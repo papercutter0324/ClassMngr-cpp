@@ -3,6 +3,7 @@
 #include "next/application/calendar_event_edit_draft.h"
 #include "next/application/calendar_event_import_save_port.h"
 #include "next/application/calendar_event_projection.h"
+#include "next/application/calendar_event_repeat_occurrence_plan.h"
 #include "next/application/calendar_event_save_port.h"
 #include "next/application/calendar_event_start_of_term_policy.h"
 #include "next/application/calendar_event_series_create_port.h"
@@ -195,6 +196,30 @@ void verifyInvalidValidation(
     QVERIFY(!result.error().recoverable);
 }
 
+void verifyInvalidRepeatPlan(
+    const Result<CalendarEventSeriesCreateRequest>& result
+    )
+{
+    QVERIFY(!result);
+    QCOMPARE(result.error().code, ErrorCode::InvalidInput);
+    QVERIFY(!result.error().message.empty());
+    QVERIFY(!result.error().recoverable);
+}
+
+void verifyOccurrenceStartDates(
+    const CalendarEventSeriesCreateRequest& request,
+    const std::initializer_list<std::string_view> expected
+    )
+{
+    QCOMPARE(request.occurrences.size(), expected.size());
+    std::size_t index = 0;
+    for (const std::string_view date : expected)
+    {
+        QCOMPARE(request.occurrences.at(index).startDate, std::string(date));
+        ++index;
+    }
+}
+
 template <typename Value>
 concept HasRawSourceAccessor = requires(const Value& value)
 {
@@ -256,6 +281,12 @@ private slots:
     void editDraftContractHasNoQtOrLegacySurface();
     void seriesCreateRequestBoundsAndOccurrencesRemainTyped();
     void seriesCreateRequestContractHasNoQtOrLegacySurface();
+    void repeatOccurrencePlanSupportsDailyWeeklyAndInclusiveUntil();
+    void repeatOccurrencePlanClampsMonthlyDatesFromPreviousOccurrence();
+    void repeatOccurrencePlanPreservesSeedFieldsAndDateDuration();
+    void repeatOccurrencePlanRejectsInvalidSeedRangeUntilAndFrequency();
+    void repeatOccurrencePlanAccepts366AndRejects367Occurrences();
+    void repeatOccurrencePlanHasTypedQtFreeContract();
     void seriesEditRequestBoundsAndDatesRemainTyped();
     void seriesEditRequestAllDayAndTimeStatusPolicyIsExplicit();
     void seriesEditRequestContractHasNoQtOrLegacySurface();
@@ -1684,6 +1715,268 @@ seriesCreateRequestContractHasNoQtOrLegacySurface()
         >);
     static_assert(!std::is_copy_constructible_v<Port>);
 
+    QVERIFY(true);
+}
+
+void NextApplicationCalendarEventTests::
+repeatOccurrencePlanSupportsDailyWeeklyAndInclusiveUntil()
+{
+    auto seed = validSaveRequest();
+    seed.startDate = "2026-09-20";
+    seed.endDate = seed.startDate;
+
+    const auto daily = planCalendarEventRepeatOccurrences(
+        seed,
+        "daily-series",
+        CalendarEventRepeatFrequency::Daily,
+        "2026-09-22"
+        );
+    QVERIFY(daily);
+    QCOMPARE(daily.value().repeatSeriesId, std::string("daily-series"));
+    verifyOccurrenceStartDates(
+        daily.value(),
+        {"2026-09-20", "2026-09-21", "2026-09-22"}
+        );
+
+    const auto weekly = planCalendarEventRepeatOccurrences(
+        seed,
+        "weekly-series",
+        CalendarEventRepeatFrequency::Weekly,
+        "2026-10-11"
+        );
+    QVERIFY(weekly);
+    verifyOccurrenceStartDates(
+        weekly.value(),
+        {"2026-09-20", "2026-09-27", "2026-10-04", "2026-10-11"}
+        );
+
+    const auto untilStart = planCalendarEventRepeatOccurrences(
+        seed,
+        "inclusive-start",
+        CalendarEventRepeatFrequency::Daily,
+        seed.startDate
+        );
+    QVERIFY(untilStart);
+    QCOMPARE(untilStart.value().occurrences.size(), std::size_t(1));
+    QCOMPARE(
+        untilStart.value().occurrences.front().startDate,
+        seed.startDate
+        );
+
+    auto lowerBoundarySeed = validSaveRequest();
+    lowerBoundarySeed.startDate = "0001-01-01";
+    lowerBoundarySeed.endDate = lowerBoundarySeed.startDate;
+    const auto lowerBoundary = planCalendarEventRepeatOccurrences(
+        lowerBoundarySeed,
+        "lower-date-boundary",
+        CalendarEventRepeatFrequency::Daily,
+        "0001-01-01"
+        );
+    QVERIFY(lowerBoundary);
+    QCOMPARE(
+        lowerBoundary.value().occurrences.front().startDate,
+        std::string("0001-01-01")
+        );
+
+    auto upperBoundarySeed = validSaveRequest();
+    upperBoundarySeed.startDate = "9999-12-31";
+    upperBoundarySeed.endDate = upperBoundarySeed.startDate;
+    const auto upperBoundary = planCalendarEventRepeatOccurrences(
+        upperBoundarySeed,
+        "upper-date-boundary",
+        CalendarEventRepeatFrequency::Daily,
+        "9999-12-31"
+        );
+    QVERIFY(upperBoundary);
+    QCOMPARE(
+        upperBoundary.value().occurrences.front().startDate,
+        std::string("9999-12-31")
+        );
+}
+
+void NextApplicationCalendarEventTests::
+repeatOccurrencePlanClampsMonthlyDatesFromPreviousOccurrence()
+{
+    auto nonLeapSeed = validSaveRequest();
+    nonLeapSeed.startDate = "2025-01-31";
+    nonLeapSeed.endDate = nonLeapSeed.startDate;
+    const auto nonLeap = planCalendarEventRepeatOccurrences(
+        nonLeapSeed,
+        "non-leap-months",
+        CalendarEventRepeatFrequency::Monthly,
+        "2025-04-30"
+        );
+    QVERIFY(nonLeap);
+    verifyOccurrenceStartDates(
+        nonLeap.value(),
+        {"2025-01-31", "2025-02-28", "2025-03-28", "2025-04-28"}
+        );
+
+    auto leapSeed = validSaveRequest();
+    leapSeed.startDate = "2024-01-31";
+    leapSeed.endDate = leapSeed.startDate;
+    const auto leap = planCalendarEventRepeatOccurrences(
+        leapSeed,
+        "leap-months",
+        CalendarEventRepeatFrequency::Monthly,
+        "2024-04-30"
+        );
+    QVERIFY(leap);
+    verifyOccurrenceStartDates(
+        leap.value(),
+        {"2024-01-31", "2024-02-29", "2024-03-29", "2024-04-29"}
+        );
+}
+
+void NextApplicationCalendarEventTests::
+repeatOccurrencePlanPreservesSeedFieldsAndDateDuration()
+{
+    auto seed = validSaveRequest();
+    seed.id = calendarEventId("existing-seed-event");
+    seed.title = "Workshop series title";
+    seed.startDate = "2026-09-20";
+    seed.endDate = "2026-09-22";
+    seed.startTime = "14:15";
+    seed.endTime = "15:45";
+    seed.allDay = false;
+    seed.eventType = "Workshop";
+    seed.timeStatus = "Timed";
+
+    const auto plan = planCalendarEventRepeatOccurrences(
+        seed,
+        "caller-generated-series-id",
+        CalendarEventRepeatFrequency::Daily,
+        "2026-09-21"
+        );
+    QVERIFY(plan);
+    QCOMPARE(
+        plan.value().repeatSeriesId,
+        std::string("caller-generated-series-id")
+        );
+    QCOMPARE(plan.value().occurrences.size(), std::size_t(2));
+
+    const auto& first = plan.value().occurrences.at(0);
+    const auto& second = plan.value().occurrences.at(1);
+    QVERIFY(!first.id.has_value());
+    QVERIFY(!second.id.has_value());
+    QCOMPARE(first.title, seed.title);
+    QCOMPARE(second.title, seed.title);
+    QCOMPARE(first.startDate, std::string("2026-09-20"));
+    QCOMPARE(first.endDate, std::string("2026-09-22"));
+    QCOMPARE(second.startDate, std::string("2026-09-21"));
+    QCOMPARE(second.endDate, std::string("2026-09-23"));
+    QCOMPARE(first.startTime, seed.startTime);
+    QCOMPARE(second.startTime, seed.startTime);
+    QCOMPARE(first.endTime, seed.endTime);
+    QCOMPARE(second.endTime, seed.endTime);
+    QCOMPARE(first.allDay, seed.allDay);
+    QCOMPARE(second.allDay, seed.allDay);
+    QCOMPARE(first.eventType, seed.eventType);
+    QCOMPARE(second.eventType, seed.eventType);
+    QCOMPARE(first.timeStatus, seed.timeStatus);
+    QCOMPARE(second.timeStatus, seed.timeStatus);
+}
+
+void NextApplicationCalendarEventTests::
+repeatOccurrencePlanRejectsInvalidSeedRangeUntilAndFrequency()
+{
+    auto invalidSeed = validSaveRequest();
+    invalidSeed.startDate = "2026-02-30";
+    verifyInvalidRepeatPlan(planCalendarEventRepeatOccurrences(
+        invalidSeed,
+        "invalid-seed",
+        CalendarEventRepeatFrequency::Daily,
+        "2026-09-22"
+        ));
+
+    auto reversedSeedRange = validSaveRequest();
+    reversedSeedRange.startDate = "2026-09-20";
+    reversedSeedRange.endDate = "2026-09-19";
+    verifyInvalidRepeatPlan(planCalendarEventRepeatOccurrences(
+        reversedSeedRange,
+        "reversed-seed-range",
+        CalendarEventRepeatFrequency::Daily,
+        "2026-09-22"
+        ));
+
+    const auto validSeed = validSaveRequest();
+    verifyInvalidRepeatPlan(planCalendarEventRepeatOccurrences(
+        validSeed,
+        "invalid-until",
+        CalendarEventRepeatFrequency::Daily,
+        "2026-02-30"
+        ));
+    verifyInvalidRepeatPlan(planCalendarEventRepeatOccurrences(
+        validSeed,
+        "until-before-start",
+        CalendarEventRepeatFrequency::Daily,
+        "2026-09-19"
+        ));
+    verifyInvalidRepeatPlan(planCalendarEventRepeatOccurrences(
+        validSeed,
+        "invalid-frequency",
+        static_cast<CalendarEventRepeatFrequency>(99),
+        "2026-09-22"
+        ));
+
+    auto endOfRangeSeed = validSaveRequest();
+    endOfRangeSeed.startDate = "9999-12-30";
+    endOfRangeSeed.endDate = "9999-12-31";
+    verifyInvalidRepeatPlan(planCalendarEventRepeatOccurrences(
+        endOfRangeSeed,
+        "end-of-range",
+        CalendarEventRepeatFrequency::Daily,
+        "9999-12-31"
+        ));
+}
+
+void NextApplicationCalendarEventTests::
+repeatOccurrencePlanAccepts366AndRejects367Occurrences()
+{
+    auto seed = validSaveRequest();
+    seed.startDate = "2023-01-01";
+    seed.endDate = seed.startDate;
+    const auto exactLimit = planCalendarEventRepeatOccurrences(
+        seed,
+        "exact-limit",
+        CalendarEventRepeatFrequency::Daily,
+        "2024-01-01"
+        );
+    QVERIFY(exactLimit);
+    QCOMPARE(
+        exactLimit.value().occurrences.size(),
+        kCalendarEventSeriesCreateMaxOccurrences
+        );
+    QCOMPARE(
+        exactLimit.value().occurrences.back().startDate,
+        std::string("2024-01-01")
+        );
+
+    seed.startDate = "2024-01-01";
+    seed.endDate = seed.startDate;
+    const auto overLimit = planCalendarEventRepeatOccurrences(
+        seed,
+        "over-limit",
+        CalendarEventRepeatFrequency::Daily,
+        "2025-01-01"
+        );
+    verifyInvalidRepeatPlan(overLimit);
+}
+
+void NextApplicationCalendarEventTests::
+repeatOccurrencePlanHasTypedQtFreeContract()
+{
+    using PlanResult = decltype(planCalendarEventRepeatOccurrences(
+        std::declval<const CalendarEventSaveRequest&>(),
+        std::declval<std::string>(),
+        std::declval<CalendarEventRepeatFrequency>(),
+        std::declval<std::string_view>()
+        ));
+    static_assert(std::is_same_v<
+        PlanResult,
+        Result<CalendarEventSeriesCreateRequest>
+        >);
+    static_assert(std::is_enum_v<CalendarEventRepeatFrequency>);
     QVERIFY(true);
 }
 

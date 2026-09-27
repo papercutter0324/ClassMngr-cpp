@@ -6,6 +6,7 @@
 #include "calendar_event_model.h"
 #include "core/application_services.h"
 #include "domain/models/calendar_event.h"
+#include "next/application/calendar_event_repeat_occurrence_plan.h"
 #include "next/platform/application_services_calendar_event_port.h"
 #include "next/platform/application_services_calendar_event_delete_port.h"
 #include "next/platform/application_services_calendar_event_save_port.h"
@@ -48,6 +49,8 @@ using CalendarEventEditDraft =
     ClassMngr::Next::Application::CalendarEventEditDraft;
 using CalendarEventSaveRequest =
     ClassMngr::Next::Application::CalendarEventSaveRequest;
+using ApplicationCalendarEventRepeatFrequency =
+    ClassMngr::Next::Application::CalendarEventRepeatFrequency;
 
 QString projectionText(
     const std::string& value
@@ -91,24 +94,23 @@ bool calendarServiceIsAvailable(
     return calendarEventPort.isAvailable();
 }
 
-QDate nextRepeatDate(
-    const QDate& date,
-    CalendarEventRepeatFrequency frequency
+ApplicationCalendarEventRepeatFrequency applicationRepeatFrequency(
+    const CalendarEventRepeatFrequency frequency
     )
 {
     switch (frequency)
     {
     case CalendarEventRepeatFrequency::Daily:
-        return date.addDays(1);
-
-    case CalendarEventRepeatFrequency::Monthly:
-        return date.addMonths(1);
+        return ApplicationCalendarEventRepeatFrequency::Daily;
 
     case CalendarEventRepeatFrequency::Weekly:
-        return date.addDays(7);
+        return ApplicationCalendarEventRepeatFrequency::Weekly;
+
+    case CalendarEventRepeatFrequency::Monthly:
+        return ApplicationCalendarEventRepeatFrequency::Monthly;
     }
 
-    return date.addDays(7);
+    return static_cast<ApplicationCalendarEventRepeatFrequency>(-1);
 }
 
 CalendarEventSaveRequest saveRequestFromDraft(
@@ -131,60 +133,6 @@ CalendarEventSaveRequest saveRequestFromDraft(
     }
 
     return request;
-}
-
-QList<CalendarEventEditDraft> repeatedCalendarEventDrafts(
-    const CalendarEventEditDraft& draft,
-    CalendarEventRepeatFrequency frequency,
-    const QDate& untilDate
-    )
-{
-    const QDate startDate = QDate::fromString(
-        projectionText(draft.startDate),
-        Qt::ISODate
-        );
-    const QDate endDate = QDate::fromString(
-        projectionText(draft.endDate),
-        Qt::ISODate
-        );
-
-    QList<CalendarEventEditDraft> events;
-
-    if (
-        !startDate.isValid()
-        || !endDate.isValid()
-        || !untilDate.isValid()
-        || untilDate < startDate
-        )
-    {
-        events.append(draft);
-        return events;
-    }
-
-    const int durationDays =
-        startDate.daysTo(
-            endDate
-            );
-
-    for (
-        QDate occurrenceDate = startDate;
-        occurrenceDate.isValid() && occurrenceDate <= untilDate;
-        occurrenceDate = nextRepeatDate(occurrenceDate, frequency)
-        )
-    {
-        CalendarEventEditDraft occurrence = draft;
-        occurrence.id.reset();
-        occurrence.startDate = occurrenceDate.toString(
-            Qt::ISODate
-            ).toStdString();
-        occurrence.endDate = occurrenceDate.addDays(durationDays).toString(
-            Qt::ISODate
-            ).toStdString();
-
-        events.append(occurrence);
-    }
-
-    return events;
 }
 
 bool isRepeatSeriesEvent(
@@ -899,31 +847,33 @@ void CalendarPage::openCalendarDialog(
         {
             if (dialog.repeatEnabled())
             {
-                savedDraft.repeatSeriesId =
-                    newRepeatSeriesId().toUtf8().toStdString();
-                const QList<CalendarEventEditDraft> eventsToSave =
-                    repeatedCalendarEventDrafts(
-                        savedDraft,
-                        dialog.repeatFrequency(),
-                        dialog.repeatUntilDate()
-                        );
-
-                ClassMngr::Next::Application::
-                    CalendarEventSeriesCreateRequest request;
-                request.repeatSeriesId = *savedDraft.repeatSeriesId;
-                request.occurrences.reserve(eventsToSave.size());
-                for (const CalendarEventEditDraft& occurrence : eventsToSave)
+                const auto plannedSeries =
+                    ClassMngr::Next::Application::
+                        planCalendarEventRepeatOccurrences(
+                            saveRequestFromDraft(savedDraft),
+                            newRepeatSeriesId().toUtf8().toStdString(),
+                            applicationRepeatFrequency(
+                                dialog.repeatFrequency()
+                                ),
+                            dialog.repeatUntilDate()
+                                .toString(Qt::ISODate)
+                                .toStdString()
+                            );
+                if (!plannedSeries)
                 {
-                    request.occurrences.push_back(
-                        saveRequestFromDraft(occurrence)
+                    DialogServices::showWarning(
+                        this,
+                        tr("Save Calendar Event"),
+                        projectionText(plannedSeries.error().message)
                         );
+                    return;
                 }
 
                 ClassMngr::Next::Platform::
                     ApplicationServicesCalendarEventSeriesCreatePort
                     createPort(*m_services);
                 const auto typedSaved =
-                    createPort.createRepeatSeries(request);
+                    createPort.createRepeatSeries(plannedSeries.value());
                 if (!typedSaved)
                 {
                     DialogServices::showWarning(
