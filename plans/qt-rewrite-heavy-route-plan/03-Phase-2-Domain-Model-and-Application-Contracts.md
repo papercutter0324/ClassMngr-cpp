@@ -10,9 +10,9 @@
 - Last updated: 2026-09-27
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F99 is selected to add a Qt-free Calendar repeat-series
-  creation use case over the existing planner and port. Gate 1 and Gate 2
-  remain Partial; the formal workspace criterion and audited `src/next`
+- Current note: F100 is selected for seeded Schedule Import replacement
+  rollback parity across baseline and current repositories. Gate 1 and Gate 2
+  remain Partial; the formal workspace create criterion and audited `src/next`
   isolation are Satisfied. Historical production-workbook evidence remains
   open. Sub Prep remains capped at 2026-2027.
 
@@ -161,21 +161,23 @@ No new v2 production path depends on DataService, MainWindow, PageManager, or a 
 - Do not hide business rules inside presenters or delegates.
 - Do not allow compatibility methods to become the permanent v2 API.
 
-## Next selected bounded slice (F99)
+## Next selected bounded slice (F100)
 
-Add a Qt-free Calendar repeat-series creation use case that composes
-`calendar_event_repeat_occurrence_plan.h` with an injected
-`calendar_event_series_create_port.h`, then route the Calendar page through
-it. Keep Qt dialog mapping, UUID generation, warnings, and cache invalidation
-in the UI.
+Add seeded Schedule Import replacement rollback parity comparing baseline
+`48fc5c5cc7dee78d82f8bf5f1bf8b51725575b99` with current F99
+`794ed7c0a5de8252a1687a1be8e4612c856cf00e`. Run the same fixed seed, plan, and
+failure trigger through each revision's own repository, schema, and transaction
+closure. Update teacher and `class_info`, clear the target's regular schedule
+rows, insert an earlier replacement row, then fail a later `class_times` row
+(for example, Wednesday).
 
-Use a fake port to verify the planned request is forwarded once on success,
-port errors propagate, and invalid plans make no port call. Verify with the
-focused Application Calendar and Platform series-create targets and a
-`ClassMngr` build. Two Explorer lanes confirmed the page currently owns plan
-and save composition. Three Investigator lanes compared Gate 2 rollback,
-Schedule Import meeting-pattern, and Calendar use-case candidates; Calendar
-was selected to alternate to Gate 1 and reuse the existing planner and port.
-Gate 1 advances but remains Partial; Gate 2 remains Partial. This is selected
-work, not implementation evidence. Phase 2 exit remains Open. Sub Prep remains
+For each run, require the injected failure and assert the post-failure state
+matches its pre-operation snapshot for `teachers`, `classes`, `class_info`,
+`class_times`, `class_intensive_times`, `intensive_slot_states`,
+`app_settings`, and `sqlite_sequence`; compare normalized baseline/current
+snapshots as well. Add or strengthen the current focused
+`ClassMngrScheduleImportTests` case and use a narrow baseline/current harness.
+Two independent explorers verified transaction order and found no blocker.
+Gate 2 remains Partial; Gate 1 remains Partial. This is selected work, not
+implementation or parity evidence. Phase 2 exit remains Open. Sub Prep remains
 capped at 2026-2027.
