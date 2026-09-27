@@ -1198,3 +1198,7 @@ To prove a session-bound operation cannot fall back through a compatibility faca
 ## F112 - isolate the complete CalendarService read surface
 
 Exercise every CalendarService content-read method with a closed bound session and a separately open DataService, then repeat through the legacy-only constructor. Keep writes and deletes out of the read-isolation slice. If MSVC reports an invalid generated-file path in a fresh build, rerun from a short temporary path and report the retry evidence without asserting an unproven root cause.
+
+## F113 - isolate output reads while preserving legacy construction
+
+For operation-scoped output adapters, prove a closed bound session plus a separate open DataService cannot supply fallback content, even when the service still reports available. Repeat through sessionless legacy construction and retain normal adapter regressions, especially established failure handling such as zero student count. Isolate fresh verification builds from repository build caches and clean only generated scratch paths after checking containment.

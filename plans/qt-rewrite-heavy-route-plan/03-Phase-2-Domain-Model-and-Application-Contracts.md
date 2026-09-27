@@ -10,15 +10,14 @@
 - Last updated: 2026-09-28
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F112 is verified at commit `677f2451`; the six CalendarService
-  content reads now use a non-null session without DataService fallback, while
-  sessionless legacy reads remain. Broader Calendar UI/contracts remain open;
-  F112 isolates CalendarService reads only. F113 is selected for Sub Prep print and
-  roster-output read isolation. Gates 1 and 2 remain Partial; workspace create
-  and audited direct `src/next` isolation are Satisfied. Strict transitive
-  ApplicationServices-to-DataService isolation remains unresolved. Exit
-  remains Open. Historical production-workbook provenance is a tracked risk,
-  not a literal exit criterion.
+- Current note: F113 is verified at commit `e9ef19a0`; session-bound Sub Prep
+  print-source and roster-output reads no longer fall back to DataService.
+  Broader Calendar UI/contracts remain open. F114 is selected for TeacherService
+  catalog-read isolation. Gates 1 and 2 remain Partial; workspace create and
+  audited direct `src/next` isolation are Satisfied. Strict transitive
+  ApplicationServices-to-DataService isolation remains unresolved. Exit remains
+  Open. Historical production-workbook provenance is a tracked risk, not a
+  literal exit criterion.
   Sub Prep remains January 1 of the reference date's year through December 31
   of the following year at most; 2026-2027 is illustrative.
 
@@ -167,47 +166,39 @@ No new v2 production path depends on DataService, MainWindow, PageManager, or a 
 - Do not hide business rules inside presenters or delegates.
 - Do not allow compatibility methods to become the permanent v2 API.
 
-## Latest verified progress (F112)
+## Latest verified progress (F113)
 
-Commit `677f2451` independently passed verification. All six CalendarService
-content reads—`eventsForDate`, `eventsInRange`,
-`eventDateIntervalsInRange`, `upcomingEvents`, `event`, and
-`repeatSeriesFromDate`—are now authoritative to a non-null session. If its
-calendar repository is unavailable, the read fails/unavailable without a
-DataService fallback. All six DataService-only behaviors remain for
-sessionless legacy construction; writes and deletes are unchanged. This closes
-these CalendarService read fallbacks only.
+Commit `e9ef19a0` independently passed verification. Session-bound Sub Prep
+print-source and roster-output reads now fail/unavailable without a required
+repository instead of falling back to DataService; sessionless legacy behavior
+remains. The selected class/day/mode scope, bounded print projection, requested
+roster columns, and row/cell/text limits remain enforced. F113 isolates these
+output reads only; broader Calendar UI/contracts and other migrations remain
+open.
 
-### Cumulative exit-gate status after F112
+### Cumulative exit-gate status after F113
 
 | Exit-gate area | Audit status | Finding |
 | --- | --- | --- |
 | App-less Domain/Application behavior (Gate 1) | Partial | F110 adds the composed Calendar visibility predicate; broader app-less behavior remains incomplete. |
 | Baseline parity (Gate 2) | Partial | F109 adds synthetic repeat-series creation state-transition parity; broader parity remains open. |
 | Workspace boundary | Satisfied | The formal workspace-create criterion remains satisfied. |
-| v2 dependency isolation | Partial transitive progress | Direct audited `src/next` isolation remains Satisfied; F111 and F112 isolate targeted SettingsService and CalendarService reads, but other service fallbacks and the strict transitive edge remain unresolved. |
+| v2 dependency isolation | Partial transitive progress | Direct audited `src/next` isolation remains Satisfied; F111 and F112 isolate targeted SettingsService and CalendarService reads, and F113 isolates Sub Prep output reads, but other service fallbacks and the strict transitive edge remain unresolved. |
 
 Phase 2 remains In Progress with its exit gate Open. Historical
 production-workbook provenance remains a tracked risk, not a literal exit
 criterion. The `SettingsService::isAvailable()` limitation from F111 remains:
-it can return true when a separate DataService is open. Other feature-service
-fallbacks, Sub Prep output reads, document-service migration, and live
-MainWindow projection-failure/retranslation integration remain open. Sub Prep
-is bounded to January 1 of the reference date's year through December 31 of
-the following year, at most; 2026-2027 is illustrative.
+it can return true when a separate DataService is open. Broader Calendar
+UI/contracts, other feature-service fallbacks, document-service migration, and
+live MainWindow projection-failure/retranslation integration remain open. Sub
+Prep is bounded to January 1 of the reference date's year through December 31
+of the following year, at most; 2026-2027 is illustrative.
 
-### Next selected bounded slice (F113)
+### Next selected bounded slice (F114)
 
-Isolate Sub Prep's operation-scoped print-source and roster-output reads from
-DataService when called with a non-null session. A missing required repository
-must fail/unavailable without a fallback read; retain DataService-only
-behavior for sessionless legacy construction. Preserve the existing selected
-class/day/mode scope, bounded print projection, requested roster columns, and
-row/cell/text limits.
-
-Add lifecycle coverage with a closed bound `DatabaseSession` and a separately
-open, seeded DataService: neither source path may expose its seeded content,
-while legacy sessionless reads continue to work. Retain focused
-ApplicationServices print-source and roster-output adapter coverage. This is
-Sub Prep read isolation only; it does not close other service-family fallbacks
-or establish global isolation.
+Isolate the `TeacherService` catalog reads `teachers`, `nativeEnglishTeachers`,
+`gsTeamMembers`, and `latestImportDate` from DataService for a non-null bound
+session. With a closed bound `DatabaseSession` and a separately open, seeded
+DataService, all four reads must fail/unavailable without exposing seeded
+content. Preserve DataService-only behavior for sessionless legacy
+construction, and retain the normal staff-directory regression.

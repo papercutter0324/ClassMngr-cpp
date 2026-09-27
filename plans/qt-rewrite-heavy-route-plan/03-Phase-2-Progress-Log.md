@@ -6859,3 +6859,41 @@ Retain the focused normal ApplicationServices Calendar adapter CTest. This
 slice does not close other service-family fallbacks or establish global
 isolation. Broader Calendar UI/contracts remain open; F112 isolates only these
 CalendarService reads.
+
+## Verified F112 session-bound CalendarService reads - commit `677f2451`
+
+F112 was verified against base `0e05a3d1`. In a short-path retry after C1083,
+`ClassMngrDataServiceLifecycleTests` and
+`ClassMngrNextPlatformApplicationServicesCalendarEventPortTests` passed
+focused CTest 2/2.
+The lifecycle regression confirms the six session-bound CalendarService reads
+do not fall back to a separately open, seeded DataService, while sessionless
+legacy reads remain. No full suite ran.
+
+## Verified F113 Sub Prep output-read isolation - commit `e9ef19a0`
+
+An independent archive of base `677f2451` overlaid only
+`src/app/services/feature_services.cpp` and
+`tests/data_service_lifecycle_tests.cpp`. The exact three CTests passed 3/3:
+`ClassMngrDataServiceLifecycleTests`,
+`ClassMngrNextPlatformApplicationServicesSubPrepPrintSourcePortTests`, and
+`ClassMngrNextPlatformApplicationServicesSubPrepRosterOutputSourcePortTests`.
+Verification used Windows x64 Debug, Ninja, MSVC 19.51, and Qt 6.12. A
+non-fatal `vswhere` warning was emitted. `git diff --check` passed. No full
+suite ran.
+
+For a non-null session, Sub Prep print-source and roster-output reads now fail
+or report unavailable without falling back to DataService; sessionless
+DataService-only behavior remains. Broader Calendar UI/contracts and other
+feature-service migrations remain open. Historical production-workbook
+provenance remains a tracked, non-gating risk. Sub Prep remains bounded to
+January 1 of the reference date's year through December 31 of the following
+year, at most; 2026-2027 is illustrative.
+
+### Next selected bounded slice (F114)
+
+Isolate `TeacherService::teachers`, `nativeEnglishTeachers`, `gsTeamMembers`,
+and `latestImportDate` for non-null bound sessions. A closed bound
+`DatabaseSession` alongside a separately open, seeded DataService must fail all
+four reads without exposing its content; sessionless DataService-only behavior
+must remain. Retain the normal staff-directory regression.
