@@ -36,6 +36,7 @@ private slots:
     void invalidVersionIsRecognizedButRejected();
     void readsNamedMultiSheetWorkbookMetadata();
     void validatorReportsRecognitionStatusesAndMetadata();
+    void rejectsGeneratedWorkbookWithInvalidDate();
     void appliesGeneratedWorkbookWithExplicitReviewDecision();
     void registryAcceptsAdditionalTemplateAdapters();
     void unreadableDataFailsValidation();
@@ -516,6 +517,29 @@ void TeacherImportTests::validatorReportsRecognitionStatusesAndMetadata()
     const auto alternate = validateTeacherImportData(testWorkbookData(), mockRegistry);
     QCOMPARE(alternate.status, TeacherImportFileStatus::Valid);
     QCOMPARE(alternate.previewCounts.nativeEnglishTeachers, 1);
+}
+
+void TeacherImportTests::rejectsGeneratedWorkbookWithInvalidDate()
+{
+    const QByteArray workbook = testWorkbookData(QStringLiteral("invalid-date"));
+    const QByteArray workbookSha256 =
+        QCryptographicHash::hash(workbook, QCryptographicHash::Sha256).toHex();
+    qInfo().noquote() << "F94_INPUT_SIZE=" << workbook.size();
+    qInfo().noquote() << "F94_INPUT_SHA256=" << workbookSha256;
+    QCOMPARE(workbook.size(), 3423);
+    QCOMPARE(workbookSha256, QByteArrayLiteral(
+        "256b29c2f27bfe787007aaa6df28e5e084dc3788863cbf4b6a09fb265f0685d0"));
+
+    const TeacherImportTemplateRegistry registry =
+        createDefaultTeacherImportTemplateRegistry();
+    const TeacherImportFileValidation validation =
+        validateTeacherImportData(workbook, registry);
+    QCOMPARE(validation.status, TeacherImportFileStatus::RecognizedButInvalid);
+    QCOMPARE(validation.templateId, QStringLiteral("sectioned-contact-list-v1"));
+    QCOMPARE(validation.sourceDate, QDate());
+    QCOMPARE(validation.discoveredSections, QStringList{QStringLiteral("M1")});
+    QCOMPARE(validation.diagnostics, QStringList{
+        QStringLiteral("Cell A1 must contain a version date such as 26.07.09ver.")});
 }
 
 void TeacherImportTests::appliesGeneratedWorkbookWithExplicitReviewDecision()
