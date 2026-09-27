@@ -1140,3 +1140,7 @@ Prep's queried interval to the current and following calendar years at most.
 ## Phase 2 Calendar suffix-edit policy - 2026-09-27
 
 - Move repeat-series edit date shifting and field propagation into a Qt-free Application planner fed by an ordered value snapshot. Keep the platform adapter responsible for query order and Qt/domain conversion. Preserve Technical failure behavior for invalid or unrepresentable dates so the adapter does not attempt persistence.
+## Phase 2 malformed UTF-8 validation parity - 2026-09-27
+
+- Inject malformed UTF-8 into the XML member before rebuilding a source-generated ZIP so the fixture remains structurally valid and CRC-correct. Run that exact emitted byte sequence through each revision own parser; ZIP rewriters can change archive metadata even when member contents match.
+- Observe the validator result before pinning assertions. This invalid shared-string marker returns `UnsupportedTemplate` with no preview metadata; it is not an unreadable-workbook result and does not establish persistence rejection or historical workbook parity.

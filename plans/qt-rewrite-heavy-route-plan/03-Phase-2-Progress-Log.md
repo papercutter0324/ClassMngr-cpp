@@ -6208,22 +6208,41 @@ migrations, document-service migration, and live MainWindow
 projection-failure/retranslation integration remain open. Sub Prep remains
 capped at 2026-2027.
 
-### Next selected bounded slice (F98)
+## Verified F98 malformed-UTF-8 Teacher Import workbook parity - commit `30d545a8`
 
-Add source-generated malformed-UTF-8 Teacher Import workbook parity using
-identical bytes from the shared `testWorkbookData`/`storedZip` helpers. In the
-`xl/sharedStrings.xml` member, replace the `M` in the second shared-string
-marker `<t>M1</t>` with raw `0xFF` at member offset 223, then rebuild the ZIP
-CRC. First characterize each revision's behavior, then compare normalized
-status, template, source date, discovered sections, counts, and ordered
-semantic preview; omit localized names and diagnostics. Add a pinned current
-regression and a narrow baseline/current harness that compiles each revision's
-own reader, validator, registry, template, and name helper. Use baseline
-`48fc5c5cc7dee78d82f8bf5f1bf8b51725575b99` and current
-`36ebb09a960fa82f633701ec83fba35bcd7f3599`.
+Commit `30d545a8eb198042948d233e6e10110bf364ff27` changes only
+`tests/teacher_import_tests.cpp`. The generated malformed-workbook input is
+3,422 bytes with SHA-256
+`7386d4eae0e7f8d54467b57f05ec909cd0c1e7f392d865f9dc7e52faf3cc8165`. The
+input replaces the `M` in the second `<t>M1</t>` marker at
+`xl/sharedStrings.xml` member offset 223 with raw `0xFF`; the rebuilt ZIP has
+valid CRCs for all six entries.
 
-This is source-generated malformed-workbook parity only; historical
-production-workbook evidence remains open. F98 is selected to advance Gate 2;
-Gate 2 and Gate 1 remain Partial. This is selected work, not implementation
-evidence.
-Phase 2 exit remains Open. Sub Prep remains capped at 2026-2027.
+A baseline/current harness ran identical bytes through each revision's own
+reader, validator, registry, template, and name helper. Both returned
+`UnsupportedTemplate` with empty metadata and records and zero counts. An
+independent exact-case run reported 3 passed, 0 failed; focused CTest passed
+1/1. This is source-generated malformed-workbook parity only; historical
+production-workbook evidence remains open. Gate 2 advances but remains Partial;
+Gate 1 remains Partial. The formal workspace criterion and audited v2 isolation
+remain Satisfied. Phase 2 exit remains Open. Sub Prep remains capped at
+2026-2027.
+
+### Next selected bounded slice (F99)
+
+Add a Qt-free Calendar repeat-series creation use case that composes
+`calendar_event_repeat_occurrence_plan.h` with an injected
+`calendar_event_series_create_port.h`, then route the Calendar page through
+it. Keep Qt dialog mapping, UUID generation, warnings, and cache invalidation
+in the UI.
+
+Use a fake port to verify the planned request is forwarded once on success,
+port errors propagate, and invalid plans make no port call. Verify with the
+focused Application Calendar and Platform series-create targets and a
+`ClassMngr` build. Two Explorer lanes confirmed the page currently owns plan
+and save composition. Three Investigator lanes compared Gate 2 rollback,
+Schedule Import meeting-pattern, and Calendar use-case candidates; Calendar
+was selected to alternate to Gate 1 and reuse the existing planner and port.
+Gate 1 advances but remains Partial; Gate 2 remains Partial. This is selected
+work, not implementation evidence. Phase 2 exit remains Open. Sub Prep remains
+capped at 2026-2027.

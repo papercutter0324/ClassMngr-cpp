@@ -10,12 +10,11 @@
 - Last updated: 2026-09-27
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F97 adds a Qt-free Calendar repeat-series edit planner and
-  routes the platform port through it. F98 is selected for source-generated
-  malformed-UTF-8 Teacher Import workbook parity. Gate 1 and Gate 2 remain
-  Partial; the formal workspace criterion and audited `src/next` isolation are
-  Satisfied. Historical production-workbook evidence remains open. Sub Prep
-  remains capped at 2026-2027.
+- Current note: F99 is selected to add a Qt-free Calendar repeat-series
+  creation use case over the existing planner and port. Gate 1 and Gate 2
+  remain Partial; the formal workspace criterion and audited `src/next`
+  isolation are Satisfied. Historical production-workbook evidence remains
+  open. Sub Prep remains capped at 2026-2027.
 
 ## Objective
 
@@ -162,56 +161,21 @@ No new v2 production path depends on DataService, MainWindow, PageManager, or a 
 - Do not hide business rules inside presenters or delegates.
 - Do not allow compatibility methods to become the permanent v2 API.
 
-## Verified F97 Calendar repeat-series edit planner - commit `36ebb09a`
+## Next selected bounded slice (F99)
 
-Commit `36ebb09a960fa82f633701ec83fba35bcd7f3599` adds
-`src/next/application/calendar_event_series_edit_plan.h`, registers it in
-`cmake/next.cmake`, and routes
-`src/next/platform/application_services_calendar_event_series_edit_port.h`
-through the Qt-free planner. The planner preserves query order and event IDs,
-common start-date offset and requested duration, request fields, trimmed series
-ID, empty-input success, and Technical failures for invalid source or shifted
-dates.
+Add a Qt-free Calendar repeat-series creation use case that composes
+`calendar_event_repeat_occurrence_plan.h` with an injected
+`calendar_event_series_create_port.h`, then route the Calendar page through
+it. Keep Qt dialog mapping, UUID generation, warnings, and cache invalidation
+in the UI.
 
-Independent fresh Ninja builds produced
-`ClassMngrNextApplicationCalendarEventTests`,
-`ClassMngrNextPlatformApplicationServicesCalendarEventPortTests`, and
-`ClassMngr`. Both focused CTests passed; an independent platform recheck also
-passed for empty suffix and no-save failure cases. `git diff --check` passed;
-no full suite was run.
-
-### Cumulative exit-gate status after F97
-
-| Exit-gate area | Audit status | Finding |
-| --- | --- | --- |
-| App-less Domain/Application behavior (Gate 1) | Partial | F95 adds repeat occurrence planning and F97 adds repeat-series edit planning; broader application behavior remains incomplete. |
-| Baseline parity (Gate 2) | Partial | F92 and F94 compare source-generated workbook paths; F96 adds one synthetic database rollback case. Historical production-workbook evidence and broader parity remain open; F97 adds no parity evidence. |
-| Workspace boundary | Satisfied | The formal WorkspaceGateway/WorkspaceCoordinator criterion remains satisfied; the broader FileController integration gap remains outside that criterion. |
-| v2 dependency isolation | Satisfied in the audited v2 scope | Audited `src/next` sources remain free of direct DataService, MainWindow, PageManager, and widget-pointer dependencies. |
-
-Phase 2 remains In Progress with its exit gate Open. Historical
-production-workbook evidence, other rollback failure stages, broader Calendar
-UI/contracts, generic settings persistence, remaining feature-service
-migrations, document-service migration, and live MainWindow
-projection-failure/retranslation integration remain open. Sub Prep remains
+Use a fake port to verify the planned request is forwarded once on success,
+port errors propagate, and invalid plans make no port call. Verify with the
+focused Application Calendar and Platform series-create targets and a
+`ClassMngr` build. Two Explorer lanes confirmed the page currently owns plan
+and save composition. Three Investigator lanes compared Gate 2 rollback,
+Schedule Import meeting-pattern, and Calendar use-case candidates; Calendar
+was selected to alternate to Gate 1 and reuse the existing planner and port.
+Gate 1 advances but remains Partial; Gate 2 remains Partial. This is selected
+work, not implementation evidence. Phase 2 exit remains Open. Sub Prep remains
 capped at 2026-2027.
-
-### Next selected bounded slice (F98)
-
-Add source-generated malformed-UTF-8 Teacher Import workbook parity using
-identical bytes from the shared `testWorkbookData`/`storedZip` helpers. In the
-`xl/sharedStrings.xml` member, replace the `M` in the second shared-string
-marker `<t>M1</t>` with raw `0xFF` at member offset 223, then rebuild the ZIP
-CRC. First characterize each revision's behavior, then compare normalized
-status, template, source date, discovered sections, counts, and ordered
-semantic preview; omit localized names and diagnostics. Add a pinned current
-regression and a narrow baseline/current harness that compiles each revision's
-own reader, validator, registry, template, and name helper. Use baseline
-`48fc5c5cc7dee78d82f8bf5f1bf8b51725575b99` and current
-`36ebb09a960fa82f633701ec83fba35bcd7f3599`.
-
-This is source-generated malformed-workbook parity only; historical
-production-workbook evidence remains open. F98 is selected to advance Gate 2;
-Gate 2 and Gate 1 remain Partial. This is selected work, not implementation
-evidence.
-Phase 2 exit remains Open. Sub Prep remains capped at 2026-2027.
