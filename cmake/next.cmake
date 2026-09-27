@@ -57,6 +57,7 @@ set(CLASSMNGR_NEXT_APPLICATION_SOURCES
     src/next/application/calendar_event_save_port.h
     src/next/application/calendar_event_repeat_occurrence_plan.h
     src/next/application/calendar_event_series_create_port.h
+    src/next/application/calendar_event_series_create_use_case.h
     src/next/application/calendar_event_series_edit_port.h
     src/next/application/calendar_event_series_edit_plan.h
     src/next/application/calendar_event_series_delete_port.h

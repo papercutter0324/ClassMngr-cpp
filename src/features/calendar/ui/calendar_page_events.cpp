@@ -6,7 +6,7 @@
 #include "calendar_event_model.h"
 #include "core/application_services.h"
 #include "domain/models/calendar_event.h"
-#include "next/application/calendar_event_repeat_occurrence_plan.h"
+#include "next/application/calendar_event_series_create_use_case.h"
 #include "next/platform/application_services_calendar_event_port.h"
 #include "next/platform/application_services_calendar_event_delete_port.h"
 #include "next/platform/application_services_calendar_event_save_port.h"
@@ -847,9 +847,13 @@ void CalendarPage::openCalendarDialog(
         {
             if (dialog.repeatEnabled())
             {
-                const auto plannedSeries =
+                ClassMngr::Next::Platform::
+                    ApplicationServicesCalendarEventSeriesCreatePort
+                    createPort(*m_services);
+                const auto typedSaved =
                     ClassMngr::Next::Application::
-                        planCalendarEventRepeatOccurrences(
+                        CalendarEventSeriesCreateUseCase::execute(
+                            createPort,
                             saveRequestFromDraft(savedDraft),
                             newRepeatSeriesId().toUtf8().toStdString(),
                             applicationRepeatFrequency(
@@ -859,21 +863,6 @@ void CalendarPage::openCalendarDialog(
                                 .toString(Qt::ISODate)
                                 .toStdString()
                             );
-                if (!plannedSeries)
-                {
-                    DialogServices::showWarning(
-                        this,
-                        tr("Save Calendar Event"),
-                        projectionText(plannedSeries.error().message)
-                        );
-                    return;
-                }
-
-                ClassMngr::Next::Platform::
-                    ApplicationServicesCalendarEventSeriesCreatePort
-                    createPort(*m_services);
-                const auto typedSaved =
-                    createPort.createRepeatSeries(plannedSeries.value());
                 if (!typedSaved)
                 {
                     DialogServices::showWarning(

@@ -7,6 +7,7 @@
 #include "next/application/calendar_event_save_port.h"
 #include "next/application/calendar_event_start_of_term_policy.h"
 #include "next/application/calendar_event_series_create_port.h"
+#include "next/application/calendar_event_series_create_use_case.h"
 #include "next/application/calendar_event_series_edit_port.h"
 #include "next/application/calendar_event_series_edit_plan.h"
 
@@ -251,6 +252,25 @@ std::vector<CalendarEventCampusCode> campusCodes(
     return result;
 }
 
+class FakeCalendarEventSeriesCreatePort final
+    : public CalendarEventSeriesCreatePort
+{
+public:
+    int createCalls = 0;
+    std::optional<CalendarEventSeriesCreateRequest> receivedRequest;
+    CalendarEventSeriesCreateResult response =
+        CalendarEventSeriesCreateResult::success({});
+
+    CalendarEventSeriesCreateResult createRepeatSeries(
+        const CalendarEventSeriesCreateRequest& request
+        ) override
+    {
+        ++createCalls;
+        receivedRequest = request;
+        return response;
+    }
+};
+
 }
 
 class NextApplicationCalendarEventTests final : public QObject
@@ -288,6 +308,9 @@ private slots:
     void repeatOccurrencePlanRejectsInvalidSeedRangeUntilAndFrequency();
     void repeatOccurrencePlanAccepts366AndRejects367Occurrences();
     void repeatOccurrencePlanHasTypedQtFreeContract();
+    void repeatSeriesCreateUseCasePlansAndForwardsExactlyOnce();
+    void repeatSeriesCreateUseCasePropagatesPortFailure();
+    void repeatSeriesCreateUseCaseRejectsInvalidPlanWithoutCallingPort();
     void seriesEditRequestBoundsAndDatesRemainTyped();
     void seriesEditRequestAllDayAndTimeStatusPolicyIsExplicit();
     void seriesEditRequestContractHasNoQtOrLegacySurface();
@@ -1982,6 +2005,129 @@ repeatOccurrencePlanHasTypedQtFreeContract()
         >);
     static_assert(std::is_enum_v<CalendarEventRepeatFrequency>);
     QVERIFY(true);
+}
+
+void NextApplicationCalendarEventTests::
+repeatSeriesCreateUseCasePlansAndForwardsExactlyOnce()
+{
+    using UseCaseResult = decltype(
+        CalendarEventSeriesCreateUseCase::execute(
+            std::declval<CalendarEventSeriesCreatePort&>(),
+            std::declval<const CalendarEventSaveRequest&>(),
+            std::declval<std::string>(),
+            std::declval<CalendarEventRepeatFrequency>(),
+            std::declval<std::string_view>()
+            )
+        );
+    static_assert(std::is_same_v<
+        UseCaseResult,
+        CalendarEventSeriesCreateResult
+        >);
+
+    CalendarEventSaveRequest seed = validSaveRequest();
+    seed.id = calendarEventId("event-existing");
+    seed.title = "Repeat workshop";
+    seed.startDate = "2026-09-20";
+    seed.endDate = "2026-09-21";
+    seed.startTime = "08:30";
+    seed.endTime = "10:15";
+    seed.eventType = "Workshop";
+    seed.timeStatus = "Timed";
+
+    FakeCalendarEventSeriesCreatePort port;
+    const CalendarEventId firstId = calendarEventId("event-101");
+    const CalendarEventId secondId = calendarEventId("event-102");
+    port.response = CalendarEventSeriesCreateResult::success({
+        firstId,
+        secondId
+    });
+
+    const CalendarEventSeriesCreateResult result =
+        CalendarEventSeriesCreateUseCase::execute(
+            port,
+            seed,
+            "generated-series-123",
+            CalendarEventRepeatFrequency::Daily,
+            "2026-09-21"
+            );
+
+    QVERIFY(result);
+    QCOMPARE(port.createCalls, 1);
+    QVERIFY(port.receivedRequest.has_value());
+
+    CalendarEventSaveRequest firstOccurrence = seed;
+    firstOccurrence.id.reset();
+    firstOccurrence.startDate = "2026-09-20";
+    firstOccurrence.endDate = "2026-09-21";
+    CalendarEventSaveRequest secondOccurrence = seed;
+    secondOccurrence.id.reset();
+    secondOccurrence.startDate = "2026-09-21";
+    secondOccurrence.endDate = "2026-09-22";
+
+    const CalendarEventSeriesCreateRequest expectedRequest{
+        "generated-series-123",
+        {firstOccurrence, secondOccurrence}
+    };
+    QVERIFY(*port.receivedRequest == expectedRequest);
+    QCOMPARE(result.value().size(), std::size_t(2));
+    QVERIFY(result.value().at(0) == firstId);
+    QVERIFY(result.value().at(1) == secondId);
+}
+
+void NextApplicationCalendarEventTests::
+repeatSeriesCreateUseCasePropagatesPortFailure()
+{
+    FakeCalendarEventSeriesCreatePort port;
+    port.response = CalendarEventSeriesCreateResult::failure({
+        .code = ErrorCode::Conflict,
+        .message = "The repeat series could not be stored.",
+        .recoverable = true
+    });
+
+    const CalendarEventSeriesCreateResult result =
+        CalendarEventSeriesCreateUseCase::execute(
+            port,
+            validSaveRequest(),
+            "series-with-failure",
+            CalendarEventRepeatFrequency::Weekly,
+            "2026-09-20"
+            );
+
+    QVERIFY(!result);
+    QCOMPARE(port.createCalls, 1);
+    QCOMPARE(result.error().code, ErrorCode::Conflict);
+    QCOMPARE(
+        result.error().message,
+        std::string("The repeat series could not be stored.")
+        );
+    QVERIFY(result.error().recoverable);
+}
+
+void NextApplicationCalendarEventTests::
+repeatSeriesCreateUseCaseRejectsInvalidPlanWithoutCallingPort()
+{
+    FakeCalendarEventSeriesCreatePort port;
+
+    const CalendarEventSeriesCreateResult result =
+        CalendarEventSeriesCreateUseCase::execute(
+            port,
+            validSaveRequest(),
+            "series-with-invalid-range",
+            CalendarEventRepeatFrequency::Daily,
+            "2026-09-19"
+            );
+
+    QVERIFY(!result);
+    QCOMPARE(port.createCalls, 0);
+    QVERIFY(!port.receivedRequest.has_value());
+    QCOMPARE(result.error().code, ErrorCode::InvalidInput);
+    QCOMPARE(
+        result.error().message,
+        std::string(
+            "Calendar repeat until date must not precede the seed start date."
+            )
+        );
+    QVERIFY(!result.error().recoverable);
 }
 
 void NextApplicationCalendarEventTests::
