@@ -228,6 +228,7 @@ private slots:
     void featureServicesExposeNarrowOperations();
     void settingsServiceDoesNotFallBackFromClosedSession();
     void calendarServiceDoesNotFallBackFromClosedSession();
+    void subPrepOutputReadsDoNotFallBackFromClosedSession();
     void closeAndSwitchReleaseEveryRepository();
     void schemaFailureClosesDatabaseSession();
     void classDeleteFailureRollsBackAllChanges();
@@ -1511,6 +1512,112 @@ calendarServiceDoesNotFallBackFromClosedSession()
     QCOMPARE(
         legacyRepeatSeries->first().title,
         QStringLiteral("F112 Calendar Isolation Event")
+        );
+}
+
+void DataServiceLifecycleTests::
+subPrepOutputReadsDoNotFallBackFromClosedSession()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+
+    DataService legacyDataService;
+    QVERIFY(legacyDataService.openDatabase(
+        directory.filePath(QStringLiteral("legacy-sub-prep-output.db"))
+        ).has_value());
+    const QString seedPrefix = QStringLiteral("F113 Sub Prep");
+    const DatabaseIds seeded = populateDatabase(
+        legacyDataService,
+        seedPrefix
+        );
+    QVERIFY(seeded.teacherId > 0);
+    QVERIFY(seeded.classId > 0);
+    QVERIFY(seeded.rosterSaved);
+
+    DatabaseSession closedSession;
+    QVERIFY(!closedSession.isOpen());
+    QVERIFY(closedSession.teacherRepository() == nullptr);
+    QVERIFY(closedSession.classRepository() == nullptr);
+    QVERIFY(closedSession.classInfoRepository() == nullptr);
+    QVERIFY(closedSession.rosterRepository() == nullptr);
+
+    TeacherService sessionBoundTeachers(
+        &closedSession,
+        &legacyDataService
+        );
+    ClassService sessionBoundClasses(
+        &closedSession,
+        &legacyDataService
+        );
+    RosterService sessionBoundRosters(
+        &closedSession,
+        &legacyDataService
+        );
+    TeacherService legacyOnlyTeachers(&legacyDataService);
+    ClassService legacyOnlyClasses(&legacyDataService);
+    RosterService legacyOnlyRosters(&legacyDataService);
+
+    QVERIFY(sessionBoundTeachers.isAvailable());
+    QVERIFY(sessionBoundClasses.isAvailable());
+    QVERIFY(sessionBoundRosters.isAvailable());
+    QVERIFY(legacyOnlyTeachers.isAvailable());
+    QVERIFY(legacyOnlyClasses.isAvailable());
+    QVERIFY(legacyOnlyRosters.isAvailable());
+
+    QVERIFY(!sessionBoundTeachers.teacher(seeded.teacherId));
+    QVERIFY(!sessionBoundClasses.classroom(seeded.classId));
+    QVERIFY(!sessionBoundClasses.classInfo(seeded.classId));
+    QVERIFY(!sessionBoundRosters.studentCount(seeded.classId));
+    QVERIFY(!sessionBoundRosters.rosterForOutput(
+        seeded.classId,
+        Roster::BaseColumns,
+        10,
+        60,
+        4096
+        ));
+
+    const Result<Teacher> legacyTeacher =
+        legacyOnlyTeachers.teacher(seeded.teacherId);
+    QVERIFY(legacyTeacher);
+    QCOMPARE(
+        legacyTeacher->teacherEn,
+        seedPrefix + QStringLiteral(" Teacher")
+        );
+
+    const Result<Classroom> legacyClass =
+        legacyOnlyClasses.classroom(seeded.classId);
+    QVERIFY(legacyClass);
+    QCOMPARE(
+        legacyClass->name,
+        seedPrefix + QStringLiteral(" Class")
+        );
+
+    const Result<ClassInfo> legacyClassInfo =
+        legacyOnlyClasses.classInfo(seeded.classId);
+    QVERIFY(legacyClassInfo);
+    QCOMPARE(
+        legacyClassInfo->classGrade,
+        seedPrefix + QStringLiteral(" Grade")
+        );
+
+    const Result<int> legacyStudentCount =
+        legacyOnlyRosters.studentCount(seeded.classId);
+    QVERIFY(legacyStudentCount);
+    QCOMPARE(*legacyStudentCount, 1);
+
+    const Result<Roster> legacyRosterOutput =
+        legacyOnlyRosters.rosterForOutput(
+            seeded.classId,
+            Roster::BaseColumns,
+            10,
+            60,
+            4096
+            );
+    QVERIFY(legacyRosterOutput);
+    QCOMPARE(legacyRosterOutput->rows.size(), 1);
+    QCOMPARE(
+        legacyRosterOutput->rows.first().first(),
+        seedPrefix + QStringLiteral(" Student")
         );
 }
 

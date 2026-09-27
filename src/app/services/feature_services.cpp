@@ -276,9 +276,13 @@ Status TeacherService::update(const Teacher& teacher) const
 
 Result<Teacher> TeacherService::teacher(int teacherId) const
 {
-    if (auto* repository = session() ? session()->teacherRepository() : nullptr)
+    if (session())
     {
-        return repository->getTeacher(teacherId);
+        if (auto* repository = session()->teacherRepository())
+        {
+            return repository->getTeacher(teacherId);
+        }
+        return std::unexpected(unavailableError());
     }
     return dataService()
         ? dataService()->getTeacher(teacherId)
@@ -456,9 +460,13 @@ Result<QList<ClassInfo>> ClassService::scheduleClassInfos() const
 
 Result<Classroom> ClassService::classroom(int classId) const
 {
-    if (auto* repository = session() ? session()->classRepository() : nullptr)
+    if (session())
     {
-        return repository->getClassById(classId);
+        if (auto* repository = session()->classRepository())
+        {
+            return repository->getClassById(classId);
+        }
+        return std::unexpected(unavailableError());
     }
     return dataService()
         ? dataService()->getClassById(classId)
@@ -495,15 +503,17 @@ Status ClassService::remove(int classId) const
 
 Result<ClassInfo> ClassService::classInfo(int classId) const
 {
-    if (auto* repository = session() ? session()->classInfoRepository() : nullptr)
+    if (session())
     {
-        return repository->loadClassInfo(classId);
+        if (auto* repository = session()->classInfoRepository())
+        {
+            return repository->loadClassInfo(classId);
+        }
+        return std::unexpected(unavailableError());
     }
-    if (dataService())
-    {
-        return dataService()->loadClassInfo(classId);
-    }
-    return std::unexpected(unavailableError());
+    return dataService()
+        ? dataService()->loadClassInfo(classId)
+        : Result<ClassInfo>(std::unexpected(unavailableError()));
 }
 
 Result<SubPrepClassDetailsRecord> ClassService::subPrepClassDetails(
@@ -1331,15 +1341,19 @@ Result<Roster> RosterService::rosterForOutput(
     const std::size_t maxTextBytes
     ) const
 {
-    if (auto* repository = session() ? session()->rosterRepository() : nullptr)
+    if (session())
     {
-        return repository->loadRosterForOutput(
-            classId,
-            requestedColumns,
-            maxRows,
-            maxCells,
-            maxTextBytes
-            );
+        if (auto* repository = session()->rosterRepository())
+        {
+            return repository->loadRosterForOutput(
+                classId,
+                requestedColumns,
+                maxRows,
+                maxCells,
+                maxTextBytes
+                );
+        }
+        return std::unexpected(unavailableError());
     }
     return dataService()
         ? dataService()->loadRosterForOutput(
@@ -1354,9 +1368,13 @@ Result<Roster> RosterService::rosterForOutput(
 
 Result<int> RosterService::studentCount(int classId) const
 {
-    if (auto* repository = session() ? session()->rosterRepository() : nullptr)
+    if (session())
     {
-        return repository->getRosterStudentCount(classId);
+        if (auto* repository = session()->rosterRepository())
+        {
+            return repository->getRosterStudentCount(classId);
+        }
+        return std::unexpected(unavailableError());
     }
     return dataService()
         ? dataService()->getRosterStudentCount(classId)
