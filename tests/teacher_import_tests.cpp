@@ -36,6 +36,7 @@ private slots:
     void invalidVersionIsRecognizedButRejected();
     void readsNamedMultiSheetWorkbookMetadata();
     void validatorReportsRecognitionStatusesAndMetadata();
+    void rejectsGeneratedWorkbookWithInvalidUtf8SharedString();
     void rejectsGeneratedWorkbookWithInvalidDate();
     void appliesGeneratedWorkbookWithExplicitReviewDecision();
     void registryAcceptsAdditionalTemplateAdapters();
@@ -202,6 +203,50 @@ QByteArray testWorkbookData(
         {QByteArrayLiteral("xl/worksheets/sheet1.xml"), sheet1},
         {QByteArrayLiteral("xl/worksheets/sheet2.xml"), sheet2}
     });
+}
+
+QByteArray testWorkbookDataWithInvalidUtf8SharedString()
+{
+    const QByteArray validWorkbook = testWorkbookData();
+    const auto readLe16 = [](const QByteArray& bytes, int offset) {
+        const quint16 low = static_cast<quint8>(bytes.at(offset));
+        const quint16 high = static_cast<quint8>(bytes.at(offset + 1));
+        return static_cast<quint16>(low | (high << 8));
+    };
+    const auto readLe32 = [&readLe16](const QByteArray& bytes, int offset) {
+        const quint32 low = readLe16(bytes, offset);
+        const quint32 high = readLe16(bytes, offset + 2);
+        return low | (high << 16);
+    };
+
+    QList<TestZipEntry> entries;
+    int offset = 0;
+    while (offset + 4 <= validWorkbook.size()
+           && readLe32(validWorkbook, offset) == 0x04034b50)
+    {
+        const quint16 nameLength = readLe16(validWorkbook, offset + 26);
+        const quint16 extraLength = readLe16(validWorkbook, offset + 28);
+        const quint32 compressedSize = readLe32(validWorkbook, offset + 18);
+        const quint32 uncompressedSize = readLe32(validWorkbook, offset + 22);
+        Q_ASSERT(compressedSize == uncompressedSize);
+
+        const int nameOffset = offset + 30;
+        const QByteArray name = validWorkbook.mid(nameOffset, nameLength);
+        const int contentsOffset = nameOffset + nameLength + extraLength;
+        QByteArray contents = validWorkbook.mid(contentsOffset, uncompressedSize);
+        if (name == QByteArrayLiteral("xl/sharedStrings.xml"))
+        {
+            const QByteArray validMarker = QByteArrayLiteral("<t>M1</t>");
+            const int markerOffset = contents.indexOf(validMarker);
+            Q_ASSERT(markerOffset >= 0);
+            Q_ASSERT(contents.indexOf(validMarker, markerOffset + validMarker.size()) == -1);
+            contents[markerOffset + 3] = static_cast<char>(0xff);
+        }
+        entries.append({name, contents});
+        offset = contentsOffset + compressedSize;
+    }
+    Q_ASSERT(entries.size() == 6);
+    return storedZip(entries);
 }
 
 CalendarImport::Workbook sectionedWorkbook()
@@ -517,6 +562,36 @@ void TeacherImportTests::validatorReportsRecognitionStatusesAndMetadata()
     const auto alternate = validateTeacherImportData(testWorkbookData(), mockRegistry);
     QCOMPARE(alternate.status, TeacherImportFileStatus::Valid);
     QCOMPARE(alternate.previewCounts.nativeEnglishTeachers, 1);
+}
+
+void TeacherImportTests::rejectsGeneratedWorkbookWithInvalidUtf8SharedString()
+{
+    const QByteArray workbook = testWorkbookDataWithInvalidUtf8SharedString();
+
+    const QByteArray workbookSha256 =
+        QCryptographicHash::hash(workbook, QCryptographicHash::Sha256).toHex();
+    qInfo().noquote() << "F98_INPUT_SIZE=" << workbook.size();
+    qInfo().noquote() << "F98_INPUT_SHA256=" << workbookSha256;
+    QCOMPARE(workbook.size(), 3422);
+    QCOMPARE(workbookSha256, QByteArrayLiteral(
+        "7386d4eae0e7f8d54467b57f05ec909cd0c1e7f392d865f9dc7e52faf3cc8165"));
+
+    const TeacherImportTemplateRegistry registry =
+        createDefaultTeacherImportTemplateRegistry();
+    const TeacherImportFileValidation validation =
+        validateTeacherImportData(workbook, registry);
+    QCOMPARE(validation.status, TeacherImportFileStatus::UnsupportedTemplate);
+    QVERIFY(validation.templateId.isEmpty());
+    QVERIFY(!validation.sourceDate.isValid());
+    QVERIFY(validation.discoveredSections.isEmpty());
+    QCOMPARE(validation.previewCounts.koreanTeachers, 0);
+    QCOMPARE(validation.previewCounts.nativeEnglishTeachers, 0);
+    QCOMPARE(validation.previewCounts.gsTeamMembers, 0);
+    QVERIFY(validation.preview.templateId.isEmpty());
+    QVERIFY(!validation.preview.sourceDate.isValid());
+    QVERIFY(validation.preview.koreanGroups.isEmpty());
+    QVERIFY(validation.preview.nativeEnglishTeachers.isEmpty());
+    QVERIFY(validation.preview.gsTeamMembers.isEmpty());
 }
 
 void TeacherImportTests::rejectsGeneratedWorkbookWithInvalidDate()
