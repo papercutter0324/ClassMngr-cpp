@@ -1128,3 +1128,7 @@ Prep's queried interval to the current and following calendar years at most.
 ## Phase 2 negative validation differential - 2026-09-27
 
 - For a baseline-present invalid input, compile each revision's own validator path against one pinned byte sequence and compare the full semantic result. A direct rerun of both saved executables can independently confirm the captured output. Keep validation rejection evidence distinct from repository no-write or rollback claims when the path exits before persistence.
+
+## Phase 2 Calendar repeat planning - 2026-09-27
+
+- Preserve monthly recurrence by advancing from the previous occurrence and clamping to that month's last day (Jan 31 → Feb 28/29 → Mar 28/29). Treat the until date as an inclusive occurrence-start cutoff, preserve the seed's fixed day duration and fields, clear per-occurrence IDs, and reject plans outside supported date or count bounds in the Qt-free Application policy.

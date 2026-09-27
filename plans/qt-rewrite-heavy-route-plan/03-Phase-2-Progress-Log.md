@@ -6065,3 +6065,94 @@ baseline, a narrow baseline harness may be needed. No full suite. Gate 2 remains
 Partial and historical production-workbook evidence remains missing. This is
 selected work, not implementation or test evidence. Sub Prep remains capped at
 2026-2027.
+
+## Verified F94 Teacher Import invalid-date validation parity - commit `f99d155f`
+
+Commit `f99d155f636d273269d805531f7ef7db7be84bed` changes only
+`tests/teacher_import_tests.cpp`. `rejectsGeneratedWorkbookWithInvalidDate`
+pins `testWorkbookData("invalid-date")` at 3,423 bytes and SHA-256
+`256b29c2f27bfe787007aaa6df28e5e084dc3788863cbf4b6a09fb265f0685d0`. It
+asserts `RecognizedButInvalid`, template `sectioned-contact-list-v1`, an
+invalid source date, section M1, and the exact A1 diagnostic `Cell A1 must
+contain a version date such as 26.07.09ver.`
+
+A narrow harness compiled each revision's own validator, registry, sectioned
+template, and workbook reader. Baseline `48fc5c5cc7dee78d82f8bf5f1bf8b51725575b99`
+and current sources returned identical semantic JSON at SHA-256
+`8eee9375c47b3602b86e893092441f450c74860e2bb0f3edc53642a06322cbd9`; root
+independently reran both archived executables and confirmed the match. The
+focused current QTest passed 3/3 including setup and cleanup; filtered CTest
+passed 1/1. `git diff --check` passed; no full suite was run. This is negative
+validation parity only and establishes no repository no-write or rollback
+parity.
+
+### Cumulative exit-gate status after F94
+
+| Exit-gate area | Audit status | Finding |
+| --- | --- | --- |
+| App-less Domain/Application behavior (Gate 1) | Partial | F93 adds a Qt-free start-of-term policy used by both Calendar consumers; F94 changes tests only. Broader behavior remains incomplete. |
+| Baseline parity (Gate 2) | Partial | F92 covers a baseline-present source-generated valid workbook flow; F94 adds same-byte invalid-date validation parity. Historical production-workbook evidence and broader parity remain open. |
+| Workspace boundary | Satisfied | The formal WorkspaceGateway/WorkspaceCoordinator criterion remains satisfied; the broader FileController integration gap is outside that criterion. |
+| v2 dependency isolation | Satisfied in the audited v2 scope | Audited `src/next` sources remain free of direct DataService, MainWindow, PageManager, and widget-pointer dependencies; F94 changes tests only. |
+
+Phase 2 remains In Progress with its exit gate Open. Open scope includes
+historical production-workbook evidence, repository rollback parity, broader
+Calendar UI/contracts, generic settings persistence, remaining feature-service
+migrations, document-service migration, invalid-UTF-8 coverage, and live
+MainWindow projection-failure/retranslation integration. Sub Prep remains capped at 2026-2027.
+
+## Verified F95 Calendar repeat occurrence planner - commit `78659638`
+
+Three independent Gate 1 feasibility lanes found no narrower seam and selected
+Calendar repeat occurrence planning. Commit
+`7865963815efa256b797b85af27b9a33107e8f70` adds the Qt-free
+`CalendarEventRepeatOccurrencePlan`, registers it in `cmake/next.cmake`, and
+routes Calendar series creation through the existing
+`ApplicationServicesCalendarEventSeriesCreatePort`. It preserves daily and
+weekly cadence, chained month-end clamping, inclusive until dates, fixed event
+duration, copied fields, cleared occurrence IDs, and the 366-occurrence limit.
+Malformed dates, ranges, and frequencies return structured errors. The legacy
+Domain estimator remains separate.
+
+App-less Calendar tests cover daily/weekly/monthly recurrence, January 31 to
+February 28/29 to March 28/29, cutoff, duration, fields and IDs, invalid inputs,
+and 366/367 boundaries. Independent verification built
+`ClassMngrNextApplicationCalendarEventTests` and `ClassMngr`; focused CTest
+passed 1/1 and `git diff --check` passed.
+
+### Cumulative exit-gate status after F95
+
+| Exit-gate area | Audit status | Finding |
+| --- | --- | --- |
+| App-less Domain/Application behavior (Gate 1) | Partial | F93 adds the Calendar start-of-term policy and F95 adds repeat occurrence planning; broader application behavior remains incomplete. |
+| Baseline parity (Gate 2) | Partial | F92 covers a baseline-present valid generated workbook flow and F94 adds invalid-date validation parity. F95 adds no parity evidence; historical production-workbook evidence and repository rollback parity remain open. |
+| Workspace boundary | Satisfied | The formal WorkspaceGateway/WorkspaceCoordinator criterion remains satisfied; the broader FileController integration gap remains outside that criterion. |
+| v2 dependency isolation | Satisfied in the audited v2 scope | Audited `src/next` sources remain free of direct DataService, MainWindow, PageManager, and widget-pointer dependencies. |
+
+Phase 2 remains In Progress with its exit gate Open. Broader Calendar UI and
+contracts, generic settings persistence, remaining feature-service migrations,
+document-service migration, invalid-UTF-8 coverage, and live MainWindow
+projection-failure/retranslation integration remain open. Sub Prep remains
+capped at 2026-2027.
+
+### Next selected bounded slice (F96)
+
+Compare Teacher Import repository rollback on baseline
+`48fc5c5cc7dee78d82f8bf5f1bf8b51725575b99` and current
+`7865963815efa256b797b85af27b9a33107e8f70`. Use the same deterministic
+synthetic `TeacherImportPlan` with one Korean teacher, one Native English
+teacher, and one GS Team member. Inject failure while inserting
+`teacher_import/latest_source_date`; verify failure at the latest-date-save
+stage and compare the normalized empty post-failure state for all three teacher
+tables and the setting. This is synthetic plan/database rollback evidence, not
+workbook or historical production data.
+
+The current test `rollsBackAllTeacherWritesWhenLatestDateSaveFails` pins the
+plan and failure trigger, but the baseline test lacks this case. Build a narrow
+harness from each revision's own sources because current test sources reference
+headers absent at baseline; do not overlay current production sources onto the
+baseline. F96 is selected to advance Gate 2, which remains Partial; Gate 1
+remains Partial, the formal workspace criterion and audited `src/next`
+isolation remain Satisfied, and the Phase 2 exit gate remains Open. This is
+selected work, not implementation or parity evidence. Sub Prep remains capped
+at 2026-2027.
