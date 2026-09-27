@@ -143,9 +143,13 @@ Status SettingsService::save(
     const QVariant& value
     ) const
 {
-    if (auto* repository = session() ? session()->settingsRepository() : nullptr)
+    if (session())
     {
-        return repository->saveSetting(key, value);
+        if (auto* repository = session()->settingsRepository())
+        {
+            return repository->saveSetting(key, value);
+        }
+        return std::unexpected(unavailableError());
     }
     if (dataService())
     {
@@ -159,9 +163,13 @@ Status SettingsService::saveAll(
     const QVariantMap& values
     ) const
 {
-    if (auto* repository = session() ? session()->settingsRepository() : nullptr)
+    if (session())
     {
-        return repository->saveSettings(values);
+        if (auto* repository = session()->settingsRepository())
+        {
+            return repository->saveSettings(values);
+        }
+        return std::unexpected(unavailableError());
     }
     if (dataService())
     {
@@ -175,9 +183,13 @@ Result<QVariant> SettingsService::load(
     const QString& key
     ) const
 {
-    if (auto* repository = session() ? session()->settingsRepository() : nullptr)
+    if (session())
     {
-        return repository->loadSetting(key);
+        if (auto* repository = session()->settingsRepository())
+        {
+            return repository->loadSetting(key);
+        }
+        return std::unexpected(unavailableError());
     }
     return dataService()
         ? dataService()->loadSetting(key)

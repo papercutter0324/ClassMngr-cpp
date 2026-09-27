@@ -226,6 +226,7 @@ private slots:
     void applicationServicesOwnDatabaseFileOperations();
     void boundedRosterOutputLoadsOnlyRequestedColumnsAndEnforcesLimits();
     void featureServicesExposeNarrowOperations();
+    void settingsServiceDoesNotFallBackFromClosedSession();
     void closeAndSwitchReleaseEveryRepository();
     void schemaFailureClosesDatabaseSession();
     void classDeleteFailureRollsBackAllChanges();
@@ -1346,6 +1347,75 @@ void DataServiceLifecycleTests::featureServicesExposeNarrowOperations()
     dataService.closeDatabase();
     QVERIFY(!teachers.isAvailable());
     QVERIFY(!classes.isAvailable());
+}
+
+void DataServiceLifecycleTests::
+settingsServiceDoesNotFallBackFromClosedSession()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+
+    DataService legacyDataService;
+    QVERIFY(legacyDataService.openDatabase(
+        directory.filePath(QStringLiteral("legacy-settings.db"))
+        ).has_value());
+
+    const QString existingKey = QStringLiteral("settings-isolation/existing");
+    const QString singleWriteKey = QStringLiteral("settings-isolation/single");
+    const QString batchWriteKey = QStringLiteral("settings-isolation/batch");
+    const QString originalValue = QStringLiteral("legacy value");
+    QVERIFY(legacyDataService.saveSetting(existingKey, originalValue));
+
+    DatabaseSession closedSession;
+    QVERIFY(!closedSession.isOpen());
+    QVERIFY(closedSession.settingsRepository() == nullptr);
+
+    SettingsService sessionBound(&closedSession, &legacyDataService);
+    SettingsService legacyOnly(&legacyDataService);
+    QVERIFY(sessionBound.isAvailable());
+
+    const Result<QVariant> unavailableLoad = sessionBound.load(existingKey);
+    QVERIFY(!unavailableLoad);
+    QCOMPARE(
+        sessionBound.loadOrDefault(
+            existingKey,
+            QStringLiteral("session default")
+            ).toString(),
+        QStringLiteral("session default")
+        );
+    QVERIFY(!sessionBound.save(existingKey, QStringLiteral("rejected single")));
+
+    QVariantMap sessionBatch;
+    sessionBatch.insert(existingKey, QStringLiteral("rejected batch"));
+    sessionBatch.insert(batchWriteKey, QStringLiteral("must not be written"));
+    QVERIFY(!sessionBound.saveAll(sessionBatch));
+
+    const Result<QVariant> retainedLegacyValue =
+        legacyDataService.loadSetting(existingKey);
+    QVERIFY(retainedLegacyValue);
+    QCOMPARE(retainedLegacyValue->toString(), originalValue);
+    const Result<QVariant> untouchedSingleKey =
+        legacyDataService.loadSetting(singleWriteKey);
+    const Result<QVariant> untouchedBatchKey =
+        legacyDataService.loadSetting(batchWriteKey);
+    QVERIFY(untouchedSingleKey);
+    QVERIFY(untouchedBatchKey);
+    QVERIFY(!untouchedSingleKey->isValid());
+    QVERIFY(!untouchedBatchKey->isValid());
+
+    QCOMPARE(legacyOnly.load(existingKey)->toString(), originalValue);
+    QVERIFY(legacyOnly.save(singleWriteKey, QStringLiteral("legacy single")));
+    QVERIFY(legacyOnly.saveAll(
+        {{batchWriteKey, QStringLiteral("legacy batch")}}
+        ));
+    QCOMPARE(
+        legacyOnly.load(singleWriteKey)->toString(),
+        QStringLiteral("legacy single")
+        );
+    QCOMPARE(
+        legacyOnly.load(batchWriteKey)->toString(),
+        QStringLiteral("legacy batch")
+        );
 }
 
 void DataServiceLifecycleTests::closeAndSwitchReleaseEveryRepository()
