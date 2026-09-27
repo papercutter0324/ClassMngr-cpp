@@ -1152,3 +1152,8 @@ Prep's queried interval to the current and following calendar years at most.
 ## Phase 2 Calendar single-event save boundary - 2026-09-27
 
 - Put request validation and save-port result propagation in an app-less use case, then keep Qt mapping and feedback in the UI/platform edges. A one-occurrence repeat save deliberately clears that event's series ID; the suffix-edit path preserves the series and stays separate. Compare seeded create/update rows as persistence parity, not workbook provenance.
+
+
+## Phase 2 Calendar suffix-delete validation boundary - 2026-09-27
+
+- Keep repeat-series suffix-delete validation in the Application request/use case and reuse the domain canonical-date policy. Preserve adapter validation before service lookup, the current diagnostic, the original series-ID bytes, and the existing Qt date conversion. Leave single-event deletion on its own typed port until a concrete shared scope contract is needed.

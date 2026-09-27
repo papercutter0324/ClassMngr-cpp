@@ -6314,3 +6314,49 @@ production-workbook evidence, broader Calendar UI/contracts, generic settings
 persistence, remaining feature-service migrations, document-service migration,
 and live MainWindow projection-failure/retranslation integration remain open.
 Sub Prep remains capped at 2026-2027.
+
+### Selected next slice (F101)
+
+Add a Qt-free `CalendarEventSaveUseCase` around
+`CalendarEventSaveRequest`/`CalendarEventSavePort`, route normal save and
+“this occurrence only” through it, preserve repeat-ID detachment, and leave
+“this and following” on the series-edit path. Test exact forwarding, one port
+call, result ID, port error, and invalid-request rejection without a call.
+Pair the Gate 1 work with seeded create/update parity between baseline
+`48fc5c5cc7dee78d82f8bf5f1bf8b51725575b99` and F100
+`2738216a026ffdb935c1327aff70c0f95cc2af6f`, compiling each revision's own
+repository/model/schema/transaction sources and comparing returned IDs and
+normalized event state. No workbook provenance is implied.
+
+## Verified F101 Calendar event save use case and repository parity - commit `6502a96e`
+
+F101 added a Qt-free `CalendarEventSaveUseCase` around the existing
+`CalendarEventSaveRequest` and `CalendarEventSavePort`, routed the normal-save
+and one-occurrence Calendar UI branches through it, and retained repeat-series
+detachment for the selected occurrence. The separate “this and following”
+series-edit path remains unchanged. App-less fake-port tests cover request
+forwarding, result ID, port failure, and invalid-request rejection without a
+port call.
+
+A fresh independent Ninja build compiled `ClassMngr` and three focused test
+targets in 358/358 steps; focused CTest passed 3/3. Seeded baseline/F100
+Calendar Event create/update runs compiled each revision's own repository
+source closure and produced matching normalized snapshots at SHA-256
+`F479B00CBD1F2DDFC5D960A6CA92CC3BC32527D22597A512ACB2FC0FF222E23D`.
+This establishes seeded repository parity for those create/update cases only;
+it does not establish historical production-workbook provenance.
+
+### Cumulative exit-gate status after F101
+
+| Exit-gate area | Audit status | Finding |
+| --- | --- | --- |
+| App-less Domain/Application behavior (Gate 1) | Partial | F101 adds the Calendar single-event save use case; broader application behavior remains incomplete. |
+| Baseline parity (Gate 2) | Partial | F101 adds seeded Calendar Event create/update parity; historical production-workbook evidence and broader parity remain open. |
+| Workspace boundary | Satisfied | The formal workspace create criterion remains satisfied. |
+| v2 dependency isolation | Satisfied in the audited v2 scope | Audited `src/next` sources remain free of direct DataService, MainWindow, PageManager, and widget-pointer dependencies. |
+
+Phase 2 remains In Progress with its exit gate Open. Historical
+production-workbook evidence, broader Calendar UI/contracts, generic settings
+persistence, remaining feature-service migrations, document-service migration,
+and live MainWindow projection-failure/retranslation integration remain open.
+Sub Prep remains capped at 2026-2027.
