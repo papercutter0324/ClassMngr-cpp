@@ -3053,7 +3053,7 @@ pending review; implementation has not begun. Gate 1 and Gate 2 remain
 Partial; workspace-create acceptance and active-v2 DataService isolation
 remain Satisfied. Phase 2 is In Progress/Open. No push was requested.
 
-## Phase 2 continuation - 2026-09-29 (F125 verified; F126 review next)
+## Phase 2 continuation - 2026-09-29 (F126 verified; F127 implementation in progress)
 
 The user requested a commit after every completed slice, then immediate work on
 the next slice. F125 source/test commit
@@ -3073,11 +3073,29 @@ The `windows-x64-debug` preset built `ClassMngr`,
 passed 3/3. The combined F124/F125 selection passed 6/6. `git diff --check`
 passed. No full suite or baseline comparison ran.
 
-F126's candidate is routing the class-details save in `ClassDetailsPage`
-through an app-less boundary with a Qt-free request for class fields and
-schedules. Preserve current `ClassInfoValidator` normalization and feedback,
-schedule conflict checks, teacher/notes/activity fields, session-backed save,
-and warning/dirty/title/signal behavior. Candidate review and implementation
-have not begun. Gate 1 and Gate 2 remain Partial; workspace-create acceptance
-and active-v2 DataService isolation remain Satisfied. Phase 2 is
-In Progress/Open. No push was requested.
+F126 source/test commit `ca4c1a97` (`Phase2 - integrate class details save
+use case`) adds the app-less `ClassDetailsSaveUseCase`, the session-backed
+platform adapter, and page integration. The Qt-free request carries a typed
+class ID, editable text, and typed regular/intensive schedule values. The page
+retains normalized `ClassInfoValidator` feedback and separate regular and
+intensive conflict checks. The adapter reloads the existing session-backed
+record, updates only requested fields, and preserves teacher assignment,
+notes, and time-filler activities. Page success still clears dirty state,
+updates the title, and emits `classInfoSaved`; port failure preserves warning
+and dirty-state behavior.
+
+The focused F126 CTest selection passed 3/3. The implementation build included
+the production `ClassMngr` target and all focused targets. Independent
+verification reran the three focused tests successfully; its build command
+was up to date. A clean independent rebuild was unavailable because Ninja
+could not find `rc` and the Visual Studio generator could not find a C++
+compiler. `git diff --check` passed. No full suite or baseline comparison ran.
+
+F127 is now being implemented as the inferred class-details display/read
+query: a Qt-free snapshot with raw ordered schedules, teacher display data,
+student count, and independent source outcomes/fallbacks. It will leave the
+fresh save-validation read in place. The tentative next candidate after F127
+is a slot-state persistence use case for the schedule widget. Gate 1 and Gate
+2 remain Partial; workspace-create acceptance and active-v2 DataService
+isolation remain Satisfied. Phase 2 is In Progress/Open. No push was
+requested.

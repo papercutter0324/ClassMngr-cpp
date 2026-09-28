@@ -1258,3 +1258,11 @@ Put the existing UTF-16 length check in the app-less save orchestration before
 port invocation, while keeping the platform adapter defensive for direct
 callers. Exercise the exact limit and oversized no-write behavior through the
 use case, then verify the page preserves its manual warning and dirty state.
+
+## F126 - normalize schedule text before typed conversion - 2026-09-29
+
+The class schedule UI and validator accept normalized `h:mm AP` values, while
+the strict schedule parser accepts only `HH:mm`. Convert only after the
+existing UI validation and normalization, and cover AM/PM, noon, and midnight
+at the page boundary. Keep the app contract Qt-free and pass typed minute
+values to the session-backed adapter.
