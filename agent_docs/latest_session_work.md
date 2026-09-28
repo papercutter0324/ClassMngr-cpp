@@ -3053,7 +3053,7 @@ pending review; implementation has not begun. Gate 1 and Gate 2 remain
 Partial; workspace-create acceptance and active-v2 DataService isolation
 remain Satisfied. Phase 2 is In Progress/Open. No push was requested.
 
-## Phase 2 continuation - 2026-09-29 (F127 verified; F128 implementation in progress)
+## Phase 2 continuation - 2026-09-29 (F128 verified; F129 implementation in progress)
 
 The user requested a commit after every completed slice, then immediate work on
 the next slice. F125 source/test commit
@@ -3109,10 +3109,26 @@ Studio developer environment; `git diff --check` passed. No full suite or
 baseline comparison ran. Malformed schedule values are covered at the
 app/platform boundary; malformed-value widget rendering was not changed.
 
-F128 is now in implementation as a typed persistence boundary for the shared
-schedule slot-state toggle. It preserves the existing UI transition and
-default-state rules, maps through the session-backed schedule service, and
-covers regular and intensive callers of the shared toggle. Gate 1 and Gate 2
-remain Partial; workspace-create acceptance and active-v2 DataService
-isolation remain Satisfied. Phase 2 is In Progress/Open. No push was
-requested.
+F128 source/test commit `93ad5afb` (`Phase2 - integrate schedule slot state
+save use case`) adds a Qt-free command with typed weekday, start minute,
+selected state, and default state. The UI/view model retains the transition
+rule; the session-backed adapter maps the command to the existing global
+day/start-time slot-state key, preserving delete-on-default behavior. The
+shared ordinary handler covers regular and intensive views. The separate
+testing-assignment path remains unchanged.
+
+The app command, platform adapter, schedule widget, and testing-classes CTest
+targets passed 4/4. The regular and intensive toggle tests assert exact
+weekday/time/state/default mapping. Coverage includes invalid requests,
+session persistence and deletion, failed-write warning/no-reload, unavailable
+service skip/reload, read-only/time-column no-op, and testing-assignment
+behavior. `ClassMngr` built and `git diff --check` passed. No full suite or
+baseline comparison ran.
+
+F129 is now in implementation as a single-class roster snapshot save boundary.
+Its request will preserve ordered columns, widths, and all 25 row positions,
+while carrying the existing questionable Korean-name decision through the
+port. UI validation, autosave/dirty behavior, warning timing, and class-switch
+gating remain in place. Gate 1 and Gate 2 remain Partial; workspace-create
+acceptance and active-v2 DataService isolation remain Satisfied. Phase 2 is
+In Progress/Open. No push was requested.

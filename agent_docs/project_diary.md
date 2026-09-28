@@ -1275,3 +1275,11 @@ Keep class, teacher, and roster read outcomes independent so one failed source
 does not discard successful display data. After save, refresh title data from
 the query but overlay the just-saved class fields so the title stays current
 without reloading the form or marking it dirty.
+
+## F128 - persist the selected schedule slot state without moving its transition - 2026-09-29
+
+The slot-state table is globally keyed by weekday and start time, and removes
+an override when the selected state equals the slot default. Keep the view
+model's transition choice in the UI; send a typed weekday, minute, selected
+state, and default state through the use case so the session adapter can
+preserve default deletion and write behavior for all shared toggle callers.

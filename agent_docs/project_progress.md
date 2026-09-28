@@ -1566,7 +1566,7 @@ warning/dirty behavior. Review and implementation have not begun. Gate 1 and
 Gate 2 remain Partial; formal workspace-create acceptance and active-v2
 DataService isolation remain Satisfied. Phase 2 remains In Progress/Open.
 
-## Current Position - 2026-09-29 (F127 verified; F128 implementation in progress)
+## Current Position - 2026-09-29 (F128 verified; F129 implementation in progress)
 
 F126 source/test commit `ca4c1a97` (`Phase2 - integrate class details save
 use case`) adds the Qt-free `ClassDetailsSaveUseCase` and session-backed
@@ -1597,9 +1597,23 @@ passed. No full suite or baseline comparison ran. Malformed schedule values
 are tested as lossless through the app/platform boundary; malformed-value
 widget rendering remains outside scope.
 
-F128 is now in implementation: an app-less typed save command for the shared
-schedule slot-state toggle. The UI keeps the transition/default rules; the
-command carries weekday, start minute, selected state, and default state, and
-the platform adapter persists through the active session. Gate 1 and Gate 2
-remain Partial; formal workspace-create acceptance and active-v2 DataService
-isolation remain Satisfied. Phase 2 remains In Progress/Open.
+F128 source/test commit `93ad5afb` (`Phase2 - integrate schedule slot state
+save use case`) adds a Qt-free typed command and session-backed adapter for
+the shared schedule toggle. The UI still chooses the next/default state; the
+adapter preserves override deletion when a slot returns to its default. The
+ordinary toggle path remains shared by regular and intensive views, with the
+testing-assignment path unchanged.
+
+The app, platform, schedule-widget, and testing-classes focused CTest targets
+passed 4/4. Coverage checks invalid requests, session persistence/default
+deletion, regular and intensive weekday/time mapping, warning/reload behavior,
+unavailable-service fallback, and the separate testing-assignment path.
+`ClassMngr` built and `git diff --check` passed. No full suite or baseline
+comparison ran.
+
+F129 is now in implementation: a Qt-free save boundary for one selected
+class's complete roster snapshot. The planned request preserves ordered
+columns, widths, all 25 row positions, and the existing questionable-name
+confirmation flag while keeping current UI validation and save feedback.
+Gate 1 and Gate 2 remain Partial; formal workspace-create acceptance and
+active-v2 DataService isolation remain Satisfied. Phase 2 remains In Progress/Open.
