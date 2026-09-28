@@ -12,10 +12,11 @@
   detail view) are complete; Work Package D closed 2026-09-23. Sub Prep has
   session-backed Platform reads for selected-class details, print source, and
   schedule summaries. F122 Schedule Import Skip parity, F123 Teacher Profile
-  Edit page integration, and F124 co-teacher assignment integration are
-  verified. F125's ClassNotesPage use-case integration is the next bounded
-  candidate. Page/output wiring, broader parity, and 96-class Release memory
-  evidence remain open. Phase 1 build-system exit evidence remains outstanding.
+  Edit page integration, F124 co-teacher assignment integration, and F125
+  ClassNotesPage use-case integration are verified. F126's class-details save
+  boundary is the next bounded candidate. Page/output wiring, broader parity,
+  and 96-class Release memory evidence remain open. Phase 1 build-system exit
+  evidence remains outstanding.
 - Current blocker: official Phase 1 targets are Windows x64 and macOS
   universal. On commit `57f5dff6`, Windows x64 passed 66/66; macOS Debug failed
   after GitHub reported runner communication loss. The user observed the

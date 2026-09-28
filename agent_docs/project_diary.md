@@ -1251,3 +1251,10 @@ the app-less use case. The platform adapter should reload the session-backed
 `ClassInfo` and change only its teacher assignment before saving; defaulting
 after a failed read can overwrite class details, notes, or schedules. Test the
 full persisted class-owned fields and both assignment and unassignment.
+
+## F125 - validate bounded notes before calling the save port - 2026-09-29
+
+Put the existing UTF-16 length check in the app-less save orchestration before
+port invocation, while keeping the platform adapter defensive for direct
+callers. Exercise the exact limit and oversized no-write behavior through the
+use case, then verify the page preserves its manual warning and dirty state.

@@ -1565,3 +1565,27 @@ calling the session-backed save port. Preserve trimmed fields and current
 warning/dirty behavior. Review and implementation have not begun. Gate 1 and
 Gate 2 remain Partial; formal workspace-create acceptance and active-v2
 DataService isolation remain Satisfied. Phase 2 remains In Progress/Open.
+
+## Current Position - 2026-09-29 (F125 verified; F126 review next)
+
+F125 source/test commit `42bdbbea7e1d2cbc2c9eeb8c0631fd22b335a17d` adds
+`ClassNotesSaveUseCase` and routes `ClassNotesPage` through it. The use case
+enforces the existing 10,000 UTF-16 code-unit bound before invoking the port,
+and returns adapter failures unchanged. The platform adapter retains
+defensive validation and the active session-backed `ClassService` save. Page
+trimming, manual warning, and dirty-state behavior remain intact.
+
+The `windows-x64-debug` preset built `ClassMngr` and the application,
+platform, and page test targets. F125's focused CTests passed 3/3; the combined
+F124/F125 focused set passed 6/6. Coverage includes exact-limit acceptance,
+oversized no-write rejection, failure propagation, trimmed fields, persisted
+notes, and manual warning/dirty behavior. `git diff --check` passed. No full
+suite or baseline comparison ran.
+
+F126's candidate is the direct class-details save in `ClassDetailsPage`. Review
+a Qt-free request for class fields and schedules while retaining existing
+`ClassInfoValidator` and schedule-conflict behavior, hidden-field preservation,
+session-backed persistence, and page lifecycle. Candidate review and
+implementation have not begun. Gate 1 and Gate 2 remain Partial; formal
+workspace-create acceptance and active-v2 DataService isolation remain
+Satisfied. Phase 2 remains In Progress/Open.

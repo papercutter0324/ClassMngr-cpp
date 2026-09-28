@@ -3052,3 +3052,32 @@ directly while the request already owns limit validation. Candidate scope is
 pending review; implementation has not begun. Gate 1 and Gate 2 remain
 Partial; workspace-create acceptance and active-v2 DataService isolation
 remain Satisfied. Phase 2 is In Progress/Open. No push was requested.
+
+## Phase 2 continuation - 2026-09-29 (F125 verified; F126 review next)
+
+The user requested a commit after every completed slice, then immediate work on
+the next slice. F125 source/test commit
+`42bdbbea7e1d2cbc2c9eeb8c0631fd22b335a17d` (`Phase2 - integrate class notes
+save use case`) adds `ClassNotesSaveUseCase` and routes `ClassNotesPage` through
+it. The app-less use case enforces `ClassNotesSaveRequest`'s 10,000 UTF-16
+code-unit bound before port invocation and preserves port failures. The
+platform adapter retains its defensive check and session-backed
+`ClassService::saveClassNotes` call. The page keeps trimming, manual warning,
+and dirty-state behavior; oversized manual text is rejected before calling
+the port and remains dirty.
+
+The `windows-x64-debug` preset built `ClassMngr`,
+`ClassMngrNextApplicationClassNotesSavePortTests`,
+`ClassMngrNextPlatformApplicationServicesClassNotesSavePortTests`, and
+`ClassMngrNextFeatureClassNotesPageTests`. The F125 focused CTest selection
+passed 3/3. The combined F124/F125 selection passed 6/6. `git diff --check`
+passed. No full suite or baseline comparison ran.
+
+F126's candidate is routing the class-details save in `ClassDetailsPage`
+through an app-less boundary with a Qt-free request for class fields and
+schedules. Preserve current `ClassInfoValidator` normalization and feedback,
+schedule conflict checks, teacher/notes/activity fields, session-backed save,
+and warning/dirty/title/signal behavior. Candidate review and implementation
+have not begun. Gate 1 and Gate 2 remain Partial; workspace-create acceptance
+and active-v2 DataService isolation remain Satisfied. Phase 2 is
+In Progress/Open. No push was requested.
