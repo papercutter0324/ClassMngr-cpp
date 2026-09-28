@@ -538,6 +538,44 @@ add_test(
     COMMAND ClassMngrNextApplicationTeacherImportUseCaseTests
 )
 
+# Verify Teacher profile validation and save-then-reload orchestration without Qt.
+add_executable(
+    ClassMngrNextApplicationTeacherProfileEditTests
+    tests/next_application_teacher_profile_edit_tests.cpp
+)
+target_compile_features(
+    ClassMngrNextApplicationTeacherProfileEditTests
+    PRIVATE
+        cxx_std_23
+)
+if(MSVC)
+    target_compile_options(
+        ClassMngrNextApplicationTeacherProfileEditTests
+        PRIVATE
+            /utf-8
+    )
+endif()
+set_target_properties(
+    ClassMngrNextApplicationTeacherProfileEditTests
+    PROPERTIES
+        AUTOMOC OFF
+        AUTOUIC OFF
+        AUTORCC OFF
+)
+set_property(
+    TARGET ClassMngrNextApplicationTeacherProfileEditTests
+    PROPERTY CLASSMNGR_STANDALONE_CPP_TEST TRUE
+)
+target_link_libraries(
+    ClassMngrNextApplicationTeacherProfileEditTests
+    PRIVATE
+        ClassMngrNext::Application
+)
+add_test(
+    NAME ClassMngrNextApplicationTeacherProfileEditTests
+    COMMAND ClassMngrNextApplicationTeacherProfileEditTests
+)
+
 classmngr_add_qt_test(
     NAME CalendarEventImportParity
     SOURCES

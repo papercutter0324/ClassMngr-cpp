@@ -37,6 +37,7 @@ set(CLASSMNGR_NEXT_DOMAIN_SOURCES
     src/next/domain/speaking_evaluation_grade.h
     src/next/domain/student_name_pair.h
     src/next/domain/teacher_display_name.h
+    src/next/domain/teacher_profile.h
 )
 
 set(CLASSMNGR_NEXT_APPLICATION_SOURCES
@@ -130,6 +131,7 @@ set(CLASSMNGR_NEXT_APPLICATION_SOURCES
     src/next/application/teacher_import_plan_validation.h
     src/next/application/teacher_import_match_cardinality.h
     src/next/application/teacher_import_use_case.h
+    src/next/application/teacher_profile_edit_use_case.h
     src/next/application/report_job_coordinator.h
     src/next/application/report_job_state.h
     src/next/application/recent_workspace_history.h
