@@ -8,6 +8,7 @@
 #include <memory>
 
 class DataService;
+class DatabaseSession;
 class ThemeService;
 class SettingsService;
 class TeacherService;
@@ -49,6 +50,9 @@ public:
         );
 
     [[nodiscard]] DataService* dataService() const;
+    // Session identity and narrow-service binding. Lifecycle operations must
+    // use ApplicationServices to keep the compatibility facade synchronized.
+    [[nodiscard]] DatabaseSession* databaseSession() const;
     [[nodiscard]] SettingsService* settingsService() const;
     [[nodiscard]] TeacherService* teacherService() const;
     [[nodiscard]] ClassService* classService() const;
@@ -60,6 +64,8 @@ public:
     [[nodiscard]] const DocumentCatalog* documentCatalog() const;
 
 private:
+    // Declared first so the session outlives the facade and all feature services.
+    std::unique_ptr<DatabaseSession> m_databaseSession;
     std::unique_ptr<DataService> m_dataService;
     mutable std::unique_ptr<SettingsService> m_settingsService;
     mutable std::unique_ptr<TeacherService> m_teacherService;

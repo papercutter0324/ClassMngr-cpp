@@ -62,6 +62,10 @@ public:
         const QString &dbPath = QString()
         );
 
+    // The owner must outlive this facade. Route session open/close through this
+    // facade so its legacy repository adapters refresh with the session.
+    explicit DataService(DatabaseSession& session);
+
     ~DataService();
 
 
@@ -469,7 +473,8 @@ private:
     void refreshRepositoryAdapters();
 
     QString m_initialDatabasePath;
-    std::unique_ptr<DatabaseSession> m_session;
+    std::unique_ptr<DatabaseSession> m_ownedSession;
+    DatabaseSession* m_session;
 
     SettingsRepository* m_settingsRepository = nullptr;
     CampusRecordRepository* m_campusRecordRepository = nullptr;

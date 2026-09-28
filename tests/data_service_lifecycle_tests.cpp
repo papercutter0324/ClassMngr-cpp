@@ -222,8 +222,10 @@ class DataServiceLifecycleTests : public QObject
 
 private slots:
     void databaseSessionOwnsRepositoryLifetime();
+    void borrowedDataServicePreservesOwnedSession();
     void failedReplacementOpenPreservesSessionAndReleasesCandidate();
     void applicationServicesOwnDatabaseFileOperations();
+    void applicationServicesShareCanonicalSessionAcrossLifecycle();
     void boundedRosterOutputLoadsOnlyRequestedColumnsAndEnforcesLimits();
     void featureServicesExposeNarrowOperations();
     void settingsServiceDoesNotFallBackFromClosedSession();
@@ -242,6 +244,124 @@ private slots:
     void existingTestingSchemaGainsClassAssignmentColumn();
 };
 
+void DataServiceLifecycleTests::borrowedDataServicePreservesOwnedSession()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    DatabaseSession session;
+    const QString path = directory.filePath(QStringLiteral("borrowed.db"));
+    QVERIFY(session.open(path));
+    const QString connection = session.database().connectionName();
+    {
+        DataService facade(session);
+        QCOMPARE(facade.databaseSession(), &session);
+        QVERIFY(facade.isOpen());
+        QCOMPARE(facade.currentDatabasePath(), session.databasePath());
+        QVERIFY(facade.saveSetting(QStringLiteral("borrowed/value"), 42));
+        const auto loaded = facade.loadSetting(QStringLiteral("borrowed/value"));
+        QVERIFY(loaded);
+        QCOMPARE(loaded->toInt(), 42);
+    }
+    QVERIFY(session.isOpen());
+    QCOMPARE(session.database().connectionName(), connection);
+    QVERIFY(QSqlDatabase::contains(connection));
+    {
+        DataService secondFacade(session);
+        const auto retained = secondFacade.loadSetting(QStringLiteral("borrowed/value"));
+        QVERIFY(retained);
+        QCOMPARE(retained->toInt(), 42);
+        secondFacade.closeDatabase();
+        QVERIFY(!session.isOpen());
+        QVERIFY(!secondFacade.isOpen());
+        QVERIFY(!secondFacade.loadSetting(QStringLiteral("borrowed/value")));
+        QVERIFY(secondFacade.openDatabase(path));
+        QCOMPARE(secondFacade.databaseSession(), &session);
+        const auto reopened = secondFacade.loadSetting(QStringLiteral("borrowed/value"));
+        QVERIFY(reopened);
+        QCOMPARE(reopened->toInt(), 42);
+    }
+    QVERIFY(session.isOpen());
+    session.close();
+}
+void DataServiceLifecycleTests::applicationServicesShareCanonicalSessionAcrossLifecycle()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    DatabaseSession* const session = services.databaseSession();
+    DataService* const facade = services.dataService();
+    QVERIFY(session != nullptr);
+    QVERIFY(facade != nullptr);
+    QCOMPARE(facade->databaseSession(), session);
+    const QList<FeatureService*> features = {
+        services.settingsService(), services.teacherService(), services.classService(),
+        services.scheduleService(), services.calendarService(), services.rosterService(),
+        services.speakingEvaluationService()
+    };
+    for (FeatureService* feature : features)
+        QVERIFY(!feature->isAvailable());
+    QVERIFY(!services.hasOpenDatabase());
+    QVERIFY(!session->isOpen());
+    QVERIFY(!facade->isOpen());
+    const QString path = directory.filePath(QStringLiteral("canonical.db"));
+    QVERIFY(services.openDatabase(path));
+    QVERIFY(session->isOpen());
+    QVERIFY(facade->isOpen());
+    QVERIFY(services.hasOpenDatabase());
+    QCOMPARE(services.currentDatabasePath(), session->databasePath());
+    QCOMPARE(facade->currentDatabasePath(), session->databasePath());
+    for (FeatureService* feature : features)
+        QVERIFY(feature->isAvailable());
+    QVERIFY(services.settingsService()->save(QStringLiteral("canonical/value"), 73));
+    const auto facadeValue = facade->loadSetting(QStringLiteral("canonical/value"));
+    QVERIFY(facadeValue);
+    QCOMPARE(facadeValue->toInt(), 73);
+    Teacher teacher;
+    teacher.teacherEn = QStringLiteral("Canonical teacher");
+    const auto teacherId = facade->createTeacher(teacher);
+    QVERIFY(teacherId);
+    const auto featureTeacher = services.teacherService()->teacher(*teacherId);
+    QVERIFY(featureTeacher);
+    QCOMPARE(featureTeacher->teacherEn, teacher.teacherEn);
+    const QString connection = session->database().connectionName();
+    const QStringList connections = QSqlDatabase::connectionNames();
+    const QString invalidPath = directory.filePath(QStringLiteral("invalid.db"));
+    QFile invalidFile(invalidPath);
+    QVERIFY(invalidFile.open(QIODevice::WriteOnly));
+    const QByteArray invalidBytes = QByteArrayLiteral("not a SQLite database");
+    QCOMPARE(invalidFile.write(invalidBytes), qint64(invalidBytes.size()));
+    invalidFile.close();
+    QVERIFY(!services.openDatabase(invalidPath));
+    QCOMPARE(services.databaseSession(), session);
+    QCOMPARE(facade->databaseSession(), session);
+    QCOMPARE(session->database().connectionName(), connection);
+    QCOMPARE(QSqlDatabase::connectionNames(), connections);
+    QCOMPARE(services.currentDatabasePath(), QFileInfo(path).absoluteFilePath());
+    for (FeatureService* feature : features)
+        QVERIFY(feature->isAvailable());
+    const auto retained = services.settingsService()->load(QStringLiteral("canonical/value"));
+    QVERIFY(retained);
+    QCOMPARE(retained->toInt(), 73);
+    services.closeDatabase();
+    QVERIFY(!session->isOpen());
+    QVERIFY(!facade->isOpen());
+    QVERIFY(!services.hasOpenDatabase());
+    QVERIFY(services.currentDatabasePath().isEmpty());
+    QCOMPARE(facade->currentDatabasePath(), session->databasePath());
+    QVERIFY(!QSqlDatabase::contains(connection));
+    for (FeatureService* feature : features)
+        QVERIFY(!feature->isAvailable());
+    QVERIFY(!facade->loadSetting(QStringLiteral("canonical/value")));
+    QVERIFY(!services.settingsService()->load(QStringLiteral("canonical/value")));
+    QVERIFY(services.openDatabase(path));
+    QCOMPARE(services.databaseSession(), session);
+    QCOMPARE(facade->databaseSession(), session);
+    for (FeatureService* feature : features)
+        QVERIFY(feature->isAvailable());
+    const auto reopened = services.settingsService()->load(QStringLiteral("canonical/value"));
+    QVERIFY(reopened);
+    QCOMPARE(reopened->toInt(), 73);
+}
 void DataServiceLifecycleTests::applicationServicesOwnDatabaseFileOperations()
 {
     QTemporaryDir directory;
