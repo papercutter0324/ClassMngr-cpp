@@ -145,6 +145,25 @@ Update `agent_docs/latest_session_work.md` only when a handoff is expressly requ
 
 ## Important context
 
+### Local Windows x64 Debug build timing (2026-09-28)
+
+- Configuring and generating the `windows-x64-debug` preset in the existing
+  `build/windows-x64-debug` tree took 4m25s (192.8s configuring and 72.7s
+  generating).
+- Building `ClassMngr` and `ClassMngrNext` with
+  `cmake --build --preset windows-x64-debug --target ClassMngr ClassMngrNext`
+  succeeded in 12m17.5s. This is a local reference from a partially built
+  tree, not a clean-build guarantee. The toolchain was Visual Studio 18 / MSBuild
+  18.10.1 with Qt 6.12.0.
+- The default preset also builds test executables. That full build did not
+  complete: `ClassMngrNextPlatformApplicationServicesWorkspacePortTests`
+  failed to compile because it used the forward-declared `SettingsService`.
+  CTest was not run.
+- During that full build, `cmake/production_sources.cmake` changed and caused
+  another configure/generate pass lasting 10m30s (449.0s configuring and
+  181.2s generating). Treat that extra pass as a source-change interruption,
+  not normal build overhead.
+
 This plan is based on the current Qt-Rewrite source tree. Existing plan documents in the branch are intentionally ignored and do not define scope or architecture.
 
 The current repository contains a large Qt desktop application with:
