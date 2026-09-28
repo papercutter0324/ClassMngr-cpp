@@ -10,15 +10,15 @@
 - Last updated: 2026-09-28
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F114 is verified at commit `8aee10a6`; bound-session Calendar
-  mutations fail closed and `FeatureService::isAvailable()` follows the bound
-  session. This resolves those Calendar fallbacks only. Gates 1 and 2 remain
-  Partial; workspace create and audited direct `src/next` isolation are
-  Satisfied. Strict transitive isolation remains unresolved. F115 is selected
-  for direct ClassNotes service fail-closed behavior; the active adapter already
-  rejects a closed session via availability. Exit remains Open. Historical
-  production-workbook provenance is a tracked risk, not a literal exit
-  criterion.
+- Current note: F115 is verified at commit `96c8b8a5`; direct ClassNotes saves
+  now fail closed for a closed bound session. Gates 1 and 2 remain Partial;
+  workspace create and audited direct `src/next` isolation remain Satisfied.
+  Strict transitive isolation remains unresolved. Next is a paired read-only
+  re-audit of active `src/next` to `ApplicationServices` calls and Gate 1/Gate 2
+  evidence, separating source scans, bound-session method behavior, the
+  retained `DataService*` edge, and documented outer-adapter Workspace and
+  document-catalog routes. Exit remains Open. Historical production-workbook
+  provenance is a tracked risk, not a literal exit criterion.
   Sub Prep remains January 1 of the reference date's year through December 31
   of the following year at most; 2026-2027 is illustrative.
 
@@ -167,55 +167,52 @@ No new v2 production path depends on DataService, MainWindow, PageManager, or a 
 - Do not hide business rules inside presenters or delegates.
 - Do not allow compatibility methods to become the permanent v2 API.
 
-## Latest verified progress (F114)
+## Latest verified progress (F115)
 
-Commit `8aee10a6a4704535e49d3c2621f03479b8b8580a` changes only
+Commit `96c8b8a5812ceb8280fafd8fa3c9b6f99a8d409c` changes only
 `src/app/services/feature_services.cpp` and
-`tests/data_service_lifecycle_tests.cpp`. A non-null `FeatureService` session
-now determines availability; DataService-only construction retains legacy
-availability. `CalendarService::saveEvents`, `deleteEvent`,
-`deleteRepeatSeriesFromDate`, and `deleteAllEvents` fail closed when a bound
-session is closed, without falling through to a separately open seeded
-DataService. Tests assert legacy state remains unchanged after each rejected
-call and retain sessionless legacy operations. `saveEvent()` is unchanged:
-there is no current `src/next` caller.
+`tests/data_service_lifecycle_tests.cpp`. `ClassService::saveClassNotes()` now
+fails closed when a non-null bound session has no repository, without using a
+separately open DataService. Lifecycle assertions verify both notes fields
+remain unchanged after rejection; DataService-only construction still updates
+both fields. F114 already makes the active ClassNotes adapter reject a closed
+bound session through `isAvailable()` before calling this method. F115 closes a
+latent direct-service fallback, not an observed live port leak.
 
-After per-operation unchanged-state assertions were added, an independent
-Tester passed the exact two-file snapshot on base
-`2fe914856851581efb637be44cd762b3dec7b1db`. Fresh Windows x64 Debug verification
-with Ninja 1.13.2, MSVC 19.51.36257, and Qt 6.12.0 passed
-`ClassMngrDataServiceLifecycleTests` and
-`ClassMngrNextPlatformApplicationServicesCalendarEventPortTests` (2/2);
-`git diff --check` passed. The same snapshot also passed
-`ClassMngrSharedPolicyTests` (1/1), including open-session `saveEvents`. No
-full suite ran. F114 resolves live Calendar mutation fallbacks and the
-availability mismatch only; it does not establish global or strict object-graph
-DataService isolation.
+Independent fresh-snapshot Windows x64 Debug verification with CMake 4.4.2,
+Ninja 1.13.2, MSVC 19.51.36257, and Qt 6.12.0 passed the exact registered
+`ClassMngrDataServiceLifecycleTests`,
+`ClassMngrNextPlatformApplicationServicesClassNotesSavePortTests`, and
+`ClassMngrNextFeatureClassNotesPageTests` CTests (3/3, `--no-tests=error`).
+`git diff --check` passed; no full suite ran.
 
-### Cumulative exit-gate status after F114
+### Cumulative exit-gate status after F115
 
 | Exit-gate area | Audit status | Finding |
 | --- | --- | --- |
 | App-less Domain/Application behavior (Gate 1) | Partial | F110 adds the composed Calendar visibility predicate; broader app-less behavior remains incomplete. |
-| Baseline parity (Gate 2) | Partial | F109 adds synthetic repeat-series creation state-transition parity; broader parity remains open. |
+| Baseline parity (Gate 2) | Partial | F82/F83 common-input comparisons use post-baseline fixtures and do not establish historical-workbook parity; broader baseline behavior remains incomplete. |
 | Workspace boundary | Satisfied | The formal workspace-create criterion remains satisfied. |
-| v2 dependency isolation | Partial transitive progress | Direct audited `src/next` source scan remains Satisfied; F111-F114 isolate selected Settings, Calendar, and Sub Prep operations, but other service fallbacks and strict transitive isolation remain unresolved. |
+| v2 dependency isolation | Partial transitive progress | The direct `src/next` source scan remains Satisfied; F111-F115 cover selected bound-session Settings, Calendar, Sub Prep, and ClassNotes methods. The retained `DataService*` compatibility edge and wider `ApplicationServices` usage remain unresolved pending re-audit; strict transitive isolation is unresolved. |
 
 Phase 2 remains In Progress with its exit gate Open. Historical
 production-workbook provenance remains a tracked risk, not a literal exit
-criterion. Gates 1 and 2 remain Partial. The F114 direct `src/next` scan does
-not establish strict transitive isolation. Broader Calendar UI/contracts, other
-feature-service fallbacks, document-service migration, and live MainWindow
-projection-failure/retranslation integration remain open. Sub Prep is bounded
-to January 1 of the reference date's year through December 31 of the following
+criterion. Gate 1 and Gate 2 remain Partial. Keep four isolation scopes
+separate: (a) the audited direct `src/next` scan finds no direct DataService,
+MainWindow, PageManager, or widget-pointer references; (b) F111-F115 provide
+method-level bound-session isolation for selected active Settings, Calendar,
+Sub Prep, and ClassNotes paths; (c) the retained `DataService*` compatibility
+edge and wider `ApplicationServices` use are not resolved by those findings;
+(d) Workspace and document-catalog calls remain documented outer-adapter
+routes. Strict transitive isolation remains unresolved. Sub Prep is bounded to
+January 1 of the reference date's year through December 31 of the following
 year, at most; 2026-2027 is illustrative.
 
-### Next selected bounded slice (F115)
+### Next bounded work (read-only re-audit)
 
-Make `ClassService::saveClassNotes()` fail closed for a closed non-null bound
-session even when a separate DataService is open; assert both notes fields and
-legacy state remain unchanged. Preserve DataService-only compatibility and the
-ClassNotes port/page regressions. The active adapter already checks
-session-authoritative availability and rejects a closed session before calling
-this method; F115 covers direct service-level consistency and its latent
-fallback, not an observed live v2 port leak.
+Pair a read-only audit of active `src/next` to `ApplicationServices` service
+calls with a refresh of Gate 1 and Gate 2 evidence. Preserve the four scopes
+above: direct source isolation, method-level bound-session runtime isolation,
+the retained legacy `DataService*` edge, and documented outer-adapter
+Workspace/document-catalog routes. Do not claim strict transitive isolation
+until the re-audit resolves it; keep both gates Partial and Phase 2 exit Open.

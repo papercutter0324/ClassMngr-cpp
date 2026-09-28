@@ -1461,6 +1461,16 @@ The initial F114 candidate was to isolate TeacherService catalog reads, but the 
 
 Gate 1 and Gate 2 remain Partial; workspace create and audited direct `src/next` dependency isolation remain Satisfied. Strict transitive `ApplicationServices`-to-`DataService` isolation remains unresolved. Phase 2 exit remains Open. Sub Prep remains bounded to January 1 of the reference year through December 31 of the following year at most.
 
+## Current Position - 2026-09-28 (F115 verified; exit-gate audit next)
+
+F115 source/test commit `96c8b8a5` makes `ClassService::saveClassNotes()` authoritative to a non-null session. Direct service coverage proves a closed bound session cannot save through a separately open, seeded DataService and leaves both notes fields unchanged; a DataService-only service still updates both fields. F114's session-authoritative availability guard also makes the active ClassNotes adapter fail closed before calling the service.
+
+Independent fresh-snapshot verification overlaid only `feature_services.cpp` and `data_service_lifecycle_tests.cpp` on `0c3fdd61`. Windows x64 Debug, CMake 4.4.2, Ninja 1.13.2, MSVC 19.51, and Qt 6.12.0 built and passed the registered lifecycle, ClassNotes save-port, and ClassNotes page CTests 3/3. `git diff --check` passed. The broader suite was not run; the initial preset configure was incompatible with Ninja's platform setting, and the direct Ninja configure succeeded.
+
+Next, independently re-audit the active `src/next` -> `ApplicationServices` service paths against the literal dependency gate, keeping method-level runtime isolation distinct from the retained legacy `DataService*` compatibility edge. Refresh the Gate 1 and Gate 2 evidence map at the same time. F82/F83 already document common-input baseline/current comparisons for the two named Schedule Import fixtures; those cases do not close broad Gate 2.
+
+Gate 1 and Gate 2 remain Partial; workspace create and audited direct `src/next` dependency isolation remain Satisfied. Strict transitive `ApplicationServices`-to-`DataService` isolation remains unresolved. Phase 2 exit remains Open. Sub Prep remains bounded to January 1 of the reference year through December 31 of the following year at most.
+
 ## Current Position - 2026-09-28 (F114 verified; F115 selected)
 
 F114 source/test commit `8aee10a6` makes a bound `DatabaseSession` authoritative for `FeatureService::isAvailable()` and for CalendarService `saveEvents`, `deleteEvent`, `deleteRepeatSeriesFromDate`, and `deleteAllEvents`. A closed bound session rejects each operation without changing the separately open seeded DataService; lifecycle assertions check the legacy state immediately after each rejected call. Sessionless DataService-only behavior remains covered. Singular `saveEvent()` is unchanged because no current `src/next` caller was found.

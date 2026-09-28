@@ -1206,3 +1206,7 @@ For operation-scoped output adapters, prove a closed bound session plus a separa
 ## F114 - close live Calendar mutation fallbacks
 
 When several rejected operations share a seeded legacy store, check the store immediately after each operation as well as at the end of the sequence; the final state alone can hide which call mutated it. Make a bound session authoritative for availability and each live Next Calendar mutation, while separately preserving DataService-only behavior. Re-run the same independent verifier after strengthening assertion granularity.
+
+## F115 - test the service contract beyond its adapter guard
+
+If an adapter checks availability before calling a service, that does not prove the service method itself cannot fall back when called directly. Test the service with a closed bound session plus an open legacy store, verify every persisted field stays unchanged, and separately preserve the sessionless legacy save path.

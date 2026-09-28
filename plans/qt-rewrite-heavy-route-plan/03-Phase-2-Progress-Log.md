@@ -6929,12 +6929,54 @@ remain common-fixture evidence and do not close Gate 2.
 F114 supersedes the earlier TeacherService catalog-read selection: an
 independent call-site audit found no current `src/next` caller for those reads.
 
-### Next selected bounded slice (F115)
+## Verified F115 session-bound ClassNotes save isolation - commit `96c8b8a5812ceb8280fafd8fa3c9b6f99a8d409c`
 
-Make `ClassService::saveClassNotes()` fail closed for a closed non-null bound
-session even when a separate DataService is open. Test that the rejected call
-leaves both notes fields unchanged, and preserve DataService-only compatibility
-and the ClassNotes port/page regressions. The active ClassNotes adapter already
-checks session-authoritative `isAvailable()` and rejects a closed session
-before calling `saveClassNotes()`; F115 covers direct service-level consistency
-and its latent fallback, not an observed live v2 port leak.
+The commit changes only `src/app/services/feature_services.cpp` and
+`tests/data_service_lifecycle_tests.cpp`, based on
+`0c3fdd61171ef3a7ee9a1cac1460b256f7b03313`. SHA-256 is
+`E57108C8810E40D9FBFA92FA51FFE6AD2FD08D2CC9BD0FA67661BA745B3AA024` for
+`feature_services.cpp` and
+`EA9D5C745CEE98D59222B70EC4C58EBFE570F7F5274526E77A717ECED81AFA11` for the
+lifecycle tests. `ClassService::saveClassNotes()` now fails closed when a
+non-null bound session has no repository instead of using a separately open
+DataService. Direct lifecycle assertions confirm both notes fields stay
+unchanged on rejection; a DataService-only service still updates both fields.
+F114's session-authoritative `isAvailable()` already rejects the active
+ClassNotes adapter before it calls this method. F115 closes a latent direct
+service fallback, not an observed live port leak.
+
+Independent fresh-snapshot Windows x64 Debug verification used CMake 4.4.2,
+Ninja 1.13.2, MSVC 19.51.36257, and Qt 6.12.0. The exact registered CTests
+`ClassMngrDataServiceLifecycleTests`,
+`ClassMngrNextPlatformApplicationServicesClassNotesSavePortTests`, and
+`ClassMngrNextFeatureClassNotesPageTests` passed 3/3 with `--no-tests=error`;
+`git diff --check` passed. A preset configure first failed because its x64
+platform setting is incompatible with Ninja; direct Ninja configure succeeded.
+Optional Vulkan-header and `vswhere` notices were nonfatal. No full suite ran.
+
+After F111-F115, selected active Settings, Calendar read/mutation, Sub Prep
+output, and ClassNotes service paths have session-authoritative entry points.
+This does not resolve the retained `DataService*` field or wider
+`ApplicationServices` usage. Keep isolation findings distinct: the audited
+direct `src/next` scan remains Satisfied; method-level runtime isolation applies
+to the selected bound-session paths; the legacy compatibility edge and broader
+service usage require re-audit; documented Workspace and document-catalog
+routes remain outer-adapter boundaries. Strict transitive isolation remains
+unresolved. Gate 1 and Gate 2 remain Partial; workspace boundary remains
+Satisfied and Phase 2 exit remains Open.
+
+F82/F83 remain common-input baseline/current comparisons pinned by current
+regressions, using fixtures added after the baseline. They are not historical-
+workbook evidence and do not complete Gate 2; broader parity remains open.
+Historical production-workbook provenance remains a tracked risk, not a literal
+exit criterion.
+
+### Next bounded work (read-only re-audit)
+
+Pair a read-only audit of active `src/next` to `ApplicationServices` service
+calls with a refresh of Gate 1 and Gate 2 evidence. Separate (a) direct source
+isolation, (b) method-level runtime isolation for bound sessions, (c) the
+retained legacy `DataService*` compatibility edge and broader
+`ApplicationServices` usage, and (d) documented outer-adapter Workspace and
+document-catalog routes. Keep Gate 1 and Gate 2 Partial and Phase 2 exit Open;
+do not claim strict transitive isolation before the review.
