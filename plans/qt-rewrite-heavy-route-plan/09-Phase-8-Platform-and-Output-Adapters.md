@@ -2,6 +2,12 @@
 
 Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, and phase sequence.
 
+## Mandatory route for new and resumed work
+
+- Use the Heavy route for every task, slice, follow-up, and reopened gate in this phase. `Default route: Heavy` is a binding instruction.
+- At each start or resume, explicitly select Heavy and reread this phase plan and [00-Start-Here.md](00-Start-Here.md). Follow the active `AGENTS.md` Heavy-route instructions and `~/.codex/codex_workflow/heavy_route.md`, including their delegation, verification, and deployment-state requirements.
+- A new session, handoff, or context reset does not change the route. Do not continue under Light or Medium. If a required Heavy-route step blocks progress, report the blocker before implementation instead of silently switching routes.
+
 ## Status
 
 - Status: Not started
