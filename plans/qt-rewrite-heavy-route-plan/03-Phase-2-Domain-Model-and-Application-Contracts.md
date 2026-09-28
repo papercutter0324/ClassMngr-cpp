@@ -10,14 +10,14 @@
 - Last updated: 2026-09-28
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F115 is verified at commit `96c8b8a5`; direct ClassNotes saves
-  now fail closed for a closed bound session. Gates 1 and 2 remain Partial;
-  workspace create and audited direct `src/next` isolation remain Satisfied.
-  Strict transitive isolation remains unresolved. Next is a paired read-only
-  re-audit of active `src/next` to `ApplicationServices` calls and Gate 1/Gate 2
-  evidence, separating source scans, bound-session method behavior, the
-  retained `DataService*` edge, and documented outer-adapter Workspace and
-  document-catalog routes. Exit remains Open. Historical production-workbook
+- Current note: F116 is verified at commit `6636cac1`; the Sub Prep
+  roster-output port no longer calls `ApplicationServices::hasOpenDatabase()`.
+  Gates 1 and 2 remain Partial; workspace create and the audited direct
+  `src/next` scan remain Satisfied. Strict transitive isolation remains
+  unresolved: AppServices factories retain dual-bound services and Workspace
+  still reaches DataService. F117 is selected for app-less teacher-profile edit
+  at the TeacherInfoPage boundary, pending bounded solution review. The separate
+  DataService-isolation track remains open. Historical production-workbook
   provenance is a tracked risk, not a literal exit criterion.
   Sub Prep remains January 1 of the reference date's year through December 31
   of the following year at most; 2026-2027 is illustrative.
@@ -167,52 +167,56 @@ No new v2 production path depends on DataService, MainWindow, PageManager, or a 
 - Do not hide business rules inside presenters or delegates.
 - Do not allow compatibility methods to become the permanent v2 API.
 
-## Latest verified progress (F115)
+## Latest verified progress (F116)
 
-Commit `96c8b8a5812ceb8280fafd8fa3c9b6f99a8d409c` changes only
-`src/app/services/feature_services.cpp` and
-`tests/data_service_lifecycle_tests.cpp`. `ClassService::saveClassNotes()` now
-fails closed when a non-null bound session has no repository, without using a
-separately open DataService. Lifecycle assertions verify both notes fields
-remain unchanged after rejection; DataService-only construction still updates
-both fields. F114 already makes the active ClassNotes adapter reject a closed
-bound session through `isAvailable()` before calling this method. F115 closes a
-latent direct-service fallback, not an observed live port leak.
+Commit `6636cac1a26528089dbda49e1bc9f93ff1d6346a` changes only
+`src/next/platform/application_services_sub_prep_roster_output_source_port.h`
+and removes its `ApplicationServices::hasOpenDatabase()` call. An independent
+fresh-snapshot verification overlaid exactly this file, SHA-256
+`C92559472DA7F1E6758BD74341CD4EBF3439E105A4A91361EAD276A9CAC39ABD`. The
+registered CTests `ClassMngrDataServiceLifecycleTests` and
+`ClassMngrNextPlatformApplicationServicesSubPrepRosterOutputSourcePortTests`
+passed 2/2 with `--no-tests=error`; `git diff --check` passed. The existing
+lifecycle test proves closed bound services reject while a separate legacy
+DataService remains open. The focused port target has no direct split-session
+injection assertion, so it does not independently verify that pairing at the
+port boundary.
 
-Independent fresh-snapshot Windows x64 Debug verification with CMake 4.4.2,
-Ninja 1.13.2, MSVC 19.51.36257, and Qt 6.12.0 passed the exact registered
-`ClassMngrDataServiceLifecycleTests`,
-`ClassMngrNextPlatformApplicationServicesClassNotesSavePortTests`, and
-`ClassMngrNextFeatureClassNotesPageTests` CTests (3/3, `--no-tests=error`).
-`git diff --check` passed; no full suite ran.
+F116 leaves the Workspace adapter unchanged. Direct `src/next` isolation and
+the formal workspace-create boundary remain Satisfied. Strict transitive
+isolation remains unresolved: AppServices factories retain dual-bound services
+and Workspace itself reaches DataService.
 
-### Cumulative exit-gate status after F115
+### Cumulative exit-gate status after F116
 
 | Exit-gate area | Audit status | Finding |
 | --- | --- | --- |
-| App-less Domain/Application behavior (Gate 1) | Partial | F110 adds the composed Calendar visibility predicate; broader app-less behavior remains incomplete. |
+| App-less Domain/Application behavior (Gate 1) | Partial | Existing coverage includes workspace lifecycle; Class Transfer schedule-candidate validation (F79); Teacher Import policies, validation, and apply (F80/F81/F85/F87/F89/F90); Schedule Import match-key typing (F84); and Calendar policies/use cases (F93/F95/F97/F99/F101-F105/F107/F110). Teacher-profile edit, broader class/schedule/roster/evaluation editing, backup/recovery, and legacy database import remain planned. |
 | Baseline parity (Gate 2) | Partial | Bounded records include F82/F83 post-baseline Schedule Import inputs, F86/F88 baseline-era generated Schedule Import inputs, F91/F92/F94/F96/F98 Teacher Import flows and failure cases, and F100/F101/F103/F104/F106/F108/F109 Schedule Import rollback and Calendar repository transitions. They do not cover all validation, conflict, planning, or state-transition behavior; historical production-workbook provenance remains unverified. |
 | Workspace boundary | Satisfied | The formal workspace-create criterion remains satisfied. |
-| v2 dependency isolation | Partial transitive progress | The direct `src/next` source scan remains Satisfied; F111-F115 cover selected bound-session Settings, Calendar, Sub Prep, and ClassNotes methods. The retained `DataService*` compatibility edge and wider `ApplicationServices` usage remain unresolved pending re-audit; strict transitive isolation is unresolved. |
+| v2 dependency isolation | Partial transitive progress | The direct `src/next` source scan remains Satisfied; F111-F115 cover selected bound-session Settings, Calendar, Sub Prep, and ClassNotes methods, while F116 removes the Sub Prep roster-output port's `hasOpenDatabase()` call. AppServices factories retain dual-bound services and Workspace reaches DataService; strict transitive isolation remains unresolved. |
 
 Phase 2 remains In Progress with its exit gate Open. Historical
 production-workbook provenance remains a tracked risk, not a literal exit
-criterion. Gate 1 and Gate 2 remain Partial. Keep four isolation scopes
-separate: (a) the audited direct `src/next` scan finds no direct DataService,
-MainWindow, PageManager, or widget-pointer references; (b) F111-F115 provide
-method-level bound-session isolation for selected active Settings, Calendar,
-Sub Prep, and ClassNotes paths; (c) the retained `DataService*` compatibility
-edge and wider `ApplicationServices` use are not resolved by those findings;
-(d) Workspace and document-catalog calls remain documented outer-adapter
-routes. Strict transitive isolation remains unresolved. Sub Prep is bounded to
-January 1 of the reference date's year through December 31 of the following
-year, at most; 2026-2027 is illustrative.
+criterion. Gate 1 remains Partial: the listed app-less work does not cover all
+planned use cases. Gate 2 remains Partial, with bounded comparisons listed
+above; they do not cover every validation, conflict, planning, or state
+transition behavior. The F116 port test also lacks direct split-session
+injection coverage. Sub Prep remains bounded to January 1 of the reference
+date's year through December 31 of the following year, at most; 2026-2027 is
+illustrative.
 
-### Next bounded work (read-only re-audit)
+### Next selected slice (F117; pending bounded solution review)
 
-Pair a read-only audit of active `src/next` to `ApplicationServices` service
-calls with a refresh of Gate 1 and Gate 2 evidence. Preserve the four scopes
-above: direct source isolation, method-level bound-session runtime isolation,
-the retained legacy `DataService*` edge, and documented outer-adapter
-Workspace/document-catalog routes. Do not claim strict transitive isolation
-until the re-audit resolves it; keep both gates Partial and Phase 2 exit Open.
+Add an app-less teacher-profile edit use case at the `TeacherInfoPage`
+application boundary after bounded solution review establishes its contract
+and acceptance. Broader class, schedule, roster/evaluation editing,
+backup/recovery, and legacy database import use cases remain planned work.
+
+### Independent open track: DataService isolation
+
+Keep the strict isolation review open. The audited direct `src/next` scan and
+formal workspace-create criterion remain Satisfied, but these scopes do not
+resolve dual-bound AppServices factories or Workspace's DataService edge.
+F116 only removes the roster-output port's `hasOpenDatabase()` call; do not
+claim strict transitive isolation.

@@ -1210,3 +1210,7 @@ When several rejected operations share a seeded legacy store, check the store im
 ## F115 - test the service contract beyond its adapter guard
 
 If an adapter checks availability before calling a service, that does not prove the service method itself cannot fall back when called directly. Test the service with a closed bound session plus an open legacy store, verify every persisted field stays unchanged, and separately preserve the sessionless legacy save path.
+
+## F116 - remove the redundant active status query - 2026-09-28
+
+When a v2 adapter's bound services already provide session-authoritative availability, remove its separate `ApplicationServices::hasOpenDatabase()` check so that adapter does not query legacy open state. Verify the closed-session behavior with the lifecycle contrast and audit the exact production call path; a service's retained `DataService*` and the Workspace adapter remain separate isolation work.
