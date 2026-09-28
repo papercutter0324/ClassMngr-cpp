@@ -1,12 +1,14 @@
 #include "data/data_service.h"
 #include "app/services/feature_services.h"
 #include "core/utils/file_name_utils.h"
+#include "data/database/database_session.h"
 #include "features/classes/services/class_transfer_json_codec.h"
 #include "features/classes/ui/class_export_dialog.h"
 #include "features/classes/ui/class_import_dialog.h"
 
 #include <QApplication>
 #include <QComboBox>
+#include <QCryptographicHash>
 #include <QDir>
 #include <QFile>
 #include <QFileInfo>
@@ -17,8 +19,14 @@
 #include <QListWidget>
 #include <QPixmap>
 #include <QPushButton>
+#include <QSqlError>
+#include <QSqlQuery>
+#include <QSqlRecord>
 #include <QTemporaryDir>
 #include <QtTest>
+
+#include <algorithm>
+#include <optional>
 
 namespace
 {
@@ -212,6 +220,97 @@ QString loadReviewFontFamily()
         QFontDatabase::applicationFontFamilies(fontId);
     return families.isEmpty() ? QString() : families.first();
 }
+
+std::optional<QByteArray> persistedDatabaseSnapshot(
+    const QSqlDatabase& database,
+    QString* error
+    )
+{
+    QSqlQuery tableQuery(database);
+    if (!tableQuery.exec(QStringLiteral(
+            "SELECT name FROM sqlite_master "
+            "WHERE type = 'table' "
+            "AND (name NOT LIKE 'sqlite_%' OR name = 'sqlite_sequence') "
+            "ORDER BY name")))
+    {
+        *error = tableQuery.lastError().text();
+        return std::nullopt;
+    }
+
+    QJsonObject tables;
+    while (tableQuery.next())
+    {
+        const QString tableName = tableQuery.value(0).toString();
+        QString quotedTableName = tableName;
+        quotedTableName.replace(QStringLiteral("\""), QStringLiteral("\"\""));
+
+        QSqlQuery rowQuery(database);
+        if (!rowQuery.exec(
+                QStringLiteral("SELECT * FROM \"%1\"")
+                    .arg(quotedTableName)))
+        {
+            *error = rowQuery.lastError().text();
+            return std::nullopt;
+        }
+
+        QList<QByteArray> serializedRows;
+        while (rowQuery.next())
+        {
+            QJsonArray row;
+            for (int column = 0; column < rowQuery.record().count(); ++column)
+            {
+                const QVariant value = rowQuery.value(column);
+                QJsonObject cell;
+                cell.insert(
+                    QStringLiteral("type"),
+                    QString::fromLatin1(value.metaType().name()));
+                if (value.isNull())
+                {
+                    cell.insert(QStringLiteral("value"), QJsonValue::Null);
+                }
+                else if (value.metaType().id() == QMetaType::QByteArray)
+                {
+                    cell.insert(
+                        QStringLiteral("value"),
+                        QStringLiteral("base64:%1").arg(
+                            QString::fromLatin1(value.toByteArray().toBase64())));
+                }
+                else
+                {
+                    cell.insert(QStringLiteral("value"), value.toString());
+                }
+                row.append(cell);
+            }
+            serializedRows.append(
+                QJsonDocument(row).toJson(QJsonDocument::Compact));
+        }
+
+        std::sort(serializedRows.begin(), serializedRows.end());
+        QJsonArray rows;
+        for (const QByteArray& serializedRow : serializedRows)
+        {
+            rows.append(QJsonDocument::fromJson(serializedRow).array());
+        }
+        tables.insert(tableName, rows);
+    }
+
+    return QJsonDocument(tables).toJson(QJsonDocument::Compact);
+}
+
+std::optional<qlonglong> sqliteTotalChanges(
+    const QSqlDatabase& database,
+    QString* error
+    )
+{
+    QSqlQuery query(database);
+    if (!query.exec(QStringLiteral("SELECT total_changes()"))
+        || !query.next())
+    {
+        *error = query.lastError().text();
+        return std::nullopt;
+    }
+    return query.value(0).toLongLong();
+}
 }
 
 class ClassTransferTests : public QObject
@@ -236,6 +335,7 @@ private slots:
     void successFixtureReplacesMatchingDestinationAndChildren();
     void malformedNonpositiveReviewTargetsAreRejectedAtLegacyBoundary();
     void permanentConflictFixturePresentsReviewAndRejectsScheduleCollision();
+    void conflictFixtureMatchesCommonInputBaselineAndRejectsWithoutWrites();
     void dialogRejectsDuplicateReplacementTargets();
     void applyRejectsReplacementOutsideCurrentPreviewMatches();
     void exportDialogStartsClearAndSortsClassesAlphabetically();
@@ -1281,6 +1381,146 @@ void ClassTransferTests::
     {
         QCOMPARE(evaluationAfter->at(index), evaluationBefore->at(index));
     }
+}
+
+void ClassTransferTests::
+    conflictFixtureMatchesCommonInputBaselineAndRejectsWithoutWrites()
+{
+    // The fixture postdates baseline 48fc5c5c; using its unchanged bytes in
+    // both trees is common-input evidence, not historical input parity.
+    const QString fixturePath =
+        QDir(QStringLiteral(CLASSMNGR_SOURCE_DIR)).filePath(
+            QStringLiteral("tests/fixtures/transfers/conflict_source.json")
+            );
+    QFile fixtureFile(fixturePath);
+    QVERIFY(fixtureFile.open(QIODevice::ReadOnly));
+    const QByteArray fixtureBytes = fixtureFile.readAll();
+    QCOMPARE(
+        QCryptographicHash::hash(
+            fixtureBytes, QCryptographicHash::Sha256).toHex(),
+        QByteArray("bed9cbee84a7946f51029efc4aae2b2850bda9784757250fbf6ce90cab7fb173")
+        );
+    const auto package = ClassTransferJsonCodec::fromJson(
+        QJsonDocument::fromJson(fixtureBytes).object());
+    QVERIFY2(package.has_value(), package ? "" : qPrintable(package.error()));
+    QCOMPARE(package->version, ClassTransferPackage::CurrentVersion);
+    QCOMPARE(package->teachers.size(), 1);
+    QCOMPARE(package->classes.size(), 1);
+
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    DataService service;
+    QVERIFY(service.openDatabase(
+        directory.filePath(QStringLiteral("destination.db"))).has_value());
+
+    const int destinationTeacher =
+        createdTeacherId(service, completeTeacher());
+    QCOMPARE(destinationTeacher, 1);
+    const int destinationClass = addCompleteClass(
+        service,
+        destinationTeacher,
+        QStringLiteral("Destination Class"),
+        QStringLiteral("E4"),
+        QStringLiteral("Perseus"),
+        QStringLiteral("Monday"),
+        QStringLiteral("Destination Student")
+        );
+    QCOMPARE(destinationClass, 1);
+
+    const auto preview = service.previewClassImport(*package);
+    QVERIFY2(preview.has_value(), preview ? "" : qPrintable(preview.error()));
+    QCOMPARE(preview->teachers.size(), 1);
+    QCOMPARE(preview->teachers.first().teacherKey,
+             QStringLiteral("teacher-1"));
+    QCOMPARE(preview->teachers.first().matchingTeacherIds,
+             QList<int>({destinationTeacher}));
+    QCOMPARE(preview->classes.size(), 1);
+    QCOMPARE(preview->classes.first().packageClassIndex, 0);
+    QCOMPARE(preview->classes.first().matchingClassIds,
+             QList<int>({destinationClass}));
+
+    ClassService classes(service.databaseSession(), &service);
+    TeacherService teachers(service.databaseSession(), &service);
+    ClassImportDialog dialog(&classes, &teachers, *package, *preview);
+    auto* classChoice = dialog.findChild<QComboBox*>(
+        QStringLiteral("classImportChoice_0"));
+    auto* teacherChoice = dialog.findChild<QComboBox*>(
+        QStringLiteral("teacherImportChoice_teacher-1"));
+    auto* importButton = dialog.findChild<QPushButton*>(
+        QStringLiteral("importClassesButton"));
+    QVERIFY(classChoice);
+    QVERIFY(teacherChoice);
+    QVERIFY(importButton);
+    QVERIFY(importButton->isEnabled());
+
+    QCOMPARE(classChoice->count(), 3);
+    QCOMPARE(classChoice->itemData(0, Qt::UserRole).toInt(),
+             static_cast<int>(ClassImportAction::Create));
+    QCOMPARE(classChoice->itemData(0, Qt::UserRole + 1).toInt(), -1);
+    QCOMPARE(classChoice->itemData(1, Qt::UserRole).toInt(),
+             static_cast<int>(ClassImportAction::Replace));
+    QCOMPARE(classChoice->itemData(1, Qt::UserRole + 1).toInt(),
+             destinationClass);
+    QCOMPARE(classChoice->itemData(2, Qt::UserRole).toInt(),
+             static_cast<int>(ClassImportAction::Skip));
+    QCOMPARE(classChoice->itemData(2, Qt::UserRole + 1).toInt(), -1);
+
+    QCOMPARE(teacherChoice->count(), 2);
+    QCOMPARE(teacherChoice->itemData(0, Qt::UserRole).toInt(),
+             static_cast<int>(TeacherImportAction::KeepExisting));
+    QCOMPARE(teacherChoice->itemData(0, Qt::UserRole + 1).toInt(),
+             destinationTeacher);
+    QCOMPARE(teacherChoice->itemData(1, Qt::UserRole).toInt(),
+             static_cast<int>(TeacherImportAction::ReplaceExisting));
+    QCOMPARE(teacherChoice->itemData(1, Qt::UserRole + 1).toInt(),
+             destinationTeacher);
+
+    const ClassImportPlan plan = dialog.importPlan();
+    QCOMPARE(plan.classes.size(), 1);
+    QCOMPARE(plan.classes.first().packageClassIndex, 0);
+    QCOMPARE(plan.classes.first().action, ClassImportAction::Create);
+    QCOMPARE(plan.classes.first().targetClassId, -1);
+    QCOMPARE(plan.teachers.size(), 1);
+    QCOMPARE(plan.teachers.first().teacherKey, QStringLiteral("teacher-1"));
+    QCOMPARE(plan.teachers.first().action,
+             TeacherImportAction::KeepExisting);
+    QCOMPARE(plan.teachers.first().targetTeacherId, destinationTeacher);
+
+    const QSqlDatabase database = service.databaseSession()->database();
+    QString snapshotError;
+    const auto snapshotBefore =
+        persistedDatabaseSnapshot(database, &snapshotError);
+    QVERIFY2(snapshotBefore.has_value(), qPrintable(snapshotError));
+    const auto changesBefore = sqliteTotalChanges(database, &snapshotError);
+    QVERIFY2(changesBefore.has_value(), qPrintable(snapshotError));
+
+    QSqlQuery queryOnly(database);
+    QVERIFY2(queryOnly.exec(QStringLiteral("PRAGMA query_only = ON")),
+             qPrintable(queryOnly.lastError().text()));
+    QSqlQuery queryOnlyState(database);
+    QVERIFY2(queryOnlyState.exec(QStringLiteral("PRAGMA query_only")),
+             qPrintable(queryOnlyState.lastError().text()));
+    QVERIFY(queryOnlyState.next());
+    QCOMPARE(queryOnlyState.value(0).toInt(), 1);
+
+    const auto result = service.importClasses(*package, plan);
+    QVERIFY(!result.has_value());
+    QCOMPARE(
+        result.error(),
+        QStringLiteral(
+            "Schedule conflicts prevent this import:\n\n"
+            "Regular schedule: E4 Perseus \u2014 Monday 4:00 PM\u20134:50 PM "
+            "conflicts with E4 Perseus \u2014 Monday 4:00 PM\u20134:50 PM\n"
+            "Intensive schedule: E4 Perseus \u2014 Monday 10:00 AM\u201310:55 AM "
+            "conflicts with E4 Perseus \u2014 Monday 10:00 AM\u201310:55 AM"));
+
+    const auto snapshotAfter =
+        persistedDatabaseSnapshot(database, &snapshotError);
+    QVERIFY2(snapshotAfter.has_value(), qPrintable(snapshotError));
+    QCOMPARE(*snapshotAfter, *snapshotBefore);
+    const auto changesAfter = sqliteTotalChanges(database, &snapshotError);
+    QVERIFY2(changesAfter.has_value(), qPrintable(snapshotError));
+    QCOMPARE(*changesAfter - *changesBefore, qlonglong(0));
 }
 
 void ClassTransferTests::requiredSuccessFixtureTraversesReviewAndPersistsResults()
