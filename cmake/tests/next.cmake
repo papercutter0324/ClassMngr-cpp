@@ -221,6 +221,15 @@ classmngr_add_qt_test(
 )
 
 classmngr_add_qt_test(
+    NAME NextApplicationClassesNavigationSnapshot
+    SOURCES
+        tests/next_application_classes_navigation_snapshot_tests.cpp
+    LIBRARIES
+        ClassMngrNext::Application
+        Qt6::Test
+)
+
+classmngr_add_qt_test(
     NAME NextApplicationSpeakingEvaluationSaveUseCase
     SOURCES
         tests/next_application_speaking_evaluation_save_use_case_tests.cpp
@@ -979,6 +988,16 @@ classmngr_add_qt_test(
     NAME NextPlatformApplicationServicesRosterReadPort
     SOURCES
         tests/next_platform_application_services_roster_read_port_tests.cpp
+    LIBRARIES
+        ClassMngrNext::Platform
+        Qt6::Test
+    OFFSCREEN
+)
+
+classmngr_add_qt_test(
+    NAME NextPlatformApplicationServicesClassesNavigationReadPort
+    SOURCES
+        tests/next_platform_application_services_classes_navigation_read_port_tests.cpp
     LIBRARIES
         ClassMngrNext::Platform
         Qt6::Test

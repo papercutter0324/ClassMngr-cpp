@@ -28,6 +28,7 @@
 #include <QLabel>
 #include <QLayout>
 #include <QPushButton>
+#include <QSet>
 #include <QTableView>
 
 #include "ui/shared/widgets/sectioncards/class_info_section_card.h"
@@ -42,6 +43,7 @@ void setClassGrade(int classId, const QString& grade);
 void setIncludeAlternativeMatchingClass(bool include);
 void setExistingIntensiveHours(bool exists);
 void setDistinctIntensiveDays(bool distinct);
+void setClassesNavigationReadFailure(bool fails);
 void setSpeakingEvaluation(
     int classId,
     const QString& evaluationName,
@@ -138,6 +140,8 @@ private slots:
     void explicitClassRequestRetainsExcludingFiltersAndAllSelection();
     void testingModeUsesRegularMeetingsForDayFiltering();
     void allGradeTabShowsClassesAcrossGrades();
+    void classesNavigationReadFailureKeepsNamesAndBlankMetadata();
+    void classInfoSaveRefreshesNavigationSnapshot();
     void dayFilterSelectsAllWhenSelectedGradeDisappears();
     void selectedGradeRemainsVisibleWhenCurrentClassIsFilteredOut();
     void navigationControlsUsePills();
@@ -676,6 +680,7 @@ void ClassesPageTests::allGradeTabShowsClassesAcrossGrades()
 {
     ApplicationServices services;
     ClassesPage page(&services);
+    const ClassesPageRuntimeMetrics before = page.runtimeMetrics();
     QVERIFY(page.openClass(42));
 
     auto* tabs = gradeTabs(&page);
@@ -700,10 +705,129 @@ void ClassesPageTests::allGradeTabShowsClassesAcrossGrades()
         QStringLiteral("E5 Athena • Th 5:00")
         );
 
+    const ClassesPageRuntimeMetrics after = page.runtimeMetrics();
+    QCOMPARE(after.classInfoQueryCount - before.classInfoQueryCount, 1);
+    QCOMPARE(after.classInfoResultRowCount - before.classInfoResultRowCount, 2);
+    QCOMPARE(after.classInfoScheduleRowCount - before.classInfoScheduleRowCount, 2);
+    QCOMPARE(after.teacherQueryCount - before.teacherQueryCount, 0);
+    QCOMPARE(after.teacherResultRowCount - before.teacherResultRowCount, 2);
+
     allClassesTabs->setCurrentIndex(1);
     QApplication::processEvents();
     QCOMPARE(page.currentClassId(), 43);
     QCOMPARE(tabs->currentIndex(), tabs->count() - 1);
+}
+
+void ClassesPageTests::classesNavigationReadFailureKeepsNamesAndBlankMetadata()
+{
+    ScheduleWidgetTestStubs::setClassesNavigationReadFailure(true);
+
+    ApplicationServices services;
+    ClassMngr::Next::Platform::
+        ApplicationServicesClassVisibilityPreferencesPort(services)
+            .save(
+                ClassMngr::Next::Application::ClassVisibilityScope::AllClasses
+                );
+
+    ClassesPage page(&services);
+    QVERIFY(page.openClass(42));
+
+    const auto* tabs = gradeTabs(&page);
+    QVERIFY(tabs);
+    auto* allClassesTabs = tabs->currentWidget()
+        ? tabs->currentWidget()->findChild<NavigationTabWidget*>(
+            QStringLiteral("classesLevelTabs")
+            )
+        : nullptr;
+    QVERIFY(allClassesTabs);
+    QCOMPARE(allClassesTabs->count(), 2);
+    QSet<int> visibleClassIds;
+    for (int index = 0; index < allClassesTabs->count(); ++index)
+    {
+        const QWidget* tabPage = allClassesTabs->widget(index);
+        QVERIFY(tabPage);
+        const int classId = tabPage->property("class_id").toInt();
+        visibleClassIds.insert(classId);
+
+        const QString label = allClassesTabs->tabText(index);
+        if (classId == 42)
+        {
+            QVERIFY(label.contains(QStringLiteral("Hercules")));
+        }
+        else if (classId == 43)
+        {
+            QVERIFY(label.contains(QStringLiteral("Athena")));
+        }
+        else
+        {
+            QFAIL("The navigation included an unexpected class ID.");
+        }
+
+        QVERIFY(!label.contains(QStringLiteral("E4")));
+        QVERIFY(!label.contains(QStringLiteral("E5")));
+        QVERIFY(!label.contains(QStringLiteral("Susan")));
+        QVERIFY(!label.contains(QStringLiteral("Thomas")));
+        QVERIFY(!label.contains(QStringLiteral("4:00")));
+        QVERIFY(!label.contains(QStringLiteral("5:00")));
+    }
+    QCOMPARE(visibleClassIds, QSet<int>({42, 43}));
+    QCOMPARE(page.currentClassId(), 42);
+
+    const ClassesPageRuntimeMetrics metrics = page.runtimeMetrics();
+    QCOMPARE(metrics.classInfoQueryCount, 1);
+    QCOMPARE(metrics.classInfoResultRowCount, 0);
+    QCOMPARE(metrics.classInfoScheduleRowCount, 0);
+    QCOMPARE(metrics.teacherResultRowCount, 0);
+}
+
+void ClassesPageTests::classInfoSaveRefreshesNavigationSnapshot()
+{
+    ApplicationServices services;
+    ClassesPage page(&services);
+    QVERIFY(page.openClass(42));
+
+    auto* details = page.findChild<ClassDetailsPage*>();
+    QVERIFY(details);
+
+    ClassInfo info = services.dataService()->loadClassInfo(42)
+        .value_or(ClassInfo{});
+    info.classGrade = QStringLiteral("E5");
+    info.classLevel = QStringLiteral("Athena");
+    QVERIFY(services.classService()->saveClassInfo(info));
+
+    QSignalSpy savedSignal(&page, &ClassesPage::classInfoSaved);
+    QVERIFY(QMetaObject::invokeMethod(
+        details,
+        "classInfoSaved",
+        Qt::DirectConnection,
+        Q_ARG(int, 42)
+        ));
+
+    QCOMPARE(savedSignal.size(), 1);
+    QCOMPARE(page.currentClassId(), 42);
+    auto* gradeNavigation = gradeTabs(&page);
+    QVERIFY(gradeNavigation);
+    QCOMPARE(
+        gradeNavigation->tabText(gradeNavigation->currentIndex()),
+        QStringLiteral("All")
+        );
+    auto* allClassesNavigation = gradeNavigation->currentWidget()
+        ? gradeNavigation->currentWidget()->findChild<NavigationTabWidget*>(
+            QStringLiteral("classesLevelTabs")
+            )
+        : nullptr;
+    QVERIFY(allClassesNavigation);
+    QCOMPARE(allClassesNavigation->count(), 2);
+    QCOMPARE(
+        allClassesNavigation->tabText(0),
+        QStringLiteral("E5 Athena • T 4:00")
+        );
+    const auto* sectionTabs = page.findChild<NavigationTabWidget*>(
+        QStringLiteral("classesSectionTabs")
+        );
+    QVERIFY(sectionTabs);
+    QCOMPARE(sectionTabs->count(), 6);
+    QCOMPARE(sectionTabs->tabText(0), QStringLiteral("Details"));
 }
 
 void ClassesPageTests::dayFilterSelectsAllWhenSelectedGradeDisappears()

@@ -13,6 +13,25 @@
 #include <QString>
 #include <QStringList>
 
+struct ClassNavigationReadRecord final
+{
+    int classId = -1;
+    bool hasClassInfo = false;
+    QString grade;
+    QString level;
+    QString teacherEnglishName;
+    QString teacherKoreanName;
+    QList<ClassTime> regularTimes;
+    QList<ClassTime> intensiveTimes;
+};
+
+struct ClassesNavigationReadMetrics final
+{
+    int metadataStatementCount = 0;
+    int regularScheduleStatementCount = 0;
+    int intensiveScheduleStatementCount = 0;
+};
+
 class ClassInfoRepository
 {
 public:
@@ -33,6 +52,11 @@ public:
     [[nodiscard]] Result<ClassInfo> loadClassInfo(
         int classId
         );
+
+    [[nodiscard]] Result<QList<ClassNavigationReadRecord>>
+        loadClassesNavigationRecords(const QList<int>& classIds);
+    [[nodiscard]] const ClassesNavigationReadMetrics&
+        classesNavigationReadMetrics() const noexcept;
 
     [[nodiscard]] Result<SubPrepClassDetailsRecord>
         loadSubPrepClassDetails(int classId);
@@ -68,4 +92,5 @@ public:
 
 private:
     QSqlDatabase& m_database;
+    ClassesNavigationReadMetrics m_classesNavigationReadMetrics;
 };

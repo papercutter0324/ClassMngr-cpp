@@ -67,6 +67,7 @@ bool possibleImportedClasses = false;
 bool existingIntensiveHours = false;
 bool distinctIntensiveDays = false;
 bool includeAlternativeMatchingClass = false;
+bool classesNavigationReadFailure = false;
 
 void reset()
 {
@@ -99,6 +100,7 @@ void reset()
     existingIntensiveHours = false;
     distinctIntensiveDays = false;
     includeAlternativeMatchingClass = false;
+    classesNavigationReadFailure = false;
 }
 
 void setDatabaseOpen(
@@ -165,6 +167,13 @@ void setDistinctIntensiveDays(
     distinctIntensiveDays = distinct;
 }
 
+void setClassesNavigationReadFailure(
+    bool fails
+    )
+{
+    classesNavigationReadFailure = fails;
+}
+
 void setIncludeAlternativeMatchingClass(
     bool include
     )
@@ -229,11 +238,123 @@ void setTestingClassAssignment(
 
 ApplicationServices::ApplicationServices()
 {
+    m_databaseSession = std::make_unique<DatabaseSession>();
     m_dataService =
         std::make_unique<DataService>();
 }
 
 ApplicationServices::~ApplicationServices() = default;
+
+DatabaseSession::DatabaseSession() = default;
+
+DatabaseSession::~DatabaseSession() = default;
+
+bool DatabaseSession::isOpen() const
+{
+    return true;
+}
+
+ClassInfoRepository* DatabaseSession::classInfoRepository() const
+{
+    static QSqlDatabase database;
+    static ClassInfoRepository repository(database);
+    return &repository;
+}
+
+ClassInfoRepository::ClassInfoRepository(QSqlDatabase& database)
+    : m_database(database)
+{
+}
+
+Result<QList<ClassNavigationReadRecord>>
+ClassInfoRepository::loadClassesNavigationRecords(
+    const QList<int>& classIds
+    )
+{
+    if (ScheduleWidgetTestStubs::classesNavigationReadFailure)
+    {
+        return std::unexpected(
+            QStringLiteral("Classes navigation read failed.")
+            );
+    }
+
+    QList<ClassNavigationReadRecord> records;
+    records.reserve(classIds.size());
+    for (const int classId : classIds)
+    {
+        ClassNavigationReadRecord record;
+        record.classId = classId;
+        record.hasClassInfo = true;
+
+        const TestingClass testingClass =
+            ScheduleWidgetTestStubs::testingClasses.value(classId);
+        if (ScheduleWidgetTestStubs::testingClasses.contains(classId))
+        {
+            record.grade = testingClass.grade;
+            record.level = testingClass.level;
+            if (testingClass.teacherId > 0)
+            {
+                const Teacher teacher = DataService().getTeacher(
+                    testingClass.teacherId
+                    ).value_or(Teacher{});
+                record.teacherEnglishName = teacher.teacherEn;
+                record.teacherKoreanName = teacher.teacherKr;
+            }
+        }
+        else
+        {
+            record.grade = ScheduleWidgetTestStubs::classGrades.value(
+                classId,
+                classId == 43
+                    ? QStringLiteral("E5")
+                    : QStringLiteral("E4")
+                );
+            record.level = record.grade == QStringLiteral("E5")
+                ? QStringLiteral("Athena")
+                : QStringLiteral("Hercules");
+            const int teacherId = classId == 43 ? 8 : 7;
+            const Teacher teacher = DataService().getTeacher(teacherId)
+                .value_or(Teacher{});
+            record.teacherEnglishName = teacher.teacherEn;
+            record.teacherKoreanName = teacher.teacherKr;
+
+            ClassTime regular;
+            regular.day = classId == 44
+                ? QStringLiteral("Monday")
+                : classId == 43
+                ? QStringLiteral("Thursday")
+                : QStringLiteral("Tuesday");
+            regular.startTime = classId == 43 || classId == 44
+                ? QStringLiteral("5:00 PM")
+                : QStringLiteral("4:00 PM");
+            regular.endTime = classId == 43 || classId == 44
+                ? QStringLiteral("5:50 PM")
+                : QStringLiteral("4:50 PM");
+            record.regularTimes.append(regular);
+
+            if (ScheduleWidgetTestStubs::existingIntensiveHours)
+            {
+                if (ScheduleWidgetTestStubs::distinctIntensiveDays)
+                {
+                    regular.day = classId == 43
+                        ? QStringLiteral("Monday")
+                        : QStringLiteral("Friday");
+                }
+                regular.startTime = QStringLiteral("9:00 AM");
+                regular.endTime = QStringLiteral("9:50 AM");
+                record.intensiveTimes.append(regular);
+            }
+        }
+
+        records.append(std::move(record));
+    }
+    return records;
+}
+
+DatabaseSession* ApplicationServices::databaseSession() const
+{
+    return m_databaseSession.get();
+}
 
 DataService* ApplicationServices::dataService() const
 {
@@ -260,6 +381,27 @@ ClassService* ApplicationServices::classService() const
             );
     }
     return m_classService.get();
+}
+
+TeacherService* ApplicationServices::teacherService() const
+{
+    if (!m_teacherService)
+    {
+        m_teacherService = std::make_unique<TeacherService>(
+            m_dataService.get()
+            );
+    }
+    return m_teacherService.get();
+}
+
+SpeakingEvaluationService* ApplicationServices::speakingEvaluationService() const
+{
+    if (!m_speakingEvaluationService)
+    {
+        m_speakingEvaluationService =
+            std::make_unique<SpeakingEvaluationService>(m_dataService.get());
+    }
+    return m_speakingEvaluationService.get();
 }
 
 ScheduleService* ApplicationServices::scheduleService() const
@@ -799,7 +941,10 @@ Status DataService::saveClassInfo(
     const ClassInfo& info
     )
 {
-    Q_UNUSED(info);
+    ScheduleWidgetTestStubs::classGrades.insert(
+        info.classId,
+        info.classGrade
+        );
     return {};
 }
 
