@@ -215,12 +215,17 @@ reference date's year through December 31 of the following year, at most;
 
 ### Next selected slice (F122)
 
-Strengthen `ScheduleImportTests::skippedExactMatchPreservesItsSchedule` with a
-full persisted-state snapshot before and after its first Skip apply, using
-`persistedScheduleImportSnapshot(database, true)` to include
-`sqlite_sequence`. Retain assertions for one skipped row, zero cleared rows,
-the existing schedule and profile-name preservation, and the subsequent
-explicit name-update behavior. Run this exact filtered case with the same seed
+Strengthen `ScheduleImportTests::skippedExactMatchPreservesItsSchedule` with
+before/after semantic comparisons from
+`persistedScheduleImportSnapshot(database, true)`. Normalize only the generated
+`class_times.id` and the `sqlite_sequence` value for `class_times`; preserve all
+other application values and sequence entries. The pinned baseline probe
+re-materializes the same Monday schedule row (ID 1→2; sequence 1→2) while
+preserving `class_id`, day, start/end values, profile name, and the rest of the
+snapshot. This is established baseline behavior, not a defect; do not require
+zero writes or claim physical snapshot equality. Retain assertions for one
+skipped row, zero cleared rows, schedule/profile-name preservation, and the
+subsequent explicit name update. Run the exact filtered case with the same seed
 and plan in current and pinned baseline
 `48fc5c5cc7dee78d82f8bf5f1bf8b51725575b99`. This is baseline-present,
 hand-authored seeded evidence, not workbook parsing or historical

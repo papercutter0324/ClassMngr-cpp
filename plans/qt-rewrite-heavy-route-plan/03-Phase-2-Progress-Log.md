@@ -7270,14 +7270,19 @@ with its exit gate Open.
 
 ### Next selected slice (F122)
 
-Add a full persisted-state snapshot before and after the first Skip apply in
-`ScheduleImportTests::skippedExactMatchPreservesItsSchedule`, using
-`persistedScheduleImportSnapshot(database, true)` to include
-`sqlite_sequence`. Retain its one-skipped/zero-cleared summary, schedule and
-profile-name preservation, and subsequent explicit name update. Run the exact
-filtered case with the same seed and plan in current and baseline
-`48fc5c5cc7dee78d82f8bf5f1bf8b51725575b99`. This is baseline-present,
-hand-authored seeded evidence, not workbook parsing or historical
-production-workbook provenance. F122 implementation is underway and
+Compare before/after semantic state in
+`ScheduleImportTests::skippedExactMatchPreservesItsSchedule` using
+`persistedScheduleImportSnapshot(database, true)`. Normalize only generated
+`class_times.id` and that table's `sqlite_sequence` value; require all other
+application values and sequence entries to match. The pinned baseline probe
+re-materializes the existing Monday schedule row (ID 1→2; sequence 1→2) while
+preserving class ID, day, start/end, profile name, and all remaining snapshot
+state. This established baseline behavior is not a defect and does not imply
+zero writes or full physical snapshot equality. Keep the one-skipped/zero-
+cleared summary, schedule/profile-name preservation, and subsequent explicit
+name update. Run the exact filtered case with the same seed and plan in current
+and baseline `48fc5c5cc7dee78d82f8bf5f1bf8b51725575b99`; this remains
+baseline-present, hand-authored seeded evidence, not workbook parsing or
+historical-workbook provenance. F122 implementation is underway and
 current/baseline verification is pending; Gate 1 and Gate 2 remain Partial and
 Phase 2 remains In Progress/Open.
