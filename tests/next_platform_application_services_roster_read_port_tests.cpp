@@ -1,0 +1,255 @@
+#include "app/services/feature_services.h"
+#include "core/application_services.h"
+#include "data/data_service.h"
+#include "data/database/database_session.h"
+#include "next/application/roster_read_query.h"
+#include "next/platform/application_services_roster_read_port.h"
+
+#include <QSqlError>
+#include <QSqlQuery>
+#include <QTemporaryDir>
+#include <QUuid>
+#include <QtTest/QtTest>
+
+#include <string>
+#include <utility>
+#include <vector>
+
+using namespace ClassMngr::Next;
+
+namespace
+{
+
+QString databasePath(QTemporaryDir& directory)
+{
+    return directory.filePath(
+        QStringLiteral("roster-read-%1.tps").arg(
+            QUuid::createUuid().toString(QUuid::WithoutBraces)
+            )
+        );
+}
+
+Application::RosterReadQuery query(const int classId)
+{
+    const auto typedId = Domain::ClassId::fromString(std::to_string(classId));
+    if (!typedId)
+    {
+        qFatal("Test class ID must have a typed representation.");
+    }
+
+    return {.classId = *typedId};
+}
+
+struct CellValue final
+{
+    int row;
+    int column;
+    QString value;
+};
+
+bool seedRawRoster(
+    QSqlDatabase database,
+    const int classId
+    )
+{
+    const QStringList columns{
+        QStringLiteral("Korean"),
+        QStringLiteral("Winter"),
+        QStringLiteral("English"),
+        QStringLiteral("Autumn"),
+        QStringLiteral("\u5099\u8003")
+    };
+    const QVector<int> widths{321, 222, 210, 333, 177};
+
+    QSqlQuery insertColumn(database);
+    insertColumn.prepare(QStringLiteral(
+        "INSERT INTO roster_columns (class_id, name, position, width) "
+        "VALUES (?, ?, ?, ?)"
+        ));
+    for (int column = 0; column < columns.size(); ++column)
+    {
+        insertColumn.bindValue(0, classId);
+        insertColumn.bindValue(1, columns[column]);
+        insertColumn.bindValue(2, column);
+        insertColumn.bindValue(3, widths[column]);
+        if (!insertColumn.exec())
+        {
+            return false;
+        }
+    }
+
+    const std::vector<CellValue> cells{
+        {0, 0, QStringLiteral("\uAE40\uBBFC\uC9C0")},
+        {0, 1, QStringLiteral("A+")},
+        {0, 2, QStringLiteral("First")},
+        {0, 3, QStringLiteral("Fall A")},
+        {0, 4, QStringLiteral("Review \U0001F4DA")},
+        {24, 2, QStringLiteral("Middle 25")},
+        {37, 4, QStringLiteral("\uC218\uC5C5 \U0001F4DA")}
+    };
+    QSqlQuery insertCell(database);
+    insertCell.prepare(QStringLiteral(
+        "INSERT INTO roster_data (class_id, row_index, col_index, value) "
+        "VALUES (?, ?, ?, ?)"
+        ));
+    for (const CellValue& cell : cells)
+    {
+        insertCell.bindValue(0, classId);
+        insertCell.bindValue(1, cell.row);
+        insertCell.bindValue(2, cell.column);
+        insertCell.bindValue(3, cell.value);
+        if (!insertCell.exec())
+        {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+}
+
+class NextPlatformApplicationServicesRosterReadPortTests final : public QObject
+{
+    Q_OBJECT
+
+private slots:
+    void readsCompleteRawSnapshotWithoutUiRowLimit();
+    void missingRosterIsSuccessfulEmptySnapshot();
+    void repositoryErrorIsStructured();
+    void closedSessionFailsWithoutDataServiceFallback();
+};
+
+void NextPlatformApplicationServicesRosterReadPortTests::
+readsCompleteRawSnapshotWithoutUiRowLimit()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+
+    const auto createdClass = services.classService()->create(
+        QStringLiteral("Roster Read Test")
+        );
+    QVERIFY(createdClass);
+    QVERIFY(seedRawRoster(
+        services.databaseSession()->database(),
+        *createdClass
+        ));
+
+    Platform::ApplicationServicesRosterReadPort port(services);
+    const auto result = Application::RosterReadUseCase::execute(
+        query(*createdClass),
+        port
+        );
+
+    QVERIFY2(
+        result,
+        qPrintable(result ? QString() : QString::fromStdString(result.error().message))
+        );
+    QCOMPARE(
+        result.value().columns,
+        (std::vector<std::u16string>{
+            u"Korean", u"Winter", u"English", u"Autumn", u"\u5099\u8003"
+        })
+        );
+    QCOMPARE(result.value().columnWidths, (std::vector<int>{321, 222, 210, 333, 177}));
+    QCOMPARE(result.value().rows.size(), std::size_t(38));
+    QCOMPARE(result.value().rows[0].size(), std::size_t(5));
+    QCOMPARE(result.value().rows[0][0], std::u16string(u"\uAE40\uBBFC\uC9C0"));
+    QCOMPARE(result.value().rows[0][1], std::u16string(u"A+"));
+    QCOMPARE(result.value().rows[0][2], std::u16string(u"First"));
+    QCOMPARE(result.value().rows[0][3], std::u16string(u"Fall A"));
+    QCOMPARE(result.value().rows[0][4], std::u16string(u"Review \U0001F4DA"));
+    QVERIFY(result.value().rows[23][4].empty());
+    QCOMPARE(result.value().rows[24][2], std::u16string(u"Middle 25"));
+    QCOMPARE(result.value().rows[37][4], std::u16string(u"\uC218\uC5C5 \U0001F4DA"));
+}
+
+void NextPlatformApplicationServicesRosterReadPortTests::
+missingRosterIsSuccessfulEmptySnapshot()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+
+    const auto createdClass = services.classService()->create(
+        QStringLiteral("Empty Roster Read Test")
+        );
+    QVERIFY(createdClass);
+
+    Platform::ApplicationServicesRosterReadPort port(services);
+    const auto result = Application::RosterReadUseCase::execute(
+        query(*createdClass),
+        port
+        );
+
+    QVERIFY(result);
+    QVERIFY(result.value().columns.empty());
+    QVERIFY(result.value().columnWidths.empty());
+    QVERIFY(result.value().rows.empty());
+}
+
+void NextPlatformApplicationServicesRosterReadPortTests::
+repositoryErrorIsStructured()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+
+    const auto createdClass = services.classService()->create(
+        QStringLiteral("Broken Roster Read Test")
+        );
+    QVERIFY(createdClass);
+
+    QSqlQuery dropTable(services.databaseSession()->database());
+    QVERIFY2(dropTable.exec(QStringLiteral("DROP TABLE roster_columns")),
+        qPrintable(dropTable.lastError().text()));
+
+    Platform::ApplicationServicesRosterReadPort port(services);
+    const auto result = Application::RosterReadUseCase::execute(
+        query(*createdClass),
+        port
+        );
+
+    QVERIFY(!result);
+    QCOMPARE(result.error().code, Domain::ErrorCode::Technical);
+    QVERIFY(!result.error().message.empty());
+}
+
+void NextPlatformApplicationServicesRosterReadPortTests::
+closedSessionFailsWithoutDataServiceFallback()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+
+    const auto createdClass = services.classService()->create(
+        QStringLiteral("Closed Roster Read Test")
+        );
+    QVERIFY(createdClass);
+
+    services.closeDatabase();
+    QVERIFY(!services.hasOpenDatabase());
+    QVERIFY(services.dataService());
+    QVERIFY(!services.dataService()->isOpen());
+
+    Platform::ApplicationServicesRosterReadPort port(services);
+    const auto result = Application::RosterReadUseCase::execute(
+        query(*createdClass),
+        port
+        );
+
+    QVERIFY(!result);
+    QCOMPARE(result.error().code, Domain::ErrorCode::NotFound);
+    QVERIFY(QString::fromStdString(result.error().message).contains(
+        QStringLiteral("unavailable")
+        ));
+}
+
+QTEST_MAIN(NextPlatformApplicationServicesRosterReadPortTests)
+
+#include "next_platform_application_services_roster_read_port_tests.moc"

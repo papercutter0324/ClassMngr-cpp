@@ -10,7 +10,9 @@
 #include "features/roster/ui/roster_model.h"
 #include "features/roster/ui/roster_table_view.h"
 #include "domain/validation/roster_validator.h"
+#include "next/application/roster_read_query.h"
 #include "next/application/roster_save_use_case.h"
+#include "next/platform/application_services_roster_read_port.h"
 #include "next/platform/application_services_roster_save_port.h"
 #include "ui/shared/styles/roles.h"
 #include "ui/shared/pages/autosave_coordinator.h"
@@ -60,6 +62,46 @@ ClassMngr::Next::Application::RosterSnapshot applicationRosterSnapshot(
     return snapshot;
 }
 
+Roster rosterFromApplicationSnapshot(
+    const ClassMngr::Next::Application::RosterSnapshot& snapshot
+    )
+{
+    Roster roster;
+    roster.columns.reserve(static_cast<qsizetype>(snapshot.columns.size()));
+    for (const std::u16string& column : snapshot.columns)
+    {
+        roster.columns.append(QString::fromUtf16(
+            column.data(),
+            static_cast<qsizetype>(column.size())
+            ));
+    }
+
+    roster.columnWidths.reserve(
+        static_cast<qsizetype>(snapshot.columnWidths.size())
+        );
+    for (const int width : snapshot.columnWidths)
+    {
+        roster.columnWidths.append(width);
+    }
+
+    roster.rows.reserve(static_cast<qsizetype>(snapshot.rows.size()));
+    for (const std::vector<std::u16string>& sourceRow : snapshot.rows)
+    {
+        QStringList row;
+        row.reserve(static_cast<qsizetype>(sourceRow.size()));
+        for (const std::u16string& cell : sourceRow)
+        {
+            row.append(QString::fromUtf16(
+                cell.data(),
+                static_cast<qsizetype>(cell.size())
+                ));
+        }
+        roster.rows.append(std::move(row));
+    }
+
+    return roster;
+}
+
 } // namespace
 
 RosterEditorWidget::RosterEditorWidget(
@@ -106,11 +148,29 @@ void RosterEditorWidget::loadClass(
     m_loadingRoster = true;
 
     Roster roster;
-    if (m_services && m_services->rosterService() && m_classroom.id > 0)
+    if (m_services && m_classroom.id > 0)
     {
-        roster = m_services->rosterService()
-            ->roster(m_classroom.id)
-            .value_or(Roster{});
+        const auto classId =
+            ClassMngr::Next::Domain::ClassId::fromString(
+                std::to_string(m_classroom.id)
+                );
+        if (classId)
+        {
+            const ClassMngr::Next::Application::RosterReadQuery query{
+                .classId = *classId
+            };
+            const ClassMngr::Next::Platform::
+                ApplicationServicesRosterReadPort port(*m_services);
+            const ClassMngr::Next::Application::RosterReadResult loaded =
+                ClassMngr::Next::Application::RosterReadUseCase::execute(
+                    query,
+                    port
+                    );
+            if (loaded)
+            {
+                roster = rosterFromApplicationSnapshot(loaded.value());
+            }
+        }
     }
 
     m_model->setRoster(roster);

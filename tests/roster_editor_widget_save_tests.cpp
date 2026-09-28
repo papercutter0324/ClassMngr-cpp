@@ -1,5 +1,6 @@
 #include "app/services/feature_services.h"
 #include "core/application_services.h"
+#include "data/database/database_session.h"
 #include "domain/models/classroom.h"
 #include "domain/models/roster.h"
 #include "domain/models/testing_class.h"
@@ -14,6 +15,8 @@
 
 #include <QListWidget>
 #include <QSignalSpy>
+#include <QSqlError>
+#include <QSqlQuery>
 #include <QTemporaryDir>
 #include <QtTest/QtTest>
 #include <QUuid>
@@ -139,6 +142,8 @@ private slots:
     void autosaveFailureRemainsSilentAndDirty();
     void confirmedInteractiveSaveAllowsQuestionableKoreanNameLength();
     void failedRosterSaveKeepsTestingClassSelection();
+    void loadClassPreservesModelNormalizationWidthsAndCleanState();
+    void emptyAndFailedReadsKeepBlankRosterAndRefreshOutputCapabilities();
 };
 
 void RosterEditorWidgetSaveTests::
@@ -368,6 +373,103 @@ failedRosterSaveKeepsTestingClassSelection()
         QStringLiteral("English")
         ))).toString(), QStringLiteral("Alice"));
     QCOMPARE(prompts.messages.size(), 1);
+}
+
+void RosterEditorWidgetSaveTests::
+loadClassPreservesModelNormalizationWidthsAndCleanState()
+{
+    RosterEditorFixture fixture;
+    QString error;
+    QVERIFY2(fixture.initialize(&error), qPrintable(error));
+
+    Roster roster;
+    roster.columns = Roster::BaseColumns;
+    roster.columns.append(QStringLiteral("\u5099\u8003"));
+    roster.columnWidths = {211, 143, 166, 167, 168, 169, 242};
+    QStringList row(7, QString());
+    row[0] = QStringLiteral("Alice");
+    row[1] = QStringLiteral("\uAE40\uBBFC\uC9C0");
+    row[2] = QStringLiteral("A+");
+    row[6] = QStringLiteral("Review \U0001F4DA");
+    roster.rows.append(row);
+    QVERIFY(fixture.services.rosterService()->saveRoster(fixture.classId, roster));
+
+    QSqlQuery updateRawName(fixture.services.databaseSession()->database());
+    updateRawName.prepare(QStringLiteral(
+        "UPDATE roster_data SET value=? "
+        "WHERE class_id=? AND row_index=0 AND col_index=0"
+        ));
+    updateRawName.addBindValue(QStringLiteral("  Alice  "));
+    updateRawName.addBindValue(fixture.classId);
+    QVERIFY2(updateRawName.exec(), qPrintable(updateRawName.lastError().text()));
+
+    RosterEditorWidget editor(&fixture.services);
+    editor.loadClass(Classroom(QStringLiteral("Loaded roster"), fixture.classId));
+    auto* model = editor.findChild<RosterModel*>();
+    auto* table = editor.findChild<RosterTableView*>(QStringLiteral("rosterTable"));
+    QVERIFY(model);
+    QVERIFY(table);
+
+    QCOMPARE(model->rowCount(), 25);
+    QCOMPARE(model->columnCount(), 7);
+    QCOMPARE(model->columnName(5), QStringLiteral("Fall"));
+    QCOMPARE(model->columnName(6), QStringLiteral("\u5099\u8003"));
+    QCOMPARE(model->data(model->index(0, 0)).toString(), QStringLiteral("Alice"));
+    QCOMPARE(model->data(model->index(0, 1)).toString(), QStringLiteral("\uAE40\uBBFC\uC9C0"));
+    QCOMPARE(model->data(model->index(0, 2)).toString(), QStringLiteral("A+"));
+    QCOMPARE(model->data(model->index(0, 6)).toString(), QStringLiteral("Review \U0001F4DA"));
+    QVERIFY(model->data(model->index(24, 6)).toString().isEmpty());
+    QCOMPARE(table->columnWidth(0), 211);
+    QCOMPARE(table->columnWidth(5), 169);
+    QCOMPARE(table->columnWidth(6), 242);
+    QVERIFY(!editor.hasUnsavedChanges());
+    QVERIFY(editor.outputCapabilities().printEnabled);
+    QVERIFY(editor.outputCapabilities().saveAsEnabled);
+}
+
+void RosterEditorWidgetSaveTests::
+emptyAndFailedReadsKeepBlankRosterAndRefreshOutputCapabilities()
+{
+    RosterEditorFixture fixture;
+    QString error;
+    QVERIFY2(fixture.initialize(&error), qPrintable(error));
+
+    RosterEditorWidget editor(&fixture.services);
+    QSignalSpy capabilitiesSpy(
+        &editor,
+        &BasePage::outputCapabilitiesChanged
+        );
+    QVERIFY(capabilitiesSpy.isValid());
+    editor.loadClass(Classroom(QStringLiteral("Empty roster"), fixture.classId));
+
+    auto* model = editor.findChild<RosterModel*>();
+    QVERIFY(model);
+    QCOMPARE(model->rowCount(), 25);
+    QCOMPARE(model->columnCount(), Roster::BaseColumns.size());
+    QVERIFY(model->data(model->index(0, 0)).toString().isEmpty());
+    QVERIFY(model->data(model->index(24, 5)).toString().isEmpty());
+    QVERIFY(!editor.hasUnsavedChanges());
+    QCOMPARE(capabilitiesSpy.count(), 1);
+    QVERIFY(editor.outputCapabilities().printEnabled);
+
+    fixture.services.closeDatabase();
+    editor.loadClass(Classroom(QStringLiteral("Failed roster read"), fixture.classId));
+    QCOMPARE(model->rowCount(), 25);
+    QCOMPARE(model->columnCount(), Roster::BaseColumns.size());
+    QVERIFY(model->data(model->index(0, 0)).toString().isEmpty());
+    QVERIFY(model->data(model->index(24, 5)).toString().isEmpty());
+    QVERIFY(!editor.hasUnsavedChanges());
+    QCOMPARE(capabilitiesSpy.count(), 2);
+    QVERIFY(editor.outputCapabilities().printEnabled);
+
+    editor.clearDatabaseState();
+    QCOMPARE(model->rowCount(), 25);
+    QCOMPARE(model->columnCount(), Roster::BaseColumns.size());
+    QVERIFY(model->data(model->index(0, 0)).toString().isEmpty());
+    QVERIFY(!editor.hasUnsavedChanges());
+    QCOMPARE(capabilitiesSpy.count(), 3);
+    QVERIFY(!editor.outputCapabilities().printEnabled);
+    QVERIFY(!editor.outputCapabilities().saveAsEnabled);
 }
 
 QTEST_MAIN(RosterEditorWidgetSaveTests)

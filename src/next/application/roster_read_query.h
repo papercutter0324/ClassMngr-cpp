@@ -1,57 +1,56 @@
 #pragma once
 
+#include "next/application/roster_snapshot.h"
 #include "next/domain/domain_types.h"
 #include "next/domain/operation_result.h"
-#include "next/application/roster_snapshot.h"
 
 #include <charconv>
 #include <string>
 #include <system_error>
-#include <vector>
 
 namespace ClassMngr::Next::Application
 {
 
-struct RosterSaveRequest final
+struct RosterReadQuery final
 {
     Domain::ClassId classId;
-    RosterSnapshot roster;
-    bool allowQuestionableKoreanNameLengths = false;
 
     friend bool operator==(
-        const RosterSaveRequest&,
-        const RosterSaveRequest&
+        const RosterReadQuery&,
+        const RosterReadQuery&
         ) = default;
 };
 
-class RosterSavePort
+using RosterReadResult = Domain::Result<RosterSnapshot>;
+
+class RosterReadPort
 {
 public:
-    virtual ~RosterSavePort() = default;
+    virtual ~RosterReadPort() = default;
 
-    [[nodiscard]] virtual Domain::Result<void> saveRoster(
-        const RosterSaveRequest& request
+    [[nodiscard]] virtual RosterReadResult readRoster(
+        const RosterReadQuery& query
         ) const = 0;
 };
 
-class RosterSaveUseCase final
+class RosterReadUseCase final
 {
 public:
-    [[nodiscard]] static Domain::Result<void> execute(
-        const RosterSaveRequest& request,
-        const RosterSavePort& port
+    [[nodiscard]] static RosterReadResult execute(
+        const RosterReadQuery& query,
+        const RosterReadPort& port
         )
     {
-        if (!isCanonicalPositiveClassId(request.classId.value()))
+        if (!isCanonicalPositiveClassId(query.classId.value()))
         {
-            return Domain::Result<void>::failure({
+            return RosterReadResult::failure({
                 .code = Domain::ErrorCode::InvalidInput,
                 .message = "Class ID must be a canonical positive integer.",
                 .recoverable = true
             });
         }
 
-        return port.saveRoster(request);
+        return port.readRoster(query);
     }
 
 private:
