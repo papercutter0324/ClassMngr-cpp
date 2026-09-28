@@ -10,12 +10,57 @@
 #include "features/roster/ui/roster_model.h"
 #include "features/roster/ui/roster_table_view.h"
 #include "domain/validation/roster_validator.h"
+#include "next/application/roster_save_use_case.h"
+#include "next/platform/application_services_roster_save_port.h"
 #include "ui/shared/styles/roles.h"
 #include "ui/shared/pages/autosave_coordinator.h"
 #include "ui/shared/validation/form_validation_binder.h"
 
 #include <QPushButton>
 #include <QSignalBlocker>
+
+#include <string>
+#include <utility>
+#include <vector>
+
+namespace
+{
+
+ClassMngr::Next::Application::RosterSnapshot applicationRosterSnapshot(
+    const Roster& roster
+    )
+{
+    ClassMngr::Next::Application::RosterSnapshot snapshot;
+    snapshot.columns.reserve(static_cast<std::size_t>(roster.columns.size()));
+    for (const QString& column : roster.columns)
+    {
+        snapshot.columns.push_back(column.toStdU16String());
+    }
+
+    snapshot.columnWidths.reserve(
+        static_cast<std::size_t>(roster.columnWidths.size())
+        );
+    for (const int width : roster.columnWidths)
+    {
+        snapshot.columnWidths.push_back(width);
+    }
+
+    snapshot.rows.reserve(static_cast<std::size_t>(roster.rows.size()));
+    for (const QStringList& sourceRow : roster.rows)
+    {
+        std::vector<std::u16string> row;
+        row.reserve(static_cast<std::size_t>(sourceRow.size()));
+        for (const QString& cell : sourceRow)
+        {
+            row.push_back(cell.toStdU16String());
+        }
+        snapshot.rows.push_back(std::move(row));
+    }
+
+    return snapshot;
+}
+
+} // namespace
 
 RosterEditorWidget::RosterEditorWidget(
     ApplicationServices* services,
@@ -221,7 +266,7 @@ bool RosterEditorWidget::saveRosterInternal(
     bool confirmQuestionableLengths
     )
 {
-    if (!m_services || !m_services->rosterService() || m_classroom.id <= 0)
+    if (!m_services || m_classroom.id <= 0)
     {
         return false;
     }
@@ -233,10 +278,25 @@ bool RosterEditorWidget::saveRosterInternal(
         return false;
     }
 
-    const Status saved = m_services->rosterService()->saveRoster(
-        m_classroom.id,
-        currentRosterForSave(),
-        confirmQuestionableLengths
+    const auto classId = ClassMngr::Next::Domain::ClassId::fromString(
+        std::to_string(m_classroom.id)
+        );
+    if (!classId)
+    {
+        return false;
+    }
+
+    const ClassMngr::Next::Application::RosterSaveRequest request{
+        .classId = *classId,
+        .roster = applicationRosterSnapshot(currentRosterForSave()),
+        .allowQuestionableKoreanNameLengths = confirmQuestionableLengths
+    };
+    const ClassMngr::Next::Platform::ApplicationServicesRosterSavePort port(
+        m_services
+        );
+    const auto saved = ClassMngr::Next::Application::RosterSaveUseCase::execute(
+        request,
+        port
         );
     if (!saved)
     {
@@ -245,7 +305,10 @@ bool RosterEditorWidget::saveRosterInternal(
             DialogServices::showWarning(
                 this,
                 tr("Save Roster"),
-                saved.error()
+                QString::fromUtf8(
+                    saved.error().message.data(),
+                    static_cast<qsizetype>(saved.error().message.size())
+                    )
                 );
         }
         return false;
