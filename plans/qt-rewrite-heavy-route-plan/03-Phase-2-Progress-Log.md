@@ -7235,6 +7235,49 @@ deterministic seeded test must compare normalized preview, review, and plan;
 replacement identity/result; and persisted class details, schedule, roster,
 and evaluation, including `sqlite_sequence` if supported. Run focused
 `ClassMngrClassTransferTests` in both trees. This is post-baseline common-input
-evidence, not historical production-workbook parity. The Executor has begun
-the test change; current/baseline verification is pending and Gate 2 remains
-Partial.
+evidence, not historical production-workbook parity. At selection, the
+Executor had begun the test change; its current/baseline verification is
+recorded in the following entry. Gate 2 remained Partial.
+
+## Verified F121 Class Transfer successful replacement common-input comparison - commit `dd8d22c0732dc3b85f9c531d7991c639524e6a52`
+
+F121 changes only `tests/class_transfer_tests.cpp` (SHA-256
+`9E02465B02721946362D90305C1A6968607939432561BEFE96561261BF8CA7B2`, Git blob
+`9a58d3c35cef404c0d9f4a7542206ed49afc32c0`). Fixture
+`tests/fixtures/transfers/success_source.json` is post-baseline (SHA-256
+`A40CB4079865EB5C48800208A3648360C08B0CEC2F3ED1E3FA383E91BD4050E8`, Git blob
+`74d7a69a99d8c0aa6424cba8ac5a14e3fcb7d3ab`).
+
+Independent exact-commit fresh-archive verification passed
+`successFixtureClassReplacementMatchesCommonInputState` on current and pinned
+baseline `48fc5c5cc7dee78d82f8bf5f1bf8b51725575b99`, with the same two-file
+baseline overlay (test and fixture). Both runs produced persisted snapshot
+SHA-256 `ae65cb0a14393a9da0c9a546320f233531e324a4ef0bbfeee7f1a8306701ee6b`,
+including `sqlite_sequence`. Current build and
+`ClassMngrClassTransferTests` CTest passed 1/1. Baseline build passed and the
+direct parity function passed with setup/test/cleanup (3 QtTest cases). The
+full baseline overlaid CTest target was attempted and failed four unrelated
+tests: two expect behavior absent from the baseline and two require unrelated
+fixtures outside the overlay; it did not pass as a full target. Current used Qt
+6.12.0 and baseline Qt 6.11.1; both used CMake 4.4.2, Ninja 1.13.2, and MSVC
+19.51.36257. Both focused runs had an unrelated missing Qt font-directory
+warning.
+
+F121 is post-baseline common-input evidence, not historical-workbook parity.
+Gate 1 and Gate 2 remain Partial; F120 active-v2 DataService isolation and the
+formal workspace-create boundary remain Satisfied. Phase 2 remains In Progress
+with its exit gate Open.
+
+### Next selected slice (F122)
+
+Add a full persisted-state snapshot before and after the first Skip apply in
+`ScheduleImportTests::skippedExactMatchPreservesItsSchedule`, using
+`persistedScheduleImportSnapshot(database, true)` to include
+`sqlite_sequence`. Retain its one-skipped/zero-cleared summary, schedule and
+profile-name preservation, and subsequent explicit name update. Run the exact
+filtered case with the same seed and plan in current and baseline
+`48fc5c5cc7dee78d82f8bf5f1bf8b51725575b99`. This is baseline-present,
+hand-authored seeded evidence, not workbook parsing or historical
+production-workbook provenance. F122 implementation is underway and
+current/baseline verification is pending; Gate 1 and Gate 2 remain Partial and
+Phase 2 remains In Progress/Open.

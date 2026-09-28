@@ -12,16 +12,16 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-09-28
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F120 is independently verified after the same-file path-alias
-  repair at `09201aa5`; all seven Workspace operations route through
-  `ApplicationServices` to `DatabaseSession` or a file helper, and active
-  `src/next` call paths no longer depend on `DataService`. Workspace create and
-  active v2 DataService isolation are Satisfied; Gates 1 and 2 remain Partial.
-  F121 is a selected post-baseline Class Transfer common-input parity slice; its
-  implementation and verification are pending. Historical workbook provenance
-  remains a tracked risk, not a literal exit criterion. Sub Prep remains
-  January 1 of the reference date's year through December 31 of the following
-  year at most; 2026-2027 is illustrative.
+- Current note: F121 independently verified a post-baseline Class Transfer
+  replacement comparison against the pinned baseline; this is common-input
+  evidence, not historical-workbook parity. F120 active-v2 DataService
+  isolation and formal workspace-create acceptance remain Satisfied. Gates 1
+  and 2 remain Partial.
+  F122 is selected for a seeded Schedule Import Skip snapshot comparison in
+  current and baseline trees. Historical workbook provenance remains a tracked
+  risk, not a literal exit criterion. Sub Prep remains January 1 of the
+  reference date's year through December 31 of the following year at most;
+  2026-2027 is illustrative.
 
 ## Objective
 
@@ -168,43 +168,42 @@ No new v2 production path depends on DataService, MainWindow, PageManager, or a 
 - Do not hide business rules inside presenters or delegates.
 - Do not allow compatibility methods to become the permanent v2 API.
 
-## Latest verified progress (F120)
+## Latest verified progress (F121)
 
-F120's implementation commit `b1288b96166a3beaa5885555e3fe05ab83d59107`
-removed the Workspace operation path through `DataService`. Exact-commit
-independent verification passed its focused build and three required CTests,
-then found a same-file Windows path-alias data-loss edge in file-copy handling.
-The repair commit `09201aa5282973044a83b1471c6c8f676a7cb716` protects that
-copy case. On a fresh archive of the repair, `ClassMngr` and all three focused
-targets built; `ClassMngrDataServiceLifecycleTests`,
-`ClassMngrNextPlatformApplicationServicesWorkspacePortTests`, and
-`ClassMngrFileControllerWorkspaceLifecycleTests` passed 3/3. A case-variant
-probe reported `operationSucceeded=1`, `sourceExists=1`, and
-`contentPreserved=1`. Verification used CMake 4.4.2, Ninja 1.13.2, MSVC
-19.51.36257, and Qt 6.12.0. Missing optional Vulkan headers and one object-path
-warning applied to an unselected target. No full suite ran.
+Commit `dd8d22c0732dc3b85f9c531d7991c639524e6a52` changes only
+`tests/class_transfer_tests.cpp` (SHA-256
+`9E02465B02721946362D90305C1A6968607939432561BEFE96561261BF8CA7B2`, Git blob
+`9a58d3c35cef404c0d9f4a7542206ed49afc32c0`). The common input is the
+post-baseline fixture `tests/fixtures/transfers/success_source.json` (SHA-256
+`A40CB4079865EB5C48800208A3648360C08B0CEC2F3ED1E3FA383E91BD4050E8`, Git blob
+`74d7a69a99d8c0aa6424cba8ac5a14e3fcb7d3ab`).
 
-The repair delta is `src/data/database/database_file_operations.cpp` (SHA-256
-`57B07272C59D4BD7B09B40D78EE1E69112497AB92DE6A2E38E2B5F4C9F9E0DF6`, blob
-`7f20ea653900f661e68e625ec8a9951b89e7c906`) and
-`tests/data_service_lifecycle_tests.cpp` (SHA-256
-`0A8674C31F015BF0AD10D58B827152FB427AA6E7EADA642F0EA93D268008F182`, blob
-`825e530379931eccb0efd68c32738484c9d2b0d0`).
+Independent exact-commit fresh-archive verification passed
+`successFixtureClassReplacementMatchesCommonInputState` on current and pinned
+baseline `48fc5c5cc7dee78d82f8bf5f1bf8b51725575b99`, using the same two-file
+baseline overlay (test and fixture). Both runs produced persisted snapshot
+SHA-256 `ae65cb0a14393a9da0c9a546320f233531e324a4ef0bbfeee7f1a8306701ee6b`,
+including `sqlite_sequence`. The current target build and
+`ClassMngrClassTransferTests` CTest passed 1/1. The baseline build passed and
+the direct parity function passed with setup/test/cleanup (3 QtTest cases).
+The full baseline overlaid CTest target was also attempted but failed four
+unrelated tests: two expect behavior absent from that baseline, and two need
+unrelated fixtures not in the overlay. Do not treat this as a baseline full
+target pass. Current Qt was 6.12.0, baseline Qt 6.11.1; both used CMake 4.4.2,
+Ninja 1.13.2, and MSVC 19.51.36257. Both focused runs had an unrelated missing
+Qt font-directory warning.
 
-The source audit confirms the seven Workspace operations route from
-`ApplicationServices` to `DatabaseSession` or the file helper; they do not call
-`m_dataService`, which remains for compatibility construction/access. Active
-`src/next` has no direct `DataService` references. Workspace transitive
-DataService isolation is Satisfied alongside the formal workspace-create
-boundary. Gate 1 and Gate 2 remain Partial. F118 is common-input evidence on a
-checked-in post-baseline fixture, not historical production-workbook parity.
+F121 is post-baseline common-input evidence, not historical-workbook parity.
+Gate 1 and Gate 2 remain Partial; the F120 workspace operation isolation and
+formal workspace-create boundary remain Satisfied. Phase 2 remains In Progress
+with its exit gate Open.
 
-### Cumulative exit-gate status after F120
+### Cumulative exit-gate status after F121
 
 | Exit-gate area | Audit status | Finding |
 | --- | --- | --- |
 | App-less Domain/Application behavior (Gate 1) | Partial | Coverage includes workspace lifecycle; Class Transfer schedule-candidate validation (F79); Teacher Import (F80/F81/F85/F87/F89/F90); Schedule Import match-key typing (F84); Calendar policies/use cases (F93/F95/F97/F99/F101-F105/F107/F110); and Teacher profile edit (F117). Broader class/schedule/roster/evaluation editing, backup/recovery, and legacy database import remain planned. |
-| Baseline parity (Gate 2) | Partial | Bounded records include F82/F83 post-baseline Schedule Import inputs, F86/F88 baseline-era generated Schedule Import inputs, F91/F92/F94/F96/F98 Teacher Import flows and failure cases, F100/F101/F103/F104/F106/F108/F109 Schedule Import rollback and Calendar repository transitions, and F118 common-input Class Transfer conflict behavior. They do not cover all validation, conflict, planning, or state-transition behavior; historical production-workbook provenance remains unverified. |
+| Baseline parity (Gate 2) | Partial | Bounded records include F82/F83 post-baseline Schedule Import inputs, F86/F88 baseline-era generated Schedule Import inputs, F91/F92/F94/F96/F98 Teacher Import flows and failure cases, F100/F101/F103/F104/F106/F108/F109 Schedule Import rollback and Calendar repository transitions, F118 common-input Class Transfer conflict behavior, and F121 common-input successful replacement state. They do not cover all validation, conflict, planning, or state-transition behavior; historical production-workbook provenance remains unverified. |
 | Workspace boundary | Satisfied | The formal workspace-create criterion remains satisfied. |
 | v2 dependency isolation | Satisfied for active `src/next` call paths | F120 removes the Workspace operation edge to `DataService`; the source audit confirms all seven operations route to `DatabaseSession` or the file helper. Legacy facade construction/access remains available. |
 
@@ -214,17 +213,18 @@ a literal exit criterion. Sub Prep remains bounded to January 1 of the
 reference date's year through December 31 of the following year, at most;
 2026-2027 is illustrative.
 
-### Next selected slice (F121)
+### Next selected slice (F122)
 
-Add a test-only successful Class Transfer replacement common-input comparison
-using the same `tests/fixtures/transfers/success_source.json` bytes in clean
-current and baseline trees. Pin the fixture SHA-256
-`A40CB4079865EB5C48800208A3648360C08B0CEC2F3ED1E3FA383E91BD4050E8` and
-baseline commit `48fc5c5cc7dee78d82f8bf5f1bf8b51725575b99`. The deterministic
-seeded test must compare normalized preview, review, and plan; replacement
-identity/result; and persisted class details, schedule, roster, and evaluation
-(including `sqlite_sequence` where supported). Run focused
-`ClassMngrClassTransferTests` in both trees. Label the result as post-baseline
-common-input evidence, not historical production-workbook parity. F121
-implementation is underway and baseline/current verification is pending; Gate 2
-remains Partial.
+Strengthen `ScheduleImportTests::skippedExactMatchPreservesItsSchedule` with a
+full persisted-state snapshot before and after its first Skip apply, using
+`persistedScheduleImportSnapshot(database, true)` to include
+`sqlite_sequence`. Retain assertions for one skipped row, zero cleared rows,
+the existing schedule and profile-name preservation, and the subsequent
+explicit name-update behavior. Run this exact filtered case with the same seed
+and plan in current and pinned baseline
+`48fc5c5cc7dee78d82f8bf5f1bf8b51725575b99`. This is baseline-present,
+hand-authored seeded evidence, not workbook parsing or historical
+production-workbook provenance. F122 implementation is underway and
+current/baseline verification is pending; Phase 2 remains In Progress/Open,
+Gate 1 and Gate 2 remain Partial, and workspace plus active-v2 isolation
+remain Satisfied.
