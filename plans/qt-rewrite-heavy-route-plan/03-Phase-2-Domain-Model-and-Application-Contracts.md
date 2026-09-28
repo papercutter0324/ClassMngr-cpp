@@ -12,15 +12,14 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-09-28
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F118 is verified at commit `b68eba6d`; its Class Transfer
-  comparison is common-input evidence on a checked-in post-baseline fixture, not
-  historical production-workbook parity. Gates 1 and 2 remain Partial;
-  workspace create and the audited direct `src/next` scan remain Satisfied.
-  Strict transitive isolation remains unresolved: F119 targets the seven
-  dual-bound service factories, while Workspace still reaches DataService.
-  Historical workbook provenance is a tracked risk, not a literal exit
-  criterion. Sub Prep remains January 1 of the reference date's year through
-  December 31 of the following year at most; 2026-2027 is illustrative.
+- Current note: F119 is independently verified at commit `80fbf034`. Its seven
+  feature-service factories now use the session only, but all seven Workspace
+  operations still reach DataService through ApplicationServices. Gates 1 and
+  2 remain Partial; workspace create and the audited direct `src/next` scan
+  remain Satisfied. F120 targets this remaining transitive edge. Historical
+  workbook provenance is a tracked risk, not a literal exit criterion. Sub
+  Prep remains January 1 of the reference date's year through December 31 of
+  the following year at most; 2026-2027 is illustrative.
 
 ## Objective
 
@@ -167,39 +166,48 @@ No new v2 production path depends on DataService, MainWindow, PageManager, or a 
 - Do not hide business rules inside presenters or delegates.
 - Do not allow compatibility methods to become the permanent v2 API.
 
-## Latest verified progress (F118)
+## Latest verified progress (F119)
 
-Commit `b68eba6dd93c1eaa6473ec9494a4d9e7da9980ef` changes only
-`tests/class_transfer_tests.cpp` (SHA-256
-`71FA243D9C641EA955A5B33201478C76BCEDFAE7A333D0AF7727AE8E14FFB1E8`). Its
-focused test uses `tests/fixtures/transfers/conflict_source.json` (SHA-256
-`BED9CBEE84A7946F51029EFC4AA2B2850BDA9784757250FBF6CE90CAB7FB173`) and pins
-seeded preview matches, normalized review choices and plan, the exact combined
-regular/intensive schedule-collision diagnostic, unchanged snapshots of all
-application tables including `sqlite_sequence`, and zero `total_changes` under
-`query_only`.
+Commit `80fbf034d96b7d04b9be19c61de20de2c44a2f9d` changes five files:
 
-The independent Tester used a fresh archive of current base
-`5263aebf8222e16e3085498af851a7f0d3041818` with only this test overlay. The
-legacy baseline was `48fc5c5cc7dee78d82f8bf5f1bf8b51725575b99`, with the fixture
-unchanged and only the F118 helper/includes/slot/case transplanted. Both
-focused CTests passed 1/1 and the exact error and persisted-state assertions
-matched. Verification used CMake 4.4.2, Ninja 1.13.2, MSVC 19.51.36257, and Qt
-6.12.0. The temporary baseline tree needed three CMake minimum references
-changed from 6.11.1 to 6.12.0; no baseline production code changed.
-`git diff --check` passed. No full suite ran.
+- `src/data/data_service.h` — SHA-256 `E6EAF02E21693E9B5B687F8E657FD6687D3DEBC85B81AB05693C6C4179BCCFA7`
+- `src/data/data_service.cpp` — SHA-256 `9EA5BB3BCD4034D07F8A21A87747E81141D5D2A98A9875A1AA99FC4F4F80F8C3`
+- `src/core/application_services.h` — SHA-256 `B085423CEE89A53D262DF0A7E595BF5C2357E29043F945F07C87DAE99B1883F3`
+- `src/core/application_services.cpp` — SHA-256 `33CAFC7EC764E0BB9E97C223157AFA0BCA7E316B8DCE245C93EEA9AF647AAC8B`
+- `tests/data_service_lifecycle_tests.cpp` — SHA-256 `E3DAA625158F103CE4E95D9215397C09F7F66483C4B38353D3AF3BF38B180137`
 
-F118 is common-input comparison evidence on a checked-in post-baseline fixture;
-it is not historical production-workbook parity. Gate 2 remains Partial.
+F119 moves canonical `DatabaseSession` ownership to `ApplicationServices`,
+retains `DataService` as a borrowing compatibility facade while preserving
+standalone ownership, and constructs all seven feature services with the
+session only. The prior latest-session handoff SHA-256 values were incorrect;
+the values above were recalculated from an archive of this exact commit, and
+the corresponding Git blob IDs matched the archived files.
 
-### Cumulative exit-gate status after F118
+Independent verification used a fresh `git archive` of `80fbf034`. On Windows
+x64 Debug with Ninja, MSVC, and Qt 6.12, `ClassMngr` and six target executables
+built in 370 Ninja steps. These CTests passed 6/6:
+`ClassMngrDataServiceLifecycleTests`,
+`ClassMngrNextPlatformApplicationServicesWorkspacePortTests`,
+`ClassMngrDocumentCatalogTests`, `ClassMngrSubPrepPrintPdfTests`,
+`ClassMngrNextPlatformApplicationServicesClassNotesSavePortTests`, and
+`ClassMngrNextFeatureClassNotesPageTests`. `git diff --check` passed. Optional
+missing WrapVulkanHeaders notices and long-path warnings were confined to 19
+unselected test targets; none of the six selected targets showed them. No full
+suite ran.
+
+F119 removes the dual-bound factory edge but leaves Workspace's seven
+operations delegating through `ApplicationServices` to `DataService`. Gate 1
+and Gate 2 remain Partial; F118 remains common-input evidence on a checked-in
+post-baseline fixture, not historical production-workbook parity.
+
+### Cumulative exit-gate status after F119
 
 | Exit-gate area | Audit status | Finding |
 | --- | --- | --- |
 | App-less Domain/Application behavior (Gate 1) | Partial | Coverage includes workspace lifecycle; Class Transfer schedule-candidate validation (F79); Teacher Import (F80/F81/F85/F87/F89/F90); Schedule Import match-key typing (F84); Calendar policies/use cases (F93/F95/F97/F99/F101-F105/F107/F110); and Teacher profile edit (F117). Broader class/schedule/roster/evaluation editing, backup/recovery, and legacy database import remain planned. |
 | Baseline parity (Gate 2) | Partial | Bounded records include F82/F83 post-baseline Schedule Import inputs, F86/F88 baseline-era generated Schedule Import inputs, F91/F92/F94/F96/F98 Teacher Import flows and failure cases, F100/F101/F103/F104/F106/F108/F109 Schedule Import rollback and Calendar repository transitions, and F118 common-input Class Transfer conflict behavior. They do not cover all validation, conflict, planning, or state-transition behavior; historical production-workbook provenance remains unverified. |
 | Workspace boundary | Satisfied | The formal workspace-create criterion remains satisfied. |
-| v2 dependency isolation | Partial transitive progress | The direct `src/next` source scan remains Satisfied; F111-F116 cover selected bound-session Settings, Calendar, Sub Prep, and ClassNotes paths. All seven feature-service factories remain dual-bound and Workspace reaches DataService; F119 targets the factory edge but strict transitive isolation remains unresolved. |
+| v2 dependency isolation | Partial transitive progress | The direct `src/next` source scan remains Satisfied; F111-F116 cover selected bound-session Settings, Calendar, Sub Prep, and ClassNotes paths. F119 makes all seven feature-service factories session-only. Workspace still reaches DataService through ApplicationServices for open, close, open-state, path, save, save-as, and export; F120 targets that remaining edge. |
 
 Phase 2 remains In Progress with its exit gate Open. Gate 1 and Gate 2 remain
 Partial; F118 adds only common-input conflict evidence. Historical
@@ -207,23 +215,20 @@ production-workbook provenance remains a tracked risk, not a literal exit
 criterion. Sub Prep remains bounded to January 1 of the reference date's year
 through December 31 of the following year, at most; 2026-2027 is illustrative.
 
-### Next selected slice (F119)
+### Next selected slice (F120, pending solution review)
 
-Move canonical `DatabaseSession` ownership from `DataService` to
-`ApplicationServices`, keep `DataService` as a borrowing compatibility facade
-while preserving standalone `DataService` ownership, and construct all seven
-feature services with the session only. Limit implementation to
-`data_service.h/.cpp`, `application_services.h/.cpp`, and lifecycle tests. This
-removes the dual-bound service-factory edge; it does not close the Workspace
-path, which still delegates through `ApplicationServices` to `DataService`, or
-pass strict transitive isolation.
+Remove Workspace's `ApplicationServices` to `DataService` operation edge across
+open, close, open-state, path, save, save-as, and export while preserving
+current behavior and `DataService` facade validity across session swaps. The
+bounded solution review must settle an approach before implementation; no
+architecture is selected here. Acceptance must cover all seven operations and
+the facade lifecycle, and demonstrate the v2 Workspace path no longer depends
+transitively on `DataService`.
 
 ### Independent open track: DataService isolation
 
-Keep strict isolation open. DataService currently owns the canonical session;
-ApplicationServices creates it through DataService, and all seven
-feature-service factories pass both the session and DataService. Workspace
-operations still delegate through ApplicationServices to DataService. F119
-targets session ownership and the factory edge but leaves the Workspace edge;
-direct `src/next` isolation and workspace-create acceptance do not satisfy the
-literal transitive-isolation criterion.
+Strict transitive isolation remains open. F119 moved canonical session
+ownership to `ApplicationServices` and made feature-service factories
+session-only. Although the audited `src/next` scan and workspace-create
+acceptance are satisfied, they do not satisfy the literal transitive-isolation
+criterion while Workspace operations still delegate to `DataService`.

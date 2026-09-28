@@ -7125,3 +7125,51 @@ creates it through DataService, and all seven feature-service factories pass
 both session and DataService. Workspace operations also delegate through
 ApplicationServices to DataService. F119 addresses ownership and the factory
 edge only; Workspace's edge remains open.
+
+## Verified F119 ApplicationServices session ownership and factory handoff - commit `80fbf034d96b7d04b9be19c61de20de2c44a2f9d`
+
+F119 changes five files:
+
+- `src/data/data_service.h` — SHA-256 `E6EAF02E21693E9B5B687F8E657FD6687D3DEBC85B81AB05693C6C4179BCCFA7`
+- `src/data/data_service.cpp` — SHA-256 `9EA5BB3BCD4034D07F8A21A87747E81141D5D2A98A9875A1AA99FC4F4F80F8C3`
+- `src/core/application_services.h` — SHA-256 `B085423CEE89A53D262DF0A7E595BF5C2357E29043F945F07C87DAE99B1883F3`
+- `src/core/application_services.cpp` — SHA-256 `33CAFC7EC764E0BB9E97C223157AFA0BCA7E316B8DCE245C93EEA9AF647AAC8B`
+- `tests/data_service_lifecycle_tests.cpp` — SHA-256 `E3DAA625158F103CE4E95D9215397C09F7F66483C4B38353D3AF3BF38B180137`
+
+Canonical `DatabaseSession` ownership now resides in `ApplicationServices`.
+`DataService` remains a borrowing compatibility facade while retaining its
+standalone owning constructor, and all seven feature-service factories receive
+the session only. Earlier latest-session handoff hashes for these paths were
+incorrect; these exact-commit archive hashes replace them, with matching Git
+blob IDs.
+
+Independent verification used a fresh archive of `80fbf034`. `ClassMngr` and
+six target executables built on Windows x64 Debug with Ninja, MSVC, and Qt 6.12
+in 370 Ninja steps. CTest passed 6/6:
+`ClassMngrDataServiceLifecycleTests`,
+`ClassMngrNextPlatformApplicationServicesWorkspacePortTests`,
+`ClassMngrDocumentCatalogTests`, `ClassMngrSubPrepPrintPdfTests`,
+`ClassMngrNextPlatformApplicationServicesClassNotesSavePortTests`, and
+`ClassMngrNextFeatureClassNotesPageTests`. `git diff --check` passed. Optional
+missing WrapVulkanHeaders notices and long-path warnings applied only to 19
+unselected test targets; none appeared for the six selected targets. No full
+suite ran.
+
+The Workspace adapter still reaches `DataService` through
+`ApplicationServices` for open, close, open-state, path, save, save-as, and
+export. Thus F119 removes the dual-bound factory edge but does not pass strict
+transitive-isolation acceptance. Gate 1 and Gate 2 remain Partial; the formal
+workspace-create boundary and audited direct `src/next` scan remain Satisfied.
+F118 is common-input evidence on a checked-in post-baseline fixture, not
+historical production-workbook parity. Phase 2 remains In Progress with its
+exit gate Open.
+
+### Next selected slice (F120, pending bounded solution review)
+
+Remove the Workspace path's transitive `ApplicationServices` to `DataService`
+operation edge across open, close, open-state, path, save, save-as, and export.
+Preserve existing operation behavior and ensure the compatibility facade stays
+valid across session swaps. Review solution alternatives and settle the
+implementation seam before changing production code. Acceptance must cover
+all seven operations and facade lifecycle, and establish that the v2 Workspace
+path no longer depends transitively on `DataService`.

@@ -1222,3 +1222,7 @@ Put validate/update/reload ordering and normalized-value flow in the app-less us
 ## F118 - label common-input conflict evidence precisely - 2026-09-28
 
 When a checked-in fixture postdates the baseline, run its identical bytes against each revision's own production source closure and assert the same normalized review plan, exact diagnostic, full persisted-state snapshot (including `sqlite_sequence`), and zero writes. Record this as common-input regression evidence, not historical input parity.
+
+## F119 - hash the committed snapshot for handoffs - 2026-09-28
+
+Compute handoff SHA-256 values from a fresh archive of the exact commit and compare the archived files to the commit's Git blobs. The initial F119 handoff listed five values that did not match either the Windows working-tree bytes or the fresh archive; do not attribute such a mismatch to line endings without evidence. The corrected archive hashes and independent build/test results now establish the F119 snapshot.
