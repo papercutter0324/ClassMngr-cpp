@@ -4316,7 +4316,9 @@ void ScheduleImportTests::skippedExactMatchPreservesItsSchedule()
             QStringLiteral(
                 "INSERT INTO class_times "
                 "(class_id, day, start_time, end_time) "
-                "VALUES (%1, 'Monday', '4:00 PM', '4:55 PM')"
+                "VALUES "
+                "(%1, 'Tuesday', '4:00 PM', '4:55 PM'), "
+                "(%1, 'Monday', '4:00 PM', '4:55 PM')"
                 )
                 .arg(classId)
             );
@@ -4337,8 +4339,13 @@ void ScheduleImportTests::skippedExactMatchPreservesItsSchedule()
         candidate.times = {
             {
                 QStringLiteral("Tuesday"),
-                QStringLiteral("5:00 PM"),
-                QStringLiteral("5:55 PM")
+                QStringLiteral("4:00 PM"),
+                QStringLiteral("4:55 PM")
+            },
+            {
+                QStringLiteral("Monday"),
+                QStringLiteral("4:00 PM"),
+                QStringLiteral("4:55 PM")
             }
         };
         ScheduleImportPlan plan;
@@ -4364,6 +4371,33 @@ void ScheduleImportTests::skippedExactMatchPreservesItsSchedule()
         };
 
         ScheduleImportRepository repository(database);
+        execOrFail(
+            query,
+            QStringLiteral(
+                "SELECT day, start_time, end_time FROM class_times "
+                "WHERE class_id=%1 ORDER BY id"
+                )
+                .arg(classId)
+            );
+        QStringList orderedScheduleBefore;
+        while (query.next())
+        {
+            orderedScheduleBefore.append(
+                QStringList{
+                    query.value(0).toString(),
+                    query.value(1).toString(),
+                    query.value(2).toString()
+                }.join(QLatin1Char('|'))
+                );
+        }
+        QCOMPARE(
+            orderedScheduleBefore,
+            (QStringList{
+                QStringLiteral("Tuesday|4:00 PM|4:55 PM"),
+                QStringLiteral("Monday|4:00 PM|4:55 PM")
+            })
+            );
+
         const auto imported =
             repository.apply(plan);
         const QString error =
@@ -4376,15 +4410,39 @@ void ScheduleImportTests::skippedExactMatchPreservesItsSchedule()
             query,
             QStringLiteral(
                 "SELECT day, start_time, end_time "
-                "FROM class_times WHERE class_id=%1"
+                "FROM class_times WHERE class_id=%1 ORDER BY id"
                 )
                 .arg(classId)
             );
-        QVERIFY(query.next());
-        QCOMPARE(query.value(0).toString(), QStringLiteral("Monday"));
-        QCOMPARE(query.value(1).toString(), QStringLiteral("4:00 PM"));
-        QCOMPARE(query.value(2).toString(), QStringLiteral("4:55 PM"));
-        QVERIFY(!query.next());
+        QStringList orderedScheduleAfter;
+        while (query.next())
+        {
+            orderedScheduleAfter.append(
+                QStringList{
+                    query.value(0).toString(),
+                    query.value(1).toString(),
+                    query.value(2).toString()
+                }.join(QLatin1Char('|'))
+                );
+        }
+        QCOMPARE(orderedScheduleAfter, orderedScheduleBefore);
+
+        // Pin the complete baseline-derived post-apply state, including raw
+        // class_times IDs and sqlite_sequence after the row re-materialization.
+        const QByteArray persistedAfterHash =
+            QCryptographicHash::hash(
+                persistedScheduleImportSnapshot(database, true)
+                    .join(QChar(0x1d))
+                    .toUtf8(),
+                QCryptographicHash::Sha256
+                ).toHex();
+        QCOMPARE(
+            persistedAfterHash,
+            QByteArrayLiteral(
+                "08ad64ed3d853e52a1a686c1683d0d1fe8a289026e21d21081e09ee4840c5ebe"
+                )
+            );
+
         execOrFail(
             query,
             QStringLiteral(
