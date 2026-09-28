@@ -1214,3 +1214,7 @@ If an adapter checks availability before calling a service, that does not prove 
 ## F116 - remove the redundant active status query - 2026-09-28
 
 When a v2 adapter's bound services already provide session-authoritative availability, remove its separate `ApplicationServices::hasOpenDatabase()` check so that adapter does not query legacy open state. Verify the closed-session behavior with the lifecycle contrast and audit the exact production call path; a service's retained `DataService*` and the Workspace adapter remain separate isolation work.
+
+## F117 - keep profile editing app-less without duplicating validation - 2026-09-28
+
+Put validate/update/reload ordering and normalized-value flow in the app-less use case, while leaving prompts, dirty-state handling, and page feedback in the UI. Keep the semantic validator injectable and require a production adapter to map the existing `TeacherValidator` result, including field, severity, and bounded arguments; do not create a second normalization rule set. Keep page integration separate until its session-bound persistence path is ready.

@@ -2933,3 +2933,25 @@ F104 is selected: add CalendarEventDeleteAllUseCase around CalendarEventDeleteAl
 The user-committed Sub Prep rule uses the reference year and the following year, ending December 31 of that following year; 2026-2027 is an example only. The Phase 2 plan/log commit 4a65da25 carries this wording forward.
 
 Only one of the two requested Explorer lanes for next-slice mapping could run; the second lane and replacement were unavailable at the agent thread limit. F104 was selected from the written open scope, the available Explorer report, and direct evidence of the Calendar reset path. Revisit if later evidence changes the candidate.
+
+## Current continuation - 2026-09-28 (F117 committed; F118 active)
+
+The active deployment objective is to complete Phase 2 under the formal plan using bounded implementation slices, an independent verification for every slice, canonical documentation updates, and per-slice commits. The user selected Heavy via `00-Start-Here`; deployment ID `qt-rewrite-phase2-resume-20260928` was emitted at deployment entry and must not be emitted again.
+
+### F117 - app-less Teacher Profile Edit contract
+
+Source/test commit `3fd2b93f0fd87077aa59654265cda8b53b658ba9` adds checked Teacher identity and profile values, a validation-policy boundary returning normalized fields and structured field-addressable issues, and a persistence port with separate update and reload operations. It rejects invalid IDs before policy calls, blocks only error-severity issues while preserving all details, accepts warning-only results, updates with normalized values, differentiates update/reload errors, marks a reload error as following a successful write, and returns the canonical profile after reload.
+
+An independent Tester extracted base `47844dfc087d47da9426e0aa06d948a1ab2264a9` with `git archive`, overlaid exactly the five source/test/CMake paths from F117, and verified their SHA-256 values. A forced clean Ninja/MSVC rebuild passed; `ClassMngrNextApplicationTeacherProfileEditTests` passed 1/1 with `--no-tests=error`. The two new production headers and test target have no Qt linkage or legacy production dependency. `git diff --check` passed. MSVC emitted nonfatal C4530 because the test target lacks `/EHsc`; no full suite ran.
+
+The canonical Phase 2 plan/log update is assigned to Archivist and must be checked for a separate docs-only commit. Main has updated `project_progress.md` and `project_diary.md` with the F117 evidence and remaining Gate 1 limitation; these changes still need a documentation commit. F117 does not add the production validation adapter or wire `TeacherInfoPage`; the adapter must delegate to existing `TeacherValidator` rules and normalization.
+
+### F118 - Gate 2 Class Transfer common-input comparison
+
+Executor owns `tests/class_transfer_tests.cpp` and is adding a focused regression around `tests/fixtures/transfers/conflict_source.json`. The fixture postdates the legacy baseline. Name any comparison honestly as common-input parity on a checked-in post-baseline fixture, not historical production-workbook parity. Required coverage: normalized preview/review choices and match output, exact combined regular/intensive conflict text, complete relevant persisted-state snapshots before/after, and zero writes. Independent Tester, documentation, and commit are still outstanding. Do not stage this path with F117.
+
+### Exit-gate status and next work
+
+Gate 1 and Gate 2 remain Partial. Workspace-create acceptance and the audited direct `src/next` source scan remain Satisfied. Strict transitive `ApplicationServices`-to-`DataService` isolation remains unresolved because factories retain dual-bound feature services and Workspace still owns legacy lifecycle calls. Historical production-workbook provenance is a tracked risk, not a literal exit criterion. The Phase 2 exit gate remains Open.
+
+After F118, continue with the remaining formal Gate 1/2 scope and isolate the session/workspace ownership and v2 service-factory edges in bounded slices. Keep the legacy service compatibility path intact and do not weaken the literal dependency gate. At closure, update this handoff, verify the full formal exit checklist, and provide the required deployment-token report.
