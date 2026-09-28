@@ -1,5 +1,7 @@
 # Phase 3 — Persistence Rewrite
 
+Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, and phase sequence.
+
 ## Status
 
 - Status: Not started

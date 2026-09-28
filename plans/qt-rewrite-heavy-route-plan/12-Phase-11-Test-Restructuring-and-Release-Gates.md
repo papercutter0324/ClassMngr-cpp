@@ -1,5 +1,7 @@
 # Phase 11 — Test Restructuring and Release Gates
 
+Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, and phase sequence.
+
 ## Status
 
 - Status: Not started
