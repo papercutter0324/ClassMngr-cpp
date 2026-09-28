@@ -15,6 +15,11 @@ class ScrollablePageBody;
 class ClassDetailsSection;
 class ClassScheduleSection;
 
+namespace ClassMngr::Next::Application
+{
+class ClassDetailsSavePort;
+}
+
 class QLabel;
 class QPushButton;
 class SectionCard;
@@ -29,7 +34,8 @@ public:
     explicit ClassDetailsPage(
         ApplicationServices* services,
         bool embedded = false,
-        QWidget* parent = nullptr
+        QWidget* parent = nullptr,
+        ClassMngr::Next::Application::ClassDetailsSavePort* savePort = nullptr
         );
 
     void loadClass(
@@ -76,6 +82,7 @@ private:
 
 private:
     ApplicationServices* m_services{nullptr};
+    ClassMngr::Next::Application::ClassDetailsSavePort* m_savePort{nullptr};
 
     Classroom m_classroom;
 

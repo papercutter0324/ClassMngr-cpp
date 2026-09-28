@@ -29,6 +29,16 @@ classmngr_add_qt_test(
     OFFSCREEN
 )
 
+classmngr_add_qt_test(
+    NAME ClassDetailsSavePage
+    SOURCES
+        tests/class_details_save_page_tests.cpp
+    LIBRARIES
+        Qt6::Test
+        Qt6::Widgets
+    OFFSCREEN
+)
+
 qt_add_executable(ClassMngrClassesPageTests
         tests/classes_page_tests.cpp
         src/core/utils/colorutils.cpp

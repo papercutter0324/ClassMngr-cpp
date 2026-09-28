@@ -17,7 +17,10 @@
 #include "domain/models/class_conflict.h"
 #include "domain/models/class_info.h"
 #include "domain/models/teacher.h"
+#include "domain/rules/schedule_value_parser.h"
 #include "domain/validation/class_info_validator.h"
+#include "next/application/class_details_save_use_case.h"
+#include "next/platform/application_services_class_details_save_port.h"
 #include "core/fontmanager.h"
 #include "ui/shared/constants/gui_constants.h"
 #include "ui/shared/styles/roles.h"
@@ -27,10 +30,15 @@
 #include <QComboBox>
 #include <QLabel>
 #include <QPushButton>
+#include <QTime>
 #include <QStringList>
 #include <QVBoxLayout>
 #include <QWidget>
 #include <QtAssert>
+
+#include <optional>
+#include <string>
+#include <vector>
 
 namespace
 {
@@ -50,15 +58,94 @@ SectionCard* addSectionCard(
 
     return card;
 }
+
+std::optional<ClassMngr::Next::Domain::ScheduleTime> toDomainScheduleTime(
+    const ClassTime& time
+    )
+{
+    const auto day = ScheduleValueParser::parseWeekday(time.day);
+    const auto parseNormalizedTime = [](const QString& value)
+        -> std::optional<QTime>
+    {
+        const QTime parsed = QTime::fromString(
+            value,
+            QStringLiteral("h:mm AP")
+            );
+        if (!parsed.isValid()
+            || parsed.toString(QStringLiteral("h:mm AP")) != value)
+        {
+            return std::nullopt;
+        }
+
+        return parsed;
+    };
+    const auto start = parseNormalizedTime(time.startTime);
+    const auto end = parseNormalizedTime(time.endTime);
+    if (!day || !start || !end)
+    {
+        return std::nullopt;
+    }
+
+    return ClassMngr::Next::Domain::ScheduleTime::fromMinutes(
+        static_cast<int>(day->value),
+        start->hour() * 60 + start->minute(),
+        end->hour() * 60 + end->minute()
+        );
+}
+
+std::optional<std::vector<ClassMngr::Next::Domain::ScheduleTime>>
+toDomainScheduleTimes(const QList<ClassTime>& times)
+{
+    std::vector<ClassMngr::Next::Domain::ScheduleTime> result;
+    result.reserve(static_cast<std::size_t>(times.size()));
+    for (const ClassTime& time : times)
+    {
+        const auto converted = toDomainScheduleTime(time);
+        if (!converted)
+        {
+            return std::nullopt;
+        }
+        result.push_back(*converted);
+    }
+    return result;
+}
+
+std::optional<ClassMngr::Next::Application::ClassDetailsSaveRequest>
+classDetailsSaveRequest(const ClassInfo& info)
+{
+    const auto classId = ClassMngr::Next::Domain::ClassId::fromString(
+        std::to_string(info.classId)
+        );
+    const auto regularTimes = toDomainScheduleTimes(info.classTimes);
+    const auto intensiveTimes = toDomainScheduleTimes(info.intensiveTimes);
+    if (!classId || !regularTimes || !intensiveTimes)
+    {
+        return std::nullopt;
+    }
+
+    return ClassMngr::Next::Application::ClassDetailsSaveRequest{
+        .classId = *classId,
+        .classGrade = info.classGrade.toStdU16String(),
+        .classLevel = info.classLevel.toStdU16String(),
+        .readingBook = info.readingBook.toStdU16String(),
+        .essayBook = info.essayBook.toStdU16String(),
+        .classColor = info.classColor.toStdU16String(),
+        .fontColor = info.fontColor.toStdU16String(),
+        .regularTimes = *regularTimes,
+        .intensiveTimes = *intensiveTimes
+    };
+}
 }
 
 ClassDetailsPage::ClassDetailsPage(
     ApplicationServices* services,
     bool embedded,
-    QWidget* parent
+    QWidget* parent,
+    ClassMngr::Next::Application::ClassDetailsSavePort* savePort
     )
     : BasePage(parent)
     , m_services(services)
+    , m_savePort(savePort)
     , m_embedded(embedded)
     , m_autosave(new AutosaveCoordinator(this))
 {
@@ -620,8 +707,22 @@ bool ClassDetailsPage::saveClassInfoInternal(
         return false;
     }
 
-    const Status saved =
-        classService->saveClassInfo(info);
+    const ClassInfo normalizedInfo = ClassInfoValidator::normalized(info);
+    const auto request = classDetailsSaveRequest(normalizedInfo);
+    ClassMngr::Next::Platform::
+        ApplicationServicesClassDetailsSavePort defaultSavePort(m_services);
+    const ClassMngr::Next::Application::ClassDetailsSavePort& savePort =
+        m_savePort ? *m_savePort : defaultSavePort;
+    const ClassMngr::Next::Domain::Result<void> saved = request
+        ? ClassMngr::Next::Application::ClassDetailsSaveUseCase::execute(
+              *request,
+              savePort
+              )
+        : ClassMngr::Next::Domain::Result<void>::failure({
+              .code = ClassMngr::Next::Domain::ErrorCode::Validation,
+              .message = "Class schedule values could not be converted.",
+              .recoverable = true
+          });
 
     if (!saved)
     {
@@ -632,7 +733,10 @@ bool ClassDetailsPage::saveClassInfoInternal(
             DialogServices::showWarning(
                 this,
                 tr("Save Class Information"),
-                saved.error()
+                QString::fromUtf8(
+                    saved.error().message.data(),
+                    static_cast<qsizetype>(saved.error().message.size())
+                    )
                 );
         }
 
