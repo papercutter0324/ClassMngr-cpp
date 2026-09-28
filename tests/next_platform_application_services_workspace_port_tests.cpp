@@ -1,8 +1,12 @@
 #include "core/application_services.h"
+#include "app/services/feature_services.h"
+#include "data/database/database_session.h"
 #include "next/platform/application_services_workspace_port.h"
 
 #include <QFile>
 #include <QFileInfo>
+#include <QSqlDatabase>
+#include <QSqlQuery>
 #include <QTemporaryDir>
 #include <QtTest/QtTest>
 
@@ -143,13 +147,43 @@ void NextPlatformApplicationServicesWorkspacePortTests::voidSaveSucceedsOpenAndF
 {
     ApplicationServices services;
     ApplicationServicesWorkspacePort port(services);
+    const QString databasePath =
+        m_directory.filePath(QStringLiteral("save.tps"));
     const auto opened = port.openDatabase(
-        utf8(m_directory.filePath(QStringLiteral("save.tps")))
+        utf8(databasePath)
         );
     QVERIFY(opened);
 
+    QSqlDatabase activeDatabase = services.databaseSession()->database();
+    QVERIFY(activeDatabase.transaction());
+    QVERIFY(services.settingsService()->save(
+        QStringLiteral("workspace/save-commit"),
+        QStringLiteral("committed")
+        ));
     const auto saved = port.saveDatabase(opened.value());
     QVERIFY(saved);
+
+    const QString observerConnection =
+        QStringLiteral("workspace-save-observer");
+    {
+        QSqlDatabase observer = QSqlDatabase::addDatabase(
+            QStringLiteral("QSQLITE"),
+            observerConnection
+            );
+        observer.setDatabaseName(databasePath);
+        QVERIFY(observer.open());
+        QSqlQuery query(observer);
+        QVERIFY(query.exec(
+            QStringLiteral(
+                "SELECT value FROM app_settings WHERE key='workspace/save-commit'"
+                )
+            ));
+        QVERIFY(query.next());
+        QCOMPARE(query.value(0).toString(), QStringLiteral("committed"));
+        observer.close();
+    }
+    QSqlDatabase::removeDatabase(observerConnection);
+    activeDatabase = QSqlDatabase();
 
     services.closeDatabase();
     const auto closedSave = port.saveDatabase(opened.value());
@@ -177,6 +211,10 @@ void NextPlatformApplicationServicesWorkspacePortTests::saveAsPreservesIdentityA
     QVERIFY(opened);
     const std::string originalIdentity = opened.value().workspaceId();
     const std::string expectedDestination = normalizedPath(destinationPath);
+    QVERIFY(services.settingsService()->save(
+        QStringLiteral("workspace/save-as-content"),
+        QStringLiteral("copied")
+        ));
 
     const auto saved = port.saveDatabaseAs(
         opened.value(),
@@ -190,6 +228,11 @@ void NextPlatformApplicationServicesWorkspacePortTests::saveAsPreservesIdentityA
     QCOMPARE(utf8(services.currentDatabasePath()), expectedDestination);
     QVERIFY(services.hasOpenDatabase());
     QVERIFY(QFile::exists(destinationPath));
+    const auto copiedValue = services.settingsService()->load(
+        QStringLiteral("workspace/save-as-content")
+        );
+    QVERIFY(copiedValue);
+    QCOMPARE(copiedValue->toString(), QStringLiteral("copied"));
 }
 
 void NextPlatformApplicationServicesWorkspacePortTests::exportReturnsNormalizedDestinationWithoutChangingCurrentPath()
@@ -206,6 +249,10 @@ void NextPlatformApplicationServicesWorkspacePortTests::exportReturnsNormalizedD
     QVERIFY(opened);
     const std::string currentPath = port.currentDatabasePath();
     const std::string expectedDestination = normalizedPath(destinationPath);
+    QVERIFY(services.settingsService()->save(
+        QStringLiteral("workspace/export-content"),
+        QStringLiteral("exported")
+        ));
 
     const auto exported = port.exportDatabaseAs(
         opened.value(),
@@ -217,6 +264,15 @@ void NextPlatformApplicationServicesWorkspacePortTests::exportReturnsNormalizedD
     QCOMPARE(port.currentDatabasePath(), currentPath);
     QCOMPARE(utf8(services.currentDatabasePath()), currentPath);
     QVERIFY(QFile::exists(destinationPath));
+
+    ApplicationServices exportedServices;
+    QVERIFY(exportedServices.openDatabase(destinationPath));
+    const auto exportedValue = exportedServices.settingsService()->load(
+        QStringLiteral("workspace/export-content")
+        );
+    QVERIFY(exportedValue);
+    QCOMPARE(exportedValue->toString(), QStringLiteral("exported"));
+    QCOMPARE(port.currentDatabasePath(), currentPath);
 }
 
 void NextPlatformApplicationServicesWorkspacePortTests::openPreservesLegacyErrorMessage()

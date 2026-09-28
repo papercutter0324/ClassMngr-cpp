@@ -21,7 +21,6 @@
 
 #include <QList>
 #include <QPair>
-#include <QSqlDatabase>
 #include <QString>
 #include <QVariantMap>
 
@@ -29,23 +28,7 @@
 
 #include <memory>
 
-class CampusRecordRepository;
-class CalendarEventRepository;
 class DatabaseSession;
-class ClassInfoRepository;
-class ClassRepository;
-class ClassTransferRepository;
-class IntensiveSlotStateRepository;
-class GsTeamRepository;
-class NativeEnglishTeacherRepository;
-class RosterRepository;
-class ScheduleImportRepository;
-class SettingsRepository;
-class SpeakingEvalRepository;
-class TeacherRepository;
-class TeacherImportRepository;
-class TestingBlockRepository;
-class TestingClassRepository;
 
 // =========================================================
 // Data Service
@@ -62,8 +45,8 @@ public:
         const QString &dbPath = QString()
         );
 
-    // The owner must outlive this facade. Route session open/close through this
-    // facade so its legacy repository adapters refresh with the session.
+    // The owner must outlive this facade. Repository access resolves through this
+    // session so replacement and close transitions stay visible to this facade.
     explicit DataService(DatabaseSession& session);
 
     ~DataService();
@@ -469,27 +452,7 @@ public:
 
 
 private:
-
-    void refreshRepositoryAdapters();
-
     QString m_initialDatabasePath;
     std::unique_ptr<DatabaseSession> m_ownedSession;
     DatabaseSession* m_session;
-
-    SettingsRepository* m_settingsRepository = nullptr;
-    CampusRecordRepository* m_campusRecordRepository = nullptr;
-    TeacherRepository* m_teacherRepository = nullptr;
-    NativeEnglishTeacherRepository* m_nativeEnglishTeacherRepository = nullptr;
-    GsTeamRepository* m_gsTeamRepository = nullptr;
-    TeacherImportRepository* m_teacherImportRepository = nullptr;
-    ClassRepository* m_classRepository = nullptr;
-    ClassTransferRepository* m_classTransferRepository = nullptr;
-    ScheduleImportRepository* m_scheduleImportRepository = nullptr;
-    ClassInfoRepository* m_classInfoRepository = nullptr;
-    IntensiveSlotStateRepository* m_intensiveSlotStateRepository = nullptr;
-    TestingBlockRepository* m_testingBlockRepository = nullptr;
-    TestingClassRepository* m_testingClassRepository = nullptr;
-    CalendarEventRepository* m_calendarEventRepository = nullptr;
-    RosterRepository* m_rosterRepository = nullptr;
-    SpeakingEvalRepository* m_speakingEvalRepository = nullptr;
 };

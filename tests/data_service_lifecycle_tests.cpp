@@ -224,8 +224,10 @@ private slots:
     void databaseSessionOwnsRepositoryLifetime();
     void borrowedDataServicePreservesOwnedSession();
     void failedReplacementOpenPreservesSessionAndReleasesCandidate();
+    void legacyDataServiceOwnsDatabaseFileOperations();
     void applicationServicesOwnDatabaseFileOperations();
     void applicationServicesShareCanonicalSessionAcrossLifecycle();
+    void borrowedFacadeResolvesRepositoriesAfterDirectSessionTransitions();
     void boundedRosterOutputLoadsOnlyRequestedColumnsAndEnforcesLimits();
     void featureServicesExposeNarrowOperations();
     void settingsServiceDoesNotFallBackFromClosedSession();
@@ -399,6 +401,132 @@ void DataServiceLifecycleTests::applicationServicesOwnDatabaseFileOperations()
     services.closeDatabase();
     QVERIFY(!services.saveDatabaseAs(savedPath).has_value());
     QVERIFY(!services.exportDatabaseAs(exportedPath).has_value());
+}
+
+void DataServiceLifecycleTests::legacyDataServiceOwnsDatabaseFileOperations()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+
+    const QString sourcePath =
+        directory.filePath(QStringLiteral("legacy-source.db"));
+    const QString savedPath =
+        directory.filePath(QStringLiteral("legacy-saved.db"));
+    const QString exportedPath =
+        directory.filePath(QStringLiteral("legacy-exported.db"));
+    const QString key = QStringLiteral("legacy-file-operation/value");
+
+    DataService legacyService;
+    QVERIFY(legacyService.openDatabase(sourcePath));
+    QVERIFY(legacyService.saveSetting(key, QStringLiteral("legacy value")));
+    legacyService.save();
+    QVERIFY(legacyService.saveAs(savedPath));
+    QVERIFY(legacyService.exportAs(exportedPath));
+    QCOMPARE(
+        legacyService.currentDatabasePath(),
+        QFileInfo(sourcePath).absoluteFilePath()
+        );
+
+    DataService savedDatabase;
+    QVERIFY(savedDatabase.openDatabase(savedPath));
+    const Result<QVariant> savedValue = savedDatabase.loadSetting(key);
+    QVERIFY(savedValue);
+    QCOMPARE(savedValue->toString(), QStringLiteral("legacy value"));
+
+    DataService exportedDatabase;
+    QVERIFY(exportedDatabase.openDatabase(exportedPath));
+    const Result<QVariant> exportedValue = exportedDatabase.loadSetting(key);
+    QVERIFY(exportedValue);
+    QCOMPARE(exportedValue->toString(), QStringLiteral("legacy value"));
+}
+
+void DataServiceLifecycleTests::
+borrowedFacadeResolvesRepositoriesAfterDirectSessionTransitions()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+
+    ApplicationServices services;
+    DatabaseSession* const session = services.databaseSession();
+    DataService* const facade = services.dataService();
+    QVERIFY(session != nullptr);
+    QVERIFY(facade != nullptr);
+    QVERIFY(!session->isOpen());
+    QVERIFY(!facade->loadSetting(QStringLiteral("lifecycle/value")));
+
+    const QString databaseA =
+        directory.filePath(QStringLiteral("database-a.db"));
+    const QString invalidDatabase =
+        directory.filePath(QStringLiteral("invalid.db"));
+    const QString databaseB =
+        directory.filePath(QStringLiteral("database-b.db"));
+
+    QVERIFY(services.openDatabase(databaseA));
+    QVERIFY(facade->saveSetting(
+        QStringLiteral("lifecycle/value"),
+        QStringLiteral("Database A")
+        ));
+    Teacher teacherA;
+    teacherA.teacherEn = QStringLiteral("Database A Teacher");
+    const Result<int> teacherAId = facade->createTeacher(teacherA);
+    QVERIFY(teacherAId);
+
+    QFile invalidFile(invalidDatabase);
+    QVERIFY(invalidFile.open(QIODevice::WriteOnly));
+    const QByteArray invalidContents = QByteArrayLiteral("not a SQLite database");
+    QCOMPARE(invalidFile.write(invalidContents), qint64(invalidContents.size()));
+    invalidFile.close();
+    QVERIFY(!services.openDatabase(invalidDatabase));
+    QCOMPARE(services.currentDatabasePath(), QFileInfo(databaseA).absoluteFilePath());
+    const Result<QVariant> retainedAValue =
+        facade->loadSetting(QStringLiteral("lifecycle/value"));
+    QVERIFY(retainedAValue);
+    QCOMPARE(retainedAValue->toString(), QStringLiteral("Database A"));
+    const Result<Teacher> retainedATeacher = facade->getTeacher(*teacherAId);
+    QVERIFY(retainedATeacher);
+    QCOMPARE(retainedATeacher->teacherEn, QStringLiteral("Database A Teacher"));
+
+    QVERIFY(session->open(databaseB));
+    QCOMPARE(
+        services.currentDatabasePath(),
+        QFileInfo(databaseB).absoluteFilePath()
+        );
+    const Result<QVariant> initialBValue =
+        facade->loadSetting(QStringLiteral("lifecycle/value"));
+    QVERIFY(initialBValue);
+    QVERIFY(initialBValue->toString().isEmpty());
+    const Result<QList<Teacher>> initialBTeachers = facade->getAllTeachers();
+    QVERIFY(initialBTeachers);
+    QVERIFY(initialBTeachers->isEmpty());
+
+    QVERIFY(facade->saveSetting(
+        QStringLiteral("lifecycle/value"),
+        QStringLiteral("Database B")
+        ));
+    Teacher teacherB;
+    teacherB.teacherEn = QStringLiteral("Database B Teacher");
+    const Result<int> teacherBId = facade->createTeacher(teacherB);
+    QVERIFY(teacherBId);
+    QCOMPARE(*teacherBId, *teacherAId);
+    const Result<Teacher> currentBTeacher = facade->getTeacher(*teacherBId);
+    QVERIFY(currentBTeacher);
+    QCOMPARE(currentBTeacher->teacherEn, QStringLiteral("Database B Teacher"));
+
+    services.closeDatabase();
+    QVERIFY(!session->isOpen());
+    QVERIFY(!facade->loadSetting(QStringLiteral("lifecycle/value")));
+    QVERIFY(!facade->getAllTeachers());
+    QVERIFY(session->open(databaseB));
+    const Result<QVariant> reopenedBValue =
+        facade->loadSetting(QStringLiteral("lifecycle/value"));
+    QVERIFY(reopenedBValue);
+    QCOMPARE(reopenedBValue->toString(), QStringLiteral("Database B"));
+    const Result<Teacher> reopenedBTeacher = facade->getTeacher(*teacherBId);
+    QVERIFY(reopenedBTeacher);
+    QCOMPARE(reopenedBTeacher->teacherEn, QStringLiteral("Database B Teacher"));
+    const Result<Teacher> noLeakedATeacher = facade->getTeacher(*teacherAId);
+    QVERIFY(noLeakedATeacher);
+    QCOMPARE(noLeakedATeacher->teacherEn, QStringLiteral("Database B Teacher"));
 }
 
 void DataServiceLifecycleTests::

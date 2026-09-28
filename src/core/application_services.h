@@ -50,8 +50,8 @@ public:
         );
 
     [[nodiscard]] DataService* dataService() const;
-    // Session identity and narrow-service binding. Lifecycle operations must
-    // use ApplicationServices to keep the compatibility facade synchronized.
+    // Session identity and narrow-service binding. The compatibility facade
+    // resolves repository access through this canonical session.
     [[nodiscard]] DatabaseSession* databaseSession() const;
     [[nodiscard]] SettingsService* settingsService() const;
     [[nodiscard]] TeacherService* teacherService() const;

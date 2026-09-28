@@ -1,6 +1,7 @@
 #include "application_services.h"
 
 #include "data/data_service.h"
+#include "data/database/database_file_operations.h"
 #include "data/database/database_session.h"
 #include "app/services/feature_services.h"
 #include "core/theme_service.h"
@@ -43,42 +44,42 @@ Status ApplicationServices::openDatabase(
     const QString& databasePath
     )
 {
-    if (!m_dataService)
+    if (!m_databaseSession)
     {
         return std::unexpected(
             QStringLiteral("Data service is unavailable.")
             );
     }
 
-    return m_dataService->openDatabase(databasePath);
+    return m_databaseSession->open(databasePath);
 }
 
 void ApplicationServices::closeDatabase()
 {
-    if (m_dataService)
+    if (m_databaseSession)
     {
-        m_dataService->closeDatabase();
+        m_databaseSession->close();
     }
 }
 
 bool ApplicationServices::hasOpenDatabase() const
 {
-    return m_dataService
-        && m_dataService->isOpen();
+    return m_databaseSession
+        && m_databaseSession->isOpen();
 }
 
 QString ApplicationServices::currentDatabasePath() const
 {
-    return m_dataService
-        ? m_dataService->currentDatabasePath()
+    return m_databaseSession
+        ? m_databaseSession->databasePath()
         : QString();
 }
 
 void ApplicationServices::saveDatabase()
 {
-    if (m_dataService)
+    if (hasOpenDatabase())
     {
-        m_dataService->save();
+        m_databaseSession->database().commit();
     }
 }
 
@@ -86,20 +87,46 @@ Status ApplicationServices::saveDatabaseAs(
     const QString& destinationPath
     )
 {
-    return m_dataService
-        ? m_dataService->saveAs(destinationPath)
-        : Status(std::unexpected(
-            QStringLiteral("Data service is unavailable.")));
+    if (!m_databaseSession)
+    {
+        return std::unexpected(
+            QStringLiteral("Data service is unavailable.")
+            );
+    }
+    if (!m_databaseSession->isOpen())
+    {
+        return std::unexpected(
+            QStringLiteral("No Teacher Profile is open.")
+            );
+    }
+
+    return DatabaseFileOperations::copyDatabaseFile(
+        m_databaseSession->databasePath(),
+        destinationPath
+        );
 }
 
 Status ApplicationServices::exportDatabaseAs(
     const QString& destinationPath
     )
 {
-    return m_dataService
-        ? m_dataService->exportAs(destinationPath)
-        : Status(std::unexpected(
-            QStringLiteral("Data service is unavailable.")));
+    if (!m_databaseSession)
+    {
+        return std::unexpected(
+            QStringLiteral("Data service is unavailable.")
+            );
+    }
+    if (!m_databaseSession->isOpen())
+    {
+        return std::unexpected(
+            QStringLiteral("No Teacher Profile is open.")
+            );
+    }
+
+    return DatabaseFileOperations::copyDatabaseFile(
+        m_databaseSession->databasePath(),
+        destinationPath
+        );
 }
 
 DataService* ApplicationServices::dataService() const
