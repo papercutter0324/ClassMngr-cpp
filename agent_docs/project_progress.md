@@ -1537,3 +1537,32 @@ Gate 1 and Gate 2 remain Partial. The formal workspace-create boundary and
 active-v2 DataService isolation remain Satisfied. Phase 2 remains In Progress
 with its exit gate Open. The user's requested session handoff records this
 continuation point in `latest_session_work.md`.
+
+## Current Position - 2026-09-29 (F123 verified; F124 review next)
+
+F123 source/test commit `9f7e736b5c926a3e2412f83f95b2ec68c70bd180` integrates
+F117's app-less Teacher Profile Edit use case into `TeacherInfoPage`. The
+UI-boundary policy delegates normalization and validation to
+`TeacherValidator`; its adapter carries bounded field/severity/display
+arguments through the app contract and restores structured feedback in the
+existing form binder. The persistence port uses `ApplicationServices`'
+session-backed `TeacherService` update/reload path. Canonical reload continues
+to update the header, clear autosave state, and emit `teacherSaved` once.
+
+The `windows-x64-debug` preset built `ClassMngr`,
+`ClassMngrTeacherInfoPageTests`, and
+`ClassMngrNextApplicationTeacherProfileEditTests`. The two focused CTests
+passed 2/2, covering a warning-bearing save with canonical reload and
+validation rejection with no write. `git diff --check` passed. MSBuild first
+hit Visual Studio FileTracker access denial under the sandbox; the focused
+build passed after the required access was granted. The page-test target
+emitted existing duplicate-stub `/FORCE` warnings, but its executable ran
+successfully. No full suite or baseline comparison ran.
+
+F124's candidate is the direct co-teacher assignment save in
+`ClassCoTeacherPage`. Review a typed application request and a session-backed
+adapter that changes only the teacher assignment while preserving the rest of
+`ClassInfo`, the existing warning/dirty/title/signal behavior, and the
+unassigned-teacher sentinel. Candidate scope is pending acceptance. Gate 1 and
+Gate 2 remain Partial; formal workspace-create acceptance and active-v2
+DataService isolation remain Satisfied. Phase 2 remains In Progress/Open.

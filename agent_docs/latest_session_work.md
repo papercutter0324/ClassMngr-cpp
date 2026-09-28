@@ -3015,3 +3015,35 @@ independently verify F123. Phase 2 remains In Progress/Open; Gate 1 and Gate 2
 are Partial, while workspace-create and active-v2 DataService isolation are
 Satisfied. The deployment-token report remains for Phase 2 deployment
 closure; this task handoff does not close the phase. No push was requested.
+
+## Phase 2 continuation - 2026-09-29 (F123 verified; F124 review next)
+
+The user requested a commit after every completed slice, then immediate work on
+the next slice. F123 source/test commit
+`9f7e736b5c926a3e2412f83f95b2ec68c70bd180` (`Phase2 - integrate teacher
+profile edit use case`) connects `TeacherInfoPage` to F117's app-less
+`TeacherProfileEditUseCase`. The UI-boundary policy delegates to
+`TeacherValidator` and carries bounded field/severity/display arguments. The
+persistence port uses `ApplicationServices`' session-backed `TeacherService`
+for update and canonical reload. Warning-bearing saves remain valid, errors
+block writes, and successful saves update the header, clear dirty state, and
+emit `teacherSaved` once.
+
+The configured `windows-x64-debug` build produced `ClassMngr`,
+`ClassMngrTeacherInfoPageTests`, and
+`ClassMngrNextApplicationTeacherProfileEditTests`. The focused CTest selection
+passed 2/2. `git diff --check` passed. Visual Studio FileTracker first denied
+access under the default sandbox; the focused build passed after the required
+access was granted. The page-test target emitted its existing duplicate-stub
+`/FORCE` linker warnings; its executable ran successfully. No full suite,
+baseline comparison, or independent archive verification ran.
+
+F124's candidate is the direct co-teacher assignment save in
+`ClassCoTeacherPage`. Review a typed application request and session-backed
+adapter that changes only the selected teacher assignment, preserving all
+other `ClassInfo` fields and the current error, dirty-state, title-refresh, and
+signal behavior. Keep the `-1` unassigned sentinel mapping explicit. This
+candidate is pending bounded scope acceptance; implementation has not begun.
+Gate 1 and Gate 2 remain Partial; workspace-create acceptance and active-v2
+DataService isolation remain Satisfied. Phase 2 remains In Progress/Open. No
+push was requested.

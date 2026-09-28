@@ -5,16 +5,17 @@
 - Overall status: In progress
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
-- Last updated: 2026-09-28
+- Last updated: 2026-09-29
 - Current milestone: Phase 2 application-contract slices are continuing.
   Calendar-import planning, the existing-signature read cutover, and Work
   Package D (model-backed class list/navigation and reusable selected-class
   detail view) are complete; Work Package D closed 2026-09-23. Sub Prep has
   session-backed Platform reads for selected-class details, print source, and
-  schedule summaries. F122 Schedule Import Skip parity is verified. F123's
-  TeacherInfoPage integration is a candidate pending bounded solution review.
-  Page/output wiring, broader parity, and 96-class Release memory evidence
-  remain open. Phase 1 build-system exit evidence remains outstanding.
+  schedule summaries. F122 Schedule Import Skip parity and F123 Teacher Profile
+  Edit page integration are verified. F124's ClassCoTeacherPage save boundary
+  is pending bounded solution review. Page/output wiring, broader parity, and
+  96-class Release memory evidence remain open. Phase 1 build-system exit
+  evidence remains outstanding.
 - Current blocker: official Phase 1 targets are Windows x64 and macOS
   universal. On commit `57f5dff6`, Windows x64 passed 66/66; macOS Debug failed
   after GitHub reported runner communication loss. The user observed the

@@ -1234,3 +1234,12 @@ Keep the existing `ApplicationServices` workspace API and route its implementati
 ## F122 - compare Schedule Import Skip final state without erasing row identity - 2026-09-28
 
 The legacy Skip path can recreate schedule rows, advancing `class_times.id` and `sqlite_sequence` even when meeting values are preserved. Assert consumer-visible meeting order before and after, then compare exact baseline/current final snapshots including IDs and sequences. Do not infer a physical no-op from the user-facing Skip choice; label hand-authored seeded comparisons separately from historical workbook provenance.
+
+## F123 - keep live validation feedback while routing saves through the use case - 2026-09-29
+
+Keep `TeacherInfoPage`'s live `TeacherValidator` feedback, then use the app-less
+edit contract as the authoritative save gate. Map the validator result into
+bounded application issues and restore it in the form binder so warnings still
+allow saves and remain visible after canonical reload. Test through a real
+temporary session so a legacy `DataService` fallback cannot mask the
+integration.
