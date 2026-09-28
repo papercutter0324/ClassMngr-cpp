@@ -82,6 +82,7 @@ set(CLASSMNGR_NEXT_APPLICATION_SOURCES
     src/next/application/class_co_teacher_assignment_use_case.h
     src/next/application/class_details_save_use_case.h
     src/next/application/roster_save_use_case.h
+    src/next/application/speaking_evaluation_save_use_case.h
     src/next/application/class_details_page_snapshot.h
     src/next/application/class_details_page_read_port.h
     src/next/application/class_details_page_query.h
@@ -204,6 +205,7 @@ set(CLASSMNGR_NEXT_PLATFORM_SOURCES
     src/next/platform/application_services_class_notes_save_port.h
     src/next/platform/application_services_class_details_save_port.h
     src/next/platform/application_services_roster_save_port.h
+    src/next/platform/application_services_speaking_evaluation_save_port.h
     src/next/platform/application_services_class_details_page_read_port.h
     src/next/platform/application_services_class_co_teacher_assignment_port.h
     src/next/platform/application_services_current_campus_preferences_port.h

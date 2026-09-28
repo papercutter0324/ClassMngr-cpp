@@ -1,8 +1,14 @@
 #include "speaking_eval_page_p.h"
 
 #include "domain/validation/speaking_eval_validator.h"
+#include "next/application/speaking_evaluation_save_use_case.h"
+#include "next/platform/application_services_speaking_evaluation_save_port.h"
 #include "ui/shared/dialogs/user_prompt_service.h"
 #include "ui/shared/validation/form_validation_binder.h"
+
+#include <string>
+#include <utility>
+#include <vector>
 
 void SpeakingEvalPage::saveData()
 {
@@ -61,7 +67,6 @@ bool SpeakingEvalPage::saveEvaluationInternal(
 {
     if (
         !m_services
-        || !m_services->speakingEvaluationService()
         || m_classroom.id <= 0
         || m_evaluationName.trimmed().isEmpty()
         )
@@ -69,7 +74,6 @@ bool SpeakingEvalPage::saveEvaluationInternal(
         return false;
     }
 
-    Q_UNUSED(showValidationMessages);
     updateEvaluationValidation();
 
     const ValidationResult validation = SpeakingEvalValidator::validate(
@@ -92,16 +96,51 @@ bool SpeakingEvalPage::saveEvaluationInternal(
         return false;
     }
 
-    const Status saved =
-        m_services
-            ->speakingEvaluationService()
-            ->saveEvaluation(
-                m_classroom.id,
-                m_evaluationName,
-                m_model->rows(),
-                m_model->changedCells(),
-                confirmQuestionableLengths
-                );
+    const auto classId = ClassMngr::Next::Domain::ClassId::fromString(
+        std::to_string(m_classroom.id)
+        );
+    if (!classId)
+    {
+        return false;
+    }
+
+    ClassMngr::Next::Application::SpeakingEvaluationSnapshot snapshot;
+    const SpeakingEvalRows rows = m_model->rows();
+    snapshot.rows.reserve(static_cast<std::size_t>(rows.size()));
+    for (const QStringList& sourceRow : rows)
+    {
+        std::vector<std::u16string> row;
+        row.reserve(static_cast<std::size_t>(sourceRow.size()));
+        for (const QString& cell : sourceRow)
+        {
+            row.push_back(cell.toStdU16String());
+        }
+        snapshot.rows.push_back(std::move(row));
+    }
+
+    const QList<SpeakingEvalCellChange> changedCells =
+        m_model->changedCells();
+    snapshot.changedCells.reserve(
+        static_cast<std::size_t>(changedCells.size())
+        );
+    for (const SpeakingEvalCellChange& change : changedCells)
+    {
+        snapshot.changedCells.push_back({change.row, change.column});
+    }
+
+    const ClassMngr::Next::Application::SpeakingEvaluationSaveRequest request{
+        .classId = *classId,
+        .evaluationName = m_evaluationName.toStdU16String(),
+        .evaluation = std::move(snapshot),
+        .allowQuestionableKoreanNameLengths = confirmQuestionableLengths
+    };
+    const ClassMngr::Next::Platform::
+        ApplicationServicesSpeakingEvaluationSavePort port(m_services);
+    const auto saved =
+        ClassMngr::Next::Application::SpeakingEvaluationSaveUseCase::execute(
+            request,
+            port
+            );
 
     if (!saved)
     {
@@ -110,7 +149,10 @@ bool SpeakingEvalPage::saveEvaluationInternal(
             DialogServices::showWarning(
                 this,
                 tr("Save Failed"),
-                saved.error()
+                QString::fromUtf8(
+                    saved.error().message.data(),
+                    static_cast<qsizetype>(saved.error().message.size())
+                    )
                 );
         }
 
