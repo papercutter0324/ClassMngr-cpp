@@ -1230,3 +1230,7 @@ Compute handoff SHA-256 values from a fresh archive of the exact commit and comp
 ## F120 - remove the operation edge without callback coupling - 2026-09-28
 
 Keep the existing `ApplicationServices` workspace API and route its implementations to the canonical session plus a shared file-operation helper. Make the compatibility facade resolve current repositories from its session so direct session replacement cannot leave cached pointers dangling. A refresh callback from the new workspace path would retain the dependency being removed; prefer live access and verify both the call graph and facade lifecycle.
+
+## F122 - compare Schedule Import Skip final state without erasing row identity - 2026-09-28
+
+The legacy Skip path can recreate schedule rows, advancing `class_times.id` and `sqlite_sequence` even when meeting values are preserved. Assert consumer-visible meeting order before and after, then compare exact baseline/current final snapshots including IDs and sequences. Do not infer a physical no-op from the user-facing Skip choice; label hand-authored seeded comparisons separately from historical workbook provenance.

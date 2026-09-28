@@ -12,16 +12,14 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-09-28
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F121 independently verified a post-baseline Class Transfer
-  replacement comparison against the pinned baseline; this is common-input
-  evidence, not historical-workbook parity. F120 active-v2 DataService
-  isolation and formal workspace-create acceptance remain Satisfied. Gates 1
-  and 2 remain Partial.
-  F122 is selected for a seeded Schedule Import Skip snapshot comparison in
-  current and baseline trees. Historical workbook provenance remains a tracked
-  risk, not a literal exit criterion. Sub Prep remains January 1 of the
-  reference date's year through December 31 of the following year at most;
-  2026-2027 is illustrative.
+- Current note: F122 is verified as baseline-present, hand-authored Schedule
+  Import Skip state parity; it does not establish historical-workbook
+  provenance. F120 active-v2 DataService isolation and formal workspace-create
+  acceptance remain Satisfied. Gates 1 and 2 remain Partial. F123 is a
+  candidate pending bounded solution review; implementation has not begun.
+  Historical workbook provenance remains a tracked risk, not a literal exit
+  criterion. Sub Prep remains January 1 of the reference date's year through
+  December 31 of the following year at most; 2026-2027 is illustrative.
 
 ## Objective
 
@@ -168,42 +166,45 @@ No new v2 production path depends on DataService, MainWindow, PageManager, or a 
 - Do not hide business rules inside presenters or delegates.
 - Do not allow compatibility methods to become the permanent v2 API.
 
-## Latest verified progress (F121)
+## Latest verified progress (F122)
 
-Commit `dd8d22c0732dc3b85f9c531d7991c639524e6a52` changes only
-`tests/class_transfer_tests.cpp` (SHA-256
-`9E02465B02721946362D90305C1A6968607939432561BEFE96561261BF8CA7B2`, Git blob
-`9a58d3c35cef404c0d9f4a7542206ed49afc32c0`). The common input is the
-post-baseline fixture `tests/fixtures/transfers/success_source.json` (SHA-256
-`A40CB4079865EB5C48800208A3648360C08B0CEC2F3ED1E3FA383E91BD4050E8`, Git blob
-`74d7a69a99d8c0aa6424cba8ac5a14e3fcb7d3ab`).
+Commit `e3411e733d2ce402a03096e715150e45b4244dff` (`Phase2 - pin Schedule
+Import Skip parity`) changes only `tests/schedule_import_tests.cpp` (+67/-9;
+Git blob `eb422208842551eb37a4783f31982b82cab674b3`, extracted SHA-256
+`9697009E56FE575EE0303F54413CCBA205B17EF716278E9E5C1158E7343BB066`). Its
+fresh archive tree ID is `ca903158a6e8ff2866987b4873e5be3f5e92f845`; TAR
+SHA-256 `402DB5014595E72B84836AA131B08C482FC23551B6D3FC192C6AB6ED52895440`.
 
-Independent exact-commit fresh-archive verification passed
-`successFixtureClassReplacementMatchesCommonInputState` on current and pinned
-baseline `48fc5c5cc7dee78d82f8bf5f1bf8b51725575b99`, using the same two-file
-baseline overlay (test and fixture). Both runs produced persisted snapshot
-SHA-256 `ae65cb0a14393a9da0c9a546320f233531e324a4ef0bbfeee7f1a8306701ee6b`,
-including `sqlite_sequence`. The current target build and
-`ClassMngrClassTransferTests` CTest passed 1/1. The baseline build passed and
-the direct parity function passed with setup/test/cleanup (3 QtTest cases).
-The full baseline overlaid CTest target was also attempted but failed four
-unrelated tests: two expect behavior absent from that baseline, and two need
-unrelated fixtures not in the overlay. Do not treat this as a baseline full
-target pass. Current Qt was 6.12.0, baseline Qt 6.11.1; both used CMake 4.4.2,
-Ninja 1.13.2, and MSVC 19.51.36257. Both focused runs had an unrelated missing
-Qt font-directory warning.
+Independent fresh-archive verification against pinned baseline
+`48fc5c5cc7dee78d82f8bf5f1bf8b51725575b99` passed the exact focused case
+`ScheduleImportTests::skippedExactMatchPreservesItsSchedule` 3/3 on both
+current and baseline. The baseline archive TAR SHA-256 is
+`1870A9BDE4087B061CA3C35B6EB0804B10335222D12B0C98F095343D504F7FD7`; its
+overlay used the same seed and test with the exact F122 helper/method and only
+the missing `QCryptographicHash`/`QSqlRecord` includes. Both runs produced
+identical complete final snapshots (SHA-256
+`08ad64ed3d853e52a1a686c1683d0d1fe8a289026e21d21081e09ee4840c5ebe`), including
+raw `class_times.id` and `sqlite_sequence`. The test preserved Tuesday-then-
+Monday order, asserted one skipped row and zero schedules cleared, and retained
+profile behavior.
 
-F121 is post-baseline common-input evidence, not historical-workbook parity.
-Gate 1 and Gate 2 remain Partial; the F120 workspace operation isolation and
-formal workspace-create boundary remain Satisfied. Phase 2 remains In Progress
-with its exit gate Open.
+Current and baseline builds passed on Windows 11 x64 with MSVC 19.51.36257 and
+Ninja 1.13.2; current used Qt 6.12 and baseline Qt 6.11.1. The baseline reused
+its cleanly configured archive dependencies. A `QSqlRecord` compile issue was
+fixed only by the two missing includes in the temporary baseline overlay; no
+shared checkout files changed. No full suite ran. `git diff --check` passed.
 
-### Cumulative exit-gate status after F121
+F122 is hand-authored, baseline-present seeded evidence, not historical
+workbook provenance. Gate 1 and Gate 2 remain Partial; F120 active-v2
+DataService isolation and the formal workspace-create boundary remain
+Satisfied. Phase 2 remains In Progress with its exit gate Open.
+
+### Cumulative exit-gate status after F122
 
 | Exit-gate area | Audit status | Finding |
 | --- | --- | --- |
 | App-less Domain/Application behavior (Gate 1) | Partial | Coverage includes workspace lifecycle; Class Transfer schedule-candidate validation (F79); Teacher Import (F80/F81/F85/F87/F89/F90); Schedule Import match-key typing (F84); Calendar policies/use cases (F93/F95/F97/F99/F101-F105/F107/F110); and Teacher profile edit (F117). Broader class/schedule/roster/evaluation editing, backup/recovery, and legacy database import remain planned. |
-| Baseline parity (Gate 2) | Partial | Bounded records include F82/F83 post-baseline Schedule Import inputs, F86/F88 baseline-era generated Schedule Import inputs, F91/F92/F94/F96/F98 Teacher Import flows and failure cases, F100/F101/F103/F104/F106/F108/F109 Schedule Import rollback and Calendar repository transitions, F118 common-input Class Transfer conflict behavior, and F121 common-input successful replacement state. They do not cover all validation, conflict, planning, or state-transition behavior; historical production-workbook provenance remains unverified. |
+| Baseline parity (Gate 2) | Partial | Bounded records include F82/F83 post-baseline Schedule Import inputs, F86/F88 baseline-era generated Schedule Import inputs, F91/F92/F94/F96/F98 Teacher Import flows and failure cases, F100/F101/F103/F104/F106/F108/F109 Schedule Import rollback and Calendar repository transitions, F118 common-input Class Transfer conflict behavior, F121 common-input successful replacement state, and F122 hand-authored seeded Schedule Import Skip state parity. They do not cover all validation, conflict, planning, or state-transition behavior; historical production-workbook provenance remains unverified. |
 | Workspace boundary | Satisfied | The formal workspace-create criterion remains satisfied. |
 | v2 dependency isolation | Satisfied for active `src/next` call paths | F120 removes the Workspace operation edge to `DataService`; the source audit confirms all seven operations route to `DatabaseSession` or the file helper. Legacy facade construction/access remains available. |
 
@@ -213,30 +214,13 @@ a literal exit criterion. Sub Prep remains bounded to January 1 of the
 reference date's year through December 31 of the following year, at most;
 2026-2027 is illustrative.
 
-### Next selected slice (F122)
+### Next candidate (F123; bounded solution review pending)
 
-Strengthen `ScheduleImportTests::skippedExactMatchPreservesItsSchedule` with
-current/baseline final-state parity. Seed at least two existing schedule rows
-in an insertion order different from day/time sort; capture `(day, start, end)`
-ordered by `class_times.id` before and after Skip, and require that relative
-meeting order and values to remain unchanged. Compare complete post-apply
-snapshots from `persistedScheduleImportSnapshot(database, true)`, including
-`class_times.id` and `sqlite_sequence`; pin the baseline-derived snapshot hash
-and require the same hash on current. Keep assertions for one skipped row,
-zero cleared rows, and existing schedule/profile-name preservation, followed
-by the subsequent explicit name update.
-
-Both baseline and current Normal-import flows copy schedule rows in ID order,
-delete/recreate the schedule table, and reinsert them. The pinned baseline
-observed the same Monday `class_id`, day, start/end, and profile-name values
-while `class_times.id` and its sequence advanced 1→2. This is expected storage
-behavior, not a defect. IDs also define ClassInfo and Sub Prep ordering, so
-retain them in final parity and preserve relative meeting order. Do not claim
-pre/post physical snapshot identity or zero writes. Run the exact filtered
-case with the same seed and plan in current
-and pinned baseline `48fc5c5cc7dee78d82f8bf5f1bf8b51725575b99`. This is
-baseline-present, hand-authored seeded evidence, not workbook parsing or
-historical production-workbook provenance. F122 implementation is underway
-and current/baseline verification is pending; Phase 2 remains In Progress/Open,
-Gate 1 and Gate 2 remain Partial, and workspace plus active-v2 isolation
-remain Satisfied.
+Explore integrating F117's app-less existing-teacher edit use case with the
+production `TeacherInfoPage` flow. The candidate boundary delegates validation
+to `TeacherValidator` without duplicating rules, preserves warning/error
+mapping, uses the session-backed update/reload path, and retains canonical
+reload plus current autosave, header, and signal behavior. Two independent
+Explorers agreed on the candidate; Investigator solution review was interrupted
+at the user's stop request. Scope is not accepted and implementation has not
+begun. Phase 2 remains In Progress/Open; Gate 1 and Gate 2 remain Partial.

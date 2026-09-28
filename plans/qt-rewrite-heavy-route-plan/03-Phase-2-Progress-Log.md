@@ -7290,4 +7290,43 @@ and plan in current and pinned
 baseline `48fc5c5cc7dee78d82f8bf5f1bf8b51725575b99`. This is baseline-present,
 hand-authored seeded evidence, not workbook parsing or historical-workbook
 provenance. F122 implementation is underway and current/baseline verification
-is pending; Gate 1 and Gate 2 remain Partial and Phase 2 remains In Progress/Open.
+is pending at selection; results follow below. Gate 1 and Gate 2 remain Partial
+and Phase 2 remains In Progress/Open.
+
+## Verified F122 Schedule Import Skip final-state parity - commit `e3411e733d2ce402a03096e715150e45b4244dff`
+
+F122 changes only `tests/schedule_import_tests.cpp` (+67/-9; Git blob
+`eb422208842551eb37a4783f31982b82cab674b3`, extracted SHA-256
+`9697009E56FE575EE0303F54413CCBA205B17EF716278E9E5C1158E7343BB066`). The
+fresh archive tree ID is `ca903158a6e8ff2866987b4873e5be3f5e92f845`; TAR
+SHA-256 `402DB5014595E72B84836AA131B08C482FC23551B6D3FC192C6AB6ED52895440`.
+
+Independent fresh-archive current and pinned-baseline
+`48fc5c5cc7dee78d82f8bf5f1bf8b51725575b99` builds both passed, and the exact
+case `ScheduleImportTests::skippedExactMatchPreservesItsSchedule` passed 3/3 on
+each tree (3 passed, 0 failed). The baseline archive TAR SHA-256 is
+`1870A9BDE4087B061CA3C35B6EB0804B10335222D12B0C98F095343D504F7FD7`; its
+overlay used the same seed/test, the exact F122 helper/method, and only the
+missing `QCryptographicHash`/`QSqlRecord` includes. Both final snapshots had
+SHA-256 `08ad64ed3d853e52a1a686c1683d0d1fe8a289026e21d21081e09ee4840c5ebe`,
+including raw `class_times.id` and `sqlite_sequence`. Tuesday-then-Monday order
+was preserved; assertions retained one skipped row, zero schedules cleared,
+and profile behavior.
+
+The environment was Windows 11 x64, MSVC 19.51.36257, Ninja 1.13.2, current
+Qt 6.12, and baseline Qt 6.11.1. Baseline reused its cleanly configured
+archive dependencies; the `QSqlRecord` compile issue was resolved only in the
+temporary baseline overlay, with no shared-checkout edits. No full suite ran.
+`git diff --check` passed. F122 is hand-authored, baseline-present seeded
+evidence, not historical-workbook provenance. Gate 1 and Gate 2 remain Partial;
+workspace and active-v2 DataService isolation remain Satisfied; Phase 2 remains
+In Progress/Open.
+
+### Next candidate (F123; bounded solution review pending)
+
+Consider integrating F117's app-less existing-teacher edit use case into
+production `TeacherInfoPage`. The candidate preserves `TeacherValidator` as the
+validation owner, warning/error mapping, session-backed update/reload, canonical
+reload, and current autosave/header/signal behavior. Two Explorers agreed on
+this candidate; the Investigator solution review was interrupted at the user's
+stop request, so scope is not accepted and implementation has not begun.

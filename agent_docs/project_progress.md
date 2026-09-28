@@ -1512,3 +1512,28 @@ F119 source/test commit `80fbf034` implements canonical `DatabaseSession` owners
 F120 is selected as one gate-closing slice after three independent solution reviews. Keep the existing `ApplicationServices` workspace API and route its seven operation implementations to `DatabaseSession` and a shared DataService-independent file-copy helper. Replace `DataService`'s stale repository-pointer cache with live session-backed access. Preserve the Workspace API and controller composition. Acceptance covers a source audit showing no `m_dataService` operation call, all seven Workspace behaviors, and facade validity after first open, successful database replacement, failed replacement, close, and reopen. Focused tests target the lifecycle, Workspace port, and FileController lifecycle suites with a `ClassMngr` build.
 
 Gate 1 and Gate 2 remain Partial; F118 adds one post-baseline common-input conflict comparison to Gate 2. Workspace create and audited direct `src/next` source isolation remain Satisfied. F119 removes the dual-bound feature-service factory edge, but strict transitive isolation remains unresolved at the Workspace path. Phase 2 exit remains Open.
+
+## Current Position - 2026-09-28 (F122 verified; F123 candidate pending review)
+
+F122 source commit `e3411e733d2ce402a03096e715150e45b4244dff` adds ordered
+multi-meeting and final-state parity assertions to
+`ScheduleImportTests::skippedExactMatchPreservesItsSchedule`. An independent
+fresh-archive Tester verified the exact commit and pinned baseline
+`48fc5c5cc7dee78d82f8bf5f1bf8b51725575b99`; both focused cases passed 3/3.
+Both produced final snapshot SHA-256
+`08ad64ed3d853e52a1a686c1683d0d1fe8a289026e21d21081e09ee4840c5ebe`, including
+`class_times.id` and `sqlite_sequence`, and retained Tuesday-before-Monday
+consumer order. Current used Windows x64, MSVC 19.51.36257.0, Ninja 1.13.2,
+and Qt 6.12.0; the baseline used Qt 6.11.1. No full suite ran. This is
+baseline-present hand-authored seed evidence, not historical workbook parity.
+
+F123's candidate is to integrate the existing-teacher edit use case from F117
+with the production `TeacherInfoPage` flow, preserving `TeacherValidator`
+semantics, the active session-backed update/reload path, validation feedback,
+and save lifecycle. Two independent Explorers agreed on this gap, but the
+bounded solution review is pending; no F123 implementation has begun.
+
+Gate 1 and Gate 2 remain Partial. The formal workspace-create boundary and
+active-v2 DataService isolation remain Satisfied. Phase 2 remains In Progress
+with its exit gate Open. The user's requested session handoff records this
+continuation point in `latest_session_work.md`.

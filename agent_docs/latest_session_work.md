@@ -2974,4 +2974,44 @@ The user resumed this deployment on 2026-09-28. The branch includes the user-aut
 
 Three independent Investigator reviews agree F120 should be one gate-closing slice: a partial reroute would leave the transitive edge open or the compatibility facade unsafe after session swaps. They compared a dedicated Workspace service/port rewire with keeping the existing `ApplicationServices` boundary. The selected boundary keeps the current `ApplicationServices` API and makes its seven workspace operation implementations use `DatabaseSession` and a small DataService-independent file-copy helper; `DataService` will resolve repositories live from its owned or borrowed session instead of caching raw pointers. Do not use a refresh callback from the Workspace path. This removes the recorded operation edge while preserving FileController and port call sites that already use ApplicationServices for open-state and path.
 
-F120 acceptance: audit the seven Workspace operations to confirm they call only `DatabaseSession` and the shared file helper, with no `m_dataService` operation call; confirm `src/next` still has no direct DataService dependency. Preserve path/error normalization, open/close postconditions, save commit behavior, save-as copy then port reopen with Workspace identity retained, and export's unchanged active path. Add lifecycle coverage for a borrowed facade after opening from closed, successful A-to-B replacement, failed replacement preserving A, close, and reopening B; keep standalone/sessionless legacy coverage. Focused verification covers `ClassMngrDataServiceLifecycleTests`, `ClassMngrNextPlatformApplicationServicesWorkspacePortTests`, and `ClassMngrFileControllerWorkspaceLifecycleTests` as needed, plus a `ClassMngr` build and diff hygiene. F120 implementation has not started. Phase 2 remains In Progress with Gate 1 and Gate 2 Partial, Workspace-create acceptance Satisfied, audited direct `src/next` isolation Satisfied, strict transitive isolation unresolved, and the exit gate Open. Continue with implementation, independent verification, documentation, a per-slice commit, and the next slice. At closure, verify the formal exit checklist and provide the required deployment-token report.
+F120 acceptance: audit the seven Workspace operations to confirm they call only `DatabaseSession` and the shared file helper, with no `m_dataService` operation call; confirm `src/next` still has no direct DataService dependency. Preserve path/error normalization, open/close postconditions, save commit behavior, save-as copy then port reopen with Workspace identity retained, and export's unchanged active path. Add lifecycle coverage for a borrowed facade after opening from closed, successful A-to-B replacement, failed replacement preserving A, close, and reopening B; keep standalone/sessionless legacy coverage. Focused verification covers `ClassMngrDataServiceLifecycleTests`, `ClassMngrNextPlatformApplicationServicesWorkspacePortTests`, and `ClassMngrFileControllerWorkspaceLifecycleTests` as needed, plus a `ClassMngr` build and diff hygiene. F120 implementation has not started. Phase 2 remains In Progress with Gate 1 and Gate 2 Partial, Workspace-create acceptance Satisfied, audited direct `src/next` isolation Satisfied, strict transitive isolation unresolved, and the exit gate Open. Continue with implementation, independent verification, documentation, a per-slice commit, and the next slice. At Phase 2 deployment closure, verify the formal exit checklist and provide the required deployment-token report through the Archivist workflow.
+
+## Phase 2 continuation handoff - 2026-09-28 (F122 verified; stop point)
+
+The user requested a handoff after the current task and asked work to stop. The
+active deployment ID is `qt-rewrite-phase2-resume-20260928`; the branch is
+`Qt-Rewrite`; F122 source commit is
+`e3411e733d2ce402a03096e715150e45b4244dff` (`Phase2 - pin Schedule Import Skip
+parity`). It changes only `tests/schedule_import_tests.cpp` (Git blob
+`eb422208842551eb37a4783f31982b82cab674b3`, fresh-archive SHA-256
+`9697009E56FE575EE0303F54413CCBA205B17EF716278E9E5C1158E7343BB066`). The
+F122 archive tree ID is `ca903158a6e8ff2866987b4873e5be3f5e92f845`; TAR SHA-256
+is `402DB5014595E72B84836AA131B08C482FC23551B6D3FC192C6AB6ED52895440`.
+
+Independent verification built and ran the exact focused
+`skippedExactMatchPreservesItsSchedule` case in current and pinned baseline
+`48fc5c5cc7dee78d82f8bf5f1bf8b51725575b99`; each reported 3 passed, 0 failed.
+Both final snapshots hash to
+`08ad64ed3d853e52a1a686c1683d0d1fe8a289026e21d21081e09ee4840c5ebe`, including
+row IDs and `sqlite_sequence`. The test proves Tuesday-then-Monday insertion
+order survives Skip, `classesSkipped == 1`, `schedulesCleared == 0`, and the
+profile behavior. Baseline used the exact F122 test/helper overlay plus only
+the missing `QCryptographicHash` and `QSqlRecord` includes; the shared
+checkout was untouched. Windows 11 x64, MSVC 19.51.36257.0, Ninja 1.13.2;
+current Qt 6.12.0, baseline Qt 6.11.1. No full suite ran. The baseline build
+had an optional Vulkan-header notice and an unrelated object-path warning.
+
+The Phase 2 plan and Start Here handoff record F122 as verified and retain the
+gates as open. `00-Start-Here.md` previously pointed to Work Package D, but the
+Phase 2 progress log records D completed on 2026-09-23. Two independent
+Explorers recommend F123 as a candidate to integrate F117's existing-teacher
+edit use case with `TeacherInfoPage`, preserving `TeacherValidator` behavior,
+session-backed update/reload, validation feedback, autosave, canonical reload,
+header updates, and `teacherSaved`. The bounded Investigator solution review
+was interrupted at the user's stop request; F123 is a candidate, not an
+accepted implementation scope. On resume, perform the required three-lane
+solution review, compare the reports, update acceptance, then implement and
+independently verify F123. Phase 2 remains In Progress/Open; Gate 1 and Gate 2
+are Partial, while workspace-create and active-v2 DataService isolation are
+Satisfied. The deployment-token report remains for Phase 2 deployment
+closure; this task handoff does not close the phase. No push was requested.
