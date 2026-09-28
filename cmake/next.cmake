@@ -81,6 +81,9 @@ set(CLASSMNGR_NEXT_APPLICATION_SOURCES
     src/next/application/class_summary_projection.h
     src/next/application/class_co_teacher_assignment_use_case.h
     src/next/application/class_details_save_use_case.h
+    src/next/application/class_details_page_snapshot.h
+    src/next/application/class_details_page_read_port.h
+    src/next/application/class_details_page_query.h
     src/next/application/class_notes_save_port.h
     src/next/application/class_notes_save_use_case.h
     src/next/application/sub_prep_schedule_summary_query.h
@@ -196,6 +199,7 @@ set(CLASSMNGR_NEXT_PLATFORM_SOURCES
     src/next/platform/application_services_class_visibility_preferences_port.h
     src/next/platform/application_services_class_notes_save_port.h
     src/next/platform/application_services_class_details_save_port.h
+    src/next/platform/application_services_class_details_page_read_port.h
     src/next/platform/application_services_class_co_teacher_assignment_port.h
     src/next/platform/application_services_current_campus_preferences_port.h
     src/next/platform/application_services_middle_school_analytics_preferences_port.h

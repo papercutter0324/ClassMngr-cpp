@@ -20,7 +20,9 @@
 #include "domain/rules/schedule_value_parser.h"
 #include "domain/validation/class_info_validator.h"
 #include "next/application/class_details_save_use_case.h"
+#include "next/application/class_details_page_query.h"
 #include "next/platform/application_services_class_details_save_port.h"
+#include "next/platform/application_services_class_details_page_read_port.h"
 #include "core/fontmanager.h"
 #include "ui/shared/constants/gui_constants.h"
 #include "ui/shared/styles/roles.h"
@@ -135,17 +137,135 @@ classDetailsSaveRequest(const ClassInfo& info)
         .intensiveTimes = *intensiveTimes
     };
 }
+
+QString displayText(const std::string& value)
+{
+    return QString::fromUtf8(
+        value.data(),
+        static_cast<qsizetype>(value.size())
+        );
+}
+
+std::string sourceText(const QString& value)
+{
+    return value.toUtf8().toStdString();
+}
+
+ClassMngr::Next::Application::ClassDetailsPageFields displayFields(
+    const ClassInfo& info
+    )
+{
+    ClassMngr::Next::Application::ClassDetailsPageFields fields;
+    fields.classGrade = sourceText(info.classGrade);
+    fields.classLevel = sourceText(info.classLevel);
+    fields.readingBook = sourceText(info.readingBook);
+    fields.essayBook = sourceText(info.essayBook);
+    fields.classColor = sourceText(info.classColor);
+    fields.fontColor = sourceText(info.fontColor);
+    fields.regularSchedule.reserve(
+        static_cast<std::size_t>(info.classTimes.size())
+        );
+    fields.intensiveSchedule.reserve(
+        static_cast<std::size_t>(info.intensiveTimes.size())
+        );
+    for (const ClassTime& time : info.classTimes)
+    {
+        fields.regularSchedule.push_back({
+            sourceText(time.day),
+            sourceText(time.startTime),
+            sourceText(time.endTime)
+        });
+    }
+    for (const ClassTime& time : info.intensiveTimes)
+    {
+        fields.intensiveSchedule.push_back({
+            sourceText(time.day),
+            sourceText(time.startTime),
+            sourceText(time.endTime)
+        });
+    }
+    return fields;
+}
+
+QList<ClassTime> displaySchedule(
+    const std::vector<
+        ClassMngr::Next::Application::ClassDetailsPageScheduleRow
+        >& rows
+    )
+{
+    QList<ClassTime> result;
+    result.reserve(static_cast<qsizetype>(rows.size()));
+    for (const auto& value : rows)
+    {
+        ClassTime row;
+        row.day = displayText(value.day);
+        row.startTime = displayText(value.startTime);
+        row.endTime = displayText(value.endTime);
+        result.append(std::move(row));
+    }
+    return result;
+}
+
+std::optional<ClassMngr::Next::Application::ClassDetailsPageReadSnapshot>
+readDisplaySnapshot(
+    ApplicationServices* services,
+    ClassMngr::Next::Application::ClassDetailsPageReadPort* injectedPort,
+    const int classId
+    )
+{
+    if (!services || classId < 0)
+    {
+        return std::nullopt;
+    }
+
+    const auto typedClassId =
+        ClassMngr::Next::Domain::ClassId::fromString(
+            std::to_string(classId)
+            );
+    if (!typedClassId)
+    {
+        return std::nullopt;
+    }
+
+    const auto execute = [&typedClassId](
+        ClassMngr::Next::Application::ClassDetailsPageReadPort& readPort
+        ) -> std::optional<
+            ClassMngr::Next::Application::ClassDetailsPageReadSnapshot
+            >
+    {
+        const ClassMngr::Next::Application::ClassDetailsPageQuery query(
+            readPort
+            );
+        auto loaded = query.execute(*typedClassId);
+        if (!loaded)
+        {
+            return std::nullopt;
+        }
+        return std::move(loaded.value());
+    };
+
+    if (injectedPort)
+    {
+        return execute(*injectedPort);
+    }
+
+    ClassMngr::Next::Platform::
+        ApplicationServicesClassDetailsPageReadPort readPort(*services);
+    return execute(readPort);
+}
 }
 
 ClassDetailsPage::ClassDetailsPage(
     ApplicationServices* services,
     bool embedded,
     QWidget* parent,
-    ClassMngr::Next::Application::ClassDetailsSavePort* savePort
+    ClassMngr::Next::Application::ClassDetailsSavePort* savePort,
+    ClassMngr::Next::Application::ClassDetailsPageReadPort* displayReadPort
     )
     : BasePage(parent)
     , m_services(services)
     , m_savePort(savePort)
+    , m_displayReadPort(displayReadPort)
     , m_embedded(embedded)
     , m_autosave(new AutosaveCoordinator(this))
 {
@@ -431,31 +551,34 @@ void ClassDetailsPage::loadClass(
 
     m_classroom = classroom;
 
-    auto* classService = m_services->classService();
-    auto* rosterService = m_services->rosterService();
+    m_displaySnapshot = readDisplaySnapshot(
+        m_services,
+        m_displayReadPort,
+        classroom.id
+        );
+    const ClassMngr::Next::Application::ClassDetailsPageFields emptyFields;
+    const auto& fields = m_displaySnapshot && m_displaySnapshot->classFields
+        ? m_displaySnapshot->classFields.value()
+        : emptyFields;
+    const int studentCount = m_displaySnapshot && m_displaySnapshot->studentCount
+        ? m_displaySnapshot->studentCount.value()
+        : 0;
 
-    const ClassInfo info =
-        classService->classInfo(
-            classroom.id
-            ).value_or(ClassInfo{});
-
-    updateTitle(info);
+    updateTitle(m_displaySnapshot ? &*m_displaySnapshot : nullptr);
 
     m_detailsSection->loadInfo(
-        info.classGrade,
-        info.classLevel,
-        info.readingBook,
-        info.essayBook,
-        info.classColor,
-        info.fontColor,
-        rosterService->studentCount(
-            classroom.id
-            ).value_or(0)
+        displayText(fields.classGrade),
+        displayText(fields.classLevel),
+        displayText(fields.readingBook),
+        displayText(fields.essayBook),
+        displayText(fields.classColor),
+        displayText(fields.fontColor),
+        studentCount
         );
 
     m_scheduleSection->loadSchedules(
-        info.classTimes,
-        info.intensiveTimes
+        displaySchedule(fields.regularSchedule),
+        displaySchedule(fields.intensiveSchedule)
         );
 
     refreshScheduleValidationBindings();
@@ -473,6 +596,7 @@ void ClassDetailsPage::clearDatabaseState()
     m_autosave->setLoading(true);
 
     m_classroom = {};
+    m_displaySnapshot.reset();
     m_detailsSection->loadInfo({}, {}, {}, {}, {}, {}, 0);
     m_scheduleSection->loadSchedules(
         QList<ClassTime>{},
@@ -480,7 +604,7 @@ void ClassDetailsPage::clearDatabaseState()
         );
     refreshScheduleValidationBindings();
     m_validationBinder->clear();
-    updateTitle({});
+    updateTitle(nullptr);
     m_pageHeader->setSubtitle(
         tr("No class selected")
         );
@@ -491,26 +615,39 @@ void ClassDetailsPage::clearDatabaseState()
 }
 
 void ClassDetailsPage::updateTitle(
-    const ClassInfo& info
+    const ClassMngr::Next::Application::ClassDetailsPageReadSnapshot* snapshot
     )
 {
     m_pageHeader->setTitle(tr("Class Information"));
-
-    Teacher teacher;
-
-    if (info.teacherId > 0)
+    if (m_classroom.id < 0)
     {
-        teacher = m_services
-            ->teacherService()
-            ->teacher(info.teacherId)
-            .value_or(Teacher{});
+        m_pageHeader->setSubtitle(tr("No class selected"));
+        return;
     }
 
-    const QString displayName =
-        SidebarNodeNaming::formatClassDisplayName(
-            info,
+    QString displayName;
+    if (snapshot && snapshot->classFields)
+    {
+        const auto& fields = snapshot->classFields.value();
+        ClassInfo classInfo;
+        classInfo.classId = m_classroom.id;
+        classInfo.classGrade = displayText(fields.classGrade);
+        classInfo.classLevel = displayText(fields.classLevel);
+        classInfo.classTimes = displaySchedule(fields.regularSchedule);
+
+        Teacher teacher;
+        if (snapshot->teacherDisplayName)
+        {
+            teacher.preferredName = displayText(
+                snapshot->teacherDisplayName.value()
+                );
+        }
+
+        displayName = SidebarNodeNaming::formatClassDisplayName(
+            classInfo,
             teacher
             );
+    }
 
     const QString fallbackName =
         m_classroom.name.trimmed().isEmpty()
@@ -745,7 +882,50 @@ bool ClassDetailsPage::saveClassInfoInternal(
 
     clearDirty();
 
-    updateTitle(info);
+    if (auto refreshedSnapshot = readDisplaySnapshot(
+            m_services,
+            m_displayReadPort,
+            m_classroom.id
+            ))
+    {
+        m_displaySnapshot = std::move(refreshedSnapshot);
+    }
+
+    if (m_displaySnapshot)
+    {
+        m_displaySnapshot->classFields =
+            ClassMngr::Next::Domain::Result<
+                ClassMngr::Next::Application::ClassDetailsPageFields
+                >::success(displayFields(info));
+    }
+    else if (const auto classId =
+                 ClassMngr::Next::Domain::ClassId::fromString(
+                     std::to_string(info.classId)
+                     ))
+    {
+        const ClassMngr::Next::Domain::OperationError missingTeacher{
+            .code = ClassMngr::Next::Domain::ErrorCode::NotFound,
+            .message = "The class teacher display name is unavailable.",
+            .recoverable = true
+        };
+        const ClassMngr::Next::Domain::OperationError missingRoster{
+            .code = ClassMngr::Next::Domain::ErrorCode::NotFound,
+            .message = "The class student count is unavailable.",
+            .recoverable = true
+        };
+        m_displaySnapshot =
+            ClassMngr::Next::Application::ClassDetailsPageReadSnapshot{
+                *classId,
+                ClassMngr::Next::Domain::Result<
+                    ClassMngr::Next::Application::ClassDetailsPageFields
+                    >::success(displayFields(info)),
+                ClassMngr::Next::Domain::Result<std::string>::failure(
+                    missingTeacher
+                    ),
+                ClassMngr::Next::Domain::Result<int>::failure(missingRoster)
+            };
+    }
+    updateTitle(m_displaySnapshot ? &*m_displaySnapshot : nullptr);
 
     emit classInfoSaved(
         m_classroom.id
@@ -766,24 +946,12 @@ void ClassDetailsPage::retranslateUi()
         m_embeddedHeading->setText(tr("Class Details"));
     }
 
-    if (
-        m_services
-        && m_services->classService()
-        && m_classroom.id >= 0
-        )
-    {
-        updateTitle(
-            m_services
-                ->classService()
-                ->classInfo(m_classroom.id)
-                .value_or(ClassInfo{})
-            );
-    }
-    else
-    {
-        m_pageHeader->setTitle(tr("Class Information"));
-        m_pageHeader->setSubtitle(tr("No class selected"));
-    }
+    m_displaySnapshot = readDisplaySnapshot(
+        m_services,
+        m_displayReadPort,
+        m_classroom.id
+        );
+    updateTitle(m_displaySnapshot ? &*m_displaySnapshot : nullptr);
 
     if (m_detailsCard)
     {

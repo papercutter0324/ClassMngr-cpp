@@ -203,6 +203,15 @@ classmngr_add_qt_test(
 )
 
 classmngr_add_qt_test(
+    NAME NextApplicationClassDetailsPageQuery
+    SOURCES
+        tests/next_application_class_details_page_query_tests.cpp
+    LIBRARIES
+        ClassMngrNext::Application
+        Qt6::Test
+)
+
+classmngr_add_qt_test(
     NAME NextApplicationSubPrepRosterOutputSourceQuery
     SOURCES
         tests/next_application_sub_prep_roster_output_source_query_tests.cpp
@@ -914,6 +923,16 @@ classmngr_add_qt_test(
     NAME NextPlatformApplicationServicesClassDetailsSavePort
     SOURCES
         tests/next_platform_application_services_class_details_save_port_tests.cpp
+    LIBRARIES
+        ClassMngrNext::Platform
+        Qt6::Test
+    OFFSCREEN
+)
+
+classmngr_add_qt_test(
+    NAME NextPlatformApplicationServicesClassDetailsPageReadPort
+    SOURCES
+        tests/next_platform_application_services_class_details_page_read_port_tests.cpp
     LIBRARIES
         ClassMngrNext::Platform
         Qt6::Test

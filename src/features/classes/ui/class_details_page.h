@@ -2,10 +2,13 @@
 
 #include "core/enums/schedule_type.h"
 #include "domain/models/class_info.h"
+#include "next/application/class_details_page_snapshot.h"
 #include "ui/shared/pages/basepage.h"
 #include "domain/models/classroom.h"
 
 #include <QString>
+
+#include <optional>
 
 class ApplicationServices;
 class AutosaveCoordinator;
@@ -18,6 +21,7 @@ class ClassScheduleSection;
 namespace ClassMngr::Next::Application
 {
 class ClassDetailsSavePort;
+class ClassDetailsPageReadPort;
 }
 
 class QLabel;
@@ -35,7 +39,9 @@ public:
         ApplicationServices* services,
         bool embedded = false,
         QWidget* parent = nullptr,
-        ClassMngr::Next::Application::ClassDetailsSavePort* savePort = nullptr
+        ClassMngr::Next::Application::ClassDetailsSavePort* savePort = nullptr,
+        ClassMngr::Next::Application::ClassDetailsPageReadPort*
+            displayReadPort = nullptr
         );
 
     void loadClass(
@@ -60,7 +66,8 @@ private:
     void buildUi();
     void updateScrollContentMinimumWidth();
     void updateTitle(
-        const ClassInfo& info
+        const ClassMngr::Next::Application::
+            ClassDetailsPageReadSnapshot* snapshot
         );
 
     void markDirty();
@@ -83,8 +90,13 @@ private:
 private:
     ApplicationServices* m_services{nullptr};
     ClassMngr::Next::Application::ClassDetailsSavePort* m_savePort{nullptr};
+    ClassMngr::Next::Application::ClassDetailsPageReadPort*
+        m_displayReadPort{nullptr};
 
     Classroom m_classroom;
+    std::optional<
+        ClassMngr::Next::Application::ClassDetailsPageReadSnapshot
+        > m_displaySnapshot;
 
     bool m_embedded{false};
     AutosaveCoordinator* m_autosave{nullptr};
