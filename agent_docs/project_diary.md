@@ -1283,3 +1283,11 @@ an override when the selected state equals the slot default. Keep the view
 model's transition choice in the UI; send a typed weekday, minute, selected
 state, and default state through the use case so the session adapter can
 preserve default deletion and write behavior for all shared toggle callers.
+
+## F129 - keep roster table saves lossless and test the enclosing gate - 2026-09-29
+
+Carry a full ordered roster snapshot through the Qt-free save request, including
+every row position, UTF-16 values, and column widths; pass the existing
+questionable-name confirmation as an explicit flag. Verify UI boundaries too:
+invalid-cell focus, silent autosave failure with dirty state retained, and
+class-selection rollback when the session-backed save fails.

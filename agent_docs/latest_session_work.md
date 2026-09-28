@@ -3125,10 +3125,40 @@ service skip/reload, read-only/time-column no-op, and testing-assignment
 behavior. `ClassMngr` built and `git diff --check` passed. No full suite or
 baseline comparison ran.
 
-F129 is now in implementation as a single-class roster snapshot save boundary.
-Its request will preserve ordered columns, widths, and all 25 row positions,
-while carrying the existing questionable Korean-name decision through the
-port. UI validation, autosave/dirty behavior, warning timing, and class-switch
-gating remain in place. Gate 1 and Gate 2 remain Partial; workspace-create
-acceptance and active-v2 DataService isolation remain Satisfied. Phase 2 is
-In Progress/Open. No push was requested.
+## Phase 2 continuation - 2026-09-29 (F129 verified; F130 implementation in progress)
+
+The user requested a commit after every completed slice, then immediate work
+on the next slice. The active deployment ID is
+`f126-class-details-20260929`; branch `Qt-Rewrite`. F129 source/test commit
+`a0e3c98a` (`Phase2 - integrate roster save use case`) adds a Qt-free save
+contract for one selected class's complete roster snapshot and a
+session-backed platform adapter. It preserves ordered columns, widths, all 25
+row positions, UTF-16 values, and the existing questionable Korean-name
+confirmation flag. The widget retains validation/focus, interactive
+confirmation, autosave/manual timing, warning and dirty-state behavior, and
+class-selection save gating.
+
+Focused app/platform/page CTests passed 3/3; the existing roster-import widget
+regression passed, and `ClassMngr` built. The independent follow-up rebuilt
+`ClassMngrRosterEditorWidgetSaveTests` and passed 1/1. It directly verifies
+invalid-cell focus, silent autosave failure with dirty state retained, and
+rollback of the selected testing class after a roster-save failure. Source and
+test review found no remaining acceptance gap; `git diff --check` passed. No
+full suite or baseline comparison ran.
+
+F129 verification handoff is recorded in `project_progress.md`,
+`project_diary.md`, and this file. The handoff documentation commit is
+separate from the source commit. No push was requested.
+
+F130 is now in implementation: route one speaking-evaluation save through a
+Qt-free use case and session-backed adapter. Preserve the ordered 25-by-11
+UTF-16 matrix, changed-cell coordinates, and the existing empty-change-list
+write-all meaning. Keep validation, focus, confirmation, autosave/manual and
+interactive feedback, dirty-baseline updates, and failed class/evaluation
+switch behavior at the page boundary. The Executor owns production; an
+independent Tester will verify the slice before its source commit.
+
+Gate 1 and Gate 2 remain Partial. Formal workspace-create acceptance and
+active-v2 DataService isolation remain Satisfied. Phase 2 remains In Progress
+with the exit gate Open. The deployment-token report remains required at
+Phase 2 closure. No push was requested.

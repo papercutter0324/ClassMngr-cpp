@@ -1,7 +1,7 @@
 # Project Progress
 
 Active deployment plan: Qt Rewrite Phase 2 — Domain Model and Application Contracts.
-Current deployment: qt-rewrite-phase2-resume-20260928 (executing). Route: Heavy.
+Current deployment: f126-class-details-20260929 (executing). Route: Heavy.
 Phase 1 hosted acceptance is closed on commit `0883009d`; the local branch adds
 continued Phase 2 domain and application-contract work on top of that verified
 baseline.
@@ -1611,9 +1611,23 @@ unavailable-service fallback, and the separate testing-assignment path.
 `ClassMngr` built and `git diff --check` passed. No full suite or baseline
 comparison ran.
 
-F129 is now in implementation: a Qt-free save boundary for one selected
-class's complete roster snapshot. The planned request preserves ordered
-columns, widths, all 25 row positions, and the existing questionable-name
-confirmation flag while keeping current UI validation and save feedback.
+F129 source/test commit `a0e3c98a` (`Phase2 - integrate roster save use case`)
+adds a Qt-free single-class roster snapshot request and a session-backed
+platform adapter. It preserves ordered columns, widths, all 25 row positions,
+UTF-16 values, and the questionable Korean-name confirmation flag. The widget
+keeps validation/focus, interactive confirmation, autosave/manual timing,
+dirty-state and warning behavior, and class-selection save gating.
+
+The application, platform, and page CTest selection passed 3/3; the existing
+roster-import widget regression passed, and `ClassMngr` built. Independent
+verification rebuilt the focused roster-save widget target and passed 1/1,
+including direct assertions for invalid-cell focus, silent autosave failure,
+and rollback of a testing-class selection after save failure. Whitespace
+validation passed. No full suite or baseline comparison ran.
+
+F130 is in implementation to add an app-less save boundary for one edited
+speaking evaluation. Preserve its ordered 25-by-11 value matrix, changed-cell
+coordinates and existing empty-change-list semantics, along with UI validation,
+confirmation, dirty-state, autosave/manual behavior, and selection rollback.
 Gate 1 and Gate 2 remain Partial; formal workspace-create acceptance and
 active-v2 DataService isolation remain Satisfied. Phase 2 remains In Progress/Open.
