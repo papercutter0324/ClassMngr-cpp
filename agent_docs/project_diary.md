@@ -1298,3 +1298,10 @@ An empty evaluation change list means write all cells, while a non-empty list
 limits persistence to those coordinates. Test both cases at the platform edge:
 put a distinct unlisted value in the in-memory matrix, save one listed cell,
 then assert the unlisted edit did not overwrite the previously stored value.
+
+## F131 - preserve exact evaluation read keys and separate UI fallback - 2026-09-29
+
+Read evaluation names exactly as stored; do not trim a query key when the
+repository lookup is exact. Keep an empty successful result distinct from a
+structured read failure in the application boundary, while preserving the
+page's existing blank, clean grid for either outcome.

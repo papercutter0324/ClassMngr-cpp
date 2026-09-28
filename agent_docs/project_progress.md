@@ -1639,9 +1639,23 @@ non-empty-delta case and passed 1/1. The case confirms that a changed value
 outside the delta stays unwritten while the listed cell is persisted.
 `git diff --check` passed. No full suite or baseline comparison ran.
 
-F131 is in implementation as a single-evaluation read query for the Speaking
-Evaluation page. Preserve the exact evaluation-name key, ordered UTF-16 rows,
-the structured session/read result, and the existing blank 25-by-11 clean page
-state for empty or failed reads. Keep model normalization at the page edge.
+F131 source/test commit `d0828493` (`Phase2 - integrate speaking evaluation
+read query`) adds a Qt-free typed-ID query and a session-backed read adapter
+for one selected evaluation. It preserves the exact evaluation-name key and
+ordered UTF-16 rows. `SpeakingEvalPage` reads through the query while keeping
+the existing model normalization and blank 25-by-11 clean state for empty or
+failed reads.
+
+The app, platform, and page focused CTests passed 3/3; `ClassMngr` built.
+Independent verification confirmed exact-name behavior (`" Winter "` does
+not match `"Winter"`), ordered Unicode rows, structured read failures, and
+empty/failed page fallbacks. `git diff --check` passed. Partial/malformed-row
+normalization at the page is source-reviewed but has no direct load-path test.
+No full suite or baseline comparison ran.
+
+F132 is in implementation as a Qt-free read query for one selected class's
+roster, paired with F129's save boundary. Preserve raw ordered columns, widths,
+rows, and UTF-16 values; require the active session; and keep the widget's
+silent blank-roster fallback and existing model/layout normalization.
 Gate 1 and Gate 2 remain Partial; formal workspace-create acceptance and
 active-v2 DataService isolation remain Satisfied. Phase 2 remains In Progress/Open.

@@ -3125,7 +3125,7 @@ service skip/reload, read-only/time-column no-op, and testing-assignment
 behavior. `ClassMngr` built and `git diff --check` passed. No full suite or
 baseline comparison ran.
 
-## Phase 2 continuation - 2026-09-29 (F130 verified; F131 implementation in progress)
+## Phase 2 continuation - 2026-09-29 (F131 verified; F132 implementation in progress)
 
 The user requested a commit after every completed slice, then immediate work
 on the next slice. The active deployment ID is
@@ -3170,14 +3170,30 @@ F130's source/test commit is `70f3ddc9`; its verification handoff is recorded
 in `project_progress.md`, `project_diary.md`, and this file. The handoff
 documentation commit is separate from the source commit.
 
-F131 is now in implementation: add an app-less single-evaluation read query
-and route the Speaking Evaluation page load through a session-backed adapter.
-Preserve the exact evaluation-name key, ordered UTF-16 rows, structured
-read/session errors, and the existing blank 25-by-11 clean page state for
-empty or failed reads. Keep row normalization at the page/model boundary;
-leave evaluation-tab listing, analytics, score import, and export outside this
-slice. The Executor owns production; an independent Tester will verify it
-before commit.
+F131 source/test commit `d0828493` (`Phase2 - integrate speaking evaluation
+read query`) adds a Qt-free typed-ID query and a session-backed adapter for one
+selected evaluation. It preserves the exact evaluation-name key and ordered
+UTF-16 rows. The page reads through the query, then keeps its existing model
+normalization and blank 25-by-11 clean fallback on empty or failed reads.
+
+The app, platform, and page focused CTests passed 3/3; `ClassMngr` built.
+Independent verification confirmed exact-name behavior (`" Winter "` does
+not match `"Winter"`), ordered Unicode rows, structured read failures, and
+empty/failed page fallbacks. `git diff --check` passed. There is no direct
+page-load test for partial/malformed-row normalization; the existing model
+path remains in place. No full suite or baseline comparison ran.
+
+The F131 verification handoff is recorded in `project_progress.md`,
+`project_diary.md`, and this file. Its documentation commit is separate from
+the source commit.
+
+F132 is now in implementation: add an app-less read query for one selected
+class's roster and route `RosterEditorWidget::loadClass` through a
+session-backed adapter. Preserve ordered columns, widths, raw rows, UTF-16
+values, and existing model normalization/presentation. The page keeps its
+current silent blank-roster fallback, layout setup, validation refresh, clean
+autosave state, and output-capability updates. The Executor owns production;
+an independent Tester will verify it before commit.
 
 Gate 1 and Gate 2 remain Partial. Formal workspace-create acceptance and
 active-v2 DataService isolation remain Satisfied. Phase 2 remains In Progress
