@@ -110,6 +110,7 @@ private slots:
     void cleanup();
     void defaultPortSavesBothFieldsToPersistence();
     void successfulManualSaveTrimsFieldsAndCancelsAutosave();
+    void oversizedManualSaveWarnsWithoutCallingPort();
     void manualFailureWarnsAndRetainsDirtyState();
     void autosaveFailureRetainsDirtyStateWithoutWarning();
     void discardReloadsSavedValuesAndCancelsAutosave();
@@ -192,6 +193,43 @@ successfulManualSaveTrimsFieldsAndCancelsAutosave()
 
     QTest::qWait(AutosaveCoordinator::DefaultDebounceIntervalMs + 100);
     QCOMPARE(savePort.callCount, 1);
+}
+
+void NextFeatureClassNotesPageTests::
+oversizedManualSaveWarnsWithoutCallingPort()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+    const int classId = createSeededClass(services);
+    QVERIFY(classId > 0);
+
+    RecordingClassNotesSavePort savePort;
+    ClassNotesPage page(&services, false, nullptr, &savePort);
+    page.setSaveMode(SaveMode::Manual);
+    page.loadClass(Classroom(QStringLiteral("Class Notes Page Test"), classId));
+
+    const QList<QTextEdit*> editors = page.findChildren<QTextEdit*>();
+    QCOMPARE(editors.size(), 2);
+    editors[0]->setPlainText(QString(
+        static_cast<qsizetype>(
+            Application::kClassNotesSaveMaxTextCodeUnits + 1
+            ),
+        QChar(u'n')
+        ));
+    QVERIFY(page.hasUnsavedChanges());
+
+    QVERIFY(!page.saveChanges());
+    QCOMPARE(savePort.callCount, 0);
+    QVERIFY(page.hasUnsavedChanges());
+    QCOMPARE(m_promptService.requests.size(), std::size_t(1));
+    QCOMPARE(m_promptService.requests.front().severity, PromptSeverity::Warning);
+    QCOMPARE(m_promptService.requests.front().title,
+        QStringLiteral("Save Class Notes"));
+    QVERIFY(m_promptService.requests.front().message.contains(
+        QStringLiteral("10,000")
+        ));
 }
 
 void NextFeatureClassNotesPageTests::manualFailureWarnsAndRetainsDirtyState()

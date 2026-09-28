@@ -11,6 +11,7 @@
 #include "domain/models/class_info.h"
 #include "domain/models/teacher.h"
 #include "next/application/class_notes_save_port.h"
+#include "next/application/class_notes_save_use_case.h"
 #include "next/platform/application_services_class_notes_save_port.h"
 #include "ui/shared/constants/gui_constants.h"
 #include "ui/shared/widgets/sectioncards/class_info_section_card.h"
@@ -208,7 +209,10 @@ bool ClassNotesPage::saveClassNotesInternal(
         m_savePort ? *m_savePort : defaultSavePort;
 
     const ClassMngr::Next::Application::ClassNotesSaveResult saved =
-        savePort.saveClassNotes(request);
+        ClassMngr::Next::Application::ClassNotesSaveUseCase::execute(
+            request,
+            savePort
+            );
     if (!saved)
     {
         if (showErrorMessage)

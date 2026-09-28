@@ -81,6 +81,7 @@ set(CLASSMNGR_NEXT_APPLICATION_SOURCES
     src/next/application/class_summary_projection.h
     src/next/application/class_co_teacher_assignment_use_case.h
     src/next/application/class_notes_save_port.h
+    src/next/application/class_notes_save_use_case.h
     src/next/application/sub_prep_schedule_summary_query.h
     src/next/application/sub_prep_campus_directory_query_port.h
     src/next/application/sub_prep_print_source_query.h
