@@ -1538,31 +1538,30 @@ active-v2 DataService isolation remain Satisfied. Phase 2 remains In Progress
 with its exit gate Open. The user's requested session handoff records this
 continuation point in `latest_session_work.md`.
 
-## Current Position - 2026-09-29 (F123 verified; F124 review next)
+## Current Position - 2026-09-29 (F124 verified; F125 review next)
 
-F123 source/test commit `9f7e736b5c926a3e2412f83f95b2ec68c70bd180` integrates
-F117's app-less Teacher Profile Edit use case into `TeacherInfoPage`. The
-UI-boundary policy delegates normalization and validation to
-`TeacherValidator`; its adapter carries bounded field/severity/display
-arguments through the app contract and restores structured feedback in the
-existing form binder. The persistence port uses `ApplicationServices`'
-session-backed `TeacherService` update/reload path. Canonical reload continues
-to update the header, clear autosave state, and emit `teacherSaved` once.
+F124 source/test commit `a159591e48e312f96378302b105a3ad1276382b3` integrates
+`ClassCoTeacherPage` with the app-less `ClassCoTeacherAssignmentUseCase`. The
+use case rejects invalid IDs and maps the legacy `-1` sentinel to an absent
+teacher ID. Its session-backed platform adapter reads the current `ClassInfo`,
+changes only the teacher assignment, and saves through `ClassService`, keeping
+the other class fields, notes, and schedules. The page retains manual warning,
+dirty-state, title-refresh, and `classInfoSaved` behavior.
 
-The `windows-x64-debug` preset built `ClassMngr`,
-`ClassMngrTeacherInfoPageTests`, and
-`ClassMngrNextApplicationTeacherProfileEditTests`. The two focused CTests
-passed 2/2, covering a warning-bearing save with canonical reload and
-validation rejection with no write. `git diff --check` passed. MSBuild first
-hit Visual Studio FileTracker access denial under the sandbox; the focused
-build passed after the required access was granted. The page-test target
-emitted existing duplicate-stub `/FORCE` warnings, but its executable ran
-successfully. No full suite or baseline comparison ran.
+The `windows-x64-debug` preset built `ClassMngr`, the application test, the
+platform adapter test, and the page integration test; their focused CTests
+passed 3/3. Coverage includes invalid IDs, assigned/unassigned values,
+persisted-field and schedule preservation, unavailable service handling, page
+title/signal updates, and warning/dirty-state behavior. `git diff --check`
+passed. The existing `ClassMngrClassesPageTests` target built but failed 22
+test cases, including `page.openClass(42, ...)` and widget validation assertions;
+the first Details failure occurs before the co-teacher editor opens. It also
+emitted duplicate-stub `/FORCE` linker warnings and a stale dependency warning
+for `class_navigation_preferences.h`. No baseline comparison or full suite ran.
 
-F124's candidate is the direct co-teacher assignment save in
-`ClassCoTeacherPage`. Review a typed application request and a session-backed
-adapter that changes only the teacher assignment while preserving the rest of
-`ClassInfo`, the existing warning/dirty/title/signal behavior, and the
-unassigned-teacher sentinel. Candidate scope is pending acceptance. Gate 1 and
+F125's candidate is routing `ClassNotesPage` through an app-less
+`ClassNotesSaveUseCase`, applying the request's existing text limit before
+calling the session-backed save port. Preserve trimmed fields and current
+warning/dirty behavior. Review and implementation have not begun. Gate 1 and
 Gate 2 remain Partial; formal workspace-create acceptance and active-v2
 DataService isolation remain Satisfied. Phase 2 remains In Progress/Open.

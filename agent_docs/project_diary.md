@@ -1243,3 +1243,11 @@ bounded application issues and restore it in the form binder so warnings still
 allow saves and remain visible after canonical reload. Test through a real
 temporary session so a legacy `DataService` fallback cannot mask the
 integration.
+
+## F124 - normalize the unassigned teacher sentinel at the application edge - 2026-09-29
+
+Translate the UI's `-1` co-teacher sentinel to an absent typed teacher ID in
+the app-less use case. The platform adapter should reload the session-backed
+`ClassInfo` and change only its teacher assignment before saving; defaulting
+after a failed read can overwrite class details, notes, or schedules. Test the
+full persisted class-owned fields and both assignment and unassignment.
