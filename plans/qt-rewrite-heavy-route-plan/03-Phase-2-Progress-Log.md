@@ -7028,3 +7028,54 @@ Continue the separate isolation review of active `src/next` to
 `ApplicationServices` calls, the retained dual-bound services, and Workspace's
 DataService edge. The direct source scan and workspace-create criterion remain
 Satisfied, but strict transitive isolation is unresolved.
+
+## Verified F117 app-less Teacher profile edit contract - commit `3fd2b93f0fd87077aa59654265cda8b53b658ba9`
+
+F117 adds app-less `TeacherId`, the 14-field `TeacherProfileFields` and
+`TeacherProfile`, and `TeacherProfileEditUseCase`. Its injected validation
+policy returns normalized fields and structured issues containing code, field,
+warning/error severity, and bounded arguments. Invalid IDs short-circuit;
+validation errors preserve issues and block writes, while warning-only results
+may continue. Persistence receives normalized fields, then reloads and returns
+the canonical saved profile. Update and reload failures are distinct; a reload
+failure records that the write succeeded.
+
+Independent verification used a clean archive of base
+`47844dfc087d47da9426e0aa06d948a1ab2264a9` with exactly five overlays:
+`cmake/next.cmake` (`30F5584639C7DBECD36409E655AF1F87A1176DAAFF130CD5DF511481DF9CE7EC`),
+`cmake/tests/next.cmake` (`38ADAD66CC58C4E0F0F225E0DFE1377195E35789D5BD6CC6226617BC11EC4E55`),
+`src/next/application/teacher_profile_edit_use_case.h`
+(`1D073F3413A5E6B80C9A46595D432B630340F873326AF2EA76066E59704023FA`),
+`src/next/domain/teacher_profile.h`
+(`DC096F4BAF78227225DC54C49007AC991C0013E6CD711B2B864241B28977530D`), and
+`tests/next_application_teacher_profile_edit_tests.cpp`
+(`F90B8CD5ECBD5D22B27526C09F009FE71FCFE7CC0DFB3FBA6659EB3C726377D1`). The
+forced target rebuild succeeded; CTest
+`ClassMngrNextApplicationTeacherProfileEditTests` passed 1/1 with
+`--no-tests=error`, and `git diff --check` passed. The new contracts have no
+Qt or legacy production dependency; MSVC C4530 was non-blocking.
+
+No production validation-policy adapter or `TeacherInfoPage` integration is
+included. A future adapter must delegate to the existing `TeacherValidator`
+and map normalized values and issues without duplicating validation semantics.
+F117 advances Gate 1 app-less coverage, which remains Partial. Gate 2 remains
+Partial, the workspace-create boundary remains Satisfied, and strict
+transitive DataService isolation remains unresolved. Phase 2 remains In
+Progress with its exit gate Open. Historical production-workbook provenance is
+a tracked non-gating risk.
+
+### Next selected slice (F118)
+
+Compare baseline and current Class Transfer behavior on the same checked-in
+`tests/fixtures/transfers/conflict_source.json`: normalized preview/review
+results, exact conflict diagnostic, complete database snapshots, and zero
+writes. This is common-input evidence using a post-baseline fixture, not
+historical production-workbook parity. Gate 2 remains Partial until required
+behavior is covered.
+
+### Independent open track: DataService isolation
+
+Continue auditing active `src/next` to `ApplicationServices` calls, dual-bound
+services, and Workspace's DataService edge. F117 does not change isolation; the
+direct source scan and workspace-create criterion remain Satisfied, while
+strict transitive isolation remains unresolved.

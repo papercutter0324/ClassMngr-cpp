@@ -10,17 +10,17 @@
 - Last updated: 2026-09-28
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F116 is verified at commit `6636cac1`; the Sub Prep
-  roster-output port no longer calls `ApplicationServices::hasOpenDatabase()`.
-  Gates 1 and 2 remain Partial; workspace create and the audited direct
-  `src/next` scan remain Satisfied. Strict transitive isolation remains
-  unresolved: AppServices factories retain dual-bound services and Workspace
-  still reaches DataService. F117 is selected for app-less teacher-profile edit
-  at the TeacherInfoPage boundary, pending bounded solution review. The separate
-  DataService-isolation track remains open. Historical production-workbook
-  provenance is a tracked risk, not a literal exit criterion.
-  Sub Prep remains January 1 of the reference date's year through December 31
-  of the following year at most; 2026-2027 is illustrative.
+- Current note: F117 is verified at commit `3fd2b93f`; it adds an app-less
+  Teacher profile edit contract. Gates 1 and 2 remain Partial; workspace create
+  and the audited direct `src/next` scan remain Satisfied. Strict transitive
+  isolation remains unresolved: AppServices factories retain dual-bound
+  services and Workspace still reaches DataService. F118 is selected for a
+  common-input Class Transfer conflict comparison using a post-baseline fixture,
+  not historical production-workbook parity. Historical workbook provenance is
+  a tracked risk, not a literal exit criterion. The separate DataService-
+  isolation track remains open. Sub Prep remains January 1 of the reference
+  date's year through December 31 of the following year at most; 2026-2027 is
+  illustrative.
 
 ## Objective
 
@@ -167,56 +167,69 @@ No new v2 production path depends on DataService, MainWindow, PageManager, or a 
 - Do not hide business rules inside presenters or delegates.
 - Do not allow compatibility methods to become the permanent v2 API.
 
-## Latest verified progress (F116)
+## Latest verified progress (F117)
 
-Commit `6636cac1a26528089dbda49e1bc9f93ff1d6346a` changes only
-`src/next/platform/application_services_sub_prep_roster_output_source_port.h`
-and removes its `ApplicationServices::hasOpenDatabase()` call. An independent
-fresh-snapshot verification overlaid exactly this file, SHA-256
-`C92559472DA7F1E6758BD74341CD4EBF3439E105A4A91361EAD276A9CAC39ABD`. The
-registered CTests `ClassMngrDataServiceLifecycleTests` and
-`ClassMngrNextPlatformApplicationServicesSubPrepRosterOutputSourcePortTests`
-passed 2/2 with `--no-tests=error`; `git diff --check` passed. The existing
-lifecycle test proves closed bound services reject while a separate legacy
-DataService remains open. The focused port target has no direct split-session
-injection assertion, so it does not independently verify that pairing at the
-port boundary.
+Commit `3fd2b93f0fd87077aa59654265cda8b53b658ba9` adds the app-less
+`TeacherId`, 14-field `TeacherProfileFields`/`TeacherProfile`, and
+`TeacherProfileEditUseCase`. Its injected policy returns normalized fields and
+structured issues (code, field, warning/error severity, bounded arguments).
+Invalid IDs short-circuit; validation errors preserve issues and block writes;
+warnings may continue. The use case updates normalized fields, reloads, and
+returns the canonical saved profile. Update and reload failures are distinct;
+reload failure records that the write succeeded.
 
-F116 leaves the Workspace adapter unchanged. Direct `src/next` isolation and
-the formal workspace-create boundary remain Satisfied. Strict transitive
-isolation remains unresolved: AppServices factories retain dual-bound services
-and Workspace itself reaches DataService.
+An independent clean archive of base
+`47844dfc087d47da9426e0aa06d948a1ab2264a9` overlaid exactly five paths:
+`cmake/next.cmake`, `cmake/tests/next.cmake`,
+`src/next/application/teacher_profile_edit_use_case.h`,
+`src/next/domain/teacher_profile.h`, and
+`tests/next_application_teacher_profile_edit_tests.cpp`. Their SHA-256 hashes
+in that order are `30F5584639C7DBECD36409E655AF1F87A1176DAAFF130CD5DF511481DF9CE7EC`,
+`38ADAD66CC58C4E0F0F225E0DFE1377195E35789D5BD6CC6226617BC11EC4E55`,
+`1D073F3413A5E6B80C9A46595D432B630340F873326AF2EA76066E59704023FA`,
+`DC096F4BAF78227225DC54C49007AC991C0013E6CD711B2B864241B28977530D`, and
+`F90B8CD5ECBD5D22B27526C09F009FE71FCFE7CC0DFB3FBA6659EB3C726377D1`.
+The forced target rebuild succeeded; focused CTest
+`ClassMngrNextApplicationTeacherProfileEditTests` passed 1/1 with
+`--no-tests=error`, and `git diff --check` passed. The new contracts have no
+Qt or legacy production dependency. MSVC C4530 was non-blocking.
 
-### Cumulative exit-gate status after F116
+No production validation-policy adapter or `TeacherInfoPage` integration is
+included. A future adapter must delegate to the existing `TeacherValidator`
+and map its normalized values and issues without duplicating validation
+semantics.
+
+### Cumulative exit-gate status after F117
 
 | Exit-gate area | Audit status | Finding |
 | --- | --- | --- |
-| App-less Domain/Application behavior (Gate 1) | Partial | Existing coverage includes workspace lifecycle; Class Transfer schedule-candidate validation (F79); Teacher Import policies, validation, and apply (F80/F81/F85/F87/F89/F90); Schedule Import match-key typing (F84); and Calendar policies/use cases (F93/F95/F97/F99/F101-F105/F107/F110). Teacher-profile edit, broader class/schedule/roster/evaluation editing, backup/recovery, and legacy database import remain planned. |
+| App-less Domain/Application behavior (Gate 1) | Partial | Coverage includes workspace lifecycle; Class Transfer schedule-candidate validation (F79); Teacher Import (F80/F81/F85/F87/F89/F90); Schedule Import match-key typing (F84); Calendar policies/use cases (F93/F95/F97/F99/F101-F105/F107/F110); and Teacher profile edit (F117). Broader class/schedule/roster/evaluation editing, backup/recovery, and legacy database import remain planned. |
 | Baseline parity (Gate 2) | Partial | Bounded records include F82/F83 post-baseline Schedule Import inputs, F86/F88 baseline-era generated Schedule Import inputs, F91/F92/F94/F96/F98 Teacher Import flows and failure cases, and F100/F101/F103/F104/F106/F108/F109 Schedule Import rollback and Calendar repository transitions. They do not cover all validation, conflict, planning, or state-transition behavior; historical production-workbook provenance remains unverified. |
 | Workspace boundary | Satisfied | The formal workspace-create criterion remains satisfied. |
-| v2 dependency isolation | Partial transitive progress | The direct `src/next` source scan remains Satisfied; F111-F115 cover selected bound-session Settings, Calendar, Sub Prep, and ClassNotes methods, while F116 removes the Sub Prep roster-output port's `hasOpenDatabase()` call. AppServices factories retain dual-bound services and Workspace reaches DataService; strict transitive isolation remains unresolved. |
+| v2 dependency isolation | Partial transitive progress | The direct `src/next` source scan remains Satisfied; F111-F116 cover selected bound-session Settings, Calendar, Sub Prep, and ClassNotes paths. AppServices factories retain dual-bound services and Workspace reaches DataService; strict transitive isolation remains unresolved. |
 
-Phase 2 remains In Progress with its exit gate Open. Historical
-production-workbook provenance remains a tracked risk, not a literal exit
-criterion. Gate 1 remains Partial: the listed app-less work does not cover all
-planned use cases. Gate 2 remains Partial, with bounded comparisons listed
-above; they do not cover every validation, conflict, planning, or state
-transition behavior. The F116 port test also lacks direct split-session
-injection coverage. Sub Prep remains bounded to January 1 of the reference
-date's year through December 31 of the following year, at most; 2026-2027 is
+Phase 2 remains In Progress with its exit gate Open. Gate 1 remains Partial;
+F117 advances its app-less coverage, but does not integrate the production
+validation adapter or UI. Gate 2 remains Partial; bounded comparisons do not
+cover every validation, conflict, planning, or state-transition behavior.
+Historical production-workbook provenance remains a tracked risk, not a literal
+exit criterion. Sub Prep remains bounded to January 1 of the reference date's
+year through December 31 of the following year, at most; 2026-2027 is
 illustrative.
 
-### Next selected slice (F117; pending bounded solution review)
+### Next selected slice (F118)
 
-Add an app-less teacher-profile edit use case at the `TeacherInfoPage`
-application boundary after bounded solution review establishes its contract
-and acceptance. Broader class, schedule, roster/evaluation editing,
-backup/recovery, and legacy database import use cases remain planned work.
+Compare the baseline and current Class Transfer behavior for the same checked-in
+`tests/fixtures/transfers/conflict_source.json`. Compare normalized preview /
+review results, exact conflict diagnostic, complete database snapshots, and
+zero writes. Label this common-input comparison as post-baseline fixture
+evidence; it is not historical production-workbook parity. Gate 2 remains
+Partial until all required behavior is covered.
 
 ### Independent open track: DataService isolation
 
 Keep the strict isolation review open. The audited direct `src/next` scan and
 formal workspace-create criterion remain Satisfied, but these scopes do not
 resolve dual-bound AppServices factories or Workspace's DataService edge.
-F116 only removes the roster-output port's `hasOpenDatabase()` call; do not
-claim strict transitive isolation.
+F116 removed the roster-output port's `hasOpenDatabase()` call; F117 does not
+change isolation. Do not claim strict transitive isolation.
