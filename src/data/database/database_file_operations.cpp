@@ -4,6 +4,49 @@
 #include <QFile>
 #include <QFileInfo>
 
+#include <filesystem>
+#include <system_error>
+
+namespace
+{
+std::filesystem::path fileSystemPath(const QString& path)
+{
+#if defined(Q_OS_WIN)
+    return std::filesystem::path(path.toStdWString());
+#else
+    const QByteArray utf8Path = path.toUtf8();
+    return std::filesystem::u8path(utf8Path.constData());
+#endif
+}
+
+bool pathsReferToSameFile(
+    const QString& sourcePath,
+    const QString& targetPath
+    )
+{
+    const QString cleanSourcePath = QDir::cleanPath(sourcePath);
+    const QString cleanTargetPath = QDir::cleanPath(targetPath);
+    if (cleanSourcePath == cleanTargetPath)
+    {
+        return true;
+    }
+
+    const QFileInfo sourceInfo(cleanSourcePath);
+    const QFileInfo targetInfo(cleanTargetPath);
+    if (!sourceInfo.exists() || !targetInfo.exists())
+    {
+        return false;
+    }
+
+    std::error_code error;
+    return std::filesystem::equivalent(
+        fileSystemPath(cleanSourcePath),
+        fileSystemPath(cleanTargetPath),
+        error
+        );
+}
+}
+
 Status DatabaseFileOperations::copyDatabaseFile(
     const QString& sourcePath,
     const QString& destinationPath
@@ -16,12 +59,12 @@ Status DatabaseFileOperations::copyDatabaseFile(
             );
     }
 
-    const QString absoluteSourcePath =
-        QFileInfo(sourcePath).absoluteFilePath();
+    const QString absoluteSourcePath = QDir::cleanPath(
+        QFileInfo(sourcePath).absoluteFilePath());
     const QFileInfo targetInfo(destinationPath);
-    const QString targetPath = targetInfo.absoluteFilePath();
+    const QString targetPath = QDir::cleanPath(targetInfo.absoluteFilePath());
 
-    if (absoluteSourcePath == targetPath)
+    if (pathsReferToSameFile(absoluteSourcePath, targetPath))
     {
         return {};
     }

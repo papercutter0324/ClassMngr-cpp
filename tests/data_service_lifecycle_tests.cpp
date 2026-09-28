@@ -1,4 +1,5 @@
 #include "data/data_service.h"
+#include "data/database/database_file_operations.h"
 #include "data/database/database_session.h"
 #include "data/repositories/roster_repository.h"
 #include "app/services/feature_services.h"
@@ -224,6 +225,7 @@ private slots:
     void databaseSessionOwnsRepositoryLifetime();
     void borrowedDataServicePreservesOwnedSession();
     void failedReplacementOpenPreservesSessionAndReleasesCandidate();
+    void databaseFileCopyTreatsSameFileAliasesAsNoOp();
     void legacyDataServiceOwnsDatabaseFileOperations();
     void applicationServicesOwnDatabaseFileOperations();
     void applicationServicesShareCanonicalSessionAcrossLifecycle();
@@ -401,6 +403,52 @@ void DataServiceLifecycleTests::applicationServicesOwnDatabaseFileOperations()
     services.closeDatabase();
     QVERIFY(!services.saveDatabaseAs(savedPath).has_value());
     QVERIFY(!services.exportDatabaseAs(exportedPath).has_value());
+}
+
+void DataServiceLifecycleTests::databaseFileCopyTreatsSameFileAliasesAsNoOp()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+
+    const QString sourcePath =
+        directory.filePath(QStringLiteral("Profile.tps"));
+    const QString caseAliasPath =
+        directory.filePath(QStringLiteral("profile.tps"));
+    const QString settingKey = QStringLiteral("same-file-alias/value");
+
+    DataService source;
+    QVERIFY(source.openDatabase(sourcePath));
+    QVERIFY(source.saveSetting(settingKey, QStringLiteral("preserved data")));
+    source.closeDatabase();
+
+#if defined(Q_OS_WIN)
+    QVERIFY(QFileInfo::exists(caseAliasPath));
+#endif
+
+    const Status directCopy =
+        DatabaseFileOperations::copyDatabaseFile(sourcePath, caseAliasPath);
+    QVERIFY2(directCopy.has_value(),
+             directCopy ? "" : qPrintable(directCopy.error()));
+    QVERIFY(QFileInfo::exists(sourcePath));
+
+    DataService verification;
+    QVERIFY(verification.openDatabase(sourcePath));
+    const Result<QVariant> beforeExport = verification.loadSetting(settingKey);
+    QVERIFY(beforeExport);
+    QCOMPARE(beforeExport->toString(), QStringLiteral("preserved data"));
+
+    QVERIFY(verification.exportAs(caseAliasPath));
+    QVERIFY(QFileInfo::exists(sourcePath));
+    const Result<QVariant> afterExport = verification.loadSetting(settingKey);
+    QVERIFY(afterExport);
+    QCOMPARE(afterExport->toString(), QStringLiteral("preserved data"));
+    verification.closeDatabase();
+
+    DataService copied;
+    QVERIFY(copied.openDatabase(caseAliasPath));
+    const Result<QVariant> copiedValue = copied.loadSetting(settingKey);
+    QVERIFY(copiedValue);
+    QCOMPARE(copiedValue->toString(), QStringLiteral("preserved data"));
 }
 
 void DataServiceLifecycleTests::legacyDataServiceOwnsDatabaseFileOperations()
