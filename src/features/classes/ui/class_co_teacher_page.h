@@ -10,6 +10,11 @@ class PageHeader;
 class ScrollablePageBody;
 class TeacherInfoSection;
 
+namespace ClassMngr::Next::Application
+{
+class ClassCoTeacherAssignmentPort;
+}
+
 class QLabel;
 class QPushButton;
 class SectionCard;
@@ -22,7 +27,9 @@ public:
     explicit ClassCoTeacherPage(
         ApplicationServices* services,
         bool embedded = false,
-        QWidget* parent = nullptr
+        QWidget* parent = nullptr,
+        ClassMngr::Next::Application::ClassCoTeacherAssignmentPort*
+            assignmentPort = nullptr
         );
 
     void loadClass(
@@ -55,6 +62,8 @@ private:
 
 private:
     ApplicationServices* m_services{nullptr};
+    ClassMngr::Next::Application::ClassCoTeacherAssignmentPort*
+        m_assignmentPort{nullptr};
     Classroom m_classroom;
     bool m_embedded{false};
 

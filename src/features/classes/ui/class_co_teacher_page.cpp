@@ -6,6 +6,8 @@
 #include "core/utils/sidebar_node_naming.h"
 #include "domain/models/class_info.h"
 #include "domain/models/teacher.h"
+#include "next/application/class_co_teacher_assignment_use_case.h"
+#include "next/platform/application_services_class_co_teacher_assignment_port.h"
 #include "ui/shared/constants/gui_constants.h"
 #include "ui/shared/dialogs/user_prompt_service.h"
 #include "ui/shared/pages/autosave_coordinator.h"
@@ -25,10 +27,13 @@
 ClassCoTeacherPage::ClassCoTeacherPage(
     ApplicationServices* services,
     bool embedded,
-    QWidget* parent
+    QWidget* parent,
+    ClassMngr::Next::Application::ClassCoTeacherAssignmentPort*
+        assignmentPort
     )
     : BasePage(parent)
     , m_services(services)
+    , m_assignmentPort(assignmentPort)
     , m_embedded(embedded)
     , m_autosave(new AutosaveCoordinator(this))
 {
@@ -298,15 +303,19 @@ bool ClassCoTeacherPage::saveCoTeacherInternal(
         return true;
     }
 
-    ClassInfo info =
-        m_services->classService()
-            ->classInfo(m_classroom.id)
-            .value_or(ClassInfo{});
-    info.classId = m_classroom.id;
-    info.teacherId = m_teacherSection->teacherId();
-
-    const Status saved =
-        m_services->classService()->saveClassInfo(info);
+    ClassMngr::Next::Platform::
+        ApplicationServicesClassCoTeacherAssignmentPort defaultAssignmentPort(
+            m_services
+            );
+    const ClassMngr::Next::Application::
+        ClassCoTeacherAssignmentPort& assignmentPort =
+            m_assignmentPort ? *m_assignmentPort : defaultAssignmentPort;
+    const ClassMngr::Next::Domain::Result<void> saved =
+        ClassMngr::Next::Application::ClassCoTeacherAssignmentUseCase::execute(
+            m_classroom.id,
+            m_teacherSection->teacherId(),
+            assignmentPort
+            );
     if (!saved)
     {
         m_autosave->markDirty(false);
@@ -316,7 +325,10 @@ bool ClassCoTeacherPage::saveCoTeacherInternal(
             DialogServices::showWarning(
                 this,
                 tr("Save Co-Teacher"),
-                saved.error()
+                QString::fromUtf8(
+                    saved.error().message.data(),
+                    static_cast<qsizetype>(saved.error().message.size())
+                    )
                 );
         }
 

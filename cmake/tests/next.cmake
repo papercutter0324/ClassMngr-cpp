@@ -576,6 +576,45 @@ add_test(
     COMMAND ClassMngrNextApplicationTeacherProfileEditTests
 )
 
+# Verify co-teacher ID validation and legacy unassigned-sentinel translation
+# without Qt or persistence.
+add_executable(
+    ClassMngrNextApplicationClassCoTeacherAssignmentTests
+    tests/next_application_class_co_teacher_assignment_tests.cpp
+)
+target_compile_features(
+    ClassMngrNextApplicationClassCoTeacherAssignmentTests
+    PRIVATE
+        cxx_std_23
+)
+if(MSVC)
+    target_compile_options(
+        ClassMngrNextApplicationClassCoTeacherAssignmentTests
+        PRIVATE
+            /EHsc
+    )
+endif()
+set_target_properties(
+    ClassMngrNextApplicationClassCoTeacherAssignmentTests
+    PROPERTIES
+        AUTOMOC OFF
+        AUTOUIC OFF
+        AUTORCC OFF
+)
+set_property(
+    TARGET ClassMngrNextApplicationClassCoTeacherAssignmentTests
+    PROPERTY CLASSMNGR_STANDALONE_CPP_TEST TRUE
+)
+target_link_libraries(
+    ClassMngrNextApplicationClassCoTeacherAssignmentTests
+    PRIVATE
+        ClassMngrNext::Application
+)
+add_test(
+    NAME ClassMngrNextApplicationClassCoTeacherAssignmentTests
+    COMMAND ClassMngrNextApplicationClassCoTeacherAssignmentTests
+)
+
 classmngr_add_qt_test(
     NAME CalendarEventImportParity
     SOURCES
@@ -859,6 +898,27 @@ classmngr_add_qt_test(
     LIBRARIES
         ClassMngrNext::Platform
         Qt6::Test
+    OFFSCREEN
+)
+
+classmngr_add_qt_test(
+    NAME NextPlatformApplicationServicesClassCoTeacherAssignmentPort
+    SOURCES
+        tests/next_platform_application_services_class_co_teacher_assignment_port_tests.cpp
+    LIBRARIES
+        ClassMngrNext::Platform
+        Qt6::Test
+    OFFSCREEN
+)
+
+classmngr_add_qt_test(
+    NAME NextFeatureClassCoTeacherPage
+    SOURCES
+        tests/next_feature_class_co_teacher_page_tests.cpp
+    LIBRARIES
+        ClassMngrNext::Platform
+        Qt6::Test
+        Qt6::Widgets
     OFFSCREEN
 )
 
