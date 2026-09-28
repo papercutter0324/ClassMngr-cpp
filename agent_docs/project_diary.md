@@ -1305,3 +1305,10 @@ Read evaluation names exactly as stored; do not trim a query key when the
 repository lookup is exact. Keep an empty successful result distinct from a
 structured read failure in the application boundary, while preserving the
 page's existing blank, clean grid for either outcome.
+
+## F132 - keep raw roster reads separate from widget normalization - 2026-09-29
+
+Carry stored column order, widths, every raw row, and UTF-16 values through the
+Qt-free read snapshot without applying the widget's 25-row presentation limit.
+Let the existing roster model own required-column, name, width, and visible-row
+normalization; test the raw adapter limit and UI presentation separately.

@@ -3125,7 +3125,7 @@ service skip/reload, read-only/time-column no-op, and testing-assignment
 behavior. `ClassMngr` built and `git diff --check` passed. No full suite or
 baseline comparison ran.
 
-## Phase 2 continuation - 2026-09-29 (F131 verified; F132 implementation in progress)
+## Phase 2 continuation - 2026-09-29 (F132 verified; F133 candidate review in progress)
 
 The user requested a commit after every completed slice, then immediate work
 on the next slice. The active deployment ID is
@@ -3187,13 +3187,31 @@ The F131 verification handoff is recorded in `project_progress.md`,
 `project_diary.md`, and this file. Its documentation commit is separate from
 the source commit.
 
-F132 is now in implementation: add an app-less read query for one selected
-class's roster and route `RosterEditorWidget::loadClass` through a
-session-backed adapter. Preserve ordered columns, widths, raw rows, UTF-16
-values, and existing model normalization/presentation. The page keeps its
-current silent blank-roster fallback, layout setup, validation refresh, clean
-autosave state, and output-capability updates. The Executor owns production;
-an independent Tester will verify it before commit.
+F132 source/test commit `e878906c` (`Phase2 - integrate roster read query`)
+adds a shared Qt-free `RosterSnapshot`, a typed class-ID read query, and a
+session-backed platform adapter. `RosterEditorWidget::loadClass` reads through
+the query. Ordered columns, widths, all raw rows, and UTF-16 values pass through
+the app/platform boundary without a 25-row cap; the existing model applies
+column/name/width normalization and the UI row limit. Failed and empty reads
+retain the blank-roster behavior, while loading keeps autosave clean and
+refreshes output capabilities.
+
+The app, platform, and page focused CTests passed 3/3; `ClassMngr` built.
+Independent verification confirmed 38 raw rows at the adapter, a missing-roster
+success, structured repository failure, closed-session failure, page custom
+columns/widths and normalized values, 25-row presentation, blank/failed
+fallback, clean state, and capability signals. `git diff --check` passed. No
+single page test loads 38 rows end-to-end; the raw and displayed limits are
+covered separately. No full suite or baseline comparison ran.
+
+F132's source/test commit is `e878906c`; its verification handoff is recorded
+in `project_progress.md`, `project_diary.md`, and this file. The handoff
+documentation commit is separate from the source commit.
+
+F133 candidate review is comparing a focused query for schedule inputs used
+by `ScheduleBuilder` with a compact `ClassesPage` navigation snapshot. Two
+independent Explorers and three bounded Investigators are assessing formal
+priority, scope, and verification risk before the next implementation begins.
 
 Gate 1 and Gate 2 remain Partial. Formal workspace-create acceptance and
 active-v2 DataService isolation remain Satisfied. Phase 2 remains In Progress

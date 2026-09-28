@@ -1653,9 +1653,24 @@ empty/failed page fallbacks. `git diff --check` passed. Partial/malformed-row
 normalization at the page is source-reviewed but has no direct load-path test.
 No full suite or baseline comparison ran.
 
-F132 is in implementation as a Qt-free read query for one selected class's
-roster, paired with F129's save boundary. Preserve raw ordered columns, widths,
-rows, and UTF-16 values; require the active session; and keep the widget's
-silent blank-roster fallback and existing model/layout normalization.
+F132 source/test commit `e878906c` (`Phase2 - integrate roster read query`)
+adds a shared Qt-free `RosterSnapshot`, typed class-ID read query, and
+session-backed adapter, then routes `RosterEditorWidget::loadClass` through
+it. The app/platform boundary preserves ordered columns, widths, all raw rows,
+and UTF-16 values without applying the UI's 25-row cap. The existing model
+continues to normalize columns, names, widths, and displayed rows; read errors
+still produce a blank, clean roster.
+
+The app, platform, and page focused CTests passed 3/3; `ClassMngr` built.
+Independent verification confirmed a 38-row raw snapshot, missing-roster and
+repository-error distinction, session-only access, page normalization and
+widths, 25-row display, blank/failed fallback, clean state, and capability
+signals. `git diff --check` passed. There is no single page test loading 38
+rows end-to-end; the raw and displayed limits are covered separately. No full
+suite or baseline comparison ran.
+
+F133 candidate review is comparing a bounded ScheduleBuilder input query with
+a ClassesPage navigation snapshot against remaining Phase 2 and memory-plan
+priorities. No F133 implementation has begun.
 Gate 1 and Gate 2 remain Partial; formal workspace-create acceptance and
 active-v2 DataService isolation remain Satisfied. Phase 2 remains In Progress/Open.
