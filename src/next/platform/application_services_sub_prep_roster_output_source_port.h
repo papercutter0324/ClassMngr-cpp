@@ -155,8 +155,7 @@ public:
             ClassService* classService = m_services.classService();
             TeacherService* teacherService = m_services.teacherService();
             RosterService* rosterService = m_services.rosterService();
-            if (!m_services.hasOpenDatabase()
-                || !classService || !classService->isAvailable()
+            if (!classService || !classService->isAvailable()
                 || !teacherService || !teacherService->isAvailable()
                 || !rosterService || !rosterService->isAvailable())
             {
