@@ -7180,14 +7180,61 @@ pointers. Workspace calls will not notify or refresh the facade.
 The rationale is that `ApplicationServices` is allowed by the formal gate and
 already supplies FileController's open-state/path reads. A new Workspace
 service/port would add an unnecessary dependency without improving the
-transitive boundary. The F120 acceptance criteria are recorded in the Phase 2
-plan's [selected F120 slice](03-Phase-2-Domain-Model-and-Application-Contracts.md).
-They cover the seven-operation call graph, preserved Workspace behavior, safe
-facade reads/writes across session replacement and failures, retained standalone
-and sessionless usage, focused lifecycle/port/controller tests, a `ClassMngr`
-build, and diff hygiene.
+transitive boundary. Acceptance required a source audit confirming the seven
+operations avoid `m_dataService` and `src/next` remains DataService-free;
+preservation of path/error normalization, lifecycle postconditions, save,
+save-as copy-and-reopen identity, and export behavior; borrowed-facade reads and
+writes through open, replacement, failure, close, and reopen; and standalone
+and sessionless compatibility. Build `ClassMngr` and run the lifecycle,
+WorkspacePort, and FileController workspace targets with diff hygiene checks.
 
-F120 implementation and independent verification remain pending. Phase 2
-remains In Progress with its exit gate Open; Gate 1 and Gate 2 remain Partial,
-the workspace-create boundary remains Satisfied, and strict transitive
-isolation remains unresolved.
+At the solution-review handoff, F120 implementation and independent
+verification were pending. Phase 2 remained In Progress with its exit gate
+Open; Gate 1 and Gate 2 remained Partial, the workspace-create boundary was
+Satisfied, and strict transitive isolation remained unresolved.
+
+## Verified F120 Workspace DataService isolation and same-file copy repair - commits `b1288b96166a3beaa5885555e3fe05ab83d59107` and `09201aa5282973044a83b1471c6c8f676a7cb716`
+
+F120 made all seven `ApplicationServices` Workspace operations session-backed
+and made `DataService` resolve repository access live through its owned or
+borrowed session. The initial implementation's exact-commit fresh-archive
+verification passed the focused build and three required CTests, then exposed a
+same-file Windows path-alias data-loss edge in file-copy handling. The Executor
+fixed that edge in `09201aa5`; the same independent Tester verified a fresh
+archive of the repair. `ClassMngr` and all three F120 targets built, and these
+CTest targets passed 3/3:
+`ClassMngrDataServiceLifecycleTests`,
+`ClassMngrNextPlatformApplicationServicesWorkspacePortTests`, and
+`ClassMngrFileControllerWorkspaceLifecycleTests`. A case-variant probe
+reported `operationSucceeded=1`, `sourceExists=1`, and `contentPreserved=1`.
+The toolchain was CMake 4.4.2, Ninja 1.13.2, MSVC 19.51.36257, and Qt 6.12.0.
+Missing optional Vulkan headers and one object-path warning affected an
+unselected target. No full suite ran.
+
+The exact-archive repair delta is:
+
+- `src/data/database/database_file_operations.cpp` — SHA-256 `57B07272C59D4BD7B09B40D78EE1E69112497AB92DE6A2E38E2B5F4C9F9E0DF6`; Git blob `7f20ea653900f661e68e625ec8a9951b89e7c906`.
+- `tests/data_service_lifecycle_tests.cpp` — SHA-256 `0A8674C31F015BF0AD10D58B827152FB427AA6E7EADA642F0EA93D268008F182`; Git blob `825e530379931eccb0efd68c32738484c9d2b0d0`.
+
+Source audit confirms the seven Workspace operations route to
+`DatabaseSession` or the DataService-independent file helper; they do not call
+`m_dataService`, which remains only for facade construction/access. There are
+no direct `DataService` references under `src/next`. The Workspace operation
+edge and active `src/next` DataService isolation are now Satisfied; the formal
+workspace-create boundary remains Satisfied. Gate 1 and Gate 2 remain Partial,
+and Phase 2 remains In Progress with its exit gate Open.
+
+### Next selected slice (F121)
+
+Add a test-only successful Class Transfer replacement common-input comparison
+using identical bytes from `tests/fixtures/transfers/success_source.json` in a
+clean current tree and baseline `48fc5c5cc7dee78d82f8bf5f1bf8b51725575b99`.
+Pin fixture SHA-256
+`A40CB4079865EB5C48800208A3648360C08B0CEC2F3ED1E3FA383E91BD4050E8`. The
+deterministic seeded test must compare normalized preview, review, and plan;
+replacement identity/result; and persisted class details, schedule, roster,
+and evaluation, including `sqlite_sequence` if supported. Run focused
+`ClassMngrClassTransferTests` in both trees. This is post-baseline common-input
+evidence, not historical production-workbook parity. The Executor has begun
+the test change; current/baseline verification is pending and Gate 2 remains
+Partial.
