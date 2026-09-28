@@ -1202,3 +1202,7 @@ Exercise every CalendarService content-read method with a closed bound session a
 ## F113 - isolate output reads while preserving legacy construction
 
 For operation-scoped output adapters, prove a closed bound session plus a separate open DataService cannot supply fallback content, even when the service still reports available. Repeat through sessionless legacy construction and retain normal adapter regressions, especially established failure handling such as zero student count. Isolate fresh verification builds from repository build caches and clean only generated scratch paths after checking containment.
+
+## F114 - close live Calendar mutation fallbacks
+
+When several rejected operations share a seeded legacy store, check the store immediately after each operation as well as at the end of the sequence; the final state alone can hide which call mutated it. Make a bound session authoritative for availability and each live Next Calendar mutation, while separately preserving DataService-only behavior. Re-run the same independent verifier after strengthening assertion granularity.

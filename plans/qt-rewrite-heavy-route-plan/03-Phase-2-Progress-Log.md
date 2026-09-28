@@ -6890,10 +6890,51 @@ provenance remains a tracked, non-gating risk. Sub Prep remains bounded to
 January 1 of the reference date's year through December 31 of the following
 year, at most; 2026-2027 is illustrative.
 
-### Next selected bounded slice (F114)
+## Verified F114 Calendar live-mutation isolation - commit `8aee10a6a4704535e49d3c2621f03479b8b8580a`
 
-Isolate `TeacherService::teachers`, `nativeEnglishTeachers`, `gsTeamMembers`,
-and `latestImportDate` for non-null bound sessions. A closed bound
-`DatabaseSession` alongside a separately open, seeded DataService must fail all
-four reads without exposing its content; sessionless DataService-only behavior
-must remain. Retain the normal staff-directory regression.
+The commit changes only `src/app/services/feature_services.cpp` and
+`tests/data_service_lifecycle_tests.cpp`. Bound-session
+`FeatureService::isAvailable()` now follows the non-null session; DataService-
+only construction retains legacy availability. `CalendarService::saveEvents`,
+`deleteEvent`, `deleteRepeatSeriesFromDate`, and `deleteAllEvents` fail closed
+when a bound session is closed, without falling through to a separately open,
+seeded DataService. Lifecycle tests assert unchanged legacy state immediately
+after each rejected call and retain sessionless legacy operations. `saveEvent()`
+is unchanged because the audit found no current `src/next` caller.
+
+The initial independent verification found an assertion-granularity gap. After
+per-operation state assertions were added, the same independent Tester passed
+the exact two-file snapshot on base
+`2fe914856851581efb637be44cd762b3dec7b1db`; SHA-256 was
+`21E5048D50FD636BE954504444061E804F93D746668C1B9D272418793319719B` for
+`feature_services.cpp` and
+`F377B89DC93A880680CB301065BFC27512BF6E809DED9F9D609DDE7EE1007583` for the
+lifecycle test. Fresh Windows x64 Debug verification with Ninja 1.13.2, MSVC
+19.51.36257, and Qt 6.12.0 passed
+`ClassMngrDataServiceLifecycleTests` and
+`ClassMngrNextPlatformApplicationServicesCalendarEventPortTests` (2/2), and
+`git diff --check` passed. The same snapshot also passed
+`ClassMngrSharedPolicyTests` (1/1), including open-session `saveEvents`. No
+full suite ran. Optional Vulkan headers were unavailable and non-blocking.
+
+F114 resolves live Calendar mutation fallbacks and the service-availability
+mismatch only; it does not establish global or strict object-graph DataService
+isolation. Direct `src/next` sources remain free of DataService, MainWindow,
+PageManager, and widget-pointer references, but strict transitive isolation is
+unresolved. Gate 1 and Gate 2 remain Partial; workspace boundary remains
+Satisfied. Historical production-workbook provenance remains a tracked risk,
+not a literal exit criterion. Existing Schedule Import F82/F83 comparisons
+remain common-fixture evidence and do not close Gate 2.
+
+F114 supersedes the earlier TeacherService catalog-read selection: an
+independent call-site audit found no current `src/next` caller for those reads.
+
+### Next selected bounded slice (F115)
+
+Make `ClassService::saveClassNotes()` fail closed for a closed non-null bound
+session even when a separate DataService is open. Test that the rejected call
+leaves both notes fields unchanged, and preserve DataService-only compatibility
+and the ClassNotes port/page regressions. The active ClassNotes adapter already
+checks session-authoritative `isAvailable()` and rejects a closed session
+before calling `saveClassNotes()`; F115 covers direct service-level consistency
+and its latent fallback, not an observed live v2 port leak.
