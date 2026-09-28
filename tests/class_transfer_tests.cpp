@@ -333,6 +333,7 @@ private slots:
     void requiredSuccessFixtureTraversesReviewAndPersistsResults();
     void successFixtureReplacesMatchingTeacherThroughReview();
     void successFixtureReplacesMatchingDestinationAndChildren();
+    void successFixtureClassReplacementMatchesCommonInputState();
     void malformedNonpositiveReviewTargetsAreRejectedAtLegacyBoundary();
     void permanentConflictFixturePresentsReviewAndRejectsScheduleCollision();
     void conflictFixtureMatchesCommonInputBaselineAndRejectsWithoutWrites();
@@ -1958,6 +1959,192 @@ void ClassTransferTests::successFixtureReplacesMatchingDestinationAndChildren()
     QVERIFY(retainedTeacher.has_value());
     QCOMPARE(retainedTeacher->wifiPassword,
              QStringLiteral("local-only-password"));
+}
+
+void ClassTransferTests::successFixtureClassReplacementMatchesCommonInputState()
+{
+    const QString fixturePath =
+        QDir(QStringLiteral(CLASSMNGR_SOURCE_DIR)).filePath(
+            QStringLiteral("tests/fixtures/transfers/success_source.json")
+            );
+    QFile fixtureFile(fixturePath);
+    QVERIFY(fixtureFile.open(QIODevice::ReadOnly));
+    const QByteArray fixtureBytes = fixtureFile.readAll();
+    QCOMPARE(
+        QCryptographicHash::hash(
+            fixtureBytes, QCryptographicHash::Sha256).toHex(),
+        QByteArray("a40cb4079865eb5c48800208a3648360c08b0cec2f3ed1e3fa383e91bd4050e8")
+        );
+    const auto package = ClassTransferJsonCodec::fromJson(
+        QJsonDocument::fromJson(fixtureBytes).object());
+    QVERIFY2(package.has_value(), package ? "" : qPrintable(package.error()));
+    QCOMPARE(package->version, ClassTransferPackage::CurrentVersion);
+    QCOMPARE(package->teachers.size(), 1);
+    QCOMPARE(package->classes.size(), 1);
+
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    DataService service;
+    QVERIFY(service.openDatabase(
+        directory.filePath(QStringLiteral("destination.db"))).has_value());
+
+    Teacher localTeacher = package->teachers.first().teacher;
+    localTeacher.wifiPassword = QStringLiteral("local-only-password");
+    const int destinationTeacher = createdTeacherId(service, localTeacher);
+    QCOMPARE(destinationTeacher, 1);
+    const int destinationClass = addCompleteClass(
+        service,
+        destinationTeacher,
+        QStringLiteral("Old Destination Class"),
+        QStringLiteral("E3"),
+        QStringLiteral("Orion"),
+        QStringLiteral("Thursday"),
+        QStringLiteral("Old destination student"),
+        QStringLiteral("Destination Only Evaluation"),
+        QStringLiteral("11:00 AM"),
+        QStringLiteral("11:50 AM")
+        );
+    QCOMPARE(destinationClass, 1);
+
+    const auto preview = service.previewClassImport(*package);
+    QVERIFY2(preview.has_value(), preview ? "" : qPrintable(preview.error()));
+    QCOMPARE(preview->teachers.size(), 1);
+    QCOMPARE(preview->teachers.first().teacherKey,
+             QStringLiteral("teacher-success-1"));
+    QCOMPARE(preview->teachers.first().matchingTeacherIds,
+             QList<int>({destinationTeacher}));
+    QCOMPARE(preview->classes.size(), 1);
+    QCOMPARE(preview->classes.first().packageClassIndex, 0);
+    QCOMPARE(preview->classes.first().matchingClassIds,
+             QList<int>({destinationClass}));
+
+    ClassService classes(service.databaseSession(), &service);
+    TeacherService teachers(service.databaseSession(), &service);
+    ClassImportDialog dialog(&classes, &teachers, *package, *preview);
+    auto* classChoice = dialog.findChild<QComboBox*>(
+        QStringLiteral("classImportChoice_0"));
+    auto* teacherChoice = dialog.findChild<QComboBox*>(
+        QStringLiteral("teacherImportChoice_teacher-success-1"));
+    auto* importButton = dialog.findChild<QPushButton*>(
+        QStringLiteral("importClassesButton"));
+    QVERIFY(classChoice);
+    QVERIFY(teacherChoice);
+    QVERIFY(importButton);
+    QCOMPARE(classChoice->count(), 3);
+    QCOMPARE(classChoice->itemData(0, Qt::UserRole).toInt(),
+             static_cast<int>(ClassImportAction::Create));
+    QCOMPARE(classChoice->itemData(1, Qt::UserRole).toInt(),
+             static_cast<int>(ClassImportAction::Replace));
+    QCOMPARE(classChoice->itemData(1, Qt::UserRole + 1).toInt(),
+             destinationClass);
+    QCOMPARE(classChoice->itemData(2, Qt::UserRole).toInt(),
+             static_cast<int>(ClassImportAction::Skip));
+    QCOMPARE(teacherChoice->count(), 2);
+    QCOMPARE(teacherChoice->itemData(0, Qt::UserRole).toInt(),
+             static_cast<int>(TeacherImportAction::KeepExisting));
+    QCOMPARE(teacherChoice->itemData(0, Qt::UserRole + 1).toInt(),
+             destinationTeacher);
+    QCOMPARE(teacherChoice->itemData(1, Qt::UserRole).toInt(),
+             static_cast<int>(TeacherImportAction::ReplaceExisting));
+    QCOMPARE(teacherChoice->itemData(1, Qt::UserRole + 1).toInt(),
+             destinationTeacher);
+
+    classChoice->setCurrentIndex(1);
+    QVERIFY(importButton->isEnabled());
+    const ClassImportPlan plan = dialog.importPlan();
+    QCOMPARE(plan.classes.size(), 1);
+    QCOMPARE(plan.classes.first().packageClassIndex, 0);
+    QCOMPARE(plan.classes.first().action, ClassImportAction::Replace);
+    QCOMPARE(plan.classes.first().targetClassId, destinationClass);
+    QCOMPARE(plan.teachers.size(), 1);
+    QCOMPARE(plan.teachers.first().teacherKey,
+             QStringLiteral("teacher-success-1"));
+    QCOMPARE(plan.teachers.first().action, TeacherImportAction::KeepExisting);
+    QCOMPARE(plan.teachers.first().targetTeacherId, destinationTeacher);
+
+    const auto summary = service.importClasses(*package, plan);
+    QVERIFY2(summary.has_value(), summary ? "" : qPrintable(summary.error()));
+    QVERIFY(summary->createdClassIds.isEmpty());
+    QCOMPARE(summary->replacedClassIds, QList<int>({destinationClass}));
+    QCOMPARE(summary->skippedClassCount, 0);
+    const Result<QList<Classroom>> classesAfter = service.getClasses();
+    QVERIFY(classesAfter);
+    QCOMPARE(classesAfter->size(), 1);
+    const Result<Classroom> replacedClass =
+        service.getClassById(destinationClass);
+    QVERIFY(replacedClass);
+    QCOMPARE(replacedClass->id, destinationClass);
+    QCOMPARE(replacedClass->name, QStringLiteral("Fixture Stored Class"));
+
+    const Result<ClassInfo> replacedInfo =
+        service.loadClassInfo(destinationClass);
+    QVERIFY(replacedInfo);
+    QCOMPARE(replacedInfo->classId, destinationClass);
+    QCOMPARE(replacedInfo->teacherId, destinationTeacher);
+    QCOMPARE(replacedInfo->classGrade, QStringLiteral("E3"));
+    QCOMPARE(replacedInfo->classLevel, QStringLiteral("Orion"));
+    QCOMPARE(replacedInfo->readingBook, QStringLiteral("Reading Explorer 2"));
+    QCOMPARE(replacedInfo->essayBook, QStringLiteral("3C"));
+    QCOMPARE(replacedInfo->classColor, QStringLiteral("#2468AC"));
+    QCOMPARE(replacedInfo->fontColor, QStringLiteral("#FFFFFF"));
+    QCOMPARE(replacedInfo->notes, QStringLiteral("Fixture class notes"));
+    QCOMPARE(replacedInfo->timeFillerActivities, QStringLiteral("Word chain"));
+    QCOMPARE(replacedInfo->classTimes.size(), 1);
+    QCOMPARE(replacedInfo->classTimes.first().day, QStringLiteral("Tuesday"));
+    QCOMPARE(replacedInfo->classTimes.first().startTime,
+             QStringLiteral("3:00 PM"));
+    QCOMPARE(replacedInfo->classTimes.first().endTime,
+             QStringLiteral("3:50 PM"));
+    QVERIFY(replacedInfo->intensiveTimes.isEmpty());
+
+    const Result<Roster> replacedRoster = service.loadRoster(destinationClass);
+    QVERIFY(replacedRoster);
+    QCOMPARE(replacedRoster->columns,
+             QStringList({"English", "Korean", "Memo"}));
+    QCOMPARE(replacedRoster->columnWidths, QList<int>({180, 190, 240}));
+    QCOMPARE(replacedRoster->rows,
+             QList<QStringList>({
+                 {"Avery", "Fixture student", "Transferred row"}
+             }));
+    const Result<SpeakingEvalRows> replacedEvaluation =
+        service.loadSpeakingEval(
+            destinationClass, QStringLiteral("Fixture Evaluation"));
+    QVERIFY(replacedEvaluation);
+    SpeakingEvalRows expectedEvaluation = SpeakingEval::emptyRows();
+    expectedEvaluation[0] = {
+        QString(),
+        QStringLiteral("Avery"),
+        QStringLiteral("Fixture student"),
+        QStringLiteral("A"),
+        QStringLiteral("B+"),
+        QStringLiteral("B"),
+        QStringLiteral("A"),
+        QStringLiteral("C"),
+        QStringLiteral("B+"),
+        QStringLiteral("Fixture evaluation comment"),
+        QStringLiteral("Fixture evaluation note")
+    };
+    QCOMPARE(*replacedEvaluation, expectedEvaluation);
+    const Result<SpeakingEvalRows> oldEvaluation = service.loadSpeakingEval(
+        destinationClass, QStringLiteral("Destination Only Evaluation"));
+    QVERIFY(oldEvaluation);
+    QVERIFY(oldEvaluation->isEmpty());
+
+    const Result<Teacher> retainedTeacher =
+        service.getTeacher(destinationTeacher);
+    QVERIFY(retainedTeacher);
+    QCOMPARE(retainedTeacher->id, destinationTeacher);
+    QCOMPARE(retainedTeacher->wifiPassword,
+             QStringLiteral("local-only-password"));
+
+    QString snapshotError;
+    const auto snapshot = persistedDatabaseSnapshot(
+        service.databaseSession()->database(), &snapshotError);
+    QVERIFY2(snapshot.has_value(), qPrintable(snapshotError));
+    const QByteArray snapshotHash = QCryptographicHash::hash(
+        *snapshot, QCryptographicHash::Sha256).toHex();
+    QVERIFY2(snapshotHash == QByteArrayLiteral("ae65cb0a14393a9da0c9a546320f233531e324a4ef0bbfeee7f1a8306701ee6b"),
+             snapshotHash.constData());
 }
 
 void ClassTransferTests::malformedNonpositiveReviewTargetsAreRejectedAtLegacyBoundary()
