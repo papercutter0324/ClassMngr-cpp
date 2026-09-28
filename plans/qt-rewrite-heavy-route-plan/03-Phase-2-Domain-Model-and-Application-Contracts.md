@@ -216,20 +216,27 @@ reference date's year through December 31 of the following year, at most;
 ### Next selected slice (F122)
 
 Strengthen `ScheduleImportTests::skippedExactMatchPreservesItsSchedule` with
-before/after semantic comparisons from
-`persistedScheduleImportSnapshot(database, true)`. Normalize only the generated
-`class_times.id` and the `sqlite_sequence` value for `class_times`; preserve all
-other application values and sequence entries. The pinned baseline probe
-re-materializes the same Monday schedule row (ID 1→2; sequence 1→2) while
-preserving `class_id`, day, start/end values, profile name, and the rest of the
-snapshot. This is established baseline behavior, not a defect; do not require
-zero writes or claim physical snapshot equality. Retain assertions for one
-skipped row, zero cleared rows, schedule/profile-name preservation, and the
-subsequent explicit name update. Run the exact filtered case with the same seed
-and plan in current and pinned baseline
-`48fc5c5cc7dee78d82f8bf5f1bf8b51725575b99`. This is baseline-present,
-hand-authored seeded evidence, not workbook parsing or historical
-production-workbook provenance. F122 implementation is underway and
-current/baseline verification is pending; Phase 2 remains In Progress/Open,
+current/baseline final-state parity. Seed at least two existing schedule rows
+in an insertion order different from day/time sort; capture `(day, start, end)`
+ordered by `class_times.id` before and after Skip, and require that relative
+meeting order and values to remain unchanged. Compare complete post-apply
+snapshots from `persistedScheduleImportSnapshot(database, true)`, including
+`class_times.id` and `sqlite_sequence`; pin the baseline-derived snapshot hash
+and require the same hash on current. Keep assertions for one skipped row,
+zero cleared rows, and existing schedule/profile-name preservation, followed
+by the subsequent explicit name update.
+
+Both baseline and current Normal-import flows copy schedule rows in ID order,
+delete/recreate the schedule table, and reinsert them. The pinned baseline
+observed the same Monday `class_id`, day, start/end, and profile-name values
+while `class_times.id` and its sequence advanced 1→2. This is expected storage
+behavior, not a defect. IDs also define ClassInfo and Sub Prep ordering, so
+retain them in final parity and preserve relative meeting order. Do not claim
+pre/post physical snapshot identity or zero writes. Run the exact filtered
+case with the same seed and plan in current
+and pinned baseline `48fc5c5cc7dee78d82f8bf5f1bf8b51725575b99`. This is
+baseline-present, hand-authored seeded evidence, not workbook parsing or
+historical production-workbook provenance. F122 implementation is underway
+and current/baseline verification is pending; Phase 2 remains In Progress/Open,
 Gate 1 and Gate 2 remain Partial, and workspace plus active-v2 isolation
 remain Satisfied.

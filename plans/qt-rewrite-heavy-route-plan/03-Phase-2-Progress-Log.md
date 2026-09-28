@@ -7270,19 +7270,24 @@ with its exit gate Open.
 
 ### Next selected slice (F122)
 
-Compare before/after semantic state in
-`ScheduleImportTests::skippedExactMatchPreservesItsSchedule` using
-`persistedScheduleImportSnapshot(database, true)`. Normalize only generated
-`class_times.id` and that table's `sqlite_sequence` value; require all other
-application values and sequence entries to match. The pinned baseline probe
-re-materializes the existing Monday schedule row (ID 1→2; sequence 1→2) while
-preserving class ID, day, start/end, profile name, and all remaining snapshot
-state. This established baseline behavior is not a defect and does not imply
-zero writes or full physical snapshot equality. Keep the one-skipped/zero-
-cleared summary, schedule/profile-name preservation, and subsequent explicit
-name update. Run the exact filtered case with the same seed and plan in current
-and baseline `48fc5c5cc7dee78d82f8bf5f1bf8b51725575b99`; this remains
-baseline-present, hand-authored seeded evidence, not workbook parsing or
-historical-workbook provenance. F122 implementation is underway and
-current/baseline verification is pending; Gate 1 and Gate 2 remain Partial and
-Phase 2 remains In Progress/Open.
+Use current/baseline final-state parity for
+`ScheduleImportTests::skippedExactMatchPreservesItsSchedule`. Seed at least two
+schedule rows in insertion order different from day/time sort; compare their
+`(day, start, end)` values ordered by `class_times.id` before and after Skip,
+requiring the same relative order. Pin the full post-apply hash from
+`persistedScheduleImportSnapshot(database, true)` on baseline, including IDs
+and `sqlite_sequence`, then require that exact snapshot on current. Keep the
+one-skipped/zero-cleared summary, schedule/profile-name assertions, and later
+explicit name update.
+
+Both baseline and current Normal-import flows copy times in ID order, recreate
+the schedule table, and reinsert rows. Baseline re-materialized the same Monday
+`class_id`, day, start/end, and profile-name values while `class_times.id` and
+its sequence advanced 1→2. This is expected storage behavior; retain IDs
+because ClassInfo and Sub Prep use them for ordering. Preserve relative meeting
+order; do not claim pre/post storage identity or zero writes. Run the same seed
+and plan in current and pinned
+baseline `48fc5c5cc7dee78d82f8bf5f1bf8b51725575b99`. This is baseline-present,
+hand-authored seeded evidence, not workbook parsing or historical-workbook
+provenance. F122 implementation is underway and current/baseline verification
+is pending; Gate 1 and Gate 2 remain Partial and Phase 2 remains In Progress/Open.
