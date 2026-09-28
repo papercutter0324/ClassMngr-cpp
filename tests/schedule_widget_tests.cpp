@@ -40,6 +40,11 @@
 namespace ScheduleWidgetTestStubs
 {
 extern int savedSlotStates;
+extern int scheduleBuildCount;
+extern QString lastSavedSlotDay;
+extern QString lastSavedSlotStartTime;
+extern QString lastSavedSlotState;
+extern QString lastSavedSlotDefaultState;
 extern int printRequestCount;
 extern bool lastPrintRequestShowsEnglishNames;
 extern Theme lastPrintRequestTheme;
@@ -47,6 +52,7 @@ extern QString lastPrintRequestUserName;
 void reset();
 void setCurrentTheme(Theme theme);
 void setDatabaseOpen(bool open);
+void setSlotSaveFailure(const QString& error);
 void setIncludeMiddleSchoolClasses(bool include);
 void setTestingBlock(
     const QString& day,
@@ -191,6 +197,10 @@ private slots:
     void testingAssignmentDialogSupportsEveryAction();
     void readOnlyPresentationHidesControlsAndIgnoresClicks();
     void timeColumnAndHeaderAreNonInteractive();
+    void intensiveSlotToggleMapsAndPersistsViewModelChoice();
+    void failedSlotToggleWarnsWithoutReloading();
+    void unavailableSlotToggleSkipsWriteAndReloads();
+    void regularSlotToggleUsesSharedPersistenceHandler();
     void clearDatabaseStateRemovesLoadedDataAndSettings();
     void schedulePageScrollsWithoutResizingSchedule();
     void rendererSkipsUnchangedAndUpdatesOnlyChangedCells();
@@ -987,6 +997,187 @@ void ScheduleWidgetTests
     QVERIFY(
         defaultAppearance
         == renderTimeItem(baseState | QStyle::State_HasFocus)
+        );
+}
+
+void ScheduleWidgetTests
+    ::intensiveSlotToggleMapsAndPersistsViewModelChoice()
+{
+    ApplicationServices services;
+    ScheduleWidget widget(&services);
+    widget.refreshSchedule();
+
+    auto* intensiveButton = widget.findChild<QPushButton*>(
+        QStringLiteral("scheduleIntensiveModeButton")
+        );
+    QVERIFY(intensiveButton);
+    intensiveButton->click();
+
+    const int buildCountBeforeClick =
+        ScheduleWidgetTestStubs::scheduleBuildCount;
+    QVERIFY(
+        QMetaObject::invokeMethod(
+            &widget,
+            "onCellClicked",
+            Qt::DirectConnection,
+            Q_ARG(int, 0),
+            Q_ARG(int, 1)
+            )
+        );
+
+    QCOMPARE(ScheduleWidgetTestStubs::savedSlotStates, 1);
+    QCOMPARE(
+        ScheduleWidgetTestStubs::lastSavedSlotDay,
+        QStringLiteral("Monday")
+        );
+    QCOMPARE(
+        ScheduleWidgetTestStubs::lastSavedSlotStartTime,
+        QStringLiteral("16:00")
+        );
+    QCOMPARE(
+        ScheduleWidgetTestStubs::lastSavedSlotState,
+        QStringLiteral("lunch")
+        );
+    QCOMPARE(
+        ScheduleWidgetTestStubs::lastSavedSlotDefaultState,
+        QStringLiteral("essay")
+        );
+    QCOMPARE(
+        ScheduleWidgetTestStubs::scheduleBuildCount,
+        buildCountBeforeClick + 1
+        );
+}
+
+void ScheduleWidgetTests::failedSlotToggleWarnsWithoutReloading()
+{
+    ApplicationServices services;
+    ScheduleWidget widget(&services);
+    widget.refreshSchedule();
+
+    auto* intensiveButton = widget.findChild<QPushButton*>(
+        QStringLiteral("scheduleIntensiveModeButton")
+        );
+    QVERIFY(intensiveButton);
+    intensiveButton->click();
+
+    FakeUserPromptService prompts;
+    DialogServices::setUserPromptServiceForTesting(&prompts);
+    ScheduleWidgetTestStubs::setSlotSaveFailure(
+        QStringLiteral("injected slot failure")
+        );
+    const int buildCountBeforeClick =
+        ScheduleWidgetTestStubs::scheduleBuildCount;
+
+    QVERIFY(
+        QMetaObject::invokeMethod(
+            &widget,
+            "onCellClicked",
+            Qt::DirectConnection,
+            Q_ARG(int, 0),
+            Q_ARG(int, 1)
+            )
+        );
+
+    QCOMPARE(ScheduleWidgetTestStubs::savedSlotStates, 1);
+    QCOMPARE(
+        ScheduleWidgetTestStubs::scheduleBuildCount,
+        buildCountBeforeClick
+        );
+    QCOMPARE(prompts.messages.size(), 1);
+    QCOMPARE(
+        prompts.messages.constFirst().title,
+        QStringLiteral("Update Schedule")
+        );
+    QCOMPARE(
+        prompts.messages.constFirst().severity,
+        PromptSeverity::Warning
+        );
+    QVERIFY(
+        prompts.messages.constFirst().message.contains(
+            QStringLiteral("injected slot failure")
+            )
+        );
+}
+
+void ScheduleWidgetTests::unavailableSlotToggleSkipsWriteAndReloads()
+{
+    ApplicationServices services;
+    ScheduleWidget widget(&services);
+    widget.refreshSchedule();
+
+    auto* intensiveButton = widget.findChild<QPushButton*>(
+        QStringLiteral("scheduleIntensiveModeButton")
+        );
+    QVERIFY(intensiveButton);
+    intensiveButton->click();
+
+    const int buildCountBeforeClick =
+        ScheduleWidgetTestStubs::scheduleBuildCount;
+    ScheduleWidgetTestStubs::setDatabaseOpen(false);
+
+    QVERIFY(
+        QMetaObject::invokeMethod(
+            &widget,
+            "onCellClicked",
+            Qt::DirectConnection,
+            Q_ARG(int, 0),
+            Q_ARG(int, 1)
+            )
+        );
+
+    QCOMPARE(ScheduleWidgetTestStubs::savedSlotStates, 0);
+    QCOMPARE(
+        ScheduleWidgetTestStubs::scheduleBuildCount,
+        buildCountBeforeClick + 1
+        );
+}
+
+void ScheduleWidgetTests::regularSlotToggleUsesSharedPersistenceHandler()
+{
+    ApplicationServices services;
+    ScheduleWidget widget(&services);
+    widget.refreshSchedule();
+
+    auto* table = widget.findChild<QTableWidget*>(
+        QStringLiteral("scheduleTable")
+        );
+    QVERIFY(table);
+    QWidget* mondaySlot = table->cellWidget(0, 1);
+    QVERIFY(mondaySlot);
+    mondaySlot->setProperty("slot_toggling_enabled", true);
+
+    const int buildCountBeforeClick =
+        ScheduleWidgetTestStubs::scheduleBuildCount;
+    QVERIFY(
+        QMetaObject::invokeMethod(
+            &widget,
+            "onCellClicked",
+            Qt::DirectConnection,
+            Q_ARG(int, 0),
+            Q_ARG(int, 1)
+            )
+        );
+
+    QCOMPARE(ScheduleWidgetTestStubs::savedSlotStates, 1);
+    QCOMPARE(
+        ScheduleWidgetTestStubs::lastSavedSlotDay,
+        QStringLiteral("Monday")
+        );
+    QCOMPARE(
+        ScheduleWidgetTestStubs::lastSavedSlotStartTime,
+        QStringLiteral("16:00")
+        );
+    QCOMPARE(
+        ScheduleWidgetTestStubs::lastSavedSlotState,
+        QStringLiteral("essay")
+        );
+    QCOMPARE(
+        ScheduleWidgetTestStubs::lastSavedSlotDefaultState,
+        QStringLiteral("empty")
+        );
+    QCOMPARE(
+        ScheduleWidgetTestStubs::scheduleBuildCount,
+        buildCountBeforeClick + 1
         );
 }
 

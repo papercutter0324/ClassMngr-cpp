@@ -15,11 +15,14 @@
 #include "features/schedule/ui/testing_assignment_dialog.h"
 #include "features/schedule/services/schedule_print_service.h"
 #include "features/schedule/services/schedule_output_controller.h"
+#include "next/application/schedule_slot_state_save_use_case.h"
+#include "next/platform/application_services_schedule_slot_state_save_port.h"
 #include "next/platform/application_services_schedule_display_preferences_port.h"
 #include "next/platform/application_services_schedule_display_mode_preferences_port.h"
 #include "ui/shared/styles/roles.h"
 
 #include <algorithm>
+#include <optional>
 #include <utility>
 
 #include <QButtonGroup>
@@ -38,6 +41,129 @@
 namespace
 {
 using ScheduleWidgetDelegates::TimeColumnDelegateObjectName;
+
+[[nodiscard]] std::optional<
+    ClassMngr::Next::Application::ScheduleWeekday
+    > scheduleWeekday(const QString& value)
+{
+    using ClassMngr::Next::Application::ScheduleWeekday;
+
+    if (value == QStringLiteral("Monday"))
+    {
+        return ScheduleWeekday::Monday;
+    }
+    if (value == QStringLiteral("Tuesday"))
+    {
+        return ScheduleWeekday::Tuesday;
+    }
+    if (value == QStringLiteral("Wednesday"))
+    {
+        return ScheduleWeekday::Wednesday;
+    }
+    if (value == QStringLiteral("Thursday"))
+    {
+        return ScheduleWeekday::Thursday;
+    }
+    if (value == QStringLiteral("Friday"))
+    {
+        return ScheduleWeekday::Friday;
+    }
+    if (value == QStringLiteral("Saturday"))
+    {
+        return ScheduleWeekday::Saturday;
+    }
+    if (value == QStringLiteral("Sunday"))
+    {
+        return ScheduleWeekday::Sunday;
+    }
+
+    return std::nullopt;
+}
+
+[[nodiscard]] std::optional<int> scheduleStartMinute(
+    const QString& value
+    )
+{
+    const qsizetype separator = value.indexOf(QLatin1Char(':'));
+    if (separator < 1
+        || separator > 2
+        || value.size() - separator != 3)
+    {
+        return std::nullopt;
+    }
+
+    const auto isAsciiDigit = [](const QChar character)
+    {
+        return character >= QLatin1Char('0')
+            && character <= QLatin1Char('9');
+    };
+    for (qsizetype index = 0; index < value.size(); ++index)
+    {
+        if (index != separator && !isAsciiDigit(value.at(index)))
+        {
+            return std::nullopt;
+        }
+    }
+
+    bool validHour = false;
+    bool validMinute = false;
+    const int hour = value.left(separator).toInt(&validHour);
+    const int minute = value.mid(separator + 1).toInt(&validMinute);
+    if (!validHour
+        || !validMinute
+        || hour < 0
+        || hour >= 24
+        || minute < 0
+        || minute >= 60)
+    {
+        return std::nullopt;
+    }
+
+    return hour * 60 + minute;
+}
+
+[[nodiscard]] std::optional<
+    ClassMngr::Next::Application::ScheduleSlotState
+    > scheduleSlotState(const QString& value)
+{
+    using ClassMngr::Next::Application::ScheduleSlotState;
+
+    if (value == QStringLiteral("empty"))
+    {
+        return ScheduleSlotState::Empty;
+    }
+    if (value == QStringLiteral("essay"))
+    {
+        return ScheduleSlotState::Essay;
+    }
+    if (value == QStringLiteral("lunch"))
+    {
+        return ScheduleSlotState::Lunch;
+    }
+
+    return std::nullopt;
+}
+
+[[nodiscard]] std::optional<
+    ClassMngr::Next::Application::ScheduleSlotStateSaveRequest
+    > scheduleSlotStateSaveRequest(const ScheduleCellHit& hit)
+{
+    const auto weekday = scheduleWeekday(hit.day);
+    const auto startMinute = scheduleStartMinute(hit.timeLabel);
+    const auto selectedState = scheduleSlotState(hit.nextState);
+    const auto defaultState = scheduleSlotState(hit.defaultState);
+    if (!weekday || !startMinute || !selectedState || !defaultState)
+    {
+        return std::nullopt;
+    }
+
+    return ClassMngr::Next::Application::ScheduleSlotStateSaveRequest{
+        .weekday = *weekday,
+        .startMinute = *startMinute,
+        .selectedState = *selectedState,
+        .defaultState = *defaultState
+    };
+}
 }
 
 ScheduleWidget::ScheduleWidget(
@@ -320,25 +446,39 @@ void ScheduleWidget::onCellClicked(
     }
     if (hit.command == ScheduleCellCommand::ToggleSlot)
     {
-        auto* scheduleService =
-            m_services
-                ? m_services->scheduleService()
-                : nullptr;
+        ClassMngr::Next::Platform::
+            ApplicationServicesScheduleSlotStateSavePort port(m_services);
 
-        if (scheduleService && scheduleService->isAvailable())
+        if (port.isAvailable())
         {
-            const Status saved = scheduleService->saveIntensiveSlotState(
-                hit.day,
-                hit.timeLabel,
-                hit.nextState,
-                hit.defaultState
-                );
+            const auto request = scheduleSlotStateSaveRequest(hit);
+            if (!request)
+            {
+                DialogServices::showWarning(
+                    this,
+                    tr("Update Schedule"),
+                    tr("The selected schedule slot is invalid.")
+                    );
+                return;
+            }
+
+            const auto saved =
+                ClassMngr::Next::Application::
+                    ScheduleSlotStateSaveUseCase::execute(
+                        *request,
+                        port
+                        );
             if (!saved)
             {
                 DialogServices::showWarning(
                     this,
                     tr("Update Schedule"),
-                    saved.error()
+                    QString::fromUtf8(
+                        saved.error().message.data(),
+                        static_cast<qsizetype>(
+                            saved.error().message.size()
+                            )
+                        )
                     );
                 return;
             }

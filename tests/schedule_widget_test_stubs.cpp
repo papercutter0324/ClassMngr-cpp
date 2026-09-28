@@ -46,11 +46,17 @@ QHash<QString, int> testingClassAssignments;
 QHash<int, Roster> rosters;
 QHash<QString, SpeakingEvalRows> speakingEvaluations;
 int savedSlotStates = 0;
+int scheduleBuildCount = 0;
 int savedTestingBlocks = 0;
 int printRequestCount = 0;
 bool lastPrintRequestShowsEnglishNames = false;
 Theme lastPrintRequestTheme = Theme::Dark;
 QString lastPrintRequestUserName;
+QString lastSavedSlotDay;
+QString lastSavedSlotStartTime;
+QString lastSavedSlotState;
+QString lastSavedSlotDefaultState;
+Status slotSaveResult;
 Theme configuredTheme = Theme::Dark;
 bool themeAvailable = false;
 bool databaseOpen = true;
@@ -72,11 +78,17 @@ void reset()
     rosters.clear();
     speakingEvaluations.clear();
     savedSlotStates = 0;
+    scheduleBuildCount = 0;
     savedTestingBlocks = 0;
     printRequestCount = 0;
     lastPrintRequestShowsEnglishNames = false;
     lastPrintRequestTheme = Theme::Dark;
     lastPrintRequestUserName.clear();
+    lastSavedSlotDay.clear();
+    lastSavedSlotStartTime.clear();
+    lastSavedSlotState.clear();
+    lastSavedSlotDefaultState.clear();
+    slotSaveResult = {};
     configuredTheme = Theme::Dark;
     themeAvailable = false;
     databaseOpen = true;
@@ -94,6 +106,13 @@ void setDatabaseOpen(
     )
 {
     databaseOpen = open;
+}
+
+void setSlotSaveFailure(
+    const QString& error
+    )
+{
+    slotSaveResult = std::unexpected(error);
 }
 
 void setIncludeAdditionalClass(
@@ -219,6 +238,39 @@ ApplicationServices::~ApplicationServices() = default;
 DataService* ApplicationServices::dataService() const
 {
     return m_dataService.get();
+}
+
+SettingsService* ApplicationServices::settingsService() const
+{
+    if (!m_settingsService)
+    {
+        m_settingsService = std::make_unique<SettingsService>(
+            m_dataService.get()
+            );
+    }
+    return m_settingsService.get();
+}
+
+ClassService* ApplicationServices::classService() const
+{
+    if (!m_classService)
+    {
+        m_classService = std::make_unique<ClassService>(
+            m_dataService.get()
+            );
+    }
+    return m_classService.get();
+}
+
+ScheduleService* ApplicationServices::scheduleService() const
+{
+    if (!m_scheduleService)
+    {
+        m_scheduleService = std::make_unique<ScheduleService>(
+            m_dataService.get()
+            );
+    }
+    return m_scheduleService.get();
 }
 
 ThemeService* ApplicationServices::themeService() const
@@ -385,14 +437,18 @@ Result<QList<CalendarEvent>> DataService::loadCalendarEventsInRange(
 }
 
 Status DataService::saveIntensiveSlotState(
-    const QString&,
-    const QString&,
-    const QString&,
-    const QString&
+    const QString& day,
+    const QString& startTime,
+    const QString& state,
+    const QString& defaultState
     )
 {
     ++ScheduleWidgetTestStubs::savedSlotStates;
-    return {};
+    ScheduleWidgetTestStubs::lastSavedSlotDay = day;
+    ScheduleWidgetTestStubs::lastSavedSlotStartTime = startTime;
+    ScheduleWidgetTestStubs::lastSavedSlotState = state;
+    ScheduleWidgetTestStubs::lastSavedSlotDefaultState = defaultState;
+    return ScheduleWidgetTestStubs::slotSaveResult;
 }
 
 Result<QList<TestingBlock>> DataService::loadTestingBlocks()
@@ -954,6 +1010,7 @@ Result<ScheduleBuildResult> ScheduleBuilder::build(
     const QStringList& visibleDays
     ) const
 {
+    ++ScheduleWidgetTestStubs::scheduleBuildCount;
     ScheduleBuildResult result;
     result.days = visibleDays;
 
