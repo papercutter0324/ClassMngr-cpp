@@ -221,6 +221,15 @@ classmngr_add_qt_test(
 )
 
 classmngr_add_qt_test(
+    NAME NextApplicationSpeakingEvaluationQuery
+    SOURCES
+        tests/next_application_speaking_evaluation_query_tests.cpp
+    LIBRARIES
+        ClassMngrNext::Application
+        Qt6::Test
+)
+
+classmngr_add_qt_test(
     NAME NextApplicationClassDetailsPageQuery
     SOURCES
         tests/next_application_class_details_page_query_tests.cpp
@@ -961,6 +970,16 @@ classmngr_add_qt_test(
     NAME NextPlatformApplicationServicesSpeakingEvaluationSavePort
     SOURCES
         tests/next_platform_application_services_speaking_evaluation_save_port_tests.cpp
+    LIBRARIES
+        ClassMngrNext::Platform
+        Qt6::Test
+    OFFSCREEN
+)
+
+classmngr_add_qt_test(
+    NAME NextPlatformApplicationServicesSpeakingEvaluationReadPort
+    SOURCES
+        tests/next_platform_application_services_speaking_evaluation_read_port_tests.cpp
     LIBRARIES
         ClassMngrNext::Platform
         Qt6::Test

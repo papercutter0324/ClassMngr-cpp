@@ -1,5 +1,6 @@
 #include "app/services/feature_services.h"
 #include "core/application_services.h"
+#include "data/database/database_session.h"
 #include "domain/models/classroom.h"
 #include "domain/models/speaking_evaluation.h"
 #include "features/speaking_eval/ui/speaking_eval_model.h"
@@ -13,6 +14,8 @@
 #include <QSignalSpy>
 #include <QPushButton>
 #include <QTemporaryDir>
+#include <QSqlError>
+#include <QSqlQuery>
 #include <QtTest/QtTest>
 #include <QUuid>
 
@@ -108,6 +111,9 @@ private slots:
     void automaticSavePersistsMatrixWithoutInteractiveNotices();
     void manualValidationAndConfirmedSaveKeepTheirCurrentTiming();
     void failedClassAndEvaluationSwitchesRestoreTheCurrentSelection();
+    void successfulLoadPreservesOrderedUnicodeMatrixAndCleanState();
+    void emptyReadFallsBackToBlankGridAndCleanState();
+    void failedReadFallsBackToBlankGridAndCleanState();
 };
 
 void SpeakingEvalPageSaveTests::
@@ -306,6 +312,125 @@ failedClassAndEvaluationSwitchesRestoreTheCurrentSelection()
         SpeakingEval::toInt(SpeakingEvalColumn::EnglishName)
         )).toString(), QStringLiteral("Alice"));
     QCOMPARE(prompts.messages.size(), 2);
+}
+
+void SpeakingEvalPageSaveTests::
+successfulLoadPreservesOrderedUnicodeMatrixAndCleanState()
+{
+    SpeakingEvalPageFixture fixture;
+    QString error;
+    QVERIFY2(fixture.initialize(1, &error), qPrintable(error));
+
+    SpeakingEvalRows expected = SpeakingEval::emptyRows();
+    expected[0][SpeakingEval::toInt(SpeakingEvalColumn::EnglishName)] =
+        QStringLiteral("First");
+    expected[0][SpeakingEval::toInt(SpeakingEvalColumn::KoreanName)] =
+        QStringLiteral("\uAE40\uBBFC\uC9C0");
+    expected[7][SpeakingEval::toInt(SpeakingEvalColumn::EnglishName)] =
+        QStringLiteral("Commenter");
+    expected[7][SpeakingEval::toInt(SpeakingEvalColumn::KoreanName)] =
+        QStringLiteral("\uAE40\uBBFC\uC9C0");
+    expected[7][SpeakingEval::toInt(SpeakingEvalColumn::Comments)] =
+        QStringLiteral("Review \U0001F4DA");
+    expected[24][SpeakingEval::toInt(SpeakingEvalColumn::EnglishName)] =
+        QStringLiteral("Last");
+    expected[24][SpeakingEval::toInt(SpeakingEvalColumn::KoreanName)] =
+        QStringLiteral("\uAE40\uBBFC\uC9C0");
+    expected[24][SpeakingEval::toInt(SpeakingEvalColumn::Notes)] =
+        QStringLiteral("\uC218\uC5C5 \U0001F4DA");
+    QVERIFY(fixture.services.speakingEvaluationService()->saveEvaluation(
+        fixture.classIds.first(),
+        QStringLiteral("Winter"),
+        expected
+        ));
+
+    SpeakingEvalPage page(&fixture.services);
+    page.loadEvaluation(
+        Classroom(fixture.classNames.first(), fixture.classIds.first()),
+        QStringLiteral("Winter")
+        );
+
+    auto* model = page.findChild<SpeakingEvalModel*>();
+    QVERIFY(model);
+    QCOMPARE(model->rowCount(), 25);
+    QCOMPARE(model->columnCount(), 11);
+    QCOMPARE(model->data(model->index(0, 1)).toString(), QStringLiteral("First"));
+    QCOMPARE(model->data(model->index(0, 2)).toString(), QStringLiteral("\uAE40\uBBFC\uC9C0"));
+    QCOMPARE(model->data(model->index(7, 9)).toString(), QStringLiteral("Review \U0001F4DA"));
+    QCOMPARE(model->data(model->index(24, 1)).toString(), QStringLiteral("Last"));
+    QCOMPARE(model->data(model->index(24, 10)).toString(), QStringLiteral("\uC218\uC5C5 \U0001F4DA"));
+    QVERIFY(!page.hasUnsavedChanges());
+}
+
+void SpeakingEvalPageSaveTests::
+emptyReadFallsBackToBlankGridAndCleanState()
+{
+    SpeakingEvalPageFixture fixture;
+    QString error;
+    QVERIFY2(fixture.initialize(1, &error), qPrintable(error));
+
+    SpeakingEvalPage page(&fixture.services);
+    page.loadEvaluation(
+        Classroom(fixture.classNames.first(), fixture.classIds.first()),
+        QStringLiteral("Winter")
+        );
+
+    auto* model = page.findChild<SpeakingEvalModel*>();
+    QVERIFY(model);
+    QCOMPARE(model->rowCount(), 25);
+    QCOMPARE(model->columnCount(), 11);
+    QVERIFY(model->data(model->index(0, 1)).toString().isEmpty());
+    QVERIFY(model->data(model->index(24, 10)).toString().isEmpty());
+    QVERIFY(!page.hasUnsavedChanges());
+}
+
+void SpeakingEvalPageSaveTests::
+failedReadFallsBackToBlankGridAndCleanState()
+{
+    SpeakingEvalPageFixture fixture;
+    QString error;
+    QVERIFY2(fixture.initialize(1, &error), qPrintable(error));
+
+    SpeakingEvalRows expected = SpeakingEval::emptyRows();
+    expected[0][SpeakingEval::toInt(SpeakingEvalColumn::EnglishName)] =
+        QStringLiteral("Persisted");
+    expected[0][SpeakingEval::toInt(SpeakingEvalColumn::KoreanName)] =
+        QStringLiteral("\uAE40\uBBFC\uC9C0");
+    QVERIFY(fixture.services.speakingEvaluationService()->saveEvaluation(
+        fixture.classIds.first(),
+        QStringLiteral("Winter"),
+        expected
+        ));
+
+    SpeakingEvalPage page(&fixture.services);
+    page.setSaveMode(SaveMode::Manual);
+    page.loadEvaluation(
+        Classroom(fixture.classNames.first(), fixture.classIds.first()),
+        QStringLiteral("Winter")
+        );
+
+    auto* model = page.findChild<SpeakingEvalModel*>();
+    QVERIFY(model);
+    QCOMPARE(model->data(model->index(0, 1)).toString(), QStringLiteral("Persisted"));
+    QVERIFY(model->setData(model->index(0, 1), QStringLiteral("Unsaved"), Qt::EditRole));
+    QVERIFY(page.hasUnsavedChanges());
+
+    QSqlQuery dropDataTable(fixture.services.databaseSession()->database());
+    QVERIFY2(
+        dropDataTable.exec(QStringLiteral("DROP TABLE speaking_eval_data")),
+        qPrintable(dropDataTable.lastError().text())
+        );
+
+    page.loadEvaluation(
+        Classroom(fixture.classNames.first(), fixture.classIds.first()),
+        QStringLiteral("Winter")
+        );
+
+    QCOMPARE(model->rowCount(), 25);
+    QCOMPARE(model->columnCount(), 11);
+    QVERIFY(model->data(model->index(0, 1)).toString().isEmpty());
+    QVERIFY(model->data(model->index(24, 10)).toString().isEmpty());
+    QVERIFY(!page.hasUnsavedChanges());
 }
 
 QTEST_MAIN(SpeakingEvalPageSaveTests)

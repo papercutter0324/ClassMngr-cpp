@@ -1,7 +1,13 @@
 #include "speaking_eval_page_p.h"
+#include "next/application/speaking_evaluation_query.h"
+#include "next/platform/application_services_speaking_evaluation_read_port.h"
 #include "next/platform/application_services_class_visibility_preferences_port.h"
 #include "next/platform/application_services_schedule_display_mode_preferences_port.h"
 #include "ui/shared/dialogs/user_prompt_service.h"
+
+#include <string>
+#include <utility>
+#include <vector>
 
 SpeakingEvalPage::SpeakingEvalPage(
     ApplicationServices* services,
@@ -220,19 +226,45 @@ void SpeakingEvalPage::loadEvaluationData(
 
     SpeakingEvalRows rows;
 
-    if (
-        m_services
-        && m_services->speakingEvaluationService()
-        && m_classroom.id > 0
-        )
+    if (m_services && m_classroom.id > 0)
     {
-        rows =
-            m_services
-                ->speakingEvaluationService()
-                ->evaluation(
-                    m_classroom.id,
-                    m_evaluationName
-                    ).value_or(SpeakingEvalRows{});
+        const auto classId =
+            ClassMngr::Next::Domain::ClassId::fromString(
+                std::to_string(m_classroom.id)
+                );
+        if (classId)
+        {
+            const ClassMngr::Next::Application::SpeakingEvaluationReadQuery query{
+                .classId = *classId,
+                .evaluationName = m_evaluationName.toStdU16String()
+            };
+            const ClassMngr::Next::Platform::
+                ApplicationServicesSpeakingEvaluationReadPort port(*m_services);
+            const ClassMngr::Next::Application::SpeakingEvaluationReadResult loaded =
+                ClassMngr::Next::Application::SpeakingEvaluationQuery::execute(
+                    query,
+                    port
+                    );
+            if (loaded)
+            {
+                const ClassMngr::Next::Application::SpeakingEvaluationReadSnapshot&
+                    snapshot = loaded.value();
+                rows.reserve(static_cast<qsizetype>(snapshot.rows.size()));
+                for (const std::vector<std::u16string>& sourceRow : snapshot.rows)
+                {
+                    QStringList row;
+                    row.reserve(static_cast<qsizetype>(sourceRow.size()));
+                    for (const std::u16string& cell : sourceRow)
+                    {
+                        row.append(QString::fromUtf16(
+                            cell.data(),
+                            static_cast<qsizetype>(cell.size())
+                            ));
+                    }
+                    rows.append(std::move(row));
+                }
+            }
+        }
     }
 
     if (rows.isEmpty())
