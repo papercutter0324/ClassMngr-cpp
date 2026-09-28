@@ -1,4 +1,6 @@
 #include "features/teacher/ui/teacher_info_page.h"
+#include "app/services/feature_services.h"
+#include "core/application_services.h"
 #include "ui/shared/widgets/on_screen_keyboard.h"
 
 #include <QApplication>
@@ -13,6 +15,8 @@
 #include <QInputDialog>
 #include <QPushButton>
 #include <QTimer>
+#include <QTemporaryDir>
+#include <QSignalSpy>
 #include <QtTest>
 
 namespace
@@ -74,6 +78,8 @@ private slots:
     void birthdayUsesCalendarMonthAndDayOnly();
     void headerKeyboardOpensUntargeted();
     void inlineValidationBlocksManualSaveUntilCorrected();
+    void saveUsesApplicationEditAndReloadsCanonicalTeacher();
+    void applicationValidationBlocksInvalidTeacherWrite();
 };
 
 void TeacherInfoPageTests::personalDetailsUseRequestedTwoRowOrder()
@@ -300,6 +306,104 @@ void TeacherInfoPageTests::inlineValidationBlocksManualSaveUntilCorrected()
     QVERIFY(!english->property("formValidationState").isValid());
     QVERIFY(message->isHidden());
     QVERIFY(saveButton->isEnabled());
+}
+
+void TeacherInfoPageTests::saveUsesApplicationEditAndReloadsCanonicalTeacher()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(
+        directory.filePath(QStringLiteral("teacher-profile.tps"))));
+
+    Teacher original;
+    original.teacherKr = QStringLiteral("김선생");
+    original.teacherEn = QStringLiteral("Alex");
+    const Result<int> created = services.teacherService()->create(original);
+    QVERIFY(created.has_value());
+    original.id = *created;
+
+    TeacherInfoPage page(&services);
+    page.setSaveMode(SaveMode::Manual);
+    page.loadTeacher(original);
+
+    auto* korean = page.findChild<QLineEdit*>(QStringLiteral("teacherKrEdit"));
+    auto* english = page.findChild<QLineEdit*>(QStringLiteral("teacherEnEdit"));
+    auto* koreanWarning = page.findChild<QLabel*>(
+        QStringLiteral("teacherKrValidationMessage"));
+    QVERIFY(korean);
+    QVERIFY(english);
+    QVERIFY(koreanWarning);
+
+    QSignalSpy saved(&page, &TeacherInfoPage::teacherSaved);
+    korean->setText(QStringLiteral("김가나다"));
+    english->setText(QStringLiteral("Alexandra"));
+    QVERIFY(page.hasUnsavedChanges());
+    QCOMPARE(
+        korean->property("formValidationState").toString(),
+        QStringLiteral("warning"));
+
+    QVERIFY(page.saveChanges());
+    QVERIFY(!page.hasUnsavedChanges());
+    QCOMPARE(saved.count(), 1);
+    QCOMPARE(saved.constFirst().constFirst().toInt(), original.id);
+
+    const Result<Teacher> reloaded =
+        services.teacherService()->teacher(original.id);
+    QVERIFY(reloaded.has_value());
+    QCOMPARE(page.teacher().teacherEn, reloaded->teacherEn);
+    QCOMPARE(page.teacher().teacherKr, reloaded->teacherKr);
+    QCOMPARE(reloaded->teacherEn, QStringLiteral("Alexandra"));
+    QCOMPARE(reloaded->teacherKr, QStringLiteral("김가나다"));
+    QCOMPARE(koreanWarning->text(), QStringLiteral("Review this value."));
+}
+
+void TeacherInfoPageTests::applicationValidationBlocksInvalidTeacherWrite()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(
+        directory.filePath(QStringLiteral("teacher-profile-validation.tps"))));
+
+    Teacher original;
+    original.teacherKr = QStringLiteral("김선생");
+    original.teacherEn = QStringLiteral("Alex");
+    const Result<int> created = services.teacherService()->create(original);
+    QVERIFY(created.has_value());
+    original.id = *created;
+
+    TeacherInfoPage page(&services);
+    page.setSaveMode(SaveMode::Manual);
+    page.loadTeacher(original);
+
+    auto* korean = page.findChild<QLineEdit*>(QStringLiteral("teacherKrEdit"));
+    auto* english = page.findChild<QLineEdit*>(QStringLiteral("teacherEnEdit"));
+    auto* englishMessage = page.findChild<QLabel*>(
+        QStringLiteral("teacherEnValidationMessage"));
+    QVERIFY(korean);
+    QVERIFY(english);
+    QVERIFY(englishMessage);
+
+    QSignalSpy saved(&page, &TeacherInfoPage::teacherSaved);
+    korean->clear();
+    english->clear();
+    QVERIFY(page.hasUnsavedChanges());
+    QVERIFY(!page.saveChanges());
+    QVERIFY(page.hasUnsavedChanges());
+    QCOMPARE(saved.count(), 0);
+    QCOMPARE(
+        english->property("formValidationState").toString(),
+        QStringLiteral("error"));
+    QCOMPARE(englishMessage->text(), QStringLiteral("This field is required."));
+
+    const Result<Teacher> unchanged =
+        services.teacherService()->teacher(original.id);
+    QVERIFY(unchanged.has_value());
+    QCOMPARE(unchanged->teacherEn, QStringLiteral("Alex"));
+    QCOMPARE(unchanged->teacherKr, QStringLiteral("김선생"));
 }
 
 QTEST_MAIN(TeacherInfoPageTests)

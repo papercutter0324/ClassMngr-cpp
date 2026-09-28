@@ -17,6 +17,7 @@
 #include "ui/shared/validation/form_validation_binder.h"
 #include "ui/shared/widgets/on_screen_keyboard.h"
 #include "core/utils/sidebar_node_naming.h"
+#include "next/application/teacher_profile_edit_use_case.h"
 
 #include <QCalendarWidget>
 #include <QComboBox>
@@ -44,6 +45,9 @@
 
 #include <algorithm>
 #include <optional>
+#include <string>
+#include <utility>
+#include <vector>
 
 namespace
 {
@@ -288,6 +292,213 @@ void setComboTextWithFallback(
         combo->setCurrentIndex(index);
     }
 }
+
+namespace NextApplication = ClassMngr::Next::Application;
+namespace NextDomain = ClassMngr::Next::Domain;
+
+NextDomain::TeacherProfileFields profileFieldsFromTeacher(
+    const Teacher& teacher
+    )
+{
+    return {
+        .teacherKr = teacher.teacherKr.toStdU16String(),
+        .teacherEn = teacher.teacherEn.toStdU16String(),
+        .preferredRomanization =
+            teacher.preferredRomanization.toStdU16String(),
+        .preferredName = teacher.preferredName.toStdU16String(),
+        .roomNumber = teacher.roomNumber.toStdU16String(),
+        .birthday = teacher.birthday.toStdU16String(),
+        .phoneNumber = teacher.phoneNumber.toStdU16String(),
+        .wifiName = teacher.wifiName.toStdU16String(),
+        .wifiPassword = teacher.wifiPassword.toStdU16String(),
+        .internetType = teacher.internetType.toStdU16String(),
+        .zoomId = teacher.zoomId.toStdU16String(),
+        .zoomPassword = teacher.zoomPassword.toStdU16String(),
+        .projectionType = teacher.projectionType.toStdU16String(),
+        .notes = teacher.notes.toStdU16String()
+    };
+}
+
+Teacher teacherFromProfile(
+    const NextDomain::TeacherProfile& profile
+    )
+{
+    const NextDomain::TeacherProfileFields& fields = profile.fields;
+    return {
+        .id = profile.id.value(),
+        .teacherKr = QString::fromStdU16String(fields.teacherKr),
+        .teacherEn = QString::fromStdU16String(fields.teacherEn),
+        .preferredRomanization = QString::fromStdU16String(
+            fields.preferredRomanization),
+        .preferredName = QString::fromStdU16String(fields.preferredName),
+        .roomNumber = QString::fromStdU16String(fields.roomNumber),
+        .birthday = QString::fromStdU16String(fields.birthday),
+        .phoneNumber = QString::fromStdU16String(fields.phoneNumber),
+        .wifiName = QString::fromStdU16String(fields.wifiName),
+        .wifiPassword = QString::fromStdU16String(fields.wifiPassword),
+        .internetType = QString::fromStdU16String(fields.internetType),
+        .zoomId = QString::fromStdU16String(fields.zoomId),
+        .zoomPassword = QString::fromStdU16String(fields.zoomPassword),
+        .projectionType = QString::fromStdU16String(fields.projectionType),
+        .notes = QString::fromStdU16String(fields.notes)
+    };
+}
+
+NextDomain::OperationError operationError(const QString& message)
+{
+    return {
+        .code = NextDomain::ErrorCode::Technical,
+        .message = message.toStdString(),
+        .recoverable = true
+    };
+}
+
+class TeacherInfoValidationPolicy final
+    : public NextApplication::TeacherProfileValidationPolicy
+{
+public:
+    NextApplication::TeacherProfileValidationResult validate(
+        const NextDomain::TeacherProfile& profile
+        ) const override
+    {
+        const Teacher normalized = TeacherValidator::normalized(
+            teacherFromProfile(profile));
+        m_validation = TeacherValidator::validate(normalized);
+
+        std::vector<NextApplication::TeacherProfileValidationIssue> issues;
+        issues.reserve(static_cast<std::size_t>(m_validation.issues().size()));
+        for (const ValidationIssue& issue : m_validation.issues())
+        {
+            NextApplication::TeacherProfileValidationIssue mapped{
+                .code = issue.code.toStdString(),
+                .field = issue.field.toStdString(),
+                .severity = issue.isWarning()
+                    ? NextApplication::TeacherProfileValidationSeverity::Warning
+                    : NextApplication::TeacherProfileValidationSeverity::Error
+            };
+            for (auto argument = issue.arguments.cbegin();
+                 argument != issue.arguments.cend();
+                 ++argument)
+            {
+                // Numeric length bounds and other short display arguments
+                // cross the bounded application contract. Oversized legacy
+                // metadata is not needed by this form's message formatter.
+                const bool retained = mapped.arguments.add({
+                    .key = argument.key().toStdString(),
+                    .value = argument.value().toString().toStdU16String()
+                });
+                Q_UNUSED(retained);
+            }
+            issues.push_back(std::move(mapped));
+        }
+
+        return {
+            .normalizedFields = profileFieldsFromTeacher(normalized),
+            .issues = std::move(issues)
+        };
+    }
+
+    [[nodiscard]] const ValidationResult& uiValidation() const noexcept
+    {
+        return m_validation;
+    }
+
+private:
+    mutable ValidationResult m_validation;
+};
+
+ValidationResult uiValidationFromApplicationIssues(
+    const std::vector<NextApplication::TeacherProfileValidationIssue>& issues
+    )
+{
+    ValidationIssues mappedIssues;
+    mappedIssues.reserve(static_cast<qsizetype>(issues.size()));
+    for (const auto& issue : issues)
+    {
+        ValidationIssue mapped{
+            .code = QString::fromStdString(issue.code),
+            .field = QString::fromStdString(issue.field),
+            .severity = issue.severity
+                    == NextApplication::TeacherProfileValidationSeverity::Warning
+                ? ValidationSeverity::Warning
+                : ValidationSeverity::Error
+        };
+        for (const auto& argument : issue.arguments.values())
+        {
+            mapped.arguments.insert(
+                QString::fromStdString(argument.key),
+                QString::fromStdU16String(argument.value)
+                );
+        }
+        mappedIssues.push_back(std::move(mapped));
+    }
+    return ValidationResult(std::move(mappedIssues));
+}
+
+class TeacherServiceProfileEditPort final
+    : public NextApplication::TeacherProfileEditPersistencePort
+{
+public:
+    explicit TeacherServiceProfileEditPort(TeacherService* service)
+        : m_service(service)
+    {
+    }
+
+    NextDomain::Result<void> update(
+        const NextDomain::TeacherProfile& profile
+        ) const override
+    {
+        if (!m_service)
+        {
+            return NextDomain::Result<void>::failure(
+                operationError(QStringLiteral(
+                    "No Teacher Profile service is available.")));
+        }
+
+        const Status result = m_service->update(teacherFromProfile(profile));
+        if (!result)
+        {
+            return NextDomain::Result<void>::failure(
+                operationError(result.error()));
+        }
+        return NextDomain::Result<void>::success();
+    }
+
+    NextDomain::Result<NextDomain::TeacherProfile> reload(
+        const NextDomain::TeacherId id
+        ) const override
+    {
+        if (!m_service)
+        {
+            return NextDomain::Result<NextDomain::TeacherProfile>::failure(
+                operationError(QStringLiteral(
+                    "No Teacher Profile service is available.")));
+        }
+
+        const Result<Teacher> result = m_service->teacher(id.value());
+        if (!result)
+        {
+            return NextDomain::Result<NextDomain::TeacherProfile>::failure(
+                operationError(result.error()));
+        }
+        const auto reloadedId = NextDomain::TeacherId::fromInt(result->id);
+        if (!reloadedId)
+        {
+            return NextDomain::Result<NextDomain::TeacherProfile>::failure({
+                .code = NextDomain::ErrorCode::InvalidInput,
+                .message = "Reloaded Teacher ID must be positive.",
+                .recoverable = true
+            });
+        }
+        return NextDomain::Result<NextDomain::TeacherProfile>::success({
+            .id = *reloadedId,
+            .fields = profileFieldsFromTeacher(*result)
+        });
+    }
+
+private:
+    TeacherService* m_service = nullptr;
+};
 
 } // namespace
 
@@ -1174,62 +1385,81 @@ bool TeacherInfoPage::saveTeacherInternal(bool showErrors)
 {
     m_autosave->cancelPendingSave();
     updateFormValidation();
-    if (m_validationBinder && m_validationBinder->hasErrors())
-    {
-        if (showErrors)
-        {
-            m_validationBinder->focusFirstError();
-        }
-        return false;
-    }
 
     if (
         !m_services
+        || !m_services->databaseSession()
         || !m_services->teacherService()
-        || m_teacher.id <= 0
         )
     {
         return false;
     }
 
-    auto* teacherService = m_services->teacherService();
-
-    const Teacher updated =
-        teacherFromForm();
-
-    const Status updatedStatus = teacherService->update(updated);
-    if (!updatedStatus)
-    {
-        if (showErrors)
-        {
-            DialogServices::showWarning(
-                this,
-                tr("Save Teacher Information"),
-                tr("The teacher information could not be saved."),
-                updatedStatus.error()
-                );
-        }
-        return false;
-    }
-
-    const Result<Teacher> reloadedTeacher =
-        teacherService->teacher(
-            m_teacher.id
+    const Teacher updated = teacherFromForm();
+    const TeacherInfoValidationPolicy validationPolicy;
+    const TeacherServiceProfileEditPort persistence(
+        m_services->teacherService());
+    const NextApplication::TeacherProfileEditResult result =
+        NextApplication::TeacherProfileEditUseCase::execute(
+            NextApplication::TeacherProfileEditRequest::fromIntId(
+                updated.id,
+                profileFieldsFromTeacher(updated)),
+            validationPolicy,
+            persistence
             );
-    if (!reloadedTeacher)
+    if (!result)
     {
-        if (showErrors)
+        const auto& failure = result.error();
+        switch (failure.kind)
         {
-            DialogServices::showWarning(
-                this,
-                tr("Save Teacher Information"),
-                tr("The saved teacher information could not be reloaded."),
-                reloadedTeacher.error()
-                );
+            case NextApplication::TeacherProfileEditFailureKind::InvalidTeacherId:
+                return false;
+
+            case NextApplication::TeacherProfileEditFailureKind::ValidationFailed:
+                if (m_validationBinder)
+                {
+                    m_validationBinder->setValidation(
+                        uiValidationFromApplicationIssues(
+                            failure.validationIssues));
+                    if (showErrors)
+                    {
+                        m_validationBinder->focusFirstError();
+                    }
+                }
+                return false;
+
+            case NextApplication::TeacherProfileEditFailureKind::UpdateFailed:
+                if (showErrors)
+                {
+                    DialogServices::showWarning(
+                        this,
+                        tr("Save Teacher Information"),
+                        tr("The teacher information could not be saved."),
+                        QString::fromStdString(failure.cause.message)
+                        );
+                }
+                return false;
+
+            case NextApplication::TeacherProfileEditFailureKind::ReloadFailed:
+                if (showErrors)
+                {
+                    DialogServices::showWarning(
+                        this,
+                        tr("Save Teacher Information"),
+                        tr("The saved teacher information could not be reloaded."),
+                        QString::fromStdString(failure.cause.message)
+                        );
+                }
+                return false;
         }
         return false;
     }
-    m_teacher = *reloadedTeacher;
+
+    if (m_validationBinder)
+    {
+        m_validationBinder->setValidation(validationPolicy.uiValidation());
+    }
+    m_teacher = teacherFromProfile(*result);
 
     const QString displayName =
         SidebarNodeNaming::formatTeacherDisplayName(m_teacher);
