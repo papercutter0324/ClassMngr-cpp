@@ -1625,9 +1625,23 @@ including direct assertions for invalid-cell focus, silent autosave failure,
 and rollback of a testing-class selection after save failure. Whitespace
 validation passed. No full suite or baseline comparison ran.
 
-F130 is in implementation to add an app-less save boundary for one edited
-speaking evaluation. Preserve its ordered 25-by-11 value matrix, changed-cell
-coordinates and existing empty-change-list semantics, along with UI validation,
-confirmation, dirty-state, autosave/manual behavior, and selection rollback.
+F130 source/test commit `70f3ddc9` (`Phase2 - integrate speaking evaluation
+save use case`) adds a Qt-free typed save request and a session-backed adapter
+for one speaking evaluation. It carries the ordered 25-by-11 UTF-16 matrix,
+exact changed-cell coordinates, evaluation name, and questionable-name flag;
+an empty changed-cell list retains the existing write-all meaning. The page
+keeps validation/focus, confirmation, notices, dirty-baseline updates,
+autosave/manual timing, and class/evaluation selection rollback.
+
+The app, platform, and page focused CTests passed 3/3; `ClassMngr` built.
+Independent verification reran the platform target after adding a discriminating
+non-empty-delta case and passed 1/1. The case confirms that a changed value
+outside the delta stays unwritten while the listed cell is persisted.
+`git diff --check` passed. No full suite or baseline comparison ran.
+
+F131 is in implementation as a single-evaluation read query for the Speaking
+Evaluation page. Preserve the exact evaluation-name key, ordered UTF-16 rows,
+the structured session/read result, and the existing blank 25-by-11 clean page
+state for empty or failed reads. Keep model normalization at the page edge.
 Gate 1 and Gate 2 remain Partial; formal workspace-create acceptance and
 active-v2 DataService isolation remain Satisfied. Phase 2 remains In Progress/Open.

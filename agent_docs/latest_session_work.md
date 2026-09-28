@@ -3125,7 +3125,7 @@ service skip/reload, read-only/time-column no-op, and testing-assignment
 behavior. `ClassMngr` built and `git diff --check` passed. No full suite or
 baseline comparison ran.
 
-## Phase 2 continuation - 2026-09-29 (F129 verified; F130 implementation in progress)
+## Phase 2 continuation - 2026-09-29 (F130 verified; F131 implementation in progress)
 
 The user requested a commit after every completed slice, then immediate work
 on the next slice. The active deployment ID is
@@ -3150,13 +3150,34 @@ F129 verification handoff is recorded in `project_progress.md`,
 `project_diary.md`, and this file. The handoff documentation commit is
 separate from the source commit. No push was requested.
 
-F130 is now in implementation: route one speaking-evaluation save through a
-Qt-free use case and session-backed adapter. Preserve the ordered 25-by-11
-UTF-16 matrix, changed-cell coordinates, and the existing empty-change-list
-write-all meaning. Keep validation, focus, confirmation, autosave/manual and
-interactive feedback, dirty-baseline updates, and failed class/evaluation
-switch behavior at the page boundary. The Executor owns production; an
-independent Tester will verify the slice before its source commit.
+F130 source/test commit `70f3ddc9` (`Phase2 - integrate speaking evaluation
+save use case`) adds a Qt-free typed save request and a session-backed adapter
+for one selected speaking evaluation. The request preserves the ordered
+25-by-11 UTF-16 matrix, evaluation name, changed-cell coordinates, and
+questionable Korean-name flag. Empty changed-cell lists retain the legacy
+write-all behavior. The page keeps validation/focus, confirmation, save
+notices, dirty-baseline updates, autosave/manual timing, and failed
+class/evaluation selection rollback.
+
+The app, platform, and page focused CTests passed 3/3; `ClassMngr` built.
+Independent verification reran the platform target after adding a
+non-empty-delta case and passed 1/1. The added case proves that a changed
+in-memory cell outside the delta does not overwrite stored data while the
+listed cell persists. `git diff --check` passed. No full suite or baseline
+comparison ran.
+
+F130's source/test commit is `70f3ddc9`; its verification handoff is recorded
+in `project_progress.md`, `project_diary.md`, and this file. The handoff
+documentation commit is separate from the source commit.
+
+F131 is now in implementation: add an app-less single-evaluation read query
+and route the Speaking Evaluation page load through a session-backed adapter.
+Preserve the exact evaluation-name key, ordered UTF-16 rows, structured
+read/session errors, and the existing blank 25-by-11 clean page state for
+empty or failed reads. Keep row normalization at the page/model boundary;
+leave evaluation-tab listing, analytics, score import, and export outside this
+slice. The Executor owns production; an independent Tester will verify it
+before commit.
 
 Gate 1 and Gate 2 remain Partial. Formal workspace-create acceptance and
 active-v2 DataService isolation remain Satisfied. Phase 2 remains In Progress

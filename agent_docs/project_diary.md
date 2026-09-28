@@ -1291,3 +1291,10 @@ every row position, UTF-16 values, and column widths; pass the existing
 questionable-name confirmation as an explicit flag. Verify UI boundaries too:
 invalid-cell focus, silent autosave failure with dirty state retained, and
 class-selection rollback when the session-backed save fails.
+
+## F130 - preserve changed-cell semantics through the platform boundary - 2026-09-29
+
+An empty evaluation change list means write all cells, while a non-empty list
+limits persistence to those coordinates. Test both cases at the platform edge:
+put a distinct unlisted value in the in-memory matrix, save one listed cell,
+then assert the unlisted edit did not overwrite the previously stored value.
