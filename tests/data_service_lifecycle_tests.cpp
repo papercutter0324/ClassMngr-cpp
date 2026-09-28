@@ -1374,7 +1374,8 @@ settingsServiceDoesNotFallBackFromClosedSession()
 
     SettingsService sessionBound(&closedSession, &legacyDataService);
     SettingsService legacyOnly(&legacyDataService);
-    QVERIFY(sessionBound.isAvailable());
+    QVERIFY(!sessionBound.isAvailable());
+    QVERIFY(legacyOnly.isAvailable());
 
     const Result<QVariant> unavailableLoad = sessionBound.load(existingKey);
     QVERIFY(!unavailableLoad);
@@ -1452,7 +1453,7 @@ calendarServiceDoesNotFallBackFromClosedSession()
 
     CalendarService sessionBound(&closedSession, &legacyDataService);
     CalendarService legacyOnly(&legacyDataService);
-    QVERIFY(sessionBound.isAvailable());
+    QVERIFY(!sessionBound.isAvailable());
     QVERIFY(legacyOnly.isAvailable());
 
     QVERIFY(!sessionBound.eventsForDate(eventDate));
@@ -1461,6 +1462,47 @@ calendarServiceDoesNotFallBackFromClosedSession()
     QVERIFY(!sessionBound.upcomingEvents(eventDate, 10));
     QVERIFY(!sessionBound.event(*createdEvent));
     QVERIFY(!sessionBound.repeatSeriesFromDate(repeatSeriesId, eventDate));
+
+    CalendarEvent rejectedMutationEvent = seededEvent;
+    rejectedMutationEvent.title =
+        QStringLiteral("F114 Rejected Calendar Mutation Event");
+    rejectedMutationEvent.repeatSeriesId =
+        QStringLiteral("f114-rejected-calendar-mutation-series");
+    rejectedMutationEvent.startTime = QTime(11, 0);
+    rejectedMutationEvent.endTime = QTime(12, 0);
+
+    const auto verifySeededLegacyCalendar = [&]()
+    {
+        const Result<QList<CalendarEvent>> seededLegacyEvents =
+            legacyOnly.eventsForDate(eventDate);
+        QVERIFY(seededLegacyEvents);
+        QCOMPARE(seededLegacyEvents->size(), 1);
+        QCOMPARE(
+            seededLegacyEvents->first().title,
+            QStringLiteral("F112 Calendar Isolation Event")
+            );
+    };
+
+    QVERIFY(!sessionBound.saveEvents({rejectedMutationEvent}));
+    verifySeededLegacyCalendar();
+    QVERIFY(!sessionBound.deleteEvent(*createdEvent));
+    verifySeededLegacyCalendar();
+    QVERIFY(!sessionBound.deleteRepeatSeriesFromDate(
+        repeatSeriesId,
+        eventDate
+        ));
+    verifySeededLegacyCalendar();
+    QVERIFY(!sessionBound.deleteAllEvents());
+    verifySeededLegacyCalendar();
+
+    const Result<QList<CalendarEvent>> retainedAfterRejectedMutations =
+        legacyOnly.eventsForDate(eventDate);
+    QVERIFY(retainedAfterRejectedMutations);
+    QCOMPARE(retainedAfterRejectedMutations->size(), 1);
+    QCOMPARE(
+        retainedAfterRejectedMutations->first().title,
+        QStringLiteral("F112 Calendar Isolation Event")
+        );
 
     const Result<QList<CalendarEvent>> legacyEventsForDate =
         legacyOnly.eventsForDate(eventDate);
@@ -1513,6 +1555,26 @@ calendarServiceDoesNotFallBackFromClosedSession()
         legacyRepeatSeries->first().title,
         QStringLiteral("F112 Calendar Isolation Event")
         );
+
+    CalendarEvent legacyMutationEvent = seededEvent;
+    legacyMutationEvent.title =
+        QStringLiteral("F114 Legacy Calendar Mutation");
+    legacyMutationEvent.repeatSeriesId =
+        QStringLiteral("f114-legacy-calendar-mutation-series");
+    legacyMutationEvent.startTime = QTime(11, 0);
+    legacyMutationEvent.endTime = QTime(12, 0);
+    const Result<QList<int>> legacySavedEvents =
+        legacyOnly.saveEvents({legacyMutationEvent});
+    QVERIFY(legacySavedEvents);
+    QCOMPARE(legacySavedEvents->size(), 1);
+    QVERIFY(legacyOnly.deleteEvent(legacySavedEvents->first()));
+    QVERIFY(legacyOnly.deleteRepeatSeriesFromDate(repeatSeriesId, eventDate));
+    QVERIFY(legacyOnly.deleteAllEvents());
+
+    const Result<QList<CalendarEvent>> emptyLegacyCalendar =
+        legacyOnly.eventsForDate(eventDate);
+    QVERIFY(emptyLegacyCalendar);
+    QVERIFY(emptyLegacyCalendar->isEmpty());
 }
 
 void DataServiceLifecycleTests::
@@ -1557,9 +1619,9 @@ subPrepOutputReadsDoNotFallBackFromClosedSession()
     ClassService legacyOnlyClasses(&legacyDataService);
     RosterService legacyOnlyRosters(&legacyDataService);
 
-    QVERIFY(sessionBoundTeachers.isAvailable());
-    QVERIFY(sessionBoundClasses.isAvailable());
-    QVERIFY(sessionBoundRosters.isAvailable());
+    QVERIFY(!sessionBoundTeachers.isAvailable());
+    QVERIFY(!sessionBoundClasses.isAvailable());
+    QVERIFY(!sessionBoundRosters.isAvailable());
     QVERIFY(legacyOnlyTeachers.isAvailable());
     QVERIFY(legacyOnlyClasses.isAvailable());
     QVERIFY(legacyOnlyRosters.isAvailable());

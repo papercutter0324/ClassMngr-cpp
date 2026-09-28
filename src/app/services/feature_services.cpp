@@ -124,8 +124,11 @@ FeatureService::FeatureService(
 
 bool FeatureService::isAvailable() const
 {
-    return (m_session && m_session->isOpen())
-        || (m_legacyDataService && m_legacyDataService->isOpen());
+    if (m_session)
+    {
+        return m_session->isOpen();
+    }
+    return m_legacyDataService && m_legacyDataService->isOpen();
 }
 
 DatabaseSession* FeatureService::session() const
@@ -1177,10 +1180,13 @@ Result<QList<int>> CalendarService::saveEvents(
             );
     }
 
-    if (auto* repository = session()
-            ? session()->calendarEventRepository() : nullptr)
+    if (session())
     {
-        return repository->saveCalendarEvents(normalizedEvents);
+        if (auto* repository = session()->calendarEventRepository())
+        {
+            return repository->saveCalendarEvents(normalizedEvents);
+        }
+        return std::unexpected(unavailableError());
     }
     return dataService()
         ? dataService()->saveCalendarEvents(normalizedEvents)
@@ -1189,10 +1195,13 @@ Result<QList<int>> CalendarService::saveEvents(
 
 Status CalendarService::deleteEvent(int eventId) const
 {
-    if (auto* repository = session()
-            ? session()->calendarEventRepository() : nullptr)
+    if (session())
     {
-        return repository->deleteCalendarEvent(eventId);
+        if (auto* repository = session()->calendarEventRepository())
+        {
+            return repository->deleteCalendarEvent(eventId);
+        }
+        return std::unexpected(unavailableError());
     }
     if (dataService())
     {
@@ -1207,11 +1216,14 @@ Status CalendarService::deleteRepeatSeriesFromDate(
     const QDate& startDate
     ) const
 {
-    if (auto* repository = session()
-            ? session()->calendarEventRepository() : nullptr)
+    if (session())
     {
-        return repository->deleteCalendarEventsForRepeatSeriesFromDate(
-            repeatSeriesId, startDate);
+        if (auto* repository = session()->calendarEventRepository())
+        {
+            return repository->deleteCalendarEventsForRepeatSeriesFromDate(
+                repeatSeriesId, startDate);
+        }
+        return std::unexpected(unavailableError());
     }
     if (dataService())
     {
@@ -1224,10 +1236,13 @@ Status CalendarService::deleteRepeatSeriesFromDate(
 
 Status CalendarService::deleteAllEvents() const
 {
-    if (auto* repository = session()
-            ? session()->calendarEventRepository() : nullptr)
+    if (session())
     {
-        return repository->deleteAllCalendarEvents();
+        if (auto* repository = session()->calendarEventRepository())
+        {
+            return repository->deleteAllCalendarEvents();
+        }
+        return std::unexpected(unavailableError());
     }
     if (dataService())
     {
