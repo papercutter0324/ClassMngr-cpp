@@ -191,7 +191,7 @@ Ninja 1.13.2, MSVC 19.51.36257, and Qt 6.12.0 passed the exact registered
 | Exit-gate area | Audit status | Finding |
 | --- | --- | --- |
 | App-less Domain/Application behavior (Gate 1) | Partial | F110 adds the composed Calendar visibility predicate; broader app-less behavior remains incomplete. |
-| Baseline parity (Gate 2) | Partial | F82/F83 common-input comparisons use post-baseline fixtures and do not establish historical-workbook parity; broader baseline behavior remains incomplete. |
+| Baseline parity (Gate 2) | Partial | Bounded records include F82/F83 post-baseline Schedule Import inputs, F86/F88 baseline-era generated Schedule Import inputs, F91/F92/F94/F96/F98 Teacher Import flows and failure cases, and F100/F101/F103/F104/F106/F108/F109 Schedule Import rollback and Calendar repository transitions. They do not cover all validation, conflict, planning, or state-transition behavior; historical production-workbook provenance remains unverified. |
 | Workspace boundary | Satisfied | The formal workspace-create criterion remains satisfied. |
 | v2 dependency isolation | Partial transitive progress | The direct `src/next` source scan remains Satisfied; F111-F115 cover selected bound-session Settings, Calendar, Sub Prep, and ClassNotes methods. The retained `DataService*` compatibility edge and wider `ApplicationServices` usage remain unresolved pending re-audit; strict transitive isolation is unresolved. |
 

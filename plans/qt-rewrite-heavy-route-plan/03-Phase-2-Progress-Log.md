@@ -6965,11 +6965,14 @@ routes remain outer-adapter boundaries. Strict transitive isolation remains
 unresolved. Gate 1 and Gate 2 remain Partial; workspace boundary remains
 Satisfied and Phase 2 exit remains Open.
 
-F82/F83 remain common-input baseline/current comparisons pinned by current
-regressions, using fixtures added after the baseline. They are not historical-
-workbook evidence and do not complete Gate 2; broader parity remains open.
-Historical production-workbook provenance remains a tracked risk, not a literal
-exit criterion.
+Gate 2 remains Partial. Existing bounded comparisons include F82/F83
+post-baseline Schedule Import inputs, F86/F88 baseline-era source-generated
+Schedule Import inputs, F91/F92/F94/F96/F98 Teacher Import flows and failure
+cases, and F100/F101/F103/F104/F106/F108/F109 Schedule Import rollback and
+Calendar repository transitions. These records do not cover all validation,
+conflict, planning, or state-transition behavior. Historical
+production-workbook provenance remains unverified and is a tracked non-gating
+risk; the post-baseline Schedule Import fixtures do not establish it.
 
 ### Next bounded work (read-only re-audit)
 
