@@ -1218,3 +1218,7 @@ When a v2 adapter's bound services already provide session-authoritative availab
 ## F117 - keep profile editing app-less without duplicating validation - 2026-09-28
 
 Put validate/update/reload ordering and normalized-value flow in the app-less use case, while leaving prompts, dirty-state handling, and page feedback in the UI. Keep the semantic validator injectable and require a production adapter to map the existing `TeacherValidator` result, including field, severity, and bounded arguments; do not create a second normalization rule set. Keep page integration separate until its session-bound persistence path is ready.
+
+## F118 - label common-input conflict evidence precisely - 2026-09-28
+
+When a checked-in fixture postdates the baseline, run its identical bytes against each revision's own production source closure and assert the same normalized review plan, exact diagnostic, full persisted-state snapshot (including `sqlite_sequence`), and zero writes. Record this as common-input regression evidence, not historical input parity.
