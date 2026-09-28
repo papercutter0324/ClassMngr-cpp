@@ -7079,3 +7079,49 @@ Continue auditing active `src/next` to `ApplicationServices` calls, dual-bound
 services, and Workspace's DataService edge. F117 does not change isolation; the
 direct source scan and workspace-create criterion remain Satisfied, while
 strict transitive isolation remains unresolved.
+
+## Verified F118 Class Transfer common-input conflict comparison - commit `b68eba6dd93c1eaa6473ec9494a4d9e7da9980ef`
+
+F118 changes only `tests/class_transfer_tests.cpp` (SHA-256
+`71FA243D9C641EA955A5B33201478C76BCEDFAE7A333D0AF7727AE8E14FFB1E8`). The
+focused test uses checked-in fixture
+`tests/fixtures/transfers/conflict_source.json` (SHA-256
+`BED9CBEE84A7946F51029EFC4AA2B2850BDA9784757250FBF6CE90CAB7FB173`). It pins
+seeded preview matches, normalized review choices and plan, the exact combined
+regular/intensive schedule-collision diagnostic, unchanged snapshots of all
+application tables including `sqlite_sequence`, and zero `total_changes` under
+`query_only`.
+
+Independent verification used a fresh current archive at
+`5263aebf8222e16e3085498af851a7f0d3041818` with only the test overlay. Baseline
+`48fc5c5cc7dee78d82f8bf5f1bf8b51725575b99` retained the same fixture and
+received only the F118 helper/includes/slot/case transplant. Both focused CTests
+passed 1/1; exact error and persisted-state assertions matched. The toolchain
+was CMake 4.4.2, Ninja 1.13.2, MSVC 19.51.36257, and Qt 6.12.0. The temporary
+baseline tree required three CMake minimum references to change from 6.11.1 to
+6.12.0; baseline production code was unchanged. `git diff --check` passed. No
+full suite ran.
+
+This is common-input evidence on a checked-in post-baseline fixture, not
+historical production-workbook parity. Gate 2 remains Partial. Gate 1 remains
+Partial; the workspace-create boundary and audited direct `src/next` scan
+remain Satisfied. Strict transitive isolation remains unresolved, and Phase 2
+remains In Progress with its exit gate Open.
+
+### Next selected slice (F119)
+
+Move canonical `DatabaseSession` ownership to `ApplicationServices`, retain
+`DataService` as a borrowing compatibility facade while preserving standalone
+`DataService` ownership, and construct all seven feature-service factories
+with the session only. Scope the implementation to `data_service.h/.cpp`,
+`application_services.h/.cpp`, and lifecycle tests. This removes the
+dual-bound factory edge, not Workspace's continued delegation through
+`ApplicationServices` to `DataService` or the strict transitive isolation gate.
+
+### Independent open track: DataService isolation
+
+At selection, DataService owns the canonical session; ApplicationServices
+creates it through DataService, and all seven feature-service factories pass
+both session and DataService. Workspace operations also delegate through
+ApplicationServices to DataService. F119 addresses ownership and the factory
+edge only; Workspace's edge remains open.
