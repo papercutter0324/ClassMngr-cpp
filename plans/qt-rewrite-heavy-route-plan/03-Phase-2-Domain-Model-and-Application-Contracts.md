@@ -12,14 +12,16 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-09-28
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F119 is independently verified at commit `80fbf034`. Its seven
-  feature-service factories now use the session only, but all seven Workspace
-  operations still reach DataService through ApplicationServices. Gates 1 and
-  2 remain Partial; workspace create and the audited direct `src/next` scan
-  remain Satisfied. F120 targets this remaining transitive edge. Historical
-  workbook provenance is a tracked risk, not a literal exit criterion. Sub
-  Prep remains January 1 of the reference date's year through December 31 of
-  the following year at most; 2026-2027 is illustrative.
+- Current note: F119 is independently verified at commit `80fbf034`; all seven
+  feature-service factories use the session only. F120's solution review
+  selected session-backed `ApplicationServices` operations and live DataService
+  repository resolution to remove the remaining Workspace operation edge while
+  preserving facade safety. Implementation and independent verification remain
+  pending. Gates 1 and 2 remain Partial; workspace create and the audited direct
+  `src/next` scan remain Satisfied. Historical workbook provenance is a tracked
+  risk, not a literal exit criterion. Sub Prep remains January 1 of the
+  reference date's year through December 31 of the following year at most;
+  2026-2027 is illustrative.
 
 ## Objective
 
@@ -215,15 +217,43 @@ production-workbook provenance remains a tracked risk, not a literal exit
 criterion. Sub Prep remains bounded to January 1 of the reference date's year
 through December 31 of the following year, at most; 2026-2027 is illustrative.
 
-### Next selected slice (F120, pending solution review)
+### Next selected slice (F120; implementation pending)
 
-Remove Workspace's `ApplicationServices` to `DataService` operation edge across
-open, close, open-state, path, save, save-as, and export while preserving
-current behavior and `DataService` facade validity across session swaps. The
-bounded solution review must settle an approach before implementation; no
-architecture is selected here. Acceptance must cover all seven operations and
-the facade lifecycle, and demonstrate the v2 Workspace path no longer depends
-transitively on `DataService`.
+Keep the public `ApplicationServices` Workspace API and make all seven
+operation implementations session-backed: use `DatabaseSession` for open,
+close, open-state, path, and save commit; use a small DataService-independent
+file-operation helper shared with `DataService` for save-as/export copy
+behavior. Change `DataService` repository access from cached raw pointers to
+live resolution through its owned or borrowed session. Workspace calls must
+not notify or refresh the facade. Keep
+`ApplicationServicesWorkspacePort`/`FileController` composition stable.
+
+Acceptance:
+
+1. A call-graph/source audit confirms Workspace's seven operations route from
+   `ApplicationServices` directly to `DatabaseSession` or the file helper;
+   those methods do not call `m_dataService`, which remains only for
+   compatibility construction/access. `src/next` remains free of direct
+   `DataService` usage.
+2. Preserve operation behavior, including error and path normalization,
+   open/close postconditions, save commit, save-as copy followed by the
+   Workspace-port reopen with identity retained, and export leaving the active
+   path unchanged.
+3. Prove a borrowed facade remains valid after open-from-closed, successful
+   A-to-B replacement, failed replacement preserving A, and close/reopen to B;
+   it can read and write the current repository. Retain coverage for standalone
+   and sessionless legacy usage.
+4. Build `ClassMngr`; run focused acceptance targets
+   `ClassMngrDataServiceLifecycleTests`,
+   `ClassMngrNextPlatformApplicationServicesWorkspacePortTests`, and
+   `ClassMngrFileControllerWorkspaceLifecycleTests` as needed; check diff
+   hygiene.
+
+The three Investigator reviews converged on session-backed routing plus facade
+safety. This selected seam keeps the existing adapter/controller composition
+and avoids an extra Workspace port dependency while removing the
+`ApplicationServices` to `DataService` operation edge. Strict transitive
+isolation remains open until implementation and independent verification pass.
 
 ### Independent open track: DataService isolation
 

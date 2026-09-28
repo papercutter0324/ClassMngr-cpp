@@ -7164,12 +7164,30 @@ F118 is common-input evidence on a checked-in post-baseline fixture, not
 historical production-workbook parity. Phase 2 remains In Progress with its
 exit gate Open.
 
-### Next selected slice (F120, pending bounded solution review)
+### F120 solution review and selected implementation boundary
 
-Remove the Workspace path's transitive `ApplicationServices` to `DataService`
-operation edge across open, close, open-state, path, save, save-as, and export.
-Preserve existing operation behavior and ensure the compatibility facade stays
-valid across session swaps. Review solution alternatives and settle the
-implementation seam before changing production code. Acceptance must cover
-all seven operations and facade lifecycle, and establish that the v2 Workspace
-path no longer depends transitively on `DataService`.
+Three independent Investigator reviews agreed this should be one gate-closing
+slice: partial routing would leave either the Workspace-to-DataService edge or
+the borrowed facade unsafe. The reviews converged on session-backed operations
+and facade safety, while differing on whether to add a dedicated Workspace
+service/port. The selected seam retains the existing `ApplicationServices`
+Workspace API and adapter/controller composition. Its seven operations will
+route directly to `DatabaseSession` or a small DataService-independent
+file-operation helper shared with `DataService`; facade repository access will
+resolve live through its owned or borrowed session instead of cached raw
+pointers. Workspace calls will not notify or refresh the facade.
+
+The rationale is that `ApplicationServices` is allowed by the formal gate and
+already supplies FileController's open-state/path reads. A new Workspace
+service/port would add an unnecessary dependency without improving the
+transitive boundary. The F120 acceptance criteria are recorded in the Phase 2
+plan's [selected F120 slice](03-Phase-2-Domain-Model-and-Application-Contracts.md).
+They cover the seven-operation call graph, preserved Workspace behavior, safe
+facade reads/writes across session replacement and failures, retained standalone
+and sessionless usage, focused lifecycle/port/controller tests, a `ClassMngr`
+build, and diff hygiene.
+
+F120 implementation and independent verification remain pending. Phase 2
+remains In Progress with its exit gate Open; Gate 1 and Gate 2 remain Partial,
+the workspace-create boundary remains Satisfied, and strict transitive
+isolation remains unresolved.

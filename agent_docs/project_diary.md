@@ -1226,3 +1226,7 @@ When a checked-in fixture postdates the baseline, run its identical bytes agains
 ## F119 - hash the committed snapshot for handoffs - 2026-09-28
 
 Compute handoff SHA-256 values from a fresh archive of the exact commit and compare the archived files to the commit's Git blobs. The initial F119 handoff listed five values that did not match either the Windows working-tree bytes or the fresh archive; do not attribute such a mismatch to line endings without evidence. The corrected archive hashes and independent build/test results now establish the F119 snapshot.
+
+## F120 - remove the operation edge without callback coupling - 2026-09-28
+
+Keep the existing `ApplicationServices` workspace API and route its implementations to the canonical session plus a shared file-operation helper. Make the compatibility facade resolve current repositories from its session so direct session replacement cannot leave cached pointers dangling. A refresh callback from the new workspace path would retain the dependency being removed; prefer live access and verify both the call graph and facade lifecycle.
