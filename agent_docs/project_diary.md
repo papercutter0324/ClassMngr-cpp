@@ -1266,3 +1266,12 @@ the strict schedule parser accepts only `HH:mm`. Convert only after the
 existing UI validation and normalization, and cover AM/PM, noon, and midnight
 at the page boundary. Keep the app contract Qt-free and pass typed minute
 values to the session-backed adapter.
+
+## F127 - preserve raw schedule rows in a screen query - 2026-09-29
+
+Use ordered Qt-free raw text rows for editor reads; `ScheduleTime` cannot
+represent malformed stored rows and would make the read projection lossy.
+Keep class, teacher, and roster read outcomes independent so one failed source
+does not discard successful display data. After save, refresh title data from
+the query but overlay the just-saved class fields so the title stays current
+without reloading the form or marking it dirty.

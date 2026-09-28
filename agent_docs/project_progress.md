@@ -1566,7 +1566,7 @@ warning/dirty behavior. Review and implementation have not begun. Gate 1 and
 Gate 2 remain Partial; formal workspace-create acceptance and active-v2
 DataService isolation remain Satisfied. Phase 2 remains In Progress/Open.
 
-## Current Position - 2026-09-29 (F126 verified; F127 implementation in progress)
+## Current Position - 2026-09-29 (F127 verified; F128 implementation in progress)
 
 F126 source/test commit `ca4c1a97` (`Phase2 - integrate class details save
 use case`) adds the Qt-free `ClassDetailsSaveUseCase` and session-backed
@@ -1583,9 +1583,23 @@ up to date. A fresh independent rebuild could not be configured because Ninja
 could not find `rc` and the Visual Studio generator could not find a C++
 compiler. `git diff --check` passed. No full suite or baseline comparison ran.
 
-F127 is the inferred next slice: a Qt-free class-details read query for editor
-fields, raw ordered schedule rows, teacher display data, and student count.
-Implementation is in progress. The tentative following candidate is the
-schedule slot-state save boundary. Gate 1 and Gate 2 remain Partial; formal
-workspace-create acceptance and active-v2 DataService isolation remain
-Satisfied. Phase 2 remains In Progress/Open.
+F127 source/test commit `988b7de7` (`Phase2 - integrate class details page
+read query`) adds a Qt-free typed-ID snapshot query for editor fields, raw
+ordered schedule rows, teacher display data, and student count. The session
+adapter retains independent source outcomes; the page preserves separate
+fallbacks and refreshes the snapshot for load/reload, title retranslation, and
+after save. The fresh save-validation read remains separate.
+
+Four focused F127 CTest targets passed 4/4, including the title-refresh
+regression and F126 save-page test. `ClassMngr` and the focused targets rebuilt
+successfully with the Visual Studio developer environment; `git diff --check`
+passed. No full suite or baseline comparison ran. Malformed schedule values
+are tested as lossless through the app/platform boundary; malformed-value
+widget rendering remains outside scope.
+
+F128 is now in implementation: an app-less typed save command for the shared
+schedule slot-state toggle. The UI keeps the transition/default rules; the
+command carries weekday, start minute, selected state, and default state, and
+the platform adapter persists through the active session. Gate 1 and Gate 2
+remain Partial; formal workspace-create acceptance and active-v2 DataService
+isolation remain Satisfied. Phase 2 remains In Progress/Open.

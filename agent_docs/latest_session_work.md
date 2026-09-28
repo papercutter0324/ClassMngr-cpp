@@ -3053,7 +3053,7 @@ pending review; implementation has not begun. Gate 1 and Gate 2 remain
 Partial; workspace-create acceptance and active-v2 DataService isolation
 remain Satisfied. Phase 2 is In Progress/Open. No push was requested.
 
-## Phase 2 continuation - 2026-09-29 (F126 verified; F127 implementation in progress)
+## Phase 2 continuation - 2026-09-29 (F127 verified; F128 implementation in progress)
 
 The user requested a commit after every completed slice, then immediate work on
 the next slice. F125 source/test commit
@@ -3091,11 +3091,28 @@ was up to date. A clean independent rebuild was unavailable because Ninja
 could not find `rc` and the Visual Studio generator could not find a C++
 compiler. `git diff --check` passed. No full suite or baseline comparison ran.
 
-F127 is now being implemented as the inferred class-details display/read
-query: a Qt-free snapshot with raw ordered schedules, teacher display data,
-student count, and independent source outcomes/fallbacks. It will leave the
-fresh save-validation read in place. The tentative next candidate after F127
-is a slot-state persistence use case for the schedule widget. Gate 1 and Gate
-2 remain Partial; workspace-create acceptance and active-v2 DataService
+F127 source/test commit `988b7de7` (`Phase2 - integrate class details page
+read query`) adds a Qt-free typed-ID query and owning snapshot for the class
+details display path. The snapshot carries class fields, ordered raw schedule
+rows, teacher display name, and student count with independent source outcomes.
+The platform port reads through the active `ApplicationServices` session. The
+page uses the query for initial/reload display and title retranslation; after
+a successful save it refreshes title data while retaining the just-saved
+fields and current form state. The existing fresh read for save validation
+remains separate.
+
+The app query, platform port, page display, and F126 save-page tests passed
+4/4. The page title-refresh regression verifies that a changed teacher name is
+used after save while the form, schedules, and student count remain loaded.
+`ClassMngr` and the focused targets rebuilt successfully through the Visual
+Studio developer environment; `git diff --check` passed. No full suite or
+baseline comparison ran. Malformed schedule values are covered at the
+app/platform boundary; malformed-value widget rendering was not changed.
+
+F128 is now in implementation as a typed persistence boundary for the shared
+schedule slot-state toggle. It preserves the existing UI transition and
+default-state rules, maps through the session-backed schedule service, and
+covers regular and intensive callers of the shared toggle. Gate 1 and Gate 2
+remain Partial; workspace-create acceptance and active-v2 DataService
 isolation remain Satisfied. Phase 2 is In Progress/Open. No push was
 requested.
