@@ -228,6 +228,7 @@ private slots:
     void featureServicesExposeNarrowOperations();
     void settingsServiceDoesNotFallBackFromClosedSession();
     void calendarServiceDoesNotFallBackFromClosedSession();
+    void classNotesServiceDoesNotFallBackFromClosedSession();
     void subPrepOutputReadsDoNotFallBackFromClosedSession();
     void closeAndSwitchReleaseEveryRepository();
     void schemaFailureClosesDatabaseSession();
@@ -1575,6 +1576,64 @@ calendarServiceDoesNotFallBackFromClosedSession()
         legacyOnly.eventsForDate(eventDate);
     QVERIFY(emptyLegacyCalendar);
     QVERIFY(emptyLegacyCalendar->isEmpty());
+}
+
+void DataServiceLifecycleTests::
+classNotesServiceDoesNotFallBackFromClosedSession()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+
+    DataService legacyDataService;
+    QVERIFY(legacyDataService.openDatabase(
+        directory.filePath(QStringLiteral("legacy-class-notes.db"))
+        ).has_value());
+    const Result<int> createdClass = legacyDataService.createClass(
+        QStringLiteral("F115 Class Notes Isolation")
+        );
+    QVERIFY(createdClass);
+
+    ClassInfo originalInfo;
+    originalInfo.classId = *createdClass;
+    originalInfo.notes = QStringLiteral("Original notes");
+    originalInfo.timeFillerActivities = QStringLiteral("Original activities");
+    QVERIFY(legacyDataService.saveClassInfo(originalInfo));
+
+    DatabaseSession closedSession;
+    QVERIFY(!closedSession.isOpen());
+    QVERIFY(closedSession.classInfoRepository() == nullptr);
+
+    ClassService sessionBound(&closedSession, &legacyDataService);
+    ClassService legacyOnly(&legacyDataService);
+
+    QVERIFY(!sessionBound.saveClassNotes(
+        *createdClass,
+        QStringLiteral("Rejected notes"),
+        QStringLiteral("Rejected activities")
+        ));
+
+    const Result<ClassInfo> unchangedInfo =
+        legacyDataService.loadClassInfo(*createdClass);
+    QVERIFY(unchangedInfo);
+    QCOMPARE(unchangedInfo->notes, QStringLiteral("Original notes"));
+    QCOMPARE(
+        unchangedInfo->timeFillerActivities,
+        QStringLiteral("Original activities")
+        );
+
+    QVERIFY(legacyOnly.saveClassNotes(
+        *createdClass,
+        QStringLiteral("Legacy notes"),
+        QStringLiteral("Legacy activities")
+        ));
+    const Result<ClassInfo> legacyUpdatedInfo =
+        legacyDataService.loadClassInfo(*createdClass);
+    QVERIFY(legacyUpdatedInfo);
+    QCOMPARE(legacyUpdatedInfo->notes, QStringLiteral("Legacy notes"));
+    QCOMPARE(
+        legacyUpdatedInfo->timeFillerActivities,
+        QStringLiteral("Legacy activities")
+        );
 }
 
 void DataServiceLifecycleTests::

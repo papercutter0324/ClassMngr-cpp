@@ -654,10 +654,14 @@ Status ClassService::saveClassNotes(
             );
     }
 
-    if (auto* repository = session() ? session()->classInfoRepository() : nullptr)
+    if (session())
     {
-        return repository->saveClassNotes(
-            classId, normalizedNotes, normalizedActivities);
+        if (auto* repository = session()->classInfoRepository())
+        {
+            return repository->saveClassNotes(
+                classId, normalizedNotes, normalizedActivities);
+        }
+        return std::unexpected(unavailableError());
     }
     return dataService()
         ? dataService()->saveClassNotes(
