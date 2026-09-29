@@ -5,7 +5,7 @@
 - Overall status: In progress
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
-- Last updated: 2026-09-29
+- Last updated: 2026-09-30
 - Current milestone: Phase 2 application-contract slices are continuing.
   Calendar-import planning, the existing-signature read cutover, and Work
   Package D (model-backed class list/navigation and reusable selected-class
@@ -15,17 +15,12 @@
   ScheduleEditor save/read boundaries, and ScheduleWidget unavailable-source
   behavior. F143's Testing Classes selected-detail query is committed as
   `e2a3811cdba71b58ff2289f2c756d9bf12349bf5`; fresh Windows x64 Debug focused
-  CTests passed 3/3. F144's TestingClassesPage teacher-choice read is now
-  acceptance-complete. Its partial implementation is preserved in checkpoint
-  `56c76f412b246230fcfe00c249b195dcc6ccd95f`; the acceptance test commit is
-  `89fbbaa250ddf98fae2ab1d80385fb99164ac055`. The F144 Application,
-  Platform, and page CTests passed 3/3; the F142/F143 Application and Platform
-  regressions passed 4/4 in a second fresh Ninja tree. All seven focused CTest
-  cases passed; no full suite or full application build ran. F145 has not
-  been selected. Its scope must be a distinct vertical slice chosen by the
-  Heavy-route candidate review; the teacher-choice read belongs to F144.
-  Create/update/delete writes remain separate pending roster-order and
-  assignment/cascade acceptance.
+  CTests passed 3/3. F144's TestingClassesPage teacher-choice read is
+  acceptance-complete. F145 is accepted as a separate existing Testing Class
+  details update slice; F146 awaits Heavy-route candidate review. Create,
+  pending schedule assignment, and delete/cascade remain separate. See the
+  [Phase 2 progress log](03-Phase-2-Progress-Log.md) for F145 commits and
+  verification.
   Phase 2 Gates 1 and 2 remain Partial; broader feature migration, parity, and
   96-class Release memory evidence remain open. Phase 1 build-system exit
   evidence remains outstanding.

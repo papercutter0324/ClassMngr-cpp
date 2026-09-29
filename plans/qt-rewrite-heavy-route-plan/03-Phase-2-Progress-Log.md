@@ -7578,5 +7578,24 @@ observable unavailable behavior.
 
 F144 adds Gate 1 evidence and no Gate 2 baseline-parity evidence. Gate 1 and
 Gate 2 remain Partial; workspace boundary and active-v2 DataService isolation
-remain Satisfied. F145 has no distinct selected scope yet; complete the
-Heavy-route candidate review before starting it.
+remain Satisfied.
+
+### Progress update - 2026-09-30 (F145 accepted)
+
+F145 adds the existing Testing Class details update through the Qt-free
+`TestingClassDetailsUpdateUseCase` and an active-session Platform adapter to
+`TestingClassRepository::updateTestingClass()`. Existing-page roster-first
+behavior is preserved: when roster save succeeds but details update fails, the
+roster remains persisted and clean. Create, pending schedule assignment, and
+delete/cascade remain separate.
+
+Production commit: `26a916df9994217ffd3f12f45148207e9cf5e0c2`;
+acceptance-test commit: `ba1b7cdec15f6f163bb1620897fb4c2e2b3baccb`. Fresh
+Windows x64 Debug Ninja/MSVC configure/build passed. Three F145 CTests and
+seven F142-F144 regression CTests passed (10/10); source ownership validation
+and `git diff --check` passed. Object-path length warnings occurred, but all
+requested targets built. No full suite or full application build ran.
+
+Gate 1 and Gate 2 remain Partial; workspace boundary and active-v2 DataService
+isolation remain Satisfied. Phase 2 remains In Progress with its exit gate Open.
+F146 awaits Heavy-route candidate review.

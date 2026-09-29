@@ -1371,3 +1371,12 @@ regressions without establishing the cause of the earlier C1083.
 ## 2026-09-30 — aqt checksum sidecar failures
 
 `ChecksumDownloadFailure` indicates aqt could not retrieve the archive checksum sidecar; it is distinct from downloading an archive whose hash fails validation. Do not infer a metadata parser bug from the archive filename alone. When the exact sidecar status is unknown, bounded retries with delay and a longer request timeout can address transient availability while preserving fail-closed checksum verification. Do not add trusted mirrors or disable hash checks without verifying the exact sidecar and its provenance. Keep equivalent macOS release and baseline install paths consistent.
+
+## 2026-09-30 — F145 Testing Class details update
+
+Keep existing-class detail updates separate from create-time schedule
+assignment and delete cascades. Preserve the page's roster-first ordering and
+test the partial-save state explicitly: roster data can commit before a later
+detail update fails. Verify the Application contract, active-session adapter,
+page behavior, and prior read-path regressions together; a focused 10/10 pass
+does not imply the full Phase 2 gate is closed.

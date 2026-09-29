@@ -4092,3 +4092,18 @@ Ninja/MSVC 19.51/Qt 6.12 builds passed the three F144 CTests and four F142/F143
 Application/Platform regression CTests. No full suite or full application
 build ran. The broader teacher-facing UI still uses
 `TeacherService`; only this Testing Classes choice read has moved.
+
+## Verified F145 Testing Class details update
+
+F145 routes existing Testing Class detail updates through the Qt-free
+`TestingClassDetailsUpdateUseCase` and the active-session Platform adapter to
+`TestingClassRepository::updateTestingClass()`. The existing page saves the
+roster first. When that save succeeds and the details update fails, the roster
+remains persisted and clean. Create, pending schedule assignment, and
+delete/cascade remain separate.
+
+The production change is commit `26a916df9994217ffd3f12f45148207e9cf5e0c2`;
+acceptance tests are in `ba1b7cdec15f6f163bb1620897fb4c2e2b3baccb`. Build and
+test evidence, warnings, and verification limits are recorded in the [Phase 2
+progress log](03-Phase-2-Progress-Log.md). Phase 2 Gates 1 and 2 remain Partial
+and its exit gate remains Open.

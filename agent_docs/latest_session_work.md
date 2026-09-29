@@ -3338,11 +3338,9 @@ independently injectable while an open DatabaseSession exists; null services,
 unopened sessions, and closed sessions cover the observable unavailable path.
 No production defect was observed.
 
-F145 has not been selected. Start Here's latest note was ambiguous about
-whether the teacher-choice scope belonged to F144 or F145; the detailed Phase
-2 plan and handoff assign it to F144. Next, complete Heavy-route candidate
-review for a distinct F145 slice, then update the phase plan before
-implementation.
+The earlier note that F145 was unselected is superseded by the F145 acceptance
+record below. F144 owns the teacher-choice read; the detailed Phase 2 plan and
+handoff resolve the earlier Start Here ambiguity.
 
 ## 2026-09-30 — macOS Qt checksum retrieval
 
@@ -3353,3 +3351,44 @@ The user reported the macOS Qt 6.12.0 install failing in aqt 3.3.0 while retriev
 Updated `.github/workflows/macos-release.yml` and `.github/workflows/refactoring-baseline.yml`: both macOS Qt install commands now use a 30-second timeout, retry the complete install up to three times, and wait 10 seconds after each of the first two failures. They preserve Qt 6.12.0, `clang_64`, qtpdf, output paths, and aqt 3.3.0. Final failure remains nonzero and checksum verification remains enabled.
 
 `git diff --check`, Ruby YAML parsing on both full workflows, and `bash -n` on both changed run blocks passed. The independent Tester reviewed the retry paths and retained settings with no findings. `actionlint` was unavailable. No tests, live Qt installation, or GitHub Actions run were performed. If the error recurs after retries, capture the exact sidecar URL and HTTP response to distinguish transient availability from a persistent Qt repository publication issue. The user subsequently requested a commit; no push was requested.
+
+## 2026-09-30 — Phase 2 continuation: F145 accepted
+
+Deployment: `phase2_resume_20260929`, Heavy route. The user requires each
+accepted slice to be committed before work starts on the next one; no push was
+requested.
+
+F145 routes existing Testing Class details updates through the Qt-free
+`TestingClassDetailsUpdateUseCase` and an active-session Platform adapter to
+`TestingClassRepository::updateTestingClass()`. It validates canonical
+positive class and optional teacher IDs and has no legacy fallback. The page
+preserves the create and delete service paths and the roster-first ordering.
+If a later detail update fails, a previously successful roster save remains
+persisted and clean while the details draft stays dirty.
+
+Production commit `26a916df9994217ffd3f12f45148207e9cf5e0c2` and test commit
+`ba1b7cdec15f6f163bb1620897fb4c2e2b3baccb` are accepted. Fresh Windows x64
+Debug Ninja/MSVC verification passed all ten requested CTests. The build also
+validated source ownership and built the new standalone targets plus the page
+target. Passed CTests:
+
+- `ClassMngrNextApplicationTestingClassDetailsUpdateUseCaseTests`
+- `ClassMngrNextPlatformApplicationServicesTestingClassDetailsUpdatePortTests`
+- `ClassMngrTestingClassesPageF145UpdateTests`
+- `ClassMngrTestingClassesPageTests`
+- `ClassMngrNextApplicationTestingTeacherChoicesReadQueryTests`
+- `ClassMngrNextPlatformApplicationServicesTestingTeacherChoicesReadPortTests`
+- `ClassMngrNextApplicationScheduleTestingClassChoicesReadQueryTests`
+- `ClassMngrNextPlatformApplicationServicesScheduleTestingClassChoicesReadPortTests`
+- `ClassMngrNextApplicationTestingClassDetailsReadQueryTests`
+- `ClassMngrNextPlatformApplicationServicesTestingClassDetailsReadPortTests`
+
+The run log is `build/f145-verification-ninja-x64-debug/Testing/Temporary/LastTest.log`.
+`git diff --check` passed. No
+full suite or full `ClassMngr` application build ran. Configure emitted
+existing object-path length warnings for long test targets; all requested
+targets built. No product defect remains open.
+
+Next: complete the Heavy-route candidate review for F146 and update the Phase
+2 plan before implementation. Gate 1 and Gate 2 remain Partial; Phase 2 is In
+Progress/Open. The worktree was clean after the test commit.

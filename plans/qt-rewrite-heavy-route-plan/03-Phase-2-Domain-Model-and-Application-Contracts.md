@@ -15,37 +15,19 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Depends on: Phase 1
 - Blocks: Persistence, bootstrap, shared UI, and feature migration
 - Owner: Unassigned
-- Last updated: 2026-09-29
+- Last updated: 2026-09-30
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F144 is acceptance-complete. Its partial implementation is
-  captured in checkpoint `56c76f412b246230fcfe00c249b195dcc6ccd95f`; the
-  acceptance test update is committed as
-  `89fbbaa250ddf98fae2ab1d80385fb99164ac055`. The F144 Application query,
-  Platform adapter, and TestingClassesPage CTests passed 3/3. The F142/F143
-  Application and Platform regression CTests passed 4/4 in a separate fresh
-  short-path Ninja build. See the F144 acceptance record below for verification
-  limits. F145 has no distinct selected scope; complete the Heavy-route
-  candidate review before assigning it. The completed F144 scope moved
-  `TestingClassesPage::populateTeachers()` from `TeacherService::teachers()`
-  to a Qt-free typed Application teacher-choice query/snapshot and active-
-  session Platform adapter reading
-  `DatabaseSession::teacherRepository()->getAllTeachers()`. Preserve repository
-  order, typed teacher IDs, trimmed Korean labels/rooms, blank-Korean-name
-  filtering, selected-ID restoration, the “None” row, silent unavailable
-  session, and existing “Load Teachers” warning title and generic/detail
-  read-failure behavior. Acceptance: app-less typed/query-result/error
-  propagation; Platform active-session field/order mapping, unavailable
-  `NotFound`, and repository-failure behavior without fallback; page
-  labels/IDs/room role, filtering/order/selection/None/warning/silence. This
-  read closes the manager page's read path; create/update/delete writes stay
-  separate pending acceptance for roster-order and assignment/cascade
-  semantics.
-  F120 active-v2 DataService isolation and formal workspace-create acceptance
-  remain Satisfied. Gates 1 and 2 remain Partial. Historical workbook
-  provenance remains a tracked risk, not a literal exit criterion. Sub Prep
-  remains January 1 of the reference date's year through December 31 of the
-  following year at most; 2026-2027 is illustrative.
+- Current note: F145 is acceptance-complete as a separate existing Testing
+  Class details update slice; see its acceptance record below. It preserves
+  roster-first page behavior, including a successful roster save remaining
+  persisted and clean if the details update fails. Create, pending schedule
+  assignment, and delete/cascade remain separate. F146 awaits Heavy-route
+  candidate review. Gates 1 and 2 remain Partial; F120 active-v2 DataService
+  isolation and formal workspace-create acceptance remain Satisfied.
+  Historical workbook provenance remains a tracked risk, not a literal exit
+  criterion. Sub Prep remains January 1 of the reference date's year through
+  December 31 of the following year at most; 2026-2027 is illustrative.
 
 ## Objective
 
@@ -273,7 +255,20 @@ direct test seam while an open `DatabaseSession` exists; null services,
 unopened sessions, and closed sessions cover the observable unavailable case.
 No production defect was observed.
 
-F143 remains the preceding accepted slice. F145 has no distinct selected
-scope; complete the Heavy-route candidate review before assigning it. Testing
-Classes create/update/delete writes remain separate because roster-order and
-assignment/cascade semantics still need acceptance.
+F144 is the preceding accepted slice. F145's accepted existing-class details
+update is recorded below. Create, pending schedule assignment, and
+delete/cascade remain separate because their contracts still need acceptance.
+
+## F145 acceptance record
+
+F145 adds existing-class detail updates through the Qt-free
+`TestingClassDetailsUpdateUseCase` and the active-session Platform adapter to
+`TestingClassRepository::updateTestingClass()`. The Testing Classes page keeps
+its roster-first save order: if the roster save succeeds and the details update
+fails, the roster remains persisted and clean. Create, pending schedule
+assignment, and delete/cascade remain separate.
+
+F145's production and acceptance-test commits and verification limits are
+recorded in the [Phase 2 progress log](03-Phase-2-Progress-Log.md). Gate 1 and
+Gate 2 remain Partial; Phase 2 remains In Progress with its exit gate Open.
+F146 awaits Heavy-route candidate review.

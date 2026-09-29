@@ -1,7 +1,7 @@
 # Project Progress
 
 Active deployment plan: Qt Rewrite Phase 2 — Domain Model and Application Contracts.
-Current deployment: f126-class-details-20260929 (executing). Route: Heavy.
+Current deployment: phase2_resume_20260929 (executing). Route: Heavy.
 Phase 1 hosted acceptance is closed on commit `0883009d`; the local branch adds
 continued Phase 2 domain and application-contract work on top of that verified
 baseline.
@@ -1748,11 +1748,10 @@ and Platform regression CTests passed 4/4 in a separate fresh short-path
 Ninja build. All seven distinct required targets passed. Configure-time source
 ownership validated 1,025 files. No full suite or full application build ran.
 
-Next milestone: complete the Heavy-route candidate review for a distinct F145
-slice. Start Here's prior wording could read as assigning F144's
-populateTeachers scope to F145; the detailed Phase 2 handoff establishes F144
-as that scope. F145 remains unselected until candidate review. No push was
-requested.
+F144's teacher-choice read is accepted; the earlier Start Here ambiguity is
+resolved in favor of F144. F145 has since been selected and accepted as the
+existing Testing Class details update slice. The F146 candidate review is the
+next milestone. No push was requested.
 
 ## macOS Qt checksum recovery — 2026-09-30
 
@@ -1761,3 +1760,19 @@ The macOS release and refactoring-baseline jobs both installed Qt 6.12.0 with aq
 Both macOS install blocks now use a 30-second request timeout and retry the complete aqt install up to three times, with a 10-second delay between failed attempts. They preserve the existing Qt version, `clang_64` target, qtpdf module, output paths, and aqt pin. Checksum verification stays enabled, and the jobs still fail after the final unsuccessful attempt.
 
 `git diff --check`, Ruby YAML parsing of both workflows, and `bash -n` on both edited run blocks passed; an independent review confirmed the control flow and retained settings. No live Qt install or GitHub Actions run was performed. The underlying sidecar response remains unobserved; a permanent missing-sidecar condition will still fail closed after retries.
+
+## F145 acceptance — 2026-09-30
+
+F145 routes existing Testing Class details updates through a Qt-free
+Application use case and active-session Platform adapter. New-class creation,
+pending schedule assignment, and deletion cascades remain separate. The page
+preserves roster-first saves: a roster failure blocks the detail update, while
+a later detail failure leaves the successful roster save persisted and clean.
+
+Production commit `26a916df9994217ffd3f12f45148207e9cf5e0c2` and acceptance
+test commit `ba1b7cdec15f6f163bb1620897fb4c2e2b3baccb` are accepted. A fresh
+Windows x64 Debug Ninja/MSVC configure and focused build passed; all three
+F145 CTests and seven F142–F144 regressions passed (10/10). CMake source
+ownership validation ran. `git diff --check` passed. No full suite or full
+application build ran. The next step is a Heavy-route candidate review for
+F146; Phase 2 exit gates remain open.
