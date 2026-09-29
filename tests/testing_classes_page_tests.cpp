@@ -11,9 +11,11 @@
 #include "features/roster/ui/roster_table_view.h"
 #include "fakes/fake_user_prompt_service.h"
 #include "next/application/schedule_testing_class_choices_query.h"
+#include "next/application/testing_class_create.h"
 #include "next/application/testing_class_details_update.h"
 #include "next/application/testing_class_details_read_query.h"
 #include "next/application/testing_teacher_choices_read_query.h"
+#include "next/platform/application_services_testing_class_create_port.h"
 #include "ui/shared/widgets/marquee_item_delegate.h"
 #include "ui/shared/widgets/on_screen_keyboard.h"
 #include "ui/shared/dialogs/user_prompt_service.h"
@@ -226,6 +228,52 @@ public:
         ClassMngr::Next::Domain::Result<void>::success();
 };
 
+class RecordingTestingClassCreatePort final
+    : public ClassMngr::Next::Application::TestingClassCreatePort
+{
+public:
+    [[nodiscard]] ClassMngr::Next::Application::TestingClassCreateResult
+    createTestingClass(
+        const ClassMngr::Next::Application::TestingClassCreateRequest& request
+        ) const override
+    {
+        ++callCount;
+        lastRequest = request;
+
+        ClassMngr::Next::Application::TestingClassCreateResult created =
+            failuresRemaining > 0
+                ? failureResult
+                : delegate
+                    ? delegate->createTestingClass(request)
+                    : result;
+        if (failuresRemaining > 0)
+        {
+            --failuresRemaining;
+        }
+        lastResult = created;
+        return created;
+    }
+
+    const ClassMngr::Next::Application::TestingClassCreatePort* delegate =
+        nullptr;
+    mutable int callCount = 0;
+    mutable int failuresRemaining = 0;
+    mutable std::optional<ClassMngr::Next::Application::
+        TestingClassCreateRequest> lastRequest;
+    mutable std::optional<ClassMngr::Next::Application::
+        TestingClassCreateResult> lastResult;
+    ClassMngr::Next::Application::TestingClassCreateResult result =
+        ClassMngr::Next::Application::TestingClassCreateResult::success(
+            typedClassId(77)
+            );
+    ClassMngr::Next::Application::TestingClassCreateResult failureResult =
+        ClassMngr::Next::Application::TestingClassCreateResult::failure({
+            .code = ClassMngr::Next::Domain::ErrorCode::Conflict,
+            .message = "injected testing class create failure",
+            .recoverable = true
+        });
+};
+
 void setSingleTestingClassChoice(
     FixedTestingClassChoicesReadPort& readPort,
     const int classId,
@@ -328,6 +376,8 @@ private slots:
     void existingTestingClassUpdateRetainsSelectionAndRefreshesList();
     void testingClassDetailsUpdateFailureRetainsDraftAndShowsWarning();
     void newTestingClassCreationDoesNotUseDetailsUpdatePort();
+    void newTestingClassCreateForwardsPendingSlotAndSelectsCreatedClass();
+    void newTestingClassCreateFailureRetainsDraftAndPendingSlot();
     void rosterFailureBlocksTestingClassDetailsUpdate();
     void savedRosterRemainsCleanWhenDetailsUpdateFails();
     void zeroTeacherIdKeepsNoneSelectedWithoutWarning();
@@ -1606,6 +1656,10 @@ newTestingClassCreationDoesNotUseDetailsUpdatePort()
             .message = "update port must not handle class creation",
             .recoverable = false
         });
+    ClassMngr::Next::Platform::ApplicationServicesTestingClassCreatePort
+        persistedCreatePort(services);
+    RecordingTestingClassCreatePort createPort;
+    createPort.delegate = &persistedCreatePort;
 
     TestingClassesPage page(
         &services,
@@ -1613,7 +1667,8 @@ newTestingClassCreationDoesNotUseDetailsUpdatePort()
         nullptr,
         nullptr,
         nullptr,
-        &updatePort
+        &updatePort,
+        &createPort
         );
     page.openTestingClass(*existingClassId);
     page.refresh();
@@ -1621,16 +1676,39 @@ newTestingClassCreationDoesNotUseDetailsUpdatePort()
     auto* addButton = page.findChild<QPushButton*>(
         QStringLiteral("testingClassesAddButton")
         );
+    auto* list = page.findChild<QListWidget*>(
+        QStringLiteral("testingClassesList")
+        );
     QVERIFY(addButton);
+    QVERIFY(list);
     addButton->click();
 
     auto* nameEdit = page.findChild<QLineEdit*>(
         QStringLiteral("testingClassNameEdit")
         );
     auto* editor = page.findChild<RosterEditorWidget*>();
+    auto* saveButton = page.findChild<QPushButton*>(
+        QStringLiteral("testingClassesSaveButton")
+        );
+    auto* gradeCombo = page.findChild<QComboBox*>(
+        QStringLiteral("testingClassGradeCombo")
+        );
+    auto* levelCombo = page.findChild<QComboBox*>(
+        QStringLiteral("testingClassLevelCombo")
+        );
+    auto* roomEdit = page.findChild<QLineEdit*>(
+        QStringLiteral("testingClassRoomEdit")
+        );
     QVERIFY(nameEdit);
     QVERIFY(editor);
+    QVERIFY(saveButton);
+    QVERIFY(gradeCombo);
+    QVERIFY(levelCombo);
+    QVERIFY(roomEdit);
     nameEdit->setText(QStringLiteral("Created Through Existing Path"));
+    gradeCombo->setCurrentText(QStringLiteral("M1"));
+    levelCombo->setCurrentText(QStringLiteral("Major"));
+    roomEdit->setText(QStringLiteral("Room F146"));
     QVERIFY(page.hasUnsavedChanges());
     QVERIFY(!editor->hasUnsavedChanges());
     QSignalSpy changedSpy(&page, &TestingClassesPage::testingDataChanged);
@@ -1638,11 +1716,249 @@ newTestingClassCreationDoesNotUseDetailsUpdatePort()
     QVERIFY(page.saveChanges());
 
     QCOMPARE(updatePort.callCount, 0);
+    QCOMPARE(createPort.callCount, 1);
+    QVERIFY(createPort.lastRequest.has_value());
+    QVERIFY(createPort.lastResult.has_value());
+    QVERIFY(*createPort.lastResult);
+    QVERIFY(!createPort.lastRequest->assignmentDay.has_value());
+    QVERIFY(!createPort.lastRequest->assignmentStartTime.has_value());
     QCOMPARE(changedSpy.size(), 1);
-    QCOMPARE(ScheduleWidgetTestStubs::testingClassCount(), 1);
-    QVERIFY(ScheduleWidgetTestStubs::hasTestingClassNamed(
+    QCOMPARE(ScheduleWidgetTestStubs::testingClassCount(), 0);
+    QVERIFY(!page.hasUnsavedChanges());
+    QVERIFY(!saveButton->isEnabled());
+
+    const int createdClassId = std::stoi(
+        createPort.lastResult->value().value()
+        );
+    QVERIFY(list->currentItem());
+    QCOMPARE(list->currentItem()->data(Qt::UserRole).toInt(), createdClassId);
+    QVERIFY(list->currentItem()->text().contains(
         QStringLiteral("Created Through Existing Path")
         ));
+    const auto saved = services.databaseSession()
+        ->testingClassRepository()->loadTestingClass(createdClassId);
+    QVERIFY(saved);
+    QCOMPARE(saved->name, QStringLiteral("Created Through Existing Path"));
+    QCOMPARE(services.databaseSession()->database().tables().contains(
+        QStringLiteral("schedule_testing_blocks")
+        ), true);
+
+    QSqlQuery assignmentCount(services.databaseSession()->database());
+    assignmentCount.prepare(QStringLiteral(
+        "SELECT COUNT(*) FROM schedule_testing_blocks WHERE class_id=?"
+        ));
+    assignmentCount.addBindValue(createdClassId);
+    QVERIFY(assignmentCount.exec());
+    QVERIFY(assignmentCount.next());
+    QCOMPARE(assignmentCount.value(0).toInt(), 0);
+}
+
+void TestingClassesPageTests::
+newTestingClassCreateForwardsPendingSlotAndSelectsCreatedClass()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+    TestingClass existing = testingClass(QStringLiteral("Existing Class"));
+    existing.teacherId = -1;
+    const auto existingClassId = services.databaseSession()
+        ->testingClassRepository()->createTestingClass(existing);
+    QVERIFY(existingClassId);
+
+    ClassMngr::Next::Platform::ApplicationServicesTestingClassCreatePort
+        persistedCreatePort(services);
+    RecordingTestingClassCreatePort createPort;
+    createPort.delegate = &persistedCreatePort;
+    RecordingTestingClassDetailsUpdatePort updatePort;
+    TestingClassesPage page(
+        &services,
+        nullptr,
+        nullptr,
+        nullptr,
+        nullptr,
+        &updatePort,
+        &createPort
+        );
+    page.openTestingClass(-1, QStringLiteral("tuesday"), QStringLiteral("17:00"));
+    page.refresh();
+
+    auto* list = page.findChild<QListWidget*>(
+        QStringLiteral("testingClassesList")
+        );
+    auto* nameEdit = page.findChild<QLineEdit*>(
+        QStringLiteral("testingClassNameEdit")
+        );
+    auto* saveButton = page.findChild<QPushButton*>(
+        QStringLiteral("testingClassesSaveButton")
+        );
+    auto* addButton = page.findChild<QPushButton*>(
+        QStringLiteral("testingClassesAddButton")
+        );
+    auto* gradeCombo = page.findChild<QComboBox*>(
+        QStringLiteral("testingClassGradeCombo")
+        );
+    auto* levelCombo = page.findChild<QComboBox*>(
+        QStringLiteral("testingClassLevelCombo")
+        );
+    auto* roomEdit = page.findChild<QLineEdit*>(
+        QStringLiteral("testingClassRoomEdit")
+        );
+    QVERIFY(list);
+    QVERIFY(nameEdit);
+    QVERIFY(saveButton);
+    QVERIFY(addButton);
+    QVERIFY(gradeCombo);
+    QVERIFY(levelCombo);
+    QVERIFY(roomEdit);
+    QCOMPARE(list->count(), 1);
+    QVERIFY(!list->currentItem());
+
+    nameEdit->setText(QStringLiteral("Created With Pending Slot"));
+    gradeCombo->setCurrentText(QStringLiteral("M1"));
+    levelCombo->setCurrentText(QStringLiteral("Major"));
+    roomEdit->setText(QStringLiteral("Room F146"));
+    QVERIFY(page.hasUnsavedChanges());
+    QSignalSpy changedSpy(&page, &TestingClassesPage::testingDataChanged);
+    QVERIFY(changedSpy.isValid());
+    QVERIFY(page.saveChanges());
+
+    QCOMPARE(updatePort.callCount, 0);
+    QCOMPARE(createPort.callCount, 1);
+    QVERIFY(createPort.lastRequest.has_value());
+    QVERIFY(createPort.lastRequest->assignmentDay.has_value());
+    QVERIFY(createPort.lastRequest->assignmentStartTime.has_value());
+    QCOMPARE(*createPort.lastRequest->assignmentDay, std::u16string(u"tuesday"));
+    QCOMPARE(*createPort.lastRequest->assignmentStartTime, std::u16string(u"17:00"));
+    QVERIFY(createPort.lastResult.has_value());
+    QVERIFY(*createPort.lastResult);
+    const int createdClassId = std::stoi(
+        createPort.lastResult->value().value()
+        );
+    QCOMPARE(changedSpy.size(), 1);
+    QCOMPARE(list->count(), 2);
+    QVERIFY(list->currentItem());
+    QCOMPARE(list->currentItem()->data(Qt::UserRole).toInt(), createdClassId);
+    QVERIFY(list->currentItem()->text().contains(
+        QStringLiteral("Created With Pending Slot")
+        ));
+    QVERIFY(!page.hasUnsavedChanges());
+    QVERIFY(!saveButton->isEnabled());
+
+    const auto saved = services.databaseSession()
+        ->testingClassRepository()->loadTestingClass(createdClassId);
+    QVERIFY(saved);
+    QCOMPARE(saved->name, QStringLiteral("Created With Pending Slot"));
+    QSqlQuery assignment(services.databaseSession()->database());
+    assignment.prepare(QStringLiteral(
+        "SELECT day, start_time FROM schedule_testing_blocks WHERE class_id=?"
+        ));
+    assignment.addBindValue(createdClassId);
+    QVERIFY(assignment.exec());
+    QVERIFY(assignment.next());
+    QCOMPARE(assignment.value(0).toString(), QStringLiteral("Tuesday"));
+    QCOMPARE(assignment.value(1).toString(), QStringLiteral("17:00"));
+    QVERIFY(!assignment.next());
+
+    addButton->click();
+    nameEdit->setText(QStringLiteral("Created After Pending Slot"));
+    gradeCombo->setCurrentText(QStringLiteral("M1"));
+    levelCombo->setCurrentText(QStringLiteral("Major"));
+    roomEdit->setText(QStringLiteral("Room F147"));
+    QVERIFY(page.hasUnsavedChanges());
+    QVERIFY(page.saveChanges());
+    QCOMPARE(createPort.callCount, 2);
+    QVERIFY(createPort.lastRequest.has_value());
+    QVERIFY(!createPort.lastRequest->assignmentDay.has_value());
+    QVERIFY(!createPort.lastRequest->assignmentStartTime.has_value());
+}
+
+void TestingClassesPageTests::
+newTestingClassCreateFailureRetainsDraftAndPendingSlot()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+    ClassMngr::Next::Platform::ApplicationServicesTestingClassCreatePort
+        persistedCreatePort(services);
+    RecordingTestingClassCreatePort createPort;
+    createPort.delegate = &persistedCreatePort;
+    createPort.failuresRemaining = 1;
+    FakeUserPromptService prompts;
+    DialogServices::setUserPromptServiceForTesting(&prompts);
+
+    TestingClassesPage page(
+        &services,
+        nullptr,
+        nullptr,
+        nullptr,
+        nullptr,
+        nullptr,
+        &createPort
+        );
+    page.openTestingClass(-1, QStringLiteral("Wednesday"), QStringLiteral("18:00"));
+    page.refresh();
+    auto* nameEdit = page.findChild<QLineEdit*>(
+        QStringLiteral("testingClassNameEdit")
+        );
+    auto* saveButton = page.findChild<QPushButton*>(
+        QStringLiteral("testingClassesSaveButton")
+        );
+    auto* gradeCombo = page.findChild<QComboBox*>(
+        QStringLiteral("testingClassGradeCombo")
+        );
+    auto* levelCombo = page.findChild<QComboBox*>(
+        QStringLiteral("testingClassLevelCombo")
+        );
+    auto* roomEdit = page.findChild<QLineEdit*>(
+        QStringLiteral("testingClassRoomEdit")
+        );
+    QVERIFY(nameEdit);
+    QVERIFY(saveButton);
+    QVERIFY(gradeCombo);
+    QVERIFY(levelCombo);
+    QVERIFY(roomEdit);
+    nameEdit->setText(QStringLiteral("Draft After Create Failure"));
+    gradeCombo->setCurrentText(QStringLiteral("M1"));
+    levelCombo->setCurrentText(QStringLiteral("Major"));
+    roomEdit->setText(QStringLiteral("Room F146"));
+    QVERIFY(page.hasUnsavedChanges());
+    QSignalSpy changedSpy(&page, &TestingClassesPage::testingDataChanged);
+    QVERIFY(changedSpy.isValid());
+
+    QVERIFY(!page.saveChanges());
+
+    QCOMPARE(createPort.callCount, 1);
+    QVERIFY(createPort.lastRequest.has_value());
+    QVERIFY(createPort.lastRequest->assignmentDay.has_value());
+    QVERIFY(createPort.lastRequest->assignmentStartTime.has_value());
+    QCOMPARE(*createPort.lastRequest->assignmentDay, std::u16string(u"Wednesday"));
+    QCOMPARE(*createPort.lastRequest->assignmentStartTime, std::u16string(u"18:00"));
+    QCOMPARE(nameEdit->text(), QStringLiteral("Draft After Create Failure"));
+    QVERIFY(page.hasUnsavedChanges());
+    QVERIFY(saveButton->isEnabled());
+    QCOMPARE(prompts.messages.size(), 1);
+    QCOMPARE(prompts.messages.constFirst().title, QStringLiteral("Save Testing Class"));
+    QCOMPARE(prompts.messages.constFirst().severity, PromptSeverity::Warning);
+    QCOMPARE(prompts.messages.constFirst().message,
+             QStringLiteral("injected testing class create failure"));
+    QCOMPARE(changedSpy.size(), 0);
+    QCOMPARE(ScheduleWidgetTestStubs::testingClassCount(), 0);
+
+    QVERIFY(page.saveChanges());
+    QCOMPARE(createPort.callCount, 2);
+    QVERIFY(createPort.lastRequest.has_value());
+    QVERIFY(createPort.lastRequest->assignmentDay.has_value());
+    QVERIFY(createPort.lastRequest->assignmentStartTime.has_value());
+    QCOMPARE(*createPort.lastRequest->assignmentDay, std::u16string(u"Wednesday"));
+    QCOMPARE(*createPort.lastRequest->assignmentStartTime, std::u16string(u"18:00"));
+    QVERIFY(createPort.lastResult.has_value());
+    QVERIFY(*createPort.lastResult);
+    QCOMPARE(changedSpy.size(), 1);
+    QVERIFY(!page.hasUnsavedChanges());
 }
 
 void TestingClassesPageTests::

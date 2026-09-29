@@ -504,6 +504,22 @@ qt_add_executable(ClassMngrClassTransferTests
                 "PATH=path_list_prepend:$<TARGET_FILE_DIR:Qt6::Core>"
     )
 
+    add_test(
+        NAME ClassMngrTestingClassesPageF146CreateTests
+        COMMAND ClassMngrTestingClassesPageTests
+            newTestingClassCreationDoesNotUseDetailsUpdatePort
+            newTestingClassCreateForwardsPendingSlotAndSelectsCreatedClass
+            newTestingClassCreateFailureRetainsDraftAndPendingSlot
+    )
+
+    set_tests_properties(
+        ClassMngrTestingClassesPageF146CreateTests
+        PROPERTIES
+            ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
+            ENVIRONMENT_MODIFICATION
+                "PATH=path_list_prepend:$<TARGET_FILE_DIR:Qt6::Core>"
+    )
+
     classmngr_add_qt_test(
         NAME UpcomingBirthdays
         SOURCES

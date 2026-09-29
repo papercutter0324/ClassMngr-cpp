@@ -118,6 +118,20 @@ bool createSchema(
 
     return true;
 }
+
+int rowCount(
+    QSqlDatabase& database,
+    const QString& table
+    )
+{
+    QSqlQuery query(database);
+    if (!query.exec(QStringLiteral("SELECT COUNT(*) FROM %1").arg(table))
+        || !query.next())
+    {
+        return -1;
+    }
+    return query.value(0).toInt();
+}
 }
 
 void TestingClassRepositoryTests
@@ -438,6 +452,20 @@ void TestingClassRepositoryTests
         QCOMPARE(query.value(2).toInt(), *created);
         QVERIFY(!query.next());
 
+        const QStringList atomicTables{
+            QStringLiteral("classes"),
+            QStringLiteral("class_info"),
+            QStringLiteral("testing_classes"),
+            QStringLiteral("schedule_testing_blocks")
+        };
+        QList<int> rowsBeforeFailure;
+        for (const QString& table : atomicTables)
+        {
+            const int count = rowCount(database, table);
+            QVERIFY(count >= 0);
+            rowsBeforeFailure.append(count);
+        }
+
         testingClass.name = QStringLiteral("Must Roll Back");
         const Result<int> rejected =
             repository.createTestingClass(
@@ -455,6 +483,14 @@ void TestingClassRepositoryTests
             ));
         QVERIFY(query.next());
         QCOMPARE(query.value(0).toInt(), 0);
+
+        for (qsizetype index = 0; index < atomicTables.size(); ++index)
+        {
+            QCOMPARE(
+                rowCount(database, atomicTables.at(index)),
+                rowsBeforeFailure.at(index)
+                );
+        }
     }
 
     QSqlDatabase::removeDatabase(connectionName);
