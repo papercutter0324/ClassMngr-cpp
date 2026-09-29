@@ -4,11 +4,16 @@
 #include "domain/models/classroom.h"
 #include "domain/models/teacher.h"
 #include "features/classes/ui/class_details_page.h"
+#include "ui/shared/dialogs/user_prompt_service.h"
+#include "ui/shared/pages/page_header.h"
+#include "ui/shared/widgets/sectioncards/class_time_row.h"
+#include "ui/shared/widgets/sections/class_schedule_section.h"
 
 #include <QComboBox>
 #include <QPushButton>
 #include <QSignalSpy>
 #include <QTemporaryDir>
+#include <QTimer>
 #include <QUuid>
 #include <QtTest/QtTest>
 
@@ -48,6 +53,73 @@ int createTeacher(ApplicationServices& services)
     return services.teacherService()->create(teacher).value_or(-1);
 }
 
+ClassTimeRow* addScheduleRow(
+    ClassDetailsPage& page,
+    const ScheduleType type
+    )
+{
+    auto* schedule = page.findChild<ClassScheduleSection*>();
+    if (!schedule)
+    {
+        return nullptr;
+    }
+
+    const QString buttonText = type == ScheduleType::Regular
+        ? QStringLiteral("+ Add Time")
+        : QStringLiteral("+ Add Intensive Time");
+    for (QPushButton* button : schedule->findChildren<QPushButton*>())
+    {
+        if (button->text() == buttonText)
+        {
+            button->click();
+            break;
+        }
+    }
+
+    const QList<ClassTimeRow*>& rows = type == ScheduleType::Regular
+        ? schedule->regularRows()
+        : schedule->intensiveRows();
+    return rows.isEmpty() ? nullptr : rows.last();
+}
+
+void setSchedule(
+    ClassTimeRow* row,
+    const QString& day,
+    const QString& start,
+    const QString& end
+    )
+{
+    Q_ASSERT(row);
+    row->setDay(day);
+    row->setStartTime(start);
+    row->setEndTime(end);
+}
+
+bool saveAndCaptureWarning(
+    ClassDetailsPage& page,
+    QString* title,
+    QString* message
+    )
+{
+    QTimer::singleShot(0, [&] {
+        const auto prompt = DialogServices::promptTestDriver().activePrompt();
+        if (!prompt)
+        {
+            return;
+        }
+        if (title)
+        {
+            *title = prompt->title;
+        }
+        if (message)
+        {
+            *message = prompt->text;
+        }
+        DialogServices::promptTestDriver().accept(prompt->id);
+    });
+    return page.saveChanges();
+}
+
 void chooseNewDetails(ClassDetailsPage& page)
 {
     auto* grade = page.findChild<QComboBox*>(QStringLiteral("classGradeCombo"));
@@ -74,6 +146,7 @@ class ClassDetailsPageSaveParityTests final : public QObject
 
 private slots:
     void successfulUiSaveMatchesSeededCommonInputState();
+    void regularAndIntensiveConflictSavesMatchCommonBaselineInputs();
 };
 
 void ClassDetailsPageSaveParityTests::successfulUiSaveMatchesSeededCommonInputState()
@@ -215,6 +288,134 @@ void ClassDetailsPageSaveParityTests::successfulUiSaveMatchesSeededCommonInputSt
         persisted.intensiveTimes.at(1).endTime,
         QStringLiteral("10:55 AM")
         );
+}
+
+void ClassDetailsPageSaveParityTests::
+regularAndIntensiveConflictSavesMatchCommonBaselineInputs()
+{
+    const struct ConflictCase
+    {
+        ScheduleType mode;
+        QString day;
+        QString start;
+        QString end;
+        QString sourceName;
+        QString warningTitle;
+    } cases[] = {
+        {
+            ScheduleType::Regular,
+            QStringLiteral("Monday"),
+            QStringLiteral("9:00 AM"),
+            QStringLiteral("9:55 AM"),
+            QStringLiteral("Common Input Regular Source"),
+            QStringLiteral("Regular Schedule Conflicts")
+        },
+        {
+            ScheduleType::Intensive,
+            QStringLiteral("Tuesday"),
+            QStringLiteral("12:00 PM"),
+            QStringLiteral("12:55 PM"),
+            QStringLiteral("Common Input Intensive Source"),
+            QStringLiteral("Intensive Schedule Conflicts")
+        }
+    };
+
+    for (const ConflictCase& conflictCase : cases)
+    {
+        QTemporaryDir directory;
+        QVERIFY(directory.isValid());
+        ApplicationServices services;
+        QVERIFY(services.openDatabase(databasePath(directory)));
+
+        const int targetId = createClass(
+            services,
+            QStringLiteral("Class Details Common Input Target")
+            );
+        const int sourceId = createClass(services, conflictCase.sourceName);
+        QVERIFY(targetId > 0);
+        QVERIFY(sourceId > 0);
+
+        auto source = services.classService()->classInfo(sourceId);
+        QVERIFY(source);
+        const ClassTime overlap{
+            conflictCase.day,
+            conflictCase.start,
+            conflictCase.end
+        };
+        if (conflictCase.mode == ScheduleType::Regular)
+        {
+            source->classTimes.append(overlap);
+        }
+        else
+        {
+            source->intensiveTimes.append(overlap);
+        }
+        QVERIFY(services.classService()->saveClassInfo(*source));
+
+        ClassDetailsPage page(&services, false);
+        page.setSaveMode(SaveMode::Manual);
+        page.loadClass(
+            Classroom(
+                QStringLiteral("Class Details Common Input Target"),
+                targetId
+                )
+            );
+        ClassTimeRow* candidate = addScheduleRow(page, conflictCase.mode);
+        QVERIFY(candidate);
+        setSchedule(
+            candidate,
+            conflictCase.day,
+            conflictCase.start,
+            conflictCase.end
+            );
+
+        auto* header = page.findChild<PageHeader*>();
+        QVERIFY(header);
+        const QString subtitleBefore = header->subtitle();
+        QSignalSpy savedSpy(&page, &ClassDetailsPage::classInfoSaved);
+        QVERIFY(savedSpy.isValid());
+        QVERIFY(page.hasUnsavedChanges());
+
+        QString warningTitle;
+        QString warningMessage;
+        QVERIFY(!saveAndCaptureWarning(page, &warningTitle, &warningMessage));
+
+        QCOMPARE(warningTitle, conflictCase.warningTitle);
+        QCOMPARE(
+            warningMessage,
+            QStringLiteral(
+                "Please resolve these schedule conflicts before saving:\n\n%1 "
+                "%2-%3 conflicts with %4."
+                )
+                .arg(conflictCase.day)
+                .arg(conflictCase.start)
+                .arg(conflictCase.end)
+                .arg(conflictCase.sourceName)
+            );
+        QCOMPARE(savedSpy.size(), 0);
+        QVERIFY(page.hasUnsavedChanges());
+        QCOMPARE(header->subtitle(), subtitleBefore);
+
+        const auto unchangedTarget =
+            services.classService()->classInfo(targetId);
+        QVERIFY(unchangedTarget);
+        QVERIFY(unchangedTarget->classTimes.isEmpty());
+        QVERIFY(unchangedTarget->intensiveTimes.isEmpty());
+
+        const auto unchangedSource =
+            services.classService()->classInfo(sourceId);
+        QVERIFY(unchangedSource);
+        if (conflictCase.mode == ScheduleType::Regular)
+        {
+            QCOMPARE(unchangedSource->classTimes.size(), 1);
+            QVERIFY(unchangedSource->intensiveTimes.isEmpty());
+        }
+        else
+        {
+            QVERIFY(unchangedSource->classTimes.isEmpty());
+            QCOMPARE(unchangedSource->intensiveTimes.size(), 1);
+        }
+    }
 }
 
 QTEST_MAIN(ClassDetailsPageSaveParityTests)

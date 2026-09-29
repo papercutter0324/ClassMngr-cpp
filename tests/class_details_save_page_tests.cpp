@@ -3,7 +3,9 @@
 #include "data/database/database_session.h"
 #include "features/classes/ui/class_details_page.h"
 #include "next/application/class_details_save_use_case.h"
+#include "next/application/class_details_schedule_conflict_query.h"
 #include "ui/shared/dialogs/user_prompt_service.h"
+#include "ui/shared/pages/autosave_coordinator.h"
 #include "ui/shared/pages/page_header.h"
 #include "ui/shared/widgets/sectioncards/class_time_row.h"
 #include "ui/shared/widgets/sections/class_schedule_section.h"
@@ -57,6 +59,47 @@ public:
     mutable std::optional<Application::ClassDetailsSaveRequest> lastRequest;
     Domain::Result<void> result = Domain::Result<void>::success();
 };
+
+class RecordingClassDetailsScheduleConflictPort final
+    : public Application::ClassDetailsScheduleConflictPort
+{
+public:
+    [[nodiscard]] Application::ClassDetailsScheduleConflictResult
+    classDetailsScheduleConflicts(
+        const Application::ClassDetailsScheduleConflictRequest& request
+        ) const override
+    {
+        requests.push_back(request);
+        return request.mode == Application::ClassDetailsScheduleMode::Regular
+            ? regularResult
+            : intensiveResult;
+    }
+
+    mutable std::vector<
+        Application::ClassDetailsScheduleConflictRequest
+        > requests;
+    Application::ClassDetailsScheduleConflictResult regularResult =
+        Application::ClassDetailsScheduleConflictResult::success({});
+    Application::ClassDetailsScheduleConflictResult intensiveResult =
+        Application::ClassDetailsScheduleConflictResult::success({});
+};
+
+Application::ClassDetailsScheduleConflict conflict(
+    const std::u16string& className,
+    const std::u16string& day,
+    const std::u16string& startTime,
+    const std::u16string& endTime,
+    const std::u16string& conflictingClassName
+    )
+{
+    return {
+        .className = className,
+        .day = day,
+        .startTime = startTime,
+        .endTime = endTime,
+        .conflictingClassName = conflictingClassName
+    };
+}
 
 void chooseDetails(ClassDetailsPage& page)
 {
@@ -154,6 +197,11 @@ private slots:
     void portFailureShowsItsErrorAndLeavesPageDirty();
     void invalidFieldsBlockTheSavePort();
     void regularAndIntensiveConflictsBlockTheSavePort();
+    void regularConflictShortCircuitsIntensiveAndKeepsSameNameWording();
+    void intensiveConflictFollowsAnEmptyRegularQuery();
+    void regularQueryFailureBlocksBeforeIntensive();
+    void intensiveQueryFailureBlocksAfterRegularSuccess();
+    void noninteractiveConflictBlocksSilently();
 };
 
 void ClassDetailsSavePageTests::normalizedSchedulesReachUseCaseAsMinuteValues()
@@ -169,7 +217,15 @@ void ClassDetailsSavePageTests::normalizedSchedulesReachUseCaseAsMinuteValues()
     QVERIFY(classId > 0);
 
     RecordingClassDetailsSavePort port;
-    ClassDetailsPage page(&services, false, nullptr, &port);
+    RecordingClassDetailsScheduleConflictPort conflictPort;
+    ClassDetailsPage page(
+        &services,
+        false,
+        nullptr,
+        &port,
+        nullptr,
+        &conflictPort
+        );
     page.setSaveMode(SaveMode::Manual);
     page.loadClass(Classroom(QStringLiteral("Class Details Save Page"), classId));
 
@@ -217,6 +273,37 @@ void ClassDetailsSavePageTests::normalizedSchedulesReachUseCaseAsMinuteValues()
     QVERIFY(page.saveChanges());
 
     QCOMPARE(port.callCount, 1);
+    QCOMPARE(conflictPort.requests.size(), std::size_t(2));
+    QCOMPARE(
+        conflictPort.requests[0].mode,
+        Application::ClassDetailsScheduleMode::Regular
+        );
+    QCOMPARE(
+        conflictPort.requests[1].mode,
+        Application::ClassDetailsScheduleMode::Intensive
+        );
+    QCOMPARE(conflictPort.requests[0].candidateTimes.size(), std::size_t(2));
+    QCOMPARE(conflictPort.requests[1].candidateTimes.size(), std::size_t(2));
+    QCOMPARE(conflictPort.requests[0].candidateTimes[0].weekdayIndex(), 0);
+    QCOMPARE(
+        conflictPort.requests[0].candidateTimes[0].startMinute(),
+        9 * 60
+        );
+    QCOMPARE(conflictPort.requests[0].candidateTimes[1].weekdayIndex(), 1);
+    QCOMPARE(
+        conflictPort.requests[0].candidateTimes[1].startMinute(),
+        15 * 60
+        );
+    QCOMPARE(conflictPort.requests[1].candidateTimes[0].weekdayIndex(), 1);
+    QCOMPARE(
+        conflictPort.requests[1].candidateTimes[0].startMinute(),
+        12 * 60
+        );
+    QCOMPARE(conflictPort.requests[1].candidateTimes[1].weekdayIndex(), 2);
+    QCOMPARE(
+        conflictPort.requests[1].candidateTimes[1].startMinute(),
+        0
+        );
     QVERIFY(port.lastRequest.has_value());
     const Application::ClassDetailsSaveRequest& request = *port.lastRequest;
     QCOMPARE(request.classId.value(), std::to_string(classId));
@@ -299,7 +386,15 @@ void ClassDetailsSavePageTests::invalidFieldsBlockTheSavePort()
     QVERIFY(classId > 0);
 
     RecordingClassDetailsSavePort port;
-    ClassDetailsPage page(&services, false, nullptr, &port);
+    RecordingClassDetailsScheduleConflictPort conflictPort;
+    ClassDetailsPage page(
+        &services,
+        false,
+        nullptr,
+        &port,
+        nullptr,
+        &conflictPort
+        );
     page.setSaveMode(SaveMode::Manual);
     page.loadClass(Classroom(QStringLiteral("Class Details Invalid Save"), classId));
     auto* grade = page.findChild<QComboBox*>(QStringLiteral("classGradeCombo"));
@@ -311,6 +406,7 @@ void ClassDetailsSavePageTests::invalidFieldsBlockTheSavePort()
     QVERIFY(page.hasUnsavedChanges());
     QVERIFY(!page.saveChanges());
     QCOMPARE(port.callCount, 0);
+    QVERIFY(conflictPort.requests.empty());
 }
 
 void ClassDetailsSavePageTests::regularAndIntensiveConflictsBlockTheSavePort()
@@ -382,8 +478,10 @@ void ClassDetailsSavePageTests::regularAndIntensiveConflictsBlockTheSavePort()
         page.loadClass(
             Classroom(QStringLiteral("Class Details Conflict Target"), classId)
             );
+        ClassTimeRow* candidate = addScheduleRow(page, conflictCase.type);
+        QVERIFY(candidate);
         setSchedule(
-            addScheduleRow(page, conflictCase.type),
+            candidate,
             conflictCase.day,
             conflictCase.start,
             conflictCase.end
@@ -397,6 +495,351 @@ void ClassDetailsSavePageTests::regularAndIntensiveConflictsBlockTheSavePort()
         QCOMPARE(port.callCount, 0);
         QVERIFY(page.hasUnsavedChanges());
     }
+}
+
+void ClassDetailsSavePageTests::
+regularConflictShortCircuitsIntensiveAndKeepsSameNameWording()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+    const int classId = createClass(
+        services,
+        QStringLiteral("Class Details Same Name Conflict")
+        );
+    QVERIFY(classId > 0);
+
+    RecordingClassDetailsSavePort savePort;
+    RecordingClassDetailsScheduleConflictPort conflictPort;
+    conflictPort.regularResult =
+        Application::ClassDetailsScheduleConflictResult::success({
+            conflict(
+                u"Same Display Name",
+                u"Monday",
+                u"9:00 AM",
+                u"9:55 AM",
+                u"Same Display Name"
+                ),
+            conflict(
+                u"Same Display Name",
+                u"Wednesday",
+                u"11:00 AM",
+                u"11:55 AM",
+                u"Other Display Name"
+                )
+        });
+    ClassDetailsPage page(
+        &services,
+        false,
+        nullptr,
+        &savePort,
+        nullptr,
+        &conflictPort
+        );
+    page.setSaveMode(SaveMode::Manual);
+    page.loadClass(
+        Classroom(QStringLiteral("Class Details Same Name Conflict"), classId)
+        );
+
+    ClassTimeRow* regular = addScheduleRow(page, ScheduleType::Regular);
+    QVERIFY(regular);
+    setSchedule(
+        regular,
+        QStringLiteral("Monday"),
+        QStringLiteral("9:00 AM"),
+        QStringLiteral("9:55 AM")
+        );
+    ClassTimeRow* intensive = addScheduleRow(page, ScheduleType::Intensive);
+    QVERIFY(intensive);
+    setSchedule(
+        intensive,
+        QStringLiteral("Tuesday"),
+        QStringLiteral("12:00 PM"),
+        QStringLiteral("12:55 PM")
+        );
+
+    QString warningTitle;
+    QString warningMessage;
+    QVERIFY(!saveAndAcceptWarning(page, &warningTitle, &warningMessage));
+
+    QCOMPARE(warningTitle, QStringLiteral("Regular Schedule Conflicts"));
+    QCOMPARE(
+        warningMessage,
+        QStringLiteral(
+            "Please resolve these schedule conflicts before saving:\n\n"
+            "Monday 9:00 AM-9:55 AM conflicts with another time in this class.\n"
+            "Wednesday 11:00 AM-11:55 AM conflicts with Other Display Name."
+            )
+        );
+    QCOMPARE(conflictPort.requests.size(), std::size_t(1));
+    QCOMPARE(
+        conflictPort.requests.front().mode,
+        Application::ClassDetailsScheduleMode::Regular
+        );
+    QCOMPARE(conflictPort.requests.front().classId.value(),
+        std::to_string(classId));
+    QCOMPARE(conflictPort.requests.front().candidateTimes.size(),
+        std::size_t(1));
+    QCOMPARE(savePort.callCount, 0);
+    QVERIFY(page.hasUnsavedChanges());
+}
+
+void ClassDetailsSavePageTests::intensiveConflictFollowsAnEmptyRegularQuery()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+    const int classId = createClass(
+        services,
+        QStringLiteral("Class Details Intensive Conflict")
+        );
+    QVERIFY(classId > 0);
+
+    RecordingClassDetailsSavePort savePort;
+    RecordingClassDetailsScheduleConflictPort conflictPort;
+    conflictPort.intensiveResult =
+        Application::ClassDetailsScheduleConflictResult::success({
+            conflict(
+                u"Class Details Intensive Conflict",
+                u"Tuesday",
+                u"12:00 PM",
+                u"12:55 PM",
+                u"Intensive Source"
+                )
+        });
+    ClassDetailsPage page(
+        &services,
+        false,
+        nullptr,
+        &savePort,
+        nullptr,
+        &conflictPort
+        );
+    page.setSaveMode(SaveMode::Manual);
+    page.loadClass(
+        Classroom(QStringLiteral("Class Details Intensive Conflict"), classId)
+        );
+    ClassTimeRow* intensive = addScheduleRow(page, ScheduleType::Intensive);
+    QVERIFY(intensive);
+    setSchedule(
+        intensive,
+        QStringLiteral("Tuesday"),
+        QStringLiteral("12:00 PM"),
+        QStringLiteral("12:55 PM")
+        );
+
+    QString warningTitle;
+    QString warningMessage;
+    QVERIFY(!saveAndAcceptWarning(page, &warningTitle, &warningMessage));
+
+    QCOMPARE(warningTitle, QStringLiteral("Intensive Schedule Conflicts"));
+    QCOMPARE(
+        warningMessage,
+        QStringLiteral(
+            "Please resolve these schedule conflicts before saving:\n\n"
+            "Tuesday 12:00 PM-12:55 PM conflicts with Intensive Source."
+            )
+        );
+    QCOMPARE(conflictPort.requests.size(), std::size_t(2));
+    QCOMPARE(
+        conflictPort.requests[0].mode,
+        Application::ClassDetailsScheduleMode::Regular
+        );
+    QVERIFY(conflictPort.requests[0].candidateTimes.empty());
+    QCOMPARE(
+        conflictPort.requests[1].mode,
+        Application::ClassDetailsScheduleMode::Intensive
+        );
+    QCOMPARE(conflictPort.requests[1].candidateTimes.size(), std::size_t(1));
+    QCOMPARE(savePort.callCount, 0);
+    QVERIFY(page.hasUnsavedChanges());
+}
+
+void ClassDetailsSavePageTests::regularQueryFailureBlocksBeforeIntensive()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+    const int classId = createClass(
+        services,
+        QStringLiteral("Class Details Conflict Query Error")
+        );
+    QVERIFY(classId > 0);
+
+    RecordingClassDetailsSavePort savePort;
+    RecordingClassDetailsScheduleConflictPort conflictPort;
+    conflictPort.regularResult =
+        Application::ClassDetailsScheduleConflictResult::failure({
+            .code = Domain::ErrorCode::Technical,
+            .message = "regular conflict query failed",
+            .recoverable = true
+        });
+    ClassDetailsPage page(
+        &services,
+        false,
+        nullptr,
+        &savePort,
+        nullptr,
+        &conflictPort
+        );
+    page.setSaveMode(SaveMode::Manual);
+    page.loadClass(
+        Classroom(QStringLiteral("Class Details Conflict Query Error"), classId)
+        );
+    ClassTimeRow* regular = addScheduleRow(page, ScheduleType::Regular);
+    QVERIFY(regular);
+    setSchedule(
+        regular,
+        QStringLiteral("Monday"),
+        QStringLiteral("9:00 AM"),
+        QStringLiteral("9:55 AM")
+        );
+    ClassTimeRow* intensive = addScheduleRow(page, ScheduleType::Intensive);
+    QVERIFY(intensive);
+    setSchedule(
+        intensive,
+        QStringLiteral("Tuesday"),
+        QStringLiteral("12:00 PM"),
+        QStringLiteral("12:55 PM")
+        );
+
+    QString warningTitle;
+    QString warningMessage;
+    QVERIFY(!saveAndAcceptWarning(page, &warningTitle, &warningMessage));
+
+    QCOMPARE(warningTitle, QStringLiteral("Regular Schedule Conflicts"));
+    QCOMPARE(warningMessage, QStringLiteral("regular conflict query failed"));
+    QCOMPARE(conflictPort.requests.size(), std::size_t(1));
+    QCOMPARE(savePort.callCount, 0);
+    QVERIFY(page.hasUnsavedChanges());
+}
+
+void ClassDetailsSavePageTests::
+intensiveQueryFailureBlocksAfterRegularSuccess()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+    const int classId = createClass(
+        services,
+        QStringLiteral("Class Details Intensive Query Error")
+        );
+    QVERIFY(classId > 0);
+
+    RecordingClassDetailsSavePort savePort;
+    RecordingClassDetailsScheduleConflictPort conflictPort;
+    conflictPort.intensiveResult =
+        Application::ClassDetailsScheduleConflictResult::failure({
+            .code = Domain::ErrorCode::Technical,
+            .message = "intensive conflict query failed",
+            .recoverable = true
+        });
+    ClassDetailsPage page(
+        &services,
+        false,
+        nullptr,
+        &savePort,
+        nullptr,
+        &conflictPort
+        );
+    page.setSaveMode(SaveMode::Manual);
+    page.loadClass(
+        Classroom(QStringLiteral("Class Details Intensive Query Error"), classId)
+        );
+    ClassTimeRow* regular = addScheduleRow(page, ScheduleType::Regular);
+    QVERIFY(regular);
+    setSchedule(
+        regular,
+        QStringLiteral("Monday"),
+        QStringLiteral("9:00 AM"),
+        QStringLiteral("9:55 AM")
+        );
+    ClassTimeRow* intensive = addScheduleRow(page, ScheduleType::Intensive);
+    QVERIFY(intensive);
+    setSchedule(
+        intensive,
+        QStringLiteral("Tuesday"),
+        QStringLiteral("12:00 PM"),
+        QStringLiteral("12:55 PM")
+        );
+
+    QString warningTitle;
+    QString warningMessage;
+    QVERIFY(!saveAndAcceptWarning(page, &warningTitle, &warningMessage));
+
+    QCOMPARE(warningTitle, QStringLiteral("Intensive Schedule Conflicts"));
+    QCOMPARE(warningMessage, QStringLiteral("intensive conflict query failed"));
+    QCOMPARE(conflictPort.requests.size(), std::size_t(2));
+    QCOMPARE(
+        conflictPort.requests[0].mode,
+        Application::ClassDetailsScheduleMode::Regular
+        );
+    QCOMPARE(
+        conflictPort.requests[1].mode,
+        Application::ClassDetailsScheduleMode::Intensive
+        );
+    QCOMPARE(savePort.callCount, 0);
+    QVERIFY(page.hasUnsavedChanges());
+}
+
+void ClassDetailsSavePageTests::noninteractiveConflictBlocksSilently()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+    const int classId = createClass(
+        services,
+        QStringLiteral("Class Details Silent Conflict")
+        );
+    QVERIFY(classId > 0);
+
+    RecordingClassDetailsSavePort savePort;
+    RecordingClassDetailsScheduleConflictPort conflictPort;
+    conflictPort.regularResult =
+        Application::ClassDetailsScheduleConflictResult::success({
+            conflict(
+                u"Class Details Silent Conflict",
+                u"Monday",
+                u"9:00 AM",
+                u"9:55 AM",
+                u"Silent Source"
+                )
+        });
+    ClassDetailsPage page(
+        &services,
+        false,
+        nullptr,
+        &savePort,
+        nullptr,
+        &conflictPort
+        );
+    page.setSaveMode(SaveMode::Automatic);
+    page.loadClass(
+        Classroom(QStringLiteral("Class Details Silent Conflict"), classId)
+        );
+    ClassTimeRow* regular = addScheduleRow(page, ScheduleType::Regular);
+    QVERIFY(regular);
+    setSchedule(
+        regular,
+        QStringLiteral("Monday"),
+        QStringLiteral("9:00 AM"),
+        QStringLiteral("9:55 AM")
+        );
+
+    AutosaveCoordinator* const autosave =
+        page.findChild<AutosaveCoordinator*>();
+    QVERIFY(autosave);
+    autosave->requestSave(false);
+
+    QVERIFY(!DialogServices::promptTestDriver().activePrompt());
+    QCOMPARE(conflictPort.requests.size(), std::size_t(1));
+    QCOMPARE(savePort.callCount, 0);
+    QVERIFY(page.hasUnsavedChanges());
 }
 
 QTEST_MAIN(ClassDetailsSavePageTests)

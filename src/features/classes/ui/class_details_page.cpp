@@ -14,14 +14,15 @@
 
 #include "core/application_services.h"
 #include "app/services/feature_services.h"
-#include "domain/models/class_conflict.h"
 #include "domain/models/class_info.h"
 #include "domain/models/teacher.h"
 #include "domain/rules/schedule_value_parser.h"
 #include "domain/validation/class_info_validator.h"
 #include "next/application/class_details_save_use_case.h"
+#include "next/application/class_details_schedule_conflict_query.h"
 #include "next/application/class_details_page_query.h"
 #include "next/platform/application_services_class_details_save_port.h"
+#include "next/platform/application_services_class_details_schedule_conflict_port.h"
 #include "next/platform/application_services_class_details_page_read_port.h"
 #include "core/fontmanager.h"
 #include "ui/shared/constants/gui_constants.h"
@@ -260,12 +261,15 @@ ClassDetailsPage::ClassDetailsPage(
     bool embedded,
     QWidget* parent,
     ClassMngr::Next::Application::ClassDetailsSavePort* savePort,
-    ClassMngr::Next::Application::ClassDetailsPageReadPort* displayReadPort
+    ClassMngr::Next::Application::ClassDetailsPageReadPort* displayReadPort,
+    ClassMngr::Next::Application::ClassDetailsScheduleConflictPort*
+        scheduleConflictPort
     )
     : BasePage(parent)
     , m_services(services)
     , m_savePort(savePort)
     , m_displayReadPort(displayReadPort)
+    , m_scheduleConflictPort(scheduleConflictPort)
     , m_embedded(embedded)
     , m_autosave(new AutosaveCoordinator(this))
 {
@@ -988,14 +992,50 @@ bool ClassDetailsPage::showScheduleConflicts(
     bool showMessage
     )
 {
-    const Result<QList<ClassConflict>> loadedConflicts =
-        m_services
-            ->classService()
-            ->conflicts(
-                m_classroom.id,
-                times,
-                type
+    const auto typedClassId =
+        ClassMngr::Next::Domain::ClassId::fromString(
+            std::to_string(m_classroom.id)
+            );
+    const auto typedTimes = toDomainScheduleTimes(times);
+
+    const auto loadedConflicts = [&]()
+        -> ClassMngr::Next::Application::
+            ClassDetailsScheduleConflictResult
+    {
+        if (!typedClassId || !typedTimes)
+        {
+            return ClassMngr::Next::Application::
+                ClassDetailsScheduleConflictResult::failure({
+                    .code = ClassMngr::Next::Domain::ErrorCode::Validation,
+                    .message = "Class schedule values could not be checked.",
+                    .recoverable = true
+                });
+        }
+
+        const ClassMngr::Next::Application::
+            ClassDetailsScheduleConflictRequest request{
+                .classId = *typedClassId,
+                .mode = type == ScheduleType::Regular
+                    ? ClassMngr::Next::Application::
+                          ClassDetailsScheduleMode::Regular
+                    : ClassMngr::Next::Application::
+                          ClassDetailsScheduleMode::Intensive,
+                .candidateTimes = *typedTimes
+            };
+
+        ClassMngr::Next::Platform::
+            ApplicationServicesClassDetailsScheduleConflictPort defaultPort(
+                m_services
                 );
+        const ClassMngr::Next::Application::
+            ClassDetailsScheduleConflictPort& port =
+                m_scheduleConflictPort
+                    ? *m_scheduleConflictPort
+                    : defaultPort;
+
+        return ClassMngr::Next::Application::
+            ClassDetailsScheduleConflictQuery::execute(request, port);
+    }();
 
     if (!loadedConflicts)
     {
@@ -1004,16 +1044,18 @@ bool ClassDetailsPage::showScheduleConflicts(
             DialogServices::showWarning(
                 this,
                 title,
-                loadedConflicts.error()
+                displayText(loadedConflicts.error().message)
                 );
         }
 
         return true;
     }
 
-    const QList<ClassConflict>& conflicts = *loadedConflicts;
+    const std::vector<
+        ClassMngr::Next::Application::ClassDetailsScheduleConflict
+        >& conflicts = loadedConflicts.value();
 
-    if (conflicts.isEmpty())
+    if (conflicts.empty())
     {
         return false;
     }
@@ -1025,12 +1067,15 @@ bool ClassDetailsPage::showScheduleConflicts(
 
     QStringList details;
 
-    for (const ClassConflict& conflict : conflicts)
+    for (const ClassMngr::Next::Application::
+             ClassDetailsScheduleConflict& conflict : conflicts)
     {
         QString conflictingClass =
-            conflict.conflictingClassName;
+            QString::fromStdU16String(conflict.conflictingClassName);
 
-        if (conflictingClass == conflict.className)
+        if (
+            conflictingClass == QString::fromStdU16String(conflict.className)
+            )
         {
             conflictingClass =
                 tr("another time in this class");
@@ -1038,9 +1083,9 @@ bool ClassDetailsPage::showScheduleConflicts(
 
         details.append(
             tr("%1 %2-%3 conflicts with %4.")
-                .arg(conflict.day)
-                .arg(conflict.startTime)
-                .arg(conflict.endTime)
+                .arg(QString::fromStdU16String(conflict.day))
+                .arg(QString::fromStdU16String(conflict.startTime))
+                .arg(QString::fromStdU16String(conflict.endTime))
                 .arg(conflictingClass)
             );
     }

@@ -82,6 +82,7 @@ set(CLASSMNGR_NEXT_APPLICATION_SOURCES
     src/next/application/class_co_teacher_assignment_use_case.h
     src/next/application/classes_navigation_snapshot.h
     src/next/application/class_details_save_use_case.h
+    src/next/application/class_details_schedule_conflict_query.h
     src/next/application/roster_snapshot.h
     src/next/application/roster_read_query.h
     src/next/application/roster_save_use_case.h
@@ -233,6 +234,7 @@ set(CLASSMNGR_NEXT_PLATFORM_SOURCES
     src/next/platform/application_services_class_visibility_preferences_port.h
     src/next/platform/application_services_class_notes_save_port.h
     src/next/platform/application_services_class_details_save_port.h
+    src/next/platform/application_services_class_details_schedule_conflict_port.h
     src/next/platform/application_services_classes_navigation_read_port.h
     src/next/platform/application_services_roster_read_port.h
     src/next/platform/application_services_roster_save_port.h

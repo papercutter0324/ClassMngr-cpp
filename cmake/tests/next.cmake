@@ -203,6 +203,15 @@ classmngr_add_qt_test(
 )
 
 classmngr_add_qt_test(
+    NAME NextApplicationClassDetailsScheduleConflictQuery
+    SOURCES
+        tests/next_application_class_details_schedule_conflict_query_tests.cpp
+    LIBRARIES
+        ClassMngrNext::Application
+        Qt6::Test
+)
+
+classmngr_add_qt_test(
     NAME NextScheduleEditorDialogSave
     SOURCES
         tests/schedule_editor_dialog_tests.cpp
@@ -997,6 +1006,16 @@ classmngr_add_qt_test(
     NAME NextPlatformApplicationServicesClassDetailsSavePort
     SOURCES
         tests/next_platform_application_services_class_details_save_port_tests.cpp
+    LIBRARIES
+        ClassMngrNext::Platform
+        Qt6::Test
+    OFFSCREEN
+)
+
+classmngr_add_qt_test(
+    NAME NextPlatformApplicationServicesClassDetailsScheduleConflictPort
+    SOURCES
+        tests/next_platform_application_services_class_details_schedule_conflict_port_tests.cpp
     LIBRARIES
         ClassMngrNext::Platform
         Qt6::Test

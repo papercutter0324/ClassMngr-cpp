@@ -22,6 +22,7 @@ namespace ClassMngr::Next::Application
 {
 class ClassDetailsSavePort;
 class ClassDetailsPageReadPort;
+class ClassDetailsScheduleConflictPort;
 }
 
 class QLabel;
@@ -41,7 +42,9 @@ public:
         QWidget* parent = nullptr,
         ClassMngr::Next::Application::ClassDetailsSavePort* savePort = nullptr,
         ClassMngr::Next::Application::ClassDetailsPageReadPort*
-            displayReadPort = nullptr
+            displayReadPort = nullptr,
+        ClassMngr::Next::Application::ClassDetailsScheduleConflictPort*
+            scheduleConflictPort = nullptr
         );
 
     void loadClass(
@@ -92,6 +95,8 @@ private:
     ClassMngr::Next::Application::ClassDetailsSavePort* m_savePort{nullptr};
     ClassMngr::Next::Application::ClassDetailsPageReadPort*
         m_displayReadPort{nullptr};
+    ClassMngr::Next::Application::ClassDetailsScheduleConflictPort*
+        m_scheduleConflictPort{nullptr};
 
     Classroom m_classroom;
     std::optional<
