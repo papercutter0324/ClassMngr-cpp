@@ -1451,3 +1451,18 @@ database state on current and baseline; direct query-count behavior belongs in
 the current page tests when the shared baseline constructor offers no query
 observer. Compare duplicate groups by membership and row feedback, not by the
 legacy `QHash` iteration order.
+
+## 2026-09-30 — F152 fresh validation context
+
+Read hidden persisted validation fields immediately before each save; the
+load-time display snapshot can be stale. Keep the context separate from the
+save request so persistence still rereads current values and the service's
+final validation guard remains active. If preserving the old read-error
+fallback, test its continued validation/conflict/save order explicitly.
+
+## 2026-09-30 — F153 teacher sentinel parity selection
+
+Add current/baseline page parity for persisted teacher ID `0` changed after
+page load. This covers the remaining raw validation-context value directly;
+afterward, review moving from Class Details to another planned feature such as
+the Class Notes read boundary.

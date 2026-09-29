@@ -7785,9 +7785,36 @@ matches the pinned blob. No full suite or application build ran. Gate 2
 advances but remains Partial; Gate 1 remains Partial and Phase 2 remains In
 Progress/Open.
 
-F152 is selected for a fresh-at-save typed Application validation-context
+F152 was selected for a fresh-at-save typed Application validation-context
 query and active-session Platform adapter returning the raw signed teacher ID
 and exact UTF-16 notes/activity. Do not reuse the display snapshot. Preserve
 `-1` as the unassigned sentinel, zero as invalid, missing-row defaults, and
 legacy read-failure fallback plus validation-to-conflict-to-save order. Keep
 the save port and `ClassService` guard separate.
+
+### Progress update - 2026-09-30 (F152 accepted; F153 selected)
+
+F152, commit `f70e3e23`, adds a fresh-at-save typed Application query and
+active-session Platform adapter for the raw signed teacher ID and exact UTF-16
+notes/activity. The page queries per save; on read error it uses `ClassInfo{}`
+then continues validation, conflict, and save. The save request, adapter
+reread, and `ClassService` guard remain unchanged.
+
+Fresh Windows x64 Debug verification used CMake 4.4.2, Ninja 1.13.2, MSVC
+19.51.36257, and Qt 6.12.0. Configure validated 1,051 handwritten source
+owners; seven focused CTest targets passed 7/7 across the Application query,
+Platform port, F150 policy, page save/display, parity, and SharedPolicy. The
+pinned baseline `f232301e48f1e198d301acdfa3d8f704569f7ddc` parity CTest passed
+1/1 with only the parity-test source overlay; baseline production page source
+matches its pinned blob. Embedded debug info replaced `/Zi` after MSVC PDB
+errors, and `CL` was cleared. Missing `QSqlError` inclusion and unseeded
+`class_info` fixture rows were corrected before the passing recheck. No full
+suite or application build ran. Gates 1 and 2 remain Partial; Phase 2 stays
+In Progress/Open.
+
+F153 is selected for live-page current/baseline parity when persisted
+`teacherId=0` changes after page load. Assert the legacy teacher issue, dirty
+state, no save signal or visible conflict warning, and unchanged target row.
+Keep current direct query-count evidence distinct from baseline observer
+evidence; do not claim query-count parity. After F153, review another planned
+feature. Class Notes read is a candidate, not selected.

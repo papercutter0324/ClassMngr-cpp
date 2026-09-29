@@ -4119,7 +4119,7 @@ separate existing-class details update; F147 now covers delete/cascade.
 
 The production and acceptance-test commits, focused verification, and limits
 are recorded in the [Phase 2 progress log](03-Phase-2-Progress-Log.md). F147
-migrates delete/cascade; F148-F151 acceptance and F152 selection are recorded
+migrates delete/cascade; F148-F152 acceptance and F153 selection are recorded
 below.
 
 ## Verified F147 Testing Class delete/cascade
@@ -4132,8 +4132,8 @@ F145 details update and F146 creation remain separate accepted boundaries.
 Production commit `b037b4216b71c55c7793df5f7bbbfc4a00690065`, page transition
 fix `315b3ff33b7e2ab42b43d52cd168ce21a92158c9`, and acceptance-test commit
 `397376e439f4b5955c82948ab0c225aaf776d679` are recorded with verification
-limits in the [Phase 2 progress log](03-Phase-2-Progress-Log.md). F148-F151 are
-accepted; F152 is selected. Its acceptance constraints are in the [Phase 2
+limits in the [Phase 2 progress log](03-Phase-2-Progress-Log.md). F148-F152 are
+accepted; F153 is selected. Its acceptance constraints are in the [Phase 2
 progress log](03-Phase-2-Progress-Log.md).
 
 ## Class-details save mapping: F126 and F139
@@ -4153,8 +4153,8 @@ structured issues through `FormValidationBinder`; save-time validation remains
 in `ClassService`. Its
 preservation constraints and verification are in the [Phase 2 progress
 log](03-Phase-2-Progress-Log.md). F151 accepted invalid-schedule
-current/baseline page parity; F152 is selected for a separate hidden
-persisted-field query.
+current/baseline page parity; F152 accepted the fresh validation-context read.
+F153 is selected for persisted teacher-ID validation parity.
 
 ## F149 Class Details conflict-query mapping
 
@@ -4166,8 +4166,9 @@ behavior and rendering; persistence owns overlap calculation/order, and
 `regularConflictShortCircuitsIntensiveAndKeepsSameNameWording` covers the
 same-display-name warning edge case; baseline parity compares regular/intensive
 conflicts with distinct conflicting class names. F150 subsequently moved
-pre-save validation/normalization to a typed policy. F151's accepted invalid
-schedule parity and F152's selected hidden-context read are recorded below.
+pre-save validation/normalization to a typed policy. F151's invalid-schedule
+parity, F152's accepted hidden-context read, and F153's selected teacher-ID
+parity are recorded below.
 
 ## F151 Class Details invalid-schedule validation mapping
 
@@ -4178,11 +4179,22 @@ comparison uses a conflict trap. The baseline page source matches its pinned
 production blob. Full verification and limits are in the [Phase 2 progress
 log](03-Phase-2-Progress-Log.md). Gate 2 advances but remains Partial.
 
-## F152 selected hidden validation-context read
+## F152 accepted hidden validation-context read
 
-F152 will query fresh validation context at save time through a typed
-Application contract and active-session Platform adapter, returning raw signed
-teacher ID and exact UTF-16 notes/activity. It does not reuse the display
-snapshot and must preserve the legacy sentinel, missing-row defaults,
-read-failure fallback, and validation-to-conflict-to-save order. Save port and
-`ClassService` guard remain separate.
+F152, commit `f70e3e23`, queries fresh validation context on each save through a
+typed Application contract and active-session Platform adapter. It returns the
+raw signed teacher ID and exact UTF-16 notes/activity rather than reusing the
+display snapshot. On read error, the page uses `ClassInfo{}` and continues
+validation/conflict/save. The `-1` sentinel, zero-invalid rule, missing-row
+defaults, and legacy fallback remain; save request, adapter reread, and
+`ClassService` guard stay separate. Verification evidence is in the [Phase 2
+progress log](03-Phase-2-Progress-Log.md).
+
+## F153 selected teacher-ID validation parity
+
+F153 compares current and baseline page behavior when persisted `teacherId=0`
+changes after load. Assert the legacy teacher issue, dirty state, no save signal
+or visible conflict warning, and unchanged target row. Keep direct current
+query-count evidence distinct from baseline observer evidence; do not claim
+query-count parity. Class Notes read is a candidate for the following slice,
+not selected.

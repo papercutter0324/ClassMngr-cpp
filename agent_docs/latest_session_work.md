@@ -3629,12 +3629,33 @@ minimum changes to installed 6.12.0. The parity cases use a seeded conflict as
 a warning trap; they do not count repository queries. Current page tests
 assert zero conflict-port requests. No full suite or full app build ran.
 
-F152 is selected to replace the page's direct `ClassService::classInfo()`
-read with a fresh typed Application query and active-session Platform adapter
-for persisted teacher ID, notes, and activity text. Keep raw signed teacher ID
-(`-1` remains unassigned and `0` remains invalid), exact UTF-16 text, and the
-existing empty-context fallback on read error. Query on each save attempt;
-never reuse the load-time display snapshot. Preserve validation before F149
-conflict checks and keep the context out of the save request so the save port
-continues its separate fresh read and `ClassService` guard. Gates 1 and 2
-remain Partial; Phase 2 remains In Progress/Open. No push was requested.
+F152 implementation/test commit `f70e3e23` (`Phase2 - add typed class details
+validation context read`) is accepted. The Qt-free query uses typed `ClassId`,
+checks returned identity, and preserves raw signed teacher ID and exact UTF-16
+notes/activity. Its Platform adapter reads through the active session's
+`ClassInfoRepository::loadClassInfo()` with no `ClassService` or `DataService`
+fallback. `ClassDetailsPage` queries on every save immediately before
+validation; it does not reuse the load-time display snapshot. Query failure
+uses `ClassInfo{}` values and continues through validation, F149 conflict
+checks, and save. The context is not in the save request; the existing save
+adapter reread and `ClassService` guard remain.
+
+Independent Windows x64 Debug verification used CMake 4.4.2, Ninja 1.13.2,
+MSVC 19.51.36257.0, and Qt 6.12.0. Configure validated 1,051 handwritten
+source owners. The new Application query, Platform adapter, F150 policy,
+ClassDetails page save/display, parity, and shared-policy targets passed 7/7.
+The pinned baseline `f232301e48f1e198d301acdfa3d8f704569f7ddc` parity CTest
+passed 1/1 with only parity-test source overlaid; its production page source
+matches the pinned Git blob. Parity verifies persisted hidden fields changed
+after page load and valid visible save preservation. No full suite or app
+build ran. Initial verification found a missing `QSqlError` include and
+unseeded `class_info` test rows; both fixtures were repaired and the fresh
+recheck passed with `CL` cleared and embedded debug info.
+
+F153 is selected to compare a persisted teacher ID of `0` changed after page
+load through the live page on current and pinned baseline. Assert the legacy
+invalid-teacher issue, dirty state, no save signal or visible conflict
+warning, and unchanged persisted data. Then review moving from Class Details
+to another planned feature, with Class Notes page reads as one candidate.
+Gates 1 and 2 remain Partial; Phase 2 remains In Progress/Open. No push was
+requested.

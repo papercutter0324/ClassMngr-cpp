@@ -1899,3 +1899,31 @@ with a fresh typed validation-context query using raw signed teacher ID and
 exact UTF-16 notes/activity. Preserve the `-1` sentinel, missing-row defaults,
 and read-failure fallback/order; keep the context out of the save request so
 the save port rereads current values.
+
+## F152 Class Details validation-context read — 2026-09-30
+
+Commit `f70e3e23` replaces the page's direct `ClassService::classInfo()` read
+with a fresh typed Application validation-context query and active-session
+Platform adapter. The query returns raw signed teacher ID and exact UTF-16
+notes/activity, checks the matched class ID, and the page uses an empty
+`ClassInfo{}` context on query failure before continuing the existing
+validation/conflict/save sequence. The save request is unchanged; the save
+adapter still rereads current data and `ClassService` retains its final guard.
+
+Independent Windows x64 Debug verification used CMake 4.4.2, Ninja 1.13.2,
+MSVC 19.51.36257, Qt 6.12.0, and embedded debug information after PDB update
+errors with `/Zi`. Current configure validated 1,051 handwritten source
+owners. The query, Platform port, F150 policy, page save/display, parity, and
+shared-policy targets passed 7/7 with `CL` cleared. The pinned baseline
+`f232301e48f1e198d301acdfa3d8f704569f7ddc` parity CTest passed 1/1 with only
+the parity-test source overlaid; the baseline production page matched its Git
+blob. Parity covers stale hidden fields after page load and valid save
+preservation. No full suite or application build ran. The first verification
+attempt exposed a missing test include and unseeded `class_info` rows; both
+test fixtures were repaired before the passing recheck. Gate 1 advances but
+remains Partial; Gate 2 remains Partial. Phase 2 remains In Progress/Open.
+F153 is selected to add common-input current/baseline parity for a persisted
+teacher ID of zero changed after page load. Assert the legacy invalid-teacher
+issue, dirty state, no save signal or visible conflict warning, and unchanged
+record data. After this targeted context-parity case, review moving to another
+planned feature; a Class Notes read is one candidate.

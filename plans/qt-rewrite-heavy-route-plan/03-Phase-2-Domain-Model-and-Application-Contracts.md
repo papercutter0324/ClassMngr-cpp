@@ -28,10 +28,14 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
   case reused by F139 in `ScheduleEditorDialog`. F151 is accepted for
   current/baseline live-page invalid-schedule parity (malformed regular/intensive,
   end-before-start, duplicate rows); Gate 2 advances but remains Partial. F152
-  is selected for a fresh-at-save typed query and active-session adapter that
-  returns raw signed teacher ID and exact UTF-16 notes/activity, preserving
-  legacy defaults/fallback and validation-conflict-save order. Save port and
-  `ClassService` guard remain separate. Gates 1 and 2
+  is accepted: its fresh-at-save typed query and active-session adapter return
+  raw signed teacher ID and exact UTF-16 notes/activity; read-error behavior,
+  save request, and `ClassService` guard remain as before. F153 is selected for
+  current/baseline page parity when persisted teacher ID zero changes after
+  load. Assert the legacy teacher issue, dirty state, no save signal/visible
+  conflict warning, and unchanged row. Keep current and baseline query-count
+  evidence distinct. After F153, Class Notes read is a candidate, not selected.
+  Gates 1 and 2
   remain Partial; F120 active-v2 DataService isolation and formal
   workspace-create acceptance remain Satisfied.
   Historical workbook provenance remains a tracked risk, not a literal exit
@@ -267,8 +271,8 @@ No production defect was observed.
 F144 is the preceding accepted slice. F145's accepted existing-class details
 update is recorded below. F146's accepted new-class create, including the
 optional pending weekday/start-time assignment, is recorded after it. F147's
-accepted delete/cascade migration is recorded below; F148-F151 acceptance
-and F152 selection are recorded below.
+accepted delete/cascade migration is recorded below; F148-F152 acceptance and
+F153 selection are recorded below.
 
 ## F145 acceptance record
 
@@ -363,9 +367,9 @@ cases must remain dirty, produce no visible conflict warning, save, or signal,
 and leave persisted data unchanged. Current-only page tests assert no conflict
 query directly; baseline parity uses a seeded conflict trap. Compare duplicate
 membership and row feedback semantically; do not compare cross-group issue
-order because legacy `QHash` ordering is unspecified. A separate typed
-Application query for fresh hidden persisted teacher/notes/activity fields
-follows F151.
+order because legacy `QHash` ordering is unspecified. F152 implements the
+separate typed Application query for fresh hidden persisted
+teacher/notes/activity fields.
 
 ## F151 acceptance record
 
@@ -379,11 +383,34 @@ parity uses a conflict trap. Toolchain, overlay, and verification limits are in
 the [Phase 2 progress log](03-Phase-2-Progress-Log.md). Gate 2 advances but
 remains Partial; Gate 1 remains Partial and Phase 2 stays In Progress/Open.
 
-## F152 selected hidden validation-context read
+## F152 hidden validation-context read
 
-F152 will load the validation context fresh at save time through a typed
+F152 loads the validation context fresh at save time through a typed
 Application query and active-session Platform adapter, returning the raw signed
 teacher ID and exact UTF-16 notes/activity; do not reuse the display snapshot.
-Preserve `-1` as the unassigned sentinel, treat zero as invalid, retain
-missing-row defaults and legacy read-failure fallback, and keep validation,
-conflict, and save order. Keep the save port and `ClassService` guard separate.
+The page queries on each save; on read error it uses `ClassInfo{}` and
+continues validation, conflict, and save. Preserve `-1` as the unassigned
+sentinel, treat zero as invalid, retain missing-row defaults, and keep the
+validation/conflict/save order. The save request, adapter reread, and
+`ClassService` guard remain separate. F153 is selected for live-page current/baseline parity
+when persisted teacher ID zero changes after load; Class Notes read remains a
+candidate for later review.
+
+## F152 acceptance record
+
+F152 is accepted at commit `f70e3e23`. The current fresh Windows x64 Debug
+focused run passed 7/7 across the Application query, Platform port, F150 policy,
+page save/display, parity, and SharedPolicy targets. The baseline parity CTest
+passed 1/1 on `f232301e48f1e198d301acdfa3d8f704569f7ddc`, using only the parity
+test source overlay; the baseline production page matches its pinned blob.
+Toolchain, fixture repairs, PDB workaround, and limits are in the [Phase 2
+progress log](03-Phase-2-Progress-Log.md). Gates 1 and 2 remain Partial; Phase 2
+remains In Progress with its exit gate Open.
+
+## F153 selected teacher-ID validation parity
+
+F153 compares the live page and baseline when a persisted `teacherId=0` changes
+after page load. Assert the legacy teacher validation issue, retained dirty
+state, no save signal or visible conflict warning, and unchanged target row.
+Keep current and baseline query-count evidence distinct. After this slice,
+review another planned feature; Class Notes read is a candidate, not selected.
