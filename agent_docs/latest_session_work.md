@@ -3125,7 +3125,7 @@ service skip/reload, read-only/time-column no-op, and testing-assignment
 behavior. `ClassMngr` built and `git diff --check` passed. No full suite or
 baseline comparison ran.
 
-## Phase 2 continuation - 2026-09-29 (F135 verified; F136 candidate review in progress)
+## Phase 2 continuation - 2026-09-29 (F136 verified; F137 candidate review interrupted)
 
 The user requested a commit after every completed slice, then immediate work
 on the next slice. The active deployment ID is
@@ -3269,16 +3269,35 @@ the F135 widget test and Application/Platform test registrations are explicit.
 The Heavy-route candidate review compared the testing-assignment read,
 `ScheduleViewProjection` production integration, and Schedule Import review
 ownership. Two independent Explorers and all three independent Investigators
-ranked the testing-assignment read as the best bounded next slice. F136 is
-selected: add a Qt-free Application snapshot/query and active-session Platform
-adapter for assignment rows and special-class display data, then route
-`ScheduleWidget::reloadTestingBlocks()` through that boundary. Use a joined
-read or bounded fixed-query batch, preserve assignment order and raw day/start
-keys, plain/special rendering, unavailable clearing, warning plus prior-state
-retention on assignment-read failure, missing special-class skip, blank class-
-info fallback, and preview bypass. Keep writes, the broad view-projection
-integration, and import-review ownership separate. Implementation is starting;
-no F136 code or verification is complete yet.
+ranked the testing-assignment read as the best bounded next slice.
+
+F136 source/test commit `0295543a` adds a Qt-free ordered UTF-16 assignment
+snapshot, active-session Platform adapter, and one joined repository read for
+assignment and optional special-class display fields. The widget now consumes
+that boundary without `ScheduleService`/`DataService` fallback or per-
+assignment detail reads. It preserves plain and special assignments,
+unavailable clearing, warning and previous-state retention on assignment-read
+failure, the missing-special-class warning and card skip, blank/default class
+metadata, and preview bypass. Assignment writes, full `ScheduleViewProjection`
+integration, and Schedule Import review ownership remain separate.
+
+Independent fresh Windows x64 Debug Ninja/MSVC 19.51/Qt 6.12 verification in
+`build/f136-independent-verification` built `ClassMngr` and the Application,
+Platform, and ScheduleWidget targets. The matching focused CTests passed 3/3:
+`ClassMngrNextApplicationScheduleTestingAssignmentReadQueryTests`,
+`ClassMngrNextPlatformApplicationServicesScheduleTestingAssignmentReadPortTests`,
+and `ClassMngrScheduleWidgetTests`. The query-count check verifies one
+statement at one and 41 assignments. Independent review initially found that
+the missing-special-class warning had been dropped; the snapshot/UI boundary
+was corrected, and the independent rebuild and 3/3 rerun passed. `git diff
+--check` passed. No full suite or baseline comparison ran.
+
+F137 candidate review then started at `0295543a` with two independent Explorer
+lanes. The user requested that work stop before either report arrived; both
+lanes were interrupted. No F137 candidate was selected, and no F137 files were
+changed. On continuation, resume Heavy-route Phase 2 review from commit
+`0295543a`, rerun the bounded candidate discovery, then select and implement
+the next slice.
 
 Gate 1 and Gate 2 remain Partial. Formal workspace-create acceptance and
 active-v2 DataService isolation remain Satisfied. Phase 2 remains In Progress

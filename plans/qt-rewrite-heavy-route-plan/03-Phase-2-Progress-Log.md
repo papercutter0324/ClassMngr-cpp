@@ -7433,14 +7433,36 @@ Gate 1 and Gate 2 remain Partial. The formal workspace-create boundary and
 active-v2 DataService isolation remain Satisfied. Phase 2 remains In
 Progress/Open.
 
-### Selected slice (F136): ScheduleWidget testing-assignment display read
+## Verified F136 testing-assignment display read - commit `0295543a`
 
-Independent Heavy-route candidate review compared three Investigators and two
-Explorers; all three Investigators ranked the testing-assignment display read
-as the same candidate. Implementation is starting. The scope is a Qt-free
-Application query and active-session Platform adapter for the display read,
-with a fixed, bounded read path. Preserve assignment order and raw keys,
-rendering, failure and unavailable behavior, and missing-detail behavior, plus
-preview bypass once the preview model is installed. Writes, the broad
-`ScheduleViewProjection`, and Schedule Import session work remain outside this
-slice. F136 is selected, not implemented or verified.
+F136 adds a Qt-free ordered UTF-16 assignment snapshot, an active-session
+Platform adapter, and one joined repository read for assignments and optional
+special-class display fields. `ScheduleWidget::reloadTestingBlocks()` consumes
+the new boundary without `ScheduleService`/`DataService` fallback or per-
+assignment detail reads. It preserves plain/special rendering, unavailable
+clearing, warning and prior-state retention on assignment-read failure,
+missing-special warning and skip, blank/default class-info behavior, and
+installed-preview bypass.
+
+Independent fresh Windows x64 Debug Ninja/MSVC 19.51/Qt 6.12 verification in
+`build/f136-independent-verification` built `ClassMngr` and the Application,
+Platform, and ScheduleWidget targets. The three focused CTests passed 3/3:
+`ClassMngrNextApplicationScheduleTestingAssignmentReadQueryTests`,
+`ClassMngrNextPlatformApplicationServicesScheduleTestingAssignmentReadPortTests`,
+and `ClassMngrScheduleWidgetTests`. The Platform test confirms one recorded
+statement for reads of one and 41 assignments. Independent review found the
+missing-special-class warning had been dropped; after restoring it at the UI
+boundary, the fresh build and focused 3/3 rerun passed. `git diff --check`
+passed. No full suite or baseline comparison ran.
+
+Gate 1 and Gate 2 remain Partial. The formal workspace-create boundary and
+active-v2 DataService isolation remain Satisfied. Phase 2 remains In
+Progress/Open.
+
+### F137 candidate review interrupted; no slice selected
+
+Candidate discovery began from F136 commit `0295543a` with two independent
+Explorer lanes. The user requested that work stop before either report
+arrived, and both lanes were interrupted. No F137 candidate was selected or
+implemented. Resume with Heavy-route candidate discovery, then record the
+selected scope and acceptance before implementation.

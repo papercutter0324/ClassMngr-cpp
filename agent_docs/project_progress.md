@@ -1566,7 +1566,7 @@ warning/dirty behavior. Review and implementation have not begun. Gate 1 and
 Gate 2 remain Partial; formal workspace-create acceptance and active-v2
 DataService isolation remain Satisfied. Phase 2 remains In Progress/Open.
 
-## Current Position - 2026-09-29 (F135 verified; F136 candidate review in progress)
+## Current Position - 2026-09-29 (F136 verified; F137 candidate review interrupted)
 
 F126 source/test commit `ca4c1a97` (`Phase2 - integrate class details save
 use case`) adds the Qt-free `ClassDetailsSaveUseCase` and session-backed
@@ -1715,15 +1715,25 @@ and the app, Platform, and ScheduleWidget targets. The three focused CTests
 passed 3/3, including an assertion for the existing warning prefix.
 `git diff --check` passed. No full suite or baseline comparison ran.
 
-F136 is selected: move the ScheduleWidget testing-assignment display read
-through a Qt-free Application query and active-session Platform adapter. Use a
-single joined read or bounded fixed-query batch for assignment and special-
-class display data; preserve repository order, exact day/start keys, plain and
-special rendering, unavailable clearing, read-failure retention, missing
-special-class skip, blank/default class-info behavior, and preview bypass.
-Leave assignment writes, ScheduleViewProjection integration, and Schedule
-Import review ownership for separate slices. Three independent Investigators
-and two Explorers ranked this the best bounded continuation after F135;
-implementation is starting. Gate 1 and Gate 2 remain Partial; formal
+F136 source/test commit `0295543a` moves the ScheduleWidget testing-assignment
+display read through a Qt-free Application query and active-session Platform
+adapter. One ordered joined repository read supplies assignments and optional
+special-class display fields, replacing per-assignment service reads. The UI
+preserves plain/special rendering, unavailable clearing, warning and prior
+state retention on assignment-read failure, missing-special warning and skip,
+blank/default class-info behavior, and preview bypass.
+
+Independent fresh Windows x64 Debug Ninja/MSVC 19.51/Qt 6.12 verification
+built `ClassMngr` and the Application, Platform, and ScheduleWidget targets.
+The three focused CTests passed 3/3:
+`ClassMngrNextApplicationScheduleTestingAssignmentReadQueryTests`,
+`ClassMngrNextPlatformApplicationServicesScheduleTestingAssignmentReadPortTests`,
+and `ClassMngrScheduleWidgetTests`. The Platform test confirms one recorded
+statement at both one and 41 assignments. `git diff --check` passed. No full
+suite or baseline comparison ran.
+
+F137 candidate review began from this commit; two Explorer lanes were started
+but interrupted at the user's request before reports arrived. No next slice
+has been selected or implemented. Gate 1 and Gate 2 remain Partial; formal
 workspace-create acceptance and active-v2 DataService isolation remain
 Satisfied. Phase 2 remains In Progress/Open.

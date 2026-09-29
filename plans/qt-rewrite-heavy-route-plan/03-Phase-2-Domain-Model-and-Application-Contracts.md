@@ -18,15 +18,14 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-09-29
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F135 verifies the Qt-free slot-state read snapshot,
-  active-session Platform adapter, and `ScheduleWidget` integration; its docs
-  handoff is commit `68ff760e`. F136's testing-assignment display read is
-  selected and implementation is starting. F120 active-v2 DataService
-  isolation and formal workspace-create acceptance remain Satisfied. Gates 1
-  and 2 remain Partial. Historical workbook provenance remains a tracked
-  risk, not a literal exit criterion. Sub Prep remains January 1 of the
-  reference date's year through December 31 of the following year at most;
-  2026-2027 is illustrative.
+- Current note: F136 verifies the testing-assignment display snapshot,
+  active-session Platform adapter, and `ScheduleWidget` integration; source/test
+  commit `0295543a`. F137 candidate review began but was stopped before reports
+  arrived; no next slice is selected. F120 active-v2 DataService isolation and
+  formal workspace-create acceptance remain Satisfied. Gates 1 and 2 remain
+  Partial. Historical workbook provenance remains a tracked risk, not a literal
+  exit criterion. Sub Prep remains January 1 of the reference date's year
+  through December 31 of the following year at most; 2026-2027 is illustrative.
 
 ## Objective
 
@@ -173,21 +172,24 @@ No new v2 production path depends on DataService, MainWindow, PageManager, or a 
 - Do not hide business rules inside presenters or delegates.
 - Do not allow compatibility methods to become the permanent v2 API.
 
-## Latest verified progress (F135)
+## Latest verified progress (F136)
 
-Source/test commit `91806e5d` adds a Qt-free ordered raw UTF-16 slot-state
-query, a Platform adapter that reads `IntensiveSlotStateRepository` directly
-from the active session, and `ScheduleWidget::reloadSlotStates` integration.
-Documentation handoff commit: `68ff760e`. There is no `ScheduleService` or
-`DataService` fallback. An unavailable service is silent and retains current
-state; a read failure warns and retains current state; a successful read
-replaces state, including clearing it for an empty result.
+Source/test commit `0295543a` adds a Qt-free ordered UTF-16 testing-assignment
+snapshot, an active-session Platform adapter, and one joined repository read
+for assignment and optional special-class display fields. The widget has no
+`ScheduleService` or `DataService` read fallback or per-assignment detail
+reads. It preserves plain/special rendering, unavailable clearing, warning and
+prior-state retention on assignment-read failure, missing-special warning and
+skip, blank/default class-info behavior, and installed-preview bypass.
 
-Independent fresh Windows x64 Debug Ninja/MSVC verification built `ClassMngr`
-and the application, Platform, and widget targets. The three focused CTests
-passed 3/3, including the strengthened warning-prefix assertion. The required
-`ClassMngrFeatures` to `ClassMngrNext::Platform` dependency is explicit in the
-root `CMakeLists.txt`, and the F135 test targets are registered.
+Independent fresh Windows x64 Debug Ninja/MSVC 19.51/Qt 6.12 verification built
+`ClassMngr` and the Application, Platform, and ScheduleWidget targets in
+`build/f136-independent-verification`. The three focused CTests passed 3/3:
+`ClassMngrNextApplicationScheduleTestingAssignmentReadQueryTests`,
+`ClassMngrNextPlatformApplicationServicesScheduleTestingAssignmentReadPortTests`,
+and `ClassMngrScheduleWidgetTests`. The Platform test confirms one recorded
+statement for reads of one and 41 assignments. Independent review caught and
+verified the restoration of the legacy missing-special-class warning.
 `git diff --check` passed. No full suite or baseline comparison ran.
 
 Gate 1 and Gate 2 remain Partial. F120 active-v2 DataService isolation and the
@@ -197,11 +199,11 @@ tracked risk, not a literal exit criterion. Sub Prep remains bounded to January
 1 of the reference date's year through December 31 of the following year, at
 most; 2026-2027 is illustrative.
 
-### Cumulative exit-gate status after F135
+### Cumulative exit-gate status after F136
 
 | Exit-gate area | Audit status | Finding |
 | --- | --- | --- |
-| App-less Domain/Application behavior (Gate 1) | Partial | Coverage includes workspace lifecycle; Class Transfer schedule-candidate validation (F79); Teacher Import (F80/F81/F85/F87/F89/F90); Schedule Import match-key typing (F84); Calendar policies/use cases (F93/F95/F97/F99/F101-F105/F107/F110); teacher-profile editing (F117/F123); co-teacher assignment (F124); class-notes save (F125); Classes navigation snapshot (F133); ScheduleBuilder source snapshot (F134); and slot-state read snapshot (F135). Broader class-detail/schedule/roster/evaluation editing, backup/recovery, and legacy database import remain planned. |
+| App-less Domain/Application behavior (Gate 1) | Partial | Coverage includes workspace lifecycle; Class Transfer schedule-candidate validation (F79); Teacher Import (F80/F81/F85/F87/F89/F90); Schedule Import match-key typing (F84); Calendar policies/use cases (F93/F95/F97/F99/F101-F105/F107/F110); teacher-profile editing (F117/F123); co-teacher assignment (F124); class-notes save (F125); Classes navigation snapshot (F133); ScheduleBuilder source snapshot (F134); slot-state read snapshot (F135); and testing-assignment display snapshot (F136). Broader class-detail/schedule/roster/evaluation editing, backup/recovery, and legacy database import remain planned. |
 | Baseline parity (Gate 2) | Partial | Bounded records include F82/F83 post-baseline Schedule Import inputs, F86/F88 baseline-era generated Schedule Import inputs, F91/F92/F94/F96/F98 Teacher Import flows and failure cases, F100/F101/F103/F104/F106/F108/F109 Schedule Import rollback and Calendar repository transitions, F118 common-input Class Transfer conflict behavior, F121 common-input successful replacement state, and F122 hand-authored seeded Schedule Import Skip state parity. They do not cover all validation, conflict, planning, or state-transition behavior; historical production-workbook provenance remains unverified. |
 | Workspace boundary | Satisfied | The formal workspace-create criterion remains satisfied. |
 | v2 dependency isolation | Satisfied for active `src/next` call paths | F120 removes the Workspace operation edge to `DataService`; the source audit confirms all seven operations route to `DatabaseSession` or the file helper. Legacy facade construction/access remains available. |
@@ -212,15 +214,10 @@ a literal exit criterion. Sub Prep remains bounded to January 1 of the
 reference date's year through December 31 of the following year, at most;
 2026-2027 is illustrative.
 
-### Selected slice (F136): ScheduleWidget testing-assignment display read
+### F137 candidate review interrupted; no slice selected
 
-Implementation is starting after independent Heavy-route candidate review
-compared three Investigators and two Explorers; all three Investigators ranked
-this candidate.
-Add a Qt-free Application query and active-session Platform adapter for the
-testing-assignment display read, with a fixed, bounded read path. Preserve
-assignment order and raw keys, and retain rendering, failure, unavailable-
-service, and missing-detail behavior. Preserve preview bypass once the preview
-model is installed. Keep writes, the broad `ScheduleViewProjection`, and
-Schedule Import session work outside this slice. F136 is selected but is not
-yet implemented or verified.
+Candidate discovery began from F136 source/test commit `0295543a` with two
+independent Explorer lanes. The user requested that work stop before either
+report arrived, and both lanes were interrupted. No F137 candidate was
+selected or implemented. Resume with Heavy-route candidate discovery, then
+record the selected scope and acceptance before implementation.

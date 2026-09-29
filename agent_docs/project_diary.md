@@ -1348,8 +1348,10 @@ keep the typed save command separate from the lossless read projection.
 ## F136 - keep schedule assignment reads bounded and display-only - 2026-09-29
 
 Continue the ScheduleWidget read boundary with the testing-assignment display
-query. Return only assignment and special-class fields needed by the current
-view, preserve repository ordering and raw day/start keys, and batch the
-special-class display data instead of keeping per-assignment reads. Keep
-assignment writes and broader view-model or import-review lifetime work in
-separate slices.
+query. The Qt-free snapshot returns only fields needed by the current view;
+one ordered joined repository read supplies special-class details without
+per-assignment reads. Preserve raw day/start keys. Keep unresolved special
+class rows in the snapshot so the widget can retain its warning and skip
+behavior at the UI boundary. Verify fixed query count with a small and larger
+assignment set. Keep writes and broader view-model or import-review lifetime
+work in separate slices.
