@@ -1753,3 +1753,11 @@ slice. Start Here's prior wording could read as assigning F144's
 populateTeachers scope to F145; the detailed Phase 2 handoff establishes F144
 as that scope. F145 remains unselected until candidate review. No push was
 requested.
+
+## macOS Qt checksum recovery — 2026-09-30
+
+The macOS release and refactoring-baseline jobs both installed Qt 6.12.0 with aqt 3.3.0 and had no delayed install retry. The reported `ChecksumDownloadFailure` means aqt could not retrieve the qtbase SHA-256 sidecar; the exact HTTP response is unavailable, so a transient network or sidecar publication gap is plausible but not confirmed. The archive filename alone does not establish an aqt metadata parsing defect.
+
+Both macOS install blocks now use a 30-second request timeout and retry the complete aqt install up to three times, with a 10-second delay between failed attempts. They preserve the existing Qt version, `clang_64` target, qtpdf module, output paths, and aqt pin. Checksum verification stays enabled, and the jobs still fail after the final unsuccessful attempt.
+
+`git diff --check`, Ruby YAML parsing of both workflows, and `bash -n` on both edited run blocks passed; an independent review confirmed the control flow and retained settings. No live Qt install or GitHub Actions run was performed. The underlying sidecar response remains unobserved; a permanent missing-sidecar condition will still fail closed after retries.
