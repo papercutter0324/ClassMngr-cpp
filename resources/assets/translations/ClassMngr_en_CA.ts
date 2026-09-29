@@ -9172,7 +9172,7 @@ Version: %2</source>
     </message>
     <message>
         <location line="+1"/>
-        <source>This permanently deletes the testing class, its roster, notes, and every schedule assignment.</source>
+        <source>This permanently deletes the testing class, its roster, notes, speaking evaluations, regular and intensive class times, and every schedule assignment.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>

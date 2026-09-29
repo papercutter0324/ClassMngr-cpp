@@ -12,6 +12,8 @@
 #include "next/platform/application_services_testing_class_details_update_port.h"
 #include "next/application/testing_class_create_use_case.h"
 #include "next/platform/application_services_testing_class_create_port.h"
+#include "next/application/testing_class_delete_use_case.h"
+#include "next/platform/application_services_testing_class_delete_port.h"
 #include "next/application/testing_teacher_choices_read_query.h"
 #include "next/platform/application_services_testing_teacher_choices_read_port.h"
 #include "core/fontmanager.h"
@@ -103,7 +105,9 @@ TestingClassesPage::TestingClassesPage(
     const ClassMngr::Next::Application::TestingClassDetailsUpdatePort*
         testingClassDetailsUpdatePort,
     const ClassMngr::Next::Application::TestingClassCreatePort*
-        testingClassCreatePort
+        testingClassCreatePort,
+    const ClassMngr::Next::Application::TestingClassDeletePort*
+        testingClassDeletePort
     )
     : BasePage(parent)
     , m_services(services)
@@ -111,6 +115,7 @@ TestingClassesPage::TestingClassesPage(
     , m_testingClassDetailsReadPort(testingClassDetailsReadPort)
     , m_testingClassDetailsUpdatePort(testingClassDetailsUpdatePort)
     , m_testingClassCreatePort(testingClassCreatePort)
+    , m_testingClassDeletePort(testingClassDeletePort)
     , m_testingTeacherChoicesReadPort(testingTeacherChoicesReadPort)
     , m_autosave(new AutosaveCoordinator(this))
 {
@@ -1512,7 +1517,7 @@ void TestingClassesPage::deleteCurrentClass()
         DialogServices::confirm(
             this,
             tr("Delete Testing Class?"),
-            tr("This permanently deletes the testing class, its roster, notes, and every schedule assignment."),
+            tr("This permanently deletes the testing class, its roster, notes, speaking evaluations, regular and intensive class times, and every schedule assignment."),
             tr("Delete"),
             tr("Cancel"),
             true
@@ -1522,22 +1527,47 @@ void TestingClassesPage::deleteCurrentClass()
         return;
     }
 
-    auto* scheduleService = m_services ? m_services->scheduleService() : nullptr;
-    if (!scheduleService)
+    const auto classId =
+        ClassMngr::Next::Domain::ClassId::fromString(
+            std::to_string(m_currentClassId)
+            );
+    if (!classId)
     {
         return;
     }
 
-    const Status deleted =
-        scheduleService->deleteTestingClass(
-            m_currentClassId
+    const ClassMngr::Next::Application::TestingClassDeleteRequest request{
+        .classId = *classId
+    };
+    ClassMngr::Next::Platform::
+        ApplicationServicesTestingClassDeletePort defaultPort(m_services);
+    const ClassMngr::Next::Application::TestingClassDeletePort& deletePort =
+        m_testingClassDeletePort
+            ? *m_testingClassDeletePort
+            : defaultPort;
+    const auto deleted =
+        ClassMngr::Next::Application::TestingClassDeleteUseCase::execute(
+            request,
+            deletePort
             );
     if (!deleted)
     {
+        if (
+            deleted.error().code
+                == ClassMngr::Next::Domain::ErrorCode::NotFound
+            )
+        {
+            return;
+        }
+
+        const std::string& message = deleted.error().message;
         DialogServices::showWarning(
             this,
             tr("Delete Testing Class"),
-            deleted.error()
+            QString::fromUtf8(
+                message.data(),
+                static_cast<qsizetype>(message.size())
+                )
             );
         return;
     }

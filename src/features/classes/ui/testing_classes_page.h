@@ -24,6 +24,7 @@ class ScheduleTestingClassChoicesReadPort;
 class TestingClassDetailsReadPort;
 class TestingClassDetailsUpdatePort;
 class TestingClassCreatePort;
+class TestingClassDeletePort;
 class TestingTeacherChoicesReadPort;
 }
 
@@ -44,7 +45,9 @@ public:
         const ClassMngr::Next::Application::
             TestingClassDetailsUpdatePort* testingClassDetailsUpdatePort = nullptr,
         const ClassMngr::Next::Application::
-            TestingClassCreatePort* testingClassCreatePort = nullptr
+            TestingClassCreatePort* testingClassCreatePort = nullptr,
+        const ClassMngr::Next::Application::
+            TestingClassDeletePort* testingClassDeletePort = nullptr
         );
 
     void openTestingClass(
@@ -108,6 +111,8 @@ private:
         TestingClassDetailsUpdatePort* m_testingClassDetailsUpdatePort = nullptr;
     const ClassMngr::Next::Application::
         TestingClassCreatePort* m_testingClassCreatePort = nullptr;
+    const ClassMngr::Next::Application::
+        TestingClassDeletePort* m_testingClassDeletePort = nullptr;
     const ClassMngr::Next::Application::
         TestingTeacherChoicesReadPort* m_testingTeacherChoicesReadPort = nullptr;
     TestingClass m_savedClass;
