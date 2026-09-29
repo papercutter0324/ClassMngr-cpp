@@ -89,7 +89,8 @@ private:
         );
     void beginNewClass(
         const QString& pendingDay = {},
-        const QString& pendingStartTime = {}
+        const QString& pendingStartTime = {},
+        bool focusName = true
         );
     TestingClass editorValue() const;
     void loadEditorValue(

@@ -1325,7 +1325,8 @@ void TestingClassesPage::loadClass(
 
 void TestingClassesPage::beginNewClass(
     const QString& pendingDay,
-    const QString& pendingStartTime
+    const QString& pendingStartTime,
+    const bool focusName
     )
 {
     m_autosave->setLoading(true);
@@ -1350,7 +1351,10 @@ void TestingClassesPage::beginNewClass(
     m_autosave->setLoading(false);
     m_autosave->markClean();
     updateActions();
-    m_nameEdit->setFocus();
+    if (focusName)
+    {
+        m_nameEdit->setFocus();
+    }
 }
 
 TestingClass TestingClassesPage::editorValue() const
@@ -1572,7 +1576,7 @@ void TestingClassesPage::deleteCurrentClass()
         return;
     }
 
-    m_currentClassId = -1;
+    beginNewClass({}, {}, false);
     rebuildClassList();
     if (m_classList->count() > 0)
     {
@@ -1586,7 +1590,7 @@ void TestingClassesPage::deleteCurrentClass()
     }
     else
     {
-        beginNewClass();
+        m_nameEdit->setFocus();
     }
     emit testingDataChanged();
 }
