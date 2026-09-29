@@ -6,6 +6,8 @@
 #include "next/platform/application_services_custom_color_palette_preferences_port.h"
 #include "next/application/schedule_testing_class_choices_query.h"
 #include "next/platform/application_services_schedule_testing_class_choices_read_port.h"
+#include "next/application/testing_class_details_read_query.h"
+#include "next/platform/application_services_testing_class_details_read_port.h"
 #include "core/fontmanager.h"
 #include "core/utils/colorutils.h"
 #include "domain/models/classroom.h"
@@ -20,6 +22,7 @@
 #include "ui/shared/pages/page_header.h"
 
 #include <algorithm>
+#include <string>
 #include <utility>
 
 #include <QColor>
@@ -85,11 +88,14 @@ TestingClassesPage::TestingClassesPage(
     ApplicationServices* services,
     QWidget* parent,
     const ClassMngr::Next::Application::
-        ScheduleTestingClassChoicesReadPort* testingClassChoicesReadPort
+        ScheduleTestingClassChoicesReadPort* testingClassChoicesReadPort,
+    const ClassMngr::Next::Application::
+        TestingClassDetailsReadPort* testingClassDetailsReadPort
     )
     : BasePage(parent)
     , m_services(services)
     , m_testingClassChoicesReadPort(testingClassChoicesReadPort)
+    , m_testingClassDetailsReadPort(testingClassDetailsReadPort)
     , m_autosave(new AutosaveCoordinator(this))
 {
     buildUi();
@@ -1050,33 +1056,97 @@ void TestingClassesPage::loadClass(
     )
 {
     m_autosave->setLoading(true);
-    auto* scheduleService = m_services ? m_services->scheduleService() : nullptr;
-    if (!scheduleService || !scheduleService->isAvailable() || classId <= 0)
+    if (classId <= 0)
     {
         return;
     }
 
-    const Result<TestingClass> loaded =
-        scheduleService->testingClass(classId);
+    const auto typedClassId =
+        ClassMngr::Next::Domain::ClassId::fromString(
+            std::to_string(classId)
+            );
+    if (!typedClassId)
+    {
+        return;
+    }
+
+    ClassMngr::Next::Platform::
+        ApplicationServicesTestingClassDetailsReadPort defaultReadPort(
+            m_services
+            );
+    const ClassMngr::Next::Application::TestingClassDetailsReadPort& readPort =
+        m_testingClassDetailsReadPort
+            ? *m_testingClassDetailsReadPort
+            : defaultReadPort;
+    const auto loaded =
+        ClassMngr::Next::Application::
+            TestingClassDetailsReadQueryHandler::execute(
+                {.classId = *typedClassId},
+                readPort
+                );
     if (!loaded)
     {
-        DialogServices::showWarning(
-            this,
-            tr("Testing Classes"),
-            loaded.error()
-            );
+        if (
+            loaded.error().code
+            != ClassMngr::Next::Domain::ErrorCode::NotFound
+            )
+        {
+            const std::string& message = loaded.error().message;
+            DialogServices::showWarning(
+                this,
+                tr("Testing Classes"),
+                QString::fromUtf8(
+                    message.data(),
+                    static_cast<qsizetype>(message.size())
+                    )
+                );
+        }
         return;
     }
 
+    int teacherId = -1;
+    if (loaded.value().teacherId)
+    {
+        const std::string& value = loaded.value().teacherId->value();
+        bool validTeacherId = false;
+        const int parsedTeacherId =
+            QString::fromStdString(value).toInt(&validTeacherId);
+        if (
+            !validTeacherId
+            || parsedTeacherId <= 0
+            || std::to_string(parsedTeacherId) != value
+            )
+        {
+            DialogServices::showWarning(
+                this,
+                tr("Testing Classes"),
+                tr("Testing class details contain an invalid teacher identifier.")
+                );
+            return;
+        }
+        teacherId = parsedTeacherId;
+    }
+
+    TestingClass testingClass;
+    testingClass.classId = classId;
+    testingClass.name = QString::fromStdU16String(loaded.value().name);
+    testingClass.grade = QString::fromStdU16String(loaded.value().grade);
+    testingClass.level = QString::fromStdU16String(loaded.value().level);
+    testingClass.room = QString::fromStdU16String(loaded.value().room);
+    testingClass.teacherId = teacherId;
+    testingClass.classColor = QString::fromStdU16String(loaded.value().classColor);
+    testingClass.fontColor = QString::fromStdU16String(loaded.value().fontColor);
+    testingClass.notes = QString::fromStdU16String(loaded.value().notes);
+
     m_currentClassId = classId;
-    m_savedClass = *loaded;
+    m_savedClass = testingClass;
     m_pendingDay.clear();
     m_pendingStartTime.clear();
-    loadEditorValue(*loaded);
+    loadEditorValue(testingClass);
     m_rosterEditor->loadClass(
         Classroom(
-            loaded->name,
-            loaded->classId
+            testingClass.name,
+            testingClass.classId
             )
         );
     m_editorDirty = false;

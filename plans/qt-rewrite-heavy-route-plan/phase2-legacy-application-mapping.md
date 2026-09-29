@@ -24,7 +24,9 @@ legacy profile startup/migration path through FileController, the F70 Class
 Transfer preview-matching policy, and F71's typed Class Transfer review-decision
 identities with legacy integer adapters,
 and Sub Prep print-source, selected-class details, and schedule-summary read
-adapters plus the Sub Prep information-sheet output wiring. Personal-details
+adapters plus the Sub Prep information-sheet output wiring. F143 also moves the
+Testing Classes manager's selected-detail read through a typed Application
+query and active-session Platform adapter. Personal-details
 save, personal-signature, and current-campus preference caller boundaries
 also use their existing typed ports through `ApplicationServices`. A partial
 content-session integration covers referenced
@@ -4041,3 +4043,31 @@ run. F72 adds Gate 2 fixture parity and no Gate 1 evidence. Both gates remain
 Partial; workspace boundary and audited v2 dependency isolation remain Satisfied;
 the Phase 2 exit gate remains Open. Sub Prep remains capped at the current and
 following calendar years, 2026-2027.
+
+## Verified F143 TestingClasses selected-detail read
+
+Before F143, `TestingClassesPage::loadClass()` read the selected class detail
+through the legacy `ScheduleService` boundary. F143 adds the Qt-free
+[`TestingClassDetailsReadQuery`](../../src/next/application/testing_class_details_read_query.h),
+typed snapshot, and handler; its Platform adapter calls
+[`TestingClassRepository::loadTestingClass()`](../../src/data/repositories/testing_class_repository.h)
+through the active `DatabaseSession`. The page now uses that query instead of
+the `ScheduleService` detail read.
+
+The snapshot carries class ID, name, grade, level, room, teacher ID, class and
+font colors, and notes. Roster loading and the page's successful-load and
+warning behavior remain intact. An unavailable session returns `NotFound` and
+stays silent; missing records and read failures warn. Nonpositive teacher IDs
+map to no teacher, preserving the editor's “None” row.
+
+Independent fresh Windows x64 Debug Ninja/MSVC/Qt 6.12 verification in
+`C:\Users\wfelt\AppData\Local\Temp\codex_f143_testing_class_details_20260929`
+validated 1,021 handwritten source owners. The Application, Platform, and
+`TestingClassesPage` targets built, and the focused CTests passed 3/3:
+`ClassMngrNextApplicationTestingClassDetailsReadQueryTests`,
+`ClassMngrNextPlatformApplicationServicesTestingClassDetailsReadPortTests`,
+and `ClassMngrTestingClassesPageTests`. Coverage includes typed-ID/result
+propagation; Platform field mapping, absent/zero teacher, unavailable/missing/
+read-error behavior, and no fallback; and page values, roster, success,
+silence/warnings, zero-ID “None” behavior, and the F142 list regression. No full
+suite or baseline comparison ran. F143 has no source/test commit hash yet.

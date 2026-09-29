@@ -21,6 +21,7 @@ class RosterEditorWidget;
 namespace ClassMngr::Next::Application
 {
 class ScheduleTestingClassChoicesReadPort;
+class TestingClassDetailsReadPort;
 }
 
 class TestingClassesPage : public BasePage
@@ -32,7 +33,9 @@ public:
         ApplicationServices* services,
         QWidget* parent = nullptr,
         const ClassMngr::Next::Application::
-            ScheduleTestingClassChoicesReadPort* testingClassChoicesReadPort = nullptr
+            ScheduleTestingClassChoicesReadPort* testingClassChoicesReadPort = nullptr,
+        const ClassMngr::Next::Application::
+            TestingClassDetailsReadPort* testingClassDetailsReadPort = nullptr
         );
 
     void openTestingClass(
@@ -90,6 +93,8 @@ private:
     ApplicationServices* m_services = nullptr;
     const ClassMngr::Next::Application::
         ScheduleTestingClassChoicesReadPort* m_testingClassChoicesReadPort = nullptr;
+    const ClassMngr::Next::Application::
+        TestingClassDetailsReadPort* m_testingClassDetailsReadPort = nullptr;
     TestingClass m_savedClass;
     int m_currentClassId{-1};
     int m_requestedClassId{-1};

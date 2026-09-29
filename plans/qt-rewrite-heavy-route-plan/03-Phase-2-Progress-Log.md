@@ -7459,10 +7459,94 @@ Gate 1 and Gate 2 remain Partial. The formal workspace-create boundary and
 active-v2 DataService isolation remain Satisfied. Phase 2 remains In
 Progress/Open.
 
-### F137 candidate review interrupted; no slice selected
+### Cumulative exit-gate status after F136 (historical snapshot)
+
+| Exit-gate area | Audit status | Finding |
+| --- | --- | --- |
+| App-less Domain/Application behavior (Gate 1) | Partial | Coverage includes workspace lifecycle; Class Transfer schedule-candidate validation (F79); Teacher Import (F80/F81/F85/F87/F89/F90); Schedule Import match-key typing (F84); Calendar policies/use cases (F93/F95/F97/F99/F101-F105/F107/F110); teacher-profile editing (F117/F123); co-teacher assignment (F124); class-notes save (F125); Classes navigation snapshot (F133); ScheduleBuilder source snapshot (F134); slot-state read snapshot (F135); and testing-assignment display snapshot (F136). Broader class-detail/schedule/roster/evaluation editing, backup/recovery, and legacy database import remained planned. |
+| Baseline parity (Gate 2) | Partial | Bounded records included F82/F83 post-baseline Schedule Import inputs, F86/F88 baseline-era generated Schedule Import inputs, F91/F92/F94/F96/F98 Teacher Import flows and failure cases, F100/F101/F103/F104/F106/F108/F109 Schedule Import rollback and Calendar repository transitions, F118 common-input Class Transfer conflict behavior, F121 common-input successful replacement state, and F122 hand-authored seeded Schedule Import Skip state parity. They did not cover all validation, conflict, planning, or state-transition behavior; historical production-workbook provenance remained unverified. |
+| Workspace boundary | Satisfied | The formal workspace-create criterion remained satisfied. |
+| v2 dependency isolation | Satisfied for active `src/next` call paths | F120 removed the Workspace operation edge to `DataService`; the source audit confirmed all seven operations route to `DatabaseSession` or the file helper. Legacy facade construction/access remained available. |
+
+Phase 2 was In Progress with its exit gate Open. Sub Prep remained bounded to
+January 1 of the reference date's year through December 31 of the following
+year at most; 2026-2027 was illustrative.
+
+### F137 candidate review interrupted (historical)
 
 Candidate discovery began from F136 commit `0295543a` with two independent
 Explorer lanes. The user requested that work stop before either report
 arrived, and both lanes were interrupted. No F137 candidate was selected or
-implemented. Resume with Heavy-route candidate discovery, then record the
-selected scope and acceptance before implementation.
+implemented at that time. F143 was selected later; its scope and acceptance
+are recorded in the current Phase 2 plan.
+
+## Verified F138 testing-class choice query - commit `cc15eced`
+
+F138 adds the Qt-free `ScheduleTestingClassChoicesReadQuery` and typed choice
+snapshot. Its Platform adapter reads `TestingClassRepository` through the
+active `DatabaseSession`; `TestingAssignmentDialog` consumes the result instead
+of reading choices from `ScheduleService`. Unavailable-session `NotFound`
+remains silent, while other failures warn. The commit adds app-less,
+Platform-adapter, and UI coverage.
+
+## Verified F139 ScheduleEditor save through Application - commit `f1c70a16`
+
+F139 routes `ScheduleEditorDialog::saveChanges()` through the existing
+`ClassDetailsSaveUseCase` and Platform port. Optional regular/intensive time
+fields distinguish a class-detail save that leaves schedules unchanged from
+an explicit schedule update. Grade, level, books, and colors continue through
+the established persistence boundary. Application, Platform, and dialog tests
+were updated.
+
+## Verified F140 ScheduleEditor class-info read - commit `7f26bcd4`
+
+F140 adds a typed `ScheduleEditorClassInfoQuery` snapshot and active-session
+Platform adapter. `ScheduleEditorDialog::loadData()` uses it to load grade,
+level, books, class/font colors, teacher Korean name, and room instead of
+reading `classInfo` through `ClassService`. The app-less, Platform, and dialog
+test targets were extended.
+
+## Verified F141 ScheduleWidget unavailable-source behavior - commit `912e62f6`
+
+F141 removes the legacy `ClassService` availability precheck before the
+ScheduleBuilder source query. An unavailable source result produces the
+days-only model without a warning; other read failures still warn. Schedule
+widget tests cover both unavailable and failure behavior.
+
+## Verified F142 TestingClasses list read - commit `a53791f4`
+
+F142 routes `TestingClassesPage` list loading through the typed choice query
+introduced in F138 and removes its `ScheduleService::testingClasses()` read.
+The page retains its ordering and action behavior, handles unavailable
+sessions silently, and warns on other read failures. The Testing Classes page
+tests cover the list boundary and its behavior.
+
+## Verified F143 TestingClasses selected-detail read
+
+F143 adds the Qt-free `TestingClassDetailsReadQuery`, typed snapshot, and
+handler. The Platform adapter reads one detail record through the active
+`DatabaseSession`'s `TestingClassRepository::loadTestingClass()`;
+`TestingClassesPage::loadClass()` no longer reads details through
+`ScheduleService`. It preserves class ID, name, grade, level, room, teacher ID,
+class/font colors, notes, roster loading, success, and warning behavior. An
+unavailable session is silent `NotFound`; missing/read failures warn.
+Nonpositive teacher IDs map to absence so the editor keeps its “None” row.
+
+Independent fresh Windows x64 Debug Ninja/MSVC/Qt 6.12 verification in
+`C:\Users\wfelt\AppData\Local\Temp\codex_f143_testing_class_details_20260929`
+validated 1,021 handwritten source owners. The build succeeded for
+`ClassMngrNextApplicationTestingClassDetailsReadQueryTests`,
+`ClassMngrNextPlatformApplicationServicesTestingClassDetailsReadPortTests`,
+and `ClassMngrTestingClassesPageTests`. The exact focused CTest selection
+passed 3/3 in 0.10s, 0.89s, and 1.64s. Coverage includes typed-ID/result
+propagation; Platform field mapping, absent/zero teacher, unavailable/missing/
+read-error behavior, and no fallback; and page fields, roster, success,
+silence/warnings, zero-ID “None” behavior, and the F142 list regression. No
+full suite or baseline comparison ran. The F143 source/test commit has not yet
+been created, so no commit hash is recorded.
+
+F143 adds Gate 1 application evidence but no Gate 2 baseline-parity evidence.
+Gate 1 and Gate 2 remain Partial; workspace boundary and active-v2 DataService
+isolation remain Satisfied. Phase 2 remains In Progress with its exit gate
+Open. Next entry: continue Phase 2 from the remaining application-contract and
+baseline-parity gaps.

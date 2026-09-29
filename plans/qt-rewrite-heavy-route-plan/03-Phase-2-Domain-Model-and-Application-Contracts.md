@@ -18,14 +18,17 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-09-29
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F136 verifies the testing-assignment display snapshot,
-  active-session Platform adapter, and `ScheduleWidget` integration; source/test
-  commit `0295543a`. F137 candidate review began but was stopped before reports
-  arrived; no next slice is selected. F120 active-v2 DataService isolation and
+- Current note: F143 is independently verified against F142 commit
+  `a53791f4`; its source/test commit has not yet been created. The selected-
+  class detail query, active-session Platform adapter, and
+  `TestingClassesPage::loadClass()` integration preserve editor values, roster,
+  and success/warning behavior. All three focused CTests passed; details are
+  below. No Gate 2 parity is claimed. F120 active-v2 DataService isolation and
   formal workspace-create acceptance remain Satisfied. Gates 1 and 2 remain
-  Partial. Historical workbook provenance remains a tracked risk, not a literal
-  exit criterion. Sub Prep remains January 1 of the reference date's year
-  through December 31 of the following year at most; 2026-2027 is illustrative.
+  Partial.
+  Historical workbook provenance remains a tracked risk, not a literal exit
+  criterion. Sub Prep remains January 1 of the reference date's year through
+  December 31 of the following year at most; 2026-2027 is illustrative.
 
 ## Objective
 
@@ -172,38 +175,45 @@ No new v2 production path depends on DataService, MainWindow, PageManager, or a 
 - Do not hide business rules inside presenters or delegates.
 - Do not allow compatibility methods to become the permanent v2 API.
 
-## Latest verified progress (F136)
+## Latest verified progress (F143)
 
-Source/test commit `0295543a` adds a Qt-free ordered UTF-16 testing-assignment
-snapshot, an active-session Platform adapter, and one joined repository read
-for assignment and optional special-class display fields. The widget has no
-`ScheduleService` or `DataService` read fallback or per-assignment detail
-reads. It preserves plain/special rendering, unavailable clearing, warning and
-prior-state retention on assignment-read failure, missing-special warning and
-skip, blank/default class-info behavior, and installed-preview bypass.
+F143 adds the Qt-free `TestingClassDetailsReadQuery`, typed snapshot, and
+handler. Its Platform adapter reads the selected record directly through the
+active `DatabaseSession`'s
+`TestingClassRepository::loadTestingClass()`. `TestingClassesPage::loadClass()`
+uses this boundary instead of a `ScheduleService` detail read. The result keeps
+class ID, name, grade, level, room, teacher ID, class/font colors, and notes;
+roster loading, success state, and warning behavior remain intact. An
+unavailable session returns silent `NotFound`; missing/read errors remain
+warnings. Nonpositive teacher IDs map to absence, preserving the editor's
+“None” row.
 
-Independent fresh Windows x64 Debug Ninja/MSVC 19.51/Qt 6.12 verification built
-`ClassMngr` and the Application, Platform, and ScheduleWidget targets in
-`build/f136-independent-verification`. The three focused CTests passed 3/3:
-`ClassMngrNextApplicationScheduleTestingAssignmentReadQueryTests`,
-`ClassMngrNextPlatformApplicationServicesScheduleTestingAssignmentReadPortTests`,
-and `ClassMngrScheduleWidgetTests`. The Platform test confirms one recorded
-statement for reads of one and 41 assignments. Independent review caught and
-verified the restoration of the legacy missing-special-class warning.
-`git diff --check` passed. No full suite or baseline comparison ran.
+Independent fresh Windows x64 Debug Ninja/MSVC/Qt 6.12 verification in
+`C:\Users\wfelt\AppData\Local\Temp\codex_f143_testing_class_details_20260929`
+validated 1,021 handwritten source owners. The build succeeded for
+`ClassMngrNextApplicationTestingClassDetailsReadQueryTests`,
+`ClassMngrNextPlatformApplicationServicesTestingClassDetailsReadPortTests`,
+and `ClassMngrTestingClassesPageTests`; the exact focused CTest selection passed
+3/3 (0.10s, 0.89s, 1.64s). App-less tests cover typed-ID/result propagation;
+Platform tests cover field mapping, absent/zero teacher, unavailable/missing/
+read-error behavior, and no fallback; the page test covers fields, roster,
+success, silence/warnings, the zero-ID “None” row, and the F142 list regression.
+No full suite or baseline comparison ran. No F143 source/test commit hash is
+available yet.
 
-Gate 1 and Gate 2 remain Partial. F120 active-v2 DataService isolation and the
-formal workspace-create boundary remain Satisfied. Phase 2 remains In Progress
-with its exit gate Open. Historical production-workbook provenance remains a
-tracked risk, not a literal exit criterion. Sub Prep remains bounded to January
-1 of the reference date's year through December 31 of the following year, at
-most; 2026-2027 is illustrative.
+F143 adds Gate 1 application behavior evidence and no Gate 2 baseline-parity
+evidence. F120 active-v2 DataService isolation and the formal workspace-create
+boundary remain Satisfied. Phase 2 remains In Progress with its exit gate Open.
+Historical production-workbook provenance remains a tracked risk, not a
+literal exit criterion. Sub Prep remains bounded to January 1 of the reference
+date's year through December 31 of the following year at most; 2026-2027 is
+illustrative.
 
-### Cumulative exit-gate status after F136
+### Cumulative exit-gate status after F143
 
 | Exit-gate area | Audit status | Finding |
 | --- | --- | --- |
-| App-less Domain/Application behavior (Gate 1) | Partial | Coverage includes workspace lifecycle; Class Transfer schedule-candidate validation (F79); Teacher Import (F80/F81/F85/F87/F89/F90); Schedule Import match-key typing (F84); Calendar policies/use cases (F93/F95/F97/F99/F101-F105/F107/F110); teacher-profile editing (F117/F123); co-teacher assignment (F124); class-notes save (F125); Classes navigation snapshot (F133); ScheduleBuilder source snapshot (F134); slot-state read snapshot (F135); and testing-assignment display snapshot (F136). Broader class-detail/schedule/roster/evaluation editing, backup/recovery, and legacy database import remain planned. |
+| App-less Domain/Application behavior (Gate 1) | Partial | Coverage includes workspace lifecycle; Class Transfer schedule-candidate validation (F79); Teacher Import (F80/F81/F85/F87/F89/F90); Schedule Import match-key typing (F84); Calendar policies/use cases (F93/F95/F97/F99/F101-F105/F107/F110); teacher-profile editing (F117/F123); co-teacher assignment (F124); class-notes save (F125); Classes navigation snapshot (F133); ScheduleBuilder source snapshot (F134); slot-state and testing-assignment reads (F135/F136); testing-class choices and TestingClasses list reads (F138/F142); ScheduleEditor save and class-info read (F139/F140); and TestingClasses selected-detail read (F143). Broader class-detail, schedule, roster, and evaluation editing, backup/recovery, and legacy database import remain planned. |
 | Baseline parity (Gate 2) | Partial | Bounded records include F82/F83 post-baseline Schedule Import inputs, F86/F88 baseline-era generated Schedule Import inputs, F91/F92/F94/F96/F98 Teacher Import flows and failure cases, F100/F101/F103/F104/F106/F108/F109 Schedule Import rollback and Calendar repository transitions, F118 common-input Class Transfer conflict behavior, F121 common-input successful replacement state, and F122 hand-authored seeded Schedule Import Skip state parity. They do not cover all validation, conflict, planning, or state-transition behavior; historical production-workbook provenance remains unverified. |
 | Workspace boundary | Satisfied | The formal workspace-create criterion remains satisfied. |
 | v2 dependency isolation | Satisfied for active `src/next` call paths | F120 removes the Workspace operation edge to `DataService`; the source audit confirms all seven operations route to `DatabaseSession` or the file helper. Legacy facade construction/access remains available. |
@@ -213,11 +223,3 @@ Partial; historical production-workbook provenance remains a tracked risk, not
 a literal exit criterion. Sub Prep remains bounded to January 1 of the
 reference date's year through December 31 of the following year, at most;
 2026-2027 is illustrative.
-
-### F137 candidate review interrupted; no slice selected
-
-Candidate discovery began from F136 source/test commit `0295543a` with two
-independent Explorer lanes. The user requested that work stop before either
-report arrived, and both lanes were interrupted. No F137 candidate was
-selected or implemented. Resume with Heavy-route candidate discovery, then
-record the selected scope and acceptance before implementation.
