@@ -9,7 +9,11 @@
 #include "features/schedule/ui/schedule_widget.h"
 #include "features/schedule/services/schedule_output_controller.h"
 #include "features/schedule/ui/testing_assignment_dialog.h"
+#include "data/database/database_session.h"
+#include "data/repositories/testing_class_repository.h"
+#include "next/application/schedule_testing_class_choices_query.h"
 #include "next/application/schedule_testing_assignment_save.h"
+#include "next/platform/application_services_schedule_testing_class_choices_read_port.h"
 #include "next/platform/application_services_schedule_display_preferences_port.h"
 #include "ui/shared/dialogs/user_prompt_service.h"
 #include "ui/shared/widgets/text_fit_push_button.h"
@@ -35,12 +39,17 @@
 #include <QRegularExpression>
 #include <QScrollArea>
 #include <QScrollBar>
+#include <QSqlDatabase>
+#include <QSqlQuery>
 #include <QStyleOptionViewItem>
 #include <QTableWidget>
 #include <QTimer>
+#include <QTemporaryDir>
+#include <QUuid>
 
 #include <algorithm>
 #include <functional>
+#include <string>
 #include <utility>
 
 namespace ScheduleWidgetTestStubs
@@ -373,6 +382,151 @@ bool chooseTestingClass(
     return true;
 }
 
+ClassMngr::Next::Application::ScheduleTestingClassChoice testingClassChoice(
+    const int classId,
+    const QString& name,
+    const QString& grade,
+    const QString& level,
+    const QString& room
+    )
+{
+    const auto typedClassId = ClassMngr::Next::Domain::ClassId::fromString(
+        std::to_string(classId)
+        );
+    if (!typedClassId)
+    {
+        qFatal("Test class ID must have a typed representation.");
+    }
+
+    return {
+        .classId = *typedClassId,
+        .name = name.toStdU16String(),
+        .grade = grade.toStdU16String(),
+        .level = level.toStdU16String(),
+        .room = room.toStdU16String()
+    };
+}
+
+QString scheduleWidgetDatabasePath(QTemporaryDir& directory)
+{
+    return directory.filePath(
+        QStringLiteral("schedule-widget-testing-classes-%1.tps").arg(
+            QUuid::createUuid().toString(QUuid::WithoutBraces)
+            )
+        );
+}
+
+bool insertTestingClassRecord(
+    QSqlDatabase database,
+    const TestingClass& testingClass
+    )
+{
+    QSqlQuery classQuery(database);
+    classQuery.prepare(QStringLiteral(
+        "INSERT INTO classes (id, name) VALUES (?, ?)"
+        ));
+    classQuery.addBindValue(testingClass.classId);
+    classQuery.addBindValue(testingClass.name);
+    if (!classQuery.exec())
+    {
+        return false;
+    }
+
+    QSqlQuery informationQuery(database);
+    informationQuery.prepare(QStringLiteral(R"(
+        INSERT INTO class_info (
+            class_id, teacher_id, class_grade, class_level,
+            class_color, font_color
+        ) VALUES (?, NULL, ?, ?, ?, ?)
+    )"));
+    informationQuery.addBindValue(testingClass.classId);
+    informationQuery.addBindValue(testingClass.grade);
+    informationQuery.addBindValue(testingClass.level);
+    informationQuery.addBindValue(testingClass.classColor.isEmpty()
+        ? QStringLiteral("#FFFFFF")
+        : testingClass.classColor);
+    informationQuery.addBindValue(testingClass.fontColor.isEmpty()
+        ? QStringLiteral("#000000")
+        : testingClass.fontColor);
+    if (!informationQuery.exec())
+    {
+        return false;
+    }
+
+    QSqlQuery testingClassQuery(database);
+    testingClassQuery.prepare(QStringLiteral(
+        "INSERT INTO testing_classes (class_id, room) VALUES (?, ?)"
+        ));
+    testingClassQuery.addBindValue(testingClass.classId);
+    testingClassQuery.addBindValue(testingClass.room);
+    return testingClassQuery.exec();
+}
+
+bool seedTestingClassRecords(
+    ApplicationServices& services,
+    const QList<TestingClass>& testingClasses
+    )
+{
+    DatabaseSession* const session = services.databaseSession();
+    if (!session || !session->isOpen())
+    {
+        return false;
+    }
+
+    const QSqlDatabase database = session->database();
+    for (const TestingClass& testingClass : testingClasses)
+    {
+        if (!insertTestingClassRecord(database, testingClass))
+        {
+            return false;
+        }
+    }
+    return true;
+}
+
+class ApplicationServicesDatabaseGuard final
+{
+public:
+    explicit ApplicationServicesDatabaseGuard(
+        ApplicationServices& services
+        ) noexcept
+        : m_services(services)
+    {
+    }
+
+    ~ApplicationServicesDatabaseGuard()
+    {
+        m_services.closeDatabase();
+    }
+
+private:
+    ApplicationServices& m_services;
+};
+
+class FixedTestingClassChoicesReadPort final
+    : public ClassMngr::Next::Application::
+        ScheduleTestingClassChoicesReadPort
+{
+public:
+    [[nodiscard]] ClassMngr::Next::Application::
+        ScheduleTestingClassChoicesReadResult readTestingClassChoices(
+            const ClassMngr::Next::Application::
+                ScheduleTestingClassChoicesReadQuery& query
+            ) const override
+    {
+        ++callCount;
+        lastQuery = query;
+        return result;
+    }
+
+    mutable int callCount = 0;
+    mutable ClassMngr::Next::Application::
+        ScheduleTestingClassChoicesReadQuery lastQuery;
+    ClassMngr::Next::Application::ScheduleTestingClassChoicesReadResult
+        result = ClassMngr::Next::Application::
+            ScheduleTestingClassChoicesReadResult::success({});
+};
+
 }
 
 class ScheduleWidgetTests : public QObject
@@ -393,6 +547,9 @@ private slots:
     void legacyHourSettingsDoNotCarryForward();
     void testingModeFiltersClassesAndDisplaysSavedBlock();
     void testingModeDisplaysAssignedTestingClassCard();
+    void testingAssignmentDialogPreservesChoiceOrderLabelsAndPreselection();
+    void emptyAndUnavailableTestingClassChoicesKeepNoSelectionWarning();
+    void testingClassChoiceRepositoryFailureRetainsWarning();
     void testingAssignmentDialogSupportsEveryAction();
     void testingAssignmentWritesMapActionsAndReloadSuccessfulState();
     void testingAssignmentCancelAndManageDoNotWriteOrReload();
@@ -876,6 +1033,177 @@ void ScheduleWidgetTests
         );
 }
 
+void ScheduleWidgetTests::
+testingAssignmentDialogPreservesChoiceOrderLabelsAndPreselection()
+{
+    FixedTestingClassChoicesReadPort choicesReadPort;
+    choicesReadPort.result =
+        ClassMngr::Next::Application::
+            ScheduleTestingClassChoicesReadResult::success({
+                .choices = {
+                    testingClassChoice(
+                        42,
+                        QStringLiteral("Writing Lab"),
+                        QStringLiteral("M2"),
+                        QStringLiteral("Mixed (High)"),
+                        QStringLiteral("Library")
+                        ),
+                    testingClassChoice(
+                        7,
+                        QStringLiteral("Oral Review"),
+                        QStringLiteral("E5"),
+                        QStringLiteral("Lower"),
+                        QStringLiteral("204")
+                        )
+                }
+            });
+
+    TestingAssignmentDialog assignDialog(choicesReadPort, nullptr);
+    auto* classes = assignDialog.findChild<QComboBox*>(
+        QStringLiteral("testingAssignmentClassCombo")
+        );
+    auto* mode = assignDialog.findChild<QComboBox*>(
+        QStringLiteral("testingAssignmentModeCombo")
+        );
+    auto* buttons = assignDialog.findChild<QDialogButtonBox*>();
+    QVERIFY(classes);
+    QVERIFY(mode);
+    QVERIFY(buttons);
+    QCOMPARE(classes->count(), 2);
+    QCOMPARE(
+        classes->itemText(0),
+        QStringLiteral("Writing Lab \u2014 M2 Mixed (High) \u2014 Room Library")
+        );
+    QCOMPARE(classes->itemData(0).toInt(), 42);
+    QCOMPARE(
+        classes->itemText(1),
+        QStringLiteral("Oral Review \u2014 E5 Lower \u2014 Room 204")
+        );
+    QCOMPARE(classes->itemData(1).toInt(), 7);
+
+    mode->setCurrentIndex(1);
+    classes->setCurrentIndex(1);
+    buttons->button(QDialogButtonBox::Save)->click();
+    QCOMPARE(
+        assignDialog.selectedAction(),
+        TestingAssignmentDialog::Action::AssignTestingClass
+        );
+    QCOMPARE(assignDialog.selectedClassId(), 7);
+
+    TestingAssignment existing;
+    existing.kind = TestingAssignmentKind::SpecialClass;
+    existing.classId = 42;
+    TestingAssignmentDialog editDialog(choicesReadPort, &existing);
+    classes = editDialog.findChild<QComboBox*>(
+        QStringLiteral("testingAssignmentClassCombo")
+        );
+    mode = editDialog.findChild<QComboBox*>(
+        QStringLiteral("testingAssignmentModeCombo")
+        );
+    QVERIFY(classes);
+    QVERIFY(mode);
+    QCOMPARE(mode->currentIndex(), 1);
+    QCOMPARE(classes->currentIndex(), 0);
+    QCOMPARE(classes->currentData().toInt(), 42);
+    QCOMPARE(editDialog.selectedClassId(), 42);
+    QCOMPARE(choicesReadPort.callCount, 2);
+}
+
+void ScheduleWidgetTests::
+emptyAndUnavailableTestingClassChoicesKeepNoSelectionWarning()
+{
+    FixedTestingClassChoicesReadPort emptyPort;
+    emptyPort.result =
+        ClassMngr::Next::Application::
+            ScheduleTestingClassChoicesReadResult::success({});
+    FakeUserPromptService emptyPrompts;
+    DialogServices::setUserPromptServiceForTesting(&emptyPrompts);
+    TestingAssignmentDialog emptyDialog(emptyPort, nullptr);
+    auto* classes = emptyDialog.findChild<QComboBox*>(
+        QStringLiteral("testingAssignmentClassCombo")
+        );
+    auto* mode = emptyDialog.findChild<QComboBox*>(
+        QStringLiteral("testingAssignmentModeCombo")
+        );
+    auto* buttons = emptyDialog.findChild<QDialogButtonBox*>();
+    QVERIFY(classes);
+    QVERIFY(mode);
+    QVERIFY(buttons);
+    QCOMPARE(classes->count(), 0);
+    QVERIFY(emptyPrompts.messages.isEmpty());
+    mode->setCurrentIndex(1);
+    buttons->button(QDialogButtonBox::Save)->click();
+    QCOMPARE(emptyPrompts.messages.size(), 1);
+    QCOMPARE(emptyPrompts.messages.constFirst().title,
+             QStringLiteral("Testing Assignment"));
+    QCOMPARE(emptyPrompts.messages.constFirst().severity,
+             PromptSeverity::Warning);
+    QCOMPARE(emptyPrompts.messages.constFirst().message,
+             QStringLiteral("Choose a testing class or manage your classes."));
+
+    FixedTestingClassChoicesReadPort unavailablePort;
+    unavailablePort.result =
+        ClassMngr::Next::Application::
+            ScheduleTestingClassChoicesReadResult::failure({
+                .code = ClassMngr::Next::Domain::ErrorCode::NotFound,
+                .message = "The active database session is unavailable.",
+                .recoverable = false
+            });
+    FakeUserPromptService unavailablePrompts;
+    DialogServices::setUserPromptServiceForTesting(&unavailablePrompts);
+    TestingAssignmentDialog unavailableDialog(unavailablePort, nullptr);
+    classes = unavailableDialog.findChild<QComboBox*>(
+        QStringLiteral("testingAssignmentClassCombo")
+        );
+    mode = unavailableDialog.findChild<QComboBox*>(
+        QStringLiteral("testingAssignmentModeCombo")
+        );
+    buttons = unavailableDialog.findChild<QDialogButtonBox*>();
+    QVERIFY(classes);
+    QVERIFY(mode);
+    QVERIFY(buttons);
+    QCOMPARE(classes->count(), 0);
+    QVERIFY(unavailablePrompts.messages.isEmpty());
+    mode->setCurrentIndex(1);
+    buttons->button(QDialogButtonBox::Save)->click();
+    QCOMPARE(unavailablePrompts.messages.size(), 1);
+    QCOMPARE(unavailablePrompts.messages.constFirst().title,
+             QStringLiteral("Testing Assignment"));
+    QCOMPARE(unavailablePrompts.messages.constFirst().message,
+             QStringLiteral("Choose a testing class or manage your classes."));
+}
+
+void ScheduleWidgetTests::
+testingClassChoiceRepositoryFailureRetainsWarning()
+{
+    FixedTestingClassChoicesReadPort failedPort;
+    failedPort.result =
+        ClassMngr::Next::Application::
+            ScheduleTestingClassChoicesReadResult::failure({
+                .code = ClassMngr::Next::Domain::ErrorCode::Technical,
+                .message = "injected testing class choices read failure",
+                .recoverable = true
+            });
+    FakeUserPromptService prompts;
+    DialogServices::setUserPromptServiceForTesting(&prompts);
+
+    TestingAssignmentDialog dialog(failedPort, nullptr);
+
+    auto* classes = dialog.findChild<QComboBox*>(
+        QStringLiteral("testingAssignmentClassCombo")
+        );
+    QVERIFY(classes);
+    QCOMPARE(classes->count(), 0);
+    QCOMPARE(failedPort.callCount, 1);
+    QCOMPARE(prompts.messages.size(), 1);
+    QCOMPARE(prompts.messages.constFirst().title,
+             QStringLiteral("Testing Classes"));
+    QCOMPARE(prompts.messages.constFirst().severity,
+             PromptSeverity::Warning);
+    QCOMPARE(prompts.messages.constFirst().message,
+             QStringLiteral("injected testing class choices read failure"));
+}
+
 void ScheduleWidgetTests
     ::testingAssignmentDialogSupportsEveryAction()
 {
@@ -885,15 +1213,22 @@ void ScheduleWidgetTests
     testingClass.grade = QStringLiteral("M2");
     testingClass.level = QStringLiteral("Mixed (All)");
     testingClass.room = QStringLiteral("Library");
-    ScheduleWidgetTestStubs::setTestingClassAssignment(
-        QStringLiteral("Monday"),
-        QStringLiteral("16:00"),
-        testingClass
-        );
-
-    ApplicationServices services;
+    FixedTestingClassChoicesReadPort choicesReadPort;
+    choicesReadPort.result =
+        ClassMngr::Next::Application::
+            ScheduleTestingClassChoicesReadResult::success({
+                .choices = {
+                    testingClassChoice(
+                        testingClass.classId,
+                        testingClass.name,
+                        testingClass.grade,
+                        testingClass.level,
+                        testingClass.room
+                        )
+                }
+            });
     TestingAssignmentDialog assignDialog(
-        services.scheduleService(),
+        choicesReadPort,
         nullptr
         );
     auto* mode =
@@ -994,7 +1329,7 @@ void ScheduleWidgetTests
     QCOMPARE(assignDialog.selectedClassId(), 100);
 
     TestingAssignmentDialog manageDialog(
-        services.scheduleService(),
+        choicesReadPort,
         nullptr
         );
     mode =
@@ -1010,6 +1345,7 @@ void ScheduleWidgetTests
     QVERIFY(manage);
     QCOMPARE(manage->text(), QStringLiteral("Manage Classes"));
     manage->click();
+    QCOMPARE(manageDialog.selectedClassId(), 100);
     QCOMPARE(
         manageDialog.selectedAction(),
         TestingAssignmentDialog::Action::ManageTestingClasses
@@ -1019,7 +1355,7 @@ void ScheduleWidgetTests
     existing.kind = TestingAssignmentKind::SpecialClass;
     existing.classId = 100;
     TestingAssignmentDialog editDialog(
-        services.scheduleService(),
+        choicesReadPort,
         &existing
         );
     auto* removedEssayButton =
@@ -1043,7 +1379,7 @@ void ScheduleWidgetTests
         );
 
     TestingAssignmentDialog plainDialog(
-        services.scheduleService(),
+        choicesReadPort,
         nullptr
         );
     auto* room =
@@ -1075,7 +1411,12 @@ testingAssignmentWritesMapActionsAndReloadSuccessfulState()
     testingClass.room = QStringLiteral("Library");
     ScheduleWidgetTestStubs::setTestingClass(testingClass);
 
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
     ApplicationServices services;
+    QVERIFY(services.openDatabase(scheduleWidgetDatabasePath(directory)));
+    ApplicationServicesDatabaseGuard databaseGuard(services);
+    QVERIFY(seedTestingClassRecords(services, {testingClass}));
     saveSettingOrFail(
         services.dataService(),
         QStringLiteral("schedule_display_mode"),
@@ -1305,7 +1646,22 @@ testingAssignmentCancelAndManageDoNotWriteOrReload()
     testingClass.room = QStringLiteral("Library");
     ScheduleWidgetTestStubs::setTestingClass(testingClass);
 
+    TestingClass earlierTestingClass;
+    earlierTestingClass.classId = 200;
+    earlierTestingClass.name = QStringLiteral("Oral Review");
+    earlierTestingClass.grade = QStringLiteral("E5");
+    earlierTestingClass.level = QStringLiteral("Lower");
+    earlierTestingClass.room = QStringLiteral("204");
+
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
     ApplicationServices services;
+    QVERIFY(services.openDatabase(scheduleWidgetDatabasePath(directory)));
+    ApplicationServicesDatabaseGuard databaseGuard(services);
+    QVERIFY(seedTestingClassRecords(
+        services,
+        {testingClass, earlierTestingClass}
+        ));
     saveSettingOrFail(
         services.dataService(),
         QStringLiteral("schedule_display_mode"),
@@ -1347,6 +1703,18 @@ testingAssignmentCancelAndManageDoNotWriteOrReload()
         startTime,
         [](TestingAssignmentDialog* dialog)
         {
+            auto* classes = dialog->findChild<QComboBox*>(
+                QStringLiteral("testingAssignmentClassCombo")
+                );
+            if (
+                !classes
+                || classes->count() != 2
+                || classes->itemData(0).toInt() != 200
+                || classes->itemData(1).toInt() != 100
+                )
+            {
+                return false;
+            }
             if (!chooseTestingClass(dialog, 100))
             {
                 return false;

@@ -151,6 +151,7 @@ set(CLASSMNGR_NEXT_APPLICATION_SOURCES
     src/next/application/schedule_display_preferences.h
     src/next/application/schedule_display_mode_preferences.h
     src/next/application/schedule_slot_state_read_query.h
+    src/next/application/schedule_testing_class_choices_query.h
     src/next/application/schedule_testing_assignment_read_query.h
     src/next/application/schedule_testing_assignment_save.h
     src/next/application/schedule_testing_assignment_save_use_case.h
@@ -207,6 +208,7 @@ set(CLASSMNGR_NEXT_PLATFORM_SOURCES
     src/next/platform/application_services_schedule_display_preferences_port.h
     src/next/platform/application_services_schedule_display_mode_preferences_port.h
     src/next/platform/application_services_schedule_slot_state_read_port.h
+    src/next/platform/application_services_schedule_testing_class_choices_read_port.h
     src/next/platform/application_services_schedule_testing_assignment_read_port.h
     src/next/platform/application_services_schedule_testing_assignment_save_port.h
     src/next/platform/application_services_schedule_builder_source_port.h

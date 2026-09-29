@@ -1,7 +1,7 @@
 #include "testing_assignment_dialog.h"
 #include "ui/shared/dialogs/user_prompt_service.h"
 
-#include "app/services/feature_services.h"
+#include "next/application/schedule_testing_class_choices_query.h"
 #include "ui/shared/widgets/text_fit_dialog_button_box.h"
 
 #include <QComboBox>
@@ -19,12 +19,13 @@ constexpr int EssayMode = 2;
 }
 
 TestingAssignmentDialog::TestingAssignmentDialog(
-    ScheduleService* scheduleService,
+    const ClassMngr::Next::Application::
+        ScheduleTestingClassChoicesReadPort& choicesReadPort,
     const TestingAssignment* existingAssignment,
     QWidget* parent
     )
     : DialogShell(QStringLiteral("testingAssignment"), parent)
-    , m_scheduleService(scheduleService)
+    , m_choicesReadPort(choicesReadPort)
     , m_hasExistingAssignment(existingAssignment != nullptr)
 {
     if (existingAssignment)
@@ -186,34 +187,50 @@ void TestingAssignmentDialog::loadTestingClasses()
 {
     m_classCombo->clear();
 
-    if (!m_scheduleService || !m_scheduleService->isAvailable())
-    {
-        return;
-    }
-
-    const Result<QList<TestingClass>> testingClasses =
-        m_scheduleService->testingClasses();
+    const auto testingClasses =
+        ClassMngr::Next::Application::
+            ScheduleTestingClassChoicesReadQueryHandler::execute(
+                {},
+                m_choicesReadPort
+                );
     if (!testingClasses)
     {
+        if (
+            testingClasses.error().code
+            == ClassMngr::Next::Domain::ErrorCode::NotFound
+            )
+        {
+            return;
+        }
+
+        const std::string& message = testingClasses.error().message;
         DialogServices::showWarning(
             this,
             tr("Testing Classes"),
-            testingClasses.error()
+            QString::fromUtf8(
+                message.data(),
+                static_cast<qsizetype>(message.size())
+                )
             );
         return;
     }
 
-    for (const TestingClass& testingClass : *testingClasses)
+    for (const auto& testingClass : testingClasses.value().choices)
     {
+        bool classIdOk = false;
+        const int classId = QString::fromStdString(
+            testingClass.classId.value()
+            ).toInt(&classIdOk);
+
         m_classCombo->addItem(
             tr("%1 — %2 %3 — Room %4")
                 .arg(
-                    testingClass.name,
-                    testingClass.grade,
-                    testingClass.level,
-                    testingClass.room
+                    QString::fromStdU16String(testingClass.name),
+                    QString::fromStdU16String(testingClass.grade),
+                    QString::fromStdU16String(testingClass.level),
+                    QString::fromStdU16String(testingClass.room)
                     ),
-            testingClass.classId
+            classIdOk ? classId : -1
             );
     }
 }

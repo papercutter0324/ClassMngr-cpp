@@ -337,10 +337,6 @@ ApplicationServices::ApplicationServices()
 
 ApplicationServices::~ApplicationServices() = default;
 
-DatabaseSession::DatabaseSession() = default;
-
-DatabaseSession::~DatabaseSession() = default;
-
 bool DatabaseSession::isOpen() const
 {
     return ScheduleWidgetTestStubs::databaseOpen;

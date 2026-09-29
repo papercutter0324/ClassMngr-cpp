@@ -22,6 +22,7 @@
 #include "next/application/schedule_slot_state_save_use_case.h"
 #include "next/platform/application_services_schedule_builder_source_port.h"
 #include "next/platform/application_services_schedule_slot_state_read_port.h"
+#include "next/platform/application_services_schedule_testing_class_choices_read_port.h"
 #include "next/platform/application_services_schedule_testing_assignment_read_port.h"
 #include "next/platform/application_services_schedule_testing_assignment_save_port.h"
 #include "next/platform/application_services_schedule_slot_state_save_port.h"
@@ -537,8 +538,12 @@ void ScheduleWidget::editTestingAssignment(
         return;
     }
 
+    ClassMngr::Next::Platform::
+        ApplicationServicesScheduleTestingClassChoicesReadPort
+            testingClassChoicesReadPort(m_services);
+
     TestingAssignmentDialog dialog(
-        scheduleService,
+        testingClassChoicesReadPort,
         existingAssignment,
         this
         );

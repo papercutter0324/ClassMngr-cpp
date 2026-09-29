@@ -3,12 +3,16 @@
 #include "domain/models/testing_block.h"
 #include "ui/shared/dialogs/dialog_shell.h"
 
-class ScheduleService;
 class QComboBox;
 class QLabel;
 class QLineEdit;
 class QPushButton;
 class QWidget;
+
+namespace ClassMngr::Next::Application
+{
+class ScheduleTestingClassChoicesReadPort;
+}
 
 class TestingAssignmentDialog : public DialogShell
 {
@@ -24,7 +28,8 @@ public:
     };
 
     TestingAssignmentDialog(
-        ScheduleService* scheduleService,
+        const ClassMngr::Next::Application::
+            ScheduleTestingClassChoicesReadPort& choicesReadPort,
         const TestingAssignment* existingAssignment,
         QWidget* parent = nullptr
         );
@@ -39,7 +44,8 @@ private:
     void updateModeUi();
     void accept() override;
 
-    ScheduleService* m_scheduleService = nullptr;
+    const ClassMngr::Next::Application::
+        ScheduleTestingClassChoicesReadPort& m_choicesReadPort;
     bool m_hasExistingAssignment = false;
     TestingAssignment m_existingAssignment;
     Action m_action = Action::SavePlainTesting;
