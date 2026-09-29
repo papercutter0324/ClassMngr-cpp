@@ -18,15 +18,15 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-09-29
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F143 commit `e2a3811cdba71b58ff2289f2c756d9bf12349bf5` is
-  the last completed slice; its fresh Windows x64 Debug focused CTests passed
-  3/3. Deployment `phase2_resume_20260929` is paused per the user's request.
-  F144 is selected and partially implemented; acceptance/testing are
-  incomplete. Checkpoint commit `56c76f412b246230fcfe00c249b195dcc6ccd95f`
-  captures the partial/unverified F144 implementation and handoff, but it is
-  not an acceptance-complete F144 slice commit. F143 remains last accepted; no
-  F144 tests ran, the full build did not complete, and F145 is unstarted. The
-  current scope is to move
+- Current note: F144 is acceptance-complete. Its partial implementation is
+  captured in checkpoint `56c76f412b246230fcfe00c249b195dcc6ccd95f`; the
+  acceptance test update is committed as
+  `89fbbaa250ddf98fae2ab1d80385fb99164ac055`. The F144 Application query,
+  Platform adapter, and TestingClassesPage CTests passed 3/3. The F142/F143
+  Application and Platform regression CTests passed 4/4 in a separate fresh
+  short-path Ninja build. See the F144 acceptance record below for verification
+  limits. F145 has no distinct selected scope; complete the Heavy-route
+  candidate review before assigning it. The completed F144 scope moved
   `TestingClassesPage::populateTeachers()` from `TeacherService::teachers()`
   to a Qt-free typed Application teacher-choice query/snapshot and active-
   session Platform adapter reading
@@ -37,11 +37,10 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
   read-failure behavior. Acceptance: app-less typed/query-result/error
   propagation; Platform active-session field/order mapping, unavailable
   `NotFound`, and repository-failure behavior without fallback; page
-  labels/IDs/room role, filtering/order/selection/None/warning/silence; focused
-  app-less, Platform, and `ClassMngrTestingClassesPageTests` CTests retaining
-  F142/F143 regressions. This remaining read closes the manager page's read
-  path; create/update/delete writes stay separate pending acceptance for
-  roster-order and assignment/cascade semantics. F145 is unstarted.
+  labels/IDs/room role, filtering/order/selection/None/warning/silence. This
+  read closes the manager page's read path; create/update/delete writes stay
+  separate pending acceptance for roster-order and assignment/cascade
+  semantics.
   F120 active-v2 DataService isolation and formal workspace-create acceptance
   remain Satisfied. Gates 1 and 2 remain Partial. Historical workbook
   provenance remains a tracked risk, not a literal exit criterion. Sub Prep
@@ -242,49 +241,39 @@ a literal exit criterion. Sub Prep remains bounded to January 1 of the
 reference date's year through December 31 of the following year, at most;
 2026-2027 is illustrative.
 
-## F144 paused implementation handoff
+## F144 acceptance record
 
-F143 is the last accepted slice (`e2a3811cdba71b58ff2289f2c756d9bf12349bf5`).
-Checkpoint commit `56c76f412b246230fcfe00c249b195dcc6ccd95f` captures the
-partial/unverified F144 teacher-choice implementation and handoff; it is not an
-acceptance-complete F144 slice commit. Acceptance is incomplete, no F144 tests
-ran, the full build did not complete, and F145 is unstarted.
+F144 moves `TestingClassesPage::populateTeachers()` from
+`TeacherService::teachers()` to a Qt-free typed Application query and a
+Platform adapter that reads
+`DatabaseSession::teacherRepository()->getAllTeachers()`. It preserves
+repository order, typed teacher IDs, trimmed Korean labels and rooms, blank
+label filtering, ID-based selection restoration, the None row, silent
+unavailable-session behavior, and the existing failure warning.
 
-F144 production files:
+The partial production/test implementation is checkpointed at
+`56c76f412b246230fcfe00c249b195dcc6ccd95f`; the final page-test update is in
+acceptance test commit
+`89fbbaa250ddf98fae2ab1d80385fb99164ac055`.
 
-- `src/next/application/testing_teacher_choices_read_query.h`
-- `src/next/platform/application_services_testing_teacher_choices_read_port.h`
-- `src/features/classes/ui/testing_classes_page.h`
-- `src/features/classes/ui/testing_classes_page.cpp`
-- `cmake/next.cmake`
+Each fresh Windows x64 Debug Ninja/MSVC 19.51/Qt 6.12 configure, with
+`BUILD_TESTING=ON`, validated 1,025 handwritten source owners. The F144
+Application query, Platform adapter, and `ClassMngrTestingClassesPageTests`
+targets built and passed CTest 3/3 in
+`build/phase2-f144-independent-ninja-x64-20260929`. The F142/F143 Application
+and Platform regression targets built and passed CTest 4/4 in the separate
+short-path tree `build/p2-f142f143`. All seven focused CTest cases passed.
+`git diff --check` passed. No full suite or full `ClassMngr`
+application build ran.
 
-F144 test and registration files, with edits that may be partial:
+An earlier F142/F143 Platform build attempt failed before test execution with
+MSVC C1083; the separate fresh short-path build passed without reproducing it.
+The cause is unknown. The null-`teacherRepository()` defensive branch has no
+direct test seam while an open `DatabaseSession` exists; null services,
+unopened sessions, and closed sessions cover the observable unavailable case.
+No production defect was observed.
 
-- `tests/next_application_testing_teacher_choices_read_query_tests.cpp`
-- `tests/next_platform_application_services_testing_teacher_choices_read_port_tests.cpp`
-- `tests/testing_classes_page_tests.cpp`
-- `cmake/tests/next.cmake`
-- `cmake/tests/features.cmake`
-
-Before the pause, a direct MSVC compile of `testing_classes_page.cpp`, including
-the new query and adapter headers, passed; `git diff --check` passed for the
-production edits. The full build did not complete: CMake regeneration stalled,
-and the direct MSBuild `Features` target encountered a FileTracker access-denied
-error. No F144 tests or CTests completed. The direct compile does not satisfy
-the selected acceptance.
-
-Resume only after work is explicitly requested. Read [Start Here](00-Start-Here.md),
-this Phase 2 plan, the [progress log](03-Phase-2-Progress-Log.md), the
-[legacy mapping](phase2-legacy-application-mapping.md), and
-`agent_docs/latest_session_work.md`. Inspect the current worktree and diffs
-first; preserve all F144 production, partial test, registration, and documentation
-work without resetting or discarding it. Complete the app-less Application,
-Platform adapter, and `ClassMngrTestingClassesPageTests` coverage for successful
-and empty results, unavailable session/repository and repository errors,
-ID-based selection restoration, None, trimmed labels/rooms, blank-label
-filtering, and established warnings. Then build and run the declared F144 CTests
-plus the F142/F143 regression CTests, resolve failures, and record actual
-results; the prior direct compile is not a substitute. After acceptance passes,
-update the phase records and commit F144 as its own slice. Only then begin the
-next slice from Start Here under the Heavy route. Do not start F145 before that
-resume sequence reaches it.
+F143 remains the preceding accepted slice. F145 has no distinct selected
+scope; complete the Heavy-route candidate review before assigning it. Testing
+Classes create/update/delete writes remain separate because roster-order and
+assignment/cascade semantics still need acceptance.

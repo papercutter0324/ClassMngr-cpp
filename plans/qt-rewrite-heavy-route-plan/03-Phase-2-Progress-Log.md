@@ -7548,9 +7548,35 @@ full suite or baseline comparison ran. Source/test commit:
 F143 adds Gate 1 application evidence but no Gate 2 baseline-parity evidence.
 Gate 1 and Gate 2 remain Partial; workspace boundary and active-v2 DataService
 isolation remain Satisfied. Phase 2 remains In Progress with its exit gate
-Open. F143 remains the latest verified and last accepted slice. Checkpoint
-commit `56c76f412b246230fcfe00c249b195dcc6ccd95f` captures partial/unverified
-F144 and its handoff; it is not an acceptance-complete F144 slice commit. No
-F144 tests ran, the full build did not complete, and F145 is unstarted. After
-explicit resume, continue with the paused F144 handoff in the current Phase 2
-plan.
+Open.
+
+### Progress update - 2026-09-29 (F144 accepted)
+
+F144 routes `TestingClassesPage::populateTeachers()` through a Qt-free typed
+Application query and an active-session Platform adapter backed by
+`DatabaseSession::teacherRepository()->getAllTeachers()`. It preserves
+repository order and typed IDs; the page trims labels/rooms, filters blank
+Korean labels, restores selection by ID, retains None, stays silent for an
+unavailable session, and preserves the existing failure warning. The partial
+implementation is checkpointed at
+`56c76f412b246230fcfe00c249b195dcc6ccd95f`; the final page-test update is
+committed as `89fbbaa250ddf98fae2ab1d80385fb99164ac055`.
+
+Each fresh Windows x64 Debug Ninja/MSVC 19.51/Qt 6.12 configure validated
+1,025 handwritten source owners. The F144 Application query, Platform adapter,
+and TestingClassesPage CTests passed 3/3 in
+`build/phase2-f144-independent-ninja-x64-20260929`. The F142/F143 Application
+and Platform regression CTests passed 4/4 in the separate fresh short-path
+tree `build/p2-f142f143`. All seven focused CTest cases passed;
+`git diff --check` passed. An earlier F142/F143 Platform build attempt failed
+before test execution with MSVC C1083; the fresh short-path build passed
+without reproducing it, and its cause is unknown. No full suite or full
+`ClassMngr` application build ran. The adapter's defensive
+null-teacherRepository branch has no direct test seam while an open session
+exists; null services, unopened sessions, and closed sessions cover the
+observable unavailable behavior.
+
+F144 adds Gate 1 evidence and no Gate 2 baseline-parity evidence. Gate 1 and
+Gate 2 remain Partial; workspace boundary and active-v2 DataService isolation
+remain Satisfied. F145 has no distinct selected scope yet; complete the
+Heavy-route candidate review before starting it.

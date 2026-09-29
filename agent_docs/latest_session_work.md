@@ -3304,37 +3304,42 @@ active-v2 DataService isolation remain Satisfied. Phase 2 remains In Progress
 with the exit gate Open. The deployment-token report remains required at
 Phase 2 closure. No push was requested.
 
-## 2026-09-29 — Phase 2 continuation handoff: F144 paused
+## 2026-09-29 — Phase 2 continuation: F144 accepted
 
-The user asked to stop during the current work and resume on another device. Stop implementation and testing here. The active deployment ID is phase2_resume_20260929.
+The active deployment is phase2_resume_20260929 on the Heavy route. The user
+requires a commit after every accepted slice, followed by work on the next
+slice; no push was requested.
 
-Last completed slice: F143, committed as e2a3811cdba71b58ff2289f2c756d9bf12349bf5 (Phase2 - route testing class manager detail reads through application). Its focused CTests passed 3/3 in a fresh Windows x64 Debug Ninja/MSVC/Qt 6.12 tree.
+F144 moves the TestingClassesPage teacher-choice read through a Qt-free typed
+Application query and an active-session Platform adapter backed by
+teacherRepository()->getAllTeachers(). It preserves repository order and typed
+IDs; the page trims labels and rooms, filters blank Korean labels, restores
+selection by ID, retains None, stays silent when the session is unavailable,
+and keeps the existing load warning on other failures. The original partial
+implementation is checkpointed at 56c76f412b246230fcfe00c249b195dcc6ccd95f.
+The acceptance test update is committed as
+89fbbaa250ddf98fae2ab1d80385fb99164ac055 (Phase2 - accept F144 teacher
+choices).
 
-Current slice: F144, teacher-choice read for TestingClassesPage. Checkpoint commit 56c76f412b246230fcfe00c249b195dcc6ccd95f (Phase2 - checkpoint partial F144 teacher choices) captures the partial implementation and paused handoff. It is not the acceptance-complete F144 slice. The working tree was clean after the checkpoint. No F145 work has started.
+Fresh Windows x64 Debug Ninja/MSVC 19.51/Qt 6.12 verification passed:
 
-Known F144 production files:
-- src/next/application/testing_teacher_choices_read_query.h
-- src/next/platform/application_services_testing_teacher_choices_read_port.h
-- src/features/classes/ui/testing_classes_page.h
-- src/features/classes/ui/testing_classes_page.cpp
-- cmake/next.cmake
+- build/phase2-f144-independent-ninja-x64-20260929 built and passed the F144
+  Application query, Platform adapter, and TestingClassesPage CTests (3/3);
+  source ownership validated 1,025 handwritten files.
+- build/p2-f142f143 built and passed the F142/F143 Application and Platform
+  regression CTests (4/4) in a fresh short-path tree.
+- All seven distinct required CTests passed. git diff --check passed. No full
+  suite or full ClassMngr application build ran.
 
-The implementation introduces a Qt-free typed query and snapshot, reads teacher choices from the active session's teacher repository, preserves repository order and typed IDs, and maps the choices into the existing page UI. The UI trims labels and rooms, skips blank Korean labels, restores selection by ID, retains the None item, and preserves the existing load warning behavior. The TeacherService read was removed from populateTeachers only.
+An earlier F142/F143 Platform build attempt reported MSVC C1083 before tests
+ran. The fresh short-path build then passed; the cause of the first failure is
+unknown. The adapter's defensive null-teacherRepository branch is not
+independently injectable while an open DatabaseSession exists; null services,
+unopened sessions, and closed sessions cover the observable unavailable path.
+No production defect was observed.
 
-The Tester was interrupted at the user's request. These test paths and registrations may contain partial edits; inspect and preserve them before continuing:
-- tests/next_application_testing_teacher_choices_read_query_tests.cpp
-- tests/next_platform_application_services_testing_teacher_choices_read_port_tests.cpp
-- tests/testing_classes_page_tests.cpp
-- cmake/tests/next.cmake
-- cmake/tests/features.cmake
-
-Verification completed so far: a direct MSVC compile of testing_classes_page.cpp, including the new query and adapter headers, passed. git diff --check passed for the production edits. The full build did not complete: CMake regeneration stalled, and the direct MSBuild Features target encountered a FileTracker access-denied error. No F144 tests or CTests have completed; checkpoint 56c76f412b246230fcfe00c249b195dcc6ccd95f does not establish acceptance.
-
-Resume instructions:
-1. Read plans/qt-rewrite-heavy-route-plan/00-Start-Here.md and the current Phase 2 plan, progress log, and legacy mapping. Use their F144 scope and acceptance criteria.
-2. Inspect checkpoint commit 56c76f412b246230fcfe00c249b195dcc6ccd95f and its files before editing. The test files may be partial; preserve and complete them. Do not start F145 yet.
-3. Complete the app-less Application query tests, Platform adapter tests, and TestingClassesPage behavior tests. Cover successful and empty results, unavailable session/repository and repository errors, ID-based selection restoration, None, trimmed labels and rooms, blank-label skipping, and the established warning behavior.
-4. Build and run the declared F144 tests, along with the existing F142/F143 regression CTests. Resolve any failures and record the actual results; the prior direct compile is not a substitute for these acceptance checks.
-5. Once F144 acceptance passes, update the phase records with verified evidence and create the acceptance-complete F144 slice commit building on this checkpoint. Then begin the next slice specified by 00-Start-Here.md, following the Heavy-route instructions and committing after each accepted slice.
-
-No deployment implementation or verification should continue until work is explicitly resumed.
+F145 has not been selected. Start Here's latest note was ambiguous about
+whether the teacher-choice scope belonged to F144 or F145; the detailed Phase
+2 plan and handoff assign it to F144. Next, complete Heavy-route candidate
+review for a distinct F145 slice, then update the phase plan before
+implementation.

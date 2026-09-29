@@ -4072,3 +4072,23 @@ read-error behavior, and no fallback; and page values, roster, success,
 silence/warnings, zero-ID “None” behavior, and the F142 list regression. No full
 suite or baseline comparison ran. Source/test commit:
 `e2a3811cdba71b58ff2289f2c756d9bf12349bf5`.
+
+## Verified F144 TestingClasses teacher-choice read
+
+Before F144, `TestingClassesPage::populateTeachers()` loaded teacher choices
+through `TeacherService::teachers()`. F144 replaces that read with the
+Qt-free `TestingTeacherChoicesReadQuery` and an active-session Platform
+adapter using `DatabaseSession::teacherRepository()->getAllTeachers()`.
+Repository order and typed teacher IDs pass through the Application snapshot.
+The page retains its None row, trims labels and rooms, skips blank Korean
+labels, restores selection by ID, silently handles an unavailable session,
+and keeps the existing warning for other read failures.
+
+The implementation is checkpointed at
+`56c76f412b246230fcfe00c249b195dcc6ccd95f`; its final page-test update is in
+acceptance test commit
+`89fbbaa250ddf98fae2ab1d80385fb99164ac055`. Fresh Windows x64 Debug
+Ninja/MSVC 19.51/Qt 6.12 builds passed the three F144 CTests and four F142/F143
+Application/Platform regression CTests. No full suite or full application
+build ran. The broader teacher-facing UI still uses
+`TeacherService`; only this Testing Classes choice read has moved.

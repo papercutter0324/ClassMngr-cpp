@@ -15,28 +15,17 @@
   ScheduleEditor save/read boundaries, and ScheduleWidget unavailable-source
   behavior. F143's Testing Classes selected-detail query is committed as
   `e2a3811cdba71b58ff2289f2c756d9bf12349bf5`; fresh Windows x64 Debug focused
-  CTests passed 3/3. Deployment `phase2_resume_20260929` is paused per the
-  user's request. F144 is partially implemented; acceptance is incomplete.
-  Checkpoint commit `56c76f412b246230fcfe00c249b195dcc6ccd95f` captures the
-  partial/unverified implementation and handoff, not an acceptance-complete
-  F144 slice commit. F143 remains last accepted; no F144 tests ran, the full
-  build did not complete, and F145 is unstarted. Its selected scope is to route
-  `TestingClassesPage::populateTeachers()` through a typed Application query
-  and active-session Platform adapter using
-  `DatabaseSession::teacherRepository()->getAllTeachers()` to close the
-  manager page's remaining read path. Preserve repository order, typed teacher
-  IDs, trimmed Korean labels/rooms, blank-name filtering, restored selected ID,
-  “None,” and unavailable/failure feedback. Acceptance: app-less typed
-  query/result/error propagation; Platform active-session field/order mapping,
-  unavailable `NotFound`, and repository failure without fallback; page
-  label/ID/room-role filtering/order/selection/None, warning title and
-  generic/detail messages, and silent-unavailable behavior; focused app-less,
-  Platform, and
-  `ClassMngrTestingClassesPageTests` CTests retaining F142/F143 regressions.
+  CTests passed 3/3. F144's TestingClassesPage teacher-choice read is now
+  acceptance-complete. Its partial implementation is preserved in checkpoint
+  `56c76f412b246230fcfe00c249b195dcc6ccd95f`; the acceptance test commit is
+  `89fbbaa250ddf98fae2ab1d80385fb99164ac055`. The F144 Application,
+  Platform, and page CTests passed 3/3; the F142/F143 Application and Platform
+  regressions passed 4/4 in a second fresh Ninja tree. All seven focused CTest
+  cases passed; no full suite or full application build ran. F145 has not
+  been selected. Its scope must be a distinct vertical slice chosen by the
+  Heavy-route candidate review; the teacher-choice read belongs to F144.
   Create/update/delete writes remain separate pending roster-order and
-  assignment/cascade acceptance. F145 remains unstarted. See the [paused F144
-  handoff](03-Phase-2-Domain-Model-and-Application-Contracts.md#f144-paused-implementation-handoff)
-  for exact files, completed verification, and resume steps.
+  assignment/cascade acceptance.
   Phase 2 Gates 1 and 2 remain Partial; broader feature migration, parity, and
   96-class Release memory evidence remain open. Phase 1 build-system exit
   evidence remains outstanding.

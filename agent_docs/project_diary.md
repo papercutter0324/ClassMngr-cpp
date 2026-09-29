@@ -1359,3 +1359,11 @@ work in separate slices.
 ## 2026-09-29 — Mid-slice handoff
 
 Reusable lesson: when a substantive slice is paused before acceptance, preserve the working tree and make the handoff state explicit: what is implemented, what verification remains, the commit boundary, and the next authorized step. The current F144 continuation details are kept in latest_session_work.md.
+
+## 2026-09-29 — F144 acceptance
+
+Keep the full acceptance set explicit when a partial checkpoint resumes:
+verify the new Application and Platform boundaries, the owning page behavior,
+and the prior page/query regressions. A build error on one tree is not product
+evidence; a fresh short-path build completed the two blocked Platform
+regressions without establishing the cause of the earlier C1083.
