@@ -150,6 +150,7 @@ set(CLASSMNGR_NEXT_APPLICATION_SOURCES
     src/next/application/selection_state.h
     src/next/application/schedule_display_preferences.h
     src/next/application/schedule_display_mode_preferences.h
+    src/next/application/schedule_slot_state_read_query.h
     src/next/application/schedule_slot_state_save.h
     src/next/application/schedule_slot_state_save_use_case.h
     src/next/application/schedule_import_overlap_projection.h
@@ -202,6 +203,7 @@ set(CLASSMNGR_NEXT_PLATFORM_SOURCES
     src/next/platform/language_preference_port.h
     src/next/platform/application_services_schedule_display_preferences_port.h
     src/next/platform/application_services_schedule_display_mode_preferences_port.h
+    src/next/platform/application_services_schedule_slot_state_read_port.h
     src/next/platform/application_services_schedule_builder_source_port.h
     src/next/platform/application_services_schedule_slot_state_save_port.h
     src/next/platform/application_services_evaluation_default_policy_port.h

@@ -56,6 +56,9 @@ extern QString lastPrintRequestUserName;
 void reset();
 void setCurrentTheme(Theme theme);
 void setDatabaseOpen(bool open);
+void setIntensiveSlotStates(QList<IntensiveSlotState> states);
+void setIntensiveSlotStateReadFailure(const QString& error);
+void setIntensiveSlotStateRepositoryAvailable(bool available);
 void setSlotSaveFailure(const QString& error);
 void setScheduleClassInfoReadFailure(bool fail);
 void setExistingIntensiveHours(bool exists);
@@ -203,6 +206,7 @@ const ScheduleCellView* findScheduleCell(
     }
     return nullptr;
 }
+
 }
 
 class ScheduleWidgetTests : public QObject
@@ -229,6 +233,10 @@ private slots:
     void unavailableSourceReturnsDaysOnlyWithoutReading();
     void failedSourceReadLogsAndKeepsIndependentScheduleReads();
     void previewModelBypassesSourceAndScheduleReads();
+    void slotStateSuccessReplacesAndClearsOverrides();
+    void unavailableSlotStateReadIsSilentAndRetainsOverrides();
+    void failedSlotStateReadWarnsAndRetainsOverrides();
+    void readOnlyScheduleStillLoadsSlotStates();
     void timeColumnAndHeaderAreNonInteractive();
     void intensiveSlotToggleMapsAndPersistsViewModelChoice();
     void failedSlotToggleWarnsWithoutReloading();
@@ -1089,6 +1097,229 @@ void ScheduleWidgetTests::previewModelBypassesSourceAndScheduleReads()
         widget.scheduleModel().rows.first().timeLabel,
         QStringLiteral("10:00")
         );
+}
+
+void ScheduleWidgetTests::slotStateSuccessReplacesAndClearsOverrides()
+{
+    ScheduleWidgetTestStubs::setExistingIntensiveHours(true);
+    ApplicationServices services;
+    saveSettingOrFail(
+        services.dataService(),
+        QStringLiteral("schedule_display_mode"),
+        QStringLiteral("intensive")
+        );
+    ScheduleWidgetTestStubs::setIntensiveSlotStates({
+        {
+            QStringLiteral("Tuesday"),
+            QStringLiteral("09:00"),
+            QString::fromUcs4(U" custom 🧭 ")
+        },
+        {
+            QStringLiteral("Monday"),
+            QStringLiteral("09:00"),
+            QStringLiteral("legacy override")
+        }
+    });
+
+    ScheduleWidget widget(&services);
+    widget.refreshSchedule();
+
+    QCOMPARE(ScheduleWidgetTestStubs::slotStateReadCount, 1);
+    ScheduleViewModel model = widget.scheduleModel();
+    const ScheduleCellView* tuesday = findScheduleCell(
+        model,
+        QStringLiteral("Tuesday"),
+        QStringLiteral("09:00")
+        );
+    const ScheduleCellView* monday = findScheduleCell(
+        model,
+        QStringLiteral("Monday"),
+        QStringLiteral("09:00")
+        );
+    QVERIFY(tuesday);
+    QVERIFY(monday);
+    QCOMPARE(tuesday->slotState,
+             QString::fromUcs4(U" custom 🧭 "));
+    QCOMPARE(monday->slotState, QStringLiteral("legacy override"));
+
+    ScheduleWidgetTestStubs::setIntensiveSlotStates({
+        {
+            QStringLiteral("Monday"),
+            QStringLiteral("09:00"),
+            QStringLiteral("replacement")
+        }
+    });
+    widget.refreshSchedule();
+
+    QCOMPARE(ScheduleWidgetTestStubs::slotStateReadCount, 2);
+    model = widget.scheduleModel();
+    tuesday = findScheduleCell(
+        model,
+        QStringLiteral("Tuesday"),
+        QStringLiteral("09:00")
+        );
+    monday = findScheduleCell(
+        model,
+        QStringLiteral("Monday"),
+        QStringLiteral("09:00")
+        );
+    QVERIFY(tuesday);
+    QVERIFY(monday);
+    QCOMPARE(tuesday->slotState, scheduleEssaySlotState());
+    QCOMPARE(monday->slotState, QStringLiteral("replacement"));
+
+    ScheduleWidgetTestStubs::setIntensiveSlotStates({});
+    widget.refreshSchedule();
+
+    QCOMPARE(ScheduleWidgetTestStubs::slotStateReadCount, 3);
+    model = widget.scheduleModel();
+    tuesday = findScheduleCell(
+        model,
+        QStringLiteral("Tuesday"),
+        QStringLiteral("09:00")
+        );
+    monday = findScheduleCell(
+        model,
+        QStringLiteral("Monday"),
+        QStringLiteral("09:00")
+        );
+    QVERIFY(tuesday);
+    QVERIFY(monday);
+    QCOMPARE(tuesday->slotState, scheduleEssaySlotState());
+    QCOMPARE(monday->slotState, scheduleEssaySlotState());
+}
+
+void ScheduleWidgetTests::
+unavailableSlotStateReadIsSilentAndRetainsOverrides()
+{
+    ScheduleWidgetTestStubs::setExistingIntensiveHours(true);
+    ApplicationServices services;
+    saveSettingOrFail(
+        services.dataService(),
+        QStringLiteral("schedule_display_mode"),
+        QStringLiteral("intensive")
+        );
+    ScheduleWidgetTestStubs::setIntensiveSlotStates({
+        {
+            QStringLiteral("Tuesday"),
+            QStringLiteral("09:00"),
+            QStringLiteral("saved override")
+        }
+    });
+
+    ScheduleWidget widget(&services);
+    widget.refreshSchedule();
+    QCOMPARE(ScheduleWidgetTestStubs::slotStateReadCount, 1);
+
+    ScheduleWidgetTestStubs::setIntensiveSlotStateRepositoryAvailable(false);
+    ScheduleWidgetTestStubs::setIntensiveSlotStates({
+        {
+            QStringLiteral("Tuesday"),
+            QStringLiteral("09:00"),
+            QStringLiteral("must not replace")
+        }
+    });
+    FakeUserPromptService prompts;
+    DialogServices::setUserPromptServiceForTesting(&prompts);
+    widget.refreshSchedule();
+
+    QVERIFY(prompts.messages.isEmpty());
+    QCOMPARE(ScheduleWidgetTestStubs::slotStateReadCount, 1);
+    const ScheduleViewModel model = widget.scheduleModel();
+    const ScheduleCellView* tuesday = findScheduleCell(
+        model,
+        QStringLiteral("Tuesday"),
+        QStringLiteral("09:00")
+        );
+    QVERIFY(tuesday);
+    QCOMPARE(tuesday->slotState, QStringLiteral("saved override"));
+}
+
+void ScheduleWidgetTests::failedSlotStateReadWarnsAndRetainsOverrides()
+{
+    ScheduleWidgetTestStubs::setExistingIntensiveHours(true);
+    ApplicationServices services;
+    saveSettingOrFail(
+        services.dataService(),
+        QStringLiteral("schedule_display_mode"),
+        QStringLiteral("intensive")
+        );
+    ScheduleWidgetTestStubs::setIntensiveSlotStates({
+        {
+            QStringLiteral("Tuesday"),
+            QStringLiteral("09:00"),
+            QStringLiteral("saved override")
+        }
+    });
+
+    ScheduleWidget widget(&services);
+    widget.refreshSchedule();
+    QCOMPARE(ScheduleWidgetTestStubs::slotStateReadCount, 1);
+
+    ScheduleWidgetTestStubs::setIntensiveSlotStateReadFailure(
+        QStringLiteral("injected slot-state read failure")
+        );
+    QTest::ignoreMessage(
+        QtWarningMsg,
+        QRegularExpression(QStringLiteral(
+            ".*Failed to load intensive slot states:.*"
+            "injected slot-state read failure.*"
+            ))
+        );
+    FakeUserPromptService prompts;
+    DialogServices::setUserPromptServiceForTesting(&prompts);
+    widget.refreshSchedule();
+
+    QCOMPARE(prompts.messages.size(), 1);
+    QCOMPARE(prompts.messages.constFirst().title, QStringLiteral("Schedule"));
+    QCOMPARE(prompts.messages.constFirst().severity, PromptSeverity::Warning);
+    QVERIFY(prompts.messages.constFirst().message.contains(
+        QStringLiteral("injected slot-state read failure")
+        ));
+    QCOMPARE(ScheduleWidgetTestStubs::slotStateReadCount, 2);
+    const ScheduleViewModel model = widget.scheduleModel();
+    const ScheduleCellView* tuesday = findScheduleCell(
+        model,
+        QStringLiteral("Tuesday"),
+        QStringLiteral("09:00")
+        );
+    QVERIFY(tuesday);
+    QCOMPARE(tuesday->slotState, QStringLiteral("saved override"));
+}
+
+void ScheduleWidgetTests::readOnlyScheduleStillLoadsSlotStates()
+{
+    ScheduleWidgetTestStubs::setExistingIntensiveHours(true);
+    ApplicationServices services;
+    saveSettingOrFail(
+        services.dataService(),
+        QStringLiteral("schedule_display_mode"),
+        QStringLiteral("intensive")
+        );
+    ScheduleWidgetTestStubs::setIntensiveSlotStates({
+        {
+            QStringLiteral("Tuesday"),
+            QStringLiteral("09:00"),
+            QStringLiteral("read-only override")
+        }
+    });
+
+    ScheduleWidget widget(
+        &services,
+        nullptr,
+        ScheduleMode::ReadOnly
+        );
+    widget.refreshSchedule();
+
+    QCOMPARE(ScheduleWidgetTestStubs::slotStateReadCount, 1);
+    const ScheduleViewModel model = widget.scheduleModel();
+    const ScheduleCellView* tuesday = findScheduleCell(
+        model,
+        QStringLiteral("Tuesday"),
+        QStringLiteral("09:00")
+        );
+    QVERIFY(tuesday);
+    QCOMPARE(tuesday->slotState, QStringLiteral("read-only override"));
 }
 
 void ScheduleWidgetTests

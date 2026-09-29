@@ -16,8 +16,10 @@
 #include "features/schedule/services/schedule_print_service.h"
 #include "features/schedule/services/schedule_output_controller.h"
 #include "next/application/schedule_builder_source_snapshot.h"
+#include "next/application/schedule_slot_state_read_query.h"
 #include "next/application/schedule_slot_state_save_use_case.h"
 #include "next/platform/application_services_schedule_builder_source_port.h"
+#include "next/platform/application_services_schedule_slot_state_read_port.h"
 #include "next/platform/application_services_schedule_slot_state_save_port.h"
 #include "next/platform/application_services_schedule_display_preferences_port.h"
 #include "next/platform/application_services_schedule_display_mode_preferences_port.h"
@@ -1000,32 +1002,47 @@ void ScheduleWidget::updateButtons()
 
 void ScheduleWidget::reloadSlotStates()
 {
-    auto* scheduleService =
-        m_services
-            ? m_services->scheduleService()
-            : nullptr;
-
-    if (!scheduleService || !scheduleService->isAvailable())
-    {
-        return;
-    }
-
-    const Result<QList<IntensiveSlotState>> states =
-        scheduleService->intensiveSlotStates();
+    ClassMngr::Next::Platform::
+        ApplicationServicesScheduleSlotStateReadPort readPort(m_services);
+    const auto states = ClassMngr::Next::Application::
+        ScheduleSlotStateReadQueryHandler::execute(
+            {},
+            readPort
+            );
     if (!states)
     {
+        if (states.error().code == ClassMngr::Next::Domain::ErrorCode::NotFound)
+        {
+            return;
+        }
+
+        const QString error = QString::fromUtf8(
+            states.error().message.data(),
+            static_cast<qsizetype>(states.error().message.size())
+            );
         qWarning()
             << "Failed to load intensive slot states:"
-            << states.error();
+            << error;
         DialogServices::showWarning(
             this,
             tr("Schedule"),
-            states.error()
+            error
             );
         return;
     }
 
-    m_interactionState.setSlotStates(*states);
+    QList<IntensiveSlotState> qtStates;
+    qtStates.reserve(static_cast<qsizetype>(states.value().rows.size()));
+    for (const auto& row : states.value().rows)
+    {
+        qtStates.append({
+            .day = QString::fromStdU16String(row.day),
+            .startTime = QString::fromStdU16String(row.startTime),
+            .state = QString::fromStdU16String(row.state)
+        });
+    }
+
+    m_interactionState.setSlotStates(qtStates);
 }
 
 void ScheduleWidget::reloadTestingBlocks()

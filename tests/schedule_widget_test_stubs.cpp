@@ -48,6 +48,8 @@ int savedSlotStates = 0;
 int scheduleClassInfoReadCount = 0;
 int slotStateReadCount = 0;
 int testingAssignmentsReadCount = 0;
+QList<IntensiveSlotState> intensiveSlotStates;
+QString intensiveSlotStateReadFailure;
 int savedTestingBlocks = 0;
 int printRequestCount = 0;
 bool lastPrintRequestShowsEnglishNames = false;
@@ -61,6 +63,7 @@ Status slotSaveResult;
 Theme configuredTheme = Theme::Dark;
 bool themeAvailable = false;
 bool databaseOpen = true;
+bool intensiveSlotStateRepositoryAvailable = true;
 bool includeAdditionalClass = false;
 bool includeMiddleSchoolClasses = false;
 bool matchImportedClasses = false;
@@ -84,6 +87,8 @@ void reset()
     scheduleClassInfoReadCount = 0;
     slotStateReadCount = 0;
     testingAssignmentsReadCount = 0;
+    intensiveSlotStates.clear();
+    intensiveSlotStateReadFailure.clear();
     savedTestingBlocks = 0;
     printRequestCount = 0;
     lastPrintRequestShowsEnglishNames = false;
@@ -97,6 +102,7 @@ void reset()
     configuredTheme = Theme::Dark;
     themeAvailable = false;
     databaseOpen = true;
+    intensiveSlotStateRepositoryAvailable = true;
     includeAdditionalClass = false;
     includeMiddleSchoolClasses = false;
     matchImportedClasses = false;
@@ -113,6 +119,21 @@ void setDatabaseOpen(
     )
 {
     databaseOpen = open;
+}
+
+void setIntensiveSlotStates(QList<IntensiveSlotState> states)
+{
+    intensiveSlotStates = std::move(states);
+}
+
+void setIntensiveSlotStateReadFailure(const QString& error)
+{
+    intensiveSlotStateReadFailure = error;
+}
+
+void setIntensiveSlotStateRepositoryAvailable(const bool available)
+{
+    intensiveSlotStateRepositoryAvailable = available;
 }
 
 void setSlotSaveFailure(
@@ -261,7 +282,41 @@ DatabaseSession::~DatabaseSession() = default;
 
 bool DatabaseSession::isOpen() const
 {
-    return true;
+    return ScheduleWidgetTestStubs::databaseOpen;
+}
+
+IntensiveSlotStateRepository* DatabaseSession::
+intensiveSlotStateRepository() const
+{
+    if (!ScheduleWidgetTestStubs::intensiveSlotStateRepositoryAvailable)
+    {
+        return nullptr;
+    }
+
+    static QSqlDatabase database;
+    static IntensiveSlotStateRepository repository(database);
+    return &repository;
+}
+
+IntensiveSlotStateRepository::IntensiveSlotStateRepository(
+    QSqlDatabase& database
+    )
+    : m_database(database)
+{
+}
+
+Result<QList<IntensiveSlotState>>
+IntensiveSlotStateRepository::loadIntensiveSlotStates()
+{
+    ++ScheduleWidgetTestStubs::slotStateReadCount;
+    if (!ScheduleWidgetTestStubs::intensiveSlotStateReadFailure.isEmpty())
+    {
+        return std::unexpected(
+            ScheduleWidgetTestStubs::intensiveSlotStateReadFailure
+            );
+    }
+
+    return ScheduleWidgetTestStubs::intensiveSlotStates;
 }
 
 ClassInfoRepository* DatabaseSession::classInfoRepository() const
@@ -1318,13 +1373,18 @@ bool scheduleSlotTogglingEnabled(
 }
 
 QString scheduleSlotState(
-    const QString&,
-    const QString&,
+    const QString& day,
+    const QString& timeLabel,
     const QString& defaultState,
-    const QMap<QString, QString>&
+    const QMap<QString, QString>& slotStateOverrides
     )
 {
-    return defaultState;
+    const auto iterator = slotStateOverrides.constFind(
+        day + QLatin1Char('\x1f') + timeLabel
+        );
+    return iterator == slotStateOverrides.cend()
+        ? defaultState
+        : iterator.value();
 }
 
 ScheduleViewModel buildScheduleViewModel(
@@ -1403,7 +1463,12 @@ ScheduleViewModel buildScheduleViewModel(
                         request.displayMode
                         )
                     );
-            cell.slotState = cell.defaultSlotState;
+            cell.slotState = scheduleSlotState(
+                day,
+                sourceRow.label,
+                cell.defaultSlotState,
+                request.slotStateOverrides
+                );
             cell.slotTogglingEnabled =
                 scheduleSlotTogglingEnabled(
                     day,
