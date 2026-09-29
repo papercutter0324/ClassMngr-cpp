@@ -33,7 +33,9 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
   save request, and `ClassService` guard remain as before. F153 is accepted for
   current/baseline page parity when persisted teacher ID zero changes after
   load. F154's typed Class Notes page-read query and port are accepted. F155 is
-  under review, not selected. See the acceptance record below.
+  selected for the Class Co-Teacher selected-class/title read boundary, not
+  implemented or accepted. The prior F123 candidate wording is historical;
+  current Teacher Profile integration status is recorded in the progress log.
   Gates 1 and 2
   remain Partial; F120 active-v2 DataService isolation and formal
   workspace-create acceptance remain Satisfied.
@@ -271,7 +273,7 @@ F144 is the preceding accepted slice. F145's accepted existing-class details
 update is recorded below. F146's accepted new-class create, including the
 optional pending weekday/start-time assignment, is recorded after it. F147's
 accepted delete/cascade migration is recorded below; F148-F154 acceptance and
-the F155 review status are recorded below.
+F155 selection are recorded below.
 
 ## F145 acceptance record
 
@@ -391,8 +393,8 @@ The page queries on each save; on read error it uses `ClassInfo{}` and
 continues validation, conflict, and save. Preserve `-1` as the unassigned
 sentinel, treat zero as invalid, retain missing-row defaults, and keep the
 validation/conflict/save order. The save request, adapter reread, and
-`ClassService` guard remain separate. F153 and F154 acceptance and the F155
-review status are recorded below.
+`ClassService` guard remain separate. F153 and F154 acceptance and F155
+selection are recorded below.
 
 ## F152 acceptance record
 
@@ -440,5 +442,23 @@ overlaid. Baseline page/header match blobs
 `bbc9bc24a053aca83434eba6efac1e4ad5801bc2` /
 `5c825327f1393791d7101ab33c10999768ff639a`. Toolchain and build provenance are
 recorded in the [Phase 2 progress log](03-Phase-2-Progress-Log.md). No full
-suite or application build ran. F155 remains under review, not selected. Gates
-1 and 2 remain Partial; Phase 2 remains In Progress/Open.
+suite or application build ran. F155 remains selected, not implemented or
+accepted. Gates 1 and 2 remain Partial; Phase 2 remains In Progress/Open.
+
+## F155 selected Class Co-Teacher selected-class/title read
+
+Add a dedicated typed Application query/port and active-session Platform
+adapter for the selected class/title projection. It returns the selected
+teacher ID plus grade, level, and regular-schedule inputs used by
+`SidebarNodeNaming`, and the assigned teacher display name. Class and teacher
+outcomes remain independent. Use the read on page load, discard, and after a
+successful assignment. Preserve current read/error fallbacks, selection/title,
+dirty state, save, and signal behavior. Leave the full teacher-choice catalogue
+and existing assignment use case/adapter unchanged; do not expand into
+schedule, roster, or Teacher Profile work.
+
+Acceptance covers query identity/errors, adapter mapping and no `DataService`
+fallback, page timing and independent sources, load/discard/post-save title and
+selected-value behavior, and current-versus-original-pinned-baseline parity.
+F155 is selected, not implemented or accepted. Gates 1 and 2 remain Partial;
+Phase 2 remains In Progress/Open.

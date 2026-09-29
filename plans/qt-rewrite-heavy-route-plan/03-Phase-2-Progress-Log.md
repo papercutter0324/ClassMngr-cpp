@@ -7875,3 +7875,31 @@ Baseline page/header match blobs
 `5c825327f1393791d7101ab33c10999768ff639a`. No full suite or application build
 ran. F155's candidate selection is under review; it is not selected. Gates 1
 and 2 remain Partial; Phase 2 remains In Progress/Open.
+
+### Progress update - 2026-09-30 (F155 selected)
+
+F155 is selected after three independent solution reviews for a separate Class
+Co-Teacher selected-class/title read. Add a typed Application query/port and
+active-session Platform adapter that returns the selected teacher ID plus the
+grade, level, and regular-schedule inputs for `SidebarNodeNaming`, and assigned
+teacher display name. Class and teacher outcomes remain independent. Use it on
+load, discard, and after successful assignment. Preserve read/error fallbacks,
+selection/title, dirty/save/signal behavior; leave the teacher-choice catalogue
+and assignment use case/adapter unchanged. Do not expand into schedule, roster,
+or Teacher Profile reads.
+
+Acceptance requires typed identity/error behavior, adapter mapping with no
+`DataService` fallback, read timing and source independence, load/discard/
+post-save title and selected-value behavior, and current-versus-original-pinned-
+baseline parity. F155 is selected, not implemented or accepted. Gates 1 and 2
+remain Partial; Phase 2 remains In Progress/Open.
+
+### Dated status correction - F123 Teacher Profile integration
+
+The earlier F123 candidate/pending-review note above is historical. Commit
+`9f7e736b2e525f18c9b135352579138860fad5b6` (`Phase2 - integrate teacher profile
+edit use case`) now changes `src/features/teacher/ui/teacher_info_page.cpp` and
+`tests/teacher_info_page_tests.cpp`: current page source invokes
+`TeacherProfileEditUseCase`, and its tests cover save/reload and invalid-write
+blocking. This work did not independently rerun the TeacherInfoPage target or
+pinned-baseline parity; F123 acceptance and reverification are not claimed.

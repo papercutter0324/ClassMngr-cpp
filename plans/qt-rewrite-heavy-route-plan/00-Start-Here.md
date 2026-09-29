@@ -27,7 +27,8 @@
   current/baseline invalid-schedule page parity. F152's fresh typed validation-
   context read is accepted. F153 is accepted for current/baseline page parity
   when persisted teacher ID zero changes after load. F154's typed Class Notes
-  read is accepted; F155 is under review, not selected. See the [Phase 2 progress
+  read is accepted. F155 is selected for the Class Co-Teacher selected-class/
+  title read boundary, not implemented or accepted. See the [Phase 2 progress
   log](03-Phase-2-Progress-Log.md) for commits and verification.
   Phase 2 Gates 1 and 2 remain Partial; broader feature migration, parity, and
   96-class Release memory evidence remain open. Phase 1 build-system exit

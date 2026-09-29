@@ -4119,7 +4119,7 @@ separate existing-class details update; F147 now covers delete/cascade.
 
 The production and acceptance-test commits, focused verification, and limits
 are recorded in the [Phase 2 progress log](03-Phase-2-Progress-Log.md). F147
-migrates delete/cascade; F148-F154 acceptance and F155 review status are recorded
+migrates delete/cascade; F148-F154 acceptance and F155 selection are recorded
 below.
 
 ## Verified F147 Testing Class delete/cascade
@@ -4133,8 +4133,9 @@ Production commit `b037b4216b71c55c7793df5f7bbbfc4a00690065`, page transition
 fix `315b3ff33b7e2ab42b43d52cd168ce21a92158c9`, and acceptance-test commit
 `397376e439f4b5955c82948ab0c225aaf776d679` are recorded with verification
 limits in the [Phase 2 progress log](03-Phase-2-Progress-Log.md). F148-F154 are
-accepted; F155 is under review, not selected. Its status is in the [Phase 2
-progress log](03-Phase-2-Progress-Log.md).
+accepted; F155 is selected, not implemented or accepted. Its boundary and
+acceptance criteria are in the [Phase 2 progress
+log](03-Phase-2-Progress-Log.md).
 
 ## Class-details save mapping: F126 and F139
 
@@ -4209,4 +4210,18 @@ teacher outcomes. UI trimming and subtitle formatting/fallbacks remain in the
 page. Failed reads preserve defaults, with no `DataService` fallback.
 Load/discard use the query; refresh/save add no reads. Current and pinned
 baseline verification, including limits, is in the [Phase 2 progress
-log](03-Phase-2-Progress-Log.md). F155 remains under review, not selected.
+log](03-Phase-2-Progress-Log.md).
+
+## F155 selected Class Co-Teacher selected-class/title read
+
+F155 adds a typed Application query/port and active-session Platform adapter
+for the selected class/title projection. Read the selected teacher ID plus
+grade/level/regular-schedule inputs used by `SidebarNodeNaming`, and the
+assigned teacher display name, with independent class and teacher outcomes.
+Call it on load, discard, and after successful assignment. Preserve current
+read/error fallbacks, selection/title, dirty, save, and signal behavior. Keep
+the teacher-choice catalogue and assignment use case/adapter unchanged; do not
+extend the slice to schedule, roster, or Teacher Profile reads. Acceptance
+requires typed identity/errors, no `DataService` fallback, mapping, page timing
+and source independence, load/discard/post-save behavior, and current versus
+original-pinned-baseline parity. F155 is selected, not implemented or accepted.
