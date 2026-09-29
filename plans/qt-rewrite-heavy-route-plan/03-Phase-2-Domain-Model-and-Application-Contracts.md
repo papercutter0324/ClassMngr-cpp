@@ -18,10 +18,10 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-09-29
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F133 verifies the Qt-free typed-ID Classes navigation
-  snapshot and session-backed read adapter. F134's ScheduleBuilder source-query
-  projection is in progress; its ordering is an inferred sequencing choice,
-  not a Phase 2 mandate. F120 active-v2 DataService
+- Current note: F134 verifies the ScheduleBuilder source-query snapshot,
+  session-backed adapter, and widget integration. F135 is selected to migrate
+  the slot-state read; this ordering is an inferred sequencing choice, not a
+  Phase 2 mandate. F120 active-v2 DataService
   isolation and formal workspace-create acceptance remain Satisfied. Gates 1
   and 2 remain Partial. Historical workbook provenance remains a tracked
   risk, not a literal exit criterion. Sub Prep remains January 1 of the
@@ -173,19 +173,28 @@ No new v2 production path depends on DataService, MainWindow, PageManager, or a 
 - Do not hide business rules inside presenters or delegates.
 - Do not allow compatibility methods to become the permanent v2 API.
 
-## Latest verified progress (F133)
+## Latest verified progress (F134)
 
-Source/test commit `b111b799` (`Phase2 - integrate classes navigation snapshot`)
-adds a Qt-free typed-ID snapshot and an active-session Platform adapter. The
-adapter batches class metadata and teacher names in one join, then reads regular
-and intensive times with two ordered statements. `ClassesPage` keeps its
-existing tab, filter, selection, and refresh behavior. Missing rows or a read
-failure leave the requested class names present with blank metadata.
+Source/test commit `cbb15e32` (`ScheduleBuilder source query`) adds a compact,
+Qt-free schedule-source snapshot, an active-session Platform adapter, and
+ScheduleBuilder/Widget integration. The adapter uses the existing ordered,
+batched repository query. This slice does not claim query-count or database
+optimization. Raw UTF-16 day/start/end values and their order are preserved for
+the existing parser.
 
-`ClassMngr` and the four focused CTest suites passed 4/4: application snapshot,
-platform read port, ClassesPage, and navigation model. Independent Ninja/MSVC
-verification was used after VS ZERO_CHECK encountered FileTracker access
-denied. `git diff --check` passed. No full suite or baseline comparison ran.
+Independent fresh Windows x64 Debug Ninja/MSVC verification built `ClassMngr`
+and the focused application, platform, builder, and widget targets. The four
+focused CTest suites passed 4/4; `git diff --check` passed. The repaired
+platform test distinguishes insertion order from repository order and checks
+the exact intensive `endTime`. No full suite or baseline comparison ran.
+
+Preview behavior is unchanged. `buildUi()` sets `setCompactPreview(true)` and
+`setMaximumVisibleRows(6)`; each triggers `loadSchedule()` before
+`ScheduleImportReviewDialog::prepare` calls `refreshSchedule()` and installs
+the preview model. With services available, those steps can perform three
+pre-model schedule reads, all present in the F134 parent. After
+`setPreviewModel()` runs, subsequent preview renders and refreshes bypass
+source, slot-state, and testing-assignment reads.
 
 Gate 1 and Gate 2 remain Partial. F120 active-v2 DataService isolation and the
 formal workspace-create boundary remain Satisfied. Phase 2 remains In Progress
@@ -194,11 +203,11 @@ tracked risk, not a literal exit criterion. Sub Prep remains bounded to January
 1 of the reference date's year through December 31 of the following year, at
 most; 2026-2027 is illustrative.
 
-### Cumulative exit-gate status after F133
+### Cumulative exit-gate status after F134
 
 | Exit-gate area | Audit status | Finding |
 | --- | --- | --- |
-| App-less Domain/Application behavior (Gate 1) | Partial | Coverage includes workspace lifecycle; Class Transfer schedule-candidate validation (F79); Teacher Import (F80/F81/F85/F87/F89/F90); Schedule Import match-key typing (F84); Calendar policies/use cases (F93/F95/F97/F99/F101-F105/F107/F110); teacher-profile editing (F117/F123); co-teacher assignment (F124); class-notes save (F125); and the Classes navigation snapshot (F133). Broader class-detail/schedule/roster/evaluation editing, backup/recovery, and legacy database import remain planned. |
+| App-less Domain/Application behavior (Gate 1) | Partial | Coverage includes workspace lifecycle; Class Transfer schedule-candidate validation (F79); Teacher Import (F80/F81/F85/F87/F89/F90); Schedule Import match-key typing (F84); Calendar policies/use cases (F93/F95/F97/F99/F101-F105/F107/F110); teacher-profile editing (F117/F123); co-teacher assignment (F124); class-notes save (F125); Classes navigation snapshot (F133); and ScheduleBuilder source snapshot (F134). Broader class-detail/schedule/roster/evaluation editing, backup/recovery, and legacy database import remain planned. |
 | Baseline parity (Gate 2) | Partial | Bounded records include F82/F83 post-baseline Schedule Import inputs, F86/F88 baseline-era generated Schedule Import inputs, F91/F92/F94/F96/F98 Teacher Import flows and failure cases, F100/F101/F103/F104/F106/F108/F109 Schedule Import rollback and Calendar repository transitions, F118 common-input Class Transfer conflict behavior, F121 common-input successful replacement state, and F122 hand-authored seeded Schedule Import Skip state parity. They do not cover all validation, conflict, planning, or state-transition behavior; historical production-workbook provenance remains unverified. |
 | Workspace boundary | Satisfied | The formal workspace-create criterion remains satisfied. |
 | v2 dependency isolation | Satisfied for active `src/next` call paths | F120 removes the Workspace operation edge to `DataService`; the source audit confirms all seven operations route to `DatabaseSession` or the file helper. Legacy facade construction/access remains available. |
@@ -209,16 +218,14 @@ a literal exit criterion. Sub Prep remains bounded to January 1 of the
 reference date's year through December 31 of the following year, at most;
 2026-2027 is illustrative.
 
-### F134 implementation in progress: ScheduleBuilder source-query projection
+### Next selected slice (F135): ScheduleWidget slot-state read
 
-Read the ScheduleBuilder source query into a compact Qt-free input snapshot,
-integrated through the session-backed Platform adapter and builder/widget.
-This sequence is an inference: feature order places Classes before
-Schedule/Imports, while Phase 2 requires both a compact schedule projection and
-an import review session without ranking them. The ScheduleBuilder read
-projection is the narrower vertical slice. Existing repository code already
-batches ordered SQL, so this slice does not claim query-count or database
-optimization. Preserve raw ordered day/start/end strings and current parser
-quirks. Keep slot state, testing assignments, and the final
-ScheduleViewProjection migration separate. Schedule Import review is a broader
-later candidate.
+Move the ordered raw UTF-16 slot-state read into a Qt-free snapshot and query,
+read by a Platform adapter directly from the active `DatabaseSession` repository
+without a `ScheduleService`/`DataService` fallback, and integrate it through
+`ScheduleWidget::reloadSlotStates`. Preserve the existing unavailable-service
+no-op and current-state retention, read-failure warning and current-state
+retention, and successful full replacement (including an empty result clearing
+old state). Keep testing-assignment reads and the final
+`ScheduleViewProjection` migration separate. Selecting this narrower next read
+is an inference, not a Phase 2 mandated ranking; implementation has not begun.

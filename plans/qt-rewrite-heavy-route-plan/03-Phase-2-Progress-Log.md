@@ -7382,3 +7382,42 @@ the application contract should carry explicit Qt-free class fields and
 schedule values. Candidate scope and validation/persistence port split are
 pending review; no F126 implementation has begun. Phase 2 remains
 In Progress/Open; Gates 1 and 2 remain Partial.
+
+## Verified F134 ScheduleBuilder source query - commit `cbb15e32`
+
+F134 adds a compact Qt-free schedule-source snapshot, an active-session
+Platform adapter, and ScheduleBuilder/Widget integration. The adapter reads
+through the existing ordered, batched repository query; this work does not
+claim query-count or database optimization. Raw UTF-16 day/start/end values
+and their order remain available to the existing parser.
+
+Independent fresh Windows x64 Debug Ninja/MSVC verification built `ClassMngr`
+and the focused application, platform, builder, and widget targets. The four
+focused CTest suites passed 4/4, and `git diff --check` passed. The repaired
+platform test distinguishes fixture insertion order from repository order and
+asserts the exact intensive `endTime`. No full suite or baseline comparison
+ran.
+
+Preview behavior is unchanged. `buildUi()` sets `setCompactPreview(true)` and
+`setMaximumVisibleRows(6)`; each triggers `loadSchedule()` before
+`ScheduleImportReviewDialog::prepare` calls `refreshSchedule()` and installs
+the preview model. With services available, those steps can perform three
+pre-model schedule reads, all present in the F134 parent. After
+`setPreviewModel()` runs, subsequent preview renders and refreshes bypass
+source, slot-state, and testing-assignment reads.
+
+Gate 1 and Gate 2 remain Partial. F120 active-v2 DataService isolation and the
+formal workspace-create boundary remain Satisfied. Phase 2 remains In
+Progress/Open.
+
+### Next selected slice (F135; implementation not begun)
+
+Migrate the slot-state read through an ordered raw UTF-16 Qt-free snapshot and
+query. The Platform adapter will read the active `DatabaseSession` repository
+directly, without `ScheduleService` or `DataService` fallback, and
+`ScheduleWidget::reloadSlotStates` will consume it. Preserve unavailable-service
+no-op/current-state retention, read-failure warning/current-state retention,
+and successful replacement, including clearing old state for an empty result.
+Keep testing-assignment reads and the final `ScheduleViewProjection`
+migration separate. Selecting this slice is an inference, not a Phase 2
+mandated ranking.

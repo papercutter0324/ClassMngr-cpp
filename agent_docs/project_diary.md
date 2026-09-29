@@ -1327,3 +1327,19 @@ snapshot and session-backed adapter; do not duplicate SQL or call it a query
 optimization. Preserve raw meeting text because the builder's day and time
 parsing has asymmetric malformed-value behavior. Keep widget preview, slot
 state, and testing-assignment sources separate from this read.
+
+For preview verification, distinguish a model already installed in
+`ScheduleWidget` from `ScheduleImportReviewDialog`'s pre-model renders: two
+`buildUi()` setters and the `prepare()` preference refresh can read live
+schedule data before preview installation. That call order predates F134, so
+describe the actual call order instead of claiming the entire dialog setup
+bypasses reads.
+
+## F135 - preserve legacy slot-state values at the Application read boundary - 2026-09-29
+
+Read intensive slot-state overrides through the active `DatabaseSession`
+repository, not `ScheduleService`'s compatibility fallback. Carry ordered raw
+day/start/state text into the widget so malformed or unknown stored strings
+retain their existing map behavior; a successful empty snapshot must still
+clear overrides, while unavailable or failed reads leave the current map
+untouched.

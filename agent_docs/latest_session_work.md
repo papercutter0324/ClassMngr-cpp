@@ -3125,7 +3125,7 @@ service skip/reload, read-only/time-column no-op, and testing-assignment
 behavior. `ClassMngr` built and `git diff --check` passed. No full suite or
 baseline comparison ran.
 
-## Phase 2 continuation - 2026-09-29 (F133 verified; F134 implementation in progress)
+## Phase 2 continuation - 2026-09-29 (F134 verified; F135 selected)
 
 The user requested a commit after every completed slice, then immediate work
 on the next slice. The active deployment ID is
@@ -3227,20 +3227,35 @@ Ninja/MSVC after the Visual Studio FileTracker reported access denied.
 F133's verification handoff is recorded in the canonical deployment documents;
 their commit is separate from the source commit.
 
-F134 implementation is in progress: route ScheduleBuilder's source read
-through a compact Qt-free application snapshot and active-session Platform
-adapter, then keep schedule parsing and row construction in the service-free
-builder. Reuse the repository's existing ordered batch read; this is an
+F134 source/test commit `cbb15e32` (`Phase2 - integrate schedule builder
+source query`) adds a Qt-free source snapshot and active-session Platform
+adapter, then keeps schedule parsing and row construction in the service-free
+builder. It reuses the repository's existing ordered batch read; this is an
 application-boundary improvement, not a database query-count optimization.
-Preserve raw schedule strings and current parser behavior, including blank-day
-defaulting, invalid-start skipping, invalid-end inclusion, offsets, and source
-order. Keep slot-state and testing-assignment reads separate, and do not claim
-the final ScheduleViewProjection migration. Schedule Import review remains a
-broader candidate for later work.
+The snapshot preserves raw schedule strings and current parser behavior,
+including blank-day defaulting, invalid-start skipping, invalid-end inclusion,
+offsets, and source order. The repaired Platform test distinguishes creation
+order from repository order and checks the exact intensive end time.
 
-This ordering is an inference: the formal sequence puts Classes before
-Schedule/Imports but does not rank ScheduleBuilder ahead of Schedule Import
-internally. The formal Phase 2 plan now records F133 verified and F134 selected.
+The independent fresh Ninja/MSVC build passed for `ClassMngr` and the four
+focused targets. The app snapshot, Platform read port, builder, and ScheduleWidget
+CTest targets passed 4/4; `git diff --check` passed. No full suite or baseline
+comparison ran. Once `setPreviewModel()` installs a ScheduleWidget preview,
+subsequent renders and refreshes bypass source, slot-state, and
+testing-assignment reads. Before that, `ScheduleImportReviewDialog::buildUi()`
+calls two setters that render the live schedule, and `prepare()` performs its
+normal refresh to load display preferences. With services available, setup can
+perform three pre-preview reads. This call order is present at the F134 parent.
+
+The Heavy-route candidate review selected F135: move the intensive slot-state
+read behind a Qt-free Application query and an active-session Platform adapter
+that reads the `DatabaseSession` repository directly. Carry ordered raw
+day/start/state strings so legacy stored values are not normalized or dropped.
+Preserve unavailable no-op and current-state retention, warning and current-
+state retention on read failure, and successful replacement including empty
+results clearing overrides. Keep testing-assignment reads and the final
+`ScheduleViewProjection` migration separate. This sequence is a proportionality
+judgment, not a Phase 2 mandated ranking.
 
 Gate 1 and Gate 2 remain Partial. Formal workspace-create acceptance and
 active-v2 DataService isolation remain Satisfied. Phase 2 remains In Progress

@@ -1566,7 +1566,7 @@ warning/dirty behavior. Review and implementation have not begun. Gate 1 and
 Gate 2 remain Partial; formal workspace-create acceptance and active-v2
 DataService isolation remain Satisfied. Phase 2 remains In Progress/Open.
 
-## Current Position - 2026-09-29 (F133 verified; F134 implementation in progress)
+## Current Position - 2026-09-29 (F134 verified; F135 selected)
 
 F126 source/test commit `ca4c1a97` (`Phase2 - integrate class details save
 use case`) adds the Qt-free `ClassDetailsSaveUseCase` and session-backed
@@ -1683,12 +1683,31 @@ selection, and class-info-save refresh. Verification used Ninja/MSVC after the
 Visual Studio generator hit a FileTracker access-denied error.
 `git diff --check` passed. No full suite or baseline comparison ran.
 
-F134 implementation is in progress: route ScheduleBuilder's source read
-through a compact Qt-free application snapshot and active-session Platform
-adapter, then keep schedule parsing and row construction in the service-free
-builder. Reuse the repository's existing ordered batch read; this advances the
-application boundary rather than reducing SQL query count. Keep raw schedule
-strings and current parser/fallback behavior. Schedule Import review remains a
-broader later candidate. Gate 1 and Gate 2 remain Partial; formal
-workspace-create acceptance and active-v2 DataService isolation remain
-Satisfied. Phase 2 remains In Progress/Open.
+F134 source/test commit `cbb15e32` (`Phase2 - integrate schedule builder
+source query`) adds a Qt-free schedule-source snapshot and active-session
+Platform adapter, then keeps parsing and row construction in the service-free
+builder. It reuses the repository's ordered batch read; this advances the
+application boundary rather than reducing SQL query count. Raw day/start/end
+strings and parser behavior remain intact.
+
+The app, Platform adapter, builder, and ScheduleWidget focused CTests passed
+4/4 in an independent fresh Ninja/MSVC build. The Platform fixture now inserts
+classes in an order distinct from repository order and asserts the sorted
+snapshot IDs and exact intensive end time. `git diff --check` passed. No full
+suite or baseline comparison ran. After preview installation,
+`ScheduleWidget` bypasses source, slot-state, and testing-assignment reads;
+`ScheduleImportReviewDialog::buildUi()` also calls two setters that render the
+live schedule before `prepare()` performs its normal preference refresh and
+installs the preview. With services available, setup can perform three
+pre-preview reads. This call order is present at the F134 parent; later preview
+renders and refreshes bypass those reads.
+
+F135 is selected: route the intensive slot-state read through a Qt-free
+Application query and an active-session Platform adapter that reads the
+`DatabaseSession` repository directly. Preserve ordered raw day/start/state
+values, silent unavailable behavior, warning and state retention on read
+failure, and replacement on success (including an empty result clearing
+overrides). Keep testing-assignment reads and the final `ScheduleViewProjection`
+migration separate. Gate 1 and Gate 2 remain Partial; formal workspace-create
+acceptance and active-v2 DataService isolation remain Satisfied. Phase 2
+remains In Progress/Open.
