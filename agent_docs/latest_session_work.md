@@ -3501,7 +3501,7 @@ The next step is a Heavy-route candidate review for F148. Gate 1 and Gate 2
 remain Partial, Phase 2 is In Progress/Open, and the worktree was clean after
 the test commit.
 
-## 2026-09-30 — Phase 2 continuation: F148 accepted; F149 review started
+## 2026-09-30 — Phase 2 continuation: F148 and F149 accepted; F150 selected
 
 Deployment: `phase2_resume_20260929`, Heavy route. F148's test/CMake commit is
 `6c7211d6427b6dbcddd4d109d9d09f9eeff14f28` (`Phase2 - add class details save
@@ -3548,5 +3548,41 @@ Application, and will preserve the current same-display-name warning behavior.
 The selected acceptance includes app-less contract tests, active-session
 Platform tests, page behavior tests, and common-input regular/intensive
 conflict parity against baseline `48fc5c5cc7dee78d82f8bf5f1bf8b51725575b99`.
-The Executor has started implementation; no production verification has run.
+
+F149 production/test commit `2e7d8866` (`Phase2 - route class details
+conflict checks through typed query`) is accepted. Fresh current verification
+used CMake 4.4.2, Ninja 1.13.2, MSVC 19.51.36257, and Qt 6.12.0. The short-path
+build at `C:\Users\wflet\AppData\Local\Temp\p2f149\current` completed
+successfully. The focused current selector
+`^(ClassMngrNextApplicationClassDetailsScheduleConflictQueryTests|ClassMngrNextPlatformApplicationServicesClassDetailsScheduleConflictPortTests|ClassMngrClassDetailsSavePageTests|ClassMngrClassDetailsPageSaveParityTests)$`
+passed 4/4. The pinned baseline
+`48fc5c5cc7dee78d82f8bf5f1bf8b51725575b99` parity CTest passed 1/1, covering
+both F148 successful save and F149 regular/intensive conflicts.
+
+The baseline overlay added the same parity test and registration, and changed
+only three Qt minimum versions from 6.11.1 to installed 6.12.0; no production
+source was overlaid. Because the baseline dialog API predates the current
+prompt driver, its temporary parity harness uses
+`setUserPromptServiceForTesting` and a recording `IUserPromptService`; it keeps
+the same seed, save action, warning title/body, no-write, and dirty/header
+assertions. Current source SHA-256 is
+`FF7C5A35C33D5F38E290E4DCFCC943BE5A38DC6E1E98DC659788DCACBA98E74F`; adapted
+baseline harness SHA-256 is
+`41AA9B1F7C5D26DF50645FDD8D6FCC2A5EB17BF3E7D9350033DA5FFFBA5D3F41`.
+The first current build hit MSVC C1083 because an object path was 265
+characters; the fresh short-path build reduced it to 233 and passed. No full
+suite or full application build ran.
+
+Three independent F150 reviews and the main review selected Class Details
+pre-save normalization/validation as the next bounded slice. It will use a
+Qt-free typed Domain/Application policy and preserve current page feedback,
+save-blocking, and exact validation order. Keep the ClassService save-time
+validation guard and F149 conflict query unchanged. Preserve book-catalog
+rules, raw malformed schedule diagnostics, duplicate-slot semantics, hidden
+field checks, and stable issue ordering. Use deterministic first-seen order
+for duplicate-slot groups because the legacy QHash group order is unspecified.
+The main implementation risk is avoiding a second book catalog while
+representing raw schedule text in the typed input.
+F150 implementation is starting; no F150 acceptance or verification is
+claimed. Gate 1 and Gate 2 remain Partial; Phase 2 remains In Progress/Open.
 No push was requested.

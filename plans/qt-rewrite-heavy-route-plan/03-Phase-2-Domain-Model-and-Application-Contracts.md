@@ -24,17 +24,21 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
   operation. F145 preserves roster-first page behavior: a successful roster
   save remains persisted and clean if the details update fails. F147 is accepted
   for delete/cascade migration and the Testing Classes page success-transition
-  fix. F148 adds one common-input successful Class Details save comparison to
-  Gate 2, not validation or conflict parity. F149 is selected and
-  implementation is starting: add a typed Qt-free regular/intensive conflict
-  query and active-session `DatabaseSession` Platform adapter using the
-  existing `ClassInfoRepository` operation. Preserve page validation,
-  sequential short-circuit/warning behavior, `ClassService` save-time guards,
-  and same-display-name message behavior including its edge case; the overlap
-  algorithm stays outside Application. F126 already routes
-  `ClassDetailsPage` saves through the Qt-free save use case, and F139 reuses it in
-  `ScheduleEditorDialog`. Gates 1 and 2 remain Partial; F120 active-v2
-  DataService isolation and formal workspace-create acceptance remain Satisfied.
+  fix. F148 adds one common-input successful Class Details save comparison.
+  F149 is accepted: `ClassDetailsPage` uses a typed Qt-free regular/intensive
+  conflict query and active-session Platform adapter to `ClassInfoRepository`.
+  Warning rendering and sequential short-circuit stay in the page; overlap and
+  ordering stay in persistence;
+  `ClassService` save-time guards remain. F150 is selected and implementation
+  is starting: move page pre-save validation/normalization into a typed
+  Domain/Application policy and map structured issues to `FormValidationBinder`.
+  Preserve save-time validation, F149 conflict order/warnings, exact duplicate-schedule
+  behavior, validation order, Qt-dependent catalog rules, malformed schedule
+  input, and hidden-field behavior without duplicating catalog rules. F126
+  already routes `ClassDetailsPage` saves through the Qt-free save use case, and
+  F139 reuses it in `ScheduleEditorDialog`. Gates 1 and 2 remain Partial; F120
+  active-v2 DataService isolation and formal workspace-create acceptance remain
+  Satisfied.
   Historical workbook provenance remains a tracked risk, not a literal exit
   criterion. Sub Prep remains January 1 of the reference date's year through
   December 31 of the following year at most; 2026-2027 is illustrative.
@@ -268,8 +272,8 @@ No production defect was observed.
 F144 is the preceding accepted slice. F145's accepted existing-class details
 update is recorded below. F146's accepted new-class create, including the
 optional pending weekday/start-time assignment, is recorded after it. F147's
-accepted delete/cascade migration is recorded below; F148 acceptance is below
-and F149 conflict-query implementation is starting.
+accepted delete/cascade migration is recorded below; F148 and F149 acceptance
+are recorded below; F150 implementation is starting.
 
 ## F145 acceptance record
 
@@ -312,11 +316,11 @@ creation remain separate accepted slices.
 Production, page-transition-fix, and acceptance-test commits and the focused
 verification evidence and limits are recorded in the [Phase 2 progress
 log](03-Phase-2-Progress-Log.md). Gate 1 and Gate 2 remain Partial; Phase 2
-remains In Progress with its exit gate Open. F148 acceptance adds one
-successful-save comparison to Gate 2 only; validation and conflict parity
-remain open. F149 is selected and implementation is starting. Its baseline
-conflict-parity requirement and preservation constraints are in the latest
-[Phase 2 progress entry](03-Phase-2-Progress-Log.md).
+remains In Progress with its exit gate Open. F148 adds one successful-save
+comparison; F149 adds a typed conflict query and a baseline parity case. F150
+is selected and implementation is starting. The latest [Phase 2 progress
+entry](03-Phase-2-Progress-Log.md) records the acceptance boundaries and
+verification evidence.
 
 ## F148 acceptance record
 
@@ -324,7 +328,22 @@ F148 adds a live `ClassDetailsPage` successful-save comparison against the
 pinned legacy baseline using the same seeded teacher, class, and edits. The
 case verifies persisted fields and untouched values, regular/intensive time
 ordering, the `classInfoSaved` signal, and clean dirty state. This adds one
-common-input Gate 2 case; validation and conflict parity remain open. Commit,
+common-input Gate 2 successful-save case; it provides no validation or conflict
+evidence. F149 conflict behavior is recorded below. Commit,
 test, toolchain, and verification limits are recorded in the [Phase 2 progress
 log](03-Phase-2-Progress-Log.md). Gate 1 and Gate 2 remain Partial; Phase 2
 remains In Progress with its exit gate Open.
+
+## F149 acceptance record
+
+F149 routes the Class Details page's regular/intensive pre-save conflict lookup
+through a Qt-free typed query and an active-session Platform adapter to the
+existing `ClassInfoRepository` operation. Warning presentation stays in the
+page; overlap calculation/order stay in persistence; `ClassService` save-time
+guards remain. The page behavior test
+`regularConflictShortCircuitsIntensiveAndKeepsSameNameWording` covers the
+same-display-name warning edge case. Baseline parity compares regular/intensive
+conflicts with distinct conflicting class names. Focused current and baseline evidence is recorded in
+the [Phase 2 progress log](03-Phase-2-Progress-Log.md). F150 now owns the
+pre-save validation/normalization migration. Gates 1 and 2 remain Partial; the
+Phase 2 exit gate remains Open.

@@ -7691,14 +7691,43 @@ successful-save comparison to Gate 2 only; it does not establish validation or
 conflict parity. Gate 1 and Gate 2 remain Partial; the Phase 2 exit gate stays
 Open.
 
-### Progress update - 2026-09-30 (F149 selected; implementation starting)
+### Progress update - 2026-09-30 (F149 accepted; F150 selected)
 
-F149 is selected to add a Qt-free typed regular/intensive conflict query and a
-Platform adapter using the active `DatabaseSession` and existing
-`ClassInfoRepository` operation. Keep `ClassDetailsPage` validation, sequential
-short-circuit and warning behavior, and `ClassService` save-time guards
-unchanged. Preserve the existing same-display-name conflict-message behavior,
-including its edge case;
-the overlap algorithm itself does not move into Application. Acceptance
-requires baseline conflict parity. Gate 1 and Gate 2 remain Partial; Phase 2's
-exit gate remains Open.
+F149, commit `2e7d8866` (`Phase2 - route class details conflict checks through
+typed query`), routes `ClassDetailsPage` regular/intensive pre-save conflict
+lookups through a Qt-free typed query and Platform adapter to the active
+`DatabaseSession`'s existing `ClassInfoRepository` operation. UI warning
+rendering stays in the page; overlap calculation and ordering stay in
+persistence; `ClassService` save-time guards remain. The same-display-name
+warning edge case is covered by the page behavior test
+`regularConflictShortCircuitsIntensiveAndKeepsSameNameWording`. Current-vs-
+baseline parity compares regular/intensive conflicts with distinct conflicting
+class names.
+
+The independent Tester built a fresh short-path Windows x64 tree with CMake
+4.4.2, Ninja 1.13.2, MSVC 19.51.36257, and Qt 6.12.0. The exact focused CTest
+selection passed 4/4:
+`^(ClassMngrNextApplicationClassDetailsScheduleConflictQueryTests|ClassMngrNextPlatformApplicationServicesClassDetailsScheduleConflictPortTests|ClassMngrClassDetailsSavePageTests|ClassMngrClassDetailsPageSaveParityTests)$`.
+The first long-path attempt failed with MSVC C1083 at a 265-character path;
+retrying at 233 characters succeeded, with no remaining C++ diagnostic.
+
+`ClassMngrClassDetailsPageSaveParityTests` passed 1/1 on pinned baseline
+`48fc5c5cc7dee78d82f8bf5f1bf8b51725575b99`. Current parity source SHA-256:
+`FF7C5A35C33D5F38E290E4DCFCC943BE5A38DC6E1E98DC659788DCACBA98E74F`.
+The baseline-only observer adaptation to
+`setUserPromptServiceForTesting`/recording `IUserPromptService` has SHA-256
+`41AA9B1F7C5D26DF50645FDD8D6FCC2A5EB17BF3E7D9350033DA5FFFBA5D3F41`; it
+preserves input, title/body, no-write, dirty-state, and header assertions. The
+baseline overlay also adds the parity source and target registration and bumps
+only three Qt minimum versions. Production sources were not overlaid. F149
+adds regular and intensive common-input conflict comparisons to Gate 2, plus
+app-less query evidence to Gate 1; both gates remain Partial and Phase 2's exit
+gate remains Open.
+
+F150 was selected after three independent read-only reviews and main review;
+implementation is starting. Move `ClassDetailsPage` pre-save validation and
+normalization into a Qt-free typed Domain/Application policy and map structured
+issues to `FormValidationBinder`. Preserve `ClassService` save-time validation,
+F149 conflict order and warnings, exact duplicate-schedule behavior, and
+validation order. Keep Qt-dependent book-catalog rules, raw malformed schedule
+input, and hidden-field behavior intact without duplicating catalog rules.

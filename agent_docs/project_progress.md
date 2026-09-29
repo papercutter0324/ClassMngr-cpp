@@ -1823,5 +1823,29 @@ The assertions cover persisted detail fields, preserved teacher/notes/
 activities, regular and intensive schedule order, the saved signal, and clean
 page state. Gate 2 gains one successful-save comparison but remains Partial;
 the case does not establish validation or conflict parity. Phase 2 remains
-In Progress/Open. F149 is selected for the typed Class Details
-schedule-conflict query boundary, with implementation underway.
+In Progress/Open.
+
+## F149 Class Details schedule-conflict query — 2026-09-30
+
+F149 adds a Qt-free typed conflict query and active-session Platform adapter
+for the Class Details page. The adapter reads
+`DatabaseSession::classInfoRepository()->getClassTimeConflicts()` directly;
+warning rendering stays in the page, overlap/order stay in persistence, and
+the existing save-time `ClassService` checks remain.
+
+Commit `2e7d8866` (`Phase2 - route class details conflict checks through typed
+query`) passed the fresh focused build and CTests 4/4; the pinned baseline
+parity CTest passed 1/1 for F148 success plus F149 regular/intensive conflict
+cases. No full suite or application build ran. Gate 1 and Gate 2 remain
+Partial, and Phase 2 remains In Progress/Open.
+
+## F150 selected — 2026-09-30
+
+F150 moves Class Details pre-save normalization and validation behind a
+Qt-free typed Domain/Application policy, then maps structured issues back to
+the existing page field feedback. Keep `ClassService` save-time validation
+and F149 conflict preflight unchanged. Preserve book-catalog rules, malformed
+schedule diagnostics, duplicate-schedule semantics, hidden-field checks, and
+stable issue order. Make legacy unordered duplicate-group diagnostics
+deterministic in first-seen order. Implementation is starting; Phase 2 gates
+remain Partial/Open.

@@ -1406,3 +1406,14 @@ case on the current tree and pinned baseline. A fake save port proves request
 mapping, not persistence parity; assert the saved fields, untouched values,
 ordered schedules, and visible success state on both revisions. Keep one
 successful save separate from validation and conflict parity.
+
+## 2026-09-30 — F149 Class Details conflict query
+
+Keep conflict data raw at the typed Application boundary, and leave warning
+wording in the page. The Platform adapter can preserve existing order while
+reading directly from the active repository; the save-time service guard still
+matters. When the pinned baseline has a different dialog test API, adapt only
+the temporary warning observer and keep the same page input and assertions.
+On Windows/MSVC, C1083 can be caused by a test object path beyond CMake's
+length limit; the F149 short-path retry reduced the path from 265 to 233
+characters and passed without a source change.
