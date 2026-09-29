@@ -4,6 +4,7 @@
 #include "next/domain/operation_result.h"
 #include "next/domain/schedule_time.h"
 
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -19,8 +20,8 @@ struct ClassDetailsSaveRequest final
     std::u16string essayBook;
     std::u16string classColor;
     std::u16string fontColor;
-    std::vector<Domain::ScheduleTime> regularTimes;
-    std::vector<Domain::ScheduleTime> intensiveTimes;
+    std::optional<std::vector<Domain::ScheduleTime>> regularTimes;
+    std::optional<std::vector<Domain::ScheduleTime>> intensiveTimes;
 };
 
 class ClassDetailsSavePort

@@ -2,6 +2,7 @@
 #include "core/application_services.h"
 #include "data/data_service.h"
 #include "data/database/database_session.h"
+#include "data/repositories/class_info_repository.h"
 #include "next/application/class_details_save_use_case.h"
 #include "next/platform/application_services_class_details_save_port.h"
 
@@ -10,6 +11,7 @@
 #include <QtTest/QtTest>
 
 #include <string>
+#include <vector>
 
 using namespace ClassMngr::Next;
 
@@ -52,6 +54,19 @@ Domain::ScheduleTime scheduleTime(
     return *result;
 }
 
+Application::ClassDetailsSaveRequest requestForClass(const int classId)
+{
+    return {
+        .classId = *Domain::ClassId::fromString(std::to_string(classId)),
+        .classGrade = u"E4",
+        .classLevel = u"Theseus",
+        .readingBook = u"Reading Explorer 1",
+        .essayBook = u"4A",
+        .classColor = u"#112233",
+        .fontColor = u"#445566"
+    };
+}
+
 bool sameTime(
     const ClassTime& value,
     const QString& day,
@@ -71,6 +86,7 @@ class NextPlatformApplicationServicesClassDetailsSavePortTests final
 
 private slots:
     void savesEditedFieldsAndPreservesHiddenClassInfo();
+    void absentSchedulesPreservePersistedSchedulesIndependently();
     void unavailableSessionReturnsStructuredFailure();
 };
 
@@ -119,8 +135,12 @@ savesEditedFieldsAndPreservesHiddenClassInfo()
         .essayBook = u"",
         .classColor = u"#123456",
         .fontColor = u"#654321",
-        .regularTimes = {scheduleTime(1, 18 * 60, 18 * 60 + 50)},
-        .intensiveTimes = {scheduleTime(6, 19 * 60, 19 * 60 + 45)}
+        .regularTimes = std::vector<Domain::ScheduleTime>{
+            scheduleTime(1, 18 * 60, 18 * 60 + 50)
+        },
+        .intensiveTimes = std::vector<Domain::ScheduleTime>{
+            scheduleTime(6, 19 * 60, 19 * 60 + 45)
+        }
     };
 
     Platform::ApplicationServicesClassDetailsSavePort port(services);
@@ -155,6 +175,133 @@ savesEditedFieldsAndPreservesHiddenClassInfo()
         QStringLiteral("7:00 PM"),
         QStringLiteral("7:45 PM")
         ));
+    QVERIFY(request.regularTimes.has_value());
+    QVERIFY(request.intensiveTimes.has_value());
+}
+
+void NextPlatformApplicationServicesClassDetailsSavePortTests::
+absentSchedulesPreservePersistedSchedulesIndependently()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+
+    const auto createdClass = services.classService()->create(
+        QStringLiteral("Class Details Schedule Preservation Test")
+        );
+    QVERIFY(createdClass);
+    auto original = services.classService()->classInfo(*createdClass);
+    QVERIFY(original);
+    original->classGrade = QStringLiteral("E4");
+    original->classLevel = QStringLiteral("Theseus");
+    original->readingBook = QStringLiteral("Reading Explorer 1");
+    original->essayBook = QStringLiteral("4A");
+    original->classColor = QStringLiteral("#112233");
+    original->fontColor = QStringLiteral("#445566");
+    original->classTimes = {{
+        QStringLiteral("Monday"),
+        QStringLiteral("9:00 AM"),
+        QStringLiteral("9:50 AM")
+    }};
+    original->intensiveTimes = {{
+        QStringLiteral("Friday"),
+        QStringLiteral("10:00 AM"),
+        QStringLiteral("10:50 AM")
+    }};
+    // Seed the exact stored rows at the repository seam. The legacy service
+    // normalizes accepted time text before persistence, so this fixture uses
+    // its supported canonical stored representation.
+    QVERIFY(services.databaseSession());
+    QVERIFY(services.databaseSession()->classInfoRepository());
+    QVERIFY(services.databaseSession()->classInfoRepository()
+        ->saveClassInfo(*original));
+
+    const auto seeded = services.classService()->classInfo(*createdClass);
+    QVERIFY(seeded);
+    QCOMPARE(seeded->classTimes.size(), 1);
+    QCOMPARE(seeded->classTimes.front().day, QStringLiteral("Monday"));
+    QCOMPARE(seeded->classTimes.front().startTime, QStringLiteral("9:00 AM"));
+    QCOMPARE(seeded->classTimes.front().endTime, QStringLiteral("9:50 AM"));
+    QCOMPARE(seeded->intensiveTimes.size(), 1);
+    QCOMPARE(seeded->intensiveTimes.front().day, QStringLiteral("Friday"));
+    QCOMPARE(seeded->intensiveTimes.front().startTime,
+        QStringLiteral("10:00 AM"));
+    QCOMPARE(seeded->intensiveTimes.front().endTime,
+        QStringLiteral("10:50 AM"));
+
+    Platform::ApplicationServicesClassDetailsSavePort port(services);
+    Application::ClassDetailsSaveRequest updateIntensive =
+        requestForClass(*createdClass);
+    updateIntensive.intensiveTimes = std::vector<Domain::ScheduleTime>{
+        scheduleTime(6, 19 * 60, 19 * 60 + 45)
+    };
+    QVERIFY(!updateIntensive.regularTimes.has_value());
+    QVERIFY(Application::ClassDetailsSaveUseCase::execute(
+        updateIntensive,
+        port
+        ));
+
+    auto afterIntensiveUpdate =
+        services.classService()->classInfo(*createdClass);
+    QVERIFY(afterIntensiveUpdate);
+    QCOMPARE(afterIntensiveUpdate->classTimes.size(), 1);
+    QVERIFY(sameTime(
+        afterIntensiveUpdate->classTimes.front(),
+        QStringLiteral("Monday"),
+        QStringLiteral("9:00 AM"),
+        QStringLiteral("9:50 AM")
+        ));
+    QCOMPARE(afterIntensiveUpdate->intensiveTimes.size(), 1);
+    QVERIFY(sameTime(
+        afterIntensiveUpdate->intensiveTimes.front(),
+        QStringLiteral("Sunday"),
+        QStringLiteral("7:00 PM"),
+        QStringLiteral("7:45 PM")
+        ));
+
+    Application::ClassDetailsSaveRequest updateRegular =
+        requestForClass(*createdClass);
+    updateRegular.regularTimes = std::vector<Domain::ScheduleTime>{
+        scheduleTime(1, 18 * 60, 18 * 60 + 50)
+    };
+    QVERIFY(!updateRegular.intensiveTimes.has_value());
+    QVERIFY(Application::ClassDetailsSaveUseCase::execute(
+        updateRegular,
+        port
+        ));
+
+    auto afterRegularUpdate =
+        services.classService()->classInfo(*createdClass);
+    QVERIFY(afterRegularUpdate);
+    QCOMPARE(afterRegularUpdate->classTimes.size(), 1);
+    QVERIFY(sameTime(
+        afterRegularUpdate->classTimes.front(),
+        QStringLiteral("Tuesday"),
+        QStringLiteral("6:00 PM"),
+        QStringLiteral("6:50 PM")
+        ));
+    QCOMPARE(afterRegularUpdate->intensiveTimes.size(), 1);
+    QVERIFY(sameTime(
+        afterRegularUpdate->intensiveTimes.front(),
+        QStringLiteral("Sunday"),
+        QStringLiteral("7:00 PM"),
+        QStringLiteral("7:45 PM")
+        ));
+
+    Application::ClassDetailsSaveRequest clearSchedules =
+        requestForClass(*createdClass);
+    clearSchedules.regularTimes = std::vector<Domain::ScheduleTime>{};
+    clearSchedules.intensiveTimes = std::vector<Domain::ScheduleTime>{};
+    QVERIFY(Application::ClassDetailsSaveUseCase::execute(
+        clearSchedules,
+        port
+        ));
+
+    const auto cleared = services.classService()->classInfo(*createdClass);
+    QVERIFY(cleared);
+    QVERIFY(cleared->classTimes.isEmpty());
+    QVERIFY(cleared->intensiveTimes.isEmpty());
 }
 
 void NextPlatformApplicationServicesClassDetailsSavePortTests::

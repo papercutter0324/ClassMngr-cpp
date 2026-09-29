@@ -8,7 +8,9 @@
 #include "app/services/feature_services.h"
 #include "core/application_services.h"
 #include "core/fontmanager.h"
+#include "next/application/class_details_save_use_case.h"
 #include "next/platform/application_services_custom_color_palette_preferences_port.h"
+#include "next/platform/application_services_class_details_save_port.h"
 #include "ui/shared/widgets/clickable_color_preview.h"
 #include "core/utils/colorutils.h"
 
@@ -24,13 +26,17 @@
 #include <QSignalBlocker>
 #include <QVBoxLayout>
 
+#include <string>
+
 ScheduleEditorDialog::ScheduleEditorDialog(
     ApplicationServices* services,
     int classId,
-    QWidget* parent
+    QWidget* parent,
+    ClassMngr::Next::Application::ClassDetailsSavePort* savePort
     )
     : DialogShell(QStringLiteral("scheduleEditor"), parent)
     , m_services(services)
+    , m_savePort(savePort)
     , m_classId(classId)
 {
     setWindowTitle(
@@ -128,18 +134,18 @@ void ScheduleEditorDialog::chooseFontColor()
 
 void ScheduleEditorDialog::saveChanges()
 {
-    auto* classService =
-        m_services
-            ? m_services->classService()
-            : nullptr;
-
-    if (!classService || !classService->isAvailable())
+    const auto classId = ClassMngr::Next::Domain::ClassId::fromString(
+        std::to_string(m_classId)
+        );
+    if (!classId)
     {
+        DialogServices::showWarning(
+            this,
+            tr("Could Not Save"),
+            tr("The class information could not be saved.")
+            );
         return;
     }
-
-    ClassInfo info =
-        m_cachedInfo;
 
     const QString newGrade =
         m_gradeCombo->currentText();
@@ -151,24 +157,43 @@ void ScheduleEditorDialog::saveChanges()
         newGrade != m_originalGrade
         || newLevel != m_originalLevel;
 
-    info.classGrade = newGrade;
-    info.classLevel = newLevel;
-    info.classColor = m_classColor;
-    info.fontColor = m_fontColor;
+    const ClassMngr::Next::Application::ClassDetailsSaveRequest request{
+        .classId = *classId,
+        .classGrade = newGrade.toStdU16String(),
+        .classLevel = newLevel.toStdU16String(),
+        .readingBook = clearBooks
+            ? std::u16string{}
+            : m_cachedInfo.readingBook.toStdU16String(),
+        .essayBook = clearBooks
+            ? std::u16string{}
+            : m_cachedInfo.essayBook.toStdU16String(),
+        .classColor = m_classColor.toStdU16String(),
+        .fontColor = m_fontColor.toStdU16String()
+    };
 
-    if (clearBooks)
-    {
-        info.readingBook.clear();
-        info.essayBook.clear();
-    }
-
-    if (!classService->saveClassInfo(info))
-    {
-        DialogServices::showWarning(
-            this,
-            tr("Could Not Save"),
-            tr("The class information could not be saved.")
+    ClassMngr::Next::Platform::
+        ApplicationServicesClassDetailsSavePort defaultSavePort(m_services);
+    const ClassMngr::Next::Application::ClassDetailsSavePort& savePort =
+        m_savePort ? *m_savePort : defaultSavePort;
+    const auto saveResult =
+        ClassMngr::Next::Application::ClassDetailsSaveUseCase::execute(
+            request,
+            savePort
             );
+
+    if (!saveResult)
+    {
+        if (
+            saveResult.error().code
+            != ClassMngr::Next::Domain::ErrorCode::NotFound
+            )
+        {
+            DialogServices::showWarning(
+                this,
+                tr("Could Not Save"),
+                tr("The class information could not be saved.")
+                );
+        }
 
         return;
     }

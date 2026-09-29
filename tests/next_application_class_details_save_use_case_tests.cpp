@@ -4,6 +4,7 @@
 
 #include <optional>
 #include <string>
+#include <vector>
 
 using namespace ClassMngr::Next;
 
@@ -20,10 +21,10 @@ Application::ClassDetailsSaveRequest request(std::string classId)
         .essayBook = u"",
         .classColor = u"#123456",
         .fontColor = u"#654321",
-        .regularTimes = {
+        .regularTimes = std::vector<Domain::ScheduleTime>{
             *Domain::ScheduleTime::fromMinutes(0, 9 * 60, 9 * 60 + 50)
         },
-        .intensiveTimes = {
+        .intensiveTimes = std::vector<Domain::ScheduleTime>{
             *Domain::ScheduleTime::fromMinutes(4, 10 * 60, 10 * 60 + 50)
         }
     };
@@ -55,6 +56,7 @@ class NextApplicationClassDetailsSaveUseCaseTests final : public QObject
 private slots:
     void invalidClassIdsDoNotReachPort();
     void validRequestPreservesTypedScheduleValues();
+    void forwardsRequestsWithAbsentSchedules();
     void preservesPortFailure();
 };
 
@@ -90,6 +92,31 @@ validRequestPreservesTypedScheduleValues()
     QCOMPARE(port.lastRequest->classGrade, std::u16string(u"E4"));
     QCOMPARE(port.lastRequest->regularTimes, value.regularTimes);
     QCOMPARE(port.lastRequest->intensiveTimes, value.intensiveTimes);
+}
+
+void NextApplicationClassDetailsSaveUseCaseTests::
+forwardsRequestsWithAbsentSchedules()
+{
+    RecordingSavePort port;
+    Application::ClassDetailsSaveRequest value = request("42");
+    value.regularTimes.reset();
+    value.intensiveTimes.reset();
+
+    const auto result =
+        Application::ClassDetailsSaveUseCase::execute(value, port);
+    QVERIFY(result);
+    QCOMPARE(port.callCount, 1);
+    QVERIFY(port.lastRequest.has_value());
+    QCOMPARE(port.lastRequest->classId.value(), std::string("42"));
+    QCOMPARE(port.lastRequest->classGrade, std::u16string(u"E4"));
+    QCOMPARE(port.lastRequest->classLevel, std::u16string(u"Theseus"));
+    QCOMPARE(port.lastRequest->readingBook,
+        std::u16string(u"Reading Explorer 1"));
+    QCOMPARE(port.lastRequest->essayBook, std::u16string(u""));
+    QCOMPARE(port.lastRequest->classColor, std::u16string(u"#123456"));
+    QCOMPARE(port.lastRequest->fontColor, std::u16string(u"#654321"));
+    QVERIFY(!port.lastRequest->regularTimes.has_value());
+    QVERIFY(!port.lastRequest->intensiveTimes.has_value());
 }
 
 void NextApplicationClassDetailsSaveUseCaseTests::preservesPortFailure()

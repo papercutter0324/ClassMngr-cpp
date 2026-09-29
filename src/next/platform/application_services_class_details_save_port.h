@@ -93,8 +93,14 @@ public:
             info.essayBook = legacyText(request.essayBook);
             info.classColor = legacyText(request.classColor);
             info.fontColor = legacyText(request.fontColor);
-            info.classTimes = legacyTimes(request.regularTimes);
-            info.intensiveTimes = legacyTimes(request.intensiveTimes);
+            if (request.regularTimes)
+            {
+                info.classTimes = legacyTimes(*request.regularTimes);
+            }
+            if (request.intensiveTimes)
+            {
+                info.intensiveTimes = legacyTimes(*request.intensiveTimes);
+            }
 
             const Status saved = classService->saveClassInfo(info);
             if (!saved)

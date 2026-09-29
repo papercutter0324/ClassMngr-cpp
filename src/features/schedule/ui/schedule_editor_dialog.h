@@ -8,6 +8,11 @@ class ClickableColorPreview;
 class QComboBox;
 class QLineEdit;
 
+namespace ClassMngr::Next::Application
+{
+class ClassDetailsSavePort;
+}
+
 class ScheduleEditorDialog : public DialogShell
 {
     Q_OBJECT
@@ -16,7 +21,8 @@ public:
     ScheduleEditorDialog(
         ApplicationServices* services,
         int classId,
-        QWidget* parent = nullptr
+        QWidget* parent = nullptr,
+        ClassMngr::Next::Application::ClassDetailsSavePort* savePort = nullptr
         );
 
 signals:
@@ -49,6 +55,7 @@ private:
 
 private:
     ApplicationServices* m_services = nullptr;
+    ClassMngr::Next::Application::ClassDetailsSavePort* m_savePort = nullptr;
     int m_classId = -1;
     ClassInfo m_cachedInfo;
     QString m_originalGrade;

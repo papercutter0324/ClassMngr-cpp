@@ -1809,10 +1809,12 @@ ScheduleViewModel buildScheduleViewModel(
 ScheduleEditorDialog::ScheduleEditorDialog(
     ApplicationServices* services,
     int classId,
-    QWidget* parent
+    QWidget* parent,
+    ClassMngr::Next::Application::ClassDetailsSavePort* savePort
     )
     : DialogShell(QStringLiteral("scheduleEditor"), parent)
     , m_services(services)
+    , m_savePort(savePort)
     , m_classId(classId)
 {
 }

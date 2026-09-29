@@ -203,6 +203,17 @@ classmngr_add_qt_test(
 )
 
 classmngr_add_qt_test(
+    NAME NextScheduleEditorDialogSave
+    SOURCES
+        tests/schedule_editor_dialog_tests.cpp
+    LIBRARIES
+        ClassMngrNext::Application
+        Qt6::Test
+        Qt6::Widgets
+    OFFSCREEN
+)
+
+classmngr_add_qt_test(
     NAME NextApplicationRosterSaveUseCase
     SOURCES
         tests/next_application_roster_save_use_case_tests.cpp
