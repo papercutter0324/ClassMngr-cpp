@@ -3438,3 +3438,65 @@ Initial test-fixture issues were corrected in test assets; all 14 final tests
 passed. The next step is a Heavy-route candidate review for F147. Gate 1 and
 Gate 2 remain Partial, Phase 2 is In Progress/Open, and the worktree was clean
 after the test commit.
+
+F147 was selected and accepted as the Testing Class delete boundary; its
+acceptance evidence and F148 handoff follow.
+
+## 2026-09-30 — Phase 2 continuation: F147 accepted
+
+Deployment: `phase2_resume_20260929`, Heavy route. Each accepted slice is
+committed before work starts on the next one; no push was requested.
+
+F147 routes `TestingClassesPage::deleteCurrentClass()` through the Qt-free
+`TestingClassDeleteUseCase` and an active-session Platform adapter to the
+existing repository cascade. The adapter has no legacy fallback. The prompt
+now names the class, roster, notes, speaking evaluations, regular and
+intensive class times, and every schedule assignment. Repository transaction
+semantics were not changed.
+
+The first independent page run exposed a crash after successful deletion when
+the deleted class had dirty editor/roster state and a sibling was selected: the
+selection callback tried to save the stale draft through the new-class path.
+Commit `315b3ff33b7e2ab42b43d52cd168ce21a92158c9` resets the deleted class
+state before list rebuild/reselection. The repaired regression confirms the
+sibling loads cleanly, with zero accidental create/update calls and exactly
+one `testingDataChanged` signal. Delete failure still warns and retains the
+current draft.
+
+Production commit `b037b4216b71c55c7793df5f7bbbfc4a00690065`, page transition
+fix commit above, and acceptance test commit
+`397376e439f4b5955c82948ab0c225aaf776d679` are accepted. Fresh Windows x64
+Debug Ninja/MSVC verification with Qt 6.12.0 passed 17/17 focused CTests.
+Repository tests verify all cascade categories, sibling preservation, and
+transaction rollback after a trigger fails the final class deletion. Page
+tests cover no selection, cancel, prompt contents/controls, failure, and
+success with and without siblings. `git diff --check` passed. No full 220-test
+suite or full `ClassMngr` application build ran. The configure emitted
+object-path length warnings for unrelated targets; `VsDevCmd` reported
+missing `vswhere.exe`, but configure and requested builds succeeded. One
+duplicate intensive-time fixture key was corrected before the final run.
+
+Passed CTests:
+
+- `ClassMngrTestingClassRepositoryTests`
+- `ClassMngrTestingClassesPageTests`
+- `ClassMngrTestingClassesPageF145UpdateTests`
+- `ClassMngrTestingClassesPageF146CreateTests`
+- `ClassMngrTestingClassesPageF147DeleteTests`
+- `ClassMngrNextApplicationScheduleTestingClassChoicesReadQueryTests`
+- `ClassMngrNextApplicationTestingClassDetailsReadQueryTests`
+- `ClassMngrNextApplicationTestingClassDetailsUpdateUseCaseTests`
+- `ClassMngrNextApplicationTestingClassCreateUseCaseTests`
+- `ClassMngrNextApplicationTestingClassDeleteUseCaseTests`
+- `ClassMngrNextPlatformApplicationServicesScheduleTestingClassChoicesReadPortTests`
+- `ClassMngrNextApplicationTestingTeacherChoicesReadQueryTests`
+- `ClassMngrNextPlatformApplicationServicesTestingTeacherChoicesReadPortTests`
+- `ClassMngrNextPlatformApplicationServicesTestingClassDetailsReadPortTests`
+- `ClassMngrNextPlatformApplicationServicesTestingClassDetailsUpdatePortTests`
+- `ClassMngrNextPlatformApplicationServicesTestingClassCreatePortTests`
+- `ClassMngrNextPlatformApplicationServicesTestingClassDeletePortTests`
+
+The run log is `build/f147-verification-ninja-x64-debug/Testing/Temporary/LastTest.log`.
+The next step is a Heavy-route candidate review for F148. Gate 1 and Gate 2
+remain Partial, Phase 2 is In Progress/Open, and the worktree was clean after
+the test commit.

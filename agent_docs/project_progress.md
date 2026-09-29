@@ -1793,3 +1793,22 @@ details, room, or assignment rows remain after a conflicting slot create.
 `git diff --check` passed. No full suite or full application build ran. The
 next step is a Heavy-route candidate review for F147; Phase 2 gates remain
 open.
+
+## F147 acceptance — 2026-09-30
+
+F147 routes Testing Class deletion through a Qt-free Application use case and
+active-session Platform adapter while retaining the repository's transactional
+cascade. The confirmation now discloses the roster, notes, speaking
+evaluations, regular and intensive class times, and schedule assignments.
+After successful deletion, the page clears the deleted class's dirty editor
+and roster state before selecting a sibling, preventing an accidental save or
+create during the selection transition.
+
+Production commit `b037b4216b71c55c7793df5f7bbbfc4a00690065`, transition fix
+`315b3ff33b7e2ab42b43d52cd168ce21a92158c9`, and test commit
+`397376e439f4b5955c82948ab0c225aaf776d679` are accepted. Fresh Windows x64
+Debug Ninja/MSVC verification passed all 17 F147, repository, and F142–F146
+regression CTests. Cascade success preserves sibling rows; a final-delete
+trigger verifies rollback. `git diff --check` passed. No full 220-test suite or
+full application build ran. The next step is a Heavy-route candidate review
+for F148; Phase 2 gates remain open.

@@ -7619,4 +7619,34 @@ build ran.
 
 Gate 1 and Gate 2 remain Partial; workspace boundary and active-v2 DataService
 isolation remain Satisfied. Phase 2 remains In Progress with its exit gate Open.
-F147 awaits Heavy-route candidate review.
+
+### Progress update - 2026-09-30 (F147 accepted)
+
+F147 routes Testing Class deletion through the Qt-free
+`TestingClassDeleteUseCase` and an active-session Platform adapter to
+`TestingClassRepository::deleteTestingClass()`. The page's destructive
+confirmation names the roster, notes, speaking evaluations, regular and
+intensive class times, and every schedule assignment. After a successful
+delete, the page clears the deleted editor and roster before rebuilding the
+list and selecting a sibling.
+
+Production commit: `b037b4216b71c55c7793df5f7bbbfc4a00690065`; page
+transition fix: `315b3ff33b7e2ab42b43d52cd168ce21a92158c9`; acceptance-test
+commit: `397376e439f4b5955c82948ab0c225aaf776d679`. A fresh Windows x64 Debug
+Ninja/MSVC/Qt 6.12 configure/build passed all 17 focused CTests covering
+repository behavior, the F145/F146/F147 page slices, and F142-F146 regressions.
+Coverage includes the typed use case, active-session adapter and no fallback,
+full cascade with sibling preservation, rollback on a final-delete trigger
+failure, prompt disclosure, cancel/failure/success behavior, and a repaired
+page regression asserting clean sibling load, zero create/update calls, and
+exactly one signal. An initial page run exposed a crash when deleting a dirty
+selected class and then selecting a sibling; the transition fix clears the
+deleted editor and roster before list rebuild/reselection.
+
+CMake reported unrelated object-path length warnings and a missing-vswhere
+notice; configure and build succeeded. A duplicate intensive-time fixture key
+was corrected before the final pass. `git diff --check` passed. No full 220-test
+suite or full application build ran. Gate 1 and Gate 2 remain Partial; workspace
+boundary and active-v2 DataService isolation remain Satisfied. Phase 2 remains
+In Progress with its exit gate Open. F148 is the next unselected candidate,
+awaiting Heavy-route candidate review.

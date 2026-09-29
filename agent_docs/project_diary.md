@@ -1389,3 +1389,12 @@ repository transaction's rollback behavior. On a slot conflict, assert all
 four affected tables remain unchanged, not only the class row. Build fixture
 fixes in a test-only change should be followed by the complete requested
 focused run before acceptance.
+
+## 2026-09-30 — F147 Testing Class deletion
+
+When a successful delete changes selection, discard the deleted record's dirty
+editor and roster before rebuilding the list. Otherwise the page's ordinary
+selection autosave can create the deleted draft as a new class. Keep the
+failure path's draft intact. Test the full cascade, sibling preservation, and
+rollback after a late SQL failure; the destructive prompt should disclose all
+record categories the repository removes.
