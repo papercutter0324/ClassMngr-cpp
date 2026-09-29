@@ -3664,5 +3664,15 @@ registration, and three Qt minimum bumps; production page source matched blob
 The baseline run was a focused F153 harness, not the full expanded parity
 suite. Parity uses a seeded conflict warning trap and does not count repository
 queries; current-only tests assert no conflict requests. No full suite or app
-build ran. Class Notes read is under review as a possible next slice. Gates 1
-and 2 remain Partial; Phase 2 remains In Progress/Open. No push was requested.
+build ran. Gates 1 and 2 remain Partial; Phase 2 remains In Progress/Open. No
+push was requested.
+
+F154 is selected to add a dedicated typed Class Notes page read query and
+Platform port. The response is a small screen projection for text fields,
+subtitle inputs, and teacher display name, with class and teacher results
+independent. Preserve UTF-16 text, UI trimming, existing title formatting and
+fallbacks; use the active-session boundary with no `DataService` fallback.
+Initial load/discard use the query; refresh/save do not add reads. Verify
+identity/error handling, independent read failures, page load/discard behavior,
+and current versus original pinned-baseline display parity. Three independent
+solution reviews agreed this is the smallest cohesive next feature boundary.

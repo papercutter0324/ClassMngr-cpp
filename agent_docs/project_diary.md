@@ -1467,3 +1467,11 @@ coverage. The pinned legacy comparison can use an isolated test-only overlay
 when the parity harness did not exist at the baseline; verify the production
 page still matches its pinned blob. Use a seeded conflict only as a warning
 trap, and keep direct query-count claims in current-only tests.
+
+## 2026-09-30 — F154 Class Notes read boundary
+
+Complete the Class Notes read seam separately from its existing save port.
+Return a page-sized projection with independent class and teacher results;
+keep display formatting and text trimming in the UI. Preserve partial success
+when teacher lookup fails, and avoid reads on refresh or save. Keep the new
+adapter on the active session boundary without DataService fallback.

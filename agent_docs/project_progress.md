@@ -1943,4 +1943,17 @@ Toolchain: CMake 4.4.2, Ninja 1.13.2, MSVC 19.51.36257, Qt 6.12.0, with
 Parity uses a seeded conflict as a warning trap and does not count repository
 queries; direct query-count evidence remains in current-only tests. Gate 2
 remains Partial; Gate 1 remains Partial; Phase 2 remains In Progress/Open.
-Class Notes reads are under review as a possible next slice.
+
+## F154 selected Class Notes page read boundary
+
+F154 adds a dedicated typed Application read query/port for the Class Notes
+page. Return only the class ID, notes, time-filler activities, class grade and
+level, regular schedule day/start values, and teacher display name. Keep class
+and teacher source outcomes independent; preserve UTF-16 text, UI trimming,
+`SidebarNodeNaming` formatting, and existing defaults on failures. The
+Platform adapter uses the active session without a `DataService` fallback.
+Initial load and discard read through the new query; refresh and save add no
+reads. Verify query identity/error handling, adapter field mapping and
+read-failure behavior, page load/discard/fallbacks, and current versus original
+pinned-baseline display parity. Gates 1 and 2 remain Partial; Phase 2 remains
+In Progress/Open.
