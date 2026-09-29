@@ -20,7 +20,6 @@
 #include "data/repositories/teacher_import_repository.h"
 #include "data/repositories/testing_block_repository.h"
 #include "data/repositories/testing_class_repository.h"
-#include "features/schedule/ui/schedule_builder.h"
 #include "features/schedule/ui/schedule_editor_dialog.h"
 #include "features/schedule/ui/schedule_print_dialog.h"
 #include "features/schedule/services/schedule_print_service.h"
@@ -46,7 +45,9 @@ QHash<QString, int> testingClassAssignments;
 QHash<int, Roster> rosters;
 QHash<QString, SpeakingEvalRows> speakingEvaluations;
 int savedSlotStates = 0;
-int scheduleBuildCount = 0;
+int scheduleClassInfoReadCount = 0;
+int slotStateReadCount = 0;
+int testingAssignmentsReadCount = 0;
 int savedTestingBlocks = 0;
 int printRequestCount = 0;
 bool lastPrintRequestShowsEnglishNames = false;
@@ -68,6 +69,7 @@ bool existingIntensiveHours = false;
 bool distinctIntensiveDays = false;
 bool includeAlternativeMatchingClass = false;
 bool classesNavigationReadFailure = false;
+bool scheduleClassInfoReadFailure = false;
 
 void reset()
 {
@@ -79,7 +81,9 @@ void reset()
     rosters.clear();
     speakingEvaluations.clear();
     savedSlotStates = 0;
-    scheduleBuildCount = 0;
+    scheduleClassInfoReadCount = 0;
+    slotStateReadCount = 0;
+    testingAssignmentsReadCount = 0;
     savedTestingBlocks = 0;
     printRequestCount = 0;
     lastPrintRequestShowsEnglishNames = false;
@@ -101,6 +105,7 @@ void reset()
     distinctIntensiveDays = false;
     includeAlternativeMatchingClass = false;
     classesNavigationReadFailure = false;
+    scheduleClassInfoReadFailure = false;
 }
 
 void setDatabaseOpen(
@@ -115,6 +120,11 @@ void setSlotSaveFailure(
     )
 {
     slotSaveResult = std::unexpected(error);
+}
+
+void setScheduleClassInfoReadFailure(const bool fail)
+{
+    scheduleClassInfoReadFailure = fail;
 }
 
 void setIncludeAdditionalClass(
@@ -351,6 +361,74 @@ ClassInfoRepository::loadClassesNavigationRecords(
     return records;
 }
 
+Result<QList<ClassInfo>> ClassInfoRepository::loadScheduleClassInfos()
+{
+    ++ScheduleWidgetTestStubs::scheduleClassInfoReadCount;
+    if (ScheduleWidgetTestStubs::scheduleClassInfoReadFailure)
+    {
+        return std::unexpected(
+            QStringLiteral("injected schedule read failure")
+            );
+    }
+
+    QList<ClassInfo> infos;
+    const auto appendClass = [&infos](const int classId)
+    {
+        const auto loaded = DataService().loadClassInfo(classId);
+        if (loaded)
+        {
+            ClassInfo info = *loaded;
+            if (info.teacherId > 0)
+            {
+                const Teacher teacher = DataService().getTeacher(
+                    info.teacherId
+                    ).value_or(Teacher{});
+                info.teacherKr = teacher.teacherKr;
+                info.teacherEn = teacher.teacherEn;
+                info.teacherPreferredName =
+                    teacher.preferredDisplayName();
+                info.roomNumber = teacher.roomNumber;
+            }
+            infos.append(std::move(info));
+        }
+    };
+
+    if (ScheduleWidgetTestStubs::includeAdditionalClass)
+    {
+        appendClass(43);
+    }
+    appendClass(42);
+
+    if (ScheduleWidgetTestStubs::includeMiddleSchoolClasses)
+    {
+        ClassInfo m1 = DataService().loadClassInfo(45).value_or(ClassInfo{});
+        m1.classGrade = QStringLiteral("M1");
+        m1.classLevel = QStringLiteral("Solis");
+        m1.classTimes = {
+            {
+                .day = QStringLiteral("Wednesday"),
+                .startTime = QStringLiteral("4:00 PM"),
+                .endTime = QStringLiteral("4:50 PM")
+            }
+        };
+        infos.append(std::move(m1));
+
+        ClassInfo m2 = DataService().loadClassInfo(44).value_or(ClassInfo{});
+        m2.classGrade = QStringLiteral("M2");
+        m2.classLevel = QStringLiteral("Ursa");
+        m2.classTimes = {
+            {
+                .day = QStringLiteral("Monday"),
+                .startTime = QStringLiteral("4:00 PM"),
+                .endTime = QStringLiteral("4:50 PM")
+            }
+        };
+        infos.append(std::move(m2));
+    }
+
+    return infos;
+}
+
 DatabaseSession* ApplicationServices::databaseSession() const
 {
     return m_databaseSession.get();
@@ -567,6 +645,7 @@ Result<ScheduleImportSummary> DataService::importSchedule(
 
 Result<QList<IntensiveSlotState>> DataService::loadIntensiveSlotStates()
 {
+    ++ScheduleWidgetTestStubs::slotStateReadCount;
     return {};
 }
 
@@ -627,6 +706,7 @@ Result<QList<TestingBlock>> DataService::loadTestingBlocks()
 Result<QList<TestingAssignment>>
 DataService::loadTestingAssignments()
 {
+    ++ScheduleWidgetTestStubs::testingAssignmentsReadCount;
     QList<TestingAssignment> assignments;
 
     for (
@@ -1141,106 +1221,6 @@ void FontManager::setManagedRichText(
         label->setTextFormat(Qt::RichText);
         label->setText(html);
     }
-}
-
-ScheduleBuilder::ScheduleBuilder(
-    ClassService* classService
-    )
-    : m_classService(classService)
-{
-}
-
-Result<ScheduleBuildResult> ScheduleBuilder::build(
-    bool,
-    const QStringList& visibleDays
-    ) const
-{
-    ++ScheduleWidgetTestStubs::scheduleBuildCount;
-    ScheduleBuildResult result;
-    result.days = visibleDays;
-
-    if (!m_classService || !m_classService->isAvailable())
-    {
-        return result;
-    }
-
-    result.rows.append(
-        {QStringLiteral("16:00")}
-        );
-
-    if (ScheduleWidgetTestStubs::includeAdditionalClass)
-    {
-        result.rows.append(
-            {QStringLiteral("17:00")}
-            );
-    }
-
-    for (const QString& day : visibleDays)
-    {
-        result.schedule.insert(day, {});
-    }
-
-    if (visibleDays.contains(QStringLiteral("Tuesday")))
-    {
-        ScheduleEntry entry;
-        entry.classId = 42;
-        entry.teacherKr = QStringLiteral("김선생");
-        entry.teacherEn = QStringLiteral("Susan");
-        entry.roomNumber = QStringLiteral("413");
-        entry.classGrade = QStringLiteral("E4");
-        entry.classLevel = QStringLiteral("Hercules");
-
-        result.schedule[QStringLiteral("Tuesday")]
-            [QStringLiteral("16:00")]
-                .append(entry);
-    }
-
-    if (
-        ScheduleWidgetTestStubs::includeAdditionalClass
-        && visibleDays.contains(QStringLiteral("Thursday"))
-        )
-    {
-        ScheduleEntry entry;
-        entry.classId = 43;
-        entry.teacherKr = QStringLiteral("이선생");
-        entry.teacherEn = QStringLiteral("Thomas");
-        entry.roomNumber = QStringLiteral("512");
-        entry.classGrade = QStringLiteral("E5");
-        entry.classLevel = QStringLiteral("Athena");
-
-        result.schedule[QStringLiteral("Thursday")]
-            [QStringLiteral("17:00")]
-                .append(entry);
-    }
-
-    if (ScheduleWidgetTestStubs::includeMiddleSchoolClasses)
-    {
-        if (visibleDays.contains(QStringLiteral("Monday")))
-        {
-            ScheduleEntry entry;
-            entry.classId = 44;
-            entry.teacherEn = QStringLiteral("M2 Teacher");
-            entry.classGrade = QStringLiteral("M2");
-            entry.classLevel = QStringLiteral("Ursa");
-            result.schedule[QStringLiteral("Monday")]
-                [QStringLiteral("16:00")]
-                    .append(entry);
-        }
-
-        if (visibleDays.contains(QStringLiteral("Wednesday")))
-        {
-            ScheduleEntry entry;
-            entry.classId = 45;
-            entry.teacherEn = QStringLiteral("M1 Teacher");
-            entry.classGrade = QStringLiteral("M1");
-            entry.classLevel = QStringLiteral("Solis");
-            result.schedule[QStringLiteral("Wednesday")]
-                [QStringLiteral("16:00")]
-                    .append(entry);
-        }
-    }
-
-    return result;
 }
 
 QString scheduleEmptySlotState()

@@ -493,6 +493,7 @@ Result<ClassInfo> ClassInfoRepository::loadClassInfo(
     int classId
     )
 {
+    ++m_scheduleClassInfoReadMetrics.singleClassInfoReadCount;
     if (classId <= 0)
     {
         return std::unexpected(
@@ -845,6 +846,12 @@ const ClassesNavigationReadMetrics&
 ClassInfoRepository::classesNavigationReadMetrics() const noexcept
 {
     return m_classesNavigationReadMetrics;
+}
+
+const ScheduleClassInfoReadMetrics&
+ClassInfoRepository::scheduleClassInfoReadMetrics() const noexcept
+{
+    return m_scheduleClassInfoReadMetrics;
 }
 
 Result<SubPrepClassDetailsRecord>
@@ -1630,10 +1637,12 @@ ClassInfoRepository::loadClassTeacherAssignments()
 
 Result<QList<ClassInfo>> ClassInfoRepository::loadScheduleClassInfos()
 {
+    ++m_scheduleClassInfoReadMetrics.scheduleClassInfosCallCount;
     QList<ClassInfo> infos;
     QHash<int, qsizetype> indexesByClassId;
     QSqlQuery query(m_database);
 
+    ++m_scheduleClassInfoReadMetrics.metadataStatementCount;
     const auto loadedClasses = SqlQueryUtils::execute(
         query,
         QStringLiteral(R"(
@@ -1695,10 +1704,22 @@ Result<QList<ClassInfo>> ClassInfoRepository::loadScheduleClassInfos()
         infos.append(std::move(info));
     }
 
-    auto loadTimes = [&]<typename Times>(const QString& tableName, Times ClassInfo::* times)
+    auto loadTimes = [&]<typename Times>(
+        const QString& tableName,
+        Times ClassInfo::* times,
+        const bool intensive
+        )
         -> Status
     {
         QSqlQuery timesQuery(m_database);
+        if (intensive)
+        {
+            ++m_scheduleClassInfoReadMetrics.intensiveScheduleStatementCount;
+        }
+        else
+        {
+            ++m_scheduleClassInfoReadMetrics.regularScheduleStatementCount;
+        }
         const auto executed = SqlQueryUtils::execute(
             timesQuery,
             QStringLiteral(R"(
@@ -1742,11 +1763,19 @@ Result<QList<ClassInfo>> ClassInfoRepository::loadScheduleClassInfos()
         return {};
     };
 
-    if (const Status status = loadTimes(QStringLiteral("class_times"), &ClassInfo::classTimes); !status)
+    if (const Status status = loadTimes(
+            QStringLiteral("class_times"),
+            &ClassInfo::classTimes,
+            false
+            ); !status)
     {
         return std::unexpected(status.error());
     }
-    if (const Status status = loadTimes(QStringLiteral("class_intensive_times"), &ClassInfo::intensiveTimes); !status)
+    if (const Status status = loadTimes(
+            QStringLiteral("class_intensive_times"),
+            &ClassInfo::intensiveTimes,
+            true
+            ); !status)
     {
         return std::unexpected(status.error());
     }

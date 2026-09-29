@@ -32,6 +32,15 @@ struct ClassesNavigationReadMetrics final
     int intensiveScheduleStatementCount = 0;
 };
 
+struct ScheduleClassInfoReadMetrics final
+{
+    int scheduleClassInfosCallCount = 0;
+    int singleClassInfoReadCount = 0;
+    int metadataStatementCount = 0;
+    int regularScheduleStatementCount = 0;
+    int intensiveScheduleStatementCount = 0;
+};
+
 class ClassInfoRepository
 {
 public:
@@ -57,6 +66,8 @@ public:
         loadClassesNavigationRecords(const QList<int>& classIds);
     [[nodiscard]] const ClassesNavigationReadMetrics&
         classesNavigationReadMetrics() const noexcept;
+    [[nodiscard]] const ScheduleClassInfoReadMetrics&
+        scheduleClassInfoReadMetrics() const noexcept;
 
     [[nodiscard]] Result<SubPrepClassDetailsRecord>
         loadSubPrepClassDetails(int classId);
@@ -93,4 +104,5 @@ public:
 private:
     QSqlDatabase& m_database;
     ClassesNavigationReadMetrics m_classesNavigationReadMetrics;
+    ScheduleClassInfoReadMetrics m_scheduleClassInfoReadMetrics;
 };

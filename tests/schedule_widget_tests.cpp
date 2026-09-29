@@ -30,17 +30,21 @@
 #include <QLineEdit>
 #include <QPainter>
 #include <QPushButton>
+#include <QRegularExpression>
 #include <QScrollArea>
 #include <QScrollBar>
 #include <QStyleOptionViewItem>
 #include <QTableWidget>
 
 #include <algorithm>
+#include <utility>
 
 namespace ScheduleWidgetTestStubs
 {
 extern int savedSlotStates;
-extern int scheduleBuildCount;
+extern int scheduleClassInfoReadCount;
+extern int slotStateReadCount;
+extern int testingAssignmentsReadCount;
 extern QString lastSavedSlotDay;
 extern QString lastSavedSlotStartTime;
 extern QString lastSavedSlotState;
@@ -53,6 +57,8 @@ void reset();
 void setCurrentTheme(Theme theme);
 void setDatabaseOpen(bool open);
 void setSlotSaveFailure(const QString& error);
+void setScheduleClassInfoReadFailure(bool fail);
+void setExistingIntensiveHours(bool exists);
 void setIncludeMiddleSchoolClasses(bool include);
 void setTestingBlock(
     const QString& day,
@@ -174,6 +180,29 @@ ScheduleViewModel rendererTestModel(
     model.rows.append(row);
     return model;
 }
+
+const ScheduleCellView* findScheduleCell(
+    const ScheduleViewModel& model,
+    const QString& day,
+    const QString& timeLabel
+    )
+{
+    for (const ScheduleRowView& row : model.rows)
+    {
+        if (row.timeLabel != timeLabel)
+        {
+            continue;
+        }
+        for (const ScheduleCellView& cell : row.cells)
+        {
+            if (cell.day == day)
+            {
+                return &cell;
+            }
+        }
+    }
+    return nullptr;
+}
 }
 
 class ScheduleWidgetTests : public QObject
@@ -196,6 +225,10 @@ private slots:
     void testingModeDisplaysAssignedTestingClassCard();
     void testingAssignmentDialogSupportsEveryAction();
     void readOnlyPresentationHidesControlsAndIgnoresClicks();
+    void sourceQueryBuildsRegularIntensiveAndTestingSchedules();
+    void unavailableSourceReturnsDaysOnlyWithoutReading();
+    void failedSourceReadLogsAndKeepsIndependentScheduleReads();
+    void previewModelBypassesSourceAndScheduleReads();
     void timeColumnAndHeaderAreNonInteractive();
     void intensiveSlotToggleMapsAndPersistsViewModelChoice();
     void failedSlotToggleWarnsWithoutReloading();
@@ -219,6 +252,7 @@ void ScheduleWidgetTests::cleanup()
 void ScheduleWidgetTests
     ::persistsAndMirrorsEveryViewOption()
 {
+    ScheduleWidgetTestStubs::setExistingIntensiveHours(true);
     ApplicationServices services;
     ScheduleWidget interactive(&services);
 
@@ -267,7 +301,10 @@ void ScheduleWidgetTests
             table->cellWidget(0, 2)
             );
     QVERIFY(scheduledClass);
-    QVERIFY(scheduledClass->text().contains(QStringLiteral("Susan")));
+    QVERIFY2(
+        scheduledClass->text().contains(QStringLiteral("Susan")),
+        qPrintable(scheduledClass->text())
+        );
     QVERIFY(!scheduledClass->text().contains(QStringLiteral("김선생")));
 
     ScheduleWidget mirrored(
@@ -874,7 +911,8 @@ void ScheduleWidgetTests
     QVERIFY(controls);
     QVERIFY(controls->isHidden());
     QVERIFY(table);
-    QCOMPARE(table->rowCount(), 1);
+    QCOMPARE(table->rowCount(), 13);
+    QCOMPARE(ScheduleWidgetTestStubs::scheduleClassInfoReadCount, 1);
     QCOMPARE(
         widget.displayState().displayMode,
         ScheduleDisplayMode::Intensive
@@ -919,6 +957,137 @@ void ScheduleWidgetTests
     QCOMPARE(
         ScheduleWidgetTestStubs::savedSlotStates,
         0
+        );
+}
+
+void ScheduleWidgetTests::
+sourceQueryBuildsRegularIntensiveAndTestingSchedules()
+{
+    ScheduleWidgetTestStubs::setExistingIntensiveHours(true);
+
+    ApplicationServices services;
+    ScheduleWidget widget(&services);
+    widget.refreshSchedule();
+
+    QCOMPARE(ScheduleWidgetTestStubs::scheduleClassInfoReadCount, 1);
+    const ScheduleViewModel regular = widget.scheduleModel();
+    const ScheduleCellView* regularCell = findScheduleCell(
+        regular,
+        QStringLiteral("Tuesday"),
+        QStringLiteral("16:00")
+        );
+    QVERIFY(regularCell);
+    QCOMPARE(regularCell->entries.size(), 1);
+    QCOMPARE(regularCell->entries.first().classId, 42);
+
+    saveSettingOrFail(
+        services.dataService(),
+        QStringLiteral("schedule_display_mode"),
+        QStringLiteral("intensive")
+        );
+    widget.refreshSchedule();
+
+    QCOMPARE(ScheduleWidgetTestStubs::scheduleClassInfoReadCount, 2);
+    QCOMPARE(widget.displayState().displayMode, ScheduleDisplayMode::Intensive);
+    const ScheduleViewModel intensive = widget.scheduleModel();
+    const ScheduleCellView* intensiveCell = findScheduleCell(
+        intensive,
+        QStringLiteral("Tuesday"),
+        QStringLiteral("09:00")
+        );
+    QVERIFY(intensiveCell);
+    QCOMPARE(intensiveCell->entries.size(), 1);
+    QCOMPARE(intensiveCell->entries.first().classId, 42);
+
+    saveSettingOrFail(
+        services.dataService(),
+        QStringLiteral("schedule_display_mode"),
+        QStringLiteral("testing")
+        );
+    widget.refreshSchedule();
+
+    QCOMPARE(ScheduleWidgetTestStubs::scheduleClassInfoReadCount, 3);
+    QCOMPARE(widget.displayState().displayMode, ScheduleDisplayMode::Testing);
+    const ScheduleViewModel testing = widget.scheduleModel();
+    const ScheduleCellView* testingCell = findScheduleCell(
+        testing,
+        QStringLiteral("Tuesday"),
+        QStringLiteral("16:00")
+        );
+    QVERIFY(testingCell);
+    QCOMPARE(testingCell->entries.size(), 1);
+    QCOMPARE(testingCell->entries.first().classId, 42);
+}
+
+void ScheduleWidgetTests::
+unavailableSourceReturnsDaysOnlyWithoutReading()
+{
+    ScheduleWidgetTestStubs::setDatabaseOpen(false);
+
+    ApplicationServices services;
+    ScheduleWidget widget(&services);
+    widget.refreshSchedule();
+
+    QCOMPARE(ScheduleWidgetTestStubs::scheduleClassInfoReadCount, 0);
+    QCOMPARE(widget.scheduleModel().days, visibleScheduleDays(false));
+    QVERIFY(widget.scheduleModel().rows.isEmpty());
+}
+
+void ScheduleWidgetTests::
+failedSourceReadLogsAndKeepsIndependentScheduleReads()
+{
+    ScheduleWidgetTestStubs::setScheduleClassInfoReadFailure(true);
+    ScheduleWidgetTestStubs::setTestingBlock(
+        QStringLiteral("Monday"),
+        QStringLiteral("16:00"),
+        QStringLiteral("Library")
+        );
+
+    ApplicationServices services;
+    ScheduleWidget widget(&services);
+    QTest::ignoreMessage(
+        QtWarningMsg,
+        QRegularExpression(QStringLiteral(
+            ".*injected schedule read failure.*"
+            ))
+        );
+    widget.refreshSchedule();
+
+    QCOMPARE(ScheduleWidgetTestStubs::scheduleClassInfoReadCount, 1);
+    QCOMPARE(ScheduleWidgetTestStubs::slotStateReadCount, 1);
+    QCOMPARE(ScheduleWidgetTestStubs::testingAssignmentsReadCount, 1);
+    QCOMPARE(widget.scheduleModel().days, visibleScheduleDays(false));
+    QVERIFY(widget.scheduleModel().rows.isEmpty());
+}
+
+void ScheduleWidgetTests::previewModelBypassesSourceAndScheduleReads()
+{
+    ApplicationServices services;
+    ScheduleWidget widget(&services);
+
+    ScheduleViewModel preview;
+    preview.days = {QStringLiteral("Wednesday")};
+    ScheduleRowView row;
+    row.timeLabel = QStringLiteral("10:00");
+    ScheduleCellView previewCell;
+    previewCell.day = QStringLiteral("Wednesday");
+    previewCell.timeLabel = QStringLiteral("10:00");
+    row.cells.append(previewCell);
+    preview.rows.append(std::move(row));
+    widget.setPreviewModel(preview);
+    widget.refreshSchedule();
+
+    QCOMPARE(ScheduleWidgetTestStubs::scheduleClassInfoReadCount, 0);
+    QCOMPARE(ScheduleWidgetTestStubs::slotStateReadCount, 0);
+    QCOMPARE(ScheduleWidgetTestStubs::testingAssignmentsReadCount, 0);
+    QCOMPARE(
+        widget.scheduleModel().days,
+        QStringList{QStringLiteral("Wednesday")}
+        );
+    QCOMPARE(widget.scheduleModel().rows.size(), 1);
+    QCOMPARE(
+        widget.scheduleModel().rows.first().timeLabel,
+        QStringLiteral("10:00")
         );
 }
 
@@ -1013,14 +1182,30 @@ void ScheduleWidgetTests
     QVERIFY(intensiveButton);
     intensiveButton->click();
 
+    auto* table = widget.findChild<QTableWidget*>(
+        QStringLiteral("scheduleTable")
+        );
+    QVERIFY(table);
+    const ScheduleViewModel model = widget.scheduleModel();
+    int regularHourRow = -1;
+    for (int row = 0; row < model.rows.size(); ++row)
+    {
+        if (model.rows.at(row).timeLabel == QStringLiteral("16:00"))
+        {
+            regularHourRow = row;
+            break;
+        }
+    }
+    QVERIFY(regularHourRow >= 0);
+
     const int buildCountBeforeClick =
-        ScheduleWidgetTestStubs::scheduleBuildCount;
+        ScheduleWidgetTestStubs::scheduleClassInfoReadCount;
     QVERIFY(
         QMetaObject::invokeMethod(
             &widget,
             "onCellClicked",
             Qt::DirectConnection,
-            Q_ARG(int, 0),
+            Q_ARG(int, regularHourRow),
             Q_ARG(int, 1)
             )
         );
@@ -1043,7 +1228,7 @@ void ScheduleWidgetTests
         QStringLiteral("essay")
         );
     QCOMPARE(
-        ScheduleWidgetTestStubs::scheduleBuildCount,
+        ScheduleWidgetTestStubs::scheduleClassInfoReadCount,
         buildCountBeforeClick + 1
         );
 }
@@ -1066,7 +1251,7 @@ void ScheduleWidgetTests::failedSlotToggleWarnsWithoutReloading()
         QStringLiteral("injected slot failure")
         );
     const int buildCountBeforeClick =
-        ScheduleWidgetTestStubs::scheduleBuildCount;
+        ScheduleWidgetTestStubs::scheduleClassInfoReadCount;
 
     QVERIFY(
         QMetaObject::invokeMethod(
@@ -1080,7 +1265,7 @@ void ScheduleWidgetTests::failedSlotToggleWarnsWithoutReloading()
 
     QCOMPARE(ScheduleWidgetTestStubs::savedSlotStates, 1);
     QCOMPARE(
-        ScheduleWidgetTestStubs::scheduleBuildCount,
+        ScheduleWidgetTestStubs::scheduleClassInfoReadCount,
         buildCountBeforeClick
         );
     QCOMPARE(prompts.messages.size(), 1);
@@ -1112,7 +1297,7 @@ void ScheduleWidgetTests::unavailableSlotToggleSkipsWriteAndReloads()
     intensiveButton->click();
 
     const int buildCountBeforeClick =
-        ScheduleWidgetTestStubs::scheduleBuildCount;
+        ScheduleWidgetTestStubs::scheduleClassInfoReadCount;
     ScheduleWidgetTestStubs::setDatabaseOpen(false);
 
     QVERIFY(
@@ -1127,8 +1312,8 @@ void ScheduleWidgetTests::unavailableSlotToggleSkipsWriteAndReloads()
 
     QCOMPARE(ScheduleWidgetTestStubs::savedSlotStates, 0);
     QCOMPARE(
-        ScheduleWidgetTestStubs::scheduleBuildCount,
-        buildCountBeforeClick + 1
+        ScheduleWidgetTestStubs::scheduleClassInfoReadCount,
+        buildCountBeforeClick
         );
 }
 
@@ -1147,7 +1332,7 @@ void ScheduleWidgetTests::regularSlotToggleUsesSharedPersistenceHandler()
     mondaySlot->setProperty("slot_toggling_enabled", true);
 
     const int buildCountBeforeClick =
-        ScheduleWidgetTestStubs::scheduleBuildCount;
+        ScheduleWidgetTestStubs::scheduleClassInfoReadCount;
     QVERIFY(
         QMetaObject::invokeMethod(
             &widget,
@@ -1176,7 +1361,7 @@ void ScheduleWidgetTests::regularSlotToggleUsesSharedPersistenceHandler()
         QStringLiteral("empty")
         );
     QCOMPARE(
-        ScheduleWidgetTestStubs::scheduleBuildCount,
+        ScheduleWidgetTestStubs::scheduleClassInfoReadCount,
         buildCountBeforeClick + 1
         );
 }

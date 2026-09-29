@@ -15,7 +15,9 @@
 #include "features/schedule/ui/testing_assignment_dialog.h"
 #include "features/schedule/services/schedule_print_service.h"
 #include "features/schedule/services/schedule_output_controller.h"
+#include "next/application/schedule_builder_source_snapshot.h"
 #include "next/application/schedule_slot_state_save_use_case.h"
+#include "next/platform/application_services_schedule_builder_source_port.h"
 #include "next/platform/application_services_schedule_slot_state_save_port.h"
 #include "next/platform/application_services_schedule_display_preferences_port.h"
 #include "next/platform/application_services_schedule_display_mode_preferences_port.h"
@@ -1162,31 +1164,48 @@ ScheduleViewModel ScheduleWidget::buildScheduleModel()
     const ScheduleViewRequest request =
         buildScheduleViewRequest();
 
-    ScheduleBuilder builder(
-        m_services
-            ? m_services->classService()
-            : nullptr
-        );
-
-    const Result<ScheduleBuildResult> result =
-        builder.build(
-            scheduleModeUsesIntensiveTimes(
-                request.displayMode
-                ),
-            request.days
-            );
-
-    if (!result)
+    const ScheduleBuildResult unavailableResult{
+        .days = request.days
+    };
+    ClassService* const classService =
+        m_services ? m_services->classService() : nullptr;
+    if (!classService || !classService->isAvailable())
     {
-        qWarning() << result.error();
         return buildScheduleViewModel(
-            ScheduleBuildResult{.days = request.days},
+            unavailableResult,
             request
             );
     }
 
+    ClassMngr::Next::Platform::
+        ApplicationServicesScheduleBuilderSourcePort readPort(m_services);
+    const auto source = ClassMngr::Next::Application::
+        ScheduleBuilderSourceQueryHandler::execute(
+            {},
+            readPort
+            );
+    if (!source)
+    {
+        qWarning() << QString::fromUtf8(
+            source.error().message.data(),
+            static_cast<qsizetype>(source.error().message.size())
+            );
+        return buildScheduleViewModel(
+            unavailableResult,
+            request
+            );
+    }
+
+    const ScheduleBuilder builder;
+    const ScheduleBuildResult result = builder.build(
+        source.value(),
+        scheduleModeUsesIntensiveTimes(
+            request.displayMode
+            ),
+        request.days
+        );
     return buildScheduleViewModel(
-        *result,
+        result,
         request
         );
 }

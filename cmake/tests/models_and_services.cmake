@@ -62,7 +62,6 @@ qt_add_executable(ClassMngrBasePageTests
 
     qt_add_executable(ClassMngrScheduleBuilderTests
         tests/schedule_builder_tests.cpp
-        tests/schedule_builder_test_stubs.cpp
         src/features/schedule/ui/schedule_builder.cpp
     )
 
@@ -82,6 +81,7 @@ qt_add_executable(ClassMngrBasePageTests
             Qt6::Gui
             Qt6::Sql
             Qt6::Test
+            ClassMngrNext::Application
     )
 
     add_test(

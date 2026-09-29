@@ -1,15 +1,12 @@
 #pragma once
 
-#include "core/result.h"
-#include "domain/models/class_info.h"
+#include "next/application/schedule_builder_source_snapshot.h"
 
 #include <QList>
 #include <QMap>
 #include <QString>
 #include <QStringList>
 #include <QTime>
-
-class ClassService;
 
 enum class ScheduleEntryKind
 {
@@ -50,11 +47,9 @@ struct ScheduleBuildResult
 class ScheduleBuilder
 {
 public:
-    explicit ScheduleBuilder(
-        ClassService* classService
-        );
-
-    [[nodiscard]] Result<ScheduleBuildResult> build(
+    [[nodiscard]] ScheduleBuildResult build(
+        const ClassMngr::Next::Application::
+            ScheduleBuilderSourceSnapshot& source,
         bool useIntensive,
         const QStringList& visibleDays
         ) const;
@@ -76,7 +71,4 @@ private:
         int finalHour,
         int offset
         ) const;
-
-private:
-    ClassService* m_classService = nullptr;
 };

@@ -402,6 +402,8 @@ qt_add_executable(ClassMngrClassTransferTests
             Qt6::Sql
             Qt6::Widgets
             Qt6::Test
+            ClassMngrNext::Application
+            ClassMngrNext::Platform
     )
 
     add_test(

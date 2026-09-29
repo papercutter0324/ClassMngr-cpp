@@ -1,8 +1,10 @@
 #include "schedule_builder.h"
 
-#include "app/services/feature_services.h"
-
 #include <QTime>
+
+#include <charconv>
+#include <string>
+#include <system_error>
 
 namespace
 {
@@ -12,54 +14,52 @@ constexpr int FullIntensiveStartHour = 9;
 constexpr int FullIntensiveFinalHour = 21;
 
 ScheduleEntry toEntry(
-    int classId,
-    const ClassInfo& info
+    const ClassMngr::Next::Application::ScheduleBuilderSourceClass& source
     )
 {
     ScheduleEntry entry;
 
-    entry.classId = classId;
-    entry.teacherKr = info.teacherKr;
-    entry.teacherEn = info.teacherEn;
-    entry.teacherPreferredName = info.teacherPreferredName;
-    entry.roomNumber = info.roomNumber;
-    entry.classGrade = info.classGrade;
-    entry.classLevel = info.classLevel;
+    const std::string& classId = source.classId.value();
+    const auto [end, error] = std::from_chars(
+        classId.data(),
+        classId.data() + classId.size(),
+        entry.classId
+        );
+    if (error != std::errc{} || end != classId.data() + classId.size())
+    {
+        entry.classId = -1;
+    }
+
+    entry.teacherKr = QString::fromStdU16String(source.teacherKoreanName);
+    entry.teacherEn = QString::fromStdU16String(source.teacherEnglishName);
+    entry.teacherPreferredName = QString::fromStdU16String(
+        source.teacherPreferredName
+        );
+    entry.roomNumber = QString::fromStdU16String(source.roomNumber);
+    entry.classGrade = QString::fromStdU16String(source.grade);
+    entry.classLevel = QString::fromStdU16String(source.level);
     entry.classColor =
-        info.classColor.isEmpty()
+        source.classColor.empty()
             ? QStringLiteral("#FFFFFF")
-            : info.classColor;
+            : QString::fromStdU16String(source.classColor);
     entry.fontColor =
-        info.fontColor.isEmpty()
+        source.fontColor.empty()
             ? QStringLiteral("#000000")
-            : info.fontColor;
+            : QString::fromStdU16String(source.fontColor);
 
     return entry;
 }
 }
 
-ScheduleBuilder::ScheduleBuilder(
-    ClassService* classService
-    )
-    : m_classService(classService)
-{
-}
-
-Result<ScheduleBuildResult> ScheduleBuilder::build(
-    bool useIntensive,
+ScheduleBuildResult ScheduleBuilder::build(
+    const ClassMngr::Next::Application::
+        ScheduleBuilderSourceSnapshot& source,
+    const bool useIntensive,
     const QStringList& visibleDays
     ) const
 {
     ScheduleBuildResult result;
     result.days = visibleDays;
-
-    if (
-        !m_classService
-        || !m_classService->isAvailable()
-        )
-    {
-        return result;
-    }
 
     for (const QString& day : visibleDays)
     {
@@ -74,26 +74,19 @@ Result<ScheduleBuildResult> ScheduleBuilder::build(
     int earliestHour = 0;
     int scheduleOffset = 0;
 
-    const Result<QList<ClassInfo>> classInfos =
-        m_classService->scheduleClassInfos();
-    if (!classInfos)
+    for (const auto& info : source.classes)
     {
-        return std::unexpected(classInfos.error());
-    }
-
-    for (const ClassInfo& info : *classInfos)
-    {
-        const QList<ClassTime>& times =
+        const auto& times =
             useIntensive
-                ? info.intensiveTimes
-                : info.classTimes;
+                ? info.intensiveSchedule
+                : info.regularSchedule;
 
-        for (const ClassTime& time : times)
+        for (const auto& time : times)
         {
             const QString day =
-                time.day.trimmed().isEmpty()
+                QString::fromStdU16String(time.day).trimmed().isEmpty()
                     ? QStringLiteral("Monday")
-                    : time.day.trimmed();
+                    : QString::fromStdU16String(time.day).trimmed();
 
             if (!visibleDays.contains(day))
             {
@@ -101,7 +94,7 @@ Result<ScheduleBuildResult> ScheduleBuilder::build(
             }
 
             const QTime startTime =
-                parseTime(time.startTime);
+                parseTime(QString::fromStdU16String(time.startTime));
 
             if (!startTime.isValid())
             {
@@ -109,7 +102,7 @@ Result<ScheduleBuildResult> ScheduleBuilder::build(
             }
 
             const QTime endTime =
-                parseTime(time.endTime);
+                parseTime(QString::fromStdU16String(time.endTime));
 
             int adjustedHour =
                 startTime.hour();
@@ -149,7 +142,7 @@ Result<ScheduleBuildResult> ScheduleBuilder::build(
                 {
                     day,
                     startTime,
-                    toEntry(info.classId, info)
+                    toEntry(info)
                 }
                 );
         }

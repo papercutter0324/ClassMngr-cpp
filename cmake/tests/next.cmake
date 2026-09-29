@@ -221,6 +221,15 @@ classmngr_add_qt_test(
 )
 
 classmngr_add_qt_test(
+    NAME NextApplicationScheduleBuilderSourceSnapshot
+    SOURCES
+        tests/next_application_schedule_builder_source_snapshot_tests.cpp
+    LIBRARIES
+        ClassMngrNext::Application
+        Qt6::Test
+)
+
+classmngr_add_qt_test(
     NAME NextApplicationClassesNavigationSnapshot
     SOURCES
         tests/next_application_classes_navigation_snapshot_tests.cpp
@@ -1275,6 +1284,16 @@ classmngr_add_qt_test(
     NAME NextPlatformApplicationServicesScheduleSlotStateSavePort
     SOURCES
         tests/next_platform_application_services_schedule_slot_state_save_port_tests.cpp
+    LIBRARIES
+        ClassMngrNext::Platform
+        Qt6::Test
+    OFFSCREEN
+)
+
+classmngr_add_qt_test(
+    NAME NextPlatformApplicationServicesScheduleBuilderSourcePort
+    SOURCES
+        tests/next_platform_application_services_schedule_builder_source_port_tests.cpp
     LIBRARIES
         ClassMngrNext::Platform
         Qt6::Test
