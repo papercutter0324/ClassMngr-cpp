@@ -8,6 +8,8 @@
 #include "next/platform/application_services_schedule_testing_class_choices_read_port.h"
 #include "next/application/testing_class_details_read_query.h"
 #include "next/platform/application_services_testing_class_details_read_port.h"
+#include "next/application/testing_class_details_update_use_case.h"
+#include "next/platform/application_services_testing_class_details_update_port.h"
 #include "next/application/testing_teacher_choices_read_query.h"
 #include "next/platform/application_services_testing_teacher_choices_read_port.h"
 #include "core/fontmanager.h"
@@ -24,6 +26,7 @@
 #include "ui/shared/pages/page_header.h"
 
 #include <algorithm>
+#include <optional>
 #include <string>
 #include <utility>
 
@@ -94,12 +97,15 @@ TestingClassesPage::TestingClassesPage(
     const ClassMngr::Next::Application::TestingClassDetailsReadPort*
         testingClassDetailsReadPort,
     const ClassMngr::Next::Application::TestingTeacherChoicesReadPort*
-        testingTeacherChoicesReadPort
+        testingTeacherChoicesReadPort,
+    const ClassMngr::Next::Application::TestingClassDetailsUpdatePort*
+        testingClassDetailsUpdatePort
     )
     : BasePage(parent)
     , m_services(services)
     , m_testingClassChoicesReadPort(testingClassChoicesReadPort)
     , m_testingClassDetailsReadPort(testingClassDetailsReadPort)
+    , m_testingClassDetailsUpdatePort(testingClassDetailsUpdatePort)
     , m_testingTeacherChoicesReadPort(testingTeacherChoicesReadPort)
     , m_autosave(new AutosaveCoordinator(this))
 {
@@ -282,21 +288,19 @@ bool TestingClassesPage::saveChanges()
         return true;
     }
 
-    auto* scheduleService = m_services ? m_services->scheduleService() : nullptr;
-    if (!scheduleService || !scheduleService->isAvailable())
-    {
-        return false;
-    }
-
     TestingClass testingClass =
         editorValue();
-    Result<int> created =
-        std::unexpected(QString());
 
     if (m_currentClassId <= 0)
     {
-        created =
-            scheduleService->createTestingClass(
+        auto* scheduleService =
+            m_services ? m_services->scheduleService() : nullptr;
+        if (!scheduleService || !scheduleService->isAvailable())
+        {
+            return false;
+        }
+
+        const Result<int> created = scheduleService->createTestingClass(
                 testingClass,
                 m_pendingDay,
                 m_pendingStartTime
@@ -317,16 +321,74 @@ bool TestingClassesPage::saveChanges()
     {
         testingClass.classId =
             m_currentClassId;
-        const Status updated =
-            scheduleService->updateTestingClass(
-                testingClass
+        const auto classId =
+            ClassMngr::Next::Domain::ClassId::fromString(
+                std::to_string(testingClass.classId)
                 );
-        if (!updated)
+        if (!classId)
         {
             DialogServices::showWarning(
                 this,
                 tr("Save Testing Class"),
-                updated.error()
+                tr("Testing class ID must be a positive integer.")
+                );
+            return false;
+        }
+
+        std::optional<ClassMngr::Next::Domain::TeacherId> teacherId;
+        if (testingClass.teacherId > 0)
+        {
+            teacherId =
+                ClassMngr::Next::Domain::TeacherId::fromString(
+                    std::to_string(testingClass.teacherId)
+                    );
+        }
+
+        const ClassMngr::Next::Application::
+            TestingClassDetailsUpdateRequest request{
+                .classId = *classId,
+                .name = testingClass.name.toStdU16String(),
+                .grade = testingClass.grade.toStdU16String(),
+                .level = testingClass.level.toStdU16String(),
+                .room = testingClass.room.toStdU16String(),
+                .teacherId = std::move(teacherId),
+                .classColor = testingClass.classColor.toStdU16String(),
+                .fontColor = testingClass.fontColor.toStdU16String(),
+                .notes = testingClass.notes.toStdU16String()
+            };
+        ClassMngr::Next::Platform::
+            ApplicationServicesTestingClassDetailsUpdatePort defaultPort(
+                m_services
+                );
+        const ClassMngr::Next::Application::
+            TestingClassDetailsUpdatePort& updatePort =
+                m_testingClassDetailsUpdatePort
+                    ? *m_testingClassDetailsUpdatePort
+                    : defaultPort;
+        const auto updated =
+            ClassMngr::Next::Application::
+                TestingClassDetailsUpdateUseCase::execute(
+                    request,
+                    updatePort
+                    );
+        if (!updated)
+        {
+            if (
+                updated.error().code
+                == ClassMngr::Next::Domain::ErrorCode::NotFound
+                )
+            {
+                return false;
+            }
+
+            const std::string& message = updated.error().message;
+            DialogServices::showWarning(
+                this,
+                tr("Save Testing Class"),
+                QString::fromUtf8(
+                    message.data(),
+                    static_cast<qsizetype>(message.size())
+                    )
                 );
             return false;
         }

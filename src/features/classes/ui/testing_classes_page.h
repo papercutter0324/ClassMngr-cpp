@@ -22,6 +22,7 @@ namespace ClassMngr::Next::Application
 {
 class ScheduleTestingClassChoicesReadPort;
 class TestingClassDetailsReadPort;
+class TestingClassDetailsUpdatePort;
 class TestingTeacherChoicesReadPort;
 }
 
@@ -38,7 +39,9 @@ public:
         const ClassMngr::Next::Application::
             TestingClassDetailsReadPort* testingClassDetailsReadPort = nullptr,
         const ClassMngr::Next::Application::
-            TestingTeacherChoicesReadPort* testingTeacherChoicesReadPort = nullptr
+            TestingTeacherChoicesReadPort* testingTeacherChoicesReadPort = nullptr,
+        const ClassMngr::Next::Application::
+            TestingClassDetailsUpdatePort* testingClassDetailsUpdatePort = nullptr
         );
 
     void openTestingClass(
@@ -98,6 +101,8 @@ private:
         ScheduleTestingClassChoicesReadPort* m_testingClassChoicesReadPort = nullptr;
     const ClassMngr::Next::Application::
         TestingClassDetailsReadPort* m_testingClassDetailsReadPort = nullptr;
+    const ClassMngr::Next::Application::
+        TestingClassDetailsUpdatePort* m_testingClassDetailsUpdatePort = nullptr;
     const ClassMngr::Next::Application::
         TestingTeacherChoicesReadPort* m_testingTeacherChoicesReadPort = nullptr;
     TestingClass m_savedClass;
