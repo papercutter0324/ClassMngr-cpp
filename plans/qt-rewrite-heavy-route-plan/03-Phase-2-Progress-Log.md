@@ -7548,5 +7548,9 @@ full suite or baseline comparison ran. Source/test commit:
 F143 adds Gate 1 application evidence but no Gate 2 baseline-parity evidence.
 Gate 1 and Gate 2 remain Partial; workspace boundary and active-v2 DataService
 isolation remain Satisfied. Phase 2 remains In Progress with its exit gate
-Open. F143 remains the latest verified slice. After explicit resume, continue
-with the paused F144 handoff in the current Phase 2 plan; F145 is unstarted.
+Open. F143 remains the latest verified and last accepted slice. Checkpoint
+commit `56c76f412b246230fcfe00c249b195dcc6ccd95f` captures partial/unverified
+F144 and its handoff; it is not an acceptance-complete F144 slice commit. No
+F144 tests ran, the full build did not complete, and F145 is unstarted. After
+explicit resume, continue with the paused F144 handoff in the current Phase 2
+plan.

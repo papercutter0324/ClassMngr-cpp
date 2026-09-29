@@ -16,9 +16,11 @@
   behavior. F143's Testing Classes selected-detail query is committed as
   `e2a3811cdba71b58ff2289f2c756d9bf12349bf5`; fresh Windows x64 Debug focused
   CTests passed 3/3. Deployment `phase2_resume_20260929` is paused per the
-  user's request. F144 is partially implemented; acceptance and testing are
-  incomplete, and the checkpoint does not constitute an accepted F144 slice
-  commit. Its selected scope is to route
+  user's request. F144 is partially implemented; acceptance is incomplete.
+  Checkpoint commit `56c76f412b246230fcfe00c249b195dcc6ccd95f` captures the
+  partial/unverified implementation and handoff, not an acceptance-complete
+  F144 slice commit. F143 remains last accepted; no F144 tests ran, the full
+  build did not complete, and F145 is unstarted. Its selected scope is to route
   `TestingClassesPage::populateTeachers()` through a typed Application query
   and active-session Platform adapter using
   `DatabaseSession::teacherRepository()->getAllTeachers()` to close the

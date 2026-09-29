@@ -1740,6 +1740,6 @@ Satisfied. Phase 2 remains In Progress/Open.
 
 ## Current handoff — 2026-09-29
 
-Phase 2 last completed slice: F143, commit e2a3811cdba71b58ff2289f2c756d9bf12349bf5. Current position: F144 teacher-choice read is partially implemented, but its acceptance checks are incomplete and it has no commit. Keep the current working tree intact. F145 has not started.
+Phase 2 last accepted slice: F143, commit e2a3811cdba71b58ff2289f2c756d9bf12349bf5. F144 teacher-choice read is captured in checkpoint commit 56c76f412b246230fcfe00c249b195dcc6ccd95f, but its acceptance checks are incomplete; F143 remains the last accepted slice. The working tree was clean after the checkpoint. F145 has not started.
 
 Next milestone: resume F144 using the instructions in latest_session_work.md, finish its predeclared acceptance checks, update the phase records, and commit F144 only after it passes. Then begin the next slice in 00-Start-Here.md.

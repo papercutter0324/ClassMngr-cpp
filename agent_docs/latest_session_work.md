@@ -3310,7 +3310,7 @@ The user asked to stop during the current work and resume on another device. Sto
 
 Last completed slice: F143, committed as e2a3811cdba71b58ff2289f2c756d9bf12349bf5 (Phase2 - route testing class manager detail reads through application). Its focused CTests passed 3/3 in a fresh Windows x64 Debug Ninja/MSVC/Qt 6.12 tree.
 
-Current slice: F144, teacher-choice read for TestingClassesPage. Production code has been added, but the declared tests and acceptance are incomplete. A checkpoint commit preserves this incomplete state; no accepted F144 implementation commit exists. Preserve the checkpoint and any remaining uncommitted files; do not reset or discard them. No F145 work has started.
+Current slice: F144, teacher-choice read for TestingClassesPage. Checkpoint commit 56c76f412b246230fcfe00c249b195dcc6ccd95f (Phase2 - checkpoint partial F144 teacher choices) captures the partial implementation and paused handoff. It is not the acceptance-complete F144 slice. The working tree was clean after the checkpoint. No F145 work has started.
 
 Known F144 production files:
 - src/next/application/testing_teacher_choices_read_query.h
@@ -3328,13 +3328,13 @@ The Tester was interrupted at the user's request. These test paths and registrat
 - cmake/tests/next.cmake
 - cmake/tests/features.cmake
 
-Verification completed so far: a direct MSVC compile of testing_classes_page.cpp, including the new query and adapter headers, passed. git diff --check passed for the production edits. The full build did not complete: CMake regeneration stalled, and the direct MSBuild Features target encountered a FileTracker access-denied error. No F144 tests or CTests have completed; the checkpoint is not an accepted F144 implementation commit.
+Verification completed so far: a direct MSVC compile of testing_classes_page.cpp, including the new query and adapter headers, passed. git diff --check passed for the production edits. The full build did not complete: CMake regeneration stalled, and the direct MSBuild Features target encountered a FileTracker access-denied error. No F144 tests or CTests have completed; checkpoint 56c76f412b246230fcfe00c249b195dcc6ccd95f does not establish acceptance.
 
 Resume instructions:
 1. Read plans/qt-rewrite-heavy-route-plan/00-Start-Here.md and the current Phase 2 plan, progress log, and legacy mapping. Use their F144 scope and acceptance criteria.
-2. Inspect the current worktree and diffs before editing. Keep existing F144 production and any partial test or documentation work. Do not start F145 yet.
+2. Inspect checkpoint commit 56c76f412b246230fcfe00c249b195dcc6ccd95f and its files before editing. The test files may be partial; preserve and complete them. Do not start F145 yet.
 3. Complete the app-less Application query tests, Platform adapter tests, and TestingClassesPage behavior tests. Cover successful and empty results, unavailable session/repository and repository errors, ID-based selection restoration, None, trimmed labels and rooms, blank-label skipping, and the established warning behavior.
 4. Build and run the declared F144 tests, along with the existing F142/F143 regression CTests. Resolve any failures and record the actual results; the prior direct compile is not a substitute for these acceptance checks.
-5. Once F144 acceptance passes, update the phase records with verified evidence and commit F144 as its own slice. Then begin the next slice specified by 00-Start-Here.md, following the Heavy-route instructions and committing after each accepted slice.
+5. Once F144 acceptance passes, update the phase records with verified evidence and create the acceptance-complete F144 slice commit building on this checkpoint. Then begin the next slice specified by 00-Start-Here.md, following the Heavy-route instructions and committing after each accepted slice.
 
 No deployment implementation or verification should continue until work is explicitly resumed.

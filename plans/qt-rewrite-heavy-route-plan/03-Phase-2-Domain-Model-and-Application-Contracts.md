@@ -22,8 +22,11 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
   the last completed slice; its fresh Windows x64 Debug focused CTests passed
   3/3. Deployment `phase2_resume_20260929` is paused per the user's request.
   F144 is selected and partially implemented; acceptance/testing are
-  incomplete; the checkpoint does not constitute an accepted F144 slice
-  commit. The current scope is to move
+  incomplete. Checkpoint commit `56c76f412b246230fcfe00c249b195dcc6ccd95f`
+  captures the partial/unverified F144 implementation and handoff, but it is
+  not an acceptance-complete F144 slice commit. F143 remains last accepted; no
+  F144 tests ran, the full build did not complete, and F145 is unstarted. The
+  current scope is to move
   `TestingClassesPage::populateTeachers()` from `TeacherService::teachers()`
   to a Qt-free typed Application teacher-choice query/snapshot and active-
   session Platform adapter reading
@@ -241,10 +244,11 @@ reference date's year through December 31 of the following year, at most;
 
 ## F144 paused implementation handoff
 
-F143 is the last completed slice (`e2a3811cdba71b58ff2289f2c756d9bf12349bf5`).
-F144 teacher-choice reading is partially implemented; its acceptance and tests
-are incomplete, and its checkpoint commit is not an accepted F144 slice
-commit. F145 has not started.
+F143 is the last accepted slice (`e2a3811cdba71b58ff2289f2c756d9bf12349bf5`).
+Checkpoint commit `56c76f412b246230fcfe00c249b195dcc6ccd95f` captures the
+partial/unverified F144 teacher-choice implementation and handoff; it is not an
+acceptance-complete F144 slice commit. Acceptance is incomplete, no F144 tests
+ran, the full build did not complete, and F145 is unstarted.
 
 F144 production files:
 
