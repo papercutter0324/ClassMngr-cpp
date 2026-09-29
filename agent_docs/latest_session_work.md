@@ -3583,6 +3583,36 @@ field checks, and stable issue ordering. Use deterministic first-seen order
 for duplicate-slot groups because the legacy QHash group order is unspecified.
 The main implementation risk is avoiding a second book catalog while
 representing raw schedule text in the typed input.
-F150 implementation is starting; no F150 acceptance or verification is
-claimed. Gate 1 and Gate 2 remain Partial; Phase 2 remains In Progress/Open.
-No push was requested.
+F150 implementation/test commit `854f9849` (`Phase2 - move class details
+validation into typed policy`) is accepted. The policy takes typed fields,
+raw regular/intensive schedule rows, and a catalog snapshot sourced from the
+existing `ClassInfoConfig`. The page maps structured issues to its existing
+validation binder, blocks invalid saves before F149 conflict queries, and
+converts normalized values back to the save model. The `ClassService`
+save-time validation guard and F149 conflict order/warnings remain unchanged.
+
+Independent fresh Windows x64 Debug verification used CMake 4.4.2, Ninja
+1.13.2, MSVC 19.51.36257.0, and Qt 6.12.0. Configure validated 1,047
+handwritten source owners. `ClassMngrNextApplicationClassDetailsValidationPolicyTests`,
+`ClassMngrClassDetailsSavePageTests`, `ClassMngrClassDetailsPageSaveParityTests`,
+and `ClassMngrSharedPolicyTests` passed 4/4. The pinned baseline
+`48fc5c5cc7dee78d82f8bf5f1bf8b51725575b99` parity target passed 1/1. Its
+overlay included only parity source/registration and Qt minimum changes from
+6.11.1 to installed 6.12.0; no production source was overlaid. Common inputs
+cover successful save, regular/intensive conflicts, and invalid save. The
+hidden notes/activity whitespace regression passed on both revisions. The
+page-level mapping tests are representative rather than exhaustive for every
+field/focus pair. No full suite or full application build ran. A first
+baseline scratch attempt failed during incomplete extraction; the clean
+re-extracted baseline run passed. The production fix after review ensured
+normalized hidden fields are applied during save conversion.
+
+F151 is selected to extend current/baseline live-page parity for malformed
+regular and intensive schedules, end-before-start, and duplicate schedule
+rows. Assert that invalid input keeps the page dirty, blocks conflict lookup
+and save, emits no saved signal, and leaves persisted data unchanged. Do not
+assert legacy cross-group duplicate issue order because its `QHash` order was
+unspecified; compare row-specific feedback and duplicate membership. A typed
+Application query for fresh persisted teacher/notes/activity validation
+context is deferred as a separate following slice. Gates 1 and 2 remain
+Partial; Phase 2 remains In Progress/Open. No push was requested.

@@ -1417,3 +1417,19 @@ the temporary warning observer and keep the same page input and assertions.
 On Windows/MSVC, C1083 can be caused by a test object path beyond CMake's
 length limit; the F149 short-path retry reduced the path from 265 to 233
 characters and passed without a source change.
+
+## 2026-09-30 — F150 typed validation conversion
+
+When a Qt-free policy returns normalized values, the UI adapter must apply
+every persisted normalized field when reconstructing the save model, including
+hidden fields restored from storage. Seeding whitespace into hidden notes and
+activity fields caught an omission that issue-validation tests could not; keep
+that database-backed save assertion with the page parity case.
+
+## 2026-09-30 — F151 validation parity selection
+
+Extend validation parity through live regular and intensive malformed
+schedule inputs, end-before-start, and duplicate rows. Legacy `QHash` does not
+define duplicate-group order, so compare duplicate membership and visible
+row-specific behavior semantically. Keep the fresh Application read for
+hidden persisted validation fields as a separate next boundary.

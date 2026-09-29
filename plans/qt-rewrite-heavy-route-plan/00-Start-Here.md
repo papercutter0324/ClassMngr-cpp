@@ -21,12 +21,11 @@
   pending weekday/start-time assignment in the atomic repository operation.
   F147 is accepted for delete/cascade migration and the Testing Classes page
   success-transition fix. F148 is accepted with common-input Class Details
-  save parity. F126's ClassDetailsPage save already uses the Qt-free save use
-  case, which F139 reuses in ScheduleEditor; page validation and conflict
-  checks remain outside that contract. F149 is selected and implementation is
-  starting: a typed Application conflict query with an active-session Platform
-  adapter; existing page validation, warning/short-circuit behavior, and
-  save-time guards remain. See the [Phase 2 progress
+  save parity. F126's `ClassDetailsPage` save uses the Qt-free save use case,
+  reused by F139 in `ScheduleEditorDialog`. F149's typed conflict query and
+  F150's typed validation policy are accepted. F151 is selected for
+  current/baseline invalid-schedule validation parity; a separate query for
+  hidden persisted teacher/notes/activity fields follows. See the [Phase 2 progress
   log](03-Phase-2-Progress-Log.md) for commits and verification.
   Phase 2 Gates 1 and 2 remain Partial; broader feature migration, parity, and
   96-class Release memory evidence remain open. Phase 1 build-system exit

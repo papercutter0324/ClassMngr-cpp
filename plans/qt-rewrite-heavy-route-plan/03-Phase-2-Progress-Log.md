@@ -7731,3 +7731,34 @@ issues to `FormValidationBinder`. Preserve `ClassService` save-time validation,
 F149 conflict order and warnings, exact duplicate-schedule behavior, and
 validation order. Keep Qt-dependent book-catalog rules, raw malformed schedule
 input, and hidden-field behavior intact without duplicating catalog rules.
+
+### Progress update - 2026-09-30 (F150 accepted; F151 selected)
+
+F150, commit `854f9849` (`Phase2 - move class details validation into typed
+policy`), moves `ClassDetailsPage` pre-save validation and normalization into a
+typed Qt-free policy and maps structured issues to `FormValidationBinder`.
+`ClassService` save-time validation remains. The policy preserves F149 conflict
+ordering/warnings, exact duplicate-schedule behavior and validation order,
+Qt-dependent book-catalog rules, raw malformed schedule input, and hidden-field
+behavior without duplicating catalog rules.
+
+A fresh Windows x64 Debug configure with CMake 4.4.2, Ninja 1.13.2, MSVC
+19.51.36257, and Qt 6.12.0 validated 1,047 handwritten source owners. Current
+policy, page, parity, and shared-policy focused CTests passed 4/4. The pinned
+baseline `48fc5c5cc7dee78d82f8bf5f1bf8b51725575b99` parity CTest passed 1/1.
+Its overlay added only parity test source/registration and three Qt minimum
+bumps from 6.11.1 to 6.12.0; no production source was overlaid. Parity covers
+F148 successful save, F149 regular/intensive conflicts, F150 missing-level
+invalid save, and hidden persisted notes/activity whitespace trimming on both
+revisions. Page field/focus mapping cases are representative, not exhaustive.
+No full suite or application build ran. Gate 1 and Gate 2 remain Partial; Phase
+2 remains In Progress with its exit gate Open.
+
+F151 is selected for live-page current/baseline validation parity covering
+malformed regular and intensive schedule inputs, end-before-start, and
+duplicate rows. Each invalid case must remain dirty, make no conflict query,
+save, or signal, and leave persisted data unchanged. Compare duplicate
+membership and row-level feedback semantically; do not compare cross-group
+issue order because legacy `QHash` order is unspecified. A typed Application
+query for fresh hidden persisted teacher/notes/activity fields follows F151 as
+a separate slice.

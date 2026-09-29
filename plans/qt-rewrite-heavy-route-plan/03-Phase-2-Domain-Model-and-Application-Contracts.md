@@ -21,24 +21,18 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Current note: F145 is acceptance-complete as the existing Testing Class
   details update slice; F146 is accepted as new-class creation, including the
   optional pending weekday/start-time assignment in the atomic repository
-  operation. F145 preserves roster-first page behavior: a successful roster
-  save remains persisted and clean if the details update fails. F147 is accepted
-  for delete/cascade migration and the Testing Classes page success-transition
-  fix. F148 adds one common-input successful Class Details save comparison.
-  F149 is accepted: `ClassDetailsPage` uses a typed Qt-free regular/intensive
-  conflict query and active-session Platform adapter to `ClassInfoRepository`.
-  Warning rendering and sequential short-circuit stay in the page; overlap and
-  ordering stay in persistence;
-  `ClassService` save-time guards remain. F150 is selected and implementation
-  is starting: move page pre-save validation/normalization into a typed
-  Domain/Application policy and map structured issues to `FormValidationBinder`.
-  Preserve save-time validation, F149 conflict order/warnings, exact duplicate-schedule
-  behavior, validation order, Qt-dependent catalog rules, malformed schedule
-  input, and hidden-field behavior without duplicating catalog rules. F126
-  already routes `ClassDetailsPage` saves through the Qt-free save use case, and
-  F139 reuses it in `ScheduleEditorDialog`. Gates 1 and 2 remain Partial; F120
-  active-v2 DataService isolation and formal workspace-create acceptance remain
-  Satisfied.
+  operation. F145 preserves roster-first page behavior. F147 is accepted for
+  delete/cascade and its page transition fix. F148 adds common-input successful
+  save parity; F149's typed conflict query and F150's typed validation policy
+  are accepted. F126 routes `ClassDetailsPage` saves through the Qt-free use
+  case reused by F139 in `ScheduleEditorDialog`. F151 is selected for live-page
+  current/baseline parity on malformed regular/intensive schedules,
+  end-before-start, and duplicate rows. Assert invalid dirty state, no
+  conflict/save/signal, and unchanged persisted data; compare duplicate
+  feedback semantically without cross-group issue-order assertions. A separate
+  hidden persisted teacher/notes/activity query follows F151. Gates 1 and 2
+  remain Partial; F120 active-v2 DataService isolation and formal
+  workspace-create acceptance remain Satisfied.
   Historical workbook provenance remains a tracked risk, not a literal exit
   criterion. Sub Prep remains January 1 of the reference date's year through
   December 31 of the following year at most; 2026-2027 is illustrative.
@@ -272,8 +266,8 @@ No production defect was observed.
 F144 is the preceding accepted slice. F145's accepted existing-class details
 update is recorded below. F146's accepted new-class create, including the
 optional pending weekday/start-time assignment, is recorded after it. F147's
-accepted delete/cascade migration is recorded below; F148 and F149 acceptance
-are recorded below; F150 implementation is starting.
+accepted delete/cascade migration is recorded below; F148-F150 acceptance
+and F151 selection are recorded below.
 
 ## F145 acceptance record
 
@@ -343,7 +337,29 @@ page; overlap calculation/order stay in persistence; `ClassService` save-time
 guards remain. The page behavior test
 `regularConflictShortCircuitsIntensiveAndKeepsSameNameWording` covers the
 same-display-name warning edge case. Baseline parity compares regular/intensive
-conflicts with distinct conflicting class names. Focused current and baseline evidence is recorded in
-the [Phase 2 progress log](03-Phase-2-Progress-Log.md). F150 now owns the
-pre-save validation/normalization migration. Gates 1 and 2 remain Partial; the
-Phase 2 exit gate remains Open.
+conflicts with distinct conflicting class names. Focused current and baseline
+evidence is recorded in the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
+F150 acceptance is recorded below. Gates 1 and 2
+remain Partial; the Phase 2 exit gate remains Open.
+
+## F150 acceptance record
+
+F150 moves `ClassDetailsPage` pre-save validation and normalization into a
+typed Qt-free Domain/Application policy and maps structured issues through
+`FormValidationBinder`. It preserves `ClassService` save-time validation,
+F149 conflict ordering/warnings, exact duplicate-schedule behavior, validation
+order, Qt-dependent book-catalog rules, raw malformed schedule input, and
+hidden-field behavior without duplicating catalog rules. Current and baseline
+verification, including representative-only page field/focus mapping coverage,
+is recorded in the [Phase 2 progress log](03-Phase-2-Progress-Log.md). Gates 1
+and 2 remain Partial; Phase 2 remains In Progress with its exit gate Open.
+
+## F151 selected validation-parity slice
+
+F151 compares live-page current and baseline validation for malformed regular
+and intensive schedule inputs, end-before-start, and duplicate rows. Invalid
+cases must remain dirty and make no conflict query, save, or signal, with
+persisted data unchanged. Compare duplicate membership and row feedback
+semantically; do not compare cross-group issue order because legacy `QHash`
+ordering is unspecified. A separate typed Application query for fresh hidden
+persisted teacher/notes/activity fields follows F151.

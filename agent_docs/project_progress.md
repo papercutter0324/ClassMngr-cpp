@@ -1839,7 +1839,7 @@ parity CTest passed 1/1 for F148 success plus F149 regular/intensive conflict
 cases. No full suite or application build ran. Gate 1 and Gate 2 remain
 Partial, and Phase 2 remains In Progress/Open.
 
-## F150 selected — 2026-09-30
+## F150 selection record — 2026-09-30
 
 F150 moves Class Details pre-save normalization and validation behind a
 Qt-free typed Domain/Application policy, then maps structured issues back to
@@ -1847,5 +1847,30 @@ the existing page field feedback. Keep `ClassService` save-time validation
 and F149 conflict preflight unchanged. Preserve book-catalog rules, malformed
 schedule diagnostics, duplicate-schedule semantics, hidden-field checks, and
 stable issue order. Make legacy unordered duplicate-group diagnostics
-deterministic in first-seen order. Implementation is starting; Phase 2 gates
-remain Partial/Open.
+deterministic in first-seen order. See the acceptance record below; Phase 2
+gates remain Partial/Open.
+
+## F150 Class Details validation policy — 2026-09-30
+
+Commit `854f9849` moves page pre-save normalization and validation into a
+Qt-free typed policy. The page adapts the live `ClassInfoConfig` catalog,
+retains malformed schedule row text, maps structured issues to existing field
+feedback, blocks conflicts/saves for invalid input, and saves normalized
+values. `ClassService` save-time validation and F149 conflict ordering remain.
+
+Fresh Windows x64 Debug Ninja/MSVC verification (CMake 4.4.2, Ninja 1.13.2,
+MSVC 19.51.36257, Qt 6.12.0) validated 1,047 handwritten source owners. The
+policy, page validation, parity, and shared-policy targets passed CTest 4/4.
+The pinned baseline `48fc5c5cc7dee78d82f8bf5f1bf8b51725575b99` parity target
+passed 1/1 with only the test source/registration and three Qt minimum bumps
+overlaid; no production source was changed. Parity covers F148 successful
+save, F149 regular/intensive conflicts, and F150 invalid save. A regression
+also checks trimming of hidden persisted notes and activity text. Representative
+page field/focus mappings are tested; mapping every field directly through the
+page remains a coverage limitation. No full suite or application build ran.
+Gate 1 and Gate 2 remain Partial; Phase 2 remains In Progress/Open. F151 is
+selected to add live-page baseline parity for malformed regular/intensive
+schedule validation, end-before-start, and duplicate rows. Compare duplicate
+membership and row-specific feedback semantically because the legacy
+cross-group `QHash` order is unspecified. A typed Application read for hidden
+persisted validation fields remains a separate subsequent candidate.
