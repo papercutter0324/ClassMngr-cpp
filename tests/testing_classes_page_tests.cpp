@@ -291,6 +291,7 @@ private slots:
     void unavailableTestingClassChoicesQueryIsSilentAndEmpty();
     void testingClassChoicesQueryFailureShowsExactWarning();
     void testingTeacherChoicesPopulateOrderedTrimmedChoicesAndRestoreSelection();
+    void emptySuccessfulTestingTeacherChoicesKeepNoneSelectedWithoutWarning();
     void unavailableTestingTeacherChoicesQueryIsSilent();
     void testingTeacherChoicesQueryFailureShowsExactWarning();
     void testingClassDetailsReadMapsEditorRosterAndCleanState();
@@ -949,6 +950,39 @@ testingTeacherChoicesPopulateOrderedTrimmedChoicesAndRestoreSelection()
 }
 
 void TestingClassesPageTests::
+emptySuccessfulTestingTeacherChoicesKeepNoneSelectedWithoutWarning()
+{
+    ApplicationServices services;
+    FixedTestingClassChoicesReadPort classChoicesReadPort;
+    classChoicesReadPort.result = ClassMngr::Next::Application::
+        ScheduleTestingClassChoicesReadResult::success({});
+    FixedTestingTeacherChoicesReadPort teacherChoicesReadPort;
+    teacherChoicesReadPort.result = ClassMngr::Next::Application::
+        TestingTeacherChoicesReadResult::success({});
+    FakeUserPromptService prompts;
+    DialogServices::setUserPromptServiceForTesting(&prompts);
+
+    TestingClassesPage page(
+        &services,
+        nullptr,
+        &classChoicesReadPort,
+        nullptr,
+        &teacherChoicesReadPort
+        );
+    page.refresh();
+
+    auto* teacherCombo = page.findChild<QComboBox*>(
+        QStringLiteral("testingClassTeacherCombo")
+        );
+    QVERIFY(teacherCombo);
+    QCOMPARE(teacherChoicesReadPort.callCount, 1);
+    QCOMPARE(teacherCombo->count(), 1);
+    QCOMPARE(teacherCombo->currentText(), QStringLiteral("None"));
+    QCOMPARE(teacherCombo->currentData().toInt(), -1);
+    QVERIFY(prompts.messages.isEmpty());
+}
+
+void TestingClassesPageTests::
 unavailableTestingTeacherChoicesQueryIsSilent()
 {
     ApplicationServices services;
@@ -991,7 +1025,16 @@ unavailableTestingTeacherChoicesQueryIsSilent()
 void TestingClassesPageTests::
 testingTeacherChoicesQueryFailureShowsExactWarning()
 {
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+
     ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+    // Keep the old source populated so an accidental fallback would add rows.
+    const auto legacyTeachers = services.teacherService()->teachers();
+    QVERIFY(legacyTeachers);
+    QVERIFY(!legacyTeachers->isEmpty());
+
     FixedTestingClassChoicesReadPort classChoicesReadPort;
     classChoicesReadPort.result = ClassMngr::Next::Application::
         ScheduleTestingClassChoicesReadResult::success({});
@@ -1020,6 +1063,8 @@ testingTeacherChoicesQueryFailureShowsExactWarning()
     QVERIFY(teacherCombo);
     QCOMPARE(teacherChoicesReadPort.callCount, 1);
     QCOMPARE(teacherCombo->count(), 1);
+    QCOMPARE(teacherCombo->currentText(), QStringLiteral("None"));
+    QCOMPARE(teacherCombo->currentData().toInt(), -1);
     QCOMPARE(prompts.messages.size(), 1);
     QCOMPARE(prompts.messages.constFirst().title, QStringLiteral("Load Teachers"));
     QCOMPARE(prompts.messages.constFirst().severity, PromptSeverity::Warning);
