@@ -7,18 +7,24 @@
 #include "features/classes/ui/class_details_page.h"
 #include "ui/shared/dialogs/user_prompt_service.h"
 #include "ui/shared/pages/page_header.h"
+#include "ui/shared/validation/form_validation_binder.h"
 #include "ui/shared/widgets/sectioncards/class_time_row.h"
 #include "ui/shared/widgets/sections/class_schedule_section.h"
 
+#include <QCoreApplication>
 #include <QComboBox>
 #include <QLabel>
 #include <QPushButton>
 #include <QSignalSpy>
 #include <QSqlQuery>
 #include <QTemporaryDir>
+#include <QSet>
 #include <QTimer>
-#include <QUuid>
 #include <QtTest/QtTest>
+#include <QUuid>
+#include <QVariantList>
+
+#include <vector>
 
 namespace
 {
@@ -98,13 +104,67 @@ void setSchedule(
     row->setEndTime(end);
 }
 
+void setRawEndTime(ClassTimeRow* row, const QString& value)
+{
+    Q_ASSERT(row);
+    row->endCombo()->addItem(value);
+    row->endCombo()->setCurrentText(value);
+}
+
+bool sameSchedule(
+    const QList<ClassTime>& left,
+    const QList<ClassTime>& right
+    )
+{
+    if (left.size() != right.size())
+    {
+        return false;
+    }
+    for (qsizetype index = 0; index < left.size(); ++index)
+    {
+        if (left.at(index).day != right.at(index).day
+            || left.at(index).startTime != right.at(index).startTime
+            || left.at(index).endTime != right.at(index).endTime)
+        {
+            return false;
+        }
+    }
+    return true;
+}
+
+bool sameClassInfo(const ClassInfo& left, const ClassInfo& right)
+{
+    return left.classId == right.classId
+        && left.teacherId == right.teacherId
+        && left.teacherKr == right.teacherKr
+        && left.teacherEn == right.teacherEn
+        && left.teacherPreferredName == right.teacherPreferredName
+        && left.roomNumber == right.roomNumber
+        && left.wifiName == right.wifiName
+        && left.wifiPassword == right.wifiPassword
+        && left.internetType == right.internetType
+        && left.zoomId == right.zoomId
+        && left.zoomPassword == right.zoomPassword
+        && left.projectionType == right.projectionType
+        && left.classGrade == right.classGrade
+        && left.classLevel == right.classLevel
+        && left.readingBook == right.readingBook
+        && left.essayBook == right.essayBook
+        && left.classColor == right.classColor
+        && left.fontColor == right.fontColor
+        && left.notes == right.notes
+        && left.timeFillerActivities == right.timeFillerActivities
+        && sameSchedule(left.classTimes, right.classTimes)
+        && sameSchedule(left.intensiveTimes, right.intensiveTimes);
+}
+
 bool saveAndCaptureWarning(
     ClassDetailsPage& page,
     QString* title,
     QString* message
     )
 {
-    QTimer::singleShot(0, [&] {
+    QTimer::singleShot(0, [title, message] {
         const auto prompt = DialogServices::promptTestDriver().activePrompt();
         if (!prompt)
         {
@@ -121,6 +181,17 @@ bool saveAndCaptureWarning(
         DialogServices::promptTestDriver().accept(prompt->id);
     });
     return page.saveChanges();
+}
+
+bool saveAndCaptureOptionalWarning(
+    ClassDetailsPage& page,
+    QString* title,
+    QString* message
+    )
+{
+    const bool saved = saveAndCaptureWarning(page, title, message);
+    QCoreApplication::processEvents();
+    return saved;
 }
 
 void chooseNewDetails(ClassDetailsPage& page)
@@ -151,6 +222,7 @@ private slots:
     void successfulUiSaveMatchesSeededCommonInputState();
     void regularAndIntensiveConflictSavesMatchCommonBaselineInputs();
     void invalidUiSaveMatchesCommonBaselineInputState();
+    void invalidScheduleUiSavesMatchCommonBaselineInputs();
 };
 
 void ClassDetailsPageSaveParityTests::successfulUiSaveMatchesSeededCommonInputState()
@@ -512,6 +584,360 @@ invalidUiSaveMatchesCommonBaselineInputState()
         persistedAfter->intensiveTimes.size(),
         persistedBefore->intensiveTimes.size()
         );
+}
+
+void ClassDetailsPageSaveParityTests::
+invalidScheduleUiSavesMatchCommonBaselineInputs()
+{
+    enum class FailureKind
+    {
+        MalformedRegular,
+        MalformedIntensive,
+        EndBeforeStart,
+        DuplicateRows
+    };
+
+    const FailureKind cases[]{
+        FailureKind::MalformedRegular,
+        FailureKind::MalformedIntensive,
+        FailureKind::EndBeforeStart,
+        FailureKind::DuplicateRows
+    };
+
+    for (const FailureKind failureKind : cases)
+    {
+        ScheduleType mode = ScheduleType::Regular;
+        QString caseName;
+        QString sourceName;
+        std::vector<ClassTime> candidateTimes;
+        ClassTime conflictTime;
+        int malformedRow = -1;
+        QString malformedValue;
+        QString expectedCode;
+        QString expectedField;
+        QString expectedMessage;
+        QString validationLabel;
+        QSet<int> expectedDuplicateRows;
+
+        switch (failureKind)
+        {
+        case FailureKind::MalformedRegular:
+            caseName = QStringLiteral("Malformed Regular");
+            sourceName = QStringLiteral("Malformed Regular Conflict Source");
+            mode = ScheduleType::Regular;
+            candidateTimes = {
+                {
+                    QStringLiteral("Monday"),
+                    QStringLiteral("7:00 AM"),
+                    QStringLiteral("placeholder")
+                },
+                {
+                    QStringLiteral("Tuesday"),
+                    QStringLiteral("8:00 AM"),
+                    QStringLiteral("8:55 AM")
+                }
+            };
+            conflictTime = {
+                QStringLiteral("Tuesday"),
+                QStringLiteral("8:00 AM"),
+                QStringLiteral("8:55 AM")
+            };
+            malformedRow = 0;
+            malformedValue = QStringLiteral("not-a-time");
+            expectedCode = QStringLiteral("schedule.time.invalid_format");
+            expectedField = QStringLiteral("classTimes[0].endTime");
+            expectedMessage = QStringLiteral("Enter a valid value.");
+            validationLabel = QStringLiteral(
+                "classRegularScheduleValidationMessage"
+                );
+            break;
+
+        case FailureKind::MalformedIntensive:
+            caseName = QStringLiteral("Malformed Intensive");
+            sourceName = QStringLiteral("Malformed Intensive Conflict Source");
+            mode = ScheduleType::Intensive;
+            candidateTimes = {
+                {
+                    QStringLiteral("Wednesday"),
+                    QStringLiteral("1:00 PM"),
+                    QStringLiteral("placeholder")
+                },
+                {
+                    QStringLiteral("Tuesday"),
+                    QStringLiteral("12:00 PM"),
+                    QStringLiteral("12:55 PM")
+                }
+            };
+            conflictTime = {
+                QStringLiteral("Tuesday"),
+                QStringLiteral("12:00 PM"),
+                QStringLiteral("12:55 PM")
+            };
+            malformedRow = 0;
+            malformedValue = QStringLiteral("not-a-time");
+            expectedCode = QStringLiteral("schedule.time.invalid_format");
+            expectedField = QStringLiteral("intensiveTimes[0].endTime");
+            expectedMessage = QStringLiteral("Enter a valid value.");
+            validationLabel = QStringLiteral(
+                "classIntensiveScheduleValidationMessage"
+                );
+            break;
+
+        case FailureKind::EndBeforeStart:
+            caseName = QStringLiteral("End Before Start");
+            sourceName = QStringLiteral("End Before Start Conflict Source");
+            candidateTimes = {
+                {
+                    QStringLiteral("Monday"),
+                    QStringLiteral("9:00 AM"),
+                    QStringLiteral("8:55 AM")
+                },
+                {
+                    QStringLiteral("Tuesday"),
+                    QStringLiteral("8:00 AM"),
+                    QStringLiteral("8:55 AM")
+                }
+            };
+            conflictTime = {
+                QStringLiteral("Tuesday"),
+                QStringLiteral("8:00 AM"),
+                QStringLiteral("8:55 AM")
+            };
+            expectedCode = QStringLiteral("schedule.time.end_not_after_start");
+            expectedField = QStringLiteral("classTimes[0].endTime");
+            expectedMessage = QStringLiteral(
+                "The end time must be after the start time."
+                );
+            validationLabel = QStringLiteral(
+                "classRegularScheduleValidationMessage"
+                );
+            break;
+
+        case FailureKind::DuplicateRows:
+            caseName = QStringLiteral("Duplicate Rows");
+            sourceName = QStringLiteral("Duplicate Rows Conflict Source");
+            candidateTimes = {
+                {
+                    QStringLiteral("Monday"),
+                    QStringLiteral("9:00 AM"),
+                    QStringLiteral("9:55 AM")
+                },
+                {
+                    QStringLiteral("Monday"),
+                    QStringLiteral("9:00 AM"),
+                    QStringLiteral("9:55 AM")
+                },
+                {
+                    QStringLiteral("Tuesday"),
+                    QStringLiteral("8:00 AM"),
+                    QStringLiteral("8:55 AM")
+                },
+                {
+                    QStringLiteral("Tuesday"),
+                    QStringLiteral("8:00 AM"),
+                    QStringLiteral("8:55 AM")
+                },
+                {
+                    QStringLiteral("Wednesday"),
+                    QStringLiteral("7:00 AM"),
+                    QStringLiteral("7:55 AM")
+                }
+            };
+            conflictTime = candidateTimes.front();
+            expectedCode = QStringLiteral("class_time.duplicate_slot");
+            expectedMessage = QStringLiteral("Enter a valid value.");
+            validationLabel = QStringLiteral(
+                "classRegularScheduleValidationMessage"
+                );
+            expectedDuplicateRows = {0, 1, 2, 3};
+            break;
+        }
+
+        QTemporaryDir directory;
+        QVERIFY(directory.isValid());
+        ApplicationServices services;
+        QVERIFY(services.openDatabase(databasePath(directory)));
+        const QString targetName = QStringLiteral(
+            "Common Invalid Schedule Target %1"
+            ).arg(caseName);
+        const int targetId = createClass(services, targetName);
+        const int sourceId = createClass(services, sourceName);
+        QVERIFY(targetId > 0);
+        QVERIFY(sourceId > 0);
+
+        auto sourceInfoResult = services.classService()->classInfo(sourceId);
+        QVERIFY(sourceInfoResult);
+        ClassInfo sourceInfo = *sourceInfoResult;
+        if (mode == ScheduleType::Regular)
+        {
+            sourceInfo.classTimes.append(conflictTime);
+        }
+        else
+        {
+            sourceInfo.intensiveTimes.append(conflictTime);
+        }
+        QVERIFY(services.classService()->saveClassInfo(sourceInfo));
+
+        const auto persistedTargetBefore =
+            services.classService()->classInfo(targetId);
+        const auto persistedSourceBefore =
+            services.classService()->classInfo(sourceId);
+        QVERIFY(persistedTargetBefore && persistedSourceBefore);
+
+        // The leading public constructor is shared with the pinned baseline;
+        // the conflicting source row acts as a preflight trap if validation
+        // ever falls through to conflict-warning handling.
+        ClassDetailsPage page(&services, false);
+        page.setSaveMode(SaveMode::Manual);
+        page.loadClass(Classroom(targetName, targetId));
+        auto* header = page.findChild<PageHeader*>();
+        auto* schedule = page.findChild<ClassScheduleSection*>();
+        QVERIFY(header && schedule);
+        const QString subtitleBefore = header->subtitle();
+
+        std::vector<ClassTimeRow*> rows;
+        rows.reserve(candidateTimes.size());
+        for (std::size_t index = 0; index < candidateTimes.size(); ++index)
+        {
+            ClassTimeRow* row = addScheduleRow(page, mode);
+            QVERIFY(row);
+            const ClassTime& value = candidateTimes[index];
+            setSchedule(row, value.day, value.startTime, value.endTime);
+            if (static_cast<int>(index) == malformedRow)
+            {
+                setRawEndTime(row, malformedValue);
+            }
+            else if (failureKind == FailureKind::EndBeforeStart && index == 0)
+            {
+                setRawEndTime(row, value.endTime);
+            }
+            rows.push_back(row);
+        }
+
+        auto* validationMessage = page.findChild<QLabel*>(validationLabel);
+        auto* binder = page.findChild<FormValidationBinder*>();
+        QVERIFY(validationMessage && binder);
+        QCOMPARE(validationMessage->text(), expectedMessage);
+        QVERIFY(binder->validation().hasErrors());
+
+        const ValidationIssues& issues = binder->validation().issues();
+        if (failureKind == FailureKind::DuplicateRows)
+        {
+            QSet<int> reportedRows;
+            int duplicateIssueCount = 0;
+            for (const ValidationIssue& issue : issues)
+            {
+                if (issue.code != expectedCode)
+                {
+                    continue;
+                }
+                ++duplicateIssueCount;
+                reportedRows.insert(issue.row);
+                QVERIFY(issue.isError());
+                QCOMPARE(issue.column, 1);
+                QCOMPARE(
+                    issue.field,
+                    QStringLiteral("classTimes[%1].startTime").arg(issue.row)
+                    );
+
+                QSet<int> groupRows;
+                const QVariantList group = issue.arguments
+                    .value(QStringLiteral("duplicateRows"))
+                    .toList();
+                for (const QVariant& row : group)
+                {
+                    groupRows.insert(row.toInt());
+                }
+                QVERIFY(groupRows.size() == 2);
+                if (issue.row == 0 || issue.row == 1)
+                {
+                    QVERIFY(groupRows.contains(0));
+                    QVERIFY(groupRows.contains(1));
+                }
+                else
+                {
+                    QVERIFY(issue.row == 2 || issue.row == 3);
+                    QVERIFY(groupRows.contains(2));
+                    QVERIFY(groupRows.contains(3));
+                }
+            }
+            QCOMPARE(duplicateIssueCount, 4);
+            QCOMPARE(reportedRows.size(), expectedDuplicateRows.size());
+            for (const int row : expectedDuplicateRows)
+            {
+                QVERIFY(reportedRows.contains(row));
+                QCOMPARE(
+                    rows[static_cast<std::size_t>(row)]
+                        ->startHourCombo()
+                        ->property("formValidationState")
+                        .toString(),
+                    QStringLiteral("error")
+                    );
+            }
+            QVERIFY(!rows[4]->startHourCombo()
+                         ->property("formValidationState")
+                         .isValid());
+        }
+        else
+        {
+            QCOMPARE(issues.size(), 1);
+            const ValidationIssue& issue = issues.front();
+            QVERIFY(issue.isError());
+            QCOMPARE(issue.code, expectedCode);
+            QCOMPARE(issue.field, expectedField);
+            QCOMPARE(issue.row, 0);
+            QCOMPARE(issue.column, 2);
+            if (failureKind == FailureKind::MalformedRegular
+                || failureKind == FailureKind::MalformedIntensive)
+            {
+                QCOMPARE(
+                    issue.arguments.value(QStringLiteral("value")).toString(),
+                    malformedValue
+                    );
+            }
+            else
+            {
+                QCOMPARE(
+                    issue.arguments.value(QStringLiteral("start")).toString(),
+                    QStringLiteral("9:00 AM")
+                    );
+                QCOMPARE(
+                    issue.arguments.value(QStringLiteral("end")).toString(),
+                    QStringLiteral("8:55 AM")
+                    );
+            }
+            QCOMPARE(
+                rows.front()->endCombo()->property("formValidationState")
+                    .toString(),
+                QStringLiteral("error")
+                );
+        }
+
+        QSignalSpy savedSpy(&page, &ClassDetailsPage::classInfoSaved);
+        QVERIFY(savedSpy.isValid());
+        QVERIFY(page.hasUnsavedChanges());
+        QString warningTitle;
+        QString warningMessage;
+        QVERIFY(!saveAndCaptureOptionalWarning(
+            page,
+            &warningTitle,
+            &warningMessage
+            ));
+        QVERIFY(warningTitle.isEmpty());
+        QVERIFY(warningMessage.isEmpty());
+        QVERIFY(!DialogServices::promptTestDriver().activePrompt());
+        QCOMPARE(savedSpy.size(), 0);
+        QVERIFY(page.hasUnsavedChanges());
+        QCOMPARE(header->subtitle(), subtitleBefore);
+
+        const auto persistedTargetAfter =
+            services.classService()->classInfo(targetId);
+        const auto persistedSourceAfter =
+            services.classService()->classInfo(sourceId);
+        QVERIFY(persistedTargetAfter && persistedSourceAfter);
+        QVERIFY(sameClassInfo(*persistedTargetBefore, *persistedTargetAfter));
+        QVERIFY(sameClassInfo(*persistedSourceBefore, *persistedSourceAfter));
+    }
 }
 
 QTEST_MAIN(ClassDetailsPageSaveParityTests)
