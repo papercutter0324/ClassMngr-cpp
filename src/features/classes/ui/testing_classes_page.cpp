@@ -10,6 +10,8 @@
 #include "next/platform/application_services_testing_class_details_read_port.h"
 #include "next/application/testing_class_details_update_use_case.h"
 #include "next/platform/application_services_testing_class_details_update_port.h"
+#include "next/application/testing_class_create_use_case.h"
+#include "next/platform/application_services_testing_class_create_port.h"
 #include "next/application/testing_teacher_choices_read_query.h"
 #include "next/platform/application_services_testing_teacher_choices_read_port.h"
 #include "core/fontmanager.h"
@@ -99,13 +101,16 @@ TestingClassesPage::TestingClassesPage(
     const ClassMngr::Next::Application::TestingTeacherChoicesReadPort*
         testingTeacherChoicesReadPort,
     const ClassMngr::Next::Application::TestingClassDetailsUpdatePort*
-        testingClassDetailsUpdatePort
+        testingClassDetailsUpdatePort,
+    const ClassMngr::Next::Application::TestingClassCreatePort*
+        testingClassCreatePort
     )
     : BasePage(parent)
     , m_services(services)
     , m_testingClassChoicesReadPort(testingClassChoicesReadPort)
     , m_testingClassDetailsReadPort(testingClassDetailsReadPort)
     , m_testingClassDetailsUpdatePort(testingClassDetailsUpdatePort)
+    , m_testingClassCreatePort(testingClassCreatePort)
     , m_testingTeacherChoicesReadPort(testingTeacherChoicesReadPort)
     , m_autosave(new AutosaveCoordinator(this))
 {
@@ -293,29 +298,84 @@ bool TestingClassesPage::saveChanges()
 
     if (m_currentClassId <= 0)
     {
-        auto* scheduleService =
-            m_services ? m_services->scheduleService() : nullptr;
-        if (!scheduleService || !scheduleService->isAvailable())
+        std::optional<ClassMngr::Next::Domain::TeacherId> teacherId;
+        if (testingClass.teacherId > 0)
         {
+            teacherId =
+                ClassMngr::Next::Domain::TeacherId::fromString(
+                    std::to_string(testingClass.teacherId)
+                    );
+        }
+
+        std::optional<std::u16string> assignmentDay;
+        std::optional<std::u16string> assignmentStartTime;
+        if (
+            !m_pendingDay.trimmed().isEmpty()
+            || !m_pendingStartTime.trimmed().isEmpty()
+            )
+        {
+            assignmentDay = m_pendingDay.toStdU16String();
+            assignmentStartTime = m_pendingStartTime.toStdU16String();
+        }
+
+        const ClassMngr::Next::Application::TestingClassCreateRequest request{
+            .name = testingClass.name.toStdU16String(),
+            .grade = testingClass.grade.toStdU16String(),
+            .level = testingClass.level.toStdU16String(),
+            .room = testingClass.room.toStdU16String(),
+            .teacherId = std::move(teacherId),
+            .classColor = testingClass.classColor.toStdU16String(),
+            .fontColor = testingClass.fontColor.toStdU16String(),
+            .notes = testingClass.notes.toStdU16String(),
+            .assignmentDay = std::move(assignmentDay),
+            .assignmentStartTime = std::move(assignmentStartTime)
+        };
+        ClassMngr::Next::Platform::
+            ApplicationServicesTestingClassCreatePort defaultPort(m_services);
+        const ClassMngr::Next::Application::TestingClassCreatePort& createPort =
+            m_testingClassCreatePort
+                ? *m_testingClassCreatePort
+                : defaultPort;
+        const auto created =
+            ClassMngr::Next::Application::TestingClassCreateUseCase::execute(
+                request,
+                createPort
+                );
+        if (!created)
+        {
+            if (
+                created.error().code
+                == ClassMngr::Next::Domain::ErrorCode::NotFound
+                )
+            {
+                return false;
+            }
+
+            const std::string& message = created.error().message;
+            DialogServices::showWarning(
+                this,
+                tr("Save Testing Class"),
+                QString::fromUtf8(
+                    message.data(),
+                    static_cast<qsizetype>(message.size())
+                    )
+                );
             return false;
         }
 
-        const Result<int> created = scheduleService->createTestingClass(
-                testingClass,
-                m_pendingDay,
-                m_pendingStartTime
-                );
-        if (!created)
+        bool classIdConverted = false;
+        testingClass.classId = QString::fromStdString(
+            created.value().value()
+            ).toInt(&classIdConverted);
+        if (!classIdConverted || testingClass.classId <= 0)
         {
             DialogServices::showWarning(
                 this,
                 tr("Save Testing Class"),
-                created.error()
+                tr("Creating the testing class did not return a valid ID.")
                 );
             return false;
         }
-
-        testingClass.classId = *created;
     }
     else
     {
