@@ -16,6 +16,7 @@
 #include <QLabel>
 #include <QPushButton>
 #include <QSignalSpy>
+#include <QSqlError>
 #include <QSqlQuery>
 #include <QTemporaryDir>
 #include <QSet>
@@ -41,6 +42,12 @@ QString databasePath(QTemporaryDir& directory)
 int createClass(ApplicationServices& services, const QString& name)
 {
     return services.classService()->create(name).value_or(-1);
+}
+
+bool seedClassInfo(ApplicationServices& services, const int classId)
+{
+    const auto info = services.classService()->classInfo(classId);
+    return info && services.classService()->saveClassInfo(*info).has_value();
 }
 
 int createTeacher(ApplicationServices& services)
@@ -223,6 +230,8 @@ private slots:
     void regularAndIntensiveConflictSavesMatchCommonBaselineInputs();
     void invalidUiSaveMatchesCommonBaselineInputState();
     void invalidScheduleUiSavesMatchCommonBaselineInputs();
+    void staleHiddenValidationDataBlocksCommonBaselineSaveInputs();
+    void validVisibleSavePreservesUpdatedHiddenValues();
 };
 
 void ClassDetailsPageSaveParityTests::successfulUiSaveMatchesSeededCommonInputState()
@@ -938,6 +947,154 @@ invalidScheduleUiSavesMatchCommonBaselineInputs()
         QVERIFY(sameClassInfo(*persistedTargetBefore, *persistedTargetAfter));
         QVERIFY(sameClassInfo(*persistedSourceBefore, *persistedSourceAfter));
     }
+}
+
+void ClassDetailsPageSaveParityTests::
+staleHiddenValidationDataBlocksCommonBaselineSaveInputs()
+{
+    const struct HiddenFieldCase
+    {
+        QString column;
+        QString validationField;
+    } cases[] = {
+        {
+            QStringLiteral("notes"),
+            QStringLiteral("notes")
+        },
+        {
+            QStringLiteral("time_filler_activities"),
+            QStringLiteral("timeFillerActivities")
+        }
+    };
+
+    for (const HiddenFieldCase& hiddenField : cases)
+    {
+        QTemporaryDir directory;
+        QVERIFY(directory.isValid());
+        ApplicationServices services;
+        QVERIFY(services.openDatabase(databasePath(directory)));
+        const QString name = QStringLiteral("Stale Hidden Context %1")
+            .arg(hiddenField.validationField);
+        const int classId = createClass(services, name);
+        QVERIFY(classId > 0);
+        QVERIFY(seedClassInfo(services, classId));
+
+        ClassDetailsPage page(&services, false);
+        page.setSaveMode(SaveMode::Manual);
+        page.loadClass(Classroom(name, classId));
+
+        const QString invalidText(10001, QLatin1Char('x'));
+        QSqlQuery update(services.databaseSession()->database());
+        update.prepare(
+            QStringLiteral("UPDATE class_info SET %1=? WHERE class_id=?")
+                .arg(hiddenField.column)
+            );
+        update.addBindValue(invalidText);
+        update.addBindValue(classId);
+        QVERIFY2(update.exec(), qPrintable(update.lastError().text()));
+        QCOMPARE(update.numRowsAffected(), 1);
+
+        const auto persistedBefore = services.classService()->classInfo(classId);
+        QVERIFY(persistedBefore);
+        QCOMPARE(
+            hiddenField.column == QStringLiteral("notes")
+                ? persistedBefore->notes.size()
+                : persistedBefore->timeFillerActivities.size(),
+            10001
+            );
+
+        auto* header = page.findChild<PageHeader*>();
+        QVERIFY(header);
+        const QString subtitleBefore = header->subtitle();
+        chooseNewDetails(page);
+        QSignalSpy savedSpy(&page, &ClassDetailsPage::classInfoSaved);
+        QVERIFY(savedSpy.isValid());
+        QVERIFY(page.hasUnsavedChanges());
+
+        QString warningTitle;
+        QString warningMessage;
+        QVERIFY(!saveAndCaptureOptionalWarning(
+            page,
+            &warningTitle,
+            &warningMessage
+            ));
+        QVERIFY(warningTitle.isEmpty());
+        QVERIFY(warningMessage.isEmpty());
+        QVERIFY(!DialogServices::promptTestDriver().activePrompt());
+        QCOMPARE(savedSpy.size(), 0);
+        QVERIFY(page.hasUnsavedChanges());
+        QCOMPARE(header->subtitle(), subtitleBefore);
+
+        FormValidationBinder* const binder =
+            page.findChild<FormValidationBinder*>();
+        QVERIFY(binder);
+        QVERIFY(binder->hasErrors());
+        bool foundExpectedIssue = false;
+        for (const ValidationIssue& issue : binder->validation().issues())
+        {
+            if (issue.code == QStringLiteral("validation.length.out_of_bounds")
+                && issue.field == hiddenField.validationField)
+            {
+                foundExpectedIssue = true;
+            }
+        }
+        QVERIFY(foundExpectedIssue);
+
+        const auto persistedAfter = services.classService()->classInfo(classId);
+        QVERIFY(persistedAfter);
+        QVERIFY(sameClassInfo(*persistedBefore, *persistedAfter));
+    }
+}
+
+void ClassDetailsPageSaveParityTests::validVisibleSavePreservesUpdatedHiddenValues()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+    const QString name = QStringLiteral("Updated Hidden Context Save");
+    const int classId = createClass(services, name);
+    QVERIFY(classId > 0);
+    QVERIFY(seedClassInfo(services, classId));
+
+    ClassDetailsPage page(&services, false);
+    page.setSaveMode(SaveMode::Manual);
+    page.loadClass(Classroom(name, classId));
+
+    const QString notes = QStringLiteral(
+        "Updated after load: notes\nsecond line"
+        );
+    const QString activities = QStringLiteral(
+        "Updated after load: activities\nsecond line"
+        );
+    QSqlQuery update(services.databaseSession()->database());
+    update.prepare(QStringLiteral(
+        "UPDATE class_info SET notes=?, time_filler_activities=? "
+        "WHERE class_id=?"
+        ));
+    update.addBindValue(notes);
+    update.addBindValue(activities);
+    update.addBindValue(classId);
+    QVERIFY2(update.exec(), qPrintable(update.lastError().text()));
+    QCOMPARE(update.numRowsAffected(), 1);
+
+    chooseNewDetails(page);
+    QSignalSpy savedSpy(&page, &ClassDetailsPage::classInfoSaved);
+    QVERIFY(savedSpy.isValid());
+    QVERIFY(page.hasUnsavedChanges());
+    QVERIFY(page.saveChanges());
+
+    QCOMPARE(savedSpy.size(), 1);
+    QCOMPARE(savedSpy.at(0).at(0).toInt(), classId);
+    QVERIFY(!page.hasUnsavedChanges());
+    const auto persisted = services.classService()->classInfo(classId);
+    QVERIFY(persisted);
+    QCOMPARE(persisted->classGrade, QStringLiteral("E4"));
+    QCOMPARE(persisted->classLevel, QStringLiteral("Theseus"));
+    QCOMPARE(persisted->readingBook, QStringLiteral("Reading Explorer 1"));
+    QCOMPARE(persisted->essayBook, QStringLiteral("4A"));
+    QCOMPARE(persisted->notes, notes);
+    QCOMPARE(persisted->timeFillerActivities, activities);
 }
 
 QTEST_MAIN(ClassDetailsPageSaveParityTests)

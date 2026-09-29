@@ -212,6 +212,15 @@ classmngr_add_qt_test(
 )
 
 classmngr_add_qt_test(
+    NAME NextApplicationClassDetailsValidationContextQuery
+    SOURCES
+        tests/next_application_class_details_validation_context_query_tests.cpp
+    LIBRARIES
+        ClassMngrNext::Application
+        Qt6::Test
+)
+
+classmngr_add_qt_test(
     NAME NextApplicationClassDetailsValidationPolicy
     SOURCES
         tests/next_application_class_details_validation_policy_tests.cpp
@@ -1025,6 +1034,16 @@ classmngr_add_qt_test(
     NAME NextPlatformApplicationServicesClassDetailsScheduleConflictPort
     SOURCES
         tests/next_platform_application_services_class_details_schedule_conflict_port_tests.cpp
+    LIBRARIES
+        ClassMngrNext::Platform
+        Qt6::Test
+    OFFSCREEN
+)
+
+classmngr_add_qt_test(
+    NAME NextPlatformApplicationServicesClassDetailsValidationContextPort
+    SOURCES
+        tests/next_platform_application_services_class_details_validation_context_port_tests.cpp
     LIBRARIES
         ClassMngrNext::Platform
         Qt6::Test

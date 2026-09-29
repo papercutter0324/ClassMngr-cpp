@@ -13,7 +13,6 @@
 #include "ui/shared/widgets/sectioncards/class_time_row.h"
 
 #include "core/application_services.h"
-#include "app/services/feature_services.h"
 #include "domain/models/class_info.h"
 #include "domain/models/teacher.h"
 #include "features/classes/config/class_info_config.h"
@@ -22,9 +21,11 @@
 #include "next/application/class_details_save_use_case.h"
 #include "next/application/class_details_validation_policy.h"
 #include "next/application/class_details_schedule_conflict_query.h"
+#include "next/application/class_details_validation_context_query.h"
 #include "next/application/class_details_page_query.h"
 #include "next/platform/application_services_class_details_save_port.h"
 #include "next/platform/application_services_class_details_schedule_conflict_port.h"
+#include "next/platform/application_services_class_details_validation_context_port.h"
 #include "next/platform/application_services_class_details_page_read_port.h"
 #include "core/fontmanager.h"
 #include "ui/shared/constants/gui_constants.h"
@@ -596,13 +597,16 @@ ClassDetailsPage::ClassDetailsPage(
     ClassMngr::Next::Application::ClassDetailsSavePort* savePort,
     ClassMngr::Next::Application::ClassDetailsPageReadPort* displayReadPort,
     ClassMngr::Next::Application::ClassDetailsScheduleConflictPort*
-        scheduleConflictPort
+        scheduleConflictPort,
+    ClassMngr::Next::Application::ClassDetailsValidationContextPort*
+        validationContextPort
     )
     : BasePage(parent)
     , m_services(services)
     , m_savePort(savePort)
     , m_displayReadPort(displayReadPort)
     , m_scheduleConflictPort(scheduleConflictPort)
+    , m_validationContextPort(validationContextPort)
     , m_embedded(embedded)
     , m_autosave(new AutosaveCoordinator(this))
 {
@@ -1128,22 +1132,51 @@ bool ClassDetailsPage::saveClassInfoInternal(
         return true;
     }
 
-    auto* classService = m_services->classService();
-
-    const ClassInfo currentInfo =
-        classService->classInfo(
-                m_classroom.id
-                ).value_or(ClassInfo{});
-
     ClassInfo info = classInfoFromForm();
-
-    info.teacherId =
-        currentInfo.teacherId;
-    info.notes =
-        currentInfo.notes;
-
-    info.timeFillerActivities =
-        currentInfo.timeFillerActivities;
+    const auto typedClassId =
+        ClassMngr::Next::Domain::ClassId::fromString(
+            std::to_string(m_classroom.id)
+            );
+    if (typedClassId)
+    {
+        ClassMngr::Next::Platform::
+            ApplicationServicesClassDetailsValidationContextPort defaultPort(
+                m_services
+                );
+        const ClassMngr::Next::Application::
+            ClassDetailsValidationContextPort& contextPort =
+                m_validationContextPort
+                    ? *m_validationContextPort
+                    : defaultPort;
+        const auto context = ClassMngr::Next::Application::
+            ClassDetailsValidationContextQuery::execute(
+                *typedClassId,
+                contextPort
+                );
+        if (context)
+        {
+            const auto& values = context.value();
+            info.teacherId = values.teacherId;
+            info.notes = QString::fromStdU16String(values.notes);
+            info.timeFillerActivities = QString::fromStdU16String(
+                values.timeFillerActivities
+                );
+        }
+        else
+        {
+            const ClassInfo emptyContext;
+            info.teacherId = emptyContext.teacherId;
+            info.notes = emptyContext.notes;
+            info.timeFillerActivities = emptyContext.timeFillerActivities;
+        }
+    }
+    else
+    {
+        const ClassInfo emptyContext;
+        info.teacherId = emptyContext.teacherId;
+        info.notes = emptyContext.notes;
+        info.timeFillerActivities = emptyContext.timeFillerActivities;
+    }
 
     refreshScheduleValidationBindings();
     const auto validation = validateClassDetailsInput(info);

@@ -23,6 +23,7 @@ namespace ClassMngr::Next::Application
 class ClassDetailsSavePort;
 class ClassDetailsPageReadPort;
 class ClassDetailsScheduleConflictPort;
+class ClassDetailsValidationContextPort;
 }
 
 class QLabel;
@@ -44,7 +45,9 @@ public:
         ClassMngr::Next::Application::ClassDetailsPageReadPort*
             displayReadPort = nullptr,
         ClassMngr::Next::Application::ClassDetailsScheduleConflictPort*
-            scheduleConflictPort = nullptr
+            scheduleConflictPort = nullptr,
+        ClassMngr::Next::Application::ClassDetailsValidationContextPort*
+            validationContextPort = nullptr
         );
 
     void loadClass(
@@ -97,6 +100,8 @@ private:
         m_displayReadPort{nullptr};
     ClassMngr::Next::Application::ClassDetailsScheduleConflictPort*
         m_scheduleConflictPort{nullptr};
+    ClassMngr::Next::Application::ClassDetailsValidationContextPort*
+        m_validationContextPort{nullptr};
 
     Classroom m_classroom;
     std::optional<

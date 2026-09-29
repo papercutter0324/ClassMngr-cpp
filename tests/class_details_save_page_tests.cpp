@@ -2,6 +2,7 @@
 #include "core/application_services.h"
 #include "data/database/database_session.h"
 #include "features/classes/ui/class_details_page.h"
+#include "next/application/class_details_validation_context_query.h"
 #include "next/application/class_details_save_use_case.h"
 #include "next/application/class_details_schedule_conflict_query.h"
 #include "ui/shared/dialogs/user_prompt_service.h"
@@ -9,6 +10,7 @@
 #include "ui/shared/pages/page_header.h"
 #include "ui/shared/widgets/sectioncards/class_time_row.h"
 #include "ui/shared/widgets/sections/class_schedule_section.h"
+#include "ui/shared/validation/form_validation_binder.h"
 
 #include <QComboBox>
 #include <QApplication>
@@ -54,11 +56,16 @@ public:
     {
         ++callCount;
         lastRequest = value;
+        if (events)
+        {
+            events->push_back("save");
+        }
         return result;
     }
 
     mutable int callCount = 0;
     mutable std::optional<Application::ClassDetailsSaveRequest> lastRequest;
+    mutable std::vector<std::string>* events = nullptr;
     Domain::Result<void> result = Domain::Result<void>::success();
 };
 
@@ -72,6 +79,14 @@ public:
         ) const override
     {
         requests.push_back(request);
+        if (events)
+        {
+            events->push_back(
+                request.mode == Application::ClassDetailsScheduleMode::Regular
+                    ? "regular"
+                    : "intensive"
+                );
+        }
         return request.mode == Application::ClassDetailsScheduleMode::Regular
             ? regularResult
             : intensiveResult;
@@ -80,10 +95,40 @@ public:
     mutable std::vector<
         Application::ClassDetailsScheduleConflictRequest
         > requests;
+    mutable std::vector<std::string>* events = nullptr;
     Application::ClassDetailsScheduleConflictResult regularResult =
         Application::ClassDetailsScheduleConflictResult::success({});
     Application::ClassDetailsScheduleConflictResult intensiveResult =
         Application::ClassDetailsScheduleConflictResult::success({});
+};
+
+class RecordingClassDetailsValidationContextPort final
+    : public Application::ClassDetailsValidationContextPort
+{
+public:
+    [[nodiscard]] Application::ClassDetailsValidationContextPortResult
+    loadClassDetailsValidationContext(
+        const Domain::ClassId& classId
+        ) const override
+    {
+        ++callCount;
+        requestedClassIds.push_back(classId);
+        if (events)
+        {
+            events->push_back("context");
+        }
+        return result;
+    }
+
+    mutable int callCount = 0;
+    mutable std::vector<Domain::ClassId> requestedClassIds;
+    mutable std::vector<std::string>* events = nullptr;
+    Application::ClassDetailsValidationContextPortResult result =
+        Application::ClassDetailsValidationContextPortResult::failure({
+            .code = Domain::ErrorCode::Technical,
+            .message = "Unconfigured validation context port.",
+            .recoverable = false
+        });
 };
 
 Application::ClassDetailsScheduleConflict conflict(
@@ -199,6 +244,8 @@ private slots:
     void portFailureShowsItsErrorAndLeavesPageDirty();
     void invalidFieldsBlockTheSavePort();
     void malformedScheduleBlocksConflictQueriesAndFocusesItsField();
+    void freshInvalidContextBlocksBeforeConflictAndSave();
+    void contextReadFailureFallsBackAndContinuesSaveOrder();
     void regularAndIntensiveConflictsBlockTheSavePort();
     void regularConflictShortCircuitsIntensiveAndKeepsSameNameWording();
     void intensiveConflictFollowsAnEmptyRegularQuery();
@@ -499,6 +546,153 @@ malformedScheduleBlocksConflictQueriesAndFocusesItsField()
     QCOMPARE(row->endCombo()->property("formValidationState").toString(),
         QStringLiteral("error"));
     QTRY_VERIFY(row->endCombo()->hasFocus());
+}
+
+void ClassDetailsSavePageTests::freshInvalidContextBlocksBeforeConflictAndSave()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+    const int classId = createClass(
+        services,
+        QStringLiteral("Class Details Fresh Validation Context")
+        );
+    QVERIFY(classId > 0);
+
+    std::vector<std::string> events;
+    RecordingClassDetailsSavePort savePort;
+    savePort.events = &events;
+    RecordingClassDetailsScheduleConflictPort conflictPort;
+    conflictPort.events = &events;
+    RecordingClassDetailsValidationContextPort contextPort;
+    contextPort.events = &events;
+    const Domain::ClassId typedClassId = *Domain::ClassId::fromString(
+        std::to_string(classId)
+        );
+    contextPort.result =
+        Application::ClassDetailsValidationContextPortResult::success({
+            .matchedClassId = typedClassId,
+            .teacherId = -1,
+            .notes = {},
+            .timeFillerActivities = {}
+        });
+
+    ClassDetailsPage page(
+        &services,
+        false,
+        nullptr,
+        &savePort,
+        nullptr,
+        &conflictPort,
+        &contextPort
+        );
+    page.setSaveMode(SaveMode::Manual);
+    page.loadClass(
+        Classroom(QStringLiteral("Class Details Fresh Validation Context"), classId)
+        );
+    QCOMPARE(contextPort.callCount, 0);
+
+    // Simulate hidden data changing after load. Save should query its current
+    // validation context at the point it validates the form.
+    contextPort.result =
+        Application::ClassDetailsValidationContextPortResult::success({
+            .matchedClassId = typedClassId,
+            .teacherId = 0,
+            .notes = {},
+            .timeFillerActivities = {}
+        });
+    chooseDetails(page);
+    QSignalSpy savedSpy(&page, &ClassDetailsPage::classInfoSaved);
+    QVERIFY(savedSpy.isValid());
+    QVERIFY(page.hasUnsavedChanges());
+
+    QVERIFY(!page.saveChanges());
+    QCOMPARE(contextPort.callCount, 1);
+    QCOMPARE(contextPort.requestedClassIds.size(), std::size_t(1));
+    QCOMPARE(contextPort.requestedClassIds.front().value(),
+        std::to_string(classId));
+    QCOMPARE(events.size(), std::size_t(1));
+    QCOMPARE(events.front(), std::string("context"));
+    QVERIFY(conflictPort.requests.empty());
+    QCOMPARE(savePort.callCount, 0);
+    QCOMPARE(savedSpy.size(), 0);
+    QVERIFY(page.hasUnsavedChanges());
+    QVERIFY(!DialogServices::promptTestDriver().activePrompt());
+
+    FormValidationBinder* const binder = page.findChild<FormValidationBinder*>();
+    QVERIFY(binder);
+    QVERIFY(binder->hasErrors());
+    bool foundTeacherIssue = false;
+    for (const ValidationIssue& issue : binder->validation().issues())
+    {
+        if (issue.code == QStringLiteral("class_info.teacher_id.invalid"))
+        {
+            foundTeacherIssue = true;
+            QCOMPARE(issue.field, QStringLiteral("teacherId"));
+        }
+    }
+    QVERIFY(foundTeacherIssue);
+}
+
+void ClassDetailsSavePageTests::contextReadFailureFallsBackAndContinuesSaveOrder()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+    const int classId = createClass(
+        services,
+        QStringLiteral("Class Details Validation Context Fallback")
+        );
+    QVERIFY(classId > 0);
+
+    std::vector<std::string> events;
+    RecordingClassDetailsSavePort savePort;
+    savePort.events = &events;
+    RecordingClassDetailsScheduleConflictPort conflictPort;
+    conflictPort.events = &events;
+    RecordingClassDetailsValidationContextPort contextPort;
+    contextPort.events = &events;
+    contextPort.result =
+        Application::ClassDetailsValidationContextPortResult::failure({
+            .code = Domain::ErrorCode::Technical,
+            .message = "validation context repository read failed",
+            .recoverable = true
+        });
+
+    ClassDetailsPage page(
+        &services,
+        false,
+        nullptr,
+        &savePort,
+        nullptr,
+        &conflictPort,
+        &contextPort
+        );
+    page.setSaveMode(SaveMode::Manual);
+    page.loadClass(
+        Classroom(
+            QStringLiteral("Class Details Validation Context Fallback"),
+            classId
+            )
+        );
+    chooseDetails(page);
+    QSignalSpy savedSpy(&page, &ClassDetailsPage::classInfoSaved);
+    QVERIFY(savedSpy.isValid());
+
+    QVERIFY(page.saveChanges());
+    QCOMPARE(contextPort.callCount, 1);
+    QCOMPARE(conflictPort.requests.size(), std::size_t(2));
+    QCOMPARE(savePort.callCount, 1);
+    QCOMPARE(events.size(), std::size_t(4));
+    QCOMPARE(events[0], std::string("context"));
+    QCOMPARE(events[1], std::string("regular"));
+    QCOMPARE(events[2], std::string("intensive"));
+    QCOMPARE(events[3], std::string("save"));
+    QCOMPARE(savedSpy.size(), 1);
+    QVERIFY(!page.hasUnsavedChanges());
+    QVERIFY(!DialogServices::promptTestDriver().activePrompt());
 }
 
 void ClassDetailsSavePageTests::regularAndIntensiveConflictsBlockTheSavePort()
