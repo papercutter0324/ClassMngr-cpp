@@ -3343,3 +3343,13 @@ whether the teacher-choice scope belonged to F144 or F145; the detailed Phase
 2 plan and handoff assign it to F144. Next, complete Heavy-route candidate
 review for a distinct F145 slice, then update the phase plan before
 implementation.
+
+## 2026-09-30 — macOS Qt checksum retrieval
+
+Deployment ID: `macos-aqt-checksum-20260930`.
+
+The user reported the macOS Qt 6.12.0 install failing in aqt 3.3.0 while retrieving the qtbase archive checksum from `download.qt.io`. Independent upstream source review established that this is a checksum-sidecar retrieval failure, not a checksum mismatch; the exact response status and URL were not available, and the `MacOS_26-X86_64-ARM64` archive name alone does not prove aqt parser incompatibility.
+
+Updated `.github/workflows/macos-release.yml` and `.github/workflows/refactoring-baseline.yml`: both macOS Qt install commands now use a 30-second timeout, retry the complete install up to three times, and wait 10 seconds after each of the first two failures. They preserve Qt 6.12.0, `clang_64`, qtpdf, output paths, and aqt 3.3.0. Final failure remains nonzero and checksum verification remains enabled.
+
+`git diff --check`, Ruby YAML parsing on both full workflows, and `bash -n` on both changed run blocks passed. The independent Tester reviewed the retry paths and retained settings with no findings. `actionlint` was unavailable. No tests, live Qt installation, or GitHub Actions run were performed. If the error recurs after retries, capture the exact sidecar URL and HTTP response to distinguish transient availability from a persistent Qt repository publication issue. The user subsequently requested a commit; no push was requested.

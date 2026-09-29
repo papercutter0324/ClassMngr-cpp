@@ -1367,3 +1367,7 @@ verify the new Application and Platform boundaries, the owning page behavior,
 and the prior page/query regressions. A build error on one tree is not product
 evidence; a fresh short-path build completed the two blocked Platform
 regressions without establishing the cause of the earlier C1083.
+
+## 2026-09-30 — aqt checksum sidecar failures
+
+`ChecksumDownloadFailure` indicates aqt could not retrieve the archive checksum sidecar; it is distinct from downloading an archive whose hash fails validation. Do not infer a metadata parser bug from the archive filename alone. When the exact sidecar status is unknown, bounded retries with delay and a longer request timeout can address transient availability while preserving fail-closed checksum verification. Do not add trusted mirrors or disable hash checks without verifying the exact sidecar and its provenance. Keep equivalent macOS release and baseline install paths consistent.
