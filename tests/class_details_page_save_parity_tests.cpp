@@ -232,6 +232,7 @@ private slots:
     void invalidScheduleUiSavesMatchCommonBaselineInputs();
     void staleHiddenValidationDataBlocksCommonBaselineSaveInputs();
     void validVisibleSavePreservesUpdatedHiddenValues();
+    void freshInvalidTeacherIdBlocksCommonBaselineSaveInputs();
 };
 
 void ClassDetailsPageSaveParityTests::successfulUiSaveMatchesSeededCommonInputState()
@@ -1095,6 +1096,126 @@ void ClassDetailsPageSaveParityTests::validVisibleSavePreservesUpdatedHiddenValu
     QCOMPARE(persisted->essayBook, QStringLiteral("4A"));
     QCOMPARE(persisted->notes, notes);
     QCOMPARE(persisted->timeFillerActivities, activities);
+}
+
+void ClassDetailsPageSaveParityTests::
+freshInvalidTeacherIdBlocksCommonBaselineSaveInputs()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+    const QString targetName = QStringLiteral("Fresh Invalid Teacher Target");
+    const QString sourceName = QStringLiteral("Fresh Invalid Teacher Conflict Source");
+    const int targetId = createClass(services, targetName);
+    const int sourceId = createClass(services, sourceName);
+    QVERIFY(targetId > 0);
+    QVERIFY(sourceId > 0);
+    QVERIFY(seedClassInfo(services, targetId));
+
+    auto sourceInfo = services.classService()->classInfo(sourceId);
+    QVERIFY(sourceInfo);
+    sourceInfo->classTimes.append({
+        QStringLiteral("Monday"),
+        QStringLiteral("9:00 AM"),
+        QStringLiteral("9:55 AM")
+    });
+    QVERIFY(services.classService()->saveClassInfo(*sourceInfo));
+    const auto sourceBefore = services.classService()->classInfo(sourceId);
+    QVERIFY(sourceBefore);
+
+    ClassDetailsPage page(&services, false);
+    page.setSaveMode(SaveMode::Manual);
+    page.loadClass(Classroom(targetName, targetId));
+    auto* header = page.findChild<PageHeader*>();
+    QVERIFY(header);
+    const QString subtitleBefore = header->subtitle();
+
+    DatabaseSession* const session = services.databaseSession();
+    QVERIFY(session && session->isOpen());
+    QSqlQuery disableForeignKeys(session->database());
+    QVERIFY2(disableForeignKeys.exec(QStringLiteral("PRAGMA foreign_keys = OFF")),
+        qPrintable(disableForeignKeys.lastError().text()));
+    disableForeignKeys.finish();
+
+    QSqlQuery updateTeacherId(session->database());
+    updateTeacherId.prepare(QStringLiteral(
+        "UPDATE class_info SET teacher_id=? WHERE class_id=?"
+        ));
+    updateTeacherId.addBindValue(0);
+    updateTeacherId.addBindValue(targetId);
+    QVERIFY2(updateTeacherId.exec(),
+        qPrintable(updateTeacherId.lastError().text()));
+    QCOMPARE(updateTeacherId.numRowsAffected(), 1);
+    updateTeacherId.finish();
+
+    QSqlQuery enableForeignKeys(session->database());
+    QVERIFY2(enableForeignKeys.exec(QStringLiteral("PRAGMA foreign_keys = ON")),
+        qPrintable(enableForeignKeys.lastError().text()));
+    enableForeignKeys.finish();
+
+    QSqlQuery verifyRawTeacherId(session->database());
+    verifyRawTeacherId.prepare(QStringLiteral(
+        "SELECT teacher_id FROM class_info WHERE class_id=?"
+        ));
+    verifyRawTeacherId.addBindValue(targetId);
+    QVERIFY2(verifyRawTeacherId.exec(),
+        qPrintable(verifyRawTeacherId.lastError().text()));
+    QVERIFY(verifyRawTeacherId.next());
+    QVERIFY(!verifyRawTeacherId.value(0).isNull());
+    QCOMPARE(verifyRawTeacherId.value(0).toInt(), 0);
+    verifyRawTeacherId.finish();
+
+    const auto targetBefore = services.classService()->classInfo(targetId);
+    QVERIFY(targetBefore);
+    QCOMPARE(targetBefore->teacherId, 0);
+
+    ClassTimeRow* const candidate = addScheduleRow(page, ScheduleType::Regular);
+    QVERIFY(candidate);
+    setSchedule(
+        candidate,
+        QStringLiteral("Monday"),
+        QStringLiteral("9:00 AM"),
+        QStringLiteral("9:55 AM")
+        );
+    QSignalSpy savedSpy(&page, &ClassDetailsPage::classInfoSaved);
+    QVERIFY(savedSpy.isValid());
+    QVERIFY(page.hasUnsavedChanges());
+
+    QString warningTitle;
+    QString warningMessage;
+    QVERIFY(!saveAndCaptureOptionalWarning(
+        page,
+        &warningTitle,
+        &warningMessage
+        ));
+    QVERIFY(warningTitle.isEmpty());
+    QVERIFY(warningMessage.isEmpty());
+    QVERIFY(!DialogServices::promptTestDriver().activePrompt());
+    QCOMPARE(savedSpy.size(), 0);
+    QVERIFY(page.hasUnsavedChanges());
+    QCOMPARE(header->subtitle(), subtitleBefore);
+
+    FormValidationBinder* const binder = page.findChild<FormValidationBinder*>();
+    QVERIFY(binder);
+    QVERIFY(binder->hasErrors());
+    bool foundTeacherIssue = false;
+    for (const ValidationIssue& issue : binder->validation().issues())
+    {
+        if (issue.code == QStringLiteral("class_info.teacher_id.invalid"))
+        {
+            foundTeacherIssue = true;
+            QCOMPARE(issue.field, QStringLiteral("teacherId"));
+            QCOMPARE(issue.arguments.value(QStringLiteral("value")).toInt(), 0);
+        }
+    }
+    QVERIFY(foundTeacherIssue);
+
+    const auto targetAfter = services.classService()->classInfo(targetId);
+    const auto sourceAfter = services.classService()->classInfo(sourceId);
+    QVERIFY(targetAfter && sourceAfter);
+    QVERIFY(sameClassInfo(*targetBefore, *targetAfter));
+    QVERIFY(sameClassInfo(*sourceBefore, *sourceAfter));
 }
 
 QTEST_MAIN(ClassDetailsPageSaveParityTests)
