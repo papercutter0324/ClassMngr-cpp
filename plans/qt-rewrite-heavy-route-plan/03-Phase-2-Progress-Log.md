@@ -7410,7 +7410,7 @@ Gate 1 and Gate 2 remain Partial. F120 active-v2 DataService isolation and the
 formal workspace-create boundary remain Satisfied. Phase 2 remains In
 Progress/Open.
 
-## Verified F135 slot-state read - commit `91806e5d`
+## Verified F135 slot-state read - source/test commit `91806e5d`
 
 F135 adds a Qt-free ordered raw UTF-16 slot-state query and a Platform adapter
 that reads `IntensiveSlotStateRepository` directly from the active session,
@@ -7419,6 +7419,8 @@ uses the read while preserving behavior: an unavailable service is silent and
 retains current state; a read failure warns and retains current state; a
 successful read replaces state, including clearing old state for an empty
 result.
+
+The documentation handoff for F135 is commit `68ff760e`.
 
 Independent fresh Windows x64 Debug Ninja/MSVC verification built `ClassMngr`
 and the application, Platform, and widget targets. The three focused CTests
@@ -7431,7 +7433,14 @@ Gate 1 and Gate 2 remain Partial. The formal workspace-create boundary and
 active-v2 DataService isolation remain Satisfied. Phase 2 remains In
 Progress/Open.
 
-### F136 candidate review in progress
+### Selected slice (F136): ScheduleWidget testing-assignment display read
 
-The next bounded slice is under Heavy-route candidate review. No candidate has
-been selected and implementation has not begun.
+Independent Heavy-route candidate review compared three Investigators and two
+Explorers; all three Investigators ranked the testing-assignment display read
+as the same candidate. Implementation is starting. The scope is a Qt-free
+Application query and active-session Platform adapter for the display read,
+with a fixed, bounded read path. Preserve assignment order and raw keys,
+rendering, failure and unavailable behavior, and missing-detail behavior, plus
+preview bypass once the preview model is installed. Writes, the broad
+`ScheduleViewProjection`, and Schedule Import session work remain outside this
+slice. F136 is selected, not implemented or verified.

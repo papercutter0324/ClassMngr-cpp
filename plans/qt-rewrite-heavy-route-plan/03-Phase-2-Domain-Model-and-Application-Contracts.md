@@ -19,12 +19,13 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
 - Current note: F135 verifies the Qt-free slot-state read snapshot,
-  active-session Platform adapter, and `ScheduleWidget` integration. F136
-  candidate review is in progress; no next slice is selected. F120 active-v2
-  DataService isolation and formal workspace-create acceptance remain
-  Satisfied. Gates 1 and 2 remain Partial. Historical workbook provenance
-  remains a tracked risk, not a literal exit criterion. Sub Prep remains
-  January 1 of the reference date's year through December 31 of the following year at most;
+  active-session Platform adapter, and `ScheduleWidget` integration; its docs
+  handoff is commit `68ff760e`. F136's testing-assignment display read is
+  selected and implementation is starting. F120 active-v2 DataService
+  isolation and formal workspace-create acceptance remain Satisfied. Gates 1
+  and 2 remain Partial. Historical workbook provenance remains a tracked
+  risk, not a literal exit criterion. Sub Prep remains January 1 of the
+  reference date's year through December 31 of the following year at most;
   2026-2027 is illustrative.
 
 ## Objective
@@ -177,10 +178,10 @@ No new v2 production path depends on DataService, MainWindow, PageManager, or a 
 Source/test commit `91806e5d` adds a Qt-free ordered raw UTF-16 slot-state
 query, a Platform adapter that reads `IntensiveSlotStateRepository` directly
 from the active session, and `ScheduleWidget::reloadSlotStates` integration.
-There is no `ScheduleService` or `DataService` fallback. An unavailable service
-is silent and retains current state; a read failure warns and retains current
-state; a successful read replaces state, including clearing it for an empty
-result.
+Documentation handoff commit: `68ff760e`. There is no `ScheduleService` or
+`DataService` fallback. An unavailable service is silent and retains current
+state; a read failure warns and retains current state; a successful read
+replaces state, including clearing it for an empty result.
 
 Independent fresh Windows x64 Debug Ninja/MSVC verification built `ClassMngr`
 and the application, Platform, and widget targets. The three focused CTests
@@ -211,7 +212,15 @@ a literal exit criterion. Sub Prep remains bounded to January 1 of the
 reference date's year through December 31 of the following year, at most;
 2026-2027 is illustrative.
 
-### F136 candidate review in progress
+### Selected slice (F136): ScheduleWidget testing-assignment display read
 
-The next bounded slice is under Heavy-route candidate review. No candidate has
-been selected and implementation has not begun.
+Implementation is starting after independent Heavy-route candidate review
+compared three Investigators and two Explorers; all three Investigators ranked
+this candidate.
+Add a Qt-free Application query and active-session Platform adapter for the
+testing-assignment display read, with a fixed, bounded read path. Preserve
+assignment order and raw keys, and retain rendering, failure, unavailable-
+service, and missing-detail behavior. Preserve preview bypass once the preview
+model is installed. Keep writes, the broad `ScheduleViewProjection`, and
+Schedule Import session work outside this slice. F136 is selected but is not
+yet implemented or verified.

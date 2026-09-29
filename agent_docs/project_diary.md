@@ -1344,3 +1344,12 @@ retain their existing map behavior; a successful empty snapshot must still
 clear overrides, while unavailable or failed reads leave the current map
 untouched. Pin the existing warning prefix in the widget regression test, and
 keep the typed save command separate from the lossless read projection.
+
+## F136 - keep schedule assignment reads bounded and display-only - 2026-09-29
+
+Continue the ScheduleWidget read boundary with the testing-assignment display
+query. Return only assignment and special-class fields needed by the current
+view, preserve repository ordering and raw day/start keys, and batch the
+special-class display data instead of keeping per-assignment reads. Keep
+assignment writes and broader view-model or import-review lifetime work in
+separate slices.

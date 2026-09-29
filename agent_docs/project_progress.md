@@ -1715,6 +1715,15 @@ and the app, Platform, and ScheduleWidget targets. The three focused CTests
 passed 3/3, including an assertion for the existing warning prefix.
 `git diff --check` passed. No full suite or baseline comparison ran.
 
-F136 candidate review is underway. Gate 1 and Gate 2 remain Partial; formal
+F136 is selected: move the ScheduleWidget testing-assignment display read
+through a Qt-free Application query and active-session Platform adapter. Use a
+single joined read or bounded fixed-query batch for assignment and special-
+class display data; preserve repository order, exact day/start keys, plain and
+special rendering, unavailable clearing, read-failure retention, missing
+special-class skip, blank/default class-info behavior, and preview bypass.
+Leave assignment writes, ScheduleViewProjection integration, and Schedule
+Import review ownership for separate slices. Three independent Investigators
+and two Explorers ranked this the best bounded continuation after F135;
+implementation is starting. Gate 1 and Gate 2 remain Partial; formal
 workspace-create acceptance and active-v2 DataService isolation remain
 Satisfied. Phase 2 remains In Progress/Open.

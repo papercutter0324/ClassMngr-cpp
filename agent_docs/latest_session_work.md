@@ -3266,7 +3266,19 @@ confirmed the root production target already links `ClassMngrNext::Platform`;
 the F135 widget test and Application/Platform test registrations are explicit.
 `git diff --check` passed. No full suite or baseline comparison ran.
 
-The Heavy-route review for F136 is underway; no next slice has been selected.
+The Heavy-route candidate review compared the testing-assignment read,
+`ScheduleViewProjection` production integration, and Schedule Import review
+ownership. Two independent Explorers and all three independent Investigators
+ranked the testing-assignment read as the best bounded next slice. F136 is
+selected: add a Qt-free Application snapshot/query and active-session Platform
+adapter for assignment rows and special-class display data, then route
+`ScheduleWidget::reloadTestingBlocks()` through that boundary. Use a joined
+read or bounded fixed-query batch, preserve assignment order and raw day/start
+keys, plain/special rendering, unavailable clearing, warning plus prior-state
+retention on assignment-read failure, missing special-class skip, blank class-
+info fallback, and preview bypass. Keep writes, the broad view-projection
+integration, and import-review ownership separate. Implementation is starting;
+no F136 code or verification is complete yet.
 
 Gate 1 and Gate 2 remain Partial. Formal workspace-create acceptance and
 active-v2 DataService isolation remain Satisfied. Phase 2 remains In Progress
