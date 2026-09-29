@@ -1460,9 +1460,10 @@ save request so persistence still rereads current values and the service's
 final validation guard remains active. If preserving the old read-error
 fallback, test its continued validation/conflict/save order explicitly.
 
-## 2026-09-30 — F153 teacher sentinel parity selection
+## 2026-09-30 — F153 teacher sentinel parity
 
-Add current/baseline page parity for persisted teacher ID `0` changed after
-page load. This covers the remaining raw validation-context value directly;
-afterward, review moving from Class Details to another planned feature such as
-the Class Notes read boundary.
+Persisted teacher ID `0` changed after page load now has current/baseline page
+coverage. The pinned legacy comparison can use an isolated test-only overlay
+when the parity harness did not exist at the baseline; verify the production
+page still matches its pinned blob. Use a seeded conflict only as a warning
+trap, and keep direct query-count claims in current-only tests.

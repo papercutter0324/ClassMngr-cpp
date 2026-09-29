@@ -1922,8 +1922,25 @@ preservation. No full suite or application build ran. The first verification
 attempt exposed a missing test include and unseeded `class_info` rows; both
 test fixtures were repaired before the passing recheck. Gate 1 advances but
 remains Partial; Gate 2 remains Partial. Phase 2 remains In Progress/Open.
-F153 is selected to add common-input current/baseline parity for a persisted
-teacher ID of zero changed after page load. Assert the legacy invalid-teacher
-issue, dirty state, no save signal or visible conflict warning, and unchanged
-record data. After this targeted context-parity case, review moving to another
-planned feature; a Class Notes read is one candidate.
+
+## F153 teacher-ID validation parity — 2026-09-30
+
+Commit `477ed151` adds current/baseline Class Details page parity when the
+persisted `teacher_id` is changed to `0` after page load. The page reports
+`class_info.teacher_id.invalid` on `teacherId` with value `0`, remains dirty,
+shows no conflict warning, emits no save signal, and leaves target/source
+records unchanged.
+
+Independent Windows x64 Debug verification passed the current parity and
+page-save CTest targets 2/2; the page-save target also contains the F152
+direct no-conflict-query regression. The pinned legacy baseline
+`48fc5c5cc7dee78d82f8bf5f1bf8b51725575b99` passed the focused F153 parity
+harness 1/1. Its temporary overlay contained only adapted parity test source,
+test registration, and Qt minimum bumps; no production source was overlaid.
+The baseline page matched blob `cdc48da8e3bab73dd0e064cf8364899f67ad1021`.
+Toolchain: CMake 4.4.2, Ninja 1.13.2, MSVC 19.51.36257, Qt 6.12.0, with
+`CL` cleared and embedded debug information. No full suite or app build ran.
+Parity uses a seeded conflict as a warning trap and does not count repository
+queries; direct query-count evidence remains in current-only tests. Gate 2
+remains Partial; Gate 1 remains Partial; Phase 2 remains In Progress/Open.
+Class Notes reads are under review as a possible next slice.

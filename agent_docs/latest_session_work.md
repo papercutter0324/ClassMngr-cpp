@@ -3652,10 +3652,17 @@ build ran. Initial verification found a missing `QSqlError` include and
 unseeded `class_info` test rows; both fixtures were repaired and the fresh
 recheck passed with `CL` cleared and embedded debug info.
 
-F153 is selected to compare a persisted teacher ID of `0` changed after page
-load through the live page on current and pinned baseline. Assert the legacy
-invalid-teacher issue, dirty state, no save signal or visible conflict
-warning, and unchanged persisted data. Then review moving from Class Details
-to another planned feature, with Class Notes page reads as one candidate.
-Gates 1 and 2 remain Partial; Phase 2 remains In Progress/Open. No push was
-requested.
+F153 parity test commit `477ed151` (`Phase2 - add teacher ID validation parity
+case`) is accepted. Independent Windows x64 Debug verification passed current
+parity and page-save targets 2/2; page-save includes the F152 direct
+no-conflict-query regression. The original pinned baseline
+`48fc5c5cc7dee78d82f8bf5f1bf8b51725575b99` passed the focused F153 parity
+harness 1/1. Baseline overlays were limited to adapted parity test source,
+registration, and three Qt minimum bumps; production page source matched blob
+`cdc48da8e3bab73dd0e064cf8364899f67ad1021`. Toolchain: CMake 4.4.2, Ninja
+1.13.2, MSVC 19.51.36257.0 x64, Qt 6.12.0; `CL` cleared, embedded debug info.
+The baseline run was a focused F153 harness, not the full expanded parity
+suite. Parity uses a seeded conflict warning trap and does not count repository
+queries; current-only tests assert no conflict requests. No full suite or app
+build ran. Class Notes read is under review as a possible next slice. Gates 1
+and 2 remain Partial; Phase 2 remains In Progress/Open. No push was requested.
