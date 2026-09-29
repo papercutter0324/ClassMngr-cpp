@@ -7818,3 +7818,33 @@ state, no save signal or visible conflict warning, and unchanged target row.
 Keep current direct query-count evidence distinct from baseline observer
 evidence; do not claim query-count parity. After F153, review another planned
 feature. Class Notes read is a candidate, not selected.
+
+### Progress update - 2026-09-30 (F153 accepted; F154 selected)
+
+F153, commit `477ed151`, accepts current/baseline live-page parity when
+persisted `teacherId=0` changes after load. Current parity and page-save
+targets passed 2/2; page-save retains F152's separate no-conflict-query
+regression. The F153 conflict check uses a warning trap, not a query-count
+comparison.
+The focused harness on original pinned baseline
+`48fc5c5cc7dee78d82f8bf5f1bf8b51725575b99` passed CTest 1/1. Its overlay
+contains only the adapted parity source, test registration, and Qt minimum
+bumps; no production source was overlaid, and baseline page source matches blob
+`cdc48da8e3bab73dd0e064cf8364899f67ad1021`.
+
+Fresh Windows x64 Debug verification used CMake 4.4.2, Ninja 1.13.2, MSVC
+19.51.36257, and Qt 6.12.0. `CL` was cleared and embedded debug information was
+used. The warning trap is not a query-count assertion. This was not the
+expanded parity suite; no full suite or application build ran. Gates 1
+and 2 remain Partial; Phase 2 remains In Progress/Open.
+
+F154 is selected, after three independent solution reviews, as a separate
+typed Class Notes page-read query and active-session Platform port. Its
+projection includes class ID, exact UTF-16 notes/time-filler activity,
+grade/level, regular-schedule day/start, and teacher display name; class and
+teacher outcomes remain independent. Keep trimming and `SidebarNodeNaming`
+title formatting/fallbacks in UI, preserve failed-read defaults, and avoid
+`DataService` fallback. Load/discard use the query; refresh/save add no reads.
+Verify identity/errors, independent source failures, mapping, load/discard, and
+current-versus-original-pinned-baseline display parity. F154 is selected, not
+implemented or accepted.

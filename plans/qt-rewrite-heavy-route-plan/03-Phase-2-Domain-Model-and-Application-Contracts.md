@@ -30,11 +30,10 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
   end-before-start, duplicate rows); Gate 2 advances but remains Partial. F152
   is accepted: its fresh-at-save typed query and active-session adapter return
   raw signed teacher ID and exact UTF-16 notes/activity; read-error behavior,
-  save request, and `ClassService` guard remain as before. F153 is selected for
+  save request, and `ClassService` guard remain as before. F153 is accepted for
   current/baseline page parity when persisted teacher ID zero changes after
-  load. Assert the legacy teacher issue, dirty state, no save signal/visible
-  conflict warning, and unchanged row. Keep current and baseline query-count
-  evidence distinct. After F153, Class Notes read is a candidate, not selected.
+  load. F154 is selected for a separate typed Class Notes page-read query and
+  port. Preserve the UI and read-failure boundaries recorded below.
   Gates 1 and 2
   remain Partial; F120 active-v2 DataService isolation and formal
   workspace-create acceptance remain Satisfied.
@@ -271,8 +270,8 @@ No production defect was observed.
 F144 is the preceding accepted slice. F145's accepted existing-class details
 update is recorded below. F146's accepted new-class create, including the
 optional pending weekday/start-time assignment, is recorded after it. F147's
-accepted delete/cascade migration is recorded below; F148-F152 acceptance and
-F153 selection are recorded below.
+accepted delete/cascade migration is recorded below; F148-F153 acceptance and
+F154 selection are recorded below.
 
 ## F145 acceptance record
 
@@ -392,9 +391,8 @@ The page queries on each save; on read error it uses `ClassInfo{}` and
 continues validation, conflict, and save. Preserve `-1` as the unassigned
 sentinel, treat zero as invalid, retain missing-row defaults, and keep the
 validation/conflict/save order. The save request, adapter reread, and
-`ClassService` guard remain separate. F153 is selected for live-page current/baseline parity
-when persisted teacher ID zero changes after load; Class Notes read remains a
-candidate for later review.
+`ClassService` guard remain separate. F153 acceptance and the selected F154
+Class Notes read are recorded below.
 
 ## F152 acceptance record
 
@@ -407,10 +405,30 @@ Toolchain, fixture repairs, PDB workaround, and limits are in the [Phase 2
 progress log](03-Phase-2-Progress-Log.md). Gates 1 and 2 remain Partial; Phase 2
 remains In Progress with its exit gate Open.
 
-## F153 selected teacher-ID validation parity
+## F153 accepted teacher-ID validation parity
 
-F153 compares the live page and baseline when a persisted `teacherId=0` changes
-after page load. Assert the legacy teacher validation issue, retained dirty
-state, no save signal or visible conflict warning, and unchanged target row.
-Keep current and baseline query-count evidence distinct. After this slice,
-review another planned feature; Class Notes read is a candidate, not selected.
+F153, commit `477ed151`, compares the live page and baseline when persisted
+`teacherId=0` changes after page load. The accepted assertions cover the legacy
+teacher issue, dirty state, no save signal or visible conflict warning, and an
+unchanged target row. The conflict check uses a warning trap, not a query-count
+comparison. Current parity and page-save targets passed 2/2; the page-save
+target retains F152's separate no-conflict-query regression. The original pinned baseline
+`48fc5c5cc7dee78d82f8bf5f1bf8b51725575b99` focused parity harness passed 1/1.
+The baseline overlay changed only the parity harness/registration and Qt
+minimums; no production source was overlaid, and its page source matches blob
+`cdc48da8e3bab73dd0e064cf8364899f67ad1021`. Toolchain and verification limits
+are in the [Phase 2 progress log](03-Phase-2-Progress-Log.md). Gates 1 and 2
+remain Partial; Phase 2 remains In Progress/Open.
+
+## F154 selected Class Notes page read
+
+Add a dedicated typed Application read query and active-session Platform port,
+separate from the existing Class Notes save port. Its screen projection carries class
+ID, exact UTF-16 notes and time-filler activity, grade/level, regular-schedule
+day/start, and teacher display name; class and teacher outcomes fail
+independently. Keep text trimming and `SidebarNodeNaming` title formatting and
+fallbacks in the UI. Preserve defaults on failed reads, avoid `DataService`
+fallback, and use the query for load/discard only; refresh/save add no reads.
+Verify typed identity and errors, independent source failures, mapping, page
+load/discard, and current-versus-original-pinned-baseline display parity.
+F154 is selected, not implemented or accepted. Gates 1 and 2 remain Partial.
