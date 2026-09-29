@@ -3690,5 +3690,17 @@ F154 patch, then that same source was committed unchanged as `8bcbf136`. Logs:
 `%TEMP%\p2f152\testsc-f154.log` and
 `%TEMP%\p2f153\test-baseline-notes-parity.log`. No full suite/app build
 ran. Gates 1 and 2 remain Partial; Phase 2 remains In Progress/Open. F155
-selection is under review from the remaining Phase 2 plan. No push was
-requested.
+is selected for a dedicated Class Co-Teacher page read query and active-session
+Platform adapter. Return selected teacher ID and the class/teacher display
+fields used by `SidebarNodeNaming`, with independent read outcomes. Use the
+query on load/discard and after successful assignment; preserve missing/read-
+error fallbacks. Keep the existing teacher-choice catalogue and assignment
+use case/adapter out of scope. Current tests should verify call timing and
+failures; original-pinned-baseline parity should cover selected value/title,
+discard reload, and post-save title updates. Gates 1 and 2 remain Partial;
+Phase 2 remains In Progress/Open. No push was requested.
+
+An older F123 candidate handoff predates commit `9f7e736b`, which contains
+TeacherInfoPage use-case integration and page tests. That production integration
+is present in the current checkout; this continuation did not re-verify its
+CTest target or baseline parity and makes no new acceptance claim for it.

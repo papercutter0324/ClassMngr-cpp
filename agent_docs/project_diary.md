@@ -1476,3 +1476,12 @@ loaded text when teacher lookup fails. Leave display formatting and trimming
 in the UI, use the active session without DataService fallback, and keep reads
 out of refresh/save. Compare visible load/discard behavior on the pinned
 baseline; assert query counts only in current tests.
+
+## 2026-09-30 — F155 Co-Teacher selected-class read
+
+Move the selected assignment and title inputs behind a separate read query,
+but keep teacher choices and assignment saving on their existing boundaries.
+Refresh the selected-class snapshot after a successful assignment and on
+discard. Use baseline parity for visible selection/title behavior and keep
+read-count assertions current-only. Historical F123 candidate notes must not
+be treated as current production state after commit `9f7e736b`.

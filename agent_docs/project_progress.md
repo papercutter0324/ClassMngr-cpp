@@ -1966,5 +1966,22 @@ header matched blobs `bbc9bc24a053aca83434eba6efac1e4ad5801bc2` and
 1.13.2, MSVC 19.51.36257, Qt 6.12.0, `CL` cleared, embedded debug info. The
 current run built the F154 working-tree source immediately before it was
 committed unchanged as `8bcbf136`. No full suite or app build ran. Gate 1 and
-Gate 2 remain Partial; Phase 2 remains In Progress/Open. F155 selection is
-under review from the remaining Phase 2 plan.
+Gate 2 remain Partial; Phase 2 remains In Progress/Open.
+
+## F155 selected Class Co-Teacher read boundary
+
+Add a dedicated typed page read query and active-session Platform adapter for
+the assigned teacher ID and class/teacher fields used by
+`SidebarNodeNaming`. Use it on load/discard and after successful assignment to
+refresh selection and title. Preserve missing/read-error fallbacks. Leave the
+teacher-choice catalogue read and existing assignment use case/adapter
+unchanged; do not expand into roster, schedule, or teacher-profile work.
+Acceptance should cover typed identity, independent field/teacher outcomes,
+current page query behavior, load/discard/post-save title behavior, and
+current-versus-pinned-baseline display parity. Gates 1 and 2 remain Partial;
+Phase 2 remains In Progress/Open.
+
+The older F123 candidate notes predate commit `9f7e736b`, which contains
+`TeacherInfoPage` use-case integration and tests. The production integration
+is present in the current checkout; this continuation did not re-verify its
+CTest target or baseline parity.
