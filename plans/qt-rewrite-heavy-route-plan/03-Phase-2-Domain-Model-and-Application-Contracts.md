@@ -24,9 +24,17 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
   operation. F145 preserves roster-first page behavior: a successful roster
   save remains persisted and clean if the details update fails. F147 is accepted
   for delete/cascade migration and the Testing Classes page success-transition
-  fix; F148 awaits Heavy-route candidate review. Gates 1 and 2 remain Partial;
-  F120 active-v2 DataService
-  isolation and formal workspace-create acceptance remain Satisfied.
+  fix. F148 adds one common-input successful Class Details save comparison to
+  Gate 2, not validation or conflict parity. F149 is selected and
+  implementation is starting: add a typed Qt-free regular/intensive conflict
+  query and active-session `DatabaseSession` Platform adapter using the
+  existing `ClassInfoRepository` operation. Preserve page validation,
+  sequential short-circuit/warning behavior, `ClassService` save-time guards,
+  and same-display-name message behavior including its edge case; the overlap
+  algorithm stays outside Application. F126 already routes
+  `ClassDetailsPage` saves through the Qt-free save use case, and F139 reuses it in
+  `ScheduleEditorDialog`. Gates 1 and 2 remain Partial; F120 active-v2
+  DataService isolation and formal workspace-create acceptance remain Satisfied.
   Historical workbook provenance remains a tracked risk, not a literal exit
   criterion. Sub Prep remains January 1 of the reference date's year through
   December 31 of the following year at most; 2026-2027 is illustrative.
@@ -260,8 +268,8 @@ No production defect was observed.
 F144 is the preceding accepted slice. F145's accepted existing-class details
 update is recorded below. F146's accepted new-class create, including the
 optional pending weekday/start-time assignment, is recorded after it. F147's
-accepted delete/cascade migration is recorded below; F148 awaits Heavy-route
-candidate review.
+accepted delete/cascade migration is recorded below; F148 acceptance is below
+and F149 conflict-query implementation is starting.
 
 ## F145 acceptance record
 
@@ -304,5 +312,19 @@ creation remain separate accepted slices.
 Production, page-transition-fix, and acceptance-test commits and the focused
 verification evidence and limits are recorded in the [Phase 2 progress
 log](03-Phase-2-Progress-Log.md). Gate 1 and Gate 2 remain Partial; Phase 2
-remains In Progress with its exit gate Open. F148 awaits Heavy-route candidate
-review.
+remains In Progress with its exit gate Open. F148 acceptance adds one
+successful-save comparison to Gate 2 only; validation and conflict parity
+remain open. F149 is selected and implementation is starting. Its baseline
+conflict-parity requirement and preservation constraints are in the latest
+[Phase 2 progress entry](03-Phase-2-Progress-Log.md).
+
+## F148 acceptance record
+
+F148 adds a live `ClassDetailsPage` successful-save comparison against the
+pinned legacy baseline using the same seeded teacher, class, and edits. The
+case verifies persisted fields and untouched values, regular/intensive time
+ordering, the `classInfoSaved` signal, and clean dirty state. This adds one
+common-input Gate 2 case; validation and conflict parity remain open. Commit,
+test, toolchain, and verification limits are recorded in the [Phase 2 progress
+log](03-Phase-2-Progress-Log.md). Gate 1 and Gate 2 remain Partial; Phase 2
+remains In Progress with its exit gate Open.

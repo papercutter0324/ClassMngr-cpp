@@ -1398,3 +1398,11 @@ selection autosave can create the deleted draft as a new class. Keep the
 failure path's draft intact. Test the full cascade, sibling preservation, and
 rollback after a late SQL failure; the destructive prompt should disclose all
 record categories the repository removes.
+
+## 2026-09-30 — F148 Class Details save parity
+
+For common-input save parity, drive the same live page and persisted database
+case on the current tree and pinned baseline. A fake save port proves request
+mapping, not persistence parity; assert the saved fields, untouched values,
+ordered schedules, and visible success state on both revisions. Keep one
+successful save separate from validation and conflict parity.

@@ -1812,3 +1812,16 @@ regression CTests. Cascade success preserves sibling rows; a final-delete
 trigger verifies rollback. `git diff --check` passed. No full 220-test suite or
 full application build ran. The next step is a Heavy-route candidate review
 for F148; Phase 2 gates remain open.
+
+## F148 class-details save parity — 2026-09-30
+
+F148 adds a common-input success case for `ClassDetailsPage` saving through
+the real page and active services. Commit `6c7211d6427b6dbcddd4d109d9d09f9eeff14f28`
+adds the test and its CMake registration. The same seeded save passed on a
+fresh current archive and pinned baseline `48fc5c5cc7dee78d82f8bf5f1bf8b51725575b99`.
+The assertions cover persisted detail fields, preserved teacher/notes/
+activities, regular and intensive schedule order, the saved signal, and clean
+page state. Gate 2 gains one successful-save comparison but remains Partial;
+the case does not establish validation or conflict parity. Phase 2 remains
+In Progress/Open. F149 is selected for the typed Class Details
+schedule-conflict query boundary, with implementation underway.

@@ -20,8 +20,14 @@
   update slice. F146 is accepted as new-class creation, including its optional
   pending weekday/start-time assignment in the atomic repository operation.
   F147 is accepted for delete/cascade migration and the Testing Classes page
-  success-transition fix. F148 awaits Heavy-route candidate review. See the
-  [Phase 2 progress log](03-Phase-2-Progress-Log.md) for commits and verification.
+  success-transition fix. F148 is accepted with common-input Class Details
+  save parity. F126's ClassDetailsPage save already uses the Qt-free save use
+  case, which F139 reuses in ScheduleEditor; page validation and conflict
+  checks remain outside that contract. F149 is selected and implementation is
+  starting: a typed Application conflict query with an active-session Platform
+  adapter; existing page validation, warning/short-circuit behavior, and
+  save-time guards remain. See the [Phase 2 progress
+  log](03-Phase-2-Progress-Log.md) for commits and verification.
   Phase 2 Gates 1 and 2 remain Partial; broader feature migration, parity, and
   96-class Release memory evidence remain open. Phase 1 build-system exit
   evidence remains outstanding.

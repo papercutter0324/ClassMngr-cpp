@@ -3500,3 +3500,53 @@ The run log is `build/f147-verification-ninja-x64-debug/Testing/Temporary/LastTe
 The next step is a Heavy-route candidate review for F148. Gate 1 and Gate 2
 remain Partial, Phase 2 is In Progress/Open, and the worktree was clean after
 the test commit.
+
+## 2026-09-30 — Phase 2 continuation: F148 accepted; F149 review started
+
+Deployment: `phase2_resume_20260929`, Heavy route. F148's test/CMake commit is
+`6c7211d6427b6dbcddd4d109d9d09f9eeff14f28` (`Phase2 - add class details save
+parity test`). The test target is
+`ClassMngrClassDetailsPageSaveParityTests`; its sole case,
+`successfulUiSaveMatchesSeededCommonInputState`, creates the same teacher and
+class seed, edits fields through a live `ClassDetailsPage` with real
+`ApplicationServices`, and saves without a fake port. It asserts persisted
+teacher/details/notes/activities, exact ordered regular and intensive times,
+one `classInfoSaved` signal with the class ID, and a clean dirty state.
+
+Independent fresh Windows x64 builds used CMake 4.4.2, Ninja 1.13.2, MSVC
+19.51.36257.0, and Qt 6.12.0. The case passed CTest 1/1 on both current code
+(archive source commit `2956df18f3f0c0c53623ad0945b2d75d90d725f4`, 310 Ninja
+actions) and pinned baseline
+`48fc5c5cc7dee78d82f8bf5f1bf8b51725575b99` (313 actions). Both used test
+source overlay SHA-256
+`7D73E3F8425022BFA4006B9667D9D7E7CDA0B8BC0AA4CB0DD2ECCAFD15EF8F26` and
+the same target registration. The temporary baseline overlay changed only
+the three Qt minimum versions from 6.11.1 to the installed 6.12.0 and added
+the test registration; production sources were not overlaid. Exact command:
+`ctest --test-dir "<build>" -R "^ClassMngrClassDetailsPageSaveParityTests$" --output-on-failure --no-tests=error`.
+The F148 case adds one common-input successful-save comparison to Gate 2;
+validation and conflict parity remain open. No full suite ran. The CMake
+warnings were nonfatal and affected missing `vswhere`, optional Vulkan headers,
+or object-path lengths for unrelated targets.
+
+Review of latest commits `2956df18` and `397376e4` found no blocker. The
+independent review noted two low-priority test gaps: closed/unavailable-session
+cases do not themselves distinguish a direct active-session adapter from a
+same-session fallback, and the delete cancel/failure cases keep the roster
+clean (the success regression covers dirty roster state). Production code uses
+the active repository directly; the focused F147 17/17 result remains the
+recorded run, not a rerun during review.
+
+Three independent F149 Investigators agreed on a narrow typed regular/intensive
+schedule-conflict query behind the Class Details page and an active-session
+Platform adapter to `ClassInfoRepository::getClassTimeConflicts()`. The page
+will keep validation-first ordering, Regular-before-Intensive short-circuiting,
+warning/silent-autosave behavior, and the existing ClassService save-time
+validation/conflict recheck. The adapter will not call `ClassService` or
+`DataService`. F149 does not move the repository overlap algorithm into
+Application, and will preserve the current same-display-name warning behavior.
+The selected acceptance includes app-less contract tests, active-session
+Platform tests, page behavior tests, and common-input regular/intensive
+conflict parity against baseline `48fc5c5cc7dee78d82f8bf5f1bf8b51725575b99`.
+The Executor has started implementation; no production verification has run.
+No push was requested.

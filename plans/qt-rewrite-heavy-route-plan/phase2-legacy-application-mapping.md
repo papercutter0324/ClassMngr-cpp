@@ -4119,7 +4119,8 @@ separate existing-class details update; F147 now covers delete/cascade.
 
 The production and acceptance-test commits, focused verification, and limits
 are recorded in the [Phase 2 progress log](03-Phase-2-Progress-Log.md). F147
-now migrates delete/cascade; F148 awaits Heavy-route candidate review.
+migrates delete/cascade; F148 acceptance and the selected, starting F149 slice
+are recorded below.
 
 ## Verified F147 Testing Class delete/cascade
 
@@ -4131,5 +4132,21 @@ F145 details update and F146 creation remain separate accepted boundaries.
 Production commit `b037b4216b71c55c7793df5f7bbbfc4a00690065`, page transition
 fix `315b3ff33b7e2ab42b43d52cd168ce21a92158c9`, and acceptance-test commit
 `397376e439f4b5955c82948ab0c225aaf776d679` are recorded with verification
-limits in the [Phase 2 progress log](03-Phase-2-Progress-Log.md). F148 awaits
-Heavy-route candidate review.
+limits in the [Phase 2 progress log](03-Phase-2-Progress-Log.md). F148 is
+accepted; F149 is selected and implementation is starting. Its acceptance
+constraints and baseline-parity requirement are in the [Phase 2 progress
+log](03-Phase-2-Progress-Log.md).
+
+## Class-details save mapping: F126 and F139
+
+Commit `ca4c1a9701bbeee7a1ce27789808311a1760ef68` already routes
+`ClassDetailsPage` save through the Qt-free
+[`ClassDetailsSaveUseCase`](../../src/next/application/class_details_save_use_case.h)
+and its Platform adapter. F139, commit
+`f1c70a166943b9daac74cdadfdc0a515cea89efa`, reuses the contract from
+`ScheduleEditorDialog`. The Platform adapter still persists through
+`ClassService`; the `ClassDetailsPage` keeps `ClassInfoValidator` checks and
+regular/intensive conflict preflight in its page path. Those validation and
+conflict behaviors have not moved into Application. F148 adds a common-input
+successful-save comparison only; its test and parity limits are in the
+[Phase 2 progress log](03-Phase-2-Progress-Log.md).

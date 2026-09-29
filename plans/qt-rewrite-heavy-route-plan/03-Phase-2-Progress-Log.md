@@ -7383,6 +7383,19 @@ schedule values. Candidate scope and validation/persistence port split are
 pending review; no F126 implementation has begun. Phase 2 remains
 In Progress/Open; Gates 1 and 2 remain Partial.
 
+### Superseding status note - F126 and F139 (2026-09-30)
+
+The candidate status above is historical and is superseded by the verified
+implementation record: commit
+`ca4c1a9701bbeee7a1ce27789808311a1760ef68` already routes
+`ClassDetailsPage` save through the Qt-free `ClassDetailsSaveUseCase` and
+Platform adapter. F139, commit
+`f1c70a166943b9daac74cdadfdc0a515cea89efa`, reuses that contract for
+`ScheduleEditorDialog`. The Platform adapter still persists through
+`ClassService`; page-level validation and schedule-conflict behavior have not
+been migrated. See the [legacy application mapping](phase2-legacy-application-mapping.md)
+for the current boundary. This correction does not change Gate 1 or Gate 2.
+
 ## Verified F134 ScheduleBuilder source query - commit `cbb15e32`
 
 F134 adds a compact Qt-free schedule-source snapshot, an active-session
@@ -7648,5 +7661,44 @@ notice; configure and build succeeded. A duplicate intensive-time fixture key
 was corrected before the final pass. `git diff --check` passed. No full 220-test
 suite or full application build ran. Gate 1 and Gate 2 remain Partial; workspace
 boundary and active-v2 DataService isolation remain Satisfied. Phase 2 remains
-In Progress with its exit gate Open. F148 is the next unselected candidate,
-awaiting Heavy-route candidate review.
+In Progress with its exit gate Open.
+
+### Progress update - 2026-09-30 (F148 accepted; F149 selected)
+
+F148 adds the live-page case
+`successfulUiSaveMatchesSeededCommonInputState` in target
+`ClassMngrClassDetailsPageSaveParityTests`. It saves the same seeded teacher,
+class, and edits through `ClassDetailsPage` with real `ApplicationServices`,
+then checks persisted edited and untouched values, exact regular/intensive
+schedule order, one `classInfoSaved` signal with the class ID, and clean dirty
+state. The test/CMake commit is
+`6c7211d6427b6dbcddd4d109d9d09f9eeff14f28`.
+
+Independent fresh Windows x64 builds used CMake 4.4.2, Ninja 1.13.2, MSVC
+19.51.36257.0, and Qt 6.12.0. The focused CTest passed 1/1 on current code
+(source archive `2956df18f3f0c0c53623ad0945b2d75d90d725f4`, 310 Ninja actions)
+and 1/1 on pinned baseline
+`48fc5c5cc7dee78d82f8bf5f1bf8b51725575b99` (313 actions). Both used identical
+test source overlay SHA-256
+`7D73E3F8425022BFA4006B9667D9D7E7CDA0B8BC0AA4CB0DD2ECCAFD15EF8F26` and
+target registration. The baseline temporary overlay changed only three Qt
+minimum versions from 6.11.1 to installed 6.12.0 and added the test
+registration; production sources were not overlaid. Command:
+`ctest --test-dir "<build>" -R "^ClassMngrClassDetailsPageSaveParityTests$" --output-on-failure --no-tests=error`.
+Nonfatal CMake warnings concerned missing `vswhere`, optional Vulkan headers,
+and unrelated object-path lengths. No full suite ran. This adds one common-input
+successful-save comparison to Gate 2 only; it does not establish validation or
+conflict parity. Gate 1 and Gate 2 remain Partial; the Phase 2 exit gate stays
+Open.
+
+### Progress update - 2026-09-30 (F149 selected; implementation starting)
+
+F149 is selected to add a Qt-free typed regular/intensive conflict query and a
+Platform adapter using the active `DatabaseSession` and existing
+`ClassInfoRepository` operation. Keep `ClassDetailsPage` validation, sequential
+short-circuit and warning behavior, and `ClassService` save-time guards
+unchanged. Preserve the existing same-display-name conflict-message behavior,
+including its edge case;
+the overlap algorithm itself does not move into Application. Acceptance
+requires baseline conflict parity. Gate 1 and Gate 2 remain Partial; Phase 2's
+exit gate remains Open.
