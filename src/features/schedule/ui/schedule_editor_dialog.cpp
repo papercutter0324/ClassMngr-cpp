@@ -5,12 +5,13 @@
 #include "ui/shared/widgets/text_fit_push_button.h"
 
 #include "features/classes/config/class_info_config.h"
-#include "app/services/feature_services.h"
 #include "core/application_services.h"
 #include "core/fontmanager.h"
 #include "next/application/class_details_save_use_case.h"
+#include "next/application/schedule_editor_class_info_query.h"
 #include "next/platform/application_services_custom_color_palette_preferences_port.h"
 #include "next/platform/application_services_class_details_save_port.h"
+#include "next/platform/application_services_schedule_editor_class_info_read_port.h"
 #include "ui/shared/widgets/clickable_color_preview.h"
 #include "core/utils/colorutils.h"
 
@@ -32,11 +33,13 @@ ScheduleEditorDialog::ScheduleEditorDialog(
     ApplicationServices* services,
     int classId,
     QWidget* parent,
-    ClassMngr::Next::Application::ClassDetailsSavePort* savePort
+    ClassMngr::Next::Application::ClassDetailsSavePort* savePort,
+    ClassMngr::Next::Application::ScheduleEditorClassInfoReadPort* readPort
     )
     : DialogShell(QStringLiteral("scheduleEditor"), parent)
     , m_services(services)
     , m_savePort(savePort)
+    , m_readPort(readPort)
     , m_classId(classId)
 {
     setWindowTitle(
@@ -163,10 +166,10 @@ void ScheduleEditorDialog::saveChanges()
         .classLevel = newLevel.toStdU16String(),
         .readingBook = clearBooks
             ? std::u16string{}
-            : m_cachedInfo.readingBook.toStdU16String(),
+            : m_readingBook.toStdU16String(),
         .essayBook = clearBooks
             ? std::u16string{}
-            : m_cachedInfo.essayBook.toStdU16String(),
+            : m_essayBook.toStdU16String(),
         .classColor = m_classColor.toStdU16String(),
         .fontColor = m_fontColor.toStdU16String()
     };
@@ -360,55 +363,75 @@ void ScheduleEditorDialog::buildUi()
 
 void ScheduleEditorDialog::loadData()
 {
-    auto* classService =
-        m_services
-            ? m_services->classService()
-            : nullptr;
-
-    if (!classService || !classService->isAvailable())
+    const auto classId = ClassMngr::Next::Domain::ClassId::fromString(
+        std::to_string(m_classId)
+        );
+    if (!classId)
     {
         return;
     }
 
-    m_loadingData = true;
+    const auto applyLoadedData = [this, &classId](
+        const ClassMngr::Next::Application::
+            ScheduleEditorClassInfoReadPort& readPort
+        )
+    {
+        const auto loaded =
+            ClassMngr::Next::Application::ScheduleEditorClassInfoQuery::execute(
+                *classId,
+                readPort
+                );
+        if (!loaded)
+        {
+            return;
+        }
 
-    m_cachedInfo =
-        classService->classInfo(m_classId).value_or(ClassInfo{});
+        const auto& info = loaded.value();
+        m_loadingData = true;
 
-    m_originalGrade =
-        m_cachedInfo.classGrade;
+        m_readingBook = QString::fromStdU16String(info.readingBook);
+        m_essayBook = QString::fromStdU16String(info.essayBook);
+        m_originalGrade = QString::fromStdU16String(info.classGrade);
+        m_originalLevel = QString::fromStdU16String(info.classLevel);
 
-    m_originalLevel =
-        m_cachedInfo.classLevel;
+        m_teacherKrEdit->setText(
+            QString::fromStdU16String(info.teacherKoreanName)
+            );
 
-    m_teacherKrEdit->setText(
-        m_cachedInfo.teacherKr
-        );
+        m_roomNumberEdit->setText(
+            QString::fromStdU16String(info.roomNumber)
+            );
 
-    m_roomNumberEdit->setText(
-        m_cachedInfo.roomNumber
-        );
+        setComboText(
+            m_gradeCombo,
+            m_originalGrade
+            );
 
-    setComboText(
-        m_gradeCombo,
-        m_originalGrade
-        );
+        rebuildLevelOptions(m_originalLevel);
 
-    rebuildLevelOptions(m_originalLevel);
-
-    m_classColor =
-        m_cachedInfo.classColor.isEmpty()
+        m_classColor = info.classColor.empty()
             ? QStringLiteral("#FFFFFF")
-            : m_cachedInfo.classColor;
+            : QString::fromStdU16String(info.classColor);
 
-    m_fontColor =
-        m_cachedInfo.fontColor.isEmpty()
+        m_fontColor = info.fontColor.empty()
             ? QStringLiteral("#000000")
-            : m_cachedInfo.fontColor;
+            : QString::fromStdU16String(info.fontColor);
 
-    updateColorPreviews();
+        updateColorPreviews();
+        m_loadingData = false;
+    };
 
-    m_loadingData = false;
+    if (m_readPort)
+    {
+        applyLoadedData(*m_readPort);
+        return;
+    }
+
+    ClassMngr::Next::Platform::
+        ApplicationServicesScheduleEditorClassInfoReadPort defaultReadPort(
+            m_services
+            );
+    applyLoadedData(defaultReadPort);
 }
 
 void ScheduleEditorDialog::updateColorPreviews()

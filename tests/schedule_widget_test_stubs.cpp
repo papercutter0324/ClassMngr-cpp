@@ -1810,11 +1810,13 @@ ScheduleEditorDialog::ScheduleEditorDialog(
     ApplicationServices* services,
     int classId,
     QWidget* parent,
-    ClassMngr::Next::Application::ClassDetailsSavePort* savePort
+    ClassMngr::Next::Application::ClassDetailsSavePort* savePort,
+    ClassMngr::Next::Application::ScheduleEditorClassInfoReadPort* readPort
     )
     : DialogShell(QStringLiteral("scheduleEditor"), parent)
     , m_services(services)
     , m_savePort(savePort)
+    , m_readPort(readPort)
     , m_classId(classId)
 {
 }

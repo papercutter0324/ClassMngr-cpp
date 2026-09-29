@@ -1,7 +1,8 @@
 #pragma once
 
-#include "domain/models/class_info.h"
 #include "ui/shared/dialogs/dialog_shell.h"
+
+#include <QString>
 
 class ApplicationServices;
 class ClickableColorPreview;
@@ -11,6 +12,7 @@ class QLineEdit;
 namespace ClassMngr::Next::Application
 {
 class ClassDetailsSavePort;
+class ScheduleEditorClassInfoReadPort;
 }
 
 class ScheduleEditorDialog : public DialogShell
@@ -22,7 +24,9 @@ public:
         ApplicationServices* services,
         int classId,
         QWidget* parent = nullptr,
-        ClassMngr::Next::Application::ClassDetailsSavePort* savePort = nullptr
+        ClassMngr::Next::Application::ClassDetailsSavePort* savePort = nullptr,
+        ClassMngr::Next::Application::ScheduleEditorClassInfoReadPort*
+            readPort = nullptr
         );
 
 signals:
@@ -56,8 +60,11 @@ private:
 private:
     ApplicationServices* m_services = nullptr;
     ClassMngr::Next::Application::ClassDetailsSavePort* m_savePort = nullptr;
+    ClassMngr::Next::Application::ScheduleEditorClassInfoReadPort*
+        m_readPort = nullptr;
     int m_classId = -1;
-    ClassInfo m_cachedInfo;
+    QString m_readingBook;
+    QString m_essayBook;
     QString m_originalGrade;
     QString m_originalLevel;
     QString m_classColor{"#FFFFFF"};

@@ -3,9 +3,11 @@
 #include "domain/models/class_info.h"
 #include "features/schedule/ui/schedule_editor_dialog.h"
 #include "next/application/class_details_save_use_case.h"
+#include "next/application/schedule_editor_class_info_query.h"
 #include "ui/shared/dialogs/user_prompt_service.h"
 
 #include <QComboBox>
+#include <QLineEdit>
 #include <QPushButton>
 #include <QSignalSpy>
 #include <QTemporaryDir>
@@ -60,6 +62,11 @@ int createClassWithDetails(ApplicationServices& services)
     return *created;
 }
 
+Domain::ClassId typedClassId(const int value)
+{
+    return *Domain::ClassId::fromString(std::to_string(value));
+}
+
 class RecordingSavePort final
     : public Application::ClassDetailsSavePort
 {
@@ -76,6 +83,30 @@ public:
     mutable int callCount = 0;
     mutable std::optional<Application::ClassDetailsSaveRequest> lastRequest;
     Domain::Result<void> result = Domain::Result<void>::success();
+};
+
+class RecordingReadPort final
+    : public Application::ScheduleEditorClassInfoReadPort
+{
+public:
+    [[nodiscard]] Application::ScheduleEditorClassInfoReadResult
+    readScheduleEditorClassInfo(
+        const Domain::ClassId& value
+        ) const override
+    {
+        ++callCount;
+        lastClassId = value;
+        return result;
+    }
+
+    mutable int callCount = 0;
+    mutable std::optional<Domain::ClassId> lastClassId;
+    Application::ScheduleEditorClassInfoReadResult result =
+        Application::ScheduleEditorClassInfoReadResult::failure({
+            .code = Domain::ErrorCode::Technical,
+            .message = "Unconfigured dialog read port",
+            .recoverable = false
+        });
 };
 
 QList<QComboBox*> dialogCombos(ScheduleEditorDialog& dialog)
@@ -127,8 +158,11 @@ class ScheduleEditorDialogTests final : public QObject
 
 private slots:
     void unchangedDetailsAreForwardedAndSuccessfulSaveAccepts();
+    void successfulReadMapsAllFieldsAndPreservesBooksOnSave();
     void gradeChangeClearsBothBooksAndOmitsSchedules();
     void levelChangeClearsBothBooksAndOmitsSchedules();
+    void failedReadLeavesSilentEmptyDefaults_data();
+    void failedReadLeavesSilentEmptyDefaults();
     void notFoundKeepsDialogOpenWithoutWarning();
     void otherFailureShowsExistingWarningAndKeepsDialogOpen();
 };
@@ -163,6 +197,62 @@ unchangedDetailsAreForwardedAndSuccessfulSaveAccepts()
     QCOMPARE(savedSpy.at(0).at(0).toInt(), classId);
     QCOMPARE(dialog.result(), static_cast<int>(QDialog::Accepted));
     QVERIFY(!dialog.isVisible());
+}
+
+void ScheduleEditorDialogTests::
+successfulReadMapsAllFieldsAndPreservesBooksOnSave()
+{
+    constexpr int classId = 42;
+    RecordingReadPort readPort;
+    readPort.result = Application::ScheduleEditorClassInfoReadResult::success({
+        .classId = typedClassId(classId),
+        .classGrade = u"E4",
+        .classLevel = u"Theseus",
+        .readingBook = u"Reading Explorer 1",
+        .essayBook = u"4A",
+        .classColor = u"#123456",
+        .fontColor = u"#654321",
+        .teacherKoreanName = u"\uAE40\uC120\uC0DD",
+        .roomNumber = u"308"
+    });
+    RecordingSavePort savePort;
+    ScheduleEditorDialog dialog(nullptr, classId, nullptr, &savePort, &readPort);
+
+    QCOMPARE(readPort.callCount, 1);
+    QVERIFY(readPort.lastClassId.has_value());
+    QCOMPARE(readPort.lastClassId->value(), std::string("42"));
+    const QList<QComboBox*> combos = dialogCombos(dialog);
+    QCOMPARE(combos.size(), 2);
+    QCOMPARE(combos.at(0)->currentText(), QStringLiteral("E4"));
+    QCOMPARE(combos.at(1)->currentText(), QStringLiteral("Theseus"));
+    const QList<QLineEdit*> edits = dialog.findChildren<QLineEdit*>();
+    QCOMPARE(edits.size(), 2);
+    QCOMPARE(
+        edits.at(0)->text(),
+        QString::fromUtf8("\xEA\xB9\x80\xEC\x84\xA0\xEC\x83\x9D"));
+    QCOMPARE(edits.at(1)->text(), QStringLiteral("308"));
+
+    QSignalSpy savedSpy(&dialog, &ScheduleEditorDialog::saved);
+    QVERIFY(savedSpy.isValid());
+    dialog.show();
+    QTRY_VERIFY(dialog.isVisible());
+    QVERIFY(clickSave(dialog));
+
+    QCOMPARE(savePort.callCount, 1);
+    QVERIFY(savePort.lastRequest.has_value());
+    const Application::ClassDetailsSaveRequest& request =
+        *savePort.lastRequest;
+    QCOMPARE(request.classId.value(), std::string("42"));
+    QCOMPARE(request.classGrade, std::u16string(u"E4"));
+    QCOMPARE(request.classLevel, std::u16string(u"Theseus"));
+    QCOMPARE(request.readingBook, std::u16string(u"Reading Explorer 1"));
+    QCOMPARE(request.essayBook, std::u16string(u"4A"));
+    QCOMPARE(request.classColor, std::u16string(u"#123456"));
+    QCOMPARE(request.fontColor, std::u16string(u"#654321"));
+    verifySchedulesOmitted(request);
+    QCOMPARE(savedSpy.size(), 1);
+    QCOMPARE(savedSpy.at(0).at(0).toInt(), classId);
+    QCOMPARE(dialog.result(), static_cast<int>(QDialog::Accepted));
 }
 
 void ScheduleEditorDialogTests::
@@ -231,6 +321,65 @@ levelChangeClearsBothBooksAndOmitsSchedules()
     QVERIFY(request.readingBook.empty());
     QVERIFY(request.essayBook.empty());
     verifySchedulesOmitted(request);
+}
+
+void ScheduleEditorDialogTests::
+failedReadLeavesSilentEmptyDefaults_data()
+{
+    QTest::addColumn<int>("errorCode");
+    QTest::addColumn<QString>("errorMessage");
+    QTest::newRow("repository-failure")
+        << static_cast<int>(Domain::ErrorCode::Technical)
+        << QStringLiteral("class details read failed");
+    QTest::newRow("unavailable-session")
+        << static_cast<int>(Domain::ErrorCode::NotFound)
+        << QStringLiteral("active session unavailable");
+}
+
+void ScheduleEditorDialogTests::failedReadLeavesSilentEmptyDefaults()
+{
+    QFETCH(int, errorCode);
+    QFETCH(QString, errorMessage);
+
+    constexpr int classId = 42;
+    RecordingReadPort readPort;
+    readPort.result = Application::ScheduleEditorClassInfoReadResult::failure({
+        .code = static_cast<Domain::ErrorCode>(errorCode),
+        .message = errorMessage.toStdString(),
+        .recoverable = true
+    });
+    RecordingSavePort savePort;
+    ScheduleEditorDialog dialog(nullptr, classId, nullptr, &savePort, &readPort);
+
+    QCOMPARE(readPort.callCount, 1);
+    QVERIFY(readPort.lastClassId.has_value());
+    QCOMPARE(readPort.lastClassId->value(), std::string("42"));
+    const QList<QComboBox*> combos = dialogCombos(dialog);
+    QCOMPARE(combos.size(), 2);
+    QVERIFY(combos.at(0)->currentText().isEmpty());
+    QVERIFY(combos.at(1)->currentText().isEmpty());
+    const QList<QLineEdit*> edits = dialog.findChildren<QLineEdit*>();
+    QCOMPARE(edits.size(), 2);
+    QVERIFY(edits.at(0)->text().isEmpty());
+    QVERIFY(edits.at(1)->text().isEmpty());
+    QVERIFY(!DialogServices::promptTestDriver().activePrompt().has_value());
+
+    dialog.show();
+    QTRY_VERIFY(dialog.isVisible());
+    QVERIFY(clickSave(dialog));
+    QCOMPARE(savePort.callCount, 1);
+    QVERIFY(savePort.lastRequest.has_value());
+    const Application::ClassDetailsSaveRequest& request =
+        *savePort.lastRequest;
+    QCOMPARE(request.classId.value(), std::string("42"));
+    QVERIFY(request.classGrade.empty());
+    QVERIFY(request.classLevel.empty());
+    QVERIFY(request.readingBook.empty());
+    QVERIFY(request.essayBook.empty());
+    QCOMPARE(request.classColor, std::u16string(u"#FFFFFF"));
+    QCOMPARE(request.fontColor, std::u16string(u"#000000"));
+    verifySchedulesOmitted(request);
+    QCOMPARE(dialog.result(), static_cast<int>(QDialog::Accepted));
 }
 
 void ScheduleEditorDialogTests::notFoundKeepsDialogOpenWithoutWarning()

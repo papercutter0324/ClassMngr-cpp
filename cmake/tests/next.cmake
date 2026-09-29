@@ -277,6 +277,15 @@ classmngr_add_qt_test(
 )
 
 classmngr_add_qt_test(
+    NAME NextApplicationScheduleEditorClassInfoQuery
+    SOURCES
+        tests/next_application_schedule_editor_class_info_query_tests.cpp
+    LIBRARIES
+        ClassMngrNext::Application
+        Qt6::Test
+)
+
+classmngr_add_qt_test(
     NAME NextApplicationSubPrepRosterOutputSourceQuery
     SOURCES
         tests/next_application_sub_prep_roster_output_source_query_tests.cpp
@@ -1048,6 +1057,16 @@ classmngr_add_qt_test(
     NAME NextPlatformApplicationServicesClassDetailsPageReadPort
     SOURCES
         tests/next_platform_application_services_class_details_page_read_port_tests.cpp
+    LIBRARIES
+        ClassMngrNext::Platform
+        Qt6::Test
+    OFFSCREEN
+)
+
+classmngr_add_qt_test(
+    NAME NextPlatformApplicationServicesScheduleEditorClassInfoReadPort
+    SOURCES
+        tests/next_platform_application_services_schedule_editor_class_info_read_port_tests.cpp
     LIBRARIES
         ClassMngrNext::Platform
         Qt6::Test
