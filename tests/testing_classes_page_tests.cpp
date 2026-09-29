@@ -1,12 +1,17 @@
 #include "core/application_services.h"
 #include "data/data_service.h"
+#include "data/database/database_session.h"
+#include "data/repositories/testing_class_repository.h"
 #include "domain/models/roster.h"
 #include "domain/models/testing_class.h"
 #include "features/classes/ui/testing_classes_page.h"
 #include "features/roster/ui/roster_editor_widget.h"
 #include "features/roster/ui/roster_table_view.h"
+#include "fakes/fake_user_prompt_service.h"
+#include "next/application/schedule_testing_class_choices_query.h"
 #include "ui/shared/widgets/marquee_item_delegate.h"
 #include "ui/shared/widgets/on_screen_keyboard.h"
+#include "ui/shared/dialogs/user_prompt_service.h"
 
 #include <QtTest>
 
@@ -20,10 +25,16 @@
 #include <QStandardItemModel>
 #include <QTabWidget>
 #include <QTimer>
+#include <QTemporaryDir>
+#include <QUuid>
+
+#include <optional>
+#include <string>
 
 namespace ScheduleWidgetTestStubs
 {
 void reset();
+void setTestingClass(const TestingClass& testingClass);
 }
 
 void RosterEditorWidget::importScores()
@@ -52,6 +63,51 @@ TestingClass testingClass(
     value.fontColor = QStringLiteral("#FFFFFF");
     return value;
 }
+
+QString databasePath(QTemporaryDir& directory)
+{
+    return directory.filePath(
+        QStringLiteral("testing-classes-page-%1.tps").arg(
+            QUuid::createUuid().toString(QUuid::WithoutBraces)
+            )
+        );
+}
+
+ClassMngr::Next::Domain::ClassId typedClassId(const int value)
+{
+    const auto parsed = ClassMngr::Next::Domain::ClassId::fromString(
+        std::to_string(value)
+        );
+    if (!parsed)
+    {
+        qFatal("Test class ID must have a typed representation.");
+    }
+    return *parsed;
+}
+
+class FixedTestingClassChoicesReadPort final
+    : public ClassMngr::Next::Application::
+        ScheduleTestingClassChoicesReadPort
+{
+public:
+    [[nodiscard]] ClassMngr::Next::Application::
+        ScheduleTestingClassChoicesReadResult readTestingClassChoices(
+            const ClassMngr::Next::Application::
+                ScheduleTestingClassChoicesReadQuery& query
+            ) const override
+    {
+        ++callCount;
+        lastQuery = query;
+        return result;
+    }
+
+    mutable int callCount = 0;
+    mutable std::optional<ClassMngr::Next::Application::
+        ScheduleTestingClassChoicesReadQuery> lastQuery;
+    ClassMngr::Next::Application::ScheduleTestingClassChoicesReadResult
+        result = ClassMngr::Next::Application::
+            ScheduleTestingClassChoicesReadResult::success({});
+};
 
 Roster rosterWithEvaluation()
 {
@@ -116,18 +172,27 @@ class TestingClassesPageTests : public QObject
 
 private slots:
     void init();
+    void cleanup();
     void rosterEditorOmitsRemoveButtonAndKeepsContextAction();
     void rosterTableSupportsMultiCellSelection();
     void rosterKeyboardTriggerOpensInAppPalette();
     void rosterKeyboardWritesToKoreanNameCell();
     void outputAvailabilityFollowsRosterTabAndLoadedClass();
     void testingClassesUsesNarrowNonCollapsibleNavigation();
+    void testingClassChoicesQueryMapsActiveSessionAndPreferredSelection();
+    void unavailableTestingClassChoicesQueryIsSilentAndEmpty();
+    void testingClassChoicesQueryFailureShowsExactWarning();
     void testingRosterHidesEvaluationsWithoutLosingData();
 };
 
 void TestingClassesPageTests::init()
 {
     ScheduleWidgetTestStubs::reset();
+}
+
+void TestingClassesPageTests::cleanup()
+{
+    DialogServices::setUserPromptServiceForTesting(nullptr);
 }
 
 void TestingClassesPageTests
@@ -368,7 +433,18 @@ void TestingClassesPageTests
             );
     QVERIFY(created);
 
-    TestingClassesPage page(&services);
+    FixedTestingClassChoicesReadPort readPort;
+    readPort.result = ClassMngr::Next::Application::
+        ScheduleTestingClassChoicesReadResult::success({
+            .choices = {{
+                .classId = typedClassId(*created),
+                .name = u"Output Availability",
+                .grade = u"M1",
+                .level = u"Major",
+                .room = u"401"
+            }}
+        });
+    TestingClassesPage page(&services, nullptr, &readPort);
     page.setDatabaseOpen(true);
     page.openTestingClass(*created);
     page.activate();
@@ -404,7 +480,18 @@ void TestingClassesPageTests
             );
     QVERIFY(created);
 
-    TestingClassesPage page(&services);
+    FixedTestingClassChoicesReadPort readPort;
+    readPort.result = ClassMngr::Next::Application::
+        ScheduleTestingClassChoicesReadResult::success({
+            .choices = {{
+                .classId = typedClassId(*created),
+                .name = longName.toStdU16String(),
+                .grade = u"M1",
+                .level = u"Major",
+                .room = u"401"
+            }}
+        });
+    TestingClassesPage page(&services, nullptr, &readPort);
     page.resize(1100, 720);
     page.show();
     page.openTestingClass(*created);
@@ -472,6 +559,163 @@ void TestingClassesPageTests
         deleteButton->geometry().top()
         > addButton->geometry().bottom()
         );
+}
+
+void TestingClassesPageTests::
+testingClassChoicesQueryMapsActiveSessionAndPreferredSelection()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+    DatabaseSession* const session = services.databaseSession();
+    QVERIFY(session);
+    QVERIFY(session->isOpen());
+    TestingClassRepository* const repository =
+        session->testingClassRepository();
+    QVERIFY(repository);
+
+    TestingClass zuluMajor = testingClass(QStringLiteral("Zulu Major"));
+    zuluMajor.grade = QStringLiteral("M1");
+    zuluMajor.level = QStringLiteral("Major");
+    zuluMajor.room = QStringLiteral("Room 411");
+    zuluMajor.teacherId = -1;
+    const auto zuluMajorId = repository->createTestingClass(zuluMajor);
+    QVERIFY(zuluMajorId);
+
+    TestingClass omegaM2 = testingClass(QStringLiteral("Omega M2"));
+    omegaM2.grade = QStringLiteral("M2");
+    omegaM2.level = QStringLiteral("Major");
+    omegaM2.room = QStringLiteral("Room 414");
+    omegaM2.teacherId = -1;
+    const auto omegaM2Id = repository->createTestingClass(omegaM2);
+    QVERIFY(omegaM2Id);
+
+    TestingClass betaSongs = testingClass(QStringLiteral("Beta Songs"));
+    betaSongs.grade = QStringLiteral("M1");
+    betaSongs.level = QStringLiteral("Song's");
+    betaSongs.room = QStringLiteral("Room 412");
+    betaSongs.teacherId = -1;
+    const auto betaSongsId = repository->createTestingClass(betaSongs);
+    QVERIFY(betaSongsId);
+
+    TestingClass alphaMajor = testingClass(QStringLiteral("Alpha Major"));
+    alphaMajor.grade = QStringLiteral("M1");
+    alphaMajor.level = QStringLiteral("Major");
+    alphaMajor.room = QStringLiteral("Room 413");
+    alphaMajor.teacherId = -1;
+    const auto alphaMajorId = repository->createTestingClass(alphaMajor);
+    QVERIFY(alphaMajorId);
+
+    alphaMajor.classId = *alphaMajorId;
+    ScheduleWidgetTestStubs::setTestingClass(alphaMajor);
+
+    TestingClassesPage page(&services);
+    page.resize(1000, 700);
+    page.show();
+    page.openTestingClass(*alphaMajorId);
+    QApplication::processEvents();
+
+    auto* list = page.findChild<QListWidget*>(
+        QStringLiteral("testingClassesList")
+        );
+    QVERIFY(list);
+    QCOMPARE(list->count(), 4);
+    QCOMPARE(
+        list->item(0)->text(),
+        QStringLiteral("Beta Songs — M1 — Song's")
+        );
+    QCOMPARE(
+        list->item(1)->text(),
+        QStringLiteral("Alpha Major — M1 — Major")
+        );
+    QCOMPARE(
+        list->item(2)->text(),
+        QStringLiteral("Zulu Major — M1 — Major")
+        );
+    QCOMPARE(
+        list->item(3)->text(),
+        QStringLiteral("Omega M2 — M2 — Major")
+        );
+    QCOMPARE(list->item(0)->data(Qt::UserRole).toInt(), *betaSongsId);
+    QCOMPARE(list->item(1)->data(Qt::UserRole).toInt(), *alphaMajorId);
+    QCOMPARE(list->item(2)->data(Qt::UserRole).toInt(), *zuluMajorId);
+    QCOMPARE(list->item(3)->data(Qt::UserRole).toInt(), *omegaM2Id);
+    QCOMPARE(list->currentRow(), 1);
+    QCOMPARE(
+        list->currentItem()->data(Qt::UserRole).toInt(),
+        *alphaMajorId
+        );
+}
+
+void TestingClassesPageTests::
+unavailableTestingClassChoicesQueryIsSilentAndEmpty()
+{
+    ApplicationServices services;
+    FixedTestingClassChoicesReadPort readPort;
+    readPort.result = ClassMngr::Next::Application::
+        ScheduleTestingClassChoicesReadResult::failure({
+            .code = ClassMngr::Next::Domain::ErrorCode::NotFound,
+            .message = "The active database session is unavailable.",
+            .recoverable = false
+        });
+    FakeUserPromptService prompts;
+    DialogServices::setUserPromptServiceForTesting(&prompts);
+
+    TestingClassesPage page(&services, nullptr, &readPort);
+    page.resize(900, 650);
+    page.show();
+    page.openTestingClass();
+    QApplication::processEvents();
+
+    auto* list = page.findChild<QListWidget*>(
+        QStringLiteral("testingClassesList")
+        );
+    QVERIFY(list);
+    QCOMPARE(readPort.callCount, 1);
+    QVERIFY(readPort.lastQuery.has_value());
+    QVERIFY(*readPort.lastQuery
+        == ClassMngr::Next::Application::ScheduleTestingClassChoicesReadQuery{});
+    QCOMPARE(list->count(), 0);
+    QVERIFY(prompts.messages.isEmpty());
+}
+
+void TestingClassesPageTests::
+testingClassChoicesQueryFailureShowsExactWarning()
+{
+    ApplicationServices services;
+    FixedTestingClassChoicesReadPort readPort;
+    readPort.result = ClassMngr::Next::Application::
+        ScheduleTestingClassChoicesReadResult::failure({
+            .code = ClassMngr::Next::Domain::ErrorCode::Technical,
+            .message = "injected testing class choices read failure",
+            .recoverable = false
+        });
+    FakeUserPromptService prompts;
+    DialogServices::setUserPromptServiceForTesting(&prompts);
+
+    TestingClassesPage page(&services, nullptr, &readPort);
+    page.resize(900, 650);
+    page.show();
+    page.openTestingClass();
+    QApplication::processEvents();
+
+    auto* list = page.findChild<QListWidget*>(
+        QStringLiteral("testingClassesList")
+        );
+    QVERIFY(list);
+    QCOMPARE(readPort.callCount, 1);
+    QVERIFY(readPort.lastQuery.has_value());
+    QVERIFY(*readPort.lastQuery
+        == ClassMngr::Next::Application::ScheduleTestingClassChoicesReadQuery{});
+    QCOMPARE(list->count(), 0);
+    QCOMPARE(prompts.messages.size(), 1);
+    QCOMPARE(prompts.messages.constFirst().title,
+             QStringLiteral("Testing Classes"));
+    QCOMPARE(prompts.messages.constFirst().severity, PromptSeverity::Warning);
+    QCOMPARE(prompts.messages.constFirst().message,
+             QStringLiteral("injected testing class choices read failure"));
 }
 
 void TestingClassesPageTests

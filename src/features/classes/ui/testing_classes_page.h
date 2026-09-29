@@ -18,6 +18,11 @@ class QTabWidget;
 class QTextEdit;
 class RosterEditorWidget;
 
+namespace ClassMngr::Next::Application
+{
+class ScheduleTestingClassChoicesReadPort;
+}
+
 class TestingClassesPage : public BasePage
 {
     Q_OBJECT
@@ -25,7 +30,9 @@ class TestingClassesPage : public BasePage
 public:
     explicit TestingClassesPage(
         ApplicationServices* services,
-        QWidget* parent = nullptr
+        QWidget* parent = nullptr,
+        const ClassMngr::Next::Application::
+            ScheduleTestingClassChoicesReadPort* testingClassChoicesReadPort = nullptr
         );
 
     void openTestingClass(
@@ -81,6 +88,8 @@ private:
     void deleteCurrentClass();
 
     ApplicationServices* m_services = nullptr;
+    const ClassMngr::Next::Application::
+        ScheduleTestingClassChoicesReadPort* m_testingClassChoicesReadPort = nullptr;
     TestingClass m_savedClass;
     int m_currentClassId{-1};
     int m_requestedClassId{-1};

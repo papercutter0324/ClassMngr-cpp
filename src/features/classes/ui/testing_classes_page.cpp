@@ -4,6 +4,8 @@
 #include "core/application_services.h"
 #include "app/services/feature_services.h"
 #include "next/platform/application_services_custom_color_palette_preferences_port.h"
+#include "next/application/schedule_testing_class_choices_query.h"
+#include "next/platform/application_services_schedule_testing_class_choices_read_port.h"
 #include "core/fontmanager.h"
 #include "core/utils/colorutils.h"
 #include "domain/models/classroom.h"
@@ -81,10 +83,13 @@ int levelOrder(
 
 TestingClassesPage::TestingClassesPage(
     ApplicationServices* services,
-    QWidget* parent
+    QWidget* parent,
+    const ClassMngr::Next::Application::
+        ScheduleTestingClassChoicesReadPort* testingClassChoicesReadPort
     )
     : BasePage(parent)
     , m_services(services)
+    , m_testingClassChoicesReadPort(testingClassChoicesReadPort)
     , m_autosave(new AutosaveCoordinator(this))
 {
     buildUi();
@@ -916,29 +921,68 @@ void TestingClassesPage::rebuildClassList(
     int preferredClassId
     )
 {
-    auto* scheduleService = m_services ? m_services->scheduleService() : nullptr;
     const QSignalBlocker blocker(m_classList);
     m_classList->clear();
-    if (!scheduleService || !scheduleService->isAvailable())
-    {
-        updateActions();
-        return;
-    }
 
-    const Result<QList<TestingClass>> loaded =
-        scheduleService->testingClasses();
+    ClassMngr::Next::Platform::
+        ApplicationServicesScheduleTestingClassChoicesReadPort defaultReadPort(
+            m_services
+            );
+    const ClassMngr::Next::Application::
+        ScheduleTestingClassChoicesReadPort& readPort =
+            m_testingClassChoicesReadPort
+                ? *m_testingClassChoicesReadPort
+                : defaultReadPort;
+
+    const auto loaded =
+        ClassMngr::Next::Application::
+            ScheduleTestingClassChoicesReadQueryHandler::execute(
+                {},
+                readPort
+                );
     if (!loaded)
     {
+        if (
+            loaded.error().code
+            == ClassMngr::Next::Domain::ErrorCode::NotFound
+            )
+        {
+            updateActions();
+            return;
+        }
+
+        const std::string& message = loaded.error().message;
         DialogServices::showWarning(
             this,
             tr("Testing Classes"),
-            loaded.error()
+            QString::fromUtf8(
+                message.data(),
+                static_cast<qsizetype>(message.size())
+                )
             );
         return;
     }
 
-    QList<TestingClass> testingClasses =
-        *loaded;
+    QList<TestingClass> testingClasses;
+    testingClasses.reserve(
+        static_cast<qsizetype>(loaded.value().choices.size())
+        );
+    for (const auto& choice : loaded.value().choices)
+    {
+        bool classIdOk = false;
+        const int classId = QString::fromStdString(
+            choice.classId.value()
+            ).toInt(&classIdOk);
+
+        TestingClass testingClass;
+        testingClass.classId = classIdOk ? classId : -1;
+        testingClass.name = QString::fromStdU16String(choice.name);
+        testingClass.grade = QString::fromStdU16String(choice.grade);
+        testingClass.level = QString::fromStdU16String(choice.level);
+        testingClass.room = QString::fromStdU16String(choice.room);
+        testingClasses.push_back(std::move(testingClass));
+    }
+
     std::sort(
         testingClasses.begin(),
         testingClasses.end(),
