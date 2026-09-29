@@ -1470,8 +1470,9 @@ trap, and keep direct query-count claims in current-only tests.
 
 ## 2026-09-30 — F154 Class Notes read boundary
 
-Complete the Class Notes read seam separately from its existing save port.
-Return a page-sized projection with independent class and teacher results;
-keep display formatting and text trimming in the UI. Preserve partial success
-when teacher lookup fails, and avoid reads on refresh or save. Keep the new
-adapter on the active session boundary without DataService fallback.
+Keep the Class Notes read seam separate from its existing save port. A
+page-sized projection with independent class and teacher results preserves
+loaded text when teacher lookup fails. Leave display formatting and trimming
+in the UI, use the active session without DataService fallback, and keep reads
+out of refresh/save. Compare visible load/discard behavior on the pinned
+baseline; assert query counts only in current tests.

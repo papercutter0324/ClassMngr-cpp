@@ -1944,16 +1944,27 @@ Parity uses a seeded conflict as a warning trap and does not count repository
 queries; direct query-count evidence remains in current-only tests. Gate 2
 remains Partial; Gate 1 remains Partial; Phase 2 remains In Progress/Open.
 
-## F154 selected Class Notes page read boundary
+## F154 Class Notes page read boundary — 2026-09-30
 
-F154 adds a dedicated typed Application read query/port for the Class Notes
-page. Return only the class ID, notes, time-filler activities, class grade and
-level, regular schedule day/start values, and teacher display name. Keep class
-and teacher source outcomes independent; preserve UTF-16 text, UI trimming,
-`SidebarNodeNaming` formatting, and existing defaults on failures. The
-Platform adapter uses the active session without a `DataService` fallback.
-Initial load and discard read through the new query; refresh and save add no
-reads. Verify query identity/error handling, adapter field mapping and
-read-failure behavior, page load/discard/fallbacks, and current versus original
-pinned-baseline display parity. Gates 1 and 2 remain Partial; Phase 2 remains
-In Progress/Open.
+Commit `8bcbf136` adds a dedicated typed Application read query and
+active-session Platform adapter for Class Notes. The small projection carries
+class ID, exact UTF-16 notes/activity, grade/level, regular schedule day/start,
+and preferred teacher display name, with class and teacher results
+independent. The page keeps trimming, subtitle formatting/fallbacks, and the
+existing save boundary. Load and discard use the query; refresh/save add no
+reads. The adapter does not use `DataService` fallback.
+
+Independent Windows x64 Debug verification passed six current focused targets
+6/6: Application query, Platform adapter, page, parity, and both existing save
+port targets. Current CMake validated 1,058 handwritten source owners. The
+original pinned baseline `48fc5c5cc7dee78d82f8bf5f1bf8b51725575b99` passed
+the focused page-parity harness 1/1 for initial text/subtitle and discard
+reload. Baseline overlays were limited to parity test source/registration and
+Qt minimum changes; no production source was overlaid. Baseline page and
+header matched blobs `bbc9bc24a053aca83434eba6efac1e4ad5801bc2` and
+`5c825327f1393791d7101ab33c10999768ff639a`. Toolchain: CMake 4.4.2, Ninja
+1.13.2, MSVC 19.51.36257, Qt 6.12.0, `CL` cleared, embedded debug info. The
+current run built the F154 working-tree source immediately before it was
+committed unchanged as `8bcbf136`. No full suite or app build ran. Gate 1 and
+Gate 2 remain Partial; Phase 2 remains In Progress/Open. F155 selection is
+under review from the remaining Phase 2 plan.

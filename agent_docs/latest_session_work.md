@@ -3667,12 +3667,28 @@ queries; current-only tests assert no conflict requests. No full suite or app
 build ran. Gates 1 and 2 remain Partial; Phase 2 remains In Progress/Open. No
 push was requested.
 
-F154 is selected to add a dedicated typed Class Notes page read query and
-Platform port. The response is a small screen projection for text fields,
-subtitle inputs, and teacher display name, with class and teacher results
-independent. Preserve UTF-16 text, UI trimming, existing title formatting and
-fallbacks; use the active-session boundary with no `DataService` fallback.
-Initial load/discard use the query; refresh/save do not add reads. Verify
-identity/error handling, independent read failures, page load/discard behavior,
-and current versus original pinned-baseline display parity. Three independent
-solution reviews agreed this is the smallest cohesive next feature boundary.
+F154 implementation commit `8bcbf136` (`Phase2 - add Class Notes typed read
+boundary`) is accepted. It adds a typed Qt-free page read query/port and
+active-session Platform adapter with independent class/teacher results; the
+page uses it for load/discard while preserving text trimming, subtitle
+formatting/fallback, and the existing save port. No `DataService` fallback is
+used, and refresh/save add no read.
+
+Independent Windows x64 Debug verification passed six current focused CTest
+targets 6/6, including both save-port targets. It verified query identity and
+error behavior, mapping and independent source failures, load/discard counts,
+and no reads on refresh/save. The original baseline
+`48fc5c5cc7dee78d82f8bf5f1bf8b51725575b99` parity harness passed 1/1 for
+initial text/subtitle and discard reload. Baseline overlays contained only
+parity source/registration and Qt minimum bumps; no production overlay. Pinned
+baseline page/header match blobs `bbc9bc24a053aca83434eba6efac1e4ad5801bc2`
+and `5c825327f1393791d7101ab33c10999768ff639a`. Toolchain was CMake 4.4.2,
+Ninja 1.13.2, MSVC 19.51.36257.0 x64, Qt 6.12.0; `CL` cleared with embedded
+debug info. Current tree configure validated 1,058 handwritten source owners.
+The F154 current-source test ran at prior HEAD `a8c909dd` with the uncommitted
+F154 patch, then that same source was committed unchanged as `8bcbf136`. Logs:
+`%TEMP%\p2f152\testsc-f154.log` and
+`%TEMP%\p2f153\test-baseline-notes-parity.log`. No full suite/app build
+ran. Gates 1 and 2 remain Partial; Phase 2 remains In Progress/Open. F155
+selection is under review from the remaining Phase 2 plan. No push was
+requested.
