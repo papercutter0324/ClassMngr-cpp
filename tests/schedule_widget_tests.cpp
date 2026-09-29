@@ -4,10 +4,12 @@
 #include "data/data_service.h"
 #include "fakes/fake_user_prompt_service.h"
 #include "features/schedule/ui/schedule_page.h"
+#include "features/schedule/ui/schedule_cell_hit_test.h"
 #include "features/schedule/ui/schedule_table_renderer.h"
 #include "features/schedule/ui/schedule_widget.h"
 #include "features/schedule/services/schedule_output_controller.h"
 #include "features/schedule/ui/testing_assignment_dialog.h"
+#include "next/application/schedule_testing_assignment_save.h"
 #include "next/platform/application_services_schedule_display_preferences_port.h"
 #include "ui/shared/dialogs/user_prompt_service.h"
 #include "ui/shared/widgets/text_fit_push_button.h"
@@ -35,8 +37,10 @@
 #include <QScrollBar>
 #include <QStyleOptionViewItem>
 #include <QTableWidget>
+#include <QTimer>
 
 #include <algorithm>
+#include <functional>
 #include <utility>
 
 namespace ScheduleWidgetTestStubs
@@ -45,6 +49,14 @@ extern int savedSlotStates;
 extern int scheduleClassInfoReadCount;
 extern int slotStateReadCount;
 extern int testingAssignmentsReadCount;
+extern int testingAssignmentWriteCount;
+extern ClassMngr::Next::Application::
+    ScheduleTestingAssignmentMutation lastTestingAssignmentMutation;
+extern QString lastTestingAssignmentWriteDay;
+extern QString lastTestingAssignmentWriteStartTime;
+extern QString lastTestingAssignmentWriteRoom;
+extern int lastTestingAssignmentWriteClassId;
+extern bool lastTestingAssignmentWriteReplaceExisting;
 extern QString lastSavedSlotDay;
 extern QString lastSavedSlotStartTime;
 extern QString lastSavedSlotState;
@@ -61,6 +73,7 @@ void setIntensiveSlotStateReadFailure(const QString& error);
 void setIntensiveSlotStateRepositoryAvailable(bool available);
 void setTestingAssignmentReadFailure(const QString& error);
 void setTestingAssignmentRepositoryAvailable(bool available);
+void setTestingAssignmentWriteFailure(const QString& error);
 void setSlotSaveFailure(const QString& error);
 void setScheduleClassInfoReadFailure(bool fail);
 void setExistingIntensiveHours(bool exists);
@@ -75,6 +88,7 @@ void setTestingClassAssignment(
     const QString& startTime,
     const TestingClass& testingClass
     );
+void setTestingClass(const TestingClass& testingClass);
 void setUnresolvedTestingClassAssignment(
     const QString& day,
     const QString& startTime,
@@ -214,6 +228,151 @@ const ScheduleCellView* findScheduleCell(
     return nullptr;
 }
 
+using TestingAssignmentDialogScript =
+    std::function<bool(TestingAssignmentDialog*)>;
+
+bool interactWithTestingAssignmentCell(
+    ScheduleWidget& widget,
+    const QString& day,
+    const QString& timeLabel,
+    const TestingAssignmentDialogScript& script
+    )
+{
+    auto* table = widget.findChild<QTableWidget*>(
+        QStringLiteral("scheduleTable")
+        );
+    if (!table)
+    {
+        return false;
+    }
+
+    const ScheduleViewModel model = widget.scheduleModel();
+    const int column = model.days.indexOf(day) + 1;
+    int row = -1;
+    for (qsizetype index = 0; index < model.rows.size(); ++index)
+    {
+        if (model.rows.at(index).timeLabel == timeLabel)
+        {
+            row = static_cast<int>(index);
+            break;
+        }
+    }
+    if (column <= 0 || row < 0)
+    {
+        return false;
+    }
+
+    QWidget* const cell = table->cellWidget(row, column);
+    if (
+        ScheduleCellHitTest::hit(cell).command
+        != ScheduleCellCommand::EditTestingAssignment
+        )
+    {
+        return false;
+    }
+
+    bool dialogFound = false;
+    bool scriptSucceeded = false;
+    QTimer timer;
+    timer.setSingleShot(true);
+    QObject::connect(
+        &timer,
+        &QTimer::timeout,
+        &widget,
+        [&]
+        {
+            for (QWidget* topLevel : QApplication::topLevelWidgets())
+            {
+                auto* dialog = qobject_cast<TestingAssignmentDialog*>(
+                    topLevel
+                    );
+                if (!dialog)
+                {
+                    continue;
+                }
+
+                dialogFound = true;
+                scriptSucceeded = script(dialog);
+                if (!scriptSucceeded)
+                {
+                    dialog->reject();
+                }
+                return;
+            }
+
+            if (auto* modal = qobject_cast<TestingAssignmentDialog*>(
+                    QApplication::activeModalWidget()
+                    ))
+            {
+                modal->reject();
+            }
+        }
+        );
+    timer.start(0);
+    const bool invoked = QMetaObject::invokeMethod(
+        &widget,
+        "onCellClicked",
+        Qt::DirectConnection,
+        Q_ARG(int, row),
+        Q_ARG(int, column)
+        );
+    timer.stop();
+
+    return invoked && dialogFound && scriptSucceeded;
+}
+
+bool clickTestingAssignmentDialogButton(
+    TestingAssignmentDialog* dialog,
+    const QDialogButtonBox::StandardButton standardButton
+    )
+{
+    auto* buttons = dialog
+        ? dialog->findChild<QDialogButtonBox*>()
+        : nullptr;
+    auto* button = buttons ? buttons->button(standardButton) : nullptr;
+    if (!button)
+    {
+        return false;
+    }
+    button->click();
+    return true;
+}
+
+bool chooseTestingClass(
+    TestingAssignmentDialog* dialog,
+    const int classId
+    )
+{
+    auto* mode = dialog
+        ? dialog->findChild<QComboBox*>(
+            QStringLiteral("testingAssignmentModeCombo")
+            )
+        : nullptr;
+    auto* classes = dialog
+        ? dialog->findChild<QComboBox*>(
+            QStringLiteral("testingAssignmentClassCombo")
+            )
+        : nullptr;
+    auto* manage = dialog
+        ? dialog->findChild<QPushButton*>(
+            QStringLiteral("testingAssignmentManageClassesButton")
+            )
+        : nullptr;
+    if (!mode || !classes || !manage)
+    {
+        return false;
+    }
+
+    mode->setCurrentIndex(1);
+    const int classIndex = classes->findData(classId);
+    if (classIndex < 0)
+    {
+        return false;
+    }
+    classes->setCurrentIndex(classIndex);
+    return true;
+}
+
 }
 
 class ScheduleWidgetTests : public QObject
@@ -235,6 +394,9 @@ private slots:
     void testingModeFiltersClassesAndDisplaysSavedBlock();
     void testingModeDisplaysAssignedTestingClassCard();
     void testingAssignmentDialogSupportsEveryAction();
+    void testingAssignmentWritesMapActionsAndReloadSuccessfulState();
+    void testingAssignmentCancelAndManageDoNotWriteOrReload();
+    void failedTestingAssignmentWriteWarnsAndDoesNotReload();
     void readOnlyPresentationHidesControlsAndIgnoresClicks();
     void sourceQueryBuildsRegularIntensiveAndTestingSchedules();
     void unavailableSourceReturnsDaysOnlyWithoutReading();
@@ -899,6 +1061,391 @@ void ScheduleWidgetTests
         TestingAssignmentDialog::Action::SavePlainTesting
         );
     QCOMPARE(plainDialog.room(), QStringLiteral("402"));
+}
+
+void ScheduleWidgetTests::
+testingAssignmentWritesMapActionsAndReloadSuccessfulState()
+{
+    ScheduleWidgetTestStubs::setIncludeMiddleSchoolClasses(true);
+    TestingClass testingClass;
+    testingClass.classId = 100;
+    testingClass.name = QStringLiteral("Writing Lab");
+    testingClass.grade = QStringLiteral("M2");
+    testingClass.level = QStringLiteral("Mixed (High)");
+    testingClass.room = QStringLiteral("Library");
+    ScheduleWidgetTestStubs::setTestingClass(testingClass);
+
+    ApplicationServices services;
+    saveSettingOrFail(
+        services.dataService(),
+        QStringLiteral("schedule_display_mode"),
+        QStringLiteral("testing")
+        );
+    saveSettingOrFail(
+        services.dataService(),
+        QStringLiteral("schedule_testing_affects_m1"),
+        QStringLiteral("true")
+        );
+    ScheduleWidget widget(&services);
+    widget.refreshSchedule();
+
+    const QString day = QStringLiteral("Wednesday");
+    const QString startTime = QStringLiteral("16:00");
+    ScheduleViewModel model = widget.scheduleModel();
+    const ScheduleCellView* initialCell = findScheduleCell(
+        model,
+        day,
+        startTime
+        );
+    QVERIFY(initialCell);
+    QVERIFY(initialCell->testingBlockCreationEnabled);
+    int readCount = ScheduleWidgetTestStubs::testingAssignmentsReadCount;
+
+    QVERIFY(interactWithTestingAssignmentCell(
+        widget,
+        day,
+        startTime,
+        [](TestingAssignmentDialog* dialog)
+        {
+            return chooseTestingClass(dialog, 100)
+                && clickTestingAssignmentDialogButton(
+                    dialog,
+                    QDialogButtonBox::Save
+                    );
+        }
+        ));
+    QCOMPARE(ScheduleWidgetTestStubs::testingAssignmentWriteCount, 1);
+    QCOMPARE(
+        ScheduleWidgetTestStubs::lastTestingAssignmentMutation,
+        ClassMngr::Next::Application::
+            ScheduleTestingAssignmentMutation::AssignTestingClass
+        );
+    QCOMPARE(ScheduleWidgetTestStubs::lastTestingAssignmentWriteDay, day);
+    QCOMPARE(
+        ScheduleWidgetTestStubs::lastTestingAssignmentWriteStartTime,
+        startTime
+        );
+    QCOMPARE(ScheduleWidgetTestStubs::lastTestingAssignmentWriteRoom,
+             QString());
+    QCOMPARE(ScheduleWidgetTestStubs::lastTestingAssignmentWriteClassId, 100);
+    QVERIFY(!ScheduleWidgetTestStubs::lastTestingAssignmentWriteReplaceExisting);
+    ++readCount;
+    QCOMPARE(ScheduleWidgetTestStubs::testingAssignmentsReadCount, readCount);
+    model = widget.scheduleModel();
+    const ScheduleCellView* assignedClass = findScheduleCell(
+        model,
+        day,
+        startTime
+        );
+    QVERIFY(assignedClass);
+    QVERIFY(assignedClass->testingClassAssignment);
+    QCOMPARE(assignedClass->testingClassId, 100);
+
+    QVERIFY(interactWithTestingAssignmentCell(
+        widget,
+        day,
+        startTime,
+        [](TestingAssignmentDialog* dialog)
+        {
+            auto* mode = dialog->findChild<QComboBox*>(
+                QStringLiteral("testingAssignmentModeCombo")
+                );
+            auto* room = dialog->findChild<QLineEdit*>(
+                QStringLiteral("testingAssignmentRoomEdit")
+                );
+            if (!mode || !room)
+            {
+                return false;
+            }
+            mode->setCurrentIndex(0);
+            room->setText(QStringLiteral("  Room 9  "));
+            return clickTestingAssignmentDialogButton(
+                dialog,
+                QDialogButtonBox::Save
+                );
+        }
+        ));
+    QCOMPARE(ScheduleWidgetTestStubs::testingAssignmentWriteCount, 2);
+    QCOMPARE(
+        ScheduleWidgetTestStubs::lastTestingAssignmentMutation,
+        ClassMngr::Next::Application::
+            ScheduleTestingAssignmentMutation::SavePlainTesting
+        );
+    QCOMPARE(ScheduleWidgetTestStubs::lastTestingAssignmentWriteDay, day);
+    QCOMPARE(
+        ScheduleWidgetTestStubs::lastTestingAssignmentWriteStartTime,
+        startTime
+        );
+    QCOMPARE(ScheduleWidgetTestStubs::lastTestingAssignmentWriteRoom,
+             QStringLiteral("Room 9"));
+    QCOMPARE(ScheduleWidgetTestStubs::lastTestingAssignmentWriteClassId, -1);
+    QVERIFY(ScheduleWidgetTestStubs::lastTestingAssignmentWriteReplaceExisting);
+    ++readCount;
+    QCOMPARE(ScheduleWidgetTestStubs::testingAssignmentsReadCount, readCount);
+    model = widget.scheduleModel();
+    const ScheduleCellView* assignedPlain = findScheduleCell(
+        model,
+        day,
+        startTime
+        );
+    QVERIFY(assignedPlain);
+    QVERIFY(!assignedPlain->testingClassAssignment);
+    QCOMPARE(assignedPlain->testingRoom, QStringLiteral("Room 9"));
+
+    QVERIFY(interactWithTestingAssignmentCell(
+        widget,
+        day,
+        startTime,
+        [](TestingAssignmentDialog* dialog)
+        {
+            return chooseTestingClass(dialog, 100)
+                && clickTestingAssignmentDialogButton(
+                    dialog,
+                    QDialogButtonBox::Save
+                    );
+        }
+        ));
+    QCOMPARE(ScheduleWidgetTestStubs::testingAssignmentWriteCount, 3);
+    QCOMPARE(
+        ScheduleWidgetTestStubs::lastTestingAssignmentMutation,
+        ClassMngr::Next::Application::
+            ScheduleTestingAssignmentMutation::AssignTestingClass
+        );
+    QCOMPARE(ScheduleWidgetTestStubs::lastTestingAssignmentWriteClassId, 100);
+    QVERIFY(ScheduleWidgetTestStubs::lastTestingAssignmentWriteReplaceExisting);
+    ++readCount;
+    QCOMPARE(ScheduleWidgetTestStubs::testingAssignmentsReadCount, readCount);
+
+    QVERIFY(interactWithTestingAssignmentCell(
+        widget,
+        day,
+        startTime,
+        [](TestingAssignmentDialog* dialog)
+        {
+            auto* mode = dialog->findChild<QComboBox*>(
+                QStringLiteral("testingAssignmentModeCombo")
+                );
+            if (!mode)
+            {
+                return false;
+            }
+            mode->setCurrentIndex(2);
+            return clickTestingAssignmentDialogButton(
+                dialog,
+                QDialogButtonBox::Save
+                );
+        }
+        ));
+    QCOMPARE(ScheduleWidgetTestStubs::testingAssignmentWriteCount, 4);
+    QCOMPARE(
+        ScheduleWidgetTestStubs::lastTestingAssignmentMutation,
+        ClassMngr::Next::Application::
+            ScheduleTestingAssignmentMutation::RemoveAssignment
+        );
+    QCOMPARE(ScheduleWidgetTestStubs::lastTestingAssignmentWriteDay, day);
+    QCOMPARE(
+        ScheduleWidgetTestStubs::lastTestingAssignmentWriteStartTime,
+        startTime
+        );
+    QCOMPARE(ScheduleWidgetTestStubs::lastTestingAssignmentWriteClassId, -1);
+    ++readCount;
+    QCOMPARE(ScheduleWidgetTestStubs::testingAssignmentsReadCount, readCount);
+    model = widget.scheduleModel();
+    const ScheduleCellView* removed = findScheduleCell(
+        model,
+        day,
+        startTime
+        );
+    QVERIFY(removed);
+    QVERIFY(!removed->testingClassAssignment);
+    QVERIFY(removed->testingRoom.isEmpty());
+
+    QVERIFY(interactWithTestingAssignmentCell(
+        widget,
+        day,
+        startTime,
+        [](TestingAssignmentDialog* dialog)
+        {
+            auto* room = dialog->findChild<QLineEdit*>(
+                QStringLiteral("testingAssignmentRoomEdit")
+                );
+            if (!room)
+            {
+                return false;
+            }
+            room->setText(QStringLiteral("Room 3"));
+            return clickTestingAssignmentDialogButton(
+                dialog,
+                QDialogButtonBox::Save
+                );
+        }
+        ));
+    QCOMPARE(ScheduleWidgetTestStubs::testingAssignmentWriteCount, 5);
+    QCOMPARE(
+        ScheduleWidgetTestStubs::lastTestingAssignmentMutation,
+        ClassMngr::Next::Application::
+            ScheduleTestingAssignmentMutation::SavePlainTesting
+        );
+    QCOMPARE(ScheduleWidgetTestStubs::lastTestingAssignmentWriteRoom,
+             QStringLiteral("Room 3"));
+    QVERIFY(!ScheduleWidgetTestStubs::lastTestingAssignmentWriteReplaceExisting);
+    ++readCount;
+    QCOMPARE(ScheduleWidgetTestStubs::testingAssignmentsReadCount, readCount);
+}
+
+void ScheduleWidgetTests::
+testingAssignmentCancelAndManageDoNotWriteOrReload()
+{
+    ScheduleWidgetTestStubs::setIncludeMiddleSchoolClasses(true);
+    TestingClass testingClass;
+    testingClass.classId = 100;
+    testingClass.name = QStringLiteral("Writing Lab");
+    testingClass.grade = QStringLiteral("M2");
+    testingClass.level = QStringLiteral("Mixed (High)");
+    testingClass.room = QStringLiteral("Library");
+    ScheduleWidgetTestStubs::setTestingClass(testingClass);
+
+    ApplicationServices services;
+    saveSettingOrFail(
+        services.dataService(),
+        QStringLiteral("schedule_display_mode"),
+        QStringLiteral("testing")
+        );
+    saveSettingOrFail(
+        services.dataService(),
+        QStringLiteral("schedule_testing_affects_m1"),
+        QStringLiteral("true")
+        );
+    ScheduleWidget widget(&services);
+    widget.refreshSchedule();
+
+    const QString day = QStringLiteral("Wednesday");
+    const QString startTime = QStringLiteral("16:00");
+    const int readCount = ScheduleWidgetTestStubs::testingAssignmentsReadCount;
+    QVERIFY(interactWithTestingAssignmentCell(
+        widget,
+        day,
+        startTime,
+        [](TestingAssignmentDialog* dialog)
+        {
+            return clickTestingAssignmentDialogButton(
+                dialog,
+                QDialogButtonBox::Cancel
+                );
+        }
+        ));
+    QCOMPARE(ScheduleWidgetTestStubs::testingAssignmentWriteCount, 0);
+    QCOMPARE(ScheduleWidgetTestStubs::testingAssignmentsReadCount, readCount);
+
+    QSignalSpy requested(
+        &widget,
+        &ScheduleWidget::testingClassesRequested
+        );
+    QVERIFY(interactWithTestingAssignmentCell(
+        widget,
+        day,
+        startTime,
+        [](TestingAssignmentDialog* dialog)
+        {
+            if (!chooseTestingClass(dialog, 100))
+            {
+                return false;
+            }
+            auto* manage = dialog->findChild<QPushButton*>(
+                    QStringLiteral("testingAssignmentManageClassesButton")
+                    );
+            if (!manage)
+            {
+                return false;
+            }
+            manage->click();
+            return true;
+        }
+        ));
+
+    QCOMPARE(ScheduleWidgetTestStubs::testingAssignmentWriteCount, 0);
+    QCOMPARE(ScheduleWidgetTestStubs::testingAssignmentsReadCount, readCount);
+    QCOMPARE(requested.count(), 1);
+    const QList<QVariant> arguments = requested.takeFirst();
+    QCOMPARE(arguments.size(), 3);
+    QCOMPARE(arguments.at(0).toInt(), 100);
+    QCOMPARE(arguments.at(1).toString(), day);
+    QCOMPARE(arguments.at(2).toString(), startTime);
+}
+
+void ScheduleWidgetTests::
+failedTestingAssignmentWriteWarnsAndDoesNotReload()
+{
+    ScheduleWidgetTestStubs::setIncludeMiddleSchoolClasses(true);
+    ScheduleWidgetTestStubs::setTestingBlock(
+        QStringLiteral("Wednesday"),
+        QStringLiteral("16:00"),
+        QStringLiteral("Old Room")
+        );
+    ScheduleWidgetTestStubs::setTestingAssignmentWriteFailure(
+        QStringLiteral("injected testing assignment write failure")
+        );
+
+    ApplicationServices services;
+    saveSettingOrFail(
+        services.dataService(),
+        QStringLiteral("schedule_display_mode"),
+        QStringLiteral("testing")
+        );
+    ScheduleWidget widget(&services);
+    widget.refreshSchedule();
+    const int readCount = ScheduleWidgetTestStubs::testingAssignmentsReadCount;
+    const ScheduleViewModel beforeModel = widget.scheduleModel();
+    const ScheduleCellView* before = findScheduleCell(
+        beforeModel,
+        QStringLiteral("Wednesday"),
+        QStringLiteral("16:00")
+        );
+    QVERIFY(before);
+    QCOMPARE(before->testingRoom, QStringLiteral("Old Room"));
+
+    FakeUserPromptService prompts;
+    DialogServices::setUserPromptServiceForTesting(&prompts);
+    QVERIFY(interactWithTestingAssignmentCell(
+        widget,
+        QStringLiteral("Wednesday"),
+        QStringLiteral("16:00"),
+        [](TestingAssignmentDialog* dialog)
+        {
+            auto* room = dialog->findChild<QLineEdit*>(
+                QStringLiteral("testingAssignmentRoomEdit")
+                );
+            if (!room)
+            {
+                return false;
+            }
+            room->setText(QStringLiteral("New Room"));
+            return clickTestingAssignmentDialogButton(
+                dialog,
+                QDialogButtonBox::Save
+                );
+        }
+        ));
+
+    QCOMPARE(ScheduleWidgetTestStubs::testingAssignmentWriteCount, 1);
+    QCOMPARE(ScheduleWidgetTestStubs::lastTestingAssignmentWriteRoom,
+             QStringLiteral("New Room"));
+    QVERIFY(ScheduleWidgetTestStubs::lastTestingAssignmentWriteReplaceExisting);
+    QCOMPARE(ScheduleWidgetTestStubs::testingAssignmentsReadCount, readCount);
+    QCOMPARE(prompts.messages.size(), 1);
+    QCOMPARE(prompts.messages.constFirst().title,
+             QStringLiteral("Testing Assignment"));
+    QCOMPARE(prompts.messages.constFirst().severity, PromptSeverity::Warning);
+    QCOMPARE(prompts.messages.constFirst().message,
+             QStringLiteral("injected testing assignment write failure"));
+    const ScheduleViewModel afterModel = widget.scheduleModel();
+    const ScheduleCellView* after = findScheduleCell(
+        afterModel,
+        QStringLiteral("Wednesday"),
+        QStringLiteral("16:00")
+        );
+    QVERIFY(after);
+    QCOMPARE(after->testingRoom, QStringLiteral("Old Room"));
 }
 
 void ScheduleWidgetTests

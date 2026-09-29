@@ -18,10 +18,12 @@
 #include "next/application/schedule_builder_source_snapshot.h"
 #include "next/application/schedule_slot_state_read_query.h"
 #include "next/application/schedule_testing_assignment_read_query.h"
+#include "next/application/schedule_testing_assignment_save_use_case.h"
 #include "next/application/schedule_slot_state_save_use_case.h"
 #include "next/platform/application_services_schedule_builder_source_port.h"
 #include "next/platform/application_services_schedule_slot_state_read_port.h"
 #include "next/platform/application_services_schedule_testing_assignment_read_port.h"
+#include "next/platform/application_services_schedule_testing_assignment_save_port.h"
 #include "next/platform/application_services_schedule_slot_state_save_port.h"
 #include "next/platform/application_services_schedule_display_preferences_port.h"
 #include "next/platform/application_services_schedule_display_mode_preferences_port.h"
@@ -29,6 +31,7 @@
 
 #include <algorithm>
 #include <optional>
+#include <string>
 #include <utility>
 
 #include <QButtonGroup>
@@ -560,48 +563,62 @@ void ScheduleWidget::editTestingAssignment(
 
     const bool replaceExisting =
         existingAssignment != nullptr;
-    Status result;
+    ClassMngr::Next::Application::
+        ScheduleTestingAssignmentSaveRequest request{
+            .day = day.toStdU16String(),
+            .startTime = timeLabel.toStdU16String(),
+            .replaceExisting = replaceExisting
+        };
 
     switch (dialog.selectedAction())
     {
     case TestingAssignmentDialog::Action::RemoveAssignment:
-        result =
-            scheduleService->deleteTestingAssignment(
-                day,
-                timeLabel
-                );
+        request.mutation =
+            ClassMngr::Next::Application::
+                ScheduleTestingAssignmentMutation::RemoveAssignment;
         break;
 
     case TestingAssignmentDialog::Action::AssignTestingClass:
-        result =
-            scheduleService->assignTestingClass(
-                day,
-                timeLabel,
-                dialog.selectedClassId(),
-                replaceExisting
-                );
+    {
+        request.mutation =
+            ClassMngr::Next::Application::
+                ScheduleTestingAssignmentMutation::AssignTestingClass;
+        const int selectedClassId = dialog.selectedClassId();
+        if (selectedClassId > 0)
+        {
+            const std::string classId = std::to_string(selectedClassId);
+            request.classId =
+                ClassMngr::Next::Domain::ClassId::fromString(classId);
+        }
         break;
+    }
 
     case TestingAssignmentDialog::Action::SavePlainTesting:
-        result =
-            scheduleService->saveTestingBlock(
-                day,
-                timeLabel,
-                dialog.room(),
-                replaceExisting
-                );
+        request.mutation =
+            ClassMngr::Next::Application::
+                ScheduleTestingAssignmentMutation::SavePlainTesting;
+        request.room = dialog.room().toStdU16String();
         break;
 
     case TestingAssignmentDialog::Action::ManageTestingClasses:
         return;
     }
 
+    ClassMngr::Next::Platform::
+        ApplicationServicesScheduleTestingAssignmentSavePort port(m_services);
+    const auto result =
+        ClassMngr::Next::Application::
+            ScheduleTestingAssignmentSaveUseCase::execute(request, port);
+
     if (!result)
     {
         DialogServices::showWarning(
             this,
             tr("Testing Assignment"),
-            result.error()
+            QString::fromUtf8(
+                result.error().message.data(),
+                static_cast<qsizetype>(result.error().message.size())
+                )
             );
         return;
     }

@@ -21,6 +21,7 @@
 #include "data/repositories/testing_block_repository.h"
 #include "data/repositories/testing_class_repository.h"
 #include "next/application/schedule_testing_assignment_read_query.h"
+#include "next/application/schedule_testing_assignment_save.h"
 #include "features/schedule/ui/schedule_editor_dialog.h"
 #include "features/schedule/ui/schedule_print_dialog.h"
 #include "features/schedule/services/schedule_print_service.h"
@@ -49,6 +50,16 @@ int savedSlotStates = 0;
 int scheduleClassInfoReadCount = 0;
 int slotStateReadCount = 0;
 int testingAssignmentsReadCount = 0;
+int testingAssignmentWriteCount = 0;
+ClassMngr::Next::Application::ScheduleTestingAssignmentMutation
+    lastTestingAssignmentMutation =
+        ClassMngr::Next::Application::
+            ScheduleTestingAssignmentMutation::SavePlainTesting;
+QString lastTestingAssignmentWriteDay;
+QString lastTestingAssignmentWriteStartTime;
+QString lastTestingAssignmentWriteRoom;
+int lastTestingAssignmentWriteClassId = -1;
+bool lastTestingAssignmentWriteReplaceExisting = false;
 TestingAssignmentDisplayReadMetrics testingAssignmentDisplayReadMetrics;
 QList<IntensiveSlotState> intensiveSlotStates;
 QString intensiveSlotStateReadFailure;
@@ -68,6 +79,7 @@ bool databaseOpen = true;
 bool intensiveSlotStateRepositoryAvailable = true;
 bool testingAssignmentRepositoryAvailable = true;
 QString testingAssignmentReadFailure;
+QString testingAssignmentWriteFailure;
 bool includeAdditionalClass = false;
 bool includeMiddleSchoolClasses = false;
 bool matchImportedClasses = false;
@@ -91,6 +103,15 @@ void reset()
     scheduleClassInfoReadCount = 0;
     slotStateReadCount = 0;
     testingAssignmentsReadCount = 0;
+    testingAssignmentWriteCount = 0;
+    lastTestingAssignmentMutation =
+        ClassMngr::Next::Application::
+            ScheduleTestingAssignmentMutation::SavePlainTesting;
+    lastTestingAssignmentWriteDay.clear();
+    lastTestingAssignmentWriteStartTime.clear();
+    lastTestingAssignmentWriteRoom.clear();
+    lastTestingAssignmentWriteClassId = -1;
+    lastTestingAssignmentWriteReplaceExisting = false;
     testingAssignmentDisplayReadMetrics = {};
     intensiveSlotStates.clear();
     intensiveSlotStateReadFailure.clear();
@@ -110,6 +131,7 @@ void reset()
     intensiveSlotStateRepositoryAvailable = true;
     testingAssignmentRepositoryAvailable = true;
     testingAssignmentReadFailure.clear();
+    testingAssignmentWriteFailure.clear();
     includeAdditionalClass = false;
     includeMiddleSchoolClasses = false;
     matchImportedClasses = false;
@@ -151,6 +173,11 @@ void setTestingAssignmentReadFailure(const QString& error)
 void setTestingAssignmentRepositoryAvailable(const bool available)
 {
     testingAssignmentRepositoryAvailable = available;
+}
+
+void setTestingAssignmentWriteFailure(const QString& error)
+{
+    testingAssignmentWriteFailure = error;
 }
 
 void setSlotSaveFailure(
@@ -281,6 +308,11 @@ void setTestingClassAssignment(
         day + QLatin1Char('\x1f') + startTime,
         testingClass.classId
         );
+}
+
+void setTestingClass(const TestingClass& testingClass)
+{
+    testingClasses.insert(testingClass.classId, testingClass);
 }
 
 void setUnresolvedTestingClassAssignment(
@@ -943,6 +975,125 @@ DataService::loadTestingAssignments()
     }
 
     return assignments;
+}
+
+Status TestingBlockRepository::saveTestingBlock(
+    const QString& day,
+    const QString& startTime,
+    const QString& room,
+    const bool replaceExisting
+    )
+{
+    using namespace ClassMngr::Next::Application;
+    ++ScheduleWidgetTestStubs::testingAssignmentWriteCount;
+    ScheduleWidgetTestStubs::lastTestingAssignmentMutation =
+        ScheduleTestingAssignmentMutation::SavePlainTesting;
+    ScheduleWidgetTestStubs::lastTestingAssignmentWriteDay = day;
+    ScheduleWidgetTestStubs::lastTestingAssignmentWriteStartTime = startTime;
+    ScheduleWidgetTestStubs::lastTestingAssignmentWriteRoom = room;
+    ScheduleWidgetTestStubs::lastTestingAssignmentWriteClassId = -1;
+    ScheduleWidgetTestStubs::lastTestingAssignmentWriteReplaceExisting =
+        replaceExisting;
+
+    if (!ScheduleWidgetTestStubs::testingAssignmentWriteFailure.isEmpty())
+    {
+        return std::unexpected(
+            ScheduleWidgetTestStubs::testingAssignmentWriteFailure
+            );
+    }
+
+    const QString key = day + QLatin1Char('\x1f') + startTime;
+    if (
+        !replaceExisting
+        && ScheduleWidgetTestStubs::testingClassAssignments.contains(key)
+        )
+    {
+        return std::unexpected(
+            QStringLiteral(
+                "This slot is assigned to a testing class. Confirm replacement first."
+                )
+            );
+    }
+
+    ScheduleWidgetTestStubs::testingBlocks.insert(key, room.trimmed());
+    ScheduleWidgetTestStubs::testingClassAssignments.remove(key);
+    return {};
+}
+
+Status TestingBlockRepository::assignTestingClass(
+    const QString& day,
+    const QString& startTime,
+    const int classId,
+    const bool replaceExisting
+    )
+{
+    using namespace ClassMngr::Next::Application;
+    ++ScheduleWidgetTestStubs::testingAssignmentWriteCount;
+    ScheduleWidgetTestStubs::lastTestingAssignmentMutation =
+        ScheduleTestingAssignmentMutation::AssignTestingClass;
+    ScheduleWidgetTestStubs::lastTestingAssignmentWriteDay = day;
+    ScheduleWidgetTestStubs::lastTestingAssignmentWriteStartTime = startTime;
+    ScheduleWidgetTestStubs::lastTestingAssignmentWriteRoom.clear();
+    ScheduleWidgetTestStubs::lastTestingAssignmentWriteClassId = classId;
+    ScheduleWidgetTestStubs::lastTestingAssignmentWriteReplaceExisting =
+        replaceExisting;
+
+    if (!ScheduleWidgetTestStubs::testingAssignmentWriteFailure.isEmpty())
+    {
+        return std::unexpected(
+            ScheduleWidgetTestStubs::testingAssignmentWriteFailure
+            );
+    }
+
+    const QString key = day + QLatin1Char('\x1f') + startTime;
+    const auto existingClass =
+        ScheduleWidgetTestStubs::testingClassAssignments.constFind(key);
+    const bool hasAssignment =
+        existingClass != ScheduleWidgetTestStubs::testingClassAssignments.cend()
+        || ScheduleWidgetTestStubs::testingBlocks.contains(key);
+    const bool sameClass =
+        existingClass != ScheduleWidgetTestStubs::testingClassAssignments.cend()
+        && existingClass.value() == classId;
+    if (hasAssignment && !sameClass && !replaceExisting)
+    {
+        return std::unexpected(
+            QStringLiteral(
+                "This slot already has a testing assignment. Confirm replacement first."
+                )
+            );
+    }
+
+    ScheduleWidgetTestStubs::testingBlocks.remove(key);
+    ScheduleWidgetTestStubs::testingClassAssignments.insert(key, classId);
+    return {};
+}
+
+Status TestingBlockRepository::deleteTestingAssignment(
+    const QString& day,
+    const QString& startTime
+    )
+{
+    using namespace ClassMngr::Next::Application;
+    ++ScheduleWidgetTestStubs::testingAssignmentWriteCount;
+    ScheduleWidgetTestStubs::lastTestingAssignmentMutation =
+        ScheduleTestingAssignmentMutation::RemoveAssignment;
+    ScheduleWidgetTestStubs::lastTestingAssignmentWriteDay = day;
+    ScheduleWidgetTestStubs::lastTestingAssignmentWriteStartTime = startTime;
+    ScheduleWidgetTestStubs::lastTestingAssignmentWriteRoom.clear();
+    ScheduleWidgetTestStubs::lastTestingAssignmentWriteClassId = -1;
+    ScheduleWidgetTestStubs::lastTestingAssignmentWriteReplaceExisting = false;
+
+    if (!ScheduleWidgetTestStubs::testingAssignmentWriteFailure.isEmpty())
+    {
+        return std::unexpected(
+            ScheduleWidgetTestStubs::testingAssignmentWriteFailure
+            );
+    }
+
+    const QString key = day + QLatin1Char('\x1f') + startTime;
+    ScheduleWidgetTestStubs::testingBlocks.remove(key);
+    ScheduleWidgetTestStubs::testingClassAssignments.remove(key);
+    return {};
 }
 
 Status DataService::saveTestingBlock(
