@@ -16,9 +16,11 @@
 #include "app/services/feature_services.h"
 #include "domain/models/class_info.h"
 #include "domain/models/teacher.h"
+#include "features/classes/config/class_info_config.h"
 #include "domain/rules/schedule_value_parser.h"
-#include "domain/validation/class_info_validator.h"
+#include "domain/validation/validation_result.h"
 #include "next/application/class_details_save_use_case.h"
+#include "next/application/class_details_validation_policy.h"
 #include "next/application/class_details_schedule_conflict_query.h"
 #include "next/application/class_details_page_query.h"
 #include "next/platform/application_services_class_details_save_port.h"
@@ -150,6 +152,337 @@ QString displayText(const std::string& value)
 std::string sourceText(const QString& value)
 {
     return value.toUtf8().toStdString();
+}
+
+std::vector<std::u16string> validationChoices(const QStringList& choices)
+{
+    std::vector<std::u16string> values;
+    values.reserve(static_cast<std::size_t>(choices.size()));
+    for (const QString& choice : choices)
+    {
+        values.push_back(choice.toStdU16String());
+    }
+    return values;
+}
+
+ClassMngr::Next::Application::ClassDetailsValidationCatalog
+classDetailsValidationCatalog()
+{
+    using namespace ClassMngr::Next::Application;
+
+    ClassDetailsValidationCatalog catalog;
+    catalog.grades.reserve(
+        static_cast<std::size_t>(ClassInfoConfig::Grades.size())
+        );
+    for (const QString& gradeName : ClassInfoConfig::Grades)
+    {
+        ClassDetailsValidationGradeCatalog grade;
+        grade.name = gradeName.toStdU16String();
+        const QStringList levels = ClassInfoConfig::levelsForGrade(gradeName);
+        grade.levels.reserve(static_cast<std::size_t>(levels.size()));
+        for (const QString& levelName : levels)
+        {
+            grade.levels.push_back({
+                .name = levelName.toStdU16String(),
+                .readingBooks = validationChoices(
+                    ClassInfoConfig::readingBooks(gradeName, levelName)
+                    ),
+                .essayBooks = validationChoices(
+                    ClassInfoConfig::essayBooks(gradeName, levelName)
+                    )
+            });
+        }
+        catalog.grades.push_back(std::move(grade));
+    }
+    return catalog;
+}
+
+ClassMngr::Next::Application::ClassDetailsValidationInput
+classDetailsValidationInput(const ClassInfo& info)
+{
+    using namespace ClassMngr::Next::Application;
+
+    ClassDetailsValidationInput input;
+    input.classId = info.classId;
+    input.teacherId = info.teacherId;
+    input.classGrade = info.classGrade.toStdU16String();
+    input.classLevel = info.classLevel.toStdU16String();
+    input.readingBook = info.readingBook.toStdU16String();
+    input.essayBook = info.essayBook.toStdU16String();
+    input.classColor = info.classColor.toStdU16String();
+    input.fontColor = info.fontColor.toStdU16String();
+    input.notes = info.notes.toStdU16String();
+    input.timeFillerActivities = info.timeFillerActivities.toStdU16String();
+
+    const auto copyRows = [](const QList<ClassTime>& times)
+    {
+        std::vector<ClassDetailsScheduleValidationRow> rows;
+        rows.reserve(static_cast<std::size_t>(times.size()));
+        for (const ClassTime& time : times)
+        {
+            rows.push_back({
+                .day = time.day.toStdU16String(),
+                .startTime = time.startTime.toStdU16String(),
+                .endTime = time.endTime.toStdU16String()
+            });
+        }
+        return rows;
+    };
+    input.regularTimes = copyRows(info.classTimes);
+    input.intensiveTimes = copyRows(info.intensiveTimes);
+    return input;
+}
+
+ClassMngr::Next::Application::ClassDetailsValidationOutput
+validateClassDetailsInput(const ClassInfo& info)
+{
+    return ClassMngr::Next::Application::
+        ClassDetailsValidationPolicy::normalizeAndValidate(
+            classDetailsValidationInput(info),
+            classDetailsValidationCatalog()
+            );
+}
+
+QString validationIssueCode(
+    ClassMngr::Next::Application::ClassDetailsValidationCode code
+    )
+{
+    using Code = ClassMngr::Next::Application::ClassDetailsValidationCode;
+    switch (code)
+    {
+    case Code::ClassIdInvalid:
+        return QStringLiteral("class_info.class_id.invalid");
+    case Code::TeacherIdInvalid:
+        return QStringLiteral("class_info.teacher_id.invalid");
+    case Code::GradeRequired:
+        return QStringLiteral("class_info.grade.required");
+    case Code::LevelRequired:
+        return QStringLiteral("class_info.level.required");
+    case Code::ValueNotAllowed:
+        return QStringLiteral("class_info.value.not_allowed");
+    case Code::BookRequiresGradeLevel:
+        return QStringLiteral("class_info.book.requires_grade_level");
+    case Code::InvalidHexColor:
+        return QStringLiteral("color.invalid_hex");
+    case Code::TextLengthOutOfBounds:
+        return QStringLiteral("validation.length.out_of_bounds");
+    case Code::InvalidWeekday:
+        return QStringLiteral("schedule.weekday.invalid");
+    case Code::InvalidTimeFormat:
+        return QStringLiteral("schedule.time.invalid_format");
+    case Code::EndNotAfterStart:
+        return QStringLiteral("schedule.time.end_not_after_start");
+    case Code::DuplicateSlot:
+        return QStringLiteral("class_time.duplicate_slot");
+    }
+    return {};
+}
+
+QString validationIssueField(
+    const ClassMngr::Next::Application::ClassDetailsValidationIssue& issue
+    )
+{
+    using Field = ClassMngr::Next::Application::ClassDetailsValidationField;
+    switch (issue.field)
+    {
+    case Field::ClassId:
+        return QStringLiteral("classId");
+    case Field::TeacherId:
+        return QStringLiteral("teacherId");
+    case Field::ClassGrade:
+        return QStringLiteral("classGrade");
+    case Field::ClassLevel:
+        return QStringLiteral("classLevel");
+    case Field::ReadingBook:
+        return QStringLiteral("readingBook");
+    case Field::EssayBook:
+        return QStringLiteral("essayBook");
+    case Field::ClassColor:
+        return QStringLiteral("classColor");
+    case Field::FontColor:
+        return QStringLiteral("fontColor");
+    case Field::Notes:
+        return QStringLiteral("notes");
+    case Field::TimeFillerActivities:
+        return QStringLiteral("timeFillerActivities");
+    case Field::ScheduleDay:
+    case Field::ScheduleStartTime:
+    case Field::ScheduleEndTime:
+    {
+        const QString prefix = issue.schedule
+                == ClassMngr::Next::Application::
+                    ClassDetailsValidationSchedule::Intensive
+            ? QStringLiteral("intensiveTimes")
+            : QStringLiteral("classTimes");
+        const QString suffix = issue.field == Field::ScheduleDay
+            ? QStringLiteral("day")
+            : issue.field == Field::ScheduleStartTime
+                ? QStringLiteral("startTime")
+                : QStringLiteral("endTime");
+        return QStringLiteral("%1[%2].%3")
+            .arg(prefix)
+            .arg(static_cast<qulonglong>(issue.row))
+            .arg(suffix);
+    }
+    }
+    return {};
+}
+
+int validationIssueColumn(
+    ClassMngr::Next::Application::ClassDetailsValidationField field
+    )
+{
+    using Field = ClassMngr::Next::Application::ClassDetailsValidationField;
+    switch (field)
+    {
+    case Field::ScheduleDay:
+        return 0;
+    case Field::ScheduleStartTime:
+        return 1;
+    case Field::ScheduleEndTime:
+        return 2;
+    default:
+        return -1;
+    }
+}
+
+ValidationResult legacyValidationResult(
+    const ClassMngr::Next::Application::ClassDetailsValidationOutput& output
+    )
+{
+    using Code = ClassMngr::Next::Application::ClassDetailsValidationCode;
+
+    ValidationResult result;
+    for (const auto& issue : output.issues)
+    {
+        QVariantMap arguments;
+        if (issue.integerValue)
+        {
+            arguments.insert(QStringLiteral("value"), *issue.integerValue);
+        }
+        if (issue.value)
+        {
+            arguments.insert(
+                QStringLiteral("value"),
+                QString::fromStdU16String(*issue.value)
+                );
+        }
+        if (issue.start)
+        {
+            arguments.insert(
+                QStringLiteral("start"),
+                QString::fromStdU16String(*issue.start)
+                );
+        }
+        if (issue.end)
+        {
+            arguments.insert(
+                QStringLiteral("end"),
+                QString::fromStdU16String(*issue.end)
+                );
+        }
+        if (issue.code == Code::ValueNotAllowed)
+        {
+            QStringList allowedValues;
+            allowedValues.reserve(
+                static_cast<qsizetype>(issue.allowedValues.size())
+                );
+            for (const std::u16string& value : issue.allowedValues)
+            {
+                allowedValues.append(QString::fromStdU16String(value));
+            }
+            arguments.insert(QStringLiteral("allowedValues"), allowedValues);
+        }
+        if (!issue.duplicateRows.empty())
+        {
+            QVariantList duplicateRows;
+            duplicateRows.reserve(
+                static_cast<qsizetype>(issue.duplicateRows.size())
+                );
+            for (const int row : issue.duplicateRows)
+            {
+                duplicateRows.append(row);
+            }
+            arguments.insert(QStringLiteral("duplicateRows"), duplicateRows);
+        }
+        if (issue.length)
+        {
+            arguments.insert(
+                QStringLiteral("length"),
+                static_cast<qlonglong>(*issue.length)
+                );
+        }
+        if (issue.minimum)
+        {
+            arguments.insert(
+                QStringLiteral("minimum"),
+                static_cast<qlonglong>(*issue.minimum)
+                );
+        }
+        if (issue.maximum)
+        {
+            arguments.insert(
+                QStringLiteral("maximum"),
+                static_cast<qlonglong>(*issue.maximum)
+                );
+        }
+
+        const bool scheduleField = issue.field ==
+                ClassMngr::Next::Application::
+                    ClassDetailsValidationField::ScheduleDay
+            || issue.field == ClassMngr::Next::Application::
+                   ClassDetailsValidationField::ScheduleStartTime
+            || issue.field == ClassMngr::Next::Application::
+                   ClassDetailsValidationField::ScheduleEndTime;
+        result.add({
+            .code = validationIssueCode(issue.code),
+            .field = validationIssueField(issue),
+            .row = scheduleField ? static_cast<int>(issue.row) : -1,
+            .column = validationIssueColumn(issue.field),
+            .severity = ValidationSeverity::Error,
+            .arguments = std::move(arguments)
+        });
+    }
+    return result;
+}
+
+ClassInfo normalizedClassDetailsInfo(
+    const ClassInfo& source,
+    const ClassMngr::Next::Application::ClassDetailsValidationInput& normalized
+    )
+{
+    ClassInfo info = source;
+    info.classGrade = QString::fromStdU16String(normalized.classGrade);
+    info.classLevel = QString::fromStdU16String(normalized.classLevel);
+    info.readingBook = QString::fromStdU16String(normalized.readingBook);
+    info.essayBook = QString::fromStdU16String(normalized.essayBook);
+    info.classColor = QString::fromStdU16String(normalized.classColor);
+    info.fontColor = QString::fromStdU16String(normalized.fontColor);
+    info.notes = QString::fromStdU16String(normalized.notes);
+    info.timeFillerActivities =
+        QString::fromStdU16String(normalized.timeFillerActivities);
+
+    const auto copyRows = [](
+        const std::vector<
+            ClassMngr::Next::Application::ClassDetailsScheduleValidationRow
+            >& rows
+        )
+    {
+        QList<ClassTime> times;
+        times.reserve(static_cast<qsizetype>(rows.size()));
+        for (const auto& row : rows)
+        {
+            times.append({
+                QString::fromStdU16String(row.day),
+                QString::fromStdU16String(row.startTime),
+                QString::fromStdU16String(row.endTime)
+            });
+        }
+        return times;
+    };
+    info.classTimes = copyRows(normalized.regularTimes);
+    info.intensiveTimes = copyRows(normalized.intensiveTimes);
+    return info;
 }
 
 ClassMngr::Next::Application::ClassDetailsPageFields displayFields(
@@ -782,8 +1115,8 @@ void ClassDetailsPage::updateFormValidation()
     }
 
     refreshScheduleValidationBindings();
-    const ClassInfo info = ClassInfoValidator::normalized(classInfoFromForm());
-    m_validationBinder->setValidation(ClassInfoValidator::validate(info));
+    const auto validation = validateClassDetailsInput(classInfoFromForm());
+    m_validationBinder->setValidation(legacyValidationResult(validation));
 }
 
 bool ClassDetailsPage::saveClassInfoInternal(
@@ -813,11 +1146,8 @@ bool ClassDetailsPage::saveClassInfoInternal(
         currentInfo.timeFillerActivities;
 
     refreshScheduleValidationBindings();
-    m_validationBinder->setValidation(
-        ClassInfoValidator::validate(
-            ClassInfoValidator::normalized(info)
-            )
-        );
+    const auto validation = validateClassDetailsInput(info);
+    m_validationBinder->setValidation(legacyValidationResult(validation));
     if (m_validationBinder->hasErrors())
     {
         m_validationBinder->focusFirstError();
@@ -848,7 +1178,10 @@ bool ClassDetailsPage::saveClassInfoInternal(
         return false;
     }
 
-    const ClassInfo normalizedInfo = ClassInfoValidator::normalized(info);
+    const ClassInfo normalizedInfo = normalizedClassDetailsInfo(
+        info,
+        validation.normalized
+        );
     const auto request = classDetailsSaveRequest(normalizedInfo);
     ClassMngr::Next::Platform::
         ApplicationServicesClassDetailsSavePort defaultSavePort(m_services);

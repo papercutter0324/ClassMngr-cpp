@@ -1,5 +1,6 @@
 #include "app/services/feature_services.h"
 #include "core/application_services.h"
+#include "data/database/database_session.h"
 #include "domain/models/class_info.h"
 #include "domain/models/classroom.h"
 #include "domain/models/teacher.h"
@@ -10,8 +11,10 @@
 #include "ui/shared/widgets/sections/class_schedule_section.h"
 
 #include <QComboBox>
+#include <QLabel>
 #include <QPushButton>
 #include <QSignalSpy>
+#include <QSqlQuery>
 #include <QTemporaryDir>
 #include <QTimer>
 #include <QUuid>
@@ -147,6 +150,7 @@ class ClassDetailsPageSaveParityTests final : public QObject
 private slots:
     void successfulUiSaveMatchesSeededCommonInputState();
     void regularAndIntensiveConflictSavesMatchCommonBaselineInputs();
+    void invalidUiSaveMatchesCommonBaselineInputState();
 };
 
 void ClassDetailsPageSaveParityTests::successfulUiSaveMatchesSeededCommonInputState()
@@ -204,6 +208,18 @@ void ClassDetailsPageSaveParityTests::successfulUiSaveMatchesSeededCommonInputSt
         }
     };
     QVERIFY(services.classService()->saveClassInfo(seededInfo));
+
+    QSqlQuery hiddenFields(services.databaseSession()->database());
+    hiddenFields.prepare(QStringLiteral(
+        "UPDATE class_info SET notes=?, time_filler_activities=? "
+        "WHERE class_id=?"
+        ));
+    hiddenFields.addBindValue(
+        QStringLiteral("  Keep these notes exactly.\nSecond line.  ")
+        );
+    hiddenFields.addBindValue(QStringLiteral("  Quiet reading\nWord games  "));
+    hiddenFields.addBindValue(classId);
+    QVERIFY(hiddenFields.exec());
 
     ClassDetailsPage page(&services, false);
     page.setSaveMode(SaveMode::Manual);
@@ -416,6 +432,86 @@ regularAndIntensiveConflictSavesMatchCommonBaselineInputs()
             QCOMPARE(unchangedSource->intensiveTimes.size(), 1);
         }
     }
+}
+
+void ClassDetailsPageSaveParityTests::
+invalidUiSaveMatchesCommonBaselineInputState()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+    const int classId = createClass(
+        services,
+        QStringLiteral("Class Details Invalid Save Parity")
+        );
+    QVERIFY(classId > 0);
+
+    auto seededInfoResult = services.classService()->classInfo(classId);
+    QVERIFY(seededInfoResult);
+    ClassInfo seededInfo = *seededInfoResult;
+    seededInfo.classGrade = QStringLiteral("E4");
+    seededInfo.classLevel = QStringLiteral("Theseus");
+    seededInfo.readingBook = QStringLiteral("Reading Explorer 1");
+    seededInfo.essayBook = QStringLiteral("4A");
+    seededInfo.classColor = QStringLiteral("#AABBCC");
+    seededInfo.fontColor = QStringLiteral("#112233");
+    seededInfo.classTimes = {{
+        QStringLiteral("Monday"),
+        QStringLiteral("9:00 AM"),
+        QStringLiteral("9:55 AM")
+    }};
+    seededInfo.intensiveTimes = {{
+        QStringLiteral("Tuesday"),
+        QStringLiteral("12:00 PM"),
+        QStringLiteral("12:55 PM")
+    }};
+    QVERIFY(services.classService()->saveClassInfo(seededInfo));
+
+    ClassDetailsPage page(&services, false);
+    page.setSaveMode(SaveMode::Manual);
+    page.loadClass(
+        Classroom(QStringLiteral("Class Details Invalid Save Parity"), classId)
+        );
+
+    auto* grade = page.findChild<QComboBox*>(QStringLiteral("classGradeCombo"));
+    auto* level = page.findChild<QComboBox*>(QStringLiteral("classLevelCombo"));
+    auto* header = page.findChild<PageHeader*>();
+    QVERIFY(grade && level && header);
+    const QString subtitleBefore = header->subtitle();
+    const auto persistedBefore = services.classService()->classInfo(classId);
+    QVERIFY(persistedBefore);
+
+    QSignalSpy savedSpy(&page, &ClassDetailsPage::classInfoSaved);
+    QVERIFY(savedSpy.isValid());
+    grade->setCurrentText(QStringLiteral("E4"));
+    level->setCurrentIndex(0);
+    QVERIFY(page.hasUnsavedChanges());
+    QVERIFY(!page.saveChanges());
+
+    auto* validationMessage = page.findChild<QLabel*>(
+        QStringLiteral("classLevelValidationMessage")
+        );
+    QVERIFY(validationMessage);
+    QCOMPARE(validationMessage->text(), QStringLiteral("This field is required."));
+    QCOMPARE(level->property("formValidationState").toString(),
+        QStringLiteral("error"));
+    QCOMPARE(savedSpy.size(), 0);
+    QVERIFY(page.hasUnsavedChanges());
+    QCOMPARE(header->subtitle(), subtitleBefore);
+
+    const auto persistedAfter = services.classService()->classInfo(classId);
+    QVERIFY(persistedAfter);
+    QCOMPARE(persistedAfter->classGrade, persistedBefore->classGrade);
+    QCOMPARE(persistedAfter->classLevel, persistedBefore->classLevel);
+    QCOMPARE(persistedAfter->readingBook, persistedBefore->readingBook);
+    QCOMPARE(persistedAfter->essayBook, persistedBefore->essayBook);
+    QCOMPARE(persistedAfter->classTimes.size(), persistedBefore->classTimes.size());
+    QCOMPARE(
+        persistedAfter->intensiveTimes.size(),
+        persistedBefore->intensiveTimes.size()
+        );
 }
 
 QTEST_MAIN(ClassDetailsPageSaveParityTests)

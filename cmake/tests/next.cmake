@@ -212,6 +212,15 @@ classmngr_add_qt_test(
 )
 
 classmngr_add_qt_test(
+    NAME NextApplicationClassDetailsValidationPolicy
+    SOURCES
+        tests/next_application_class_details_validation_policy_tests.cpp
+    LIBRARIES
+        ClassMngrNext::Application
+        Qt6::Test
+)
+
+classmngr_add_qt_test(
     NAME NextScheduleEditorDialogSave
     SOURCES
         tests/schedule_editor_dialog_tests.cpp

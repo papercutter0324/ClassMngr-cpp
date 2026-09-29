@@ -11,6 +11,8 @@
 #include "ui/shared/widgets/sections/class_schedule_section.h"
 
 #include <QComboBox>
+#include <QApplication>
+#include <QLabel>
 #include <QPushButton>
 #include <QSignalSpy>
 #include <QTemporaryDir>
@@ -196,6 +198,7 @@ private slots:
     void normalizedSchedulesReachUseCaseAsMinuteValues();
     void portFailureShowsItsErrorAndLeavesPageDirty();
     void invalidFieldsBlockTheSavePort();
+    void malformedScheduleBlocksConflictQueriesAndFocusesItsField();
     void regularAndIntensiveConflictsBlockTheSavePort();
     void regularConflictShortCircuitsIntensiveAndKeepsSameNameWording();
     void intensiveConflictFollowsAnEmptyRegularQuery();
@@ -400,6 +403,9 @@ void ClassDetailsSavePageTests::invalidFieldsBlockTheSavePort()
     auto* grade = page.findChild<QComboBox*>(QStringLiteral("classGradeCombo"));
     auto* level = page.findChild<QComboBox*>(QStringLiteral("classLevelCombo"));
     QVERIFY(grade && level);
+    page.show();
+    page.activateWindow();
+    QApplication::processEvents();
     grade->setCurrentText(QStringLiteral("E4"));
     level->setCurrentIndex(0);
 
@@ -407,6 +413,92 @@ void ClassDetailsSavePageTests::invalidFieldsBlockTheSavePort()
     QVERIFY(!page.saveChanges());
     QCOMPARE(port.callCount, 0);
     QVERIFY(conflictPort.requests.empty());
+
+    auto* validationMessage = page.findChild<QLabel*>(
+        QStringLiteral("classLevelValidationMessage")
+        );
+    QVERIFY(validationMessage);
+    QCOMPARE(validationMessage->text(), QStringLiteral("This field is required."));
+    QCOMPARE(level->property("formValidationState").toString(),
+        QStringLiteral("error"));
+    QTRY_VERIFY(level->hasFocus());
+    QVERIFY(page.hasUnsavedChanges());
+}
+
+void ClassDetailsSavePageTests::
+malformedScheduleBlocksConflictQueriesAndFocusesItsField()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+    const int classId = createClass(
+        services,
+        QStringLiteral("Class Details Malformed Schedule")
+        );
+    QVERIFY(classId > 0);
+
+    RecordingClassDetailsSavePort port;
+    RecordingClassDetailsScheduleConflictPort conflictPort;
+    ClassDetailsPage page(
+        &services,
+        false,
+        nullptr,
+        &port,
+        nullptr,
+        &conflictPort
+        );
+    page.setSaveMode(SaveMode::Manual);
+    page.loadClass(
+        Classroom(QStringLiteral("Class Details Malformed Schedule"), classId)
+        );
+    page.show();
+    page.activateWindow();
+    QApplication::processEvents();
+
+    ClassTimeRow* row = addScheduleRow(page, ScheduleType::Regular);
+    QVERIFY(row);
+    setSchedule(
+        row,
+        QStringLiteral("Monday"),
+        QStringLiteral("9:00 AM"),
+        QStringLiteral("9:55 AM")
+        );
+    row->endCombo()->addItem(QStringLiteral("not-a-time"));
+    row->endCombo()->setCurrentText(QStringLiteral("not-a-time"));
+
+    ClassTimeRow* intensiveRow = addScheduleRow(page, ScheduleType::Intensive);
+    QVERIFY(intensiveRow);
+    setSchedule(
+        intensiveRow,
+        QStringLiteral("Tuesday"),
+        QStringLiteral("12:00 PM"),
+        QStringLiteral("12:55 PM")
+        );
+    intensiveRow->endCombo()->addItem(QStringLiteral("also-not-a-time"));
+    intensiveRow->endCombo()->setCurrentText(QStringLiteral("also-not-a-time"));
+
+    QVERIFY(page.hasUnsavedChanges());
+    QVERIFY(!page.saveChanges());
+    QCOMPARE(port.callCount, 0);
+    QVERIFY(conflictPort.requests.empty());
+    QVERIFY(page.hasUnsavedChanges());
+
+    auto* validationMessage = page.findChild<QLabel*>(
+        QStringLiteral("classRegularScheduleValidationMessage")
+        );
+    auto* intensiveValidationMessage = page.findChild<QLabel*>(
+        QStringLiteral("classIntensiveScheduleValidationMessage")
+        );
+    QVERIFY(validationMessage && intensiveValidationMessage);
+    QCOMPARE(validationMessage->text(), QStringLiteral("Enter a valid value."));
+    QCOMPARE(
+        intensiveValidationMessage->text(),
+        QStringLiteral("Enter a valid value.")
+        );
+    QCOMPARE(row->endCombo()->property("formValidationState").toString(),
+        QStringLiteral("error"));
+    QTRY_VERIFY(row->endCombo()->hasFocus());
 }
 
 void ClassDetailsSavePageTests::regularAndIntensiveConflictsBlockTheSavePort()
