@@ -1355,3 +1355,7 @@ class rows in the snapshot so the widget can retain its warning and skip
 behavior at the UI boundary. Verify fixed query count with a small and larger
 assignment set. Keep writes and broader view-model or import-review lifetime
 work in separate slices.
+
+## 2026-09-29 — Mid-slice handoff
+
+Reusable lesson: when a substantive slice is paused before acceptance, preserve the working tree and make the handoff state explicit: what is implemented, what verification remains, the commit boundary, and the next authorized step. The current F144 continuation details are kept in latest_session_work.md.

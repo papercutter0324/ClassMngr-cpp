@@ -3303,3 +3303,38 @@ Gate 1 and Gate 2 remain Partial. Formal workspace-create acceptance and
 active-v2 DataService isolation remain Satisfied. Phase 2 remains In Progress
 with the exit gate Open. The deployment-token report remains required at
 Phase 2 closure. No push was requested.
+
+## 2026-09-29 — Phase 2 continuation handoff: F144 paused
+
+The user asked to stop during the current work and resume on another device. Stop implementation and testing here. The active deployment ID is phase2_resume_20260929.
+
+Last completed slice: F143, committed as e2a3811cdba71b58ff2289f2c756d9bf12349bf5 (Phase2 - route testing class manager detail reads through application). Its focused CTests passed 3/3 in a fresh Windows x64 Debug Ninja/MSVC/Qt 6.12 tree.
+
+Current slice: F144, teacher-choice read for TestingClassesPage. Production code has been added, but the declared tests and acceptance are incomplete. A checkpoint commit preserves this incomplete state; no accepted F144 implementation commit exists. Preserve the checkpoint and any remaining uncommitted files; do not reset or discard them. No F145 work has started.
+
+Known F144 production files:
+- src/next/application/testing_teacher_choices_read_query.h
+- src/next/platform/application_services_testing_teacher_choices_read_port.h
+- src/features/classes/ui/testing_classes_page.h
+- src/features/classes/ui/testing_classes_page.cpp
+- cmake/next.cmake
+
+The implementation introduces a Qt-free typed query and snapshot, reads teacher choices from the active session's teacher repository, preserves repository order and typed IDs, and maps the choices into the existing page UI. The UI trims labels and rooms, skips blank Korean labels, restores selection by ID, retains the None item, and preserves the existing load warning behavior. The TeacherService read was removed from populateTeachers only.
+
+The Tester was interrupted at the user's request. These test paths and registrations may contain partial edits; inspect and preserve them before continuing:
+- tests/next_application_testing_teacher_choices_read_query_tests.cpp
+- tests/next_platform_application_services_testing_teacher_choices_read_port_tests.cpp
+- tests/testing_classes_page_tests.cpp
+- cmake/tests/next.cmake
+- cmake/tests/features.cmake
+
+Verification completed so far: a direct MSVC compile of testing_classes_page.cpp, including the new query and adapter headers, passed. git diff --check passed for the production edits. The full build did not complete: CMake regeneration stalled, and the direct MSBuild Features target encountered a FileTracker access-denied error. No F144 tests or CTests have completed; the checkpoint is not an accepted F144 implementation commit.
+
+Resume instructions:
+1. Read plans/qt-rewrite-heavy-route-plan/00-Start-Here.md and the current Phase 2 plan, progress log, and legacy mapping. Use their F144 scope and acceptance criteria.
+2. Inspect the current worktree and diffs before editing. Keep existing F144 production and any partial test or documentation work. Do not start F145 yet.
+3. Complete the app-less Application query tests, Platform adapter tests, and TestingClassesPage behavior tests. Cover successful and empty results, unavailable session/repository and repository errors, ID-based selection restoration, None, trimmed labels and rooms, blank-label skipping, and the established warning behavior.
+4. Build and run the declared F144 tests, along with the existing F142/F143 regression CTests. Resolve any failures and record the actual results; the prior direct compile is not a substitute for these acceptance checks.
+5. Once F144 acceptance passes, update the phase records with verified evidence and commit F144 as its own slice. Then begin the next slice specified by 00-Start-Here.md, following the Heavy-route instructions and committing after each accepted slice.
+
+No deployment implementation or verification should continue until work is explicitly resumed.

@@ -12,6 +12,7 @@
 #include "fakes/fake_user_prompt_service.h"
 #include "next/application/schedule_testing_class_choices_query.h"
 #include "next/application/testing_class_details_read_query.h"
+#include "next/application/testing_teacher_choices_read_query.h"
 #include "ui/shared/widgets/marquee_item_delegate.h"
 #include "ui/shared/widgets/on_screen_keyboard.h"
 #include "ui/shared/dialogs/user_prompt_service.h"
@@ -93,6 +94,18 @@ ClassMngr::Next::Domain::ClassId typedClassId(const int value)
     return *parsed;
 }
 
+ClassMngr::Next::Domain::TeacherId typedTeacherId(const int value)
+{
+    const auto parsed = ClassMngr::Next::Domain::TeacherId::fromString(
+        std::to_string(value)
+        );
+    if (!parsed)
+    {
+        qFatal("Test teacher ID must have a typed representation.");
+    }
+    return *parsed;
+}
+
 ClassMngr::Next::Application::TestingClassDetailsSnapshot testingClassDetails(
     const int classId,
     const QString& name
@@ -161,6 +174,29 @@ public:
                 .message = "Unconfigured testing class details read port.",
                 .recoverable = false
             });
+};
+
+class FixedTestingTeacherChoicesReadPort final
+    : public ClassMngr::Next::Application::TestingTeacherChoicesReadPort
+{
+public:
+    [[nodiscard]] ClassMngr::Next::Application::
+        TestingTeacherChoicesReadResult readTestingTeacherChoices(
+            const ClassMngr::Next::Application::
+                TestingTeacherChoicesReadQuery& query
+            ) const override
+    {
+        ++callCount;
+        lastQuery = query;
+        return result;
+    }
+
+    mutable int callCount = 0;
+    mutable std::optional<ClassMngr::Next::Application::
+        TestingTeacherChoicesReadQuery> lastQuery;
+    ClassMngr::Next::Application::TestingTeacherChoicesReadResult result =
+        ClassMngr::Next::Application::TestingTeacherChoicesReadResult::
+            success({});
 };
 
 void setSingleTestingClassChoice(
@@ -254,6 +290,9 @@ private slots:
     void testingClassChoicesQueryMapsActiveSessionAndPreferredSelection();
     void unavailableTestingClassChoicesQueryIsSilentAndEmpty();
     void testingClassChoicesQueryFailureShowsExactWarning();
+    void testingTeacherChoicesPopulateOrderedTrimmedChoicesAndRestoreSelection();
+    void unavailableTestingTeacherChoicesQueryIsSilent();
+    void testingTeacherChoicesQueryFailureShowsExactWarning();
     void testingClassDetailsReadMapsEditorRosterAndCleanState();
     void unavailableTestingClassDetailsReadIsSilent();
     void missingTestingClassDetailsShowsWarning();
@@ -814,6 +853,187 @@ testingClassChoicesQueryFailureShowsExactWarning()
 }
 
 void TestingClassesPageTests::
+testingTeacherChoicesPopulateOrderedTrimmedChoicesAndRestoreSelection()
+{
+    ApplicationServices services;
+    FixedTestingClassChoicesReadPort classChoicesReadPort;
+    classChoicesReadPort.result = ClassMngr::Next::Application::
+        ScheduleTestingClassChoicesReadResult::success({});
+    FixedTestingTeacherChoicesReadPort teacherChoicesReadPort;
+    teacherChoicesReadPort.result = ClassMngr::Next::Application::
+        TestingTeacherChoicesReadResult::success({
+            .choices = {
+                {
+                    .teacherId = typedTeacherId(21),
+                    .name = u"  김선생 \t",
+                    .room = u"  Room 21  "
+                },
+                {
+                    .teacherId = typedTeacherId(22),
+                    .name = u" \t\r\n",
+                    .room = u"Room 22"
+                },
+                {
+                    .teacherId = typedTeacherId(23),
+                    .name = u"  이선생 ",
+                    .room = u" \tRoom 23\t "
+                }
+            }
+        });
+
+    TestingClassesPage page(
+        &services,
+        nullptr,
+        &classChoicesReadPort,
+        nullptr,
+        &teacherChoicesReadPort
+        );
+    page.refresh();
+
+    auto* teacherCombo = page.findChild<QComboBox*>(
+        QStringLiteral("testingClassTeacherCombo")
+        );
+    QVERIFY(teacherCombo);
+    QCOMPARE(teacherChoicesReadPort.callCount, 1);
+    QVERIFY(teacherChoicesReadPort.lastQuery.has_value());
+    QVERIFY(*teacherChoicesReadPort.lastQuery
+        == ClassMngr::Next::Application::TestingTeacherChoicesReadQuery{});
+
+    // The blank Korean label is omitted, and the remaining choices keep the
+    // supplied repository order after the built-in None row.
+    QCOMPARE(teacherCombo->count(), 3);
+    QCOMPARE(teacherCombo->itemText(0), QStringLiteral("None"));
+    QCOMPARE(teacherCombo->itemData(0).toInt(), -1);
+    QCOMPARE(teacherCombo->itemText(1), QStringLiteral("김선생"));
+    QCOMPARE(teacherCombo->itemData(1).toInt(), 21);
+    QCOMPARE(
+        teacherCombo->itemData(1, Qt::UserRole + 1).toString(),
+        QStringLiteral("Room 21")
+        );
+    QCOMPARE(teacherCombo->itemText(2), QStringLiteral("이선생"));
+    QCOMPARE(teacherCombo->itemData(2).toInt(), 23);
+    QCOMPARE(
+        teacherCombo->itemData(2, Qt::UserRole + 1).toString(),
+        QStringLiteral("Room 23")
+        );
+
+    teacherCombo->setCurrentIndex(teacherCombo->findData(23));
+    QCOMPARE(teacherCombo->currentData().toInt(), 23);
+    teacherChoicesReadPort.result = ClassMngr::Next::Application::
+        TestingTeacherChoicesReadResult::success({
+            .choices = {
+                {
+                    .teacherId = typedTeacherId(23),
+                    .name = u"  이선생 ",
+                    .room = u" \tRoom 23\t "
+                },
+                {
+                    .teacherId = typedTeacherId(21),
+                    .name = u"  김선생 \t",
+                    .room = u"  Room 21  "
+                },
+                {
+                    .teacherId = typedTeacherId(22),
+                    .name = u" \t\r\n",
+                    .room = u"Room 22"
+                }
+            }
+        });
+    page.refresh();
+
+    QCOMPARE(teacherChoicesReadPort.callCount, 2);
+    QCOMPARE(teacherCombo->count(), 3);
+    QCOMPARE(teacherCombo->itemData(1).toInt(), 23);
+    QCOMPARE(teacherCombo->currentData().toInt(), 23);
+    QCOMPARE(teacherCombo->currentText(), QStringLiteral("이선생"));
+}
+
+void TestingClassesPageTests::
+unavailableTestingTeacherChoicesQueryIsSilent()
+{
+    ApplicationServices services;
+    FixedTestingClassChoicesReadPort classChoicesReadPort;
+    classChoicesReadPort.result = ClassMngr::Next::Application::
+        ScheduleTestingClassChoicesReadResult::success({});
+    FixedTestingTeacherChoicesReadPort teacherChoicesReadPort;
+    teacherChoicesReadPort.result = ClassMngr::Next::Application::
+        TestingTeacherChoicesReadResult::failure({
+            .code = ClassMngr::Next::Domain::ErrorCode::NotFound,
+            .message = "The active database session is unavailable.",
+            .recoverable = false
+        });
+    FakeUserPromptService prompts;
+    DialogServices::setUserPromptServiceForTesting(&prompts);
+
+    TestingClassesPage page(
+        &services,
+        nullptr,
+        &classChoicesReadPort,
+        nullptr,
+        &teacherChoicesReadPort
+        );
+    page.refresh();
+
+    auto* teacherCombo = page.findChild<QComboBox*>(
+        QStringLiteral("testingClassTeacherCombo")
+        );
+    QVERIFY(teacherCombo);
+    QCOMPARE(teacherChoicesReadPort.callCount, 1);
+    QVERIFY(teacherChoicesReadPort.lastQuery.has_value());
+    QVERIFY(*teacherChoicesReadPort.lastQuery
+        == ClassMngr::Next::Application::TestingTeacherChoicesReadQuery{});
+    QCOMPARE(teacherCombo->count(), 1);
+    QCOMPARE(teacherCombo->currentText(), QStringLiteral("None"));
+    QCOMPARE(teacherCombo->currentData().toInt(), -1);
+    QVERIFY(prompts.messages.isEmpty());
+}
+
+void TestingClassesPageTests::
+testingTeacherChoicesQueryFailureShowsExactWarning()
+{
+    ApplicationServices services;
+    FixedTestingClassChoicesReadPort classChoicesReadPort;
+    classChoicesReadPort.result = ClassMngr::Next::Application::
+        ScheduleTestingClassChoicesReadResult::success({});
+    FixedTestingTeacherChoicesReadPort teacherChoicesReadPort;
+    teacherChoicesReadPort.result = ClassMngr::Next::Application::
+        TestingTeacherChoicesReadResult::failure({
+            .code = ClassMngr::Next::Domain::ErrorCode::Technical,
+            .message = "injected teacher choices repository detail",
+            .recoverable = false
+        });
+    FakeUserPromptService prompts;
+    DialogServices::setUserPromptServiceForTesting(&prompts);
+
+    TestingClassesPage page(
+        &services,
+        nullptr,
+        &classChoicesReadPort,
+        nullptr,
+        &teacherChoicesReadPort
+        );
+    page.refresh();
+
+    auto* teacherCombo = page.findChild<QComboBox*>(
+        QStringLiteral("testingClassTeacherCombo")
+        );
+    QVERIFY(teacherCombo);
+    QCOMPARE(teacherChoicesReadPort.callCount, 1);
+    QCOMPARE(teacherCombo->count(), 1);
+    QCOMPARE(prompts.messages.size(), 1);
+    QCOMPARE(prompts.messages.constFirst().title, QStringLiteral("Load Teachers"));
+    QCOMPARE(prompts.messages.constFirst().severity, PromptSeverity::Warning);
+    QCOMPARE(
+        prompts.messages.constFirst().message,
+        QStringLiteral("Teachers could not be loaded.")
+        );
+    QCOMPARE(
+        prompts.messages.constFirst().details,
+        QStringLiteral("injected teacher choices repository detail")
+        );
+}
+
+void TestingClassesPageTests::
 testingClassDetailsReadMapsEditorRosterAndCleanState()
 {
     QTemporaryDir directory;
@@ -882,11 +1102,21 @@ testingClassDetailsReadMapsEditorRosterAndCleanState()
         *createdClass,
         QStringLiteral("Stored choice")
         );
+    FixedTestingTeacherChoicesReadPort teacherChoicesReadPort;
+    teacherChoicesReadPort.result = ClassMngr::Next::Application::
+        TestingTeacherChoicesReadResult::success({
+            .choices = {{
+                .teacherId = *parsedTeacherId,
+                .name = u"Teacher 7",
+                .room = u"Room 7"
+            }}
+        });
     TestingClassesPage page(
         &services,
         nullptr,
         &choicesReadPort,
-        &readPort
+        &readPort,
+        &teacherChoicesReadPort
         );
     page.resize(1000, 700);
     page.openTestingClass(*createdClass);
@@ -1175,7 +1405,16 @@ void TestingClassesPageTests::zeroTeacherIdKeepsNoneSelectedWithoutWarning()
     FakeUserPromptService prompts;
     DialogServices::setUserPromptServiceForTesting(&prompts);
 
-    TestingClassesPage page(&services);
+    FixedTestingTeacherChoicesReadPort teacherChoicesReadPort;
+    teacherChoicesReadPort.result = ClassMngr::Next::Application::
+        TestingTeacherChoicesReadResult::success({});
+    TestingClassesPage page(
+        &services,
+        nullptr,
+        nullptr,
+        nullptr,
+        &teacherChoicesReadPort
+        );
     page.openTestingClass(*createdClass);
     page.refresh();
 

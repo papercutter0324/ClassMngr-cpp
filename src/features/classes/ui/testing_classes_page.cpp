@@ -8,6 +8,8 @@
 #include "next/platform/application_services_schedule_testing_class_choices_read_port.h"
 #include "next/application/testing_class_details_read_query.h"
 #include "next/platform/application_services_testing_class_details_read_port.h"
+#include "next/application/testing_teacher_choices_read_query.h"
+#include "next/platform/application_services_testing_teacher_choices_read_port.h"
 #include "core/fontmanager.h"
 #include "core/utils/colorutils.h"
 #include "domain/models/classroom.h"
@@ -89,13 +91,16 @@ TestingClassesPage::TestingClassesPage(
     QWidget* parent,
     const ClassMngr::Next::Application::
         ScheduleTestingClassChoicesReadPort* testingClassChoicesReadPort,
-    const ClassMngr::Next::Application::
-        TestingClassDetailsReadPort* testingClassDetailsReadPort
+    const ClassMngr::Next::Application::TestingClassDetailsReadPort*
+        testingClassDetailsReadPort,
+    const ClassMngr::Next::Application::TestingTeacherChoicesReadPort*
+        testingTeacherChoicesReadPort
     )
     : BasePage(parent)
     , m_services(services)
     , m_testingClassChoicesReadPort(testingClassChoicesReadPort)
     , m_testingClassDetailsReadPort(testingClassDetailsReadPort)
+    , m_testingTeacherChoicesReadPort(testingTeacherChoicesReadPort)
     , m_autosave(new AutosaveCoordinator(this))
 {
     buildUi();
@@ -863,35 +868,71 @@ void TestingClassesPage::populateTeachers()
         TeacherRoomRole
         );
 
-    auto* teacherService = m_services ? m_services->teacherService() : nullptr;
-    if (teacherService && teacherService->isAvailable())
+    ClassMngr::Next::Platform::
+        ApplicationServicesTestingTeacherChoicesReadPort defaultReadPort(
+            m_services
+            );
+    const ClassMngr::Next::Application::
+        TestingTeacherChoicesReadPort& readPort =
+            m_testingTeacherChoicesReadPort
+                ? *m_testingTeacherChoicesReadPort
+                : defaultReadPort;
+
+    const auto loaded =
+        ClassMngr::Next::Application::
+            TestingTeacherChoicesReadQueryHandler::execute(
+                {},
+                readPort
+                );
+    if (!loaded)
     {
-        const Result<QList<Teacher>> teachers = teacherService->teachers();
-        if (!teachers)
+        if (
+            loaded.error().code
+            != ClassMngr::Next::Domain::ErrorCode::NotFound
+            )
         {
+            const std::string& detail = loaded.error().message;
             DialogServices::showWarning(
                 this,
                 tr("Load Teachers"),
                 tr("Teachers could not be loaded."),
-                teachers.error()
+                QString::fromUtf8(
+                    detail.data(),
+                    static_cast<qsizetype>(detail.size())
+                    )
                 );
-            return;
         }
-        for (const Teacher& teacher : *teachers)
+        return;
+    }
+
+    for (const auto& choice : loaded.value().choices)
+    {
+        const QString label =
+            QString::fromStdU16String(choice.name).trimmed();
+        if (label.isEmpty())
         {
-            const QString label =
-                teacher.teacherKr.trimmed();
-            if (label.isEmpty())
-            {
-                continue;
-            }
-            m_teacherCombo->addItem(label, teacher.id);
-            m_teacherCombo->setItemData(
-                m_teacherCombo->count() - 1,
-                teacher.roomNumber.trimmed(),
-                TeacherRoomRole
-                );
+            continue;
         }
+
+        const std::string& teacherIdValue = choice.teacherId.value();
+        bool teacherIdOk = false;
+        const int teacherId = QString::fromStdString(teacherIdValue)
+                                  .toInt(&teacherIdOk);
+        if (
+            !teacherIdOk
+            || teacherId <= 0
+            || std::to_string(teacherId) != teacherIdValue
+            )
+        {
+            continue;
+        }
+
+        m_teacherCombo->addItem(label, teacherId);
+        m_teacherCombo->setItemData(
+            m_teacherCombo->count() - 1,
+            QString::fromStdU16String(choice.room).trimmed(),
+            TeacherRoomRole
+            );
     }
 
     const int selectedIndex =

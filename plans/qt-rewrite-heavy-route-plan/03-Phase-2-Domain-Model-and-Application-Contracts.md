@@ -18,17 +18,32 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-09-29
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F143 is independently verified against F142 commit
-  `a53791f4`; its source/test commit has not yet been created. The selected-
-  class detail query, active-session Platform adapter, and
-  `TestingClassesPage::loadClass()` integration preserve editor values, roster,
-  and success/warning behavior. All three focused CTests passed; details are
-  below. No Gate 2 parity is claimed. F120 active-v2 DataService isolation and
-  formal workspace-create acceptance remain Satisfied. Gates 1 and 2 remain
-  Partial.
-  Historical workbook provenance remains a tracked risk, not a literal exit
-  criterion. Sub Prep remains January 1 of the reference date's year through
-  December 31 of the following year at most; 2026-2027 is illustrative.
+- Current note: F143 commit `e2a3811cdba71b58ff2289f2c756d9bf12349bf5` is
+  the last completed slice; its fresh Windows x64 Debug focused CTests passed
+  3/3. Deployment `phase2_resume_20260929` is paused per the user's request.
+  F144 is selected and partially implemented; acceptance/testing are
+  incomplete; the checkpoint does not constitute an accepted F144 slice
+  commit. The current scope is to move
+  `TestingClassesPage::populateTeachers()` from `TeacherService::teachers()`
+  to a Qt-free typed Application teacher-choice query/snapshot and active-
+  session Platform adapter reading
+  `DatabaseSession::teacherRepository()->getAllTeachers()`. Preserve repository
+  order, typed teacher IDs, trimmed Korean labels/rooms, blank-Korean-name
+  filtering, selected-ID restoration, the “None” row, silent unavailable
+  session, and existing “Load Teachers” warning title and generic/detail
+  read-failure behavior. Acceptance: app-less typed/query-result/error
+  propagation; Platform active-session field/order mapping, unavailable
+  `NotFound`, and repository-failure behavior without fallback; page
+  labels/IDs/room role, filtering/order/selection/None/warning/silence; focused
+  app-less, Platform, and `ClassMngrTestingClassesPageTests` CTests retaining
+  F142/F143 regressions. This remaining read closes the manager page's read
+  path; create/update/delete writes stay separate pending acceptance for
+  roster-order and assignment/cascade semantics. F145 is unstarted.
+  F120 active-v2 DataService isolation and formal workspace-create acceptance
+  remain Satisfied. Gates 1 and 2 remain Partial. Historical workbook
+  provenance remains a tracked risk, not a literal exit criterion. Sub Prep
+  remains January 1 of the reference date's year through December 31 of the
+  following year at most; 2026-2027 is illustrative.
 
 ## Objective
 
@@ -175,7 +190,7 @@ No new v2 production path depends on DataService, MainWindow, PageManager, or a 
 - Do not hide business rules inside presenters or delegates.
 - Do not allow compatibility methods to become the permanent v2 API.
 
-## Latest verified progress (F143)
+## Latest verified progress (F143; commit `e2a3811cdba71b58ff2289f2c756d9bf12349bf5`)
 
 F143 adds the Qt-free `TestingClassDetailsReadQuery`, typed snapshot, and
 handler. Its Platform adapter reads the selected record directly through the
@@ -198,8 +213,8 @@ and `ClassMngrTestingClassesPageTests`; the exact focused CTest selection passed
 Platform tests cover field mapping, absent/zero teacher, unavailable/missing/
 read-error behavior, and no fallback; the page test covers fields, roster,
 success, silence/warnings, the zero-ID “None” row, and the F142 list regression.
-No full suite or baseline comparison ran. No F143 source/test commit hash is
-available yet.
+No full suite or baseline comparison ran. Source/test commit
+`e2a3811cdba71b58ff2289f2c756d9bf12349bf5`.
 
 F143 adds Gate 1 application behavior evidence and no Gate 2 baseline-parity
 evidence. F120 active-v2 DataService isolation and the formal workspace-create
@@ -223,3 +238,49 @@ Partial; historical production-workbook provenance remains a tracked risk, not
 a literal exit criterion. Sub Prep remains bounded to January 1 of the
 reference date's year through December 31 of the following year, at most;
 2026-2027 is illustrative.
+
+## F144 paused implementation handoff
+
+F143 is the last completed slice (`e2a3811cdba71b58ff2289f2c756d9bf12349bf5`).
+F144 teacher-choice reading is partially implemented; its acceptance and tests
+are incomplete, and its checkpoint commit is not an accepted F144 slice
+commit. F145 has not started.
+
+F144 production files:
+
+- `src/next/application/testing_teacher_choices_read_query.h`
+- `src/next/platform/application_services_testing_teacher_choices_read_port.h`
+- `src/features/classes/ui/testing_classes_page.h`
+- `src/features/classes/ui/testing_classes_page.cpp`
+- `cmake/next.cmake`
+
+F144 test and registration files, with edits that may be partial:
+
+- `tests/next_application_testing_teacher_choices_read_query_tests.cpp`
+- `tests/next_platform_application_services_testing_teacher_choices_read_port_tests.cpp`
+- `tests/testing_classes_page_tests.cpp`
+- `cmake/tests/next.cmake`
+- `cmake/tests/features.cmake`
+
+Before the pause, a direct MSVC compile of `testing_classes_page.cpp`, including
+the new query and adapter headers, passed; `git diff --check` passed for the
+production edits. The full build did not complete: CMake regeneration stalled,
+and the direct MSBuild `Features` target encountered a FileTracker access-denied
+error. No F144 tests or CTests completed. The direct compile does not satisfy
+the selected acceptance.
+
+Resume only after work is explicitly requested. Read [Start Here](00-Start-Here.md),
+this Phase 2 plan, the [progress log](03-Phase-2-Progress-Log.md), the
+[legacy mapping](phase2-legacy-application-mapping.md), and
+`agent_docs/latest_session_work.md`. Inspect the current worktree and diffs
+first; preserve all F144 production, partial test, registration, and documentation
+work without resetting or discarding it. Complete the app-less Application,
+Platform adapter, and `ClassMngrTestingClassesPageTests` coverage for successful
+and empty results, unavailable session/repository and repository errors,
+ID-based selection restoration, None, trimmed labels/rooms, blank-label
+filtering, and established warnings. Then build and run the declared F144 CTests
+plus the F142/F143 regression CTests, resolve failures, and record actual
+results; the prior direct compile is not a substitute. After acceptance passes,
+update the phase records and commit F144 as its own slice. Only then begin the
+next slice from Start Here under the Heavy route. Do not start F145 before that
+resume sequence reaches it.

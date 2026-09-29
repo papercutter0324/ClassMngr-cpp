@@ -7521,7 +7521,7 @@ The page retains its ordering and action behavior, handles unavailable
 sessions silently, and warns on other read failures. The Testing Classes page
 tests cover the list boundary and its behavior.
 
-## Verified F143 TestingClasses selected-detail read
+## Verified F143 TestingClasses selected-detail read - commit `e2a3811cdba71b58ff2289f2c756d9bf12349bf5`
 
 F143 adds the Qt-free `TestingClassDetailsReadQuery`, typed snapshot, and
 handler. The Platform adapter reads one detail record through the active
@@ -7542,11 +7542,11 @@ passed 3/3 in 0.10s, 0.89s, and 1.64s. Coverage includes typed-ID/result
 propagation; Platform field mapping, absent/zero teacher, unavailable/missing/
 read-error behavior, and no fallback; and page fields, roster, success,
 silence/warnings, zero-ID “None” behavior, and the F142 list regression. No
-full suite or baseline comparison ran. The F143 source/test commit has not yet
-been created, so no commit hash is recorded.
+full suite or baseline comparison ran. Source/test commit:
+`e2a3811cdba71b58ff2289f2c756d9bf12349bf5`.
 
 F143 adds Gate 1 application evidence but no Gate 2 baseline-parity evidence.
 Gate 1 and Gate 2 remain Partial; workspace boundary and active-v2 DataService
 isolation remain Satisfied. Phase 2 remains In Progress with its exit gate
-Open. Next entry: continue Phase 2 from the remaining application-contract and
-baseline-parity gaps.
+Open. F143 remains the latest verified slice. After explicit resume, continue
+with the paused F144 handoff in the current Phase 2 plan; F145 is unstarted.

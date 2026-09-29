@@ -4044,7 +4044,7 @@ Partial; workspace boundary and audited v2 dependency isolation remain Satisfied
 the Phase 2 exit gate remains Open. Sub Prep remains capped at the current and
 following calendar years, 2026-2027.
 
-## Verified F143 TestingClasses selected-detail read
+## Verified F143 TestingClasses selected-detail read - commit `e2a3811cdba71b58ff2289f2c756d9bf12349bf5`
 
 Before F143, `TestingClassesPage::loadClass()` read the selected class detail
 through the legacy `ScheduleService` boundary. F143 adds the Qt-free
@@ -4070,4 +4070,5 @@ and `ClassMngrTestingClassesPageTests`. Coverage includes typed-ID/result
 propagation; Platform field mapping, absent/zero teacher, unavailable/missing/
 read-error behavior, and no fallback; and page values, roster, success,
 silence/warnings, zero-ID “None” behavior, and the F142 list regression. No full
-suite or baseline comparison ran. F143 has no source/test commit hash yet.
+suite or baseline comparison ran. Source/test commit:
+`e2a3811cdba71b58ff2289f2c756d9bf12349bf5`.
