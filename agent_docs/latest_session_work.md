@@ -3389,6 +3389,52 @@ full suite or full `ClassMngr` application build ran. Configure emitted
 existing object-path length warnings for long test targets; all requested
 targets built. No product defect remains open.
 
-Next: complete the Heavy-route candidate review for F146 and update the Phase
-2 plan before implementation. Gate 1 and Gate 2 remain Partial; Phase 2 is In
-Progress/Open. The worktree was clean after the test commit.
+F146 was selected and accepted as a new-class creation slice, including the
+existing optional pending weekday/start-time assignment. Its acceptance and
+the next F147 handoff are recorded below.
+
+## 2026-09-30 — Phase 2 continuation: F146 accepted
+
+Deployment: `phase2_resume_20260929`, Heavy route. Each accepted slice is
+committed before work starts on the next one; no push was requested.
+
+F146 adds `TestingClassCreateUseCase` with a typed `ClassId` result and an
+active-session Platform adapter to
+`TestingClassRepository::createTestingClass()`. The page passes an optional
+pending weekday and start time into that same repository operation, so the
+repository transaction still covers class, details, room, and assignment.
+The existing-class F145 update and delete paths remain unchanged. No new UI
+flow was added.
+
+Production commit `d7acb516cd9261e2199f742b46f90de48aa907d1` and acceptance
+test commit `14d2d124a3d8b0548d241f1d2dcea136dbee55d9` are accepted. Fresh x64
+Debug Ninja verification with Visual Studio 2026 tools and Qt 6.12.0 passed
+14/14 focused CTests. Coverage includes Application validation/result
+propagation, active-session persistence with and without a slot, slot
+normalization, unavailable-session behavior, rollback across `classes`,
+`class_info`, `testing_classes`, and `schedule_testing_blocks`, page pending
+slot and draft behavior, and the F145/F142–F144 regressions. `git diff
+--check` passed. No full suite or full `ClassMngr` application build ran.
+
+Passed CTests:
+
+- `ClassMngrTestingClassRepositoryTests`
+- `ClassMngrTestingClassesPageTests`
+- `ClassMngrTestingClassesPageF145UpdateTests`
+- `ClassMngrTestingClassesPageF146CreateTests`
+- `ClassMngrNextApplicationScheduleTestingClassChoicesReadQueryTests`
+- `ClassMngrNextApplicationTestingClassDetailsReadQueryTests`
+- `ClassMngrNextApplicationTestingClassDetailsUpdateUseCaseTests`
+- `ClassMngrNextApplicationTestingClassCreateUseCaseTests`
+- `ClassMngrNextPlatformApplicationServicesScheduleTestingClassChoicesReadPortTests`
+- `ClassMngrNextApplicationTestingTeacherChoicesReadQueryTests`
+- `ClassMngrNextPlatformApplicationServicesTestingTeacherChoicesReadPortTests`
+- `ClassMngrNextPlatformApplicationServicesTestingClassDetailsReadPortTests`
+- `ClassMngrNextPlatformApplicationServicesTestingClassDetailsUpdatePortTests`
+- `ClassMngrNextPlatformApplicationServicesTestingClassCreatePortTests`
+
+The run log is `build/f146-verification-ninja-x64-debug/Testing/Temporary/LastTest.log`.
+Initial test-fixture issues were corrected in test assets; all 14 final tests
+passed. The next step is a Heavy-route candidate review for F147. Gate 1 and
+Gate 2 remain Partial, Phase 2 is In Progress/Open, and the worktree was clean
+after the test commit.

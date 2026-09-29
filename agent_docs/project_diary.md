@@ -1380,3 +1380,12 @@ test the partial-save state explicitly: roster data can commit before a later
 detail update fails. Verify the Application contract, active-session adapter,
 page behavior, and prior read-path regressions together; a focused 10/10 pass
 does not imply the full Phase 2 gate is closed.
+
+## 2026-09-30 — F146 Testing Class creation
+
+Keep the optional pending weekday/start-time assignment in the same create
+operation as class, details, and room persistence; splitting it would lose the
+repository transaction's rollback behavior. On a slot conflict, assert all
+four affected tables remain unchanged, not only the class row. Build fixture
+fixes in a test-only change should be followed by the complete requested
+focused run before acceptance.

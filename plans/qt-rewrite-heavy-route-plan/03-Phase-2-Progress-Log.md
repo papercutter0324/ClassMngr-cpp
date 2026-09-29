@@ -7586,8 +7586,8 @@ F145 adds the existing Testing Class details update through the Qt-free
 `TestingClassDetailsUpdateUseCase` and an active-session Platform adapter to
 `TestingClassRepository::updateTestingClass()`. Existing-page roster-first
 behavior is preserved: when roster save succeeds but details update fails, the
-roster remains persisted and clean. Create, pending schedule assignment, and
-delete/cascade remain separate.
+roster remains persisted and clean. New-class creation, pending assignment,
+and delete/cascade were outside F145's existing-class update boundary.
 
 Production commit: `26a916df9994217ffd3f12f45148207e9cf5e0c2`;
 acceptance-test commit: `ba1b7cdec15f6f163bb1620897fb4c2e2b3baccb`. Fresh
@@ -7598,4 +7598,25 @@ requested targets built. No full suite or full application build ran.
 
 Gate 1 and Gate 2 remain Partial; workspace boundary and active-v2 DataService
 isolation remain Satisfied. Phase 2 remains In Progress with its exit gate Open.
-F146 awaits Heavy-route candidate review.
+
+### Progress update - 2026-09-30 (F146 accepted)
+
+F146 routes new Testing Class creation through the Qt-free
+`TestingClassCreateUseCase` and active-session Platform adapter to
+`TestingClassRepository::createTestingClass()`. It includes the optional
+pending weekday/start-time assignment because the repository operation owns
+the atomic class/details/room/assignment transaction. F145 remains the
+existing-class details update slice; delete/cascade remains separate.
+
+Production commit: `d7acb516cd9261e2199f742b46f90de48aa907d1`;
+acceptance-test commit: `14d2d124a3d8b0548d241f1d2dcea136dbee55d9`. A fresh
+Windows x64 Debug Ninja/MSVC configure/build with Qt 6.12 passed 14 focused
+CTests covering F146, repository behavior, F145, and F142-F144. Rollback
+assertions cover `classes`, `class_info`, `testing_classes`, and
+`schedule_testing_blocks`. Fixture issues were corrected in test assets before
+the final pass. `git diff --check` passed. No full suite or full application
+build ran.
+
+Gate 1 and Gate 2 remain Partial; workspace boundary and active-v2 DataService
+isolation remain Satisfied. Phase 2 remains In Progress with its exit gate Open.
+F147 awaits Heavy-route candidate review.

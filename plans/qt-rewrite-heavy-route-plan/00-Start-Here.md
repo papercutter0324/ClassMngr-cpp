@@ -16,11 +16,12 @@
   behavior. F143's Testing Classes selected-detail query is committed as
   `e2a3811cdba71b58ff2289f2c756d9bf12349bf5`; fresh Windows x64 Debug focused
   CTests passed 3/3. F144's TestingClassesPage teacher-choice read is
-  acceptance-complete. F145 is accepted as a separate existing Testing Class
-  details update slice; F146 awaits Heavy-route candidate review. Create,
-  pending schedule assignment, and delete/cascade remain separate. See the
-  [Phase 2 progress log](03-Phase-2-Progress-Log.md) for F145 commits and
-  verification.
+  acceptance-complete. F145 is accepted as the existing Testing Class details
+  update slice. F146 is accepted as new-class creation, including its optional
+  pending weekday/start-time assignment in the atomic repository operation;
+  delete/cascade remains separate. F147 awaits Heavy-route candidate review.
+  See the [Phase 2 progress log](03-Phase-2-Progress-Log.md) for F145/F146
+  commits and verification.
   Phase 2 Gates 1 and 2 remain Partial; broader feature migration, parity, and
   96-class Release memory evidence remain open. Phase 1 build-system exit
   evidence remains outstanding.

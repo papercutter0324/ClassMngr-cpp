@@ -18,12 +18,13 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-09-30
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F145 is acceptance-complete as a separate existing Testing
-  Class details update slice; see its acceptance record below. It preserves
-  roster-first page behavior, including a successful roster save remaining
-  persisted and clean if the details update fails. Create, pending schedule
-  assignment, and delete/cascade remain separate. F146 awaits Heavy-route
-  candidate review. Gates 1 and 2 remain Partial; F120 active-v2 DataService
+- Current note: F145 is acceptance-complete as the existing Testing Class
+  details update slice; F146 is accepted as new-class creation, including the
+  optional pending weekday/start-time assignment in the atomic repository
+  operation. F145 preserves roster-first page behavior: a successful roster
+  save remains persisted and clean if the details update fails. Delete/cascade
+  remains separate; F147 awaits Heavy-route candidate review. Gates 1 and 2
+  remain Partial; F120 active-v2 DataService
   isolation and formal workspace-create acceptance remain Satisfied.
   Historical workbook provenance remains a tracked risk, not a literal exit
   criterion. Sub Prep remains January 1 of the reference date's year through
@@ -256,8 +257,9 @@ unopened sessions, and closed sessions cover the observable unavailable case.
 No production defect was observed.
 
 F144 is the preceding accepted slice. F145's accepted existing-class details
-update is recorded below. Create, pending schedule assignment, and
-delete/cascade remain separate because their contracts still need acceptance.
+update is recorded below. F146's accepted new-class create, including the
+optional pending weekday/start-time assignment, is recorded after it.
+Delete/cascade remains separate. F147 awaits Heavy-route candidate review.
 
 ## F145 acceptance record
 
@@ -265,10 +267,24 @@ F145 adds existing-class detail updates through the Qt-free
 `TestingClassDetailsUpdateUseCase` and the active-session Platform adapter to
 `TestingClassRepository::updateTestingClass()`. The Testing Classes page keeps
 its roster-first save order: if the roster save succeeds and the details update
-fails, the roster remains persisted and clean. Create, pending schedule
-assignment, and delete/cascade remain separate.
+fails, the roster remains persisted and clean. F146 handles new-class creation
+and its optional pending assignment below; delete/cascade remains separate.
 
 F145's production and acceptance-test commits and verification limits are
 recorded in the [Phase 2 progress log](03-Phase-2-Progress-Log.md). Gate 1 and
 Gate 2 remain Partial; Phase 2 remains In Progress with its exit gate Open.
-F146 awaits Heavy-route candidate review.
+
+## F146 acceptance record
+
+F146 routes new Testing Class creation through the Qt-free
+`TestingClassCreateUseCase` and the active-session Platform adapter to
+`TestingClassRepository::createTestingClass()`. The existing optional pending
+weekday/start-time assignment travels with creation because that repository
+operation owns the atomic class, details, room, and assignment transaction.
+F145 remains the separate existing-class details update slice; delete/cascade
+remains future work.
+
+Production and acceptance-test commits and verification limits are recorded in
+the [Phase 2 progress log](03-Phase-2-Progress-Log.md). Gate 1 and Gate 2 remain
+Partial; Phase 2 remains In Progress with its exit gate Open. F147 awaits
+Heavy-route candidate review.

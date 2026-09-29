@@ -1750,8 +1750,10 @@ ownership validated 1,025 files. No full suite or full application build ran.
 
 F144's teacher-choice read is accepted; the earlier Start Here ambiguity is
 resolved in favor of F144. F145 has since been selected and accepted as the
-existing Testing Class details update slice. The F146 candidate review is the
-next milestone. No push was requested.
+existing Testing Class details update slice. F146 has since been accepted as
+the Testing Class creation boundary with its optional pending schedule
+assignment. The next milestone is a Heavy-route candidate review for F147. No
+push was requested.
 
 ## macOS Qt checksum recovery — 2026-09-30
 
@@ -1774,5 +1776,20 @@ test commit `ba1b7cdec15f6f163bb1620897fb4c2e2b3baccb` are accepted. A fresh
 Windows x64 Debug Ninja/MSVC configure and focused build passed; all three
 F145 CTests and seven F142–F144 regressions passed (10/10). CMake source
 ownership validation ran. `git diff --check` passed. No full suite or full
-application build ran. The next step is a Heavy-route candidate review for
-F146; Phase 2 exit gates remain open.
+application build ran. F146 is recorded below; Phase 2 exit gates remain open.
+
+## F146 acceptance — 2026-09-30
+
+F146 routes new Testing Class saves through a Qt-free Application use case and
+active-session Platform adapter. Optional weekday/start-time assignment is
+passed to the same repository create operation, preserving its transaction.
+The new-class page path, F145 update path, and delete path remain distinct.
+
+Production commit `d7acb516cd9261e2199f742b46f90de48aa907d1` and acceptance
+test commit `14d2d124a3d8b0548d241f1d2dcea136dbee55d9` are accepted. A fresh
+Windows x64 Debug Ninja/MSVC build passed all 14 focused F146, repository, and
+F142–F145 regression CTests. The repository rollback test verifies no class,
+details, room, or assignment rows remain after a conflicting slot create.
+`git diff --check` passed. No full suite or full application build ran. The
+next step is a Heavy-route candidate review for F147; Phase 2 gates remain
+open.
