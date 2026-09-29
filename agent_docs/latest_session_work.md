@@ -3125,7 +3125,7 @@ service skip/reload, read-only/time-column no-op, and testing-assignment
 behavior. `ClassMngr` built and `git diff --check` passed. No full suite or
 baseline comparison ran.
 
-## Phase 2 continuation - 2026-09-29 (F132 verified; F133 candidate review in progress)
+## Phase 2 continuation - 2026-09-29 (F133 verified; F134 implementation in progress)
 
 The user requested a commit after every completed slice, then immediate work
 on the next slice. The active deployment ID is
@@ -3208,10 +3208,39 @@ F132's source/test commit is `e878906c`; its verification handoff is recorded
 in `project_progress.md`, `project_diary.md`, and this file. The handoff
 documentation commit is separate from the source commit.
 
-F133 candidate review is comparing a focused query for schedule inputs used
-by `ScheduleBuilder` with a compact `ClassesPage` navigation snapshot. Two
-independent Explorers and three bounded Investigators are assessing formal
-priority, scope, and verification risk before the next implementation begins.
+F133 source/test commit `b111b799` (`Phase2 - integrate classes navigation
+snapshot`) adds a Qt-free typed-ID navigation snapshot and active-session
+platform adapter. The repository loads compact class metadata and teacher
+display names with one join, then reads regular and intensive schedules with
+two ordered batch queries. The application snapshot preserves exact UTF-16
+names and raw schedule rows. `ClassesPage` retains its existing filtering,
+selection, and refresh behavior, and keeps class names with blank metadata
+when the read fails.
+
+`ClassMngr` and four focused test targets built; the app, platform, ClassesPage,
+and navigation-model CTests passed 4/4. Independent verification confirmed
+three-query batching across multiple classes, missing class-info and teacher
+rows, exact schedule strings/order, filtering and selection, read-failure
+fallback, and refresh after class-info save. The independent build used
+Ninja/MSVC after the Visual Studio FileTracker reported access denied.
+`git diff --check` passed. No full suite or baseline comparison ran.
+F133's verification handoff is recorded in the canonical deployment documents;
+their commit is separate from the source commit.
+
+F134 implementation is in progress: route ScheduleBuilder's source read
+through a compact Qt-free application snapshot and active-session Platform
+adapter, then keep schedule parsing and row construction in the service-free
+builder. Reuse the repository's existing ordered batch read; this is an
+application-boundary improvement, not a database query-count optimization.
+Preserve raw schedule strings and current parser behavior, including blank-day
+defaulting, invalid-start skipping, invalid-end inclusion, offsets, and source
+order. Keep slot-state and testing-assignment reads separate, and do not claim
+the final ScheduleViewProjection migration. Schedule Import review remains a
+broader candidate for later work.
+
+This ordering is an inference: the formal sequence puts Classes before
+Schedule/Imports but does not rank ScheduleBuilder ahead of Schedule Import
+internally. The formal Phase 2 plan now records F133 verified and F134 selected.
 
 Gate 1 and Gate 2 remain Partial. Formal workspace-create acceptance and
 active-v2 DataService isolation remain Satisfied. Phase 2 remains In Progress

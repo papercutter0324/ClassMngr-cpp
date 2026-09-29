@@ -1312,3 +1312,18 @@ Carry stored column order, widths, every raw row, and UTF-16 values through the
 Qt-free read snapshot without applying the widget's 25-row presentation limit.
 Let the existing roster model own required-column, name, width, and visible-row
 normalization; test the raw adapter limit and UI presentation separately.
+
+## F133 - batch compact ClassesPage navigation inputs - 2026-09-29
+
+Keep requested classes in order when class metadata or its teacher is missing.
+A fixed set of batched repository reads preserves raw regular and intensive
+schedule strings while removing per-class lookups; assert statement counts
+across multiple classes so a moved N+1 loop cannot pass.
+
+## F134 - keep schedule input reads compact and lossless
+
+Route the existing ordered repository batch through a Qt-free application
+snapshot and session-backed adapter; do not duplicate SQL or call it a query
+optimization. Preserve raw meeting text because the builder's day and time
+parsing has asymmetric malformed-value behavior. Keep widget preview, slot
+state, and testing-assignment sources separate from this read.

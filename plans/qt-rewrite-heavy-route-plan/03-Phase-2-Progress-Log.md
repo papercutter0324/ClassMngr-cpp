@@ -7330,3 +7330,55 @@ validation owner, warning/error mapping, session-backed update/reload, canonical
 reload, and current autosave/header/signal behavior. Two Explorers agreed on
 this candidate; the Investigator solution review was interrupted at the user's
 stop request, so scope is not accepted and implementation has not begun.
+
+## Latest verified progress (F125)
+
+Source/test commit `42bdbbea7e1d2cbc2c9eeb8c0631fd22b335a17d` (`Phase2 -
+integrate class notes save use case`) adds the app-less
+`ClassNotesSaveUseCase` and routes `ClassNotesPage` through it. The use case
+enforces the request's existing 10,000 UTF-16 code-unit limit before calling
+the application port and returns port failures unchanged. The platform
+adapter keeps its defensive validation and session-backed `ClassService` save.
+Page trimming, manual warning, and dirty-state behavior remain intact.
+
+The `windows-x64-debug` preset built `ClassMngr`, the application contract
+test, the platform adapter test, and the page integration test. The three
+F125 CTest targets passed 3/3; the combined F124/F125 focused set passed 6/6.
+Coverage includes exact-limit acceptance, oversized no-write rejection,
+failure propagation, trimmed page saves, persistence, warning/dirty handling,
+and the page's oversized-input warning. `git diff --check` passed. No full
+suite or baseline comparison ran.
+
+Gate 1 and Gate 2 remain Partial. F125 completes the notes save action but does
+not close the remaining class-detail, schedule, roster, evaluation,
+backup/recovery, or legacy database-import gaps. F120 active-v2 DataService
+isolation and the formal workspace-create boundary remain Satisfied. Phase 2
+remains In Progress with its exit gate Open.
+
+### Cumulative exit-gate status after F125
+
+| Exit-gate area | Audit status | Finding |
+| --- | --- | --- |
+| App-less Domain/Application behavior (Gate 1) | Partial | Coverage includes workspace lifecycle; Class Transfer schedule-candidate validation (F79); Teacher Import (F80/F81/F85/F87/F89/F90); Schedule Import match-key typing (F84); Calendar policies/use cases (F93/F95/F97/F99/F101-F105/F107/F110); teacher-profile editing (F117/F123); co-teacher assignment (F124); and class-notes save (F125). Broader class-detail/schedule/roster/evaluation editing, backup/recovery, and legacy database import remain planned. |
+| Baseline parity (Gate 2) | Partial | Bounded records include F82/F83 post-baseline Schedule Import inputs, F86/F88 baseline-era generated Schedule Import inputs, F91/F92/F94/F96/F98 Teacher Import flows and failure cases, F100/F101/F103/F104/F106/F108/F109 Schedule Import rollback and Calendar repository transitions, F118 common-input Class Transfer conflict behavior, F121 common-input successful replacement state, and F122 hand-authored seeded Schedule Import Skip state parity. They do not cover all validation, conflict, planning, or state-transition behavior; historical production-workbook provenance remains unverified. |
+| Workspace boundary | Satisfied | The formal workspace-create criterion remains satisfied. |
+| v2 dependency isolation | Satisfied for active `src/next` call paths | F120 removes the Workspace operation edge to `DataService`; the source audit confirms all seven operations route to `DatabaseSession` or the file helper. Legacy facade construction/access remains available. |
+
+Phase 2 remains In Progress with its exit gate Open. Gate 1 and Gate 2 remain
+Partial; historical production-workbook provenance remains a tracked risk, not
+a literal exit criterion. Sub Prep remains bounded to January 1 of the
+reference date's year through December 31 of the following year, at most;
+2026-2027 is illustrative.
+
+### Next candidate (F126; bounded solution review pending)
+
+Review an app-less save boundary for the class details edited by
+`ClassDetailsPage`. Preserve the existing `ClassInfoValidator` feedback and
+normalization, regular and intensive schedule-conflict checks, untouched
+teacher/notes/activity fields, session-backed `ClassService` persistence, and
+the current warning, dirty-state, title, and `classInfoSaved` behavior. The
+page currently assembles a Qt `ClassInfo` and calls `saveClassInfo` directly;
+the application contract should carry explicit Qt-free class fields and
+schedule values. Candidate scope and validation/persistence port split are
+pending review; no F126 implementation has begun. Phase 2 remains
+In Progress/Open; Gates 1 and 2 remain Partial.

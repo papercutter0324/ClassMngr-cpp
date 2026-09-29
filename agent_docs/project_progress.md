@@ -1566,7 +1566,7 @@ warning/dirty behavior. Review and implementation have not begun. Gate 1 and
 Gate 2 remain Partial; formal workspace-create acceptance and active-v2
 DataService isolation remain Satisfied. Phase 2 remains In Progress/Open.
 
-## Current Position - 2026-09-29 (F128 verified; F129 implementation in progress)
+## Current Position - 2026-09-29 (F133 verified; F134 implementation in progress)
 
 F126 source/test commit `ca4c1a97` (`Phase2 - integrate class details save
 use case`) adds the Qt-free `ClassDetailsSaveUseCase` and session-backed
@@ -1669,8 +1669,26 @@ signals. `git diff --check` passed. There is no single page test loading 38
 rows end-to-end; the raw and displayed limits are covered separately. No full
 suite or baseline comparison ran.
 
-F133 candidate review is comparing a bounded ScheduleBuilder input query with
-a ClassesPage navigation snapshot against remaining Phase 2 and memory-plan
-priorities. No F133 implementation has begun.
-Gate 1 and Gate 2 remain Partial; formal workspace-create acceptance and
-active-v2 DataService isolation remain Satisfied. Phase 2 remains In Progress/Open.
+F133 source/test commit `b111b799` (`Phase2 - integrate classes navigation
+snapshot`) adds a Qt-free typed-ID navigation snapshot and active-session
+adapter. The repository loads class metadata and teacher labels with one join,
+then loads regular and intensive schedule rows in two ordered batch queries.
+`ClassesPage` retains its tab model, filtering, selection, and refresh
+behavior; a read failure retains class names with blank metadata.
+
+`ClassMngr` and four focused test targets built; the app, platform, ClassesPage,
+and navigation-model CTests passed 4/4. Independent verification confirmed
+the three-query batch, missing-row fallbacks, ordered raw values, filtering,
+selection, and class-info-save refresh. Verification used Ninja/MSVC after the
+Visual Studio generator hit a FileTracker access-denied error.
+`git diff --check` passed. No full suite or baseline comparison ran.
+
+F134 implementation is in progress: route ScheduleBuilder's source read
+through a compact Qt-free application snapshot and active-session Platform
+adapter, then keep schedule parsing and row construction in the service-free
+builder. Reuse the repository's existing ordered batch read; this advances the
+application boundary rather than reducing SQL query count. Keep raw schedule
+strings and current parser/fallback behavior. Schedule Import review remains a
+broader later candidate. Gate 1 and Gate 2 remain Partial; formal
+workspace-create acceptance and active-v2 DataService isolation remain
+Satisfied. Phase 2 remains In Progress/Open.
