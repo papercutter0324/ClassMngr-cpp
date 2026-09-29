@@ -32,8 +32,8 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
   raw signed teacher ID and exact UTF-16 notes/activity; read-error behavior,
   save request, and `ClassService` guard remain as before. F153 is accepted for
   current/baseline page parity when persisted teacher ID zero changes after
-  load. F154 is selected for a separate typed Class Notes page-read query and
-  port. Preserve the UI and read-failure boundaries recorded below.
+  load. F154's typed Class Notes page-read query and port are accepted. F155 is
+  under review, not selected. See the acceptance record below.
   Gates 1 and 2
   remain Partial; F120 active-v2 DataService isolation and formal
   workspace-create acceptance remain Satisfied.
@@ -270,8 +270,8 @@ No production defect was observed.
 F144 is the preceding accepted slice. F145's accepted existing-class details
 update is recorded below. F146's accepted new-class create, including the
 optional pending weekday/start-time assignment, is recorded after it. F147's
-accepted delete/cascade migration is recorded below; F148-F153 acceptance and
-F154 selection are recorded below.
+accepted delete/cascade migration is recorded below; F148-F154 acceptance and
+the F155 review status are recorded below.
 
 ## F145 acceptance record
 
@@ -391,8 +391,8 @@ The page queries on each save; on read error it uses `ClassInfo{}` and
 continues validation, conflict, and save. Preserve `-1` as the unassigned
 sentinel, treat zero as invalid, retain missing-row defaults, and keep the
 validation/conflict/save order. The save request, adapter reread, and
-`ClassService` guard remain separate. F153 acceptance and the selected F154
-Class Notes read are recorded below.
+`ClassService` guard remain separate. F153 and F154 acceptance and the F155
+review status are recorded below.
 
 ## F152 acceptance record
 
@@ -420,15 +420,25 @@ minimums; no production source was overlaid, and its page source matches blob
 are in the [Phase 2 progress log](03-Phase-2-Progress-Log.md). Gates 1 and 2
 remain Partial; Phase 2 remains In Progress/Open.
 
-## F154 selected Class Notes page read
+## F154 accepted Class Notes page read
 
-Add a dedicated typed Application read query and active-session Platform port,
-separate from the existing Class Notes save port. Its screen projection carries class
-ID, exact UTF-16 notes and time-filler activity, grade/level, regular-schedule
-day/start, and teacher display name; class and teacher outcomes fail
-independently. Keep text trimming and `SidebarNodeNaming` title formatting and
-fallbacks in the UI. Preserve defaults on failed reads, avoid `DataService`
-fallback, and use the query for load/discard only; refresh/save add no reads.
-Verify typed identity and errors, independent source failures, mapping, page
-load/discard, and current-versus-original-pinned-baseline display parity.
-F154 is selected, not implemented or accepted. Gates 1 and 2 remain Partial.
+F154, commit `8bcbf136`, adds a typed Class Notes query/port and active-session
+Platform adapter, separate from the existing save port. Its projection carries
+class ID, exact UTF-16 notes/time-filler activities, grade/level, regular
+schedule day/start, and preferred teacher display name; class and teacher
+outcomes are independent. The UI retains trimming and subtitle formatting/
+fallbacks. Failed reads preserve defaults; there is no `DataService` fallback.
+Load/discard use the query; refresh/save add no reads.
+
+Six current focused CTest targets passed 6/6 across the query, adapter, feature
+page, parity, and existing Application/Platform save ports; configure validated
+1,058 source owners. The original pinned baseline
+`48fc5c5cc7dee78d82f8bf5f1bf8b51725575b99` focused parity harness passed 1/1
+for initial text/subtitle and discard reload. Its overlay changed only the
+parity test source/registration and Qt minimums; no production source was
+overlaid. Baseline page/header match blobs
+`bbc9bc24a053aca83434eba6efac1e4ad5801bc2` /
+`5c825327f1393791d7101ab33c10999768ff639a`. Toolchain and build provenance are
+recorded in the [Phase 2 progress log](03-Phase-2-Progress-Log.md). No full
+suite or application build ran. F155 remains under review, not selected. Gates
+1 and 2 remain Partial; Phase 2 remains In Progress/Open.

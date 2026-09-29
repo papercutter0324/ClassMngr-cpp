@@ -4119,7 +4119,7 @@ separate existing-class details update; F147 now covers delete/cascade.
 
 The production and acceptance-test commits, focused verification, and limits
 are recorded in the [Phase 2 progress log](03-Phase-2-Progress-Log.md). F147
-migrates delete/cascade; F148-F153 acceptance and F154 selection are recorded
+migrates delete/cascade; F148-F154 acceptance and F155 review status are recorded
 below.
 
 ## Verified F147 Testing Class delete/cascade
@@ -4132,8 +4132,8 @@ F145 details update and F146 creation remain separate accepted boundaries.
 Production commit `b037b4216b71c55c7793df5f7bbbfc4a00690065`, page transition
 fix `315b3ff33b7e2ab42b43d52cd168ce21a92158c9`, and acceptance-test commit
 `397376e439f4b5955c82948ab0c225aaf776d679` are recorded with verification
-limits in the [Phase 2 progress log](03-Phase-2-Progress-Log.md). F148-F153 are
-accepted; F154 is selected. Its constraints are in the [Phase 2
+limits in the [Phase 2 progress log](03-Phase-2-Progress-Log.md). F148-F154 are
+accepted; F155 is under review, not selected. Its status is in the [Phase 2
 progress log](03-Phase-2-Progress-Log.md).
 
 ## Class-details save mapping: F126 and F139
@@ -4154,7 +4154,7 @@ in `ClassService`. Its
 preservation constraints and verification are in the [Phase 2 progress
 log](03-Phase-2-Progress-Log.md). F151 accepted invalid-schedule
 current/baseline page parity; F152 accepted the fresh validation-context read;
-F153 accepted persisted teacher-ID validation parity. F154 is selected below.
+F153 accepted persisted teacher-ID validation parity. F154 is accepted below.
 
 ## F149 Class Details conflict-query mapping
 
@@ -4199,14 +4199,14 @@ target row. The conflict check uses a warning trap, not a query-count
 comparison. Verification and limits are in the [Phase 2 progress
 log](03-Phase-2-Progress-Log.md).
 
-## F154 selected Class Notes page read
+## F154 accepted Class Notes page read
 
-F154 adds a dedicated typed Application query and active-session Platform port,
-separate from the save port. Its projection carries class ID, exact UTF-16
-notes/time-filler activity, grade/level, regular-schedule day/start, and teacher
-display name, with independent class and teacher outcomes. Keep trimming and
-`SidebarNodeNaming` title formatting/fallbacks in the UI, retain failed-read
-defaults, and avoid `DataService` fallback. Load/discard use this query;
-refresh/save add no reads. Verify typed identity/errors, independent failures,
-mapping, load/discard behavior, and current-versus-original-pinned-baseline
-display parity. This slice is selected, not implemented or accepted.
+F154, commit `8bcbf136`, adds a typed Class Notes query/port and active-session
+Platform adapter, separate from the save port. Its projection carries class ID,
+exact UTF-16 notes/time-filler activities, grade/level, regular schedule
+day/start, and preferred teacher display name, with independent class and
+teacher outcomes. UI trimming and subtitle formatting/fallbacks remain in the
+page. Failed reads preserve defaults, with no `DataService` fallback.
+Load/discard use the query; refresh/save add no reads. Current and pinned
+baseline verification, including limits, is in the [Phase 2 progress
+log](03-Phase-2-Progress-Log.md). F155 remains under review, not selected.

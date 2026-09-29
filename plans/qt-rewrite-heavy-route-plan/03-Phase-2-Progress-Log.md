@@ -7848,3 +7848,30 @@ title formatting/fallbacks in UI, preserve failed-read defaults, and avoid
 Verify identity/errors, independent source failures, mapping, load/discard, and
 current-versus-original-pinned-baseline display parity. F154 is selected, not
 implemented or accepted.
+
+### Progress update - 2026-09-30 (F154 accepted; F155 under review)
+
+F154, commit `8bcbf136`, adds the typed Class Notes query/port and active-session
+Platform adapter. The screen projection contains class ID, exact UTF-16
+notes/time-filler activities, grade/level, regular schedule day/start, and
+preferred teacher display name; class and teacher outcomes are independent.
+The UI retains trimming and subtitle formatting/fallbacks. Failed reads keep
+defaults, with no `DataService` fallback. Load/discard use the query;
+refresh/save add no reads.
+
+Fresh Windows x64 Debug configure validated 1,058 source owners; six focused
+CTest targets passed 6/6 across query, adapter, feature page, parity, and
+existing Application/Platform save ports. Toolchain: CMake 4.4.2, Ninja 1.13.2,
+MSVC 19.51.36257, Qt 6.12.0; `CL` was cleared and embedded debug info used.
+The F154 working tree was built on previous HEAD `a8c909dd` and committed
+unchanged as `8bcbf136`.
+
+The original pinned baseline
+`48fc5c5cc7dee78d82f8bf5f1bf8b51725575b99` focused parity harness passed 1/1
+for initial text/subtitle and discard reload. Its overlay changed only parity
+test source/registration and Qt minimums; no production source was overlaid.
+Baseline page/header match blobs
+`bbc9bc24a053aca83434eba6efac1e4ad5801bc2` /
+`5c825327f1393791d7101ab33c10999768ff639a`. No full suite or application build
+ran. F155's candidate selection is under review; it is not selected. Gates 1
+and 2 remain Partial; Phase 2 remains In Progress/Open.
