@@ -11,6 +11,7 @@
 #include "features/roster/ui/roster_table_view.h"
 #include "fakes/fake_user_prompt_service.h"
 #include "next/application/schedule_testing_class_choices_query.h"
+#include "next/application/testing_class_details_update.h"
 #include "next/application/testing_class_details_read_query.h"
 #include "next/application/testing_teacher_choices_read_query.h"
 #include "ui/shared/widgets/marquee_item_delegate.h"
@@ -27,6 +28,7 @@
 #include <QMenu>
 #include <QPushButton>
 #include <QScrollBar>
+#include <QSignalSpy>
 #include <QSqlError>
 #include <QSqlQuery>
 #include <QSplitter>
@@ -37,6 +39,7 @@
 #include <QTemporaryDir>
 #include <QUuid>
 
+#include <algorithm>
 #include <optional>
 #include <string>
 
@@ -44,6 +47,8 @@ namespace ScheduleWidgetTestStubs
 {
 void reset();
 void setTestingClass(const TestingClass& testingClass);
+int testingClassCount();
+bool hasTestingClassNamed(const QString& name);
 }
 
 void RosterEditorWidget::importScores()
@@ -199,6 +204,28 @@ public:
             success({});
 };
 
+class RecordingTestingClassDetailsUpdatePort final
+    : public ClassMngr::Next::Application::TestingClassDetailsUpdatePort
+{
+public:
+    [[nodiscard]] ClassMngr::Next::Application::
+        TestingClassDetailsUpdateResult updateTestingClassDetails(
+            const ClassMngr::Next::Application::
+                TestingClassDetailsUpdateRequest& request
+            ) const override
+    {
+        ++callCount;
+        lastRequest = request;
+        return result;
+    }
+
+    mutable int callCount = 0;
+    mutable std::optional<ClassMngr::Next::Application::
+        TestingClassDetailsUpdateRequest> lastRequest;
+    ClassMngr::Next::Application::TestingClassDetailsUpdateResult result =
+        ClassMngr::Next::Domain::Result<void>::success();
+};
+
 void setSingleTestingClassChoice(
     FixedTestingClassChoicesReadPort& readPort,
     const int classId,
@@ -298,6 +325,11 @@ private slots:
     void unavailableTestingClassDetailsReadIsSilent();
     void missingTestingClassDetailsShowsWarning();
     void testingClassDetailsReadFailureShowsWarningWithoutFallback();
+    void existingTestingClassUpdateRetainsSelectionAndRefreshesList();
+    void testingClassDetailsUpdateFailureRetainsDraftAndShowsWarning();
+    void newTestingClassCreationDoesNotUseDetailsUpdatePort();
+    void rosterFailureBlocksTestingClassDetailsUpdate();
+    void savedRosterRemainsCleanWhenDetailsUpdateFails();
     void zeroTeacherIdKeepsNoneSelectedWithoutWarning();
     void testingRosterHidesEvaluationsWithoutLosingData();
 };
@@ -1413,6 +1445,376 @@ testingClassDetailsReadFailureShowsWarningWithoutFallback()
         );
     QVERIFY(nameEdit);
     QVERIFY(nameEdit->text() != QStringLiteral("Stored Class"));
+}
+
+void TestingClassesPageTests::
+existingTestingClassUpdateRetainsSelectionAndRefreshesList()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+    DatabaseSession* const session = services.databaseSession();
+    QVERIFY(session);
+    TestingClassRepository* const repository =
+        session->testingClassRepository();
+    QVERIFY(repository);
+
+    TestingClass target = testingClass(QStringLiteral("Alpha Target"));
+    target.teacherId = -1;
+    target.grade = QStringLiteral("M1");
+    target.level = QStringLiteral("Major");
+    const auto targetId = repository->createTestingClass(target);
+    QVERIFY(targetId);
+
+    TestingClass other = testingClass(QStringLiteral("Beta Stable"));
+    other.teacherId = -1;
+    other.grade = QStringLiteral("M1");
+    other.level = QStringLiteral("Major");
+    const auto otherId = repository->createTestingClass(other);
+    QVERIFY(otherId);
+
+    TestingClassesPage page(&services);
+    page.openTestingClass(*targetId);
+    page.refresh();
+
+    auto* list = page.findChild<QListWidget*>(
+        QStringLiteral("testingClassesList")
+        );
+    auto* nameEdit = page.findChild<QLineEdit*>(
+        QStringLiteral("testingClassNameEdit")
+        );
+    auto* saveButton = page.findChild<QPushButton*>(
+        QStringLiteral("testingClassesSaveButton")
+        );
+    QVERIFY(list);
+    QVERIFY(nameEdit);
+    QVERIFY(saveButton);
+    QCOMPARE(list->count(), 2);
+    QCOMPARE(list->currentItem()->data(Qt::UserRole).toInt(), *targetId);
+    QCOMPARE(list->currentRow(), 0);
+
+    nameEdit->setText(QStringLiteral("Zulu Updated Target"));
+    QVERIFY(page.hasUnsavedChanges());
+    QSignalSpy changedSpy(&page, &TestingClassesPage::testingDataChanged);
+    QVERIFY(changedSpy.isValid());
+
+    QVERIFY(page.saveChanges());
+
+    QCOMPARE(changedSpy.size(), 1);
+    QCOMPARE(list->count(), 2);
+    QCOMPARE(list->item(0)->data(Qt::UserRole).toInt(), *otherId);
+    QCOMPARE(list->item(1)->data(Qt::UserRole).toInt(), *targetId);
+    QCOMPARE(list->currentRow(), 1);
+    QCOMPARE(list->currentItem()->data(Qt::UserRole).toInt(), *targetId);
+    QVERIFY(list->item(1)->text().contains(QStringLiteral("Zulu Updated Target")));
+    QCOMPARE(nameEdit->text(), QStringLiteral("Zulu Updated Target"));
+    QVERIFY(!page.hasUnsavedChanges());
+    QVERIFY(!saveButton->isEnabled());
+
+    const auto saved = repository->loadTestingClass(*targetId);
+    QVERIFY(saved);
+    QCOMPARE(saved->name, QStringLiteral("Zulu Updated Target"));
+}
+
+void TestingClassesPageTests::
+testingClassDetailsUpdateFailureRetainsDraftAndShowsWarning()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+    TestingClass stored = testingClass(QStringLiteral("Stored Class"));
+    stored.teacherId = -1;
+    const auto classId = services.databaseSession()
+        ->testingClassRepository()->createTestingClass(stored);
+    QVERIFY(classId);
+
+    RecordingTestingClassDetailsUpdatePort updatePort;
+    updatePort.result =
+        ClassMngr::Next::Application::TestingClassDetailsUpdateResult::failure({
+            .code = ClassMngr::Next::Domain::ErrorCode::Technical,
+            .message = "injected testing class details update failure",
+            .recoverable = false
+        });
+    FakeUserPromptService prompts;
+    DialogServices::setUserPromptServiceForTesting(&prompts);
+
+    TestingClassesPage page(
+        &services,
+        nullptr,
+        nullptr,
+        nullptr,
+        nullptr,
+        &updatePort
+        );
+    page.openTestingClass(*classId);
+    page.refresh();
+    auto* nameEdit = page.findChild<QLineEdit*>(
+        QStringLiteral("testingClassNameEdit")
+        );
+    auto* saveButton = page.findChild<QPushButton*>(
+        QStringLiteral("testingClassesSaveButton")
+        );
+    QVERIFY(nameEdit);
+    QVERIFY(saveButton);
+
+    nameEdit->setText(QStringLiteral("Draft Must Remain"));
+    QVERIFY(page.hasUnsavedChanges());
+    QVERIFY(!page.saveChanges());
+
+    QCOMPARE(updatePort.callCount, 1);
+    QVERIFY(updatePort.lastRequest.has_value());
+    QCOMPARE(updatePort.lastRequest->classId.value(), std::to_string(*classId));
+    QCOMPARE(updatePort.lastRequest->name, std::u16string(u"Draft Must Remain"));
+    QCOMPARE(nameEdit->text(), QStringLiteral("Draft Must Remain"));
+    QVERIFY(page.hasUnsavedChanges());
+    QCOMPARE(prompts.messages.size(), 1);
+    QCOMPARE(prompts.messages.constFirst().title,
+             QStringLiteral("Save Testing Class"));
+    QCOMPARE(prompts.messages.constFirst().severity, PromptSeverity::Warning);
+    QCOMPARE(prompts.messages.constFirst().message,
+             QStringLiteral("injected testing class details update failure"));
+
+    const auto unchanged = services.databaseSession()
+        ->testingClassRepository()->loadTestingClass(*classId);
+    QVERIFY(unchanged);
+    QCOMPARE(unchanged->name, QStringLiteral("Stored Class"));
+}
+
+void TestingClassesPageTests::
+newTestingClassCreationDoesNotUseDetailsUpdatePort()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+    TestingClass existing = testingClass(QStringLiteral("Existing Class"));
+    existing.teacherId = -1;
+    const auto existingClassId = services.databaseSession()
+        ->testingClassRepository()->createTestingClass(existing);
+    QVERIFY(existingClassId);
+    QCOMPARE(ScheduleWidgetTestStubs::testingClassCount(), 0);
+
+    RecordingTestingClassDetailsUpdatePort updatePort;
+    updatePort.result =
+        ClassMngr::Next::Application::TestingClassDetailsUpdateResult::failure({
+            .code = ClassMngr::Next::Domain::ErrorCode::Technical,
+            .message = "update port must not handle class creation",
+            .recoverable = false
+        });
+
+    TestingClassesPage page(
+        &services,
+        nullptr,
+        nullptr,
+        nullptr,
+        nullptr,
+        &updatePort
+        );
+    page.openTestingClass(*existingClassId);
+    page.refresh();
+
+    auto* addButton = page.findChild<QPushButton*>(
+        QStringLiteral("testingClassesAddButton")
+        );
+    QVERIFY(addButton);
+    addButton->click();
+
+    auto* nameEdit = page.findChild<QLineEdit*>(
+        QStringLiteral("testingClassNameEdit")
+        );
+    auto* editor = page.findChild<RosterEditorWidget*>();
+    QVERIFY(nameEdit);
+    QVERIFY(editor);
+    nameEdit->setText(QStringLiteral("Created Through Existing Path"));
+    QVERIFY(page.hasUnsavedChanges());
+    QVERIFY(!editor->hasUnsavedChanges());
+    QSignalSpy changedSpy(&page, &TestingClassesPage::testingDataChanged);
+    QVERIFY(changedSpy.isValid());
+    QVERIFY(page.saveChanges());
+
+    QCOMPARE(updatePort.callCount, 0);
+    QCOMPARE(changedSpy.size(), 1);
+    QCOMPARE(ScheduleWidgetTestStubs::testingClassCount(), 1);
+    QVERIFY(ScheduleWidgetTestStubs::hasTestingClassNamed(
+        QStringLiteral("Created Through Existing Path")
+        ));
+}
+
+void TestingClassesPageTests::
+rosterFailureBlocksTestingClassDetailsUpdate()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+    TestingClass stored = testingClass(QStringLiteral("Stored Class"));
+    stored.teacherId = -1;
+    const auto classId = services.databaseSession()
+        ->testingClassRepository()->createTestingClass(stored);
+    QVERIFY(classId);
+    RosterRepository* const rosterRepository =
+        services.databaseSession()->rosterRepository();
+    QVERIFY(rosterRepository);
+    QVERIFY(rosterRepository->saveRoster(
+        *classId,
+        rosterWithEvaluation()
+        ).has_value());
+
+    RecordingTestingClassDetailsUpdatePort updatePort;
+    FakeUserPromptService prompts;
+    DialogServices::setUserPromptServiceForTesting(&prompts);
+    TestingClassesPage page(
+        &services,
+        nullptr,
+        nullptr,
+        nullptr,
+        nullptr,
+        &updatePort
+        );
+    page.openTestingClass(*classId);
+    page.refresh();
+
+    auto* nameEdit = page.findChild<QLineEdit*>(
+        QStringLiteral("testingClassNameEdit")
+        );
+    auto* editor = page.findChild<RosterEditorWidget*>();
+    auto* table = page.findChild<RosterTableView*>(
+        QStringLiteral("rosterTable")
+        );
+    QVERIFY(nameEdit);
+    QVERIFY(editor);
+    QVERIFY(table);
+    const int englishColumn = columnByName(
+        table->model(),
+        QStringLiteral("English")
+        );
+    QVERIFY(englishColumn >= 0);
+    QVERIFY(table->model()->setData(
+        table->model()->index(0, englishColumn),
+        QStringLiteral("Roster Draft"),
+        Qt::EditRole
+        ));
+    nameEdit->setText(QStringLiteral("Metadata Draft"));
+    QVERIFY(editor->hasUnsavedChanges());
+    QVERIFY(page.hasUnsavedChanges());
+
+    services.closeDatabase();
+    QVERIFY(!page.saveChanges());
+
+    QCOMPARE(updatePort.callCount, 0);
+    QVERIFY(editor->hasUnsavedChanges());
+    QVERIFY(page.hasUnsavedChanges());
+    QCOMPARE(nameEdit->text(), QStringLiteral("Metadata Draft"));
+    QVERIFY(!prompts.messages.isEmpty());
+    QCOMPARE(prompts.messages.constFirst().title, QStringLiteral("Save Roster"));
+}
+
+void TestingClassesPageTests::savedRosterRemainsCleanWhenDetailsUpdateFails()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+    TestingClass stored = testingClass(QStringLiteral("Stored Class"));
+    stored.teacherId = -1;
+    const auto classId = services.databaseSession()
+        ->testingClassRepository()->createTestingClass(stored);
+    QVERIFY(classId);
+    RosterRepository* const rosterRepository =
+        services.databaseSession()->rosterRepository();
+    QVERIFY(rosterRepository);
+    QVERIFY(rosterRepository->saveRoster(
+        *classId,
+        rosterWithEvaluation()
+        ).has_value());
+
+    RecordingTestingClassDetailsUpdatePort updatePort;
+    updatePort.result =
+        ClassMngr::Next::Application::TestingClassDetailsUpdateResult::failure({
+            .code = ClassMngr::Next::Domain::ErrorCode::Technical,
+            .message = "injected details failure after roster save",
+            .recoverable = false
+        });
+    FakeUserPromptService prompts;
+    DialogServices::setUserPromptServiceForTesting(&prompts);
+    TestingClassesPage page(
+        &services,
+        nullptr,
+        nullptr,
+        nullptr,
+        nullptr,
+        &updatePort
+        );
+    page.openTestingClass(*classId);
+    page.refresh();
+
+    auto* nameEdit = page.findChild<QLineEdit*>(
+        QStringLiteral("testingClassNameEdit")
+        );
+    auto* editor = page.findChild<RosterEditorWidget*>();
+    auto* table = page.findChild<RosterTableView*>(
+        QStringLiteral("rosterTable")
+        );
+    QVERIFY(nameEdit);
+    QVERIFY(editor);
+    QVERIFY(table);
+    const int englishColumn = columnByName(
+        table->model(),
+        QStringLiteral("English")
+        );
+    QVERIFY(englishColumn >= 0);
+    QVERIFY(table->model()->setData(
+        table->model()->index(0, englishColumn),
+        QStringLiteral("Roster Edit"),
+        Qt::EditRole
+        ));
+    const int koreanColumn = columnByName(
+        table->model(),
+        QStringLiteral("Korean")
+        );
+    QVERIFY(koreanColumn >= 0);
+    QVERIFY(table->model()->setData(
+        table->model()->index(0, koreanColumn),
+        QStringLiteral("\uBC15\uD559\uC0DD"),
+        Qt::EditRole
+        ));
+    nameEdit->setText(QStringLiteral("Retained Metadata Draft"));
+    QVERIFY(editor->hasUnsavedChanges());
+
+    QVERIFY(!page.saveChanges());
+
+    QCOMPARE(updatePort.callCount, 1);
+    QVERIFY(updatePort.lastRequest.has_value());
+    QCOMPARE(updatePort.lastRequest->name,
+             std::u16string(u"Retained Metadata Draft"));
+    QVERIFY(!editor->hasUnsavedChanges());
+    QVERIFY(page.hasUnsavedChanges());
+    QCOMPARE(nameEdit->text(), QStringLiteral("Retained Metadata Draft"));
+    QCOMPARE(prompts.messages.size(), 1);
+    QCOMPARE(prompts.messages.constFirst().title,
+             QStringLiteral("Save Testing Class"));
+    QCOMPARE(prompts.messages.constFirst().message,
+             QStringLiteral("injected details failure after roster save"));
+
+    const auto savedRoster = rosterRepository->loadRoster(*classId);
+    QVERIFY(savedRoster);
+    const int savedEnglishColumn = savedRoster->columns.indexOf(
+        QStringLiteral("English")
+        );
+    QVERIFY(savedEnglishColumn >= 0);
+    QCOMPARE(savedRoster->rows.value(0).value(savedEnglishColumn),
+             QStringLiteral("Roster Edit"));
+    const auto unchangedClass = services.databaseSession()
+        ->testingClassRepository()->loadTestingClass(*classId);
+    QVERIFY(unchangedClass);
+    QCOMPARE(unchangedClass->name, QStringLiteral("Stored Class"));
 }
 
 void TestingClassesPageTests::zeroTeacherIdKeepsNoneSelectedWithoutWarning()

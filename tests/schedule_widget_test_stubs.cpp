@@ -315,6 +315,23 @@ void setTestingClass(const TestingClass& testingClass)
     testingClasses.insert(testingClass.classId, testingClass);
 }
 
+int testingClassCount()
+{
+    return testingClasses.size();
+}
+
+bool hasTestingClassNamed(const QString& name)
+{
+    for (const TestingClass& testingClass : testingClasses)
+    {
+        if (testingClass.name == name)
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
 void setUnresolvedTestingClassAssignment(
     const QString& day,
     const QString& startTime,

@@ -486,6 +486,24 @@ qt_add_executable(ClassMngrClassTransferTests
             ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
     )
 
+    add_test(
+        NAME ClassMngrTestingClassesPageF145UpdateTests
+        COMMAND ClassMngrTestingClassesPageTests
+            existingTestingClassUpdateRetainsSelectionAndRefreshesList
+            testingClassDetailsUpdateFailureRetainsDraftAndShowsWarning
+            newTestingClassCreationDoesNotUseDetailsUpdatePort
+            rosterFailureBlocksTestingClassDetailsUpdate
+            savedRosterRemainsCleanWhenDetailsUpdateFails
+    )
+
+    set_tests_properties(
+        ClassMngrTestingClassesPageF145UpdateTests
+        PROPERTIES
+            ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
+            ENVIRONMENT_MODIFICATION
+                "PATH=path_list_prepend:$<TARGET_FILE_DIR:Qt6::Core>"
+    )
+
     classmngr_add_qt_test(
         NAME UpcomingBirthdays
         SOURCES
