@@ -1217,15 +1217,6 @@ ScheduleViewModel ScheduleWidget::buildScheduleModel()
     const ScheduleBuildResult unavailableResult{
         .days = request.days
     };
-    ClassService* const classService =
-        m_services ? m_services->classService() : nullptr;
-    if (!classService || !classService->isAvailable())
-    {
-        return buildScheduleViewModel(
-            unavailableResult,
-            request
-            );
-    }
 
     ClassMngr::Next::Platform::
         ApplicationServicesScheduleBuilderSourcePort readPort(m_services);
@@ -1236,10 +1227,16 @@ ScheduleViewModel ScheduleWidget::buildScheduleModel()
             );
     if (!source)
     {
-        qWarning() << QString::fromUtf8(
-            source.error().message.data(),
-            static_cast<qsizetype>(source.error().message.size())
-            );
+        if (
+            source.error().code
+            != ClassMngr::Next::Domain::ErrorCode::NotFound
+            )
+        {
+            qWarning() << QString::fromUtf8(
+                source.error().message.data(),
+                static_cast<qsizetype>(source.error().message.size())
+                );
+        }
         return buildScheduleViewModel(
             unavailableResult,
             request

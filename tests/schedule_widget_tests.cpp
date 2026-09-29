@@ -41,6 +41,7 @@
 #include <QScrollBar>
 #include <QSqlDatabase>
 #include <QSqlQuery>
+#include <QStringList>
 #include <QStyleOptionViewItem>
 #include <QTableWidget>
 #include <QTimer>
@@ -108,6 +109,51 @@ QString settingValue(const QString& key);
 
 namespace
 {
+class ScopedQtWarningCapture final
+{
+public:
+    explicit ScopedQtWarningCapture(QStringList& messages)
+        : m_messages(messages)
+        , m_previousHandler(qInstallMessageHandler(&handleMessage))
+    {
+        s_activeCapture = this;
+    }
+
+    ~ScopedQtWarningCapture()
+    {
+        s_activeCapture = nullptr;
+        qInstallMessageHandler(m_previousHandler);
+    }
+
+    ScopedQtWarningCapture(const ScopedQtWarningCapture&) = delete;
+    ScopedQtWarningCapture& operator=(const ScopedQtWarningCapture&) = delete;
+
+private:
+    static void handleMessage(
+        const QtMsgType type,
+        const QMessageLogContext& context,
+        const QString& message
+        )
+    {
+        if (s_activeCapture && type == QtWarningMsg)
+        {
+            s_activeCapture->m_messages.append(message);
+            return;
+        }
+
+        if (s_activeCapture && s_activeCapture->m_previousHandler)
+        {
+            s_activeCapture->m_previousHandler(type, context, message);
+        }
+    }
+
+    QStringList& m_messages;
+    QtMessageHandler m_previousHandler = nullptr;
+    static ScopedQtWarningCapture* s_activeCapture;
+};
+
+ScopedQtWarningCapture* ScopedQtWarningCapture::s_activeCapture = nullptr;
+
 void saveSettingOrFail(
     DataService* dataService,
     const QString& key,
@@ -1959,11 +2005,16 @@ unavailableSourceReturnsDaysOnlyWithoutReading()
 
     ApplicationServices services;
     ScheduleWidget widget(&services);
-    widget.refreshSchedule();
+    QStringList warnings;
+    {
+        const ScopedQtWarningCapture warningCapture(warnings);
+        widget.refreshSchedule();
+    }
 
     QCOMPARE(ScheduleWidgetTestStubs::scheduleClassInfoReadCount, 0);
     QCOMPARE(widget.scheduleModel().days, visibleScheduleDays(false));
     QVERIFY(widget.scheduleModel().rows.isEmpty());
+    QVERIFY2(warnings.isEmpty(), qPrintable(warnings.join(QLatin1Char('\n'))));
 }
 
 void ScheduleWidgetTests::
@@ -1981,7 +2032,7 @@ failedSourceReadLogsAndKeepsIndependentScheduleReads()
     QTest::ignoreMessage(
         QtWarningMsg,
         QRegularExpression(QStringLiteral(
-            ".*injected schedule read failure.*"
+            "^\"injected schedule read failure\"$"
             ))
         );
     widget.refreshSchedule();
