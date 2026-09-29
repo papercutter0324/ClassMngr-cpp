@@ -1342,4 +1342,5 @@ repository, not `ScheduleService`'s compatibility fallback. Carry ordered raw
 day/start/state text into the widget so malformed or unknown stored strings
 retain their existing map behavior; a successful empty snapshot must still
 clear overrides, while unavailable or failed reads leave the current map
-untouched.
+untouched. Pin the existing warning prefix in the widget regression test, and
+keep the typed save command separate from the lossless read projection.

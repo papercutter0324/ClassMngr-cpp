@@ -7410,14 +7410,28 @@ Gate 1 and Gate 2 remain Partial. F120 active-v2 DataService isolation and the
 formal workspace-create boundary remain Satisfied. Phase 2 remains In
 Progress/Open.
 
-### Next selected slice (F135; implementation not begun)
+## Verified F135 slot-state read - commit `91806e5d`
 
-Migrate the slot-state read through an ordered raw UTF-16 Qt-free snapshot and
-query. The Platform adapter will read the active `DatabaseSession` repository
-directly, without `ScheduleService` or `DataService` fallback, and
-`ScheduleWidget::reloadSlotStates` will consume it. Preserve unavailable-service
-no-op/current-state retention, read-failure warning/current-state retention,
-and successful replacement, including clearing old state for an empty result.
-Keep testing-assignment reads and the final `ScheduleViewProjection`
-migration separate. Selecting this slice is an inference, not a Phase 2
-mandated ranking.
+F135 adds a Qt-free ordered raw UTF-16 slot-state query and a Platform adapter
+that reads `IntensiveSlotStateRepository` directly from the active session,
+without `ScheduleService` or `DataService` fallback. `ScheduleWidget::reloadSlotStates`
+uses the read while preserving behavior: an unavailable service is silent and
+retains current state; a read failure warns and retains current state; a
+successful read replaces state, including clearing old state for an empty
+result.
+
+Independent fresh Windows x64 Debug Ninja/MSVC verification built `ClassMngr`
+and the application, Platform, and widget targets. The three focused CTests
+passed 3/3, including the strengthened warning-prefix assertion. The explicit
+`ClassMngrFeatures` to `ClassMngrNext::Platform` dependency exists in the root
+`CMakeLists.txt`, and F135 test targets are registered. `git diff --check`
+passed. No full suite or baseline comparison ran.
+
+Gate 1 and Gate 2 remain Partial. The formal workspace-create boundary and
+active-v2 DataService isolation remain Satisfied. Phase 2 remains In
+Progress/Open.
+
+### F136 candidate review in progress
+
+The next bounded slice is under Heavy-route candidate review. No candidate has
+been selected and implementation has not begun.

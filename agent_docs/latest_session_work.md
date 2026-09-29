@@ -3125,7 +3125,7 @@ service skip/reload, read-only/time-column no-op, and testing-assignment
 behavior. `ClassMngr` built and `git diff --check` passed. No full suite or
 baseline comparison ran.
 
-## Phase 2 continuation - 2026-09-29 (F134 verified; F135 selected)
+## Phase 2 continuation - 2026-09-29 (F135 verified; F136 candidate review in progress)
 
 The user requested a commit after every completed slice, then immediate work
 on the next slice. The active deployment ID is
@@ -3247,15 +3247,26 @@ calls two setters that render the live schedule, and `prepare()` performs its
 normal refresh to load display preferences. With services available, setup can
 perform three pre-preview reads. This call order is present at the F134 parent.
 
-The Heavy-route candidate review selected F135: move the intensive slot-state
-read behind a Qt-free Application query and an active-session Platform adapter
-that reads the `DatabaseSession` repository directly. Carry ordered raw
-day/start/state strings so legacy stored values are not normalized or dropped.
-Preserve unavailable no-op and current-state retention, warning and current-
-state retention on read failure, and successful replacement including empty
-results clearing overrides. Keep testing-assignment reads and the final
-`ScheduleViewProjection` migration separate. This sequence is a proportionality
-judgment, not a Phase 2 mandated ranking.
+F135 source/test commit `91806e5d` (`Phase2 - integrate schedule slot-state
+read query`) adds a Qt-free query for intensive slot-state overrides and a
+Platform adapter that reads directly from the active `DatabaseSession`
+repository. The ordered raw UTF-16 day/start/state values preserve unknown
+stored text. `ScheduleWidget::reloadSlotStates()` uses the query; unavailable
+reads remain silent and retain state, read failures warn and retain state, and
+successful reads replace all overrides, including clearing them on an empty
+result. The adapter has no `ScheduleService` or `DataService` path.
+
+Independent fresh Windows x64 Debug Ninja/MSVC verification built `ClassMngr`
+and the Application, Platform, and ScheduleWidget targets. These CTest suites
+passed 3/3: `ClassMngrNextApplicationScheduleSlotStateReadQueryTests`,
+`ClassMngrNextPlatformApplicationServicesScheduleSlotStateReadPortTests`, and
+`ClassMngrScheduleWidgetTests`. The widget warning assertion pins the existing
+`Failed to load intensive slot states:` prefix and injected error. The tester
+confirmed the root production target already links `ClassMngrNext::Platform`;
+the F135 widget test and Application/Platform test registrations are explicit.
+`git diff --check` passed. No full suite or baseline comparison ran.
+
+The Heavy-route review for F136 is underway; no next slice has been selected.
 
 Gate 1 and Gate 2 remain Partial. Formal workspace-create acceptance and
 active-v2 DataService isolation remain Satisfied. Phase 2 remains In Progress

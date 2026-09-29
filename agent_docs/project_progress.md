@@ -1566,7 +1566,7 @@ warning/dirty behavior. Review and implementation have not begun. Gate 1 and
 Gate 2 remain Partial; formal workspace-create acceptance and active-v2
 DataService isolation remain Satisfied. Phase 2 remains In Progress/Open.
 
-## Current Position - 2026-09-29 (F134 verified; F135 selected)
+## Current Position - 2026-09-29 (F135 verified; F136 candidate review in progress)
 
 F126 source/test commit `ca4c1a97` (`Phase2 - integrate class details save
 use case`) adds the Qt-free `ClassDetailsSaveUseCase` and session-backed
@@ -1702,12 +1702,19 @@ installs the preview. With services available, setup can perform three
 pre-preview reads. This call order is present at the F134 parent; later preview
 renders and refreshes bypass those reads.
 
-F135 is selected: route the intensive slot-state read through a Qt-free
-Application query and an active-session Platform adapter that reads the
-`DatabaseSession` repository directly. Preserve ordered raw day/start/state
-values, silent unavailable behavior, warning and state retention on read
-failure, and replacement on success (including an empty result clearing
-overrides). Keep testing-assignment reads and the final `ScheduleViewProjection`
-migration separate. Gate 1 and Gate 2 remain Partial; formal workspace-create
-acceptance and active-v2 DataService isolation remain Satisfied. Phase 2
-remains In Progress/Open.
+F135 source/test commit `91806e5d` (`Phase2 - integrate schedule slot-state
+read query`) adds a Qt-free query and active-session Platform adapter for
+intensive slot-state overrides. The adapter reads the `DatabaseSession`
+repository directly, without `ScheduleService` or `DataService` fallback, and
+preserves ordered raw day/start/state strings. The widget retains overrides on
+unavailable or failed reads, warns on failure, and replaces the full map on
+success, including clearing it for an empty result.
+
+Independent fresh Windows x64 Debug Ninja/MSVC verification built `ClassMngr`
+and the app, Platform, and ScheduleWidget targets. The three focused CTests
+passed 3/3, including an assertion for the existing warning prefix.
+`git diff --check` passed. No full suite or baseline comparison ran.
+
+F136 candidate review is underway. Gate 1 and Gate 2 remain Partial; formal
+workspace-create acceptance and active-v2 DataService isolation remain
+Satisfied. Phase 2 remains In Progress/Open.
