@@ -6,6 +6,8 @@
 #include <QSqlQuery>
 #include <QtTest>
 
+#include <array>
+
 class TestingClassRepositoryTests : public QObject
 {
     Q_OBJECT
@@ -16,6 +18,8 @@ private slots:
     void persistsEverySupportedMixedLevel();
     void exposesTestingWorkspaceGradeAndLevelChoices();
     void createsClassAndAssignmentAtomically();
+    void deletesEveryCascadeRowAndPreservesSiblingClass();
+    void rollsBackEveryCascadeDeleteWhenFinalClassDeleteFails();
     void loadsRegularClassTeacherAssignmentsInOneSnapshot();
 };
 
@@ -131,6 +135,115 @@ int rowCount(
         return -1;
     }
     return query.value(0).toInt();
+}
+
+bool insertCascadeRows(
+    QSqlDatabase& database,
+    const int classId,
+    const QString& day,
+    const QString& evaluationName
+    )
+{
+    QSqlQuery query(database);
+    query.prepare(QStringLiteral(
+        "INSERT INTO schedule_testing_blocks (day, start_time, room, class_id) "
+        "VALUES (?, '16:00', 'Library', ?)"
+        ));
+    query.addBindValue(day);
+    query.addBindValue(classId);
+    if (!query.exec())
+    {
+        return false;
+    }
+
+    query.prepare(QStringLiteral(
+        "INSERT INTO roster_columns (class_id, name, position, width) "
+        "VALUES (?, 'English', 0, 120)"
+        ));
+    query.addBindValue(classId);
+    if (!query.exec())
+    {
+        return false;
+    }
+    query.prepare(QStringLiteral(
+        "INSERT INTO roster_data (class_id, row_index, col_index, value) "
+        "VALUES (?, 0, 0, 'A')"
+        ));
+    query.addBindValue(classId);
+    if (!query.exec())
+    {
+        return false;
+    }
+
+    query.prepare(QStringLiteral(
+        "INSERT INTO speaking_evaluations (class_id, evaluation_name) "
+        "VALUES (?, ?)"
+        ));
+    query.addBindValue(classId);
+    query.addBindValue(evaluationName);
+    if (!query.exec())
+    {
+        return false;
+    }
+    const QVariant evaluationId = query.lastInsertId();
+    query.prepare(QStringLiteral(
+        "INSERT INTO speaking_eval_data (evaluation_id, row_index) "
+        "VALUES (?, 0)"
+        ));
+    query.addBindValue(evaluationId);
+    if (!query.exec())
+    {
+        return false;
+    }
+
+    query.prepare(QStringLiteral(
+        "INSERT INTO class_times (class_id) VALUES (?)"
+        ));
+    query.addBindValue(classId);
+    if (!query.exec())
+    {
+        return false;
+    }
+    query.prepare(QStringLiteral(
+        "INSERT INTO class_intensive_times (class_id) VALUES (?)"
+        ));
+    query.addBindValue(classId);
+    return query.exec();
+}
+
+using CascadeCounts = std::array<int, 10>;
+
+CascadeCounts cascadeCounts(QSqlDatabase& database, const int classId)
+{
+    const QStringList queries{
+        QStringLiteral("SELECT COUNT(*) FROM classes WHERE id=?"),
+        QStringLiteral("SELECT COUNT(*) FROM class_info WHERE class_id=?"),
+        QStringLiteral("SELECT COUNT(*) FROM testing_classes WHERE class_id=?"),
+        QStringLiteral("SELECT COUNT(*) FROM schedule_testing_blocks WHERE class_id=?"),
+        QStringLiteral("SELECT COUNT(*) FROM roster_columns WHERE class_id=?"),
+        QStringLiteral("SELECT COUNT(*) FROM roster_data WHERE class_id=?"),
+        QStringLiteral("SELECT COUNT(*) FROM speaking_evaluations WHERE class_id=?"),
+        QStringLiteral(
+            "SELECT COUNT(*) FROM speaking_eval_data WHERE evaluation_id IN ("
+            "SELECT id FROM speaking_evaluations WHERE class_id=?)"
+            ),
+        QStringLiteral("SELECT COUNT(*) FROM class_times WHERE class_id=?"),
+        QStringLiteral("SELECT COUNT(*) FROM class_intensive_times WHERE class_id=?")
+    };
+    CascadeCounts counts{};
+    for (qsizetype index = 0; index < queries.size(); ++index)
+    {
+        QSqlQuery query(database);
+        query.prepare(queries.at(index));
+        query.addBindValue(classId);
+        if (!query.exec() || !query.next())
+        {
+            counts.at(static_cast<std::size_t>(index)) = -1;
+            continue;
+        }
+        counts.at(static_cast<std::size_t>(index)) = query.value(0).toInt();
+    }
+    return counts;
 }
 }
 
@@ -491,6 +604,126 @@ void TestingClassRepositoryTests
                 rowsBeforeFailure.at(index)
                 );
         }
+    }
+
+    QSqlDatabase::removeDatabase(connectionName);
+}
+
+void TestingClassRepositoryTests::
+deletesEveryCascadeRowAndPreservesSiblingClass()
+{
+    const QString connectionName =
+        QStringLiteral("testing_class_repository_delete_cascade");
+
+    {
+        QSqlDatabase database = QSqlDatabase::addDatabase(
+            QStringLiteral("QSQLITE"),
+            connectionName
+            );
+        database.setDatabaseName(QStringLiteral(":memory:"));
+        QVERIFY(database.open());
+        QVERIFY(createSchema(database));
+        TestingClassRepository repository(database);
+
+        TestingClass target;
+        target.name = QStringLiteral("Cascade Target");
+        target.grade = QStringLiteral("M1");
+        target.level = QStringLiteral("Major");
+        target.room = QStringLiteral("Target Room");
+        const auto targetId = repository.createTestingClass(target);
+        QVERIFY(targetId);
+        TestingClass sibling = target;
+        sibling.name = QStringLiteral("Cascade Sibling");
+        sibling.room = QStringLiteral("Sibling Room");
+        const auto siblingId = repository.createTestingClass(sibling);
+        QVERIFY(siblingId);
+        QVERIFY(insertCascadeRows(
+            database, *targetId, QStringLiteral("Monday"),
+            QStringLiteral("Target Speaking")
+            ));
+        QVERIFY(insertCascadeRows(
+            database, *siblingId, QStringLiteral("Tuesday"),
+            QStringLiteral("Sibling Speaking")
+            ));
+
+        QCOMPARE(cascadeCounts(database, *targetId), CascadeCounts({1,1,1,1,1,1,1,1,1,1}));
+        QCOMPARE(cascadeCounts(database, *siblingId), CascadeCounts({1,1,1,1,1,1,1,1,1,1}));
+        QCOMPARE(rowCount(database, QStringLiteral("speaking_eval_data")), 2);
+        QVERIFY(repository.deleteTestingClass(*targetId));
+
+        QCOMPARE(cascadeCounts(database, *targetId), CascadeCounts({0,0,0,0,0,0,0,0,0,0}));
+        QCOMPARE(cascadeCounts(database, *siblingId), CascadeCounts({1,1,1,1,1,1,1,1,1,1}));
+        QCOMPARE(rowCount(database, QStringLiteral("speaking_eval_data")), 1);
+        const auto remaining = repository.loadTestingClass(*siblingId);
+        QVERIFY(remaining);
+        QCOMPARE(remaining->name, QStringLiteral("Cascade Sibling"));
+        QCOMPARE(remaining->room, QStringLiteral("Sibling Room"));
+    }
+
+    QSqlDatabase::removeDatabase(connectionName);
+}
+
+void TestingClassRepositoryTests::
+rollsBackEveryCascadeDeleteWhenFinalClassDeleteFails()
+{
+    const QString connectionName =
+        QStringLiteral("testing_class_repository_delete_rollback");
+
+    {
+        QSqlDatabase database = QSqlDatabase::addDatabase(
+            QStringLiteral("QSQLITE"),
+            connectionName
+            );
+        database.setDatabaseName(QStringLiteral(":memory:"));
+        QVERIFY(database.open());
+        QVERIFY(createSchema(database));
+        TestingClassRepository repository(database);
+
+        TestingClass target;
+        target.name = QStringLiteral("Rollback Target");
+        target.grade = QStringLiteral("M2");
+        target.level = QStringLiteral("Song's");
+        target.room = QStringLiteral("Target Room");
+        const auto targetId = repository.createTestingClass(target);
+        QVERIFY(targetId);
+        TestingClass sibling = target;
+        sibling.name = QStringLiteral("Rollback Sibling");
+        sibling.room = QStringLiteral("Sibling Room");
+        const auto siblingId = repository.createTestingClass(sibling);
+        QVERIFY(siblingId);
+        QVERIFY(insertCascadeRows(
+            database, *targetId, QStringLiteral("Monday"),
+            QStringLiteral("Target Speaking")
+            ));
+        QVERIFY(insertCascadeRows(
+            database, *siblingId, QStringLiteral("Tuesday"),
+            QStringLiteral("Sibling Speaking")
+            ));
+        const CascadeCounts targetBefore = cascadeCounts(database, *targetId);
+        const CascadeCounts siblingBefore = cascadeCounts(database, *siblingId);
+        QCOMPARE(targetBefore, CascadeCounts({1,1,1,1,1,1,1,1,1,1}));
+        QCOMPARE(siblingBefore, CascadeCounts({1,1,1,1,1,1,1,1,1,1}));
+        const int evaluationDataBefore =
+            rowCount(database, QStringLiteral("speaking_eval_data"));
+        QCOMPARE(evaluationDataBefore, 2);
+
+        QSqlQuery trigger(database);
+        QVERIFY(trigger.exec(QStringLiteral(
+            "CREATE TRIGGER fail_testing_class_delete "
+            "BEFORE DELETE ON classes WHEN OLD.id=%1 "
+            "BEGIN SELECT RAISE(ABORT, 'injected final delete failure'); END"
+            ).arg(*targetId)));
+
+        QVERIFY(!repository.deleteTestingClass(*targetId));
+        QCOMPARE(cascadeCounts(database, *targetId), targetBefore);
+        QCOMPARE(cascadeCounts(database, *siblingId), siblingBefore);
+        QCOMPARE(
+            rowCount(database, QStringLiteral("speaking_eval_data")),
+            evaluationDataBefore
+            );
+        const auto remaining = repository.loadTestingClass(*targetId);
+        QVERIFY(remaining);
+        QCOMPARE(remaining->name, QStringLiteral("Rollback Target"));
     }
 
     QSqlDatabase::removeDatabase(connectionName);

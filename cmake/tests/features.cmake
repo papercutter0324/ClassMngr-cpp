@@ -520,6 +520,24 @@ qt_add_executable(ClassMngrClassTransferTests
                 "PATH=path_list_prepend:$<TARGET_FILE_DIR:Qt6::Core>"
     )
 
+    add_test(
+        NAME ClassMngrTestingClassesPageF147DeleteTests
+        COMMAND ClassMngrTestingClassesPageTests
+            testingClassDeletionWithoutSelectionDoesNothing
+            testingClassDeletionCancelKeepsDraftAndDoesNotCallPort
+            testingClassDeletionFailureRetainsDraftAndDoesNotSave
+            testingClassDeletionSuccessSelectsSiblingAndEmitsOnce
+            testingClassDeletionSuccessWithNoSiblingStartsNewDraft
+    )
+
+    set_tests_properties(
+        ClassMngrTestingClassesPageF147DeleteTests
+        PROPERTIES
+            ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
+            ENVIRONMENT_MODIFICATION
+                "PATH=path_list_prepend:$<TARGET_FILE_DIR:Qt6::Core>"
+    )
+
     classmngr_add_qt_test(
         NAME UpcomingBirthdays
         SOURCES
