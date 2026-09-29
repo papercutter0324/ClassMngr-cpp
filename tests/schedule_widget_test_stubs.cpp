@@ -20,6 +20,7 @@
 #include "data/repositories/teacher_import_repository.h"
 #include "data/repositories/testing_block_repository.h"
 #include "data/repositories/testing_class_repository.h"
+#include "next/application/schedule_testing_assignment_read_query.h"
 #include "features/schedule/ui/schedule_editor_dialog.h"
 #include "features/schedule/ui/schedule_print_dialog.h"
 #include "features/schedule/services/schedule_print_service.h"
@@ -48,6 +49,7 @@ int savedSlotStates = 0;
 int scheduleClassInfoReadCount = 0;
 int slotStateReadCount = 0;
 int testingAssignmentsReadCount = 0;
+TestingAssignmentDisplayReadMetrics testingAssignmentDisplayReadMetrics;
 QList<IntensiveSlotState> intensiveSlotStates;
 QString intensiveSlotStateReadFailure;
 int savedTestingBlocks = 0;
@@ -64,6 +66,8 @@ Theme configuredTheme = Theme::Dark;
 bool themeAvailable = false;
 bool databaseOpen = true;
 bool intensiveSlotStateRepositoryAvailable = true;
+bool testingAssignmentRepositoryAvailable = true;
+QString testingAssignmentReadFailure;
 bool includeAdditionalClass = false;
 bool includeMiddleSchoolClasses = false;
 bool matchImportedClasses = false;
@@ -87,6 +91,7 @@ void reset()
     scheduleClassInfoReadCount = 0;
     slotStateReadCount = 0;
     testingAssignmentsReadCount = 0;
+    testingAssignmentDisplayReadMetrics = {};
     intensiveSlotStates.clear();
     intensiveSlotStateReadFailure.clear();
     savedTestingBlocks = 0;
@@ -103,6 +108,8 @@ void reset()
     themeAvailable = false;
     databaseOpen = true;
     intensiveSlotStateRepositoryAvailable = true;
+    testingAssignmentRepositoryAvailable = true;
+    testingAssignmentReadFailure.clear();
     includeAdditionalClass = false;
     includeMiddleSchoolClasses = false;
     matchImportedClasses = false;
@@ -134,6 +141,16 @@ void setIntensiveSlotStateReadFailure(const QString& error)
 void setIntensiveSlotStateRepositoryAvailable(const bool available)
 {
     intensiveSlotStateRepositoryAvailable = available;
+}
+
+void setTestingAssignmentReadFailure(const QString& error)
+{
+    testingAssignmentReadFailure = error;
+}
+
+void setTestingAssignmentRepositoryAvailable(const bool available)
+{
+    testingAssignmentRepositoryAvailable = available;
 }
 
 void setSlotSaveFailure(
@@ -265,6 +282,18 @@ void setTestingClassAssignment(
         testingClass.classId
         );
 }
+
+void setUnresolvedTestingClassAssignment(
+    const QString& day,
+    const QString& startTime,
+    const int classId
+    )
+{
+    testingClassAssignments.insert(
+        day + QLatin1Char('\x1f') + startTime,
+        classId
+        );
+}
 }
 
 ApplicationServices::ApplicationServices()
@@ -317,6 +346,110 @@ IntensiveSlotStateRepository::loadIntensiveSlotStates()
     }
 
     return ScheduleWidgetTestStubs::intensiveSlotStates;
+}
+
+TestingBlockRepository* DatabaseSession::testingBlockRepository() const
+{
+    if (!ScheduleWidgetTestStubs::testingAssignmentRepositoryAvailable)
+    {
+        return nullptr;
+    }
+
+    static QSqlDatabase database;
+    static TestingBlockRepository repository(database);
+    return &repository;
+}
+
+TestingBlockRepository::TestingBlockRepository(QSqlDatabase& database)
+    : m_database(database)
+{
+}
+
+Result<QList<TestingAssignmentDisplayRecord>>
+TestingBlockRepository::loadTestingAssignmentDisplayRecords()
+{
+    ++ScheduleWidgetTestStubs::testingAssignmentsReadCount;
+    ++ScheduleWidgetTestStubs::testingAssignmentDisplayReadMetrics.callCount;
+    ++ScheduleWidgetTestStubs::testingAssignmentDisplayReadMetrics.statementCount;
+    if (!ScheduleWidgetTestStubs::testingAssignmentReadFailure.isEmpty())
+    {
+        return std::unexpected(
+            ScheduleWidgetTestStubs::testingAssignmentReadFailure
+            );
+    }
+
+    QList<TestingAssignmentDisplayRecord> rows;
+    for (
+        auto iterator = ScheduleWidgetTestStubs::testingBlocks.cbegin();
+        iterator != ScheduleWidgetTestStubs::testingBlocks.cend();
+        ++iterator
+        )
+    {
+        const QStringList keyParts =
+            iterator.key().split(QLatin1Char('\x1f'));
+        if (keyParts.size() != 2)
+        {
+            continue;
+        }
+
+        TestingAssignmentDisplayRecord row;
+        row.day = keyParts.at(0);
+        row.startTime = keyParts.at(1);
+        row.room = iterator.value();
+        rows.append(std::move(row));
+    }
+
+    for (
+        auto iterator =
+            ScheduleWidgetTestStubs::testingClassAssignments.cbegin();
+        iterator !=
+            ScheduleWidgetTestStubs::testingClassAssignments.cend();
+        ++iterator
+        )
+    {
+        const QStringList keyParts =
+            iterator.key().split(QLatin1Char('\x1f'));
+        if (keyParts.size() != 2)
+        {
+            continue;
+        }
+
+        TestingAssignmentDisplayRecord row;
+        row.day = keyParts.at(0);
+        row.startTime = keyParts.at(1);
+        row.classId = iterator.value();
+        const auto testingClass =
+            ScheduleWidgetTestStubs::testingClasses.constFind(row.classId);
+        if (testingClass != ScheduleWidgetTestStubs::testingClasses.cend())
+        {
+            row.hasSpecialClass = true;
+            row.className = testingClass->name;
+            row.testingClassRoom = testingClass->room;
+            row.grade = testingClass->grade;
+            row.level = testingClass->level;
+            row.classColor = testingClass->classColor;
+            row.fontColor = testingClass->fontColor;
+            if (testingClass->teacherId > 0)
+            {
+                const Teacher teacher = DataService().getTeacher(
+                    testingClass->teacherId
+                    ).value_or(Teacher{});
+                row.teacherKoreanName = teacher.teacherKr;
+                row.teacherEnglishName = teacher.teacherEn;
+                row.teacherPreferredName =
+                    teacher.preferredDisplayName();
+            }
+        }
+        rows.append(std::move(row));
+    }
+
+    return rows;
+}
+
+const TestingAssignmentDisplayReadMetrics&
+TestingBlockRepository::testingAssignmentDisplayReadMetrics() const noexcept
+{
+    return ScheduleWidgetTestStubs::testingAssignmentDisplayReadMetrics;
 }
 
 ClassInfoRepository* DatabaseSession::classInfoRepository() const

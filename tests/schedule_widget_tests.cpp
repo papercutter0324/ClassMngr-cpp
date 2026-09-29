@@ -59,6 +59,8 @@ void setDatabaseOpen(bool open);
 void setIntensiveSlotStates(QList<IntensiveSlotState> states);
 void setIntensiveSlotStateReadFailure(const QString& error);
 void setIntensiveSlotStateRepositoryAvailable(bool available);
+void setTestingAssignmentReadFailure(const QString& error);
+void setTestingAssignmentRepositoryAvailable(bool available);
 void setSlotSaveFailure(const QString& error);
 void setScheduleClassInfoReadFailure(bool fail);
 void setExistingIntensiveHours(bool exists);
@@ -72,6 +74,11 @@ void setTestingClassAssignment(
     const QString& day,
     const QString& startTime,
     const TestingClass& testingClass
+    );
+void setUnresolvedTestingClassAssignment(
+    const QString& day,
+    const QString& startTime,
+    int classId
     );
 QString settingValue(const QString& key);
 }
@@ -233,6 +240,9 @@ private slots:
     void unavailableSourceReturnsDaysOnlyWithoutReading();
     void failedSourceReadLogsAndKeepsIndependentScheduleReads();
     void previewModelBypassesSourceAndScheduleReads();
+    void failedTestingAssignmentReadWarnsAndRetainsAssignments();
+    void unavailableTestingAssignmentReadClearsAssignments();
+    void missingTestingClassWarnsAndSkipsOnlyThatAssignment();
     void slotStateSuccessReplacesAndClearsOverrides();
     void unavailableSlotStateReadIsSilentAndRetainsOverrides();
     void failedSlotStateReadWarnsAndRetainsOverrides();
@@ -1097,6 +1107,187 @@ void ScheduleWidgetTests::previewModelBypassesSourceAndScheduleReads()
         widget.scheduleModel().rows.first().timeLabel,
         QStringLiteral("10:00")
         );
+}
+
+void ScheduleWidgetTests::
+failedTestingAssignmentReadWarnsAndRetainsAssignments()
+{
+    TestingClass testingClass;
+    testingClass.classId = 100;
+    testingClass.name = QStringLiteral("Writing Lab");
+    testingClass.grade = QStringLiteral("M2");
+    testingClass.level = QStringLiteral("Mixed (High)");
+    testingClass.room = QStringLiteral("Library");
+    ScheduleWidgetTestStubs::setTestingClassAssignment(
+        QStringLiteral("Monday"),
+        QStringLiteral("16:00"),
+        testingClass
+        );
+
+    ApplicationServices services;
+    saveSettingOrFail(
+        services.dataService(),
+        QStringLiteral("schedule_display_mode"),
+        QStringLiteral("testing")
+        );
+    ScheduleWidget widget(&services);
+    widget.refreshSchedule();
+
+    QCOMPARE(ScheduleWidgetTestStubs::testingAssignmentsReadCount, 1);
+    ScheduleViewModel model = widget.scheduleModel();
+    const ScheduleCellView* monday = findScheduleCell(
+        model,
+        QStringLiteral("Monday"),
+        QStringLiteral("16:00")
+        );
+    QVERIFY(monday);
+    QVERIFY(monday->testingClassAssignment);
+    QCOMPARE(monday->testingClassId, 100);
+
+    ScheduleWidgetTestStubs::setTestingAssignmentReadFailure(
+        QStringLiteral("injected testing assignment read failure")
+        );
+    QTest::ignoreMessage(
+        QtWarningMsg,
+        QRegularExpression(QStringLiteral(
+            ".*Failed to load testing blocks:.*"
+            "injected testing assignment read failure.*"
+            ))
+        );
+    FakeUserPromptService prompts;
+    DialogServices::setUserPromptServiceForTesting(&prompts);
+    widget.refreshSchedule();
+
+    QCOMPARE(prompts.messages.size(), 1);
+    QCOMPARE(prompts.messages.constFirst().title,
+             QStringLiteral("Testing Layout"));
+    QCOMPARE(prompts.messages.constFirst().severity, PromptSeverity::Warning);
+    QCOMPARE(prompts.messages.constFirst().message,
+             QStringLiteral("injected testing assignment read failure"));
+    QCOMPARE(ScheduleWidgetTestStubs::testingAssignmentsReadCount, 2);
+    model = widget.scheduleModel();
+    monday = findScheduleCell(
+        model,
+        QStringLiteral("Monday"),
+        QStringLiteral("16:00")
+        );
+    QVERIFY(monday);
+    QVERIFY(monday->testingClassAssignment);
+    QCOMPARE(monday->testingClassId, 100);
+}
+
+void ScheduleWidgetTests::
+unavailableTestingAssignmentReadClearsAssignments()
+{
+    TestingClass testingClass;
+    testingClass.classId = 100;
+    testingClass.name = QStringLiteral("Writing Lab");
+    testingClass.grade = QStringLiteral("M2");
+    testingClass.level = QStringLiteral("Mixed (High)");
+    testingClass.room = QStringLiteral("Library");
+    ScheduleWidgetTestStubs::setTestingClassAssignment(
+        QStringLiteral("Monday"),
+        QStringLiteral("16:00"),
+        testingClass
+        );
+
+    ApplicationServices services;
+    saveSettingOrFail(
+        services.dataService(),
+        QStringLiteral("schedule_display_mode"),
+        QStringLiteral("testing")
+        );
+    ScheduleWidget widget(&services);
+    widget.refreshSchedule();
+
+    ScheduleViewModel model = widget.scheduleModel();
+    const ScheduleCellView* monday = findScheduleCell(
+        model,
+        QStringLiteral("Monday"),
+        QStringLiteral("16:00")
+        );
+    QVERIFY(monday);
+    QVERIFY(monday->testingClassAssignment);
+
+    ScheduleWidgetTestStubs::setTestingAssignmentRepositoryAvailable(false);
+    FakeUserPromptService prompts;
+    DialogServices::setUserPromptServiceForTesting(&prompts);
+    widget.refreshSchedule();
+
+    QVERIFY(prompts.messages.isEmpty());
+    QCOMPARE(ScheduleWidgetTestStubs::testingAssignmentsReadCount, 1);
+    model = widget.scheduleModel();
+    monday = findScheduleCell(
+        model,
+        QStringLiteral("Monday"),
+        QStringLiteral("16:00")
+        );
+    QVERIFY(!monday || !monday->testingClassAssignment);
+}
+
+void ScheduleWidgetTests::
+missingTestingClassWarnsAndSkipsOnlyThatAssignment()
+{
+    TestingClass testingClass;
+    testingClass.classId = 100;
+    testingClass.name = QStringLiteral("Writing Lab");
+    testingClass.grade = QStringLiteral("M2");
+    testingClass.level = QStringLiteral("Mixed (High)");
+    testingClass.room = QStringLiteral("Library");
+    ScheduleWidgetTestStubs::setTestingClassAssignment(
+        QStringLiteral("Monday"),
+        QStringLiteral("16:00"),
+        testingClass
+        );
+    ScheduleWidgetTestStubs::setUnresolvedTestingClassAssignment(
+        QStringLiteral("Tuesday"),
+        QStringLiteral("16:00"),
+        101
+        );
+    ScheduleWidgetTestStubs::setTestingBlock(
+        QStringLiteral("Wednesday"),
+        QStringLiteral("16:00"),
+        QStringLiteral("Room 9")
+        );
+
+    ApplicationServices services;
+    saveSettingOrFail(
+        services.dataService(),
+        QStringLiteral("schedule_display_mode"),
+        QStringLiteral("testing")
+        );
+    ScheduleWidget widget(&services);
+    QTest::ignoreMessage(
+        QtWarningMsg,
+        QRegularExpression(QStringLiteral(
+            ".*Failed to load assigned testing class:.*"
+            "The testing class was not found\\..*"
+            ))
+        );
+    widget.refreshSchedule();
+
+    ScheduleViewModel model = widget.scheduleModel();
+    const ScheduleCellView* monday = findScheduleCell(
+        model,
+        QStringLiteral("Monday"),
+        QStringLiteral("16:00")
+        );
+    const ScheduleCellView* tuesday = findScheduleCell(
+        model,
+        QStringLiteral("Tuesday"),
+        QStringLiteral("16:00")
+        );
+    const ScheduleCellView* wednesday = findScheduleCell(
+        model,
+        QStringLiteral("Wednesday"),
+        QStringLiteral("16:00")
+        );
+    QVERIFY(monday);
+    QVERIFY(monday->testingClassAssignment);
+    QCOMPARE(monday->testingClassId, 100);
+    QVERIFY(!tuesday || !tuesday->testingClassAssignment);
+    QVERIFY(wednesday);
+    QCOMPARE(wednesday->testingRoom, QStringLiteral("Room 9"));
 }
 
 void ScheduleWidgetTests::slotStateSuccessReplacesAndClearsOverrides()

@@ -253,6 +253,121 @@ TestingBlockRepository::loadTestingAssignments()
     return assignments;
 }
 
+Result<QList<TestingAssignmentDisplayRecord>>
+TestingBlockRepository::loadTestingAssignmentDisplayRecords()
+{
+    ++m_testingAssignmentDisplayReadMetrics.callCount;
+    QList<TestingAssignmentDisplayRecord> assignments;
+    QSqlQuery query(m_database);
+
+    ++m_testingAssignmentDisplayReadMetrics.statementCount;
+    const auto executed = SqlQueryUtils::execute(
+        query,
+        QStringLiteral(R"(
+            SELECT
+                b.day,
+                b.start_time,
+                b.room,
+                b.class_id,
+                tc.class_id AS testing_class_id,
+                c.id AS testing_class_record_id,
+                c.name AS testing_class_name,
+                tc.room AS testing_class_room,
+                ci.class_grade,
+                ci.class_level,
+                ci.class_color,
+                ci.font_color,
+                t.teacher_kr,
+                t.teacher_en,
+                t.preferred_name
+            FROM schedule_testing_blocks b
+            LEFT JOIN testing_classes tc
+            ON tc.class_id = b.class_id
+            LEFT JOIN classes c
+            ON c.id = tc.class_id
+            LEFT JOIN class_info ci
+            ON ci.class_id = tc.class_id
+            LEFT JOIN teachers t
+            ON t.id = ci.teacher_id
+            ORDER BY b.day, b.start_time
+        )"),
+        QObject::tr("Loading testing blocks")
+        );
+    if (!executed)
+    {
+        return std::unexpected(executed.error().userMessage());
+    }
+
+    while (query.next())
+    {
+        TestingAssignmentDisplayRecord assignment;
+        assignment.day = query.value(QStringLiteral("day")).toString();
+        assignment.startTime =
+            query.value(QStringLiteral("start_time")).toString();
+        assignment.room = query.value(QStringLiteral("room")).toString();
+        assignment.classId =
+            query.value(QStringLiteral("class_id")).isNull()
+                ? -1
+                : query.value(QStringLiteral("class_id")).toInt();
+        assignment.hasSpecialClass =
+            !query.value(QStringLiteral("testing_class_id")).isNull()
+            && !query.value(
+                QStringLiteral("testing_class_record_id")
+                ).isNull();
+
+        if (assignment.hasSpecialClass)
+        {
+            assignment.className = query.value(
+                QStringLiteral("testing_class_name")
+                ).toString();
+            assignment.teacherKoreanName = query.value(
+                QStringLiteral("teacher_kr")
+                ).toString();
+            assignment.teacherEnglishName = query.value(
+                QStringLiteral("teacher_en")
+                ).toString();
+            assignment.teacherPreferredName = query.value(
+                QStringLiteral("preferred_name")
+                ).toString();
+            assignment.testingClassRoom = query.value(
+                QStringLiteral("testing_class_room")
+                ).toString();
+            assignment.grade = query.value(
+                QStringLiteral("class_grade")
+                ).toString();
+            assignment.level = query.value(
+                QStringLiteral("class_level")
+                ).toString();
+
+            const QString classColor = query.value(
+                QStringLiteral("class_color")
+                ).toString();
+            if (!classColor.trimmed().isEmpty())
+            {
+                assignment.classColor = classColor;
+            }
+
+            const QString fontColor = query.value(
+                QStringLiteral("font_color")
+                ).toString();
+            if (!fontColor.trimmed().isEmpty())
+            {
+                assignment.fontColor = fontColor;
+            }
+        }
+
+        assignments.append(std::move(assignment));
+    }
+
+    return assignments;
+}
+
+const TestingAssignmentDisplayReadMetrics&
+TestingBlockRepository::testingAssignmentDisplayReadMetrics() const noexcept
+{
+    return m_testingAssignmentDisplayReadMetrics;
+}
+
 Status TestingBlockRepository::saveTestingBlock(
     const QString& day,
     const QString& startTime,

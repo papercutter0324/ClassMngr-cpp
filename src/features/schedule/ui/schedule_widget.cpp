@@ -17,9 +17,11 @@
 #include "features/schedule/services/schedule_output_controller.h"
 #include "next/application/schedule_builder_source_snapshot.h"
 #include "next/application/schedule_slot_state_read_query.h"
+#include "next/application/schedule_testing_assignment_read_query.h"
 #include "next/application/schedule_slot_state_save_use_case.h"
 #include "next/platform/application_services_schedule_builder_source_port.h"
 #include "next/platform/application_services_schedule_slot_state_read_port.h"
+#include "next/platform/application_services_schedule_testing_assignment_read_port.h"
 #include "next/platform/application_services_schedule_slot_state_save_port.h"
 #include "next/platform/application_services_schedule_display_preferences_port.h"
 #include "next/platform/application_services_schedule_display_mode_preferences_port.h"
@@ -1047,92 +1049,101 @@ void ScheduleWidget::reloadSlotStates()
 
 void ScheduleWidget::reloadTestingBlocks()
 {
-    auto* scheduleService =
-        m_services
-            ? m_services->scheduleService()
-            : nullptr;
-    auto* classService =
-        m_services
-            ? m_services->classService()
-            : nullptr;
+    ClassMngr::Next::Platform::
+        ApplicationServicesScheduleTestingAssignmentReadPort port(
+            m_services
+            );
+    const auto loaded =
+        ClassMngr::Next::Application::
+            ScheduleTestingAssignmentReadQueryHandler::execute(
+                {},
+                port
+                );
 
-    if (!scheduleService || !scheduleService->isAvailable())
+    if (!loaded)
     {
-        m_interactionState.clearTestingAssignments();
-        return;
-    }
+        if (loaded.error().code == ClassMngr::Next::Domain::ErrorCode::NotFound)
+        {
+            m_interactionState.clearTestingAssignments();
+            return;
+        }
 
-    const Result<QList<TestingAssignment>> assignments =
-        scheduleService->testingAssignments();
-
-    if (!assignments)
-    {
+        const QString error = QString::fromUtf8(
+            loaded.error().message.data(),
+            static_cast<qsizetype>(loaded.error().message.size())
+            );
         qWarning()
             << "Failed to load testing blocks:"
-            << assignments.error();
+            << error;
         DialogServices::showWarning(
             this,
             tr("Testing Layout"),
-            assignments.error()
+            error
             );
         return;
     }
 
     QMap<QString, TestingAssignmentView> loadedAssignments;
 
-    for (const TestingAssignment& assignment : *assignments)
+    for (const auto& row : loaded.value().rows)
     {
-        TestingAssignmentView view;
-        view.assignment = assignment;
-
-        if (
-            assignment.kind
-                == TestingAssignmentKind::SpecialClass
-            )
+        if (row.classId > 0 && !row.specialClass)
         {
-            if (!classService || !classService->isAvailable())
-            {
-                continue;
-            }
+            qWarning()
+                << "Failed to load assigned testing class:"
+                << tr("The testing class was not found.");
+            continue;
+        }
 
-            const Result<TestingClass> testingClass =
-                scheduleService->testingClass(
-                    assignment.classId
-                    );
+        TestingAssignmentView view;
+        const QString day = QString::fromStdU16String(row.day);
+        const QString startTime =
+            QString::fromStdU16String(row.startTime);
+        view.assignment.day = day;
+        view.assignment.startTime = startTime;
+        view.assignment.kind = row.classId > 0
+            ? TestingAssignmentKind::SpecialClass
+            : TestingAssignmentKind::PlainTesting;
+        view.assignment.room = QString::fromStdU16String(row.room);
+        view.assignment.classId = row.classId;
 
-            if (!testingClass)
-            {
-                qWarning()
-                    << "Failed to load assigned testing class:"
-                    << testingClass.error();
-                continue;
-            }
-
-            const ClassInfo info =
-                classService->classInfo(
-                    assignment.classId
-                    ).value_or(ClassInfo{});
+        if (row.classId > 0 && row.specialClass)
+        {
             ScheduleEntry entry;
-            entry.classId = assignment.classId;
+            entry.classId = row.classId;
             entry.kind = ScheduleEntryKind::TestingClass;
-            entry.className = testingClass->name;
-            entry.teacherKr = info.teacherKr;
-            entry.teacherEn = info.teacherEn;
-            entry.teacherPreferredName =
-                info.teacherPreferredName;
-            entry.roomNumber = testingClass->room;
-            entry.classGrade = testingClass->grade;
-            entry.classLevel = testingClass->level;
-            entry.classColor = testingClass->classColor;
-            entry.fontColor = testingClass->fontColor;
+            entry.className = QString::fromStdU16String(
+                row.specialClass->name
+                );
+            entry.teacherKr = QString::fromStdU16String(
+                row.specialClass->teacherKoreanName
+                );
+            entry.teacherEn = QString::fromStdU16String(
+                row.specialClass->teacherEnglishName
+                );
+            entry.teacherPreferredName = QString::fromStdU16String(
+                row.specialClass->teacherPreferredName
+                );
+            entry.roomNumber = QString::fromStdU16String(
+                row.specialClass->room
+                );
+            entry.classGrade = QString::fromStdU16String(
+                row.specialClass->grade
+                );
+            entry.classLevel = QString::fromStdU16String(
+                row.specialClass->level
+                );
+            entry.classColor = QString::fromStdU16String(
+                row.specialClass->classColor
+                );
+            entry.fontColor = QString::fromStdU16String(
+                row.specialClass->fontColor
+                );
             view.testingClassEntry = entry;
         }
 
         loadedAssignments.insert(
-            scheduleSlotKey(
-                assignment.day,
-                assignment.startTime
-                ),
+            scheduleSlotKey(day, startTime),
             view
             );
     }

@@ -7,6 +7,30 @@
 #include <QSqlDatabase>
 #include <QString>
 
+struct TestingAssignmentDisplayRecord final
+{
+    QString day;
+    QString startTime;
+    QString room;
+    int classId{-1};
+    bool hasSpecialClass{false};
+    QString className;
+    QString teacherKoreanName;
+    QString teacherEnglishName;
+    QString teacherPreferredName;
+    QString testingClassRoom;
+    QString grade;
+    QString level;
+    QString classColor{QStringLiteral("#FFFFFF")};
+    QString fontColor{QStringLiteral("#000000")};
+};
+
+struct TestingAssignmentDisplayReadMetrics final
+{
+    int callCount = 0;
+    int statementCount = 0;
+};
+
 class TestingBlockRepository
 {
 public:
@@ -16,6 +40,11 @@ public:
 
     [[nodiscard]] Result<QList<TestingAssignment>>
     loadTestingAssignments();
+
+    [[nodiscard]] Result<QList<TestingAssignmentDisplayRecord>>
+    loadTestingAssignmentDisplayRecords();
+    [[nodiscard]] const TestingAssignmentDisplayReadMetrics&
+    testingAssignmentDisplayReadMetrics() const noexcept;
 
     [[nodiscard]] Result<QList<TestingBlock>> loadTestingBlocks();
 
@@ -49,4 +78,6 @@ public:
 
 private:
     QSqlDatabase& m_database;
+    TestingAssignmentDisplayReadMetrics
+        m_testingAssignmentDisplayReadMetrics;
 };
