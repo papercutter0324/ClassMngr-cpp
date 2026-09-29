@@ -6,12 +6,13 @@
 #include "ui/shared/pages/page_header.h"
 
 #include "core/application_services.h"
-#include "app/services/feature_services.h"
 #include "core/fontmanager.h"
 #include "domain/models/class_info.h"
 #include "domain/models/teacher.h"
+#include "next/application/class_notes_page_read_query.h"
 #include "next/application/class_notes_save_port.h"
 #include "next/application/class_notes_save_use_case.h"
+#include "next/platform/application_services_class_notes_page_read_port.h"
 #include "next/platform/application_services_class_notes_save_port.h"
 #include "ui/shared/constants/gui_constants.h"
 #include "ui/shared/widgets/sectioncards/class_info_section_card.h"
@@ -26,16 +27,19 @@
 #include <QtAssert>
 
 #include <string>
+#include <utility>
 
 ClassNotesPage::ClassNotesPage(
     ApplicationServices* services,
     bool embedded,
     QWidget* parent,
-    ClassMngr::Next::Application::ClassNotesSavePort* savePort
+    ClassMngr::Next::Application::ClassNotesSavePort* savePort,
+    ClassMngr::Next::Application::ClassNotesPageReadPort* readPort
     )
     : BasePage(parent)
     , m_services(services)
     , m_savePort(savePort)
+    , m_readPort(readPort)
     , m_embedded(embedded)
     , m_autosave(new AutosaveCoordinator(this))
 {
@@ -67,20 +71,55 @@ void ClassNotesPage::loadClass(
 
     m_classroom = classroom;
 
-    auto* classService = m_services->classService();
-    auto* teacherService = m_services->teacherService();
-
-    const ClassInfo info =
-        classService->classInfo(
-            classroom.id
-            ).value_or(ClassInfo{});
-
+    ClassInfo info;
     Teacher teacher;
-
-    if (info.teacherId > 0)
+    const auto classId = ClassMngr::Next::Domain::ClassId::fromString(
+        std::to_string(classroom.id)
+        );
+    if (classId)
     {
-        teacher = teacherService->teacher(info.teacherId)
-            .value_or(Teacher{});
+        ClassMngr::Next::Platform::ApplicationServicesClassNotesPageReadPort
+            defaultReadPort(m_services);
+        const ClassMngr::Next::Application::ClassNotesPageReadPort& readPort =
+            m_readPort ? *m_readPort : defaultReadPort;
+        const ClassMngr::Next::Application::ClassNotesPageReadQuery query(
+            readPort
+            );
+        const auto snapshot = query.execute(*classId);
+
+        if (snapshot)
+        {
+            const auto& classFields = snapshot.value().classFields;
+            if (classFields)
+            {
+                const auto& fields = classFields.value();
+                info.classId = classroom.id;
+                info.classGrade = QString::fromStdU16String(fields.classGrade);
+                info.classLevel = QString::fromStdU16String(fields.classLevel);
+                info.notes = QString::fromStdU16String(fields.notes);
+                info.timeFillerActivities = QString::fromStdU16String(
+                    fields.timeFillerActivities
+                    );
+                info.classTimes.reserve(
+                    static_cast<qsizetype>(fields.regularSchedule.size())
+                    );
+                for (const auto& row : fields.regularSchedule)
+                {
+                    ClassTime time;
+                    time.day = QString::fromStdU16String(row.day);
+                    time.startTime = QString::fromStdU16String(row.startTime);
+                    info.classTimes.append(std::move(time));
+                }
+            }
+
+            const auto& teacherDisplayName = snapshot.value().teacherDisplayName;
+            if (teacherDisplayName)
+            {
+                teacher.preferredName = QString::fromStdU16String(
+                    teacherDisplayName.value()
+                    );
+            }
+        }
     }
 
     m_subtitleText =

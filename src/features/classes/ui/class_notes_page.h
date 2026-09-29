@@ -16,6 +16,7 @@ class QTextEdit;
 namespace ClassMngr::Next::Application
 {
 class ClassNotesSavePort;
+class ClassNotesPageReadPort;
 }
 
 class ClassNotesPage : public BasePage
@@ -27,7 +28,8 @@ public:
         ApplicationServices* services,
         bool embedded = false,
         QWidget* parent = nullptr,
-        ClassMngr::Next::Application::ClassNotesSavePort* savePort = nullptr
+        ClassMngr::Next::Application::ClassNotesSavePort* savePort = nullptr,
+        ClassMngr::Next::Application::ClassNotesPageReadPort* readPort = nullptr
         );
 
     void loadClass(
@@ -60,6 +62,7 @@ private:
 private:
     ApplicationServices* m_services = nullptr;
     ClassMngr::Next::Application::ClassNotesSavePort* m_savePort = nullptr;
+    ClassMngr::Next::Application::ClassNotesPageReadPort* m_readPort = nullptr;
     Classroom m_classroom;
     QString m_savedNotes;
     QString m_savedTimeFillerActivities;

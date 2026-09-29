@@ -94,6 +94,9 @@ set(CLASSMNGR_NEXT_APPLICATION_SOURCES
     src/next/application/class_details_page_read_port.h
     src/next/application/class_details_page_query.h
     src/next/application/schedule_editor_class_info_query.h
+    src/next/application/class_notes_page_read_snapshot.h
+    src/next/application/class_notes_page_read_port.h
+    src/next/application/class_notes_page_read_query.h
     src/next/application/class_notes_save_port.h
     src/next/application/class_notes_save_use_case.h
     src/next/application/sub_prep_schedule_summary_query.h
@@ -235,6 +238,7 @@ set(CLASSMNGR_NEXT_PLATFORM_SOURCES
     src/next/platform/application_services_class_selection_reset_policy_port.h
     src/next/platform/application_services_class_visibility_preferences_port.h
     src/next/platform/application_services_class_notes_save_port.h
+    src/next/platform/application_services_class_notes_page_read_port.h
     src/next/platform/application_services_class_details_save_port.h
     src/next/platform/application_services_class_details_schedule_conflict_port.h
     src/next/platform/application_services_class_details_validation_context_port.h
