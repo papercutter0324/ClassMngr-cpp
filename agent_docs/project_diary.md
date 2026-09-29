@@ -1433,3 +1433,21 @@ schedule inputs, end-before-start, and duplicate rows. Legacy `QHash` does not
 define duplicate-group order, so compare duplicate membership and visible
 row-specific behavior semantically. Keep the fresh Application read for
 hidden persisted validation fields as a separate next boundary.
+
+## 2026-09-30 — F152 validation-context read selection
+
+Fetch the hidden persisted fields fresh for every save attempt; the page-load
+snapshot may be stale. Preserve teacher ID `-1` as unassigned, `0` as invalid,
+and exact notes/activity text for the Qt-free policy. Keep the query context
+out of the save request so the save adapter continues to reread and preserve
+the latest persisted record. On query failure, retain the existing empty
+context fallback and downstream validation/conflict/save order.
+
+## 2026-09-30 — F151 validation parity
+
+Use a valid cross-class conflict as a warning trap while testing invalid
+schedule input through the real page. Assert visible validation and unchanged
+database state on current and baseline; direct query-count behavior belongs in
+the current page tests when the shared baseline constructor offers no query
+observer. Compare duplicate groups by membership and row feedback, not by the
+legacy `QHash` iteration order.

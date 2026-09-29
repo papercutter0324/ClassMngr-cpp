@@ -1874,3 +1874,28 @@ schedule validation, end-before-start, and duplicate rows. Compare duplicate
 membership and row-specific feedback semantically because the legacy
 cross-group `QHash` order is unspecified. A typed Application read for hidden
 persisted validation fields remains a separate subsequent candidate.
+
+## F151 Class Details invalid-schedule parity — 2026-09-30
+
+Commit `f232301e` adds four live-page common-input parity cases for malformed
+regular schedules, malformed intensive schedules, end-before-start, and
+duplicate rows. The cases assert field/row/column feedback, dirty-state
+retention, no visible conflict warning, no saved signal, and unchanged target
+and source records. Duplicate groups are compared semantically without
+depending on cross-group ordering.
+
+Fresh Windows x64 Debug Ninja/MSVC verification (CMake 4.4.2, Ninja 1.13.2,
+MSVC 19.51.36257, Qt 6.12.0) validated 1,047 handwritten source owners. The
+policy, page, parity, and shared-policy CTests passed 4/4. The pinned baseline
+`48fc5c5cc7dee78d82f8bf5f1bf8b51725575b99` parity target passed 1/1 (6/6
+QtTest cases). The baseline overlay added only parity test source/registration
+and three Qt minimum bumps; its production `class_details_page.cpp` matched
+the pinned Git blob. Baseline parity proves no visible conflict warning or
+write; direct query-count assertions remain in the current-only page tests.
+No full suite or application build ran. Gate 2 gains these validation cases
+and remains Partial. Gate 1 remains Partial; Phase 2 remains In Progress/Open.
+F152 is selected: replace the page's direct `ClassService::classInfo()` read
+with a fresh typed validation-context query using raw signed teacher ID and
+exact UTF-16 notes/activity. Preserve the `-1` sentinel, missing-row defaults,
+and read-failure fallback/order; keep the context out of the save request so
+the save port rereads current values.

@@ -25,12 +25,13 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
   delete/cascade and its page transition fix. F148 adds common-input successful
   save parity; F149's typed conflict query and F150's typed validation policy
   are accepted. F126 routes `ClassDetailsPage` saves through the Qt-free use
-  case reused by F139 in `ScheduleEditorDialog`. F151 is selected for live-page
-  current/baseline parity on malformed regular/intensive schedules,
-  end-before-start, and duplicate rows. Assert invalid dirty state, no
-  conflict/save/signal, and unchanged persisted data; compare duplicate
-  feedback semantically without cross-group issue-order assertions. A separate
-  hidden persisted teacher/notes/activity query follows F151. Gates 1 and 2
+  case reused by F139 in `ScheduleEditorDialog`. F151 is accepted for
+  current/baseline live-page invalid-schedule parity (malformed regular/intensive,
+  end-before-start, duplicate rows); Gate 2 advances but remains Partial. F152
+  is selected for a fresh-at-save typed query and active-session adapter that
+  returns raw signed teacher ID and exact UTF-16 notes/activity, preserving
+  legacy defaults/fallback and validation-conflict-save order. Save port and
+  `ClassService` guard remain separate. Gates 1 and 2
   remain Partial; F120 active-v2 DataService isolation and formal
   workspace-create acceptance remain Satisfied.
   Historical workbook provenance remains a tracked risk, not a literal exit
@@ -266,8 +267,8 @@ No production defect was observed.
 F144 is the preceding accepted slice. F145's accepted existing-class details
 update is recorded below. F146's accepted new-class create, including the
 optional pending weekday/start-time assignment, is recorded after it. F147's
-accepted delete/cascade migration is recorded below; F148-F150 acceptance
-and F151 selection are recorded below.
+accepted delete/cascade migration is recorded below; F148-F151 acceptance
+and F152 selection are recorded below.
 
 ## F145 acceptance record
 
@@ -354,12 +355,35 @@ verification, including representative-only page field/focus mapping coverage,
 is recorded in the [Phase 2 progress log](03-Phase-2-Progress-Log.md). Gates 1
 and 2 remain Partial; Phase 2 remains In Progress with its exit gate Open.
 
-## F151 selected validation-parity slice
+## F151 validation-parity slice
 
 F151 compares live-page current and baseline validation for malformed regular
 and intensive schedule inputs, end-before-start, and duplicate rows. Invalid
-cases must remain dirty and make no conflict query, save, or signal, with
-persisted data unchanged. Compare duplicate membership and row feedback
-semantically; do not compare cross-group issue order because legacy `QHash`
-ordering is unspecified. A separate typed Application query for fresh hidden
-persisted teacher/notes/activity fields follows F151.
+cases must remain dirty, produce no visible conflict warning, save, or signal,
+and leave persisted data unchanged. Current-only page tests assert no conflict
+query directly; baseline parity uses a seeded conflict trap. Compare duplicate
+membership and row feedback semantically; do not compare cross-group issue
+order because legacy `QHash` ordering is unspecified. A separate typed
+Application query for fresh hidden persisted teacher/notes/activity fields
+follows F151.
+
+## F151 acceptance record
+
+F151, commit `f232301e`, is accepted with current/baseline live-page validation
+parity. The current focused run passed 4/4; baseline parity passed CTest 1/1
+and six QtTest cases. Four input cases cover malformed regular, malformed
+intensive, end-before-start, and two duplicate groups with a unique row. Issue
+mapping, dirty state, no visible warning/save signal, and unchanged data are
+asserted. Current page tests count conflict-query calls directly; the baseline
+parity uses a conflict trap. Toolchain, overlay, and verification limits are in
+the [Phase 2 progress log](03-Phase-2-Progress-Log.md). Gate 2 advances but
+remains Partial; Gate 1 remains Partial and Phase 2 stays In Progress/Open.
+
+## F152 selected hidden validation-context read
+
+F152 will load the validation context fresh at save time through a typed
+Application query and active-session Platform adapter, returning the raw signed
+teacher ID and exact UTF-16 notes/activity; do not reuse the display snapshot.
+Preserve `-1` as the unassigned sentinel, treat zero as invalid, retain
+missing-row defaults and legacy read-failure fallback, and keep validation,
+conflict, and save order. Keep the save port and `ClassService` guard separate.

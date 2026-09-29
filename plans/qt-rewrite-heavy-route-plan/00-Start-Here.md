@@ -23,9 +23,10 @@
   success-transition fix. F148 is accepted with common-input Class Details
   save parity. F126's `ClassDetailsPage` save uses the Qt-free save use case,
   reused by F139 in `ScheduleEditorDialog`. F149's typed conflict query and
-  F150's typed validation policy are accepted. F151 is selected for
-  current/baseline invalid-schedule validation parity; a separate query for
-  hidden persisted teacher/notes/activity fields follows. See the [Phase 2 progress
+  F150's typed validation policy are accepted. F151 is accepted for
+  current/baseline invalid-schedule page parity. F152 is selected for a fresh
+  typed read of hidden persisted teacher/notes/activity fields, preserving raw
+  values and legacy defaults/fallback. See the [Phase 2 progress
   log](03-Phase-2-Progress-Log.md) for commits and verification.
   Phase 2 Gates 1 and 2 remain Partial; broader feature migration, parity, and
   96-class Release memory evidence remain open. Phase 1 build-system exit

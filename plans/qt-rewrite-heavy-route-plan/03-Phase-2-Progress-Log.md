@@ -7754,11 +7754,40 @@ revisions. Page field/focus mapping cases are representative, not exhaustive.
 No full suite or application build ran. Gate 1 and Gate 2 remain Partial; Phase
 2 remains In Progress with its exit gate Open.
 
-F151 is selected for live-page current/baseline validation parity covering
+F151 was selected for live-page current/baseline validation parity covering
 malformed regular and intensive schedule inputs, end-before-start, and
-duplicate rows. Each invalid case must remain dirty, make no conflict query,
-save, or signal, and leave persisted data unchanged. Compare duplicate
-membership and row-level feedback semantically; do not compare cross-group
-issue order because legacy `QHash` order is unspecified. A typed Application
-query for fresh hidden persisted teacher/notes/activity fields follows F151 as
-a separate slice.
+duplicate rows. Invalid cases must remain dirty, show no conflict warning,
+save, or signal, and leave persisted data unchanged. Current page tests assert
+no conflict query directly; the baseline parity uses a seeded conflict trap.
+Compare duplicate membership and row-level feedback semantically; do not
+compare cross-group issue order because legacy `QHash` order is unspecified. A
+typed Application query for fresh hidden persisted teacher/notes/activity
+fields follows F151 as a separate slice.
+
+### Progress update - 2026-09-30 (F151 accepted; F152 selected)
+
+F151, commit `f232301e`, adds live-page current/baseline validation parity for
+malformed regular input, malformed intensive input, end-before-start, and two
+duplicate groups with a unique row. Assertions cover issue mapping, retained
+dirty state, no visible warning or save signal, and unchanged persisted data.
+Current page tests assert zero conflict-query calls directly; baseline parity
+uses a conflict trap. Duplicate membership and row feedback compare
+semantically; cross-group issue order is excluded because legacy `QHash` order
+is unspecified.
+
+Fresh Windows x64 Debug verification used CMake 4.4.2, Ninja 1.13.2, MSVC
+19.51.36257, and Qt 6.12.0. Configure validated 1,047 handwritten source
+owners, and the focused current CTests passed 4/4. The pinned baseline
+`48fc5c5cc7dee78d82f8bf5f1bf8b51725575b99` parity CTest passed 1/1 with six
+QtTest cases. Its overlay added only the parity test source/registration and
+three Qt minimum bumps from 6.11.1 to 6.12.0; baseline production page source
+matches the pinned blob. No full suite or application build ran. Gate 2
+advances but remains Partial; Gate 1 remains Partial and Phase 2 remains In
+Progress/Open.
+
+F152 is selected for a fresh-at-save typed Application validation-context
+query and active-session Platform adapter returning the raw signed teacher ID
+and exact UTF-16 notes/activity. Do not reuse the display snapshot. Preserve
+`-1` as the unassigned sentinel, zero as invalid, missing-row defaults, and
+legacy read-failure fallback plus validation-to-conflict-to-save order. Keep
+the save port and `ClassService` guard separate.

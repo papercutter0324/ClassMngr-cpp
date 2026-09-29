@@ -4119,7 +4119,7 @@ separate existing-class details update; F147 now covers delete/cascade.
 
 The production and acceptance-test commits, focused verification, and limits
 are recorded in the [Phase 2 progress log](03-Phase-2-Progress-Log.md). F147
-migrates delete/cascade; F148-F150 acceptance and F151 selection are recorded
+migrates delete/cascade; F148-F151 acceptance and F152 selection are recorded
 below.
 
 ## Verified F147 Testing Class delete/cascade
@@ -4132,8 +4132,8 @@ F145 details update and F146 creation remain separate accepted boundaries.
 Production commit `b037b4216b71c55c7793df5f7bbbfc4a00690065`, page transition
 fix `315b3ff33b7e2ab42b43d52cd168ce21a92158c9`, and acceptance-test commit
 `397376e439f4b5955c82948ab0c225aaf776d679` are recorded with verification
-limits in the [Phase 2 progress log](03-Phase-2-Progress-Log.md). F148-F150 are
-accepted; F151 is selected. Its acceptance constraints are in the [Phase 2
+limits in the [Phase 2 progress log](03-Phase-2-Progress-Log.md). F148-F151 are
+accepted; F152 is selected. Its acceptance constraints are in the [Phase 2
 progress log](03-Phase-2-Progress-Log.md).
 
 ## Class-details save mapping: F126 and F139
@@ -4152,8 +4152,9 @@ normalization into a typed Qt-free Domain/Application policy and maps
 structured issues through `FormValidationBinder`; save-time validation remains
 in `ClassService`. Its
 preservation constraints and verification are in the [Phase 2 progress
-log](03-Phase-2-Progress-Log.md). F151 is selected for invalid-schedule
-current/baseline page parity; a separate hidden persisted-field query follows.
+log](03-Phase-2-Progress-Log.md). F151 accepted invalid-schedule
+current/baseline page parity; F152 is selected for a separate hidden
+persisted-field query.
 
 ## F149 Class Details conflict-query mapping
 
@@ -4165,5 +4166,23 @@ behavior and rendering; persistence owns overlap calculation/order, and
 `regularConflictShortCircuitsIntensiveAndKeepsSameNameWording` covers the
 same-display-name warning edge case; baseline parity compares regular/intensive
 conflicts with distinct conflicting class names. F150 subsequently moved
-pre-save validation/normalization to a typed policy; F151 covers the remaining
-invalid-schedule page parity work.
+pre-save validation/normalization to a typed policy. F151's accepted invalid
+schedule parity and F152's selected hidden-context read are recorded below.
+
+## F151 Class Details invalid-schedule validation mapping
+
+F151, commit `f232301e`, adds live-page invalid-input validation parity for
+malformed regular and intensive times, end-before-start, and duplicate rows.
+Current page tests directly assert no conflict-query calls; the baseline
+comparison uses a conflict trap. The baseline page source matches its pinned
+production blob. Full verification and limits are in the [Phase 2 progress
+log](03-Phase-2-Progress-Log.md). Gate 2 advances but remains Partial.
+
+## F152 selected hidden validation-context read
+
+F152 will query fresh validation context at save time through a typed
+Application contract and active-session Platform adapter, returning raw signed
+teacher ID and exact UTF-16 notes/activity. It does not reuse the display
+snapshot and must preserve the legacy sentinel, missing-row defaults,
+read-failure fallback, and validation-to-conflict-to-save order. Save port and
+`ClassService` guard remain separate.

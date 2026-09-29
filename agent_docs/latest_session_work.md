@@ -3607,12 +3607,34 @@ baseline scratch attempt failed during incomplete extraction; the clean
 re-extracted baseline run passed. The production fix after review ensured
 normalized hidden fields are applied during save conversion.
 
-F151 is selected to extend current/baseline live-page parity for malformed
-regular and intensive schedules, end-before-start, and duplicate schedule
-rows. Assert that invalid input keeps the page dirty, blocks conflict lookup
-and save, emits no saved signal, and leaves persisted data unchanged. Do not
-assert legacy cross-group duplicate issue order because its `QHash` order was
-unspecified; compare row-specific feedback and duplicate membership. A typed
-Application query for fresh persisted teacher/notes/activity validation
-context is deferred as a separate following slice. Gates 1 and 2 remain
-Partial; Phase 2 remains In Progress/Open. No push was requested.
+F151 parity-test commit `f232301e` (`Phase2 - add class details validation
+parity cases`) is accepted. It adds four common-input live-page cases for
+malformed regular input, malformed intensive input, end-before-start, and two
+duplicate groups with a unique row. They check issue feedback and locations,
+dirty state, no visible conflict warning, no saved signal, and unchanged
+target/source records. Duplicate membership and row-specific feedback are
+asserted without comparing cross-group order.
+
+Independent fresh Windows x64 Debug verification used CMake 4.4.2, Ninja
+1.13.2, MSVC 19.51.36257.0, and Qt 6.12.0. Current CTests passed 4/4:
+`ClassMngrNextApplicationClassDetailsValidationPolicyTests` (8 QtTest cases),
+`ClassMngrClassDetailsSavePageTests` (12),
+`ClassMngrClassDetailsPageSaveParityTests` (6), and
+`ClassMngrSharedPolicyTests` (83). Configure validated 1,047 handwritten
+source owners. The pinned baseline
+`48fc5c5cc7dee78d82f8bf5f1bf8b51725575b99` parity target passed 1/1 CTest
+(6/6 QtTest cases); baseline production source matched its pinned Git blob.
+The overlay was limited to parity test source/registration and three Qt
+minimum changes to installed 6.12.0. The parity cases use a seeded conflict as
+a warning trap; they do not count repository queries. Current page tests
+assert zero conflict-port requests. No full suite or full app build ran.
+
+F152 is selected to replace the page's direct `ClassService::classInfo()`
+read with a fresh typed Application query and active-session Platform adapter
+for persisted teacher ID, notes, and activity text. Keep raw signed teacher ID
+(`-1` remains unassigned and `0` remains invalid), exact UTF-16 text, and the
+existing empty-context fallback on read error. Query on each save attempt;
+never reuse the load-time display snapshot. Preserve validation before F149
+conflict checks and keep the context out of the save request so the save port
+continues its separate fresh read and `ClassService` guard. Gates 1 and 2
+remain Partial; Phase 2 remains In Progress/Open. No push was requested.
