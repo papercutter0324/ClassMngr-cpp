@@ -1,7 +1,8 @@
 #pragma once
 
-#include "app/services/feature_services.h"
 #include "core/application_services.h"
+#include "data/database/database_session.h"
+#include "data/repositories/settings_repository.h"
 #include "next/application/calendar_event_type_color_preferences.h"
 
 #include <QByteArray>
@@ -24,16 +25,14 @@ public:
     explicit ApplicationServicesCalendarEventTypeColorPreferencesPort(
         ApplicationServices& services
         ) noexcept
-        : m_settingsService(services.settingsService())
+        : m_session(services.databaseSession())
     {
     }
 
     explicit ApplicationServicesCalendarEventTypeColorPreferencesPort(
         ApplicationServices* services
         ) noexcept
-        : m_settingsService(
-            services ? services->settingsService() : nullptr
-            )
+        : m_session(services ? services->databaseSession() : nullptr)
     {
     }
 
@@ -54,19 +53,21 @@ public:
         const std::string& normalizedEventType
         ) const override
     {
-        if (!m_settingsService || !m_settingsService->isAvailable())
+        if (!m_session || !m_session->isOpen())
         {
             return {};
         }
 
-        const QByteArray storedColor =
-            m_settingsService
-                ->loadOrDefault(
-                    key(normalizedEventType),
-                    QString()
-                    )
-                .toString()
-                .toUtf8();
+        SettingsRepository* const repository = m_session->settingsRepository();
+        if (!repository)
+        {
+            return {};
+        }
+
+        const auto setting = repository->loadSetting(key(normalizedEventType));
+        const QByteArray storedColor = setting
+            ? setting->toString().toUtf8()
+            : QByteArray();
 
         return std::string(
             storedColor.constData(),
@@ -79,7 +80,13 @@ public:
         const std::string& colorHexRgb
         ) const override
     {
-        if (!m_settingsService || !m_settingsService->isAvailable())
+        if (!m_session || !m_session->isOpen())
+        {
+            return;
+        }
+
+        SettingsRepository* const repository = m_session->settingsRepository();
+        if (!repository)
         {
             return;
         }
@@ -88,7 +95,7 @@ public:
             colorHexRgb.data(),
             static_cast<qsizetype>(colorHexRgb.size())
             );
-        if (const Status saved = m_settingsService->save(
+        if (const Status saved = repository->saveSetting(
                 key(normalizedEventType),
                 storedColor
                 ); !saved)
@@ -111,7 +118,7 @@ private:
                 );
     }
 
-    SettingsService* m_settingsService = nullptr;
+    DatabaseSession* m_session = nullptr;
 };
 
 } // namespace ClassMngr::Next::Platform
