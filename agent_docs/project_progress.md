@@ -2200,7 +2200,7 @@ parity. Gates 1 and 2 remain Partial; Phase 2 remains In Progress/Open. A
 separate worker owns workflow repair; this work does not modify
 `.github/workflows/refactoring-baseline.yml`. No push was requested.
 
-## Current Phase 2 position - 2026-10-01 (F170 accepted; F171 selected)
+## Current Phase 2 position - 2026-10-01 (F171 accepted; F172 selected)
 
 F170 source commit `68391fac` moves `ApplicationServicesRosterReadPort` from
 `RosterService::roster()` to the active session's `RosterRepository`, with no
@@ -2212,16 +2212,28 @@ Platform port (0.19s), and `RosterEditorWidgetSave` (2.08s). The two focused
 roster editor read slots also exited successfully. `git diff --check` passed.
 No full suite or application build was run.
 
-F171 is selected: migrate `ApplicationServicesRosterSavePort` from
-`RosterService::saveRoster()` to the active-session `RosterRepository`. Keep
-canonical class-ID and open-session checks; preserve
-`RosterValidator::normalized()`, `RosterValidator::validate()`, and the
-`allowQuestionableKoreanNameLengths` choice. Retain current technical failure
-mapping and remove the service/`DataService` fallback. Acceptance covers full
-snapshot persistence, rejected input without writes, the questionable Korean
-name-length override, repository rollback, and page dirty/error behavior. Run
-`NextApplicationRosterSaveUseCase`,
-`NextPlatformApplicationServicesRosterSavePort`, and `RosterEditorWidgetSave`.
-Keep `build/f168` because its configured Ninja cache contains all three test
-targets. Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial.
-Workflow repair remains with the other worker.
+F171 source commit `7cb8e5d7` migrates `ApplicationServicesRosterSavePort`
+from `RosterService::saveRoster()` to the active-session
+`RosterRepository::saveRoster()`, with no service or `DataService` fallback.
+It preserves canonical-ID/session checks, roster normalization and validation,
+the questionable Korean name-length choice, and Technical failure mapping.
+Tests cover normalized snapshot persistence, complete no-write behavior for
+invalid input, the allow flag, repository rollback, and the closed-session
+path. Focused CTest passed 3/3: application save use case (0.02s), Platform
+save port (0.24s), and `RosterEditorWidgetSave` (2.03s; 2.30s total). The
+independent Tester also passed 3/3. `git diff --check` passed. No full suite or
+application build was run.
+
+F172 is selected: migrate `ApplicationServicesClassCoTeacherAssignmentPort`
+to active-session `ClassInfoRepository` persistence, with no
+`ClassService`/`DataService` fallback. Preserve typed assignment/unassignment,
+all unedited class fields, `ClassInfoValidator` normalization and validation,
+and regular plus intensive schedule-conflict checks before saving. Acceptance
+covers repository/session errors and transactional failure, class-field
+preservation, validation, both conflict types, and
+`NextFeatureClassCoTeacherPage` dirty/error behavior. Focused targets are
+`ClassMngrNextApplicationClassCoTeacherAssignmentTests`,
+`ClassMngrNextPlatformApplicationServicesClassCoTeacherAssignmentPortTests`,
+and `ClassMngrNextFeatureClassCoTeacherPageTests`; `build/f168` contains them.
+Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial. Workflow repair
+remains with the other worker.

@@ -36,7 +36,8 @@
   subtitle read, F166's RosterEditorWidget class subtitle read, and F167's
   ClassDetailsPage display read and F168's ClassDetailsPage save port are
   accepted. F169's ClassNotesPage save port and F170's roster read port are
-  accepted. F171 is selected for the roster save port. See the [Phase 2 progress
+  accepted. F171's roster save port is accepted. F172 is selected for the
+  Class Co-Teacher assignment save port. See the [Phase 2 progress
   log](03-Phase-2-Progress-Log.md)
   for evidence and current selection details.
   Phase 2 Gates 1 and 2 remain Partial; broader feature migration, parity, and

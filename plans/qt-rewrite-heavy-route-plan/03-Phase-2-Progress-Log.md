@@ -8299,7 +8299,7 @@ fields/schedule/teacher/count/fallback parity. F167 implementation has not
 started. Gate 1 and Gate 2 remain Partial; Phase 2 remains In Progress and its
 exit gate remains Open.
 
-### Progress update - 2026-10-01 (F170 accepted; F171 selected)
+### Progress update - 2026-10-01 (F171 accepted; F172 selected)
 
 F167, source commit `97efac8b`, updates
 `ApplicationServicesClassDetailsPageReadPort` to use active-session
@@ -8349,17 +8349,29 @@ errors, and NotFound on a closed session. Independent CTest command:
 widget read slots also exited 0 individually. `git diff --check` passed. No
 full suite or application build ran.
 
-F171 migrates `ApplicationServicesRosterSavePort` from
-`RosterService::saveRoster()` to the active-session
-`RosterRepository::saveRoster()`, with no service or `DataService` fallback.
-Preserve canonical positive-ID and open-session checks;
-`RosterValidator::normalized()` and `validate()` with
-`allowQuestionableKoreanNameLengths`; current Technical error mapping; snapshot
-persistence; invalid-input no-write; questionable-length override; repository
-rollback; and `RosterEditorWidgetSave` dirty/error behavior. Verify
-`NextApplicationRosterSaveUseCase`,
-`NextPlatformApplicationServicesRosterSavePort`, and `RosterEditorWidgetSave`.
-Keep the Co-Teacher assignment save port open for a later slice. The cleanup
-evaluation retains `build/f168` because its configured Ninja cache already has
-all three targets. Gate 1 and Gate 2 remain Partial; Phase 2 remains In Progress
-and its exit gate remains Open.
+F171, source commit `7cb8e5d7`, migrates `ApplicationServicesRosterSavePort`
+from `RosterService` to active-session `RosterRepository::saveRoster`, with no
+service or `DataService` fallback. It preserves canonical ID/open-session
+checks, `RosterValidator::normalized()` and `validate()` with the questionable
+Korean name-length flag, and Technical error mapping. Tests cover normalized
+full-snapshot persistence, exact stored-snapshot preservation on invalid input,
+the allow flag, injected-DB-failure rollback, and closed session with
+`DataService` present. Independent CTest command:
+`ctest --test-dir build/f168 -R "ClassMngrNextApplicationRosterSaveUseCaseTests|ClassMngrNextPlatformApplicationServicesRosterSavePortTests|ClassMngrRosterEditorWidgetSaveTests" --output-on-failure`;
+3/3 passed (0.02s, 0.24s, 2.03s; 2.30s total). The independent Tester also
+passed 3/3. `git diff --check` passed. No full suite or application build ran.
+
+F172 migrates `ApplicationServicesClassCoTeacherAssignmentPort` to the
+active-session `ClassInfoRepository`, with no `ClassService` or `DataService`
+fallback. Preserve typed teacher assignment/unassignment, all other class
+fields, full `ClassInfoValidator` normalization/validation, regular and
+intensive schedule-conflict checks and current errors, and repository/session
+errors and transaction behavior. Verify
+`ClassMngrNextApplicationClassCoTeacherAssignmentTests`,
+`ClassMngrNextPlatformApplicationServicesClassCoTeacherAssignmentPortTests`,
+and `ClassMngrNextFeatureClassCoTeacherPageTests`. Cover both conflict types,
+invalid class input, complete unchanged-field parity, unavailable session,
+write failure/rollback, and existing page dirty/error behavior. Retain
+`build/f168` for F172: its Ninja target list contains all three F172 test
+targets. Gate 1 and Gate 2 remain Partial; Phase 2 remains In Progress and its
+exit gate remains Open.

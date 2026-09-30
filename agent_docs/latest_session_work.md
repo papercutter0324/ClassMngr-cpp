@@ -4052,31 +4052,36 @@ writes, unavailable/closed sessions, and repository write failure retaining
 both existing fields. `git diff --check` passed. No full suite or application
 build was run.
 
-## 2026-10-01 - F170 accepted; F171 selected
+## 2026-10-01 - F171 accepted; F172 selected
 
-F170 source commit `68391fac` replaces the `RosterService::roster()` call in
-`ApplicationServicesRosterReadPort` with the open session's
-`RosterRepository::loadRoster()`. It keeps canonical ID validation, full
-ordered sparse snapshot conversion, empty-roster success, structured
-repository errors, and closed-session failure without a service or
-`DataService` fallback.
+F171 source commit `7cb8e5d7` migrates `ApplicationServicesRosterSavePort`
+from `RosterService::saveRoster()` to the active-session
+`RosterRepository::saveRoster()`, with no service or `DataService` fallback.
+It preserves canonical-ID/session checks, roster normalization and validation,
+the questionable Korean name-length choice, and Technical failure mapping.
+Tests cover normalized snapshot persistence, complete no-write behavior for
+invalid input, the allow flag, repository rollback, and the closed-session
+path.
 
-The application query, Platform port, and `RosterEditorWidgetSave` targets
-built. Independent CTest ran
-`ctest --test-dir build/f168 -R "ClassMngrNextApplicationRosterReadQueryTests|ClassMngrNextPlatformApplicationServicesRosterReadPortTests|ClassMngrRosterEditorWidgetSaveTests" --output-on-failure`;
-3/3 passed (query 0.02s, port 0.19s, widget 2.08s; 2.29s total). The named
-widget slots `loadClassPreservesModelNormalizationWidthsAndCleanState` and
-`emptyAndFailedReadsKeepBlankRosterAndRefreshOutputCapabilities` also exited
-0 individually. `git diff --check` passed. No full suite or application build
-was run.
+Build targets:
+`ClassMngrNextApplicationRosterSaveUseCaseTests`,
+`ClassMngrNextPlatformApplicationServicesRosterSavePortTests`, and
+`ClassMngrRosterEditorWidgetSaveTests`. Independent CTest ran
+`ctest --test-dir build/f168 -R "ClassMngrNextApplicationRosterSaveUseCaseTests|ClassMngrNextPlatformApplicationServicesRosterSavePortTests|ClassMngrRosterEditorWidgetSaveTests" --output-on-failure`;
+3/3 passed (application 0.02s, Platform 0.24s, widget 2.03s; 2.30s total).
+The independent Tester also passed 3/3. `git diff --check` passed. No full
+suite or application build was run.
 
-F171 is selected: migrate `ApplicationServicesRosterSavePort` to
-`RosterRepository::saveRoster()` through the open session. Preserve canonical
-ID/session checks, `RosterValidator` normalization and validation, and the
-`allowQuestionableKoreanNameLengths` override; keep technical error mapping
-and remove service/DataService fallback. Acceptance includes complete snapshot
-persistence, invalid input without writes, allowed questionable Korean name
-lengths, repository rollback, and `RosterEditorWidgetSave` dirty/error
-behavior. The existing `build/f168` cache contains the application save-use
-case, save-port, and widget targets. Phase 2 remains In Progress/Open; Gates 1
-and 2 remain Partial. Workflow repair belongs to the other worker. Do not push.
+F172 is selected: migrate `ApplicationServicesClassCoTeacherAssignmentPort`
+to active-session `ClassInfoRepository` persistence, with no
+`ClassService`/`DataService` fallback. Preserve typed assignment/unassignment,
+all unedited class fields, `ClassInfoValidator` normalization and validation,
+and regular plus intensive schedule-conflict checks before saving. Acceptance
+covers repository/session errors and transactional failure, class-field
+preservation, validation, both conflict types, and
+`NextFeatureClassCoTeacherPage` dirty/error behavior. Run
+`ClassMngrNextApplicationClassCoTeacherAssignmentTests`,
+`ClassMngrNextPlatformApplicationServicesClassCoTeacherAssignmentPortTests`,
+and `ClassMngrNextFeatureClassCoTeacherPageTests`. Phase 2 remains In
+Progress/Open; Gates 1 and 2 remain Partial. Workflow repair belongs to the
+other worker. Do not push.

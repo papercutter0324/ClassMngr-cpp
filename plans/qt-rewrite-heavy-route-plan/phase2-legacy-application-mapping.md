@@ -4132,8 +4132,8 @@ F145 details update and F146 creation remain separate accepted boundaries.
 Production commit `b037b4216b71c55c7793df5f7bbbfc4a00690065`, page transition
 fix `315b3ff33b7e2ab42b43d52cd168ce21a92158c9`, and acceptance-test commit
 `397376e439f4b5955c82948ab0c225aaf776d679` are recorded with verification
-limits in the [Phase 2 progress log](03-Phase-2-Progress-Log.md). F148-F170
-are accepted. F171 is selected; its boundary and acceptance criteria are in
+limits in the [Phase 2 progress log](03-Phase-2-Progress-Log.md). F148-F171
+are accepted. F172 is selected; its boundary and acceptance criteria are in
 the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 
 ## Class-details save mapping: F126 and F139
@@ -4463,17 +4463,31 @@ widget read slots also passed individually. `git diff --check` passed. No full
 suite or application build ran. See the [Phase 2 progress
 log](03-Phase-2-Progress-Log.md).
 
-## F171 selected roster save port
+## F171 accepted roster save port
 
-Migrate `ApplicationServicesRosterSavePort` from `RosterService::saveRoster()`
-to the active-session `RosterRepository::saveRoster()`, with no service or
-`DataService` fallback. Preserve canonical positive-ID and open-session checks;
-`RosterValidator::normalized()` and `validate()` with
-`allowQuestionableKoreanNameLengths`; current Technical error mapping; snapshot
-persistence; invalid-input no-write; questionable-length override; repository
-rollback; and `RosterEditorWidgetSave` dirty/error behavior. Verify
-`NextApplicationRosterSaveUseCase`,
-`NextPlatformApplicationServicesRosterSavePort`, and `RosterEditorWidgetSave`.
-Keep the Co-Teacher assignment save port open for a later slice. The configured
-`build/f168` Ninja cache contains all three targets and is retained for F171.
-Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial.
+F171, source commit `7cb8e5d7`, migrates `ApplicationServicesRosterSavePort`
+from `RosterService` to active-session `RosterRepository::saveRoster`, with no
+service or `DataService` fallback. It preserves canonical ID/open-session
+checks, `RosterValidator::normalized()` and `validate()` with the questionable
+Korean name-length flag, and Technical error mapping. Tests cover normalized
+full-snapshot persistence, exact stored-snapshot preservation on invalid input,
+the allow flag, injected-DB-failure rollback, and closed session with
+`DataService` present. Independent CTest passed 3/3: 0.02s, 0.24s, and 2.03s
+(2.30s total); the Tester also passed 3/3. `git diff --check` passed. No full
+suite or application build ran. See the [Phase 2 progress
+log](03-Phase-2-Progress-Log.md).
+
+## F172 selected Class Co-Teacher assignment save port
+
+Migrate `ApplicationServicesClassCoTeacherAssignmentPort` to active-session
+`ClassInfoRepository` persistence, with no `ClassService` or `DataService`
+fallback. Preserve typed teacher assignment/unassignment, all other class
+fields, full `ClassInfoValidator` normalization/validation, regular and
+intensive schedule-conflict checks and current errors, and repository/session
+errors and transaction behavior. Verify
+`ClassMngrNextApplicationClassCoTeacherAssignmentTests`,
+`ClassMngrNextPlatformApplicationServicesClassCoTeacherAssignmentPortTests`,
+and `ClassMngrNextFeatureClassCoTeacherPageTests`. Cover both conflict types,
+invalid class input, complete unchanged-field parity, unavailable session,
+write failure/rollback, and existing page dirty/error behavior. Phase 2 remains
+In Progress/Open; Gates 1 and 2 remain Partial.

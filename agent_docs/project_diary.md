@@ -1638,3 +1638,13 @@ column widths, and UTF-16 cell contents; the UI applies its own display row
 limit and model normalization. The current `RosterEditorWidget` path already
 uses the typed read port, so its load, empty, and failed-read slots provide the
 integration regression without broadening this slice into roster save.
+
+## 2026-10-01 - F171 roster save adapter
+
+Move the write to the open session's `RosterRepository`, but keep
+`RosterValidator` normalization and validation at the Platform adapter because
+the typed request is a raw snapshot. Test rejected input by comparing the full
+persisted snapshot before and after; exercise repository rollback with an
+injected write failure. F172 is the Co-Teacher assignment save port, whose
+direct repository path must retain full class validation and regular/intensive
+schedule-conflict checks.
