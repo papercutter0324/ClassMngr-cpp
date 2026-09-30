@@ -1,6 +1,7 @@
 #include "core/application_services.h"
 #include "app/services/feature_services.h"
 #include "data/database/database_session.h"
+#include "data/repositories/gs_team_repository.h"
 #include "data/repositories/native_english_teacher_repository.h"
 
 DatabaseSession* ApplicationServices::databaseSession() const
@@ -19,10 +20,20 @@ DatabaseSession::nativeEnglishTeacherRepository() const
     return nullptr;
 }
 
+GsTeamRepository* DatabaseSession::gsTeamRepository() const
+{
+    return nullptr;
+}
+
 Result<QList<NativeEnglishTeacher>>
 NativeEnglishTeacherRepository::getAll() const
 {
     return QList<NativeEnglishTeacher>{};
+}
+
+Result<QList<GsTeamMember>> GsTeamRepository::getAll() const
+{
+    return QList<GsTeamMember>{};
 }
 
 TeacherService* ApplicationServices::teacherService() const

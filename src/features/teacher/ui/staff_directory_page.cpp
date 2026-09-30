@@ -6,7 +6,9 @@
 #include "core/fontmanager.h"
 #include "domain/models/gs_team_member.h"
 #include "domain/models/native_english_teacher.h"
+#include "next/application/gs_team_directory_read_query.h"
 #include "next/application/native_english_teacher_directory_read_query.h"
+#include "next/platform/application_services_gs_team_directory_read_port.h"
 #include "next/platform/application_services_native_english_teacher_directory_read_port.h"
 #include "ui/shared/constants/gui_constants.h"
 #include "ui/shared/widgets/on_screen_keyboard.h"
@@ -329,19 +331,6 @@ void StaffDirectoryPage::buildUi()
 
 bool StaffDirectoryPage::loadDirectory()
 {
-    TeacherService* teacherService = nullptr;
-    if (m_kind == StaffDirectoryKind::GsTeam)
-    {
-        teacherService = m_services
-            ? m_services->teacherService()
-            : nullptr;
-        if (!teacherService || !teacherService->isAvailable())
-        {
-            clearDatabaseState();
-            return false;
-        }
-    }
-
     m_loading = true;
     m_table->setSortingEnabled(false);
     m_table->clearContents();
@@ -402,30 +391,50 @@ bool StaffDirectoryPage::loadDirectory()
     }
     else
     {
-        const Result<QList<GsTeamMember>> loadedMembers =
-            teacherService->gsTeamMembers();
+        const ClassMngr::Next::Platform::
+            ApplicationServicesGsTeamDirectoryReadPort port(m_services);
+        const ClassMngr::Next::Application::GsTeamDirectoryReadQuery query(port);
+        const ClassMngr::Next::Application::GsTeamDirectoryReadResult
+            loadedMembers = query.execute();
         if (!loadedMembers)
         {
             m_loading = false;
             updateActions();
+            if (loadedMembers.error().code
+                == ClassMngr::Next::Domain::ErrorCode::NotFound)
+            {
+                clearDatabaseState();
+                return false;
+            }
+
+            const std::string& message = loadedMembers.error().message;
             DialogServices::showWarning(
                 this,
                 tr("Load Directory"),
-                loadedMembers.error()
+                QString::fromUtf8(
+                    message.data(),
+                    static_cast<qsizetype>(message.size()))
                 );
             return false;
         }
 
-        const QList<GsTeamMember>& members = *loadedMembers;
-        m_table->setRowCount(members.size());
-        for (int row = 0; row < members.size(); ++row)
+        const auto& members = loadedMembers.value();
+        const int rowCount = static_cast<int>(members.size());
+        m_table->setRowCount(rowCount);
+        for (int row = 0; row < rowCount; ++row)
         {
-            const GsTeamMember& member = members.at(row);
-            m_table->setItem(row, 0, textItem(member.name, member.id));
-            m_table->setItem(row, 1, textItem(member.koreanName));
-            m_table->setItem(row, 2, textItem(member.position));
-            m_table->setItem(row, 3, textItem(member.phoneNumber));
-            m_table->setItem(row, 4, textItem(member.birthday));
+            const auto& member = members.at(static_cast<std::size_t>(row));
+            m_table->setItem(row, 0, textItem(
+                QString::fromStdU16String(member.name),
+                member.id.value()));
+            m_table->setItem(row, 1, textItem(
+                QString::fromStdU16String(member.koreanName)));
+            m_table->setItem(row, 2, textItem(
+                QString::fromStdU16String(member.position)));
+            m_table->setItem(row, 3, textItem(
+                QString::fromStdU16String(member.phoneNumber)));
+            m_table->setItem(row, 4, textItem(
+                QString::fromStdU16String(member.birthday)));
         }
     }
 

@@ -120,6 +120,26 @@ classmngr_add_qt_test(
 )
 
 classmngr_add_qt_test(
+    NAME StaffDirectoryGsTeamRead
+    SOURCES
+        tests/staff_directory_gs_team_read_tests.cpp
+    LIBRARIES
+        Qt6::Test
+        Qt6::Widgets
+    OFFSCREEN
+)
+
+classmngr_add_qt_test(
+    NAME StaffDirectoryGsTeamReadParity
+    SOURCES
+        tests/staff_directory_gs_team_read_parity_tests.cpp
+    LIBRARIES
+        Qt6::Test
+        Qt6::Widgets
+    OFFSCREEN
+)
+
+classmngr_add_qt_test(
     NAME RosterEditorWidgetSave
     SOURCES
         tests/roster_editor_widget_save_tests.cpp
