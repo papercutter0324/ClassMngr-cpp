@@ -1629,3 +1629,12 @@ write. Requiring the open session removes the legacy service's `DataService`
 fallback; retain the existing typed error mapping and repository failure text.
 The focused fixture checks exact 10,000-unit requests with edge whitespace and
 surrogate pairs, plus failed-write preservation of both stored fields.
+
+## 2026-10-01 - F170 roster read adapter
+
+Keep roster snapshot conversion at the Platform edge and use the open
+session's `RosterRepository` directly. Preserve all sparse rows, source order,
+column widths, and UTF-16 cell contents; the UI applies its own display row
+limit and model normalization. The current `RosterEditorWidget` path already
+uses the typed read port, so its load, empty, and failed-read slots provide the
+integration regression without broadening this slice into roster save.

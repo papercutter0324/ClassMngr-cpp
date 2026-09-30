@@ -2200,24 +2200,28 @@ parity. Gates 1 and 2 remain Partial; Phase 2 remains In Progress/Open. A
 separate worker owns workflow repair; this work does not modify
 `.github/workflows/refactoring-baseline.yml`. No push was requested.
 
-## Current Phase 2 position - 2026-09-30 (F169 accepted; F170 selected)
+## Current Phase 2 position - 2026-10-01 (F170 accepted; F171 selected)
 
-F169 source commit `56dec15a` moves `ApplicationServicesClassNotesSavePort`
-from `ClassService` to the open session's `ClassInfoRepository`, trimming both
-fields and preserving `ClassInfoValidator::validateNotes()` plus typed error
-mapping. It has no service or `DataService` fallback. Independent CTest passed
-2/2 for `ClassMngrNextPlatformApplicationServicesClassNotesSavePortTests` and
-`ClassMngrNextFeatureClassNotesPageTests`; `git diff --check` passed. No full
-suite or application build was run.
+F170 source commit `68391fac` moves `ApplicationServicesRosterReadPort` from
+`RosterService::roster()` to the active session's `RosterRepository`, with no
+service or `DataService` fallback. The port preserves canonical class-ID
+validation and complete ordered sparse snapshot mapping, including columns,
+widths and UTF-16 cells; empty rosters succeed and repository failures remain
+technical. Independent focused CTest passed 3/3: application query (0.02s),
+Platform port (0.19s), and `RosterEditorWidgetSave` (2.08s). The two focused
+roster editor read slots also exited successfully. `git diff --check` passed.
+No full suite or application build was run.
 
-F170 is selected: migrate `ApplicationServicesRosterReadPort` from
-`RosterService::roster()` to the active-session `RosterRepository`. Preserve
-canonical class-ID validation; complete ordered sparse snapshots, columns,
-widths, UTF-16 cells, and no UI row limit; successful empty-roster results;
-technical repository errors; and unavailable/closed-session mapping. Keep the
-read boundary separate from roster save and other roster-service operations.
-Acceptance uses `NextApplicationRosterReadQuery`,
-`NextPlatformApplicationServicesRosterReadPort`, and `RosterEditorWidgetSave`
-integration coverage. Keep `build/f168` because its configured Ninja cache
-already contains all three targets. Phase 2 remains In Progress/Open; Gates 1
-and 2 remain Partial. Workflow repair remains with the other worker.
+F171 is selected: migrate `ApplicationServicesRosterSavePort` from
+`RosterService::saveRoster()` to the active-session `RosterRepository`. Keep
+canonical class-ID and open-session checks; preserve
+`RosterValidator::normalized()`, `RosterValidator::validate()`, and the
+`allowQuestionableKoreanNameLengths` choice. Retain current technical failure
+mapping and remove the service/`DataService` fallback. Acceptance covers full
+snapshot persistence, rejected input without writes, the questionable Korean
+name-length override, repository rollback, and page dirty/error behavior. Run
+`NextApplicationRosterSaveUseCase`,
+`NextPlatformApplicationServicesRosterSavePort`, and `RosterEditorWidgetSave`.
+Keep `build/f168` because its configured Ninja cache contains all three test
+targets. Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial.
+Workflow repair remains with the other worker.

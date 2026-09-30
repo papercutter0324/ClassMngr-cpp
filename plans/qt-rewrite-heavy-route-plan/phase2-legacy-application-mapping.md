@@ -4132,8 +4132,8 @@ F145 details update and F146 creation remain separate accepted boundaries.
 Production commit `b037b4216b71c55c7793df5f7bbbfc4a00690065`, page transition
 fix `315b3ff33b7e2ab42b43d52cd168ce21a92158c9`, and acceptance-test commit
 `397376e439f4b5955c82948ab0c225aaf776d679` are recorded with verification
-limits in the [Phase 2 progress log](03-Phase-2-Progress-Log.md). F148-F169
-are accepted. F170 is selected; its boundary and acceptance criteria are in
+limits in the [Phase 2 progress log](03-Phase-2-Progress-Log.md). F148-F170
+are accepted. F171 is selected; its boundary and acceptance criteria are in
 the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 
 ## Class-details save mapping: F126 and F139
@@ -4451,19 +4451,29 @@ UTF-16 request limit remain. Independent Tester review and focused CTest passed
 or application build ran. See the [Phase 2 progress
 log](03-Phase-2-Progress-Log.md).
 
-## F170 selected roster read port
+## F170 accepted roster read port
 
-Migrate `ApplicationServicesRosterReadPort` from `RosterService::roster()` to
-the open session's `RosterRepository::loadRoster()`, with no service or
-`DataService` fallback. Preserve canonical class-ID validation; the complete
-ordered sparse snapshot (columns, widths, UTF-16 cells, without a row limit);
-successful empty rosters; technical repository errors; and unavailable/closed-
-session mapping. Verify `NextApplicationRosterReadQuery`,
-`NextPlatformApplicationServicesRosterReadPort`, and `RosterEditorWidgetSave`
-integration, especially `loadClassPreservesModelNormalizationWidthsAndCleanState`
-and `emptyAndFailedReadsKeepBlankRosterAndRefreshOutputCapabilities`. This is
-the narrower read-adapter slice; defer the Class Co-Teacher save adapter
-because it requires full ClassInfo validation and regular/intensive
-schedule-conflict parity. The configured
-`build/f168` Ninja cache contains all three targets and is retained for F170.
+F170, source commit `68391fac`, migrates `ApplicationServicesRosterReadPort`
+to the open session's `RosterRepository::loadRoster()` with no service or
+`DataService` fallback. Tester confirmed canonical-ID validation, complete
+ordered sparse snapshot conversion, empty-roster success, technical repository
+errors, and NotFound on a closed session. Independent CTest passed 3/3: query
+0.02s, port 0.19s, and `RosterEditorWidgetSave` 2.08s (2.29s total). Both named
+widget read slots also passed individually. `git diff --check` passed. No full
+suite or application build ran. See the [Phase 2 progress
+log](03-Phase-2-Progress-Log.md).
+
+## F171 selected roster save port
+
+Migrate `ApplicationServicesRosterSavePort` from `RosterService::saveRoster()`
+to the active-session `RosterRepository::saveRoster()`, with no service or
+`DataService` fallback. Preserve canonical positive-ID and open-session checks;
+`RosterValidator::normalized()` and `validate()` with
+`allowQuestionableKoreanNameLengths`; current Technical error mapping; snapshot
+persistence; invalid-input no-write; questionable-length override; repository
+rollback; and `RosterEditorWidgetSave` dirty/error behavior. Verify
+`NextApplicationRosterSaveUseCase`,
+`NextPlatformApplicationServicesRosterSavePort`, and `RosterEditorWidgetSave`.
+Keep the Co-Teacher assignment save port open for a later slice. The configured
+`build/f168` Ninja cache contains all three targets and is retained for F171.
 Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial.

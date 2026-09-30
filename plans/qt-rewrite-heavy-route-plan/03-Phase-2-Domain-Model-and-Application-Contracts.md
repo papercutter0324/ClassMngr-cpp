@@ -15,7 +15,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Depends on: Phase 1
 - Blocks: Persistence, bootstrap, shared UI, and feature migration
 - Owner: Unassigned
-- Last updated: 2026-09-30
+- Last updated: 2026-10-01
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
 - Current note: F145 is acceptance-complete as the existing Testing Class
@@ -41,7 +41,8 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
   F164's selected-class grade read, F165's selected-class subtitle read, and
   F166's RosterEditorWidget class subtitle read, and F167's ClassDetailsPage
   display read, F168's ClassDetailsPage save port, and F169's ClassNotesPage
-  save port are accepted. F170 is selected to migrate the roster read port.
+  save port and F170's roster read port are accepted. F171 is selected to
+  migrate the roster save port.
   The prior F123 candidate wording is historical;
   current Teacher Profile integration status is recorded in the progress log.
   Gates 1 and 2
@@ -724,20 +725,29 @@ UTF-16 request limit remain. Independent Tester review and focused CTest passed
 2/2: save-port tests in 0.18s and ClassNotesPage tests in 2.91s.
 `git diff --check` passed. No full suite or application build is claimed.
 
-## F170 selected roster read port
+## F170 accepted roster read port
 
-Migrate `ApplicationServicesRosterReadPort` from
-`RosterService::roster()` to the open session's
-`RosterRepository::loadRoster()`, with no service or `DataService` fallback.
-Preserve canonical class-ID validation; the complete ordered sparse snapshot
-(columns, widths, and UTF-16 cells, without a row limit); successful empty
-rosters; technical repository errors; and unavailable/closed-session mapping.
-Verify `NextApplicationRosterReadQuery`,
-`NextPlatformApplicationServicesRosterReadPort`, and `RosterEditorWidgetSave`
-integration, especially `loadClassPreservesModelNormalizationWidthsAndCleanState`
-and `emptyAndFailedReadsKeepBlankRosterAndRefreshOutputCapabilities`. This is
-the narrower read-adapter slice; defer the Class Co-Teacher save adapter because
-it requires full ClassInfo validation and regular/intensive schedule-conflict
-parity. Retain `build/f168`
-for F170; its configured Ninja cache already contains all three test targets.
+F170, source commit `68391fac`, migrates `ApplicationServicesRosterReadPort`
+to the open session's `RosterRepository::loadRoster()`, with no service or
+`DataService` fallback. Tester confirmed canonical-ID validation, complete
+ordered sparse snapshot conversion, empty-roster success, technical repository
+errors, and NotFound on a closed session. Independent CTest passed 3/3:
+Application query 0.02s, Platform port 0.19s, and `RosterEditorWidgetSave`
+2.08s (2.29s total). The two named widget read slots also passed individually.
+`git diff --check` passed. No full suite or application build is claimed.
+
+## F171 selected roster save port
+
+Migrate `ApplicationServicesRosterSavePort` from
+`RosterService::saveRoster()` to the active-session
+`RosterRepository::saveRoster()`, with no service or `DataService` fallback.
+Preserve canonical positive-ID and open-session checks;
+`RosterValidator::normalized()` and `validate()` with
+`allowQuestionableKoreanNameLengths`; current Technical error mapping; snapshot
+persistence; invalid-input no-write; the questionable-length override;
+repository rollback; and `RosterEditorWidgetSave` dirty/error behavior. Verify
+`NextApplicationRosterSaveUseCase`,
+`NextPlatformApplicationServicesRosterSavePort`, and `RosterEditorWidgetSave`.
+Keep the Co-Teacher assignment save port open for a later slice. Retain
+`build/f168`; its configured Ninja cache already contains all three targets.
 Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial.
