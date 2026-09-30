@@ -251,6 +251,10 @@ slice is accepted. Do not switch an individual slice to a lightweight or
 incremental route without recording an explicit product or architecture
 decision in this plan.
 
+After completing a slice, evaluate any unique subfolder it created under
+`build/` for cleanup. Remove the subfolder if it is not explicitly or clearly
+required for testing later slices.
+
 ## Target architecture
 
     ClassMngrNext
