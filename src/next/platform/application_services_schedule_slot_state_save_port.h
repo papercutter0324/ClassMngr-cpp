@@ -1,9 +1,11 @@
 #pragma once
 
-#include "app/services/feature_services.h"
 #include "core/application_services.h"
+#include "data/database/database_session.h"
+#include "data/repositories/intensive_slot_state_repository.h"
 #include "next/application/schedule_slot_state_save.h"
 
+#include <QByteArray>
 #include <QString>
 
 #include <exception>
@@ -13,8 +15,7 @@
 namespace ClassMngr::Next::Platform
 {
 
-// Adapts the Qt-free slot-state command to the active schedule service. The
-// production ApplicationServices binds that service to its DatabaseSession.
+// Adapts the Qt-free slot-state command to the active session repository.
 class ApplicationServicesScheduleSlotStateSavePort final
     : public Application::ScheduleSlotStateSavePort
 {
@@ -48,9 +49,11 @@ public:
 
     [[nodiscard]] bool isAvailable() const
     {
-        ScheduleService* const service =
-            m_services ? m_services->scheduleService() : nullptr;
-        return service && service->isAvailable();
+        DatabaseSession* const session =
+            m_services ? m_services->databaseSession() : nullptr;
+        return session
+            && session->isOpen()
+            && session->intensiveSlotStateRepository();
     }
 
     [[nodiscard]] Application::ScheduleSlotStateSaveResult saveSlotState(
@@ -65,16 +68,23 @@ public:
                 );
         }
 
-        ScheduleService* const service =
-            m_services ? m_services->scheduleService() : nullptr;
-        if (!service || !service->isAvailable())
-        {
-            return unavailableFailure();
-        }
-
         try
         {
-            const Status saved = service->saveIntensiveSlotState(
+            DatabaseSession* const session =
+                m_services ? m_services->databaseSession() : nullptr;
+            if (!session || !session->isOpen())
+            {
+                return unavailableFailure();
+            }
+
+            IntensiveSlotStateRepository* const repository =
+                session->intensiveSlotStateRepository();
+            if (!repository)
+            {
+                return unavailableFailure();
+            }
+
+            const Status saved = repository->saveIntensiveSlotState(
                 legacyWeekday(request.weekday),
                 legacyStartTime(request.startMinute),
                 legacyState(request.selectedState),
@@ -82,7 +92,7 @@ public:
                 );
             if (!saved)
             {
-                if (!service->isAvailable())
+                if (!session->isOpen())
                 {
                     return unavailableFailure();
                 }
@@ -183,7 +193,7 @@ private:
     {
         return failure(
             Domain::ErrorCode::NotFound,
-            "The schedule service is unavailable."
+            "The active database session for intensive slot states is unavailable."
             );
     }
 

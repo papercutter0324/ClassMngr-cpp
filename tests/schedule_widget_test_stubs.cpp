@@ -495,6 +495,57 @@ IntensiveSlotStateRepository::loadIntensiveSlotStates()
     return ScheduleWidgetTestStubs::intensiveSlotStates;
 }
 
+Status IntensiveSlotStateRepository::saveIntensiveSlotState(
+    const QString& day,
+    const QString& startTime,
+    const QString& state,
+    const QString& defaultState
+    )
+{
+    ++ScheduleWidgetTestStubs::savedSlotStates;
+    ScheduleWidgetTestStubs::lastSavedSlotDay = day;
+    ScheduleWidgetTestStubs::lastSavedSlotStartTime = startTime;
+    ScheduleWidgetTestStubs::lastSavedSlotState = state;
+    ScheduleWidgetTestStubs::lastSavedSlotDefaultState = defaultState;
+
+    if (!ScheduleWidgetTestStubs::slotSaveResult)
+    {
+        return ScheduleWidgetTestStubs::slotSaveResult;
+    }
+
+    QList<IntensiveSlotState>& states =
+        ScheduleWidgetTestStubs::intensiveSlotStates;
+    for (qsizetype index = 0; index < states.size(); ++index)
+    {
+        IntensiveSlotState& current = states[index];
+        if (current.day != day || current.startTime != startTime)
+        {
+            continue;
+        }
+
+        if (state == defaultState)
+        {
+            states.removeAt(index);
+        }
+        else
+        {
+            current.state = state;
+        }
+        return {};
+    }
+
+    if (state != defaultState)
+    {
+        states.append({
+            .day = day,
+            .startTime = startTime,
+            .state = state
+        });
+    }
+
+    return {};
+}
+
 TestingBlockRepository* DatabaseSession::testingBlockRepository() const
 {
     if (!ScheduleWidgetTestStubs::testingAssignmentRepositoryAvailable)
@@ -1136,6 +1187,8 @@ Status DataService::saveIntensiveSlotState(
     const QString& defaultState
     )
 {
+    // Retained for legacy service coverage; the migrated schedule slot save
+    // port now exercises IntensiveSlotStateRepository's test double above.
     ++ScheduleWidgetTestStubs::savedSlotStates;
     ScheduleWidgetTestStubs::lastSavedSlotDay = day;
     ScheduleWidgetTestStubs::lastSavedSlotStartTime = startTime;
