@@ -1,4 +1,5 @@
 #include "core/application_services.h"
+#include "app/services/feature_services.h"
 #include "data/data_service.h"
 #include "data/database/database_session.h"
 #include "next/application/calendar_event_by_id_query_port.h"
@@ -236,6 +237,8 @@ private slots:
     void projectsOverlappingRangeAsOwnedTypedMetadata();
     void readsTwoCalendarYearsOfSubPrepIntervalsWithoutProjectionTruncation();
     void readsTwoYearSubPrepIntervalsThroughApplicationServices();
+    void reportsUnavailableSubPrepIntervalSessionsStructurally();
+    void reportsSubPrepIntervalRepositoryFailureStructurally();
     void projectsByIdAsOwnedTypedMetadata();
     void deletesValidTypedEvent();
     void reportsInvalidDeleteIdStructurally();
@@ -469,6 +472,58 @@ readsTwoYearSubPrepIntervalsThroughApplicationServices()
     QCOMPARE(result.value()[2].eventType, std::string("Holiday"));
     QCOMPARE(result.value()[2].startDate.value(), std::string("2027-12-31"));
     QCOMPARE(result.value()[2].endDate.value(), std::string("2028-01-07"));
+}
+
+void NextPlatformApplicationServicesCalendarEventPortTests::
+reportsUnavailableSubPrepIntervalSessionsStructurally()
+{
+    ApplicationServices unopenedServices;
+    QVERIFY(unopenedServices.dataService());
+    ApplicationServicesSubPrepCalendarEventIntervalsPort unopenedPort(
+        unopenedServices
+        );
+    verifyFailure(
+        SubPrepCalendarEventIntervalsQuery(unopenedPort).execute({
+            CalendarEventDate("2026-07-01")
+        }),
+        ErrorCode::NotFound
+        );
+
+    ApplicationServices closedServices;
+    QVERIFY(openDatabase(closedServices, m_directory));
+    closedServices.closeDatabase();
+    QVERIFY(!closedServices.hasOpenDatabase());
+
+    ApplicationServicesSubPrepCalendarEventIntervalsPort closedPort(
+        closedServices
+        );
+    verifyFailure(
+        SubPrepCalendarEventIntervalsQuery(closedPort).execute({
+            CalendarEventDate("2026-07-01")
+        }),
+        ErrorCode::NotFound
+        );
+}
+
+void NextPlatformApplicationServicesCalendarEventPortTests::
+reportsSubPrepIntervalRepositoryFailureStructurally()
+{
+    ApplicationServices services;
+    QVERIFY(openDatabase(services, m_directory));
+
+    QSqlQuery query(services.databaseSession()->database());
+    QVERIFY2(
+        query.exec(QStringLiteral("DROP TABLE calendar_events")),
+        qPrintable(query.lastError().text())
+        );
+
+    ApplicationServicesSubPrepCalendarEventIntervalsPort port(services);
+    verifyFailure(
+        SubPrepCalendarEventIntervalsQuery(port).execute({
+            CalendarEventDate("2026-07-01")
+        }),
+        ErrorCode::Technical
+        );
 }
 
 void NextPlatformApplicationServicesCalendarEventPortTests::

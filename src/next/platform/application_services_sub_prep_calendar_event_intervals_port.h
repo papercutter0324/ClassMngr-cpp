@@ -1,7 +1,8 @@
 #pragma once
 
-#include "app/services/feature_services.h"
 #include "core/application_services.h"
+#include "data/database/database_session.h"
+#include "data/repositories/calendar_event_repository.h"
 #include "next/application/sub_prep_calendar_event_intervals_query.h"
 
 #include <QByteArray>
@@ -16,8 +17,8 @@
 namespace ClassMngr::Next::Platform
 {
 
-// Reads a narrow calendar interval snapshot through the legacy feature
-// service and copies only the three values required by Sub Prep.
+// Reads a narrow calendar interval snapshot through the active session's
+// calendar repository and copies only the three values required by Sub Prep.
 class ApplicationServicesSubPrepCalendarEventIntervalsPort final
     : public Application::SubPrepCalendarEventIntervalsReadPort
 {
@@ -74,17 +75,27 @@ public:
 
         try
         {
-            const CalendarService* service = nullptr;
+            DatabaseSession* session = nullptr;
+            CalendarEventRepository* repository = nullptr;
             if (!m_intervalRangeReader)
             {
-                service = m_services
-                    ? m_services->calendarService()
+                session = m_services
+                    ? m_services->databaseSession()
                     : nullptr;
-                if (!service || !service->isAvailable())
+                if (!session || !session->isOpen())
                 {
                     return failure(
                         Domain::ErrorCode::NotFound,
-                        "The calendar service is unavailable."
+                        "The active database session for calendar intervals is unavailable."
+                        );
+                }
+
+                repository = session->calendarEventRepository();
+                if (!repository)
+                {
+                    return failure(
+                        Domain::ErrorCode::NotFound,
+                        "The calendar event repository is unavailable."
                         );
                 }
             }
@@ -92,14 +103,17 @@ public:
             const ::Result<QList<CalendarEventDateInterval>> loaded =
                 m_intervalRangeReader
                     ? m_intervalRangeReader(startDate, endDate)
-                    : service->eventDateIntervalsInRange(startDate, endDate);
+                    : repository->loadCalendarEventDateIntervalsInRange(
+                        startDate,
+                        endDate
+                        );
             if (!loaded)
             {
-                if (service && !service->isAvailable())
+                if (session && !session->isOpen())
                 {
                     return failure(
                         Domain::ErrorCode::NotFound,
-                        "The calendar service is unavailable."
+                        "The active database session for calendar intervals is unavailable."
                         );
                 }
 
