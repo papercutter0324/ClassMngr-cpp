@@ -1,7 +1,8 @@
 #pragma once
 
-#include "app/services/feature_services.h"
 #include "core/application_services.h"
+#include "data/database/database_session.h"
+#include "data/repositories/settings_repository.h"
 #include "next/application/calendar_first_day_of_week_preferences.h"
 
 #include <QDebug>
@@ -13,8 +14,8 @@ namespace ClassMngr::Next::Platform
 {
 
 // Qt-boundary adapter for the calendar first-day preference. The existing
-// SettingsService lifetime and QVariant/QLocale conversion remain outside the
-// application contract; the provider retains its UI normalization policy.
+// SettingsRepository access and QVariant/QLocale conversion remain outside
+// the application contract; the provider retains its UI normalization policy.
 class ApplicationServicesCalendarFirstDayOfWeekPreferencesPort final
     : public Application::CalendarFirstDayOfWeekPreferencesPort
 {
@@ -22,16 +23,14 @@ public:
     explicit ApplicationServicesCalendarFirstDayOfWeekPreferencesPort(
         ApplicationServices& services
         ) noexcept
-        : m_settingsService(services.settingsService())
+        : m_session(services.databaseSession())
     {
     }
 
     explicit ApplicationServicesCalendarFirstDayOfWeekPreferencesPort(
         ApplicationServices* services
         ) noexcept
-        : m_settingsService(
-            services ? services->settingsService() : nullptr
-            )
+        : m_session(services ? services->databaseSession() : nullptr)
     {
     }
 
@@ -54,18 +53,25 @@ public:
         const Application::CalendarFirstDayOfWeek fallback =
             localeFirstDayOfWeek();
 
-        if (!m_settingsService || !m_settingsService->isAvailable())
+        if (!m_session || !m_session->isOpen())
         {
             return fallback;
         }
 
-        const QVariant storedValue = m_settingsService->loadOrDefault(
-            key(),
-            static_cast<int>(fallback)
-            );
+        SettingsRepository* const repository = m_session->settingsRepository();
+        if (!repository)
+        {
+            return fallback;
+        }
+
+        const auto stored = repository->loadSetting(key());
+        if (!stored)
+        {
+            return fallback;
+        }
 
         bool ok = false;
-        const int storedDay = storedValue.toInt(&ok);
+        const int storedDay = stored->toInt(&ok);
         if (!ok || storedDay < 0 || storedDay > 6)
         {
             return fallback;
@@ -78,12 +84,18 @@ public:
         const Application::CalendarFirstDayOfWeek firstDayOfWeek
         ) const override
     {
-        if (!m_settingsService || !m_settingsService->isAvailable())
+        if (!m_session || !m_session->isOpen())
         {
             return;
         }
 
-        if (const Status saved = m_settingsService->save(
+        SettingsRepository* const repository = m_session->settingsRepository();
+        if (!repository)
+        {
+            return;
+        }
+
+        if (const Status saved = repository->saveSetting(
                 key(),
                 static_cast<int>(firstDayOfWeek)
                 ); !saved)
@@ -124,7 +136,7 @@ private:
         return Application::CalendarFirstDayOfWeek::Sunday;
     }
 
-    SettingsService* m_settingsService = nullptr;
+    DatabaseSession* m_session = nullptr;
 };
 
 } // namespace ClassMngr::Next::Platform

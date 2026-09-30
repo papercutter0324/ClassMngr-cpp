@@ -1,6 +1,7 @@
 #include "core/application_services.h"
 #include "data/data_service.h"
 #include "data/database/database_session.h"
+#include "data/repositories/settings_repository.h"
 #include "next/application/calendar_first_day_of_week_preferences.h"
 #include "next/platform/application_services_calendar_first_day_of_week_preferences_port.h"
 
@@ -45,13 +46,13 @@ bool executeSql(
     const QString& statement
     )
 {
-    DataService* dataService = services.dataService();
-    if (!dataService || !dataService->databaseSession())
+    DatabaseSession* const session = services.databaseSession();
+    if (!session || !session->isOpen())
     {
         return false;
     }
 
-    QSqlQuery query(dataService->databaseSession()->database());
+    QSqlQuery query(session->database());
     return query.exec(statement);
 }
 
@@ -90,6 +91,7 @@ private slots:
     void cleanupTestCase();
     void missingSettingUsesLocaleFallback();
     void invalidSettingUsesLocaleFallback();
+    void readErrorsUseLocaleFallback();
     void roundTripsAllDaysUsingExactKey();
     void unavailableSettingsUseLocaleFallbackAndIgnoreSave();
     void saveFailurePreservesStoredValueAndWarning();
@@ -117,6 +119,11 @@ missingSettingUsesLocaleFallback()
 {
     ApplicationServices services;
     QVERIFY(openDatabase(services, m_directory));
+    QVERIFY(services.dataService());
+    DatabaseSession* const session = services.databaseSession();
+    QVERIFY(session);
+    QVERIFY(session->isOpen());
+    QVERIFY(session->settingsRepository());
 
     QLocale::setDefault(QLocale(QStringLiteral("en_US")));
     ApplicationServices* servicesPointer = &services;
@@ -136,10 +143,15 @@ invalidSettingUsesLocaleFallback()
     ApplicationServices services;
     QVERIFY(openDatabase(services, m_directory));
     QVERIFY(services.dataService());
+    DatabaseSession* const session = services.databaseSession();
+    QVERIFY(session);
+    QVERIFY(session->isOpen());
+    SettingsRepository* const repository = session->settingsRepository();
+    QVERIFY(repository);
 
     QLocale::setDefault(QLocale(QStringLiteral("en_GB")));
     QVERIFY(
-        services.dataService()->saveSetting(
+        repository->saveSetting(
             QString::fromUtf8(FirstDayOfWeekKey),
             QStringLiteral("not-a-day")
             )
@@ -152,7 +164,7 @@ invalidSettingUsesLocaleFallback()
     QCOMPARE(port.load(), CalendarFirstDayOfWeek::Monday);
 
     QVERIFY(
-        services.dataService()->saveSetting(
+        repository->saveSetting(
             QString::fromUtf8(FirstDayOfWeekKey),
             7
             )
@@ -160,11 +172,29 @@ invalidSettingUsesLocaleFallback()
     QCOMPARE(port.load(), CalendarFirstDayOfWeek::Monday);
 
     QVERIFY(
-        services.dataService()->saveSetting(
+        repository->saveSetting(
             QString::fromUtf8(FirstDayOfWeekKey),
             -1
             )
         );
+    QCOMPARE(port.load(), CalendarFirstDayOfWeek::Monday);
+}
+
+void NextPlatformApplicationServicesCalendarFirstDayOfWeekPreferencesPortTests::
+readErrorsUseLocaleFallback()
+{
+    ApplicationServices services;
+    QVERIFY(openDatabase(services, m_directory));
+    QVERIFY(services.dataService());
+    DatabaseSession* const session = services.databaseSession();
+    QVERIFY(session);
+    QVERIFY(session->isOpen());
+    QVERIFY(session->settingsRepository());
+
+    QLocale::setDefault(QLocale(QStringLiteral("en_GB")));
+    QVERIFY(executeSql(services, QStringLiteral("DROP TABLE app_settings")));
+
+    ApplicationServicesCalendarFirstDayOfWeekPreferencesPort port(services);
     QCOMPARE(port.load(), CalendarFirstDayOfWeek::Monday);
 }
 
@@ -174,8 +204,13 @@ roundTripsAllDaysUsingExactKey()
     ApplicationServices services;
     QVERIFY(openDatabase(services, m_directory));
     QVERIFY(services.dataService());
+    DatabaseSession* const session = services.databaseSession();
+    QVERIFY(session);
+    QVERIFY(session->isOpen());
+    SettingsRepository* const repository = session->settingsRepository();
+    QVERIFY(repository);
     QVERIFY(
-        services.dataService()->saveSetting(
+        repository->saveSetting(
             QStringLiteral("calendar/unrelatedPreference"),
             QStringLiteral("preserved")
             )
@@ -200,14 +235,14 @@ roundTripsAllDaysUsingExactKey()
         port.save(expected);
         QCOMPARE(port.load(), expected);
 
-        const auto stored = services.dataService()->loadSetting(
+        const auto stored = repository->loadSetting(
             QString::fromUtf8(FirstDayOfWeekKey)
             );
         QVERIFY(stored);
         QCOMPARE(stored->toInt(), static_cast<int>(expected));
     }
 
-    const auto unrelated = services.dataService()->loadSetting(
+    const auto unrelated = repository->loadSetting(
         QStringLiteral("calendar/unrelatedPreference")
         );
     QVERIFY(unrelated);
@@ -219,6 +254,10 @@ unavailableSettingsUseLocaleFallbackAndIgnoreSave()
 {
     QLocale::setDefault(QLocale(QStringLiteral("en_GB")));
     ApplicationServices services;
+    QVERIFY(services.dataService());
+    DatabaseSession* const session = services.databaseSession();
+    QVERIFY(session);
+    QVERIFY(!session->isOpen());
     ApplicationServicesCalendarFirstDayOfWeekPreferencesPort port(services);
 
     QCOMPARE(port.load(), CalendarFirstDayOfWeek::Monday);
@@ -231,6 +270,43 @@ unavailableSettingsUseLocaleFallbackAndIgnoreSave()
     QCOMPARE(nullPort.load(), CalendarFirstDayOfWeek::Monday);
     nullPort.save(CalendarFirstDayOfWeek::Sunday);
     QCOMPARE(nullPort.load(), CalendarFirstDayOfWeek::Monday);
+
+    ApplicationServices closedServices;
+    const QString closedDatabasePath = databasePath(m_directory);
+    QVERIFY(closedServices.openDatabase(closedDatabasePath));
+    QVERIFY(closedServices.dataService());
+    DatabaseSession* const closedSession = closedServices.databaseSession();
+    QVERIFY(closedSession);
+    QVERIFY(closedSession->isOpen());
+    SettingsRepository* const repository = closedSession->settingsRepository();
+    QVERIFY(repository);
+    QVERIFY(repository->saveSetting(
+        QString::fromUtf8(FirstDayOfWeekKey),
+        static_cast<int>(CalendarFirstDayOfWeek::Sunday)
+        ));
+
+    ApplicationServicesCalendarFirstDayOfWeekPreferencesPort closedPort(
+        closedServices
+        );
+    closedServices.closeDatabase();
+    QVERIFY(closedServices.dataService());
+    QVERIFY(!closedSession->isOpen());
+    QCOMPARE(closedPort.load(), CalendarFirstDayOfWeek::Monday);
+    closedPort.save(CalendarFirstDayOfWeek::Monday);
+
+    QVERIFY(closedServices.openDatabase(closedDatabasePath));
+    QVERIFY(closedSession->isOpen());
+    SettingsRepository* const reopenedRepository =
+        closedSession->settingsRepository();
+    QVERIFY(reopenedRepository);
+    const auto unchanged = reopenedRepository->loadSetting(
+        QString::fromUtf8(FirstDayOfWeekKey)
+        );
+    QVERIFY(unchanged);
+    QCOMPARE(
+        unchanged->toInt(),
+        static_cast<int>(CalendarFirstDayOfWeek::Sunday)
+        );
 }
 
 void NextPlatformApplicationServicesCalendarFirstDayOfWeekPreferencesPortTests::
@@ -239,6 +315,10 @@ saveFailurePreservesStoredValueAndWarning()
     ApplicationServices services;
     QVERIFY(openDatabase(services, m_directory));
     QVERIFY(services.dataService());
+    DatabaseSession* const session = services.databaseSession();
+    QVERIFY(session);
+    QVERIFY(session->isOpen());
+    QVERIFY(session->settingsRepository());
 
     QLocale::setDefault(QLocale(QStringLiteral("en_US")));
     ApplicationServicesCalendarFirstDayOfWeekPreferencesPort port(services);
