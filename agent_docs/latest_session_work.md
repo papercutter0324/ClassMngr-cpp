@@ -3830,7 +3830,7 @@ Qt 6.12 metadata shim (removed afterward), and test-only API/registration
 adaptations; production files and pinned baseline blobs were not overlaid. No
 full suite/app build or baseline query-count claim.
 
-## 2026-09-30 — Phase 2 continuation: F161-F164 accepted; F165 selected
+## 2026-09-30 — Phase 2 continuation: F161-F165 accepted; F166 selected
 
 At continuation start, reviewed commits `314f4d5b` and `0c5d5566`. No blocking
 issue was found. One non-blocking review note: `314f4d5b` changed a PDF text
@@ -3930,17 +3930,36 @@ build succeeded after the earlier Ninja CRT assertion; baseline configuration
 used Qt 6.12.0 with `QT_NO_CONFIG_VERSION_OVERRIDE_FILES=ON`. No full
 ClassesPage suite or application build and no query-count claim.
 
-Three independent Investigators compared remaining candidates and recommended
-F165: the ClassesPage selected-class subtitle read in `updateHeaderText()`.
-Add a typed read containing only the class fields needed by the subtitle
-formatter and optional assigned-teacher display data, from the active session
-without DataService fallback. Keep formatting in the UI. Preserve independent
-class-info and teacher results: failed teacher lookup must not erase class
-details. Keep the current “No class selected,” class-name/`Class N`, and
-formatter fallbacks and existing refresh points. Leave F163 list loading and
-F164 tab visibility unchanged. Acceptance covers typed mapping,
-session/repository errors without fallback, independent detail/teacher failure
-cases, exact subtitle output and fallback behavior, and pinned-baseline visible
-subtitle parity. Gates 1 and 2 remain Partial; Phase 2 remains In Progress/Open.
-A separate worker owns workflow repair; this work does not modify
+F165 source commit `e0b9d61213af57a79a685264c9f64fabf841bd1a` adds a typed
+Qt-free subtitle query and active-session Platform adapter. The repository
+projection carries class grade/level, regular schedule day/start time, and the
+four teacher display-name fields; class and teacher results remain independent.
+Only `ClassesPage::updateHeaderText()` uses it. Formatting and the visible
+fallback chain remain in the page. F163 list loading and F164 tab visibility
+are unchanged.
+
+Focused current Application and Platform CTests passed. Three page slots
+passed: independent subtitle outcomes/refresh, trimmed display/name/ID
+fallbacks, and F164's grade-read fail-open regression. The no-fallback page
+case kept legacy services available while closing the active session and
+asserted no legacy class-info read. On exact baseline
+`48fc5c5cc7dee78d82f8bf5f1bf8b51725575b99`, a test-only page slot passed the
+same visible subtitle, `E4 Hercules • Susan • Tues (4:00)`. Only the baseline
+test source was overlaid; all 584 `src/` blobs matched. The baseline configure
+used VS 18 2026 and Qt 6.12 with
+`QT_NO_CONFIG_VERSION_OVERRIDE_FILES=ON`. `git diff --check` passed. No full
+ClassesPage suite, application build, or query-count comparison was run.
+
+Three independent Investigators compared candidates for F166. The selected
+slice reuses F165's typed class/teacher display query in
+`RosterEditorWidget::updateHeaderText()` through its `sidebarClassDisplayName()`
+path. Preserve the roster header's distinct outer-read fallback: for a valid
+class, an unavailable active-session query uses the trimmed classroom name or
+`Class N`; an invalid ID displays No class selected. A class-details failure
+still uses the formatter's defaults, while teacher failure retains class
+details. Keep the existing roster title, embedded heading, and load/save paths
+unchanged. Acceptance covers exact subtitle text, teacher failure, fallback/no
+session behavior, and pinned-baseline subtitle parity. Gates 1 and 2 remain
+Partial; Phase 2 remains In Progress/Open. A separate worker owns workflow
+repair; this work does not modify
 `.github/workflows/refactoring-baseline.yml`. No push was requested.

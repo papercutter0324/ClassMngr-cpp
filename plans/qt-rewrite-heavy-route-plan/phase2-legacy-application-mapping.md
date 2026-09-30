@@ -4132,9 +4132,9 @@ F145 details update and F146 creation remain separate accepted boundaries.
 Production commit `b037b4216b71c55c7793df5f7bbbfc4a00690065`, page transition
 fix `315b3ff33b7e2ab42b43d52cd168ce21a92158c9`, and acceptance-test commit
 `397376e439f4b5955c82948ab0c225aaf776d679` are recorded with verification
-limits in the [Phase 2 progress log](03-Phase-2-Progress-Log.md). F148-F164 are
-accepted. F165 is selected; its boundary and acceptance criteria are in the
-[Phase 2 progress log](03-Phase-2-Progress-Log.md).
+limits in the [Phase 2 progress log](03-Phase-2-Progress-Log.md). F148-F165
+are accepted. F166 is selected; its boundary and acceptance criteria are in
+the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 
 ## Class-details save mapping: F126 and F139
 
@@ -4379,18 +4379,29 @@ timed out after 300 seconds on both revisions without a mismatch or cause
 identified. No full ClassesPage suite, application build, or query-count
 comparison is claimed. See the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 
-## F165 selected ClassesPage selected-class subtitle read
+## F165 accepted ClassesPage selected-class subtitle read
 
-Replace only the selected-class subtitle reads in
-`ClassesPage::updateHeaderText()` with a typed query for the class fields used
-by the existing formatter and optional assigned-teacher display data, backed
-by active-session repositories without `DataService` fallback. Keep formatting
-in the UI. Preserve invalid selection or unavailable services as “No class
-selected”; missing/failed class info uses defaults, while failed teacher lookup
-does not erase class details. Preserve class-name/`Class N` and formatter
-fallbacks and current refresh points, with independent class and teacher
-outcomes. Acceptance covers typed mapping, session/repository errors without
-fallback, independent class/teacher failures, and pinned-baseline visible
-subtitle/fallback parity. Keep F163 list reads and F164 tab behavior separate.
-F165 is selected; implementation has not started. Details are in the [Phase 2
-contract plan](03-Phase-2-Domain-Model-and-Application-Contracts.md).
+F165, source commit `e0b9d61213af57a79a685264c9f64fabf841bd1a`, adds the
+Qt-free `SelectedClassSubtitle` query and active-session repository adapter,
+projecting class grade/level/regular schedule and teacher display fields with
+independent class/teacher outcomes. `ClassesPage` keeps its formatter, subtitle
+fallback, and refresh behavior; no `DataService` fallback is used. Current
+Application and Platform CTests and the three focused page slots passed. The
+pinned-baseline visible subtitle passed with a test-source-only slot overlay;
+all 584 baseline `src/` blobs matched. `git diff --check` passed. No full suite,
+application build, or query-count comparison is claimed. See the [Phase 2
+progress log](03-Phase-2-Progress-Log.md).
+
+## F166 selected RosterEditorWidget class subtitle read
+
+Migrate `RosterEditorWidget::updateHeaderText()` and
+`sidebarClassDisplayName()` in
+[`roster_editor_widget_ui.cpp`](../../src/features/roster/ui/roster_editor_widget_ui.cpp)
+from `ClassService::classInfo()` and `TeacherService::teacher()` to reuse F165's
+typed subtitle read. Keep `SidebarNodeNaming::formatClassDisplayName()` in the
+UI. Preserve invalid-ID "No class selected"; for valid IDs retain the
+classroom-name/`Class N` fallback when the read is unavailable and preserve
+class details on teacher failure. Title, embedded heading, and roster load/save
+behavior remain in scope for parity. Acceptance covers exact subtitle,
+teacher failure, fallback/no-session behavior, and pinned-baseline parity.
+Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial.

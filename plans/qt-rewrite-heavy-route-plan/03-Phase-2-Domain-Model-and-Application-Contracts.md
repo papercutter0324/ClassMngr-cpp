@@ -37,9 +37,10 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
   read, F157's TeacherInfoPage profile-save port, and F158's selected-teacher
   navigation read, F159's Native English Staff Directory read, F160's GS
   Team Staff Directory read, F161's Native English Staff Directory save,
-  F162's GS Team Staff Directory save, F163's ClassesPage class-list read, and
-  F164's ClassesPage selected-class grade read are accepted. F165 is selected
-  for the ClassesPage selected-class subtitle read.
+  F162's GS Team Staff Directory save, F163's ClassesPage class-list read,
+  F164's selected-class grade read, and F165's selected-class subtitle read
+  are accepted. F166 is selected for the
+  roster editor's class subtitle read.
   The prior F123 candidate wording is historical;
   current Teacher Profile integration status is recorded in the progress log.
   Gates 1 and 2
@@ -637,18 +638,35 @@ or cause identified. No full ClassesPage suite, application build, or
 query-count comparison is claimed. Evidence and limits are in the [Phase 2
 progress log](03-Phase-2-Progress-Log.md).
 
-## F165 selected ClassesPage selected-class subtitle read
+## F165 accepted ClassesPage selected-class subtitle read
 
-Replace only the selected-class subtitle reads in
-`ClassesPage::updateHeaderText()` with a typed query for the class fields used
-by the existing formatter and optional assigned-teacher display data, backed
-by active-session repositories without `DataService` fallback. Keep formatting
-in the UI. Preserve invalid selection or unavailable services as “No class
-selected”; missing/failed class info uses defaults, while failed teacher lookup
-does not erase class details. Preserve class-name/`Class N` and formatter
-fallbacks and current refresh points, with independent class and teacher
-outcomes. Acceptance covers typed mapping, session/repository errors without
-fallback, independent class/teacher failures, and pinned-baseline visible
-subtitle/fallback parity. Keep F163 list reads and F164 tab behavior separate.
-F165 is selected; implementation has not started. Gates 1 and 2 remain Partial;
-Phase 2 remains In Progress/Open.
+F165, source commit `e0b9d61213af57a79a685264c9f64fabf841bd1a`, adds the
+Qt-free `SelectedClassSubtitle` read query and active-session repository
+adapter. Its narrow projection carries class grade, level, and regular schedule
+plus assigned-teacher display fields, with independent class and teacher
+outcomes. The UI retains subtitle formatting, fallback, and refresh behavior;
+there is no `DataService` fallback.
+
+Current Application and Platform CTests passed. The focused page slots
+`selectedClassSubtitleUsesIndependentReadOutcomesAndRefreshes`,
+`selectedClassSubtitleFallbackChainUsesTrimmedValues`, and
+`selectedClassGradeFailureFailsOpenWithoutDataServiceFallback` passed. On the
+pinned baseline `48fc5c5cc7dee78d82f8bf5f1bf8b51725575b99`, the visible
+subtitle `E4 Hercules • Susan • Tues (4:00)` passed with only a test-source
+slot overlaid; all 584 baseline `src/` blobs matched. `git diff --check` passed.
+No full suite, application build, or query-count comparison is claimed. See the
+[Phase 2 progress log](03-Phase-2-Progress-Log.md) for evidence and limits.
+
+## F166 selected RosterEditorWidget class subtitle read
+
+Migrate `RosterEditorWidget::updateHeaderText()` and
+`sidebarClassDisplayName()` in
+[`roster_editor_widget_ui.cpp`](../../src/features/roster/ui/roster_editor_widget_ui.cpp)
+from `ClassService::classInfo()` and `TeacherService::teacher()` to F165's
+typed selected-class subtitle read. Keep `SidebarNodeNaming::formatClassDisplayName()`
+in the UI. Preserve invalid-ID "No class selected"; for valid IDs retain the
+classroom-name/`Class N` fallback when the read is unavailable and retain class
+details when the teacher read fails. Keep the title, embedded heading, and
+roster load/save behavior unchanged. Acceptance covers exact subtitle output,
+teacher failure, fallback/no-session behavior, and pinned-baseline parity.
+Gates 1 and 2 remain Partial; Phase 2 remains In Progress/Open.

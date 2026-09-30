@@ -2146,15 +2146,35 @@ unchanged. A separate real-database parity harness timed out after 300 seconds
 on both builds; no mismatch or cause was established. No full suite/application
 build or query-count claim.
 
-F165 is selected for the ClassesPage selected-class subtitle read in
-`updateHeaderText()`. Add a typed read for only the class fields consumed by
-the subtitle formatter and the optional assigned-teacher display data, using
-the active session without DataService fallback. Keep formatting in the UI
-and preserve independent class-info and teacher outcomes, current fallback
-text, and refresh points. Keep F163 list reads and F164 section visibility
-separate. Acceptance covers typed mapping, session/repository errors without
-fallback, independent detail/teacher failure cases, exact subtitle output and
-fallbacks, and pinned-baseline visible subtitle parity. Gates 1 and 2 remain
-Partial; Phase 2 remains In Progress/Open. A separate worker owns workflow
-repair; this work does not modify `.github/workflows/refactoring-baseline.yml`.
-No push was requested.
+F165, source commit `e0b9d61213af57a79a685264c9f64fabf841bd1a`, adds a typed
+Qt-free selected-class subtitle read and active-session Platform adapter.
+Repository projections include only class grade/level, regular meeting
+day/start time, and teacher display-name fields. Class and teacher outcomes
+remain independent; formatting, “No class selected,” classroom-name/`Class N`,
+and formatter fallbacks stay in the UI. The F163 list and F164 section-grade
+paths remain separate.
+
+Focused Application and Platform CTests passed. The ClassesPage slots
+`selectedClassSubtitleUsesIndependentReadOutcomesAndRefreshes`,
+`selectedClassSubtitleFallbackChainUsesTrimmedValues`, and
+`selectedClassGradeFailureFailsOpenWithoutDataServiceFallback` passed. The
+subtitle test covers class-read defaults, teacher failure retaining class
+details, and a legacy-services-available/session-unavailable case without a
+legacy class-info read. On exact pinned baseline
+`48fc5c5cc7dee78d82f8bf5f1bf8b51725575b99`, a test-only slot confirmed the
+visible subtitle `E4 Hercules • Susan • Tues (4:00)`; the equivalent current
+slot passed. All 584 baseline `src/` blobs matched. `git diff --check` passed.
+No full suite/application build or query-count claim.
+
+F166 is selected: migrate `RosterEditorWidget::updateHeaderText()` and its
+`sidebarClassDisplayName()` read to reuse F165's typed subtitle query and
+active-session adapter. Keep `SidebarNodeNaming::formatClassDisplayName()` in
+the UI. Preserve “No class selected” for invalid class IDs; for a valid class,
+an unavailable query falls back to the trimmed classroom name or `Class N`.
+Preserve formatter defaults for failed class details, class details after a
+teacher failure, and the roster title, embedded heading, and load/save paths.
+Acceptance covers exact visible subtitle, independent teacher failure,
+fallback/no-session behavior, and pinned-baseline subtitle parity. Gates 1 and
+2 remain Partial; Phase 2 remains In Progress/Open. A separate worker owns
+workflow repair; this work does not modify
+`.github/workflows/refactoring-baseline.yml`. No push was requested.

@@ -8233,3 +8233,32 @@ fallback, independent class/teacher failure cases, and pinned-baseline visible
 subtitle/fallback parity. Keep F163 list reads and F164 tab behavior separate.
 Implementation has not started. Gate 1 and Gate 2 remain Partial; Phase 2
 remains In Progress and its exit gate remains Open.
+
+### Progress update - 2026-09-30 (F165 accepted; F166 selected)
+
+F165, source commit `e0b9d61213af57a79a685264c9f64fabf841bd1a`, adds the
+Qt-free `SelectedClassSubtitle` read query and active-session repository
+adapter, projecting only class grade, level, regular schedule, and teacher
+display fields. Class and teacher failures remain independent; subtitle
+formatting, fallback, and refresh behavior stay in the UI, with no
+`DataService` fallback.
+
+Current Application and Platform CTests passed. The page slots
+`selectedClassSubtitleUsesIndependentReadOutcomesAndRefreshes`,
+`selectedClassSubtitleFallbackChainUsesTrimmedValues`, and
+`selectedClassGradeFailureFailsOpenWithoutDataServiceFallback` passed. On the
+pinned baseline `48fc5c5cc7dee78d82f8bf5f1bf8b51725575b99`, visible subtitle
+`E4 Hercules • Susan • Tues (4:00)` passed with only a test-source slot
+overlaid; all 584 baseline `src/` blobs matched. `git diff --check` passed.
+No full suite, application build, or query-count comparison is claimed.
+
+F166 is selected: migrate `RosterEditorWidget::updateHeaderText()` and
+`sidebarClassDisplayName()` in `src/features/roster/ui/roster_editor_widget_ui.cpp`
+from `ClassService::classInfo()` and `TeacherService::teacher()` to reuse F165's
+typed subtitle read. Keep `SidebarNodeNaming::formatClassDisplayName()` in the
+UI. Preserve invalid-ID "No class selected"; for valid IDs retain the
+classroom-name/`Class N` fallback if the read is unavailable and retain class
+details on teacher failure. Preserve the title, embedded heading, and roster
+load/save behavior. Acceptance covers exact subtitle, teacher failure,
+fallback/no-session behavior, and pinned-baseline parity. Gate 1 and Gate 2
+remain Partial; Phase 2 remains In Progress and its exit gate remains Open.

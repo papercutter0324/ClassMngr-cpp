@@ -1573,9 +1573,13 @@ A stub-backed visible-tab parity slot is sufficient to compare the tab rule
 against the pinned page behavior; a separate real-database harness timed out on
 both builds and established no mismatch. Report those checks separately.
 
-## 2026-09-30 — F165 ClassesPage subtitle read selection
+## 2026-09-30 — F165 ClassesPage subtitle read acceptance
 
-Keep class detail and optional teacher outcomes independent in the typed
-subtitle read. A teacher lookup failure should retain the class label and
-formatter fallback. Leave subtitle formatting and localized fallback choices
-at the UI edge.
+Keep class details and optional teacher display fields as separate outcomes:
+a failed teacher lookup must leave successful class details available to the
+formatter. Keep display formatting and localized fallback choices at the UI
+edge. The active-session repository projection only needs class grade, level,
+regular meeting day/start time, and the teacher fields used by
+`preferredDisplayName()`; do not widen the contract to full class or teacher
+records. The exact pinned-baseline page subtitle and all 584 production source
+blobs matched without a production overlay.

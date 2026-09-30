@@ -32,10 +32,10 @@
   selected-teacher navigation read, F159's Native English Staff Directory
   read, F160's GS Team Staff Directory read, F161's Native English Staff
   Directory save, F162's GS Team Staff Directory save, F163's ClassesPage
-  class-list read, and F164's ClassesPage selected-class grade read are
-  accepted. F165 is selected for the ClassesPage selected-class subtitle read.
-  See the [Phase 2 progress log](03-Phase-2-Progress-Log.md) for evidence and
-  current selection details.
+  class-list read, F164's selected-class grade read, and F165's selected-class
+  subtitle read are accepted. F166 is selected to migrate the roster editor's
+  class subtitle read. See the [Phase 2 progress log](03-Phase-2-Progress-Log.md)
+  for evidence and current selection details.
   Phase 2 Gates 1 and 2 remain Partial; broader feature migration, parity, and
   96-class Release memory evidence remain open. Phase 1 build-system exit
   evidence remains outstanding.
