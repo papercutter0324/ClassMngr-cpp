@@ -14,12 +14,14 @@
 #include "features/roster/ui/roster_editor_widget.h"
 #include "features/speaking_eval/ui/speaking_eval_page.h"
 #include "features/speaking_eval/ui/speaking_eval_report_assets_p.h"
+#include "next/application/classes_list_read_query.h"
 #include "next/application/classes_navigation_snapshot.h"
 #include "next/domain/course.h"
 #include "next/platform/application_services_class_day_filter_reset_policy_port.h"
 #include "next/platform/application_services_class_selection_reset_policy_port.h"
 #include "next/platform/application_services_class_visibility_preferences_port.h"
 #include "next/platform/application_services_classes_navigation_read_port.h"
+#include "next/platform/application_services_classes_list_read_port.h"
 #include "next/platform/application_services_middle_school_analytics_preferences_port.h"
 #include "next/platform/application_services_schedule_display_mode_preferences_port.h"
 #include "ui/shared/constants/gui_constants.h"
@@ -30,7 +32,9 @@
 #include "ui/shared/widgets/on_screen_keyboard.h"
 #include "ui/shared/dialogs/user_prompt_service.h"
 
+#include <charconv>
 #include <string>
+#include <system_error>
 #include <utility>
 
 #include <QFont>
@@ -159,6 +163,49 @@ QWidget* tabPage(
 
     return page;
 }
+
+QList<Classroom> classroomsFromListSnapshot(
+    const ClassMngr::Next::Application::ClassesListSnapshot& snapshot
+    )
+{
+    QList<Classroom> classrooms;
+    classrooms.reserve(static_cast<qsizetype>(snapshot.classes.size()));
+    for (const auto& entry : snapshot.classes)
+    {
+        int classId = 0;
+        const std::string& classIdValue = entry.classId.value();
+        const auto [end, error] = std::from_chars(
+            classIdValue.data(),
+            classIdValue.data() + classIdValue.size(),
+            classId
+            );
+        Q_ASSERT(
+            error == std::errc{}
+            && end == classIdValue.data() + classIdValue.size()
+            && classId > 0
+            );
+        if (error != std::errc{}
+            || end != classIdValue.data() + classIdValue.size()
+            || classId <= 0)
+        {
+            continue;
+        }
+
+        Classroom classroom;
+        classroom.id = classId;
+        classroom.name = QString::fromStdU16String(entry.className);
+        classrooms.append(std::move(classroom));
+    }
+    return classrooms;
+}
+
+QString classesListErrorMessage(const std::string& message)
+{
+    return QString::fromUtf8(
+        message.data(),
+        static_cast<qsizetype>(message.size())
+        );
+}
 }
 
 ClassesPage::ClassesPage(
@@ -246,14 +293,17 @@ bool ClassesPage::openClass(
     }
 
     ++m_classQueryCount;
-    const Result<QList<Classroom>> loadedClasses = classService->classes();
+    ClassMngr::Next::Platform::
+        ApplicationServicesClassesListReadPort readPort(m_services);
+    const ClassMngr::Next::Application::ClassesListReadQuery query(readPort);
+    const auto loadedClasses = query.execute();
     if (!loadedClasses)
     {
         DialogServices::showWarning(
             this,
             tr("Load Classes"),
             tr("Classes could not be loaded."),
-            loadedClasses.error()
+            classesListErrorMessage(loadedClasses.error().message)
             );
         m_classes.clear();
         m_currentClassId = -1;
@@ -263,7 +313,7 @@ bool ClassesPage::openClass(
         updateHeaderText();
         return false;
     }
-    m_classes = *loadedClasses;
+    m_classes = classroomsFromListSnapshot(loadedClasses.value());
     m_sourceClassCount = m_classes.size();
     m_classResultRowCount += m_classes.size();
 
@@ -2253,19 +2303,23 @@ void ClassesPage::handleClassInfoSaved(
 
     if (classService && classService->isAvailable())
     {
-        const Result<QList<Classroom>> loadedClasses =
-            classService->classes();
+        ClassMngr::Next::Platform::
+            ApplicationServicesClassesListReadPort readPort(m_services);
+        const ClassMngr::Next::Application::ClassesListReadQuery query(
+            readPort
+            );
+        const auto loadedClasses = query.execute();
         if (!loadedClasses)
         {
             DialogServices::showWarning(
                 this,
                 tr("Load Classes"),
                 tr("Classes could not be reloaded after saving."),
-                loadedClasses.error()
+                classesListErrorMessage(loadedClasses.error().message)
                 );
             return;
         }
-        m_classes = *loadedClasses;
+        m_classes = classroomsFromListSnapshot(loadedClasses.value());
         rebuildClassTabs(classId);
         rebuildSectionTabs();
         restoreSelections();

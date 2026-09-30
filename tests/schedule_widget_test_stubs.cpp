@@ -41,6 +41,7 @@ namespace ScheduleWidgetTestStubs
 {
 QHash<QString, QVariant> settings;
 QHash<int, QString> classGrades;
+QHash<int, QString> classNameOverrides;
 QHash<QString, QString> testingBlocks;
 QHash<int, TestingClass> testingClasses;
 QHash<QString, int> testingClassAssignments;
@@ -89,11 +90,50 @@ bool distinctIntensiveDays = false;
 bool includeAlternativeMatchingClass = false;
 bool classesNavigationReadFailure = false;
 bool scheduleClassInfoReadFailure = false;
+int legacyClassListReadCount = 0;
+int repositoryClassListReadCount = 0;
+
+QList<Classroom> classList()
+{
+    Classroom classroom;
+    classroom.id = 42;
+    classroom.name = classNameOverrides.value(
+        classroom.id,
+        QStringLiteral("Hercules")
+        );
+
+    QList<Classroom> classrooms{classroom};
+
+    if (includeAdditionalClass)
+    {
+        Classroom additionalClass;
+        additionalClass.id = 43;
+        additionalClass.name = classNameOverrides.value(
+            additionalClass.id,
+            QStringLiteral("Athena")
+            );
+        classrooms.append(additionalClass);
+    }
+
+    if (includeAlternativeMatchingClass)
+    {
+        Classroom alternativeClass;
+        alternativeClass.id = 44;
+        alternativeClass.name = classNameOverrides.value(
+            alternativeClass.id,
+            QStringLiteral("Hercules Evening")
+            );
+        classrooms.append(alternativeClass);
+    }
+
+    return classrooms;
+}
 
 void reset()
 {
     settings.clear();
     classGrades.clear();
+    classNameOverrides.clear();
     testingBlocks.clear();
     testingClasses.clear();
     testingClassAssignments.clear();
@@ -141,6 +181,8 @@ void reset()
     includeAlternativeMatchingClass = false;
     classesNavigationReadFailure = false;
     scheduleClassInfoReadFailure = false;
+    legacyClassListReadCount = 0;
+    repositoryClassListReadCount = 0;
 }
 
 void setDatabaseOpen(
@@ -197,6 +239,22 @@ void setIncludeAdditionalClass(
     )
 {
     includeAdditionalClass = include;
+}
+
+void setClassesVisibilityAll()
+{
+    settings.insert(
+        QStringLiteral("classes_navigation_visibility_scope"),
+        QStringLiteral("all_classes")
+        );
+}
+
+void setClassName(
+    int classId,
+    const QString& name
+    )
+{
+    classNameOverrides.insert(classId, name);
 }
 
 void setIncludeMiddleSchoolClasses(
@@ -502,6 +560,24 @@ ClassInfoRepository* DatabaseSession::classInfoRepository() const
     static QSqlDatabase database;
     static ClassInfoRepository repository(database);
     return &repository;
+}
+
+ClassRepository* DatabaseSession::classRepository() const
+{
+    static QSqlDatabase database;
+    static ClassRepository repository(database);
+    return &repository;
+}
+
+ClassRepository::ClassRepository(QSqlDatabase& database)
+    : m_database(database)
+{
+}
+
+Result<QList<Classroom>> ClassRepository::getClasses()
+{
+    ++ScheduleWidgetTestStubs::repositoryClassListReadCount;
+    return ScheduleWidgetTestStubs::classList();
 }
 
 ClassInfoRepository::ClassInfoRepository(QSqlDatabase& database)
@@ -1248,29 +1324,8 @@ Result<bool> DataService::isTestingClass(
 
 Result<QList<Classroom>> DataService::getClasses()
 {
-    Classroom classroom;
-    classroom.id = 42;
-    classroom.name = QStringLiteral("Hercules");
-
-    QList<Classroom> classrooms{classroom};
-
-    if (ScheduleWidgetTestStubs::includeAdditionalClass)
-    {
-        Classroom additionalClass;
-        additionalClass.id = 43;
-        additionalClass.name = QStringLiteral("Athena");
-        classrooms.append(additionalClass);
-    }
-
-    if (ScheduleWidgetTestStubs::includeAlternativeMatchingClass)
-    {
-        Classroom alternativeClass;
-        alternativeClass.id = 44;
-        alternativeClass.name = QStringLiteral("Hercules Evening");
-        classrooms.append(alternativeClass);
-    }
-
-    return classrooms;
+    ++ScheduleWidgetTestStubs::legacyClassListReadCount;
+    return ScheduleWidgetTestStubs::classList();
 }
 
 Result<Classroom> DataService::getClassById(

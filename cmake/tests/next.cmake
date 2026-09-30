@@ -304,6 +304,24 @@ classmngr_add_qt_test(
 )
 
 classmngr_add_qt_test(
+    NAME NextApplicationClassesListReadQuery
+    SOURCES
+        tests/next_application_classes_list_read_query_tests.cpp
+    LIBRARIES
+        ClassMngrNext::Application
+        Qt6::Test
+)
+
+classmngr_add_qt_test(
+    NAME NextPlatformApplicationServicesClassesListReadPort
+    SOURCES
+        tests/next_platform_application_services_classes_list_read_port_tests.cpp
+    LIBRARIES
+        ClassMngrNext::Platform
+        Qt6::Test
+)
+
+classmngr_add_qt_test(
     NAME NextApplicationSpeakingEvaluationSaveUseCase
     SOURCES
         tests/next_application_speaking_evaluation_save_use_case_tests.cpp

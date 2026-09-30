@@ -39,11 +39,15 @@ namespace ScheduleWidgetTestStubs
 {
 void reset();
 void setIncludeAdditionalClass(bool include);
+void setClassesVisibilityAll();
+void setClassName(int classId, const QString& name);
 void setClassGrade(int classId, const QString& grade);
 void setIncludeAlternativeMatchingClass(bool include);
 void setExistingIntensiveHours(bool exists);
 void setDistinctIntensiveDays(bool distinct);
 void setClassesNavigationReadFailure(bool fails);
+extern int legacyClassListReadCount;
+extern int repositoryClassListReadCount;
 void setSpeakingEvaluation(
     int classId,
     const QString& evaluationName,
@@ -141,6 +145,8 @@ private slots:
     void testingModeUsesRegularMeetingsForDayFiltering();
     void allGradeTabShowsClassesAcrossGrades();
     void classesNavigationReadFailureKeepsNamesAndBlankMetadata();
+    void classesListQueryUsesActiveRepositoryOnOpenAndAfterInfoSave();
+    void classInfoSaveRefreshesVisibleClassListAndPreservesSelection();
     void classInfoSaveRefreshesNavigationSnapshot();
     void dayFilterSelectsAllWhenSelectedGradeDisappears();
     void selectedGradeRemainsVisibleWhenCurrentClassIsFilteredOut();
@@ -778,6 +784,121 @@ void ClassesPageTests::classesNavigationReadFailureKeepsNamesAndBlankMetadata()
     QCOMPARE(metrics.classInfoResultRowCount, 0);
     QCOMPARE(metrics.classInfoScheduleRowCount, 0);
     QCOMPARE(metrics.teacherResultRowCount, 0);
+}
+
+void ClassesPageTests::
+classesListQueryUsesActiveRepositoryOnOpenAndAfterInfoSave()
+{
+    ApplicationServices services;
+    ClassesPage page(&services);
+
+    QVERIFY(page.openClass(43));
+    QCOMPARE(ScheduleWidgetTestStubs::repositoryClassListReadCount, 1);
+    QCOMPARE(ScheduleWidgetTestStubs::legacyClassListReadCount, 0);
+    QCOMPARE(page.currentClassId(), 43);
+
+    auto* details = page.findChild<ClassDetailsPage*>();
+    QVERIFY(details);
+    QSignalSpy savedSignal(&page, &ClassesPage::classInfoSaved);
+    QVERIFY(QMetaObject::invokeMethod(
+        details,
+        "classInfoSaved",
+        Qt::DirectConnection,
+        Q_ARG(int, 43)
+        ));
+
+    QCOMPARE(ScheduleWidgetTestStubs::repositoryClassListReadCount, 2);
+    QCOMPARE(ScheduleWidgetTestStubs::legacyClassListReadCount, 0);
+    QCOMPARE(savedSignal.size(), 1);
+    QCOMPARE(page.currentClassId(), 43);
+}
+
+void ClassesPageTests::
+classInfoSaveRefreshesVisibleClassListAndPreservesSelection()
+{
+    ScheduleWidgetTestStubs::setClassesNavigationReadFailure(true);
+    ScheduleWidgetTestStubs::setClassesVisibilityAll();
+
+    ApplicationServices services;
+    ClassesPage page(&services);
+    QVERIFY(page.openClass(42));
+    QCOMPARE(page.currentClassId(), 42);
+
+    auto* gradeNavigation = gradeTabs(&page);
+    QVERIFY(gradeNavigation);
+    gradeNavigation->setCurrentIndex(gradeNavigation->count() - 1);
+
+    auto* allClassesNavigation = gradeNavigation->currentWidget()
+        ? gradeNavigation->currentWidget()->findChild<NavigationTabWidget*>(
+            QStringLiteral("classesLevelTabs")
+            )
+        : nullptr;
+    QVERIFY(allClassesNavigation);
+    QCOMPARE(allClassesNavigation->count(), 2);
+
+    const QWidget* initialFirstClassPage = allClassesNavigation->widget(0);
+    const QWidget* initialSecondClassPage = allClassesNavigation->widget(1);
+    QVERIFY(initialFirstClassPage);
+    QVERIFY(initialSecondClassPage);
+    QCOMPARE(initialFirstClassPage->property("class_id").toInt(), 43);
+    QCOMPARE(initialSecondClassPage->property("class_id").toInt(), 42);
+    QVERIFY(
+        allClassesNavigation->tabText(0).contains(QStringLiteral("Athena"))
+        );
+    QVERIFY(
+        allClassesNavigation->tabText(1).contains(QStringLiteral("Hercules"))
+        );
+
+    ScheduleWidgetTestStubs::setClassName(43, QStringLiteral("Zulu"));
+
+    auto* details = page.findChild<ClassDetailsPage*>();
+    QVERIFY(details);
+    QSignalSpy savedSignal(&page, &ClassesPage::classInfoSaved);
+    QVERIFY(QMetaObject::invokeMethod(
+        details,
+        "classInfoSaved",
+        Qt::DirectConnection,
+        Q_ARG(int, 42)
+        ));
+
+    QCOMPARE(savedSignal.size(), 1);
+    QCOMPARE(page.currentClassId(), 42);
+
+    gradeNavigation = gradeTabs(&page);
+    QVERIFY(gradeNavigation);
+    QCOMPARE(
+        gradeNavigation->tabText(gradeNavigation->currentIndex()),
+        QStringLiteral("All")
+        );
+    allClassesNavigation = gradeNavigation->currentWidget()
+        ? gradeNavigation->currentWidget()->findChild<NavigationTabWidget*>(
+            QStringLiteral("classesLevelTabs")
+            )
+        : nullptr;
+    QVERIFY(allClassesNavigation);
+    QCOMPARE(allClassesNavigation->count(), 2);
+
+    const QWidget* refreshedFirstClassPage = allClassesNavigation->widget(0);
+    const QWidget* refreshedSecondClassPage = allClassesNavigation->widget(1);
+    QVERIFY(refreshedFirstClassPage);
+    QVERIFY(refreshedSecondClassPage);
+    QCOMPARE(refreshedFirstClassPage->property("class_id").toInt(), 42);
+    QCOMPARE(refreshedSecondClassPage->property("class_id").toInt(), 43);
+    QVERIFY(
+        allClassesNavigation->tabText(0).contains(QStringLiteral("Hercules"))
+        );
+    QVERIFY(
+        allClassesNavigation->tabText(1).contains(QStringLiteral("Zulu"))
+        );
+    QVERIFY(
+        !allClassesNavigation->tabText(1).contains(QStringLiteral("Athena"))
+        );
+    QCOMPARE(
+        allClassesNavigation->widget(
+            allClassesNavigation->currentIndex()
+            )->property("class_id").toInt(),
+        42
+        );
 }
 
 void ClassesPageTests::classInfoSaveRefreshesNavigationSnapshot()
