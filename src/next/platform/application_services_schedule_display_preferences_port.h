@@ -1,7 +1,8 @@
 #pragma once
 
-#include "app/services/feature_services.h"
 #include "core/application_services.h"
+#include "data/database/database_session.h"
+#include "data/repositories/settings_repository.h"
 #include "next/application/schedule_display_preferences.h"
 
 #include <QByteArray>
@@ -41,49 +42,43 @@ public:
     [[nodiscard]] Application::ScheduleDisplayPreferencesResult load()
         const override
     {
-        const SettingsService* settingsService = m_services.settingsService();
-        if (!settingsService || !settingsService->isAvailable())
+        DatabaseSession* const session = m_services.databaseSession();
+        if (!session || !session->isOpen())
         {
             return Application::ScheduleDisplayPreferencesResult::success({});
         }
 
+        SettingsRepository* const repository = session->settingsRepository();
+        if (!repository)
+        {
+            return Application::ScheduleDisplayPreferencesResult::success({});
+        }
+
+        const auto settingToBoolOrDefault = [repository](const QString& key)
+        {
+            const auto stored = repository->loadSetting(key);
+            return stored
+                ? settingToBool(*stored, false)
+                : false;
+        };
+
         return Application::ScheduleDisplayPreferencesResult::success({
-            .use24HourTime = settingToBool(
-                settingsService->loadOrDefault(
-                    QStringLiteral("schedule_use_24h"),
-                    QStringLiteral("false")
-                    ),
-                false
+            .use24HourTime = settingToBoolOrDefault(
+                QStringLiteral("schedule_use_24h")
                 ),
-            .showEnglishNames = settingToBool(
-                settingsService->loadOrDefault(
-                    QStringLiteral(
-                        "schedule_show_korean_teacher_english_names"
-                        ),
-                    QStringLiteral("false")
-                    ),
-                false
+            .showEnglishNames = settingToBoolOrDefault(
+                QStringLiteral(
+                    "schedule_show_korean_teacher_english_names"
+                    )
                 ),
-            .showWeekends = settingToBool(
-                settingsService->loadOrDefault(
-                    QStringLiteral("schedule_show_weekends"),
-                    QStringLiteral("false")
-                    ),
-                false
+            .showWeekends = settingToBoolOrDefault(
+                QStringLiteral("schedule_show_weekends")
                 ),
-            .showAllIntensiveHours = settingToBool(
-                settingsService->loadOrDefault(
-                    QStringLiteral("schedule_show_all_hours_v2"),
-                    QStringLiteral("false")
-                    ),
-                false
+            .showAllIntensiveHours = settingToBoolOrDefault(
+                QStringLiteral("schedule_show_all_hours_v2")
                 ),
-            .testingAffectsM1 = settingToBool(
-                settingsService->loadOrDefault(
-                    QStringLiteral("schedule_testing_affects_m1"),
-                    QStringLiteral("false")
-                    ),
-                false
+            .testingAffectsM1 = settingToBoolOrDefault(
+                QStringLiteral("schedule_testing_affects_m1")
                 )
         });
     }
@@ -92,13 +87,19 @@ public:
         const Application::ScheduleDisplayPreferencesSaveRequest& request
         ) override
     {
-        const SettingsService* settingsService = m_services.settingsService();
-        if (!settingsService || !settingsService->isAvailable())
+        DatabaseSession* const session = m_services.databaseSession();
+        if (!session || !session->isOpen())
         {
             return Application::ScheduleDisplayPreferencesSaveResult::success();
         }
 
-        const Status saved = settingsService->saveAll({
+        SettingsRepository* const repository = session->settingsRepository();
+        if (!repository)
+        {
+            return Application::ScheduleDisplayPreferencesSaveResult::success();
+        }
+
+        const Status saved = repository->saveSettings({
             {
                 QStringLiteral("schedule_use_24h"),
                 storedBool(request.use24HourTime)

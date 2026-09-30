@@ -1,6 +1,7 @@
 #include "core/application_services.h"
 #include "data/data_service.h"
 #include "data/database/database_session.h"
+#include "data/repositories/settings_repository.h"
 #include "next/application/schedule_display_preferences.h"
 #include "next/platform/application_services_schedule_display_preferences_port.h"
 
@@ -41,15 +42,13 @@ bool executeSql(
     const QString& statement
     )
 {
-    DataService* dataService = services.dataService();
-    if (!dataService || !dataService->databaseSession())
+    DatabaseSession* const session = services.databaseSession();
+    if (!session || !session->isOpen())
     {
         return false;
     }
 
-    const QSqlDatabase database =
-        dataService->databaseSession()->database();
-    QSqlQuery query(database);
+    QSqlQuery query(session->database());
     return query.exec(statement);
 }
 
@@ -66,6 +65,8 @@ private slots:
     void readsFalseSetting();
     void missingSettingDefaultsFalse();
     void unavailableSettingsDefaultFalse();
+    void closedSessionDefaultsAndIgnoresSave();
+    void readErrorsDefaultFalse();
     void savesAllValuesAndUsesLegacyKeys();
     void preservesLegacyQVariantCoercion();
     void atomicSaveFailureReturnsTypedErrorAndRollsBack();
@@ -86,8 +87,13 @@ readsTrueSetting()
     ApplicationServices services;
     QVERIFY(openDatabase(services, m_directory));
     QVERIFY(services.dataService());
+    DatabaseSession* const session = services.databaseSession();
+    QVERIFY(session);
+    QVERIFY(session->isOpen());
+    SettingsRepository* const repository = session->settingsRepository();
+    QVERIFY(repository);
     QVERIFY(
-        services.dataService()->saveSetting(
+        repository->saveSetting(
             QStringLiteral("schedule_use_24h"),
             QStringLiteral("true")
             )
@@ -106,8 +112,13 @@ readsFalseSetting()
     ApplicationServices services;
     QVERIFY(openDatabase(services, m_directory));
     QVERIFY(services.dataService());
+    DatabaseSession* const session = services.databaseSession();
+    QVERIFY(session);
+    QVERIFY(session->isOpen());
+    SettingsRepository* const repository = session->settingsRepository();
+    QVERIFY(repository);
     QVERIFY(
-        services.dataService()->saveSetting(
+        repository->saveSetting(
             QStringLiteral("schedule_use_24h"),
             QStringLiteral("false")
             )
@@ -141,6 +152,10 @@ void NextPlatformApplicationServicesScheduleDisplayPreferencesPortTests::
 unavailableSettingsDefaultFalse()
 {
     ApplicationServices services;
+    QVERIFY(services.dataService());
+    DatabaseSession* const session = services.databaseSession();
+    QVERIFY(session);
+    QVERIFY(!session->isOpen());
 
     ApplicationServicesScheduleDisplayPreferencesPort port(services);
     const auto result = port.load();
@@ -163,11 +178,88 @@ unavailableSettingsDefaultFalse()
 }
 
 void NextPlatformApplicationServicesScheduleDisplayPreferencesPortTests::
+closedSessionDefaultsAndIgnoresSave()
+{
+    ApplicationServices services;
+    const QString path = databasePath(m_directory);
+    QVERIFY(services.openDatabase(path));
+    QVERIFY(services.dataService());
+    DatabaseSession* const session = services.databaseSession();
+    QVERIFY(session);
+    QVERIFY(session->isOpen());
+    SettingsRepository* const repository = session->settingsRepository();
+    QVERIFY(repository);
+
+    const std::array<QString, 5> keys = {{
+        QStringLiteral("schedule_use_24h"),
+        QStringLiteral("schedule_show_korean_teacher_english_names"),
+        QStringLiteral("schedule_show_weekends"),
+        QStringLiteral("schedule_show_all_hours_v2"),
+        QStringLiteral("schedule_testing_affects_m1")
+    }};
+    for (const QString& key : keys)
+    {
+        QVERIFY(repository->saveSetting(key, QStringLiteral("true")));
+    }
+
+    ApplicationServicesScheduleDisplayPreferencesPort port(services);
+    services.closeDatabase();
+    QVERIFY(services.dataService());
+    QVERIFY(!session->isOpen());
+
+    const auto loadedWhileClosed = port.load();
+    QVERIFY(loadedWhileClosed);
+    QVERIFY(loadedWhileClosed.value() == ScheduleDisplayPreferences{});
+    QVERIFY(port.save({
+        .use24HourTime = false,
+        .showEnglishNames = false,
+        .showWeekends = false,
+        .showAllIntensiveHours = false,
+        .testingAffectsM1 = false
+    }));
+
+    QVERIFY(services.openDatabase(path));
+    QVERIFY(session->isOpen());
+    SettingsRepository* const reopenedRepository =
+        session->settingsRepository();
+    QVERIFY(reopenedRepository);
+    for (const QString& key : keys)
+    {
+        const auto stored = reopenedRepository->loadSetting(key);
+        QVERIFY(stored);
+        QCOMPARE(stored->toString(), QStringLiteral("true"));
+    }
+}
+
+void NextPlatformApplicationServicesScheduleDisplayPreferencesPortTests::
+readErrorsDefaultFalse()
+{
+    ApplicationServices services;
+    QVERIFY(openDatabase(services, m_directory));
+    QVERIFY(services.dataService());
+    DatabaseSession* const session = services.databaseSession();
+    QVERIFY(session);
+    QVERIFY(session->isOpen());
+    QVERIFY(session->settingsRepository());
+    QVERIFY(executeSql(services, QStringLiteral("DROP TABLE app_settings")));
+
+    ApplicationServicesScheduleDisplayPreferencesPort port(services);
+    const auto loaded = port.load();
+    QVERIFY(loaded);
+    QVERIFY(loaded.value() == ScheduleDisplayPreferences{});
+}
+
+void NextPlatformApplicationServicesScheduleDisplayPreferencesPortTests::
 savesAllValuesAndUsesLegacyKeys()
 {
     ApplicationServices services;
     QVERIFY(openDatabase(services, m_directory));
     QVERIFY(services.dataService());
+    DatabaseSession* const session = services.databaseSession();
+    QVERIFY(session);
+    QVERIFY(session->isOpen());
+    SettingsRepository* const repository = session->settingsRepository();
+    QVERIFY(repository);
 
     const ScheduleDisplayPreferences expected{
         .use24HourTime = true,
@@ -178,6 +270,10 @@ savesAllValuesAndUsesLegacyKeys()
     };
 
     ApplicationServicesScheduleDisplayPreferencesPort port(services);
+    QVERIFY(repository->saveSetting(
+        QStringLiteral("schedule/unrelated"),
+        QStringLiteral("preserved")
+        ));
     QVERIFY(port.save(expected));
 
     const auto loaded = port.load();
@@ -210,10 +306,15 @@ savesAllValuesAndUsesLegacyKeys()
     }};
     for (const auto& [key, expectedValue] : storedValues)
     {
-        const auto stored = services.dataService()->loadSetting(key);
+        const auto stored = repository->loadSetting(key);
         QVERIFY(stored);
         QCOMPARE(stored->toString(), expectedValue);
     }
+    const auto unrelated = repository->loadSetting(
+        QStringLiteral("schedule/unrelated")
+        );
+    QVERIFY(unrelated);
+    QCOMPARE(unrelated->toString(), QStringLiteral("preserved"));
 }
 
 void NextPlatformApplicationServicesScheduleDisplayPreferencesPortTests::
@@ -222,6 +323,11 @@ preservesLegacyQVariantCoercion()
     ApplicationServices services;
     QVERIFY(openDatabase(services, m_directory));
     QVERIFY(services.dataService());
+    DatabaseSession* const session = services.databaseSession();
+    QVERIFY(session);
+    QVERIFY(session->isOpen());
+    SettingsRepository* const repository = session->settingsRepository();
+    QVERIFY(repository);
 
     const std::array<std::pair<QVariant, bool>, 6> values = {{
         {QVariant(QStringLiteral(" TRUE ")), true},
@@ -248,14 +354,14 @@ preservesLegacyQVariantCoercion()
             for (const QString& resetKey : keys)
             {
                 QVERIFY(
-                    services.dataService()->saveSetting(
+                    repository->saveSetting(
                         resetKey,
                         false
                         )
                     );
             }
             QVERIFY(
-                services.dataService()->saveSetting(
+                repository->saveSetting(
                     key,
                     value
                     )
