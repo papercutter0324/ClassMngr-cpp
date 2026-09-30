@@ -4132,8 +4132,8 @@ F145 details update and F146 creation remain separate accepted boundaries.
 Production commit `b037b4216b71c55c7793df5f7bbbfc4a00690065`, page transition
 fix `315b3ff33b7e2ab42b43d52cd168ce21a92158c9`, and acceptance-test commit
 `397376e439f4b5955c82948ab0c225aaf776d679` are recorded with verification
-limits in the [Phase 2 progress log](03-Phase-2-Progress-Log.md). F148-F176
-are accepted. F177 is selected; its boundary and acceptance criteria are in
+limits in the [Phase 2 progress log](03-Phase-2-Progress-Log.md). F148-F177
+are accepted. F178 is selected; its boundary and acceptance criteria are in
 the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 
 ## Class-details save mapping: F126 and F139
@@ -4547,14 +4547,34 @@ fallbacks, structured errors, and the post-read closed-session recheck. No full
 suite or application build ran. See the [Phase 2 progress
 log](03-Phase-2-Progress-Log.md).
 
-## F177 selected Sub Prep schedule-summary port
+## F177 accepted Sub Prep schedule-summary port
 
-Migrate `ApplicationServicesSubPrepScheduleSummaryPort` from `ClassService` to
-the active session's `ClassInfoRepository`. Preserve scope validation,
-empty-scope no-read behavior, ordering/omission, bounded projection and meeting
-formatting, and unavailable/read-error mapping. Verify
+F177, source commit `25b9719c`, migrates
+`ApplicationServicesSubPrepScheduleSummaryPort` to active-session
+`ClassInfoRepository::loadSubPrepClassSummaries()`, preserving scope
+validation, empty-scope no-read behavior, ordering/omission, bounded projection,
+meeting formatting, and unavailable/read-error mapping. Implementation and
+independent Tester each passed all three targets:
 `ClassMngrNextApplicationSubPrepScheduleSummaryQueryTests`,
 `ClassMngrNextPlatformApplicationServicesSubPrepPrintSourcePortTests`, and
-`ClassMngrSubPrepPageTests`. The configured `build/f168` Ninja target list
-contains all three F177 targets and is retained for F177. Phase 2 remains In
-Progress/Open; Gates 1 and 2 remain Partial.
+`ClassMngrSubPrepPageTests`. `git diff --check` passed. No full suite or
+application build ran. See the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
+
+## F178 selected Sub Prep print source port
+
+Migrate `ApplicationServicesSubPrepPrintSourcePort` from `ClassService`,
+`TeacherService`, and `RosterService` to active-session
+`ClassInfoRepository::loadClassInfosForScheduleScope`,
+`TeacherRepository::getTeacher`, and
+`RosterRepository::getRosterStudentCount`. Preserve scope validation, selected
+mode/day filtering and order, omission of classes without a meeting or usable
+teacher, teacher caching/first-reference order, and bounded output. Preserve
+teacher-not-found omission and class/teacher read-error mapping; only
+roster-count failures use the zero-count fallback. Keep NotFound versus
+Technical mappings and no `DataService` fallback. Verify
+`ClassMngrNextApplicationSubPrepPrintSourceQueryTests`,
+`ClassMngrNextPlatformApplicationServicesSubPrepPrintSourcePortTests`,
+`ClassMngrSubPrepPrintSourceMapperTests`, and `ClassMngrSubPrepPageTests`. The
+configured `build/f168` Ninja target list contains all four F178 targets and is
+retained for F178. Phase 2 remains In Progress/Open; Gates 1 and 2 remain
+Partial.

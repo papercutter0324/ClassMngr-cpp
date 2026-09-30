@@ -8299,7 +8299,7 @@ fields/schedule/teacher/count/fallback parity. F167 implementation has not
 started. Gate 1 and Gate 2 remain Partial; Phase 2 remains In Progress and its
 exit gate remains Open.
 
-### Progress update - 2026-10-01 (F176 accepted; F177 selected)
+### Progress update - 2026-10-01 (F177 accepted; F178 selected)
 
 F167, source commit `97efac8b`, updates
 `ApplicationServicesClassDetailsPageReadPort` to use active-session
@@ -8418,12 +8418,29 @@ identity, preferred-name selection, bounded UTF-8 conversion, teacher
 fallbacks, structured errors, and the post-read closed-session recheck. No full
 suite or application build ran.
 
-F177 migrates `ApplicationServicesSubPrepScheduleSummaryPort` from
-`ClassService` to the active session's `ClassInfoRepository`. Preserve scope
-validation, empty-scope no-read behavior, ordering/omission, bounded projection
-and meeting formatting, and unavailable/read-error mapping. Verify
+F177, source commit `25b9719c`, migrates
+`ApplicationServicesSubPrepScheduleSummaryPort` to active-session
+`ClassInfoRepository::loadSubPrepClassSummaries()`, preserving scope
+validation, empty-scope no-read behavior, ordering/omission, bounded projection,
+meeting formatting, and unavailable/read-error mapping. Implementation and
+independent Tester each passed all three targets:
 `ClassMngrNextApplicationSubPrepScheduleSummaryQueryTests`,
 `ClassMngrNextPlatformApplicationServicesSubPrepPrintSourcePortTests`, and
-`ClassMngrSubPrepPageTests`. The Ninja target list confirms all three F177
-targets, so retain `build/f168`. Gate 1 and Gate 2 remain Partial; Phase 2
-remains In Progress and its exit gate remains Open.
+`ClassMngrSubPrepPageTests`. `git diff --check` passed. No full suite or
+application build ran.
+
+F178 migrates `ApplicationServicesSubPrepPrintSourcePort` from `ClassService`,
+`TeacherService`, and `RosterService` to active-session
+`ClassInfoRepository::loadClassInfosForScheduleScope`,
+`TeacherRepository::getTeacher`, and
+`RosterRepository::getRosterStudentCount`. Preserve scope validation, selected
+mode/day filtering and order, omission of classes without a meeting or usable
+teacher, teacher caching/first-reference order, and bounded output. Preserve
+teacher-not-found omission and class/teacher read-error mapping; only
+roster-count failures use the zero-count fallback. Keep NotFound versus
+Technical mappings and no `DataService` fallback. Verify
+`ClassMngrNextApplicationSubPrepPrintSourceQueryTests`,
+`ClassMngrNextPlatformApplicationServicesSubPrepPrintSourcePortTests`,
+`ClassMngrSubPrepPrintSourceMapperTests`, and `ClassMngrSubPrepPageTests`.
+`build/f168` contains all four F178 targets and is retained. Gate 1 and Gate 2
+remain Partial; Phase 2 remains In Progress and its exit gate remains Open.

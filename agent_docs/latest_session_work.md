@@ -4159,3 +4159,29 @@ formatting, and unavailable/read error mapping. Focused targets are
 `ClassMngrNextPlatformApplicationServicesSubPrepPrintSourcePortTests`, and
 `ClassMngrSubPrepPageTests`. The configured `build/f168` tree is retained. The
 workflow file remains with the other worker; no push was requested.
+
+## 2026-10-01 - F177 accepted; F178 selected
+
+F177 source commit `25b9719c` migrates
+`ApplicationServicesSubPrepScheduleSummaryPort` to the active session's
+`ClassInfoRepository::loadSubPrepClassSummaries()`. Implementation and
+independent Tester each passed all three focused targets:
+`ClassMngrNextApplicationSubPrepScheduleSummaryQueryTests`,
+`ClassMngrNextPlatformApplicationServicesSubPrepPrintSourcePortTests`, and
+`ClassMngrSubPrepPageTests`. Coverage retains
+empty-scope success without a repository read, request validation, order and
+omission behavior, bounded meeting projection, and error classifications.
+`git diff --check` passed; no full suite or application build was run.
+
+Two independent Explorer lanes selected F178: migrate
+`ApplicationServicesSubPrepPrintSourcePort` to the active session's class-info,
+teacher, and roster repositories. Preserve request bounds, selected schedule
+filtering and order, teacher lookup caching and missing-teacher omission,
+bounded copied output, and the zero-count fallback when roster counts fail.
+Keep class/teacher read failures distinct from roster-count fallback and avoid a
+`DataService` fallback. Focused targets are
+`ClassMngrNextApplicationSubPrepPrintSourceQueryTests`,
+`ClassMngrNextPlatformApplicationServicesSubPrepPrintSourcePortTests`,
+`ClassMngrSubPrepPrintSourceMapperTests`, and `ClassMngrSubPrepPageTests`; all
+four exist in the retained `build/f168` target list. The workflow fix remains
+with the other worker. No push was requested.

@@ -2200,7 +2200,7 @@ parity. Gates 1 and 2 remain Partial; Phase 2 remains In Progress/Open. A
 separate worker owns workflow repair; this work does not modify
 `.github/workflows/refactoring-baseline.yml`. No push was requested.
 
-## Current Phase 2 position - 2026-10-01 (F176 accepted; F177 selected)
+## Current Phase 2 position - 2026-10-01 (F177 accepted; F178 selected)
 
 F170 source commit `68391fac` moves `ApplicationServicesRosterReadPort` from
 `RosterService::roster()` to the active session's `RosterRepository`, with no
@@ -2278,13 +2278,28 @@ verification each passed 3/3 focused targets:
 repository read failure. `git diff --check` passed; no full suite or application
 build was run.
 
-F177 is selected: migrate `ApplicationServicesSubPrepScheduleSummaryPort` from
-`ClassService::subPrepClassSummaries()` to the active session's
-`ClassInfoRepository::loadSubPrepClassSummaries()`. Preserve request
+F177 source commit `25b9719c` migrates
+`ApplicationServicesSubPrepScheduleSummaryPort` to the active session's
+`ClassInfoRepository::loadSubPrepClassSummaries()`. It preserves request
 validation, empty-scope success without a repository read, requested class
 order and omission rules, bounded summary projection and meeting formatting,
-and unavailable/read error mapping. Focused targets are
+and unavailable/read error mapping. Implementation and independent
+verification each passed 3/3 focused targets:
 `ClassMngrNextApplicationSubPrepScheduleSummaryQueryTests`,
 `ClassMngrNextPlatformApplicationServicesSubPrepPrintSourcePortTests`, and
-`ClassMngrSubPrepPageTests`. Phase 2 remains In Progress/Open; Gates 1 and 2
-remain Partial. Workflow repair remains with the other worker.
+`ClassMngrSubPrepPageTests`. `git diff --check` passed; no full suite or
+application build was run.
+
+F178 is selected: migrate `ApplicationServicesSubPrepPrintSourcePort` from
+`ClassService`, `TeacherService`, and `RosterService` to the active session's
+`ClassInfoRepository`, `TeacherRepository`, and `RosterRepository`. Preserve
+scope validation, selected mode/day filtering and order, omission of classes
+without an in-scope meeting or usable teacher, teacher caching and first-
+reference order, bounded output, zero student-count fallback on roster-read
+failure, and class/teacher error mapping. Only roster-count failures use the
+zero-count fallback. Focused targets are
+`ClassMngrNextApplicationSubPrepPrintSourceQueryTests`,
+`ClassMngrNextPlatformApplicationServicesSubPrepPrintSourcePortTests`,
+`ClassMngrSubPrepPrintSourceMapperTests`, and `ClassMngrSubPrepPageTests`.
+Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial. Workflow repair
+remains with the other worker.

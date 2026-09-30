@@ -1689,3 +1689,11 @@ keep the post-read session check: a repository result is invalid if the session
 closes while the read is in progress. Preserve the existing teacher fallback
 and bounded UTF-8 mapping. F177 continues the same Sub Prep read boundary with
 the schedule-summary port.
+
+## 2026-10-01 - F177 Sub Prep schedule-summary read port
+
+Call `ClassInfoRepository::loadSubPrepClassSummaries()` through the active
+session and preserve the existing scope checks, no-read empty scope, projection
+order and error classification. F178 advances the Sub Prep output boundary to
+the operation-scoped print-source port; keep its missing-teacher omission and
+zero-count fallback for roster-read failures.

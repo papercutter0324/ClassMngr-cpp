@@ -44,9 +44,9 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
   save port, F170's roster read port, and F171's roster save port are accepted.
   F172's Class Co-Teacher assignment save port, F173's ScheduleWidget
   slot-state save port, and F174's speaking-evaluation read port are accepted.
-  F175's ScheduleBuilder source port and F176's Sub Prep class-details read
-  port are accepted. F177 is selected to migrate the Sub Prep schedule-summary
-  port.
+  F175's ScheduleBuilder source port, F176's Sub Prep class-details read port,
+  and F177's Sub Prep schedule-summary port are accepted. F178 is selected to
+  migrate the Sub Prep print source port.
   The prior F123 candidate wording is historical;
   current Teacher Profile integration status is recorded in the progress log.
   Gates 1 and 2
@@ -820,14 +820,33 @@ identity, preferred-name selection, bounded UTF-8 conversion, teacher
 fallbacks, structured errors, and the post-read closed-session recheck. No full
 suite or application build ran.
 
-## F177 selected Sub Prep schedule-summary port
+## F177 accepted Sub Prep schedule-summary port
 
-Migrate `ApplicationServicesSubPrepScheduleSummaryPort` from `ClassService` to
-the active session's `ClassInfoRepository`. Preserve scope validation, empty-
-scope no-read behavior, ordering/omission, bounded projection and meeting
-formatting, and unavailable/read-error mapping. Verify
+F177, source commit `25b9719c`, migrates
+`ApplicationServicesSubPrepScheduleSummaryPort` to active-session
+`ClassInfoRepository::loadSubPrepClassSummaries()`, preserving scope
+validation, empty-scope no-read behavior, ordering/omission, bounded projection,
+meeting formatting, and unavailable/read-error mapping. Implementation and
+independent Tester each passed all three targets:
 `ClassMngrNextApplicationSubPrepScheduleSummaryQueryTests`,
 `ClassMngrNextPlatformApplicationServicesSubPrepPrintSourcePortTests`, and
-`ClassMngrSubPrepPageTests`. Retain `build/f168`; its Ninja target list
-contains all three F177 targets. Phase 2 remains In Progress/Open; Gates 1 and 2
-remain Partial.
+`ClassMngrSubPrepPageTests`. `git diff --check` passed. No full suite or
+application build ran.
+
+## F178 selected Sub Prep print source port
+
+Migrate `ApplicationServicesSubPrepPrintSourcePort` from `ClassService`,
+`TeacherService`, and `RosterService` to active-session
+`ClassInfoRepository::loadClassInfosForScheduleScope`,
+`TeacherRepository::getTeacher`, and
+`RosterRepository::getRosterStudentCount`. Preserve scope validation, selected
+mode/day filtering and order, omission of classes without a meeting or usable
+teacher, teacher caching/first-reference order, and bounded output. Preserve
+teacher-not-found omission and class/teacher read-error mapping; only
+roster-count failures use the zero-count fallback. Keep NotFound versus
+Technical mappings and no `DataService` fallback. Verify
+`ClassMngrNextApplicationSubPrepPrintSourceQueryTests`,
+`ClassMngrNextPlatformApplicationServicesSubPrepPrintSourcePortTests`,
+`ClassMngrSubPrepPrintSourceMapperTests`, and `ClassMngrSubPrepPageTests`.
+Retain `build/f168`; its Ninja target list contains all four F178 targets.
+Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial.
