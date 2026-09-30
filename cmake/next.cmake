@@ -80,6 +80,9 @@ set(CLASSMNGR_NEXT_APPLICATION_SOURCES
     src/next/application/campus_directory_projection.h
     src/next/application/class_summary_projection.h
     src/next/application/class_co_teacher_assignment_use_case.h
+    src/next/application/class_co_teacher_page_read_snapshot.h
+    src/next/application/class_co_teacher_page_read_port.h
+    src/next/application/class_co_teacher_page_read_query.h
     src/next/application/classes_navigation_snapshot.h
     src/next/application/class_details_save_use_case.h
     src/next/application/class_details_schedule_conflict_query.h
@@ -250,6 +253,7 @@ set(CLASSMNGR_NEXT_PLATFORM_SOURCES
     src/next/platform/application_services_class_details_page_read_port.h
     src/next/platform/application_services_schedule_editor_class_info_read_port.h
     src/next/platform/application_services_class_co_teacher_assignment_port.h
+    src/next/platform/application_services_class_co_teacher_page_read_port.h
     src/next/platform/application_services_current_campus_preferences_port.h
     src/next/platform/application_services_middle_school_analytics_preferences_port.h
     src/next/platform/application_services_personal_display_name_preferences_port.h

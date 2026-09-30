@@ -60,6 +60,16 @@ classmngr_add_qt_test(
 )
 
 classmngr_add_qt_test(
+    NAME ClassCoTeacherPageReadParity
+    SOURCES
+        tests/class_co_teacher_page_read_parity_tests.cpp
+    LIBRARIES
+        Qt6::Test
+        Qt6::Widgets
+    OFFSCREEN
+)
+
+classmngr_add_qt_test(
     NAME RosterEditorWidgetSave
     SOURCES
         tests/roster_editor_widget_save_tests.cpp

@@ -3,6 +3,9 @@
 #include "ui/shared/pages/basepage.h"
 
 #include "domain/models/classroom.h"
+#include "next/application/class_co_teacher_page_read_snapshot.h"
+
+#include <optional>
 
 class ApplicationServices;
 class AutosaveCoordinator;
@@ -13,6 +16,7 @@ class TeacherInfoSection;
 namespace ClassMngr::Next::Application
 {
 class ClassCoTeacherAssignmentPort;
+class ClassCoTeacherPageReadPort;
 }
 
 class QLabel;
@@ -29,7 +33,9 @@ public:
         bool embedded = false,
         QWidget* parent = nullptr,
         ClassMngr::Next::Application::ClassCoTeacherAssignmentPort*
-            assignmentPort = nullptr
+            assignmentPort = nullptr,
+        ClassMngr::Next::Application::ClassCoTeacherPageReadPort*
+            readPort = nullptr
         );
 
     void loadClass(
@@ -52,6 +58,9 @@ signals:
 
 private:
     void buildUi();
+    void readSelectedClassSnapshot();
+    void selectCachedTeacher();
+    int selectedTeacherIdFromSnapshot() const;
     void updateTitle();
     void markDirty();
     void clearDirty();
@@ -64,6 +73,11 @@ private:
     ApplicationServices* m_services{nullptr};
     ClassMngr::Next::Application::ClassCoTeacherAssignmentPort*
         m_assignmentPort{nullptr};
+    ClassMngr::Next::Application::ClassCoTeacherPageReadPort*
+        m_readPort{nullptr};
+    std::optional<
+        ClassMngr::Next::Application::ClassCoTeacherPageReadSnapshot
+        > m_readSnapshot;
     Classroom m_classroom;
     bool m_embedded{false};
 

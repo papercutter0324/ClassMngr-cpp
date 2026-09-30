@@ -7,6 +7,8 @@
 #include "domain/models/class_info.h"
 #include "domain/models/teacher.h"
 #include "next/application/class_co_teacher_assignment_use_case.h"
+#include "next/application/class_co_teacher_page_read_query.h"
+#include "next/platform/application_services_class_co_teacher_page_read_port.h"
 #include "next/platform/application_services_class_co_teacher_assignment_port.h"
 #include "ui/shared/constants/gui_constants.h"
 #include "ui/shared/dialogs/user_prompt_service.h"
@@ -24,16 +26,24 @@
 #include <QVBoxLayout>
 #include <QtAssert>
 
+#include <charconv>
+#include <string>
+#include <system_error>
+#include <utility>
+
 ClassCoTeacherPage::ClassCoTeacherPage(
     ApplicationServices* services,
     bool embedded,
     QWidget* parent,
     ClassMngr::Next::Application::ClassCoTeacherAssignmentPort*
-        assignmentPort
+        assignmentPort,
+    ClassMngr::Next::Application::ClassCoTeacherPageReadPort*
+        readPort
     )
     : BasePage(parent)
     , m_services(services)
     , m_assignmentPort(assignmentPort)
+    , m_readPort(readPort)
     , m_embedded(embedded)
     , m_autosave(new AutosaveCoordinator(this))
 {
@@ -163,11 +173,8 @@ void ClassCoTeacherPage::loadClass(
     }
 
     m_teacherSection->setTeachers(*teachers);
-    const ClassInfo info =
-        m_services->classService()
-            ->classInfo(classroom.id)
-            .value_or(ClassInfo{});
-    m_teacherSection->selectTeacher(info.teacherId);
+    readSelectedClassSnapshot();
+    selectCachedTeacher();
     updateTitle();
 
     m_autosave->setLoading(false);
@@ -178,6 +185,7 @@ void ClassCoTeacherPage::clearDatabaseState()
 {
     m_autosave->setLoading(true);
     m_classroom = {};
+    m_readSnapshot.reset();
     m_teacherSection->setTeachers({});
     m_teacherSection->selectTeacher(-1);
     updateTitle();
@@ -251,16 +259,40 @@ void ClassCoTeacherPage::updateTitle()
         return;
     }
 
-    const ClassInfo info =
-        m_services->classService()
-            ->classInfo(m_classroom.id)
-            .value_or(ClassInfo{});
+    ClassInfo info;
     Teacher teacher;
-    if (info.teacherId > 0)
+    if (m_readSnapshot)
     {
-        teacher = m_services->teacherService()
-            ->teacher(info.teacherId)
-            .value_or(Teacher{});
+        const auto& classFields = m_readSnapshot->classFields;
+        if (classFields)
+        {
+            info.classId = m_classroom.id;
+            info.teacherId = selectedTeacherIdFromSnapshot();
+            info.classGrade = QString::fromStdU16String(
+                classFields.value().classGrade
+                );
+            info.classLevel = QString::fromStdU16String(
+                classFields.value().classLevel
+                );
+            info.classTimes.reserve(static_cast<qsizetype>(
+                classFields.value().regularSchedule.size()
+                ));
+            for (const auto& row : classFields.value().regularSchedule)
+            {
+                ClassTime time;
+                time.day = QString::fromStdU16String(row.day);
+                time.startTime = QString::fromStdU16String(row.startTime);
+                info.classTimes.append(std::move(time));
+            }
+
+            const auto& teacherDisplayName = m_readSnapshot->teacherDisplayName;
+            if (info.teacherId > 0 && teacherDisplayName)
+            {
+                teacher.preferredName = QString::fromStdU16String(
+                    teacherDisplayName.value()
+                    );
+            }
+        }
     }
 
     const QString displayName =
@@ -336,7 +368,77 @@ bool ClassCoTeacherPage::saveCoTeacherInternal(
     }
 
     clearDirty();
+    readSelectedClassSnapshot();
+    selectCachedTeacher();
     updateTitle();
     emit classInfoSaved(m_classroom.id);
     return true;
+}
+
+void ClassCoTeacherPage::readSelectedClassSnapshot()
+{
+    m_readSnapshot.reset();
+    if (m_classroom.id <= 0)
+    {
+        return;
+    }
+
+    const auto classId = ClassMngr::Next::Domain::ClassId::fromString(
+        std::to_string(m_classroom.id)
+        );
+    if (!classId)
+    {
+        return;
+    }
+
+    ClassMngr::Next::Platform::
+        ApplicationServicesClassCoTeacherPageReadPort defaultReadPort(
+            m_services
+            );
+    const ClassMngr::Next::Application::ClassCoTeacherPageReadPort& readPort =
+        m_readPort ? *m_readPort : defaultReadPort;
+    const ClassMngr::Next::Application::ClassCoTeacherPageReadQuery query(
+        readPort
+        );
+    const auto snapshot = query.execute(*classId);
+    if (snapshot)
+    {
+        m_readSnapshot = snapshot.value();
+    }
+}
+
+void ClassCoTeacherPage::selectCachedTeacher()
+{
+    m_teacherSection->selectTeacher(selectedTeacherIdFromSnapshot());
+}
+
+int ClassCoTeacherPage::selectedTeacherIdFromSnapshot() const
+{
+    if (!m_readSnapshot || !m_readSnapshot->classFields)
+    {
+        return -1;
+    }
+
+    const auto& teacherId =
+        m_readSnapshot->classFields.value().selectedTeacherId;
+    if (!teacherId)
+    {
+        return -1;
+    }
+
+    const std::string& value = teacherId->value();
+    int parsed = 0;
+    const auto [end, error] = std::from_chars(
+        value.data(),
+        value.data() + value.size(),
+        parsed
+        );
+    if (error != std::errc{}
+        || end != value.data() + value.size()
+        || parsed <= 0
+        || std::to_string(parsed) != value)
+    {
+        return -1;
+    }
+    return parsed;
 }
