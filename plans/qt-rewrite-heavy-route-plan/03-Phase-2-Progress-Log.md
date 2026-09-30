@@ -8299,7 +8299,7 @@ fields/schedule/teacher/count/fallback parity. F167 implementation has not
 started. Gate 1 and Gate 2 remain Partial; Phase 2 remains In Progress and its
 exit gate remains Open.
 
-### Progress update - 2026-10-01 (F188 accepted; F189 selected)
+### Progress update - 2026-10-01 (F189 accepted; F190 selected)
 
 F167, source commit `97efac8b`, updates
 `ApplicationServicesClassDetailsPageReadPort` to use active-session
@@ -8606,22 +8606,38 @@ and transaction rollback. Optional typed occurrence-ID conversion remains in
 code without direct test coverage; no defect was found. Phase 2 remains In
 Progress/Open; Gates 1 and 2 remain Partial.
 
-F189 is selected for `ApplicationServicesCalendarEventSeriesEditPort` in
-`src/next/platform/application_services_calendar_event_series_edit_port.h`,
-with focused tests in
-`tests/next_platform_application_services_calendar_event_port_tests.cpp`.
-Load the suffix through the active open session's
-`CalendarEventRepository::loadCalendarEventsForRepeatSeriesFromDate()`, run
-the existing planner unchanged, normalize then `validateSeries()`, and persist
-one ordered `saveCalendarEvents()` batch, with no `CalendarService` or
-`DataService` fallback. Preserve validation before session lookup, suffix
-order/identity, earlier and unrelated rows, planner date offsets/durations/
-field propagation, empty-suffix success, NotFound/Technical mapping, and atomic
-updates. Keep the use case, planner, and Calendar Page UI unchanged. Verify
+F189, source commit `99f41d0e`, migrates
+`ApplicationServicesCalendarEventSeriesEditPort` to active-session
+`CalendarEventRepository::loadCalendarEventsForRepeatSeriesFromDate()` and one
+normalized, validated, ordered `saveCalendarEvents()` batch, without
+`CalendarService` or `DataService` fallback. It preserves request validation
+before session lookup, suffix order/identity, planner offsets, durations and
+field propagation, earlier and unrelated rows, empty-suffix success,
+NotFound/Technical mapping with repository wording, and atomic updates.
+Implementation and independent Tester passed
 `ClassMngrNextPlatformApplicationServicesCalendarEventPortTests`,
 `ClassMngrNextApplicationCalendarEventTests`, and
-`ClassMngrCalendarEventRepositoryTests`. Two independent Explorer lanes found
-this is the remaining CalendarService-backed `src/next/platform` calendar
-adapter with matching repository read/write APIs; preference ports have
-separate `SettingsService` boundaries. Phase 2 remains In Progress/Open; Gates
-1 and 2 remain Partial.
+`ClassMngrCalendarEventRepositoryTests`; build and `git diff --check` passed.
+Coverage includes repository seed/read parity, suffix order/identity, prefix/unrelated-row
+retention, empty suffix, invalid source/overflow, all-day/unknown-time fields,
+unavailable/closed sessions with `DataService`, read failure, and rollback on a
+second update. Source has one suffix load and one batch save; tests do not
+instrument call count.
+
+F190 is selected for `ApplicationServicesCalendarEventDisplayPreferencesPort`
+in `src/next/platform/application_services_calendar_event_display_preferences_port.h`,
+with focused tests in
+`tests/next_platform_application_services_calendar_event_display_preferences_port_tests.cpp`.
+Use only the ApplicationServices-bound active open session's
+`SettingsRepository`; preserve generic/sessionless `SettingsService` behavior
+from F111. Keep the exact two keys, default-false reads, QVariant boolean
+coercion, read-error fallback to false, unavailable/null defaults and no-op
+saves, Technical save-error mapping, atomic two-key persistence, and unrelated
+setting preservation. Keep typed callers/UI unchanged and cover unavailable
+and closed sessions with `DataService` present. Verify
+`ClassMngrNextPlatformApplicationServicesCalendarEventDisplayPreferencesPortTests`
+(registered in `next.cmake:1416`). The two independent Explorer lanes selected
+this narrow adapter boundary based on existing transactional repository support
+and focused round-trip/coercion/rollback tests; first-day preference behavior
+has locale fallback and save-warning differences. Gate 1 and Gate 2 remain
+Partial; Phase 2 remains In Progress and its exit gate remains Open.

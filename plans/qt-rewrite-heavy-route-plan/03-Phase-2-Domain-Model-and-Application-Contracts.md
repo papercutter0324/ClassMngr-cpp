@@ -51,8 +51,9 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
   accepted. F182's active Calendar event read/by-ID adapter, F183's single
   Calendar Event save port, F184's Calendar Event delete port, F185's
   Calendar Event delete-all port, F186's repeat-series suffix-delete port,
-  F187's Calendar Event Import save port, and F188's repeat-series creation
-  port are accepted. F189 is selected for repeat-series editing.
+  F187's Calendar Event Import save port, F188's repeat-series creation port,
+  and F189's repeat-series edit port are accepted. F190 is selected for the
+  Calendar Event display-preferences port.
   The prior F123 candidate wording is historical;
   current Teacher Profile integration status is recorded in the progress log.
   Gates 1 and 2
@@ -1030,24 +1031,46 @@ session lookup, unavailable/open/closed sessions with `DataService` present,
 and transaction rollback. Optional typed occurrence-ID conversion remains in
 code without direct test coverage; no defect was found.
 
-## F189 selected Calendar Event repeat-series edit port
+## F189 accepted Calendar Event repeat-series edit port
 
-Migrate `ApplicationServicesCalendarEventSeriesEditPort` in
-`src/next/platform/application_services_calendar_event_series_edit_port.h`,
-with focused tests in
-`tests/next_platform_application_services_calendar_event_port_tests.cpp`, to
-load the suffix through the active open session's
-`CalendarEventRepository::loadCalendarEventsForRepeatSeriesFromDate()`, run the
-existing planner unchanged, normalize then `validateSeries()`, and persist one
-ordered `saveCalendarEvents()` batch, without `CalendarService` or
-`DataService` fallback. Preserve validation before session lookup, suffix
-order/identity, earlier and unrelated rows, planner date offsets/durations/
-field propagation, empty-suffix success, NotFound/Technical mapping, and atomic
-updates. Keep the use case, planner, and Calendar Page UI unchanged. Verify
+Commit `99f41d0e` migrates
+`ApplicationServicesCalendarEventSeriesEditPort` in
+`src/next/platform/application_services_calendar_event_series_edit_port.h`
+to load the suffix through the active session's
+`CalendarEventRepository::loadCalendarEventsForRepeatSeriesFromDate()`, run
+the existing planner, normalize and validate, then persist one ordered
+`saveCalendarEvents()` batch, with no `CalendarService` or `DataService`
+fallback. It preserves validation before session lookup, suffix order and
+identity, planner offsets/durations/field propagation, earlier and unrelated
+rows, empty-suffix success, NotFound/Technical mapping with repository wording,
+and atomic updates. Implementation and independent Tester passed
 `ClassMngrNextPlatformApplicationServicesCalendarEventPortTests`,
 `ClassMngrNextApplicationCalendarEventTests`, and
-`ClassMngrCalendarEventRepositoryTests`. Two independent Explorer lanes found
-this is the remaining CalendarService-backed `src/next/platform` calendar
-adapter with matching repository read/write APIs; preference ports have
-separate `SettingsService` boundaries. Phase 2 remains In Progress/Open; Gates
-1 and 2 remain Partial.
+`ClassMngrCalendarEventRepositoryTests`; build and `git diff --check` passed.
+Coverage includes repository seed/read parity, ordering/identity, prefix and
+unrelated-row retention, empty suffix, invalid source/overflow, all-day and
+unknown-time conversion, unavailable/closed sessions with `DataService`, read
+failure, and rollback on a second update. Source has one suffix load and one
+batch save; tests do not instrument call count.
+
+## F190 selected Calendar Event display-preferences port
+
+Migrate `ApplicationServicesCalendarEventDisplayPreferencesPort` in
+`src/next/platform/application_services_calendar_event_display_preferences_port.h`,
+with focused tests in
+`tests/next_platform_application_services_calendar_event_display_preferences_port_tests.cpp`,
+to use only the ApplicationServices-bound active open session's
+`SettingsRepository`. Do not change generic/sessionless `SettingsService`
+behavior established by F111. Preserve the exact two setting keys,
+default-false reads, QVariant boolean coercion, read-error fallback to false,
+unavailable/null defaults and no-op saves, Technical save-error mapping,
+atomic two-key persistence, and preservation of unrelated settings. Keep typed
+callers and UI unchanged; cover unavailable and closed sessions with
+`DataService` present. Verify
+`ClassMngrNextPlatformApplicationServicesCalendarEventDisplayPreferencesPortTests`
+(registered in `next.cmake:1416`). Two independent Explorer lanes selected
+this boundary because `SettingsRepository` already provides transactional
+persistence and focused round-trip, coercion, and rollback coverage; the
+first-day preference has locale fallback and save-warning behavior, while
+other setting ports have different contracts. Phase 2 remains In Progress/
+Open; Gates 1 and 2 remain Partial.
