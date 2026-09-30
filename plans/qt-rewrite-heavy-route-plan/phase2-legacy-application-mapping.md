@@ -4119,7 +4119,7 @@ separate existing-class details update; F147 now covers delete/cascade.
 
 The production and acceptance-test commits, focused verification, and limits
 are recorded in the [Phase 2 progress log](03-Phase-2-Progress-Log.md). F147
-migrates delete/cascade; F148-F154 acceptance and F155 selection are recorded
+migrates delete/cascade; F148-F155 acceptance and F156 selection are recorded
 below.
 
 ## Verified F147 Testing Class delete/cascade
@@ -4132,8 +4132,8 @@ F145 details update and F146 creation remain separate accepted boundaries.
 Production commit `b037b4216b71c55c7793df5f7bbbfc4a00690065`, page transition
 fix `315b3ff33b7e2ab42b43d52cd168ce21a92158c9`, and acceptance-test commit
 `397376e439f4b5955c82948ab0c225aaf776d679` are recorded with verification
-limits in the [Phase 2 progress log](03-Phase-2-Progress-Log.md). F148-F154 are
-accepted; F155 is selected, not implemented or accepted. Its boundary and
+limits in the [Phase 2 progress log](03-Phase-2-Progress-Log.md). F148-F155 are
+accepted; F156 is selected, not implemented or accepted. Its boundary and
 acceptance criteria are in the [Phase 2 progress
 log](03-Phase-2-Progress-Log.md).
 
@@ -4212,16 +4212,35 @@ Load/discard use the query; refresh/save add no reads. Current and pinned
 baseline verification, including limits, is in the [Phase 2 progress
 log](03-Phase-2-Progress-Log.md).
 
-## F155 selected Class Co-Teacher selected-class/title read
+## F155 accepted Class Co-Teacher selected-class/title read
 
-F155 adds a typed Application query/port and active-session Platform adapter
-for the selected class/title projection. Read the selected teacher ID plus
-grade/level/regular-schedule inputs used by `SidebarNodeNaming`, and the
-assigned teacher display name, with independent class and teacher outcomes.
-Call it on load, discard, and after successful assignment. Preserve current
-read/error fallbacks, selection/title, dirty, save, and signal behavior. Keep
-the teacher-choice catalogue and assignment use case/adapter unchanged; do not
-extend the slice to schedule, roster, or Teacher Profile reads. Acceptance
-requires typed identity/errors, no `DataService` fallback, mapping, page timing
-and source independence, load/discard/post-save behavior, and current versus
-original-pinned-baseline parity. F155 is selected, not implemented or accepted.
+F155, commit `2d810d0e21f85233575b700e927ec3a36c907f21`, adds a typed
+selected-class/title query and active-session Platform adapter. It returns
+selected teacher ID, grade/level/regular-schedule inputs for `SidebarNodeNaming`,
+and assigned teacher display name with independent class/teacher outcomes. It
+runs on load, discard, and after successful assignment; read/error fallbacks,
+selection/title, dirty/save/signal behavior, teacher-choice catalogue, and
+assignment use case/adapter remain unchanged. Schedule, roster, and Teacher
+Profile reads remain outside this slice.
+
+Six current focused CTests passed 6/6 on Windows x64 Debug (CMake 4.4.2, Ninja
+1.13.2, MSVC 19.51, Qt 6.12). The pinned baseline
+`48fc5c5cc7dee78d82f8bf5f1bf8b51725575b99` parity passed 1/1 using its cache and
+only adapted parity source/registration/Qt minimum overlays; no production
+overlay. Baseline page/header match blobs
+`d25263eda8d464b2a3b17a35f44d6376ee5db588` /
+`bba856ebb2ed907072d266a38bf3abe4e939d95e`. Visible load, external-change
+discard, and post-save selection/title/persistence passed on both. Current-only
+read-count claims remain separate; there is no baseline query-count claim.
+
+## F156 selected Class Co-Teacher teacher-catalogue read
+
+Replace `TeacherService::teachers()` in `ClassCoTeacherPage` with a separate
+Qt-free Application teacher-catalogue projection and active-session Platform
+adapter. Include only fields consumed by `TeacherInfoSection`; preserve IDs,
+bilingual ordering/details, selection, and load-failure warning/clear behavior.
+Use no `DataService` or `TeacherService` fallback. Leave F155's snapshot and
+assignment save unchanged. Acceptance covers mapping/no-fallback, warning/error/
+clear behavior, ordering/selection/display, current query timing, and current-
+versus-original-baseline visible parity; make no baseline query-count claim.
+F156 is selected, not implemented or accepted.

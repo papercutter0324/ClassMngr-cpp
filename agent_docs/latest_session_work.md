@@ -3704,3 +3704,30 @@ An older F123 candidate handoff predates commit `9f7e736b`, which contains
 TeacherInfoPage use-case integration and page tests. That production integration
 is present in the current checkout; this continuation did not re-verify its
 CTest target or baseline parity and makes no new acceptance claim for it.
+
+F155 commit `2d810d0e21f85233575b700e927ec3a36c907f21` adds a dedicated typed
+Co-Teacher page read query and active-session Platform adapter for selected
+teacher ID and class/teacher title inputs. The page uses it on load/discard
+and after successful assignment. The teacher-choice catalogue and assignment
+save boundary remain separate; read failures preserve existing fallback
+behavior.
+
+Windows x64 Debug verification passed six current focused CTest targets 6/6
+(read query, Platform adapter, page, parity, and existing Application and
+Platform assignment tests) using CMake 4.4.2, Ninja 1.13.2, MSVC 19.51, and
+Qt 6.12.0. The pinned baseline
+`48fc5c5cc7dee78d82f8bf5f1bf8b51725575b99` parity harness passed 1/1 with only
+test source/registration and Qt minimum overlays; its production page/header
+blobs are `d25263eda8d464b2a3b17a35f44d6376ee5db588` and
+`bba856ebb2ed907072d266a38bf3abe4e939d95e`. Both revisions cover initial
+selection/title, discard after an external change, and post-save selection,
+title, and persistence. No full suite/app build or baseline query-count claim.
+
+F156 is selected for a separate typed Application teacher-catalogue read and
+active-session Platform adapter for Co-Teacher. Replace the page's
+`TeacherService::teachers()` read with a projection limited to fields consumed
+by `TeacherInfoSection`; preserve bilingual ordering, selection, displayed
+details, and load-failure warning/clear behavior. Keep F155's selected-class
+snapshot and assignment save unchanged. Three independent reviews recommend
+this boundary. Gates 1 and 2 remain Partial; Phase 2 remains In Progress/Open.
+No push was requested.

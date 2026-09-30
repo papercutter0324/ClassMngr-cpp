@@ -1985,3 +1985,19 @@ The older F123 candidate notes predate commit `9f7e736b`, which contains
 `TeacherInfoPage` use-case integration and tests. The production integration
 is present in the current checkout; this continuation did not re-verify its
 CTest target or baseline parity.
+
+## F155 accepted; F156 selected — 2026-09-30
+
+F155 commit `2d810d0e21f85233575b700e927ec3a36c907f21` adds the typed
+Co-Teacher selected-class/title read boundary. Six focused current CTest
+targets passed 6/6. The pinned baseline
+`48fc5c5cc7dee78d82f8bf5f1bf8b51725575b99` parity harness passed 1/1 with
+test-only adaptation and no production overlay. Both versions assert initial
+selection/title, discard after an external change, and post-save selection,
+title, and persistence. No full suite or application build ran; no baseline
+query-count claim is made.
+
+F156 is selected for a separate typed Application and active-session Platform
+read of the Co-Teacher teacher-choice catalogue. Preserve displayed fields,
+bilingual ordering, selection, and load-failure warning/clear behavior. Gates
+1 and 2 remain Partial; Phase 2 remains In Progress/Open.

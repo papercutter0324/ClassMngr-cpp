@@ -32,9 +32,10 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
   raw signed teacher ID and exact UTF-16 notes/activity; read-error behavior,
   save request, and `ClassService` guard remain as before. F153 is accepted for
   current/baseline page parity when persisted teacher ID zero changes after
-  load. F154's typed Class Notes page-read query and port are accepted. F155 is
-  selected for the Class Co-Teacher selected-class/title read boundary, not
-  implemented or accepted. The prior F123 candidate wording is historical;
+  load. F154's typed Class Notes page-read query and F155's Class Co-Teacher
+  selected-class/title read are accepted. F156 is selected for the
+  ClassCoTeacherPage teacher-catalogue read, not implemented or accepted. The
+  prior F123 candidate wording is historical;
   current Teacher Profile integration status is recorded in the progress log.
   Gates 1 and 2
   remain Partial; F120 active-v2 DataService isolation and formal
@@ -272,8 +273,8 @@ No production defect was observed.
 F144 is the preceding accepted slice. F145's accepted existing-class details
 update is recorded below. F146's accepted new-class create, including the
 optional pending weekday/start-time assignment, is recorded after it. F147's
-accepted delete/cascade migration is recorded below; F148-F154 acceptance and
-F155 selection are recorded below.
+accepted delete/cascade migration is recorded below; F148-F155 acceptance and
+F156 selection are recorded below.
 
 ## F145 acceptance record
 
@@ -393,8 +394,8 @@ The page queries on each save; on read error it uses `ClassInfo{}` and
 continues validation, conflict, and save. Preserve `-1` as the unassigned
 sentinel, treat zero as invalid, retain missing-row defaults, and keep the
 validation/conflict/save order. The save request, adapter reread, and
-`ClassService` guard remain separate. F153 and F154 acceptance and F155
-selection are recorded below.
+`ClassService` guard remain separate. F153-F155 acceptance and F156 selection
+are recorded below.
 
 ## F152 acceptance record
 
@@ -445,20 +446,41 @@ recorded in the [Phase 2 progress log](03-Phase-2-Progress-Log.md). No full
 suite or application build ran. F155 remains selected, not implemented or
 accepted. Gates 1 and 2 remain Partial; Phase 2 remains In Progress/Open.
 
-## F155 selected Class Co-Teacher selected-class/title read
+## F155 accepted Class Co-Teacher selected-class/title read
 
-Add a dedicated typed Application query/port and active-session Platform
-adapter for the selected class/title projection. It returns the selected
-teacher ID plus grade, level, and regular-schedule inputs used by
-`SidebarNodeNaming`, and the assigned teacher display name. Class and teacher
-outcomes remain independent. Use the read on page load, discard, and after a
-successful assignment. Preserve current read/error fallbacks, selection/title,
-dirty state, save, and signal behavior. Leave the full teacher-choice catalogue
-and existing assignment use case/adapter unchanged; do not expand into
-schedule, roster, or Teacher Profile work.
+F155, commit `2d810d0e21f85233575b700e927ec3a36c907f21`, adds the typed
+selected-class/title read and active-session Platform adapter. The query returns
+selected teacher ID, grade/level/regular-schedule inputs for
+`SidebarNodeNaming`, and assigned teacher display name with independent class
+and teacher outcomes. It runs on load, discard, and after successful assignment;
+existing fallbacks, selection/title, dirty/save/signal behavior, teacher-choice
+catalogue, and assignment use case/adapter remain intact. The slice does not
+cover schedule, roster, or Teacher Profile reads.
 
-Acceptance covers query identity/errors, adapter mapping and no `DataService`
-fallback, page timing and independent sources, load/discard/post-save title and
-selected-value behavior, and current-versus-original-pinned-baseline parity.
-F155 is selected, not implemented or accepted. Gates 1 and 2 remain Partial;
-Phase 2 remains In Progress/Open.
+Six focused current CTest targets passed 6/6 on Windows x64 Debug with CMake
+4.4.2, Ninja 1.13.2, MSVC 19.51, and Qt 6.12: query, Platform adapter, page,
+current parity, and existing Application/Platform assignment tests. The pinned
+baseline `48fc5c5cc7dee78d82f8bf5f1bf8b51725575b99` parity passed 1/1 using the
+baseline cache and only adapted parity source/registration/Qt minimum overlays;
+no production source was overlaid. Baseline page/header match blobs
+`d25263eda8d464b2a3b17a35f44d6376ee5db588` /
+`bba856ebb2ed907072d266a38bf3abe4e939d95e`. Visible load, external-change
+discard, and post-save selection/title/persistence passed on both. Keep current-
+only read-count claims separate; do not claim baseline query-count parity. Gates
+1 and 2 remain Partial; Phase 2 remains In Progress/Open.
+
+## F156 selected Class Co-Teacher teacher-catalogue read
+
+Add a separate Qt-free Application teacher-catalogue projection and
+active-session Platform adapter to replace `TeacherService::teachers()` for
+`ClassCoTeacherPage`. Include only fields consumed by `TeacherInfoSection` and
+preserve teacher IDs, bilingual ordering/details, selection, and existing
+load-failure warning/clear behavior. Do not use `DataService` or
+`TeacherService` fallback. Leave the F155 snapshot and assignment save
+unchanged.
+
+Acceptance covers mapping/no-fallback, warning/error/clear behavior,
+ordering/selection/display, current query timing, and current-versus-original-
+baseline visible parity; make no baseline query-count claim. F156 is selected,
+not implemented or accepted. Gates 1 and 2 remain Partial; Phase 2 remains In
+Progress/Open.

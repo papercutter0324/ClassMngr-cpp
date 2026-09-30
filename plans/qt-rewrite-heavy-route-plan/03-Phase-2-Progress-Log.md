@@ -7903,3 +7903,34 @@ edit use case`) now changes `src/features/teacher/ui/teacher_info_page.cpp` and
 `TeacherProfileEditUseCase`, and its tests cover save/reload and invalid-write
 blocking. This work did not independently rerun the TeacherInfoPage target or
 pinned-baseline parity; F123 acceptance and reverification are not claimed.
+
+### Progress update - 2026-09-30 (F155 accepted; F156 selected)
+
+F155, commit `2d810d0e21f85233575b700e927ec3a36c907f21` (`Phase2 - add
+Co-Teacher page read boundary`), adds the typed Class Co-Teacher selected-class/
+title read and active-session Platform adapter. Visible load, external-change
+discard, and post-save selected-value/title/persistence assertions passed on
+current and baseline. Current focused CTests passed 6/6 on Windows x64 Debug
+(query, Platform adapter, page, current parity, existing Application and
+Platform assignment tests), using CMake 4.4.2, Ninja 1.13.2, MSVC 19.51, and
+Qt 6.12.
+
+Pinned baseline `48fc5c5cc7dee78d82f8bf5f1bf8b51725575b99` parity passed 1/1 by
+reusing its cache and overlaying only adapted parity test source/registration
+and Qt minimums; no production source was overlaid. Baseline page/header match
+blobs `d25263eda8d464b2a3b17a35f44d6376ee5db588` /
+`bba856ebb2ed907072d266a38bf3abe4e939d95e`. Keep current-only read-count
+claims separate; no baseline query-count claim. Gates 1 and 2 remain Partial;
+Phase 2 remains In Progress/Open.
+
+F156 is selected after three independent investigations: replace
+`TeacherService::teachers()` in `ClassCoTeacherPage` with a separate Qt-free
+Application teacher-catalogue projection and active-session Platform adapter.
+Include only `TeacherInfoSection` fields; preserve IDs, bilingual
+ordering/details, selection, and load-failure warning/clear behavior. Add no
+`DataService` or `TeacherService` fallback, and leave F155's snapshot and
+assignment save unchanged. Acceptance requires mapping/no-fallback,
+warning/error/clear, ordering/selection/display, current query timing, and
+current-versus-original-baseline visible parity. Do not compare baseline query
+counts. F156 is selected, not implemented or accepted. Gates 1 and 2 remain
+Partial; Phase 2 remains In Progress/Open.

@@ -1485,3 +1485,13 @@ Refresh the selected-class snapshot after a successful assignment and on
 discard. Use baseline parity for visible selection/title behavior and keep
 read-count assertions current-only. Historical F123 candidate notes must not
 be treated as current production state after commit `9f7e736b`.
+
+## 2026-09-30 — F155 parity fixture and F156 choice read
+
+Seed page-parity teachers with valid catalog grade/level pairs so save reaches
+its intended post-save assertions; English-only teacher names are valid when
+the optional Korean name is empty. For baseline parity, adapt only test calls
+when the pinned API differs, verify baseline production blobs, and avoid
+query-count claims. Keep the Co-Teacher choice catalogue as a separate read
+from its selected-class snapshot because they have different data and refresh
+timing.
