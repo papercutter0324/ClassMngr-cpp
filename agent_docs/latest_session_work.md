@@ -4052,7 +4052,7 @@ writes, unavailable/closed sessions, and repository write failure retaining
 both existing fields. `git diff --check` passed. No full suite or application
 build was run.
 
-## 2026-10-01 - F174 accepted; F175 selected
+## 2026-10-01 - F175 accepted; F176 selected
 
 F172 source commit `2daa209e` migrates
 `ApplicationServicesClassCoTeacherAssignmentPort` to the active session's
@@ -4103,19 +4103,33 @@ ran `ClassMngrNextApplicationSpeakingEvaluationQueryTests`,
 passed 3/3. `git diff --check` passed with line-ending conversion warnings. No
 full suite or application build was run.
 
-Two independent Explorer lanes selected F175: migrate
+F175 source commit `4009fcd5` changes
 `ApplicationServicesScheduleBuilderSourcePort` from constructing
 `ClassService(session, nullptr)` to calling the active session's
-`ClassInfoRepository::loadScheduleClassInfos()`. Preserve active-session
-availability, NotFound and Technical failures, snapshot field mapping and
-source order, raw regular/intensive schedule rows, absent/stale teacher data,
-testing-class exclusion, and ScheduleWidget regular/intensive/testing and
-failure behavior. Focused targets are
-`ClassMngrNextApplicationScheduleBuilderSourceSnapshotTests`,
+`ClassInfoRepository::loadScheduleClassInfos()`. The port retains active-session
+availability, `NotFound` and `Technical` mappings, snapshot fields and source
+order, raw regular/intensive schedules, teacher/profile edge cases, and widget
+modes. Both the implementation run and independent Tester passed the four
+focused targets: `ClassMngrNextApplicationScheduleBuilderSourceSnapshotTests`,
 `ClassMngrNextPlatformApplicationServicesScheduleBuilderSourcePortTests`,
-`ClassMngrScheduleBuilderTests`, and `ClassMngrScheduleWidgetTests`; `build/f168`
-contains all four. The Speaking Evaluation save migration is deferred until
-its validator normalization and Korean-name-length policy have a safe owner.
+`ClassMngrScheduleBuilderTests`, and `ClassMngrScheduleWidgetTests` (4/4).
+`git diff --check` passed with a line-ending conversion warning. No full suite
+or application build was run.
+
+Two independent Explorer lanes selected F176: migrate
+`ApplicationServicesSubPrepClassDetailsPort` from
+`ClassService::subPrepClassDetails()` to the active session's
+`ClassInfoRepository::loadSubPrepClassDetails()`. Preserve canonical ID and
+record-identity checks, preferred teacher-name selection, bounded UTF-8 fields,
+missing/stale teacher and class-info defaults, and existing error classes.
+Keep the page's details refresh/display path. Existing focused targets are
+`ClassMngrNextApplicationSubPrepClassDetailsQueryTests`,
+`ClassMngrNextPlatformApplicationServicesSubPrepPrintSourcePortTests`, and
+`ClassMngrSubPrepPageTests`; all exist in `build/f168`. Add explicit tests for
+closed/unavailable session and SQL repository read failure if still uncovered.
+Retain the no-schedule-table dependency already exercised by the Platform test.
+The Speaking Evaluation save migration remains deferred until its validator
+normalization and Korean-name-length policy have a safe owner.
 
 The active deployment objective is Phase 2 under the Heavy route; deployment
 ID `phase2_resume_20260929`. Gates 1 and 2 remain Partial and Phase 2 remains

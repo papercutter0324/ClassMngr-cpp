@@ -44,7 +44,8 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
   save port, F170's roster read port, and F171's roster save port are accepted.
   F172's Class Co-Teacher assignment save port, F173's ScheduleWidget
   slot-state save port, and F174's speaking-evaluation read port are accepted.
-  F175 is selected to migrate the ScheduleBuilder source port.
+  F175's ScheduleBuilder source port is accepted. F176 is selected to migrate
+  the Sub Prep class-details read port.
   The prior F123 candidate wording is historical;
   current Teacher Profile integration status is recorded in the progress log.
   Gates 1 and 2
@@ -792,17 +793,31 @@ and SQL errors mapped to Technical, closed-session NotFound, and a blank clean
 grid on page read failure. `git diff --check` passed. No full suite or app build
 is claimed.
 
-## F175 selected ScheduleBuilder source port
+## F175 accepted ScheduleBuilder source port
 
-Migrate `ApplicationServicesScheduleBuilderSourcePort` away from constructing
+F175, source commit `4009fcd5`, migrates
+`ApplicationServicesScheduleBuilderSourcePort` from constructing
 `ClassService(session, nullptr)` to active-session
-`DatabaseSession::classInfoRepository()->loadScheduleClassInfos()`. Preserve
-active-session checks, NotFound/Technical mappings, snapshot fields/order/raw
-schedules, testing-class exclusion, teacher missing/stale behavior, and widget
-modes. Verify `ClassMngrNextApplicationScheduleBuilderSourceSnapshotTests`,
+`DatabaseSession::classInfoRepository()->loadScheduleClassInfos()`, preserving
+session checks, NotFound/Technical mappings, snapshot fields/order/raw
+schedules, Testing Class exclusion, teacher missing/stale behavior, and widget
+modes. The implementation and independent Tester each passed all four focused targets:
+`ClassMngrNextApplicationScheduleBuilderSourceSnapshotTests`,
 `ClassMngrNextPlatformApplicationServicesScheduleBuilderSourcePortTests`,
-`ClassMngrScheduleBuilderTests`, and `ClassMngrScheduleWidgetTests`. Retain
-`build/f168`; its Ninja target list contains all four F175 targets. Defer the
-Speaking Evaluation save port until validator normalization/validation and the
-questionable Korean length policy have explicit ownership. Phase 2 remains In
-Progress/Open; Gates 1 and 2 remain Partial.
+`ClassMngrScheduleBuilderTests`, and `ClassMngrScheduleWidgetTests`.
+`git diff --check` passed. No full suite or application build is claimed.
+
+## F176 selected Sub Prep class-details read port
+
+Migrate `ApplicationServicesSubPrepClassDetailsPort` to
+`DatabaseSession::classInfoRepository()->loadSubPrepClassDetails()`. Preserve
+canonical ID, record identity, error classifications, preferred-name
+selection, bounded UTF-8 fields, missing/stale teacher/profile defaults, no
+schedule-table dependency, and page refresh/display. Verify
+`ClassMngrNextApplicationSubPrepClassDetailsQueryTests`,
+`ClassMngrNextPlatformApplicationServicesSubPrepPrintSourcePortTests`, and
+`ClassMngrSubPrepPageTests`. Add direct adapter coverage for closed/unavailable
+sessions returning NotFound and repository SQL read failure returning
+Technical; current details tests do not directly cover these cases. Retain
+`build/f168`; its Ninja target list contains all three F176 targets. Phase 2
+remains In Progress/Open; Gates 1 and 2 remain Partial.

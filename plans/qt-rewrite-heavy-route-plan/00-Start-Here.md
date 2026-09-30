@@ -38,8 +38,9 @@
   accepted. F169's ClassNotesPage save port and F170's roster read port are
   accepted. F171's roster save port and F172's Class Co-Teacher assignment
   save port and F173's ScheduleWidget slot-state save port are accepted. F174's
-  speaking-evaluation read port is accepted. F175 is selected for the
-  ScheduleBuilder source port. See the [Phase 2 progress
+  speaking-evaluation read port and F175's ScheduleBuilder source port are
+  accepted. F176 is selected for the Sub Prep class-details read port. See the
+  [Phase 2 progress
   log](03-Phase-2-Progress-Log.md)
   for evidence and current selection details.
   Phase 2 Gates 1 and 2 remain Partial; broader feature migration, parity, and

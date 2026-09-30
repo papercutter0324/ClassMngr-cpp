@@ -8299,7 +8299,7 @@ fields/schedule/teacher/count/fallback parity. F167 implementation has not
 started. Gate 1 and Gate 2 remain Partial; Phase 2 remains In Progress and its
 exit gate remains Open.
 
-### Progress update - 2026-10-01 (F174 accepted; F175 selected)
+### Progress update - 2026-10-01 (F175 accepted; F176 selected)
 
 F167, source commit `97efac8b`, updates
 `ApplicationServicesClassDetailsPageReadPort` to use active-session
@@ -8396,15 +8396,27 @@ and SQL errors mapped to Technical, closed-session NotFound, and a blank clean
 grid on page read failure. `git diff --check` passed. No full suite or app build
 ran.
 
-F175 migrates `ApplicationServicesScheduleBuilderSourcePort` away from
-constructing `ClassService(session, nullptr)` to active-session
-`DatabaseSession::classInfoRepository()->loadScheduleClassInfos()`. Preserve
-active-session checks, NotFound/Technical mappings, snapshot fields/order/raw
-schedules, testing-class exclusion, teacher missing/stale behavior, and widget
-modes. Verify `ClassMngrNextApplicationScheduleBuilderSourceSnapshotTests`,
+F175, source commit `4009fcd5`, migrates
+`ApplicationServicesScheduleBuilderSourcePort` from constructing
+`ClassService(session, nullptr)` to active-session
+`DatabaseSession::classInfoRepository()->loadScheduleClassInfos()`, preserving
+session checks, NotFound/Technical mappings, snapshot fields/order/raw
+schedules, Testing Class exclusion, teacher missing/stale behavior, and widget
+modes. The implementation and independent Tester each passed all four focused targets:
+`ClassMngrNextApplicationScheduleBuilderSourceSnapshotTests`,
 `ClassMngrNextPlatformApplicationServicesScheduleBuilderSourcePortTests`,
-`ClassMngrScheduleBuilderTests`, and `ClassMngrScheduleWidgetTests`. Retain
-`build/f168`; its Ninja target list contains all four F175 targets. Defer the
-Speaking Evaluation save port until validator normalization/validation and the
-questionable Korean length policy have explicit ownership. Gate 1 and Gate 2
-remain Partial; Phase 2 remains In Progress and its exit gate remains Open.
+`ClassMngrScheduleBuilderTests`, and `ClassMngrScheduleWidgetTests`.
+`git diff --check` passed. No full suite or application build ran.
+
+F176 migrates `ApplicationServicesSubPrepClassDetailsPort` to
+`DatabaseSession::classInfoRepository()->loadSubPrepClassDetails()`. Preserve
+canonical ID, record identity, error classifications, preferred-name
+selection, bounded UTF-8 fields, missing/stale teacher/profile defaults, no
+schedule-table dependency, and page refresh/display. Verify
+`ClassMngrNextApplicationSubPrepClassDetailsQueryTests`,
+`ClassMngrNextPlatformApplicationServicesSubPrepPrintSourcePortTests`, and
+`ClassMngrSubPrepPageTests`. The existing focused tests do not appear to directly
+cover closed/unavailable sessions or repository SQL read failure; add those
+cases if the implementation review confirms the gap. Retain `build/f168`; its
+Ninja target list contains all three F176 targets. Gate 1 and Gate 2 remain
+Partial; Phase 2 remains In Progress and its exit gate remains Open.

@@ -2200,7 +2200,7 @@ parity. Gates 1 and 2 remain Partial; Phase 2 remains In Progress/Open. A
 separate worker owns workflow repair; this work does not modify
 `.github/workflows/refactoring-baseline.yml`. No push was requested.
 
-## Current Phase 2 position - 2026-10-01 (F174 accepted; F175 selected)
+## Current Phase 2 position - 2026-10-01 (F175 accepted; F176 selected)
 
 F170 source commit `68391fac` moves `ApplicationServicesRosterReadPort` from
 `RosterService::roster()` to the active session's `RosterRepository`, with no
@@ -2255,14 +2255,24 @@ repository failures, and closed-session behavior; page tests retain blank,
 clean state after failed reads. `git diff --check` passed. No full suite or
 application build was run.
 
-F175 is selected: migrate `ApplicationServicesScheduleBuilderSourcePort` from
-constructing `ClassService(session, nullptr)` to the active session's
-`ClassInfoRepository::loadScheduleClassInfos()`. Preserve session availability,
-NotFound/Technical results, mapped class and teacher fields, source ordering,
-raw regular/intensive schedules, missing/stale teacher behavior, testing-class
-exclusion, and ScheduleWidget modes. Focused targets are
-`ClassMngrNextApplicationScheduleBuilderSourceSnapshotTests`,
-`ClassMngrNextPlatformApplicationServicesScheduleBuilderSourcePortTests`,
-`ClassMngrScheduleBuilderTests`, and `ClassMngrScheduleWidgetTests`; all four
-exist in `build/f168`. Phase 2 remains In Progress/Open; Gates 1 and 2 remain
-Partial. Workflow repair remains with the other worker.
+F175 source commit `4009fcd5` changes `ApplicationServicesScheduleBuilderSourcePort`
+from constructing `ClassService(session, nullptr)` to calling the active
+session's `ClassInfoRepository::loadScheduleClassInfos()`. The implementation
+run and independent verification passed all 4 focused targets: application
+snapshot, Platform port, ScheduleBuilder, and ScheduleWidget. Existing coverage
+checks query metrics, ordering, raw schedules, teacher/profile edge cases,
+testing-class exclusion, and widget modes. `git diff --check` passed. No full
+suite or application build was run.
+
+F176 is selected: migrate `ApplicationServicesSubPrepClassDetailsPort` from
+`ClassService::subPrepClassDetails()` to the active session's
+`ClassInfoRepository::loadSubPrepClassDetails()`. Preserve canonical class-ID
+and record-identity checks, preferred-name selection, bounded UTF-8 fields,
+missing/stale teacher and class-info defaults, `NotFound` and `Technical`
+classifications, and Sub Prep page refresh/display behavior. Existing targets
+are `ClassMngrNextApplicationSubPrepClassDetailsQueryTests`,
+`ClassMngrNextPlatformApplicationServicesSubPrepPrintSourcePortTests`, and
+`ClassMngrSubPrepPageTests`; all three exist in `build/f168`. Add direct tests
+for unavailable/closed session and repository read failure if absent. Phase 2
+remains In Progress/Open; Gates 1 and 2 remain Partial. Workflow repair remains
+with the other worker.

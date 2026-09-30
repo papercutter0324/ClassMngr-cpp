@@ -1674,3 +1674,10 @@ Keep evaluation names exact at the typed query boundary. The current query
 allows whitespace-only names, while the repository rejects them as blank; the
 Platform adapter therefore preserves a Technical failure for this case. Cover
 the mapping explicitly when replacing service delegation with direct reads.
+
+## 2026-10-01 - F175 ScheduleBuilder source port
+
+When a feature service only forwards to a repository, the Platform adapter can
+replace the wrapper with that same session repository call without changing
+query rules. Keep repository read metrics observable; the Platform tests assert
+them as well as the mapped source order and page integration.
