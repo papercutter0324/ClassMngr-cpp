@@ -1,7 +1,8 @@
 #pragma once
 
-#include "app/services/feature_services.h"
 #include "core/application_services.h"
+#include "data/database/database_session.h"
+#include "data/repositories/class_info_repository.h"
 #include "next/application/sub_prep_schedule_summary_query.h"
 #include "next/domain/teacher_display_name.h"
 
@@ -145,8 +146,18 @@ public:
                 return Application::SubPrepScheduleSummaryReadResult::success({});
             }
 
-            ClassService* classService = m_services.classService();
-            if (!classService || !classService->isAvailable())
+            DatabaseSession* const session = m_services.databaseSession();
+            if (!session || !session->isOpen())
+            {
+                return failure(
+                    Domain::ErrorCode::NotFound,
+                    "The Sub Prep schedule summary service is unavailable."
+                    );
+            }
+
+            ClassInfoRepository* const repository =
+                session->classInfoRepository();
+            if (!repository)
             {
                 return failure(
                     Domain::ErrorCode::NotFound,
@@ -159,7 +170,7 @@ public:
                 ? ScheduleType::Regular
                 : ScheduleType::Intensive;
             const ::Result<QList<SubPrepClassSummaryRecord>> records =
-                classService->subPrepClassSummaries(
+                repository->loadSubPrepClassSummaries(
                     legacyClassIds,
                     legacyDays,
                     legacyMode,
@@ -172,14 +183,14 @@ public:
                     );
             if (!records)
             {
-                if (!classService->isAvailable())
+                if (!session->isOpen())
                 {
                     return failure(
                         Domain::ErrorCode::NotFound,
                         "The Sub Prep schedule summary service became unavailable while loading summaries."
                         );
                 }
-                return legacyFailure(records.error());
+                return repositoryFailure(records.error());
             }
 
             std::unordered_map<int, const SubPrepClassSummaryRecord*>
@@ -728,15 +739,15 @@ private:
     }
 
     [[nodiscard]] static Application::SubPrepScheduleSummaryReadResult
-    legacyFailure(const QString& legacyError)
+    repositoryFailure(const QString& repositoryError)
     {
-        const QString normalized = legacyError.toLower();
+        const QString normalized = repositoryError.toLower();
         if (normalized.contains(QStringLiteral("invalid"))
             || normalized.contains(QStringLiteral("unique")))
         {
             return failure(
                 Domain::ErrorCode::InvalidInput,
-                errorText(legacyError,
+                errorText(repositoryError,
                     "The Sub Prep schedule summary request is invalid.")
                 );
         }
@@ -746,23 +757,23 @@ private:
         {
             return failure(
                 Domain::ErrorCode::Validation,
-                errorText(legacyError,
+                errorText(repositoryError,
                     "The Sub Prep schedule summary data failed validation.")
                 );
         }
         return failure(
             Domain::ErrorCode::Technical,
-            errorText(legacyError,
+            errorText(repositoryError,
                 "Sub Prep schedule summaries could not be loaded.")
             );
     }
 
     [[nodiscard]] static std::string errorText(
-        const QString& legacyError,
+        const QString& repositoryError,
         const char* fallback
         )
     {
-        const QByteArray bytes = legacyError.toUtf8();
+        const QByteArray bytes = repositoryError.toUtf8();
         return bytes.isEmpty() ? fallback : bytes.toStdString();
     }
 
