@@ -2057,17 +2057,34 @@ blobs unchanged. The scratch harness used a temporary Qt 6.12 metadata shim
 and baseline API adaptations, then restored the original baseline CMake hash.
 No full suite/app build or baseline query-count claim.
 
-Three independent Investigator reviews unanimously select F160: move only the
-GS Team branch of `StaffDirectoryPage::loadDirectory()` to a typed Qt-free
-Application query and active-session Platform adapter backed by
-`GsTeamRepository::getAll()`. Add a dedicated int-backed
-`GsTeamMemberId`; preserve the five displayed fields, row ID role, repository
-order, unavailable-session silent clear, repository-error warning, and success
-state behavior. Keep F159's Native English read, both directory save paths,
-and Phase 7's model/view conversion separate. Acceptance includes mapping,
-failure/no-fallback, page/route regressions, save regressions, and pinned-
-baseline visible parity. Cover the route race where the availability preflight
-passes while the session is open, then the session closes during leave
-confirmation and the active-session read returns `NotFound`: show no page and
-do not fall back through `TeacherService` or `DataService`. Gates 1 and 2
-remain Partial; Phase 2 remains In Progress/Open.
+## F160 accepted; F161 selected — 2026-09-30
+
+F160 source commit `b703d3260a01b783594ffe6b87d10d9f7b02d193` adds a typed
+Qt-free Application read query and active-session Platform adapter for the GS
+Team branch of `StaffDirectoryPage::loadDirectory()`, backed by
+`GsTeamRepository::getAll()`. It introduces a dedicated int-backed
+`GsTeamMemberId` and preserves the five displayed fields, row ID role,
+repository order, unavailable-session silent clear, repository-error warning,
+and success-state behavior. The route race test closes the session during
+leave confirmation; the page remains hidden with no legacy fallback.
+
+The focused current CTest selection passed 9/9, including the F160 query,
+adapter, page and route cases plus F159 and `StaffDirectoryPage` regressions.
+Pinned-baseline visible parity passed 1/1 with only the F160 parity test and
+registration overlaid; production blobs stayed pinned. The scratch run used a
+temporary Qt metadata compatibility shim and a baseline constructor
+adaptation, then restored the pinned CMake hash. No full suite/application
+build or baseline query-count claim. Gates 1 and 2 remain Partial; Phase 2
+remains In Progress/Open.
+
+F161 is selected for only the Native English branch of
+`StaffDirectoryPage::saveDirectory()`. Add a typed Application save operation
+and active-session Platform adapter backed by
+`NativeEnglishTeacherRepository::saveDirectory()`. Preserve the current
+unique-name and birthday validation, typed row identity, add/update/delete
+behavior, repository transaction, warning/quiet-autosave behavior, dirty state
+on failure, and successful reload and `directorySaved` signal. Keep the GS
+Team writer and directory model/view conversion separate. Acceptance covers
+typed mapping, session/repository errors and no fallback, page validation and
+save state, persistence and reload behavior, regression coverage, and
+pinned-baseline visible parity. Make no baseline query-count claim.

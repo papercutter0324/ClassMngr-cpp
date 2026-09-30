@@ -35,8 +35,9 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
   load. F154's typed Class Notes page-read query and F155's Class Co-Teacher
   selected-class/title read and F156's ClassCoTeacherPage teacher-catalogue
   read, F157's TeacherInfoPage profile-save port, and F158's selected-teacher
-  navigation read and F159's Native English Staff Directory read are accepted.
-  F160 is selected for the GS Team Staff Directory read. The prior F123
+  navigation read, F159's Native English Staff Directory read, and F160's GS
+  Team Staff Directory read are accepted. F161 is selected for the Native
+  English Staff Directory save path. The prior F123
   candidate wording is historical;
   current Teacher Profile integration status is recorded in the progress log.
   Gates 1 and 2
@@ -551,24 +552,30 @@ the original CMake hash restored, plus a parity-test API adaptation. No full
 suite/application build or baseline query-count claim. Detailed evidence is in
 the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 
-## F160 selected GS Team Staff Directory read
+## F160 accepted GS Team Staff Directory read
 
-Migrate only the GS Team branch of `StaffDirectoryPage::loadDirectory()`
-through a typed Qt-free Application read query and active-session Platform
-adapter to `GsTeamRepository::getAll()`, using a dedicated int-backed
-`Domain::GsTeamMemberId`. Preserve the five displayed fields, row ID role,
-repository order, unavailable-session silent clear, repository-error warning,
-success-state semantics, and confirmation-before-read/show-only-on-success
-route behavior. Keep F159's Native English read,
-both save paths, and Phase 7 model/view conversion out of scope.
+F160, source commit `b703d3260a01b783594ffe6b87d10d9f7b02d193`, migrates only
+the GS Team branch of `StaffDirectoryPage::loadDirectory()` through a typed
+Qt-free Application query and active-session Platform adapter to
+`GsTeamRepository::getAll()`, using int-backed `Domain::GsTeamMemberId`. It
+preserves the five displayed fields, ID role, repository order, unavailable-
+session silent clear, repository-error warning, and confirmation-before-read/
+show-only-on-success behavior. The Native English branch, both save paths, and
+Phase 7 model/view conversion remain separate. Focused verification and limits
+are recorded in the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 
-Acceptance requires query/adapter mapping, error, and no-fallback coverage;
-page and route values, ordering, IDs, and failure behavior; F159 and save
-regressions; and pinned-baseline visible parity. Cover the route race where
-`TeacherService::isAvailable()` passes while the session is open, then the
-session closes during leave confirmation and the active-session read returns
-`NotFound`: do not fall back through `TeacherService` or `DataService`, or show
-the page after confirmation. Test unavailable-session silent clear separately
-from the repository-error warning. Make no baseline query-count claim. F160 is
-selected; implementation has not started. Gates 1 and 2 remain Partial; Phase 2
-remains In Progress/Open.
+## F161 selected Native English Staff Directory save
+
+Migrate only the Native English branch of `StaffDirectoryPage::saveDirectory()`
+through a typed Qt-free Application save operation and active-session Platform
+adapter backed by `NativeEnglishTeacherRepository::saveDirectory()`. Preserve
+unique-name and optional-birthday validation, typed row IDs, add/update/delete,
+repository transaction behavior, warning versus quiet autosave behavior,
+dirty state on failure, and successful reload plus `directorySaved`. Keep the
+GS Team writer and directory model/view conversion separate.
+
+Acceptance covers typed request/mapping; unavailable-session and repository
+errors with no fallback; page validation and save-state behavior; persistence,
+reload, and signal behavior; related regressions; and pinned-baseline visible
+parity. Do not claim baseline query counts. F161 is selected; implementation
+has not started. Gates 1 and 2 remain Partial; Phase 2 remains In Progress/Open.

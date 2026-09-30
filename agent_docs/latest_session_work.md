@@ -3830,19 +3830,46 @@ Qt 6.12 metadata shim (removed afterward), and test-only API/registration
 adaptations; production files and pinned baseline blobs were not overlaid. No
 full suite/app build or baseline query-count claim.
 
-Three independent Investigator reviews unanimously select F160: migrate only
-the GS Team branch of `StaffDirectoryPage::loadDirectory()` through a typed
-Qt-free Application read query and active-session Platform adapter backed by
-`GsTeamRepository::getAll()`. Add a dedicated int-backed
-`GsTeamMemberId`, preserving the five displayed fields, ID role, repository
-order, unavailable-session silent clear, repository-error warning, and success
-state behavior. Keep the F159 Native English read, both directory save paths,
-and Phase 7 model/view conversion separate. Acceptance covers query/adapter
-mapping and error/no-fallback behavior; page/route values, ordering, IDs, and
-failures; F159 and save regressions; and pinned-baseline visible parity. Cover
-the route race where preflight passes while the session is open, then the
-session closes during confirmation and the active-session read returns
-`NotFound`; preserve confirmation-before-read, do not fall back through
-`TeacherService` or `DataService`, and do not show the page. Make no query-count
-claim. Gates 1 and 2 remain Partial; Phase 2 remains In Progress/Open. No push
-was requested. F160 implementation has not started.
+## 2026-09-30 — Phase 2 continuation: F160 accepted; F161 selected
+
+At continuation start, reviewed commits `314f4d5b` and `0c5d5566`. No blocking
+issue was found. One non-blocking review note: `314f4d5b` changed a PDF text
+assertion to use `.simplified()`, which collapses internal whitespace and
+therefore no longer checks exact spacing.
+
+F160 source commit `b703d3260a01b783594ffe6b87d10d9f7b02d193` adds a typed
+Qt-free Application query and active-session Platform adapter for the GS Team
+branch of `StaffDirectoryPage::loadDirectory()`, backed by
+`GsTeamRepository::getAll()`. It adds int-backed `GsTeamMemberId` and preserves
+the five displayed fields, row ID role, repository order, unavailable-session
+silent clear, repository-error warning, and success state. The route test
+covers a session close during leave confirmation: the query sees the closed
+session, the page remains hidden, and no fallback or warning occurs.
+
+The focused current build and CTest passed 9/9, including the F160 query,
+adapter, page and route cases plus F159 and `StaffDirectoryPage` regressions.
+Pinned-baseline visible parity passed 1/1 with only the F160 parity source and
+registration overlaid; pinned production blobs remained unchanged. The
+baseline expected Qt 6.11.1 while the installed package was Qt 6.12.0; a
+temporary scratch-only metadata shim and baseline constructor adaptation were
+used, the shim was removed, and root CMake was restored to hash
+`cc8a061dfa64977926805167cc10418ca15d83d8`. No full suite/app build or
+baseline query-count claim. `.github/workflows/refactoring-baseline.yml` was
+not changed by this work; a separate worker owns workflow repair.
+
+Two independent Explorers mapped the next candidate set; three independent
+Investigators compared the write paths, Phase 2 value, and parity risk. F161
+is selected for only the Native English branch of
+`StaffDirectoryPage::saveDirectory()`, adding a typed Application save
+operation and active-session Platform adapter backed by
+`NativeEnglishTeacherRepository::saveDirectory()`. This keeps the first write
+slice to one name key and its established typed row ID. Preserve existing
+unique-name and optional birthday validation, add/update/delete behavior,
+transaction results, warning/quiet-autosave behavior, dirty state on failure,
+and successful reload and `directorySaved` signal. Keep the GS Team writer,
+directory model/view conversion, and other teacher workflows out of scope.
+Acceptance covers typed mapping, active-session and repository failure with no
+fallback, validation and save state, persisted changes and reload/signal,
+regressions, and pinned-baseline visible parity. The current focused source
+commit is complete; F161 implementation has not started. Gates 1 and 2 remain
+Partial; Phase 2 remains In Progress/Open. No push was requested.

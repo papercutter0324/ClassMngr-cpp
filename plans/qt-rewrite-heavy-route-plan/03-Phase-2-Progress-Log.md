@@ -8061,3 +8061,44 @@ the page after confirmation. Test unavailable-session silent clear separately
 from the repository-error warning. Make no baseline query-count claim. F160 is
 selected; implementation has not started. Gates 1 and 2 remain Partial; Phase 2
 remains In Progress/Open.
+
+### Progress update - 2026-09-30 (F160 accepted; F161 selected)
+
+F160, source commit `b703d3260a01b783594ffe6b87d10d9f7b02d193`, adds the
+int-backed `GsTeamMemberId`, a typed Qt-free Application read query, and an
+active-session Platform adapter to `GsTeamRepository::getAll()`. It migrates
+only the GS Team branch of `StaffDirectoryPage::loadDirectory()`. The page
+retains its five display fields, ID role, repository order, unavailable-session
+silent clear, repository-error warning, success state, and
+confirmation-before-read/show-only-on-success behavior. A route regression
+closes the session during leave confirmation: the typed read returns
+`NotFound`, the page stays hidden, and no `TeacherService`/`DataService`
+fallback or warning occurs. Unavailable-session clear and repository-error
+warning are tested separately.
+
+Independent Tester evidence: focused current build/CTest passed 9/9 across the
+F160 query, adapter, page/parity, F159, and StaffDirectoryPage regression
+targets. Pinned-baseline visible parity passed 1/1 with test/registration
+overlay only and no production overlay. Baseline Qt 6.11.1 versus installed
+6.12.0 required a temporary scratch-only metadata shim and constructor
+adaptation; the shim was removed and the pinned root CMake file restored to
+hash `cc8a061dfa64977926805167cc10418ca15d83d8`. No full suite/application
+build or baseline query-count claim.
+
+F161 was selected after two Explorer lanes and three independent Investigator
+lanes. It migrates only the Native English branch of
+`StaffDirectoryPage::saveDirectory()` through a typed Application save
+operation and active-session Platform adapter backed by
+`NativeEnglishTeacherRepository::saveDirectory()`. Preserve unique-name and
+optional-birthday validation, typed row IDs, add/update/delete, the repository
+transaction, warning versus quiet autosave, dirty state on failure, and
+successful reload plus `directorySaved`. Keep the GS Team writer and
+directory model/view conversion separate. Acceptance covers typed mapping;
+active-session/repository errors and no fallback; page validation/save state;
+persistence, reload, and signal behavior; regressions; and pinned-baseline
+visible parity. No baseline query-count claim. Implementation has not started;
+F161 was selected as the narrower first writer path with one name-key invariant
+and an existing typed ID.
+
+Gate 1 and Gate 2 remain Partial; Phase 2 remains In Progress and its exit gate
+remains Open.

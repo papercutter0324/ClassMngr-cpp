@@ -1521,3 +1521,11 @@ overlay; make no query-count claim. Keep Native English and GS Team reads
 separate because their records and repositories differ. Give each table its
 own typed ID; keep both save paths and the later table model/view conversion
 out of the read slice.
+
+## 2026-09-30 — F160 GS Team directory read
+
+Use a distinct int-backed GS Team member ID and read from the active session's
+repository. Availability can change during leave confirmation, so perform the
+typed read after confirmation; classify an unavailable session as silent
+`NotFound` and repository failure as a warning. Keep baseline-only Qt and API
+adaptations inside the scratch checkout and verify pinned production blobs.

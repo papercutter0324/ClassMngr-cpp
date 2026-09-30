@@ -4304,21 +4304,31 @@ changes only, no production overlay. No full suite/application build or
 baseline query-count claim. Verification details are in the [Phase 2 progress
 log](03-Phase-2-Progress-Log.md).
 
-## F160 selected GS Team Staff Directory read
+## F160 accepted GS Team Staff Directory read
 
-Migrate only the GS Team branch of `StaffDirectoryPage::loadDirectory()`
-through a typed Qt-free Application read query and active-session Platform
-adapter to `GsTeamRepository::getAll()`, with dedicated int-backed
-`Domain::GsTeamMemberId`. Preserve five displayed fields, row ID role,
-repository order, unavailable-session silent clear, repository-error warning,
-success-state semantics, and confirmation-before-read/show-only-on-success
-route behavior. F159's Native English read, both save paths, and Phase 7
-model/view conversion remain outside this slice. Acceptance covers
-mapping/error/no-fallback, page and route values/order/IDs/failures, F159 and
-save regressions, and pinned-baseline visible parity. Test the route race where
-`TeacherService::isAvailable()` passes while the session is open, then the
-session closes during leave confirmation and the active-session read returns
-`NotFound`: do not fall back through `TeacherService` or `DataService`, or show
-the page after confirmation. Test unavailable-session silent clear separately
-from the repository-error warning. Make no baseline query-count claim;
-implementation has not started.
+F160, source commit `b703d3260a01b783594ffe6b87d10d9f7b02d193`, migrates only
+the GS Team branch of `StaffDirectoryPage::loadDirectory()` through a typed
+Qt-free Application query and active-session Platform adapter to
+`GsTeamRepository::getAll()`, using int-backed `Domain::GsTeamMemberId`. It
+preserves five displayed fields, the ID role, repository order, unavailable-
+session silent clear, repository-error warning, and confirmation-before-read/
+show-only-on-success behavior. F159's Native English read, both save paths,
+and Phase 7 model/view conversion remain separate. Focused evidence and limits
+are in the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
+
+## F161 selected Native English Staff Directory save
+
+Migrate only the Native English branch of `StaffDirectoryPage::saveDirectory()`
+through a typed Qt-free Application save operation and active-session Platform
+adapter backed by `NativeEnglishTeacherRepository::saveDirectory()`. Preserve
+unique-name and optional-birthday validation, typed row IDs, add/update/delete,
+repository transaction behavior, warning versus quiet autosave behavior,
+dirty state on failure, and successful reload plus `directorySaved`. Keep the
+GS Team writer and directory model/view conversion separate.
+
+Acceptance covers typed request/mapping; active-session and repository errors
+with no fallback; page validation/save state; persistence, reload, and signal;
+related regressions; and pinned-baseline visible parity. Make no baseline
+query-count claim. F161 is selected; implementation has not started. Its
+selection and acceptance are also summarized in the [Phase 2 contract
+plan](03-Phase-2-Domain-Model-and-Application-Contracts.md).
