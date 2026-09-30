@@ -35,8 +35,9 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
   load. F154's typed Class Notes page-read query and F155's Class Co-Teacher
   selected-class/title read and F156's ClassCoTeacherPage teacher-catalogue
   read, F157's TeacherInfoPage profile-save port, and F158's selected-teacher
-  navigation read are accepted. F159 is selected for the Native English Staff
-  Directory read. The prior F123 candidate wording is historical;
+  navigation read and F159's Native English Staff Directory read are accepted.
+  F160 is selected for the GS Team Staff Directory read. The prior F123
+  candidate wording is historical;
   current Teacher Profile integration status is recorded in the progress log.
   Gates 1 and 2
   remain Partial; F120 active-v2 DataService isolation and formal
@@ -274,8 +275,8 @@ No production defect was observed.
 F144 is the preceding accepted slice. F145's accepted existing-class details
 update is recorded below. F146's accepted new-class create, including the
 optional pending weekday/start-time assignment, is recorded after it. F147's
-accepted delete/cascade migration is recorded below; F148-F158 acceptance and
-F159 selection are recorded below.
+accepted delete/cascade migration is recorded below; F148-F159 acceptance and
+F160 selection are recorded below.
 
 ## F145 acceptance record
 
@@ -395,7 +396,7 @@ The page queries on each save; on read error it uses `ClassInfo{}` and
 continues validation, conflict, and save. Preserve `-1` as the unassigned
 sentinel, treat zero as invalid, retain missing-row defaults, and keep the
 validation/conflict/save order. The save request, adapter reread, and
-`ClassService` guard remain separate. F153-F158 acceptance and F159 selection
+`ClassService` guard remain separate. F153-F159 acceptance and F160 selection
 are recorded below.
 
 ## F152 acceptance record
@@ -529,19 +530,44 @@ reads remain separate. Focused verification passed 8/8 on current and 1/1 on
 the pinned baseline; details and limitations are in the progress log. Gates 1
 and 2 remain Partial; Phase 2 remains In Progress/Open.
 
-## F159 selected Native English Staff Directory read
+## F159 accepted Native English Staff Directory read
 
-Migrate only the Native English branch of `StaffDirectoryPage::loadDirectory()`
-through a typed Qt-free Application query and active-session Platform adapter
-using `NativeEnglishTeacherRepository::getAll()`. Preserve the six displayed
-fields, ID role, repository position/name/ID ordering, navigation
-confirmation-before-read and show-only-on-success behavior, unavailable-state
-clear, repository-error warning, and current state semantics. Keep the GS Team
-branch and both `saveDirectory()` paths unchanged; Phase 7's model/view
-conversion remains separate.
+F159, source commit `1849ed23327538e2d21b05dfe0cebcc97e99d78c`, migrates only
+the Native English branch of `StaffDirectoryPage::loadDirectory()` through a
+typed Qt-free Application query and active-session Platform adapter using
+`NativeEnglishTeacherRepository::getAll()`. It preserves the six displayed
+fields, ID role, repository ordering, confirmation-before-read and
+show-only-on-success behavior, unavailable-state clear, repository-error
+warning, and current state semantics. The GS Team branch, both save paths, and
+Phase 7 model/view conversion remain separate.
 
-Verify Application query and Platform mapping/error/no-fallback behavior,
-focused page/route values, ordering, IDs, failures, GS Team and save regressions,
-and pinned-baseline visible route parity. Make no baseline query-count claim.
-F159 is selected; implementation has not started. Gates 1 and 2 remain
-Partial; Phase 2 remains In Progress/Open.
+Five focused current CTest targets passed 5/5: Application query, Platform
+adapter, Native English page behavior, pinned-baseline parity, and
+`StaffDirectoryPage` regression. Public-page parity passed 1/1 on pinned
+baseline `48fc5c5cc7dee78d82f8bf5f1bf8b51725575b99` with only test/harness and
+registration changes and no production overlay. The scratch baseline run used
+a temporary Qt 6.12 metadata compatibility shim, removed after configure with
+the original CMake hash restored, plus a parity-test API adaptation. No full
+suite/application build or baseline query-count claim. Detailed evidence is in
+the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
+
+## F160 selected GS Team Staff Directory read
+
+Migrate only the GS Team branch of `StaffDirectoryPage::loadDirectory()`
+through a typed Qt-free Application read query and active-session Platform
+adapter to `GsTeamRepository::getAll()`, using a dedicated int-backed
+`Domain::GsTeamMemberId`. Preserve the five displayed fields, row ID role,
+repository order, unavailable-session silent clear, repository-error warning,
+success-state semantics, and confirmation-before-read/show-only-on-success
+route behavior. Keep F159's Native English read,
+both save paths, and Phase 7 model/view conversion out of scope.
+
+Acceptance requires query/adapter mapping, error, and no-fallback coverage;
+page and route values, ordering, IDs, and failure behavior; F159 and save
+regressions; and pinned-baseline visible parity. Explicitly cover the route
+where legacy `TeacherService::isAvailable()` passes but the active-session read
+returns `NotFound`: do not fall back to `DataService` or show the page after
+confirmation. Test unavailable-session silent clear separately from the
+repository-error warning. Make no baseline query-count claim. F160 is selected;
+implementation has not started. Gates 1 and 2 remain Partial; Phase 2 remains
+In Progress/Open.

@@ -4119,7 +4119,7 @@ separate existing-class details update; F147 now covers delete/cascade.
 
 The production and acceptance-test commits, focused verification, and limits
 are recorded in the [Phase 2 progress log](03-Phase-2-Progress-Log.md). F147
-migrates delete/cascade; F148-F158 acceptance and F159 selection are recorded
+migrates delete/cascade; F148-F159 acceptance and F160 selection are recorded
 below.
 
 ## Verified F147 Testing Class delete/cascade
@@ -4132,9 +4132,9 @@ F145 details update and F146 creation remain separate accepted boundaries.
 Production commit `b037b4216b71c55c7793df5f7bbbfc4a00690065`, page transition
 fix `315b3ff33b7e2ab42b43d52cd168ce21a92158c9`, and acceptance-test commit
 `397376e439f4b5955c82948ab0c225aaf776d679` are recorded with verification
-limits in the [Phase 2 progress log](03-Phase-2-Progress-Log.md). F148-F158 are
-accepted. F159 is selected, not implemented; its boundary and acceptance
-criteria are in the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
+limits in the [Phase 2 progress log](03-Phase-2-Progress-Log.md). F148-F159 are
+accepted. F160 is selected; its boundary and acceptance criteria are in the
+[Phase 2 progress log](03-Phase-2-Progress-Log.md).
 
 ## Class-details save mapping: F126 and F139
 
@@ -4289,16 +4289,35 @@ separate. Current focused CTest passed 8/8 and pinned-baseline navigation
 parity passed 1/1. Verification limits are in the [Phase 2 progress
 log](03-Phase-2-Progress-Log.md).
 
-## F159 selected Native English Staff Directory read
+## F159 accepted Native English Staff Directory read
 
-Migrate only the Native English branch of `StaffDirectoryPage::loadDirectory()`
-through a typed Qt-free Application query and active-session Platform adapter
-using `NativeEnglishTeacherRepository::getAll()`. Preserve its six displayed
-fields, ID role, repository position/name/ID ordering, navigation
-confirmation-before-read and show-only-on-success behavior, unavailable-state
-clear, repository-error warning, and current state semantics. Leave the GS Team
-branch and both `saveDirectory()` paths unchanged; Phase 7's model/view
-conversion remains separate. Verify mapping, error/no-fallback behavior, page
-and route values/order/IDs/failures, GS Team/save regressions, and pinned-
-baseline visible route parity. Do not claim baseline query-count parity.
-Implementation has not started.
+F159, source commit `1849ed23327538e2d21b05dfe0cebcc97e99d78c`, migrates only
+the Native English branch of `StaffDirectoryPage::loadDirectory()` through a
+typed Qt-free Application query and active-session Platform adapter using
+`NativeEnglishTeacherRepository::getAll()`. It preserves six displayed fields,
+ID role, repository ordering, confirmation-before-read and show-only-on-success
+behavior, unavailable-session clear, repository-error warning, and current
+state semantics. The GS Team branch, both save paths, and Phase 7 model/view
+conversion remain separate. Focused current CTest passed 5/5 targets; pinned
+baseline public-page parity passed 1/1 with test/harness and registration
+changes only, no production overlay. No full suite/application build or
+baseline query-count claim. Verification details are in the [Phase 2 progress
+log](03-Phase-2-Progress-Log.md).
+
+## F160 selected GS Team Staff Directory read
+
+Migrate only the GS Team branch of `StaffDirectoryPage::loadDirectory()`
+through a typed Qt-free Application read query and active-session Platform
+adapter to `GsTeamRepository::getAll()`, with dedicated int-backed
+`Domain::GsTeamMemberId`. Preserve five displayed fields, row ID role,
+repository order, unavailable-session silent clear, repository-error warning,
+success-state semantics, and confirmation-before-read/show-only-on-success
+route behavior. F159's Native English read, both save paths, and Phase 7
+model/view conversion remain outside this slice. Acceptance covers
+mapping/error/no-fallback, page and route values/order/IDs/failures, F159 and
+save regressions, and pinned-baseline visible parity. Explicitly test when
+legacy `TeacherService::isAvailable()` passes but the active-session read
+returns `NotFound`: do not fall back to `DataService` or show the page after
+confirmation. Test unavailable-session silent clear separately from the
+repository-error warning. Make no baseline query-count claim; implementation
+has not started.

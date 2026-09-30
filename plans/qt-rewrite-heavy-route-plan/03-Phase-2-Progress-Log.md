@@ -8022,19 +8022,41 @@ test was adapted only for the pinned three-argument `NavigationController`
 API; no repository production files were overlaid. No full suite/application
 build or baseline query-count claim.
 
-F159 is selected after three independent Investigator reviews (unanimous) and
-two independent Explorer confirmations. Migrate only the Native English branch
-of `StaffDirectoryPage::loadDirectory()` through a typed Qt-free Application
-query and active-session Platform adapter using
-`NativeEnglishTeacherRepository::getAll()`. Preserve six displayed fields,
-ID role, repository position/name/ID ordering, navigation
-confirmation-before-read and show-only-on-success behavior, unavailable-state
-clear, repository-error warning, and current state semantics. Keep the GS Team
-branch and both `saveDirectory()` paths unchanged; Phase 7's staff model/view
-conversion remains separate.
+### Progress update - 2026-09-30 (F159 accepted; F160 selected)
 
-Acceptance should cover Application query and Platform mapping/error/no-
-fallback behavior; page/route values, ordering, IDs, and failure behavior; GS
-Team and save regressions; and pinned-baseline visible route parity. Make no
-baseline query-count claim. F159 is selected; implementation has not started.
-Gates 1 and 2 remain Partial; Phase 2 remains In Progress/Open.
+F159, source commit `1849ed23327538e2d21b05dfe0cebcc97e99d78c`, migrates only
+the Native English branch of `StaffDirectoryPage::loadDirectory()` through a
+typed Qt-free Application query and active-session Platform adapter using
+`NativeEnglishTeacherRepository::getAll()`. It preserves the six displayed
+fields, ID role, repository ordering, confirmation-before-read and
+show-only-on-success behavior, unavailable-session clear, repository-error
+warning, and current state semantics. GS Team and both save paths remain
+outside F159.
+
+The focused current build and CTest passed 5/5 targets: Application query,
+Platform adapter, Native English page behavior, pinned-baseline parity, and
+`StaffDirectoryPage` regression. Public-page parity passed 1/1 on pinned
+baseline `48fc5c5cc7dee78d82f8bf5f1bf8b51725575b99` with only test/harness and
+registration changes and no production overlay. The scratch baseline run used
+a temporary Qt 6.12 metadata compatibility shim, removed after configure with
+the original CMake hash restored, plus a parity-test API adaptation. No full
+suite/application build or baseline query-count claim.
+
+F160 is selected after three independent Investigator reviews (unanimous) and
+two Explorer confirmations. Migrate only the GS Team branch of
+`StaffDirectoryPage::loadDirectory()` through a typed Qt-free Application read
+query and active-session Platform adapter to `GsTeamRepository::getAll()`,
+using a dedicated int-backed `Domain::GsTeamMemberId`. Preserve its five
+displayed fields, row ID role, repository order, unavailable-session silent
+clear, repository-error warning, success-state semantics, and
+confirmation-before-read/show-only-on-success behavior. Keep F159's Native
+English read, both save paths, and Phase 7 model/view conversion out of scope.
+Acceptance covers query/adapter mapping, errors and no-fallback; page/route
+values, ordering, IDs, and failures; F159 and save regressions; and
+pinned-baseline visible parity. Explicitly test when legacy
+`TeacherService::isAvailable()` passes but the active-session read returns
+`NotFound`: do not fall back to `DataService` or show the page after
+confirmation. Test unavailable-session silent clear separately from the
+repository-error warning. Make no baseline query-count claim. F160 is selected;
+implementation has not started. Gates 1 and 2 remain Partial; Phase 2 remains
+In Progress/Open.

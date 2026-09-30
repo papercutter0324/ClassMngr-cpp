@@ -1511,13 +1511,13 @@ page save port to the active-session `TeacherRepository` retained the existing
 use case and validation policy, while current page tests and pinned-baseline
 public-page parity checked save/reload and invalid-write behavior.
 
-## 2026-09-30 — F158 navigation read and F159 directory boundary
+## 2026-09-30 — F158 parity and F159 directory reads
 
-The pinned baseline required test-harness-only compatibility adjustments:
-Qt 6.12 package metadata was supplied temporarily for the older baseline CMake
-setup, and the copied parity test used the baseline's three-argument navigation
-constructor. Keep both changes in the disposable baseline checkout; verify
-production blobs remain pinned and make no query-count claim. For the next
-directory migration, keep Native English and GS Team reads separate because
-they use distinct records and repositories; keep both save paths and the later
-table model/view conversion out of the read slice.
+Pinned-baseline checks needed temporary Qt metadata and copied-test API
+adaptations. Keep those changes in the disposable baseline checkout, restore
+the original CMake hash, and verify production blobs remain pinned. When disk
+space is limited, reuse the verified baseline cache only after checking the
+overlay; make no query-count claim. Keep Native English and GS Team reads
+separate because their records and repositories differ. Give each table its
+own typed ID; keep both save paths and the later table model/view conversion
+out of the read slice.

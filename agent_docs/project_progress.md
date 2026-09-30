@@ -2035,7 +2035,7 @@ cover ID/field mapping, session/repository errors, no fallback, current route
 behavior, and pinned-baseline visible parity. Gates 1 and 2 remain Partial;
 Phase 2 remains In Progress/Open.
 
-## F158 accepted; F159 selected — 2026-09-30
+## F158 and F159 accepted; F160 selected — 2026-09-30
 
 F158 commit `4d099893071d4271ea8873d2219dfc7642de1e5c` adds the typed Teacher
 Profile read query and active-session Platform adapter at
@@ -2046,9 +2046,27 @@ three-argument constructor adaptation in the copied test. No production
 overlay, full suite/app build, or baseline query-count claim. Phase 2 remains
 In Progress/Open; no push was requested.
 
-F159 is selected for only the Native English branch of
-`StaffDirectoryPage::loadDirectory()`, through a typed Qt-free Application
-query and active-session Platform adapter backed by
-`NativeEnglishTeacherRepository::getAll()`. Preserve row mapping, IDs, ordering,
-navigation confirmation and warning behavior. Keep the GS Team branch, both
-directory save paths, and Phase 7's model/view conversion separate.
+F159 source commit `1849ed23327538e2d21b05dfe0cebcc97e99d78c` adds a typed
+Qt-free Application query and active-session Platform adapter for only the
+Native English branch of `StaffDirectoryPage::loadDirectory()`, backed by
+`NativeEnglishTeacherRepository::getAll()`. `NativeEnglishTeacherId` keeps its
+table identity distinct from Korean teacher IDs. The focused current build and
+CTest passed 5/5 targets. Pinned-baseline public-page parity passed 1/1 with
+only parity/test-harness changes, no production overlay, and pinned production
+blobs unchanged. The scratch harness used a temporary Qt 6.12 metadata shim
+and baseline API adaptations, then restored the original baseline CMake hash.
+No full suite/app build or baseline query-count claim.
+
+Three independent Investigator reviews unanimously select F160: move only the
+GS Team branch of `StaffDirectoryPage::loadDirectory()` to a typed Qt-free
+Application query and active-session Platform adapter backed by
+`GsTeamRepository::getAll()`. Add a dedicated int-backed
+`GsTeamMemberId`; preserve the five displayed fields, row ID role, repository
+order, unavailable-session silent clear, repository-error warning, and success
+state behavior. Keep F159's Native English read, both directory save paths,
+and Phase 7's model/view conversion separate. Acceptance includes mapping,
+failure/no-fallback, page/route regressions, save regressions, and pinned-
+baseline visible parity. Cover the route edge where legacy availability passes
+its preflight but the active-session adapter returns unavailable: preserve
+confirmation-before-read, show no page, and do not fall back to `DataService`.
+Gates 1 and 2 remain Partial; Phase 2 remains In Progress/Open.
