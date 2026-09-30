@@ -1396,10 +1396,13 @@ void ClassTransferTests::
     QFile fixtureFile(fixturePath);
     QVERIFY(fixtureFile.open(QIODevice::ReadOnly));
     const QByteArray fixtureBytes = fixtureFile.readAll();
+    QByteArray normalizedFixtureBytes = fixtureBytes;
+    normalizedFixtureBytes.replace("\r\n", "\n");
+    normalizedFixtureBytes.replace('\r', '\n');
     QCOMPARE(
         QCryptographicHash::hash(
-            fixtureBytes, QCryptographicHash::Sha256).toHex(),
-        QByteArray("bed9cbee84a7946f51029efc4aae2b2850bda9784757250fbf6ce90cab7fb173")
+            normalizedFixtureBytes, QCryptographicHash::Sha256).toHex(),
+        QByteArray("14756a43ac06382b890bfcbb74b50cb327eaf75f5414cd5f4697f4a4785a2b0c")
         );
     const auto package = ClassTransferJsonCodec::fromJson(
         QJsonDocument::fromJson(fixtureBytes).object());
@@ -1970,10 +1973,13 @@ void ClassTransferTests::successFixtureClassReplacementMatchesCommonInputState()
     QFile fixtureFile(fixturePath);
     QVERIFY(fixtureFile.open(QIODevice::ReadOnly));
     const QByteArray fixtureBytes = fixtureFile.readAll();
+    QByteArray normalizedFixtureBytes = fixtureBytes;
+    normalizedFixtureBytes.replace("\r\n", "\n");
+    normalizedFixtureBytes.replace('\r', '\n');
     QCOMPARE(
         QCryptographicHash::hash(
-            fixtureBytes, QCryptographicHash::Sha256).toHex(),
-        QByteArray("a40cb4079865eb5c48800208a3648360c08b0cec2f3ed1e3fa383e91bd4050e8")
+            normalizedFixtureBytes, QCryptographicHash::Sha256).toHex(),
+        QByteArray("df18ca11d3052499d3ddc02ca18cd92e51d436c659dc756a69063cec9c29aadd")
         );
     const auto package = ClassTransferJsonCodec::fromJson(
         QJsonDocument::fromJson(fixtureBytes).object());

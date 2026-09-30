@@ -30,7 +30,7 @@ QString defaultDirectory(
             : QStandardPaths::DocumentsLocation;
     const QString directory =
         QStandardPaths::writableLocation(location);
-    return directory.isEmpty()
+    return directory.isEmpty() || !QDir(directory).exists()
         ? QDir::homePath()
         : directory;
 }

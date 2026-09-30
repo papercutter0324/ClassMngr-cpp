@@ -767,8 +767,11 @@ bool comparePdfToReference(
             return false;
         }
 
-        if (generated.getAllText(pageIndex).text()
-            != reference.getAllText(pageIndex).text())
+        // PDF text extraction can insert different line breaks and spacing
+        // when a platform uses different font metrics. Preserve the full
+        // character sequence while ignoring that layout-only whitespace.
+        if (generated.getAllText(pageIndex).text().simplified()
+            != reference.getAllText(pageIndex).text().simplified())
         {
             if (errorMessage)
             {

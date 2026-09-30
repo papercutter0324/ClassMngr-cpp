@@ -867,14 +867,16 @@ qtFileDialogUsesPurposeSpecificSystemDefaultWhenPreferenceIsEmpty()
     const QString systemDirectory = QStandardPaths::writableLocation(
         static_cast<QStandardPaths::StandardLocation>(location)
         );
-    const QString expectedDirectory = systemDirectory.isEmpty()
-        ? QDir::homePath()
-        : systemDirectory;
+    const QString expectedDirectory =
+        systemDirectory.isEmpty() || !QDir(systemDirectory).exists()
+            ? QDir::homePath()
+            : systemDirectory;
 
     InMemoryFileDialogDirectoryPreferences preferences;
     QtFileDialogService service(preferences, FileDialogBackend::Qt);
 
     bool inspected = false;
+    QString observedDirectory;
     QTimer::singleShot(
         0,
         [&]()
@@ -883,10 +885,7 @@ qtFileDialogUsesPurposeSpecificSystemDefaultWhenPreferenceIsEmpty()
                 QStringLiteral("classmngrFileDialog")
                 );
             QVERIFY(dialog);
-            QCOMPARE(
-                dialog->directory().absolutePath(),
-                QDir::cleanPath(expectedDirectory)
-                );
+            observedDirectory = dialog->directory().absolutePath();
             inspected = true;
             dialog->reject();
         }
@@ -899,6 +898,10 @@ qtFileDialogUsesPurposeSpecificSystemDefaultWhenPreferenceIsEmpty()
         }
         ).has_value());
     QVERIFY(inspected);
+    QCOMPARE(
+        observedDirectory,
+        QDir::cleanPath(expectedDirectory)
+        );
 }
 
 void DialogServicesTests::saveFileReturnsAccessoryChoice()

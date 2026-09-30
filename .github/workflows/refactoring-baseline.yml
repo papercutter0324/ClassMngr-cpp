@@ -121,8 +121,36 @@ jobs:
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
+          $aqtConfigPath = Join-Path $env:RUNNER_TEMP "aqt-settings.ini"
+          @"
+          [requests]
+          max_retries_to_retrieve_hash: 10
+          "@ | Set-Content -Path $aqtConfigPath -Encoding Ascii
+          $env:AQT_CONFIG = $aqtConfigPath
+          "AQT_CONFIG=$aqtConfigPath" | Out-File -FilePath $env:GITHUB_ENV -Append
+
           python -m pip install --disable-pip-version-check "aqtinstall @ git+https://github.com/miurahr/aqtinstall.git@8c3695d4a4e1ceabf6a74dc6c79681656dc6b74b"
-          python -m aqt install-qt windows desktop $env:QT_VERSION win64_msvc2022_64 --outputdir C:\Qt --modules qtpdf
+          if ($LASTEXITCODE -ne 0) {
+            throw "aqtinstall package installation failed with exit code $LASTEXITCODE"
+          }
+
+          $maxAttempts = 3
+          for ($attempt = 1; $attempt -le $maxAttempts; $attempt++) {
+            python -m aqt install-qt windows desktop $env:QT_VERSION win64_msvc2022_64 --outputdir C:\Qt --timeout 30 --modules qtpdf
+            $exitCode = $LASTEXITCODE
+
+            if ($exitCode -eq 0) {
+              break
+            }
+
+            if ($attempt -eq $maxAttempts) {
+              throw "Windows Qt installation failed after $maxAttempts attempts (exit code $exitCode)"
+            }
+
+            Write-Warning "Windows Qt installation failed on attempt $attempt (exit code $exitCode); retrying..."
+            Start-Sleep -Seconds (10 * $attempt)
+          }
+
           "CMAKE_GENERATOR=Visual Studio 17 2022" | Out-File -FilePath $env:GITHUB_ENV -Append
           "QT_MSVC_X64_PREFIX=C:\Qt\$env:QT_VERSION\msvc2022_64" | Out-File -FilePath $env:GITHUB_ENV -Append
 
