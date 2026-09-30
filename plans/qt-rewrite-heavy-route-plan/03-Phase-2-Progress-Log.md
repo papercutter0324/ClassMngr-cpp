@@ -8299,7 +8299,7 @@ fields/schedule/teacher/count/fallback parity. F167 implementation has not
 started. Gate 1 and Gate 2 remain Partial; Phase 2 remains In Progress and its
 exit gate remains Open.
 
-### Progress update - 2026-09-30 (F168 accepted; F169 selected)
+### Progress update - 2026-09-30 (F169 accepted; F170 selected)
 
 F167, source commit `97efac8b`, updates
 `ApplicationServicesClassDetailsPageReadPort` to use active-session
@@ -8330,17 +8330,28 @@ parity case passed with only the parity test and target registration overlaid;
 no production files were overlaid. `git diff --check` passed. No full suite or
 application build is claimed.
 
-F169 is selected: migrate `ApplicationServicesClassNotesSavePort` from
-`ClassService` to the active-session `ClassInfoRepository`. Preserve positive
-class-ID/request validation, trimming of both fields, and
-`ClassInfoValidator::validateNotes` result mapping. Require an open
-session/repository with no `DataService` fallback. Verify both trimmed fields
-and UTF-16-limit persistence, invalid input before write, unavailable session,
-and repository write failure preserving stored notes. Run
-`ClassMngrNextPlatformApplicationServicesClassNotesSavePortTests` and the
-ClassNotesPage integration regression. Cleanup evaluation kept `build/f168` for
-F169 because its configured Ninja cache already contains
-`ClassMngrNextPlatformApplicationServicesClassNotesSavePortTests` and
-`ClassMngrNextFeatureClassNotesPageTests`; the baseline parity scratch worktree
+F169, source commit `56dec15a`, migrates
+`ApplicationServicesClassNotesSavePort` to the open session's
+`ClassInfoRepository`, trims both fields, and uses
+`ClassInfoValidator::validateNotes` without `ClassService` or `DataService`
+fallback. It preserves invalid/unavailable/technical result mapping and the
+UTF-16 request limit. Independent Tester review and focused CTest passed 2/2:
+save-port target in 0.18s and ClassNotesPage target in 2.91s.
+`git diff --check` passed. No full suite or application build ran.
+
+F170 is selected as the narrower roster read-adapter slice: migrate
+`ApplicationServicesRosterReadPort` from
+`RosterService::roster()` to open-session `RosterRepository::loadRoster()`, with
+no service or `DataService` fallback. Preserve canonical class-ID validation;
+the full ordered sparse snapshot (columns, widths, UTF-16 cells, no row limit);
+successful empty roster; technical repository errors; and unavailable/closed
+session mapping. Verify `NextApplicationRosterReadQuery`,
+`NextPlatformApplicationServicesRosterReadPort`, and `RosterEditorWidgetSave`
+integration, including `loadClassPreservesModelNormalizationWidthsAndCleanState`
+and `emptyAndFailedReadsKeepBlankRosterAndRefreshOutputCapabilities`. Keep the
+Class Co-Teacher save adapter for a later slice because it requires full
+ClassInfo validation and regular/intensive schedule-conflict parity. The
+cleanup evaluation retains `build/f168` for F170 because its configured Ninja
+cache contains all three test targets. The baseline parity scratch worktree
 and build were removed. Gate 1 and Gate 2 remain Partial; Phase 2 remains In
 Progress and its exit gate remains Open.

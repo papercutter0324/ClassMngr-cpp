@@ -2200,24 +2200,24 @@ parity. Gates 1 and 2 remain Partial; Phase 2 remains In Progress/Open. A
 separate worker owns workflow repair; this work does not modify
 `.github/workflows/refactoring-baseline.yml`. No push was requested.
 
-## Current Phase 2 position - 2026-09-30 (F168 accepted; F169 selected)
+## Current Phase 2 position - 2026-09-30 (F169 accepted; F170 selected)
 
-F168 source commit `07493cab` migrates
-`ApplicationServicesClassDetailsSavePort` from `ClassService` to the active
-session's `ClassInfoRepository`, preserving validation, hidden fields and
-schedules, and typed outcomes. Focused current CTest passed 4/4: save-port
-tests 9/9, page display tests 5/5, page save tests 14/14, and save-parity tests
-9/9. The visible-save parity case also passed against pinned baseline
-`48fc5c5cc7dee78d82f8bf5f1bf8b51725575b99`; only the parity test and target
-registration were overlaid, with production files unchanged. `git diff --check`
-passed. No full suite or application build was run.
+F169 source commit `56dec15a` moves `ApplicationServicesClassNotesSavePort`
+from `ClassService` to the open session's `ClassInfoRepository`, trimming both
+fields and preserving `ClassInfoValidator::validateNotes()` plus typed error
+mapping. It has no service or `DataService` fallback. Independent CTest passed
+2/2 for `ClassMngrNextPlatformApplicationServicesClassNotesSavePortTests` and
+`ClassMngrNextFeatureClassNotesPageTests`; `git diff --check` passed. No full
+suite or application build was run.
 
-F169 is selected: migrate `ApplicationServicesClassNotesSavePort` from
-`ClassService` to the active-session `ClassInfoRepository`. Preserve request
-validation, positive IDs, trimming, `ClassInfoValidator::validateNotes()` and
-typed error mapping. Require an open session and repository with no
-`DataService` fallback. Acceptance covers both trimmed fields, UTF-16-limit
-persistence, invalid input before write, unavailable session, and repository
-write failure retaining stored notes; run its focused port target and the
-Class Notes page regression. Phase 2 remains In Progress/Open; Gates 1 and 2
-remain Partial. Workflow repair remains with the other worker.
+F170 is selected: migrate `ApplicationServicesRosterReadPort` from
+`RosterService::roster()` to the active-session `RosterRepository`. Preserve
+canonical class-ID validation; complete ordered sparse snapshots, columns,
+widths, UTF-16 cells, and no UI row limit; successful empty-roster results;
+technical repository errors; and unavailable/closed-session mapping. Keep the
+read boundary separate from roster save and other roster-service operations.
+Acceptance uses `NextApplicationRosterReadQuery`,
+`NextPlatformApplicationServicesRosterReadPort`, and `RosterEditorWidgetSave`
+integration coverage. Keep `build/f168` because its configured Ninja cache
+already contains all three targets. Phase 2 remains In Progress/Open; Gates 1
+and 2 remain Partial. Workflow repair remains with the other worker.

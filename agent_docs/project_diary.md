@@ -1620,3 +1620,12 @@ current focused save, display, and parity targets passed; the common visible
 save case also matched the pinned baseline without production overlays. F169
 continues the same bounded boundary migration for the Class Notes save port;
 preserve trimming and notes validation while requiring an open session.
+
+## 2026-09-30 - F169 Class Notes save adapter
+
+Keep the UTF-16 request limit at the typed boundary, trim both values after Qt
+conversion, and run `ClassInfoValidator::validateNotes` before the repository
+write. Requiring the open session removes the legacy service's `DataService`
+fallback; retain the existing typed error mapping and repository failure text.
+The focused fixture checks exact 10,000-unit requests with edge whitespace and
+surrogate pairs, plus failed-write preservation of both stored fields.

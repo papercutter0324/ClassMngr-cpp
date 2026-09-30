@@ -40,8 +40,8 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
   F162's GS Team Staff Directory save, F163's ClassesPage class-list read,
   F164's selected-class grade read, F165's selected-class subtitle read, and
   F166's RosterEditorWidget class subtitle read, and F167's ClassDetailsPage
-  display read and F168's ClassDetailsPage save port are accepted. F169 is
-  selected to migrate the ClassNotesPage save port.
+  display read, F168's ClassDetailsPage save port, and F169's ClassNotesPage
+  save port are accepted. F170 is selected to migrate the roster read port.
   The prior F123 candidate wording is historical;
   current Teacher Profile integration status is recorded in the progress log.
   Gates 1 and 2
@@ -713,14 +713,31 @@ passed after overlaying only the parity test and target registration; no
 production files were overlaid. `git diff --check` passed. No full suite or
 application build is claimed.
 
-## F169 selected ClassNotesPage save port
+## F169 accepted ClassNotesPage save port
 
-Migrate `ApplicationServicesClassNotesSavePort` from `ClassService` to the
-active-session `ClassInfoRepository`. Preserve positive-ID/request validation,
-trimming of both fields, and `ClassInfoValidator::validateNotes` result
-mapping. Require an open session and repository, with no `DataService`
-fallback. Test both trimmed fields and UTF-16-limit persistence, invalid input
-before write, unavailable session, and repository write failure preserving
-stored notes. Run `ClassMngrNextPlatformApplicationServicesClassNotesSavePortTests`
-and the ClassNotesPage integration regression. Phase 2 remains In Progress/Open;
-Gates 1 and 2 remain Partial.
+F169, source commit `56dec15a`, migrates
+`ApplicationServicesClassNotesSavePort` to the open session's
+`ClassInfoRepository`, trimming both fields and using
+`ClassInfoValidator::validateNotes` without `ClassService` or `DataService`
+fallback. Existing invalid, unavailable, and technical result mapping and the
+UTF-16 request limit remain. Independent Tester review and focused CTest passed
+2/2: save-port tests in 0.18s and ClassNotesPage tests in 2.91s.
+`git diff --check` passed. No full suite or application build is claimed.
+
+## F170 selected roster read port
+
+Migrate `ApplicationServicesRosterReadPort` from
+`RosterService::roster()` to the open session's
+`RosterRepository::loadRoster()`, with no service or `DataService` fallback.
+Preserve canonical class-ID validation; the complete ordered sparse snapshot
+(columns, widths, and UTF-16 cells, without a row limit); successful empty
+rosters; technical repository errors; and unavailable/closed-session mapping.
+Verify `NextApplicationRosterReadQuery`,
+`NextPlatformApplicationServicesRosterReadPort`, and `RosterEditorWidgetSave`
+integration, especially `loadClassPreservesModelNormalizationWidthsAndCleanState`
+and `emptyAndFailedReadsKeepBlankRosterAndRefreshOutputCapabilities`. This is
+the narrower read-adapter slice; defer the Class Co-Teacher save adapter because
+it requires full ClassInfo validation and regular/intensive schedule-conflict
+parity. Retain `build/f168`
+for F170; its configured Ninja cache already contains all three test targets.
+Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial.
