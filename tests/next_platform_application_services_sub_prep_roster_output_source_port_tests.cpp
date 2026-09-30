@@ -1,4 +1,5 @@
 #include "core/application_services.h"
+#include "app/services/feature_services.h"
 #include "data/data_service.h"
 #include "data/database/database_session.h"
 #include "domain/models/roster.h"
@@ -180,6 +181,9 @@ private slots:
     void readsSelectedClassesModeAndRequestedRosterColumns();
     void includesUnassignedTeacherAndUsesSelectedMode();
     void emptyScopeAndNoncanonicalIdsAvoidDatabaseReads();
+    void unavailableSessionsDoNotFallBackToDataService();
+    void staleTeacherFailureDoesNotReturnPartialInput();
+    void activeSessionScheduleReadFailureIsTechnical();
     void rejectsOutOfBoundRosterAndClassText();
 
 private:
@@ -360,6 +364,14 @@ emptyScopeAndNoncanonicalIdsAvoidDatabaseReads()
     QVERIFY(empty);
     QVERIFY(empty.value().classes.empty());
 
+    auto emptyDayRequest = requestFor(
+        {classId(1)},
+        {}
+        );
+    const auto emptyDays = port.loadSource(emptyDayRequest);
+    QVERIFY(emptyDays);
+    QVERIFY(emptyDays.value().classes.empty());
+
     const auto aliasedId = ClassId::fromString("01");
     QVERIFY(aliasedId.has_value());
     auto invalidRequest = requestFor(
@@ -369,6 +381,103 @@ emptyScopeAndNoncanonicalIdsAvoidDatabaseReads()
     const auto invalid = port.loadSource(invalidRequest);
     QVERIFY(!invalid);
     QCOMPARE(invalid.error().code, ErrorCode::InvalidInput);
+}
+
+void NextPlatformApplicationServicesSubPrepRosterOutputSourcePortTests::
+unavailableSessionsDoNotFallBackToDataService()
+{
+    ApplicationServices services;
+    QVERIFY(services.dataService());
+    ApplicationServicesSubPrepRosterOutputSourcePort port(services);
+    const auto request = requestFor(
+        {classId(1)},
+        {SubPrepWeekday::Monday}
+        );
+
+    const auto unopened = port.loadSource(request);
+    QVERIFY(!unopened);
+    QCOMPARE(unopened.error().code, ErrorCode::NotFound);
+
+    QVERIFY(openDatabase(services, m_directory));
+    services.closeDatabase();
+    QVERIFY(!services.hasOpenDatabase());
+
+    const auto closed = port.loadSource(request);
+    QVERIFY(!closed);
+    QCOMPARE(closed.error().code, ErrorCode::NotFound);
+}
+
+void NextPlatformApplicationServicesSubPrepRosterOutputSourcePortTests::
+staleTeacherFailureDoesNotReturnPartialInput()
+{
+    ApplicationServices services;
+    QVERIFY(openDatabase(services, m_directory));
+    const int firstClass = createClass(
+        services,
+        QStringLiteral("Unassigned first class"),
+        -1,
+        QStringLiteral("E4"),
+        QStringLiteral("Theseus"),
+        QStringLiteral("Monday"),
+        QStringLiteral("9:00 AM"),
+        QStringLiteral("10:00 AM")
+        );
+    const int staleTeacherClass = createClass(
+        services,
+        QStringLiteral("Stale teacher second class"),
+        -1,
+        QStringLiteral("E5"),
+        QStringLiteral("Artemis"),
+        QStringLiteral("Monday"),
+        QStringLiteral("11:00 AM"),
+        QStringLiteral("12:00 PM")
+        );
+    QVERIFY(firstClass > 0);
+    QVERIFY(staleTeacherClass > 0);
+    QVERIFY(services.rosterService()->saveRoster(
+        firstClass,
+        rosterWithColumns()
+        ));
+    QVERIFY(services.rosterService()->saveRoster(
+        staleTeacherClass,
+        rosterWithColumns()
+        ));
+    QVERIFY(executeSql(services, QStringLiteral("PRAGMA foreign_keys = OFF")));
+    QVERIFY(executeSql(
+        services,
+        QStringLiteral("UPDATE class_info SET teacher_id = 999999 WHERE class_id = %1")
+            .arg(staleTeacherClass)
+        ));
+    QVERIFY(executeSql(services, QStringLiteral("PRAGMA foreign_keys = ON")));
+
+    ApplicationServicesSubPrepRosterOutputSourcePort port(services);
+    const auto result = port.loadSource(requestFor(
+        {classId(firstClass), classId(staleTeacherClass)},
+        {SubPrepWeekday::Monday}
+        ));
+
+    QVERIFY(!result);
+    QVERIFY(!result.hasValue());
+    QCOMPARE(result.error().code, ErrorCode::NotFound);
+    QVERIFY(!result.error().message.empty());
+}
+
+void NextPlatformApplicationServicesSubPrepRosterOutputSourcePortTests::
+activeSessionScheduleReadFailureIsTechnical()
+{
+    ApplicationServices services;
+    QVERIFY(openDatabase(services, m_directory));
+    QVERIFY(executeSql(services, QStringLiteral("DROP TABLE class_times")));
+
+    ApplicationServicesSubPrepRosterOutputSourcePort port(services);
+    const auto result = port.loadSource(requestFor(
+        {classId(1)},
+        {SubPrepWeekday::Monday}
+        ));
+
+    QVERIFY(!result);
+    QCOMPARE(result.error().code, ErrorCode::Technical);
+    QVERIFY(!result.error().message.empty());
 }
 
 void NextPlatformApplicationServicesSubPrepRosterOutputSourcePortTests::

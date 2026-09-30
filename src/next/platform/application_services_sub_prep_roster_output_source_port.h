@@ -1,7 +1,11 @@
 #pragma once
 
-#include "app/services/feature_services.h"
 #include "core/application_services.h"
+#include "data/database/database_session.h"
+#include "data/repositories/class_info_repository.h"
+#include "data/repositories/class_repository.h"
+#include "data/repositories/roster_repository.h"
+#include "data/repositories/teacher_repository.h"
 #include "next/application/sub_prep_roster_output_source_query.h"
 
 #include <QByteArray>
@@ -152,16 +156,29 @@ public:
                 rosterColumns.append(*decoded);
             }
 
-            ClassService* classService = m_services.classService();
-            TeacherService* teacherService = m_services.teacherService();
-            RosterService* rosterService = m_services.rosterService();
-            if (!classService || !classService->isAvailable()
-                || !teacherService || !teacherService->isAvailable()
-                || !rosterService || !rosterService->isAvailable())
+            DatabaseSession* const session = m_services.databaseSession();
+            if (!session || !session->isOpen())
             {
                 return failure(
                     Domain::ErrorCode::NotFound,
-                    "The Sub Prep roster output services are unavailable."
+                    "The active database session for Sub Prep roster output is unavailable."
+                    );
+            }
+
+            ClassInfoRepository* const classInfoRepository =
+                session->classInfoRepository();
+            ClassRepository* const classRepository =
+                session->classRepository();
+            TeacherRepository* const teacherRepository =
+                session->teacherRepository();
+            RosterRepository* const rosterRepository =
+                session->rosterRepository();
+            if (!classInfoRepository || !classRepository
+                || !teacherRepository || !rosterRepository)
+            {
+                return failure(
+                    Domain::ErrorCode::NotFound,
+                    "A Sub Prep roster output repository is unavailable."
                     );
             }
 
@@ -170,7 +187,7 @@ public:
                 ? ScheduleType::Intensive
                 : ScheduleType::Regular;
             const ::Result<QList<ClassInfo>> loadedSchedule =
-                classService->classInfosForScheduleScope(
+                classInfoRepository->loadClassInfosForScheduleScope(
                     legacyClassIds,
                     selectedDays,
                     scheduleType,
@@ -184,14 +201,14 @@ public:
                     );
             if (!loadedSchedule)
             {
-                if (!classService->isAvailable())
+                if (!session->isOpen())
                 {
                     return failure(
                         Domain::ErrorCode::NotFound,
-                        "The class service became unavailable while loading roster output."
+                        "The active database session became unavailable while loading roster output."
                         );
                 }
-                return legacyFailure(
+                return repositoryFailure(
                     loadedSchedule.error(),
                     "Selected Sub Prep roster schedule could not be loaded."
                     );
@@ -273,17 +290,17 @@ public:
                 }
 
                 const ::Result<Classroom> classroom =
-                    classService->classroom(classId);
+                    classRepository->getClassById(classId);
                 if (!classroom)
                 {
-                    if (!classService->isAvailable())
+                    if (!session->isOpen())
                     {
                         return failure(
                             Domain::ErrorCode::NotFound,
-                            "The class service became unavailable while loading a selected class."
+                            "The active database session became unavailable while loading a selected class."
                             );
                     }
-                    return legacyFailure(
+                    return repositoryFailure(
                         classroom.error(),
                         "A selected Sub Prep class could not be loaded."
                         );
@@ -297,17 +314,17 @@ public:
                 }
 
                 const ::Result<ClassInfo> loadedInfo =
-                    classService->classInfo(classId);
+                    classInfoRepository->loadClassInfo(classId);
                 if (!loadedInfo)
                 {
-                    if (!classService->isAvailable())
+                    if (!session->isOpen())
                     {
                         return failure(
                             Domain::ErrorCode::NotFound,
-                            "The class service became unavailable while loading class output details."
+                            "The active database session became unavailable while loading class output details."
                             );
                     }
-                    return legacyFailure(
+                    return repositoryFailure(
                         loadedInfo.error(),
                         "Selected Sub Prep class output details could not be loaded."
                         );
@@ -398,17 +415,17 @@ public:
                     if (copiedTeacherIds.insert(info.teacherId).second)
                     {
                         const ::Result<Teacher> loadedTeacher =
-                            teacherService->teacher(info.teacherId);
+                            teacherRepository->getTeacher(info.teacherId);
                         if (!loadedTeacher)
                         {
-                            if (!teacherService->isAvailable())
+                            if (!session->isOpen())
                             {
                                 return failure(
                                     Domain::ErrorCode::NotFound,
-                                    "The teacher service became unavailable while loading roster output."
+                                    "The active database session became unavailable while loading roster output."
                                     );
                             }
-                            return legacyFailure(
+                            return repositoryFailure(
                                 loadedTeacher.error(),
                                 "The selected class teacher could not be loaded."
                                 );
@@ -507,7 +524,7 @@ public:
                     Application::kSubPrepRosterOutputMaxTotalTextBytes
                     - totalTextBytes;
                 const ::Result<Roster> loadedRoster =
-                    rosterService->rosterForOutput(
+                    rosterRepository->loadRosterForOutput(
                         classId,
                         rosterColumns,
                         rowsRemaining,
@@ -516,14 +533,14 @@ public:
                         );
                 if (!loadedRoster)
                 {
-                    if (!rosterService->isAvailable())
+                    if (!session->isOpen())
                     {
                         return failure(
                             Domain::ErrorCode::NotFound,
-                            "The roster service became unavailable while loading selected output."
+                            "The active database session became unavailable while loading selected output."
                             );
                     }
-                    return legacyFailure(
+                    return repositoryFailure(
                         loadedRoster.error(),
                         "A selected class roster could not be loaded within its output limits."
                         );
@@ -792,7 +809,7 @@ private:
     }
 
     [[nodiscard]] static Application::SubPrepRosterOutputSourceReadResult
-    legacyFailure(const QString& message, const char* fallback)
+    repositoryFailure(const QString& message, const char* fallback)
     {
         const QString normalized = message.toLower();
         Domain::ErrorCode code = Domain::ErrorCode::Technical;
