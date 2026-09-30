@@ -4052,7 +4052,7 @@ writes, unavailable/closed sessions, and repository write failure retaining
 both existing fields. `git diff --check` passed. No full suite or application
 build was run.
 
-## 2026-10-01 - F173 accepted; F174 selected
+## 2026-10-01 - F174 accepted; F175 selected
 
 F172 source commit `2daa209e` migrates
 `ApplicationServicesClassCoTeacherAssignmentPort` to the active session's
@@ -4087,19 +4087,35 @@ Focused verification ran
 passed 3/3. `git diff --check` passed with only line-ending conversion
 warnings. No full suite or application build was run.
 
-Two independent Explorer lanes selected F174: migrate
+F174 source commit `16188918` migrates
 `ApplicationServicesSpeakingEvaluationReadPort` from
 `SpeakingEvaluationService::evaluation()` to the open session's
 `SpeakingEvalRepository::loadSpeakingEval()`, with no service or `DataService`
-fallback. Preserve canonical positive class-ID checks, exact evaluation-name
-lookup, ordered 25x11 UTF-16 matrix conversion, successful empty results for
-missing evaluations, Technical repository-error mapping, closed-session
-`NotFound`, and the page's blank clean grid when a read fails. The application
-query permits whitespace-only evaluation names while the repository rejects
-them as technical failures; retain that existing behavior. Focused targets:
-`ClassMngrNextApplicationSpeakingEvaluationQueryTests`,
+fallback. The port retains canonical positive class-ID checks, exact
+evaluation-name lookup, ordered 25x11 UTF-16 matrix conversion, successful
+empty results for missing evaluations, Technical repository-error mapping,
+closed-session `NotFound`, and the page's blank clean grid after a failed read.
+The application query permits whitespace-only names while the repository
+rejects them as technical failures; tests preserve that behavior. Focused CTest
+ran `ClassMngrNextApplicationSpeakingEvaluationQueryTests`,
 `ClassMngrNextPlatformApplicationServicesSpeakingEvaluationReadPortTests`, and
-`ClassMngrSpeakingEvalPageSaveTests`. Retain `build/f168` for implementation.
+`ClassMngrSpeakingEvalPageSaveTests`; 3/3 passed. The independent Tester also
+passed 3/3. `git diff --check` passed with line-ending conversion warnings. No
+full suite or application build was run.
+
+Two independent Explorer lanes selected F175: migrate
+`ApplicationServicesScheduleBuilderSourcePort` from constructing
+`ClassService(session, nullptr)` to calling the active session's
+`ClassInfoRepository::loadScheduleClassInfos()`. Preserve active-session
+availability, NotFound and Technical failures, snapshot field mapping and
+source order, raw regular/intensive schedule rows, absent/stale teacher data,
+testing-class exclusion, and ScheduleWidget regular/intensive/testing and
+failure behavior. Focused targets are
+`ClassMngrNextApplicationScheduleBuilderSourceSnapshotTests`,
+`ClassMngrNextPlatformApplicationServicesScheduleBuilderSourcePortTests`,
+`ClassMngrScheduleBuilderTests`, and `ClassMngrScheduleWidgetTests`; `build/f168`
+contains all four. The Speaking Evaluation save migration is deferred until
+its validator normalization and Korean-name-length policy have a safe owner.
 
 The active deployment objective is Phase 2 under the Heavy route; deployment
 ID `phase2_resume_20260929`. Gates 1 and 2 remain Partial and Phase 2 remains

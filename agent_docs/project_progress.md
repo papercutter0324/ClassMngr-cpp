@@ -2200,7 +2200,7 @@ parity. Gates 1 and 2 remain Partial; Phase 2 remains In Progress/Open. A
 separate worker owns workflow repair; this work does not modify
 `.github/workflows/refactoring-baseline.yml`. No push was requested.
 
-## Current Phase 2 position - 2026-10-01 (F173 accepted; F174 selected)
+## Current Phase 2 position - 2026-10-01 (F174 accepted; F175 selected)
 
 F170 source commit `68391fac` moves `ApplicationServicesRosterReadPort` from
 `RosterService::roster()` to the active session's `RosterRepository`, with no
@@ -2245,15 +2245,24 @@ passed 3/3: application use case, Platform port, and ScheduleWidget. The
 independent Tester also passed 3/3. `git diff --check` passed. No full suite or
 application build was run.
 
-F174 is selected: migrate `ApplicationServicesSpeakingEvaluationReadPort` from
-`SpeakingEvaluationService::evaluation()` to the active session's
-`SpeakingEvalRepository::loadSpeakingEval()`, without a service or `DataService`
-fallback. Preserve canonical positive class IDs, exact-name lookup, ordered
-25x11 Unicode matrices, missing evaluations as successful empty results,
-current error mapping, and the page's blank clean grid after a failed read.
-Retain the whitespace-only evaluation-name behavior (the query permits it and
-the repository currently rejects it as a technical error). Focused targets are
-`ClassMngrNextApplicationSpeakingEvaluationQueryTests`,
-`ClassMngrNextPlatformApplicationServicesSpeakingEvaluationReadPortTests`, and
-`ClassMngrSpeakingEvalPageSaveTests`. Phase 2 remains In Progress/Open; Gates 1
-and 2 remain Partial. Workflow repair remains with the other worker.
+F174 source commit `16188918` migrates
+`ApplicationServicesSpeakingEvaluationReadPort` to the active session's
+`SpeakingEvalRepository`, without service or `DataService` fallback. Both the
+implementation run and independent verification passed the 3 focused targets:
+application query, Platform port, and SpeakingEval page. Coverage includes
+canonical IDs, exact and missing-name behavior, ordered UTF-16 matrix data,
+repository failures, and closed-session behavior; page tests retain blank,
+clean state after failed reads. `git diff --check` passed. No full suite or
+application build was run.
+
+F175 is selected: migrate `ApplicationServicesScheduleBuilderSourcePort` from
+constructing `ClassService(session, nullptr)` to the active session's
+`ClassInfoRepository::loadScheduleClassInfos()`. Preserve session availability,
+NotFound/Technical results, mapped class and teacher fields, source ordering,
+raw regular/intensive schedules, missing/stale teacher behavior, testing-class
+exclusion, and ScheduleWidget modes. Focused targets are
+`ClassMngrNextApplicationScheduleBuilderSourceSnapshotTests`,
+`ClassMngrNextPlatformApplicationServicesScheduleBuilderSourcePortTests`,
+`ClassMngrScheduleBuilderTests`, and `ClassMngrScheduleWidgetTests`; all four
+exist in `build/f168`. Phase 2 remains In Progress/Open; Gates 1 and 2 remain
+Partial. Workflow repair remains with the other worker.

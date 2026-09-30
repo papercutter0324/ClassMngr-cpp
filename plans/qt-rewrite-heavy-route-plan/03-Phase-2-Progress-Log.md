@@ -8299,7 +8299,7 @@ fields/schedule/teacher/count/fallback parity. F167 implementation has not
 started. Gate 1 and Gate 2 remain Partial; Phase 2 remains In Progress and its
 exit gate remains Open.
 
-### Progress update - 2026-10-01 (F173 accepted; F174 selected)
+### Progress update - 2026-10-01 (F174 accepted; F175 selected)
 
 F167, source commit `97efac8b`, updates
 `ApplicationServicesClassDetailsPageReadPort` to use active-session
@@ -8384,16 +8384,27 @@ targets: `ClassMngrNextApplicationScheduleSlotStateSaveTests`,
 `ClassMngrScheduleWidgetTests`. `git diff --check` passed. No full suite or
 application build ran.
 
-F174 migrates `ApplicationServicesSpeakingEvaluationReadPort` from
-`SpeakingEvaluationService::evaluation()` to open-session
-`SpeakingEvalRepository::loadSpeakingEval()`, with no service or `DataService`
-fallback. Preserve canonical positive-ID handling; exact name and Unicode
-25x11 matrix conversion/order; missing evaluation as successful empty result;
-Technical error mapping; closed-session NotFound; and the page's blank, clean
-grid on failed reads. Whitespace-only evaluation names remain query-valid but
-are rejected as trimmed-empty by the repository and mapped to Technical by the
-adapter. Verify `ClassMngrNextApplicationSpeakingEvaluationQueryTests`,
+F174, source commit `16188918`, migrates
+`ApplicationServicesSpeakingEvaluationReadPort` to the active-session
+`SpeakingEvalRepository`, with no feature-service or `DataService` fallback.
+Independent Tester and implementer each reported all three targets passed:
+`ClassMngrNextApplicationSpeakingEvaluationQueryTests`,
 `ClassMngrNextPlatformApplicationServicesSpeakingEvaluationReadPortTests`, and
-`ClassMngrSpeakingEvalPageSaveTests`. Retain `build/f168`; its Ninja target list
-contains all three F174 targets. Gate 1 and Gate 2 remain Partial; Phase 2
-remains In Progress and its exit gate remains Open.
+`ClassMngrSpeakingEvalPageSaveTests`. Coverage includes canonical IDs,
+exact/missing name behavior, 25x11 UTF-16 Unicode order, whitespace-only names
+and SQL errors mapped to Technical, closed-session NotFound, and a blank clean
+grid on page read failure. `git diff --check` passed. No full suite or app build
+ran.
+
+F175 migrates `ApplicationServicesScheduleBuilderSourcePort` away from
+constructing `ClassService(session, nullptr)` to active-session
+`DatabaseSession::classInfoRepository()->loadScheduleClassInfos()`. Preserve
+active-session checks, NotFound/Technical mappings, snapshot fields/order/raw
+schedules, testing-class exclusion, teacher missing/stale behavior, and widget
+modes. Verify `ClassMngrNextApplicationScheduleBuilderSourceSnapshotTests`,
+`ClassMngrNextPlatformApplicationServicesScheduleBuilderSourcePortTests`,
+`ClassMngrScheduleBuilderTests`, and `ClassMngrScheduleWidgetTests`. Retain
+`build/f168`; its Ninja target list contains all four F175 targets. Defer the
+Speaking Evaluation save port until validator normalization/validation and the
+questionable Korean length policy have explicit ownership. Gate 1 and Gate 2
+remain Partial; Phase 2 remains In Progress and its exit gate remains Open.

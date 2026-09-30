@@ -1667,3 +1667,10 @@ legacy service doubles only for legacy callers. The repository fake should
 apply override updates and default-state deletions to its stored fixture so
 reload assertions observe the committed state; cover preservation of unrelated
 overrides and failed-write behavior.
+
+## 2026-10-01 - F174 Speaking Evaluation read port
+
+Keep evaluation names exact at the typed query boundary. The current query
+allows whitespace-only names, while the repository rejects them as blank; the
+Platform adapter therefore preserves a Technical failure for this case. Cover
+the mapping explicitly when replacing service delegation with direct reads.

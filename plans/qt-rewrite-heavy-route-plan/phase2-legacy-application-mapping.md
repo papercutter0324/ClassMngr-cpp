@@ -4132,8 +4132,8 @@ F145 details update and F146 creation remain separate accepted boundaries.
 Production commit `b037b4216b71c55c7793df5f7bbbfc4a00690065`, page transition
 fix `315b3ff33b7e2ab42b43d52cd168ce21a92158c9`, and acceptance-test commit
 `397376e439f4b5955c82948ab0c225aaf776d679` are recorded with verification
-limits in the [Phase 2 progress log](03-Phase-2-Progress-Log.md). F148-F173
-are accepted. F174 is selected; its boundary and acceptance criteria are in
+limits in the [Phase 2 progress log](03-Phase-2-Progress-Log.md). F148-F174
+are accepted. F175 is selected; its boundary and acceptance criteria are in
 the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 
 ## Class-details save mapping: F126 and F139
@@ -4505,18 +4505,31 @@ targets: `ClassMngrNextApplicationScheduleSlotStateSaveTests`,
 `ClassMngrScheduleWidgetTests`. `git diff --check` passed. No full suite or
 application build ran. See the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 
-## F174 selected speaking-evaluation read port
+## F174 accepted speaking-evaluation read port
 
-Migrate `ApplicationServicesSpeakingEvaluationReadPort` from
-`SpeakingEvaluationService::evaluation()` to open-session
-`SpeakingEvalRepository::loadSpeakingEval()`, with no service or `DataService`
-fallback. Preserve canonical positive-ID handling; exact name and Unicode
-25x11 matrix conversion/order; missing evaluation as a successful empty result;
-Technical error mapping; closed-session NotFound; and the page's blank, clean
-grid on failed reads. Whitespace-only evaluation names remain query-valid but
-are rejected as trimmed-empty by the repository and mapped to Technical by the
-adapter. Verify `ClassMngrNextApplicationSpeakingEvaluationQueryTests`,
+F174, source commit `16188918`, migrates
+`ApplicationServicesSpeakingEvaluationReadPort` to the active-session
+`SpeakingEvalRepository`, with no feature-service or `DataService` fallback.
+Independent Tester and implementer each reported all three targets passed:
+`ClassMngrNextApplicationSpeakingEvaluationQueryTests`,
 `ClassMngrNextPlatformApplicationServicesSpeakingEvaluationReadPortTests`, and
-`ClassMngrSpeakingEvalPageSaveTests`. The configured `build/f168` Ninja target
-list contains all three F174 targets and is retained for F174. Phase 2 remains
-In Progress/Open; Gates 1 and 2 remain Partial.
+`ClassMngrSpeakingEvalPageSaveTests`. Coverage includes canonical IDs,
+exact/missing name behavior, 25x11 UTF-16 Unicode order, whitespace-only names
+and SQL errors mapped to Technical, closed-session NotFound, and a blank clean
+grid on page read failure. `git diff --check` passed. No full suite or app build
+ran. See the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
+
+## F175 selected ScheduleBuilder source port
+
+Migrate `ApplicationServicesScheduleBuilderSourcePort` away from constructing
+`ClassService(session, nullptr)` to active-session
+`DatabaseSession::classInfoRepository()->loadScheduleClassInfos()`. Preserve
+active-session checks, NotFound/Technical mappings, snapshot fields/order/raw
+schedules, testing-class exclusion, teacher missing/stale behavior, and widget
+modes. Verify `ClassMngrNextApplicationScheduleBuilderSourceSnapshotTests`,
+`ClassMngrNextPlatformApplicationServicesScheduleBuilderSourcePortTests`,
+`ClassMngrScheduleBuilderTests`, and `ClassMngrScheduleWidgetTests`. Retain
+`build/f168`; its Ninja target list contains all four F175 targets. Defer the
+Speaking Evaluation save port until validator normalization/validation and the
+questionable Korean length policy have explicit ownership. Phase 2 remains In
+Progress/Open; Gates 1 and 2 remain Partial.
