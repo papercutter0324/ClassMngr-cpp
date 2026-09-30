@@ -1648,3 +1648,13 @@ persisted snapshot before and after; exercise repository rollback with an
 injected write failure. F172 is the Co-Teacher assignment save port, whose
 direct repository path must retain full class validation and regular/intensive
 schedule-conflict checks.
+
+## 2026-10-01 - F172 Co-Teacher assignment save port
+
+ClassInfo's teacher details are joined from the selected teacher record, while
+the repository persists the teacher ID, class fields, and schedules. Verify
+assignment by checking the selected teacher's joined metadata separately from
+the unchanged stored class fields; verify unassignment clears joined metadata.
+Keep full validation and both schedule-conflict preflights before the
+transactional class-info save. F173 pairs the already-migrated slot-state read
+with its save port.

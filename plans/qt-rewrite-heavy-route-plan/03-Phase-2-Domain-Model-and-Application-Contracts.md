@@ -42,7 +42,8 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
   F166's RosterEditorWidget class subtitle read, and F167's ClassDetailsPage
   display read, F168's ClassDetailsPage save port, and F169's ClassNotesPage
   save port, F170's roster read port, and F171's roster save port are accepted.
-  F172 is selected to migrate the Class Co-Teacher assignment save port.
+  F172's Class Co-Teacher assignment save port is accepted. F173 is selected to
+  migrate the ScheduleWidget slot-state save port.
   The prior F123 candidate wording is historical;
   current Teacher Profile integration status is recorded in the progress log.
   Gates 1 and 2
@@ -749,17 +750,36 @@ the allow flag, injected-DB-failure rollback, and closed session with
 Platform 0.24s, and `RosterEditorWidgetSave` 2.03s (2.30s total).
 `git diff --check` passed. No full suite or application build is claimed.
 
-## F172 selected Class Co-Teacher assignment save port
+## F172 accepted Class Co-Teacher assignment save port
 
-Migrate `ApplicationServicesClassCoTeacherAssignmentPort` to persistence via
-the active-session `ClassInfoRepository`, with no `ClassService` or
-`DataService` fallback. Preserve typed teacher assignment/unassignment, every
-other class field, full `ClassInfoValidator` normalization/validation, regular
-and intensive schedule-conflict checks and current errors, plus repository and
-session errors and transaction behavior. Verify
+F172, source commit `2daa209e`, migrates
+`ApplicationServicesClassCoTeacherAssignmentPort` to the active-session
+`ClassInfoRepository`, preserving positive-ID behavior, typed assignment and
+unassignment, stored class fields/schedules, joined teacher metadata, full
+`ClassInfoValidator` normalization, and regular-then-intensive conflict checks
+with exact current messages. It has no `ClassService` or `DataService`
+fallback. Port tests cover invalid IDs/loaded data, exact regular/intensive
+conflict messages and precedence, complete no-write state, injected
+transactional rollback, and open/closed sessions. Worker and independent Tester
+each built and passed 3/3:
 `ClassMngrNextApplicationClassCoTeacherAssignmentTests`,
 `ClassMngrNextPlatformApplicationServicesClassCoTeacherAssignmentPortTests`,
-and `ClassMngrNextFeatureClassCoTeacherPageTests`. Cover both conflict types,
-invalid class input, complete unchanged-field parity, unavailable session,
-write failure/rollback, and existing page dirty/error behavior. Phase 2 remains
-In Progress/Open; Gates 1 and 2 remain Partial.
+and `ClassMngrNextFeatureClassCoTeacherPageTests`. `git diff --check` passed.
+No full suite or application build is claimed.
+
+## F173 selected ScheduleWidget slot-state save port
+
+Migrate `ApplicationServicesScheduleSlotStateSavePort` from
+`ScheduleService::saveIntensiveSlotState()` to active-session
+`IntensiveSlotStateRepository::saveIntensiveSlotState()`, with no service or
+`DataService` fallback. Make `isAvailable()` reflect the open active
+session/repository. Preserve typed validation, weekday/HH:mm/state-token
+mapping, selected-equals-default deletion, and ScheduleWidget success, warning,
+unavailable, reload, and shared-toggle behavior. Verify
+`ClassMngrNextApplicationScheduleSlotStateSaveTests`,
+`ClassMngrNextPlatformApplicationServicesScheduleSlotStateSavePortTests`, and
+`ClassMngrScheduleWidgetTests`. Cover direct repository readback for nondefault
+save and deletion; invalid input no-write; repository write failure as
+Technical; no-session/closed-session NotFound with facade present; and widget
+integration. Retain `build/f168`; its Ninja target list contains all three
+F173 targets. Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial.

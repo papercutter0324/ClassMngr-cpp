@@ -2200,7 +2200,7 @@ parity. Gates 1 and 2 remain Partial; Phase 2 remains In Progress/Open. A
 separate worker owns workflow repair; this work does not modify
 `.github/workflows/refactoring-baseline.yml`. No push was requested.
 
-## Current Phase 2 position - 2026-10-01 (F171 accepted; F172 selected)
+## Current Phase 2 position - 2026-10-01 (F172 accepted; F173 selected)
 
 F170 source commit `68391fac` moves `ApplicationServicesRosterReadPort` from
 `RosterService::roster()` to the active session's `RosterRepository`, with no
@@ -2224,16 +2224,30 @@ save port (0.24s), and `RosterEditorWidgetSave` (2.03s; 2.30s total). The
 independent Tester also passed 3/3. `git diff --check` passed. No full suite or
 application build was run.
 
-F172 is selected: migrate `ApplicationServicesClassCoTeacherAssignmentPort`
-to active-session `ClassInfoRepository` persistence, with no
-`ClassService`/`DataService` fallback. Preserve typed assignment/unassignment,
-all unedited class fields, `ClassInfoValidator` normalization and validation,
-and regular plus intensive schedule-conflict checks before saving. Acceptance
-covers repository/session errors and transactional failure, class-field
-preservation, validation, both conflict types, and
-`NextFeatureClassCoTeacherPage` dirty/error behavior. Focused targets are
-`ClassMngrNextApplicationClassCoTeacherAssignmentTests`,
-`ClassMngrNextPlatformApplicationServicesClassCoTeacherAssignmentPortTests`,
-and `ClassMngrNextFeatureClassCoTeacherPageTests`; `build/f168` contains them.
-Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial. Workflow repair
-remains with the other worker.
+F172 source commit `2daa209e` migrates
+`ApplicationServicesClassCoTeacherAssignmentPort` to the active session's
+`ClassInfoRepository`, with no `ClassService` or `DataService` fallback. It
+preserves positive-ID behavior, typed assignment/unassignment, complete stored
+class fields and schedules, and joined teacher metadata behavior. It also
+retains `ClassInfoValidator` normalization/validation and regular-before-
+intensive conflict checks with the existing message. Port tests cover invalid
+IDs and loaded data, exact regular and intensive conflict errors and priority,
+no-write preservation, injected transactional failure, and open/closed session
+behavior. Independent focused CTest passed 3/3: Application use case, Platform
+port, and Co-Teacher page targets. The independent Tester also passed 3/3.
+`git diff --check` passed. No full suite or application build was run.
+
+F173 is selected: migrate `ApplicationServicesScheduleSlotStateSavePort` from
+`ScheduleService::saveIntensiveSlotState()` to the active session's
+`IntensiveSlotStateRepository::saveIntensiveSlotState()`, with no service or
+`DataService` fallback. Make `isAvailable()` reflect the active session and its
+repository. Preserve typed validation; weekday, `HH:mm`, and state-token
+mapping; default-state deletion; and widget success, warning, reload, and
+shared-toggle behavior. Acceptance covers repository persistence/deletion,
+invalid input without writes, repository failure mapping, unavailable/closed
+session behavior, and `ScheduleWidget` integration. Run
+`ClassMngrNextApplicationScheduleSlotStateSaveTests`,
+`ClassMngrNextPlatformApplicationServicesScheduleSlotStateSavePortTests`, and
+`ClassMngrScheduleWidgetTests`. Retain `build/f168`; its Ninja target list has
+all three. Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial.
+Workflow repair remains with the other worker.

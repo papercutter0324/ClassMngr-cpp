@@ -4052,36 +4052,35 @@ writes, unavailable/closed sessions, and repository write failure retaining
 both existing fields. `git diff --check` passed. No full suite or application
 build was run.
 
-## 2026-10-01 - F171 accepted; F172 selected
+## 2026-10-01 - F172 accepted; F173 selected
 
-F171 source commit `7cb8e5d7` migrates `ApplicationServicesRosterSavePort`
-from `RosterService::saveRoster()` to the active-session
-`RosterRepository::saveRoster()`, with no service or `DataService` fallback.
-It preserves canonical-ID/session checks, roster normalization and validation,
-the questionable Korean name-length choice, and Technical failure mapping.
-Tests cover normalized snapshot persistence, complete no-write behavior for
-invalid input, the allow flag, repository rollback, and the closed-session
-path.
+F172 source commit `2daa209e` migrates
+`ApplicationServicesClassCoTeacherAssignmentPort` to the active session's
+`ClassInfoRepository`, with no `ClassService` or `DataService` fallback. It
+preserves positive-ID behavior, typed assignment/unassignment, stored class
+fields and schedules, and joined teacher metadata behavior. It also retains
+`ClassInfoValidator` normalization/validation and regular-before-intensive
+conflict checks with the existing error message. Tests cover invalid IDs and
+loaded data, exact regular and intensive conflict errors and priority,
+complete no-write preservation, injected transactional failure, and
+open/closed session behavior.
 
-Build targets:
-`ClassMngrNextApplicationRosterSaveUseCaseTests`,
-`ClassMngrNextPlatformApplicationServicesRosterSavePortTests`, and
-`ClassMngrRosterEditorWidgetSaveTests`. Independent CTest ran
-`ctest --test-dir build/f168 -R "ClassMngrNextApplicationRosterSaveUseCaseTests|ClassMngrNextPlatformApplicationServicesRosterSavePortTests|ClassMngrRosterEditorWidgetSaveTests" --output-on-failure`;
-3/3 passed (application 0.02s, Platform 0.24s, widget 2.03s; 2.30s total).
-The independent Tester also passed 3/3. `git diff --check` passed. No full
-suite or application build was run.
+Independent CTest ran
+`ctest --test-dir build/f168 -R "ClassMngrNextApplicationClassCoTeacherAssignmentTests|ClassMngrNextPlatformApplicationServicesClassCoTeacherAssignmentPortTests|ClassMngrNextFeatureClassCoTeacherPageTests" --output-on-failure`;
+3/3 passed. The independent Tester also passed 3/3. `git diff --check` passed.
+No full suite or application build was run.
 
-F172 is selected: migrate `ApplicationServicesClassCoTeacherAssignmentPort`
-to active-session `ClassInfoRepository` persistence, with no
-`ClassService`/`DataService` fallback. Preserve typed assignment/unassignment,
-all unedited class fields, `ClassInfoValidator` normalization and validation,
-and regular plus intensive schedule-conflict checks before saving. Acceptance
-covers repository/session errors and transactional failure, class-field
-preservation, validation, both conflict types, and
-`NextFeatureClassCoTeacherPage` dirty/error behavior. Run
-`ClassMngrNextApplicationClassCoTeacherAssignmentTests`,
-`ClassMngrNextPlatformApplicationServicesClassCoTeacherAssignmentPortTests`,
-and `ClassMngrNextFeatureClassCoTeacherPageTests`. Phase 2 remains In
-Progress/Open; Gates 1 and 2 remain Partial. Workflow repair belongs to the
-other worker. Do not push.
+F173 is selected: migrate `ApplicationServicesScheduleSlotStateSavePort` from
+`ScheduleService::saveIntensiveSlotState()` to the active session's
+`IntensiveSlotStateRepository::saveIntensiveSlotState()`, with no service or
+`DataService` fallback. Make `isAvailable()` reflect the active session and its
+repository. Preserve typed validation; weekday, `HH:mm`, and state-token
+mapping; default-state deletion; and widget success, warning, reload, and
+shared-toggle behavior. Acceptance covers repository persistence/deletion,
+invalid input without writes, repository failure mapping, unavailable/closed
+session behavior, and `ScheduleWidget` integration. Run
+`ClassMngrNextApplicationScheduleSlotStateSaveTests`,
+`ClassMngrNextPlatformApplicationServicesScheduleSlotStateSavePortTests`, and
+`ClassMngrScheduleWidgetTests`. Retain `build/f168`; its Ninja target list has
+all three. Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial.
+Workflow repair belongs to the other worker. Do not push.
