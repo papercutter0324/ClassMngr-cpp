@@ -2,6 +2,7 @@
 #include "app/services/feature_services.h"
 #include "data/data_service.h"
 #include "data/database/database_session.h"
+#include "data/repositories/class_info_repository.h"
 #include "domain/models/roster.h"
 #include "domain/models/teacher.h"
 #include "next/application/sub_prep_print_source_query.h"
@@ -268,6 +269,8 @@ private slots:
     void summaryAggregateMeetingOverflowSurfacesValidation();
     void allEmptyTeacherNamesKeepAdapterFallbacks();
     void selectedClassDetailsReadUsesOnlyScopedSessionData();
+    void selectedClassDetailsUnavailableSessionsDoNotFallback();
+    void selectedClassDetailsSqlRepositoryFailureIsTechnical();
     void selectedClassDetailsUsesMissingTeacherFallbackAndBoundsFields();
     void projectsSelectedClassesInRequestOrderAndCopiesFilteredSource();
     void selectsIntensiveTimesAndOmitsClassesOutsideSelectedDays();
@@ -960,6 +963,86 @@ selectedClassDetailsReadUsesOnlyScopedSessionData()
     services.closeDatabase();
     QVERIFY(ownedCopy == details);
     QCOMPARE(ownedCopy.teacherFacilities.room, std::string("Room details"));
+}
+
+void NextPlatformApplicationServicesSubPrepPrintSourcePortTests::
+selectedClassDetailsUnavailableSessionsDoNotFallback()
+{
+    ApplicationServices unopenedServices;
+    QVERIFY(unopenedServices.dataService());
+    QVERIFY(!unopenedServices.dataService()->isOpen());
+
+    ApplicationServicesSubPrepClassDetailsPort unopenedPort(unopenedServices);
+    auto result = unopenedPort.loadDetails(classId(42));
+    QVERIFY(!result);
+    QCOMPARE(result.error().code, ErrorCode::NotFound);
+
+    ApplicationServices closedServices;
+    const QString path = databasePath(m_directory);
+    QVERIFY(closedServices.openDatabase(path));
+    const int selectedClass = createClass(
+        closedServices,
+        QStringLiteral("Closed selected details"),
+        -1,
+        QStringLiteral("E4"),
+        QStringLiteral("Perseus"),
+        QStringLiteral("Persisted class notes"),
+        QStringLiteral("#FFFFFF"),
+        QStringLiteral("#000000"),
+        {}
+        );
+    QVERIFY(selectedClass > 0);
+    closedServices.closeDatabase();
+    QVERIFY(!closedServices.hasOpenDatabase());
+    QVERIFY(closedServices.dataService());
+    QVERIFY(!closedServices.dataService()->isOpen());
+
+    ApplicationServicesSubPrepClassDetailsPort closedPort(closedServices);
+    result = closedPort.loadDetails(classId(selectedClass));
+    QVERIFY(!result);
+    QCOMPARE(result.error().code, ErrorCode::NotFound);
+
+    QVERIFY(closedServices.openDatabase(path));
+    const auto persisted = closedServices.databaseSession()
+        ->classInfoRepository()
+        ->loadSubPrepClassDetails(selectedClass);
+    QVERIFY(persisted);
+    QCOMPARE(persisted->classNotes, QStringLiteral("Persisted class notes"));
+}
+
+void NextPlatformApplicationServicesSubPrepPrintSourcePortTests::
+selectedClassDetailsSqlRepositoryFailureIsTechnical()
+{
+    ApplicationServices services;
+    QVERIFY(openDatabase(services, m_directory));
+    const int selectedClass = createClass(
+        services,
+        QStringLiteral("Unreadable selected details"),
+        -1,
+        QStringLiteral("E4"),
+        QStringLiteral("Perseus"),
+        QStringLiteral("Class notes"),
+        QStringLiteral("#FFFFFF"),
+        QStringLiteral("#000000"),
+        {}
+        );
+    QVERIFY(selectedClass > 0);
+
+    QVERIFY(executeSql(services, QStringLiteral("DROP TABLE class_info")));
+    QSqlQuery confirmAbsent(services.databaseSession()->database());
+    QVERIFY(confirmAbsent.exec(QStringLiteral(
+        "SELECT name FROM sqlite_master "
+        "WHERE type = 'table' AND name = 'class_info'"
+        )));
+    QVERIFY(!confirmAbsent.next());
+
+    ApplicationServicesSubPrepClassDetailsPort port(services);
+    const auto result = port.loadDetails(classId(selectedClass));
+    QVERIFY(!result);
+    QCOMPARE(result.error().code, ErrorCode::Technical);
+    QVERIFY(!result.error().message.empty());
+    QVERIFY(result.error().message.find("Loading selected Sub Prep class details")
+        != std::string::npos);
 }
 
 void NextPlatformApplicationServicesSubPrepPrintSourcePortTests::

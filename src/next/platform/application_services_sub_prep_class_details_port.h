@@ -1,7 +1,8 @@
 #pragma once
 
-#include "app/services/feature_services.h"
 #include "core/application_services.h"
+#include "data/database/database_session.h"
+#include "data/repositories/class_info_repository.h"
 #include "next/application/sub_prep_class_details_query.h"
 #include "next/domain/teacher_display_name.h"
 
@@ -69,8 +70,18 @@ public:
 
         try
         {
-            ClassService* classService = m_services.classService();
-            if (!classService || !classService->isAvailable())
+            DatabaseSession* const session = m_services.databaseSession();
+            if (!session || !session->isOpen())
+            {
+                return failure(
+                    Domain::ErrorCode::NotFound,
+                    "The Sub Prep class details service is unavailable."
+                    );
+            }
+
+            ClassInfoRepository* const repository =
+                session->classInfoRepository();
+            if (!repository)
             {
                 return failure(
                     Domain::ErrorCode::NotFound,
@@ -79,17 +90,17 @@ public:
             }
 
             const ::Result<SubPrepClassDetailsRecord> source =
-                classService->subPrepClassDetails(*legacyClassId);
+                repository->loadSubPrepClassDetails(*legacyClassId);
             if (!source)
             {
-                if (!classService->isAvailable())
+                if (!session->isOpen())
                 {
                     return failure(
                         Domain::ErrorCode::NotFound,
                         "The Sub Prep class details service became unavailable while loading details."
                         );
                 }
-                return legacyFailure(source.error());
+                return repositoryFailure(source.error());
             }
 
             const SubPrepClassDetailsRecord& record = source.value();
@@ -280,17 +291,17 @@ private:
     }
 
     [[nodiscard]] static Application::SubPrepClassDetailsReadResult
-    legacyFailure(
-        const QString& legacyError
+    repositoryFailure(
+        const QString& repositoryError
         )
     {
-        const QString normalized = legacyError.toLower();
+        const QString normalized = repositoryError.toLower();
         if (normalized.contains(QStringLiteral("service is available"))
             || normalized.contains(QStringLiteral("service unavailable")))
         {
             return failure(
                 Domain::ErrorCode::NotFound,
-                errorText(legacyError,
+                errorText(repositoryError,
                     "The Sub Prep class details service is unavailable.")
                 );
         }
@@ -300,7 +311,7 @@ private:
         {
             return failure(
                 Domain::ErrorCode::NotFound,
-                errorText(legacyError,
+                errorText(repositoryError,
                     "The selected Sub Prep class details were not found.")
                 );
         }
@@ -308,7 +319,7 @@ private:
         {
             return failure(
                 Domain::ErrorCode::InvalidInput,
-                errorText(legacyError,
+                errorText(repositoryError,
                     "The selected Sub Prep class identifier is invalid.")
                 );
         }
@@ -316,24 +327,24 @@ private:
         {
             return failure(
                 Domain::ErrorCode::Validation,
-                errorText(legacyError,
+                errorText(repositoryError,
                     "The selected Sub Prep class details failed validation.")
                 );
         }
 
         return failure(
             Domain::ErrorCode::Technical,
-            errorText(legacyError,
+            errorText(repositoryError,
                 "Selected Sub Prep class details could not be loaded.")
             );
     }
 
     [[nodiscard]] static std::string errorText(
-        const QString& legacyError,
+        const QString& repositoryError,
         const char* fallback
         )
     {
-        const QByteArray bytes = legacyError.toUtf8();
+        const QByteArray bytes = repositoryError.toUtf8();
         return bytes.isEmpty() ? fallback : bytes.toStdString();
     }
 
