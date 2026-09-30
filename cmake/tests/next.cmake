@@ -731,6 +731,15 @@ classmngr_add_qt_test(
         Qt6::Test
 )
 
+classmngr_add_qt_test(
+    NAME NextApplicationNativeEnglishTeacherDirectoryReadQuery
+    SOURCES
+        tests/next_application_native_english_teacher_directory_read_query_tests.cpp
+    LIBRARIES
+        ClassMngrNext::Application
+        Qt6::Test
+)
+
 # Verify co-teacher ID validation and legacy unassigned-sentinel translation
 # without Qt or persistence.
 add_executable(
@@ -1200,6 +1209,16 @@ classmngr_add_qt_test(
     NAME NextPlatformApplicationServicesTeacherProfileReadPort
     SOURCES
         tests/next_platform_application_services_teacher_profile_read_port_tests.cpp
+    LIBRARIES
+        ClassMngrNext::Platform
+        Qt6::Test
+    OFFSCREEN
+)
+
+classmngr_add_qt_test(
+    NAME NextPlatformApplicationServicesNativeEnglishTeacherDirectoryReadPort
+    SOURCES
+        tests/next_platform_application_services_native_english_teacher_directory_read_port_tests.cpp
     LIBRARIES
         ClassMngrNext::Platform
         Qt6::Test

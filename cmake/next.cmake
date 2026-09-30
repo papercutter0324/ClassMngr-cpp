@@ -31,6 +31,7 @@ set(CLASSMNGR_NEXT_DOMAIN_SOURCES
     src/next/domain/calendar_event_timing.h
     src/next/domain/domain_types.h
     src/next/domain/korean_teacher_key.h
+    src/next/domain/native_english_teacher_id.h
     src/next/domain/operation_result.h
     src/next/domain/schedule_entry.h
     src/next/domain/schedule_time.h
@@ -153,6 +154,9 @@ set(CLASSMNGR_NEXT_APPLICATION_SOURCES
     src/next/application/import_job_state.h
     src/next/application/korean_teacher_import_update.h
     src/next/application/native_english_teacher_import_update.h
+    src/next/application/native_english_teacher_directory_read_snapshot.h
+    src/next/application/native_english_teacher_directory_read_port.h
+    src/next/application/native_english_teacher_directory_read_query.h
     src/next/application/gs_team_import_update.h
     src/next/application/teacher_import_plan_validation.h
     src/next/application/teacher_import_match_cardinality.h
@@ -263,6 +267,7 @@ set(CLASSMNGR_NEXT_PLATFORM_SOURCES
     src/next/platform/application_services_class_co_teacher_teacher_choices_read_port.h
     src/next/platform/application_services_teacher_profile_edit_persistence_port.h
     src/next/platform/application_services_teacher_profile_read_port.h
+    src/next/platform/application_services_native_english_teacher_directory_read_port.h
     src/next/platform/application_services_current_campus_preferences_port.h
     src/next/platform/application_services_middle_school_analytics_preferences_port.h
     src/next/platform/application_services_personal_display_name_preferences_port.h

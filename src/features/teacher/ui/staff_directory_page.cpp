@@ -6,6 +6,8 @@
 #include "core/fontmanager.h"
 #include "domain/models/gs_team_member.h"
 #include "domain/models/native_english_teacher.h"
+#include "next/application/native_english_teacher_directory_read_query.h"
+#include "next/platform/application_services_native_english_teacher_directory_read_port.h"
 #include "ui/shared/constants/gui_constants.h"
 #include "ui/shared/widgets/on_screen_keyboard.h"
 #include "ui/shared/widgets/text_fit_push_button.h"
@@ -29,6 +31,8 @@
 #include <QVBoxLayout>
 
 #include <algorithm>
+#include <cstddef>
+#include <string>
 
 namespace
 {
@@ -325,14 +329,17 @@ void StaffDirectoryPage::buildUi()
 
 bool StaffDirectoryPage::loadDirectory()
 {
-    auto* teacherService =
-        m_services
+    TeacherService* teacherService = nullptr;
+    if (m_kind == StaffDirectoryKind::GsTeam)
+    {
+        teacherService = m_services
             ? m_services->teacherService()
             : nullptr;
-    if (!teacherService || !teacherService->isAvailable())
-    {
-        clearDatabaseState();
-        return false;
+        if (!teacherService || !teacherService->isAvailable())
+        {
+            clearDatabaseState();
+            return false;
+        }
     }
 
     m_loading = true;
@@ -342,31 +349,55 @@ bool StaffDirectoryPage::loadDirectory()
 
     if (m_kind == StaffDirectoryKind::NativeEnglishTeachers)
     {
-        const Result<QList<NativeEnglishTeacher>> loadedTeachers =
-            teacherService->nativeEnglishTeachers();
+        const ClassMngr::Next::Platform::
+            ApplicationServicesNativeEnglishTeacherDirectoryReadPort port(
+                m_services);
+        const ClassMngr::Next::Application::
+            NativeEnglishTeacherDirectoryReadQuery query(port);
+        const ClassMngr::Next::Application::
+            NativeEnglishTeacherDirectoryReadResult loadedTeachers =
+                query.execute();
         if (!loadedTeachers)
         {
             m_loading = false;
             updateActions();
+            if (loadedTeachers.error().code
+                == ClassMngr::Next::Domain::ErrorCode::NotFound)
+            {
+                clearDatabaseState();
+                return false;
+            }
+
+            const std::string& message = loadedTeachers.error().message;
             DialogServices::showWarning(
                 this,
                 tr("Load Directory"),
-                loadedTeachers.error()
+                QString::fromUtf8(
+                    message.data(),
+                    static_cast<qsizetype>(message.size()))
                 );
             return false;
         }
 
-        const QList<NativeEnglishTeacher>& teachers = *loadedTeachers;
-        m_table->setRowCount(teachers.size());
-        for (int row = 0; row < teachers.size(); ++row)
+        const auto& teachers = loadedTeachers.value();
+        const int rowCount = static_cast<int>(teachers.size());
+        m_table->setRowCount(rowCount);
+        for (int row = 0; row < rowCount; ++row)
         {
-            const NativeEnglishTeacher& teacher = teachers.at(row);
-            m_table->setItem(row, 0, textItem(teacher.name, teacher.id));
-            m_table->setItem(row, 1, textItem(teacher.position));
-            m_table->setItem(row, 2, textItem(teacher.phoneNumber));
-            m_table->setItem(row, 3, textItem(teacher.email));
-            m_table->setItem(row, 4, textItem(teacher.birthday));
-            m_table->setItem(row, 5, textItem(teacher.nationality));
+            const auto& teacher = teachers.at(static_cast<std::size_t>(row));
+            m_table->setItem(row, 0, textItem(
+                QString::fromStdU16String(teacher.name),
+                teacher.id.value()));
+            m_table->setItem(row, 1, textItem(
+                QString::fromStdU16String(teacher.position)));
+            m_table->setItem(row, 2, textItem(
+                QString::fromStdU16String(teacher.phoneNumber)));
+            m_table->setItem(row, 3, textItem(
+                QString::fromStdU16String(teacher.email)));
+            m_table->setItem(row, 4, textItem(
+                QString::fromStdU16String(teacher.birthday)));
+            m_table->setItem(row, 5, textItem(
+                QString::fromStdU16String(teacher.nationality)));
         }
     }
     else

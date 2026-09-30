@@ -1,5 +1,29 @@
 #include "core/application_services.h"
 #include "app/services/feature_services.h"
+#include "data/database/database_session.h"
+#include "data/repositories/native_english_teacher_repository.h"
+
+DatabaseSession* ApplicationServices::databaseSession() const
+{
+    return nullptr;
+}
+
+bool DatabaseSession::isOpen() const
+{
+    return false;
+}
+
+NativeEnglishTeacherRepository*
+DatabaseSession::nativeEnglishTeacherRepository() const
+{
+    return nullptr;
+}
+
+Result<QList<NativeEnglishTeacher>>
+NativeEnglishTeacherRepository::getAll() const
+{
+    return QList<NativeEnglishTeacher>{};
+}
 
 TeacherService* ApplicationServices::teacherService() const
 {
