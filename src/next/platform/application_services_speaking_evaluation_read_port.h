@@ -1,8 +1,8 @@
 #pragma once
 
-#include "app/services/feature_services.h"
 #include "core/application_services.h"
 #include "data/database/database_session.h"
+#include "data/repositories/speaking_eval_repository.h"
 #include "domain/models/speaking_evaluation.h"
 #include "next/application/speaking_evaluation_query.h"
 
@@ -73,16 +73,16 @@ public:
             return unavailableFailure();
         }
 
-        SpeakingEvaluationService* const service =
-            m_services->speakingEvaluationService();
-        if (!service || !service->isAvailable())
+        SpeakingEvalRepository* const repository =
+            session->speakingEvalRepository();
+        if (!repository)
         {
             return unavailableFailure();
         }
 
         try
         {
-            const Result<SpeakingEvalRows> loaded = service->evaluation(
+            const Result<SpeakingEvalRows> loaded = repository->loadSpeakingEval(
                 *classId,
                 legacyText(query.evaluationName)
                 );
@@ -193,7 +193,8 @@ private:
     {
         return Application::SpeakingEvaluationReadResult::failure({
             .code = Domain::ErrorCode::NotFound,
-            .message = "The speaking evaluation service is unavailable.",
+            .message = "The active database session for speaking evaluations "
+                       "is unavailable.",
             .recoverable = true
         });
     }

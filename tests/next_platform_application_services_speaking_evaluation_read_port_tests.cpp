@@ -1,9 +1,12 @@
 #include "app/services/feature_services.h"
 #include "core/application_services.h"
 #include "data/data_service.h"
+#include "data/database/database_session.h"
+#include "data/repositories/speaking_eval_repository.h"
 #include "next/application/speaking_evaluation_query.h"
 #include "next/platform/application_services_speaking_evaluation_read_port.h"
 
+#include <QSqlQuery>
 #include <QTemporaryDir>
 #include <QUuid>
 #include <QtTest/QtTest>
@@ -70,6 +73,8 @@ class NextPlatformApplicationServicesSpeakingEvaluationReadPortTests final
 
 private slots:
     void readsExactNameAndPreservesOrderedUnicodeMatrix();
+    void rejectsNoncanonicalClassIdsBeforeSessionAccess();
+    void mapsRepositoryErrorsToTechnicalFailures();
     void closedSessionFailsWithoutDataServiceFallback();
 };
 
@@ -87,7 +92,9 @@ readsExactNameAndPreservesOrderedUnicodeMatrix()
     QVERIFY(createdClass);
 
     const SpeakingEvalRows expected = makeRows();
-    QVERIFY(services.speakingEvaluationService()->saveEvaluation(
+    SpeakingEvalRepository* const repository =
+        services.databaseSession()->speakingEvalRepository();
+    QVERIFY(repository->saveSpeakingEval(
         *createdClass,
         QStringLiteral("Winter"),
         expected
@@ -119,6 +126,79 @@ readsExactNameAndPreservesOrderedUnicodeMatrix()
     QVERIFY(exactNameMiss);
     QVERIFY(exactNameMiss.value().rows.empty());
     QCOMPARE(exactNameMiss.value().evaluationName, std::u16string(u" Winter "));
+}
+
+void NextPlatformApplicationServicesSpeakingEvaluationReadPortTests::
+rejectsNoncanonicalClassIdsBeforeSessionAccess()
+{
+    ApplicationServices services;
+    Platform::ApplicationServicesSpeakingEvaluationReadPort port(services);
+    const std::vector<std::string> invalidIds{
+        "0",
+        "-1",
+        "042",
+        "12x",
+        "2147483648"
+    };
+
+    for (const std::string& value : invalidIds)
+    {
+        const auto classId = Domain::ClassId::fromString(value);
+        QVERIFY(classId);
+        const auto result = port.readEvaluation({
+            .classId = *classId,
+            .evaluationName = u"Winter"
+        });
+        QVERIFY(!result);
+        QCOMPARE(result.error().code, Domain::ErrorCode::InvalidInput);
+    }
+}
+
+void NextPlatformApplicationServicesSpeakingEvaluationReadPortTests::
+mapsRepositoryErrorsToTechnicalFailures()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+
+    const auto createdClass = services.classService()->create(
+        QStringLiteral("Speaking Evaluation Read Failure Test")
+        );
+    QVERIFY(createdClass);
+
+    Platform::ApplicationServicesSpeakingEvaluationReadPort port(services);
+    const auto blankName = Application::SpeakingEvaluationQuery::execute(
+        query(*createdClass, u"   "),
+        port
+        );
+    QVERIFY(!blankName);
+    QCOMPARE(blankName.error().code, Domain::ErrorCode::Technical);
+    QVERIFY(blankName.error().recoverable);
+    QVERIFY(QString::fromStdString(blankName.error().message).contains(
+        QStringLiteral("invalid class id or evaluation name")
+        ));
+
+    SpeakingEvalRepository* const repository =
+        services.databaseSession()->speakingEvalRepository();
+    QVERIFY(repository->saveSpeakingEval(
+        *createdClass,
+        QStringLiteral("Winter"),
+        makeRows()
+        ));
+    QSqlQuery dropDataTable(services.databaseSession()->database());
+    QVERIFY(dropDataTable.exec(QStringLiteral(
+        "DROP TABLE speaking_eval_data"
+        )));
+
+    const auto failedRead = Application::SpeakingEvaluationQuery::execute(
+        query(*createdClass, u"Winter"),
+        port
+        );
+    QVERIFY(!failedRead);
+    QCOMPARE(failedRead.error().code, Domain::ErrorCode::Technical);
+    QVERIFY(failedRead.error().recoverable);
+    QVERIFY(!failedRead.error().message.empty());
 }
 
 void NextPlatformApplicationServicesSpeakingEvaluationReadPortTests::
