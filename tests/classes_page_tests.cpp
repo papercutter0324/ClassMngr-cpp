@@ -42,12 +42,14 @@ void setIncludeAdditionalClass(bool include);
 void setClassesVisibilityAll();
 void setClassName(int classId, const QString& name);
 void setClassGrade(int classId, const QString& grade);
+void setSelectedClassGradeReadFailure(bool fails);
 void setIncludeAlternativeMatchingClass(bool include);
 void setExistingIntensiveHours(bool exists);
 void setDistinctIntensiveDays(bool distinct);
 void setClassesNavigationReadFailure(bool fails);
 extern int legacyClassListReadCount;
 extern int repositoryClassListReadCount;
+extern int legacyClassInfoReadCount;
 void setSpeakingEvaluation(
     int classId,
     const QString& evaluationName,
@@ -135,6 +137,8 @@ private slots:
     void nestedEditorsAreDeferredUntilTheirSectionIsOpened();
     void classDetailsAndCoTeacherTabsSeparateTheirSectionCards();
     void middleSchoolAnalyticsAndEvaluationsTabsFollowPreference();
+    void selectedClassGradeFailureFailsOpenWithoutDataServiceFallback();
+    void sectionSelectionSurvivesGradeTabRebuilds();
     void evaluationDefaultPolicyDefaultsToAllAndPersists();
     void visibilityScopePortIsAppliedOnInitialLoadAndRefresh();
     void dayFiltersToggleIndependentlyAndRetainHiddenEditor();
@@ -290,6 +294,7 @@ void ClassesPageTests
     }
 
     for (const QString& grade : {
+             QString(),
              QStringLiteral(" e5 "),
              QStringLiteral("Unknown")
          })
@@ -321,6 +326,76 @@ void ClassesPageTests
     {
         QCOMPARE(sectionTabs->tabText(index), enabledLabels.at(index));
     }
+}
+
+void ClassesPageTests::
+selectedClassGradeFailureFailsOpenWithoutDataServiceFallback()
+{
+    ApplicationServices controlServices;
+    ClassMngr::Next::Platform::
+        ApplicationServicesMiddleSchoolAnalyticsPreferencesPort
+            controlPreference(controlServices);
+    controlPreference.save(true);
+    ClassesPage controlPage(&controlServices);
+    const int readsBeforeControl =
+        ScheduleWidgetTestStubs::legacyClassInfoReadCount;
+    QVERIFY(controlPage.openClass(42, ClassesSection::Details));
+    const int controlPageClassInfoReads =
+        ScheduleWidgetTestStubs::legacyClassInfoReadCount - readsBeforeControl;
+
+    ApplicationServices services;
+    ClassMngr::Next::Platform::
+        ApplicationServicesMiddleSchoolAnalyticsPreferencesPort preference(
+            services
+            );
+    preference.save(false);
+    ClassesPage page(&services);
+    auto* sectionTabs = page.findChild<NavigationTabWidget*>(
+        QStringLiteral("classesSectionTabs")
+        );
+    QVERIFY(sectionTabs);
+
+    ScheduleWidgetTestStubs::setClassGrade(42, QStringLiteral("E4"));
+    ScheduleWidgetTestStubs::setSelectedClassGradeReadFailure(true);
+    const int readsBeforeFailure =
+        ScheduleWidgetTestStubs::legacyClassInfoReadCount;
+    QVERIFY(page.openClass(42, ClassesSection::Details));
+    const int failurePageClassInfoReads =
+        ScheduleWidgetTestStubs::legacyClassInfoReadCount - readsBeforeFailure;
+
+    QCOMPARE(failurePageClassInfoReads, controlPageClassInfoReads);
+    QCOMPARE(sectionTabs->count(), 6);
+    QCOMPARE(sectionTabs->tabText(2), QStringLiteral("Analytics"));
+    QCOMPARE(sectionTabs->tabText(3), QStringLiteral("Evaluations"));
+    QCOMPARE(sectionTabs->currentIndex(), 0);
+    QCOMPARE(page.currentSection(), ClassesSection::Details);
+
+}
+
+void ClassesPageTests::sectionSelectionSurvivesGradeTabRebuilds()
+{
+    ApplicationServices services;
+    ClassesPage page(&services);
+    auto* sectionTabs = page.findChild<NavigationTabWidget*>(
+        QStringLiteral("classesSectionTabs")
+        );
+    QVERIFY(sectionTabs);
+
+    ScheduleWidgetTestStubs::setClassGrade(42, QStringLiteral("E4"));
+    QVERIFY(page.openClass(42, ClassesSection::Evaluations));
+    QCOMPARE(page.currentSection(), ClassesSection::Evaluations);
+    QCOMPARE(sectionTabs->currentIndex(), 3);
+
+    ScheduleWidgetTestStubs::setClassGrade(42, QStringLiteral(" m3 "));
+    page.retranslateUi();
+    QCOMPARE(sectionTabs->count(), 4);
+    QCOMPARE(page.currentSection(), ClassesSection::Evaluations);
+
+    ScheduleWidgetTestStubs::setClassGrade(42, QStringLiteral("E4"));
+    page.retranslateUi();
+    QCOMPARE(sectionTabs->count(), 6);
+    QCOMPARE(sectionTabs->currentIndex(), 3);
+    QCOMPARE(page.currentSection(), ClassesSection::Evaluations);
 }
 
 void ClassesPageTests::evaluationDefaultPolicyDefaultsToAllAndPersists()

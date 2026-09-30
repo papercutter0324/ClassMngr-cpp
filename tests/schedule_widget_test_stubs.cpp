@@ -92,6 +92,8 @@ bool classesNavigationReadFailure = false;
 bool scheduleClassInfoReadFailure = false;
 int legacyClassListReadCount = 0;
 int repositoryClassListReadCount = 0;
+int legacyClassInfoReadCount = 0;
+bool selectedClassGradeReadFailure = false;
 
 QList<Classroom> classList()
 {
@@ -183,6 +185,8 @@ void reset()
     scheduleClassInfoReadFailure = false;
     legacyClassListReadCount = 0;
     repositoryClassListReadCount = 0;
+    legacyClassInfoReadCount = 0;
+    selectedClassGradeReadFailure = false;
 }
 
 void setDatabaseOpen(
@@ -270,6 +274,11 @@ void setClassGrade(
     )
 {
     classGrades.insert(classId, grade);
+}
+
+void setSelectedClassGradeReadFailure(const bool fails)
+{
+    selectedClassGradeReadFailure = fails;
 }
 
 void setMatchImportedClasses(
@@ -583,6 +592,26 @@ Result<QList<Classroom>> ClassRepository::getClasses()
 ClassInfoRepository::ClassInfoRepository(QSqlDatabase& database)
     : m_database(database)
 {
+}
+
+Result<ClassInfo> ClassInfoRepository::loadClassInfo(const int classId)
+{
+    if (ScheduleWidgetTestStubs::selectedClassGradeReadFailure)
+    {
+        return std::unexpected(
+            QStringLiteral("Injected selected class grade read failure.")
+            );
+    }
+
+    ClassInfo info;
+    info.classId = classId;
+    info.classGrade = ScheduleWidgetTestStubs::classGrades.value(
+        classId,
+        classId == 43
+            ? QStringLiteral("E5")
+            : QStringLiteral("E4")
+        );
+    return info;
 }
 
 Result<QList<ClassNavigationReadRecord>>
@@ -1348,6 +1377,7 @@ Result<ClassInfo> DataService::loadClassInfo(
     int classId
     )
 {
+    ++ScheduleWidgetTestStubs::legacyClassInfoReadCount;
     ClassInfo info;
     info.classId = classId;
     if (ScheduleWidgetTestStubs::testingClasses.contains(classId))

@@ -16,7 +16,9 @@
 #include "features/speaking_eval/ui/speaking_eval_report_assets_p.h"
 #include "next/application/classes_list_read_query.h"
 #include "next/application/classes_navigation_snapshot.h"
+#include "next/application/selected_class_grade_read_query.h"
 #include "next/domain/course.h"
+#include "next/platform/application_services_selected_class_grade_read_port.h"
 #include "next/platform/application_services_class_day_filter_reset_policy_port.h"
 #include "next/platform/application_services_class_selection_reset_policy_port.h"
 #include "next/platform/application_services_class_visibility_preferences_port.h"
@@ -33,6 +35,7 @@
 #include "ui/shared/dialogs/user_prompt_service.h"
 
 #include <charconv>
+#include <optional>
 #include <string>
 #include <system_error>
 #include <utility>
@@ -1315,11 +1318,27 @@ void ClassesPage::rebuildSectionTabs()
         && classService->isAvailable()
         )
     {
-        hideMiddleSchoolAnalyticsAndEvaluations = isMiddleSchoolGrade(
-            classService->classInfo(classroom.id)
-                .value_or(ClassInfo{})
-                .classGrade
-            );
+        const std::optional<ClassMngr::Next::Domain::ClassId> classId =
+            ClassMngr::Next::Domain::ClassId::fromString(
+                std::to_string(classroom.id)
+                );
+        if (classId)
+        {
+            ClassMngr::Next::Platform::
+                ApplicationServicesSelectedClassGradeReadPort readPort(
+                    *m_services
+                    );
+            const ClassMngr::Next::Application::
+                SelectedClassGradeReadQuery query(readPort);
+            const auto grade = query.execute(*classId);
+            if (grade)
+            {
+                hideMiddleSchoolAnalyticsAndEvaluations =
+                    isMiddleSchoolGrade(QString::fromStdString(
+                        grade.value().classGrade
+                        ));
+            }
+        }
     }
 
     QList<ClassesSection> visibleSections{
