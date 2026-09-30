@@ -7,6 +7,8 @@
 #include "next/platform/application_services_class_details_save_port.h"
 
 #include <QTemporaryDir>
+#include <QSqlError>
+#include <QSqlQuery>
 #include <QUuid>
 #include <QtTest/QtTest>
 
@@ -88,6 +90,10 @@ private slots:
     void savesEditedFieldsAndPreservesHiddenClassInfo();
     void absentSchedulesPreservePersistedSchedulesIndependently();
     void unavailableSessionReturnsStructuredFailure();
+    void classInfoReadFailureReturnsTechnicalFailure();
+    void classInfoSaveFailureReturnsTechnicalFailure();
+    void invalidPreservedDataFailsMergedClassInfoValidation();
+    void scheduleConflictRetainsClassInfoValidationBehavior();
 };
 
 void NextPlatformApplicationServicesClassDetailsSavePortTests::
@@ -136,10 +142,12 @@ savesEditedFieldsAndPreservesHiddenClassInfo()
         .classColor = u"#123456",
         .fontColor = u"#654321",
         .regularTimes = std::vector<Domain::ScheduleTime>{
-            scheduleTime(1, 18 * 60, 18 * 60 + 50)
+            scheduleTime(1, 18 * 60, 18 * 60 + 50),
+            scheduleTime(0, 17 * 60, 17 * 60 + 50)
         },
         .intensiveTimes = std::vector<Domain::ScheduleTime>{
-            scheduleTime(6, 19 * 60, 19 * 60 + 45)
+            scheduleTime(6, 19 * 60, 19 * 60 + 45),
+            scheduleTime(4, 16 * 60, 16 * 60 + 45)
         }
     };
 
@@ -161,19 +169,31 @@ savesEditedFieldsAndPreservesHiddenClassInfo()
     QCOMPARE(actual->notes, QStringLiteral("Keep these notes"));
     QCOMPARE(actual->timeFillerActivities,
         QStringLiteral("Keep these activities"));
-    QCOMPARE(actual->classTimes.size(), 1);
+    QCOMPARE(actual->classTimes.size(), 2);
     QVERIFY(sameTime(
         actual->classTimes.front(),
         QStringLiteral("Tuesday"),
         QStringLiteral("6:00 PM"),
         QStringLiteral("6:50 PM")
         ));
-    QCOMPARE(actual->intensiveTimes.size(), 1);
+    QVERIFY(sameTime(
+        actual->classTimes[1],
+        QStringLiteral("Monday"),
+        QStringLiteral("5:00 PM"),
+        QStringLiteral("5:50 PM")
+        ));
+    QCOMPARE(actual->intensiveTimes.size(), 2);
     QVERIFY(sameTime(
         actual->intensiveTimes.front(),
         QStringLiteral("Sunday"),
         QStringLiteral("7:00 PM"),
         QStringLiteral("7:45 PM")
+        ));
+    QVERIFY(sameTime(
+        actual->intensiveTimes[1],
+        QStringLiteral("Friday"),
+        QStringLiteral("4:00 PM"),
+        QStringLiteral("4:45 PM")
         ));
     QVERIFY(request.regularTimes.has_value());
     QVERIFY(request.intensiveTimes.has_value());
@@ -320,6 +340,163 @@ unavailableSessionReturnsStructuredFailure()
     QVERIFY(QString::fromStdString(result.error().message).contains(
         QStringLiteral("unavailable")
         ));
+}
+
+void NextPlatformApplicationServicesClassDetailsSavePortTests::
+classInfoReadFailureReturnsTechnicalFailure()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+    const auto createdClass = services.classService()->create(
+        QStringLiteral("Class Details Read Failure")
+        );
+    QVERIFY(createdClass);
+
+    QSqlQuery damageClassRead(services.databaseSession()->database());
+    QVERIFY2(
+        damageClassRead.exec(QStringLiteral("DROP TABLE class_times")),
+        qPrintable(damageClassRead.lastError().text())
+        );
+
+    Platform::ApplicationServicesClassDetailsSavePort port(services);
+    const auto result = Application::ClassDetailsSaveUseCase::execute(
+        requestForClass(*createdClass),
+        port
+        );
+
+    QVERIFY(!result);
+    QCOMPARE(result.error().code, Domain::ErrorCode::Technical);
+    QVERIFY(!result.error().message.empty());
+}
+
+void NextPlatformApplicationServicesClassDetailsSavePortTests::
+classInfoSaveFailureReturnsTechnicalFailure()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+    const auto createdClass = services.classService()->create(
+        QStringLiteral("Class Details Save Failure")
+        );
+    QVERIFY(createdClass);
+    const auto original = services.classService()->classInfo(*createdClass);
+    QVERIFY(original);
+    QVERIFY(services.classService()->saveClassInfo(*original));
+
+    QSqlQuery installFailure(services.databaseSession()->database());
+    QVERIFY2(
+        installFailure.exec(QStringLiteral(
+            "CREATE TRIGGER fail_class_details_save "
+            "BEFORE UPDATE ON class_info "
+            "BEGIN SELECT RAISE(FAIL, 'save denied'); END"
+            )),
+        qPrintable(installFailure.lastError().text())
+        );
+
+    Platform::ApplicationServicesClassDetailsSavePort port(services);
+    const auto result = Application::ClassDetailsSaveUseCase::execute(
+        requestForClass(*createdClass),
+        port
+        );
+
+    QVERIFY(!result);
+    QCOMPARE(result.error().code, Domain::ErrorCode::Technical);
+    QVERIFY(QString::fromStdString(result.error().message).contains(
+        QStringLiteral("save denied")
+        ));
+}
+
+void NextPlatformApplicationServicesClassDetailsSavePortTests::
+invalidPreservedDataFailsMergedClassInfoValidation()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+    const auto createdClass = services.classService()->create(
+        QStringLiteral("Class Details Invalid Hidden Data")
+        );
+    QVERIFY(createdClass);
+    auto original = services.classService()->classInfo(*createdClass);
+    QVERIFY(original);
+    QVERIFY(services.classService()->saveClassInfo(*original));
+
+    const QString invalidNotes(10001, QChar(u'x'));
+    QSqlQuery damageHiddenField(services.databaseSession()->database());
+    damageHiddenField.prepare(QStringLiteral(
+        "UPDATE class_info SET notes=? WHERE class_id=?"
+        ));
+    damageHiddenField.addBindValue(invalidNotes);
+    damageHiddenField.addBindValue(*createdClass);
+    QVERIFY2(
+        damageHiddenField.exec(),
+        qPrintable(damageHiddenField.lastError().text())
+        );
+    QCOMPARE(damageHiddenField.numRowsAffected(), 1);
+
+    Platform::ApplicationServicesClassDetailsSavePort port(services);
+    const auto result = Application::ClassDetailsSaveUseCase::execute(
+        requestForClass(*createdClass),
+        port
+        );
+
+    QVERIFY(!result);
+    QCOMPARE(result.error().code, Domain::ErrorCode::Technical);
+    const QString message = QString::fromStdString(result.error().message);
+    QVERIFY(message.contains(QStringLiteral("Class information validation failed")));
+    QVERIFY(message.contains(QStringLiteral("notes")));
+
+    const auto unchanged = services.classService()->classInfo(*createdClass);
+    QVERIFY(unchanged);
+    QCOMPARE(unchanged->notes, invalidNotes);
+    QVERIFY(unchanged->classGrade.isEmpty());
+}
+
+void NextPlatformApplicationServicesClassDetailsSavePortTests::
+scheduleConflictRetainsClassInfoValidationBehavior()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+    const auto conflictingClass = services.classService()->create(
+        QStringLiteral("Existing Class Details Schedule")
+        );
+    QVERIFY(conflictingClass);
+    const auto selectedClass = services.classService()->create(
+        QStringLiteral("Selected Class Details Schedule")
+        );
+    QVERIFY(selectedClass);
+
+    auto existingInfo = services.classService()->classInfo(*conflictingClass);
+    QVERIFY(existingInfo);
+    existingInfo->classTimes = {
+        {QStringLiteral("Monday"), QStringLiteral("6:00 PM"),
+         QStringLiteral("6:50 PM")}
+    };
+    QVERIFY(services.classService()->saveClassInfo(*existingInfo));
+
+    Application::ClassDetailsSaveRequest request =
+        requestForClass(*selectedClass);
+    request.regularTimes = std::vector<Domain::ScheduleTime>{
+        scheduleTime(0, 18 * 60, 18 * 60 + 50)
+    };
+    Platform::ApplicationServicesClassDetailsSavePort port(services);
+    const auto result =
+        Application::ClassDetailsSaveUseCase::execute(request, port);
+
+    QVERIFY(!result);
+    QCOMPARE(result.error().code, Domain::ErrorCode::Technical);
+    QVERIFY(QString::fromStdString(result.error().message).contains(
+        QStringLiteral("Class schedule conflict")
+        ));
+
+    const auto unchanged = services.classService()->classInfo(*selectedClass);
+    QVERIFY(unchanged);
+    QVERIFY(unchanged->classTimes.isEmpty());
 }
 
 QTEST_MAIN(NextPlatformApplicationServicesClassDetailsSavePortTests)

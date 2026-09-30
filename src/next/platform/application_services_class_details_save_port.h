@@ -1,11 +1,17 @@
 #pragma once
 
-#include "app/services/feature_services.h"
+#include "core/enums/schedule_type.h"
 #include "core/application_services.h"
+#include "data/database/database_session.h"
+#include "data/repositories/class_info_repository.h"
+#include "domain/models/class_conflict.h"
 #include "domain/models/class_info.h"
+#include "domain/validation/class_info_validator.h"
+#include "domain/validation/validation_result.h"
 #include "next/application/class_details_save_use_case.h"
 
 #include <QByteArray>
+#include <QStringList>
 #include <QTime>
 
 #include <charconv>
@@ -63,27 +69,30 @@ public:
                 );
         }
 
-        ClassService* const classService =
-            m_services ? m_services->classService() : nullptr;
-        if (!classService || !classService->isAvailable())
+        DatabaseSession* const session =
+            m_services ? m_services->databaseSession() : nullptr;
+        if (!session || !session->isOpen())
         {
             return unavailableFailure();
         }
 
+        ClassInfoRepository* const repository =
+            session->classInfoRepository();
+        if (!repository)
+        {
+            return failure(
+                Domain::ErrorCode::Technical,
+                "Class details repository is unavailable."
+                );
+        }
+
         try
         {
-            const Result<ClassInfo> loaded = classService->classInfo(*classId);
+            const Result<ClassInfo> loaded =
+                repository->loadClassInfo(*classId);
             if (!loaded)
             {
-                if (!classService->isAvailable())
-                {
-                    return unavailableFailure();
-                }
-
-                return failure(
-                    Domain::ErrorCode::Technical,
-                    toStdString(loaded.error())
-                    );
+                return repositoryFailure(session, loaded.error());
             }
 
             ClassInfo info = *loaded;
@@ -102,18 +111,46 @@ public:
                 info.intensiveTimes = legacyTimes(*request.intensiveTimes);
             }
 
-            const Status saved = classService->saveClassInfo(info);
+            const ClassInfo normalized = ClassInfoValidator::normalized(info);
+            const ValidationResult validation =
+                ClassInfoValidator::validate(normalized);
+            if (validation.hasErrors())
+            {
+                return repositoryFailure(
+                    session,
+                    validationError(
+                        QStringLiteral("Class information"),
+                        validation
+                        )
+                    );
+            }
+
+            const Status regularConflicts = validateScheduleConflicts(
+                *repository,
+                normalized,
+                normalized.classTimes,
+                ScheduleType::Regular
+                );
+            if (!regularConflicts)
+            {
+                return repositoryFailure(session, regularConflicts.error());
+            }
+
+            const Status intensiveConflicts = validateScheduleConflicts(
+                *repository,
+                normalized,
+                normalized.intensiveTimes,
+                ScheduleType::Intensive
+                );
+            if (!intensiveConflicts)
+            {
+                return repositoryFailure(session, intensiveConflicts.error());
+            }
+
+            const Status saved = repository->saveClassInfo(normalized);
             if (!saved)
             {
-                if (!classService->isAvailable())
-                {
-                    return unavailableFailure();
-                }
-
-                return failure(
-                    Domain::ErrorCode::Technical,
-                    toStdString(saved.error())
-                    );
+                return repositoryFailure(session, saved.error());
             }
 
             return Domain::Result<void>::success();
@@ -222,6 +259,78 @@ private:
     {
         const QByteArray bytes = value.toUtf8();
         return bytes.toStdString();
+    }
+
+    [[nodiscard]] static QString validationError(
+        const QString& subject,
+        const ValidationResult& validation
+        )
+    {
+        QStringList details;
+        for (const ValidationIssue& issue : validation.errors())
+        {
+            QString detail = issue.field.isEmpty()
+                ? issue.code
+                : QStringLiteral("%1: %2").arg(issue.field, issue.code);
+            if (issue.row >= 0 && !issue.field.contains(QChar(u'[')))
+            {
+                detail.prepend(
+                    QStringLiteral("row %1, ").arg(issue.row + 1)
+                    );
+            }
+            details.append(detail);
+        }
+
+        return QStringLiteral("%1 validation failed: %2")
+            .arg(subject, details.join(QStringLiteral("; ")));
+    }
+
+    [[nodiscard]] static Status validateScheduleConflicts(
+        ClassInfoRepository& repository,
+        const ClassInfo& info,
+        const QList<ClassTime>& times,
+        const ScheduleType type
+        )
+    {
+        if (times.isEmpty())
+        {
+            return {};
+        }
+
+        const Result<QList<ClassConflict>> conflicts =
+            repository.getClassTimeConflicts(info.classId, times, type);
+        if (!conflicts)
+        {
+            return std::unexpected(conflicts.error());
+        }
+        if (conflicts->isEmpty())
+        {
+            return {};
+        }
+
+        const ClassConflict& first = conflicts->first();
+        return std::unexpected(
+            QStringLiteral(
+                "Class schedule conflict: %1 %2\u2013%3 conflicts with %4."
+                ).arg(
+                    first.day,
+                    first.startTime,
+                    first.endTime,
+                    first.conflictingClassName
+                    )
+            );
+    }
+
+    [[nodiscard]] static Domain::Result<void> repositoryFailure(
+        DatabaseSession* session,
+        const QString& message
+        )
+    {
+        if (!session || !session->isOpen())
+        {
+            return unavailableFailure();
+        }
+        return failure(Domain::ErrorCode::Technical, toStdString(message));
     }
 
     [[nodiscard]] static Domain::Result<void> failure(
