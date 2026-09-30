@@ -1,6 +1,7 @@
 #include "core/application_services.h"
 #include "data/data_service.h"
 #include "data/database/database_session.h"
+#include "data/repositories/settings_repository.h"
 #include "next/application/calendar_event_display_preferences.h"
 #include "next/platform/application_services_calendar_event_display_preferences_port.h"
 
@@ -47,13 +48,13 @@ bool executeSql(
     const QString& statement
     )
 {
-    DataService* dataService = services.dataService();
-    if (!dataService || !dataService->databaseSession())
+    DatabaseSession* const session = services.databaseSession();
+    if (!session || !session->isOpen())
     {
         return false;
     }
 
-    QSqlQuery query(dataService->databaseSession()->database());
+    QSqlQuery query(session->database());
     return query.exec(statement);
 }
 
@@ -67,6 +68,7 @@ class NextPlatformApplicationServicesCalendarEventDisplayPreferencesPortTests
 private slots:
     void initTestCase();
     void missingAndUnavailableSettingsDefaultFalse();
+    void readErrorsDefaultFalse();
     void exactKeysRoundTripAndPreserveUnrelatedSettings();
     void preservesLegacyQVariantBooleanCoercion();
     void atomicSaveFailureRollsBackAndPreservesUnrelatedSettings();
@@ -86,6 +88,11 @@ missingAndUnavailableSettingsDefaultFalse()
 {
     ApplicationServices services;
     QVERIFY(openDatabase(services, m_directory));
+    QVERIFY(services.dataService());
+    DatabaseSession* const session = services.databaseSession();
+    QVERIFY(session);
+    QVERIFY(session->isOpen());
+    QVERIFY(session->settingsRepository());
 
     ApplicationServicesCalendarEventDisplayPreferencesPort port(services);
     const auto missing = port.load();
@@ -94,6 +101,11 @@ missingAndUnavailableSettingsDefaultFalse()
     QVERIFY(!missing.value().hideStartOfTermEvents);
 
     ApplicationServices unavailableServices;
+    QVERIFY(unavailableServices.dataService());
+    DatabaseSession* const unavailableSession =
+        unavailableServices.databaseSession();
+    QVERIFY(unavailableSession);
+    QVERIFY(!unavailableSession->isOpen());
     ApplicationServicesCalendarEventDisplayPreferencesPort unavailablePort(
         unavailableServices
         );
@@ -105,6 +117,51 @@ missingAndUnavailableSettingsDefaultFalse()
         .showEventsAtAllCampuses = true,
         .hideStartOfTermEvents = true
     }));
+
+    ApplicationServices closedServices;
+    const QString closedDatabasePath = databasePath(m_directory);
+    QVERIFY(closedServices.openDatabase(closedDatabasePath));
+    QVERIFY(closedServices.dataService());
+    DatabaseSession* const closedSession = closedServices.databaseSession();
+    QVERIFY(closedSession);
+    QVERIFY(closedSession->isOpen());
+    SettingsRepository* const closedRepository =
+        closedSession->settingsRepository();
+    QVERIFY(closedRepository);
+    QVERIFY(closedRepository->saveSettings({
+        {QString::fromUtf8(ShowAllCampusesKey), true},
+        {QString::fromUtf8(HideStartOfTermEventsKey), true}
+    }));
+
+    ApplicationServicesCalendarEventDisplayPreferencesPort closedPort(
+        closedServices
+        );
+    closedServices.closeDatabase();
+    QVERIFY(closedServices.dataService());
+    QVERIFY(!closedSession->isOpen());
+    const auto closed = closedPort.load();
+    QVERIFY(closed);
+    QCOMPARE(closed.value(), CalendarEventDisplayPreferences{});
+    QVERIFY(closedPort.save({
+        .showEventsAtAllCampuses = false,
+        .hideStartOfTermEvents = false
+    }));
+
+    QVERIFY(closedServices.openDatabase(closedDatabasePath));
+    QVERIFY(closedSession->isOpen());
+    SettingsRepository* const reopenedRepository =
+        closedSession->settingsRepository();
+    QVERIFY(reopenedRepository);
+    const auto unchangedShow = reopenedRepository->loadSetting(
+        QString::fromUtf8(ShowAllCampusesKey)
+        );
+    const auto unchangedHide = reopenedRepository->loadSetting(
+        QString::fromUtf8(HideStartOfTermEventsKey)
+        );
+    QVERIFY(unchangedShow);
+    QVERIFY(unchangedHide);
+    QCOMPARE(unchangedShow->toBool(), true);
+    QCOMPARE(unchangedHide->toBool(), true);
 
     ApplicationServicesCalendarEventDisplayPreferencesPort nullPort(
         static_cast<ApplicationServices*>(nullptr)
@@ -119,13 +176,37 @@ missingAndUnavailableSettingsDefaultFalse()
 }
 
 void NextPlatformApplicationServicesCalendarEventDisplayPreferencesPortTests::
+readErrorsDefaultFalse()
+{
+    ApplicationServices services;
+    QVERIFY(openDatabase(services, m_directory));
+    QVERIFY(services.dataService());
+    DatabaseSession* const session = services.databaseSession();
+    QVERIFY(session);
+    QVERIFY(session->isOpen());
+    QVERIFY(session->settingsRepository());
+    QVERIFY(executeSql(services, QStringLiteral("DROP TABLE app_settings")));
+
+    ApplicationServicesCalendarEventDisplayPreferencesPort port(services);
+    const auto loaded = port.load();
+    QVERIFY(loaded);
+    QVERIFY(!loaded.value().showEventsAtAllCampuses);
+    QVERIFY(!loaded.value().hideStartOfTermEvents);
+}
+
+void NextPlatformApplicationServicesCalendarEventDisplayPreferencesPortTests::
 exactKeysRoundTripAndPreserveUnrelatedSettings()
 {
     ApplicationServices services;
     QVERIFY(openDatabase(services, m_directory));
     QVERIFY(services.dataService());
+    DatabaseSession* const session = services.databaseSession();
+    QVERIFY(session);
+    QVERIFY(session->isOpen());
+    SettingsRepository* const repository = session->settingsRepository();
+    QVERIFY(repository);
     QVERIFY(
-        services.dataService()->saveSetting(
+        repository->saveSetting(
             QString::fromUtf8(UnrelatedKey),
             QStringLiteral("preserved")
             )
@@ -145,10 +226,10 @@ exactKeysRoundTripAndPreserveUnrelatedSettings()
     QVERIFY(loaded);
     QCOMPARE(loaded.value(), expected);
 
-    const auto storedShowAllCampuses = services.dataService()->loadSetting(
+    const auto storedShowAllCampuses = repository->loadSetting(
         QString::fromUtf8(ShowAllCampusesKey)
         );
-    const auto storedHideStartOfTermEvents = services.dataService()->loadSetting(
+    const auto storedHideStartOfTermEvents = repository->loadSetting(
         QString::fromUtf8(HideStartOfTermEventsKey)
         );
     QVERIFY(storedShowAllCampuses);
@@ -156,7 +237,7 @@ exactKeysRoundTripAndPreserveUnrelatedSettings()
     QCOMPARE(storedShowAllCampuses->toBool(), true);
     QCOMPARE(storedHideStartOfTermEvents->toBool(), true);
 
-    const auto unrelated = services.dataService()->loadSetting(
+    const auto unrelated = repository->loadSetting(
         QString::fromUtf8(UnrelatedKey)
         );
     QVERIFY(unrelated);
@@ -169,6 +250,11 @@ preservesLegacyQVariantBooleanCoercion()
     ApplicationServices services;
     QVERIFY(openDatabase(services, m_directory));
     QVERIFY(services.dataService());
+    DatabaseSession* const session = services.databaseSession();
+    QVERIFY(session);
+    QVERIFY(session->isOpen());
+    SettingsRepository* const repository = session->settingsRepository();
+    QVERIFY(repository);
 
     const std::array<std::pair<QVariant, bool>, 6> values = {{
         {QVariant(QStringLiteral(" TRUE ")), true},
@@ -188,9 +274,9 @@ preservesLegacyQVariantBooleanCoercion()
     {
         for (const auto& [value, expected] : values)
         {
-            QVERIFY(services.dataService()->saveSetting(key, value));
+            QVERIFY(repository->saveSetting(key, value));
             QVERIFY(
-                services.dataService()->saveSetting(
+                repository->saveSetting(
                     key == keys.at(0) ? keys.at(1) : keys.at(0),
                     false
                     )
@@ -218,6 +304,11 @@ atomicSaveFailureRollsBackAndPreservesUnrelatedSettings()
     ApplicationServices services;
     QVERIFY(openDatabase(services, m_directory));
     QVERIFY(services.dataService());
+    DatabaseSession* const session = services.databaseSession();
+    QVERIFY(session);
+    QVERIFY(session->isOpen());
+    SettingsRepository* const repository = session->settingsRepository();
+    QVERIFY(repository);
 
     const CalendarEventDisplayPreferences initial{
         .showEventsAtAllCampuses = false,
@@ -231,7 +322,7 @@ atomicSaveFailureRollsBackAndPreservesUnrelatedSettings()
     ApplicationServicesCalendarEventDisplayPreferencesPort port(services);
     QVERIFY(port.save(initial));
     QVERIFY(
-        services.dataService()->saveSetting(
+        repository->saveSetting(
             QString::fromUtf8(UnrelatedKey),
             QStringLiteral("preserved")
             )
@@ -256,7 +347,7 @@ atomicSaveFailureRollsBackAndPreservesUnrelatedSettings()
     QVERIFY(loaded);
     QCOMPARE(loaded.value(), initial);
 
-    const auto unrelated = services.dataService()->loadSetting(
+    const auto unrelated = repository->loadSetting(
         QString::fromUtf8(UnrelatedKey)
         );
     QVERIFY(unrelated);

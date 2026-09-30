@@ -1,7 +1,8 @@
 #pragma once
 
-#include "app/services/feature_services.h"
 #include "core/application_services.h"
+#include "data/database/database_session.h"
+#include "data/repositories/settings_repository.h"
 #include "next/application/calendar_event_display_preferences.h"
 
 #include <QByteArray>
@@ -13,7 +14,7 @@ namespace ClassMngr::Next::Platform
 
 // Qt-boundary adapter for the two calendar event-display settings. The
 // ApplicationServices/settings access and QVariant conversion stay here;
-// saveAll keeps the pair atomic and leaves unrelated settings untouched.
+// saveSettings keeps the pair atomic and leaves unrelated settings untouched.
 class ApplicationServicesCalendarEventDisplayPreferencesPort final
     : public Application::CalendarEventDisplayPreferencesPort
 {
@@ -21,16 +22,14 @@ public:
     explicit ApplicationServicesCalendarEventDisplayPreferencesPort(
         ApplicationServices& services
         ) noexcept
-        : m_settingsService(services.settingsService())
+        : m_session(services.databaseSession())
     {
     }
 
     explicit ApplicationServicesCalendarEventDisplayPreferencesPort(
         ApplicationServices* services
         ) noexcept
-        : m_settingsService(
-            services ? services->settingsService() : nullptr
-            )
+        : m_session(services ? services->databaseSession() : nullptr)
     {
     }
 
@@ -50,24 +49,30 @@ public:
     [[nodiscard]] Application::CalendarEventDisplayPreferencesResult load()
         const override
     {
-        if (!m_settingsService || !m_settingsService->isAvailable())
+        if (!m_session || !m_session->isOpen())
         {
             return Application::CalendarEventDisplayPreferencesResult::success({});
         }
 
+        SettingsRepository* const repository = m_session->settingsRepository();
+        if (!repository)
+        {
+            return Application::CalendarEventDisplayPreferencesResult::success({});
+        }
+
+        const auto showAllCampuses = repository->loadSetting(
+            showEventsAtAllCampusesKey()
+            );
+        const auto hideStartOfTerm = repository->loadSetting(
+            hideStartOfTermEventsKey()
+            );
         return Application::CalendarEventDisplayPreferencesResult::success({
             .showEventsAtAllCampuses = settingToBool(
-                m_settingsService->loadOrDefault(
-                    showEventsAtAllCampusesKey(),
-                    false
-                    ),
+                showAllCampuses ? *showAllCampuses : QVariant(),
                 false
                 ),
             .hideStartOfTermEvents = settingToBool(
-                m_settingsService->loadOrDefault(
-                    hideStartOfTermEventsKey(),
-                    false
-                    ),
+                hideStartOfTerm ? *hideStartOfTerm : QVariant(),
                 false
                 )
         });
@@ -78,13 +83,20 @@ public:
         const Application::CalendarEventDisplayPreferencesSaveRequest& request
         ) const override
     {
-        if (!m_settingsService || !m_settingsService->isAvailable())
+        if (!m_session || !m_session->isOpen())
         {
             return Application::
                 CalendarEventDisplayPreferencesSaveResult::success();
         }
 
-        const Status saved = m_settingsService->saveAll({
+        SettingsRepository* const repository = m_session->settingsRepository();
+        if (!repository)
+        {
+            return Application::
+                CalendarEventDisplayPreferencesSaveResult::success();
+        }
+
+        const Status saved = repository->saveSettings({
             {
                 showEventsAtAllCampusesKey(),
                 request.showEventsAtAllCampuses
@@ -146,7 +158,7 @@ private:
         return value.toBool();
     }
 
-    SettingsService* m_settingsService = nullptr;
+    DatabaseSession* m_session = nullptr;
 };
 
 } // namespace ClassMngr::Next::Platform
