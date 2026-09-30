@@ -1,8 +1,8 @@
 #pragma once
 
-#include "app/services/feature_services.h"
 #include "core/application_services.h"
 #include "data/database/database_session.h"
+#include "data/repositories/class_info_repository.h"
 #include "next/application/schedule_builder_source_snapshot.h"
 
 #include <QByteArray>
@@ -49,14 +49,15 @@ public:
 
         try
         {
-            ClassService classService(session, nullptr);
-            if (!classService.isAvailable())
+            ClassInfoRepository* const repository =
+                session->classInfoRepository();
+            if (!repository)
             {
                 return unavailableFailure();
             }
 
             const Result<QList<ClassInfo>> loaded =
-                classService.scheduleClassInfos();
+                repository->loadScheduleClassInfos();
             if (!loaded)
             {
                 return failure(
