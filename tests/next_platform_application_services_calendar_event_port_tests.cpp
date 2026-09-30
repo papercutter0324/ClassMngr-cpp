@@ -260,7 +260,7 @@ private slots:
     void reportsSaveServiceFailureStructurally();
     void createsDailyWeeklyMonthlySeriesWithTypedIdsAndParity();
     void reportsInvalidSeriesCreateRequestStructurally();
-    void reportsUnavailableSeriesCreateServiceStructurally();
+    void reportsUnavailableSeriesCreateSessionStructurally();
     void reportsSeriesCreateBatchFailureWithoutPartialRows();
     void editsValidRepeatSeriesSuffixWithTypedParity();
     void acceptsEmptyRepeatSeriesEditSuffixAsNoOp();
@@ -1371,11 +1371,16 @@ createsDailyWeeklyMonthlySeriesWithTypedIdsAndParity()
 {
     ApplicationServices services;
     QVERIFY(openDatabase(services, m_directory));
-    CalendarService* legacyService = services.calendarService();
-    QVERIFY(legacyService);
+    QVERIFY(services.dataService());
+    DatabaseSession* const session = services.databaseSession();
+    QVERIFY(session);
+    QVERIFY(session->isOpen());
+    CalendarEventRepository* const repository =
+        session->calendarEventRepository();
+    QVERIFY(repository);
 
     ApplicationServicesCalendarEventSeriesCreatePort port(services);
-    const QList<CalendarEventSeriesCreateRequest> requests{
+    QList<CalendarEventSeriesCreateRequest> requests{
         seriesCreateRequest(
             "series-daily",
             {
@@ -1411,16 +1416,19 @@ createsDailyWeeklyMonthlySeriesWithTypedIdsAndParity()
             true
             )
     };
+    requests[0].repeatSeriesId = " \tseries-daily \t";
+    requests[0].occurrences[0].title = "  Daily   title  ";
+    requests[0].occurrences[0].eventType = "  Meeting  ";
+    requests[0].occurrences[0].timeStatus = "  Timed  ";
+    for (CalendarEventSaveRequest& occurrence : requests[1].occurrences)
+    {
+        occurrence.eventType = "  Other  ";
+    }
 
     const QList<QString> seriesIds{
         QStringLiteral("series-daily"),
         QStringLiteral("series-weekly"),
         QStringLiteral("series-monthly")
-    };
-    const QList<QString> titles{
-        QStringLiteral("Daily title"),
-        QStringLiteral("Weekly title"),
-        QStringLiteral("Monthly title")
     };
     const QList<QList<QPair<QDate, QDate>>> expectedRanges{
         {
@@ -1440,6 +1448,7 @@ createsDailyWeeklyMonthlySeriesWithTypedIdsAndParity()
         }
     };
 
+    int previousEventId = 0;
     for (int requestIndex = 0; requestIndex < requests.size();
          ++requestIndex)
     {
@@ -1447,7 +1456,10 @@ createsDailyWeeklyMonthlySeriesWithTypedIdsAndParity()
             requests.at(requestIndex)
             );
         QVERIFY(created);
-        QCOMPARE(created.value().size(), std::size_t(3));
+        QCOMPARE(
+            created.value().size(),
+            requests.at(requestIndex).occurrences.size()
+            );
 
         const std::vector<CalendarEventSaveRequest>& occurrences =
             requests.at(requestIndex).occurrences;
@@ -1462,15 +1474,21 @@ createsDailyWeeklyMonthlySeriesWithTypedIdsAndParity()
                 );
             QVERIFY(converted);
             QVERIFY(legacyId > 0);
-            QVERIFY(legacyService->event(legacyId));
+            QVERIFY(legacyId > previousEventId);
+            previousEventId = legacyId;
 
-            const auto loaded = legacyService->event(legacyId);
+            const auto loaded = repository->getCalendarEvent(legacyId);
             QVERIFY(loaded);
             QCOMPARE(
                 loaded->repeatSeriesId,
                 seriesIds.at(requestIndex)
                 );
-            QCOMPARE(loaded->title, titles.at(requestIndex));
+            QCOMPARE(
+                loaded->title,
+                QString::fromStdString(
+                    occurrences.at(occurrenceIndex).title
+                    ).simplified()
+                );
             QCOMPARE(
                 loaded->startDate,
                 expectedRanges.at(requestIndex).at(
@@ -1487,13 +1505,13 @@ createsDailyWeeklyMonthlySeriesWithTypedIdsAndParity()
                 loaded->eventType,
                 QString::fromStdString(
                     occurrences.at(occurrenceIndex).eventType
-                    )
+                    ).trimmed()
                 );
             QCOMPARE(
                 loaded->timeStatus,
                 QString::fromStdString(
                     occurrences.at(occurrenceIndex).timeStatus
-                    )
+                    ).trimmed()
                 );
 
             if (requestIndex == 0)
@@ -1594,14 +1612,48 @@ reportsInvalidSeriesCreateRequestStructurally()
 }
 
 void NextPlatformApplicationServicesCalendarEventPortTests::
-reportsUnavailableSeriesCreateServiceStructurally()
+reportsUnavailableSeriesCreateSessionStructurally()
 {
     ApplicationServices services;
+    QVERIFY(services.dataService());
+    DatabaseSession* const session = services.databaseSession();
+    QVERIFY(session);
+    QVERIFY(!session->isOpen());
     ApplicationServicesCalendarEventSeriesCreatePort port(services);
+
+    auto invalidRequest = seriesCreateRequest(
+        "series-unavailable",
+        {{QDate(2026, 12, 1), QDate(2026, 12, 1)}},
+        QStringLiteral("Valid title"),
+        QStringLiteral("Meeting"),
+        QStringLiteral("Timed")
+        );
+    invalidRequest.repeatSeriesId = " \t";
+    verifyFailure(
+        port.createRepeatSeries(invalidRequest),
+        ErrorCode::InvalidInput
+        );
 
     verifyFailure(
         port.createRepeatSeries(seriesCreateRequest(
             "series-unavailable",
+            {{QDate(2026, 12, 1), QDate(2026, 12, 1)}},
+            QStringLiteral("Valid title"),
+            QStringLiteral("Meeting"),
+            QStringLiteral("Timed")
+            )),
+        ErrorCode::NotFound
+        );
+
+    QVERIFY(openDatabase(services, m_directory));
+    QVERIFY(session->isOpen());
+    QVERIFY(session->calendarEventRepository());
+    services.closeDatabase();
+    QVERIFY(services.dataService());
+    QVERIFY(!session->isOpen());
+    verifyFailure(
+        port.createRepeatSeries(seriesCreateRequest(
+            "series-closed",
             {{QDate(2026, 12, 1), QDate(2026, 12, 1)}},
             QStringLiteral("Valid title"),
             QStringLiteral("Meeting"),
@@ -1616,10 +1668,15 @@ reportsSeriesCreateBatchFailureWithoutPartialRows()
 {
     ApplicationServices services;
     QVERIFY(openDatabase(services, m_directory));
+    QVERIFY(services.dataService());
+    DatabaseSession* const session = services.databaseSession();
+    QVERIFY(session);
+    QVERIFY(session->isOpen());
+    CalendarEventRepository* const repository =
+        session->calendarEventRepository();
+    QVERIFY(repository);
 
-    QSqlQuery query(
-        services.dataService()->databaseSession()->database()
-        );
+    QSqlQuery query(session->database());
     QVERIFY(query.exec(QStringLiteral(
         "CREATE TRIGGER reject_calendar_series_second_occurrence "
         "BEFORE INSERT ON calendar_events "
@@ -1648,7 +1705,7 @@ reportsSeriesCreateBatchFailureWithoutPartialRows()
             != std::string::npos
         );
 
-    const auto loaded = services.calendarService()->eventsInRange(
+    const auto loaded = repository->loadCalendarEventsInRange(
         QDate(2026, 12, 1),
         QDate(2026, 12, 3)
         );
