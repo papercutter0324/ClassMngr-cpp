@@ -8299,7 +8299,7 @@ fields/schedule/teacher/count/fallback parity. F167 implementation has not
 started. Gate 1 and Gate 2 remain Partial; Phase 2 remains In Progress and its
 exit gate remains Open.
 
-### Progress update - 2026-10-01 (F189 accepted; F190 selected)
+### Progress update - 2026-10-01 (F190 accepted; F191 selected)
 
 F167, source commit `97efac8b`, updates
 `ApplicationServicesClassDetailsPageReadPort` to use active-session
@@ -8624,20 +8624,26 @@ unavailable/closed sessions with `DataService`, read failure, and rollback on a
 second update. Source has one suffix load and one batch save; tests do not
 instrument call count.
 
-F190 is selected for `ApplicationServicesCalendarEventDisplayPreferencesPort`
-in `src/next/platform/application_services_calendar_event_display_preferences_port.h`,
-with focused tests in
-`tests/next_platform_application_services_calendar_event_display_preferences_port_tests.cpp`.
-Use only the ApplicationServices-bound active open session's
-`SettingsRepository`; preserve generic/sessionless `SettingsService` behavior
-from F111. Keep the exact two keys, default-false reads, QVariant boolean
-coercion, read-error fallback to false, unavailable/null defaults and no-op
-saves, Technical save-error mapping, atomic two-key persistence, and unrelated
-setting preservation. Keep typed callers/UI unchanged and cover unavailable
-and closed sessions with `DataService` present. Verify
-`ClassMngrNextPlatformApplicationServicesCalendarEventDisplayPreferencesPortTests`
-(registered in `next.cmake:1416`). The two independent Explorer lanes selected
-this narrow adapter boundary based on existing transactional repository support
-and focused round-trip/coercion/rollback tests; first-day preference behavior
-has locale fallback and save-warning differences. Gate 1 and Gate 2 remain
-Partial; Phase 2 remains In Progress and its exit gate remains Open.
+F190, source commit `7d1c6cdd`, migrates
+`ApplicationServicesCalendarEventDisplayPreferencesPort` to the active open
+session's `SettingsRepository`. It preserves the exact keys, default-false
+reads, QVariant boolean coercion, read-error fallback to false, unavailable
+and null no-op behavior, Technical save-error mapping, atomic two-key save,
+and unrelated settings. The focused build succeeded; the independent Tester
+passed `ClassMngrNextPlatformApplicationServicesCalendarEventDisplayPreferencesPortTests`
+1/1 and `git diff --check`. Closed/unavailable-session coverage includes
+`DataService`; generic `SettingsService` behavior and UI/callers are unchanged.
+The stale `saveAll` comment was corrected before the source commit.
+
+F191 is selected to migrate
+`ApplicationServicesCalendarEventTypeColorPreferencesPort` in
+`src/next/platform/application_services_calendar_event_type_color_preferences_port.h`
+to the active-session `SettingsRepository`, with focused coverage in
+`tests/next_platform_application_services_calendar_event_type_color_preferences_port_tests.cpp`.
+Preserve caller-owned normalization and color fallback, dynamic setting keys,
+invalid stored-color behavior, warning on save error, unavailable/null
+behavior, and unrelated settings. Verify
+`NextPlatformApplicationServicesCalendarEventTypeColorPreferencesPort`. Two
+independent Explorer lanes agreed based on the adapter, tests, repository API,
+and code map. Gate 1 and Gate 2 remain Partial; Phase 2 remains In Progress
+and its exit gate remains Open.
