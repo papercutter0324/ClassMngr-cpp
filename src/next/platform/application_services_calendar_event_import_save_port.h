@@ -1,13 +1,16 @@
 #pragma once
 
-#include "app/services/feature_services.h"
 #include "core/application_services.h"
+#include "data/database/database_session.h"
+#include "data/repositories/calendar_event_repository.h"
+#include "domain/validation/calendar_event_validator.h"
 #include "next/application/calendar_event_import_save_port.h"
 
 #include <QByteArray>
 #include <QDate>
 #include <QList>
 #include <QString>
+#include <QStringList>
 #include <QTime>
 
 #include <exception>
@@ -19,8 +22,8 @@
 namespace ClassMngr::Next::Platform
 {
 
-// Converts an ordered, typed import batch and delegates it in one call so the
-// legacy repository transaction still covers the complete import.
+// Converts an ordered, typed import batch and makes one repository call so
+// its transaction covers the complete import.
 class ApplicationServicesCalendarEventImportSavePort final
     : public Application::CalendarEventImportSavePort
 {
@@ -61,8 +64,8 @@ public:
 
         try
         {
-            CalendarService* service = m_services.calendarService();
-            if (!service || !service->isAvailable())
+            DatabaseSession* const session = m_services.databaseSession();
+            if (!session || !session->isOpen())
             {
                 return failure(
                     Domain::ErrorCode::NotFound,
@@ -70,8 +73,10 @@ public:
                     );
             }
 
-            QList<CalendarEvent> events;
-            events.reserve(static_cast<qsizetype>(request.events.size()));
+            QList<CalendarEvent> normalizedEvents;
+            normalizedEvents.reserve(
+                static_cast<qsizetype>(request.events.size())
+                );
             for (const Application::CalendarEventSaveRequest& source :
                  request.events)
             {
@@ -84,15 +89,38 @@ public:
                         );
                 }
 
-                events.append(*event);
+                normalizedEvents.append(
+                    CalendarEventValidator::normalized(*event)
+                    );
+            }
+
+            const ValidationResult validation =
+                CalendarEventValidator::validateSeries(normalizedEvents);
+            if (validation.hasErrors())
+            {
+                return failure(
+                    Domain::ErrorCode::Technical,
+                    validationError(validation)
+                    );
+            }
+
+            CalendarEventRepository* const repository =
+                session->calendarEventRepository();
+            if (!repository)
+            {
+                return failure(
+                    Domain::ErrorCode::NotFound,
+                    "The calendar event repository is unavailable."
+                    );
             }
 
             // Keep one save call: CalendarEventRepository owns the batch
-            // transaction and preserves input order.
-            const ::Result<QList<int>> saved = service->saveEvents(events);
+            // transaction and preserves input order, including empty batches.
+            const ::Result<QList<int>> saved =
+                repository->saveCalendarEvents(normalizedEvents);
             if (!saved)
             {
-                if (!service->isAvailable())
+                if (!session->isOpen())
                 {
                     return failure(
                         Domain::ErrorCode::NotFound,
@@ -165,6 +193,28 @@ public:
     }
 
 private:
+    [[nodiscard]] static std::string validationError(
+        const ValidationResult& validation
+        )
+    {
+        QStringList details;
+        for (const ValidationIssue& issue : validation.errors())
+        {
+            QString detail = issue.field.isEmpty()
+                ? issue.code
+                : QStringLiteral("%1: %2").arg(issue.field, issue.code);
+            if (issue.row >= 0 && !issue.field.contains(QChar(u'[')))
+            {
+                detail.prepend(QStringLiteral("row %1, ").arg(issue.row + 1));
+            }
+            details.append(detail);
+        }
+
+        return QStringLiteral("Calendar events validation failed: %1")
+            .arg(details.join(QStringLiteral("; ")))
+            .toStdString();
+    }
+
     [[nodiscard]] static QString legacyText(
         const std::string& value
         )

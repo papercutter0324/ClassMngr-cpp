@@ -253,7 +253,7 @@ private slots:
     void acceptsDuplicateOnlyEmptyImportBatchAsNoOp();
     void rejectsInvalidImportBatchBeforeCreatingAnyRows();
     void reportsImportBatchFailureWithoutPartialRows();
-    void reportsUnavailableImportSaveServiceStructurally();
+    void reportsUnavailableImportSaveSessionStructurally();
     void createsAndUpdatesValidEventWithTypedIdMapping();
     void reportsInvalidSaveRequestStructurally();
     void reportsUnavailableSaveSessionStructurally();
@@ -980,42 +980,82 @@ savesOrderedCalendarImportBatchWithTypedIdsAndParity()
 {
     ApplicationServices services;
     QVERIFY(openDatabase(services, m_directory));
-    CalendarService* legacyService = services.calendarService();
-    QVERIFY(legacyService);
+    QVERIFY(services.dataService());
+    DatabaseSession* const session = services.databaseSession();
+    QVERIFY(session);
+    QVERIFY(session->isOpen());
+    CalendarEventRepository* const repository =
+        session->calendarEventRepository();
+    QVERIFY(repository);
+
+    CalendarEventImportSaveRequest request = validImportSaveRequest();
+    request.events.front().title = "  Later   imported event  ";
+    request.events.front().eventType = "  Workshop  ";
+    request.events.front().timeStatus = "  Unknown  ";
+    CalendarEventSaveRequest timedEvent = validSaveRequest();
+    timedEvent.title = "Timed imported event";
+    timedEvent.startDate = "2026-12-11";
+    timedEvent.endDate = "2026-12-11";
+    request.events.push_back(std::move(timedEvent));
 
     ApplicationServicesCalendarEventImportSavePort port(services);
-    const auto saved = port.saveImportedEvents(validImportSaveRequest());
+    const auto saved = port.saveImportedEvents(request);
 
     QVERIFY(saved);
-    QCOMPARE(saved.value().size(), std::size_t(2));
+    QCOMPARE(saved.value().size(), std::size_t(3));
     const int laterEventId = std::stoi(saved.value().at(0).value());
     const int earlierEventId = std::stoi(saved.value().at(1).value());
+    const int timedEventId = std::stoi(saved.value().at(2).value());
     QVERIFY(laterEventId > 0);
     QVERIFY(earlierEventId > laterEventId);
+    QVERIFY(timedEventId > earlierEventId);
 
-    const auto laterEvent = legacyService->event(laterEventId);
+    const auto laterEvent = repository->getCalendarEvent(laterEventId);
     QVERIFY(laterEvent);
     QCOMPARE(laterEvent->title, QStringLiteral("Later imported event"));
+    QCOMPARE(laterEvent->eventType, QStringLiteral("Workshop"));
     QCOMPARE(laterEvent->startDate, QDate(2026, 12, 12));
+    QCOMPARE(laterEvent->endDate, QDate(2026, 12, 12));
     QCOMPARE(laterEvent->timeStatus, QStringLiteral("Unknown"));
+    QVERIFY(!laterEvent->allDay);
     QVERIFY(!laterEvent->startTime.isValid());
+    QVERIFY(!laterEvent->endTime.isValid());
     QVERIFY(laterEvent->repeatSeriesId.isEmpty());
 
-    const auto earlierEvent = legacyService->event(earlierEventId);
+    const auto earlierEvent = repository->getCalendarEvent(earlierEventId);
     QVERIFY(earlierEvent);
     QCOMPARE(earlierEvent->title, QStringLiteral("Earlier imported event"));
     QCOMPARE(earlierEvent->startDate, QDate(2026, 12, 10));
+    QCOMPARE(earlierEvent->endDate, QDate(2026, 12, 10));
     QCOMPARE(earlierEvent->eventType, QStringLiteral("Holiday"));
+    QCOMPARE(earlierEvent->timeStatus, QStringLiteral("Timed"));
     QVERIFY(earlierEvent->allDay);
     QVERIFY(!earlierEvent->startTime.isValid());
+    QVERIFY(!earlierEvent->endTime.isValid());
     QVERIFY(earlierEvent->repeatSeriesId.isEmpty());
 
-    const auto loaded = legacyService->eventsInRange(
+    const auto persistedTimedEvent =
+        repository->getCalendarEvent(timedEventId);
+    QVERIFY(persistedTimedEvent);
+    QCOMPARE(
+        persistedTimedEvent->title,
+        QStringLiteral("Timed imported event")
+        );
+    QCOMPARE(persistedTimedEvent->eventType, QStringLiteral("Meeting"));
+    QCOMPARE(persistedTimedEvent->startDate, QDate(2026, 12, 11));
+    QCOMPARE(persistedTimedEvent->endDate, QDate(2026, 12, 11));
+    QCOMPARE(persistedTimedEvent->timeStatus, QStringLiteral("Timed"));
+    QVERIFY(!persistedTimedEvent->allDay);
+    QCOMPARE(persistedTimedEvent->startTime, QTime(9, 0));
+    QCOMPARE(persistedTimedEvent->endTime, QTime(10, 0));
+    QVERIFY(persistedTimedEvent->repeatSeriesId.isEmpty());
+
+    const auto loaded = repository->loadCalendarEventsInRange(
         QDate(2026, 12, 10),
         QDate(2026, 12, 12)
         );
     QVERIFY(loaded);
-    QCOMPARE(loaded->size(), 2);
+    QCOMPARE(loaded->size(), 3);
 }
 
 void NextPlatformApplicationServicesCalendarEventPortTests::
@@ -1023,11 +1063,23 @@ acceptsDuplicateOnlyEmptyImportBatchAsNoOp()
 {
     ApplicationServices services;
     QVERIFY(openDatabase(services, m_directory));
+    QVERIFY(services.dataService());
+    DatabaseSession* const session = services.databaseSession();
+    QVERIFY(session);
+    QVERIFY(session->isOpen());
+    QVERIFY(session->calendarEventRepository());
     ApplicationServicesCalendarEventImportSavePort port(services);
 
     const auto saved = port.saveImportedEvents({});
     QVERIFY(saved);
     QVERIFY(saved.value().empty());
+    const auto loaded = session->calendarEventRepository()
+        ->loadCalendarEventsInRange(
+            QDate(2026, 12, 10),
+            QDate(2026, 12, 12)
+            );
+    QVERIFY(loaded);
+    QVERIFY(loaded->isEmpty());
 }
 
 void NextPlatformApplicationServicesCalendarEventPortTests::
@@ -1035,18 +1087,37 @@ rejectsInvalidImportBatchBeforeCreatingAnyRows()
 {
     ApplicationServices services;
     QVERIFY(openDatabase(services, m_directory));
-    CalendarService* legacyService = services.calendarService();
-    QVERIFY(legacyService);
+    QVERIFY(services.dataService());
+    DatabaseSession* const session = services.databaseSession();
+    QVERIFY(session);
+    QVERIFY(session->isOpen());
+    CalendarEventRepository* const repository =
+        session->calendarEventRepository();
+    QVERIFY(repository);
 
     auto request = validImportSaveRequest();
     request.events.back().id = calendarEventId(999);
     ApplicationServicesCalendarEventImportSavePort port(services);
-    verifyFailure(
-        port.saveImportedEvents(request),
-        ErrorCode::InvalidInput
+    const auto creationOnly = port.saveImportedEvents(request);
+    verifyFailure(creationOnly, ErrorCode::InvalidInput);
+    QCOMPARE(
+        creationOnly.error().message,
+        std::string("Calendar imports may only create new events.")
         );
 
-    const auto loaded = legacyService->eventsInRange(
+    CalendarEventImportSaveRequest tooManyEvents;
+    tooManyEvents.events.resize(
+        kCalendarEventImportSaveMaxEvents + 1,
+        validSaveRequest()
+        );
+    const auto tooMany = port.saveImportedEvents(tooManyEvents);
+    verifyFailure(tooMany, ErrorCode::InvalidInput);
+    QCOMPARE(
+        tooMany.error().message,
+        std::string("Calendar import event count exceeds the maximum.")
+        );
+
+    const auto loaded = repository->loadCalendarEventsInRange(
         QDate(2026, 12, 10),
         QDate(2026, 12, 12)
         );
@@ -1059,12 +1130,15 @@ reportsImportBatchFailureWithoutPartialRows()
 {
     ApplicationServices services;
     QVERIFY(openDatabase(services, m_directory));
-    CalendarService* legacyService = services.calendarService();
-    QVERIFY(legacyService);
+    QVERIFY(services.dataService());
+    DatabaseSession* const session = services.databaseSession();
+    QVERIFY(session);
+    QVERIFY(session->isOpen());
+    CalendarEventRepository* const repository =
+        session->calendarEventRepository();
+    QVERIFY(repository);
 
-    QSqlQuery query(
-        services.dataService()->databaseSession()->database()
-        );
+    QSqlQuery query(session->database());
     QVERIFY(query.exec(QStringLiteral(
         "CREATE TRIGGER reject_calendar_import_second "
         "BEFORE INSERT ON calendar_events "
@@ -1087,7 +1161,7 @@ reportsImportBatchFailureWithoutPartialRows()
             != std::string::npos
     );
 
-    const auto loaded = legacyService->eventsInRange(
+    const auto loaded = repository->loadCalendarEventsInRange(
         QDate(2026, 12, 10),
         QDate(2026, 12, 12)
         );
@@ -1096,15 +1170,40 @@ reportsImportBatchFailureWithoutPartialRows()
 }
 
 void NextPlatformApplicationServicesCalendarEventPortTests::
-reportsUnavailableImportSaveServiceStructurally()
+reportsUnavailableImportSaveSessionStructurally()
 {
     ApplicationServices services;
+    QVERIFY(services.dataService());
+    DatabaseSession* const session = services.databaseSession();
+    QVERIFY(session);
+    QVERIFY(!session->isOpen());
     ApplicationServicesCalendarEventImportSavePort port(services);
 
     verifyFailure(
         port.saveImportedEvents(validImportSaveRequest()),
         ErrorCode::NotFound
         );
+    verifyFailure(port.saveImportedEvents({}), ErrorCode::NotFound);
+
+    auto invalidRequest = validImportSaveRequest();
+    invalidRequest.events.front().id = calendarEventId(999);
+    verifyFailure(
+        port.saveImportedEvents(invalidRequest),
+        ErrorCode::InvalidInput
+        );
+
+    QVERIFY(openDatabase(services, m_directory));
+    QVERIFY(session->isOpen());
+    QVERIFY(session->calendarEventRepository());
+    services.closeDatabase();
+    QVERIFY(services.dataService());
+    QVERIFY(!session->isOpen());
+
+    verifyFailure(
+        port.saveImportedEvents(validImportSaveRequest()),
+        ErrorCode::NotFound
+        );
+    verifyFailure(port.saveImportedEvents({}), ErrorCode::NotFound);
 }
 
 void NextPlatformApplicationServicesCalendarEventPortTests::
