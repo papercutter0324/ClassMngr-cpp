@@ -1066,13 +1066,32 @@ passed `ClassMngrNextPlatformApplicationServicesCalendarEventDisplayPreferencesP
 `DataService`; generic `SettingsService` behavior and UI/callers are unchanged.
 The stale `saveAll` comment was corrected before the source commit.
 
-## F191 selected Calendar Event type-color preferences port
+## F191 accepted Calendar Event type-color preferences port
 
-Migrate `ApplicationServicesCalendarEventTypeColorPreferencesPort` to the
-active-session `SettingsRepository`, verified by
-`NextPlatformApplicationServicesCalendarEventTypeColorPreferencesPort`.
-Preserve caller-owned normalization and color fallback, dynamic setting keys,
-invalid stored-color behavior, save-error warnings, unavailable/null behavior,
-and unrelated settings. Two independent Explorer lanes selected this adapter
-based on the existing port, focused tests, repository API, and code map. Phase
-2 remains In Progress/Open; Gates 1 and 2 remain Partial.
+Commit `d170c5f3` migrates
+`ApplicationServicesCalendarEventTypeColorPreferencesPort` to use only the
+active open session's `SettingsRepository`. It preserves the exact dynamic
+key, caller-normalized event type, UTF-8 bytes, invalid stored-color passthrough,
+unavailable/null no-op behavior, save-failure warning, and previous value on
+save failure. Tests cover closed-session no-fallback with `DataService`,
+read-error fallback to an empty value, round-trip, unrelated settings, and
+existing behavior. The build succeeded; the independent Tester passed
+`ClassMngrNextPlatformApplicationServicesCalendarEventTypeColorPreferencesPortTests`
+1/1 and `git diff --check`. Generic/sessionless `SettingsService` behavior and
+caller/UI are unchanged.
+
+## F192 selected Calendar first-day-of-week preferences port
+
+Migrate `ApplicationServicesCalendarFirstDayOfWeekPreferencesPort` in
+`src/next/platform/application_services_calendar_first_day_of_week_preferences_port.h`
+to use only the active-session `SettingsRepository`. Preserve the
+`calendar/firstDayOfWeek` key; locale fallback for missing, unavailable, null,
+read-error, and invalid values; all values `0..6`; save-warning behavior; and
+unavailable/closed no-op saves. Keep provider normalization, revision and
+signal ordering, and generic `SettingsService` behavior unchanged. Add focused
+closed-session-with-`DataService` no-fallback and read-error fallback coverage
+to the existing registered `NextPlatformApplicationServicesCalendarFirstDayOfWeekPreferencesPort`
+target in `next.cmake`. This was selected after comparing independent
+candidate scans, based on the existing focused coverage and locale-derived
+fallback contract. Phase 2 remains In
+Progress/Open; Gates 1 and 2 remain Partial.

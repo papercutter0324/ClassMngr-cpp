@@ -46,10 +46,11 @@
   accepted. F182's active Calendar event read/by-ID adapter, F183's single
   Calendar Event save port, F184's Calendar Event delete port, F185's
   Calendar Event delete-all port, F186's repeat-series suffix-delete port,
-  F187's Calendar Event Import save port, F188's repeat-series creation port,
-  and F189's repeat-series edit port, and F190's Calendar Event
-  display-preferences port are accepted. F191 is selected for Calendar Event
-  type-color preferences.
+  F187's Calendar Event Import save port, F188's Calendar Event repeat-series
+  creation port,
+  F189's repeat-series edit port, and F190's Calendar Event display-preferences
+  port are accepted. F191's Calendar Event type-color preferences port is
+  accepted. F192 is selected for Calendar first-day-of-week preferences.
   See the
   [Phase 2 progress
   log](03-Phase-2-Progress-Log.md)
