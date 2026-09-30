@@ -1,7 +1,8 @@
 #pragma once
 
-#include "app/services/feature_services.h"
 #include "core/application_services.h"
+#include "data/database/database_session.h"
+#include "data/repositories/calendar_event_repository.h"
 #include "next/application/calendar_event_by_id_query_port.h"
 #include "next/application/calendar_event_projection.h"
 
@@ -22,9 +23,9 @@
 namespace ClassMngr::Next::Platform
 {
 
-// Qt-boundary adapter that copies the legacy calendar service result into a
+// Qt-boundary adapter that copies the active repository result into a
 // bounded, application-owned event projection. ApplicationServices remains
-// caller-owned; no CalendarService, CalendarEvent, or other legacy pointer
+// caller-owned; no CalendarEvent or repository pointer
 // crosses this boundary.
 class ApplicationServicesCalendarEventPort final
     : public Application::CalendarEventByIdQueryPort
@@ -54,8 +55,10 @@ public:
     {
         try
         {
-            const CalendarService* service = m_services.calendarService();
-            return service && service->isAvailable();
+            DatabaseSession* const session = m_services.databaseSession();
+            return session
+                && session->isOpen()
+                && session->calendarEventRepository();
         }
         catch (...)
         {
@@ -102,28 +105,39 @@ public:
 
         try
         {
-            const CalendarService* service = m_services.calendarService();
-            if (!service || !service->isAvailable())
+            DatabaseSession* const session = m_services.databaseSession();
+            if (!session || !session->isOpen())
             {
                 return failureSummary(
                     Domain::ErrorCode::NotFound,
-                    "The calendar service is unavailable."
+                    "The calendar event repository is unavailable."
                     );
             }
 
-            const ::Result<CalendarEvent> loaded = service->event(eventId);
+            CalendarEventRepository* const repository =
+                session->calendarEventRepository();
+            if (!repository)
+            {
+                return failureSummary(
+                    Domain::ErrorCode::NotFound,
+                    "The calendar event repository is unavailable."
+                    );
+            }
+
+            const ::Result<CalendarEvent> loaded =
+                repository->getCalendarEvent(eventId);
             if (!loaded)
             {
-                const QString legacyError = loaded.error();
-                if (!service->isAvailable())
+                const QString repositoryError = loaded.error();
+                if (!session->isOpen())
                 {
                     return failureSummary(
                         Domain::ErrorCode::NotFound,
-                        "The calendar service is unavailable."
+                        "The calendar event repository is unavailable."
                         );
                 }
 
-                const QString normalizedError = legacyError.toLower();
+                const QString normalizedError = repositoryError.toLower();
                 if (normalizedError.contains(QStringLiteral("no matching record"))
                     || normalizedError.contains(QStringLiteral("not found"))
                     || normalizedError.contains(QStringLiteral("does not exist")))
@@ -134,7 +148,7 @@ public:
                         );
                 }
 
-                const QByteArray errorBytes = legacyError.toUtf8();
+                const QByteArray errorBytes = repositoryError.toUtf8();
                 const std::string message = errorBytes.isEmpty()
                     ? "Calendar event could not be loaded."
                     : "Calendar event could not be loaded: "
@@ -189,29 +203,39 @@ public:
 
         try
         {
-            const CalendarService* service = m_services.calendarService();
-            if (!service || !service->isAvailable())
+            DatabaseSession* const session = m_services.databaseSession();
+            if (!session || !session->isOpen())
             {
                 return failure(
                     Domain::ErrorCode::NotFound,
-                    "The calendar service is unavailable."
+                    "The calendar event repository is unavailable."
+                    );
+            }
+
+            CalendarEventRepository* const repository =
+                session->calendarEventRepository();
+            if (!repository)
+            {
+                return failure(
+                    Domain::ErrorCode::NotFound,
+                    "The calendar event repository is unavailable."
                     );
             }
 
             const ::Result<QList<CalendarEvent>> loaded =
-                service->eventsInRange(startDate, endDate);
+                repository->loadCalendarEventsInRange(startDate, endDate);
             if (!loaded)
             {
-                const QString legacyError = loaded.error();
-                if (!service->isAvailable())
+                const QString repositoryError = loaded.error();
+                if (!session->isOpen())
                 {
                     return failure(
                         Domain::ErrorCode::NotFound,
-                        "The calendar service is unavailable."
+                        "The calendar event repository is unavailable."
                         );
                 }
 
-                const QByteArray errorBytes = legacyError.toUtf8();
+                const QByteArray errorBytes = repositoryError.toUtf8();
                 const std::string message = errorBytes.isEmpty()
                     ? "Calendar events could not be loaded."
                     : "Calendar events could not be loaded: "

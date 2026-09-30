@@ -276,6 +276,7 @@ private slots:
     void preservesLegacyTitleSurroundingSpaces();
     void preservesAllDayAndUnknownTimePolicy();
     void reportsUnavailableAndInvalidRangesStructurally();
+    void reportsCalendarEventRepositoryReadFailuresStructurally();
     void returnsLegacyImportSignatureKeysInRangeOrder();
     void reportsUnavailableAndInvalidImportSignatureRangesStructurally();
     void reportsImportSignatureRangeReadFailureStructurally();
@@ -2211,9 +2212,11 @@ void NextPlatformApplicationServicesCalendarEventPortTests::
 reportsUnavailableAndInvalidRangesStructurally()
 {
     ApplicationServices unavailableServices;
+    QVERIFY(unavailableServices.dataService());
     ApplicationServicesCalendarEventPort unavailablePort(
         unavailableServices
         );
+    QVERIFY(!unavailablePort.isAvailable());
     verifyFailure(
         unavailablePort.projection(
             QDate(2026, 9, 20),
@@ -2233,6 +2236,7 @@ reportsUnavailableAndInvalidRangesStructurally()
     ApplicationServices services;
     QVERIFY(openDatabase(services, m_directory));
     ApplicationServicesCalendarEventPort port(services);
+    QVERIFY(port.isAvailable());
     verifyFailure(
         port.projectionById(0),
         ErrorCode::InvalidInput
@@ -2256,6 +2260,57 @@ reportsUnavailableAndInvalidRangesStructurally()
     verifyFailure(
         port.projection(QDate(2026, 9, 21), QDate(2026, 9, 20)),
         ErrorCode::InvalidInput
+        );
+
+    services.closeDatabase();
+    QVERIFY(services.dataService());
+    QVERIFY(!port.isAvailable());
+    verifyFailure(
+        port.projection(QDate(2026, 9, 20), QDate(2026, 9, 21)),
+        ErrorCode::NotFound
+        );
+    verifyFailure(port.projectionById(1), ErrorCode::NotFound);
+    verifyFailure(
+        port.loadEventById(calendarEventId(1)),
+        ErrorCode::NotFound
+        );
+}
+
+void NextPlatformApplicationServicesCalendarEventPortTests::
+reportsCalendarEventRepositoryReadFailuresStructurally()
+{
+    ApplicationServices services;
+    QVERIFY(openDatabase(services, m_directory));
+    CalendarService* const service = services.calendarService();
+    QVERIFY(service);
+    CalendarEvent event = makeEvent(
+        QStringLiteral("Read failure"),
+        QDate(2026, 9, 20),
+        QDate(2026, 9, 21)
+        );
+    event.startTime = QTime(9, 0);
+    event.endTime = QTime(10, 0);
+    const int eventId = saveEvent(
+        *service,
+        event
+        );
+    QVERIFY(eventId > 0);
+
+    QSqlQuery query(services.databaseSession()->database());
+    QVERIFY2(
+        query.exec(QStringLiteral("DROP TABLE calendar_events")),
+        qPrintable(query.lastError().text())
+        );
+
+    ApplicationServicesCalendarEventPort port(services);
+    verifyFailure(
+        port.projection(QDate(2026, 9, 20), QDate(2026, 9, 21)),
+        ErrorCode::Technical
+        );
+    verifyFailure(port.projectionById(eventId), ErrorCode::Technical);
+    verifyFailure(
+        port.loadEventById(calendarEventId(eventId)),
+        ErrorCode::Technical
         );
 }
 
