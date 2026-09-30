@@ -25,6 +25,15 @@ struct ClassNavigationReadRecord final
     QList<ClassTime> intensiveTimes;
 };
 
+struct ClassSubtitleReadRecord final
+{
+    int classId = -1;
+    int teacherId = -1;
+    QString grade;
+    QString level;
+    QList<ClassTime> regularTimes;
+};
+
 struct ClassesNavigationReadMetrics final
 {
     int metadataStatementCount = 0;
@@ -59,6 +68,9 @@ public:
         );
 
     [[nodiscard]] Result<ClassInfo> loadClassInfo(
+        int classId
+        );
+    [[nodiscard]] Result<ClassSubtitleReadRecord> loadClassSubtitleRecord(
         int classId
         );
 

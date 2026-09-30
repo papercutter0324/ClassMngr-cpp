@@ -11,14 +11,17 @@
 #include "features/classes/ui/class_details_page.h"
 #include "features/classes/ui/class_notes_page.h"
 #include "features/classes/ui/class_analytics_page.h"
+#include "features/classes/ui/classes_page_subtitle_text.h"
 #include "features/roster/ui/roster_editor_widget.h"
 #include "features/speaking_eval/ui/speaking_eval_page.h"
 #include "features/speaking_eval/ui/speaking_eval_report_assets_p.h"
 #include "next/application/classes_list_read_query.h"
 #include "next/application/classes_navigation_snapshot.h"
+#include "next/application/selected_class_subtitle_read_query.h"
 #include "next/application/selected_class_grade_read_query.h"
 #include "next/domain/course.h"
 #include "next/platform/application_services_selected_class_grade_read_port.h"
+#include "next/platform/application_services_selected_class_subtitle_read_port.h"
 #include "next/platform/application_services_class_day_filter_reset_policy_port.h"
 #include "next/platform/application_services_class_selection_reset_policy_port.h"
 #include "next/platform/application_services_class_visibility_preferences_port.h"
@@ -2260,45 +2263,77 @@ void ClassesPage::updateHeaderText()
     m_titleLabel->setText(tr("Classes"));
 
     const Classroom classroom = classroomById(m_currentClassId);
-    auto* classService =
-        m_services
-            ? m_services->classService()
-            : nullptr;
-    auto* teacherService =
-        m_services
-            ? m_services->teacherService()
-            : nullptr;
-
-    if (
-        !classService
-        || !classService->isAvailable()
-        || !teacherService
-        || !teacherService->isAvailable()
-        || classroom.id <= 0
-        )
+    if (classroom.id <= 0)
     {
         m_subtitleLabel->setText(tr("No class selected"));
         return;
     }
 
-    const ClassInfo info = classService->classInfo(classroom.id).value_or(ClassInfo{});
-    Teacher teacher;
-
-    if (info.teacherId > 0)
+    const std::optional<ClassMngr::Next::Domain::ClassId> selectedClassId =
+        ClassMngr::Next::Domain::ClassId::fromString(
+            std::to_string(classroom.id)
+            );
+    if (!selectedClassId)
     {
-        teacher = teacherService->teacher(info.teacherId)
-            .value_or(Teacher{});
+        m_subtitleLabel->setText(tr("No class selected"));
+        return;
+    }
+
+    ClassMngr::Next::Platform::
+        ApplicationServicesSelectedClassSubtitleReadPort readPort(m_services);
+    const ClassMngr::Next::Application::
+        SelectedClassSubtitleReadQuery query(readPort);
+    const auto loadedSubtitle = query.execute(*selectedClassId);
+    if (!loadedSubtitle)
+    {
+        m_subtitleLabel->setText(tr("No class selected"));
+        return;
+    }
+
+    ClassInfo info;
+    Teacher teacher;
+    const auto& subtitle = loadedSubtitle.value();
+    if (subtitle.classFields)
+    {
+        const auto& fields = subtitle.classFields.value();
+        info.classGrade = QString::fromStdU16String(fields.classGrade);
+        info.classLevel = QString::fromStdU16String(fields.classLevel);
+        info.classTimes.reserve(
+            static_cast<qsizetype>(fields.regularSchedule.size())
+            );
+        for (const auto& row : fields.regularSchedule)
+        {
+            ClassTime time;
+            time.day = QString::fromStdU16String(row.day);
+            time.startTime = QString::fromStdU16String(row.startTime);
+            time.endTime.clear();
+            info.classTimes.append(std::move(time));
+        }
+    }
+
+    if (subtitle.assignedTeacher
+        && subtitle.assignedTeacher.value().has_value())
+    {
+        const auto& fields = subtitle.assignedTeacher.value().value();
+        teacher.teacherKr = QString::fromStdU16String(fields.teacherKr);
+        teacher.teacherEn = QString::fromStdU16String(fields.teacherEn);
+        teacher.preferredRomanization = QString::fromStdU16String(
+            fields.preferredRomanization
+            );
+        teacher.preferredName = QString::fromStdU16String(
+            fields.preferredName
+            );
     }
 
     const QString displayName =
         SidebarNodeNaming::formatClassDisplayName(info, teacher).trimmed();
 
     m_subtitleLabel->setText(
-        !displayName.isEmpty()
-            ? displayName
-            : !classroom.name.trimmed().isEmpty()
-                ? classroom.name.trimmed()
-                : tr("Class %1").arg(classroom.id)
+        ClassesPageSubtitleText::fromDisplayNameOrFallback(
+            displayName,
+            classroom.name,
+            tr("Class %1").arg(classroom.id)
+            )
         );
 }
 

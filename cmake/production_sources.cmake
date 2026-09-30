@@ -351,6 +351,7 @@ set(CLASSMNGR_FEATURES_SOURCES
     "src/features/classes/ui/class_notes_page.h"
     "src/features/classes/ui/classes_page.cpp"
     "src/features/classes/ui/classes_page.h"
+    "src/features/classes/ui/classes_page_subtitle_text.h"
     "src/features/classes/ui/testing_classes_page.cpp"
     "src/features/classes/ui/testing_classes_page.h"
     "src/features/documents/document_catalog.cpp"

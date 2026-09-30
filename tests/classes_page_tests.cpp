@@ -1,8 +1,10 @@
 #include "core/application_services.h"
+#include "app/services/feature_services.h"
 #include "data/data_service.h"
 #include "features/classes/ui/class_co_teacher_page.h"
 #include "features/classes/ui/class_details_page.h"
 #include "features/classes/ui/classes_page.h"
+#include "features/classes/ui/classes_page_subtitle_text.h"
 #include "features/roster/ui/roster_editor_widget.h"
 #include "features/speaking_eval/ui/speaking_eval_page.h"
 #include "domain/models/speaking_evaluation.h"
@@ -40,9 +42,13 @@ namespace ScheduleWidgetTestStubs
 void reset();
 void setIncludeAdditionalClass(bool include);
 void setClassesVisibilityAll();
+void setDatabaseSessionOpen(bool open);
 void setClassName(int classId, const QString& name);
 void setClassGrade(int classId, const QString& grade);
 void setSelectedClassGradeReadFailure(bool fails);
+void setSelectedClassSubtitleReadFailure(bool fails);
+void setSelectedClassSubtitleTeacherReadFailure(bool fails);
+void setSelectedClassSubtitleTeacherId(int teacherId);
 void setIncludeAlternativeMatchingClass(bool include);
 void setExistingIntensiveHours(bool exists);
 void setDistinctIntensiveDays(bool distinct);
@@ -50,6 +56,8 @@ void setClassesNavigationReadFailure(bool fails);
 extern int legacyClassListReadCount;
 extern int repositoryClassListReadCount;
 extern int legacyClassInfoReadCount;
+extern int selectedClassSubtitleReadCount;
+extern int selectedClassSubtitleTeacherReadCount;
 void setSpeakingEvaluation(
     int classId,
     const QString& evaluationName,
@@ -150,6 +158,8 @@ private slots:
     void allGradeTabShowsClassesAcrossGrades();
     void classesNavigationReadFailureKeepsNamesAndBlankMetadata();
     void classesListQueryUsesActiveRepositoryOnOpenAndAfterInfoSave();
+    void selectedClassSubtitleUsesIndependentReadOutcomesAndRefreshes();
+    void selectedClassSubtitleFallbackChainUsesTrimmedValues();
     void classInfoSaveRefreshesVisibleClassListAndPreservesSelection();
     void classInfoSaveRefreshesNavigationSnapshot();
     void dayFilterSelectsAllWhenSelectedGradeDisappears();
@@ -886,6 +896,98 @@ classesListQueryUsesActiveRepositoryOnOpenAndAfterInfoSave()
     QCOMPARE(ScheduleWidgetTestStubs::legacyClassListReadCount, 0);
     QCOMPARE(savedSignal.size(), 1);
     QCOMPARE(page.currentClassId(), 43);
+}
+
+void ClassesPageTests::
+selectedClassSubtitleUsesIndependentReadOutcomesAndRefreshes()
+{
+    ApplicationServices services;
+    ClassesPage page(&services);
+    auto* subtitle = page.findChild<QLabel*>(QStringLiteral("pageSubtitle"));
+    QVERIFY(subtitle);
+    QCOMPARE(subtitle->text(), QStringLiteral("No class selected"));
+
+    QVERIFY(page.openClass(42));
+    const QString bullet(QChar(0x2022));
+    QCOMPARE(
+        subtitle->text(),
+        QStringLiteral("E4 Hercules ") + bullet
+            + QStringLiteral(" Susan ") + bullet
+            + QStringLiteral(" Tues (4:00)")
+        );
+    QVERIFY(ScheduleWidgetTestStubs::selectedClassSubtitleReadCount > 0);
+    QVERIFY(
+        ScheduleWidgetTestStubs::selectedClassSubtitleTeacherReadCount > 0
+        );
+
+    ScheduleWidgetTestStubs::setSelectedClassSubtitleTeacherId(-1);
+    page.refresh();
+    QCOMPARE(
+        subtitle->text(),
+        QStringLiteral("E4 Hercules ") + bullet
+            + QStringLiteral(" No Teacher ") + bullet
+            + QStringLiteral(" Tues (4:00)")
+        );
+
+    ScheduleWidgetTestStubs::setSelectedClassSubtitleTeacherId(-2);
+    ScheduleWidgetTestStubs::setSelectedClassSubtitleTeacherReadFailure(true);
+    page.refresh();
+    QCOMPARE(
+        subtitle->text(),
+        QStringLiteral("E4 Hercules ") + bullet
+            + QStringLiteral(" No Teacher ") + bullet
+            + QStringLiteral(" Tues (4:00)")
+        );
+
+    ScheduleWidgetTestStubs::setSelectedClassSubtitleReadFailure(true);
+    page.refresh();
+    QCOMPARE(
+        subtitle->text(),
+        QStringLiteral("Unknown Class ") + bullet
+            + QStringLiteral(" No Teacher")
+        );
+
+    ScheduleWidgetTestStubs::setDatabaseSessionOpen(false);
+    QVERIFY(services.classService()->isAvailable());
+    QVERIFY(services.teacherService()->isAvailable());
+    const int legacyReadsBeforeClosedSession =
+        ScheduleWidgetTestStubs::legacyClassInfoReadCount;
+    page.retranslateUi();
+    QCOMPARE(subtitle->text(), QStringLiteral("No class selected"));
+    QCOMPARE(
+        ScheduleWidgetTestStubs::legacyClassInfoReadCount,
+        legacyReadsBeforeClosedSession
+        );
+    ScheduleWidgetTestStubs::setDatabaseSessionOpen(true);
+}
+
+void ClassesPageTests::
+selectedClassSubtitleFallbackChainUsesTrimmedValues()
+{
+    QCOMPARE(
+        ClassesPageSubtitleText::fromDisplayNameOrFallback(
+            QStringLiteral("  Formatted Class  "),
+            QStringLiteral(" Class Room Name "),
+            QStringLiteral("Class 42")
+            ),
+        QStringLiteral("Formatted Class")
+        );
+    QCOMPARE(
+        ClassesPageSubtitleText::fromDisplayNameOrFallback(
+            QStringLiteral(" \t "),
+            QStringLiteral(" Class Room Name "),
+            QStringLiteral("Class 42")
+            ),
+        QStringLiteral("Class Room Name")
+        );
+    QCOMPARE(
+        ClassesPageSubtitleText::fromDisplayNameOrFallback(
+            QString(),
+            QStringLiteral("  "),
+            QStringLiteral("Class 42")
+            ),
+        QStringLiteral("Class 42")
+        );
 }
 
 void ClassesPageTests::

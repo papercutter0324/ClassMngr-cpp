@@ -309,6 +309,54 @@ Result<Teacher> TeacherRepository::getTeacher(
     return teacherFromQuery(query);
 }
 
+Result<TeacherDisplayNameReadRecord>
+TeacherRepository::loadTeacherDisplayNameFields(
+    int teacherId
+    )
+{
+    if (teacherId <= 0)
+    {
+        return std::unexpected(
+            QObject::tr("Loading teacher display name failed: invalid teacher id %1.")
+                .arg(teacherId)
+            );
+    }
+
+    QSqlQuery query(m_database);
+    query.prepare(R"(
+        SELECT teacher_kr, teacher_en, preferred_romanization, preferred_name
+        FROM teachers
+        WHERE id=?
+    )");
+    query.addBindValue(teacherId);
+
+    const auto executed = SqlQueryUtils::executePrepared(
+        query,
+        QObject::tr("Loading teacher display name"),
+        teacherIdentity(teacherId)
+        );
+    if (!executed)
+    {
+        return std::unexpected(executed.error().userMessage());
+    }
+
+    if (!query.next())
+    {
+        return std::unexpected(
+            QObject::tr(
+                "Loading teacher display name failed for %1: no matching record exists."
+                ).arg(teacherIdentity(teacherId))
+            );
+    }
+
+    return TeacherDisplayNameReadRecord{
+        query.value("teacher_kr").toString(),
+        query.value("teacher_en").toString(),
+        query.value("preferred_romanization").toString(),
+        query.value("preferred_name").toString()
+    };
+}
+
 Result<QList<Teacher>> TeacherRepository::getAllTeachers()
 {
     QList<Teacher> teachers;

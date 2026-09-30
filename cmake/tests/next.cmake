@@ -221,6 +221,15 @@ classmngr_add_qt_test(
 )
 
 classmngr_add_qt_test(
+    NAME NextApplicationSelectedClassSubtitleReadQuery
+    SOURCES
+        tests/next_application_selected_class_subtitle_read_query_tests.cpp
+    LIBRARIES
+        ClassMngrNext::Application
+        Qt6::Test
+)
+
+classmngr_add_qt_test(
     NAME NextApplicationClassNotesSavePort
     SOURCES
         tests/next_application_class_notes_save_port_tests.cpp
@@ -1227,6 +1236,16 @@ classmngr_add_qt_test(
     NAME NextPlatformApplicationServicesClassDetailsPageReadPort
     SOURCES
         tests/next_platform_application_services_class_details_page_read_port_tests.cpp
+    LIBRARIES
+        ClassMngrNext::Platform
+        Qt6::Test
+    OFFSCREEN
+)
+
+classmngr_add_qt_test(
+    NAME NextPlatformApplicationServicesSelectedClassSubtitleReadPort
+    SOURCES
+        tests/next_platform_application_services_selected_class_subtitle_read_port_tests.cpp
     LIBRARIES
         ClassMngrNext::Platform
         Qt6::Test

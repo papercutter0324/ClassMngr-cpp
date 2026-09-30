@@ -6,6 +6,14 @@
 #include <QList>
 #include <QSqlDatabase>
 
+struct TeacherDisplayNameReadRecord final
+{
+    QString teacherKr;
+    QString teacherEn;
+    QString preferredRomanization;
+    QString preferredName;
+};
+
 class TeacherRepository
 {
 public:
@@ -28,6 +36,8 @@ public:
     [[nodiscard]] Result<Teacher> getTeacher(
         int teacherId
         );
+    [[nodiscard]] Result<TeacherDisplayNameReadRecord>
+        loadTeacherDisplayNameFields(int teacherId);
 
     [[nodiscard]] Result<QList<Teacher>> getAllTeachers();
 

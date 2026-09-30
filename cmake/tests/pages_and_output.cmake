@@ -214,6 +214,7 @@ qt_add_executable(ClassMngrClassesPageTests
         src/features/classes/ui/class_details_page.h
         src/features/classes/ui/classes_page.cpp
         src/features/classes/ui/classes_page.h
+        src/features/classes/ui/classes_page_subtitle_text.h
         src/features/classes/ui/class_notes_page.cpp
         src/features/classes/ui/class_notes_page.h
         src/features/roster/ui/roster_column_layout_controller.cpp

@@ -657,6 +657,78 @@ Result<ClassInfo> ClassInfoRepository::loadClassInfo(
     return info;
 }
 
+Result<ClassSubtitleReadRecord> ClassInfoRepository::loadClassSubtitleRecord(
+    int classId
+    )
+{
+    if (classId <= 0)
+    {
+        return std::unexpected(
+            QObject::tr("Loading class subtitle failed: invalid class id %1.")
+                .arg(classId)
+            );
+    }
+
+    const QString identity = QObject::tr("class id %1").arg(classId);
+    ClassSubtitleReadRecord record;
+    record.classId = classId;
+
+    QSqlQuery query(m_database);
+    query.prepare(R"(
+        SELECT teacher_id, class_grade, class_level
+        FROM class_info
+        WHERE class_id = ?
+    )");
+    query.addBindValue(classId);
+
+    const auto loadedFields = SqlQueryUtils::executePrepared(
+        query,
+        QObject::tr("Loading class subtitle details"),
+        identity
+        );
+    if (!loadedFields)
+    {
+        return std::unexpected(loadedFields.error().userMessage());
+    }
+
+    if (query.next())
+    {
+        const QVariant teacherId = query.value("teacher_id");
+        record.teacherId = teacherId.isNull() ? -1 : teacherId.toInt();
+        record.grade = query.value("class_grade").toString();
+        record.level = query.value("class_level").toString();
+    }
+
+    query.prepare(R"(
+        SELECT day, start_time
+        FROM class_times
+        WHERE class_id = ?
+        ORDER BY id
+    )");
+    query.addBindValue(classId);
+
+    const auto loadedTimes = SqlQueryUtils::executePrepared(
+        query,
+        QObject::tr("Loading class subtitle schedule"),
+        identity
+        );
+    if (!loadedTimes)
+    {
+        return std::unexpected(loadedTimes.error().userMessage());
+    }
+
+    while (query.next())
+    {
+        ClassTime time;
+        time.day = query.value("day").toString();
+        time.startTime = query.value("start_time").toString();
+        time.endTime.clear();
+        record.regularTimes.append(std::move(time));
+    }
+
+    return record;
+}
+
 Result<QList<ClassNavigationReadRecord>>
 ClassInfoRepository::loadClassesNavigationRecords(
     const QList<int>& classIds

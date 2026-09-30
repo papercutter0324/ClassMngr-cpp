@@ -77,6 +77,7 @@ Status slotSaveResult;
 Theme configuredTheme = Theme::Dark;
 bool themeAvailable = false;
 bool databaseOpen = true;
+bool databaseSessionOpen = true;
 bool intensiveSlotStateRepositoryAvailable = true;
 bool testingAssignmentRepositoryAvailable = true;
 QString testingAssignmentReadFailure;
@@ -94,6 +95,11 @@ int legacyClassListReadCount = 0;
 int repositoryClassListReadCount = 0;
 int legacyClassInfoReadCount = 0;
 bool selectedClassGradeReadFailure = false;
+int selectedClassSubtitleReadCount = 0;
+int selectedClassSubtitleTeacherReadCount = 0;
+bool selectedClassSubtitleReadFailure = false;
+bool selectedClassSubtitleTeacherReadFailure = false;
+int selectedClassSubtitleTeacherId = -2;
 
 QList<Classroom> classList()
 {
@@ -170,6 +176,7 @@ void reset()
     configuredTheme = Theme::Dark;
     themeAvailable = false;
     databaseOpen = true;
+    databaseSessionOpen = true;
     intensiveSlotStateRepositoryAvailable = true;
     testingAssignmentRepositoryAvailable = true;
     testingAssignmentReadFailure.clear();
@@ -187,6 +194,11 @@ void reset()
     repositoryClassListReadCount = 0;
     legacyClassInfoReadCount = 0;
     selectedClassGradeReadFailure = false;
+    selectedClassSubtitleReadCount = 0;
+    selectedClassSubtitleTeacherReadCount = 0;
+    selectedClassSubtitleReadFailure = false;
+    selectedClassSubtitleTeacherReadFailure = false;
+    selectedClassSubtitleTeacherId = -2;
 }
 
 void setDatabaseOpen(
@@ -194,6 +206,14 @@ void setDatabaseOpen(
     )
 {
     databaseOpen = open;
+    databaseSessionOpen = open;
+}
+
+void setDatabaseSessionOpen(
+    bool open
+    )
+{
+    databaseSessionOpen = open;
 }
 
 void setIntensiveSlotStates(QList<IntensiveSlotState> states)
@@ -279,6 +299,21 @@ void setClassGrade(
 void setSelectedClassGradeReadFailure(const bool fails)
 {
     selectedClassGradeReadFailure = fails;
+}
+
+void setSelectedClassSubtitleReadFailure(const bool fails)
+{
+    selectedClassSubtitleReadFailure = fails;
+}
+
+void setSelectedClassSubtitleTeacherReadFailure(const bool fails)
+{
+    selectedClassSubtitleTeacherReadFailure = fails;
+}
+
+void setSelectedClassSubtitleTeacherId(const int teacherId)
+{
+    selectedClassSubtitleTeacherId = teacherId;
 }
 
 void setMatchImportedClasses(
@@ -423,7 +458,7 @@ ApplicationServices::~ApplicationServices() = default;
 
 bool DatabaseSession::isOpen() const
 {
-    return ScheduleWidgetTestStubs::databaseOpen;
+    return ScheduleWidgetTestStubs::databaseSessionOpen;
 }
 
 IntensiveSlotStateRepository* DatabaseSession::
@@ -571,6 +606,13 @@ ClassInfoRepository* DatabaseSession::classInfoRepository() const
     return &repository;
 }
 
+TeacherRepository* DatabaseSession::teacherRepository() const
+{
+    static QSqlDatabase database;
+    static TeacherRepository repository(database);
+    return &repository;
+}
+
 ClassRepository* DatabaseSession::classRepository() const
 {
     static QSqlDatabase database;
@@ -612,6 +654,98 @@ Result<ClassInfo> ClassInfoRepository::loadClassInfo(const int classId)
             : QStringLiteral("E4")
         );
     return info;
+}
+
+Result<ClassSubtitleReadRecord> ClassInfoRepository::loadClassSubtitleRecord(
+    const int classId
+    )
+{
+    ++ScheduleWidgetTestStubs::selectedClassSubtitleReadCount;
+    if (ScheduleWidgetTestStubs::selectedClassSubtitleReadFailure)
+    {
+        return std::unexpected(
+            QStringLiteral("Injected selected class subtitle read failure.")
+            );
+    }
+
+    ClassSubtitleReadRecord record;
+    record.classId = classId;
+    if (ScheduleWidgetTestStubs::testingClasses.contains(classId))
+    {
+        const TestingClass testingClass =
+            ScheduleWidgetTestStubs::testingClasses.value(classId);
+        record.teacherId = testingClass.teacherId;
+        record.grade = testingClass.grade;
+        record.level = testingClass.level;
+        if (!testingClass.grade.isEmpty())
+        {
+            record.regularTimes = {
+                {
+                    QStringLiteral("Tuesday"),
+                    QStringLiteral("4:00 PM"),
+                    QString()
+                }
+            };
+        }
+        return record;
+    }
+
+    record.teacherId = ScheduleWidgetTestStubs::selectedClassSubtitleTeacherId
+        == -2
+        ? (classId == 43 ? 8 : 7)
+        : ScheduleWidgetTestStubs::selectedClassSubtitleTeacherId;
+    record.grade = ScheduleWidgetTestStubs::classGrades.value(
+        classId,
+        classId == 43
+            ? QStringLiteral("E5")
+            : QStringLiteral("E4")
+        );
+    record.level = classId == 43
+        ? QStringLiteral("Athena")
+        : QStringLiteral("Hercules");
+    ClassTime meeting;
+    meeting.day = classId == 43
+        ? QStringLiteral("Thursday")
+        : QStringLiteral("Tuesday");
+    meeting.startTime = classId == 43
+        ? QStringLiteral("5:00 PM")
+        : QStringLiteral("4:00 PM");
+    meeting.endTime.clear();
+    record.regularTimes.append(std::move(meeting));
+    return record;
+}
+
+TeacherRepository::TeacherRepository(QSqlDatabase& database)
+    : m_database(database)
+{
+}
+
+Result<TeacherDisplayNameReadRecord>
+TeacherRepository::loadTeacherDisplayNameFields(const int teacherId)
+{
+    ++ScheduleWidgetTestStubs::selectedClassSubtitleTeacherReadCount;
+    if (ScheduleWidgetTestStubs::selectedClassSubtitleTeacherReadFailure)
+    {
+        return std::unexpected(
+            QStringLiteral("Injected subtitle teacher read failure.")
+            );
+    }
+
+    if (teacherId <= 0)
+    {
+        return std::unexpected(
+            QStringLiteral("Invalid subtitle teacher identifier.")
+            );
+    }
+
+    TeacherDisplayNameReadRecord record;
+    record.teacherEn = teacherId == 8
+        ? QStringLiteral("Thomas")
+        : QStringLiteral("Susan");
+    record.teacherKr = teacherId == 8
+        ? QStringLiteral("이 선생님")
+        : QStringLiteral("김 선생님");
+    return record;
 }
 
 Result<QList<ClassNavigationReadRecord>>
