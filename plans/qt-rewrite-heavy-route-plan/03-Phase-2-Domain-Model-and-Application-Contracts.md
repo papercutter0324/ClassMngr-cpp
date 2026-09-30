@@ -1120,22 +1120,34 @@ The worker build succeeded; independent registered CTest
 passed 1/1, and `git diff --check` passed. Callers and generic
 `SettingsService` are unchanged.
 
-## F195 selected Schedule display mode preferences port
+## F195 accepted Schedule display mode preferences port
 
-Migrate `ApplicationServicesScheduleDisplayModePreferencesPort` in
-`src/next/platform/application_services_schedule_display_mode_preferences_port.h`
-to use only the active open session's `SettingsRepository`, with focused tests
-in `tests/next_platform_application_services_schedule_display_mode_preferences_port_tests.cpp`
+Commit `eb73707b` migrates `ApplicationServicesScheduleDisplayModePreferencesPort`
+to use only the active open session's `SettingsRepository`. It preserves
+canonical `schedule_display_mode` values regular/intensive/testing, legacy
+`schedule_show_intensive` fallback, migration writes only when the canonical
+QVariant is absent/invalid, and an invalid-but-present canonical value remains
+untouched while retaining legacy fallback interpretation. Reads use Regular
+when unavailable/closed; saves are no-ops in those states. Legacy-read and
+save failures retain their warnings. The worker build and independent CTest
+`ClassMngrNextPlatformApplicationServicesScheduleDisplayModePreferencesPortTests`
+passed 1/1; `git diff --check` passed. Callers and generic `SettingsService`
+are unchanged. Two Explorer lanes differed, with one suggesting Current
+Campus; Schedule display mode was selected after comparing scans for
+continuity with F194 and existing focused migration coverage.
+
+## F196 selected Current Campus preferences port
+
+Migrate `ApplicationServicesCurrentCampusPreferencesPort` in
+`src/next/platform/application_services_current_campus_preferences_port.h`
+to use only the active open session's `SettingsRepository`, with focused tests in
+`tests/next_platform_application_services_current_campus_preferences_port_tests.cpp`
 and registered target
-`NextPlatformApplicationServicesScheduleDisplayModePreferencesPort`. Preserve
-canonical key `schedule_display_mode` and values regular/intensive/testing,
-legacy `schedule_show_intensive` fallback, migration write when the canonical
-value is absent, and leave an invalid existing canonical value untouched while
-retaining legacy fallback interpretation. Use Regular when unavailable; keep
-unavailable/closed saves as no-ops, preserve save warnings, and leave typed
-callers and generic/sessionless `SettingsService` unchanged. Add
-closed-session-with-`DataService` no-fallback and read-error behavior coverage.
-Two independent Explorer lanes differed, with one suggesting Current Campus;
-after comparing scans, Schedule display mode was chosen for continuity with
-F194 and the existing focused migration tests. Phase 2 remains In Progress/Open;
-Gates 1 and 2 remain Partial.
+`NextPlatformApplicationServicesCurrentCampusPreferencesPort`. Preserve exact
+key `myInfo/campus`, UTF-8/verbatim and `QVariant::toString()` behavior,
+`isAvailable()`, empty reads and successful no-op writes when unavailable or
+closed, Technical write-error mapping, and unrelated settings. Add
+closed-session-with-`DataService` no-fallback and read-error empty coverage.
+Leave the Personal Details aggregate writer and callers and generic/sessionless
+`SettingsService` unchanged. Two independent Explorer lanes agreed. Phase 2
+remains In Progress/Open; Gates 1 and 2 remain Partial.
