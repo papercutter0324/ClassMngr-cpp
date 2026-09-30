@@ -1,9 +1,10 @@
 #pragma once
 
-#include "app/services/feature_services.h"
 #include "core/application_services.h"
 #include "data/database/database_session.h"
+#include "data/repositories/roster_repository.h"
 #include "domain/models/roster.h"
+#include "domain/validation/roster_validator.h"
 #include "next/application/roster_save_use_case.h"
 
 #include <QByteArray>
@@ -72,18 +73,35 @@ public:
             return unavailableFailure();
         }
 
-        RosterService* const service = m_services->rosterService();
-        if (!service || !service->isAvailable())
+        RosterRepository* const repository = session->rosterRepository();
+        if (!repository)
         {
-            return unavailableFailure();
+            return failure(
+                Domain::ErrorCode::Technical,
+                "Roster repository is unavailable."
+                );
         }
 
         try
         {
-            const Status saved = service->saveRoster(
-                *classId,
-                legacyRoster(request.roster),
+            const Roster normalized = RosterValidator::normalized(
+                legacyRoster(request.roster)
+                );
+            const ValidationResult validation = RosterValidator::validate(
+                normalized,
                 request.allowQuestionableKoreanNameLengths
+                );
+            if (validation.hasErrors())
+            {
+                return failure(
+                    Domain::ErrorCode::Technical,
+                    toStdString(validationError(validation))
+                    );
+            }
+
+            const Status saved = repository->saveRoster(
+                *classId,
+                normalized
                 );
             if (!saved)
             {
@@ -179,6 +197,27 @@ private:
     {
         const QByteArray bytes = value.toUtf8();
         return bytes.toStdString();
+    }
+
+    [[nodiscard]] static QString validationError(
+        const ValidationResult& validation
+        )
+    {
+        QStringList details;
+        for (const ValidationIssue& issue : validation.errors())
+        {
+            QString detail = issue.field.isEmpty()
+                ? issue.code
+                : QStringLiteral("%1: %2").arg(issue.field, issue.code);
+            if (issue.row >= 0 && !issue.field.contains(QChar(u'[')))
+            {
+                detail.prepend(QStringLiteral("row %1, ").arg(issue.row + 1));
+            }
+            details.append(detail);
+        }
+
+        return QStringLiteral("Roster validation failed: %1")
+            .arg(details.join(QStringLiteral("; ")));
     }
 
     [[nodiscard]] static Domain::Result<void> failure(

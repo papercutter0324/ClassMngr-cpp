@@ -1,9 +1,13 @@
 #include "app/services/feature_services.h"
 #include "core/application_services.h"
 #include "data/data_service.h"
+#include "data/database/database_session.h"
+#include "data/repositories/roster_repository.h"
 #include "next/application/roster_save_use_case.h"
 #include "next/platform/application_services_roster_save_port.h"
 
+#include <QSqlError>
+#include <QSqlQuery>
 #include <QTemporaryDir>
 #include <QUuid>
 #include <QtTest/QtTest>
@@ -80,10 +84,41 @@ class NextPlatformApplicationServicesRosterSavePortTests final : public QObject
     Q_OBJECT
 
 private slots:
+    void rejectsNonCanonicalIdsBeforeSessionAccess();
     void savesCompleteRosterSnapshotToOpenSession();
     void forwardsQuestionableKoreanNameDecision();
+    void repositoryFailureMapsTechnicalAndRollsBack();
     void closedSessionReturnsFailureWithoutDataServiceFallback();
 };
+
+void NextPlatformApplicationServicesRosterSavePortTests::
+rejectsNonCanonicalIdsBeforeSessionAccess()
+{
+    ApplicationServices services;
+    Platform::ApplicationServicesRosterSavePort port(services);
+
+    for (const std::string classId : {
+             "0",
+             "-2",
+             "+42",
+             "class-42",
+             " 42",
+             "42 ",
+             "01",
+             "00042",
+             "999999999999999999999"
+         })
+    {
+        const auto typedId = Domain::ClassId::fromString(classId);
+        QVERIFY(typedId);
+
+        Application::RosterSaveRequest saveRequest = request(1);
+        saveRequest.classId = *typedId;
+        const auto result = port.saveRoster(saveRequest);
+        QVERIFY(!result);
+        QCOMPARE(result.error().code, Domain::ErrorCode::InvalidInput);
+    }
+}
 
 void NextPlatformApplicationServicesRosterSavePortTests::
 savesCompleteRosterSnapshotToOpenSession()
@@ -98,7 +133,10 @@ savesCompleteRosterSnapshotToOpenSession()
         );
     QVERIFY(createdClass);
 
-    const Application::RosterSaveRequest saveRequest = request(*createdClass);
+    Application::RosterSaveRequest saveRequest = request(*createdClass);
+    saveRequest.roster.columns[0] = u" English ";
+    saveRequest.roster.columns[3] = u" Speech   Contest ";
+    saveRequest.roster.rows[0][0] = u"  Student   A  ";
     Platform::ApplicationServicesRosterSavePort port(services);
     const auto saved =
         Application::RosterSaveUseCase::execute(saveRequest, port);
@@ -107,7 +145,10 @@ savesCompleteRosterSnapshotToOpenSession()
         qPrintable(saved ? QString() : QString::fromStdString(saved.error().message))
         );
 
-    const auto persisted = services.rosterService()->roster(*createdClass);
+    RosterRepository* const repository =
+        services.databaseSession()->rosterRepository();
+    QVERIFY(repository);
+    const auto persisted = repository->loadRoster(*createdClass);
     QVERIFY(persisted);
     QCOMPARE(persisted->columns,
         QStringList({
@@ -136,6 +177,20 @@ forwardsQuestionableKoreanNameDecision()
         );
     QVERIFY(createdClass);
 
+    Platform::ApplicationServicesRosterSavePort port(services);
+    const auto originalSaved = Application::RosterSaveUseCase::execute(
+        request(*createdClass),
+        port
+        );
+    QVERIFY2(
+        originalSaved,
+        qPrintable(
+            originalSaved
+                ? QString()
+                : QString::fromStdString(originalSaved.error().message)
+            )
+        );
+
     Application::RosterSaveRequest saveRequest = request(*createdClass);
     saveRequest.roster.rows[0][1] = u"김";
     for (std::size_t row = 1; row < saveRequest.roster.rows.size(); ++row)
@@ -143,11 +198,22 @@ forwardsQuestionableKoreanNameDecision()
         saveRequest.roster.rows[row] = {};
     }
 
-    Platform::ApplicationServicesRosterSavePort port(services);
     const auto rejected =
         Application::RosterSaveUseCase::execute(saveRequest, port);
     QVERIFY(!rejected);
     QCOMPARE(rejected.error().code, Domain::ErrorCode::Technical);
+    QVERIFY(!rejected.error().message.empty());
+
+    RosterRepository* const repository =
+        services.databaseSession()->rosterRepository();
+    QVERIFY(repository);
+    const auto beforeRejected = repository->loadRoster(*createdClass);
+    QVERIFY(beforeRejected);
+    const auto unchanged = repository->loadRoster(*createdClass);
+    QVERIFY(unchanged);
+    QCOMPARE(unchanged->columns, beforeRejected->columns);
+    QCOMPARE(unchanged->columnWidths, beforeRejected->columnWidths);
+    QCOMPARE(unchanged->rows, beforeRejected->rows);
 
     saveRequest.allowQuestionableKoreanNameLengths = true;
     const auto accepted =
@@ -159,10 +225,69 @@ forwardsQuestionableKoreanNameDecision()
             )
         );
 
-    const auto persisted = services.rosterService()->roster(*createdClass);
+    const auto persisted = repository->loadRoster(*createdClass);
     QVERIFY(persisted);
     QCOMPARE(persisted->rows.size(), 1);
     QCOMPARE(persisted->rows.at(0).at(1), QStringLiteral("김"));
+}
+
+void NextPlatformApplicationServicesRosterSavePortTests::
+repositoryFailureMapsTechnicalAndRollsBack()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+
+    const auto createdClass = services.classService()->create(
+        QStringLiteral("Roster Save Repository Failure Test")
+        );
+    QVERIFY(createdClass);
+
+    Platform::ApplicationServicesRosterSavePort port(services);
+    const Application::RosterSaveRequest original = request(*createdClass);
+    const auto originalSaved =
+        Application::RosterSaveUseCase::execute(original, port);
+    QVERIFY2(
+        originalSaved,
+        qPrintable(
+            originalSaved
+                ? QString()
+                : QString::fromStdString(originalSaved.error().message)
+            )
+        );
+
+    QSqlQuery trigger(services.databaseSession()->database());
+    QVERIFY2(
+        trigger.exec(QStringLiteral(
+            "CREATE TRIGGER reject_roster_data_insert "
+            "BEFORE INSERT ON roster_data "
+            "WHEN NEW.value = 'Injected Failure' "
+            "BEGIN "
+            "SELECT RAISE(ABORT, 'injected roster failure'); "
+            "END"
+            )),
+        qPrintable(trigger.lastError().text())
+        );
+
+    Application::RosterSaveRequest changed = original;
+    changed.roster.rows[0][0] = u"Injected Failure";
+    const auto failed =
+        Application::RosterSaveUseCase::execute(changed, port);
+    QVERIFY(!failed);
+    QCOMPARE(failed.error().code, Domain::ErrorCode::Technical);
+    QVERIFY(!failed.error().message.empty());
+
+    RosterRepository* const repository =
+        services.databaseSession()->rosterRepository();
+    QVERIFY(repository);
+    const auto persisted = repository->loadRoster(*createdClass);
+    QVERIFY(persisted);
+    QCOMPARE(persisted->columns.size(), 7);
+    QCOMPARE(persisted->columnWidths.size(), 7);
+    QCOMPARE(persisted->rows.size(), 25);
+    QCOMPARE(persisted->rows.at(0).at(0), QStringLiteral("Student A"));
+    QCOMPARE(persisted->rows.at(24).at(0), QStringLiteral("Student Y"));
 }
 
 void NextPlatformApplicationServicesRosterSavePortTests::
