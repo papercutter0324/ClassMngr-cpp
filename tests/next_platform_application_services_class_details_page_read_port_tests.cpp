@@ -41,6 +41,9 @@ class NextPlatformApplicationServicesClassDetailsPageReadPortTests final
 private slots:
     void readsFieldsOrderedRawSchedulesTeacherAndRosterFromSession();
     void unavailableSessionReturnsIndependentSourceFailures();
+    void classReadFailureDoesNotDiscardRosterCount();
+    void teacherReadFailureDoesNotDiscardClassOrRoster();
+    void rosterReadFailureDoesNotDiscardClassOrTeacher();
     void nonCanonicalClassIdReturnsInvalidInputOutcomes();
 };
 
@@ -59,9 +62,10 @@ readsFieldsOrderedRawSchedulesTeacherAndRosterFromSession()
 
     Teacher teacher;
     teacher.teacherEn = QStringLiteral("English Name");
-    teacher.preferredRomanization = QStringLiteral("Preferred Teacher");
+    teacher.preferredRomanization = QStringLiteral("Romanized Teacher");
     teacher.preferredName = QStringLiteral("Preferred Teacher");
-    const auto createdTeacher = services.teacherService()->save(teacher);
+    const auto createdTeacher =
+        services.databaseSession()->teacherRepository()->saveTeacher(teacher);
     QVERIFY(createdTeacher);
 
     const auto original = services.classService()->classInfo(*createdClass);
@@ -218,6 +222,111 @@ unavailableSessionReturnsIndependentSourceFailures()
     QCOMPARE(snapshot.studentCount.error().code, Domain::ErrorCode::NotFound);
     QVERIFY(QString::fromStdString(snapshot.classFields.error().message)
         .contains(QStringLiteral("unavailable")));
+}
+
+void NextPlatformApplicationServicesClassDetailsPageReadPortTests::
+classReadFailureDoesNotDiscardRosterCount()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+
+    QSqlQuery damageClassRead(services.databaseSession()->database());
+    QVERIFY2(
+        damageClassRead.exec(QStringLiteral("DROP TABLE class_times")),
+        qPrintable(damageClassRead.lastError().text())
+        );
+
+    Platform::ApplicationServicesClassDetailsPageReadPort port(services);
+    const auto result = port.readClassDetailsPage(classId(42));
+
+    QVERIFY(result);
+    const auto& snapshot = result.value();
+    QVERIFY(!snapshot.classFields);
+    QVERIFY(!snapshot.teacherDisplayName);
+    QVERIFY(snapshot.studentCount);
+    QCOMPARE(snapshot.studentCount.value(), 0);
+}
+
+void NextPlatformApplicationServicesClassDetailsPageReadPortTests::
+teacherReadFailureDoesNotDiscardClassOrRoster()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+
+    const auto createdClass = services.classService()->create(
+        QStringLiteral("Class Details Teacher Failure")
+        );
+    QVERIFY(createdClass);
+    Teacher teacher;
+    teacher.teacherEn = QStringLiteral("Teacher English Name");
+    const auto createdTeacher = services.teacherService()->save(teacher);
+    QVERIFY(createdTeacher);
+    const auto original = services.classService()->classInfo(*createdClass);
+    QVERIFY(original);
+    ClassInfo info = *original;
+    info.teacherId = *createdTeacher;
+    QVERIFY(services.classService()->saveClassInfo(info));
+
+    QSqlQuery damageTeacherRead(services.databaseSession()->database());
+    QVERIFY2(
+        damageTeacherRead.exec(QStringLiteral("PRAGMA foreign_keys=OFF")),
+        qPrintable(damageTeacherRead.lastError().text())
+        );
+    damageTeacherRead.prepare(QStringLiteral(
+        "UPDATE class_info SET teacher_id=? WHERE class_id=?"
+        ));
+    damageTeacherRead.addBindValue(987654);
+    damageTeacherRead.addBindValue(*createdClass);
+    QVERIFY2(
+        damageTeacherRead.exec(),
+        qPrintable(damageTeacherRead.lastError().text())
+        );
+
+    Platform::ApplicationServicesClassDetailsPageReadPort port(services);
+    const auto result = port.readClassDetailsPage(classId(*createdClass));
+
+    QVERIFY(result);
+    const auto& snapshot = result.value();
+    QVERIFY(snapshot.classFields);
+    QVERIFY(!snapshot.teacherDisplayName);
+    QCOMPARE(snapshot.teacherDisplayName.error().code,
+             Domain::ErrorCode::NotFound);
+    QVERIFY(snapshot.studentCount);
+    QCOMPARE(snapshot.studentCount.value(), 0);
+}
+
+void NextPlatformApplicationServicesClassDetailsPageReadPortTests::
+rosterReadFailureDoesNotDiscardClassOrTeacher()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+
+    const auto createdClass = services.classService()->create(
+        QStringLiteral("Class Details Roster Failure")
+        );
+    QVERIFY(createdClass);
+
+    QSqlQuery damageRosterRead(services.databaseSession()->database());
+    QVERIFY2(
+        damageRosterRead.exec(QStringLiteral("DROP TABLE roster_columns")),
+        qPrintable(damageRosterRead.lastError().text())
+        );
+
+    Platform::ApplicationServicesClassDetailsPageReadPort port(services);
+    const auto result = port.readClassDetailsPage(classId(*createdClass));
+
+    QVERIFY(result);
+    const auto& snapshot = result.value();
+    QVERIFY(snapshot.classFields);
+    QVERIFY(snapshot.teacherDisplayName);
+    QVERIFY(snapshot.teacherDisplayName.value().empty());
+    QVERIFY(!snapshot.studentCount);
 }
 
 void NextPlatformApplicationServicesClassDetailsPageReadPortTests::

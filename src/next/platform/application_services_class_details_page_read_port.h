@@ -1,8 +1,10 @@
 #pragma once
 
-#include "app/services/feature_services.h"
 #include "core/application_services.h"
 #include "data/database/database_session.h"
+#include "data/repositories/class_info_repository.h"
+#include "data/repositories/roster_repository.h"
+#include "data/repositories/teacher_repository.h"
 #include "domain/models/class_info.h"
 #include "domain/models/teacher.h"
 #include "next/application/class_details_page_read_port.h"
@@ -87,16 +89,19 @@ public:
                 );
         }
 
-        ClassService* classService = m_services.classService();
-        RosterService* rosterService = m_services.rosterService();
-        TeacherService* teacherService = m_services.teacherService();
+        ClassInfoRepository* const classInfoRepository =
+            session->classInfoRepository();
+        TeacherRepository* const teacherRepository =
+            session->teacherRepository();
+        RosterRepository* const rosterRepository =
+            session->rosterRepository();
 
         std::optional<ClassInfo> loadedClassInfo;
-        if (!classService || !classService->isAvailable())
+        if (!classInfoRepository)
         {
             snapshot.classFields = classFieldsFailure(
                 Domain::ErrorCode::NotFound,
-                "The class details service is unavailable."
+                "The class details repository is unavailable."
                 );
             snapshot.teacherDisplayName = teacherFailure(
                 Domain::ErrorCode::NotFound,
@@ -108,10 +113,10 @@ public:
             try
             {
                 const ::Result<ClassInfo> source =
-                    classService->classInfo(*legacyClassId);
+                    classInfoRepository->loadClassInfo(*legacyClassId);
                 if (!source)
                 {
-                    const Domain::OperationError error = fromLegacyError(
+                    const Domain::OperationError error = fromRepositoryError(
                         source.error(),
                         "The selected class details could not be loaded."
                         );
@@ -161,23 +166,25 @@ public:
                 snapshot.teacherDisplayName =
                     Domain::Result<std::string>::success({});
             }
-            else if (!teacherService || !teacherService->isAvailable())
+            else if (!teacherRepository)
             {
                 snapshot.teacherDisplayName = teacherFailure(
                     Domain::ErrorCode::NotFound,
-                    "The class teacher service is unavailable."
+                    "The class teacher repository is unavailable."
                     );
             }
             else
             {
                 try
                 {
-                    const ::Result<Teacher> source =
-                        teacherService->teacher(loadedClassInfo->teacherId);
+                    const ::Result<TeacherDisplayNameReadRecord> source =
+                        teacherRepository->loadTeacherDisplayNameFields(
+                            loadedClassInfo->teacherId
+                            );
                     if (!source)
                     {
                         snapshot.teacherDisplayName = teacherFailure(
-                            fromLegacyError(
+                            fromRepositoryError(
                                 source.error(),
                                 "The class teacher display name could not be loaded."
                                 )
@@ -185,9 +192,15 @@ public:
                     }
                     else
                     {
+                        Teacher teacher;
+                        teacher.teacherKr = source->teacherKr;
+                        teacher.teacherEn = source->teacherEn;
+                        teacher.preferredRomanization =
+                            source->preferredRomanization;
+                        teacher.preferredName = source->preferredName;
                         snapshot.teacherDisplayName =
                             Domain::Result<std::string>::success(
-                                utf8(source->preferredDisplayName())
+                                utf8(teacher.preferredDisplayName())
                                 );
                     }
                 }
@@ -208,11 +221,11 @@ public:
             }
         }
 
-        if (!rosterService || !rosterService->isAvailable())
+        if (!rosterRepository)
         {
             snapshot.studentCount = studentCountFailure(
                 Domain::ErrorCode::NotFound,
-                "The class roster service is unavailable."
+                "The class roster repository is unavailable."
                 );
         }
         else
@@ -220,11 +233,11 @@ public:
             try
             {
                 const ::Result<int> source =
-                    rosterService->studentCount(*legacyClassId);
+                    rosterRepository->getRosterStudentCount(*legacyClassId);
                 if (!source)
                 {
                     snapshot.studentCount = studentCountFailure(
-                        fromLegacyError(
+                        fromRepositoryError(
                             source.error(),
                             "The class student count could not be loaded."
                             )
@@ -323,7 +336,7 @@ private:
         return value;
     }
 
-    [[nodiscard]] static Domain::OperationError fromLegacyError(
+    [[nodiscard]] static Domain::OperationError fromRepositoryError(
         const QString& message,
         const char* fallback
         )
