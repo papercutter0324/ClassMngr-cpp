@@ -45,8 +45,9 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
   F172's Class Co-Teacher assignment save port, F173's ScheduleWidget
   slot-state save port, and F174's speaking-evaluation read port are accepted.
   F175's ScheduleBuilder source port, F176's Sub Prep class-details read port,
-  and F177's Sub Prep schedule-summary port are accepted. F178 is selected to
-  migrate the Sub Prep print source port.
+  F177's Sub Prep schedule-summary port, and F178's Sub Prep print source port
+  are accepted. F179 is selected to migrate the Sub Prep roster-output source
+  port.
   The prior F123 candidate wording is historical;
   current Teacher Profile integration status is recorded in the progress log.
   Gates 1 and 2
@@ -833,20 +834,33 @@ independent Tester each passed all three targets:
 `ClassMngrSubPrepPageTests`. `git diff --check` passed. No full suite or
 application build ran.
 
-## F178 selected Sub Prep print source port
+## F178 accepted Sub Prep print source port
 
-Migrate `ApplicationServicesSubPrepPrintSourcePort` from `ClassService`,
-`TeacherService`, and `RosterService` to active-session
-`ClassInfoRepository::loadClassInfosForScheduleScope`,
-`TeacherRepository::getTeacher`, and
-`RosterRepository::getRosterStudentCount`. Preserve scope validation, selected
-mode/day filtering and order, omission of classes without a meeting or usable
-teacher, teacher caching/first-reference order, and bounded output. Preserve
-teacher-not-found omission and class/teacher read-error mapping; only
-roster-count failures use the zero-count fallback. Keep NotFound versus
-Technical mappings and no `DataService` fallback. Verify
+F178, source commit `afeab035`, migrates
+`ApplicationServicesSubPrepPrintSourcePort` to active-session class-info,
+teacher, and roster repositories. Implementation and independent Tester each
+passed all four targets:
 `ClassMngrNextApplicationSubPrepPrintSourceQueryTests`,
 `ClassMngrNextPlatformApplicationServicesSubPrepPrintSourcePortTests`,
-`ClassMngrSubPrepPrintSourceMapperTests`, and `ClassMngrSubPrepPageTests`.
-Retain `build/f168`; its Ninja target list contains all four F178 targets.
-Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial.
+`ClassMngrSubPrepPrintSourceMapperTests`, and `ClassMngrSubPrepPageTests`. Added
+coverage confirms unopened/closed sessions return NotFound. No full suite or
+application build ran.
+
+## F179 selected Sub Prep roster-output source port
+
+Migrate `ApplicationServicesSubPrepRosterOutputSourcePort` from
+`ClassService`, `TeacherService`, and `RosterService` to direct active-session
+`ClassInfoRepository::loadClassInfosForScheduleScope()` and `loadClassInfo()`,
+`ClassRepository::getClassById()`, `TeacherRepository::getTeacher()`, and
+`RosterRepository::loadRosterForOutput()`. Preserve request validation and
+return success without reads when the selected class or day scope is empty.
+Preserve class order, mode/day filtering, unassigned/missing/stale
+teacher behavior, class/schedule identity checks, extra-column normalization
+and deduplication, UTF-8 and aggregate text limits, cumulative remaining
+row/cell/text budgets, existing errors, no `DataService` fallback, and no
+partial output/package on failure. Verify
+`ClassMngrNextApplicationSubPrepRosterOutputSourceQueryTests`,
+`ClassMngrNextPlatformApplicationServicesSubPrepRosterOutputSourcePortTests`,
+`ClassMngrSubPrepPackageServiceTests`, and `ClassMngrSubPrepPageTests`. Retain
+`build/f168`; its Ninja target list contains all four F179 targets. Phase 2
+remains In Progress/Open; Gates 1 and 2 remain Partial.

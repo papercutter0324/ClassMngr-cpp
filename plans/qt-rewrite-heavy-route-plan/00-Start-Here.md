@@ -39,9 +39,9 @@
   accepted. F171's roster save port and F172's Class Co-Teacher assignment
   save port and F173's ScheduleWidget slot-state save port are accepted. F174's
   speaking-evaluation read port and F175's ScheduleBuilder source port are
-  accepted. F176's Sub Prep class-details read port and F177's Sub Prep
-  schedule-summary port are accepted. F178 is selected for the Sub Prep print
-  source port. See the
+  accepted. F176's Sub Prep class-details read port, F177's Sub Prep
+  schedule-summary port, and F178's Sub Prep print source port are accepted.
+  F179 is selected for the Sub Prep roster-output source port. See the
   [Phase 2 progress
   log](03-Phase-2-Progress-Log.md)
   for evidence and current selection details.

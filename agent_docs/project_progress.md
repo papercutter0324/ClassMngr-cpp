@@ -2200,7 +2200,7 @@ parity. Gates 1 and 2 remain Partial; Phase 2 remains In Progress/Open. A
 separate worker owns workflow repair; this work does not modify
 `.github/workflows/refactoring-baseline.yml`. No push was requested.
 
-## Current Phase 2 position - 2026-10-01 (F177 accepted; F178 selected)
+## Current Phase 2 position - 2026-10-01 (F178 accepted; F179 selected)
 
 F170 source commit `68391fac` moves `ApplicationServicesRosterReadPort` from
 `RosterService::roster()` to the active session's `RosterRepository`, with no
@@ -2290,16 +2290,30 @@ verification each passed 3/3 focused targets:
 `ClassMngrSubPrepPageTests`. `git diff --check` passed; no full suite or
 application build was run.
 
-F178 is selected: migrate `ApplicationServicesSubPrepPrintSourcePort` from
-`ClassService`, `TeacherService`, and `RosterService` to the active session's
-`ClassInfoRepository`, `TeacherRepository`, and `RosterRepository`. Preserve
-scope validation, selected mode/day filtering and order, omission of classes
-without an in-scope meeting or usable teacher, teacher caching and first-
-reference order, bounded output, zero student-count fallback on roster-read
-failure, and class/teacher error mapping. Only roster-count failures use the
-zero-count fallback. Focused targets are
-`ClassMngrNextApplicationSubPrepPrintSourceQueryTests`,
+F178 source commit `afeab035` migrates
+`ApplicationServicesSubPrepPrintSourcePort` from feature services to the
+active session's class-info, teacher, and roster repositories. It preserves
+selected mode/day filtering and class order, teacher caching and first-
+reference order, missing/unassigned-teacher omission, bounded owning output,
+class/teacher error mappings, and the zero student-count fallback only for
+roster-count failures. The Platform test adds unopened/closed-session
+`NotFound` coverage. Implementation and independent verification passed 4/4
+focused targets: `ClassMngrNextApplicationSubPrepPrintSourceQueryTests`,
 `ClassMngrNextPlatformApplicationServicesSubPrepPrintSourcePortTests`,
 `ClassMngrSubPrepPrintSourceMapperTests`, and `ClassMngrSubPrepPageTests`.
-Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial. Workflow repair
-remains with the other worker.
+`git diff --check` passed. The build emitted a nonfatal `vswhere.exe` warning;
+no full suite or application build was run.
+
+F179 is selected: migrate `ApplicationServicesSubPrepRosterOutputSourcePort`
+to the active session's class-info, class, teacher, and roster repositories.
+Preserve request validation and empty-scope no-read, selected class order and
+mode/day filtering, unassigned/missing/stale-teacher behavior, class and
+schedule identity checks, extra-column deduplication, UTF-8 and aggregate text
+limits, and cumulative remaining row/cell/text budgets for roster projection.
+Keep existing error mappings, avoid `DataService` fallback, and return no
+partial output on failure. Focused targets are
+`ClassMngrNextApplicationSubPrepRosterOutputSourceQueryTests`,
+`ClassMngrNextPlatformApplicationServicesSubPrepRosterOutputSourcePortTests`,
+`ClassMngrSubPrepPackageServiceTests`, and `ClassMngrSubPrepPageTests`. Phase 2
+remains In Progress/Open; Gates 1 and 2 remain Partial. Workflow repair remains
+with the other worker.

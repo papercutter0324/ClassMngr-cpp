@@ -4185,3 +4185,28 @@ Keep class/teacher read failures distinct from roster-count fallback and avoid a
 `ClassMngrSubPrepPrintSourceMapperTests`, and `ClassMngrSubPrepPageTests`; all
 four exist in the retained `build/f168` target list. The workflow fix remains
 with the other worker. No push was requested.
+
+## 2026-10-01 - F178 accepted; F179 selected
+
+F178 source commit `afeab035` migrates
+`ApplicationServicesSubPrepPrintSourcePort` to direct class-info, teacher, and
+roster repository reads through the active session. The implementation and
+independent Tester passed all four focused targets: the Application query,
+Platform port, print-source mapper, and Sub Prep page. Added tests verify
+unopened and closed sessions return `NotFound`; existing tests retain schedule
+filtering/order, missing and unassigned teachers, and zero-count roster failure
+fallback. `git diff --check` passed. CMake emitted a nonfatal `vswhere.exe`
+warning. No full suite or application build ran.
+
+Two independent Explorer lanes selected F179: migrate
+`ApplicationServicesSubPrepRosterOutputSourcePort` from feature services to the
+active session's class-info, class, teacher, and roster repositories. Preserve
+validation, selected class order, schedule filtering, class/schedule identity,
+teacher behavior, extra-column normalization, and bounded row/cell/text output
+through remaining-budget repository arguments. Errors must not yield partial
+output, and no `DataService` fallback is allowed. Focused targets are
+`ClassMngrNextApplicationSubPrepRosterOutputSourceQueryTests`,
+`ClassMngrNextPlatformApplicationServicesSubPrepRosterOutputSourcePortTests`,
+`ClassMngrSubPrepPackageServiceTests`, and `ClassMngrSubPrepPageTests`; all four
+exist in the retained `build/f168` target list. The workflow repair remains
+with the other worker. No push was requested.

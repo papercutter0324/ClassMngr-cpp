@@ -8299,7 +8299,7 @@ fields/schedule/teacher/count/fallback parity. F167 implementation has not
 started. Gate 1 and Gate 2 remain Partial; Phase 2 remains In Progress and its
 exit gate remains Open.
 
-### Progress update - 2026-10-01 (F177 accepted; F178 selected)
+### Progress update - 2026-10-01 (F178 accepted; F179 selected)
 
 F167, source commit `97efac8b`, updates
 `ApplicationServicesClassDetailsPageReadPort` to use active-session
@@ -8429,18 +8429,29 @@ independent Tester each passed all three targets:
 `ClassMngrSubPrepPageTests`. `git diff --check` passed. No full suite or
 application build ran.
 
-F178 migrates `ApplicationServicesSubPrepPrintSourcePort` from `ClassService`,
-`TeacherService`, and `RosterService` to active-session
-`ClassInfoRepository::loadClassInfosForScheduleScope`,
-`TeacherRepository::getTeacher`, and
-`RosterRepository::getRosterStudentCount`. Preserve scope validation, selected
-mode/day filtering and order, omission of classes without a meeting or usable
-teacher, teacher caching/first-reference order, and bounded output. Preserve
-teacher-not-found omission and class/teacher read-error mapping; only
-roster-count failures use the zero-count fallback. Keep NotFound versus
-Technical mappings and no `DataService` fallback. Verify
+F178, source commit `afeab035`, migrates
+`ApplicationServicesSubPrepPrintSourcePort` to active-session class-info,
+teacher, and roster repositories. Implementation and independent Tester each
+passed all four targets:
 `ClassMngrNextApplicationSubPrepPrintSourceQueryTests`,
 `ClassMngrNextPlatformApplicationServicesSubPrepPrintSourcePortTests`,
-`ClassMngrSubPrepPrintSourceMapperTests`, and `ClassMngrSubPrepPageTests`.
-`build/f168` contains all four F178 targets and is retained. Gate 1 and Gate 2
+`ClassMngrSubPrepPrintSourceMapperTests`, and `ClassMngrSubPrepPageTests`. Added
+coverage confirms unopened/closed sessions return NotFound. No full suite or
+application build ran.
+
+F179 migrates `ApplicationServicesSubPrepRosterOutputSourcePort` from
+`ClassService`, `TeacherService`, and `RosterService` to direct active-session
+`ClassInfoRepository::loadClassInfosForScheduleScope()` and `loadClassInfo()`,
+`ClassRepository::getClassById()`, `TeacherRepository::getTeacher()`, and
+`RosterRepository::loadRosterForOutput()`. Preserve request validation and
+return success without reads when the selected class or day scope is empty.
+Preserve class order, mode/day filtering, unassigned/missing/stale
+teacher behavior, class/schedule identity checks, extra-column normalization
+and deduplication, UTF-8 and aggregate text limits, cumulative remaining
+row/cell/text budgets, existing errors, no `DataService` fallback, and no
+partial output/package on failure. Verify
+`ClassMngrNextApplicationSubPrepRosterOutputSourceQueryTests`,
+`ClassMngrNextPlatformApplicationServicesSubPrepRosterOutputSourcePortTests`,
+`ClassMngrSubPrepPackageServiceTests`, and `ClassMngrSubPrepPageTests`.
+`build/f168` contains all four F179 targets and is retained. Gate 1 and Gate 2
 remain Partial; Phase 2 remains In Progress and its exit gate remains Open.

@@ -1697,3 +1697,11 @@ session and preserve the existing scope checks, no-read empty scope, projection
 order and error classification. F178 advances the Sub Prep output boundary to
 the operation-scoped print-source port; keep its missing-teacher omission and
 zero-count fallback for roster-read failures.
+
+## 2026-10-01 - F178 Sub Prep print-source port
+
+Use the active session's class-info, teacher, and roster repositories directly.
+Preserve the selected schedule scope, teacher caching/order, missing-teacher
+omission, and count-zero fallback only for roster-count failures. F179 moves the
+larger roster-output source; pass the remaining row, cell, and text-byte budgets
+to the repository and keep failed reads from returning a partial package.
