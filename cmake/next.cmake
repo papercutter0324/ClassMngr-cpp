@@ -38,6 +38,7 @@ set(CLASSMNGR_NEXT_DOMAIN_SOURCES
     src/next/domain/student_name_pair.h
     src/next/domain/teacher_display_name.h
     src/next/domain/teacher_profile.h
+    src/next/domain/teacher_profile_fields.h
 )
 
 set(CLASSMNGR_NEXT_APPLICATION_SOURCES
@@ -157,6 +158,8 @@ set(CLASSMNGR_NEXT_APPLICATION_SOURCES
     src/next/application/teacher_import_match_cardinality.h
     src/next/application/teacher_import_use_case.h
     src/next/application/teacher_profile_edit_use_case.h
+    src/next/application/teacher_profile_read_port.h
+    src/next/application/teacher_profile_read_query.h
     src/next/application/report_job_coordinator.h
     src/next/application/report_job_state.h
     src/next/application/recent_workspace_history.h
@@ -259,6 +262,7 @@ set(CLASSMNGR_NEXT_PLATFORM_SOURCES
     src/next/platform/application_services_class_co_teacher_page_read_port.h
     src/next/platform/application_services_class_co_teacher_teacher_choices_read_port.h
     src/next/platform/application_services_teacher_profile_edit_persistence_port.h
+    src/next/platform/application_services_teacher_profile_read_port.h
     src/next/platform/application_services_current_campus_preferences_port.h
     src/next/platform/application_services_middle_school_analytics_preferences_port.h
     src/next/platform/application_services_personal_display_name_preferences_port.h

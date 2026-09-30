@@ -722,6 +722,15 @@ add_test(
     COMMAND ClassMngrNextApplicationTeacherProfileEditTests
 )
 
+classmngr_add_qt_test(
+    NAME NextApplicationTeacherProfileReadQuery
+    SOURCES
+        tests/next_application_teacher_profile_read_query_tests.cpp
+    LIBRARIES
+        ClassMngrNext::Application
+        Qt6::Test
+)
+
 # Verify co-teacher ID validation and legacy unassigned-sentinel translation
 # without Qt or persistence.
 add_executable(
@@ -1181,6 +1190,16 @@ classmngr_add_qt_test(
     NAME NextPlatformApplicationServicesTeacherProfileEditPersistencePort
     SOURCES
         tests/next_platform_application_services_teacher_profile_edit_persistence_port_tests.cpp
+    LIBRARIES
+        ClassMngrNext::Platform
+        Qt6::Test
+    OFFSCREEN
+)
+
+classmngr_add_qt_test(
+    NAME NextPlatformApplicationServicesTeacherProfileReadPort
+    SOURCES
+        tests/next_platform_application_services_teacher_profile_read_port_tests.cpp
     LIBRARIES
         ClassMngrNext::Platform
         Qt6::Test

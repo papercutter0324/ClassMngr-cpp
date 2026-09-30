@@ -16,12 +16,15 @@
 #include "features/teacher/ui/teacher_info_page.h"
 #include "features/teacher/ui/staff_directory_page.h"
 #include "next/application/document_catalog_use_case.h"
+#include "next/application/teacher_profile_read_query.h"
 #include "next/platform/application_services_document_catalog_port.h"
+#include "next/platform/application_services_teacher_profile_read_port.h"
 #include "ui/shared/pages/pdf_viewer_page.h"
 
 #include <QFileInfo>
 #include <QLocale>
 
+#include <string>
 #include <utility>
 namespace
 {
@@ -50,6 +53,33 @@ QString evaluationNameForKey(
     }
 
     return QString();
+}
+
+Teacher teacherFromReadSnapshot(
+    const ClassMngr::Next::Application::TeacherProfileReadSnapshot& snapshot,
+    const int teacherId
+    )
+{
+    const ClassMngr::Next::Domain::TeacherProfileFields& fields =
+        snapshot.fields;
+    return {
+        .id = teacherId,
+        .teacherKr = QString::fromStdU16String(fields.teacherKr),
+        .teacherEn = QString::fromStdU16String(fields.teacherEn),
+        .preferredRomanization = QString::fromStdU16String(
+            fields.preferredRomanization),
+        .preferredName = QString::fromStdU16String(fields.preferredName),
+        .roomNumber = QString::fromStdU16String(fields.roomNumber),
+        .birthday = QString::fromStdU16String(fields.birthday),
+        .phoneNumber = QString::fromStdU16String(fields.phoneNumber),
+        .wifiName = QString::fromStdU16String(fields.wifiName),
+        .wifiPassword = QString::fromStdU16String(fields.wifiPassword),
+        .internetType = QString::fromStdU16String(fields.internetType),
+        .zoomId = QString::fromStdU16String(fields.zoomId),
+        .zoomPassword = QString::fromStdU16String(fields.zoomPassword),
+        .projectionType = QString::fromStdU16String(fields.projectionType),
+        .notes = QString::fromStdU16String(fields.notes)
+    };
 }
 
 }
@@ -117,20 +147,29 @@ void NavigationController::handleTeacher(
     const NavigationData& data
     )
 {
-    auto* teachers =
-        m_services
-            ? m_services->teacherService()
-            : nullptr;
-
-    if (!teachers || !teachers->isAvailable())
+    if (!m_services || !m_pages)
     {
         return;
     }
 
-    const Result<Teacher> teacher =
-        teachers->teacher(data.teacherId);
+    if (data.teacherId <= 0)
+    {
+        return;
+    }
 
-    if (!teacher)
+    const auto teacherId = ClassMngr::Next::Domain::TeacherId::fromString(
+        std::to_string(data.teacherId));
+    if (!teacherId)
+    {
+        return;
+    }
+
+    const ClassMngr::Next::Platform::
+        ApplicationServicesTeacherProfileReadPort port(m_services);
+    const ClassMngr::Next::Application::TeacherProfileReadQuery query(port);
+    const ClassMngr::Next::Application::TeacherProfileReadResult profile =
+        query.execute(*teacherId);
+    if (!profile)
     {
         return;
     }
@@ -147,9 +186,9 @@ void NavigationController::handleTeacher(
         return;
     }
 
-    page->loadTeacher(
-        *teacher
-        );
+    page->loadTeacher(teacherFromReadSnapshot(
+        profile.value(),
+        data.teacherId));
 
     m_pages->showPage(
         PageType::TeacherInfo
