@@ -42,8 +42,9 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
   F166's RosterEditorWidget class subtitle read, and F167's ClassDetailsPage
   display read, F168's ClassDetailsPage save port, and F169's ClassNotesPage
   save port, F170's roster read port, and F171's roster save port are accepted.
-  F172's Class Co-Teacher assignment save port is accepted. F173 is selected to
-  migrate the ScheduleWidget slot-state save port.
+  F172's Class Co-Teacher assignment save port and F173's ScheduleWidget
+  slot-state save port are accepted. F174 is selected to migrate the
+  speaking-evaluation read port.
   The prior F123 candidate wording is historical;
   current Teacher Profile integration status is recorded in the progress log.
   Gates 1 and 2
@@ -767,19 +768,28 @@ each built and passed 3/3:
 and `ClassMngrNextFeatureClassCoTeacherPageTests`. `git diff --check` passed.
 No full suite or application build is claimed.
 
-## F173 selected ScheduleWidget slot-state save port
+## F173 accepted ScheduleWidget slot-state save port
 
-Migrate `ApplicationServicesScheduleSlotStateSavePort` from
-`ScheduleService::saveIntensiveSlotState()` to active-session
-`IntensiveSlotStateRepository::saveIntensiveSlotState()`, with no service or
-`DataService` fallback. Make `isAvailable()` reflect the open active
-session/repository. Preserve typed validation, weekday/HH:mm/state-token
-mapping, selected-equals-default deletion, and ScheduleWidget success, warning,
-unavailable, reload, and shared-toggle behavior. Verify
-`ClassMngrNextApplicationScheduleSlotStateSaveTests`,
+F173, source commit `a214dec4`, migrates
+`ApplicationServicesScheduleSlotStateSavePort` to the active session's
+`IntensiveSlotStateRepository`. Independent verification passed 3/3 focused
+targets: `ClassMngrNextApplicationScheduleSlotStateSaveTests`,
 `ClassMngrNextPlatformApplicationServicesScheduleSlotStateSavePortTests`, and
-`ClassMngrScheduleWidgetTests`. Cover direct repository readback for nondefault
-save and deletion; invalid input no-write; repository write failure as
-Technical; no-session/closed-session NotFound with facade present; and widget
-integration. Retain `build/f168`; its Ninja target list contains all three
-F173 targets. Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial.
+`ClassMngrScheduleWidgetTests`. `git diff --check` passed. No full suite or
+application build is claimed.
+
+## F174 selected speaking-evaluation read port
+
+Migrate `ApplicationServicesSpeakingEvaluationReadPort` from
+`SpeakingEvaluationService::evaluation()` to open-session
+`SpeakingEvalRepository::loadSpeakingEval()`, with no service or `DataService`
+fallback. Preserve canonical positive-ID handling; exact name and Unicode
+25x11 matrix conversion/order; missing evaluation as a successful empty result;
+Technical error mapping; closed-session NotFound; and the page's blank, clean
+grid on failed reads. Whitespace-only evaluation names remain query-valid but
+are rejected as trimmed-empty by the repository and mapped to Technical by the
+adapter. Verify `ClassMngrNextApplicationSpeakingEvaluationQueryTests`,
+`ClassMngrNextPlatformApplicationServicesSpeakingEvaluationReadPortTests`, and
+`ClassMngrSpeakingEvalPageSaveTests`. Retain `build/f168`; its Ninja target list
+contains all three F174 targets. Phase 2 remains In Progress/Open; Gates 1 and 2
+remain Partial.

@@ -1658,3 +1658,12 @@ the unchanged stored class fields; verify unassignment clears joined metadata.
 Keep full validation and both schedule-conflict preflights before the
 transactional class-info save. F173 pairs the already-migrated slot-state read
 with its save port.
+
+## 2026-10-01 - F173 schedule slot-state save port
+
+After moving a widget save port from a feature service to its session
+repository, route the widget test double through that same repository. Keep
+legacy service doubles only for legacy callers. The repository fake should
+apply override updates and default-state deletions to its stored fixture so
+reload assertions observe the committed state; cover preservation of unrelated
+overrides and failed-write behavior.

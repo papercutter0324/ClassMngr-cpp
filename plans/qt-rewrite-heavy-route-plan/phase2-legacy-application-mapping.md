@@ -4132,8 +4132,8 @@ F145 details update and F146 creation remain separate accepted boundaries.
 Production commit `b037b4216b71c55c7793df5f7bbbfc4a00690065`, page transition
 fix `315b3ff33b7e2ab42b43d52cd168ce21a92158c9`, and acceptance-test commit
 `397376e439f4b5955c82948ab0c225aaf776d679` are recorded with verification
-limits in the [Phase 2 progress log](03-Phase-2-Progress-Log.md). F148-F172
-are accepted. F173 is selected; its boundary and acceptance criteria are in
+limits in the [Phase 2 progress log](03-Phase-2-Progress-Log.md). F148-F173
+are accepted. F174 is selected; its boundary and acceptance criteria are in
 the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 
 ## Class-details save mapping: F126 and F139
@@ -4495,20 +4495,28 @@ and `ClassMngrNextFeatureClassCoTeacherPageTests`. `git diff --check` passed.
 No full suite or application build ran. See the [Phase 2 progress
 log](03-Phase-2-Progress-Log.md).
 
-## F173 selected ScheduleWidget slot-state save port
+## F173 accepted ScheduleWidget slot-state save port
 
-Migrate `ApplicationServicesScheduleSlotStateSavePort` from
-`ScheduleService::saveIntensiveSlotState()` to active-session
-`IntensiveSlotStateRepository::saveIntensiveSlotState()`, with no service or
-`DataService` fallback. Make `isAvailable()` reflect the open active
-session/repository. Preserve typed validation, weekday/HH:mm/state-token
-mapping, selected-equals-default deletion, and ScheduleWidget success, warning,
-unavailable, reload, and shared-toggle behavior. Verify
-`ClassMngrNextApplicationScheduleSlotStateSaveTests`,
+F173, source commit `a214dec4`, migrates
+`ApplicationServicesScheduleSlotStateSavePort` to the active session's
+`IntensiveSlotStateRepository`. Independent verification passed 3/3 focused
+targets: `ClassMngrNextApplicationScheduleSlotStateSaveTests`,
 `ClassMngrNextPlatformApplicationServicesScheduleSlotStateSavePortTests`, and
-`ClassMngrScheduleWidgetTests`. Cover direct repository readback for nondefault
-save and deletion; invalid input no-write; repository write failure as
-Technical; no-session/closed-session NotFound with facade present; and widget
-integration. The configured `build/f168` Ninja target list contains all three
-F173 targets and is retained for F173. Phase 2 remains In Progress/Open; Gates
-1 and 2 remain Partial.
+`ClassMngrScheduleWidgetTests`. `git diff --check` passed. No full suite or
+application build ran. See the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
+
+## F174 selected speaking-evaluation read port
+
+Migrate `ApplicationServicesSpeakingEvaluationReadPort` from
+`SpeakingEvaluationService::evaluation()` to open-session
+`SpeakingEvalRepository::loadSpeakingEval()`, with no service or `DataService`
+fallback. Preserve canonical positive-ID handling; exact name and Unicode
+25x11 matrix conversion/order; missing evaluation as a successful empty result;
+Technical error mapping; closed-session NotFound; and the page's blank, clean
+grid on failed reads. Whitespace-only evaluation names remain query-valid but
+are rejected as trimmed-empty by the repository and mapped to Technical by the
+adapter. Verify `ClassMngrNextApplicationSpeakingEvaluationQueryTests`,
+`ClassMngrNextPlatformApplicationServicesSpeakingEvaluationReadPortTests`, and
+`ClassMngrSpeakingEvalPageSaveTests`. The configured `build/f168` Ninja target
+list contains all three F174 targets and is retained for F174. Phase 2 remains
+In Progress/Open; Gates 1 and 2 remain Partial.

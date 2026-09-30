@@ -8299,7 +8299,7 @@ fields/schedule/teacher/count/fallback parity. F167 implementation has not
 started. Gate 1 and Gate 2 remain Partial; Phase 2 remains In Progress and its
 exit gate remains Open.
 
-### Progress update - 2026-10-01 (F172 accepted; F173 selected)
+### Progress update - 2026-10-01 (F173 accepted; F174 selected)
 
 F167, source commit `97efac8b`, updates
 `ApplicationServicesClassDetailsPageReadPort` to use active-session
@@ -8376,18 +8376,24 @@ each built and passed 3/3:
 and `ClassMngrNextFeatureClassCoTeacherPageTests`. `git diff --check` passed.
 No full suite or application build ran.
 
-F173 migrates `ApplicationServicesScheduleSlotStateSavePort` from
-`ScheduleService::saveIntensiveSlotState()` to active-session
-`IntensiveSlotStateRepository::saveIntensiveSlotState()`, with no service or
-`DataService` fallback. Make `isAvailable()` reflect the open active
-session/repository. Preserve typed validation, weekday/HH:mm/state-token
-mapping, selected-equals-default deletion, and ScheduleWidget success, warning,
-unavailable, reload, and shared-toggle behavior. Verify
-`ClassMngrNextApplicationScheduleSlotStateSaveTests`,
+F173, source commit `a214dec4`, migrates
+`ApplicationServicesScheduleSlotStateSavePort` to the active session's
+`IntensiveSlotStateRepository`. Independent verification passed 3/3 focused
+targets: `ClassMngrNextApplicationScheduleSlotStateSaveTests`,
 `ClassMngrNextPlatformApplicationServicesScheduleSlotStateSavePortTests`, and
-`ClassMngrScheduleWidgetTests`. Cover direct repository readback for nondefault
-save and deletion; invalid input no-write; repository write failure as
-Technical; no-session/closed-session NotFound with facade present; and widget
-integration. Retain `build/f168`: its Ninja target list contains all three
-F173 targets. Gate 1 and Gate 2 remain Partial; Phase 2 remains In Progress and
-its exit gate remains Open.
+`ClassMngrScheduleWidgetTests`. `git diff --check` passed. No full suite or
+application build ran.
+
+F174 migrates `ApplicationServicesSpeakingEvaluationReadPort` from
+`SpeakingEvaluationService::evaluation()` to open-session
+`SpeakingEvalRepository::loadSpeakingEval()`, with no service or `DataService`
+fallback. Preserve canonical positive-ID handling; exact name and Unicode
+25x11 matrix conversion/order; missing evaluation as successful empty result;
+Technical error mapping; closed-session NotFound; and the page's blank, clean
+grid on failed reads. Whitespace-only evaluation names remain query-valid but
+are rejected as trimmed-empty by the repository and mapped to Technical by the
+adapter. Verify `ClassMngrNextApplicationSpeakingEvaluationQueryTests`,
+`ClassMngrNextPlatformApplicationServicesSpeakingEvaluationReadPortTests`, and
+`ClassMngrSpeakingEvalPageSaveTests`. Retain `build/f168`; its Ninja target list
+contains all three F174 targets. Gate 1 and Gate 2 remain Partial; Phase 2
+remains In Progress and its exit gate remains Open.

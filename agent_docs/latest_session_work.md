@@ -4052,7 +4052,7 @@ writes, unavailable/closed sessions, and repository write failure retaining
 both existing fields. `git diff --check` passed. No full suite or application
 build was run.
 
-## 2026-10-01 - F172 accepted; F173 selected
+## 2026-10-01 - F173 accepted; F174 selected
 
 F172 source commit `2daa209e` migrates
 `ApplicationServicesClassCoTeacherAssignmentPort` to the active session's
@@ -4070,17 +4070,37 @@ Independent CTest ran
 3/3 passed. The independent Tester also passed 3/3. `git diff --check` passed.
 No full suite or application build was run.
 
-F173 is selected: migrate `ApplicationServicesScheduleSlotStateSavePort` from
-`ScheduleService::saveIntensiveSlotState()` to the active session's
-`IntensiveSlotStateRepository::saveIntensiveSlotState()`, with no service or
-`DataService` fallback. Make `isAvailable()` reflect the active session and its
-repository. Preserve typed validation; weekday, `HH:mm`, and state-token
-mapping; default-state deletion; and widget success, warning, reload, and
-shared-toggle behavior. Acceptance covers repository persistence/deletion,
-invalid input without writes, repository failure mapping, unavailable/closed
-session behavior, and `ScheduleWidget` integration. Run
-`ClassMngrNextApplicationScheduleSlotStateSaveTests`,
-`ClassMngrNextPlatformApplicationServicesScheduleSlotStateSavePortTests`, and
-`ClassMngrScheduleWidgetTests`. Retain `build/f168`; its Ninja target list has
-all three. Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial.
-Workflow repair belongs to the other worker. Do not push.
+F173 source commit `a214dec4` migrates
+`ApplicationServicesScheduleSlotStateSavePort` from the feature service to the
+open session's `IntensiveSlotStateRepository`, with no `DataService` fallback.
+The port retains typed request validation, weekday and minute formatting,
+state-token mapping, default-state deletion, and availability checks against
+the active session/repository. Platform tests cover saved-value readback,
+deletion of only the selected override, invalid-input no-write behavior,
+injected repository failure, and unavailable/closed sessions. The widget test
+double now implements repository writes, preserving the existing assertions
+for arguments, reloads, warnings, and unavailable saves.
+
+Focused verification ran
+`ctest --test-dir build/f168 -R "ClassMngrNextApplicationScheduleSlotStateSaveTests|ClassMngrNextPlatformApplicationServicesScheduleSlotStateSavePortTests|ClassMngrScheduleWidgetTests" --output-on-failure`;
+3/3 passed. The independent Tester also ran the three focused targets and
+passed 3/3. `git diff --check` passed with only line-ending conversion
+warnings. No full suite or application build was run.
+
+Two independent Explorer lanes selected F174: migrate
+`ApplicationServicesSpeakingEvaluationReadPort` from
+`SpeakingEvaluationService::evaluation()` to the open session's
+`SpeakingEvalRepository::loadSpeakingEval()`, with no service or `DataService`
+fallback. Preserve canonical positive class-ID checks, exact evaluation-name
+lookup, ordered 25x11 UTF-16 matrix conversion, successful empty results for
+missing evaluations, Technical repository-error mapping, closed-session
+`NotFound`, and the page's blank clean grid when a read fails. The application
+query permits whitespace-only evaluation names while the repository rejects
+them as technical failures; retain that existing behavior. Focused targets:
+`ClassMngrNextApplicationSpeakingEvaluationQueryTests`,
+`ClassMngrNextPlatformApplicationServicesSpeakingEvaluationReadPortTests`, and
+`ClassMngrSpeakingEvalPageSaveTests`. Retain `build/f168` for implementation.
+
+The active deployment objective is Phase 2 under the Heavy route; deployment
+ID `phase2_resume_20260929`. Gates 1 and 2 remain Partial and Phase 2 remains
+In Progress/Open. Workflow repair belongs to the other worker. Do not push.

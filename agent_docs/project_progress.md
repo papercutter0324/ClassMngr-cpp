@@ -2200,7 +2200,7 @@ parity. Gates 1 and 2 remain Partial; Phase 2 remains In Progress/Open. A
 separate worker owns workflow repair; this work does not modify
 `.github/workflows/refactoring-baseline.yml`. No push was requested.
 
-## Current Phase 2 position - 2026-10-01 (F172 accepted; F173 selected)
+## Current Phase 2 position - 2026-10-01 (F173 accepted; F174 selected)
 
 F170 source commit `68391fac` moves `ApplicationServicesRosterReadPort` from
 `RosterService::roster()` to the active session's `RosterRepository`, with no
@@ -2237,17 +2237,23 @@ behavior. Independent focused CTest passed 3/3: Application use case, Platform
 port, and Co-Teacher page targets. The independent Tester also passed 3/3.
 `git diff --check` passed. No full suite or application build was run.
 
-F173 is selected: migrate `ApplicationServicesScheduleSlotStateSavePort` from
-`ScheduleService::saveIntensiveSlotState()` to the active session's
-`IntensiveSlotStateRepository::saveIntensiveSlotState()`, with no service or
-`DataService` fallback. Make `isAvailable()` reflect the active session and its
-repository. Preserve typed validation; weekday, `HH:mm`, and state-token
-mapping; default-state deletion; and widget success, warning, reload, and
-shared-toggle behavior. Acceptance covers repository persistence/deletion,
-invalid input without writes, repository failure mapping, unavailable/closed
-session behavior, and `ScheduleWidget` integration. Run
-`ClassMngrNextApplicationScheduleSlotStateSaveTests`,
-`ClassMngrNextPlatformApplicationServicesScheduleSlotStateSavePortTests`, and
-`ClassMngrScheduleWidgetTests`. Retain `build/f168`; its Ninja target list has
-all three. Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial.
-Workflow repair remains with the other worker.
+F173 source commit `a214dec4` migrates `ApplicationServicesScheduleSlotStateSavePort`
+to the active session's `IntensiveSlotStateRepository`, removing the service
+and `DataService` fallback. It preserves typed validation, weekday/time/state
+mapping, default-state deletion, and widget behavior. Independent focused CTest
+passed 3/3: application use case, Platform port, and ScheduleWidget. The
+independent Tester also passed 3/3. `git diff --check` passed. No full suite or
+application build was run.
+
+F174 is selected: migrate `ApplicationServicesSpeakingEvaluationReadPort` from
+`SpeakingEvaluationService::evaluation()` to the active session's
+`SpeakingEvalRepository::loadSpeakingEval()`, without a service or `DataService`
+fallback. Preserve canonical positive class IDs, exact-name lookup, ordered
+25x11 Unicode matrices, missing evaluations as successful empty results,
+current error mapping, and the page's blank clean grid after a failed read.
+Retain the whitespace-only evaluation-name behavior (the query permits it and
+the repository currently rejects it as a technical error). Focused targets are
+`ClassMngrNextApplicationSpeakingEvaluationQueryTests`,
+`ClassMngrNextPlatformApplicationServicesSpeakingEvaluationReadPortTests`, and
+`ClassMngrSpeakingEvalPageSaveTests`. Phase 2 remains In Progress/Open; Gates 1
+and 2 remain Partial. Workflow repair remains with the other worker.
