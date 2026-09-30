@@ -8,8 +8,10 @@
 #include "domain/models/native_english_teacher.h"
 #include "next/application/gs_team_directory_read_query.h"
 #include "next/application/native_english_teacher_directory_read_query.h"
+#include "next/application/native_english_teacher_directory_save_use_case.h"
 #include "next/platform/application_services_gs_team_directory_read_port.h"
 #include "next/platform/application_services_native_english_teacher_directory_read_port.h"
+#include "next/platform/application_services_native_english_teacher_directory_save_port.h"
 #include "ui/shared/constants/gui_constants.h"
 #include "ui/shared/widgets/on_screen_keyboard.h"
 #include "ui/shared/widgets/text_fit_push_button.h"
@@ -35,6 +37,7 @@
 #include <algorithm>
 #include <cstddef>
 #include <string>
+#include <utility>
 
 namespace
 {
@@ -439,6 +442,7 @@ bool StaffDirectoryPage::loadDirectory()
     }
 
     m_deletedIds.clear();
+    m_deletedNativeEnglishTeacherIds.clear();
     m_dirty = false;
     m_loading = false;
     updateActions();
@@ -492,7 +496,18 @@ void StaffDirectoryPage::deleteSelectedRows()
     {
         const auto* item = m_table->item(row, 0);
         const int id = item ? item->data(IdRole).toInt() : -1;
-        if (id > 0) m_deletedIds.append(id);
+        if (id > 0)
+        {
+            if (m_kind == StaffDirectoryKind::NativeEnglishTeachers)
+            {
+                m_deletedNativeEnglishTeacherIds.append(
+                    ClassMngr::Next::Domain::NativeEnglishTeacherId(id));
+            }
+            else
+            {
+                m_deletedIds.append(id);
+            }
+        }
         m_table->removeRow(row);
     }
     markDirty();
@@ -509,6 +524,107 @@ bool StaffDirectoryPage::validateBirthday(const QString& value) const
 
 bool StaffDirectoryPage::saveDirectory(bool showErrors)
 {
+    if (m_kind == StaffDirectoryKind::NativeEnglishTeachers)
+    {
+        const ClassMngr::Next::Platform::
+            ApplicationServicesNativeEnglishTeacherDirectorySavePort port(
+                m_services);
+        if (!port.hasActiveSession())
+        {
+            return false;
+        }
+
+        ClassMngr::Next::Application::
+            NativeEnglishTeacherDirectorySaveRequest request;
+        request.rows.reserve(static_cast<std::size_t>(m_table->rowCount()));
+        for (int row = 0; row < m_table->rowCount(); ++row)
+        {
+            const auto* nameItem = m_table->item(row, 0);
+            const int id = nameItem ? nameItem->data(IdRole).toInt() : -1;
+            const QString name = cellText(m_table, row, 0).simplified();
+            const QString birthday = cellText(m_table, row, 4);
+            const QString normalizedBirthday = birthday.trimmed();
+            const bool birthdayIsBlank = normalizedBirthday.isEmpty();
+            const bool birthdayIsValid = QDate::fromString(
+                QStringLiteral("2000-%1").arg(normalizedBirthday),
+                QStringLiteral("yyyy-MM-dd")
+                ).isValid();
+
+            ClassMngr::Next::Application::NativeEnglishTeacherDirectorySaveRow
+                teacher;
+            if (id > 0)
+            {
+                teacher.id = ClassMngr::Next::Domain::NativeEnglishTeacherId(id);
+            }
+            teacher.name = name.toStdU16String();
+            teacher.position = cellText(m_table, row, 1).toStdU16String();
+            teacher.phoneNumber = cellText(m_table, row, 2).toStdU16String();
+            teacher.email = cellText(m_table, row, 3).toStdU16String();
+            teacher.birthday = birthday.toStdU16String();
+            teacher.nationality = cellText(m_table, row, 5).toStdU16String();
+            teacher.normalizedNameKey =
+                normalizedName(name).toStdU16String();
+            teacher.birthdayIsBlank = birthdayIsBlank;
+            teacher.birthdayIsValid = birthdayIsValid;
+            request.rows.push_back(std::move(teacher));
+        }
+
+        request.deletedIds.reserve(
+            static_cast<std::size_t>(m_deletedNativeEnglishTeacherIds.size()));
+        for (const auto id : m_deletedNativeEnglishTeacherIds)
+        {
+            request.deletedIds.push_back(id);
+        }
+
+        const auto outcome =
+            ClassMngr::Next::Application::
+                NativeEnglishTeacherDirectorySaveUseCase::execute(
+                    request,
+                    port
+                    );
+        if (!outcome.validation.isValid())
+        {
+            if (showErrors)
+            {
+                DialogServices::showWarning(
+                    this,
+                    tr("Save Directory"),
+                    tr("Each Native English Teacher needs a unique name and a valid MM-dd birthday.")
+                    );
+            }
+            return false;
+        }
+        if (!outcome.saved)
+        {
+            if (outcome.error
+                && outcome.error->code
+                    == ClassMngr::Next::Domain::ErrorCode::NotFound)
+            {
+                return false;
+            }
+            if (showErrors)
+            {
+                const std::string message = outcome.error
+                    ? outcome.error->message
+                    : std::string{};
+                DialogServices::showWarning(
+                    this,
+                    tr("Save Directory"),
+                    message.empty()
+                        ? tr("The Native English Teacher directory could not be saved.")
+                        : QString::fromUtf8(
+                            message.data(),
+                            static_cast<qsizetype>(message.size()))
+                    );
+            }
+            return false;
+        }
+
+        loadDirectory();
+        emit directorySaved();
+        return true;
+    }
+
     auto* teacherService =
         m_services
             ? m_services->teacherService()
@@ -516,37 +632,6 @@ bool StaffDirectoryPage::saveDirectory(bool showErrors)
     if (!teacherService || !teacherService->isAvailable()) return false;
 
     Status status;
-    if (m_kind == StaffDirectoryKind::NativeEnglishTeachers)
-    {
-        QList<NativeEnglishTeacher> teachers;
-        QSet<QString> names;
-        for (int row = 0; row < m_table->rowCount(); ++row)
-        {
-            NativeEnglishTeacher teacher;
-            teacher.id = m_table->item(row, 0)
-                ? m_table->item(row, 0)->data(IdRole).toInt() : -1;
-            teacher.name = cellText(m_table, row, 0).simplified();
-            teacher.position = cellText(m_table, row, 1);
-            teacher.phoneNumber = cellText(m_table, row, 2);
-            teacher.email = cellText(m_table, row, 3);
-            teacher.birthday = cellText(m_table, row, 4);
-            teacher.nationality = cellText(m_table, row, 5);
-            const QString key = normalizedName(teacher.name);
-            if (key.isEmpty() || names.contains(key) || !validateBirthday(teacher.birthday))
-            {
-                status = std::unexpected(tr("Each Native English Teacher needs a unique name and a valid MM-dd birthday."));
-                break;
-            }
-            names.insert(key);
-            teachers.append(teacher);
-        }
-        if (status)
-        {
-            status = teacherService->saveNativeEnglishTeacherDirectory(
-                teachers, m_deletedIds);
-        }
-    }
-    else
     {
         QList<GsTeamMember> members;
         QSet<QString> englishNames;
@@ -662,6 +747,7 @@ void StaffDirectoryPage::clearDatabaseState()
     m_table->clearContents();
     m_table->setRowCount(0);
     m_deletedIds.clear();
+    m_deletedNativeEnglishTeacherIds.clear();
     m_dirty = false;
     m_loading = false;
     updateActions();

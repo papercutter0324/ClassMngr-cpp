@@ -31,6 +31,14 @@ NativeEnglishTeacherRepository::getAll() const
     return QList<NativeEnglishTeacher>{};
 }
 
+Status NativeEnglishTeacherRepository::saveDirectory(
+    const QList<NativeEnglishTeacher>&,
+    const QList<int>&
+    )
+{
+    return {};
+}
+
 Result<QList<GsTeamMember>> GsTeamRepository::getAll() const
 {
     return QList<GsTeamMember>{};

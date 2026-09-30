@@ -740,6 +740,17 @@ classmngr_add_qt_test(
         Qt6::Test
 )
 
+# Exercise Native English Teacher directory validation and save orchestration
+# without creating a GUI application.
+classmngr_add_qt_test(
+    NAME NextApplicationNativeEnglishTeacherDirectorySave
+    SOURCES
+        tests/next_application_native_english_teacher_directory_save_tests.cpp
+    LIBRARIES
+        ClassMngrNext::Application
+        Qt6::Test
+)
+
 classmngr_add_qt_test(
     NAME NextApplicationGsTeamDirectoryReadQuery
     SOURCES
@@ -1228,6 +1239,16 @@ classmngr_add_qt_test(
     NAME NextPlatformApplicationServicesNativeEnglishTeacherDirectoryReadPort
     SOURCES
         tests/next_platform_application_services_native_english_teacher_directory_read_port_tests.cpp
+    LIBRARIES
+        ClassMngrNext::Platform
+        Qt6::Test
+    OFFSCREEN
+)
+
+classmngr_add_qt_test(
+    NAME NextPlatformApplicationServicesNativeEnglishTeacherDirectorySavePort
+    SOURCES
+        tests/next_platform_application_services_native_english_teacher_directory_save_port_tests.cpp
     LIBRARIES
         ClassMngrNext::Platform
         Qt6::Test

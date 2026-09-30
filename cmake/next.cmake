@@ -158,6 +158,10 @@ set(CLASSMNGR_NEXT_APPLICATION_SOURCES
     src/next/application/native_english_teacher_directory_read_snapshot.h
     src/next/application/native_english_teacher_directory_read_port.h
     src/next/application/native_english_teacher_directory_read_query.h
+    src/next/application/native_english_teacher_directory_save.h
+    src/next/application/native_english_teacher_directory_save_policy.h
+    src/next/application/native_english_teacher_directory_save_port.h
+    src/next/application/native_english_teacher_directory_save_use_case.h
     src/next/application/gs_team_directory_read_snapshot.h
     src/next/application/gs_team_directory_read_port.h
     src/next/application/gs_team_directory_read_query.h
@@ -272,6 +276,7 @@ set(CLASSMNGR_NEXT_PLATFORM_SOURCES
     src/next/platform/application_services_teacher_profile_edit_persistence_port.h
     src/next/platform/application_services_teacher_profile_read_port.h
     src/next/platform/application_services_native_english_teacher_directory_read_port.h
+    src/next/platform/application_services_native_english_teacher_directory_save_port.h
     src/next/platform/application_services_gs_team_directory_read_port.h
     src/next/platform/application_services_current_campus_preferences_port.h
     src/next/platform/application_services_middle_school_analytics_preferences_port.h

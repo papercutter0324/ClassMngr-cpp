@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ui/shared/pages/basepage.h"
+#include "next/domain/native_english_teacher_id.h"
 
 #include <QList>
 
@@ -64,6 +65,8 @@ private:
     bool m_loading = false;
     bool m_dirty = false;
     QList<int> m_deletedIds;
+    QList<ClassMngr::Next::Domain::NativeEnglishTeacherId>
+        m_deletedNativeEnglishTeacherIds;
 
     QLabel* m_titleLabel = nullptr;
     QLabel* m_subtitleLabel = nullptr;
