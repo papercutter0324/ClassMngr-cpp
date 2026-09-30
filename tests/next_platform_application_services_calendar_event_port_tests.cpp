@@ -272,8 +272,9 @@ private slots:
     void reportsRepeatSeriesEditReadFailureStructurally();
     void reportsRepeatSeriesEditSaveFailureStructurally();
     void deletesValidRepeatSeriesSuffix();
+    void deletesMissingRepeatSeriesSuffixSuccessfully();
     void reportsInvalidRepeatSeriesDeleteRequestStructurally();
-    void reportsUnavailableRepeatSeriesDeleteServiceStructurally();
+    void reportsUnavailableRepeatSeriesDeleteSessionStructurally();
     void reportsRepeatSeriesDeleteServiceFailureStructurally();
     void preservesLegacyTitleSurroundingSpaces();
     void preservesAllDayAndUnknownTimePolicy();
@@ -2038,8 +2039,13 @@ deletesValidRepeatSeriesSuffix()
 {
     ApplicationServices services;
     QVERIFY(openDatabase(services, m_directory));
-    CalendarService* legacyService = services.calendarService();
-    QVERIFY(legacyService);
+    QVERIFY(services.dataService());
+    DatabaseSession* const session = services.databaseSession();
+    QVERIFY(session);
+    QVERIFY(session->isOpen());
+    CalendarEventRepository* const repository =
+        session->calendarEventRepository();
+    QVERIFY(repository);
 
     const QString repeatSeriesId = QStringLiteral("series-delete-suffix");
     QList<int> eventIds;
@@ -2057,22 +2063,94 @@ deletesValidRepeatSeriesSuffix()
         event.startTime = QTime(9, 0);
         event.endTime = QTime(10, 0);
         event.repeatSeriesId = repeatSeriesId;
-        const int eventId = saveEvent(*legacyService, event);
+        const auto saved = repository->saveCalendarEvent(event);
+        QVERIFY(saved);
+        const int eventId = *saved;
         QVERIFY(eventId > 0);
         eventIds.append(eventId);
     }
 
+    CalendarEvent unrelatedSeriesEvent = makeEvent(
+        QStringLiteral("Unrelated series event"),
+        QDate(2026, 12, 15),
+        QDate(2026, 12, 15)
+        );
+    unrelatedSeriesEvent.startTime = QTime(13, 0);
+    unrelatedSeriesEvent.endTime = QTime(14, 0);
+    unrelatedSeriesEvent.repeatSeriesId = QStringLiteral("series-delete-other");
+    const auto unrelatedSeriesSaved =
+        repository->saveCalendarEvent(unrelatedSeriesEvent);
+    QVERIFY(unrelatedSeriesSaved);
+    QVERIFY(*unrelatedSeriesSaved > 0);
+
+    CalendarEvent unrelatedEvent = makeEvent(
+        QStringLiteral("Unrelated one-time event"),
+        QDate(2026, 12, 10),
+        QDate(2026, 12, 10)
+        );
+    unrelatedEvent.startTime = QTime(15, 0);
+    unrelatedEvent.endTime = QTime(16, 0);
+    const auto unrelatedSaved = repository->saveCalendarEvent(unrelatedEvent);
+    QVERIFY(unrelatedSaved);
+    QVERIFY(*unrelatedSaved > 0);
+
+    for (const int eventId : eventIds)
+    {
+        QVERIFY(repository->getCalendarEvent(eventId));
+    }
+    QVERIFY(repository->getCalendarEvent(*unrelatedSeriesSaved));
+    QVERIFY(repository->getCalendarEvent(*unrelatedSaved));
+
     ApplicationServicesCalendarEventSeriesDeletePort port(services);
     const CalendarEventSeriesDeleteRequest request{
-        repeatSeriesId.toUtf8().toStdString(),
+        QStringLiteral("  series-delete-suffix  ").toUtf8().toStdString(),
         QStringLiteral("2026-12-08").toStdString()
     };
     const auto deleted = port.deleteRepeatSeriesFromDate(request);
 
     QVERIFY(deleted);
-    QVERIFY(legacyService->event(eventIds.at(0)));
-    QVERIFY(!legacyService->event(eventIds.at(1)));
-    QVERIFY(!legacyService->event(eventIds.at(2)));
+    QVERIFY(repository->getCalendarEvent(eventIds.at(0)));
+    QVERIFY(!repository->getCalendarEvent(eventIds.at(1)));
+    QVERIFY(!repository->getCalendarEvent(eventIds.at(2)));
+    QVERIFY(repository->getCalendarEvent(*unrelatedSeriesSaved));
+    QVERIFY(repository->getCalendarEvent(*unrelatedSaved));
+
+    const auto remaining = repository->loadCalendarEventsInRange(
+        QDate(2026, 12, 1),
+        QDate(2026, 12, 31)
+        );
+    QVERIFY(remaining);
+    QCOMPARE(remaining->size(), 3);
+}
+
+void NextPlatformApplicationServicesCalendarEventPortTests::
+deletesMissingRepeatSeriesSuffixSuccessfully()
+{
+    ApplicationServices services;
+    QVERIFY(openDatabase(services, m_directory));
+    QVERIFY(services.dataService());
+    DatabaseSession* const session = services.databaseSession();
+    QVERIFY(session);
+    QVERIFY(session->isOpen());
+    CalendarEventRepository* const repository =
+        session->calendarEventRepository();
+    QVERIFY(repository);
+
+    const QString repeatSeriesId = QStringLiteral("series-delete-missing");
+    const auto before = repository->loadCalendarEventsForRepeatSeriesFromDate(
+        repeatSeriesId,
+        QDate(2026, 12, 8)
+        );
+    QVERIFY(before);
+    QVERIFY(before->isEmpty());
+
+    ApplicationServicesCalendarEventSeriesDeletePort port(services);
+    const auto deleted = port.deleteRepeatSeriesFromDate({
+        repeatSeriesId.toUtf8().toStdString(),
+        "2026-12-08"
+    });
+
+    QVERIFY(deleted);
 }
 
 void NextPlatformApplicationServicesCalendarEventPortTests::
@@ -2130,11 +2208,30 @@ reportsInvalidRepeatSeriesDeleteRequestStructurally()
 }
 
 void NextPlatformApplicationServicesCalendarEventPortTests::
-reportsUnavailableRepeatSeriesDeleteServiceStructurally()
+reportsUnavailableRepeatSeriesDeleteSessionStructurally()
 {
     ApplicationServices services;
+    QVERIFY(services.dataService());
+    DatabaseSession* const session = services.databaseSession();
+    QVERIFY(session);
+    QVERIFY(!session->isOpen());
     ApplicationServicesCalendarEventSeriesDeletePort port(services);
 
+    verifyFailure(
+        port.deleteRepeatSeriesFromDate({
+            "series-delete-unavailable",
+            "2026-12-08"
+        }),
+        ErrorCode::NotFound
+        );
+
+    QVERIFY(openDatabase(services, m_directory));
+    QVERIFY(session->isOpen());
+    QVERIFY(session->calendarEventRepository());
+
+    services.closeDatabase();
+    QVERIFY(services.dataService());
+    QVERIFY(!session->isOpen());
     verifyFailure(
         port.deleteRepeatSeriesFromDate({
             "series-delete-unavailable",
@@ -2149,8 +2246,13 @@ reportsRepeatSeriesDeleteServiceFailureStructurally()
 {
     ApplicationServices services;
     QVERIFY(openDatabase(services, m_directory));
-    CalendarService* legacyService = services.calendarService();
-    QVERIFY(legacyService);
+    QVERIFY(services.dataService());
+    DatabaseSession* const session = services.databaseSession();
+    QVERIFY(session);
+    QVERIFY(session->isOpen());
+    CalendarEventRepository* const repository =
+        session->calendarEventRepository();
+    QVERIFY(repository);
 
     CalendarEvent event = makeEvent(
         QStringLiteral("Repeat delete failure"),
@@ -2160,12 +2262,12 @@ reportsRepeatSeriesDeleteServiceFailureStructurally()
     event.startTime = QTime(9, 0);
     event.endTime = QTime(10, 0);
     event.repeatSeriesId = QStringLiteral("series-delete-failure");
-    const int eventId = saveEvent(*legacyService, event);
+    const auto saved = repository->saveCalendarEvent(event);
+    QVERIFY(saved);
+    const int eventId = *saved;
     QVERIFY(eventId > 0);
 
-    QSqlQuery query(
-        services.dataService()->databaseSession()->database()
-        );
+    QSqlQuery query(session->database());
     QVERIFY(query.exec(QStringLiteral(
         "CREATE TRIGGER reject_calendar_repeat_delete "
         "BEFORE DELETE ON calendar_events "
@@ -2185,7 +2287,7 @@ reportsRepeatSeriesDeleteServiceFailureStructurally()
         deleted.error().message.find("Deleting calendar repeat series")
             != std::string::npos
         );
-    QVERIFY(legacyService->event(eventId));
+    QVERIFY(repository->getCalendarEvent(eventId));
 }
 
 void NextPlatformApplicationServicesCalendarEventPortTests::
