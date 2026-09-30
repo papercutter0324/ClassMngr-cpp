@@ -3830,7 +3830,7 @@ Qt 6.12 metadata shim (removed afterward), and test-only API/registration
 adaptations; production files and pinned baseline blobs were not overlaid. No
 full suite/app build or baseline query-count claim.
 
-## 2026-09-30 — Phase 2 continuation: F161-F165 accepted; F166 selected
+## 2026-09-30 — Phase 2 continuation: F161-F166 accepted; F167 selected
 
 At continuation start, reviewed commits `314f4d5b` and `0c5d5566`. No blocking
 issue was found. One non-blocking review note: `314f4d5b` changed a PDF text
@@ -3950,16 +3950,34 @@ used VS 18 2026 and Qt 6.12 with
 `QT_NO_CONFIG_VERSION_OVERRIDE_FILES=ON`. `git diff --check` passed. No full
 ClassesPage suite, application build, or query-count comparison was run.
 
-Three independent Investigators compared candidates for F166. The selected
-slice reuses F165's typed class/teacher display query in
-`RosterEditorWidget::updateHeaderText()` through its `sidebarClassDisplayName()`
-path. Preserve the roster header's distinct outer-read fallback: for a valid
-class, an unavailable active-session query uses the trimmed classroom name or
-`Class N`; an invalid ID displays No class selected. A class-details failure
-still uses the formatter's defaults, while teacher failure retains class
-details. Keep the existing roster title, embedded heading, and load/save paths
-unchanged. Acceptance covers exact subtitle text, teacher failure, fallback/no
-session behavior, and pinned-baseline subtitle parity. Gates 1 and 2 remain
-Partial; Phase 2 remains In Progress/Open. A separate worker owns workflow
-repair; this work does not modify
+F166 source commit `577aea078a01b3a3986c07336c06631394620fcc` moves only
+`RosterEditorWidget::updateHeaderText()` to F165's typed subtitle query and
+active-session adapter. `SidebarNodeNaming` formatting remains in the UI. An
+unavailable outer read keeps the roster-specific trimmed classroom-name or `Class N` fallback; failed class fields still use formatter defaults, and failed
+teacher fields leave class details available. Invalid-ID text, title, embedded
+heading, and roster load/save behavior remain unchanged.
+
+The current `ClassMngrClassesPageTests` target built with the existing VS 18
+2026/Qt 6.12 Debug cache. Focused QtTest slots
+`rosterEditorSubtitleUsesSelectedClassSubtitleRead`,
+`rosterEditorSubtitleKeepsNameFallbackWhenReadIsUnavailable`, and
+`selectedClassSubtitleUsesIndependentReadOutcomesAndRefreshes` passed (5/5
+including init and cleanup). The visible subtitle `E4 Hercules • Susan • Tues (4:00)` passed on exact pinned baseline
+`48fc5c5cc7dee78d82f8bf5f1bf8b51725575b99` with a temporary test-source-only
+slot; the baseline scratch source was restored, and no production source was
+overlaid. `git diff --check` passed. An unfiltered ClassesPage run stalled at
+startup and was stopped after 30 seconds. No full suite, application build,
+or query-count claim.
+
+F167 is selected: migrate the existing `ClassDetailsPage` display read
+adapter, `ApplicationServicesClassDetailsPageReadPort`, from legacy class,
+teacher, and roster service calls to active-session `ClassInfoRepository`,
+`TeacherRepository`, and `RosterRepository` reads. Reuse
+`ClassDetailsPageReadSnapshot`; preserve independent class, teacher, and roster
+count outcomes, raw schedule text/order, current defaults/fallbacks, and
+`Teacher::preferredDisplayName()` precedence. Acceptance covers adapter
+mapping and source failures without DataService fallback, existing display
+regressions, and pinned-baseline visible fields, schedule, teacher, count, and
+fallback parity. Gates 1 and 2 remain Partial; Phase 2 remains In Progress/Open.
+A separate worker owns workflow repair; this work does not modify
 `.github/workflows/refactoring-baseline.yml`. No push was requested.

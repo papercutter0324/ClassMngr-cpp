@@ -4132,9 +4132,8 @@ F145 details update and F146 creation remain separate accepted boundaries.
 Production commit `b037b4216b71c55c7793df5f7bbbfc4a00690065`, page transition
 fix `315b3ff33b7e2ab42b43d52cd168ce21a92158c9`, and acceptance-test commit
 `397376e439f4b5955c82948ab0c225aaf776d679` are recorded with verification
-limits in the [Phase 2 progress log](03-Phase-2-Progress-Log.md). F148-F165
-are accepted. F166 is selected; its boundary and acceptance criteria are in
-the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
+limits in the [Phase 2 progress log](03-Phase-2-Progress-Log.md). F148-F166 are accepted. F167 is selected; its boundary and
+acceptance criteria are in the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 
 ## Class-details save mapping: F126 and F139
 
@@ -4392,16 +4391,33 @@ all 584 baseline `src/` blobs matched. `git diff --check` passed. No full suite,
 application build, or query-count comparison is claimed. See the [Phase 2
 progress log](03-Phase-2-Progress-Log.md).
 
-## F166 selected RosterEditorWidget class subtitle read
+## F166 accepted RosterEditorWidget class subtitle read
 
-Migrate `RosterEditorWidget::updateHeaderText()` and
-`sidebarClassDisplayName()` in
-[`roster_editor_widget_ui.cpp`](../../src/features/roster/ui/roster_editor_widget_ui.cpp)
-from `ClassService::classInfo()` and `TeacherService::teacher()` to reuse F165's
-typed subtitle read. Keep `SidebarNodeNaming::formatClassDisplayName()` in the
-UI. Preserve invalid-ID "No class selected"; for valid IDs retain the
-classroom-name/`Class N` fallback when the read is unavailable and preserve
-class details on teacher failure. Title, embedded heading, and roster load/save
-behavior remain in scope for parity. Acceptance covers exact subtitle,
-teacher failure, fallback/no-session behavior, and pinned-baseline parity.
-Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial.
+F166, source commit `577aea078a01b3a3986c07336c06631394620fcc`, routes
+`RosterEditorWidget::updateHeaderText()` and `sidebarClassDisplayName()`
+through F165's typed read. UI formatting, title, embedded heading, fallbacks,
+and roster load/save behavior remain intact. The existing VS 18 2026/Qt 6.12
+Debug cache built `ClassMngrClassesPageTests`; all three focused slots passed
+5/5 including init/cleanup. Exact visible text `E4 Hercules • Susan • Tues (4:00)`
+passed on current and
+pinned baseline `48fc5c5cc7dee78d82f8bf5f1bf8b51725575b99` with a temporary
+baseline test-source slot and no production overlay. Failure/fallback coverage
+passed, including teacher failure, detail defaults, invalid ID, trimmed-name /
+`Class 42`, and unavailable-session fallback without a legacy class-info read.
+`git diff --check` passed. The unfiltered page run stalled at startup and was
+stopped after 30 seconds; no full suite, application build, or query-count
+comparison is claimed. See the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
+
+## F167 selected ClassDetailsPage display read
+
+Replace `ApplicationServicesClassDetailsPageReadPort`'s legacy reads with
+`ClassInfoRepository::loadClassInfo()`,
+`TeacherRepository::loadTeacherDisplayNameFields()`, and
+`RosterRepository::getRosterStudentCount()` through the active `DatabaseSession`.
+Reuse `ClassDetailsPageReadSnapshot`; preserve independent class, teacher, and
+count results, raw schedule fields/order, defaults/fallbacks, and
+`Teacher::preferredDisplayName()` precedence. Acceptance covers adapter
+mapping, missing/source failures without `DataService` fallback, existing page
+display regressions, and pinned-baseline visible fields/schedule/teacher/count/
+fallback parity. F167 implementation has not started. Phase 2 remains
+In Progress/Open; Gates 1 and 2 remain Partial.

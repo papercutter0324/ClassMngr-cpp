@@ -1583,3 +1583,19 @@ regular meeting day/start time, and the teacher fields used by
 `preferredDisplayName()`; do not widen the contract to full class or teacher
 records. The exact pinned-baseline page subtitle and all 584 production source
 blobs matched without a production overlay.
+
+## 2026-09-30 — F166 roster subtitle acceptance
+
+Keep outer-query unavailability separate from inner class-detail failure: the
+roster header falls back to classroom name/ID only for the outer failure, while
+the formatter still supplies defaults when its class fields fail. A failed
+teacher read must retain successful class fields. The active-session query can
+be reused by another display consumer without moving `SidebarNodeNaming`
+formatting out of the UI. Exact current and pinned-baseline subtitles matched
+with no production overlay.
+
+F167 reuses the existing `ClassDetailsPageReadSnapshot` and query while
+replacing its remaining service-backed Platform reads. Keep class details,
+teacher display name, and roster count as separate outcomes; do not infer a
+memory or query-count improvement because the roster repository count method
+currently loads the roster before counting.

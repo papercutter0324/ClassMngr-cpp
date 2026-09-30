@@ -8262,3 +8262,39 @@ details on teacher failure. Preserve the title, embedded heading, and roster
 load/save behavior. Acceptance covers exact subtitle, teacher failure,
 fallback/no-session behavior, and pinned-baseline parity. Gate 1 and Gate 2
 remain Partial; Phase 2 remains In Progress and its exit gate remains Open.
+
+### Progress update - 2026-09-30 (F166 accepted; F167 selected)
+
+F166, source commit `577aea078a01b3a3986c07336c06631394620fcc`, routes
+`RosterEditorWidget::updateHeaderText()` and `sidebarClassDisplayName()` through
+F165's typed selected-class subtitle read. UI formatting, title, embedded
+heading, fallbacks, and roster load/save behavior remain intact.
+
+`ClassMngrClassesPageTests` built using the existing VS 18 2026/Qt 6.12 Debug
+cache. Focused slots `rosterEditorSubtitleUsesSelectedClassSubtitleRead`,
+`rosterEditorSubtitleKeepsNameFallbackWhenReadIsUnavailable`, and
+`selectedClassSubtitleUsesIndependentReadOutcomesAndRefreshes` passed 5/5
+including init/cleanup. Exact visible text `E4 Hercules • Susan • Tues (4:00)`
+passed on current and
+pinned baseline `48fc5c5cc7dee78d82f8bf5f1bf8b51725575b99`; baseline used a
+temporary test-source-only slot and no production overlay. Coverage includes
+teacher failure retaining class/schedule details, class-detail failure retaining
+formatter defaults, invalid ID, trimmed-name/`Class 42` fallback, and
+unavailable-session name fallback with legacy services available and no legacy
+class-info read. `git diff --check` passed. The unfiltered ClassesPage run
+stalled at startup and was stopped after 30 seconds. No full suite, application
+build, or query-count comparison is claimed.
+
+F167 is selected: replace the Platform source in
+`ApplicationServicesClassDetailsPageReadPort` with active-session reads through
+`ClassInfoRepository::loadClassInfo()`,
+`TeacherRepository::loadTeacherDisplayNameFields()`, and
+`RosterRepository::getRosterStudentCount()`, reusing
+`ClassDetailsPageReadSnapshot`. Preserve independent class, teacher, and count
+results; raw schedule fields/order; defaults/fallbacks; and
+`Teacher::preferredDisplayName()` precedence. Acceptance covers adapter mapping,
+missing/source failures without `DataService` fallback, existing
+ClassDetailsPage display regressions, and pinned-baseline visible
+fields/schedule/teacher/count/fallback parity. F167 implementation has not
+started. Gate 1 and Gate 2 remain Partial; Phase 2 remains In Progress and its
+exit gate remains Open.

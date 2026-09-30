@@ -38,9 +38,9 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
   navigation read, F159's Native English Staff Directory read, F160's GS
   Team Staff Directory read, F161's Native English Staff Directory save,
   F162's GS Team Staff Directory save, F163's ClassesPage class-list read,
-  F164's selected-class grade read, and F165's selected-class subtitle read
-  are accepted. F166 is selected for the
-  roster editor's class subtitle read.
+  F164's selected-class grade read, F165's selected-class subtitle read, and
+  F166's RosterEditorWidget class subtitle read are accepted. F167 is selected
+  for the ClassDetailsPage display read.
   The prior F123 candidate wording is historical;
   current Teacher Profile integration status is recorded in the progress log.
   Gates 1 and 2
@@ -657,16 +657,41 @@ slot overlaid; all 584 baseline `src/` blobs matched. `git diff --check` passed.
 No full suite, application build, or query-count comparison is claimed. See the
 [Phase 2 progress log](03-Phase-2-Progress-Log.md) for evidence and limits.
 
-## F166 selected RosterEditorWidget class subtitle read
+## F166 accepted RosterEditorWidget class subtitle read
 
-Migrate `RosterEditorWidget::updateHeaderText()` and
-`sidebarClassDisplayName()` in
-[`roster_editor_widget_ui.cpp`](../../src/features/roster/ui/roster_editor_widget_ui.cpp)
-from `ClassService::classInfo()` and `TeacherService::teacher()` to F165's
-typed selected-class subtitle read. Keep `SidebarNodeNaming::formatClassDisplayName()`
-in the UI. Preserve invalid-ID "No class selected"; for valid IDs retain the
-classroom-name/`Class N` fallback when the read is unavailable and retain class
-details when the teacher read fails. Keep the title, embedded heading, and
-roster load/save behavior unchanged. Acceptance covers exact subtitle output,
-teacher failure, fallback/no-session behavior, and pinned-baseline parity.
-Gates 1 and 2 remain Partial; Phase 2 remains In Progress/Open.
+F166, source commit `577aea078a01b3a3986c07336c06631394620fcc`, routes
+`RosterEditorWidget::updateHeaderText()` and `sidebarClassDisplayName()` through
+F165's typed selected-class subtitle read. The UI keeps
+`SidebarNodeNaming::formatClassDisplayName()` and preserves the title, embedded
+heading, fallback behavior, and roster load/save behavior.
+
+`ClassMngrClassesPageTests` built using the existing VS 18 2026/Qt 6.12 Debug
+cache. Focused slots `rosterEditorSubtitleUsesSelectedClassSubtitleRead`,
+`rosterEditorSubtitleKeepsNameFallbackWhenReadIsUnavailable`, and
+`selectedClassSubtitleUsesIndependentReadOutcomesAndRefreshes` passed 5/5
+including init/cleanup. Exact visible text `E4 Hercules • Susan • Tues (4:00)`
+passed on current and
+pinned baseline `48fc5c5cc7dee78d82f8bf5f1bf8b51725575b99`; baseline used a
+temporary test-source-only slot and no production overlay. Coverage includes
+teacher failure retaining class/schedule details, class-detail failure retaining
+formatter defaults, invalid ID, trimmed-name/`Class 42` fallback, and
+unavailable-session name fallback with legacy services available and no legacy
+class-info read. `git diff --check` passed. The unfiltered ClassesPage run
+stalled at startup and was stopped after 30 seconds. No full suite, application
+build, or query-count comparison is claimed.
+
+## F167 selected ClassDetailsPage display read
+
+Replace the Platform source in `ApplicationServicesClassDetailsPageReadPort`:
+use `ClassInfoRepository::loadClassInfo()`,
+`TeacherRepository::loadTeacherDisplayNameFields()`, and
+`RosterRepository::getRosterStudentCount()` through the active `DatabaseSession`
+instead of `ClassService::classInfo()`, `TeacherService::teacher()`, and
+`RosterService::studentCount()`. Reuse `ClassDetailsPageReadSnapshot` and
+preserve independent class, teacher, and count results; raw schedule fields and
+order; defaults and fallbacks; and `Teacher::preferredDisplayName()` precedence.
+Acceptance covers adapter mapping, missing/source failures without
+`DataService` fallback, existing ClassDetailsPage display regressions, and
+pinned-baseline parity for visible fields, schedule, teacher, count, and
+fallback. F167 implementation has not started. Gates 1 and 2 remain Partial;
+Phase 2 remains In Progress/Open.

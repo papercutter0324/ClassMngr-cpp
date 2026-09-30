@@ -2166,15 +2166,36 @@ visible subtitle `E4 Hercules • Susan • Tues (4:00)`; the equivalent current
 slot passed. All 584 baseline `src/` blobs matched. `git diff --check` passed.
 No full suite/application build or query-count claim.
 
-F166 is selected: migrate `RosterEditorWidget::updateHeaderText()` and its
-`sidebarClassDisplayName()` read to reuse F165's typed subtitle query and
-active-session adapter. Keep `SidebarNodeNaming::formatClassDisplayName()` in
-the UI. Preserve “No class selected” for invalid class IDs; for a valid class,
-an unavailable query falls back to the trimmed classroom name or `Class N`.
-Preserve formatter defaults for failed class details, class details after a
-teacher failure, and the roster title, embedded heading, and load/save paths.
-Acceptance covers exact visible subtitle, independent teacher failure,
-fallback/no-session behavior, and pinned-baseline subtitle parity. Gates 1 and
-2 remain Partial; Phase 2 remains In Progress/Open. A separate worker owns
-workflow repair; this work does not modify
+F166 source commit `577aea078a01b3a3986c07336c06631394620fcc` migrates only
+`RosterEditorWidget::updateHeaderText()` to F165's typed subtitle query and
+active-session adapter. Formatting stays at the UI edge. An unavailable outer
+read falls back to the trimmed classroom name or `Class N`; class-detail
+failure retains formatter defaults and teacher failure retains class details.
+The invalid-ID message, title, embedded heading, roster load, and save paths
+remain unchanged.
+
+The current `ClassMngrClassesPageTests` target built with VS 18 2026 and Qt
+6.12. Focused slots for the roster subtitle, no-session/name fallback, and
+F165 independent outcomes passed (5/5 including QtTest initialization and
+cleanup). The visible subtitle `E4 Hercules • Susan • Tues (4:00)` passed on
+the pinned baseline `48fc5c5cc7dee78d82f8bf5f1bf8b51725575b99` with only a
+temporary test-source slot overlaid; the scratch source was restored and no
+production source was overlaid. Coverage includes class-detail defaults,
+teacher failure, invalid ID, trimmed name/`Class 42` fallback, and no-session
+name fallback while legacy services were available without a legacy class-info
+read. `git diff --check` passed. An unfiltered page-test run stalled at startup
+and was stopped after 30 seconds. No full suite, application build, or
+query-count claim.
+
+F167 is selected: migrate the existing `ClassDetailsPage` display read
+adapter, `ApplicationServicesClassDetailsPageReadPort`, from legacy class,
+teacher, and roster services to active-session `ClassInfoRepository`,
+`TeacherRepository`, and `RosterRepository` reads. Reuse the existing
+`ClassDetailsPageReadSnapshot`; preserve independent class, teacher, and
+student-count outcomes, raw schedule text/order, page defaults/fallbacks, and
+`Teacher::preferredDisplayName()` precedence. Acceptance covers adapter
+mapping/errors without DataService fallback, current display regressions, and
+pinned-baseline visible fields, schedules, teacher, count, and fallback
+parity. Gates 1 and 2 remain Partial; Phase 2 remains In Progress/Open. A
+separate worker owns workflow repair; this work does not modify
 `.github/workflows/refactoring-baseline.yml`. No push was requested.
