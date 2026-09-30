@@ -29,8 +29,8 @@
   when persisted teacher ID zero changes after load. F154's typed Class Notes
   read, F155's Class Co-Teacher selected-class/title read, F156's
   teacher-catalogue read, and F157's TeacherInfoPage profile-save port are
-  accepted. F158 is selected for the teacher navigation read, not implemented
-  or accepted. See the [Phase 2 progress
+  accepted. F158's selected-teacher navigation read is accepted; F159 is
+  selected for the Native English Staff Directory read. See the [Phase 2 progress
   log](03-Phase-2-Progress-Log.md) for commits and verification.
   Phase 2 Gates 1 and 2 remain Partial; broader feature migration, parity, and
   96-class Release memory evidence remain open. Phase 1 build-system exit

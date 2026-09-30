@@ -8001,3 +8001,40 @@ typed mapping, session/repository failure and no-fallback coverage,
 lookup-before-leave-confirmation order, current navigation, and pinned-baseline
 visible parity. F158 is selected, not implemented or accepted.
 Gates 1 and 2 remain Partial; Phase 2 remains In Progress/Open.
+
+### Progress update - 2026-09-30 (F158 accepted; F159 selected)
+
+F158, source commit `4d099893071d4271ea8873d2219dfc7642de1e5c`, moves only the
+selected-teacher lookup in `NavigationController::handleTeacher` through a
+typed Qt-free Application query and active-session Platform
+`TeacherRepository::getTeacher()` adapter. Lookup remains before leave
+confirmation; lookup failures remain silent. F157's edit port, the page-load
+path, and other teacher reads remain separate.
+
+The focused current build and CTest passed 8/8. Navigation parity passed 1/1
+on pinned baseline `48fc5c5cc7dee78d82f8bf5f1bf8b51725575b99`; pinned
+baseline production blobs remained unchanged. The baseline run used installed
+Qt 6.12.0 while its CMake requires 6.11.1: a temporary three-line Qt version
+metadata shim before `qt_standard_project_setup()` enabled configure, then was
+removed and the original CMake hash
+`cc8a061dfa64977926805167cc10418ca15d83d8` restored. The copied scratch parity
+test was adapted only for the pinned three-argument `NavigationController`
+API; no repository production files were overlaid. No full suite/application
+build or baseline query-count claim.
+
+F159 is selected after three independent Investigator reviews (unanimous) and
+two independent Explorer confirmations. Migrate only the Native English branch
+of `StaffDirectoryPage::loadDirectory()` through a typed Qt-free Application
+query and active-session Platform adapter using
+`NativeEnglishTeacherRepository::getAll()`. Preserve six displayed fields,
+ID role, repository position/name/ID ordering, navigation
+confirmation-before-read and show-only-on-success behavior, unavailable-state
+clear, repository-error warning, and current state semantics. Keep the GS Team
+branch and both `saveDirectory()` paths unchanged; Phase 7's staff model/view
+conversion remains separate.
+
+Acceptance should cover Application query and Platform mapping/error/no-
+fallback behavior; page/route values, ordering, IDs, and failure behavior; GS
+Team and save regressions; and pinned-baseline visible route parity. Make no
+baseline query-count claim. F159 is selected; implementation has not started.
+Gates 1 and 2 remain Partial; Phase 2 remains In Progress/Open.

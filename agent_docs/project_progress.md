@@ -2034,3 +2034,21 @@ preserve lookup failure, confirmation, and page-load behavior. Acceptance will
 cover ID/field mapping, session/repository errors, no fallback, current route
 behavior, and pinned-baseline visible parity. Gates 1 and 2 remain Partial;
 Phase 2 remains In Progress/Open.
+
+## F158 accepted; F159 selected — 2026-09-30
+
+F158 commit `4d099893071d4271ea8873d2219dfc7642de1e5c` adds the typed Teacher
+Profile read query and active-session Platform adapter at
+`NavigationController::handleTeacher`. The focused current build and CTest
+passed 8/8; pinned-baseline navigation parity passed 1/1. The baseline run
+used installed Qt 6.12.0 with a temporary scratch-only Qt metadata shim and a
+three-argument constructor adaptation in the copied test. No production
+overlay, full suite/app build, or baseline query-count claim. Phase 2 remains
+In Progress/Open; no push was requested.
+
+F159 is selected for only the Native English branch of
+`StaffDirectoryPage::loadDirectory()`, through a typed Qt-free Application
+query and active-session Platform adapter backed by
+`NativeEnglishTeacherRepository::getAll()`. Preserve row mapping, IDs, ordering,
+navigation confirmation and warning behavior. Keep the GS Team branch, both
+directory save paths, and Phase 7's model/view conversion separate.

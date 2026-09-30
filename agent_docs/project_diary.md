@@ -1510,3 +1510,14 @@ failure-trigger fixtures must pass normal page validation first. Moving the
 page save port to the active-session `TeacherRepository` retained the existing
 use case and validation policy, while current page tests and pinned-baseline
 public-page parity checked save/reload and invalid-write behavior.
+
+## 2026-09-30 — F158 navigation read and F159 directory boundary
+
+The pinned baseline required test-harness-only compatibility adjustments:
+Qt 6.12 package metadata was supplied temporarily for the older baseline CMake
+setup, and the copied parity test used the baseline's three-argument navigation
+constructor. Keep both changes in the disposable baseline checkout; verify
+production blobs remain pinned and make no query-count claim. For the next
+directory migration, keep Native English and GS Team reads separate because
+they use distinct records and repositories; keep both save paths and the later
+table model/view conversion out of the read slice.

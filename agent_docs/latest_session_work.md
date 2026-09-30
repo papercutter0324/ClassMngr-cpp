@@ -3791,3 +3791,36 @@ cover typed IDs, field mapping, session and repository errors, no fallback,
 current route behavior, and pinned-baseline visible parity. No query-count
 comparison on the baseline. Gates 1 and 2 remain Partial; Phase 2 remains In
 Progress/Open. No push was requested.
+
+## F158 accepted; F159 selected - 2026-09-30
+
+F158 source commit `4d099893071d4271ea8873d2219dfc7642de1e5c` adds a typed
+Teacher Profile read query and active-session Platform adapter backed by
+`TeacherRepository::getTeacher()`. `NavigationController::handleTeacher()`
+retains lookup-before-confirmation order and silently leaves the current page
+unchanged when lookup fails. Focused current build and CTest passed 8/8,
+including F157 edit regressions, the read query/adapter, route behavior, and
+visible parity.
+
+Pinned baseline `48fc5c5cc7dee78d82f8bf5f1bf8b51725575b99` navigation parity
+passed 1/1. Baseline production blobs remained pinned. Because the installed
+Qt is 6.12.0 while baseline CMake requests 6.11.1, configure used
+`QT_NO_PACKAGE_VERSION_CHECK=TRUE` and a temporary three-line Qt version
+metadata shim before `qt_standard_project_setup()` in the scratch checkout;
+the shim was removed afterward and the CMake file hash restored to
+`cc8a061dfa64977926805167cc10418ca15d83d8`. The copied scratch parity test
+used the baseline's three-argument `NavigationController` constructor; no
+repository test or production source was changed for that adaptation. No full
+suite/app build or baseline query-count claim.
+
+Three independent Investigator reviews selected F159 as the Native English
+branch of `StaffDirectoryPage::loadDirectory()` only. Add a typed Qt-free
+Application query and active-session Platform adapter using
+`NativeEnglishTeacherRepository::getAll()`. Preserve six displayed fields,
+row ID role, repository order, navigation confirmation-before-read, and
+distinct silent-unavailable versus warned repository-error behavior. Keep the
+GS Team branch, both `saveDirectory()` paths, and Phase 7 table model/view work
+separate. Proposed acceptance covers query and adapter mapping/errors/no
+fallback, page and route behavior, GS Team/save regressions, and pinned-baseline
+visible parity; do not claim baseline query counts. F159 implementation has
+not started. Gates 1 and 2 remain Partial; Phase 2 remains In Progress/Open.

@@ -4119,7 +4119,7 @@ separate existing-class details update; F147 now covers delete/cascade.
 
 The production and acceptance-test commits, focused verification, and limits
 are recorded in the [Phase 2 progress log](03-Phase-2-Progress-Log.md). F147
-migrates delete/cascade; F148-F157 acceptance and F158 selection are recorded
+migrates delete/cascade; F148-F158 acceptance and F159 selection are recorded
 below.
 
 ## Verified F147 Testing Class delete/cascade
@@ -4132,10 +4132,9 @@ F145 details update and F146 creation remain separate accepted boundaries.
 Production commit `b037b4216b71c55c7793df5f7bbbfc4a00690065`, page transition
 fix `315b3ff33b7e2ab42b43d52cd168ce21a92158c9`, and acceptance-test commit
 `397376e439f4b5955c82948ab0c225aaf776d679` are recorded with verification
-limits in the [Phase 2 progress log](03-Phase-2-Progress-Log.md). F148-F157 are
-accepted; F158 is selected, not implemented or accepted. Its boundary and
-acceptance criteria are in the [Phase 2 progress
-log](03-Phase-2-Progress-Log.md).
+limits in the [Phase 2 progress log](03-Phase-2-Progress-Log.md). F148-F158 are
+accepted. F159 is selected, not implemented; its boundary and acceptance
+criteria are in the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 
 ## Class-details save mapping: F126 and F139
 
@@ -4279,15 +4278,27 @@ These focused tests reverified TeacherInfoPage/use-case save/reload and
 invalid-write behavior previously attributed to F123. This evidence covers the
 tested page-edit path only and does not establish broader F123 acceptance.
 
-## F158 selected TeacherInfoPage teacher-navigation read
+## F158 accepted TeacherInfoPage teacher-navigation read
 
-Move only the selected-teacher navigation read in
-`NavigationController::handleTeacher` to a Qt-free typed Application query and
-active-session Platform `TeacherRepository::getTeacher()` adapter, separate
-from F157's edit port. Preserve lookup/failure/confirmation/load order and
-visible behavior. Leave existing `TeacherInfoPage` save/load APIs and handlers
-unchanged; navigation still invokes its page-load path. Do not migrate sidebar
-teacher operations or other reads. Acceptance requires typed mapping,
-session/repository failure and no-fallback coverage,
-lookup-before-leave-confirmation order, current navigation behavior, and
-pinned-baseline visible parity. F158 is selected, not implemented or accepted.
+F158, commit `4d099893071d4271ea8873d2219dfc7642de1e5c`, moves only the
+selected-teacher lookup in `NavigationController::handleTeacher` through a
+typed Qt-free Application query and active-session Platform `TeacherRepository`
+adapter. Lookup-before-confirmation order and silent lookup failures remain;
+the F157 edit port, existing page-load path, and other teacher reads are
+separate. Current focused CTest passed 8/8 and pinned-baseline navigation
+parity passed 1/1. Verification limits are in the [Phase 2 progress
+log](03-Phase-2-Progress-Log.md).
+
+## F159 selected Native English Staff Directory read
+
+Migrate only the Native English branch of `StaffDirectoryPage::loadDirectory()`
+through a typed Qt-free Application query and active-session Platform adapter
+using `NativeEnglishTeacherRepository::getAll()`. Preserve its six displayed
+fields, ID role, repository position/name/ID ordering, navigation
+confirmation-before-read and show-only-on-success behavior, unavailable-state
+clear, repository-error warning, and current state semantics. Leave the GS Team
+branch and both `saveDirectory()` paths unchanged; Phase 7's model/view
+conversion remains separate. Verify mapping, error/no-fallback behavior, page
+and route values/order/IDs/failures, GS Team/save regressions, and pinned-
+baseline visible route parity. Do not claim baseline query-count parity.
+Implementation has not started.

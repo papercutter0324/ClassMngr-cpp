@@ -34,9 +34,9 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
   current/baseline page parity when persisted teacher ID zero changes after
   load. F154's typed Class Notes page-read query and F155's Class Co-Teacher
   selected-class/title read and F156's ClassCoTeacherPage teacher-catalogue
-  read and F157's TeacherInfoPage profile-save port are accepted. F158 is
-  selected for the selected-teacher navigation read, not implemented or
-  accepted. The prior F123 candidate wording is historical;
+  read, F157's TeacherInfoPage profile-save port, and F158's selected-teacher
+  navigation read are accepted. F159 is selected for the Native English Staff
+  Directory read. The prior F123 candidate wording is historical;
   current Teacher Profile integration status is recorded in the progress log.
   Gates 1 and 2
   remain Partial; F120 active-v2 DataService isolation and formal
@@ -274,8 +274,8 @@ No production defect was observed.
 F144 is the preceding accepted slice. F145's accepted existing-class details
 update is recorded below. F146's accepted new-class create, including the
 optional pending weekday/start-time assignment, is recorded after it. F147's
-accepted delete/cascade migration is recorded below; F148-F157 acceptance and
-F158 selection are recorded below.
+accepted delete/cascade migration is recorded below; F148-F158 acceptance and
+F159 selection are recorded below.
 
 ## F145 acceptance record
 
@@ -395,7 +395,7 @@ The page queries on each save; on read error it uses `ClassInfo{}` and
 continues validation, conflict, and save. Preserve `-1` as the unassigned
 sentinel, treat zero as invalid, retain missing-row defaults, and keep the
 validation/conflict/save order. The save request, adapter reread, and
-`ClassService` guard remain separate. F153-F157 acceptance and F158 selection
+`ClassService` guard remain separate. F153-F158 acceptance and F159 selection
 are recorded below.
 
 ## F152 acceptance record
@@ -518,18 +518,30 @@ invalid-write behavior previously attributed to F123. This evidence is limited
 to the tested page-edit path; it does not establish broader F123 acceptance.
 Gates 1 and 2 remain Partial; Phase 2 remains In Progress/Open.
 
-## F158 selected TeacherInfoPage teacher-navigation read
+## F158 accepted TeacherInfoPage teacher-navigation read
 
-Migrate only the selected-teacher navigation read in
-`NavigationController::handleTeacher` to a Qt-free typed Application query and
-active-session Platform `TeacherRepository::getTeacher()` adapter, separate
-from F157's edit port. Preserve lookup/failure/confirmation/load order and
-visible behavior. Leave `TeacherInfoPage`'s existing save/load APIs and
-handlers unchanged; navigation still invokes the existing page-load path. Do
-not migrate sidebar teacher operations or other feature reads.
+F158, commit `4d099893071d4271ea8873d2219dfc7642de1e5c`, moves only the
+selected-teacher lookup in `NavigationController::handleTeacher` to a Qt-free
+typed Application query and active-session Platform `TeacherRepository`
+adapter. It preserves lookup-before-leave-confirmation order and silent lookup
+failures; F157's edit port, the existing page-load path, and other teacher
+reads remain separate. Focused verification passed 8/8 on current and 1/1 on
+the pinned baseline; details and limitations are in the progress log. Gates 1
+and 2 remain Partial; Phase 2 remains In Progress/Open.
 
-Acceptance requires typed mapping, session/repository failure and no-fallback
-coverage, lookup-before-leave-confirmation order, current navigation behavior,
-and pinned-baseline visible parity.
-F158 is selected, not implemented or accepted. Gates 1 and 2 remain Partial;
-Phase 2 remains In Progress/Open.
+## F159 selected Native English Staff Directory read
+
+Migrate only the Native English branch of `StaffDirectoryPage::loadDirectory()`
+through a typed Qt-free Application query and active-session Platform adapter
+using `NativeEnglishTeacherRepository::getAll()`. Preserve the six displayed
+fields, ID role, repository position/name/ID ordering, navigation
+confirmation-before-read and show-only-on-success behavior, unavailable-state
+clear, repository-error warning, and current state semantics. Keep the GS Team
+branch and both `saveDirectory()` paths unchanged; Phase 7's model/view
+conversion remains separate.
+
+Verify Application query and Platform mapping/error/no-fallback behavior,
+focused page/route values, ordering, IDs, failures, GS Team and save regressions,
+and pinned-baseline visible route parity. Make no baseline query-count claim.
+F159 is selected; implementation has not started. Gates 1 and 2 remain
+Partial; Phase 2 remains In Progress/Open.
