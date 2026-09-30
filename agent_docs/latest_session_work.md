@@ -4134,3 +4134,28 @@ normalization and Korean-name-length policy have a safe owner.
 The active deployment objective is Phase 2 under the Heavy route; deployment
 ID `phase2_resume_20260929`. Gates 1 and 2 remain Partial and Phase 2 remains
 In Progress/Open. Workflow repair belongs to the other worker. Do not push.
+
+## 2026-10-01 - F176 accepted; F177 selected
+
+F176 source commit `e111d5be` migrates
+`ApplicationServicesSubPrepClassDetailsPort` to the active session's
+`ClassInfoRepository::loadSubPrepClassDetails()`. The adapter preserves
+canonical IDs and record identity, preferred teacher-name selection, bounded
+UTF-8 fields, missing/stale teacher defaults, structured errors, and a
+post-read closed-session check. Tests cover unavailable/closed session and SQL
+read failure. Implementation and independent Tester each passed 3/3 focused
+targets: `ClassMngrNextApplicationSubPrepClassDetailsQueryTests`,
+`ClassMngrNextPlatformApplicationServicesSubPrepPrintSourcePortTests`, and
+`ClassMngrSubPrepPageTests`. `git diff --check` passed. No full suite or
+application build was run.
+
+Two independent Explorer lanes selected F177: migrate
+`ApplicationServicesSubPrepScheduleSummaryPort` to the active session's
+`ClassInfoRepository::loadSubPrepClassSummaries()`. Preserve ID/day/mode and
+scope validation, empty-scope success without I/O, requested class ordering,
+omission of unusable or out-of-scope records, bounded values, meeting
+formatting, and unavailable/read error mapping. Focused targets are
+`ClassMngrNextApplicationSubPrepScheduleSummaryQueryTests`,
+`ClassMngrNextPlatformApplicationServicesSubPrepPrintSourcePortTests`, and
+`ClassMngrSubPrepPageTests`. The configured `build/f168` tree is retained. The
+workflow file remains with the other worker; no push was requested.

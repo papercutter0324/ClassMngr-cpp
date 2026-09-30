@@ -1681,3 +1681,11 @@ When a feature service only forwards to a repository, the Platform adapter can
 replace the wrapper with that same session repository call without changing
 query rules. Keep repository read metrics observable; the Platform tests assert
 them as well as the mapped source order and page integration.
+
+## 2026-10-01 - F176 Sub Prep class-details read port
+
+Use `ClassInfoRepository::loadSubPrepClassDetails()` on the active session and
+keep the post-read session check: a repository result is invalid if the session
+closes while the read is in progress. Preserve the existing teacher fallback
+and bounded UTF-8 mapping. F177 continues the same Sub Prep read boundary with
+the schedule-summary port.

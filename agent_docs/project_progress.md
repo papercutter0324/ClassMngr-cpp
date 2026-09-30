@@ -2200,7 +2200,7 @@ parity. Gates 1 and 2 remain Partial; Phase 2 remains In Progress/Open. A
 separate worker owns workflow repair; this work does not modify
 `.github/workflows/refactoring-baseline.yml`. No push was requested.
 
-## Current Phase 2 position - 2026-10-01 (F175 accepted; F176 selected)
+## Current Phase 2 position - 2026-10-01 (F176 accepted; F177 selected)
 
 F170 source commit `68391fac` moves `ApplicationServicesRosterReadPort` from
 `RosterService::roster()` to the active session's `RosterRepository`, with no
@@ -2264,15 +2264,27 @@ checks query metrics, ordering, raw schedules, teacher/profile edge cases,
 testing-class exclusion, and widget modes. `git diff --check` passed. No full
 suite or application build was run.
 
-F176 is selected: migrate `ApplicationServicesSubPrepClassDetailsPort` from
+F176 source commit `e111d5be` migrates
+`ApplicationServicesSubPrepClassDetailsPort` from
 `ClassService::subPrepClassDetails()` to the active session's
-`ClassInfoRepository::loadSubPrepClassDetails()`. Preserve canonical class-ID
-and record-identity checks, preferred-name selection, bounded UTF-8 fields,
-missing/stale teacher and class-info defaults, `NotFound` and `Technical`
-classifications, and Sub Prep page refresh/display behavior. Existing targets
-are `ClassMngrNextApplicationSubPrepClassDetailsQueryTests`,
+`ClassInfoRepository::loadSubPrepClassDetails()`. It preserves canonical
+class-ID and record-identity checks, preferred-name selection, bounded UTF-8
+fields, missing/stale teacher and class-info defaults, structured errors, and
+the post-read closed-session recheck. Implementation and independent
+verification each passed 3/3 focused targets:
+`ClassMngrNextApplicationSubPrepClassDetailsQueryTests`,
 `ClassMngrNextPlatformApplicationServicesSubPrepPrintSourcePortTests`, and
-`ClassMngrSubPrepPageTests`; all three exist in `build/f168`. Add direct tests
-for unavailable/closed session and repository read failure if absent. Phase 2
-remains In Progress/Open; Gates 1 and 2 remain Partial. Workflow repair remains
-with the other worker.
+`ClassMngrSubPrepPageTests`. Tests cover unavailable/closed sessions and
+repository read failure. `git diff --check` passed; no full suite or application
+build was run.
+
+F177 is selected: migrate `ApplicationServicesSubPrepScheduleSummaryPort` from
+`ClassService::subPrepClassSummaries()` to the active session's
+`ClassInfoRepository::loadSubPrepClassSummaries()`. Preserve request
+validation, empty-scope success without a repository read, requested class
+order and omission rules, bounded summary projection and meeting formatting,
+and unavailable/read error mapping. Focused targets are
+`ClassMngrNextApplicationSubPrepScheduleSummaryQueryTests`,
+`ClassMngrNextPlatformApplicationServicesSubPrepPrintSourcePortTests`, and
+`ClassMngrSubPrepPageTests`. Phase 2 remains In Progress/Open; Gates 1 and 2
+remain Partial. Workflow repair remains with the other worker.

@@ -4132,8 +4132,8 @@ F145 details update and F146 creation remain separate accepted boundaries.
 Production commit `b037b4216b71c55c7793df5f7bbbfc4a00690065`, page transition
 fix `315b3ff33b7e2ab42b43d52cd168ce21a92158c9`, and acceptance-test commit
 `397376e439f4b5955c82948ab0c225aaf776d679` are recorded with verification
-limits in the [Phase 2 progress log](03-Phase-2-Progress-Log.md). F148-F175
-are accepted. F176 is selected; its boundary and acceptance criteria are in
+limits in the [Phase 2 progress log](03-Phase-2-Progress-Log.md). F148-F176
+are accepted. F177 is selected; its boundary and acceptance criteria are in
 the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 
 ## Class-details save mapping: F126 and F139
@@ -4534,18 +4534,27 @@ modes. The implementation and independent Tester each passed all four focused ta
 `git diff --check` passed. No full suite or application build ran. See the
 [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 
-## F176 selected Sub Prep class-details read port
+## F176 accepted Sub Prep class-details read port
 
-Migrate `ApplicationServicesSubPrepClassDetailsPort` to
-`DatabaseSession::classInfoRepository()->loadSubPrepClassDetails()`. Preserve
-canonical ID, record identity, error classifications, preferred-name
-selection, bounded UTF-8 fields, missing/stale teacher/profile defaults, no
-schedule-table dependency, and page refresh/display. Verify
+F176, source commit `e111d5be`, migrates
+`ApplicationServicesSubPrepClassDetailsPort` to the active-session
+`ClassInfoRepository`. Independent implementation and Tester each passed 3/3:
 `ClassMngrNextApplicationSubPrepClassDetailsQueryTests`,
 `ClassMngrNextPlatformApplicationServicesSubPrepPrintSourcePortTests`, and
-`ClassMngrSubPrepPageTests`. Add direct adapter coverage for closed/unavailable
-sessions returning NotFound and repository SQL read failure returning
-Technical; current details tests do not directly cover these cases. The
-configured `build/f168` Ninja target list contains all three F176 targets and
-is retained for F176. Phase 2 remains In Progress/Open; Gates 1 and 2 remain
-Partial.
+`ClassMngrSubPrepPageTests`. The direct read preserves canonical ID and record
+identity, preferred-name selection, bounded UTF-8 conversion, teacher
+fallbacks, structured errors, and the post-read closed-session recheck. No full
+suite or application build ran. See the [Phase 2 progress
+log](03-Phase-2-Progress-Log.md).
+
+## F177 selected Sub Prep schedule-summary port
+
+Migrate `ApplicationServicesSubPrepScheduleSummaryPort` from `ClassService` to
+the active session's `ClassInfoRepository`. Preserve scope validation,
+empty-scope no-read behavior, ordering/omission, bounded projection and meeting
+formatting, and unavailable/read-error mapping. Verify
+`ClassMngrNextApplicationSubPrepScheduleSummaryQueryTests`,
+`ClassMngrNextPlatformApplicationServicesSubPrepPrintSourcePortTests`, and
+`ClassMngrSubPrepPageTests`. The configured `build/f168` Ninja target list
+contains all three F177 targets and is retained for F177. Phase 2 remains In
+Progress/Open; Gates 1 and 2 remain Partial.

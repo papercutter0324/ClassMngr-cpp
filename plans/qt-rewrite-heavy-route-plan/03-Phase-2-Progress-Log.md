@@ -8299,7 +8299,7 @@ fields/schedule/teacher/count/fallback parity. F167 implementation has not
 started. Gate 1 and Gate 2 remain Partial; Phase 2 remains In Progress and its
 exit gate remains Open.
 
-### Progress update - 2026-10-01 (F175 accepted; F176 selected)
+### Progress update - 2026-10-01 (F176 accepted; F177 selected)
 
 F167, source commit `97efac8b`, updates
 `ApplicationServicesClassDetailsPageReadPort` to use active-session
@@ -8408,15 +8408,22 @@ modes. The implementation and independent Tester each passed all four focused ta
 `ClassMngrScheduleBuilderTests`, and `ClassMngrScheduleWidgetTests`.
 `git diff --check` passed. No full suite or application build ran.
 
-F176 migrates `ApplicationServicesSubPrepClassDetailsPort` to
-`DatabaseSession::classInfoRepository()->loadSubPrepClassDetails()`. Preserve
-canonical ID, record identity, error classifications, preferred-name
-selection, bounded UTF-8 fields, missing/stale teacher/profile defaults, no
-schedule-table dependency, and page refresh/display. Verify
+F176, source commit `e111d5be`, migrates
+`ApplicationServicesSubPrepClassDetailsPort` to the active-session
+`ClassInfoRepository`. Independent implementation and Tester each passed 3/3:
 `ClassMngrNextApplicationSubPrepClassDetailsQueryTests`,
 `ClassMngrNextPlatformApplicationServicesSubPrepPrintSourcePortTests`, and
-`ClassMngrSubPrepPageTests`. The existing focused tests do not appear to directly
-cover closed/unavailable sessions or repository SQL read failure; add those
-cases if the implementation review confirms the gap. Retain `build/f168`; its
-Ninja target list contains all three F176 targets. Gate 1 and Gate 2 remain
-Partial; Phase 2 remains In Progress and its exit gate remains Open.
+`ClassMngrSubPrepPageTests`. The direct read preserves canonical ID and record
+identity, preferred-name selection, bounded UTF-8 conversion, teacher
+fallbacks, structured errors, and the post-read closed-session recheck. No full
+suite or application build ran.
+
+F177 migrates `ApplicationServicesSubPrepScheduleSummaryPort` from
+`ClassService` to the active session's `ClassInfoRepository`. Preserve scope
+validation, empty-scope no-read behavior, ordering/omission, bounded projection
+and meeting formatting, and unavailable/read-error mapping. Verify
+`ClassMngrNextApplicationSubPrepScheduleSummaryQueryTests`,
+`ClassMngrNextPlatformApplicationServicesSubPrepPrintSourcePortTests`, and
+`ClassMngrSubPrepPageTests`. The Ninja target list confirms all three F177
+targets, so retain `build/f168`. Gate 1 and Gate 2 remain Partial; Phase 2
+remains In Progress and its exit gate remains Open.
