@@ -3830,7 +3830,7 @@ Qt 6.12 metadata shim (removed afterward), and test-only API/registration
 adaptations; production files and pinned baseline blobs were not overlaid. No
 full suite/app build or baseline query-count claim.
 
-## 2026-09-30 — Phase 2 continuation: F161 accepted; F162 selected
+## 2026-09-30 — Phase 2 continuation: F161/F162 accepted; F163 selected
 
 At continuation start, reviewed commits `314f4d5b` and `0c5d5566`. No blocking
 issue was found. One non-blocking review note: `314f4d5b` changed a PDF text
@@ -3862,18 +3862,37 @@ and root CMake returned to pinned hash
 baseline query-count claim.
 
 Two independent Explorers mapped remaining paths; three independent
-Investigators compared cohesion, feasibility, and parity. F162 is selected
-for only the GS Team branch of `StaffDirectoryPage::saveDirectory()`, adding a
+Investigators compared cohesion, feasibility, and parity.
+
+F162 source commit `00a56324f1435475e3a7479fec99bc2e01653495` adds a
 GS Team-specific typed Application save operation and active-session Platform
-adapter backed by `GsTeamRepository::saveDirectory()`. Use `GsTeamMemberId`;
-require at least one English or Korean name, enforce each normalized key's
-uniqueness within its own namespace while allowing a match across namespaces,
-and accept only blank or valid birthdays. Preserve five fields, typed row and
-deleted IDs, repository transaction, warning/quiet-autosave, dirty-on-failure,
-reload, and `directorySaved`. Keep the Native English writer and
-model/view conversion separate. Acceptance covers app-less policy, mapping,
-session/repository errors and no fallback, page/persistence behavior, F159-F161
-regressions, and pinned-baseline visible parity. F162 implementation has not
-started. Gates 1 and 2 remain Partial; Phase 2 remains In Progress/Open. No
-push was requested. A separate worker owns workflow repair; this work did not
-modify `.github/workflows/refactoring-baseline.yml`.
+adapter backed by `GsTeamRepository::saveDirectory()`. It uses
+`GsTeamMemberId`; requires at least one English or Korean name; enforces key
+uniqueness within each language namespace while allowing cross-namespace
+matches; and accepts valid or blank birthdays. The page preserves typed row
+and deleted IDs, transaction behavior, warning and quiet autosave, dirty state
+on failure, reload, and `directorySaved`.
+
+Independent Tester evidence: focused current CTest passed 16/16, covering the
+F159-F162 policy, adapter, persistence, and page regressions. Pinned-baseline
+GS Team save parity passed 1/1 on
+`48fc5c5cc7dee78d82f8bf5f1bf8b51725575b99`, with only the parity test and
+registration overlaid and no production overlay. Current C: linking exhausted
+disk; a serial focused build and test passed from D: scratch. Baseline setup
+adapted three database-session calls and used a temporary Qt metadata shim;
+root CMake was restored to pinned hash
+`cc8a061dfa64977926805167cc10418ca15d83d8`. No full suite/application build or
+baseline query-count claim.
+
+Three independent candidate assessments recommend F163: the ClassesPage
+class-list read. Add a typed class ID/name Application query and active-session
+Platform adapter backed by `ClassRepository::getClasses()`. Migrate only the
+class-list reads on page open and after class-info save. Preserve IDs, names,
+repository ordering, selection/tab behavior, empty results, and current
+failure behavior. Keep navigation metadata reads and other legacy class calls
+unchanged. Acceptance covers typed mapping, session/repository failures with no
+fallback, page open and saved-class refresh behavior, relevant regressions, and
+pinned-baseline visible parity; make no query-count claim. Gates 1 and 2 remain
+Partial; Phase 2 remains In Progress/Open. A separate worker owns workflow
+repair; this work does not modify `.github/workflows/refactoring-baseline.yml`.
+No push was requested.

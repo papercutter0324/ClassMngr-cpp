@@ -2097,16 +2097,35 @@ restored to hash `cc8a061dfa64977926805167cc10418ca15d83d8`. No full
 suite/application build or baseline query-count claim. Gates 1 and 2 remain
 Partial; Phase 2 remains In Progress/Open.
 
-F162 is selected for only the GS Team branch of
-`StaffDirectoryPage::saveDirectory()`, with a typed Qt-free Application save
-operation and active-session Platform adapter backed by
-`GsTeamRepository::saveDirectory()`. Use the existing `GsTeamMemberId` and a
-GS Team-specific policy: at least one of the English or Korean names must be
-present, each language key is unique within its own namespace, matching keys
-across namespaces remain allowed, and birthdays are valid or blank. Preserve
-the five row fields, typed existing/deleted IDs, add/update/delete transaction,
-warning/quiet-autosave behavior, dirty state on failure, successful reload,
-and `directorySaved`. Keep the Native English writer and model/view conversion
-separate. Acceptance covers app-less validation, active-session/repository
-errors and no fallback, page/persistence state, F159-F161 regressions, and
-pinned-baseline visible parity. Make no baseline query-count claim.
+F162 source commit `00a56324f1435475e3a7479fec99bc2e01653495` adds a
+GS Team-specific typed Application save operation and active-session Platform
+adapter backed by `GsTeamRepository::saveDirectory()`. It uses
+`GsTeamMemberId`; requires at least one English or Korean name; enforces key
+uniqueness within each language namespace while allowing cross-namespace
+matches; and accepts valid or blank birthdays. The page preserves typed row
+and deleted IDs, add/update/delete transaction behavior, warning and quiet
+autosave paths, dirty-on-failure state, reload, and `directorySaved`.
+
+Focused current CTest passed 16/16, including the F159-F162 policy, adapter,
+persistence, and `StaffDirectoryPage` regressions. Pinned-baseline GS Team
+save parity passed 1/1 on `48fc5c5cc7dee78d82f8bf5f1bf8b51725575b99`, with
+only the parity test and registration overlaid and no production overlay. The
+current C: build exhausted disk during link; serial focused verification passed
+from D: scratch. Baseline setup adapted three database-session calls and used
+a temporary Qt metadata shim; root CMake was restored to pinned hash
+`cc8a061dfa64977926805167cc10418ca15d83d8`. No full suite/application build or
+baseline query-count claim.
+
+F163 is selected for the ClassesPage class-list read. Add a typed class ID/name
+Application query and active-session Platform adapter backed by
+`ClassRepository::getClasses()`, and migrate only the page's list reads on open
+and after class-info save. Preserve class IDs, names, repository order,
+selection/tab behavior, empty-list results, and existing session/read failure
+behavior. Keep `ClassesNavigationSnapshot` metadata reads and other legacy
+class calls outside this slice. Acceptance covers query/adapter mapping,
+session and repository errors without fallback, page open and post-save
+refresh regressions, and pinned-baseline visible parity; make no query-count
+claim. Two Explorers and three Investigators independently recommended this
+boundary. Gates 1 and 2 remain Partial; Phase 2 remains In Progress/Open. A
+separate worker owns workflow repair; this work does not modify
+`.github/workflows/refactoring-baseline.yml`. No push was requested.

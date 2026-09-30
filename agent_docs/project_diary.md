@@ -1539,3 +1539,18 @@ Choose Unicode collision fixtures from the supported Qt version itself:
 Qt 6.12 keeps U+00DF and `ss` distinct, while U+00C4 and U+00E4 compare equal.
 For GS Team, keep English and Korean uniqueness sets separate and allow the
 same comparison key across those namespaces.
+
+## 2026-09-30 — F162 GS Team directory save
+
+Keep GS Team validation separate from the Native English save policy even
+when both pages share a directory UI. Their identities and uniqueness scopes
+differ. On a disk-constrained Windows host, a serial focused build in a
+separate scratch volume can provide the requested slice evidence; report that
+scope precisely and do not imply a full build.
+
+## 2026-09-30 — F163 ClassesPage class-list read selection
+
+Keep the class-list query distinct from `ClassesNavigationSnapshot`: the
+snapshot enriches a list supplied by the feature and does not own list
+enumeration. A class ID/name projection can migrate open and post-save list
+reads while leaving metadata, editors, and other legacy operations intact.

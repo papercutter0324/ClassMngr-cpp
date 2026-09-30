@@ -4133,8 +4133,8 @@ Production commit `b037b4216b71c55c7793df5f7bbbfc4a00690065`, page transition
 fix `315b3ff33b7e2ab42b43d52cd168ce21a92158c9`, and acceptance-test commit
 `397376e439f4b5955c82948ab0c225aaf776d679` are recorded with verification
 limits in the [Phase 2 progress log](03-Phase-2-Progress-Log.md). F148-F159 are
-accepted. F160 is selected; its boundary and acceptance criteria are in the
-[Phase 2 progress log](03-Phase-2-Progress-Log.md).
+accepted through F162. F163 is selected; its boundary and acceptance criteria
+are in the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 
 ## Class-details save mapping: F126 and F139
 
@@ -4328,21 +4328,28 @@ retaining localized warnings. Typed IDs, CRUD/transaction behavior, failure
 dirty state, quiet autosave, reload, and `directorySaved` remain. Focused
 evidence and limits are in the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 
-## F162 selected GS Team Staff Directory save
+## F162 accepted GS Team Staff Directory save
 
-Migrate only the GS Team branch of `StaffDirectoryPage::saveDirectory()`
-through a GS Team-specific typed Application save operation/policy and
-active-session Platform adapter backed directly by
-`GsTeamRepository::saveDirectory()`, using `GsTeamMemberId`. Preserve the five
-fields, typed existing/deleted IDs, add/update/delete transaction, warning
-versus quiet autosave, dirty-on-failure, reload, and signal behavior. Keep the
-Native English writer and model/view conversion separate.
+F162, source commit `00a56324f1435475e3a7479fec99bc2e01653495`, migrates only
+the GS Team branch of `StaffDirectoryPage::saveDirectory()` through a
+GS Team-specific typed Application save operation/policy and active-session
+Platform adapter backed directly by `GsTeamRepository::saveDirectory()`, using
+`GsTeamMemberId`. It preserves the five fields, typed existing/deleted IDs,
+add/update/delete transaction, warning versus quiet autosave, dirty-on-failure,
+reload, and signal behavior. The Native English writer and model/view
+conversion remain separate. Focused CTest passed 16/16; pinned-baseline GS Team
+save parity passed 1/1 on `48fc5c5cc7dee78d82f8bf5f1bf8b51725575b99`. No full
+suite, application build, or query-count comparison ran. See the [Phase 2
+progress log](03-Phase-2-Progress-Log.md) for details and limits.
 
-Require at least one English or Korean name. Each normalized key is unique
-within its own language namespace; cross-language matches are allowed.
-Birthdays are blank or valid. Acceptance covers app-less rules including
-cross-namespace matching, mapping/session/repository failures with no fallback,
-page/persistence behavior, F159-F161 regressions, and pinned-baseline visible
-parity. Make no baseline query-count claim. F162 is selected; implementation
-has not started. Details are in the [Phase 2 contract
-plan](03-Phase-2-Domain-Model-and-Application-Contracts.md).
+## F163 selected ClassesPage class-list read
+
+Add a typed class ID/name list query and active-session Platform adapter backed
+by `ClassRepository::getClasses()`. Replace only the class-list reads in
+`ClassesPage` on open and after a successful ClassInfo save. Preserve order,
+IDs/names, selection, and empty/error behavior. Existing navigation metadata
+reads and other legacy class calls remain outside the slice. Acceptance covers
+query/adapter mapping, session/repository errors without fallback, list
+contents/order/selection on open and post-save refresh, and pinned-baseline
+visible parity. F163 is selected; implementation has not started. Details are
+in the [Phase 2 contract plan](03-Phase-2-Domain-Model-and-Application-Contracts.md).

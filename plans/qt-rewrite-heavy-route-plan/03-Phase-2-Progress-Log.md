@@ -8150,3 +8150,23 @@ parity. No baseline query-count claim. F162 implementation has not started.
 
 Gate 1 and Gate 2 remain Partial; Phase 2 remains In Progress and its exit gate
 remains Open.
+
+### Progress update - 2026-09-30 (F162 accepted; F163 selected)
+
+F162, source commit `00a56324f1435475e3a7479fec99bc2e01653495`, migrates the
+GS Team branch of `StaffDirectoryPage::saveDirectory()` through the typed
+Application save operation/policy and active-session Platform adapter to
+`GsTeamRepository::saveDirectory()`. Focused CTest passed 16/16, and pinned-
+baseline GS Team save parity passed 1/1 on
+`48fc5c5cc7dee78d82f8bf5f1bf8b51725575b99`. No full suite, application build,
+or query-count comparison ran.
+
+F163 is selected: add a typed class ID/name list query and active-session
+Platform adapter backed by `ClassRepository::getClasses()`, replacing only the
+`ClassesPage` list reads on open and after successful ClassInfo save. Preserve
+order, IDs/names, selection, and empty/error behavior. Existing navigation
+metadata reads and other legacy class calls stay outside the slice. Acceptance
+covers query/adapter mapping, session/repository errors without fallback,
+open/post-save list contents, order and selection, and pinned-baseline visible
+parity. Implementation has not started. Gate 1 and Gate 2 remain Partial;
+Phase 2 remains In Progress and its exit gate remains Open.
