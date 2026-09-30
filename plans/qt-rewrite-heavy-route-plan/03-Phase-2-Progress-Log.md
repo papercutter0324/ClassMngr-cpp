@@ -8102,3 +8102,51 @@ and an existing typed ID.
 
 Gate 1 and Gate 2 remain Partial; Phase 2 remains In Progress and its exit gate
 remains Open.
+
+### Progress update - 2026-09-30 (F161 accepted; F162 selected)
+
+F161, source commit `ac173977d8d517d4af3236ee7794368bbe9a6bdc`, migrates only
+the Native English branch of `StaffDirectoryPage::saveDirectory()` through a
+typed Qt-free Application save/validation operation and active-session
+Platform adapter calling `NativeEnglishTeacherRepository::saveDirectory()`.
+Application owns empty/duplicate comparison-key and valid-or-blank birthday
+decisions. The page supplies `QString::simplified().toCaseFolded()` keys and
+current `QDate` facts while retaining localized warnings. Typed existing and
+deleted IDs, add/update/delete, repository transaction, dirty state on failure,
+quiet autosave, successful reload, and `directorySaved` are preserved. The GS
+Team writer remains separate.
+
+Focused Windows x64 Debug CTest passed 12/12 with MSVC 14.51 and Qt 6.12.0.
+Coverage includes the app-less policy/use case, direct active-session adapter
+and rollback, page CRUD/reload/signal/validation, unavailable-session silence,
+repository warning and dirty state, quiet autosave, and F159/F160/page
+regressions. Pinned-baseline public-page save parity passed 1/1 on
+`48fc5c5cc7dee78d82f8bf5f1bf8b51725575b99`. Only parity test and registration
+were overlaid; no production source was overlaid. The baseline adapter changed
+nine `databaseSession()` calls to `dataService()->databaseSession()` and added
+the DataService include (adapted test hash
+`3508be3660d926602a29bfa21d1a8ea888eea10f`; registration hash
+`80d1b5bf9366339b9df49fc0e14232107c972f2f`). The temporary Qt 6.12 metadata
+shim was removed and pinned root CMake restored to hash
+`cc8a061dfa64977926805167cc10418ca15d83d8`. No full suite/app build or baseline
+query-count claim. Under Qt 6.12, `Straße` and `STRASSE` produce distinct
+keys, while `Ä` and `ä` collide; current page semantics are preserved and the
+test asserts the latter equality explicitly.
+
+F162 was selected after two Explorer lanes and three independent Investigator
+reviews. It migrates only the GS Team branch of
+`StaffDirectoryPage::saveDirectory()` through a GS Team-specific typed
+Application save operation/policy and active-session Platform adapter backed
+directly by `GsTeamRepository::saveDirectory()`, using `GsTeamMemberId`.
+Preserve the five fields, typed existing/deleted IDs, add/update/delete
+transaction, warning versus quiet autosave, dirty-on-failure, reload, and
+signal. Require at least one English or Korean name; normalized keys must be
+unique within each language namespace, while cross-namespace matches remain
+allowed; birthdays must be blank or valid. Keep the Native English writer and
+model/view conversion separate. Acceptance covers app-less rules including a
+cross-namespace match, mapping/session/repository failure and no fallback,
+page/persistence behavior, F159-F161 regressions, and pinned-baseline visible
+parity. No baseline query-count claim. F162 implementation has not started.
+
+Gate 1 and Gate 2 remain Partial; Phase 2 remains In Progress and its exit gate
+remains Open.

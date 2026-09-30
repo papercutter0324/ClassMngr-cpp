@@ -35,10 +35,10 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
   load. F154's typed Class Notes page-read query and F155's Class Co-Teacher
   selected-class/title read and F156's ClassCoTeacherPage teacher-catalogue
   read, F157's TeacherInfoPage profile-save port, and F158's selected-teacher
-  navigation read, F159's Native English Staff Directory read, and F160's GS
-  Team Staff Directory read are accepted. F161 is selected for the Native
-  English Staff Directory save path. The prior F123
-  candidate wording is historical;
+  navigation read, F159's Native English Staff Directory read, F160's GS
+  Team Staff Directory read, and F161's Native English Staff Directory save
+  are accepted. F162 is selected for the GS Team Staff Directory save path.
+  The prior F123 candidate wording is historical;
   current Teacher Profile integration status is recorded in the progress log.
   Gates 1 and 2
   remain Partial; F120 active-v2 DataService isolation and formal
@@ -564,18 +564,34 @@ show-only-on-success behavior. The Native English branch, both save paths, and
 Phase 7 model/view conversion remain separate. Focused verification and limits
 are recorded in the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 
-## F161 selected Native English Staff Directory save
+## F161 accepted Native English Staff Directory save
 
-Migrate only the Native English branch of `StaffDirectoryPage::saveDirectory()`
-through a typed Qt-free Application save operation and active-session Platform
-adapter backed by `NativeEnglishTeacherRepository::saveDirectory()`. Preserve
-unique-name and optional-birthday validation, typed row IDs, add/update/delete,
-repository transaction behavior, warning versus quiet autosave behavior,
-dirty state on failure, and successful reload plus `directorySaved`. Keep the
-GS Team writer and directory model/view conversion separate.
+F161, source commit `ac173977d8d517d4af3236ee7794368bbe9a6bdc`, migrates only
+the Native English branch of `StaffDirectoryPage::saveDirectory()` through a
+typed Qt-free Application save/validation operation and active-session
+Platform adapter to `NativeEnglishTeacherRepository::saveDirectory()`. The
+Application decides empty/duplicate comparison-key and valid-or-blank birthday
+rules; the Qt page supplies simplified, case-folded keys and current `QDate`
+facts while retaining localized warnings. Typed row IDs, CRUD and transaction
+behavior, failure dirty state, quiet autosave, successful reload, and
+`directorySaved` are preserved. The GS Team writer remains separate. Focused
+verification and limits are in the [Phase 2 progress
+log](03-Phase-2-Progress-Log.md).
 
-Acceptance covers typed request/mapping; unavailable-session and repository
-errors with no fallback; page validation and save-state behavior; persistence,
-reload, and signal behavior; related regressions; and pinned-baseline visible
-parity. Do not claim baseline query counts. F161 is selected; implementation
+## F162 selected GS Team Staff Directory save
+
+Migrate only the GS Team branch of `StaffDirectoryPage::saveDirectory()`
+through a GS Team-specific typed Application save operation/policy and
+active-session Platform adapter backed directly by
+`GsTeamRepository::saveDirectory()`, using `GsTeamMemberId`. Preserve the five
+fields, typed existing/deleted IDs, add/update/delete transaction, warning
+versus quiet autosave, dirty-on-failure, reload, and signal behavior. Keep the
+Native English writer and model/view conversion separate.
+
+Require at least one English or Korean name; keys must be unique within each
+language namespace while cross-language matches remain allowed. A birthday is
+blank or valid. Acceptance covers app-less rule tests (including cross-
+namespace matches), mapping/session/repository failures with no fallback,
+page/persistence behavior, F159-F161 regressions, and pinned-baseline visible
+parity. Make no baseline query-count claim. F162 is selected; implementation
 has not started. Gates 1 and 2 remain Partial; Phase 2 remains In Progress/Open.

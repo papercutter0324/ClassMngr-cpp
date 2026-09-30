@@ -2077,14 +2077,36 @@ adaptation, then restored the pinned CMake hash. No full suite/application
 build or baseline query-count claim. Gates 1 and 2 remain Partial; Phase 2
 remains In Progress/Open.
 
-F161 is selected for only the Native English branch of
-`StaffDirectoryPage::saveDirectory()`. Add a typed Application save operation
-and active-session Platform adapter backed by
-`NativeEnglishTeacherRepository::saveDirectory()`. Preserve the current
-unique-name and birthday validation, typed row identity, add/update/delete
-behavior, repository transaction, warning/quiet-autosave behavior, dirty state
-on failure, and successful reload and `directorySaved` signal. Keep the GS
-Team writer and directory model/view conversion separate. Acceptance covers
-typed mapping, session/repository errors and no fallback, page validation and
-save state, persistence and reload behavior, regression coverage, and
+## F161 accepted; F162 selected — 2026-09-30
+
+F161 source commit `ac173977d8d517d4af3236ee7794368bbe9a6bdc` adds a typed
+Qt-free Application save/validation operation and active-session Platform
+adapter for only the Native English branch of
+`StaffDirectoryPage::saveDirectory()`, backed by
+`NativeEnglishTeacherRepository::saveDirectory()`. The Application policy
+owns empty/duplicate comparison-key and valid-or-blank birthday decisions;
+the feature edge supplies Qt-normalized keys and date facts. The page retains
+the localized warning, typed IDs, add/update/delete, transaction behavior,
+dirty state on failure, quiet autosave, reload, and success signal.
+
+Focused current CTest passed 12/12. Pinned-baseline visible save parity passed
+1/1 against `48fc5c5cc7dee78d82f8bf5f1bf8b51725575b99`, with only a parity
+test and registration overlay; production blobs remained pinned. The scratch
+test adapted the baseline database-session API, and its root CMake was
+restored to hash `cc8a061dfa64977926805167cc10418ca15d83d8`. No full
+suite/application build or baseline query-count claim. Gates 1 and 2 remain
+Partial; Phase 2 remains In Progress/Open.
+
+F162 is selected for only the GS Team branch of
+`StaffDirectoryPage::saveDirectory()`, with a typed Qt-free Application save
+operation and active-session Platform adapter backed by
+`GsTeamRepository::saveDirectory()`. Use the existing `GsTeamMemberId` and a
+GS Team-specific policy: at least one of the English or Korean names must be
+present, each language key is unique within its own namespace, matching keys
+across namespaces remain allowed, and birthdays are valid or blank. Preserve
+the five row fields, typed existing/deleted IDs, add/update/delete transaction,
+warning/quiet-autosave behavior, dirty state on failure, successful reload,
+and `directorySaved`. Keep the Native English writer and model/view conversion
+separate. Acceptance covers app-less validation, active-session/repository
+errors and no fallback, page/persistence state, F159-F161 regressions, and
 pinned-baseline visible parity. Make no baseline query-count claim.

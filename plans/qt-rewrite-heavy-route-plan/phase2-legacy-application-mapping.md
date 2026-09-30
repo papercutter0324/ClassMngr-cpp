@@ -4316,19 +4316,33 @@ show-only-on-success behavior. F159's Native English read, both save paths,
 and Phase 7 model/view conversion remain separate. Focused evidence and limits
 are in the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 
-## F161 selected Native English Staff Directory save
+## F161 accepted Native English Staff Directory save
 
-Migrate only the Native English branch of `StaffDirectoryPage::saveDirectory()`
-through a typed Qt-free Application save operation and active-session Platform
-adapter backed by `NativeEnglishTeacherRepository::saveDirectory()`. Preserve
-unique-name and optional-birthday validation, typed row IDs, add/update/delete,
-repository transaction behavior, warning versus quiet autosave behavior,
-dirty state on failure, and successful reload plus `directorySaved`. Keep the
-GS Team writer and directory model/view conversion separate.
+F161, source commit `ac173977d8d517d4af3236ee7794368bbe9a6bdc`, migrates only
+the Native English branch of `StaffDirectoryPage::saveDirectory()` through a
+typed Qt-free Application save/validation operation and active-session
+Platform adapter to `NativeEnglishTeacherRepository::saveDirectory()`. The
+Application owns empty/duplicate-key and valid-or-blank birthday decisions;
+the page supplies simplified, case-folded keys and current `QDate` facts,
+retaining localized warnings. Typed IDs, CRUD/transaction behavior, failure
+dirty state, quiet autosave, reload, and `directorySaved` remain. Focused
+evidence and limits are in the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 
-Acceptance covers typed request/mapping; active-session and repository errors
-with no fallback; page validation/save state; persistence, reload, and signal;
-related regressions; and pinned-baseline visible parity. Make no baseline
-query-count claim. F161 is selected; implementation has not started. Its
-selection and acceptance are also summarized in the [Phase 2 contract
+## F162 selected GS Team Staff Directory save
+
+Migrate only the GS Team branch of `StaffDirectoryPage::saveDirectory()`
+through a GS Team-specific typed Application save operation/policy and
+active-session Platform adapter backed directly by
+`GsTeamRepository::saveDirectory()`, using `GsTeamMemberId`. Preserve the five
+fields, typed existing/deleted IDs, add/update/delete transaction, warning
+versus quiet autosave, dirty-on-failure, reload, and signal behavior. Keep the
+Native English writer and model/view conversion separate.
+
+Require at least one English or Korean name. Each normalized key is unique
+within its own language namespace; cross-language matches are allowed.
+Birthdays are blank or valid. Acceptance covers app-less rules including
+cross-namespace matching, mapping/session/repository failures with no fallback,
+page/persistence behavior, F159-F161 regressions, and pinned-baseline visible
+parity. Make no baseline query-count claim. F162 is selected; implementation
+has not started. Details are in the [Phase 2 contract
 plan](03-Phase-2-Domain-Model-and-Application-Contracts.md).

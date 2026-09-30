@@ -30,9 +30,10 @@
   read, F155's Class Co-Teacher selected-class/title read, F156's
   teacher-catalogue read, F157's TeacherInfoPage profile-save port, F158's
   selected-teacher navigation read, F159's Native English Staff Directory
-  read, and F160's GS Team Staff Directory read are accepted. F161 is selected
-  for the Native English Staff Directory save path. See the [Phase 2 progress
-  log](03-Phase-2-Progress-Log.md) for evidence and current selection details.
+  read, F160's GS Team Staff Directory read, and F161's Native English Staff
+  Directory save are accepted. F162 is selected for the GS Team Staff Directory
+  save path. See the [Phase 2 progress log](03-Phase-2-Progress-Log.md) for
+  evidence and current selection details.
   Phase 2 Gates 1 and 2 remain Partial; broader feature migration, parity, and
   96-class Release memory evidence remain open. Phase 1 build-system exit
   evidence remains outstanding.

@@ -1529,3 +1529,13 @@ repository. Availability can change during leave confirmation, so perform the
 typed read after confirmation; classify an unavailable session as silent
 `NotFound` and repository failure as a warning. Keep baseline-only Qt and API
 adaptations inside the scratch checkout and verify pinned production blobs.
+
+## 2026-09-30 — F161 directory save validation
+
+Keep validation decisions in Qt-free Application while the feature edge
+supplies Qt's normalized comparison key and date-validity fact; do not replace
+Qt's Unicode/date behavior with an approximate standard-library algorithm.
+Choose Unicode collision fixtures from the supported Qt version itself:
+Qt 6.12 keeps U+00DF and `ss` distinct, while U+00C4 and U+00E4 compare equal.
+For GS Team, keep English and Korean uniqueness sets separate and allow the
+same comparison key across those namespaces.

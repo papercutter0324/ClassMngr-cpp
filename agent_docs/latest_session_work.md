@@ -3830,46 +3830,50 @@ Qt 6.12 metadata shim (removed afterward), and test-only API/registration
 adaptations; production files and pinned baseline blobs were not overlaid. No
 full suite/app build or baseline query-count claim.
 
-## 2026-09-30 — Phase 2 continuation: F160 accepted; F161 selected
+## 2026-09-30 — Phase 2 continuation: F161 accepted; F162 selected
 
 At continuation start, reviewed commits `314f4d5b` and `0c5d5566`. No blocking
 issue was found. One non-blocking review note: `314f4d5b` changed a PDF text
-assertion to use `.simplified()`, which collapses internal whitespace and
-therefore no longer checks exact spacing.
+assertion to use `.simplified()`, which collapses internal whitespace and no
+longer checks exact spacing. F160 was accepted in source commit
+`b703d3260a01b783594ffe6b87d10d9f7b02d193` and acceptance-doc commit
+`58494d91406cb24f41e89292f1d5174a2918fcd5`.
 
-F160 source commit `b703d3260a01b783594ffe6b87d10d9f7b02d193` adds a typed
-Qt-free Application query and active-session Platform adapter for the GS Team
-branch of `StaffDirectoryPage::loadDirectory()`, backed by
-`GsTeamRepository::getAll()`. It adds int-backed `GsTeamMemberId` and preserves
-the five displayed fields, row ID role, repository order, unavailable-session
-silent clear, repository-error warning, and success state. The route test
-covers a session close during leave confirmation: the query sees the closed
-session, the page remains hidden, and no fallback or warning occurs.
+F161 source commit `ac173977d8d517d4af3236ee7794368bbe9a6bdc` adds a typed
+Qt-free Application save/validation operation and active-session Platform
+adapter for only the Native English branch of
+`StaffDirectoryPage::saveDirectory()`, backed by
+`NativeEnglishTeacherRepository::saveDirectory()`. Application owns empty and
+duplicate comparison-key validation plus valid-or-blank birthday decisions;
+the feature edge supplies Qt-normalized keys and date facts, retaining current
+Unicode/date semantics and localized messages. Typed row/deleted IDs represent
+existing, added, and removed rows. GS Team remains on its own save path.
 
-The focused current build and CTest passed 9/9, including the F160 query,
-adapter, page and route cases plus F159 and `StaffDirectoryPage` regressions.
-Pinned-baseline visible parity passed 1/1 with only the F160 parity source and
-registration overlaid; pinned production blobs remained unchanged. The
-baseline expected Qt 6.11.1 while the installed package was Qt 6.12.0; a
-temporary scratch-only metadata shim and baseline constructor adaptation were
-used, the shim was removed, and root CMake was restored to hash
-`cc8a061dfa64977926805167cc10418ca15d83d8`. No full suite/app build or
-baseline query-count claim. `.github/workflows/refactoring-baseline.yml` was
-not changed by this work; a separate worker owns workflow repair.
+Independent Tester evidence: focused current CTest passed 12/12, covering the
+app-less policy/use case, direct active-session mapping and rollback, page
+update/insert/delete, persisted state, reload/signal, warning and quiet
+autosave, invalid dates/duplicate Unicode keys, and F159/F160/page regressions.
+Pinned-baseline save parity passed 1/1 on
+`48fc5c5cc7dee78d82f8bf5f1bf8b51725575b99`, with only the parity test and
+registration overlaid and no production overlay. The scratch test adapted the
+baseline database-session API; temporary Qt 6.12 metadata setup was restored,
+and root CMake returned to pinned hash
+`cc8a061dfa64977926805167cc10418ca15d83d8`. No full suite/application build or
+baseline query-count claim.
 
-Two independent Explorers mapped the next candidate set; three independent
-Investigators compared the write paths, Phase 2 value, and parity risk. F161
-is selected for only the Native English branch of
-`StaffDirectoryPage::saveDirectory()`, adding a typed Application save
-operation and active-session Platform adapter backed by
-`NativeEnglishTeacherRepository::saveDirectory()`. This keeps the first write
-slice to one name key and its established typed row ID. Preserve existing
-unique-name and optional birthday validation, add/update/delete behavior,
-transaction results, warning/quiet-autosave behavior, dirty state on failure,
-and successful reload and `directorySaved` signal. Keep the GS Team writer,
-directory model/view conversion, and other teacher workflows out of scope.
-Acceptance covers typed mapping, active-session and repository failure with no
-fallback, validation and save state, persisted changes and reload/signal,
-regressions, and pinned-baseline visible parity. The current focused source
-commit is complete; F161 implementation has not started. Gates 1 and 2 remain
-Partial; Phase 2 remains In Progress/Open. No push was requested.
+Two independent Explorers mapped remaining paths; three independent
+Investigators compared cohesion, feasibility, and parity. F162 is selected
+for only the GS Team branch of `StaffDirectoryPage::saveDirectory()`, adding a
+GS Team-specific typed Application save operation and active-session Platform
+adapter backed by `GsTeamRepository::saveDirectory()`. Use `GsTeamMemberId`;
+require at least one English or Korean name, enforce each normalized key's
+uniqueness within its own namespace while allowing a match across namespaces,
+and accept only blank or valid birthdays. Preserve five fields, typed row and
+deleted IDs, repository transaction, warning/quiet-autosave, dirty-on-failure,
+reload, and `directorySaved`. Keep the Native English writer and
+model/view conversion separate. Acceptance covers app-less policy, mapping,
+session/repository errors and no fallback, page/persistence behavior, F159-F161
+regressions, and pinned-baseline visible parity. F162 implementation has not
+started. Gates 1 and 2 remain Partial; Phase 2 remains In Progress/Open. No
+push was requested. A separate worker owns workflow repair; this work did not
+modify `.github/workflows/refactoring-baseline.yml`.
