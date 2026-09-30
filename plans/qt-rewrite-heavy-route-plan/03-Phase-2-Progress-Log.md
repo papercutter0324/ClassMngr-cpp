@@ -8299,7 +8299,7 @@ fields/schedule/teacher/count/fallback parity. F167 implementation has not
 started. Gate 1 and Gate 2 remain Partial; Phase 2 remains In Progress and its
 exit gate remains Open.
 
-### Progress update - 2026-10-01 (F192 accepted; F193 selected)
+### Progress update - 2026-10-01 (F193 accepted; F194 selected)
 
 F167, source commit `97efac8b`, updates
 `ApplicationServicesClassDetailsPageReadPort` to use active-session
@@ -8658,21 +8658,30 @@ worker build and independent registered CTest
 `ClassMngrNextPlatformApplicationServicesCalendarFirstDayOfWeekPreferencesPortTests`
 passed 1/1; `git diff --check` passed.
 
-F193 is selected for
-`ApplicationServicesAcademicCalendarSchedulePreferencesPort` in
-`src/next/platform/application_services_academic_calendar_schedule_preferences_port.h`,
-with focused tests in
-`tests/next_platform_application_services_academic_calendar_schedule_preferences_port_tests.cpp`
-and registered target
-`NextPlatformApplicationServicesAcademicCalendarSchedulePreferencesPort`.
-Use only the active open session's `SettingsRepository`. Preserve exact key
+F193, source commit `e0042081`, migrates
+`ApplicationServicesAcademicCalendarSchedulePreferencesPort` to use only the
+active open session's `SettingsRepository`. It preserves exact key
 `calendar/academicSchedule/v1`, opaque UTF-8 payload round-trip without parsing
-or rewriting, empty reads/no-op saves for unavailable, null, closed, and
+or rewriting, empty reads/no-op writes for missing/unavailable/null/closed/
 read-error cases, save warning and prior value on failure, and unrelated
-settings. Keep provider serialization, schema/version/default/revision/signal
-behavior and generic `SettingsService` unchanged. Add closed-session-with-
-`DataService` no-fallback and read-error empty-fallback coverage. Two
-independent Explorer lanes agreed on the selection. The earlier 2026-09-26
-generated `.moc` build failure is historical; verify the current target build.
-Gate 1 and Gate 2 remain Partial; Phase 2 remains In Progress and its exit
-gate remains Open.
+settings. The worker build succeeded; independent registered CTest
+`ClassMngrNextPlatformApplicationServicesAcademicCalendarSchedulePreferencesPortTests`
+passed 1/1, and `git diff --check` passed. The historical 2026-09-26 generated-
+MOC build failure did not recur. Provider, callers, and generic
+`SettingsService` are unchanged.
+
+F194 is selected for `ApplicationServicesScheduleDisplayPreferencesPort` in
+`src/next/platform/application_services_schedule_display_preferences_port.h`,
+with focused tests in
+`tests/next_platform_application_services_schedule_display_preferences_port_tests.cpp`
+and registered target
+`NextPlatformApplicationServicesScheduleDisplayPreferencesPort`. Use only the
+active open session's `SettingsRepository`. Preserve the five exact keys,
+false defaults, existing QVariant coercion, atomic all-five save, Technical
+error mapping, successful no-op for unavailable/closed sessions, and
+unrelated settings. Add read-error fallback-to-false and closed-session-with-
+`DataService` no-fallback coverage. Leave menu, schedule, and calendar callers
+and generic/sessionless `SettingsService` unchanged. Two independent Explorer
+lanes agreed; existing focused tests cover keys, coercion, and rollback. Gate 1
+and Gate 2 remain Partial; Phase 2 remains In Progress and its exit gate
+remains Open.

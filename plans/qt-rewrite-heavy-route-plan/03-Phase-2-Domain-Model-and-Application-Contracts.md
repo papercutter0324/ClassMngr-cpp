@@ -1093,19 +1093,33 @@ build succeeded; independent registered CTest
 `ClassMngrNextPlatformApplicationServicesCalendarFirstDayOfWeekPreferencesPortTests`
 passed 1/1, and `git diff --check` passed.
 
-## F193 selected Academic Calendar schedule preferences port
+## F193 accepted Academic Calendar schedule preferences port
 
-Migrate `ApplicationServicesAcademicCalendarSchedulePreferencesPort` in
-`src/next/platform/application_services_academic_calendar_schedule_preferences_port.h`
+Commit `e0042081` migrates
+`ApplicationServicesAcademicCalendarSchedulePreferencesPort` to use only the
+active open session's `SettingsRepository`. It preserves exact key
+`calendar/academicSchedule/v1`, opaque UTF-8 payload round-trip without parsing
+or rewriting, empty reads/no-op writes for missing/unavailable/null/closed/
+read-error cases, save warning and prior value on failure, and unrelated
+settings. The worker build succeeded; independent registered CTest
+`ClassMngrNextPlatformApplicationServicesAcademicCalendarSchedulePreferencesPortTests`
+passed 1/1, and `git diff --check` passed. The historical 2026-09-26 generated-
+MOC build failure did not recur. Provider, callers, and generic
+`SettingsService` are unchanged.
+
+## F194 selected Schedule display preferences port
+
+Migrate `ApplicationServicesScheduleDisplayPreferencesPort` in
+`src/next/platform/application_services_schedule_display_preferences_port.h`
 to use only the active open session's `SettingsRepository`, with focused tests
-in `tests/next_platform_application_services_academic_calendar_schedule_preferences_port_tests.cpp`
+in `tests/next_platform_application_services_schedule_display_preferences_port_tests.cpp`
 and registered target
-`NextPlatformApplicationServicesAcademicCalendarSchedulePreferencesPort`.
-Preserve exact key `calendar/academicSchedule/v1`, opaque UTF-8 payload
-round-trip without parsing or rewriting, empty reads and no-op saves for
-unavailable/null/closed/read-error cases, save warning and previous value on
-failure, and unrelated settings. Keep provider serialization, schema/version,
-default, revision, and signal behavior and generic `SettingsService` unchanged.
-Add closed-session-with-`DataService` no-fallback and read-error empty-fallback
-coverage. Two independent Explorer lanes agreed on this adapter boundary.
-Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial.
+`NextPlatformApplicationServicesScheduleDisplayPreferencesPort`. Preserve the
+five exact keys, false defaults, existing QVariant coercion, atomic all-five
+save, Technical error mapping, successful no-op for unavailable/closed
+sessions, and unrelated settings. Add read-error fallback-to-false and
+closed-session-with-`DataService` no-fallback coverage. Leave menu, schedule,
+and calendar callers and generic/sessionless `SettingsService` unchanged. Two
+independent Explorer lanes agreed on this slice; existing focused tests cover
+keys, coercion, and rollback. Phase 2 remains In Progress/Open; Gates 1 and 2
+remain Partial.
