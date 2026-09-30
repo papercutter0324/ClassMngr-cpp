@@ -7901,8 +7901,8 @@ The earlier F123 candidate/pending-review note above is historical. Commit
 edit use case`) now changes `src/features/teacher/ui/teacher_info_page.cpp` and
 `tests/teacher_info_page_tests.cpp`: current page source invokes
 `TeacherProfileEditUseCase`, and its tests cover save/reload and invalid-write
-blocking. This work did not independently rerun the TeacherInfoPage target or
-pinned-baseline parity; F123 acceptance and reverification are not claimed.
+blocking. At that point the TeacherInfoPage target and pinned-baseline parity
+had not been independently rerun; this note made no F123 acceptance claim.
 
 ### Progress update - 2026-09-30 (F155 accepted; F156 selected)
 
@@ -7964,4 +7964,40 @@ repository mapping and session/repository errors, valid save/reload,
 invalid-write blocking, and pinned-baseline public-page parity. Existing F123
 use-case integration is not newly accepted: its page target and baseline parity
 were not independently rerun. F157 is selected, not implemented or accepted.
+Gates 1 and 2 remain Partial; Phase 2 remains In Progress/Open.
+
+### Progress update - 2026-09-30 (F157 accepted; F158 selected)
+
+F157, commit `cb6199f3369420c0e2e6c77d11f853d2799d9f92`, replaces
+`TeacherInfoPage`'s page-local `TeacherServiceProfileEditPort` with an
+active-session `TeacherRepository` update/reload adapter. It maps all
+`TeacherProfile` fields and preserves the existing edit use case, validation
+policy, canonical reload, and visible validation/warning/dirty/save/signal
+behavior.
+
+Current focused build and CTest passed 4/4 (Application use case, Platform
+port, TeacherInfoPage, and page parity); configure validated 1,074 owners.
+Toolchain: Windows x64 Debug, CMake 4.4.2, Ninja 1.13.2, MSVC 19.51, Qt 6.12.
+Pinned baseline `48fc5c5cc7dee78d82f8bf5f1bf8b51725575b99` public-page parity
+passed 1/1 with only parity source/registration overlaid; no production source
+was overlaid. Baseline page/header hashes are
+`49e9ee45226ddb2f456d73c369901ad459a6eb27` /
+`e279133ab8c601d5e514b3531b9e2e25a62604f1`. Parity covers valid normalized
+save/reload and invalid no-write. No full suite/application build or baseline
+query-count claim.
+
+This focused run reverified TeacherInfoPage/use-case save/reload and
+invalid-write behavior previously attributed to F123. It establishes only the
+tested page-edit path, not broader F123 acceptance.
+
+F158 is selected after three investigations: move only the selected-teacher
+navigation read in `NavigationController::handleTeacher` to a Qt-free typed
+Application query and active-session Platform `TeacherRepository::getTeacher()`
+adapter, separate from F157's edit port. Preserve lookup/failure/confirmation/
+load order and visible behavior. Leave existing `TeacherInfoPage` save/load
+APIs and handlers unchanged; navigation still invokes its page-load path. Do
+not migrate sidebar teacher operations or other reads. Acceptance requires
+typed mapping, session/repository failure and no-fallback coverage,
+lookup-before-leave-confirmation order, current navigation, and pinned-baseline
+visible parity. F158 is selected, not implemented or accepted.
 Gates 1 and 2 remain Partial; Phase 2 remains In Progress/Open.

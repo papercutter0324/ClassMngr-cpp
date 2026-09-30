@@ -2014,11 +2014,23 @@ No full suite/app build or baseline query-count claim. Gates 1 and 2 remain
 Partial; Phase 2 remains In Progress/Open. Three independent reviews are
 complete; F157 is selected for the Teacher Profile persistence adapter.
 
-## F157 selected — 2026-09-30
+## F157 accepted; F158 selected — 2026-09-30
 
-Move `TeacherInfoPage`'s page-local `TeacherService` persistence adapter behind
-an active-session Platform adapter to `TeacherRepository`, keeping the existing
-`TeacherProfileEditUseCase` and `TeacherInfoValidationPolicy`. Preserve
-canonical reload, validation, warning, dirty-state, and save-signal behavior;
-use current adapter/error tests and pinned-baseline page parity. No F157
-implementation or acceptance is claimed yet.
+F157 commit `cb6199f3369420c0e2e6c77d11f853d2799d9f92` moves Teacher Profile
+save/reload persistence from the page-local `TeacherService` adapter to an
+active-session Platform port backed by `TeacherRepository`. It maps every
+profile field and preserves the existing edit use case, validation, canonical
+reload, warnings, dirty state, and save signal. The focused current build and
+CTest passed 4/4; the pinned baseline public-page parity passed 1/1 with only
+the parity test source/registration overlaid and no production overlay. No full
+suite/app build or baseline query-count claim. The tested page edit path also
+reverifies the save/use-case and invalid-write behavior previously associated
+with F123; no broader F123 claim is made.
+
+F158 is selected for a typed Teacher Profile read query and active-session
+Platform adapter at `NavigationController::handleTeacher`, using
+`TeacherRepository::getTeacher()`. Keep it separate from the F157 edit port;
+preserve lookup failure, confirmation, and page-load behavior. Acceptance will
+cover ID/field mapping, session/repository errors, no fallback, current route
+behavior, and pinned-baseline visible parity. Gates 1 and 2 remain Partial;
+Phase 2 remains In Progress/Open.

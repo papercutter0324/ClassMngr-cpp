@@ -34,8 +34,9 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
   current/baseline page parity when persisted teacher ID zero changes after
   load. F154's typed Class Notes page-read query and F155's Class Co-Teacher
   selected-class/title read and F156's ClassCoTeacherPage teacher-catalogue
-  read are accepted. F157 is selected for the TeacherInfoPage profile-save
-  port, not implemented or accepted. The prior F123 candidate wording is historical;
+  read and F157's TeacherInfoPage profile-save port are accepted. F158 is
+  selected for the selected-teacher navigation read, not implemented or
+  accepted. The prior F123 candidate wording is historical;
   current Teacher Profile integration status is recorded in the progress log.
   Gates 1 and 2
   remain Partial; F120 active-v2 DataService isolation and formal
@@ -273,8 +274,8 @@ No production defect was observed.
 F144 is the preceding accepted slice. F145's accepted existing-class details
 update is recorded below. F146's accepted new-class create, including the
 optional pending weekday/start-time assignment, is recorded after it. F147's
-accepted delete/cascade migration is recorded below; F148-F156 acceptance and
-F157 selection are recorded below.
+accepted delete/cascade migration is recorded below; F148-F157 acceptance and
+F158 selection are recorded below.
 
 ## F145 acceptance record
 
@@ -394,7 +395,7 @@ The page queries on each save; on read error it uses `ClassInfo{}` and
 continues validation, conflict, and save. Preserve `-1` as the unassigned
 sentinel, treat zero as invalid, retain missing-row defaults, and keep the
 validation/conflict/save order. The save request, adapter reread, and
-`ClassService` guard remain separate. F153-F156 acceptance and F157 selection
+`ClassService` guard remain separate. F153-F157 acceptance and F158 selection
 are recorded below.
 
 ## F152 acceptance record
@@ -492,18 +493,43 @@ production overlay. Baseline page/header match blobs
 full suite or application build. Gates 1 and 2 remain Partial; Phase 2 remains
 In Progress/Open.
 
-## F157 selected TeacherInfoPage profile-save port
+## F157 accepted TeacherInfoPage profile-save port
 
-Replace the page-local `TeacherServiceProfileEditPort` with an active-session
-Platform adapter to `TeacherRepository`. Keep the existing
-`TeacherProfileEditUseCase` and `TeacherInfoValidationPolicy`, canonical reload,
-and visible validation, warning, dirty, save, and signal behavior unchanged.
-This scope excludes Teacher Profile load and navigation reads.
+F157, commit `cb6199f3369420c0e2e6c77d11f853d2799d9f92`, replaces the
+page-local `TeacherServiceProfileEditPort` with an active-session
+`TeacherRepository` update/reload adapter. It maps all `TeacherProfile` fields
+and preserves `TeacherProfileEditUseCase`, `TeacherInfoValidationPolicy`,
+canonical reload, and visible validation/warning/dirty/save/signal semantics.
+The slice excludes Teacher Profile load and navigation reads.
 
-Acceptance requires current port/page/use-case tests, no `DataService` or
-`TeacherService` fallback, repository mapping and session/repository error
-handling, valid save/reload and invalid-write blocking, and pinned-baseline
-public-page parity. The F123 use-case integration exists, but its page target
-and baseline parity were not independently rerun; F123 acceptance is not
-claimed. F157 is selected, not implemented or accepted. Gates 1 and 2 remain
-Partial; Phase 2 remains In Progress/Open.
+The current focused build and CTest passed 4/4 (Application use case, Platform
+port, TeacherInfoPage, and page parity) after configure validated 1,074 owners.
+Toolchain: Windows x64 Debug, CMake 4.4.2, Ninja 1.13.2, MSVC 19.51, Qt 6.12.
+Pinned baseline `48fc5c5cc7dee78d82f8bf5f1bf8b51725575b99` public-page parity
+passed 1/1 with only parity source/registration overlaid; no production source
+was overlaid. Baseline page/header hashes are
+`49e9ee45226ddb2f456d73c369901ad459a6eb27` /
+`e279133ab8c601d5e514b3531b9e2e25a62604f1`. Parity covers valid normalized
+save/reload and invalid no-write. No full suite/application build or baseline
+query-count claim.
+
+The F157 focused tests also reverified TeacherInfoPage/use-case save/reload and
+invalid-write behavior previously attributed to F123. This evidence is limited
+to the tested page-edit path; it does not establish broader F123 acceptance.
+Gates 1 and 2 remain Partial; Phase 2 remains In Progress/Open.
+
+## F158 selected TeacherInfoPage teacher-navigation read
+
+Migrate only the selected-teacher navigation read in
+`NavigationController::handleTeacher` to a Qt-free typed Application query and
+active-session Platform `TeacherRepository::getTeacher()` adapter, separate
+from F157's edit port. Preserve lookup/failure/confirmation/load order and
+visible behavior. Leave `TeacherInfoPage`'s existing save/load APIs and
+handlers unchanged; navigation still invokes the existing page-load path. Do
+not migrate sidebar teacher operations or other feature reads.
+
+Acceptance requires typed mapping, session/repository failure and no-fallback
+coverage, lookup-before-leave-confirmation order, current navigation behavior,
+and pinned-baseline visible parity.
+F158 is selected, not implemented or accepted. Gates 1 and 2 remain Partial;
+Phase 2 remains In Progress/Open.

@@ -1505,8 +1505,8 @@ English fixture sort orders so tests can detect swapping the two selectors.
 
 ## 2026-09-30 — F157 Teacher Profile persistence boundary
 
-Keep the existing Teacher Profile edit use case and validation policy while
-moving page persistence to an active-session Platform adapter. The adapter
-should use `TeacherRepository` directly; retain canonical reload and validate
-normalized updates before repository writes. Compare public page behavior on
-the pinned baseline and keep repository failure behavior in current tests.
+Keep persistence adapters honest about which failure path a test reaches:
+failure-trigger fixtures must pass normal page validation first. Moving the
+page save port to the active-session `TeacherRepository` retained the existing
+use case and validation policy, while current page tests and pinned-baseline
+public-page parity checked save/reload and invalid-write behavior.

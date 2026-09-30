@@ -4119,7 +4119,7 @@ separate existing-class details update; F147 now covers delete/cascade.
 
 The production and acceptance-test commits, focused verification, and limits
 are recorded in the [Phase 2 progress log](03-Phase-2-Progress-Log.md). F147
-migrates delete/cascade; F148-F156 acceptance and F157 selection are recorded
+migrates delete/cascade; F148-F157 acceptance and F158 selection are recorded
 below.
 
 ## Verified F147 Testing Class delete/cascade
@@ -4132,8 +4132,8 @@ F145 details update and F146 creation remain separate accepted boundaries.
 Production commit `b037b4216b71c55c7793df5f7bbbfc4a00690065`, page transition
 fix `315b3ff33b7e2ab42b43d52cd168ce21a92158c9`, and acceptance-test commit
 `397376e439f4b5955c82948ab0c225aaf776d679` are recorded with verification
-limits in the [Phase 2 progress log](03-Phase-2-Progress-Log.md). F148-F156 are
-accepted; F157 is selected, not implemented or accepted. Its boundary and
+limits in the [Phase 2 progress log](03-Phase-2-Progress-Log.md). F148-F157 are
+accepted; F158 is selected, not implemented or accepted. Its boundary and
 acceptance criteria are in the [Phase 2 progress
 log](03-Phase-2-Progress-Log.md).
 
@@ -4255,17 +4255,39 @@ overlay. Baseline page/header match blobs
 `bba856ebb2ed907072d266a38bf3abe4e939d95e`. No baseline query-count claim; no
 full suite or app build.
 
-## F157 selected TeacherInfoPage profile-save port
+## F157 accepted TeacherInfoPage profile-save port
 
-Replace the page-local `TeacherServiceProfileEditPort` with an active-session
-Platform adapter to `TeacherRepository`. Retain the existing
-`TeacherProfileEditUseCase` and `TeacherInfoValidationPolicy`, canonical reload,
-and visible validation/warning/dirty/save/signal behavior. Scope excludes
-Teacher Profile load and navigation reads.
+F157, commit `cb6199f3369420c0e2e6c77d11f853d2799d9f92`, replaces the
+page-local `TeacherServiceProfileEditPort` with an active-session
+`TeacherRepository` update/reload adapter. It maps all `TeacherProfile` fields
+and retains `TeacherProfileEditUseCase`, `TeacherInfoValidationPolicy`,
+canonical reload, and visible validation/warning/dirty/save/signal semantics.
+The slice excludes Teacher Profile load and navigation reads.
 
-Acceptance requires current port/page/use-case tests, no `DataService` or
-`TeacherService` fallback, repository mapping and session/repository errors,
-valid save/reload and invalid-write blocking, and pinned-baseline public-page
-parity. The F123 use-case integration exists, but its page target and baseline
-parity were not independently rerun; F123 acceptance is not claimed. F157 is
-selected, not implemented or accepted.
+The current focused build and CTest passed 4/4 (Application use case, Platform
+port, TeacherInfoPage, page parity) after configure validated 1,074 owners.
+Windows x64 Debug used CMake 4.4.2, Ninja 1.13.2, MSVC 19.51, and Qt 6.12.
+Pinned baseline `48fc5c5cc7dee78d82f8bf5f1bf8b51725575b99` public-page parity
+passed 1/1 with only parity source/registration overlaid; no production source
+was overlaid. Baseline page/header hashes:
+`49e9ee45226ddb2f456d73c369901ad459a6eb27` /
+`e279133ab8c601d5e514b3531b9e2e25a62604f1`. Parity covers valid normalized
+save/reload and invalid no-write. No full suite/app build or baseline
+query-count claim.
+
+These focused tests reverified TeacherInfoPage/use-case save/reload and
+invalid-write behavior previously attributed to F123. This evidence covers the
+tested page-edit path only and does not establish broader F123 acceptance.
+
+## F158 selected TeacherInfoPage teacher-navigation read
+
+Move only the selected-teacher navigation read in
+`NavigationController::handleTeacher` to a Qt-free typed Application query and
+active-session Platform `TeacherRepository::getTeacher()` adapter, separate
+from F157's edit port. Preserve lookup/failure/confirmation/load order and
+visible behavior. Leave existing `TeacherInfoPage` save/load APIs and handlers
+unchanged; navigation still invokes its page-load path. Do not migrate sidebar
+teacher operations or other reads. Acceptance requires typed mapping,
+session/repository failure and no-fallback coverage,
+lookup-before-leave-confirmation order, current navigation behavior, and
+pinned-baseline visible parity. F158 is selected, not implemented or accepted.

@@ -3759,7 +3759,35 @@ active-session Platform adapter to `TeacherRepository`, retaining the existing
 edit use case and validation policy. Acceptance covers adapter field/error
 mapping with no fallback, valid common-input save and canonical reload parity,
 invalid-write blocking, dirty state and save signal on current and baseline.
-The page/validation behavior is present in current source, but the earlier F123
-integration was not independently reverified; F157 will add that evidence
-while closing the persistence boundary. No F157 implementation has begun or
-been accepted yet.
+## F157 accepted; F158 selected - 2026-09-30
+
+F157 commit `cb6199f3369420c0e2e6c77d11f853d2799d9f92` replaces the page-local
+Teacher Profile `TeacherService` persistence port with an active-session
+Platform adapter using `TeacherRepository` for update and canonical reload.
+All profile fields map in both directions. The edit use case and validation
+policy remain in place, as do warning, dirty-state, and save-signal behavior.
+
+Fresh Windows x64 Debug configure validated 1,074 source owners. The serial
+focused build and CTest passed 4/4: Teacher Profile Application use case,
+Platform persistence port, TeacherInfoPage, and public-page parity. Toolchain:
+CMake 4.4.2, Ninja 1.13.2, MSVC 19.51, Qt 6.12. The pinned baseline
+`48fc5c5cc7dee78d82f8bf5f1bf8b51725575b99` parity test passed 1/1 with only
+the parity source and single CMake registration overlaid; no production
+overlay. Baseline page/header blobs are
+`49e9ee45226ddb2f456d73c369901ad459a6eb27` and
+`e279133ab8c601d5e514b3531b9e2e25a62604f1`. The parity case covers valid
+normalized save/reload and invalid-write blocking. No full suite/app build or
+baseline query-count claim. The current page target and baseline page parity
+reverify the tested F123 save/use-case behavior; no broader F123 acceptance is
+claimed.
+
+Three independent reviews compared a Native English Staff Directory read with
+the adjacent Teacher Profile navigation read. F158 is selected for a typed
+Application read query and active-session Platform adapter at
+`NavigationController::handleTeacher`, backed directly by
+`TeacherRepository::getTeacher()`. Keep it distinct from F157's edit port and
+preserve lookup/failure/leave-confirmation/page-load behavior. Acceptance will
+cover typed IDs, field mapping, session and repository errors, no fallback,
+current route behavior, and pinned-baseline visible parity. No query-count
+comparison on the baseline. Gates 1 and 2 remain Partial; Phase 2 remains In
+Progress/Open. No push was requested.
