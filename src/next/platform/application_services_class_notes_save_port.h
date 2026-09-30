@@ -1,11 +1,14 @@
 #pragma once
 
-#include "app/services/feature_services.h"
 #include "core/application_services.h"
+#include "data/database/database_session.h"
+#include "data/repositories/class_info_repository.h"
+#include "domain/validation/class_info_validator.h"
 #include "next/application/class_notes_save_port.h"
 
 #include <QByteArray>
 #include <QString>
+#include <QStringList>
 
 #include <charconv>
 #include <exception>
@@ -17,8 +20,8 @@
 namespace ClassMngr::Next::Platform
 {
 
-// Qt and legacy service conversion stay at this boundary. ApplicationServices
-// remains caller-owned, matching the rest of the application-service ports.
+// Qt conversion stays at this boundary. ApplicationServices remains
+// caller-owned, matching the rest of the application-service ports.
 class ApplicationServicesClassNotesSavePort final
     : public Application::ClassNotesSavePort
 {
@@ -54,11 +57,11 @@ public:
         const Application::ClassNotesSaveRequest& request
         ) const override
     {
-        const Domain::Result<void> validation = request.validate();
-        if (!validation)
+        const Domain::Result<void> requestValidation = request.validate();
+        if (!requestValidation)
         {
             return Application::ClassNotesSaveResult::failure(
-                validation.error()
+                requestValidation.error()
                 );
         }
 
@@ -71,23 +74,52 @@ public:
                 );
         }
 
-        ClassService* const classService =
-            m_services ? m_services->classService() : nullptr;
-        if (!classService || !classService->isAvailable())
+        DatabaseSession* const session =
+            m_services ? m_services->databaseSession() : nullptr;
+        if (!session || !session->isOpen())
         {
             return unavailableFailure();
         }
 
+        ClassInfoRepository* const repository =
+            session->classInfoRepository();
+        if (!repository)
+        {
+            return failure(
+                Domain::ErrorCode::Technical,
+                "Class notes repository is unavailable."
+                );
+        }
+
         try
         {
-            const Status saved = classService->saveClassNotes(
+            const QString notes = legacyText(request.notes).trimmed();
+            const QString activities =
+                legacyText(request.timeFillerActivities).trimmed();
+            const ValidationResult validation = ClassInfoValidator::validateNotes(
                 *classId,
-                legacyText(request.notes),
-                legacyText(request.timeFillerActivities)
+                notes,
+                activities
+                );
+            if (validation.hasErrors())
+            {
+                return failure(
+                    Domain::ErrorCode::Technical,
+                    toStdString(validationError(
+                        QStringLiteral("Class notes"),
+                        validation
+                        ))
+                    );
+            }
+
+            const Status saved = repository->saveClassNotes(
+                *classId,
+                notes,
+                activities
                 );
             if (!saved)
             {
-                if (!classService->isAvailable())
+                if (!session->isOpen())
                 {
                     return unavailableFailure();
                 }
@@ -149,6 +181,34 @@ private:
         }
 
         return parsed;
+    }
+
+    [[nodiscard]] static QString validationError(
+        const QString& subject,
+        const ValidationResult& validation
+        )
+    {
+        QStringList details;
+        for (const ValidationIssue& issue : validation.errors())
+        {
+            QString detail = issue.field.isEmpty()
+                ? issue.code
+                : QStringLiteral("%1: %2").arg(issue.field, issue.code);
+            if (issue.row >= 0 && !issue.field.contains(QChar(u'[')))
+            {
+                detail.prepend(QStringLiteral("row %1, ").arg(issue.row + 1));
+            }
+            details.append(detail);
+        }
+
+        return QStringLiteral("%1 validation failed: %2")
+            .arg(subject, details.join(QStringLiteral("; ")));
+    }
+
+    [[nodiscard]] static std::string toStdString(const QString& value)
+    {
+        const QByteArray bytes = value.toUtf8();
+        return bytes.toStdString();
     }
 
     [[nodiscard]] static Application::ClassNotesSaveResult failure(

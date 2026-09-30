@@ -1,9 +1,10 @@
 #include "app/services/feature_services.h"
 #include "core/application_services.h"
-#include "data/data_service.h"
 #include "data/database/database_session.h"
+#include "data/repositories/class_info_repository.h"
 #include "next/platform/application_services_class_notes_save_port.h"
 
+#include <QByteArray>
 #include <QSqlQuery>
 #include <QTemporaryDir>
 #include <QUuid>
@@ -55,6 +56,14 @@ int createClass(ApplicationServices& services)
     return created ? *created : -1;
 }
 
+ClassInfoRepository* classInfoRepository(ApplicationServices& services)
+{
+    DatabaseSession* const session = services.databaseSession();
+    return session && session->isOpen()
+        ? session->classInfoRepository()
+        : nullptr;
+}
+
 }
 
 class NextPlatformApplicationServicesClassNotesSavePortTests final
@@ -63,14 +72,14 @@ class NextPlatformApplicationServicesClassNotesSavePortTests final
     Q_OBJECT
 
 private slots:
-    void savesBothFieldsAndPreservesUtf16Limit();
-    void mapsInvalidInputBeforeServiceAccess();
-    void mapsUnavailableService();
-    void mapsLegacyWriteFailureAndPreservesStoredNotes();
+    void savesTrimmedFieldsAtExactUtf16Limit();
+    void rejectsInvalidAndOverLimitInputBeforeAnyWrite();
+    void mapsUnavailableAndClosedSession();
+    void mapsRepositoryWriteFailureAndPreservesStoredNotes();
 };
 
 void NextPlatformApplicationServicesClassNotesSavePortTests::
-savesBothFieldsAndPreservesUtf16Limit()
+savesTrimmedFieldsAtExactUtf16Limit()
 {
     QTemporaryDir directory;
     QVERIFY(directory.isValid());
@@ -79,76 +88,54 @@ savesBothFieldsAndPreservesUtf16Limit()
     QVERIFY(services.openDatabase(databasePath(directory)));
     const int classId = createClass(services);
     QVERIFY(classId > 0);
+    ClassInfoRepository* const repository = classInfoRepository(services);
+    QVERIFY(repository);
 
-    std::u16string emojiNotes;
-    emojiNotes.reserve(Application::kClassNotesSaveMaxTextCodeUnits);
+    std::u16string notes = u"  ";
+    notes.reserve(Application::kClassNotesSaveMaxTextCodeUnits);
     for (std::size_t index = 0;
-         index < Application::kClassNotesSaveMaxTextCodeUnits / 2;
+         index < (Application::kClassNotesSaveMaxTextCodeUnits - 4) / 2;
          ++index)
     {
-        emojiNotes.push_back(u'\xD83E');
-        emojiNotes.push_back(u'\xDDED');
+        notes.push_back(u'\xD83E');
+        notes.push_back(u'\xDDED');
     }
+    notes += u"  ";
+    QCOMPARE(
+        notes.size(),
+        Application::kClassNotesSaveMaxTextCodeUnits
+        );
+
+    std::u16string activities = u"  ";
+    activities.append(
+        Application::kClassNotesSaveMaxTextCodeUnits - 4,
+        u'a'
+        );
+    activities += u"  ";
+    QCOMPARE(
+        activities.size(),
+        Application::kClassNotesSaveMaxTextCodeUnits
+        );
 
     Platform::ApplicationServicesClassNotesSavePort port(services);
     const Application::ClassNotesSaveResult saved = port.saveClassNotes(
         request(
             std::to_string(classId),
-            std::move(emojiNotes),
-            u"  Filler activity  "
+            std::move(notes),
+            std::move(activities)
             )
         );
     QVERIFY(saved);
 
-    const auto loaded = services.classService()->classInfo(classId);
+    const Result<ClassInfo> loaded = repository->loadClassInfo(classId);
     QVERIFY(loaded);
-    QCOMPARE(loaded->notes.size(), 10'000);
-    QCOMPARE(loaded->notes.toUtf8().size(), 20'000);
-    QCOMPARE(loaded->timeFillerActivities, QStringLiteral("Filler activity"));
+    QCOMPARE(loaded->notes.size(), 9'996);
+    QCOMPARE(loaded->notes.toUtf8().size(), 19'992);
+    QCOMPARE(loaded->timeFillerActivities, QString(9'996, u'a'));
 }
 
 void NextPlatformApplicationServicesClassNotesSavePortTests::
-mapsInvalidInputBeforeServiceAccess()
-{
-    ApplicationServices services;
-    Platform::ApplicationServicesClassNotesSavePort port(&services);
-
-    const Application::ClassNotesSaveResult invalidClass =
-        port.saveClassNotes(request("not-an-integer", u"Notes", u"Activities"));
-    QVERIFY(!invalidClass);
-    QCOMPARE(invalidClass.error().code, Domain::ErrorCode::InvalidInput);
-
-    const Application::ClassNotesSaveResult oversizedText =
-        port.saveClassNotes(request(
-            "1",
-            std::u16string(
-                Application::kClassNotesSaveMaxTextCodeUnits + 1,
-                u'x'
-                ),
-            u""
-            ));
-    QVERIFY(!oversizedText);
-    QCOMPARE(oversizedText.error().code, Domain::ErrorCode::Validation);
-}
-
-void NextPlatformApplicationServicesClassNotesSavePortTests::
-mapsUnavailableService()
-{
-    ApplicationServices services;
-    Platform::ApplicationServicesClassNotesSavePort port(services);
-
-    const Application::ClassNotesSaveResult result = port.saveClassNotes(
-        request("1", u"Notes", u"Activities")
-        );
-    QVERIFY(!result);
-    QCOMPARE(result.error().code, Domain::ErrorCode::NotFound);
-    QVERIFY(fromUtf8(result.error().message).contains(
-        QStringLiteral("unavailable")
-        ));
-}
-
-void NextPlatformApplicationServicesClassNotesSavePortTests::
-mapsLegacyWriteFailureAndPreservesStoredNotes()
+rejectsInvalidAndOverLimitInputBeforeAnyWrite()
 {
     QTemporaryDir directory;
     QVERIFY(directory.isValid());
@@ -157,13 +144,128 @@ mapsLegacyWriteFailureAndPreservesStoredNotes()
     QVERIFY(services.openDatabase(databasePath(directory)));
     const int classId = createClass(services);
     QVERIFY(classId > 0);
-    QVERIFY(services.classService()->saveClassNotes(
+    ClassInfoRepository* const repository = classInfoRepository(services);
+    QVERIFY(repository);
+    QVERIFY(repository->saveClassNotes(
         classId,
         QStringLiteral("Original notes"),
         QStringLiteral("Original activities")
         ));
 
-    QSqlQuery query(services.dataService()->databaseSession()->database());
+    QSqlQuery query(services.databaseSession()->database());
+    QVERIFY(query.exec(QStringLiteral(
+        "CREATE TRIGGER reject_class_notes_update "
+        "BEFORE UPDATE ON class_info "
+        "BEGIN "
+        "SELECT RAISE(ABORT, 'input validation must run before writing'); "
+        "END"
+        )));
+
+    Platform::ApplicationServicesClassNotesSavePort port(services);
+    const Application::ClassNotesSaveResult invalidClass =
+        port.saveClassNotes(request(
+            "not-an-integer",
+            u"Notes",
+            u"Activities"
+            ));
+    QVERIFY(!invalidClass);
+    QCOMPARE(invalidClass.error().code, Domain::ErrorCode::InvalidInput);
+
+    const Application::ClassNotesSaveResult nonPositiveClass =
+        port.saveClassNotes(request("0", u"Notes", u"Activities"));
+    QVERIFY(!nonPositiveClass);
+    QCOMPARE(nonPositiveClass.error().code, Domain::ErrorCode::InvalidInput);
+
+    const Application::ClassNotesSaveResult oversizedNotes =
+        port.saveClassNotes(request(
+            std::to_string(classId),
+            std::u16string(
+                Application::kClassNotesSaveMaxTextCodeUnits + 1,
+                u'x'
+                ),
+            u"Activities"
+            ));
+    QVERIFY(!oversizedNotes);
+    QCOMPARE(oversizedNotes.error().code, Domain::ErrorCode::Validation);
+
+    const Application::ClassNotesSaveResult oversizedActivities =
+        port.saveClassNotes(request(
+            std::to_string(classId),
+            u"Notes",
+            std::u16string(
+                Application::kClassNotesSaveMaxTextCodeUnits + 1,
+                u'x'
+                )
+            ));
+    QVERIFY(!oversizedActivities);
+    QCOMPARE(oversizedActivities.error().code, Domain::ErrorCode::Validation);
+
+    const Result<ClassInfo> loaded = repository->loadClassInfo(classId);
+    QVERIFY(loaded);
+    QCOMPARE(loaded->notes, QStringLiteral("Original notes"));
+    QCOMPARE(
+        loaded->timeFillerActivities,
+        QStringLiteral("Original activities")
+        );
+}
+
+void NextPlatformApplicationServicesClassNotesSavePortTests::
+mapsUnavailableAndClosedSession()
+{
+    ApplicationServices unavailableServices;
+    QVERIFY(unavailableServices.dataService());
+    Platform::ApplicationServicesClassNotesSavePort unavailablePort(
+        unavailableServices
+        );
+    const Application::ClassNotesSaveResult unavailable =
+        unavailablePort.saveClassNotes(
+            request("1", u"Notes", u"Activities")
+            );
+    QVERIFY(!unavailable);
+    QCOMPARE(unavailable.error().code, Domain::ErrorCode::NotFound);
+    QVERIFY(fromUtf8(unavailable.error().message).contains(
+        QStringLiteral("unavailable")
+        ));
+
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices closedServices;
+    QVERIFY(closedServices.openDatabase(databasePath(directory)));
+    QVERIFY(createClass(closedServices) > 0);
+    closedServices.closeDatabase();
+    QVERIFY(!closedServices.databaseSession()->isOpen());
+
+    Platform::ApplicationServicesClassNotesSavePort closedPort(closedServices);
+    const Application::ClassNotesSaveResult closed =
+        closedPort.saveClassNotes(
+            request("1", u"Notes", u"Activities")
+            );
+    QVERIFY(!closed);
+    QCOMPARE(closed.error().code, Domain::ErrorCode::NotFound);
+    QVERIFY(fromUtf8(closed.error().message).contains(
+        QStringLiteral("unavailable")
+        ));
+}
+
+void NextPlatformApplicationServicesClassNotesSavePortTests::
+mapsRepositoryWriteFailureAndPreservesStoredNotes()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+    const int classId = createClass(services);
+    QVERIFY(classId > 0);
+    ClassInfoRepository* const repository = classInfoRepository(services);
+    QVERIFY(repository);
+    QVERIFY(repository->saveClassNotes(
+        classId,
+        QStringLiteral("Original notes"),
+        QStringLiteral("Original activities")
+        ));
+
+    QSqlQuery query(services.databaseSession()->database());
     QVERIFY(query.exec(QStringLiteral(
         "CREATE TRIGGER reject_class_notes_update "
         "BEFORE UPDATE OF notes ON class_info "
@@ -187,10 +289,13 @@ mapsLegacyWriteFailureAndPreservesStoredNotes()
         QStringLiteral("Saving class notes")
         ));
 
-    const auto loaded = services.classService()->classInfo(classId);
+    const Result<ClassInfo> loaded = repository->loadClassInfo(classId);
     QVERIFY(loaded);
     QCOMPARE(loaded->notes, QStringLiteral("Original notes"));
-    QCOMPARE(loaded->timeFillerActivities, QStringLiteral("Original activities"));
+    QCOMPARE(
+        loaded->timeFillerActivities,
+        QStringLiteral("Original activities")
+        );
 }
 
 QTEST_MAIN(NextPlatformApplicationServicesClassNotesSavePortTests)
