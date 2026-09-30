@@ -3981,3 +3981,34 @@ regressions, and pinned-baseline visible fields, schedule, teacher, count, and
 fallback parity. Gates 1 and 2 remain Partial; Phase 2 remains In Progress/Open.
 A separate worker owns workflow repair; this work does not modify
 `.github/workflows/refactoring-baseline.yml`. No push was requested.
+
+## 2026-09-30 - F167 accepted; F168 selected
+
+F167 source commit `97efac8b` switches
+`ApplicationServicesClassDetailsPageReadPort` to the active session's
+`ClassInfoRepository`, `TeacherRepository`, and `RosterRepository`. It keeps
+class fields, teacher display name, and roster count independent; preserves
+raw schedule row order and defaults; and constructs `Teacher` from all four
+display-name fields before calling `preferredDisplayName()`.
+
+The VS 18 2026 / Qt 6.12 Debug build passed for the adapter, page display, and
+page read parity targets. Focused current results: 8/8 adapter, 5/5 existing
+display, and 4/4 live read parity. The same parity source passed 4/4 on the
+exact pinned baseline `48fc5c5cc7dee78d82f8bf5f1bf8b51725575b99`, using
+temporary test-source and CMake registration overlays only; production files
+were not overlaid, and scratch source/CMake were restored. Successful visible
+fields, schedule order, teacher, count, and missing-teacher fallback matched.
+An exploratory missing-class-info case exposed a pre-existing UI fallback
+delta (current selected-name fallback; baseline `Unknown Class • No Teacher`);
+F167 changed no UI code. `git diff --check` passed. No full suite, application
+build, or query-count claim.
+
+F168 is selected: migrate the class-info load/save in
+`ApplicationServicesClassDetailsSavePort` from `ClassService` to the active
+session's `ClassInfoRepository`. Preserve validation, hidden fields and
+schedules, and typed result behavior. Acceptance covers no DataService
+fallback, source failures, current save/display regressions, and
+pinned-baseline visible save parity. Implementation is underway in the
+assigned port and test files; no F168 commit exists yet. Phase 2 remains In
+Progress/Open; Gates 1 and 2 remain Partial. Workflow repair belongs to the
+other worker; no workflow file was changed here.

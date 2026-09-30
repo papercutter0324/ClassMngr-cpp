@@ -1599,3 +1599,15 @@ replacing its remaining service-backed Platform reads. Keep class details,
 teacher display name, and roster count as separate outcomes; do not infer a
 memory or query-count improvement because the roster repository count method
 currently loads the roster before counting.
+
+## 2026-09-30 - F167 class details display read
+
+Use distinct values for English name, romanization, and preferred name in the
+adapter fixture so field mapping is observable. Check baseline visible parity
+for successful reads and independent teacher failure; record fallback
+differences already present in the current UI separately instead of attributing
+them to an adapter-only change. A class-info failure currently falls back to
+the selected classroom name on the migrated page but to `Unknown Class • No
+Teacher` on the pinned baseline. Keep the class, teacher, and roster-count
+failure outcomes independent. The current roster count repository reads the
+roster before counting, so make no efficiency claim.

@@ -4132,8 +4132,9 @@ F145 details update and F146 creation remain separate accepted boundaries.
 Production commit `b037b4216b71c55c7793df5f7bbbfc4a00690065`, page transition
 fix `315b3ff33b7e2ab42b43d52cd168ce21a92158c9`, and acceptance-test commit
 `397376e439f4b5955c82948ab0c225aaf776d679` are recorded with verification
-limits in the [Phase 2 progress log](03-Phase-2-Progress-Log.md). F148-F166 are accepted. F167 is selected; its boundary and
-acceptance criteria are in the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
+limits in the [Phase 2 progress log](03-Phase-2-Progress-Log.md). F148-F167
+are accepted. F168 is selected; implementation is in progress. Its boundary
+and acceptance criteria are in the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 
 ## Class-details save mapping: F126 and F139
 
@@ -4408,16 +4409,28 @@ passed, including teacher failure, detail defaults, invalid ID, trimmed-name /
 stopped after 30 seconds; no full suite, application build, or query-count
 comparison is claimed. See the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 
-## F167 selected ClassDetailsPage display read
+## F167 accepted ClassDetailsPage display read
 
-Replace `ApplicationServicesClassDetailsPageReadPort`'s legacy reads with
-`ClassInfoRepository::loadClassInfo()`,
-`TeacherRepository::loadTeacherDisplayNameFields()`, and
-`RosterRepository::getRosterStudentCount()` through the active `DatabaseSession`.
-Reuse `ClassDetailsPageReadSnapshot`; preserve independent class, teacher, and
-count results, raw schedule fields/order, defaults/fallbacks, and
-`Teacher::preferredDisplayName()` precedence. Acceptance covers adapter
-mapping, missing/source failures without `DataService` fallback, existing page
-display regressions, and pinned-baseline visible fields/schedule/teacher/count/
-fallback parity. F167 implementation has not started. Phase 2 remains
+F167, source commit `97efac8b`, changes
+`ApplicationServicesClassDetailsPageReadPort` to use the active-session class,
+teacher-display, and roster-count repositories. It reuses
+`ClassDetailsPageReadSnapshot` and retains independent results, raw schedule
+order, defaults/fallbacks, and preferred-teacher precedence. Focused current
+tests passed 8/8 adapter, 5/5 existing display, and 4/4 live parity. The same
+live parity passed 4/4 on pinned baseline
+`48fc5c5cc7dee78d82f8bf5f1bf8b51725575b99` with test/CMake overlays only and no
+production overlay, covering visible fields, schedule order, teacher, count,
+and missing-teacher fallback. An exploratory missing-class-info-row check
+exposed a pre-existing UI fallback delta: current shows the selected class
+name; baseline shows `Unknown Class • No Teacher`. F167 changed no UI
+code, preserved current behavior, and does not claim parity for this case. See
+the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
+
+## F168 selected ClassDetailsPage save read
+
+Migrate `ApplicationServicesClassDetailsSavePort` class-info load/save from
+`ClassService` to the active-session `ClassInfoRepository`. Preserve
+validation, hidden fields/schedules, and independent typed failures. Acceptance
+covers no `DataService` fallback, existing save/display regressions, and
+pinned-baseline visible save parity. F168 implementation is in progress. Phase 2 remains
 In Progress/Open; Gates 1 and 2 remain Partial.

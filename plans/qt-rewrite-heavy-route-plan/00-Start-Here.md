@@ -33,9 +33,10 @@
   read, F160's GS Team Staff Directory read, F161's Native English Staff
   Directory save, F162's GS Team Staff Directory save, F163's ClassesPage
   class-list read, F164's selected-class grade read, F165's selected-class
-  subtitle read, and F166's RosterEditorWidget class subtitle read are accepted.
-  F167 is selected for the ClassDetailsPage display read. See the [Phase 2
-  progress log](03-Phase-2-Progress-Log.md)
+  subtitle read, F166's RosterEditorWidget class subtitle read, and F167's
+  ClassDetailsPage display read are accepted. F168 is selected and implementation
+  is in progress for the ClassDetailsPage save read. See the [Phase 2 progress
+  log](03-Phase-2-Progress-Log.md)
   for evidence and current selection details.
   Phase 2 Gates 1 and 2 remain Partial; broader feature migration, parity, and
   96-class Release memory evidence remain open. Phase 1 build-system exit

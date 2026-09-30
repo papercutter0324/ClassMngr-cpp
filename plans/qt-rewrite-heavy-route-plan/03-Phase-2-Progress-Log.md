@@ -8298,3 +8298,32 @@ ClassDetailsPage display regressions, and pinned-baseline visible
 fields/schedule/teacher/count/fallback parity. F167 implementation has not
 started. Gate 1 and Gate 2 remain Partial; Phase 2 remains In Progress and its
 exit gate remains Open.
+
+### Progress update - 2026-09-30 (F167 accepted; F168 selected)
+
+F167, source commit `97efac8b`, updates
+`ApplicationServicesClassDetailsPageReadPort` to use active-session
+`ClassInfoRepository::loadClassInfo()`,
+`TeacherRepository::loadTeacherDisplayNameFields()`, and
+`RosterRepository::getRosterStudentCount()`. It reuses
+`ClassDetailsPageReadSnapshot` and preserves independent class, teacher, and
+count outcomes, raw schedule fields/order, defaults/fallbacks, and
+`Teacher::preferredDisplayName()` precedence.
+
+Current focused tests passed 8/8 adapter, 5/5 existing display, and 4/4 live
+parity. The same live parity source passed 4/4 on pinned baseline
+`48fc5c5cc7dee78d82f8bf5f1bf8b51725575b99` with test/CMake overlays only and no
+production overlay, covering visible fields, raw schedule order, preferred
+teacher, count, and missing-teacher fallback while retaining class/count. An
+exploratory missing-class-info-row test exposed a pre-existing UI fallback
+difference: current shows the selected class name; baseline shows
+`Unknown Class • No Teacher`. F167 changed no UI code and retained current
+behavior; this case is excluded from parity claims.
+
+F168 is selected: migrate `ApplicationServicesClassDetailsSavePort` class-info
+load/save from `ClassService` to the active-session `ClassInfoRepository`.
+Preserve validation, hidden fields/schedules, and independent typed failures.
+Acceptance covers no `DataService` fallback, existing save/display regressions,
+and pinned-baseline visible save parity. F168 implementation is in progress.
+Gate 1 and Gate 2 remain Partial; Phase 2 remains In Progress and its exit gate
+remains Open.
