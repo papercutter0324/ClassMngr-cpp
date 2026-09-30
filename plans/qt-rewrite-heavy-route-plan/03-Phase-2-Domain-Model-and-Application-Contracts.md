@@ -50,8 +50,9 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
   interval port, and F181's Calendar Event Import signature query port are
   accepted. F182's active Calendar event read/by-ID adapter, F183's single
   Calendar Event save port, F184's Calendar Event delete port, F185's
-  Calendar Event delete-all port, and F186's repeat-series suffix-delete port
-  are accepted. F187 is selected for Calendar Event Import save.
+  Calendar Event delete-all port, F186's repeat-series suffix-delete port, and
+  F187's Calendar Event Import save port are accepted. F188 is selected for
+  repeat-series creation.
   The prior F123 candidate wording is historical;
   current Teacher Profile integration status is recorded in the progress log.
   Gates 1 and 2
@@ -990,25 +991,43 @@ no-match success, invalid diagnostics, open/closed sessions with `DataService`,
 SQL failure, and F108 repository suffix/sequence parity. `git diff --check`
 passed.
 
-## F187 selected Calendar Event Import save port
+## F187 accepted Calendar Event Import save port
 
-Migrate `ApplicationServicesCalendarEventImportSavePort` in
-`src/next/platform/application_services_calendar_event_import_save_port.h`,
-with focused tests in
-`tests/next_platform_application_services_calendar_event_port_tests.cpp`, to
-one active-open-session `CalendarEventRepository::saveCalendarEvents()` call,
-with no `CalendarService` or `DataService` fallback. Preserve
-`request.validate()` including creation-only rules and the 4,096-event cap;
-canonical date/time conversion and all-day/unknown fields; event order;
-`CalendarEventValidator::normalized()` then `validateSeries()`; blank
-`repeatSeriesId`; ordered typed-ID cardinality; transaction/rollback; empty
-batch success for duplicate-only imports while open; unavailable/closed
-NotFound and open-session repository Technical failures. Keep Import use-case,
-query, and UI wiring unchanged. Verify
+F187, source commit `e7396c77`, migrates
+`ApplicationServicesCalendarEventImportSavePort` to exactly one
+`CalendarEventRepository::saveCalendarEvents(normalizedEvents)` call on the
+open active session, with no `CalendarService` or `DataService` fallback. It
+preserves `request.validate()` creation-only behavior and the 4,096-event
+maximum, canonical date/time
+and all-day/unknown-field conversion, event order, normalization then
+`validateSeries()`, blank `repeatSeriesId`, ordered typed-ID cardinality, batch
+transaction/rollback, empty-batch success while open, unavailable/closed
+NotFound, and open-session repository Technical failures. Import use-case,
+query, and UI wiring remain unchanged. Implementation and independent Tester
+each passed
 `ClassMngrNextPlatformApplicationServicesCalendarEventPortTests`,
 `ClassMngrNextApplicationCalendarEventImportUseCaseTests`,
 `ClassMngrCalendarEventImportParityTests`, and
-`ClassMngrCalendarEventRepositoryTests`. Two Explorer lanes considered series
-edit; the main agent selected this adjacent F181 signature-query cutover,
-including empty duplicate-only batch behavior documented by the application
-contract. Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial.
+`ClassMngrCalendarEventRepositoryTests`; build and `git diff --check` passed.
+Source has one visible repository save call; tests verify result order and
+rollback rather than instrumenting invocation count.
+
+## F188 selected Calendar Event repeat-series creation port
+
+Migrate `ApplicationServicesCalendarEventSeriesCreatePort` in
+`src/next/platform/application_services_calendar_event_series_create_port.h`,
+with focused tests in
+`tests/next_platform_application_services_calendar_event_port_tests.cpp`, to
+the active session's `CalendarEventRepository::saveCalendarEvents()` with no
+`CalendarService` or `DataService` fallback. Preserve request validation
+before session access, planned daily/weekly/monthly occurrences and order,
+series ID handling, canonical conversion and all-day/unknown-time fields,
+normalization then `validateSeries()`, one atomic repository batch, ordered
+positive typed IDs, and structured validation/NotFound/Technical failures.
+Keep the Series Create use case and Calendar Page UI unchanged. Verify
+`ClassMngrNextPlatformApplicationServicesCalendarEventPortTests`,
+`ClassMngrNextApplicationCalendarEventTests`, and
+`ClassMngrCalendarEventRepositoryTests`. Two independent Explorer lanes
+selected this focused single-batch write; series edit is broader read/plan/write
+and is deferred. Phase 2 remains In Progress/Open; Gates 1 and 2 remain
+Partial.

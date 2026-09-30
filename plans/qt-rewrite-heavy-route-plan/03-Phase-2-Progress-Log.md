@@ -8299,7 +8299,7 @@ fields/schedule/teacher/count/fallback parity. F167 implementation has not
 started. Gate 1 and Gate 2 remain Partial; Phase 2 remains In Progress and its
 exit gate remains Open.
 
-### Progress update - 2026-10-01 (F186 accepted; F187 selected)
+### Progress update - 2026-10-01 (F187 accepted; F188 selected)
 
 F167, source commit `97efac8b`, updates
 `ApplicationServicesClassDetailsPageReadPort` to use active-session
@@ -8569,24 +8569,40 @@ no-match success, invalid diagnostics, open/closed sessions with `DataService`,
 SQL failure, and F108 repository suffix/sequence parity. `git diff --check`
 passed. Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial.
 
-F187 is selected for `ApplicationServicesCalendarEventImportSavePort` in
-`src/next/platform/application_services_calendar_event_import_save_port.h`,
-with focused tests in
-`tests/next_platform_application_services_calendar_event_port_tests.cpp`.
-Use one active-open-session `CalendarEventRepository::saveCalendarEvents()`
-call with no `CalendarService` or `DataService` fallback. Preserve
-`request.validate()` including creation-only rules and the 4,096-event cap;
-canonical date/time conversion and all-day/unknown fields; event order;
-`CalendarEventValidator::normalized()` then `validateSeries()`; blank
-`repeatSeriesId`; ordered typed-ID cardinality; transaction/rollback; empty
-batch success for duplicate-only imports while open; unavailable/closed
-NotFound and open-session repository Technical failures. Keep Import use-case,
-query, and UI wiring unchanged. Verify
+F187, source commit `e7396c77`, migrates
+`ApplicationServicesCalendarEventImportSavePort` to exactly one active open
+session `CalendarEventRepository::saveCalendarEvents(normalizedEvents)` call,
+with no `CalendarService` or `DataService` fallback. It preserves
+`request.validate()` creation-only behavior and the 4,096-event maximum,
+canonical date/time
+and all-day/unknown-field conversion, event order, normalization then
+`validateSeries()`, blank `repeatSeriesId`, ordered typed-ID cardinality, batch
+transaction/rollback, empty-batch success while open, unavailable/closed
+NotFound, and open-session repository Technical failures. Import use-case,
+query, and UI wiring remain unchanged. Implementation and independent Tester
+each passed
 `ClassMngrNextPlatformApplicationServicesCalendarEventPortTests`,
 `ClassMngrNextApplicationCalendarEventImportUseCaseTests`,
 `ClassMngrCalendarEventImportParityTests`, and
-`ClassMngrCalendarEventRepositoryTests`. Two Explorer lanes considered series
-edit as an alternative; the main agent selected the adjacent F181
-signature-query cutover, including empty duplicate-only batch behavior from
-the Application contract. Phase 2 remains In Progress/Open; Gates 1 and 2
-remain Partial.
+`ClassMngrCalendarEventRepositoryTests`; build and `git diff --check` passed.
+Source has one visible repository save call; tests verify result order and
+rollback rather than instrumenting invocation count. Phase 2 remains In
+Progress/Open; Gates 1 and 2 remain Partial.
+
+F188 is selected for `ApplicationServicesCalendarEventSeriesCreatePort` in
+`src/next/platform/application_services_calendar_event_series_create_port.h`,
+with focused tests in
+`tests/next_platform_application_services_calendar_event_port_tests.cpp`.
+Use the active session's `CalendarEventRepository::saveCalendarEvents()` with
+no `CalendarService` or `DataService` fallback. Preserve request validation
+before session access, planned daily/weekly/monthly occurrences and order,
+series ID handling, canonical conversion and all-day/unknown-time fields,
+normalization then `validateSeries()`, one atomic repository batch, ordered
+positive typed IDs, and structured validation/NotFound/Technical failures.
+Keep the Series Create use case and Calendar Page UI unchanged. Verify
+`ClassMngrNextPlatformApplicationServicesCalendarEventPortTests`,
+`ClassMngrNextApplicationCalendarEventTests`, and
+`ClassMngrCalendarEventRepositoryTests`. Two independent Explorer lanes
+selected this focused single-batch write; series edit is broader read/plan/write
+and is deferred. Phase 2 remains In Progress/Open; Gates 1 and 2 remain
+Partial.
