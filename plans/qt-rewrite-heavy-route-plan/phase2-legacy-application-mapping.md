@@ -4132,9 +4132,9 @@ F145 details update and F146 creation remain separate accepted boundaries.
 Production commit `b037b4216b71c55c7793df5f7bbbfc4a00690065`, page transition
 fix `315b3ff33b7e2ab42b43d52cd168ce21a92158c9`, and acceptance-test commit
 `397376e439f4b5955c82948ab0c225aaf776d679` are recorded with verification
-limits in the [Phase 2 progress log](03-Phase-2-Progress-Log.md). F148-F159 are
-accepted through F162. F163 is selected; its boundary and acceptance criteria
-are in the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
+limits in the [Phase 2 progress log](03-Phase-2-Progress-Log.md). F148-F163 are
+accepted. F164 is selected; its boundary and acceptance criteria are in the
+[Phase 2 progress log](03-Phase-2-Progress-Log.md).
 
 ## Class-details save mapping: F126 and F139
 
@@ -4342,14 +4342,32 @@ save parity passed 1/1 on `48fc5c5cc7dee78d82f8bf5f1bf8b51725575b99`. No full
 suite, application build, or query-count comparison ran. See the [Phase 2
 progress log](03-Phase-2-Progress-Log.md) for details and limits.
 
-## F163 selected ClassesPage class-list read
+## F163 accepted ClassesPage class-list read
 
-Add a typed class ID/name list query and active-session Platform adapter backed
-by `ClassRepository::getClasses()`. Replace only the class-list reads in
-`ClassesPage` on open and after a successful ClassInfo save. Preserve order,
-IDs/names, selection, and empty/error behavior. Existing navigation metadata
-reads and other legacy class calls remain outside the slice. Acceptance covers
-query/adapter mapping, session/repository errors without fallback, list
-contents/order/selection on open and post-save refresh, and pinned-baseline
-visible parity. F163 is selected; implementation has not started. Details are
-in the [Phase 2 contract plan](03-Phase-2-Domain-Model-and-Application-Contracts.md).
+F163, source commit `a556c0441dcebbb3b6a7baecef6e293b5644b149`, adds the typed
+`ClassesListReadQuery`/port and active-session Platform adapter to
+`ClassRepository::getClasses()`. Only the ClassesPage open and post-ClassInfo-
+save list reads use it. Ordering, IDs/names, selection, and empty/error
+behavior remain intact; navigation metadata and other legacy class calls are
+outside this slice. Focused Application/Platform CTests passed 2/2, and direct
+current-page slots passed. Pinned-baseline visible list parity passed for open
+and post-save; the test/stub-only overlay changed
+`classes_page_tests.cpp` and `schedule_widget_test_stubs.cpp`, with production
+hashes matching. The full ClassesPage CTest stalled in existing
+`classDetailsAndCoTeacherTabsSeparateTheirSectionCards()` after
+`nestedEditorsAreDeferredUntilTheirSectionIsOpened()`. No full suite,
+application build, or query-count comparison ran. Details are in the [Phase 2
+progress log](03-Phase-2-Progress-Log.md).
+
+## F164 selected ClassesPage selected-class grade read
+
+Add a typed selected-class ID/grade read for only
+`ClassesPage::rebuildSectionTabs()` and an active-session Platform adapter
+backed by `ClassInfoRepository::loadClassInfo()`. Preserve the middle-school
+rule, preference override, current selection, and fail-open behavior: missing
+or failed grade reads leave Analytics and Evaluations visible. Leave subtitle
+and navigation metadata reads outside the slice. Acceptance covers typed
+mapping, session/repository failures without fallback, tab visibility and
+preference/current-page behavior, and pinned-baseline visible tab parity. F164
+is selected; implementation has not started. Details are in the [Phase 2
+contract plan](03-Phase-2-Domain-Model-and-Application-Contracts.md).

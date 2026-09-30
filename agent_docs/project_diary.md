@@ -1554,3 +1554,16 @@ Keep the class-list query distinct from `ClassesNavigationSnapshot`: the
 snapshot enriches a list supplied by the feature and does not own list
 enumeration. A class ID/name projection can migrate open and post-save list
 reads while leaving metadata, editors, and other legacy operations intact.
+
+For page parity, prove a save refresh visibly changes class order and keeps
+the selected class; a second read or a rename that stays in the same position
+does not demonstrate the ordering behavior. Reconstruct pinned source from its
+exact commit and compare production blobs before using a scratch baseline; a
+directory name or existing build cache is not proof of provenance.
+
+## 2026-09-30 — F164 ClassesPage section visibility read selection
+
+Keep the grade lookup for Analytics/Evaluations visibility separate from the
+subtitle and navigation metadata reads. They have independent failures and
+fallbacks. A missing or failed grade currently leaves both sections visible;
+preserve that behavior with a narrow typed class-grade read.

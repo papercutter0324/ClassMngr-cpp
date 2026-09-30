@@ -2116,16 +2116,28 @@ a temporary Qt metadata shim; root CMake was restored to pinned hash
 `cc8a061dfa64977926805167cc10418ca15d83d8`. No full suite/application build or
 baseline query-count claim.
 
-F163 is selected for the ClassesPage class-list read. Add a typed class ID/name
-Application query and active-session Platform adapter backed by
-`ClassRepository::getClasses()`, and migrate only the page's list reads on open
-and after class-info save. Preserve class IDs, names, repository order,
-selection/tab behavior, empty-list results, and existing session/read failure
-behavior. Keep `ClassesNavigationSnapshot` metadata reads and other legacy
-class calls outside this slice. Acceptance covers query/adapter mapping,
-session and repository errors without fallback, page open and post-save
-refresh regressions, and pinned-baseline visible parity; make no query-count
-claim. Two Explorers and three Investigators independently recommended this
-boundary. Gates 1 and 2 remain Partial; Phase 2 remains In Progress/Open. A
+F163 source commit `a556c0441dcebbb3b6a7baecef6e293b5644b149` adds a typed
+class ID/name list query and active-session Platform adapter backed by
+`ClassRepository::getClasses()`, migrating only the ClassesPage list reads on
+open and after ClassInfo save. It preserves repository ordering, names, IDs,
+selection, and existing failure handling without a DataService fallback.
+
+The focused Application and Platform CTests passed 2/2; the relevant direct
+ClassesPage slots passed. Pinned-baseline parity passed for both visible list
+opening and post-save rename/reordering on
+`48fc5c5cc7dee78d82f8bf5f1bf8b51725575b99`, with only test/stub overlays and
+no production changes. The full ClassesPage CTest stalled in the existing
+`classDetailsAndCoTeacherTabsSeparateTheirSectionCards()` slot. No full
+suite/application build or query-count claim.
+
+F164 is selected for the selected-class grade read in
+`ClassesPage::rebuildSectionTabs()`. Add a typed class ID/grade Application
+read and active-session Platform adapter backed by `ClassInfoRepository`; keep
+the existing middle-school grade rule, preference override, visible section
+set, selection, and quiet fallback when the grade is unavailable. Leave the
+subtitle reads, navigation metadata, and other class operations separate.
+Acceptance covers typed mapping, session/repository failure without fallback,
+section visibility and preference behavior, and pinned-baseline visible tab
+parity. Gates 1 and 2 remain Partial; Phase 2 remains In Progress/Open. A
 separate worker owns workflow repair; this work does not modify
 `.github/workflows/refactoring-baseline.yml`. No push was requested.

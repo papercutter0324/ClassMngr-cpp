@@ -3830,7 +3830,7 @@ Qt 6.12 metadata shim (removed afterward), and test-only API/registration
 adaptations; production files and pinned baseline blobs were not overlaid. No
 full suite/app build or baseline query-count claim.
 
-## 2026-09-30 — Phase 2 continuation: F161/F162 accepted; F163 selected
+## 2026-09-30 — Phase 2 continuation: F161-F163 accepted; F164 selected
 
 At continuation start, reviewed commits `314f4d5b` and `0c5d5566`. No blocking
 issue was found. One non-blocking review note: `314f4d5b` changed a PDF text
@@ -3884,15 +3884,41 @@ root CMake was restored to pinned hash
 `cc8a061dfa64977926805167cc10418ca15d83d8`. No full suite/application build or
 baseline query-count claim.
 
-Three independent candidate assessments recommend F163: the ClassesPage
-class-list read. Add a typed class ID/name Application query and active-session
-Platform adapter backed by `ClassRepository::getClasses()`. Migrate only the
-class-list reads on page open and after class-info save. Preserve IDs, names,
-repository ordering, selection/tab behavior, empty results, and current
-failure behavior. Keep navigation metadata reads and other legacy class calls
-unchanged. Acceptance covers typed mapping, session/repository failures with no
-fallback, page open and saved-class refresh behavior, relevant regressions, and
-pinned-baseline visible parity; make no query-count claim. Gates 1 and 2 remain
-Partial; Phase 2 remains In Progress/Open. A separate worker owns workflow
-repair; this work does not modify `.github/workflows/refactoring-baseline.yml`.
-No push was requested.
+F163 source commit `a556c0441dcebbb3b6a7baecef6e293b5644b149` adds a typed
+class ID/name list query and active-session Platform adapter backed directly by
+`ClassRepository::getClasses()`. `ClassesPage::openClass()` and the
+post-ClassInfo-save handler use the typed read; the separate navigation
+metadata read and other legacy class calls remain unchanged. The adapter
+preserves repository order, names, and IDs and has no DataService fallback.
+The page preserves selection and existing open/reload failure behavior.
+
+Focused current Application and Platform CTests passed 2/2. Direct ClassesPage
+slots for active-repository reads, post-save visible refresh, ClassInfo
+navigation refresh, and navigation metadata failure passed. Current and pinned
+baseline `48fc5c5cc7dee78d82f8bf5f1bf8b51725575b99` both passed visible
+all-grade list parity and the post-save refresh slot. The post-save fixture
+changes visible class order from `[43 Athena, 42 Hercules]` to
+`[42 Hercules, 43 Zulu]` while retaining class 42. The baseline was extracted
+from the exact commit; only `tests/classes_page_tests.cpp` and
+`tests/schedule_widget_test_stubs.cpp` were overlaid. Production hashes
+matched the pin. Its Debug/Ninja build used Qt 6.12.0 with
+`QT_NO_CONFIG_VERSION_OVERRIDE_FILES=ON` for the older pinned Qt requirement.
+Current and baseline builds ran from D: scratch because C: had about 30 MB
+free. The full `ClassMngrClassesPageTests` CTest stalled in the existing
+`classDetailsAndCoTeacherTabsSeparateTheirSectionCards()` slot after
+`nestedEditorsAreDeferredUntilTheirSectionIsOpened()` passed. No full suite or
+application build and no query-count claim.
+
+Three independent Investigators compared remaining candidates. F164 is selected
+for the single selected-class grade read in `ClassesPage::rebuildSectionTabs()`.
+Add a typed class ID/grade Application read with an active-session Platform
+adapter backed by `ClassInfoRepository::loadClassInfo()`. Preserve the
+middle-school grade rule, preference override, section selection, and current
+quiet fallback that shows Analytics/Evaluations when the grade read is
+unavailable or fails. Keep the subtitle’s ClassInfo/Teacher reads and
+navigation metadata read separate; this keeps their existing failure paths
+independent. Acceptance covers typed mapping, session/repository errors without
+fallback, tab visibility and preference behavior, and pinned-baseline visible
+tab parity. Gates 1 and 2 remain Partial; Phase 2 remains In Progress/Open. A
+separate worker owns workflow repair; this work does not modify
+`.github/workflows/refactoring-baseline.yml`. No push was requested.

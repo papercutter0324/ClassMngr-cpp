@@ -8170,3 +8170,32 @@ covers query/adapter mapping, session/repository errors without fallback,
 open/post-save list contents, order and selection, and pinned-baseline visible
 parity. Implementation has not started. Gate 1 and Gate 2 remain Partial;
 Phase 2 remains In Progress and its exit gate remains Open.
+
+### Progress update - 2026-09-30 (F163 accepted; F164 selected)
+
+F163, source commit `a556c0441dcebbb3b6a7baecef6e293b5644b149`, adds typed
+`ClassesListReadQuery`/port and an active-session Platform adapter to
+`ClassRepository::getClasses()`. It replaces only the ClassesPage open and
+post-ClassInfo-save class-list reads, preserving order, IDs/names, selection,
+and empty/error behavior. Navigation metadata and other legacy class calls
+remain outside the slice.
+
+Focused Application/Platform CTests passed 2/2, and direct current-page slots
+passed. Pinned baseline `48fc5c5cc7dee78d82f8bf5f1bf8b51725575b99` passed
+visible list parity on open and post-save with test/stub-only overlays to
+`classes_page_tests.cpp` and `schedule_widget_test_stubs.cpp`; production hashes
+matched. The full ClassesPage CTest stalled in existing
+`classDetailsAndCoTeacherTabsSeparateTheirSectionCards()` after
+`nestedEditorsAreDeferredUntilTheirSectionIsOpened()`. No full suite,
+application build, or query-count comparison ran.
+
+F164 is selected: add a typed selected-class ID/grade read for only
+`ClassesPage::rebuildSectionTabs()` and an active-session Platform adapter
+backed by `ClassInfoRepository::loadClassInfo()`. Preserve the middle-school
+rule, preference override, current selection, and fail-open behavior: missing
+or failed grade reads leave Analytics/Evaluations visible. Keep subtitle and
+navigation metadata reads outside scope. Acceptance covers typed mapping,
+session/repository failures without fallback, tab visibility and
+preference/current-page behavior, and pinned-baseline visible tab parity.
+Implementation has not started. Gate 1 and Gate 2 remain Partial; Phase 2
+remains In Progress and its exit gate remains Open.
