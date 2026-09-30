@@ -1,6 +1,5 @@
 #include "class_co_teacher_page.h"
 
-#include "app/services/feature_services.h"
 #include "core/application_services.h"
 #include "core/fontmanager.h"
 #include "core/utils/sidebar_node_naming.h"
@@ -8,8 +7,10 @@
 #include "domain/models/teacher.h"
 #include "next/application/class_co_teacher_assignment_use_case.h"
 #include "next/application/class_co_teacher_page_read_query.h"
+#include "next/application/class_co_teacher_teacher_choices_read_query.h"
 #include "next/platform/application_services_class_co_teacher_page_read_port.h"
 #include "next/platform/application_services_class_co_teacher_assignment_port.h"
+#include "next/platform/application_services_class_co_teacher_teacher_choices_read_port.h"
 #include "ui/shared/constants/gui_constants.h"
 #include "ui/shared/dialogs/user_prompt_service.h"
 #include "ui/shared/pages/autosave_coordinator.h"
@@ -31,6 +32,50 @@
 #include <system_error>
 #include <utility>
 
+namespace
+{
+
+int legacyTeacherIdValue(
+    const ClassMngr::Next::Domain::TeacherId& teacherId
+    )
+{
+    const std::string& value = teacherId.value();
+    int parsed = 0;
+    const auto [end, error] = std::from_chars(
+        value.data(),
+        value.data() + value.size(),
+        parsed
+        );
+    if (error != std::errc{}
+        || end != value.data() + value.size()
+        || parsed <= 0
+        || std::to_string(parsed) != value)
+    {
+        return -1;
+    }
+    return parsed;
+}
+
+Teacher uiTeacher(
+    const ClassMngr::Next::Application::ClassCoTeacherTeacherChoice& source
+    )
+{
+    Teacher teacher;
+    teacher.id = legacyTeacherIdValue(source.teacherId);
+    teacher.teacherKr = QString::fromStdU16String(source.teacherKr);
+    teacher.teacherEn = QString::fromStdU16String(source.teacherEn);
+    teacher.roomNumber = QString::fromStdU16String(source.roomNumber);
+    teacher.internetType = QString::fromStdU16String(source.internetType);
+    teacher.wifiName = QString::fromStdU16String(source.wifiName);
+    teacher.wifiPassword = QString::fromStdU16String(source.wifiPassword);
+    teacher.projectionType = QString::fromStdU16String(source.projectionType);
+    teacher.zoomId = QString::fromStdU16String(source.zoomId);
+    teacher.zoomPassword = QString::fromStdU16String(source.zoomPassword);
+    return teacher;
+}
+
+} // namespace
+
 ClassCoTeacherPage::ClassCoTeacherPage(
     ApplicationServices* services,
     bool embedded,
@@ -38,12 +83,15 @@ ClassCoTeacherPage::ClassCoTeacherPage(
     ClassMngr::Next::Application::ClassCoTeacherAssignmentPort*
         assignmentPort,
     ClassMngr::Next::Application::ClassCoTeacherPageReadPort*
-        readPort
+        readPort,
+    ClassMngr::Next::Application::ClassCoTeacherTeacherChoicesReadPort*
+        teacherChoicesReadPort
     )
     : BasePage(parent)
     , m_services(services)
     , m_assignmentPort(assignmentPort)
     , m_readPort(readPort)
+    , m_teacherChoicesReadPort(teacherChoicesReadPort)
     , m_embedded(embedded)
     , m_autosave(new AutosaveCoordinator(this))
 {
@@ -157,22 +205,45 @@ void ClassCoTeacherPage::loadClass(
     refresh();
     m_classroom = classroom;
 
-    const Result<QList<Teacher>> teachers =
-        m_services->teacherService()->teachers();
-    if (!teachers)
+    ClassMngr::Next::Platform::
+        ApplicationServicesClassCoTeacherTeacherChoicesReadPort
+            defaultTeacherChoicesReadPort(m_services);
+    const ClassMngr::Next::Application::
+        ClassCoTeacherTeacherChoicesReadPort& teacherChoicesReadPort =
+            m_teacherChoicesReadPort
+                ? *m_teacherChoicesReadPort
+                : defaultTeacherChoicesReadPort;
+    const ClassMngr::Next::Application::
+        ClassCoTeacherTeacherChoicesReadQuery teacherChoicesQuery(
+            teacherChoicesReadPort
+            );
+    const auto teacherChoices = teacherChoicesQuery.execute();
+    if (!teacherChoices)
     {
+        const std::string& message = teacherChoices.error().message;
         DialogServices::showWarning(
             this,
             tr("Load Co-Teacher"),
             tr("Teachers could not be loaded."),
-            teachers.error()
+            QString::fromUtf8(
+                message.data(),
+                static_cast<qsizetype>(message.size())
+                )
             );
         m_autosave->setLoading(false);
         clearDatabaseState();
         return;
     }
 
-    m_teacherSection->setTeachers(*teachers);
+    QList<Teacher> teachers;
+    teachers.reserve(static_cast<qsizetype>(
+        teacherChoices.value().teachers.size()
+        ));
+    for (const auto& teacher : teacherChoices.value().teachers)
+    {
+        teachers.append(uiTeacher(teacher));
+    }
+    m_teacherSection->setTeachers(teachers);
     readSelectedClassSnapshot();
     selectCachedTeacher();
     updateTitle();
@@ -426,19 +497,5 @@ int ClassCoTeacherPage::selectedTeacherIdFromSnapshot() const
         return -1;
     }
 
-    const std::string& value = teacherId->value();
-    int parsed = 0;
-    const auto [end, error] = std::from_chars(
-        value.data(),
-        value.data() + value.size(),
-        parsed
-        );
-    if (error != std::errc{}
-        || end != value.data() + value.size()
-        || parsed <= 0
-        || std::to_string(parsed) != value)
-    {
-        return -1;
-    }
-    return parsed;
+    return legacyTeacherIdValue(*teacherId);
 }

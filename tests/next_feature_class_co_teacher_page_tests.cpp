@@ -5,14 +5,17 @@
 #include "features/classes/ui/class_co_teacher_page.h"
 #include "next/application/class_co_teacher_assignment_use_case.h"
 #include "next/application/class_co_teacher_page_read_query.h"
+#include "next/application/class_co_teacher_teacher_choices_read_query.h"
 #include "ui/shared/dialogs/user_prompt_service.h"
 #include "ui/shared/pages/autosave_coordinator.h"
 #include "ui/shared/pages/page_header.h"
 #include "ui/shared/widgets/sections/teacher_info_section.h"
 
 #include <QComboBox>
+#include <QLineEdit>
 #include <QSqlQuery>
 #include <QSignalSpy>
+#include <QStringList>
 #include <QTemporaryDir>
 #include <QUuid>
 #include <QtTest/QtTest>
@@ -61,6 +64,21 @@ Domain::ClassId typedClassId(const int value)
 Domain::TeacherId typedTeacherId(const int value)
 {
     return *Domain::TeacherId::fromString(std::to_string(value));
+}
+
+QStringList visibleTeacherDetails(const TeacherInfoSection* section)
+{
+    QStringList details;
+    if (!section)
+    {
+        return details;
+    }
+
+    for (const QLineEdit* field : section->findChildren<QLineEdit*>())
+    {
+        details.append(field->text());
+    }
+    return details;
 }
 
 bool updatePersistedTeacherId(
@@ -140,16 +158,46 @@ public:
         ) const override
     {
         ++callCount;
+        if (events)
+        {
+            events->push_back("classInfo");
+        }
         requests.push_back(id);
         return result;
     }
 
     mutable int callCount = 0;
     mutable std::vector<Domain::ClassId> requests;
+    mutable std::vector<std::string>* events = nullptr;
     Application::ClassCoTeacherPageReadResult result =
         Application::ClassCoTeacherPageReadResult::failure({
             .code = Domain::ErrorCode::Technical,
             .message = "Unconfigured page read",
+            .recoverable = false
+        });
+};
+
+class RecordingTeacherChoicesReadPort final
+    : public Application::ClassCoTeacherTeacherChoicesReadPort
+{
+public:
+    [[nodiscard]] Application::ClassCoTeacherTeacherChoicesResult
+    readClassCoTeacherTeacherChoices() const override
+    {
+        ++callCount;
+        if (events)
+        {
+            events->push_back("teacherChoices");
+        }
+        return result;
+    }
+
+    mutable int callCount = 0;
+    mutable std::vector<std::string>* events = nullptr;
+    Application::ClassCoTeacherTeacherChoicesResult result =
+        Application::ClassCoTeacherTeacherChoicesResult::failure({
+            .code = Domain::ErrorCode::Technical,
+            .message = "Unconfigured teacher choices read",
             .recoverable = false
         });
 };
@@ -201,6 +249,7 @@ private slots:
     void loadDiscardAndSuccessfulSaveUseFreshSnapshotsAtExpectedTimes();
     void readFailuresKeepDefaultSelectionAndIndependentTitleSources();
     void nonpositivePersistedTeacherIdRetainsClassTitleAndClearsSelection();
+    void teacherChoicesFailureWarnsAndClearsDatabaseState();
 
 private:
     RecordingPromptService m_promptService;
@@ -331,7 +380,7 @@ loadDiscardAndSuccessfulSaveUseFreshSnapshotsAtExpectedTimes()
     const int classId = createClass(services);
     const int teacherOne = createTeacher(services);
     Teacher teacherTwoRecord;
-    teacherTwoRecord.teacherEn = QStringLiteral("Second Page Teacher");
+    teacherTwoRecord.teacherEn = QStringLiteral("Alpha Teacher");
     teacherTwoRecord.preferredName = teacherTwoRecord.teacherEn;
     const auto savedTeacherTwo = services.teacherService()->save(teacherTwoRecord);
     const int teacherTwo = savedTeacherTwo ? *savedTeacherTwo : -1;
@@ -341,15 +390,56 @@ loadDiscardAndSuccessfulSaveUseFreshSnapshotsAtExpectedTimes()
 
     RecordingAssignmentPort assignmentPort;
     RecordingPageReadPort readPort;
+    RecordingTeacherChoicesReadPort teacherChoicesPort;
+    std::vector<std::string> readEvents;
+    readPort.events = &readEvents;
+    teacherChoicesPort.events = &readEvents;
     readPort.result = pageReadResult(
         classId,
         Domain::Result<Application::ClassCoTeacherPageFields>::success(
             readFields(teacherOne)
             ),
-        Domain::Result<std::u16string>::success(u"Page Teacher")
+        Domain::Result<std::u16string>::success(u"Zulu Teacher")
         );
+    Application::ClassCoTeacherTeacherChoicesSnapshot choices;
+    choices.teachers = {
+        {
+            .teacherId = typedTeacherId(teacherTwo),
+            .teacherKr = u"\uBC15\uBBFC\uC900",
+            .teacherEn = u"Alpha Teacher",
+            .roomNumber = u"Room Two",
+            .internetType = u"Ethernet",
+            .wifiName = u"Network Two",
+            .wifiPassword = u"Password Two",
+            .projectionType = u"Zoom",
+            .zoomId = u"Zoom Two",
+            .zoomPassword = u"Zoom Password Two"
+        },
+        {
+            .teacherId = typedTeacherId(teacherOne),
+            .teacherKr = u"\uAE40\uBBFC\uC900",
+            .teacherEn = u"Zulu Teacher",
+            .roomNumber = u"Room One",
+            .internetType = u"WiFi",
+            .wifiName = u"Network One",
+            .wifiPassword = u"Password One",
+            .projectionType = u"HDMI",
+            .zoomId = u"Zoom One",
+            .zoomPassword = u"Zoom Password One"
+        }
+    };
+    teacherChoicesPort.result =
+        Application::ClassCoTeacherTeacherChoicesResult::success(
+            std::move(choices)
+            );
     ClassCoTeacherPage page(
-        &services, false, nullptr, &assignmentPort, &readPort);
+        &services,
+        false,
+        nullptr,
+        &assignmentPort,
+        &readPort,
+        &teacherChoicesPort
+        );
     page.setSaveMode(SaveMode::Manual);
     page.loadClass(Classroom(QStringLiteral("Co-Teacher Page Test"), classId));
 
@@ -358,14 +448,44 @@ loadDiscardAndSuccessfulSaveUseFreshSnapshotsAtExpectedTimes()
     QVERIFY(section);
     QVERIFY(header);
     QCOMPARE(readPort.callCount, 1);
+    QCOMPARE(teacherChoicesPort.callCount, 1);
+    QVERIFY((readEvents == std::vector<std::string>{
+        "teacherChoices", "classInfo"
+    }));
     QVERIFY(readPort.requests.front() == typedClassId(classId));
     QCOMPARE(section->teacherId(), teacherOne);
-    QVERIFY(header->subtitle().contains(QStringLiteral("Page Teacher")));
+    QVERIFY(header->subtitle().contains(QStringLiteral("Zulu Teacher")));
+    QCOMPARE(section->teacherSelector()->currentData().toInt(), teacherOne);
+    QCOMPARE(section->teacherSelector()->currentText(),
+             QStringLiteral("\uAE40\uBBFC\uC900"));
+    QCOMPARE(section->teacherSelector()->itemData(0).toInt(), -1);
+    QCOMPARE(section->teacherSelector()->itemData(1).toInt(), teacherOne);
+    QCOMPARE(section->teacherSelector()->itemData(2).toInt(), teacherTwo);
+    auto* englishSelector =
+        section->findChild<QComboBox*>(QStringLiteral("teacherEnCombo"));
+    QVERIFY(englishSelector);
+    QCOMPARE(englishSelector->currentData().toInt(), teacherOne);
+    QCOMPARE(englishSelector->currentText(), QStringLiteral("Zulu Teacher"));
+    QCOMPARE(englishSelector->itemData(0).toInt(), -1);
+    QCOMPARE(englishSelector->itemData(1).toInt(), teacherTwo);
+    QCOMPARE(englishSelector->itemData(2).toInt(), teacherOne);
+    const QStringList teacherOneDetails{
+        QStringLiteral("Room One"),
+        QStringLiteral("WiFi"),
+        QStringLiteral("Network One"),
+        QStringLiteral("Password One"),
+        QStringLiteral("HDMI"),
+        QStringLiteral("Zoom One"),
+        QStringLiteral("Zoom Password One")
+    };
+    QVERIFY(visibleTeacherDetails(section) == teacherOneDetails);
 
     page.refresh();
     QCOMPARE(readPort.callCount, 1);
+    QCOMPARE(teacherChoicesPort.callCount, 1);
     page.retranslateUi();
     QCOMPARE(readPort.callCount, 1);
+    QCOMPARE(teacherChoicesPort.callCount, 1);
 
     QComboBox* selector = section->teacherSelector();
     QVERIFY(selector);
@@ -378,7 +498,7 @@ loadDiscardAndSuccessfulSaveUseFreshSnapshotsAtExpectedTimes()
         Domain::Result<Application::ClassCoTeacherPageFields>::success(
             readFields(teacherTwo, u"G2", u"After Assignment")
             ),
-        Domain::Result<std::u16string>::success(u"Second Page Teacher")
+        Domain::Result<std::u16string>::success(u"Alpha Teacher")
         );
 
     QVERIFY(page.saveChanges());
@@ -387,8 +507,23 @@ loadDiscardAndSuccessfulSaveUseFreshSnapshotsAtExpectedTimes()
     QCOMPARE(assignmentPort.requests.front().teacherId->value(),
         std::to_string(teacherTwo));
     QCOMPARE(readPort.callCount, 2);
+    QCOMPARE(teacherChoicesPort.callCount, 1);
+    QVERIFY((readEvents == std::vector<std::string>{
+        "teacherChoices", "classInfo", "classInfo"
+    }));
     QCOMPARE(section->teacherId(), teacherTwo);
-    QVERIFY(header->subtitle().contains(QStringLiteral("Second Page Teacher")));
+    QCOMPARE(section->teacherSelector()->currentData().toInt(), teacherTwo);
+    const QStringList teacherTwoDetails{
+        QStringLiteral("Room Two"),
+        QStringLiteral("Ethernet"),
+        QStringLiteral("Network Two"),
+        QStringLiteral("Password Two"),
+        QStringLiteral("Zoom"),
+        QStringLiteral("Zoom Two"),
+        QStringLiteral("Zoom Password Two")
+    };
+    QVERIFY(visibleTeacherDetails(section) == teacherTwoDetails);
+    QVERIFY(header->subtitle().contains(QStringLiteral("Alpha Teacher")));
     QVERIFY(header->subtitle().contains(QStringLiteral("G2")));
     QVERIFY(!page.hasUnsavedChanges());
 
@@ -401,18 +536,36 @@ loadDiscardAndSuccessfulSaveUseFreshSnapshotsAtExpectedTimes()
         Domain::Result<Application::ClassCoTeacherPageFields>::success(
             readFields(teacherOne, u"E4", u"Discard Reload")
             ),
-        Domain::Result<std::u16string>::success(u"Page Teacher")
+        Domain::Result<std::u16string>::success(u"Zulu Teacher")
         );
 
     page.discardChanges();
     QCOMPARE(readPort.callCount, 3);
+    QCOMPARE(teacherChoicesPort.callCount, 2);
+    QVERIFY((readEvents == std::vector<std::string>{
+        "teacherChoices", "classInfo", "classInfo",
+        "teacherChoices", "classInfo"
+    }));
     QCOMPARE(section->teacherId(), teacherOne);
+    QCOMPARE(section->teacherSelector()->currentData().toInt(), teacherOne);
+    QCOMPARE(section->teacherSelector()->currentText(),
+             QStringLiteral("\uAE40\uBBFC\uC900"));
+    QCOMPARE(section->teacherSelector()->itemData(0).toInt(), -1);
+    QCOMPARE(section->teacherSelector()->itemData(1).toInt(), teacherOne);
+    QCOMPARE(section->teacherSelector()->itemData(2).toInt(), teacherTwo);
+    QCOMPARE(englishSelector->currentData().toInt(), teacherOne);
+    QCOMPARE(englishSelector->currentText(), QStringLiteral("Zulu Teacher"));
+    QCOMPARE(englishSelector->itemData(0).toInt(), -1);
+    QCOMPARE(englishSelector->itemData(1).toInt(), teacherTwo);
+    QCOMPARE(englishSelector->itemData(2).toInt(), teacherOne);
+    QVERIFY(visibleTeacherDetails(section) == teacherOneDetails);
     QVERIFY(header->subtitle().contains(QStringLiteral("Discard Reload")));
-    QVERIFY(header->subtitle().contains(QStringLiteral("Page Teacher")));
+    QVERIFY(header->subtitle().contains(QStringLiteral("Zulu Teacher")));
     QVERIFY(!page.hasUnsavedChanges());
     QCOMPARE(assignmentPort.callCount, 1);
     page.clearDatabaseState();
     QCOMPARE(readPort.callCount, 3);
+    QCOMPARE(teacherChoicesPort.callCount, 2);
     QCOMPARE(header->subtitle(), QStringLiteral("No class selected"));
 }
 
@@ -517,6 +670,57 @@ nonpositivePersistedTeacherIdRetainsClassTitleAndClearsSelection()
     QVERIFY(header->subtitle().contains(QStringLiteral("No Teacher")));
     QVERIFY(header->subtitle().contains(QStringLiteral("Mon")));
     QVERIFY(header->subtitle().contains(QStringLiteral("4:15")));
+}
+
+void NextFeatureClassCoTeacherPageTests::
+teacherChoicesFailureWarnsAndClearsDatabaseState()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+    const int classId = createClass(services);
+    QVERIFY(classId > 0);
+
+    RecordingPageReadPort classReadPort;
+    RecordingTeacherChoicesReadPort teacherChoicesPort;
+    teacherChoicesPort.result =
+        Application::ClassCoTeacherTeacherChoicesResult::failure({
+            .code = Domain::ErrorCode::Technical,
+            .message = "teacher catalogue unavailable",
+            .recoverable = false
+        });
+    ClassCoTeacherPage page(
+        &services,
+        false,
+        nullptr,
+        nullptr,
+        &classReadPort,
+        &teacherChoicesPort
+        );
+
+    page.loadClass(Classroom(QStringLiteral("Co-Teacher Page Test"), classId));
+
+    const auto* section = page.findChild<TeacherInfoSection*>();
+    const auto* header = page.findChild<PageHeader*>();
+    QVERIFY(section);
+    QVERIFY(header);
+    QCOMPARE(teacherChoicesPort.callCount, 1);
+    QCOMPARE(classReadPort.callCount, 0);
+    QCOMPARE(section->teacherId(), -1);
+    QCOMPARE(section->teacherSelector()->count(), 1);
+    QCOMPARE(section->teacherSelector()->currentData().toInt(), -1);
+    QCOMPARE(header->subtitle(), QStringLiteral("No class selected"));
+    QVERIFY(!page.hasUnsavedChanges());
+
+    QCOMPARE(m_promptService.requests.size(), std::size_t(1));
+    QCOMPARE(m_promptService.requests.front().severity, PromptSeverity::Warning);
+    QCOMPARE(m_promptService.requests.front().title,
+             QStringLiteral("Load Co-Teacher"));
+    QCOMPARE(m_promptService.requests.front().message,
+             QStringLiteral("Teachers could not be loaded."));
+    QCOMPARE(m_promptService.requests.front().details,
+             QStringLiteral("teacher catalogue unavailable"));
 }
 
 QTEST_MAIN(NextFeatureClassCoTeacherPageTests)

@@ -17,6 +17,7 @@ namespace ClassMngr::Next::Application
 {
 class ClassCoTeacherAssignmentPort;
 class ClassCoTeacherPageReadPort;
+class ClassCoTeacherTeacherChoicesReadPort;
 }
 
 class QLabel;
@@ -35,7 +36,9 @@ public:
         ClassMngr::Next::Application::ClassCoTeacherAssignmentPort*
             assignmentPort = nullptr,
         ClassMngr::Next::Application::ClassCoTeacherPageReadPort*
-            readPort = nullptr
+            readPort = nullptr,
+        ClassMngr::Next::Application::ClassCoTeacherTeacherChoicesReadPort*
+            teacherChoicesReadPort = nullptr
         );
 
     void loadClass(
@@ -75,6 +78,8 @@ private:
         m_assignmentPort{nullptr};
     ClassMngr::Next::Application::ClassCoTeacherPageReadPort*
         m_readPort{nullptr};
+    ClassMngr::Next::Application::ClassCoTeacherTeacherChoicesReadPort*
+        m_teacherChoicesReadPort{nullptr};
     std::optional<
         ClassMngr::Next::Application::ClassCoTeacherPageReadSnapshot
         > m_readSnapshot;
