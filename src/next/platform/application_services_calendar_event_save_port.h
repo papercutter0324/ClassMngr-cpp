@@ -1,13 +1,16 @@
 #pragma once
 
-#include "app/services/feature_services.h"
 #include "core/application_services.h"
+#include "data/database/database_session.h"
+#include "data/repositories/calendar_event_repository.h"
+#include "domain/validation/calendar_event_validator.h"
 #include "next/application/calendar_event_save_port.h"
 
 #include <QByteArray>
 #include <QDate>
-#include <QTime>
 #include <QString>
+#include <QStringList>
+#include <QTime>
 
 #include <charconv>
 #include <exception>
@@ -73,8 +76,8 @@ public:
                     );
             }
 
-            const CalendarService* service = m_services.calendarService();
-            if (!service || !service->isAvailable())
+            DatabaseSession* const session = m_services.databaseSession();
+            if (!session || !session->isOpen())
             {
                 return failure(
                     Domain::ErrorCode::NotFound,
@@ -122,10 +125,34 @@ public:
             // repeat editing remain on the existing batch-save path.
             event.repeatSeriesId.clear();
 
-            const ::Result<QList<int>> saved = service->saveEvents({event});
+            const CalendarEvent normalized =
+                CalendarEventValidator::normalized(event);
+            const QList<CalendarEvent> normalizedEvents{normalized};
+            const ValidationResult validation =
+                CalendarEventValidator::validateSeries(normalizedEvents);
+            if (validation.hasErrors())
+            {
+                return failure(
+                    Domain::ErrorCode::Technical,
+                    validationError(validation)
+                    );
+            }
+
+            CalendarEventRepository* const repository =
+                session->calendarEventRepository();
+            if (!repository)
+            {
+                return failure(
+                    Domain::ErrorCode::NotFound,
+                    "The calendar event repository is unavailable."
+                    );
+            }
+
+            const ::Result<QList<int>> saved =
+                repository->saveCalendarEvents(normalizedEvents);
             if (!saved)
             {
-                if (!service->isAvailable())
+                if (!session->isOpen())
                 {
                     return failure(
                         Domain::ErrorCode::NotFound,
@@ -173,6 +200,28 @@ public:
     }
 
 private:
+    [[nodiscard]] static std::string validationError(
+        const ValidationResult& validation
+        )
+    {
+        QStringList details;
+        for (const ValidationIssue& issue : validation.errors())
+        {
+            QString detail = issue.field.isEmpty()
+                ? issue.code
+                : QStringLiteral("%1: %2").arg(issue.field, issue.code);
+            if (issue.row >= 0 && !issue.field.contains(QChar(u'[')))
+            {
+                detail.prepend(QStringLiteral("row %1, ").arg(issue.row + 1));
+            }
+            details.append(detail);
+        }
+
+        return QStringLiteral("Calendar events validation failed: %1")
+            .arg(details.join(QStringLiteral("; ")))
+            .toStdString();
+    }
+
     [[nodiscard]] static QString legacyText(
         const std::string& value
         )

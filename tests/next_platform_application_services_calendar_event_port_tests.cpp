@@ -2,6 +2,7 @@
 #include "app/services/feature_services.h"
 #include "data/data_service.h"
 #include "data/database/database_session.h"
+#include "data/repositories/calendar_event_repository.h"
 #include "next/application/calendar_event_by_id_query_port.h"
 #include "next/application/calendar_event_delete_port.h"
 #include "next/application/calendar_event_delete_all_port.h"
@@ -254,7 +255,7 @@ private slots:
     void reportsUnavailableImportSaveServiceStructurally();
     void createsAndUpdatesValidEventWithTypedIdMapping();
     void reportsInvalidSaveRequestStructurally();
-    void reportsUnavailableSaveServiceStructurally();
+    void reportsUnavailableSaveSessionStructurally();
     void reportsSaveServiceFailureStructurally();
     void createsDailyWeeklyMonthlySeriesWithTypedIdsAndParity();
     void reportsInvalidSeriesCreateRequestStructurally();
@@ -1026,11 +1027,17 @@ createsAndUpdatesValidEventWithTypedIdMapping()
 {
     ApplicationServices services;
     QVERIFY(openDatabase(services, m_directory));
-    CalendarService* legacyService = services.calendarService();
-    QVERIFY(legacyService);
+    QVERIFY(services.dataService());
+    DatabaseSession* const session = services.databaseSession();
+    QVERIFY(session);
+    QVERIFY(session->isOpen());
+    CalendarEventRepository* const repository =
+        session->calendarEventRepository();
+    QVERIFY(repository);
 
     ApplicationServicesCalendarEventSavePort port(services);
-    const CalendarEventSaveRequest createRequest = validSaveRequest();
+    CalendarEventSaveRequest createRequest = validSaveRequest();
+    createRequest.title = "  Typed   save event  ";
     const auto created = port.saveEvent(createRequest);
     QVERIFY(created);
 
@@ -1045,7 +1052,7 @@ createsAndUpdatesValidEventWithTypedIdMapping()
         );
     QVERIFY(converted);
     QVERIFY(legacyId > 0);
-    const auto loadedCreated = legacyService->event(legacyId);
+    const auto loadedCreated = repository->getCalendarEvent(legacyId);
     QVERIFY(loadedCreated);
     QCOMPARE(loadedCreated->id, legacyId);
     QCOMPARE(loadedCreated->title, QStringLiteral("Typed save event"));
@@ -1067,7 +1074,7 @@ createsAndUpdatesValidEventWithTypedIdMapping()
     QVERIFY(updated);
     QCOMPARE(updated.value(), createdId);
 
-    const auto loadedUpdated = legacyService->event(legacyId);
+    const auto loadedUpdated = repository->getCalendarEvent(legacyId);
     QVERIFY(loadedUpdated);
     QCOMPARE(loadedUpdated->id, legacyId);
     QCOMPARE(loadedUpdated->title, QStringLiteral("Typed updated event"));
@@ -1075,13 +1082,12 @@ createsAndUpdatesValidEventWithTypedIdMapping()
     QCOMPARE(loadedUpdated->endDate, QDate(2026, 12, 12));
     QCOMPARE(loadedUpdated->startTime, QTime(11, 0));
     QCOMPARE(loadedUpdated->endTime, QTime(12, 30));
-    QCOMPARE(
-        legacyService->eventsInRange(
+    const auto loadedRange = repository->loadCalendarEventsInRange(
             QDate(2026, 12, 10),
             QDate(2026, 12, 12)
-            )->size(),
-        1
-        );
+            );
+    QVERIFY(loadedRange);
+    QCOMPARE(loadedRange->size(), 1);
 }
 
 void NextPlatformApplicationServicesCalendarEventPortTests::
@@ -1119,10 +1125,26 @@ reportsInvalidSaveRequestStructurally()
 }
 
 void NextPlatformApplicationServicesCalendarEventPortTests::
-reportsUnavailableSaveServiceStructurally()
+reportsUnavailableSaveSessionStructurally()
 {
     ApplicationServices services;
+    QVERIFY(services.dataService());
+    DatabaseSession* const session = services.databaseSession();
+    QVERIFY(session);
+    QVERIFY(!session->isOpen());
+
     ApplicationServicesCalendarEventSavePort port(services);
+
+    verifyFailure(
+        port.saveEvent(validSaveRequest()),
+        ErrorCode::NotFound
+        );
+
+    QVERIFY(openDatabase(services, m_directory));
+    QVERIFY(session->isOpen());
+    services.closeDatabase();
+    QVERIFY(services.dataService());
+    QVERIFY(!session->isOpen());
 
     verifyFailure(
         port.saveEvent(validSaveRequest()),
@@ -1135,9 +1157,10 @@ reportsSaveServiceFailureStructurally()
 {
     ApplicationServices services;
     QVERIFY(openDatabase(services, m_directory));
+    QVERIFY(services.dataService());
 
     QSqlQuery query(
-        services.dataService()->databaseSession()->database()
+        services.databaseSession()->database()
         );
     QVERIFY(query.exec(QStringLiteral(
         "CREATE TRIGGER reject_calendar_save "
