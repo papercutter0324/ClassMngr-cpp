@@ -114,11 +114,41 @@ class NextPlatformApplicationServicesRosterReadPortTests final : public QObject
     Q_OBJECT
 
 private slots:
+    void rejectsNonCanonicalIdsBeforeSessionAccess();
     void readsCompleteRawSnapshotWithoutUiRowLimit();
     void missingRosterIsSuccessfulEmptySnapshot();
     void repositoryErrorIsStructured();
     void closedSessionFailsWithoutDataServiceFallback();
 };
+
+void NextPlatformApplicationServicesRosterReadPortTests::
+rejectsNonCanonicalIdsBeforeSessionAccess()
+{
+    ApplicationServices services;
+    Platform::ApplicationServicesRosterReadPort port(services);
+
+    for (const std::string classId : {
+             "0",
+             "-2",
+             "+42",
+             "class-42",
+             " 42",
+             "42 ",
+             "01",
+             "00042",
+             "999999999999999999999"
+         })
+    {
+        const auto typedId = Domain::ClassId::fromString(classId);
+        QVERIFY(typedId);
+
+        const Application::RosterReadResult result = port.readRoster({
+            .classId = *typedId
+        });
+        QVERIFY(!result);
+        QCOMPARE(result.error().code, Domain::ErrorCode::InvalidInput);
+    }
+}
 
 void NextPlatformApplicationServicesRosterReadPortTests::
 readsCompleteRawSnapshotWithoutUiRowLimit()

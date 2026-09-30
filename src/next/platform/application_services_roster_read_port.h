@@ -1,8 +1,8 @@
 #pragma once
 
-#include "app/services/feature_services.h"
 #include "core/application_services.h"
 #include "data/database/database_session.h"
+#include "data/repositories/roster_repository.h"
 #include "domain/models/roster.h"
 #include "next/application/roster_read_query.h"
 
@@ -73,15 +73,18 @@ public:
             return unavailableFailure();
         }
 
-        RosterService* const service = m_services->rosterService();
-        if (!service || !service->isAvailable())
+        RosterRepository* const repository = session->rosterRepository();
+        if (!repository)
         {
-            return unavailableFailure();
+            return failure(
+                Domain::ErrorCode::Technical,
+                "Roster repository is unavailable."
+                );
         }
 
         try
         {
-            const Result<Roster> loaded = service->roster(*classId);
+            const Result<Roster> loaded = repository->loadRoster(*classId);
             if (!loaded)
             {
                 return failure(
