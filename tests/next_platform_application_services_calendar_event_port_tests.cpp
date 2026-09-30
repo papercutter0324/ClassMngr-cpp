@@ -268,7 +268,7 @@ private slots:
     void reportsRepeatSeriesDateOverflowBeforePersistence();
     void propagatesAllDayAndUnknownTimePolicy();
     void reportsInvalidRepeatSeriesEditRequestStructurally();
-    void reportsUnavailableRepeatSeriesEditServiceStructurally();
+    void reportsUnavailableRepeatSeriesEditSessionStructurally();
     void reportsRepeatSeriesEditReadFailureStructurally();
     void reportsRepeatSeriesEditSaveFailureStructurally();
     void deletesValidRepeatSeriesSuffix();
@@ -1718,8 +1718,13 @@ editsValidRepeatSeriesSuffixWithTypedParity()
 {
     ApplicationServices services;
     QVERIFY(openDatabase(services, m_directory));
-    CalendarService* legacyService = services.calendarService();
-    QVERIFY(legacyService);
+    QVERIFY(services.dataService());
+    DatabaseSession* const session = services.databaseSession();
+    QVERIFY(session);
+    QVERIFY(session->isOpen());
+    CalendarEventRepository* const repository =
+        session->calendarEventRepository();
+    QVERIFY(repository);
 
     const QString repeatSeriesId = QStringLiteral("series-edit");
     const QList<QDate> occurrenceDates = {
@@ -1742,12 +1747,27 @@ editsValidRepeatSeriesSuffixWithTypedParity()
         event.eventType = QStringLiteral("Meeting");
         event.timeStatus = QStringLiteral("Timed");
         event.repeatSeriesId = repeatSeriesId;
-        const int eventId = saveEvent(*legacyService, event);
+        const auto saved = repository->saveCalendarEvent(event);
+        QVERIFY(saved);
+        const int eventId = *saved;
         QVERIFY(eventId > 0);
         eventIds.append(eventId);
     }
 
-    const auto before = legacyService->repeatSeriesFromDate(
+    CalendarEvent unrelatedEvent = makeEvent(
+        QStringLiteral("Unrelated repeat event"),
+        QDate(2026, 12, 15),
+        QDate(2026, 12, 16)
+        );
+    unrelatedEvent.startTime = QTime(15, 0);
+    unrelatedEvent.endTime = QTime(16, 0);
+    unrelatedEvent.repeatSeriesId = QStringLiteral("series-other-edit");
+    const auto unrelatedSaved = repository->saveCalendarEvent(unrelatedEvent);
+    QVERIFY(unrelatedSaved);
+    const int unrelatedEventId = *unrelatedSaved;
+    QVERIFY(unrelatedEventId > 0);
+
+    const auto before = repository->loadCalendarEventsForRepeatSeriesFromDate(
         repeatSeriesId,
         QDate(2026, 12, 1)
         );
@@ -1764,7 +1784,7 @@ editsValidRepeatSeriesSuffixWithTypedParity()
     const auto edited = port.editRepeatSeriesFromDate(request);
     QVERIFY(edited);
 
-    const auto after = legacyService->repeatSeriesFromDate(
+    const auto after = repository->loadCalendarEventsForRepeatSeriesFromDate(
         repeatSeriesId,
         QDate(2026, 12, 1)
         );
@@ -1798,6 +1818,15 @@ editsValidRepeatSeriesSuffixWithTypedParity()
         QCOMPARE(event.startTime, QTime(13, 15));
         QCOMPARE(event.endTime, QTime(14, 45));
     }
+
+    const auto unrelated = repository->getCalendarEvent(unrelatedEventId);
+    QVERIFY(unrelated);
+    QCOMPARE(unrelated->title, QStringLiteral("Unrelated repeat event"));
+    QCOMPARE(unrelated->repeatSeriesId, QStringLiteral("series-other-edit"));
+    QCOMPARE(unrelated->startDate, QDate(2026, 12, 15));
+    QCOMPARE(unrelated->endDate, QDate(2026, 12, 16));
+    QCOMPARE(unrelated->startTime, QTime(15, 0));
+    QCOMPARE(unrelated->endTime, QTime(16, 0));
 }
 
 void NextPlatformApplicationServicesCalendarEventPortTests::
@@ -1805,8 +1834,13 @@ acceptsEmptyRepeatSeriesEditSuffixAsNoOp()
 {
     ApplicationServices services;
     QVERIFY(openDatabase(services, m_directory));
-    CalendarService* legacyService = services.calendarService();
-    QVERIFY(legacyService);
+    QVERIFY(services.dataService());
+    DatabaseSession* const session = services.databaseSession();
+    QVERIFY(session);
+    QVERIFY(session->isOpen());
+    CalendarEventRepository* const repository =
+        session->calendarEventRepository();
+    QVERIFY(repository);
 
     const QString repeatSeriesId = QStringLiteral("series-empty-edit-suffix");
     CalendarEvent event = makeEvent(
@@ -1817,10 +1851,12 @@ acceptsEmptyRepeatSeriesEditSuffixAsNoOp()
     event.startTime = QTime(9, 0);
     event.endTime = QTime(10, 0);
     event.repeatSeriesId = repeatSeriesId;
-    const int eventId = saveEvent(*legacyService, event);
+    const auto saved = repository->saveCalendarEvent(event);
+    QVERIFY(saved);
+    const int eventId = *saved;
     QVERIFY(eventId > 0);
 
-    const auto before = legacyService->repeatSeriesFromDate(
+    const auto before = repository->loadCalendarEventsForRepeatSeriesFromDate(
         repeatSeriesId,
         QDate(2026, 12, 8)
         );
@@ -1833,14 +1869,14 @@ acceptsEmptyRepeatSeriesEditSuffixAsNoOp()
     const auto edited = port.editRepeatSeriesFromDate(request);
 
     QVERIFY(edited);
-    const auto after = legacyService->repeatSeriesFromDate(
+    const auto after = repository->loadCalendarEventsForRepeatSeriesFromDate(
         repeatSeriesId,
         QDate(2026, 12, 8)
         );
     QVERIFY(after);
     QVERIFY(after->isEmpty());
 
-    const auto unchanged = legacyService->event(eventId);
+    const auto unchanged = repository->getCalendarEvent(eventId);
     QVERIFY(unchanged);
     QCOMPARE(unchanged->title, QStringLiteral("Before selected suffix"));
     QCOMPARE(unchanged->startDate, QDate(2026, 12, 1));
@@ -1852,8 +1888,13 @@ reportsInvalidRepeatSeriesSourceDateBeforePersistence()
 {
     ApplicationServices services;
     QVERIFY(openDatabase(services, m_directory));
-    CalendarService* legacyService = services.calendarService();
-    QVERIFY(legacyService);
+    QVERIFY(services.dataService());
+    DatabaseSession* const session = services.databaseSession();
+    QVERIFY(session);
+    QVERIFY(session->isOpen());
+    CalendarEventRepository* const repository =
+        session->calendarEventRepository();
+    QVERIFY(repository);
 
     const QString repeatSeriesId = QStringLiteral("series-invalid-source-date");
     CalendarEvent event = makeEvent(
@@ -1864,12 +1905,12 @@ reportsInvalidRepeatSeriesSourceDateBeforePersistence()
     event.startTime = QTime(9, 0);
     event.endTime = QTime(10, 0);
     event.repeatSeriesId = repeatSeriesId;
-    const int eventId = saveEvent(*legacyService, event);
+    const auto saved = repository->saveCalendarEvent(event);
+    QVERIFY(saved);
+    const int eventId = *saved;
     QVERIFY(eventId > 0);
 
-    QSqlQuery corruptSourceDate(
-        services.dataService()->databaseSession()->database()
-        );
+    QSqlQuery corruptSourceDate(session->database());
     corruptSourceDate.prepare(QStringLiteral(
         "UPDATE calendar_events SET start_date=? WHERE id=?"
         ));
@@ -1877,7 +1918,7 @@ reportsInvalidRepeatSeriesSourceDateBeforePersistence()
     corruptSourceDate.addBindValue(eventId);
     QVERIFY(corruptSourceDate.exec());
 
-    const auto selected = legacyService->repeatSeriesFromDate(
+    const auto selected = repository->loadCalendarEventsForRepeatSeriesFromDate(
         repeatSeriesId,
         QDate(2026, 12, 8)
         );
@@ -1885,9 +1926,7 @@ reportsInvalidRepeatSeriesSourceDateBeforePersistence()
     QCOMPARE(selected->size(), 1);
     QVERIFY(!selected->front().startDate.isValid());
 
-    QSqlQuery rejectPersistence(
-        services.dataService()->databaseSession()->database()
-        );
+    QSqlQuery rejectPersistence(session->database());
     QVERIFY(rejectPersistence.exec(QStringLiteral(
         "CREATE TRIGGER reject_calendar_series_edit "
         "BEFORE UPDATE ON calendar_events "
@@ -1906,7 +1945,7 @@ reportsInvalidRepeatSeriesSourceDateBeforePersistence()
             "A calendar repeat-series occurrence has an invalid start date."
             )
         );
-    const auto unchanged = legacyService->event(eventId);
+    const auto unchanged = repository->getCalendarEvent(eventId);
     QVERIFY(unchanged);
     QCOMPARE(unchanged->title, QStringLiteral("Invalid source date"));
 }
@@ -1916,8 +1955,13 @@ reportsRepeatSeriesDateOverflowBeforePersistence()
 {
     ApplicationServices services;
     QVERIFY(openDatabase(services, m_directory));
-    CalendarService* legacyService = services.calendarService();
-    QVERIFY(legacyService);
+    QVERIFY(services.dataService());
+    DatabaseSession* const session = services.databaseSession();
+    QVERIFY(session);
+    QVERIFY(session->isOpen());
+    CalendarEventRepository* const repository =
+        session->calendarEventRepository();
+    QVERIFY(repository);
 
     const QString repeatSeriesId = QStringLiteral("series-edit-date-overflow");
     CalendarEvent event = makeEvent(
@@ -1927,12 +1971,12 @@ reportsRepeatSeriesDateOverflowBeforePersistence()
         );
     event.allDay = true;
     event.repeatSeriesId = repeatSeriesId;
-    const int eventId = saveEvent(*legacyService, event);
+    const auto saved = repository->saveCalendarEvent(event);
+    QVERIFY(saved);
+    const int eventId = *saved;
     QVERIFY(eventId > 0);
 
-    QSqlQuery rejectPersistence(
-        services.dataService()->databaseSession()->database()
-        );
+    QSqlQuery rejectPersistence(session->database());
     QVERIFY(rejectPersistence.exec(QStringLiteral(
         "CREATE TRIGGER reject_calendar_series_edit "
         "BEFORE UPDATE ON calendar_events "
@@ -1957,7 +2001,7 @@ reportsRepeatSeriesDateOverflowBeforePersistence()
             "A calendar repeat-series edit would move an occurrence outside the supported date range."
             )
         );
-    const auto unchanged = legacyService->event(eventId);
+    const auto unchanged = repository->getCalendarEvent(eventId);
     QVERIFY(unchanged);
     QCOMPARE(unchanged->title, QStringLiteral("At supported date boundary"));
     QCOMPARE(unchanged->startDate, QDate(9999, 12, 31));
@@ -1969,8 +2013,13 @@ propagatesAllDayAndUnknownTimePolicy()
 {
     ApplicationServices services;
     QVERIFY(openDatabase(services, m_directory));
-    CalendarService* legacyService = services.calendarService();
-    QVERIFY(legacyService);
+    QVERIFY(services.dataService());
+    DatabaseSession* const session = services.databaseSession();
+    QVERIFY(session);
+    QVERIFY(session->isOpen());
+    CalendarEventRepository* const repository =
+        session->calendarEventRepository();
+    QVERIFY(repository);
 
     const QString repeatSeriesId = QStringLiteral("series-time-policy");
     const QList<QDate> occurrenceDates = {
@@ -1989,7 +2038,9 @@ propagatesAllDayAndUnknownTimePolicy()
         event.startTime = QTime(9, 0);
         event.endTime = QTime(10, 0);
         event.repeatSeriesId = repeatSeriesId;
-        const int eventId = saveEvent(*legacyService, event);
+        const auto saved = repository->saveCalendarEvent(event);
+        QVERIFY(saved);
+        const int eventId = *saved;
         QVERIFY(eventId > 0);
         eventIds.append(eventId);
     }
@@ -2011,7 +2062,7 @@ propagatesAllDayAndUnknownTimePolicy()
 
     for (qsizetype index = 0; index < eventIds.size(); ++index)
     {
-        const auto loaded = legacyService->event(eventIds.at(index));
+        const auto loaded = repository->getCalendarEvent(eventIds.at(index));
         QVERIFY(loaded);
         QCOMPARE(loaded->id, eventIds.at(index));
         QCOMPARE(loaded->title, QStringLiteral("All-day policy"));
@@ -2038,14 +2089,14 @@ propagatesAllDayAndUnknownTimePolicy()
     };
     QVERIFY(port.editRepeatSeriesFromDate(unknownRequest));
 
-    const auto untouched = legacyService->event(eventIds.at(0));
+    const auto untouched = repository->getCalendarEvent(eventIds.at(0));
     QVERIFY(untouched);
     QVERIFY(untouched->allDay);
     QCOMPARE(untouched->title, QStringLiteral("All-day policy"));
 
     for (qsizetype index = 1; index < eventIds.size(); ++index)
     {
-        const auto loaded = legacyService->event(eventIds.at(index));
+        const auto loaded = repository->getCalendarEvent(eventIds.at(index));
         QVERIFY(loaded);
         QCOMPARE(loaded->id, eventIds.at(index));
         QCOMPARE(loaded->title, QStringLiteral("Unknown policy"));
@@ -2094,14 +2145,44 @@ reportsInvalidRepeatSeriesEditRequestStructurally()
 }
 
 void NextPlatformApplicationServicesCalendarEventPortTests::
-reportsUnavailableRepeatSeriesEditServiceStructurally()
+reportsUnavailableRepeatSeriesEditSessionStructurally()
 {
     ApplicationServices services;
+    QVERIFY(services.dataService());
+    DatabaseSession* const session = services.databaseSession();
+    QVERIFY(session);
+    QVERIFY(!session->isOpen());
     ApplicationServicesCalendarEventSeriesEditPort port(services);
 
+    auto invalid = validSeriesEditRequest();
+    invalid.repeatSeriesId = " \t";
     verifyFailure(
-        port.editRepeatSeriesFromDate(validSeriesEditRequest()),
-        ErrorCode::NotFound
+        port.editRepeatSeriesFromDate(invalid),
+        ErrorCode::InvalidInput
+        );
+
+    const auto unavailable = port.editRepeatSeriesFromDate(
+        validSeriesEditRequest()
+        );
+    verifyFailure(unavailable, ErrorCode::NotFound);
+    QCOMPARE(
+        unavailable.error().message,
+        std::string("The calendar event repository is unavailable.")
+        );
+
+    QVERIFY(openDatabase(services, m_directory));
+    QVERIFY(session->isOpen());
+    QVERIFY(session->calendarEventRepository());
+    services.closeDatabase();
+    QVERIFY(services.dataService());
+    QVERIFY(!session->isOpen());
+    const auto closed = port.editRepeatSeriesFromDate(
+        validSeriesEditRequest()
+        );
+    verifyFailure(closed, ErrorCode::NotFound);
+    QCOMPARE(
+        closed.error().message,
+        std::string("The calendar event repository is unavailable.")
         );
 }
 
@@ -2110,9 +2191,12 @@ reportsRepeatSeriesEditReadFailureStructurally()
 {
     ApplicationServices services;
     QVERIFY(openDatabase(services, m_directory));
-    QSqlQuery query(
-        services.dataService()->databaseSession()->database()
-        );
+    QVERIFY(services.dataService());
+    DatabaseSession* const session = services.databaseSession();
+    QVERIFY(session);
+    QVERIFY(session->isOpen());
+    QVERIFY(session->calendarEventRepository());
+    QSqlQuery query(session->database());
     QVERIFY(query.exec(QStringLiteral("DROP TABLE calendar_events")));
 
     ApplicationServicesCalendarEventSeriesEditPort port(services);
@@ -2132,15 +2216,21 @@ reportsRepeatSeriesEditSaveFailureStructurally()
 {
     ApplicationServices services;
     QVERIFY(openDatabase(services, m_directory));
-    CalendarService* legacyService = services.calendarService();
-    QVERIFY(legacyService);
+    QVERIFY(services.dataService());
+    DatabaseSession* const session = services.databaseSession();
+    QVERIFY(session);
+    QVERIFY(session->isOpen());
+    CalendarEventRepository* const repository =
+        session->calendarEventRepository();
+    QVERIFY(repository);
 
     const QString repeatSeriesId = QStringLiteral("series-edit-failure");
+    const QList<QDate> occurrenceDates{
+        QDate(2026, 12, 8),
+        QDate(2026, 12, 15)
+    };
     QList<int> eventIds;
-    for (const QDate& startDate : {
-             QDate(2026, 12, 8),
-             QDate(2026, 12, 15)
-         })
+    for (const QDate& startDate : occurrenceDates)
     {
         CalendarEvent event = makeEvent(
             QStringLiteral("Persisted before failure"),
@@ -2150,17 +2240,18 @@ reportsRepeatSeriesEditSaveFailureStructurally()
         event.startTime = QTime(9, 0);
         event.endTime = QTime(10, 0);
         event.repeatSeriesId = repeatSeriesId;
-        const int eventId = saveEvent(*legacyService, event);
+        const auto saved = repository->saveCalendarEvent(event);
+        QVERIFY(saved);
+        const int eventId = *saved;
         QVERIFY(eventId > 0);
         eventIds.append(eventId);
     }
 
-    QSqlQuery query(
-        services.dataService()->databaseSession()->database()
-        );
+    QSqlQuery query(session->database());
     QVERIFY(query.exec(QStringLiteral(
         "CREATE TRIGGER reject_calendar_repeat_edit "
         "BEFORE UPDATE ON calendar_events "
+        "WHEN NEW.start_date = '2026-12-17' "
         "BEGIN "
         "SELECT RAISE(ABORT, 'injected calendar repeat edit failure'); "
         "END"
@@ -2179,12 +2270,14 @@ reportsRepeatSeriesEditSaveFailureStructurally()
             != std::string::npos
         );
 
-    for (const int eventId : eventIds)
+    for (qsizetype index = 0; index < eventIds.size(); ++index)
     {
-        const auto loaded = legacyService->event(eventId);
+        const auto loaded = repository->getCalendarEvent(eventIds.at(index));
         QVERIFY(loaded);
         QCOMPARE(loaded->title, QStringLiteral("Persisted before failure"));
         QCOMPARE(loaded->repeatSeriesId, repeatSeriesId);
+        QCOMPARE(loaded->startDate, occurrenceDates.at(index));
+        QCOMPARE(loaded->endDate, occurrenceDates.at(index));
         QCOMPARE(loaded->startTime, QTime(9, 0));
         QCOMPARE(loaded->endTime, QTime(10, 0));
     }

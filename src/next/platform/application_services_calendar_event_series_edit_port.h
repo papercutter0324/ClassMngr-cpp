@@ -1,15 +1,18 @@
 #pragma once
 
-#include "app/services/feature_services.h"
 #include "core/application_services.h"
+#include "data/database/database_session.h"
+#include "data/repositories/calendar_event_repository.h"
+#include "domain/validation/calendar_event_validator.h"
 #include "next/application/calendar_event_series_edit_port.h"
 #include "next/application/calendar_event_series_edit_plan.h"
 
 #include <QByteArray>
 #include <QDate>
 #include <QList>
-#include <QTime>
 #include <QString>
+#include <QStringList>
+#include <QTime>
 
 #include <exception>
 #include <string>
@@ -19,9 +22,9 @@
 namespace ClassMngr::Next::Platform
 {
 
-// Qt-boundary adapter for editing a repeat-series suffix. The legacy service
-// owns recurrence selection and persistence; the Application planner owns
-// the Qt-free occurrence transformation and this adapter applies its updates.
+// Qt-boundary adapter for editing a repeat-series suffix. The repository
+// selects the recurrence suffix; the Application planner owns the Qt-free
+// occurrence transformation and this adapter applies its updates.
 class ApplicationServicesCalendarEventSeriesEditPort final
     : public Application::CalendarEventSeriesEditPort
 {
@@ -62,12 +65,12 @@ public:
 
         try
         {
-            const CalendarService* service = m_services.calendarService();
-            if (!service || !service->isAvailable())
+            DatabaseSession* const session = m_services.databaseSession();
+            if (!session || !session->isOpen())
             {
                 return failure(
                     Domain::ErrorCode::NotFound,
-                    "The calendar service is unavailable."
+                    "The calendar event repository is unavailable."
                     );
             }
 
@@ -88,18 +91,28 @@ public:
             const QString repeatSeriesId = legacyText(
                 request.repeatSeriesId
                 ).trimmed();
+            CalendarEventRepository* const repository =
+                session->calendarEventRepository();
+            if (!repository)
+            {
+                return failure(
+                    Domain::ErrorCode::NotFound,
+                    "The calendar event repository is unavailable."
+                    );
+            }
+
             const ::Result<QList<CalendarEvent>> seriesEvents =
-                service->repeatSeriesFromDate(
+                repository->loadCalendarEventsForRepeatSeriesFromDate(
                     repeatSeriesId,
                     startDate
                     );
             if (!seriesEvents)
             {
-                if (!service->isAvailable())
+                if (!session->isOpen())
                 {
                     return failure(
                         Domain::ErrorCode::NotFound,
-                        "The calendar service is unavailable."
+                        "The calendar event repository is unavailable."
                         );
                 }
 
@@ -205,18 +218,30 @@ public:
                         );
                 }
 
-                updatedEvents.append(std::move(updatedEvent));
+                updatedEvents.append(
+                    CalendarEventValidator::normalized(updatedEvent)
+                    );
+            }
+
+            const ValidationResult validation =
+                CalendarEventValidator::validateSeries(updatedEvents);
+            if (validation.hasErrors())
+            {
+                return failure(
+                    Domain::ErrorCode::Technical,
+                    validationError(validation)
+                    );
             }
 
             const ::Result<QList<int>> saved =
-                service->saveEvents(updatedEvents);
+                repository->saveCalendarEvents(updatedEvents);
             if (!saved)
             {
-                if (!service->isAvailable())
+                if (!session->isOpen())
                 {
                     return failure(
                         Domain::ErrorCode::NotFound,
-                        "The calendar service is unavailable."
+                        "The calendar event repository is unavailable."
                         );
                 }
 
@@ -248,6 +273,28 @@ public:
     }
 
 private:
+    [[nodiscard]] static std::string validationError(
+        const ValidationResult& validation
+        )
+    {
+        QStringList details;
+        for (const ValidationIssue& issue : validation.errors())
+        {
+            QString detail = issue.field.isEmpty()
+                ? issue.code
+                : QStringLiteral("%1: %2").arg(issue.field, issue.code);
+            if (issue.row >= 0 && !issue.field.contains(QChar(u'[')))
+            {
+                detail.prepend(QStringLiteral("row %1, ").arg(issue.row + 1));
+            }
+            details.append(detail);
+        }
+
+        return QStringLiteral("Calendar events validation failed: %1")
+            .arg(details.join(QStringLiteral("; ")))
+            .toStdString();
+    }
+
     [[nodiscard]] static QString legacyText(
         const std::string& value
         )
