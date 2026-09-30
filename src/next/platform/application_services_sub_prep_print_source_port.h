@@ -1,7 +1,10 @@
 #pragma once
 
-#include "app/services/feature_services.h"
 #include "core/application_services.h"
+#include "data/database/database_session.h"
+#include "data/repositories/class_info_repository.h"
+#include "data/repositories/roster_repository.h"
+#include "data/repositories/teacher_repository.h"
 #include "next/application/sub_prep_print_source_query.h"
 
 #include <QByteArray>
@@ -22,9 +25,8 @@ namespace ClassMngr::Next::Platform
 {
 
 // Copies only the requested Sub Prep classes, selected-mode meetings, and
-// referenced teacher facts from the legacy services. No legacy records or
-// service pointers escape this call; the owning ApplicationServices remains
-// the adapter's only dependency.
+// referenced teacher facts from the active database repositories. No
+// repository records or pointers escape this call.
 class ApplicationServicesSubPrepPrintSourcePort final
     : public Application::SubPrepPrintSourceReadPort
 {
@@ -114,21 +116,31 @@ public:
                 ? ScheduleType::Regular
                 : ScheduleType::Intensive;
 
-            ClassService* classService = m_services.classService();
-            RosterService* rosterService = m_services.rosterService();
-            TeacherService* teacherService = m_services.teacherService();
-            if (!classService || !classService->isAvailable()
-                || !rosterService || !rosterService->isAvailable()
-                || !teacherService || !teacherService->isAvailable())
+            DatabaseSession* const session = m_services.databaseSession();
+            if (!session || !session->isOpen())
             {
                 return failure(
                     Domain::ErrorCode::NotFound,
-                    "A Sub Prep print source service is unavailable."
+                    "The active database session for Sub Prep print data is unavailable."
+                    );
+            }
+
+            ClassInfoRepository* const classRepository =
+                session->classInfoRepository();
+            TeacherRepository* const teacherRepository =
+                session->teacherRepository();
+            RosterRepository* const rosterRepository =
+                session->rosterRepository();
+            if (!classRepository || !teacherRepository || !rosterRepository)
+            {
+                return failure(
+                    Domain::ErrorCode::NotFound,
+                    "A Sub Prep print source repository is unavailable."
                     );
             }
 
             const ::Result<QList<ClassInfo>> loadedInfos =
-                classService->classInfosForScheduleScope(
+                classRepository->loadClassInfosForScheduleScope(
                     legacyClassIdList,
                     selectedDayLabels,
                     legacyMode,
@@ -141,14 +153,14 @@ public:
                     );
             if (!loadedInfos)
             {
-                if (!classService->isAvailable())
+                if (!session->isOpen())
                 {
                     return failure(
                         Domain::ErrorCode::NotFound,
-                        "The class service became unavailable while loading Sub Prep print data."
+                        "The active database session became unavailable while loading Sub Prep print data."
                         );
                 }
-                return legacyFailure(
+                return repositoryFailure(
                     loadedInfos.error(),
                     "Scoped Sub Prep class information could not be loaded."
                     );
@@ -302,14 +314,14 @@ public:
                 if (teacher == teachersByLegacyId.end())
                 {
                     const ::Result<Teacher> loadedTeacher =
-                        teacherService->teacher(assignedTeacherId);
+                        teacherRepository->getTeacher(assignedTeacherId);
                     if (!loadedTeacher)
                     {
-                        if (!teacherService->isAvailable())
+                        if (!session->isOpen())
                         {
                             return failure(
                                 Domain::ErrorCode::NotFound,
-                                "The teacher service became unavailable while loading Sub Prep print data."
+                                "The active database session became unavailable while loading Sub Prep print data."
                                 );
                         }
 
@@ -322,7 +334,7 @@ public:
                             continue;
                         }
 
-                        return legacyFailure(
+                        return repositoryFailure(
                             loadedTeacher.error(),
                             "A Sub Prep print teacher could not be loaded."
                             );
@@ -379,7 +391,7 @@ public:
                 // Resolve the teacher before the roster read. Roster failures
                 // retain the legacy count-zero fallback.
                 const ::Result<int> studentCount =
-                    rosterService->studentCount(legacyClassId);
+                    rosterRepository->getRosterStudentCount(legacyClassId);
                 if (studentCount)
                 {
                     classRecord.studentCount = static_cast<std::size_t>(
@@ -550,14 +562,14 @@ private:
     }
 
     [[nodiscard]] static Application::SubPrepPrintSourceReadResult
-    legacyFailure(
-        const QString& legacyError,
+    repositoryFailure(
+        const QString& repositoryError,
         const char* fallback
         )
     {
-        const QByteArray errorBytes = legacyError.toUtf8();
+        const QByteArray errorBytes = repositoryError.toUtf8();
         return failure(
-            isNotFound(legacyError)
+            isNotFound(repositoryError)
                 ? Domain::ErrorCode::NotFound
                 : Domain::ErrorCode::Technical,
             errorBytes.isEmpty()

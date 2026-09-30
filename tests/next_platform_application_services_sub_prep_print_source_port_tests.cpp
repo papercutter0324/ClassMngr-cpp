@@ -275,6 +275,7 @@ private slots:
     void projectsSelectedClassesInRequestOrderAndCopiesFilteredSource();
     void selectsIntensiveTimesAndOmitsClassesOutsideSelectedDays();
     void supportsUnassignedAndMissingTeachersAndEmptyRosterFallback();
+    void unavailableSessionsDoNotFallBackToDataService();
     void queryEmptyScopeDoesNotReadAndNonemptyReadFailurePropagates();
     void rejectsNoncanonicalClassIdAliasesBeforeReading();
     void maximumClassScopeFitsSqliteBindLimits();
@@ -1477,6 +1478,31 @@ supportsUnassignedAndMissingTeachersAndEmptyRosterFallback()
     QVERIFY(result.value().classes[0].teacherId == teacherId(assignedTeacher));
     QCOMPARE(result.value().classes[0].studentCount, std::size_t(0));
     QCOMPARE(result.value().teachers.size(), std::size_t(1));
+}
+
+void NextPlatformApplicationServicesSubPrepPrintSourcePortTests::
+unavailableSessionsDoNotFallBackToDataService()
+{
+    ApplicationServices services;
+    QVERIFY(services.dataService());
+    ApplicationServicesSubPrepPrintSourcePort port(services);
+
+    const SubPrepPrintSourceRequest request = requestFor(
+        {classId(1)},
+        {SubPrepWeekday::Monday},
+        ScheduleViewMode::Regular
+        );
+    const auto unopened = port.loadSource(request);
+    QVERIFY(!unopened);
+    QCOMPARE(unopened.error().code, ErrorCode::NotFound);
+
+    QVERIFY(openDatabase(services, m_directory));
+    services.closeDatabase();
+    QVERIFY(!services.hasOpenDatabase());
+
+    const auto closed = port.loadSource(request);
+    QVERIFY(!closed);
+    QCOMPARE(closed.error().code, ErrorCode::NotFound);
 }
 
 void NextPlatformApplicationServicesSubPrepPrintSourcePortTests::
