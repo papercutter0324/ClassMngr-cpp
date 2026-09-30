@@ -46,8 +46,9 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
   slot-state save port, and F174's speaking-evaluation read port are accepted.
   F175's ScheduleBuilder source port, F176's Sub Prep class-details read port,
   F177's Sub Prep schedule-summary port, F178's Sub Prep print source port,
-  and F179's Sub Prep roster-output source port are accepted. F180 is selected
-  to migrate the Sub Prep calendar-event interval port.
+  F179's Sub Prep roster-output source port, and F180's Sub Prep calendar-event
+  interval port are accepted. F181 is selected to migrate the Calendar Event
+  Import signature query port.
   The prior F123 candidate wording is historical;
   current Teacher Profile integration status is recorded in the progress log.
   Gates 1 and 2
@@ -867,9 +868,10 @@ partial output/package on failure. Verify
 unavailable sessions, stale-teacher failure without partial output, technical
 repository failure, and empty-day no-read. `git diff --check` passed.
 
-## F180 selected Sub Prep calendar-event interval port
+## F180 accepted Sub Prep calendar-event interval port
 
-Migrate `ApplicationServicesSubPrepCalendarEventIntervalsPort` in
+F180, source commit `0f3ebf51`, migrates
+`ApplicationServicesSubPrepCalendarEventIntervalsPort` in
 `src/next/platform/application_services_sub_prep_calendar_event_intervals_port.h`
 to the open session's
 `CalendarEventRepository::loadCalendarEventDateIntervalsInRange()`. Preserve
@@ -877,10 +879,27 @@ query/window validation, the inclusive current- and following-calendar-year
 range with a year-9999 clamp, unlimited purpose-specific results, Vacation and
 Holiday filtering, crossing-interval order, and quiet failure including the
 page's empty-calendar fallback. Keep the injectable `IntervalRangeReader` and
-its 4,097-event no-projection-cap coverage. Verify direct repository use and
-unopened/closed-session NotFound without fallback using
+its 4,097-event no-projection-cap test. Implementation and independent Tester
+each passed all three targets:
 `ClassMngrNextApplicationSubPrepCalendarEventIntervalsQueryTests`,
 `ClassMngrNextPlatformApplicationServicesCalendarEventPortTests`, and
-`ClassMngrSubPrepPageTests`. The first two Ninja targets are registered in
-`build/f168`; their executables need building. Phase 2 remains In Progress/Open;
-Gates 1 and 2 remain Partial.
+`ClassMngrSubPrepPageTests`. Added tests cover unopened/closed-session
+NotFound and active-repository Technical failure. `git diff --check` passed.
+
+## F181 selected Calendar Event Import signature query port
+
+Migrate `ApplicationServicesCalendarEventImportSignatureQueryPort` in
+`src/next/platform/application_services_calendar_event_import_signature_query_port.h`
+to active-session `CalendarEventRepository::loadCalendarEventsInRange()`,
+including `isAvailable()`, with no `CalendarService` or `DataService` fallback.
+Preserve canonical ordered ISO range validation, all rows without a projection
+cap, repository order and duplicate rows, and the six-field UTF-16 signature
+normalization: simplified title, normalized event type and time status, ISO
+dates, and `allDay`. Preserve typed InvalidInput, NotFound, and Technical errors.
+Verify direct active-session reads and unavailable/closed-session behavior
+with `ClassMngrNextApplicationCalendarEventImportSignatureQueryPortTests`,
+`ClassMngrNextPlatformApplicationServicesCalendarEventPortTests`,
+`ClassMngrNextApplicationCalendarEventImportUseCaseTests`, and
+`ClassMngrCalendarEventImportParityTests`. All four are in the `build/f168`
+Ninja/CTest graph; their executables need building. Phase 2 remains In
+Progress/Open; Gates 1 and 2 remain Partial.

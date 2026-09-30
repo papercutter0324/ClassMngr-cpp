@@ -23,9 +23,10 @@ typed student-name pair at the roster score-import join, and F65's verified
 legacy profile startup/migration path through FileController, the F70 Class
 Transfer preview-matching policy, and F71's typed Class Transfer review-decision
 identities with legacy integer adapters,
-and Sub Prep print-source, selected-class details, schedule-summary, and
-roster-output read adapters; the calendar-event interval port is selected next.
-The Sub Prep information-sheet output wiring is also complete. F143 moves the
+and Sub Prep print-source, selected-class details, schedule-summary,
+roster-output, and calendar-event interval read adapters. The Calendar Event
+Import signature query port is selected next. The Sub Prep information-sheet
+output wiring is also complete. F143 moves the
 Testing Classes manager's selected-detail read through a typed Application
 query and active-session Platform adapter. Personal-details
 save, personal-signature, and current-campus preference caller boundaries
@@ -4133,8 +4134,8 @@ F145 details update and F146 creation remain separate accepted boundaries.
 Production commit `b037b4216b71c55c7793df5f7bbbfc4a00690065`, page transition
 fix `315b3ff33b7e2ab42b43d52cd168ce21a92158c9`, and acceptance-test commit
 `397376e439f4b5955c82948ab0c225aaf776d679` are recorded with verification
-limits in the [Phase 2 progress log](03-Phase-2-Progress-Log.md). F148-F179
-are accepted. F180 is selected; its boundary and acceptance criteria are in
+limits in the [Phase 2 progress log](03-Phase-2-Progress-Log.md). F148-F180
+are accepted. F181 is selected; its boundary and acceptance criteria are in
 the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 
 ## Class-details save mapping: F126 and F139
@@ -4595,17 +4596,35 @@ unavailable sessions, stale-teacher failure without partial output, technical
 repository failure, and empty-day no-read. `git diff --check` passed. Phase 2
 remains In Progress/Open; Gates 1 and 2 remain Partial.
 
-## F180 selected Sub Prep calendar-event interval port
+## F180 accepted Sub Prep calendar-event interval port
 
-Migrate `ApplicationServicesSubPrepCalendarEventIntervalsPort` to the open
+F180, source commit `0f3ebf51`, migrates
+`ApplicationServicesSubPrepCalendarEventIntervalsPort` to the open
 session's `CalendarEventRepository::loadCalendarEventDateIntervalsInRange()`.
 Preserve query/window validation, the inclusive current- and following-year
 range with a year-9999 clamp, unlimited purpose-specific results, Vacation and
-Holiday filtering, crossing-interval order, and quiet failure with the page's
-empty-calendar fallback. Keep the injectable `IntervalRangeReader` and its
-4,097-event no-projection-cap test. Verify direct repository use and
-unopened/closed-session NotFound without fallback using
+Holiday filtering, crossing-interval order, quiet failure with the page's
+empty-calendar fallback, and the injectable `IntervalRangeReader` with its
+4,097-event no-projection-cap test. Implementation and independent Tester each
+passed all three targets:
 `ClassMngrNextApplicationSubPrepCalendarEventIntervalsQueryTests`,
 `ClassMngrNextPlatformApplicationServicesCalendarEventPortTests`, and
-`ClassMngrSubPrepPageTests`. The first two targets are registered in
-`build/f168`; their executables need building.
+`ClassMngrSubPrepPageTests`. Added tests cover unopened/closed-session NotFound
+and active-repository Technical failure. `git diff --check` passed.
+
+## F181 selected Calendar Event Import signature query port
+
+Migrate `ApplicationServicesCalendarEventImportSignatureQueryPort` in
+`src/next/platform/application_services_calendar_event_import_signature_query_port.h`
+to active-session `CalendarEventRepository::loadCalendarEventsInRange()`,
+including `isAvailable()`, with no `CalendarService` or `DataService` fallback.
+Preserve canonical ordered ISO range validation, all rows without projection
+cap, repository order and duplicates, and the six-field UTF-16 signature
+normalization: simplified title, normalized event type and time status, ISO
+dates, and `allDay`. Preserve typed InvalidInput, NotFound, and Technical
+errors. Verify direct active-session reads and unavailable/closed-session
+behavior using `ClassMngrNextApplicationCalendarEventImportSignatureQueryPortTests`,
+`ClassMngrNextPlatformApplicationServicesCalendarEventPortTests`,
+`ClassMngrNextApplicationCalendarEventImportUseCaseTests`, and
+`ClassMngrCalendarEventImportParityTests`. All four are in the `build/f168`
+Ninja/CTest graph; their executables need building.
