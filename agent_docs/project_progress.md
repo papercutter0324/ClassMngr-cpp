@@ -2200,31 +2200,24 @@ parity. Gates 1 and 2 remain Partial; Phase 2 remains In Progress/Open. A
 separate worker owns workflow repair; this work does not modify
 `.github/workflows/refactoring-baseline.yml`. No push was requested.
 
-## Current Phase 2 position - 2026-09-30 (F167 accepted; F168 selected)
+## Current Phase 2 position - 2026-09-30 (F168 accepted; F169 selected)
 
-F167 source commit `97efac8b` migrates
-`ApplicationServicesClassDetailsPageReadPort` to the active session's class
-info, teacher display-name, and roster repositories. It reuses
-`ClassDetailsPageReadSnapshot`, preserves independent outcomes and schedule
-order, and maps all teacher display-name fields before applying
-`Teacher::preferredDisplayName()`.
+F168 source commit `07493cab` migrates
+`ApplicationServicesClassDetailsSavePort` from `ClassService` to the active
+session's `ClassInfoRepository`, preserving validation, hidden fields and
+schedules, and typed outcomes. Focused current CTest passed 4/4: save-port
+tests 9/9, page display tests 5/5, page save tests 14/14, and save-parity tests
+9/9. The visible-save parity case also passed against pinned baseline
+`48fc5c5cc7dee78d82f8bf5f1bf8b51725575b99`; only the parity test and target
+registration were overlaid, with production files unchanged. `git diff --check`
+passed. No full suite or application build was run.
 
-Focused current targets passed: adapter tests 8/8, existing page display tests
-5/5, and live page parity tests 4/4. The same parity source passed 4/4 on the
-pinned baseline `48fc5c5cc7dee78d82f8bf5f1bf8b51725575b99`; its temporary
-baseline overlays changed only the test source and CMake registration. The
-shared visible fields, schedule order, preferred teacher, roster count, and
-missing-teacher fallback matched. An exploratory missing-class-info case
-showed a pre-existing UI fallback delta: current code falls back to the
-selected classroom name, while the pinned baseline shows `Unknown Class • No
-Teacher`. F167 did not change UI code and retains the current fallback. No
-full suite, application build, or query-count claim was made.
-
-F168 is selected: migrate `ApplicationServicesClassDetailsSavePort`'s class
-info load/save from `ClassService` to the active-session `ClassInfoRepository`.
-Preserve the validated save behavior, hidden class fields and schedules, and
-typed success/failure outcomes. Acceptance covers missing/source failures
-without `DataService` fallback, current save/display regressions, and
-pinned-baseline visible save parity. Implementation has started. Phase 2
-remains In Progress/Open; Gates 1 and 2 remain Partial. Workflow repair remains
-with the other worker.
+F169 is selected: migrate `ApplicationServicesClassNotesSavePort` from
+`ClassService` to the active-session `ClassInfoRepository`. Preserve request
+validation, positive IDs, trimming, `ClassInfoValidator::validateNotes()` and
+typed error mapping. Require an open session and repository with no
+`DataService` fallback. Acceptance covers both trimmed fields, UTF-16-limit
+persistence, invalid input before write, unavailable session, and repository
+write failure retaining stored notes; run its focused port target and the
+Class Notes page regression. Phase 2 remains In Progress/Open; Gates 1 and 2
+remain Partial. Workflow repair remains with the other worker.

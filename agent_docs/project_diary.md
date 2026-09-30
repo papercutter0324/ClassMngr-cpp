@@ -1611,3 +1611,12 @@ the selected classroom name on the migrated page but to `Unknown Class • No
 Teacher` on the pinned baseline. Keep the class, teacher, and roster-count
 failure outcomes independent. The current roster count repository reads the
 roster before counting, so make no efficiency claim.
+
+## 2026-09-30 - F168 class details save port
+
+Keep the save adapter on the active session's `ClassInfoRepository` and preserve
+validation plus fields the editor does not expose, including schedules. The
+current focused save, display, and parity targets passed; the common visible
+save case also matched the pinned baseline without production overlays. F169
+continues the same bounded boundary migration for the Class Notes save port;
+preserve trimming and notes validation while requiring an open session.

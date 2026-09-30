@@ -40,8 +40,8 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
   F162's GS Team Staff Directory save, F163's ClassesPage class-list read,
   F164's selected-class grade read, F165's selected-class subtitle read, and
   F166's RosterEditorWidget class subtitle read, and F167's ClassDetailsPage
-  display read are accepted. F168 is selected; implementation is in progress
-  for the ClassDetailsPage save read.
+  display read and F168's ClassDetailsPage save port are accepted. F169 is
+  selected to migrate the ClassNotesPage save port.
   The prior F123 candidate wording is historical;
   current Teacher Profile integration status is recorded in the progress log.
   Gates 1 and 2
@@ -702,12 +702,25 @@ difference: current shows the selected class name, while baseline shows
 `Unknown Class • No Teacher`. F167 changed no UI code and preserved current
 behavior; this case is excluded from parity claims.
 
-## F168 selected ClassDetailsPage save read
+## F168 accepted ClassDetailsPage save port
 
-Migrate the class-info load/save path in
-`ApplicationServicesClassDetailsSavePort` from `ClassService` to the active-
-session `ClassInfoRepository`. Preserve validation, hidden fields and
-schedules, and independent typed failures. Acceptance covers no `DataService`
-fallback, existing save/display regressions, and pinned-baseline visible save
-parity. F168 implementation is in progress. Gates 1 and 2 remain Partial;
-Phase 2 remains In Progress/Open.
+F168, source commit `07493cab`, migrates
+`ApplicationServicesClassDetailsSavePort` to the active-session
+`ClassInfoRepository`. Focused CTest targets passed 4/4: save port 9, page
+display 5, page save 14, and live parity 9. On pinned baseline
+`48fc5c5cc7dee78d82f8bf5f1bf8b51725575b99`, the visible-save parity case also
+passed after overlaying only the parity test and target registration; no
+production files were overlaid. `git diff --check` passed. No full suite or
+application build is claimed.
+
+## F169 selected ClassNotesPage save port
+
+Migrate `ApplicationServicesClassNotesSavePort` from `ClassService` to the
+active-session `ClassInfoRepository`. Preserve positive-ID/request validation,
+trimming of both fields, and `ClassInfoValidator::validateNotes` result
+mapping. Require an open session and repository, with no `DataService`
+fallback. Test both trimmed fields and UTF-16-limit persistence, invalid input
+before write, unavailable session, and repository write failure preserving
+stored notes. Run `ClassMngrNextPlatformApplicationServicesClassNotesSavePortTests`
+and the ClassNotesPage integration regression. Phase 2 remains In Progress/Open;
+Gates 1 and 2 remain Partial.

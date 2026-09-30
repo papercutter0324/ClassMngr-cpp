@@ -4012,3 +4012,25 @@ pinned-baseline visible save parity. Implementation is underway in the
 assigned port and test files; no F168 commit exists yet. Phase 2 remains In
 Progress/Open; Gates 1 and 2 remain Partial. Workflow repair belongs to the
 other worker; no workflow file was changed here.
+
+## 2026-09-30 - F168 accepted; F169 selected
+
+F168 source commit `07493cab` migrates
+`ApplicationServicesClassDetailsSavePort` to the active session's
+`ClassInfoRepository`. The VS 18 2026 / Qt 6.12 Debug build completed the four
+focused targets. CTest passed 4/4: save-port tests 9/9, page display tests 5/5,
+page save tests 14/14, and save-parity tests 9/9. The common visible-save case
+passed on current code and pinned baseline
+`48fc5c5cc7dee78d82f8bf5f1bf8b51725575b99`, using only temporary test-source
+and CMake-registration overlays on the baseline. `git diff --check` passed.
+No full suite or application build was run.
+
+F169 is selected: migrate `ApplicationServicesClassNotesSavePort` from
+`ClassService` to active-session `ClassInfoRepository`. Preserve positive-ID
+and request validation, trimming, `ClassInfoValidator::validateNotes()` and
+typed failures; require an open session and remove the `DataService` fallback.
+Acceptance covers trimmed persistence of both fields, the UTF-16 limit,
+invalid input before writes, unavailable session, and repository write failure
+retaining existing notes. Run the focused save-port target and Class Notes page
+regression. Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial.
+Workflow repair remains with the other worker. Do not push.

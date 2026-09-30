@@ -8299,7 +8299,7 @@ fields/schedule/teacher/count/fallback parity. F167 implementation has not
 started. Gate 1 and Gate 2 remain Partial; Phase 2 remains In Progress and its
 exit gate remains Open.
 
-### Progress update - 2026-09-30 (F167 accepted; F168 selected)
+### Progress update - 2026-09-30 (F168 accepted; F169 selected)
 
 F167, source commit `97efac8b`, updates
 `ApplicationServicesClassDetailsPageReadPort` to use active-session
@@ -8320,10 +8320,27 @@ difference: current shows the selected class name; baseline shows
 `Unknown Class • No Teacher`. F167 changed no UI code and retained current
 behavior; this case is excluded from parity claims.
 
-F168 is selected: migrate `ApplicationServicesClassDetailsSavePort` class-info
-load/save from `ClassService` to the active-session `ClassInfoRepository`.
-Preserve validation, hidden fields/schedules, and independent typed failures.
-Acceptance covers no `DataService` fallback, existing save/display regressions,
-and pinned-baseline visible save parity. F168 implementation is in progress.
-Gate 1 and Gate 2 remain Partial; Phase 2 remains In Progress and its exit gate
-remains Open.
+F168, source commit `07493cab`, migrates
+`ApplicationServicesClassDetailsSavePort` to the active-session
+`ClassInfoRepository`, preserving validation, hidden fields/schedules, and
+independent typed failures without `DataService` fallback. Focused CTest targets
+passed 4/4: save port 9, page display 5, page save 14, and live parity 9. On
+pinned baseline `48fc5c5cc7dee78d82f8bf5f1bf8b51725575b99`, the visible-save
+parity case passed with only the parity test and target registration overlaid;
+no production files were overlaid. `git diff --check` passed. No full suite or
+application build is claimed.
+
+F169 is selected: migrate `ApplicationServicesClassNotesSavePort` from
+`ClassService` to the active-session `ClassInfoRepository`. Preserve positive
+class-ID/request validation, trimming of both fields, and
+`ClassInfoValidator::validateNotes` result mapping. Require an open
+session/repository with no `DataService` fallback. Verify both trimmed fields
+and UTF-16-limit persistence, invalid input before write, unavailable session,
+and repository write failure preserving stored notes. Run
+`ClassMngrNextPlatformApplicationServicesClassNotesSavePortTests` and the
+ClassNotesPage integration regression. Cleanup evaluation kept `build/f168` for
+F169 because its configured Ninja cache already contains
+`ClassMngrNextPlatformApplicationServicesClassNotesSavePortTests` and
+`ClassMngrNextFeatureClassNotesPageTests`; the baseline parity scratch worktree
+and build were removed. Gate 1 and Gate 2 remain Partial; Phase 2 remains In
+Progress and its exit gate remains Open.

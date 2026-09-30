@@ -4132,9 +4132,9 @@ F145 details update and F146 creation remain separate accepted boundaries.
 Production commit `b037b4216b71c55c7793df5f7bbbfc4a00690065`, page transition
 fix `315b3ff33b7e2ab42b43d52cd168ce21a92158c9`, and acceptance-test commit
 `397376e439f4b5955c82948ab0c225aaf776d679` are recorded with verification
-limits in the [Phase 2 progress log](03-Phase-2-Progress-Log.md). F148-F167
-are accepted. F168 is selected; implementation is in progress. Its boundary
-and acceptance criteria are in the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
+limits in the [Phase 2 progress log](03-Phase-2-Progress-Log.md). F148-F168
+are accepted. F169 is selected; its boundary and acceptance criteria are in
+the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 
 ## Class-details save mapping: F126 and F139
 
@@ -4143,16 +4143,17 @@ Commit `ca4c1a9701bbeee7a1ce27789808311a1760ef68` already routes
 [`ClassDetailsSaveUseCase`](../../src/next/application/class_details_save_use_case.h)
 and its Platform adapter. F139, commit
 `f1c70a166943b9daac74cdadfdc0a515cea89efa`, reuses the contract from
-`ScheduleEditorDialog`. The Platform adapter still persists through
-`ClassService`. F149 moved the pre-save conflict lookup behind a typed Qt-free
-query and active-session Platform adapter, while warning rendering stays in
-the page and persistence retains overlap calculation/order. `ClassService`
-save-time guards remain. F150 moved the page's pre-save validation and
-normalization into a typed Qt-free Domain/Application policy and maps
-structured issues through `FormValidationBinder`; save-time validation remains
-in `ClassService`. Its
-preservation constraints and verification are in the [Phase 2 progress
-log](03-Phase-2-Progress-Log.md). F151 accepted invalid-schedule
+`ScheduleEditorDialog`. F168 moved the class-info load/save path in
+`ApplicationServicesClassDetailsSavePort` to the active-session
+`ClassInfoRepository`, preserving validation and hidden fields/schedules. F149
+moved the pre-save conflict lookup behind a typed Qt-free query and active-session
+Platform adapter, while warning rendering
+stays in the page and persistence retains overlap calculation/order. F150 moved
+the page's pre-save validation and normalization into a typed Qt-free
+Domain/Application policy and maps structured issues through
+`FormValidationBinder`. Preservation constraints and verification are in the
+[Phase 2 progress log](03-Phase-2-Progress-Log.md).
+F151 accepted invalid-schedule
 current/baseline page parity; F152 accepted the fresh validation-context read;
 F153 accepted persisted teacher-ID validation parity. F154 is accepted below.
 
@@ -4426,11 +4427,27 @@ name; baseline shows `Unknown Class • No Teacher`. F167 changed no UI
 code, preserved current behavior, and does not claim parity for this case. See
 the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 
-## F168 selected ClassDetailsPage save read
+## F168 accepted ClassDetailsPage save port
 
-Migrate `ApplicationServicesClassDetailsSavePort` class-info load/save from
-`ClassService` to the active-session `ClassInfoRepository`. Preserve
-validation, hidden fields/schedules, and independent typed failures. Acceptance
-covers no `DataService` fallback, existing save/display regressions, and
-pinned-baseline visible save parity. F168 implementation is in progress. Phase 2 remains
-In Progress/Open; Gates 1 and 2 remain Partial.
+F168, source commit `07493cab`, moves
+`ApplicationServicesClassDetailsSavePort` to the active-session
+`ClassInfoRepository`, preserving validation, hidden fields/schedules, and
+typed failures without `DataService` fallback. Focused CTest targets passed
+4/4 (save port 9, page display 5, page save 14, parity 9). The visible-save
+parity case passed on pinned baseline
+`48fc5c5cc7dee78d82f8bf5f1bf8b51725575b99` with test and target-registration
+overlays only. `git diff --check` passed; no full suite or application build is
+claimed. See the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
+
+## F169 selected ClassNotesPage save port
+
+Migrate `ApplicationServicesClassNotesSavePort` from `ClassService` to the
+active-session `ClassInfoRepository`. Preserve positive-ID/request validation,
+trimming of both fields, and `ClassInfoValidator::validateNotes` result
+mapping. Require an open session/repository with no `DataService` fallback.
+Cover both trimmed fields and UTF-16-limit persistence, invalid input before
+write, unavailable session, and repository write failure preserving stored
+notes. Run
+`ClassMngrNextPlatformApplicationServicesClassNotesSavePortTests` and the
+ClassNotesPage integration regression. Phase 2 remains In Progress/Open; Gates
+1 and 2 remain Partial.
