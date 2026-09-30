@@ -8299,7 +8299,7 @@ fields/schedule/teacher/count/fallback parity. F167 implementation has not
 started. Gate 1 and Gate 2 remain Partial; Phase 2 remains In Progress and its
 exit gate remains Open.
 
-### Progress update - 2026-10-01 (F184 accepted; F185 selected)
+### Progress update - 2026-10-01 (F185 accepted; F186 selected)
 
 F167, source commit `97efac8b`, updates
 `ApplicationServicesClassDetailsPageReadPort` to use active-session
@@ -8536,20 +8536,39 @@ no direct fixture because normal open sessions provide the repository; this is
 nonblocking. `git diff --check` passed. Phase 2 remains In Progress/Open; Gates
 1 and 2 remain Partial.
 
-F185 is selected for `ApplicationServicesCalendarEventDeleteAllPort` in
-`src/next/platform/application_services_calendar_event_delete_all_port.h`,
+F185, source commit `a4bd5914`, migrates
+`ApplicationServicesCalendarEventDeleteAllPort` availability and deletion to
+the active session's `CalendarEventRepository::deleteAllCalendarEvents()`,
+with no `CalendarService` or `DataService` fallback. It preserves
+unavailable/closed NotFound, open-session repository Technical failures, and
+success, while leaving `CalendarPreferencesPanel` confirmation/cancel,
+warning, and success behavior unchanged. Implementation and independent
+Tester each passed
+`ClassMngrNextPlatformApplicationServicesCalendarEventPortTests`,
+`ClassMngrNextApplicationCalendarEventTests`, and
+`ClassMngrCalendarEventRepositoryTests`. Tests cover seeded regular and
+repeat-series rows, open/unopened/closed availability with `DataService`
+present, and SQL failure; the repository test verifies F104 `sqlite_sequence`
+parity. The null-repository guard has no direct fixture because open sessions
+normally provide it; this is nonblocking. `git diff --check` passed. Phase 2
+remains In Progress/Open; Gates 1 and 2 remain Partial.
+
+F186 is selected for `ApplicationServicesCalendarEventSeriesDeletePort` in
+`src/next/platform/application_services_calendar_event_series_delete_port.h`,
 with focused tests in
 `tests/next_platform_application_services_calendar_event_port_tests.cpp`.
-Use the open active `DatabaseSession`'s
-`CalendarEventRepository::deleteAllCalendarEvents()` with direct
-session/repository availability and no `CalendarService` or `DataService`
-fallback. Preserve NotFound for unavailable/closed sessions, Technical
-repository errors, and success semantics. Keep
-`CalendarPreferencesPanel::resetCalendarEvents()` confirmation/cancel,
-warnings, and success notification unchanged; no UI rewiring. Preserve F104
-delete-all sequence behavior: seeded rows are removed and `sqlite_sequence`
-remains 3. Verify `ClassMngrNextPlatformApplicationServicesCalendarEventPortTests`,
+Use the active session's
+`CalendarEventRepository::deleteCalendarEventsForRepeatSeriesFromDate()` with
+no `CalendarService` or `DataService` fallback. Preserve request validation
+before session lookup, exact diagnostics and date conversion, repeat-series
+ID handling, and deletion of the selected and later occurrences in that series
+while retaining earlier and unrelated rows. Preserve NotFound for
+unavailable/closed sessions, Technical repository failures while open, and
+success when no rows match. Keep Calendar Page invalidation/warning and the
+typed use-case route unchanged. Preserve F108 seeded repository parity and
+sequence behavior. Verify
+`ClassMngrNextPlatformApplicationServicesCalendarEventPortTests`,
 `ClassMngrNextApplicationCalendarEventTests`, and
 `ClassMngrCalendarEventRepositoryTests`. Two independent Explorer lanes
-recommended this adapter with one repository operation. Phase 2 remains In
-Progress/Open; Gates 1 and 2 remain Partial.
+selected this focused operation. Phase 2 remains In Progress/Open; Gates 1
+and 2 remain Partial.

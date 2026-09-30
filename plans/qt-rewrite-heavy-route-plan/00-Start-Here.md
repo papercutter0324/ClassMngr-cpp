@@ -44,8 +44,9 @@
   F179's Sub Prep roster-output source port and F180's Sub Prep calendar-event
   interval port and F181's Calendar Event Import signature query port are
   accepted. F182's active Calendar event read/by-ID adapter, F183's single
-  Calendar Event save port, and F184's Calendar Event delete port are accepted.
-  F185 is selected for the Calendar Event delete-all port.
+  Calendar Event save port, F184's Calendar Event delete port, and F185's
+  Calendar Event delete-all port are accepted. F186 is selected for the
+  repeat-series suffix-delete port.
   See the
   [Phase 2 progress
   log](03-Phase-2-Progress-Log.md)
