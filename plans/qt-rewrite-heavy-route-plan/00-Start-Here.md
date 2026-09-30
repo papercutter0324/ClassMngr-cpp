@@ -27,9 +27,9 @@
   current/baseline invalid-schedule page parity. F152's fresh typed validation-
   context read is accepted. F153 is accepted for current/baseline page parity
   when persisted teacher ID zero changes after load. F154's typed Class Notes
-  read and F155's Class Co-Teacher selected-class/title read are accepted.
-  F156 is selected for the teacher-catalogue read; it is not implemented or
-  accepted. See the [Phase 2 progress
+  read, F155's Class Co-Teacher selected-class/title read, and F156's
+  teacher-catalogue read are accepted. F157 is selected for the
+  TeacherInfoPage profile-save port, not implemented or accepted. See the [Phase 2 progress
   log](03-Phase-2-Progress-Log.md) for commits and verification.
   Phase 2 Gates 1 and 2 remain Partial; broader feature migration, parity, and
   96-class Release memory evidence remain open. Phase 1 build-system exit

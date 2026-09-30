@@ -2001,3 +2001,24 @@ F156 is selected for a separate typed Application and active-session Platform
 read of the Co-Teacher teacher-choice catalogue. Preserve displayed fields,
 bilingual ordering, selection, and load-failure warning/clear behavior. Gates
 1 and 2 remain Partial; Phase 2 remains In Progress/Open.
+
+## F156 accepted — 2026-09-30
+
+F156 commit `3581078bdca61cfe76489ff19c5d518d8b3145bb` adds a separate typed
+Co-Teacher teacher-choice read query and active-session Platform adapter. The
+current eight focused CTest targets passed 8/8; the pinned baseline parity
+harness passed 1/1 with test-only adaptation and no production overlay. Tests
+cover direct repository mapping, no fallback, warning/clear behavior, crossed
+Korean/English choice ordering, selected details, and load/discard behavior.
+No full suite/app build or baseline query-count claim. Gates 1 and 2 remain
+Partial; Phase 2 remains In Progress/Open. Three independent reviews are
+complete; F157 is selected for the Teacher Profile persistence adapter.
+
+## F157 selected — 2026-09-30
+
+Move `TeacherInfoPage`'s page-local `TeacherService` persistence adapter behind
+an active-session Platform adapter to `TeacherRepository`, keeping the existing
+`TeacherProfileEditUseCase` and `TeacherInfoValidationPolicy`. Preserve
+canonical reload, validation, warning, dirty-state, and save-signal behavior;
+use current adapter/error tests and pinned-baseline page parity. No F157
+implementation or acceptance is claimed yet.

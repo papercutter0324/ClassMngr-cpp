@@ -4119,7 +4119,7 @@ separate existing-class details update; F147 now covers delete/cascade.
 
 The production and acceptance-test commits, focused verification, and limits
 are recorded in the [Phase 2 progress log](03-Phase-2-Progress-Log.md). F147
-migrates delete/cascade; F148-F155 acceptance and F156 selection are recorded
+migrates delete/cascade; F148-F156 acceptance and F157 selection are recorded
 below.
 
 ## Verified F147 Testing Class delete/cascade
@@ -4132,8 +4132,8 @@ F145 details update and F146 creation remain separate accepted boundaries.
 Production commit `b037b4216b71c55c7793df5f7bbbfc4a00690065`, page transition
 fix `315b3ff33b7e2ab42b43d52cd168ce21a92158c9`, and acceptance-test commit
 `397376e439f4b5955c82948ab0c225aaf776d679` are recorded with verification
-limits in the [Phase 2 progress log](03-Phase-2-Progress-Log.md). F148-F155 are
-accepted; F156 is selected, not implemented or accepted. Its boundary and
+limits in the [Phase 2 progress log](03-Phase-2-Progress-Log.md). F148-F156 are
+accepted; F157 is selected, not implemented or accepted. Its boundary and
 acceptance criteria are in the [Phase 2 progress
 log](03-Phase-2-Progress-Log.md).
 
@@ -4233,14 +4233,39 @@ overlay. Baseline page/header match blobs
 discard, and post-save selection/title/persistence passed on both. Current-only
 read-count claims remain separate; there is no baseline query-count claim.
 
-## F156 selected Class Co-Teacher teacher-catalogue read
+## F156 accepted Class Co-Teacher teacher-catalogue read
 
-Replace `TeacherService::teachers()` in `ClassCoTeacherPage` with a separate
-Qt-free Application teacher-catalogue projection and active-session Platform
-adapter. Include only fields consumed by `TeacherInfoSection`; preserve IDs,
-bilingual ordering/details, selection, and load-failure warning/clear behavior.
-Use no `DataService` or `TeacherService` fallback. Leave F155's snapshot and
-assignment save unchanged. Acceptance covers mapping/no-fallback, warning/error/
-clear behavior, ordering/selection/display, current query timing, and current-
-versus-original-baseline visible parity; make no baseline query-count claim.
-F156 is selected, not implemented or accepted.
+F156, commit `3581078bdca61cfe76489ff19c5d518d8b3145bb`, replaces
+`TeacherService::teachers()` in `ClassCoTeacherPage` with a Qt-free Application
+catalogue projection and active-session Platform adapter. It includes only
+`TeacherInfoSection` fields; preserves IDs, bilingual ordering/details,
+selection, and load-failure warning/clear behavior; and has no
+`DataService`/`TeacherService` fallback. F155's snapshot and assignment save
+are unchanged.
+
+Eight current focused CTests passed 8/8 on Windows x64 Debug (CMake 4.4.2,
+Ninja 1.13.2, MSVC 19.51, Qt 6.12); configure validated 1,071 owners. Coverage
+includes direct active-repository mapping/no-fallback, warning/clear, crossed
+bilingual order (Korean one-to-two, English two-to-one, None first),
+selection/details/title on load/discard, and current save/post-save. Original
+pinned baseline `48fc5c5cc7dee78d82f8bf5f1bf8b51725575b99` parity passed 1/1
+with test-only DB API adaptation, registration, and Qt minimums; no production
+overlay. Baseline page/header match blobs
+`d25263eda8d464b2a3b17a35f44d6376ee5db588` /
+`bba856ebb2ed907072d266a38bf3abe4e939d95e`. No baseline query-count claim; no
+full suite or app build.
+
+## F157 selected TeacherInfoPage profile-save port
+
+Replace the page-local `TeacherServiceProfileEditPort` with an active-session
+Platform adapter to `TeacherRepository`. Retain the existing
+`TeacherProfileEditUseCase` and `TeacherInfoValidationPolicy`, canonical reload,
+and visible validation/warning/dirty/save/signal behavior. Scope excludes
+Teacher Profile load and navigation reads.
+
+Acceptance requires current port/page/use-case tests, no `DataService` or
+`TeacherService` fallback, repository mapping and session/repository errors,
+valid save/reload and invalid-write blocking, and pinned-baseline public-page
+parity. The F123 use-case integration exists, but its page target and baseline
+parity were not independently rerun; F123 acceptance is not claimed. F157 is
+selected, not implemented or accepted.

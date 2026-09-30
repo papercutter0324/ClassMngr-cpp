@@ -1495,3 +1495,18 @@ when the pinned API differs, verify baseline production blobs, and avoid
 query-count claims. Keep the Co-Teacher choice catalogue as a separate read
 from its selected-class snapshot because they have different data and refresh
 timing.
+
+## 2026-09-30 — F156 Co-Teacher teacher catalogue
+
+Keep a page read projection Qt-free and include only fields consumed by its
+view. Read the teacher list from the active repository without a service or
+DataService fallback, leaving display sorting in the UI. Cross the Korean and
+English fixture sort orders so tests can detect swapping the two selectors.
+
+## 2026-09-30 — F157 Teacher Profile persistence boundary
+
+Keep the existing Teacher Profile edit use case and validation policy while
+moving page persistence to an active-session Platform adapter. The adapter
+should use `TeacherRepository` directly; retain canonical reload and validate
+normalized updates before repository writes. Compare public page behavior on
+the pinned baseline and keep repository failure behavior in current tests.

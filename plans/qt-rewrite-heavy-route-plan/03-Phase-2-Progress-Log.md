@@ -7934,3 +7934,34 @@ warning/error/clear, ordering/selection/display, current query timing, and
 current-versus-original-baseline visible parity. Do not compare baseline query
 counts. F156 is selected, not implemented or accepted. Gates 1 and 2 remain
 Partial; Phase 2 remains In Progress/Open.
+
+### Progress update - 2026-09-30 (F156 accepted; F157 selected)
+
+F156, commit `3581078bdca61cfe76489ff19c5d518d8b3145bb`, replaces the
+ClassCoTeacherPage `TeacherService::teachers()` read with a separate Qt-free
+Application catalogue projection and active-session Platform adapter. Eight
+focused current CTests passed 8/8; configure validated 1,071 owners. Toolchain:
+Windows x64 Debug, CMake 4.4.2, Ninja 1.13.2, MSVC 19.51, Qt 6.12. Coverage
+includes direct active-repository mapping/no-fallback, warning/clear, crossed
+bilingual order (Korean one-to-two, English two-to-one, None first),
+selection/details/title on load/discard, and current save/post-save.
+
+Original pinned baseline `48fc5c5cc7dee78d82f8bf5f1bf8b51725575b99` parity
+passed 1/1 with test-only DB API adaptation, registration, and Qt minimums; no
+production overlay. Baseline page/header match blobs
+`d25263eda8d464b2a3b17a35f44d6376ee5db588` /
+`bba856ebb2ed907072d266a38bf3abe4e939d95e`. Do not claim baseline query-count
+parity. No full suite or app build ran. Gates 1 and 2 remain Partial; Phase 2
+remains In Progress/Open.
+
+F157 is selected: replace the page-local `TeacherServiceProfileEditPort` with
+an active-session Platform adapter to `TeacherRepository`, retaining
+`TeacherProfileEditUseCase`, `TeacherInfoValidationPolicy`, canonical reload,
+and visible validation/warning/dirty/save/signal behavior. Keep the scope away
+from Teacher Profile load/navigation reads. Acceptance requires current
+port/page/use-case tests, no `DataService`/`TeacherService` fallback,
+repository mapping and session/repository errors, valid save/reload,
+invalid-write blocking, and pinned-baseline public-page parity. Existing F123
+use-case integration is not newly accepted: its page target and baseline parity
+were not independently rerun. F157 is selected, not implemented or accepted.
+Gates 1 and 2 remain Partial; Phase 2 remains In Progress/Open.

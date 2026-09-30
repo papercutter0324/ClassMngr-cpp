@@ -3731,3 +3731,35 @@ details, and load-failure warning/clear behavior. Keep F155's selected-class
 snapshot and assignment save unchanged. Three independent reviews recommend
 this boundary. Gates 1 and 2 remain Partial; Phase 2 remains In Progress/Open.
 No push was requested.
+
+F156 commit `3581078bdca61cfe76489ff19c5d518d8b3145bb` adds a Qt-free teacher-
+choice snapshot/query/port and active-session Platform adapter. It returns
+typed teacher IDs, Korean/English names, room, internet type, Wi-Fi fields,
+projection type, and Zoom fields. The feature boundary reconstructs the UI
+`Teacher`; `TeacherInfoSection` retains sorting and formatting. The page reads
+choices on load/discard, preserves the load-failure warning/clear path, and
+keeps F155's selected-class snapshot and the existing save port/use case
+separate. The adapter uses `TeacherRepository::getAllTeachers()` directly
+without `DataService` or `TeacherService` fallback.
+
+Fresh Windows x64 Debug configure validated 1,071 handwritten source owners.
+The serial focused build and combined CTest run passed 8/8 in 1.91 seconds
+with CMake 4.4.2, Ninja 1.13.2, MSVC 19.51, and Qt 6.12.0. The pinned baseline
+`48fc5c5cc7dee78d82f8bf5f1bf8b51725575b99` parity harness passed 1/1 using
+only adapted parity-test database calls/registration and Qt minimum changes;
+no production overlay. Baseline ClassCoTeacherPage page/header blobs match
+`d25263eda8d464b2a3b17a35f44d6376ee5db588` /
+`bba856ebb2ed907072d266a38bf3abe4e939d95e`. Both parity runs assert crossed
+Korean/English ordering, None first, selected details and title on load and
+discard. The current tests also cover save/post-save behavior. No full suite or
+app build; baseline query counts are not compared. Three independent reviews
+recommended distinct next candidates. F157 is selected to replace
+`TeacherInfoPage`'s page-local `TeacherServiceProfileEditPort` with an
+active-session Platform adapter to `TeacherRepository`, retaining the existing
+edit use case and validation policy. Acceptance covers adapter field/error
+mapping with no fallback, valid common-input save and canonical reload parity,
+invalid-write blocking, dirty state and save signal on current and baseline.
+The page/validation behavior is present in current source, but the earlier F123
+integration was not independently reverified; F157 will add that evidence
+while closing the persistence boundary. No F157 implementation has begun or
+been accepted yet.
