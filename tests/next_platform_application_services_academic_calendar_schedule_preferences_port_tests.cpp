@@ -1,6 +1,7 @@
 #include "core/application_services.h"
 #include "data/data_service.h"
 #include "data/database/database_session.h"
+#include "data/repositories/settings_repository.h"
 #include "next/platform/application_services_academic_calendar_schedule_preferences_port.h"
 
 #include <QRegularExpression>
@@ -43,13 +44,13 @@ bool executeSql(
     const QString& statement
     )
 {
-    DataService* dataService = services.dataService();
-    if (!dataService || !dataService->databaseSession())
+    DatabaseSession* const session = services.databaseSession();
+    if (!session || !session->isOpen())
     {
         return false;
     }
 
-    QSqlQuery query(dataService->databaseSession()->database());
+    QSqlQuery query(session->database());
     return query.exec(statement);
 }
 
@@ -71,6 +72,7 @@ class NextPlatformApplicationServicesAcademicCalendarSchedulePreferencesPortTest
 private slots:
     void initTestCase();
     void missingAndUnavailableReadEmptyAndIgnoreSave();
+    void readErrorsReturnEmpty();
     void roundTripsThroughTheExactKey();
     void preservesStoredPayloadAndUnrelatedSettings();
     void saveFailurePreservesWarningAndStoredPayload();
@@ -90,17 +92,66 @@ missingAndUnavailableReadEmptyAndIgnoreSave()
 {
     ApplicationServices services;
     QVERIFY(openDatabase(services, m_directory));
+    QVERIFY(services.dataService());
+    DatabaseSession* const session = services.databaseSession();
+    QVERIFY(session);
+    QVERIFY(session->isOpen());
+    QVERIFY(session->settingsRepository());
 
     ApplicationServicesAcademicCalendarSchedulePreferencesPort port(services);
     QVERIFY(port.read().empty());
 
     ApplicationServices unavailableServices;
+    QVERIFY(unavailableServices.dataService());
+    DatabaseSession* const unavailableSession =
+        unavailableServices.databaseSession();
+    QVERIFY(unavailableSession);
+    QVERIFY(!unavailableSession->isOpen());
     ApplicationServicesAcademicCalendarSchedulePreferencesPort unavailablePort(
         unavailableServices
         );
     QVERIFY(unavailablePort.read().empty());
     unavailablePort.write(R"({"version":1})");
     QVERIFY(unavailablePort.read().empty());
+
+    ApplicationServices closedServices;
+    const QString closedDatabasePath = databasePath(m_directory);
+    QVERIFY(closedServices.openDatabase(closedDatabasePath));
+    QVERIFY(closedServices.dataService());
+    DatabaseSession* const closedSession = closedServices.databaseSession();
+    QVERIFY(closedSession);
+    QVERIFY(closedSession->isOpen());
+    SettingsRepository* const closedRepository =
+        closedSession->settingsRepository();
+    QVERIFY(closedRepository);
+    const QString oldPayload = QStringLiteral(
+        R"({"version":1,"profiles":{"old":true}})"
+        );
+    QVERIFY(closedRepository->saveSetting(
+        QString::fromUtf8(AcademicCalendarScheduleKey),
+        oldPayload
+        ));
+
+    ApplicationServicesAcademicCalendarSchedulePreferencesPort closedPort(
+        closedServices
+        );
+    closedServices.closeDatabase();
+    QVERIFY(closedServices.dataService());
+    QVERIFY(!closedSession->isOpen());
+    QVERIFY(closedPort.read().empty());
+    closedPort.write(R"({"version":1,"profiles":{"new":true}})");
+    QVERIFY(closedPort.read().empty());
+
+    QVERIFY(closedServices.openDatabase(closedDatabasePath));
+    QVERIFY(closedSession->isOpen());
+    SettingsRepository* const reopenedRepository =
+        closedSession->settingsRepository();
+    QVERIFY(reopenedRepository);
+    const auto unchanged = reopenedRepository->loadSetting(
+        QString::fromUtf8(AcademicCalendarScheduleKey)
+        );
+    QVERIFY(unchanged);
+    QCOMPARE(unchanged->toString(), oldPayload);
 
     ApplicationServicesAcademicCalendarSchedulePreferencesPort nullPort(
         static_cast<ApplicationServices*>(nullptr)
@@ -111,11 +162,32 @@ missingAndUnavailableReadEmptyAndIgnoreSave()
 }
 
 void NextPlatformApplicationServicesAcademicCalendarSchedulePreferencesPortTests::
+readErrorsReturnEmpty()
+{
+    ApplicationServices services;
+    QVERIFY(openDatabase(services, m_directory));
+    QVERIFY(services.dataService());
+    DatabaseSession* const session = services.databaseSession();
+    QVERIFY(session);
+    QVERIFY(session->isOpen());
+    QVERIFY(session->settingsRepository());
+    QVERIFY(executeSql(services, QStringLiteral("DROP TABLE app_settings")));
+
+    ApplicationServicesAcademicCalendarSchedulePreferencesPort port(services);
+    QVERIFY(port.read().empty());
+}
+
+void NextPlatformApplicationServicesAcademicCalendarSchedulePreferencesPortTests::
 roundTripsThroughTheExactKey()
 {
     ApplicationServices services;
     QVERIFY(openDatabase(services, m_directory));
     QVERIFY(services.dataService());
+    DatabaseSession* const session = services.databaseSession();
+    QVERIFY(session);
+    QVERIFY(session->isOpen());
+    SettingsRepository* const repository = session->settingsRepository();
+    QVERIFY(repository);
 
     const std::string expected =
         R"({"version":1,"profiles":{"elementary":{},"middle":{}}})";
@@ -127,7 +199,7 @@ roundTripsThroughTheExactKey()
 
     QCOMPARE(port.read(), expected);
 
-    const auto stored = services.dataService()->loadSetting(
+    const auto stored = repository->loadSetting(
         QString::fromUtf8(AcademicCalendarScheduleKey)
         );
     QVERIFY(stored);
@@ -140,18 +212,23 @@ preservesStoredPayloadAndUnrelatedSettings()
     ApplicationServices services;
     QVERIFY(openDatabase(services, m_directory));
     QVERIFY(services.dataService());
+    DatabaseSession* const session = services.databaseSession();
+    QVERIFY(session);
+    QVERIFY(session->isOpen());
+    SettingsRepository* const repository = session->settingsRepository();
+    QVERIFY(repository);
 
     const QString storedPayload = QString::fromUtf8(
         "{\"version\":1,\"profiles\":{\"elementary\":{\"2026\":{\"termYear\":2026}},\"middle\":{}}}"
         );
     QVERIFY(
-        services.dataService()->saveSetting(
+        repository->saveSetting(
             QString::fromUtf8(AcademicCalendarScheduleKey),
             storedPayload
             )
         );
     QVERIFY(
-        services.dataService()->saveSetting(
+        repository->saveSetting(
             QString::fromUtf8(UnrelatedKey),
             QStringLiteral("preserved")
             )
@@ -165,7 +242,7 @@ preservesStoredPayloadAndUnrelatedSettings()
     port.write(replacement);
     QCOMPARE(port.read(), replacement);
 
-    const auto unrelated = services.dataService()->loadSetting(
+    const auto unrelated = repository->loadSetting(
         QString::fromUtf8(UnrelatedKey)
         );
     QVERIFY(unrelated);
@@ -177,6 +254,11 @@ saveFailurePreservesWarningAndStoredPayload()
 {
     ApplicationServices services;
     QVERIFY(openDatabase(services, m_directory));
+    QVERIFY(services.dataService());
+    DatabaseSession* const session = services.databaseSession();
+    QVERIFY(session);
+    QVERIFY(session->isOpen());
+    QVERIFY(session->settingsRepository());
 
     const std::string initial = R"({"version":1,"profiles":{}})";
     const std::string replacement = R"({"version":1,"profiles":{"changed":true}})";

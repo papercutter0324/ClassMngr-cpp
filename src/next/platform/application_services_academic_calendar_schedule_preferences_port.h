@@ -1,7 +1,8 @@
 #pragma once
 
-#include "app/services/feature_services.h"
 #include "core/application_services.h"
+#include "data/database/database_session.h"
+#include "data/repositories/settings_repository.h"
 #include "next/application/academic_calendar_schedule_preferences.h"
 
 #include <QByteArray>
@@ -24,16 +25,14 @@ public:
     explicit ApplicationServicesAcademicCalendarSchedulePreferencesPort(
         ApplicationServices& services
         ) noexcept
-        : m_settingsService(services.settingsService())
+        : m_session(services.databaseSession())
     {
     }
 
     explicit ApplicationServicesAcademicCalendarSchedulePreferencesPort(
         ApplicationServices* services
         ) noexcept
-        : m_settingsService(
-            services ? services->settingsService() : nullptr
-            )
+        : m_session(services ? services->databaseSession() : nullptr)
     {
     }
 
@@ -52,19 +51,24 @@ public:
 
     [[nodiscard]] std::string read() const override
     {
-        if (!m_settingsService || !m_settingsService->isAvailable())
+        if (!m_session || !m_session->isOpen())
         {
             return {};
         }
 
-        const QByteArray payload =
-            m_settingsService
-                ->loadOrDefault(
-                    key(),
-                    QString()
-                    )
-                .toString()
-                .toUtf8();
+        SettingsRepository* const repository = m_session->settingsRepository();
+        if (!repository)
+        {
+            return {};
+        }
+
+        const auto stored = repository->loadSetting(key());
+        if (!stored)
+        {
+            return {};
+        }
+
+        const QByteArray payload = stored->toString().toUtf8();
 
         return std::string(
             payload.constData(),
@@ -74,7 +78,13 @@ public:
 
     void write(const std::string& payload) const override
     {
-        if (!m_settingsService || !m_settingsService->isAvailable())
+        if (!m_session || !m_session->isOpen())
+        {
+            return;
+        }
+
+        SettingsRepository* const repository = m_session->settingsRepository();
+        if (!repository)
         {
             return;
         }
@@ -83,7 +93,7 @@ public:
             payload.data(),
             static_cast<qsizetype>(payload.size())
             );
-        if (const Status saved = m_settingsService->save(
+        if (const Status saved = repository->saveSetting(
                 key(),
                 storedPayload
                 ); !saved)
@@ -100,7 +110,7 @@ private:
         return QStringLiteral("calendar/academicSchedule/v1");
     }
 
-    SettingsService* m_settingsService = nullptr;
+    DatabaseSession* m_session = nullptr;
 };
 
 } // namespace ClassMngr::Next::Platform
