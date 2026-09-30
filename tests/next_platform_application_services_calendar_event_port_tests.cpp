@@ -247,7 +247,7 @@ private slots:
     void reportsUnavailableDeleteSessionStructurally();
     void reportsDeleteServiceFailureStructurally();
     void deletesAllCalendarEventsThroughTypedPort();
-    void reportsUnavailableDeleteAllServiceStructurally();
+    void reportsUnavailableDeleteAllSessionStructurally();
     void reportsDeleteAllServiceFailureStructurally();
     void savesOrderedCalendarImportBatchWithTypedIdsAndParity();
     void acceptsDuplicateOnlyEmptyImportBatchAsNoOp();
@@ -857,8 +857,13 @@ deletesAllCalendarEventsThroughTypedPort()
 {
     ApplicationServices services;
     QVERIFY(openDatabase(services, m_directory));
-    CalendarService* legacyService = services.calendarService();
-    QVERIFY(legacyService);
+    QVERIFY(services.dataService());
+    DatabaseSession* const session = services.databaseSession();
+    QVERIFY(session);
+    QVERIFY(session->isOpen());
+    CalendarEventRepository* const repository =
+        session->calendarEventRepository();
+    QVERIFY(repository);
 
     CalendarEvent firstEvent = makeEvent(
         QStringLiteral("Reset one"),
@@ -867,7 +872,9 @@ deletesAllCalendarEventsThroughTypedPort()
         );
     firstEvent.startTime = QTime(9, 0);
     firstEvent.endTime = QTime(10, 0);
-    QVERIFY(saveEvent(*legacyService, firstEvent) > 0);
+    const auto firstSaved = repository->saveCalendarEvent(firstEvent);
+    QVERIFY(firstSaved);
+    QVERIFY(*firstSaved > 0);
 
     CalendarEvent secondEvent = makeEvent(
         QStringLiteral("Reset two"),
@@ -876,13 +883,18 @@ deletesAllCalendarEventsThroughTypedPort()
         );
     secondEvent.startTime = QTime(11, 0);
     secondEvent.endTime = QTime(12, 0);
-    QVERIFY(saveEvent(*legacyService, secondEvent) > 0);
+    secondEvent.repeatSeriesId = QStringLiteral("reset-series");
+    const auto secondSaved = repository->saveCalendarEvent(secondEvent);
+    QVERIFY(secondSaved);
+    QVERIFY(*secondSaved > *firstSaved);
+    QVERIFY(repository->getCalendarEvent(*firstSaved));
+    QVERIFY(repository->getCalendarEvent(*secondSaved));
 
     ApplicationServicesCalendarEventDeleteAllPort port(services);
     QVERIFY(port.isAvailable());
     const auto deleted = port.deleteAllEvents();
     QVERIFY(deleted);
-    const auto remaining = legacyService->eventsInRange(
+    const auto remaining = repository->loadCalendarEventsInRange(
         QDate(2026, 12, 1),
         QDate(2026, 12, 31)
         );
@@ -891,11 +903,26 @@ deletesAllCalendarEventsThroughTypedPort()
 }
 
 void NextPlatformApplicationServicesCalendarEventPortTests::
-reportsUnavailableDeleteAllServiceStructurally()
+reportsUnavailableDeleteAllSessionStructurally()
 {
     ApplicationServices services;
+    QVERIFY(services.dataService());
+    DatabaseSession* const session = services.databaseSession();
+    QVERIFY(session);
+    QVERIFY(!session->isOpen());
     ApplicationServicesCalendarEventDeleteAllPort port(services);
 
+    QVERIFY(!port.isAvailable());
+    verifyFailure(port.deleteAllEvents(), ErrorCode::NotFound);
+
+    QVERIFY(openDatabase(services, m_directory));
+    QVERIFY(session->isOpen());
+    QVERIFY(session->calendarEventRepository());
+    QVERIFY(port.isAvailable());
+
+    services.closeDatabase();
+    QVERIFY(services.dataService());
+    QVERIFY(!session->isOpen());
     QVERIFY(!port.isAvailable());
     verifyFailure(port.deleteAllEvents(), ErrorCode::NotFound);
 }
@@ -905,8 +932,14 @@ reportsDeleteAllServiceFailureStructurally()
 {
     ApplicationServices services;
     QVERIFY(openDatabase(services, m_directory));
-    CalendarService* legacyService = services.calendarService();
-    QVERIFY(legacyService);
+    QVERIFY(services.dataService());
+    DatabaseSession* const session = services.databaseSession();
+    QVERIFY(session);
+    QVERIFY(session->isOpen());
+    CalendarEventRepository* const repository =
+        session->calendarEventRepository();
+    QVERIFY(repository);
+
     CalendarEvent event = makeEvent(
         QStringLiteral("Reset failure"),
         QDate(2026, 12, 2),
@@ -914,12 +947,12 @@ reportsDeleteAllServiceFailureStructurally()
         );
     event.startTime = QTime(9, 0);
     event.endTime = QTime(10, 0);
-    const int eventId = saveEvent(*legacyService, event);
+    const auto saved = repository->saveCalendarEvent(event);
+    QVERIFY(saved);
+    const int eventId = *saved;
     QVERIFY(eventId > 0);
 
-    QSqlQuery query(
-        services.dataService()->databaseSession()->database()
-        );
+    QSqlQuery query(session->database());
     QVERIFY(query.exec(QStringLiteral(
         "CREATE TRIGGER reject_calendar_delete_all "
         "BEFORE DELETE ON calendar_events "
@@ -938,7 +971,7 @@ reportsDeleteAllServiceFailureStructurally()
         || deleted.error().message.find("Deleting all calendar events")
             != std::string::npos
         );
-    QVERIFY(legacyService->event(eventId));
+    QVERIFY(repository->getCalendarEvent(eventId));
 }
 
 void NextPlatformApplicationServicesCalendarEventPortTests::
