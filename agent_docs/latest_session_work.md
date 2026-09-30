@@ -3840,8 +3840,9 @@ state behavior. Keep the F159 Native English read, both directory save paths,
 and Phase 7 model/view conversion separate. Acceptance covers query/adapter
 mapping and error/no-fallback behavior; page/route values, ordering, IDs, and
 failures; F159 and save regressions; and pinned-baseline visible parity. Cover
-the route edge where legacy availability passes preflight but the active-
-session adapter returns unavailable: preserve confirmation-before-read, do
-not fall back to `DataService`, and do not show the page. Make no query-count
+the route race where preflight passes while the session is open, then the
+session closes during confirmation and the active-session read returns
+`NotFound`; preserve confirmation-before-read, do not fall back through
+`TeacherService` or `DataService`, and do not show the page. Make no query-count
 claim. Gates 1 and 2 remain Partial; Phase 2 remains In Progress/Open. No push
 was requested. F160 implementation has not started.

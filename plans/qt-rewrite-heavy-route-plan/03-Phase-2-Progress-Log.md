@@ -8053,10 +8053,11 @@ confirmation-before-read/show-only-on-success behavior. Keep F159's Native
 English read, both save paths, and Phase 7 model/view conversion out of scope.
 Acceptance covers query/adapter mapping, errors and no-fallback; page/route
 values, ordering, IDs, and failures; F159 and save regressions; and
-pinned-baseline visible parity. Explicitly test when legacy
-`TeacherService::isAvailable()` passes but the active-session read returns
-`NotFound`: do not fall back to `DataService` or show the page after
-confirmation. Test unavailable-session silent clear separately from the
-repository-error warning. Make no baseline query-count claim. F160 is selected;
-implementation has not started. Gates 1 and 2 remain Partial; Phase 2 remains
-In Progress/Open.
+pinned-baseline visible parity. Test the route race where
+`TeacherService::isAvailable()` passes while the session is open, then the
+session closes during leave confirmation and the active-session read returns
+`NotFound`: do not fall back through `TeacherService` or `DataService`, or show
+the page after confirmation. Test unavailable-session silent clear separately
+from the repository-error warning. Make no baseline query-count claim. F160 is
+selected; implementation has not started. Gates 1 and 2 remain Partial; Phase 2
+remains In Progress/Open.

@@ -2066,7 +2066,8 @@ order, unavailable-session silent clear, repository-error warning, and success
 state behavior. Keep F159's Native English read, both directory save paths,
 and Phase 7's model/view conversion separate. Acceptance includes mapping,
 failure/no-fallback, page/route regressions, save regressions, and pinned-
-baseline visible parity. Cover the route edge where legacy availability passes
-its preflight but the active-session adapter returns unavailable: preserve
-confirmation-before-read, show no page, and do not fall back to `DataService`.
-Gates 1 and 2 remain Partial; Phase 2 remains In Progress/Open.
+baseline visible parity. Cover the route race where the availability preflight
+passes while the session is open, then the session closes during leave
+confirmation and the active-session read returns `NotFound`: show no page and
+do not fall back through `TeacherService` or `DataService`. Gates 1 and 2
+remain Partial; Phase 2 remains In Progress/Open.
