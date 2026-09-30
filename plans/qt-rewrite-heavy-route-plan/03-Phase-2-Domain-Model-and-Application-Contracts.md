@@ -48,8 +48,9 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
   F177's Sub Prep schedule-summary port, F178's Sub Prep print source port,
   F179's Sub Prep roster-output source port, F180's Sub Prep calendar-event
   interval port, and F181's Calendar Event Import signature query port are
-  accepted. F182's active Calendar event read/by-ID adapter is accepted; F183
-  is selected for the single Calendar Event save port migration.
+  accepted. F182's active Calendar event read/by-ID adapter and F183's single
+  Calendar Event save port are accepted. F184 is selected for Calendar Event
+  deletion through the active session repository.
   The prior F123 candidate wording is historical;
   current Teacher Profile integration status is recorded in the progress log.
   Gates 1 and 2
@@ -919,20 +920,36 @@ sessions, repository Technical failures, missing-ID mapping, and the 4,096
 projection cap (4,097 fails); the import signature query remains uncapped.
 `git diff --check` passed. See the progress log for evidence.
 
-## F183 selected single Calendar Event save port
+## F183 accepted single Calendar Event save port
 
-Migrate `src/next/platform/application_services_calendar_event_save_port.h`,
-with focused coverage in
-`tests/next_platform_application_services_calendar_event_port_tests.cpp`, to
-the open active session's `CalendarEventRepository::saveCalendarEvents({event})`.
-Keep the existing one-event batch operation path and no `CalendarService` or
-`DataService` fallback. Preserve `CalendarEventValidator::normalized()` and
-`validateSeries()` in the current normalize-then-validate flow; typed create
-and update ID behavior; request, date, and time validation and conversion;
-`repeatSeriesId` clearing; error mapping; and batch transactional semantics.
-Repeat-series create/edit and import save are out of scope. Verify
+F183, source commit `3c13a5fb`, migrates
+`ApplicationServicesCalendarEventSavePort` to the open session's
+`CalendarEventRepository::saveCalendarEvents({event})`, with no
+`CalendarService` or `DataService` fallback. It retains
+`CalendarEventValidator::normalized()` followed by `validateSeries()`, the
+one-event transaction path, typed create/update IDs, request/date/time
+conversion, `repeatSeriesId` clearing, and error mapping. Implementation and
+independent Tester each passed
 `ClassMngrNextPlatformApplicationServicesCalendarEventPortTests`,
 `ClassMngrNextApplicationCalendarEventTests`, and
-`ClassMngrCalendarEventRepositoryTests`. No UI wiring change is expected:
-CalendarPage already uses the typed save use case. Phase 2 remains In
+`ClassMngrCalendarEventRepositoryTests`. Coverage includes unopened/closed
+sessions with `DataService` present, create/update IDs, normalized title,
+invalid requests, and repository failure. `git diff --check` passed.
+
+## F184 selected Calendar Event delete port
+
+Migrate `ApplicationServicesCalendarEventDeletePort` in
+`src/next/platform/application_services_calendar_event_delete_port.h`, with
+focused tests in
+`tests/next_platform_application_services_calendar_event_port_tests.cpp`, to
+the open active `DatabaseSession`'s
+`CalendarEventRepository::deleteCalendarEvent(int)`, without
+`CalendarService` or `DataService` fallback. Preserve positive typed-ID
+parsing and InvalidInput; map unavailable/closed sessions to NotFound and
+repository failures to Technical; keep deletion successful for a valid
+positive ID with no matching row. Repeat-series suffix-delete is out of scope.
+Verify `ClassMngrNextPlatformApplicationServicesCalendarEventPortTests`,
+`ClassMngrNextApplicationCalendarEventTests`, and
+`ClassMngrCalendarEventRepositoryTests`. CalendarPage already uses the typed
+delete use case, so no UI rewiring is expected. Phase 2 remains In
 Progress/Open; Gates 1 and 2 remain Partial.
