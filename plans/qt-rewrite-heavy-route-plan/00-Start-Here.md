@@ -50,8 +50,8 @@
   creation port, F189's repeat-series edit port, F190's Calendar Event display
   preferences port, F191's Calendar Event type-color preferences port, and
   F192's Calendar first-day-of-week preferences port and F193's Academic
-  Calendar schedule preferences port are accepted. F194 is selected for
-  Schedule display preferences.
+  Calendar schedule preferences port and F194's Schedule display preferences
+  port are accepted. F195 is selected for Schedule display mode preferences.
   See the
   [Phase 2 progress
   log](03-Phase-2-Progress-Log.md)

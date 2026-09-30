@@ -8299,7 +8299,7 @@ fields/schedule/teacher/count/fallback parity. F167 implementation has not
 started. Gate 1 and Gate 2 remain Partial; Phase 2 remains In Progress and its
 exit gate remains Open.
 
-### Progress update - 2026-10-01 (F193 accepted; F194 selected)
+### Progress update - 2026-10-01 (F194 accepted; F195 selected)
 
 F167, source commit `97efac8b`, updates
 `ApplicationServicesClassDetailsPageReadPort` to use active-session
@@ -8670,18 +8670,33 @@ passed 1/1, and `git diff --check` passed. The historical 2026-09-26 generated-
 MOC build failure did not recur. Provider, callers, and generic
 `SettingsService` are unchanged.
 
-F194 is selected for `ApplicationServicesScheduleDisplayPreferencesPort` in
-`src/next/platform/application_services_schedule_display_preferences_port.h`,
+F194, source commit `7db4cfbb`, migrates
+`ApplicationServicesScheduleDisplayPreferencesPort` to the active open
+session's `SettingsRepository`. It preserves the five exact keys, false
+defaults, QVariant coercion, one atomic `saveSettings` call, Technical error
+mapping, successful no-op for unavailable/closed sessions, and unrelated
+settings. Tests cover read-error defaults, closed-session no-fallback with
+`DataService`, keys/coercion, unrelated settings, and rollback. The worker
+build succeeded; independent registered CTest
+`ClassMngrNextPlatformApplicationServicesScheduleDisplayPreferencesPortTests`
+passed 1/1, and `git diff --check` passed. Callers and generic
+`SettingsService` are unchanged.
+
+F195 is selected for `ApplicationServicesScheduleDisplayModePreferencesPort`
+in `src/next/platform/application_services_schedule_display_mode_preferences_port.h`,
 with focused tests in
-`tests/next_platform_application_services_schedule_display_preferences_port_tests.cpp`
+`tests/next_platform_application_services_schedule_display_mode_preferences_port_tests.cpp`
 and registered target
-`NextPlatformApplicationServicesScheduleDisplayPreferencesPort`. Use only the
-active open session's `SettingsRepository`. Preserve the five exact keys,
-false defaults, existing QVariant coercion, atomic all-five save, Technical
-error mapping, successful no-op for unavailable/closed sessions, and
-unrelated settings. Add read-error fallback-to-false and closed-session-with-
-`DataService` no-fallback coverage. Leave menu, schedule, and calendar callers
-and generic/sessionless `SettingsService` unchanged. Two independent Explorer
-lanes agreed; existing focused tests cover keys, coercion, and rollback. Gate 1
-and Gate 2 remain Partial; Phase 2 remains In Progress and its exit gate
-remains Open.
+`NextPlatformApplicationServicesScheduleDisplayModePreferencesPort`. Use only
+the active open session's `SettingsRepository`. Preserve canonical key
+`schedule_display_mode` and values regular/intensive/testing, legacy
+`schedule_show_intensive` fallback, migration write when the canonical value is
+absent, and leave an invalid existing canonical value untouched while retaining
+legacy fallback interpretation. Use Regular when unavailable; keep
+unavailable/closed saves as no-ops, preserve save warnings, and leave typed
+callers and generic/sessionless `SettingsService` unchanged. Add
+closed-session-with-`DataService` no-fallback and read-error behavior coverage.
+Two independent Explorer lanes differed, with one suggesting Current Campus;
+after comparing scans, Schedule display mode was chosen for continuity with
+F194 and the existing focused migration tests. Gate 1 and Gate 2 remain Partial;
+Phase 2 remains In Progress and its exit gate remains Open.
