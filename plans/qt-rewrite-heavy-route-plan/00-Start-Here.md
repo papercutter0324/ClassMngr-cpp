@@ -41,7 +41,8 @@
   speaking-evaluation read port and F175's ScheduleBuilder source port are
   accepted. F176's Sub Prep class-details read port, F177's Sub Prep
   schedule-summary port, and F178's Sub Prep print source port are accepted.
-  F179 is selected for the Sub Prep roster-output source port. See the
+  F179's Sub Prep roster-output source port is accepted. F180 is selected for
+  the Sub Prep calendar-event interval port. See the
   [Phase 2 progress
   log](03-Phase-2-Progress-Log.md)
   for evidence and current selection details.

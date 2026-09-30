@@ -23,8 +23,9 @@ typed student-name pair at the roster score-import join, and F65's verified
 legacy profile startup/migration path through FileController, the F70 Class
 Transfer preview-matching policy, and F71's typed Class Transfer review-decision
 identities with legacy integer adapters,
-and Sub Prep print-source, selected-class details, and schedule-summary read
-adapters plus the Sub Prep information-sheet output wiring. F143 also moves the
+and Sub Prep print-source, selected-class details, schedule-summary, and
+roster-output read adapters; the calendar-event interval port is selected next.
+The Sub Prep information-sheet output wiring is also complete. F143 moves the
 Testing Classes manager's selected-detail read through a typed Application
 query and active-session Platform adapter. Personal-details
 save, personal-signature, and current-campus preference caller boundaries
@@ -4132,8 +4133,8 @@ F145 details update and F146 creation remain separate accepted boundaries.
 Production commit `b037b4216b71c55c7793df5f7bbbfc4a00690065`, page transition
 fix `315b3ff33b7e2ab42b43d52cd168ce21a92158c9`, and acceptance-test commit
 `397376e439f4b5955c82948ab0c225aaf776d679` are recorded with verification
-limits in the [Phase 2 progress log](03-Phase-2-Progress-Log.md). F148-F178
-are accepted. F179 is selected; its boundary and acceptance criteria are in
+limits in the [Phase 2 progress log](03-Phase-2-Progress-Log.md). F148-F179
+are accepted. F180 is selected; its boundary and acceptance criteria are in
 the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 
 ## Class-details save mapping: F126 and F139
@@ -4572,9 +4573,10 @@ passed all four targets:
 coverage confirms unopened/closed sessions return NotFound. No full suite or
 application build ran. See the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 
-## F179 selected Sub Prep roster-output source port
+## F179 accepted Sub Prep roster-output source port
 
-Migrate `ApplicationServicesSubPrepRosterOutputSourcePort` from
+F179, source commit `82931424`, migrates
+`ApplicationServicesSubPrepRosterOutputSourcePort` from
 `ClassService`, `TeacherService`, and `RosterService` to direct active-session
 `ClassInfoRepository::loadClassInfosForScheduleScope()` and `loadClassInfo()`,
 `ClassRepository::getClassById()`, `TeacherRepository::getTeacher()`, and
@@ -4587,7 +4589,23 @@ row/cell/text budgets, existing errors, no `DataService` fallback, and no
 partial output/package on failure. Verify
 `ClassMngrNextApplicationSubPrepRosterOutputSourceQueryTests`,
 `ClassMngrNextPlatformApplicationServicesSubPrepRosterOutputSourcePortTests`,
-`ClassMngrSubPrepPackageServiceTests`, and `ClassMngrSubPrepPageTests`. The
-configured `build/f168` Ninja target list contains all four F179 targets and is
-retained for F179. Phase 2 remains In Progress/Open; Gates 1 and 2 remain
-Partial.
+`ClassMngrSubPrepPackageServiceTests`, and `ClassMngrSubPrepPageTests` passed
+4/4 for implementation and independent Tester. Added coverage exercises
+unavailable sessions, stale-teacher failure without partial output, technical
+repository failure, and empty-day no-read. `git diff --check` passed. Phase 2
+remains In Progress/Open; Gates 1 and 2 remain Partial.
+
+## F180 selected Sub Prep calendar-event interval port
+
+Migrate `ApplicationServicesSubPrepCalendarEventIntervalsPort` to the open
+session's `CalendarEventRepository::loadCalendarEventDateIntervalsInRange()`.
+Preserve query/window validation, the inclusive current- and following-year
+range with a year-9999 clamp, unlimited purpose-specific results, Vacation and
+Holiday filtering, crossing-interval order, and quiet failure with the page's
+empty-calendar fallback. Keep the injectable `IntervalRangeReader` and its
+4,097-event no-projection-cap test. Verify direct repository use and
+unopened/closed-session NotFound without fallback using
+`ClassMngrNextApplicationSubPrepCalendarEventIntervalsQueryTests`,
+`ClassMngrNextPlatformApplicationServicesCalendarEventPortTests`, and
+`ClassMngrSubPrepPageTests`. The first two targets are registered in
+`build/f168`; their executables need building.

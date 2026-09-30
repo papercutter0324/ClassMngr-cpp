@@ -8299,7 +8299,7 @@ fields/schedule/teacher/count/fallback parity. F167 implementation has not
 started. Gate 1 and Gate 2 remain Partial; Phase 2 remains In Progress and its
 exit gate remains Open.
 
-### Progress update - 2026-10-01 (F178 accepted; F179 selected)
+### Progress update - 2026-10-01 (F179 accepted; F180 selected)
 
 F167, source commit `97efac8b`, updates
 `ApplicationServicesClassDetailsPageReadPort` to use active-session
@@ -8439,7 +8439,8 @@ passed all four targets:
 coverage confirms unopened/closed sessions return NotFound. No full suite or
 application build ran.
 
-F179 migrates `ApplicationServicesSubPrepRosterOutputSourcePort` from
+F179, source commit `82931424`, migrates
+`ApplicationServicesSubPrepRosterOutputSourcePort` from
 `ClassService`, `TeacherService`, and `RosterService` to direct active-session
 `ClassInfoRepository::loadClassInfosForScheduleScope()` and `loadClassInfo()`,
 `ClassRepository::getClassById()`, `TeacherRepository::getTeacher()`, and
@@ -8453,5 +8454,22 @@ partial output/package on failure. Verify
 `ClassMngrNextApplicationSubPrepRosterOutputSourceQueryTests`,
 `ClassMngrNextPlatformApplicationServicesSubPrepRosterOutputSourcePortTests`,
 `ClassMngrSubPrepPackageServiceTests`, and `ClassMngrSubPrepPageTests`.
-`build/f168` contains all four F179 targets and is retained. Gate 1 and Gate 2
-remain Partial; Phase 2 remains In Progress and its exit gate remains Open.
+Implementation and independent Tester each passed all four targets. Added
+coverage exercises unavailable sessions, stale-teacher failure without partial
+output, technical repository failure, and empty-day no-read. `git diff --check`
+passed. `build/f168` contains all four targets and is retained. Gate 1 and Gate
+2 remain Partial; Phase 2 remains In Progress and its exit gate remains Open.
+
+F180 migrates `ApplicationServicesSubPrepCalendarEventIntervalsPort` in
+`src/next/platform/application_services_sub_prep_calendar_event_intervals_port.h`
+to open-session `CalendarEventRepository::loadCalendarEventDateIntervalsInRange()`.
+Preserve query/window validation, the inclusive current- and following-year
+range with a year-9999 clamp, unlimited purpose-specific results, Vacation and
+Holiday filtering, crossing-interval order, and quiet read failure with the
+page's empty-calendar fallback. Keep the injectable `IntervalRangeReader` and
+its 4,097-event no-projection-cap test. Acceptance should verify direct
+repository use and unopened/closed-session NotFound without fallback. Targets:
+`ClassMngrNextApplicationSubPrepCalendarEventIntervalsQueryTests`,
+`ClassMngrNextPlatformApplicationServicesCalendarEventPortTests`, and
+`ClassMngrSubPrepPageTests`. The first two are registered in `build/f168`; their
+executables need building.

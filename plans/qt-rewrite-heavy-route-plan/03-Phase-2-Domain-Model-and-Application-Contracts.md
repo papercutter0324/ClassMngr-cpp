@@ -45,9 +45,9 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
   F172's Class Co-Teacher assignment save port, F173's ScheduleWidget
   slot-state save port, and F174's speaking-evaluation read port are accepted.
   F175's ScheduleBuilder source port, F176's Sub Prep class-details read port,
-  F177's Sub Prep schedule-summary port, and F178's Sub Prep print source port
-  are accepted. F179 is selected to migrate the Sub Prep roster-output source
-  port.
+  F177's Sub Prep schedule-summary port, F178's Sub Prep print source port,
+  and F179's Sub Prep roster-output source port are accepted. F180 is selected
+  to migrate the Sub Prep calendar-event interval port.
   The prior F123 candidate wording is historical;
   current Teacher Profile integration status is recorded in the progress log.
   Gates 1 and 2
@@ -846,9 +846,10 @@ passed all four targets:
 coverage confirms unopened/closed sessions return NotFound. No full suite or
 application build ran.
 
-## F179 selected Sub Prep roster-output source port
+## F179 accepted Sub Prep roster-output source port
 
-Migrate `ApplicationServicesSubPrepRosterOutputSourcePort` from
+F179, source commit `82931424`, migrates
+`ApplicationServicesSubPrepRosterOutputSourcePort` from
 `ClassService`, `TeacherService`, and `RosterService` to direct active-session
 `ClassInfoRepository::loadClassInfosForScheduleScope()` and `loadClassInfo()`,
 `ClassRepository::getClassById()`, `TeacherRepository::getTeacher()`, and
@@ -861,6 +862,25 @@ row/cell/text budgets, existing errors, no `DataService` fallback, and no
 partial output/package on failure. Verify
 `ClassMngrNextApplicationSubPrepRosterOutputSourceQueryTests`,
 `ClassMngrNextPlatformApplicationServicesSubPrepRosterOutputSourcePortTests`,
-`ClassMngrSubPrepPackageServiceTests`, and `ClassMngrSubPrepPageTests`. Retain
-`build/f168`; its Ninja target list contains all four F179 targets. Phase 2
-remains In Progress/Open; Gates 1 and 2 remain Partial.
+`ClassMngrSubPrepPackageServiceTests`, and `ClassMngrSubPrepPageTests` passed
+4/4 for both implementation and independent Tester. Added coverage exercises
+unavailable sessions, stale-teacher failure without partial output, technical
+repository failure, and empty-day no-read. `git diff --check` passed.
+
+## F180 selected Sub Prep calendar-event interval port
+
+Migrate `ApplicationServicesSubPrepCalendarEventIntervalsPort` in
+`src/next/platform/application_services_sub_prep_calendar_event_intervals_port.h`
+to the open session's
+`CalendarEventRepository::loadCalendarEventDateIntervalsInRange()`. Preserve
+query/window validation, the inclusive current- and following-calendar-year
+range with a year-9999 clamp, unlimited purpose-specific results, Vacation and
+Holiday filtering, crossing-interval order, and quiet failure including the
+page's empty-calendar fallback. Keep the injectable `IntervalRangeReader` and
+its 4,097-event no-projection-cap coverage. Verify direct repository use and
+unopened/closed-session NotFound without fallback using
+`ClassMngrNextApplicationSubPrepCalendarEventIntervalsQueryTests`,
+`ClassMngrNextPlatformApplicationServicesCalendarEventPortTests`, and
+`ClassMngrSubPrepPageTests`. The first two Ninja targets are registered in
+`build/f168`; their executables need building. Phase 2 remains In Progress/Open;
+Gates 1 and 2 remain Partial.
