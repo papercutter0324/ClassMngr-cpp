@@ -44,6 +44,14 @@ Result<QList<GsTeamMember>> GsTeamRepository::getAll() const
     return QList<GsTeamMember>{};
 }
 
+Status GsTeamRepository::saveDirectory(
+    const QList<GsTeamMember>&,
+    const QList<int>&
+    )
+{
+    return {};
+}
+
 TeacherService* ApplicationServices::teacherService() const
 {
     return nullptr;

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ui/shared/pages/basepage.h"
+#include "next/domain/gs_team_member_id.h"
 #include "next/domain/native_english_teacher_id.h"
 
 #include <QList>
@@ -55,7 +56,6 @@ private:
     void deleteSelectedRows();
     void markDirty(bool scheduleAutosave = true);
     bool saveDirectory(bool showErrors);
-    bool validateBirthday(const QString& value) const;
     void updateActions();
     void updateTableMetrics();
 
@@ -64,7 +64,7 @@ private:
     SaveMode m_saveMode = SaveMode::Automatic;
     bool m_loading = false;
     bool m_dirty = false;
-    QList<int> m_deletedIds;
+    QList<ClassMngr::Next::Domain::GsTeamMemberId> m_deletedGsTeamMemberIds;
     QList<ClassMngr::Next::Domain::NativeEnglishTeacherId>
         m_deletedNativeEnglishTeacherIds;
 

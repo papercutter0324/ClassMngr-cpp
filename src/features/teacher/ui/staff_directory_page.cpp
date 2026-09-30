@@ -1,15 +1,14 @@
 #include "staff_directory_page.h"
 #include "ui/shared/dialogs/user_prompt_service.h"
 
-#include "app/services/feature_services.h"
 #include "core/application_services.h"
 #include "core/fontmanager.h"
-#include "domain/models/gs_team_member.h"
-#include "domain/models/native_english_teacher.h"
 #include "next/application/gs_team_directory_read_query.h"
+#include "next/application/gs_team_directory_save_use_case.h"
 #include "next/application/native_english_teacher_directory_read_query.h"
 #include "next/application/native_english_teacher_directory_save_use_case.h"
 #include "next/platform/application_services_gs_team_directory_read_port.h"
+#include "next/platform/application_services_gs_team_directory_save_port.h"
 #include "next/platform/application_services_native_english_teacher_directory_read_port.h"
 #include "next/platform/application_services_native_english_teacher_directory_save_port.h"
 #include "ui/shared/constants/gui_constants.h"
@@ -26,7 +25,6 @@
 #include <QLabel>
 #include <QLineEdit>
 #include <QPushButton>
-#include <QSet>
 #include <QComboBox>
 #include <QCoreApplication>
 #include <QStyledItemDelegate>
@@ -441,7 +439,7 @@ bool StaffDirectoryPage::loadDirectory()
         }
     }
 
-    m_deletedIds.clear();
+    m_deletedGsTeamMemberIds.clear();
     m_deletedNativeEnglishTeacherIds.clear();
     m_dirty = false;
     m_loading = false;
@@ -505,21 +503,13 @@ void StaffDirectoryPage::deleteSelectedRows()
             }
             else
             {
-                m_deletedIds.append(id);
+                m_deletedGsTeamMemberIds.append(
+                    ClassMngr::Next::Domain::GsTeamMemberId(id));
             }
         }
         m_table->removeRow(row);
     }
     markDirty();
-}
-
-bool StaffDirectoryPage::validateBirthday(const QString& value) const
-{
-    if (value.trimmed().isEmpty()) return true;
-    const QDate date = QDate::fromString(
-        QStringLiteral("2000-%1").arg(value.trimmed()),
-        QStringLiteral("yyyy-MM-dd"));
-    return date.isValid();
 }
 
 bool StaffDirectoryPage::saveDirectory(bool showErrors)
@@ -625,53 +615,94 @@ bool StaffDirectoryPage::saveDirectory(bool showErrors)
         return true;
     }
 
-    auto* teacherService =
-        m_services
-            ? m_services->teacherService()
-            : nullptr;
-    if (!teacherService || !teacherService->isAvailable()) return false;
-
-    Status status;
+    const ClassMngr::Next::Platform::
+        ApplicationServicesGsTeamDirectorySavePort port(m_services);
+    if (!port.hasActiveSession())
     {
-        QList<GsTeamMember> members;
-        QSet<QString> englishNames;
-        QSet<QString> koreanNames;
-        for (int row = 0; row < m_table->rowCount(); ++row)
-        {
-            GsTeamMember member;
-            member.id = m_table->item(row, 0)
-                ? m_table->item(row, 0)->data(IdRole).toInt() : -1;
-            member.name = cellText(m_table, row, 0).simplified();
-            member.koreanName = cellText(m_table, row, 1).simplified();
-            member.position = cellText(m_table, row, 2);
-            member.phoneNumber = cellText(m_table, row, 3);
-            member.birthday = cellText(m_table, row, 4);
-            const QString english = normalizedName(member.name);
-            const QString korean = normalizedName(member.koreanName);
-            if ((english.isEmpty() && korean.isEmpty())
-                || (!english.isEmpty() && englishNames.contains(english))
-                || (!korean.isEmpty() && koreanNames.contains(korean))
-                || !validateBirthday(member.birthday))
-            {
-                status = std::unexpected(tr("Each GS Team member needs a unique name or Korean name and a valid MM-dd birthday."));
-                break;
-            }
-            if (!english.isEmpty()) englishNames.insert(english);
-            if (!korean.isEmpty()) koreanNames.insert(korean);
-            members.append(member);
-        }
-        if (status)
-        {
-            status = teacherService->saveGsTeamDirectory(
-                members, m_deletedIds);
-        }
+        return false;
     }
 
-    if (!status)
+    ClassMngr::Next::Application::GsTeamDirectorySaveRequest request;
+    request.rows.reserve(static_cast<std::size_t>(m_table->rowCount()));
+    for (int row = 0; row < m_table->rowCount(); ++row)
+    {
+        const auto* nameItem = m_table->item(row, 0);
+        const int id = nameItem ? nameItem->data(IdRole).toInt() : -1;
+        const QString name = cellText(m_table, row, 0).simplified();
+        const QString koreanName = cellText(m_table, row, 1).simplified();
+        const QString birthday = cellText(m_table, row, 4);
+        const QString normalizedBirthday = birthday.trimmed();
+        const bool birthdayIsBlank = normalizedBirthday.isEmpty();
+        const bool birthdayIsValid = QDate::fromString(
+            QStringLiteral("2000-%1").arg(normalizedBirthday),
+            QStringLiteral("yyyy-MM-dd")
+            ).isValid();
+
+        ClassMngr::Next::Application::GsTeamDirectorySaveRow member;
+        if (id > 0)
+        {
+            member.id = ClassMngr::Next::Domain::GsTeamMemberId(id);
+        }
+        member.name = name.toStdU16String();
+        member.koreanName = koreanName.toStdU16String();
+        member.position = cellText(m_table, row, 2).toStdU16String();
+        member.phoneNumber = cellText(m_table, row, 3).toStdU16String();
+        member.birthday = birthday.toStdU16String();
+        member.normalizedEnglishNameKey =
+            normalizedName(name).toStdU16String();
+        member.normalizedKoreanNameKey =
+            normalizedName(koreanName).toStdU16String();
+        member.birthdayIsBlank = birthdayIsBlank;
+        member.birthdayIsValid = birthdayIsValid;
+        request.rows.push_back(std::move(member));
+    }
+
+    request.deletedIds.reserve(
+        static_cast<std::size_t>(m_deletedGsTeamMemberIds.size()));
+    for (const auto id : m_deletedGsTeamMemberIds)
+    {
+        request.deletedIds.push_back(id);
+    }
+
+    const auto outcome =
+        ClassMngr::Next::Application::GsTeamDirectorySaveUseCase::execute(
+            request,
+            port
+            );
+    if (!outcome.validation.isValid())
     {
         if (showErrors)
         {
-            DialogServices::showWarning(this, tr("Save Directory"), status.error());
+            DialogServices::showWarning(
+                this,
+                tr("Save Directory"),
+                tr("Each GS Team member needs a unique name or Korean name and a valid MM-dd birthday.")
+                );
+        }
+        return false;
+    }
+    if (!outcome.saved)
+    {
+        if (outcome.error
+            && outcome.error->code
+                == ClassMngr::Next::Domain::ErrorCode::NotFound)
+        {
+            return false;
+        }
+        if (showErrors)
+        {
+            const std::string message = outcome.error
+                ? outcome.error->message
+                : std::string{};
+            DialogServices::showWarning(
+                this,
+                tr("Save Directory"),
+                message.empty()
+                    ? tr("The GS Team directory could not be saved.")
+                    : QString::fromUtf8(
+                        message.data(),
+                        static_cast<qsizetype>(message.size()))
+                );
         }
         return false;
     }
@@ -746,7 +777,7 @@ void StaffDirectoryPage::clearDatabaseState()
     m_loading = true;
     m_table->clearContents();
     m_table->setRowCount(0);
-    m_deletedIds.clear();
+    m_deletedGsTeamMemberIds.clear();
     m_deletedNativeEnglishTeacherIds.clear();
     m_dirty = false;
     m_loading = false;
