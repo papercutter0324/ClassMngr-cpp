@@ -1,7 +1,8 @@
 #pragma once
 
-#include "app/services/feature_services.h"
 #include "core/application_services.h"
+#include "data/database/database_session.h"
+#include "data/repositories/calendar_event_repository.h"
 #include "next/application/calendar_event_import_signature.h"
 #include "next/application/calendar_event_import_signature_query_port.h"
 
@@ -18,9 +19,9 @@
 namespace ClassMngr::Next::Platform
 {
 
-// Qt and legacy-service adapter for the Application calendar-import signature
-// query. It intentionally reads the complete date range instead of using the
-// bounded event projection, preserving legacy duplicate-detection semantics.
+// Qt and repository adapter for the Application calendar-import signature
+// query. It reads the complete date range instead of using the bounded event
+// projection, preserving duplicate-detection semantics.
 class ApplicationServicesCalendarEventImportSignatureQueryPort final
     : public Application::CalendarEventImportSignatureQueryPort
 {
@@ -49,8 +50,10 @@ public:
     {
         try
         {
-            const CalendarService* service = m_services.calendarService();
-            return service && service->isAvailable();
+            DatabaseSession* const session = m_services.databaseSession();
+            return session
+                && session->isOpen()
+                && session->calendarEventRepository();
         }
         catch (...)
         {
@@ -89,31 +92,41 @@ public:
 
         try
         {
-            const CalendarService* service = m_services.calendarService();
-            if (!service || !service->isAvailable())
+            DatabaseSession* const session = m_services.databaseSession();
+            if (!session || !session->isOpen())
             {
                 return failure(
                     Domain::ErrorCode::NotFound,
-                    "No Teacher Profile service is available."
+                    "The calendar event repository is unavailable."
+                    );
+            }
+
+            CalendarEventRepository* const repository =
+                session->calendarEventRepository();
+            if (!repository)
+            {
+                return failure(
+                    Domain::ErrorCode::NotFound,
+                    "The calendar event repository is unavailable."
                     );
             }
 
             const ::Result<QList<CalendarEvent>> loaded =
-                service->eventsInRange(startDate, endDate);
+                repository->loadCalendarEventsInRange(startDate, endDate);
             if (!loaded)
             {
-                const QString legacyError = loaded.error();
-                if (!service->isAvailable())
+                const QString repositoryError = loaded.error();
+                if (!session->isOpen())
                 {
                     return failure(
                         Domain::ErrorCode::NotFound,
-                        "No Teacher Profile service is available."
+                        "The calendar event repository is unavailable."
                         );
                 }
 
                 return failure(
                     Domain::ErrorCode::Technical,
-                    legacyError.toUtf8().toStdString()
+                    repositoryError.toUtf8().toStdString()
                     );
             }
 

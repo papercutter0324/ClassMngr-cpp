@@ -306,6 +306,11 @@ reportsCalendarEventPortAvailability()
     QVERIFY(openDatabase(services, m_directory));
     QVERIFY(port.isAvailable());
     QVERIFY(importPort.isAvailable());
+
+    services.closeDatabase();
+    QVERIFY(services.dataService());
+    QVERIFY(!port.isAvailable());
+    QVERIFY(!importPort.isAvailable());
 }
 
 void NextPlatformApplicationServicesCalendarEventPortTests::
@@ -2402,9 +2407,11 @@ void NextPlatformApplicationServicesCalendarEventPortTests::
 reportsUnavailableAndInvalidImportSignatureRangesStructurally()
 {
     ApplicationServices unavailableServices;
+    QVERIFY(unavailableServices.dataService());
     ApplicationServicesCalendarEventImportSignatureQueryPort unavailablePort(
         unavailableServices
         );
+    QVERIFY(!unavailablePort.isAvailable());
     verifyFailure(
         unavailablePort.loadSignaturesInRange(importSignatureRange(
             QDate(2026, 9, 20),
@@ -2416,6 +2423,7 @@ reportsUnavailableAndInvalidImportSignatureRangesStructurally()
     ApplicationServices services;
     QVERIFY(openDatabase(services, m_directory));
     ApplicationServicesCalendarEventImportSignatureQueryPort port(services);
+    QVERIFY(port.isAvailable());
     verifyFailure(
         port.loadSignaturesInRange(importSignatureRange(
             QDate(),
@@ -2436,6 +2444,17 @@ reportsUnavailableAndInvalidImportSignatureRangesStructurally()
             CalendarEventDate("2026-09-22")
         }),
         ErrorCode::InvalidInput
+        );
+
+    services.closeDatabase();
+    QVERIFY(services.dataService());
+    QVERIFY(!port.isAvailable());
+    verifyFailure(
+        port.loadSignaturesInRange(importSignatureRange(
+            QDate(2026, 9, 20),
+            QDate(2026, 9, 21)
+            )),
+        ErrorCode::NotFound
         );
 }
 
