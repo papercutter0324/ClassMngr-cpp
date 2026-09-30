@@ -8299,7 +8299,7 @@ fields/schedule/teacher/count/fallback parity. F167 implementation has not
 started. Gate 1 and Gate 2 remain Partial; Phase 2 remains In Progress and its
 exit gate remains Open.
 
-### Progress update - 2026-10-01 (F185 accepted; F186 selected)
+### Progress update - 2026-10-01 (F186 accepted; F187 selected)
 
 F167, source commit `97efac8b`, updates
 `ApplicationServicesClassDetailsPageReadPort` to use active-session
@@ -8553,22 +8553,40 @@ parity. The null-repository guard has no direct fixture because open sessions
 normally provide it; this is nonblocking. `git diff --check` passed. Phase 2
 remains In Progress/Open; Gates 1 and 2 remain Partial.
 
-F186 is selected for `ApplicationServicesCalendarEventSeriesDeletePort` in
-`src/next/platform/application_services_calendar_event_series_delete_port.h`,
-with focused tests in
-`tests/next_platform_application_services_calendar_event_port_tests.cpp`.
-Use the active session's
-`CalendarEventRepository::deleteCalendarEventsForRepeatSeriesFromDate()` with
-no `CalendarService` or `DataService` fallback. Preserve request validation
-before session lookup, exact diagnostics and date conversion, repeat-series
-ID handling, and deletion of the selected and later occurrences in that series
-while retaining earlier and unrelated rows. Preserve NotFound for
-unavailable/closed sessions, Technical repository failures while open, and
-success when no rows match. Keep Calendar Page invalidation/warning and the
-typed use-case route unchanged. Preserve F108 seeded repository parity and
-sequence behavior. Verify
+F186, source commit `192dcc8c`, migrates
+`ApplicationServicesCalendarEventSeriesDeletePort` to the active session's
+`CalendarEventRepository::deleteCalendarEventsForRepeatSeriesFromDate()`,
+with no `CalendarService` or `DataService` fallback. It preserves request
+validation before session lookup, exact diagnostics, date conversion and
+series ID handling, selected-and-later suffix scope while retaining earlier
+and unrelated events, NotFound for unavailable/closed sessions, Technical
+repository failures, and success when no rows match. Implementation and
+independent Tester each passed
 `ClassMngrNextPlatformApplicationServicesCalendarEventPortTests`,
 `ClassMngrNextApplicationCalendarEventTests`, and
-`ClassMngrCalendarEventRepositoryTests`. Two independent Explorer lanes
-selected this focused operation. Phase 2 remains In Progress/Open; Gates 1
-and 2 remain Partial.
+`ClassMngrCalendarEventRepositoryTests`. Coverage includes padded IDs,
+no-match success, invalid diagnostics, open/closed sessions with `DataService`,
+SQL failure, and F108 repository suffix/sequence parity. `git diff --check`
+passed. Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial.
+
+F187 is selected for `ApplicationServicesCalendarEventImportSavePort` in
+`src/next/platform/application_services_calendar_event_import_save_port.h`,
+with focused tests in
+`tests/next_platform_application_services_calendar_event_port_tests.cpp`.
+Use one active-open-session `CalendarEventRepository::saveCalendarEvents()`
+call with no `CalendarService` or `DataService` fallback. Preserve
+`request.validate()` including creation-only rules and the 4,096-event cap;
+canonical date/time conversion and all-day/unknown fields; event order;
+`CalendarEventValidator::normalized()` then `validateSeries()`; blank
+`repeatSeriesId`; ordered typed-ID cardinality; transaction/rollback; empty
+batch success for duplicate-only imports while open; unavailable/closed
+NotFound and open-session repository Technical failures. Keep Import use-case,
+query, and UI wiring unchanged. Verify
+`ClassMngrNextPlatformApplicationServicesCalendarEventPortTests`,
+`ClassMngrNextApplicationCalendarEventImportUseCaseTests`,
+`ClassMngrCalendarEventImportParityTests`, and
+`ClassMngrCalendarEventRepositoryTests`. Two Explorer lanes considered series
+edit as an alternative; the main agent selected the adjacent F181
+signature-query cutover, including empty duplicate-only batch behavior from
+the Application contract. Phase 2 remains In Progress/Open; Gates 1 and 2
+remain Partial.
