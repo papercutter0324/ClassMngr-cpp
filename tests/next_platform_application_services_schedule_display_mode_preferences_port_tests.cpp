@@ -1,11 +1,13 @@
 #include "core/application_services.h"
 #include "data/data_service.h"
 #include "data/database/database_session.h"
+#include "data/repositories/settings_repository.h"
 #include "next/application/schedule_display_mode_preferences.h"
 #include "next/platform/application_services_schedule_display_mode_preferences_port.h"
 
-#include <QSqlQuery>
 #include <QApplication>
+#include <QRegularExpression>
+#include <QSqlQuery>
 #include <QTemporaryDir>
 #include <QUuid>
 #include <QtTest/QtTest>
@@ -55,6 +57,8 @@ private slots:
     void missingModeDefaultsAndMigratesRegular();
     void savesTypedModesAsCanonicalStrings();
     void unavailableServicesDefaultAndIgnoreSaves();
+    void closedSessionDefaultsAndIgnoresSaves();
+    void repositoryReadErrorsPreserveWarningsAndFallback();
 
 private:
     QTemporaryDir m_directory;
@@ -87,12 +91,17 @@ void NextPlatformApplicationServicesScheduleDisplayModePreferencesPortTests
     ApplicationServices services;
     QVERIFY(openDatabase(services, m_directory));
     QVERIFY(services.dataService());
+    DatabaseSession* const session = services.databaseSession();
+    QVERIFY(session);
+    QVERIFY(session->isOpen());
+    SettingsRepository* const repository = session->settingsRepository();
+    QVERIFY(repository);
     ApplicationServicesScheduleDisplayModePreferencesPort port(services);
 
     for (const auto& [storedValue, expectedMode] : values)
     {
         QVERIFY(
-            services.dataService()->saveSetting(
+            repository->saveSetting(
                 QString::fromUtf8(CanonicalKey),
                 storedValue
                 )
@@ -108,8 +117,13 @@ void NextPlatformApplicationServicesScheduleDisplayModePreferencesPortTests
     ApplicationServices services;
     QVERIFY(openDatabase(services, m_directory));
     QVERIFY(services.dataService());
+    DatabaseSession* const session = services.databaseSession();
+    QVERIFY(session);
+    QVERIFY(session->isOpen());
+    SettingsRepository* const repository = session->settingsRepository();
+    QVERIFY(repository);
     QVERIFY(
-        services.dataService()->saveSetting(
+        repository->saveSetting(
             QString::fromUtf8(LegacyKey),
             true
             )
@@ -118,7 +132,7 @@ void NextPlatformApplicationServicesScheduleDisplayModePreferencesPortTests
     ApplicationServicesScheduleDisplayModePreferencesPort port(services);
     QCOMPARE(port.load(), ScheduleDisplayMode::Intensive);
 
-    const auto canonical = services.dataService()->loadSetting(
+    const auto canonical = repository->loadSetting(
         QString::fromUtf8(CanonicalKey)
         );
     QVERIFY(canonical);
@@ -131,14 +145,19 @@ void NextPlatformApplicationServicesScheduleDisplayModePreferencesPortTests
     ApplicationServices services;
     QVERIFY(openDatabase(services, m_directory));
     QVERIFY(services.dataService());
+    DatabaseSession* const session = services.databaseSession();
+    QVERIFY(session);
+    QVERIFY(session->isOpen());
+    SettingsRepository* const repository = session->settingsRepository();
+    QVERIFY(repository);
     QVERIFY(
-        services.dataService()->saveSetting(
+        repository->saveSetting(
             QString::fromUtf8(LegacyKey),
             false
             )
         );
     QVERIFY(
-        services.dataService()->saveSetting(
+        repository->saveSetting(
             QString::fromUtf8(CanonicalKey),
             QStringLiteral("unknown")
             )
@@ -147,7 +166,7 @@ void NextPlatformApplicationServicesScheduleDisplayModePreferencesPortTests
     ApplicationServicesScheduleDisplayModePreferencesPort port(services);
     QCOMPARE(port.load(), ScheduleDisplayMode::Regular);
 
-    const auto canonical = services.dataService()->loadSetting(
+    const auto canonical = repository->loadSetting(
         QString::fromUtf8(CanonicalKey)
         );
     QVERIFY(canonical);
@@ -159,11 +178,17 @@ void NextPlatformApplicationServicesScheduleDisplayModePreferencesPortTests
 {
     ApplicationServices services;
     QVERIFY(openDatabase(services, m_directory));
+    QVERIFY(services.dataService());
+    DatabaseSession* const session = services.databaseSession();
+    QVERIFY(session);
+    QVERIFY(session->isOpen());
+    SettingsRepository* const repository = session->settingsRepository();
+    QVERIFY(repository);
 
     ApplicationServicesScheduleDisplayModePreferencesPort port(services);
     QCOMPARE(port.load(), ScheduleDisplayMode::Regular);
 
-    const auto canonical = services.dataService()->loadSetting(
+    const auto canonical = repository->loadSetting(
         QString::fromUtf8(CanonicalKey)
         );
     QVERIFY(canonical);
@@ -191,12 +216,17 @@ void NextPlatformApplicationServicesScheduleDisplayModePreferencesPortTests
     ApplicationServices services;
     QVERIFY(openDatabase(services, m_directory));
     QVERIFY(services.dataService());
+    DatabaseSession* const session = services.databaseSession();
+    QVERIFY(session);
+    QVERIFY(session->isOpen());
+    SettingsRepository* const repository = session->settingsRepository();
+    QVERIFY(repository);
     ApplicationServicesScheduleDisplayModePreferencesPort port(services);
 
     for (const auto& [mode, expectedValue] : values)
     {
         port.save(mode);
-        const auto canonical = services.dataService()->loadSetting(
+        const auto canonical = repository->loadSetting(
             QString::fromUtf8(CanonicalKey)
             );
         QVERIFY(canonical);
@@ -208,16 +238,92 @@ void NextPlatformApplicationServicesScheduleDisplayModePreferencesPortTests
     ::unavailableServicesDefaultAndIgnoreSaves()
 {
     ApplicationServices services;
+    QVERIFY(services.dataService());
+    DatabaseSession* const session = services.databaseSession();
+    QVERIFY(session);
+    QVERIFY(!session->isOpen());
     ApplicationServicesScheduleDisplayModePreferencesPort port(services);
 
     QCOMPARE(port.load(), ScheduleDisplayMode::Regular);
     port.save(ScheduleDisplayMode::Intensive);
+}
 
+void NextPlatformApplicationServicesScheduleDisplayModePreferencesPortTests
+    ::closedSessionDefaultsAndIgnoresSaves()
+{
+    ApplicationServices services;
+    const QString path = databasePath(m_directory);
+    QVERIFY(services.openDatabase(path));
     QVERIFY(services.dataService());
-    const auto canonical = services.dataService()->loadSetting(
+    DatabaseSession* const session = services.databaseSession();
+    QVERIFY(session);
+    QVERIFY(session->isOpen());
+    SettingsRepository* const repository = session->settingsRepository();
+    QVERIFY(repository);
+    QVERIFY(repository->saveSetting(
+        QString::fromUtf8(CanonicalKey),
+        QStringLiteral("intensive")
+        ));
+    QVERIFY(repository->saveSetting(
+        QString::fromUtf8(LegacyKey),
+        true
+        ));
+
+    ApplicationServicesScheduleDisplayModePreferencesPort port(services);
+    services.closeDatabase();
+    QVERIFY(services.dataService());
+    QVERIFY(!session->isOpen());
+    QCOMPARE(port.load(), ScheduleDisplayMode::Regular);
+    port.save(ScheduleDisplayMode::Testing);
+
+    QVERIFY(services.openDatabase(path));
+    QVERIFY(session->isOpen());
+    SettingsRepository* const reopenedRepository =
+        session->settingsRepository();
+    QVERIFY(reopenedRepository);
+    const auto canonical = reopenedRepository->loadSetting(
         QString::fromUtf8(CanonicalKey)
         );
-    QVERIFY(!canonical);
+    QVERIFY(canonical);
+    QCOMPARE(canonical->toString(), QStringLiteral("intensive"));
+    const auto legacy = reopenedRepository->loadSetting(
+        QString::fromUtf8(LegacyKey)
+        );
+    QVERIFY(legacy);
+    QVERIFY(legacy->toBool());
+}
+
+void NextPlatformApplicationServicesScheduleDisplayModePreferencesPortTests
+    ::repositoryReadErrorsPreserveWarningsAndFallback()
+{
+    ApplicationServices services;
+    QVERIFY(openDatabase(services, m_directory));
+    QVERIFY(services.dataService());
+    DatabaseSession* const session = services.databaseSession();
+    QVERIFY(session);
+    QVERIFY(session->isOpen());
+    QVERIFY(session->settingsRepository());
+
+    QSqlQuery query(session->database());
+    QVERIFY(query.exec(QStringLiteral("DROP TABLE app_settings")));
+
+    QTest::ignoreMessage(
+        QtWarningMsg,
+        QRegularExpression(
+            QStringLiteral(
+                "Failed to load setting.*schedule_show_intensive.*"
+                )
+            )
+        );
+    QTest::ignoreMessage(
+        QtWarningMsg,
+        QRegularExpression(
+            QStringLiteral("Failed to save schedule display mode:.*")
+            )
+        );
+
+    ApplicationServicesScheduleDisplayModePreferencesPort port(services);
+    QCOMPARE(port.load(), ScheduleDisplayMode::Regular);
 }
 
 QTEST_MAIN(

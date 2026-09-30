@@ -1,7 +1,8 @@
 #pragma once
 
-#include "app/services/feature_services.h"
 #include "core/application_services.h"
+#include "data/database/database_session.h"
+#include "data/repositories/settings_repository.h"
 #include "next/application/schedule_display_mode_preferences.h"
 
 #include <QDebug>
@@ -41,24 +42,30 @@ public:
     [[nodiscard]] Application::ScheduleDisplayMode load()
         const override
     {
-        const SettingsService* settingsService = m_services.settingsService();
-        if (!settingsService || !settingsService->isAvailable())
+        DatabaseSession* const session = m_services.databaseSession();
+        if (!session || !session->isOpen())
         {
             return Application::ScheduleDisplayMode::Regular;
         }
 
-        const auto storedModeResult = settingsService->load(canonicalKey());
+        SettingsRepository* const repository = session->settingsRepository();
+        if (!repository)
+        {
+            return Application::ScheduleDisplayMode::Regular;
+        }
+
+        const auto storedModeResult = repository->loadSetting(canonicalKey());
         const QVariant storedMode = storedModeResult.value_or(QVariant());
         const Application::ScheduleDisplayMode mode = modeFromSetting(
             storedMode,
             settingToBool(
-                settingsService->loadOrDefault(legacyKey(), false)
+                loadOrDefault(*repository, legacyKey(), false)
                 )
             );
 
         if (!storedMode.isValid())
         {
-            saveStoredMode(*settingsService, mode);
+            saveStoredMode(*repository, mode);
         }
 
         return mode;
@@ -68,13 +75,19 @@ public:
         const Application::ScheduleDisplayMode mode
         ) const override
     {
-        const SettingsService* settingsService = m_services.settingsService();
-        if (!settingsService || !settingsService->isAvailable())
+        DatabaseSession* const session = m_services.databaseSession();
+        if (!session || !session->isOpen())
         {
             return;
         }
 
-        saveStoredMode(*settingsService, mode);
+        SettingsRepository* const repository = session->settingsRepository();
+        if (!repository)
+        {
+            return;
+        }
+
+        saveStoredMode(*repository, mode);
     }
 
 private:
@@ -159,12 +172,32 @@ private:
         return value.toBool();
     }
 
+    [[nodiscard]] static QVariant loadOrDefault(
+        SettingsRepository& repository,
+        const QString& key,
+        const QVariant& defaultValue
+        )
+    {
+        const auto value = repository.loadSetting(key);
+        if (!value)
+        {
+            qWarning()
+                << "Failed to load setting"
+                << key
+                << ':'
+                << value.error();
+            return defaultValue;
+        }
+
+        return value->isValid() ? *value : defaultValue;
+    }
+
     static void saveStoredMode(
-        const SettingsService& settingsService,
+        SettingsRepository& repository,
         const Application::ScheduleDisplayMode mode
         )
     {
-        if (const Status saved = settingsService.save(
+        if (const Status saved = repository.saveSetting(
                 canonicalKey(),
                 storedModeValue(mode)
                 );
