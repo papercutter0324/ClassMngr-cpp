@@ -43,7 +43,8 @@
   schedule-summary port, and F178's Sub Prep print source port are accepted.
   F179's Sub Prep roster-output source port and F180's Sub Prep calendar-event
   interval port and F181's Calendar Event Import signature query port are
-  accepted. F182 is selected for the active Calendar event read/by-ID adapter.
+  accepted. F182's active Calendar event read/by-ID adapter is accepted; F183
+  is selected for the single Calendar Event save port migration.
   See the
   [Phase 2 progress
   log](03-Phase-2-Progress-Log.md)

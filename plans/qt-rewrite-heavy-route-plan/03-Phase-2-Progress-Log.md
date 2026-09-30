@@ -8299,7 +8299,7 @@ fields/schedule/teacher/count/fallback parity. F167 implementation has not
 started. Gate 1 and Gate 2 remain Partial; Phase 2 remains In Progress and its
 exit gate remains Open.
 
-### Progress update - 2026-10-01 (F181 accepted; F182 selected)
+### Progress update - 2026-10-01 (F182 accepted; F183 selected)
 
 F167, source commit `97efac8b`, updates
 `ApplicationServicesClassDetailsPageReadPort` to use active-session
@@ -8493,19 +8493,31 @@ and independent Tester each passed all four targets:
 errors now use the message “The calendar event repository is unavailable.”
 `git diff --check` passed.
 
-F182 migrates `ApplicationServicesCalendarEventPort` in
-`src/next/platform/application_services_calendar_event_port.h` to the open
-active session. Route `isAvailable()` through session availability,
-`projectionById()`/`loadEventById()` through
-`CalendarEventRepository::getCalendarEvent()`, and `projection()` through
-`loadCalendarEventsInRange()`, with no `CalendarService` or `DataService`
-fallback. Preserve typed ID parsing and identity, missing-row NotFound versus
-Technical error mapping, `projectEvent` fields and bounds, range
-validation/order, the 4,096-event cap, and CalendarPage activation behavior.
-Verify using `ClassMngrNextPlatformApplicationServicesCalendarEventPortTests`,
+F182, source commit `1d4d9eda`, moves
+`ApplicationServicesCalendarEventPort` to the open active session's
+`CalendarEventRepository` for availability, by-ID, and range reads, with no
+`CalendarService` or `DataService` fallback. The implementer and independent
+Tester each passed `ClassMngrNextPlatformApplicationServicesCalendarEventPortTests`,
 `ClassMngrNextApplicationCalendarEventTests`, and
-`ClassMngrCalendarEventRepositoryTests`. All three targets are in the
-`build/f168` Ninja/CTest graph; their executables need building. Exclude
-`CalendarEventCacheTests`, which tests a separate adapter. The separate
-single-event save port remains future work and must retain
-`CalendarEventValidator` normalization and series validation.
+`ClassMngrCalendarEventRepositoryTests`. Coverage includes unavailable/closed
+sessions and repository Technical failures, missing-ID mapping, and the 4,096
+projection cap (4,097 fails); the import signature query remains uncapped.
+`git diff --check` passed. Phase 2 remains In Progress/Open; Gates 1 and 2
+remain Partial.
+
+F183 is selected for the single Calendar Event save port in
+`src/next/platform/application_services_calendar_event_save_port.h`, with
+focused tests in
+`tests/next_platform_application_services_calendar_event_port_tests.cpp`.
+Use the active session's `CalendarEventRepository::saveCalendarEvents({event})`
+with no `CalendarService` or `DataService` fallback. Preserve the current
+normalize-then-`validateSeries()` flow using
+`CalendarEventValidator::normalized()`, typed create/update ID behavior,
+request/date/time validation and conversion, `repeatSeriesId` clearing, error
+mapping, and batch transactional semantics. Keep the repository batch call for
+the single event. Repeat-series create/edit and import save are out of scope.
+Verify `ClassMngrNextPlatformApplicationServicesCalendarEventPortTests`,
+`ClassMngrNextApplicationCalendarEventTests`, and
+`ClassMngrCalendarEventRepositoryTests`. CalendarPage already uses the typed
+save use case, so no UI wiring change is expected. Phase 2 remains In
+Progress/Open; Gates 1 and 2 remain Partial.
