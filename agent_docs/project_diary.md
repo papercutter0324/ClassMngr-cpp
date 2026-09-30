@@ -1561,9 +1561,21 @@ does not demonstrate the ordering behavior. Reconstruct pinned source from its
 exact commit and compare production blobs before using a scratch baseline; a
 directory name or existing build cache is not proof of provenance.
 
-## 2026-09-30 — F164 ClassesPage section visibility read selection
+## 2026-09-30 — F164 ClassesPage section visibility read
 
 Keep the grade lookup for Analytics/Evaluations visibility separate from the
 subtitle and navigation metadata reads. They have independent failures and
 fallbacks. A missing or failed grade currently leaves both sections visible;
-preserve that behavior with a narrow typed class-grade read.
+preserve that behavior with a narrow typed class-grade read. A failed optional
+read should not trigger a legacy service fallback.
+
+A stub-backed visible-tab parity slot is sufficient to compare the tab rule
+against the pinned page behavior; a separate real-database harness timed out on
+both builds and established no mismatch. Report those checks separately.
+
+## 2026-09-30 — F165 ClassesPage subtitle read selection
+
+Keep class detail and optional teacher outcomes independent in the typed
+subtitle read. A teacher lookup failure should retain the class label and
+formatter fallback. Leave subtitle formatting and localized fallback choices
+at the UI edge.

@@ -37,9 +37,9 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
   read, F157's TeacherInfoPage profile-save port, and F158's selected-teacher
   navigation read, F159's Native English Staff Directory read, F160's GS
   Team Staff Directory read, F161's Native English Staff Directory save,
-  F162's GS Team Staff Directory save, and F163's ClassesPage class-list read
-  are accepted. F164 is selected for the ClassesPage selected-class grade
-  read.
+  F162's GS Team Staff Directory save, F163's ClassesPage class-list read, and
+  F164's ClassesPage selected-class grade read are accepted. F165 is selected
+  for the ClassesPage selected-class subtitle read.
   The prior F123 candidate wording is historical;
   current Teacher Profile integration status is recorded in the progress log.
   Gates 1 and 2
@@ -616,15 +616,39 @@ ClassesPage CTest stalled in existing
 application build, or query-count comparison ran. See the [Phase 2 progress
 log](03-Phase-2-Progress-Log.md) for evidence and limits.
 
-## F164 selected ClassesPage selected-class grade read
+## F164 accepted ClassesPage selected-class grade read
 
-Add a typed selected-class ID/grade read for only
-`ClassesPage::rebuildSectionTabs()` and an active-session Platform adapter
-backed by `ClassInfoRepository::loadClassInfo()`. Preserve the middle-school
-rule, preference override, current selection, and fail-open behavior: missing
-or failed grade reads leave Analytics and Evaluations visible. Leave subtitle
-and navigation metadata reads outside this slice. Acceptance covers typed
-mapping, session/repository failures without fallback, tab visibility and
-preference/current-page behavior, and pinned-baseline visible tab parity. F164
-is selected; implementation has not started. Gates 1 and 2 remain Partial;
+F164, source commit `85af7830708f062e34c94fde8fa0ff40310a8d9e`, adds
+`SelectedClassGradeReadQuery`/port and an active-session adapter to
+`ClassInfoRepository::loadClassInfo()`, used only in
+`ClassesPage::rebuildSectionTabs()`. It preserves grade normalization, the
+middle-school rule, preference override, current selection, and fail-open
+behavior; missing or failed grade reads leave Analytics and Evaluations visible.
+There is no `DataService` fallback. Subtitle and navigation metadata reads
+remain separate.
+
+Application and Platform focused tests passed 4/4 each; three focused page
+slots passed. `middleSchoolAnalyticsAndEvaluationsTabsFollowPreference` passed
+on current and pinned baseline
+`48fc5c5cc7dee78d82f8bf5f1bf8b51725575b99`, and baseline production blobs
+matched. Stub-backed visible tab parity passed. The separate real-database
+parity harness timed out after 300 seconds on both revisions without a mismatch
+or cause identified. No full ClassesPage suite, application build, or
+query-count comparison is claimed. Evidence and limits are in the [Phase 2
+progress log](03-Phase-2-Progress-Log.md).
+
+## F165 selected ClassesPage selected-class subtitle read
+
+Replace only the selected-class subtitle reads in
+`ClassesPage::updateHeaderText()` with a typed query for the class fields used
+by the existing formatter and optional assigned-teacher display data, backed
+by active-session repositories without `DataService` fallback. Keep formatting
+in the UI. Preserve invalid selection or unavailable services as “No class
+selected”; missing/failed class info uses defaults, while failed teacher lookup
+does not erase class details. Preserve class-name/`Class N` and formatter
+fallbacks and current refresh points, with independent class and teacher
+outcomes. Acceptance covers typed mapping, session/repository errors without
+fallback, independent class/teacher failures, and pinned-baseline visible
+subtitle/fallback parity. Keep F163 list reads and F164 tab behavior separate.
+F165 is selected; implementation has not started. Gates 1 and 2 remain Partial;
 Phase 2 remains In Progress/Open.

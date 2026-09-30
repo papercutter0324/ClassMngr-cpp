@@ -2130,14 +2130,31 @@ no production changes. The full ClassesPage CTest stalled in the existing
 `classDetailsAndCoTeacherTabsSeparateTheirSectionCards()` slot. No full
 suite/application build or query-count claim.
 
-F164 is selected for the selected-class grade read in
-`ClassesPage::rebuildSectionTabs()`. Add a typed class ID/grade Application
-read and active-session Platform adapter backed by `ClassInfoRepository`; keep
-the existing middle-school grade rule, preference override, visible section
-set, selection, and quiet fallback when the grade is unavailable. Leave the
-subtitle reads, navigation metadata, and other class operations separate.
-Acceptance covers typed mapping, session/repository failure without fallback,
-section visibility and preference behavior, and pinned-baseline visible tab
-parity. Gates 1 and 2 remain Partial; Phase 2 remains In Progress/Open. A
-separate worker owns workflow repair; this work does not modify
-`.github/workflows/refactoring-baseline.yml`. No push was requested.
+F164 source commit `85af7830708f062e34c94fde8fa0ff40310a8d9e` adds a typed
+selected-class ID/grade query and active-session Platform adapter to
+`ClassInfoRepository::loadClassInfo()`. Only
+`ClassesPage::rebuildSectionTabs()` uses it. The query has no DataService
+fallback; missing or failed grades keep Analytics and Evaluations visible.
+Existing grade normalization, preference override, and section selection are
+preserved.
+
+Focused Application and Platform tests each passed 4/4 test slots; three
+focused page slots passed. The existing middle-school/preference tab slot
+passed against both current code and the exact pinned baseline
+`48fc5c5cc7dee78d82f8bf5f1bf8b51725575b99`. Baseline production sources were
+unchanged. A separate real-database parity harness timed out after 300 seconds
+on both builds; no mismatch or cause was established. No full suite/application
+build or query-count claim.
+
+F165 is selected for the ClassesPage selected-class subtitle read in
+`updateHeaderText()`. Add a typed read for only the class fields consumed by
+the subtitle formatter and the optional assigned-teacher display data, using
+the active session without DataService fallback. Keep formatting in the UI
+and preserve independent class-info and teacher outcomes, current fallback
+text, and refresh points. Keep F163 list reads and F164 section visibility
+separate. Acceptance covers typed mapping, session/repository errors without
+fallback, independent detail/teacher failure cases, exact subtitle output and
+fallbacks, and pinned-baseline visible subtitle parity. Gates 1 and 2 remain
+Partial; Phase 2 remains In Progress/Open. A separate worker owns workflow
+repair; this work does not modify `.github/workflows/refactoring-baseline.yml`.
+No push was requested.

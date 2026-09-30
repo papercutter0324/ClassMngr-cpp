@@ -3830,7 +3830,7 @@ Qt 6.12 metadata shim (removed afterward), and test-only API/registration
 adaptations; production files and pinned baseline blobs were not overlaid. No
 full suite/app build or baseline query-count claim.
 
-## 2026-09-30 — Phase 2 continuation: F161-F163 accepted; F164 selected
+## 2026-09-30 — Phase 2 continuation: F161-F164 accepted; F165 selected
 
 At continuation start, reviewed commits `314f4d5b` and `0c5d5566`. No blocking
 issue was found. One non-blocking review note: `314f4d5b` changed a PDF text
@@ -3909,16 +3909,38 @@ free. The full `ClassMngrClassesPageTests` CTest stalled in the existing
 `nestedEditorsAreDeferredUntilTheirSectionIsOpened()` passed. No full suite or
 application build and no query-count claim.
 
-Three independent Investigators compared remaining candidates. F164 is selected
-for the single selected-class grade read in `ClassesPage::rebuildSectionTabs()`.
-Add a typed class ID/grade Application read with an active-session Platform
-adapter backed by `ClassInfoRepository::loadClassInfo()`. Preserve the
-middle-school grade rule, preference override, section selection, and current
-quiet fallback that shows Analytics/Evaluations when the grade read is
-unavailable or fails. Keep the subtitle’s ClassInfo/Teacher reads and
-navigation metadata read separate; this keeps their existing failure paths
-independent. Acceptance covers typed mapping, session/repository errors without
-fallback, tab visibility and preference behavior, and pinned-baseline visible
-tab parity. Gates 1 and 2 remain Partial; Phase 2 remains In Progress/Open. A
-separate worker owns workflow repair; this work does not modify
+F164 source commit `85af7830708f062e34c94fde8fa0ff40310a8d9e` adds a typed
+selected-class ID/grade query and active-session Platform adapter directly to
+`ClassInfoRepository::loadClassInfo()`. Only
+`ClassesPage::rebuildSectionTabs()` uses it. The adapter has no DataService
+fallback; the page preserves the service-availability guard, middle-school
+normalization, preference override, current section, and fail-open result for
+missing or failed grades.
+
+Independent Tester evidence: the Application and Platform QtTest runs each
+passed 4/4 test slots; focused page tests passed for grade/preference
+visibility, no-fallback failure behavior, and section selection. The existing
+`middleSchoolAnalyticsAndEvaluationsTabsFollowPreference` slot passed on both
+current code and pinned baseline `48fc5c5cc7dee78d82f8bf5f1bf8b51725575b99`.
+The baseline tree was extracted from the exact commit and production blobs
+matched. A separate real-database parity harness timed out after 300 seconds
+on both current and baseline builds; its logs show no mismatch or cause. The
+stub-backed visible-tab parity slot passed on both. A fresh D: Visual Studio
+build succeeded after the earlier Ninja CRT assertion; baseline configuration
+used Qt 6.12.0 with `QT_NO_CONFIG_VERSION_OVERRIDE_FILES=ON`. No full
+ClassesPage suite or application build and no query-count claim.
+
+Three independent Investigators compared remaining candidates and recommended
+F165: the ClassesPage selected-class subtitle read in `updateHeaderText()`.
+Add a typed read containing only the class fields needed by the subtitle
+formatter and optional assigned-teacher display data, from the active session
+without DataService fallback. Keep formatting in the UI. Preserve independent
+class-info and teacher results: failed teacher lookup must not erase class
+details. Keep the current “No class selected,” class-name/`Class N`, and
+formatter fallbacks and existing refresh points. Leave F163 list loading and
+F164 tab visibility unchanged. Acceptance covers typed mapping,
+session/repository errors without fallback, independent detail/teacher failure
+cases, exact subtitle output and fallback behavior, and pinned-baseline visible
+subtitle parity. Gates 1 and 2 remain Partial; Phase 2 remains In Progress/Open.
+A separate worker owns workflow repair; this work does not modify
 `.github/workflows/refactoring-baseline.yml`. No push was requested.

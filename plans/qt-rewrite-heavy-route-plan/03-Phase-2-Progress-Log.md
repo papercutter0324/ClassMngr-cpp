@@ -8199,3 +8199,37 @@ session/repository failures without fallback, tab visibility and
 preference/current-page behavior, and pinned-baseline visible tab parity.
 Implementation has not started. Gate 1 and Gate 2 remain Partial; Phase 2
 remains In Progress and its exit gate remains Open.
+
+### Progress update - 2026-09-30 (F164 accepted; F165 selected)
+
+F164, source commit `85af7830708f062e34c94fde8fa0ff40310a8d9e`, adds
+`SelectedClassGradeReadQuery`/port and an active-session adapter to
+`ClassInfoRepository::loadClassInfo()`, used only in
+`ClassesPage::rebuildSectionTabs()`. Grade normalization, the middle-school
+rule, preference override, current selection, and fail-open behavior remain;
+missing or failed grade reads leave Analytics and Evaluations visible. There is
+no `DataService` fallback.
+
+Current Application and Platform tests passed 4/4 test slots each; three
+focused page slots passed. The existing
+`middleSchoolAnalyticsAndEvaluationsTabsFollowPreference` test passed on both
+current and pinned baseline
+`48fc5c5cc7dee78d82f8bf5f1bf8b51725575b99`; baseline production blobs matched.
+Stub-backed visible tab parity passed. Separate real-database parity harnesses
+timed out after 300 seconds on both revisions, with no mismatch or cause
+identified. No full ClassesPage suite, application build, or query-count
+comparison is claimed.
+
+F165 is selected: replace only selected-class subtitle reads in
+`ClassesPage::updateHeaderText()` with a typed read of class fields used by the
+existing formatter and optional assigned-teacher display data, backed by
+active-session repositories without `DataService` fallback. Keep formatting in
+the UI. Preserve invalid selection/unavailable services as “No class
+selected”; missing/failed class info uses defaults, while teacher lookup
+failure must not erase class details. Preserve class-name/`Class N` and
+formatter fallbacks and refresh points, with independent class/teacher
+outcomes. Acceptance covers typed mapping, session/repository failures without
+fallback, independent class/teacher failure cases, and pinned-baseline visible
+subtitle/fallback parity. Keep F163 list reads and F164 tab behavior separate.
+Implementation has not started. Gate 1 and Gate 2 remain Partial; Phase 2
+remains In Progress and its exit gate remains Open.
