@@ -1080,18 +1080,32 @@ existing behavior. The build succeeded; the independent Tester passed
 1/1 and `git diff --check`. Generic/sessionless `SettingsService` behavior and
 caller/UI are unchanged.
 
-## F192 selected Calendar first-day-of-week preferences port
+## F192 accepted Calendar first-day-of-week preferences port
 
-Migrate `ApplicationServicesCalendarFirstDayOfWeekPreferencesPort` in
-`src/next/platform/application_services_calendar_first_day_of_week_preferences_port.h`
-to use only the active-session `SettingsRepository`. Preserve the
-`calendar/firstDayOfWeek` key; locale fallback for missing, unavailable, null,
-read-error, and invalid values; all values `0..6`; save-warning behavior; and
-unavailable/closed no-op saves. Keep provider normalization, revision and
-signal ordering, and generic `SettingsService` behavior unchanged. Add focused
-closed-session-with-`DataService` no-fallback and read-error fallback coverage
-to the existing registered `NextPlatformApplicationServicesCalendarFirstDayOfWeekPreferencesPort`
-target in `next.cmake`. This was selected after comparing independent
-candidate scans, based on the existing focused coverage and locale-derived
-fallback contract. Phase 2 remains In
-Progress/Open; Gates 1 and 2 remain Partial.
+Commit `f77b6d1c` migrates
+`ApplicationServicesCalendarFirstDayOfWeekPreferencesPort` to use only the
+active open session's `SettingsRepository`. It preserves
+`calendar/firstDayOfWeek`; recalculated `QLocale` fallback for missing,
+unavailable, null, closed, read-error, or invalid values; all values `0..6`;
+unavailable/closed no-op saves; save warnings; provider normalization,
+revision, and signal order; and generic `SettingsService` behavior. The worker
+build succeeded; independent registered CTest
+`ClassMngrNextPlatformApplicationServicesCalendarFirstDayOfWeekPreferencesPortTests`
+passed 1/1, and `git diff --check` passed.
+
+## F193 selected Academic Calendar schedule preferences port
+
+Migrate `ApplicationServicesAcademicCalendarSchedulePreferencesPort` in
+`src/next/platform/application_services_academic_calendar_schedule_preferences_port.h`
+to use only the active open session's `SettingsRepository`, with focused tests
+in `tests/next_platform_application_services_academic_calendar_schedule_preferences_port_tests.cpp`
+and registered target
+`NextPlatformApplicationServicesAcademicCalendarSchedulePreferencesPort`.
+Preserve exact key `calendar/academicSchedule/v1`, opaque UTF-8 payload
+round-trip without parsing or rewriting, empty reads and no-op saves for
+unavailable/null/closed/read-error cases, save warning and previous value on
+failure, and unrelated settings. Keep provider serialization, schema/version,
+default, revision, and signal behavior and generic `SettingsService` unchanged.
+Add closed-session-with-`DataService` no-fallback and read-error empty-fallback
+coverage. Two independent Explorer lanes agreed on this adapter boundary.
+Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial.

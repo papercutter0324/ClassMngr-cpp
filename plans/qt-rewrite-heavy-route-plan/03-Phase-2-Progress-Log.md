@@ -8299,7 +8299,7 @@ fields/schedule/teacher/count/fallback parity. F167 implementation has not
 started. Gate 1 and Gate 2 remain Partial; Phase 2 remains In Progress and its
 exit gate remains Open.
 
-### Progress update - 2026-10-01 (F191 accepted; F192 selected)
+### Progress update - 2026-10-01 (F192 accepted; F193 selected)
 
 F167, source commit `97efac8b`, updates
 `ApplicationServicesClassDetailsPageReadPort` to use active-session
@@ -8647,17 +8647,32 @@ behavior. The build succeeded; the independent Tester passed registered CTest
 1/1 and `git diff --check`. Generic/sessionless `SettingsService` behavior and
 caller/UI are unchanged.
 
-F192 is selected for
-`ApplicationServicesCalendarFirstDayOfWeekPreferencesPort` in
-`src/next/platform/application_services_calendar_first_day_of_week_preferences_port.h`,
-using only the active-session `SettingsRepository`. Preserve the
-`calendar/firstDayOfWeek` key, locale fallback for missing/unavailable/null,
-read-error, and invalid values, all values `0..6`, save-warning semantics,
-unavailable/closed no-op saves, and provider normalization/revision/signal
-ordering; keep generic `SettingsService` behavior unchanged. Add closed-session
-with-`DataService` no-fallback coverage and read-error fallback coverage to
-registered target `NextPlatformApplicationServicesCalendarFirstDayOfWeekPreferencesPort`
-in `next.cmake`. This was selected after comparing independent candidate scans,
-based on the existing focused coverage and locale-derived fallback contract.
-Gate 1 and Gate 2 remain Partial; Phase 2
-remains In Progress and its exit gate remains Open.
+F192, source commit `f77b6d1c`, migrates
+`ApplicationServicesCalendarFirstDayOfWeekPreferencesPort` to use only the
+active open session's `SettingsRepository`. It preserves
+`calendar/firstDayOfWeek`, recalculated `QLocale` fallback for missing,
+unavailable, null, closed, read-error, and invalid values, all values `0..6`,
+unavailable/closed no-op saves, save-warning behavior, provider normalization,
+revision and signal ordering, and generic `SettingsService` behavior. The
+worker build and independent registered CTest
+`ClassMngrNextPlatformApplicationServicesCalendarFirstDayOfWeekPreferencesPortTests`
+passed 1/1; `git diff --check` passed.
+
+F193 is selected for
+`ApplicationServicesAcademicCalendarSchedulePreferencesPort` in
+`src/next/platform/application_services_academic_calendar_schedule_preferences_port.h`,
+with focused tests in
+`tests/next_platform_application_services_academic_calendar_schedule_preferences_port_tests.cpp`
+and registered target
+`NextPlatformApplicationServicesAcademicCalendarSchedulePreferencesPort`.
+Use only the active open session's `SettingsRepository`. Preserve exact key
+`calendar/academicSchedule/v1`, opaque UTF-8 payload round-trip without parsing
+or rewriting, empty reads/no-op saves for unavailable, null, closed, and
+read-error cases, save warning and prior value on failure, and unrelated
+settings. Keep provider serialization, schema/version/default/revision/signal
+behavior and generic `SettingsService` unchanged. Add closed-session-with-
+`DataService` no-fallback and read-error empty-fallback coverage. Two
+independent Explorer lanes agreed on the selection. The earlier 2026-09-26
+generated `.moc` build failure is historical; verify the current target build.
+Gate 1 and Gate 2 remain Partial; Phase 2 remains In Progress and its exit
+gate remains Open.
