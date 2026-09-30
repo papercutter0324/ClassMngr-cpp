@@ -1,7 +1,6 @@
 #include "teacher_info_page.h"
 
 #include "core/application_services.h"
-#include "app/services/feature_services.h"
 #include "core/fontmanager.h"
 #include "domain/models/teacher.h"
 #include "domain/validation/teacher_validator.h"
@@ -18,6 +17,7 @@
 #include "ui/shared/widgets/on_screen_keyboard.h"
 #include "core/utils/sidebar_node_naming.h"
 #include "next/application/teacher_profile_edit_use_case.h"
+#include "next/platform/application_services_teacher_profile_edit_persistence_port.h"
 
 #include <QCalendarWidget>
 #include <QComboBox>
@@ -344,15 +344,6 @@ Teacher teacherFromProfile(
     };
 }
 
-NextDomain::OperationError operationError(const QString& message)
-{
-    return {
-        .code = NextDomain::ErrorCode::Technical,
-        .message = message.toStdString(),
-        .recoverable = true
-    };
-}
-
 class TeacherInfoValidationPolicy final
     : public NextApplication::TeacherProfileValidationPolicy
 {
@@ -434,71 +425,6 @@ ValidationResult uiValidationFromApplicationIssues(
     }
     return ValidationResult(std::move(mappedIssues));
 }
-
-class TeacherServiceProfileEditPort final
-    : public NextApplication::TeacherProfileEditPersistencePort
-{
-public:
-    explicit TeacherServiceProfileEditPort(TeacherService* service)
-        : m_service(service)
-    {
-    }
-
-    NextDomain::Result<void> update(
-        const NextDomain::TeacherProfile& profile
-        ) const override
-    {
-        if (!m_service)
-        {
-            return NextDomain::Result<void>::failure(
-                operationError(QStringLiteral(
-                    "No Teacher Profile service is available.")));
-        }
-
-        const Status result = m_service->update(teacherFromProfile(profile));
-        if (!result)
-        {
-            return NextDomain::Result<void>::failure(
-                operationError(result.error()));
-        }
-        return NextDomain::Result<void>::success();
-    }
-
-    NextDomain::Result<NextDomain::TeacherProfile> reload(
-        const NextDomain::TeacherId id
-        ) const override
-    {
-        if (!m_service)
-        {
-            return NextDomain::Result<NextDomain::TeacherProfile>::failure(
-                operationError(QStringLiteral(
-                    "No Teacher Profile service is available.")));
-        }
-
-        const Result<Teacher> result = m_service->teacher(id.value());
-        if (!result)
-        {
-            return NextDomain::Result<NextDomain::TeacherProfile>::failure(
-                operationError(result.error()));
-        }
-        const auto reloadedId = NextDomain::TeacherId::fromInt(result->id);
-        if (!reloadedId)
-        {
-            return NextDomain::Result<NextDomain::TeacherProfile>::failure({
-                .code = NextDomain::ErrorCode::InvalidInput,
-                .message = "Reloaded Teacher ID must be positive.",
-                .recoverable = true
-            });
-        }
-        return NextDomain::Result<NextDomain::TeacherProfile>::success({
-            .id = *reloadedId,
-            .fields = profileFieldsFromTeacher(*result)
-        });
-    }
-
-private:
-    TeacherService* m_service = nullptr;
-};
 
 } // namespace
 
@@ -1389,7 +1315,6 @@ bool TeacherInfoPage::saveTeacherInternal(bool showErrors)
     if (
         !m_services
         || !m_services->databaseSession()
-        || !m_services->teacherService()
         )
     {
         return false;
@@ -1397,8 +1322,9 @@ bool TeacherInfoPage::saveTeacherInternal(bool showErrors)
 
     const Teacher updated = teacherFromForm();
     const TeacherInfoValidationPolicy validationPolicy;
-    const TeacherServiceProfileEditPort persistence(
-        m_services->teacherService());
+    const ClassMngr::Next::Platform::
+        ApplicationServicesTeacherProfileEditPersistencePort persistence(
+            m_services);
     const NextApplication::TeacherProfileEditResult result =
         NextApplication::TeacherProfileEditUseCase::execute(
             NextApplication::TeacherProfileEditRequest::fromIntId(

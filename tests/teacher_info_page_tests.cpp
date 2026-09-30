@@ -1,6 +1,10 @@
 #include "features/teacher/ui/teacher_info_page.h"
 #include "app/services/feature_services.h"
 #include "core/application_services.h"
+#include "data/database/database_session.h"
+#include "data/repositories/teacher_repository.h"
+#include "fakes/fake_user_prompt_service.h"
+#include "ui/shared/dialogs/user_prompt_service.h"
 #include "ui/shared/widgets/on_screen_keyboard.h"
 
 #include <QApplication>
@@ -14,6 +18,7 @@
 #include <QMetaObject>
 #include <QInputDialog>
 #include <QPushButton>
+#include <QSqlQuery>
 #include <QTimer>
 #include <QTemporaryDir>
 #include <QSignalSpy>
@@ -72,6 +77,7 @@ class TeacherInfoPageTests : public QObject
     Q_OBJECT
 
 private slots:
+    void cleanup();
     void personalDetailsUseRequestedTwoRowOrder();
     void preferredNameListsAvailableNameChoices();
     void promptsWhenSecondPreferredNameChoiceIsAdded();
@@ -80,7 +86,14 @@ private slots:
     void inlineValidationBlocksManualSaveUntilCorrected();
     void saveUsesApplicationEditAndReloadsCanonicalTeacher();
     void applicationValidationBlocksInvalidTeacherWrite();
+    void repositoryUpdateFailureKeepsDirtyStateAndShowsWarning();
+    void repositoryReloadFailureKeepsDirtyStateAfterSuccessfulWrite();
 };
+
+void TeacherInfoPageTests::cleanup()
+{
+    DialogServices::setUserPromptServiceForTesting(nullptr);
+}
 
 void TeacherInfoPageTests::personalDetailsUseRequestedTwoRowOrder()
 {
@@ -404,6 +417,136 @@ void TeacherInfoPageTests::applicationValidationBlocksInvalidTeacherWrite()
     QVERIFY(unchanged.has_value());
     QCOMPARE(unchanged->teacherEn, QStringLiteral("Alex"));
     QCOMPARE(unchanged->teacherKr, QStringLiteral("김선생"));
+}
+
+void TeacherInfoPageTests::
+repositoryUpdateFailureKeepsDirtyStateAndShowsWarning()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(
+        directory.filePath(QStringLiteral("teacher-profile-update-failure.tps"))));
+
+    Teacher original;
+    original.teacherKr = QStringLiteral("김선생");
+    original.teacherEn = QStringLiteral("Alex");
+    const Result<int> created = services.teacherService()->create(original);
+    QVERIFY(created);
+    original.id = *created;
+
+    QSqlQuery trigger(services.databaseSession()->database());
+    QVERIFY(trigger.exec(QStringLiteral(
+        "CREATE TRIGGER reject_teacher_profile_update "
+        "BEFORE UPDATE ON teachers "
+        "WHEN NEW.teacher_en = 'Reject Profile' "
+        "BEGIN "
+        "SELECT RAISE(ABORT, 'injected profile update failure'); "
+        "END"
+        )));
+
+    FakeUserPromptService prompts;
+    DialogServices::setUserPromptServiceForTesting(&prompts);
+    TeacherInfoPage page(&services);
+    page.setSaveMode(SaveMode::Manual);
+    page.loadTeacher(original);
+
+    auto* english = page.findChild<QLineEdit*>(
+        QStringLiteral("teacherEnEdit"));
+    QVERIFY(english);
+    QSignalSpy saved(&page, &TeacherInfoPage::teacherSaved);
+    english->setText(QStringLiteral("Reject Profile"));
+    QVERIFY(page.hasUnsavedChanges());
+
+    QVERIFY(!page.saveChanges());
+    QVERIFY(page.hasUnsavedChanges());
+    QCOMPARE(saved.count(), 0);
+    QCOMPARE(prompts.messages.size(), 1);
+    QCOMPARE(prompts.messages.first().severity, PromptSeverity::Warning);
+    QCOMPARE(prompts.messages.first().title,
+        QStringLiteral("Save Teacher Information"));
+    QCOMPARE(prompts.messages.first().message,
+        QStringLiteral("The teacher information could not be saved."));
+    QVERIFY(prompts.messages.first().details.contains(
+        QStringLiteral("injected profile update failure")));
+    QCOMPARE(page.teacher().teacherEn, QStringLiteral("Alex"));
+
+    const Result<Teacher> unchanged = services.databaseSession()
+        ->teacherRepository()->getTeacher(original.id);
+    QVERIFY(unchanged);
+    QCOMPARE(unchanged->teacherEn, QStringLiteral("Alex"));
+    QCOMPARE(unchanged->teacherKr, QStringLiteral("김선생"));
+}
+
+void TeacherInfoPageTests::
+repositoryReloadFailureKeepsDirtyStateAfterSuccessfulWrite()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(
+        directory.filePath(QStringLiteral("teacher-profile-reload-failure.tps"))));
+
+    Teacher original;
+    original.teacherKr = QStringLiteral("김선생");
+    original.teacherEn = QStringLiteral("Alex");
+    const Result<int> created = services.teacherService()->create(original);
+    QVERIFY(created);
+    original.id = *created;
+
+    QSqlQuery trigger(services.databaseSession()->database());
+    QVERIFY(trigger.exec(QStringLiteral(
+        "CREATE TABLE teacher_profile_update_audit (teacher_id INTEGER, teacher_en TEXT)"
+        )));
+    QVERIFY(trigger.exec(QStringLiteral(
+        "CREATE TRIGGER remove_teacher_after_profile_update "
+        "AFTER UPDATE OF teacher_en ON teachers "
+        "WHEN NEW.teacher_en = 'Reload Failure' "
+        "BEGIN "
+        "INSERT INTO teacher_profile_update_audit(teacher_id, teacher_en) "
+        "VALUES (NEW.id, NEW.teacher_en); "
+        "DELETE FROM teachers WHERE id = NEW.id; "
+        "END"
+        )));
+
+    FakeUserPromptService prompts;
+    DialogServices::setUserPromptServiceForTesting(&prompts);
+    TeacherInfoPage page(&services);
+    page.setSaveMode(SaveMode::Manual);
+    page.loadTeacher(original);
+
+    auto* english = page.findChild<QLineEdit*>(
+        QStringLiteral("teacherEnEdit"));
+    QVERIFY(english);
+    QSignalSpy saved(&page, &TeacherInfoPage::teacherSaved);
+    english->setText(QStringLiteral("Reload Failure"));
+    QVERIFY(page.hasUnsavedChanges());
+
+    QVERIFY(!page.saveChanges());
+    QVERIFY(page.hasUnsavedChanges());
+    QCOMPARE(saved.count(), 0);
+    QCOMPARE(prompts.messages.size(), 1);
+    QCOMPARE(prompts.messages.first().severity, PromptSeverity::Warning);
+    QCOMPARE(prompts.messages.first().title,
+        QStringLiteral("Save Teacher Information"));
+    QCOMPARE(prompts.messages.first().message,
+        QStringLiteral("The saved teacher information could not be reloaded."));
+    QVERIFY(prompts.messages.first().details.contains(
+        QStringLiteral("no matching record"), Qt::CaseInsensitive));
+    QCOMPARE(page.teacher().teacherEn, QStringLiteral("Alex"));
+
+    QSqlQuery audit(services.databaseSession()->database());
+    QVERIFY(audit.exec(QStringLiteral(
+        "SELECT teacher_id, teacher_en FROM teacher_profile_update_audit")));
+    QVERIFY(audit.next());
+    QCOMPARE(audit.value(0).toInt(), original.id);
+    QCOMPARE(audit.value(1).toString(), QStringLiteral("Reload Failure"));
+    QVERIFY(!audit.next());
+    const Result<Teacher> deleted = services.databaseSession()
+        ->teacherRepository()->getTeacher(original.id);
+    QVERIFY(!deleted);
 }
 
 QTEST_MAIN(TeacherInfoPageTests)

@@ -1178,6 +1178,16 @@ classmngr_add_qt_test(
 )
 
 classmngr_add_qt_test(
+    NAME NextPlatformApplicationServicesTeacherProfileEditPersistencePort
+    SOURCES
+        tests/next_platform_application_services_teacher_profile_edit_persistence_port_tests.cpp
+    LIBRARIES
+        ClassMngrNext::Platform
+        Qt6::Test
+    OFFSCREEN
+)
+
+classmngr_add_qt_test(
     NAME NextPlatformApplicationServicesClassCoTeacherAssignmentPort
     SOURCES
         tests/next_platform_application_services_class_co_teacher_assignment_port_tests.cpp

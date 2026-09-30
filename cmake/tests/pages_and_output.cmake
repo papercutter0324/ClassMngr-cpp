@@ -70,6 +70,16 @@ classmngr_add_qt_test(
 )
 
 classmngr_add_qt_test(
+    NAME TeacherInfoPagePersistenceParity
+    SOURCES
+        tests/teacher_info_page_persistence_parity_tests.cpp
+    LIBRARIES
+        Qt6::Test
+        Qt6::Widgets
+    OFFSCREEN
+)
+
+classmngr_add_qt_test(
     NAME RosterEditorWidgetSave
     SOURCES
         tests/roster_editor_widget_save_tests.cpp
