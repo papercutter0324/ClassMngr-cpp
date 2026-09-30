@@ -160,6 +160,8 @@ private slots:
     void classesListQueryUsesActiveRepositoryOnOpenAndAfterInfoSave();
     void selectedClassSubtitleUsesIndependentReadOutcomesAndRefreshes();
     void selectedClassSubtitleFallbackChainUsesTrimmedValues();
+    void rosterEditorSubtitleUsesSelectedClassSubtitleRead();
+    void rosterEditorSubtitleKeepsNameFallbackWhenReadIsUnavailable();
     void classInfoSaveRefreshesVisibleClassListAndPreservesSelection();
     void classInfoSaveRefreshesNavigationSnapshot();
     void dayFilterSelectsAllWhenSelectedGradeDisappears();
@@ -988,6 +990,101 @@ selectedClassSubtitleFallbackChainUsesTrimmedValues()
             ),
         QStringLiteral("Class 42")
         );
+}
+
+void ClassesPageTests::rosterEditorSubtitleUsesSelectedClassSubtitleRead()
+{
+    ApplicationServices services;
+    RosterEditorWidget editor(&services, true);
+
+    Classroom classroom;
+    classroom.id = 42;
+    classroom.name = QStringLiteral("Classroom fallback");
+    editor.loadClass(classroom);
+
+    auto* const subtitle = editor.findChild<QLabel*>(
+        QStringLiteral("pageSubtitle")
+        );
+    auto* const title = editor.findChild<QLabel*>(
+        QStringLiteral("pageTitle")
+        );
+    auto* const embeddedHeading = editor.findChild<QLabel*>(
+        QStringLiteral("classRosterHeading")
+        );
+    QVERIFY(subtitle);
+    QVERIFY(title);
+    QVERIFY(embeddedHeading);
+
+    const QString bullet(QChar(0x2022));
+    QCOMPARE(
+        subtitle->text(),
+        QStringLiteral("E4 Hercules ") + bullet
+            + QStringLiteral(" Susan ") + bullet
+            + QStringLiteral(" Tues (4:00)")
+        );
+    QVERIFY(ScheduleWidgetTestStubs::selectedClassSubtitleReadCount > 0);
+    QVERIFY(
+        ScheduleWidgetTestStubs::selectedClassSubtitleTeacherReadCount > 0
+        );
+    QCOMPARE(title->text(), QStringLiteral("Class Roster"));
+    QCOMPARE(embeddedHeading->text(), QStringLiteral("Class Roster"));
+
+    ScheduleWidgetTestStubs::setSelectedClassSubtitleTeacherReadFailure(true);
+    editor.loadClass(classroom);
+    QCOMPARE(
+        subtitle->text(),
+        QStringLiteral("E4 Hercules ") + bullet
+            + QStringLiteral(" No Teacher ") + bullet
+            + QStringLiteral(" Tues (4:00)")
+        );
+
+    ScheduleWidgetTestStubs::setSelectedClassSubtitleTeacherReadFailure(false);
+    ScheduleWidgetTestStubs::setSelectedClassSubtitleReadFailure(true);
+    editor.loadClass(classroom);
+    QCOMPARE(
+        subtitle->text(),
+        QStringLiteral("Unknown Class ") + bullet
+            + QStringLiteral(" No Teacher")
+        );
+    QCOMPARE(title->text(), QStringLiteral("Class Roster"));
+    QCOMPARE(embeddedHeading->text(), QStringLiteral("Class Roster"));
+}
+
+void ClassesPageTests::
+rosterEditorSubtitleKeepsNameFallbackWhenReadIsUnavailable()
+{
+    ApplicationServices services;
+    RosterEditorWidget editor(&services);
+
+    auto* const subtitle = editor.findChild<QLabel*>(
+        QStringLiteral("pageSubtitle")
+        );
+    QVERIFY(subtitle);
+
+    editor.loadClass({});
+    QCOMPARE(subtitle->text(), QStringLiteral("No class selected"));
+    QCOMPARE(ScheduleWidgetTestStubs::selectedClassSubtitleReadCount, 0);
+
+    ScheduleWidgetTestStubs::setDatabaseSessionOpen(false);
+    QVERIFY(services.classService()->isAvailable());
+    QVERIFY(services.teacherService()->isAvailable());
+    const int legacyClassInfoReadsBefore =
+        ScheduleWidgetTestStubs::legacyClassInfoReadCount;
+
+    Classroom classroom;
+    classroom.id = 42;
+    classroom.name = QStringLiteral("  Room Name  ");
+    editor.loadClass(classroom);
+    QCOMPARE(subtitle->text(), QStringLiteral("Room Name"));
+
+    classroom.name = QStringLiteral("  ");
+    editor.loadClass(classroom);
+    QCOMPARE(subtitle->text(), QStringLiteral("Class 42"));
+    QCOMPARE(
+        ScheduleWidgetTestStubs::legacyClassInfoReadCount,
+        legacyClassInfoReadsBefore
+        );
+    ScheduleWidgetTestStubs::setDatabaseSessionOpen(true);
 }
 
 void ClassesPageTests::

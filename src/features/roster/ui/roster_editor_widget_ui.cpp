@@ -3,7 +3,6 @@
 #include "ui/shared/widgets/text_fit_push_button.h"
 
 #include "core/application_services.h"
-#include "app/services/feature_services.h"
 #include "core/fontmanager.h"
 #include "core/utils/sidebar_node_naming.h"
 #include "features/roster/ui/roster_column_layout_controller.h"
@@ -12,6 +11,9 @@
 #include "features/roster/ui/roster_item_delegate.h"
 #include "features/roster/ui/roster_model.h"
 #include "features/roster/ui/roster_table_view.h"
+#include "next/application/selected_class_subtitle_read_query.h"
+#include "next/domain/domain_types.h"
+#include "next/platform/application_services_selected_class_subtitle_read_port.h"
 #include "ui/shared/constants/gui_constants.h"
 #include "ui/shared/widgets/on_screen_keyboard.h"
 #include "ui/shared/pages/autosave_coordinator.h"
@@ -26,31 +28,75 @@
 #include <QTimer>
 #include <QVBoxLayout>
 
+#include <string>
+#include <utility>
+
 namespace
 {
 
 QString sidebarClassDisplayName(
-    ClassService* classService,
-    TeacherService* teacherService,
+    ApplicationServices* services,
     int classId
     )
 {
-    if (!classService || !teacherService || classId <= 0)
+    if (!services || classId <= 0)
     {
         return {};
     }
 
-    const ClassInfo classInfo =
-        classService->classInfo(
-            classId
-            ).value_or(ClassInfo{});
+    const auto selectedClassId =
+        ClassMngr::Next::Domain::ClassId::fromString(
+            std::to_string(classId)
+            );
+    if (!selectedClassId)
+    {
+        return {};
+    }
 
+    ClassMngr::Next::Platform::
+        ApplicationServicesSelectedClassSubtitleReadPort readPort(services);
+    const ClassMngr::Next::Application::
+        SelectedClassSubtitleReadQuery query(readPort);
+    const auto loadedSubtitle = query.execute(*selectedClassId);
+    if (!loadedSubtitle)
+    {
+        return {};
+    }
+
+    ClassInfo classInfo;
     Teacher teacher;
 
-    if (classInfo.teacherId > 0)
+    const auto& subtitle = loadedSubtitle.value();
+    if (subtitle.classFields)
     {
-        teacher = teacherService->teacher(classInfo.teacherId)
-            .value_or(Teacher{});
+        const auto& fields = subtitle.classFields.value();
+        classInfo.classGrade = QString::fromStdU16String(fields.classGrade);
+        classInfo.classLevel = QString::fromStdU16String(fields.classLevel);
+        classInfo.classTimes.reserve(
+            static_cast<qsizetype>(fields.regularSchedule.size())
+            );
+        for (const auto& row : fields.regularSchedule)
+        {
+            ClassTime time;
+            time.day = QString::fromStdU16String(row.day);
+            time.startTime = QString::fromStdU16String(row.startTime);
+            time.endTime.clear();
+            classInfo.classTimes.append(std::move(time));
+        }
+    }
+
+    if (subtitle.assignedTeacher
+        && subtitle.assignedTeacher.value().has_value())
+    {
+        const auto& fields = subtitle.assignedTeacher.value().value();
+        teacher.teacherKr = QString::fromStdU16String(fields.teacherKr);
+        teacher.teacherEn = QString::fromStdU16String(fields.teacherEn);
+        teacher.preferredRomanization = QString::fromStdU16String(
+            fields.preferredRomanization
+            );
+        teacher.preferredName = QString::fromStdU16String(
+            fields.preferredName
+            );
     }
 
     return SidebarNodeNaming::formatClassDisplayName(
@@ -349,8 +395,7 @@ void RosterEditorWidget::updateHeaderText()
     }
 
     const QString sidebarName = sidebarClassDisplayName(
-        m_services ? m_services->classService() : nullptr,
-        m_services ? m_services->teacherService() : nullptr,
+        m_services,
         m_classroom.id
         );
 
