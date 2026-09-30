@@ -242,8 +242,9 @@ private slots:
     void reportsSubPrepIntervalRepositoryFailureStructurally();
     void projectsByIdAsOwnedTypedMetadata();
     void deletesValidTypedEvent();
+    void deletesMissingValidTypedEventSuccessfully();
     void reportsInvalidDeleteIdStructurally();
-    void reportsUnavailableDeleteServiceStructurally();
+    void reportsUnavailableDeleteSessionStructurally();
     void reportsDeleteServiceFailureStructurally();
     void deletesAllCalendarEventsThroughTypedPort();
     void reportsUnavailableDeleteAllServiceStructurally();
@@ -707,8 +708,13 @@ deletesValidTypedEvent()
 {
     ApplicationServices services;
     QVERIFY(openDatabase(services, m_directory));
-    CalendarService* legacyService = services.calendarService();
-    QVERIFY(legacyService);
+    QVERIFY(services.dataService());
+    DatabaseSession* const session = services.databaseSession();
+    QVERIFY(session);
+    QVERIFY(session->isOpen());
+    CalendarEventRepository* const repository =
+        session->calendarEventRepository();
+    QVERIFY(repository);
 
     CalendarEvent event = makeEvent(
         QStringLiteral("Delete me"),
@@ -717,14 +723,38 @@ deletesValidTypedEvent()
         );
     event.startTime = QTime(9, 0);
     event.endTime = QTime(10, 0);
-    const int eventId = saveEvent(*legacyService, event);
+    const auto saved = repository->saveCalendarEvent(event);
+    QVERIFY(saved);
+    const int eventId = *saved;
     QVERIFY(eventId > 0);
+    QVERIFY(repository->getCalendarEvent(eventId));
 
     ApplicationServicesCalendarEventDeletePort port(services);
     const auto deleted = port.deleteEvent(calendarEventId(eventId));
 
     QVERIFY(deleted);
-    QVERIFY(!legacyService->event(eventId));
+    QVERIFY(!repository->getCalendarEvent(eventId));
+}
+
+void NextPlatformApplicationServicesCalendarEventPortTests::
+deletesMissingValidTypedEventSuccessfully()
+{
+    ApplicationServices services;
+    QVERIFY(openDatabase(services, m_directory));
+    QVERIFY(services.dataService());
+    DatabaseSession* const session = services.databaseSession();
+    QVERIFY(session);
+    QVERIFY(session->isOpen());
+    CalendarEventRepository* const repository =
+        session->calendarEventRepository();
+    QVERIFY(repository);
+    QVERIFY(!repository->getCalendarEvent(1));
+
+    ApplicationServicesCalendarEventDeletePort port(services);
+    const auto deleted = port.deleteEvent(calendarEventId(1));
+
+    QVERIFY(deleted);
+    QVERIFY(!repository->getCalendarEvent(1));
 }
 
 void NextPlatformApplicationServicesCalendarEventPortTests::
@@ -750,10 +780,26 @@ reportsInvalidDeleteIdStructurally()
 }
 
 void NextPlatformApplicationServicesCalendarEventPortTests::
-reportsUnavailableDeleteServiceStructurally()
+reportsUnavailableDeleteSessionStructurally()
 {
     ApplicationServices services;
+    QVERIFY(services.dataService());
+    DatabaseSession* const session = services.databaseSession();
+    QVERIFY(session);
+    QVERIFY(!session->isOpen());
+
     ApplicationServicesCalendarEventDeletePort port(services);
+
+    verifyFailure(
+        port.deleteEvent(calendarEventId(1)),
+        ErrorCode::NotFound
+        );
+
+    QVERIFY(openDatabase(services, m_directory));
+    QVERIFY(session->isOpen());
+    services.closeDatabase();
+    QVERIFY(services.dataService());
+    QVERIFY(!session->isOpen());
 
     verifyFailure(
         port.deleteEvent(calendarEventId(1)),
@@ -766,8 +812,13 @@ reportsDeleteServiceFailureStructurally()
 {
     ApplicationServices services;
     QVERIFY(openDatabase(services, m_directory));
-    CalendarService* legacyService = services.calendarService();
-    QVERIFY(legacyService);
+    QVERIFY(services.dataService());
+    DatabaseSession* const session = services.databaseSession();
+    QVERIFY(session);
+    QVERIFY(session->isOpen());
+    CalendarEventRepository* const repository =
+        session->calendarEventRepository();
+    QVERIFY(repository);
 
     CalendarEvent event = makeEvent(
         QStringLiteral("Delete failure"),
@@ -776,12 +827,12 @@ reportsDeleteServiceFailureStructurally()
         );
     event.startTime = QTime(9, 0);
     event.endTime = QTime(10, 0);
-    const int eventId = saveEvent(*legacyService, event);
+    const auto saved = repository->saveCalendarEvent(event);
+    QVERIFY(saved);
+    const int eventId = *saved;
     QVERIFY(eventId > 0);
 
-    QSqlQuery query(
-        services.dataService()->databaseSession()->database()
-        );
+    QSqlQuery query(session->database());
     QVERIFY(query.exec(QStringLiteral(
         "CREATE TRIGGER reject_calendar_delete "
         "BEFORE DELETE ON calendar_events "
@@ -798,7 +849,7 @@ reportsDeleteServiceFailureStructurally()
         deleted.error().message.find("Deleting calendar event")
             != std::string::npos
         );
-    QVERIFY(legacyService->event(eventId));
+    QVERIFY(repository->getCalendarEvent(eventId));
 }
 
 void NextPlatformApplicationServicesCalendarEventPortTests::

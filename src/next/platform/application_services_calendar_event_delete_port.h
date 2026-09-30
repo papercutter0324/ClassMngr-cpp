@@ -1,7 +1,8 @@
 #pragma once
 
-#include "app/services/feature_services.h"
 #include "core/application_services.h"
+#include "data/database/database_session.h"
+#include "data/repositories/calendar_event_repository.h"
 #include "next/application/calendar_event_delete_port.h"
 
 #include <QByteArray>
@@ -59,8 +60,8 @@ public:
 
         try
         {
-            const CalendarService* service = m_services.calendarService();
-            if (!service || !service->isAvailable())
+            DatabaseSession* const session = m_services.databaseSession();
+            if (!session || !session->isOpen())
             {
                 return failure(
                     Domain::ErrorCode::NotFound,
@@ -68,10 +69,21 @@ public:
                     );
             }
 
-            const ::Status deleted = service->deleteEvent(*legacyId);
+            CalendarEventRepository* const repository =
+                session->calendarEventRepository();
+            if (!repository)
+            {
+                return failure(
+                    Domain::ErrorCode::NotFound,
+                    "The calendar event repository is unavailable."
+                    );
+            }
+
+            const ::Status deleted =
+                repository->deleteCalendarEvent(*legacyId);
             if (!deleted)
             {
-                if (!service->isAvailable())
+                if (!session->isOpen())
                 {
                     return failure(
                         Domain::ErrorCode::NotFound,
