@@ -45,9 +45,9 @@
   interval port and F181's Calendar Event Import signature query port are
   accepted. F182's active Calendar event read/by-ID adapter, F183's single
   Calendar Event save port, F184's Calendar Event delete port, F185's
-  Calendar Event delete-all port, F186's repeat-series suffix-delete port, and
-  F187's Calendar Event Import save port are accepted. F188 is selected for
-  repeat-series creation.
+  Calendar Event delete-all port, F186's repeat-series suffix-delete port,
+  F187's Calendar Event Import save port, and F188's repeat-series creation
+  port are accepted. F189 is selected for repeat-series editing.
   See the
   [Phase 2 progress
   log](03-Phase-2-Progress-Log.md)

@@ -50,9 +50,9 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
   interval port, and F181's Calendar Event Import signature query port are
   accepted. F182's active Calendar event read/by-ID adapter, F183's single
   Calendar Event save port, F184's Calendar Event delete port, F185's
-  Calendar Event delete-all port, F186's repeat-series suffix-delete port, and
-  F187's Calendar Event Import save port are accepted. F188 is selected for
-  repeat-series creation.
+  Calendar Event delete-all port, F186's repeat-series suffix-delete port,
+  F187's Calendar Event Import save port, and F188's repeat-series creation
+  port are accepted. F189 is selected for repeat-series editing.
   The prior F123 candidate wording is historical;
   current Teacher Profile integration status is recorded in the progress log.
   Gates 1 and 2
@@ -1012,22 +1012,42 @@ each passed
 Source has one visible repository save call; tests verify result order and
 rollback rather than instrumenting invocation count.
 
-## F188 selected Calendar Event repeat-series creation port
+## F188 accepted Calendar Event repeat-series creation port
 
-Migrate `ApplicationServicesCalendarEventSeriesCreatePort` in
-`src/next/platform/application_services_calendar_event_series_create_port.h`,
-with focused tests in
-`tests/next_platform_application_services_calendar_event_port_tests.cpp`, to
-the active session's `CalendarEventRepository::saveCalendarEvents()` with no
-`CalendarService` or `DataService` fallback. Preserve request validation
-before session access, planned daily/weekly/monthly occurrences and order,
-series ID handling, canonical conversion and all-day/unknown-time fields,
-normalization then `validateSeries()`, one atomic repository batch, ordered
-positive typed IDs, and structured validation/NotFound/Technical failures.
-Keep the Series Create use case and Calendar Page UI unchanged. Verify
+F188, source commit `6ad0dc6f`, migrates
+`CalendarEventSeriesCreatePort` to the active session's
+`CalendarEventRepository::saveCalendarEvents(normalizedEvents)` in one call,
+with no `CalendarService` or `DataService` fallback. It preserves request
+validation before session access; daily/weekly/monthly occurrence order;
+trimmed series ID; canonical date/time, `allDay`, and unknown-field conversion;
+normalization then `validateSeries()`; ordered positive typed IDs; and
+NotFound/Technical mapping. Implementation and independent Tester passed
 `ClassMngrNextPlatformApplicationServicesCalendarEventPortTests`,
 `ClassMngrNextApplicationCalendarEventTests`, and
-`ClassMngrCalendarEventRepositoryTests`. Two independent Explorer lanes
-selected this focused single-batch write; series edit is broader read/plan/write
-and is deferred. Phase 2 remains In Progress/Open; Gates 1 and 2 remain
-Partial.
+`ClassMngrCalendarEventRepositoryTests`; build and `git diff --check` passed.
+Coverage includes normalized fields, series ID, ordered IDs, validation before
+session lookup, unavailable/open/closed sessions with `DataService` present,
+and transaction rollback. Optional typed occurrence-ID conversion remains in
+code without direct test coverage; no defect was found.
+
+## F189 selected Calendar Event repeat-series edit port
+
+Migrate `ApplicationServicesCalendarEventSeriesEditPort` in
+`src/next/platform/application_services_calendar_event_series_edit_port.h`,
+with focused tests in
+`tests/next_platform_application_services_calendar_event_port_tests.cpp`, to
+load the suffix through the active open session's
+`CalendarEventRepository::loadCalendarEventsForRepeatSeriesFromDate()`, run the
+existing planner unchanged, normalize then `validateSeries()`, and persist one
+ordered `saveCalendarEvents()` batch, without `CalendarService` or
+`DataService` fallback. Preserve validation before session lookup, suffix
+order/identity, earlier and unrelated rows, planner date offsets/durations/
+field propagation, empty-suffix success, NotFound/Technical mapping, and atomic
+updates. Keep the use case, planner, and Calendar Page UI unchanged. Verify
+`ClassMngrNextPlatformApplicationServicesCalendarEventPortTests`,
+`ClassMngrNextApplicationCalendarEventTests`, and
+`ClassMngrCalendarEventRepositoryTests`. Two independent Explorer lanes found
+this is the remaining CalendarService-backed `src/next/platform` calendar
+adapter with matching repository read/write APIs; preference ports have
+separate `SettingsService` boundaries. Phase 2 remains In Progress/Open; Gates
+1 and 2 remain Partial.

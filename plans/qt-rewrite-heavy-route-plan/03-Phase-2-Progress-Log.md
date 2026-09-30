@@ -8299,7 +8299,7 @@ fields/schedule/teacher/count/fallback parity. F167 implementation has not
 started. Gate 1 and Gate 2 remain Partial; Phase 2 remains In Progress and its
 exit gate remains Open.
 
-### Progress update - 2026-10-01 (F187 accepted; F188 selected)
+### Progress update - 2026-10-01 (F188 accepted; F189 selected)
 
 F167, source commit `97efac8b`, updates
 `ApplicationServicesClassDetailsPageReadPort` to use active-session
@@ -8589,20 +8589,39 @@ Source has one visible repository save call; tests verify result order and
 rollback rather than instrumenting invocation count. Phase 2 remains In
 Progress/Open; Gates 1 and 2 remain Partial.
 
-F188 is selected for `ApplicationServicesCalendarEventSeriesCreatePort` in
-`src/next/platform/application_services_calendar_event_series_create_port.h`,
-with focused tests in
-`tests/next_platform_application_services_calendar_event_port_tests.cpp`.
-Use the active session's `CalendarEventRepository::saveCalendarEvents()` with
-no `CalendarService` or `DataService` fallback. Preserve request validation
-before session access, planned daily/weekly/monthly occurrences and order,
-series ID handling, canonical conversion and all-day/unknown-time fields,
-normalization then `validateSeries()`, one atomic repository batch, ordered
-positive typed IDs, and structured validation/NotFound/Technical failures.
-Keep the Series Create use case and Calendar Page UI unchanged. Verify
+F188, source commit `6ad0dc6f`, migrates
+`CalendarEventSeriesCreatePort` to the active session's
+`CalendarEventRepository::saveCalendarEvents(normalizedEvents)` in one call,
+with no `CalendarService` or `DataService` fallback. It preserves request
+validation before session access; daily/weekly/monthly occurrence order;
+trimmed series ID; canonical date/time, `allDay`, and unknown-field conversion;
+normalization then `validateSeries()`; ordered positive typed IDs; and
+NotFound/Technical mapping. Implementation and independent Tester passed
 `ClassMngrNextPlatformApplicationServicesCalendarEventPortTests`,
 `ClassMngrNextApplicationCalendarEventTests`, and
-`ClassMngrCalendarEventRepositoryTests`. Two independent Explorer lanes
-selected this focused single-batch write; series edit is broader read/plan/write
-and is deferred. Phase 2 remains In Progress/Open; Gates 1 and 2 remain
-Partial.
+`ClassMngrCalendarEventRepositoryTests`; build and `git diff --check` passed.
+Coverage includes normalized fields, series ID, ordered IDs, validation before
+session lookup, unavailable/open/closed sessions with `DataService` present,
+and transaction rollback. Optional typed occurrence-ID conversion remains in
+code without direct test coverage; no defect was found. Phase 2 remains In
+Progress/Open; Gates 1 and 2 remain Partial.
+
+F189 is selected for `ApplicationServicesCalendarEventSeriesEditPort` in
+`src/next/platform/application_services_calendar_event_series_edit_port.h`,
+with focused tests in
+`tests/next_platform_application_services_calendar_event_port_tests.cpp`.
+Load the suffix through the active open session's
+`CalendarEventRepository::loadCalendarEventsForRepeatSeriesFromDate()`, run
+the existing planner unchanged, normalize then `validateSeries()`, and persist
+one ordered `saveCalendarEvents()` batch, with no `CalendarService` or
+`DataService` fallback. Preserve validation before session lookup, suffix
+order/identity, earlier and unrelated rows, planner date offsets/durations/
+field propagation, empty-suffix success, NotFound/Technical mapping, and atomic
+updates. Keep the use case, planner, and Calendar Page UI unchanged. Verify
+`ClassMngrNextPlatformApplicationServicesCalendarEventPortTests`,
+`ClassMngrNextApplicationCalendarEventTests`, and
+`ClassMngrCalendarEventRepositoryTests`. Two independent Explorer lanes found
+this is the remaining CalendarService-backed `src/next/platform` calendar
+adapter with matching repository read/write APIs; preference ports have
+separate `SettingsService` boundaries. Phase 2 remains In Progress/Open; Gates
+1 and 2 remain Partial.
