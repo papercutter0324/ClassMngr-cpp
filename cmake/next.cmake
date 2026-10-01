@@ -216,6 +216,7 @@ set(CLASSMNGR_NEXT_APPLICATION_SOURCES
     src/next/application/schedule_import_overlap_projection.h
     src/next/application/schedule_import_state_projection.h
     src/next/application/schedule_import_state_validation.h
+    src/next/application/schedule_import_state_snapshot.h
     src/next/application/schedule_import_review_decisions.h
     src/next/application/schedule_import_plan_validation.h
     src/next/application/schedule_import_matching_projection.h
@@ -274,6 +275,7 @@ set(CLASSMNGR_NEXT_PLATFORM_SOURCES
     src/next/platform/application_services_schedule_testing_assignment_read_port.h
     src/next/platform/application_services_schedule_testing_assignment_save_port.h
     src/next/platform/application_services_schedule_builder_source_port.h
+    src/next/platform/application_services_schedule_import_state_snapshot_port.h
     src/next/platform/application_services_schedule_slot_state_save_port.h
     src/next/platform/application_services_evaluation_default_policy_port.h
     src/next/platform/application_services_class_day_filter_reset_policy_port.h

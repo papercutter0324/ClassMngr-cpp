@@ -8,6 +8,7 @@
 #include "core/utils/colorutils.h"
 #include "features/classes/config/class_info_config.h"
 #include "next/platform/application_services_custom_color_palette_preferences_port.h"
+#include "next/platform/application_services_schedule_import_state_snapshot_port.h"
 #include "domain/models/class_info.h"
 #include "domain/models/classroom.h"
 #include "domain/models/teacher.h"
@@ -53,6 +54,7 @@
 #include <QVBoxLayout>
 
 #include <algorithm>
+#include <charconv>
 #include <cstddef>
 #include <optional>
 #include <string>
@@ -143,6 +145,43 @@ std::vector<ImportState::ScheduleImportStateTime> stateTimes(
         result.push_back(stateTime(time));
     }
     return result;
+}
+
+QString snapshotText(const std::u16string& value)
+{
+    return QString::fromStdU16String(value);
+}
+
+QList<ClassTime> snapshotTimes(
+    const std::vector<ImportState::ScheduleImportStateReadTime>& times
+    )
+{
+    QList<ClassTime> result;
+    result.reserve(static_cast<qsizetype>(times.size()));
+    for (const auto& time : times)
+    {
+        result.append({
+            snapshotText(time.day),
+            snapshotText(time.startTime),
+            snapshotText(time.endTime)
+        });
+    }
+    return result;
+}
+
+template <typename Id>
+int snapshotLegacyId(const Id& id)
+{
+    int value = -1;
+    const std::string& text = id.value();
+    const auto [end, error] = std::from_chars(
+        text.data(),
+        text.data() + text.size(),
+        value
+        );
+    return error == std::errc{} && end == text.data() + text.size()
+        ? value
+        : -1;
 }
 
 ImportDomain::TeacherId stateTeacherId(const int legacyId)
@@ -1019,80 +1058,96 @@ void ScheduleImportReviewDialog::updateReviewState()
         }
     }
 
-    ClassService* classService =
-        m_services
-            ? m_services->classService()
-            : nullptr;
-    if (classService && !classService->isAvailable())
-    {
-        classService = nullptr;
-    }
-    TeacherService* teacherService =
-        m_services
-            ? m_services->teacherService()
-            : nullptr;
-    if (teacherService && !teacherService->isAvailable())
-    {
-        teacherService = nullptr;
-    }
-    QList<Classroom> availableClasses;
-    QList<Teacher> availableTeachers;
-    QHash<int, Teacher> teachersById;
-    QHash<int, ClassInfo> classInfoSnapshots;
+    ClassMngr::Next::Platform::
+        ApplicationServicesScheduleImportStateSnapshotPort snapshotPort(
+            m_services
+            );
+    const ImportState::ScheduleImportStateSnapshotOutcome snapshotOutcome =
+        ImportState::ScheduleImportStateSnapshotQueryHandler::execute(
+            {},
+            snapshotPort
+            );
+    const auto* stateSnapshot =
+        std::get_if<ImportState::ScheduleImportStateSnapshot>(
+            &snapshotOutcome
+            );
     bool stateSnapshotsAvailable = false;
-    if (classService && teacherService)
+    QHash<int, const ImportState::ScheduleImportStateReadTeacherSnapshot*>
+        teachersById;
+    QHash<int, const ImportState::ScheduleImportStateReadClassSnapshot*>
+        classSnapshotsById;
+    if (stateSnapshot)
     {
-        const Result<QList<Classroom>> classes = classService->classes();
-        const Result<QList<Teacher>> teachers = teacherService->teachers();
-        if (!classes || !teachers)
+        stateSnapshotsAvailable = true;
+        teachersById.reserve(
+            static_cast<qsizetype>(stateSnapshot->teachers.size())
+            );
+        for (const auto& teacher : stateSnapshot->teachers)
         {
-            valid = false;
-            if (message.isEmpty())
-            {
-                message = !classes ? classes.error() : teachers.error();
-            }
-            classService = nullptr;
-            teacherService = nullptr;
+            teachersById.insert(snapshotLegacyId(teacher.id), &teacher);
         }
-        else
+        classSnapshotsById.reserve(
+            static_cast<qsizetype>(stateSnapshot->classes.size())
+            );
+        for (const auto& classroom : stateSnapshot->classes)
         {
-            availableClasses = *classes;
-            availableTeachers = *teachers;
-            for (const Teacher& teacher : availableTeachers)
+            classSnapshotsById.insert(
+                snapshotLegacyId(classroom.id),
+                &classroom
+                );
+        }
+    }
+    else
+    {
+        const auto& failure =
+            std::get<ImportState::ScheduleImportStateSnapshotFailure>(
+                snapshotOutcome
+                );
+        valid = false;
+        if (message.isEmpty())
+        {
+            switch (failure.kind)
             {
-                teachersById.insert(teacher.id, teacher);
-            }
-
-            stateSnapshotsAvailable = true;
-            for (const Classroom& classroom : availableClasses)
-            {
-                const Result<ClassInfo> info =
-                    classService->classInfo(classroom.id);
-                if (!info)
-                {
-                    stateSnapshotsAvailable = false;
-                    valid = false;
-                    if (message.isEmpty())
-                    {
-                        message = info.error();
-                    }
-                    continue;
-                }
-                classInfoSnapshots.insert(classroom.id, *info);
+            case ImportState::ScheduleImportStateSnapshotFailureKind::
+                ActiveSessionUnavailable:
+                message = tr(
+                    "Current schedule data is unavailable because there is no open profile."
+                    );
+                break;
+            case ImportState::ScheduleImportStateSnapshotFailureKind::
+                RepositoryUnavailable:
+                message = tr(
+                    "Current schedule data is unavailable because a required repository could not be opened."
+                    );
+                break;
+            case ImportState::ScheduleImportStateSnapshotFailureKind::
+                RepositoryReadFailed:
+            case ImportState::ScheduleImportStateSnapshotFailureKind::
+                InvalidSnapshot:
+                message = failure.message.empty()
+                    ? tr("Current schedule data could not be loaded.")
+                    : QString::fromStdString(failure.message);
+                break;
             }
         }
     }
-    const auto classInfoForReview =
-        [&classInfoSnapshots, classService](const int classId)
+    const auto classSnapshotForReview =
+        [&classSnapshotsById](const int classId)
+        -> const ImportState::ScheduleImportStateReadClassSnapshot*
     {
-        const auto snapshot = classInfoSnapshots.constFind(classId);
-        if (snapshot != classInfoSnapshots.cend())
-        {
-            return snapshot.value();
-        }
-        return classService
-            ? classService->classInfo(classId).value_or(ClassInfo{})
-            : ClassInfo{};
+        return classSnapshotsById.value(classId, nullptr);
+    };
+    const auto teacherSnapshotForReview =
+        [&teachersById](
+            const ImportState::ScheduleImportStateReadClassSnapshot* classroom
+            ) -> const ImportState::ScheduleImportStateReadTeacherSnapshot*
+    {
+        return classroom
+            ? teachersById.value(
+                  snapshotLegacyId(classroom->teacherId),
+                  nullptr
+                  )
+            : nullptr;
     };
     QSet<int> targets;
     QHash<int, int> classActions;
@@ -1155,11 +1210,13 @@ void ScheduleImportReviewDialog::updateReviewState()
             {
                 control.details->setText(
                     classDifferences(
-                        classService,
-                        teacherService,
                         m_preview.user.classes[
                             control.candidateIndex
                         ],
+                        classSnapshotForReview(target),
+                        teacherSnapshotForReview(
+                            classSnapshotForReview(target)
+                            ),
                         target,
                         m_request.kind,
                         control.color,
@@ -1183,11 +1240,11 @@ void ScheduleImportReviewDialog::updateReviewState()
             {
                 control.details->setText(
                     classDifferences(
-                        classService,
-                        teacherService,
                         m_preview.user.classes[
                             control.candidateIndex
                         ],
+                        nullptr,
+                        nullptr,
                         -1,
                         m_request.kind,
                         control.color,
@@ -1332,15 +1389,17 @@ void ScheduleImportReviewDialog::updateReviewState()
         const int targetClassId = targetClassIdText.toInt(
             &targetClassIdIsNumeric
             );
-        const QString targetLabel =
-            classService && teacherService && targetClassIdIsNumeric
-                ? classLabel(
-                    classService,
-                    teacherService,
-                    targetClassId,
-                    m_request.kind
-                    )
-                : tr("Class %1").arg(targetClassIdText);
+        const auto* targetClass = stateSnapshotsAvailable
+            && targetClassIdIsNumeric
+            ? classSnapshotForReview(targetClassId)
+            : nullptr;
+        const QString targetLabel = targetClass
+            ? classLabel(
+                  *targetClass,
+                  teacherSnapshotForReview(targetClass),
+                  m_request.kind
+                  )
+            : tr("Class %1").arg(targetClassIdText);
         scheduleConflicts.append(
             tr("Multiple imported classes are assigned to %1: %2.")
                 .arg(
@@ -1355,7 +1414,7 @@ void ScheduleImportReviewDialog::updateReviewState()
     projected.intensiveSlotStates =
         m_preview.user.intensiveSlotStates;
 
-    if (classService && teacherService)
+    if (stateSnapshotsAvailable)
     {
         for (const ClassControl& control : m_classControls)
         {
@@ -1381,26 +1440,39 @@ void ScheduleImportReviewDialog::updateReviewState()
                     continue;
                 }
 
-                const ClassInfo info = classInfoForReview(target);
+                const auto* info = classSnapshotForReview(target);
+                if (!info)
+                {
+                    valid = false;
+                    if (message.isEmpty())
+                    {
+                        message = tr(
+                            "The selected existing class is no longer available."
+                            );
+                    }
+                    continue;
+                }
                 ScheduleImportClassCandidate preserved;
-                const Teacher preservedTeacher =
-                    teachersById.value(info.teacherId);
-                preserved.teacherKr = preservedTeacher.teacherKr;
-                preserved.rooms = {
-                    preservedTeacher.roomNumber
-                };
-                preserved.classGrade = info.classGrade;
-                preserved.classLevel = info.classLevel;
+                const auto* preservedTeacher =
+                    teacherSnapshotForReview(info);
+                preserved.teacherKr = preservedTeacher
+                    ? snapshotText(preservedTeacher->koreanName)
+                    : QString();
+                preserved.rooms = {preservedTeacher
+                    ? snapshotText(preservedTeacher->roomNumber)
+                    : QString()};
+                preserved.classGrade = snapshotText(info->grade);
+                preserved.classLevel = snapshotText(info->level);
                 preserved.importedColors = {
-                    info.classColor.isEmpty()
+                    info->classColor.empty()
                         ? QStringLiteral("#FFFFFF")
-                        : info.classColor
+                        : snapshotText(info->classColor)
                 };
                 preserved.times =
                     m_request.kind
                             == ScheduleImportKind::Intensive
-                        ? info.intensiveTimes
-                        : info.classTimes;
+                        ? snapshotTimes(info->intensiveTimes)
+                        : snapshotTimes(info->normalTimes);
                 projected.classes.append(preserved);
                 continue;
             }
@@ -1430,9 +1502,13 @@ void ScheduleImportReviewDialog::updateReviewState()
                     )
                 )
             {
-                room = teachersById.value(
-                    teacherTargets.value(candidate.teacherKey, -1)
-                    ).roomNumber;
+                const auto* reusedTeacher = teachersById.value(
+                    teacherTargets.value(candidate.teacherKey, -1),
+                    nullptr
+                    );
+                room = reusedTeacher
+                    ? snapshotText(reusedTeacher->roomNumber)
+                    : QString();
             }
             candidate.rooms =
                 room.trimmed().isEmpty()
@@ -1443,31 +1519,35 @@ void ScheduleImportReviewDialog::updateReviewState()
 
         if (preservesAbsentIntensiveClasses)
         {
-            for (const Classroom& classroom : availableClasses)
+            for (const auto& classroom : stateSnapshot->classes)
             {
-                if (targets.contains(classroom.id))
+                const int classId = snapshotLegacyId(classroom.id);
+                if (targets.contains(classId))
                 {
                     continue;
                 }
 
-                const ClassInfo info = classInfoForReview(classroom.id);
-                if (info.intensiveTimes.isEmpty())
+                if (classroom.intensiveTimes.empty())
                 {
                     continue;
                 }
 
                 ScheduleImportClassCandidate preserved;
-                const Teacher teacher = teachersById.value(info.teacherId);
-                preserved.teacherKr = teacher.teacherKr;
-                preserved.rooms = {teacher.roomNumber};
-                preserved.classGrade = info.classGrade;
-                preserved.classLevel = info.classLevel;
+                const auto* teacher = teacherSnapshotForReview(&classroom);
+                preserved.teacherKr = teacher
+                    ? snapshotText(teacher->koreanName)
+                    : QString();
+                preserved.rooms = {teacher
+                    ? snapshotText(teacher->roomNumber)
+                    : QString()};
+                preserved.classGrade = snapshotText(classroom.grade);
+                preserved.classLevel = snapshotText(classroom.level);
                 preserved.importedColors = {
-                    info.classColor.isEmpty()
+                    classroom.classColor.empty()
                         ? QStringLiteral("#FFFFFF")
-                        : info.classColor
+                        : snapshotText(classroom.classColor)
                 };
-                preserved.times = info.intensiveTimes;
+                preserved.times = snapshotTimes(classroom.intensiveTimes);
                 projected.classes.append(preserved);
             }
         }
@@ -1608,38 +1688,41 @@ void ScheduleImportReviewDialog::updateReviewState()
         }
 
         stateRequest.existingTeachers.reserve(
-            static_cast<std::size_t>(availableTeachers.size())
+            stateSnapshot->teachers.size()
             );
-        for (const Teacher& teacher : availableTeachers)
+        for (const auto& teacher : stateSnapshot->teachers)
         {
             stateRequest.existingTeachers.push_back(
                 {
-                    stateTeacherId(teacher.id),
+                    teacher.id,
                     utf8String(
-                        TeacherImportNameUtils::hangulOnly(teacher.teacherKr)
+                        TeacherImportNameUtils::hangulOnly(
+                            snapshotText(teacher.koreanName)
+                            )
                         )
                 }
                 );
         }
 
         stateRequest.existingClasses.reserve(
-            static_cast<std::size_t>(availableClasses.size())
+            stateSnapshot->classes.size()
             );
-        for (const Classroom& classroom : availableClasses)
+        for (const auto& classroom : stateSnapshot->classes)
         {
-            const ClassInfo info = classInfoSnapshots.value(classroom.id);
+            const QString grade = snapshotText(classroom.grade);
+            const QString level = snapshotText(classroom.level);
             const QString label = QStringLiteral("%1 %2")
-                .arg(info.classGrade, info.classLevel)
+                .arg(grade, level)
                 .simplified();
             stateRequest.existingClasses.push_back(
                 {
-                    stateClassId(classroom.id),
-                    stateTeacherId(info.teacherId),
-                    utf8String(normalizedIdentity(info.classGrade)),
-                    utf8String(normalizedIdentity(info.classLevel)),
+                    classroom.id,
+                    classroom.teacherId,
+                    utf8String(normalizedIdentity(grade)),
+                    utf8String(normalizedIdentity(level)),
                     utf8String(label),
-                    stateTimes(info.classTimes),
-                    stateTimes(info.intensiveTimes)
+                    stateTimes(snapshotTimes(classroom.normalTimes)),
+                    stateTimes(snapshotTimes(classroom.intensiveTimes))
                 }
                 );
         }
@@ -1656,18 +1739,18 @@ void ScheduleImportReviewDialog::updateReviewState()
     }
 
     int cleared = 0;
-    if (classService && !preservesAbsentIntensiveClasses)
+    if (stateSnapshotsAvailable && !preservesAbsentIntensiveClasses)
     {
-        for (const Classroom& classroom : availableClasses)
+        for (const auto& classroom : stateSnapshot->classes)
         {
-            const ClassInfo info = classInfoForReview(classroom.id);
             const bool hasSelectedTimes =
                 m_request.kind == ScheduleImportKind::Intensive
-                    ? !info.intensiveTimes.isEmpty()
-                    : !info.classTimes.isEmpty();
+                    ? !classroom.intensiveTimes.empty()
+                    : !classroom.normalTimes.empty();
+            const int classId = snapshotLegacyId(classroom.id);
             if (
                 hasSelectedTimes
-                && !targets.contains(classroom.id)
+                && !targets.contains(classId)
                 )
             {
                 ++cleared;

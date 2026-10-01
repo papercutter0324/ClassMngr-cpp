@@ -97,6 +97,51 @@ struct ScheduleImportStateClassSnapshot
     std::vector<ScheduleImportStateTime> intensiveTimes;
 };
 
+// A class-import review needs a single read of all current state to render its
+// proposed schedule and validate the selected resolutions. Keep repository
+// text and schedule rows as UTF-16 strings so this source contract stays free
+// of Qt types and preserves the database values verbatim.
+struct ScheduleImportStateReadTime
+{
+    std::u16string day;
+    std::u16string startTime;
+    std::u16string endTime;
+
+    friend bool operator==(
+        const ScheduleImportStateReadTime&,
+        const ScheduleImportStateReadTime&
+        ) = default;
+};
+
+struct ScheduleImportStateReadTeacherSnapshot
+{
+    Domain::TeacherId id;
+    std::u16string koreanName;
+    std::u16string roomNumber;
+
+    friend bool operator==(
+        const ScheduleImportStateReadTeacherSnapshot&,
+        const ScheduleImportStateReadTeacherSnapshot&
+        ) = default;
+};
+
+struct ScheduleImportStateReadClassSnapshot
+{
+    Domain::ClassId id;
+    Domain::TeacherId teacherId;
+    std::u16string className;
+    std::u16string grade;
+    std::u16string level;
+    std::u16string classColor;
+    std::vector<ScheduleImportStateReadTime> normalTimes;
+    std::vector<ScheduleImportStateReadTime> intensiveTimes;
+
+    friend bool operator==(
+        const ScheduleImportStateReadClassSnapshot&,
+        const ScheduleImportStateReadClassSnapshot&
+        ) = default;
+};
+
 struct ScheduleImportStateValidationRequest
 {
     ScheduleImportStateKind kind = ScheduleImportStateKind::Normal;

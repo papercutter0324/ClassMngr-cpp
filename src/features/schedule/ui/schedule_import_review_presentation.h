@@ -2,6 +2,7 @@
 
 #include "domain/models/schedule_import.h"
 #include "features/schedule/ui/schedule_view_model.h"
+#include "next/application/schedule_import_state_snapshot.h"
 
 #include <QString>
 #include <QStringList>
@@ -37,6 +38,29 @@ namespace ScheduleImportReviewPresentation
     ClassService* classService,
     TeacherService* teacherService,
     const ScheduleImportClassCandidate& candidate,
+    int targetClassId,
+    ScheduleImportKind kind,
+    const QString& classColor,
+    const QColor& changesColor,
+    const QColor& changesHeadingColor
+    );
+
+// Data-only review variants consume the Application snapshot directly and do
+// not issue additional legacy-service reads while the review is refreshing.
+[[nodiscard]] QString classLabel(
+    const ClassMngr::Next::Application::
+        ScheduleImportStateReadClassSnapshot& classroom,
+    const ClassMngr::Next::Application::
+        ScheduleImportStateReadTeacherSnapshot* teacher,
+    ScheduleImportKind kind
+    );
+
+[[nodiscard]] QString classDifferences(
+    const ScheduleImportClassCandidate& candidate,
+    const ClassMngr::Next::Application::
+        ScheduleImportStateReadClassSnapshot* existing,
+    const ClassMngr::Next::Application::
+        ScheduleImportStateReadTeacherSnapshot* existingTeacher,
     int targetClassId,
     ScheduleImportKind kind,
     const QString& classColor,

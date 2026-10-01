@@ -686,6 +686,257 @@ QString classDifferences(
             );
 }
 
+namespace
+{
+
+QString qString(const std::u16string& value)
+{
+    return QString::fromStdU16String(value);
+}
+
+QList<ClassTime> classTimes(
+    const std::vector<
+        ClassMngr::Next::Application::ScheduleImportStateReadTime
+        >& source
+    )
+{
+    QList<ClassTime> result;
+    result.reserve(static_cast<qsizetype>(source.size()));
+    for (const auto& time : source)
+    {
+        result.append({
+            qString(time.day),
+            qString(time.startTime),
+            qString(time.endTime)
+        });
+    }
+    return result;
+}
+
+QString classDifferencesFromSnapshot(
+    const ScheduleImportClassCandidate& candidate,
+    const QString& existingGrade,
+    const QString& existingLevel,
+    const QString& existingTeacherName,
+    const QList<ClassTime>& existingTimes,
+    const QString& existingColor,
+    const QString& classColor,
+    const QColor& changesColor,
+    const QColor& changesHeadingColor
+    )
+{
+    const auto differenceItem =
+        [](const QString& label,
+           const QString& existing,
+           const QString& imported)
+        {
+            return QStringLiteral(
+                "<li><b>%1:</b> %2 \u2192 %3</li>"
+                )
+                .arg(
+                    label.toHtmlEscaped(),
+                    existing.toHtmlEscaped(),
+                    imported.toHtmlEscaped()
+                    );
+        };
+    const auto meetingDifferenceItem =
+        [](const QString& label,
+           const QString& differences)
+        {
+            return QStringLiteral(
+                "<li><b>%1:</b><br>%2</li>"
+                )
+                .arg(
+                    label.toHtmlEscaped(),
+                    differences
+                    );
+        };
+
+    QStringList differences;
+    if (existingGrade != candidate.classGrade)
+    {
+        differences.append(
+            differenceItem(
+                QObject::tr("Grade"),
+                existingGrade,
+                candidate.classGrade
+                )
+            );
+    }
+    if (existingLevel != candidate.classLevel)
+    {
+        differences.append(
+            differenceItem(
+                QObject::tr("Level"),
+                existingLevel,
+                candidate.classLevel
+                )
+            );
+    }
+    if (
+        TeacherImportNameUtils::hangulOnly(existingTeacherName)
+        != candidate.teacherKey
+        )
+    {
+        differences.append(
+            differenceItem(
+                QObject::tr("Teacher"),
+                existingTeacherName,
+                candidate.teacherKr
+                )
+            );
+    }
+    if (meetingKeys(existingTimes) != meetingKeys(candidate.times))
+    {
+        differences.append(
+            meetingDifferenceItem(
+                QObject::tr("Days"),
+                meetingDifferenceText(
+                    existingTimes,
+                    candidate.times
+                    )
+                )
+            );
+    }
+    if (existingColor.compare(classColor, Qt::CaseInsensitive) != 0)
+    {
+        differences.append(
+            differenceItem(
+                QObject::tr("Color"),
+                existingColor,
+                classColor
+                )
+            );
+    }
+
+    if (differences.isEmpty())
+    {
+        return QObject::tr(
+                   "No grade, level, teacher, day, or color differences."
+                   )
+            .toHtmlEscaped();
+    }
+
+    return QStringLiteral(
+        "<span style=\"color:%1\"><b style=\"color:%2\">%3</b>"
+        "<ul style=\"margin-top:2px; margin-bottom:0px;\">%4</ul>"
+        "</span>"
+        )
+        .arg(
+            changesColor.name(QColor::HexRgb),
+            changesHeadingColor.name(QColor::HexRgb),
+            QObject::tr("Changes:").toHtmlEscaped(),
+            differences.join(QString())
+            );
+}
+
+}
+
+QString classLabel(
+    const ClassMngr::Next::Application::
+        ScheduleImportStateReadClassSnapshot& classroom,
+    const ClassMngr::Next::Application::
+        ScheduleImportStateReadTeacherSnapshot* teacher,
+    const ScheduleImportKind kind
+    )
+{
+    const QString grade = qString(classroom.grade);
+    const QString level = qString(classroom.level);
+    const QString course =
+        QStringLiteral("%1 %2").arg(grade, level).simplified();
+    bool classIdIsNumeric = false;
+    const int classId = QString::fromStdString(classroom.id.value())
+        .toInt(&classIdIsNumeric);
+    const QString label = !course.isEmpty()
+        ? course
+        : !qString(classroom.className).trimmed().isEmpty()
+            ? qString(classroom.className).trimmed()
+            : QObject::tr("Class %1").arg(
+                  classIdIsNumeric ? classId : -1
+                  );
+    const bool importingIntensive = kind == ScheduleImportKind::Intensive;
+    const QList<ClassTime> regularTimes = classTimes(classroom.normalTimes);
+    const QList<ClassTime> intensiveTimes =
+        classTimes(classroom.intensiveTimes);
+    const QList<ClassTime>& preferredTimes = importingIntensive
+        ? intensiveTimes
+        : regularTimes;
+    const QList<ClassTime>& fallbackTimes = importingIntensive
+        ? regularTimes
+        : intensiveTimes;
+    const bool usesPreferredTimes = !preferredTimes.isEmpty();
+    const QString schedule = compactMeetingText(
+        usesPreferredTimes ? preferredTimes : fallbackTimes
+        );
+    QStringList detailParts;
+    if (teacher && !qString(teacher->koreanName).trimmed().isEmpty())
+    {
+        detailParts.append(qString(teacher->koreanName).trimmed());
+    }
+    if (!schedule.isEmpty())
+    {
+        detailParts.append(schedule);
+    }
+    const QString details = detailParts.join(QLatin1Char(' '));
+    const QString scheduleTag = schedule.isEmpty()
+        ? QString()
+        : usesPreferredTimes
+            ? importingIntensive
+                ? QStringLiteral(" ") + QObject::tr("[Int]")
+                : QStringLiteral(" ") + QObject::tr("[Reg]")
+            : importingIntensive
+                ? QStringLiteral(" ") + QObject::tr("[Reg]")
+                : QStringLiteral(" ") + QObject::tr("[Int]");
+    return details.isEmpty()
+        ? label
+        : QStringLiteral("%1 (%2)%3").arg(label, details, scheduleTag);
+}
+
+QString classDifferences(
+    const ScheduleImportClassCandidate& candidate,
+    const ClassMngr::Next::Application::
+        ScheduleImportStateReadClassSnapshot* existing,
+    const ClassMngr::Next::Application::
+        ScheduleImportStateReadTeacherSnapshot* existingTeacher,
+    const int targetClassId,
+    const ScheduleImportKind kind,
+    const QString& classColor,
+    const QColor& changesColor,
+    const QColor& changesHeadingColor
+    )
+{
+    if (targetClassId <= 0)
+    {
+        return QObject::tr(
+                   "A new class will be created with color %1."
+                   )
+            .arg(classColor)
+            .toHtmlEscaped();
+    }
+    if (!existing)
+    {
+        return QObject::tr(
+                   "Current class details are unavailable for this review."
+                   )
+            .toHtmlEscaped();
+    }
+
+    const QList<ClassTime> existingTimes = kind == ScheduleImportKind::Intensive
+        ? classTimes(existing->intensiveTimes)
+        : classTimes(existing->normalTimes);
+    return classDifferencesFromSnapshot(
+        candidate,
+        qString(existing->grade),
+        qString(existing->level),
+        existingTeacher ? qString(existingTeacher->koreanName) : QString(),
+        existingTimes,
+        qString(existing->classColor),
+        classColor,
+        changesColor,
+        changesHeadingColor
+        );
+}
+
 QString teacherLabel(
     const Teacher& teacher
     )

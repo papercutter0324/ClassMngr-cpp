@@ -771,6 +771,11 @@ TeacherRepository::TeacherRepository(QSqlDatabase& database)
 {
 }
 
+Result<QList<Teacher>> TeacherRepository::getAllTeachers()
+{
+    return DataService().getAllTeachers();
+}
+
 Result<TeacherDisplayNameReadRecord>
 TeacherRepository::loadTeacherDisplayNameFields(const int teacherId)
 {
@@ -921,6 +926,10 @@ Result<QList<ClassInfo>> ClassInfoRepository::loadScheduleClassInfos()
         appendClass(43);
     }
     appendClass(42);
+    if (ScheduleWidgetTestStubs::includeAlternativeMatchingClass)
+    {
+        appendClass(44);
+    }
 
     if (ScheduleWidgetTestStubs::includeMiddleSchoolClasses)
     {

@@ -649,6 +649,15 @@ classmngr_add_qt_test(
 )
 
 classmngr_add_qt_test(
+    NAME NextApplicationScheduleImportStateSnapshot
+    SOURCES
+        tests/next_application_schedule_import_state_snapshot_tests.cpp
+    LIBRARIES
+        ClassMngrNext::Application
+        Qt6::Test
+)
+
+classmngr_add_qt_test(
     NAME NextApplicationScheduleImportMatchingProjection
     SOURCES
         tests/next_application_schedule_import_matching_projection_tests.cpp
@@ -1956,6 +1965,16 @@ classmngr_add_qt_test(
     NAME NextPlatformApplicationServicesScheduleBuilderSourcePort
     SOURCES
         tests/next_platform_application_services_schedule_builder_source_port_tests.cpp
+    LIBRARIES
+        ClassMngrNext::Platform
+        Qt6::Test
+    OFFSCREEN
+)
+
+classmngr_add_qt_test(
+    NAME NextPlatformApplicationServicesScheduleImportStateSnapshotPort
+    SOURCES
+        tests/next_platform_application_services_schedule_import_state_snapshot_port_tests.cpp
     LIBRARIES
         ClassMngrNext::Platform
         Qt6::Test

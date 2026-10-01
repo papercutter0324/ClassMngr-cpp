@@ -58,6 +58,9 @@ void setMatchImportedClasses(bool match);
 void setPossibleImportedClasses(bool match);
 void setExistingIntensiveHours(bool exists);
 void setIncludeAlternativeMatchingClass(bool include);
+void setClassGrade(int classId, const QString& grade);
+void setScheduleClassInfoReadFailure(bool fail);
+extern int legacyClassInfoReadCount;
 }
 
 class ScheduleImportDialogTests : public QObject
@@ -77,6 +80,8 @@ private slots:
     void intensiveModeChoiceReflectsExistingSchedule();
     void regularPreviewShowsFullEssayGrid();
     void possibleMatchIsPreselectedForUpdate();
+    void reviewRefreshUsesFreshTypedStateSnapshot();
+    void reviewSnapshotFailureStaysInvalidWithoutLegacyFallback();
     void ambiguousTargetedClassSkipIsRejected();
     void uniqueExactTargetedClassSkipIsAllowed();
     void targetlessClassSkipIsAllowed();
@@ -1136,6 +1141,7 @@ void ScheduleImportDialogTests
 {
     ScheduleWidgetTestStubs::reset();
     ScheduleWidgetTestStubs::setMatchImportedClasses(true);
+    ScheduleWidgetTestStubs::setIncludeAdditionalClass(true);
     QTemporaryDir directory;
     QVERIFY(directory.isValid());
     const QString path =
@@ -1896,8 +1902,146 @@ void ScheduleImportDialogTests::possibleMatchIsPreselectedForUpdate()
     QCOMPARE(action->currentData(Qt::UserRole + 1).toInt(), 43);
 }
 
+void ScheduleImportDialogTests::reviewRefreshUsesFreshTypedStateSnapshot()
+{
+    ApplicationServices services;
+    ScheduleImportReviewRequest request;
+    request.kind = ScheduleImportKind::Normal;
+    request.user.name = QStringLiteral("Alice");
+
+    ScheduleImportClassCandidate candidate;
+    candidate.teacherKey = QStringLiteral("\uAE40\uC120\uC0DD");
+    candidate.teacherKr = QStringLiteral("\uAE40\uC120\uC0DD");
+    candidate.rooms = {QStringLiteral("413")};
+    candidate.classGrade = QStringLiteral("E4");
+    candidate.classLevel = QStringLiteral("Hercules");
+    candidate.times = {
+        {
+            QStringLiteral("Tuesday"),
+            QStringLiteral("4:00 PM"),
+            QStringLiteral("4:50 PM")
+        }
+    };
+    request.user.classes = {candidate};
+
+    ScheduleImportReviewDialog review(&services, request);
+    QVERIFY(review.prepare());
+    auto* action = review.findChild<QComboBox*>(
+        QStringLiteral("scheduleImportClassAction_0")
+        );
+    auto* details = review.findChild<QLabel*>(
+        QStringLiteral("scheduleImportClassDifferences_0")
+        );
+    QVERIFY(action);
+    QVERIFY(details);
+
+    const int updateIndex = actionIndex(
+        action,
+        ScheduleImportClassAction::UpdateExisting,
+        42
+        );
+    const int createIndex = actionIndex(
+        action,
+        ScheduleImportClassAction::CreateNew
+        );
+    QVERIFY(updateIndex >= 0);
+    QVERIFY(createIndex >= 0);
+
+    ScheduleWidgetTestStubs::setClassGrade(
+        42,
+        QStringLiteral("M1")
+        );
+    action->setCurrentIndex(createIndex);
+    action->setCurrentIndex(updateIndex);
+
+    QVERIFY(details->text().contains(QStringLiteral("M1")));
+    QVERIFY(details->text().contains(QStringLiteral("E4")));
+}
+
+void ScheduleImportDialogTests::
+reviewSnapshotFailureStaysInvalidWithoutLegacyFallback()
+{
+    ScheduleWidgetTestStubs::setIncludeAdditionalClass(true);
+    ScheduleWidgetTestStubs::setPossibleImportedClasses(true);
+    ScheduleWidgetTestStubs::setScheduleClassInfoReadFailure(true);
+
+    ApplicationServices services;
+    ScheduleImportReviewRequest request;
+    request.kind = ScheduleImportKind::Normal;
+    request.user.name = QStringLiteral("Alice");
+
+    ScheduleImportClassCandidate candidate;
+    candidate.teacherKey = QStringLiteral("\uAE40\uC120\uC0DD");
+    candidate.teacherKr = QStringLiteral("\uAE40\uC120\uC0DD");
+    candidate.rooms = {QStringLiteral("413")};
+    candidate.classGrade = QStringLiteral("E4");
+    candidate.classLevel = QStringLiteral("Hercules");
+    candidate.times = {
+        {
+            QStringLiteral("Monday"),
+            QStringLiteral("4:00 PM"),
+            QStringLiteral("4:55 PM")
+        }
+    };
+    candidate.meetingPatternError = QStringLiteral("invalid meeting data");
+    request.user.classes = {candidate};
+
+    ScheduleImportReviewDialog review(&services, request);
+    QVERIFY(review.prepare());
+
+    auto* action = review.findChild<QComboBox*>(
+        QStringLiteral("scheduleImportClassAction_0")
+        );
+    auto* import = review.findChild<QPushButton*>(
+        QStringLiteral("scheduleImportAcceptButton")
+        );
+    auto* status = review.findChild<QLabel*>(
+        QStringLiteral("scheduleImportReviewStatus")
+        );
+    auto* summary = review.findChild<QLabel*>(
+        QStringLiteral("scheduleImportReviewSummary")
+        );
+    QVERIFY(action);
+    QVERIFY(import);
+    QVERIFY(status);
+    QVERIFY(summary);
+    QVERIFY(!import->isEnabled());
+    QVERIFY(status->text().contains(
+        QStringLiteral("injected schedule read failure")
+        ));
+    QVERIFY(summary->text().contains(
+        QStringLiteral("0 existing schedule(s) cleared")
+        ));
+
+    const int legacyReadsBeforeRefresh =
+        ScheduleWidgetTestStubs::legacyClassInfoReadCount;
+    const int createIndex = actionIndex(
+        action,
+        ScheduleImportClassAction::CreateNew
+        );
+    const int updateIndex = actionIndex(
+        action,
+        ScheduleImportClassAction::UpdateExisting,
+        43
+        );
+    QVERIFY(createIndex >= 0);
+    QVERIFY(updateIndex >= 0);
+    action->setCurrentIndex(createIndex);
+    action->setCurrentIndex(updateIndex);
+
+    QCOMPARE(
+        ScheduleWidgetTestStubs::legacyClassInfoReadCount,
+        legacyReadsBeforeRefresh
+        );
+    QVERIFY(!import->isEnabled());
+    QVERIFY(status->text().contains(
+        QStringLiteral("injected schedule read failure")
+        ));
+}
+
 void ScheduleImportDialogTests::ambiguousTargetedClassSkipIsRejected()
 {
+    ScheduleWidgetTestStubs::setIncludeAdditionalClass(true);
     ScheduleWidgetTestStubs::setIncludeAlternativeMatchingClass(true);
 
     ApplicationServices services;
