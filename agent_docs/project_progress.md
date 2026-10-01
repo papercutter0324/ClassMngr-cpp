@@ -74,7 +74,7 @@ in source commit `57aefadf`; F220 is accepted in source commit `4a87ab1e`;
 F221 is accepted in source commit `ec65c0c6`; F222 is accepted in source
 commit `6920e019`; F223 is accepted in source commit `4b46adc7`; F224 is
 accepted in source commit `3c45c74b`; F225 is accepted in source commit
-`7d842339`; F226 is selected.
+`7d842339`; F226 is accepted in source commit `6c6210b0`; F227 is selected.
 F196 and F197 use
 only the active open session's
 `SettingsRepository` and preserve their keys, conversions, defaults, and
@@ -2743,7 +2743,7 @@ repository read-error coverage. Focused CTest:
 independent Explorer lanes selected this bounded adapter migration. Phase 2
 remains In Progress/Open; Gates 1 and 2 remain Partial.
 
-## Current Phase 2 position - 2026-10-02 (F225 accepted; F226 selected)
+## Current Phase 2 position - 2026-10-02 (F226 accepted; F227 selected)
 
 F218-F221 are accepted in commits `9bb936ee`, `57aefadf`, `4a87ab1e`, and
 `ec65c0c6`. F222 source commit `6920e019` migrates Schedule Import resolution
@@ -2794,12 +2794,22 @@ failures: `acceptedReviewCanTearDownSourceDialog`,
 the target-pairing correction passed the Application apply test 1/1. `git diff
 --check` passed; no full suite ran.
 
-F226 is selected to move Schedule Import review-readiness orchestration into
-a Qt-free Application contract. It will run the existing review-decision
-validator first, then state validation only after decisions are accepted.
-The dialog keeps Qt normalization, control construction, conflict labels,
-and user-facing messages; repository apply-time validation remains
-authoritative. Focused acceptance adds app-less decision/state precedence and
-success tests and retains the decision, state-validation, repository, and
-dialog targets. Phase 2 remains In Progress/Open; Gates 1 and 2 remain
-Partial.
+F226 source commit `6c6210b0` adds a Qt-free review-readiness use case that
+returns typed decision issues, state-evaluation status, and an optional state
+error. The dialog calls it once; it no longer calls either validator directly.
+The same typed input fields and snapshot read cadence are preserved, as are
+decision-conflict handling and the lower priority of state-error messages.
+Independent readiness, review-decision, state-validation, and Schedule Import
+repository targets passed 4/4. The dialog reported 29 passed with only the
+three documented baseline failures. `git diff --check` passed; no full suite
+ran.
+
+F227 is selected to move the proposed Schedule Import summary calculation
+into a Qt-free Application projection. It will count teacher and class
+actions, acknowledged diagnostics, and the existing schedule-cleared count
+from a typed `ScheduleImportApplyRequest` plus that count. Keep snapshot and
+clear-count calculation, preview projection, and localized summary formatting
+in the dialog. Acceptance adds app-less summary cases and a dialog summary
+parity assertion, then reruns the repository and dialog targets; only the
+three documented dialog baseline failures are expected. Phase 2 remains In
+Progress/Open; Gates 1 and 2 remain Partial.

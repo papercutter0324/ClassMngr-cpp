@@ -1950,3 +1950,10 @@ Validate action/target-ID shape before dispatching an application write port,
 while leaving target existence and current-state validation to the repository
 transaction. Test both invalid shape rejection without a port call and valid
 existing-teacher dispatch.
+
+## 2026-10-02 - F226 Schedule Import review readiness
+
+Compose the existing decision and state validators behind one Application
+boundary, preserving decision-first evaluation. Return both typed decisions
+and optional state errors so the UI can keep conflict detail and message
+priority without re-reading the snapshot.

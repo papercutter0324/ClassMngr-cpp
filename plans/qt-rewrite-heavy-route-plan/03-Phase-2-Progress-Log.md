@@ -9283,31 +9283,25 @@ only the three named Dialog baseline failures are expected, and
 `git diff --check` must pass. Phase 2 remains In Progress/Open; Gates 1 and 2
 remain Partial.
 
-### Progress update - 2026-10-02 (F225 accepted; F226 selected)
+### Progress update - 2026-10-02 (F226 accepted; F227 selected)
 
-F225, source commit `7d842339`, adds a Qt-free Schedule Import apply
-request/result, use case, and typed write port, and routes confirmed dialog
-apply through the contract. Existing decision and plan-eligibility policies
-run before dispatch; malformed teacher target/action combinations are also
-rejected before the port. The Platform adapter maps to the legacy plan and
-delegates to `ScheduleService::importSchedule()`, preserving repository SQL,
-transaction ownership, fresh apply-time validation, and fallback behavior.
-Focused Application ApplyUseCase, Platform ApplyPort, ReviewDecisions,
-PlanValidation, and ScheduleImport repository targets passed independently.
-The Dialog target passed 29 with only the three established baseline failures
+F226, source commit `6c6210b0`, adds a Qt-free Schedule Import review-readiness
+use case that validates review decisions before optional state validation. The
+dialog uses it once, preserves duplicate-conflict/message priority, and makes
+no additional snapshot read. Independent readiness, decision, state-validation,
+and Schedule Import repository CTests passed 4/4. The Dialog target had 29
+passed with only the three documented baseline failures
 (`acceptedReviewCanTearDownSourceDialog`, `mismatchedProfileRequiresConfirmation`,
-and `reviewPreviewUsesSavedScheduleDisplaySettings`). The correction recheck
-passed ApplyUseCase 1/1 and confirmed the contract remains Qt-free. No full
-suite ran.
+and `reviewPreviewUsesSavedScheduleDisplaySettings`). `git diff --check` passed;
+no full suite ran.
 
-F226 is selected: add a Qt-free Application review-readiness orchestration
-contract that accepts typed review decisions and state-validation input, runs
-`validateScheduleImportReviewDecisions()` first, and invokes
-`validateScheduleImportState()` only when decisions are accepted. Keep Qt
-normalization/control construction, user-facing messages, conflict labels,
-and widgets in the dialog. Preserve ordering, snapshot cadence, and repository
-apply-time revalidation. Acceptance requires app-less readiness tests for
-decision rejection/precedence, state rejection, and success; existing
-decision/state validator tests; Schedule Import dialog and repository targets;
-only the three named Dialog baseline failures; and `git diff --check`. Phase 2
-remains In Progress/Open; Gates 1 and 2 remain Partial.
+F227 is selected: move teacher/class action counts, ignored-diagnostic count,
+and schedules-cleared count from legacy `ScheduleImportReviewSummaryBuilder`
+into a Qt-free Application proposed-summary projection, using typed
+`ScheduleImportApplyRequest` plus the UI-derived schedules-cleared count.
+Preserve count semantics and localized formatting in UI; leave preview
+projection, snapshot cadence, and repository apply validation unchanged. Add
+app-less summary tests and dialog summary parity; run summary, dialog, and
+repository targets, expecting only the three named dialog baselines, plus
+`git diff --check`. Phase 2 remains In Progress/Open; Gates 1 and 2 remain
+Partial.

@@ -4665,7 +4665,7 @@ Focused acceptance includes the Application state and decision validators,
 Phase 2 remains In Progress/Open with Gates 1 and 2 Partial. Next: finish F219,
 independently verify and commit it, then choose the following slice.
 
-## Current handoff - 2026-10-02 (F225 accepted; F226 selected)
+## Current handoff - 2026-10-02 (F226 accepted; F227 selected)
 
 F219 source commit `57aefadf` adds the shared state validator as a live
 Schedule Import readiness preflight. The Application state-validation,
@@ -4743,13 +4743,22 @@ reported 29 passed and only its three recorded baseline failures. The
 independent target-pairing correction check passed ApplyUseCase 1/1; `git diff
 --check` passed. No full suite ran.
 
-F226 is selected to move review-readiness orchestration into a Qt-free
-Application contract. It will accept typed decision and state-validation
-requests, preserve the current decision-before-state-validation order, and
-return typed issues. The dialog retains Qt-specific input normalization,
-control state, conflict labels, and user-facing messages. Acceptance needs
-app-less tests for invalid decisions taking precedence, state rejection, and
-success; existing decision/state validation, Schedule Import repository, and
-dialog targets remain required. Preserve the three named dialog baseline
-failures and repository apply-time validation. Next: implement F226,
-independently verify and commit it, then select the following slice.
+F226 source commit `6c6210b0` adds a Qt-free review-readiness use case that
+returns typed decision issues, state-evaluation status, and an optional state
+error. The dialog calls the use case once and no longer directly calls either
+validator. Typed request construction, snapshot reads, duplicate-target
+conflicts, and user-visible message priority remain unchanged. Independent
+readiness, review-decision, state-validation, and Schedule Import repository
+tests passed 4/4. Dialog reported 29 passed and only the three recorded
+baseline failures; `git diff --check` passed. No full suite ran.
+
+F227 is selected to move the proposed Schedule Import summary calculation
+into a Qt-free Application projection consuming the typed apply request and
+the UI-computed schedule-cleared count. Preserve teacher/class action counts,
+ignored-diagnostic count, clear-count semantics, and summary text. Keep Qt
+formatting and clear-count calculation in the dialog; leave the preview
+projection, snapshot cadence, and repository apply validation unchanged.
+Acceptance needs app-less count cases, dialog summary parity, and the
+repository/dialog focused targets; the same three dialog baselines remain
+expected. Next: implement F227, independently verify and commit it, then
+select the next slice.
