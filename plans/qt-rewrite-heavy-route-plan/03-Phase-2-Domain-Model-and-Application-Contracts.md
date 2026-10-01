@@ -225,30 +225,37 @@ No new v2 production path depends on DataService, MainWindow, PageManager, or a 
 
 Earlier verified slices and cumulative exit-gate snapshots are archived in the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 
-## Latest progress update - 2026-10-02 (F230 accepted; F231 selected)
+## Latest progress update - 2026-10-02 (F231 accepted; F232 selected)
 
-F230, source commit `547ccb5b`, has the dialog build and pass the typed
-`ScheduleImportApplyRequest` directly to the Application use case, removing
-legacy-plan construction at the UI/Application boundary while retaining
-typed-to-legacy conversion at the service persistence boundary. Focused
-Application ApplyUseCase, Platform apply-port, and Schedule Import repository
-CTests passed. The Dialog target reported 34 passed and only the three
-established baseline failures (`acceptedReviewCanTearDownSourceDialog`,
+F231, source commit `6ebf6d33`, derives
+`ScheduleImportReviewDecisionRequest` from the typed
+`ScheduleImportApplyRequest` through a Qt-free Application projection reused
+by ApplyUseCase and dialog readiness/summary. Five focused Application CTests
+passed 1/1 each: ApplyReviewDecisions, ApplyUseCase, ReviewDecisions,
+ReviewReadiness, and ReviewSummaryProjection. The Dialog target reported 34
+passed and 3 failed, exactly the established baselines
+(`acceptedReviewCanTearDownSourceDialog`,
 `mismatchedProfileRequiresConfirmation`, and
-`reviewPreviewUsesSavedScheduleDisplaySettings`). New confirmation/mapping,
-typed request-model mapping, and legacy policy-text parity slots passed;
-`git diff --check` passed.
+`reviewPreviewUsesSavedScheduleDisplaySettings`); the modified summary and
+teacher-skip auto-skip slot, confirmation outcome, and snapshot checks passed.
+Source ownership found one owner for 1,172 files, and `git diff --check`
+passed. No full suite ran.
 
-F231 is selected based on two independent Explorer reports: add an Application
-projection from `ScheduleImportApplyRequest` to
-`ScheduleImportReviewDecisionRequest`, then reuse it in ApplyUseCase and dialog
-review readiness/summary. Preserve candidate and resolution order,
-UTF-16/UTF-8 conversion, imported-room normalization and empty omission, typed
-class IDs, skipped-teacher auto-skip behavior, summary/presentation,
-confirmation timing, and snapshot cadence. Keep state-validation request
-assembly in the UI; defer the broader repository migration. Add app-less tests
-for non-ASCII data, typed targets, action/order, and empty rooms. Run the
-projection, apply-use-case, review-decision/readiness/summary, and Dialog
-targets; allow only the three named Dialog baselines. Phase 2 remains In
-Progress/Open; Gates 1 and 2 remain Partial. See the
-[Phase 2 progress log](03-Phase-2-Progress-Log.md) for prior slice evidence.
+F232 is selected after three independent Investigator reviews. The v2 Platform
+apply adapter will be session-bound and call a typed
+`ScheduleImportRepository::apply(ScheduleImportApplyRequest)` entrypoint on
+the active session repository, bypassing `ScheduleService` and its legacy
+`DataService` fallback. At the repository boundary, adapt the typed request to
+the existing plan-backed transaction core so fresh-state checks, validation,
+transactional writes, rollback, messages, and summary behavior remain shared.
+Keep the `ScheduleImportPlan` service/repository path for v1 callers; this
+slice does not remove all legacy-plan internals.
+
+Acceptance covers typed end-to-end success, stale/conflicting rejection before
+writes, write-failure rollback through the shared path, no fallback for an
+unavailable or closed session, and continued legacy-plan behavior. Target the
+ApplyUseCase, Platform ApplyPort/integration, and Schedule Import repository
+CTests; preserve dialog confirmation behavior and check it if its target is
+included. Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial. See
+the [Phase 2 progress log](03-Phase-2-Progress-Log.md) for prior slice
+evidence.

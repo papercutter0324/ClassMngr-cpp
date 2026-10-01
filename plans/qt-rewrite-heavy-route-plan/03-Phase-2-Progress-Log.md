@@ -9419,3 +9419,23 @@ for non-ASCII data, typed targets, action/order, and empty rooms. Run the
 projection, apply-use-case, review-decision/readiness/summary, and Dialog
 targets; allow only the three named Dialog baselines. Phase 2 remains
 In Progress/Open; Gates 1 and 2 remain Partial.
+
+### Progress update - 2026-10-02 (F231 accepted; F232 selected)
+
+F231, source commit `6ebf6d33`, adds the Qt-free apply-request decision
+projection used by ApplyUseCase and dialog readiness/summary. Its five focused
+Application CTests passed 1/1 each. Dialog reported 34 passed and the same
+three established baseline failures; the changed summary/teacher-skip slot,
+confirmation outcome, and snapshot checks passed. Source ownership found one
+owner for 1,172 files; `git diff --check` passed. No full suite ran.
+
+F232 is selected: make the v2 Platform apply route session-bound and call the
+active session's typed Schedule Import repository directly. Adapt the typed
+request to the repository's existing plan-backed transaction core, preserving
+fresh-state validation and transactional behavior without duplicating it;
+retain the legacy `ScheduleImportPlan` path for v1 callers. Acceptance covers
+typed success, stale/conflicting rejection before writes, rollback, no
+fallback for unavailable/closed sessions, and continued legacy-plan behavior.
+Target ApplyUseCase, Platform ApplyPort/integration, and Schedule Import
+repository CTests; check dialog confirmation if its target is included. Phase
+2 remains In Progress/Open; Gates 1 and 2 remain Partial.

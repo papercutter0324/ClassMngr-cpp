@@ -4665,7 +4665,7 @@ Focused acceptance includes the Application state and decision validators,
 Phase 2 remains In Progress/Open with Gates 1 and 2 Partial. Next: finish F219,
 independently verify and commit it, then choose the following slice.
 
-## Current handoff - 2026-10-02 (F230 accepted; F231 selected)
+## Current handoff - 2026-10-02 (F231 accepted; F232 in progress)
 
 F219 source commit `57aefadf` adds the shared state validator as a live
 Schedule Import readiness preflight. The Application state-validation,
@@ -4803,15 +4803,30 @@ target reported 34 passed and only the three documented baselines:
 and `reviewPreviewUsesSavedScheduleDisplaySettings`. All three new F230 dialog
 slots passed individually. `git diff --check` passed; no full suite ran.
 
-F231 is selected after two independent Explorer reviews. Add a Qt-free
-Application projection from `ScheduleImportApplyRequest` to
-`ScheduleImportReviewDecisionRequest`, and reuse the result in Apply use-case
-validation plus the dialog's readiness and proposed-summary path. Preserve
-candidate and resolution ordering, UTF-16/UTF-8 conversion, trimmed and empty
-room handling, typed class targets, class auto-skip for skipped teachers,
-summary counts and localized presentation, confirmation timing, and snapshot
-cadence. Leave state-validation request assembly in the dialog. Focused
-acceptance adds app-less projection coverage for Unicode, order, actions,
-typed targets, and room normalization, then runs projection, Apply use case,
-review-decision, readiness, summary, and Dialog targets. Only the three named
-Dialog baselines are expected. The broader typed repository path is deferred.
+F231 source commit `6ebf6d33` adds the Qt-free Application projection from
+`ScheduleImportApplyRequest` to `ScheduleImportReviewDecisionRequest`, shared
+by ApplyUseCase and dialog readiness/summary. The five Application targets
+passed 1/1 each. The Dialog target reported 34 passed and only the three
+documented baseline failures: `acceptedReviewCanTearDownSourceDialog`,
+`mismatchedProfileRequiresConfirmation`, and
+`reviewPreviewUsesSavedScheduleDisplaySettings`. The modified summary test
+also confirmed that skipping a teacher auto-skips its class and updates the
+summary; confirmation and snapshot checks passed. Source ownership validation
+found one owner for 1,172 files; `git diff --check` passed. No full suite ran.
+
+F232 is in progress. Three independent Investigator reviews agreed that the
+ScheduleImportRepository owns fresh-state validation, transaction, and rollback
+safety. The selected route has the Platform apply port call the active
+session's repository directly, with a typed repository entrypoint that adapts
+to the existing plan-backed transactional core. Keep the legacy plan
+service/repository API for v1 callers; the v2 path must not go through
+ScheduleService or DataService fallback. This removes the Application DTO from
+the legacy service API and avoids duplicate write logic, while explicitly
+retaining the plan core as an interim persistence adapter. The F232 Executor
+owns the Platform apply port, ScheduleImportRepository, and focused Platform
+and repository tests. Acceptance includes typed success and persisted summary,
+stale/overlap rejection before writes, rollback through the shared transaction,
+closed-session failure, legacy-path preservation, the ApplyUseCase and
+Platform/repository focused CTests, source ownership validation, and
+`git diff --check`. Source is not yet committed. Phase 2 remains In Progress;
+Gates 1 and 2 remain Partial.

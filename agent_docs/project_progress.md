@@ -2745,7 +2745,7 @@ repository read-error coverage. Focused CTest:
 independent Explorer lanes selected this bounded adapter migration. Phase 2
 remains In Progress/Open; Gates 1 and 2 remain Partial.
 
-## Current Phase 2 position - 2026-10-02 (F230 accepted; F231 selected)
+## Current Phase 2 position - 2026-10-02 (F231 accepted; F232 in progress)
 
 F218-F221 are accepted in commits `9bb936ee`, `57aefadf`, `4a87ab1e`, and
 `ec65c0c6`. F222 source commit `6920e019` migrates Schedule Import resolution
@@ -2851,15 +2851,24 @@ only the three documented baselines:
 `reviewPreviewUsesSavedScheduleDisplaySettings`. All three new F230 dialog
 slots passed individually; `git diff --check` passed. No full suite ran.
 
-F231 is selected after two independent Explorer reviews: derive
-`ScheduleImportReviewDecisionRequest` from the typed `ScheduleImportApplyRequest`
-through one Qt-free Application projection, then reuse it in the Apply use
-case and dialog readiness/summary path. Preserve candidate, teacher, and class
-order; UTF-16/UTF-8 conversion; imported-room trimming and omission of empty
-rooms; typed class targets; skipped-teacher class auto-skip; summary values,
-localized presentation, confirmation timing, and snapshot cadence. Keep state
-validation request assembly and presentation in the feature UI. Add app-less
-projection coverage for non-ASCII text, actions, order, typed targets, and room
-handling; run the projection, Apply use case, review-decision, readiness,
-summary, and Dialog targets. Only the three documented Dialog baselines are
-expected. Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial.
+F231 source commit `6ebf6d33` derives `ScheduleImportReviewDecisionRequest`
+from the typed `ScheduleImportApplyRequest` through one Qt-free Application
+projection, shared by ApplyUseCase and dialog readiness/summary. The projection
+preserves candidate and resolution ordering, UTF-16/UTF-8 conversion, trimmed
+and empty-room handling, actions, and typed class targets. Five focused
+Application CTests passed 1/1 each. The Dialog target reported 34 passed and
+only the three documented baseline failures:
+`acceptedReviewCanTearDownSourceDialog`, `mismatchedProfileRequiresConfirmation`,
+and `reviewPreviewUsesSavedScheduleDisplaySettings`; the modified summary and
+skip-cascade check passed. Source ownership found one owner for 1,172 files,
+and `git diff --check` passed. No full suite ran.
+
+F232 is in progress: route the typed v2 apply port directly to the active
+session repository and add a typed repository entrypoint that adapts into the
+existing plan-backed transactional core. This removes the `ScheduleService`
+and `DataService` fallback path from v2 while retaining the legacy plan API
+for v1 callers. Three independent reviews confirmed the repository must keep
+fresh-state validation and rollback behavior; the selected route avoids adding
+the Application request type to `ScheduleService`. Implementation and focused
+integration coverage are underway. Phase 2 remains In Progress/Open; Gates 1
+and 2 remain Partial.

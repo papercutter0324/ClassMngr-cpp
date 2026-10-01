@@ -1996,3 +1996,14 @@ Derive the compact review-decision request from the typed apply request once
 in Application and reuse it for apply eligibility, readiness, and summary.
 Keep UI ordering and the class skip cascade visible before projection; test
 Unicode conversion, typed targets, and normalized/empty rooms at the boundary.
+For the persistence follow-up, confirm dependency direction before routing the
+Application contract into repository code; keep fresh-state checks and
+transaction guarantees at the active-session write boundary.
+
+## 2026-10-02 - F232 Schedule Import session-bound apply
+
+Keep the typed v2 write path on the active session's repository and out of the
+legacy service fallback. Preserve the single repository transaction core and
+its fresh-state checks for both typed and v1 plan callers; put any interim
+request adapter at the repository boundary rather than duplicating writes or
+extending the legacy service with the Application DTO.
