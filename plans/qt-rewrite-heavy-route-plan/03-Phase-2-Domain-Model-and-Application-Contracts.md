@@ -225,24 +225,30 @@ No new v2 production path depends on DataService, MainWindow, PageManager, or a 
 
 Earlier verified slices and cumulative exit-gate snapshots are archived in the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 
-## Latest progress update - 2026-10-02 (F222 accepted; F223 selected)
+## Latest progress update - 2026-10-02 (F223 accepted; F224 selected)
 
-F222, source commit `6920e019`, builds Schedule Import resolution choices from
-the F221 typed snapshot and removes the legacy class/teacher service reads
-from choice construction. Independent review passed. Application and Platform
-snapshot tests plus `ClassMngrScheduleImportTests` passed. The dialog target
-passed 24 tests and failed the same three documented baseline cases:
-`acceptedReviewCanTearDownSourceDialog`,
+F223, source commit `4b46adc7`, routes Schedule Import review matching through
+the Qt-free `projectScheduleImportMatching` projection and F221 typed snapshot.
+The independent Tester built all four focused targets: Application matching
+projection and Platform snapshot-port tests passed; Schedule Import repository
+tests passed 54 with one sample-gated skip; and the dialog target passed 27
+with only the three established baseline failures
+(`acceptedReviewCanTearDownSourceDialog`,
 `mismatchedProfileRequiresConfirmation`, and
-`reviewPreviewUsesSavedScheduleDisplaySettings`. `git diff --check` passed;
-no full suite ran. There is no direct test for a successful snapshot with a
-missing preview reference, a narrow remaining coverage gap.
+`reviewPreviewUsesSavedScheduleDisplaySettings`). The duplicate-target test
+verified both initial targets were 44 before the modal warning. `git diff --check`
+passed; no full suite ran.
 
-F223 is selected: migrate Schedule Import review matching to the existing
-Qt-free `projectScheduleImportMatching` projection using the F221 typed
-snapshot. Add `roomNumber` to the snapshot, mapped from Platform `ClassInfo`,
-because the F221 projection omits it. Preserve Qt `simplified().toCaseFolded()`
-normalization, conversion ordering, suggestions, confidence, and explanation.
-Leave workbook parsing, apply-time validation, and matching policy unchanged.
-Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial. See the [Phase
-2 progress log](03-Phase-2-Progress-Log.md) for prior slice evidence.
+F224 is selected: remove the legacy `openScheduleImportService()` availability
+guard from `ScheduleImportReviewDialog::prepare()`. Review readiness and
+failures now come from the F221 typed state snapshot. Preserve the
+apply-time `ScheduleService::importSchedule()` write path, workbook parsing,
+matching and eligibility, validation, and repository-read failure handling.
+Add focused regression coverage showing that a missing active session follows
+the typed snapshot failure path, builds no controls, and does not call
+`previewImport()`. Acceptance reruns the Application matching-projection,
+Platform snapshot-port, Schedule Import repository, and Dialog focused targets;
+only the three named Dialog baseline failures are expected, and
+`git diff --check` must pass. Phase 2 remains In Progress/Open; Gates 1 and 2
+remain Partial. See the [Phase 2 progress log](03-Phase-2-Progress-Log.md) for
+prior slice evidence.

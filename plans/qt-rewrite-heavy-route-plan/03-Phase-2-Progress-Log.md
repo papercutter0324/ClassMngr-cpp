@@ -9255,3 +9255,30 @@ because F221's projection omits it. Preserve Qt
 confidence, and explanation. Leave workbook parsing, apply-time validation,
 and matching policy unchanged. Phase 2 remains In Progress/Open; Gates 1 and 2
 remain Partial.
+
+### Progress update - 2026-10-02 (F223 accepted; F224 selected)
+
+F223, source commit `4b46adc7`, routes Schedule Import review matching through
+the Qt-free `projectScheduleImportMatching` projection and F221 typed snapshot.
+The independent Tester built all four focused targets: Application matching
+projection and Platform snapshot-port tests passed; Schedule Import repository
+tests passed 54 with one sample-gated skip; and the dialog target passed 27
+with only the three established baseline failures
+(`acceptedReviewCanTearDownSourceDialog`,
+`mismatchedProfileRequiresConfirmation`, and
+`reviewPreviewUsesSavedScheduleDisplaySettings`). The duplicate-target test
+verified both initial targets were 44 before the modal warning. `git diff --check`
+passed; no full suite ran.
+
+F224 is selected: remove the legacy `openScheduleImportService()` availability
+guard from `ScheduleImportReviewDialog::prepare()`. Review readiness and
+failures now come from the F221 typed state snapshot. Preserve the
+apply-time `ScheduleService::importSchedule()` write path, workbook parsing,
+matching and eligibility, validation, and repository-read failure handling.
+Add focused regression coverage showing that a missing active session follows
+the typed snapshot failure path, builds no controls, and does not call
+`previewImport()`. Acceptance reruns the Application matching-projection,
+Platform snapshot-port, Schedule Import repository, and Dialog focused targets;
+only the three named Dialog baseline failures are expected, and
+`git diff --check` must pass. Phase 2 remains In Progress/Open; Gates 1 and 2
+remain Partial.

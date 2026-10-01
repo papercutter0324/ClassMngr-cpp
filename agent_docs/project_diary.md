@@ -1933,3 +1933,6 @@ case-folded keys and ID ordering while sourcing teacher/class state from one
 typed snapshot; include class room number in that snapshot because room
 matching is part of the current preview behavior. Keep workbook parsing and
 repository apply validation with their existing owners.
+When a warning depends on projected choices, assert the actual initial target
+IDs before checking the warning; a fake preview can otherwise mask a mismatch
+between snapshot matching and conflict reporting.

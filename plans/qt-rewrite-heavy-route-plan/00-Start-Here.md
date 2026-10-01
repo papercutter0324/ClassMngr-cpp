@@ -17,9 +17,10 @@
   (skipped-update-version policy), F217 (roster-score import), F218
   (Speaking Evaluation class-tab read integration), F219 (Schedule Import
   live-state validation), F220 (Schedule Import plan eligibility policy), and
-  F221 (typed Schedule Import current-state snapshot read) and F222
-  (Schedule Import resolution choices from the typed snapshot) are accepted.
-  F223 (Schedule Import matching projection using the typed snapshot) is
+  F221 (typed Schedule Import current-state snapshot read), F222
+  (Schedule Import resolution choices from the typed snapshot), and F223
+  (Schedule Import matching projection using the typed snapshot) are accepted.
+  F224 (remove the legacy Schedule Import service-availability guard) is
   selected. Gates 1 and 2 remain Partial, with broader feature migration,
   parity, and 96-class Release memory evidence still open. See the
   [Phase 2 progress log](03-Phase-2-Progress-Log.md) for current scope and

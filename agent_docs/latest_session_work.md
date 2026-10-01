@@ -4665,7 +4665,7 @@ Focused acceptance includes the Application state and decision validators,
 Phase 2 remains In Progress/Open with Gates 1 and 2 Partial. Next: finish F219,
 independently verify and commit it, then choose the following slice.
 
-## Current handoff - 2026-10-02 (F222 accepted; F223 in progress)
+## Current handoff - 2026-10-02 (F223 accepted; F224 selected)
 
 F219 source commit `57aefadf` adds the shared state validator as a live
 Schedule Import readiness preflight. The Application state-validation,
@@ -4706,14 +4706,22 @@ documented baseline cases `acceptedReviewCanTearDownSourceDialog`,
 no full suite ran. Independent review confirmed choice ordering, labels,
 room matching, suggested/exact/supplemental targets, actions, and defaults.
 
-F223 is in progress: replace the remaining review-time
-`ScheduleService::previewImport()` read with the existing Qt-free Application
-matching projection over the F221 snapshot. Preserve imported and repository
-ordering, Qt simplified/case-folded matching, IDs and sentinel conversion,
-suggestions, confidence/explanation, inventory, and regular/intensive behavior.
-Add class room number to the typed snapshot and map it at the Platform boundary
-to retain the existing matching key. Keep parsing, eligibility policy, and
-repository apply validation unchanged. The existing three dialog baseline
-failures remain the comparison point. Phase 2 remains In Progress/Open; Gates
-1 and 2 remain Partial. Next: finish F223, independently verify and commit it,
-then select and begin the next slice.
+F223 source commit `4b46adc7` replaces review-time preview matching with the
+Qt-free Application projection over the F221 typed snapshot and adds mapped
+class room number to that snapshot. Independent focused verification passed
+the matching-projection, Platform snapshot-port, and Schedule Import targets.
+The dialog target reported 27 passed and only the three documented baseline
+failures: `acceptedReviewCanTearDownSourceDialog`,
+`mismatchedProfileRequiresConfirmation`, and
+`reviewPreviewUsesSavedScheduleDisplaySettings`. The duplicate-target warning
+test asserts both initial targets are 44 and passes. `git diff --check` passed;
+no full suite ran.
+
+F224 is selected to remove the `openScheduleImportService()` availability
+probe from review preparation and rely on the typed snapshot outcome for
+readiness and failure handling. Add a focused missing-session regression that
+proves the typed failure is surfaced without controls or legacy preview. Keep
+`ScheduleService::importSchedule()` as the apply-time write path, and leave
+parsing, matching, eligibility, and validation untouched. Next: implement
+F224, independently verify it, commit its source slice and documentation, and
+select and begin the following slice.

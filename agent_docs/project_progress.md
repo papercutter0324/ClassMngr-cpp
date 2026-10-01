@@ -72,7 +72,8 @@ is accepted in source commit `23dc6c2b`; F217 is accepted in source commit
 `b587a6d5`; F218 is accepted in source commit `9bb936ee`; F219 is accepted
 in source commit `57aefadf`; F220 is accepted in source commit `4a87ab1e`;
 F221 is accepted in source commit `ec65c0c6`; F222 is accepted in source
-commit `6920e019`; F223 is in progress.
+commit `6920e019`; F223 is accepted in source commit `4b46adc7`; F224 is
+selected.
 F196 and F197 use
 only the active open session's
 `SettingsRepository` and preserve their keys, conversions, defaults, and
@@ -2741,7 +2742,7 @@ repository read-error coverage. Focused CTest:
 independent Explorer lanes selected this bounded adapter migration. Phase 2
 remains In Progress/Open; Gates 1 and 2 remain Partial.
 
-## Current Phase 2 position - 2026-10-02 (F222 accepted; F223 in progress)
+## Current Phase 2 position - 2026-10-02 (F223 accepted; F224 selected)
 
 F218-F221 are accepted in commits `9bb936ee`, `57aefadf`, `4a87ab1e`, and
 `ec65c0c6`. F222 source commit `6920e019` migrates Schedule Import resolution
@@ -2755,13 +2756,24 @@ failures were the documented baseline cases
 `reviewPreviewUsesSavedScheduleDisplaySettings`. `git diff --check` passed;
 no full suite ran.
 
-F223 is in progress to build Schedule Import review matching from the existing
-Qt-free Application projection and typed state snapshot, removing the
-remaining `ScheduleService::previewImport()` read from review preparation.
-Preserve Qt `simplified().toCaseFolded()` matching keys, ordering, IDs and
-sentinel behavior, suggestions, confidence/explanation, inventory, and
-regular/intensive schedule handling. The state snapshot needs class room
-number added at its Platform mapping boundary. Workbook parsing, eligibility
-policy, repository preview/apply, and apply-time validation remain in their
-current owners. Phase 2 remains In Progress/Open; Gates 1 and 2 remain
-Partial.
+F223 source commit `4b46adc7` builds Schedule Import review matching from the
+Qt-free Application projection and F221 typed state snapshot. It removes the
+remaining `ScheduleService::previewImport()` read from review preparation and
+adds class room number at the Platform snapshot boundary. Independent focused
+verification passed the matching-projection, Platform snapshot-port, and
+Schedule Import repository targets. The dialog target reported 27 passed and
+the three documented baseline failures:
+`acceptedReviewCanTearDownSourceDialog`,
+`mismatchedProfileRequiresConfirmation`, and
+`reviewPreviewUsesSavedScheduleDisplaySettings`. The duplicate-target warning
+test verifies both initial class targets are 44 before the warning. No full
+suite ran; `git diff --check` passed.
+
+F224 is selected to remove the legacy `openScheduleImportService()`
+availability probe from `ScheduleImportReviewDialog::prepare()` and use the
+typed snapshot outcome for review readiness and failure handling. Add a
+focused missing-session regression proving the typed failure is surfaced
+without building controls or calling legacy preview. Keep the apply-time
+`ScheduleService::importSchedule()` write path, workbook parsing, matching,
+eligibility, and validation unchanged. Phase 2 remains In Progress/Open; Gates
+1 and 2 remain Partial.
