@@ -1,15 +1,15 @@
 #pragma once
 
-#include "app/services/feature_services.h"
 #include "core/application_services.h"
 #include "next/application/sub_prep_personal_zoom_preferences.h"
 
 #include <QByteArray>
 #include <QString>
-#include <QVariant>
 
 #include <cstddef>
 #include <string>
+
+class DatabaseSession;
 
 namespace ClassMngr::Next::Platform
 {
@@ -24,16 +24,14 @@ public:
     explicit ApplicationServicesSubPrepPersonalZoomPreferencesPort(
         ApplicationServices& services
         ) noexcept
-        : m_settingsService(services.settingsService())
+        : m_session(services.databaseSession())
     {
     }
 
     explicit ApplicationServicesSubPrepPersonalZoomPreferencesPort(
         ApplicationServices* services
         ) noexcept
-        : m_settingsService(
-            services ? services->settingsService() : nullptr
-            )
+        : m_session(services ? services->databaseSession() : nullptr)
     {
     }
 
@@ -51,52 +49,9 @@ public:
         ) = delete;
 
     [[nodiscard]] Application::SubPrepPersonalZoomPreferencesResult load()
-        const override
-    {
-        if (!m_settingsService || !m_settingsService->isAvailable())
-        {
-            return Application::
-                SubPrepPersonalZoomPreferencesResult::failure(
-                    unavailableError()
-                    );
-        }
-
-        const StoredValue loginId =
-            readWithLegacyFallback(
-                primaryLoginIdKey(),
-                legacyLoginIdKey()
-                );
-        const StoredValue password =
-            readWithLegacyFallback(
-                primaryPasswordKey(),
-                legacyPasswordKey()
-                );
-        const StoredValue unavailable =
-            readWithLegacyFallback(
-                primaryUnavailableKey(),
-                legacyUnavailableKey()
-                );
-
-        return Application::
-            SubPrepPersonalZoomPreferencesResult::success({
-                .loginId = loginId.value.isValid()
-                    ? toUtf8(loginId.value.toString())
-                    : std::string("N/A"),
-                .password = password.value.isValid()
-                    ? toUtf8(password.value.toString())
-                    : std::string("N/A"),
-                .unavailable = unavailable.value.isValid()
-                    ? unavailable.value.toBool()
-                    : true
-            });
-    }
+        const override;
 
 private:
-    struct StoredValue final
-    {
-        QVariant value;
-    };
-
     [[nodiscard]] static QString primaryLoginIdKey()
     {
         return QStringLiteral("myInfo/zoomLoginId");
@@ -136,43 +91,6 @@ private:
         };
     }
 
-    [[nodiscard]] StoredValue readWithLegacyFallback(
-        const QString& primaryKey,
-        const QString& legacyKey
-        ) const
-    {
-        const QVariant primaryValue =
-            m_settingsService->loadOrDefault(
-                primaryKey,
-                QVariant()
-                );
-        if (primaryValue.isValid())
-        {
-            return {primaryValue};
-        }
-
-        const QVariant legacyValue =
-            m_settingsService->loadOrDefault(
-                legacyKey,
-                QVariant()
-                );
-        if (!legacyValue.isValid())
-        {
-            return {QVariant()};
-        }
-
-        // Migration is intentionally best-effort, matching the previous
-        // helper: the legacy value remains the successful read result.
-        static_cast<void>(
-            m_settingsService->save(
-                primaryKey,
-                legacyValue
-                )
-            );
-
-        return {legacyValue};
-    }
-
     [[nodiscard]] static std::string toUtf8(
         const QString& value
         )
@@ -184,7 +102,7 @@ private:
             );
     }
 
-    SettingsService* m_settingsService = nullptr;
+    DatabaseSession* m_session = nullptr;
 };
 
 } // namespace ClassMngr::Next::Platform

@@ -1,9 +1,11 @@
 #include "core/application_services.h"
 #include "data/data_service.h"
 #include "data/database/database_session.h"
+#include "data/repositories/settings_repository.h"
 #include "next/application/sub_prep_personal_zoom_preferences.h"
 #include "next/platform/application_services_sub_prep_personal_zoom_preferences_port.h"
 
+#include <QRegularExpression>
 #include <QSqlQuery>
 #include <QTemporaryDir>
 #include <QUuid>
@@ -44,18 +46,26 @@ bool openDatabase(
     return services.openDatabase(databasePath(directory)).has_value();
 }
 
+SettingsRepository* settingsRepository(ApplicationServices& services)
+{
+    DatabaseSession* const session = services.databaseSession();
+    return session && session->isOpen()
+        ? session->settingsRepository()
+        : nullptr;
+}
+
 bool executeSql(
     ApplicationServices& services,
     const QString& statement
     )
 {
-    DataService* dataService = services.dataService();
-    if (!dataService || !dataService->databaseSession())
+    DatabaseSession* const session = services.databaseSession();
+    if (!session || !session->isOpen())
     {
         return false;
     }
 
-    QSqlQuery query(dataService->databaseSession()->database());
+    QSqlQuery query(session->database());
     return query.exec(statement);
 }
 
@@ -81,7 +91,9 @@ private slots:
     void legacyValuesFallbackAndMigrate();
     void missingValuesUseNADefaults();
     void unavailableSettingsFailWithoutChangingCallerState();
+    void closedSessionFailsWithoutDataServiceFallback();
     void migrationSaveFailureStillReturnsLegacyValues();
+    void repositoryReadFailureWarnsAndUsesDefaults();
 
 private:
     QTemporaryDir m_directory;
@@ -99,31 +111,33 @@ primaryValuesTakePrecedenceAndPreserveUtf8()
     ApplicationServices services;
     QVERIFY(openDatabase(services, m_directory));
     QVERIFY(services.dataService());
-    QVERIFY(services.dataService()->saveSetting(
+    SettingsRepository* const repository = settingsRepository(services);
+    QVERIFY(repository);
+    QVERIFY(repository->saveSetting(
         QString::fromUtf8(PrimaryLoginIdKey),
         QStringLiteral("  primary / 김 선생님  ")
         ));
-    QVERIFY(services.dataService()->saveSetting(
+    QVERIFY(repository->saveSetting(
         QString::fromUtf8(PrimaryPasswordKey),
         QStringLiteral("pässword / 비밀번호 📚")
         ));
-    QVERIFY(services.dataService()->saveSetting(
+    QVERIFY(repository->saveSetting(
         QString::fromUtf8(PrimaryUnavailableKey),
         QStringLiteral("false")
         ));
-    QVERIFY(services.dataService()->saveSetting(
+    QVERIFY(repository->saveSetting(
         QString::fromUtf8(LegacyLoginIdKey),
         QStringLiteral("legacy@example.com")
         ));
-    QVERIFY(services.dataService()->saveSetting(
+    QVERIFY(repository->saveSetting(
         QString::fromUtf8(LegacyPasswordKey),
         QStringLiteral("legacy password")
         ));
-    QVERIFY(services.dataService()->saveSetting(
+    QVERIFY(repository->saveSetting(
         QString::fromUtf8(LegacyUnavailableKey),
         true
         ));
-    QVERIFY(services.dataService()->saveSetting(
+    QVERIFY(repository->saveSetting(
         QString::fromUtf8(UnrelatedKey),
         QStringLiteral("preserved")
         ));
@@ -141,8 +155,7 @@ primaryValuesTakePrecedenceAndPreserveUtf8()
         })
         );
     QCOMPARE(
-        services.dataService()
-            ->loadSetting(QString::fromUtf8(UnrelatedKey))
+        repository->loadSetting(QString::fromUtf8(UnrelatedKey))
             ->toString(),
         QStringLiteral("preserved")
         );
@@ -154,19 +167,21 @@ legacyValuesFallbackAndMigrate()
     ApplicationServices services;
     QVERIFY(openDatabase(services, m_directory));
     QVERIFY(services.dataService());
-    QVERIFY(services.dataService()->saveSetting(
+    SettingsRepository* const repository = settingsRepository(services);
+    QVERIFY(repository);
+    QVERIFY(repository->saveSetting(
         QString::fromUtf8(LegacyLoginIdKey),
         QStringLiteral(" legacy@example.com ")
         ));
-    QVERIFY(services.dataService()->saveSetting(
+    QVERIFY(repository->saveSetting(
         QString::fromUtf8(LegacyPasswordKey),
         QStringLiteral(" legacy password ")
         ));
-    QVERIFY(services.dataService()->saveSetting(
+    QVERIFY(repository->saveSetting(
         QString::fromUtf8(LegacyUnavailableKey),
         false
         ));
-    QVERIFY(services.dataService()->saveSetting(
+    QVERIFY(repository->saveSetting(
         QString::fromUtf8(UnrelatedKey),
         QStringLiteral("preserved")
         ));
@@ -185,26 +200,22 @@ legacyValuesFallbackAndMigrate()
         );
 
     QCOMPARE(
-        services.dataService()
-            ->loadSetting(QString::fromUtf8(PrimaryLoginIdKey))
+        repository->loadSetting(QString::fromUtf8(PrimaryLoginIdKey))
             ->toString(),
         QStringLiteral(" legacy@example.com ")
         );
     QCOMPARE(
-        services.dataService()
-            ->loadSetting(QString::fromUtf8(PrimaryPasswordKey))
+        repository->loadSetting(QString::fromUtf8(PrimaryPasswordKey))
             ->toString(),
         QStringLiteral(" legacy password ")
         );
     QCOMPARE(
-        services.dataService()
-            ->loadSetting(QString::fromUtf8(PrimaryUnavailableKey))
+        repository->loadSetting(QString::fromUtf8(PrimaryUnavailableKey))
             ->toBool(),
         false
         );
     QCOMPARE(
-        services.dataService()
-            ->loadSetting(QString::fromUtf8(UnrelatedKey))
+        repository->loadSetting(QString::fromUtf8(UnrelatedKey))
             ->toString(),
         QStringLiteral("preserved")
         );
@@ -215,6 +226,8 @@ missingValuesUseNADefaults()
 {
     ApplicationServices services;
     QVERIFY(openDatabase(services, m_directory));
+    SettingsRepository* const repository = settingsRepository(services);
+    QVERIFY(repository);
 
     ApplicationServicesSubPrepPersonalZoomPreferencesPort port(services);
     const auto loaded = port.load();
@@ -238,7 +251,7 @@ missingValuesUseNADefaults()
              LegacyUnavailableKey
          })
     {
-        const auto stored = services.dataService()->loadSetting(
+        const auto stored = repository->loadSetting(
             QString::fromUtf8(key)
             );
         QVERIFY(stored.has_value());
@@ -252,7 +265,10 @@ unavailableSettingsFailWithoutChangingCallerState()
     ApplicationServices services;
     ApplicationServicesSubPrepPersonalZoomPreferencesPort port(services);
 
-    QVERIFY(!port.load());
+    const auto unavailable = port.load();
+    QVERIFY(!unavailable);
+    QCOMPARE(unavailable.error().code, Domain::ErrorCode::Technical);
+    QVERIFY(!unavailable.error().recoverable);
 
     ApplicationServicesSubPrepPersonalZoomPreferencesPort nullPort(
         static_cast<ApplicationServices*>(nullptr)
@@ -261,20 +277,103 @@ unavailableSettingsFailWithoutChangingCallerState()
 }
 
 void NextPlatformApplicationServicesSubPrepPersonalZoomPreferencesPortTests::
+closedSessionFailsWithoutDataServiceFallback()
+{
+    ApplicationServices services;
+    const QString path = databasePath(m_directory);
+    QVERIFY(services.openDatabase(path));
+    QVERIFY(services.dataService());
+    DatabaseSession* const session = services.databaseSession();
+    QVERIFY(session);
+    SettingsRepository* repository = session->settingsRepository();
+    QVERIFY(repository);
+
+    const QString legacyLogin = QStringLiteral("legacy@example.com");
+    const QString legacyPassword = QStringLiteral("legacy password");
+    constexpr bool legacyUnavailable = false;
+    const QString unrelated = QStringLiteral("preserved");
+    QVERIFY(repository->saveSetting(
+        QString::fromUtf8(LegacyLoginIdKey),
+        legacyLogin
+        ));
+    QVERIFY(repository->saveSetting(
+        QString::fromUtf8(LegacyPasswordKey),
+        legacyPassword
+        ));
+    QVERIFY(repository->saveSetting(
+        QString::fromUtf8(LegacyUnavailableKey),
+        legacyUnavailable
+        ));
+    QVERIFY(repository->saveSetting(
+        QString::fromUtf8(UnrelatedKey),
+        unrelated
+        ));
+
+    ApplicationServicesSubPrepPersonalZoomPreferencesPort port(services);
+    services.closeDatabase();
+    QVERIFY(services.dataService());
+    QVERIFY(!session->isOpen());
+
+    const auto loaded = port.load();
+    QVERIFY(!loaded);
+    QCOMPARE(loaded.error().code, Domain::ErrorCode::Technical);
+    QVERIFY(!loaded.error().recoverable);
+
+    QVERIFY(services.openDatabase(path));
+    QVERIFY(session->isOpen());
+    repository = session->settingsRepository();
+    QVERIFY(repository);
+
+    for (const char* key : {
+             PrimaryLoginIdKey,
+             PrimaryPasswordKey,
+             PrimaryUnavailableKey
+         })
+    {
+        const auto stored = repository->loadSetting(QString::fromUtf8(key));
+        QVERIFY(stored);
+        QVERIFY(!stored->isValid());
+    }
+
+    const auto storedLegacyLogin = repository->loadSetting(
+        QString::fromUtf8(LegacyLoginIdKey)
+        );
+    QVERIFY(storedLegacyLogin);
+    QCOMPARE(storedLegacyLogin->toString(), legacyLogin);
+    const auto storedLegacyPassword = repository->loadSetting(
+        QString::fromUtf8(LegacyPasswordKey)
+        );
+    QVERIFY(storedLegacyPassword);
+    QCOMPARE(storedLegacyPassword->toString(), legacyPassword);
+    const auto storedLegacyUnavailable = repository->loadSetting(
+        QString::fromUtf8(LegacyUnavailableKey)
+        );
+    QVERIFY(storedLegacyUnavailable);
+    QCOMPARE(storedLegacyUnavailable->toBool(), legacyUnavailable);
+    const auto storedUnrelated = repository->loadSetting(
+        QString::fromUtf8(UnrelatedKey)
+        );
+    QVERIFY(storedUnrelated);
+    QCOMPARE(storedUnrelated->toString(), unrelated);
+}
+
+void NextPlatformApplicationServicesSubPrepPersonalZoomPreferencesPortTests::
 migrationSaveFailureStillReturnsLegacyValues()
 {
     ApplicationServices services;
     QVERIFY(openDatabase(services, m_directory));
     QVERIFY(services.dataService());
-    QVERIFY(services.dataService()->saveSetting(
+    SettingsRepository* const repository = settingsRepository(services);
+    QVERIFY(repository);
+    QVERIFY(repository->saveSetting(
         QString::fromUtf8(LegacyLoginIdKey),
         QStringLiteral("legacy@example.com")
         ));
-    QVERIFY(services.dataService()->saveSetting(
+    QVERIFY(repository->saveSetting(
         QString::fromUtf8(LegacyPasswordKey),
         QStringLiteral("legacy password")
         ));
-    QVERIFY(services.dataService()->saveSetting(
+    QVERIFY(repository->saveSetting(
         QString::fromUtf8(LegacyUnavailableKey),
         false
         ));
@@ -303,16 +402,44 @@ migrationSaveFailureStillReturnsLegacyValues()
         })
         );
     QCOMPARE(
-        services.dataService()
-            ->loadSetting(QString::fromUtf8(PrimaryLoginIdKey))
+        repository->loadSetting(QString::fromUtf8(PrimaryLoginIdKey))
             ->toString(),
         QStringLiteral("legacy@example.com")
         );
-    const auto failedPrimaryPassword = services.dataService()->loadSetting(
+    const auto failedPrimaryPassword = repository->loadSetting(
         QString::fromUtf8(PrimaryPasswordKey)
         );
     QVERIFY(failedPrimaryPassword.has_value());
     QVERIFY(!failedPrimaryPassword->isValid());
+}
+
+void NextPlatformApplicationServicesSubPrepPersonalZoomPreferencesPortTests::
+repositoryReadFailureWarnsAndUsesDefaults()
+{
+    ApplicationServices services;
+    QVERIFY(openDatabase(services, m_directory));
+    QVERIFY(services.dataService());
+    QVERIFY(executeSql(services, QStringLiteral("DROP TABLE app_settings")));
+
+    ApplicationServicesSubPrepPersonalZoomPreferencesPort port(services);
+    for (int index = 0; index < 6; ++index)
+    {
+        QTest::ignoreMessage(
+            QtWarningMsg,
+            QRegularExpression(QStringLiteral("Failed to load setting.*"))
+            );
+    }
+
+    const auto loaded = port.load();
+    QVERIFY(loaded);
+    QCOMPARE(
+        loaded.value(),
+        (SubPrepPersonalZoomPreferences{
+            .loginId = "N/A",
+            .password = "N/A",
+            .unavailable = true
+        })
+        );
 }
 
 QTEST_MAIN(NextPlatformApplicationServicesSubPrepPersonalZoomPreferencesPortTests)
