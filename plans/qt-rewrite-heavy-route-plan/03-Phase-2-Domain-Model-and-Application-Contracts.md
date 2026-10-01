@@ -68,7 +68,11 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
   validation, F220's plan eligibility policy, F221's current-state snapshot,
   F222's resolution choices, F223's matching projection, F224's typed-snapshot
   prepare path, F225's apply contract, and F226's readiness orchestration are
-  accepted. F227's proposed-summary projection is selected.
+  accepted. F227's proposed-summary projection, F228's cleared-schedule count,
+  F229's typed preview projection, F230's UI-built typed apply request, F231's
+  apply-request decision projection, and F232's session-bound typed apply are
+  accepted. F233 is selected for a shared typed repository core with a
+  validated v1 plan adapter.
   The prior F123 candidate wording is historical;
   current Teacher Profile integration status is recorded in the progress log.
   Gates 1 and 2
@@ -225,37 +229,22 @@ No new v2 production path depends on DataService, MainWindow, PageManager, or a 
 
 Earlier verified slices and cumulative exit-gate snapshots are archived in the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 
-## Latest progress update - 2026-10-02 (F231 accepted; F232 selected)
+## Latest progress update - 2026-10-02 (F232 accepted; F233 selected)
 
-F231, source commit `6ebf6d33`, derives
-`ScheduleImportReviewDecisionRequest` from the typed
-`ScheduleImportApplyRequest` through a Qt-free Application projection reused
-by ApplyUseCase and dialog readiness/summary. Five focused Application CTests
-passed 1/1 each: ApplyReviewDecisions, ApplyUseCase, ReviewDecisions,
-ReviewReadiness, and ReviewSummaryProjection. The Dialog target reported 34
-passed and 3 failed, exactly the established baselines
-(`acceptedReviewCanTearDownSourceDialog`,
-`mismatchedProfileRequiresConfirmation`, and
-`reviewPreviewUsesSavedScheduleDisplaySettings`); the modified summary and
-teacher-skip auto-skip slot, confirmation outcome, and snapshot checks passed.
-Source ownership found one owner for 1,172 files, and `git diff --check`
-passed. No full suite ran.
+F232, source commit `075b4335`, routes the typed v2 Apply port directly to the
+active session's Schedule Import repository. Its `applyTyped()` adapter maps
+into the existing plan-based transaction core; the v2 route no longer calls
+`ScheduleService` or the legacy `DataService` fallback. The v1
+`ScheduleImportPlan` path remains.
 
-F232 is selected after three independent Investigator reviews. The v2 Platform
-apply adapter will be session-bound and call a typed
-`ScheduleImportRepository::apply(ScheduleImportApplyRequest)` entrypoint on
-the active session repository, bypassing `ScheduleService` and its legacy
-`DataService` fallback. At the repository boundary, adapt the typed request to
-the existing plan-backed transaction core so fresh-state checks, validation,
-transactional writes, rollback, messages, and summary behavior remain shared.
-Keep the `ScheduleImportPlan` service/repository path for v1 callers; this
-slice does not remove all legacy-plan internals.
-
-Acceptance covers typed end-to-end success, stale/conflicting rejection before
-writes, write-failure rollback through the shared path, no fallback for an
-unavailable or closed session, and continued legacy-plan behavior. Target the
-ApplyUseCase, Platform ApplyPort/integration, and Schedule Import repository
-CTests; preserve dialog confirmation behavior and check it if its target is
-included. Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial. See
-the [Phase 2 progress log](03-Phase-2-Progress-Log.md) for prior slice
-evidence.
+F233 is selected: make `ScheduleImportApplyRequest` the shared repository-core
+input, with `ScheduleImportPlan` retained as a validated v1 edge adapter into
+that same core. Remove the typed-v2 round-trip through the plan while
+preserving legacy API behavior and validation messages/order. The typed core
+must validate direct calls explicitly, keep fresh-state checks and rejection
+before writes, share one transaction/rollback path, and preserve summaries and
+normal/intensive behavior. Add typed and legacy parity, including malformed
+typed actions and modes. This uses the existing v2 write contract without a
+second persistence command. Phase 2 remains In Progress/Open; Gates 1 and 2
+remain Partial. See the [Phase 2 progress log](03-Phase-2-Progress-Log.md) for
+F232 verification evidence.

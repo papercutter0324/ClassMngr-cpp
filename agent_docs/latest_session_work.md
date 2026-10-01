@@ -4665,7 +4665,7 @@ Focused acceptance includes the Application state and decision validators,
 Phase 2 remains In Progress/Open with Gates 1 and 2 Partial. Next: finish F219,
 independently verify and commit it, then choose the following slice.
 
-## Current handoff - 2026-10-02 (F231 accepted; F232 in progress)
+## Current handoff - 2026-10-02 (F232 accepted; F233 selected)
 
 F219 source commit `57aefadf` adds the shared state validator as a live
 Schedule Import readiness preflight. The Application state-validation,
@@ -4814,19 +4814,27 @@ also confirmed that skipping a teacher auto-skips its class and updates the
 summary; confirmation and snapshot checks passed. Source ownership validation
 found one owner for 1,172 files; `git diff --check` passed. No full suite ran.
 
-F232 is in progress. Three independent Investigator reviews agreed that the
-ScheduleImportRepository owns fresh-state validation, transaction, and rollback
-safety. The selected route has the Platform apply port call the active
-session's repository directly, with a typed repository entrypoint that adapts
-to the existing plan-backed transactional core. Keep the legacy plan
-service/repository API for v1 callers; the v2 path must not go through
-ScheduleService or DataService fallback. This removes the Application DTO from
-the legacy service API and avoids duplicate write logic, while explicitly
-retaining the plan core as an interim persistence adapter. The F232 Executor
-owns the Platform apply port, ScheduleImportRepository, and focused Platform
-and repository tests. Acceptance includes typed success and persisted summary,
-stale/overlap rejection before writes, rollback through the shared transaction,
-closed-session failure, legacy-path preservation, the ApplyUseCase and
-Platform/repository focused CTests, source ownership validation, and
-`git diff --check`. Source is not yet committed. Phase 2 remains In Progress;
-Gates 1 and 2 remain Partial.
+F232 source commit `075b4335` routes the typed Platform apply port directly to
+the active session repository, bypassing `ScheduleService` and `DataService`
+fallback. `ScheduleImportRepository::applyTyped()` adapts to the existing
+plan-backed transaction core; v1 service/repository APIs remain unchanged.
+ApplyUseCase, Platform ApplyPort, and Schedule Import repository CTests passed
+3/3. The focused dialog confirmation slot passed. Typed success/persisted
+summary, missing/closed session, legacy service route, stale/overlap rejection
+before writes, rollback after a forced write failure, and intensive
+mode/slot-state mapping passed. Source ownership found one owner for 1,172
+files; `git diff --check` passed. No full suite ran.
+
+F233 is selected to remove the typed-to-plan repository adapter. The two
+independent Explorer lanes found that the existing typed ApplyRequest contains
+the write inputs needed by the current transactional body, while
+ScheduleImportStateValidationRequest is too narrow to replace it. Make
+ScheduleImportApplyRequest the shared core input and preserve the existing
+ScheduleImportPlan API as a validated v1 edge adapter. This reuses the current
+v2 write contract instead of adding a second command type. Preserve validation
+messages/order, current-state reads, stale/conflict rejection before writes,
+rollback, summaries, and intensive behavior. Cover both typed and legacy
+entrypoints through the same core, including malformed direct typed requests.
+The remaining plan adapter in F232 is the target of this slice. Update the
+Phase 2 plan and begin implementation; Phase 2 remains In Progress/Open with
+Gates 1 and 2 Partial.

@@ -9429,13 +9429,31 @@ three established baseline failures; the changed summary/teacher-skip slot,
 confirmation outcome, and snapshot checks passed. Source ownership found one
 owner for 1,172 files; `git diff --check` passed. No full suite ran.
 
-F232 is selected: make the v2 Platform apply route session-bound and call the
-active session's typed Schedule Import repository directly. Adapt the typed
-request to the repository's existing plan-backed transaction core, preserving
-fresh-state validation and transactional behavior without duplicating it;
-retain the legacy `ScheduleImportPlan` path for v1 callers. Acceptance covers
-typed success, stale/conflicting rejection before writes, rollback, no
-fallback for unavailable/closed sessions, and continued legacy-plan behavior.
-Target ApplyUseCase, Platform ApplyPort/integration, and Schedule Import
-repository CTests; check dialog confirmation if its target is included. Phase
-2 remains In Progress/Open; Gates 1 and 2 remain Partial.
+### Progress update - 2026-10-02 (F232 accepted; F233 selected)
+
+F232, source commit `075b4335`, routes the typed v2 Apply port directly to the
+active session's Schedule Import repository. `applyTyped()` maps the typed
+request into the existing plan-based transactional core. The v2 route no
+longer calls `ScheduleService` or the legacy `DataService` fallback; the v1
+`ScheduleImportPlan` service/repository path remains. Focused CTests passed
+3/3: Application ApplyUseCase, Platform ApplyPort, and
+`ClassMngrScheduleImportTests`. The focused dialog confirmation slot
+`applyUsesConfirmationAndReportsServiceOutcome` passed. Coverage includes typed
+success and persisted summary, missing/closed session, retained legacy service
+route, stale-target and overlap rejection before writes, forced write-failure
+rollback, and intensive-mode and slot-state mapping. Configure/source-ownership
+validation found one owner for 1,172 handwritten files; `git diff --check`
+passed. No full suite or aggregate Dialog target ran.
+
+F233 is selected: use the existing typed `ScheduleImportApplyRequest` as the
+shared repository-core input and keep `ScheduleImportPlan` as a validated v1
+edge adapter into that core. Remove the typed-v2 round-trip through the plan;
+preserve legacy API behavior and validation messages/order. The typed core
+must explicitly validate direct calls, preserve repository-time fresh-state
+checks and rejection before writes, use one transaction/rollback path, and
+retain summaries plus normal/intensive behavior. Add parity for typed and
+legacy entrypoints, including malformed typed actions/modes so enum defaults
+cannot silently change. ApplyRequest already carries the v2 write data; the
+narrow current-state validation request is insufficient, while a second
+persistence command would duplicate translation. Phase 2 remains
+In Progress/Open; Gates 1 and 2 remain Partial.

@@ -25,9 +25,10 @@
   (review readiness), and F227 (review-summary projection) are accepted. F228
   (cleared-schedule count projection), F229 (typed state-to-schedule
   projection for review-preview construction), and F230 (UI-built typed
-  Schedule Import apply request) are accepted. F231 (apply-request decision
-  projection) is accepted; F232 (session-bound typed Schedule Import apply
-  through the active-session repository) is selected.
+  Schedule Import apply request), F231 (apply-request decision projection),
+  and F232 (session-bound typed Schedule Import apply through the active-session
+  repository) are accepted. F233 (shared typed repository-core input with a
+  validated v1 `ScheduleImportPlan` adapter) is selected.
   Gates 1 and 2 remain Partial, with broader feature migration,
   parity, and 96-class Release memory evidence still open. See the
   [Phase 2 progress log](03-Phase-2-Progress-Log.md) for current scope and

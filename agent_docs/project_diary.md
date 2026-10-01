@@ -2007,3 +2007,11 @@ legacy service fallback. Preserve the single repository transaction core and
 its fresh-state checks for both typed and v1 plan callers; put any interim
 request adapter at the repository boundary rather than duplicating writes or
 extending the legacy service with the Application DTO.
+
+## 2026-10-02 - F233 Schedule Import shared apply core
+
+Use the existing typed ApplyRequest as the shared repository-core input and
+keep ScheduleImportPlan only at the v1 edge. This removes the v2 plan
+round-trip without introducing a second persistence command; both entrypoints
+must preserve their validation messages while sharing fresh-state and
+transactional behavior.

@@ -2745,7 +2745,7 @@ repository read-error coverage. Focused CTest:
 independent Explorer lanes selected this bounded adapter migration. Phase 2
 remains In Progress/Open; Gates 1 and 2 remain Partial.
 
-## Current Phase 2 position - 2026-10-02 (F231 accepted; F232 in progress)
+## Current Phase 2 position - 2026-10-02 (F232 accepted; F233 selected)
 
 F218-F221 are accepted in commits `9bb936ee`, `57aefadf`, `4a87ab1e`, and
 `ec65c0c6`. F222 source commit `6920e019` migrates Schedule Import resolution
@@ -2863,12 +2863,24 @@ and `reviewPreviewUsesSavedScheduleDisplaySettings`; the modified summary and
 skip-cascade check passed. Source ownership found one owner for 1,172 files,
 and `git diff --check` passed. No full suite ran.
 
-F232 is in progress: route the typed v2 apply port directly to the active
-session repository and add a typed repository entrypoint that adapts into the
-existing plan-backed transactional core. This removes the `ScheduleService`
-and `DataService` fallback path from v2 while retaining the legacy plan API
-for v1 callers. Three independent reviews confirmed the repository must keep
-fresh-state validation and rollback behavior; the selected route avoids adding
-the Application request type to `ScheduleService`. Implementation and focused
-integration coverage are underway. Phase 2 remains In Progress/Open; Gates 1
-and 2 remain Partial.
+F232 source commit `075b4335` routes the typed v2 apply port directly to the
+active session repository. Its repository-bound typed adapter reuses the
+existing plan-backed transaction core, preserving repository-time validation,
+rollback, errors, and summary behavior while keeping the legacy service and
+plan API for v1 callers. The Application ApplyUseCase, Platform ApplyPort, and
+Schedule Import repository CTests passed 3/3. The focused dialog confirmation
+slot passed. Typed success/persisted-summary, closed-session, legacy-route,
+stale/overlap rejection, write-failure rollback, and intensive mapping
+coverage passed. Source ownership found one owner for 1,172 files, and
+`git diff --check` passed; no full suite ran.
+
+F233 is selected to remove the typed-to-plan adapter from the repository
+write core. Make the typed `ScheduleImportApplyRequest` the shared core input;
+keep the legacy `ScheduleImportPlan` API as a validated v1 edge adapter into
+that same core. Preserve policy/error order, repository-time fresh-state
+checks, transaction/rollback, summaries, and intensive schedule behavior.
+Two independent Explorer lanes mapped the remaining plan data flow and
+compared direct typed input with a separate persistence command. The current
+ApplyRequest already serves as the v2 write contract, so reuse it and avoid a
+second command representation. Phase 2 remains In Progress/Open; Gates 1 and
+2 remain Partial.
