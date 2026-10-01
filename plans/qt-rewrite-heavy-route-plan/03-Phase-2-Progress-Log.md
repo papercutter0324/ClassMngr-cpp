@@ -9392,3 +9392,30 @@ and confirmation through
 case, Platform apply port, Schedule Import repository, and Dialog targets;
 only the three established Dialog baselines are expected. Phase 2 remains
 In Progress/Open; Gates 1 and 2 remain Partial.
+
+### Progress update - 2026-10-02 (F230 accepted; F231 selected)
+
+F230, source commit `547ccb5b`, has the dialog build and pass the typed
+`ScheduleImportApplyRequest` directly to the Application use case, removing
+legacy-plan construction at the UI/Application boundary while retaining
+typed-to-legacy conversion at the service persistence boundary. Focused
+Application ApplyUseCase, Platform apply-port, and Schedule Import repository
+CTests passed. The Dialog target reported 34 passed and only the three
+established baseline failures (`acceptedReviewCanTearDownSourceDialog`,
+`mismatchedProfileRequiresConfirmation`, and
+`reviewPreviewUsesSavedScheduleDisplaySettings`). New confirmation/mapping,
+typed request-model mapping, and legacy policy-text parity slots passed;
+`git diff --check` passed.
+
+F231 is selected based on two independent Explorer reports: add an Application
+projection from `ScheduleImportApplyRequest` to
+`ScheduleImportReviewDecisionRequest`, then reuse it in ApplyUseCase and dialog
+review readiness/summary. Preserve candidate and resolution order,
+UTF-16/UTF-8 conversion, imported-room normalization and empty omission, typed
+class IDs, skipped-teacher auto-skip behavior, summary/presentation,
+confirmation timing, and snapshot cadence. Keep state-validation request
+assembly in the UI; defer the broader repository migration. Add app-less tests
+for non-ASCII data, typed targets, action/order, and empty rooms. Run the
+projection, apply-use-case, review-decision/readiness/summary, and Dialog
+targets; allow only the three named Dialog baselines. Phase 2 remains
+In Progress/Open; Gates 1 and 2 remain Partial.

@@ -2745,7 +2745,7 @@ repository read-error coverage. Focused CTest:
 independent Explorer lanes selected this bounded adapter migration. Phase 2
 remains In Progress/Open; Gates 1 and 2 remain Partial.
 
-## Current Phase 2 position - 2026-10-02 (F229 accepted; F230 selected)
+## Current Phase 2 position - 2026-10-02 (F230 accepted; F231 selected)
 
 F218-F221 are accepted in commits `9bb936ee`, `57aefadf`, `4a87ab1e`, and
 `ec65c0c6`. F222 source commit `6920e019` migrates Schedule Import resolution
@@ -2838,14 +2838,28 @@ target reported 32 passed and only the three documented baselines:
 passed. Source ownership validation found one owner for 1,170 handwritten
 files and `git diff --check` passed; no full suite ran.
 
-F230 is selected after two independent Explorer reviews: move the active
-review dialog's apply handoff to the existing typed
-`ScheduleImportApplyRequest`, avoiding the intermediate legacy plan at the
-UI/Application boundary. Preserve the full candidate/resolution mapping,
-typed target IDs, confirmation-before-write timing, detailed policy-error
-text from the existing validator, and repository apply-time validation. Keep
-legacy conversion at the persistence adapter. Acceptance pins mapped request
-fields and confirmation order in `applyUsesConfirmationAndReportsServiceOutcome`
-and runs the Application apply use case, Platform apply port, Schedule Import
-repository, and Dialog targets; only the three documented Dialog baselines
-are expected. Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial.
+F230 source commit `547ccb5b` changes the review dialog to build and pass the
+typed `ScheduleImportApplyRequest` directly to the Apply use case. It removes
+the UI/Application legacy-plan conversion and keeps typed-to-legacy conversion
+at the persistence adapter. Candidate and resolution mappings, typed IDs,
+confirmation timing, and detailed policy-error text are covered by parity
+checks. The Application Apply use case, Platform apply port, and Schedule
+Import repository CTests passed. The Dialog target reported 34 passed and
+only the three documented baselines:
+`acceptedReviewCanTearDownSourceDialog`,
+`mismatchedProfileRequiresConfirmation`, and
+`reviewPreviewUsesSavedScheduleDisplaySettings`. All three new F230 dialog
+slots passed individually; `git diff --check` passed. No full suite ran.
+
+F231 is selected after two independent Explorer reviews: derive
+`ScheduleImportReviewDecisionRequest` from the typed `ScheduleImportApplyRequest`
+through one Qt-free Application projection, then reuse it in the Apply use
+case and dialog readiness/summary path. Preserve candidate, teacher, and class
+order; UTF-16/UTF-8 conversion; imported-room trimming and omission of empty
+rooms; typed class targets; skipped-teacher class auto-skip; summary values,
+localized presentation, confirmation timing, and snapshot cadence. Keep state
+validation request assembly and presentation in the feature UI. Add app-less
+projection coverage for non-ASCII text, actions, order, typed targets, and room
+handling; run the projection, Apply use case, review-decision, readiness,
+summary, and Dialog targets. Only the three documented Dialog baselines are
+expected. Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial.

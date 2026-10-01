@@ -225,31 +225,30 @@ No new v2 production path depends on DataService, MainWindow, PageManager, or a 
 
 Earlier verified slices and cumulative exit-gate snapshots are archived in the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 
-## Latest progress update - 2026-10-02 (F229 accepted; F230 selected)
+## Latest progress update - 2026-10-02 (F230 accepted; F231 selected)
 
-F229, source commit `e8a2a5b5`, reuses
-`projectScheduleImportStateSchedules()` for review-preview membership and
-schedule preservation. The dialog retains control order, snapshot Skip times,
-and Qt row construction, enrichment, and conflict formatting. Focused
-Application state-validation and Schedule Import repository targets passed.
-The Dialog target reported 32 passed and only the three established baseline
-failures (`acceptedReviewCanTearDownSourceDialog`,
+F230, source commit `547ccb5b`, has the dialog build and pass the typed
+`ScheduleImportApplyRequest` directly to the Application use case, removing
+legacy-plan construction at the UI/Application boundary while retaining
+typed-to-legacy conversion at the service persistence boundary. Focused
+Application ApplyUseCase, Platform apply-port, and Schedule Import repository
+CTests passed. The Dialog target reported 34 passed and only the three
+established baseline failures (`acceptedReviewCanTearDownSourceDialog`,
 `mismatchedProfileRequiresConfirmation`, and
-`reviewPreviewUsesSavedScheduleDisplaySettings`); both new parity slots
-passed. Source ownership found one owner for 1,170 handwritten files, and
-`git diff --check` passed. No full suite ran.
+`reviewPreviewUsesSavedScheduleDisplaySettings`). New confirmation/mapping,
+typed request-model mapping, and legacy policy-text parity slots passed;
+`git diff --check` passed.
 
-F230 is selected based on two independent Explorer reports: have
-`ScheduleImportReviewDialog::applyImport()` build and pass the typed
-`ScheduleImportApplyRequest` directly to the Application use case. Remove the
-legacy `ScheduleImportPlan` construction and plan-to-request conversion at the
-UI/Application boundary; retain typed-to-legacy conversion inside the existing
-service persistence boundary. Preserve the complete field mapping and typed
-IDs, confirmation-before-write timing, current detailed policy-error text from
-the legacy validator, and repository apply validation. Verify request mapping
-and confirmation through
-`applyUsesConfirmationAndReportsServiceOutcome`, the Application apply use
-case, Platform apply port, Schedule Import repository, and Dialog targets;
-only the three established Dialog baselines are expected. Keep Phase 2
-In Progress/Open and Gates 1 and 2 Partial. See the
+F231 is selected based on two independent Explorer reports: add an Application
+projection from `ScheduleImportApplyRequest` to
+`ScheduleImportReviewDecisionRequest`, then reuse it in ApplyUseCase and dialog
+review readiness/summary. Preserve candidate and resolution order,
+UTF-16/UTF-8 conversion, imported-room normalization and empty omission, typed
+class IDs, skipped-teacher auto-skip behavior, summary/presentation,
+confirmation timing, and snapshot cadence. Keep state-validation request
+assembly in the UI; defer the broader repository migration. Add app-less tests
+for non-ASCII data, typed targets, action/order, and empty rooms. Run the
+projection, apply-use-case, review-decision/readiness/summary, and Dialog
+targets; allow only the three named Dialog baselines. Phase 2 remains In
+Progress/Open; Gates 1 and 2 remain Partial. See the
 [Phase 2 progress log](03-Phase-2-Progress-Log.md) for prior slice evidence.

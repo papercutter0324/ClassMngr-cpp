@@ -1989,3 +1989,10 @@ When an Application apply request already exists, the dialog should build and
 pass that typed contract directly instead of routing through a legacy plan.
 Keep confirmation timing, detailed user-facing policy errors, and legacy
 conversion at the persistence boundary under explicit parity coverage.
+
+## 2026-10-02 - F231 Schedule Import decision projection
+
+Derive the compact review-decision request from the typed apply request once
+in Application and reuse it for apply eligibility, readiness, and summary.
+Keep UI ordering and the class skip cascade visible before projection; test
+Unicode conversion, typed targets, and normalized/empty rooms at the boundary.

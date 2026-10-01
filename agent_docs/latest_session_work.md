@@ -4665,7 +4665,7 @@ Focused acceptance includes the Application state and decision validators,
 Phase 2 remains In Progress/Open with Gates 1 and 2 Partial. Next: finish F219,
 independently verify and commit it, then choose the following slice.
 
-## Current handoff - 2026-10-02 (F229 accepted; F230 selected)
+## Current handoff - 2026-10-02 (F230 accepted; F231 selected)
 
 F219 source commit `57aefadf` adds the shared state validator as a live
 Schedule Import readiness preflight. The Application state-validation,
@@ -4791,13 +4791,27 @@ and `reviewPreviewUsesSavedScheduleDisplaySettings`. Both new F229 preview
 parity slots passed. Independent source ownership validation found one owner
 for 1,170 handwritten files and `git diff --check` passed. No full suite ran.
 
-F230 is selected after two independent Explorer reviews: move the dialog's
-apply handoff to the existing typed `ScheduleImportApplyRequest`. Preserve
-candidate and resolution field mappings, typed target IDs, confirmation before
-write, the detailed policy-error text from the legacy validator, and
-repository apply-time validation. Keep legacy conversion at the persistence
-adapter. Acceptance pins request mappings and confirmation order in
-`applyUsesConfirmationAndReportsServiceOutcome`, then runs the Application
-apply use case, Platform apply port, Schedule Import repository, and Dialog
-targets; only the three named Dialog baselines are expected. The source slice
-will start after the F229 acceptance commit and documentation handoff.
+F230 source commit `547ccb5b` removes the intermediate legacy plan at the
+UI/Application boundary: the dialog builds and passes the typed
+`ScheduleImportApplyRequest` directly. The Platform adapter keeps only the
+typed-to-legacy conversion at the service persistence boundary. Candidate and
+resolution mappings, typed IDs, confirmation-before-write, and detailed
+policy-error text have explicit parity coverage. Application Apply use case,
+Platform apply port, and Schedule Import repository CTests passed. The Dialog
+target reported 34 passed and only the three documented baselines:
+`acceptedReviewCanTearDownSourceDialog`, `mismatchedProfileRequiresConfirmation`,
+and `reviewPreviewUsesSavedScheduleDisplaySettings`. All three new F230 dialog
+slots passed individually. `git diff --check` passed; no full suite ran.
+
+F231 is selected after two independent Explorer reviews. Add a Qt-free
+Application projection from `ScheduleImportApplyRequest` to
+`ScheduleImportReviewDecisionRequest`, and reuse the result in Apply use-case
+validation plus the dialog's readiness and proposed-summary path. Preserve
+candidate and resolution ordering, UTF-16/UTF-8 conversion, trimmed and empty
+room handling, typed class targets, class auto-skip for skipped teachers,
+summary counts and localized presentation, confirmation timing, and snapshot
+cadence. Leave state-validation request assembly in the dialog. Focused
+acceptance adds app-less projection coverage for Unicode, order, actions,
+typed targets, and room normalization, then runs projection, Apply use case,
+review-decision, readiness, summary, and Dialog targets. Only the three named
+Dialog baselines are expected. The broader typed repository path is deferred.
