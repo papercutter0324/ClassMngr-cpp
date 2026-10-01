@@ -3,7 +3,10 @@
 #include "core/updater/github_release.h"
 #include "core/updater/update_configuration.h"
 #include "core/updater/update_service.h"
+#include "next/platform/settings_manager_skipped_update_version_port.h"
+#include "ui/shared/dialogs/update_dialog.h"
 
+#include <QApplication>
 #include <QCoreApplication>
 #include <QDateTime>
 #include <QDir>
@@ -18,38 +21,48 @@
 #include <QTemporaryDir>
 #include <QTcpServer>
 #include <QTcpSocket>
+#include <QPushButton>
 #include <QtTest/QtTest>
 
 #include <memory>
+#include <optional>
+#include <string>
 #include <utility>
 
 namespace
 {
 
-QString assetName(const QString& platformKey)
+QString assetName(
+    const QString& platformKey,
+    const QString& versionText
+    )
 {
     if (platformKey == QStringLiteral("windows-x64"))
     {
-        return QStringLiteral("ClassMngr-1.0.0-win-x64.exe");
+        return QStringLiteral("ClassMngr-%1-win-x64.exe").arg(versionText);
     }
 
     if (platformKey == QStringLiteral("windows-arm64"))
     {
-        return QStringLiteral("ClassMngr-1.0.0-win-arm64.exe");
+        return QStringLiteral("ClassMngr-%1-win-arm64.exe").arg(versionText);
     }
 
     if (platformKey == QStringLiteral("macos-universal"))
     {
-        return QStringLiteral("ClassMngr-1.0.0-macos-universal.dmg");
+        return QStringLiteral("ClassMngr-%1-macos-universal.dmg")
+            .arg(versionText);
     }
 
-    return QStringLiteral("ClassMngr-1.0.0-linux-x86_64.tar.gz");
+    return QStringLiteral("ClassMngr-%1-linux-x86_64.tar.gz")
+        .arg(versionText);
 }
 
-QByteArray validReleaseResponse()
+QByteArray validReleaseResponse(
+    const QString& versionText = QStringLiteral("1.0.0")
+    )
 {
     const QString platformKey = GitHubRelease::currentPlatformKeys().first();
-    const QString fileName = assetName(platformKey);
+    const QString fileName = assetName(platformKey, versionText);
 
     QJsonObject asset;
     asset.insert(QStringLiteral("name"), fileName);
@@ -63,18 +76,22 @@ QByteArray validReleaseResponse()
         );
     asset.insert(
         QStringLiteral("browser_download_url"),
-        QStringLiteral("https://github.com/example/releases/download/v1.0.0/%1")
-            .arg(fileName)
+        QStringLiteral("https://github.com/example/releases/download/v%1/%2")
+            .arg(versionText, fileName)
         );
 
     QJsonArray assets;
     assets.append(asset);
 
     QJsonObject release;
-    release.insert(QStringLiteral("tag_name"), QStringLiteral("v1.0.0"));
+    release.insert(
+        QStringLiteral("tag_name"),
+        QStringLiteral("v%1").arg(versionText)
+        );
     release.insert(
         QStringLiteral("html_url"),
-        QStringLiteral("https://github.com/example/releases/tag/v1.0.0")
+        QStringLiteral("https://github.com/example/releases/tag/v%1")
+            .arg(versionText)
         );
     release.insert(
         QStringLiteral("published_at"),
@@ -207,6 +224,31 @@ void setAutomaticChecksEnabled(const bool enabled)
     SettingsManager::instance().sync();
 }
 
+void setSkippedUpdateVersion(const std::string& version)
+{
+    const ClassMngr::Next::Platform::
+        SettingsManagerSkippedUpdateVersionPort
+        skippedUpdateVersionPort;
+    skippedUpdateVersionPort.write({.skippedVersion = version});
+}
+
+UpdateDialog* automaticUpdateDialog()
+{
+    for (QWidget* widget : QApplication::topLevelWidgets())
+    {
+        auto* const dialog = qobject_cast<UpdateDialog*>(widget);
+        if (
+            dialog
+            && dialog->property("automaticUpdatePrompt").toBool()
+            )
+        {
+            return dialog;
+        }
+    }
+
+    return nullptr;
+}
+
 UpdateConfiguration configurationFor(const QUrl& apiUrl)
 {
     UpdateConfiguration configuration;
@@ -247,6 +289,8 @@ private slots:
     void startupWaitsForCompletionAndForcesOnlyOnce();
     void disabledPreferenceAttemptCanBeRetried();
     void unconfiguredStartupDoesNotDispatch();
+    void staleSkippedVersionClearsAndSynchronizesOpenDialog();
+    void exactSkippedVersionIsKeptAndSuppressesPrompt();
 
 private:
     std::unique_ptr<QTemporaryDir> m_settingsRoot;
@@ -386,6 +430,84 @@ unconfiguredStartupDoesNotDispatch()
     QCOMPARE(startedSpy.count(), 0);
     QCOMPARE(failedSpy.count(), 0);
     QVERIFY(QFile::remove(secondOrphanPath));
+}
+
+void UpdateControllerAutomaticStartupTests::
+staleSkippedVersionClearsAndSynchronizesOpenDialog()
+{
+    QCoreApplication::setApplicationVersion(QStringLiteral("1.0.0"));
+    setAutomaticChecksEnabled(true);
+
+    LocalHttpServer server(validReleaseResponse(QStringLiteral("2.0.0")));
+    QVERIFY(server.listen());
+    UpdateService service(configurationFor(server.url()));
+    UpdateController controller(&service);
+    QSignalSpy succeededSpy(&service, &UpdateService::checkSucceeded);
+
+    // The stale value is cleared before prompt eligibility is evaluated, so
+    // the available update opens the automatic prompt.
+    setSkippedUpdateVersion("1.5.0");
+    QVERIFY(service.checkForUpdates(UpdateService::CheckPolicy::Force));
+    QTRY_COMPARE(succeededSpy.count(), 1);
+    QCOMPARE(server.requestCount(), 1);
+
+    const ClassMngr::Next::Platform::
+        SettingsManagerSkippedUpdateVersionPort
+        skippedUpdateVersionPort;
+    QVERIFY(!skippedUpdateVersionPort.read().skippedVersion.has_value());
+
+    UpdateDialog* const dialog = automaticUpdateDialog();
+    QVERIFY(dialog);
+    QVERIFY(controller.hasVisibleDialog());
+    auto* const secondaryButton =
+        dialog->findChild<QPushButton*>(QStringLiteral("updateSecondaryButton"));
+    QVERIFY(secondaryButton);
+    QCOMPARE(secondaryButton->text(), QStringLiteral("Skip This Version"));
+
+    // Put the open dialog in its skipped state, then persist a stale value
+    // again. The next result must clear both storage and the displayed state.
+    dialog->setSkippedVersion(QStringLiteral("2.0.0"));
+    QCOMPARE(
+        secondaryButton->text(),
+        QStringLiteral("Notify Me About This Version")
+        );
+    setSkippedUpdateVersion("1.5.0");
+
+    QVERIFY(service.checkForUpdates(UpdateService::CheckPolicy::Force));
+    QTRY_COMPARE(succeededSpy.count(), 2);
+
+    QVERIFY(!skippedUpdateVersionPort.read().skippedVersion.has_value());
+    QVERIFY(controller.hasVisibleDialog());
+    QCOMPARE(secondaryButton->text(), QStringLiteral("Skip This Version"));
+
+    dialog->close();
+}
+
+void UpdateControllerAutomaticStartupTests::
+exactSkippedVersionIsKeptAndSuppressesPrompt()
+{
+    QCoreApplication::setApplicationVersion(QStringLiteral("1.0.0"));
+    setAutomaticChecksEnabled(true);
+    setSkippedUpdateVersion("2.0.0");
+
+    LocalHttpServer server(validReleaseResponse(QStringLiteral("2.0.0")));
+    QVERIFY(server.listen());
+    UpdateService service(configurationFor(server.url()));
+    UpdateController controller(&service);
+    QSignalSpy succeededSpy(&service, &UpdateService::checkSucceeded);
+
+    QVERIFY(service.checkForUpdates(UpdateService::CheckPolicy::Force));
+    QTRY_COMPARE(succeededSpy.count(), 1);
+    QCOMPARE(server.requestCount(), 1);
+
+    const ClassMngr::Next::Platform::
+        SettingsManagerSkippedUpdateVersionPort
+        skippedUpdateVersionPort;
+    QCOMPARE(
+        skippedUpdateVersionPort.read().skippedVersion,
+        std::optional<std::string>("2.0.0")
+        );
+    QVERIFY(!controller.hasVisibleDialog());
 }
 
 QTEST_MAIN(UpdateControllerAutomaticStartupTests)

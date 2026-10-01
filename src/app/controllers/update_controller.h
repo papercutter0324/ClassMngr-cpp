@@ -31,10 +31,7 @@ public:
 private:
     [[nodiscard]] bool automaticChecksEnabled() const;
     void runStartupMaintenance();
-    [[nodiscard]] bool isVersionSkipped(
-        const QString& version
-        ) const;
-    void reconcileSkippedVersion(
+    [[nodiscard]] bool reconcileSkippedVersion(
         const UpdateCheckResult& result
         );
     void skipVersion(

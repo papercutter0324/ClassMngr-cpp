@@ -93,6 +93,37 @@ add_test(
     COMMAND ClassMngrNextApplicationAutomaticUpdateStartupEligibilityTests
 )
 
+# Keep skipped-update version decisions independent of Qt and the runtime.
+add_executable(
+    ClassMngrNextApplicationSkippedUpdateVersionPolicyTests
+    tests/next_application_skipped_update_version_policy_tests.cpp
+)
+target_compile_features(
+    ClassMngrNextApplicationSkippedUpdateVersionPolicyTests
+    PRIVATE
+        cxx_std_23
+)
+set_target_properties(
+    ClassMngrNextApplicationSkippedUpdateVersionPolicyTests
+    PROPERTIES
+        AUTOMOC OFF
+        AUTOUIC OFF
+        AUTORCC OFF
+)
+set_property(
+    TARGET ClassMngrNextApplicationSkippedUpdateVersionPolicyTests
+    PROPERTY CLASSMNGR_STANDALONE_CPP_TEST TRUE
+)
+target_link_libraries(
+    ClassMngrNextApplicationSkippedUpdateVersionPolicyTests
+    PRIVATE
+        ClassMngrNext::Application
+)
+add_test(
+    NAME ClassMngrNextApplicationSkippedUpdateVersionPolicyTests
+    COMMAND ClassMngrNextApplicationSkippedUpdateVersionPolicyTests
+)
+
 classmngr_add_qt_test(
     NAME UpdateControllerAutomaticStartup
     SOURCES

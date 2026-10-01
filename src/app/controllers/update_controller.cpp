@@ -6,6 +6,7 @@
 #include "core/updater/update_service.h"
 #include "core/updater/version.h"
 #include "next/application/automatic_update_startup_eligibility.h"
+#include "next/application/skipped_update_version_policy.h"
 #include "next/platform/settings_manager_automatic_update_preferences_port.h"
 #include "next/platform/settings_manager_skipped_update_version_port.h"
 #include "ui/shared/actions/action_registry.h"
@@ -15,6 +16,24 @@
 #include <QDialog>
 
 #include <optional>
+#include <string>
+#include <string_view>
+
+namespace
+{
+
+ClassMngr::Next::Application::UpdateVersion toApplicationVersion(
+    const Version& version
+    )
+{
+    return {
+        .major = version.majorVersion(),
+        .minor = version.minorVersion(),
+        .patch = version.patchVersion()
+    };
+}
+
+} // namespace
 
 UpdateController::UpdateController(
     UpdateService* service,
@@ -31,7 +50,8 @@ UpdateController::UpdateController(
         this,
         [this](const UpdateCheckResult& result)
         {
-            reconcileSkippedVersion(result);
+            const bool latestVersionIsSkipped =
+                reconcileSkippedVersion(result);
 
             UpdateDownloader::cleanupDownloads(
                 result.updateAvailable
@@ -47,9 +67,7 @@ UpdateController::UpdateController(
                 && !hasVisibleDialog()
                 && !m_automaticPromptSuppressed
                 && automaticChecksEnabled()
-                && !isVersionSkipped(
-                    result.latestVersion.toString()
-                    )
+                && !latestVersionIsSkipped
                 )
             {
                 showAutomaticUpdateDialog();
@@ -68,23 +86,7 @@ bool UpdateController::automaticChecksEnabled() const
         && automaticUpdatePreferencesPort.read().automaticChecksEnabled;
 }
 
-bool UpdateController::isVersionSkipped(
-    const QString& version
-    ) const
-{
-    const ClassMngr::Next::Platform::
-        SettingsManagerSkippedUpdateVersionPort
-        skippedUpdateVersionPort;
-    const auto skipped =
-        skippedUpdateVersionPort.read().skippedVersion;
-
-    return !version.trimmed().isEmpty()
-        && skipped.has_value()
-        && QString::fromStdString(*skipped)
-            == version.trimmed();
-}
-
-void UpdateController::reconcileSkippedVersion(
+bool UpdateController::reconcileSkippedVersion(
     const UpdateCheckResult& result
     )
 {
@@ -94,22 +96,47 @@ void UpdateController::reconcileSkippedVersion(
     const auto storedSkippedVersion =
         skippedUpdateVersionPort.read().skippedVersion;
 
-    if (!storedSkippedVersion.has_value())
+    using ClassMngr::Next::Application::
+        SkippedUpdateVersionPolicyInput;
+    using ClassMngr::Next::Application::
+        SkippedUpdateVersionState;
+    using ClassMngr::Next::Application::
+        decideSkippedUpdateVersion;
+
+    SkippedUpdateVersionPolicyInput input;
+    input.currentVersion =
+        toApplicationVersion(result.currentVersion);
+    input.latestVersion =
+        toApplicationVersion(result.latestVersion);
+    const std::string latestVersionText =
+        result.latestVersion.toString().trimmed().toUtf8().toStdString();
+    input.latestVersionText = std::string_view(latestVersionText);
+
+    if (!storedSkippedVersion)
     {
-        return;
+        input.state = SkippedUpdateVersionState::Missing;
+    }
+    else
+    {
+        input.storedVersionText = std::string_view(*storedSkippedVersion);
+        const auto parsedSkippedVersion = Version::parse(
+            QString::fromStdString(*storedSkippedVersion)
+            );
+        if (parsedSkippedVersion)
+        {
+            input.state = SkippedUpdateVersionState::Valid;
+            input.skippedVersion =
+                toApplicationVersion(*parsedSkippedVersion);
+        }
+        else
+        {
+            input.state = SkippedUpdateVersionState::Invalid;
+        }
     }
 
-    const auto parsedSkippedVersion =
-        Version::parse(
-            QString::fromStdString(
-                *storedSkippedVersion
-                )
-            );
-    if (
-        !parsedSkippedVersion
-        || result.currentVersion >= *parsedSkippedVersion
-        || result.latestVersion > *parsedSkippedVersion
-        )
+    const auto decision =
+        decideSkippedUpdateVersion(input);
+    if (decision.clearStoredVersion)
     {
         skippedUpdateVersionPort.clear();
         if (m_dialog)
@@ -117,6 +144,8 @@ void UpdateController::reconcileSkippedVersion(
             m_dialog->setSkippedVersion(QString());
         }
     }
+
+    return decision.suppressAutomaticPrompt;
 }
 
 void UpdateController::skipVersion(
