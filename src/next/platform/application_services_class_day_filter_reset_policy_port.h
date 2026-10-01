@@ -1,7 +1,8 @@
 #pragma once
 
-#include "app/services/feature_services.h"
 #include "core/application_services.h"
+#include "data/database/database_session.h"
+#include "data/repositories/settings_repository.h"
 #include "next/application/class_day_filter_reset_policy.h"
 
 #include <QString>
@@ -10,9 +11,9 @@
 namespace ClassMngr::Next::Platform
 {
 
-// Qt-boundary adapter for the class day-filter reset policy. The legacy
-// ApplicationServices/settings access and QVariant conversion stay here;
-// callers consume only the typed application policy.
+// Qt-boundary adapter for the class day-filter reset policy. The active-session
+// settings access and QVariant conversion stay here; callers consume only the
+// typed application policy.
 class ApplicationServicesClassDayFilterResetPolicyPort final
     : public Application::ClassDayFilterResetPolicyPort
 {
@@ -20,7 +21,7 @@ public:
     explicit ApplicationServicesClassDayFilterResetPolicyPort(
         ApplicationServices& services
         ) noexcept
-        : m_services(services)
+        : m_session(services.databaseSession())
     {
     }
 
@@ -40,19 +41,24 @@ public:
     [[nodiscard]] Application::ClassDayFilterResetPolicy load()
         const override
     {
-        const SettingsService* settingsService = m_services.settingsService();
-        if (!settingsService || !settingsService->isAvailable())
+        if (!m_session || !m_session->isOpen())
         {
             return Application::ClassDayFilterResetPolicy::OnApplicationClose;
         }
 
-        const auto storedPolicy = settingsService->load(key());
+        SettingsRepository* const repository = m_session->settingsRepository();
+        if (!repository)
+        {
+            return Application::ClassDayFilterResetPolicy::OnApplicationClose;
+        }
+
+        const auto storedPolicy = repository->loadSetting(key());
         if (!storedPolicy || !storedPolicy->isValid())
         {
             // Preserve the legacy preference boundary's default materializing
             // behavior when storage is available.
             static_cast<void>(
-                settingsService->save(
+                repository->saveSetting(
                     key(),
                     storedPolicyValue(
                         Application::ClassDayFilterResetPolicy::OnApplicationClose
@@ -72,14 +78,19 @@ public:
         const Application::ClassDayFilterResetPolicy policy
         ) const override
     {
-        const SettingsService* settingsService = m_services.settingsService();
-        if (!settingsService || !settingsService->isAvailable())
+        if (!m_session || !m_session->isOpen())
+        {
+            return;
+        }
+
+        SettingsRepository* const repository = m_session->settingsRepository();
+        if (!repository)
         {
             return;
         }
 
         static_cast<void>(
-            settingsService->save(key(), storedPolicyValue(policy))
+            repository->saveSetting(key(), storedPolicyValue(policy))
             );
     }
 
@@ -100,7 +111,7 @@ private:
             : QStringLiteral("on_application_close");
     }
 
-    ApplicationServices& m_services;
+    DatabaseSession* m_session = nullptr;
 };
 
 } // namespace ClassMngr::Next::Platform
