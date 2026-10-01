@@ -4420,3 +4420,40 @@ keep the three existing callers and typed interface unchanged. Focused CTest:
 Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial. Next: update
 the four Phase 2 plan documents, implement F204, independently verify and
 commit it, then select F205.
+
+## 2026-10-01 - F204 accepted; F205 selected
+
+F204 source commit `3cf2ab80` migrates
+`ApplicationServicesClassDayFilterResetPolicyPort` to the active session's
+`SettingsRepository`, with no compatibility-service fallback. It preserves the
+exact key, normalized `on_page_leave` mapping, OnApplicationClose fallback,
+missing-key materialization, valid unknown values unchanged, and silent save
+failures. Closed-session coverage keeps `DataService` present and verifies the
+stored policy and unrelated setting after reopening; a trigger-based write
+failure is silent and preserves the prior value. The read-error case defaults
+silently. The independent Tester passed focused x64 Visual Studio CTest
+`ClassMngrNextPlatformApplicationServicesClassDayFilterResetPolicyPortTests`
+1/1; `git diff --check` passed. No full suite ran.
+
+Both independent Explorer scans recommend F205:
+`ApplicationServicesClassSelectionResetPolicyPort`, the adjacent one-key
+class-navigation preference. Move its exact-key read/write to the active
+session's `SettingsRepository`; preserve trimmed/lowercased `on_page_leave`,
+OnApplicationClose fallback and default materialization for missing/invalid/
+read-error values, no rewrite of valid unknown values, and silent save
+failures. Add closed-session no-fallback, read-error, failed-write, and
+valid-unknown preservation tests. Keep callers and typed interface unchanged.
+Focused CTest:
+`ClassMngrNextPlatformApplicationServicesClassSelectionResetPolicyPortTests`.
+The existing Classes Page tests exercise page-leave clearing versus
+application-close retention and their interaction with day-filter state.
+F205 adapter and focused tests are now implemented in the working tree. The
+Executor's x64 Visual Studio build and focused CTest passed 1/1. Independent
+review agreed with the adapter behavior and focused CTest result. The two
+Classes Page lifecycle slots initially exposed closed-database fixtures; they
+now open temporary databases, and the rebuilt target passes both filtered
+slots. `git diff --check` passed. No full suite ran. F205 has no source commit
+yet. The root and four public plan-document updates for F204 acceptance/F205
+selection are prepared but not committed. Phase 2 remains In Progress/Open;
+Gates 1 and 2 remain Partial. Next: commit the documentation update
+separately, commit F205 source and test-fixture changes, then select F206.

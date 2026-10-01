@@ -1777,3 +1777,10 @@ Independent scans compared the adjacent one-key class-navigation policy with
 the multi-format Custom Color Palette adapter. Continue the small typed
 preference sequence; keep the palette's legacy payload formats and broad caller
 surface for a later bounded slice.
+
+## 2026-10-01 - F205 Class Selection Reset policy
+
+Complete the neighboring class-navigation reset preferences together while
+keeping the typed policy adapters separate. Preserve the difference between
+page-leave clearing and application-close retention; the existing Classes Page
+tests exercise both policies and their interaction with day-filter state.
