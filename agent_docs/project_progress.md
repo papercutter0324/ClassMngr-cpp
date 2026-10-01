@@ -63,7 +63,8 @@ is accepted in source commit `59133929`; F202 is accepted in source commit
 `c9ff5731`; F203 is accepted in source commit `4f128b01`; F204 is accepted in
 source commit `3cf2ab80`; F205 is accepted in source commit `bf9ca8a7`; F206 is
 accepted in source commit `7d0291d3`; F207 is accepted in source commit
-`12cb021a`; F208 is accepted in source commit `d17ddd25`.
+`12cb021a`; F208 is accepted in source commit `d17ddd25`; F209 is accepted in
+source commit `7b2f8226`.
 F196 and F197 use
 only the active open session's
 `SettingsRepository` and preserve their keys, conversions, defaults, and
@@ -113,24 +114,26 @@ defaults, and a direct zero-row assertion proving missing reads do not
 materialize keys. The focused x64 build and independent CTest passed 1/1;
 source ownership validated 1,140 handwritten files and `git diff --check`
 passed. No full suite ran.
+F209 moves Speaking Evaluation save persistence to the active session's
+`SpeakingEvalRepository`. It preserves canonical class IDs, trimmed names,
+`SpeakingEvalValidator` normalization and validation, the 25-by-11 matrix,
+changed-cell deltas, the Korean-name-length choice, and Technical error
+mapping. The focused x64 build passed, ownership validated 1,141 handwritten
+sources, and the independent focused CTest passed 1/1. Coverage includes
+trigger-forced repository failure with full rollback. No full suite ran.
 
 F179-F195 advanced Sub Prep and Calendar repository boundaries and the
 preference-port migrations; individual scope and evidence remain in the
 [Phase 2 progress log](../plans/qt-rewrite-heavy-route-plan/03-Phase-2-Progress-Log.md).
-The post-F208 scans found no remaining `SettingsService` or `DataService`
-references under `src/next`. F209 is selected for
-`ApplicationServicesSpeakingEvaluationSavePort`: persist through the active
-session's `SpeakingEvalRepository`, moving database-bound code into a `.cpp`
-registered under `ClassMngrFeatures`. Preserve the existing service's
-canonical class ID handling, session availability, evaluation-name trimming,
-`SpeakingEvalValidator` normalization and validation (including the
-questionable Korean-name-length flag), 25-by-11 matrix, exact changed-cell
-delta, and Technical error mapping. Keep callers and the typed interface
-unchanged and add focused normalization/rejection coverage. CTest:
-`ClassMngrNextPlatformApplicationServicesSpeakingEvaluationSavePortTests`.
-The independent scans also noted a possible last-selected-campus ID-length
-consistency follow-up; it was not selected as a blocker. Gates 1 and 2 remain
-Partial.
+Two independent post-F209 scans found no direct DataService, SettingsService,
+or SpeakingEvaluationService references under `src/next`. F210 is selected to
+move recent-workspace history mutation policy from `FileController` into a
+Qt-free Application use case. Preserve raw/normalized alias removal,
+newest-first ordering, the ten-entry cap, lastPath updates and conditional
+pruning, and unrelated fallback values. Keep Qt path normalization, settings
+I/O, last-database-directory updates, and menu work in the controller. Add
+app-less policy tests and retain `FileControllerWorkspaceLifecycle` as the
+integration regression. Gates 1 and 2 remain Partial.
 
 ### Earlier Phase 2 detail - 2026-09-26
 

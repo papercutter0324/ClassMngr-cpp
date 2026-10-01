@@ -4567,3 +4567,26 @@ callers and the typed interface stay unchanged. Focused CTest:
 `ClassMngrNextPlatformApplicationServicesSpeakingEvaluationSavePortTests`.
 Gates 1 and 2 remain Partial. Next: implement F209, then independently verify
 and commit it.
+
+## 2026-10-01 — F209 accepted; F210 selected
+
+F209 source commit `7b2f8226` moves
+`ApplicationServicesSpeakingEvaluationSavePort` from the feature service to
+the active session's `SpeakingEvalRepository`. The adapter preserves canonical
+IDs, open-session behavior, name trimming, `SpeakingEvalValidator`
+normalization/validation, the Korean-name-length decision, the full 25-by-11
+matrix, original changed-cell deltas, and nonrecoverable Technical save-error
+mapping. The focused x64 build passed; CMake validated 1,141 handwritten
+sources; independent focused CTest passed 1/1 in `build/f168`. Trigger-based
+failure coverage confirms full rollback. No full suite ran.
+
+Two independent Explorer lanes found no direct `DataService`,
+`SettingsService`, or `SpeakingEvaluationService` references under `src/next`.
+F210 is selected to move recent-workspace history mutation policy out of
+`FileController` into a Qt-free Application use case. Preserve raw/normalized
+alias removal, newest-first insertion, cap-at-ten, lastPath record/prune
+behavior, and unrelated fallback paths. Qt path normalization and menu work
+stay in the controller. The new use-case target will have app-less tests, with
+`FileControllerWorkspaceLifecycle` retained for integration. No F210 results
+are recorded yet. Phase 2 remains In Progress/Open; Gates 1 and 2 remain
+Partial.

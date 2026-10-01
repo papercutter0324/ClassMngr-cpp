@@ -130,6 +130,10 @@
   absent key and stored SQL NULL, prove read non-materialization by querying
   row existence/count directly; QVariant validity alone cannot distinguish
   the two states.
+- When a Platform adapter replaces a legacy feature-service call with direct
+  repository access, preserve the service's normalization, validation, and
+  changed-cell persistence semantics at the boundary; the service may own more
+  than storage routing.
 
 ## macOS universal route-matrix lesson - 2026-09-17
 

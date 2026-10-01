@@ -8845,7 +8845,7 @@ migration saves fail, and no closed-session `DataService` fallback. Focused
 CTest passed 1/1 in executor and independent runs. Source ownership validated
 1,139 owners. `git diff --check` passed; no full suite ran.
 
-### Progress update - 2026-10-01 (F208 accepted; F209 selected)
+### Progress update - 2026-10-01 (F208 accepted)
 
 F208, source commit `d17ddd25`, migrates
 `ApplicationServicesSubPrepPreferencesPort` to the active open session's
@@ -8860,18 +8860,39 @@ source ownership validated 1,140 handwritten files; independent CTest
 `ClassMngrNextPlatformApplicationServicesSubPrepPreferencesPortTests` passed
 1/1 in `build/f168`; `git diff --check` passed. No full suite ran.
 
-F209 is selected: migrate `ApplicationServicesSpeakingEvaluationSavePort` from
-`SpeakingEvaluationService` to the active session's `SpeakingEvalRepository`.
-Move implementation into a `.cpp`, register under `ClassMngrFeatures`, and
-keep database/validator includes out of the shared header. Preserve the
-interface/callers, canonical class IDs, open-session/NotFound behavior,
-trimmed evaluation name, `SpeakingEvalValidator` normalization and validation
-(including the Korean-name-length decision), full 25x11 matrix, exact changed-
-cell delta, current Technical error mapping, and no `DataService` fallback.
-Focused CTest: `ClassMngrNextPlatformApplicationServicesSpeakingEvaluationSavePortTests`.
-Post-F208 scans found no remaining `SettingsService` or `DataService`
-references in `src/next`; this adapter is the remaining substantive
-feature-service dependency and has a clear repository boundary. The
-last-selected-campus ID-length consistency follow-up is lower priority and not
-a blocker. F209 implementation/results are not yet recorded. Gates 1 and 2
-remain Partial; Phase 2 remains In Progress/Open.
+### Progress update - 2026-10-01 (F209 accepted; F210 selected and started)
+
+F209, source commit `7b2f8226`, moves
+`ApplicationServicesSpeakingEvaluationSavePort` to the active session's
+`SpeakingEvalRepository`, moves implementation into `.cpp`, registers it under
+`ClassMngrFeatures`, and removes service/database/repository/validator details
+from the shared header. It preserves canonical ID checks, open-session
+NotFound, trimmed evaluation name, `SpeakingEvalValidator` normalization and
+validation (including the preserved, questionable Korean-name-length flag
+behavior), the 25x11 matrix, original changed-cell delta, error mapping, and no
+`DataService` fallback. Tests cover
+matrix/delta, name and score-alias normalization, invalid create/update
+rejection, flag behavior, closed-session behavior with `DataService` present,
+and trigger-forced repository save failure with the persisted matrix
+unchanged. The focused x64 build passed; CMake ownership validated 1,141
+handwritten sources; independent CTest
+`ClassMngrNextPlatformApplicationServicesSpeakingEvaluationSavePortTests`
+passed 1/1 in `build/f168`. No full suite ran.
+
+F210 is selected: move deterministic recent-workspace history mutation from
+`FileController` to a Qt-free Application use case using existing
+`RecentWorkspaceHistory` and `RecentWorkspaceHistoryPort`, in planned target
+`NextApplicationRecentWorkspaceHistoryUseCase` (app-less). Preserve
+raw/normalized alias removal, normalized-path prepend, the 10-entry cap,
+`lastPath` recording, pruning both aliases, clearing `lastPath` only on a
+match, and unrelated fallback state. Keep Qt path normalization, encoding
+conversion, last-database-directory updates, and menu work in `FileController`;
+retain `FileControllerWorkspaceLifecycle` integration coverage. Two fresh
+independent scans compared candidate scopes and agreed that no direct
+`DataService` or `SettingsService` references remain under `src/next`; the
+policy remains controller-owned, so its move advances Gate 1. Speaking
+Evaluation read-port `.cpp` extraction is a later structural
+cleanup; the last-selected-campus length concern is lower priority and not a
+confirmed defect. F210 implementation has started; no F210 results or
+acceptance are recorded. Phase 2 remains In Progress/Open; Gates 1 and 2
+remain Partial.

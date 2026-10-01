@@ -58,8 +58,8 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
   Class Visibility, F203's Evaluation Default Policy, F204's Class Day Filter
   Reset Policy, F205's Class Selection Reset Policy, F206's Custom Color
   Palette preferences, F207's Sub Prep Personal Zoom preferences, and F208's
-  Sub Prep saved-content preferences ports are accepted; F209 is selected for
-  speaking-evaluation save.
+  Sub Prep saved-content preferences and F209's speaking-evaluation save are
+  accepted; F210 recent-workspace history policy is selected and in progress.
   The prior F123 candidate wording is historical;
   current Teacher Profile integration status is recorded in the progress log.
   Gates 1 and 2
@@ -216,23 +216,36 @@ No new v2 production path depends on DataService, MainWindow, PageManager, or a 
 
 Earlier verified slices and cumulative exit-gate snapshots are archived in the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 
-## F209 selected Speaking Evaluation save port
+## Latest progress update - 2026-10-01 (F209 accepted; F210 selected)
 
-F208 is accepted; its source commit, preserved behavior, focused verification,
-and limits are recorded in the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
+F209, source commit `7b2f8226`, moves
+`ApplicationServicesSpeakingEvaluationSavePort` to the active session's
+`SpeakingEvalRepository`, moves implementation into `.cpp`, registers it under
+`ClassMngrFeatures`, and removes service, database, repository, and validator
+details from the shared header. It preserves canonical ID checks,
+open-session/NotFound behavior, trimmed evaluation name, validator
+normalization and validation (including the preserved, questionable
+Korean-name-length flag behavior), the 25x11 matrix, original changed-cell
+delta, error mapping, and no `DataService` fallback. Focused x64 build passed;
+CMake ownership validated 1,141 handwritten sources; independent focused CTest
+`ClassMngrNextPlatformApplicationServicesSpeakingEvaluationSavePortTests`
+passed 1/1 in `build/f168`. Coverage includes matrix/delta, name and score
+alias normalization, invalid create/update rejection, flag behavior,
+closed-session behavior with `DataService` present, and trigger-forced save
+failure with the persisted matrix unchanged. No full suite ran. Details are in
+the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 
-Migrate `ApplicationServicesSpeakingEvaluationSavePort` from
-`SpeakingEvaluationService` to the active session's `SpeakingEvalRepository`.
-Move implementation into a `.cpp`, register it under `ClassMngrFeatures`, and
-keep database and validator includes out of the shared header. Preserve the
-interface and callers, canonical class IDs, open-session/NotFound behavior,
-trimmed evaluation name, `SpeakingEvalValidator` normalization and validation
-(including the Korean-name-length decision), full 25x11 matrix, exact changed-
-cell delta, current Technical error mapping, and no `DataService` fallback.
-Focused CTest: `ClassMngrNextPlatformApplicationServicesSpeakingEvaluationSavePortTests`.
-F209 is selected; implementation and results are not yet recorded. The
-post-F208 scans found no remaining `SettingsService` or `DataService`
-references in `src/next`; this save adapter is the remaining substantive
-feature-service dependency and has a clear repository boundary. The separate
-last-selected-campus ID-length consistency follow-up is lower priority and is
-not a blocker.
+F210 moves deterministic recent-workspace history mutation from
+`FileController` to a Qt-free Application use case using
+`RecentWorkspaceHistory` and `RecentWorkspaceHistoryPort`, in planned target
+`NextApplicationRecentWorkspaceHistoryUseCase` (app-less). Preserve removal of
+raw and normalized aliases, normalized-path prepend, the 10-entry cap,
+`lastPath` recording, pruning both aliases, clearing `lastPath` only on a
+match, and unrelated fallback state. Keep Qt path normalization, encoding
+conversion, last-database-directory updates, and menu work in `FileController`;
+retain `FileControllerWorkspaceLifecycle` integration coverage. Two fresh
+independent scans compared candidate scopes and agree that no direct
+`DataService` or `SettingsService` references remain under `src/next`; moving
+this controller-owned policy advances Gate 1. F210
+implementation has started; results and acceptance are pending. Phase 2 stays
+In Progress/Open and Gates 1 and 2 stay Partial.
