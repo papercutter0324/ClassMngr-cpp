@@ -7563,6 +7563,21 @@ Gate 1 and Gate 2 remain Partial; workspace boundary and active-v2 DataService
 isolation remain Satisfied. Phase 2 remains In Progress with its exit gate
 Open.
 
+### Cumulative exit-gate status after F143
+
+| Exit-gate area | Audit status | Finding |
+| --- | --- | --- |
+| App-less Domain/Application behavior (Gate 1) | Partial | Coverage includes workspace lifecycle; Class Transfer schedule-candidate validation (F79); Teacher Import (F80/F81/F85/F87/F89/F90); Schedule Import match-key typing (F84); Calendar policies/use cases (F93/F95/F97/F99/F101-F105/F107/F110); teacher-profile editing (F117/F123); co-teacher assignment (F124); class-notes save (F125); Classes navigation snapshot (F133); ScheduleBuilder source snapshot (F134); slot-state and testing-assignment reads (F135/F136); testing-class choices and TestingClasses list reads (F138/F142); ScheduleEditor save and class-info read (F139/F140); and TestingClasses selected-detail read (F143). Broader class-detail, schedule, roster, and evaluation editing, backup/recovery, and legacy database import remain planned. |
+| Baseline parity (Gate 2) | Partial | Bounded records include F82/F83 post-baseline Schedule Import inputs, F86/F88 baseline-era generated Schedule Import inputs, F91/F92/F94/F96/F98 Teacher Import flows and failure cases, F100/F101/F103/F104/F106/F108/F109 Schedule Import rollback and Calendar repository transitions, F118 common-input Class Transfer conflict behavior, F121 common-input successful replacement state, and F122 hand-authored seeded Schedule Import Skip state parity. They do not cover all validation, conflict, planning, or state-transition behavior; historical production-workbook provenance remains unverified. |
+| Workspace boundary | Satisfied | The formal workspace-create criterion remains satisfied. |
+| v2 dependency isolation | Satisfied for active `src/next` call paths | F120 removes the Workspace operation edge to `DataService`; the source audit confirms all seven operations route to `DatabaseSession` or the file helper. Legacy facade construction/access remains available. |
+
+Phase 2 remains In Progress with its exit gate Open. Gate 1 and Gate 2 remain
+Partial; historical production-workbook provenance remains a tracked risk, not
+a literal exit criterion. Sub Prep remains bounded to January 1 of the
+reference date's year through December 31 of the following year, at most;
+2026-2027 is illustrative.
+
 ### Progress update - 2026-09-29 (F144 accepted)
 
 F144 routes `TestingClassesPage::populateTeachers()` through a Qt-free typed
@@ -8299,7 +8314,7 @@ fields/schedule/teacher/count/fallback parity. F167 implementation has not
 started. Gate 1 and Gate 2 remain Partial; Phase 2 remains In Progress and its
 exit gate remains Open.
 
-### Progress update - 2026-10-01 (F203 accepted; F204 selected)
+### Progress update - 2026-10-01 (F204 accepted; F205 selected)
 
 F167, source commit `97efac8b`, updates
 `ApplicationServicesClassDetailsPageReadPort` to use active-session
@@ -8792,18 +8807,31 @@ silent. Independent registered CTest
 `ClassMngrNextPlatformApplicationServicesEvaluationDefaultPolicyPortTests`
 passed 1/1. No full suite ran.
 
-F204 is selected for `ApplicationServicesClassDayFilterResetPolicyPort`.
-Move its one-key read/write for
-`classes_navigation_day_filter_reset_policy` to the active session's
-`SettingsRepository`, without closed-session fallback. Preserve
-`on_page_leave` normalization and `OnApplicationClose` default, best-effort
-persistence for missing/invalid/read-error values, no rewrite of valid unknown
-values, and silent save failures. Keep callers and typed interface unchanged.
-Add closed-session, read-error, failed-write, and valid-unsupported-value
-preservation coverage. Registered CTest:
-`ClassMngrNextPlatformApplicationServicesClassDayFilterResetPolicyPortTests`.
-Two Explorer scans differed: one preferred Custom Color Palette, the other
-Class Day Filter Reset Policy. The narrower adjacent one-key typed class-
-navigation policy was selected; leave the palette for later. F204 is selected;
-no F204 results are recorded. Gate 1 and Gate 2 remain Partial; Phase 2 remains
-In Progress with its exit gate Open.
+F204, source commit `3cf2ab80`, migrates
+`ApplicationServicesClassDayFilterResetPolicyPort` to the active session's
+`SettingsRepository`, with no facade fallback. It preserves exact key
+`classes_navigation_day_filter_reset_policy`, trimmed/lowercase
+`on_page_leave` mapping to OnPageLeave, OnApplicationClose default,
+best-effort materialization for missing/invalid/read-error values, and no
+rewrite of valid unknown values. Closed-session coverage includes `DataService`;
+read-error and trigger-based failed-write behavior are silent. Independent
+registered CTest
+`ClassMngrNextPlatformApplicationServicesClassDayFilterResetPolicyPortTests`
+passed 1/1. No full suite ran.
+
+F205 is selected for `ApplicationServicesClassSelectionResetPolicyPort`.
+Migrate its one-key read/write for
+`classes_navigation_class_selection_reset_policy` to the active session's
+`SettingsRepository`, with no closed-session fallback. Normalize trimmed,
+lowercase `on_page_leave` to OnPageLeave; other values map to
+OnApplicationClose. Best-effort persist `on_application_close` for
+missing/invalid/read-error values; valid unknown values default without
+rewrite. Unavailable/closed sessions do not fall back, saves remain silent,
+and callers/interface stay unchanged. Add closed-session, read-error,
+failed-write, and valid-unknown preservation coverage. Registered CTest:
+`ClassMngrNextPlatformApplicationServicesClassSelectionResetPolicyPortTests`.
+Both Explorer lanes agreed; existing Classes Page tests cover page-leave
+clearing versus application-close retention, so preserve that distinction.
+Custom Color Palette and Sub Prep remain broader candidates for later. F205 is
+selected; no F205 results are recorded. Gate 1 and Gate 2 remain Partial;
+Phase 2 remains In Progress with its exit gate Open.
