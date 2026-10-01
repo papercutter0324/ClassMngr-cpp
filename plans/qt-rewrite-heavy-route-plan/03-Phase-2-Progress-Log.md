@@ -9178,3 +9178,29 @@ apply guards with their current owners. Add app-less target
 snapshot-read contract remains later work. F219 advances Gate 1; Gate 2
 remains Partial. Phase 2 remains In Progress/Open; Gates 1 and 2 remain
 Partial.
+
+### Progress update - 2026-10-02 (F220 accepted; F221 selected)
+
+F220, source commit `4a87ab1e`, moves Schedule Import plan eligibility into a
+Qt-free Application contract with a feature adapter, preserving validation
+order, localized errors, and Skip exemptions. Independent focused build/CTest
+passed 2/2: `ClassMngrNextApplicationScheduleImportPlanValidationTests` and
+`ClassMngrScheduleImportTests`. `git diff --check` passed; no full suite ran.
+F220 advances Gate 1; Gate 2 remains Partial.
+
+F221 is selected: add a typed Application query and Platform adapter for the
+live Schedule Import current-state snapshots used by F219 review readiness.
+Move only the snapshot source in
+`ScheduleImportReviewDialog::updateReviewState()` to the active-session typed
+read boundary. Keep resolution-control/presentation lookups, matching, and
+repository apply-time validation in their current owners. Preserve snapshot
+identity/data semantics and validator/status priority. Use structured
+unavailable/read failures without legacy-service fallback for absent/closed
+sessions or repository read failures. Acceptance requires app-less
+success/error tests; Platform mapping, read-error, unavailable, and
+closed-session tests; dialog integration for fresh preflight snapshots and
+error priority; and continued `ClassMngrScheduleImportTests` apply-time
+coverage. `ClassMngrScheduleImportDialogTests` has the same three baseline
+failures confirmed at F218 and F219 (18/3 and 21/3); don't claim it passes and
+compare baseline if used. Phase 2 remains In Progress/Open; Gates 1 and 2
+remain Partial.

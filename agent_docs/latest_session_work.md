@@ -4665,7 +4665,7 @@ Focused acceptance includes the Application state and decision validators,
 Phase 2 remains In Progress/Open with Gates 1 and 2 Partial. Next: finish F219,
 independently verify and commit it, then choose the following slice.
 
-## Current handoff - 2026-10-02 (F219 accepted; F220 selected)
+## Current handoff - 2026-10-02 (F220 accepted; F221 selected)
 
 F219 source commit `57aefadf` adds the shared state validator as a live
 Schedule Import readiness preflight. The Application state-validation,
@@ -4675,9 +4675,24 @@ baseline `9bb936ee`: 18 passed/3 failed at baseline versus 21 passed/3 failed
 under F219 with the same failure names. These are recorded as pre-existing;
 no full suite ran. `git diff --check` passed.
 
-F220 is selected to move intrinsic Schedule Import plan eligibility into a
-Qt-free Application contract while preserving the existing validation order
-and user-facing errors through the feature adapter. Add an app-less validation
-matrix and retain `ClassMngrScheduleImportTests` for pre-write integration.
-Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial. Next: finish
-F220, independently verify and commit it, then choose the next slice.
+F220 source commit `4a87ab1e` moves intrinsic Schedule Import plan
+eligibility into a Qt-free Application contract while preserving the existing
+validation order, weekday/color rules, and user-facing errors through the
+feature adapter. The app-less policy target and `ClassMngrScheduleImportTests`
+passed 2/2, including multi-candidate precedence; `git diff --check` passed.
+No full suite ran.
+
+F221 is selected to add a typed Application query and Platform adapter for the
+live current-state snapshot used by F219's Schedule Import review readiness
+check. Migrate only the snapshot source in
+`ScheduleImportReviewDialog::updateReviewState()`; leave resolution-control
+presentation reads and repository apply-time validation in their current
+owners. Preserve snapshot data/identity and status priority, and report
+unavailable/closed-session or repository-read errors without legacy-service
+fallback. Acceptance covers app-less success/error, Platform active-session
+mapping and failure behavior, dialog preflight integration, and the continuing
+`ClassMngrScheduleImportTests` apply-time boundary. The dialog target retains
+the three baseline failures documented at F218/F219 and is not claimed as
+passing. Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial. Next:
+implement F221, independently verify and commit it, then choose the following
+slice.

@@ -5,7 +5,7 @@
 - Overall status: In progress
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
-- Last updated: 2026-10-01
+- Last updated: 2026-10-02
 - Current milestone: Phase 2 remains in progress. F204 (Class Day Filter Reset
   Policy), F205 (Class Selection Reset Policy), F206 (Custom Color Palette
   preferences), and F207 (Sub Prep Personal Zoom preferences) are accepted;
@@ -15,11 +15,11 @@
   evaluation selection), and F214 (class day-filter matching policy) are
   accepted. F215 (automatic-update startup eligibility) and F216
   (skipped-update-version policy), F217 (roster-score import), and F218
-  (Speaking Evaluation class-tab read integration) are accepted. F219 (Schedule
-  Import live-state validation) is accepted. F220 (Schedule Import plan
-  eligibility policy) is selected. Gates 1 and 2
-  remain Partial, with broader feature migration, parity, and 96-class Release
-  memory evidence still open. See the
+  (Speaking Evaluation class-tab read integration), F219 (Schedule Import
+  live-state validation), and F220 (Schedule Import plan eligibility policy)
+  are accepted. F221 (typed Schedule Import current-state snapshot read) is
+  selected. Gates 1 and 2 remain Partial, with broader feature migration,
+  parity, and 96-class Release memory evidence still open. See the
   [Phase 2 progress log](03-Phase-2-Progress-Log.md) for current scope and
   acceptance evidence.
 - Current blocker: official Phase 1 targets are Windows x64 and macOS

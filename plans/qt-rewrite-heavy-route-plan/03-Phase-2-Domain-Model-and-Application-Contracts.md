@@ -15,7 +15,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Depends on: Phase 1
 - Blocks: Persistence, bootstrap, shared UI, and feature migration
 - Owner: Unassigned
-- Last updated: 2026-10-01
+- Last updated: 2026-10-02
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
 - Current note: F145 is acceptance-complete as the existing Testing Class
@@ -64,9 +64,10 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
   policy, F213's default evaluation selection, and F214's class day-filter
   matching policy, F215's automatic-update startup eligibility, F216's
   skipped-update-version policy, and F217's roster-score import are accepted.
-  F218's Speaking Evaluation class-tab read integration and F219's Schedule
-  Import live-state validation are accepted. F220's Schedule Import plan
-  eligibility policy is selected.
+  F218's Speaking Evaluation class-tab read integration, F219's Schedule
+  Import live-state validation, and F220's Schedule Import plan eligibility
+  policy are accepted. F221's typed Schedule Import current-state snapshot
+  read is selected.
   The prior F123 candidate wording is historical;
   current Teacher Profile integration status is recorded in the progress log.
   Gates 1 and 2
@@ -223,35 +224,29 @@ No new v2 production path depends on DataService, MainWindow, PageManager, or a 
 
 Earlier verified slices and cumulative exit-gate snapshots are archived in the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 
-## Latest progress update - 2026-10-02 (F219 accepted; F220 selected)
+## Latest progress update - 2026-10-02 (F220 accepted; F221 selected)
 
-F219, source commit `57aefadf`, wires Qt-free
-`validateScheduleImportState()` as a live review-readiness preflight after
-review decisions. It preserves status priority, detailed overlap warnings,
-targetless Skip, intensive preservation, and the repository's final apply-time
-check. Dialog tests cover rejecting ambiguous positive-target Skip and
-accepting unique exact Skip and targetless Skip. Independent Application
-state-validation, review-decision, and `ClassMngrScheduleImportTests` passed;
-`git diff --check` passed. No full suite ran.
+F220, source commit `4a87ab1e`, moves Schedule Import plan eligibility into a
+Qt-free Application contract with a feature adapter. It preserves validation
+order, localized errors, and Skip exemptions. Independent focused build/CTest
+passed 2/2: `ClassMngrNextApplicationScheduleImportPlanValidationTests` and
+`ClassMngrScheduleImportTests`. `git diff --check` passed; no full suite ran.
+F220 advances Gate 1; Gate 2 remains Partial.
 
-`ClassMngrScheduleImportDialogTests` has three confirmed pre-existing failures:
-`acceptedReviewCanTearDownSourceDialog`,
-`mismatchedProfileRequiresConfirmation`, and
-`reviewPreviewUsesSavedScheduleDisplaySettings`. F219 produced 21 pass/3 fail;
-a clean archived F218 baseline at `9bb936ee` produced 18 pass/3 fail. These
-are a known gate issue, not F219 regressions; the dialog target is not claimed
-as passing.
-
-F220 is selected: move intrinsic `ScheduleImportPlanValidator` eligibility
-rules into a Qt-free Application contract, retaining the feature validator as
-a Qt adapter that translates values and errors. Preserve exact first-error
-order: intensive mode, diagnostics acknowledgment, review decisions,
-all-candidate basics, then per-candidate meeting-pattern and colors; Skip
-exempts only pattern and color. Keep parsing, presentation, and repository
-apply guards with their current owners. Add app-less target
-`NextApplicationScheduleImportPlanValidation` and retain
-`ClassMngrScheduleImportTests` integration coverage. A typed current-state
-snapshot-read contract remains later work. F219 advances Gate 1; Gate 2
-remains Partial. Phase 2 remains In Progress/Open; Gates 1 and 2 remain
+F221 is selected: add a typed Application query and Platform adapter for the
+live Schedule Import current-state snapshots used by F219 review readiness.
+Migrate only the snapshot source in
+`ScheduleImportReviewDialog::updateReviewState()` to the active-session typed
+read boundary; keep resolution-control and presentation lookups, matching,
+and repository apply-time validation in their current owners. Preserve
+snapshot identity/data semantics and validator/status priority. Return
+structured unavailable/read failures without legacy-service fallback when
+the session is absent/closed or repository reads fail. Acceptance requires
+app-less success/error tests; Platform mapping, read-error, unavailable, and
+closed-session tests; dialog coverage for a fresh preflight snapshot and error
+priority; and continued `ClassMngrScheduleImportTests` apply-time coverage.
+`ClassMngrScheduleImportDialogTests` retains three baseline failures confirmed
+at F218 and F219 (18/3 and 21/3); do not claim that target passes, and compare
+baseline if it is used. Phase 2 remains In Progress/Open; Gates 1 and 2 remain
 Partial. See the [Phase 2 progress log](03-Phase-2-Progress-Log.md) for prior
 slice evidence.

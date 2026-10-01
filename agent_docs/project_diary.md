@@ -1904,4 +1904,14 @@ readiness matches the repository's exact-match rule.
 Give intrinsic plan checks a Qt-free Application contract while keeping legacy
 plan conversion and localized errors at the feature boundary. Preserve the
 validator's existing first-error sequence and keep review-decision validation
-as its own tested contract.
+as its own tested contract. Add a multi-candidate assertion to prove all
+candidate basics are checked before any meeting-pattern or color rule.
+
+## 2026-10-02 - F221 Schedule Import snapshot reads
+
+Use the existing typed schedule-state snapshot as the payload for an
+Application read query and active-session Platform adapter. Keep dialog
+presentation lookups and repository apply-time validation separate. Missing
+sessions and read failures must surface explicitly without falling back to
+legacy services, and the repository remains authoritative if state changes
+after review.

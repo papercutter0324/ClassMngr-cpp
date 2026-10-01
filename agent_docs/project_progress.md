@@ -70,7 +70,7 @@ accepted in source commit `2347739c`; F212 is accepted in source commit
 source commit `9e03e668`; F215 is accepted in source commit `68ef5962`; F216
 is accepted in source commit `23dc6c2b`; F217 is accepted in source commit
 `b587a6d5`; F218 is accepted in source commit `9bb936ee`; F219 is accepted
-in source commit `57aefadf`.
+in source commit `57aefadf`; F220 is accepted in source commit `4a87ab1e`.
 F196 and F197 use
 only the active open session's
 `SettingsRepository` and preserve their keys, conversions, defaults, and
@@ -251,16 +251,25 @@ F218 source baseline `9bb936ee` (18 passed/3 failed); F219 has 21 passed/3
 failed, with all three new Skip tests passing. `git diff --check` passed; no
 full suite ran.
 
-F220 is selected to move intrinsic Schedule Import plan-eligibility policy
-into a Qt-free Application contract, retaining `ScheduleImportPlanValidator`
-as the Qt/domain adapter. Preserve first-error order: intensive mode,
-diagnostics acknowledgment, existing review-decision validation, basic
-validity for every candidate, then per-candidate meeting-pattern and color
-checks; Skip exempts only meeting-pattern and color checks. Add the app-less
-`NextApplicationScheduleImportPlanValidation` target and retain
-`ClassMngrScheduleImportTests` for pre-write integration. This advances Gate 1;
-Gate 2 remains Partial pending baseline-parity evidence. Phase 2 remains In
-Progress/Open. A typed current-state snapshot read remains a later candidate.
+F220 source commit `4a87ab1e` moves intrinsic Schedule Import plan-eligibility
+policy into a Qt-free Application contract, retaining
+`ScheduleImportPlanValidator` as the Qt/domain adapter. It preserves the
+first-error order, exact weekday/color rules, and Skip exemptions; tests include
+multi-candidate basic-check precedence. The app-less eligibility target and
+`ClassMngrScheduleImportTests` passed 2/2; `git diff --check` passed. No full
+suite ran.
+
+F221 is selected to add a typed Application query and Platform adapter for the
+live Schedule Import current-state snapshot used by F219 review readiness.
+Migrate only the snapshot source in `ScheduleImportReviewDialog::updateReviewState()`;
+preserve identity/data semantics and status priority, keep resolution-control
+presentation reads and repository apply-time validation in place, and report
+absent-session/read failures without legacy-service fallback. Cover app-less
+success/error results, active-session Platform mapping and failure behavior,
+dialog preflight integration, and `ClassMngrScheduleImportTests`. The dialog
+target's three baseline failures remain documented from F218/F219 and are not
+claimed as passing. This continues Gate 1; Gate 2 remains Partial. Phase 2
+remains In Progress/Open.
 
 ### Earlier Phase 2 detail - 2026-09-26
 
