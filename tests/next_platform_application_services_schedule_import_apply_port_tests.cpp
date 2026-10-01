@@ -9,64 +9,65 @@ class ScheduleImportApplyPortTests : public QObject
     Q_OBJECT
 
 private slots:
-    void mapsAllPlanFields();
+    void mapsTypedRequestToLegacyPlan();
     void reportsUnavailableService();
     void mapsSummaryAndFailure();
 };
 
-void ScheduleImportApplyPortTests::mapsAllPlanFields()
+void ScheduleImportApplyPortTests::mapsTypedRequestToLegacyPlan()
 {
-    ScheduleImportPlan plan;
-    plan.kind = ScheduleImportKind::Intensive;
-    plan.intensiveMode = ScheduleImportIntensiveMode::ReplaceWithNew;
-    plan.selectedUserName = QStringLiteral("김지원");
-    plan.saveProfileNameIfBlank = true;
-    plan.updateProfileName = true;
-    plan.unknownCellsAcknowledged = true;
-    ScheduleImportClassCandidate candidate;
-    candidate.teacherKey = QStringLiteral("김지원");
-    candidate.teacherKr = QStringLiteral("김지원");
-    candidate.rooms = {QStringLiteral(" 413 ")};
-    candidate.importedColors = {QStringLiteral("#123456")};
-    candidate.classGrade = QStringLiteral("E4");
-    candidate.classLevel = QStringLiteral("Hercules");
-    candidate.times.append({QStringLiteral("Monday"), QStringLiteral("4:00 PM"),
-        QStringLiteral("4:50 PM")});
-    candidate.sourceCells = {QStringLiteral("B12")};
-    candidate.meetingPatternError = QStringLiteral("pattern");
-    plan.candidates.append(candidate);
-    plan.intensiveSlotStates.append({QStringLiteral("Monday"),
-        QStringLiteral("4:00 PM"), QStringLiteral("Occupied")});
-    plan.diagnostics.append({QStringLiteral("Sheet"), QStringLiteral("김지원"),
-        QStringLiteral("B12"), QStringLiteral("?"), QStringLiteral("Ignored")});
-    plan.teachers.append({QStringLiteral("김지원"), ScheduleImportTeacherAction::UpdateRoom,
-        17, QStringLiteral(" 413 ")});
-    plan.classes.append({0, ScheduleImportClassAction::UpdateExisting, 42,
-        QStringLiteral(" #FFFFFF "), QStringLiteral(" #000000 ")});
+    Application::ScheduleImportApplyRequest typed;
+    typed.intensiveSchedule = true;
+    typed.intensiveMode = Application::ScheduleImportPlanIntensiveMode::ReplaceWithNew;
+    typed.selectedUserName = u"\uAE40\uC9C0\uC6D0";
+    typed.saveProfileNameIfBlank = true;
+    typed.updateProfileName = true;
+    typed.diagnosticsAcknowledged = true;
 
-    const auto typed = Platform::scheduleImportApplyRequest(plan);
-    QVERIFY(typed.intensiveSchedule);
-    QCOMPARE(typed.intensiveMode, Application::ScheduleImportPlanIntensiveMode::ReplaceWithNew);
-    QCOMPARE(typed.teachers.at(0).targetTeacherId->value(), std::string("17"));
-    QCOMPARE(typed.classes.at(0).targetClassId->value(), std::string("42"));
-    QCOMPARE(typed.teachers.at(0).selectedRoom, std::u16string(u"413"));
-    QCOMPARE(typed.classes.at(0).classColor, std::u16string(u"#FFFFFF"));
+    Application::ScheduleImportApplyCandidate candidate;
+    candidate.teacherKey = u"\uAE40\uC9C0\uC6D0";
+    candidate.teacherName = u"\uAE40\uC9C0\uC6D0";
+    candidate.rooms = {u"413"};
+    candidate.importedColors = {u"#123456"};
+    candidate.grade = u"E4";
+    candidate.level = u"Hercules";
+    candidate.times.push_back({u"Monday", u"4:00 PM", u"4:50 PM"});
+    candidate.sourceCells = {u"B12"};
+    candidate.meetingPatternError = u"pattern";
+    typed.candidates.push_back(candidate);
+    typed.intensiveSlotStates.push_back({u"Monday", u"4:00 PM", u"Occupied"});
+    typed.diagnostics.push_back({u"Sheet", u"\uAE40\uC9C0\uC6D0", u"B12", u"?", u"Ignored"});
+    typed.teachers.push_back({
+        u"\uAE40\uC9C0\uC6D0",
+        Application::ScheduleImportReviewTeacherAction::UpdateRoom,
+        Domain::TeacherId::fromString("17"),
+        u"413"
+    });
+    typed.classes.push_back({
+        0,
+        Application::ScheduleImportReviewClassAction::UpdateExisting,
+        Domain::ClassId::fromString("42"),
+        u"#FFFFFF",
+        u"#000000"
+    });
 
     const auto restored = Platform::legacyScheduleImportPlan(typed);
-    QCOMPARE(restored.kind, plan.kind);
-    QCOMPARE(restored.intensiveMode, plan.intensiveMode);
-    QCOMPARE(restored.selectedUserName, plan.selectedUserName);
+    QCOMPARE(restored.kind, ScheduleImportKind::Intensive);
+    QCOMPARE(restored.intensiveMode, ScheduleImportIntensiveMode::ReplaceWithNew);
+    QCOMPARE(restored.selectedUserName, QString::fromStdU16String(typed.selectedUserName));
     QVERIFY(restored.saveProfileNameIfBlank && restored.updateProfileName
         && restored.unknownCellsAcknowledged);
-    QCOMPARE(restored.candidates.at(0).teacherKr, candidate.teacherKr);
+    QCOMPARE(restored.candidates.at(0).teacherKr,
+        QString::fromStdU16String(candidate.teacherName));
     QCOMPARE(restored.candidates.at(0).rooms.at(0), QStringLiteral("413"));
-    QCOMPARE(restored.candidates.at(0).importedColors, candidate.importedColors);
+    QCOMPARE(restored.candidates.at(0).importedColors.at(0), QStringLiteral("#123456"));
     QCOMPARE(restored.candidates.at(0).times.at(0).startTime,
-        candidate.times.at(0).startTime);
-    QCOMPARE(restored.candidates.at(0).sourceCells, candidate.sourceCells);
-    QCOMPARE(restored.candidates.at(0).meetingPatternError, candidate.meetingPatternError);
+        QStringLiteral("4:00 PM"));
+    QCOMPARE(restored.candidates.at(0).sourceCells.at(0), QStringLiteral("B12"));
+    QCOMPARE(restored.candidates.at(0).meetingPatternError, QStringLiteral("pattern"));
     QCOMPARE(restored.intensiveSlotStates.at(0).state, QStringLiteral("Occupied"));
-    QCOMPARE(restored.diagnostics.at(0).userName, QStringLiteral("김지원"));
+    QCOMPARE(restored.diagnostics.at(0).userName,
+        QString::fromStdU16String(u"\uAE40\uC9C0\uC6D0"));
     QCOMPARE(restored.teachers.at(0).action, ScheduleImportTeacherAction::UpdateRoom);
     QCOMPARE(restored.teachers.at(0).targetTeacherId, 17);
     QCOMPARE(restored.classes.at(0).action, ScheduleImportClassAction::UpdateExisting);

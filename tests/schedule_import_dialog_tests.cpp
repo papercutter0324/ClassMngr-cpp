@@ -7,6 +7,8 @@
 #include "features/schedule/ui/schedule_import_dialog.h"
 #include "features/schedule/ui/schedule_import_review_dialog.h"
 #include "features/schedule/ui/schedule_widget.h"
+#include "features/schedule/services/schedule_import_plan_validator.h"
+#include "features/schedule/services/schedule_import_review_model.h"
 #include "features/schedule/import/schedule_workbook_parser.h"
 #include "features/teacher/import/teacher_import_name_utils.h"
 #include "next/application/schedule_import_review_summary_projection.h"
@@ -74,6 +76,7 @@ void setScheduleClassInfoReadFailure(bool fail);
 extern int legacyClassInfoReadCount;
 extern int scheduleImportPreviewCallCount;
 extern int scheduleImportApplyCallCount;
+extern ScheduleImportPlan lastScheduleImportPlan;
 extern QString scheduleImportApplyFailure;
 }
 
@@ -119,6 +122,8 @@ private slots:
     void suppliedWorkbookBuildsStagedReview();
     void permanentConflictWorkbookPresentsReviewWarning();
     void applyUsesConfirmationAndReportsServiceOutcome();
+    void policyFailureMessageRetainsLegacyText();
+    void reviewModelBuildsTypedApplyRequest();
 };
 
 namespace
@@ -2598,6 +2603,7 @@ reviewPrepareSnapshotFailureDoesNotBuildControlsOrFallback()
     candidate.teacherKey = QStringLiteral("\uAE40\uC120\uC0DD");
     candidate.teacherKr = QStringLiteral("\uAE40\uC120\uC0DD");
     candidate.rooms = {QStringLiteral("413")};
+    candidate.importedColors = {QStringLiteral("#123456")};
     candidate.classGrade = QStringLiteral("E4");
     candidate.classLevel = QStringLiteral("Hercules");
     candidate.times = {
@@ -3977,18 +3983,135 @@ void ScheduleImportDialogTests::applyUsesConfirmationAndReportsServiceOutcome()
     prompts.scriptedChoices.enqueue(PromptChoice::Accepted);
     apply->click();
     QCOMPARE(ScheduleWidgetTestStubs::scheduleImportApplyCallCount, 1);
+    QCOMPARE(prompts.confirmations.size(), 2);
     QCOMPARE(prompts.messages.size(), 1);
     QCOMPARE(prompts.messages.constLast().message, QStringLiteral("injected write failure"));
+    const ScheduleImportPlan& appliedPlan =
+        ScheduleWidgetTestStubs::lastScheduleImportPlan;
+    QCOMPARE(appliedPlan.kind, ScheduleImportKind::Normal);
+    QCOMPARE(appliedPlan.selectedUserName, QStringLiteral("Alice"));
+    QVERIFY(appliedPlan.saveProfileNameIfBlank);
+    QCOMPARE(appliedPlan.candidates.size(), 1);
+    QCOMPARE(appliedPlan.candidates.first().teacherKey, candidate.teacherKey);
+    QCOMPARE(appliedPlan.candidates.first().teacherKr, candidate.teacherKr);
+    QCOMPARE(appliedPlan.candidates.first().rooms, candidate.rooms);
+    QCOMPARE(appliedPlan.candidates.first().importedColors, candidate.importedColors);
+    QCOMPARE(appliedPlan.candidates.first().classGrade, candidate.classGrade);
+    QCOMPARE(appliedPlan.candidates.first().classLevel, candidate.classLevel);
+    QCOMPARE(appliedPlan.candidates.first().sourceCells, candidate.sourceCells);
+    QCOMPARE(appliedPlan.candidates.first().times.size(), candidate.times.size());
+    QCOMPARE(appliedPlan.candidates.first().times.at(0).day, QStringLiteral("Monday"));
+    QCOMPARE(appliedPlan.candidates.first().times.at(0).startTime, QStringLiteral("4:00 PM"));
+    QCOMPARE(appliedPlan.candidates.first().times.at(0).endTime, QStringLiteral("4:50 PM"));
+    QCOMPARE(appliedPlan.candidates.first().times.at(1).day, QStringLiteral("Wednesday"));
+    QCOMPARE(appliedPlan.teachers.size(), 1);
+    QCOMPARE(appliedPlan.teachers.first().action, ScheduleImportTeacherAction::Reuse);
+    QCOMPARE(appliedPlan.teachers.first().targetTeacherId, 7);
+    QCOMPARE(appliedPlan.teachers.first().selectedRoom, QStringLiteral("413"));
+    QCOMPARE(appliedPlan.classes.size(), 1);
+    QCOMPARE(appliedPlan.classes.first().candidateIndex, 0);
+    QCOMPARE(appliedPlan.classes.first().action, ScheduleImportClassAction::CreateNew);
+    QCOMPARE(appliedPlan.classes.first().targetClassId, -1);
     QCOMPARE(review.result(), 0);
 
     ScheduleWidgetTestStubs::scheduleImportApplyFailure.clear();
     prompts.scriptedChoices.enqueue(PromptChoice::Accepted);
     apply->click();
     QCOMPARE(ScheduleWidgetTestStubs::scheduleImportApplyCallCount, 2);
+    QCOMPARE(prompts.confirmations.size(), 3);
     QCOMPARE(prompts.messages.size(), 2);
     QVERIFY(prompts.messages.constLast().message.contains(
         QStringLiteral("Schedule imported successfully.")));
     QCOMPARE(review.result(), static_cast<int>(QDialog::Accepted));
+}
+
+void ScheduleImportDialogTests::policyFailureMessageRetainsLegacyText()
+{
+    ScheduleImportPlan legacyPlan;
+    legacyPlan.diagnostics.append(ScheduleImportDiagnostic{});
+    const auto legacyValidation = ScheduleImportPlanValidator::validate(legacyPlan);
+    QVERIFY(!legacyValidation);
+
+    ImportState::ScheduleImportApplyRequest request;
+    request.diagnostics.push_back({});
+    const ImportState::ScheduleImportPlanEligibilityIssue issue{
+        ImportState::ScheduleImportPlanEligibilityIssueCode::UnacknowledgedDiagnostics
+    };
+    QCOMPARE(
+        ScheduleImportPlanValidator::policyFailureMessage(request, issue),
+        legacyValidation.error()
+        );
+}
+
+void ScheduleImportDialogTests::reviewModelBuildsTypedApplyRequest()
+{
+    ScheduleImportReviewContext context;
+    context.kind = ScheduleImportKind::Intensive;
+    context.intensiveMode = ScheduleImportIntensiveMode::ReplaceWithNew;
+    context.selectedUserName = QStringLiteral("Alice");
+    context.saveProfileNameIfBlank = true;
+    context.updateProfileName = true;
+    context.unknownCellsAcknowledged = true;
+    ScheduleImportClassCandidate candidate;
+    candidate.teacherKey = QStringLiteral("Kim");
+    candidate.teacherKr = QStringLiteral("Kim");
+    candidate.rooms = {QStringLiteral(" 413 ")};
+    candidate.importedColors = {QStringLiteral("#123456")};
+    candidate.classGrade = QStringLiteral("E4");
+    candidate.classLevel = QStringLiteral("Hercules");
+    candidate.times = {{QStringLiteral("Monday"), QStringLiteral("4:00 PM"),
+        QStringLiteral("4:50 PM")}};
+    candidate.sourceCells = {QStringLiteral("B12")};
+    candidate.meetingPatternError = QStringLiteral("pattern");
+    context.candidates = {candidate};
+    context.intensiveSlotStates = {{QStringLiteral("Tuesday"),
+        QStringLiteral("5:00 PM"), QStringLiteral("Occupied")}};
+    context.diagnostics = {{QStringLiteral("Sheet"), QStringLiteral("Alice"),
+        QStringLiteral("B12"), QStringLiteral("?"), QStringLiteral("Ignored")}};
+
+    QList<ScheduleImportTeacherResolution> teachers{{
+        QStringLiteral("Kim"), ScheduleImportTeacherAction::UpdateRoom, 17,
+        QStringLiteral(" 413 ")
+    }};
+    QList<ScheduleImportClassResolution> classes{{
+        0, ScheduleImportClassAction::UpdateExisting, 42,
+        QStringLiteral(" #FFFFFF "), QStringLiteral(" #000000 ")
+    }};
+
+    const auto request = ScheduleImportReviewModel::buildApplyRequest(
+        context, teachers, classes);
+    QVERIFY(request.intensiveSchedule);
+    QCOMPARE(request.intensiveMode,
+        ImportState::ScheduleImportPlanIntensiveMode::ReplaceWithNew);
+    QCOMPARE(request.selectedUserName, std::u16string(u"Alice"));
+    QVERIFY(request.saveProfileNameIfBlank && request.updateProfileName
+        && request.diagnosticsAcknowledged);
+    QCOMPARE(request.candidates.size(), std::size_t(1));
+    QCOMPARE(request.candidates.at(0).teacherKey, std::u16string(u"Kim"));
+    QCOMPARE(request.candidates.at(0).teacherName, std::u16string(u"Kim"));
+    QCOMPARE(request.candidates.at(0).rooms.at(0), std::u16string(u"413"));
+    QCOMPARE(request.candidates.at(0).importedColors.at(0),
+        std::u16string(u"#123456"));
+    QCOMPARE(request.candidates.at(0).grade, std::u16string(u"E4"));
+    QCOMPARE(request.candidates.at(0).level, std::u16string(u"Hercules"));
+    QCOMPARE(request.candidates.at(0).times.at(0).day, std::u16string(u"Monday"));
+    QCOMPARE(request.candidates.at(0).times.at(0).startTime,
+        std::u16string(u"4:00 PM"));
+    QCOMPARE(request.candidates.at(0).sourceCells.at(0), std::u16string(u"B12"));
+    QCOMPARE(request.candidates.at(0).meetingPatternError, std::u16string(u"pattern"));
+    QCOMPARE(request.intensiveSlotStates.at(0).day, std::u16string(u"Tuesday"));
+    QCOMPARE(request.diagnostics.at(0).cellReference, std::u16string(u"B12"));
+    QCOMPARE(request.teachers.at(0).action,
+        ImportState::ScheduleImportReviewTeacherAction::UpdateRoom);
+    QVERIFY(request.teachers.at(0).targetTeacherId.has_value());
+    QCOMPARE(request.teachers.at(0).targetTeacherId->value(), std::string("17"));
+    QCOMPARE(request.teachers.at(0).selectedRoom, std::u16string(u"413"));
+    QCOMPARE(request.classes.at(0).action,
+        ImportState::ScheduleImportReviewClassAction::UpdateExisting);
+    QVERIFY(request.classes.at(0).targetClassId.has_value());
+    QCOMPARE(request.classes.at(0).targetClassId->value(), std::string("42"));
+    QCOMPARE(request.classes.at(0).classColor, std::u16string(u"#FFFFFF"));
+    QCOMPARE(request.classes.at(0).fontColor, std::u16string(u"#000000"));
 }
 
 QTEST_MAIN(ScheduleImportDialogTests)

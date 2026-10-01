@@ -12,6 +12,7 @@
 #include <optional>
 #include <set>
 #include <string>
+#include <utility>
 
 namespace
 {
@@ -31,6 +32,10 @@ using ClassMngr::Next::Application::
     ScheduleImportReviewTeacherResolution;
 using ClassMngr::Next::Application::ScheduleImportPlanEligibilityIssue;
 using ClassMngr::Next::Application::ScheduleImportPlanEligibilityIssueCode;
+using ClassMngr::Next::Application::ScheduleImportPlanEligibilityRequest;
+using ClassMngr::Next::Application::ScheduleImportApplyRequest;
+using ClassMngr::Next::Application::ScheduleImportPlanEligibilityCandidate;
+using ClassMngr::Next::Application::ScheduleImportReviewDecisionCandidate;
 using ClassMngr::Next::Domain::Course;
 using ClassMngr::Next::Domain::Weekday;
 
@@ -237,6 +242,116 @@ QString decisionFailure(
         "Every imported teacher requires a matching resolution."
         );
 }
+
+ScheduleImportPlanEligibilityRequest eligibilityRequest(
+    const ScheduleImportApplyRequest& applyRequest
+    )
+{
+    ScheduleImportPlanEligibilityRequest request;
+    request.intensiveSchedule = applyRequest.intensiveSchedule;
+    request.intensiveMode = applyRequest.intensiveMode;
+    request.hasDiagnostics = !applyRequest.diagnostics.empty();
+    request.diagnosticsAcknowledged = applyRequest.diagnosticsAcknowledged;
+
+    for (const auto& candidate : applyRequest.candidates)
+    {
+        ScheduleImportPlanEligibilityCandidate item;
+        item.grade =
+            QString::fromStdU16String(candidate.grade).toStdString();
+        item.level =
+            QString::fromStdU16String(candidate.level).toStdString();
+        item.teacherKey = candidate.teacherKey;
+        item.teacherName = candidate.teacherName;
+        for (const auto& time : candidate.times)
+        {
+            item.weekdays.push_back(
+                QString::fromStdU16String(time.day).toStdString()
+                );
+        }
+        request.candidates.push_back(std::move(item));
+
+        ScheduleImportReviewDecisionCandidate decisionCandidate;
+        decisionCandidate.teacherKey =
+            QString::fromStdU16String(candidate.teacherKey).toStdString();
+        for (const auto& room : candidate.rooms)
+        {
+            const std::string value =
+                QString::fromStdU16String(room).toStdString();
+            if (!value.empty())
+            {
+                decisionCandidate.importedRooms.push_back(value);
+            }
+        }
+        request.reviewDecisions.candidates.push_back(std::move(decisionCandidate));
+    }
+    for (const auto& teacher : applyRequest.teachers)
+    {
+        request.reviewDecisions.teachers.push_back({
+            QString::fromStdU16String(teacher.teacherKey).toStdString(),
+            teacher.action,
+            QString::fromStdU16String(teacher.selectedRoom).toStdString()
+        });
+    }
+    for (const auto& candidateClass : applyRequest.classes)
+    {
+        request.reviewDecisions.classes.push_back({
+            candidateClass.candidateIndex,
+            candidateClass.action,
+            candidateClass.targetClassId
+        });
+        request.classColors.push_back({
+            candidateClass.candidateIndex,
+            QString::fromStdU16String(candidateClass.classColor)
+                .trimmed()
+                .toStdString(),
+            QString::fromStdU16String(candidateClass.fontColor)
+                .trimmed()
+                .toStdString()
+        });
+    }
+    return request;
+}
+
+QString formatPolicyIssue(
+    const ScheduleImportPlanEligibilityIssue& issue,
+    const ScheduleImportPlanEligibilityRequest& request,
+    const QString& grade,
+    const QString& level
+    )
+{
+    using IssueCode = ScheduleImportPlanEligibilityIssueCode;
+    switch (issue.code)
+    {
+    case IssueCode::InvalidIntensiveMode:
+        return QObject::tr(
+            "Choose how the existing intensive schedule should be handled."
+            );
+    case IssueCode::UnacknowledgedDiagnostics:
+        return QObject::tr(
+            "Unrecognized timetable cells must be acknowledged before importing."
+            );
+    case IssueCode::InvalidReviewDecision:
+        return issue.reviewDecisionIssue.has_value()
+            ? decisionFailure(
+                *issue.reviewDecisionIssue,
+                request.reviewDecisions
+                )
+            : QObject::tr("The import plan contains an invalid resolution.");
+    case IssueCode::InvalidCourse:
+    case IssueCode::InvalidTeacherKey:
+    case IssueCode::MissingMeetingTimes:
+        return QObject::tr("The import contains an invalid class.");
+    case IssueCode::InvalidMeetingWeekday:
+    case IssueCode::InvalidMeetingPattern:
+        return QObject::tr("The meeting pattern for %1 %2 is invalid: %3")
+            .arg(grade, level, meetingPatternFailure(issue));
+    case IssueCode::InvalidClassColor:
+        return QObject::tr(
+            "Choose a valid class color for every imported class."
+            );
+    }
+    return QObject::tr("The import plan contains an invalid resolution.");
+}
 }
 
 Result<ValidatedScheduleImportPlan> ScheduleImportPlanValidator::validate(
@@ -352,56 +467,18 @@ Result<ValidatedScheduleImportPlan> ScheduleImportPlanValidator::validate(
             );
     if (issue.has_value())
     {
-        using IssueCode = ScheduleImportPlanEligibilityIssueCode;
-        QString error;
-        switch (issue->code)
-        {
-        case IssueCode::InvalidIntensiveMode:
-            error = QObject::tr(
-                "Choose how the existing intensive schedule should be handled."
-                );
-            break;
-        case IssueCode::UnacknowledgedDiagnostics:
-            error = QObject::tr(
-                "Unrecognized timetable cells must be acknowledged before importing."
-                );
-            break;
-        case IssueCode::InvalidReviewDecision:
-            error = issue->reviewDecisionIssue.has_value()
-                ? decisionFailure(
-                    *issue->reviewDecisionIssue,
-                    request.reviewDecisions
-                    )
-                : QObject::tr(
-                    "The import plan contains an invalid resolution."
-                    );
-            break;
-        case IssueCode::InvalidCourse:
-        case IssueCode::InvalidTeacherKey:
-        case IssueCode::MissingMeetingTimes:
-            error = QObject::tr("The import contains an invalid class.");
-            break;
-        case IssueCode::InvalidMeetingWeekday:
-        case IssueCode::InvalidMeetingPattern:
-            error = QObject::tr(
-                "The meeting pattern for %1 %2 is invalid: %3"
-                )
-                .arg(
-                    plan.candidates[static_cast<qsizetype>(issue->candidateIndex)]
-                        .classGrade,
-                    plan.candidates[static_cast<qsizetype>(issue->candidateIndex)]
-                        .classLevel,
-                    meetingPatternFailure(*issue)
-                    );
-            break;
-        case IssueCode::InvalidClassColor:
-            error = QObject::tr(
-                "Choose a valid class color for every imported class."
-                );
-            break;
-        }
+        const qsizetype candidateIndex =
+            static_cast<qsizetype>(issue->candidateIndex);
+        const QString grade = candidateIndex >= 0
+                && candidateIndex < plan.candidates.size()
+            ? plan.candidates[candidateIndex].classGrade
+            : QString();
+        const QString level = candidateIndex >= 0
+                && candidateIndex < plan.candidates.size()
+            ? plan.candidates[candidateIndex].classLevel
+            : QString();
         return std::unexpected(
-            error
+            formatPolicyIssue(*issue, request, grade, level)
             );
     }
 
@@ -422,4 +499,21 @@ Result<ValidatedScheduleImportPlan> ScheduleImportPlanValidator::validate(
     }
 
     return validated;
+}
+
+QString ScheduleImportPlanValidator::policyFailureMessage(
+    const ClassMngr::Next::Application::ScheduleImportApplyRequest& request,
+    const ClassMngr::Next::Application::ScheduleImportPlanEligibilityIssue& issue
+    )
+{
+    const ScheduleImportPlanEligibilityRequest policy =
+        eligibilityRequest(request);
+    const std::size_t candidateIndex = issue.candidateIndex;
+    const QString grade = candidateIndex < request.candidates.size()
+        ? QString::fromStdU16String(request.candidates[candidateIndex].grade)
+        : QString();
+    const QString level = candidateIndex < request.candidates.size()
+        ? QString::fromStdU16String(request.candidates[candidateIndex].level)
+        : QString();
+    return formatPolicyIssue(issue, policy, grade, level);
 }

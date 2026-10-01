@@ -2313,8 +2313,7 @@ void ScheduleImportReviewDialog::applyImport()
         return;
     }
 
-    const ScheduleImportPlan plan =
-        importPlan();
+    const auto request = applyRequest();
     const QString confirmation =
         m_reviewSummary->text()
         + QStringLiteral("\n\n")
@@ -2343,17 +2342,17 @@ void ScheduleImportReviewDialog::applyImport()
         writePort(m_services);
     const auto summary =
         ClassMngr::Next::Application::ScheduleImportApplyUseCase::execute(
-            ClassMngr::Next::Platform::scheduleImportApplyRequest(plan),
+            request,
             writePort);
 
     if (!summary)
     {
         QString error = QString::fromStdU16String(summary.error().message);
         if (summary.error().policyIssue)
-        {
-            const auto legacyValidation = ScheduleImportPlanValidator::validate(plan);
-            if (!legacyValidation) error = legacyValidation.error();
-        }
+            error = ScheduleImportPlanValidator::policyFailureMessage(
+                request,
+                *summary.error().policyIssue
+                );
         DialogServices::showWarning(
             this,
             tr("Import Schedule"),
@@ -2399,7 +2398,8 @@ void ScheduleImportReviewDialog::applyImport()
     accept();
 }
 
-ScheduleImportPlan ScheduleImportReviewDialog::importPlan() const
+ClassMngr::Next::Application::ScheduleImportApplyRequest
+ScheduleImportReviewDialog::applyRequest() const
 {
     ScheduleImportReviewContext context;
     context.kind = m_request.kind;
@@ -2470,7 +2470,7 @@ ScheduleImportPlan ScheduleImportReviewDialog::importPlan() const
         classes.append(resolution);
     }
 
-    return ScheduleImportReviewModel::buildPlan(
+    return ScheduleImportReviewModel::buildApplyRequest(
         context,
         teachers,
         classes

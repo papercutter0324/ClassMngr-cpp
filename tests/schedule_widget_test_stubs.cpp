@@ -101,6 +101,7 @@ int repositoryClassListReadCount = 0;
 int legacyClassInfoReadCount = 0;
 int scheduleImportPreviewCallCount = 0;
 int scheduleImportApplyCallCount = 0;
+ScheduleImportPlan lastScheduleImportPlan;
 QString scheduleImportApplyFailure;
 bool selectedClassGradeReadFailure = false;
 int selectedClassSubtitleReadCount = 0;
@@ -208,6 +209,7 @@ void reset()
     legacyClassInfoReadCount = 0;
     scheduleImportPreviewCallCount = 0;
     scheduleImportApplyCallCount = 0;
+    lastScheduleImportPlan = {};
     scheduleImportApplyFailure.clear();
     selectedClassGradeReadFailure = false;
     selectedClassSubtitleReadCount = 0;
@@ -1243,6 +1245,7 @@ Result<ScheduleImportSummary> DataService::importSchedule(
     )
 {
     ++ScheduleWidgetTestStubs::scheduleImportApplyCallCount;
+    ScheduleWidgetTestStubs::lastScheduleImportPlan = plan;
     if (!ScheduleWidgetTestStubs::scheduleImportApplyFailure.isEmpty())
     {
         return std::unexpected(ScheduleWidgetTestStubs::scheduleImportApplyFailure);

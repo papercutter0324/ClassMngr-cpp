@@ -3,6 +3,7 @@
 #include "domain/models/schedule_import.h"
 #include "features/schedule/ui/schedule_import_dialog_shared.h"
 #include "features/schedule/ui/schedule_import_resolution_controls.h"
+#include "next/application/schedule_import_apply_use_case.h"
 #include "ui/shared/dialogs/dialog_shell.h"
 
 #include <QList>
@@ -62,7 +63,8 @@ protected:
         QResizeEvent* event
         ) override;
 
-    [[nodiscard]] ScheduleImportPlan importPlan() const;
+    [[nodiscard]] ClassMngr::Next::Application::ScheduleImportApplyRequest
+    applyRequest() const;
 
     ApplicationServices* m_services = nullptr;
     ScheduleImportReviewRequest m_request;

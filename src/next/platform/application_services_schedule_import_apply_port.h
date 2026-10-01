@@ -7,15 +7,12 @@
 
 #include <QString>
 #include <charconv>
+#include <optional>
+#include <string>
+#include <utility>
 
 namespace ClassMngr::Next::Platform
 {
-
-template <typename Id>
-[[nodiscard]] inline std::optional<Id> applyId(int value)
-{
-    return value > 0 ? Id::fromString(std::to_string(value)) : std::nullopt;
-}
 
 template <typename Id>
 [[nodiscard]] inline int legacyApplyId(const std::optional<Id>& value)
@@ -26,33 +23,6 @@ template <typename Id>
     const auto [end, error] = std::from_chars(text.data(), text.data() + text.size(), parsed);
     return error == std::errc{} && end == text.data() + text.size() && parsed > 0
         ? parsed : -1;
-}
-
-[[nodiscard]] inline Application::ScheduleImportReviewTeacherAction applyTeacherAction(
-    ScheduleImportTeacherAction action)
-{
-    using Action = Application::ScheduleImportReviewTeacherAction;
-    switch (action)
-    {
-    case ScheduleImportTeacherAction::Reuse: return Action::Reuse;
-    case ScheduleImportTeacherAction::UpdateRoom: return Action::UpdateRoom;
-    case ScheduleImportTeacherAction::Create: return Action::Create;
-    case ScheduleImportTeacherAction::Skip: return Action::Skip;
-    }
-    return Action::Invalid;
-}
-
-[[nodiscard]] inline Application::ScheduleImportReviewClassAction applyClassAction(
-    ScheduleImportClassAction action)
-{
-    using Action = Application::ScheduleImportReviewClassAction;
-    switch (action)
-    {
-    case ScheduleImportClassAction::UpdateExisting: return Action::UpdateExisting;
-    case ScheduleImportClassAction::CreateNew: return Action::CreateNew;
-    case ScheduleImportClassAction::Skip: return Action::Skip;
-    }
-    return Action::Invalid;
 }
 
 [[nodiscard]] inline ScheduleImportTeacherAction legacyTeacherAction(
@@ -76,67 +46,6 @@ template <typename Id>
     case Application::ScheduleImportReviewClassAction::Skip: return ScheduleImportClassAction::Skip;
     default: return ScheduleImportClassAction::CreateNew;
     }
-}
-
-[[nodiscard]] inline Application::ScheduleImportApplyRequest
-scheduleImportApplyRequest(const ScheduleImportPlan& plan)
-{
-    using namespace Application;
-    ScheduleImportApplyRequest request;
-    request.intensiveSchedule = plan.kind == ScheduleImportKind::Intensive;
-    request.intensiveMode = plan.intensiveMode == ScheduleImportIntensiveMode::ReplaceWithNew
-        ? ScheduleImportPlanIntensiveMode::ReplaceWithNew
-        : ScheduleImportPlanIntensiveMode::UpdateExisting;
-    request.selectedUserName = plan.selectedUserName.toStdU16String();
-    request.saveProfileNameIfBlank = plan.saveProfileNameIfBlank;
-    request.updateProfileName = plan.updateProfileName;
-    request.diagnosticsAcknowledged = plan.unknownCellsAcknowledged;
-    for (const auto& candidate : plan.candidates)
-    {
-        ScheduleImportApplyCandidate item;
-        item.teacherKey = candidate.teacherKey.toStdU16String();
-        item.teacherName = candidate.teacherKr.toStdU16String();
-        for (const auto& room : candidate.rooms) item.rooms.push_back(room.trimmed().toStdU16String());
-        for (const auto& color : candidate.importedColors) item.importedColors.push_back(color.toStdU16String());
-        item.grade = candidate.classGrade.toStdU16String();
-        item.level = candidate.classLevel.toStdU16String();
-        for (const auto& time : candidate.times)
-        {
-            item.times.push_back({time.day.toStdU16String(),
-                                  time.startTime.toStdU16String(),
-                                  time.endTime.toStdU16String()});
-        }
-        for (const auto& cell : candidate.sourceCells) item.sourceCells.push_back(cell.toStdU16String());
-        item.meetingPatternError = candidate.meetingPatternError.toStdU16String();
-        request.candidates.push_back(std::move(item));
-    }
-    for (const auto& slot : plan.intensiveSlotStates)
-    {
-        request.intensiveSlotStates.push_back({slot.day.toStdU16String(),
-            slot.startTime.toStdU16String(), slot.state.toStdU16String()});
-    }
-    for (const auto& diagnostic : plan.diagnostics)
-    {
-        request.diagnostics.push_back({diagnostic.sheetName.toStdU16String(),
-            diagnostic.userName.toStdU16String(), diagnostic.cellReference.toStdU16String(),
-            diagnostic.value.toStdU16String(), diagnostic.message.toStdU16String()});
-    }
-    for (const auto& teacher : plan.teachers)
-    {
-        request.teachers.push_back({teacher.teacherKey.toStdU16String(),
-            applyTeacherAction(teacher.action),
-            applyId<Domain::TeacherId>(teacher.targetTeacherId),
-            teacher.selectedRoom.trimmed().toStdU16String()});
-    }
-    for (const auto& candidateClass : plan.classes)
-    {
-        request.classes.push_back({candidateClass.candidateIndex,
-            applyClassAction(candidateClass.action),
-            applyId<Domain::ClassId>(candidateClass.targetClassId),
-            candidateClass.classColor.trimmed().toStdU16String(),
-            candidateClass.fontColor.trimmed().toStdU16String()});
-    }
-    return request;
 }
 
 [[nodiscard]] inline ScheduleImportPlan legacyScheduleImportPlan(

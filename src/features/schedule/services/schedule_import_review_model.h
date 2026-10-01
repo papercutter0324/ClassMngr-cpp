@@ -1,6 +1,7 @@
 #pragma once
 
 #include "domain/models/schedule_import.h"
+#include "next/application/schedule_import_apply_use_case.h"
 
 struct ScheduleImportReviewContext
 {
@@ -19,7 +20,8 @@ struct ScheduleImportReviewContext
 class ScheduleImportReviewModel final
 {
 public:
-    [[nodiscard]] static ScheduleImportPlan buildPlan(
+    [[nodiscard]] static ClassMngr::Next::Application::ScheduleImportApplyRequest
+    buildApplyRequest(
         const ScheduleImportReviewContext& context,
         const QList<ScheduleImportTeacherResolution>& teachers,
         const QList<ScheduleImportClassResolution>& classes
