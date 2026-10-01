@@ -1705,3 +1705,12 @@ Preserve the selected schedule scope, teacher caching/order, missing-teacher
 omission, and count-zero fallback only for roster-count failures. F179 moves the
 larger roster-output source; pass the remaining row, cell, and text-byte budgets
 to the repository and keep failed reads from returning a partial package.
+
+## 2026-10-01 - F196 Current Campus preference adapter
+
+When a `DataService` object remains available after its database session closes,
+test the v2 adapter against the session itself and verify it does not fall back
+through the compatibility facade. Keep each preference adapter's own defaults,
+coercion, and error behavior while migrating persistence to
+`SettingsRepository`; do not broaden a one-key preference slice into the
+separate aggregate Personal Details writer.

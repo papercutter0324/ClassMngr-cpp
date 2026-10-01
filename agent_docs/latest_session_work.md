@@ -4186,7 +4186,7 @@ Keep class/teacher read failures distinct from roster-count fallback and avoid a
 four exist in the retained `build/f168` target list. The workflow fix remains
 with the other worker. No push was requested.
 
-## 2026-10-01 - F178 accepted; F179 selected
+## Previous handoff - 2026-10-01 (F178 accepted; F179 selected)
 
 F178 source commit `afeab035` migrates
 `ApplicationServicesSubPrepPrintSourcePort` to direct class-info, teacher, and
@@ -4210,3 +4210,27 @@ output, and no `DataService` fallback is allowed. Focused targets are
 `ClassMngrSubPrepPackageServiceTests`, and `ClassMngrSubPrepPageTests`; all four
 exist in the retained `build/f168` target list. The workflow repair remains
 with the other worker. No push was requested.
+
+## 2026-10-01 - F196 accepted; F197 selected
+
+F196 source commit `b9f0a07d` moves
+`ApplicationServicesCurrentCampusPreferencesPort` to the active session's
+`SettingsRepository`. It preserves the exact `myInfo/campus` key, verbatim
+UTF-8 and QVariant conversion, availability, empty reads/no-op writes for
+unavailable or closed sessions, Technical write errors, and unrelated
+settings. The focused suite has nine substantive slots; the Executor passed
+all nine and the independent registered CTest passed 1/1. The Tester verified
+closed-session no-fallback while `DataService` remains present, repository
+read-error empty behavior, and no service references in the adapter. The
+initialized MSVC rebuild succeeded and `git diff --check` passed. No full
+suite ran.
+
+Two independent Explorer lanes proposed next-slice options. F197 is selected
+for the smaller typed `ApplicationServicesMiddleSchoolAnalyticsPreferencesPort`
+boundary, continuing the preference-port sequence. Preserve its exact key,
+`QVariant::toBool()`, missing/invalid false fallback and default-materializing
+attempt, unavailable/closed behavior, and existing callers. Add explicit
+closed-session no-fallback coverage. Target:
+`ClassMngrNextPlatformApplicationServicesMiddleSchoolAnalyticsPreferencesPortTests`.
+Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial. Next: implement
+F197, then independently verify and commit it before selecting F198.

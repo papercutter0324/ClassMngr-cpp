@@ -52,8 +52,9 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
   Calendar Event save port, F184's Calendar Event delete port, F185's
   Calendar Event delete-all port, F186's repeat-series suffix-delete port,
   F187's Calendar Event Import save port, F188's repeat-series creation port,
-  and F189's repeat-series edit port are accepted. F190 is selected for the
-  Calendar Event display-preferences port.
+  and F189's repeat-series edit port are accepted. F190-F196's preference
+  ports are accepted; F197 is selected for the Middle School Analytics
+  visibility preference.
   The prior F123 candidate wording is historical;
   current Teacher Profile integration status is recorded in the progress log.
   Gates 1 and 2
@@ -1136,18 +1137,27 @@ are unchanged. Two Explorer lanes differed, with one suggesting Current
 Campus; Schedule display mode was selected after comparing scans for
 continuity with F194 and existing focused migration coverage.
 
-## F196 selected Current Campus preferences port
+## F196 accepted Current Campus preferences port
 
-Migrate `ApplicationServicesCurrentCampusPreferencesPort` in
-`src/next/platform/application_services_current_campus_preferences_port.h`
-to use only the active open session's `SettingsRepository`, with focused tests in
-`tests/next_platform_application_services_current_campus_preferences_port_tests.cpp`
-and registered target
-`NextPlatformApplicationServicesCurrentCampusPreferencesPort`. Preserve exact
-key `myInfo/campus`, UTF-8/verbatim and `QVariant::toString()` behavior,
-`isAvailable()`, empty reads and successful no-op writes when unavailable or
-closed, Technical write-error mapping, and unrelated settings. Add
-closed-session-with-`DataService` no-fallback and read-error empty coverage.
-Leave the Personal Details aggregate writer and callers and generic/sessionless
-`SettingsService` unchanged. Two independent Explorer lanes agreed. Phase 2
-remains In Progress/Open; Gates 1 and 2 remain Partial.
+Commit `b9f0a07d` migrates `ApplicationServicesCurrentCampusPreferencesPort`
+to direct `DatabaseSession`/`SettingsRepository` access, with no
+`DataService`/`SettingsService` fallback. It preserves key `myInfo/campus`,
+verbatim UTF-8 and `QVariant::toString()` conversion, unavailable/closed
+behavior, empty read-error results, and Technical write-error mapping. The
+executor self-check covered 9 test slots; the independent Tester rebuilt the
+focused target and passed CTest 1/1. `git diff --check` passed. No full suite
+ran. Callers, the Personal Details aggregate writer, and generic/sessionless
+`SettingsService` are unchanged.
+
+## F197 selected Middle School Analytics visibility preference
+
+Migrate `ApplicationServicesMiddleSchoolAnalyticsPreferencesPort` through the
+active open session's `SettingsRepository`, using target
+`NextPlatformApplicationServicesMiddleSchoolAnalyticsPreferencesPort`. Preserve
+key `classes_navigation_show_middle_school_analytics_and_evaluations`,
+`QVariant::toBool()` coercion, false fallback and default-materializing attempt
+for missing/invalid values, unavailable/closed false/no-op behavior, callers,
+and generic/sessionless `SettingsService`. Add closed-session with-`DataService`
+no-fallback coverage and retain read-failure behavior. F197 is selected but not
+implemented; it has no test results. Phase 2 remains In Progress/Open; Gates 1
+and 2 remain Partial.

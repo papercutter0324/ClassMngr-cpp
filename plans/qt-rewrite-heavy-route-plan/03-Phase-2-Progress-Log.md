@@ -8299,7 +8299,7 @@ fields/schedule/teacher/count/fallback parity. F167 implementation has not
 started. Gate 1 and Gate 2 remain Partial; Phase 2 remains In Progress and its
 exit gate remains Open.
 
-### Progress update - 2026-10-01 (F195 accepted; F196 selected)
+### Progress update - 2026-10-01 (F196 accepted; F197 selected)
 
 F167, source commit `97efac8b`, updates
 `ApplicationServicesClassDetailsPageReadPort` to use active-session
@@ -8697,17 +8697,27 @@ are unchanged. Two Explorer lanes differed, with one suggesting Current
 Campus; Schedule display mode was selected after comparing scans for
 continuity with F194 and existing focused migration coverage.
 
-F196 is selected for `ApplicationServicesCurrentCampusPreferencesPort` in
-`src/next/platform/application_services_current_campus_preferences_port.h`,
-with focused tests in
-`tests/next_platform_application_services_current_campus_preferences_port_tests.cpp`
-and registered target
-`NextPlatformApplicationServicesCurrentCampusPreferencesPort`. Use only the
-active open session's `SettingsRepository`. Preserve exact key `myInfo/campus`,
-UTF-8/verbatim and `QVariant::toString()` behavior, `isAvailable()`, empty reads
-and successful no-op writes when unavailable/closed, Technical write-error
-mapping, and unrelated settings. Add closed-session-with-`DataService`
-no-fallback and read-error empty coverage. Leave the Personal Details
-aggregate writer and callers and generic/sessionless `SettingsService`
-unchanged. Two independent Explorer lanes agreed. Gate 1 and Gate 2 remain
-Partial; Phase 2 remains In Progress and its exit gate remains Open.
+F196, source commit `b9f0a07d`, migrates
+`ApplicationServicesCurrentCampusPreferencesPort` to direct
+`DatabaseSession`/`SettingsRepository` access, with no
+`DataService`/`SettingsService` fallback. It
+preserves key `myInfo/campus`, verbatim UTF-8 and `QVariant::toString()`
+conversion, unavailable/closed behavior, read-error empty results, and
+Technical write-error mapping. The executor self-check passed 9 test slots;
+the independent Tester rebuilt the focused target and CTest passed 1/1.
+`git diff --check` passed; no full suite ran. Callers and the Personal Details
+aggregate writer remain unchanged.
+
+F197 is selected for `ApplicationServicesMiddleSchoolAnalyticsPreferencesPort`,
+a typed Qt-free bool port with a one-key adapter and existing focused test
+suite. Target/test:
+`NextPlatformApplicationServicesMiddleSchoolAnalyticsPreferencesPort` /
+`ClassMngrNextPlatformApplicationServicesMiddleSchoolAnalyticsPreferencesPortTests`.
+Use only the active open session's `SettingsRepository`; preserve key
+`classes_navigation_show_middle_school_analytics_and_evaluations`,
+`QVariant::toBool()` coercion, false fallback and the default-materializing
+attempt when missing/invalid, unavailable/closed false/no-op behavior, caller
+behavior, and generic/sessionless `SettingsService`. Add closed-session with
+`DataService` no-fallback coverage and retain read-failure behavior. F197 is
+selected, not implemented; no F197 test results exist. Gate 1 and Gate 2 remain
+Partial; Phase 2 remains In Progress with its exit gate Open.
