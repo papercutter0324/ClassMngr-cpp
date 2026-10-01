@@ -1,11 +1,9 @@
 #pragma once
 
-#include "app/services/feature_services.h"
 #include "core/application_services.h"
 #include "next/application/custom_color_palette_preferences.h"
 
 #include <QColor>
-#include <QDebug>
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonParseError>
@@ -18,12 +16,14 @@
 #include <cstddef>
 #include <string>
 
+class DatabaseSession;
+
 namespace ClassMngr::Next::Platform
 {
 
 // Qt-boundary adapter for the shared custom-color palette. It owns the exact
 // legacy key, all supported stored payload formats, QColor canonicalization,
-// fixed-size normalization, and the compatibility save warning.
+// fixed-size normalization, and the existing save warning.
 class ApplicationServicesCustomColorPalettePreferencesPort final
     : public Application::CustomColorPalettePreferencesPort
 {
@@ -31,18 +31,14 @@ public:
     explicit ApplicationServicesCustomColorPalettePreferencesPort(
         ApplicationServices& services
         ) noexcept
-        : m_settingsService(services.settingsService())
+        : m_session(services.databaseSession())
     {
     }
 
     explicit ApplicationServicesCustomColorPalettePreferencesPort(
         ApplicationServices* services
         ) noexcept
-        : m_settingsService(
-              services
-                  ? services->settingsService()
-                  : nullptr
-              )
+        : m_session(services ? services->databaseSession() : nullptr)
     {
     }
 
@@ -60,36 +56,11 @@ public:
         ) = delete;
 
     [[nodiscard]] Application::CustomColorPalette read()
-        const override
-    {
-        if (!m_settingsService || !m_settingsService->isAvailable())
-        {
-            return Application::defaultCustomColorPalette();
-        }
-
-        return normalizeStoredValue(
-            m_settingsService->loadOrDefault(key(), QString())
-            );
-    }
+        const override;
 
     void write(
         const Application::CustomColorPalette& palette
-        ) const override
-    {
-        if (!m_settingsService || !m_settingsService->isAvailable())
-        {
-            return;
-        }
-
-        const QStringList colors = toQStringList(palette);
-        if (const Status saved = m_settingsService->save(
-                key(),
-                serializeCustomColors(colors)
-                ); !saved)
-        {
-            qWarning() << "Failed to save custom colors:" << saved.error();
-        }
-    }
+        ) const override;
 
     // Kept on the Qt-bound adapter so the legacy QVariant payload conversion
     // can be verified independently of the database driver's TEXT coercion.
@@ -249,7 +220,7 @@ private:
         return QStringLiteral("custom_colors");
     }
 
-    SettingsService* m_settingsService = nullptr;
+    DatabaseSession* m_session = nullptr;
 };
 
 } // namespace ClassMngr::Next::Platform

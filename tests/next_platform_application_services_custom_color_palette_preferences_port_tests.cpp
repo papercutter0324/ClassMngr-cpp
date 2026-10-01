@@ -1,6 +1,7 @@
 #include "core/application_services.h"
 #include "data/data_service.h"
 #include "data/database/database_session.h"
+#include "data/repositories/settings_repository.h"
 #include "next/application/custom_color_palette_preferences.h"
 #include "next/platform/application_services_custom_color_palette_preferences_port.h"
 
@@ -41,18 +42,26 @@ bool openDatabase(
     return services.openDatabase(databasePath(directory)).has_value();
 }
 
+SettingsRepository* settingsRepository(ApplicationServices& services)
+{
+    DatabaseSession* const session = services.databaseSession();
+    return session && session->isOpen()
+        ? session->settingsRepository()
+        : nullptr;
+}
+
 bool executeSql(
     ApplicationServices& services,
     const QString& statement
     )
 {
-    DataService* dataService = services.dataService();
-    if (!dataService || !dataService->databaseSession())
+    DatabaseSession* const session = services.databaseSession();
+    if (!session || !session->isOpen())
     {
         return false;
     }
 
-    QSqlQuery query(dataService->databaseSession()->database());
+    QSqlQuery query(session->database());
     return query.exec(statement);
 }
 
@@ -113,6 +122,8 @@ private slots:
     void invalidEntriesUseFallbackAndNormalizeToSixteenCanonicalColors();
     void saveFailurePreservesStoredPaletteAndWarning();
     void preservesUnrelatedSettings();
+    void closedSessionDefaultsAndIgnoresWritesWithoutFallback();
+    void repositoryReadFailureWarnsAndReturnsDefaults();
 
 private:
     QTemporaryDir m_directory;
@@ -129,11 +140,21 @@ missingAndUnavailableReadDefaults()
 {
     ApplicationServices services;
     QVERIFY(openDatabase(services, m_directory));
+    QVERIFY(services.dataService());
+    SettingsRepository* const repository = settingsRepository(services);
+    QVERIFY(repository);
 
     ApplicationServicesCustomColorPalettePreferencesPort port(services);
     QVERIFY(port.read() == defaultCustomColorPalette());
+    const auto missing = repository->loadSetting(
+        QString::fromUtf8(CustomColorsKey)
+        );
+    QVERIFY(missing);
+    QVERIFY(!missing->isValid());
 
     ApplicationServices unavailableServices;
+    QVERIFY(unavailableServices.dataService());
+    QVERIFY(!unavailableServices.databaseSession()->isOpen());
     ApplicationServicesCustomColorPalettePreferencesPort unavailablePort(
         unavailableServices
         );
@@ -156,6 +177,8 @@ compactJsonRoundTripUsesExactKey()
     ApplicationServices services;
     QVERIFY(openDatabase(services, m_directory));
     QVERIFY(services.dataService());
+    SettingsRepository* const repository = settingsRepository(services);
+    QVERIFY(repository);
 
     const CustomColorPalette expected = paletteWithTwoColors();
     ApplicationServicesCustomColorPalettePreferencesPort port(services);
@@ -165,13 +188,13 @@ compactJsonRoundTripUsesExactKey()
     const auto expectedRead = canonicalizedPalette(expected);
     QVERIFY(actual == expectedRead);
 
-    const auto stored = services.dataService()->loadSetting(
+    const auto stored = repository->loadSetting(
         QString::fromUtf8(CustomColorsKey)
         );
     QVERIFY(stored);
     QCOMPARE(stored->toString(), compactJson(expected));
 
-    const auto staleKey = services.dataService()->loadSetting(
+    const auto staleKey = repository->loadSetting(
         QStringLiteral("customColors")
         );
     QVERIFY(staleKey);
@@ -183,7 +206,8 @@ legacyQStringListJsonAndSeparatorPayloadsLoad()
 {
     ApplicationServices services;
     QVERIFY(openDatabase(services, m_directory));
-    QVERIFY(services.dataService());
+    SettingsRepository* const repository = settingsRepository(services);
+    QVERIFY(repository);
 
     ApplicationServicesCustomColorPalettePreferencesPort port(services);
     const auto expected = paletteWithTwoColors();
@@ -206,7 +230,7 @@ legacyQStringListJsonAndSeparatorPayloadsLoad()
     for (const QString& payload : payloads)
     {
         QVERIFY(
-            services.dataService()->saveSetting(
+            repository->saveSetting(
                 QString::fromUtf8(CustomColorsKey),
                 payload
                 )
@@ -220,7 +244,8 @@ invalidEntriesUseFallbackAndNormalizeToSixteenCanonicalColors()
 {
     ApplicationServices services;
     QVERIFY(openDatabase(services, m_directory));
-    QVERIFY(services.dataService());
+    SettingsRepository* const repository = settingsRepository(services);
+    QVERIFY(repository);
 
     QJsonArray source;
     source.append(QStringLiteral("not-a-color"));
@@ -233,7 +258,7 @@ invalidEntriesUseFallbackAndNormalizeToSixteenCanonicalColors()
     source.append(QStringLiteral("#654321"));
 
     QVERIFY(
-        services.dataService()->saveSetting(
+        repository->saveSetting(
             QString::fromUtf8(CustomColorsKey),
             QString::fromUtf8(
                 QJsonDocument(source).toJson(QJsonDocument::Compact)
@@ -285,7 +310,9 @@ saveFailurePreservesStoredPaletteAndWarning()
         QtWarningMsg,
         QRegularExpression(QStringLiteral("Failed to save custom colors:.*"))
         );
-    port.write(paletteWithTwoColors());
+    auto attempted = paletteWithTwoColors();
+    attempted.hexColors[0] = "#fedcba";
+    port.write(attempted);
 
     const auto actual = port.read();
     const auto expectedRead = canonicalizedPalette(initial);
@@ -298,21 +325,87 @@ preservesUnrelatedSettings()
     ApplicationServices services;
     QVERIFY(openDatabase(services, m_directory));
     QVERIFY(services.dataService());
-    QVERIFY(
-        services.dataService()->saveSetting(
-            QString::fromUtf8(UnrelatedKey),
-            QStringLiteral("preserved")
-            )
-        );
+    SettingsRepository* const repository = settingsRepository(services);
+    QVERIFY(repository);
+    QVERIFY(repository->saveSetting(
+        QString::fromUtf8(UnrelatedKey),
+        QStringLiteral("preserved")
+        ));
 
     ApplicationServicesCustomColorPalettePreferencesPort port(services);
     port.write(paletteWithTwoColors());
 
-    const auto unrelated = services.dataService()->loadSetting(
+    const auto unrelated = repository->loadSetting(
         QString::fromUtf8(UnrelatedKey)
         );
     QVERIFY(unrelated);
     QCOMPARE(unrelated->toString(), QStringLiteral("preserved"));
+}
+
+void NextPlatformApplicationServicesCustomColorPalettePreferencesPortTests::
+closedSessionDefaultsAndIgnoresWritesWithoutFallback()
+{
+    ApplicationServices services;
+    const QString path = databasePath(m_directory);
+    QVERIFY(services.openDatabase(path));
+    QVERIFY(services.dataService());
+    DatabaseSession* const session = services.databaseSession();
+    QVERIFY(session);
+    SettingsRepository* repository = session->settingsRepository();
+    QVERIFY(repository);
+
+    const QString initialPayload = compactJson(paletteWithTwoColors());
+    const QString unrelatedValue = QStringLiteral("preserved");
+    QVERIFY(repository->saveSetting(
+        QString::fromUtf8(CustomColorsKey),
+        initialPayload
+        ));
+    QVERIFY(repository->saveSetting(
+        QString::fromUtf8(UnrelatedKey),
+        unrelatedValue
+        ));
+
+    ApplicationServicesCustomColorPalettePreferencesPort port(services);
+    services.closeDatabase();
+    QVERIFY(services.dataService());
+    QVERIFY(!session->isOpen());
+    QVERIFY(port.read() == defaultCustomColorPalette());
+    auto attempted = paletteWithTwoColors();
+    attempted.hexColors[0] = "#fedcba";
+    port.write(attempted);
+
+    QVERIFY(services.openDatabase(path));
+    QVERIFY(session->isOpen());
+    repository = session->settingsRepository();
+    QVERIFY(repository);
+    const auto storedPalette = repository->loadSetting(
+        QString::fromUtf8(CustomColorsKey)
+        );
+    QVERIFY(storedPalette);
+    QCOMPARE(storedPalette->toString(), initialPayload);
+    const auto unrelated = repository->loadSetting(
+        QString::fromUtf8(UnrelatedKey)
+        );
+    QVERIFY(unrelated);
+    QCOMPARE(unrelated->toString(), unrelatedValue);
+}
+
+void NextPlatformApplicationServicesCustomColorPalettePreferencesPortTests::
+repositoryReadFailureWarnsAndReturnsDefaults()
+{
+    ApplicationServices services;
+    QVERIFY(openDatabase(services, m_directory));
+    QVERIFY(services.dataService());
+    QVERIFY(executeSql(services, QStringLiteral("DROP TABLE app_settings")));
+
+    ApplicationServicesCustomColorPalettePreferencesPort port(services);
+    QTest::ignoreMessage(
+        QtWarningMsg,
+        QRegularExpression(
+            QStringLiteral("Failed to load setting.*custom_colors.*")
+            )
+        );
+    QVERIFY(port.read() == defaultCustomColorPalette());
 }
 
 QTEST_MAIN(
