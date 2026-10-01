@@ -225,59 +225,31 @@ No new v2 production path depends on DataService, MainWindow, PageManager, or a 
 
 Earlier verified slices and cumulative exit-gate snapshots are archived in the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 
-## Latest progress update - 2026-10-02 (F228 accepted; F229 selected)
+## Latest progress update - 2026-10-02 (F229 accepted; F230 selected)
 
-F226, source commit `6c6210b0`, adds a Qt-free Schedule Import review-readiness
-use case that validates review decisions before optional state validation. The
-dialog uses it once, preserves duplicate-conflict/message priority, and makes
-no additional snapshot read. Independent readiness, decision, state-validation,
-and Schedule Import repository CTests passed 4/4. The Dialog target had 29
-passed with only the three documented baseline failures
-(`acceptedReviewCanTearDownSourceDialog`, `mismatchedProfileRequiresConfirmation`,
-and `reviewPreviewUsesSavedScheduleDisplaySettings`). `git diff --check` passed;
-no full suite ran.
-
-F227, source commit `cb61f2ab`, moves the proposed Schedule Import summary into
-a Qt-free Application projection over the existing
-`ScheduleImportReviewDecisionRequest`, ignored-diagnostic count, and
-UI-computed `schedulesCleared` count. It counts teacher Create, UpdateRoom,
-and Skip plus class CreateNew, UpdateExisting, and Skip; Reuse, Unselected,
-and Invalid actions do not contribute. The dialog keeps localized summary
-formatting and the separate apply-result message. Independent projection and
-repository CTests passed 2/2. The direct offscreen Dialog run passed 30 and
-failed only the three documented baselines:
-`acceptedReviewCanTearDownSourceDialog`,
+F229, source commit `e8a2a5b5`, reuses
+`projectScheduleImportStateSchedules()` for review-preview membership and
+schedule preservation. The dialog retains control order, snapshot Skip times,
+and Qt row construction, enrichment, and conflict formatting. Focused
+Application state-validation and Schedule Import repository targets passed.
+The Dialog target reported 32 passed and only the three established baseline
+failures (`acceptedReviewCanTearDownSourceDialog`,
 `mismatchedProfileRequiresConfirmation`, and
-`reviewPreviewUsesSavedScheduleDisplaySettings`. `git diff --check` passed;
-no full suite ran.
+`reviewPreviewUsesSavedScheduleDisplaySettings`); both new parity slots
+passed. Source ownership found one owner for 1,170 handwritten files, and
+`git diff --check` passed. No full suite ran.
 
-F228, source commit `d90f475f`, adds the Qt-free
-`projectScheduleImportSchedulesCleared()` projection over the typed state
-snapshot and review decisions. It preserves full-parse numeric ID matching,
-counts classes with hours in the selected schedule kind that have no selected
-target, and returns zero for intensive preserve mode. The dialog calls the
-projection only when a snapshot is available, retaining zero when the snapshot
-is unavailable. The Application projection CTest passed 1/1. The Dialog run
-reported 30 passed with only the three documented baselines
-(`acceptedReviewCanTearDownSourceDialog`, `mismatchedProfileRequiresConfirmation`,
-and `reviewPreviewUsesSavedScheduleDisplaySettings`); both the nonzero summary
-parity assertion and the no-snapshot zero-count assertion passed. Independent
-source ownership validation found one owner for all 1,170 handwritten files.
-`git diff --check` passed; no full suite ran.
-
-F229 is selected, based on two independent Explorer lanes: reuse the existing
-Qt-free `projectScheduleImportStateSchedules()` projection to select class
-schedules for the review preview. Keep widget and Qt preview-row construction
-and conversion, teacher-room and color enrichment, displayed order, and
-translated conflict messages in the feature UI. Preserve skipped-target
-schedule retention, incomplete-resolution behavior, intensive preservation
-of untargeted classes, snapshot-failure fallback, and snapshot read cadence.
-Acceptance compares preview rows and conflict ordering with existing dialog
-behavior and adds focused parity coverage. Run
-`NextApplicationScheduleImportStateValidation`,
-`NextApplicationScheduleImportStateSnapshot` if affected,
-`ClassMngrScheduleImportTests`, and `ClassMngrScheduleImportDialogTests`; only
-the three named Dialog baselines are expected. Verify source ownership and
-`git diff --check`; no full suite. Phase 2 remains In Progress/Open; Gates 1 and
-2 remain Partial. See the [Phase 2 progress log](03-Phase-2-Progress-Log.md)
-for prior slice evidence.
+F230 is selected based on two independent Explorer reports: have
+`ScheduleImportReviewDialog::applyImport()` build and pass the typed
+`ScheduleImportApplyRequest` directly to the Application use case. Remove the
+legacy `ScheduleImportPlan` construction and plan-to-request conversion at the
+UI/Application boundary; retain typed-to-legacy conversion inside the existing
+service persistence boundary. Preserve the complete field mapping and typed
+IDs, confirmation-before-write timing, current detailed policy-error text from
+the legacy validator, and repository apply validation. Verify request mapping
+and confirmation through
+`applyUsesConfirmationAndReportsServiceOutcome`, the Application apply use
+case, Platform apply port, Schedule Import repository, and Dialog targets;
+only the three established Dialog baselines are expected. Keep Phase 2
+In Progress/Open and Gates 1 and 2 Partial. See the
+[Phase 2 progress log](03-Phase-2-Progress-Log.md) for prior slice evidence.

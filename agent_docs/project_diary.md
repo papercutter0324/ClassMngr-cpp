@@ -1973,3 +1973,19 @@ preserving the feature's full-parse integer ID matching for selected targets.
 Keep zero when a refresh has no snapshot or intensive classes are retained;
 assert the failed-refresh summary count so this fallback remains visible in
 coverage.
+
+## 2026-10-02 - F229 Schedule Import preview projection
+
+Use Application projection membership and preservation markers to select
+review-preview schedules, but retain the dialog's control order and per-control
+Skip rows. The projector coalesces by ClassId and orders references for apply;
+that order is not the established UI order. Preserve targeted Skip times from
+the snapshot when another action shares the ID, and test order, targetless
+Skip, incomplete actions, and intensive preservation.
+
+## 2026-10-02 - F230 Schedule Import typed apply handoff
+
+When an Application apply request already exists, the dialog should build and
+pass that typed contract directly instead of routing through a legacy plan.
+Keep confirmation timing, detailed user-facing policy errors, and legacy
+conversion at the persistence boundary under explicit parity coverage.

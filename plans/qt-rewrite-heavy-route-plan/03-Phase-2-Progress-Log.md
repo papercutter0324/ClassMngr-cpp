@@ -9350,7 +9350,7 @@ parity assertion and no-snapshot zero-count assertion passed. Independent
 source ownership validation found one owner for 1,170 handwritten files;
 `git diff --check` passed. No full suite ran.
 
-F229 is selected after two independent Explorer lanes. Reuse the existing
+F229 was selected after two independent Explorer lanes. Reuse the existing
 `projectScheduleImportStateSchedules()` projection to drive class-schedule
 selection for the review preview. Keep widget and Qt preview-row construction
 and conversion, teacher-room and color enrichment, displayed order, and
@@ -9364,3 +9364,31 @@ and adds focused parity coverage. Run
 `ClassMngrScheduleImportTests`, and `ClassMngrScheduleImportDialogTests`; allow
 only the three named Dialog baselines. Verify source ownership and
 `git diff --check`; no full suite.
+
+### Progress update - 2026-10-02 (F229 accepted; F230 selected)
+
+F229, source commit `e8a2a5b5`, reuses
+`projectScheduleImportStateSchedules()` for review-preview membership and
+schedule preservation. The dialog retains control order, snapshot Skip times,
+and Qt row construction, enrichment, and conflict formatting. Focused
+Application state-validation and Schedule Import repository targets passed.
+The Dialog target reported 32 passed and only the three established baseline
+failures (`acceptedReviewCanTearDownSourceDialog`,
+`mismatchedProfileRequiresConfirmation`, and
+`reviewPreviewUsesSavedScheduleDisplaySettings`); both new parity slots
+passed. Source ownership found one owner for 1,170 handwritten files, and
+`git diff --check` passed. No full suite ran.
+
+F230 is selected based on two independent Explorer reports: have
+`ScheduleImportReviewDialog::applyImport()` build and pass the typed
+`ScheduleImportApplyRequest` directly to the Application use case. Remove the
+legacy `ScheduleImportPlan` construction and plan-to-request conversion at the
+UI/Application boundary; retain typed-to-legacy conversion inside the existing
+service persistence boundary. Preserve the complete field mapping and typed
+IDs, confirmation-before-write timing, current detailed policy-error text from
+the legacy validator, and repository apply validation. Verify request mapping
+and confirmation through
+`applyUsesConfirmationAndReportsServiceOutcome`, the Application apply use
+case, Platform apply port, Schedule Import repository, and Dialog targets;
+only the three established Dialog baselines are expected. Phase 2 remains
+In Progress/Open; Gates 1 and 2 remain Partial.

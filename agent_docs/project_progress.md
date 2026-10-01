@@ -2745,7 +2745,7 @@ repository read-error coverage. Focused CTest:
 independent Explorer lanes selected this bounded adapter migration. Phase 2
 remains In Progress/Open; Gates 1 and 2 remain Partial.
 
-## Current Phase 2 position - 2026-10-02 (F228 accepted; F229 selected)
+## Current Phase 2 position - 2026-10-02 (F229 accepted; F230 selected)
 
 F218-F221 are accepted in commits `9bb936ee`, `57aefadf`, `4a87ab1e`, and
 `ec65c0c6`. F222 source commit `6920e019` migrates Schedule Import resolution
@@ -2825,15 +2825,27 @@ and only the three documented baseline failures. A new assertion verifies the
 zero count after snapshot refresh failure. Source ownership validation passed
 for 1,170 handwritten files and `git diff --check` passed; no full suite ran.
 
-F229 is selected to reuse `projectScheduleImportStateSchedules()` when building
-the Schedule Import review preview. Keep preview-row construction and Qt
-conversion, teacher-room and color enrichment, displayed ordering, and
-translated conflict messages in the feature UI. Preserve skipped-target
-schedule retention, incomplete-resolution preview behavior, intensive
-preservation of untargeted classes, snapshot-failure fallback, and current
-snapshot cadence. Acceptance must compare preview rows and conflict ordering
-against the existing dialog behavior, add focused parity coverage, and run the
-Application state-projection, Schedule Import repository, and Dialog targets;
-only the three documented Dialog baselines are expected. Verify source
-ownership and `git diff --check`; do not run the full suite. Phase 2 remains In
-Progress/Open; Gates 1 and 2 remain Partial.
+F229 source commit `e8a2a5b5` reuses `projectScheduleImportStateSchedules()` to
+select the Schedule Import review-preview schedules. The dialog retains its
+control order, snapshot-backed Skip rows, UI enrichment, translated conflicts,
+snapshot-failure fallback, and snapshot cadence; the Application projection
+supplies class membership and intensive-preservation rows. Focused
+state-validation and Schedule Import repository CTests passed. The Dialog
+target reported 32 passed and only the three documented baselines:
+`acceptedReviewCanTearDownSourceDialog`,
+`mismatchedProfileRequiresConfirmation`, and
+`reviewPreviewUsesSavedScheduleDisplaySettings`. Both new preview parity slots
+passed. Source ownership validation found one owner for 1,170 handwritten
+files and `git diff --check` passed; no full suite ran.
+
+F230 is selected after two independent Explorer reviews: move the active
+review dialog's apply handoff to the existing typed
+`ScheduleImportApplyRequest`, avoiding the intermediate legacy plan at the
+UI/Application boundary. Preserve the full candidate/resolution mapping,
+typed target IDs, confirmation-before-write timing, detailed policy-error
+text from the existing validator, and repository apply-time validation. Keep
+legacy conversion at the persistence adapter. Acceptance pins mapped request
+fields and confirmation order in `applyUsesConfirmationAndReportsServiceOutcome`
+and runs the Application apply use case, Platform apply port, Schedule Import
+repository, and Dialog targets; only the three documented Dialog baselines
+are expected. Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial.

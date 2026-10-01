@@ -4665,7 +4665,7 @@ Focused acceptance includes the Application state and decision validators,
 Phase 2 remains In Progress/Open with Gates 1 and 2 Partial. Next: finish F219,
 independently verify and commit it, then choose the following slice.
 
-## Current handoff - 2026-10-02 (F228 accepted; F229 selected)
+## Current handoff - 2026-10-02 (F229 accepted; F230 selected)
 
 F219 source commit `57aefadf` adds the shared state validator as a live
 Schedule Import readiness preflight. The Application state-validation,
@@ -4779,15 +4779,25 @@ parity assertion and the no-snapshot zero-count assertion both passed.
 Independent source ownership validation found one owner for all 1,170
 handwritten files; `git diff --check` passed. No full suite ran.
 
-F229 is selected to use the existing Qt-free
-`projectScheduleImportStateSchedules()` projection for review-preview schedule
-selection. Preserve the current order in the UI while adapting projected rows
-to the preview model; keep teacher, room, and color enrichment plus localized
-conflict messages at the feature boundary. Preserve skipped-target schedules,
-incomplete-resolution preview behavior, intensive preservation of untargeted
-classes, snapshot-failure fallback, and snapshot cadence. Acceptance compares
-preview rows and conflict order against the current dialog, adds focused parity
-coverage, and reruns Application state-projection, Schedule Import repository,
-and Dialog targets with only the three named Dialog baselines expected. Verify
-source ownership and `git diff --check`; no full suite. Implementation starts
-after the F228 acceptance/F229 selection documentation commit.
+F229 source commit `e8a2a5b5` reuses the Qt-free
+`projectScheduleImportStateSchedules()` projection for review-preview
+membership and intensive-preservation rows. The dialog keeps class-control
+order, snapshot times for targeted Skip rows, UI enrichment, localized
+conflicts, snapshot-failure fallback, and snapshot cadence. The Application
+state-validation and Schedule Import repository CTests passed; the Dialog
+target reported 32 passed with only the three named baselines:
+`acceptedReviewCanTearDownSourceDialog`, `mismatchedProfileRequiresConfirmation`,
+and `reviewPreviewUsesSavedScheduleDisplaySettings`. Both new F229 preview
+parity slots passed. Independent source ownership validation found one owner
+for 1,170 handwritten files and `git diff --check` passed. No full suite ran.
+
+F230 is selected after two independent Explorer reviews: move the dialog's
+apply handoff to the existing typed `ScheduleImportApplyRequest`. Preserve
+candidate and resolution field mappings, typed target IDs, confirmation before
+write, the detailed policy-error text from the legacy validator, and
+repository apply-time validation. Keep legacy conversion at the persistence
+adapter. Acceptance pins request mappings and confirmation order in
+`applyUsesConfirmationAndReportsServiceOutcome`, then runs the Application
+apply use case, Platform apply port, Schedule Import repository, and Dialog
+targets; only the three named Dialog baselines are expected. The source slice
+will start after the F229 acceptance commit and documentation handoff.
