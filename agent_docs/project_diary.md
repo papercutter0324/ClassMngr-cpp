@@ -1726,3 +1726,16 @@ checks the active session directly.
 F198 is the Personal Details aggregate save boundary. Keep its nine settings in
 one `SettingsRepository::saveSettings()` transaction; preserve rollback and
 signature conversion as one adapter operation.
+
+## 2026-10-01 - F198 Personal Details aggregate save
+
+Keep the Personal Details nine-key write atomic through the active session's
+`SettingsRepository`. A closed-session test should retain a live `DataService`
+object and verify the whole seeded bundle after reopening, so an accidental
+compatibility-facade fallback cannot hide behind the service's lifetime.
+
+## 2026-10-01 - F199 Personal Display Name read port
+
+Pair the `myInfo/name` read port with the aggregate Personal Details writer
+that already owns that key. Verify the typed read port sees the aggregate
+writer's value, including UTF-8 and whitespace, while keeping callers unchanged.

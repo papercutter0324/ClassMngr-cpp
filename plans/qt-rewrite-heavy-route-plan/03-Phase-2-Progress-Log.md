@@ -8299,7 +8299,7 @@ fields/schedule/teacher/count/fallback parity. F167 implementation has not
 started. Gate 1 and Gate 2 remain Partial; Phase 2 remains In Progress and its
 exit gate remains Open.
 
-### Progress update - 2026-10-01 (F197 accepted; F198 selected/in progress)
+### Progress update - 2026-10-01 (F198 accepted; F199 selected)
 
 F167, source commit `97efac8b`, updates
 `ApplicationServicesClassDetailsPageReadPort` to use active-session
@@ -8721,13 +8721,26 @@ stored `true`, closed-session no-fallback with `DataService`, and repository-
 only adapter references. `git diff --check` passed; generic/sessionless
 `SettingsService` and callers are unchanged. No full suite ran.
 
-F198 is selected and implementation is in progress for
-`ApplicationServicesPersonalDetailsSavePort` in
-`src/next/platform/application_services_personal_details_save_port.h`. Migrate
-to one atomic active-session `SettingsRepository::saveSettings()` batch.
-Preserve all nine exact keys/values, UTF-8 and prepared signature-image
-encoding, mode/font normalization, typed Technical failure mapping, UI callers,
-and generic/sessionless `SettingsService`. Add closed-session-with-`DataService`
-no-fallback coverage and prove seeded bundle values remain unchanged. No F198
-results exist. Gate 1 and Gate 2 remain Partial; Phase 2 remains In Progress
-with its exit gate Open.
+F198, source commit `0e8361eb`, migrates
+`ApplicationServicesPersonalDetailsSavePort` to one atomic active-session
+`SettingsRepository::saveSettings()` batch for the nine-key bundle. It
+preserves exact keys/values, UTF-8 and prepared signature-image encoding,
+mode/font normalization, typed Technical failures, and rollback. After an x64
+MSVC rebuild, independent focused CTest
+`ClassMngrNextPlatformApplicationServicesPersonalDetailsSavePortTests` passed
+1/1. Closed-session coverage confirms no `DataService` fallback and no bundle
+changes after reopen. `git diff --check` passed; no full suite ran. UI callers
+and generic/sessionless `SettingsService` are unchanged.
+
+F199 is selected for `ApplicationServicesPersonalDisplayNamePreferencesPort`,
+using the existing target
+`NextPlatformApplicationServicesPersonalDisplayNamePreferencesPort`. Read and
+write `myInfo/name` through the active open session's `SettingsRepository`;
+preserve exact UTF-8 and whitespace, empty reads and successful no-op writes
+when unavailable, and Technical write-error mapping. Add closed-session with
+`DataService` no-fallback coverage and verify this read sees the name written by
+F198's aggregate writer. Keep callers unchanged. Two Explorer lanes differed;
+this slice was selected to pair with F198's aggregate writer/read path, with
+Class Visibility left as a later candidate. F199 is selected, not implemented;
+no F199 results exist. Gate 1 and Gate 2 remain Partial; Phase 2 remains In
+Progress with its exit gate Open.

@@ -53,8 +53,8 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
   Calendar Event delete-all port, F186's repeat-series suffix-delete port,
   F187's Calendar Event Import save port, F188's repeat-series creation port,
   and F189's repeat-series edit port are accepted. F190-F197's preference
-  ports are accepted; F198 is selected and in progress for the Personal
-  Details save port.
+  ports and F198's Personal Details save port are accepted; F199 is selected
+  for the Personal Display Name preferences port.
   The prior F123 candidate wording is historical;
   current Teacher Profile integration status is recorded in the progress log.
   Gates 1 and 2
@@ -1164,14 +1164,27 @@ repository-only adapter references. `git diff --check` passed; no full suite
 ran. Generic/sessionless
 `SettingsService` and callers remain unchanged.
 
-## F198 selected Personal Details save port (in progress)
+## F198 accepted Personal Details save port
 
-Migrate `ApplicationServicesPersonalDetailsSavePort` in
-`src/next/platform/application_services_personal_details_save_port.h` to use the
-active open session's `SettingsRepository::saveSettings()` in one atomic batch.
-Preserve all nine exact keys and values, UTF-8 and prepared signature-image
-encoding, mode/font normalization, typed Technical failure mapping, existing
-UI callers, and generic/sessionless `SettingsService`. Add explicit
-closed-session-with-`DataService` no-fallback coverage and prove seeded bundle
-values remain unchanged. Implementation has started; no F198 results exist.
-Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial.
+Commit `0e8361eb` migrates `ApplicationServicesPersonalDetailsSavePort` to one
+atomic active-session `SettingsRepository::saveSettings()` batch for the
+nine-key bundle. It preserves exact keys/values, UTF-8 and prepared
+signature-image encoding, mode/font normalization, typed Technical failures,
+and rollback. After an x64 MSVC rebuild, independent focused CTest
+`ClassMngrNextPlatformApplicationServicesPersonalDetailsSavePortTests` passed
+1/1. Closed-session coverage confirms no `DataService` fallback and no bundle
+changes after reopen. `git diff --check` passed; no full suite ran. UI callers
+and generic/sessionless `SettingsService` are unchanged.
+
+## F199 selected Personal Display Name preferences port
+
+Migrate `ApplicationServicesPersonalDisplayNamePreferencesPort` to read and
+write `myInfo/name` through the active open session's `SettingsRepository`.
+Preserve exact UTF-8 and whitespace, empty reads and successful no-op writes
+when unavailable, and Technical write-error mapping. Add closed-session with
+`DataService` no-fallback coverage and verify the read observes the name written
+by F198's aggregate writer. Existing callers remain unchanged. Two Explorer
+lanes differed; this slice was selected to pair with F198's aggregate writer
+and read path. Class Visibility remains a later candidate. F199 is selected,
+not implemented; no F199 results exist. Phase 2 remains In Progress/Open; Gates
+1 and 2 remain Partial.

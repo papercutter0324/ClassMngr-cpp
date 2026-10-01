@@ -4235,7 +4235,7 @@ closed-session no-fallback coverage. Target:
 Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial. Next: implement
 F197, then independently verify and commit it before selecting F198.
 
-## 2026-10-01 - F197 accepted; F198 selected
+## Previous handoff - 2026-10-01 (F197 accepted; F198 selected)
 
 F197 source commit `26c0f23b` migrates
 `ApplicationServicesMiddleSchoolAnalyticsPreferencesPort` to the active
@@ -4256,3 +4256,29 @@ existing callers. Add closed-session no-fallback coverage. The implementation
 is underway in the Platform adapter and its focused test; no F198 results yet.
 Target: `ClassMngrNextPlatformApplicationServicesPersonalDetailsSavePortTests`.
 Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial.
+
+## 2026-10-01 - F198 accepted; F199 selected
+
+F198 source commit `0e8361eb` migrates
+`ApplicationServicesPersonalDetailsSavePort` to one active-session
+`SettingsRepository::saveSettings()` transaction. It preserves the exact nine
+keys, UTF-8 values, prepared signature-image encoding, signature mode/font
+normalization, and typed Technical failure mapping. The closed-session test
+keeps `DataService` present, confirms the adapter fails without fallback, then
+reopens the database and verifies all nine seeded values and an unrelated
+setting remain unchanged. The independent Tester rebuilt the focused target
+with x64 MSVC and CTest passed 1/1. `git diff --check` passed; no full suite
+ran.
+
+Two independent Explorer lanes proposed different F199 candidates. Selected
+`ApplicationServicesPersonalDisplayNamePreferencesPort` because it completes
+the `myInfo/name` repository read path paired with F198's aggregate write. Keep
+the interface and callers unchanged; preserve the exact key, UTF-8 bytes and
+whitespace, empty read/successful no-op behavior while unavailable, and
+Technical write-error mapping. Add closed-session-with-`DataService`
+no-fallback coverage and verify the read port sees the name written by the
+F198 aggregate port. Focused target:
+`NextPlatformApplicationServicesPersonalDisplayNamePreferencesPort`.
+Class Visibility remains a candidate for a later preference slice. Phase 2
+remains In Progress/Open; Gates 1 and 2 remain Partial. Next: implement F199,
+independently verify it, commit it, then select F200.
