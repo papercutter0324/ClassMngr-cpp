@@ -296,6 +296,33 @@ QString stateValidationMessage(const StateValidationError& error)
     return QObject::tr("Review the Schedule Import choices.");
 }
 
+QString scheduleImportSnapshotFailureMessage(
+    const ImportState::ScheduleImportStateSnapshotFailure& failure
+    )
+{
+    switch (failure.kind)
+    {
+    case ImportState::ScheduleImportStateSnapshotFailureKind::
+        ActiveSessionUnavailable:
+        return QObject::tr(
+            "Current schedule data is unavailable because there is no open profile."
+            );
+    case ImportState::ScheduleImportStateSnapshotFailureKind::
+        RepositoryUnavailable:
+        return QObject::tr(
+            "Current schedule data is unavailable because a required repository could not be opened."
+            );
+    case ImportState::ScheduleImportStateSnapshotFailureKind::
+        RepositoryReadFailed:
+    case ImportState::ScheduleImportStateSnapshotFailureKind::
+        InvalidSnapshot:
+        return failure.message.empty()
+            ? QObject::tr("Current schedule data could not be loaded.")
+            : QString::fromStdString(failure.message);
+    }
+    return QObject::tr("Current schedule data could not be loaded.");
+}
+
 ReviewTeacherAction reviewTeacherAction(int action)
 {
     if (action < 0)
@@ -762,21 +789,31 @@ void ScheduleImportReviewDialog::rebuildResolutionControls()
         m_warningScrollArea = nullptr;
     }
 
-    ClassService* classService =
-        m_services
-            ? m_services->classService()
-            : nullptr;
-    TeacherService* teacherService =
-        m_services
-            ? m_services->teacherService()
-            : nullptr;
-    if (
-        !classService
-        || !classService->isAvailable()
-        || !teacherService
-        || !teacherService->isAvailable()
-        )
+    ClassMngr::Next::Platform::
+        ApplicationServicesScheduleImportStateSnapshotPort snapshotPort(
+            m_services
+            );
+    const ImportState::ScheduleImportStateSnapshotOutcome snapshotOutcome =
+        ImportState::ScheduleImportStateSnapshotQueryHandler::execute(
+            {},
+            snapshotPort
+            );
+    const auto* stateSnapshot =
+        std::get_if<ImportState::ScheduleImportStateSnapshot>(
+            &snapshotOutcome
+            );
+    if (!stateSnapshot)
     {
+        const auto& failure =
+            std::get<ImportState::ScheduleImportStateSnapshotFailure>(
+                snapshotOutcome
+                );
+        DialogServices::showWarning(
+            this,
+            tr("Review Schedule Import"),
+            tr("Import resolution data could not be loaded."),
+            scheduleImportSnapshotFailureMessage(failure)
+            );
         return;
     }
 
@@ -850,8 +887,7 @@ void ScheduleImportReviewDialog::rebuildResolutionControls()
                 m_classContent,
                 m_teacherLayout,
                 m_classLayout,
-                classService,
-                teacherService,
+                stateSnapshot,
                 &m_preview,
                 m_request.kind,
                 [this]()
@@ -987,7 +1023,9 @@ void ScheduleImportReviewDialog::updateScheduleConflictWarning(
 
 void ScheduleImportReviewDialog::updateReviewState()
 {
-    bool valid = true;
+    bool valid =
+        m_teacherControls.size() == m_preview.teachers.size()
+        && m_classControls.size() == m_preview.classes.size();
     QString message;
     const bool preservesAbsentIntensiveClasses =
         m_request.kind == ScheduleImportKind::Intensive
@@ -1079,6 +1117,10 @@ void ScheduleImportReviewDialog::updateReviewState()
     if (stateSnapshot)
     {
         stateSnapshotsAvailable = true;
+        if (!valid)
+        {
+            message = tr("Import resolution data could not be loaded.");
+        }
         teachersById.reserve(
             static_cast<qsizetype>(stateSnapshot->teachers.size())
             );
@@ -1106,29 +1148,7 @@ void ScheduleImportReviewDialog::updateReviewState()
         valid = false;
         if (message.isEmpty())
         {
-            switch (failure.kind)
-            {
-            case ImportState::ScheduleImportStateSnapshotFailureKind::
-                ActiveSessionUnavailable:
-                message = tr(
-                    "Current schedule data is unavailable because there is no open profile."
-                    );
-                break;
-            case ImportState::ScheduleImportStateSnapshotFailureKind::
-                RepositoryUnavailable:
-                message = tr(
-                    "Current schedule data is unavailable because a required repository could not be opened."
-                    );
-                break;
-            case ImportState::ScheduleImportStateSnapshotFailureKind::
-                RepositoryReadFailed:
-            case ImportState::ScheduleImportStateSnapshotFailureKind::
-                InvalidSnapshot:
-                message = failure.message.empty()
-                    ? tr("Current schedule data could not be loaded.")
-                    : QString::fromStdString(failure.message);
-                break;
-            }
+            message = scheduleImportSnapshotFailureMessage(failure);
         }
     }
     const auto classSnapshotForReview =

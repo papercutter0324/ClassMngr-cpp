@@ -3,8 +3,7 @@
 #include "schedule_import_review_presentation.h"
 #include "schedule_import_resolution_view.h"
 
-#include "app/services/feature_services.h"
-#include "domain/models/classroom.h"
+#include "domain/models/class_info.h"
 #include "domain/rules/schedule_import_rules.h"
 #include "ui/shared/constants/gui_constants.h"
 #include "ui/shared/widgets/no_wheel_combobox.h"
@@ -13,6 +12,7 @@
 #include <QComboBox>
 #include <QCoreApplication>
 #include <QFont>
+#include <QHash>
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QObject>
@@ -22,6 +22,9 @@
 #include <QVBoxLayout>
 
 #include <algorithm>
+#include <charconv>
+#include <string>
+#include <system_error>
 
 namespace ScheduleImportResolutionControls
 {
@@ -29,6 +32,59 @@ namespace
 {
 using namespace ScheduleImportResolutionView;
 using namespace ScheduleImportReviewPresentation;
+namespace ImportState = ClassMngr::Next::Application;
+
+template <typename Id>
+int snapshotLegacyId(const Id& id)
+{
+    int value = -1;
+    const std::string& text = id.value();
+    const auto [end, error] = std::from_chars(
+        text.data(),
+        text.data() + text.size(),
+        value
+        );
+    return error == std::errc{} && end == text.data() + text.size()
+        ? value
+        : -1;
+}
+
+QString snapshotText(const std::u16string& value)
+{
+    return QString::fromStdU16String(value);
+}
+
+QList<ClassTime> snapshotTimes(
+    const std::vector<ImportState::ScheduleImportStateReadTime>& times
+    )
+{
+    QList<ClassTime> result;
+    result.reserve(static_cast<qsizetype>(times.size()));
+    for (const auto& time : times)
+    {
+        result.append({
+            snapshotText(time.day),
+            snapshotText(time.startTime),
+            snapshotText(time.endTime)
+        });
+    }
+    return result;
+}
+
+ClassInfo classInfoForEligibility(
+    const ImportState::ScheduleImportStateReadClassSnapshot& classroom
+    )
+{
+    ClassInfo info;
+    info.classId = snapshotLegacyId(classroom.id);
+    info.teacherId = snapshotLegacyId(classroom.teacherId);
+    info.classGrade = snapshotText(classroom.grade);
+    info.classLevel = snapshotText(classroom.level);
+    info.classColor = snapshotText(classroom.classColor);
+    info.classTimes = snapshotTimes(classroom.normalTimes);
+    info.intensiveTimes = snapshotTimes(classroom.intensiveTimes);
+    return info;
+}
 
 QString translate(
     const char* source
@@ -90,16 +146,92 @@ Result<BuildResult> build(
         || !request.classContent
         || !request.teacherLayout
         || !request.classLayout
-        || !request.classService
-        || !request.teacherService
+        || !request.stateSnapshot
         || !request.preview
         )
     {
-        return result;
+        return std::unexpected(
+            translate("Current schedule data could not be loaded.")
+            );
     }
 
-    ClassService* classService = request.classService;
-    TeacherService* teacherService = request.teacherService;
+    QHash<int, const ImportState::ScheduleImportStateReadTeacherSnapshot*>
+        teachersById;
+    QHash<int, const ImportState::ScheduleImportStateReadClassSnapshot*>
+        classesById;
+    teachersById.reserve(
+        static_cast<qsizetype>(request.stateSnapshot->teachers.size())
+        );
+    for (const auto& teacher : request.stateSnapshot->teachers)
+    {
+        teachersById.insert(snapshotLegacyId(teacher.id), &teacher);
+    }
+    classesById.reserve(
+        static_cast<qsizetype>(request.stateSnapshot->classes.size())
+        );
+    for (const auto& classroom : request.stateSnapshot->classes)
+    {
+        classesById.insert(snapshotLegacyId(classroom.id), &classroom);
+    }
+
+    const auto teacherSnapshot = [&teachersById](const int id)
+        -> const ImportState::ScheduleImportStateReadTeacherSnapshot*
+    {
+        return teachersById.value(id, nullptr);
+    };
+    const auto classSnapshot = [&classesById](const int id)
+        -> const ImportState::ScheduleImportStateReadClassSnapshot*
+    {
+        return classesById.value(id, nullptr);
+    };
+
+    // Validate all references before creating any controls. A malformed or
+    // incomplete snapshot must not leave a partly populated review page.
+    for (const auto& classroom : request.stateSnapshot->classes)
+    {
+        const int teacherId = snapshotLegacyId(classroom.teacherId);
+        if (teacherId > 0 && !teacherSnapshot(teacherId))
+        {
+            return std::unexpected(
+                translate("Current schedule data could not be loaded.")
+                );
+        }
+    }
+    for (const ScheduleImportTeacherPreview& preview :
+         request.preview->teachers)
+    {
+        for (const int teacherId : preview.matchingTeacherIds)
+        {
+            if (!teacherSnapshot(teacherId))
+            {
+                return std::unexpected(
+                    translate("A matching Korean teacher is no longer available.")
+                    );
+            }
+        }
+    }
+    for (const ScheduleImportClassPreview& preview :
+         request.preview->classes)
+    {
+        for (const int classId : preview.matchingClassIds)
+        {
+            if (!classSnapshot(classId))
+            {
+                return std::unexpected(
+                    translate("A matching class is no longer available.")
+                    );
+            }
+        }
+        if (
+            preview.suggestedClassId > 0
+            && !classSnapshot(preview.suggestedClassId)
+            )
+        {
+            return std::unexpected(
+                translate("A suggested class is no longer available.")
+                );
+        }
+    }
 
     for (int row = 0;
          row < request.preview->teachers.size();
@@ -139,15 +271,10 @@ Result<BuildResult> build(
         {
             const int teacherId =
                 preview.matchingTeacherIds.first();
-            const Result<Teacher> existing =
-                teacherService->teacher(teacherId);
-            if (!existing)
-            {
-                return std::unexpected(existing.error());
-            }
+            const auto* existing = teacherSnapshot(teacherId);
             const bool exactRoom =
                 preview.importedRooms.size() == 1
-                && existing->roomNumber.trimmed()
+                && snapshotText(existing->roomNumber).trimmed()
                     == preview.importedRooms.first().trimmed();
 
             if (!exactRoom)
@@ -199,12 +326,7 @@ Result<BuildResult> build(
             }
             for (int teacherId : preview.matchingTeacherIds)
             {
-                const Result<Teacher> existing =
-                    teacherService->teacher(teacherId);
-                if (!existing)
-                {
-                    return std::unexpected(existing.error());
-                }
+                const auto* existing = teacherSnapshot(teacherId);
                 addResolutionItem(
                     control.action,
                     translate("Use existing: %1")
@@ -293,12 +415,6 @@ Result<BuildResult> build(
     }
     request.teacherLayout->addStretch();
 
-    const Result<QList<Classroom>> allClasses =
-        classService->classes();
-    if (!allClasses)
-    {
-        return std::unexpected(allClasses.error());
-    }
     QList<ScheduleImportClassPreview> orderedClasses =
         request.preview->classes;
     std::stable_sort(
@@ -377,9 +493,10 @@ Result<BuildResult> build(
                     : translate("Update existing: %1"))
                     .arg(
                         classLabel(
-                            classService,
-                            teacherService,
-                            classId,
+                            *classSnapshot(classId),
+                            teacherSnapshot(snapshotLegacyId(
+                                classSnapshot(classId)->teacherId
+                                )),
                             request.kind
                             )
                         ),
@@ -390,14 +507,14 @@ Result<BuildResult> build(
                 );
             addedTargets.insert(classId);
         }
-        for (const Classroom& classroom : *allClasses)
+        for (const auto& classroom : request.stateSnapshot->classes)
         {
-            if (addedTargets.contains(classroom.id))
+            const int classId = snapshotLegacyId(classroom.id);
+            if (addedTargets.contains(classId))
             {
                 continue;
             }
-            const ClassInfo info =
-                classService->classInfo(classroom.id).value_or(ClassInfo{});
+            const ClassInfo info = classInfoForEligibility(classroom);
             if (
                 !scheduleImportClassOptionIsEligible(
                     candidate,
@@ -413,16 +530,17 @@ Result<BuildResult> build(
                 translate("Update existing: %1")
                     .arg(
                         classLabel(
-                            classService,
-                            teacherService,
-                            classroom.id,
+                            classroom,
+                            teacherSnapshot(snapshotLegacyId(
+                                classroom.teacherId
+                                )),
                             request.kind
                             )
                         ),
                 static_cast<int>(
                     ScheduleImportClassAction::UpdateExisting
                     ),
-                classroom.id
+                classId
                 );
         }
         addResolutionItem(

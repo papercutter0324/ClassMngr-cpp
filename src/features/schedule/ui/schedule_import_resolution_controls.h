@@ -2,19 +2,18 @@
 
 #include "core/result.h"
 #include "domain/models/schedule_import.h"
+#include "next/application/schedule_import_state_snapshot.h"
 
 #include <QList>
 #include <QString>
 
 #include <functional>
 
-class ClassService;
 class QLabel;
 class QObject;
 class QPushButton;
 class QComboBox;
 class QVBoxLayout;
-class TeacherService;
 class QWidget;
 
 namespace ScheduleImportResolutionControls
@@ -43,8 +42,8 @@ struct BuildRequest
     QWidget* classContent = nullptr;
     QVBoxLayout* teacherLayout = nullptr;
     QVBoxLayout* classLayout = nullptr;
-    ClassService* classService = nullptr;
-    TeacherService* teacherService = nullptr;
+    const ClassMngr::Next::Application::
+        ScheduleImportStateSnapshot* stateSnapshot = nullptr;
     const ScheduleImportPreview* preview = nullptr;
     ScheduleImportKind kind{};
     std::function<void()> stateChanged;

@@ -7,11 +7,8 @@
 #include <QString>
 #include <QStringList>
 
-class ClassService;
 class QColor;
-class TeacherService;
 struct ScheduleDisplayState;
-struct Teacher;
 
 namespace ScheduleImportReviewPresentation
 {
@@ -25,24 +22,6 @@ namespace ScheduleImportReviewPresentation
 
 [[nodiscard]] QStringList projectedScheduleConflicts(
     const ScheduleImportUserBlock& user
-    );
-
-[[nodiscard]] QString classLabel(
-    ClassService* classService,
-    TeacherService* teacherService,
-    int classId,
-    ScheduleImportKind kind
-    );
-
-[[nodiscard]] QString classDifferences(
-    ClassService* classService,
-    TeacherService* teacherService,
-    const ScheduleImportClassCandidate& candidate,
-    int targetClassId,
-    ScheduleImportKind kind,
-    const QString& classColor,
-    const QColor& changesColor,
-    const QColor& changesHeadingColor
     );
 
 // Data-only review variants consume the Application snapshot directly and do
@@ -69,7 +48,8 @@ namespace ScheduleImportReviewPresentation
     );
 
 [[nodiscard]] QString teacherLabel(
-    const Teacher& teacher
+    const ClassMngr::Next::Application::
+        ScheduleImportStateReadTeacherSnapshot& teacher
     );
 
 [[nodiscard]] bool importedClassLess(

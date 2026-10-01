@@ -56,6 +56,7 @@ void reset();
 void setIncludeAdditionalClass(bool include);
 void setMatchImportedClasses(bool match);
 void setPossibleImportedClasses(bool match);
+void setMatchingImportedTeacherIds(QList<int> teacherIds);
 void setExistingIntensiveHours(bool exists);
 void setIncludeAlternativeMatchingClass(bool include);
 void setClassGrade(int classId, const QString& grade);
@@ -80,6 +81,7 @@ private slots:
     void intensiveModeChoiceReflectsExistingSchedule();
     void regularPreviewShowsFullEssayGrid();
     void possibleMatchIsPreselectedForUpdate();
+    void resolutionChoicesUseTypedSnapshotAndPreserveOrdering();
     void reviewRefreshUsesFreshTypedStateSnapshot();
     void reviewSnapshotFailureStaysInvalidWithoutLegacyFallback();
     void ambiguousTargetedClassSkipIsRejected();
@@ -1473,6 +1475,33 @@ void ScheduleImportDialogTests
             QComboBox::AdjustToMinimumContentsLengthWithIcon
             );
     }
+    auto* exactMatchAction = review->findChild<QComboBox*>(
+        QStringLiteral("scheduleImportClassAction_1")
+        );
+    QVERIFY(exactMatchAction);
+    QCOMPARE(exactMatchAction->count(), 4);
+    QVERIFY(exactMatchAction->itemText(0).startsWith(
+        QStringLiteral("Update suggested: E5 Athena")
+        ));
+    QVERIFY(exactMatchAction->itemText(0).contains(
+        QStringLiteral("\uC774\uC120\uC0DD")
+        ));
+    QVERIFY(exactMatchAction->itemText(0).contains(QStringLiteral("[Reg]")));
+    QCOMPARE(exactMatchAction->itemData(0, Qt::UserRole + 1).toInt(), 43);
+    QVERIFY(exactMatchAction->itemText(1).startsWith(
+        QStringLiteral("Update existing: E4 Hercules")
+        ));
+    QCOMPARE(exactMatchAction->itemData(1, Qt::UserRole + 1).toInt(), 42);
+    QCOMPARE(
+        exactMatchAction->itemText(2),
+        QStringLiteral("Create new class")
+        );
+    QCOMPARE(
+        exactMatchAction->itemText(3),
+        QStringLiteral("Skip imported class")
+        );
+    QCOMPARE(exactMatchAction->currentIndex(), 0);
+    QCOMPARE(exactMatchAction->currentData(Qt::UserRole + 1).toInt(), 43);
 
     const auto colorButtons =
         review->findChildren<QPushButton*>(
@@ -1902,6 +1931,107 @@ void ScheduleImportDialogTests::possibleMatchIsPreselectedForUpdate()
     QCOMPARE(action->currentData(Qt::UserRole + 1).toInt(), 43);
 }
 
+void ScheduleImportDialogTests::
+resolutionChoicesUseTypedSnapshotAndPreserveOrdering()
+{
+    ScheduleWidgetTestStubs::setIncludeAdditionalClass(true);
+    ScheduleWidgetTestStubs::setPossibleImportedClasses(true);
+    ScheduleWidgetTestStubs::setMatchingImportedTeacherIds({8, 7});
+
+    ApplicationServices services;
+    ScheduleImportReviewRequest request;
+    request.kind = ScheduleImportKind::Normal;
+    request.user.name = QStringLiteral("Alice");
+
+    ScheduleImportClassCandidate candidate;
+    candidate.teacherKey = QStringLiteral("\uAE40\uC120\uC0DD");
+    candidate.teacherKr = QStringLiteral("\uAE40\uC120\uC0DD");
+    candidate.rooms = {QStringLiteral("414")};
+    candidate.classGrade = QStringLiteral("E4");
+    candidate.classLevel = QStringLiteral("Hercules");
+    candidate.times = {
+        {
+            QStringLiteral("Tuesday"),
+            QStringLiteral("4:00 PM"),
+            QStringLiteral("4:50 PM")
+        }
+    };
+    request.user.classes = {candidate};
+
+    ScheduleImportReviewDialog review(&services, request);
+    QVERIFY(review.prepare());
+
+    auto* teacherAction = review.findChild<QComboBox*>(
+        QStringLiteral("scheduleImportTeacherAction_0")
+        );
+    auto* teacherRoom = review.findChild<QComboBox*>(
+        QStringLiteral("scheduleImportTeacherRoom_0")
+        );
+    QVERIFY(teacherAction);
+    QVERIFY(teacherRoom);
+    QCOMPARE(teacherRoom->count(), 1);
+    QCOMPARE(teacherRoom->itemText(0), QStringLiteral("414"));
+    QCOMPARE(teacherRoom->currentData().toString(), QStringLiteral("414"));
+
+    const QStringList expectedTeacherChoices{
+        QStringLiteral("Choose a resolution..."),
+        QStringLiteral("Use existing: \uC774\uC120\uC0DD \u2014 Room 512"),
+        QStringLiteral("Update existing room: \uC774\uC120\uC0DD \u2014 Room 512"),
+        QStringLiteral("Use existing: \uAE40\uC120\uC0DD \u2014 Room 413"),
+        QStringLiteral("Update existing room: \uAE40\uC120\uC0DD \u2014 Room 413"),
+        QStringLiteral("Create a new Korean teacher"),
+        QStringLiteral("Skip affected classes")
+    };
+    QCOMPARE(teacherAction->count(), expectedTeacherChoices.size());
+    for (int index = 0; index < expectedTeacherChoices.size(); ++index)
+    {
+        QCOMPARE(teacherAction->itemText(index), expectedTeacherChoices[index]);
+    }
+    QCOMPARE(teacherAction->currentIndex(), 0);
+    QCOMPARE(teacherAction->currentData(Qt::UserRole).toInt(), -1);
+    QCOMPARE(teacherAction->itemData(1, Qt::UserRole + 1).toInt(), 8);
+    QCOMPARE(teacherAction->itemData(3, Qt::UserRole + 1).toInt(), 7);
+
+    auto* classAction = review.findChild<QComboBox*>(
+        QStringLiteral("scheduleImportClassAction_0")
+        );
+    QVERIFY(classAction);
+    QCOMPARE(classAction->count(), 5);
+    QCOMPARE(
+        classAction->itemText(0),
+        QStringLiteral("Choose Update, Create, or Skip...")
+        );
+    QVERIFY(classAction->itemText(1).startsWith(
+        QStringLiteral("Update suggested: E5 Athena")
+        ));
+    QVERIFY(classAction->itemText(1).contains(
+        QStringLiteral("\uC774\uC120\uC0DD")
+        ));
+    QVERIFY(classAction->itemText(1).contains(QStringLiteral("[Reg]")));
+    QCOMPARE(classAction->itemData(1, Qt::UserRole + 1).toInt(), 43);
+    QVERIFY(classAction->itemText(2).startsWith(
+        QStringLiteral("Update existing: E4 Hercules")
+        ));
+    QVERIFY(classAction->itemText(2).contains(
+        QStringLiteral("\uAE40\uC120\uC0DD")
+        ));
+    QVERIFY(classAction->itemText(2).contains(QStringLiteral("[Reg]")));
+    QCOMPARE(classAction->itemData(2, Qt::UserRole + 1).toInt(), 42);
+    QCOMPARE(
+        classAction->itemText(3),
+        QStringLiteral("Create new class")
+        );
+    QCOMPARE(
+        classAction->itemText(4),
+        QStringLiteral("Skip imported class")
+        );
+    QCOMPARE(classAction->currentIndex(), 1);
+    QCOMPARE(
+        classAction->currentData(Qt::UserRole).toInt(),
+        static_cast<int>(ScheduleImportClassAction::UpdateExisting)
+        );
+}
+
 void ScheduleImportDialogTests::reviewRefreshUsesFreshTypedStateSnapshot()
 {
     ApplicationServices services;
@@ -1986,12 +2116,11 @@ reviewSnapshotFailureStaysInvalidWithoutLegacyFallback()
     candidate.meetingPatternError = QStringLiteral("invalid meeting data");
     request.user.classes = {candidate};
 
+    FakeUserPromptService prompts;
+    DialogServices::setUserPromptServiceForTesting(&prompts);
     ScheduleImportReviewDialog review(&services, request);
     QVERIFY(review.prepare());
 
-    auto* action = review.findChild<QComboBox*>(
-        QStringLiteral("scheduleImportClassAction_0")
-        );
     auto* import = review.findChild<QPushButton*>(
         QStringLiteral("scheduleImportAcceptButton")
         );
@@ -2001,7 +2130,6 @@ reviewSnapshotFailureStaysInvalidWithoutLegacyFallback()
     auto* summary = review.findChild<QLabel*>(
         QStringLiteral("scheduleImportReviewSummary")
         );
-    QVERIFY(action);
     QVERIFY(import);
     QVERIFY(status);
     QVERIFY(summary);
@@ -2009,33 +2137,31 @@ reviewSnapshotFailureStaysInvalidWithoutLegacyFallback()
     QVERIFY(status->text().contains(
         QStringLiteral("injected schedule read failure")
         ));
+    QCOMPARE(
+        review.findChildren<QComboBox*>(
+            QRegularExpression(QStringLiteral("^scheduleImportTeacherAction_"))
+            ).size(),
+        0
+        );
+    QCOMPARE(
+        review.findChildren<QComboBox*>(
+            QRegularExpression(QStringLiteral("^scheduleImportClassAction_"))
+            ).size(),
+        0
+        );
+    QCOMPARE(prompts.messages.size(), 1);
+    QCOMPARE(
+        prompts.messages.constFirst().title,
+        QStringLiteral("Review Schedule Import")
+        );
+    QVERIFY(prompts.messages.constFirst().message.contains(
+        QStringLiteral("Import resolution data could not be loaded.")
+        ));
+    QVERIFY(prompts.messages.constFirst().details.contains(
+        QStringLiteral("injected schedule read failure")
+        ));
     QVERIFY(summary->text().contains(
         QStringLiteral("0 existing schedule(s) cleared")
-        ));
-
-    const int legacyReadsBeforeRefresh =
-        ScheduleWidgetTestStubs::legacyClassInfoReadCount;
-    const int createIndex = actionIndex(
-        action,
-        ScheduleImportClassAction::CreateNew
-        );
-    const int updateIndex = actionIndex(
-        action,
-        ScheduleImportClassAction::UpdateExisting,
-        43
-        );
-    QVERIFY(createIndex >= 0);
-    QVERIFY(updateIndex >= 0);
-    action->setCurrentIndex(createIndex);
-    action->setCurrentIndex(updateIndex);
-
-    QCOMPARE(
-        ScheduleWidgetTestStubs::legacyClassInfoReadCount,
-        legacyReadsBeforeRefresh
-        );
-    QVERIFY(!import->isEnabled());
-    QVERIFY(status->text().contains(
-        QStringLiteral("injected schedule read failure")
         ));
 }
 

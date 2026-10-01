@@ -1,8 +1,6 @@
 #include "schedule_import_review_presentation.h"
 
-#include "app/services/feature_services.h"
 #include "core/utils/colorutils.h"
-#include "domain/models/classroom.h"
 #include "domain/rules/schedule_import_rules.h"
 #include "features/classes/config/class_info_config.h"
 #include "features/schedule/ui/schedule_import_dialog_shared.h"
@@ -474,218 +472,6 @@ QStringList projectedScheduleConflicts(
     return conflicts;
 }
 
-QString classLabel(
-    ClassService* classService,
-    TeacherService* teacherService,
-    int classId,
-    ScheduleImportKind kind
-    )
-{
-    const Classroom classroom =
-        classService->classroom(classId).value_or(Classroom{});
-    const ClassInfo info =
-        classService->classInfo(classId).value_or(ClassInfo{});
-    const QString course =
-        QStringLiteral("%1 %2")
-            .arg(
-                info.classGrade,
-                info.classLevel
-                )
-            .simplified();
-
-    const QString label =
-        !course.isEmpty()
-            ? course
-            : !classroom.name.trimmed().isEmpty()
-                ? classroom.name.trimmed()
-                : QObject::tr("Class %1").arg(classId);
-    const Teacher teacher =
-        teacherService->teacher(info.teacherId).value_or(Teacher{});
-    const bool importingIntensive =
-        kind == ScheduleImportKind::Intensive;
-    const QList<ClassTime>& preferredTimes =
-        importingIntensive
-            ? info.intensiveTimes
-            : info.classTimes;
-    const QList<ClassTime>& fallbackTimes =
-        importingIntensive
-            ? info.classTimes
-            : info.intensiveTimes;
-    const bool usesPreferredTimes =
-        !preferredTimes.isEmpty();
-    const QList<ClassTime>& times =
-        usesPreferredTimes
-            ? preferredTimes
-            : fallbackTimes;
-    const QString schedule =
-        compactMeetingText(times);
-    QStringList detailParts;
-    if (!teacher.teacherKr.trimmed().isEmpty())
-    {
-        detailParts.append(teacher.teacherKr.trimmed());
-    }
-    if (!schedule.isEmpty())
-    {
-        detailParts.append(schedule);
-    }
-    const QString details =
-        detailParts.join(QLatin1Char(' '));
-    const QString scheduleTag =
-        schedule.isEmpty()
-            ? QString()
-            : usesPreferredTimes
-                ? importingIntensive
-                    ? QStringLiteral(" ") + QObject::tr("[Int]")
-                    : QStringLiteral(" ") + QObject::tr("[Reg]")
-                : importingIntensive
-                    ? QStringLiteral(" ") + QObject::tr("[Reg]")
-                    : QStringLiteral(" ") + QObject::tr("[Int]");
-    return details.isEmpty()
-        ? label
-        : QStringLiteral("%1 (%2)%3")
-              .arg(label, details, scheduleTag);
-}
-
-QString classDifferences(
-    ClassService* classService,
-    TeacherService* teacherService,
-    const ScheduleImportClassCandidate& candidate,
-    int targetClassId,
-    ScheduleImportKind kind,
-    const QString& classColor,
-    const QColor& changesColor,
-    const QColor& changesHeadingColor
-    )
-{
-    if (!classService || !teacherService || targetClassId <= 0)
-    {
-        return QObject::tr(
-                   "A new class will be created with color %1."
-                   )
-            .arg(classColor)
-            .toHtmlEscaped();
-    }
-
-    const auto differenceItem =
-        [](const QString& label,
-           const QString& existing,
-           const QString& imported)
-        {
-            return QStringLiteral(
-                "<li><b>%1:</b> %2 → %3</li>"
-                )
-                .arg(
-                    label.toHtmlEscaped(),
-                    existing.toHtmlEscaped(),
-                    imported.toHtmlEscaped()
-                    );
-        };
-    const auto meetingDifferenceItem =
-        [](const QString& label,
-           const QString& differences)
-        {
-            return QStringLiteral(
-                "<li><b>%1:</b><br>%2</li>"
-                )
-                .arg(
-                    label.toHtmlEscaped(),
-                    differences
-                    );
-        };
-
-    const ClassInfo existing =
-        classService->classInfo(targetClassId).value_or(ClassInfo{});
-    const Teacher existingTeacher =
-        teacherService->teacher(existing.teacherId).value_or(Teacher{});
-    const QList<ClassTime> existingTimes =
-        kind == ScheduleImportKind::Intensive
-            ? existing.intensiveTimes
-            : existing.classTimes;
-    QStringList differences;
-
-    if (existing.classGrade != candidate.classGrade)
-    {
-        differences.append(
-            differenceItem(
-                QObject::tr("Grade"),
-                existing.classGrade,
-                candidate.classGrade
-                )
-            );
-    }
-    if (existing.classLevel != candidate.classLevel)
-    {
-        differences.append(
-            differenceItem(
-                QObject::tr("Level"),
-                existing.classLevel,
-                candidate.classLevel
-                )
-            );
-    }
-    if (
-        TeacherImportNameUtils::hangulOnly(
-            existingTeacher.teacherKr
-            ) != candidate.teacherKey
-        )
-    {
-        differences.append(
-            differenceItem(
-                QObject::tr("Teacher"),
-                existingTeacher.teacherKr,
-                candidate.teacherKr
-                )
-            );
-    }
-    if (meetingKeys(existingTimes) != meetingKeys(candidate.times))
-    {
-        differences.append(
-            meetingDifferenceItem(
-                QObject::tr("Days"),
-                meetingDifferenceText(
-                    existingTimes,
-                    candidate.times
-                    )
-                )
-            );
-    }
-    if (
-        existing.classColor.compare(
-            classColor,
-            Qt::CaseInsensitive
-            ) != 0
-        )
-    {
-        differences.append(
-            differenceItem(
-                QObject::tr("Color"),
-                existing.classColor,
-                classColor
-                )
-            );
-    }
-
-    if (differences.isEmpty())
-    {
-        return QObject::tr(
-                   "No grade, level, teacher, day, or color differences."
-                   )
-            .toHtmlEscaped();
-    }
-
-    return QStringLiteral(
-        "<span style=\"color:%1\"><b style=\"color:%2\">%3</b>"
-        "<ul style=\"margin-top:2px; margin-bottom:0px;\">%4</ul>"
-        "</span>"
-        )
-        .arg(
-            changesColor.name(QColor::HexRgb),
-            changesHeadingColor.name(QColor::HexRgb),
-            QObject::tr("Changes:").toHtmlEscaped(),
-            differences.join(QString())
-            );
-}
-
 namespace
 {
 
@@ -938,15 +724,16 @@ QString classDifferences(
 }
 
 QString teacherLabel(
-    const Teacher& teacher
+    const ClassMngr::Next::Application::
+        ScheduleImportStateReadTeacherSnapshot& teacher
     )
 {
     return QObject::tr("%1 — Room %2")
         .arg(
-            teacher.teacherKr.trimmed(),
-            teacher.roomNumber.trimmed().isEmpty()
+            qString(teacher.koreanName).trimmed(),
+            qString(teacher.roomNumber).trimmed().isEmpty()
                 ? QObject::tr("not set")
-                : teacher.roomNumber.trimmed()
+                : qString(teacher.roomNumber).trimmed()
             );
 }
 

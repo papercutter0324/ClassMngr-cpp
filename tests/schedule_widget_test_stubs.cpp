@@ -86,6 +86,7 @@ bool includeAdditionalClass = false;
 bool includeMiddleSchoolClasses = false;
 bool matchImportedClasses = false;
 bool possibleImportedClasses = false;
+QList<int> matchingImportedTeacherIds;
 bool existingIntensiveHours = false;
 bool distinctIntensiveDays = false;
 bool includeAlternativeMatchingClass = false;
@@ -185,6 +186,7 @@ void reset()
     includeMiddleSchoolClasses = false;
     matchImportedClasses = false;
     possibleImportedClasses = false;
+    matchingImportedTeacherIds.clear();
     existingIntensiveHours = false;
     distinctIntensiveDays = false;
     includeAlternativeMatchingClass = false;
@@ -328,6 +330,11 @@ void setPossibleImportedClasses(
     )
 {
     possibleImportedClasses = match;
+}
+
+void setMatchingImportedTeacherIds(QList<int> teacherIds)
+{
+    matchingImportedTeacherIds = std::move(teacherIds);
 }
 
 void setExistingIntensiveHours(
@@ -1124,6 +1131,8 @@ Result<ScheduleImportPreview> DataService::previewScheduleImport(
             teacher.teacherKey = candidate.teacherKey;
             teacher.teacherKr = candidate.teacherKr;
             teacher.importedRooms = candidate.rooms;
+            teacher.matchingTeacherIds =
+                ScheduleWidgetTestStubs::matchingImportedTeacherIds;
             preview.teachers.append(teacher);
         }
 
@@ -1138,8 +1147,12 @@ Result<ScheduleImportPreview> DataService::previewScheduleImport(
             && candidate.classLevel == QStringLiteral("Hercules")
             )
         {
-            classroom.matchingClassIds = {43};
-            classroom.suggestedClassId = 43;
+            const int matchingClassId =
+                ScheduleWidgetTestStubs::includeAdditionalClass
+                    ? 43
+                    : 42;
+            classroom.matchingClassIds = {matchingClassId};
+            classroom.suggestedClassId = matchingClassId;
             classroom.exactMatch =
                 ScheduleWidgetTestStubs::matchImportedClasses;
             classroom.matchConfidence =
