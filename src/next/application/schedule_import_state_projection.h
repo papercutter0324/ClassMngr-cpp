@@ -135,6 +135,7 @@ struct ScheduleImportStateReadClassSnapshot
     std::u16string classColor;
     std::vector<ScheduleImportStateReadTime> normalTimes;
     std::vector<ScheduleImportStateReadTime> intensiveTimes;
+    std::u16string roomNumber;
 
     friend bool operator==(
         const ScheduleImportStateReadClassSnapshot&,

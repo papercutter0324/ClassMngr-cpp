@@ -81,6 +81,7 @@ ClassInfo classInfoForEligibility(
     info.classGrade = snapshotText(classroom.grade);
     info.classLevel = snapshotText(classroom.level);
     info.classColor = snapshotText(classroom.classColor);
+    info.roomNumber = snapshotText(classroom.roomNumber);
     info.classTimes = snapshotTimes(classroom.normalTimes);
     info.intensiveTimes = snapshotTimes(classroom.intensiveTimes);
     return info;

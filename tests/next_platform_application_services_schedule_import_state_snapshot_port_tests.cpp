@@ -305,6 +305,7 @@ mapsActiveSessionRecordsInRepositoryOrder()
     QCOMPARE(assigned->className, std::u16string(u"Duplicate"));
     QCOMPARE(assigned->grade, std::u16string(u" E4 "));
     QCOMPARE(assigned->classColor, std::u16string(u"#123456"));
+    QCOMPARE(assigned->roomNumber, std::u16string(u" Room 9 "));
     QCOMPARE(assigned->normalTimes.size(), std::size_t(2));
     QCOMPARE(assigned->normalTimes[0].day, std::u16string(u" Raw Monday "));
     QCOMPARE(assigned->normalTimes[0].startTime, std::u16string(u"bad start"));

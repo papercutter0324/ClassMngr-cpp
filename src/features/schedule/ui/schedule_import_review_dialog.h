@@ -45,7 +45,9 @@ private:
         ScheduleImportResolutionControls::ClassControl;
 
     void buildUi();
-    void rebuildResolutionControls();
+    void rebuildResolutionControls(
+        const ClassMngr::Next::Application::ScheduleImportStateSnapshot& snapshot
+        );
     void chooseClassColor(int candidateIndex);
     void updateReviewState();
     void updateScheduleConflictWarning(

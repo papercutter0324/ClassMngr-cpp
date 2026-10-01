@@ -20,6 +20,7 @@
 #include "features/schedule/services/schedule_import_review_summary.h"
 #include "features/teacher/import/teacher_import_name_utils.h"
 #include "next/application/schedule_import_review_decisions.h"
+#include "next/application/schedule_import_matching_projection.h"
 #include "next/application/schedule_import_state_validation.h"
 #include "next/domain/domain_types.h"
 #include "features/schedule/ui/schedule_view_model.h"
@@ -89,6 +90,7 @@ using StateValidationRequest =
 
 namespace ImportState = ClassMngr::Next::Application;
 namespace ImportDomain = ClassMngr::Next::Domain;
+namespace ImportMatching = ClassMngr::Next::Application;
 
 std::string utf8String(const QString& value)
 {
@@ -182,6 +184,225 @@ int snapshotLegacyId(const Id& id)
     return error == std::errc{} && end == text.data() + text.size()
         ? value
         : -1;
+}
+
+std::vector<ImportMatching::ScheduleImportMatchingTime> matchingTimes(
+    const QList<ClassTime>& times
+    )
+{
+    std::vector<ImportMatching::ScheduleImportMatchingTime> result;
+    result.reserve(static_cast<std::size_t>(times.size()));
+    for (const ClassTime& time : times)
+    {
+        result.push_back({time.day.toStdString()});
+    }
+    return result;
+}
+
+std::vector<ImportMatching::ScheduleImportMatchingTime> matchingTimes(
+    const std::vector<ImportState::ScheduleImportStateReadTime>& times
+    )
+{
+    std::vector<ImportMatching::ScheduleImportMatchingTime> result;
+    result.reserve(times.size());
+    for (const auto& time : times)
+    {
+        result.push_back({snapshotText(time.day).toStdString()});
+    }
+    return result;
+}
+
+ImportMatching::ScheduleImportMatchingInput scheduleImportMatchingInput(
+    const ScheduleImportUserBlock& user,
+    const ScheduleImportKind kind,
+    const ImportState::ScheduleImportStateSnapshot& snapshot
+    )
+{
+    ImportMatching::ScheduleImportMatchingInput result;
+    result.kind = kind == ScheduleImportKind::Intensive
+        ? ImportMatching::ScheduleImportMatchingKind::Intensive
+        : ImportMatching::ScheduleImportMatchingKind::Normal;
+    result.candidates.reserve(static_cast<std::size_t>(user.classes.size()));
+    for (const ScheduleImportClassCandidate& candidate : user.classes)
+    {
+        ImportMatching::ScheduleImportMatchingCandidate projected;
+        projected.teacherKey = ImportDomain::KoreanTeacherKey::fromName(
+            candidate.teacherKey.toStdU16String()
+            );
+        projected.teacherName = candidate.teacherKr.toStdU16String();
+        projected.gradeMatchKey = normalizedIdentity(
+            candidate.classGrade
+            ).toStdU16String();
+        projected.levelMatchKey = normalizedIdentity(
+            candidate.classLevel
+            ).toStdU16String();
+        projected.rooms.reserve(static_cast<std::size_t>(candidate.rooms.size()));
+        projected.roomMatchKeys.reserve(
+            static_cast<std::size_t>(candidate.rooms.size())
+            );
+        for (const QString& room : candidate.rooms)
+        {
+            projected.rooms.push_back(room.toStdU16String());
+            projected.roomMatchKeys.push_back(
+                normalizedIdentity(room).toStdU16String()
+                );
+        }
+        projected.times = matchingTimes(candidate.times);
+        result.candidates.push_back(std::move(projected));
+    }
+
+    result.teachers.reserve(snapshot.teachers.size());
+    for (const auto& teacher : snapshot.teachers)
+    {
+        result.teachers.push_back({teacher.id, teacher.koreanName});
+    }
+
+    result.classes.reserve(snapshot.classes.size());
+    for (const auto& classroom : snapshot.classes)
+    {
+        result.classes.push_back({
+            classroom.id,
+            classroom.teacherId,
+            snapshotLegacyId(classroom.id) > 0,
+            normalizedIdentity(snapshotText(classroom.roomNumber))
+                .toStdU16String(),
+            normalizedIdentity(snapshotText(classroom.grade))
+                .toStdU16String(),
+            normalizedIdentity(snapshotText(classroom.level))
+                .toStdU16String(),
+            matchingTimes(classroom.normalTimes),
+            matchingTimes(classroom.intensiveTimes)
+        });
+    }
+    return result;
+}
+
+QString matchingExplanation(
+    const ImportMatching::ScheduleImportMatchingExplanation explanation
+    )
+{
+    switch (explanation)
+    {
+    case ImportMatching::ScheduleImportMatchingExplanation::Exact:
+        return QObject::tr(
+            "One existing class matches the imported grade, level, Korean teacher, room, and meeting days."
+            );
+    case ImportMatching::ScheduleImportMatchingExplanation::
+        PossibleWithTargetHours:
+        return QObject::tr(
+            "Possible existing classes share the imported grade and level and have a compatible weekday group."
+            );
+    case ImportMatching::ScheduleImportMatchingExplanation::
+        PossibleWithOtherHours:
+        return QObject::tr(
+            "Possible existing classes have hours only in the other schedule type; their grade, level, and weekday group are compatible."
+            );
+    case ImportMatching::ScheduleImportMatchingExplanation::
+        PossibleWithoutHours:
+        return QObject::tr(
+            "Possible existing classes share the imported grade and level but have no schedule hours to compare."
+            );
+    case ImportMatching::ScheduleImportMatchingExplanation::None:
+        return QObject::tr(
+            "No existing class has the same grade and level with a compatible weekday group."
+            );
+    }
+    return {};
+}
+
+ScheduleImportPreview scheduleImportPreview(
+    const ScheduleImportUserBlock& user,
+    const ScheduleImportKind kind,
+    const ImportMatching::ScheduleImportMatchingProjection& projection
+    )
+{
+    ScheduleImportPreview result;
+    result.kind = kind;
+    result.user = user;
+    result.inventory.classCount =
+        static_cast<int>(projection.inventory.classCount);
+    result.inventory.hasRegularHours =
+        projection.inventory.hasRegularHours;
+    result.inventory.hasIntensiveHours =
+        projection.inventory.hasIntensiveHours;
+
+    result.teachers.reserve(
+        static_cast<qsizetype>(projection.teachers.size())
+        );
+    for (const auto& teacher : projection.teachers)
+    {
+        ScheduleImportTeacherPreview projected;
+        projected.teacherKey = QString::fromStdU16String(
+            teacher.teacherKey.value()
+            );
+        projected.teacherKr = QString::fromStdU16String(teacher.teacherName);
+        projected.importedRooms.reserve(
+            static_cast<qsizetype>(teacher.importedRooms.size())
+            );
+        for (const std::u16string& room : teacher.importedRooms)
+        {
+            projected.importedRooms.append(QString::fromStdU16String(room));
+        }
+        projected.matchingTeacherIds.reserve(
+            static_cast<qsizetype>(teacher.matchingTeacherIds.size())
+            );
+        for (const ImportDomain::TeacherId& teacherId :
+             teacher.matchingTeacherIds)
+        {
+            projected.matchingTeacherIds.append(snapshotLegacyId(teacherId));
+        }
+        projected.affectedClassCount =
+            static_cast<int>(teacher.affectedClassCount);
+        result.teachers.append(std::move(projected));
+    }
+
+    result.classes.reserve(
+        static_cast<qsizetype>(projection.classes.size())
+        );
+    for (const auto& value : projection.classes)
+    {
+        ScheduleImportClassPreview projected;
+        projected.candidateIndex = static_cast<int>(value.candidateIndex);
+        projected.matchingClassIds.reserve(
+            static_cast<qsizetype>(value.matchingClassIds.size())
+            );
+        for (const ImportDomain::ClassId& classId : value.matchingClassIds)
+        {
+            projected.matchingClassIds.append(snapshotLegacyId(classId));
+        }
+        if (value.suggestedClassId)
+        {
+            projected.suggestedClassId =
+                snapshotLegacyId(*value.suggestedClassId);
+        }
+        projected.exactMatch = value.exactMatch;
+        switch (value.confidence)
+        {
+        case ImportMatching::ScheduleImportMatchingConfidence::None:
+            projected.matchConfidence = ScheduleImportClassMatchConfidence::None;
+            break;
+        case ImportMatching::ScheduleImportMatchingConfidence::Possible:
+            projected.matchConfidence =
+                ScheduleImportClassMatchConfidence::Possible;
+            break;
+        case ImportMatching::ScheduleImportMatchingConfidence::Confident:
+            projected.matchConfidence =
+                ScheduleImportClassMatchConfidence::Confident;
+            break;
+        }
+        projected.matchExplanation = matchingExplanation(value.explanation);
+        result.classes.append(std::move(projected));
+    }
+
+    result.initiallyAbsentClassIds.reserve(
+        static_cast<qsizetype>(projection.initiallyAbsentClassIds.size())
+        );
+    for (const ImportDomain::ClassId& classId :
+         projection.initiallyAbsentClassIds)
+    {
+        result.initiallyAbsentClassIds.append(snapshotLegacyId(classId));
+    }
+    return result;
 }
 
 ImportDomain::TeacherId stateTeacherId(const int legacyId)
@@ -710,85 +931,6 @@ bool ScheduleImportReviewDialog::prepare()
         return false;
     }
 
-    const auto preview =
-        scheduleService->previewImport(
-            m_request.user,
-            m_request.kind
-            );
-    if (!preview)
-    {
-        DialogServices::showWarning(
-            this,
-            tr("Import Schedule"),
-            preview.error()
-            );
-        return false;
-    }
-
-    m_preview = *preview;
-    m_intensiveModeSection->setVisible(
-        m_request.kind == ScheduleImportKind::Intensive
-        && m_preview.inventory.hasIntensiveHours
-        );
-    m_updateIntensiveRadio->setChecked(true);
-    // The preview widget is created before the import is prepared, so its
-    // normal page-entry refresh has not run yet. Load the current display
-    // preferences before building the imported schedule model.
-    m_previewWidget->refreshSchedule();
-    m_previewWidget->setPreviewModel(
-        previewModel(
-            m_preview.user,
-            m_request.kind == ScheduleImportKind::Intensive,
-            m_previewWidget->displayState()
-            )
-        );
-    rebuildResolutionControls();
-    updateReviewState();
-    int previewEntryCount = 0;
-    for (const ScheduleImportClassCandidate& candidate : m_preview.user.classes)
-    {
-        previewEntryCount += candidate.times.size();
-    }
-    StartupProfiler::recordScheduleImportReviewPrepared(
-        m_preview.teachers.size(),
-        m_preview.classes.size(),
-        m_preview.user.diagnostics.size(),
-        previewEntryCount,
-        m_teacherControls.size(),
-        m_classControls.size()
-        );
-    m_prepared = true;
-    resizeForReviewStage();
-    QTimer::singleShot(
-        0,
-        this,
-        &ScheduleImportReviewDialog::resizeForReviewStage
-        );
-    return true;
-}
-
-void ScheduleImportReviewDialog::rebuildResolutionControls()
-{
-    clearLayout(m_teacherLayout);
-    clearLayout(m_classLayout);
-
-    m_teacherControls.clear();
-    m_classControls.clear();
-    m_warningLabel = nullptr;
-    m_warningAcknowledgement = nullptr;
-
-    if (m_warningScrollArea)
-    {
-        const int warningTabIndex =
-            m_resolutionTabs->indexOf(m_warningScrollArea);
-        if (warningTabIndex >= 0)
-        {
-            m_resolutionTabs->removeTab(warningTabIndex);
-        }
-        delete m_warningScrollArea;
-        m_warningScrollArea = nullptr;
-    }
-
     ClassMngr::Next::Platform::
         ApplicationServicesScheduleImportStateSnapshotPort snapshotPort(
             m_services
@@ -814,7 +956,85 @@ void ScheduleImportReviewDialog::rebuildResolutionControls()
             tr("Import resolution data could not be loaded."),
             scheduleImportSnapshotFailureMessage(failure)
             );
-        return;
+        return false;
+    }
+
+    const ImportMatching::ScheduleImportMatchingProjection matchingProjection =
+        ImportMatching::projectScheduleImportMatching(
+            scheduleImportMatchingInput(
+                m_request.user,
+                m_request.kind,
+                *stateSnapshot
+                )
+            );
+    m_preview = scheduleImportPreview(
+        m_request.user,
+        m_request.kind,
+        matchingProjection
+        );
+    m_intensiveModeSection->setVisible(
+        m_request.kind == ScheduleImportKind::Intensive
+        && m_preview.inventory.hasIntensiveHours
+        );
+    m_updateIntensiveRadio->setChecked(true);
+    // The preview widget is created before the import is prepared, so its
+    // normal page-entry refresh has not run yet. Load the current display
+    // preferences before building the imported schedule model.
+    m_previewWidget->refreshSchedule();
+    m_previewWidget->setPreviewModel(
+        previewModel(
+            m_preview.user,
+            m_request.kind == ScheduleImportKind::Intensive,
+            m_previewWidget->displayState()
+            )
+        );
+    rebuildResolutionControls(*stateSnapshot);
+    updateReviewState();
+    int previewEntryCount = 0;
+    for (const ScheduleImportClassCandidate& candidate : m_preview.user.classes)
+    {
+        previewEntryCount += candidate.times.size();
+    }
+    StartupProfiler::recordScheduleImportReviewPrepared(
+        m_preview.teachers.size(),
+        m_preview.classes.size(),
+        m_preview.user.diagnostics.size(),
+        previewEntryCount,
+        m_teacherControls.size(),
+        m_classControls.size()
+        );
+    m_prepared = true;
+    resizeForReviewStage();
+    QTimer::singleShot(
+        0,
+        this,
+        &ScheduleImportReviewDialog::resizeForReviewStage
+        );
+    return true;
+}
+
+void ScheduleImportReviewDialog::rebuildResolutionControls(
+    const ImportState::ScheduleImportStateSnapshot& stateSnapshot
+    )
+{
+    clearLayout(m_teacherLayout);
+    clearLayout(m_classLayout);
+
+    m_teacherControls.clear();
+    m_classControls.clear();
+    m_warningLabel = nullptr;
+    m_warningAcknowledgement = nullptr;
+
+    if (m_warningScrollArea)
+    {
+        const int warningTabIndex =
+            m_resolutionTabs->indexOf(m_warningScrollArea);
+        if (warningTabIndex >= 0)
+        {
+            m_resolutionTabs->removeTab(warningTabIndex);
+        }
+        delete m_warningScrollArea;
+        m_warningScrollArea = nullptr;
     }
 
     if (!m_preview.user.diagnostics.isEmpty())
@@ -887,7 +1107,7 @@ void ScheduleImportReviewDialog::rebuildResolutionControls()
                 m_classContent,
                 m_teacherLayout,
                 m_classLayout,
-                stateSnapshot,
+                &stateSnapshot,
                 &m_preview,
                 m_request.kind,
                 [this]()

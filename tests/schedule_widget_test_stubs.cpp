@@ -41,6 +41,9 @@ namespace ScheduleWidgetTestStubs
 {
 QHash<QString, QVariant> settings;
 QHash<int, QString> classGrades;
+QHash<int, QString> classLevels;
+QHash<int, QString> classRooms;
+QSet<int> classesWithEmptyRegularHours;
 QHash<int, QString> classNameOverrides;
 QHash<QString, QString> testingBlocks;
 QHash<int, TestingClass> testingClasses;
@@ -90,11 +93,13 @@ QList<int> matchingImportedTeacherIds;
 bool existingIntensiveHours = false;
 bool distinctIntensiveDays = false;
 bool includeAlternativeMatchingClass = false;
+bool duplicateKoreanTeacherNames = false;
 bool classesNavigationReadFailure = false;
 bool scheduleClassInfoReadFailure = false;
 int legacyClassListReadCount = 0;
 int repositoryClassListReadCount = 0;
 int legacyClassInfoReadCount = 0;
+int scheduleImportPreviewCallCount = 0;
 bool selectedClassGradeReadFailure = false;
 int selectedClassSubtitleReadCount = 0;
 int selectedClassSubtitleTeacherReadCount = 0;
@@ -142,6 +147,9 @@ void reset()
 {
     settings.clear();
     classGrades.clear();
+    classLevels.clear();
+    classRooms.clear();
+    classesWithEmptyRegularHours.clear();
     classNameOverrides.clear();
     testingBlocks.clear();
     testingClasses.clear();
@@ -190,11 +198,13 @@ void reset()
     existingIntensiveHours = false;
     distinctIntensiveDays = false;
     includeAlternativeMatchingClass = false;
+    duplicateKoreanTeacherNames = false;
     classesNavigationReadFailure = false;
     scheduleClassInfoReadFailure = false;
     legacyClassListReadCount = 0;
     repositoryClassListReadCount = 0;
     legacyClassInfoReadCount = 0;
+    scheduleImportPreviewCallCount = 0;
     selectedClassGradeReadFailure = false;
     selectedClassSubtitleReadCount = 0;
     selectedClassSubtitleTeacherReadCount = 0;
@@ -296,6 +306,42 @@ void setClassGrade(
     )
 {
     classGrades.insert(classId, grade);
+}
+
+void setClassLevel(
+    int classId,
+    const QString& level
+    )
+{
+    classLevels.insert(classId, level);
+}
+
+void setClassRoom(
+    int classId,
+    const QString& room
+    )
+{
+    classRooms.insert(classId, room);
+}
+
+void setClassRegularHoursEmpty(
+    const int classId,
+    const bool empty
+    )
+{
+    if (empty)
+    {
+        classesWithEmptyRegularHours.insert(classId);
+    }
+    else
+    {
+        classesWithEmptyRegularHours.remove(classId);
+    }
+}
+
+void setDuplicateKoreanTeacherNames(const bool duplicate)
+{
+    duplicateKoreanTeacherNames = duplicate;
 }
 
 void setSelectedClassGradeReadFailure(const bool fails)
@@ -924,6 +970,18 @@ Result<QList<ClassInfo>> ClassInfoRepository::loadScheduleClassInfos()
                     teacher.preferredDisplayName();
                 info.roomNumber = teacher.roomNumber;
             }
+            if (ScheduleWidgetTestStubs::classRooms.contains(classId))
+            {
+                info.roomNumber =
+                    ScheduleWidgetTestStubs::classRooms.value(classId);
+            }
+            if (
+                ScheduleWidgetTestStubs::classesWithEmptyRegularHours
+                    .contains(classId)
+                )
+            {
+                info.classTimes.clear();
+            }
             infos.append(std::move(info));
         }
     };
@@ -1101,6 +1159,7 @@ Result<ScheduleImportPreview> DataService::previewScheduleImport(
     ScheduleImportKind kind
     )
 {
+    ++ScheduleWidgetTestStubs::scheduleImportPreviewCallCount;
     ScheduleImportPreview preview;
     preview.kind = kind;
     preview.user = user;
@@ -1616,10 +1675,12 @@ Result<ClassInfo> DataService::loadClassInfo(
                 ? QStringLiteral("E5")
                 : QStringLiteral("E4")
             );
-    info.classLevel =
+    info.classLevel = ScheduleWidgetTestStubs::classLevels.value(
+        classId,
         classId == 43
             ? QStringLiteral("Athena")
-            : QStringLiteral("Hercules");
+            : QStringLiteral("Hercules")
+        );
     info.notes =
         classId == 43
             ? QStringLiteral("Review the vocabulary list.")
@@ -1809,10 +1870,13 @@ Result<Teacher> DataService::getTeacher(
 
 Result<QList<Teacher>> DataService::getAllTeachers()
 {
-    return QList<Teacher>{
-        getTeacher(7).value_or(Teacher{}),
-        getTeacher(8).value_or(Teacher{})
-    };
+    Teacher first = getTeacher(7).value_or(Teacher{});
+    Teacher second = getTeacher(8).value_or(Teacher{});
+    if (ScheduleWidgetTestStubs::duplicateKoreanTeacherNames)
+    {
+        second.teacherKr = first.teacherKr;
+    }
+    return QList<Teacher>{std::move(first), std::move(second)};
 }
 
 Theme ThemeService::currentTheme() const

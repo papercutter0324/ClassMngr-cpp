@@ -198,7 +198,8 @@ public:
                     info.classLevel.toStdU16String(),
                     info.classColor.toStdU16String(),
                     scheduleTimes(info.classTimes),
-                    scheduleTimes(info.intensiveTimes)
+                    scheduleTimes(info.intensiveTimes),
+                    info.roomNumber.toStdU16String()
                 });
             }
 

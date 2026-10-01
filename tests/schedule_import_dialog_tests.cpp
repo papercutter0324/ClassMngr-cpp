@@ -60,9 +60,17 @@ void setMatchingImportedTeacherIds(QList<int> teacherIds);
 void setExistingIntensiveHours(bool exists);
 void setIncludeAlternativeMatchingClass(bool include);
 void setClassGrade(int classId, const QString& grade);
+void setClassLevel(int classId, const QString& level);
+void setClassRoom(int classId, const QString& room);
+void setClassRegularHoursEmpty(int classId, bool empty);
+void setDuplicateKoreanTeacherNames(bool duplicate);
 void setScheduleClassInfoReadFailure(bool fail);
 extern int legacyClassInfoReadCount;
+extern int scheduleImportPreviewCallCount;
 }
+
+namespace ImportState = ClassMngr::Next::Application;
+namespace ImportDomain = ClassMngr::Next::Domain;
 
 class ScheduleImportDialogTests : public QObject
 {
@@ -82,6 +90,9 @@ private slots:
     void regularPreviewShowsFullEssayGrid();
     void possibleMatchIsPreselectedForUpdate();
     void resolutionChoicesUseTypedSnapshotAndPreserveOrdering();
+    void reviewMatchingUsesNormalizedSnapshotFields();
+    void resolutionBuilderRetainsAdditionalEligibleTargets();
+    void reviewPrepareSnapshotFailureDoesNotBuildControlsOrFallback();
     void reviewRefreshUsesFreshTypedStateSnapshot();
     void reviewSnapshotFailureStaysInvalidWithoutLegacyFallback();
     void ambiguousTargetedClassSkipIsRejected();
@@ -1142,7 +1153,6 @@ void ScheduleImportDialogTests
     ::compactFlowAndReviewPresentation()
 {
     ScheduleWidgetTestStubs::reset();
-    ScheduleWidgetTestStubs::setMatchImportedClasses(true);
     ScheduleWidgetTestStubs::setIncludeAdditionalClass(true);
     QTemporaryDir directory;
     QVERIFY(directory.isValid());
@@ -1480,17 +1490,17 @@ void ScheduleImportDialogTests
         );
     QVERIFY(exactMatchAction);
     QCOMPARE(exactMatchAction->count(), 4);
-    QVERIFY(exactMatchAction->itemText(0).startsWith(
-        QStringLiteral("Update suggested: E5 Athena")
-        ));
-    QVERIFY(exactMatchAction->itemText(0).contains(
-        QStringLiteral("\uC774\uC120\uC0DD")
-        ));
-    QVERIFY(exactMatchAction->itemText(0).contains(QStringLiteral("[Reg]")));
-    QCOMPARE(exactMatchAction->itemData(0, Qt::UserRole + 1).toInt(), 43);
+    QCOMPARE(
+        exactMatchAction->itemText(0),
+        QStringLiteral("Choose Update, Create, or Skip...")
+        );
     QVERIFY(exactMatchAction->itemText(1).startsWith(
-        QStringLiteral("Update existing: E4 Hercules")
+        QStringLiteral("Update suggested: E4 Hercules")
         ));
+    QVERIFY(exactMatchAction->itemText(1).contains(
+        QStringLiteral("\uAE40\uC120\uC0DD")
+        ));
+    QVERIFY(exactMatchAction->itemText(1).contains(QStringLiteral("[Reg]")));
     QCOMPARE(exactMatchAction->itemData(1, Qt::UserRole + 1).toInt(), 42);
     QCOMPARE(
         exactMatchAction->itemText(2),
@@ -1500,8 +1510,8 @@ void ScheduleImportDialogTests
         exactMatchAction->itemText(3),
         QStringLiteral("Skip imported class")
         );
-    QCOMPARE(exactMatchAction->currentIndex(), 0);
-    QCOMPARE(exactMatchAction->currentData(Qt::UserRole + 1).toInt(), 43);
+    QCOMPARE(exactMatchAction->currentIndex(), 1);
+    QCOMPARE(exactMatchAction->currentData(Qt::UserRole + 1).toInt(), 42);
 
     const auto colorButtons =
         review->findChildren<QPushButton*>(
@@ -1600,31 +1610,26 @@ void ScheduleImportDialogTests
                     )
             )
         );
-    const int gradePosition =
-        changedDetails.indexOf(QStringLiteral("Grade:"));
-    const int levelPosition =
-        changedDetails.indexOf(QStringLiteral("Level:"));
-    const int teacherPosition =
-        changedDetails.indexOf(QStringLiteral("Teacher:"));
-    const int daysPosition =
-        changedDetails.indexOf(QStringLiteral("Days:"));
-    const int colorPosition =
-        changedDetails.indexOf(QStringLiteral("Color:"));
-    QVERIFY(gradePosition >= 0);
-    QVERIFY(gradePosition < levelPosition);
-    QVERIFY(levelPosition < teacherPosition);
-    QVERIFY(teacherPosition < daysPosition);
-    QVERIFY(daysPosition < colorPosition);
+    QVERIFY(changedDetails.contains(QStringLiteral("Days:")));
+    QVERIFY(!changedDetails.contains(QStringLiteral("Grade:")));
+    QVERIFY(!changedDetails.contains(QStringLiteral("Level:")));
+    QVERIFY(changedDetails.contains(QStringLiteral("Teacher:")));
     QVERIFY2(
         changedDetails.contains(
-            QStringLiteral("— → Tues. 5:00pm - 5:55pm")
+            QStringLiteral("Tues. 4:00pm - 4:50pm")
             ),
         qPrintable(changedDetails)
         );
     QVERIFY(
         changedDetails.contains(
-            QStringLiteral("<br>Thurs. 5:00pm - 5:50pm → Thurs. 5:00pm - 5:55pm")
+            QStringLiteral("Tues. 5:00pm - 5:55pm")
             )
+        );
+    QVERIFY2(
+        changedDetails.contains(
+            QStringLiteral("Thurs. 5:00pm - 5:55pm")
+            ),
+        qPrintable(changedDetails)
         );
     QVERIFY(
         changedDetails.contains(
@@ -1890,9 +1895,6 @@ void ScheduleImportDialogTests::regularPreviewShowsFullEssayGrid()
 
 void ScheduleImportDialogTests::possibleMatchIsPreselectedForUpdate()
 {
-    ScheduleWidgetTestStubs::setIncludeAdditionalClass(true);
-    ScheduleWidgetTestStubs::setPossibleImportedClasses(true);
-
     ApplicationServices services;
     ScheduleImportReviewRequest request;
     request.kind = ScheduleImportKind::Normal;
@@ -1901,12 +1903,12 @@ void ScheduleImportDialogTests::possibleMatchIsPreselectedForUpdate()
     ScheduleImportClassCandidate candidate;
     candidate.teacherKey = QStringLiteral("김선생");
     candidate.teacherKr = QStringLiteral("김선생");
-    candidate.rooms = {QStringLiteral("413")};
+    candidate.rooms = {QStringLiteral("414")};
     candidate.classGrade = QStringLiteral("E4");
     candidate.classLevel = QStringLiteral("Hercules");
     candidate.times = {
         {
-            QStringLiteral("Monday"),
+            QStringLiteral("Tuesday"),
             QStringLiteral("4:00 PM"),
             QStringLiteral("4:55 PM")
         }
@@ -1928,15 +1930,14 @@ void ScheduleImportDialogTests::possibleMatchIsPreselectedForUpdate()
         action->currentData(Qt::UserRole).toInt(),
         static_cast<int>(ScheduleImportClassAction::UpdateExisting)
         );
-    QCOMPARE(action->currentData(Qt::UserRole + 1).toInt(), 43);
+    QCOMPARE(action->currentData(Qt::UserRole + 1).toInt(), 42);
 }
 
 void ScheduleImportDialogTests::
 resolutionChoicesUseTypedSnapshotAndPreserveOrdering()
 {
     ScheduleWidgetTestStubs::setIncludeAdditionalClass(true);
-    ScheduleWidgetTestStubs::setPossibleImportedClasses(true);
-    ScheduleWidgetTestStubs::setMatchingImportedTeacherIds({8, 7});
+    ScheduleWidgetTestStubs::setDuplicateKoreanTeacherNames(true);
 
     ApplicationServices services;
     ScheduleImportReviewRequest request;
@@ -1975,10 +1976,10 @@ resolutionChoicesUseTypedSnapshotAndPreserveOrdering()
 
     const QStringList expectedTeacherChoices{
         QStringLiteral("Choose a resolution..."),
-        QStringLiteral("Use existing: \uC774\uC120\uC0DD \u2014 Room 512"),
-        QStringLiteral("Update existing room: \uC774\uC120\uC0DD \u2014 Room 512"),
         QStringLiteral("Use existing: \uAE40\uC120\uC0DD \u2014 Room 413"),
         QStringLiteral("Update existing room: \uAE40\uC120\uC0DD \u2014 Room 413"),
+        QStringLiteral("Use existing: \uAE40\uC120\uC0DD \u2014 Room 512"),
+        QStringLiteral("Update existing room: \uAE40\uC120\uC0DD \u2014 Room 512"),
         QStringLiteral("Create a new Korean teacher"),
         QStringLiteral("Skip affected classes")
     };
@@ -1989,40 +1990,32 @@ resolutionChoicesUseTypedSnapshotAndPreserveOrdering()
     }
     QCOMPARE(teacherAction->currentIndex(), 0);
     QCOMPARE(teacherAction->currentData(Qt::UserRole).toInt(), -1);
-    QCOMPARE(teacherAction->itemData(1, Qt::UserRole + 1).toInt(), 8);
-    QCOMPARE(teacherAction->itemData(3, Qt::UserRole + 1).toInt(), 7);
+    QCOMPARE(teacherAction->itemData(1, Qt::UserRole + 1).toInt(), 7);
+    QCOMPARE(teacherAction->itemData(3, Qt::UserRole + 1).toInt(), 8);
 
     auto* classAction = review.findChild<QComboBox*>(
         QStringLiteral("scheduleImportClassAction_0")
         );
     QVERIFY(classAction);
-    QCOMPARE(classAction->count(), 5);
+    QCOMPARE(classAction->count(), 4);
     QCOMPARE(
         classAction->itemText(0),
         QStringLiteral("Choose Update, Create, or Skip...")
         );
     QVERIFY(classAction->itemText(1).startsWith(
-        QStringLiteral("Update suggested: E5 Athena")
+        QStringLiteral("Update suggested: E4 Hercules")
         ));
     QVERIFY(classAction->itemText(1).contains(
-        QStringLiteral("\uC774\uC120\uC0DD")
-        ));
-    QVERIFY(classAction->itemText(1).contains(QStringLiteral("[Reg]")));
-    QCOMPARE(classAction->itemData(1, Qt::UserRole + 1).toInt(), 43);
-    QVERIFY(classAction->itemText(2).startsWith(
-        QStringLiteral("Update existing: E4 Hercules")
-        ));
-    QVERIFY(classAction->itemText(2).contains(
         QStringLiteral("\uAE40\uC120\uC0DD")
         ));
-    QVERIFY(classAction->itemText(2).contains(QStringLiteral("[Reg]")));
-    QCOMPARE(classAction->itemData(2, Qt::UserRole + 1).toInt(), 42);
+    QVERIFY(classAction->itemText(1).contains(QStringLiteral("[Reg]")));
+    QCOMPARE(classAction->itemData(1, Qt::UserRole + 1).toInt(), 42);
     QCOMPARE(
-        classAction->itemText(3),
+        classAction->itemText(2),
         QStringLiteral("Create new class")
         );
     QCOMPARE(
-        classAction->itemText(4),
+        classAction->itemText(3),
         QStringLiteral("Skip imported class")
         );
     QCOMPARE(classAction->currentIndex(), 1);
@@ -2030,6 +2023,206 @@ resolutionChoicesUseTypedSnapshotAndPreserveOrdering()
         classAction->currentData(Qt::UserRole).toInt(),
         static_cast<int>(ScheduleImportClassAction::UpdateExisting)
         );
+}
+
+void ScheduleImportDialogTests::reviewMatchingUsesNormalizedSnapshotFields()
+{
+    ScheduleWidgetTestStubs::setClassGrade(
+        42,
+        QStringLiteral(" E4 ")
+        );
+    ScheduleWidgetTestStubs::setClassLevel(
+        42,
+        QStringLiteral(" hErCuLeS ")
+        );
+    ScheduleWidgetTestStubs::setClassRoom(
+        42,
+        QStringLiteral(" Room   413 ")
+        );
+
+    ApplicationServices services;
+    const Result<Teacher> teacher = services.teacherService()->teacher(7);
+    QVERIFY(teacher);
+
+    ScheduleImportReviewRequest request;
+    request.kind = ScheduleImportKind::Normal;
+    request.user.name = QStringLiteral("Alice");
+
+    ScheduleImportClassCandidate candidate;
+    candidate.teacherKey = TeacherImportNameUtils::hangulOnly(
+        teacher->teacherKr
+        );
+    candidate.teacherKr = teacher->teacherKr;
+    candidate.rooms = {QStringLiteral(" rOoM  413 ")};
+    candidate.classGrade = QStringLiteral(" e4 ");
+    candidate.classLevel = QStringLiteral(" HERCULES ");
+    candidate.times = {
+        {
+            QStringLiteral("Tuesday"),
+            QStringLiteral("4:00 PM"),
+            QStringLiteral("4:50 PM")
+        }
+    };
+    request.user.classes = {candidate};
+
+    ScheduleImportReviewDialog review(&services, request);
+    QVERIFY(review.prepare());
+
+    auto* action = review.findChild<QComboBox*>(
+        QStringLiteral("scheduleImportClassAction_0")
+        );
+    QVERIFY(action);
+    QCOMPARE(
+        action->currentData(Qt::UserRole).toInt(),
+        static_cast<int>(ScheduleImportClassAction::UpdateExisting)
+        );
+    QCOMPARE(action->currentData(Qt::UserRole + 1).toInt(), 42);
+    QVERIFY(action->currentText().startsWith(
+        QStringLiteral("Update suggested: E4 hErCuLeS")
+        ));
+    QCOMPARE(ScheduleWidgetTestStubs::scheduleImportPreviewCallCount, 0);
+}
+
+void ScheduleImportDialogTests::
+resolutionBuilderRetainsAdditionalEligibleTargets()
+{
+    const auto teacherId = *ImportDomain::TeacherId::fromString("7");
+    const auto suggestedClassId = *ImportDomain::ClassId::fromString("43");
+    const auto additionalClassId = *ImportDomain::ClassId::fromString("42");
+
+    ImportState::ScheduleImportStateSnapshot snapshot;
+    snapshot.teachers.push_back({teacherId, u"\uAE40\uC120\uC0DD", u"413"});
+    const auto makeClass = [teacherId](
+                               const ImportDomain::ClassId& id,
+                               const std::u16string& name
+                               )
+    {
+        return ImportState::ScheduleImportStateReadClassSnapshot{
+            id,
+            teacherId,
+            name,
+            u"E4",
+            u"Hercules",
+            {},
+            {{u"Tuesday", u"4:00 PM", u"4:50 PM"}},
+            {},
+            {}
+        };
+    };
+    snapshot.classes = {
+        makeClass(suggestedClassId, u"Athena"),
+        makeClass(additionalClassId, u"Hercules")
+    };
+
+    ScheduleImportPreview preview;
+    preview.kind = ScheduleImportKind::Normal;
+    ScheduleImportClassCandidate candidate;
+    candidate.teacherKey = QStringLiteral("\uAE40\uC120\uC0DD");
+    candidate.teacherKr = QStringLiteral("\uAE40\uC120\uC0DD");
+    candidate.classGrade = QStringLiteral("E4");
+    candidate.classLevel = QStringLiteral("Hercules");
+    candidate.times = {
+        {
+            QStringLiteral("Tuesday"),
+            QStringLiteral("4:00 PM"),
+            QStringLiteral("4:50 PM")
+        }
+    };
+    preview.user.classes = {candidate};
+    ScheduleImportClassPreview projected;
+    projected.candidateIndex = 0;
+    projected.matchingClassIds = {43};
+    projected.suggestedClassId = 43;
+    projected.exactMatch = true;
+    projected.matchConfidence = ScheduleImportClassMatchConfidence::Confident;
+    preview.classes = {projected};
+
+    QWidget root;
+    QWidget teacherContent(&root);
+    QWidget classContent(&root);
+    QVBoxLayout teacherLayout(&teacherContent);
+    QVBoxLayout classLayout(&classContent);
+    const auto result = ScheduleImportResolutionControls::build({
+        &root,
+        &teacherContent,
+        &classContent,
+        &teacherLayout,
+        &classLayout,
+        &snapshot,
+        &preview,
+        ScheduleImportKind::Normal,
+        {},
+        {}
+    });
+    QVERIFY(result);
+    QCOMPARE(result->classControls.size(), 1);
+    const QComboBox* action = result->classControls.constFirst().action;
+    QVERIFY(action);
+    QCOMPARE(action->count(), 4);
+    QCOMPARE(action->itemData(0, Qt::UserRole + 1).toInt(), 43);
+    QCOMPARE(action->itemData(1, Qt::UserRole + 1).toInt(), 42);
+    QVERIFY(action->itemText(0).startsWith(
+        QStringLiteral("Update suggested:")
+        ));
+    QVERIFY(action->itemText(1).startsWith(
+        QStringLiteral("Update existing:")
+        ));
+}
+
+void ScheduleImportDialogTests::
+reviewPrepareSnapshotFailureDoesNotBuildControlsOrFallback()
+{
+    ScheduleWidgetTestStubs::setScheduleClassInfoReadFailure(true);
+
+    ApplicationServices services;
+    ScheduleImportReviewRequest request;
+    request.kind = ScheduleImportKind::Normal;
+    request.user.name = QStringLiteral("Alice");
+
+    ScheduleImportClassCandidate candidate;
+    candidate.teacherKey = QStringLiteral("\uAE40\uC120\uC0DD");
+    candidate.teacherKr = QStringLiteral("\uAE40\uC120\uC0DD");
+    candidate.rooms = {QStringLiteral("413")};
+    candidate.classGrade = QStringLiteral("E4");
+    candidate.classLevel = QStringLiteral("Hercules");
+    candidate.times = {
+        {
+            QStringLiteral("Tuesday"),
+            QStringLiteral("4:00 PM"),
+            QStringLiteral("4:50 PM")
+        }
+    };
+    request.user.classes = {candidate};
+
+    FakeUserPromptService prompts;
+    DialogServices::setUserPromptServiceForTesting(&prompts);
+    ScheduleImportReviewDialog review(&services, request);
+    QVERIFY(!review.prepare());
+
+    QCOMPARE(ScheduleWidgetTestStubs::scheduleImportPreviewCallCount, 0);
+    QCOMPARE(
+        review.findChildren<QComboBox*>(
+            QRegularExpression(QStringLiteral("^scheduleImportTeacherAction_"))
+            ).size(),
+        0
+        );
+    QCOMPARE(
+        review.findChildren<QComboBox*>(
+            QRegularExpression(QStringLiteral("^scheduleImportClassAction_"))
+            ).size(),
+        0
+        );
+    QCOMPARE(prompts.messages.size(), 1);
+    QCOMPARE(
+        prompts.messages.constFirst().title,
+        QStringLiteral("Review Schedule Import")
+        );
+    QVERIFY(prompts.messages.constFirst().message.contains(
+        QStringLiteral("Import resolution data could not be loaded.")
+        ));
+    QVERIFY(prompts.messages.constFirst().details.contains(
+        QStringLiteral("injected schedule read failure")
+        ));
 }
 
 void ScheduleImportDialogTests::reviewRefreshUsesFreshTypedStateSnapshot()
@@ -2093,7 +2286,6 @@ reviewSnapshotFailureStaysInvalidWithoutLegacyFallback()
 {
     ScheduleWidgetTestStubs::setIncludeAdditionalClass(true);
     ScheduleWidgetTestStubs::setPossibleImportedClasses(true);
-    ScheduleWidgetTestStubs::setScheduleClassInfoReadFailure(true);
 
     ApplicationServices services;
     ScheduleImportReviewRequest request;
@@ -2121,6 +2313,14 @@ reviewSnapshotFailureStaysInvalidWithoutLegacyFallback()
     ScheduleImportReviewDialog review(&services, request);
     QVERIFY(review.prepare());
 
+    auto* classAction = review.findChild<QComboBox*>(
+        QStringLiteral("scheduleImportClassAction_0")
+        );
+    QVERIFY(classAction);
+    QVERIFY(classAction->count() > 1);
+    ScheduleWidgetTestStubs::setScheduleClassInfoReadFailure(true);
+    classAction->setCurrentIndex(classAction->count() - 1);
+
     auto* import = review.findChild<QPushButton*>(
         QStringLiteral("scheduleImportAcceptButton")
         );
@@ -2141,28 +2341,16 @@ reviewSnapshotFailureStaysInvalidWithoutLegacyFallback()
         review.findChildren<QComboBox*>(
             QRegularExpression(QStringLiteral("^scheduleImportTeacherAction_"))
             ).size(),
-        0
+        1
         );
     QCOMPARE(
         review.findChildren<QComboBox*>(
             QRegularExpression(QStringLiteral("^scheduleImportClassAction_"))
             ).size(),
-        0
+        1
         );
-    QCOMPARE(prompts.messages.size(), 1);
-    QCOMPARE(
-        prompts.messages.constFirst().title,
-        QStringLiteral("Review Schedule Import")
-        );
-    QVERIFY(prompts.messages.constFirst().message.contains(
-        QStringLiteral("Import resolution data could not be loaded.")
-        ));
-    QVERIFY(prompts.messages.constFirst().details.contains(
-        QStringLiteral("injected schedule read failure")
-        ));
-    QVERIFY(summary->text().contains(
-        QStringLiteral("0 existing schedule(s) cleared")
-        ));
+    QCOMPARE(prompts.messages.size(), 0);
+    QCOMPARE(ScheduleWidgetTestStubs::scheduleImportPreviewCallCount, 0);
 }
 
 void ScheduleImportDialogTests::ambiguousTargetedClassSkipIsRejected()
@@ -2296,7 +2484,9 @@ void ScheduleImportDialogTests::reviewWarnsForDuplicateClassTargets()
 {
     ScheduleWidgetTestStubs::setIncludeAdditionalClass(true);
     ScheduleWidgetTestStubs::setIncludeAlternativeMatchingClass(true);
-    ScheduleWidgetTestStubs::setPossibleImportedClasses(true);
+    ScheduleWidgetTestStubs::setClassGrade(43, QStringLiteral("E4"));
+    ScheduleWidgetTestStubs::setClassLevel(43, QStringLiteral("Hercules"));
+    ScheduleWidgetTestStubs::setClassRegularHoursEmpty(43, true);
 
     ApplicationServices services;
     ScheduleImportReviewRequest request;
@@ -2333,6 +2523,22 @@ void ScheduleImportDialogTests::reviewWarnsForDuplicateClassTargets()
         request
         );
     QVERIFY(review.prepare());
+    auto* firstAction = review.findChild<QComboBox*>(
+        QStringLiteral("scheduleImportClassAction_0")
+        );
+    auto* secondAction = review.findChild<QComboBox*>(
+        QStringLiteral("scheduleImportClassAction_1")
+        );
+    QVERIFY(firstAction);
+    QVERIFY(secondAction);
+    QCOMPARE(
+        firstAction->currentData(Qt::UserRole + 1).toInt(),
+        44
+        );
+    QCOMPARE(
+        secondAction->currentData(Qt::UserRole + 1).toInt(),
+        44
+        );
     review.show();
 
     auto* import =
@@ -2357,7 +2563,7 @@ void ScheduleImportDialogTests::reviewWarnsForDuplicateClassTargets()
             QStringLiteral("Multiple imported classes are assigned")
             )
         );
-    QVERIFY(warning->text().contains(QStringLiteral("E5 Athena")));
+    QVERIFY(warning->text().contains(QStringLiteral("E4 Hercules")));
     QVERIFY(!import->isEnabled());
     warning->accept();
     QTRY_VERIFY(
@@ -2372,16 +2578,11 @@ void ScheduleImportDialogTests::reviewWarnsForDuplicateClassTargets()
             )
         );
 
-    auto* secondAction =
-        review.findChild<QComboBox*>(
-            QStringLiteral("scheduleImportClassAction_1")
-            );
-    QVERIFY(secondAction);
     const int alternateTargetIndex =
         actionIndex(
             secondAction,
             ScheduleImportClassAction::UpdateExisting,
-            44
+            43
             );
     QVERIFY(alternateTargetIndex >= 0);
     secondAction->setCurrentIndex(alternateTargetIndex);
@@ -2391,7 +2592,7 @@ void ScheduleImportDialogTests::reviewWarnsForDuplicateClassTargets()
         actionIndex(
             secondAction,
             ScheduleImportClassAction::UpdateExisting,
-            43
+            44
             );
     QVERIFY(duplicateTargetIndex >= 0);
     secondAction->setCurrentIndex(duplicateTargetIndex);
@@ -2511,6 +2712,17 @@ void ScheduleImportDialogTests
         request
         );
     QVERIFY(review.prepare());
+    auto* classAction = review.findChild<QComboBox*>(
+        QStringLiteral("scheduleImportClassAction_0")
+        );
+    QVERIFY(classAction);
+    QCOMPARE(classAction->currentData(Qt::UserRole + 1).toInt(), 42);
+    const int createNewIndex = actionIndex(
+        classAction,
+        ScheduleImportClassAction::CreateNew
+        );
+    QVERIFY(createNewIndex >= 0);
+    classAction->setCurrentIndex(createNewIndex);
     review.show();
 
     QTRY_VERIFY(
@@ -3130,7 +3342,7 @@ void ScheduleImportDialogTests
             );
     }
 
-    ScheduleWidgetTestStubs::setMatchImportedClasses(true);
+    ScheduleWidgetTestStubs::setClassRegularHoursEmpty(42, true);
     ApplicationServices services;
     saveSettingOrFail(services.dataService(),
         QStringLiteral("myInfo/name"),
