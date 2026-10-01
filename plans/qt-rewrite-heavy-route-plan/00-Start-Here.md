@@ -11,8 +11,9 @@
   preferences), and F207 (Sub Prep Personal Zoom preferences) are accepted;
   F208 (Sub Prep saved-content preferences), F209 (speaking-evaluation save),
   F210 (recent-workspace history policy), F211 (speaking-evaluation read-port
-  extraction), and F212 (upcoming-birthday schedule policy) are accepted.
-  F213 (default evaluation selection) is selected. Gates 1 and 2
+  extraction), F212 (upcoming-birthday schedule policy), and F213 (default
+  evaluation selection) are accepted. F214 (class day-filter matching policy)
+  is selected. Gates 1 and 2
   remain Partial, with broader feature migration, parity, and 96-class Release
   memory evidence still open. See the
   [Phase 2 progress log](03-Phase-2-Progress-Log.md) for current scope and

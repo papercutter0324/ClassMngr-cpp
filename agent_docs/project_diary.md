@@ -1844,3 +1844,12 @@ controller-policy candidate. Keep calendar schedule/date calculations and
 localized display labels at the feature boundary; move only row-content policy
 and data reads behind the existing contracts. Preserve the rule that any
 non-whitespace evaluation cell makes the current term populated.
+
+## 2026-10-01 - F214 class day-filter policy
+
+Move matching and active-schedule visibility decisions behind the Qt-free
+Application boundary while keeping weekday-string adaptation and presentation
+in the feature. Preserve trimmed case-folded matching, weekend aliases, the
+selected regular/intensive schedule, OR matching, and the rule that
+ActiveSchedule excludes classes without entries even when the selected-day set
+is empty.

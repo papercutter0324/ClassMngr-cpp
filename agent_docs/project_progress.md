@@ -155,18 +155,29 @@ boundary. The executor's focused CTests passed 2/2; the follow-up Unicode
 preservation assertion passed 1/1, and independent tester recheck passed 1/1.
 CMake ownership validated 1,146 handwritten sources. No full suite ran.
 
-Two independent scans compared different F213 candidates: skipped-update
-version reconciliation in `UpdateController`, and the default evaluation
-selection path that still reads through `ClassService` and
-`SpeakingEvaluationService`. F213 is selected to complete the typed Application
-path for default evaluation selection: move populated-row semantics into the
-Qt-free Application contract and route feature reads through the existing
-selected-class-grade and Speaking Evaluation read ports. Keep calendar date,
-schedule/term calculation, and display-label mapping at the feature boundary.
-Preserve All/no-data/error empty results, grade-to-school mapping, any
-non-whitespace cell as populated, and current/previous cycle behavior,
-including Winter/Fall wrap. Phase 2 remains In Progress/Open; Gates 1 and 2
-remain Partial.
+F213 source commit `dc2b3ed9` completes the typed Application path for default
+evaluation selection. The feature now reads class grade and speaking
+evaluations through the existing typed Application queries and platform ports;
+its production path no longer calls `ClassService` or
+`SpeakingEvaluationService`. The Qt-free contract evaluates UTF-16 rows,
+including ASCII whitespace, Unicode separators, and U+0085 parity; the feature
+wrapper delegates its compatibility helper to that policy. Focused build
+passed for `ClassMngrFeatures` and the three evaluation-selection targets;
+CTest passed 3/3, including app-less, feature-level, and production integration
+coverage. CMake ownership validated 1,146 handwritten sources, unchanged. An
+independent review caught the U+0085 gap before acceptance; the repair and
+focused recheck passed. `git diff --check` passed; no full suite ran.
+
+Two independent scans compared F214 candidates: the automatic-update startup
+eligibility/state transition and the class-tab day-filter rule. F214 is
+selected to move day-filter matching into Qt-free Application policy. Preserve
+trimmed, case-folded day matching, `weekend`/`wkend` expansion to Saturday and
+Sunday, OR matching, regular/intensive schedule selection, and ActiveSchedule
+visibility even with no selected days. Keep class grouping, ordering, time
+formatting, and translated labels in the feature. Add app-less policy coverage
+and retain `ClassMngrClassTabNavigationModelTests` as feature integration.
+Automatic-update startup eligibility remains a later candidate. Phase 2
+remains In Progress/Open; Gates 1 and 2 remain Partial.
 
 ### Earlier Phase 2 detail - 2026-09-26
 

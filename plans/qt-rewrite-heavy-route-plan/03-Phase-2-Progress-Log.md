@@ -8972,3 +8972,26 @@ previous-cycle fallback, including Winter/Fall wrap. Two independent Explorer
 scans disagreed on the candidate; the selected path closes a concrete v1 read
 path through existing typed contracts. Phase 2 remains In Progress/Open;
 Gates 1 and 2 remain Partial.
+
+### Progress update - 2026-10-01 (F213 accepted; F214 selected)
+
+F213, source commit `dc2b3ed9`, routes `forClass` through
+`SelectedClassGradeReadPort`/`SelectedClassGradeReadQuery` and
+`SpeakingEvaluationReadPort`/`SpeakingEvaluationQuery`; the production path no
+longer calls legacy `ClassService` or `SpeakingEvaluationService`. Qt-free
+Application owns the UTF-16 row-content policy, including U+0085 parity. The
+focused target and `ClassMngrFeatures` built successfully; CTest passed 3/3,
+and CMake ownership validated 1,146 files. The independent Tester caught a
+U+0085 mismatch; it passed after repair. `git diff --check` passed; no full
+suite ran.
+
+F214 is selected: move class day-filter matching into Qt-free Application,
+including selected-day matching, trimmed case-fold normalization,
+`weekend`/`wkend` expansion, Regular/Intensive source selection, and
+ActiveSchedule hide-empty behavior. Keep grouping, ordering, time formatting,
+and translated labels in the feature. Acceptance covers app-less policy tests
+and existing `ClassTabNavigationModelTests`. Two independent Explorer scans
+disagreed on automatic-update startup eligibility; class day-filter is selected
+as a bounded UI-owned rule with existing production-path tests. Update
+eligibility remains a later candidate. Phase 2 remains In Progress/Open; Gates
+1 and 2 remain Partial.

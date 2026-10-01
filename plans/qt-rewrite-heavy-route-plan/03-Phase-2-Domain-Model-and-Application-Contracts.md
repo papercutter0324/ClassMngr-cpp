@@ -61,7 +61,8 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
   Sub Prep saved-content preferences and F209's speaking-evaluation save are
   accepted; F210's recent-workspace history policy, F211's Speaking
   Evaluation read-port extraction, and F212's upcoming-birthday schedule
-  policy are accepted. F213's default evaluation selection is selected.
+  policy and F213's default evaluation selection are accepted. F214's class
+  day-filter matching policy is selected.
   The prior F123 candidate wording is historical;
   current Teacher Profile integration status is recorded in the progress log.
   Gates 1 and 2
@@ -218,24 +219,26 @@ No new v2 production path depends on DataService, MainWindow, PageManager, or a 
 
 Earlier verified slices and cumulative exit-gate snapshots are archived in the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 
-## Latest progress update - 2026-10-01 (F212 accepted; F213 selected)
+## Latest progress update - 2026-10-01 (F213 accepted; F214 selected)
 
-F212, source commit `bd6d044f`, moves upcoming-birthday date parsing,
-occurrence generation, and week bucketing from the feature wrapper into a
-Qt-free Application use case. CMake ownership validated 1,146 handwritten
-sources. The focused Application and feature CTests passed 2/2; after a Unicode
-display-name regression assertion was added, the focused Application target
-passed 1/1 and the independent Tester recheck passed 1/1. No full suite ran.
+F213, source commit `dc2b3ed9`, routes `forClass` through
+`SelectedClassGradeReadPort`/`SelectedClassGradeReadQuery` and
+`SpeakingEvaluationReadPort`/`SpeakingEvaluationQuery`; the production path no
+longer calls legacy `ClassService` or `SpeakingEvaluationService`. Qt-free
+Application owns the UTF-16 row-content policy, including U+0085 parity. The
+focused target and `ClassMngrFeatures` built successfully; CTest passed 3/3,
+and CMake ownership validated 1,146 files. The independent Tester caught a
+U+0085 mismatch; it passed after repair. `git diff --check` passed; no full
+suite ran.
 
-F213 is selected: move default evaluation selection's populated-row semantics
-into Qt-free Application and route the feature wrapper through the existing
-typed `SelectedClassGradeReadPort` and `SpeakingEvaluationReadPort` contracts
-and Application cycle selector. Keep calendar schedule/date/term calculation
-and display labels in the feature. Preserve `All` as empty; empty results for
-no data, schedule, or read error; grade-level mapping; any non-whitespace cell,
-including Unicode, making the current evaluation populated; and four-period
-previous-cycle fallback, including Winter/Fall wrap. Two independent Explorer
-scans disagreed on the candidate; the selected path closes a concrete v1 read
-path through existing typed contracts. Phase 2 remains In Progress/Open;
-Gates 1 and 2 remain Partial. See the [Phase 2 progress log](03-Phase-2-Progress-Log.md)
+F214 is selected: move class day-filter matching into Qt-free Application,
+including selected-day matching, trimmed case-fold normalization,
+`weekend`/`wkend` expansion, Regular/Intensive source selection, and
+ActiveSchedule hide-empty behavior. Keep grouping, ordering, time formatting,
+and translated labels in the feature. Acceptance covers app-less policy tests
+and existing `ClassTabNavigationModelTests`. Two independent Explorer scans
+disagreed on automatic-update startup eligibility; class day-filter is selected
+as a bounded UI-owned rule with existing production-path tests. Update
+eligibility remains a later candidate. Phase 2 remains In Progress/Open; Gates
+1 and 2 remain Partial. See the [Phase 2 progress log](03-Phase-2-Progress-Log.md)
 for prior slice evidence.
