@@ -924,13 +924,6 @@ bool ScheduleImportReviewDialog::prepare()
         return true;
     }
 
-    ScheduleService* scheduleService =
-        openScheduleImportService(m_services);
-    if (!scheduleService)
-    {
-        return false;
-    }
-
     ClassMngr::Next::Platform::
         ApplicationServicesScheduleImportStateSnapshotPort snapshotPort(
             m_services

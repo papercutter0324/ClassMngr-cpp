@@ -64,6 +64,7 @@ void setClassLevel(int classId, const QString& level);
 void setClassRoom(int classId, const QString& room);
 void setClassRegularHoursEmpty(int classId, bool empty);
 void setDuplicateKoreanTeacherNames(bool duplicate);
+void setDatabaseSessionOpen(bool open);
 void setScheduleClassInfoReadFailure(bool fail);
 extern int legacyClassInfoReadCount;
 extern int scheduleImportPreviewCallCount;
@@ -93,6 +94,7 @@ private slots:
     void reviewMatchingUsesNormalizedSnapshotFields();
     void resolutionBuilderRetainsAdditionalEligibleTargets();
     void reviewPrepareSnapshotFailureDoesNotBuildControlsOrFallback();
+    void reviewPrepareClosedSessionUsesSnapshotWarning();
     void reviewRefreshUsesFreshTypedStateSnapshot();
     void reviewSnapshotFailureStaysInvalidWithoutLegacyFallback();
     void ambiguousTargetedClassSkipIsRejected();
@@ -2222,6 +2224,62 @@ reviewPrepareSnapshotFailureDoesNotBuildControlsOrFallback()
         ));
     QVERIFY(prompts.messages.constFirst().details.contains(
         QStringLiteral("injected schedule read failure")
+        ));
+}
+
+void ScheduleImportDialogTests::
+reviewPrepareClosedSessionUsesSnapshotWarning()
+{
+    ScheduleWidgetTestStubs::setDatabaseSessionOpen(false);
+
+    ApplicationServices services;
+    ScheduleImportReviewRequest request;
+    request.kind = ScheduleImportKind::Normal;
+    request.user.name = QStringLiteral("Alice");
+
+    ScheduleImportClassCandidate candidate;
+    candidate.teacherKey = QStringLiteral("\uAE40\uC120\uC0DD");
+    candidate.teacherKr = QStringLiteral("\uAE40\uC120\uC0DD");
+    candidate.rooms = {QStringLiteral("413")};
+    candidate.classGrade = QStringLiteral("E4");
+    candidate.classLevel = QStringLiteral("Hercules");
+    candidate.times = {
+        {
+            QStringLiteral("Tuesday"),
+            QStringLiteral("4:00 PM"),
+            QStringLiteral("4:50 PM")
+        }
+    };
+    request.user.classes = {candidate};
+
+    FakeUserPromptService prompts;
+    DialogServices::setUserPromptServiceForTesting(&prompts);
+    ScheduleImportReviewDialog review(&services, request);
+    QVERIFY(!review.prepare());
+
+    QCOMPARE(ScheduleWidgetTestStubs::scheduleImportPreviewCallCount, 0);
+    QCOMPARE(
+        review.findChildren<QComboBox*>(
+            QRegularExpression(QStringLiteral("^scheduleImportTeacherAction_"))
+            ).size(),
+        0
+        );
+    QCOMPARE(
+        review.findChildren<QComboBox*>(
+            QRegularExpression(QStringLiteral("^scheduleImportClassAction_"))
+            ).size(),
+        0
+        );
+    QCOMPARE(prompts.messages.size(), 1);
+    QCOMPARE(
+        prompts.messages.constFirst().title,
+        QStringLiteral("Review Schedule Import")
+        );
+    QVERIFY(prompts.messages.constFirst().message.contains(
+        QStringLiteral("Import resolution data could not be loaded.")
+        ));
+    QVERIFY(prompts.messages.constFirst().details.contains(
+        QStringLiteral("no open profile")
         ));
 }
 
