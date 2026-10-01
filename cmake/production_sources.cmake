@@ -556,6 +556,7 @@ set(CLASSMNGR_FEATURES_SOURCES
     "src/features/teacher/upcoming_birthday_schedule.h"
     "src/next/platform/application_services_custom_color_palette_preferences_port.cpp"
     "src/next/platform/application_services_sub_prep_personal_zoom_preferences_port.cpp"
+    "src/next/platform/application_services_sub_prep_preferences_port.cpp"
 )
 
 set(CLASSMNGR_APP_SERVICES_SOURCES

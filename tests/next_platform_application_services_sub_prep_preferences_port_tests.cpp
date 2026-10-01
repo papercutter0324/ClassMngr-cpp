@@ -1,9 +1,11 @@
 #include "core/application_services.h"
 #include "data/data_service.h"
 #include "data/database/database_session.h"
+#include "data/repositories/settings_repository.h"
 #include "next/application/sub_prep_preferences.h"
 #include "next/platform/application_services_sub_prep_preferences_port.h"
 
+#include <QRegularExpression>
 #include <QSqlQuery>
 #include <QTemporaryDir>
 #include <QUuid>
@@ -45,18 +47,26 @@ bool openDatabase(
     return services.openDatabase(databasePath(directory)).has_value();
 }
 
+SettingsRepository* settingsRepository(ApplicationServices& services)
+{
+    DatabaseSession* const session = services.databaseSession();
+    return session && session->isOpen()
+        ? session->settingsRepository()
+        : nullptr;
+}
+
 bool executeSql(
     ApplicationServices& services,
     const QString& statement
     )
 {
-    DataService* dataService = services.dataService();
-    if (!dataService || !dataService->databaseSession())
+    DatabaseSession* const session = services.databaseSession();
+    if (!session || !session->isOpen())
     {
         return false;
     }
 
-    QSqlQuery query(dataService->databaseSession()->database());
+    QSqlQuery query(session->database());
     return query.exec(statement);
 }
 
@@ -83,6 +93,8 @@ private slots:
     void exactKeysRoundTripAndPreserveUnrelatedSettings();
     void atomicSaveFailureRollsBackAndPreservesUnrelatedSettings();
     void unavailableSettingsFailWithoutWrites();
+    void closedSessionFailsWithoutDataServiceFallback();
+    void repositoryReadFailureWarnsAndUsesDefaults();
 
 private:
     QTemporaryDir m_directory;
@@ -99,9 +111,32 @@ missingValuesPreserveOptionalDefaults()
 {
     ApplicationServices services;
     QVERIFY(openDatabase(services, m_directory));
+    SettingsRepository* const repository = settingsRepository(services);
+    QVERIFY(repository);
 
     ApplicationServicesSubPrepPreferencesPort port(services);
     const auto loaded = port.load();
+
+    DatabaseSession* const session = services.databaseSession();
+    QVERIFY(session);
+    QSqlQuery materializedRows(session->database());
+    QVERIFY(materializedRows.prepare(QStringLiteral(R"(
+        SELECT COUNT(*)
+        FROM app_settings
+        WHERE key IN (?, ?, ?, ?)
+    )")));
+    for (const char* key : {
+             ClassMaterialsKey,
+             BookReportGradingKey,
+             BookReportSpecialInstructionsKey,
+             SubCommentsKey
+         })
+    {
+        materializedRows.addBindValue(QString::fromUtf8(key));
+    }
+    QVERIFY(materializedRows.exec());
+    QVERIFY(materializedRows.next());
+    QCOMPARE(materializedRows.value(0).toInt(), 0);
 
     QVERIFY(loaded);
     QCOMPARE(
@@ -114,18 +149,17 @@ missingValuesPreserveOptionalDefaults()
         })
         );
 
-    QVERIFY(services.dataService());
-    const auto storedClassMaterials = services.dataService()->loadSetting(
+    const auto storedClassMaterials = repository->loadSetting(
         QString::fromUtf8(ClassMaterialsKey)
         );
-    const auto storedBookReportGrading = services.dataService()->loadSetting(
+    const auto storedBookReportGrading = repository->loadSetting(
         QString::fromUtf8(BookReportGradingKey)
         );
     const auto storedSpecialInstructions =
-        services.dataService()->loadSetting(
+        repository->loadSetting(
             QString::fromUtf8(BookReportSpecialInstructionsKey)
             );
-    const auto storedSubComments = services.dataService()->loadSetting(
+    const auto storedSubComments = repository->loadSetting(
         QString::fromUtf8(SubCommentsKey)
         );
     QVERIFY(storedClassMaterials.has_value());
@@ -143,12 +177,13 @@ presentEmptyOptionalValuesRemainPresent()
 {
     ApplicationServices services;
     QVERIFY(openDatabase(services, m_directory));
-    QVERIFY(services.dataService());
-    QVERIFY(services.dataService()->saveSetting(
+    SettingsRepository* const repository = settingsRepository(services);
+    QVERIFY(repository);
+    QVERIFY(repository->saveSetting(
         QString::fromUtf8(BookReportGradingKey),
         QString()
         ));
-    QVERIFY(services.dataService()->saveSetting(
+    QVERIFY(repository->saveSetting(
         QString::fromUtf8(BookReportSpecialInstructionsKey),
         QString()
         ));
@@ -168,8 +203,9 @@ exactKeysRoundTripAndPreserveUnrelatedSettings()
 {
     ApplicationServices services;
     QVERIFY(openDatabase(services, m_directory));
-    QVERIFY(services.dataService());
-    QVERIFY(services.dataService()->saveSetting(
+    SettingsRepository* const repository = settingsRepository(services);
+    QVERIFY(repository);
+    QVERIFY(repository->saveSetting(
         QString::fromUtf8(UnrelatedKey),
         QStringLiteral("preserved")
         ));
@@ -197,39 +233,34 @@ exactKeysRoundTripAndPreserveUnrelatedSettings()
     }};
     for (const char* key : keys)
     {
-        const auto stored = services.dataService()->loadSetting(
+        const auto stored = repository->loadSetting(
             QString::fromUtf8(key)
             );
         QVERIFY(stored);
     }
 
     QCOMPARE(
-        services.dataService()
-            ->loadSetting(QString::fromUtf8(ClassMaterialsKey))
+        repository->loadSetting(QString::fromUtf8(ClassMaterialsKey))
             ->toString(),
         QStringLiteral("  Materials / 김  ")
         );
     QCOMPARE(
-        services.dataService()
-            ->loadSetting(QString::fromUtf8(BookReportGradingKey))
+        repository->loadSetting(QString::fromUtf8(BookReportGradingKey))
             ->toString(),
         QStringLiteral("  Grading / 評価  ")
         );
     QCOMPARE(
-        services.dataService()
-            ->loadSetting(QString::fromUtf8(BookReportSpecialInstructionsKey))
+        repository->loadSetting(QString::fromUtf8(BookReportSpecialInstructionsKey))
             ->toString(),
         QStringLiteral("  Bring spare books / 📚  ")
         );
     QCOMPARE(
-        services.dataService()
-            ->loadSetting(QString::fromUtf8(SubCommentsKey))
+        repository->loadSetting(QString::fromUtf8(SubCommentsKey))
             ->toString(),
         QStringLiteral("  Notes / 메모  ")
         );
     QCOMPARE(
-        services.dataService()
-            ->loadSetting(QString::fromUtf8(UnrelatedKey))
+        repository->loadSetting(QString::fromUtf8(UnrelatedKey))
             ->toString(),
         QStringLiteral("preserved")
         );
@@ -240,7 +271,8 @@ atomicSaveFailureRollsBackAndPreservesUnrelatedSettings()
 {
     ApplicationServices services;
     QVERIFY(openDatabase(services, m_directory));
-    QVERIFY(services.dataService());
+    SettingsRepository* const repository = settingsRepository(services);
+    QVERIFY(repository);
 
     const SubPrepPreferences initial{
         .classMaterials = "initial materials",
@@ -259,7 +291,7 @@ atomicSaveFailureRollsBackAndPreservesUnrelatedSettings()
 
     ApplicationServicesSubPrepPreferencesPort port(services);
     QVERIFY(port.save(initial));
-    QVERIFY(services.dataService()->saveSetting(
+    QVERIFY(repository->saveSetting(
         QString::fromUtf8(UnrelatedKey),
         QStringLiteral("preserved")
         ));
@@ -278,13 +310,13 @@ atomicSaveFailureRollsBackAndPreservesUnrelatedSettings()
     const auto saved = port.save(replacement);
     QVERIFY(!saved);
     QCOMPARE(saved.error().code, Domain::ErrorCode::Technical);
+    QVERIFY(!saved.error().recoverable);
 
     const auto loaded = port.load();
     QVERIFY(loaded);
     QCOMPARE(loaded.value(), initial);
     QCOMPARE(
-        services.dataService()
-            ->loadSetting(QString::fromUtf8(UnrelatedKey))
+        repository->loadSetting(QString::fromUtf8(UnrelatedKey))
             ->toString(),
         QStringLiteral("preserved")
         );
@@ -296,17 +328,143 @@ unavailableSettingsFailWithoutWrites()
     ApplicationServices services;
     ApplicationServicesSubPrepPreferencesPort port(services);
 
-    QVERIFY(!port.load());
-    QVERIFY(!port.save({
+    const auto unavailableLoad = port.load();
+    QVERIFY(!unavailableLoad);
+    QCOMPARE(unavailableLoad.error().code, Domain::ErrorCode::Technical);
+    QVERIFY(!unavailableLoad.error().recoverable);
+
+    const auto unavailableSave = port.save({
         .classMaterials = "materials",
         .bookReportGrading = std::string("grading"),
         .bookReportSpecialInstructions = std::string("special"),
         .subComments = "comments"
-    }));
+    });
+    QVERIFY(!unavailableSave);
+    QCOMPARE(unavailableSave.error().code, Domain::ErrorCode::Technical);
+    QVERIFY(!unavailableSave.error().recoverable);
 
-    ApplicationServicesSubPrepPreferencesPort nullPort(nullptr);
-    QVERIFY(!nullPort.load());
-    QVERIFY(!nullPort.save({}));
+    ApplicationServicesSubPrepPreferencesPort nullPort(
+        static_cast<ApplicationServices*>(nullptr)
+        );
+    const auto nullLoad = nullPort.load();
+    QVERIFY(!nullLoad);
+    QCOMPARE(nullLoad.error().code, Domain::ErrorCode::Technical);
+    QVERIFY(!nullLoad.error().recoverable);
+    const auto nullSave = nullPort.save({});
+    QVERIFY(!nullSave);
+    QCOMPARE(nullSave.error().code, Domain::ErrorCode::Technical);
+    QVERIFY(!nullSave.error().recoverable);
+}
+
+void NextPlatformApplicationServicesSubPrepPreferencesPortTests::
+closedSessionFailsWithoutDataServiceFallback()
+{
+    ApplicationServices services;
+    const QString path = databasePath(m_directory);
+    QVERIFY(services.openDatabase(path));
+    QVERIFY(services.dataService());
+    DatabaseSession* const session = services.databaseSession();
+    QVERIFY(session);
+    SettingsRepository* repository = session->settingsRepository();
+    QVERIFY(repository);
+
+    const QString classMaterials = QStringLiteral("  saved materials  ");
+    const QString bookReportGrading = QStringLiteral("  saved grading  ");
+    const QString specialInstructions = QStringLiteral("  saved special  ");
+    const QString subComments = QStringLiteral("  saved notes  ");
+    const QString unrelated = QStringLiteral("preserved");
+    const SubPrepPreferences initial{
+        .classMaterials = utf8(classMaterials),
+        .bookReportGrading = utf8(bookReportGrading),
+        .bookReportSpecialInstructions = utf8(specialInstructions),
+        .subComments = utf8(subComments)
+    };
+    const SubPrepPreferences replacement{
+        .classMaterials = "replacement materials",
+        .bookReportGrading = std::string("replacement grading"),
+        .bookReportSpecialInstructions = std::string("replacement special"),
+        .subComments = "replacement notes"
+    };
+
+    ApplicationServicesSubPrepPreferencesPort port(services);
+    QVERIFY(port.save(initial));
+    QVERIFY(repository->saveSetting(
+        QString::fromUtf8(UnrelatedKey),
+        unrelated
+        ));
+
+    services.closeDatabase();
+    QVERIFY(services.dataService());
+    QVERIFY(!session->isOpen());
+
+    const auto loaded = port.load();
+    QVERIFY(!loaded);
+    QCOMPARE(loaded.error().code, Domain::ErrorCode::Technical);
+    QVERIFY(!loaded.error().recoverable);
+    const auto saved = port.save(replacement);
+    QVERIFY(!saved);
+    QCOMPARE(saved.error().code, Domain::ErrorCode::Technical);
+    QVERIFY(!saved.error().recoverable);
+
+    QVERIFY(services.openDatabase(path));
+    QVERIFY(session->isOpen());
+    repository = session->settingsRepository();
+    QVERIFY(repository);
+
+    const auto storedClassMaterials = repository->loadSetting(
+        QString::fromUtf8(ClassMaterialsKey)
+        );
+    QVERIFY(storedClassMaterials);
+    QCOMPARE(storedClassMaterials->toString(), classMaterials);
+    const auto storedBookReportGrading = repository->loadSetting(
+        QString::fromUtf8(BookReportGradingKey)
+        );
+    QVERIFY(storedBookReportGrading);
+    QCOMPARE(storedBookReportGrading->toString(), bookReportGrading);
+    const auto storedSpecialInstructions = repository->loadSetting(
+        QString::fromUtf8(BookReportSpecialInstructionsKey)
+        );
+    QVERIFY(storedSpecialInstructions);
+    QCOMPARE(storedSpecialInstructions->toString(), specialInstructions);
+    const auto storedSubComments = repository->loadSetting(
+        QString::fromUtf8(SubCommentsKey)
+        );
+    QVERIFY(storedSubComments);
+    QCOMPARE(storedSubComments->toString(), subComments);
+    const auto storedUnrelated = repository->loadSetting(
+        QString::fromUtf8(UnrelatedKey)
+        );
+    QVERIFY(storedUnrelated);
+    QCOMPARE(storedUnrelated->toString(), unrelated);
+}
+
+void NextPlatformApplicationServicesSubPrepPreferencesPortTests::
+repositoryReadFailureWarnsAndUsesDefaults()
+{
+    ApplicationServices services;
+    QVERIFY(openDatabase(services, m_directory));
+    QVERIFY(executeSql(services, QStringLiteral("DROP TABLE app_settings")));
+
+    ApplicationServicesSubPrepPreferencesPort port(services);
+    for (int index = 0; index < 4; ++index)
+    {
+        QTest::ignoreMessage(
+            QtWarningMsg,
+            QRegularExpression(QStringLiteral("Failed to load setting.*"))
+            );
+    }
+
+    const auto loaded = port.load();
+    QVERIFY(loaded);
+    QCOMPARE(
+        loaded.value(),
+        (SubPrepPreferences{
+            .classMaterials = {},
+            .bookReportGrading = std::nullopt,
+            .bookReportSpecialInstructions = std::nullopt,
+            .subComments = {}
+        })
+        );
 }
 
 QTEST_MAIN(NextPlatformApplicationServicesSubPrepPreferencesPortTests)

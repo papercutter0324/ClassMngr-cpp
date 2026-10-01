@@ -1,6 +1,5 @@
 #pragma once
 
-#include "app/services/feature_services.h"
 #include "core/application_services.h"
 #include "next/application/sub_prep_preferences.h"
 
@@ -12,12 +11,14 @@
 #include <optional>
 #include <string>
 
+class DatabaseSession;
+
 namespace ClassMngr::Next::Platform
 {
 
 // Qt-boundary adapter for the Sub Prep saved-content settings. The exact
-// legacy keys, QVariant conversion, service availability, and atomic saveAll
-// remain outside the application contract.
+// legacy keys, QVariant conversion, session availability, and atomic
+// repository saves remain outside the application contract.
 class ApplicationServicesSubPrepPreferencesPort final
     : public Application::SubPrepPreferencesPort
 {
@@ -25,14 +26,14 @@ public:
     explicit ApplicationServicesSubPrepPreferencesPort(
         ApplicationServices& services
         ) noexcept
-        : m_settingsService(services.settingsService())
+        : m_session(services.databaseSession())
     {
     }
 
     explicit ApplicationServicesSubPrepPreferencesPort(
-        SettingsService* settingsService
+        ApplicationServices* services
         ) noexcept
-        : m_settingsService(settingsService)
+        : m_session(services ? services->databaseSession() : nullptr)
     {
     }
 
@@ -50,98 +51,11 @@ public:
         ) = delete;
 
     [[nodiscard]] Application::SubPrepPreferencesResult load()
-        const override
-    {
-        if (!m_settingsService || !m_settingsService->isAvailable())
-        {
-            return Application::SubPrepPreferencesResult::failure(
-                unavailableError()
-                );
-        }
-
-        return Application::SubPrepPreferencesResult::success({
-            .classMaterials =
-                toUtf8(
-                    m_settingsService->loadOrDefault(
-                        classMaterialsKey(),
-                        QString()
-                        ).toString()
-                    ),
-            .bookReportGrading =
-                optionalUtf8(
-                    m_settingsService->loadOrDefault(
-                        bookReportGradingKey(),
-                        QVariant()
-                        )
-                    ),
-            .bookReportSpecialInstructions =
-                optionalUtf8(
-                    m_settingsService->loadOrDefault(
-                        bookReportSpecialInstructionsKey(),
-                        QVariant()
-                        )
-                    ),
-            .subComments =
-                toUtf8(
-                    m_settingsService->loadOrDefault(
-                        subCommentsKey(),
-                        QString()
-                        ).toString()
-                    )
-        });
-    }
+        const override;
 
     [[nodiscard]] Application::SubPrepPreferencesSaveResult save(
         const Application::SubPrepPreferences& preferences
-        ) const override
-    {
-        if (!m_settingsService || !m_settingsService->isAvailable())
-        {
-            return Application::SubPrepPreferencesSaveResult::failure(
-                unavailableError()
-                );
-        }
-
-        const Status saved = m_settingsService->saveAll({
-            {
-                classMaterialsKey(),
-                fromUtf8(preferences.classMaterials)
-            },
-            {
-                bookReportGradingKey(),
-                preferences.bookReportGrading
-                    ? QVariant(fromUtf8(*preferences.bookReportGrading))
-                    : QVariant()
-            },
-            {
-                bookReportSpecialInstructionsKey(),
-                preferences.bookReportSpecialInstructions
-                    ? QVariant(
-                        fromUtf8(
-                            *preferences.bookReportSpecialInstructions
-                            )
-                        )
-                    : QVariant()
-            },
-            {
-                subCommentsKey(),
-                fromUtf8(preferences.subComments)
-            }
-        });
-        if (!saved)
-        {
-            const QByteArray errorBytes = saved.error().toUtf8();
-            return Application::SubPrepPreferencesSaveResult::failure({
-                .code = Domain::ErrorCode::Technical,
-                .message = errorBytes.isEmpty()
-                    ? "Sub Prep preferences could not be saved."
-                    : errorBytes.toStdString(),
-                .recoverable = false
-            });
-        }
-
-        return Application::SubPrepPreferencesSaveResult::success();
-    }
+        ) const override;
 
 private:
     [[nodiscard]] static QString classMaterialsKey()
@@ -206,7 +120,7 @@ private:
         return toUtf8(value.toString());
     }
 
-    SettingsService* m_settingsService = nullptr;
+    DatabaseSession* m_session = nullptr;
 };
 
 } // namespace ClassMngr::Next::Platform
