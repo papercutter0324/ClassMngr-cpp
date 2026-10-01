@@ -55,9 +55,9 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
   and F189's repeat-series edit port are accepted. F190-F197's preference
   ports, F198's Personal Details save, F199's Personal Display Name, F200's
   Personal Signature preferences, F201's Personal Signature Image, F202's
-  Class Visibility, F203's Evaluation Default Policy, and F204's Class Day
-  Filter Reset Policy ports are accepted; F205 is selected for Class Selection
-  Reset Policy.
+  Class Visibility, F203's Evaluation Default Policy, F204's Class Day Filter
+  Reset Policy, and F205's Class Selection Reset Policy ports are accepted;
+  F206 is selected for Custom Color Palette preferences.
   The prior F123 candidate wording is historical;
   current Teacher Profile integration status is recorded in the progress log.
   Gates 1 and 2
@@ -214,20 +214,24 @@ No new v2 production path depends on DataService, MainWindow, PageManager, or a 
 
 Earlier verified slices and cumulative exit-gate snapshots are archived in the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 
-## F205 selected Class Selection Reset Policy port
+## F205 accepted Class Selection Reset Policy port
 
-Move `ApplicationServicesClassSelectionResetPolicyPort`'s one-key read/write
-for `classes_navigation_class_selection_reset_policy` to the active session's
-`SettingsRepository`, with no closed-session fallback. Normalize trimmed,
-lowercase `on_page_leave` to OnPageLeave; map other values to
-OnApplicationClose. For missing, invalid, or read-error values, best-effort
-persist `on_application_close`; valid unknown values default without rewrite.
-Unavailable/closed sessions do not fall back, and save failures stay silent.
-Keep callers and typed interface unchanged; add closed-session, read-error,
-failed-write, and valid-unknown preservation coverage. Registered CTest:
-`ClassMngrNextPlatformApplicationServicesClassSelectionResetPolicyPortTests`.
-Both Explorer lanes agreed on this candidate; existing Classes Page tests
-cover page-leave clearing versus application-close retention, so preserve that
-distinction. The broader Custom Color Palette and Sub Prep candidates remain
-for later. F205 is selected; no F205 results are recorded. Phase 2 remains
-In Progress/Open; Gates 1 and 2 remain Partial.
+F205 is accepted; its source commit, focused test evidence, and the two
+filtered Classes Page results are recorded in the [Phase 2 progress
+log](03-Phase-2-Progress-Log.md). Phase 2 remains In Progress/Open; Gates 1
+and 2 remain Partial.
+
+## F206 selected Custom Color Palette preferences port
+
+Move `ApplicationServicesCustomColorPalettePreferencesPort` to the active
+open session's `SettingsRepository`, without closed-session fallback. Preserve
+exact key `custom_colors`, its 16 entries/defaults/canonicalization, compact
+JSON writes, and legacy parsing of `QStringList`, JSON, and newline/semicolon/
+comma-delimited values. Missing or unavailable data uses the default without
+materialization; read errors warn and use the default. Write errors warn and
+preserve the prior value. Keep `ColorUtils`, callers, and the typed interface
+unchanged; cover closed-session no-fallback with `DataService` present and
+repository read errors. Focused CTest:
+`NextPlatformApplicationServicesCustomColorPalettePreferencesPort`; related
+`ColorUtilsCustomColorPalette` coverage is available. Both Explorer lanes
+recommend this candidate. F206 is selected; no F206 results are recorded.

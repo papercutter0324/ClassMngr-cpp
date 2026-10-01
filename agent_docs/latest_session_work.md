@@ -4457,3 +4457,30 @@ yet. The root and four public plan-document updates for F204 acceptance/F205
 selection are prepared but not committed. Phase 2 remains In Progress/Open;
 Gates 1 and 2 remain Partial. Next: commit the documentation update
 separately, commit F205 source and test-fixture changes, then select F206.
+
+## 2026-10-01 - F205 accepted; F206 selected
+
+F205 source commit `bf9ca8a7` moves
+`ApplicationServicesClassSelectionResetPolicyPort` to the active session's
+`SettingsRepository`. Focused registered CTest
+`ClassMngrNextPlatformApplicationServicesClassSelectionResetPolicyPortTests`
+passed 1/1. The independent reviewer accepted the adapter and focused test.
+The two Classes Page lifecycle checks initially had closed-database fixtures;
+both now open temporary databases and pass in the rebuilt target. Their
+results preserve page-leave clearing versus application-close retention and
+the day-filter interaction. `git diff --check` passed; no full suite ran.
+
+Both independent Explorer lanes selected F206:
+`ApplicationServicesCustomColorPalettePreferencesPort`. Move its persistence
+to the active open session's `SettingsRepository` without changing callers or
+the typed contract. Preserve key `custom_colors`, the 16-entry defaults and
+normalization, QColor canonicalization, compact JSON writes, QStringList/JSON/
+newline/semicolon/comma legacy reads, default-without-write behavior for
+missing/unavailable storage, warning/default behavior on repository read
+errors, and warning plus previous-value preservation on failed writes. Add
+closed-session no-fallback and repository read-error coverage. The existing
+focused palette CTest and `ColorUtilsCustomColorPalette` coverage remain
+available. No F206 source changes have started. Phase 2 remains In
+Progress/Open; Gates 1 and 2 remain Partial. Next: finish the four public plan
+updates, commit the F205 acceptance/F206 selection documentation, then
+implement and verify F206 before selecting F207.

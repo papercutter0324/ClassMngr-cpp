@@ -1784,3 +1784,11 @@ Complete the neighboring class-navigation reset preferences together while
 keeping the typed policy adapters separate. Preserve the difference between
 page-leave clearing and application-close retention; the existing Classes Page
 tests exercise both policies and their interaction with day-filter state.
+
+## 2026-10-01 - F206 Custom Color Palette adapter
+
+After closing the adjacent class-navigation preference pair, continue with
+the existing typed palette boundary. Keep its 16-color normalization and
+legacy payload decoding in the Qt adapter, preserve warning behavior for read
+and write failures, and migrate only persistence ownership; callers and the
+typed ColorUtils contract already use the adapter.

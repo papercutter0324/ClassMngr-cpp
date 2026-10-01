@@ -7,8 +7,9 @@
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-01
 - Current milestone: Phase 2 remains in progress. F204 (Class Day Filter Reset
-  Policy) is accepted; F205 (Class Selection Reset Policy) is the current
-  slice. Gates 1 and 2 remain Partial, with broader feature migration, parity,
+  Policy) and F205 (Class Selection Reset Policy) are accepted; F206 (Custom
+  Color Palette preferences) is the current slice. Gates 1 and 2 remain
+  Partial, with broader feature migration, parity,
   and 96-class Release memory evidence still open. See the
   [Phase 2 progress log](03-Phase-2-Progress-Log.md) for current scope and
   acceptance evidence.

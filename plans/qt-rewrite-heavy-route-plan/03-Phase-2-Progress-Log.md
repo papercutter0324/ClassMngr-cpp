@@ -8314,7 +8314,7 @@ fields/schedule/teacher/count/fallback parity. F167 implementation has not
 started. Gate 1 and Gate 2 remain Partial; Phase 2 remains In Progress and its
 exit gate remains Open.
 
-### Progress update - 2026-10-01 (F204 accepted; F205 selected)
+### Progress update - 2026-10-01 (F205 accepted; F206 selected)
 
 F167, source commit `97efac8b`, updates
 `ApplicationServicesClassDetailsPageReadPort` to use active-session
@@ -8819,19 +8819,24 @@ registered CTest
 `ClassMngrNextPlatformApplicationServicesClassDayFilterResetPolicyPortTests`
 passed 1/1. No full suite ran.
 
-F205 is selected for `ApplicationServicesClassSelectionResetPolicyPort`.
-Migrate its one-key read/write for
-`classes_navigation_class_selection_reset_policy` to the active session's
-`SettingsRepository`, with no closed-session fallback. Normalize trimmed,
-lowercase `on_page_leave` to OnPageLeave; other values map to
-OnApplicationClose. Best-effort persist `on_application_close` for
-missing/invalid/read-error values; valid unknown values default without
-rewrite. Unavailable/closed sessions do not fall back, saves remain silent,
-and callers/interface stay unchanged. Add closed-session, read-error,
-failed-write, and valid-unknown preservation coverage. Registered CTest:
-`ClassMngrNextPlatformApplicationServicesClassSelectionResetPolicyPortTests`.
-Both Explorer lanes agreed; existing Classes Page tests cover page-leave
-clearing versus application-close retention, so preserve that distinction.
-Custom Color Palette and Sub Prep remain broader candidates for later. F205 is
-selected; no F205 results are recorded. Gate 1 and Gate 2 remain Partial;
-Phase 2 remains In Progress with its exit gate Open.
+F205, source commit `bf9ca8a7`, migrates
+`ApplicationServicesClassSelectionResetPolicyPort` to the active session's
+`SettingsRepository`, with no closed-session fallback. Independent registered
+CTest `ClassMngrNextPlatformApplicationServicesClassSelectionResetPolicyPortTests`
+passed 1/1. After fixing two closed-database fixtures, both filtered
+`ClassesPage` slots passed. `git diff --check` passed; no full suite ran.
+
+F206 is selected for `ApplicationServicesCustomColorPalettePreferencesPort`.
+Move it to the active open session's `SettingsRepository`, with no
+closed-session fallback. Preserve exact key `custom_colors`, its 16
+entries/defaults/canonicalization, compact JSON writes, and legacy parsing of
+`QStringList`, JSON, and newline/semicolon/comma-delimited values. Missing or
+unavailable data uses the default without materialization; repository read
+errors warn and use the default; write errors warn and preserve the prior
+value. Keep `ColorUtils`, callers, and the typed interface unchanged. Add
+closed-session no-fallback coverage with `DataService` present and repository
+read-error coverage. Focused CTest:
+`NextPlatformApplicationServicesCustomColorPalettePreferencesPort`; related
+`ColorUtilsCustomColorPalette` coverage is available. Both Explorer lanes
+recommend F206. It is selected; no F206 results are recorded. Gate 1 and Gate
+2 remain Partial; Phase 2 remains In Progress with its exit gate Open.
