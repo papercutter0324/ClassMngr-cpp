@@ -688,6 +688,37 @@ add_test(
     COMMAND ClassMngrNextApplicationScheduleImportReviewDecisionsTests
 )
 
+# Exercise plan eligibility without Qt or the legacy runtime.
+add_executable(
+    ClassMngrNextApplicationScheduleImportPlanValidationTests
+    tests/next_application_schedule_import_plan_validation_tests.cpp
+)
+target_compile_features(
+    ClassMngrNextApplicationScheduleImportPlanValidationTests
+    PRIVATE
+        cxx_std_23
+)
+set_target_properties(
+    ClassMngrNextApplicationScheduleImportPlanValidationTests
+    PROPERTIES
+        AUTOMOC OFF
+        AUTOUIC OFF
+        AUTORCC OFF
+)
+set_property(
+    TARGET ClassMngrNextApplicationScheduleImportPlanValidationTests
+    PROPERTY CLASSMNGR_STANDALONE_CPP_TEST TRUE
+)
+target_link_libraries(
+    ClassMngrNextApplicationScheduleImportPlanValidationTests
+    PRIVATE
+        ClassMngrNext::Application
+)
+add_test(
+    NAME ClassMngrNextApplicationScheduleImportPlanValidationTests
+    COMMAND ClassMngrNextApplicationScheduleImportPlanValidationTests
+)
+
 # Exercise the Korean teacher sparse update policy without Qt or the legacy runtime.
 add_executable(
     ClassMngrNextApplicationKoreanTeacherImportUpdateTests

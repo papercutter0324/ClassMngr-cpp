@@ -1,13 +1,12 @@
 #include "schedule_import_plan_validator.h"
 
 #include "domain/rules/schedule_import_rules.h"
-#include "features/teacher/import/teacher_import_name_utils.h"
+#include "next/application/schedule_import_plan_validation.h"
 #include "next/application/schedule_import_review_decisions.h"
 #include "next/domain/course.h"
 #include "next/domain/domain_types.h"
 
 #include <QObject>
-#include <QRegularExpression>
 
 #include <cstddef>
 #include <optional>
@@ -30,6 +29,10 @@ using ClassMngr::Next::Application::
     ScheduleImportReviewTeacherAction;
 using ClassMngr::Next::Application::
     ScheduleImportReviewTeacherResolution;
+using ClassMngr::Next::Application::ScheduleImportPlanEligibilityIssue;
+using ClassMngr::Next::Application::ScheduleImportPlanEligibilityIssueCode;
+using ClassMngr::Next::Domain::Course;
+using ClassMngr::Next::Domain::Weekday;
 
 std::optional<ClassMngr::Next::Domain::ClassId> decisionTargetId(
     int legacyTargetId
@@ -44,23 +47,80 @@ std::optional<ClassMngr::Next::Domain::ClassId> decisionTargetId(
         );
 }
 
-bool validCourse(const QString& grade, const QString& level)
+QString meetingPatternExpectation(
+    const Course::WeeklyMeetingDayRuleKind ruleKind
+    )
 {
-    return ClassMngr::Next::Domain::Course::fromNames(
-        grade.toStdString(),
-        level.toStdString()
-        ).has_value();
+    switch (ruleKind)
+    {
+    case Course::WeeklyMeetingDayRuleKind::PairedWeekdays:
+        return QObject::tr(
+            "Expected Monday/Wednesday, Monday/Friday, Wednesday/Friday, or Tuesday/Thursday."
+            );
+    case Course::WeeklyMeetingDayRuleKind::ThreeDayOrTuesdayThursday:
+        return QObject::tr(
+            "Expected Monday/Wednesday/Friday or Tuesday/Thursday."
+            );
+    case Course::WeeklyMeetingDayRuleKind::SingleWeekday:
+        return QObject::tr("Expected one weekday meeting.");
+    }
+    return {};
 }
 
-QString normalizedHexColor(const QString& value)
+QString weekdayName(const Weekday weekday)
 {
-    static const QRegularExpression expression(
-        QStringLiteral("^#[0-9A-Fa-f]{6}$")
-        );
-    const QString color = value.trimmed();
-    return expression.match(color).hasMatch()
-        ? color.toUpper()
+    switch (weekday)
+    {
+    case Weekday::Monday:
+        return QStringLiteral("Monday");
+    case Weekday::Tuesday:
+        return QStringLiteral("Tuesday");
+    case Weekday::Wednesday:
+        return QStringLiteral("Wednesday");
+    case Weekday::Thursday:
+        return QStringLiteral("Thursday");
+    case Weekday::Friday:
+        return QStringLiteral("Friday");
+    case Weekday::Saturday:
+        return QStringLiteral("Saturday");
+    case Weekday::Sunday:
+        return QStringLiteral("Sunday");
+    }
+    return {};
+}
+
+QString meetingPatternFailure(
+    const ScheduleImportPlanEligibilityIssue& issue
+    )
+{
+    if (
+        issue.code
+        == ScheduleImportPlanEligibilityIssueCode::InvalidMeetingWeekday
+        )
+    {
+        return QObject::tr(
+            "Each imported class must have exactly one meeting per scheduled weekday."
+            );
+    }
+
+    QStringList displayDays;
+    for (const Weekday weekday : issue.meetingWeekdays)
+    {
+        displayDays.append(
+            scheduleImportWeekdayDisplayName(weekdayName(weekday))
+            );
+    }
+
+    const QString expectation = issue.meetingPatternRuleKind.has_value()
+        ? meetingPatternExpectation(*issue.meetingPatternRuleKind)
         : QString();
+    return QObject::tr("%1 Detected: %2.")
+        .arg(
+            expectation,
+            displayDays.isEmpty()
+                ? QObject::tr("no meetings")
+                : displayDays.join(QStringLiteral(", "))
+            );
 }
 
 ScheduleImportReviewTeacherAction decisionAction(
@@ -183,34 +243,49 @@ Result<ValidatedScheduleImportPlan> ScheduleImportPlanValidator::validate(
     const ScheduleImportPlan& plan
     )
 {
-    if (
-        plan.kind == ScheduleImportKind::Intensive
-        && plan.intensiveMode != ScheduleImportIntensiveMode::UpdateExisting
-        && plan.intensiveMode != ScheduleImportIntensiveMode::ReplaceWithNew
-        )
+    ClassMngr::Next::Application::ScheduleImportPlanEligibilityRequest request;
+    request.intensiveSchedule = plan.kind == ScheduleImportKind::Intensive;
+    switch (plan.intensiveMode)
     {
-        return std::unexpected(
-            QObject::tr(
-                "Choose how the existing intensive schedule should be handled."
-                )
-            );
+    case ScheduleImportIntensiveMode::UpdateExisting:
+        request.intensiveMode =
+            ClassMngr::Next::Application::ScheduleImportPlanIntensiveMode::
+                UpdateExisting;
+        break;
+    case ScheduleImportIntensiveMode::ReplaceWithNew:
+        request.intensiveMode =
+            ClassMngr::Next::Application::ScheduleImportPlanIntensiveMode::
+                ReplaceWithNew;
+        break;
+    default:
+        request.intensiveMode =
+            ClassMngr::Next::Application::ScheduleImportPlanIntensiveMode::
+                Invalid;
+        break;
     }
+    request.hasDiagnostics = !plan.diagnostics.isEmpty();
+    request.diagnosticsAcknowledged = plan.unknownCellsAcknowledged;
 
-    if (!plan.diagnostics.isEmpty() && !plan.unknownCellsAcknowledged)
-    {
-        return std::unexpected(
-            QObject::tr(
-                "Unrecognized timetable cells must be acknowledged before importing."
-                )
-            );
-    }
-
-    ScheduleImportReviewDecisionRequest decisions;
-    decisions.candidates.reserve(
+    request.candidates.reserve(
         static_cast<std::size_t>(plan.candidates.size())
         );
     for (const ScheduleImportClassCandidate& candidate : plan.candidates)
     {
+        ClassMngr::Next::Application::
+            ScheduleImportPlanEligibilityCandidate eligibilityCandidate;
+        eligibilityCandidate.grade = candidate.classGrade.toStdString();
+        eligibilityCandidate.level = candidate.classLevel.toStdString();
+        eligibilityCandidate.teacherKey = candidate.teacherKey.toStdU16String();
+        eligibilityCandidate.teacherName = candidate.teacherKr.toStdU16String();
+        eligibilityCandidate.weekdays.reserve(
+            static_cast<std::size_t>(candidate.times.size())
+            );
+        for (const ClassTime& time : candidate.times)
+        {
+            eligibilityCandidate.weekdays.push_back(time.day.toStdString());
+        }
+        request.candidates.push_back(std::move(eligibilityCandidate));
+
         ClassMngr::Next::Application::ScheduleImportReviewDecisionCandidate
             decisionCandidate;
         decisionCandidate.teacherKey = candidate.teacherKey.toStdString();
@@ -227,15 +302,17 @@ Result<ValidatedScheduleImportPlan> ScheduleImportPlanValidator::validate(
                     );
             }
         }
-        decisions.candidates.push_back(std::move(decisionCandidate));
+        request.reviewDecisions.candidates.push_back(
+            std::move(decisionCandidate)
+            );
     }
 
-    decisions.teachers.reserve(
+    request.reviewDecisions.teachers.reserve(
         static_cast<std::size_t>(plan.teachers.size())
         );
     for (const ScheduleImportTeacherResolution& resolution : plan.teachers)
     {
-        decisions.teachers.push_back(
+        request.reviewDecisions.teachers.push_back(
             ScheduleImportReviewTeacherResolution{
                 resolution.teacherKey.toStdString(),
                 decisionAction(resolution.action),
@@ -244,28 +321,87 @@ Result<ValidatedScheduleImportPlan> ScheduleImportPlanValidator::validate(
             );
     }
 
-    decisions.classes.reserve(
+    request.reviewDecisions.classes.reserve(
+        static_cast<std::size_t>(plan.classes.size())
+        );
+    request.classColors.reserve(
         static_cast<std::size_t>(plan.classes.size())
         );
     for (const ScheduleImportClassResolution& resolution : plan.classes)
     {
-        decisions.classes.push_back(
+        request.reviewDecisions.classes.push_back(
             ScheduleImportReviewClassResolution{
                 resolution.candidateIndex,
                 decisionAction(resolution.action),
                 decisionTargetId(resolution.targetClassId)
             }
             );
+        request.classColors.push_back(
+            ClassMngr::Next::Application::
+                ScheduleImportPlanEligibilityClassColors{
+                    resolution.candidateIndex,
+                    resolution.classColor.trimmed().toStdString(),
+                    resolution.fontColor.trimmed().toStdString()
+                }
+            );
     }
 
-    const auto decisionResult =
-        ClassMngr::Next::Application::validateScheduleImportReviewDecisions(
-            decisions
+    const std::optional<ScheduleImportPlanEligibilityIssue> issue =
+        ClassMngr::Next::Application::validateScheduleImportPlanEligibility(
+            request
             );
-    if (!decisionResult.accepted())
+    if (issue.has_value())
     {
+        using IssueCode = ScheduleImportPlanEligibilityIssueCode;
+        QString error;
+        switch (issue->code)
+        {
+        case IssueCode::InvalidIntensiveMode:
+            error = QObject::tr(
+                "Choose how the existing intensive schedule should be handled."
+                );
+            break;
+        case IssueCode::UnacknowledgedDiagnostics:
+            error = QObject::tr(
+                "Unrecognized timetable cells must be acknowledged before importing."
+                );
+            break;
+        case IssueCode::InvalidReviewDecision:
+            error = issue->reviewDecisionIssue.has_value()
+                ? decisionFailure(
+                    *issue->reviewDecisionIssue,
+                    request.reviewDecisions
+                    )
+                : QObject::tr(
+                    "The import plan contains an invalid resolution."
+                    );
+            break;
+        case IssueCode::InvalidCourse:
+        case IssueCode::InvalidTeacherKey:
+        case IssueCode::MissingMeetingTimes:
+            error = QObject::tr("The import contains an invalid class.");
+            break;
+        case IssueCode::InvalidMeetingWeekday:
+        case IssueCode::InvalidMeetingPattern:
+            error = QObject::tr(
+                "The meeting pattern for %1 %2 is invalid: %3"
+                )
+                .arg(
+                    plan.candidates[static_cast<qsizetype>(issue->candidateIndex)]
+                        .classGrade,
+                    plan.candidates[static_cast<qsizetype>(issue->candidateIndex)]
+                        .classLevel,
+                    meetingPatternFailure(*issue)
+                    );
+            break;
+        case IssueCode::InvalidClassColor:
+            error = QObject::tr(
+                "Choose a valid class color for every imported class."
+                );
+            break;
+        }
         return std::unexpected(
-            decisionFailure(decisionResult.issues.front(), decisions)
+            error
             );
     }
 
@@ -283,60 +419,6 @@ Result<ValidatedScheduleImportPlan> ScheduleImportPlanValidator::validate(
             resolution.candidateIndex,
             resolution
             );
-    }
-
-    for (const ScheduleImportClassCandidate& candidate : plan.candidates)
-    {
-        if (
-            !validCourse(candidate.classGrade, candidate.classLevel)
-            || candidate.teacherKey.isEmpty()
-            || TeacherImportNameUtils::hangulOnly(candidate.teacherKr)
-                != candidate.teacherKey
-            || candidate.times.isEmpty()
-            )
-        {
-            return std::unexpected(
-                QObject::tr("The import contains an invalid class.")
-                );
-        }
-    }
-
-    for (int index = 0; index < plan.candidates.size(); ++index)
-    {
-        const ScheduleImportClassResolution classResolution =
-            validated.classResolutions.value(index);
-        const QString meetingPatternError =
-            scheduleImportMeetingPatternError(plan.candidates[index]);
-        if (
-            classResolution.action != ScheduleImportClassAction::Skip
-            && !meetingPatternError.isEmpty()
-            )
-        {
-            return std::unexpected(
-                QObject::tr(
-                    "The meeting pattern for %1 %2 is invalid: %3"
-                    )
-                    .arg(
-                        plan.candidates[index].classGrade,
-                        plan.candidates[index].classLevel,
-                        meetingPatternError
-                        )
-                );
-        }
-        if (
-            classResolution.action != ScheduleImportClassAction::Skip
-            && (
-                normalizedHexColor(classResolution.classColor).isEmpty()
-                || normalizedHexColor(classResolution.fontColor).isEmpty()
-                )
-            )
-        {
-            return std::unexpected(
-                QObject::tr(
-                    "Choose a valid class color for every imported class."
-                    )
-                );
-        }
     }
 
     return validated;
