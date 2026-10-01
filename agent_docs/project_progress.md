@@ -74,7 +74,8 @@ in source commit `57aefadf`; F220 is accepted in source commit `4a87ab1e`;
 F221 is accepted in source commit `ec65c0c6`; F222 is accepted in source
 commit `6920e019`; F223 is accepted in source commit `4b46adc7`; F224 is
 accepted in source commit `3c45c74b`; F225 is accepted in source commit
-`7d842339`; F226 is accepted in source commit `6c6210b0`; F227 is selected.
+`7d842339`; F226 is accepted in source commit `6c6210b0`; F227 is accepted in
+source commit `cb61f2ab`; F228 is selected.
 F196 and F197 use
 only the active open session's
 `SettingsRepository` and preserve their keys, conversions, defaults, and
@@ -2743,7 +2744,7 @@ repository read-error coverage. Focused CTest:
 independent Explorer lanes selected this bounded adapter migration. Phase 2
 remains In Progress/Open; Gates 1 and 2 remain Partial.
 
-## Current Phase 2 position - 2026-10-02 (F226 accepted; F227 selected)
+## Current Phase 2 position - 2026-10-02 (F227 accepted; F228 selected)
 
 F218-F221 are accepted in commits `9bb936ee`, `57aefadf`, `4a87ab1e`, and
 `ec65c0c6`. F222 source commit `6920e019` migrates Schedule Import resolution
@@ -2804,12 +2805,22 @@ repository targets passed 4/4. The dialog reported 29 passed with only the
 three documented baseline failures. `git diff --check` passed; no full suite
 ran.
 
-F227 is selected to move the proposed Schedule Import summary calculation
-into a Qt-free Application projection. It will count teacher and class
-actions, acknowledged diagnostics, and the existing schedule-cleared count
-from a typed `ScheduleImportApplyRequest` plus that count. Keep snapshot and
-clear-count calculation, preview projection, and localized summary formatting
-in the dialog. Acceptance adds app-less summary cases and a dialog summary
-parity assertion, then reruns the repository and dialog targets; only the
-three documented dialog baseline failures are expected. Phase 2 remains In
-Progress/Open; Gates 1 and 2 remain Partial.
+F227 source commit `cb61f2ab` moves the proposed Schedule Import action counts
+into a Qt-free Application projection consuming the existing typed review
+decisions, ignored-diagnostic count, and UI-computed schedules-cleared count.
+It preserves the legacy count rules, leaves localized text in the dialog, and
+keeps the actual apply result separate. Projection and repository CTests
+passed 2/2; the offscreen dialog run reported 30 passed and only the three
+documented baseline failures. `git diff --check` passed; no full suite ran.
+
+F228 is selected to move the existing-schedules-cleared review count rule into
+a Qt-free Application projection over the typed state snapshot and selected
+class targets. Count classes with hours in the selected schedule type when
+they have no selected target; keep the count zero when no snapshot is
+available or absent intensive classes are preserved. Keep localized summary
+formatting in the dialog and leave snapshot cadence, preview construction,
+and actual apply behavior unchanged. Acceptance covers normal and intensive
+hours, selected targets, empty schedules, preservation mode, a dialog summary
+parity assertion, and focused projection/dialog targets; only the three
+documented dialog baselines are expected. Phase 2 remains In Progress/Open;
+Gates 1 and 2 remain Partial.

@@ -4665,7 +4665,7 @@ Focused acceptance includes the Application state and decision validators,
 Phase 2 remains In Progress/Open with Gates 1 and 2 Partial. Next: finish F219,
 independently verify and commit it, then choose the following slice.
 
-## Current handoff - 2026-10-02 (F226 accepted; F227 selected)
+## Current handoff - 2026-10-02 (F227 accepted; F228 selected)
 
 F219 source commit `57aefadf` adds the shared state validator as a live
 Schedule Import readiness preflight. The Application state-validation,
@@ -4752,13 +4752,29 @@ readiness, review-decision, state-validation, and Schedule Import repository
 tests passed 4/4. Dialog reported 29 passed and only the three recorded
 baseline failures; `git diff --check` passed. No full suite ran.
 
-F227 is selected to move the proposed Schedule Import summary calculation
-into a Qt-free Application projection consuming the typed apply request and
-the UI-computed schedule-cleared count. Preserve teacher/class action counts,
-ignored-diagnostic count, clear-count semantics, and summary text. Keep Qt
-formatting and clear-count calculation in the dialog; leave the preview
-projection, snapshot cadence, and repository apply validation unchanged.
-Acceptance needs app-less count cases, dialog summary parity, and the
-repository/dialog focused targets; the same three dialog baselines remain
-expected. Next: implement F227, independently verify and commit it, then
-select the next slice.
+F227 source commit `cb61f2ab` moves proposed Schedule Import action counts into
+a Qt-free Application projection consuming the already-built
+`ScheduleImportReviewDecisionRequest`, ignored-diagnostic count, and
+UI-computed schedules-cleared count. It preserves teacher Create/UpdateRoom/
+Skip and class CreateNew/UpdateExisting/Skip counts, ignores Reuse/Unselected/
+Invalid, and leaves localized wording in the dialog. `importPlan()` and the
+actual applied-result summary remain on the apply path. Independent projection
+and Schedule Import repository CTests passed 2/2. Direct offscreen Dialog
+reported 30 passed and only the three documented baseline failures:
+`acceptedReviewCanTearDownSourceDialog`, `mismatchedProfileRequiresConfirmation`,
+and `reviewPreviewUsesSavedScheduleDisplaySettings`. `git diff --check` passed;
+no full suite ran.
+
+F228 is selected to move the existing-schedules-cleared review count into a
+Qt-free Application projection over the typed current-state snapshot and class
+targets. Preserve the current rule: count classes with hours in the selected
+schedule kind when no selected class target refers to them; return zero when
+the snapshot is unavailable or absent intensive classes are preserved. Keep
+localized formatting in the dialog; do not change snapshot cadence, preview
+construction, or actual apply behavior. Acceptance covers normal/intensive
+hours, selected targets, empty schedules, intensive preservation, dialog
+summary parity, and focused Application projection and Dialog targets. Only
+the three recorded Dialog baselines are expected; no full suite is needed.
+F228 implementation has begun in a separate source slice after F227 was
+committed; this handoff records the scoped acceptance conditions before code
+review.

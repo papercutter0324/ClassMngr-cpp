@@ -1957,3 +1957,11 @@ Compose the existing decision and state validators behind one Application
 boundary, preserving decision-first evaluation. Return both typed decisions
 and optional state errors so the UI can keep conflict detail and message
 priority without re-reading the snapshot.
+
+## 2026-10-02 - F227 Schedule Import proposed summary
+
+Build review counts from the compact decisions already produced during a
+refresh plus scalar diagnostic and cleared-schedule counts. Reconstructing the
+full apply request for summary text needlessly copies candidate and time data.
+Keep localized wording in the dialog and the applied-result summary on the
+apply path.
