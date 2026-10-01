@@ -32,6 +32,8 @@
 #include <QPushButton>
 #include <QSet>
 #include <QTableView>
+#include <QTemporaryDir>
+#include <QUuid>
 
 #include "ui/shared/widgets/sectioncards/class_info_section_card.h"
 
@@ -79,6 +81,23 @@ void RosterEditorWidget::outputRosters(
 
 namespace
 {
+QString databasePath(QTemporaryDir& directory)
+{
+    return directory.filePath(
+        QStringLiteral("classes-page-reset-policies-%1.tps").arg(
+            QUuid::createUuid().toString(QUuid::WithoutBraces)
+            )
+        );
+}
+
+bool openDatabase(
+    ApplicationServices& services,
+    QTemporaryDir& directory
+    )
+{
+    return services.openDatabase(databasePath(directory)).has_value();
+}
+
 QAbstractButton* dayFilterButton(
     ClassesPage* page,
     const QString& objectName
@@ -592,7 +611,10 @@ void ClassesPageTests::dayFiltersResetOnPageLeaveAfterHideAndShow()
 void ClassesPageTests::
 classSelectionResetOnPageLeaveClearsOnlyClassStateAfterHideAndShow()
 {
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
     ApplicationServices services;
+    QVERIFY(openDatabase(services, directory));
     ClassMngr::Next::Platform::
         ApplicationServicesClassSelectionResetPolicyPort classSelectionPolicy(
             services
@@ -648,7 +670,10 @@ classSelectionResetOnPageLeaveClearsOnlyClassStateAfterHideAndShow()
 void ClassesPageTests::
 classSelectionResetOnApplicationCloseRetainsOnlyClassStateAfterHideAndShow()
 {
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
     ApplicationServices services;
+    QVERIFY(openDatabase(services, directory));
     ClassMngr::Next::Platform::
         ApplicationServicesClassSelectionResetPolicyPort classSelectionPolicy(
             services
