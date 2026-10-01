@@ -56,6 +56,8 @@ private slots:
     void ignoresInvalidAndPastBirthdaysAndSortsNames();
     void crossesCalendarYears();
     void mapsLeapDayToFebruaryTwentyEighthInNonLeapYears();
+    void rejectsNonPaddedMonthLikeQtDateFormat();
+    void mapsPreferredNamesAndTrimsStaffValues();
     void dialogCentersTodayAndShowsWeeklyEmptyState();
     void actionIsCreatedWithTeacherMenuText();
 };
@@ -160,6 +162,77 @@ void UpcomingBirthdaysTests::mapsLeapDayToFebruaryTwentyEighthInNonLeapYears()
 
     QCOMPARE(schedule.thisWeek.size(), 1);
     QCOMPARE(schedule.thisWeek.first().date, QDate(2027, 2, 28));
+}
+
+void UpcomingBirthdaysTests::rejectsNonPaddedMonthLikeQtDateFormat()
+{
+    const QString birthdayValue = QStringLiteral("2-03");
+    const QDate parsedByLegacyFormat = QDate::fromString(
+        QStringLiteral("2000-%1").arg(birthdayValue),
+        QStringLiteral("yyyy-MM-dd")
+        );
+    QVERIFY(!parsedByLegacyFormat.isValid());
+
+    const UpcomingBirthdaySchedule schedule = UpcomingBirthdaySchedule::build(
+        {teacher(QStringLiteral("Non-padded birthday"), birthdayValue)},
+        {},
+        {},
+        QDate(2000, 2, 3)
+        );
+    QVERIFY(schedule.isEmpty());
+}
+
+void UpcomingBirthdaysTests::mapsPreferredNamesAndTrimsStaffValues()
+{
+    Teacher korean = teacher(
+        QStringLiteral("English fallback"),
+        QStringLiteral(" 08-21 ")
+        );
+    korean.teacherKr = QStringLiteral("Korean fallback");
+    korean.preferredName = QStringLiteral("  Chosen Name  ");
+
+    const UpcomingBirthdaySchedule schedule = UpcomingBirthdaySchedule::build(
+        {korean},
+        {nativeTeacher(
+            QStringLiteral("  Native Name "),
+            QStringLiteral(" NET "),
+            QStringLiteral("08-21"))},
+        {gsTeamMember(
+            QStringLiteral("  "),
+            QStringLiteral(" Team Korean Name "),
+            QStringLiteral(" Leader "),
+            QStringLiteral("08-21"))},
+        QDate(2026, 8, 21)
+        );
+
+    QCOMPARE(schedule.today.size(), 3);
+    const auto findGroup = [&schedule](const UpcomingBirthdayGroup group)
+        -> const UpcomingBirthday*
+    {
+        for (const UpcomingBirthday& entry : schedule.today)
+        {
+            if (entry.group == group)
+            {
+                return &entry;
+            }
+        }
+        return nullptr;
+    };
+
+    const UpcomingBirthday* const koreanEntry =
+        findGroup(UpcomingBirthdayGroup::KoreanTeacher);
+    const UpcomingBirthday* const nativeEntry =
+        findGroup(UpcomingBirthdayGroup::NativeEnglishTeacher);
+    const UpcomingBirthday* const gsEntry =
+        findGroup(UpcomingBirthdayGroup::GsTeam);
+    QVERIFY(koreanEntry);
+    QVERIFY(nativeEntry);
+    QVERIFY(gsEntry);
+    QCOMPARE(koreanEntry->displayName, QStringLiteral("Chosen Name"));
+    QCOMPARE(nativeEntry->displayName, QStringLiteral("Native Name"));
+    QCOMPARE(nativeEntry->position, QStringLiteral("NET"));
+    QCOMPARE(gsEntry->displayName, QStringLiteral("Team Korean Name"));
+    QCOMPARE(gsEntry->position, QStringLiteral("Leader"));
 }
 
 void UpcomingBirthdaysTests::dialogCentersTodayAndShowsWeeklyEmptyState()

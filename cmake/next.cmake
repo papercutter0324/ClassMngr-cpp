@@ -189,6 +189,7 @@ set(CLASSMNGR_NEXT_APPLICATION_SOURCES
     src/next/application/report_job_state.h
     src/next/application/recent_workspace_history.h
     src/next/application/recent_workspace_history_use_case.h
+    src/next/application/upcoming_birthday_schedule_use_case.h
     src/next/application/selection_state.h
     src/next/application/schedule_display_preferences.h
     src/next/application/schedule_display_mode_preferences.h

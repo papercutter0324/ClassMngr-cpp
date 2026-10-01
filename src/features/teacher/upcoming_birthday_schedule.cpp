@@ -1,47 +1,87 @@
 #include "upcoming_birthday_schedule.h"
 
+#include "next/application/upcoming_birthday_schedule_use_case.h"
+
+#include <QByteArray>
+
 #include <algorithm>
+#include <cstddef>
+#include <string>
+#include <vector>
 
 namespace
 {
-QDate parseBirthday(const QString& birthday)
+
+using ClassMngr::Next::Application::UpcomingBirthdayCandidate;
+using ClassMngr::Next::Application::UpcomingBirthdayDate;
+using ClassMngr::Next::Application::UpcomingBirthdayOccurrence;
+using ClassMngr::Next::Application::UpcomingBirthdayStaffGroup;
+using ClassMngr::Next::Application::UpcomingBirthdayScheduleUseCase;
+
+std::string utf8(const QString& value)
 {
-    return QDate::fromString(
-        QStringLiteral("2000-%1").arg(birthday.trimmed()),
-        QStringLiteral("yyyy-MM-dd")
-        );
+    const QByteArray bytes = value.toUtf8();
+    return bytes.toStdString();
 }
 
-QDate occurrenceForYear(const QDate& birthday, int year)
+std::u16string utf16(const QString& value)
 {
-    QDate occurrence(year, birthday.month(), birthday.day());
-
-    if (!occurrence.isValid()
-        && birthday.month() == 2
-        && birthday.day() == 29)
-    {
-        occurrence = QDate(year, 2, 28);
-    }
-
-    return occurrence;
+    return value.toStdU16String();
 }
 
-QDate nextOccurrenceInRange(
-    const QDate& birthday,
-    const QDate& rangeStart,
-    const QDate& rangeEnd
+UpcomingBirthdayGroup featureGroup(
+    const UpcomingBirthdayStaffGroup group
     )
 {
-    for (int year = rangeStart.year(); year <= rangeEnd.year(); ++year)
+    switch (group)
     {
-        const QDate occurrence = occurrenceForYear(birthday, year);
-        if (occurrence >= rangeStart && occurrence <= rangeEnd)
-        {
-            return occurrence;
-        }
+    case UpcomingBirthdayStaffGroup::KoreanTeacher:
+        return UpcomingBirthdayGroup::KoreanTeacher;
+    case UpcomingBirthdayStaffGroup::NativeEnglishTeacher:
+        return UpcomingBirthdayGroup::NativeEnglishTeacher;
+    case UpcomingBirthdayStaffGroup::GsTeam:
+        return UpcomingBirthdayGroup::GsTeam;
     }
 
-    return {};
+    return UpcomingBirthdayGroup::KoreanTeacher;
+}
+
+UpcomingBirthday convertOccurrence(
+    const UpcomingBirthdayOccurrence& occurrence
+    )
+{
+    return {
+        QDate(
+            occurrence.date.year,
+            occurrence.date.month,
+            occurrence.date.day
+            ),
+        QString::fromUtf16(
+            occurrence.displayName.data(),
+            static_cast<qsizetype>(occurrence.displayName.size())
+            ),
+        QString::fromUtf16(
+            occurrence.position.data(),
+            static_cast<qsizetype>(occurrence.position.size())
+            ),
+        featureGroup(occurrence.group)
+    };
+}
+
+void appendOccurrences(
+    QList<UpcomingBirthday>* destination,
+    const std::vector<UpcomingBirthdayOccurrence>& source
+    )
+{
+    if (!destination)
+    {
+        return;
+    }
+
+    for (const UpcomingBirthdayOccurrence& occurrence : source)
+    {
+        destination->append(convertOccurrence(occurrence));
+    }
 }
 
 bool birthdayLessThan(
@@ -71,60 +111,6 @@ bool birthdayLessThan(
     return QString::localeAwareCompare(left.position, right.position) < 0;
 }
 
-void appendBirthday(
-    UpcomingBirthdaySchedule* schedule,
-    const QString& birthdayValue,
-    const QString& displayNameValue,
-    const QString& position,
-    UpcomingBirthdayGroup group,
-    const QDate& referenceDate,
-    const QDate& thisWeekEnd,
-    const QDate& nextWeekEnd
-    )
-{
-    if (!schedule)
-    {
-        return;
-    }
-
-    const QDate birthday = parseBirthday(birthdayValue);
-    const QString displayName = displayNameValue.trimmed();
-    if (!birthday.isValid() || displayName.isEmpty())
-    {
-        return;
-    }
-
-    const QDate occurrence = nextOccurrenceInRange(
-        birthday,
-        referenceDate,
-        nextWeekEnd
-        );
-    if (!occurrence.isValid())
-    {
-        return;
-    }
-
-    const UpcomingBirthday entry{
-        occurrence,
-        displayName,
-        position.trimmed(),
-        group
-    };
-
-    if (occurrence == referenceDate)
-    {
-        schedule->today.append(entry);
-    }
-    else if (occurrence <= thisWeekEnd)
-    {
-        schedule->thisWeek.append(entry);
-    }
-    else
-    {
-        schedule->nextWeek.append(entry);
-    }
-}
-
 void sortBirthdays(QList<UpcomingBirthday>* birthdays)
 {
     if (birthdays)
@@ -132,6 +118,7 @@ void sortBirthdays(QList<UpcomingBirthday>* birthdays)
         std::sort(birthdays->begin(), birthdays->end(), birthdayLessThan);
     }
 }
+
 }
 
 bool UpcomingBirthdaySchedule::isEmpty() const
@@ -146,62 +133,58 @@ UpcomingBirthdaySchedule UpcomingBirthdaySchedule::build(
     const QDate& referenceDate
     )
 {
-    UpcomingBirthdaySchedule result;
-
-    if (!referenceDate.isValid())
-    {
-        return result;
-    }
-
-    const QDate thisWeekEnd = referenceDate.addDays(
-        7 - referenceDate.dayOfWeek()
-        );
-    const QDate nextWeekEnd = thisWeekEnd.addDays(7);
+    std::vector<UpcomingBirthdayCandidate> candidates;
+    candidates.reserve(static_cast<std::size_t>(
+        teachers.size() + nativeEnglishTeachers.size() + gsTeamMembers.size()
+        ));
 
     for (const Teacher& teacher : teachers)
     {
-        appendBirthday(
-            &result,
-            teacher.birthday,
-            teacher.preferredDisplayName(),
-            {},
-            UpcomingBirthdayGroup::KoreanTeacher,
-            referenceDate,
-            thisWeekEnd,
-            nextWeekEnd
-            );
+        candidates.push_back({
+            .birthdayMonthDay = utf8(teacher.birthday.trimmed()),
+            .displayName = utf16(teacher.preferredDisplayName().trimmed()),
+            .group = UpcomingBirthdayStaffGroup::KoreanTeacher
+        });
     }
 
     for (const NativeEnglishTeacher& teacher : nativeEnglishTeachers)
     {
-        appendBirthday(
-            &result,
-            teacher.birthday,
-            teacher.name,
-            teacher.position,
-            UpcomingBirthdayGroup::NativeEnglishTeacher,
-            referenceDate,
-            thisWeekEnd,
-            nextWeekEnd
-            );
+        candidates.push_back({
+            .birthdayMonthDay = utf8(teacher.birthday.trimmed()),
+            .displayName = utf16(teacher.name.trimmed()),
+            .position = utf16(teacher.position.trimmed()),
+            .group = UpcomingBirthdayStaffGroup::NativeEnglishTeacher
+        });
     }
 
     for (const GsTeamMember& member : gsTeamMembers)
     {
         const QString displayName = member.name.trimmed().isEmpty()
-            ? member.koreanName
-            : member.name;
-        appendBirthday(
-            &result,
-            member.birthday,
-            displayName,
-            member.position,
-            UpcomingBirthdayGroup::GsTeam,
-            referenceDate,
-            thisWeekEnd,
-            nextWeekEnd
-            );
+            ? member.koreanName.trimmed()
+            : member.name.trimmed();
+        candidates.push_back({
+            .birthdayMonthDay = utf8(member.birthday.trimmed()),
+            .displayName = utf16(displayName),
+            .position = utf16(member.position.trimmed()),
+            .group = UpcomingBirthdayStaffGroup::GsTeam
+        });
     }
+
+    const UpcomingBirthdayDate applicationReferenceDate{
+        referenceDate.year(),
+        referenceDate.month(),
+        referenceDate.day()
+    };
+    const ClassMngr::Next::Application::UpcomingBirthdaySchedule schedule =
+        UpcomingBirthdayScheduleUseCase::build(
+            candidates,
+            applicationReferenceDate
+            );
+
+    UpcomingBirthdaySchedule result;
+    appendOccurrences(&result.today, schedule.today);
+    appendOccurrences(&result.thisWeek, schedule.thisWeek);
+    appendOccurrences(&result.nextWeek, schedule.nextWeek);
 
     sortBirthdays(&result.today);
     sortBirthdays(&result.thisWeek);
