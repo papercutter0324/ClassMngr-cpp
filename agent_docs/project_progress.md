@@ -56,19 +56,22 @@ the staged-package report probe passed. Cross-platform CI and local
 ### Current state - 2026-10-01
 
 Phase 2 remains In Progress/Open under deployment `phase2_resume_20260929`.
-F196 is accepted in source commit `b9f0a07d`: Current Campus preferences now
-use the active open session's `SettingsRepository`, preserving the exact key,
-UTF-8 and `QVariant::toString()` behavior, unavailable/closed defaults, and
-typed write errors. The Executor's nine focused cases and the independent
-registered CTest passed; `git diff --check` passed. No full suite ran.
+F196 is accepted in source commit `b9f0a07d`; F197 is accepted in source commit
+`26c0f23b`. Both preference adapters use only the active open session's
+`SettingsRepository` and preserve their exact keys, conversions, defaults, and
+closed-session behavior. F196's independent focused CTest passed 1/1. F197's
+independent focused CTest passed 1/1, including a SQLite-trigger case proving
+an explicit failed save is silent and leaves the stored value unchanged.
+`git diff --check` passed for both; no full suite ran.
 
 F179-F195 advanced Sub Prep and Calendar repository boundaries and the
 preference-port migrations; individual scope and evidence remain in the
 [Phase 2 progress log](../plans/qt-rewrite-heavy-route-plan/03-Phase-2-Progress-Log.md).
-F197 is selected for `ApplicationServicesMiddleSchoolAnalyticsPreferencesPort`:
-move its one-key boolean preference to the active session repository while
-preserving its key, QVariant coercion, false default/materialization attempt,
-and unavailable/closed behavior. Focused verification remains pending.
+F198 is selected for `ApplicationServicesPersonalDetailsSavePort`: move the
+nine-key aggregate save to the active session's transactional
+`SettingsRepository::saveSettings()`, preserving encoding, normalization,
+rollback, and typed errors. Add closed-session no-fallback coverage. Focused
+verification is pending.
 Gates 1 and 2 remain Partial.
 
 ### Earlier Phase 2 detail - 2026-09-26
@@ -2336,7 +2339,7 @@ partial output on failure. Focused targets are
 remains In Progress/Open; Gates 1 and 2 remain Partial. Workflow repair remains
 with the other worker.
 
-## Current Phase 2 position - 2026-10-01 (F196 accepted; F197 selected)
+## Archived Phase 2 position - 2026-10-01 (F196 accepted; F197 selected)
 
 F179-F195 advanced session-backed Sub Prep and Calendar operations and six
 preference ports; their individual commits and acceptance evidence are recorded
@@ -2358,3 +2361,21 @@ and its existing focused Platform target. Migrate to the active open session's
 fallback and default-materialization attempt, unavailable/closed behavior, and
 existing callers. Add closed-session no-fallback coverage. Phase 2 remains
 In Progress/Open; Gates 1 and 2 remain Partial.
+
+## Current Phase 2 position - 2026-10-01 (F197 accepted; F198 selected)
+
+F197 source commit `26c0f23b` migrates
+`ApplicationServicesMiddleSchoolAnalyticsPreferencesPort` to the active open
+session's `SettingsRepository`. It preserves the exact visibility key,
+`QVariant::toBool()`, false fallback and materialization attempt, and
+unavailable/closed behavior. The independent registered CTest passed 1/1. A
+SQLite-trigger test verifies a failed explicit save stays silent and preserves
+the previous value; closed-session tests verify no `DataService` fallback.
+`git diff --check` passed. No full suite ran.
+
+F198 is selected for `ApplicationServicesPersonalDetailsSavePort` and its
+existing focused Platform test. Move the nine-key bundle to one active-session
+`SettingsRepository::saveSettings()` transaction. Preserve exact keys and
+values, UTF-8 and signature-image processing, signature normalization,
+rollback, typed errors, and callers. Add closed-session no-fallback coverage.
+Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial.

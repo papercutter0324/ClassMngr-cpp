@@ -8299,7 +8299,7 @@ fields/schedule/teacher/count/fallback parity. F167 implementation has not
 started. Gate 1 and Gate 2 remain Partial; Phase 2 remains In Progress and its
 exit gate remains Open.
 
-### Progress update - 2026-10-01 (F196 accepted; F197 selected)
+### Progress update - 2026-10-01 (F197 accepted; F198 selected/in progress)
 
 F167, source commit `97efac8b`, updates
 `ApplicationServicesClassDetailsPageReadPort` to use active-session
@@ -8708,16 +8708,26 @@ the independent Tester rebuilt the focused target and CTest passed 1/1.
 `git diff --check` passed; no full suite ran. Callers and the Personal Details
 aggregate writer remain unchanged.
 
-F197 is selected for `ApplicationServicesMiddleSchoolAnalyticsPreferencesPort`,
-a typed Qt-free bool port with a one-key adapter and existing focused test
-suite. Target/test:
-`NextPlatformApplicationServicesMiddleSchoolAnalyticsPreferencesPort` /
-`ClassMngrNextPlatformApplicationServicesMiddleSchoolAnalyticsPreferencesPortTests`.
-Use only the active open session's `SettingsRepository`; preserve key
+F197, source commit `26c0f23b`, migrates
+`ApplicationServicesMiddleSchoolAnalyticsPreferencesPort` to the active open
+session's `SettingsRepository` only. It preserves exact key
 `classes_navigation_show_middle_school_analytics_and_evaluations`,
-`QVariant::toBool()` coercion, false fallback and the default-materializing
-attempt when missing/invalid, unavailable/closed false/no-op behavior, caller
-behavior, and generic/sessionless `SettingsService`. Add closed-session with
-`DataService` no-fallback coverage and retain read-failure behavior. F197 is
-selected, not implemented; no F197 test results exist. Gate 1 and Gate 2 remain
-Partial; Phase 2 remains In Progress with its exit gate Open.
+`QVariant::toBool()`, best-effort false materialization for missing, invalid,
+or read-error values, unavailable/closed false/no-op behavior, and silent write
+failures. The Executor and independent Tester passed the focused registered
+CTest `ClassMngrNextPlatformApplicationServicesMiddleSchoolAnalyticsPreferencesPortTests`
+1/1. Tester verified SQLite-trigger write failure is silent and preserves
+stored `true`, closed-session no-fallback with `DataService`, and repository-
+only adapter references. `git diff --check` passed; generic/sessionless
+`SettingsService` and callers are unchanged. No full suite ran.
+
+F198 is selected and implementation is in progress for
+`ApplicationServicesPersonalDetailsSavePort` in
+`src/next/platform/application_services_personal_details_save_port.h`. Migrate
+to one atomic active-session `SettingsRepository::saveSettings()` batch.
+Preserve all nine exact keys/values, UTF-8 and prepared signature-image
+encoding, mode/font normalization, typed Technical failure mapping, UI callers,
+and generic/sessionless `SettingsService`. Add closed-session-with-`DataService`
+no-fallback coverage and prove seeded bundle values remain unchanged. No F198
+results exist. Gate 1 and Gate 2 remain Partial; Phase 2 remains In Progress
+with its exit gate Open.

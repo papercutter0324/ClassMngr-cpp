@@ -52,8 +52,9 @@
   F192's Calendar first-day-of-week preferences port and F193's Academic
   Calendar schedule preferences port, F194's Schedule display preferences
   port, and F195's Schedule display mode preferences port are accepted. F196
-  is accepted for Current Campus preferences; F197 is selected for the
-  Middle School Analytics visibility preference.
+  is accepted for Current Campus preferences, and F197 is accepted for Middle
+  School Analytics visibility. F198 is selected for the Personal Details save
+  port; implementation is in progress.
   See the
   [Phase 2 progress
   log](03-Phase-2-Progress-Log.md)

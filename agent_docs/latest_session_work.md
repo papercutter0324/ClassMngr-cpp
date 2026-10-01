@@ -4211,7 +4211,7 @@ output, and no `DataService` fallback is allowed. Focused targets are
 exist in the retained `build/f168` target list. The workflow repair remains
 with the other worker. No push was requested.
 
-## 2026-10-01 - F196 accepted; F197 selected
+## Previous handoff - 2026-10-01 (F196 accepted; F197 selected)
 
 F196 source commit `b9f0a07d` moves
 `ApplicationServicesCurrentCampusPreferencesPort` to the active session's
@@ -4234,3 +4234,25 @@ closed-session no-fallback coverage. Target:
 `ClassMngrNextPlatformApplicationServicesMiddleSchoolAnalyticsPreferencesPortTests`.
 Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial. Next: implement
 F197, then independently verify and commit it before selecting F198.
+
+## 2026-10-01 - F197 accepted; F198 selected
+
+F197 source commit `26c0f23b` migrates
+`ApplicationServicesMiddleSchoolAnalyticsPreferencesPort` to the active
+session's `SettingsRepository`. It preserves the exact key,
+`QVariant::toBool()`, false fallback and default-materialization attempt,
+unavailable/closed behavior, and silent write failures. The focused target
+passed CTest 1/1 in both implementation and independent verification. Added
+coverage includes closed-session no-fallback with `DataService` still present,
+read failure, and a rejected SQLite-trigger save that stays silent and
+preserves the stored value. The adapter has no service/facade access;
+`git diff --check` passed. No full suite ran.
+
+F198 is selected for `ApplicationServicesPersonalDetailsSavePort`: migrate its
+nine-key aggregate to the active session's `SettingsRepository::saveSettings()`
+in one transaction. Preserve all key/value conversions, prepared signature
+image encoding, mode/font normalization, Technical failures, rollback, and
+existing callers. Add closed-session no-fallback coverage. The implementation
+is underway in the Platform adapter and its focused test; no F198 results yet.
+Target: `ClassMngrNextPlatformApplicationServicesPersonalDetailsSavePortTests`.
+Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial.

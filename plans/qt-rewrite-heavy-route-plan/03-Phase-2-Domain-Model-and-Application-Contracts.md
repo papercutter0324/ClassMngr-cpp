@@ -52,9 +52,9 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
   Calendar Event save port, F184's Calendar Event delete port, F185's
   Calendar Event delete-all port, F186's repeat-series suffix-delete port,
   F187's Calendar Event Import save port, F188's repeat-series creation port,
-  and F189's repeat-series edit port are accepted. F190-F196's preference
-  ports are accepted; F197 is selected for the Middle School Analytics
-  visibility preference.
+  and F189's repeat-series edit port are accepted. F190-F197's preference
+  ports are accepted; F198 is selected and in progress for the Personal
+  Details save port.
   The prior F123 candidate wording is historical;
   current Teacher Profile integration status is recorded in the progress log.
   Gates 1 and 2
@@ -1149,15 +1149,29 @@ focused target and passed CTest 1/1. `git diff --check` passed. No full suite
 ran. Callers, the Personal Details aggregate writer, and generic/sessionless
 `SettingsService` are unchanged.
 
-## F197 selected Middle School Analytics visibility preference
+## F197 accepted Middle School Analytics visibility preference
 
-Migrate `ApplicationServicesMiddleSchoolAnalyticsPreferencesPort` through the
-active open session's `SettingsRepository`, using target
-`NextPlatformApplicationServicesMiddleSchoolAnalyticsPreferencesPort`. Preserve
-key `classes_navigation_show_middle_school_analytics_and_evaluations`,
-`QVariant::toBool()` coercion, false fallback and default-materializing attempt
-for missing/invalid values, unavailable/closed false/no-op behavior, callers,
-and generic/sessionless `SettingsService`. Add closed-session with-`DataService`
-no-fallback coverage and retain read-failure behavior. F197 is selected but not
-implemented; it has no test results. Phase 2 remains In Progress/Open; Gates 1
-and 2 remain Partial.
+Commit `26c0f23b` migrates
+`ApplicationServicesMiddleSchoolAnalyticsPreferencesPort` to the active open
+session's `SettingsRepository` only. It preserves key
+`classes_navigation_show_middle_school_analytics_and_evaluations`,
+`QVariant::toBool()`, best-effort false materialization for missing, invalid,
+or read-error values, unavailable/closed false/no-op behavior, and silent write
+failures. The Executor and independent Tester passed the focused registered
+CTest 1/1. Tester verified a SQLite-trigger write failure stays silent and
+preserves stored `true`, closed-session no-fallback with `DataService`, and
+repository-only adapter references. `git diff --check` passed; no full suite
+ran. Generic/sessionless
+`SettingsService` and callers remain unchanged.
+
+## F198 selected Personal Details save port (in progress)
+
+Migrate `ApplicationServicesPersonalDetailsSavePort` in
+`src/next/platform/application_services_personal_details_save_port.h` to use the
+active open session's `SettingsRepository::saveSettings()` in one atomic batch.
+Preserve all nine exact keys and values, UTF-8 and prepared signature-image
+encoding, mode/font normalization, typed Technical failure mapping, existing
+UI callers, and generic/sessionless `SettingsService`. Add explicit
+closed-session-with-`DataService` no-fallback coverage and prove seeded bundle
+values remain unchanged. Implementation has started; no F198 results exist.
+Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial.

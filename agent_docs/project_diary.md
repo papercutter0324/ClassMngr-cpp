@@ -1714,3 +1714,15 @@ through the compatibility facade. Keep each preference adapter's own defaults,
 coercion, and error behavior while migrating persistence to
 `SettingsRepository`; do not broaden a one-key preference slice into the
 separate aggregate Personal Details writer.
+
+## 2026-10-01 - F197 visibility preference adapter
+
+When a typed preference save returns `void` and the legacy adapter suppresses
+repository failures, test an injected open-session write failure explicitly:
+the call remains silent and the previous stored value remains intact. Pair that
+with a closed-session case where `DataService` still exists to prove the adapter
+checks the active session directly.
+
+F198 is the Personal Details aggregate save boundary. Keep its nine settings in
+one `SettingsRepository::saveSettings()` transaction; preserve rollback and
+signature conversion as one adapter operation.
