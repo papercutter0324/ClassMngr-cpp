@@ -1924,3 +1924,12 @@ Keep control construction in the feature UI while moving existing teacher and
 class choice reads onto the typed snapshot. Preserve option ordering and
 eligibility behavior, and keep schedule preview and apply-time validation in
 their current owners so the read-boundary migration stays isolated.
+
+## 2026-10-02 - F223 Schedule Import matching projection
+
+Reuse the existing Qt-free matching projection for review preparation and
+adapt Qt text only at the feature boundary. Preserve the legacy simplified,
+case-folded keys and ID ordering while sourcing teacher/class state from one
+typed snapshot; include class room number in that snapshot because room
+matching is part of the current preview behavior. Keep workbook parsing and
+repository apply validation with their existing owners.

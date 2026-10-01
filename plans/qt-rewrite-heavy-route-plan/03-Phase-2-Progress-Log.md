@@ -9233,3 +9233,25 @@ reruns the Application and Platform snapshot targets plus
 `ClassMngrScheduleImportTests`; and compares dialog results with the documented
 baseline without claiming a pass if the same three failures remain. Phase 2
 remains In Progress/Open; Gates 1 and 2 remain Partial.
+
+### Progress update - 2026-10-02 (F222 accepted; F223 selected)
+
+F222, source commit `6920e019`, populates Schedule Import resolution controls
+from the F221 typed snapshot and removes legacy class/teacher service reads
+from choice construction. Independent review passed. Application state
+snapshot, Platform state snapshot, and `ClassMngrScheduleImportTests` passed.
+`ClassMngrScheduleImportDialogTests` passed 24 and failed the same documented
+baseline cases: `acceptedReviewCanTearDownSourceDialog`,
+`mismatchedProfileRequiresConfirmation`, and
+`reviewPreviewUsesSavedScheduleDisplaySettings`. `git diff --check` passed;
+no full suite ran. No direct test covers a successful snapshot with a missing
+preview reference, a narrow remaining coverage gap.
+
+F223 is selected: migrate Schedule Import review matching to the existing
+Qt-free `projectScheduleImportMatching` projection using the F221 typed
+snapshot. Add `roomNumber` to the snapshot, mapped from Platform `ClassInfo`,
+because F221's projection omits it. Preserve Qt
+`simplified().toCaseFolded()` normalization, conversion ordering, suggestions,
+confidence, and explanation. Leave workbook parsing, apply-time validation,
+and matching policy unchanged. Phase 2 remains In Progress/Open; Gates 1 and 2
+remain Partial.

@@ -4665,7 +4665,7 @@ Focused acceptance includes the Application state and decision validators,
 Phase 2 remains In Progress/Open with Gates 1 and 2 Partial. Next: finish F219,
 independently verify and commit it, then choose the following slice.
 
-## Current handoff - 2026-10-02 (F221 accepted; F222 selected)
+## Current handoff - 2026-10-02 (F222 accepted; F223 in progress)
 
 F219 source commit `57aefadf` adds the shared state validator as a live
 Schedule Import readiness preflight. The Application state-validation,
@@ -4695,16 +4695,25 @@ failures are the documented F218/F219 baseline cases:
 `reviewPreviewUsesSavedScheduleDisplaySettings`. Both new dialog tests
 passed. `git diff --check` passed; no full suite ran.
 
-F222 is selected to populate Schedule Import resolution controls from the F221
-typed snapshot, removing their current teacher/class service reads while
-keeping widget construction in the feature UI. Preserve choice ordering,
-labels, room matching, suggested/exact and supplemental eligible-class
-choices, action data, and defaults. Leave
-`scheduleImportClassOptionIsEligible()`,
-`ScheduleService::previewImport()`, and repository apply validation with
-their current owners. Snapshot failures must remain explicit, with no legacy
-fallback or partial controls. Acceptance includes dialog choice/order/default
-and failure cases, plus the snapshot and apply-time targets. The dialog target
-retains its three baseline failures and is not claimed as passing. Phase 2
-remains In Progress/Open; Gates 1 and 2 remain Partial. Next: implement F222,
-independently verify and commit it, then choose the following slice.
+F222 source commit `6920e019` migrates resolution choice construction to the
+F221 typed state snapshot, removing the choice builder's service reads while
+keeping widget construction in the feature UI. Independent focused app
+snapshot, Platform snapshot, and `ClassMngrScheduleImportTests` passed. The
+dialog target reported 24 passed/3 failed; the only failures were the
+documented baseline cases `acceptedReviewCanTearDownSourceDialog`,
+`mismatchedProfileRequiresConfirmation`, and
+`reviewPreviewUsesSavedScheduleDisplaySettings`. `git diff --check` passed;
+no full suite ran. Independent review confirmed choice ordering, labels,
+room matching, suggested/exact/supplemental targets, actions, and defaults.
+
+F223 is in progress: replace the remaining review-time
+`ScheduleService::previewImport()` read with the existing Qt-free Application
+matching projection over the F221 snapshot. Preserve imported and repository
+ordering, Qt simplified/case-folded matching, IDs and sentinel conversion,
+suggestions, confidence/explanation, inventory, and regular/intensive behavior.
+Add class room number to the typed snapshot and map it at the Platform boundary
+to retain the existing matching key. Keep parsing, eligibility policy, and
+repository apply validation unchanged. The existing three dialog baseline
+failures remain the comparison point. Phase 2 remains In Progress/Open; Gates
+1 and 2 remain Partial. Next: finish F223, independently verify and commit it,
+then select and begin the next slice.

@@ -71,7 +71,8 @@ source commit `9e03e668`; F215 is accepted in source commit `68ef5962`; F216
 is accepted in source commit `23dc6c2b`; F217 is accepted in source commit
 `b587a6d5`; F218 is accepted in source commit `9bb936ee`; F219 is accepted
 in source commit `57aefadf`; F220 is accepted in source commit `4a87ab1e`;
-F221 is accepted in source commit `ec65c0c6`.
+F221 is accepted in source commit `ec65c0c6`; F222 is accepted in source
+commit `6920e019`; F223 is in progress.
 F196 and F197 use
 only the active open session's
 `SettingsRepository` and preserve their keys, conversions, defaults, and
@@ -2663,7 +2664,7 @@ lanes independently recommended this candidate because it complements F198's
 aggregate writer. Phase 2 remains In Progress/Open; Gates 1 and 2 remain
 Partial.
 
-## Current Phase 2 position - 2026-10-01 (F205 accepted; F206 selected)
+## Archived Phase 2 position - 2026-10-01 (F205 accepted; F206 selected)
 
 F201 source commit `59133929` migrates
 `ApplicationServicesPersonalSignatureImagePort` to the active open session's
@@ -2739,3 +2740,28 @@ repository read-error coverage. Focused CTest:
 `NextPlatformApplicationServicesCustomColorPalettePreferencesPort`. Both
 independent Explorer lanes selected this bounded adapter migration. Phase 2
 remains In Progress/Open; Gates 1 and 2 remain Partial.
+
+## Current Phase 2 position - 2026-10-02 (F222 accepted; F223 in progress)
+
+F218-F221 are accepted in commits `9bb936ee`, `57aefadf`, `4a87ab1e`, and
+`ec65c0c6`. F222 source commit `6920e019` migrates Schedule Import resolution
+choice reads to the F221 typed snapshot, preserving option order, labels,
+defaults, room matching, and suggested/exact/supplemental class targets.
+Independent focused app snapshot, Platform snapshot, and repository/apply
+tests passed. The dialog target reported 24 passed and 3 failures; the only
+failures were the documented baseline cases
+`acceptedReviewCanTearDownSourceDialog`,
+`mismatchedProfileRequiresConfirmation`, and
+`reviewPreviewUsesSavedScheduleDisplaySettings`. `git diff --check` passed;
+no full suite ran.
+
+F223 is in progress to build Schedule Import review matching from the existing
+Qt-free Application projection and typed state snapshot, removing the
+remaining `ScheduleService::previewImport()` read from review preparation.
+Preserve Qt `simplified().toCaseFolded()` matching keys, ordering, IDs and
+sentinel behavior, suggestions, confidence/explanation, inventory, and
+regular/intensive schedule handling. The state snapshot needs class room
+number added at its Platform mapping boundary. Workbook parsing, eligibility
+policy, repository preview/apply, and apply-time validation remain in their
+current owners. Phase 2 remains In Progress/Open; Gates 1 and 2 remain
+Partial.
