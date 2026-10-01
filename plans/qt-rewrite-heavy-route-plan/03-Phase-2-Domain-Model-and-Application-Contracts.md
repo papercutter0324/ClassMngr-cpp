@@ -53,8 +53,9 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
   Calendar Event delete-all port, F186's repeat-series suffix-delete port,
   F187's Calendar Event Import save port, F188's repeat-series creation port,
   and F189's repeat-series edit port are accepted. F190-F197's preference
-  ports and F198's Personal Details save port are accepted; F199 is selected
-  for the Personal Display Name preferences port.
+  ports and F198's Personal Details save and F199's Personal Display Name
+  preferences ports are accepted; F200 is selected for Personal Signature
+  preferences.
   The prior F123 candidate wording is historical;
   current Teacher Profile integration status is recorded in the progress log.
   Gates 1 and 2
@@ -1176,15 +1177,28 @@ and rollback. After an x64 MSVC rebuild, independent focused CTest
 changes after reopen. `git diff --check` passed; no full suite ran. UI callers
 and generic/sessionless `SettingsService` are unchanged.
 
-## F199 selected Personal Display Name preferences port
+## F199 accepted Personal Display Name preferences port
 
-Migrate `ApplicationServicesPersonalDisplayNamePreferencesPort` to read and
-write `myInfo/name` through the active open session's `SettingsRepository`.
-Preserve exact UTF-8 and whitespace, empty reads and successful no-op writes
-when unavailable, and Technical write-error mapping. Add closed-session with
-`DataService` no-fallback coverage and verify the read observes the name written
-by F198's aggregate writer. Existing callers remain unchanged. Two Explorer
-lanes differed; this slice was selected to pair with F198's aggregate writer
-and read path. Class Visibility remains a later candidate. F199 is selected,
-not implemented; no F199 results exist. Phase 2 remains In Progress/Open; Gates
-1 and 2 remain Partial.
+Commit `dc489863` migrates `ApplicationServicesPersonalDisplayNamePreferencesPort`
+to the active-session `SettingsRepository` for `myInfo/name`, with no facade
+fallback. It preserves UTF-8 and whitespace, empty reads/no-op writes when
+unavailable, Technical write failures, and warning/default behavior on read
+error. Coverage includes closed-session no-fallback with `DataService`,
+read-failure warning, and integration with F198's aggregate writer.
+Independent x64 MSVC CTest
+`ClassMngrNextPlatformApplicationServicesPersonalDisplayNamePreferencesPortTests`
+passed 1/1. `git diff --check` passed; no full suite ran.
+
+## F200 selected Personal Signature preferences port
+
+Migrate `ApplicationServicesPersonalSignaturePreferencesPort`, target
+`NextPlatformApplicationServicesPersonalSignaturePreferencesPort`, as a
+three-key reader for mode, font, and typed text written by F198's aggregate
+port. Preserve mode `1` as Type and other values as Image, font `toInt()`
+conversion, typed-text UTF-8/whitespace, missing/invalid defaults without
+writes, unavailable Technical failure, and warning/default on repository read
+error. Add closed-session-with-`DataService` no-fallback coverage; keep callers
+and generic/sessionless `SettingsService` unchanged. Two independent Explorer
+lanes agreed because this pairs with the F198 aggregate write. Class Visibility
+remains a later candidate. F200 is selected, not implemented; no F200 results
+exist. Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial.

@@ -4257,7 +4257,7 @@ is underway in the Platform adapter and its focused test; no F198 results yet.
 Target: `ClassMngrNextPlatformApplicationServicesPersonalDetailsSavePortTests`.
 Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial.
 
-## 2026-10-01 - F198 accepted; F199 selected
+## Previous handoff - 2026-10-01 (F198 accepted; F199 selected)
 
 F198 source commit `0e8361eb` migrates
 `ApplicationServicesPersonalDetailsSavePort` to one active-session
@@ -4282,3 +4282,30 @@ F198 aggregate port. Focused target:
 Class Visibility remains a candidate for a later preference slice. Phase 2
 remains In Progress/Open; Gates 1 and 2 remain Partial. Next: implement F199,
 independently verify it, commit it, then select F200.
+
+## 2026-10-01 - F199 accepted; F200 selected
+
+F199 source commit `dc489863` migrates
+`ApplicationServicesPersonalDisplayNamePreferencesPort` to the active
+session's `SettingsRepository`. It preserves exact `myInfo/name` UTF-8 and
+whitespace, empty reads and successful no-op writes while unavailable, and
+Technical write errors. The adapter has no `SettingsService`/`DataService`
+fallback and retains the legacy warning when repository reads fail. Closed
+session coverage keeps `DataService` present, verifies empty read/no-op write,
+then reopens the database and confirms stored values are unchanged. An
+integration test confirms the port reads the name written by F198's aggregate
+save. The independent Tester rebuilt the focused x64 MSVC target and CTest
+passed 1/1; `git diff --check` passed. No full suite ran.
+
+Two independent Explorer lanes agreed on F200:
+`ApplicationServicesPersonalSignaturePreferencesPort`, a three-key read port
+for `myInfo/signatureMode`, `myInfo/typedSignatureFont`, and
+`myInfo/typedSignatureText`, already written by the F198 aggregate save.
+Keep callers unchanged. Preserve `1`-means-Type mode conversion, `toInt()`
+font conversion, UTF-8 text/whitespace, Image/empty/zero defaults without
+writes for missing/invalid settings, Technical failure when unavailable, and
+warnings plus defaults on read errors. Add closed-session-with-`DataService`
+no-fallback coverage. Existing focused target:
+`NextPlatformApplicationServicesPersonalSignaturePreferencesPort`. Phase 2
+remains In Progress/Open; Gates 1 and 2 remain Partial. Next: implement F200,
+independently verify it, commit it, then select F201.

@@ -8299,7 +8299,7 @@ fields/schedule/teacher/count/fallback parity. F167 implementation has not
 started. Gate 1 and Gate 2 remain Partial; Phase 2 remains In Progress and its
 exit gate remains Open.
 
-### Progress update - 2026-10-01 (F198 accepted; F199 selected)
+### Progress update - 2026-10-01 (F199 accepted; F200 selected)
 
 F167, source commit `97efac8b`, updates
 `ApplicationServicesClassDetailsPageReadPort` to use active-session
@@ -8732,15 +8732,26 @@ MSVC rebuild, independent focused CTest
 changes after reopen. `git diff --check` passed; no full suite ran. UI callers
 and generic/sessionless `SettingsService` are unchanged.
 
-F199 is selected for `ApplicationServicesPersonalDisplayNamePreferencesPort`,
-using the existing target
-`NextPlatformApplicationServicesPersonalDisplayNamePreferencesPort`. Read and
-write `myInfo/name` through the active open session's `SettingsRepository`;
-preserve exact UTF-8 and whitespace, empty reads and successful no-op writes
-when unavailable, and Technical write-error mapping. Add closed-session with
-`DataService` no-fallback coverage and verify this read sees the name written by
-F198's aggregate writer. Keep callers unchanged. Two Explorer lanes differed;
-this slice was selected to pair with F198's aggregate writer/read path, with
-Class Visibility left as a later candidate. F199 is selected, not implemented;
-no F199 results exist. Gate 1 and Gate 2 remain Partial; Phase 2 remains In
-Progress with its exit gate Open.
+F199, source commit `dc489863`, migrates
+`ApplicationServicesPersonalDisplayNamePreferencesPort` to the active-session
+`SettingsRepository` for `myInfo/name`, with no facade fallback. It preserves
+UTF-8 and whitespace, empty reads/no-op writes when unavailable, Technical
+write failures, and warning/default behavior on read error. Coverage includes
+closed-session no-fallback with `DataService`, read-failure warning, and
+integration with F198's aggregate writer. Independent x64 MSVC CTest
+`ClassMngrNextPlatformApplicationServicesPersonalDisplayNamePreferencesPortTests`
+passed 1/1. `git diff --check` passed; no full suite ran.
+
+F200 is selected for `ApplicationServicesPersonalSignaturePreferencesPort`,
+with existing CMake name
+`NextPlatformApplicationServicesPersonalSignaturePreferencesPort`. This is a
+three-key reader for mode, font, and typed text already written by F198's
+aggregate port. Preserve mode `1` as Type and other values as Image, font
+`toInt()` conversion, typed-text UTF-8/whitespace, missing/invalid defaults
+without writes, unavailable Technical failure, and warning/default on
+repository read error. Add closed-session-with-`DataService` no-fallback
+coverage; keep callers and generic/sessionless `SettingsService` unchanged.
+Two independent Explorer lanes agreed because this pairs with F198's aggregate
+write. Class Visibility remains a later candidate. F200 is selected, not
+implemented; no F200 results exist. Gate 1 and Gate 2 remain Partial; Phase 2
+remains In Progress with its exit gate Open.

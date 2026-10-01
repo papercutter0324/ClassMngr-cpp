@@ -1739,3 +1739,10 @@ compatibility-facade fallback cannot hide behind the service's lifetime.
 Pair the `myInfo/name` read port with the aggregate Personal Details writer
 that already owns that key. Verify the typed read port sees the aggregate
 writer's value, including UTF-8 and whitespace, while keeping callers unchanged.
+
+## 2026-10-01 - F200 Personal Signature preferences reader
+
+The typed signature-preferences reader consumes three keys owned by the F198
+aggregate writer. Keep missing/invalid defaults and mode/font conversion at
+the Qt adapter edge; retain the compatibility reader's warning and default
+result when repository reads fail.

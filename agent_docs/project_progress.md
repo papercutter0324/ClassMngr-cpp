@@ -57,28 +57,33 @@ the staged-package report probe passed. Cross-platform CI and local
 
 Phase 2 remains In Progress/Open under deployment `phase2_resume_20260929`.
 F196 is accepted in source commit `b9f0a07d`; F197 is accepted in source commit
-`26c0f23b`; F198 is accepted in source commit `0e8361eb`. F196 and F197 use
-only the active open session's `SettingsRepository` and preserve their keys,
-conversions, defaults, and closed-session behavior. F198 moves the nine-key
-Personal Details aggregate save to one active-session repository transaction.
-Independent focused CTest passed 1/1 for all three slices. F197's coverage
-includes a SQLite-trigger case proving an explicit failed save is silent and
-leaves the stored value unchanged; F198's coverage includes a closed-session
-no-fallback check with `DataService` still present and verifies all seeded
-values remain unchanged after reopen. `git diff --check` passed; no full suite
-ran.
+`26c0f23b`; F198 is accepted in source commit `0e8361eb`; F199 is accepted in
+source commit `dc489863`. F196 and F197 use only the active open session's
+`SettingsRepository` and preserve their keys, conversions, defaults, and
+closed-session behavior. F198 moves the nine-key Personal Details aggregate
+save to one active-session repository transaction. F199 moves the
+`myInfo/name` reader and writer to the active session repository. Independent
+focused CTest passed 1/1 for all four slices. F197's coverage includes a
+SQLite-trigger case proving an explicit failed save is silent and leaves the
+stored value unchanged. F198 verifies no `DataService` fallback and preserves
+all seeded values after reopen; F199 covers repository read-error warnings,
+closed-session behavior, and visibility of the F198 aggregate name.
+`git diff --check` passed; no full suite ran.
 
 F179-F195 advanced Sub Prep and Calendar repository boundaries and the
 preference-port migrations; individual scope and evidence remain in the
 [Phase 2 progress log](../plans/qt-rewrite-heavy-route-plan/03-Phase-2-Progress-Log.md).
-F199 is selected for `ApplicationServicesPersonalDisplayNamePreferencesPort`:
-move the `myInfo/name` read/write path to the active session's
-`SettingsRepository`, preserving exact UTF-8/whitespace, empty read and
-successful no-op behavior while unavailable, and Technical write failures.
-Add closed-session no-fallback coverage and verify it reads the name saved by
-F198's aggregate port. Its focused test target is
-`NextPlatformApplicationServicesPersonalDisplayNamePreferencesPort`.
-Gates 1 and 2 remain Partial.
+F200 is selected for `ApplicationServicesPersonalSignaturePreferencesPort`:
+move reads of `myInfo/signatureMode`, `myInfo/typedSignatureFont`, and
+`myInfo/typedSignatureText` to the active session's `SettingsRepository`.
+Preserve mode/font/text conversion and defaults, no writes for missing values,
+the Technical unavailable result, and warning plus defaults on repository read
+failure. Add closed-session no-fallback coverage with `DataService` still
+present; keep callers and the generic/sessionless `SettingsService` unchanged.
+Its focused test target is
+`NextPlatformApplicationServicesPersonalSignaturePreferencesPort`. Both
+Explorer lanes recommended this adjacent reader because it pairs with F198's
+aggregate writer. Gates 1 and 2 remain Partial.
 
 ### Earlier Phase 2 detail - 2026-09-26
 
@@ -2386,7 +2391,7 @@ values, UTF-8 and signature-image processing, signature normalization,
 rollback, typed errors, and callers. Add closed-session no-fallback coverage.
 Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial.
 
-## Current Phase 2 position - 2026-10-01 (F198 accepted; F199 selected)
+## Previous Phase 2 position - 2026-10-01 (F198 accepted; F199 selected)
 
 F198 source commit `0e8361eb` migrates
 `ApplicationServicesPersonalDetailsSavePort` to one active-session
@@ -2406,3 +2411,28 @@ Add closed-session no-fallback coverage and verify the read port sees the name
 written by F198's aggregate save. Focused target:
 `NextPlatformApplicationServicesPersonalDisplayNamePreferencesPort`. Phase 2
 remains In Progress/Open; Gates 1 and 2 remain Partial.
+
+## Current Phase 2 position - 2026-10-01 (F199 accepted; F200 selected)
+
+F199 source commit `dc489863` migrates
+`ApplicationServicesPersonalDisplayNamePreferencesPort` to the active
+session's `SettingsRepository`, with no service/facade fallback. It preserves
+`myInfo/name`, exact UTF-8 and whitespace, empty reads and successful no-op
+writes while unavailable, Technical write errors, and warnings on failed
+reads. The independent Tester rebuilt the focused x64 MSVC target and passed
+CTest 1/1. Tests prove closed-session behavior with `DataService` present,
+read-error fallback and warning, and visibility of a name written by F198's
+aggregate port. `git diff --check` passed; no full suite ran.
+
+F200 is selected for `ApplicationServicesPersonalSignaturePreferencesPort`.
+Move reads of `myInfo/signatureMode`, `myInfo/typedSignatureFont`, and
+`myInfo/typedSignatureText` to the active session's `SettingsRepository`.
+Preserve persisted-mode normalization, `QVariant::toInt()` font behavior,
+UTF-8 text and whitespace, defaults without writes for missing/invalid values,
+Technical unavailable failures, and warning/default behavior on read errors.
+Add closed-session no-fallback coverage with `DataService` present; keep
+callers and generic/sessionless `SettingsService` unchanged. Focused target:
+`NextPlatformApplicationServicesPersonalSignaturePreferencesPort`. Both
+Explorer lanes recommended this adapter as the next reader for F198's
+aggregate bundle. Phase 2 remains In Progress/Open; Gates 1 and 2 remain
+Partial.

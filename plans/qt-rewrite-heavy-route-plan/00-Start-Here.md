@@ -53,8 +53,9 @@
   Calendar schedule preferences port, F194's Schedule display preferences
   port, and F195's Schedule display mode preferences port are accepted. F196
   is accepted for Current Campus preferences, F197 for Middle School
-  Analytics visibility, and F198 for Personal Details save. F199 is selected
-  for Personal Display Name preferences.
+  Analytics visibility, F198 for Personal Details save, and F199 for Personal
+  Display Name preferences. F200 is selected for Personal Signature
+  preferences.
   See the
   [Phase 2 progress
   log](03-Phase-2-Progress-Log.md)
