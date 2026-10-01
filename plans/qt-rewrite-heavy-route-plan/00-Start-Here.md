@@ -14,8 +14,9 @@
   extraction), F212 (upcoming-birthday schedule policy), F213 (default
   evaluation selection), and F214 (class day-filter matching policy) are
   accepted. F215 (automatic-update startup eligibility) and F216
-  (skipped-update-version policy) are accepted. F217 (roster-score import use
-  case) is selected. Gates 1 and 2
+  (skipped-update-version policy), and F217 (roster-score import) are
+  accepted. F218 (Speaking Evaluation class-tab read integration) is selected.
+  Gates 1 and 2
   remain Partial, with broader feature migration, parity, and 96-class Release
   memory evidence still open. See the
   [Phase 2 progress log](03-Phase-2-Progress-Log.md) for current scope and

@@ -1874,3 +1874,11 @@ Application. Preserve the legacy two-part comparison: parsed numeric ordering
 decides whether a stored skip is stale, while literal version text decides
 whether it matches the latest release. Leading-zero values can parse as the
 same version without being exact text matches.
+
+## 2026-10-01 - F217 roster score import
+
+Use the existing typed read query at the feature boundary, derive score rows in
+a Qt-free Application use case, and keep table-column discovery and model
+updates in the widget. Share the existing Qt-compatible UTF-16 trim policy
+instead of maintaining a second whitespace list; retain UI pair matching and
+last-write-wins behavior for duplicate imported names.

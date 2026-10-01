@@ -68,7 +68,8 @@ source commit `7b2f8226`; F210 is accepted in source commit `22cec99b`; F211 is
 accepted in source commit `2347739c`; F212 is accepted in source commit
 `bd6d044f`; F213 is accepted in source commit `dc2b3ed9`; F214 is accepted in
 source commit `9e03e668`; F215 is accepted in source commit `68ef5962`; F216
-is accepted in source commit `23dc6c2b`.
+is accepted in source commit `23dc6c2b`; F217 is accepted in source commit
+`b587a6d5`.
 F196 and F197 use
 only the active open session's
 `SettingsRepository` and preserve their keys, conversions, defaults, and
@@ -209,20 +210,36 @@ dialog synchronization, and an exact skipped version remaining persisted while
 suppressing the prompt. Executor focused CTest passed 4/4; independent Tester
 CTest passed 2/2; `git diff --check` passed. No full suite ran.
 
-F217 is selected: move roster-score import derivation into a Qt-free
-Application use case and route `RosterEditorWidget::importScores()` through the
-existing `SpeakingEvaluationReadQuery`/`SpeakingEvaluationReadPort`, removing
-that operation's direct `SpeakingEvaluationService::rosterScoreImport`
-dependency. Preserve trimmed complete English/Korean name-pair matching,
-last-duplicate-wins behavior, six-component score mapping and rounding,
-`N/A` for incomplete or unknown grades, model update and no-match behavior,
-evaluation-column selection, missing-column handling, and idempotence. Add
-app-less use-case tests and retain the registered roster import UI target as
-production integration coverage. Two independent scans surfaced version
-parsing and skip/unskip coverage as alternatives; the roster import path was
-selected because it is a direct production dependency with existing typed read
-contracts and focused integration tests. Phase 2 remains In Progress/Open;
-Gates 1 and 2 remain Partial.
+F217 source commit `b587a6d5` adds Qt-free
+`SpeakingEvaluationRosterScoreImportUseCase` over the existing typed speaking-
+evaluation read query and port. It preserves the 11-column source layout,
+QString-compatible trimming, row order, six-component grade mapping and 0.4
+rounding behavior, and `N/A` results for invalid or incomplete grades. The
+feature no longer calls `SpeakingEvaluationService::rosterScoreImport`; it
+retains exact trimmed name-pair matching, last-duplicate-wins updates, column
+selection, and model writes. The legacy service API remains available.
+`qt_compatible_text.h` centralizes the existing Qt-compatible whitespace rule
+also used by Class Details. Executor focused tests passed 5/5 and source
+ownership validation passed. Independent CTest passed 4/4, the shared
+ClassDetails trim-policy target passed 1/1, and the added optional-column
+regression recheck passed 1/1. `git diff --check` passed; no full suite ran.
+
+F218 is selected: route `SpeakingEvalPage` class-list reads through
+`ClassesListReadQuery` and its Platform port, and class-tab metadata reads
+through `ClassesNavigationSnapshotQueryHandler` and its Platform port. Preserve
+class order, tab labels and metadata, selection retention/fallback, schedule
+and visibility filtering, unavailable-session behavior, list-read warnings,
+and name-only tabs when metadata reads fail. Keep `ClassTabNavigation`, Qt
+conversion, preferences, evaluation-grid behavior, and presentation at the
+feature boundary. Extend `SpeakingEvalPageSave` with production integration
+coverage while retaining the existing list/navigation Application and
+Platform CTests. Two Explorers and three Investigators compared this smaller
+caller cutover with remaining Schedule Import validation. Schedule validation
+more directly advances the exit gate but has broader first-error and skipped-
+class rules; F218 was selected for its established contracts, focused targets,
+and tighter implementation scope. Schedule Import validation remains a
+gate-focused follow-up. Phase 2 remains In Progress/Open; Gates 1 and 2 remain
+Partial.
 
 ### Earlier Phase 2 detail - 2026-09-26
 

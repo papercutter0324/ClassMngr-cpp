@@ -9074,3 +9074,41 @@ requires app-less use-case tests and the existing registered
 disagreed on the top candidate; Explorer A identified this production path and
 its existing typed read contract and UI coverage. Phase 2 remains In
 Progress/Open; Gates 1 and 2 remain Partial.
+
+### Progress update - 2026-10-01 (F217 accepted; F218 selected)
+
+F217, source commit `b587a6d5`, adds Qt-free
+`SpeakingEvaluationRosterScoreImportUseCase` using the existing typed speaking-
+evaluation query and read port. `qt_compatible_text.h` extracts the exact
+QString-compatible whitespace rule, and `ClassDetailsValidationPolicy`
+delegates to it. The feature no longer calls
+`SpeakingEvaluationService::rosterScoreImport`; the legacy compatibility API
+remains. App-less tests cover trimming, source order, grade labels, rounding
+below/above 0.4, malformed/short/missing-name rows, unknown/incomplete grades
+as `N/A`, read failure, identity mismatch, and empty reads. UI tests preserve
+duplicate last-wins, pair matching, persistence, no-data/error behavior,
+idempotence, and required-column handling; they add
+`missingOptionalEvaluationColumnDoesNotBlockAvailableImports`. The Executor's
+focused build and CTest passed 5/5 with source ownership validation. The
+independent Tester passed 4/4, plus the class-details whitespace regression
+1/1 and optional-column recheck 1/1. `git diff --check` passed; no full suite
+ran.
+
+F218 is selected: route `SpeakingEvalPage::loadEvaluations()` class-list reads
+through `ClassesListReadQuery`/`ApplicationServicesClassesListReadPort`, and
+`rebuildClassTabs()` metadata/teacher reads through
+`ClassesNavigationSnapshotQueryHandler`/`ApplicationServicesClassesNavigationReadPort`.
+Keep `ClassTabNavigation` construction/presentation, preference handling,
+evaluation grid, and Qt conversion at the feature edge. Preserve list order,
+tab labels/metadata, selection fallback/retention, schedule and visibility
+filters, disabled/unavailable behavior, class-list warning/clearing, and
+name-only tabs when per-class metadata/teacher reads fail. Extend
+`SpeakingEvalPageSave` with assertions for tab order/selection and list or
+snapshot failure/fallback. Existing focused query, list-port, and navigation-
+port targets remain acceptance; add the app-page integration coverage. Two
+Explorers and three Investigators reviewed candidates: two recommendations
+favored broader Schedule Import validation for gate value, while the narrower
+Speaking Evaluation cutover is selected for complete typed contracts, existing
+focused page tests, and bounded scope. Schedule Import remains a later
+gate-focused follow-up; F218 does not close a gate. Phase 2 remains In
+Progress/Open; Gates 1 and 2 remain Partial.

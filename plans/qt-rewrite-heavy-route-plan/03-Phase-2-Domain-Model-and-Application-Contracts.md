@@ -62,9 +62,9 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
   accepted; F210's recent-workspace history policy, F211's Speaking
   Evaluation read-port extraction, and F212's upcoming-birthday schedule
   policy, F213's default evaluation selection, and F214's class day-filter
-  matching policy, F215's automatic-update startup eligibility, and F216's
-  skipped-update-version policy are accepted. F217's roster-score import use
-  case is selected.
+  matching policy, F215's automatic-update startup eligibility, F216's
+  skipped-update-version policy, and F217's roster-score import are accepted.
+  F218's Speaking Evaluation class-tab read integration is selected.
   The prior F123 candidate wording is historical;
   current Teacher Profile integration status is recorded in the progress log.
   Gates 1 and 2
@@ -221,30 +221,41 @@ No new v2 production path depends on DataService, MainWindow, PageManager, or a 
 
 Earlier verified slices and cumulative exit-gate snapshots are archived in the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 
-## Latest progress update - 2026-10-01 (F216 accepted; F217 selected)
+## Latest progress update - 2026-10-01 (F217 accepted; F218 selected)
 
-F216, source commit `23dc6c2b`, adds the Qt-free
-`decideSkippedUpdateVersion` policy. The controller retains `Version::parse`,
-UTF-8 conversion, preference writes and clears, and dialog synchronization.
-The app-less eight-case matrix includes textual `01.2.3` versus `1.2.3`.
-Controller tests cover stale-version clearing, prompt and open-dialog
-synchronization, exact skip persistence, and suppression. The Executor's
-focused build passed and CTest passed 4/4; the independent Tester build was
-already current and CTest passed 2/2. `git diff --check` passed; no full suite
+F217, source commit `b587a6d5`, adds Qt-free
+`SpeakingEvaluationRosterScoreImportUseCase` using the existing typed speaking-
+evaluation query and read port. `qt_compatible_text.h` extracts the exact
+QString-compatible whitespace rule, and `ClassDetailsValidationPolicy`
+delegates to it. The feature no longer calls
+`SpeakingEvaluationService::rosterScoreImport`; the legacy compatibility API
+remains. App-less tests cover trimming, source order, grade labels, rounding
+below/above 0.4, malformed/short/missing-name rows, unknown/incomplete grades
+as `N/A`, read failure, identity mismatch, and empty reads. UI tests preserve
+duplicate last-wins, pair matching, persistence, no-data/error behavior,
+idempotence, and required-column handling; they add
+`missingOptionalEvaluationColumnDoesNotBlockAvailableImports`. The Executor's
+focused build and CTest passed 5/5 with source ownership validation. The
+independent Tester passed 4/4, plus the class-details whitespace regression
+1/1 and optional-column recheck 1/1. `git diff --check` passed; no full suite
 ran.
 
-F217 is selected: add a Qt-free roster-score import use case and integrate it
-into `RosterEditorWidget::importScores()`, replacing that operation's direct
-`SpeakingEvaluationService::rosterScoreImport` dependency with the existing
-`SpeakingEvaluationReadQuery`/`SpeakingEvaluationReadPort`. Preserve trimmed
-complete English/Korean pair matching, exact pair semantics and last-duplicate
-wins; parse six score labels using existing Domain grade conversion and
-six-component overall-grade rounding; return `N/A` for incomplete or unknown
-grades. Keep evaluation-column selection, model updates, no-match/error
-behavior, missing-column handling, and idempotence in the UI. Acceptance
-requires app-less use-case tests and the existing registered
-`RosterEditorWidgetImport` UI test target. Two independent Explorer scans
-disagreed on the top candidate; Explorer A identified this production path and
-its existing typed read contract and UI coverage. Phase 2 remains In
+F218 is selected: route `SpeakingEvalPage::loadEvaluations()` class-list reads
+through `ClassesListReadQuery`/`ApplicationServicesClassesListReadPort`, and
+`rebuildClassTabs()` metadata/teacher reads through
+`ClassesNavigationSnapshotQueryHandler`/`ApplicationServicesClassesNavigationReadPort`.
+Keep `ClassTabNavigation` construction/presentation, preference handling,
+evaluation grid, and Qt conversion at the feature edge. Preserve list order,
+tab labels/metadata, selection fallback/retention, schedule and visibility
+filters, disabled/unavailable behavior, class-list warning/clearing, and
+name-only tabs when per-class metadata/teacher reads fail. Extend
+`SpeakingEvalPageSave` with assertions for tab order/selection and list or
+snapshot failure/fallback. Existing focused query, list-port, and navigation-
+port targets remain acceptance; add the app-page integration coverage. Two
+Explorers and three Investigators reviewed candidates: two recommendations
+favored broader Schedule Import validation for gate value, while the narrower
+Speaking Evaluation cutover is selected for complete typed contracts, existing
+focused page tests, and bounded scope. Schedule Import remains a later
+gate-focused follow-up; F218 does not close a gate. Phase 2 remains In
 Progress/Open; Gates 1 and 2 remain Partial. See the [Phase 2 progress log](03-Phase-2-Progress-Log.md)
 for prior slice evidence.
