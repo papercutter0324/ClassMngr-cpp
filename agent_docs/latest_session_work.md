@@ -4391,3 +4391,32 @@ public plan-document updates for F202 acceptance/F203 selection are prepared
 but not committed. Phase 2 remains In Progress/Open; Gates 1 and 2 remain
 Partial. Next: finish independent verification, review and commit the
 documentation update separately, commit F203 source, then select F204.
+
+## 2026-10-01 - F203 accepted; F204 selected
+
+F203 source commit `4f128b01` migrates
+`ApplicationServicesEvaluationDefaultPolicyPort` to the active session's
+`SettingsRepository`, with no compatibility-service fallback. It preserves the
+exact key, normalized `current_or_previous_term` mapping, canonical saved
+values, All fallback and missing-key materialization, valid unknown values
+unchanged, and silent save failures. Closed-session coverage retains
+`DataService` and confirms settings stay unchanged after reopen; a trigger
+failure preserves the prior value silently. The read-error test verifies
+silent defaulting, and the implementation attempts to persist `all`. The
+independent Tester passed focused x64 Visual Studio CTest
+`ClassMngrNextPlatformApplicationServicesEvaluationDefaultPolicyPortTests`
+1/1; `git diff --check` passed. No full suite ran.
+
+Two independent Explorer lanes considered the Class Day Filter Reset policy
+and Custom Color Palette adapter for F204. Select
+`ApplicationServicesClassDayFilterResetPolicyPort` as the adjacent one-key
+class-navigation preference. Move its exact-key read/write to the active
+session's `SettingsRepository`; preserve trimmed/lowercased `on_page_leave`,
+the OnApplicationClose default, default materialization for missing/invalid/
+read-error values, no rewrite of valid unrecognized values, and silent save
+failures. Add closed-session no-fallback, read-error, and failed-write tests;
+keep the three existing callers and typed interface unchanged. Focused CTest:
+`ClassMngrNextPlatformApplicationServicesClassDayFilterResetPolicyPortTests`.
+Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial. Next: update
+the four Phase 2 plan documents, implement F204, independently verify and
+commit it, then select F205.

@@ -1770,3 +1770,10 @@ When choosing between a one-key typed preference and a multi-format palette
 adapter, continue with the smaller typed policy boundary first. Preserve the
 distinction between missing/read-error values, which attempt default
 materialization, and valid unrecognized values, which default only in memory.
+
+## 2026-10-01 - F204 Class Day Filter Reset policy
+
+Independent scans compared the adjacent one-key class-navigation policy with
+the multi-format Custom Color Palette adapter. Continue the small typed
+preference sequence; keep the palette's legacy payload formats and broad caller
+surface for a later bounded slice.

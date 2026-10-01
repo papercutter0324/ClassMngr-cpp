@@ -54,9 +54,9 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
   F187's Calendar Event Import save port, F188's repeat-series creation port,
   and F189's repeat-series edit port are accepted. F190-F197's preference
   ports, F198's Personal Details save, F199's Personal Display Name, F200's
-  Personal Signature preferences, F201's Personal Signature Image, and F202's
-  Class Visibility preferences ports are accepted; F203 is selected for
-  Evaluation Default Policy.
+  Personal Signature preferences, F201's Personal Signature Image, F202's
+  Class Visibility, and F203's Evaluation Default Policy ports are accepted;
+  F204 is selected for Class Day Filter Reset Policy.
   The prior F123 candidate wording is historical;
   current Teacher Profile integration status is recorded in the progress log.
   Gates 1 and 2
@@ -1231,21 +1231,32 @@ silent. Independent focused CTest
 `ClassMngrNextPlatformApplicationServicesClassVisibilityPreferencesPortTests`
 passed 1/1; `git diff --check` passed. No full suite ran.
 
-## F203 selected Evaluation Default Policy port
+## F203 accepted Evaluation Default Policy port
 
-Move `ApplicationServicesEvaluationDefaultPolicyPort`'s single preference
-read/write to the active session's `SettingsRepository`, with no service/facade
-fallback. Preserve key `classes_navigation_evaluation_default_policy`,
-trimmed/lowercased `current_or_previous_term`, canonical `all` and
-`current_or_previous_term` values, and the `All` fallback. Missing, invalid, or
-read-error values return `All` and attempt to materialize `all`; valid
-unrecognized values return `All` without rewrite. Unavailable/closed reads
-return `All`; saves are no-ops and failed saves remain silent. Add closed-session
-no-fallback, read-error, and failed-write coverage; keep callers and the typed
-interface unchanged. Focused CTest:
-`ClassMngrNextPlatformApplicationServicesEvaluationDefaultPolicyPortTests`.
-Two Explorer
-candidates were the Evaluation Default Policy and Custom Color Palette
-preferences. The narrower one-key typed policy continues the preference-port
-sequence. F203 remains selected; no acceptance results are recorded yet. Phase 2
-remains In Progress/Open; Gates 1 and 2 remain Partial.
+Commit `4f128b01` migrates `ApplicationServicesEvaluationDefaultPolicyPort` to
+the active session's `SettingsRepository`. It preserves key
+`classes_navigation_evaluation_default_policy`, trimmed/lowercased
+`current_or_previous_term` and canonical `all`/`current_or_previous_term`
+values, `All` fallback, default materialization for missing/invalid/read-error
+values, and no rewrite of valid unrecognized values. Closed sessions have no
+facade fallback; trigger-based failed saves and repository read errors remain
+silent. Independent registered CTest
+`ClassMngrNextPlatformApplicationServicesEvaluationDefaultPolicyPortTests`
+passed 1/1. No full suite ran.
+
+## F204 selected Class Day Filter Reset Policy port
+
+Move `ApplicationServicesClassDayFilterResetPolicyPort`'s one-key read/write
+for `classes_navigation_day_filter_reset_policy` to the active session's
+`SettingsRepository`, without closed-session fallback. Preserve `on_page_leave`
+normalization and `OnApplicationClose` default, best-effort persistence for
+missing/invalid/read-error values, no rewrite of valid unknown values, and
+silent save failures. Keep callers and typed interface unchanged. Add
+closed-session, read-error, failed-write, and valid-unsupported-value
+preservation coverage. Registered CTest:
+`ClassMngrNextPlatformApplicationServicesClassDayFilterResetPolicyPortTests`.
+Two Explorer scans differed: one preferred Custom Color Palette, the other
+Class Day Filter Reset Policy. The narrower adjacent one-key typed class-
+navigation policy was selected; leave the palette for later. F204 is selected;
+no F204 results are recorded. Phase 2 remains In Progress/Open; Gates 1 and 2
+remain Partial.

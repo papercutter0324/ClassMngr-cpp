@@ -8299,7 +8299,7 @@ fields/schedule/teacher/count/fallback parity. F167 implementation has not
 started. Gate 1 and Gate 2 remain Partial; Phase 2 remains In Progress and its
 exit gate remains Open.
 
-### Progress update - 2026-10-01 (F202 accepted; F203 selected)
+### Progress update - 2026-10-01 (F203 accepted; F204 selected)
 
 F167, source commit `97efac8b`, updates
 `ApplicationServicesClassDetailsPageReadPort` to use active-session
@@ -8780,18 +8780,30 @@ focused CTest
 `ClassMngrNextPlatformApplicationServicesClassVisibilityPreferencesPortTests`
 passed 1/1; `git diff --check` passed. No full suite ran.
 
-F203 is selected for `ApplicationServicesEvaluationDefaultPolicyPort`. Move its
-single preference read/write to the active session's `SettingsRepository`, with
-no service/facade fallback. Preserve key
+F203, source commit `4f128b01`, migrates
+`ApplicationServicesEvaluationDefaultPolicyPort` to the active session's
+`SettingsRepository`. It preserves key
 `classes_navigation_evaluation_default_policy`, trimmed/lowercased
-`current_or_previous_term`, canonical `all` and `current_or_previous_term`
-values, and the `All` fallback. Missing, invalid, or read-error values return
-`All` and attempt to materialize `all`; valid unrecognized values return `All`
-without rewrite. Unavailable/closed reads return `All`; saves are no-ops and
-failed saves remain silent. Add closed-session no-fallback, read-error, and
-failed-write coverage; keep callers and typed interface unchanged. Focused
-CTest: `ClassMngrNextPlatformApplicationServicesEvaluationDefaultPolicyPortTests`.
-Two Explorer candidates were Evaluation Default Policy and Custom Color Palette;
-the narrower one-key typed policy continues the preference-port sequence.
-F203 remains selected; no acceptance results are recorded yet. Gate 1 and Gate
-2 remain Partial; Phase 2 remains In Progress with its exit gate Open.
+`current_or_previous_term` and canonical `all`/`current_or_previous_term`
+values, `All` fallback, default materialization for missing/invalid/read-error
+values, and no rewrite of valid unrecognized values. Closed sessions have no
+facade fallback; trigger-based failed saves and repository read errors remain
+silent. Independent registered CTest
+`ClassMngrNextPlatformApplicationServicesEvaluationDefaultPolicyPortTests`
+passed 1/1. No full suite ran.
+
+F204 is selected for `ApplicationServicesClassDayFilterResetPolicyPort`.
+Move its one-key read/write for
+`classes_navigation_day_filter_reset_policy` to the active session's
+`SettingsRepository`, without closed-session fallback. Preserve
+`on_page_leave` normalization and `OnApplicationClose` default, best-effort
+persistence for missing/invalid/read-error values, no rewrite of valid unknown
+values, and silent save failures. Keep callers and typed interface unchanged.
+Add closed-session, read-error, failed-write, and valid-unsupported-value
+preservation coverage. Registered CTest:
+`ClassMngrNextPlatformApplicationServicesClassDayFilterResetPolicyPortTests`.
+Two Explorer scans differed: one preferred Custom Color Palette, the other
+Class Day Filter Reset Policy. The narrower adjacent one-key typed class-
+navigation policy was selected; leave the palette for later. F204 is selected;
+no F204 results are recorded. Gate 1 and Gate 2 remain Partial; Phase 2 remains
+In Progress with its exit gate Open.

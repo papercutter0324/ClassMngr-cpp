@@ -55,8 +55,8 @@
   is accepted for Current Campus preferences, F197 for Middle School
   Analytics visibility, F198 for Personal Details save, F199 for Personal
   Display Name preferences, F200 for Personal Signature preferences, F201 for
-  Personal Signature Image, and F202 for Class Visibility preferences. F203 is
-  selected for Evaluation Default Policy.
+  Personal Signature Image, F202 for Class Visibility preferences, and F203 for
+  Evaluation Default Policy. F204 is selected for Class Day Filter Reset Policy.
   See the
   [Phase 2 progress
   log](03-Phase-2-Progress-Log.md)

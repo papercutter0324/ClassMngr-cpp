@@ -60,14 +60,16 @@ F196 is accepted in source commit `b9f0a07d`; F197 is accepted in source commit
 `26c0f23b`; F198 is accepted in source commit `0e8361eb`; F199 is accepted in
 source commit `dc489863`; F200 is accepted in source commit `ef603583`; F201
 is accepted in source commit `59133929`; F202 is accepted in source commit
-`c9ff5731`. F196 and F197 use only the active open session's
+`c9ff5731`; F203 is accepted in source commit `4f128b01`. F196 and F197 use
+only the active open session's
 `SettingsRepository` and preserve their keys, conversions, defaults, and
 closed-session behavior. F198 moves the nine-key Personal Details aggregate
 save to one active-session repository transaction. F199 moves the `myInfo/name`
 reader and writer to the active session repository. F200 migrates the three-key
 Personal Signature reader; F201 migrates the signature-image reader. F202
-migrates class visibility preferences. Independent focused CTest passed 1/1
-for F196-F202. F197's coverage includes a SQLite-trigger case proving an
+migrates class visibility preferences; F203 migrates the Evaluation Default
+Policy preference. Independent focused CTest passed 1/1 for F196-F203. F197's
+coverage includes a SQLite-trigger case proving an
 explicit failed save is silent and leaves the stored value unchanged. F198
 verifies no `DataService` fallback and preserves all seeded values after
 reopen; F199 covers repository read-error warnings, closed-session behavior,
@@ -76,25 +78,27 @@ warnings/defaults, invalid values unchanged, closed sessions, and values from
 the F198 aggregate writer. F201 covers read-error warnings, closed-session
 no-fallback, and unchanged image/unrelated values after reopen. F202 covers
 missing-key materialization, valid unsupported values unchanged, closed-session
-no-fallback, silent failed writes, and silent read failure. `git diff --check`
-passed; no full suite ran.
+no-fallback, silent failed writes, and silent read failure. F203 covers
+canonical saves, valid unsupported values unchanged, closed-session no-fallback,
+silent failed writes, and silent read failure. `git diff --check` passed; no
+full suite ran.
 
 F179-F195 advanced Sub Prep and Calendar repository boundaries and the
 preference-port migrations; individual scope and evidence remain in the
 [Phase 2 progress log](../plans/qt-rewrite-heavy-route-plan/03-Phase-2-Progress-Log.md).
-F203 is selected for `ApplicationServicesEvaluationDefaultPolicyPort`: move
+F204 is selected for `ApplicationServicesClassDayFilterResetPolicyPort`: move
 its single preference read/write to the active session's `SettingsRepository`.
 Preserve the exact key and enum/string mapping, trimmed and lowercased
-`current_or_previous_term`, the `All` fallback, default materialization for
+`on_page_leave`, the OnApplicationClose fallback, default materialization for
 missing/invalid/read errors, no rewrite of valid unrecognized values, and
 silent save failures. Closed sessions must not fall back to the live
 `DataService`; add closed-session, read-error, and failed-write coverage.
 Callers and the typed interface stay unchanged. Focused CTest:
-`ClassMngrNextPlatformApplicationServicesEvaluationDefaultPolicyPortTests`.
-The independent
-Explorer scans also identified Custom Color Palette preferences; the narrower
-one-key typed policy is selected to continue the preference-port sequence.
-Gates 1 and 2 remain Partial.
+`ClassMngrNextPlatformApplicationServicesClassDayFilterResetPolicyPortTests`.
+Two independent Explorer scans differed between this policy and the broader
+Custom Color Palette adapter; the adjacent one-key typed policy is selected to
+continue the class-navigation preference sequence. Gates 1 and 2 remain
+Partial.
 
 ### Earlier Phase 2 detail - 2026-09-26
 
@@ -2474,7 +2478,7 @@ lanes independently recommended this candidate because it complements F198's
 aggregate writer. Phase 2 remains In Progress/Open; Gates 1 and 2 remain
 Partial.
 
-## Current Phase 2 position - 2026-10-01 (F202 accepted; F203 selected)
+## Current Phase 2 position - 2026-10-01 (F203 accepted; F204 selected)
 
 F201 source commit `59133929` migrates
 `ApplicationServicesPersonalSignatureImagePort` to the active open session's
@@ -2500,15 +2504,27 @@ closed-session no-fallback with `DataService` present, a failed write that
 preserves the stored value, and a silent repository read failure. No full suite
 ran.
 
-F203 is selected for `ApplicationServicesEvaluationDefaultPolicyPort`.
+F203 source commit `4f128b01` migrates
+`ApplicationServicesEvaluationDefaultPolicyPort` to the active open session's
+`SettingsRepository`, with no compatibility-service fallback. It preserves
+key `classes_navigation_evaluation_default_policy`, trimmed/lowercased
+`current_or_previous_term`, canonical values, the All fallback, missing-key
+materialization, no rewrite of valid unknown values, and silent save failures.
+Independent focused CTest
+`ClassMngrNextPlatformApplicationServicesEvaluationDefaultPolicyPortTests`
+passed 1/1. Coverage includes valid unsupported values remaining unchanged,
+closed-session no-fallback with `DataService` present, silent trigger-based
+write failure, and silent read failure with a best-effort default save. No full
+suite ran.
+
+F204 is selected for `ApplicationServicesClassDayFilterResetPolicyPort`.
 Move the exact-key preference read/write to the active session's
-`SettingsRepository`. Preserve trimmed/lowercased
-`current_or_previous_term`, the `All` fallback, default persistence for
-missing/invalid/read errors, no rewrite of valid unrecognized values, and
-silent write failures. Add closed-session no-fallback, read-error, and
-failed-write coverage; keep callers and the typed interface unchanged.
-Focused CTest:
-`ClassMngrNextPlatformApplicationServicesEvaluationDefaultPolicyPortTests`.
-The two Explorer lanes surfaced this and Custom Color Palette preferences;
-select the narrower one-key typed policy to continue the preference-port
-sequence. Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial.
+`SettingsRepository`. Preserve trimmed/lowercased `on_page_leave`, the
+OnApplicationClose fallback, default persistence for missing/invalid/read
+errors, no rewrite of valid unrecognized values, and silent save failures. Add
+closed-session no-fallback, read-error, and failed-write coverage; keep callers
+and the typed interface unchanged. Focused CTest:
+`ClassMngrNextPlatformApplicationServicesClassDayFilterResetPolicyPortTests`.
+Independent Explorer scans differed between this compact class-navigation
+policy and Custom Color Palette; select the adjacent one-key policy. Phase 2
+remains In Progress/Open; Gates 1 and 2 remain Partial.
