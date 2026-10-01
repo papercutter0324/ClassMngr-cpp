@@ -1,10 +1,13 @@
 #include "core/application_services.h"
 #include "data/data_service.h"
+#include "data/database/database_session.h"
 #include "features/my_info/data/signature_image_processor.h"
 #include "next/platform/application_services_personal_signature_image_port.h"
 
 #include <QBuffer>
 #include <QImage>
+#include <QRegularExpression>
+#include <QSqlQuery>
 #include <QTemporaryDir>
 #include <QUuid>
 #include <QtTest/QtTest>
@@ -35,6 +38,21 @@ bool openDatabase(
     )
 {
     return services.openDatabase(databasePath(directory)).has_value();
+}
+
+bool executeSql(
+    ApplicationServices& services,
+    const QString& statement
+    )
+{
+    DatabaseSession* const session = services.databaseSession();
+    if (!session || !session->isOpen())
+    {
+        return false;
+    }
+
+    QSqlQuery query(session->database());
+    return query.exec(statement);
 }
 
 QByteArray sourcePng()
@@ -73,6 +91,8 @@ private slots:
     void missingAndUnavailableSettingsReturnEmpty();
     void corruptBase64ReturnsEmpty();
     void preservesUnrelatedSettingsAndDoesNotWrite();
+    void closedSessionReturnsEmptyAndPreservesSettingsOnReopen();
+    void repositoryReadFailureWarnsAndReturnsEmpty();
 
 private:
     QTemporaryDir m_directory;
@@ -191,6 +211,68 @@ preservesUnrelatedSettingsAndDoesNotWrite()
         );
     QVERIFY(stillMissing);
     QVERIFY(!stillMissing->isValid());
+}
+
+void NextPlatformApplicationServicesPersonalSignatureImagePortTests::
+closedSessionReturnsEmptyAndPreservesSettingsOnReopen()
+{
+    ApplicationServices services;
+    const QString path = databasePath(m_directory);
+    QVERIFY(services.openDatabase(path));
+    QVERIFY(services.dataService());
+
+    const QByteArray source = sourcePng();
+    QVERIFY(!source.isEmpty());
+    const QString encodedImage = QString::fromLatin1(source.toBase64());
+    const QString unrelatedValue = QStringLiteral("preserved");
+    QVERIFY(
+        services.dataService()->saveSetting(
+            QString::fromUtf8(SignatureImageKey),
+            encodedImage
+            )
+        );
+    QVERIFY(
+        services.dataService()->saveSetting(
+            QString::fromUtf8(UnrelatedKey),
+            unrelatedValue
+            )
+        );
+
+    ApplicationServicesPersonalSignatureImagePort port(services);
+    services.closeDatabase();
+    QVERIFY(services.dataService());
+    QVERIFY(!services.databaseSession()->isOpen());
+    QVERIFY(port.read().empty());
+
+    QVERIFY(services.openDatabase(path));
+    const auto storedImage = services.dataService()->loadSetting(
+        QString::fromUtf8(SignatureImageKey)
+        );
+    QVERIFY(storedImage);
+    QCOMPARE(storedImage->toString(), encodedImage);
+    const auto unrelated = services.dataService()->loadSetting(
+        QString::fromUtf8(UnrelatedKey)
+        );
+    QVERIFY(unrelated);
+    QCOMPARE(unrelated->toString(), unrelatedValue);
+}
+
+void NextPlatformApplicationServicesPersonalSignatureImagePortTests::
+repositoryReadFailureWarnsAndReturnsEmpty()
+{
+    ApplicationServices services;
+    QVERIFY(openDatabase(services, m_directory));
+    QVERIFY(services.dataService());
+    QVERIFY(executeSql(services, QStringLiteral("DROP TABLE app_settings")));
+
+    ApplicationServicesPersonalSignatureImagePort port(services);
+    QTest::ignoreMessage(
+        QtWarningMsg,
+        QRegularExpression(
+            QStringLiteral("Failed to load setting.*myInfo/signatureImage.*")
+            )
+        );
+    QVERIFY(port.read().empty());
 }
 
 QTEST_MAIN(NextPlatformApplicationServicesPersonalSignatureImagePortTests)
