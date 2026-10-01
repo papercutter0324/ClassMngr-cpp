@@ -4310,7 +4310,7 @@ no-fallback coverage. Existing focused target:
 remains In Progress/Open; Gates 1 and 2 remain Partial. Next: implement F200,
 independently verify it, commit it, then select F201.
 
-## 2026-10-01 - F200 accepted; F201 selected
+## Previous handoff - 2026-10-01 (F200 accepted; F201 selected)
 
 F200 source commit `ef603583` migrates
 `ApplicationServicesPersonalSignaturePreferencesPort` to the active
@@ -4332,3 +4332,29 @@ no-fallback coverage with `DataService` present; keep callers unchanged.
 Focused target: `NextPlatformApplicationServicesPersonalSignatureImagePort`.
 Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial. Next:
 implement F201, independently verify it, commit it, then select F202.
+
+## 2026-10-01 - F201 accepted; F202 selected
+
+F201 source commit `59133929` migrates
+`ApplicationServicesPersonalSignatureImagePort` to the active session's
+`SettingsRepository`, with no compatibility-service fallback. It preserves
+the exact key, Latin-1 Base64 decoding, one-time signature-image preparation,
+and empty results for missing, corrupt, unavailable, and repository-read-error
+cases while retaining read warnings. Closed-session coverage keeps `DataService`
+present, confirms the read is empty, then reopens and verifies the image and
+unrelated setting remain unchanged. The independent Tester rebuilt the x64
+target and CTest passed 1/1; `git diff --check` passed. No full suite ran.
+
+Two independent Explorer lanes recommended F202:
+`ApplicationServicesClassVisibilityPreferencesPort`, a one-key typed
+preference. Move it to the active session's `SettingsRepository`; preserve the
+exact `classes_navigation_visibility_scope` key, trimmed/lowercased
+`all_classes` mapping, ActiveSchedule defaults, and default materialization for
+missing/invalid/read errors. Valid but unrecognized values default without
+rewrite. Unavailable/closed storage returns ActiveSchedule and ignores saves;
+write failures remain silent. Add closed-session-with-`DataService` no-fallback
+coverage and a failed-write preservation test. Keep callers and the typed
+interface unchanged. Focused target:
+`NextPlatformApplicationServicesClassVisibilityPreferencesPort`. Phase 2
+remains In Progress/Open; Gates 1 and 2 remain Partial. Next: implement F202,
+independently verify it, commit it, then select F203.

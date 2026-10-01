@@ -1753,3 +1753,10 @@ Keep image lookup, Base64 decoding, and signature-image preparation together
 at the adapter boundary. When moving reads to the active session repository,
 preserve the warning and empty-result behavior for read errors, plus the
 existing empty behavior for missing or corrupt stored images.
+
+## 2026-10-01 - F202 Class Visibility preference
+
+Preserve this preference's special default behavior: missing, invalid, or
+failed reads attempt to persist `active_schedule`, while a valid unrecognized
+string defaults in memory without being rewritten. The void save port keeps
+write failures silent; test a rejected write and the prior value explicitly.

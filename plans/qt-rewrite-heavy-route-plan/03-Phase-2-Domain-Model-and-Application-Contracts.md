@@ -53,9 +53,9 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
   Calendar Event delete-all port, F186's repeat-series suffix-delete port,
   F187's Calendar Event Import save port, F188's repeat-series creation port,
   and F189's repeat-series edit port are accepted. F190-F197's preference
-  ports, F198's Personal Details save, F199's Personal Display Name, and
-  F200's Personal Signature preferences ports are accepted; F201 is selected
-  for Personal Signature Image.
+  ports, F198's Personal Details save, F199's Personal Display Name, F200's
+  Personal Signature preferences, and F201's Personal Signature Image ports
+  are accepted; F202 is selected for Class Visibility preferences.
   The prior F123 candidate wording is historical;
   current Teacher Profile integration status is recorded in the progress log.
   Gates 1 and 2
@@ -1203,15 +1203,32 @@ closed-session no-fallback with `DataService` and preserved database values,
 and values written by F198's aggregate port. `git diff --check` passed; no full
 suite ran.
 
-## F201 selected Personal Signature Image port
+## F201 accepted Personal Signature Image port
 
-Move `ApplicationServicesPersonalSignatureImagePort`'s read of exact key
-`myInfo/signatureImage` to the active-session `SettingsRepository`. Preserve
-Latin-1 Base64 decoding and `SignatureImage` preparation, empty results for
-missing/corrupt/unavailable/read-error values, and the read warning. Add
-closed-session-with-`DataService` no-fallback coverage; keep the interface and
-callers unchanged. Both Explorer lanes independently recommended this because
-F198's aggregate writer writes the key. Existing CMake name:
-`NextPlatformApplicationServicesPersonalSignatureImagePort`. Class Visibility
-remains a later candidate. F201 is selected, not implemented; no F201 results
-exist. Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial.
+Commit `59133929` moves `ApplicationServicesPersonalSignatureImagePort` to use
+only the active open session's `SettingsRepository` for exact key
+`myInfo/signatureImage`. It preserves `QVariant::toString().toLatin1()`, Base64
+decoding, one `SignatureImage::prepareForEmbedding`, empty output for
+missing/corrupt/unavailable/read-error values, and warning on read error.
+Closed-session coverage with `DataService` present returns empty and confirms
+image and unrelated settings remain unchanged after reopen. Independent x64
+MSVC CTest
+`ClassMngrNextPlatformApplicationServicesPersonalSignatureImagePortTests`
+passed 1/1. `git diff --check` passed; no full suite ran.
+
+## F202 selected Class Visibility preferences port
+
+Migrate `ApplicationServicesClassVisibilityPreferencesPort` to the active
+session's `SettingsRepository`, with no service/facade fallback. Preserve key
+`classes_navigation_visibility_scope`; trimmed/lowercase `all_classes` maps to
+AllClasses and other valid values to ActiveSchedule without rewrite. Missing,
+invalid, or read-error values return ActiveSchedule and attempt to materialize
+`active_schedule`; unavailable/closed returns ActiveSchedule without saving.
+Keep void save failures silent. Add closed-session-with-`DataService`
+no-fallback/value-preservation coverage and a trigger-based failed-save case
+that proves the stored value is preserved silently. Keep the typed interface and
+callers unchanged. Both independent Explorer lanes recommended this candidate.
+Existing CMake name:
+`NextPlatformApplicationServicesClassVisibilityPreferencesPort`. F202 is
+selected, not implemented; no F202 results exist. Phase 2 remains In
+Progress/Open; Gates 1 and 2 remain Partial.

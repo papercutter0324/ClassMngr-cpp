@@ -58,33 +58,37 @@ the staged-package report probe passed. Cross-platform CI and local
 Phase 2 remains In Progress/Open under deployment `phase2_resume_20260929`.
 F196 is accepted in source commit `b9f0a07d`; F197 is accepted in source commit
 `26c0f23b`; F198 is accepted in source commit `0e8361eb`; F199 is accepted in
-source commit `dc489863`; F200 is accepted in source commit `ef603583`. F196
-and F197 use only the active open session's `SettingsRepository` and preserve
-their keys, conversions, defaults, and closed-session behavior. F198 moves the
-nine-key Personal Details aggregate save to one active-session repository
-transaction. F199 moves the `myInfo/name` reader and writer to the active
-session repository. F200 migrates the three-key Personal Signature reader.
-Independent focused CTest passed 1/1 for all five slices. F197's coverage
-includes a SQLite-trigger case proving an explicit failed save is silent and
-leaves the stored value unchanged. F198 verifies no `DataService` fallback and
-preserves all seeded values after reopen; F199 covers repository read-error
-warnings, closed-session behavior, and visibility of the F198 aggregate name.
-F200 covers read-error warnings/defaults, invalid values unchanged, closed
-sessions, and values from the F198 aggregate writer. `git diff --check` passed;
-no full suite ran.
+source commit `dc489863`; F200 is accepted in source commit `ef603583`; F201
+is accepted in source commit `59133929`. F196 and F197 use only the active
+open session's `SettingsRepository` and preserve their keys, conversions,
+defaults, and closed-session behavior. F198 moves the nine-key Personal
+Details aggregate save to one active-session repository transaction. F199
+moves the `myInfo/name` reader and writer to the active session repository.
+F200 migrates the three-key Personal Signature reader; F201 migrates the
+signature-image reader. Independent focused CTest passed 1/1 for all six
+slices. F197's coverage includes a SQLite-trigger case proving an explicit
+failed save is silent and leaves the stored value unchanged. F198 verifies no
+`DataService` fallback and preserves all seeded values after reopen; F199
+covers repository read-error warnings, closed-session behavior, and visibility
+of the F198 aggregate name. F200 covers read-error warnings/defaults, invalid
+values unchanged, closed sessions, and values from the F198 aggregate writer.
+F201 covers read-error warnings, closed-session no-fallback, and unchanged
+image/unrelated values after reopen. `git diff --check` passed; no full suite
+ran.
 
 F179-F195 advanced Sub Prep and Calendar repository boundaries and the
 preference-port migrations; individual scope and evidence remain in the
 [Phase 2 progress log](../plans/qt-rewrite-heavy-route-plan/03-Phase-2-Progress-Log.md).
-F201 is selected for `ApplicationServicesPersonalSignatureImagePort`: move the
-`myInfo/signatureImage` read path to the active session's
-`SettingsRepository`. Preserve Base64 decoding, image preparation, and empty
-results for missing, corrupt, unavailable, and read-error cases, including the
-read warning. Add closed-session no-fallback coverage with `DataService` still
-present; keep callers unchanged. Its focused test target is
-`NextPlatformApplicationServicesPersonalSignatureImagePort`. Both Explorer
-lanes independently recommended this port, which reads a key written by
-F198's aggregate save. Gates 1 and 2 remain Partial.
+F202 is selected for `ApplicationServicesClassVisibilityPreferencesPort`:
+move its single preference read/write to the active session's
+`SettingsRepository`. Preserve exact key and enum/string mapping, trimmed and
+lowercased `all_classes`, default materialization for missing/invalid/read
+errors, no rewrite of valid but unrecognized values, ActiveSchedule when
+unavailable, and silent write failures. Add closed-session no-fallback
+coverage with `DataService` still present and a failed-write preservation case;
+keep callers and the typed interface unchanged. Focused target:
+`NextPlatformApplicationServicesClassVisibilityPreferencesPort`. Both
+Explorer lanes recommended this candidate. Gates 1 and 2 remain Partial.
 
 ### Earlier Phase 2 detail - 2026-09-26
 
@@ -2438,7 +2442,7 @@ Explorer lanes recommended this adapter as the next reader for F198's
 aggregate bundle. Phase 2 remains In Progress/Open; Gates 1 and 2 remain
 Partial.
 
-## Current Phase 2 position - 2026-10-01 (F200 accepted; F201 selected)
+## Previous Phase 2 position - 2026-10-01 (F200 accepted; F201 selected)
 
 F200 source commit `ef603583` migrates
 `ApplicationServicesPersonalSignaturePreferencesPort` to the active session's
@@ -2463,3 +2467,29 @@ unchanged. Focused target:
 lanes independently recommended this candidate because it complements F198's
 aggregate writer. Phase 2 remains In Progress/Open; Gates 1 and 2 remain
 Partial.
+
+## Current Phase 2 position - 2026-10-01 (F201 accepted; F202 selected)
+
+F201 source commit `59133929` migrates
+`ApplicationServicesPersonalSignatureImagePort` to the active open session's
+`SettingsRepository`. It preserves exact-key lookup, `toString().toLatin1()`
+Base64 decoding, one `SignatureImage::prepareForEmbedding()` call, and empty
+results for missing, corrupt, unavailable, and read-error values while
+preserving the repository-read warning. Independent focused CTest
+`ClassMngrNextPlatformApplicationServicesPersonalSignatureImagePortTests`
+passed 1/1. Tests cover valid image preparation/transparency, read-error
+warning, closed-session no-fallback with `DataService` present, and unchanged
+image/unrelated values after reopen. `git diff --check` passed; no full suite
+ran.
+
+F202 is selected for `ApplicationServicesClassVisibilityPreferencesPort`.
+Move its exact-key read/write to the active session's `SettingsRepository`.
+Preserve trimmed/lowercased `all_classes`, ActiveSchedule defaults,
+default-materialization attempts for missing/invalid/read errors, no rewrite of
+valid but unrecognized values, unavailable no-op behavior, and silent write
+failures. Add closed-session no-fallback with `DataService` present and a
+failed-write preservation case. Keep callers and typed interface unchanged.
+Focused target:
+`NextPlatformApplicationServicesClassVisibilityPreferencesPort`. Both
+Explorer lanes recommended this candidate. Phase 2 remains In Progress/Open;
+Gates 1 and 2 remain Partial.

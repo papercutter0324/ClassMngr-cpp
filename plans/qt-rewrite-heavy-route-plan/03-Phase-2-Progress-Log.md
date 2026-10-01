@@ -8299,7 +8299,7 @@ fields/schedule/teacher/count/fallback parity. F167 implementation has not
 started. Gate 1 and Gate 2 remain Partial; Phase 2 remains In Progress and its
 exit gate remains Open.
 
-### Progress update - 2026-10-01 (F200 accepted; F201 selected)
+### Progress update - 2026-10-01 (F201 accepted; F202 selected)
 
 F167, source commit `97efac8b`, updates
 `ApplicationServicesClassDetailsPageReadPort` to use active-session
@@ -8755,14 +8755,29 @@ closed-session no-fallback with `DataService` and preserved database values,
 and values written by F198's aggregate port. `git diff --check` passed; no full
 suite ran.
 
-F201 is selected for `ApplicationServicesPersonalSignatureImagePort`, with
+F201, source commit `59133929`, moves
+`ApplicationServicesPersonalSignatureImagePort` to use only the active open
+session's `SettingsRepository` for exact key `myInfo/signatureImage`. It
+preserves `QVariant::toString().toLatin1()`, Base64 decoding, one
+`SignatureImage::prepareForEmbedding`, empty output for
+missing/corrupt/unavailable/read-error values, and warning on read error.
+Closed-session coverage with `DataService` present returns empty and confirms
+image and unrelated settings remain unchanged after reopen. Independent x64
+MSVC CTest
+`ClassMngrNextPlatformApplicationServicesPersonalSignatureImagePortTests`
+passed 1/1. `git diff --check` passed; no full suite ran.
+
+F202 is selected for `ApplicationServicesClassVisibilityPreferencesPort`, with
 existing CMake name
-`NextPlatformApplicationServicesPersonalSignatureImagePort`. Move its read of
-exact key `myInfo/signatureImage` to the active-session `SettingsRepository`;
-preserve Latin-1 Base64 decoding and `SignatureImage` preparation, empty
-results for missing/corrupt/unavailable/read-error values, and the read warning.
-Add closed-session-with-`DataService` no-fallback coverage; keep interface and
-callers unchanged. Both Explorer lanes independently recommended this because
-F198's aggregate writer writes the key. Class Visibility remains a later
-candidate. F201 is selected, not implemented; no F201 results exist. Gate 1 and
-Gate 2 remain Partial; Phase 2 remains In Progress with its exit gate Open.
+`NextPlatformApplicationServicesClassVisibilityPreferencesPort`. Use the
+active-session `SettingsRepository`, with no service/facade fallback. Preserve
+`classes_navigation_visibility_scope`; trimmed/lowercase `all_classes` maps to
+AllClasses and other valid values to ActiveSchedule without rewrite. Missing,
+invalid, or read-error values return ActiveSchedule and attempt to materialize
+`active_schedule`; unavailable/closed returns ActiveSchedule without saving.
+Keep void save failures silent. Add closed-session-with-`DataService`
+no-fallback/value-preservation coverage and a trigger-based failed-save case
+that proves the stored value is preserved silently. Keep the typed interface
+and callers unchanged. Both independent Explorer lanes recommended this
+candidate. F202 is selected, not implemented; no F202 results exist. Gate 1
+and Gate 2 remain Partial; Phase 2 remains In Progress with its exit gate Open.
