@@ -9,6 +9,8 @@
 #include "features/schedule/import/schedule_workbook_parser.h"
 #include "features/teacher/import/teacher_import_name_utils.h"
 #include "next/application/schedule_import_review_summary_projection.h"
+#include "next/application/schedule_import_schedules_cleared_projection.h"
+#include "next/platform/application_services_schedule_import_state_snapshot_port.h"
 #include "fakes/fake_user_prompt_service.h"
 #include "ui/shared/constants/gui_constants.h"
 #include "ui/shared/dialogs/user_prompt_service.h"
@@ -2153,11 +2155,33 @@ void ScheduleImportDialogTests::reviewSummaryUsesApplicationProjection()
         0,
         ClassMngr::Next::Application::ScheduleImportReviewClassAction::CreateNew
     });
+    ClassMngr::Next::Platform::
+        ApplicationServicesScheduleImportStateSnapshotPort snapshotPort(
+            services
+            );
+    const auto snapshotOutcome =
+        ImportState::ScheduleImportStateSnapshotQueryHandler::execute(
+            {},
+            snapshotPort
+            );
+    const auto* snapshot =
+        std::get_if<ImportState::ScheduleImportStateSnapshot>(
+            &snapshotOutcome
+            );
+    QVERIFY(snapshot);
+    const int expectedCleared =
+        ClassMngr::Next::Application::projectScheduleImportSchedulesCleared(
+            *snapshot,
+            decisions,
+            ImportState::ScheduleImportStateKind::Normal,
+            ImportState::ScheduleImportStateIntensiveMode::ReplaceWithNew
+            );
+    QVERIFY(expectedCleared > 0);
     const auto expected =
         ClassMngr::Next::Application::projectScheduleImportReviewSummary(
             decisions,
             0,
-            0
+            expectedCleared
             );
     const QString expectedActionSummary =
         QStringLiteral(
@@ -2171,6 +2195,10 @@ void ScheduleImportDialogTests::reviewSummaryUsesApplicationProjection()
             .arg(expected.classesUpdated)
             .arg(expected.classesSkipped);
     QVERIFY(summaryLabel->text().startsWith(expectedActionSummary));
+    QVERIFY(summaryLabel->text().contains(
+        QStringLiteral("%1 existing schedule(s) cleared;")
+            .arg(expected.schedulesCleared)
+        ));
 }
 
 void ScheduleImportDialogTests::
@@ -2479,6 +2507,9 @@ reviewSnapshotFailureStaysInvalidWithoutLegacyFallback()
     QVERIFY(import);
     QVERIFY(status);
     QVERIFY(summary);
+    QVERIFY(summary->text().contains(
+        QStringLiteral("0 existing schedule(s) cleared;")
+        ));
     QVERIFY(!import->isEnabled());
     QVERIFY(status->text().contains(
         QStringLiteral("injected schedule read failure")

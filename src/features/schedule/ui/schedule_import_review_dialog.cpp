@@ -23,6 +23,7 @@
 #include "next/application/schedule_import_review_readiness.h"
 #include "next/application/schedule_import_matching_projection.h"
 #include "next/application/schedule_import_review_summary_projection.h"
+#include "next/application/schedule_import_schedules_cleared_projection.h"
 #include "next/domain/domain_types.h"
 #include "features/schedule/ui/schedule_view_model.h"
 #include "features/schedule/ui/schedule_widget.h"
@@ -1976,23 +1977,20 @@ void ScheduleImportReviewDialog::updateReviewState()
     }
 
     int cleared = 0;
-    if (stateSnapshotsAvailable && !preservesAbsentIntensiveClasses)
+    if (stateSnapshotsAvailable)
     {
-        for (const auto& classroom : stateSnapshot->classes)
-        {
-            const bool hasSelectedTimes =
-                m_request.kind == ScheduleImportKind::Intensive
-                    ? !classroom.intensiveTimes.empty()
-                    : !classroom.normalTimes.empty();
-            const int classId = snapshotLegacyId(classroom.id);
-            if (
-                hasSelectedTimes
-                && !targets.contains(classId)
-                )
-            {
-                ++cleared;
-            }
-        }
+        cleared =
+            ClassMngr::Next::Application::
+                projectScheduleImportSchedulesCleared(
+                    *stateSnapshot,
+                    decisions,
+                    m_request.kind == ScheduleImportKind::Intensive
+                        ? ImportState::ScheduleImportStateKind::Intensive
+                        : ImportState::ScheduleImportStateKind::Normal,
+                    preservesAbsentIntensiveClasses
+                        ? ImportState::ScheduleImportStateIntensiveMode::UpdateExisting
+                        : ImportState::ScheduleImportStateIntensiveMode::ReplaceWithNew
+                    );
     }
 
     m_reviewStatus->setText(

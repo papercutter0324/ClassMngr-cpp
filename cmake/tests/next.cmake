@@ -774,6 +774,37 @@ add_test(
     COMMAND ClassMngrNextApplicationScheduleImportReviewSummaryProjectionTests
 )
 
+# Keep the schedule clear count projection independent of Qt and the legacy runtime.
+add_executable(
+    ClassMngrNextApplicationScheduleImportSchedulesClearedProjectionTests
+    tests/next_application_schedule_import_schedules_cleared_projection_tests.cpp
+)
+target_compile_features(
+    ClassMngrNextApplicationScheduleImportSchedulesClearedProjectionTests
+    PRIVATE
+        cxx_std_23
+)
+set_target_properties(
+    ClassMngrNextApplicationScheduleImportSchedulesClearedProjectionTests
+    PROPERTIES
+        AUTOMOC OFF
+        AUTOUIC OFF
+        AUTORCC OFF
+)
+set_property(
+    TARGET ClassMngrNextApplicationScheduleImportSchedulesClearedProjectionTests
+    PROPERTY CLASSMNGR_STANDALONE_CPP_TEST TRUE
+)
+target_link_libraries(
+    ClassMngrNextApplicationScheduleImportSchedulesClearedProjectionTests
+    PRIVATE
+        ClassMngrNext::Application
+)
+add_test(
+    NAME ClassMngrNextApplicationScheduleImportSchedulesClearedProjectionTests
+    COMMAND ClassMngrNextApplicationScheduleImportSchedulesClearedProjectionTests
+)
+
 # Exercise plan eligibility without Qt or the legacy runtime.
 add_executable(
     ClassMngrNextApplicationScheduleImportPlanValidationTests
