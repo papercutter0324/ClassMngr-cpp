@@ -9146,3 +9146,35 @@ Investigators agreed on the minimal live-state preflight after decision
 validation while retaining dialog warnings and repository apply validation.
 F219 advances Gate 1; Gate 2 remains Partial. Phase 2 remains In Progress/Open;
 Gates 1 and 2 remain Partial.
+
+### Progress update - 2026-10-02 (F219 accepted; F220 selected)
+
+F219, source commit `57aefadf`, wires Qt-free
+`validateScheduleImportState()` as a live review-readiness preflight after
+review decisions. It preserves status priority, detailed overlap warnings,
+targetless Skip, intensive preservation, and the repository's final apply-time
+check. Dialog tests cover rejecting ambiguous positive-target Skip and
+accepting unique exact Skip and targetless Skip. Independent Application
+state-validation, review-decision, and `ClassMngrScheduleImportTests` passed;
+`git diff --check` passed. No full suite ran.
+
+`ClassMngrScheduleImportDialogTests` has three confirmed pre-existing failures:
+`acceptedReviewCanTearDownSourceDialog`,
+`mismatchedProfileRequiresConfirmation`, and
+`reviewPreviewUsesSavedScheduleDisplaySettings`. F219 produced 21 pass/3 fail;
+a clean archived F218 baseline at `9bb936ee` produced 18 pass/3 fail. These
+are a known gate issue, not F219 regressions; the dialog target is not claimed
+as passing.
+
+F220 is selected: move intrinsic `ScheduleImportPlanValidator` eligibility
+rules into a Qt-free Application contract, retaining the feature validator as
+a Qt adapter that translates values and errors. Preserve exact first-error
+order: intensive mode, diagnostics acknowledgment, review decisions,
+all-candidate basics, then per-candidate meeting-pattern and colors; Skip
+exempts only pattern and color. Keep parsing, presentation, and repository
+apply guards with their current owners. Add app-less target
+`NextApplicationScheduleImportPlanValidation` and retain
+`ClassMngrScheduleImportTests` integration coverage. A typed current-state
+snapshot-read contract remains later work. F219 advances Gate 1; Gate 2
+remains Partial. Phase 2 remains In Progress/Open; Gates 1 and 2 remain
+Partial.

@@ -4643,7 +4643,7 @@ moving actual feature policy; the structural
 Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial. Next:
 implement F212, independently verify, and commit it.
 
-## Current handoff - 2026-10-01 (F218 accepted; F219 selected)
+## Previous handoff - 2026-10-01 (F218 accepted; F219 selected)
 
 F218 source commit `9bb936ee` migrates SpeakingEval page class-list,
 navigation metadata, and selected-class subtitle reads to existing Application
@@ -4664,3 +4664,20 @@ Focused acceptance includes the Application state and decision validators,
 `ClassMngrScheduleImportDialogTests`, and `ClassMngrScheduleImportTests`.
 Phase 2 remains In Progress/Open with Gates 1 and 2 Partial. Next: finish F219,
 independently verify and commit it, then choose the following slice.
+
+## Current handoff - 2026-10-02 (F219 accepted; F220 selected)
+
+F219 source commit `57aefadf` adds the shared state validator as a live
+Schedule Import readiness preflight. The Application state-validation,
+review-decision, and repository import CTests passed; all three new Skip cases
+passed. The dialog CTest has three failures that reproduce on clean F218 source
+baseline `9bb936ee`: 18 passed/3 failed at baseline versus 21 passed/3 failed
+under F219 with the same failure names. These are recorded as pre-existing;
+no full suite ran. `git diff --check` passed.
+
+F220 is selected to move intrinsic Schedule Import plan eligibility into a
+Qt-free Application contract while preserving the existing validation order
+and user-facing errors through the feature adapter. Add an app-less validation
+matrix and retain `ClassMngrScheduleImportTests` for pre-write integration.
+Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial. Next: finish
+F220, independently verify and commit it, then choose the next slice.

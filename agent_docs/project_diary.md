@@ -1898,3 +1898,10 @@ status message and detailed overlap-warning list; the repository must repeat
 state validation at apply time because the review snapshot can become stale.
 Cover ambiguous targeted Skip alongside unique and targetless Skip so review
 readiness matches the repository's exact-match rule.
+
+## 2026-10-02 - F220 Schedule Import plan eligibility
+
+Give intrinsic plan checks a Qt-free Application contract while keeping legacy
+plan conversion and localized errors at the feature boundary. Preserve the
+validator's existing first-error sequence and keep review-decision validation
+as its own tested contract.

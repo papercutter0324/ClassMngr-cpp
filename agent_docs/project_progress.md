@@ -53,7 +53,7 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current state - 2026-10-01
+### Current state - 2026-10-02
 
 Phase 2 remains In Progress/Open under deployment `phase2_resume_20260929`.
 F196 is accepted in source commit `b9f0a07d`; F197 is accepted in source commit
@@ -69,7 +69,8 @@ accepted in source commit `2347739c`; F212 is accepted in source commit
 `bd6d044f`; F213 is accepted in source commit `dc2b3ed9`; F214 is accepted in
 source commit `9e03e668`; F215 is accepted in source commit `68ef5962`; F216
 is accepted in source commit `23dc6c2b`; F217 is accepted in source commit
-`b587a6d5`; F218 is accepted in source commit `9bb936ee`.
+`b587a6d5`; F218 is accepted in source commit `9bb936ee`; F219 is accepted
+in source commit `57aefadf`.
 F196 and F197 use
 only the active open session's
 `SettingsRepository` and preserve their keys, conversions, defaults, and
@@ -235,17 +236,31 @@ Application query, Platform port, and navigation-model CTests passed 8/8 in
 session, technical list-read failure, and metadata fallback. `git diff --check`
 passed; no full suite ran.
 
-F219 is selected to add the existing Qt-free `validateScheduleImportState()`
-as a live-state readiness check in `ScheduleImportReviewDialog`, after review
-decisions are complete and current snapshots are available. Preserve existing
-status priority and localized UI checks, duplicate-decision validation,
-detailed overlap warnings, targetless Skip behavior, intensive preservation,
-and the repository's final pre-write check. In particular, reject a targeted
-Skip unless its current exact grade/level/teacher match is unique. Focused
-acceptance targets are `NextApplicationScheduleImportStateValidation`,
-`ClassMngrNextApplicationScheduleImportReviewDecisionsTests`,
-`ClassMngrScheduleImportDialogTests`, and `ClassMngrScheduleImportTests`.
-Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial.
+F219 source commit `57aefadf` adds the existing Qt-free
+`validateScheduleImportState()` as a live-state readiness check in the Schedule
+Import review dialog. It rejects a targeted Skip unless its current exact
+grade/level/teacher match is unique, while preserving targetless Skip, current
+status priority, detailed overlap warnings, intensive preservation, and the
+repository's final pre-write check. The state-validation and review-decision
+CTest targets and `ClassMngrScheduleImportTests` passed. The full
+`ClassMngrScheduleImportDialogTests` target has three pre-existing failures:
+the same `acceptedReviewCanTearDownSourceDialog`,
+`mismatchedProfileRequiresConfirmation`, and
+`reviewPreviewUsesSavedScheduleDisplaySettings` failures reproduce on clean
+F218 source baseline `9bb936ee` (18 passed/3 failed); F219 has 21 passed/3
+failed, with all three new Skip tests passing. `git diff --check` passed; no
+full suite ran.
+
+F220 is selected to move intrinsic Schedule Import plan-eligibility policy
+into a Qt-free Application contract, retaining `ScheduleImportPlanValidator`
+as the Qt/domain adapter. Preserve first-error order: intensive mode,
+diagnostics acknowledgment, existing review-decision validation, basic
+validity for every candidate, then per-candidate meeting-pattern and color
+checks; Skip exempts only meeting-pattern and color checks. Add the app-less
+`NextApplicationScheduleImportPlanValidation` target and retain
+`ClassMngrScheduleImportTests` for pre-write integration. This advances Gate 1;
+Gate 2 remains Partial pending baseline-parity evidence. Phase 2 remains In
+Progress/Open. A typed current-state snapshot read remains a later candidate.
 
 ### Earlier Phase 2 detail - 2026-09-26
 

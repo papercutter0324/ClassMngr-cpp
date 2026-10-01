@@ -16,7 +16,8 @@
   accepted. F215 (automatic-update startup eligibility) and F216
   (skipped-update-version policy), F217 (roster-score import), and F218
   (Speaking Evaluation class-tab read integration) are accepted. F219 (Schedule
-  Import live-state validation) is selected. Gates 1 and 2
+  Import live-state validation) is accepted. F220 (Schedule Import plan
+  eligibility policy) is selected. Gates 1 and 2
   remain Partial, with broader feature migration, parity, and 96-class Release
   memory evidence still open. See the
   [Phase 2 progress log](03-Phase-2-Progress-Log.md) for current scope and

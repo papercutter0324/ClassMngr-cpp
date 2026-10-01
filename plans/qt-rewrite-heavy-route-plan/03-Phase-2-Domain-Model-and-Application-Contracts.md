@@ -64,8 +64,9 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
   policy, F213's default evaluation selection, and F214's class day-filter
   matching policy, F215's automatic-update startup eligibility, F216's
   skipped-update-version policy, and F217's roster-score import are accepted.
-  F218's Speaking Evaluation class-tab read integration is accepted. F219's
-  Schedule Import live-state validation is selected.
+  F218's Speaking Evaluation class-tab read integration and F219's Schedule
+  Import live-state validation are accepted. F220's Schedule Import plan
+  eligibility policy is selected.
   The prior F123 candidate wording is historical;
   current Teacher Profile integration status is recorded in the progress log.
   Gates 1 and 2
@@ -222,37 +223,35 @@ No new v2 production path depends on DataService, MainWindow, PageManager, or a 
 
 Earlier verified slices and cumulative exit-gate snapshots are archived in the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 
-## Latest progress update - 2026-10-01 (F218 accepted; F219 selected)
+## Latest progress update - 2026-10-02 (F219 accepted; F220 selected)
 
-F218, source commit `9bb936ee`, moves Speaking Evaluation class-list,
-per-class navigation metadata, and selected-class subtitle reads to existing
-Application queries and Platform ports. It preserves tab order, labels, and
-metadata; selected-class fallback/retention; Regular/Intensive schedule and
-visibility filtering; absent/closed session behavior; warnings on open-session
-list-read failure; name-only fallback on failed navigation metadata; and
-rendered subtitle parity. Independent focused verification passed all eight
-CTest targets: `ClassMngrSpeakingEvalPageSaveTests`,
-`ClassMngrNextApplicationClassesListReadQueryTests`,
-`ClassMngrNextApplicationClassesNavigationSnapshotTests`,
-`ClassMngrNextApplicationSelectedClassSubtitleReadQueryTests`,
-`ClassMngrNextPlatformApplicationServicesClassesListReadPortTests`,
-`ClassMngrNextPlatformApplicationServicesClassesNavigationReadPortTests`,
-`ClassMngrNextPlatformApplicationServicesSelectedClassSubtitleReadPortTests`,
-and `ClassMngrClassTabNavigationModelTests`. The filter-integration coverage
-gap was closed before acceptance. `git diff --check` passed; no full suite ran.
+F219, source commit `57aefadf`, wires Qt-free
+`validateScheduleImportState()` as a live review-readiness preflight after
+review decisions. It preserves status priority, detailed overlap warnings,
+targetless Skip, intensive preservation, and the repository's final apply-time
+check. Dialog tests cover rejecting ambiguous positive-target Skip and
+accepting unique exact Skip and targetless Skip. Independent Application
+state-validation, review-decision, and `ClassMngrScheduleImportTests` passed;
+`git diff --check` passed. No full suite ran.
 
-F219 is selected: add `validateScheduleImportState()` as a live-state preflight
-in `ScheduleImportReviewDialog::updateReviewState()` after review-decision
-checks. Preserve status priority, form and duplicate-decision validation, full
-overlap-warning details, targetless Skip, intensive-preservation behavior, and
-the repository's final pre-write check. Reject ambiguous positive-target Skip
-before the dialog appears ready. Acceptance targets are
-`NextApplicationScheduleImportStateValidation`,
-`ClassMngrNextApplicationScheduleImportReviewDecisionsTests`,
-`ClassMngrScheduleImportDialogTests`, and `ClassMngrScheduleImportTests`.
-Two Explorers recommended this gate-focused integration; three independent
-Investigators agreed on the minimal live-state preflight after decision
-validation while retaining dialog warnings and repository apply validation.
-F219 advances Gate 1; Gate 2 remains Partial. Phase 2 remains In Progress/Open;
-Gates 1 and 2 remain Partial. See the [Phase 2 progress log](03-Phase-2-Progress-Log.md)
-for prior slice evidence.
+`ClassMngrScheduleImportDialogTests` has three confirmed pre-existing failures:
+`acceptedReviewCanTearDownSourceDialog`,
+`mismatchedProfileRequiresConfirmation`, and
+`reviewPreviewUsesSavedScheduleDisplaySettings`. F219 produced 21 pass/3 fail;
+a clean archived F218 baseline at `9bb936ee` produced 18 pass/3 fail. These
+are a known gate issue, not F219 regressions; the dialog target is not claimed
+as passing.
+
+F220 is selected: move intrinsic `ScheduleImportPlanValidator` eligibility
+rules into a Qt-free Application contract, retaining the feature validator as
+a Qt adapter that translates values and errors. Preserve exact first-error
+order: intensive mode, diagnostics acknowledgment, review decisions,
+all-candidate basics, then per-candidate meeting-pattern and colors; Skip
+exempts only pattern and color. Keep parsing, presentation, and repository
+apply guards with their current owners. Add app-less target
+`NextApplicationScheduleImportPlanValidation` and retain
+`ClassMngrScheduleImportTests` integration coverage. A typed current-state
+snapshot-read contract remains later work. F219 advances Gate 1; Gate 2
+remains Partial. Phase 2 remains In Progress/Open; Gates 1 and 2 remain
+Partial. See the [Phase 2 progress log](03-Phase-2-Progress-Log.md) for prior
+slice evidence.
