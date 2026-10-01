@@ -1,8 +1,10 @@
 #include "core/application_services.h"
 #include "data/data_service.h"
 #include "data/database/database_session.h"
+#include "data/repositories/settings_repository.h"
 #include "next/platform/application_services_current_campus_preferences_port.h"
 
+#include <QRegularExpression>
 #include <QSqlQuery>
 #include <QTemporaryDir>
 #include <QUuid>
@@ -41,13 +43,13 @@ bool executeSql(
     const QString& statement
     )
 {
-    DataService* dataService = services.dataService();
-    if (!dataService || !dataService->databaseSession())
+    DatabaseSession* const session = services.databaseSession();
+    if (!session || !session->isOpen())
     {
         return false;
     }
 
-    QSqlQuery query(dataService->databaseSession()->database());
+    QSqlQuery query(session->database());
     return query.exec(statement);
 }
 
@@ -73,6 +75,8 @@ private slots:
     void writePersistsExactKeyAndPreservesUnrelatedSettings();
     void missingAndUnavailableReadEmpty();
     void reportsSettingsAvailability();
+    void closedSessionDefaultsAndIgnoresWrite();
+    void repositoryReadErrorsWarnAndReturnEmpty();
     void preservesQVariantToStringConversion();
     void preservesUnrelatedSettings();
     void writeFailureMapsToTechnicalError();
@@ -93,10 +97,15 @@ exactKeyAndVerbatimStringRoundTrip()
     ApplicationServices services;
     QVERIFY(openDatabase(services, m_directory));
     QVERIFY(services.dataService());
+    DatabaseSession* const session = services.databaseSession();
+    QVERIFY(session);
+    QVERIFY(session->isOpen());
+    SettingsRepository* const repository = session->settingsRepository();
+    QVERIFY(repository);
 
     const QString expected = QStringLiteral("  Campus A / Main  ");
     QVERIFY(
-        services.dataService()->saveSetting(
+        repository->saveSetting(
             QString::fromUtf8(CurrentCampusKey),
             expected
             )
@@ -105,7 +114,7 @@ exactKeyAndVerbatimStringRoundTrip()
     ApplicationServicesCurrentCampusPreferencesPort port(services);
     QCOMPARE(port.read(), utf8(expected));
 
-    const auto stored = services.dataService()->loadSetting(
+    const auto stored = repository->loadSetting(
         QString::fromUtf8(CurrentCampusKey)
         );
     QVERIFY(stored);
@@ -118,8 +127,13 @@ writePersistsExactKeyAndPreservesUnrelatedSettings()
     ApplicationServices services;
     QVERIFY(openDatabase(services, m_directory));
     QVERIFY(services.dataService());
+    DatabaseSession* const session = services.databaseSession();
+    QVERIFY(session);
+    QVERIFY(session->isOpen());
+    SettingsRepository* const repository = session->settingsRepository();
+    QVERIFY(repository);
     QVERIFY(
-        services.dataService()->saveSetting(
+        repository->saveSetting(
             QString::fromUtf8(UnrelatedKey),
             QStringLiteral("preserved")
             )
@@ -130,13 +144,13 @@ writePersistsExactKeyAndPreservesUnrelatedSettings()
     QVERIFY(port.write(utf8(expected)));
     QCOMPARE(port.read(), utf8(expected));
 
-    const auto stored = services.dataService()->loadSetting(
+    const auto stored = repository->loadSetting(
         QString::fromUtf8(CurrentCampusKey)
         );
     QVERIFY(stored);
     QCOMPARE(stored->toString(), expected);
 
-    const auto unrelated = services.dataService()->loadSetting(
+    const auto unrelated = repository->loadSetting(
         QString::fromUtf8(UnrelatedKey)
         );
     QVERIFY(unrelated);
@@ -153,6 +167,11 @@ missingAndUnavailableReadEmpty()
     QVERIFY(port.read().empty());
 
     ApplicationServices unavailableServices;
+    QVERIFY(unavailableServices.dataService());
+    DatabaseSession* const unavailableSession =
+        unavailableServices.databaseSession();
+    QVERIFY(unavailableSession);
+    QVERIFY(!unavailableSession->isOpen());
     ApplicationServicesCurrentCampusPreferencesPort unavailablePort(
         unavailableServices
         );
@@ -171,12 +190,18 @@ reportsSettingsAvailability()
 {
     ApplicationServices availableServices;
     QVERIFY(openDatabase(availableServices, m_directory));
+    QVERIFY(availableServices.dataService());
+    QVERIFY(availableServices.databaseSession());
+    QVERIFY(availableServices.databaseSession()->isOpen());
     ApplicationServicesCurrentCampusPreferencesPort availablePort(
         &availableServices
         );
     QVERIFY(availablePort.isAvailable());
 
     ApplicationServices unavailableServices;
+    QVERIFY(unavailableServices.dataService());
+    QVERIFY(unavailableServices.databaseSession());
+    QVERIFY(!unavailableServices.databaseSession()->isOpen());
     ApplicationServicesCurrentCampusPreferencesPort unavailablePort(
         &unavailableServices
         );
@@ -189,15 +214,79 @@ reportsSettingsAvailability()
 }
 
 void NextPlatformApplicationServicesCurrentCampusPreferencesPortTests::
+closedSessionDefaultsAndIgnoresWrite()
+{
+    ApplicationServices services;
+    const QString path = databasePath(m_directory);
+    QVERIFY(services.openDatabase(path));
+    QVERIFY(services.dataService());
+    DatabaseSession* const session = services.databaseSession();
+    QVERIFY(session);
+    QVERIFY(session->isOpen());
+    SettingsRepository* const repository = session->settingsRepository();
+    QVERIFY(repository);
+    QVERIFY(repository->saveSetting(
+        QString::fromUtf8(CurrentCampusKey),
+        QStringLiteral("Campus Before Close")
+        ));
+
+    ApplicationServicesCurrentCampusPreferencesPort port(services);
+    services.closeDatabase();
+    QVERIFY(services.dataService());
+    QVERIFY(!port.isAvailable());
+    QVERIFY(port.read().empty());
+    QVERIFY(port.write(utf8(QStringLiteral("Campus After Close"))));
+
+    QVERIFY(services.openDatabase(path));
+    QVERIFY(session->isOpen());
+    SettingsRepository* const reopenedRepository =
+        session->settingsRepository();
+    QVERIFY(reopenedRepository);
+    const auto stored = reopenedRepository->loadSetting(
+        QString::fromUtf8(CurrentCampusKey)
+        );
+    QVERIFY(stored);
+    QCOMPARE(stored->toString(), QStringLiteral("Campus Before Close"));
+}
+
+void NextPlatformApplicationServicesCurrentCampusPreferencesPortTests::
+repositoryReadErrorsWarnAndReturnEmpty()
+{
+    ApplicationServices services;
+    QVERIFY(openDatabase(services, m_directory));
+    QVERIFY(services.dataService());
+    DatabaseSession* const session = services.databaseSession();
+    QVERIFY(session);
+    QVERIFY(session->isOpen());
+    QVERIFY(session->settingsRepository());
+    QVERIFY(executeSql(services, QStringLiteral("DROP TABLE app_settings")));
+
+    QTest::ignoreMessage(
+        QtWarningMsg,
+        QRegularExpression(
+            QStringLiteral("Failed to load setting.*myInfo/campus.*")
+            )
+        );
+
+    ApplicationServicesCurrentCampusPreferencesPort port(services);
+    QVERIFY(port.read().empty());
+}
+
+void NextPlatformApplicationServicesCurrentCampusPreferencesPortTests::
 preservesQVariantToStringConversion()
 {
     ApplicationServices services;
     QVERIFY(openDatabase(services, m_directory));
     QVERIFY(services.dataService());
+    DatabaseSession* const session = services.databaseSession();
+    QVERIFY(session);
+    QVERIFY(session->isOpen());
+    SettingsRepository* const repository = session->settingsRepository();
+    QVERIFY(repository);
 
     ApplicationServicesCurrentCampusPreferencesPort port(services);
     QVERIFY(
-        services.dataService()->saveSetting(
+        repository->saveSetting(
             QString::fromUtf8(CurrentCampusKey),
             42
             )
@@ -205,7 +294,7 @@ preservesQVariantToStringConversion()
     QCOMPARE(port.read(), utf8(QStringLiteral("42")));
 
     QVERIFY(
-        services.dataService()->saveSetting(
+        repository->saveSetting(
             QString::fromUtf8(CurrentCampusKey),
             QString()
             )
@@ -219,14 +308,19 @@ preservesUnrelatedSettings()
     ApplicationServices services;
     QVERIFY(openDatabase(services, m_directory));
     QVERIFY(services.dataService());
+    DatabaseSession* const session = services.databaseSession();
+    QVERIFY(session);
+    QVERIFY(session->isOpen());
+    SettingsRepository* const repository = session->settingsRepository();
+    QVERIFY(repository);
     QVERIFY(
-        services.dataService()->saveSetting(
+        repository->saveSetting(
             QString::fromUtf8(UnrelatedKey),
             QStringLiteral("preserved")
             )
         );
     QVERIFY(
-        services.dataService()->saveSetting(
+        repository->saveSetting(
             QString::fromUtf8(CurrentCampusKey),
             QStringLiteral("Campus B")
             )
@@ -235,7 +329,7 @@ preservesUnrelatedSettings()
     ApplicationServicesCurrentCampusPreferencesPort port(services);
     QCOMPARE(port.read(), utf8(QStringLiteral("Campus B")));
 
-    const auto unrelated = services.dataService()->loadSetting(
+    const auto unrelated = repository->loadSetting(
         QString::fromUtf8(UnrelatedKey)
         );
     QVERIFY(unrelated);
@@ -248,6 +342,11 @@ writeFailureMapsToTechnicalError()
     ApplicationServices services;
     QVERIFY(openDatabase(services, m_directory));
     QVERIFY(services.dataService());
+    DatabaseSession* const session = services.databaseSession();
+    QVERIFY(session);
+    QVERIFY(session->isOpen());
+    SettingsRepository* const repository = session->settingsRepository();
+    QVERIFY(repository);
     QVERIFY(executeSql(
         services,
         QStringLiteral(R"(
@@ -276,7 +375,7 @@ writeFailureMapsToTechnicalError()
             != std::string::npos
         );
 
-    const auto stored = services.dataService()->loadSetting(
+    const auto stored = repository->loadSetting(
         QString::fromUtf8(CurrentCampusKey)
         );
     QVERIFY(stored);
