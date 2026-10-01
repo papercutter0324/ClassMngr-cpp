@@ -1760,3 +1760,13 @@ Preserve this preference's special default behavior: missing, invalid, or
 failed reads attempt to persist `active_schedule`, while a valid unrecognized
 string defaults in memory without being rewritten. The void save port keeps
 write failures silent; test a rejected write and the prior value explicitly.
+SQLite represented a written invalid `QVariant` as a valid empty string in the
+focused path, so tests distinguish missing-key materialization from valid
+unsupported values instead of treating the empty string as an invalid variant.
+
+## 2026-10-01 - F203 Evaluation Default Policy preference
+
+When choosing between a one-key typed preference and a multi-format palette
+adapter, continue with the smaller typed policy boundary first. Preserve the
+distinction between missing/read-error values, which attempt default
+materialization, and valid unrecognized values, which default only in memory.

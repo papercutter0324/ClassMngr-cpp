@@ -4358,3 +4358,36 @@ interface unchanged. Focused target:
 `NextPlatformApplicationServicesClassVisibilityPreferencesPort`. Phase 2
 remains In Progress/Open; Gates 1 and 2 remain Partial. Next: implement F202,
 independently verify it, commit it, then select F203.
+
+## 2026-10-01 - F202 accepted; F203 selected
+
+F202 source commit `c9ff5731` migrates
+`ApplicationServicesClassVisibilityPreferencesPort` to the active session's
+`SettingsRepository`, with no compatibility-service fallback. It preserves
+the exact preference key, trimmed/lowercased `all_classes` mapping,
+ActiveSchedule fallback and missing-key materialization, and leaves valid
+unsupported values unchanged. Closed-session coverage keeps `DataService`
+present, then reopens the database to verify the original preference and an
+unrelated setting; a SQLite-trigger failure stays silent and preserves the
+stored value. The read-error path also defaults silently. The independent
+Tester built the x64 Visual Studio target, focused CTest passed 1/1, and
+`git diff --check` passed. No full suite ran.
+
+Two independent Explorer lanes proposed F203 options: the one-key Evaluation
+Default Policy preference and the broader Custom Color Palette adapter. F203
+is selected for `ApplicationServicesEvaluationDefaultPolicyPort` because its
+small typed boundary continues the current preference-port sequence. Move its
+exact-key read/write to the active session's `SettingsRepository`; preserve
+trimmed/lowercased `current_or_previous_term`, `All` fallback, default
+materialization for missing/invalid/read errors, no rewrite of valid unknown
+values, and silent save failures. Add closed-session no-fallback, read-error,
+and failed-write coverage; callers and the typed interface stay unchanged.
+Focused CTest:
+`ClassMngrNextPlatformApplicationServicesEvaluationDefaultPolicyPortTests`.
+F203's adapter and focused tests are now implemented in the working tree. The
+Executor's x64 Visual Studio build and focused CTest passed 1/1; independent
+verification is pending. F203 has no source commit yet. The root and four
+public plan-document updates for F202 acceptance/F203 selection are prepared
+but not committed. Phase 2 remains In Progress/Open; Gates 1 and 2 remain
+Partial. Next: finish independent verification, review and commit the
+documentation update separately, commit F203 source, then select F204.

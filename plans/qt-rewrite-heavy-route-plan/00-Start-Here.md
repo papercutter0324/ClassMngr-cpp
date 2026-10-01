@@ -54,9 +54,9 @@
   port, and F195's Schedule display mode preferences port are accepted. F196
   is accepted for Current Campus preferences, F197 for Middle School
   Analytics visibility, F198 for Personal Details save, F199 for Personal
-  Display Name preferences, F200 for Personal Signature preferences, and F201
-  for Personal Signature Image. F202 is selected for Class Visibility
-  preferences.
+  Display Name preferences, F200 for Personal Signature preferences, F201 for
+  Personal Signature Image, and F202 for Class Visibility preferences. F203 is
+  selected for Evaluation Default Policy.
   See the
   [Phase 2 progress
   log](03-Phase-2-Progress-Log.md)

@@ -8299,7 +8299,7 @@ fields/schedule/teacher/count/fallback parity. F167 implementation has not
 started. Gate 1 and Gate 2 remain Partial; Phase 2 remains In Progress and its
 exit gate remains Open.
 
-### Progress update - 2026-10-01 (F201 accepted; F202 selected)
+### Progress update - 2026-10-01 (F202 accepted; F203 selected)
 
 F167, source commit `97efac8b`, updates
 `ApplicationServicesClassDetailsPageReadPort` to use active-session
@@ -8767,17 +8767,31 @@ MSVC CTest
 `ClassMngrNextPlatformApplicationServicesPersonalSignatureImagePortTests`
 passed 1/1. `git diff --check` passed; no full suite ran.
 
-F202 is selected for `ApplicationServicesClassVisibilityPreferencesPort`, with
-existing CMake name
-`NextPlatformApplicationServicesClassVisibilityPreferencesPort`. Use the
-active-session `SettingsRepository`, with no service/facade fallback. Preserve
-`classes_navigation_visibility_scope`; trimmed/lowercase `all_classes` maps to
-AllClasses and other valid values to ActiveSchedule without rewrite. Missing,
-invalid, or read-error values return ActiveSchedule and attempt to materialize
-`active_schedule`; unavailable/closed returns ActiveSchedule without saving.
-Keep void save failures silent. Add closed-session-with-`DataService`
-no-fallback/value-preservation coverage and a trigger-based failed-save case
-that proves the stored value is preserved silently. Keep the typed interface
-and callers unchanged. Both independent Explorer lanes recommended this
-candidate. F202 is selected, not implemented; no F202 results exist. Gate 1
-and Gate 2 remain Partial; Phase 2 remains In Progress with its exit gate Open.
+F202, source commit `c9ff5731`, migrates
+`ApplicationServicesClassVisibilityPreferencesPort` to the active open
+session's `SettingsRepository`, with no compatibility-service fallback. It
+preserves key `classes_navigation_visibility_scope`, trimmed/lowercased
+`all_classes` mapping, ActiveSchedule defaults and missing-key materialization,
+no rewrite of valid unsupported values, and silent write failures. Closed-
+session coverage retains `DataService`, returns the default, and confirms
+stored and unrelated values after reopen; trigger-based failed write preserves
+the stored value silently. Repository read failure is also silent. Independent
+focused CTest
+`ClassMngrNextPlatformApplicationServicesClassVisibilityPreferencesPortTests`
+passed 1/1; `git diff --check` passed. No full suite ran.
+
+F203 is selected for `ApplicationServicesEvaluationDefaultPolicyPort`. Move its
+single preference read/write to the active session's `SettingsRepository`, with
+no service/facade fallback. Preserve key
+`classes_navigation_evaluation_default_policy`, trimmed/lowercased
+`current_or_previous_term`, canonical `all` and `current_or_previous_term`
+values, and the `All` fallback. Missing, invalid, or read-error values return
+`All` and attempt to materialize `all`; valid unrecognized values return `All`
+without rewrite. Unavailable/closed reads return `All`; saves are no-ops and
+failed saves remain silent. Add closed-session no-fallback, read-error, and
+failed-write coverage; keep callers and typed interface unchanged. Focused
+CTest: `ClassMngrNextPlatformApplicationServicesEvaluationDefaultPolicyPortTests`.
+Two Explorer candidates were Evaluation Default Policy and Custom Color Palette;
+the narrower one-key typed policy continues the preference-port sequence.
+F203 remains selected; no acceptance results are recorded yet. Gate 1 and Gate
+2 remain Partial; Phase 2 remains In Progress with its exit gate Open.
