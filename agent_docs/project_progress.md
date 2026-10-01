@@ -168,16 +168,27 @@ coverage. CMake ownership validated 1,146 handwritten sources, unchanged. An
 independent review caught the U+0085 gap before acceptance; the repair and
 focused recheck passed. `git diff --check` passed; no full suite ran.
 
-Two independent scans compared F214 candidates: the automatic-update startup
-eligibility/state transition and the class-tab day-filter rule. F214 is
-selected to move day-filter matching into Qt-free Application policy. Preserve
-trimmed, case-folded day matching, `weekend`/`wkend` expansion to Saturday and
-Sunday, OR matching, regular/intensive schedule selection, and ActiveSchedule
-visibility even with no selected days. Keep class grouping, ordering, time
-formatting, and translated labels in the feature. Add app-less policy coverage
-and retain `ClassMngrClassTabNavigationModelTests` as feature integration.
-Automatic-update startup eligibility remains a later candidate. Phase 2
-remains In Progress/Open; Gates 1 and 2 remain Partial.
+F214 source commit `9e03e668` moves class day-filter matching into the Qt-free
+`ClassDayFilterPolicy`. It preserves trimmed, case-folded weekday matching,
+`weekend`/`wkend` aliases, OR matching, regular/intensive source selection, and
+the AllClasses/ActiveSchedule empty-filter behavior. Qt string normalization
+and conversion plus grouping, ordering, time formatting, and translated labels
+remain at the feature boundary. CMake ownership validated 1,148 handwritten
+sources. The app-less policy, class-tab navigation model, and feature targets
+built; executor and independent focused CTest passed 2/2. `git diff --check`
+passed; no full suite ran.
+
+Two independent scans agreed on F215: move automatic-update startup
+eligibility into a Qt-free Application policy. Use the existing configuration
+flag, typed automatic-check preference, and releases-API availability as the
+eligibility inputs. Preserve lifecycle/service/one-shot guards and startup
+maintenance ordering; disabled or unconfigured attempts remain retryable, and
+an eligible attempt starts one forced check. Re-read the preference when
+processing results for automatic-prompt behavior. Keep networking, cleanup,
+manual checks, dialog presentation, and skipped-version behavior in their
+existing owners. Add an app-less decision matrix and focused controller/update
+integration coverage. This advances the Phase 2 update-use-case item; Gates 1
+and 2 remain Partial and Phase 2 remains In Progress/Open.
 
 ### Earlier Phase 2 detail - 2026-09-26
 

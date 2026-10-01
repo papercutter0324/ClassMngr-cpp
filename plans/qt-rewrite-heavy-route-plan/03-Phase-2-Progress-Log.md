@@ -8995,3 +8995,30 @@ disagreed on automatic-update startup eligibility; class day-filter is selected
 as a bounded UI-owned rule with existing production-path tests. Update
 eligibility remains a later candidate. Phase 2 remains In Progress/Open; Gates
 1 and 2 remain Partial.
+
+### Progress update - 2026-10-01 (F214 accepted; F215 selected)
+
+F214, source commit `9e03e668`, adds Qt-free `ClassDayFilterPolicy` for
+normalized-key matching, `weekend`/`wkend` aliases, OR matching,
+Regular/Intensive source selection, and AllClasses/ActiveSchedule empty-filter
+behavior. Qt trim/case-fold/UTF-8 conversion and UI grouping, ordering, time
+formatting, and labels remain in the feature. CMake ownership validated 1,148
+handwritten sources. Focused builds passed for
+`ClassMngrNextApplicationClassDayFilterPolicyTests`,
+`ClassMngrClassTabNavigationModelTests`, and `ClassMngrFeatures`; focused CTest
+passed 2/2 in executor and independent Tester runs. `git diff --check` passed;
+no full suite ran.
+
+F215 is selected: move automatic-update startup eligibility into Qt-free
+Application policy using configuration `checkOnStartup`, the typed automatic-
+check preference, and release API URL availability. Preserve lifecycle,
+service, and one-shot guards; run startup cleanup once before preference/URL
+gates; keep disabled or unconfigured attempts retryable; and set started then
+request `CheckPolicy::Force` only for an enabled, configured attempt. Reread
+the preference when processing results for prompt suppression. Manual checks,
+networking, downloader cleanup, dialogs, and skipped-version behavior remain
+with their current owners. Acceptance requires an app-less decision matrix and
+focused `UpdateController` integration coverage for startup, one-shot behavior,
+retry after disabled or unconfigured attempts, and forced service dispatch. Two
+independent Explorer scans agreed on moving startup eligibility into
+Application. Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial.

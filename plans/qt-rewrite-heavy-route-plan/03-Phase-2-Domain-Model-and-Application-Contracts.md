@@ -61,8 +61,9 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
   Sub Prep saved-content preferences and F209's speaking-evaluation save are
   accepted; F210's recent-workspace history policy, F211's Speaking
   Evaluation read-port extraction, and F212's upcoming-birthday schedule
-  policy and F213's default evaluation selection are accepted. F214's class
-  day-filter matching policy is selected.
+  policy, F213's default evaluation selection, and F214's class day-filter
+  matching policy are accepted. F215's automatic-update startup eligibility
+  is selected.
   The prior F123 candidate wording is historical;
   current Teacher Profile integration status is recorded in the progress log.
   Gates 1 and 2
@@ -219,26 +220,31 @@ No new v2 production path depends on DataService, MainWindow, PageManager, or a 
 
 Earlier verified slices and cumulative exit-gate snapshots are archived in the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 
-## Latest progress update - 2026-10-01 (F213 accepted; F214 selected)
+## Latest progress update - 2026-10-01 (F214 accepted; F215 selected)
 
-F213, source commit `dc2b3ed9`, routes `forClass` through
-`SelectedClassGradeReadPort`/`SelectedClassGradeReadQuery` and
-`SpeakingEvaluationReadPort`/`SpeakingEvaluationQuery`; the production path no
-longer calls legacy `ClassService` or `SpeakingEvaluationService`. Qt-free
-Application owns the UTF-16 row-content policy, including U+0085 parity. The
-focused target and `ClassMngrFeatures` built successfully; CTest passed 3/3,
-and CMake ownership validated 1,146 files. The independent Tester caught a
-U+0085 mismatch; it passed after repair. `git diff --check` passed; no full
-suite ran.
+F214, source commit `9e03e668`, adds Qt-free `ClassDayFilterPolicy` for
+normalized-key matching, `weekend`/`wkend` aliases, OR matching,
+Regular/Intensive source selection, and AllClasses/ActiveSchedule empty-filter
+behavior. Qt trim/case-fold/UTF-8 conversion and UI grouping, ordering, time
+formatting, and labels remain in the feature. CMake ownership validated 1,148
+handwritten sources. Focused builds passed for
+`ClassMngrNextApplicationClassDayFilterPolicyTests`,
+`ClassMngrClassTabNavigationModelTests`, and `ClassMngrFeatures`; focused CTest
+passed 2/2 in executor and independent Tester runs. `git diff --check` passed;
+no full suite ran.
 
-F214 is selected: move class day-filter matching into Qt-free Application,
-including selected-day matching, trimmed case-fold normalization,
-`weekend`/`wkend` expansion, Regular/Intensive source selection, and
-ActiveSchedule hide-empty behavior. Keep grouping, ordering, time formatting,
-and translated labels in the feature. Acceptance covers app-less policy tests
-and existing `ClassTabNavigationModelTests`. Two independent Explorer scans
-disagreed on automatic-update startup eligibility; class day-filter is selected
-as a bounded UI-owned rule with existing production-path tests. Update
-eligibility remains a later candidate. Phase 2 remains In Progress/Open; Gates
-1 and 2 remain Partial. See the [Phase 2 progress log](03-Phase-2-Progress-Log.md)
+F215 is selected: move automatic-update startup eligibility into Qt-free
+Application policy using configuration `checkOnStartup`, the typed automatic-
+check preference, and release API URL availability. Preserve lifecycle,
+service, and one-shot guards; run startup cleanup once before preference/URL
+gates; keep disabled or unconfigured attempts retryable; and set started then
+request `CheckPolicy::Force` only for an enabled, configured attempt. Reread
+the preference when processing results for prompt suppression. Manual checks,
+networking, downloader cleanup, dialogs, and skipped-version behavior remain
+with their current owners. Acceptance requires an app-less decision matrix and
+focused `UpdateController` integration coverage for startup, one-shot behavior,
+retry after disabled or unconfigured attempts, and forced service dispatch. Two
+independent Explorer scans agreed on moving startup eligibility into
+Application. Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial.
+See the [Phase 2 progress log](03-Phase-2-Progress-Log.md)
 for prior slice evidence.

@@ -1853,3 +1853,11 @@ in the feature. Preserve trimmed case-folded matching, weekend aliases, the
 selected regular/intensive schedule, OR matching, and the rule that
 ActiveSchedule excludes classes without entries even when the selected-day set
 is empty.
+
+## 2026-10-01 - F215 automatic update startup eligibility
+
+Keep lifecycle and filesystem effects in the controller, and make eligibility
+a deterministic Application decision. Preserve the order: pass lifecycle
+guards, run one-time cleanup, check configuration/preference/URL, then mark the
+one-shot state only when dispatching a forced check. Disabled or unconfigured
+attempts remain retryable; re-read the preference before automatic prompting.
