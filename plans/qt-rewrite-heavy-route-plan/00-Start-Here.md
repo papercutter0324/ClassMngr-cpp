@@ -6,64 +6,12 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-01
-- Current milestone: Phase 2 application-contract slices are continuing.
-  Calendar-import planning, the existing-signature read cutover, and Work
-  Package D (model-backed class list/navigation and reusable selected-class
-  detail view) are complete; Work Package D closed 2026-09-23. Sub Prep has
-  session-backed Platform reads for selected-class details, print source, and
-  schedule summaries. F138-F142 cover typed testing-class choices/list reads,
-  ScheduleEditor save/read boundaries, and ScheduleWidget unavailable-source
-  behavior. F143's Testing Classes selected-detail query is committed as
-  `e2a3811cdba71b58ff2289f2c756d9bf12349bf5`; fresh Windows x64 Debug focused
-  CTests passed 3/3. F144's TestingClassesPage teacher-choice read is
-  acceptance-complete. F145 is accepted as the existing Testing Class details
-  update slice. F146 is accepted as new-class creation, including its optional
-  pending weekday/start-time assignment in the atomic repository operation.
-  F147 is accepted for delete/cascade migration and the Testing Classes page
-  success-transition fix. F148 is accepted with common-input Class Details
-  save parity. F126's `ClassDetailsPage` save uses the Qt-free save use case,
-  reused by F139 in `ScheduleEditorDialog`. F149's typed conflict query and
-  F150's typed validation policy are accepted. F151 is accepted for
-  current/baseline invalid-schedule page parity. F152's fresh typed validation-
-  context read is accepted. F153 is accepted for current/baseline page parity
-  when persisted teacher ID zero changes after load. F154's typed Class Notes
-  read, F155's Class Co-Teacher selected-class/title read, F156's
-  teacher-catalogue read, F157's TeacherInfoPage profile-save port, F158's
-  selected-teacher navigation read, F159's Native English Staff Directory
-  read, F160's GS Team Staff Directory read, F161's Native English Staff
-  Directory save, F162's GS Team Staff Directory save, F163's ClassesPage
-  class-list read, F164's selected-class grade read, F165's selected-class
-  subtitle read, F166's RosterEditorWidget class subtitle read, and F167's
-  ClassDetailsPage display read and F168's ClassDetailsPage save port are
-  accepted. F169's ClassNotesPage save port and F170's roster read port are
-  accepted. F171's roster save port and F172's Class Co-Teacher assignment
-  save port and F173's ScheduleWidget slot-state save port are accepted. F174's
-  speaking-evaluation read port and F175's ScheduleBuilder source port are
-  accepted. F176's Sub Prep class-details read port, F177's Sub Prep
-  schedule-summary port, and F178's Sub Prep print source port are accepted.
-  F179's Sub Prep roster-output source port and F180's Sub Prep calendar-event
-  interval port and F181's Calendar Event Import signature query port are
-  accepted. F182's active Calendar event read/by-ID adapter, F183's single
-  Calendar Event save port, F184's Calendar Event delete port, F185's
-  Calendar Event delete-all port, F186's repeat-series suffix-delete port,
-  F187's Calendar Event Import save port, F188's Calendar Event repeat-series
-  creation port, F189's repeat-series edit port, F190's Calendar Event display
-  preferences port, F191's Calendar Event type-color preferences port, and
-  F192's Calendar first-day-of-week preferences port and F193's Academic
-  Calendar schedule preferences port, F194's Schedule display preferences
-  port, and F195's Schedule display mode preferences port are accepted. F196
-  is accepted for Current Campus preferences, F197 for Middle School
-  Analytics visibility, F198 for Personal Details save, F199 for Personal
-  Display Name preferences, F200 for Personal Signature preferences, F201 for
-  Personal Signature Image, F202 for Class Visibility preferences, and F203 for
-  Evaluation Default Policy. F204 is selected for Class Day Filter Reset Policy.
-  See the
-  [Phase 2 progress
-  log](03-Phase-2-Progress-Log.md)
-  for evidence and current selection details.
-  Phase 2 Gates 1 and 2 remain Partial; broader feature migration, parity, and
-  96-class Release memory evidence remain open. Phase 1 build-system exit
-  evidence remains outstanding.
+- Current milestone: Phase 2 remains in progress. F204 (Class Day Filter Reset
+  Policy) is accepted; F205 (Class Selection Reset Policy) is the current
+  slice. Gates 1 and 2 remain Partial, with broader feature migration, parity,
+  and 96-class Release memory evidence still open. See the
+  [Phase 2 progress log](03-Phase-2-Progress-Log.md) for current scope and
+  acceptance evidence.
 - Current blocker: official Phase 1 targets are Windows x64 and macOS
   universal. On commit `57f5dff6`, Windows x64 passed 66/66; macOS Debug failed
   after GitHub reported runner communication loss. The user observed the
