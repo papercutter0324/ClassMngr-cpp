@@ -1,9 +1,16 @@
 #include "core/application_services.h"
 #include "data/data_service.h"
+#include "data/database/database_session.h"
+#include "data/repositories/settings_repository.h"
+#include "next/application/personal_details_save.h"
+#include "next/platform/application_services_personal_details_save_port.h"
 #include "next/platform/application_services_personal_signature_preferences_port.h"
 
+#include <QRegularExpression>
+#include <QSqlQuery>
 #include <QTemporaryDir>
 #include <QUuid>
+#include <QVariantMap>
 #include <QtTest/QtTest>
 
 #include <cstddef>
@@ -38,6 +45,29 @@ bool openDatabase(
     return services.openDatabase(databasePath(directory)).has_value();
 }
 
+SettingsRepository* settingsRepository(ApplicationServices& services)
+{
+    DatabaseSession* const session = services.databaseSession();
+    return session && session->isOpen()
+        ? session->settingsRepository()
+        : nullptr;
+}
+
+bool executeSql(
+    ApplicationServices& services,
+    const QString& statement
+    )
+{
+    DatabaseSession* const session = services.databaseSession();
+    if (!session || !session->isOpen())
+    {
+        return false;
+    }
+
+    QSqlQuery query(session->database());
+    return query.exec(statement);
+}
+
 std::string utf8(const QString& value)
 {
     const QByteArray encoded = value.toUtf8();
@@ -69,6 +99,9 @@ private slots:
     void invalidVariantsNormalizeLikeTheLegacyReader();
     void unavailableSettingsReturnFailure();
     void preservesUnrelatedSettingsAndDoesNotWrite();
+    void repositoryReadFailuresWarnAndUseDefaults();
+    void closedSessionRefusesReadAndPreservesSettingsOnReopen();
+    void readsValuesWrittenByPersonalDetailsSavePort();
 
 private:
     QTemporaryDir m_directory;
@@ -86,22 +119,24 @@ exactKeysRoundTripUtf8WhitespaceAndTypedValues()
     ApplicationServices services;
     QVERIFY(openDatabase(services, m_directory));
     QVERIFY(services.dataService());
+    SettingsRepository* const repository = settingsRepository(services);
+    QVERIFY(repository);
 
     const QString expectedText = expectedUtf8Text();
     QVERIFY(
-        services.dataService()->saveSetting(
+        repository->saveSetting(
             QString::fromUtf8(SignatureModeKey),
             1
             )
         );
     QVERIFY(
-        services.dataService()->saveSetting(
+        repository->saveSetting(
             QString::fromUtf8(TypedSignatureTextKey),
             expectedText
             )
         );
     QVERIFY(
-        services.dataService()->saveSetting(
+        repository->saveSetting(
             QString::fromUtf8(TypedSignatureFontKey),
             2
             )
@@ -120,7 +155,7 @@ exactKeysRoundTripUtf8WhitespaceAndTypedValues()
         })
         );
 
-    const auto wrongKey = services.dataService()->loadSetting(
+    const auto wrongKey = repository->loadSetting(
         QString::fromUtf8(WrongModeKey)
         );
     QVERIFY(wrongKey);
@@ -133,6 +168,8 @@ missingValuesUseExistingDefaultsWithoutWriting()
     ApplicationServices services;
     QVERIFY(openDatabase(services, m_directory));
     QVERIFY(services.dataService());
+    SettingsRepository* const repository = settingsRepository(services);
+    QVERIFY(repository);
 
     ApplicationServicesPersonalSignaturePreferencesPort port(services);
     const auto loaded = port.load();
@@ -153,7 +190,7 @@ missingValuesUseExistingDefaultsWithoutWriting()
              TypedSignatureFontKey
          })
     {
-        const auto stored = services.dataService()->loadSetting(
+        const auto stored = repository->loadSetting(
             QString::fromUtf8(key)
             );
         QVERIFY(stored);
@@ -167,22 +204,27 @@ invalidVariantsNormalizeLikeTheLegacyReader()
     ApplicationServices services;
     QVERIFY(openDatabase(services, m_directory));
     QVERIFY(services.dataService());
+    SettingsRepository* const repository = settingsRepository(services);
+    QVERIFY(repository);
+    const QString invalidMode = QStringLiteral("not-a-mode");
+    const QString typedText = QStringLiteral("  text with spaces  ");
+    const QString invalidFont = QStringLiteral("not-a-font");
     QVERIFY(
-        services.dataService()->saveSetting(
+        repository->saveSetting(
             QString::fromUtf8(SignatureModeKey),
-            QStringLiteral("not-a-mode")
+            invalidMode
             )
         );
     QVERIFY(
-        services.dataService()->saveSetting(
+        repository->saveSetting(
             QString::fromUtf8(TypedSignatureTextKey),
-            QStringLiteral("  text with spaces  ")
+            typedText
             )
         );
     QVERIFY(
-        services.dataService()->saveSetting(
+        repository->saveSetting(
             QString::fromUtf8(TypedSignatureFontKey),
-            QStringLiteral("not-a-font")
+            invalidFont
             )
         );
 
@@ -193,12 +235,28 @@ invalidVariantsNormalizeLikeTheLegacyReader()
     QCOMPARE(loaded.value().mode, PersonalSignatureMode::Image);
     QCOMPARE(
         loaded.value().typedSignatureText,
-        std::string("  text with spaces  ")
+        utf8(typedText)
         );
     QCOMPARE(loaded.value().typedSignatureFont, 0);
 
+    const auto originalMode = repository->loadSetting(
+        QString::fromUtf8(SignatureModeKey)
+        );
+    QVERIFY(originalMode);
+    QCOMPARE(originalMode->toString(), invalidMode);
+    const auto storedText = repository->loadSetting(
+        QString::fromUtf8(TypedSignatureTextKey)
+        );
+    QVERIFY(storedText);
+    QCOMPARE(storedText->toString(), typedText);
+    const auto storedFont = repository->loadSetting(
+        QString::fromUtf8(TypedSignatureFontKey)
+        );
+    QVERIFY(storedFont);
+    QCOMPARE(storedFont->toString(), invalidFont);
+
     QVERIFY(
-        services.dataService()->saveSetting(
+        repository->saveSetting(
             QString::fromUtf8(SignatureModeKey),
             9
             )
@@ -206,6 +264,22 @@ invalidVariantsNormalizeLikeTheLegacyReader()
     const auto unknownMode = port.load();
     QVERIFY(unknownMode);
     QCOMPARE(unknownMode.value().mode, PersonalSignatureMode::Image);
+
+    const auto changedMode = repository->loadSetting(
+        QString::fromUtf8(SignatureModeKey)
+        );
+    QVERIFY(changedMode);
+    QCOMPARE(changedMode->toInt(), 9);
+    const auto stillStoredText = repository->loadSetting(
+        QString::fromUtf8(TypedSignatureTextKey)
+        );
+    QVERIFY(stillStoredText);
+    QCOMPARE(stillStoredText->toString(), typedText);
+    const auto stillStoredFont = repository->loadSetting(
+        QString::fromUtf8(TypedSignatureFontKey)
+        );
+    QVERIFY(stillStoredFont);
+    QCOMPARE(stillStoredFont->toString(), invalidFont);
 }
 
 void NextPlatformApplicationServicesPersonalSignaturePreferencesPortTests::
@@ -218,7 +292,12 @@ unavailableSettingsReturnFailure()
     ApplicationServicesPersonalSignaturePreferencesPort nullPort(
         static_cast<ApplicationServices*>(nullptr)
         );
-    QVERIFY(!nullPort.load());
+    const auto nullLoad = nullPort.load();
+    QVERIFY(!nullLoad);
+    QCOMPARE(
+        nullLoad.error().code,
+        ClassMngr::Next::Domain::ErrorCode::Technical
+        );
 }
 
 void NextPlatformApplicationServicesPersonalSignaturePreferencesPortTests::
@@ -227,8 +306,10 @@ preservesUnrelatedSettingsAndDoesNotWrite()
     ApplicationServices services;
     QVERIFY(openDatabase(services, m_directory));
     QVERIFY(services.dataService());
+    SettingsRepository* const repository = settingsRepository(services);
+    QVERIFY(repository);
     QVERIFY(
-        services.dataService()->saveSetting(
+        repository->saveSetting(
             QString::fromUtf8(UnrelatedKey),
             QStringLiteral("preserved")
             )
@@ -237,7 +318,7 @@ preservesUnrelatedSettingsAndDoesNotWrite()
     ApplicationServicesPersonalSignaturePreferencesPort port(services);
     QVERIFY(port.load());
 
-    const auto unrelated = services.dataService()->loadSetting(
+    const auto unrelated = repository->loadSetting(
         QString::fromUtf8(UnrelatedKey)
         );
     QVERIFY(unrelated);
@@ -249,12 +330,127 @@ preservesUnrelatedSettingsAndDoesNotWrite()
              TypedSignatureFontKey
          })
     {
-        const auto stored = services.dataService()->loadSetting(
+        const auto stored = repository->loadSetting(
             QString::fromUtf8(key)
             );
         QVERIFY(stored);
         QVERIFY(!stored->isValid());
     }
+}
+
+void NextPlatformApplicationServicesPersonalSignaturePreferencesPortTests::
+repositoryReadFailuresWarnAndUseDefaults()
+{
+    ApplicationServices services;
+    QVERIFY(openDatabase(services, m_directory));
+    QVERIFY(services.dataService());
+    QVERIFY(settingsRepository(services));
+    QVERIFY(executeSql(services, QStringLiteral("DROP TABLE app_settings")));
+
+    for (const char* key : {
+             SignatureModeKey,
+             TypedSignatureFontKey,
+             TypedSignatureTextKey
+         })
+    {
+        QTest::ignoreMessage(
+            QtWarningMsg,
+            QRegularExpression(
+                QStringLiteral("Failed to load setting.*%1.*")
+                    .arg(QString::fromUtf8(key))
+                )
+            );
+    }
+
+    ApplicationServicesPersonalSignaturePreferencesPort port(services);
+    const auto loaded = port.load();
+
+    QVERIFY(loaded);
+    QCOMPARE(
+        loaded.value(),
+        (PersonalSignaturePreferences{
+            .mode = PersonalSignatureMode::Image,
+            .typedSignatureText = {},
+            .typedSignatureFont = 0
+        })
+        );
+}
+
+void NextPlatformApplicationServicesPersonalSignaturePreferencesPortTests::
+closedSessionRefusesReadAndPreservesSettingsOnReopen()
+{
+    ApplicationServices services;
+    const QString path = databasePath(m_directory);
+    QVERIFY(services.openDatabase(path));
+    QVERIFY(services.dataService());
+    SettingsRepository* repository = settingsRepository(services);
+    QVERIFY(repository);
+
+    const QString expectedText = expectedUtf8Text();
+    const QVariantMap initialValues = {
+        {QString::fromUtf8(SignatureModeKey), 1},
+        {QString::fromUtf8(TypedSignatureTextKey), expectedText},
+        {QString::fromUtf8(TypedSignatureFontKey), 2},
+        {QString::fromUtf8(UnrelatedKey), QStringLiteral("preserved")}
+    };
+    QVERIFY(repository->saveSettings(initialValues));
+
+    ApplicationServicesPersonalSignaturePreferencesPort port(services);
+    services.closeDatabase();
+    QVERIFY(services.dataService());
+    QVERIFY(!services.databaseSession()->isOpen());
+
+    const auto closedLoad = port.load();
+    QVERIFY(!closedLoad);
+    QCOMPARE(
+        closedLoad.error().code,
+        ClassMngr::Next::Domain::ErrorCode::Technical
+        );
+    QVERIFY(
+        closedLoad.error().message
+            == "Personal signature preferences service is unavailable."
+        );
+
+    QVERIFY(services.openDatabase(path));
+    repository = settingsRepository(services);
+    QVERIFY(repository);
+    for (auto setting = initialValues.cbegin();
+         setting != initialValues.cend();
+         ++setting)
+    {
+        const auto stored = repository->loadSetting(setting.key());
+        QVERIFY(stored);
+        QCOMPARE(*stored, setting.value());
+    }
+}
+
+void NextPlatformApplicationServicesPersonalSignaturePreferencesPortTests::
+readsValuesWrittenByPersonalDetailsSavePort()
+{
+    ApplicationServices services;
+    QVERIFY(openDatabase(services, m_directory));
+
+    const QString expectedText = expectedUtf8Text();
+    PersonalDetailsSaveRequest request;
+    request.signatureMode = PersonalSignatureMode::Type;
+    request.typedSignatureText = utf8(expectedText);
+    request.typedSignatureFont = 2;
+
+    ApplicationServicesPersonalDetailsSavePort savePort(services);
+    QVERIFY(savePort.save(request));
+
+    ApplicationServicesPersonalSignaturePreferencesPort readPort(services);
+    const auto loaded = readPort.load();
+
+    QVERIFY(loaded);
+    QCOMPARE(
+        loaded.value(),
+        (PersonalSignaturePreferences{
+            .mode = PersonalSignatureMode::Type,
+            .typedSignatureText = utf8(expectedText),
+            .typedSignatureFont = 2
+        })
+        );
 }
 
 QTEST_MAIN(

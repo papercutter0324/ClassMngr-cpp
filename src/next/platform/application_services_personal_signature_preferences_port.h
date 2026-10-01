@@ -1,10 +1,12 @@
 #pragma once
 
-#include "app/services/feature_services.h"
 #include "core/application_services.h"
+#include "data/database/database_session.h"
+#include "data/repositories/settings_repository.h"
 #include "next/application/personal_signature_preferences.h"
 
 #include <QByteArray>
+#include <QDebug>
 #include <QString>
 #include <QVariant>
 
@@ -16,7 +18,8 @@ namespace ClassMngr::Next::Platform
 
 // Qt-boundary adapter for the read-only personal signature preferences. Exact
 // keys, QVariant conversion, and persisted-mode normalization remain here;
-// the caller receives only typed values and opaque UTF-8 text.
+// the caller receives only typed values and opaque UTF-8 text. Reads use only
+// the active session repository and never materialize missing defaults.
 class ApplicationServicesPersonalSignaturePreferencesPort final
     : public Application::PersonalSignaturePreferencesPort
 {
@@ -24,14 +27,14 @@ public:
     explicit ApplicationServicesPersonalSignaturePreferencesPort(
         ApplicationServices& services
         ) noexcept
-        : m_services(&services)
+        : m_session(services.databaseSession())
     {
     }
 
     explicit ApplicationServicesPersonalSignaturePreferencesPort(
         ApplicationServices* services
         ) noexcept
-        : m_services(services)
+        : m_session(services ? services->databaseSession() : nullptr)
     {
     }
 
@@ -51,11 +54,17 @@ public:
     [[nodiscard]] Application::PersonalSignaturePreferencesResult load()
         const override
     {
-        SettingsService* const settingsService =
-            m_services
-                ? m_services->settingsService()
-                : nullptr;
-        if (!settingsService || !settingsService->isAvailable())
+        if (!m_session || !m_session->isOpen())
+        {
+            return Application::
+                PersonalSignaturePreferencesResult::failure(
+                    unavailableError()
+                    );
+        }
+
+        SettingsRepository* const repository =
+            m_session->settingsRepository();
+        if (!repository)
         {
             return Application::
                 PersonalSignaturePreferencesResult::failure(
@@ -64,25 +73,11 @@ public:
         }
 
         const int storedMode =
-            settingsService
-                ->loadOrDefault(
-                    signatureModeKey(),
-                    0
-                    )
-                .toInt();
+            loadOrDefault(*repository, signatureModeKey(), 0).toInt();
         const int storedFont =
-            settingsService
-                ->loadOrDefault(
-                    typedSignatureFontKey(),
-                    0
-                    )
-                .toInt();
+            loadOrDefault(*repository, typedSignatureFontKey(), 0).toInt();
         const QByteArray storedText =
-            settingsService
-                ->loadOrDefault(
-                    typedSignatureTextKey(),
-                    QString()
-                    )
+            loadOrDefault(*repository, typedSignatureTextKey(), QString())
                 .toString()
                 .toUtf8();
 
@@ -99,6 +94,28 @@ public:
     }
 
 private:
+    [[nodiscard]] static QVariant loadOrDefault(
+        SettingsRepository& repository,
+        const QString& key,
+        const QVariant& defaultValue
+        )
+    {
+        const Result<QVariant> stored = repository.loadSetting(key);
+        if (!stored)
+        {
+            qWarning()
+                << "Failed to load setting"
+                << key
+                << ':'
+                << stored.error();
+            return defaultValue;
+        }
+
+        return stored->isValid()
+            ? *stored
+            : defaultValue;
+    }
+
     [[nodiscard]] static QString signatureModeKey()
     {
         return QStringLiteral("myInfo/signatureMode");
@@ -123,7 +140,7 @@ private:
         };
     }
 
-    ApplicationServices* m_services = nullptr;
+    DatabaseSession* m_session = nullptr;
 };
 
 } // namespace ClassMngr::Next::Platform
