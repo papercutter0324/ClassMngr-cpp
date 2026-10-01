@@ -56,9 +56,9 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
   ports, F198's Personal Details save, F199's Personal Display Name, F200's
   Personal Signature preferences, F201's Personal Signature Image, F202's
   Class Visibility, F203's Evaluation Default Policy, F204's Class Day Filter
-  Reset Policy, F205's Class Selection Reset Policy, and F206's Custom Color
-  Palette preferences ports are accepted; F207 is selected for Sub Prep
-  Personal Zoom preferences.
+  Reset Policy, F205's Class Selection Reset Policy, F206's Custom Color
+  Palette preferences, and F207's Sub Prep Personal Zoom preferences ports are
+  accepted; F208 is selected for Sub Prep saved-content preferences.
   The prior F123 candidate wording is historical;
   current Teacher Profile integration status is recorded in the progress log.
   Gates 1 and 2
@@ -221,19 +221,26 @@ F206 is accepted; its source commit, focused CTest results, ColorUtils coverage,
 owner-count check, and verification limits are recorded in the [Phase 2
 progress log](03-Phase-2-Progress-Log.md).
 
-## F207 selected Sub Prep Personal Zoom preferences port
+## F207 accepted Sub Prep Personal Zoom preferences port
 
-Migrate `ApplicationServicesSubPrepPersonalZoomPreferencesPort` reads and
-best-effort legacy migration writes to the active open session's
-`SettingsRepository`. Preserve primary keys `myInfo/zoomLoginId`,
-`myInfo/zoomPassword`, and `myInfo/zoomNotAvailable`, legacy keys
-`subPrep/personalZoomEmail`, `subPrep/personalZoomPassword`, and
-`subPrep/personalZoomNotAvailable`, primary precedence, legacy fallback and
-best-effort migration, UTF-8, `QVariant::toBool()`, and `N/A`/true defaults.
-Keep its typed Technical unavailable error, successful legacy result when a
-migration save fails, and no closed-session `DataService` fallback. Add
-closed-session no-fallback coverage with `DataService` present and repository
-read-error/default coverage. Keep the typed interface and callers unchanged.
-Focused CTest: `ClassMngrNextPlatformApplicationServicesSubPrepPersonalZoomPreferencesPortTests`
-(registered name `NextPlatformApplicationServicesSubPrepPersonalZoomPreferencesPort`).
-F207 is selected; no F207 results are recorded.
+F207 is accepted; its source commit, focused CTest results, owner-count check,
+and verification limits are recorded in the [Phase 2 progress
+log](03-Phase-2-Progress-Log.md).
+
+## F208 selected Sub Prep saved-content preferences port
+
+Migrate `ApplicationServicesSubPrepPreferencesPort` to the active open
+session's `SettingsRepository`. Preserve keys `subPrep/classMaterials`,
+`subPrep/bookReportGrading`, `subPrep/bookReportSpecialInstructions`, and
+`subPrep/subComments`; UTF-8 and whitespace; empty required text versus absent
+optional values (`nullopt`) and present empty strings; missing reads without
+materialization; and atomic four-key save, rollback, and unrelated settings.
+Preserve typed Technical unavailable/nonrecoverable save errors and repository
+read-error warning/default semantics. Add closed-session no-fallback coverage
+with `DataService` present and repository read-error coverage. Keep the typed
+interface and Sub Prep UI callers unchanged. Keep QtSql out of the UI-shared
+header; implement in `.cpp` and register under `ClassMngrFeatures` if needed.
+Focused target `ClassMngrNextPlatformApplicationServicesSubPrepPreferencesPortTests`
+(registered name `NextPlatformApplicationServicesSubPrepPreferencesPort`).
+Both Explorer scans agree on this candidate. F208 is selected; no F208 results
+are recorded.

@@ -62,7 +62,8 @@ source commit `dc489863`; F200 is accepted in source commit `ef603583`; F201
 is accepted in source commit `59133929`; F202 is accepted in source commit
 `c9ff5731`; F203 is accepted in source commit `4f128b01`; F204 is accepted in
 source commit `3cf2ab80`; F205 is accepted in source commit `bf9ca8a7`; F206 is
-accepted in source commit `7d0291d3`.
+accepted in source commit `7d0291d3`; F207 is accepted in source commit
+`12cb021a`.
 F196 and F197 use
 only the active open session's
 `SettingsRepository` and preserve their keys, conversions, defaults, and
@@ -98,22 +99,28 @@ formats, and warning behavior. Keeping database calls in a `.cpp` registered
 under `ClassMngrFeatures` avoids exposing QtSql headers through the shared UI
 header. Its focused adapter CTest and related ColorUtils CTest passed 1/1 each;
 source ownership and `git diff --check` passed. No full suite ran.
+F207 migrates the Sub Prep Personal Zoom reader and best-effort legacy-key
+migration to the active session repository. It preserves primary precedence,
+UTF-8 and `toBool()` conversion, defaults, unavailable errors, and successful
+legacy reads after failed migration writes. Its focused CTest passed 1/1 in the
+executor and independent run; source ownership validated 1,139 owners, and
+`git diff --check` passed. No full suite ran.
 
 F179-F195 advanced Sub Prep and Calendar repository boundaries and the
 preference-port migrations; individual scope and evidence remain in the
 [Phase 2 progress log](../plans/qt-rewrite-heavy-route-plan/03-Phase-2-Progress-Log.md).
-F207 is selected for `ApplicationServicesSubPrepPersonalZoomPreferencesPort`.
-Move reads and best-effort legacy migration writes to the active open session's
-`SettingsRepository`. Preserve the three primary keys and three legacy keys,
-primary precedence, legacy fallback/migration, UTF-8 and `QVariant::toBool()`
-conversion, `N/A`/true defaults, the typed Technical unavailable error, and a
-successful legacy result when a migration write fails. Add closed-session
-no-fallback coverage with `DataService` present and repository read-error
-coverage. Keep the typed interface and callers unchanged. Focused CTest:
-`ClassMngrNextPlatformApplicationServicesSubPrepPersonalZoomPreferencesPortTests`.
-The independent scans also surfaced the four-key Sub Prep saved-content port;
-Zoom was selected for its load-only contract, leaving the atomic aggregate
-write as a separate bounded slice. Gates 1 and 2 remain Partial.
+F208 is selected for `ApplicationServicesSubPrepPreferencesPort`, the only
+remaining `SettingsService`-backed preferences adapter under
+`src/next/platform`. Move load and save to the active open session's
+`SettingsRepository`, preserving exact keys, UTF-8 values, absent-versus-empty
+optional fields, missing-value defaults without materialization, the atomic
+four-key save and rollback, unrelated settings, and typed Technical errors.
+Add closed-session no-fallback coverage with `DataService` present and
+repository read-error/default coverage. Keep the typed interface and Sub Prep
+page callers unchanged; keep QtSql headers out of the UI-shared header. Focused
+CTest: `ClassMngrNextPlatformApplicationServicesSubPrepPreferencesPortTests`.
+Two independent scans selected this four-key saved-content aggregate after
+F207 closed the Personal Zoom reader. Gates 1 and 2 remain Partial.
 
 ### Earlier Phase 2 detail - 2026-09-26
 

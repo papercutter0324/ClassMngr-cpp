@@ -7,10 +7,11 @@
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-01
 - Current milestone: Phase 2 remains in progress. F204 (Class Day Filter Reset
-  Policy), F205 (Class Selection Reset Policy), and F206 (Custom Color Palette
-  preferences) are accepted; F207 (Sub Prep Personal Zoom preferences) is the
-  current slice. Gates 1 and 2 remain Partial, with broader feature migration,
-  and 96-class Release memory evidence still open. See the
+  Policy), F205 (Class Selection Reset Policy), F206 (Custom Color Palette
+  preferences), and F207 (Sub Prep Personal Zoom preferences) are accepted;
+  F208 (Sub Prep saved-content preferences) is the current slice. Gates 1 and 2
+  remain Partial, with broader feature migration, parity, and 96-class Release
+  memory evidence still open. See the
   [Phase 2 progress log](03-Phase-2-Progress-Log.md) for current scope and
   acceptance evidence.
 - Current blocker: official Phase 1 targets are Windows x64 and macOS

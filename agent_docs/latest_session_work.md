@@ -4513,3 +4513,28 @@ coverage. Keep callers and the typed contract unchanged. Focused CTest:
 The four-key saved-content port remains a separate candidate. Phase 2 remains
 In Progress/Open; Gates 1 and 2 remain Partial. Next: implement F207,
 independently verify and commit it, then select F208.
+
+## 2026-10-01 — F207 accepted; F208 selected
+
+F207 source commit `12cb021a` migrates
+`ApplicationServicesSubPrepPersonalZoomPreferencesPort` to the active open
+session's `SettingsRepository`. It preserves all three primary and legacy key
+pairs, primary precedence, fallback and best-effort migration, UTF-8 and
+`toBool()` conversion, `N/A`/true defaults, typed Technical unavailability,
+and successful legacy results after migration-write failure. The focused CTest
+passed 1/1 in both executor and independent runs. Source ownership validated
+1,139 owners; `git diff --check` passed. No full suite ran.
+
+Both independent Explorer scans selected F208:
+`ApplicationServicesSubPrepPreferencesPort`, the only remaining
+`SettingsService`-backed preferences adapter under `src/next/platform`. Move
+load and save to the active open session's `SettingsRepository`. Preserve the
+four exact keys, UTF-8 and whitespace, absent-versus-empty optional values,
+missing-value defaults without materialization, atomic save/rollback,
+unrelated settings, and typed Technical errors. Add closed-session
+no-fallback coverage with `DataService` present and repository read-error/
+default coverage. Keep the typed interface and callers unchanged, and keep
+QtSql headers out of the shared UI header. Focused CTest:
+`ClassMngrNextPlatformApplicationServicesSubPrepPreferencesPortTests`.
+Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial. Next:
+implement F208, independently verify and commit it, then select F209.

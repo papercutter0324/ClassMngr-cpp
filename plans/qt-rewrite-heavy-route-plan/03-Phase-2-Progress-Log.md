@@ -8314,7 +8314,7 @@ fields/schedule/teacher/count/fallback parity. F167 implementation has not
 started. Gate 1 and Gate 2 remain Partial; Phase 2 remains In Progress and its
 exit gate remains Open.
 
-### Progress update - 2026-10-01 (F206 accepted; F207 selected)
+### Progress update - 2026-10-01 (F207 accepted; F208 selected)
 
 F167, source commit `97efac8b`, updates
 `ApplicationServicesClassDetailsPageReadPort` to use active-session
@@ -8833,25 +8833,33 @@ executor and independent run; independent
 `ClassMngrColorUtilsCustomColorPaletteTests` passed 1/1. The source owner check
 validated 1,138 owners. `git diff --check` passed; no full suite ran.
 
-F207 is selected for `ApplicationServicesSubPrepPersonalZoomPreferencesPort`.
-Migrate reads and best-effort legacy migration writes to the active open
-session's `SettingsRepository`. Preserve primary keys `myInfo/zoomLoginId`,
-`myInfo/zoomPassword`, `myInfo/zoomNotAvailable`; legacy keys
-`subPrep/personalZoomEmail`, `subPrep/personalZoomPassword`,
-`subPrep/personalZoomNotAvailable`; primary precedence; legacy fallback and
-best-effort migration; UTF-8 and `QVariant::toBool()`; `N/A`/true defaults;
-the typed Technical unavailable error; success with legacy data when migration
-save fails; and no closed-session `DataService` fallback. Add closed-session
-no-fallback coverage with `DataService` present and repository read-error/
-default coverage. Keep the typed interface and callers unchanged. Focused CTest
-`ClassMngrNextPlatformApplicationServicesSubPrepPersonalZoomPreferencesPortTests`
-is registered as `NextPlatformApplicationServicesSubPrepPersonalZoomPreferencesPort`.
+F207, source commit `12cb021a`, migrates
+`ApplicationServicesSubPrepPersonalZoomPreferencesPort` to the active open
+session's `SettingsRepository`. It preserves the primary keys
+`myInfo/zoomLoginId`, `myInfo/zoomPassword`, and `myInfo/zoomNotAvailable`,
+legacy keys `subPrep/personalZoomEmail`, `subPrep/personalZoomPassword`, and
+`subPrep/personalZoomNotAvailable`, primary precedence, legacy fallback and
+best-effort migration writes, UTF-8, `QVariant::toBool()`, `N/A`/true defaults,
+the typed Technical unavailable error, successful legacy results when
+migration saves fail, and no closed-session `DataService` fallback. Focused
+CTest passed 1/1 in executor and independent runs. Source ownership validated
+1,139 owners. `git diff --check` passed; no full suite ran.
 
-The two Explorer scans differed: one preferred this narrower load-only contract
-over the broader four-key atomic `ApplicationServicesSubPrepPreferencesPort`;
-the other preferred Sub Prep saved-content preferences over Zoom. Zoom was
-selected for its load-only typed contract, leaving the four-key transactional
-write for a later bounded slice. F207 is selected; no F207 results are
-recorded. Gate 1 and Gate 2 remain Partial; Phase 2 remains In Progress with
-its exit gate Open. Next continuation: implement and verify F207 against this
-contract.
+F208 is selected for `ApplicationServicesSubPrepPreferencesPort`, the only
+remaining `SettingsService`-backed preference adapter in `src/next/platform`.
+Migrate it to the active open session's `SettingsRepository`. Preserve exact
+keys `subPrep/classMaterials`, `subPrep/bookReportGrading`,
+`subPrep/bookReportSpecialInstructions`, and `subPrep/subComments`; UTF-8 and
+whitespace; empty absent required text, absent optional text as `nullopt` versus
+present empty strings; missing reads without materialization; atomic four-key
+save/rollback and unrelated settings; typed Technical unavailable and
+nonrecoverable save errors; repository read-error warning/default semantics.
+Add closed-session no-fallback coverage with `DataService` present and
+repository read-error coverage. Keep the typed interface and Sub Prep UI
+callers unchanged; keep QtSql out of the UI-shared header, implement in `.cpp`,
+and register under `ClassMngrFeatures` if needed. Focused target
+`ClassMngrNextPlatformApplicationServicesSubPrepPreferencesPortTests`
+(registered name `NextPlatformApplicationServicesSubPrepPreferencesPort`).
+Both Explorer scans agree on this saved-content candidate. F208 is selected;
+no F208 results are recorded. Gates 1 and 2 remain Partial; Phase 2 remains In
+Progress/Open. Next continuation: implement and verify F208, then select F209.

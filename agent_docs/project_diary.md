@@ -1797,3 +1797,8 @@ When a UI-shared header consumes a persistence adapter, keep database headers
 out of that header: forward-declare `DatabaseSession` and move repository calls
 to a `.cpp` owned by the existing QtSql-enabled feature target. This preserves
 the UI compile boundary without widening its Qt dependencies.
+
+When a preference reader falls back from a primary key to a legacy key, keep
+the legacy value as the successful result even if best-effort migration of that
+value to the primary key fails. Check session openness before trying either
+key so the compatibility facade cannot supply a closed-session fallback.
