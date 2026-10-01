@@ -1,9 +1,11 @@
 #include "app/services/feature_services.h"
 #include "core/application_services.h"
 #include "data/data_service.h"
+#include "data/database/database_session.h"
 #include "next/application/speaking_evaluation_save_use_case.h"
 #include "next/platform/application_services_speaking_evaluation_save_port.h"
 
+#include <QSqlQuery>
 #include <QTemporaryDir>
 #include <QUuid>
 #include <QtTest/QtTest>
@@ -25,6 +27,21 @@ QString databasePath(QTemporaryDir& directory)
             QUuid::createUuid().toString(QUuid::WithoutBraces)
             )
         );
+}
+
+bool executeSql(
+    ApplicationServices& services,
+    const QString& statement
+    )
+{
+    DatabaseSession* const session = services.databaseSession();
+    if (!session || !session->isOpen())
+    {
+        return false;
+    }
+
+    QSqlQuery query(session->database());
+    return query.exec(statement);
 }
 
 Application::SpeakingEvaluationSaveRequest request(const int classId)
@@ -71,6 +88,9 @@ class NextPlatformApplicationServicesSpeakingEvaluationSavePortTests final
 
 private slots:
     void savesCompleteMatrixAndAppliesExactChangedCellDelta();
+    void normalizesNameAndScoreAliasBeforePersisting();
+    void validationRejectsInvalidRowsBeforePersistence();
+    void repositoryWriteFailureMapsTechnicalAndRollsBack();
     void forwardsQuestionableKoreanNameDecision();
     void closedSessionFailsWithoutDataServiceFallback();
 };
@@ -135,6 +155,168 @@ savesCompleteMatrixAndAppliesExactChangedCellDelta()
     QVERIFY(updated->at(0).at(10).isEmpty());
     QCOMPARE(updated->at(3).at(10), QStringLiteral("Updated listed note"));
     QCOMPARE(updated->at(24).at(10), QStringLiteral("Last row"));
+}
+
+void NextPlatformApplicationServicesSpeakingEvaluationSavePortTests::
+normalizesNameAndScoreAliasBeforePersisting()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+
+    const auto createdClass = services.classService()->create(
+        QStringLiteral("Speaking Evaluation Normalization Test")
+        );
+    QVERIFY(createdClass);
+
+    Application::SpeakingEvaluationSaveRequest saveRequest = request(*createdClass);
+    saveRequest.evaluationName = u"  Alias Review  ";
+    saveRequest.evaluation.rows[0][3] = u" 5 ";
+
+    Platform::ApplicationServicesSpeakingEvaluationSavePort port(services);
+    const auto saved = Application::SpeakingEvaluationSaveUseCase::execute(
+        saveRequest,
+        port
+        );
+    QVERIFY2(
+        saved,
+        qPrintable(saved ? QString() : QString::fromStdString(saved.error().message))
+        );
+
+    const auto persisted = services.speakingEvaluationService()->evaluation(
+        *createdClass,
+        QStringLiteral("Alias Review")
+        );
+    QVERIFY(persisted);
+    QCOMPARE(persisted->size(), 25);
+    QCOMPARE(persisted->at(0).at(3), QStringLiteral("A+"));
+}
+
+void NextPlatformApplicationServicesSpeakingEvaluationSavePortTests::
+validationRejectsInvalidRowsBeforePersistence()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+
+    const auto createdClass = services.classService()->create(
+        QStringLiteral("Speaking Evaluation Validation Test")
+        );
+    QVERIFY(createdClass);
+
+    Platform::ApplicationServicesSpeakingEvaluationSavePort port(services);
+
+    auto invalidNew = request(*createdClass);
+    invalidNew.evaluationName = u"Invalid New Evaluation";
+    invalidNew.evaluation.rows[0][3] = u"Not a score";
+    const auto rejectedNew = Application::SpeakingEvaluationSaveUseCase::execute(
+        invalidNew,
+        port
+        );
+    QVERIFY(!rejectedNew);
+    QCOMPARE(rejectedNew.error().code, Domain::ErrorCode::Technical);
+    QVERIFY(!rejectedNew.error().recoverable);
+
+    const auto absentEvaluation = services.speakingEvaluationService()->evaluation(
+        *createdClass,
+        QStringLiteral("Invalid New Evaluation")
+        );
+    QVERIFY(absentEvaluation);
+    QVERIFY(absentEvaluation->isEmpty());
+
+    auto validExisting = request(*createdClass);
+    validExisting.evaluationName = u"Existing Evaluation";
+    const auto savedExisting = Application::SpeakingEvaluationSaveUseCase::execute(
+        validExisting,
+        port
+        );
+    QVERIFY(savedExisting);
+    const auto beforeUpdate = services.speakingEvaluationService()->evaluation(
+        *createdClass,
+        QStringLiteral("Existing Evaluation")
+        );
+    QVERIFY(beforeUpdate);
+
+    auto invalidUpdate = validExisting;
+    invalidUpdate.evaluation.rows[0][3] = u"Not a score";
+    invalidUpdate.evaluation.changedCells = {{0, 3}};
+    const auto rejectedUpdate = Application::SpeakingEvaluationSaveUseCase::execute(
+        invalidUpdate,
+        port
+        );
+    QVERIFY(!rejectedUpdate);
+    QCOMPARE(rejectedUpdate.error().code, Domain::ErrorCode::Technical);
+    QVERIFY(!rejectedUpdate.error().recoverable);
+
+    const auto afterUpdate = services.speakingEvaluationService()->evaluation(
+        *createdClass,
+        QStringLiteral("Existing Evaluation")
+        );
+    QVERIFY(afterUpdate);
+    QCOMPARE(*afterUpdate, *beforeUpdate);
+}
+
+void NextPlatformApplicationServicesSpeakingEvaluationSavePortTests::
+repositoryWriteFailureMapsTechnicalAndRollsBack()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+
+    const auto createdClass = services.classService()->create(
+        QStringLiteral("Speaking Evaluation Repository Failure Test")
+        );
+    QVERIFY(createdClass);
+
+    Platform::ApplicationServicesSpeakingEvaluationSavePort port(services);
+    auto saveRequest = request(*createdClass);
+    saveRequest.evaluationName = u"Rollback Evaluation";
+    const auto initialSave = Application::SpeakingEvaluationSaveUseCase::execute(
+        saveRequest,
+        port
+        );
+    QVERIFY(initialSave);
+
+    const auto beforeFailure = services.speakingEvaluationService()->evaluation(
+        *createdClass,
+        QStringLiteral("Rollback Evaluation")
+        );
+    QVERIFY(beforeFailure);
+    QCOMPARE(beforeFailure->size(), 25);
+    QCOMPARE(beforeFailure->at(0).at(3), QStringLiteral("A+"));
+
+    QVERIFY(executeSql(
+        services,
+        QStringLiteral(R"(
+            CREATE TRIGGER fail_speaking_evaluation_cell_update
+            BEFORE UPDATE ON speaking_eval_data
+            WHEN OLD.row_index = 0 AND NEW.col_3 = 'C'
+            BEGIN
+                SELECT RAISE(ABORT, 'forced speaking evaluation write failure');
+            END
+        )")
+        ));
+
+    saveRequest.evaluation.rows[0][3] = u"1";
+    saveRequest.evaluation.changedCells = {{0, 3}};
+    const auto rejectedSave = Application::SpeakingEvaluationSaveUseCase::execute(
+        saveRequest,
+        port
+        );
+    QVERIFY(!rejectedSave);
+    QCOMPARE(rejectedSave.error().code, Domain::ErrorCode::Technical);
+    QVERIFY(!rejectedSave.error().recoverable);
+    QVERIFY(!rejectedSave.error().message.empty());
+
+    const auto afterFailure = services.speakingEvaluationService()->evaluation(
+        *createdClass,
+        QStringLiteral("Rollback Evaluation")
+        );
+    QVERIFY(afterFailure);
+    QCOMPARE(*afterFailure, *beforeFailure);
 }
 
 void NextPlatformApplicationServicesSpeakingEvaluationSavePortTests::
