@@ -70,6 +70,7 @@ private slots:
     void classTabsSortByLevelThenDay();
     void duplicateLabelsAreDisambiguated();
     void dayFilterLeavesAllClassesVisibleWhenEmpty();
+    void dayFilterNormalizesRawQtDayValues();
     void dayFilterMatchesAnySelectedRegularDay();
     void weekendDayFilterMatchesSaturdayAndSunday();
     void dayFilterUsesSelectedScheduleSource();
@@ -390,6 +391,69 @@ void ClassTabNavigationTests::dayFilterLeavesAllClassesVisibleWhenEmpty()
             );
 
     QCOMPARE(classIds(model), QList<int>({1, 2}));
+}
+
+void ClassTabNavigationTests::dayFilterNormalizesRawQtDayValues()
+{
+    const QList<ClassTabNavigation::ClassEntry> entries{
+        classEntry(
+            1,
+            QStringLiteral("E4"),
+            QStringLiteral("Perseus"),
+            {classTime(QStringLiteral("\u00A0mOnDaY\t"), QStringLiteral("4:00 PM"))}
+            ),
+        classEntry(
+            2,
+            QStringLiteral("E5"),
+            QStringLiteral("Apollo")
+            ),
+        classEntry(
+            3,
+            QStringLiteral("M1"),
+            QStringLiteral("Solis"),
+            {classTime(QStringLiteral(" Holiday "), QStringLiteral("4:00 PM"))}
+            )
+    };
+
+    ClassTabNavigation::DayFilter filter;
+    filter.selectedDays = {QStringLiteral(" \tMoNdAy\u00A0")};
+
+    const ClassTabNavigation::Model mondayModel =
+        ClassTabNavigation::build(
+            entries,
+            ClassTabNavigation::GroupingPolicy::AlwaysGradeGrouped,
+            filter
+            );
+    QCOMPARE(classIds(mondayModel), QList<int>({1}));
+
+    filter.selectedDays = {QStringLiteral(" \t\u00A0 ")};
+    const ClassTabNavigation::Model whitespaceFilterModel =
+        ClassTabNavigation::build(
+            entries,
+            ClassTabNavigation::GroupingPolicy::AlwaysGradeGrouped,
+            filter
+            );
+    QCOMPARE(classIds(whitespaceFilterModel).size(), 3);
+
+    filter.visibilityScope = ClassTabNavigation::VisibilityScope::ActiveSchedule;
+    const ClassTabNavigation::Model activeWhitespaceFilterModel =
+        ClassTabNavigation::build(
+            entries,
+            ClassTabNavigation::GroupingPolicy::AlwaysGradeGrouped,
+            filter
+            );
+    QCOMPARE(classIds(activeWhitespaceFilterModel).size(), 2);
+    QVERIFY(!classIds(activeWhitespaceFilterModel).contains(2));
+
+    filter.visibilityScope = ClassTabNavigation::VisibilityScope::AllClasses;
+    filter.selectedDays = {QStringLiteral(" hOLIDAY ")};
+    const ClassTabNavigation::Model unknownDayModel =
+        ClassTabNavigation::build(
+            entries,
+            ClassTabNavigation::GroupingPolicy::AlwaysGradeGrouped,
+            filter
+            );
+    QCOMPARE(classIds(unknownDayModel), QList<int>({3}));
 }
 
 void ClassTabNavigationTests::dayFilterMatchesAnySelectedRegularDay()

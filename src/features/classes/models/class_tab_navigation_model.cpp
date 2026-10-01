@@ -1,10 +1,14 @@
 #include "class_tab_navigation_model.h"
 
 #include "features/classes/config/class_info_config.h"
+#include "next/application/class_day_filter_policy.h"
 
 #include <algorithm>
+#include <string>
 #include <utility>
+#include <vector>
 
+#include <QByteArray>
 #include <QObject>
 #include <QTime>
 
@@ -359,16 +363,6 @@ const QList<ClassTime>& preferredTimes(
         : entry.regularTimes;
 }
 
-const QList<ClassTime>& timesForFilter(
-    const ClassTabNavigation::ClassEntry& entry,
-    ClassTabNavigation::ScheduleSource scheduleSource
-    )
-{
-    return scheduleSource == ClassTabNavigation::ScheduleSource::Intensive
-        ? entry.intensiveTimes
-        : entry.regularTimes;
-}
-
 QString normalizedDay(
     const QString& day
     )
@@ -376,66 +370,66 @@ QString normalizedDay(
     return day.trimmed().toCaseFolded();
 }
 
-QSet<QString> expandedFilterDays(
-    const ClassTabNavigation::DayFilter& dayFilter
+std::vector<std::string> normalizedDayKeys(
+    const QSet<QString>& days
     )
 {
-    QSet<QString> result;
+    std::vector<std::string> result;
+    result.reserve(static_cast<std::size_t>(days.size()));
 
-    for (const QString& day : dayFilter.selectedDays)
+    for (const QString& day : days)
     {
-        const QString normalized = normalizedDay(day);
-
-        if (normalized == QStringLiteral("wkend")
-            || normalized == QStringLiteral("weekend"))
-        {
-            result.insert(QStringLiteral("saturday"));
-            result.insert(QStringLiteral("sunday"));
-            continue;
-        }
-
-        if (!normalized.isEmpty())
-        {
-            result.insert(normalized);
-        }
+        result.push_back(normalizedDay(day).toUtf8().toStdString());
     }
 
     return result;
 }
 
-bool matchesDayFilter(
-    const ClassTabNavigation::ClassEntry& entry,
+std::vector<std::string> normalizedDayKeys(
+    const QList<ClassTime>& times
+    )
+{
+    std::vector<std::string> result;
+    result.reserve(static_cast<std::size_t>(times.size()));
+    for (const ClassTime& time : times)
+    {
+        result.push_back(normalizedDay(time.day).toUtf8().toStdString());
+    }
+    return result;
+}
+
+ClassMngr::Next::Application::ClassDayFilterPolicy applicationDayFilter(
     const ClassTabNavigation::DayFilter& dayFilter
     )
 {
-    const QList<ClassTime>& scheduleTimes =
-        timesForFilter(entry, dayFilter.scheduleSource);
+    return {
+        .selectedDayKeys = normalizedDayKeys(dayFilter.selectedDays),
+        .scheduleSource = dayFilter.scheduleSource
+                == ClassTabNavigation::ScheduleSource::Intensive
+            ? ClassMngr::Next::Application::ClassDayScheduleSource::Intensive
+            : ClassMngr::Next::Application::ClassDayScheduleSource::Regular,
+        .visibilityScope = dayFilter.visibilityScope
+                == ClassTabNavigation::VisibilityScope::ActiveSchedule
+            ? ClassMngr::Next::Application::ClassDayVisibilityScope::
+                  ActiveSchedule
+            : ClassMngr::Next::Application::ClassDayVisibilityScope::
+                  AllClasses
+    };
+}
 
-    if (
-        dayFilter.visibilityScope
-            == ClassTabNavigation::VisibilityScope::ActiveSchedule
-        && scheduleTimes.isEmpty()
-        )
-    {
-        return false;
-    }
-
-    const QSet<QString> selectedDays = expandedFilterDays(dayFilter);
-
-    if (selectedDays.isEmpty())
-    {
-        return true;
-    }
-
-    for (const ClassTime& time : scheduleTimes)
-    {
-        if (selectedDays.contains(normalizedDay(time.day)))
-        {
-            return true;
-        }
-    }
-
-    return false;
+bool matchesDayFilter(
+    const ClassTabNavigation::ClassEntry& entry,
+    const ClassMngr::Next::Application::ClassDayFilterPolicy& dayFilter
+    )
+{
+    const ClassMngr::Next::Application::ClassDayScheduleDays schedule{
+        .regularDayKeys = normalizedDayKeys(entry.regularTimes),
+        .intensiveDayKeys = normalizedDayKeys(entry.intensiveTimes)
+    };
+    return ClassMngr::Next::Application::classDayFilterMatches(
+        dayFilter,
+        schedule
+        );
 }
 
 QList<ClassTabNavigation::ClassEntry> filteredEntries(
@@ -444,10 +438,11 @@ QList<ClassTabNavigation::ClassEntry> filteredEntries(
     )
 {
     QList<ClassTabNavigation::ClassEntry> result;
+    const auto policyFilter = applicationDayFilter(dayFilter);
 
     for (const ClassTabNavigation::ClassEntry& entry : entries)
     {
-        if (matchesDayFilter(entry, dayFilter))
+        if (matchesDayFilter(entry, policyFilter))
         {
             result.append(entry);
         }

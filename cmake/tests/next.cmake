@@ -31,6 +31,37 @@ add_test(
     COMMAND ClassMngrNextApplicationEvaluationDefaultSelectionTests
 )
 
+# Keep class day matching independent of Qt and the feature runtime.
+add_executable(
+    ClassMngrNextApplicationClassDayFilterPolicyTests
+    tests/next_application_class_day_filter_policy_tests.cpp
+)
+target_compile_features(
+    ClassMngrNextApplicationClassDayFilterPolicyTests
+    PRIVATE
+        cxx_std_23
+)
+set_target_properties(
+    ClassMngrNextApplicationClassDayFilterPolicyTests
+    PROPERTIES
+        AUTOMOC OFF
+        AUTOUIC OFF
+        AUTORCC OFF
+)
+set_property(
+    TARGET ClassMngrNextApplicationClassDayFilterPolicyTests
+    PROPERTY CLASSMNGR_STANDALONE_CPP_TEST TRUE
+)
+target_link_libraries(
+    ClassMngrNextApplicationClassDayFilterPolicyTests
+    PRIVATE
+        ClassMngrNext::Application
+)
+add_test(
+    NAME ClassMngrNextApplicationClassDayFilterPolicyTests
+    COMMAND ClassMngrNextApplicationClassDayFilterPolicyTests
+)
+
 classmngr_add_qt_test(
     NAME NextPlatformQSettingsFileDialogDirectoryPreferencesAdapter
     SOURCES

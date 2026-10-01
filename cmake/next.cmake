@@ -144,6 +144,7 @@ set(CLASSMNGR_NEXT_APPLICATION_SOURCES
     src/next/application/file_dialog_directory_preferences.h
     src/next/application/language_preferences_port.h
     src/next/application/upcoming_birthday_dismissal_port.h
+    src/next/application/class_day_filter_policy.h
     src/next/application/class_day_filter_reset_policy.h
     src/next/application/class_selection_reset_policy.h
     src/next/application/class_visibility_preferences.h
