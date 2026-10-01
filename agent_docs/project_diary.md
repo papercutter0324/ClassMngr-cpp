@@ -1910,8 +1910,17 @@ candidate basics are checked before any meeting-pattern or color rule.
 ## 2026-10-02 - F221 Schedule Import snapshot reads
 
 Use the existing typed schedule-state snapshot as the payload for an
-Application read query and active-session Platform adapter. Keep dialog
-presentation lookups and repository apply-time validation separate. Missing
-sessions and read failures must surface explicitly without falling back to
-legacy services, and the repository remains authoritative if state changes
-after review.
+Application read query and active-session Platform adapter. The dialog refresh
+also uses this one typed snapshot for projection and conflict labels, avoiding
+mixed-source reads while it evaluates the user's resolutions. Preserve class
+order by mapping aggregate class details back to the active repository's class
+list. Missing sessions and read failures surface explicitly without legacy
+fallback, and the repository remains authoritative if state changes after
+review.
+
+## 2026-10-02 - F222 Schedule Import resolution choices
+
+Keep control construction in the feature UI while moving existing teacher and
+class choice reads onto the typed snapshot. Preserve option ordering and
+eligibility behavior, and keep schedule preview and apply-time validation in
+their current owners so the read-boundary migration stays isolated.

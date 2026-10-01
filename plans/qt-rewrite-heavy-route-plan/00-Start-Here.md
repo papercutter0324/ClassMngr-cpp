@@ -13,11 +13,12 @@
   F210 (recent-workspace history policy), F211 (speaking-evaluation read-port
   extraction), F212 (upcoming-birthday schedule policy), F213 (default
   evaluation selection), and F214 (class day-filter matching policy) are
-  accepted. F215 (automatic-update startup eligibility) and F216
-  (skipped-update-version policy), F217 (roster-score import), and F218
+  accepted. F215 (automatic-update startup eligibility), F216
+  (skipped-update-version policy), F217 (roster-score import), F218
   (Speaking Evaluation class-tab read integration), F219 (Schedule Import
-  live-state validation), and F220 (Schedule Import plan eligibility policy)
-  are accepted. F221 (typed Schedule Import current-state snapshot read) is
+  live-state validation), F220 (Schedule Import plan eligibility policy), and
+  F221 (typed Schedule Import current-state snapshot read) are accepted.
+  F222 (Schedule Import resolution choices from the typed snapshot) is
   selected. Gates 1 and 2 remain Partial, with broader feature migration,
   parity, and 96-class Release memory evidence still open. See the
   [Phase 2 progress log](03-Phase-2-Progress-Log.md) for current scope and

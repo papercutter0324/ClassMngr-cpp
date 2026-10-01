@@ -70,7 +70,8 @@ accepted in source commit `2347739c`; F212 is accepted in source commit
 source commit `9e03e668`; F215 is accepted in source commit `68ef5962`; F216
 is accepted in source commit `23dc6c2b`; F217 is accepted in source commit
 `b587a6d5`; F218 is accepted in source commit `9bb936ee`; F219 is accepted
-in source commit `57aefadf`; F220 is accepted in source commit `4a87ab1e`.
+in source commit `57aefadf`; F220 is accepted in source commit `4a87ab1e`;
+F221 is accepted in source commit `ec65c0c6`.
 F196 and F197 use
 only the active open session's
 `SettingsRepository` and preserve their keys, conversions, defaults, and
@@ -259,17 +260,30 @@ multi-candidate basic-check precedence. The app-less eligibility target and
 `ClassMngrScheduleImportTests` passed 2/2; `git diff --check` passed. No full
 suite ran.
 
-F221 is selected to add a typed Application query and Platform adapter for the
-live Schedule Import current-state snapshot used by F219 review readiness.
-Migrate only the snapshot source in `ScheduleImportReviewDialog::updateReviewState()`;
-preserve identity/data semantics and status priority, keep resolution-control
-presentation reads and repository apply-time validation in place, and report
-absent-session/read failures without legacy-service fallback. Cover app-less
-success/error results, active-session Platform mapping and failure behavior,
-dialog preflight integration, and `ClassMngrScheduleImportTests`. The dialog
-target's three baseline failures remain documented from F218/F219 and are not
-claimed as passing. This continues Gate 1; Gate 2 remains Partial. Phase 2
-remains In Progress/Open.
+F221 source commit `ec65c0c6` adds a Qt-free Application current-state
+snapshot query and active-session Platform adapter for Schedule Import review.
+The dialog uses the typed snapshot for readiness, validation, conflict labels,
+schedule preservation, preview projection, and cleared-schedule counts; it
+preserves repository ordering and has no legacy-service fallback. Application
+snapshot, Platform snapshot, and `ClassMngrScheduleImportTests` passed.
+`ClassMngrScheduleImportDialogTests` reported 23 passed/3 failed; its only
+failures are the same F218/F219 baseline cases:
+`acceptedReviewCanTearDownSourceDialog`,
+`mismatchedProfileRequiresConfirmation`, and
+`reviewPreviewUsesSavedScheduleDisplaySettings`. Both new dialog tests passed.
+`git diff --check` passed; no full suite ran.
+
+F222 is selected to populate Schedule Import resolution controls from the F221
+typed snapshot, removing their existing teacher/class service reads while
+keeping widget construction in the feature UI. Preserve choice ordering,
+labels, room matching, suggested/exact and supplemental eligible-class choices,
+action data, and defaults. Keep `scheduleImportClassOptionIsEligible()`,
+`ScheduleService::previewImport()`, and repository apply validation in their
+current owners. Snapshot failures must remain explicit without legacy fallback
+or partial controls. Acceptance covers dialog choice contents/order/defaults
+and failure behavior, plus the existing snapshot and apply-time targets. The
+three dialog baseline failures remain tracked; do not claim the target passes.
+This continues Gate 1; Gate 2 remains Partial. Phase 2 remains In Progress/Open.
 
 ### Earlier Phase 2 detail - 2026-09-26
 

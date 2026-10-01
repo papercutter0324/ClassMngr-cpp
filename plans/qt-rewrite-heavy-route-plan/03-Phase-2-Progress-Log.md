@@ -9204,3 +9204,32 @@ coverage. `ClassMngrScheduleImportDialogTests` has the same three baseline
 failures confirmed at F218 and F219 (18/3 and 21/3); don't claim it passes and
 compare baseline if used. Phase 2 remains In Progress/Open; Gates 1 and 2
 remain Partial.
+
+### Progress update - 2026-10-02 (F221 accepted; F222 selected)
+
+F221, source commit `ec65c0c6`, adds the Qt-free Application current-state
+snapshot query and active-session Platform adapter. Schedule Import review
+state now uses the typed snapshot for validation/readiness, conflict labels,
+schedule preservation, preview projection, and cleared counts. Repository
+class/teacher order is preserved, with no legacy fallback. Focused Application
+snapshot, Platform snapshot, and `ClassMngrScheduleImportTests` CTests passed.
+`ClassMngrScheduleImportDialogTests` passed 23 and failed the same three
+baseline cases: `acceptedReviewCanTearDownSourceDialog`,
+`mismatchedProfileRequiresConfirmation`, and
+`reviewPreviewUsesSavedScheduleDisplaySettings`; both new dialog tests passed.
+`git diff --check` passed; no full suite ran. F221 advances Gate 1; Gate 2
+remains Partial.
+
+F222 is selected: populate Schedule Import resolution controls from the F221
+typed snapshot, removing `ClassService` and `TeacherService` reads from choice
+construction while retaining widget creation and presentation in the feature
+UI. Preserve choice order, labels, room matching, suggested/exact and
+supplemental eligible class choices, and action data/defaults. Keep
+`scheduleImportClassOptionIsEligible()`, `ScheduleService::previewImport()`,
+matching semantics, and repository apply validation with their current
+owners. Snapshot failure must be explicit, with no legacy fallback or partial
+controls. Acceptance covers option contents/order/defaults and failure cases;
+reruns the Application and Platform snapshot targets plus
+`ClassMngrScheduleImportTests`; and compares dialog results with the documented
+baseline without claiming a pass if the same three failures remain. Phase 2
+remains In Progress/Open; Gates 1 and 2 remain Partial.
