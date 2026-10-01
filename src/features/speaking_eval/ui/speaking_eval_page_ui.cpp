@@ -589,12 +589,7 @@ void SpeakingEvalPage::updateHeaderText()
 
     const QString sidebarName =
         sidebarClassDisplayName(
-            m_services
-                ? m_services->classService()
-                : nullptr,
-            m_services
-                ? m_services->teacherService()
-                : nullptr,
+            m_services,
             m_classroom.id
             );
 

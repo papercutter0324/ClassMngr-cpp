@@ -1,16 +1,25 @@
 #include "app/services/feature_services.h"
 #include "core/application_services.h"
+#include "core/utils/sidebar_node_naming.h"
 #include "data/database/database_session.h"
+#include "data/repositories/class_info_repository.h"
+#include "domain/models/class_info.h"
 #include "domain/models/classroom.h"
 #include "domain/models/speaking_evaluation.h"
+#include "domain/models/teacher.h"
 #include "features/speaking_eval/ui/speaking_eval_model.h"
 #include "features/speaking_eval/ui/speaking_eval_page.h"
 #include "features/speaking_eval/ui/speaking_eval_table_view.h"
 #include "fakes/fake_user_prompt_service.h"
+#include "next/application/class_visibility_preferences.h"
+#include "next/platform/application_services_class_visibility_preferences_port.h"
 #include "ui/shared/dialogs/user_prompt_service.h"
 #include "ui/shared/pages/autosave_coordinator.h"
+#include "ui/shared/pages/page_header.h"
 #include "ui/shared/widgets/navigation_tab_widget.h"
 
+#include <QCoreApplication>
+#include <QEvent>
 #include <QSignalSpy>
 #include <QPushButton>
 #include <QTemporaryDir>
@@ -111,6 +120,12 @@ private slots:
     void automaticSavePersistsMatrixWithoutInteractiveNotices();
     void manualValidationAndConfirmedSaveKeepTheirCurrentTiming();
     void failedClassAndEvaluationSwitchesRestoreTheCurrentSelection();
+    void classTabsKeepOrderAndSelectedClass();
+    void headerSubtitlePreservesClassAndTeacherDisplayMetadata();
+    void scheduleModesAndVisibilityScopeFilterNavigationTabs();
+    void unavailableClassListClearsThePageWithoutWarning();
+    void failedClassListWarnsAndDisablesEditing();
+    void failedNavigationReadKeepsNameOnlyTabs();
     void successfulLoadPreservesOrderedUnicodeMatrixAndCleanState();
     void emptyReadFallsBackToBlankGridAndCleanState();
     void failedReadFallsBackToBlankGridAndCleanState();
@@ -312,6 +327,443 @@ failedClassAndEvaluationSwitchesRestoreTheCurrentSelection()
         SpeakingEval::toInt(SpeakingEvalColumn::EnglishName)
         )).toString(), QStringLiteral("Alice"));
     QCOMPARE(prompts.messages.size(), 2);
+}
+
+void SpeakingEvalPageSaveTests::
+classTabsKeepOrderAndSelectedClass()
+{
+    SpeakingEvalPageFixture fixture;
+    QString error;
+    QVERIFY2(fixture.initialize(3, &error), qPrintable(error));
+
+    const QStringList names{
+        QStringLiteral("Zulu Class"),
+        QStringLiteral("Alpha Class"),
+        QStringLiteral("Middle Class")
+    };
+    for (int index = 0; index < names.size(); ++index)
+    {
+        QVERIFY(fixture.services.classService()->rename(
+            fixture.classIds.at(index),
+            names.at(index)
+            ));
+    }
+    ClassMngr::Next::Platform::
+        ApplicationServicesClassVisibilityPreferencesPort(fixture.services)
+            .save(ClassMngr::Next::Application::ClassVisibilityScope::AllClasses);
+
+    SpeakingEvalPage page(&fixture.services);
+    page.loadEvaluations();
+
+    auto* classTabs = page.findChild<NavigationTabWidget*>(
+        QStringLiteral("speakingEvalClassTabs")
+        );
+    QVERIFY(classTabs);
+    QCOMPARE(classTabs->count(), 3);
+    QCOMPARE(
+        classTabs->widget(0)->property("class_id").toInt(),
+        fixture.classIds.at(1)
+        );
+    QCOMPARE(
+        classTabs->widget(1)->property("class_id").toInt(),
+        fixture.classIds.at(2)
+        );
+    QCOMPARE(
+        classTabs->widget(2)->property("class_id").toInt(),
+        fixture.classIds.at(0)
+        );
+    QCOMPARE(
+        classTabs->currentWidget()->property("class_id").toInt(),
+        fixture.classIds.at(1)
+        );
+
+    page.loadEvaluations(
+        fixture.classIds.at(0),
+        QStringLiteral("Summer")
+        );
+    QCoreApplication::sendPostedEvents(nullptr, QEvent::DeferredDelete);
+    classTabs = page.findChild<NavigationTabWidget*>(
+        QStringLiteral("speakingEvalClassTabs")
+        );
+    QVERIFY(classTabs);
+    QCOMPARE(
+        classTabs->currentWidget()->property("class_id").toInt(),
+        fixture.classIds.at(0)
+        );
+}
+
+void SpeakingEvalPageSaveTests::
+headerSubtitlePreservesClassAndTeacherDisplayMetadata()
+{
+    SpeakingEvalPageFixture fixture;
+    QString error;
+    QVERIFY2(fixture.initialize(1, &error), qPrintable(error));
+
+    Teacher teacher;
+    teacher.teacherEn = QStringLiteral("English Teacher");
+    teacher.teacherKr = QStringLiteral("\uAE40\uBBFC\uC9C0");
+    teacher.preferredRomanization = QStringLiteral("Romanized Teacher");
+    teacher.preferredName = QStringLiteral("Romanized Teacher");
+    const auto teacherId = fixture.services.teacherService()->create(teacher);
+    QVERIFY(teacherId);
+
+    auto classInfoResult =
+        fixture.services.classService()->classInfo(fixture.classIds.first());
+    QVERIFY(classInfoResult);
+    ClassInfo classInfo = *classInfoResult;
+    classInfo.teacherId = *teacherId;
+    classInfo.classGrade = QStringLiteral("E5");
+    classInfo.classLevel = QStringLiteral("Artemis");
+    classInfo.readingBook = QStringLiteral("Reading Explorer 2");
+    classInfo.essayBook = QStringLiteral("5A");
+    classInfo.classTimes = {
+        ClassTime{
+            .day = QStringLiteral("Monday"),
+            .startTime = QStringLiteral("4:00 PM"),
+            .endTime = QStringLiteral("4:50 PM")
+        }
+    };
+    QVERIFY(fixture.services.classService()->saveClassInfo(classInfo));
+
+    classInfoResult =
+        fixture.services.classService()->classInfo(fixture.classIds.first());
+    const auto teacherResult =
+        fixture.services.teacherService()->teacher(*teacherId);
+    QVERIFY(classInfoResult);
+    QVERIFY(teacherResult);
+
+    SpeakingEvalPage page(&fixture.services);
+    page.loadEvaluation(
+        Classroom(fixture.classNames.first(), fixture.classIds.first()),
+        QStringLiteral("Winter")
+        );
+
+    auto* header = page.findChild<PageHeader*>();
+    QVERIFY(header);
+    const QString expectedSubtitle =
+        SidebarNodeNaming::formatClassDisplayName(
+            *classInfoResult,
+            *teacherResult
+            );
+    QVERIFY(expectedSubtitle.contains(QStringLiteral("E5 Artemis")));
+    QVERIFY(expectedSubtitle.contains(QStringLiteral("Romanized Teacher")));
+    QVERIFY(expectedSubtitle.contains(QStringLiteral("Mon")));
+    QVERIFY(expectedSubtitle.contains(QStringLiteral("4:00")));
+    QCOMPARE(header->subtitle(), expectedSubtitle);
+}
+
+void SpeakingEvalPageSaveTests::
+scheduleModesAndVisibilityScopeFilterNavigationTabs()
+{
+    SpeakingEvalPageFixture fixture;
+    QString error;
+    QVERIFY2(fixture.initialize(4, &error), qPrintable(error));
+
+    const QStringList names{
+        QStringLiteral("Alpha Regular"),
+        QStringLiteral("Beta Intensive"),
+        QStringLiteral("Gamma Both"),
+        QStringLiteral("Delta Unscheduled")
+    };
+    for (int index = 0; index < names.size(); ++index)
+    {
+        QVERIFY(fixture.services.classService()->rename(
+            fixture.classIds.at(index),
+            names.at(index)
+            ));
+    }
+
+    const QList<ClassTime> regularMeetings{
+        {
+            .day = QStringLiteral("Monday"),
+            .startTime = QStringLiteral("4:00 PM"),
+            .endTime = QStringLiteral("4:50 PM")
+        },
+        {
+            .day = QStringLiteral("Monday"),
+            .startTime = QStringLiteral("6:00 PM"),
+            .endTime = QStringLiteral("6:50 PM")
+        }
+    };
+    const QList<ClassTime> intensiveMeetings{
+        {
+            .day = QStringLiteral("Monday"),
+            .startTime = QStringLiteral("5:00 PM"),
+            .endTime = QStringLiteral("5:50 PM")
+        },
+        {
+            .day = QStringLiteral("Monday"),
+            .startTime = QStringLiteral("7:00 PM"),
+            .endTime = QStringLiteral("7:50 PM")
+        }
+    };
+    for (int index = 0; index < fixture.classIds.size(); ++index)
+    {
+        const auto loadedInfo =
+            fixture.services.classService()->classInfo(
+                fixture.classIds.at(index)
+                );
+        QVERIFY(loadedInfo);
+
+        ClassInfo classInfo = *loadedInfo;
+        if (index == 0)
+        {
+            classInfo.classTimes = {regularMeetings.at(0)};
+        }
+        else if (index == 1)
+        {
+            classInfo.intensiveTimes = {intensiveMeetings.at(0)};
+        }
+        else if (index == 2)
+        {
+            classInfo.classTimes = {regularMeetings.at(1)};
+            classInfo.intensiveTimes = {intensiveMeetings.at(1)};
+        }
+        const Status saved =
+            fixture.services.databaseSession()->classInfoRepository()
+                ->saveClassInfo(classInfo);
+        if (!saved)
+        {
+            const QString saveError = saved.error();
+            QFAIL(qPrintable(saveError));
+        }
+    }
+
+    ClassMngr::Next::Platform::
+        ApplicationServicesClassVisibilityPreferencesPort visibilityPreferences(
+            fixture.services
+            );
+    visibilityPreferences.save(
+        ClassMngr::Next::Application::ClassVisibilityScope::ActiveSchedule
+        );
+
+    SpeakingEvalPage page(&fixture.services);
+    page.loadEvaluations(
+        fixture.classIds.at(2),
+        QStringLiteral("Winter")
+        );
+
+    const auto visibleClassIds = [&page]()
+    {
+        QCoreApplication::sendPostedEvents(nullptr, QEvent::DeferredDelete);
+        auto* classTabs = page.findChild<NavigationTabWidget*>(
+            QStringLiteral("speakingEvalClassTabs")
+            );
+        QList<int> classIds;
+        if (!classTabs)
+        {
+            return classIds;
+        }
+
+        classIds.reserve(classTabs->count());
+        for (int index = 0; index < classTabs->count(); ++index)
+        {
+            classIds.append(
+                classTabs->widget(index)->property("class_id").toInt()
+                );
+        }
+        return classIds;
+    };
+
+    const QList<int> regularClassIds{
+        fixture.classIds.at(0),
+        fixture.classIds.at(2)
+    };
+    QCOMPARE(visibleClassIds(), regularClassIds);
+
+    page.setScheduleDisplayMode(ScheduleDisplayMode::Intensive);
+    const QList<int> intensiveClassIds{
+        fixture.classIds.at(1),
+        fixture.classIds.at(2)
+    };
+    QCOMPARE(visibleClassIds(), intensiveClassIds);
+    auto* classTabs = page.findChild<NavigationTabWidget*>(
+        QStringLiteral("speakingEvalClassTabs")
+        );
+    QVERIFY(classTabs);
+    QCOMPARE(
+        classTabs->currentWidget()->property("class_id").toInt(),
+        fixture.classIds.at(2)
+        );
+
+    visibilityPreferences.save(
+        ClassMngr::Next::Application::ClassVisibilityScope::AllClasses
+        );
+    page.refreshNavigationPreferences();
+    const QList<int> allClassIds{
+        fixture.classIds.at(0),
+        fixture.classIds.at(1),
+        fixture.classIds.at(2),
+        fixture.classIds.at(3)
+    };
+    QCOMPARE(visibleClassIds(), allClassIds);
+
+    visibilityPreferences.save(
+        ClassMngr::Next::Application::ClassVisibilityScope::ActiveSchedule
+        );
+    page.refreshNavigationPreferences();
+    QCOMPARE(visibleClassIds(), intensiveClassIds);
+    classTabs = page.findChild<NavigationTabWidget*>(
+        QStringLiteral("speakingEvalClassTabs")
+        );
+    QVERIFY(classTabs);
+    QCOMPARE(
+        classTabs->currentWidget()->property("class_id").toInt(),
+        fixture.classIds.at(2)
+        );
+}
+
+void SpeakingEvalPageSaveTests::
+unavailableClassListClearsThePageWithoutWarning()
+{
+    SpeakingEvalPageFixture fixture;
+    QString error;
+    QVERIFY2(fixture.initialize(1, &error), qPrintable(error));
+
+    FakeUserPromptService prompts;
+    ScopedPromptService promptScope(&prompts);
+
+    SpeakingEvalPage page(&fixture.services);
+    ClassMngr::Next::Platform::
+        ApplicationServicesClassVisibilityPreferencesPort(fixture.services)
+            .save(ClassMngr::Next::Application::ClassVisibilityScope::AllClasses);
+    SpeakingEvalRows persistedRows = SpeakingEval::emptyRows();
+    persistedRows[0][SpeakingEval::toInt(SpeakingEvalColumn::EnglishName)] =
+        QStringLiteral("Persisted");
+    persistedRows[0][SpeakingEval::toInt(SpeakingEvalColumn::KoreanName)] =
+        QStringLiteral("\uAE40\uBBFC\uC9C0");
+    QVERIFY(fixture.services.speakingEvaluationService()->saveEvaluation(
+        fixture.classIds.first(),
+        QStringLiteral("Winter"),
+        persistedRows
+        ));
+    page.loadEvaluations();
+
+    auto* classTabs = page.findChild<NavigationTabWidget*>(
+        QStringLiteral("speakingEvalClassTabs")
+        );
+    auto* table = page.findChild<SpeakingEvalTableView*>();
+    auto* model = page.findChild<SpeakingEvalModel*>();
+    QVERIFY(classTabs);
+    QVERIFY(table);
+    QVERIFY(model);
+    QCOMPARE(classTabs->count(), 1);
+    QVERIFY(table->isEnabled());
+    QCOMPARE(model->data(model->index(0, 1)).toString(), QStringLiteral("Persisted"));
+
+    fixture.services.closeDatabase();
+    page.loadEvaluations();
+    QCoreApplication::sendPostedEvents(nullptr, QEvent::DeferredDelete);
+    classTabs = page.findChild<NavigationTabWidget*>(
+        QStringLiteral("speakingEvalClassTabs")
+        );
+
+    QCOMPARE(prompts.messages.size(), 0);
+    QVERIFY(classTabs);
+    QCOMPARE(classTabs->count(), 0);
+    QVERIFY(!table->isEnabled());
+    QVERIFY(model->data(model->index(0, 1)).toString().isEmpty());
+}
+
+void SpeakingEvalPageSaveTests::
+failedClassListWarnsAndDisablesEditing()
+{
+    SpeakingEvalPageFixture fixture;
+    QString error;
+    QVERIFY2(fixture.initialize(1, &error), qPrintable(error));
+
+    FakeUserPromptService prompts;
+    ScopedPromptService promptScope(&prompts);
+
+    SpeakingEvalPage page(&fixture.services);
+    page.loadEvaluations();
+
+    auto* table = page.findChild<SpeakingEvalTableView*>();
+    QVERIFY(table);
+    QVERIFY(table->isEnabled());
+
+    QSqlQuery dropClasses(fixture.services.databaseSession()->database());
+    QVERIFY2(
+        dropClasses.exec(QStringLiteral("DROP TABLE classes")),
+        qPrintable(dropClasses.lastError().text())
+        );
+    page.loadEvaluations();
+
+    QCOMPARE(prompts.messages.size(), 1);
+    QCOMPARE(
+        prompts.messages.constFirst().title,
+        QStringLiteral("Load Speaking Evaluations")
+        );
+    QCOMPARE(
+        prompts.messages.constFirst().message,
+        QStringLiteral("Classes could not be loaded.")
+        );
+    QVERIFY(!prompts.messages.constFirst().details.isEmpty());
+    QVERIFY(!table->isEnabled());
+}
+
+void SpeakingEvalPageSaveTests::
+failedNavigationReadKeepsNameOnlyTabs()
+{
+    SpeakingEvalPageFixture fixture;
+    QString error;
+    QVERIFY2(fixture.initialize(1, &error), qPrintable(error));
+
+    ClassInfo classInfo;
+    const auto loadedInfo =
+        fixture.services.classService()->classInfo(fixture.classIds.first());
+    QVERIFY(loadedInfo);
+    classInfo = *loadedInfo;
+    classInfo.classGrade = QStringLiteral("E2");
+    classInfo.classLevel = QStringLiteral("Advanced");
+    classInfo.classTimes = {
+        ClassTime{
+            .day = QStringLiteral("Monday"),
+            .startTime = QStringLiteral("4:00 PM"),
+            .endTime = QStringLiteral("4:50 PM")
+        }
+    };
+    classInfo.intensiveTimes = {
+        ClassTime{
+            .day = QStringLiteral("Tuesday"),
+            .startTime = QStringLiteral("6:00 PM"),
+            .endTime = QStringLiteral("6:50 PM")
+        }
+    };
+    QVERIFY(fixture.services.databaseSession()->classInfoRepository()
+                ->saveClassInfo(classInfo));
+    ClassMngr::Next::Platform::
+        ApplicationServicesClassVisibilityPreferencesPort(fixture.services)
+            .save(ClassMngr::Next::Application::ClassVisibilityScope::AllClasses);
+
+    SpeakingEvalPage page(&fixture.services);
+    page.loadEvaluations();
+
+    auto* classTabs = page.findChild<NavigationTabWidget*>(
+        QStringLiteral("speakingEvalClassTabs")
+        );
+    QVERIFY(classTabs);
+    QCOMPARE(classTabs->count(), 1);
+    QVERIFY(classTabs->tabText(0).contains(QStringLiteral("E2")));
+    QVERIFY(classTabs->tabText(0).contains(QStringLiteral("4:00")));
+
+    fixture.services.closeDatabase();
+    page.setScheduleDisplayMode(ScheduleDisplayMode::Intensive);
+    QCoreApplication::sendPostedEvents(nullptr, QEvent::DeferredDelete);
+    classTabs = page.findChild<NavigationTabWidget*>(
+        QStringLiteral("speakingEvalClassTabs")
+        );
+
+    QVERIFY(classTabs);
+    QCOMPARE(classTabs->count(), 1);
+    QCOMPARE(
+        classTabs->widget(0)->property("class_id").toInt(),
+        fixture.classIds.first()
+        );
+    QVERIFY(classTabs->tabText(0).contains(fixture.classNames.first()));
+    QVERIFY(classTabs->tabText(0).contains(QStringLiteral("No time")));
+    QVERIFY(!classTabs->tabText(0).contains(QStringLiteral("E2")));
+    QVERIFY(!classTabs->tabText(0).contains(QStringLiteral("6:00")));
 }
 
 void SpeakingEvalPageSaveTests::

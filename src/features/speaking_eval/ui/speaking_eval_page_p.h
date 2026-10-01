@@ -22,6 +22,8 @@
 #include "features/speaking_eval/ui/speaking_eval_report_dialog.h"
 #include "features/speaking_eval/ui/speaking_eval_header_view.h"
 #include "features/classes/models/class_tab_navigation_model.h"
+#include "next/application/selected_class_subtitle_read_query.h"
+#include "next/platform/application_services_selected_class_subtitle_read_port.h"
 #include "ui/shared/constants/gui_constants.h"
 #include "ui/shared/styles/roles.h"
 #include "ui/shared/widgets/navigation_pill_button.h"
@@ -47,6 +49,7 @@
 #include <QUndoStack>
 #include <QVBoxLayout>
 
+#include <string>
 #include <utility>
 
 namespace
@@ -132,27 +135,69 @@ QString normalizedEvaluationName(
 }
 
 QString sidebarClassDisplayName(
-    ClassService* classService,
-    TeacherService* teacherService,
+    ApplicationServices* services,
     int classId
     )
 {
-    if (!classService || !teacherService || classId <= 0)
+    if (!services || classId <= 0)
     {
         return {};
     }
 
-    const ClassInfo classInfo =
-        classService->classInfo(
-            classId
-            ).value_or(ClassInfo{});
-
-    Teacher teacher;
-
-    if (classInfo.teacherId > 0)
+    const auto selectedClassId =
+        ClassMngr::Next::Domain::ClassId::fromString(
+            std::to_string(classId)
+            );
+    if (!selectedClassId)
     {
-        teacher = teacherService->teacher(classInfo.teacherId)
-            .value_or(Teacher{});
+        return {};
+    }
+
+    ClassMngr::Next::Platform::
+        ApplicationServicesSelectedClassSubtitleReadPort readPort(services);
+    const ClassMngr::Next::Application::SelectedClassSubtitleReadQuery query(
+        readPort
+        );
+    const auto loadedSubtitle = query.execute(*selectedClassId);
+
+    ClassInfo classInfo;
+    Teacher teacher;
+    if (loadedSubtitle)
+    {
+        const auto& subtitle = loadedSubtitle.value();
+        if (subtitle.classFields)
+        {
+            const auto& fields = subtitle.classFields.value();
+            classInfo.classGrade = QString::fromStdU16String(fields.classGrade);
+            classInfo.classLevel = QString::fromStdU16String(fields.classLevel);
+            classInfo.classTimes.reserve(
+                static_cast<qsizetype>(fields.regularSchedule.size())
+                );
+            for (const auto& row : fields.regularSchedule)
+            {
+                ClassTime time;
+                time.day = QString::fromStdU16String(row.day);
+                time.startTime = QString::fromStdU16String(row.startTime);
+                time.endTime.clear();
+                classInfo.classTimes.append(std::move(time));
+            }
+        }
+
+        if (
+            subtitle.assignedTeacher
+            && subtitle.assignedTeacher.value().has_value()
+            )
+        {
+            const auto& fields = subtitle.assignedTeacher.value().value();
+            teacher.teacherKr = QString::fromStdU16String(fields.teacherKr);
+            teacher.teacherEn = QString::fromStdU16String(fields.teacherEn);
+            teacher.preferredRomanization = QString::fromStdU16String(
+                fields.preferredRomanization
+                );
+            teacher.preferredName = QString::fromStdU16String(
+                fields.preferredName
+                );
+        }
     }
 
     return SidebarNodeNaming::formatClassDisplayName(

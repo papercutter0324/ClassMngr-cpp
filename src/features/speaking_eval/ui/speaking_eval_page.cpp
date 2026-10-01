@@ -1,11 +1,17 @@
 #include "speaking_eval_page_p.h"
-#include "next/application/speaking_evaluation_query.h"
-#include "next/platform/application_services_speaking_evaluation_read_port.h"
+#include "next/application/classes_list_read_query.h"
+#include "next/application/classes_navigation_snapshot.h"
+#include "next/platform/application_services_classes_list_read_port.h"
+#include "next/platform/application_services_classes_navigation_read_port.h"
 #include "next/platform/application_services_class_visibility_preferences_port.h"
 #include "next/platform/application_services_schedule_display_mode_preferences_port.h"
+#include "next/application/speaking_evaluation_query.h"
+#include "next/platform/application_services_speaking_evaluation_read_port.h"
 #include "ui/shared/dialogs/user_prompt_service.h"
 
+#include <charconv>
 #include <string>
+#include <system_error>
 #include <utility>
 #include <vector>
 
@@ -55,39 +61,76 @@ void SpeakingEvalPage::loadEvaluations(
     const QString& selectedEvaluationName
     )
 {
-    auto* classService = m_services ? m_services->classService() : nullptr;
-
-    if (!classService || !classService->isAvailable())
-    {
-        m_evaluationClasses.clear();
-        rebuildClassTabs(-1);
-
-        m_syncingEvaluationTabs = true;
-        if (m_evaluationTabs)
-        {
-            m_evaluationTabs->setCurrentIndex(0);
-        }
-        m_syncingEvaluationTabs = false;
-
-        loadEvaluationData({}, {});
-        setEvaluationEditorAvailable(false);
-        return;
-    }
-
-    const Result<QList<Classroom>> loadedClasses = classService->classes();
+    const ClassMngr::Next::Platform::ApplicationServicesClassesListReadPort
+        readPort(m_services);
+    const ClassMngr::Next::Application::ClassesListReadQuery query(readPort);
+    const auto loadedClasses = query.execute();
     if (!loadedClasses)
     {
+        DatabaseSession* const session =
+            m_services ? m_services->databaseSession() : nullptr;
+        if (
+            (!session || !session->isOpen())
+            && loadedClasses.error().code
+                == ClassMngr::Next::Domain::ErrorCode::NotFound
+            && loadedClasses.error().recoverable
+            )
+        {
+            m_evaluationClasses.clear();
+            rebuildClassTabs(-1);
+
+            m_syncingEvaluationTabs = true;
+            if (m_evaluationTabs)
+            {
+                m_evaluationTabs->setCurrentIndex(0);
+            }
+            m_syncingEvaluationTabs = false;
+
+            loadEvaluationData({}, {});
+            setEvaluationEditorAvailable(false);
+            return;
+        }
+
         DialogServices::showWarning(
             this,
             tr("Load Speaking Evaluations"),
             tr("Classes could not be loaded."),
-            loadedClasses.error()
+            QString::fromUtf8(
+                loadedClasses.error().message.data(),
+                static_cast<qsizetype>(loadedClasses.error().message.size())
+                )
             );
         m_evaluationClasses.clear();
         setEvaluationEditorAvailable(false);
         return;
     }
-    m_evaluationClasses = *loadedClasses;
+
+    m_evaluationClasses.clear();
+    m_evaluationClasses.reserve(
+        static_cast<qsizetype>(loadedClasses.value().classes.size())
+        );
+    for (const auto& entry : loadedClasses.value().classes)
+    {
+        int classId = 0;
+        const std::string& classIdValue = entry.classId.value();
+        const auto [end, error] = std::from_chars(
+            classIdValue.data(),
+            classIdValue.data() + classIdValue.size(),
+            classId
+            );
+        if (
+            error != std::errc{}
+            || end != classIdValue.data() + classIdValue.size()
+            )
+        {
+            continue;
+        }
+
+        Classroom classroom;
+        classroom.id = classId;
+        classroom.name = QString::fromStdU16String(entry.className);
+        m_evaluationClasses.append(std::move(classroom));
+    }
 
     ScheduleDisplayMode displayMode = ScheduleDisplayMode::Regular;
     switch (
@@ -308,52 +351,90 @@ void SpeakingEvalPage::rebuildClassTabs(
 
     m_classTabs = nullptr;
 
-    auto* classService = m_services ? m_services->classService() : nullptr;
-    auto* teacherService = m_services ? m_services->teacherService() : nullptr;
-
+    ClassMngr::Next::Application::ClassesNavigationSnapshotQuery query;
+    query.classes.reserve(
+        static_cast<std::size_t>(m_evaluationClasses.size())
+        );
     QList<ClassTabNavigation::ClassEntry> entries;
+    entries.reserve(m_evaluationClasses.size());
 
-    if (classService && classService->isAvailable())
+    for (const Classroom& classroom : std::as_const(m_evaluationClasses))
     {
-        for (const Classroom& classroom : std::as_const(m_evaluationClasses))
+        if (classroom.id <= 0)
         {
-            if (classroom.id <= 0)
+            continue;
+        }
+
+        const auto classId =
+            ClassMngr::Next::Domain::ClassId::fromString(
+                std::to_string(classroom.id)
+                );
+        if (!classId)
+        {
+            continue;
+        }
+
+        query.classes.push_back({
+            .classId = *classId,
+            .className = classroom.name.toStdU16String()
+        });
+
+        ClassTabNavigation::ClassEntry entry;
+        entry.classId = classroom.id;
+        entry.classroomName = classroom.name;
+        entries.append(std::move(entry));
+    }
+
+    if (!query.classes.empty())
+    {
+        const ClassMngr::Next::Platform::
+            ApplicationServicesClassesNavigationReadPort readPort(m_services);
+        const auto snapshot =
+            ClassMngr::Next::Application::
+                ClassesNavigationSnapshotQueryHandler::execute(
+                    query,
+                    readPort
+                    );
+        if (snapshot)
+        {
+            for (std::size_t index = 0;
+                 index < snapshot.value().classes.size();
+                 ++index)
             {
-                continue;
+                const auto& source = snapshot.value().classes[index];
+                ClassTabNavigation::ClassEntry& entry =
+                    entries[static_cast<qsizetype>(index)];
+                entry.grade = QString::fromStdU16String(source.grade);
+                entry.level = QString::fromStdU16String(source.level);
+                entry.teacherEn = QString::fromStdU16String(
+                    source.teacherEnglishName
+                    );
+                entry.teacherKr = QString::fromStdU16String(
+                    source.teacherKoreanName
+                    );
+
+                const auto appendSchedule = [](
+                    const auto& sourceRows,
+                    QList<ClassTime>& targetRows
+                    )
+                {
+                    targetRows.reserve(
+                        static_cast<qsizetype>(sourceRows.size())
+                        );
+                    for (const auto& row : sourceRows)
+                    {
+                        targetRows.append({
+                            .day = QString::fromStdU16String(row.day),
+                            .startTime = QString::fromStdU16String(
+                                row.startTime
+                                ),
+                            .endTime = QString::fromStdU16String(row.endTime)
+                        });
+                    }
+                };
+                appendSchedule(source.regularSchedule, entry.regularTimes);
+                appendSchedule(source.intensiveSchedule, entry.intensiveTimes);
             }
-
-            const ClassInfo info =
-                classService->classInfo(
-                    classroom.id
-                    ).value_or(ClassInfo{});
-
-            Teacher teacher;
-
-            if (info.teacherId > 0)
-            {
-                teacher = teacherService->teacher(info.teacherId)
-                    .value_or(Teacher{});
-            }
-
-            ClassTabNavigation::ClassEntry entry;
-            entry.classId =
-                classroom.id;
-            entry.classroomName =
-                classroom.name;
-            entry.grade =
-                info.classGrade;
-            entry.level =
-                info.classLevel;
-            entry.regularTimes =
-                info.classTimes;
-            entry.intensiveTimes =
-                info.intensiveTimes;
-            entry.teacherEn =
-                teacher.teacherEn;
-            entry.teacherKr =
-                teacher.teacherKr;
-
-            entries.append(entry);
         }
     }
 
