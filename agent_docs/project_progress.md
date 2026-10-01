@@ -67,7 +67,8 @@ accepted in source commit `7d0291d3`; F207 is accepted in source commit
 source commit `7b2f8226`; F210 is accepted in source commit `22cec99b`; F211 is
 accepted in source commit `2347739c`; F212 is accepted in source commit
 `bd6d044f`; F213 is accepted in source commit `dc2b3ed9`; F214 is accepted in
-source commit `9e03e668`; F215 is accepted in source commit `68ef5962`.
+source commit `9e03e668`; F215 is accepted in source commit `68ef5962`; F216
+is accepted in source commit `23dc6c2b`.
 F196 and F197 use
 only the active open session's
 `SettingsRepository` and preserve their keys, conversions, defaults, and
@@ -197,12 +198,31 @@ eligibility are covered at the policy level; controller integration verifies
 no service dispatch for a missing URL. `git diff --check` passed; no full suite
 ran.
 
-Two independent scans selected F216: move skipped-update-version matching and
-reconciliation decisions into Qt-free Application policy, preserving strict
-`x.x.x` parsing/comparison and the existing clear/keep rules. Keep preference
-persistence and dialog synchronization in `UpdateController`. Add app-less
-policy tests and focused controller integration coverage. Phase 2 remains
-In Progress/Open; Gates 1 and 2 remain Partial.
+F216 source commit `23dc6c2b` moves skipped-update-version reconciliation and
+prompt-suppression decisions into the Qt-free
+`decideSkippedUpdateVersion` Application policy. `UpdateController` retains
+Qt-bound `Version::parse`, UTF-8 conversion, preference persistence, and dialog
+synchronization. The app-less eight-case matrix preserves current parser and
+literal-text matching behavior, including the `01.2.3` versus `1.2.3` mismatch.
+Controller integration verifies stale-value clearing, prompt display, open-
+dialog synchronization, and an exact skipped version remaining persisted while
+suppressing the prompt. Executor focused CTest passed 4/4; independent Tester
+CTest passed 2/2; `git diff --check` passed. No full suite ran.
+
+F217 is selected: move roster-score import derivation into a Qt-free
+Application use case and route `RosterEditorWidget::importScores()` through the
+existing `SpeakingEvaluationReadQuery`/`SpeakingEvaluationReadPort`, removing
+that operation's direct `SpeakingEvaluationService::rosterScoreImport`
+dependency. Preserve trimmed complete English/Korean name-pair matching,
+last-duplicate-wins behavior, six-component score mapping and rounding,
+`N/A` for incomplete or unknown grades, model update and no-match behavior,
+evaluation-column selection, missing-column handling, and idempotence. Add
+app-less use-case tests and retain the registered roster import UI target as
+production integration coverage. Two independent scans surfaced version
+parsing and skip/unskip coverage as alternatives; the roster import path was
+selected because it is a direct production dependency with existing typed read
+contracts and focused integration tests. Phase 2 remains In Progress/Open;
+Gates 1 and 2 remain Partial.
 
 ### Earlier Phase 2 detail - 2026-09-26
 

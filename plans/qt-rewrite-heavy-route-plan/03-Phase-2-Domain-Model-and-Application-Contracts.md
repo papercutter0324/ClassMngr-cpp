@@ -62,8 +62,9 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
   accepted; F210's recent-workspace history policy, F211's Speaking
   Evaluation read-port extraction, and F212's upcoming-birthday schedule
   policy, F213's default evaluation selection, and F214's class day-filter
-  matching policy, and F215's automatic-update startup eligibility are
-  accepted. F216's skipped-update-version policy is selected.
+  matching policy, F215's automatic-update startup eligibility, and F216's
+  skipped-update-version policy are accepted. F217's roster-score import use
+  case is selected.
   The prior F123 candidate wording is historical;
   current Teacher Profile integration status is recorded in the progress log.
   Gates 1 and 2
@@ -220,28 +221,30 @@ No new v2 production path depends on DataService, MainWindow, PageManager, or a 
 
 Earlier verified slices and cumulative exit-gate snapshots are archived in the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 
-## Latest progress update - 2026-10-01 (F215 accepted; F216 selected)
+## Latest progress update - 2026-10-01 (F216 accepted; F217 selected)
 
-F215, source commit `68ef5962`, adds the Qt-free
-`automaticUpdateStartupCheckIsEligible` policy. Startup guards and maintenance
-order remain intact; cleanup runs once before preference/URL gates, and only
-eligible attempts set one-shot state and dispatch `CheckPolicy::Force`. The
-separate preference reread for prompt suppression remains in place. Focused
-targets `ClassMngrNextApplicationAutomaticUpdateStartupEligibilityTests` and
-`ClassMngrUpdateControllerAutomaticStartupTests` built; CTest passed 2/2 in the
-independent run. Coverage includes the eight-case decision matrix, startup
-completion, Force despite a fresh result, one-shot behavior, disabled-to-
-enabled retry, missing-URL non-dispatch, and cleanup order/once. `UpdateService`
-configuration is immutable: later URL eligibility is covered by the policy
-matrix, while controller tests verify no dispatch for a missing URL; no same-
-controller URL-recovery test is claimed. No full suite ran.
+F216, source commit `23dc6c2b`, adds the Qt-free
+`decideSkippedUpdateVersion` policy. The controller retains `Version::parse`,
+UTF-8 conversion, preference writes and clears, and dialog synchronization.
+The app-less eight-case matrix includes textual `01.2.3` versus `1.2.3`.
+Controller tests cover stale-version clearing, prompt and open-dialog
+synchronization, exact skip persistence, and suppression. The Executor's
+focused build passed and CTest passed 4/4; the independent Tester build was
+already current and CTest passed 2/2. `git diff --check` passed; no full suite
+ran.
 
-F216 is selected: move skipped-update-version reconciliation and matching
-policy from `UpdateController` into Qt-free Application, preserving strict
-`x.x.x` parsing and comparison plus the existing clear/keep cases. Keep
-settings persistence and dialog synchronization in the controller. Acceptance
-requires focused app-less policy tests and controller integration tests for
-preference and dialog behavior. Two independent Explorer scans agreed on this
-slice, which advances Phase 2's Application-use-case alignment. Phase 2 remains
-In Progress/Open; Gates 1 and 2 remain Partial. See the [Phase 2 progress log](03-Phase-2-Progress-Log.md)
+F217 is selected: add a Qt-free roster-score import use case and integrate it
+into `RosterEditorWidget::importScores()`, replacing that operation's direct
+`SpeakingEvaluationService::rosterScoreImport` dependency with the existing
+`SpeakingEvaluationReadQuery`/`SpeakingEvaluationReadPort`. Preserve trimmed
+complete English/Korean pair matching, exact pair semantics and last-duplicate
+wins; parse six score labels using existing Domain grade conversion and
+six-component overall-grade rounding; return `N/A` for incomplete or unknown
+grades. Keep evaluation-column selection, model updates, no-match/error
+behavior, missing-column handling, and idempotence in the UI. Acceptance
+requires app-less use-case tests and the existing registered
+`RosterEditorWidgetImport` UI test target. Two independent Explorer scans
+disagreed on the top candidate; Explorer A identified this production path and
+its existing typed read contract and UI coverage. Phase 2 remains In
+Progress/Open; Gates 1 and 2 remain Partial. See the [Phase 2 progress log](03-Phase-2-Progress-Log.md)
 for prior slice evidence.

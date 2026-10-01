@@ -1865,3 +1865,12 @@ immutable, so cover missing-URL eligibility in the app-less matrix and verify
 controller non-dispatch without adding mutable configuration solely for a
 same-controller recovery test. Re-read the preference before automatic
 prompting.
+
+## 2026-10-01 - F216 skipped update-version policy
+
+Keep numeric parsing and settings/dialog effects at the Qt controller boundary
+while moving clear/keep and automatic-prompt suppression decisions into
+Application. Preserve the legacy two-part comparison: parsed numeric ordering
+decides whether a stored skip is stale, while literal version text decides
+whether it matches the latest release. Leading-zero values can parse as the
+same version without being exact text matches.
