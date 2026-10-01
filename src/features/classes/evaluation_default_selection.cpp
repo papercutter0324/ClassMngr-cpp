@@ -3,11 +3,10 @@
 #include "next/application/evaluation_default_selection.h"
 #include "next/domain/course.h"
 
-#include <algorithm>
 #include <optional>
-#include <ranges>
-
 #include <string>
+#include <utility>
+#include <vector>
 
 namespace
 {
@@ -83,18 +82,21 @@ QString evaluationNameForTerm(AcademicTerm term)
 
 bool isPopulated(const SpeakingEvalRows& rows)
 {
-    return std::ranges::any_of(
-        rows,
-        [](const QStringList& row)
+    ClassMngr::Next::Application::EvaluationRows applicationRows;
+    applicationRows.reserve(static_cast<std::size_t>(rows.size()));
+    for (const QStringList& sourceRow : rows)
+    {
+        std::vector<std::u16string> row;
+        row.reserve(static_cast<std::size_t>(sourceRow.size()));
+        for (const QString& cell : sourceRow)
         {
-            return std::ranges::any_of(
-                row,
-                [](const QString& value)
-                {
-                    return !value.trimmed().isEmpty();
-                }
-                );
+            row.push_back(cell.toStdU16String());
         }
+        applicationRows.push_back(std::move(row));
+    }
+
+    return ClassMngr::Next::Application::evaluationRowsHaveContent(
+        applicationRows
         );
 }
 

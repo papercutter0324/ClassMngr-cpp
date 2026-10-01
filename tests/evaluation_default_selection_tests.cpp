@@ -140,6 +140,10 @@ void EvaluationDefaultSelectionTests::populatedRowsRequireActualContent()
     QVERIFY(!EvaluationDefaultSelection::isPopulated(rows));
 
     rows[0][SpeakingEval::toInt(SpeakingEvalColumn::EnglishName)] =
+        QString(QChar(0x0085));
+    QVERIFY(!EvaluationDefaultSelection::isPopulated(rows));
+
+    rows[0][SpeakingEval::toInt(SpeakingEvalColumn::EnglishName)] =
         QStringLiteral("Amy");
     QVERIFY(EvaluationDefaultSelection::isPopulated(rows));
 }
