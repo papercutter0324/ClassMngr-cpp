@@ -1,7 +1,8 @@
 #pragma once
 
-#include "app/services/feature_services.h"
 #include "core/application_services.h"
+#include "data/database/database_session.h"
+#include "data/repositories/settings_repository.h"
 #include "next/application/evaluation_default_policy_preferences.h"
 
 #include <QString>
@@ -10,9 +11,9 @@
 namespace ClassMngr::Next::Platform
 {
 
-// Qt-boundary adapter for the evaluation-default policy. The legacy
-// ApplicationServices/settings access and stored-string conversion are kept
-// here; callers consume only the typed application policy.
+// Qt-boundary adapter for the evaluation-default policy. The active-session
+// settings access and stored-string conversion are kept here; callers consume
+// only the typed application policy.
 class ApplicationServicesEvaluationDefaultPolicyPort final
     : public Application::EvaluationDefaultPolicyPreferencesPort
 {
@@ -20,7 +21,7 @@ public:
     explicit ApplicationServicesEvaluationDefaultPolicyPort(
         ApplicationServices& services
         ) noexcept
-        : m_services(services)
+        : m_session(services.databaseSession())
     {
     }
 
@@ -40,19 +41,24 @@ public:
     [[nodiscard]] Application::EvaluationDefaultPolicy load()
         const override
     {
-        const SettingsService* settingsService = m_services.settingsService();
-        if (!settingsService || !settingsService->isAvailable())
+        if (!m_session || !m_session->isOpen())
         {
             return Application::EvaluationDefaultPolicy::All;
         }
 
-        const auto storedPolicy = settingsService->load(key());
+        SettingsRepository* const repository = m_session->settingsRepository();
+        if (!repository)
+        {
+            return Application::EvaluationDefaultPolicy::All;
+        }
+
+        const auto storedPolicy = repository->loadSetting(key());
         if (!storedPolicy || !storedPolicy->isValid())
         {
             // Preserve the legacy preference boundary's default materializing
             // behavior when storage is available.
             static_cast<void>(
-                settingsService->save(
+                repository->saveSetting(
                     key(),
                     storedPolicyValue(Application::EvaluationDefaultPolicy::All)
                     )
@@ -70,13 +76,18 @@ public:
         const Application::EvaluationDefaultPolicy policy
         ) const override
     {
-        const SettingsService* settingsService = m_services.settingsService();
-        if (!settingsService || !settingsService->isAvailable())
+        if (!m_session || !m_session->isOpen())
         {
             return;
         }
 
-        static_cast<void>(settingsService->save(key(), storedPolicyValue(policy)));
+        SettingsRepository* const repository = m_session->settingsRepository();
+        if (!repository)
+        {
+            return;
+        }
+
+        static_cast<void>(repository->saveSetting(key(), storedPolicyValue(policy)));
     }
 
 private:
@@ -97,7 +108,7 @@ private:
             : QStringLiteral("all");
     }
 
-    ApplicationServices& m_services;
+    DatabaseSession* m_session = nullptr;
 };
 
 } // namespace ClassMngr::Next::Platform
