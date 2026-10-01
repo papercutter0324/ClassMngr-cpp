@@ -7,6 +7,7 @@
 #include "core/result.h"
 #include "data/data_service.h"
 #include "next/application/recent_workspace_history.h"
+#include "next/application/recent_workspace_history_use_case.h"
 #include "next/application/workspace_coordinator.h"
 #include "next/platform/application_services_workspace_port.h"
 #include "next/platform/legacy_workspace_gateway.h"
@@ -23,7 +24,6 @@
 #include <QStandardPaths>
 #include <QUuid>
 
-#include <algorithm>
 #include <cstddef>
 #include <string>
 
@@ -769,34 +769,12 @@ void FileController::updateRecentFiles(
         utf8Path(normalizedPath)
         );
 
-    history.paths.erase(
-        std::remove_if(
-            history.paths.begin(),
-            history.paths.end(),
-            [&rawPath, &normalizedPathValue](
-                const ClassMngr::Next::Application::RecentWorkspacePath& path
-                )
-            {
-                return path == rawPath || path == normalizedPathValue;
-            }
-            ),
-        history.paths.end()
-        );
-    history.paths.insert(
-        history.paths.begin(),
-        normalizedPathValue
-        );
-
-    while (
-        history.paths.size()
-        > ClassMngr::Next::Application::
-            kRecentWorkspaceHistoryMaximumEntries
-        )
-    {
-        history.paths.pop_back();
-    }
-
-    history.lastPath = normalizedPathValue;
+    history =
+        ClassMngr::Next::Application::RecentWorkspaceHistoryUseCase::record(
+            history,
+            rawPath,
+            normalizedPathValue
+            );
     recentWorkspaceHistoryPort.save(history);
 
     rememberDatabaseDirectory(normalizedPath);
@@ -1260,30 +1238,12 @@ void FileController::pruneRecentFile(
         utf8Path(normalizedPath)
         );
 
-    history.paths.erase(
-        std::remove_if(
-            history.paths.begin(),
-            history.paths.end(),
-            [&rawPath, &normalizedPathValue](
-                const ClassMngr::Next::Application::RecentWorkspacePath& path
-                )
-            {
-                return path == rawPath || path == normalizedPathValue;
-            }
-            ),
-        history.paths.end()
-        );
-
-    if (
-        history.lastPath.has_value()
-        && (
-            *history.lastPath == rawPath
-            || *history.lastPath == normalizedPathValue
-            )
-        )
-    {
-        history.lastPath.reset();
-    }
+    history =
+        ClassMngr::Next::Application::RecentWorkspaceHistoryUseCase::prune(
+            history,
+            rawPath,
+            normalizedPathValue
+            );
 
     recentWorkspaceHistoryPort.save(history);
 }

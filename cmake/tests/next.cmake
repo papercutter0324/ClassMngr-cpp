@@ -77,6 +77,15 @@ classmngr_add_qt_test(
 )
 
 classmngr_add_qt_test(
+    NAME NextApplicationRecentWorkspaceHistoryUseCase
+    SOURCES
+        tests/next_application_recent_workspace_history_use_case_tests.cpp
+    LIBRARIES
+        ClassMngrNext::Application
+        Qt6::Test
+)
+
+classmngr_add_qt_test(
     NAME NextApplicationSelection
     SOURCES
         tests/next_application_selection_tests.cpp
