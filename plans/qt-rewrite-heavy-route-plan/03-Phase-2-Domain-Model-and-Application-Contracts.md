@@ -57,8 +57,9 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
   Personal Signature preferences, F201's Personal Signature Image, F202's
   Class Visibility, F203's Evaluation Default Policy, F204's Class Day Filter
   Reset Policy, F205's Class Selection Reset Policy, F206's Custom Color
-  Palette preferences, and F207's Sub Prep Personal Zoom preferences ports are
-  accepted; F208 is selected for Sub Prep saved-content preferences.
+  Palette preferences, F207's Sub Prep Personal Zoom preferences, and F208's
+  Sub Prep saved-content preferences ports are accepted; F209 is selected for
+  speaking-evaluation save.
   The prior F123 candidate wording is historical;
   current Teacher Profile integration status is recorded in the progress log.
   Gates 1 and 2
@@ -215,32 +216,23 @@ No new v2 production path depends on DataService, MainWindow, PageManager, or a 
 
 Earlier verified slices and cumulative exit-gate snapshots are archived in the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 
-## F206 accepted Custom Color Palette preferences port
+## F209 selected Speaking Evaluation save port
 
-F206 is accepted; its source commit, focused CTest results, ColorUtils coverage,
-owner-count check, and verification limits are recorded in the [Phase 2
-progress log](03-Phase-2-Progress-Log.md).
+F208 is accepted; its source commit, preserved behavior, focused verification,
+and limits are recorded in the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 
-## F207 accepted Sub Prep Personal Zoom preferences port
-
-F207 is accepted; its source commit, focused CTest results, owner-count check,
-and verification limits are recorded in the [Phase 2 progress
-log](03-Phase-2-Progress-Log.md).
-
-## F208 selected Sub Prep saved-content preferences port
-
-Migrate `ApplicationServicesSubPrepPreferencesPort` to the active open
-session's `SettingsRepository`. Preserve keys `subPrep/classMaterials`,
-`subPrep/bookReportGrading`, `subPrep/bookReportSpecialInstructions`, and
-`subPrep/subComments`; UTF-8 and whitespace; empty required text versus absent
-optional values (`nullopt`) and present empty strings; missing reads without
-materialization; and atomic four-key save, rollback, and unrelated settings.
-Preserve typed Technical unavailable/nonrecoverable save errors and repository
-read-error warning/default semantics. Add closed-session no-fallback coverage
-with `DataService` present and repository read-error coverage. Keep the typed
-interface and Sub Prep UI callers unchanged. Keep QtSql out of the UI-shared
-header; implement in `.cpp` and register under `ClassMngrFeatures` if needed.
-Focused target `ClassMngrNextPlatformApplicationServicesSubPrepPreferencesPortTests`
-(registered name `NextPlatformApplicationServicesSubPrepPreferencesPort`).
-Both Explorer scans agree on this candidate. F208 is selected; no F208 results
-are recorded.
+Migrate `ApplicationServicesSpeakingEvaluationSavePort` from
+`SpeakingEvaluationService` to the active session's `SpeakingEvalRepository`.
+Move implementation into a `.cpp`, register it under `ClassMngrFeatures`, and
+keep database and validator includes out of the shared header. Preserve the
+interface and callers, canonical class IDs, open-session/NotFound behavior,
+trimmed evaluation name, `SpeakingEvalValidator` normalization and validation
+(including the Korean-name-length decision), full 25x11 matrix, exact changed-
+cell delta, current Technical error mapping, and no `DataService` fallback.
+Focused CTest: `ClassMngrNextPlatformApplicationServicesSpeakingEvaluationSavePortTests`.
+F209 is selected; implementation and results are not yet recorded. The
+post-F208 scans found no remaining `SettingsService` or `DataService`
+references in `src/next`; this save adapter is the remaining substantive
+feature-service dependency and has a clear repository boundary. The separate
+last-selected-campus ID-length consistency follow-up is lower priority and is
+not a blocker.

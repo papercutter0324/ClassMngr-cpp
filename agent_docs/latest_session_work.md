@@ -4538,3 +4538,32 @@ QtSql headers out of the shared UI header. Focused CTest:
 `ClassMngrNextPlatformApplicationServicesSubPrepPreferencesPortTests`.
 Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial. Next:
 implement F208, independently verify and commit it, then select F209.
+
+## 2026-10-01 — F208 accepted; F209 selected
+
+F196 is already acceptance-complete: source commit `b9f0a07d` was accepted in
+`fd64318d`, with its active-session repository migration, closed-session
+no-fallback/read-error coverage, focused CTest, and independent verification
+recorded. No separate unfinished F196 requirement was identified during this
+continuation.
+
+F208 source commit `d17ddd25` migrates Sub Prep saved-content preferences to the
+active session's `SettingsRepository`. The focused x64 build passed; CMake
+validated 1,140 handwritten source owners; the independent focused CTest passed
+1/1 in `build/f168`. Coverage verifies all four exact settings, UTF-8 and
+whitespace, missing versus present-empty optionals, atomic rollback, unrelated
+settings, closed-session no-fallback, repository read warnings/defaults, and
+zero database rows after a missing-value load. No full suite ran.
+
+Two independent scans found no remaining `SettingsService` or `DataService`
+references under `src/next`. F209 is selected to move
+`ApplicationServicesSpeakingEvaluationSavePort` from
+`SpeakingEvaluationService` to the active session's `SpeakingEvalRepository`.
+Preserve the service's trimmed name, `SpeakingEvalValidator` normalization and
+validation, 25-by-11 matrix, exact changed-cell delta, Korean-name-length
+decision, session availability, and Technical error mapping. The platform
+implementation will move to a `.cpp` registered under `ClassMngrFeatures`;
+callers and the typed interface stay unchanged. Focused CTest:
+`ClassMngrNextPlatformApplicationServicesSpeakingEvaluationSavePortTests`.
+Gates 1 and 2 remain Partial. Next: implement F209, then independently verify
+and commit it.

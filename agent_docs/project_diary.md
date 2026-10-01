@@ -126,6 +126,10 @@
   when automation must fail until all supported-platform evidence passes.
   Legacy 250 MiB measurements remain trend-only; 512 MiB is a diagnostic
   ceiling, not a Phase 0 pass criterion.
+- For settings repositories that return the same invalid QVariant for an
+  absent key and stored SQL NULL, prove read non-materialization by querying
+  row existence/count directly; QVariant validity alone cannot distinguish
+  the two states.
 
 ## macOS universal route-matrix lesson - 2026-09-17
 

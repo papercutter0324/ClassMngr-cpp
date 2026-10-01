@@ -63,7 +63,7 @@ is accepted in source commit `59133929`; F202 is accepted in source commit
 `c9ff5731`; F203 is accepted in source commit `4f128b01`; F204 is accepted in
 source commit `3cf2ab80`; F205 is accepted in source commit `bf9ca8a7`; F206 is
 accepted in source commit `7d0291d3`; F207 is accepted in source commit
-`12cb021a`.
+`12cb021a`; F208 is accepted in source commit `d17ddd25`.
 F196 and F197 use
 only the active open session's
 `SettingsRepository` and preserve their keys, conversions, defaults, and
@@ -105,22 +105,32 @@ UTF-8 and `toBool()` conversion, defaults, unavailable errors, and successful
 legacy reads after failed migration writes. Its focused CTest passed 1/1 in the
 executor and independent run; source ownership validated 1,139 owners, and
 `git diff --check` passed. No full suite ran.
+F208 migrates Sub Prep saved-content preferences to the active session's
+`SettingsRepository`, preserving the four keys, UTF-8/whitespace, optional
+absent-versus-empty values, atomic saves and rollback, and unrelated settings.
+Coverage includes closed-session no-fallback, repository read warnings and
+defaults, and a direct zero-row assertion proving missing reads do not
+materialize keys. The focused x64 build and independent CTest passed 1/1;
+source ownership validated 1,140 handwritten files and `git diff --check`
+passed. No full suite ran.
 
 F179-F195 advanced Sub Prep and Calendar repository boundaries and the
 preference-port migrations; individual scope and evidence remain in the
 [Phase 2 progress log](../plans/qt-rewrite-heavy-route-plan/03-Phase-2-Progress-Log.md).
-F208 is selected for `ApplicationServicesSubPrepPreferencesPort`, the only
-remaining `SettingsService`-backed preferences adapter under
-`src/next/platform`. Move load and save to the active open session's
-`SettingsRepository`, preserving exact keys, UTF-8 values, absent-versus-empty
-optional fields, missing-value defaults without materialization, the atomic
-four-key save and rollback, unrelated settings, and typed Technical errors.
-Add closed-session no-fallback coverage with `DataService` present and
-repository read-error/default coverage. Keep the typed interface and Sub Prep
-page callers unchanged; keep QtSql headers out of the UI-shared header. Focused
-CTest: `ClassMngrNextPlatformApplicationServicesSubPrepPreferencesPortTests`.
-Two independent scans selected this four-key saved-content aggregate after
-F207 closed the Personal Zoom reader. Gates 1 and 2 remain Partial.
+The post-F208 scans found no remaining `SettingsService` or `DataService`
+references under `src/next`. F209 is selected for
+`ApplicationServicesSpeakingEvaluationSavePort`: persist through the active
+session's `SpeakingEvalRepository`, moving database-bound code into a `.cpp`
+registered under `ClassMngrFeatures`. Preserve the existing service's
+canonical class ID handling, session availability, evaluation-name trimming,
+`SpeakingEvalValidator` normalization and validation (including the
+questionable Korean-name-length flag), 25-by-11 matrix, exact changed-cell
+delta, and Technical error mapping. Keep callers and the typed interface
+unchanged and add focused normalization/rejection coverage. CTest:
+`ClassMngrNextPlatformApplicationServicesSpeakingEvaluationSavePortTests`.
+The independent scans also noted a possible last-selected-campus ID-length
+consistency follow-up; it was not selected as a blocker. Gates 1 and 2 remain
+Partial.
 
 ### Earlier Phase 2 detail - 2026-09-26
 

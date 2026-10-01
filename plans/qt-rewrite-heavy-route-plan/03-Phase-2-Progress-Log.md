@@ -8845,21 +8845,33 @@ migration saves fail, and no closed-session `DataService` fallback. Focused
 CTest passed 1/1 in executor and independent runs. Source ownership validated
 1,139 owners. `git diff --check` passed; no full suite ran.
 
-F208 is selected for `ApplicationServicesSubPrepPreferencesPort`, the only
-remaining `SettingsService`-backed preference adapter in `src/next/platform`.
-Migrate it to the active open session's `SettingsRepository`. Preserve exact
-keys `subPrep/classMaterials`, `subPrep/bookReportGrading`,
-`subPrep/bookReportSpecialInstructions`, and `subPrep/subComments`; UTF-8 and
-whitespace; empty absent required text, absent optional text as `nullopt` versus
-present empty strings; missing reads without materialization; atomic four-key
-save/rollback and unrelated settings; typed Technical unavailable and
-nonrecoverable save errors; repository read-error warning/default semantics.
-Add closed-session no-fallback coverage with `DataService` present and
-repository read-error coverage. Keep the typed interface and Sub Prep UI
-callers unchanged; keep QtSql out of the UI-shared header, implement in `.cpp`,
-and register under `ClassMngrFeatures` if needed. Focused target
-`ClassMngrNextPlatformApplicationServicesSubPrepPreferencesPortTests`
-(registered name `NextPlatformApplicationServicesSubPrepPreferencesPort`).
-Both Explorer scans agree on this saved-content candidate. F208 is selected;
-no F208 results are recorded. Gates 1 and 2 remain Partial; Phase 2 remains In
-Progress/Open. Next continuation: implement and verify F208, then select F209.
+### Progress update - 2026-10-01 (F208 accepted; F209 selected)
+
+F208, source commit `d17ddd25`, migrates
+`ApplicationServicesSubPrepPreferencesPort` to the active open session's
+`SettingsRepository`. It preserves the exact four keys, UTF-8 and whitespace,
+empty required fields versus absent or present-empty optional fields, and
+missing reads without materialization (verified by an explicit zero-row query
+after load). Four-key saves are atomic, roll back on failure, and preserve
+unrelated settings. Unavailable/save failures retain typed Technical results;
+repository read failures retain warnings and defaults. Closed-session coverage
+confirms no fallback with `DataService` present. The focused x64 build passed;
+source ownership validated 1,140 handwritten files; independent CTest
+`ClassMngrNextPlatformApplicationServicesSubPrepPreferencesPortTests` passed
+1/1 in `build/f168`; `git diff --check` passed. No full suite ran.
+
+F209 is selected: migrate `ApplicationServicesSpeakingEvaluationSavePort` from
+`SpeakingEvaluationService` to the active session's `SpeakingEvalRepository`.
+Move implementation into a `.cpp`, register under `ClassMngrFeatures`, and
+keep database/validator includes out of the shared header. Preserve the
+interface/callers, canonical class IDs, open-session/NotFound behavior,
+trimmed evaluation name, `SpeakingEvalValidator` normalization and validation
+(including the Korean-name-length decision), full 25x11 matrix, exact changed-
+cell delta, current Technical error mapping, and no `DataService` fallback.
+Focused CTest: `ClassMngrNextPlatformApplicationServicesSpeakingEvaluationSavePortTests`.
+Post-F208 scans found no remaining `SettingsService` or `DataService`
+references in `src/next`; this adapter is the remaining substantive
+feature-service dependency and has a clear repository boundary. The
+last-selected-campus ID-length consistency follow-up is lower priority and not
+a blocker. F209 implementation/results are not yet recorded. Gates 1 and 2
+remain Partial; Phase 2 remains In Progress/Open.
