@@ -1,11 +1,14 @@
 #pragma once
 
-#include "app/services/feature_services.h"
 #include "core/application_services.h"
+#include "data/database/database_session.h"
+#include "data/repositories/settings_repository.h"
 #include "next/application/personal_display_name_preferences.h"
 
 #include <QByteArray>
+#include <QDebug>
 #include <QString>
+#include <QVariant>
 
 #include <cstddef>
 #include <string>
@@ -14,7 +17,7 @@ namespace ClassMngr::Next::Platform
 {
 
 // Qt-boundary adapter for the personal display name. The exact legacy key,
-// QVariant/UTF-8 conversion, and SettingsService failure mapping stay here;
+// QVariant/UTF-8 conversion, and repository failure mapping stay here;
 // personal-details writers remain compatibility owners.
 class ApplicationServicesPersonalDisplayNamePreferencesPort final
     : public Application::PersonalDisplayNamePreferencesPort
@@ -23,7 +26,7 @@ public:
     explicit ApplicationServicesPersonalDisplayNamePreferencesPort(
         ApplicationServices& services
         ) noexcept
-        : m_settingsService(services.settingsService())
+        : m_session(services.databaseSession())
     {
     }
 
@@ -42,23 +45,37 @@ public:
 
     [[nodiscard]] std::string read() const override
     {
-        if (!m_settingsService || !m_settingsService->isAvailable())
+        if (!m_session || !m_session->isOpen())
         {
             return {};
         }
 
-        const QByteArray storedName =
-            m_settingsService
-                ->loadOrDefault(
-                    key(),
-                    QString()
-                    )
-                .toString()
-                .toUtf8();
+        SettingsRepository* const repository = m_session->settingsRepository();
+        if (!repository)
+        {
+            return {};
+        }
+
+        const auto stored = repository->loadSetting(key());
+        QVariant storedName = QString();
+        if (!stored)
+        {
+            qWarning()
+                << "Failed to load setting"
+                << key()
+                << ':'
+                << stored.error();
+        }
+        else if (stored->isValid())
+        {
+            storedName = *stored;
+        }
+
+        const QByteArray storedNameUtf8 = storedName.toString().toUtf8();
 
         return std::string(
-            storedName.constData(),
-            static_cast<std::size_t>(storedName.size())
+            storedNameUtf8.constData(),
+            static_cast<std::size_t>(storedNameUtf8.size())
             );
     }
 
@@ -67,27 +84,30 @@ public:
         const std::string& name
         ) const override
     {
-        if (!m_settingsService || !m_settingsService->isAvailable())
+        if (!m_session || !m_session->isOpen())
         {
             return Application::
                 PersonalDisplayNamePreferencesSaveResult::success();
         }
 
-        const Status saved = m_settingsService->save(
+        SettingsRepository* const repository = m_session->settingsRepository();
+        if (!repository)
+        {
+            return failure("Personal display name could not be saved.");
+        }
+
+        const Status saved = repository->saveSetting(
             key(),
             fromUtf8(name)
             );
         if (!saved)
         {
             const QByteArray errorBytes = saved.error().toUtf8();
-            return Application::
-                PersonalDisplayNamePreferencesSaveResult::failure({
-                    .code = Domain::ErrorCode::Technical,
-                    .message = errorBytes.isEmpty()
-                        ? "Personal display name could not be saved."
-                        : errorBytes.toStdString(),
-                    .recoverable = false
-                });
+            return failure(
+                errorBytes.isEmpty()
+                    ? "Personal display name could not be saved."
+                    : errorBytes.toStdString()
+                );
         }
 
         return Application::
@@ -95,6 +115,16 @@ public:
     }
 
 private:
+    [[nodiscard]] static Application::
+    PersonalDisplayNamePreferencesSaveResult failure(std::string message)
+    {
+        return Application::PersonalDisplayNamePreferencesSaveResult::failure({
+            .code = Domain::ErrorCode::Technical,
+            .message = message,
+            .recoverable = false
+        });
+    }
+
     [[nodiscard]] static QString key()
     {
         return QStringLiteral("myInfo/name");
@@ -110,7 +140,7 @@ private:
             );
     }
 
-    SettingsService* m_settingsService = nullptr;
+    DatabaseSession* m_session = nullptr;
 };
 
 } // namespace ClassMngr::Next::Platform

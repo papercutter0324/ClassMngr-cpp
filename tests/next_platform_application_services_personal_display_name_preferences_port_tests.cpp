@@ -1,8 +1,11 @@
 #include "core/application_services.h"
 #include "data/data_service.h"
 #include "data/database/database_session.h"
+#include "next/application/personal_details_save.h"
+#include "next/platform/application_services_personal_details_save_port.h"
 #include "next/platform/application_services_personal_display_name_preferences_port.h"
 
+#include <QRegularExpression>
 #include <QSqlQuery>
 #include <QTemporaryDir>
 #include <QUuid>
@@ -60,6 +63,14 @@ std::string utf8(const QString& value)
         );
 }
 
+QString expectedUtf8Name()
+{
+    return QString::fromUtf8(
+        "  \xEA\xB9\x80\x20\xEC\x84\xA0\xEC\x83\x9D\xEB\x8B\x98 / "
+        "\xF0\x9F\xA7\xAD  "
+        );
+}
+
 } // namespace
 
 class NextPlatformApplicationServicesPersonalDisplayNamePreferencesPortTests
@@ -72,8 +83,11 @@ private slots:
     void exactKeyAndUtf8WhitespaceRoundTrip();
     void writePersistsExactKeyAndPreservesUnrelatedSettings();
     void missingAndUnavailableReadEmpty();
+    void readFailureReturnsEmpty();
     void preservesUnrelatedSettingsAndDoesNotWrite();
     void writeFailureMapsToTechnicalError();
+    void readsNameWrittenByPersonalDetailsSavePort();
+    void closedSessionReadsEmptyAndIgnoresWrites();
 
 private:
     QTemporaryDir m_directory;
@@ -92,7 +106,7 @@ exactKeyAndUtf8WhitespaceRoundTrip()
     QVERIFY(openDatabase(services, m_directory));
     QVERIFY(services.dataService());
 
-    const QString expected = QStringLiteral("  김 선생님 / 🧭  ");
+    const QString expected = expectedUtf8Name();
     QVERIFY(
         services.dataService()->saveSetting(
             QString::fromUtf8(PersonalDisplayNameKey),
@@ -129,7 +143,7 @@ writePersistsExactKeyAndPreservesUnrelatedSettings()
             )
         );
 
-    const QString expected = QStringLiteral("  김 선생님 / 🧭  ");
+    const QString expected = expectedUtf8Name();
     ApplicationServicesPersonalDisplayNamePreferencesPort port(services);
     QVERIFY(port.write(utf8(expected)));
     QCOMPARE(port.read(), utf8(expected));
@@ -168,6 +182,21 @@ missingAndUnavailableReadEmpty()
         );
     QVERIFY(unavailablePort.read().empty());
     QVERIFY(unavailablePort.write("ignored"));
+}
+
+void NextPlatformApplicationServicesPersonalDisplayNamePreferencesPortTests::
+readFailureReturnsEmpty()
+{
+    ApplicationServices services;
+    QVERIFY(openDatabase(services, m_directory));
+    QVERIFY(executeSql(services, QStringLiteral("DROP TABLE app_settings")));
+
+    ApplicationServicesPersonalDisplayNamePreferencesPort port(services);
+    QTest::ignoreMessage(
+        QtWarningMsg,
+        QRegularExpression(QStringLiteral("Failed to load setting.*"))
+        );
+    QVERIFY(port.read().empty());
 }
 
 void NextPlatformApplicationServicesPersonalDisplayNamePreferencesPortTests::
@@ -239,6 +268,66 @@ writeFailureMapsToTechnicalError()
         );
     QVERIFY(stored);
     QVERIFY(!stored->isValid());
+}
+
+void NextPlatformApplicationServicesPersonalDisplayNamePreferencesPortTests::
+readsNameWrittenByPersonalDetailsSavePort()
+{
+    ApplicationServices services;
+    QVERIFY(openDatabase(services, m_directory));
+
+    ClassMngr::Next::Application::PersonalDetailsSaveRequest request;
+    request.name = utf8(expectedUtf8Name());
+
+    ApplicationServicesPersonalDetailsSavePort savePort(services);
+    QVERIFY(savePort.save(request));
+
+    ApplicationServicesPersonalDisplayNamePreferencesPort readPort(services);
+    QCOMPARE(readPort.read(), utf8(expectedUtf8Name()));
+}
+
+void NextPlatformApplicationServicesPersonalDisplayNamePreferencesPortTests::
+closedSessionReadsEmptyAndIgnoresWrites()
+{
+    ApplicationServices services;
+    const QString path = databasePath(m_directory);
+    QVERIFY(services.openDatabase(path));
+    QVERIFY(services.dataService());
+
+    const QString expected = expectedUtf8Name();
+    QVERIFY(
+        services.dataService()->saveSetting(
+            QString::fromUtf8(PersonalDisplayNameKey),
+            expected
+            )
+        );
+    QVERIFY(
+        services.dataService()->saveSetting(
+            QString::fromUtf8(UnrelatedKey),
+            QStringLiteral("preserved")
+            )
+        );
+
+    ApplicationServicesPersonalDisplayNamePreferencesPort port(services);
+    services.closeDatabase();
+    QVERIFY(services.dataService());
+    QVERIFY(!services.databaseSession()->isOpen());
+
+    QVERIFY(port.read().empty());
+    QVERIFY(port.write("ignored while closed"));
+
+    QVERIFY(services.openDatabase(path));
+    const auto storedName = services.dataService()->loadSetting(
+        QString::fromUtf8(PersonalDisplayNameKey)
+        );
+    QVERIFY(storedName);
+    QCOMPARE(storedName->toString(), expected);
+
+    const auto unrelated = services.dataService()->loadSetting(
+        QString::fromUtf8(UnrelatedKey)
+        );
+    QVERIFY(unrelated);
+    QCOMPARE(unrelated->toString(), QStringLiteral("preserved"));
 }
 
 QTEST_MAIN(
