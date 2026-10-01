@@ -1,7 +1,8 @@
 #pragma once
 
-#include "app/services/feature_services.h"
 #include "core/application_services.h"
+#include "data/database/database_session.h"
+#include "data/repositories/settings_repository.h"
 #include "features/my_info/data/signature_image_processor.h"
 #include "next/application/personal_details_save.h"
 
@@ -17,7 +18,7 @@ namespace ClassMngr::Next::Platform
 
 // Qt-boundary adapter for the atomic Personal Details compatibility bundle.
 // It owns the nine exact keys, QVariant conversion, image preparation, and
-// the single SettingsService::saveAll transaction.
+// the single active-session SettingsRepository::saveSettings transaction.
 class ApplicationServicesPersonalDetailsSavePort final
     : public Application::PersonalDetailsSavePort
 {
@@ -25,14 +26,14 @@ public:
     explicit ApplicationServicesPersonalDetailsSavePort(
         ApplicationServices& services
         ) noexcept
-        : m_services(&services)
+        : m_session(services.databaseSession())
     {
     }
 
     explicit ApplicationServicesPersonalDetailsSavePort(
         ApplicationServices* services
         ) noexcept
-        : m_services(services)
+        : m_session(services ? services->databaseSession() : nullptr)
     {
     }
 
@@ -53,11 +54,16 @@ public:
         const Application::PersonalDetailsSaveRequest& request
         ) const override
     {
-        SettingsService* const settingsService =
-            m_services
-                ? m_services->settingsService()
-                : nullptr;
-        if (!settingsService || !settingsService->isAvailable())
+        if (!m_session || !m_session->isOpen())
+        {
+            return Application::PersonalDetailsSaveResult::failure(
+                unavailableError()
+                );
+        }
+
+        SettingsRepository* const repository =
+            m_session->settingsRepository();
+        if (!repository)
         {
             return Application::PersonalDetailsSaveResult::failure(
                 unavailableError()
@@ -103,7 +109,7 @@ public:
             }
         };
 
-        const Status saved = settingsService->saveAll(values);
+        const Status saved = repository->saveSettings(values);
         if (!saved)
         {
             const QByteArray errorBytes = saved.error().toUtf8();
@@ -219,7 +225,7 @@ private:
             : 0;
     }
 
-    ApplicationServices* m_services = nullptr;
+    DatabaseSession* m_session = nullptr;
 };
 
 } // namespace ClassMngr::Next::Platform

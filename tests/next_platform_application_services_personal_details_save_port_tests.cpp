@@ -137,6 +137,7 @@ private slots:
     void normalizesModeAndFontValues();
     void saveFailureRollsBackAllKeysAndPreservesUnrelatedSettings();
     void unavailableSettingsReturnFailureWithoutPartialWrites();
+    void closedSessionRefusesSaveAndPreservesAllSettingsOnReopen();
 
 private:
     QTemporaryDir m_directory;
@@ -329,11 +330,60 @@ unavailableSettingsReturnFailureWithoutPartialWrites()
         saved.error().code,
         ClassMngr::Next::Domain::ErrorCode::Technical
         );
+    QVERIFY(
+        saved.error().message
+            == "Personal details settings service is unavailable."
+        );
 
     ApplicationServicesPersonalDetailsSavePort nullPort(
         static_cast<ApplicationServices*>(nullptr)
         );
     QVERIFY(!nullPort.save({}));
+}
+
+void NextPlatformApplicationServicesPersonalDetailsSavePortTests::
+closedSessionRefusesSaveAndPreservesAllSettingsOnReopen()
+{
+    ApplicationServices services;
+    const QString path = databasePath(m_directory);
+    QVERIFY(services.openDatabase(path));
+    QVERIFY(services.dataService());
+
+    const QMap<QString, QVariant> initialValues = {
+        {QString::fromUtf8(NameKey), QStringLiteral("old name")},
+        {QString::fromUtf8(CampusKey), QStringLiteral("old campus")},
+        {QString::fromUtf8(ZoomLoginIdKey), QStringLiteral("old login")},
+        {QString::fromUtf8(ZoomPasswordKey), QStringLiteral("old password")},
+        {QString::fromUtf8(ZoomNotAvailableKey), true},
+        {QString::fromUtf8(SignatureImageKey), QStringLiteral("old-image")},
+        {QString::fromUtf8(SignatureModeKey), 0},
+        {QString::fromUtf8(TypedSignatureTextKey), QStringLiteral("old text")},
+        {QString::fromUtf8(TypedSignatureFontKey), 1},
+        {QString::fromUtf8(UnrelatedKey), QStringLiteral("preserved")}
+    };
+    QVERIFY(services.dataService()->saveSettings(initialValues));
+
+    ApplicationServicesPersonalDetailsSavePort port(services);
+    services.closeDatabase();
+    QVERIFY(services.dataService());
+    QVERIFY(!services.databaseSession()->isOpen());
+
+    const auto saved = port.save(replacementRequest(sourcePng()));
+    QVERIFY(!saved);
+    QCOMPARE(
+        saved.error().code,
+        ClassMngr::Next::Domain::ErrorCode::Technical
+        );
+
+    QVERIFY(services.openDatabase(path));
+    for (auto setting = initialValues.cbegin();
+         setting != initialValues.cend();
+         ++setting)
+    {
+        const auto stored = services.dataService()->loadSetting(setting.key());
+        QVERIFY(stored);
+        QCOMPARE(*stored, setting.value());
+    }
 }
 
 QTEST_MAIN(NextPlatformApplicationServicesPersonalDetailsSavePortTests)
