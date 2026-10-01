@@ -1833,4 +1833,14 @@ Move deterministic date parsing, occurrence selection, and week-bucket policy
 into the Qt-free Application layer. Keep locale-aware name ordering and
 presentation at the feature boundary, and preserve Sunday week endings, year
 rollover, the invalid-reference-date empty result, and the existing February
-29 fallback.
+29 fallback. Add exact UTF-16 display-name preservation to the app-less tests
+when feature inputs cross into the standard-library contract.
+
+## 2026-10-01 - F213 default evaluation selection
+
+When a feature path already has typed Application read ports and a Qt-free
+selection rule, complete that path end to end before taking an adjacent
+controller-policy candidate. Keep calendar schedule/date calculations and
+localized display labels at the feature boundary; move only row-content policy
+and data reads behind the existing contracts. Preserve the rule that any
+non-whitespace evaluation cell makes the current term populated.

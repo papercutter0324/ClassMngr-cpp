@@ -59,9 +59,9 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
   Reset Policy, F205's Class Selection Reset Policy, F206's Custom Color
   Palette preferences, F207's Sub Prep Personal Zoom preferences, and F208's
   Sub Prep saved-content preferences and F209's speaking-evaluation save are
-  accepted; F210's recent-workspace history policy and F211's Speaking
-  Evaluation read-port extraction are accepted. F212's upcoming-birthday
-  schedule policy is selected.
+  accepted; F210's recent-workspace history policy, F211's Speaking
+  Evaluation read-port extraction, and F212's upcoming-birthday schedule
+  policy are accepted. F213's default evaluation selection is selected.
   The prior F123 candidate wording is historical;
   current Teacher Profile integration status is recorded in the progress log.
   Gates 1 and 2
@@ -218,33 +218,24 @@ No new v2 production path depends on DataService, MainWindow, PageManager, or a 
 
 Earlier verified slices and cumulative exit-gate snapshots are archived in the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 
-## Latest progress update - 2026-10-01 (F211 accepted; F212 selected)
+## Latest progress update - 2026-10-01 (F212 accepted; F213 selected)
 
-F211, source commit `2347739c`, extracts
-`ApplicationServicesSpeakingEvaluationReadPort` implementation into `.cpp`,
-preserving its typed port/header boundary and semantics; this read-port
-extraction is distinct from F209's accepted save-port migration. The build
-passed all three focused targets; CMake source ownership validated 1,144
-handwritten sources; independent focused CTest passed 3/3 in `build/f168`:
-`ClassMngrNextApplicationSpeakingEvaluationQueryTests`,
-`ClassMngrNextPlatformApplicationServicesSpeakingEvaluationReadPortTests`, and
-`ClassMngrSpeakingEvalPageSaveTests`. Coverage includes canonical IDs,
-exact-name misses, ordered Unicode rows, repository errors, closed sessions,
-query identity, and page blank-grid behavior. Exception mapping was
-source-reviewed; tests did not directly throw an exception. No full suite ran.
+F212, source commit `bd6d044f`, moves upcoming-birthday date parsing,
+occurrence generation, and week bucketing from the feature wrapper into a
+Qt-free Application use case. CMake ownership validated 1,146 handwritten
+sources. The focused Application and feature CTests passed 2/2; after a Unicode
+display-name regression assertion was added, the focused Application target
+passed 1/1 and the independent Tester recheck passed 1/1. No full suite ran.
 
-F212 is selected: move upcoming-birthday date parsing, occurrence generation,
-and bucket policy from `src/features/teacher/upcoming_birthday_schedule.cpp` into a
-Qt-free Application use case with an app-less test target. Keep Qt `QDate` and
-`QString` conversion, locale-aware sorting, and dialog presentation at the
-feature/UI edges. Preserve an empty result for an invalid reference date,
-trimmed `MM-dd`, omission of invalid dates and blank display names, buckets for
-today, this week through Sunday, and next week through Sunday, year rollover,
-February 29 mapping to February 28 in non-leap years, all three staff groups,
-and display-name fallback rules. Keep existing dialog/action coverage in
-`UpcomingBirthdaysTests`, expanding only schedule checks as needed.
-Two Explorer scans compared candidate scopes: workspace-port `.cpp` extraction
-is structural cleanup, while birthday bucketing moves Qt feature policy into
-Application and advances Gate 1. Phase 2 remains In Progress/Open; Gates 1 and
-2 remain Partial. See the [Phase 2 progress log](03-Phase-2-Progress-Log.md)
+F213 is selected: move default evaluation selection's populated-row semantics
+into Qt-free Application and route the feature wrapper through the existing
+typed `SelectedClassGradeReadPort` and `SpeakingEvaluationReadPort` contracts
+and Application cycle selector. Keep calendar schedule/date/term calculation
+and display labels in the feature. Preserve `All` as empty; empty results for
+no data, schedule, or read error; grade-level mapping; any non-whitespace cell,
+including Unicode, making the current evaluation populated; and four-period
+previous-cycle fallback, including Winter/Fall wrap. Two independent Explorer
+scans disagreed on the candidate; the selected path closes a concrete v1 read
+path through existing typed contracts. Phase 2 remains In Progress/Open;
+Gates 1 and 2 remain Partial. See the [Phase 2 progress log](03-Phase-2-Progress-Log.md)
 for prior slice evidence.

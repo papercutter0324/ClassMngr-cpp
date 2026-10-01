@@ -144,18 +144,29 @@ was source-reviewed. No full suite ran.
 F179-F195 advanced Sub Prep and Calendar repository boundaries and the
 preference-port migrations; individual scope and evidence remain in the
 [Phase 2 progress log](../plans/qt-rewrite-heavy-route-plan/03-Phase-2-Progress-Log.md).
-F212 is selected to move upcoming-birthday date parsing, occurrence selection,
-and today/this-week/next-week bucketing from the Qt feature into a Qt-free
-Application use case. Preserve trimmed `MM-dd` parsing, omission of invalid
-dates and blank display names, empty results for an invalid reference date,
-Sunday week boundaries, year rollover, February 29 fallback to February 28 in
-non-leap years, and all staff-group mapping and name fallback behavior. Keep Qt
-date/text conversion, locale-aware ordering, and dialog presentation at the
-feature/UI boundary. Add app-less policy tests and retain
-`UpcomingBirthdaysTests` for dialog/action behavior. Two independent
-scans compared this with the structural `ApplicationServicesWorkspacePort`
-header extraction and selected birthday bucketing because it moves actual
-feature policy into Application, advancing Gate 1. Gates 1 and 2 remain Partial.
+F212 source commit `bd6d044f` moves upcoming-birthday date parsing, occurrence
+selection, and today/this-week/next-week bucketing into a Qt-free Application
+use case. It preserves trimmed `MM-dd` parsing, omission of invalid dates and
+blank display names, empty results for an invalid reference date, Sunday week
+boundaries, year rollover, February 29 fallback to February 28 in non-leap
+years, and staff-group/name fallback behavior. Qt date/text conversion,
+locale-aware ordering, and dialog presentation remain at the feature/UI
+boundary. The executor's focused CTests passed 2/2; the follow-up Unicode
+preservation assertion passed 1/1, and independent tester recheck passed 1/1.
+CMake ownership validated 1,146 handwritten sources. No full suite ran.
+
+Two independent scans compared different F213 candidates: skipped-update
+version reconciliation in `UpdateController`, and the default evaluation
+selection path that still reads through `ClassService` and
+`SpeakingEvaluationService`. F213 is selected to complete the typed Application
+path for default evaluation selection: move populated-row semantics into the
+Qt-free Application contract and route feature reads through the existing
+selected-class-grade and Speaking Evaluation read ports. Keep calendar date,
+schedule/term calculation, and display-label mapping at the feature boundary.
+Preserve All/no-data/error empty results, grade-to-school mapping, any
+non-whitespace cell as populated, and current/previous cycle behavior,
+including Winter/Fall wrap. Phase 2 remains In Progress/Open; Gates 1 and 2
+remain Partial.
 
 ### Earlier Phase 2 detail - 2026-09-26
 
