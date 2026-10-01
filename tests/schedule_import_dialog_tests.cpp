@@ -6,6 +6,7 @@
 #include "domain/models/teacher.h"
 #include "features/schedule/ui/schedule_import_dialog.h"
 #include "features/schedule/ui/schedule_import_review_dialog.h"
+#include "features/schedule/ui/schedule_widget.h"
 #include "features/schedule/import/schedule_workbook_parser.h"
 #include "features/teacher/import/teacher_import_name_utils.h"
 #include "next/application/schedule_import_review_summary_projection.h"
@@ -61,6 +62,7 @@ void setMatchImportedClasses(bool match);
 void setPossibleImportedClasses(bool match);
 void setMatchingImportedTeacherIds(QList<int> teacherIds);
 void setExistingIntensiveHours(bool exists);
+void setDistinctIntensiveDays(bool distinct);
 void setIncludeAlternativeMatchingClass(bool include);
 void setClassGrade(int classId, const QString& grade);
 void setClassLevel(int classId, const QString& level);
@@ -98,6 +100,8 @@ private slots:
     void resolutionChoicesUseTypedSnapshotAndPreserveOrdering();
     void reviewMatchingUsesNormalizedSnapshotFields();
     void reviewSummaryUsesApplicationProjection();
+    void reviewPreviewUsesProjectedRowsInControlOrder();
+    void intensivePreviewKeepsProjectedPreservationOrder();
     void resolutionBuilderRetainsAdditionalEligibleTargets();
     void reviewPrepareSnapshotFailureDoesNotBuildControlsOrFallback();
     void reviewPrepareClosedSessionUsesSnapshotWarning();
@@ -161,6 +165,55 @@ int actionIndex(
         }
     }
     return -1;
+}
+
+int unselectedActionIndex(
+    const QComboBox* combo
+    )
+{
+    if (!combo)
+    {
+        return -1;
+    }
+
+    for (int index = 0; index < combo->count(); ++index)
+    {
+        if (combo->itemData(index, Qt::UserRole).toInt() < 0)
+        {
+            return index;
+        }
+    }
+    return -1;
+}
+
+QList<ScheduleEntry> previewEntriesAt(
+    ScheduleImportReviewDialog& review,
+    const QString& day,
+    const QString& timeLabel
+    )
+{
+    auto* preview = review.findChild<ScheduleWidget*>(
+        QStringLiteral("scheduleImportPreview")
+        );
+    if (!preview)
+    {
+        return {};
+    }
+
+    const ScheduleViewModel model = preview->scheduleModel();
+    const int dayIndex = model.days.indexOf(day);
+    if (dayIndex < 0)
+    {
+        return {};
+    }
+    for (const ScheduleRowView& row : model.rows)
+    {
+        if (row.timeLabel == timeLabel && dayIndex < row.cells.size())
+        {
+            return row.cells.at(dayIndex).entries;
+        }
+    }
+    return {};
 }
 
 ScheduleImportReviewRequest classSkipRequest(const Teacher& teacher)
@@ -2199,6 +2252,250 @@ void ScheduleImportDialogTests::reviewSummaryUsesApplicationProjection()
         QStringLiteral("%1 existing schedule(s) cleared;")
             .arg(expected.schedulesCleared)
         ));
+}
+
+void ScheduleImportDialogTests::
+reviewPreviewUsesProjectedRowsInControlOrder()
+{
+    ScheduleWidgetTestStubs::setPossibleImportedClasses(true);
+
+    ApplicationServices services;
+    ScheduleImportReviewRequest request;
+    request.kind = ScheduleImportKind::Normal;
+    request.user.name = QStringLiteral("Alice");
+
+    const auto candidate = [](
+                               const QString& grade,
+                               const QString& level,
+                               const QString& day,
+                               const QString& start
+                               )
+    {
+        ScheduleImportClassCandidate result;
+        result.teacherKey = QStringLiteral("\uAE40\uC120\uC0DD");
+        result.teacherKr = result.teacherKey;
+        result.rooms = {QStringLiteral("414")};
+        result.classGrade = grade;
+        result.classLevel = level;
+        const QString end =
+            start.section(QLatin1Char(':'), 0, 0)
+            + QStringLiteral(":50 PM");
+        result.times = {
+            {
+                day,
+                start,
+                end
+            }
+        };
+        return result;
+    };
+    request.user.classes = {
+        candidate(
+            QStringLiteral("E4"),
+            QStringLiteral("Hercules"),
+            QStringLiteral("Tuesday"),
+            QStringLiteral("5:00 PM")
+            ),
+        candidate(
+            QStringLiteral("E6"),
+            QStringLiteral("Nova"),
+            QStringLiteral("Tuesday"),
+            QStringLiteral("4:00 PM")
+            ),
+        candidate(
+            QStringLiteral("E4"),
+            QStringLiteral("Hercules"),
+            QStringLiteral("Tuesday"),
+            QStringLiteral("6:00 PM")
+            ),
+        candidate(
+            QStringLiteral("E7"),
+            QStringLiteral("Orion"),
+            QStringLiteral("Thursday"),
+            QStringLiteral("7:00 PM")
+            )
+    };
+    request.user.classes[2].teacherKey = QStringLiteral("\uBC15\uC120\uC0DD");
+    request.user.classes[2].teacherKr = request.user.classes[2].teacherKey;
+
+    ScheduleImportReviewDialog review(&services, request);
+    QVERIFY(review.prepare());
+
+    auto* skipAction = review.findChild<QComboBox*>(
+        QStringLiteral("scheduleImportClassAction_0")
+        );
+    auto* createAction = review.findChild<QComboBox*>(
+        QStringLiteral("scheduleImportClassAction_1")
+        );
+    auto* incompleteAction = review.findChild<QComboBox*>(
+        QStringLiteral("scheduleImportClassAction_2")
+        );
+    auto* targetlessSkipAction = review.findChild<QComboBox*>(
+        QStringLiteral("scheduleImportClassAction_3")
+        );
+    QVERIFY(skipAction);
+    QVERIFY(createAction);
+    QVERIFY(incompleteAction);
+    QVERIFY(targetlessSkipAction);
+
+    const int skipIndex = actionIndex(
+        skipAction,
+        ScheduleImportClassAction::Skip,
+        42
+        );
+    const int createIndex = actionIndex(
+        createAction,
+        ScheduleImportClassAction::CreateNew
+        );
+    const int targetlessSkipIndex = actionIndex(
+        targetlessSkipAction,
+        ScheduleImportClassAction::Skip
+        );
+    const int incompleteIndex = unselectedActionIndex(incompleteAction);
+    QVERIFY(skipIndex >= 0);
+    QVERIFY(createIndex >= 0);
+    QVERIFY(targetlessSkipIndex >= 0);
+    QVERIFY(incompleteIndex >= 0);
+    skipAction->setCurrentIndex(skipIndex);
+    createAction->setCurrentIndex(createIndex);
+    incompleteAction->setCurrentIndex(incompleteIndex);
+    targetlessSkipAction->setItemData(
+        targetlessSkipIndex,
+        0,
+        Qt::UserRole + 1
+        );
+    targetlessSkipAction->setCurrentIndex(targetlessSkipIndex);
+    QCOMPARE(incompleteAction->currentData(Qt::UserRole).toInt(), -1);
+
+    const QList<ScheduleEntry> tuesdayEntries = previewEntriesAt(
+        review,
+        QStringLiteral("Tuesday"),
+        QStringLiteral("16:00")
+        );
+    QCOMPARE(tuesdayEntries.size(), 2);
+    QCOMPARE(tuesdayEntries.at(0).classGrade, QStringLiteral("E4"));
+    QCOMPARE(tuesdayEntries.at(0).classLevel, QStringLiteral("Hercules"));
+    QCOMPARE(tuesdayEntries.at(1).classGrade, QStringLiteral("E6"));
+    QCOMPARE(tuesdayEntries.at(1).classLevel, QStringLiteral("Nova"));
+    QVERIFY(
+        previewEntriesAt(
+            review,
+            QStringLiteral("Tuesday"),
+            QStringLiteral("17:00")
+            ).isEmpty()
+        );
+    QVERIFY(
+        previewEntriesAt(
+            review,
+            QStringLiteral("Tuesday"),
+            QStringLiteral("18:00")
+            ).isEmpty()
+        );
+    QVERIFY(
+        previewEntriesAt(
+            review,
+            QStringLiteral("Thursday"),
+            QStringLiteral("19:00")
+            ).isEmpty()
+        );
+}
+
+void ScheduleImportDialogTests::
+intensivePreviewKeepsProjectedPreservationOrder()
+{
+    ScheduleWidgetTestStubs::setIncludeAdditionalClass(true);
+    ScheduleWidgetTestStubs::setIncludeAlternativeMatchingClass(true);
+    ScheduleWidgetTestStubs::setExistingIntensiveHours(true);
+    ScheduleWidgetTestStubs::setDistinctIntensiveDays(true);
+    ScheduleWidgetTestStubs::setClassGrade(44, QStringLiteral("E7"));
+    ScheduleWidgetTestStubs::setClassLevel(44, QStringLiteral("Orion"));
+
+    ApplicationServices services;
+    ScheduleImportReviewRequest request;
+    request.kind = ScheduleImportKind::Intensive;
+    request.user.name = QStringLiteral("Alice");
+
+    ScheduleImportClassCandidate skipped;
+    skipped.teacherKey = QStringLiteral("\uAE40\uC120\uC0DD");
+    skipped.teacherKr = skipped.teacherKey;
+    skipped.rooms = {QStringLiteral("414")};
+    skipped.classGrade = QStringLiteral("E4");
+    skipped.classLevel = QStringLiteral("Hercules");
+    skipped.times = {
+        {
+            QStringLiteral("Monday"),
+            QStringLiteral("10:00 AM"),
+            QStringLiteral("10:50 AM")
+        }
+    };
+
+    ScheduleImportClassCandidate created;
+    created.teacherKey = skipped.teacherKey;
+    created.teacherKr = skipped.teacherKr;
+    created.rooms = skipped.rooms;
+    created.classGrade = QStringLiteral("E6");
+    created.classLevel = QStringLiteral("Nova");
+    created.times = {
+        {
+            QStringLiteral("Friday"),
+            QStringLiteral("9:00 AM"),
+            QStringLiteral("9:50 AM")
+        }
+    };
+    request.user.classes = {skipped, created};
+
+    ScheduleImportReviewDialog review(&services, request);
+    QVERIFY(review.prepare());
+
+    auto* updateMode = review.findChild<QRadioButton*>(
+        QStringLiteral("scheduleImportUpdateIntensiveRadio")
+        );
+    auto* skipAction = review.findChild<QComboBox*>(
+        QStringLiteral("scheduleImportClassAction_0")
+        );
+    auto* createAction = review.findChild<QComboBox*>(
+        QStringLiteral("scheduleImportClassAction_1")
+        );
+    QVERIFY(updateMode);
+    QVERIFY(skipAction);
+    QVERIFY(createAction);
+    QVERIFY(updateMode->isChecked());
+
+    const int skipIndex = actionIndex(
+        skipAction,
+        ScheduleImportClassAction::Skip
+        );
+    const int createIndex = actionIndex(
+        createAction,
+        ScheduleImportClassAction::CreateNew
+        );
+    QVERIFY(skipIndex >= 0);
+    QVERIFY(createIndex >= 0);
+    skipAction->setItemData(skipIndex, 42, Qt::UserRole + 1);
+    skipAction->setCurrentIndex(skipIndex);
+    createAction->setCurrentIndex(createIndex);
+
+    const QList<ScheduleEntry> fridayEntries = previewEntriesAt(
+        review,
+        QStringLiteral("Friday"),
+        QStringLiteral("09:00")
+        );
+    QCOMPARE(fridayEntries.size(), 3);
+    QCOMPARE(fridayEntries.at(0).classGrade, QStringLiteral("E4"));
+    QCOMPARE(fridayEntries.at(0).classLevel, QStringLiteral("Hercules"));
+    QCOMPARE(fridayEntries.at(1).classGrade, QStringLiteral("E6"));
+    QCOMPARE(fridayEntries.at(1).classLevel, QStringLiteral("Nova"));
+    QCOMPARE(fridayEntries.at(2).classGrade, QStringLiteral("E7"));
+    QCOMPARE(fridayEntries.at(2).classLevel, QStringLiteral("Orion"));
+
+    const QList<ScheduleEntry> mondayEntries = previewEntriesAt(
+        review,
+        QStringLiteral("Monday"),
+        QStringLiteral("09:00")
+        );
+    QCOMPARE(mondayEntries.size(), 1);
+    QCOMPARE(mondayEntries.first().classGrade, QStringLiteral("E5"));
+    QCOMPARE(mondayEntries.first().classLevel, QStringLiteral("Athena"));
 }
 
 void ScheduleImportDialogTests::
