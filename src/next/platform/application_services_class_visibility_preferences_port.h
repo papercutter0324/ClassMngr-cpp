@@ -1,7 +1,8 @@
 #pragma once
 
-#include "app/services/feature_services.h"
 #include "core/application_services.h"
+#include "data/database/database_session.h"
+#include "data/repositories/settings_repository.h"
 #include "next/application/class_visibility_preferences.h"
 
 #include <QString>
@@ -10,9 +11,9 @@
 namespace ClassMngr::Next::Platform
 {
 
-// Qt-boundary adapter for the class visibility scope. The legacy
-// ApplicationServices/settings access and QVariant conversion stay here;
-// callers consume only the typed application preference.
+// Qt-boundary adapter for the class visibility scope. The active-session
+// settings access and QVariant conversion stay here; callers consume only the
+// typed application preference.
 class ApplicationServicesClassVisibilityPreferencesPort final
     : public Application::ClassVisibilityPreferencesPort
 {
@@ -20,7 +21,7 @@ public:
     explicit ApplicationServicesClassVisibilityPreferencesPort(
         ApplicationServices& services
         ) noexcept
-        : m_services(services)
+        : m_session(services.databaseSession())
     {
     }
 
@@ -39,19 +40,24 @@ public:
 
     [[nodiscard]] Application::ClassVisibilityScope load() const override
     {
-        const SettingsService* settingsService = m_services.settingsService();
-        if (!settingsService || !settingsService->isAvailable())
+        if (!m_session || !m_session->isOpen())
         {
             return Application::ClassVisibilityScope::ActiveSchedule;
         }
 
-        const auto storedScope = settingsService->load(key());
+        SettingsRepository* const repository = m_session->settingsRepository();
+        if (!repository)
+        {
+            return Application::ClassVisibilityScope::ActiveSchedule;
+        }
+
+        const auto storedScope = repository->loadSetting(key());
         if (!storedScope || !storedScope->isValid())
         {
             // Preserve the legacy preference boundary's default materializing
             // behavior when storage is available.
             static_cast<void>(
-                settingsService->save(
+                repository->saveSetting(
                     key(),
                     storedScopeValue(
                         Application::ClassVisibilityScope::ActiveSchedule
@@ -69,14 +75,19 @@ public:
 
     void save(const Application::ClassVisibilityScope scope) const override
     {
-        const SettingsService* settingsService = m_services.settingsService();
-        if (!settingsService || !settingsService->isAvailable())
+        if (!m_session || !m_session->isOpen())
+        {
+            return;
+        }
+
+        SettingsRepository* const repository = m_session->settingsRepository();
+        if (!repository)
         {
             return;
         }
 
         static_cast<void>(
-            settingsService->save(key(), storedScopeValue(scope))
+            repository->saveSetting(key(), storedScopeValue(scope))
             );
     }
 
@@ -95,7 +106,7 @@ private:
             : QStringLiteral("active_schedule");
     }
 
-    ApplicationServices& m_services;
+    DatabaseSession* m_session = nullptr;
 };
 
 } // namespace ClassMngr::Next::Platform
