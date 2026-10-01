@@ -1943,3 +1943,10 @@ Let the typed snapshot query own review-time session and repository readiness.
 Keep the legacy service lookup for the write operation only, and test a closed
 session through the typed failure message, absence of controls, and absence of
 legacy preview calls.
+
+## 2026-10-02 - F225 Schedule Import apply contract
+
+Validate action/target-ID shape before dispatching an application write port,
+while leaving target existence and current-state validation to the repository
+transaction. Test both invalid shape rejection without a port call and valid
+existing-teacher dispatch.

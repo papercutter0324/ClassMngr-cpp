@@ -9283,34 +9283,31 @@ only the three named Dialog baseline failures are expected, and
 `git diff --check` must pass. Phase 2 remains In Progress/Open; Gates 1 and 2
 remain Partial.
 
-### Progress update - 2026-10-02 (F224 accepted; F225 selected)
+### Progress update - 2026-10-02 (F225 accepted; F226 selected)
 
-F224, source commit `3c45c74b`, removes the legacy
-`openScheduleImportService()` availability guard from
-`ScheduleImportReviewDialog::prepare()`. A closed-session regression test
-confirms typed-snapshot warning behavior, no controls, and zero legacy preview
-calls. Focused Application matching-projection (7), Platform snapshot-port
-(5), and Schedule Import repository (54 passed, one sample-gated skip) tests
-passed. The Dialog target passed 28 with only the three established baseline
-failures (`acceptedReviewCanTearDownSourceDialog`,
-`mismatchedProfileRequiresConfirmation`, and
-`reviewPreviewUsesSavedScheduleDisplaySettings`). `git diff --check` passed;
-no full suite ran.
+F225, source commit `7d842339`, adds a Qt-free Schedule Import apply
+request/result, use case, and typed write port, and routes confirmed dialog
+apply through the contract. Existing decision and plan-eligibility policies
+run before dispatch; malformed teacher target/action combinations are also
+rejected before the port. The Platform adapter maps to the legacy plan and
+delegates to `ScheduleService::importSchedule()`, preserving repository SQL,
+transaction ownership, fresh apply-time validation, and fallback behavior.
+Focused Application ApplyUseCase, Platform ApplyPort, ReviewDecisions,
+PlanValidation, and ScheduleImport repository targets passed independently.
+The Dialog target passed 29 with only the three established baseline failures
+(`acceptedReviewCanTearDownSourceDialog`, `mismatchedProfileRequiresConfirmation`,
+and `reviewPreviewUsesSavedScheduleDisplaySettings`). The correction recheck
+passed ApplyUseCase 1/1 and confirmed the contract remains Qt-free. No full
+suite ran.
 
-F225 is selected: introduce a Qt-free Application Schedule Import apply
-request/result/use case and typed write port, then route confirmed dialog apply
-through it. Reuse the existing decision and plan-eligibility policies before
-dispatch, mapping policy issues to the current UI messages. Preserve candidate
-order/times, selected rooms, class target IDs/colors, teacher actions and
-selected teacher target IDs, intensive mode/slot state, diagnostic
-acknowledgement, profile-name flags, and result summary fields. The Platform
-adapter maps to the legacy plan and delegates to
-`ScheduleService::importSchedule()` so current service/repository/DataService
-dispatch remains intact. Repository SQL, transaction ownership, fresh
-current-state validation, and fallback behavior remain authoritative.
-Acceptance requires app-less use-case tests; adapter mapping, unavailable,
-error, and result tests; existing decision and plan-eligibility application
-tests; `ClassMngrScheduleImportTests`; and dialog cancel/confirm/apply
-success/failure coverage. Only the same three Dialog baseline failures are
-expected; `git diff --check` must pass. Phase 2 remains In Progress/Open; Gates
-1 and 2 remain Partial.
+F226 is selected: add a Qt-free Application review-readiness orchestration
+contract that accepts typed review decisions and state-validation input, runs
+`validateScheduleImportReviewDecisions()` first, and invokes
+`validateScheduleImportState()` only when decisions are accepted. Keep Qt
+normalization/control construction, user-facing messages, conflict labels,
+and widgets in the dialog. Preserve ordering, snapshot cadence, and repository
+apply-time revalidation. Acceptance requires app-less readiness tests for
+decision rejection/precedence, state rejection, and success; existing
+decision/state validator tests; Schedule Import dialog and repository targets;
+only the three named Dialog baseline failures; and `git diff --check`. Phase 2
+remains In Progress/Open; Gates 1 and 2 remain Partial.

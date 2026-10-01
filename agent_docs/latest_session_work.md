@@ -4665,7 +4665,7 @@ Focused acceptance includes the Application state and decision validators,
 Phase 2 remains In Progress/Open with Gates 1 and 2 Partial. Next: finish F219,
 independently verify and commit it, then choose the following slice.
 
-## Current handoff - 2026-10-02 (F224 accepted; F225 selected)
+## Current handoff - 2026-10-02 (F225 accepted; F226 selected)
 
 F219 source commit `57aefadf` adds the shared state validator as a live
 Schedule Import readiness preflight. The Application state-validation,
@@ -4729,14 +4729,27 @@ verifies the typed warning, no controls, and zero legacy preview calls. The
 apply-time service write remains unchanged. `git diff --check` passed; no full
 suite ran.
 
-F225 is selected to add a Qt-free Application Schedule Import apply request,
-result, use case, and typed write port, then route confirmed dialog apply
-through that boundary. Preserve teacher target IDs, class targets, rooms,
-colors, candidate order and times, intensive mode and slot state, diagnostics
-acknowledgement, and profile-name options. Apply the existing review-decision
-and plan-eligibility policies before dispatch. A Platform adapter maps the
-typed request to the legacy plan and calls `ScheduleService::importSchedule()`
-to preserve the existing service/repository/DataService dispatch; the
-repository retains SQL, transaction ownership, and fresh apply-time
-validation. Next: implement F225, independently verify it, commit its source
-slice and documentation, then select and begin the following slice.
+F225 source commit `7d842339` adds a Qt-free Schedule Import apply request,
+summary, use case, and typed write port, and routes confirmed dialog applies
+through that boundary. The Platform adapter maps the typed request to the
+legacy plan and calls `ScheduleService::importSchedule()`, preserving the
+existing service/repository/DataService dispatch. The Application use case
+validates review decisions and plan eligibility before dispatch and rejects
+missing Reuse/UpdateRoom targets or forbidden Create/Skip targets without a
+port call. Existing-teacher availability and fresh apply-time validation stay
+repository-owned. Independent ApplyUseCase and ApplyPort tests passed, along
+with the existing decision, plan-validation, and repository targets. Dialog
+reported 29 passed and only its three recorded baseline failures. The
+independent target-pairing correction check passed ApplyUseCase 1/1; `git diff
+--check` passed. No full suite ran.
+
+F226 is selected to move review-readiness orchestration into a Qt-free
+Application contract. It will accept typed decision and state-validation
+requests, preserve the current decision-before-state-validation order, and
+return typed issues. The dialog retains Qt-specific input normalization,
+control state, conflict labels, and user-facing messages. Acceptance needs
+app-less tests for invalid decisions taking precedence, state rejection, and
+success; existing decision/state validation, Schedule Import repository, and
+dialog targets remain required. Preserve the three named dialog baseline
+failures and repository apply-time validation. Next: implement F226,
+independently verify and commit it, then select the following slice.

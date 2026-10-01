@@ -73,7 +73,8 @@ is accepted in source commit `23dc6c2b`; F217 is accepted in source commit
 in source commit `57aefadf`; F220 is accepted in source commit `4a87ab1e`;
 F221 is accepted in source commit `ec65c0c6`; F222 is accepted in source
 commit `6920e019`; F223 is accepted in source commit `4b46adc7`; F224 is
-accepted in source commit `3c45c74b`; F225 is selected.
+accepted in source commit `3c45c74b`; F225 is accepted in source commit
+`7d842339`; F226 is selected.
 F196 and F197 use
 only the active open session's
 `SettingsRepository` and preserve their keys, conversions, defaults, and
@@ -2742,7 +2743,7 @@ repository read-error coverage. Focused CTest:
 independent Explorer lanes selected this bounded adapter migration. Phase 2
 remains In Progress/Open; Gates 1 and 2 remain Partial.
 
-## Current Phase 2 position - 2026-10-02 (F224 accepted; F225 selected)
+## Current Phase 2 position - 2026-10-02 (F225 accepted; F226 selected)
 
 F218-F221 are accepted in commits `9bb936ee`, `57aefadf`, `4a87ab1e`, and
 `ec65c0c6`. F222 source commit `6920e019` migrates Schedule Import resolution
@@ -2778,15 +2779,27 @@ closed-session test verifies the typed warning, no controls, and no legacy
 preview call. The apply-time service write path remains unchanged; no full
 suite ran and `git diff --check` passed.
 
-F225 is selected to introduce a Qt-free Application Schedule Import apply
-request, result, use case, and typed write port, then route confirmed dialog
-apply through that contract. Preserve teacher target IDs, class targets,
-rooms, colors, candidate order and times, intensive mode and slot state,
-diagnostic acknowledgement, and profile-name options. Use the existing
-review-decision and plan-eligibility policies before dispatch. A Platform
-adapter translates to the legacy plan and calls `ScheduleService::importSchedule()`
-to preserve service/repository/DataService dispatch. Keep repository SQL,
-transaction ownership, and fresh apply-time validation unchanged. Acceptance
-adds app-less use-case and adapter mapping/failure tests and retains the plan,
-decision, repository, and dialog focused targets. Phase 2 remains In
-Progress/Open; Gates 1 and 2 remain Partial.
+F225 source commit `7d842339` adds a Qt-free Schedule Import apply request,
+summary, use case, and typed write port, and routes confirmed dialog applies
+through them. The Platform adapter maps the request to the existing plan and
+retains `ScheduleService::importSchedule()` dispatch. A boundary check rejects
+Reuse/UpdateRoom without a typed teacher ID and Create/Skip with one before
+calling the port; current teacher existence and freshness remain repository
+checks. The independent Application and Platform apply tests passed, as did
+the review-decision, plan-eligibility, and Schedule Import repository targets.
+The dialog target reported 29 passed and only the three documented baseline
+failures: `acceptedReviewCanTearDownSourceDialog`,
+`mismatchedProfileRequiresConfirmation`, and
+`reviewPreviewUsesSavedScheduleDisplaySettings`. The independent recheck of
+the target-pairing correction passed the Application apply test 1/1. `git diff
+--check` passed; no full suite ran.
+
+F226 is selected to move Schedule Import review-readiness orchestration into
+a Qt-free Application contract. It will run the existing review-decision
+validator first, then state validation only after decisions are accepted.
+The dialog keeps Qt normalization, control construction, conflict labels,
+and user-facing messages; repository apply-time validation remains
+authoritative. Focused acceptance adds app-less decision/state precedence and
+success tests and retains the decision, state-validation, repository, and
+dialog targets. Phase 2 remains In Progress/Open; Gates 1 and 2 remain
+Partial.
