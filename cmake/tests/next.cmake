@@ -62,6 +62,49 @@ add_test(
     COMMAND ClassMngrNextApplicationClassDayFilterPolicyTests
 )
 
+# Keep automatic-update startup eligibility app-less and Qt-free.
+add_executable(
+    ClassMngrNextApplicationAutomaticUpdateStartupEligibilityTests
+    tests/next_application_automatic_update_startup_eligibility_tests.cpp
+)
+target_compile_features(
+    ClassMngrNextApplicationAutomaticUpdateStartupEligibilityTests
+    PRIVATE
+        cxx_std_23
+)
+set_target_properties(
+    ClassMngrNextApplicationAutomaticUpdateStartupEligibilityTests
+    PROPERTIES
+        AUTOMOC OFF
+        AUTOUIC OFF
+        AUTORCC OFF
+)
+set_property(
+    TARGET ClassMngrNextApplicationAutomaticUpdateStartupEligibilityTests
+    PROPERTY CLASSMNGR_STANDALONE_CPP_TEST TRUE
+)
+target_link_libraries(
+    ClassMngrNextApplicationAutomaticUpdateStartupEligibilityTests
+    PRIVATE
+        ClassMngrNext::Application
+)
+add_test(
+    NAME ClassMngrNextApplicationAutomaticUpdateStartupEligibilityTests
+    COMMAND ClassMngrNextApplicationAutomaticUpdateStartupEligibilityTests
+)
+
+classmngr_add_qt_test(
+    NAME UpdateControllerAutomaticStartup
+    SOURCES
+        tests/update_controller_automatic_startup_tests.cpp
+    LIBRARIES
+        Qt6::Test
+    OFFSCREEN
+    ENVIRONMENT
+        "TMP=${CMAKE_CURRENT_BINARY_DIR}/update-controller-automatic-startup-temp"
+        "TEMP=${CMAKE_CURRENT_BINARY_DIR}/update-controller-automatic-startup-temp"
+)
+
 classmngr_add_qt_test(
     NAME NextPlatformQSettingsFileDialogDirectoryPreferencesAdapter
     SOURCES

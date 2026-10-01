@@ -5,6 +5,7 @@
 #include "core/updater/update_downloader.h"
 #include "core/updater/update_service.h"
 #include "core/updater/version.h"
+#include "next/application/automatic_update_startup_eligibility.h"
 #include "next/platform/settings_manager_automatic_update_preferences_port.h"
 #include "next/platform/settings_manager_skipped_update_version_port.h"
 #include "ui/shared/actions/action_registry.h"
@@ -217,10 +218,17 @@ void UpdateController::startAutomaticCheck()
 
     const UpdateConfiguration configuration =
         m_service->configuration();
+    const ClassMngr::Next::Platform::
+        SettingsManagerAutomaticUpdatePreferencesPort
+        automaticUpdatePreferencesPort;
 
     if (
-        !automaticChecksEnabled()
-        || !configuration.hasReleasesApiUrl()
+        !ClassMngr::Next::Application::
+            automaticUpdateStartupCheckIsEligible(
+                configuration.checkOnStartup,
+                automaticUpdatePreferencesPort.read(),
+                configuration.hasReleasesApiUrl()
+                )
         )
     {
         return;
