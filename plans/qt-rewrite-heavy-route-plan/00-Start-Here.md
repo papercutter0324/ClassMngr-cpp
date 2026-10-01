@@ -19,9 +19,10 @@
   live-state validation), F220 (Schedule Import plan eligibility policy), and
   F221 (typed Schedule Import current-state snapshot read), F222
   (Schedule Import resolution choices from the typed snapshot), and F223
-  (Schedule Import matching projection using the typed snapshot) are accepted.
-  F224 (remove the legacy Schedule Import service-availability guard) is
-  selected. Gates 1 and 2 remain Partial, with broader feature migration,
+  (Schedule Import matching projection using the typed snapshot), and F224
+  (remove the legacy Schedule Import service-availability guard) are accepted.
+  F225 (Schedule Import apply use case and typed write port) is selected.
+  Gates 1 and 2 remain Partial, with broader feature migration,
   parity, and 96-class Release memory evidence still open. See the
   [Phase 2 progress log](03-Phase-2-Progress-Log.md) for current scope and
   acceptance evidence.

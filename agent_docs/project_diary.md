@@ -1936,3 +1936,10 @@ repository apply validation with their existing owners.
 When a warning depends on projected choices, assert the actual initial target
 IDs before checking the warning; a fake preview can otherwise mask a mismatch
 between snapshot matching and conflict reporting.
+
+## 2026-10-02 - F224 Schedule Import review readiness
+
+Let the typed snapshot query own review-time session and repository readiness.
+Keep the legacy service lookup for the write operation only, and test a closed
+session through the typed failure message, absence of controls, and absence of
+legacy preview calls.

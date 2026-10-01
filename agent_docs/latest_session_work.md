@@ -4665,7 +4665,7 @@ Focused acceptance includes the Application state and decision validators,
 Phase 2 remains In Progress/Open with Gates 1 and 2 Partial. Next: finish F219,
 independently verify and commit it, then choose the following slice.
 
-## Current handoff - 2026-10-02 (F223 accepted; F224 selected)
+## Current handoff - 2026-10-02 (F224 accepted; F225 selected)
 
 F219 source commit `57aefadf` adds the shared state validator as a live
 Schedule Import readiness preflight. The Application state-validation,
@@ -4717,11 +4717,26 @@ failures: `acceptedReviewCanTearDownSourceDialog`,
 test asserts both initial targets are 44 and passes. `git diff --check` passed;
 no full suite ran.
 
-F224 is selected to remove the `openScheduleImportService()` availability
-probe from review preparation and rely on the typed snapshot outcome for
-readiness and failure handling. Add a focused missing-session regression that
-proves the typed failure is surfaced without controls or legacy preview. Keep
-`ScheduleService::importSchedule()` as the apply-time write path, and leave
-parsing, matching, eligibility, and validation untouched. Next: implement
-F224, independently verify it, commit its source slice and documentation, and
-select and begin the following slice.
+F224 source commit `3c45c74b` removes the ScheduleService availability probe
+from review preparation and relies on the typed snapshot outcome. Independent
+focused verification passed the Application matching-projection, Platform
+snapshot-port, and Schedule Import targets. The dialog target reported 28
+passed and only the three documented baseline failures:
+`acceptedReviewCanTearDownSourceDialog`,
+`mismatchedProfileRequiresConfirmation`, and
+`reviewPreviewUsesSavedScheduleDisplaySettings`. A new closed-session test
+verifies the typed warning, no controls, and zero legacy preview calls. The
+apply-time service write remains unchanged. `git diff --check` passed; no full
+suite ran.
+
+F225 is selected to add a Qt-free Application Schedule Import apply request,
+result, use case, and typed write port, then route confirmed dialog apply
+through that boundary. Preserve teacher target IDs, class targets, rooms,
+colors, candidate order and times, intensive mode and slot state, diagnostics
+acknowledgement, and profile-name options. Apply the existing review-decision
+and plan-eligibility policies before dispatch. A Platform adapter maps the
+typed request to the legacy plan and calls `ScheduleService::importSchedule()`
+to preserve the existing service/repository/DataService dispatch; the
+repository retains SQL, transaction ownership, and fresh apply-time
+validation. Next: implement F225, independently verify it, commit its source
+slice and documentation, then select and begin the following slice.

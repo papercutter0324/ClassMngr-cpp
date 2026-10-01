@@ -73,7 +73,7 @@ is accepted in source commit `23dc6c2b`; F217 is accepted in source commit
 in source commit `57aefadf`; F220 is accepted in source commit `4a87ab1e`;
 F221 is accepted in source commit `ec65c0c6`; F222 is accepted in source
 commit `6920e019`; F223 is accepted in source commit `4b46adc7`; F224 is
-selected.
+accepted in source commit `3c45c74b`; F225 is selected.
 F196 and F197 use
 only the active open session's
 `SettingsRepository` and preserve their keys, conversions, defaults, and
@@ -2742,7 +2742,7 @@ repository read-error coverage. Focused CTest:
 independent Explorer lanes selected this bounded adapter migration. Phase 2
 remains In Progress/Open; Gates 1 and 2 remain Partial.
 
-## Current Phase 2 position - 2026-10-02 (F223 accepted; F224 selected)
+## Current Phase 2 position - 2026-10-02 (F224 accepted; F225 selected)
 
 F218-F221 are accepted in commits `9bb936ee`, `57aefadf`, `4a87ab1e`, and
 `ec65c0c6`. F222 source commit `6920e019` migrates Schedule Import resolution
@@ -2769,11 +2769,24 @@ the three documented baseline failures:
 test verifies both initial class targets are 44 before the warning. No full
 suite ran; `git diff --check` passed.
 
-F224 is selected to remove the legacy `openScheduleImportService()`
-availability probe from `ScheduleImportReviewDialog::prepare()` and use the
-typed snapshot outcome for review readiness and failure handling. Add a
-focused missing-session regression proving the typed failure is surfaced
-without building controls or calling legacy preview. Keep the apply-time
-`ScheduleService::importSchedule()` write path, workbook parsing, matching,
-eligibility, and validation unchanged. Phase 2 remains In Progress/Open; Gates
-1 and 2 remain Partial.
+F224 source commit `3c45c74b` removes the ScheduleService availability probe
+from review preparation and relies on the typed snapshot outcome. Independent
+focused verification passed the Application matching-projection, Platform
+snapshot-port, and Schedule Import repository targets; the dialog target
+reported 28 passed with only the three documented baseline failures. The
+closed-session test verifies the typed warning, no controls, and no legacy
+preview call. The apply-time service write path remains unchanged; no full
+suite ran and `git diff --check` passed.
+
+F225 is selected to introduce a Qt-free Application Schedule Import apply
+request, result, use case, and typed write port, then route confirmed dialog
+apply through that contract. Preserve teacher target IDs, class targets,
+rooms, colors, candidate order and times, intensive mode and slot state,
+diagnostic acknowledgement, and profile-name options. Use the existing
+review-decision and plan-eligibility policies before dispatch. A Platform
+adapter translates to the legacy plan and calls `ScheduleService::importSchedule()`
+to preserve service/repository/DataService dispatch. Keep repository SQL,
+transaction ownership, and fresh apply-time validation unchanged. Acceptance
+adds app-less use-case and adapter mapping/failure tests and retains the plan,
+decision, repository, and dialog focused targets. Phase 2 remains In
+Progress/Open; Gates 1 and 2 remain Partial.
