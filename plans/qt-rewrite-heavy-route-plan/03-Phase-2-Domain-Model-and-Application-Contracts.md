@@ -225,7 +225,7 @@ No new v2 production path depends on DataService, MainWindow, PageManager, or a 
 
 Earlier verified slices and cumulative exit-gate snapshots are archived in the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 
-## Latest progress update - 2026-10-02 (F227 accepted; F228 selected)
+## Latest progress update - 2026-10-02 (F228 accepted; F229 selected)
 
 F226, source commit `6c6210b0`, adds a Qt-free Schedule Import review-readiness
 use case that validates review decisions before optional state validation. The
@@ -251,16 +251,33 @@ failed only the three documented baselines:
 `reviewPreviewUsesSavedScheduleDisplaySettings`. `git diff --check` passed;
 no full suite ran.
 
-F228 is selected: move only the existing-schedules-cleared review count into a
-Qt-free Application projection over the typed current-state snapshot and
-selected class targets. Count classes that have hours in the selected
-schedule and are not targeted; preserve zero for absent intensive classes in
-preserve mode and zero when no snapshot is available. Keep localized text in
-the dialog, and leave snapshot cadence, preview construction, and actual apply
-behavior unchanged. Acceptance covers normal/intensive selection, target
-exclusion, empty schedules, intensive preserve mode, and dialog summary parity;
-reruns the focused projection and dialog targets with only the three named
-dialog baselines expected. Source ownership validation and `git diff --check`
-are required; no full suite. Phase 2 remains In Progress/Open; Gates 1 and 2
-remain Partial. See the [Phase 2 progress log](03-Phase-2-Progress-Log.md) for
-prior slice evidence.
+F228, source commit `d90f475f`, adds the Qt-free
+`projectScheduleImportSchedulesCleared()` projection over the typed state
+snapshot and review decisions. It preserves full-parse numeric ID matching,
+counts classes with hours in the selected schedule kind that have no selected
+target, and returns zero for intensive preserve mode. The dialog calls the
+projection only when a snapshot is available, retaining zero when the snapshot
+is unavailable. The Application projection CTest passed 1/1. The Dialog run
+reported 30 passed with only the three documented baselines
+(`acceptedReviewCanTearDownSourceDialog`, `mismatchedProfileRequiresConfirmation`,
+and `reviewPreviewUsesSavedScheduleDisplaySettings`); both the nonzero summary
+parity assertion and the no-snapshot zero-count assertion passed. Independent
+source ownership validation found one owner for all 1,170 handwritten files.
+`git diff --check` passed; no full suite ran.
+
+F229 is selected, based on two independent Explorer lanes: reuse the existing
+Qt-free `projectScheduleImportStateSchedules()` projection to select class
+schedules for the review preview. Keep widget and Qt preview-row construction
+and conversion, teacher-room and color enrichment, displayed order, and
+translated conflict messages in the feature UI. Preserve skipped-target
+schedule retention, incomplete-resolution behavior, intensive preservation
+of untargeted classes, snapshot-failure fallback, and snapshot read cadence.
+Acceptance compares preview rows and conflict ordering with existing dialog
+behavior and adds focused parity coverage. Run
+`NextApplicationScheduleImportStateValidation`,
+`NextApplicationScheduleImportStateSnapshot` if affected,
+`ClassMngrScheduleImportTests`, and `ClassMngrScheduleImportDialogTests`; only
+the three named Dialog baselines are expected. Verify source ownership and
+`git diff --check`; no full suite. Phase 2 remains In Progress/Open; Gates 1 and
+2 remain Partial. See the [Phase 2 progress log](03-Phase-2-Progress-Log.md)
+for prior slice evidence.

@@ -75,7 +75,8 @@ F221 is accepted in source commit `ec65c0c6`; F222 is accepted in source
 commit `6920e019`; F223 is accepted in source commit `4b46adc7`; F224 is
 accepted in source commit `3c45c74b`; F225 is accepted in source commit
 `7d842339`; F226 is accepted in source commit `6c6210b0`; F227 is accepted in
-source commit `cb61f2ab`; F228 is selected.
+source commit `cb61f2ab`; F228 is accepted in source commit `d90f475f`; F229
+is selected.
 F196 and F197 use
 only the active open session's
 `SettingsRepository` and preserve their keys, conversions, defaults, and
@@ -2744,7 +2745,7 @@ repository read-error coverage. Focused CTest:
 independent Explorer lanes selected this bounded adapter migration. Phase 2
 remains In Progress/Open; Gates 1 and 2 remain Partial.
 
-## Current Phase 2 position - 2026-10-02 (F227 accepted; F228 selected)
+## Current Phase 2 position - 2026-10-02 (F228 accepted; F229 selected)
 
 F218-F221 are accepted in commits `9bb936ee`, `57aefadf`, `4a87ab1e`, and
 `ec65c0c6`. F222 source commit `6920e019` migrates Schedule Import resolution
@@ -2813,14 +2814,26 @@ keeps the actual apply result separate. Projection and repository CTests
 passed 2/2; the offscreen dialog run reported 30 passed and only the three
 documented baseline failures. `git diff --check` passed; no full suite ran.
 
-F228 is selected to move the existing-schedules-cleared review count rule into
-a Qt-free Application projection over the typed state snapshot and selected
-class targets. Count classes with hours in the selected schedule type when
-they have no selected target; keep the count zero when no snapshot is
-available or absent intensive classes are preserved. Keep localized summary
-formatting in the dialog and leave snapshot cadence, preview construction,
-and actual apply behavior unchanged. Acceptance covers normal and intensive
-hours, selected targets, empty schedules, preservation mode, a dialog summary
-parity assertion, and focused projection/dialog targets; only the three
-documented dialog baselines are expected. Phase 2 remains In Progress/Open;
-Gates 1 and 2 remain Partial.
+F228 source commit `d90f475f` moves the existing-schedules-cleared count into a
+Qt-free Application projection over the typed state snapshot and review
+decisions. It preserves the dialog's full-parse numeric ID matching, counts
+classes with selected schedule hours that have no selected target, and returns
+zero when an intensive schedule is preserved or no snapshot is available. The
+dialog keeps localized summary formatting and snapshot cadence unchanged. The
+new Application projection CTest passed 1/1; the dialog run reported 30 passed
+and only the three documented baseline failures. A new assertion verifies the
+zero count after snapshot refresh failure. Source ownership validation passed
+for 1,170 handwritten files and `git diff --check` passed; no full suite ran.
+
+F229 is selected to reuse `projectScheduleImportStateSchedules()` when building
+the Schedule Import review preview. Keep preview-row construction and Qt
+conversion, teacher-room and color enrichment, displayed ordering, and
+translated conflict messages in the feature UI. Preserve skipped-target
+schedule retention, incomplete-resolution preview behavior, intensive
+preservation of untargeted classes, snapshot-failure fallback, and current
+snapshot cadence. Acceptance must compare preview rows and conflict ordering
+against the existing dialog behavior, add focused parity coverage, and run the
+Application state-projection, Schedule Import repository, and Dialog targets;
+only the three documented Dialog baselines are expected. Verify source
+ownership and `git diff --check`; do not run the full suite. Phase 2 remains In
+Progress/Open; Gates 1 and 2 remain Partial.

@@ -4665,7 +4665,7 @@ Focused acceptance includes the Application state and decision validators,
 Phase 2 remains In Progress/Open with Gates 1 and 2 Partial. Next: finish F219,
 independently verify and commit it, then choose the following slice.
 
-## Current handoff - 2026-10-02 (F227 accepted; F228 selected)
+## Current handoff - 2026-10-02 (F228 accepted; F229 selected)
 
 F219 source commit `57aefadf` adds the shared state validator as a live
 Schedule Import readiness preflight. The Application state-validation,
@@ -4765,16 +4765,29 @@ reported 30 passed and only the three documented baseline failures:
 and `reviewPreviewUsesSavedScheduleDisplaySettings`. `git diff --check` passed;
 no full suite ran.
 
-F228 is selected to move the existing-schedules-cleared review count into a
-Qt-free Application projection over the typed current-state snapshot and class
-targets. Preserve the current rule: count classes with hours in the selected
-schedule kind when no selected class target refers to them; return zero when
-the snapshot is unavailable or absent intensive classes are preserved. Keep
-localized formatting in the dialog; do not change snapshot cadence, preview
-construction, or actual apply behavior. Acceptance covers normal/intensive
-hours, selected targets, empty schedules, intensive preservation, dialog
-summary parity, and focused Application projection and Dialog targets. Only
-the three recorded Dialog baselines are expected; no full suite is needed.
-F228 implementation has begun in a separate source slice after F227 was
-committed; this handoff records the scoped acceptance conditions before code
-review.
+F228 source commit `d90f475f` adds the Qt-free
+`projectScheduleImportSchedulesCleared()` calculation over the typed state
+snapshot and review decisions. It preserves full-parse numeric ID matching,
+counts classes with selected schedule hours that have no selected target, and
+returns zero in intensive preserve mode. The dialog invokes it only with an
+available snapshot, so refresh failure retains zero. The new Application CTest
+passed 1/1. The Dialog target reported 30 passed and only the three documented
+baselines: `acceptedReviewCanTearDownSourceDialog`,
+`mismatchedProfileRequiresConfirmation`, and
+`reviewPreviewUsesSavedScheduleDisplaySettings`. The new nonzero summary
+parity assertion and the no-snapshot zero-count assertion both passed.
+Independent source ownership validation found one owner for all 1,170
+handwritten files; `git diff --check` passed. No full suite ran.
+
+F229 is selected to use the existing Qt-free
+`projectScheduleImportStateSchedules()` projection for review-preview schedule
+selection. Preserve the current order in the UI while adapting projected rows
+to the preview model; keep teacher, room, and color enrichment plus localized
+conflict messages at the feature boundary. Preserve skipped-target schedules,
+incomplete-resolution preview behavior, intensive preservation of untargeted
+classes, snapshot-failure fallback, and snapshot cadence. Acceptance compares
+preview rows and conflict order against the current dialog, adds focused parity
+coverage, and reruns Application state-projection, Schedule Import repository,
+and Dialog targets with only the three named Dialog baselines expected. Verify
+source ownership and `git diff --check`; no full suite. Implementation starts
+after the F228 acceptance/F229 selection documentation commit.

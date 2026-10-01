@@ -1965,3 +1965,11 @@ refresh plus scalar diagnostic and cleared-schedule counts. Reconstructing the
 full apply request for summary text needlessly copies candidate and time data.
 Keep localized wording in the dialog and the applied-result summary on the
 apply path.
+
+## 2026-10-02 - F228 Schedule Import cleared-schedule count
+
+Move the derived count onto the typed snapshot and decision boundary, while
+preserving the feature's full-parse integer ID matching for selected targets.
+Keep zero when a refresh has no snapshot or intensive classes are retained;
+assert the failed-refresh summary count so this fallback remains visible in
+coverage.

@@ -23,7 +23,8 @@
   (remove the legacy Schedule Import service-availability guard) are accepted.
   F225 (Schedule Import apply use case and typed write port), F226
   (review readiness), and F227 (review-summary projection) are accepted. F228
-  (cleared-schedule count projection) is selected.
+  (cleared-schedule count projection) is accepted. F229 (reuse the typed
+  state-to-schedule projection for review-preview construction) is selected.
   Gates 1 and 2 remain Partial, with broader feature migration,
   parity, and 96-class Release memory evidence still open. See the
   [Phase 2 progress log](03-Phase-2-Progress-Log.md) for current scope and

@@ -9332,3 +9332,35 @@ selection, target exclusion, empty schedules, intensive preserve mode, and
 dialog summary parity. Rerun the focused projection and dialog targets, with
 only the three established Dialog baseline failures expected; verify source
 ownership and `git diff --check`. No full suite is planned.
+
+### Progress update - 2026-10-02 (F228 accepted; F229 selected)
+
+F228, source commit `d90f475f`, adds the Qt-free
+`projectScheduleImportSchedulesCleared()` projection over the typed state
+snapshot and review decisions. It preserves full-parse numeric ID matching,
+counts classes with selected-kind hours that have no selected target, and
+returns zero in intensive preserve mode. The dialog calls it only with an
+available snapshot, retaining zero when no snapshot is available. The
+Application projection CTest passed 1/1. Dialog reported 30 passed and only
+the three established baselines:
+`acceptedReviewCanTearDownSourceDialog`,
+`mismatchedProfileRequiresConfirmation`, and
+`reviewPreviewUsesSavedScheduleDisplaySettings`. Both the nonzero summary
+parity assertion and no-snapshot zero-count assertion passed. Independent
+source ownership validation found one owner for 1,170 handwritten files;
+`git diff --check` passed. No full suite ran.
+
+F229 is selected after two independent Explorer lanes. Reuse the existing
+`projectScheduleImportStateSchedules()` projection to drive class-schedule
+selection for the review preview. Keep widget and Qt preview-row construction
+and conversion, teacher-room and color enrichment, displayed order, and
+translated conflict messages in feature UI. Preserve skipped-target schedule
+retention, incomplete-resolution behavior, intensive preservation of
+untargeted classes, snapshot-failure fallback, and read cadence. Acceptance
+compares preview rows and conflict ordering against existing dialog behavior
+and adds focused parity coverage. Run
+`NextApplicationScheduleImportStateValidation`,
+`NextApplicationScheduleImportStateSnapshot` if affected,
+`ClassMngrScheduleImportTests`, and `ClassMngrScheduleImportDialogTests`; allow
+only the three named Dialog baselines. Verify source ownership and
+`git diff --check`; no full suite.
