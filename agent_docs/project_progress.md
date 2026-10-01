@@ -65,7 +65,9 @@ source commit `3cf2ab80`; F205 is accepted in source commit `bf9ca8a7`; F206 is
 accepted in source commit `7d0291d3`; F207 is accepted in source commit
 `12cb021a`; F208 is accepted in source commit `d17ddd25`; F209 is accepted in
 source commit `7b2f8226`; F210 is accepted in source commit `22cec99b`; F211 is
-accepted in source commit `2347739c`.
+accepted in source commit `2347739c`; F212 is accepted in source commit
+`bd6d044f`; F213 is accepted in source commit `dc2b3ed9`; F214 is accepted in
+source commit `9e03e668`; F215 is accepted in source commit `68ef5962`.
 F196 and F197 use
 only the active open session's
 `SettingsRepository` and preserve their keys, conversions, defaults, and
@@ -178,17 +180,29 @@ sources. The app-less policy, class-tab navigation model, and feature targets
 built; executor and independent focused CTest passed 2/2. `git diff --check`
 passed; no full suite ran.
 
-Two independent scans agreed on F215: move automatic-update startup
-eligibility into a Qt-free Application policy. Use the existing configuration
-flag, typed automatic-check preference, and releases-API availability as the
-eligibility inputs. Preserve lifecycle/service/one-shot guards and startup
-maintenance ordering; disabled or unconfigured attempts remain retryable, and
-an eligible attempt starts one forced check. Re-read the preference when
-processing results for automatic-prompt behavior. Keep networking, cleanup,
-manual checks, dialog presentation, and skipped-version behavior in their
-existing owners. Add an app-less decision matrix and focused controller/update
-integration coverage. This advances the Phase 2 update-use-case item; Gates 1
-and 2 remain Partial and Phase 2 remains In Progress/Open.
+F215 source commit `68ef5962` moves automatic-update startup eligibility into
+the Qt-free `automaticUpdateStartupCheckIsEligible` Application policy. It
+uses the startup configuration flag, typed preference, and releases-API URL
+availability. `UpdateController` retains lifecycle/service guards, runs
+one-time maintenance before eligibility, marks the check started only when
+eligible, and dispatches `CheckPolicy::Force`. Result/prompt handling retains
+its separate preference reread; networking, cleanup, dialogs, manual checks,
+and skipped-version behavior keep their existing owners. The app-less
+eight-case matrix and controller integration tests cover startup completion,
+forced dispatch despite a fresh result, one-shot behavior, disabled-to-enabled
+retry, missing-URL non-dispatch, and startup cleanup ordering/one-time
+execution. Both focused targets built and independent CTest passed 2/2. Since
+`UpdateService` configuration is immutable, URL ineligibility and later
+eligibility are covered at the policy level; controller integration verifies
+no service dispatch for a missing URL. `git diff --check` passed; no full suite
+ran.
+
+Two independent scans selected F216: move skipped-update-version matching and
+reconciliation decisions into Qt-free Application policy, preserving strict
+`x.x.x` parsing/comparison and the existing clear/keep rules. Keep preference
+persistence and dialog synchronization in `UpdateController`. Add app-less
+policy tests and focused controller integration coverage. Phase 2 remains
+In Progress/Open; Gates 1 and 2 remain Partial.
 
 ### Earlier Phase 2 detail - 2026-09-26
 

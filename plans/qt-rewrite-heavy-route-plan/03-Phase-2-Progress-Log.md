@@ -9022,3 +9022,28 @@ focused `UpdateController` integration coverage for startup, one-shot behavior,
 retry after disabled or unconfigured attempts, and forced service dispatch. Two
 independent Explorer scans agreed on moving startup eligibility into
 Application. Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial.
+
+### Progress update - 2026-10-01 (F215 accepted; F216 selected)
+
+F215, source commit `68ef5962`, adds the Qt-free
+`automaticUpdateStartupCheckIsEligible` policy. Startup guards and maintenance
+order remain intact; cleanup runs once before preference/URL gates, and only
+eligible attempts set one-shot state and dispatch `CheckPolicy::Force`. The
+separate preference reread for prompt suppression remains in place. Focused
+targets `ClassMngrNextApplicationAutomaticUpdateStartupEligibilityTests` and
+`ClassMngrUpdateControllerAutomaticStartupTests` built; CTest passed 2/2 in the
+independent run. Coverage includes the eight-case decision matrix, startup
+completion, Force despite a fresh result, one-shot behavior, disabled-to-
+enabled retry, missing-URL non-dispatch, and cleanup order/once. `UpdateService`
+configuration is immutable: later URL eligibility is covered by the policy
+matrix, while controller tests verify no dispatch for a missing URL; no same-
+controller URL-recovery test is claimed. No full suite ran.
+
+F216 is selected: move skipped-update-version reconciliation and matching
+policy from `UpdateController` into Qt-free Application, preserving strict
+`x.x.x` parsing and comparison plus the existing clear/keep cases. Keep
+settings persistence and dialog synchronization in the controller. Acceptance
+requires focused app-less policy tests and controller integration tests for
+preference and dialog behavior. Two independent Explorer scans agreed on this
+slice, which advances Phase 2's Application-use-case alignment. Phase 2 remains
+In Progress/Open; Gates 1 and 2 remain Partial.

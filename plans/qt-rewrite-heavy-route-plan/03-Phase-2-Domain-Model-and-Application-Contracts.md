@@ -62,8 +62,8 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
   accepted; F210's recent-workspace history policy, F211's Speaking
   Evaluation read-port extraction, and F212's upcoming-birthday schedule
   policy, F213's default evaluation selection, and F214's class day-filter
-  matching policy are accepted. F215's automatic-update startup eligibility
-  is selected.
+  matching policy, and F215's automatic-update startup eligibility are
+  accepted. F216's skipped-update-version policy is selected.
   The prior F123 candidate wording is historical;
   current Teacher Profile integration status is recorded in the progress log.
   Gates 1 and 2
@@ -220,31 +220,28 @@ No new v2 production path depends on DataService, MainWindow, PageManager, or a 
 
 Earlier verified slices and cumulative exit-gate snapshots are archived in the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 
-## Latest progress update - 2026-10-01 (F214 accepted; F215 selected)
+## Latest progress update - 2026-10-01 (F215 accepted; F216 selected)
 
-F214, source commit `9e03e668`, adds Qt-free `ClassDayFilterPolicy` for
-normalized-key matching, `weekend`/`wkend` aliases, OR matching,
-Regular/Intensive source selection, and AllClasses/ActiveSchedule empty-filter
-behavior. Qt trim/case-fold/UTF-8 conversion and UI grouping, ordering, time
-formatting, and labels remain in the feature. CMake ownership validated 1,148
-handwritten sources. Focused builds passed for
-`ClassMngrNextApplicationClassDayFilterPolicyTests`,
-`ClassMngrClassTabNavigationModelTests`, and `ClassMngrFeatures`; focused CTest
-passed 2/2 in executor and independent Tester runs. `git diff --check` passed;
-no full suite ran.
+F215, source commit `68ef5962`, adds the Qt-free
+`automaticUpdateStartupCheckIsEligible` policy. Startup guards and maintenance
+order remain intact; cleanup runs once before preference/URL gates, and only
+eligible attempts set one-shot state and dispatch `CheckPolicy::Force`. The
+separate preference reread for prompt suppression remains in place. Focused
+targets `ClassMngrNextApplicationAutomaticUpdateStartupEligibilityTests` and
+`ClassMngrUpdateControllerAutomaticStartupTests` built; CTest passed 2/2 in the
+independent run. Coverage includes the eight-case decision matrix, startup
+completion, Force despite a fresh result, one-shot behavior, disabled-to-
+enabled retry, missing-URL non-dispatch, and cleanup order/once. `UpdateService`
+configuration is immutable: later URL eligibility is covered by the policy
+matrix, while controller tests verify no dispatch for a missing URL; no same-
+controller URL-recovery test is claimed. No full suite ran.
 
-F215 is selected: move automatic-update startup eligibility into Qt-free
-Application policy using configuration `checkOnStartup`, the typed automatic-
-check preference, and release API URL availability. Preserve lifecycle,
-service, and one-shot guards; run startup cleanup once before preference/URL
-gates; keep disabled or unconfigured attempts retryable; and set started then
-request `CheckPolicy::Force` only for an enabled, configured attempt. Reread
-the preference when processing results for prompt suppression. Manual checks,
-networking, downloader cleanup, dialogs, and skipped-version behavior remain
-with their current owners. Acceptance requires an app-less decision matrix and
-focused `UpdateController` integration coverage for startup, one-shot behavior,
-retry after disabled or unconfigured attempts, and forced service dispatch. Two
-independent Explorer scans agreed on moving startup eligibility into
-Application. Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial.
-See the [Phase 2 progress log](03-Phase-2-Progress-Log.md)
+F216 is selected: move skipped-update-version reconciliation and matching
+policy from `UpdateController` into Qt-free Application, preserving strict
+`x.x.x` parsing and comparison plus the existing clear/keep cases. Keep
+settings persistence and dialog synchronization in the controller. Acceptance
+requires focused app-less policy tests and controller integration tests for
+preference and dialog behavior. Two independent Explorer scans agreed on this
+slice, which advances Phase 2's Application-use-case alignment. Phase 2 remains
+In Progress/Open; Gates 1 and 2 remain Partial. See the [Phase 2 progress log](03-Phase-2-Progress-Log.md)
 for prior slice evidence.

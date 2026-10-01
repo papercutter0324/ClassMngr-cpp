@@ -1859,5 +1859,9 @@ is empty.
 Keep lifecycle and filesystem effects in the controller, and make eligibility
 a deterministic Application decision. Preserve the order: pass lifecycle
 guards, run one-time cleanup, check configuration/preference/URL, then mark the
-one-shot state only when dispatching a forced check. Disabled or unconfigured
-attempts remain retryable; re-read the preference before automatic prompting.
+one-shot state only when dispatching a forced check. A disabled preference can
+be retried after the preference changes. `UpdateService` configuration is
+immutable, so cover missing-URL eligibility in the app-less matrix and verify
+controller non-dispatch without adding mutable configuration solely for a
+same-controller recovery test. Re-read the preference before automatic
+prompting.
