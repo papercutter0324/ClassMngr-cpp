@@ -10,6 +10,7 @@
 #include "next/platform/application_services_custom_color_palette_preferences_port.h"
 #include "next/platform/application_services_schedule_import_state_snapshot_port.h"
 #include "next/platform/application_services_schedule_import_apply_port.h"
+#include "next/application/schedule_import_apply_review_decisions.h"
 #include "domain/models/class_info.h"
 #include "domain/models/classroom.h"
 #include "domain/models/teacher.h"
@@ -76,10 +77,6 @@ constexpr int InitialPreviewWidth = 540;
 constexpr int PreviewHeadingSpacer = 16;
 constexpr int PreferredResolutionPaneWidth = 380;
 
-using ReviewTeacherAction =
-    ClassMngr::Next::Application::ScheduleImportReviewTeacherAction;
-using ReviewClassAction =
-    ClassMngr::Next::Application::ScheduleImportReviewClassAction;
 using ReviewDecisionIssue =
     ClassMngr::Next::Application::ScheduleImportReviewDecisionIssue;
 using ReviewDecisionIssueCode =
@@ -573,57 +570,6 @@ QString scheduleImportSnapshotFailureMessage(
             : QString::fromStdString(failure.message);
     }
     return QObject::tr("Current schedule data could not be loaded.");
-}
-
-ReviewTeacherAction reviewTeacherAction(int action)
-{
-    if (action < 0)
-    {
-        return ReviewTeacherAction::Unselected;
-    }
-    switch (static_cast<ScheduleImportTeacherAction>(action))
-    {
-    case ScheduleImportTeacherAction::Reuse:
-        return ReviewTeacherAction::Reuse;
-    case ScheduleImportTeacherAction::UpdateRoom:
-        return ReviewTeacherAction::UpdateRoom;
-    case ScheduleImportTeacherAction::Create:
-        return ReviewTeacherAction::Create;
-    case ScheduleImportTeacherAction::Skip:
-        return ReviewTeacherAction::Skip;
-    }
-    return ReviewTeacherAction::Invalid;
-}
-
-ReviewClassAction reviewClassAction(int action)
-{
-    if (action < 0)
-    {
-        return ReviewClassAction::Unselected;
-    }
-    switch (static_cast<ScheduleImportClassAction>(action))
-    {
-    case ScheduleImportClassAction::UpdateExisting:
-        return ReviewClassAction::UpdateExisting;
-    case ScheduleImportClassAction::CreateNew:
-        return ReviewClassAction::CreateNew;
-    case ScheduleImportClassAction::Skip:
-        return ReviewClassAction::Skip;
-    }
-    return ReviewClassAction::Invalid;
-}
-
-std::optional<ClassMngr::Next::Domain::ClassId> decisionTargetId(
-    int legacyTargetId
-    )
-{
-    if (legacyTargetId <= 0)
-    {
-        return std::nullopt;
-    }
-    return ClassMngr::Next::Domain::ClassId::fromString(
-        std::to_string(legacyTargetId)
-        );
 }
 
 QString reviewDecisionMessage(const ReviewDecisionIssue& issue)
@@ -1279,33 +1225,6 @@ void ScheduleImportReviewDialog::updateReviewState()
     QHash<QString, int> teacherActions;
     QHash<QString, int> teacherTargets;
     QHash<QString, QString> teacherRooms;
-    ClassMngr::Next::Application::ScheduleImportReviewDecisionRequest
-        decisions;
-    decisions.candidates.reserve(
-        static_cast<std::size_t>(m_preview.user.classes.size())
-        );
-    for (const ScheduleImportClassCandidate& candidate :
-         m_preview.user.classes)
-    {
-        ClassMngr::Next::Application::ScheduleImportReviewDecisionCandidate
-            decisionCandidate;
-        decisionCandidate.teacherKey = candidate.teacherKey.toStdString();
-        decisionCandidate.importedRooms.reserve(
-            static_cast<std::size_t>(candidate.rooms.size())
-            );
-        for (const QString& room : candidate.rooms)
-        {
-            const QString normalizedRoom = room.trimmed();
-            if (!normalizedRoom.isEmpty())
-            {
-                decisionCandidate.importedRooms.push_back(
-                    normalizedRoom.toStdString()
-                    );
-            }
-        }
-        decisions.candidates.push_back(std::move(decisionCandidate));
-    }
-
     for (const TeacherControl& control : m_teacherControls)
     {
         const int action =
@@ -1320,13 +1239,6 @@ void ScheduleImportReviewDialog::updateReviewState()
             control.action->currentData(TargetRole).toInt()
             );
         teacherRooms.insert(control.teacherKey, room);
-        decisions.teachers.push_back(
-            {
-                control.teacherKey.toStdString(),
-                reviewTeacherAction(action),
-                room.trimmed().toStdString()
-            }
-            );
 
         if (
             action == static_cast<int>(
@@ -1445,13 +1357,6 @@ void ScheduleImportReviewDialog::updateReviewState()
                 ).toInt();
         classActions.insert(control.candidateIndex, action);
         classTargets.insert(control.candidateIndex, target);
-        decisions.classes.push_back(
-            {
-                control.candidateIndex,
-                reviewClassAction(action),
-                decisionTargetId(target)
-            }
-            );
 
         if (action < 0)
         {
@@ -1608,6 +1513,10 @@ void ScheduleImportReviewDialog::updateReviewState()
             targets.insert(target);
         }
     }
+
+    const auto applyReviewRequest = applyRequest();
+    const auto decisions = ClassMngr::Next::Application::
+        projectScheduleImportApplyReviewDecisions(applyReviewRequest);
 
     std::optional<StateValidationRequest> stateInput;
     if (stateSnapshotsAvailable)

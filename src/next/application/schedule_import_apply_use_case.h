@@ -1,5 +1,6 @@
 #pragma once
 
+#include "next/application/schedule_import_apply_review_decisions.h"
 #include "next/application/schedule_import_plan_validation.h"
 
 #include <expected>
@@ -137,43 +138,27 @@ public:
         policy.intensiveMode = request.intensiveMode;
         policy.hasDiagnostics = !request.diagnostics.empty();
         policy.diagnosticsAcknowledged = request.diagnosticsAcknowledged;
+        policy.reviewDecisions =
+            projectScheduleImportApplyReviewDecisions(request);
         for (const auto& candidate : request.candidates)
         {
             ScheduleImportPlanEligibilityCandidate item;
-            item.grade = narrow(candidate.grade);
-            item.level = narrow(candidate.level);
+            item.grade = scheduleImportApplyUtf8(candidate.grade);
+            item.level = scheduleImportApplyUtf8(candidate.level);
             item.teacherKey = candidate.teacherKey;
             item.teacherName = candidate.teacherName;
             for (const auto& time : candidate.times)
             {
-                item.weekdays.push_back(narrow(time.day));
+                item.weekdays.push_back(scheduleImportApplyUtf8(time.day));
             }
             policy.candidates.push_back(std::move(item));
-            ScheduleImportReviewDecisionCandidate decision;
-            decision.teacherKey = narrow(candidate.teacherKey);
-            for (const auto& room : candidate.rooms)
-            {
-                if (!room.empty()) decision.importedRooms.push_back(narrow(room));
-            }
-            policy.reviewDecisions.candidates.push_back(std::move(decision));
-        }
-        for (const auto& teacher : request.teachers)
-        {
-            policy.reviewDecisions.teachers.push_back({
-                narrow(teacher.teacherKey), teacher.action,
-                narrow(teacher.selectedRoom)
-            });
         }
         for (const auto& candidateClass : request.classes)
         {
-            policy.reviewDecisions.classes.push_back({
-                candidateClass.candidateIndex, candidateClass.action,
-                candidateClass.targetClassId
-            });
             policy.classColors.push_back({
                 candidateClass.candidateIndex,
-                narrow(candidateClass.classColor),
-                narrow(candidateClass.fontColor)
+                scheduleImportApplyUtf8(candidateClass.classColor),
+                scheduleImportApplyUtf8(candidateClass.fontColor)
             });
         }
         if (auto issue = validateScheduleImportPlanEligibility(policy))
@@ -209,42 +194,6 @@ public:
             }
         }
         return port.applyScheduleImport(request);
-    }
-
-private:
-    [[nodiscard]] static std::string narrow(const std::u16string& text)
-    {
-        std::string result;
-        for (std::size_t i = 0; i < text.size(); ++i)
-        {
-            char32_t value = text[i];
-            if (value >= 0xD800 && value <= 0xDBFF && i + 1 < text.size()
-                && text[i + 1] >= 0xDC00 && text[i + 1] <= 0xDFFF)
-            {
-                value = 0x10000 + ((value - 0xD800) << 10)
-                    + (text[++i] - 0xDC00);
-            }
-            if (value < 0x80) result.push_back(static_cast<char>(value));
-            else if (value < 0x800)
-            {
-                result.push_back(static_cast<char>(0xC0 | (value >> 6)));
-                result.push_back(static_cast<char>(0x80 | (value & 0x3F)));
-            }
-            else if (value < 0x10000)
-            {
-                result.push_back(static_cast<char>(0xE0 | (value >> 12)));
-                result.push_back(static_cast<char>(0x80 | ((value >> 6) & 0x3F)));
-                result.push_back(static_cast<char>(0x80 | (value & 0x3F)));
-            }
-            else
-            {
-                result.push_back(static_cast<char>(0xF0 | (value >> 18)));
-                result.push_back(static_cast<char>(0x80 | ((value >> 12) & 0x3F)));
-                result.push_back(static_cast<char>(0x80 | ((value >> 6) & 0x3F)));
-                result.push_back(static_cast<char>(0x80 | (value & 0x3F)));
-            }
-        }
-        return result;
     }
 };
 

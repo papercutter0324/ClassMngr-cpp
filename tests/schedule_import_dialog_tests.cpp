@@ -2257,6 +2257,24 @@ void ScheduleImportDialogTests::reviewSummaryUsesApplicationProjection()
         QStringLiteral("%1 existing schedule(s) cleared;")
             .arg(expected.schedulesCleared)
         ));
+
+    const int skipTeacherIndex = teacherAction->findData(
+        static_cast<int>(ScheduleImportTeacherAction::Skip),
+        Qt::UserRole
+        );
+    QVERIFY(skipTeacherIndex >= 0);
+    teacherAction->setCurrentIndex(skipTeacherIndex);
+    QCoreApplication::processEvents();
+    QCOMPARE(
+        classAction->currentData(Qt::UserRole).toInt(),
+        static_cast<int>(ScheduleImportClassAction::Skip)
+        );
+    QVERIFY(summaryLabel->text().contains(
+        QStringLiteral(
+            "0 teacher(s) created, 0 room update(s), 1 teacher group(s) skipped; "
+            "0 class(es) created, 0 updated, 1 skipped;"
+            )
+        ));
 }
 
 void ScheduleImportDialogTests::
