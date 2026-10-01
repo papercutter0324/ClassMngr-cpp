@@ -1792,3 +1792,8 @@ the existing typed palette boundary. Keep its 16-color normalization and
 legacy payload decoding in the Qt adapter, preserve warning behavior for read
 and write failures, and migrate only persistence ownership; callers and the
 typed ColorUtils contract already use the adapter.
+
+When a UI-shared header consumes a persistence adapter, keep database headers
+out of that header: forward-declare `DatabaseSession` and move repository calls
+to a `.cpp` owned by the existing QtSql-enabled feature target. This preserves
+the UI compile boundary without widening its Qt dependencies.

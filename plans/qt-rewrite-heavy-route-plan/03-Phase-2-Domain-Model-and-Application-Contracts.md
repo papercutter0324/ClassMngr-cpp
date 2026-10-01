@@ -56,8 +56,9 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
   ports, F198's Personal Details save, F199's Personal Display Name, F200's
   Personal Signature preferences, F201's Personal Signature Image, F202's
   Class Visibility, F203's Evaluation Default Policy, F204's Class Day Filter
-  Reset Policy, and F205's Class Selection Reset Policy ports are accepted;
-  F206 is selected for Custom Color Palette preferences.
+  Reset Policy, F205's Class Selection Reset Policy, and F206's Custom Color
+  Palette preferences ports are accepted; F207 is selected for Sub Prep
+  Personal Zoom preferences.
   The prior F123 candidate wording is historical;
   current Teacher Profile integration status is recorded in the progress log.
   Gates 1 and 2
@@ -214,24 +215,25 @@ No new v2 production path depends on DataService, MainWindow, PageManager, or a 
 
 Earlier verified slices and cumulative exit-gate snapshots are archived in the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 
-## F205 accepted Class Selection Reset Policy port
+## F206 accepted Custom Color Palette preferences port
 
-F205 is accepted; its source commit, focused test evidence, and the two
-filtered Classes Page results are recorded in the [Phase 2 progress
-log](03-Phase-2-Progress-Log.md). Phase 2 remains In Progress/Open; Gates 1
-and 2 remain Partial.
+F206 is accepted; its source commit, focused CTest results, ColorUtils coverage,
+owner-count check, and verification limits are recorded in the [Phase 2
+progress log](03-Phase-2-Progress-Log.md).
 
-## F206 selected Custom Color Palette preferences port
+## F207 selected Sub Prep Personal Zoom preferences port
 
-Move `ApplicationServicesCustomColorPalettePreferencesPort` to the active
-open session's `SettingsRepository`, without closed-session fallback. Preserve
-exact key `custom_colors`, its 16 entries/defaults/canonicalization, compact
-JSON writes, and legacy parsing of `QStringList`, JSON, and newline/semicolon/
-comma-delimited values. Missing or unavailable data uses the default without
-materialization; read errors warn and use the default. Write errors warn and
-preserve the prior value. Keep `ColorUtils`, callers, and the typed interface
-unchanged; cover closed-session no-fallback with `DataService` present and
-repository read errors. Focused CTest:
-`NextPlatformApplicationServicesCustomColorPalettePreferencesPort`; related
-`ColorUtilsCustomColorPalette` coverage is available. Both Explorer lanes
-recommend this candidate. F206 is selected; no F206 results are recorded.
+Migrate `ApplicationServicesSubPrepPersonalZoomPreferencesPort` reads and
+best-effort legacy migration writes to the active open session's
+`SettingsRepository`. Preserve primary keys `myInfo/zoomLoginId`,
+`myInfo/zoomPassword`, and `myInfo/zoomNotAvailable`, legacy keys
+`subPrep/personalZoomEmail`, `subPrep/personalZoomPassword`, and
+`subPrep/personalZoomNotAvailable`, primary precedence, legacy fallback and
+best-effort migration, UTF-8, `QVariant::toBool()`, and `N/A`/true defaults.
+Keep its typed Technical unavailable error, successful legacy result when a
+migration save fails, and no closed-session `DataService` fallback. Add
+closed-session no-fallback coverage with `DataService` present and repository
+read-error/default coverage. Keep the typed interface and callers unchanged.
+Focused CTest: `ClassMngrNextPlatformApplicationServicesSubPrepPersonalZoomPreferencesPortTests`
+(registered name `NextPlatformApplicationServicesSubPrepPersonalZoomPreferencesPort`).
+F207 is selected; no F207 results are recorded.

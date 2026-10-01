@@ -4484,3 +4484,32 @@ available. No F206 source changes have started. Phase 2 remains In
 Progress/Open; Gates 1 and 2 remain Partial. Next: finish the four public plan
 updates, commit the F205 acceptance/F206 selection documentation, then
 implement and verify F206 before selecting F207.
+
+## 2026-10-01 — F206 accepted; F207 selected
+
+F206 source commit `7d0291d3` migrates
+`ApplicationServicesCustomColorPalettePreferencesPort` to the active session's
+`SettingsRepository`. It preserves the `custom_colors` key, 16-color
+normalization, QColor canonicalization, compact JSON writes, legacy payload
+formats, and warning/default behavior. The `.cpp` implementation is registered
+under `ClassMngrFeatures`, keeping QtSql headers out of the shared UI header.
+The source owner check validated 1,138 owners. The focused adapter CTest and
+related ColorUtils CTest each passed 1/1; independent review found no acceptance
+gap; `git diff --check` passed. No full suite ran.
+
+Two independent Explorer lanes found the remaining Sub Prep
+`SettingsService`-backed ports. One preferred the four-key saved-content
+aggregate, while the other preferred Personal Zoom as the smaller load-only
+contract. F207 is selected for
+`ApplicationServicesSubPrepPersonalZoomPreferencesPort`. Move reads and
+best-effort legacy migration writes to the active open session's
+`SettingsRepository`; preserve exact primary and legacy keys, primary
+precedence, legacy fallback and migration, UTF-8 and `QVariant::toBool()`
+conversions, `N/A`/true defaults, the typed Technical unavailable error, and
+successful legacy reads after migration-write failures. Add closed-session
+no-fallback coverage with `DataService` present and repository read-error
+coverage. Keep callers and the typed contract unchanged. Focused CTest:
+`ClassMngrNextPlatformApplicationServicesSubPrepPersonalZoomPreferencesPortTests`.
+The four-key saved-content port remains a separate candidate. Phase 2 remains
+In Progress/Open; Gates 1 and 2 remain Partial. Next: implement F207,
+independently verify and commit it, then select F208.

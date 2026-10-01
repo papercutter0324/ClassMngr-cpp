@@ -61,7 +61,8 @@ F196 is accepted in source commit `b9f0a07d`; F197 is accepted in source commit
 source commit `dc489863`; F200 is accepted in source commit `ef603583`; F201
 is accepted in source commit `59133929`; F202 is accepted in source commit
 `c9ff5731`; F203 is accepted in source commit `4f128b01`; F204 is accepted in
-source commit `3cf2ab80`; F205 is accepted in source commit `bf9ca8a7`.
+source commit `3cf2ab80`; F205 is accepted in source commit `bf9ca8a7`; F206 is
+accepted in source commit `7d0291d3`.
 F196 and F197 use
 only the active open session's
 `SettingsRepository` and preserve their keys, conversions, defaults, and
@@ -91,24 +92,28 @@ values without rewrite, closed-session no-fallback, silent failed writes/read
 errors, and the Classes Page page-leave versus application-close lifecycle
 checks. Its two filtered page slots passed after fixtures opened temporary
 databases. `git diff --check` passed; no full suite ran.
+F206 moves the custom color palette adapter to the active session's
+`SettingsRepository`, preserving key `custom_colors`, normalization, legacy
+formats, and warning behavior. Keeping database calls in a `.cpp` registered
+under `ClassMngrFeatures` avoids exposing QtSql headers through the shared UI
+header. Its focused adapter CTest and related ColorUtils CTest passed 1/1 each;
+source ownership and `git diff --check` passed. No full suite ran.
 
 F179-F195 advanced Sub Prep and Calendar repository boundaries and the
 preference-port migrations; individual scope and evidence remain in the
 [Phase 2 progress log](../plans/qt-rewrite-heavy-route-plan/03-Phase-2-Progress-Log.md).
-F206 is selected for `ApplicationServicesCustomColorPalettePreferencesPort`.
-Move persistence to the active open session's `SettingsRepository` with no
-closed-session fallback. Preserve the exact `custom_colors` key, 16-entry
-defaults and normalization, QColor canonicalization, compact JSON writes, and
-legacy QStringList, JSON, newline, semicolon, and comma payload reads. Missing
-or unavailable storage returns defaults without materializing a setting;
-repository read failures warn and return defaults, while failed writes warn
-and preserve existing values. Keep the typed interface, ColorUtils, and UI
-callers unchanged. Add closed-session no-fallback and repository read-error
-coverage; retain legacy-format, warning, and failed-write tests. Focused CTest:
-`NextPlatformApplicationServicesCustomColorPalettePreferencesPort`.
-Both independent Explorer lanes selected this existing typed adapter after
-F205 closed the class-navigation preference group. Sub Prep settings remain a
-candidate. Gates 1 and 2 remain Partial.
+F207 is selected for `ApplicationServicesSubPrepPersonalZoomPreferencesPort`.
+Move reads and best-effort legacy migration writes to the active open session's
+`SettingsRepository`. Preserve the three primary keys and three legacy keys,
+primary precedence, legacy fallback/migration, UTF-8 and `QVariant::toBool()`
+conversion, `N/A`/true defaults, the typed Technical unavailable error, and a
+successful legacy result when a migration write fails. Add closed-session
+no-fallback coverage with `DataService` present and repository read-error
+coverage. Keep the typed interface and callers unchanged. Focused CTest:
+`ClassMngrNextPlatformApplicationServicesSubPrepPersonalZoomPreferencesPortTests`.
+The independent scans also surfaced the four-key Sub Prep saved-content port;
+Zoom was selected for its load-only contract, leaving the atomic aggregate
+write as a separate bounded slice. Gates 1 and 2 remain Partial.
 
 ### Earlier Phase 2 detail - 2026-09-26
 
