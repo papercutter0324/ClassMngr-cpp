@@ -36,6 +36,152 @@ namespace Domain = ClassMngr::Next::Domain;
 
 namespace
 {
+template <typename Id>
+int legacyApplyId(const std::optional<Id>& value)
+{
+    if (!value)
+    {
+        return -1;
+    }
+
+    int parsed = -1;
+    const std::string& text = value->value();
+    const auto [end, error] = std::from_chars(
+        text.data(),
+        text.data() + text.size(),
+        parsed
+        );
+    return error == std::errc{}
+            && end == text.data() + text.size()
+            && parsed > 0
+        ? parsed
+        : -1;
+}
+
+ScheduleImportTeacherAction legacyTeacherAction(
+    const ScheduleImportReviewTeacherAction action
+    )
+{
+    switch (action)
+    {
+    case ScheduleImportReviewTeacherAction::Reuse:
+        return ScheduleImportTeacherAction::Reuse;
+    case ScheduleImportReviewTeacherAction::UpdateRoom:
+        return ScheduleImportTeacherAction::UpdateRoom;
+    case ScheduleImportReviewTeacherAction::Skip:
+        return ScheduleImportTeacherAction::Skip;
+    default:
+        return ScheduleImportTeacherAction::Create;
+    }
+}
+
+ScheduleImportClassAction legacyClassAction(
+    const ScheduleImportReviewClassAction action
+    )
+{
+    switch (action)
+    {
+    case ScheduleImportReviewClassAction::UpdateExisting:
+        return ScheduleImportClassAction::UpdateExisting;
+    case ScheduleImportReviewClassAction::Skip:
+        return ScheduleImportClassAction::Skip;
+    default:
+        return ScheduleImportClassAction::CreateNew;
+    }
+}
+
+ScheduleImportPlan legacyScheduleImportPlan(
+    const ScheduleImportApplyRequest& request
+    )
+{
+    ScheduleImportPlan plan;
+    plan.kind = request.intensiveSchedule
+        ? ScheduleImportKind::Intensive
+        : ScheduleImportKind::Normal;
+    plan.intensiveMode = request.intensiveMode
+            == ScheduleImportPlanIntensiveMode::ReplaceWithNew
+        ? ScheduleImportIntensiveMode::ReplaceWithNew
+        : ScheduleImportIntensiveMode::UpdateExisting;
+    plan.selectedUserName = QString::fromStdU16String(
+        request.selectedUserName
+        );
+    plan.saveProfileNameIfBlank = request.saveProfileNameIfBlank;
+    plan.updateProfileName = request.updateProfileName;
+    plan.unknownCellsAcknowledged = request.diagnosticsAcknowledged;
+    for (const auto& item : request.candidates)
+    {
+        ScheduleImportClassCandidate candidate;
+        candidate.teacherKey = QString::fromStdU16String(item.teacherKey);
+        candidate.teacherKr = QString::fromStdU16String(item.teacherName);
+        for (const auto& room : item.rooms)
+        {
+            candidate.rooms.append(QString::fromStdU16String(room));
+        }
+        for (const auto& color : item.importedColors)
+        {
+            candidate.importedColors.append(
+                QString::fromStdU16String(color)
+                );
+        }
+        candidate.classGrade = QString::fromStdU16String(item.grade);
+        candidate.classLevel = QString::fromStdU16String(item.level);
+        for (const auto& time : item.times)
+        {
+            candidate.times.append({
+                QString::fromStdU16String(time.day),
+                QString::fromStdU16String(time.startTime),
+                QString::fromStdU16String(time.endTime)
+            });
+        }
+        for (const auto& cell : item.sourceCells)
+        {
+            candidate.sourceCells.append(QString::fromStdU16String(cell));
+        }
+        candidate.meetingPatternError = QString::fromStdU16String(
+            item.meetingPatternError
+            );
+        plan.candidates.append(std::move(candidate));
+    }
+    for (const auto& slot : request.intensiveSlotStates)
+    {
+        plan.intensiveSlotStates.append({
+            QString::fromStdU16String(slot.day),
+            QString::fromStdU16String(slot.startTime),
+            QString::fromStdU16String(slot.state)
+        });
+    }
+    for (const auto& diagnostic : request.diagnostics)
+    {
+        plan.diagnostics.append({
+            QString::fromStdU16String(diagnostic.sheetName),
+            QString::fromStdU16String(diagnostic.userName),
+            QString::fromStdU16String(diagnostic.cellReference),
+            QString::fromStdU16String(diagnostic.value),
+            QString::fromStdU16String(diagnostic.message)
+        });
+    }
+    for (const auto& teacher : request.teachers)
+    {
+        plan.teachers.append({
+            QString::fromStdU16String(teacher.teacherKey),
+            legacyTeacherAction(teacher.action),
+            legacyApplyId(teacher.targetTeacherId),
+            QString::fromStdU16String(teacher.selectedRoom)
+        });
+    }
+    for (const auto& item : request.classes)
+    {
+        plan.classes.append({
+            item.candidateIndex,
+            legacyClassAction(item.action),
+            legacyApplyId(item.targetClassId),
+            QString::fromStdU16String(item.classColor),
+            QString::fromStdU16String(item.fontColor)
+        });
+    }
+    return plan;
+}
+
 QString teacherKey(
     const QString& value
     )
@@ -1399,4 +1545,11 @@ Result<ScheduleImportSummary> ScheduleImportRepository::apply(
     }
 
     return summary;
+}
+
+Result<ScheduleImportSummary> ScheduleImportRepository::applyTyped(
+    const ScheduleImportApplyRequest& request
+    )
+{
+    return apply(legacyScheduleImportPlan(request));
 }
