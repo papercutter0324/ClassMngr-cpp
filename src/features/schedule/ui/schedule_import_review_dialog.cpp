@@ -21,9 +21,8 @@
 #include "features/schedule/services/schedule_import_review_summary.h"
 #include "features/schedule/services/schedule_import_plan_validator.h"
 #include "features/teacher/import/teacher_import_name_utils.h"
-#include "next/application/schedule_import_review_decisions.h"
+#include "next/application/schedule_import_review_readiness.h"
 #include "next/application/schedule_import_matching_projection.h"
-#include "next/application/schedule_import_state_validation.h"
 #include "next/domain/domain_types.h"
 #include "features/schedule/ui/schedule_view_model.h"
 #include "features/schedule/ui/schedule_widget.h"
@@ -1580,11 +1579,143 @@ void ScheduleImportReviewDialog::updateReviewState()
         }
     }
 
-    const auto decisionResult =
-        ClassMngr::Next::Application::validateScheduleImportReviewDecisions(
-            decisions
-            );
-    for (const ReviewDecisionIssue& issue : decisionResult.issues)
+    const auto decisionResult = [&]
+    {
+        std::optional<StateValidationRequest> stateInput;
+        if (stateSnapshotsAvailable)
+        {
+            StateValidationRequest stateRequest;
+            stateRequest.kind = m_request.kind == ScheduleImportKind::Intensive
+                ? ImportState::ScheduleImportStateKind::Intensive
+                : ImportState::ScheduleImportStateKind::Normal;
+            stateRequest.intensiveMode = preservesAbsentIntensiveClasses
+                ? ImportState::ScheduleImportStateIntensiveMode::UpdateExisting
+                : ImportState::ScheduleImportStateIntensiveMode::ReplaceWithNew;
+
+            stateRequest.candidates.reserve(
+                static_cast<std::size_t>(m_preview.user.classes.size())
+                );
+            for (const ScheduleImportClassCandidate& candidate :
+                 m_preview.user.classes)
+            {
+                const QString label = QStringLiteral("%1 %2")
+                    .arg(candidate.classGrade, candidate.classLevel);
+                stateRequest.candidates.push_back(
+                    {
+                        utf8String(candidate.teacherKey),
+                        utf8String(normalizedIdentity(candidate.classGrade)),
+                        utf8String(normalizedIdentity(candidate.classLevel)),
+                        utf8String(label),
+                        stateTimes(candidate.times)
+                    }
+                    );
+            }
+
+            stateRequest.teacherResolutions.reserve(
+                static_cast<std::size_t>(m_teacherControls.size())
+                );
+            for (const TeacherControl& control : m_teacherControls)
+            {
+                const auto action = stateTeacherAction(
+                    control.action->currentData(ActionRole).toInt()
+                    );
+                const int legacyTarget =
+                    control.action->currentData(TargetRole).toInt();
+                std::optional<ImportDomain::TeacherId> targetTeacherId;
+                if (
+                    action == ImportState::ScheduleImportStateTeacherAction::Reuse
+                    || action
+                        == ImportState::ScheduleImportStateTeacherAction::UpdateRoom
+                    || legacyTarget > 0
+                    )
+                {
+                    targetTeacherId = stateTeacherId(legacyTarget);
+                }
+                stateRequest.teacherResolutions.push_back(
+                    {
+                        utf8String(control.teacherKey),
+                        action,
+                        std::move(targetTeacherId),
+                        !control.room->currentData().toString().trimmed().isEmpty()
+                    }
+                    );
+            }
+
+            stateRequest.classResolutions.reserve(
+                static_cast<std::size_t>(m_classControls.size())
+                );
+            for (const ClassControl& control : m_classControls)
+            {
+                const auto action = stateClassAction(
+                    control.action->currentData(ActionRole).toInt()
+                    );
+                const int legacyTarget =
+                    control.action->currentData(TargetRole).toInt();
+                std::optional<ImportDomain::ClassId> targetClassId;
+                if (
+                    action
+                        == ImportState::ScheduleImportStateClassAction::UpdateExisting
+                    || legacyTarget > 0
+                    )
+                {
+                    targetClassId = stateClassId(legacyTarget);
+                }
+                stateRequest.classResolutions.push_back(
+                    {
+                        static_cast<std::size_t>(control.candidateIndex),
+                        action,
+                        std::move(targetClassId)
+                    }
+                    );
+            }
+
+            stateRequest.existingTeachers.reserve(
+                stateSnapshot->teachers.size()
+                );
+            for (const auto& teacher : stateSnapshot->teachers)
+            {
+                stateRequest.existingTeachers.push_back(
+                    {
+                        teacher.id,
+                        utf8String(
+                            TeacherImportNameUtils::hangulOnly(
+                                snapshotText(teacher.koreanName)
+                                )
+                            )
+                    }
+                    );
+            }
+
+            stateRequest.existingClasses.reserve(
+                stateSnapshot->classes.size()
+                );
+            for (const auto& classroom : stateSnapshot->classes)
+            {
+                const QString grade = snapshotText(classroom.grade);
+                const QString level = snapshotText(classroom.level);
+                const QString label = QStringLiteral("%1 %2")
+                    .arg(grade, level)
+                    .simplified();
+                stateRequest.existingClasses.push_back(
+                    {
+                        classroom.id,
+                        classroom.teacherId,
+                        utf8String(normalizedIdentity(grade)),
+                        utf8String(normalizedIdentity(level)),
+                        utf8String(label),
+                        stateTimes(snapshotTimes(classroom.normalTimes)),
+                        stateTimes(snapshotTimes(classroom.intensiveTimes))
+                    }
+                    );
+            }
+            stateInput = std::move(stateRequest);
+        }
+
+        return ClassMngr::Next::Application::
+            evaluateScheduleImportReviewReadiness(decisions, stateInput);
+    }();
+    const auto& decisionIssues = decisionResult.decisions.issues;
+    for (const ReviewDecisionIssue& issue : decisionIssues)
     {
         valid = false;
         if (message.isEmpty())
@@ -1835,141 +1966,12 @@ void ScheduleImportReviewDialog::updateReviewState()
             }
     }
 
-    if (decisionResult.accepted() && stateSnapshotsAvailable)
+    if (decisionResult.stateError)
     {
-        StateValidationRequest stateRequest;
-        stateRequest.kind = m_request.kind == ScheduleImportKind::Intensive
-            ? ImportState::ScheduleImportStateKind::Intensive
-            : ImportState::ScheduleImportStateKind::Normal;
-        stateRequest.intensiveMode = preservesAbsentIntensiveClasses
-            ? ImportState::ScheduleImportStateIntensiveMode::UpdateExisting
-            : ImportState::ScheduleImportStateIntensiveMode::ReplaceWithNew;
-
-        stateRequest.candidates.reserve(
-            static_cast<std::size_t>(m_preview.user.classes.size())
-            );
-        for (const ScheduleImportClassCandidate& candidate :
-             m_preview.user.classes)
+        valid = false;
+        if (message.isEmpty())
         {
-            const QString label = QStringLiteral("%1 %2")
-                .arg(candidate.classGrade, candidate.classLevel);
-            stateRequest.candidates.push_back(
-                {
-                    utf8String(candidate.teacherKey),
-                    utf8String(normalizedIdentity(candidate.classGrade)),
-                    utf8String(normalizedIdentity(candidate.classLevel)),
-                    utf8String(label),
-                    stateTimes(candidate.times)
-                }
-                );
-        }
-
-        stateRequest.teacherResolutions.reserve(
-            static_cast<std::size_t>(m_teacherControls.size())
-            );
-        for (const TeacherControl& control : m_teacherControls)
-        {
-            const auto action = stateTeacherAction(
-                control.action->currentData(ActionRole).toInt()
-                );
-            const int legacyTarget =
-                control.action->currentData(TargetRole).toInt();
-            std::optional<ImportDomain::TeacherId> targetTeacherId;
-            if (
-                action == ImportState::ScheduleImportStateTeacherAction::Reuse
-                || action
-                    == ImportState::ScheduleImportStateTeacherAction::UpdateRoom
-                || legacyTarget > 0
-                )
-            {
-                targetTeacherId = stateTeacherId(legacyTarget);
-            }
-            stateRequest.teacherResolutions.push_back(
-                {
-                    utf8String(control.teacherKey),
-                    action,
-                    std::move(targetTeacherId),
-                    !control.room->currentData().toString().trimmed().isEmpty()
-                }
-                );
-        }
-
-        stateRequest.classResolutions.reserve(
-            static_cast<std::size_t>(m_classControls.size())
-            );
-        for (const ClassControl& control : m_classControls)
-        {
-            const auto action = stateClassAction(
-                control.action->currentData(ActionRole).toInt()
-                );
-            const int legacyTarget =
-                control.action->currentData(TargetRole).toInt();
-            std::optional<ImportDomain::ClassId> targetClassId;
-            if (
-                action
-                    == ImportState::ScheduleImportStateClassAction::UpdateExisting
-                || legacyTarget > 0
-                )
-            {
-                targetClassId = stateClassId(legacyTarget);
-            }
-            stateRequest.classResolutions.push_back(
-                {
-                    static_cast<std::size_t>(control.candidateIndex),
-                    action,
-                    std::move(targetClassId)
-                }
-                );
-        }
-
-        stateRequest.existingTeachers.reserve(
-            stateSnapshot->teachers.size()
-            );
-        for (const auto& teacher : stateSnapshot->teachers)
-        {
-            stateRequest.existingTeachers.push_back(
-                {
-                    teacher.id,
-                    utf8String(
-                        TeacherImportNameUtils::hangulOnly(
-                            snapshotText(teacher.koreanName)
-                            )
-                        )
-                }
-                );
-        }
-
-        stateRequest.existingClasses.reserve(
-            stateSnapshot->classes.size()
-            );
-        for (const auto& classroom : stateSnapshot->classes)
-        {
-            const QString grade = snapshotText(classroom.grade);
-            const QString level = snapshotText(classroom.level);
-            const QString label = QStringLiteral("%1 %2")
-                .arg(grade, level)
-                .simplified();
-            stateRequest.existingClasses.push_back(
-                {
-                    classroom.id,
-                    classroom.teacherId,
-                    utf8String(normalizedIdentity(grade)),
-                    utf8String(normalizedIdentity(level)),
-                    utf8String(label),
-                    stateTimes(snapshotTimes(classroom.normalTimes)),
-                    stateTimes(snapshotTimes(classroom.intensiveTimes))
-                }
-                );
-        }
-
-        if (const auto error =
-                ImportState::validateScheduleImportState(stateRequest))
-        {
-            valid = false;
-            if (message.isEmpty())
-            {
-                message = stateValidationMessage(*error);
-            }
+            message = stateValidationMessage(*decisionResult.stateError);
         }
     }
 

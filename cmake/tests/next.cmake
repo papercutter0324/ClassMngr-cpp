@@ -697,6 +697,37 @@ add_test(
     COMMAND ClassMngrNextApplicationScheduleImportReviewDecisionsTests
 )
 
+# Exercise the Qt-free review readiness orchestration contract.
+add_executable(
+    ClassMngrNextApplicationScheduleImportReviewReadinessTests
+    tests/next_application_schedule_import_review_readiness_tests.cpp
+)
+target_compile_features(
+    ClassMngrNextApplicationScheduleImportReviewReadinessTests
+    PRIVATE
+        cxx_std_23
+)
+set_target_properties(
+    ClassMngrNextApplicationScheduleImportReviewReadinessTests
+    PROPERTIES
+        AUTOMOC OFF
+        AUTOUIC OFF
+        AUTORCC OFF
+)
+set_property(
+    TARGET ClassMngrNextApplicationScheduleImportReviewReadinessTests
+    PROPERTY CLASSMNGR_STANDALONE_CPP_TEST TRUE
+)
+target_link_libraries(
+    ClassMngrNextApplicationScheduleImportReviewReadinessTests
+    PRIVATE
+        ClassMngrNext::Application
+)
+add_test(
+    NAME ClassMngrNextApplicationScheduleImportReviewReadinessTests
+    COMMAND ClassMngrNextApplicationScheduleImportReviewReadinessTests
+)
+
 # Exercise plan eligibility without Qt or the legacy runtime.
 add_executable(
     ClassMngrNextApplicationScheduleImportApplyUseCaseTests
