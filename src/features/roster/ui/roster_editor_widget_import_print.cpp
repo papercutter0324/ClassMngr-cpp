@@ -6,15 +6,28 @@
 #include "features/roster/ui/roster_model.h"
 #include "features/roster/ui/roster_print_dialog.h"
 #include "features/roster/services/roster_template_print_service.h"
+#include "next/application/speaking_evaluation_roster_score_import_use_case.h"
+#include "next/domain/domain_types.h"
 #include "next/domain/student_name_pair.h"
+#include "next/platform/application_services_speaking_evaluation_read_port.h"
 
 #include <QDialog>
 
 #include <map>
+#include <string>
 
 void RosterEditorWidget::importScores()
 {
-    if (!m_services || !m_services->speakingEvaluationService() || m_classroom.id <= 0)
+    if (!m_services || m_classroom.id <= 0)
+    {
+        return;
+    }
+
+    const auto classId =
+        ClassMngr::Next::Domain::ClassId::fromString(
+            std::to_string(m_classroom.id)
+            );
+    if (!classId)
     {
         return;
     }
@@ -53,6 +66,8 @@ void RosterEditorWidget::importScores()
     };
 
     int changeCount = 0;
+    ClassMngr::Next::Platform::ApplicationServicesSpeakingEvaluationReadPort
+        evaluationPort(m_services);
     for (const QString& evaluationName : evaluationColumns)
     {
         const int scoreColumn = findModelColumn(evaluationName);
@@ -61,23 +76,30 @@ void RosterEditorWidget::importScores()
             continue;
         }
 
-        const QList<SpeakingEvalScore> scores =
-            m_services->speakingEvaluationService()->rosterScoreImport(
-                m_classroom.id,
-                evaluationName
-                ).value_or(QList<SpeakingEvalScore>{});
-        if (scores.isEmpty())
+        const auto importedScores =
+            ClassMngr::Next::Application::
+                SpeakingEvaluationRosterScoreImportUseCase::execute(
+                    {
+                        .classId = *classId,
+                        .evaluationName = evaluationName.toStdU16String()
+                    },
+                    evaluationPort
+                    );
+        if (!importedScores || importedScores.value().empty())
         {
             continue;
         }
 
-        std::map<ClassMngr::Next::Domain::StudentNamePair, QString> lookup;
-        for (const SpeakingEvalScore& score : scores)
+        std::map<
+            ClassMngr::Next::Domain::StudentNamePair,
+            std::u16string
+            > lookup;
+        for (const auto& score : importedScores.value())
         {
             const auto namePair =
                 ClassMngr::Next::Domain::StudentNamePair::fromNames(
-                    score.englishName.trimmed().toStdU16String(),
-                    score.koreanName.trimmed().toStdU16String()
+                    score.englishName,
+                    score.koreanName
                     );
             if (!namePair)
             {
@@ -118,7 +140,10 @@ void RosterEditorWidget::importScores()
                 continue;
             }
 
-            const QString& finalGrade = score->second;
+            const QString finalGrade = QString::fromUtf16(
+                score->second.data(),
+                static_cast<qsizetype>(score->second.size())
+                );
 
             const QModelIndex index = m_model->index(row, scoreColumn);
             if (!index.isValid() || index.data(Qt::EditRole).toString() == finalGrade)

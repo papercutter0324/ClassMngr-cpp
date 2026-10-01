@@ -1,5 +1,7 @@
 #pragma once
 
+#include "next/application/qt_compatible_text.h"
+
 #include <algorithm>
 #include <cstddef>
 #include <iterator>
@@ -193,36 +195,9 @@ private:
         return true;
     }
 
-    [[nodiscard]] static bool isQtSpace(char16_t value) noexcept
-    {
-        return (value >= u'\t' && value <= u'\r')
-            || value == u' '
-            || value == 0x0085
-            || value == 0x00a0
-            || value == 0x1680
-            || (value >= 0x2000 && value <= 0x200a)
-            || value == 0x2028
-            || value == 0x2029
-            || value == 0x202f
-            || value == 0x205f
-            || value == 0x3000;
-    }
-
     [[nodiscard]] static std::u16string trim(std::u16string_view value)
     {
-        std::size_t first = 0;
-        while (first < value.size() && isQtSpace(value[first]))
-        {
-            ++first;
-        }
-
-        std::size_t last = value.size();
-        while (last > first && isQtSpace(value[last - 1]))
-        {
-            --last;
-        }
-
-        return std::u16string(value.substr(first, last - first));
+        return trimQtWhitespace(value);
     }
 
     [[nodiscard]] static std::u16string canonicalChoice(

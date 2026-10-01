@@ -227,6 +227,62 @@ public:
         return updated;
     }
 
+    bool removeStoredEvaluation(
+        const QString& evaluationName,
+        QString* error
+        ) const
+    {
+        const QString connectionName = QUuid::createUuid().toString();
+        bool removed = false;
+        QString failure;
+
+        {
+            QSqlDatabase database = QSqlDatabase::addDatabase(
+                QStringLiteral("QSQLITE"),
+                connectionName
+                );
+            database.setDatabaseName(databasePath());
+            if (!database.open())
+            {
+                failure = database.lastError().text();
+            }
+            else
+            {
+                QSqlQuery query(database);
+                query.prepare(QStringLiteral(
+                    "DELETE FROM speaking_evaluations "
+                    "WHERE class_id=? AND evaluation_name=?"
+                    ));
+                query.addBindValue(classId);
+                query.addBindValue(evaluationName);
+                removed = query.exec() && query.numRowsAffected() == 1;
+                if (!removed)
+                {
+                    failure = query.lastError().text();
+                    if (failure.isEmpty())
+                    {
+                        failure = QStringLiteral(
+                            "The expected speaking evaluation was not removed."
+                            );
+                    }
+                }
+                database.close();
+            }
+        }
+
+        QSqlDatabase::removeDatabase(connectionName);
+        if (!removed && error)
+        {
+            *error = failure;
+        }
+        return removed;
+    }
+
+    QString databasePath() const
+    {
+        return m_directory.filePath(QStringLiteral("roster-score-import.db"));
+    }
+
     bool updateStoredDuplicateScoreRow(
         const QString& evaluationName,
         const QString& englishName,
@@ -457,6 +513,9 @@ private slots:
     void paddedAndIncompleteScoresKeepRepositoryImportPolicy();
     void laterDuplicateScorePairOverwritesEarlierGrade();
     void partialNamePairIsNotMatchedOrModified();
+    void missingOptionalEvaluationColumnDoesNotBlockAvailableImports();
+    void noDataLeavesRosterUnchanged();
+    void readFailureLeavesRosterUnchanged();
     void missingNameColumnsWarnWithoutChangingOrPersistingData();
 };
 
@@ -723,6 +782,188 @@ void RosterEditorWidgetImportTests::partialNamePairIsNotMatchedOrModified()
     {
         QCOMPARE(persisted->rows.at(row), fixture.initialRoster.rows.at(row));
     }
+}
+
+void RosterEditorWidgetImportTests::noDataLeavesRosterUnchanged()
+{
+    RosterScoreImportFixture fixture;
+    QString error;
+    QVERIFY2(fixture.initialize(&error), qPrintable(error));
+    for (const EvaluationFixture& evaluation : evaluations())
+    {
+        QVERIFY2(
+            fixture.removeStoredEvaluation(evaluation.name, &error),
+            qPrintable(error)
+            );
+    }
+
+    FakeUserPromptService prompts;
+    ScopedPromptService promptScope(&prompts);
+
+    RosterEditorWidget editor(&fixture.m_services, true);
+    editor.loadClass(
+        Classroom(
+            QStringLiteral("Roster score import fixture"),
+            fixture.classId
+            )
+        );
+
+    QVERIFY(QMetaObject::invokeMethod(
+        &editor,
+        "importScores",
+        Qt::DirectConnection
+        ));
+    QCOMPARE(prompts.messages.size(), 1);
+    QCOMPARE(prompts.messages.constFirst().severity, PromptSeverity::Information);
+    QCOMPARE(
+        prompts.messages.constFirst().message,
+        QStringLiteral("Scores are already up to date.")
+        );
+    QVERIFY(!editor.hasUnsavedChanges());
+
+    const Result<Roster> persisted = fixture.m_services.rosterService()->roster(
+        fixture.classId
+        );
+    QVERIFY(persisted);
+    QCOMPARE(persisted->columns, fixture.initialRoster.columns);
+    QCOMPARE(persisted->rows, fixture.initialRoster.rows);
+}
+
+void RosterEditorWidgetImportTests::
+    missingOptionalEvaluationColumnDoesNotBlockAvailableImports()
+{
+    RosterScoreImportFixture fixture;
+    QString error;
+    QVERIFY2(fixture.initialize(&error), qPrintable(error));
+
+    FakeUserPromptService prompts;
+    ScopedPromptService promptScope(&prompts);
+
+    RosterEditorWidget editor(&fixture.m_services, true);
+    editor.loadClass(
+        Classroom(
+            QStringLiteral("Roster score import fixture"),
+            fixture.classId
+            )
+        );
+
+    RosterModel* const model = editor.findChild<RosterModel*>();
+    QVERIFY(model);
+    const int winterColumn = columnByName(model, QStringLiteral("Winter"));
+    QVERIFY(winterColumn >= 0);
+    QVERIFY(columnByName(model, QStringLiteral("English")) >= 0);
+    QVERIFY(columnByName(model, QStringLiteral("Korean")) >= 0);
+    QVERIFY(columnByName(model, QStringLiteral("Speech Contest")) >= 0);
+    QVERIFY(columnByName(model, QStringLiteral("Summer")) >= 0);
+    QVERIFY(columnByName(model, QStringLiteral("Fall")) >= 0);
+
+    // Simulate a valid roster-model state with one absent optional destination
+    // while keeping the remaining model columns and cells aligned. Restore it
+    // immediately after the import so the normal persistence path still saves
+    // a valid roster.
+    QStringList savedWinterValues;
+    savedWinterValues.reserve(model->m_rows.size());
+    for (QStringList& row : model->m_rows)
+    {
+        savedWinterValues.append(row.takeAt(winterColumn));
+    }
+    model->m_columns.removeAt(winterColumn);
+    const bool winterIsAbsent =
+        columnByName(model, QStringLiteral("Winter")) < 0;
+    const bool imported = QMetaObject::invokeMethod(
+        &editor,
+        "importScores",
+        Qt::DirectConnection
+        );
+
+    model->m_columns.insert(winterColumn, QStringLiteral("Winter"));
+    for (int row = 0; row < model->m_rows.size(); ++row)
+    {
+        model->m_rows[row].insert(winterColumn, savedWinterValues.at(row));
+    }
+
+    QVERIFY(winterIsAbsent);
+    QVERIFY(imported);
+    QCOMPARE(prompts.messages.size(), 1);
+    QCOMPARE(prompts.messages.constFirst().severity, PromptSeverity::Information);
+    QCOMPARE(
+        prompts.messages.constFirst().message,
+        QStringLiteral("Scores imported successfully.")
+        );
+
+    Roster expected = fixture.initialRoster;
+    for (const EvaluationFixture& evaluation : evaluations())
+    {
+        if (evaluation.name == QStringLiteral("Winter"))
+        {
+            continue;
+        }
+
+        const int column = columnByName(expected, evaluation.name);
+        QVERIFY(column >= 0);
+        expected.rows[0][column] = evaluation.expectedFinalGrade;
+    }
+
+    const Roster modeled = model->toRoster();
+    QCOMPARE(modeled.columns, expected.columns);
+    QCOMPARE(modeled.rows.constFirst(), expected.rows.constFirst());
+    const bool saved = editor.saveChanges();
+    QVERIFY2(
+        saved,
+        prompts.messages.size() > 1
+            ? qPrintable(prompts.messages.constLast().message)
+            : "The restored roster model did not save."
+        );
+    QVERIFY(!editor.hasUnsavedChanges());
+    QCOMPARE(prompts.messages.size(), 1);
+
+    const Result<Roster> persisted = fixture.m_services.rosterService()->roster(
+        fixture.classId
+        );
+    QVERIFY(persisted);
+    QCOMPARE(persisted->columns, expected.columns);
+    QCOMPARE(persisted->rows, expected.rows);
+}
+
+void RosterEditorWidgetImportTests::readFailureLeavesRosterUnchanged()
+{
+    RosterScoreImportFixture fixture;
+    QString error;
+    QVERIFY2(fixture.initialize(&error), qPrintable(error));
+
+    FakeUserPromptService prompts;
+    ScopedPromptService promptScope(&prompts);
+
+    RosterEditorWidget editor(&fixture.m_services, true);
+    editor.loadClass(
+        Classroom(
+            QStringLiteral("Roster score import fixture"),
+            fixture.classId
+            )
+        );
+
+    fixture.m_services.closeDatabase();
+    QVERIFY(QMetaObject::invokeMethod(
+        &editor,
+        "importScores",
+        Qt::DirectConnection
+        ));
+    QCOMPARE(prompts.messages.size(), 1);
+    QCOMPARE(prompts.messages.constFirst().severity, PromptSeverity::Information);
+    QCOMPARE(
+        prompts.messages.constFirst().message,
+        QStringLiteral("Scores are already up to date.")
+        );
+    QVERIFY(!editor.hasUnsavedChanges());
+
+    const Status reopened = fixture.m_services.openDatabase(fixture.databasePath());
+    QVERIFY2(reopened, reopened ? "" : qPrintable(reopened.error()));
+    const Result<Roster> persisted = fixture.m_services.rosterService()->roster(
+        fixture.classId
+        );
+    QVERIFY(persisted);
+    QCOMPARE(persisted->columns, fixture.initialRoster.columns);
+    QCOMPARE(persisted->rows, fixture.initialRoster.rows);
 }
 
 void RosterEditorWidgetImportTests::

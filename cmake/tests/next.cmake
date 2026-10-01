@@ -480,6 +480,44 @@ classmngr_add_qt_test(
         Qt6::Test
 )
 
+# Exercise roster-score derivation against a fake typed read port without Qt.
+add_executable(
+    ClassMngrNextApplicationSpeakingEvaluationRosterScoreImportTests
+    tests/next_application_speaking_evaluation_roster_score_import_tests.cpp
+)
+target_compile_features(
+    ClassMngrNextApplicationSpeakingEvaluationRosterScoreImportTests
+    PRIVATE
+        cxx_std_23
+)
+if(MSVC)
+    target_compile_options(
+        ClassMngrNextApplicationSpeakingEvaluationRosterScoreImportTests
+        PRIVATE
+            /utf-8
+    )
+endif()
+set_target_properties(
+    ClassMngrNextApplicationSpeakingEvaluationRosterScoreImportTests
+    PROPERTIES
+        AUTOMOC OFF
+        AUTOUIC OFF
+        AUTORCC OFF
+)
+set_property(
+    TARGET ClassMngrNextApplicationSpeakingEvaluationRosterScoreImportTests
+    PROPERTY CLASSMNGR_STANDALONE_CPP_TEST TRUE
+)
+target_link_libraries(
+    ClassMngrNextApplicationSpeakingEvaluationRosterScoreImportTests
+    PRIVATE
+        ClassMngrNext::Application
+)
+add_test(
+    NAME ClassMngrNextApplicationSpeakingEvaluationRosterScoreImportTests
+    COMMAND ClassMngrNextApplicationSpeakingEvaluationRosterScoreImportTests
+)
+
 classmngr_add_qt_test(
     NAME NextApplicationClassDetailsPageQuery
     SOURCES
