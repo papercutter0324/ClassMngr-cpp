@@ -1,10 +1,13 @@
 #include "core/application_services.h"
 #include "core/fontmanager.h"
 #include "core/utils/colorutils.h"
+#include "app/services/feature_services.h"
 #include "data/data_service.h"
+#include "domain/models/teacher.h"
 #include "features/schedule/ui/schedule_import_dialog.h"
 #include "features/schedule/ui/schedule_import_review_dialog.h"
 #include "features/schedule/import/schedule_workbook_parser.h"
+#include "features/teacher/import/teacher_import_name_utils.h"
 #include "fakes/fake_user_prompt_service.h"
 #include "ui/shared/constants/gui_constants.h"
 #include "ui/shared/dialogs/user_prompt_service.h"
@@ -74,6 +77,9 @@ private slots:
     void intensiveModeChoiceReflectsExistingSchedule();
     void regularPreviewShowsFullEssayGrid();
     void possibleMatchIsPreselectedForUpdate();
+    void ambiguousTargetedClassSkipIsRejected();
+    void uniqueExactTargetedClassSkipIsAllowed();
+    void targetlessClassSkipIsAllowed();
     void reviewWarnsForDuplicateClassTargets();
     void reviewWarnsForOverlappingProjectedTimes();
     void reviewWarnsWhenRetainedIntensiveClassOverlaps();
@@ -128,6 +134,31 @@ int actionIndex(
         }
     }
     return -1;
+}
+
+ScheduleImportReviewRequest classSkipRequest(const Teacher& teacher)
+{
+    ScheduleImportReviewRequest request;
+    request.kind = ScheduleImportKind::Normal;
+    request.user.name = QStringLiteral("Alice");
+
+    ScheduleImportClassCandidate candidate;
+    candidate.teacherKey = TeacherImportNameUtils::hangulOnly(
+        teacher.teacherKr
+        );
+    candidate.teacherKr = teacher.teacherKr;
+    candidate.rooms = {teacher.roomNumber};
+    candidate.classGrade = QStringLiteral("E4");
+    candidate.classLevel = QStringLiteral("Hercules");
+    candidate.times = {
+        {
+            QStringLiteral("Monday"),
+            QStringLiteral("4:00 PM"),
+            QStringLiteral("4:55 PM")
+        }
+    };
+    request.user.classes = {candidate};
+    return request;
 }
 
 void appendLe16(
@@ -1863,6 +1894,132 @@ void ScheduleImportDialogTests::possibleMatchIsPreselectedForUpdate()
         static_cast<int>(ScheduleImportClassAction::UpdateExisting)
         );
     QCOMPARE(action->currentData(Qt::UserRole + 1).toInt(), 43);
+}
+
+void ScheduleImportDialogTests::ambiguousTargetedClassSkipIsRejected()
+{
+    ScheduleWidgetTestStubs::setIncludeAlternativeMatchingClass(true);
+
+    ApplicationServices services;
+    const Result<Teacher> teacher = services.teacherService()->teacher(7);
+    QVERIFY(teacher);
+    ScheduleImportReviewDialog review(
+        &services,
+        classSkipRequest(*teacher)
+        );
+    QVERIFY(review.prepare());
+
+    auto* action = review.findChild<QComboBox*>(
+        QStringLiteral("scheduleImportClassAction_0")
+        );
+    auto* import = review.findChild<QPushButton*>(
+        QStringLiteral("scheduleImportAcceptButton")
+        );
+    auto* status = review.findChild<QLabel*>(
+        QStringLiteral("scheduleImportReviewStatus")
+        );
+    QVERIFY(action);
+    QVERIFY(import);
+    QVERIFY(status);
+
+    const int skipIndex = actionIndex(
+        action,
+        ScheduleImportClassAction::Skip
+        );
+    QVERIFY(skipIndex >= 0);
+    action->setItemData(skipIndex, 42, Qt::UserRole + 1);
+    action->setCurrentIndex(skipIndex);
+
+    QCOMPARE(action->currentData(Qt::UserRole + 1).toInt(), 42);
+    QVERIFY(!import->isEnabled());
+    QVERIFY(status->text().contains(QStringLiteral("unique exact")));
+    auto* details = review.findChild<QLabel*>(
+        QStringLiteral("scheduleImportClassDifferences_0")
+        );
+    QVERIFY(details);
+    QVERIFY(
+        details->text().contains(
+            QStringLiteral("selected existing class")
+            )
+        );
+}
+
+void ScheduleImportDialogTests::uniqueExactTargetedClassSkipIsAllowed()
+{
+    ApplicationServices services;
+    const Result<Teacher> teacher = services.teacherService()->teacher(7);
+    QVERIFY(teacher);
+    ScheduleImportReviewDialog review(
+        &services,
+        classSkipRequest(*teacher)
+        );
+    QVERIFY(review.prepare());
+
+    auto* action = review.findChild<QComboBox*>(
+        QStringLiteral("scheduleImportClassAction_0")
+        );
+    auto* import = review.findChild<QPushButton*>(
+        QStringLiteral("scheduleImportAcceptButton")
+        );
+    auto* status = review.findChild<QLabel*>(
+        QStringLiteral("scheduleImportReviewStatus")
+        );
+    QVERIFY(action);
+    QVERIFY(import);
+    QVERIFY(status);
+
+    const int skipIndex = actionIndex(
+        action,
+        ScheduleImportClassAction::Skip
+        );
+    QVERIFY(skipIndex >= 0);
+    action->setItemData(skipIndex, 42, Qt::UserRole + 1);
+    action->setCurrentIndex(skipIndex);
+
+    QTRY_VERIFY(import->isEnabled());
+    QCOMPARE(
+        status->text(),
+        QStringLiteral("All required resolutions are complete.")
+        );
+}
+
+void ScheduleImportDialogTests::targetlessClassSkipIsAllowed()
+{
+    ApplicationServices services;
+    const Result<Teacher> teacher = services.teacherService()->teacher(7);
+    QVERIFY(teacher);
+    ScheduleImportReviewDialog review(
+        &services,
+        classSkipRequest(*teacher)
+        );
+    QVERIFY(review.prepare());
+
+    auto* action = review.findChild<QComboBox*>(
+        QStringLiteral("scheduleImportClassAction_0")
+        );
+    auto* import = review.findChild<QPushButton*>(
+        QStringLiteral("scheduleImportAcceptButton")
+        );
+    auto* status = review.findChild<QLabel*>(
+        QStringLiteral("scheduleImportReviewStatus")
+        );
+    QVERIFY(action);
+    QVERIFY(import);
+    QVERIFY(status);
+
+    const int skipIndex = actionIndex(
+        action,
+        ScheduleImportClassAction::Skip
+        );
+    QVERIFY(skipIndex >= 0);
+    action->setItemData(skipIndex, 0, Qt::UserRole + 1);
+    action->setCurrentIndex(skipIndex);
+
+    QTRY_VERIFY(import->isEnabled());
+    QCOMPARE(
+        status->text(),
+        QStringLiteral("All required resolutions are complete.")
+        );
 }
 
 void ScheduleImportDialogTests::reviewWarnsForDuplicateClassTargets()

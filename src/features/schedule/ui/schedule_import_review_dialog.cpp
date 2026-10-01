@@ -6,21 +6,27 @@
 #include "core/fontmanager.h"
 #include "core/startup_profiler.h"
 #include "core/utils/colorutils.h"
+#include "features/classes/config/class_info_config.h"
 #include "next/platform/application_services_custom_color_palette_preferences_port.h"
+#include "domain/models/class_info.h"
 #include "domain/models/classroom.h"
+#include "domain/models/teacher.h"
 #include "domain/rules/schedule_import_rules.h"
 #include "features/schedule/ui/schedule_import_dialog_shared.h"
 #include "features/schedule/ui/schedule_import_review_presentation.h"
 #include "features/schedule/ui/schedule_import_resolution_view.h"
 #include "features/schedule/services/schedule_import_review_model.h"
 #include "features/schedule/services/schedule_import_review_summary.h"
+#include "features/teacher/import/teacher_import_name_utils.h"
 #include "next/application/schedule_import_review_decisions.h"
+#include "next/application/schedule_import_state_validation.h"
 #include "next/domain/domain_types.h"
 #include "features/schedule/ui/schedule_view_model.h"
 #include "features/schedule/ui/schedule_widget.h"
 #include "ui/shared/constants/gui_constants.h"
 #include "ui/shared/widgets/text_fit_dialog_button_box.h"
 
+#include <QByteArray>
 #include <QCheckBox>
 #include <QColor>
 #include <QComboBox>
@@ -43,6 +49,7 @@
 #include <QTableWidget>
 #include <QTabWidget>
 #include <QTimer>
+#include <QTime>
 #include <QVBoxLayout>
 
 #include <algorithm>
@@ -50,6 +57,7 @@
 #include <optional>
 #include <string>
 #include <utility>
+#include <vector>
 
 namespace
 {
@@ -70,6 +78,184 @@ using ReviewDecisionIssue =
     ClassMngr::Next::Application::ScheduleImportReviewDecisionIssue;
 using ReviewDecisionIssueCode =
     ClassMngr::Next::Application::ScheduleImportReviewDecisionIssueCode;
+using StateValidationError =
+    ClassMngr::Next::Application::ScheduleImportStateValidationError;
+using StateValidationErrorCode =
+    ClassMngr::Next::Application::ScheduleImportStateValidationErrorCode;
+using StateValidationRequest =
+    ClassMngr::Next::Application::ScheduleImportStateValidationRequest;
+
+namespace ImportState = ClassMngr::Next::Application;
+namespace ImportDomain = ClassMngr::Next::Domain;
+
+std::string utf8String(const QString& value)
+{
+    const QByteArray utf8 = value.toUtf8();
+    return std::string(
+        utf8.constData(),
+        static_cast<std::size_t>(utf8.size())
+        );
+}
+
+QString normalizedIdentity(const QString& value)
+{
+    return value.simplified().toCaseFolded();
+}
+
+int stateTimeMinutes(const QString& value)
+{
+    for (const QString& format : {
+             QStringLiteral("h:mm AP"),
+             QStringLiteral("h:mmAP"),
+             QStringLiteral("H:mm"),
+             QStringLiteral("HH:mm")
+         })
+    {
+        const QTime time = QTime::fromString(value.trimmed(), format);
+        if (time.isValid())
+        {
+            return time.hour() * 60 + time.minute();
+        }
+    }
+    return -1;
+}
+
+ImportState::ScheduleImportStateTime stateTime(const ClassTime& time)
+{
+    return {
+        static_cast<int>(ClassInfoConfig::Days.indexOf(time.day)),
+        stateTimeMinutes(time.startTime),
+        stateTimeMinutes(time.endTime),
+        utf8String(time.day),
+        utf8String(time.startTime),
+        utf8String(time.endTime)
+    };
+}
+
+std::vector<ImportState::ScheduleImportStateTime> stateTimes(
+    const QList<ClassTime>& times
+    )
+{
+    std::vector<ImportState::ScheduleImportStateTime> result;
+    result.reserve(static_cast<std::size_t>(times.size()));
+    for (const ClassTime& time : times)
+    {
+        result.push_back(stateTime(time));
+    }
+    return result;
+}
+
+ImportDomain::TeacherId stateTeacherId(const int legacyId)
+{
+    return ImportDomain::TeacherId::fromString(
+        std::to_string(legacyId)
+        ).value();
+}
+
+ImportDomain::ClassId stateClassId(const int legacyId)
+{
+    return ImportDomain::ClassId::fromString(
+        std::to_string(legacyId)
+        ).value();
+}
+
+ImportState::ScheduleImportStateTeacherAction stateTeacherAction(
+    const int action
+    )
+{
+    switch (static_cast<ScheduleImportTeacherAction>(action))
+    {
+    case ScheduleImportTeacherAction::Reuse:
+        return ImportState::ScheduleImportStateTeacherAction::Reuse;
+    case ScheduleImportTeacherAction::UpdateRoom:
+        return ImportState::ScheduleImportStateTeacherAction::UpdateRoom;
+    case ScheduleImportTeacherAction::Create:
+        return ImportState::ScheduleImportStateTeacherAction::Create;
+    case ScheduleImportTeacherAction::Skip:
+        return ImportState::ScheduleImportStateTeacherAction::Skip;
+    }
+    return ImportState::ScheduleImportStateTeacherAction::Create;
+}
+
+ImportState::ScheduleImportStateClassAction stateClassAction(
+    const int action
+    )
+{
+    switch (static_cast<ScheduleImportClassAction>(action))
+    {
+    case ScheduleImportClassAction::UpdateExisting:
+        return ImportState::ScheduleImportStateClassAction::UpdateExisting;
+    case ScheduleImportClassAction::CreateNew:
+        return ImportState::ScheduleImportStateClassAction::CreateNew;
+    case ScheduleImportClassAction::Skip:
+        return ImportState::ScheduleImportStateClassAction::Skip;
+    }
+    return ImportState::ScheduleImportStateClassAction::CreateNew;
+}
+
+QString stateValidationMessage(const StateValidationError& error)
+{
+    switch (error.code)
+    {
+    case StateValidationErrorCode::SelectedTeacherUnavailable:
+        return QObject::tr("A selected Korean teacher is no longer available.");
+    case StateValidationErrorCode::InvalidTeacherTarget:
+        return QObject::tr(
+            "A created or skipped Korean teacher cannot have an existing target."
+            );
+    case StateValidationErrorCode::MissingTeacherRoom:
+        return QObject::tr("Choose a room before updating a Korean teacher.");
+    case StateValidationErrorCode::SelectedClassUnavailable:
+        return QObject::tr("A selected class is no longer available.");
+    case StateValidationErrorCode::CreateNewClassHasTarget:
+        return QObject::tr(
+            "A class created as new cannot have an existing target."
+            );
+    case StateValidationErrorCode::SkippedClassNotUniqueExactMatch:
+        return QObject::tr(
+            "A skipped imported class can preserve only its unique exact existing match."
+            );
+    case StateValidationErrorCode::InvalidProjectedTime:
+        return QObject::tr("%1 contains an invalid time: %2 %3–%4")
+            .arg(
+                QString::fromUtf8(
+                    error.classLabel.data(),
+                    static_cast<qsizetype>(error.classLabel.size())
+                    ),
+                QString::fromUtf8(
+                    error.day.data(),
+                    static_cast<qsizetype>(error.day.size())
+                    ),
+                QString::fromUtf8(
+                    error.startTime.data(),
+                    static_cast<qsizetype>(error.startTime.size())
+                    ),
+                QString::fromUtf8(
+                    error.endTime.data(),
+                    static_cast<qsizetype>(error.endTime.size())
+                    )
+                );
+    case StateValidationErrorCode::ProjectedScheduleOverlap:
+        return QObject::tr(
+            "The proposed schedule overlaps between %1 and %2 on %3."
+            )
+            .arg(
+                QString::fromUtf8(
+                    error.classLabel.data(),
+                    static_cast<qsizetype>(error.classLabel.size())
+                    ),
+                QString::fromUtf8(
+                    error.conflictingClassLabel.data(),
+                    static_cast<qsizetype>(error.conflictingClassLabel.size())
+                    ),
+                QString::fromUtf8(
+                    error.day.data(),
+                    static_cast<qsizetype>(error.day.size())
+                    )
+                );
+    }
+    return QObject::tr("Review the Schedule Import choices.");
+}
 
 ReviewTeacherAction reviewTeacherAction(int action)
 {
@@ -850,7 +1036,10 @@ void ScheduleImportReviewDialog::updateReviewState()
         teacherService = nullptr;
     }
     QList<Classroom> availableClasses;
+    QList<Teacher> availableTeachers;
     QHash<int, Teacher> teachersById;
+    QHash<int, ClassInfo> classInfoSnapshots;
+    bool stateSnapshotsAvailable = false;
     if (classService && teacherService)
     {
         const Result<QList<Classroom>> classes = classService->classes();
@@ -868,12 +1057,43 @@ void ScheduleImportReviewDialog::updateReviewState()
         else
         {
             availableClasses = *classes;
-            for (const Teacher& teacher : *teachers)
+            availableTeachers = *teachers;
+            for (const Teacher& teacher : availableTeachers)
             {
                 teachersById.insert(teacher.id, teacher);
             }
+
+            stateSnapshotsAvailable = true;
+            for (const Classroom& classroom : availableClasses)
+            {
+                const Result<ClassInfo> info =
+                    classService->classInfo(classroom.id);
+                if (!info)
+                {
+                    stateSnapshotsAvailable = false;
+                    valid = false;
+                    if (message.isEmpty())
+                    {
+                        message = info.error();
+                    }
+                    continue;
+                }
+                classInfoSnapshots.insert(classroom.id, *info);
+            }
         }
     }
+    const auto classInfoForReview =
+        [&classInfoSnapshots, classService](const int classId)
+    {
+        const auto snapshot = classInfoSnapshots.constFind(classId);
+        if (snapshot != classInfoSnapshots.cend())
+        {
+            return snapshot.value();
+        }
+        return classService
+            ? classService->classInfo(classId).value_or(ClassInfo{})
+            : ClassInfo{};
+    };
     QSet<int> targets;
     QHash<int, int> classActions;
     QHash<int, int> classTargets;
@@ -987,7 +1207,9 @@ void ScheduleImportReviewDialog::updateReviewState()
             {
                 control.details->setText(
                     target > 0
-                        ? tr("The imported row will be skipped and its unique existing match will keep its current schedule.")
+                        ? tr(
+                              "The imported row will be skipped and its selected existing class will keep its current schedule."
+                              )
                         : tr("The imported row will be skipped.")
                 );
             }
@@ -1159,8 +1381,7 @@ void ScheduleImportReviewDialog::updateReviewState()
                     continue;
                 }
 
-                const ClassInfo info =
-                    classService->classInfo(target).value_or(ClassInfo{});
+                const ClassInfo info = classInfoForReview(target);
                 ScheduleImportClassCandidate preserved;
                 const Teacher preservedTeacher =
                     teachersById.value(info.teacherId);
@@ -1229,8 +1450,7 @@ void ScheduleImportReviewDialog::updateReviewState()
                     continue;
                 }
 
-                const ClassInfo info =
-                    classService->classInfo(classroom.id).value_or(ClassInfo{});
+                const ClassInfo info = classInfoForReview(classroom.id);
                 if (info.intensiveTimes.isEmpty())
                 {
                     continue;
@@ -1300,13 +1520,147 @@ void ScheduleImportReviewDialog::updateReviewState()
             }
     }
 
+    if (decisionResult.accepted() && stateSnapshotsAvailable)
+    {
+        StateValidationRequest stateRequest;
+        stateRequest.kind = m_request.kind == ScheduleImportKind::Intensive
+            ? ImportState::ScheduleImportStateKind::Intensive
+            : ImportState::ScheduleImportStateKind::Normal;
+        stateRequest.intensiveMode = preservesAbsentIntensiveClasses
+            ? ImportState::ScheduleImportStateIntensiveMode::UpdateExisting
+            : ImportState::ScheduleImportStateIntensiveMode::ReplaceWithNew;
+
+        stateRequest.candidates.reserve(
+            static_cast<std::size_t>(m_preview.user.classes.size())
+            );
+        for (const ScheduleImportClassCandidate& candidate :
+             m_preview.user.classes)
+        {
+            const QString label = QStringLiteral("%1 %2")
+                .arg(candidate.classGrade, candidate.classLevel);
+            stateRequest.candidates.push_back(
+                {
+                    utf8String(candidate.teacherKey),
+                    utf8String(normalizedIdentity(candidate.classGrade)),
+                    utf8String(normalizedIdentity(candidate.classLevel)),
+                    utf8String(label),
+                    stateTimes(candidate.times)
+                }
+                );
+        }
+
+        stateRequest.teacherResolutions.reserve(
+            static_cast<std::size_t>(m_teacherControls.size())
+            );
+        for (const TeacherControl& control : m_teacherControls)
+        {
+            const auto action = stateTeacherAction(
+                control.action->currentData(ActionRole).toInt()
+                );
+            const int legacyTarget =
+                control.action->currentData(TargetRole).toInt();
+            std::optional<ImportDomain::TeacherId> targetTeacherId;
+            if (
+                action == ImportState::ScheduleImportStateTeacherAction::Reuse
+                || action
+                    == ImportState::ScheduleImportStateTeacherAction::UpdateRoom
+                || legacyTarget > 0
+                )
+            {
+                targetTeacherId = stateTeacherId(legacyTarget);
+            }
+            stateRequest.teacherResolutions.push_back(
+                {
+                    utf8String(control.teacherKey),
+                    action,
+                    std::move(targetTeacherId),
+                    !control.room->currentData().toString().trimmed().isEmpty()
+                }
+                );
+        }
+
+        stateRequest.classResolutions.reserve(
+            static_cast<std::size_t>(m_classControls.size())
+            );
+        for (const ClassControl& control : m_classControls)
+        {
+            const auto action = stateClassAction(
+                control.action->currentData(ActionRole).toInt()
+                );
+            const int legacyTarget =
+                control.action->currentData(TargetRole).toInt();
+            std::optional<ImportDomain::ClassId> targetClassId;
+            if (
+                action
+                    == ImportState::ScheduleImportStateClassAction::UpdateExisting
+                || legacyTarget > 0
+                )
+            {
+                targetClassId = stateClassId(legacyTarget);
+            }
+            stateRequest.classResolutions.push_back(
+                {
+                    static_cast<std::size_t>(control.candidateIndex),
+                    action,
+                    std::move(targetClassId)
+                }
+                );
+        }
+
+        stateRequest.existingTeachers.reserve(
+            static_cast<std::size_t>(availableTeachers.size())
+            );
+        for (const Teacher& teacher : availableTeachers)
+        {
+            stateRequest.existingTeachers.push_back(
+                {
+                    stateTeacherId(teacher.id),
+                    utf8String(
+                        TeacherImportNameUtils::hangulOnly(teacher.teacherKr)
+                        )
+                }
+                );
+        }
+
+        stateRequest.existingClasses.reserve(
+            static_cast<std::size_t>(availableClasses.size())
+            );
+        for (const Classroom& classroom : availableClasses)
+        {
+            const ClassInfo info = classInfoSnapshots.value(classroom.id);
+            const QString label = QStringLiteral("%1 %2")
+                .arg(info.classGrade, info.classLevel)
+                .simplified();
+            stateRequest.existingClasses.push_back(
+                {
+                    stateClassId(classroom.id),
+                    stateTeacherId(info.teacherId),
+                    utf8String(normalizedIdentity(info.classGrade)),
+                    utf8String(normalizedIdentity(info.classLevel)),
+                    utf8String(label),
+                    stateTimes(info.classTimes),
+                    stateTimes(info.intensiveTimes)
+                }
+                );
+        }
+
+        if (const auto error =
+                ImportState::validateScheduleImportState(stateRequest))
+        {
+            valid = false;
+            if (message.isEmpty())
+            {
+                message = stateValidationMessage(*error);
+            }
+        }
+    }
+
     int cleared = 0;
     if (classService && !preservesAbsentIntensiveClasses)
     {
         for (const Classroom& classroom : availableClasses)
         {
-            const ClassInfo info =
-                classService->classInfo(classroom.id).value_or(ClassInfo{});
+            const ClassInfo info = classInfoForReview(classroom.id);
             const bool hasSelectedTimes =
                 m_request.kind == ScheduleImportKind::Intensive
                     ? !info.intensiveTimes.isEmpty()
