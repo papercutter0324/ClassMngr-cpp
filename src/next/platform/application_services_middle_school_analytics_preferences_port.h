@@ -1,7 +1,8 @@
 #pragma once
 
-#include "app/services/feature_services.h"
 #include "core/application_services.h"
+#include "data/database/database_session.h"
+#include "data/repositories/settings_repository.h"
 #include "next/application/middle_school_analytics_preferences.h"
 
 #include <QString>
@@ -11,8 +12,8 @@ namespace ClassMngr::Next::Platform
 {
 
 // Qt-boundary adapter for the middle-school analytics visibility preference.
-// The legacy ApplicationServices/settings access and QVariant conversion stay
-// here; callers consume only the typed application boolean.
+// The active-session settings access and QVariant conversion stay here;
+// callers consume only the typed application boolean.
 class ApplicationServicesMiddleSchoolAnalyticsPreferencesPort final
     : public Application::MiddleSchoolAnalyticsPreferencesPort
 {
@@ -20,7 +21,7 @@ public:
     explicit ApplicationServicesMiddleSchoolAnalyticsPreferencesPort(
         ApplicationServices& services
         ) noexcept
-        : m_services(services)
+        : m_session(services.databaseSession())
     {
     }
 
@@ -39,18 +40,23 @@ public:
 
     [[nodiscard]] bool load() const override
     {
-        const SettingsService* settingsService = m_services.settingsService();
-        if (!settingsService || !settingsService->isAvailable())
+        if (!m_session || !m_session->isOpen())
         {
             return false;
         }
 
-        const auto storedValue = settingsService->load(key());
+        SettingsRepository* const repository = m_session->settingsRepository();
+        if (!repository)
+        {
+            return false;
+        }
+
+        const auto storedValue = repository->loadSetting(key());
         if (!storedValue || !storedValue->isValid())
         {
             // Preserve the legacy preference boundary's default materializing
             // behavior when storage is available.
-            static_cast<void>(settingsService->save(key(), false));
+            static_cast<void>(repository->saveSetting(key(), false));
             return false;
         }
 
@@ -60,13 +66,18 @@ public:
 
     void save(const bool show) const override
     {
-        const SettingsService* settingsService = m_services.settingsService();
-        if (!settingsService || !settingsService->isAvailable())
+        if (!m_session || !m_session->isOpen())
         {
             return;
         }
 
-        static_cast<void>(settingsService->save(key(), show));
+        SettingsRepository* const repository = m_session->settingsRepository();
+        if (!repository)
+        {
+            return;
+        }
+
+        static_cast<void>(repository->saveSetting(key(), show));
     }
 
 private:
@@ -77,7 +88,7 @@ private:
             );
     }
 
-    ApplicationServices& m_services;
+    DatabaseSession* m_session = nullptr;
 };
 
 } // namespace ClassMngr::Next::Platform
