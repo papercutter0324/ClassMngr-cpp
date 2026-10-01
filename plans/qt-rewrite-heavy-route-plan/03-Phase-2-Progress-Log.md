@@ -9112,3 +9112,37 @@ Speaking Evaluation cutover is selected for complete typed contracts, existing
 focused page tests, and bounded scope. Schedule Import remains a later
 gate-focused follow-up; F218 does not close a gate. Phase 2 remains In
 Progress/Open; Gates 1 and 2 remain Partial.
+
+### Progress update - 2026-10-01 (F218 accepted; F219 selected)
+
+F218, source commit `9bb936ee`, moves Speaking Evaluation class-list,
+per-class navigation metadata, and selected-class subtitle reads to existing
+Application queries and Platform ports. It preserves tab order, labels, and
+metadata; selected-class fallback/retention; Regular/Intensive schedule and
+visibility filtering; absent/closed session behavior; warnings on open-session
+list-read failure; name-only fallback on failed navigation metadata; and
+rendered subtitle parity. Independent focused verification passed all eight
+CTest targets: `ClassMngrSpeakingEvalPageSaveTests`,
+`ClassMngrNextApplicationClassesListReadQueryTests`,
+`ClassMngrNextApplicationClassesNavigationSnapshotTests`,
+`ClassMngrNextApplicationSelectedClassSubtitleReadQueryTests`,
+`ClassMngrNextPlatformApplicationServicesClassesListReadPortTests`,
+`ClassMngrNextPlatformApplicationServicesClassesNavigationReadPortTests`,
+`ClassMngrNextPlatformApplicationServicesSelectedClassSubtitleReadPortTests`,
+and `ClassMngrClassTabNavigationModelTests`. The filter-integration coverage
+gap was closed before acceptance. `git diff --check` passed; no full suite ran.
+
+F219 is selected: add `validateScheduleImportState()` as a live-state preflight
+in `ScheduleImportReviewDialog::updateReviewState()` after review-decision
+checks. Preserve status priority, form and duplicate-decision validation, full
+overlap-warning details, targetless Skip, intensive-preservation behavior, and
+the repository's final pre-write check. Reject ambiguous positive-target Skip
+before the dialog appears ready. Acceptance targets are
+`NextApplicationScheduleImportStateValidation`,
+`ClassMngrNextApplicationScheduleImportReviewDecisionsTests`,
+`ClassMngrScheduleImportDialogTests`, and `ClassMngrScheduleImportTests`.
+Two Explorers recommended this gate-focused integration; three independent
+Investigators agreed on the minimal live-state preflight after decision
+validation while retaining dialog warnings and repository apply validation.
+F219 advances Gate 1; Gate 2 remains Partial. Phase 2 remains In Progress/Open;
+Gates 1 and 2 remain Partial.

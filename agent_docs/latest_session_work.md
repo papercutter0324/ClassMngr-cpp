@@ -4642,3 +4642,25 @@ moving actual feature policy; the structural
 `ApplicationServicesWorkspacePort` extraction remains a candidate for later.
 Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial. Next:
 implement F212, independently verify, and commit it.
+
+## Current handoff - 2026-10-01 (F218 accepted; F219 selected)
+
+F218 source commit `9bb936ee` migrates SpeakingEval page class-list,
+navigation metadata, and selected-class subtitle reads to existing Application
+queries and Platform ports. The independent focused build and CTest run passed
+all eight relevant targets, including page integration for ordering, selection,
+regular/intensive schedule and visibility filters, subtitle parity,
+closed-session behavior, technical list-read warnings, and name-only metadata
+fallback. `git diff --check` passed. No full suite ran.
+
+F219 is selected to call the existing `validateScheduleImportState()` as an
+additional review-readiness preflight after valid review decisions and current
+class/teacher snapshots are available. The concrete gap is that an ambiguous
+exact class match can be suggested as a positive Skip target and appear ready,
+while repository apply correctly rejects it. Preserve earlier dialog message
+priority, detailed overlap warnings, targetless Skip behavior, intensive
+schedule preservation, and the repository's final pre-write validation.
+Focused acceptance includes the Application state and decision validators,
+`ClassMngrScheduleImportDialogTests`, and `ClassMngrScheduleImportTests`.
+Phase 2 remains In Progress/Open with Gates 1 and 2 Partial. Next: finish F219,
+independently verify and commit it, then choose the following slice.

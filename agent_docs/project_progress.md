@@ -69,7 +69,7 @@ accepted in source commit `2347739c`; F212 is accepted in source commit
 `bd6d044f`; F213 is accepted in source commit `dc2b3ed9`; F214 is accepted in
 source commit `9e03e668`; F215 is accepted in source commit `68ef5962`; F216
 is accepted in source commit `23dc6c2b`; F217 is accepted in source commit
-`b587a6d5`.
+`b587a6d5`; F218 is accepted in source commit `9bb936ee`.
 F196 and F197 use
 only the active open session's
 `SettingsRepository` and preserve their keys, conversions, defaults, and
@@ -224,22 +224,28 @@ ownership validation passed. Independent CTest passed 4/4, the shared
 ClassDetails trim-policy target passed 1/1, and the added optional-column
 regression recheck passed 1/1. `git diff --check` passed; no full suite ran.
 
-F218 is selected: route `SpeakingEvalPage` class-list reads through
-`ClassesListReadQuery` and its Platform port, and class-tab metadata reads
-through `ClassesNavigationSnapshotQueryHandler` and its Platform port. Preserve
-class order, tab labels and metadata, selection retention/fallback, schedule
-and visibility filtering, unavailable-session behavior, list-read warnings,
-and name-only tabs when metadata reads fail. Keep `ClassTabNavigation`, Qt
-conversion, preferences, evaluation-grid behavior, and presentation at the
-feature boundary. Extend `SpeakingEvalPageSave` with production integration
-coverage while retaining the existing list/navigation Application and
-Platform CTests. Two Explorers and three Investigators compared this smaller
-caller cutover with remaining Schedule Import validation. Schedule validation
-more directly advances the exit gate but has broader first-error and skipped-
-class rules; F218 was selected for its established contracts, focused targets,
-and tighter implementation scope. Schedule Import validation remains a
-gate-focused follow-up. Phase 2 remains In Progress/Open; Gates 1 and 2 remain
-Partial.
+F218 source commit `9bb936ee` routes SpeakingEval page class-list,
+per-class navigation metadata, and selected-class subtitle reads through the
+existing Application queries and Platform ports. It preserves tab order,
+labels and metadata, selection fallback/retention, schedule and visibility
+filters, unavailable-session behavior, list-read warnings, name-only tabs when
+navigation reads fail, and rendered subtitle formatting. The focused page,
+Application query, Platform port, and navigation-model CTests passed 8/8 in
+`build/f168`; page integration covers the combined filters, subtitle, closed
+session, technical list-read failure, and metadata fallback. `git diff --check`
+passed; no full suite ran.
+
+F219 is selected to add the existing Qt-free `validateScheduleImportState()`
+as a live-state readiness check in `ScheduleImportReviewDialog`, after review
+decisions are complete and current snapshots are available. Preserve existing
+status priority and localized UI checks, duplicate-decision validation,
+detailed overlap warnings, targetless Skip behavior, intensive preservation,
+and the repository's final pre-write check. In particular, reject a targeted
+Skip unless its current exact grade/level/teacher match is unique. Focused
+acceptance targets are `NextApplicationScheduleImportStateValidation`,
+`ClassMngrNextApplicationScheduleImportReviewDecisionsTests`,
+`ClassMngrScheduleImportDialogTests`, and `ClassMngrScheduleImportTests`.
+Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial.
 
 ### Earlier Phase 2 detail - 2026-09-26
 

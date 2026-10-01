@@ -1882,3 +1882,19 @@ a Qt-free Application use case, and keep table-column discovery and model
 updates in the widget. Share the existing Qt-compatible UTF-16 trim policy
 instead of maintaining a second whitespace list; retain UI pair matching and
 last-write-wins behavior for duplicate imported names.
+
+## 2026-10-01 - F218 Speaking Evaluation page reads
+
+For a page migration, query, port, and navigation-model tests do not prove that
+the widget wires selected schedule and visibility preferences into the model.
+Keep a page-level integration case that exercises both filter dimensions,
+class ordering, and selected-class retention through the migrated read path.
+
+## 2026-10-01 - F219 Schedule Import state preflight
+
+Use the shared Application state validator after the dialog has complete
+decisions and current snapshots. Keep the dialog's earlier, more specific
+status message and detailed overlap-warning list; the repository must repeat
+state validation at apply time because the review snapshot can become stale.
+Cover ambiguous targeted Skip alongside unique and targetless Skip so review
+readiness matches the repository's exact-match rule.
