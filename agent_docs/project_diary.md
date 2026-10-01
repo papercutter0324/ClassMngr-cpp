@@ -1746,3 +1746,10 @@ The typed signature-preferences reader consumes three keys owned by the F198
 aggregate writer. Keep missing/invalid defaults and mode/font conversion at
 the Qt adapter edge; retain the compatibility reader's warning and default
 result when repository reads fail.
+
+## 2026-10-01 - F201 Personal Signature Image reader
+
+Keep image lookup, Base64 decoding, and signature-image preparation together
+at the adapter boundary. When moving reads to the active session repository,
+preserve the warning and empty-result behavior for read errors, plus the
+existing empty behavior for missing or corrupt stored images.

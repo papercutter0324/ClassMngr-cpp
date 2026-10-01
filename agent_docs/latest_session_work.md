@@ -4283,7 +4283,7 @@ Class Visibility remains a candidate for a later preference slice. Phase 2
 remains In Progress/Open; Gates 1 and 2 remain Partial. Next: implement F199,
 independently verify it, commit it, then select F200.
 
-## 2026-10-01 - F199 accepted; F200 selected
+## Previous handoff - 2026-10-01 (F199 accepted; F200 selected)
 
 F199 source commit `dc489863` migrates
 `ApplicationServicesPersonalDisplayNamePreferencesPort` to the active
@@ -4309,3 +4309,26 @@ no-fallback coverage. Existing focused target:
 `NextPlatformApplicationServicesPersonalSignaturePreferencesPort`. Phase 2
 remains In Progress/Open; Gates 1 and 2 remain Partial. Next: implement F200,
 independently verify it, commit it, then select F201.
+
+## 2026-10-01 - F200 accepted; F201 selected
+
+F200 source commit `ef603583` migrates
+`ApplicationServicesPersonalSignaturePreferencesPort` to the active
+session's `SettingsRepository`, with no settings-service or facade fallback.
+It preserves all three keys, mode/font/text conversions, defaults without
+writes for missing/invalid values, warning/default behavior for each failed
+repository read, and the existing Technical result when unavailable. Tests
+cover invalid values remaining stored after reads, repository read errors,
+closed-session failure with `DataService` present and values unchanged after
+reopen, and values read from F198's aggregate writer. The independent Tester
+passed focused x64 MSVC CTest 1/1; `git diff --check` passed. No full suite ran.
+
+Two independent Explorer lanes agreed on F201:
+`ApplicationServicesPersonalSignatureImagePort`, a read port for
+`myInfo/signatureImage`. Preserve the existing Base64 and image-preparation
+pipeline, exact-key lookup, empty values for missing/corrupt/unavailable/read
+failure cases, and the warning on repository read error. Add closed-session
+no-fallback coverage with `DataService` present; keep callers unchanged.
+Focused target: `NextPlatformApplicationServicesPersonalSignatureImagePort`.
+Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial. Next:
+implement F201, independently verify it, commit it, then select F202.

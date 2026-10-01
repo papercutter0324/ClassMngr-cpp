@@ -8299,7 +8299,7 @@ fields/schedule/teacher/count/fallback parity. F167 implementation has not
 started. Gate 1 and Gate 2 remain Partial; Phase 2 remains In Progress and its
 exit gate remains Open.
 
-### Progress update - 2026-10-01 (F199 accepted; F200 selected)
+### Progress update - 2026-10-01 (F200 accepted; F201 selected)
 
 F167, source commit `97efac8b`, updates
 `ApplicationServicesClassDetailsPageReadPort` to use active-session
@@ -8742,16 +8742,27 @@ integration with F198's aggregate writer. Independent x64 MSVC CTest
 `ClassMngrNextPlatformApplicationServicesPersonalDisplayNamePreferencesPortTests`
 passed 1/1. `git diff --check` passed; no full suite ran.
 
-F200 is selected for `ApplicationServicesPersonalSignaturePreferencesPort`,
-with existing CMake name
-`NextPlatformApplicationServicesPersonalSignaturePreferencesPort`. This is a
-three-key reader for mode, font, and typed text already written by F198's
-aggregate port. Preserve mode `1` as Type and other values as Image, font
-`toInt()` conversion, typed-text UTF-8/whitespace, missing/invalid defaults
-without writes, unavailable Technical failure, and warning/default on
-repository read error. Add closed-session-with-`DataService` no-fallback
-coverage; keep callers and generic/sessionless `SettingsService` unchanged.
-Two independent Explorer lanes agreed because this pairs with F198's aggregate
-write. Class Visibility remains a later candidate. F200 is selected, not
-implemented; no F200 results exist. Gate 1 and Gate 2 remain Partial; Phase 2
-remains In Progress with its exit gate Open.
+F200, source commit `ef603583`, migrates
+`ApplicationServicesPersonalSignaturePreferencesPort` to use only the active
+session's `SettingsRepository` for mode, font, and text. It preserves keys,
+mode `1`/other-value Type/Image mapping, font `toInt()`, typed-text UTF-8 and
+whitespace, and defaults; warns and defaults on repository read failure;
+returns the existing Technical error when unavailable, null, or closed; and
+does not write missing or invalid values. Focused x64 MSVC CTest
+`ClassMngrNextPlatformApplicationServicesPersonalSignaturePreferencesPortTests`
+passed 1/1. Coverage includes read errors/warnings, unchanged invalid values,
+closed-session no-fallback with `DataService` and preserved database values,
+and values written by F198's aggregate port. `git diff --check` passed; no full
+suite ran.
+
+F201 is selected for `ApplicationServicesPersonalSignatureImagePort`, with
+existing CMake name
+`NextPlatformApplicationServicesPersonalSignatureImagePort`. Move its read of
+exact key `myInfo/signatureImage` to the active-session `SettingsRepository`;
+preserve Latin-1 Base64 decoding and `SignatureImage` preparation, empty
+results for missing/corrupt/unavailable/read-error values, and the read warning.
+Add closed-session-with-`DataService` no-fallback coverage; keep interface and
+callers unchanged. Both Explorer lanes independently recommended this because
+F198's aggregate writer writes the key. Class Visibility remains a later
+candidate. F201 is selected, not implemented; no F201 results exist. Gate 1 and
+Gate 2 remain Partial; Phase 2 remains In Progress with its exit gate Open.
