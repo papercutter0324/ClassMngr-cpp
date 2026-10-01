@@ -64,7 +64,8 @@ is accepted in source commit `59133929`; F202 is accepted in source commit
 source commit `3cf2ab80`; F205 is accepted in source commit `bf9ca8a7`; F206 is
 accepted in source commit `7d0291d3`; F207 is accepted in source commit
 `12cb021a`; F208 is accepted in source commit `d17ddd25`; F209 is accepted in
-source commit `7b2f8226`; F210 is accepted in source commit `22cec99b`.
+source commit `7b2f8226`; F210 is accepted in source commit `22cec99b`; F211 is
+accepted in source commit `2347739c`.
 F196 and F197 use
 only the active open session's
 `SettingsRepository` and preserve their keys, conversions, defaults, and
@@ -131,17 +132,30 @@ and menu work remain in `FileController`. Independent focused CTest passed
 2/2 in `build/f168` for the app-less use case and controller workspace
 lifecycle targets. No full suite ran.
 
+F211 source commit `2347739c` moves Speaking Evaluation read-port database
+access, Qt conversions, and error mapping from the shared header into a `.cpp`
+registered under `ClassMngrFeatures`. It preserves canonical positive IDs,
+query identity, exact UTF-16 names and row order, active-session availability,
+and Technical failures. The three focused targets built; ownership validated
+1,144 handwritten sources; independent focused CTest passed 3/3 in
+`build/f168`. Tests cover repository error returns; thrown-exception mapping
+was source-reviewed. No full suite ran.
+
 F179-F195 advanced Sub Prep and Calendar repository boundaries and the
 preference-port migrations; individual scope and evidence remain in the
 [Phase 2 progress log](../plans/qt-rewrite-heavy-route-plan/03-Phase-2-Progress-Log.md).
-Two independent scans agreed that F211 should extract
-`ApplicationServicesSpeakingEvaluationReadPort` implementation from its
-shared header into a `.cpp`, matching F209's save-port boundary. Preserve
-canonical positive class IDs and query identity validation, exact UTF-16 names
-and row order, active open-session/repository availability behavior, Technical
-repository and exception errors, and the page's blank-grid behavior on read
-failure. This is structural cleanup; no new behavioral Gate 1 gap was found.
-Gates 1 and 2 remain Partial.
+F212 is selected to move upcoming-birthday date parsing, occurrence selection,
+and today/this-week/next-week bucketing from the Qt feature into a Qt-free
+Application use case. Preserve trimmed `MM-dd` parsing, omission of invalid
+dates and blank display names, empty results for an invalid reference date,
+Sunday week boundaries, year rollover, February 29 fallback to February 28 in
+non-leap years, and all staff-group mapping and name fallback behavior. Keep Qt
+date/text conversion, locale-aware ordering, and dialog presentation at the
+feature/UI boundary. Add app-less policy tests and retain
+`UpcomingBirthdaysTests` for dialog/action behavior. Two independent
+scans compared this with the structural `ApplicationServicesWorkspacePort`
+header extraction and selected birthday bucketing because it moves actual
+feature policy into Application, advancing Gate 1. Gates 1 and 2 remain Partial.
 
 ### Earlier Phase 2 detail - 2026-09-26
 

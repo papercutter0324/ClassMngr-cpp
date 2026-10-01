@@ -4614,3 +4614,31 @@ behavior on read failure. The existing focused target is
 This is a structural boundary cleanup; no new behavioral Gate 1 gap was found.
 Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial. Next: implement
 F211, independently verify, and commit it.
+
+## 2026-10-01 — F211 accepted; F212 selected
+
+F211 source commit `2347739c` moves Speaking Evaluation read-port database
+access, Qt conversions, and error mapping from the shared header into a `.cpp`
+registered under `ClassMngrFeatures`. It preserves canonical positive IDs,
+query identity, exact UTF-16 evaluation names and row order, active-session
+availability behavior, and Technical repository/exception errors. The three
+focused targets built; CMake validated 1,144 handwritten source owners; the
+independent focused CTest passed 3/3 in `build/f168`:
+`ClassMngrNextApplicationSpeakingEvaluationQueryTests`,
+`ClassMngrNextPlatformApplicationServicesSpeakingEvaluationReadPortTests`,
+and `ClassMngrSpeakingEvalPageSaveTests`. Tests cover repository error returns;
+thrown-exception mapping was source-reviewed. No full suite ran.
+
+Two independent Explorer scans compared F212 candidates. F212 is selected to
+move upcoming-birthday date parsing, occurrence selection, and today/this-week/
+next-week bucketing from the Qt feature into a Qt-free Application use case.
+Preserve trimmed `MM-dd` parsing, invalid/blank omission, Sunday week
+boundaries, empty results for an invalid reference date, year rollover,
+February 29 fallback in non-leap years, all three staff groups, and display-name
+fallback rules. Keep Qt date/text conversion, locale-aware sorting, and dialog
+presentation at the feature/UI edge. Add app-less policy tests and retain
+`UpcomingBirthdaysTests` for dialog/action behavior. This advances Gate 1 by
+moving actual feature policy; the structural
+`ApplicationServicesWorkspacePort` extraction remains a candidate for later.
+Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial. Next:
+implement F212, independently verify, and commit it.

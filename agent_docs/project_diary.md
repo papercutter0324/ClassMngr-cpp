@@ -1826,3 +1826,11 @@ moving its repository and Qt conversion implementation out of the shared
 header is a focused structural slice after F209 moved the save adapter. Keep
 query identity validation, canonical IDs, UTF-16 row ordering, active-session
 errors, and blank-grid behavior intact.
+
+## 2026-10-01 - F212 upcoming birthday bucketing
+
+Move deterministic date parsing, occurrence selection, and week-bucket policy
+into the Qt-free Application layer. Keep locale-aware name ordering and
+presentation at the feature boundary, and preserve Sunday week endings, year
+rollover, the invalid-reference-date empty result, and the existing February
+29 fallback.

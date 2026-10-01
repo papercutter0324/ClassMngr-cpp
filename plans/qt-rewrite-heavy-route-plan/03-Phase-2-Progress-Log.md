@@ -8921,3 +8921,33 @@ failure. The existing focused target is
 `ClassMngrNextPlatformApplicationServicesSpeakingEvaluationReadPortTests`.
 This structural cleanup identifies no new behavioral Gate 1 gap. Phase 2
 remains In Progress/Open; Gates 1 and 2 remain Partial.
+
+### Progress update - 2026-10-01 (F211 accepted; F212 selected)
+
+F211, source commit `2347739c`, extracts
+`ApplicationServicesSpeakingEvaluationReadPort` implementation into `.cpp`,
+preserving its typed port/header boundary and semantics; this read-port
+extraction is distinct from F209's accepted save-port migration. The build
+passed all three focused targets; CMake source ownership validated 1,144
+handwritten sources; independent focused CTest passed 3/3 in `build/f168`:
+`ClassMngrNextApplicationSpeakingEvaluationQueryTests`,
+`ClassMngrNextPlatformApplicationServicesSpeakingEvaluationReadPortTests`, and
+`ClassMngrSpeakingEvalPageSaveTests`. Coverage includes canonical IDs,
+exact-name misses, ordered Unicode rows, repository errors, closed sessions,
+query identity, and page blank-grid behavior. Exception mapping was
+source-reviewed; tests did not directly throw an exception. No full suite ran.
+
+F212 is selected: move upcoming-birthday date parsing, occurrence generation,
+and bucket policy from `src/features/teacher/upcoming_birthday_schedule.cpp` into a
+Qt-free Application use case with an app-less test target. Keep Qt `QDate` and
+`QString` conversion, locale-aware sorting, and dialog presentation at the
+feature/UI edges. Preserve an empty result for an invalid reference date,
+trimmed `MM-dd`, omission of invalid dates and blank display names, buckets for
+today, this week through Sunday, and next week through Sunday, year rollover,
+February 29 mapping to February 28 in non-leap years, all three staff groups,
+and display-name fallback rules. Keep existing dialog/action coverage in
+`UpcomingBirthdaysTests`, expanding only schedule checks as needed.
+Two Explorer scans compared candidate scopes: workspace-port `.cpp` extraction
+is structural cleanup, while birthday bucketing moves Qt feature policy into
+Application and advances Gate 1. Phase 2 remains In Progress/Open; Gates 1 and
+2 remain Partial.
