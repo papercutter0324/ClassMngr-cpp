@@ -9,6 +9,7 @@
 #include "features/classes/config/class_info_config.h"
 #include "next/platform/application_services_custom_color_palette_preferences_port.h"
 #include "next/platform/application_services_schedule_import_state_snapshot_port.h"
+#include "next/platform/application_services_schedule_import_apply_port.h"
 #include "domain/models/class_info.h"
 #include "domain/models/classroom.h"
 #include "domain/models/teacher.h"
@@ -18,6 +19,7 @@
 #include "features/schedule/ui/schedule_import_resolution_view.h"
 #include "features/schedule/services/schedule_import_review_model.h"
 #include "features/schedule/services/schedule_import_review_summary.h"
+#include "features/schedule/services/schedule_import_plan_validator.h"
 #include "features/teacher/import/teacher_import_name_utils.h"
 #include "next/application/schedule_import_review_decisions.h"
 #include "next/application/schedule_import_matching_projection.h"
@@ -2230,23 +2232,25 @@ void ScheduleImportReviewDialog::applyImport()
         return;
     }
 
-    ScheduleService* scheduleService =
-        openScheduleImportService(m_services);
+    const ClassMngr::Next::Platform::ApplicationServicesScheduleImportApplyPort
+        writePort(m_services);
     const auto summary =
-        scheduleService
-            ? scheduleService->importSchedule(plan)
-            : Result<ScheduleImportSummary>(
-                std::unexpected(
-                    tr("No Teacher Profile is open.")
-                    )
-                );
+        ClassMngr::Next::Application::ScheduleImportApplyUseCase::execute(
+            ClassMngr::Next::Platform::scheduleImportApplyRequest(plan),
+            writePort);
 
     if (!summary)
     {
+        QString error = QString::fromStdU16String(summary.error().message);
+        if (summary.error().policyIssue)
+        {
+            const auto legacyValidation = ScheduleImportPlanValidator::validate(plan);
+            if (!legacyValidation) error = legacyValidation.error();
+        }
         DialogServices::showWarning(
             this,
             tr("Import Schedule"),
-            summary.error()
+            error
             );
         return;
     }

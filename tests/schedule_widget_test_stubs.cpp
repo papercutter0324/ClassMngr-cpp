@@ -100,6 +100,8 @@ int legacyClassListReadCount = 0;
 int repositoryClassListReadCount = 0;
 int legacyClassInfoReadCount = 0;
 int scheduleImportPreviewCallCount = 0;
+int scheduleImportApplyCallCount = 0;
+QString scheduleImportApplyFailure;
 bool selectedClassGradeReadFailure = false;
 int selectedClassSubtitleReadCount = 0;
 int selectedClassSubtitleTeacherReadCount = 0;
@@ -205,6 +207,8 @@ void reset()
     repositoryClassListReadCount = 0;
     legacyClassInfoReadCount = 0;
     scheduleImportPreviewCallCount = 0;
+    scheduleImportApplyCallCount = 0;
+    scheduleImportApplyFailure.clear();
     selectedClassGradeReadFailure = false;
     selectedClassSubtitleReadCount = 0;
     selectedClassSubtitleTeacherReadCount = 0;
@@ -1238,6 +1242,11 @@ Result<ScheduleImportSummary> DataService::importSchedule(
     const ScheduleImportPlan& plan
     )
 {
+    ++ScheduleWidgetTestStubs::scheduleImportApplyCallCount;
+    if (!ScheduleWidgetTestStubs::scheduleImportApplyFailure.isEmpty())
+    {
+        return std::unexpected(ScheduleWidgetTestStubs::scheduleImportApplyFailure);
+    }
     ScheduleImportSummary summary;
     summary.classesCreated = plan.candidates.size();
     summary.ignoredCells = plan.diagnostics.size();

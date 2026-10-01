@@ -699,6 +699,21 @@ add_test(
 
 # Exercise plan eligibility without Qt or the legacy runtime.
 add_executable(
+    ClassMngrNextApplicationScheduleImportApplyUseCaseTests
+    tests/next_application_schedule_import_apply_use_case_tests.cpp
+)
+target_compile_features(ClassMngrNextApplicationScheduleImportApplyUseCaseTests PRIVATE cxx_std_23)
+set_target_properties(ClassMngrNextApplicationScheduleImportApplyUseCaseTests PROPERTIES
+    AUTOMOC OFF AUTOUIC OFF AUTORCC OFF)
+set_property(TARGET ClassMngrNextApplicationScheduleImportApplyUseCaseTests
+    PROPERTY CLASSMNGR_STANDALONE_CPP_TEST TRUE)
+target_link_libraries(ClassMngrNextApplicationScheduleImportApplyUseCaseTests
+    PRIVATE ClassMngrNext::Application)
+add_test(NAME ClassMngrNextApplicationScheduleImportApplyUseCaseTests
+    COMMAND ClassMngrNextApplicationScheduleImportApplyUseCaseTests)
+
+# Exercise plan eligibility without Qt or the legacy runtime.
+add_executable(
     ClassMngrNextApplicationScheduleImportPlanValidationTests
     tests/next_application_schedule_import_plan_validation_tests.cpp
 )
@@ -1975,6 +1990,16 @@ classmngr_add_qt_test(
     NAME NextPlatformApplicationServicesScheduleImportStateSnapshotPort
     SOURCES
         tests/next_platform_application_services_schedule_import_state_snapshot_port_tests.cpp
+    LIBRARIES
+        ClassMngrNext::Platform
+        Qt6::Test
+    OFFSCREEN
+)
+
+classmngr_add_qt_test(
+    NAME NextPlatformApplicationServicesScheduleImportApplyPort
+    SOURCES
+        tests/next_platform_application_services_schedule_import_apply_port_tests.cpp
     LIBRARIES
         ClassMngrNext::Platform
         Qt6::Test

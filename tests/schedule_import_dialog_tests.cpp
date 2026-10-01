@@ -68,6 +68,8 @@ void setDatabaseSessionOpen(bool open);
 void setScheduleClassInfoReadFailure(bool fail);
 extern int legacyClassInfoReadCount;
 extern int scheduleImportPreviewCallCount;
+extern int scheduleImportApplyCallCount;
+extern QString scheduleImportApplyFailure;
 }
 
 namespace ImportState = ClassMngr::Next::Application;
@@ -108,6 +110,7 @@ private slots:
     void intensivePreviewPreservesEssayAndLunchBlocks();
     void suppliedWorkbookBuildsStagedReview();
     void permanentConflictWorkbookPresentsReviewWarning();
+    void applyUsesConfirmationAndReportsServiceOutcome();
 };
 
 namespace
@@ -3505,6 +3508,74 @@ void ScheduleImportDialogTests
                 )
             );
     }
+}
+
+void ScheduleImportDialogTests::applyUsesConfirmationAndReportsServiceOutcome()
+{
+    ApplicationServices services;
+    ScheduleImportReviewRequest request;
+    request.kind = ScheduleImportKind::Normal;
+    request.user.name = QStringLiteral("Alice");
+    ScheduleImportClassCandidate candidate;
+    candidate.teacherKey = QStringLiteral("\uAE40\uC120\uC0DD");
+    candidate.teacherKr = candidate.teacherKey;
+    candidate.rooms = {QStringLiteral("413")};
+    candidate.classGrade = QStringLiteral("E4");
+    candidate.classLevel = QStringLiteral("Hercules");
+    candidate.times = {
+        {QStringLiteral("Monday"), QStringLiteral("4:00 PM"), QStringLiteral("4:50 PM")},
+        {QStringLiteral("Wednesday"), QStringLiteral("4:00 PM"), QStringLiteral("4:50 PM")}
+    };
+    request.user.classes = {candidate};
+
+    FakeUserPromptService prompts;
+    DialogServices::setUserPromptServiceForTesting(&prompts);
+    ScheduleImportReviewDialog review(&services, request);
+    QVERIFY(review.prepare());
+    auto* teacher = review.findChild<QComboBox*>(
+        QStringLiteral("scheduleImportTeacherAction_0"));
+    auto* classroom = review.findChild<QComboBox*>(
+        QStringLiteral("scheduleImportClassAction_0"));
+    auto* apply = review.findChild<QPushButton*>(
+        QStringLiteral("scheduleImportAcceptButton"));
+    QVERIFY(teacher && classroom && apply);
+    for (int index = 0; index < teacher->count(); ++index)
+    {
+        if (teacher->itemData(index, Qt::UserRole).toInt()
+                == static_cast<int>(ScheduleImportTeacherAction::Reuse)
+            && teacher->itemData(index, Qt::UserRole + 1).toInt() == 7)
+        {
+            teacher->setCurrentIndex(index);
+            break;
+        }
+    }
+    const int createIndex = actionIndex(classroom, ScheduleImportClassAction::CreateNew);
+    QVERIFY(createIndex >= 0);
+    classroom->setCurrentIndex(createIndex);
+    QVERIFY(apply->isEnabled());
+
+    prompts.scriptedChoices.enqueue(PromptChoice::Rejected);
+    apply->click();
+    QCOMPARE(prompts.confirmations.size(), 1);
+    QCOMPARE(ScheduleWidgetTestStubs::scheduleImportApplyCallCount, 0);
+    QCOMPARE(review.result(), 0);
+
+    ScheduleWidgetTestStubs::scheduleImportApplyFailure = QStringLiteral("injected write failure");
+    prompts.scriptedChoices.enqueue(PromptChoice::Accepted);
+    apply->click();
+    QCOMPARE(ScheduleWidgetTestStubs::scheduleImportApplyCallCount, 1);
+    QCOMPARE(prompts.messages.size(), 1);
+    QCOMPARE(prompts.messages.constLast().message, QStringLiteral("injected write failure"));
+    QCOMPARE(review.result(), 0);
+
+    ScheduleWidgetTestStubs::scheduleImportApplyFailure.clear();
+    prompts.scriptedChoices.enqueue(PromptChoice::Accepted);
+    apply->click();
+    QCOMPARE(ScheduleWidgetTestStubs::scheduleImportApplyCallCount, 2);
+    QCOMPARE(prompts.messages.size(), 2);
+    QVERIFY(prompts.messages.constLast().message.contains(
+        QStringLiteral("Schedule imported successfully.")));
+    QCOMPARE(review.result(), static_cast<int>(QDialog::Accepted));
 }
 
 QTEST_MAIN(ScheduleImportDialogTests)
