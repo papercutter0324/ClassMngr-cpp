@@ -8,6 +8,7 @@
 #include "features/schedule/ui/schedule_import_review_dialog.h"
 #include "features/schedule/import/schedule_workbook_parser.h"
 #include "features/teacher/import/teacher_import_name_utils.h"
+#include "next/application/schedule_import_review_summary_projection.h"
 #include "fakes/fake_user_prompt_service.h"
 #include "ui/shared/constants/gui_constants.h"
 #include "ui/shared/dialogs/user_prompt_service.h"
@@ -94,6 +95,7 @@ private slots:
     void possibleMatchIsPreselectedForUpdate();
     void resolutionChoicesUseTypedSnapshotAndPreserveOrdering();
     void reviewMatchingUsesNormalizedSnapshotFields();
+    void reviewSummaryUsesApplicationProjection();
     void resolutionBuilderRetainsAdditionalEligibleTargets();
     void reviewPrepareSnapshotFailureDoesNotBuildControlsOrFallback();
     void reviewPrepareClosedSessionUsesSnapshotWarning();
@@ -2086,6 +2088,89 @@ void ScheduleImportDialogTests::reviewMatchingUsesNormalizedSnapshotFields()
         QStringLiteral("Update suggested: E4 hErCuLeS")
         ));
     QCOMPARE(ScheduleWidgetTestStubs::scheduleImportPreviewCallCount, 0);
+}
+
+void ScheduleImportDialogTests::reviewSummaryUsesApplicationProjection()
+{
+    ScheduleWidgetTestStubs::setDuplicateKoreanTeacherNames(true);
+
+    ApplicationServices services;
+    ScheduleImportReviewRequest request;
+    request.kind = ScheduleImportKind::Normal;
+    request.user.name = QStringLiteral("Alice");
+
+    ScheduleImportClassCandidate candidate;
+    candidate.teacherKey = QStringLiteral("\uAE40\uC120\uC0DD");
+    candidate.teacherKr = candidate.teacherKey;
+    candidate.rooms = {QStringLiteral("414")};
+    candidate.classGrade = QStringLiteral("E4");
+    candidate.classLevel = QStringLiteral("Hercules");
+    candidate.times = {
+        {
+            QStringLiteral("Monday"),
+            QStringLiteral("4:00 PM"),
+            QStringLiteral("4:50 PM")
+        }
+    };
+    request.user.classes = {candidate};
+
+    ScheduleImportReviewDialog review(&services, request);
+    QVERIFY(review.prepare());
+
+    auto* teacherAction = review.findChild<QComboBox*>(
+        QStringLiteral("scheduleImportTeacherAction_0")
+        );
+    auto* classAction = review.findChild<QComboBox*>(
+        QStringLiteral("scheduleImportClassAction_0")
+        );
+    auto* summaryLabel = review.findChild<QLabel*>(
+        QStringLiteral("scheduleImportReviewSummary")
+        );
+    QVERIFY(teacherAction);
+    QVERIFY(classAction);
+    QVERIFY(summaryLabel);
+
+    const int createTeacherIndex = teacherAction->findData(
+        static_cast<int>(ScheduleImportTeacherAction::Create),
+        Qt::UserRole
+        );
+    const int createClassIndex = classAction->findData(
+        static_cast<int>(ScheduleImportClassAction::CreateNew),
+        Qt::UserRole
+        );
+    QVERIFY(createTeacherIndex >= 0);
+    QVERIFY(createClassIndex >= 0);
+    teacherAction->setCurrentIndex(createTeacherIndex);
+    classAction->setCurrentIndex(createClassIndex);
+    QCoreApplication::processEvents();
+
+    ClassMngr::Next::Application::ScheduleImportReviewDecisionRequest decisions;
+    decisions.teachers.push_back({
+        candidate.teacherKey.toStdString(),
+        ClassMngr::Next::Application::ScheduleImportReviewTeacherAction::Create
+    });
+    decisions.classes.push_back({
+        0,
+        ClassMngr::Next::Application::ScheduleImportReviewClassAction::CreateNew
+    });
+    const auto expected =
+        ClassMngr::Next::Application::projectScheduleImportReviewSummary(
+            decisions,
+            0,
+            0
+            );
+    const QString expectedActionSummary =
+        QStringLiteral(
+            "Proposed import: %1 teacher(s) created, %2 room update(s), %3 teacher group(s) skipped; "
+            "%4 class(es) created, %5 updated, %6 skipped;"
+            )
+            .arg(expected.teachersCreated)
+            .arg(expected.teacherRoomsUpdated)
+            .arg(expected.teachersSkipped)
+            .arg(expected.classesCreated)
+            .arg(expected.classesUpdated)
+            .arg(expected.classesSkipped);
+    QVERIFY(summaryLabel->text().startsWith(expectedActionSummary));
 }
 
 void ScheduleImportDialogTests::

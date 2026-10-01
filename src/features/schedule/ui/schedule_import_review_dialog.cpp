@@ -18,11 +18,11 @@
 #include "features/schedule/ui/schedule_import_review_presentation.h"
 #include "features/schedule/ui/schedule_import_resolution_view.h"
 #include "features/schedule/services/schedule_import_review_model.h"
-#include "features/schedule/services/schedule_import_review_summary.h"
 #include "features/schedule/services/schedule_import_plan_validator.h"
 #include "features/teacher/import/teacher_import_name_utils.h"
 #include "next/application/schedule_import_review_readiness.h"
 #include "next/application/schedule_import_matching_projection.h"
+#include "next/application/schedule_import_review_summary_projection.h"
 #include "next/domain/domain_types.h"
 #include "features/schedule/ui/schedule_view_model.h"
 #include "features/schedule/ui/schedule_widget.h"
@@ -2014,9 +2014,10 @@ void ScheduleImportReviewDialog::updateReviewState()
                 .arg(m_preview.user.name);
     }
 
-    const ScheduleImportReviewSummary summary =
-        ScheduleImportReviewSummaryBuilder::build(
-            importPlan(),
+    const auto summary =
+        ClassMngr::Next::Application::projectScheduleImportReviewSummary(
+            decisions,
+            static_cast<int>(m_preview.user.diagnostics.size()),
             cleared
             );
     m_reviewSummary->setText(
