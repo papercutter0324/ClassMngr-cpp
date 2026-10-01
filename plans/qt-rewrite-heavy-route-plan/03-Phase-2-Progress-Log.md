@@ -8860,7 +8860,7 @@ source ownership validated 1,140 handwritten files; independent CTest
 `ClassMngrNextPlatformApplicationServicesSubPrepPreferencesPortTests` passed
 1/1 in `build/f168`; `git diff --check` passed. No full suite ran.
 
-### Progress update - 2026-10-01 (F209 accepted; F210 selected and started)
+### Progress update - 2026-10-01 (F209 accepted; F210 selected)
 
 F209, source commit `7b2f8226`, moves
 `ApplicationServicesSpeakingEvaluationSavePort` to the active session's
@@ -8879,20 +8879,45 @@ handwritten sources; independent CTest
 `ClassMngrNextPlatformApplicationServicesSpeakingEvaluationSavePortTests`
 passed 1/1 in `build/f168`. No full suite ran.
 
-F210 is selected: move deterministic recent-workspace history mutation from
-`FileController` to a Qt-free Application use case using existing
+At this update, F210 was selected: move deterministic recent-workspace history
+mutation from `FileController` to a Qt-free Application use case using existing
 `RecentWorkspaceHistory` and `RecentWorkspaceHistoryPort`, in planned target
-`NextApplicationRecentWorkspaceHistoryUseCase` (app-less). Preserve
+`NextApplicationRecentWorkspaceHistoryUseCase` (app-less). The planned policy
+preserved
 raw/normalized alias removal, normalized-path prepend, the 10-entry cap,
 `lastPath` recording, pruning both aliases, clearing `lastPath` only on a
-match, and unrelated fallback state. Keep Qt path normalization, encoding
-conversion, last-database-directory updates, and menu work in `FileController`;
-retain `FileControllerWorkspaceLifecycle` integration coverage. Two fresh
-independent scans compared candidate scopes and agreed that no direct
-`DataService` or `SettingsService` references remain under `src/next`; the
-policy remains controller-owned, so its move advances Gate 1. Speaking
-Evaluation read-port `.cpp` extraction is a later structural
-cleanup; the last-selected-campus length concern is lower priority and not a
-confirmed defect. F210 implementation has started; no F210 results or
-acceptance are recorded. Phase 2 remains In Progress/Open; Gates 1 and 2
-remain Partial.
+match, and unrelated fallback state. Qt path normalization, encoding
+conversion, last-database-directory updates, and menu work were to remain in
+`FileController`; `FileControllerWorkspaceLifecycle` integration coverage
+would be retained. Two fresh independent scans compared candidate scopes and
+agreed that no direct `DataService` or `SettingsService` references remained
+under `src/next`; the policy was controller-owned, so its move was expected to
+advance Gate 1. Speaking Evaluation read-port `.cpp` extraction was a later
+structural cleanup; the last-selected-campus length concern was lower priority
+and not a confirmed defect. This selection snapshot is superseded by the
+following F210 acceptance and F211 selection. Phase 2 remained In Progress/Open;
+Gates 1 and 2 remained Partial.
+
+### Progress update - 2026-10-01 (F210 accepted; F211 selected)
+
+F210, source commit `22cec99b`, moves recent-workspace history mutation from
+`FileController` into the Qt-free Application use case
+`NextApplicationRecentWorkspaceHistoryUseCase`. It preserves raw/normalized
+alias removal, normalized newest-first insertion, the ten-entry cap, setting
+`lastPath` when recording, pruning both aliases, clearing `lastPath` only on a
+match, and unrelated fallback state.
+`FileController` retains Qt path work, persistence, database-directory
+updates, and menu work. Independent focused CTest passed 2/2 in `build/f168`:
+`ClassMngrNextApplicationRecentWorkspaceHistoryUseCaseTests` and
+`ClassMngrFileControllerWorkspaceLifecycleTests`.
+
+F211 is selected after two independent Explorer scans agreed on extracting
+`ApplicationServicesSpeakingEvaluationReadPort` implementation from its header
+into a `.cpp`, distinct from F209's accepted save-port migration. Preserve
+canonical positive class IDs and query-identity validation, exact UTF-16 names
+and row order, active open-session/repository availability, Technical
+repository/exception errors, and the page's blank-grid behavior on read
+failure. The existing focused target is
+`ClassMngrNextPlatformApplicationServicesSpeakingEvaluationReadPortTests`.
+This structural cleanup identifies no new behavioral Gate 1 gap. Phase 2
+remains In Progress/Open; Gates 1 and 2 remain Partial.

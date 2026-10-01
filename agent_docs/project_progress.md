@@ -64,7 +64,7 @@ is accepted in source commit `59133929`; F202 is accepted in source commit
 source commit `3cf2ab80`; F205 is accepted in source commit `bf9ca8a7`; F206 is
 accepted in source commit `7d0291d3`; F207 is accepted in source commit
 `12cb021a`; F208 is accepted in source commit `d17ddd25`; F209 is accepted in
-source commit `7b2f8226`.
+source commit `7b2f8226`; F210 is accepted in source commit `22cec99b`.
 F196 and F197 use
 only the active open session's
 `SettingsRepository` and preserve their keys, conversions, defaults, and
@@ -122,18 +122,26 @@ mapping. The focused x64 build passed, ownership validated 1,141 handwritten
 sources, and the independent focused CTest passed 1/1. Coverage includes
 trigger-forced repository failure with full rollback. No full suite ran.
 
+F210 source commit `22cec99b` moves recent-workspace history mutation into the
+Qt-free `RecentWorkspaceHistoryUseCase`, preserving raw/normalized alias
+removal, normalized newest-first insertion, the ten-entry cap, `lastPath`
+recording and conditional pruning, and unrelated fallback values. Qt path
+normalization, UTF-8 conversion, persistence, last-database-directory updates,
+and menu work remain in `FileController`. Independent focused CTest passed
+2/2 in `build/f168` for the app-less use case and controller workspace
+lifecycle targets. No full suite ran.
+
 F179-F195 advanced Sub Prep and Calendar repository boundaries and the
 preference-port migrations; individual scope and evidence remain in the
 [Phase 2 progress log](../plans/qt-rewrite-heavy-route-plan/03-Phase-2-Progress-Log.md).
-Two independent post-F209 scans found no direct DataService, SettingsService,
-or SpeakingEvaluationService references under `src/next`. F210 is selected to
-move recent-workspace history mutation policy from `FileController` into a
-Qt-free Application use case. Preserve raw/normalized alias removal,
-newest-first ordering, the ten-entry cap, lastPath updates and conditional
-pruning, and unrelated fallback values. Keep Qt path normalization, settings
-I/O, last-database-directory updates, and menu work in the controller. Add
-app-less policy tests and retain `FileControllerWorkspaceLifecycle` as the
-integration regression. Gates 1 and 2 remain Partial.
+Two independent scans agreed that F211 should extract
+`ApplicationServicesSpeakingEvaluationReadPort` implementation from its
+shared header into a `.cpp`, matching F209's save-port boundary. Preserve
+canonical positive class IDs and query identity validation, exact UTF-16 names
+and row order, active open-session/repository availability behavior, Technical
+repository and exception errors, and the page's blank-grid behavior on read
+failure. This is structural cleanup; no new behavioral Gate 1 gap was found.
+Gates 1 and 2 remain Partial.
 
 ### Earlier Phase 2 detail - 2026-09-26
 

@@ -1810,3 +1810,19 @@ When a preference reader falls back from a primary key to a legacy key, keep
 the legacy value as the successful result even if best-effort migration of that
 value to the primary key fails. Check session openness before trying either
 key so the compatibility facade cannot supply a closed-session fallback.
+
+## 2026-10-01 - F210 recent workspace history policy
+
+Move deterministic mutation policy behind a Qt-free Application use case while
+keeping path normalization, UTF-8 conversion, persistence, database-directory
+memory, and menu updates at the controller boundary. Test alias cleanup and
+`lastPath` behavior independently, and retain the controller lifecycle test as
+an integration check.
+
+## 2026-10-01 - F211 Speaking Evaluation read adapter boundary
+
+The Speaking Evaluation read adapter already has a typed application query;
+moving its repository and Qt conversion implementation out of the shared
+header is a focused structural slice after F209 moved the save adapter. Keep
+query identity validation, canonical IDs, UTF-16 row ordering, active-session
+errors, and blank-grid behavior intact.

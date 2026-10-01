@@ -4590,3 +4590,27 @@ stay in the controller. The new use-case target will have app-less tests, with
 `FileControllerWorkspaceLifecycle` retained for integration. No F210 results
 are recorded yet. Phase 2 remains In Progress/Open; Gates 1 and 2 remain
 Partial.
+
+## 2026-10-01 — F210 accepted; F211 selected
+
+F210 source commit `22cec99b` moves recent-workspace history mutation from
+`FileController` into the Qt-free `RecentWorkspaceHistoryUseCase`. It preserves
+raw/normalized alias removal, normalized newest-first insertion, the ten-entry
+cap, `lastPath` record/prune semantics, and unrelated fallback state. The
+controller retains Qt path normalization, UTF-8 conversion, persistence,
+database-directory updates, and menu work. Independent focused CTest passed
+2/2 in `build/f168`:
+`ClassMngrNextApplicationRecentWorkspaceHistoryUseCaseTests` and
+`ClassMngrFileControllerWorkspaceLifecycleTests`. No full suite ran.
+
+Two independent Explorer scans selected F211: move
+`ApplicationServicesSpeakingEvaluationReadPort` implementation from its
+shared header into a `.cpp`, following F209's save-port extraction. Preserve
+canonical positive class IDs and query identity validation, exact UTF-16
+evaluation names and row order, active open-session/repository availability
+behavior, Technical repository and exception errors, and the page's blank-grid
+behavior on read failure. The existing focused target is
+`ClassMngrNextPlatformApplicationServicesSpeakingEvaluationReadPortTests`.
+This is a structural boundary cleanup; no new behavioral Gate 1 gap was found.
+Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial. Next: implement
+F211, independently verify, and commit it.

@@ -59,7 +59,8 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
   Reset Policy, F205's Class Selection Reset Policy, F206's Custom Color
   Palette preferences, F207's Sub Prep Personal Zoom preferences, and F208's
   Sub Prep saved-content preferences and F209's speaking-evaluation save are
-  accepted; F210 recent-workspace history policy is selected and in progress.
+  accepted; F210's recent-workspace history policy is accepted. F211's
+  Speaking Evaluation read-port extraction is selected.
   The prior F123 candidate wording is historical;
   current Teacher Profile integration status is recorded in the progress log.
   Gates 1 and 2
@@ -216,36 +217,27 @@ No new v2 production path depends on DataService, MainWindow, PageManager, or a 
 
 Earlier verified slices and cumulative exit-gate snapshots are archived in the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 
-## Latest progress update - 2026-10-01 (F209 accepted; F210 selected)
+## Latest progress update - 2026-10-01 (F210 accepted; F211 selected)
 
-F209, source commit `7b2f8226`, moves
-`ApplicationServicesSpeakingEvaluationSavePort` to the active session's
-`SpeakingEvalRepository`, moves implementation into `.cpp`, registers it under
-`ClassMngrFeatures`, and removes service, database, repository, and validator
-details from the shared header. It preserves canonical ID checks,
-open-session/NotFound behavior, trimmed evaluation name, validator
-normalization and validation (including the preserved, questionable
-Korean-name-length flag behavior), the 25x11 matrix, original changed-cell
-delta, error mapping, and no `DataService` fallback. Focused x64 build passed;
-CMake ownership validated 1,141 handwritten sources; independent focused CTest
-`ClassMngrNextPlatformApplicationServicesSpeakingEvaluationSavePortTests`
-passed 1/1 in `build/f168`. Coverage includes matrix/delta, name and score
-alias normalization, invalid create/update rejection, flag behavior,
-closed-session behavior with `DataService` present, and trigger-forced save
-failure with the persisted matrix unchanged. No full suite ran. Details are in
-the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
+F210, source commit `22cec99b`, moves recent-workspace history mutation from
+`FileController` into the Qt-free Application use case
+`NextApplicationRecentWorkspaceHistoryUseCase`. It preserves raw/normalized
+alias removal, normalized newest-first insertion, the ten-entry cap, setting
+`lastPath` when recording, pruning both aliases, clearing `lastPath` only on a
+match, and unrelated fallback state.
+`FileController` retains Qt path work, persistence, database-directory
+updates, and menu work. Independent focused CTest passed 2/2 in `build/f168`:
+`ClassMngrNextApplicationRecentWorkspaceHistoryUseCaseTests` and
+`ClassMngrFileControllerWorkspaceLifecycleTests`.
 
-F210 moves deterministic recent-workspace history mutation from
-`FileController` to a Qt-free Application use case using
-`RecentWorkspaceHistory` and `RecentWorkspaceHistoryPort`, in planned target
-`NextApplicationRecentWorkspaceHistoryUseCase` (app-less). Preserve removal of
-raw and normalized aliases, normalized-path prepend, the 10-entry cap,
-`lastPath` recording, pruning both aliases, clearing `lastPath` only on a
-match, and unrelated fallback state. Keep Qt path normalization, encoding
-conversion, last-database-directory updates, and menu work in `FileController`;
-retain `FileControllerWorkspaceLifecycle` integration coverage. Two fresh
-independent scans compared candidate scopes and agree that no direct
-`DataService` or `SettingsService` references remain under `src/next`; moving
-this controller-owned policy advances Gate 1. F210
-implementation has started; results and acceptance are pending. Phase 2 stays
-In Progress/Open and Gates 1 and 2 stay Partial.
+F211 is selected after two independent Explorer scans agreed on extracting
+`ApplicationServicesSpeakingEvaluationReadPort` implementation from its header
+into a `.cpp`. This is distinct from F209's accepted save-port migration.
+Preserve canonical positive class IDs and query-identity validation, exact
+UTF-16 names and row order, active open-session/repository availability,
+Technical repository/exception errors, and the page's blank-grid behavior on
+read failure. Use the existing focused target
+`ClassMngrNextPlatformApplicationServicesSpeakingEvaluationReadPortTests`.
+This structural cleanup identifies no new behavioral Gate 1 gap. Phase 2
+remains In Progress/Open; Gates 1 and 2 remain Partial. See the [Phase 2
+progress log](03-Phase-2-Progress-Log.md) for prior slice evidence.

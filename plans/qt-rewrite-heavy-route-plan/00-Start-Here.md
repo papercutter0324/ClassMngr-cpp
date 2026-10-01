@@ -10,8 +10,8 @@
   Policy), F205 (Class Selection Reset Policy), F206 (Custom Color Palette
   preferences), and F207 (Sub Prep Personal Zoom preferences) are accepted;
   F208 (Sub Prep saved-content preferences) and F209 (speaking evaluation
-  save) are accepted. F210 (recent-workspace history policy) is selected and
-  implementation has started. Gates 1 and 2
+  save) and F210 (recent-workspace history policy) are accepted. F211
+  (speaking-evaluation read-port extraction) is selected. Gates 1 and 2
   remain Partial, with broader feature migration, parity, and 96-class Release
   memory evidence still open. See the
   [Phase 2 progress log](03-Phase-2-Progress-Log.md) for current scope and
