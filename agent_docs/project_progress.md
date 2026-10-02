@@ -83,7 +83,7 @@ is accepted in source commit `d6d4bdc6`; F235 is accepted in source commit
 `b52029a6`; F236 is accepted in source commit `5877bba0`; F237 is accepted in
 source commit `8ef76074`; F238 is accepted in source commit `7b832bcc`; F239 is
 accepted in source commit `d3e9cded`; F240 is accepted in source commit
-`4be18aa5`; F241 is selected.
+`4be18aa5`; F241 is accepted in source commit `746ef0bb`; F242 is selected.
 F196 and F197 use
 only the active open session's
 `SettingsRepository` and preserve their keys, conversions, defaults, and
@@ -2881,7 +2881,7 @@ stale/overlap rejection, write-failure rollback, and intensive mapping
 coverage passed. Source ownership found one owner for 1,172 files, and
 `git diff --check` passed; no full suite ran.
 
-## Current Phase 2 position - 2026-10-02 (F240 accepted; F241 selected)
+## Current Phase 2 position - 2026-10-02 (F241 accepted; F242 selected)
 
 F236 source commit `5877bba0` carries structured typed policy, teacher-target,
 and fresh-state failures from Repository through Platform to the review dialog.
@@ -2934,10 +2934,20 @@ whitespace checks passed. Coverage includes full-row and metadata preservation,
 invalid and empty/Unicode-whitespace-only rows, final-slot clearing, validation
 and signals, and widget confirmation/selection/autosave. No full suite ran.
 
-F241 is selected to extract roster custom-column name admission into a Qt-free
-Application policy, preserving simplified whitespace, the Autumn-to-Fall
-alias, case-insensitive duplicate and required-column checks, and existing
-messages. Keep column insertion, model notifications, validation refresh,
-dirty state, and widget prompts at their current boundaries. The two
-independent scans converged on this named Gate 1 roster-editing gap. Phase 2
-remains In Progress/Open; Gates 1 and 2 remain Partial.
+F241 source commit `746ef0bb` extracts custom-column name admission into a
+Qt-free Application policy. It preserves `QString::simplified()` whitespace,
+the Autumn-to-Fall alias, Qt's case-insensitive duplicate/required checks, and
+existing messages. `RosterModel` keeps insertion, notifications, row extension,
+validation refresh, and dirty state. A shared Qt adapter copies UTF-16 code
+units exactly; leading U+FEFF content survives the F239/F240 row policies.
+Independent fresh x64 Debug verification built four focused targets; CTest
+passed 4/4. Ownership found one owner for 1,188 handwritten files, and
+`git diff --check` plus new-file whitespace checks passed. No full suite ran.
+
+F242 is selected to extract custom-column removal eligibility into a Qt-free
+policy. Preserve invalid-index and required-column rejection and existing
+messages; keep column mutation, notifications, validation refresh, dirty state,
+width/layout work, destructive confirmation, and autosave at their existing
+boundaries. Two independent scans converged on this remaining named Gate 1
+roster-editing gap. Phase 2 remains In Progress/Open; Gates 1 and 2 remain
+Partial.

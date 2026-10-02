@@ -2058,11 +2058,12 @@ survival, UI messages, and recent-file behavior. Defer Teacher Import typed
 apply, whose current Application use case already runs in the repository and
 whose production integration is a separate boundary migration.
 
-## 2026-10-02 - F240 roster row removal accepted; F241 selected
+## 2026-10-02 - F241 custom-column name policy accepted; F242 selected
 
-Move both row reordering and row removal into Qt-free contracts while keeping
-selection, validation refresh, dirty state, autosave, confirmation, and the
-separate transfer-source compaction at their existing boundaries. The next
-bounded Gate 1 gap is custom-column name admission; preserve simplified
-whitespace, the Autumn-to-Fall alias, and case-insensitive duplicate and
-required-column behavior when extracting it.
+Move custom-column name admission into the Qt-free Application layer while
+keeping exact Qt Unicode comparison at its adapter boundary. Preserve
+`QString::simplified()` across all UTF-16 code units and copy code units without
+standard-string BOM interpretation; that same lossless adapter protects the
+adjacent row move/removal contracts. The next bounded Gate 1 gap is
+custom-column removal eligibility, with mutation and layout remaining at the
+model/widget boundary.

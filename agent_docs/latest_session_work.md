@@ -4895,10 +4895,20 @@ empty/Unicode-whitespace-only rows, final-slot clearing, and widget confirmation
 selection, autosave, and persisted rows. `git diff --check` and new-file
 whitespace checks passed; no full suite ran.
 
-F241 is selected to extract custom roster-column name admission into a Qt-free
-Application policy. Acceptance preserves `QString::simplified()` behavior,
-the Autumn-to-Fall alias, case-insensitive duplicate/required-column checks,
-existing errors, and model insertion, notifications, validation, dirty state,
-and widget prompts. The two independent scans converged on this bounded Gate 1
+F241 source commit `746ef0bb` extracts custom-column name admission into a
+Qt-free Application policy. It preserves `QString::simplified()` whitespace,
+the Autumn-to-Fall alias, Qt's case-insensitive duplicate/required checks, and
+existing messages. `RosterModel` keeps insertion, notifications, row extension,
+validation refresh, and dirty state. A shared Qt adapter copies UTF-16 code
+units exactly; leading U+FEFF content survives the F239/F240 row policies.
+Independent fresh x64 Debug verification built four focused targets; CTest
+passed 4/4. Ownership found one owner for 1,188 handwritten files, and
+`git diff --check` plus new-file whitespace checks passed. No full suite ran.
+
+F242 is selected to extract custom-column removal eligibility into a Qt-free
+policy. Preserve invalid-index and required-column rejection and existing
+messages; keep column mutation, notifications, validation refresh, dirty state,
+width/layout work, destructive confirmation, and autosave at their existing
+boundaries. Two independent scans converged on this remaining named Gate 1
 roster-editing gap. Phase 2 remains In Progress/Open; Gates 1 and 2 remain
 Partial.
