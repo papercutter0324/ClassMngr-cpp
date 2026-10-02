@@ -4852,12 +4852,19 @@ handwritten sources. The Application ApplyUseCase, Platform ApplyPort, and
 Schedule Import repository CTests passed 3/3; `git diff --check` passed. No
 full suite ran.
 
-F235 is selected to preserve typed teacher and class target IDs through the
-repository's fresh-state check. Current `applyTyped()` parses and reserializes
-IDs before comparison, so a typed `01` can alias a persisted `1`. Keep the
-exact typed ID until state validation finishes, and convert only at SQL use
-sites. Verify canonical teacher/class target `1` still applies and noncanonical
-`01` is rejected before writes with persisted snapshots unchanged. One
-independent lane identified structured failure preservation across repository
-and Platform as a separate later seam; keep it out of F235. Next: begin F235
-implementation. Phase 2 remains In Progress/Open with Gates 1 and 2 Partial.
+F235 source commit `b52029a6` preserves exact typed teacher and class target
+IDs through fresh-state validation. Canonical `1` applies; `01` rejects for
+both target types before writes with persisted snapshots unchanged. Independent
+verification passed the exact-ID slot 3/0 and the Schedule Import repository,
+Application ApplyUseCase, and Platform ApplyPort CTests 3/3. Ownership found
+one owner for 1,174 handwritten sources, and `git diff --check` passed. No full
+suite ran.
+
+F236 is selected to carry policy and teacher-target issues plus fresh-state
+validation codes/details through Repository and Platform. SQL/transaction
+errors remain message-only, and legacy `apply(plan)` keeps its existing
+behavior. Acceptance checks pre-write stale teacher/class targets and schedule
+overlap with unchanged snapshots, dialog error text, and transaction rollback.
+Next: implement and independently verify F236, update its acceptance record,
+commit the slice, and select the following slice. Phase 2 remains In
+Progress/Open with Gates 1 and 2 Partial.

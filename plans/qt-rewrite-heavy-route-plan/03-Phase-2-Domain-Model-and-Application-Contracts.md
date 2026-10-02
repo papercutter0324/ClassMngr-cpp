@@ -76,10 +76,11 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
   the UseCase and direct typed repository entry share Qt-free validation in
   which plan eligibility runs first, followed by the intensive-mode check and
   teacher target check. Localized formatting stays at the edges, and the legacy
-  plan validator is unchanged. F235 is selected to preserve exact typed
-  teacher and class target IDs through repository state validation, rejecting
-  noncanonical aliases such
-  as `01` before writes.
+  plan validator is unchanged. F235 is accepted: repository state validation
+  preserves exact typed teacher and class target IDs, rejecting noncanonical
+  aliases such as `01` before writes. F236 is selected to preserve structured
+  typed policy and target failures, including fresh-state validation codes and
+  details, through the repository, Platform, and dialog path.
   The prior F123 candidate wording is historical;
   current Teacher Profile integration status is recorded in the progress log.
   Gates 1 and 2
@@ -236,37 +237,22 @@ No new v2 production path depends on DataService, MainWindow, PageManager, or a 
 
 Earlier verified slices and cumulative exit-gate snapshots are archived in the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 
-## Latest progress update - 2026-10-02 (F234 accepted; F235 selected)
+## Latest progress update - 2026-10-02 (F235 accepted; F236 selected)
 
-F233, source commit `2cb853e9`, makes `ScheduleImportApplyRequest` the shared
-repository-core input. The validated v1 `ScheduleImportPlan` remains an edge
-adapter; both entry points use one fresh-state and transaction core.
-Application ApplyUseCase, Platform ApplyPort, and repository CTests passed
-3/3 (repository CTest 1/1). Malformed typed requests were rejected with
-persisted snapshots unchanged (3 QtTest cases, 0 failures), covering an
-out-of-range candidate and invalid teacher/class action-target combinations.
-The independent focused dialog slots passed. The full dialog aggregate had
-34 passes and only the three established baseline failures:
-`acceptedReviewCanTearDownSourceDialog`,
-`mismatchedProfileRequiresConfirmation`, and
-`reviewPreviewUsesSavedScheduleDisplaySettings`. Source ownership found 1,173
-files; `git diff --check` passed. No full suite was run.
+F235, source commit `b52029a6`, preserves typed teacher/class target IDs through
+repository state validation. Canonical `1` applied; noncanonical `01` was
+rejected for both target types before writes, with snapshots unchanged. The
+independent exact-ID QtTest slot passed (3 cases, 0 failures); Schedule Import
+repository, Application ApplyUseCase, and Platform ApplyPort CTests passed
+3/3. Source ownership found 1 owner for 1,174 handwritten files;
+`git diff --check` passed. No full suite was run.
 
-F234, source commit `d6d4bdc6`, adds Qt-free
-`schedule_import_apply_validation.h`, shared by the UseCase and direct
-`ScheduleImportRepository::applyTyped()`. Both reject invalid intensive-mode
-values even for normal schedules, while plan-eligibility diagnostics retain
-precedence. Localized formatting remains at the UseCase/repository edges and
-the legacy plan validator is unchanged. Independent x64 configure/build found
-1,174 handwritten source owners; the ApplyUseCase, Platform ApplyPort, and
-Schedule Import repository CTests passed 3/3; `git diff --check` passed. No
-full suite was run.
-
-F235 is selected to keep original typed teacher/class target IDs intact through
-repository fresh-state validation, converting them only at SQL use sites after
-validation. Acceptance requires canonical `1` to apply and noncanonical `01`
-to be rejected for both target types before writes, with persisted snapshots
-unchanged. Scope is the repository boundary; Application numeric rules stay
-unchanged. Structured-failure preservation across repository and Platform is a
-separate later seam. Phase 2 remains In Progress/Open; Gates 1 and 2 remain
-Partial.
+F236 is selected to preserve structured typed policy and teacher-target
+failures, plus fresh-state validation error codes and details, through the
+typed Repository -> Platform -> dialog path. Message-only SQL/transaction
+failures and legacy `apply(plan)` behavior remain intact. Acceptance checks
+cover structured issues/codes/details; stale teacher/class targets and
+schedule overlap rejected before writes with snapshots unchanged; established
+dialog messages; intact rollback and technical errors; and representative
+legacy-path compatibility. Two independent Explorer lanes agreed on this seam.
+Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial.

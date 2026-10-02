@@ -2031,3 +2031,11 @@ Keep typed teacher and class IDs intact through fresh-state comparison. Do not
 parse and reserialize the IDs before validation: the typed value `01` must not
 select the persisted canonical ID `1`. Convert only at the SQL adapter after
 state validation, and cover both teacher and class targets before writes.
+
+## 2026-10-02 - F236 structured Schedule Import failures selected
+
+Carry structured policy, teacher-target, and fresh-state validation failures
+through the typed Repository and Platform path so the dialog can use its
+existing issue formatters. Keep SQL/transaction failures message-only and
+preserve the legacy plan API. Test the reported codes/details, pre-write
+rejection with unchanged state, dialog messaging, and rollback behavior.
