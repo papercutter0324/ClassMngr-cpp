@@ -1,6 +1,7 @@
 #include "roster_model.h"
 
 #include "core/utils/student_name_utils.h"
+#include "next/application/roster_row_removal.h"
 #include "next/application/roster_row_reordering.h"
 
 #include <utility>
@@ -62,58 +63,55 @@ bool RosterModel::canRemoveRow(
     QString* reason
     ) const
 {
-    if (row < 0 || row >= m_rows.size())
+    const auto result =
+        ClassMngr::Next::Application::removeRosterRow(
+            applicationSnapshot(m_columns, m_rows),
+            row
+            );
+    const auto* error =
+        std::get_if<
+            ClassMngr::Next::Application::RosterRowRemovalError
+            >(&result);
+    if (!error)
     {
-        if (reason)
+        return true;
+    }
+
+    if (reason)
+    {
+        using ClassMngr::Next::Application::RosterRowRemovalErrorCode;
+        switch (error->code)
         {
+        case RosterRowRemovalErrorCode::InvalidRowIndex:
             *reason = tr("Select a student row to remove.");
-        }
-
-        return false;
-    }
-
-    const bool hasData =
-        rowHasData(m_rows[row]);
-
-    if (!hasData)
-    {
-        if (reason)
-        {
+            break;
+        case RosterRowRemovalErrorCode::RowHasNoData:
             *reason = tr("Selected row is already empty.");
+            break;
         }
-
-        return false;
     }
 
-    return true;
+    return false;
 }
 
 bool RosterModel::removeRosterRow(
     int row
     )
 {
-    QString reason;
-
-    if (!canRemoveRow(row, &reason))
+    auto result =
+        ClassMngr::Next::Application::removeRosterRow(
+            applicationSnapshot(m_columns, m_rows),
+            row
+            );
+    auto* removed =
+        std::get_if<ClassMngr::Next::Application::RosterSnapshot>(&result);
+    if (!removed)
     {
-        Q_UNUSED(reason);
         return false;
     }
 
-    const int lastRow =
-        m_rows.size() - 1;
-
-    for (int sourceRow = row + 1; sourceRow <= lastRow; ++sourceRow)
-    {
-        m_rows[sourceRow - 1] =
-            m_rows[sourceRow];
-    }
-
-    m_rows[lastRow] =
-        QStringList(
-            m_columns.size(),
-            QString()
-            );
+    m_rows = qtRows(removed->rows);
+    const int lastRow = m_rows.size() - 1;
 
     validateAll();
 

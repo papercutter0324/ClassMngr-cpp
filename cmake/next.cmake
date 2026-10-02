@@ -100,6 +100,7 @@ set(CLASSMNGR_NEXT_APPLICATION_SOURCES
     src/next/application/qt_compatible_text.h
     src/next/application/roster_snapshot.h
     src/next/application/roster_row_reordering.h
+    src/next/application/roster_row_removal.h
     src/next/application/roster_read_query.h
     src/next/application/roster_save_use_case.h
     src/next/application/speaking_evaluation_query.h

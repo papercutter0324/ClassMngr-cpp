@@ -13,6 +13,8 @@ class RosterModelTests : public QObject
 private slots:
     void removeRosterRowShiftsRowsAndClearsLastSlot();
     void removeRosterRowRejectsEmptyRows();
+    void removeRosterRowRejectsInvalidAndWhitespaceOnlyRows();
+    void removeRosterRowRefreshesValidationAndEmitsModelChanges();
     void moveRosterRowMovesSourceToLaterDestination();
     void moveRosterRowMovesSourceToEarlierDestination();
     void moveRosterRowRejectsEmptyAndSameRows();
@@ -75,6 +77,7 @@ void RosterModelTests::removeRosterRowShiftsRowsAndClearsLastSlot()
     Roster roster;
     roster.columns =
         Roster::BaseColumns;
+    roster.columns.append(QStringLiteral("Review"));
     roster.rows = {
         row(
             QStringLiteral("Amy"),
@@ -89,6 +92,9 @@ void RosterModelTests::removeRosterRowShiftsRowsAndClearsLastSlot()
             QStringLiteral("C")
             )
     };
+    roster.rows[0].append(QStringLiteral("Note Amy"));
+    roster.rows[1].append(QStringLiteral("Note Ben"));
+    roster.rows[2].append(QStringLiteral("Note Cal"));
 
     RosterModel model;
     model.setRoster(roster);
@@ -96,6 +102,10 @@ void RosterModelTests::removeRosterRowShiftsRowsAndClearsLastSlot()
     QSignalSpy dirtySpy(
         &model,
         &RosterModel::dirtyChanged
+        );
+    QSignalSpy changedSpy(
+        &model,
+        &QAbstractItemModel::dataChanged
         );
 
     QVERIFY(
@@ -125,6 +135,19 @@ void RosterModelTests::removeRosterRowShiftsRowsAndClearsLastSlot()
             .data(Qt::DisplayRole)
             .toString(),
         QStringLiteral("C")
+        );
+    QCOMPARE(model.columnCount(), 7);
+    QCOMPARE(
+        model.rowValues(1),
+        QStringList({
+            QStringLiteral("Cal"),
+            QString(),
+            QStringLiteral("C"),
+            QString(),
+            QString(),
+            QString(),
+            QStringLiteral("Note Cal")
+        })
         );
 
     QCOMPARE(
@@ -160,6 +183,16 @@ void RosterModelTests::removeRosterRowShiftsRowsAndClearsLastSlot()
         dirtySpy.first().at(0).toBool(),
         true
         );
+    QCOMPARE(changedSpy.count(), 1);
+    QCOMPARE(changedSpy.constFirst().at(0).value<QModelIndex>(), model.index(0, 0));
+    QCOMPARE(
+        changedSpy.constFirst().at(1).value<QModelIndex>(),
+        model.index(model.rowCount() - 1, model.columnCount() - 1)
+        );
+    for (int column = 0; column < model.columnCount(); ++column)
+    {
+        QVERIFY(model.rowValues(model.rowCount() - 1).at(column).isEmpty());
+    }
 }
 
 void RosterModelTests::removeRosterRowRejectsEmptyRows()
@@ -182,6 +215,87 @@ void RosterModelTests::removeRosterRowRejectsEmptyRows()
         );
     QVERIFY(
         !model.isDirty()
+        );
+}
+
+void RosterModelTests::removeRosterRowRejectsInvalidAndWhitespaceOnlyRows()
+{
+    Roster roster;
+    roster.columns = Roster::BaseColumns;
+    roster.columns.append(QStringLiteral("Review"));
+    roster.rows.append(QStringList(7, QString()));
+    roster.rows[0][6] = QStringLiteral("\u3000\u00A0\u2028");
+
+    RosterModel model;
+    model.setRoster(roster);
+
+    QString reason;
+    QVERIFY(!model.canRemoveRow(-1, &reason));
+    QCOMPARE(reason, QStringLiteral("Select a student row to remove."));
+    QVERIFY(!model.removeRosterRow(-1));
+
+    reason.clear();
+    QVERIFY(!model.canRemoveRow(model.rowCount(), &reason));
+    QCOMPARE(reason, QStringLiteral("Select a student row to remove."));
+    QVERIFY(!model.removeRosterRow(model.rowCount()));
+
+    reason.clear();
+    QVERIFY(!model.canRemoveRow(0, &reason));
+    QCOMPARE(reason, QStringLiteral("Selected row is already empty."));
+    QVERIFY(!model.removeRosterRow(0));
+    QVERIFY(!model.isDirty());
+    QVERIFY(model.rowValues(0).at(6).isEmpty());
+}
+
+void RosterModelTests::removeRosterRowRefreshesValidationAndEmitsModelChanges()
+{
+    Roster roster;
+    roster.columns = Roster::BaseColumns;
+    roster.rows = {
+        studentRow(
+            QStringLiteral("Amy"),
+            QStringLiteral("\uAE40\uBBFC\uC9C0")
+            ),
+        studentRow(
+            QStringLiteral("Ben"),
+            QStringLiteral("\uC774")
+            )
+    };
+
+    RosterModel model;
+    model.setRoster(roster);
+    const int koreanColumn = model.koreanNameColumn();
+    QVERIFY(koreanColumn >= 0);
+    QVERIFY(
+        model.errorsForCell(1, koreanColumn).contains(
+            QStringLiteral("Korean name has 1 or 5+ syllables. Verify it is correct.")
+            )
+        );
+
+    QSignalSpy dirtySpy(&model, &RosterModel::dirtyChanged);
+    QSignalSpy changedSpy(&model, &QAbstractItemModel::dataChanged);
+    QVERIFY(dirtySpy.isValid());
+    QVERIFY(changedSpy.isValid());
+
+    QVERIFY(model.removeRosterRow(0));
+
+    QCOMPARE(model.rowValues(0).at(0), QStringLiteral("Ben"));
+    QVERIFY(
+        model.errorsForCell(0, koreanColumn).contains(
+            QStringLiteral("Korean name has 1 or 5+ syllables. Verify it is correct.")
+            )
+        );
+    QVERIFY(!model.errorsForCell(1, koreanColumn).contains(
+        QStringLiteral("Korean name has 1 or 5+ syllables. Verify it is correct.")
+        ));
+    QVERIFY(model.isDirty());
+    QCOMPARE(dirtySpy.count(), 1);
+    QCOMPARE(dirtySpy.constFirst().at(0).toBool(), true);
+    QCOMPARE(changedSpy.count(), 1);
+    QCOMPARE(changedSpy.constFirst().at(0).value<QModelIndex>(), model.index(0, 0));
+    QCOMPARE(
+        changedSpy.constFirst().at(1).value<QModelIndex>(),
+        model.index(model.rowCount() - 1, model.columnCount() - 1)
         );
 }
 

@@ -13,11 +13,15 @@
 #include "ui/shared/dialogs/user_prompt_service.h"
 #include "ui/shared/pages/autosave_coordinator.h"
 
+#include <QAction>
+#include <QApplication>
 #include <QListWidget>
+#include <QMenu>
 #include <QSignalSpy>
 #include <QSqlError>
 #include <QSqlQuery>
 #include <QTemporaryDir>
+#include <QTimer>
 #include <QtTest/QtTest>
 #include <QUuid>
 
@@ -139,6 +143,7 @@ private slots:
     void manualSaveCleansOnSuccessAndStaysDirtyOnFailure();
     void autosavePersistsOrdinaryRosterWithoutReloading();
     void rowMovePreservesSelectionAndSchedulesAutosave();
+    void rowRemovalConfirmationSelectionAndAutosave();
     void invalidRosterSaveSelectsFirstInvalidCell();
     void autosaveFailureRemainsSilentAndDirty();
     void confirmedInteractiveSaveAllowsQuestionableKoreanNameLength();
@@ -289,6 +294,137 @@ rowMovePreservesSelectionAndSchedulesAutosave()
     QVERIFY(saved);
     QCOMPARE(saved->rows.at(2).at(0), QStringLiteral("Amy"));
     QCOMPARE(saved->rows.at(2).at(2), QStringLiteral("A+"));
+}
+
+void RosterEditorWidgetSaveTests::
+rowRemovalConfirmationSelectionAndAutosave()
+{
+    RosterEditorFixture fixture;
+    QString error;
+    QVERIFY2(fixture.initialize(&error), qPrintable(error));
+
+    Roster roster;
+    roster.columns = Roster::BaseColumns;
+    roster.rows = {
+        QStringList{
+            QStringLiteral("Amy"),
+            QStringLiteral("\uAE40\uBBFC\uC9C0"),
+            QStringLiteral("A+"),
+            QStringLiteral("B"),
+            QStringLiteral("C"),
+            QStringLiteral("D")
+        },
+        QStringList{
+            QStringLiteral("Ben"),
+            QStringLiteral("\uC774\uC11C\uC900"),
+            QStringLiteral("B+"),
+            QStringLiteral("A"),
+            QStringLiteral("B"),
+            QStringLiteral("C")
+        },
+        QStringList{
+            QStringLiteral("Cal"),
+            QStringLiteral("\uBC15\uC11C\uC900"),
+            QStringLiteral("C+"),
+            QStringLiteral("B"),
+            QStringLiteral("A"),
+            QStringLiteral("B")
+        }
+    };
+    QVERIFY(fixture.services.rosterService()->saveRoster(fixture.classId, roster));
+
+    FakeUserPromptService prompts;
+    prompts.scriptedChoices.enqueue(PromptChoice::Rejected);
+    prompts.scriptedChoices.enqueue(PromptChoice::Destructive);
+    ScopedPromptService promptScope(&prompts);
+
+    RosterEditorWidget editor(&fixture.services);
+    editor.loadClass(Classroom(QStringLiteral("Row removal test"), fixture.classId));
+    auto* const model = editor.findChild<RosterModel*>();
+    auto* const table = editor.findChild<RosterTableView*>(
+        QStringLiteral("rosterTable")
+        );
+    auto* const autosave = editor.findChild<AutosaveCoordinator*>();
+    QVERIFY(model);
+    QVERIFY(table);
+    QVERIFY(autosave);
+
+    autosave->setDebounceInterval(10);
+    QSignalSpy saveSpy(autosave, &AutosaveCoordinator::saveRequested);
+    QVERIFY(saveSpy.isValid());
+
+    const auto removeThroughContextMenu = [&editor, model, table]()
+    {
+        bool foundRemoveAction = false;
+        QTimer::singleShot(
+            0,
+            &editor,
+            [&foundRemoveAction]()
+            {
+                auto* menu = qobject_cast<QMenu*>(
+                    QApplication::activePopupWidget()
+                    );
+                if (!menu)
+                {
+                    return;
+                }
+
+                for (QAction* action : menu->actions())
+                {
+                    if (action->text() == QStringLiteral("Remove Student"))
+                    {
+                        foundRemoveAction = true;
+                        QTest::mouseClick(
+                            menu,
+                            Qt::LeftButton,
+                            Qt::NoModifier,
+                            menu->actionGeometry(action).center()
+                            );
+                        return;
+                    }
+                }
+
+                menu->close();
+            }
+            );
+
+        const QModelIndex clicked = model->index(1, 0);
+        return clicked.isValid()
+            && QMetaObject::invokeMethod(
+                &editor,
+                "showRosterContextMenu",
+                Qt::DirectConnection,
+                Q_ARG(QPoint, table->visualRect(clicked).center())
+                )
+            && foundRemoveAction;
+    };
+
+    QVERIFY(removeThroughContextMenu());
+    QCOMPARE(prompts.confirmations.size(), 1);
+    QCOMPARE(prompts.confirmations.constFirst().title, QStringLiteral("Remove Student"));
+    QVERIFY(prompts.confirmations.constFirst().destructive);
+    QCOMPARE(model->rowValues(1).at(0), QStringLiteral("Ben"));
+    QVERIFY(!editor.hasUnsavedChanges());
+    QCOMPARE(saveSpy.count(), 0);
+
+    QVERIFY(removeThroughContextMenu());
+    QCOMPARE(prompts.confirmations.size(), 2);
+    QCOMPARE(table->currentIndex(), model->index(1, 0));
+    QCOMPARE(model->rowValues(1).at(0), QStringLiteral("Cal"));
+    QVERIFY(model->rowValues(model->rowCount() - 1).at(0).isEmpty());
+    QVERIFY(editor.hasUnsavedChanges());
+    QVERIFY(autosave->isDirty());
+    QCOMPARE(saveSpy.count(), 0);
+
+    QTRY_VERIFY_WITH_TIMEOUT(saveSpy.count() >= 1, 5'000);
+    QCOMPARE(saveSpy.constFirst().at(0).toBool(), false);
+    QTRY_VERIFY_WITH_TIMEOUT(!editor.hasUnsavedChanges(), 5'000);
+
+    const auto saved = fixture.services.rosterService()->roster(fixture.classId);
+    QVERIFY(saved);
+    QCOMPARE(saved->rows.size(), 2);
+    QCOMPARE(saved->rows.at(0).at(0), QStringLiteral("Amy"));
+    QCOMPARE(saved->rows.at(1).at(0), QStringLiteral("Cal"));
 }
 
 void RosterEditorWidgetSaveTests::
