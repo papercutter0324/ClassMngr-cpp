@@ -85,7 +85,8 @@ source commit `8ef76074`; F238 is accepted in source commit `7b832bcc`; F239 is
 accepted in source commit `d3e9cded`; F240 is accepted in source commit
 `4be18aa5`; F241 is accepted in source commit `746ef0bb`; F242 is accepted in
 source commit `5525cade`; F243 is accepted in source commit `68260142`; F244
-is accepted in source commit `86fe782f`; F245 is selected.
+is accepted in source commit `86fe782f`; F245 is accepted in source commit
+`99c95146`; F246 is selected.
 F196 and F197 use
 only the active open session's
 `SettingsRepository` and preserve their keys, conversions, defaults, and
@@ -2883,7 +2884,7 @@ stale/overlap rejection, write-failure rollback, and intensive mapping
 coverage passed. Source ownership found one owner for 1,172 files, and
 `git diff --check` passed; no full suite ran.
 
-## Current Phase 2 position - 2026-10-02 (F244 accepted; F245 selected)
+## Current Phase 2 position - 2026-10-02 (F245 accepted; F246 selected)
 
 F236 source commit `5877bba0` carries structured typed policy, teacher-target,
 and fresh-state failures from Repository through Platform to the review dialog.
@@ -2971,11 +2972,25 @@ x64 Debug verification validated one owner for 1,194 handwritten sources; six
 focused CTests passed. Diff and new-file whitespace checks passed. No full suite
 ran.
 
-F245 is selected to move the shared Korean-name suffix suggestion rule into a
-Qt-free Application policy used by RosterModel and SpeakingEvalModel. Preserve
-trimmed case-sensitive English matching, Korean base/suffix normalization,
-first-unused A-Z selection, incomplete-name behavior, and no suggestion after
-suffix exhaustion. Keep duplicate-pair grouping and UI actions at their current
-owners. Two independent scans compared this with same-grade transfer-target
-filtering; the shared cross-feature rule was selected. Phase 2 remains
-In Progress/Open; Gates 1 and 2 remain Partial.
+F245 source commit `99c95146` moves first-unused Korean-name suffix suggestion
+into a Qt-free Application policy shared by RosterModel and SpeakingEvalModel.
+The models preserve exact legacy behavior by projecting
+`StudentNameUtils::baseKoreanName()` and `koreanNameSuffix()` at the Qt edge; the
+policy handles trimmed, case-sensitive English grouping and A-Z selection.
+Duplicate-pair grouping and the suffix choice UI remain at their current owners.
+The lossless UTF-16 adapter moved from Roster UI to `src/ui/shared` to remove a
+cross-feature dependency. Independent fresh x64 Debug/Ninja/MSVC 19.51/Qt 6.12
+verification validated one owner for 1,196 handwritten files; the app-less
+policy, RosterModel, SpeakingEval page-save, and Speaking Evaluation save-use-
+case CTests passed 4/4. Differential checks cover U+3000, unpaired UTF-16,
+malformed suffixes, and the page choice/apply flow. `git diff --check` and
+new-file whitespace checks passed; no full suite ran.
+
+F246 is selected to move same-grade roster transfer-target eligibility into a
+Qt-free Application policy. Exclude invalid and current-class IDs; require a
+nonempty current grade and preserve trimmed, case-sensitive grade equality.
+Keep class/roster lookups and failures, labels, sorting, fullness state, menu
+actions, and transfer/save behavior at the widget boundary. Two independent
+scans disagreed between this explicitly deferred plan item and Speaking
+Evaluation roster-name import planning; the narrower planned filter is selected
+for F246. Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial.

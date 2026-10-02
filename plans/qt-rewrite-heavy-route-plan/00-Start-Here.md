@@ -6,9 +6,9 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-02
-- Current milestone: Phase 2 remains in progress. F244 (Qt-free roster-transfer
-  destination preparation) is accepted; F245 (Qt-free Korean-name suffix
-  suggestion policy) is selected. Gates 1 and 2 remain Partial, with broader
+- Current milestone: Phase 2 remains in progress. F245 (Qt-free Korean-name
+  suffix suggestion policy) is accepted; F246 (same-grade roster transfer
+  target eligibility) is selected. Gates 1 and 2 remain Partial, with broader
   feature migration, parity, and 96-class Release memory evidence still open.
   See the
   [Phase 2 progress log](03-Phase-2-Progress-Log.md) for current scope and

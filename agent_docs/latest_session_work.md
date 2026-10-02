@@ -4930,11 +4930,30 @@ x64 Debug/Ninja/MSVC 19.51/Qt 6.12 verification validated one owner for 1,194
 handwritten sources; six focused CTests passed. `git diff --check` and both
 new-file whitespace checks passed. No full suite ran.
 
-F245 is selected to move the shared Korean-name suffix suggestion rule into a
-Qt-free Application policy used by RosterModel and SpeakingEvalModel. Preserve
-trimmed case-sensitive English matching, Korean base/suffix normalization,
-first-unused A-Z selection, incomplete-name behavior, and no suggestion after
-suffix exhaustion. Keep duplicate-pair grouping and UI actions at their current
-owners. Two independent scans compared this with same-grade transfer-target
-filtering; the shared cross-feature rule was selected. Phase 2 remains
-In Progress/Open; Gates 1 and 2 remain Partial.
+F245 source commit `99c95146` moves first-unused Korean-name suffix suggestion
+into a Qt-free Application policy shared by RosterModel and SpeakingEvalModel.
+The models project exact legacy `StudentNameUtils::baseKoreanName()` and
+`koreanNameSuffix()` outputs; Application compares trimmed English names
+case-sensitively, groups equal bases, marks used A-Z suffixes, and chooses the
+first free letter. Duplicate-pair grouping and the suffix choice/apply flow
+remain at their current owners. The lossless UTF-16 adapter moved to neutral
+`src/ui/shared/qt_text_adapter.h`, avoiding a Speaking Evaluation dependency on
+Roster UI.
+
+Independent fresh verification used `build/f245_independent_x64_debug` with
+Windows x64 Debug, Ninja, MSVC 19.51.36257, and Qt 6.12.0. Configure validated
+one owner for 1,196 handwritten files; the suffix policy, RosterModel,
+SpeakingEval page-save, and Speaking Evaluation save-use-case targets built,
+and all four focused CTests passed. Differential coverage includes U+3000 and
+unpaired-surrogate suffix boundaries, malformed names, and choosing/applying
+the page action. `git diff --check` and new-file whitespace checks passed. No
+full suite ran.
+
+F246 is selected to extract the same-grade roster transfer-target eligibility
+filter into Qt-free Application. The paired scans differed: one favored this
+explicitly deferred plan item, and the other found Speaking Evaluation
+roster-name import planning. Choose the narrower planned filter: reject
+nonpositive and current-class IDs, require a nonempty source grade, and keep
+trimmed case-sensitive grade matching. Service reads/failures, labels and
+ordering, fullness, menu actions, and the transfer/save sequence remain in the
+widget. Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial.

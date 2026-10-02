@@ -9584,15 +9584,27 @@ roster widget save, custom-column name, append, and row removal.
 `git diff --check` and both new-file whitespace checks passed; no full suite
 ran.
 
-F245 is selected: move only the first-unused A-Z suffix rule from
-`StudentNameUtils::suggestedKoreanNameWithSuffix` into a Qt-free Application
-contract and adapt RosterModel and SpeakingEvalModel. Preserve invalid indexes
-and incomplete names, exact trimmed case-sensitive English matching,
-normalized Korean base/suffix rules, and empty output when A-Z is exhausted.
-Keep dialog actions, selected-cell mutation, focus, and the existing
-`Domain::StudentNamePair` duplicate grouping at their current owners; the
-same-grade transfer-target filter is deferred. Two independent scans diverged;
-main selected this shared-model policy over the filter candidate. The
-cumulative Gate 1 map is historical and ends at F143
+F245, source commit `99c95146`, moves trimmed case-sensitive English grouping
+and first-unused A-Z Korean suffix selection into Qt-free Application policy.
+RosterModel and SpeakingEvalModel project legacy
+`StudentNameUtils::baseKoreanName()` and
+`StudentNameUtils::koreanNameSuffix()` values; the lossless
+UTF-16 Qt adapter now lives at the neutral UI boundary in
+[`qt_text_adapter.h`](../../src/ui/shared/qt_text_adapter.h). Fresh x64
+Debug/Ninja/MSVC 19.51/Qt 6.12 verification in
+`build/f245_independent_x64_debug` found one owner for 1,196 handwritten files.
+Four focused CTests passed: suffix policy, RosterModel, SpeakingEval page save,
+and Speaking Evaluation save use case. Differential coverage includes U+3000
+and unpaired-surrogate behavior, plus page-level suffix choose/apply.
+`git diff --check` and new-file whitespace checks passed; no full suite ran.
+
+F246 is selected, not started: extract same-grade roster transfer-target
+eligibility into a small Qt-free Application policy using the trimmed-grade/ID
+predicate. Keep lookup/error handling, labels, sorting, fullness, menu actions,
+and transfer/save flow at the UI boundary. Two independent scans disagreed: one
+recommended this explicitly deferred plan item, while the other proposed
+Speaking Evaluation roster-name import planning. Main selected it because it
+is explicitly deferred and has the narrower predicate. The cumulative Gate 1
+map is historical and ends at F143
 ([map](03-Phase-2-Progress-Log.md#L7570)); Gates 1 and 2 remain Partial. Phase
 2 remains In Progress/Open.

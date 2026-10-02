@@ -2097,3 +2097,22 @@ move the shared first-unused Korean-name suffix suggestion to Application for
 both roster and Speaking Evaluation models. Prefer this reusable cross-feature
 rule over the widget-only same-grade target filter; keep duplicate-pair
 grouping and the suffix choice UI separate.
+
+## 2026-10-02 - F245 Korean-name suffix policy accepted; F246 selected
+
+Commit `99c95146` moves first-unused suffix selection into a Qt-free
+Application policy for both roster and Speaking Evaluation. Project the exact
+legacy `StudentNameUtils::baseKoreanName()` and `koreanNameSuffix()` results
+through the UI boundary: the validation normalizer does not match the legacy
+regular-expression behavior for all Unicode whitespace and malformed UTF-16.
+Keep duplicate grouping and suffix UI behavior in place. Move the lossless
+QString/UTF-16 adapter to neutral `src/ui/shared` so Speaking Evaluation does
+not depend on Roster UI. Fresh independent verification passed four focused
+CTest entries and one-owner validation for 1,196 handwritten files.
+
+For F246, select the same-grade transfer-target eligibility filter deferred in
+the plan. This is the smaller next boundary: class/roster service access,
+display labels, sorting, fullness, menus, and the transfer transaction remain
+in the widget; Application receives current and candidate class IDs/grades and
+returns eligibility only. The paired scans compared this with extracting
+Speaking Evaluation roster-name import planning; keep that as a later option.
