@@ -1,7 +1,7 @@
 #include "roster_model.h"
 
 #include "core/utils/student_name_utils.h"
-#include "features/roster/ui/roster_qt_text_adapter.h"
+#include "ui/shared/qt_text_adapter.h"
 #include "next/application/roster_row_transfer_preparation.h"
 #include "next/application/roster_row_removal.h"
 #include "next/application/roster_row_reordering.h"
@@ -25,7 +25,7 @@ std::vector<std::u16string> toUtf16(
     result.reserve(static_cast<std::size_t>(values.size()));
     for (const QString& value : values)
     {
-        result.push_back(RosterUi::QtTextAdapter::toUtf16String(value));
+        result.push_back(Ui::QtTextAdapter::toUtf16String(value));
     }
     return result;
 }
@@ -38,7 +38,7 @@ QStringList qtStrings(
     result.reserve(static_cast<qsizetype>(values.size()));
     for (const std::u16string& value : values)
     {
-        result.append(RosterUi::QtTextAdapter::fromUtf16String(value));
+        result.append(Ui::QtTextAdapter::fromUtf16String(value));
     }
     return result;
 }
@@ -48,8 +48,8 @@ bool qtCaseInsensitiveEquals(
     const std::u16string_view right
     )
 {
-    return RosterUi::QtTextAdapter::fromUtf16String(left).compare(
-        RosterUi::QtTextAdapter::fromUtf16String(right),
+    return Ui::QtTextAdapter::fromUtf16String(left).compare(
+        Ui::QtTextAdapter::fromUtf16String(right),
         Qt::CaseInsensitive
         ) == 0;
 }
@@ -64,7 +64,7 @@ ClassMngr::Next::Application::RosterSnapshot applicationSnapshot(
     for (const QString& column : columns)
     {
         snapshot.columns.push_back(
-            RosterUi::QtTextAdapter::toUtf16String(column)
+            Ui::QtTextAdapter::toUtf16String(column)
             );
     }
 
@@ -75,7 +75,7 @@ ClassMngr::Next::Application::RosterSnapshot applicationSnapshot(
         row.reserve(static_cast<std::size_t>(sourceRow.size()));
         for (const QString& cell : sourceRow)
         {
-            row.push_back(RosterUi::QtTextAdapter::toUtf16String(cell));
+            row.push_back(Ui::QtTextAdapter::toUtf16String(cell));
         }
         snapshot.rows.push_back(std::move(row));
     }
@@ -152,7 +152,7 @@ QList<QStringList> qtRows(
         row.reserve(static_cast<qsizetype>(sourceRow.size()));
         for (const std::u16string& cell : sourceRow)
         {
-            row.append(RosterUi::QtTextAdapter::fromUtf16String(cell));
+            row.append(Ui::QtTextAdapter::fromUtf16String(cell));
         }
         converted.append(std::move(row));
     }

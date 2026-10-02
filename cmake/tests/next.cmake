@@ -186,6 +186,37 @@ add_test(
     COMMAND ClassMngrNextApplicationRosterRowTransferPreparationTests
 )
 
+# Keep Korean student-name suffix selection independent of Qt.
+add_executable(
+    ClassMngrNextApplicationStudentKoreanNameSuffixSuggestionTests
+    tests/next_application_student_korean_name_suffix_suggestion_tests.cpp
+)
+target_compile_features(
+    ClassMngrNextApplicationStudentKoreanNameSuffixSuggestionTests
+    PRIVATE
+        cxx_std_23
+)
+set_target_properties(
+    ClassMngrNextApplicationStudentKoreanNameSuffixSuggestionTests
+    PROPERTIES
+        AUTOMOC OFF
+        AUTOUIC OFF
+        AUTORCC OFF
+)
+set_property(
+    TARGET ClassMngrNextApplicationStudentKoreanNameSuffixSuggestionTests
+    PROPERTY CLASSMNGR_STANDALONE_CPP_TEST TRUE
+)
+target_link_libraries(
+    ClassMngrNextApplicationStudentKoreanNameSuffixSuggestionTests
+    PRIVATE
+        ClassMngrNext::Application
+)
+add_test(
+    NAME ClassMngrNextApplicationStudentKoreanNameSuffixSuggestionTests
+    COMMAND ClassMngrNextApplicationStudentKoreanNameSuffixSuggestionTests
+)
+
 # Keep the cycle-selection rule independent of Qt and the legacy runtime.
 add_executable(
     ClassMngrNextApplicationEvaluationDefaultSelectionTests

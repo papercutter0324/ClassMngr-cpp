@@ -2,7 +2,9 @@
 
 #include "core/utils/student_name_utils.h"
 #include "domain/validation/speaking_eval_validator.h"
+#include "next/application/student_korean_name_suffix_suggestion.h"
 #include "next/domain/student_name_pair.h"
+#include "ui/shared/qt_text_adapter.h"
 
 #include <QRegularExpression>
 
@@ -425,11 +427,42 @@ QString SpeakingEvalModel::suggestedKoreanNameWithSuffix(
     int row
     ) const
 {
-    return StudentNameUtils::suggestedKoreanNameWithSuffix(
-        m_rows,
-        row,
-        SpeakingEval::toInt(SpeakingEvalColumn::EnglishName),
-        SpeakingEval::toInt(SpeakingEvalColumn::KoreanName)
+    const int englishColumn =
+        SpeakingEval::toInt(SpeakingEvalColumn::EnglishName);
+    const int koreanColumn =
+        SpeakingEval::toInt(SpeakingEvalColumn::KoreanName);
+
+    std::vector<ClassMngr::Next::Application::StudentKoreanNameSuggestionRow>
+        nameRows;
+    nameRows.reserve(static_cast<std::size_t>(m_rows.size()));
+    for (const QStringList& values : m_rows)
+    {
+        const QString koreanName = values.value(koreanColumn);
+        const QString koreanNameSuffix =
+            StudentNameUtils::koreanNameSuffix(koreanName);
+
+        nameRows.push_back({
+            .englishName = Ui::QtTextAdapter::toUtf16String(
+                values.value(englishColumn)
+                ),
+            .koreanBaseName = Ui::QtTextAdapter::toUtf16String(
+                StudentNameUtils::baseKoreanName(koreanName)
+                ),
+            .koreanNameSuffix = koreanNameSuffix.size() == 1
+                ? std::optional<char16_t>(static_cast<char16_t>(
+                    koreanNameSuffix.front().unicode()
+                    ))
+                : std::nullopt
+        });
+    }
+
+    return Ui::QtTextAdapter::fromUtf16String(
+        ClassMngr::Next::Application::suggestStudentKoreanNameSuffix(
+            nameRows,
+            row,
+            englishColumn >= 0,
+            koreanColumn >= 0
+        )
         );
 }
 

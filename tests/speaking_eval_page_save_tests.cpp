@@ -1,5 +1,6 @@
 #include "app/services/feature_services.h"
 #include "core/application_services.h"
+#include "core/utils/student_name_utils.h"
 #include "core/utils/sidebar_node_naming.h"
 #include "data/database/database_session.h"
 #include "data/repositories/class_info_repository.h"
@@ -29,6 +30,8 @@
 #include <QSqlQuery>
 #include <QtTest/QtTest>
 #include <QUuid>
+
+#include <algorithm>
 
 namespace
 {
@@ -131,6 +134,8 @@ private slots:
     void successfulLoadPreservesOrderedUnicodeMatrixAndCleanState();
     void emptyReadFallsBackToBlankGridAndCleanState();
     void failedReadFallsBackToBlankGridAndCleanState();
+    void speakingEvalModelSuggestionMatchesLegacyHelper();
+    void suffixChoiceAppliesSuggestedNameThroughExistingPageFlow();
 };
 
 void SpeakingEvalPageSaveTests::
@@ -951,6 +956,129 @@ failedReadFallsBackToBlankGridAndCleanState()
     QVERIFY(model->data(model->index(0, 1)).toString().isEmpty());
     QVERIFY(model->data(model->index(24, 10)).toString().isEmpty());
     QVERIFY(!page.hasUnsavedChanges());
+}
+
+void SpeakingEvalPageSaveTests::
+speakingEvalModelSuggestionMatchesLegacyHelper()
+{
+    SpeakingEvalRows input = SpeakingEval::emptyRows();
+    const int englishColumn = SpeakingEval::toInt(SpeakingEvalColumn::EnglishName);
+    const int koreanColumn = SpeakingEval::toInt(SpeakingEvalColumn::KoreanName);
+    input[0][englishColumn] = QStringLiteral(" Alex ");
+    input[0][koreanColumn] = QStringLiteral("\uAE40 \uBBFC\uC218 (a)");
+    input[1][englishColumn] = QStringLiteral("Alex");
+    input[1][koreanColumn] = QStringLiteral("\uAE40\uBBFC\uC218(c)");
+    input[2][englishColumn] = QStringLiteral("alex");
+    input[2][koreanColumn] = QStringLiteral("\uAE40\uBBFC\uC218(A)");
+    input[3][englishColumn] = QStringLiteral("Alex");
+    input[3][koreanColumn] = QStringLiteral("invalid name(A)");
+
+    SpeakingEvalModel model;
+    model.loadData(input);
+    const SpeakingEvalRows normalizedRows = model.rows();
+    const QString legacySuggestion = StudentNameUtils::suggestedKoreanNameWithSuffix(
+        normalizedRows,
+        0,
+        englishColumn,
+        koreanColumn
+        );
+    QCOMPARE(model.suggestedKoreanNameWithSuffix(0), legacySuggestion);
+    QCOMPARE(model.suggestedKoreanNameWithSuffix(0), QStringLiteral("\uAE40\uBBFC\uC218(B)"));
+    QVERIFY(model.suggestedKoreanNameWithSuffix(-1).isEmpty());
+    QVERIFY(model.suggestedKoreanNameWithSuffix(model.rowCount()).isEmpty());
+    QVERIFY(model.suggestedKoreanNameWithSuffix(4).isEmpty());
+
+    const QStringList unusualKoreanNames{
+        QStringLiteral("  \uAE40 \uBBFC\uC218 (a)\u3000"),
+        QStringLiteral("invalid name(a)\u3000"),
+        QStringLiteral("\uAE40\uBBFC\uC218(A)") + QChar(0x3000),
+        QString(QChar(0xd800)) + QStringLiteral("\uAE40\uBBFC\uC218(A)")
+    };
+    for (const QString& koreanName : unusualKoreanNames)
+    {
+        SpeakingEvalRows unusualRows = SpeakingEval::emptyRows();
+        unusualRows[0][englishColumn] = QStringLiteral("Alex");
+        unusualRows[0][koreanColumn] = koreanName;
+        unusualRows[1][englishColumn] = QStringLiteral("Alex");
+        unusualRows[1][koreanColumn] = koreanName;
+
+        model.loadData(unusualRows);
+        const SpeakingEvalRows projectedRows = model.rows();
+        QCOMPARE(
+            model.suggestedKoreanNameWithSuffix(0),
+            StudentNameUtils::suggestedKoreanNameWithSuffix(
+                projectedRows,
+                0,
+                englishColumn,
+                koreanColumn
+                )
+            );
+    }
+}
+
+void SpeakingEvalPageSaveTests::
+suffixChoiceAppliesSuggestedNameThroughExistingPageFlow()
+{
+    SpeakingEvalPageFixture fixture;
+    QString error;
+    QVERIFY2(fixture.initialize(1, &error), qPrintable(error));
+
+    FakeUserPromptService prompts;
+    ScopedPromptService promptScope(&prompts);
+
+    SpeakingEvalPage page(&fixture.services);
+    page.setDatabaseOpen(true);
+    page.setSaveMode(SaveMode::Manual);
+    page.loadEvaluation(
+        Classroom(fixture.classNames.first(), fixture.classIds.first()),
+        QStringLiteral("Winter")
+        );
+
+    auto* model = page.findChild<SpeakingEvalModel*>();
+    auto* table = page.findChild<SpeakingEvalTableView*>();
+    QVERIFY(model);
+    QVERIFY(table);
+
+    QVERIFY(setStudent(
+        model,
+        0,
+        QStringLiteral("Alex"),
+        QStringLiteral("\uAE40\uBBFC\uC218(A)")
+        ));
+    prompts.scriptedActionIds.enqueue(QStringLiteral("suffix"));
+    QVERIFY(setStudent(
+        model,
+        1,
+        QStringLiteral("Alex"),
+        QStringLiteral("\uAE40\uBBFC\uC218(A)")
+        ));
+
+    QCOMPARE(prompts.actionPrompts.size(), 1);
+    const ActionPromptRequest& request = prompts.actionPrompts.constFirst();
+    QCOMPARE(request.defaultActionId, QStringLiteral("suffix"));
+    const auto suffixAction = std::find_if(
+        request.actions.cbegin(),
+        request.actions.cend(),
+        [](const PromptAction& action)
+        {
+            return action.id == QStringLiteral("suffix");
+        }
+        );
+    QVERIFY(suffixAction != request.actions.cend());
+    QVERIFY(suffixAction->enabled);
+    QCOMPARE(suffixAction->text, QStringLiteral("Use \uAE40\uBBFC\uC218(B)"));
+
+    QCOMPARE(
+        model->data(
+            model->index(1, SpeakingEval::toInt(SpeakingEvalColumn::KoreanName)),
+            Qt::EditRole
+            ).toString(),
+        QStringLiteral("\uAE40\uBBFC\uC218(B)")
+        );
+    QCOMPARE(
+        table->currentIndex(),
+        model->index(1, SpeakingEval::toInt(SpeakingEvalColumn::KoreanName))
+        );
 }
 
 QTEST_MAIN(SpeakingEvalPageSaveTests)

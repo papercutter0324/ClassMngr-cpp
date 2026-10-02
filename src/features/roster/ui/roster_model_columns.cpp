@@ -1,7 +1,7 @@
 #include "roster_model.h"
 
 #include "features/roster/ui/roster_constants.h"
-#include "features/roster/ui/roster_qt_text_adapter.h"
+#include "ui/shared/qt_text_adapter.h"
 #include "next/application/roster_custom_column_append.h"
 #include "next/application/roster_custom_column_name_policy.h"
 #include "next/application/roster_custom_column_removal_policy.h"
@@ -22,7 +22,7 @@ std::vector<std::u16string> toUtf16(
     result.reserve(static_cast<std::size_t>(values.size()));
     for (const QString& value : values)
     {
-        result.push_back(RosterUi::QtTextAdapter::toUtf16String(value));
+        result.push_back(Ui::QtTextAdapter::toUtf16String(value));
     }
     return result;
 }
@@ -32,8 +32,8 @@ bool qtCaseInsensitiveEquals(
     const std::u16string_view right
     )
 {
-    return RosterUi::QtTextAdapter::fromUtf16String(left).compare(
-        RosterUi::QtTextAdapter::fromUtf16String(right),
+    return Ui::QtTextAdapter::fromUtf16String(left).compare(
+        Ui::QtTextAdapter::fromUtf16String(right),
         Qt::CaseInsensitive
         ) == 0;
 }
@@ -61,7 +61,7 @@ QStringList qtStrings(
     result.reserve(static_cast<qsizetype>(values.size()));
     for (const std::u16string& value : values)
     {
-        result.append(RosterUi::QtTextAdapter::fromUtf16String(value));
+        result.append(Ui::QtTextAdapter::fromUtf16String(value));
     }
     return result;
 }
@@ -142,7 +142,7 @@ bool RosterModel::canAddColumn(
     using ClassMngr::Next::Application::RosterCustomColumnNameRejection;
     const auto admission =
         ClassMngr::Next::Application::admitRosterCustomColumnName(
-            RosterUi::QtTextAdapter::toUtf16String(name),
+            Ui::QtTextAdapter::toUtf16String(name),
             toUtf16(m_columns),
             toUtf16(Roster::BaseColumns),
             qtCaseInsensitiveEquals
@@ -179,7 +179,7 @@ bool RosterModel::insertCustomColumn(
     const auto result =
         ClassMngr::Next::Application::appendRosterCustomColumn(
             applicationSnapshot(m_columns, m_rows),
-            RosterUi::QtTextAdapter::toUtf16String(name),
+            Ui::QtTextAdapter::toUtf16String(name),
             toUtf16(Roster::BaseColumns),
             qtCaseInsensitiveEquals
             );
@@ -289,9 +289,9 @@ QString RosterModel::normalizedColumnName(
     const QString& name
     ) const
 {
-    return RosterUi::QtTextAdapter::fromUtf16String(
+    return Ui::QtTextAdapter::fromUtf16String(
         ClassMngr::Next::Application::normalizeRosterCustomColumnName(
-            RosterUi::QtTextAdapter::toUtf16String(name),
+            Ui::QtTextAdapter::toUtf16String(name),
             qtCaseInsensitiveEquals
             )
         );

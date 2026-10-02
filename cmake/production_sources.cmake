@@ -394,7 +394,7 @@ set(CLASSMNGR_FEATURES_SOURCES
     "src/features/roster/ui/roster_model_names.cpp"
     "src/features/roster/ui/roster_model_rows.cpp"
     "src/features/roster/ui/roster_model_validation.cpp"
-    "src/features/roster/ui/roster_qt_text_adapter.h"
+    "src/ui/shared/qt_text_adapter.h"
     "src/features/roster/ui/roster_print_dialog.cpp"
     "src/features/roster/ui/roster_print_dialog.h"
     "src/features/roster/ui/roster_table_view.cpp"

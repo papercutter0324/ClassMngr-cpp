@@ -2,10 +2,11 @@
 
 #include <QString>
 
+#include <cstddef>
 #include <string>
 #include <string_view>
 
-namespace RosterUi::QtTextAdapter
+namespace Ui::QtTextAdapter
 {
 
 // Copy QString's UTF-16 code units directly. QString's standard-string
@@ -37,4 +38,4 @@ namespace RosterUi::QtTextAdapter
     return result;
 }
 
-} // namespace RosterUi::QtTextAdapter
+} // namespace Ui::QtTextAdapter

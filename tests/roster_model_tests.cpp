@@ -3,7 +3,7 @@
 #include "core/utils/student_name_utils.h"
 #include "domain/models/roster.h"
 #include "features/roster/ui/roster_constants.h"
-#include "features/roster/ui/roster_qt_text_adapter.h"
+#include "ui/shared/qt_text_adapter.h"
 #include "next/application/roster_custom_column_name_policy.h"
 #include "next/application/speaking_evaluation_validation.h"
 
@@ -40,6 +40,7 @@ private slots:
     void legacyAutumnHeaderRemainsARequiredRemovalAlias();
     void removeCustomColumnPreservesRowsValidationSignalsAndDirtyState();
     void transferredRowMappingUsesCustomColumnNormalization();
+    void koreanNameSuffixSuggestionMatchesLegacyQt();
     void rowPoliciesPreserveLeadingBomContent();
     void namePairHelpersDetectDuplicatesAndSuggestSuffix();
     void duplicatePairValidationTrimsNamesAndSkipsIncompleteRows();
@@ -947,9 +948,9 @@ void RosterModelTests::transferApplicationNameNormalizationMatchesLegacyQt()
     for (const QString& value : englishValues)
     {
         const QString expected = StudentNameUtils::normalizeEnglishName(value);
-        const QString actual = RosterUi::QtTextAdapter::fromUtf16String(
+        const QString actual = Ui::QtTextAdapter::fromUtf16String(
             normalizeEnglishName(
-                RosterUi::QtTextAdapter::toUtf16String(value)
+                Ui::QtTextAdapter::toUtf16String(value)
                 )
             );
         QCOMPARE(actual, expected);
@@ -970,9 +971,9 @@ void RosterModelTests::transferApplicationNameNormalizationMatchesLegacyQt()
     for (const QString& value : koreanValues)
     {
         const QString expected = StudentNameUtils::normalizeKoreanName(value);
-        const QString actual = RosterUi::QtTextAdapter::fromUtf16String(
+        const QString actual = Ui::QtTextAdapter::fromUtf16String(
             normalizeKoreanName(
-                RosterUi::QtTextAdapter::toUtf16String(value)
+                Ui::QtTextAdapter::toUtf16String(value)
                 )
             );
         QCOMPARE(actual, expected);
@@ -1060,9 +1061,9 @@ void RosterModelTests::customColumnWhitespaceNormalizationMatchesQString()
         input += QStringLiteral("Column");
         input += character;
         const QString expected = input.simplified();
-        const QString actual = RosterUi::QtTextAdapter::fromUtf16String(
+        const QString actual = Ui::QtTextAdapter::fromUtf16String(
             simplifyQtWhitespace(
-                RosterUi::QtTextAdapter::toUtf16String(input)
+                Ui::QtTextAdapter::toUtf16String(input)
                 )
             );
         if (actual != expected)
@@ -1331,6 +1332,83 @@ void RosterModelTests::transferredRowMappingUsesCustomColumnNormalization()
     QVERIFY(model.insertTransferredRow(sourceColumns, sourceRow, &reason));
     QCOMPARE(model.rowValues(0)[5], QStringLiteral("Fall score"));
     QCOMPARE(model.rowValues(0)[6], QStringLiteral("Moved note"));
+}
+
+void RosterModelTests::koreanNameSuffixSuggestionMatchesLegacyQt()
+{
+    const QStringList inputs{
+        QString(),
+        QStringLiteral("\uAE40\uBBFC\uC218"),
+        QStringLiteral("  \uAE40 \uBBFC\uC218 (a)\u3000"),
+        QStringLiteral("\uAE40\uBBFC\uC218(z)"),
+        QStringLiteral("invalid name(A)"),
+        QStringLiteral("invalid name(a)"),
+        QStringLiteral("\uAE40\uBBFC\uC218(AA)"),
+        QString(QChar(0xd800)) + QStringLiteral("\uAE40\uBBFC\uC218(A)"),
+        QStringLiteral("\uAE40\uBBFC\uC218(A)") + QChar(0xfeff),
+        QStringLiteral("\uAE40\uBBFC\uC218(A)") + QChar(0x3000),
+        QStringLiteral("\u3000\uAE40\uBBFC\uC218(a)")
+    };
+
+    for (const QString& input : inputs)
+    {
+        Roster roster;
+        roster.columns = Roster::BaseColumns;
+        roster.rows = {
+            studentRow(QStringLiteral("Alex"), input),
+            studentRow(QStringLiteral("Alex"), input)
+        };
+        RosterModel model;
+        model.setRoster(roster);
+        const Roster projectedRoster = model.toRoster();
+        QCOMPARE(
+            model.suggestedKoreanNameWithSuffix(0),
+            StudentNameUtils::suggestedKoreanNameWithSuffix(
+                projectedRoster.rows,
+                0,
+                model.englishNameColumn(),
+                model.koreanNameColumn()
+                )
+            );
+    }
+
+    Roster unicodeWhitespaceRoster;
+    unicodeWhitespaceRoster.columns = Roster::BaseColumns;
+    unicodeWhitespaceRoster.rows = {
+        studentRow(
+            QStringLiteral("Alex"),
+            QStringLiteral("  \uAE40 \uBBFC\uC218 (a)\u3000")
+            ),
+        studentRow(
+            QStringLiteral("Alex"),
+            QStringLiteral("  \uAE40 \uBBFC\uC218 (a)\u3000")
+            )
+    };
+    RosterModel unicodeWhitespaceModel;
+    unicodeWhitespaceModel.setRoster(unicodeWhitespaceRoster);
+    const Roster projectedUnicodeWhitespaceRoster =
+        unicodeWhitespaceModel.toRoster();
+    const QString legacyUnicodeWhitespaceSuggestion =
+        StudentNameUtils::suggestedKoreanNameWithSuffix(
+            projectedUnicodeWhitespaceRoster.rows,
+            0,
+            unicodeWhitespaceModel.englishNameColumn(),
+            unicodeWhitespaceModel.koreanNameColumn()
+            );
+    QCOMPARE(
+        unicodeWhitespaceModel.suggestedKoreanNameWithSuffix(0),
+        legacyUnicodeWhitespaceSuggestion
+        );
+    QCOMPARE(
+        legacyUnicodeWhitespaceSuggestion,
+        QStringLiteral("\uAE40\uBBFC\uC218(B)")
+        );
+
+    Roster nameLessRoster;
+    nameLessRoster.columns = {QStringLiteral("Review")};
+    RosterModel nameLessModel;
+    nameLessModel.setRoster(nameLessRoster);
+    QVERIFY(nameLessModel.suggestedKoreanNameWithSuffix(0).isEmpty());
 }
 
 void RosterModelTests::rowPoliciesPreserveLeadingBomContent()
