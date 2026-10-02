@@ -43,6 +43,7 @@ private slots:
     void koreanNameSuffixSuggestionMatchesLegacyQt();
     void rowPoliciesPreserveLeadingBomContent();
     void namePairHelpersDetectDuplicatesAndSuggestSuffix();
+    void duplicateNameRowsRejectsInvalidRowsAndIncompletePairs();
     void duplicatePairValidationTrimsNamesAndSkipsIncompleteRows();
     void structuredValidationMarksAndClearsAffectedCells();
 };
@@ -1465,18 +1466,60 @@ void RosterModelTests::namePairHelpersDetectDuplicatesAndSuggestSuffix()
             QStringLiteral("김민수(a)")
             )
     };
+    roster.rows.append(
+        studentRow(
+            QStringLiteral("Amy"),
+            roster.rows.at(1).at(1)
+            )
+        );
 
     RosterModel model;
     model.setRoster(roster);
 
     QCOMPARE(
         model.duplicateNameRows(0),
-        QList<int>{ 1 }
+        (QList<int>{ 1, 3 })
+        );
+    QCOMPARE(
+        model.duplicateNameRows(1),
+        (QList<int>{ 0, 3 })
         );
     QCOMPARE(
         model.suggestedKoreanNameWithSuffix(0),
         QStringLiteral("김민수(B)")
         );
+}
+
+void RosterModelTests::
+duplicateNameRowsRejectsInvalidRowsAndIncompletePairs()
+{
+    Roster roster;
+    roster.columns = Roster::BaseColumns;
+    roster.rows = {
+        studentRow(
+            QStringLiteral("Alex"),
+            QStringLiteral("\uAE40\uBBFC\uC9C0")
+            ),
+        studentRow(
+            QStringLiteral("Alex"),
+            QStringLiteral("\uAE40\uBBFC\uC9C0")
+            )
+    };
+
+    RosterModel model;
+    model.setRoster(roster);
+
+    QVERIFY(model.duplicateNameRows(-1).isEmpty());
+    QVERIFY(model.duplicateNameRows(model.rowCount()).isEmpty());
+
+    Roster incompleteRoster;
+    incompleteRoster.columns = Roster::BaseColumns;
+    incompleteRoster.rows = {
+        studentRow(QStringLiteral("Alex"), QString()),
+        studentRow(QStringLiteral("Alex"), QString())
+    };
+    model.setRoster(incompleteRoster);
+    QVERIFY(model.duplicateNameRows(0).isEmpty());
 }
 
 void RosterModelTests::

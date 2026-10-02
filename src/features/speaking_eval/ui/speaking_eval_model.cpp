@@ -2,6 +2,7 @@
 
 #include "core/utils/student_name_utils.h"
 #include "domain/validation/speaking_eval_validator.h"
+#include "next/application/student_name_pair_lookup.h"
 #include "next/application/student_korean_name_suffix_suggestion.h"
 #include "next/domain/student_name_pair.h"
 #include "ui/shared/qt_text_adapter.h"
@@ -415,12 +416,34 @@ QList<int> SpeakingEvalModel::duplicateNameRows(
     int row
     ) const
 {
-    return StudentNameUtils::duplicateNameRows(
-        m_rows,
-        row,
-        SpeakingEval::toInt(SpeakingEvalColumn::EnglishName),
-        SpeakingEval::toInt(SpeakingEvalColumn::KoreanName)
-        );
+    const int englishColumn =
+        SpeakingEval::toInt(SpeakingEvalColumn::EnglishName);
+    const int koreanColumn =
+        SpeakingEval::toInt(SpeakingEvalColumn::KoreanName);
+
+    std::vector<ClassMngr::Next::Application::StudentNamePairText>
+        namePairs;
+    namePairs.reserve(static_cast<std::size_t>(m_rows.size()));
+    for (const QStringList& values : m_rows)
+    {
+        namePairs.push_back({
+            Ui::QtTextAdapter::toUtf16String(values.value(englishColumn)),
+            Ui::QtTextAdapter::toUtf16String(values.value(koreanColumn))
+        });
+    }
+
+    const std::vector<int> peerRows =
+        ClassMngr::Next::Application::lookupStudentNamePairPeers(
+            namePairs,
+            row
+            );
+    QList<int> result;
+    result.reserve(static_cast<qsizetype>(peerRows.size()));
+    for (const int peerRow : peerRows)
+    {
+        result.append(peerRow);
+    }
+    return result;
 }
 
 QString SpeakingEvalModel::suggestedKoreanNameWithSuffix(

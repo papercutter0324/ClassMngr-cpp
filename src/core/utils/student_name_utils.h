@@ -38,12 +38,6 @@ QHash<QString, QList<int>> duplicateRowsByNamePair(
     int englishColumn,
     int koreanColumn
     );
-QList<int> duplicateNameRows(
-    const QList<QStringList>& rows,
-    int row,
-    int englishColumn,
-    int koreanColumn
-    );
 QString suggestedKoreanNameWithSuffix(
     const QList<QStringList>& rows,
     int row,

@@ -206,6 +206,7 @@ private slots:
     void failedReadFallsBackToBlankGridAndCleanState();
     void speakingEvalModelSuggestionMatchesLegacyHelper();
     void suffixChoiceAppliesSuggestedNameThroughExistingPageFlow();
+    void duplicateLocateSelectsFirstPeerRow();
     void importNamesButtonAppliesRosterPairsAndPreservesMessages();
 };
 
@@ -1149,6 +1150,62 @@ suffixChoiceAppliesSuggestedNameThroughExistingPageFlow()
     QCOMPARE(
         table->currentIndex(),
         model->index(1, SpeakingEval::toInt(SpeakingEvalColumn::KoreanName))
+        );
+}
+
+void SpeakingEvalPageSaveTests::duplicateLocateSelectsFirstPeerRow()
+{
+    SpeakingEvalPageFixture fixture;
+    QString error;
+    QVERIFY2(fixture.initialize(1, &error), qPrintable(error));
+
+    FakeUserPromptService prompts;
+    ScopedPromptService promptScope(&prompts);
+
+    SpeakingEvalPage page(&fixture.services);
+    page.setDatabaseOpen(true);
+    page.setSaveMode(SaveMode::Manual);
+    page.loadEvaluation(
+        Classroom(fixture.classNames.first(), fixture.classIds.first()),
+        QStringLiteral("Winter")
+        );
+
+    auto* model = page.findChild<SpeakingEvalModel*>();
+    auto* table = page.findChild<SpeakingEvalTableView*>();
+    QVERIFY(model);
+    QVERIFY(table);
+    QVERIFY(model->duplicateNameRows(-1).isEmpty());
+    QVERIFY(model->duplicateNameRows(model->rowCount()).isEmpty());
+
+    QVERIFY(setStudent(
+        model,
+        0,
+        QStringLiteral("Alex"),
+        QStringLiteral("\uAE40\uBBFC\uC218")
+        ));
+    prompts.scriptedActionIds.enqueue(QStringLiteral("keep"));
+    QVERIFY(setStudent(
+        model,
+        1,
+        QStringLiteral("Alex"),
+        QStringLiteral("\uAE40\uBBFC\uC218")
+        ));
+
+    QCOMPARE(model->duplicateNameRows(1), QList<int>{0});
+    QCOMPARE(prompts.actionPrompts.size(), 1);
+    prompts.scriptedActionIds.enqueue(QStringLiteral("locate"));
+    QVERIFY(setStudent(
+        model,
+        2,
+        QStringLiteral("Alex"),
+        QStringLiteral("\uAE40\uBBFC\uC218")
+        ));
+
+    QCOMPARE(model->duplicateNameRows(2), (QList<int>{0, 1}));
+    QCOMPARE(prompts.actionPrompts.size(), 2);
+    QCOMPARE(
+        table->currentIndex(),
+        model->index(0, SpeakingEval::toInt(SpeakingEvalColumn::EnglishName))
         );
 }
 

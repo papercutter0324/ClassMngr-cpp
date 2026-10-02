@@ -98,6 +98,7 @@ set(CLASSMNGR_NEXT_APPLICATION_SOURCES
     src/next/application/class_details_validation_context_query.h
     src/next/application/class_details_validation_policy.h
     src/next/application/qt_compatible_text.h
+    src/next/application/student_name_pair_lookup.h
     src/next/application/roster_custom_column_name_policy.h
     src/next/application/roster_custom_column_append.h
     src/next/application/roster_custom_column_removal_policy.h

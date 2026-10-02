@@ -279,6 +279,37 @@ add_test(
     COMMAND ClassMngrNextApplicationSpeakingEvaluationRosterNameImportPlanTests
 )
 
+# Keep student name-pair lookup independent of Qt.
+add_executable(
+    ClassMngrNextApplicationStudentNamePairLookupTests
+    tests/next_application_student_name_pair_lookup_tests.cpp
+)
+target_compile_features(
+    ClassMngrNextApplicationStudentNamePairLookupTests
+    PRIVATE
+        cxx_std_23
+)
+set_target_properties(
+    ClassMngrNextApplicationStudentNamePairLookupTests
+    PROPERTIES
+        AUTOMOC OFF
+        AUTOUIC OFF
+        AUTORCC OFF
+)
+set_property(
+    TARGET ClassMngrNextApplicationStudentNamePairLookupTests
+    PROPERTY CLASSMNGR_STANDALONE_CPP_TEST TRUE
+)
+target_link_libraries(
+    ClassMngrNextApplicationStudentNamePairLookupTests
+    PRIVATE
+        ClassMngrNext::Application
+)
+add_test(
+    NAME ClassMngrNextApplicationStudentNamePairLookupTests
+    COMMAND ClassMngrNextApplicationStudentNamePairLookupTests
+)
+
 # Keep the cycle-selection rule independent of Qt and the legacy runtime.
 add_executable(
     ClassMngrNextApplicationEvaluationDefaultSelectionTests

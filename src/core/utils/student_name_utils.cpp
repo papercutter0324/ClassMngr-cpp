@@ -355,53 +355,6 @@ QHash<QString, QList<int>> duplicateRowsByNamePair(
     return duplicates;
 }
 
-QList<int> duplicateNameRows(
-    const QList<QStringList>& rows,
-    int row,
-    int englishColumn,
-    int koreanColumn
-    )
-{
-    QList<int> duplicates;
-
-    if (
-        row < 0
-        || row >= rows.size()
-        || englishColumn < 0
-        || koreanColumn < 0
-        )
-    {
-        return duplicates;
-    }
-
-    const QString key =
-        namePairKey(
-            rows[row].value(englishColumn),
-            rows[row].value(koreanColumn)
-            );
-
-    if (key.isEmpty())
-    {
-        return duplicates;
-    }
-
-    for (int candidateRow = 0; candidateRow < rows.size(); ++candidateRow)
-    {
-        if (
-            candidateRow != row
-            && namePairKey(
-                rows[candidateRow].value(englishColumn),
-                rows[candidateRow].value(koreanColumn)
-                ) == key
-            )
-        {
-            duplicates.append(candidateRow);
-        }
-    }
-
-    return duplicates;
-}
-
 QString suggestedKoreanNameWithSuffix(
     const QList<QStringList>& rows,
     int row,
