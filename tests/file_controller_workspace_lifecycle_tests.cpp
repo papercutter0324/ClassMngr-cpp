@@ -237,6 +237,9 @@ private slots:
     void createDoesNotPrepareAfterCloseFailure();
     void initialSetupBackupIsRemovedOnFinish();
     void initialSetupBackupIsRestoredOnCancel();
+    void initialSetupWithoutBackupUpdatesRecentOnlyOnFinish();
+    void initialSetupCreateFailureWarnsAfterRestoringOriginal();
+    void initialSetupRestoreFailureWarnsWithOriginalBackupPath();
     void createErrorUsesStructuredUtf8Message();
     void successfulStartupLoadPersistsNormalizedPath();
     void failedReplacementOpenPreservesActiveWorkspaceAndUiState();
@@ -772,6 +775,183 @@ void FileControllerWorkspaceLifecycleTests::initialSetupBackupIsRestoredOnCancel
     QVERIFY(initialSetupBackups(workspaceRoot, QStringLiteral("cancel-target.tps")).isEmpty());
     QVERIFY(SettingsManager::instance().getRecentFiles().isEmpty());
     QVERIFY(SettingsManager::instance().getLastFile().isEmpty());
+}
+
+void FileControllerWorkspaceLifecycleTests::
+initialSetupWithoutBackupUpdatesRecentOnlyOnFinish()
+{
+    QTemporaryDir workspaceRoot;
+    QVERIFY(workspaceRoot.isValid());
+
+    const QString targetPath = workspaceRoot.filePath(
+        QStringLiteral("new-setup-target.tps")
+        );
+    QVERIFY(!QFileInfo::exists(targetPath));
+
+    FakeFileDialogService fileDialogs;
+    fileDialogs.scriptedSaveFiles.enqueue(
+        std::optional<QString>(targetPath)
+        );
+    DialogServices::setFileDialogServiceForTesting(&fileDialogs);
+
+    FakeUserPromptService prompts;
+    DialogServices::setUserPromptServiceForTesting(&prompts);
+
+    ApplicationServices services;
+    FileController controller(&services, nullptr);
+
+    QVERIFY(controller.createInitialSetupDatabaseInteractive());
+    const QString expectedPath = QFileInfo(targetPath).absoluteFilePath();
+    QVERIFY(services.hasOpenDatabase());
+    QCOMPARE(services.currentDatabasePath(), expectedPath);
+    QVERIFY(initialSetupBackups(
+        workspaceRoot,
+        QStringLiteral("new-setup-target.tps")
+        ).isEmpty());
+    QVERIFY(SettingsManager::instance().getRecentFiles().isEmpty());
+    QVERIFY(SettingsManager::instance().getLastFile().isEmpty());
+    QVERIFY(prompts.messages.isEmpty());
+
+    controller.finishInitialSetup();
+
+    QVERIFY(services.hasOpenDatabase());
+    QCOMPARE(services.currentDatabasePath(), expectedPath);
+    QVERIFY(initialSetupBackups(
+        workspaceRoot,
+        QStringLiteral("new-setup-target.tps")
+        ).isEmpty());
+    QCOMPARE(
+        SettingsManager::instance().getRecentFiles(),
+        QStringList{expectedPath}
+        );
+    QCOMPARE(SettingsManager::instance().getLastFile(), expectedPath);
+    QVERIFY(prompts.messages.isEmpty());
+}
+
+void FileControllerWorkspaceLifecycleTests::
+initialSetupCreateFailureWarnsAfterRestoringOriginal()
+{
+    QTemporaryDir workspaceRoot;
+    QVERIFY(workspaceRoot.isValid());
+
+    const QString targetPath = workspaceRoot.filePath(
+        QStringLiteral("failed-setup-target.tps")
+        );
+    const QByteArray originalContents = QByteArrayLiteral("original profile");
+    QVERIFY(writeFile(targetPath, originalContents));
+
+    // SQLite cannot open the replacement while its rollback-journal path is
+    // occupied by a directory. The initial-setup lifecycle must first restore
+    // the preserved target, then report the workspace creation error.
+    const QString journalPath = targetPath + QStringLiteral("-journal");
+    QVERIFY(QDir().mkdir(journalPath));
+
+    FakeFileDialogService fileDialogs;
+    fileDialogs.scriptedSaveFiles.enqueue(
+        std::optional<QString>(targetPath)
+        );
+    DialogServices::setFileDialogServiceForTesting(&fileDialogs);
+
+    FakeUserPromptService prompts;
+    DialogServices::setUserPromptServiceForTesting(&prompts);
+
+    ApplicationServices services;
+    FileController controller(&services, nullptr);
+
+    QVERIFY(!controller.createInitialSetupDatabaseInteractive());
+
+    QCOMPARE(readFile(targetPath), originalContents);
+    QVERIFY(initialSetupBackups(
+        workspaceRoot,
+        QStringLiteral("failed-setup-target.tps")
+        ).isEmpty());
+    QVERIFY(!services.hasOpenDatabase());
+    QVERIFY(SettingsManager::instance().getRecentFiles().isEmpty());
+    QVERIFY(SettingsManager::instance().getLastFile().isEmpty());
+    QCOMPARE(prompts.messages.size(), 1);
+    QCOMPARE(
+        prompts.messages.constFirst().title,
+        QStringLiteral("New Teacher Profile")
+        );
+    const QString createError = prompts.messages.constFirst().message;
+    QVERIFY(createError.startsWith(
+        QStringLiteral("Unable to initialize Teacher Profile:\n%1\n\n")
+            .arg(QFileInfo(targetPath).absoluteFilePath())
+        ));
+    QVERIFY(createError.contains(QStringLiteral("unable to open database file")));
+
+    // This source contract guards the two-warning branch too: when rollback
+    // cannot restore the original, its recovery warning must be emitted before
+    // the create error so neither message masks the other.
+    const QString source = fileControllerSource();
+    QVERIFY(!source.isEmpty());
+    const qsizetype rollbackWarning = source.indexOf(
+        QStringLiteral("showInitialSetupCancelWarning(started.rollback);")
+        );
+    const qsizetype createErrorWarning = source.indexOf(
+        QStringLiteral("domainErrorMessage(started.error)")
+        );
+    QVERIFY(rollbackWarning >= 0);
+    QVERIFY(createErrorWarning > rollbackWarning);
+}
+
+void FileControllerWorkspaceLifecycleTests::
+initialSetupRestoreFailureWarnsWithOriginalBackupPath()
+{
+    QTemporaryDir workspaceRoot;
+    QVERIFY(workspaceRoot.isValid());
+
+    const QString targetPath = workspaceRoot.filePath(
+        QStringLiteral("restore-warning-target.tps")
+        );
+    const QByteArray originalContents = QByteArrayLiteral("original profile");
+    QVERIFY(writeFile(targetPath, originalContents));
+
+    FakeFileDialogService fileDialogs;
+    fileDialogs.scriptedSaveFiles.enqueue(
+        std::optional<QString>(targetPath)
+        );
+    DialogServices::setFileDialogServiceForTesting(&fileDialogs);
+
+    FakeUserPromptService prompts;
+    DialogServices::setUserPromptServiceForTesting(&prompts);
+
+    ApplicationServices services;
+    FileController controller(&services, nullptr);
+
+    QVERIFY(controller.createInitialSetupDatabaseInteractive());
+    QVERIFY(services.hasOpenDatabase());
+    const QStringList backups = initialSetupBackups(
+        workspaceRoot,
+        QStringLiteral("restore-warning-target.tps")
+        );
+    QCOMPARE(backups.size(), 1);
+
+    // Model an unavailable backup path at cancel time. Preserve its contents
+    // beside the expected recovery path so this failure case remains
+    // non-destructive while exercising the UI warning mapping.
+    const QString backupPath = workspaceRoot.filePath(backups.constFirst());
+    const QString heldOriginalPath = backupPath + QStringLiteral(".held");
+    QVERIFY(QFile::rename(backupPath, heldOriginalPath));
+
+    controller.cancelInitialSetup();
+
+    QVERIFY(!services.hasOpenDatabase());
+    QCOMPARE(readFile(heldOriginalPath), originalContents);
+    QVERIFY(QFileInfo::exists(targetPath));
+    QVERIFY(SettingsManager::instance().getRecentFiles().isEmpty());
+    QVERIFY(SettingsManager::instance().getLastFile().isEmpty());
+    QCOMPARE(prompts.messages.size(), 1);
+    QCOMPARE(
+        prompts.messages.constFirst().title,
+        QStringLiteral("Initial Setup")
+        );
+    QCOMPARE(
+        prompts.messages.constFirst().message,
+        QStringLiteral(
+            "The original Teacher Profile could not be restored:\n%1"
+            ).arg(backupPath)
+        );
 }
 
 void FileControllerWorkspaceLifecycleTests::createErrorUsesStructuredUtf8Message()

@@ -124,6 +124,47 @@ add_test(
     COMMAND ClassMngrNextApplicationSkippedUpdateVersionPolicyTests
 )
 
+# Keep initial setup replacement decisions independent of Qt and the runtime.
+add_executable(
+    ClassMngrNextApplicationInitialSetupLifecycleTests
+    tests/next_application_initial_setup_lifecycle_tests.cpp
+)
+target_compile_features(
+    ClassMngrNextApplicationInitialSetupLifecycleTests
+    PRIVATE
+        cxx_std_23
+)
+set_target_properties(
+    ClassMngrNextApplicationInitialSetupLifecycleTests
+    PROPERTIES
+        AUTOMOC OFF
+        AUTOUIC OFF
+        AUTORCC OFF
+)
+set_property(
+    TARGET ClassMngrNextApplicationInitialSetupLifecycleTests
+    PROPERTY CLASSMNGR_STANDALONE_CPP_TEST TRUE
+)
+target_link_libraries(
+    ClassMngrNextApplicationInitialSetupLifecycleTests
+    PRIVATE
+        ClassMngrNext::Application
+)
+add_test(
+    NAME ClassMngrNextApplicationInitialSetupLifecycleTests
+    COMMAND ClassMngrNextApplicationInitialSetupLifecycleTests
+)
+
+classmngr_add_qt_test(
+    NAME NextPlatformInitialSetupLifecycleAdapter
+    SOURCES
+        tests/next_platform_initial_setup_lifecycle_adapter_tests.cpp
+    LIBRARIES
+        ClassMngrNext::Application
+        ClassMngrNext::Platform
+        Qt6::Test
+)
+
 classmngr_add_qt_test(
     NAME UpdateControllerAutomaticStartup
     SOURCES

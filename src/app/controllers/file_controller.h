@@ -13,6 +13,8 @@ class MainWindow;
 
 namespace ClassMngr::Next::Application
 {
+class InitialSetupLifecycle;
+struct InitialSetupCancelResult;
 class SelectionState;
 class WorkspaceCoordinator;
 class WorkspaceState;
@@ -22,6 +24,7 @@ class WorkspaceUseCase;
 namespace ClassMngr::Next::Platform
 {
 class ApplicationServicesWorkspacePort;
+class InitialSetupLifecycleAdapter;
 class LegacyWorkspaceGateway;
 }
 
@@ -112,9 +115,9 @@ private:
         const QString& filePath
         );
 
-    [[nodiscard]] QString initialSetupBackupPath(
-        const QString& filePath
-        ) const;
+    void showInitialSetupCancelWarning(
+        const ClassMngr::Next::Application::InitialSetupCancelResult& result
+        );
 
     bool closeActiveDatabase();
 
@@ -158,8 +161,6 @@ private:
     ActionRegistry* m_actions{};
 
     QString m_currentFile;
-    QString m_initialSetupDatabasePath;
-    QString m_initialSetupBackupPath;
 
     std::unique_ptr<
         ClassMngr::Next::Platform::ApplicationServicesWorkspacePort
@@ -184,6 +185,14 @@ private:
     std::unique_ptr<
         ClassMngr::Next::Application::WorkspaceCoordinator
         > m_workspaceCoordinator;
+
+    std::unique_ptr<
+        ClassMngr::Next::Platform::InitialSetupLifecycleAdapter
+        > m_initialSetupLifecycleAdapter;
+
+    std::unique_ptr<
+        ClassMngr::Next::Application::InitialSetupLifecycle
+        > m_initialSetupLifecycle;
 };
 
 #endif // FILE_CONTROLLER_H
