@@ -3,6 +3,7 @@
 
 #include "domain/models/speaking_evaluation.h"
 #include "features/speaking_eval/services/speaking_eval_ai_prompt.h"
+#include "next/application/speaking_evaluation_ai_batch_accepted_comment_plan.h"
 #include "next/application/speaking_evaluation_ai_batch_comment_quality.h"
 #include "next/application/speaking_evaluation_ai_batch_eligibility.h"
 #include "next/platform/settings_manager_ai_comment_custom_website_port.h"
@@ -33,6 +34,7 @@
 #include <cstddef>
 #include <string>
 #include <utility>
+#include <vector>
 
 namespace
 {
@@ -1100,8 +1102,13 @@ void SpeakingEvalAiBatchDialog::updateApplyButton()
 
 void SpeakingEvalAiBatchDialog::applyComments()
 {
-    QList<SpeakingEvalAiBatchAcceptedComment> accepted;
-    int overwriteCount = 0;
+    std::vector<
+        ClassMngr::Next::Application::
+            SpeakingEvaluationAiBatchAcceptedCommentCandidate
+        > candidates;
+    candidates.reserve(
+        static_cast<std::size_t>(m_reviewTable->rowCount())
+        );
     for (int row = 0; row < m_reviewTable->rowCount(); ++row)
     {
         QTableWidgetItem* applyItem =
@@ -1117,42 +1124,59 @@ void SpeakingEvalAiBatchDialog::applyComments()
         if (
             !applyItem
             || !commentItem
-            || applyItem->checkState() != Qt::Checked
-            || !applyItem
-                ->data(ReviewValidRole)
-                .toBool()
             )
         {
             continue;
         }
 
+        const bool checked =
+            applyItem->checkState() == Qt::Checked;
+        const bool valid =
+            applyItem
+                ->data(ReviewValidRole)
+                .toBool();
         const int reportIndex =
             applyItem->data(ReportIndexRole).toInt();
-        if (
-            reportIndex < 0
-            || reportIndex >= m_reports.size()
-            )
+        int sourceRow = -1;
+        QString oldComment;
+        if (reportIndex >= 0 && reportIndex < m_reports.size())
         {
-            continue;
+            const auto& report = m_reports.at(reportIndex);
+            sourceRow = report.sourceRow;
+            oldComment = report.report.comments;
         }
 
         const QString newComment =
             commentItem->text().simplified();
-        const QString oldComment =
-            m_reports.at(reportIndex).report.comments;
-        if (newComment == oldComment)
-        {
-            continue;
-        }
-        if (!oldComment.trimmed().isEmpty())
-        {
-            ++overwriteCount;
-        }
+        candidates.push_back(
+            {
+                .checked = checked,
+                .valid = valid,
+                .reportIndex = reportIndex,
+                .sourceRow = sourceRow,
+                .oldComment = oldComment.toStdU16String(),
+                .newComment = newComment.toStdU16String()
+            }
+            );
+    }
+
+    const auto plan =
+        ClassMngr::Next::Application::
+            planSpeakingEvaluationAiBatchAcceptedComments(
+                candidates,
+                static_cast<std::size_t>(m_reports.size())
+                );
+    QList<SpeakingEvalAiBatchAcceptedComment> accepted;
+    accepted.reserve(
+        static_cast<qsizetype>(plan.assignments.size())
+        );
+    for (const auto& assignment : plan.assignments)
+    {
         accepted.append(
             {
-                m_reports.at(reportIndex).sourceRow,
-                oldComment,
-                newComment
+                assignment.sourceRow,
+                QString::fromStdU16String(assignment.oldComment),
+                QString::fromStdU16String(assignment.newComment)
             }
             );
     }
@@ -1162,7 +1186,7 @@ void SpeakingEvalAiBatchDialog::applyComments()
         return;
     }
 
-    if (overwriteCount > 0)
+    if (plan.overwriteCount > 0)
     {
         const PromptChoice answer =
             DialogServices::confirm(
@@ -1172,7 +1196,9 @@ void SpeakingEvalAiBatchDialog::applyComments()
                     "%1 existing comment(s) will be replaced. "
                     "Do you want to continue?"
                     )
-                    .arg(overwriteCount),
+                    .arg(
+                        static_cast<qulonglong>(plan.overwriteCount)
+                        ),
                 tr("Replace"),
                 tr("Cancel"),
                 true

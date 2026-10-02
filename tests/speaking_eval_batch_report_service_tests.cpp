@@ -9,6 +9,7 @@
 #include "features/speaking_eval/ui/speaking_eval_table_view.h"
 #include "core/settingsmanager.h"
 #include "core/zip_archive_writer.h"
+#include "fakes/fake_user_prompt_service.h"
 #include "ui/shared/state/option_state_keys.h"
 #include "windows_output_reference_capture.h"
 
@@ -444,6 +445,7 @@ private slots:
     void aiBatchDialogDisplaysEligibilityReasonsAndCheckState();
     void aiBatchDialogAssessesCommentQualityAndPreservesStatuses();
     void aiBatchDialogSelectsEligibleStudentsAndReviewsValidComments();
+    void aiBatchDialogConfirmsAcceptedCommentOverwrites();
     void aiPromptButtonsRequireCompleteInput();
     void aiPromptPreviewCopiesAnAnonymousPrompt();
     void pastedAiCommentsReplaceStudentPlaceholder();
@@ -2216,6 +2218,105 @@ void SpeakingEvalBatchReportServiceTests::
                     )
                 ),
         QString()
+        );
+}
+
+void SpeakingEvalBatchReportServiceTests::
+    aiBatchDialogConfirmsAcceptedCommentOverwrites()
+{
+    SpeakingEvalReportData report;
+    report.englishName = QStringLiteral("Alice");
+    report.grade = 5;
+    report.notes =
+        QStringLiteral(
+            "[Did Well]\nClear pronunciation\n"
+            "[Needs Improvement]\nAdd supporting details"
+            );
+    report.comments = QStringLiteral("Existing report comment");
+
+    SpeakingEvalAiBatchDialog dialog(
+        { { QStringLiteral("Alice"), report, 7 } }
+        );
+    auto* selection = dialog.findChild<QTableWidget*>(
+        QStringLiteral("speakingEvalAiBatchSelectionTable")
+        );
+    auto* createPromptButton = dialog.findChild<QPushButton*>(
+        QStringLiteral("speakingEvalAiBatchCreatePrompt")
+        );
+    auto* responseEdit = dialog.findChild<QPlainTextEdit*>(
+        QStringLiteral("speakingEvalAiBatchResponse")
+        );
+    auto* parseButton = dialog.findChild<QPushButton*>(
+        QStringLiteral("speakingEvalAiBatchParse")
+        );
+    auto* review = dialog.findChild<QTableWidget*>(
+        QStringLiteral("speakingEvalAiBatchReviewTable")
+        );
+    auto* applyButton = dialog.findChild<QPushButton*>(
+        QStringLiteral("speakingEvalAiBatchApply")
+        );
+    QVERIFY(selection);
+    QVERIFY(createPromptButton);
+    QVERIFY(responseEdit);
+    QVERIFY(parseButton);
+    QVERIFY(review);
+    QVERIFY(applyButton);
+
+    selection->item(0, 0)->setCheckState(Qt::Checked);
+    createPromptButton->click();
+    responseEdit->setPlainText(
+        QStringLiteral(
+            "<<<STUDENT_01>>>\n"
+            "STD_NAME spoke clearly and used strong vocabulary. "
+            "Keep adding supporting details and practice difficult sounds. "
+            "Your eye contact and confident voice made the presentation "
+            "engaging.\n"
+            "<<<END_STUDENT_01>>>"
+            )
+        );
+    QVERIFY(parseButton->isEnabled());
+    parseButton->click();
+    QCOMPARE(review->rowCount(), 1);
+    QVERIFY(applyButton->isEnabled());
+
+    struct ResetPromptService final
+    {
+        ~ResetPromptService()
+        {
+            DialogServices::setUserPromptServiceForTesting(nullptr);
+        }
+    };
+    FakeUserPromptService promptService;
+    const ResetPromptService resetPromptService;
+    DialogServices::setUserPromptServiceForTesting(&promptService);
+    applyButton->click();
+    const int rejectedResult = dialog.result();
+    const auto commentsAfterReject = dialog.acceptedComments();
+
+    promptService.scriptedChoices.enqueue(PromptChoice::Destructive);
+    applyButton->click();
+    const int acceptedResult = dialog.result();
+    const auto acceptedComments = dialog.acceptedComments();
+    const auto confirmationRequests = promptService.confirmations;
+
+    QCOMPARE(rejectedResult, static_cast<int>(QDialog::Rejected));
+    QVERIFY(commentsAfterReject.isEmpty());
+    QCOMPARE(confirmationRequests.size(), 2);
+    QVERIFY(confirmationRequests.first().destructive);
+    QVERIFY(confirmationRequests.first().message.contains(
+        QStringLiteral("1")
+        ));
+    QCOMPARE(acceptedResult, static_cast<int>(QDialog::Accepted));
+    QCOMPARE(acceptedComments.size(), 1);
+    QCOMPARE(acceptedComments.first().sourceRow, 7);
+    QCOMPARE(
+        acceptedComments.first().oldComment,
+        QStringLiteral("Existing report comment")
+        );
+    QVERIFY(
+        acceptedComments.first().newComment.contains(
+            QStringLiteral("Alice")
+            )
         );
 }
 
