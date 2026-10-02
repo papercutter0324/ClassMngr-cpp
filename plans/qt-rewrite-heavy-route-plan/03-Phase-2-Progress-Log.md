@@ -9527,17 +9527,17 @@ passed 3/3; the Application custom runner passed 11 scenarios, Platform passed
 failed creation, cancel/restore, failed remove/rename paths, recent-file timing,
 and warning/recovery assertions. `git diff --check` passed. No full suite ran.
 
-F239 is selected: move roster row reordering from RosterModel into an app-less
-contract over existing `RosterSnapshot` rows. Acceptance covers forward/backward
-moves, invalid/equal indexes, and empty/whitespace-only source rows while
-preserving Qt trimming semantics, row count, and every cell; the RosterModel
-adapter preserves existing diagnostics, validation, and dirty behavior; the
-widget regression preserves selection and autosave. Two independent Explorer
-lanes differed; main chose the narrower roster boundary because the historical
-Gate 1 map ending at F143 names broader roster editing as open. Teacher Import
-typed apply is deferred as wider transaction integration. Concrete touchpoints:
-[`canMoveRow`](../../src/features/roster/ui/roster_model_rows.cpp#L89),
-[`moveRosterRow`](../../src/features/roster/ui/roster_model_rows.cpp#L141), and
-[`RosterEditorWidget`](../../src/features/roster/ui/roster_editor_widget_students.cpp#L10).
-The historical map remains unchanged and Gates 1 and 2 remain Partial. Phase 2
-remains In Progress/Open.
+F239, source commit `d3e9cded`, extracts roster row reordering into an app-less
+contract over existing `RosterSnapshot` rows. Focused x64 Debug CTest passed
+3/3; source ownership found one owner for 1,183 handwritten sources, and
+`git diff --check` passed. No full suite ran.
+
+F240 is selected: extract roster row removal into an app-less operation over
+`RosterSnapshot`, reusing it from `RosterModel`. Preserve validation refresh,
+diagnostics, signals, dirty state, and messages; keep widget confirmation,
+selection, and autosave behavior. Acceptance covers valid and invalid indexes,
+empty and Unicode-whitespace-only rows, full remaining-row/column preservation,
+and clearing the final slot, plus model and widget regressions. Two independent
+Explorer scans converged on this named Gate 1 roster-editing gap. The
+cumulative Gate 1 map is historical and ends at F143 ([map](03-Phase-2-Progress-Log.md#L7570));
+Gates 1 and 2 remain Partial. Phase 2 remains In Progress/Open.

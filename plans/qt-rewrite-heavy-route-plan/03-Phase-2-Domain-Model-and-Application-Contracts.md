@@ -86,8 +86,8 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
   normalized input and invalid data is blocked. F238 is accepted: a Qt-free
   Application initial-setup lifecycle with a Platform file/workspace adapter
   retains FileController warnings/recent-file behavior and original-profile
-  recovery. F239 is selected to move roster row reordering into an app-less
-  contract over existing `RosterSnapshot` rows.
+  recovery. F239 is accepted for app-less roster row reordering over existing
+  `RosterSnapshot` rows; F240 is selected for app-less roster row removal.
   The prior F123 candidate wording is historical;
   current Teacher Profile integration status is recorded in the progress log.
   Gates 1 and 2
@@ -244,7 +244,7 @@ No new v2 production path depends on DataService, MainWindow, PageManager, or a 
 
 Earlier verified slices and cumulative exit-gate snapshots are archived in the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 
-## Latest progress update - 2026-10-02 (F238 accepted; F239 selected)
+## Latest progress update - 2026-10-02 (F239 accepted; F240 selected)
 
 F238, source commit `7b832bcc`, adds a Qt-free Application initial-setup
 lifecycle with a Platform file/workspace adapter. FileController warnings,
@@ -255,20 +255,17 @@ passed 3/3; the Application custom runner passed 11 scenarios, Platform passed
 failed creation, cancel/restore, failed remove/rename paths, recent-file timing,
 and warning/recovery assertions. `git diff --check` passed; no full suite ran.
 
-F239 is selected: move roster row reordering from RosterModel into an app-less
-contract over existing `RosterSnapshot` rows. The historical cumulative Gate 1
-map ends at F143 and names broader roster editing as planned ([map](03-Phase-2-Progress-Log.md#L7570)).
-Current touchpoints are
-[`canMoveRow`](../../src/features/roster/ui/roster_model_rows.cpp#L89), which
-validates indexes/source data, [`moveRosterRow`](../../src/features/roster/ui/roster_model_rows.cpp#L141),
-which moves the complete row, and
-[`RosterEditorWidget::moveStudentRow`](../../src/features/roster/ui/roster_editor_widget_students.cpp#L10),
-which retains the selection column, schedules autosave, and updates actions.
-Acceptance covers app-less forward/backward moves, invalid/equal indexes,
-empty or whitespace-only source rows with Qt trimming semantics, unchanged row
-count and cell contents; adapter preservation of diagnostics, validation, and
-dirty behavior; and widget selection/autosave regression. Two independent
-Explorer lanes differed; the narrower roster contract was chosen because Gate
-1 explicitly names broader roster editing, while Teacher Import typed apply
-has wider transaction integration. Phase 2 remains In Progress/Open; Gates 1
-and 2 remain Partial.
+F239, source commit `d3e9cded`, extracts roster row reordering into an app-less
+contract over existing `RosterSnapshot` rows. Focused x64 Debug CTest passed
+3/3; source ownership found one owner for 1,183 handwritten sources, and
+`git diff --check` passed. No full suite ran.
+
+F240 is selected: extract roster row removal into an app-less operation over
+`RosterSnapshot`, reusing it from `RosterModel`. Preserve validation refresh,
+diagnostics, signals, dirty state, and messages; keep widget confirmation,
+selection, and autosave behavior. Acceptance covers valid and invalid indexes,
+empty and Unicode-whitespace-only rows, full remaining-row/column preservation,
+and clearing the final slot, plus model and widget regressions. Two independent
+Explorer scans converged on this named Gate 1 roster-editing gap. The
+cumulative Gate 1 map is historical and ends at F143 ([map](03-Phase-2-Progress-Log.md#L7570));
+Gates 1 and 2 remain Partial. Phase 2 remains In Progress/Open.

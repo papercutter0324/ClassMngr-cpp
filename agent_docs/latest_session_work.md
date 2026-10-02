@@ -4877,12 +4877,19 @@ Coverage includes finish with and without an original profile, failed create,
 cancel restoration and recovery failures. `git diff --check` passed; no full
 suite ran.
 
-F239 is selected to move roster row reordering into an app-less contract and
-reuse it from `RosterModel`. This advances the named Gate 1 roster-editing gap
-with a bounded rule. Preserve forward/backward moves, invalid/equal indexes,
-blank and whitespace-only source rows, complete row contents, widget selection,
-validation refresh, dirty state and autosave behavior. Teacher Import typed
-apply was considered but deferred as a wider transaction/Application boundary.
-Next: implement and independently verify F239, update formal plans, commit,
-then select the following slice. Phase 2 remains In Progress/Open with Gates 1
-and 2 Partial.
+F239 source commit `d3e9cded` moves roster row reordering into an app-less
+contract and reuses it from `RosterModel`. The independent x64 Debug build
+validated one owner for 1,183 handwritten sources. The Application contract,
+RosterModel, and roster editor widget CTests passed 3/3. Coverage includes both
+move directions, invalid/equal indexes, blank and Unicode whitespace-only
+rows, complete cell/metadata preservation, selection/current-column behavior,
+and autosave. `git diff --check` passed; no full suite ran.
+
+F240 is selected to move roster row removal and compaction into a Qt-free
+operation over `RosterSnapshot` and reuse it from `RosterModel`. Acceptance
+covers valid removal, invalid indexes, and empty/Unicode-whitespace-only rows;
+preservation of columns, widths, row count, and complete remaining rows; and
+clearing the final slot. Keep model validation refresh, notifications, and
+dirty behavior, and add a widget regression for confirmation, selection, and
+autosave. Leave the separate transfer-source compaction at its current
+boundary. Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial.
