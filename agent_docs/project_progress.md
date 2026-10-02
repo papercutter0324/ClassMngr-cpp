@@ -80,7 +80,8 @@ is accepted in source commit `e8a2a5b5`; F230 is accepted in source commit
 `547ccb5b`; F231 is accepted in source commit `6ebf6d33`; F232 is accepted in
 source commit `075b4335`; F233 is accepted in source commit `2cb853e9`; F234
 is accepted in source commit `d6d4bdc6`; F235 is accepted in source commit
-`b52029a6`; F236 is accepted in source commit `5877bba0`; F237 is selected.
+`b52029a6`; F236 is accepted in source commit `5877bba0`; F237 is accepted in
+source commit `8ef76074`; F238 is selected.
 F196 and F197 use
 only the active open session's
 `SettingsRepository` and preserve their keys, conversions, defaults, and
@@ -2878,7 +2879,7 @@ stale/overlap rejection, write-failure rollback, and intensive mapping
 coverage passed. Source ownership found one owner for 1,172 files, and
 `git diff --check` passed; no full suite ran.
 
-## Current Phase 2 position - 2026-10-02 (F236 accepted; F237 selected)
+## Current Phase 2 position - 2026-10-02 (F237 accepted; F238 selected)
 
 F236 source commit `5877bba0` carries structured typed policy, teacher-target,
 and fresh-state failures from Repository through Platform to the review dialog.
@@ -2891,14 +2892,23 @@ Application and Platform CTests passed 2/2; 11 focused repository functions
 and 4 dialog functions passed. The dialog test directly checks visibility after
 failure. `git diff --check` passed; no full suite ran.
 
-F237 is selected to move Speaking Evaluation normalization and content
-validation into a Qt-free contract shared by the save use case and page
-feedback. This advances Gate 1's documented gap in broader evaluation editing.
-Preserve the baseline normalization, validation issues and field locations,
-changed-cell behavior, questionable Korean-name-length option, page messaging,
-active-session persistence, and rollback. Acceptance covers aliases, Unicode,
-empty rows, duplicate names, score/comment/note validation, invalid-request
-port suppression, and representative Platform/page compatibility. Class
-Transfer typed apply was considered but deferred because its transaction
-surface is wider and it is not the currently named gate gap. Phase 2 remains
-In Progress/Open; Gates 1 and 2 remain Partial.
+F237 source commit `8ef76074` adds Qt-free Speaking Evaluation content
+normalization and validation used by the save use case and page feedback. It
+preserves field locations, severity, focus and confirmation behavior, normalizes
+before persistence, and suppresses invalid writes. A differential case checks
+questionable Korean-name behavior against `SpeakingEvalValidator` for both
+flag settings; declining confirmation leaves persisted data unchanged.
+Independent x64 Debug verification completed 323 build steps and validated one
+owner for 1,177 handwritten sources. Application, Platform SavePort, and page
+save tests passed 9/9, 10/10, and 14/14; `git diff --check` passed. No full
+suite ran.
+
+F238 is selected to add a Qt-free contract for the initial-setup profile
+replacement lifecycle: preserve the original during setup, finalize on success,
+and restore it on cancellation. Keep file operations in a Platform adapter and
+preserve current setup messages and recent-file behavior. This directly targets
+the named backup/recovery gap; the Teacher Import typed apply integration was
+considered but deferred. Acceptance covers app-less ordering and failure tests,
+adapter recovery guarantees, and FileController/MainWindow lifecycle regressions,
+including failed create/restore handling without losing the original profile.
+Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial.

@@ -81,8 +81,11 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
   `01` before writes. F236 is accepted: structured typed policy, teacher-target,
   and fresh-state errors carry through Repository -> Platform -> dialog, while
   legacy `apply(plan)` stays localized and SQL/transaction failures remain
-  message-only. F237 is selected for app-less Speaking Evaluation validation
-  and normalization shared by the save use case and page feedback.
+  message-only. F237 is accepted: Qt-free Speaking Evaluation validation and
+  normalization is shared by save and page feedback; Platform persists
+  normalized input and invalid data is blocked. F238 is selected to add an
+  initial-setup recovery contract advancing the named backup/recovery Gate 1
+  gap.
   The prior F123 candidate wording is historical;
   current Teacher Profile integration status is recorded in the progress log.
   Gates 1 and 2
@@ -239,29 +242,36 @@ No new v2 production path depends on DataService, MainWindow, PageManager, or a 
 
 Earlier verified slices and cumulative exit-gate snapshots are archived in the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 
-## Latest progress update - 2026-10-02 (F236 accepted; F237 selected)
+## Latest progress update - 2026-10-02 (F237 accepted; F238 selected)
 
-F236, source commit `5877bba0`, carries structured typed policy,
-teacher-target, and fresh-state errors through Repository -> Platform ->
-dialog, including fresh-state context and overlap start/end times. The dialog
-uses the established formatter and a direct test confirms errors remain visible;
-legacy `apply(plan)` keeps localized `QString` behavior and SQL/transaction
-failures remain message-only. Windows x64 Debug verification completed 330
-actions and validated one owner for 1,174 handwritten sources. Application and
-Platform CTests passed 2/2; 11 selected repository functions and 4 selected
-dialog functions passed, including the visibility assertion. `git diff --check`
-passed; no full suite ran.
+F237, source commit `8ef76074`, shares Qt-free Speaking Evaluation
+normalization/content validation between the save use case and page feedback
+adapter; Platform persists normalized input and invalid data is blocked. Fresh
+x64 Debug verification completed 323 steps; source ownership found 1 owner for
+1,177 handwritten sources. Focused Application, Platform, and page-save tests
+passed 9/9, 10/10 (after parity follow-up), and 14/14; CTest passed 3/3 before
+follow-up, and Korean-name differential/page-decline slots passed 3/3 each.
+Both questionable-name settings match legacy issue code/location/severity and
+error outcome, with expected port suppression/forwarding; declining confirmation
+leaves stored state unchanged. `git diff --check` passed; no full suite ran.
 
-F237 is selected: move Speaking Evaluation normalization and content validation
-into a Qt-free contract shared by the save use case and page feedback, advancing
-the broader evaluation-editing Gate 1 gap. Preserve score aliases and name
-normalization; issue codes, locations, and messages; empty-row, duplicate,
-name, score, comment, and note behavior; the Korean-name-length option and
-changed-cell behavior; invalid requests not reaching the port; active-session
-persistence and rollback; and representative UI/save behavior. Compare cases
-with the legacy baseline and run focused Application, Platform, and page-save
-tests. Two Explorer candidates disagreed; this seam was chosen because the
-broader evaluation-editing gap is named in Gate 1. Class Transfer typed apply
-is deferred given its wider transaction surface and lack of a more directly
-named current gap. Phase 2 remains In Progress/Open; Gates 1 and 2 remain
+F238 is selected: add a Qt-free Application contract for initial-setup profile
+replacement that preserves the original during setup, finalizes on success, and
+restores on cancellation, with file operations in Platform. Preserve warnings,
+messages, recent-file updates, no-overwrite behavior, and original-profile
+recovery after create or restore failure. Acceptance covers app-less operation
+and failure ordering; adapter create/restore failures with original survival;
+and FileController/MainWindow finish, cancel, failed-create, and recent-file
+regressions. The historical cumulative Gate 1 map ends at F143 and still names
+backup/recovery as planned ([map](03-Phase-2-Progress-Log.md#L7570)). Current
+flow: [FileController create](../../src/app/controllers/file_controller.cpp#L359),
+[finish](../../src/app/controllers/file_controller.cpp#L431), and
+[cancel](../../src/app/controllers/file_controller.cpp#L460); lifecycle
+regressions cover [failed-close initiation](../../tests/file_controller_workspace_lifecycle_tests.cpp#L639),
+[finish/recent state](../../tests/file_controller_workspace_lifecycle_tests.cpp#L695),
+and [cancel/recent state](../../tests/file_controller_workspace_lifecycle_tests.cpp#L741).
+Two Explorer candidates disagreed; initial-setup recovery was chosen for the
+explicit gap, while Teacher Import typed apply is deferred because the recovery
+gap is directly named; its transaction path remains intact. Phase 2 remains
+In Progress/Open; Gates 1 and 2 remain
 Partial.

@@ -2041,10 +2041,19 @@ preserve the legacy plan API. Keep overlap start/end context in its typed
 error. A dialog result code alone does not prove it stayed open; show it and
 assert visibility before and after the failure.
 
-## 2026-10-02 - F237 Speaking Evaluation validation selected
+## 2026-10-02 - F237 Speaking Evaluation validation accepted
 
-Choose the documented broader evaluation-editing gap for the next app-less
-slice. Share Qt-free normalization and validation between the save use case and
-page feedback, preserving baseline issue locations/messages and the questionable
-Korean-name-length option. Defer typed Class Transfer apply because its
-transaction boundary is wider and is not the current named gate gap.
+Share Qt-free normalization and validation between the save use case and page
+feedback, preserving baseline issue locations/messages, focus behavior, and
+the questionable Korean-name-length option. Compare both flag settings with
+the legacy validator, and test that declining the confirmation preserves saved
+data.
+
+## 2026-10-02 - F238 initial setup recovery selected
+
+Address the explicitly named backup/recovery gap with a Qt-free contract for
+preserving, finalizing, and restoring an initial-setup profile replacement.
+Keep file operations in Platform and test failure ordering, original-profile
+survival, UI messages, and recent-file behavior. Defer Teacher Import typed
+apply, whose current Application use case already runs in the repository and
+whose production integration is a separate boundary migration.

@@ -9484,3 +9484,34 @@ disagreed; this seam was selected because broader evaluation editing is named
 as a Gate 1 gap. Class Transfer typed apply is deferred given its wider
 transaction surface and lack of a more directly named current gap. Phase 2
 remains In Progress/Open; Gates 1 and 2 remain Partial.
+
+### Progress update - 2026-10-02 (F237 accepted; F238 selected)
+
+F237, source commit `8ef76074`, shares Qt-free Speaking Evaluation
+normalization/content validation between the save use case and page feedback
+adapter; Platform persists normalized input and invalid data is blocked. Fresh
+x64 Debug verification completed 323 steps; source ownership found 1 owner for
+1,177 handwritten sources. Focused Application, Platform, and page-save tests
+passed 9/9, 10/10 after parity follow-up, and 14/14; CTest passed 3/3 before the
+follow-up, and Korean-name differential/page-decline slots passed 3/3 each.
+False and true questionable-name settings match legacy code/location/severity
+and error outcome, with port suppression/forwarding; declining confirmation
+leaves stored state unchanged. `git diff --check` passed. No full suite ran.
+
+F238 is selected: add a Qt-free Application contract for initial-setup profile
+replacement that preserves the original during setup, finalizes on success,
+and restores on cancellation, with file operations in Platform. Preserve
+warnings/messages, recent-file updates, no-overwrite behavior, and recoverable
+original profiles after create/restore failure. Acceptance: app-less operation
+and failure-ordering tests; adapter create/restore failure with original
+survival; and FileController/MainWindow regressions for finish, cancel,
+failed creation, and recent-file state. Current implementation is in
+[FileController](../../src/app/controllers/file_controller.cpp#L359); lifecycle
+coverage includes [failed-close precondition](../../tests/file_controller_workspace_lifecycle_tests.cpp#L639),
+[finish](../../tests/file_controller_workspace_lifecycle_tests.cpp#L695), and
+[cancel](../../tests/file_controller_workspace_lifecycle_tests.cpp#L741).
+The historical cumulative Gate 1 map ends at F143 and still names backup/
+recovery as planned ([map](03-Phase-2-Progress-Log.md#L7570)). Two Explorer
+candidates disagreed; main chose the directly named recovery gap, deferring
+Teacher Import typed apply while keeping its transaction path intact. Phase 2
+remains In Progress/Open; Gates 1 and 2 remain Partial.

@@ -4860,13 +4860,21 @@ handwritten files. Application and Platform CTests passed 2/2; 11 focused
 repository functions and 4 dialog functions passed, including direct dialog
 visibility after failure. `git diff --check` passed. No full suite ran.
 
-F237 is selected to make Speaking Evaluation normalization and content
-validation part of the Qt-free save contract and reuse it for page feedback.
-The slice addresses Gate 1's documented broader evaluation-editing gap. Preserve
-baseline aliases, name normalization, validation codes/locations and messages,
-the questionable Korean-name-length option, changed-cell behavior, and the
-active-session persistence and rollback paths. Acceptance covers the
-normalization/validation matrix, suppression of invalid writes, and focused
-Application, Platform, and page-save checks. Next: implement and independently
-verify F237, update the formal plan/logs, commit it, then select the following
-slice. Phase 2 remains In Progress/Open with Gates 1 and 2 Partial.
+F237 source commit `8ef76074` adds Qt-free Speaking Evaluation content
+normalization and validation shared by the save use case and page feedback.
+The independent x64 Debug build completed 323 steps and source ownership found
+one owner for 1,177 handwritten sources. Application, Platform SavePort, and
+page-save tests passed 9/9, 10/10, and 14/14. A legacy differential check
+covers both questionable Korean-name flag settings; declining confirmation
+leaves stored data unchanged. `git diff --check` passed; no full suite ran.
+
+F238 is selected to model initial-setup profile replacement in a Qt-free
+contract, preserving the original profile during setup, finalizing on success,
+and restoring on cancellation. Keep file operations in Platform and retain
+current setup messages and recent-file behavior. The named backup/recovery gap
+made this a more direct next step than Teacher Import typed apply. Acceptance
+covers app-less lifecycle/failure ordering, recovery adapter failures, and
+FileController/MainWindow lifecycle regressions proving the original profile
+survives failed creation or cancellation. Next: implement and independently
+verify F238, update formal plans, commit, then select the following slice.
+Phase 2 remains In Progress/Open with Gates 1 and 2 Partial.
