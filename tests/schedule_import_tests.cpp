@@ -65,6 +65,9 @@ private slots:
     void typedApplyRejectsOverlappingSchedulesBeforeWrites();
     void typedWriteFailureRollsBackEveryChange();
     void typedIntensiveApplyMapsModeAndSlotState();
+    void typedAndLegacyApplyShareNormalAndIntensiveResults();
+    void typedApplyRejectsInvalidEnumsBeforeWrites();
+    void typedApplyRejectsMalformedResolutionShapesBeforeWrites();
     void seededWriteFailureRollsBackEveryChange();
     void validatesExternalWorkbookWhenProvided();
 };
@@ -118,6 +121,156 @@ ClassMngr::Next::Application::ScheduleImportApplyRequest typedCreateRequest(
         });
     }
     return request;
+}
+
+template <typename Id>
+int legacyTestId(const std::optional<Id>& id)
+{
+    if (!id)
+    {
+        return -1;
+    }
+    bool ok = false;
+    const int value = QString::fromStdString(id->value()).toInt(&ok);
+    return ok ? value : -1;
+}
+
+ScheduleImportPlan legacyPlanFromTypedRequest(
+    const ClassMngr::Next::Application::ScheduleImportApplyRequest& request
+    )
+{
+    using namespace ClassMngr::Next::Application;
+
+    ScheduleImportPlan plan;
+    plan.kind = request.intensiveSchedule
+        ? ScheduleImportKind::Intensive
+        : ScheduleImportKind::Normal;
+    plan.intensiveMode = request.intensiveMode
+            == ScheduleImportPlanIntensiveMode::ReplaceWithNew
+        ? ScheduleImportIntensiveMode::ReplaceWithNew
+        : ScheduleImportIntensiveMode::UpdateExisting;
+    plan.selectedUserName = QString::fromStdU16String(request.selectedUserName);
+    plan.saveProfileNameIfBlank = request.saveProfileNameIfBlank;
+    plan.updateProfileName = request.updateProfileName;
+    plan.unknownCellsAcknowledged = request.diagnosticsAcknowledged;
+    for (const ScheduleImportApplyCandidate& source : request.candidates)
+    {
+        ScheduleImportClassCandidate candidate;
+        candidate.teacherKey = QString::fromStdU16String(source.teacherKey);
+        candidate.teacherKr = QString::fromStdU16String(source.teacherName);
+        candidate.classGrade = QString::fromStdU16String(source.grade);
+        candidate.classLevel = QString::fromStdU16String(source.level);
+        candidate.meetingPatternError = QString::fromStdU16String(
+            source.meetingPatternError
+            );
+        for (const std::u16string& room : source.rooms)
+        {
+            candidate.rooms.append(QString::fromStdU16String(room));
+        }
+        for (const std::u16string& color : source.importedColors)
+        {
+            candidate.importedColors.append(QString::fromStdU16String(color));
+        }
+        for (const ScheduleImportApplyTime& time : source.times)
+        {
+            candidate.times.push_back({
+                QString::fromStdU16String(time.day),
+                QString::fromStdU16String(time.startTime),
+                QString::fromStdU16String(time.endTime)
+            });
+        }
+        for (const std::u16string& cell : source.sourceCells)
+        {
+            candidate.sourceCells.append(QString::fromStdU16String(cell));
+        }
+        plan.candidates.append(std::move(candidate));
+    }
+    for (const ScheduleImportApplySlotState& state : request.intensiveSlotStates)
+    {
+        plan.intensiveSlotStates.push_back({
+            QString::fromStdU16String(state.day),
+            QString::fromStdU16String(state.startTime),
+            QString::fromStdU16String(state.state)
+        });
+    }
+    for (const ScheduleImportApplyDiagnostic& diagnostic : request.diagnostics)
+    {
+        plan.diagnostics.push_back({
+            QString::fromStdU16String(diagnostic.sheetName),
+            QString::fromStdU16String(diagnostic.userName),
+            QString::fromStdU16String(diagnostic.cellReference),
+            QString::fromStdU16String(diagnostic.value),
+            QString::fromStdU16String(diagnostic.message)
+        });
+    }
+    for (const ScheduleImportApplyTeacher& source : request.teachers)
+    {
+        ScheduleImportTeacherAction action = ScheduleImportTeacherAction::Create;
+        switch (source.action)
+        {
+        case ScheduleImportReviewTeacherAction::Reuse:
+            action = ScheduleImportTeacherAction::Reuse;
+            break;
+        case ScheduleImportReviewTeacherAction::UpdateRoom:
+            action = ScheduleImportTeacherAction::UpdateRoom;
+            break;
+        case ScheduleImportReviewTeacherAction::Create:
+            action = ScheduleImportTeacherAction::Create;
+            break;
+        case ScheduleImportReviewTeacherAction::Skip:
+            action = ScheduleImportTeacherAction::Skip;
+            break;
+        default:
+            Q_UNREACHABLE();
+        }
+        plan.teachers.push_back({
+            QString::fromStdU16String(source.teacherKey),
+            action,
+            legacyTestId(source.targetTeacherId),
+            QString::fromStdU16String(source.selectedRoom)
+        });
+    }
+    for (const ScheduleImportApplyClass& source : request.classes)
+    {
+        ScheduleImportClassAction action = ScheduleImportClassAction::CreateNew;
+        switch (source.action)
+        {
+        case ScheduleImportReviewClassAction::UpdateExisting:
+            action = ScheduleImportClassAction::UpdateExisting;
+            break;
+        case ScheduleImportReviewClassAction::CreateNew:
+            action = ScheduleImportClassAction::CreateNew;
+            break;
+        case ScheduleImportReviewClassAction::Skip:
+            action = ScheduleImportClassAction::Skip;
+            break;
+        default:
+            Q_UNREACHABLE();
+        }
+        plan.classes.push_back({
+            source.candidateIndex,
+            action,
+            legacyTestId(source.targetClassId),
+            QString::fromStdU16String(source.classColor),
+            QString::fromStdU16String(source.fontColor)
+        });
+    }
+    return plan;
+}
+
+void compareScheduleImportSummaries(
+    const ScheduleImportSummary& legacy,
+    const ScheduleImportSummary& typed
+    )
+{
+    QCOMPARE(typed.teachersCreated, legacy.teachersCreated);
+    QCOMPARE(typed.teachersUpdated, legacy.teachersUpdated);
+    QCOMPARE(typed.classesCreated, legacy.classesCreated);
+    QCOMPARE(typed.classesUpdated, legacy.classesUpdated);
+    QCOMPARE(typed.classesSkipped, legacy.classesSkipped);
+    QCOMPARE(typed.schedulesCleared, legacy.schedulesCleared);
+    QCOMPARE(typed.ignoredCells, legacy.ignoredCells);
+    QCOMPARE(typed.profileNameUpdated, legacy.profileNameUpdated);
 }
 
 std::optional<ClassMngr::Next::Domain::ScheduleEntry> domainEntry(
@@ -5846,6 +5999,419 @@ void ScheduleImportTests::typedIntensiveApplyMapsModeAndSlotState()
         QVERIFY(query.next());
         QCOMPARE(query.value(0).toString(), QStringLiteral("Alice"));
         QVERIFY(!query.next());
+
+        database.close();
+    }
+    QSqlDatabase::removeDatabase(connectionName);
+}
+
+void ScheduleImportTests::typedAndLegacyApplyShareNormalAndIntensiveResults()
+{
+    using namespace ClassMngr::Next::Application;
+
+    const auto compareApplyPaths = [this](
+        const QString& label,
+        const auto& makeRequest,
+        const auto& verifySummary
+        )
+    {
+        const QString typedConnectionName =
+            QStringLiteral("schedule-import-typed-legacy-%1-typed-%2")
+                .arg(label, QUuid::createUuid().toString());
+        const QString legacyConnectionName =
+            QStringLiteral("schedule-import-typed-legacy-%1-legacy-%2")
+                .arg(label, QUuid::createUuid().toString());
+        {
+            QSqlDatabase typedDatabase = QSqlDatabase::addDatabase(
+                QStringLiteral("QSQLITE"), typedConnectionName);
+            typedDatabase.setDatabaseName(QStringLiteral(":memory:"));
+            QVERIFY(typedDatabase.open());
+            QVERIFY(DatabaseSchemaManager::ensureSchema(typedDatabase).has_value());
+
+            QSqlDatabase legacyDatabase = QSqlDatabase::addDatabase(
+                QStringLiteral("QSQLITE"), legacyConnectionName);
+            legacyDatabase.setDatabaseName(QStringLiteral(":memory:"));
+            QVERIFY(legacyDatabase.open());
+            QVERIFY(DatabaseSchemaManager::ensureSchema(legacyDatabase).has_value());
+
+            ScheduleImportApplyRequest typedRequest = makeRequest(typedDatabase);
+            ScheduleImportApplyRequest legacyRequest = makeRequest(legacyDatabase);
+            ScheduleImportRepository typedRepository(typedDatabase);
+            ScheduleImportRepository legacyRepository(legacyDatabase);
+            const auto typedResult = typedRepository.applyTyped(typedRequest);
+            const QString typedError = typedResult.has_value()
+                ? QString()
+                : typedResult.error();
+            QVERIFY2(typedResult.has_value(), qPrintable(typedError));
+
+            const auto legacyResult = legacyRepository.apply(
+                legacyPlanFromTypedRequest(legacyRequest));
+            const QString legacyError = legacyResult.has_value()
+                ? QString()
+                : legacyResult.error();
+            QVERIFY2(legacyResult.has_value(), qPrintable(legacyError));
+
+            compareScheduleImportSummaries(*legacyResult, *typedResult);
+            QCOMPARE(
+                persistedScheduleImportSnapshot(typedDatabase),
+                persistedScheduleImportSnapshot(legacyDatabase)
+                );
+            verifySummary(*typedResult);
+
+            typedDatabase.close();
+            legacyDatabase.close();
+        }
+        QSqlDatabase::removeDatabase(typedConnectionName);
+        QSqlDatabase::removeDatabase(legacyConnectionName);
+    };
+
+    const auto seedNormalRequest = [](QSqlDatabase& database)
+    {
+        QSqlQuery query(database);
+        query.prepare(QStringLiteral(
+            "INSERT INTO teachers (teacher_kr, room_number) VALUES (?, ?)"));
+        query.addBindValue(QString::fromUtf16(u"\uAE40"));
+        query.addBindValue(QStringLiteral("413"));
+        if (!query.exec())
+        {
+            qFatal("Unable to seed comparison teacher: %s",
+                   qPrintable(query.lastError().text()));
+        }
+        const int updateTeacherId = query.lastInsertId().toInt();
+        query.prepare(QStringLiteral(
+            "INSERT INTO teachers (teacher_kr, room_number) VALUES (?, ?)"));
+        query.addBindValue(QString::fromUtf16(u"\uCD5C"));
+        query.addBindValue(QStringLiteral("500"));
+        if (!query.exec())
+        {
+            qFatal("Unable to seed comparison teacher: %s",
+                   qPrintable(query.lastError().text()));
+        }
+        const int skippedTeacherId = query.lastInsertId().toInt();
+
+        execOrFail(query, QStringLiteral(
+            "INSERT INTO classes (name) VALUES ('E5 Zeus')"));
+        const int updateClassId = query.lastInsertId().toInt();
+        execOrFail(query, QStringLiteral(
+            "INSERT INTO class_info "
+            "(class_id, teacher_id, class_grade, class_level, class_color, font_color) "
+            "VALUES (%1, %2, 'E5', 'Zeus', '#FFFFFF', '#000000')")
+                .arg(updateClassId)
+                .arg(updateTeacherId));
+        execOrFail(query, QStringLiteral(
+            "INSERT INTO class_times (class_id, day, start_time, end_time) "
+            "VALUES (%1, 'Monday', '3:00 PM', '3:55 PM')")
+                .arg(updateClassId));
+        execOrFail(query, QStringLiteral(
+            "INSERT INTO class_times (class_id, day, start_time, end_time) "
+            "VALUES (%1, 'Wednesday', '3:00 PM', '3:55 PM')")
+                .arg(updateClassId));
+
+        execOrFail(query, QStringLiteral(
+            "INSERT INTO classes (name) VALUES ('E5 Hera')"));
+        const int skippedClassId = query.lastInsertId().toInt();
+        execOrFail(query, QStringLiteral(
+            "INSERT INTO class_info "
+            "(class_id, teacher_id, class_grade, class_level, class_color, font_color) "
+            "VALUES (%1, %2, 'E6', 'Hera', '#FFFFFF', '#000000')")
+                .arg(skippedClassId)
+                .arg(skippedTeacherId));
+        execOrFail(query, QStringLiteral(
+            "INSERT INTO class_times (class_id, day, start_time, end_time) "
+            "VALUES (%1, 'Friday', '2:00 PM', '2:55 PM')")
+                .arg(skippedClassId));
+
+        auto request = typedCreateRequest({
+            typedCandidate(u"\uAE40", u"E5", u"Zeus"),
+            typedCandidate(u"\uBC15", u"E5", u"Apollo"),
+            typedCandidate(u"\uCD5C", u"E6", u"Hera")
+        });
+        request.diagnostics.push_back({
+            u"Sheet", u"Alice", u"B12", u"?", u"Ignored cell"
+        });
+        request.candidates[0].times = {
+            {u"Monday", u"5:00 PM", u"5:55 PM"},
+            {u"Wednesday", u"5:00 PM", u"5:55 PM"}
+        };
+        request.candidates[1].times = {
+            {u"Monday", u"4:00 PM", u"4:55 PM"},
+            {u"Wednesday", u"4:00 PM", u"4:55 PM"}
+        };
+        request.candidates[2].times = {
+            {u"Friday", u"2:00 PM", u"2:55 PM"}
+        };
+        request.candidates[0].rooms = {u"999"};
+        request.candidates[1].rooms = {u"777"};
+        request.candidates[2].rooms = {u"500"};
+
+        const auto updateTeacher = ClassMngr::Next::Domain::TeacherId::fromString(
+            std::to_string(updateTeacherId));
+        const auto updateClass = ClassMngr::Next::Domain::ClassId::fromString(
+            std::to_string(updateClassId));
+        const auto skippedClass = ClassMngr::Next::Domain::ClassId::fromString(
+            std::to_string(skippedClassId));
+        request.teachers[0].action = ScheduleImportReviewTeacherAction::UpdateRoom;
+        request.teachers[0].targetTeacherId = updateTeacher.value();
+        request.teachers[0].selectedRoom = u"999";
+        request.teachers[1].selectedRoom = u"777";
+        request.teachers[2].action = ScheduleImportReviewTeacherAction::Skip;
+        request.teachers[2].targetTeacherId.reset();
+        request.teachers[2].selectedRoom.clear();
+        request.classes[0].action = ScheduleImportReviewClassAction::UpdateExisting;
+        request.classes[0].targetClassId = updateClass.value();
+        request.classes[0].classColor = u"#123456";
+        request.classes[0].fontColor = u"#FFFFFF";
+        request.classes[2].action = ScheduleImportReviewClassAction::Skip;
+        request.classes[2].targetClassId = skippedClass.value();
+        return request;
+    };
+
+    compareApplyPaths(
+        QStringLiteral("normal"),
+        seedNormalRequest,
+        [](const ScheduleImportSummary& summary)
+        {
+            QCOMPARE(summary.teachersCreated, 1);
+            QCOMPARE(summary.teachersUpdated, 1);
+            QCOMPARE(summary.classesCreated, 1);
+            QCOMPARE(summary.classesUpdated, 1);
+            QCOMPARE(summary.classesSkipped, 1);
+            QCOMPARE(summary.ignoredCells, 1);
+        }
+        );
+
+    const auto intensiveRequestForMode = [](const ScheduleImportPlanIntensiveMode mode)
+    {
+        return [mode](QSqlDatabase& database)
+        {
+            QSqlQuery query(database);
+            query.prepare(QStringLiteral(
+                "INSERT INTO teachers (teacher_kr, room_number) VALUES (?, '500')"));
+            query.addBindValue(QString::fromUtf16(u"\uBC15"));
+            if (!query.exec())
+            {
+                qFatal("Unable to seed comparison teacher: %s",
+                       qPrintable(query.lastError().text()));
+            }
+            const int teacherId = query.lastInsertId().toInt();
+            execOrFail(query, QStringLiteral(
+                "INSERT INTO classes (name) VALUES ('E4 Apollo')"));
+            const int classId = query.lastInsertId().toInt();
+            execOrFail(query, QStringLiteral(
+                "INSERT INTO class_info "
+                "(class_id, teacher_id, class_grade, class_level) "
+                "VALUES (%1, %2, 'E4', 'Apollo')")
+                    .arg(classId)
+                    .arg(teacherId));
+            execOrFail(query, QStringLiteral(
+                "INSERT INTO class_times (class_id, day, start_time, end_time) "
+                "VALUES (%1, 'Tuesday', '9:00 AM', '9:55 AM')")
+                    .arg(classId));
+            execOrFail(query, QStringLiteral(
+                "INSERT INTO class_intensive_times "
+                "(class_id, day, start_time, end_time) "
+                "VALUES (%1, 'Friday', '2:00 PM', '2:55 PM')")
+                    .arg(classId));
+
+            auto request = typedCreateRequest({
+                typedCandidate(u"\uAE40", u"E4", u"Hercules")
+            });
+            request.intensiveSchedule = true;
+            request.intensiveMode = mode;
+            request.selectedUserName = u"Alice";
+            request.saveProfileNameIfBlank = true;
+            request.diagnostics.push_back({
+                u"Sheet", u"Alice", u"B12", u"?", u"Ignored cell"
+            });
+            request.intensiveSlotStates.push_back({
+                u"Tuesday", u"15:00", u"essay"
+            });
+            return request;
+        };
+    };
+
+    for (const auto mode : {
+             ScheduleImportPlanIntensiveMode::UpdateExisting,
+             ScheduleImportPlanIntensiveMode::ReplaceWithNew
+             })
+    {
+        compareApplyPaths(
+            mode == ScheduleImportPlanIntensiveMode::UpdateExisting
+                ? QStringLiteral("intensive-update")
+                : QStringLiteral("intensive-replace"),
+            intensiveRequestForMode(mode),
+            [](const ScheduleImportSummary& summary)
+            {
+                QCOMPARE(summary.teachersCreated, 1);
+                QCOMPARE(summary.classesCreated, 1);
+                QCOMPARE(summary.ignoredCells, 1);
+                QVERIFY(summary.profileNameUpdated);
+            }
+            );
+    }
+}
+
+void ScheduleImportTests::typedApplyRejectsInvalidEnumsBeforeWrites()
+{
+    const QString connectionName =
+        QStringLiteral("schedule-import-typed-invalid-enum-%1")
+            .arg(QUuid::createUuid().toString());
+    {
+        QSqlDatabase database = QSqlDatabase::addDatabase(
+            QStringLiteral("QSQLITE"), connectionName);
+        database.setDatabaseName(QStringLiteral(":memory:"));
+        QVERIFY(database.open());
+        QVERIFY(DatabaseSchemaManager::ensureSchema(database).has_value());
+
+        ScheduleImportRepository repository(database);
+        const QStringList before = persistedScheduleImportSnapshot(database);
+
+        auto invalidTeacherAction = typedCreateRequest({
+            typedCandidate(u"\uAE40", u"E5", u"Zeus")
+        });
+        invalidTeacherAction.teachers[0].action =
+            static_cast<ClassMngr::Next::Application::
+                ScheduleImportReviewTeacherAction>(255);
+        QVERIFY(!repository.applyTyped(invalidTeacherAction).has_value());
+        QCOMPARE(persistedScheduleImportSnapshot(database), before);
+
+        auto invalidClassAction = typedCreateRequest({
+            typedCandidate(u"\uAE40", u"E5", u"Zeus")
+        });
+        invalidClassAction.classes[0].action =
+            static_cast<ClassMngr::Next::Application::
+                ScheduleImportReviewClassAction>(255);
+        QVERIFY(!repository.applyTyped(invalidClassAction).has_value());
+        QCOMPARE(persistedScheduleImportSnapshot(database), before);
+
+        auto invalidIntensiveMode = typedCreateRequest({
+            typedCandidate(u"\uAE40", u"E5", u"Zeus")
+        });
+        invalidIntensiveMode.intensiveSchedule = true;
+        invalidIntensiveMode.intensiveMode =
+            static_cast<ClassMngr::Next::Application::
+                ScheduleImportPlanIntensiveMode>(255);
+        QVERIFY(!repository.applyTyped(invalidIntensiveMode).has_value());
+        QCOMPARE(persistedScheduleImportSnapshot(database), before);
+
+        database.close();
+    }
+    QSqlDatabase::removeDatabase(connectionName);
+}
+
+void ScheduleImportTests::typedApplyRejectsMalformedResolutionShapesBeforeWrites()
+{
+    const QString connectionName =
+        QStringLiteral("schedule-import-typed-malformed-resolution-%1")
+            .arg(QUuid::createUuid().toString());
+    {
+        QSqlDatabase database = QSqlDatabase::addDatabase(
+            QStringLiteral("QSQLITE"), connectionName);
+        database.setDatabaseName(QStringLiteral(":memory:"));
+        QVERIFY(database.open());
+        QVERIFY(DatabaseSchemaManager::ensureSchema(database).has_value());
+
+        QSqlQuery query(database);
+        execOrFail(query, QStringLiteral(
+            "INSERT INTO teachers (id, teacher_kr, room_number) "
+            "VALUES (1, 'Existing teacher', '413')"));
+        execOrFail(query, QStringLiteral(
+            "INSERT INTO classes (id, name) VALUES (1, 'Existing class')"));
+        execOrFail(query, QStringLiteral(
+            "INSERT INTO class_info "
+            "(class_id, teacher_id, class_grade, class_level) "
+            "VALUES (1, 1, 'E4', 'Hercules')"));
+        execOrFail(query, QStringLiteral(
+            "INSERT INTO class_times "
+            "(class_id, day, start_time, end_time) "
+            "VALUES (1, 'Friday', '2:00 PM', '2:55 PM')"));
+        execOrFail(query, QStringLiteral(
+            "INSERT INTO app_settings (key, value) "
+            "VALUES ('schedule-import-snapshot', 'preserve-me')"));
+
+        const auto existingTeacherId =
+            ClassMngr::Next::Domain::TeacherId::fromString(std::string("1"));
+        const auto existingClassId =
+            ClassMngr::Next::Domain::ClassId::fromString(std::string("1"));
+        QVERIFY(existingTeacherId.has_value());
+        QVERIFY(existingClassId.has_value());
+
+        ScheduleImportRepository repository(database);
+        const QStringList before = persistedScheduleImportSnapshot(database, true);
+
+        auto outOfRangeCandidate = typedCreateRequest({
+            typedCandidate(u"\uAE40", u"E5", u"Zeus")
+        });
+        outOfRangeCandidate.classes[0].candidateIndex = 1;
+        const auto outOfRangeResult = repository.applyTyped(outOfRangeCandidate);
+        QVERIFY(!outOfRangeResult.has_value());
+        QVERIFY2(
+            outOfRangeResult.error().contains(
+                QStringLiteral("invalid or duplicate resolution")),
+            qPrintable(outOfRangeResult.error())
+            );
+        QCOMPARE(persistedScheduleImportSnapshot(database, true), before);
+
+        auto createdTeacherWithTarget = typedCreateRequest({
+            typedCandidate(u"\uAE40", u"E5", u"Zeus")
+        });
+        createdTeacherWithTarget.teachers[0].targetTeacherId = *existingTeacherId;
+        const auto createdTeacherResult =
+            repository.applyTyped(createdTeacherWithTarget);
+        QVERIFY(!createdTeacherResult.has_value());
+        QVERIFY2(
+            createdTeacherResult.error().contains(
+                QStringLiteral("cannot use an existing teacher"),
+                Qt::CaseInsensitive),
+            qPrintable(createdTeacherResult.error())
+            );
+        QCOMPARE(persistedScheduleImportSnapshot(database, true), before);
+
+        auto reusedTeacherWithoutTarget = typedCreateRequest({
+            typedCandidate(u"\uAE40", u"E5", u"Zeus")
+        });
+        reusedTeacherWithoutTarget.teachers[0].action =
+            ClassMngr::Next::Application::ScheduleImportReviewTeacherAction::Reuse;
+        const auto reusedTeacherResult =
+            repository.applyTyped(reusedTeacherWithoutTarget);
+        QVERIFY(!reusedTeacherResult.has_value());
+        QVERIFY2(
+            reusedTeacherResult.error().contains(
+                QStringLiteral("Choose an existing Korean teacher")),
+            qPrintable(reusedTeacherResult.error())
+            );
+        QCOMPARE(persistedScheduleImportSnapshot(database, true), before);
+
+        auto createdClassWithTarget = typedCreateRequest({
+            typedCandidate(u"\uAE40", u"E5", u"Zeus")
+        });
+        createdClassWithTarget.classes[0].targetClassId = *existingClassId;
+        const auto createdClassResult = repository.applyTyped(createdClassWithTarget);
+        QVERIFY(!createdClassResult.has_value());
+        QVERIFY2(
+            createdClassResult.error().contains(
+                QStringLiteral("newly created class cannot have an existing target"),
+                Qt::CaseInsensitive),
+            qPrintable(createdClassResult.error())
+            );
+        QCOMPARE(persistedScheduleImportSnapshot(database, true), before);
+
+        auto updatedClassWithoutTarget = typedCreateRequest({
+            typedCandidate(u"\uAE40", u"E5", u"Zeus")
+        });
+        updatedClassWithoutTarget.classes[0].action =
+            ClassMngr::Next::Application::
+                ScheduleImportReviewClassAction::UpdateExisting;
+        const auto updatedClassResult =
+            repository.applyTyped(updatedClassWithoutTarget);
+        QVERIFY(!updatedClassResult.has_value());
+        QVERIFY2(
+            updatedClassResult.error().contains(
+                QStringLiteral("updated class must have a unique existing target"),
+                Qt::CaseInsensitive),
+            qPrintable(updatedClassResult.error())
+            );
+        QCOMPARE(persistedScheduleImportSnapshot(database, true), before);
 
         database.close();
     }

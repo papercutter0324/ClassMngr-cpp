@@ -9,6 +9,7 @@
 #include "features/classes/config/class_info_config.h"
 #include "features/schedule/services/schedule_import_plan_validator.h"
 #include "features/teacher/import/teacher_import_name_utils.h"
+#include "next/application/schedule_import_apply_review_decisions.h"
 #include "next/application/schedule_import_matching_projection.h"
 #include "next/application/schedule_import_state_validation.h"
 #include "next/domain/schedule_entry.h"
@@ -58,128 +59,233 @@ int legacyApplyId(const std::optional<Id>& value)
         : -1;
 }
 
-ScheduleImportTeacherAction legacyTeacherAction(
-    const ScheduleImportReviewTeacherAction action
+template <typename Id>
+int legacyApplyIntegerId(const std::optional<Id>& value)
+{
+    if (!value)
+    {
+        return -1;
+    }
+
+    int parsed = -1;
+    const std::string& text = value->value();
+    const auto [end, error] = std::from_chars(
+        text.data(),
+        text.data() + text.size(),
+        parsed
+        );
+    return error == std::errc{} && end == text.data() + text.size()
+        ? parsed
+        : -1;
+}
+
+ScheduleImportReviewTeacherAction applyTeacherAction(
+    const ScheduleImportTeacherAction action
     )
 {
     switch (action)
     {
-    case ScheduleImportReviewTeacherAction::Reuse:
-        return ScheduleImportTeacherAction::Reuse;
-    case ScheduleImportReviewTeacherAction::UpdateRoom:
-        return ScheduleImportTeacherAction::UpdateRoom;
-    case ScheduleImportReviewTeacherAction::Skip:
-        return ScheduleImportTeacherAction::Skip;
-    default:
-        return ScheduleImportTeacherAction::Create;
+    case ScheduleImportTeacherAction::Reuse:
+        return ScheduleImportReviewTeacherAction::Reuse;
+    case ScheduleImportTeacherAction::UpdateRoom:
+        return ScheduleImportReviewTeacherAction::UpdateRoom;
+    case ScheduleImportTeacherAction::Create:
+        return ScheduleImportReviewTeacherAction::Create;
+    case ScheduleImportTeacherAction::Skip:
+        return ScheduleImportReviewTeacherAction::Skip;
     }
+    return ScheduleImportReviewTeacherAction::Invalid;
 }
 
-ScheduleImportClassAction legacyClassAction(
-    const ScheduleImportReviewClassAction action
+ScheduleImportReviewClassAction applyClassAction(
+    const ScheduleImportClassAction action
     )
 {
     switch (action)
     {
-    case ScheduleImportReviewClassAction::UpdateExisting:
-        return ScheduleImportClassAction::UpdateExisting;
-    case ScheduleImportReviewClassAction::Skip:
-        return ScheduleImportClassAction::Skip;
-    default:
-        return ScheduleImportClassAction::CreateNew;
+    case ScheduleImportClassAction::UpdateExisting:
+        return ScheduleImportReviewClassAction::UpdateExisting;
+    case ScheduleImportClassAction::CreateNew:
+        return ScheduleImportReviewClassAction::CreateNew;
+    case ScheduleImportClassAction::Skip:
+        return ScheduleImportReviewClassAction::Skip;
     }
+    return ScheduleImportReviewClassAction::Invalid;
 }
 
-ScheduleImportPlan legacyScheduleImportPlan(
+Domain::TeacherId teacherDomainId(const int legacyId);
+Domain::ClassId classDomainId(const int legacyId);
+
+ScheduleImportApplyRequest applyRequestFromLegacyPlan(
+    const ScheduleImportPlan& plan
+    )
+{
+    ScheduleImportApplyRequest request;
+    request.intensiveSchedule = plan.kind == ScheduleImportKind::Intensive;
+    request.intensiveMode = plan.intensiveMode
+            == ScheduleImportIntensiveMode::ReplaceWithNew
+        ? ScheduleImportPlanIntensiveMode::ReplaceWithNew
+        : ScheduleImportPlanIntensiveMode::UpdateExisting;
+    request.selectedUserName = plan.selectedUserName.toStdU16String();
+    request.saveProfileNameIfBlank = plan.saveProfileNameIfBlank;
+    request.updateProfileName = plan.updateProfileName;
+    request.diagnosticsAcknowledged = plan.unknownCellsAcknowledged;
+    request.candidates.reserve(static_cast<std::size_t>(plan.candidates.size()));
+    for (const ScheduleImportClassCandidate& source : plan.candidates)
+    {
+        ScheduleImportApplyCandidate candidate;
+        candidate.teacherKey = source.teacherKey.toStdU16String();
+        candidate.teacherName = source.teacherKr.toStdU16String();
+        candidate.grade = source.classGrade.toStdU16String();
+        candidate.level = source.classLevel.toStdU16String();
+        candidate.meetingPatternError =
+            source.meetingPatternError.toStdU16String();
+        for (const QString& room : source.rooms)
+        {
+            candidate.rooms.push_back(room.toStdU16String());
+        }
+        for (const QString& color : source.importedColors)
+        {
+            candidate.importedColors.push_back(color.toStdU16String());
+        }
+        for (const ClassTime& time : source.times)
+        {
+            candidate.times.push_back({
+                time.day.toStdU16String(),
+                time.startTime.toStdU16String(),
+                time.endTime.toStdU16String()
+            });
+        }
+        for (const QString& cell : source.sourceCells)
+        {
+            candidate.sourceCells.push_back(cell.toStdU16String());
+        }
+        request.candidates.push_back(std::move(candidate));
+    }
+    request.intensiveSlotStates.reserve(
+        static_cast<std::size_t>(plan.intensiveSlotStates.size())
+        );
+    for (const IntensiveSlotState& slot : plan.intensiveSlotStates)
+    {
+        request.intensiveSlotStates.push_back({
+            slot.day.toStdU16String(),
+            slot.startTime.toStdU16String(),
+            slot.state.toStdU16String()
+        });
+    }
+    request.diagnostics.reserve(static_cast<std::size_t>(plan.diagnostics.size()));
+    for (const ScheduleImportDiagnostic& diagnostic : plan.diagnostics)
+    {
+        request.diagnostics.push_back({
+            diagnostic.sheetName.toStdU16String(),
+            diagnostic.userName.toStdU16String(),
+            diagnostic.cellReference.toStdU16String(),
+            diagnostic.value.toStdU16String(),
+            diagnostic.message.toStdU16String()
+        });
+    }
+    request.teachers.reserve(static_cast<std::size_t>(plan.teachers.size()));
+    for (const ScheduleImportTeacherResolution& source : plan.teachers)
+    {
+        ScheduleImportApplyTeacher teacher;
+        teacher.teacherKey = source.teacherKey.toStdU16String();
+        teacher.action = applyTeacherAction(source.action);
+        teacher.selectedRoom = source.selectedRoom.toStdU16String();
+        const bool needsTarget =
+            source.action == ScheduleImportTeacherAction::Reuse
+            || source.action == ScheduleImportTeacherAction::UpdateRoom;
+        if (needsTarget || source.targetTeacherId > 0)
+        {
+            teacher.targetTeacherId = teacherDomainId(source.targetTeacherId);
+        }
+        request.teachers.push_back(std::move(teacher));
+    }
+    request.classes.reserve(static_cast<std::size_t>(plan.classes.size()));
+    for (const ScheduleImportClassResolution& source : plan.classes)
+    {
+        ScheduleImportApplyClass classroom;
+        classroom.candidateIndex = source.candidateIndex;
+        classroom.action = applyClassAction(source.action);
+        classroom.classColor = source.classColor.toStdU16String();
+        classroom.fontColor = source.fontColor.toStdU16String();
+        if (source.action == ScheduleImportClassAction::UpdateExisting
+            || source.targetClassId > 0)
+        {
+            classroom.targetClassId = classDomainId(source.targetClassId);
+        }
+        request.classes.push_back(std::move(classroom));
+    }
+    return request;
+}
+
+std::optional<QString> typedRequestValidationFailure(
     const ScheduleImportApplyRequest& request
     )
 {
-    ScheduleImportPlan plan;
-    plan.kind = request.intensiveSchedule
-        ? ScheduleImportKind::Intensive
-        : ScheduleImportKind::Normal;
-    plan.intensiveMode = request.intensiveMode
-            == ScheduleImportPlanIntensiveMode::ReplaceWithNew
-        ? ScheduleImportIntensiveMode::ReplaceWithNew
-        : ScheduleImportIntensiveMode::UpdateExisting;
-    plan.selectedUserName = QString::fromStdU16String(
-        request.selectedUserName
-        );
-    plan.saveProfileNameIfBlank = request.saveProfileNameIfBlank;
-    plan.updateProfileName = request.updateProfileName;
-    plan.unknownCellsAcknowledged = request.diagnosticsAcknowledged;
-    for (const auto& item : request.candidates)
+    ScheduleImportPlanEligibilityRequest policy;
+    policy.intensiveSchedule = request.intensiveSchedule;
+    policy.intensiveMode = request.intensiveMode;
+    policy.hasDiagnostics = !request.diagnostics.empty();
+    policy.diagnosticsAcknowledged = request.diagnosticsAcknowledged;
+    policy.reviewDecisions = projectScheduleImportApplyReviewDecisions(request);
+    for (const ScheduleImportApplyCandidate& candidate : request.candidates)
     {
-        ScheduleImportClassCandidate candidate;
-        candidate.teacherKey = QString::fromStdU16String(item.teacherKey);
-        candidate.teacherKr = QString::fromStdU16String(item.teacherName);
-        for (const auto& room : item.rooms)
+        ScheduleImportPlanEligibilityCandidate item;
+        item.grade = scheduleImportApplyUtf8(candidate.grade);
+        item.level = scheduleImportApplyUtf8(candidate.level);
+        item.teacherKey = candidate.teacherKey;
+        item.teacherName = candidate.teacherName;
+        for (const ScheduleImportApplyTime& time : candidate.times)
         {
-            candidate.rooms.append(QString::fromStdU16String(room));
+            item.weekdays.push_back(scheduleImportApplyUtf8(time.day));
         }
-        for (const auto& color : item.importedColors)
+        policy.candidates.push_back(std::move(item));
+    }
+    for (const ScheduleImportApplyClass& classroom : request.classes)
+    {
+        policy.classColors.push_back({
+            classroom.candidateIndex,
+            scheduleImportApplyUtf8(classroom.classColor),
+            scheduleImportApplyUtf8(classroom.fontColor)
+        });
+    }
+
+    if (const auto issue = validateScheduleImportPlanEligibility(policy))
+    {
+        return ScheduleImportPlanValidator::policyFailureMessage(request, *issue);
+    }
+
+    if (request.intensiveMode != ScheduleImportPlanIntensiveMode::UpdateExisting
+        && request.intensiveMode
+            != ScheduleImportPlanIntensiveMode::ReplaceWithNew)
+    {
+        return ScheduleImportPlanValidator::policyFailureMessage(
+            request,
+            ScheduleImportPlanEligibilityIssue{
+                ScheduleImportPlanEligibilityIssueCode::InvalidIntensiveMode
+            }
+            );
+    }
+
+    for (const ScheduleImportApplyTeacher& teacher : request.teachers)
+    {
+        const bool needsTarget =
+            teacher.action == ScheduleImportReviewTeacherAction::Reuse
+            || teacher.action == ScheduleImportReviewTeacherAction::UpdateRoom;
+        if (needsTarget && !teacher.targetTeacherId)
         {
-            candidate.importedColors.append(
-                QString::fromStdU16String(color)
+            return QObject::tr(
+                "Choose an existing Korean teacher for this resolution."
                 );
         }
-        candidate.classGrade = QString::fromStdU16String(item.grade);
-        candidate.classLevel = QString::fromStdU16String(item.level);
-        for (const auto& time : item.times)
+        if (!needsTarget && teacher.targetTeacherId)
         {
-            candidate.times.append({
-                QString::fromStdU16String(time.day),
-                QString::fromStdU16String(time.startTime),
-                QString::fromStdU16String(time.endTime)
-            });
+            return QObject::tr(
+                "This Korean teacher resolution cannot use an existing teacher."
+                );
         }
-        for (const auto& cell : item.sourceCells)
-        {
-            candidate.sourceCells.append(QString::fromStdU16String(cell));
-        }
-        candidate.meetingPatternError = QString::fromStdU16String(
-            item.meetingPatternError
-            );
-        plan.candidates.append(std::move(candidate));
     }
-    for (const auto& slot : request.intensiveSlotStates)
-    {
-        plan.intensiveSlotStates.append({
-            QString::fromStdU16String(slot.day),
-            QString::fromStdU16String(slot.startTime),
-            QString::fromStdU16String(slot.state)
-        });
-    }
-    for (const auto& diagnostic : request.diagnostics)
-    {
-        plan.diagnostics.append({
-            QString::fromStdU16String(diagnostic.sheetName),
-            QString::fromStdU16String(diagnostic.userName),
-            QString::fromStdU16String(diagnostic.cellReference),
-            QString::fromStdU16String(diagnostic.value),
-            QString::fromStdU16String(diagnostic.message)
-        });
-    }
-    for (const auto& teacher : request.teachers)
-    {
-        plan.teachers.append({
-            QString::fromStdU16String(teacher.teacherKey),
-            legacyTeacherAction(teacher.action),
-            legacyApplyId(teacher.targetTeacherId),
-            QString::fromStdU16String(teacher.selectedRoom)
-        });
-    }
-    for (const auto& item : request.classes)
-    {
-        plan.classes.append({
-            item.candidateIndex,
-            legacyClassAction(item.action),
-            legacyApplyId(item.targetClassId),
-            QString::fromStdU16String(item.classColor),
-            QString::fromStdU16String(item.fontColor)
-        });
-    }
-    return plan;
+    return std::nullopt;
 }
 
 QString teacherKey(
@@ -478,118 +584,134 @@ std::vector<ScheduleImportStateTime> stateTimes(
 }
 
 ScheduleImportStateValidationRequest stateValidationRequest(
-    const ScheduleImportPlan& plan,
-    const ValidatedScheduleImportPlan& validatedPlan,
+    const ScheduleImportApplyRequest& applyRequest,
     const QList<Teacher>& existingTeachers,
     const QList<Classroom>& existingClasses,
     const QHash<int, ClassInfo>& existingInfo
     )
 {
     ScheduleImportStateValidationRequest request;
-    request.kind = plan.kind == ScheduleImportKind::Intensive
+    request.kind = applyRequest.intensiveSchedule
         ? ScheduleImportStateKind::Intensive
         : ScheduleImportStateKind::Normal;
-    request.intensiveMode = plan.intensiveMode
-            == ScheduleImportIntensiveMode::ReplaceWithNew
-        ? ScheduleImportStateIntensiveMode::ReplaceWithNew
-        : ScheduleImportStateIntensiveMode::UpdateExisting;
-
-    request.candidates.reserve(static_cast<std::size_t>(plan.candidates.size()));
-    for (const ScheduleImportClassCandidate& candidate : plan.candidates)
+    switch (applyRequest.intensiveMode)
     {
+    case ScheduleImportPlanIntensiveMode::UpdateExisting:
+        request.intensiveMode = ScheduleImportStateIntensiveMode::UpdateExisting;
+        break;
+    case ScheduleImportPlanIntensiveMode::ReplaceWithNew:
+        request.intensiveMode = ScheduleImportStateIntensiveMode::ReplaceWithNew;
+        break;
+    default:
+        Q_UNREACHABLE();
+    }
+
+    request.candidates.reserve(applyRequest.candidates.size());
+    for (const ScheduleImportApplyCandidate& candidate : applyRequest.candidates)
+    {
+        const QString grade = QString::fromStdU16String(candidate.grade);
+        const QString level = QString::fromStdU16String(candidate.level);
         const QString label = QStringLiteral("%1 %2")
-            .arg(candidate.classGrade, candidate.classLevel);
+            .arg(grade, level);
+        QList<ClassTime> times;
+        times.reserve(static_cast<qsizetype>(candidate.times.size()));
+        for (const ScheduleImportApplyTime& time : candidate.times)
+        {
+            times.push_back({
+                QString::fromStdU16String(time.day),
+                QString::fromStdU16String(time.startTime),
+                QString::fromStdU16String(time.endTime)
+            });
+        }
         request.candidates.push_back(
             {
-                utf8String(candidate.teacherKey),
-                utf8String(normalizedIdentity(candidate.classGrade)),
-                utf8String(normalizedIdentity(candidate.classLevel)),
+                scheduleImportApplyUtf8(candidate.teacherKey),
+                utf8String(normalizedIdentity(grade)),
+                utf8String(normalizedIdentity(level)),
                 utf8String(label),
-                stateTimes(candidate.times)
+                stateTimes(times)
             }
             );
     }
 
+    QHash<QString, ScheduleImportApplyTeacher> teacherResolutions;
+    for (const ScheduleImportApplyTeacher& resolution : applyRequest.teachers)
+    {
+        teacherResolutions.insert(
+            QString::fromStdU16String(resolution.teacherKey),
+            resolution
+            );
+    }
     request.teacherResolutions.reserve(
-        static_cast<std::size_t>(validatedPlan.teacherResolutions.size())
+        static_cast<std::size_t>(teacherResolutions.size())
         );
-    for (auto iterator = validatedPlan.teacherResolutions.cbegin();
-         iterator != validatedPlan.teacherResolutions.cend();
+    for (auto iterator = teacherResolutions.cbegin();
+         iterator != teacherResolutions.cend();
          ++iterator)
     {
-        const auto& resolution = iterator.value();
-        ScheduleImportStateTeacherAction action =
-            ScheduleImportStateTeacherAction::Create;
+        const ScheduleImportApplyTeacher& resolution = iterator.value();
+        ScheduleImportStateTeacherAction action;
         switch (resolution.action)
         {
-        case ScheduleImportTeacherAction::Reuse:
+        case ScheduleImportReviewTeacherAction::Reuse:
             action = ScheduleImportStateTeacherAction::Reuse;
             break;
-        case ScheduleImportTeacherAction::UpdateRoom:
+        case ScheduleImportReviewTeacherAction::UpdateRoom:
             action = ScheduleImportStateTeacherAction::UpdateRoom;
             break;
-        case ScheduleImportTeacherAction::Create:
+        case ScheduleImportReviewTeacherAction::Create:
             action = ScheduleImportStateTeacherAction::Create;
             break;
-        case ScheduleImportTeacherAction::Skip:
+        case ScheduleImportReviewTeacherAction::Skip:
             action = ScheduleImportStateTeacherAction::Skip;
             break;
-        }
-        // Reuse and room-update actions always name a target, even when the
-        // legacy value is nonpositive. Create and skip use nonpositive values
-        // as their no-target sentinel; positive values remain visible to the
-        // Application validator so it can preserve the existing error.
-        std::optional<Domain::TeacherId> targetTeacherId;
-        if (action == ScheduleImportStateTeacherAction::Reuse
-            || action == ScheduleImportStateTeacherAction::UpdateRoom
-            || resolution.targetTeacherId > 0)
-        {
-            targetTeacherId = teacherDomainId(resolution.targetTeacherId);
+        default:
+            Q_UNREACHABLE();
         }
         request.teacherResolutions.push_back(
             {
-                utf8String(resolution.teacherKey),
+                scheduleImportApplyUtf8(resolution.teacherKey),
                 action,
-                std::move(targetTeacherId),
-                !resolution.selectedRoom.trimmed().isEmpty()
+                resolution.targetTeacherId,
+                !QString::fromStdU16String(resolution.selectedRoom)
+                    .trimmed().isEmpty()
             }
             );
     }
 
-    request.classResolutions.reserve(
-        static_cast<std::size_t>(validatedPlan.classResolutions.size())
+    std::vector<const ScheduleImportApplyClass*> classesByCandidate(
+        applyRequest.candidates.size(),
+        nullptr
         );
-    for (int index = 0; index < plan.candidates.size(); ++index)
+    for (const ScheduleImportApplyClass& resolution : applyRequest.classes)
     {
-        const auto resolution = validatedPlan.classResolutions.value(index);
-        ScheduleImportStateClassAction action =
-            ScheduleImportStateClassAction::CreateNew;
+        classesByCandidate[static_cast<std::size_t>(resolution.candidateIndex)] =
+            &resolution;
+    }
+    request.classResolutions.reserve(classesByCandidate.size());
+    for (std::size_t index = 0; index < classesByCandidate.size(); ++index)
+    {
+        const ScheduleImportApplyClass& resolution = *classesByCandidate[index];
+        ScheduleImportStateClassAction action;
         switch (resolution.action)
         {
-        case ScheduleImportClassAction::UpdateExisting:
+        case ScheduleImportReviewClassAction::UpdateExisting:
             action = ScheduleImportStateClassAction::UpdateExisting;
             break;
-        case ScheduleImportClassAction::CreateNew:
+        case ScheduleImportReviewClassAction::CreateNew:
             action = ScheduleImportStateClassAction::CreateNew;
             break;
-        case ScheduleImportClassAction::Skip:
+        case ScheduleImportReviewClassAction::Skip:
             action = ScheduleImportStateClassAction::Skip;
             break;
-        }
-        // Updating an existing class always carries the selected legacy ID.
-        // Create-new and skip use nonpositive values to mean no selected
-        // target; positive values are retained for the existing validation.
-        std::optional<Domain::ClassId> targetClassId;
-        if (action == ScheduleImportStateClassAction::UpdateExisting
-            || resolution.targetClassId > 0)
-        {
-            targetClassId = classDomainId(resolution.targetClassId);
+        default:
+            Q_UNREACHABLE();
         }
         request.classResolutions.push_back(
             {
-                static_cast<std::size_t>(index),
+                index,
                 action,
-                std::move(targetClassId)
+                resolution.targetClassId
             }
             );
     }
@@ -989,10 +1111,51 @@ Result<ScheduleImportSummary> ScheduleImportRepository::apply(
     {
         return std::unexpected(validatedPlan.error());
     }
-    const auto& teacherResolutions =
-        validatedPlan->teacherResolutions;
-    const auto& classResolutions =
-        validatedPlan->classResolutions;
+    return applyCore(applyRequestFromLegacyPlan(plan));
+}
+
+Result<ScheduleImportSummary> ScheduleImportRepository::applyTyped(
+    const ScheduleImportApplyRequest& request
+    )
+{
+    if (!m_database.isOpen())
+    {
+        return std::unexpected(
+            QObject::tr("No Teacher Profile is open.")
+            );
+    }
+
+    if (const auto error = typedRequestValidationFailure(request))
+    {
+        return std::unexpected(*error);
+    }
+
+    ScheduleImportApplyRequest normalizedRequest = request;
+    for (ScheduleImportApplyTeacher& teacher : normalizedRequest.teachers)
+    {
+        if (teacher.targetTeacherId)
+        {
+            teacher.targetTeacherId = teacherDomainId(
+                legacyApplyId(teacher.targetTeacherId)
+                );
+        }
+    }
+    for (ScheduleImportApplyClass& classroom : normalizedRequest.classes)
+    {
+        if (classroom.targetClassId)
+        {
+            classroom.targetClassId = classDomainId(
+                legacyApplyId(classroom.targetClassId)
+                );
+        }
+    }
+    return applyCore(normalizedRequest);
+}
+
+Result<ScheduleImportSummary> ScheduleImportRepository::applyCore(
+    const ScheduleImportApplyRequest& request
+    )
+{
 
     DatabaseTransaction transaction(m_database);
     if (!transaction.started())
@@ -1042,8 +1205,7 @@ Result<ScheduleImportSummary> ScheduleImportRepository::apply(
 
     const ScheduleImportStateValidationRequest currentRequest =
         stateValidationRequest(
-            plan,
-            *validatedPlan,
+            request,
             *existingTeachers,
             *existingClasses,
             existingInfo
@@ -1060,8 +1222,25 @@ Result<ScheduleImportSummary> ScheduleImportRepository::apply(
     }
 
     ScheduleImportSummary summary;
-    summary.ignoredCells =
-        plan.diagnostics.size();
+    summary.ignoredCells = static_cast<int>(request.diagnostics.size());
+    QHash<QString, ScheduleImportApplyTeacher> teacherResolutions;
+    for (const ScheduleImportApplyTeacher& resolution : request.teachers)
+    {
+        teacherResolutions.insert(
+            QString::fromStdU16String(resolution.teacherKey),
+            resolution
+            );
+    }
+    std::vector<const ScheduleImportApplyClass*> classResolutions(
+        request.candidates.size(),
+        nullptr
+        );
+    for (const ScheduleImportApplyClass& resolution : request.classes)
+    {
+        classResolutions[static_cast<std::size_t>(resolution.candidateIndex)] =
+            &resolution;
+    }
+
     QHash<QString, int> resolvedTeacherIds;
     QSqlQuery query(m_database);
 
@@ -1071,12 +1250,12 @@ Result<ScheduleImportSummary> ScheduleImportRepository::apply(
         ++iterator
         )
     {
-        const ScheduleImportTeacherResolution& resolution =
+        const ScheduleImportApplyTeacher& resolution =
             iterator.value();
 
         if (
             resolution.action
-                == ScheduleImportTeacherAction::Skip
+                == ScheduleImportReviewTeacherAction::Skip
             )
         {
             resolvedTeacherIds.insert(iterator.key(), -1);
@@ -1085,15 +1264,16 @@ Result<ScheduleImportSummary> ScheduleImportRepository::apply(
 
         if (
             resolution.action
-                == ScheduleImportTeacherAction::Create
+                == ScheduleImportReviewTeacherAction::Create
             )
         {
             QString teacherName;
-            for (const ScheduleImportClassCandidate& candidate : plan.candidates)
+            for (const ScheduleImportApplyCandidate& candidate : request.candidates)
             {
-                if (candidate.teacherKey == iterator.key())
+                if (QString::fromStdU16String(candidate.teacherKey)
+                    == iterator.key())
                 {
-                    teacherName = candidate.teacherKr;
+                    teacherName = QString::fromStdU16String(candidate.teacherName);
                     break;
                 }
             }
@@ -1109,7 +1289,7 @@ Result<ScheduleImportSummary> ScheduleImportRepository::apply(
             )");
             query.addBindValue(teacherName);
             query.addBindValue(
-                resolution.selectedRoom.trimmed()
+                QString::fromStdU16String(resolution.selectedRoom).trimmed()
                 );
 
             if (!query.exec())
@@ -1139,12 +1319,12 @@ Result<ScheduleImportSummary> ScheduleImportRepository::apply(
 
         resolvedTeacherIds.insert(
             iterator.key(),
-            resolution.targetTeacherId
+            legacyApplyIntegerId(resolution.targetTeacherId)
             );
 
         if (
             resolution.action
-                == ScheduleImportTeacherAction::UpdateRoom
+                == ScheduleImportReviewTeacherAction::UpdateRoom
             )
         {
             query.prepare(R"(
@@ -1153,9 +1333,9 @@ Result<ScheduleImportSummary> ScheduleImportRepository::apply(
                 WHERE id=?
             )");
             query.addBindValue(
-                resolution.selectedRoom.trimmed()
+                QString::fromStdU16String(resolution.selectedRoom).trimmed()
                 );
-            query.addBindValue(resolution.targetTeacherId);
+            query.addBindValue(legacyApplyIntegerId(resolution.targetTeacherId));
 
             if (!query.exec())
             {
@@ -1171,27 +1351,25 @@ Result<ScheduleImportSummary> ScheduleImportRepository::apply(
     }
 
     const QString timeTable =
-        plan.kind == ScheduleImportKind::Intensive
+        request.intensiveSchedule
             ? QStringLiteral("class_intensive_times")
             : QStringLiteral("class_times");
     const bool preservesAbsentIntensiveClasses =
-        plan.kind == ScheduleImportKind::Intensive
-        && plan.intensiveMode
-            == ScheduleImportIntensiveMode::UpdateExisting;
+        request.intensiveSchedule
+        && request.intensiveMode
+            == ScheduleImportPlanIntensiveMode::UpdateExisting;
     std::vector<std::optional<int>> insertedClassIdsByCandidate(
-        static_cast<std::size_t>(plan.candidates.size())
+        request.candidates.size()
         );
     QHash<int, QList<ClassTime>> finalTimes;
-    for (int index = 0; index < plan.candidates.size(); ++index)
+    for (std::size_t index = 0; index < request.candidates.size(); ++index)
     {
-        const ScheduleImportClassCandidate& candidate =
-            plan.candidates[index];
-        const ScheduleImportClassResolution resolution =
-            classResolutions.value(index);
+        const ScheduleImportApplyCandidate& candidate = request.candidates[index];
+        const ScheduleImportApplyClass& resolution = *classResolutions[index];
 
         if (
             resolution.action
-                == ScheduleImportClassAction::Skip
+                == ScheduleImportReviewClassAction::Skip
             )
         {
             ++summary.classesSkipped;
@@ -1200,7 +1378,7 @@ Result<ScheduleImportSummary> ScheduleImportRepository::apply(
 
         const int teacherId =
             resolvedTeacherIds.value(
-                candidate.teacherKey,
+                QString::fromStdU16String(candidate.teacherKey),
                 -1
                 );
         if (teacherId <= 0)
@@ -1212,12 +1390,11 @@ Result<ScheduleImportSummary> ScheduleImportRepository::apply(
                 );
         }
 
-        int classId =
-            resolution.targetClassId;
+        int classId = legacyApplyId(resolution.targetClassId);
 
         if (
             resolution.action
-                == ScheduleImportClassAction::CreateNew
+                == ScheduleImportReviewClassAction::CreateNew
             )
         {
             query.prepare(
@@ -1228,8 +1405,8 @@ Result<ScheduleImportSummary> ScheduleImportRepository::apply(
             query.addBindValue(
                 QStringLiteral("%1 %2")
                     .arg(
-                        candidate.classGrade,
-                        candidate.classLevel
+                        QString::fromStdU16String(candidate.grade),
+                        QString::fromStdU16String(candidate.level)
                         )
                     .simplified()
                 );
@@ -1251,7 +1428,7 @@ Result<ScheduleImportSummary> ScheduleImportRepository::apply(
                     );
             }
             insertedClassIdsByCandidate[
-                static_cast<std::size_t>(index)
+                index
                 ] = classId;
             ++summary.classesCreated;
         }
@@ -1280,16 +1457,16 @@ Result<ScheduleImportSummary> ScheduleImportRepository::apply(
         )");
         query.addBindValue(classId);
         query.addBindValue(teacherId);
-        query.addBindValue(candidate.classGrade);
-        query.addBindValue(candidate.classLevel);
+        query.addBindValue(QString::fromStdU16String(candidate.grade));
+        query.addBindValue(QString::fromStdU16String(candidate.level));
         query.addBindValue(
             normalizedHexColor(
-                resolution.classColor
+                QString::fromStdU16String(resolution.classColor)
                 )
             );
         query.addBindValue(
             normalizedHexColor(
-                resolution.fontColor
+                QString::fromStdU16String(resolution.fontColor)
                 )
             );
 
@@ -1389,7 +1566,9 @@ Result<ScheduleImportSummary> ScheduleImportRepository::apply(
             const bool hadTimes =
                 !selectedTimes(
                     existingInfo.value(classroom.id),
-                    plan.kind
+                    request.intensiveSchedule
+                        ? ScheduleImportKind::Intensive
+                        : ScheduleImportKind::Normal
                     ).isEmpty();
             if (
                 hadTimes
@@ -1454,7 +1633,7 @@ Result<ScheduleImportSummary> ScheduleImportRepository::apply(
         return std::unexpected(written.error());
     }
 
-    if (plan.kind == ScheduleImportKind::Intensive)
+    if (request.intensiveSchedule)
     {
         if (!query.exec(QStringLiteral("DELETE FROM intensive_slot_states")))
         {
@@ -1466,11 +1645,20 @@ Result<ScheduleImportSummary> ScheduleImportRepository::apply(
                 );
         }
 
+        QList<IntensiveSlotState> slotStates;
+        slotStates.reserve(
+            static_cast<qsizetype>(request.intensiveSlotStates.size())
+            );
+        for (const ScheduleImportApplySlotState& state : request.intensiveSlotStates)
+        {
+            slotStates.push_back({
+                QString::fromStdU16String(state.day),
+                QString::fromStdU16String(state.startTime),
+                QString::fromStdU16String(state.state)
+            });
+        }
         const Status statesWritten =
-            writeIntensiveSlotStates(
-                m_database,
-                plan.intensiveSlotStates
-                );
+            writeIntensiveSlotStates(m_database, slotStates);
         if (!statesWritten)
         {
             return std::unexpected(statesWritten.error());
@@ -1478,8 +1666,8 @@ Result<ScheduleImportSummary> ScheduleImportRepository::apply(
     }
 
     if (
-        plan.saveProfileNameIfBlank
-        || plan.updateProfileName
+        request.saveProfileNameIfBlank
+        || request.updateProfileName
         )
     {
         query.prepare(
@@ -1507,9 +1695,10 @@ Result<ScheduleImportSummary> ScheduleImportRepository::apply(
         if (
             (
                 existingName.isEmpty()
-                || plan.updateProfileName
+                || request.updateProfileName
                 )
-            && !plan.selectedUserName.trimmed().isEmpty()
+            && !QString::fromStdU16String(request.selectedUserName)
+                    .trimmed().isEmpty()
             )
         {
             query.prepare(R"(
@@ -1519,7 +1708,7 @@ Result<ScheduleImportSummary> ScheduleImportRepository::apply(
                 DO UPDATE SET value=excluded.value
             )");
             query.addBindValue(
-                plan.selectedUserName.trimmed()
+                QString::fromStdU16String(request.selectedUserName).trimmed()
                 );
             if (!query.exec())
             {
@@ -1545,11 +1734,4 @@ Result<ScheduleImportSummary> ScheduleImportRepository::apply(
     }
 
     return summary;
-}
-
-Result<ScheduleImportSummary> ScheduleImportRepository::applyTyped(
-    const ScheduleImportApplyRequest& request
-    )
-{
-    return apply(legacyScheduleImportPlan(request));
 }

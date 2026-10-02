@@ -3,6 +3,7 @@
 #include "core/utils/colorutils.h"
 #include "app/services/feature_services.h"
 #include "data/data_service.h"
+#include "data/database/database_session.h"
 #include "domain/models/teacher.h"
 #include "features/schedule/ui/schedule_import_dialog.h"
 #include "features/schedule/ui/schedule_import_review_dialog.h"
@@ -42,6 +43,9 @@
 #include <QRegularExpression>
 #include <QScrollArea>
 #include <QScrollBar>
+#include <QSqlDatabase>
+#include <QSqlError>
+#include <QSqlQuery>
 #include <QSplitter>
 #include <QSplitterHandle>
 #include <QTableWidget>
@@ -75,9 +79,6 @@ void setDatabaseSessionOpen(bool open);
 void setScheduleClassInfoReadFailure(bool fail);
 extern int legacyClassInfoReadCount;
 extern int scheduleImportPreviewCallCount;
-extern int scheduleImportApplyCallCount;
-extern ScheduleImportPlan lastScheduleImportPlan;
-extern QString scheduleImportApplyFailure;
 }
 
 namespace ImportState = ClassMngr::Next::Application;
@@ -121,7 +122,7 @@ private slots:
     void intensivePreviewPreservesEssayAndLunchBlocks();
     void suppliedWorkbookBuildsStagedReview();
     void permanentConflictWorkbookPresentsReviewWarning();
-    void applyUsesConfirmationAndReportsServiceOutcome();
+    void applyUsesConfirmationAndReportsRepositoryOutcome();
     void policyFailureMessageRetainsLegacyText();
     void reviewModelBuildsTypedApplyRequest();
 };
@@ -3947,14 +3948,89 @@ void ScheduleImportDialogTests
     }
 }
 
-void ScheduleImportDialogTests::applyUsesConfirmationAndReportsServiceOutcome()
+void ScheduleImportDialogTests::applyUsesConfirmationAndReportsRepositoryOutcome()
 {
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+
     ApplicationServices services;
+    const Status opened = services.openDatabase(
+        directory.filePath(QStringLiteral("schedule-import-dialog.sqlite"))
+        );
+    QVERIFY2(
+        opened.has_value(),
+        qPrintable(opened.has_value() ? QString() : opened.error())
+        );
+    const QSqlDatabase database = services.databaseSession()->database();
+    QVERIFY(database.isValid());
+
+    QSqlQuery query(database);
+    QVERIFY2(
+        query.exec(QStringLiteral(
+            "CREATE TRIGGER reject_dialog_import_time "
+            "BEFORE INSERT ON class_times BEGIN "
+            "SELECT RAISE(ABORT, 'injected repository write failure'); END"
+            )),
+        qPrintable(query.lastError().text())
+        );
+
+    const auto persistedRowCounts = [&database]()
+    {
+        QSqlQuery snapshot(database);
+        if (!snapshot.exec(QStringLiteral(
+                "SELECT "
+                "(SELECT COUNT(*) FROM teachers), "
+                "(SELECT COUNT(*) FROM classes), "
+                "(SELECT COUNT(*) FROM class_info), "
+                "(SELECT COUNT(*) FROM class_times), "
+                "(SELECT COUNT(*) FROM app_settings)"
+                ))
+            || !snapshot.next())
+        {
+            return QStringList{
+                QStringLiteral("snapshot query failed: %1")
+                    .arg(snapshot.lastError().text())
+            };
+        }
+
+        QStringList counts;
+        for (int column = 0; column < 5; ++column)
+        {
+            counts.append(snapshot.value(column).toString());
+        }
+        return counts;
+    };
+    const auto persistedProfileNames = [&database]()
+    {
+        QSqlQuery profileNameQuery(database);
+        if (!profileNameQuery.exec(QStringLiteral(
+                "SELECT value FROM app_settings WHERE key='myInfo/name'"
+                )))
+        {
+            return QStringList{
+                QStringLiteral("profile name query failed: %1")
+                    .arg(profileNameQuery.lastError().text())
+            };
+        }
+
+        QStringList names;
+        while (profileNameQuery.next())
+        {
+            names.append(profileNameQuery.value(0).toString());
+        }
+        return names;
+    };
+    const QStringList emptyDatabaseCounts = {
+        QStringLiteral("0"), QStringLiteral("0"), QStringLiteral("0"),
+        QStringLiteral("0"), QStringLiteral("0")
+    };
+    QCOMPARE(persistedRowCounts(), emptyDatabaseCounts);
+
     ScheduleImportReviewRequest request;
     request.kind = ScheduleImportKind::Normal;
     request.user.name = QStringLiteral("Alice");
     ScheduleImportClassCandidate candidate;
-    candidate.teacherKey = QStringLiteral("\uAE40\uC120\uC0DD");
+    candidate.teacherKey = QStringLiteral("\uBC15\uC120\uC0DD");
     candidate.teacherKr = candidate.teacherKey;
     candidate.rooms = {QStringLiteral("413")};
     candidate.classGrade = QStringLiteral("E4");
@@ -3971,76 +4047,116 @@ void ScheduleImportDialogTests::applyUsesConfirmationAndReportsServiceOutcome()
     QVERIFY(review.prepare());
     auto* teacher = review.findChild<QComboBox*>(
         QStringLiteral("scheduleImportTeacherAction_0"));
+    auto* teacherRoom = review.findChild<QComboBox*>(
+        QStringLiteral("scheduleImportTeacherRoom_0"));
     auto* classroom = review.findChild<QComboBox*>(
         QStringLiteral("scheduleImportClassAction_0"));
     auto* apply = review.findChild<QPushButton*>(
         QStringLiteral("scheduleImportAcceptButton"));
-    QVERIFY(teacher && classroom && apply);
+    QVERIFY(teacher && teacherRoom && classroom && apply);
+    int createTeacherIndex = -1;
+    QStringList teacherOptions;
     for (int index = 0; index < teacher->count(); ++index)
     {
-        if (teacher->itemData(index, Qt::UserRole).toInt()
-                == static_cast<int>(ScheduleImportTeacherAction::Reuse)
-            && teacher->itemData(index, Qt::UserRole + 1).toInt() == 7)
+        const int action = teacher->itemData(index, Qt::UserRole).toInt();
+        teacherOptions.append(
+            QStringLiteral("%1 (%2)")
+                .arg(teacher->itemText(index))
+                .arg(action)
+            );
+        if (action
+            == static_cast<int>(ScheduleImportTeacherAction::Create))
         {
-            teacher->setCurrentIndex(index);
+            createTeacherIndex = index;
             break;
         }
     }
+    QVERIFY2(createTeacherIndex >= 0, qPrintable(teacherOptions.join("; ")));
+    teacher->setCurrentIndex(createTeacherIndex);
+    QCOMPARE(teacherRoom->currentData().toString(), QStringLiteral("413"));
     const int createIndex = actionIndex(classroom, ScheduleImportClassAction::CreateNew);
     QVERIFY(createIndex >= 0);
     classroom->setCurrentIndex(createIndex);
     QVERIFY(apply->isEnabled());
+    const QStringList beforeApplyCounts = persistedRowCounts();
+    const QStringList emptyScheduleTableCounts = {
+        QStringLiteral("0"), QStringLiteral("0"),
+        QStringLiteral("0"), QStringLiteral("0")
+    };
+    QCOMPARE(beforeApplyCounts.mid(0, 4), emptyScheduleTableCounts);
+    const QStringList profileNamesBeforeApply = persistedProfileNames();
 
     prompts.scriptedChoices.enqueue(PromptChoice::Rejected);
     apply->click();
     QCOMPARE(prompts.confirmations.size(), 1);
-    QCOMPARE(ScheduleWidgetTestStubs::scheduleImportApplyCallCount, 0);
+    QCOMPARE(prompts.messages.size(), 0);
     QCOMPARE(review.result(), 0);
+    QCOMPARE(persistedRowCounts(), beforeApplyCounts);
+    QCOMPARE(persistedProfileNames(), profileNamesBeforeApply);
 
-    ScheduleWidgetTestStubs::scheduleImportApplyFailure = QStringLiteral("injected write failure");
     prompts.scriptedChoices.enqueue(PromptChoice::Accepted);
     apply->click();
-    QCOMPARE(ScheduleWidgetTestStubs::scheduleImportApplyCallCount, 1);
     QCOMPARE(prompts.confirmations.size(), 2);
     QCOMPARE(prompts.messages.size(), 1);
-    QCOMPARE(prompts.messages.constLast().message, QStringLiteral("injected write failure"));
-    const ScheduleImportPlan& appliedPlan =
-        ScheduleWidgetTestStubs::lastScheduleImportPlan;
-    QCOMPARE(appliedPlan.kind, ScheduleImportKind::Normal);
-    QCOMPARE(appliedPlan.selectedUserName, QStringLiteral("Alice"));
-    QVERIFY(appliedPlan.saveProfileNameIfBlank);
-    QCOMPARE(appliedPlan.candidates.size(), 1);
-    QCOMPARE(appliedPlan.candidates.first().teacherKey, candidate.teacherKey);
-    QCOMPARE(appliedPlan.candidates.first().teacherKr, candidate.teacherKr);
-    QCOMPARE(appliedPlan.candidates.first().rooms, candidate.rooms);
-    QCOMPARE(appliedPlan.candidates.first().importedColors, candidate.importedColors);
-    QCOMPARE(appliedPlan.candidates.first().classGrade, candidate.classGrade);
-    QCOMPARE(appliedPlan.candidates.first().classLevel, candidate.classLevel);
-    QCOMPARE(appliedPlan.candidates.first().sourceCells, candidate.sourceCells);
-    QCOMPARE(appliedPlan.candidates.first().times.size(), candidate.times.size());
-    QCOMPARE(appliedPlan.candidates.first().times.at(0).day, QStringLiteral("Monday"));
-    QCOMPARE(appliedPlan.candidates.first().times.at(0).startTime, QStringLiteral("4:00 PM"));
-    QCOMPARE(appliedPlan.candidates.first().times.at(0).endTime, QStringLiteral("4:50 PM"));
-    QCOMPARE(appliedPlan.candidates.first().times.at(1).day, QStringLiteral("Wednesday"));
-    QCOMPARE(appliedPlan.teachers.size(), 1);
-    QCOMPARE(appliedPlan.teachers.first().action, ScheduleImportTeacherAction::Reuse);
-    QCOMPARE(appliedPlan.teachers.first().targetTeacherId, 7);
-    QCOMPARE(appliedPlan.teachers.first().selectedRoom, QStringLiteral("413"));
-    QCOMPARE(appliedPlan.classes.size(), 1);
-    QCOMPARE(appliedPlan.classes.first().candidateIndex, 0);
-    QCOMPARE(appliedPlan.classes.first().action, ScheduleImportClassAction::CreateNew);
-    QCOMPARE(appliedPlan.classes.first().targetClassId, -1);
+    QVERIFY(prompts.messages.constLast().message.contains(
+        QStringLiteral("injected repository write failure")));
     QCOMPARE(review.result(), 0);
+    QCOMPARE(persistedRowCounts(), beforeApplyCounts);
+    QCOMPARE(persistedProfileNames(), profileNamesBeforeApply);
 
-    ScheduleWidgetTestStubs::scheduleImportApplyFailure.clear();
+    QVERIFY2(
+        query.exec(QStringLiteral("DROP TRIGGER reject_dialog_import_time")),
+        qPrintable(query.lastError().text())
+        );
     prompts.scriptedChoices.enqueue(PromptChoice::Accepted);
     apply->click();
-    QCOMPARE(ScheduleWidgetTestStubs::scheduleImportApplyCallCount, 2);
     QCOMPARE(prompts.confirmations.size(), 3);
     QCOMPARE(prompts.messages.size(), 2);
     QVERIFY(prompts.messages.constLast().message.contains(
         QStringLiteral("Schedule imported successfully.")));
     QCOMPARE(review.result(), static_cast<int>(QDialog::Accepted));
+    const QStringList importedDatabaseCounts = {
+        QStringLiteral("1"), QStringLiteral("1"), QStringLiteral("1"),
+        QStringLiteral("2"),
+        QString::number(
+            beforeApplyCounts.at(4).toInt()
+            + (profileNamesBeforeApply.isEmpty() ? 1 : 0)
+            )
+    };
+    QCOMPARE(persistedRowCounts(), importedDatabaseCounts);
+
+    QSqlQuery schedule(database);
+    QVERIFY2(
+        schedule.exec(QStringLiteral(
+            "SELECT teachers.teacher_kr, teachers.room_number, classes.name, "
+            "class_info.class_grade, class_info.class_level, "
+            "class_times.day, class_times.start_time, class_times.end_time "
+            "FROM teachers "
+            "JOIN class_info ON class_info.teacher_id=teachers.id "
+            "JOIN classes ON classes.id=class_info.class_id "
+            "JOIN class_times ON class_times.class_id=classes.id "
+            "ORDER BY class_times.day"
+            )),
+        qPrintable(schedule.lastError().text())
+        );
+    QVERIFY(schedule.next());
+    QCOMPARE(schedule.value(0).toString(), candidate.teacherKr);
+    QCOMPARE(schedule.value(1).toString(), QStringLiteral("413"));
+    QCOMPARE(schedule.value(2).toString(), QStringLiteral("E4 Hercules"));
+    QCOMPARE(schedule.value(3).toString(), candidate.classGrade);
+    QCOMPARE(schedule.value(4).toString(), candidate.classLevel);
+    QCOMPARE(schedule.value(5).toString(), QStringLiteral("Monday"));
+    QCOMPARE(schedule.value(6).toString(), QStringLiteral("4:00 PM"));
+    QCOMPARE(schedule.value(7).toString(), QStringLiteral("4:50 PM"));
+    QVERIFY(schedule.next());
+    QCOMPARE(schedule.value(0).toString(), candidate.teacherKr);
+    QCOMPARE(schedule.value(5).toString(), QStringLiteral("Wednesday"));
+    QCOMPARE(schedule.value(6).toString(), QStringLiteral("4:00 PM"));
+    QCOMPARE(schedule.value(7).toString(), QStringLiteral("4:50 PM"));
+    QVERIFY(!schedule.next());
+
+    const QStringList importedProfileName = {QStringLiteral("Alice")};
+    QCOMPARE(persistedProfileNames(), importedProfileName);
 }
 
 void ScheduleImportDialogTests::policyFailureMessageRetainsLegacyText()

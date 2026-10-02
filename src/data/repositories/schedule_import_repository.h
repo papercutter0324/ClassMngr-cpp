@@ -2,7 +2,7 @@
 
 #include "core/result.h"
 #include "domain/models/schedule_import.h"
-#include "next/application/schedule_import_apply_use_case.h"
+#include "next/application/schedule_import_apply_request.h"
 
 #include <QSqlDatabase>
 
@@ -22,13 +22,14 @@ public:
         const ScheduleImportPlan& plan
         );
 
-    // Interim typed adapter for the v2 ApplyUseCase boundary. Mapping stays
-    // here so persistence validation and transactional writes remain shared
-    // with the legacy plan-backed apply core below.
     [[nodiscard]] Result<ScheduleImportSummary> applyTyped(
         const ClassMngr::Next::Application::ScheduleImportApplyRequest& request
         );
 
 private:
+    [[nodiscard]] Result<ScheduleImportSummary> applyCore(
+        const ClassMngr::Next::Application::ScheduleImportApplyRequest& request
+        );
+
     QSqlDatabase& m_database;
 };
