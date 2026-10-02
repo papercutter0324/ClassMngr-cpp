@@ -4825,16 +4825,25 @@ before writes, rollback after a forced write failure, and intensive
 mode/slot-state mapping passed. Source ownership found one owner for 1,172
 files; `git diff --check` passed. No full suite ran.
 
-F233 is selected to remove the typed-to-plan repository adapter. The two
-independent Explorer lanes found that the existing typed ApplyRequest contains
-the write inputs needed by the current transactional body, while
-ScheduleImportStateValidationRequest is too narrow to replace it. Make
-ScheduleImportApplyRequest the shared core input and preserve the existing
-ScheduleImportPlan API as a validated v1 edge adapter. This reuses the current
-v2 write contract instead of adding a second command type. Preserve validation
-messages/order, current-state reads, stale/conflict rejection before writes,
-rollback, summaries, and intensive behavior. Cover both typed and legacy
-entrypoints through the same core, including malformed direct typed requests.
-The remaining plan adapter in F232 is the target of this slice. Update the
-Phase 2 plan and begin implementation; Phase 2 remains In Progress/Open with
-Gates 1 and 2 Partial.
+F233 source commit `2cb853e9` is accepted. The typed
+`ScheduleImportApplyRequest` is the shared repository-core input; the legacy
+`ScheduleImportPlan` API remains a validated v1 edge adapter. This avoids the
+typed-to-plan round trip and reuses one transaction core. The Application
+ApplyUseCase, Platform ApplyPort, and repository CTests passed 3/3. New direct
+typed rejection tests cover out-of-range candidate indexes and teacher/class
+action-target mismatches, checking persisted snapshots after every failure;
+the malformed slot passed 3/0 and the repository CTest passed 1/1. Focused
+dialog Apply and policy-message checks passed. The full Dialog aggregate had
+34 passes and only the established three baseline failures. Source ownership
+found one owner for 1,173 handwritten files; `git diff --check` passed. No full
+suite ran.
+
+F234 is selected to centralize typed ApplyRequest validation in one Qt-free
+Application helper used by both `ScheduleImportApplyUseCase` and direct
+repository calls. Keep repository validation for callers that bypass the
+UseCase, retain the legacy plan-validation edge, and keep localized error
+formatting at the UI or persistence edge. Resolve the current mismatch by
+rejecting an invalid intensive-mode enum for normal schedules at both
+entrypoints while preserving validation order and detailed messages. The two
+independent Explorer lanes agree on this seam. Next: begin F234 implementation.
+Phase 2 remains In Progress/Open with Gates 1 and 2 Partial.

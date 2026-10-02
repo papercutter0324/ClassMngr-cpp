@@ -71,8 +71,9 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
   accepted. F227's proposed-summary projection, F228's cleared-schedule count,
   F229's typed preview projection, F230's UI-built typed apply request, F231's
   apply-request decision projection, and F232's session-bound typed apply are
-  accepted. F233 is selected for a shared typed repository core with a
-  validated v1 plan adapter.
+  accepted. F233 is accepted: the typed apply request is the shared repository
+  core input and the validated v1 plan is an edge adapter. F234 is selected to
+  centralize typed apply-request validation for the UseCase and repository.
   The prior F123 candidate wording is historical;
   current Teacher Profile integration status is recorded in the progress log.
   Gates 1 and 2
@@ -229,22 +230,26 @@ No new v2 production path depends on DataService, MainWindow, PageManager, or a 
 
 Earlier verified slices and cumulative exit-gate snapshots are archived in the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 
-## Latest progress update - 2026-10-02 (F232 accepted; F233 selected)
+## Latest progress update - 2026-10-02 (F233 accepted; F234 selected)
 
-F232, source commit `075b4335`, routes the typed v2 Apply port directly to the
-active session's Schedule Import repository. Its `applyTyped()` adapter maps
-into the existing plan-based transaction core; the v2 route no longer calls
-`ScheduleService` or the legacy `DataService` fallback. The v1
-`ScheduleImportPlan` path remains.
+F233, source commit `2cb853e9`, makes `ScheduleImportApplyRequest` the shared
+repository-core input. The validated v1 `ScheduleImportPlan` remains an edge
+adapter; both entry points use one fresh-state and transaction core.
+Application ApplyUseCase, Platform ApplyPort, and repository CTests passed
+3/3 (repository CTest 1/1). Malformed typed requests were rejected with
+persisted snapshots unchanged (3 QtTest cases, 0 failures), covering an
+out-of-range candidate and invalid teacher/class action-target combinations.
+The independent focused dialog slots passed. The full dialog aggregate had
+34 passes and only the three established baseline failures:
+`acceptedReviewCanTearDownSourceDialog`,
+`mismatchedProfileRequiresConfirmation`, and
+`reviewPreviewUsesSavedScheduleDisplaySettings`. Source ownership found 1,173
+files; `git diff --check` passed. No full suite was run.
 
-F233 is selected: make `ScheduleImportApplyRequest` the shared repository-core
-input, with `ScheduleImportPlan` retained as a validated v1 edge adapter into
-that same core. Remove the typed-v2 round-trip through the plan while
-preserving legacy API behavior and validation messages/order. The typed core
-must validate direct calls explicitly, keep fresh-state checks and rejection
-before writes, share one transaction/rollback path, and preserve summaries and
-normal/intensive behavior. Add typed and legacy parity, including malformed
-typed actions and modes. This uses the existing v2 write contract without a
-second persistence command. Phase 2 remains In Progress/Open; Gates 1 and 2
-remain Partial. See the [Phase 2 progress log](03-Phase-2-Progress-Log.md) for
-F232 verification evidence.
+F234 is selected to centralize Qt-free `ScheduleImportApplyRequest`
+validation for the UseCase and direct repository entry point. Preserve
+repository direct-call validation, the validated v1 plan edge, validation
+order, and detailed boundary-local messages. Add coverage rejecting an invalid
+intensive-mode enum for a normal schedule at both boundaries; the repository
+currently rejects it while the UseCase accepts it. Phase 2 remains
+In Progress/Open; Gates 1 and 2 remain Partial.

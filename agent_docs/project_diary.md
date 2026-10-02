@@ -2008,10 +2008,19 @@ its fresh-state checks for both typed and v1 plan callers; put any interim
 request adapter at the repository boundary rather than duplicating writes or
 extending the legacy service with the Application DTO.
 
-## 2026-10-02 - F233 Schedule Import shared apply core
+## 2026-10-02 - F233 Schedule Import shared apply core accepted
 
 Use the existing typed ApplyRequest as the shared repository-core input and
 keep ScheduleImportPlan only at the v1 edge. This removes the v2 plan
 round-trip without introducing a second persistence command; both entrypoints
-must preserve their validation messages while sharing fresh-state and
-transactional behavior.
+preserve their validated results while sharing fresh-state and transactional
+behavior. Direct typed requests need their own malformed-index and
+action-target rejection coverage because they bypass the legacy plan edge.
+
+## 2026-10-02 - F234 typed apply validation
+
+Centralize typed ApplyRequest validation for the UseCase and direct repository
+entrypoint, while keeping the repository boundary check and localized message
+formatting. Reject an invalid intensive-mode enum even for a normal schedule
+at both entrypoints so the same typed request cannot pass one boundary and
+fail the other. Preserve the v1 ScheduleImportPlan validation path.

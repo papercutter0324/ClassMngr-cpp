@@ -2874,13 +2874,31 @@ stale/overlap rejection, write-failure rollback, and intensive mapping
 coverage passed. Source ownership found one owner for 1,172 files, and
 `git diff --check` passed; no full suite ran.
 
-F233 is selected to remove the typed-to-plan adapter from the repository
-write core. Make the typed `ScheduleImportApplyRequest` the shared core input;
-keep the legacy `ScheduleImportPlan` API as a validated v1 edge adapter into
-that same core. Preserve policy/error order, repository-time fresh-state
-checks, transaction/rollback, summaries, and intensive schedule behavior.
-Two independent Explorer lanes mapped the remaining plan data flow and
-compared direct typed input with a separate persistence command. The current
-ApplyRequest already serves as the v2 write contract, so reuse it and avoid a
-second command representation. Phase 2 remains In Progress/Open; Gates 1 and
-2 remain Partial.
+## Current Phase 2 position - 2026-10-02 (F233 accepted; F234 selected)
+
+F233 source commit `2cb853e9` makes typed `ScheduleImportApplyRequest` the
+shared repository-core input. The legacy `ScheduleImportPlan` API remains a
+validated v1 edge adapter; both paths use the same fresh-state reads,
+validation, transaction, rollback, and summary logic. The Application
+request type now has its own Qt-free header.
+
+The Application ApplyUseCase, Platform ApplyPort, and Schedule Import
+repository CTests passed 3/3. Direct malformed-request verification covered
+an out-of-range candidate index and four teacher/class action-target
+mismatches; each failure left the persisted snapshot unchanged. The malformed
+slot passed 3 QtTest cases, and the repository CTest passed 1/1. The focused
+dialog Apply and policy-message slots passed. The full Dialog aggregate had
+34 passes and only the three established baseline failures:
+`acceptedReviewCanTearDownSourceDialog`, `mismatchedProfileRequiresConfirmation`,
+and `reviewPreviewUsesSavedScheduleDisplaySettings`. Source ownership found
+one owner for 1,173 handwritten files, and `git diff --check` passed. No full
+suite ran.
+
+F234 is selected to centralize typed ApplyRequest validation in a Qt-free
+Application helper used by both the ApplyUseCase and direct repository
+entrypoint. Keep direct repository validation, the v1 plan validator, and
+localized error formatting at their existing boundaries. Explicitly reject
+an invalid intensive-mode enum for normal schedules at both entrypoints; the
+repository already rejects it while the UseCase currently accepts it. Keep
+validation order and detailed messages stable. Phase 2 remains In
+Progress/Open; Gates 1 and 2 remain Partial.
