@@ -93,6 +93,37 @@ add_test(
     COMMAND ClassMngrNextApplicationRosterCustomColumnNamePolicyTests
 )
 
+# Keep custom roster-column append and admission independent of Qt.
+add_executable(
+    ClassMngrNextApplicationRosterCustomColumnAppendTests
+    tests/next_application_roster_custom_column_append_tests.cpp
+)
+target_compile_features(
+    ClassMngrNextApplicationRosterCustomColumnAppendTests
+    PRIVATE
+        cxx_std_23
+)
+set_target_properties(
+    ClassMngrNextApplicationRosterCustomColumnAppendTests
+    PROPERTIES
+        AUTOMOC OFF
+        AUTOUIC OFF
+        AUTORCC OFF
+)
+set_property(
+    TARGET ClassMngrNextApplicationRosterCustomColumnAppendTests
+    PROPERTY CLASSMNGR_STANDALONE_CPP_TEST TRUE
+)
+target_link_libraries(
+    ClassMngrNextApplicationRosterCustomColumnAppendTests
+    PRIVATE
+        ClassMngrNext::Application
+)
+add_test(
+    NAME ClassMngrNextApplicationRosterCustomColumnAppendTests
+    COMMAND ClassMngrNextApplicationRosterCustomColumnAppendTests
+)
+
 # Keep custom roster-column removal eligibility independent of Qt.
 add_executable(
     ClassMngrNextApplicationRosterCustomColumnRemovalPolicyTests

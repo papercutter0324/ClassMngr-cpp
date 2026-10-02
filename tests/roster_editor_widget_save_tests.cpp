@@ -16,7 +16,9 @@
 #include <QAction>
 #include <QApplication>
 #include <QHeaderView>
+#include <QInputDialog>
 #include <QListWidget>
+#include <QLineEdit>
 #include <QMenu>
 #include <QPushButton>
 #include <QSignalSpy>
@@ -144,6 +146,7 @@ class RosterEditorWidgetSaveTests final : public QObject
 private slots:
     void manualSaveCleansOnSuccessAndStaysDirtyOnFailure();
     void autosavePersistsOrdinaryRosterWithoutReloading();
+    void customColumnAdditionSelectionLayoutAutosaveAndPersistence();
     void rowMovePreservesSelectionAndSchedulesAutosave();
     void rowRemovalConfirmationSelectionAndAutosave();
     void customColumnRemovalConfirmationSelectionWidthAndAutosave();
@@ -221,6 +224,112 @@ autosavePersistsOrdinaryRosterWithoutReloading()
         model,
         QStringLiteral("English")
         ))).toString(), QStringLiteral("Carol"));
+}
+
+void RosterEditorWidgetSaveTests::
+customColumnAdditionSelectionLayoutAutosaveAndPersistence()
+{
+    RosterEditorFixture fixture;
+    QString error;
+    QVERIFY2(fixture.initialize(&error), qPrintable(error));
+
+    Roster roster;
+    roster.columns = Roster::BaseColumns;
+    roster.columnWidths = {211, 143, 166, 167, 168, 169};
+    roster.rows = {
+        {
+            QStringLiteral("Amy"),
+            QStringLiteral("\uAE40\uBBFC\uC9C0"),
+            QStringLiteral("A+"),
+            QStringLiteral("B"),
+            QStringLiteral("C"),
+            QStringLiteral("D")
+        }
+    };
+    QVERIFY(fixture.services.rosterService()->saveRoster(fixture.classId, roster));
+
+    FakeUserPromptService prompts;
+    ScopedPromptService promptScope(&prompts);
+
+    RosterEditorWidget editor(&fixture.services);
+    editor.loadClass(Classroom(QStringLiteral("Column addition test"), fixture.classId));
+    auto* const model = editor.findChild<RosterModel*>();
+    auto* const table = editor.findChild<RosterTableView*>(
+        QStringLiteral("rosterTable")
+        );
+    auto* const autosave = editor.findChild<AutosaveCoordinator*>();
+    QVERIFY(model);
+    QVERIFY(table);
+    QVERIFY(autosave);
+
+    QPushButton* addColumnButton = nullptr;
+    for (QPushButton* button : editor.findChildren<QPushButton*>())
+    {
+        if (button->text() == QStringLiteral("Add Column"))
+        {
+            addColumnButton = button;
+            break;
+        }
+    }
+    QVERIFY(addColumnButton);
+
+    autosave->setDebounceInterval(10);
+    QSignalSpy saveSpy(autosave, &AutosaveCoordinator::saveRequested);
+    QVERIFY(saveSpy.isValid());
+
+    bool inputDialogHandled = false;
+    QTimer::singleShot(
+        0,
+        &editor,
+        [&inputDialogHandled]()
+        {
+            auto* dialog = qobject_cast<QInputDialog*>(
+                QApplication::activeModalWidget()
+                );
+            if (!dialog)
+            {
+                return;
+            }
+
+            inputDialogHandled = dialog->windowTitle() == QStringLiteral("Add Column");
+            dialog->setTextValue(QStringLiteral("  Parent\t\u00a0 Contact  "));
+            dialog->accept();
+        }
+        );
+    addColumnButton->click();
+
+    QVERIFY(inputDialogHandled);
+    const int addedColumn = Roster::BaseColumns.size();
+    QCOMPARE(model->columnCount(), addedColumn + 1);
+    QCOMPARE(model->columnName(addedColumn), QStringLiteral("Parent Contact"));
+    QCOMPARE(table->currentIndex(), model->index(0, addedColumn));
+    QVERIFY(table->findChild<QLineEdit*>());
+    QCOMPARE(
+        table->horizontalHeader()->sectionResizeMode(addedColumn),
+        QHeaderView::Interactive
+        );
+    QCOMPARE(table->columnWidth(addedColumn), 220);
+    QCOMPARE(model->rowValues(0).at(0), QStringLiteral("Amy"));
+    QVERIFY(model->rowValues(0).last().isEmpty());
+    QVERIFY(model->isDirty());
+    QVERIFY(editor.hasUnsavedChanges());
+    QVERIFY(autosave->isDirty());
+    QCOMPARE(saveSpy.count(), 0);
+
+    QTRY_VERIFY_WITH_TIMEOUT(saveSpy.count() >= 1, 5'000);
+    QCOMPARE(saveSpy.constFirst().at(0).toBool(), false);
+    QTRY_VERIFY_WITH_TIMEOUT(!editor.hasUnsavedChanges(), 5'000);
+
+    const auto saved = fixture.services.rosterService()->roster(fixture.classId);
+    QVERIFY(saved);
+    QCOMPARE(
+        saved->columns,
+        Roster::BaseColumns + QStringList{QStringLiteral("Parent Contact")}
+        );
+    QCOMPARE(saved->rows.at(0).at(0), QStringLiteral("Amy"));
+    QVERIFY(saved->rows.at(0).at(6).isEmpty());
+    QCOMPARE(saved->columnWidths.at(6), table->columnWidth(addedColumn));
+    QCOMPARE(prompts.messages.size(), 0);
 }
 
 void RosterEditorWidgetSaveTests::

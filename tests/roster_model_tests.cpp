@@ -885,16 +885,22 @@ void RosterModelTests::customColumnAdmissionMatchesLegacyQtNamingRules()
         QCOMPARE(newReason, oldReason);
     }
 
+    const Roster originalRoster = model.toRoster();
     const QStringList originalColumns = model.columnNames();
     for (const QString& rejected : {
              QString(),
              QStringLiteral("Review"),
+             QString::fromUtf8("CAF\xC3\x89"),
+             QString::fromUtf8("STRA\xE1\xBA\x9E" "E"),
+             QString::fromUtf8("\xCF\x82IGMA"),
+             QStringLiteral("kelvin"),
              QStringLiteral("Fall"),
              QStringLiteral("Autumn")
          })
     {
         QVERIFY(!model.insertCustomColumn(rejected));
         QCOMPARE(model.columnNames(), originalColumns);
+        QCOMPARE(model.toRoster().rows, originalRoster.rows);
         QVERIFY(!model.isDirty());
     }
 }
@@ -1002,6 +1008,9 @@ void RosterModelTests::insertCustomColumnPreservesRowsSignalsAndDirtyState()
     QCOMPARE(model.errorsForCell(0, 0), priorValidation);
 
     const auto after = model.toRoster();
+    QStringList expectedColumns = before.columns;
+    expectedColumns.append(QStringLiteral("Parent Contact"));
+    QCOMPARE(after.columns, expectedColumns);
     QCOMPARE(after.rows.size(), before.rows.size());
     for (int rowIndex = 0; rowIndex < before.rows.size(); ++rowIndex)
     {

@@ -2,6 +2,7 @@
 
 #include "features/roster/ui/roster_constants.h"
 #include "features/roster/ui/roster_qt_text_adapter.h"
+#include "next/application/roster_custom_column_append.h"
 #include "next/application/roster_custom_column_name_policy.h"
 #include "next/application/roster_custom_column_removal_policy.h"
 
@@ -35,6 +36,47 @@ bool qtCaseInsensitiveEquals(
         RosterUi::QtTextAdapter::fromUtf16String(right),
         Qt::CaseInsensitive
         ) == 0;
+}
+
+ClassMngr::Next::Application::RosterSnapshot applicationSnapshot(
+    const QStringList& columns,
+    const QList<QStringList>& rows
+    )
+{
+    ClassMngr::Next::Application::RosterSnapshot snapshot;
+    snapshot.columns = toUtf16(columns);
+    snapshot.rows.reserve(static_cast<std::size_t>(rows.size()));
+    for (const QStringList& sourceRow : rows)
+    {
+        snapshot.rows.push_back(toUtf16(sourceRow));
+    }
+    return snapshot;
+}
+
+QStringList qtStrings(
+    const std::vector<std::u16string>& values
+    )
+{
+    QStringList result;
+    result.reserve(static_cast<qsizetype>(values.size()));
+    for (const std::u16string& value : values)
+    {
+        result.append(RosterUi::QtTextAdapter::fromUtf16String(value));
+    }
+    return result;
+}
+
+QList<QStringList> qtRows(
+    const std::vector<std::vector<std::u16string>>& rows
+    )
+{
+    QList<QStringList> result;
+    result.reserve(static_cast<qsizetype>(rows.size()));
+    for (const std::vector<std::u16string>& sourceRow : rows)
+    {
+        result.append(qtStrings(sourceRow));
+    }
+    return result;
 }
 
 } // namespace
@@ -134,16 +176,19 @@ bool RosterModel::insertCustomColumn(
     const QString& name
     )
 {
-    QString reason;
-
-    if (!canAddColumn(name, &reason))
+    const auto result =
+        ClassMngr::Next::Application::appendRosterCustomColumn(
+            applicationSnapshot(m_columns, m_rows),
+            RosterUi::QtTextAdapter::toUtf16String(name),
+            toUtf16(Roster::BaseColumns),
+            qtCaseInsensitiveEquals
+            );
+    const auto* appended =
+        std::get_if<ClassMngr::Next::Application::RosterSnapshot>(&result);
+    if (!appended)
     {
-        Q_UNUSED(reason);
         return false;
     }
-
-    const QString normalized =
-        normalizedColumnName(name);
 
     const int column =
         m_columns.size();
@@ -154,12 +199,8 @@ bool RosterModel::insertCustomColumn(
         column
         );
 
-    m_columns.append(normalized);
-
-    for (QStringList& row : m_rows)
-    {
-        row.append(QString());
-    }
+    m_columns = qtStrings(appended->columns);
+    m_rows = qtRows(appended->rows);
 
     endInsertColumns();
 
