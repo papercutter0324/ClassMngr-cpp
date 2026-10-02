@@ -6294,6 +6294,33 @@ void ScheduleImportTests::typedApplyRejectsInvalidEnumsBeforeWrites()
         QVERIFY(!repository.applyTyped(invalidIntensiveMode).has_value());
         QCOMPARE(persistedScheduleImportSnapshot(database), before);
 
+        auto invalidNormalScheduleMode = typedCreateRequest({
+            typedCandidate(u"\uAE40", u"E5", u"Zeus")
+        });
+        invalidNormalScheduleMode.intensiveMode =
+            ClassMngr::Next::Application::ScheduleImportPlanIntensiveMode::Invalid;
+        const auto invalidNormalModeResult =
+            repository.applyTyped(invalidNormalScheduleMode);
+        QVERIFY(!invalidNormalModeResult.has_value());
+        QVERIFY2(
+            invalidNormalModeResult.error().contains(
+                QStringLiteral("Choose how the existing intensive schedule should be handled.")),
+            qPrintable(invalidNormalModeResult.error())
+            );
+        QCOMPARE(persistedScheduleImportSnapshot(database), before);
+
+        invalidNormalScheduleMode.diagnosticsAcknowledged = false;
+        invalidNormalScheduleMode.diagnostics.push_back({});
+        const auto invalidModeAndDiagnosticsResult =
+            repository.applyTyped(invalidNormalScheduleMode);
+        QVERIFY(!invalidModeAndDiagnosticsResult.has_value());
+        QVERIFY2(
+            invalidModeAndDiagnosticsResult.error().contains(
+                QStringLiteral("Unrecognized timetable cells must be acknowledged")),
+            qPrintable(invalidModeAndDiagnosticsResult.error())
+            );
+        QCOMPARE(persistedScheduleImportSnapshot(database), before);
+
         database.close();
     }
     QSqlDatabase::removeDatabase(connectionName);

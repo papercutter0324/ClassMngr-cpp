@@ -47,6 +47,17 @@ int main()
         && success->ignoredCells == 7 && success->profileNameUpdated);
     require(port.calls == 1);
 
+    auto invalidNormalScheduleMode = validRequest();
+    invalidNormalScheduleMode.intensiveMode =
+        ScheduleImportPlanIntensiveMode::Invalid;
+    const auto rejectedNormalScheduleMode =
+        ScheduleImportApplyUseCase::execute(invalidNormalScheduleMode, port);
+    require(!rejectedNormalScheduleMode
+        && rejectedNormalScheduleMode.error().policyIssue.has_value());
+    require(rejectedNormalScheduleMode.error().policyIssue->code
+        == ScheduleImportPlanEligibilityIssueCode::InvalidIntensiveMode);
+    require(port.calls == 1);
+
     const auto teacherId = ClassMngr::Next::Domain::TeacherId::fromString("7");
     require(teacherId.has_value());
     Port targetPort;
@@ -63,6 +74,8 @@ int main()
         require(rejectedTarget.error().teacherTargetIssue->code
             == ScheduleImportApplyTeacherTargetIssueCode::ExistingTeacherMissingTarget);
         require(!rejectedTarget.error().policyIssue.has_value());
+        require(rejectedTarget.error().message
+            == u"Choose an existing Korean teacher for this resolution.");
         require(targetPort.calls == expectedTargetCalls);
 
         missingTeacherTarget.teachers[0].targetTeacherId = teacherId;
@@ -87,6 +100,8 @@ int main()
             == ScheduleImportApplyTeacherTargetIssueCode::NonExistingTeacherHasTarget);
         require(rejectedTarget.error().teacherTargetIssue->targetTeacherId == teacherId);
         require(!rejectedTarget.error().policyIssue.has_value());
+        require(rejectedTarget.error().message
+            == u"This Korean teacher resolution cannot use an existing teacher.");
         require(targetPort.calls == expectedTargetCalls);
     }
 
@@ -96,6 +111,14 @@ int main()
     require(!rejected && rejected.error().policyIssue.has_value());
     require(rejected.error().policyIssue->code
         == ScheduleImportPlanEligibilityIssueCode::UnacknowledgedDiagnostics);
+    require(port.calls == 1);
+
+    invalid.intensiveMode = ScheduleImportPlanIntensiveMode::Invalid;
+    const auto rejectedDiagnosticsBeforeNormalMode =
+        ScheduleImportApplyUseCase::execute(invalid, port);
+    require(!rejectedDiagnosticsBeforeNormalMode
+        && rejectedDiagnosticsBeforeNormalMode.error().policyIssue->code
+            == ScheduleImportPlanEligibilityIssueCode::UnacknowledgedDiagnostics);
     require(port.calls == 1);
 
     invalid = validRequest();

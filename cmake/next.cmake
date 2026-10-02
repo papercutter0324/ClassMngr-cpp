@@ -222,6 +222,7 @@ set(CLASSMNGR_NEXT_APPLICATION_SOURCES
     src/next/application/schedule_import_plan_validation.h
     src/next/application/schedule_import_apply_review_decisions.h
     src/next/application/schedule_import_apply_request.h
+    src/next/application/schedule_import_apply_validation.h
     src/next/application/schedule_import_apply_use_case.h
     src/next/application/schedule_import_matching_projection.h
     src/next/application/schedule_import_review_summary_projection.h

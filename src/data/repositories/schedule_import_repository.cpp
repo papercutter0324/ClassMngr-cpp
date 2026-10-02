@@ -9,7 +9,7 @@
 #include "features/classes/config/class_info_config.h"
 #include "features/schedule/services/schedule_import_plan_validator.h"
 #include "features/teacher/import/teacher_import_name_utils.h"
-#include "next/application/schedule_import_apply_review_decisions.h"
+#include "next/application/schedule_import_apply_validation.h"
 #include "next/application/schedule_import_matching_projection.h"
 #include "next/application/schedule_import_state_validation.h"
 #include "next/domain/schedule_entry.h"
@@ -218,74 +218,33 @@ ScheduleImportApplyRequest applyRequestFromLegacyPlan(
     return request;
 }
 
-std::optional<QString> typedRequestValidationFailure(
-    const ScheduleImportApplyRequest& request
+QString applyValidationFailureMessage(
+    const ScheduleImportApplyRequest& request,
+    const ScheduleImportApplyFailure& failure
     )
 {
-    ScheduleImportPlanEligibilityRequest policy;
-    policy.intensiveSchedule = request.intensiveSchedule;
-    policy.intensiveMode = request.intensiveMode;
-    policy.hasDiagnostics = !request.diagnostics.empty();
-    policy.diagnosticsAcknowledged = request.diagnosticsAcknowledged;
-    policy.reviewDecisions = projectScheduleImportApplyReviewDecisions(request);
-    for (const ScheduleImportApplyCandidate& candidate : request.candidates)
-    {
-        ScheduleImportPlanEligibilityCandidate item;
-        item.grade = scheduleImportApplyUtf8(candidate.grade);
-        item.level = scheduleImportApplyUtf8(candidate.level);
-        item.teacherKey = candidate.teacherKey;
-        item.teacherName = candidate.teacherName;
-        for (const ScheduleImportApplyTime& time : candidate.times)
-        {
-            item.weekdays.push_back(scheduleImportApplyUtf8(time.day));
-        }
-        policy.candidates.push_back(std::move(item));
-    }
-    for (const ScheduleImportApplyClass& classroom : request.classes)
-    {
-        policy.classColors.push_back({
-            classroom.candidateIndex,
-            scheduleImportApplyUtf8(classroom.classColor),
-            scheduleImportApplyUtf8(classroom.fontColor)
-        });
-    }
-
-    if (const auto issue = validateScheduleImportPlanEligibility(policy))
-    {
-        return ScheduleImportPlanValidator::policyFailureMessage(request, *issue);
-    }
-
-    if (request.intensiveMode != ScheduleImportPlanIntensiveMode::UpdateExisting
-        && request.intensiveMode
-            != ScheduleImportPlanIntensiveMode::ReplaceWithNew)
+    if (failure.policyIssue)
     {
         return ScheduleImportPlanValidator::policyFailureMessage(
             request,
-            ScheduleImportPlanEligibilityIssue{
-                ScheduleImportPlanEligibilityIssueCode::InvalidIntensiveMode
-            }
+            *failure.policyIssue
             );
     }
-
-    for (const ScheduleImportApplyTeacher& teacher : request.teachers)
+    if (failure.teacherTargetIssue)
     {
-        const bool needsTarget =
-            teacher.action == ScheduleImportReviewTeacherAction::Reuse
-            || teacher.action == ScheduleImportReviewTeacherAction::UpdateRoom;
-        if (needsTarget && !teacher.targetTeacherId)
+        switch (failure.teacherTargetIssue->code)
         {
+        case ScheduleImportApplyTeacherTargetIssueCode::ExistingTeacherMissingTarget:
             return QObject::tr(
                 "Choose an existing Korean teacher for this resolution."
                 );
-        }
-        if (!needsTarget && teacher.targetTeacherId)
-        {
+        case ScheduleImportApplyTeacherTargetIssueCode::NonExistingTeacherHasTarget:
             return QObject::tr(
                 "This Korean teacher resolution cannot use an existing teacher."
                 );
         }
     }
-    return std::nullopt;
+    return QString::fromStdU16String(failure.message);
 }
 
 QString teacherKey(
@@ -1125,9 +1084,9 @@ Result<ScheduleImportSummary> ScheduleImportRepository::applyTyped(
             );
     }
 
-    if (const auto error = typedRequestValidationFailure(request))
+    if (const auto failure = validateScheduleImportApplyRequest(request))
     {
-        return std::unexpected(*error);
+        return std::unexpected(applyValidationFailureMessage(request, *failure));
     }
 
     ScheduleImportApplyRequest normalizedRequest = request;
