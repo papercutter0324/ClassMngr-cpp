@@ -92,8 +92,9 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
   for custom-column removal eligibility; F243 is accepted for app-less custom-
   column append; F244 is accepted for roster-transfer destination preparation;
   F245 is accepted for Korean-name suffix suggestion policy; F246 is accepted
-  for same-grade roster transfer-target eligibility; F247 is selected for
-  Speaking Evaluation roster-name import planning.
+  for same-grade roster transfer-target eligibility; F247 is accepted for
+  Speaking Evaluation roster-name import planning; F248 is selected for
+  Qt-free duplicate peer-row lookup.
   The prior F123 candidate wording is historical;
   current Teacher Profile integration status is recorded in the progress log.
   Gates 1 and 2
@@ -250,27 +251,30 @@ No new v2 production path depends on DataService, MainWindow, PageManager, or a 
 
 Earlier verified slices and cumulative exit-gate snapshots are archived in the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 
-## Latest progress update - 2026-10-02 (F246 accepted; F247 selected)
+## Latest progress update - 2026-10-02 (F247 accepted; F248 selected)
 
-F246, source commit `b1a86db2`, extracts same-grade roster transfer-target
-eligibility. Fresh Windows x64 Debug/Ninja/MSVC 19.51/Qt 6.12 verification
-found one owner for 1,198 handwritten sources; three focused CTests passed:
-app-less eligibility, RosterEditorWidgetSave, and TestingClassesPage.
-`git diff --check` passed. Coverage limitation: no focused UI assertion reaches
-nonempty-grade target enumeration or checks `classInfo` call counts; policy
-tests cover the logic and the widget source compiled. No full suite ran.
+F247, source commit `7021e657`, extracts `SpeakingEvalPage::nameImportChanges`
+into a Qt-free Application planner. It preserves Qt-compatible trimming,
+U+001F pair-key/collision behavior, duplicate filtering and roster order, and
+blank rows. Fresh Windows x64 Debug/Ninja/MSVC 19.51/Qt 6.12 verification found
+one owner for 1,200 handwritten sources. Both focused CTests passed: the
+standalone planner and SpeakingEvalPageSave. `git diff --check` passed. The page
+regression checks case-insensitive first-header lookup, applied values, dirty
+state, and success/already-up-to-date notices. No full suite ran. Coverage
+limits: no exhaustive Qt whitespace-code-point comparison; partial editability
+cannot occur in the current SpeakingEvalModel because both name cells are
+editable, though per-cell checks remain at the UI boundary.
 
-F247 is selected: extract `SpeakingEvalPage::nameImportChanges` into a Qt-free
-Application planner. Preserve case-insensitive first-match column lookup,
-Qt-compatible trimming, `StudentNameUtils::namePairKey` separator/collision
-semantics, roster order, incomplete-name and duplicate filtering against
-existing and earlier imported rows; require both English and Korean name cells
-to be blank for availability, preserve editable-cell checks, and omit unchanged
-cells. Keep roster lookup,
-missing/empty-column messages, page/model editability checks, applying edits,
-and result messages at the UI boundary. Proposed focused coverage: standalone
-planner tests and a `SpeakingEvalPageSaveTests` import-action regression. Two
-completed scans informed this selection. The cumulative Gate 1 map is
-historical and ends at F143
+F248 is selected: extract `StudentNameUtils::duplicateNameRows` into Qt-free
+Application for RosterModel and SpeakingEvalModel, sharing F247's trimmed
+UTF-16 U+001F pair-key helper where clean. Preserve invalid row/column handling,
+incomplete names, case-sensitive exact matching, collision semantics,
+selected-row exclusion, and candidate row order. Keep column selection,
+prompts/actions, and duplicate resolution in the models/page. Proposed tests:
+standalone invalid-index, trim, order, and collision cases; both model-wrapper
+tests; and a focused Speaking Evaluation page duplicate-flow regression where
+practical. Paired scans differed: the alternative was AI-batch eligibility/
+review status. The shared cross-model lookup is narrower and reuses F247's
+pair-key rule. The cumulative Gate 1 map is historical and ends at F143
 ([map](03-Phase-2-Progress-Log.md#L7570)); Gates 1 and 2 remain Partial. Phase
 2 remains In Progress/Open.

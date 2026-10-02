@@ -4962,13 +4962,26 @@ tests did not reach nonempty-grade target enumeration or assert class-info
 lookup counts; the app-less tests directly cover the policy's ID and grade
 decisions.
 
-F247 is selected to extract `SpeakingEvalPage::nameImportChanges` into a
-Qt-free Application planner. Preserve case-insensitive first roster-column
-match, Qt-compatible name trimming and legacy separator-based pair keys,
-source order, incomplete and duplicate filtering against existing/imported
-pairs, and the rule that both target name cells must be blank. Keep roster
-reads, missing/empty-column feedback, per-cell editability checks, applying
-edits, and result messages at the page boundary. Add focused app-less planner
-cases and a page-level Import Names regression; no dedicated import planning
-coverage currently exists. Phase 2 remains In Progress/Open, with Gates 1 and 2
-Partial.
+F247 source commit `7021e657` extracts Speaking Evaluation roster-name import
+planning into a Qt-free Application policy. It preserves Qt-compatible
+trimming, complete-pair filtering, legacy U+001F keys and delimiter collisions,
+existing/imported duplicate filtering, source order, and blank-row assignment
+order. The page retains first case-insensitive column lookup, per-cell
+editability and unchanged-value checks, `applyChanges`, and messages.
+Independent fresh x64 Debug/Ninja/MSVC 19.51/Qt 6.12 verification validated
+one owner for 1,200 handwritten sources; the planner and SpeakingEvalPageSave
+CTest entries passed 2/2. Page regression covers first header selection,
+applied values, dirty state, and success/already-up-to-date notices.
+`git diff --check` passed; no full suite ran. The planner uses the shared
+Qt-compatible whitespace helper but was not exhaustively compared across all
+Unicode whitespace; current model flags make both name cells editable, so a
+partial-editability page scenario is not available.
+
+F248 is selected to extract interactive duplicate-peer row lookup from
+`StudentNameUtils::duplicateNameRows` into Qt-free Application shared by
+RosterModel and SpeakingEvalModel. Reuse F247's trimmed UTF-16 U+001F key where
+clean, preserving delimiter collisions, incomplete-pair behavior, selected-row
+exclusion, and candidate order. Keep column selection and duplicate prompts,
+actions, and resolution in the models/page. Add app-less policy cases, model
+wrapper checks, and a focused Speaking Evaluation duplicate-resolution
+regression. Phase 2 remains In Progress/Open, with Gates 1 and 2 Partial.

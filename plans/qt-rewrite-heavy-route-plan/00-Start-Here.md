@@ -6,9 +6,9 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-02
-- Current milestone: Phase 2 remains in progress. F246 (same-grade roster
-  transfer-target eligibility) is accepted; F247 (Qt-free Speaking Evaluation
-  roster-name import planning) is selected. Gates 1 and 2 remain Partial, with
+- Current milestone: Phase 2 remains in progress. F247 (Qt-free Speaking
+  Evaluation roster-name import planning) is accepted; F248 (Qt-free duplicate
+  peer-row lookup) is selected. Gates 1 and 2 remain Partial, with
   broader feature migration, parity, and 96-class Release memory evidence still
   open.
   See the

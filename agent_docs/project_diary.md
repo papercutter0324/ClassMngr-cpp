@@ -2134,3 +2134,24 @@ Preserve first matching case-insensitive roster columns, trimmed legacy pair
 keys, source order, duplicate filtering, blank-name-row eligibility, and
 unchanged-cell omission. Add both policy cases and a page-level import-action
 regression because no dedicated coverage currently exercises this path.
+
+## 2026-10-02 - F247 roster-name import planning accepted; F248 selected
+
+Commit `7021e657` moves deterministic Speaking Evaluation roster-name matching
+and blank-row assignments into Qt-free Application. Keep first-match column
+lookup, page/model editability checks and change application in the UI adapter.
+Preserve the legacy trimmed U+001F pair key, including collisions; the query
+uses the same Qt-compatible whitespace helper established by earlier slices.
+The page regression verifies mixed-case duplicate headers, imports in source
+order, preserves unrelated notes, and reports both successful and repeated
+imports. Independent verification passed the standalone planner and page-save
+CTest entries with one-owner validation for 1,200 handwritten files. Current
+model flags make both name cells editable, so the adapter's partial-editability
+branch is preserved but not exercised through the page test.
+
+For F248, extract interactive duplicate-peer row lookup shared by RosterModel
+and SpeakingEvalModel. Reuse F247's trimmed UTF-16 pair-key rule where clean,
+but preserve the legacy U+001F collision behavior, selected-row exclusion, and
+candidate order. Keep column choice and duplicate prompts/actions in their
+current owners. Prefer this cross-model boundary over the paired scan's AI
+batch eligibility candidate.

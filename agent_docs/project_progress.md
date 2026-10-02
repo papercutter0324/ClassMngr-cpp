@@ -2884,7 +2884,7 @@ stale/overlap rejection, write-failure rollback, and intensive mapping
 coverage passed. Source ownership found one owner for 1,172 files, and
 `git diff --check` passed; no full suite ran.
 
-## Current Phase 2 position - 2026-10-02 (F246 accepted; F247 selected)
+## Current Phase 2 position - 2026-10-02 (F247 accepted; F248 selected)
 
 F236 source commit `5877bba0` carries structured typed policy, teacher-target,
 and fresh-state failures from Repository through Platform to the review dialog.
@@ -2998,12 +2998,28 @@ RosterEditorWidgetSave, and TestingClassesPage focused CTests passed 3/3.
 enumeration or assert `classInfo` lookup counts; policy decisions are covered
 directly. No full suite ran.
 
-F247 is selected to extract `SpeakingEvalPage::nameImportChanges` planning into
-a Qt-free Application policy. Preserve case-insensitive first-match roster
-column lookup, Qt-compatible trimming and `StudentNameUtils::namePairKey`
-separator behavior, source order, incomplete/duplicate-pair filtering against
-existing and earlier imported rows, and the requirement that both name cells
-be blank. Keep roster reads, missing-column feedback, per-cell editability,
-unchanged-cell omission, applying edits, and result messages at the page/model
-boundary. Add app-less planner cases and a page-level Import Names regression.
-Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial.
+F247 source commit `7021e657` extracts roster-name import planning into a
+Qt-free Application policy. It preserves Qt-compatible trimming, complete-pair
+filtering, the legacy U+001F pair key and delimiter collisions, existing and
+imported duplicate filtering, source order, and blank-row assignment order.
+The page retains case-insensitive first-header lookup, per-cell editability,
+unchanged-cell checks, applyChanges, and UI messages. Fresh x64 Debug/Ninja/
+MSVC 19.51/Qt 6.12 verification found one owner for 1,200 handwritten sources;
+the policy and SpeakingEvalPageSave focused CTests passed 2/2. The page test
+checks first case-insensitive header selection, applied values, dirty state,
+and success/already-up-to-date messages. `git diff --check` passed; no full
+suite ran. Coverage uses the shared Qt-compatible whitespace helper without
+exhaustively comparing all Unicode whitespace, and the current model does not
+allow a partial-editability test for its two name cells.
+
+F248 is selected to extract interactive duplicate-peer row lookup from
+`StudentNameUtils::duplicateNameRows` into a Qt-free Application query shared
+by RosterModel and SpeakingEvalModel. Reuse the trimmed UTF-16 U+001F pair-key
+behavior from F247 where clean; preserve invalid row/column handling,
+incomplete pairs, exact case-sensitive matching and delimiter collisions,
+selected-row exclusion, and candidate row order. Keep column selection,
+translated prompts/actions, and duplicate resolution in their current model/
+page owners. Two scans disagreed between this cross-model helper and AI-batch
+eligibility/review policy; choose the narrower shared lookup. Add app-less
+policy cases and focused model/page regressions. Phase 2 remains In Progress/
+Open; Gates 1 and 2 remain Partial.
