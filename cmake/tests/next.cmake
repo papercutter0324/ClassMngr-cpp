@@ -93,6 +93,37 @@ add_test(
     COMMAND ClassMngrNextApplicationRosterCustomColumnNamePolicyTests
 )
 
+# Keep custom roster-column removal eligibility independent of Qt.
+add_executable(
+    ClassMngrNextApplicationRosterCustomColumnRemovalPolicyTests
+    tests/next_application_roster_custom_column_removal_policy_tests.cpp
+)
+target_compile_features(
+    ClassMngrNextApplicationRosterCustomColumnRemovalPolicyTests
+    PRIVATE
+        cxx_std_23
+)
+set_target_properties(
+    ClassMngrNextApplicationRosterCustomColumnRemovalPolicyTests
+    PROPERTIES
+        AUTOMOC OFF
+        AUTOUIC OFF
+        AUTORCC OFF
+)
+set_property(
+    TARGET ClassMngrNextApplicationRosterCustomColumnRemovalPolicyTests
+    PROPERTY CLASSMNGR_STANDALONE_CPP_TEST TRUE
+)
+target_link_libraries(
+    ClassMngrNextApplicationRosterCustomColumnRemovalPolicyTests
+    PRIVATE
+        ClassMngrNext::Application
+)
+add_test(
+    NAME ClassMngrNextApplicationRosterCustomColumnRemovalPolicyTests
+    COMMAND ClassMngrNextApplicationRosterCustomColumnRemovalPolicyTests
+)
+
 # Keep the cycle-selection rule independent of Qt and the legacy runtime.
 add_executable(
     ClassMngrNextApplicationEvaluationDefaultSelectionTests

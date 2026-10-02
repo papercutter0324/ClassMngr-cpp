@@ -31,6 +31,9 @@ private slots:
     void customColumnAdmissionMatchesLegacyQtNamingRules();
     void customColumnWhitespaceNormalizationMatchesQString();
     void insertCustomColumnPreservesRowsSignalsAndDirtyState();
+    void customColumnRemovalPreservesRulesAndRejectionMessages();
+    void legacyAutumnHeaderRemainsARequiredRemovalAlias();
+    void removeCustomColumnPreservesRowsValidationSignalsAndDirtyState();
     void transferredRowMappingUsesCustomColumnNormalization();
     void rowPoliciesPreserveLeadingBomContent();
     void namePairHelpersDetectDuplicatesAndSuggestSuffix();
@@ -1009,6 +1012,142 @@ void RosterModelTests::insertCustomColumnPreservesRowsSignalsAndDirtyState()
         }
         QVERIFY(after.rows[rowIndex][newColumn].isEmpty());
     }
+}
+
+void RosterModelTests::customColumnRemovalPreservesRulesAndRejectionMessages()
+{
+    Roster roster;
+    roster.columns = Roster::BaseColumns;
+    roster.columns.append({QStringLiteral("Review"), QStringLiteral("Notes")});
+
+    RosterModel model;
+    model.setRoster(roster);
+    const Roster before = model.toRoster();
+
+    QSignalSpy aboutToRemoveSpy(
+        &model,
+        &QAbstractItemModel::columnsAboutToBeRemoved
+        );
+    QSignalSpy removedSpy(
+        &model,
+        &QAbstractItemModel::columnsRemoved
+        );
+    QSignalSpy dirtySpy(&model, &RosterModel::dirtyChanged);
+    QVERIFY(aboutToRemoveSpy.isValid());
+    QVERIFY(removedSpy.isValid());
+    QVERIFY(dirtySpy.isValid());
+
+    QString reason;
+    QVERIFY(!model.canRemoveColumn(-1, &reason));
+    QCOMPARE(reason, QStringLiteral("Select a custom column to remove."));
+    reason.clear();
+    QVERIFY(!model.canRemoveColumn(model.columnCount(), &reason));
+    QCOMPARE(reason, QStringLiteral("Select a custom column to remove."));
+    reason.clear();
+    QVERIFY(!model.canRemoveColumn(0, &reason));
+    QCOMPARE(reason, QStringLiteral("Required roster columns cannot be removed."));
+    reason.clear();
+    QVERIFY(!model.canRemoveColumn(5, &reason));
+    QCOMPARE(reason, QStringLiteral("Required roster columns cannot be removed."));
+    QVERIFY(model.canRemoveColumn(6));
+
+    QVERIFY(!model.removeRosterColumn(-1));
+    QVERIFY(!model.removeRosterColumn(5));
+    QCOMPARE(model.toRoster().columns, before.columns);
+    QCOMPARE(model.toRoster().rows, before.rows);
+    QVERIFY(!model.isDirty());
+    QCOMPARE(aboutToRemoveSpy.count(), 0);
+    QCOMPARE(removedSpy.count(), 0);
+    QCOMPARE(dirtySpy.count(), 0);
+}
+
+void RosterModelTests::legacyAutumnHeaderRemainsARequiredRemovalAlias()
+{
+    Roster roster;
+    roster.columns = Roster::BaseColumns;
+    roster.columns[5] = QStringLiteral("Autumn");
+
+    RosterModel model;
+    model.setRoster(roster);
+
+    QCOMPARE(model.columnName(5), QStringLiteral("Fall"));
+    QString reason;
+    QVERIFY(!model.canRemoveColumn(5, &reason));
+    QCOMPARE(reason, QStringLiteral("Required roster columns cannot be removed."));
+}
+
+void RosterModelTests::removeCustomColumnPreservesRowsValidationSignalsAndDirtyState()
+{
+    Roster roster;
+    roster.columns = Roster::BaseColumns;
+    roster.columns.append({QStringLiteral("Review"), QStringLiteral("Notes")});
+    roster.rows = {
+        studentRow(
+            QStringLiteral("Amy"),
+            QStringLiteral("\uAE40"),
+            QStringLiteral("A+"),
+            QStringLiteral("Review cell")
+            ) + QStringList{QStringLiteral("Family note")},
+        studentRow(
+            QStringLiteral("Ben"),
+            QStringLiteral("\uC774\uC11C\uC900"),
+            QStringLiteral("B"),
+            QStringLiteral("Second review")
+            ) + QStringList{QStringLiteral("Second note")}
+    };
+
+    RosterModel model;
+    model.setRoster(roster);
+    const Roster before = model.toRoster();
+    const QString koreanLengthWarning =
+        QStringLiteral("Korean name has 1 or 5+ syllables. Verify it is correct.");
+    QVERIFY(model.errorsForCell(0, model.koreanNameColumn()).contains(
+        koreanLengthWarning
+        ));
+
+    QSignalSpy aboutToRemoveSpy(
+        &model,
+        &QAbstractItemModel::columnsAboutToBeRemoved
+        );
+    QSignalSpy removedSpy(
+        &model,
+        &QAbstractItemModel::columnsRemoved
+        );
+    QSignalSpy dirtySpy(&model, &RosterModel::dirtyChanged);
+    QVERIFY(aboutToRemoveSpy.isValid());
+    QVERIFY(removedSpy.isValid());
+    QVERIFY(dirtySpy.isValid());
+
+    QVERIFY(model.removeRosterColumn(6));
+
+    QCOMPARE(aboutToRemoveSpy.count(), 1);
+    QCOMPARE(removedSpy.count(), 1);
+    QCOMPARE(
+        aboutToRemoveSpy.constFirst().at(1).toInt(),
+        6
+        );
+    QCOMPARE(
+        aboutToRemoveSpy.constFirst().at(2).toInt(),
+        6
+        );
+    QCOMPARE(dirtySpy.count(), 1);
+    QCOMPARE(dirtySpy.constFirst().at(0).toBool(), true);
+    QVERIFY(model.isDirty());
+
+    const Roster after = model.toRoster();
+    QStringList expectedColumns = before.columns;
+    expectedColumns.removeAt(6);
+    QCOMPARE(after.columns, expectedColumns);
+    QCOMPARE(after.rows.size(), before.rows.size());
+    for (int rowIndex = 0; rowIndex < before.rows.size(); ++rowIndex)
+    {
+        QStringList expectedRow = before.rows.at(rowIndex);
+        expectedRow.removeAt(6);
+        QCOMPARE(after.rows.at(rowIndex), expectedRow);
+    }
+    QVERIFY(model.errorsForCell(0, model.koreanNameColumn()).contains(
+        koreanLengthWarning
+        ));
 }
 
 void RosterModelTests::transferredRowMappingUsesCustomColumnNormalization()

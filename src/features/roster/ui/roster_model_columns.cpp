@@ -3,6 +3,7 @@
 #include "features/roster/ui/roster_constants.h"
 #include "features/roster/ui/roster_qt_text_adapter.h"
 #include "next/application/roster_custom_column_name_policy.h"
+#include "next/application/roster_custom_column_removal_policy.h"
 
 #include <algorithm>
 #include <string>
@@ -173,21 +174,31 @@ bool RosterModel::canRemoveColumn(
     QString* reason
     ) const
 {
-    if (column < 0 || column >= m_columns.size())
+    const ClassMngr::Next::Application::RosterSnapshot roster{
+        .columns = toUtf16(m_columns)
+    };
+    const auto eligibility =
+        ClassMngr::Next::Application::canRemoveRosterCustomColumn(
+            roster,
+            column,
+            toUtf16(Roster::BaseColumns),
+            qtCaseInsensitiveEquals
+            );
+    if (!eligibility.accepted())
     {
-        if (reason)
+        if (reason && eligibility.rejection)
         {
-            *reason = tr("Select a custom column to remove.");
-        }
-
-        return false;
-    }
-
-    if (isRequiredColumn(column))
-    {
-        if (reason)
-        {
-            *reason = tr("Required roster columns cannot be removed.");
+            using ClassMngr::Next::Application::
+                RosterCustomColumnRemovalRejection;
+            switch (*eligibility.rejection)
+            {
+            case RosterCustomColumnRemovalRejection::InvalidColumnIndex:
+                *reason = tr("Select a custom column to remove.");
+                break;
+            case RosterCustomColumnRemovalRejection::RequiredColumn:
+                *reason = tr("Required roster columns cannot be removed.");
+                break;
+            }
         }
 
         return false;

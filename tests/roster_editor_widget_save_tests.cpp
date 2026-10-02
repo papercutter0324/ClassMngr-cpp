@@ -15,8 +15,10 @@
 
 #include <QAction>
 #include <QApplication>
+#include <QHeaderView>
 #include <QListWidget>
 #include <QMenu>
+#include <QPushButton>
 #include <QSignalSpy>
 #include <QSqlError>
 #include <QSqlQuery>
@@ -144,6 +146,7 @@ private slots:
     void autosavePersistsOrdinaryRosterWithoutReloading();
     void rowMovePreservesSelectionAndSchedulesAutosave();
     void rowRemovalConfirmationSelectionAndAutosave();
+    void customColumnRemovalConfirmationSelectionWidthAndAutosave();
     void invalidRosterSaveSelectsFirstInvalidCell();
     void autosaveFailureRemainsSilentAndDirty();
     void confirmedInteractiveSaveAllowsQuestionableKoreanNameLength();
@@ -425,6 +428,123 @@ rowRemovalConfirmationSelectionAndAutosave()
     QCOMPARE(saved->rows.size(), 2);
     QCOMPARE(saved->rows.at(0).at(0), QStringLiteral("Amy"));
     QCOMPARE(saved->rows.at(1).at(0), QStringLiteral("Cal"));
+}
+
+void RosterEditorWidgetSaveTests::
+customColumnRemovalConfirmationSelectionWidthAndAutosave()
+{
+    RosterEditorFixture fixture;
+    QString error;
+    QVERIFY2(fixture.initialize(&error), qPrintable(error));
+
+    Roster roster;
+    roster.columns = Roster::BaseColumns
+        + QStringList{QStringLiteral("Advisory"), QStringLiteral("Family notes")};
+    roster.columnWidths = {211, 143, 166, 167, 168, 169, 241, 273};
+    roster.rows = {
+        {
+            QStringLiteral("Amy"),
+            QStringLiteral("\uAE40\uBBFC\uC9C0"),
+            QStringLiteral("A+"),
+            QStringLiteral("B"),
+            QStringLiteral("C"),
+            QStringLiteral("D"),
+            QStringLiteral("Advisory value"),
+            QStringLiteral("Family value")
+        }
+    };
+    QVERIFY(fixture.services.rosterService()->saveRoster(fixture.classId, roster));
+
+    FakeUserPromptService prompts;
+    prompts.scriptedChoices.enqueue(PromptChoice::Rejected);
+    prompts.scriptedChoices.enqueue(PromptChoice::Destructive);
+    ScopedPromptService promptScope(&prompts);
+
+    RosterEditorWidget editor(&fixture.services);
+    editor.loadClass(Classroom(QStringLiteral("Column removal test"), fixture.classId));
+    auto* const model = editor.findChild<RosterModel*>();
+    auto* const table = editor.findChild<RosterTableView*>(
+        QStringLiteral("rosterTable")
+        );
+    auto* const autosave = editor.findChild<AutosaveCoordinator*>();
+    QVERIFY(model);
+    QVERIFY(table);
+    QVERIFY(autosave);
+
+    QPushButton* removeColumnButton = nullptr;
+    for (QPushButton* button : editor.findChildren<QPushButton*>())
+    {
+        if (button->text() == QStringLiteral("Remove Column"))
+        {
+            removeColumnButton = button;
+            break;
+        }
+    }
+    QVERIFY(removeColumnButton);
+
+    const int advisoryColumn = 6;
+    const int familyNotesColumn = 7;
+    const Roster before = model->toRoster();
+    const int advisoryWidth = table->columnWidth(advisoryColumn);
+    const int familyNotesWidth = table->columnWidth(familyNotesColumn);
+    QVERIFY(advisoryWidth > 0);
+    QVERIFY(familyNotesWidth > 0);
+    QVERIFY(table->horizontalHeader()->sectionResizeMode(familyNotesColumn)
+        == QHeaderView::Interactive);
+
+    QSignalSpy saveSpy(autosave, &AutosaveCoordinator::saveRequested);
+    QVERIFY(saveSpy.isValid());
+
+    table->setCurrentIndex(model->index(0, advisoryColumn));
+    removeColumnButton->click();
+    QCOMPARE(prompts.confirmations.size(), 1);
+    QCOMPARE(prompts.confirmations.constFirst().title, QStringLiteral("Remove Column"));
+    QCOMPARE(
+        prompts.confirmations.constFirst().message,
+        QStringLiteral("Remove the \"Advisory\" column?")
+        );
+    QCOMPARE(prompts.confirmations.constFirst().acceptText, QStringLiteral("Remove"));
+    QCOMPARE(prompts.confirmations.constFirst().rejectText, QStringLiteral("Cancel"));
+    QVERIFY(prompts.confirmations.constFirst().destructive);
+    QCOMPARE(model->toRoster().columns, before.columns);
+    QCOMPARE(model->toRoster().rows, before.rows);
+    QCOMPARE(table->columnWidth(advisoryColumn), advisoryWidth);
+    QCOMPARE(table->columnWidth(familyNotesColumn), familyNotesWidth);
+    QCOMPARE(table->currentIndex(), model->index(0, advisoryColumn));
+    QVERIFY(!editor.hasUnsavedChanges());
+    QCOMPARE(saveSpy.count(), 0);
+
+    table->setCurrentIndex(model->index(0, advisoryColumn));
+    removeColumnButton->click();
+    QCOMPARE(prompts.confirmations.size(), 2);
+    QCOMPARE(model->columnCount(), before.columns.size() - 1);
+    QCOMPARE(model->columnName(advisoryColumn), QStringLiteral("Family notes"));
+    QCOMPARE(model->index(0, advisoryColumn).data().toString(), QStringLiteral("Family value"));
+    QCOMPARE(table->columnWidth(advisoryColumn), familyNotesWidth);
+    QCOMPARE(
+        table->horizontalHeader()->sectionResizeMode(advisoryColumn),
+        QHeaderView::Interactive
+        );
+    QVERIFY(table->currentIndex().isValid());
+    QCOMPARE(table->currentIndex().row(), 0);
+    QCOMPARE(table->currentIndex().column(), advisoryColumn - 1);
+    QCOMPARE(model->columnName(table->currentIndex().column()), QStringLiteral("Fall"));
+    QVERIFY(editor.hasUnsavedChanges());
+    QVERIFY(autosave->isDirty());
+    QCOMPARE(saveSpy.count(), 0);
+
+    QTRY_VERIFY_WITH_TIMEOUT(saveSpy.count() >= 1, 5'000);
+    QCOMPARE(saveSpy.constFirst().at(0).toBool(), false);
+    QTRY_VERIFY_WITH_TIMEOUT(!editor.hasUnsavedChanges(), 5'000);
+
+    const auto saved = fixture.services.rosterService()->roster(fixture.classId);
+    QVERIFY(saved);
+    QCOMPARE(
+        saved->columns,
+        Roster::BaseColumns + QStringList{QStringLiteral("Family notes")}
+        );
+    QCOMPARE(saved->rows.at(0).at(6), QStringLiteral("Family value"));
+    QCOMPARE(saved->columnWidths.at(6), familyNotesWidth);
 }
 
 void RosterEditorWidgetSaveTests::
