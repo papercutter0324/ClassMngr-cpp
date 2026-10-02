@@ -2,13 +2,57 @@
 
 #include "core/utils/student_name_utils.h"
 #include "features/roster/ui/roster_qt_text_adapter.h"
+#include "next/application/roster_row_transfer_preparation.h"
 #include "next/application/roster_row_removal.h"
 #include "next/application/roster_row_reordering.h"
 
+#include <QCoreApplication>
+
+#include <string>
+#include <string_view>
 #include <utility>
+#include <variant>
+#include <vector>
 
 namespace
 {
+
+std::vector<std::u16string> toUtf16(
+    const QStringList& values
+    )
+{
+    std::vector<std::u16string> result;
+    result.reserve(static_cast<std::size_t>(values.size()));
+    for (const QString& value : values)
+    {
+        result.push_back(RosterUi::QtTextAdapter::toUtf16String(value));
+    }
+    return result;
+}
+
+QStringList qtStrings(
+    const std::vector<std::u16string>& values
+    )
+{
+    QStringList result;
+    result.reserve(static_cast<qsizetype>(values.size()));
+    for (const std::u16string& value : values)
+    {
+        result.append(RosterUi::QtTextAdapter::fromUtf16String(value));
+    }
+    return result;
+}
+
+bool qtCaseInsensitiveEquals(
+    const std::u16string_view left,
+    const std::u16string_view right
+    )
+{
+    return RosterUi::QtTextAdapter::fromUtf16String(left).compare(
+        RosterUi::QtTextAdapter::fromUtf16String(right),
+        Qt::CaseInsensitive
+        ) == 0;
+}
 
 ClassMngr::Next::Application::RosterSnapshot applicationSnapshot(
     const QStringList& columns,
@@ -37,6 +81,63 @@ ClassMngr::Next::Application::RosterSnapshot applicationSnapshot(
     }
 
     return snapshot;
+}
+
+ClassMngr::Next::Application::RosterRowTransferPreparationResult
+prepareTransferredRow(
+    const QStringList& targetColumns,
+    const QList<QStringList>& targetRows,
+    const QStringList& sourceColumns,
+    const QStringList& sourceRow
+    )
+{
+    const auto snapshot = applicationSnapshot(targetColumns, targetRows);
+    return ClassMngr::Next::Application::prepareRosterRowTransfer(
+        snapshot.columns,
+        snapshot.rows,
+        toUtf16(sourceColumns),
+        toUtf16(sourceRow),
+        qtCaseInsensitiveEquals
+        );
+}
+
+QString transferRejectionMessage(
+    const ClassMngr::Next::Application::RosterRowTransferPreparationRejection
+        rejection
+    )
+{
+    using ClassMngr::Next::Application::RosterRowTransferPreparationRejection;
+    switch (rejection)
+    {
+    case RosterRowTransferPreparationRejection::SourceRowHasNoData:
+        return QCoreApplication::translate(
+            "RosterModel",
+            "Selected row is empty."
+            );
+    case RosterRowTransferPreparationRejection::TargetRosterIsFull:
+        return QCoreApplication::translate(
+            "RosterModel",
+            "Target roster is full."
+            );
+    case RosterRowTransferPreparationRejection::DuplicateStudentNamePair:
+        return QCoreApplication::translate(
+            "RosterModel",
+            "Target roster already contains this student."
+            );
+    }
+    return {};
+}
+
+bool rejectTransfer(
+    const ClassMngr::Next::Application::RosterRowTransferPreparationError& error,
+    QString* reason
+    )
+{
+    if (reason)
+    {
+        *reason = transferRejectionMessage(error.rejection);
+    }
+    return false;
 }
 
 QList<QStringList> qtRows(
@@ -301,41 +402,20 @@ bool RosterModel::canInsertTransferredRow(
     QString* reason
     ) const
 {
-    const QStringList mappedRow =
-        mappedTransferRow(
+    const auto result =
+        prepareTransferredRow(
+            m_columns,
+            m_rows,
             sourceColumns,
             sourceRow
             );
-
-    if (!rowHasData(mappedRow))
+    const auto* error =
+        std::get_if<
+            ClassMngr::Next::Application::RosterRowTransferPreparationError
+            >(&result);
+    if (error)
     {
-        if (reason)
-        {
-            *reason = tr("Selected row is empty.");
-        }
-
-        return false;
-    }
-
-    if (firstEmptyRow() < 0)
-    {
-        if (reason)
-        {
-            *reason = tr("Target roster is full.");
-        }
-
-        return false;
-    }
-
-    if (
-        hasDuplicateTransferredStudent(
-            sourceColumns,
-            sourceRow,
-            reason
-            )
-        )
-    {
-        return false;
+        return rejectTransfer(*error, reason);
     }
 
     return true;
@@ -347,30 +427,29 @@ bool RosterModel::insertTransferredRow(
     QString* reason
     )
 {
-    if (
-        !canInsertTransferredRow(
-            sourceColumns,
-            sourceRow,
-            reason
-            )
-        )
-    {
-        return false;
-    }
-
-    const int destinationRow =
-        firstEmptyRow();
-
-    if (destinationRow < 0)
-    {
-        return false;
-    }
-
-    m_rows[destinationRow] =
-        mappedTransferRow(
+    auto result =
+        prepareTransferredRow(
+            m_columns,
+            m_rows,
             sourceColumns,
             sourceRow
             );
+    auto* prepared =
+        std::get_if<
+            ClassMngr::Next::Application::RosterRowTransferPreparation
+            >(&result);
+    if (!prepared)
+    {
+        return rejectTransfer(
+            std::get<
+                ClassMngr::Next::Application::RosterRowTransferPreparationError
+                >(result),
+            reason
+            );
+    }
+
+    m_rows[static_cast<qsizetype>(prepared->destinationRow)] =
+        qtStrings(prepared->mappedRow);
 
     validateAll();
 

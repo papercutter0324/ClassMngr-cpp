@@ -1,9 +1,11 @@
 #include "features/roster/ui/roster_model.h"
 
+#include "core/utils/student_name_utils.h"
 #include "domain/models/roster.h"
 #include "features/roster/ui/roster_constants.h"
 #include "features/roster/ui/roster_qt_text_adapter.h"
 #include "next/application/roster_custom_column_name_policy.h"
+#include "next/application/speaking_evaluation_validation.h"
 
 #include <QCoreApplication>
 #include <QtTest>
@@ -28,6 +30,9 @@ private slots:
     void insertTransferredRowCopiesOnlyMatchingColumns();
     void insertTransferredRowRejectsFullTargetRoster();
     void transferredRowDetectsDuplicateStudentPair();
+    void insertTransferredRowPreservesModelNotificationsAndValidation();
+    void insertTransferredRowRejectionKeepsModelState();
+    void transferApplicationNameNormalizationMatchesLegacyQt();
     void customColumnAdmissionMatchesLegacyQtNamingRules();
     void customColumnWhitespaceNormalizationMatchesQString();
     void insertCustomColumnPreservesRowsSignalsAndDirtyState();
@@ -781,12 +786,7 @@ void RosterModelTests::insertTransferredRowRejectsFullTargetRoster()
             &reason
             )
         );
-    QVERIFY(
-        reason.contains(
-            QStringLiteral("full"),
-            Qt::CaseInsensitive
-            )
-        );
+    QCOMPARE(reason, QStringLiteral("Target roster is full."));
     QVERIFY(
         !model.insertTransferredRow(
             Roster::BaseColumns,
@@ -837,6 +837,146 @@ void RosterModelTests::transferredRowDetectsDuplicateStudentPair()
                 )
             )
         );
+}
+
+void RosterModelTests::insertTransferredRowPreservesModelNotificationsAndValidation()
+{
+    Roster roster;
+    roster.columns = Roster::BaseColumns;
+
+    RosterModel model;
+    model.setRoster(roster);
+    model.clearDirty();
+
+    QSignalSpy dirtySpy(
+        &model,
+        &RosterModel::dirtyChanged
+        );
+    QSignalSpy changedSpy(
+        &model,
+        &QAbstractItemModel::dataChanged
+        );
+
+    QString reason;
+    QVERIFY(model.insertTransferredRow(
+        Roster::BaseColumns,
+        studentRow(QStringLiteral("Ben"), QStringLiteral("\uAC00")),
+        &reason
+        ));
+    QVERIFY(reason.isEmpty());
+    QCOMPARE(model.rowValues(0).at(model.englishNameColumn()), QStringLiteral("Ben"));
+    QCOMPARE(model.rowValues(0).at(model.koreanNameColumn()), QStringLiteral("\uAC00"));
+    QVERIFY(model.errorsForCell(0, model.koreanNameColumn()).contains(
+        QStringLiteral("Korean name has 1 or 5+ syllables. Verify it is correct.")
+        ));
+    QVERIFY(model.isDirty());
+    QCOMPARE(dirtySpy.count(), 1);
+    QCOMPARE(dirtySpy.constFirst().at(0).toBool(), true);
+    QCOMPARE(changedSpy.count(), 1);
+    QCOMPARE(
+        changedSpy.constFirst().at(0).value<QModelIndex>(),
+        model.index(0, 0)
+        );
+    QCOMPARE(
+        changedSpy.constFirst().at(1).value<QModelIndex>(),
+        model.index(model.rowCount() - 1, model.columnCount() - 1)
+        );
+}
+
+void RosterModelTests::insertTransferredRowRejectionKeepsModelState()
+{
+    Roster roster;
+    roster.columns = Roster::BaseColumns;
+    roster.rows = {
+        studentRow(QStringLiteral("Amy"), QStringLiteral("\uAE40\uBBFC\uC9C0"))
+    };
+
+    RosterModel model;
+    model.setRoster(roster);
+    model.clearDirty();
+    const Roster before = model.toRoster();
+
+    QSignalSpy dirtySpy(
+        &model,
+        &RosterModel::dirtyChanged
+        );
+    QSignalSpy changedSpy(
+        &model,
+        &QAbstractItemModel::dataChanged
+        );
+
+    QString reason;
+    QVERIFY(!model.canInsertTransferredRow(
+        Roster::BaseColumns,
+        studentRow(QString(), QString()),
+        &reason
+        ));
+    QCOMPARE(reason, QStringLiteral("Selected row is empty."));
+
+    reason.clear();
+    QVERIFY(!model.insertTransferredRow(
+        Roster::BaseColumns,
+        studentRow(QStringLiteral("Amy"), QStringLiteral("\uAE40\uBBFC\uC9C0")),
+        &reason
+        ));
+    QCOMPARE(reason, QStringLiteral("Target roster already contains this student."));
+    QCOMPARE(model.toRoster().columns, before.columns);
+    QCOMPARE(model.toRoster().rows, before.rows);
+    QVERIFY(!model.isDirty());
+    QCOMPARE(dirtySpy.count(), 0);
+    QCOMPARE(changedSpy.count(), 0);
+}
+
+void RosterModelTests::transferApplicationNameNormalizationMatchesLegacyQt()
+{
+    using ClassMngr::Next::Application::SpeakingEvaluationValidationDetail::normalizeEnglishName;
+    using ClassMngr::Next::Application::SpeakingEvaluationValidationDetail::normalizeKoreanName;
+
+    const QStringList englishValues{
+        QString(),
+        QStringLiteral("  john\t smith  "),
+        QStringLiteral("mary - jane"),
+        QStringLiteral("J.-K. Rowling"),
+        QStringLiteral("A. B. SMITH"),
+        QStringLiteral("Amy1"),
+        QStringLiteral("Amy_Name"),
+        QString::fromUtf8("Jos\xC3\xA9"),
+        QString(QChar(0xfeff)) + QStringLiteral("Amy"),
+        QString(QChar(0xd800)) + QStringLiteral("Amy")
+    };
+    for (const QString& value : englishValues)
+    {
+        const QString expected = StudentNameUtils::normalizeEnglishName(value);
+        const QString actual = RosterUi::QtTextAdapter::fromUtf16String(
+            normalizeEnglishName(
+                RosterUi::QtTextAdapter::toUtf16String(value)
+                )
+            );
+        QCOMPARE(actual, expected);
+    }
+
+    const QStringList koreanValues{
+        QString(),
+        QStringLiteral("  \uAE40 \uBBFC\uC9C0 (a)  "),
+        QStringLiteral("\uC774\uC11C\uC900(B)"),
+        QStringLiteral("\uAC00"),
+        QStringLiteral("A"),
+        QStringLiteral("\uAE40abc"),
+        QStringLiteral("\u1100"),
+        QString(QChar(0x00a0)) + QStringLiteral("\uAE40\uBBFC\uC9C0"),
+        QString(QChar(0xfeff)) + QStringLiteral("\uAE40\uBBFC\uC9C0"),
+        QString(QChar(0xd800)) + QStringLiteral("\uAE40\uBBFC\uC9C0")
+    };
+    for (const QString& value : koreanValues)
+    {
+        const QString expected = StudentNameUtils::normalizeKoreanName(value);
+        const QString actual = RosterUi::QtTextAdapter::fromUtf16String(
+            normalizeKoreanName(
+                RosterUi::QtTextAdapter::toUtf16String(value)
+                )
+            );
+        QCOMPARE(actual, expected);
+    }
 }
 
 void RosterModelTests::customColumnAdmissionMatchesLegacyQtNamingRules()

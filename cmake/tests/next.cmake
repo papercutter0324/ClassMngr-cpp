@@ -155,6 +155,37 @@ add_test(
     COMMAND ClassMngrNextApplicationRosterCustomColumnRemovalPolicyTests
 )
 
+# Keep roster row transfer preparation independent of Qt.
+add_executable(
+    ClassMngrNextApplicationRosterRowTransferPreparationTests
+    tests/next_application_roster_row_transfer_preparation_tests.cpp
+)
+target_compile_features(
+    ClassMngrNextApplicationRosterRowTransferPreparationTests
+    PRIVATE
+        cxx_std_23
+)
+set_target_properties(
+    ClassMngrNextApplicationRosterRowTransferPreparationTests
+    PROPERTIES
+        AUTOMOC OFF
+        AUTOUIC OFF
+        AUTORCC OFF
+)
+set_property(
+    TARGET ClassMngrNextApplicationRosterRowTransferPreparationTests
+    PROPERTY CLASSMNGR_STANDALONE_CPP_TEST TRUE
+)
+target_link_libraries(
+    ClassMngrNextApplicationRosterRowTransferPreparationTests
+    PRIVATE
+        ClassMngrNext::Application
+)
+add_test(
+    NAME ClassMngrNextApplicationRosterRowTransferPreparationTests
+    COMMAND ClassMngrNextApplicationRosterRowTransferPreparationTests
+)
+
 # Keep the cycle-selection rule independent of Qt and the legacy runtime.
 add_executable(
     ClassMngrNextApplicationEvaluationDefaultSelectionTests
