@@ -2077,3 +2077,13 @@ scan also found transfer-row mapping/admission; choose the narrower adjacent
 custom-column append operation for F243, reusing F241 name admission and leaving
 model signals and widget width/layout/selection/autosave at the existing
 boundaries.
+
+## 2026-10-02 - F243 custom-column append accepted; F244 selected and started
+
+Reuse F241 admission to append a normalized roster column and one empty cell to
+each existing row; preserve width metadata in the Qt-free operation. Keep model
+signals and widget layout, selection, and autosave at their current owners. The
+paired scan found target-side student transfer preparation as the next cohesive
+Application boundary, with source removal and the atomic two-roster save left
+in the widget workflow. F244 implementation has started, with independent
+acceptance pending.

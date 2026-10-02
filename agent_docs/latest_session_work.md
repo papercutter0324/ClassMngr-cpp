@@ -4914,10 +4914,17 @@ Debug/Ninja/MSVC 19.51/Qt 6.12 verification validated one owner for 1,190
 handwritten sources; five focused CTests passed. Diff and new-file whitespace
 checks passed. No full suite ran.
 
-F243 is selected to extract the Qt-free custom-column append operation over
-roster columns and rows, reusing F241 name admission. Keep model notifications,
-validation refresh, dirty state, and widget width/layout, selection, and
-autosave behavior at their current boundaries. Two independent scans compared
-this narrow continuation with transfer-row mapping/admission; the append
-operation was selected as the more focused adjacent contract. Phase 2 remains
-In Progress/Open; Gates 1 and 2 remain Partial.
+F243 source commit `68260142` extracts Qt-free custom-column append over roster
+columns and rows, reusing F241 admission. It preserves existing cells and width
+metadata while the model and widget retain their current UI effects. Independent
+fresh x64 Debug/Ninja/MSVC 19.51/Qt 6.12 verification validated one owner for
+1,192 handwritten sources; five focused CTests passed. `git diff --check` and
+both new-file whitespace checks passed. No full suite ran.
+
+F244 is in progress to extract destination-side roster transfer preparation:
+column mapping, current name/cell normalization, rejection order, duplicate
+pair check, and first-empty-slot choice. Keep mutation and model/UI/persistence
+effects at their existing boundaries. Two independent scans converged on this
+remaining roster transfer gap. Source implementation has started; independent
+acceptance is pending. Phase 2 remains In Progress/Open; Gates 1 and 2 remain
+Partial.

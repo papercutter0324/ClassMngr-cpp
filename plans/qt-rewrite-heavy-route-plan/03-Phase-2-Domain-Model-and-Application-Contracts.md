@@ -89,8 +89,8 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
   recovery. F239 is accepted for app-less roster row reordering over existing
   `RosterSnapshot` rows; F240 is accepted for app-less roster row removal;
   F241 is accepted for Qt-free roster-column name admission; F242 is accepted
-  for custom-column removal eligibility; F243 is selected for app-less custom-
-  column append.
+  for custom-column removal eligibility; F243 is accepted for app-less custom-
+  column append; F244 is selected for roster-transfer destination preparation.
   The prior F123 candidate wording is historical;
   current Teacher Profile integration status is recorded in the progress log.
   Gates 1 and 2
@@ -247,26 +247,27 @@ No new v2 production path depends on DataService, MainWindow, PageManager, or a 
 
 Earlier verified slices and cumulative exit-gate snapshots are archived in the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 
-## Latest progress update - 2026-10-02 (F242 accepted; F243 selected)
+## Latest progress update - 2026-10-02 (F243 accepted; F244 selected)
 
-F242, source commit `5525cade`, factors invalid-index and required-column
-removal eligibility into Qt-free Application policy, preserving Autumn-to-Fall
-and Qt comparison semantics. Mutation, model notifications, validation/dirty
-state, layout/width, confirmation, and autosave remain at their current owners.
-Independent fresh x64 Debug/Ninja/MSVC 19.51.36257/Qt 6.12 verification used
-CMake 4.4.2, reached build action 324/325, and validated one explicit owner for
-1,190 handwritten sources. Five focused CTests passed: custom-column removal
-policy, RosterModel, roster-editor widget save, row removal, and custom-column
-name policy. `git diff --check` passed; both new files passed LF, final-newline,
-and trailing-whitespace checks. No full suite ran.
+F243, source commit `68260142`, adds a Qt-free custom-column append operation
+over `RosterSnapshot`. It reuses F241 admission/normalization, appends the
+normalized name and one empty cell per existing row, preserves rows and width
+metadata, and leaves notifications, validation, dirty state, widget layout,
+selection, autosave, and persistence at their current owners. Fresh Windows
+x64 Debug/Ninja verification used CMake 4.4.2, MSVC 19.51.36257, and Qt 6.12;
+source ownership found one owner for 1,192 handwritten sources. Five focused
+CTests passed: append policy, name policy, RosterModel, roster-editor widget
+save, and row removal. `git diff --check` and both new-file whitespace checks
+passed; no full suite ran.
 
-F243 is selected: add a Qt-free custom-column append operation over roster
-columns and rows, appending the admitted normalized name and one empty cell per
-existing row. Keep model signals, validation, dirty behavior, and widget
-width/layout/selection/autosave at their existing owners. Two independent scans
-identified this adjacent candidate; one ranked transfer-row mapping/admission
-as another policy option, while the narrower direct continuation from F241 was
-selected. F243 is selected, not accepted or implemented. The cumulative Gate 1
-map is historical and ends at F143
+F244 is selected: prepare a roster-transfer destination row in Qt-free policy.
+Map source values into target-column order using existing normalization; reject
+an empty mapped row, then a full target, then a duplicate complete English/
+Korean name pair; otherwise select the first empty destination slot. Return a
+typed rejection or compact destination-row/mapped-row preparation. Keep model
+mutation/signals/validation/dirty state and widget lookup, source removal, width
+normalization, atomic save, and post-save state at their current owners. Two
+independent scans converged on this seam. Implementation has started; F244 is
+not accepted. The cumulative Gate 1 map is historical and ends at F143
 ([map](03-Phase-2-Progress-Log.md#L7570)); Gates 1 and 2 remain Partial. Phase
 2 remains In Progress/Open.

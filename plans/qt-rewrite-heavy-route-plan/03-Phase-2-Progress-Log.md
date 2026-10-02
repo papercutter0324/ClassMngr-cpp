@@ -9560,13 +9560,25 @@ policy, RosterModel, roster-editor widget save, row removal, and custom-column
 name policy. `git diff --check` passed; both new files passed LF, final-newline,
 and trailing-whitespace checks. No full suite ran.
 
-F243 is selected: add a Qt-free custom-column append operation over roster
-columns and rows, appending the admitted normalized name and one empty cell per
-existing row. Keep model signals, validation, dirty behavior, and widget
-width/layout/selection/autosave at their existing owners. Two independent scans
-identified this adjacent candidate; one ranked transfer-row mapping/admission
-as another policy option, while the narrower direct continuation from F241 was
-selected. F243 is selected, not accepted or implemented. The cumulative Gate 1
-map is historical and ends at F143
+F243, source commit `68260142`, adds a Qt-free custom-column append operation
+over `RosterSnapshot`. It reuses F241 admission/normalization, appends the
+normalized name and one empty cell per existing row, preserves rows and width
+metadata, and leaves notifications, validation, dirty state, widget layout,
+selection, autosave, and persistence at their current owners. Fresh Windows
+x64 Debug/Ninja verification used CMake 4.4.2, MSVC 19.51.36257, and Qt 6.12;
+source ownership found one owner for 1,192 handwritten sources. Five focused
+CTests passed: append policy, name policy, RosterModel, roster-editor widget
+save, and row removal. `git diff --check` and both new-file whitespace checks
+passed; no full suite ran.
+
+F244 is selected: prepare a roster-transfer destination row in Qt-free policy.
+Map source values into target-column order using existing normalization; reject
+an empty mapped row, then a full target, then a duplicate complete English/
+Korean name pair; otherwise select the first empty destination slot. Return a
+typed rejection or compact destination-row/mapped-row preparation. Keep model
+mutation/signals/validation/dirty state and widget lookup, source removal, width
+normalization, atomic save, and post-save state at their current owners. Two
+independent scans converged on this seam. Implementation has started; F244 is
+not accepted. The cumulative Gate 1 map is historical and ends at F143
 ([map](03-Phase-2-Progress-Log.md#L7570)); Gates 1 and 2 remain Partial. Phase
 2 remains In Progress/Open.

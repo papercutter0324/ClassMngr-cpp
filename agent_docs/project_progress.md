@@ -84,7 +84,8 @@ is accepted in source commit `d6d4bdc6`; F235 is accepted in source commit
 source commit `8ef76074`; F238 is accepted in source commit `7b832bcc`; F239 is
 accepted in source commit `d3e9cded`; F240 is accepted in source commit
 `4be18aa5`; F241 is accepted in source commit `746ef0bb`; F242 is accepted in
-source commit `5525cade`; F243 is selected.
+source commit `5525cade`; F243 is accepted in source commit `68260142`; F244
+implementation is in progress.
 F196 and F197 use
 only the active open session's
 `SettingsRepository` and preserve their keys, conversions, defaults, and
@@ -2882,7 +2883,7 @@ stale/overlap rejection, write-failure rollback, and intensive mapping
 coverage passed. Source ownership found one owner for 1,172 files, and
 `git diff --check` passed; no full suite ran.
 
-## Current Phase 2 position - 2026-10-02 (F242 accepted; F243 selected)
+## Current Phase 2 position - 2026-10-02 (F243 accepted; F244 in progress)
 
 F236 source commit `5877bba0` carries structured typed policy, teacher-target,
 and fresh-state failures from Repository through Platform to the review dialog.
@@ -2954,10 +2955,17 @@ Debug/Ninja/MSVC 19.51/Qt 6.12 verification validated one owner for 1,190
 handwritten sources; five focused CTests passed. Diff and new-file whitespace
 checks passed. No full suite ran.
 
-F243 is selected to extract the Qt-free custom-column append operation over
-roster columns and rows, reusing F241 name admission. Keep model notifications,
-validation refresh, dirty state, and widget width/layout, selection, and
-autosave behavior at their current boundaries. Two independent scans compared
-this narrow continuation with transfer-row mapping/admission; the append
-operation was selected as the more focused adjacent contract. Phase 2 remains
-In Progress/Open; Gates 1 and 2 remain Partial.
+F243 source commit `68260142` extracts Qt-free custom-column append over roster
+columns and rows, reusing F241 admission. It preserves existing cells and width
+metadata while the model and widget retain their current UI effects. Independent
+fresh x64 Debug verification validated one owner for 1,192 handwritten sources;
+five focused CTests passed and new-file whitespace checks were clean. No full
+suite ran.
+
+F244 is in progress to extract destination-side roster transfer preparation:
+column mapping, current name/cell normalization, rejection order, duplicate
+pair check, and first-empty-slot choice. Keep mutation and model/UI/persistence
+effects at their existing boundaries. Two independent scans converged on this
+remaining roster transfer gap. Source implementation has started; independent
+acceptance is pending. Phase 2 remains In Progress/Open; Gates 1 and 2 remain
+Partial.
