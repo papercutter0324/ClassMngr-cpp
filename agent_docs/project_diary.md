@@ -2058,11 +2058,11 @@ survival, UI messages, and recent-file behavior. Defer Teacher Import typed
 apply, whose current Application use case already runs in the repository and
 whose production integration is a separate boundary migration.
 
-## 2026-10-02 - F239 roster row reordering accepted; F240 selected
+## 2026-10-02 - F240 roster row removal accepted; F241 selected
 
-Move row reordering into the app-less layer while keeping Qt selection,
-validation refresh, dirty state, and autosave behavior at the roster UI
-boundary. The adjacent row-removal rule is another bounded Gate 1 gap, so F240
-extracts it separately and preserves its destructive-confirmation and
-transfer-source boundaries. Defer Teacher Import typed apply because its
-transaction handoff is broader.
+Move both row reordering and row removal into Qt-free contracts while keeping
+selection, validation refresh, dirty state, autosave, confirmation, and the
+separate transfer-source compaction at their existing boundaries. The next
+bounded Gate 1 gap is custom-column name admission; preserve simplified
+whitespace, the Autumn-to-Fall alias, and case-insensitive duplicate and
+required-column behavior when extracting it.

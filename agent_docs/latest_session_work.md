@@ -4885,11 +4885,20 @@ move directions, invalid/equal indexes, blank and Unicode whitespace-only
 rows, complete cell/metadata preservation, selection/current-column behavior,
 and autosave. `git diff --check` passed; no full suite ran.
 
-F240 is selected to move roster row removal and compaction into a Qt-free
-operation over `RosterSnapshot` and reuse it from `RosterModel`. Acceptance
-covers valid removal, invalid indexes, and empty/Unicode-whitespace-only rows;
-preservation of columns, widths, row count, and complete remaining rows; and
-clearing the final slot. Keep model validation refresh, notifications, and
-dirty behavior, and add a widget regression for confirmation, selection, and
-autosave. Leave the separate transfer-source compaction at its current
-boundary. Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial.
+F240 source commit `4be18aa5` extracts roster row removal and compaction into a
+Qt-free operation over `RosterSnapshot`; `RosterModel` retains its localized
+messages, validation refresh, notifications, and dirty behavior. Independent
+fresh x64 Debug verification validated one owner for 1,185 handwritten files;
+the app-less removal, RosterModel, and roster editor widget save CTests passed
+3/3. Coverage includes complete-row and column/width preservation, invalid and
+empty/Unicode-whitespace-only rows, final-slot clearing, and widget confirmation,
+selection, autosave, and persisted rows. `git diff --check` and new-file
+whitespace checks passed; no full suite ran.
+
+F241 is selected to extract custom roster-column name admission into a Qt-free
+Application policy. Acceptance preserves `QString::simplified()` behavior,
+the Autumn-to-Fall alias, case-insensitive duplicate/required-column checks,
+existing errors, and model insertion, notifications, validation, dirty state,
+and widget prompts. The two independent scans converged on this bounded Gate 1
+roster-editing gap. Phase 2 remains In Progress/Open; Gates 1 and 2 remain
+Partial.

@@ -82,7 +82,8 @@ source commit `075b4335`; F233 is accepted in source commit `2cb853e9`; F234
 is accepted in source commit `d6d4bdc6`; F235 is accepted in source commit
 `b52029a6`; F236 is accepted in source commit `5877bba0`; F237 is accepted in
 source commit `8ef76074`; F238 is accepted in source commit `7b832bcc`; F239 is
-accepted in source commit `d3e9cded`; F240 is selected.
+accepted in source commit `d3e9cded`; F240 is accepted in source commit
+`4be18aa5`; F241 is selected.
 F196 and F197 use
 only the active open session's
 `SettingsRepository` and preserve their keys, conversions, defaults, and
@@ -2880,7 +2881,7 @@ stale/overlap rejection, write-failure rollback, and intensive mapping
 coverage passed. Source ownership found one owner for 1,172 files, and
 `git diff --check` passed; no full suite ran.
 
-## Current Phase 2 position - 2026-10-02 (F239 accepted; F240 selected)
+## Current Phase 2 position - 2026-10-02 (F240 accepted; F241 selected)
 
 F236 source commit `5877bba0` carries structured typed policy, teacher-target,
 and fresh-state failures from Repository through Platform to the review dialog.
@@ -2923,11 +2924,20 @@ equal indexes, blank and Unicode whitespace-only rows, complete cell/metadata
 preservation, selection/current-column behavior, and autosave. `git diff
 --check` passed; no full suite ran.
 
-F240 is selected to move roster row removal/compaction into a Qt-free operation
-and reuse it from `RosterModel`. This continues the named Gate 1 roster-editing
-gap. Acceptance covers valid removal, invalid indexes, and empty/whitespace-only
-rows; preservation of columns, widths, row count and all remaining cells; and
-clearing the last slot. Keep model validation, signals and dirty state, and add
-a widget regression for confirmation, selection and autosave. Leave the
-separate transfer-source row compaction in its existing transfer boundary.
-Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial.
+F240 source commit `4be18aa5` extracts roster row removal and compaction into a
+Qt-free operation over `RosterSnapshot`; `RosterModel` adapts typed failures to
+existing messages and retains validation refresh, notifications, and dirty
+behavior. Independent fresh x64 Debug verification built the app-less removal,
+RosterModel, and widget save targets; focused CTest passed 3/3. Ownership found
+one owner for 1,185 handwritten files, and `git diff --check` plus new-file
+whitespace checks passed. Coverage includes full-row and metadata preservation,
+invalid and empty/Unicode-whitespace-only rows, final-slot clearing, validation
+and signals, and widget confirmation/selection/autosave. No full suite ran.
+
+F241 is selected to extract roster custom-column name admission into a Qt-free
+Application policy, preserving simplified whitespace, the Autumn-to-Fall
+alias, case-insensitive duplicate and required-column checks, and existing
+messages. Keep column insertion, model notifications, validation refresh,
+dirty state, and widget prompts at their current boundaries. The two
+independent scans converged on this named Gate 1 roster-editing gap. Phase 2
+remains In Progress/Open; Gates 1 and 2 remain Partial.

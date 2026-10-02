@@ -87,7 +87,8 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
   Application initial-setup lifecycle with a Platform file/workspace adapter
   retains FileController warnings/recent-file behavior and original-profile
   recovery. F239 is accepted for app-less roster row reordering over existing
-  `RosterSnapshot` rows; F240 is selected for app-less roster row removal.
+  `RosterSnapshot` rows; F240 is accepted for app-less roster row removal; F241
+  is selected for Qt-free roster-column name admission.
   The prior F123 candidate wording is historical;
   current Teacher Profile integration status is recorded in the progress log.
   Gates 1 and 2
@@ -244,28 +245,20 @@ No new v2 production path depends on DataService, MainWindow, PageManager, or a 
 
 Earlier verified slices and cumulative exit-gate snapshots are archived in the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 
-## Latest progress update - 2026-10-02 (F239 accepted; F240 selected)
+## Latest progress update - 2026-10-02 (F240 accepted; F241 selected)
 
-F238, source commit `7b832bcc`, adds a Qt-free Application initial-setup
-lifecycle with a Platform file/workspace adapter. FileController warnings,
-recent-file behavior, and original-profile recovery remain intact. Independent
-x64 Debug source ownership found 1 owner for 1,181 handwritten sources. CTest
-passed 3/3; the Application custom runner passed 11 scenarios, Platform passed
-7/7, and FileController passed 37/37. Coverage includes no-original finish,
-failed creation, cancel/restore, failed remove/rename paths, recent-file timing,
-and warning/recovery assertions. `git diff --check` passed; no full suite ran.
+F240, source commit `4be18aa5`, extracts roster row removal into an app-less
+operation over `RosterSnapshot`, reused by `RosterModel`. Independent fresh x64
+Debug verification used CMake 4.4.2, MSVC 19.51, and Qt 6.12. The app-less
+row-removal, RosterModel, and roster-widget CTests passed 3/3; source ownership
+found one owner for 1,185 handwritten files. `git diff --check` and new-file
+whitespace checks passed. No full suite ran.
 
-F239, source commit `d3e9cded`, extracts roster row reordering into an app-less
-contract over existing `RosterSnapshot` rows. Focused x64 Debug CTest passed
-3/3; source ownership found one owner for 1,183 handwritten sources, and
-`git diff --check` passed. No full suite ran.
-
-F240 is selected: extract roster row removal into an app-less operation over
-`RosterSnapshot`, reusing it from `RosterModel`. Preserve validation refresh,
-diagnostics, signals, dirty state, and messages; keep widget confirmation,
-selection, and autosave behavior. Acceptance covers valid and invalid indexes,
-empty and Unicode-whitespace-only rows, full remaining-row/column preservation,
-and clearing the final slot, plus model and widget regressions. Two independent
-Explorer scans converged on this named Gate 1 roster-editing gap. The
-cumulative Gate 1 map is historical and ends at F143 ([map](03-Phase-2-Progress-Log.md#L7570));
-Gates 1 and 2 remain Partial. Phase 2 remains In Progress/Open.
+F241 is selected: move custom roster-column name admission into a Qt-free
+contract. Preserve `QString::simplified()` whitespace normalization, the
+Autumn-to-Fall alias, case-insensitive duplicate checks, and required-column
+checks. Keep column insertion, model notifications, dirty state, and widget
+prompts at their current boundaries. Two independent scouts converged on this
+named Gate 1 roster-editing gap. The cumulative Gate 1 map is historical and
+ends at F143 ([map](03-Phase-2-Progress-Log.md#L7570)); Gates 1 and 2 remain
+Partial. Phase 2 remains In Progress/Open.
