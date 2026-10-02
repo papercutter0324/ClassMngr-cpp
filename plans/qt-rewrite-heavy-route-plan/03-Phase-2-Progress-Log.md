@@ -9668,27 +9668,38 @@ comment-quality CTest passed 1/1; UI slots
 `aiPromptBuilderUsesObservationsAndSelectedVoice` passed. Prompt output still
 contains `between 100 and 420 characters, including spaces`. The production
 420 threshold is single-sourced as `SpeakingEval::CommentPreferredMaxLength`
-for prompt builder and dialog; the dialog passes existing 100/450 min/max. An initial
-independent pass flagged the prompt literal; F251 centralized it and the final
-independent pass passed. The unrelated Next validation constant
+for prompt builder and dialog; the dialog passes existing 100/450 min/max. An
+initial independent pass flagged the prompt literal; F251 centralized it, and
+the final independent pass passed. The unrelated Next validation constant
 `SpeakingEvaluationMaximumCommentLength=450` predates F251. `git diff --check`
 and new-file hygiene passed; no full batch CTest or suite ran.
 
-F252 is selected: extract Qt-free accepted AI batch comment planning from
-`SpeakingEvalAiBatchDialog::applyComments()`. Inputs carry checked/valid state,
-report index, exact current and already-normalized replacement UTF-16 text, and
-report count; the UI keeps `QString::simplified()`. Preserve row order,
-report-index bounds, exact-pair no-op skipping, Qt-compatible trimmed counting
-of nonblank old comments, and return typed accepted assignments plus overwrite
-count. Keep parsing/text adaptation, localized overwrite confirmation,
-accepted-dialog state, page/table mutation, and undo in the UI. Add an
-Application plan header, app-less tests/CMake, adapt
-`speaking_eval_ai_batch_dialog.cpp`, and extend
-`speaking_eval_batch_report_service_tests.cpp`. Focus tests on checked/valid
-filtering, invalid indexes, no-op filtering, overwrite count, order/text
-preservation, and the UI confirmation gate. Paired scans differed: the
-alternative was a boolean default-inclusion rule. Choose the actual planning
-and overwrite decision; defer that presentation rule. The cumulative Gate 1
-map is historical and ends at F143
+F252, source commit `6f41f8a2`, extracts Qt-free accepted AI batch comment
+planning. Final independent fresh x64 Debug/Ninja verification at
+`build/f252_independent_x64_debug` used MSVC 19.51, CMake 4.4.2, and Qt 6.12.
+CMake ownership validation found one explicit owner for 1,210 handwritten
+sources and both focused targets were built. The app-less
+`ClassMngrNextApplicationSpeakingEvaluationAiBatchAcceptedCommentPlanTests`
+passed 1/1; Qt slots `aiBatchDialogConfirmsAcceptedCommentOverwrites` and
+`aiBatchDialogSelectsEligibleStudentsAndReviewsValidComments` passed
+individually. `git diff --check` and new-file hygiene passed; no full suite ran.
+The plan preserves checked/valid filtering, bounded report indexes, exact-pair
+no-op skipping, report order/text, Qt-trimmed old-comment counting, typed
+assignments, overwrite count, and the UI confirmation gate.
+
+F253 is selected: extract the verbatim `splitPrivateNotes` rule shared by
+`SpeakingEvalAiBatchDialog` and `SpeakingEvalPrivateNotesEditor` into a UTF-16
+Qt-free Application policy. Preserve `[Did Well]\n` at the start and the first
+`\n[Needs Improvement]\n` separator, body whitespace/newlines, whole-input
+fallback to didWell plus empty needsImprovement when either marker is missing,
+and repeated-separator behavior. Preserve exact body whitespace/newlines. Keep
+`joinPrivateNotes`, bullet editing and
+normalization, prompts/redaction, and observation parsing in current owners.
+Add policy header and app-less tests/CMake for formatted, empty, legacy, missing,
+repeated, and whitespace-exact cases; adapt both UI consumers and add focused
+editor/dialog regressions. Two independent scans differed: the alternative was
+AI batch response parsing. Select the narrower duplicate splitter required by
+both consumers; defer parser extraction. The cumulative Gate 1 map is
+historical and ends at F143
 ([map](03-Phase-2-Progress-Log.md#L7570)); Gates 1 and 2 remain Partial. Phase
 2 remains In Progress/Open.

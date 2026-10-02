@@ -4986,7 +4986,7 @@ actions, and resolution in the models/page. Add app-less policy cases, model
 wrapper checks, and a focused Speaking Evaluation duplicate-resolution
 regression. Phase 2 remains In Progress/Open, with Gates 1 and 2 Partial.
 
-## Current continuation - 2026-10-02 (F251 accepted; F252 selected)
+## Current continuation - 2026-10-02 (F252 accepted; F253 selected)
 
 The user asked to assume F196 complete, continue F218, commit each slice, and
 begin the next. At task start, F218 was already accepted and the branch had
@@ -5034,16 +5034,26 @@ passed 1/1; dialog functions
 unchanged, with the preferred threshold single-sourced at 420. Diff and
 new-file hygiene passed; no full batch CTest or suite ran.
 
-F252 is selected to extract accepted AI batch comment planning from
-`SpeakingEvalAiBatchDialog::applyComments()`. Pass checked/valid state, report
-index, exact current comment, already-simplified replacement UTF-16 text, and
-report count. Preserve row order, invalid-index filtering, exact no-op
-filtering, Qt-compatible trimmed blank detection, and overwrite count. Keep
-QString adaptation, localized confirmation, acceptance state, and page/table
-mutation/undo in the UI. The paired scans differed: the alternative was
-extracting the initial-checkbox default rule. Choose planning because it also
-owns the overwrite decision; defer that presentation rule. Next: implement and
-independently verify F252, commit the source slice, then record its acceptance
-and select the successor. Phase 2 remains In Progress/Open; Gates 1 and 2
-remain Partial. Active deployment ID is
+F252 source commit `6f41f8a2` extracts accepted AI batch comment planning from
+`SpeakingEvalAiBatchDialog::applyComments()`. Fresh independent x64 Debug
+verification in `build/f252_independent_x64_debug` validated one owner for
+1,210 handwritten sources. The app-less planner CTest passed 1/1, and dialog
+slots `aiBatchDialogConfirmsAcceptedCommentOverwrites` and
+`aiBatchDialogSelectsEligibleStudentsAndReviewsValidComments` passed. Coverage
+includes selection/validity and index filters, exact no-op filtering, overwrite
+count, order, UTF-16 values, and confirmation rejection/acceptance. Diff and
+new-file hygiene passed; no full suite ran.
+
+F253 is selected to extract the duplicated private-notes section splitter
+from `SpeakingEvalAiBatchDialog` and `SpeakingEvalPrivateNotesEditor` into
+Qt-free Application. Preserve the exact `[Did Well]\n` prefix and first
+`\n[Needs Improvement]\n` separator, whitespace/newlines, and fallback to
+entire input as Did Well with empty Needs Improvement if either marker is
+missing. Keep serialization, bullet-list editing/normalization, prompt
+redaction, and observation parsing with their existing owners. The paired
+scans differed: the alternative was extracting AI-batch response parsing.
+Choose the identical duplicated splitter as a narrower shared boundary and
+defer response parsing. Next: implement and independently verify F253, commit
+its source, then record acceptance and select its successor. Phase 2 remains
+In Progress/Open; Gates 1 and 2 remain Partial. Active deployment ID is
 `qt-rewrite-phase2-resume-20260928`.

@@ -90,7 +90,7 @@ is accepted in source commit `86fe782f`; F245 is accepted in source commit
 in source commit `7021e657`; F248 is accepted in source commit `8886b46f`;
 F249 is accepted in source commit `828d5014`; F250 is accepted in source
 commit `4753ce3b`; F251 is accepted in source commit `ed548438`; F252 is
-selected.
+accepted in source commit `6f41f8a2`; F253 is selected.
 F196 and F197 use
 only the active open session's
 `SettingsRepository` and preserve their keys, conversions, defaults, and
@@ -2888,7 +2888,7 @@ stale/overlap rejection, write-failure rollback, and intensive mapping
 coverage passed. Source ownership found one owner for 1,172 files, and
 `git diff --check` passed; no full suite ran.
 
-## Current Phase 2 position - 2026-10-02 (F251 accepted; F252 selected)
+## Current Phase 2 position - 2026-10-02 (F252 accepted; F253 selected)
 
 F236 source commit `5877bba0` carries structured typed policy, teacher-target,
 and fresh-state failures from Repository through Platform to the review dialog.
@@ -3062,14 +3062,24 @@ wording is unchanged. The hard maximum is passed from the existing domain
 constant. `git diff --check` and new-file hygiene passed. No full batch CTest
 or suite ran.
 
-F252 is selected: extract accepted AI batch comment planning from
-`SpeakingEvalAiBatchDialog::applyComments()` into Qt-free Application. Keep
-`QString::simplified()` at the UI edge and pass checked/valid state, report
-index, current and replacement UTF-16 values, and report count. Preserve row
-order, index bounds, exact unchanged-value skipping, Qt-compatible blank
-checking, accepted assignments, and overwrite count. Keep parsing and text
-adaptation, localized confirmation, dialog acceptance, page/table mutation,
-and undo in the UI. Paired scans differed between this planner and the initial
-checkbox default rule; choose the planning/overwrite decision and defer the
-presentation rule. Phase 2 remains In Progress/Open; Gates 1 and 2 remain
-Partial.
+F252 source commit `6f41f8a2` extracts accepted AI batch comment planning
+from `SpeakingEvalAiBatchDialog::applyComments()` into Qt-free Application.
+Fresh independent x64 Debug/Ninja/MSVC 19.51/CMake 4.4.2/Qt 6.12 verification
+in `build/f252_independent_x64_debug` validated one owner for 1,210 handwritten
+sources. The app-less planner CTest passed 1/1; dialog slots
+`aiBatchDialogConfirmsAcceptedCommentOverwrites` and
+`aiBatchDialogSelectsEligibleStudentsAndReviewsValidComments` passed. Coverage
+checks selected/valid and report-index filtering, unchanged comments, overwrite
+count, input order, UTF-16 fidelity, and confirmation reject/accept. Diff and
+new-file hygiene passed; no full suite ran.
+
+F253 is selected to extract the identical private-notes section splitter
+shared by `SpeakingEvalAiBatchDialog` and `SpeakingEvalPrivateNotesEditor` into
+Qt-free Application. Preserve the `[Did Well]\n` prefix, first
+`\n[Needs Improvement]\n` separator, exact body whitespace/newlines, and the
+legacy fallback of returning all notes as Did Well when either marker is
+missing. Keep serialization, bullet-list editing/normalization, prompts, and
+observation parsing with their existing owners. Paired scans differed: the
+alternative was AI-batch response parsing. Choose the shared exact duplicate
+as a narrower reusable boundary; defer response-parser extraction. Phase 2
+remains In Progress/Open; Gates 1 and 2 remain Partial.

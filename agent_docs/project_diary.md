@@ -2193,3 +2193,15 @@ extract the accepted-comment planning loop, including exact no-op filtering and
 overwrite counting, while leaving QString normalization, localized confirmation,
 and page/table mutation at the UI edge. Paired scans also proposed moving the
 checkbox default rule; defer that presentation-only policy.
+
+## 2026-10-02 - F252 accepted comment plan accepted; F253 selected
+
+F252 moves checked/valid report filtering, unchanged-comment removal, ordered
+assignments, and overwrite counting into a Qt-free Application policy. Keep
+QString simplification, localized confirmation, accepted-dialog state, and
+table mutation at the UI edge. Independent fresh x64 Debug verification passed
+the app-less planner and the overwrite confirmation and existing apply-flow
+dialog slots. For F253, share the exactly duplicated Did Well/Needs Improvement
+section splitter between the AI batch dialog and private-notes editor. Keep its
+legacy malformed-input fallback and section whitespace intact; leave joining,
+bullet editing, and AI response parsing for separate slices.
