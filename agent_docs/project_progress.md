@@ -2884,7 +2884,7 @@ stale/overlap rejection, write-failure rollback, and intensive mapping
 coverage passed. Source ownership found one owner for 1,172 files, and
 `git diff --check` passed; no full suite ran.
 
-## Current Phase 2 position - 2026-10-02 (F245 accepted; F246 selected)
+## Current Phase 2 position - 2026-10-02 (F246 accepted; F247 selected)
 
 F236 source commit `5877bba0` carries structured typed policy, teacher-target,
 and fresh-state failures from Repository through Platform to the review dialog.
@@ -2986,11 +2986,24 @@ case CTests passed 4/4. Differential checks cover U+3000, unpaired UTF-16,
 malformed suffixes, and the page choice/apply flow. `git diff --check` and
 new-file whitespace checks passed; no full suite ran.
 
-F246 is selected to move same-grade roster transfer-target eligibility into a
-Qt-free Application policy. Exclude invalid and current-class IDs; require a
-nonempty current grade and preserve trimmed, case-sensitive grade equality.
-Keep class/roster lookups and failures, labels, sorting, fullness state, menu
-actions, and transfer/save behavior at the widget boundary. Two independent
-scans disagreed between this explicitly deferred plan item and Speaking
-Evaluation roster-name import planning; the narrower planned filter is selected
-for F246. Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial.
+F246 source commit `b1a86db2` extracts same-grade roster transfer-target
+eligibility into a Qt-free Application policy. It rejects invalid/current
+class IDs, requires a nonempty current grade, and preserves trimmed,
+case-sensitive grade equality. The widget retains class/roster lookups and
+failures, labels, sorting, fullness, menu actions, and transfer/save behavior.
+Independent fresh x64 Debug/Ninja/MSVC 19.51/Qt 6.12 verification validated
+one owner for 1,198 handwritten sources; the app-less eligibility,
+RosterEditorWidgetSave, and TestingClassesPage focused CTests passed 3/3.
+`git diff --check` passed. The UI tests did not reach nonempty-grade target
+enumeration or assert `classInfo` lookup counts; policy decisions are covered
+directly. No full suite ran.
+
+F247 is selected to extract `SpeakingEvalPage::nameImportChanges` planning into
+a Qt-free Application policy. Preserve case-insensitive first-match roster
+column lookup, Qt-compatible trimming and `StudentNameUtils::namePairKey`
+separator behavior, source order, incomplete/duplicate-pair filtering against
+existing and earlier imported rows, and the requirement that both name cells
+be blank. Keep roster reads, missing-column feedback, per-cell editability,
+unchanged-cell omission, applying edits, and result messages at the page/model
+boundary. Add app-less planner cases and a page-level Import Names regression.
+Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial.

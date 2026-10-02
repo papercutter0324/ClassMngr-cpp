@@ -4949,11 +4949,26 @@ unpaired-surrogate suffix boundaries, malformed names, and choosing/applying
 the page action. `git diff --check` and new-file whitespace checks passed. No
 full suite ran.
 
-F246 is selected to extract the same-grade roster transfer-target eligibility
-filter into Qt-free Application. The paired scans differed: one favored this
-explicitly deferred plan item, and the other found Speaking Evaluation
-roster-name import planning. Choose the narrower planned filter: reject
-nonpositive and current-class IDs, require a nonempty source grade, and keep
-trimmed case-sensitive grade matching. Service reads/failures, labels and
-ordering, fullness, menu actions, and the transfer/save sequence remain in the
-widget. Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial.
+F246 source commit `b1a86db2` extracts same-grade roster transfer-target
+eligibility into Qt-free Application. The policy rejects invalid/current
+class IDs, requires a nonempty source grade, and compares Qt-compatible trimmed
+grades case-sensitively. The widget retains all service reads/failures, labels,
+ordering, fullness, menus, and the transfer/save sequence. Independent fresh
+x64 Debug/Ninja/MSVC 19.51/Qt 6.12 verification validated one owner for 1,198
+handwritten sources; the policy, RosterEditorWidgetSave, and
+TestingClassesPage CTests passed 3/3. `git diff --check` and new-file
+whitespace checks passed. No full suite ran. Coverage limitation: existing UI
+tests did not reach nonempty-grade target enumeration or assert class-info
+lookup counts; the app-less tests directly cover the policy's ID and grade
+decisions.
+
+F247 is selected to extract `SpeakingEvalPage::nameImportChanges` into a
+Qt-free Application planner. Preserve case-insensitive first roster-column
+match, Qt-compatible name trimming and legacy separator-based pair keys,
+source order, incomplete and duplicate filtering against existing/imported
+pairs, and the rule that both target name cells must be blank. Keep roster
+reads, missing/empty-column feedback, per-cell editability checks, applying
+edits, and result messages at the page boundary. Add focused app-less planner
+cases and a page-level Import Names regression; no dedicated import planning
+coverage currently exists. Phase 2 remains In Progress/Open, with Gates 1 and 2
+Partial.

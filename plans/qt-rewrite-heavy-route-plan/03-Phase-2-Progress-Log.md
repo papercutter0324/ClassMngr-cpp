@@ -9598,13 +9598,25 @@ and Speaking Evaluation save use case. Differential coverage includes U+3000
 and unpaired-surrogate behavior, plus page-level suffix choose/apply.
 `git diff --check` and new-file whitespace checks passed; no full suite ran.
 
-F246 is selected, not started: extract same-grade roster transfer-target
-eligibility into a small Qt-free Application policy using the trimmed-grade/ID
-predicate. Keep lookup/error handling, labels, sorting, fullness, menu actions,
-and transfer/save flow at the UI boundary. Two independent scans disagreed: one
-recommended this explicitly deferred plan item, while the other proposed
-Speaking Evaluation roster-name import planning. Main selected it because it
-is explicitly deferred and has the narrower predicate. The cumulative Gate 1
-map is historical and ends at F143
+F246, source commit `b1a86db2`, extracts same-grade roster transfer-target
+eligibility. Fresh Windows x64 Debug/Ninja/MSVC 19.51/Qt 6.12 verification
+found one owner for 1,198 handwritten sources; three focused CTests passed:
+app-less eligibility, RosterEditorWidgetSave, and TestingClassesPage.
+`git diff --check` passed. Coverage limitation: no focused UI assertion reaches
+nonempty-grade target enumeration or checks `classInfo` call counts; policy
+tests cover the logic and the widget source compiled. No full suite ran.
+
+F247 is selected: extract `SpeakingEvalPage::nameImportChanges` into a Qt-free
+Application planner. Preserve case-insensitive first-match column lookup,
+Qt-compatible trimming, `StudentNameUtils::namePairKey` separator/collision
+semantics, roster order, incomplete-name and duplicate filtering against
+existing and earlier imported rows; require both English and Korean name cells
+to be blank for availability, preserve editable-cell checks, and omit unchanged
+cells. Keep roster lookup,
+missing/empty-column messages, page/model editability checks, applying edits,
+and result messages at the UI boundary. Proposed focused coverage: standalone
+planner tests and a `SpeakingEvalPageSaveTests` import-action regression. Two
+completed scans informed this selection. The cumulative Gate 1 map is
+historical and ends at F143
 ([map](03-Phase-2-Progress-Log.md#L7570)); Gates 1 and 2 remain Partial. Phase
 2 remains In Progress/Open.

@@ -2116,3 +2116,21 @@ display labels, sorting, fullness, menus, and the transfer transaction remain
 in the widget; Application receives current and candidate class IDs/grades and
 returns eligibility only. The paired scans compared this with extracting
 Speaking Evaluation roster-name import planning; keep that as a later option.
+
+## 2026-10-02 - F246 transfer-target eligibility accepted; F247 selected
+
+Keep candidate class-info lookups behind a separate Qt-free ID guard so invalid
+and same-class IDs do not trigger service reads. Compare source and candidate
+grades only after Qt-compatible trimming, with exact case-sensitive equality.
+The widget still owns class/roster reads and errors, labels, ordering, fullness,
+menus, and the atomic transfer/save workflow. Independent verification passed
+the app-less policy and two focused roster/page targets; it also found the
+current UI tests do not exercise eligible-target enumeration for a nonempty
+grade. Direct contract coverage does exercise ID and grade decisions.
+
+For F247, extract Speaking Evaluation roster-name import planning, leaving data
+reads, warnings, per-cell editability and change application at the page edge.
+Preserve first matching case-insensitive roster columns, trimmed legacy pair
+keys, source order, duplicate filtering, blank-name-row eligibility, and
+unchanged-cell omission. Add both policy cases and a page-level import-action
+regression because no dedicated coverage currently exercises this path.

@@ -91,8 +91,9 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
   F241 is accepted for Qt-free roster-column name admission; F242 is accepted
   for custom-column removal eligibility; F243 is accepted for app-less custom-
   column append; F244 is accepted for roster-transfer destination preparation;
-  F245 is accepted for Korean-name suffix suggestion policy; F246 is selected
-  for same-grade roster transfer-target eligibility.
+  F245 is accepted for Korean-name suffix suggestion policy; F246 is accepted
+  for same-grade roster transfer-target eligibility; F247 is selected for
+  Speaking Evaluation roster-name import planning.
   The prior F123 candidate wording is historical;
   current Teacher Profile integration status is recorded in the progress log.
   Gates 1 and 2
@@ -249,29 +250,27 @@ No new v2 production path depends on DataService, MainWindow, PageManager, or a 
 
 Earlier verified slices and cumulative exit-gate snapshots are archived in the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 
-## Latest progress update - 2026-10-02 (F245 accepted; F246 selected)
+## Latest progress update - 2026-10-02 (F246 accepted; F247 selected)
 
-F245, source commit `99c95146`, moves trimmed case-sensitive English grouping
-and first-unused A-Z Korean suffix selection into Qt-free Application policy.
-RosterModel and SpeakingEvalModel project legacy
-`StudentNameUtils::baseKoreanName()` and
-`StudentNameUtils::koreanNameSuffix()` values; the lossless
-UTF-16 Qt adapter now lives at the neutral UI boundary in
-[`qt_text_adapter.h`](../../src/ui/shared/qt_text_adapter.h). Fresh x64
-Debug/Ninja/MSVC 19.51/Qt 6.12 verification in
-`build/f245_independent_x64_debug` found one owner for 1,196 handwritten files.
-Four focused CTests passed: suffix policy, RosterModel, SpeakingEval page save,
-and Speaking Evaluation save use case. Differential coverage includes U+3000
-and unpaired-surrogate behavior, plus page-level suffix choose/apply.
-`git diff --check` and new-file whitespace checks passed; no full suite ran.
+F246, source commit `b1a86db2`, extracts same-grade roster transfer-target
+eligibility. Fresh Windows x64 Debug/Ninja/MSVC 19.51/Qt 6.12 verification
+found one owner for 1,198 handwritten sources; three focused CTests passed:
+app-less eligibility, RosterEditorWidgetSave, and TestingClassesPage.
+`git diff --check` passed. Coverage limitation: no focused UI assertion reaches
+nonempty-grade target enumeration or checks `classInfo` call counts; policy
+tests cover the logic and the widget source compiled. No full suite ran.
 
-F246 is selected, not started: extract same-grade roster transfer-target
-eligibility into a small Qt-free Application policy using the trimmed-grade/ID
-predicate. Keep lookup/error handling, labels, sorting, fullness, menu actions,
-and transfer/save flow at the UI boundary. Two independent scans disagreed: one
-recommended this explicitly deferred plan item, while the other proposed
-Speaking Evaluation roster-name import planning. Main selected it because it
-is explicitly deferred and has the narrower predicate. The cumulative Gate 1
-map is historical and ends at F143
+F247 is selected: extract `SpeakingEvalPage::nameImportChanges` into a Qt-free
+Application planner. Preserve case-insensitive first-match column lookup,
+Qt-compatible trimming, `StudentNameUtils::namePairKey` separator/collision
+semantics, roster order, incomplete-name and duplicate filtering against
+existing and earlier imported rows; require both English and Korean name cells
+to be blank for availability, preserve editable-cell checks, and omit unchanged
+cells. Keep roster lookup,
+missing/empty-column messages, page/model editability checks, applying edits,
+and result messages at the UI boundary. Proposed focused coverage: standalone
+planner tests and a `SpeakingEvalPageSaveTests` import-action regression. Two
+completed scans informed this selection. The cumulative Gate 1 map is
+historical and ends at F143
 ([map](03-Phase-2-Progress-Log.md#L7570)); Gates 1 and 2 remain Partial. Phase
 2 remains In Progress/Open.
