@@ -83,9 +83,11 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
   legacy `apply(plan)` stays localized and SQL/transaction failures remain
   message-only. F237 is accepted: Qt-free Speaking Evaluation validation and
   normalization is shared by save and page feedback; Platform persists
-  normalized input and invalid data is blocked. F238 is selected to add an
-  initial-setup recovery contract advancing the named backup/recovery Gate 1
-  gap.
+  normalized input and invalid data is blocked. F238 is accepted: a Qt-free
+  Application initial-setup lifecycle with a Platform file/workspace adapter
+  retains FileController warnings/recent-file behavior and original-profile
+  recovery. F239 is selected to move roster row reordering into an app-less
+  contract over existing `RosterSnapshot` rows.
   The prior F123 candidate wording is historical;
   current Teacher Profile integration status is recorded in the progress log.
   Gates 1 and 2
@@ -242,36 +244,31 @@ No new v2 production path depends on DataService, MainWindow, PageManager, or a 
 
 Earlier verified slices and cumulative exit-gate snapshots are archived in the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 
-## Latest progress update - 2026-10-02 (F237 accepted; F238 selected)
+## Latest progress update - 2026-10-02 (F238 accepted; F239 selected)
 
-F237, source commit `8ef76074`, shares Qt-free Speaking Evaluation
-normalization/content validation between the save use case and page feedback
-adapter; Platform persists normalized input and invalid data is blocked. Fresh
-x64 Debug verification completed 323 steps; source ownership found 1 owner for
-1,177 handwritten sources. Focused Application, Platform, and page-save tests
-passed 9/9, 10/10 (after parity follow-up), and 14/14; CTest passed 3/3 before
-follow-up, and Korean-name differential/page-decline slots passed 3/3 each.
-Both questionable-name settings match legacy issue code/location/severity and
-error outcome, with expected port suppression/forwarding; declining confirmation
-leaves stored state unchanged. `git diff --check` passed; no full suite ran.
+F238, source commit `7b832bcc`, adds a Qt-free Application initial-setup
+lifecycle with a Platform file/workspace adapter. FileController warnings,
+recent-file behavior, and original-profile recovery remain intact. Independent
+x64 Debug source ownership found 1 owner for 1,181 handwritten sources. CTest
+passed 3/3; the Application custom runner passed 11 scenarios, Platform passed
+7/7, and FileController passed 37/37. Coverage includes no-original finish,
+failed creation, cancel/restore, failed remove/rename paths, recent-file timing,
+and warning/recovery assertions. `git diff --check` passed; no full suite ran.
 
-F238 is selected: add a Qt-free Application contract for initial-setup profile
-replacement that preserves the original during setup, finalizes on success, and
-restores on cancellation, with file operations in Platform. Preserve warnings,
-messages, recent-file updates, no-overwrite behavior, and original-profile
-recovery after create or restore failure. Acceptance covers app-less operation
-and failure ordering; adapter create/restore failures with original survival;
-and FileController/MainWindow finish, cancel, failed-create, and recent-file
-regressions. The historical cumulative Gate 1 map ends at F143 and still names
-backup/recovery as planned ([map](03-Phase-2-Progress-Log.md#L7570)). Current
-flow: [FileController create](../../src/app/controllers/file_controller.cpp#L359),
-[finish](../../src/app/controllers/file_controller.cpp#L431), and
-[cancel](../../src/app/controllers/file_controller.cpp#L460); lifecycle
-regressions cover [failed-close initiation](../../tests/file_controller_workspace_lifecycle_tests.cpp#L639),
-[finish/recent state](../../tests/file_controller_workspace_lifecycle_tests.cpp#L695),
-and [cancel/recent state](../../tests/file_controller_workspace_lifecycle_tests.cpp#L741).
-Two Explorer candidates disagreed; initial-setup recovery was chosen for the
-explicit gap, while Teacher Import typed apply is deferred because the recovery
-gap is directly named; its transaction path remains intact. Phase 2 remains
-In Progress/Open; Gates 1 and 2 remain
-Partial.
+F239 is selected: move roster row reordering from RosterModel into an app-less
+contract over existing `RosterSnapshot` rows. The historical cumulative Gate 1
+map ends at F143 and names broader roster editing as planned ([map](03-Phase-2-Progress-Log.md#L7570)).
+Current touchpoints are
+[`canMoveRow`](../../src/features/roster/ui/roster_model_rows.cpp#L89), which
+validates indexes/source data, [`moveRosterRow`](../../src/features/roster/ui/roster_model_rows.cpp#L141),
+which moves the complete row, and
+[`RosterEditorWidget::moveStudentRow`](../../src/features/roster/ui/roster_editor_widget_students.cpp#L10),
+which retains the selection column, schedules autosave, and updates actions.
+Acceptance covers app-less forward/backward moves, invalid/equal indexes,
+empty or whitespace-only source rows with Qt trimming semantics, unchanged row
+count and cell contents; adapter preservation of diagnostics, validation, and
+dirty behavior; and widget selection/autosave regression. Two independent
+Explorer lanes differed; the narrower roster contract was chosen because Gate
+1 explicitly names broader roster editing, while Teacher Import typed apply
+has wider transaction integration. Phase 2 remains In Progress/Open; Gates 1
+and 2 remain Partial.

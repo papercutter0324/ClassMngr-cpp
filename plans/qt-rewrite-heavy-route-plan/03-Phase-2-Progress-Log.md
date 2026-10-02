@@ -9515,3 +9515,29 @@ recovery as planned ([map](03-Phase-2-Progress-Log.md#L7570)). Two Explorer
 candidates disagreed; main chose the directly named recovery gap, deferring
 Teacher Import typed apply while keeping its transaction path intact. Phase 2
 remains In Progress/Open; Gates 1 and 2 remain Partial.
+
+### Progress update - 2026-10-02 (F238 accepted; F239 selected)
+
+F238, source commit `7b832bcc`, adds a Qt-free Application initial-setup
+lifecycle with a Platform file/workspace adapter. FileController warnings,
+recent-file behavior, and original-profile recovery remain intact. Independent
+x64 Debug source ownership found 1 owner for 1,181 handwritten sources. CTest
+passed 3/3; the Application custom runner passed 11 scenarios, Platform passed
+7/7, and FileController passed 37/37. Coverage includes no-original finish,
+failed creation, cancel/restore, failed remove/rename paths, recent-file timing,
+and warning/recovery assertions. `git diff --check` passed. No full suite ran.
+
+F239 is selected: move roster row reordering from RosterModel into an app-less
+contract over existing `RosterSnapshot` rows. Acceptance covers forward/backward
+moves, invalid/equal indexes, and empty/whitespace-only source rows while
+preserving Qt trimming semantics, row count, and every cell; the RosterModel
+adapter preserves existing diagnostics, validation, and dirty behavior; the
+widget regression preserves selection and autosave. Two independent Explorer
+lanes differed; main chose the narrower roster boundary because the historical
+Gate 1 map ending at F143 names broader roster editing as open. Teacher Import
+typed apply is deferred as wider transaction integration. Concrete touchpoints:
+[`canMoveRow`](../../src/features/roster/ui/roster_model_rows.cpp#L89),
+[`moveRosterRow`](../../src/features/roster/ui/roster_model_rows.cpp#L141), and
+[`RosterEditorWidget`](../../src/features/roster/ui/roster_editor_widget_students.cpp#L10).
+The historical map remains unchanged and Gates 1 and 2 remain Partial. Phase 2
+remains In Progress/Open.

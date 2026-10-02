@@ -4868,13 +4868,21 @@ page-save tests passed 9/9, 10/10, and 14/14. A legacy differential check
 covers both questionable Korean-name flag settings; declining confirmation
 leaves stored data unchanged. `git diff --check` passed; no full suite ran.
 
-F238 is selected to model initial-setup profile replacement in a Qt-free
-contract, preserving the original profile during setup, finalizing on success,
-and restoring on cancellation. Keep file operations in Platform and retain
-current setup messages and recent-file behavior. The named backup/recovery gap
-made this a more direct next step than Teacher Import typed apply. Acceptance
-covers app-less lifecycle/failure ordering, recovery adapter failures, and
-FileController/MainWindow lifecycle regressions proving the original profile
-survives failed creation or cancellation. Next: implement and independently
-verify F238, update formal plans, commit, then select the following slice.
-Phase 2 remains In Progress/Open with Gates 1 and 2 Partial.
+F238 source commit `7b832bcc` moves initial-setup profile replacement into a
+Qt-free Application lifecycle contract with a Platform file/workspace adapter.
+Independent x64 Debug verification validated one owner for 1,181 handwritten
+sources. Three focused CTest entries passed; the Application runner passed all
+11 scenarios, Platform tests passed 7/7, and FileController tests passed 37/37.
+Coverage includes finish with and without an original profile, failed create,
+cancel restoration and recovery failures. `git diff --check` passed; no full
+suite ran.
+
+F239 is selected to move roster row reordering into an app-less contract and
+reuse it from `RosterModel`. This advances the named Gate 1 roster-editing gap
+with a bounded rule. Preserve forward/backward moves, invalid/equal indexes,
+blank and whitespace-only source rows, complete row contents, widget selection,
+validation refresh, dirty state and autosave behavior. Teacher Import typed
+apply was considered but deferred as a wider transaction/Application boundary.
+Next: implement and independently verify F239, update formal plans, commit,
+then select the following slice. Phase 2 remains In Progress/Open with Gates 1
+and 2 Partial.

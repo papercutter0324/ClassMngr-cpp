@@ -81,7 +81,7 @@ is accepted in source commit `e8a2a5b5`; F230 is accepted in source commit
 source commit `075b4335`; F233 is accepted in source commit `2cb853e9`; F234
 is accepted in source commit `d6d4bdc6`; F235 is accepted in source commit
 `b52029a6`; F236 is accepted in source commit `5877bba0`; F237 is accepted in
-source commit `8ef76074`; F238 is selected.
+source commit `8ef76074`; F238 is accepted in source commit `7b832bcc`; F239 is selected.
 F196 and F197 use
 only the active open session's
 `SettingsRepository` and preserve their keys, conversions, defaults, and
@@ -2879,7 +2879,7 @@ stale/overlap rejection, write-failure rollback, and intensive mapping
 coverage passed. Source ownership found one owner for 1,172 files, and
 `git diff --check` passed; no full suite ran.
 
-## Current Phase 2 position - 2026-10-02 (F237 accepted; F238 selected)
+## Current Phase 2 position - 2026-10-02 (F238 accepted; F239 selected)
 
 F236 source commit `5877bba0` carries structured typed policy, teacher-target,
 and fresh-state failures from Repository through Platform to the review dialog.
@@ -2903,12 +2903,21 @@ owner for 1,177 handwritten sources. Application, Platform SavePort, and page
 save tests passed 9/9, 10/10, and 14/14; `git diff --check` passed. No full
 suite ran.
 
-F238 is selected to add a Qt-free contract for the initial-setup profile
-replacement lifecycle: preserve the original during setup, finalize on success,
-and restore it on cancellation. Keep file operations in a Platform adapter and
-preserve current setup messages and recent-file behavior. This directly targets
-the named backup/recovery gap; the Teacher Import typed apply integration was
-considered but deferred. Acceptance covers app-less ordering and failure tests,
-adapter recovery guarantees, and FileController/MainWindow lifecycle regressions,
-including failed create/restore handling without losing the original profile.
-Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial.
+F238 source commit `7b832bcc` moves initial-setup profile replacement into a
+Qt-free Application lifecycle contract with a Platform file/workspace adapter.
+The original profile remains recoverable through create and restore failures;
+FileController retains warning and recent-file behavior. Independent x64 Debug
+verification validated one owner for 1,181 handwritten sources. Three focused
+CTest entries passed; the Application runner passed all 11 scenarios, Platform
+tests passed 7/7, and FileController tests passed 37/37. `git diff --check`
+passed; no full suite ran.
+
+F239 is selected to move roster row-reordering rules into an app-less contract
+and reuse it from `RosterModel`. This advances the named Gate 1 roster-editing
+gap with a bounded rule while preserving widget selection and autosave behavior.
+Acceptance covers forward/backward moves, invalid/equal indexes, blank and
+whitespace-only source rows, unchanged row count, and preservation of all row
+cells. Keep Qt trimming semantics at the adapter boundary and verify widget
+selection/autosave regressions. Teacher Import typed apply was considered but
+deferred as a wider transaction/application boundary. Phase 2 remains In
+Progress/Open; Gates 1 and 2 remain Partial.

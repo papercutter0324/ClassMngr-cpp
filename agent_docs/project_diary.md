@@ -2049,7 +2049,7 @@ the questionable Korean-name-length option. Compare both flag settings with
 the legacy validator, and test that declining the confirmation preserves saved
 data.
 
-## 2026-10-02 - F238 initial setup recovery selected
+## 2026-10-02 - F238 initial setup recovery accepted
 
 Address the explicitly named backup/recovery gap with a Qt-free contract for
 preserving, finalizing, and restoring an initial-setup profile replacement.
@@ -2057,3 +2057,10 @@ Keep file operations in Platform and test failure ordering, original-profile
 survival, UI messages, and recent-file behavior. Defer Teacher Import typed
 apply, whose current Application use case already runs in the repository and
 whose production integration is a separate boundary migration.
+
+## 2026-10-02 - F239 roster row reordering selected
+
+Move the row move rule into the app-less layer, preserving invalid/equal index
+and whitespace-only source-row behavior. Keep cell selection, validation
+refresh, dirty state, and autosave at the roster UI boundary. Defer Teacher
+Import typed apply while addressing the specifically named roster-editing gap.
