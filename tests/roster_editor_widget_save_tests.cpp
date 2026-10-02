@@ -138,6 +138,7 @@ class RosterEditorWidgetSaveTests final : public QObject
 private slots:
     void manualSaveCleansOnSuccessAndStaysDirtyOnFailure();
     void autosavePersistsOrdinaryRosterWithoutReloading();
+    void rowMovePreservesSelectionAndSchedulesAutosave();
     void invalidRosterSaveSelectsFirstInvalidCell();
     void autosaveFailureRemainsSilentAndDirty();
     void confirmedInteractiveSaveAllowsQuestionableKoreanNameLength();
@@ -212,6 +213,82 @@ autosavePersistsOrdinaryRosterWithoutReloading()
         model,
         QStringLiteral("English")
         ))).toString(), QStringLiteral("Carol"));
+}
+
+void RosterEditorWidgetSaveTests::
+rowMovePreservesSelectionAndSchedulesAutosave()
+{
+    RosterEditorFixture fixture;
+    QString error;
+    QVERIFY2(fixture.initialize(&error), qPrintable(error));
+
+    Roster roster;
+    roster.columns = Roster::BaseColumns;
+    roster.rows = {
+        QStringList{
+            QStringLiteral("Amy"),
+            QStringLiteral("\uAE40\uBBFC\uC9C0"),
+            QStringLiteral("A+"),
+            QStringLiteral("B"),
+            QStringLiteral("C"),
+            QStringLiteral("D")
+        },
+        QStringList{
+            QStringLiteral("Ben"),
+            QStringLiteral("\uC774\uC11C\uC900"),
+            QStringLiteral("B+"),
+            QStringLiteral("A"),
+            QStringLiteral("B"),
+            QStringLiteral("C")
+        },
+        QStringList{
+            QStringLiteral("Cal"),
+            QStringLiteral("\uBC15\uC11C\uC900"),
+            QStringLiteral("C+"),
+            QStringLiteral("B"),
+            QStringLiteral("A"),
+            QStringLiteral("B")
+        }
+    };
+    QVERIFY(fixture.services.rosterService()->saveRoster(fixture.classId, roster));
+
+    RosterEditorWidget editor(&fixture.services);
+    editor.loadClass(Classroom(QStringLiteral("Row move autosave test"), fixture.classId));
+    auto* const model = editor.findChild<RosterModel*>();
+    auto* const table = editor.findChild<RosterTableView*>(
+        QStringLiteral("rosterTable")
+        );
+    auto* const autosave = editor.findChild<AutosaveCoordinator*>();
+    QVERIFY(model);
+    QVERIFY(table);
+    QVERIFY(autosave);
+
+    const int selectedColumn = model->koreanNameColumn();
+    QVERIFY(selectedColumn >= 0);
+    table->setCurrentIndex(model->index(0, selectedColumn));
+    autosave->setDebounceInterval(10);
+    QSignalSpy saveSpy(autosave, &AutosaveCoordinator::saveRequested);
+    QVERIFY(saveSpy.isValid());
+
+    table->requestRowMove(0, 2);
+
+    QCOMPARE(table->currentIndex(), model->index(2, selectedColumn));
+    QCOMPARE(model->rowValues(2).at(0), QStringLiteral("Amy"));
+    QCOMPARE(model->rowValues(2).at(2), QStringLiteral("A+"));
+    QCOMPARE(model->rowValues(0).at(0), QStringLiteral("Ben"));
+    QVERIFY(model->isDirty());
+    QVERIFY(autosave->isDirty());
+    QVERIFY(editor.hasUnsavedChanges());
+    QCOMPARE(saveSpy.count(), 0);
+
+    QTRY_VERIFY_WITH_TIMEOUT(saveSpy.count() >= 1, 5'000);
+    QCOMPARE(saveSpy.constFirst().at(0).toBool(), false);
+    QTRY_VERIFY_WITH_TIMEOUT(!editor.hasUnsavedChanges(), 5'000);
+
+    const auto saved = fixture.services.rosterService()->roster(fixture.classId);
+    QVERIFY(saved);
+    QCOMPARE(saved->rows.at(2).at(0), QStringLiteral("Amy"));
+    QCOMPARE(saved->rows.at(2).at(2), QStringLiteral("A+"));
 }
 
 void RosterEditorWidgetSaveTests::

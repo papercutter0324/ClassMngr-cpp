@@ -1,6 +1,61 @@
 #include "roster_model.h"
 
 #include "core/utils/student_name_utils.h"
+#include "next/application/roster_row_reordering.h"
+
+#include <utility>
+
+namespace
+{
+
+ClassMngr::Next::Application::RosterSnapshot applicationSnapshot(
+    const QStringList& columns,
+    const QList<QStringList>& rows
+    )
+{
+    ClassMngr::Next::Application::RosterSnapshot snapshot;
+    snapshot.columns.reserve(static_cast<std::size_t>(columns.size()));
+    for (const QString& column : columns)
+    {
+        snapshot.columns.push_back(column.toStdU16String());
+    }
+
+    snapshot.rows.reserve(static_cast<std::size_t>(rows.size()));
+    for (const QStringList& sourceRow : rows)
+    {
+        std::vector<std::u16string> row;
+        row.reserve(static_cast<std::size_t>(sourceRow.size()));
+        for (const QString& cell : sourceRow)
+        {
+            row.push_back(cell.toStdU16String());
+        }
+        snapshot.rows.push_back(std::move(row));
+    }
+
+    return snapshot;
+}
+
+QList<QStringList> qtRows(
+    const std::vector<std::vector<std::u16string>>& rows
+    )
+{
+    QList<QStringList> converted;
+    converted.reserve(static_cast<qsizetype>(rows.size()));
+    for (const std::vector<std::u16string>& sourceRow : rows)
+    {
+        QStringList row;
+        row.reserve(static_cast<qsizetype>(sourceRow.size()));
+        for (const std::u16string& cell : sourceRow)
+        {
+            row.append(QString::fromStdU16String(cell));
+        }
+        converted.append(std::move(row));
+    }
+
+    return converted;
+}
+
+} // namespace
 
 bool RosterModel::canRemoveRow(
     int row,
@@ -92,50 +147,42 @@ bool RosterModel::canMoveRow(
     QString* reason
     ) const
 {
-    if (sourceRow < 0 || sourceRow >= m_rows.size())
+    const auto result =
+        ClassMngr::Next::Application::reorderRosterRows(
+            applicationSnapshot(m_columns, m_rows),
+            sourceRow,
+            destinationRow
+            );
+    const auto* error =
+        std::get_if<
+            ClassMngr::Next::Application::RosterRowReorderingError
+            >(&result);
+    if (!error)
     {
-        if (reason)
+        return true;
+    }
+
+    if (reason)
+    {
+        using ClassMngr::Next::Application::RosterRowReorderingErrorCode;
+        switch (error->code)
         {
+        case RosterRowReorderingErrorCode::InvalidSourceIndex:
             *reason = tr("Select a student row to move.");
-        }
-
-        return false;
-    }
-
-    if (destinationRow < 0 || destinationRow >= m_rows.size())
-    {
-        if (reason)
-        {
+            break;
+        case RosterRowReorderingErrorCode::InvalidDestinationIndex:
             *reason = tr("Drop the student on another roster row.");
-        }
-
-        return false;
-    }
-
-    if (sourceRow == destinationRow)
-    {
-        if (reason)
-        {
+            break;
+        case RosterRowReorderingErrorCode::SameRow:
             *reason = tr("Drop the student on a different row.");
-        }
-
-        return false;
-    }
-
-    const bool hasData =
-        rowHasData(m_rows[sourceRow]);
-
-    if (!hasData)
-    {
-        if (reason)
-        {
+            break;
+        case RosterRowReorderingErrorCode::SourceRowHasNoData:
             *reason = tr("Selected row is empty.");
+            break;
         }
-
-        return false;
     }
 
-    return true;
+    return false;
 }
 
 bool RosterModel::moveRosterRow(
@@ -143,21 +190,20 @@ bool RosterModel::moveRosterRow(
     int destinationRow
     )
 {
-    QString reason;
-
-    if (!canMoveRow(sourceRow, destinationRow, &reason))
+    auto result =
+        ClassMngr::Next::Application::reorderRosterRows(
+            applicationSnapshot(m_columns, m_rows),
+            sourceRow,
+            destinationRow
+            );
+    auto* reordered =
+        std::get_if<ClassMngr::Next::Application::RosterSnapshot>(&result);
+    if (!reordered)
     {
-        Q_UNUSED(reason);
         return false;
     }
 
-    const QStringList movedRow =
-        m_rows.takeAt(sourceRow);
-
-    m_rows.insert(
-        destinationRow,
-        movedRow
-        );
+    m_rows = qtRows(reordered->rows);
 
     validateAll();
 

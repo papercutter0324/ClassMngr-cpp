@@ -1,5 +1,36 @@
 include_guard(GLOBAL)
 
+# Keep complete-row reordering independent of Qt and the feature runtime.
+add_executable(
+    ClassMngrNextApplicationRosterRowReorderingTests
+    tests/next_application_roster_row_reordering_tests.cpp
+)
+target_compile_features(
+    ClassMngrNextApplicationRosterRowReorderingTests
+    PRIVATE
+        cxx_std_23
+)
+set_target_properties(
+    ClassMngrNextApplicationRosterRowReorderingTests
+    PROPERTIES
+        AUTOMOC OFF
+        AUTOUIC OFF
+        AUTORCC OFF
+)
+set_property(
+    TARGET ClassMngrNextApplicationRosterRowReorderingTests
+    PROPERTY CLASSMNGR_STANDALONE_CPP_TEST TRUE
+)
+target_link_libraries(
+    ClassMngrNextApplicationRosterRowReorderingTests
+    PRIVATE
+        ClassMngrNext::Application
+)
+add_test(
+    NAME ClassMngrNextApplicationRosterRowReorderingTests
+    COMMAND ClassMngrNextApplicationRosterRowReorderingTests
+)
+
 # Keep the cycle-selection rule independent of Qt and the legacy runtime.
 add_executable(
     ClassMngrNextApplicationEvaluationDefaultSelectionTests

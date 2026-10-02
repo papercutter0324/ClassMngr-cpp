@@ -233,6 +233,7 @@ qt_add_executable(ClassMngrBasePageTests
 
     target_link_libraries(ClassMngrRosterModelTests
         PRIVATE
+            ClassMngrNext::Application
             Qt6::Core
             Qt6::Gui
             Qt6::Test

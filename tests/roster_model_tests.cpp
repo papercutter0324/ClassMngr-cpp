@@ -16,6 +16,7 @@ private slots:
     void moveRosterRowMovesSourceToLaterDestination();
     void moveRosterRowMovesSourceToEarlierDestination();
     void moveRosterRowRejectsEmptyAndSameRows();
+    void moveRosterRowRefreshesValidationAndEmitsModelChanges();
     void insertTransferredRowUsesFirstEmptyRow();
     void insertTransferredRowCopiesOnlyMatchingColumns();
     void insertTransferredRowRejectsFullTargetRoster();
@@ -340,17 +341,15 @@ void RosterModelTests::moveRosterRowRejectsEmptyAndSameRows()
 
     QVERIFY(
         !model.canMoveRow(
-            0,
+            -1,
             0,
             &reason
             )
         );
-    QVERIFY(
-        !reason.isEmpty()
-        );
+    QCOMPARE(reason, QStringLiteral("Select a student row to move."));
     QVERIFY(
         !model.moveRosterRow(
-            0,
+            -1,
             0
             )
         );
@@ -359,22 +358,89 @@ void RosterModelTests::moveRosterRowRejectsEmptyAndSameRows()
 
     QVERIFY(
         !model.canMoveRow(
-            1,
             0,
+            model.rowCount(),
             &reason
             )
         );
-    QVERIFY(
-        !reason.isEmpty()
-        );
+    QCOMPARE(reason, QStringLiteral("Drop the student on another roster row."));
     QVERIFY(
         !model.moveRosterRow(
-            1,
+            0,
+            model.rowCount()
+            )
+        );
+
+    reason.clear();
+    QVERIFY(!model.canMoveRow(0, 0, &reason));
+    QCOMPARE(reason, QStringLiteral("Drop the student on a different row."));
+    QVERIFY(!model.moveRosterRow(0, 0));
+
+    reason.clear();
+    QVERIFY(!model.canMoveRow(1, 0, &reason));
+    QCOMPARE(reason, QStringLiteral("Selected row is empty."));
+    QVERIFY(!model.moveRosterRow(1, 0));
+
+    QVERIFY(
+        !model.canMoveRow(
+            model.rowCount(),
             0
             )
         );
     QVERIFY(
         !model.isDirty()
+        );
+}
+
+void RosterModelTests::moveRosterRowRefreshesValidationAndEmitsModelChanges()
+{
+    Roster roster;
+    roster.columns = Roster::BaseColumns;
+    roster.rows = {
+        studentRow(
+            QStringLiteral("Amy"),
+            QStringLiteral("\uAE40")
+            ),
+        studentRow(
+            QStringLiteral("Ben"),
+            QStringLiteral("\uC774\uC11C\uC900")
+            )
+    };
+
+    RosterModel model;
+    model.setRoster(roster);
+    const int koreanColumn = model.koreanNameColumn();
+    QVERIFY(koreanColumn >= 0);
+    QVERIFY(
+        model.errorsForCell(0, koreanColumn).contains(
+            QStringLiteral("Korean name has 1 or 5+ syllables. Verify it is correct.")
+            )
+        );
+
+    QSignalSpy dirtySpy(&model, &RosterModel::dirtyChanged);
+    QSignalSpy changedSpy(&model, &QAbstractItemModel::dataChanged);
+    QVERIFY(dirtySpy.isValid());
+    QVERIFY(changedSpy.isValid());
+
+    QVERIFY(model.moveRosterRow(0, 2));
+
+    QVERIFY(
+        !model.errorsForCell(0, koreanColumn).contains(
+            QStringLiteral("Korean name has 1 or 5+ syllables. Verify it is correct.")
+            )
+        );
+    QVERIFY(
+        model.errorsForCell(2, koreanColumn).contains(
+            QStringLiteral("Korean name has 1 or 5+ syllables. Verify it is correct.")
+            )
+        );
+    QVERIFY(model.isDirty());
+    QCOMPARE(dirtySpy.count(), 1);
+    QCOMPARE(changedSpy.count(), 1);
+    QCOMPARE(changedSpy.constFirst().at(0).value<QModelIndex>().row(), 0);
+    QCOMPARE(
+        changedSpy.constFirst().at(1).value<QModelIndex>().row(),
+        model.rowCount() - 1
         );
 }
 
