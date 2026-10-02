@@ -1089,26 +1089,7 @@ Result<ScheduleImportSummary> ScheduleImportRepository::applyTyped(
         return std::unexpected(applyValidationFailureMessage(request, *failure));
     }
 
-    ScheduleImportApplyRequest normalizedRequest = request;
-    for (ScheduleImportApplyTeacher& teacher : normalizedRequest.teachers)
-    {
-        if (teacher.targetTeacherId)
-        {
-            teacher.targetTeacherId = teacherDomainId(
-                legacyApplyId(teacher.targetTeacherId)
-                );
-        }
-    }
-    for (ScheduleImportApplyClass& classroom : normalizedRequest.classes)
-    {
-        if (classroom.targetClassId)
-        {
-            classroom.targetClassId = classDomainId(
-                legacyApplyId(classroom.targetClassId)
-                );
-        }
-    }
-    return applyCore(normalizedRequest);
+    return applyCore(request);
 }
 
 Result<ScheduleImportSummary> ScheduleImportRepository::applyCore(

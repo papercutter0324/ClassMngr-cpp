@@ -62,6 +62,7 @@ private slots:
     void conflictsRollBackBeforeWrites();
     void writeFailureRollsBackEveryChange();
     void typedApplyRejectsStaleSelectedClassBeforeWrites();
+    void typedApplyPreservesExactTargetIdsThroughStateValidation();
     void typedApplyRejectsOverlappingSchedulesBeforeWrites();
     void typedWriteFailureRollsBackEveryChange();
     void typedIntensiveApplyMapsModeAndSlotState();
@@ -5826,6 +5827,127 @@ void ScheduleImportTests::typedApplyRejectsStaleSelectedClassBeforeWrites()
             QStringLiteral("selected class is no longer available")),
             qPrintable(staleError));
         QCOMPARE(persistedScheduleImportSnapshot(database), before);
+
+        database.close();
+    }
+    QSqlDatabase::removeDatabase(connectionName);
+}
+
+void ScheduleImportTests::typedApplyPreservesExactTargetIdsThroughStateValidation()
+{
+    const QString connectionName =
+        QStringLiteral("schedule-import-typed-exact-target-ids-%1")
+            .arg(QUuid::createUuid().toString());
+    {
+        QSqlDatabase database = QSqlDatabase::addDatabase(
+            QStringLiteral("QSQLITE"), connectionName);
+        database.setDatabaseName(QStringLiteral(":memory:"));
+        QVERIFY(database.open());
+        QVERIFY(DatabaseSchemaManager::ensureSchema(database).has_value());
+
+        QSqlQuery query(database);
+        query.prepare(QStringLiteral(
+            "INSERT INTO teachers (id, teacher_kr, room_number) "
+            "VALUES (1, ?, '413')"));
+        query.addBindValue(QString::fromUtf16(u"\uAE40"));
+        QVERIFY2(query.exec(), qPrintable(query.lastError().text()));
+        execOrFail(query, QStringLiteral(
+            "INSERT INTO classes (id, name) VALUES (1, 'Existing class')"));
+        execOrFail(query, QStringLiteral(
+            "INSERT INTO class_info "
+            "(class_id, teacher_id, class_grade, class_level) "
+            "VALUES (1, 1, 'E5', 'Zeus')"));
+        execOrFail(query, QStringLiteral(
+            "INSERT INTO class_times "
+            "(class_id, day, start_time, end_time) "
+            "VALUES (1, 'Friday', '2:00 PM', '2:55 PM')"));
+
+        const auto canonicalTeacherId =
+            ClassMngr::Next::Domain::TeacherId::fromString("1");
+        const auto canonicalClassId =
+            ClassMngr::Next::Domain::ClassId::fromString("1");
+        const auto noncanonicalTeacherId =
+            ClassMngr::Next::Domain::TeacherId::fromString("01");
+        const auto noncanonicalClassId =
+            ClassMngr::Next::Domain::ClassId::fromString("01");
+        QVERIFY(canonicalTeacherId.has_value());
+        QVERIFY(canonicalClassId.has_value());
+        QVERIFY(noncanonicalTeacherId.has_value());
+        QVERIFY(noncanonicalClassId.has_value());
+
+        ScheduleImportRepository repository(database);
+        auto canonicalTargets = typedCreateRequest({
+            typedCandidate(u"\uAE40", u"E5", u"Zeus")
+        });
+        canonicalTargets.teachers[0].action =
+            ClassMngr::Next::Application::ScheduleImportReviewTeacherAction::Reuse;
+        canonicalTargets.teachers[0].targetTeacherId = *canonicalTeacherId;
+        canonicalTargets.classes[0].action =
+            ClassMngr::Next::Application::
+                ScheduleImportReviewClassAction::UpdateExisting;
+        canonicalTargets.classes[0].targetClassId = *canonicalClassId;
+
+        const auto canonicalResult = repository.applyTyped(canonicalTargets);
+        const QString canonicalError = canonicalResult.has_value()
+            ? QString()
+            : canonicalResult.error();
+        QVERIFY2(
+            canonicalResult.has_value(),
+            qPrintable(canonicalError)
+            );
+        QCOMPARE(canonicalResult->classesUpdated, 1);
+        QCOMPARE(canonicalResult->teachersCreated, 0);
+
+        auto noncanonicalTeacherTarget = typedCreateRequest({
+            typedCandidate(u"\uAE40", u"E5", u"Zeus")
+        });
+        noncanonicalTeacherTarget.teachers[0].action =
+            ClassMngr::Next::Application::ScheduleImportReviewTeacherAction::Reuse;
+        noncanonicalTeacherTarget.teachers[0].targetTeacherId =
+            *noncanonicalTeacherId;
+        const QStringList beforeTeacherRejection =
+            persistedScheduleImportSnapshot(database, true);
+        const auto noncanonicalTeacherResult =
+            repository.applyTyped(noncanonicalTeacherTarget);
+        QVERIFY(!noncanonicalTeacherResult.has_value());
+        QVERIFY2(
+            noncanonicalTeacherResult.error().contains(
+                QStringLiteral("selected Korean teacher is no longer available"),
+                Qt::CaseInsensitive),
+            qPrintable(noncanonicalTeacherResult.error())
+            );
+        QCOMPARE(
+            persistedScheduleImportSnapshot(database, true),
+            beforeTeacherRejection
+            );
+
+        auto noncanonicalClassTarget = typedCreateRequest({
+            typedCandidate(u"\uAE40", u"E5", u"Zeus")
+        });
+        noncanonicalClassTarget.teachers[0].action =
+            ClassMngr::Next::Application::ScheduleImportReviewTeacherAction::Reuse;
+        noncanonicalClassTarget.teachers[0].targetTeacherId =
+            *canonicalTeacherId;
+        noncanonicalClassTarget.classes[0].action =
+            ClassMngr::Next::Application::
+                ScheduleImportReviewClassAction::UpdateExisting;
+        noncanonicalClassTarget.classes[0].targetClassId =
+            *noncanonicalClassId;
+        const QStringList beforeClassRejection =
+            persistedScheduleImportSnapshot(database, true);
+        const auto noncanonicalClassResult =
+            repository.applyTyped(noncanonicalClassTarget);
+        QVERIFY(!noncanonicalClassResult.has_value());
+        QVERIFY2(
+            noncanonicalClassResult.error().contains(
+                QStringLiteral("selected class is no longer available"),
+                Qt::CaseInsensitive),
+            qPrintable(noncanonicalClassResult.error())
+            );
+        QCOMPARE(
+            persistedScheduleImportSnapshot(database, true),
+            beforeClassRejection
+            );
 
         database.close();
     }
