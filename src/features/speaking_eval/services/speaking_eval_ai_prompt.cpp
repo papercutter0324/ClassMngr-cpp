@@ -1,5 +1,7 @@
 #include "speaking_eval_ai_prompt.h"
 
+#include "domain/models/speaking_evaluation.h"
+
 #include <QHash>
 #include <QRegularExpression>
 #include <QSet>
@@ -116,8 +118,8 @@ QString commonCommentRequirements(
     )
 {
     return QStringLiteral(
-        "- Write one paragraph of exactly 3 short sentences between 100 "
-        "and 420 characters, including spaces.\n"
+        "- Write one paragraph of exactly 3 short sentences between %1 "
+        "and %2 characters, including spaces.\n"
         "- When the submitted notes provide enough relevant detail, aim "
         "for 300 to 350 characters. Otherwise, stay within the required "
         "range without inventing or repeating information.\n"
@@ -148,10 +150,13 @@ QString commonCommentRequirements(
         "abilities, scores, or events.\n"
         "- Include the exact placeholder STD_NAME at least once. "
         "Do not alter or replace it.\n"
-        "- %1\n"
+        "- %3\n"
         "- Do not use headings, bullet points, quotation marks, or "
         "a character-count annotation."
-        ).arg(voiceInstruction(voice));
+        )
+        .arg(SpeakingEval::CommentMinLength)
+        .arg(SpeakingEval::CommentPreferredMaxLength)
+        .arg(voiceInstruction(voice));
 }
 
 QString gradeOrdinal(

@@ -442,6 +442,7 @@ private slots:
     void aiBatchPromptAnonymizesUpToFullClass();
     void aiBatchResponseParserHandlesPartialAndMalformedBlocks();
     void aiBatchDialogDisplaysEligibilityReasonsAndCheckState();
+    void aiBatchDialogAssessesCommentQualityAndPreservesStatuses();
     void aiBatchDialogSelectsEligibleStudentsAndReviewsValidComments();
     void aiPromptButtonsRequireCompleteInput();
     void aiPromptPreviewCopiesAnAnonymousPrompt();
@@ -1394,7 +1395,8 @@ void SpeakingEvalBatchReportServiceTests::
     QVERIFY(
         directPrompt.contains(
             QStringLiteral(
-                "between 100 and 420 characters"
+                "- Write one paragraph of exactly 3 short sentences "
+                "between 100 and 420 characters, including spaces."
                 )
             )
         );
@@ -1862,6 +1864,172 @@ void SpeakingEvalBatchReportServiceTests::
 
     QVERIFY(selection->item(6, 0)->flags() & Qt::ItemIsEnabled);
     QCOMPARE(selection->item(6, 0)->checkState(), Qt::Unchecked);
+}
+
+void SpeakingEvalBatchReportServiceTests::
+    aiBatchDialogAssessesCommentQualityAndPreservesStatuses()
+{
+    const QString notes =
+        QStringLiteral(
+            "[Did Well]\nClear pronunciation\n"
+            "[Needs Improvement]\nAdd supporting details"
+            );
+    const auto makeReport = [&notes](
+        const QString& name,
+        const int sourceRow
+        )
+    {
+        SpeakingEvalReportData report;
+        report.englishName = name;
+        report.grade = 5;
+        report.notes = notes;
+        return SpeakingEvalBatchReportService::StudentReport{
+            name,
+            report,
+            sourceRow
+        };
+    };
+
+    SpeakingEvalAiBatchDialog dialog(
+        {
+            makeReport(QStringLiteral("Empty"), 0),
+            makeReport(QStringLiteral("Too long"), 1),
+            makeReport(QStringLiteral("Short"), 2),
+            makeReport(QStringLiteral("Boundary"), 3),
+            makeReport(QStringLiteral("Missing"), 4)
+        }
+        );
+
+    auto* createPromptButton =
+        dialog.findChild<QPushButton*>(
+            QStringLiteral("speakingEvalAiBatchCreatePrompt")
+            );
+    auto* responseEdit =
+        dialog.findChild<QPlainTextEdit*>(
+            QStringLiteral("speakingEvalAiBatchResponse")
+            );
+    auto* parseButton =
+        dialog.findChild<QPushButton*>(
+            QStringLiteral("speakingEvalAiBatchParse")
+            );
+    auto* review =
+        dialog.findChild<QTableWidget*>(
+            QStringLiteral("speakingEvalAiBatchReviewTable")
+            );
+    auto* applyButton =
+        dialog.findChild<QPushButton*>(
+            QStringLiteral("speakingEvalAiBatchApply")
+            );
+    QVERIFY(createPromptButton);
+    QVERIFY(responseEdit);
+    QVERIFY(parseButton);
+    QVERIFY(review);
+    QVERIFY(applyButton);
+
+    createPromptButton->click();
+
+    const QString supplementaryCharacter =
+        QString::fromUcs4(U"\U0001F600");
+    const QString rawShortComment =
+        QString(97, QLatin1Char('s'))
+        + QStringLiteral("   ")
+        + QStringLiteral("t");
+    const QString shortComment =
+        rawShortComment.simplified();
+    const QString boundaryComment =
+        QString(98, QLatin1Char('b'))
+        + supplementaryCharacter;
+    QCOMPARE(shortComment.size(), 99);
+    QCOMPARE(boundaryComment.size(), 100);
+
+    const auto responseBlock = [](
+        const QString& studentId,
+        const QString& comment
+        )
+    {
+        return QStringLiteral("<<<%1>>>\n%2\n<<<END_%1>>>")
+            .arg(studentId, comment);
+    };
+    responseEdit->setPlainText(
+        QStringList{
+            responseBlock(QStringLiteral("STUDENT_01"), QString()),
+            responseBlock(
+                QStringLiteral("STUDENT_02"),
+                QString(451, QLatin1Char('l'))
+                ),
+            responseBlock(QStringLiteral("STUDENT_03"), rawShortComment),
+            responseBlock(
+                QStringLiteral("STUDENT_04"),
+                boundaryComment
+                )
+        }.join(QLatin1Char('\n'))
+        );
+    QVERIFY(parseButton->isEnabled());
+    parseButton->click();
+
+    QCOMPARE(review->rowCount(), 5);
+    QCOMPARE(review->item(0, 2)->text(), QStringLiteral("No comment"));
+    QCOMPARE(review->item(0, 3)->text(), QStringLiteral("0"));
+    QCOMPARE(review->item(0, 0)->checkState(), Qt::Unchecked);
+
+    QCOMPARE(
+        review->item(1, 2)->text(),
+        QStringLiteral("Too long \u2014 maximum 450 characters")
+        );
+    QCOMPARE(review->item(1, 3)->text(), QStringLiteral("451"));
+    QCOMPARE(review->item(1, 0)->checkState(), Qt::Unchecked);
+
+    const QString combinedWarning =
+        QStringLiteral(
+            "Ready \u2014 outside preferred length, "
+            "name placeholder was omitted"
+            );
+    QCOMPARE(review->item(2, 2)->text(), combinedWarning);
+    QCOMPARE(review->item(2, 3)->text(), QStringLiteral("99"));
+    QCOMPARE(review->item(2, 4)->text(), shortComment);
+    QCOMPARE(review->item(2, 0)->checkState(), Qt::Checked);
+
+    const QString placeholderWarning =
+        QStringLiteral("Ready \u2014 name placeholder was omitted");
+    QCOMPARE(review->item(3, 2)->text(), placeholderWarning);
+    QCOMPARE(review->item(3, 3)->text(), QStringLiteral("100"));
+    QCOMPARE(review->item(3, 4)->text(), boundaryComment);
+    QCOMPARE(review->item(3, 0)->checkState(), Qt::Checked);
+    QVERIFY(applyButton->isEnabled());
+
+    QCOMPARE(
+        review->item(4, 2)->text(),
+        QStringLiteral("Missing response block")
+        );
+    QCOMPARE(review->item(4, 3)->text(), QStringLiteral("0"));
+    QCOMPARE(review->item(4, 0)->checkState(), Qt::Unchecked);
+
+    review->item(2, 4)->setText(QString());
+    QCOMPARE(review->item(2, 2)->text(), combinedWarning);
+    QCOMPARE(review->item(2, 3)->text(), QStringLiteral("0"));
+    QCOMPARE(review->item(2, 0)->checkState(), Qt::Unchecked);
+    QVERIFY(applyButton->isEnabled());
+
+    review->item(3, 4)->setText(QString());
+    QCOMPARE(review->item(3, 2)->text(), placeholderWarning);
+    QCOMPARE(review->item(3, 3)->text(), QStringLiteral("0"));
+    QCOMPARE(review->item(3, 0)->checkState(), Qt::Unchecked);
+    QVERIFY(!applyButton->isEnabled());
+
+    review->item(3, 4)->setText(boundaryComment);
+    QCOMPARE(review->item(3, 2)->text(), placeholderWarning);
+    QCOMPARE(review->item(3, 3)->text(), QStringLiteral("100"));
+    QCOMPARE(review->item(3, 0)->checkState(), Qt::Checked);
+    QVERIFY(applyButton->isEnabled());
+
+    applyButton->click();
+    QCOMPARE(dialog.result(), static_cast<int>(QDialog::Accepted));
+    QCOMPARE(dialog.acceptedComments().size(), 1);
+    QCOMPARE(dialog.acceptedComments().first().sourceRow, 3);
+    QCOMPARE(
+        dialog.acceptedComments().first().newComment,
+        boundaryComment
+        );
 }
 
 void SpeakingEvalBatchReportServiceTests::

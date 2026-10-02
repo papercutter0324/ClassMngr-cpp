@@ -372,6 +372,37 @@ add_test(
     COMMAND ClassMngrNextApplicationSpeakingEvaluationAiBatchEligibilityTests
 )
 
+# Keep speaking-evaluation AI batch comment quality independent of Qt.
+add_executable(
+    ClassMngrNextApplicationSpeakingEvaluationAiBatchCommentQualityTests
+    tests/next_application_speaking_evaluation_ai_batch_comment_quality_tests.cpp
+)
+target_compile_features(
+    ClassMngrNextApplicationSpeakingEvaluationAiBatchCommentQualityTests
+    PRIVATE
+        cxx_std_23
+)
+set_target_properties(
+    ClassMngrNextApplicationSpeakingEvaluationAiBatchCommentQualityTests
+    PROPERTIES
+        AUTOMOC OFF
+        AUTOUIC OFF
+        AUTORCC OFF
+)
+set_property(
+    TARGET ClassMngrNextApplicationSpeakingEvaluationAiBatchCommentQualityTests
+    PROPERTY CLASSMNGR_STANDALONE_CPP_TEST TRUE
+)
+target_link_libraries(
+    ClassMngrNextApplicationSpeakingEvaluationAiBatchCommentQualityTests
+    PRIVATE
+        ClassMngrNext::Application
+)
+add_test(
+    NAME ClassMngrNextApplicationSpeakingEvaluationAiBatchCommentQualityTests
+    COMMAND ClassMngrNextApplicationSpeakingEvaluationAiBatchCommentQualityTests
+)
+
 # Keep the cycle-selection rule independent of Qt and the legacy runtime.
 add_executable(
     ClassMngrNextApplicationEvaluationDefaultSelectionTests

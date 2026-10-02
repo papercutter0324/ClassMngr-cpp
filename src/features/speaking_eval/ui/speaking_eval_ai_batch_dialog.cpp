@@ -3,6 +3,7 @@
 
 #include "domain/models/speaking_evaluation.h"
 #include "features/speaking_eval/services/speaking_eval_ai_prompt.h"
+#include "next/application/speaking_evaluation_ai_batch_comment_quality.h"
 #include "next/application/speaking_evaluation_ai_batch_eligibility.h"
 #include "next/platform/settings_manager_ai_comment_custom_website_port.h"
 #include "next/platform/settings_manager_ai_comment_provider_preferences_port.h"
@@ -29,6 +30,7 @@
 #include <QVBoxLayout>
 
 #include <algorithm>
+#include <cstddef>
 #include <string>
 #include <utility>
 
@@ -979,15 +981,39 @@ void SpeakingEvalAiBatchDialog::updateReviewRow(
     const QSignalBlocker blocker(m_reviewTable);
     const QString comment =
         commentItem->text().simplified();
-    const int length =
+    const qsizetype length =
         comment.size();
+    const auto quality =
+        ClassMngr::Next::Application::
+            assessSpeakingEvaluationAiBatchCommentQuality({
+                .normalizedCodeUnitLength =
+                    static_cast<std::size_t>(length),
+                .hadNamePlaceholder =
+                    commentItem
+                        ->data(HadPlaceholderRole)
+                        .toBool(),
+                .minimumCodeUnitLength =
+                    static_cast<std::size_t>(
+                        SpeakingEval::CommentMinLength
+                        ),
+                .preferredMaximumCodeUnitLength =
+                    static_cast<std::size_t>(
+                        SpeakingEval::CommentPreferredMaxLength
+                        ),
+                .maximumCodeUnitLength =
+                    static_cast<std::size_t>(
+                        SpeakingEval::CommentMaxLength
+                        )
+            });
     charactersItem->setText(
         QString::number(length)
         );
 
     QString status;
     bool valid = false;
-    if (comment.isEmpty())
+    if (quality.rejection
+        == ClassMngr::Next::Application::
+            SpeakingEvaluationAiBatchCommentRejection::Empty)
     {
         if (statusItem->text().isEmpty())
         {
@@ -998,7 +1024,9 @@ void SpeakingEvalAiBatchDialog::updateReviewRow(
             status = statusItem->text();
         }
     }
-    else if (length > SpeakingEval::CommentMaxLength)
+    else if (quality.rejection
+             == ClassMngr::Next::Application::
+                 SpeakingEvaluationAiBatchCommentRejection::TooLong)
     {
         status =
             tr("Too long — maximum %1 characters")
@@ -1006,22 +1034,15 @@ void SpeakingEvalAiBatchDialog::updateReviewRow(
     }
     else
     {
-        valid = true;
+        valid = quality.isValid();
         QStringList warnings;
-        if (
-            length < SpeakingEval::CommentMinLength
-            || length > 420
-            )
+        if (quality.outsidePreferredLength)
         {
             warnings.append(
                 tr("outside preferred length")
                 );
         }
-        if (
-            !commentItem
-                ->data(HadPlaceholderRole)
-                .toBool()
-            )
+        if (quality.missingNamePlaceholder)
         {
             warnings.append(
                 tr("name placeholder was omitted")

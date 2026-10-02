@@ -46,6 +46,7 @@ inline constexpr int RowCount = 25;
 inline constexpr int ColumnCount = 11;
 inline constexpr int RowHeight = 50;
 inline constexpr int CommentMinLength = 100;
+inline constexpr int CommentPreferredMaxLength = 420;
 inline constexpr int CommentMaxLength = 450;
 
 inline int toInt(
