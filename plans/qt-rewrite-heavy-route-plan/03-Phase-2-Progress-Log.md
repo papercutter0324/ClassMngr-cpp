@@ -9628,16 +9628,37 @@ owner for 1,202 handwritten sources. All three focused CTests passed:
 for unpaired surrogates or exhaustive Qt-whitespace comparison; the missing
 RosterModel name-column guard cannot be reached through public `setRoster`.
 
-F249 is selected: extract AI batch student eligibility into Qt-free Application.
-Preserve first-failure order (no name, unsupported grade, missing Did Well
-observations, missing Needs Improvement observations) and eligibility facts:
-either trimmed name present, grade 4–6, and both observation lists nonempty.
-Keep existing translated reasons and checked/enabled behavior. Scope the policy
-and result header, dialog adapter, app-less tests/CMake, and focused UI reason/
-state coverage in the existing batch-report test target. Leave comment review
-status, prompt creation, comment application, and overwrite confirmation
-untouched. Paired scans diverged; this focused pure decision was selected over
-the first-empty roster query, which is parked. The cumulative Gate 1 map is
-historical and ends at F143
+F249, source commit `828d5014`, extracts AI batch student eligibility into
+Qt-free Application policy. Fresh Windows x64 Debug/Ninja/MSVC 19.51/Qt 6.12
+verification in `build/f249_independent_x64_debug` used CMake ownership
+validation, which found one owner for 1,204 handwritten sources. The app-less
+eligibility CTest passed 1/1; dialog slots
+`aiBatchDialogDisplaysEligibilityReasonsAndCheckState` and
+`aiBatchDialogSelectsEligibleStudentsAndReviewsValidComments` passed
+individually. `git diff --check` and new-file hygiene passed. Coverage includes
+first-failure order (no name, unsupported grade, missing Did Well, then missing
+Needs Improvement), either trimmed name including Korean-only, grade 4–6, both
+observation lists nonempty, eligible/ineligible check and enable state,
+existing-comment defaults, and page success/already-up-to-date behavior. No
+full suite ran. Clipboard slots `aiPromptPreviewCopiesAnAnonymousPrompt` and
+`pastedAiCommentsReplaceStudentPlaceholder` reproduced
+`OleSetClipboard/OpenClipboard Failed` in the fresh environment; those paths
+are outside F249, but no pre-F249 baseline or full batch CTest was run. Treat
+this as a reproduced environment limitation, not a proven baseline.
+
+F250 is selected: extract the documented first-empty roster-row query shared
+by `RosterModel::firstEmptyRow()` and `roster_row_transfer_preparation.h` into
+Qt-free Application. Preserve Qt-compatible trimming across all cells,
+first-blank ordering, `-1` for full rows, RosterModel's 25-row padding, and
+transfer rejection precedence/destination. Add the query and app-less
+test/CMake registration. Adapt `src/features/roster/ui/roster_model_columns.cpp`
+and `src/next/application/roster_row_transfer_preparation.h`, with focused
+coverage in `tests/roster_model_tests.cpp` and
+`tests/next_application_roster_row_transfer_preparation_tests.cpp`; verify the
+policy, model, and transfer-preparation CTests. Paired scans diverged; the
+alternative was the AI batch comment-review policy. Main selected this
+previously parked query because it removes a duplicated first-empty/full
+decision across UI and Application. The cumulative Gate 1 map is historical
+and ends at F143
 ([map](03-Phase-2-Progress-Log.md#L7570)); Gates 1 and 2 remain Partial. Phase
 2 remains In Progress/Open.

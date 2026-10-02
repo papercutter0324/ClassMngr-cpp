@@ -2884,7 +2884,7 @@ stale/overlap rejection, write-failure rollback, and intensive mapping
 coverage passed. Source ownership found one owner for 1,172 files, and
 `git diff --check` passed; no full suite ran.
 
-## Current Phase 2 position - 2026-10-02 (F248 accepted; F249 selected)
+## Current Phase 2 position - 2026-10-02 (F249 accepted; F250 selected)
 
 F236 source commit `5877bba0` carries structured typed policy, teacher-target,
 and fresh-state failures from Repository through Platform to the review dialog.
@@ -3025,15 +3025,24 @@ adapter test does not cover unpaired surrogates or exhaustively compare Qt
 whitespace; RosterModel's public setup always supplies base name columns, so
 the missing-column guard cannot be reached through that route.
 
-F249 is selected: extract Speaking Evaluation AI-batch student eligibility
-into a Qt-free Application policy. Pass simple facts (trimmed name presence,
-grade, and whether each observation section has an item), preserving first-
-failure order: missing name, unsupported grade, missing Did Well observations,
-then missing Needs Improvement observations. The dialog keeps translated
-reason text and row rendering; preserve eligible rows checked only when there
-is no existing comment, and keep review status, prompts, comment application,
-and overwrite confirmation in place. Add policy cases and focused UI reason/
-row-state coverage. Paired scans differed; this pure eligibility decision was
-selected for its contained Application boundary, while the roster first-empty
-row query is deferred. Phase 2 remains In Progress/Open; Gates 1 and 2 remain
-Partial.
+F249 source commit `828d5014` extracts Speaking Evaluation AI-batch student
+eligibility into a Qt-free Application policy. It preserves first-failure
+order: missing name, unsupported grade, missing Did Well observations, then
+missing Needs Improvement observations. The dialog retains translated reasons,
+row enablement/check state, review, prompts, comment application, and overwrite
+confirmation. Fresh Windows x64 Debug verification validated one owner for
+1,204 handwritten sources; the app-less eligibility CTest passed 1/1, and the
+two relevant dialog functions passed. `git diff --check` and new-file hygiene
+passed; no full suite ran. Two unrelated clipboard functions reproduced
+`OleSetClipboard`/`OpenClipboard Failed` in the fresh environment and are not
+proven against a pre-F249 baseline.
+
+F250 is selected to extract a shared Qt-free first-empty roster-row query and
+reuse it from `RosterModel::firstEmptyRow()` and roster transfer preparation.
+Preserve Qt-compatible trimming across every cell, first blank row order,
+no-row/full behavior, the model's 25-row padding, and transfer rejection
+precedence. Add app-less query tests and focused RosterModel and transfer-
+preparation checks. Paired scans differed; choose the already parked row query
+because it removes duplicated UI/Application decisions from F244, while AI
+batch comment-review policy remains a later candidate. Phase 2 remains In
+Progress/Open; Gates 1 and 2 remain Partial.

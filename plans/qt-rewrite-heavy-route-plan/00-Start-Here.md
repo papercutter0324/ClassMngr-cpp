@@ -6,9 +6,9 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-02
-- Current milestone: Phase 2 remains in progress. F248 (Qt-free duplicate
-  peer-row lookup) is accepted; F249 (Qt-free AI batch student eligibility)
-  is selected. Gates 1 and 2 remain Partial, with
+- Current milestone: Phase 2 remains in progress. F249 (Qt-free AI batch
+  student eligibility) is accepted; F250 (Qt-free first-empty roster-row
+  lookup) is selected. Gates 1 and 2 remain Partial, with
   broader feature migration, parity, and 96-class Release memory evidence still
   open.
   See the

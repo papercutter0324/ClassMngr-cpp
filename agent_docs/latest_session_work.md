@@ -4986,11 +4986,11 @@ actions, and resolution in the models/page. Add app-less policy cases, model
 wrapper checks, and a focused Speaking Evaluation duplicate-resolution
 regression. Phase 2 remains In Progress/Open, with Gates 1 and 2 Partial.
 
-## Current continuation - 2026-10-02 (F248 accepted; F249 implementation started)
+## Current continuation - 2026-10-02 (F249 accepted; F250 selected)
 
 The user asked to assume F196 complete, continue F218, commit each slice, and
-begin the next. F218 was already accepted in the plan history; the checked-out
-branch had advanced through F245. Continue from the current branch position
+begin the next. At task start, F218 was already accepted and the branch had
+advanced through F245. This continuation proceeded from that branch position
 without replaying accepted work. Active deployment ID remains
 `qt-rewrite-phase2-resume-20260928`.
 
@@ -4998,21 +4998,31 @@ F248 source commit `8886b46f` extracts Qt-free student name-pair peer lookup
 shared by RosterModel and SpeakingEvalModel, reuses F247's trimmed UTF-16
 U+001F key, and removes the unused Core duplicate lookup. Independent fresh
 x64 Debug verification in `build/f248_independent_x64_debug` confirmed one
-owner for 1,202 handwritten sources and passed the new app-less lookup,
-RosterModel, and SpeakingEval page-save CTests (3/3). `git diff --check` passed.
-The full suite was not run. Verification did not cover unpaired surrogates
-through model adapters or every Qt whitespace code point; RosterModel's public
-setup always supplies base name columns, preventing direct test of its missing-
-column guard.
+owner for 1,202 handwritten sources and passed the app-less lookup, RosterModel,
+and SpeakingEval page-save CTests (3/3). `git diff --check` passed; no full
+suite ran. The adapter tests did not cover unpaired surrogates or every Qt
+whitespace code point; RosterModel's public setup always supplies base name
+columns, so its missing-column guard could not be reached.
 
-Two independent F249 scans proposed different candidates. Select the Qt-free
-Speaking Evaluation AI-batch student-eligibility decision, leaving comment
-review status, prompts, comment application, and overwrite confirmation at
-their owners. Preserve first-failure reason order (missing name, unsupported
-grade, missing Did Well observations, missing Needs Improvement observations),
-the current translated text, and row check/enabled state. The roster first-empty
-row query is deferred. Formal phase-plan docs are being updated to accept F248
-and select F249. Next: finish the plan/document handoff, implement F249 with
-focused Application and dialog coverage, run independent focused verification,
-commit the source slice, then document and select its successor. Phase 2 stays
-In Progress/Open; Gates 1 and 2 remain Partial.
+F249 source commit `828d5014` extracts AI-batch student eligibility into a
+Qt-free Application policy with the existing first-failure order. Fresh
+verification in `build/f249_independent_x64_debug` confirmed one owner for
+1,204 handwritten sources; the app-less CTest passed 1/1 and the two relevant
+dialog slots passed individually, covering each reason, row state, both name
+alternatives, and existing comments. `git diff --check` and new-file hygiene
+passed. Two unrelated clipboard slots failed individually with
+`OleSetClipboard/OpenClipboard Failed` and empty paste text. They reproduce in
+the fresh environment but were not tested against a pre-F249 baseline; no full
+batch CTest or suite ran.
+
+Paired F250 scans differed between AI-batch comment-review policy and the
+documented, parked first-empty roster-row query. Select the shared row query to
+remove duplicated model/Application first-empty decisions from RosterModel and
+F244 transfer preparation. Preserve Qt-compatible whitespace checks across
+all cells, first-blank ordering, no-row/full behavior, 25-row model padding,
+and transfer rejection precedence. Phase-plan docs now record F249 accepted
+and F250 selected. Next: implement F250 with app-less, RosterModel, and transfer
+preparation coverage, independently verify, commit source, then record
+acceptance and select the next slice. Phase 2 remains In Progress/Open; Gates 1
+and 2 remain Partial. Active deployment ID is
+`qt-rewrite-phase2-resume-20260928`.

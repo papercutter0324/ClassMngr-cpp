@@ -2164,3 +2164,13 @@ peers and collision compatibility. The next paired scans diverged between a
 roster first-empty query and AI-batch eligibility; choose the pure student
 eligibility decision with its existing dialog boundary and leave review status,
 comment application, and the roster query separate.
+
+## 2026-10-02 - F249 AI-batch eligibility accepted; F250 selected
+
+The dialog can keep localization and row presentation while Application returns
+a typed first-failure eligibility reason from simple facts. The two clipboard
+failures reproduce as environment clipboard errors but lack a pre-slice baseline
+comparison, so record them as unresolved environment limits. For the next
+slice, choose the documented shared first-empty roster-row query to remove the
+duplicate model/transfer decision; defer the more involved AI comment-review
+policy until its legacy length thresholds have a clear shared source.
