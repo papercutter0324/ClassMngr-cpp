@@ -2087,3 +2087,13 @@ paired scan found target-side student transfer preparation as the next cohesive
 Application boundary, with source removal and the atomic two-roster save left
 in the widget workflow. F244 implementation has started, with independent
 acceptance pending.
+
+## 2026-10-02 - F244 roster transfer preparation accepted; F245 selected
+
+Keep roster transfer preparation in Application as a compact mapped-row result
+with typed rejection and first-empty-slot decision; leave actual target mutation
+and the widget's atomic two-roster workflow in their existing owners. For F245,
+move the shared first-unused Korean-name suffix suggestion to Application for
+both roster and Speaking Evaluation models. Prefer this reusable cross-feature
+rule over the widget-only same-grade target filter; keep duplicate-pair
+grouping and the suffix choice UI separate.

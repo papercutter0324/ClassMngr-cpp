@@ -6,10 +6,11 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-02
-- Current milestone: Phase 2 remains in progress. F243 (Qt-free custom-column
-  append) is accepted; F244 (Qt-free roster-transfer destination preparation)
-  is selected. Gates 1 and 2 remain Partial, with broader feature migration,
-  parity, and 96-class Release memory evidence still open. See the
+- Current milestone: Phase 2 remains in progress. F244 (Qt-free roster-transfer
+  destination preparation) is accepted; F245 (Qt-free Korean-name suffix
+  suggestion policy) is selected. Gates 1 and 2 remain Partial, with broader
+  feature migration, parity, and 96-class Release memory evidence still open.
+  See the
   [Phase 2 progress log](03-Phase-2-Progress-Log.md) for current scope and
   acceptance evidence.
 - Current blocker: official Phase 1 targets are Windows x64 and macOS

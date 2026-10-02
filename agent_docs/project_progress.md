@@ -85,7 +85,7 @@ source commit `8ef76074`; F238 is accepted in source commit `7b832bcc`; F239 is
 accepted in source commit `d3e9cded`; F240 is accepted in source commit
 `4be18aa5`; F241 is accepted in source commit `746ef0bb`; F242 is accepted in
 source commit `5525cade`; F243 is accepted in source commit `68260142`; F244
-implementation is in progress.
+is accepted in source commit `86fe782f`; F245 is selected.
 F196 and F197 use
 only the active open session's
 `SettingsRepository` and preserve their keys, conversions, defaults, and
@@ -2883,7 +2883,7 @@ stale/overlap rejection, write-failure rollback, and intensive mapping
 coverage passed. Source ownership found one owner for 1,172 files, and
 `git diff --check` passed; no full suite ran.
 
-## Current Phase 2 position - 2026-10-02 (F243 accepted; F244 in progress)
+## Current Phase 2 position - 2026-10-02 (F244 accepted; F245 selected)
 
 F236 source commit `5877bba0` carries structured typed policy, teacher-target,
 and fresh-state failures from Repository through Platform to the review dialog.
@@ -2962,10 +2962,20 @@ fresh x64 Debug verification validated one owner for 1,192 handwritten sources;
 five focused CTests passed and new-file whitespace checks were clean. No full
 suite ran.
 
-F244 is in progress to extract destination-side roster transfer preparation:
-column mapping, current name/cell normalization, rejection order, duplicate
-pair check, and first-empty-slot choice. Keep mutation and model/UI/persistence
-effects at their existing boundaries. Two independent scans converged on this
-remaining roster transfer gap. Source implementation has started; independent
-acceptance is pending. Phase 2 remains In Progress/Open; Gates 1 and 2 remain
-Partial.
+F244 source commit `86fe782f` extracts destination-side roster transfer
+preparation into Qt-free Application. It preserves matching and normalization,
+empty/full/duplicate rejection order, first-empty-slot selection, and the legacy
+pair-key behavior. The model retains mutation and UI effects; the widget retains
+class lookup, source removal, width handling, and atomic save. Independent fresh
+x64 Debug verification validated one owner for 1,194 handwritten sources; six
+focused CTests passed. Diff and new-file whitespace checks passed. No full suite
+ran.
+
+F245 is selected to move the shared Korean-name suffix suggestion rule into a
+Qt-free Application policy used by RosterModel and SpeakingEvalModel. Preserve
+trimmed case-sensitive English matching, Korean base/suffix normalization,
+first-unused A-Z selection, incomplete-name behavior, and no suggestion after
+suffix exhaustion. Keep duplicate-pair grouping and UI actions at their current
+owners. Two independent scans compared this with same-grade transfer-target
+filtering; the shared cross-feature rule was selected. Phase 2 remains
+In Progress/Open; Gates 1 and 2 remain Partial.

@@ -4921,10 +4921,20 @@ fresh x64 Debug/Ninja/MSVC 19.51/Qt 6.12 verification validated one owner for
 1,192 handwritten sources; five focused CTests passed. `git diff --check` and
 both new-file whitespace checks passed. No full suite ran.
 
-F244 is in progress to extract destination-side roster transfer preparation:
-column mapping, current name/cell normalization, rejection order, duplicate
-pair check, and first-empty-slot choice. Keep mutation and model/UI/persistence
-effects at their existing boundaries. Two independent scans converged on this
-remaining roster transfer gap. Source implementation has started; independent
-acceptance is pending. Phase 2 remains In Progress/Open; Gates 1 and 2 remain
-Partial.
+F244 source commit `86fe782f` extracts destination-side roster transfer
+preparation into Qt-free Application. It preserves matching and normalization,
+empty/full/duplicate rejection order, first-empty-slot selection, and the legacy
+pair-key behavior. The model retains mutation and UI effects; the widget retains
+class lookup, source removal, width handling, and atomic save. Independent fresh
+x64 Debug/Ninja/MSVC 19.51/Qt 6.12 verification validated one owner for 1,194
+handwritten sources; six focused CTests passed. `git diff --check` and both
+new-file whitespace checks passed. No full suite ran.
+
+F245 is selected to move the shared Korean-name suffix suggestion rule into a
+Qt-free Application policy used by RosterModel and SpeakingEvalModel. Preserve
+trimmed case-sensitive English matching, Korean base/suffix normalization,
+first-unused A-Z selection, incomplete-name behavior, and no suggestion after
+suffix exhaustion. Keep duplicate-pair grouping and UI actions at their current
+owners. Two independent scans compared this with same-grade transfer-target
+filtering; the shared cross-feature rule was selected. Phase 2 remains
+In Progress/Open; Gates 1 and 2 remain Partial.

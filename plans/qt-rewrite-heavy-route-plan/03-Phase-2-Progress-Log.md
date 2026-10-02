@@ -9571,14 +9571,28 @@ CTests passed: append policy, name policy, RosterModel, roster-editor widget
 save, and row removal. `git diff --check` and both new-file whitespace checks
 passed; no full suite ran.
 
-F244 is selected: prepare a roster-transfer destination row in Qt-free policy.
-Map source values into target-column order using existing normalization; reject
-an empty mapped row, then a full target, then a duplicate complete English/
-Korean name pair; otherwise select the first empty destination slot. Return a
-typed rejection or compact destination-row/mapped-row preparation. Keep model
-mutation/signals/validation/dirty state and widget lookup, source removal, width
-normalization, atomic save, and post-save state at their current owners. Two
-independent scans converged on this seam. Implementation has started; F244 is
-not accepted. The cumulative Gate 1 map is historical and ends at F143
+F244, source commit `86fe782f`, adds Qt-free destination-side roster transfer
+preparation returning a typed rejection or compact target-row/mapped-row result.
+It preserves column matching, cell normalization, empty-row/full-target/
+duplicate-pair rejection order, first-empty-slot choice, incomplete-pair
+allowance, and legacy U+001F duplicate-key behavior. RosterModel retains errors,
+mutation, validation, signals, and dirty state; widget lookup, source removal,
+width normalization, and atomic save remain at their owners. Fresh x64
+Debug/Ninja/MSVC 19.51/Qt 6.12 verification found one owner for 1,194 handwritten
+sources and passed six focused CTests: transfer preparation, RosterModel,
+roster widget save, custom-column name, append, and row removal.
+`git diff --check` and both new-file whitespace checks passed; no full suite
+ran.
+
+F245 is selected: move only the first-unused A-Z suffix rule from
+`StudentNameUtils::suggestedKoreanNameWithSuffix` into a Qt-free Application
+contract and adapt RosterModel and SpeakingEvalModel. Preserve invalid indexes
+and incomplete names, exact trimmed case-sensitive English matching,
+normalized Korean base/suffix rules, and empty output when A-Z is exhausted.
+Keep dialog actions, selected-cell mutation, focus, and the existing
+`Domain::StudentNamePair` duplicate grouping at their current owners; the
+same-grade transfer-target filter is deferred. Two independent scans diverged;
+main selected this shared-model policy over the filter candidate. The
+cumulative Gate 1 map is historical and ends at F143
 ([map](03-Phase-2-Progress-Log.md#L7570)); Gates 1 and 2 remain Partial. Phase
 2 remains In Progress/Open.
