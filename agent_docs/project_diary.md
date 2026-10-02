@@ -2155,3 +2155,12 @@ but preserve the legacy U+001F collision behavior, selected-row exclusion, and
 candidate order. Keep column choice and duplicate prompts/actions in their
 current owners. Prefer this cross-model boundary over the paired scan's AI
 batch eligibility candidate.
+
+## 2026-10-02 - F248 duplicate-peer lookup accepted; F249 selected
+
+The shared lookup can reuse F247's pair-key contract while model adapters retain
+their own column selection and UI actions. Independent tests verified ordered
+peers and collision compatibility. The next paired scans diverged between a
+roster first-empty query and AI-batch eligibility; choose the pure student
+eligibility decision with its existing dialog boundary and leave review status,
+comment application, and the roster query separate.

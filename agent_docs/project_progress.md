@@ -2884,7 +2884,7 @@ stale/overlap rejection, write-failure rollback, and intensive mapping
 coverage passed. Source ownership found one owner for 1,172 files, and
 `git diff --check` passed; no full suite ran.
 
-## Current Phase 2 position - 2026-10-02 (F247 accepted; F248 selected)
+## Current Phase 2 position - 2026-10-02 (F248 accepted; F249 selected)
 
 F236 source commit `5877bba0` carries structured typed policy, teacher-target,
 and fresh-state failures from Repository through Platform to the review dialog.
@@ -3012,14 +3012,28 @@ suite ran. Coverage uses the shared Qt-compatible whitespace helper without
 exhaustively comparing all Unicode whitespace, and the current model does not
 allow a partial-editability test for its two name cells.
 
-F248 is selected to extract interactive duplicate-peer row lookup from
-`StudentNameUtils::duplicateNameRows` into a Qt-free Application query shared
-by RosterModel and SpeakingEvalModel. Reuse the trimmed UTF-16 U+001F pair-key
-behavior from F247 where clean; preserve invalid row/column handling,
+F248 source commit `8886b46f` is accepted. It extracts interactive duplicate-
+peer row lookup into Qt-free Application shared by RosterModel and
+SpeakingEvalModel, reusing F247's trimmed UTF-16 U+001F key and preserving
 incomplete pairs, exact case-sensitive matching and delimiter collisions,
-selected-row exclusion, and candidate row order. Keep column selection,
-translated prompts/actions, and duplicate resolution in their current model/
-page owners. Two scans disagreed between this cross-model helper and AI-batch
-eligibility/review policy; choose the narrower shared lookup. Add app-less
-policy cases and focused model/page regressions. Phase 2 remains In Progress/
-Open; Gates 1 and 2 remain Partial.
+selected-row exclusion, and candidate order. Column selection, translated
+prompts/actions, and duplicate resolution remain at their model/page owners.
+Independent fresh x64 Debug verification validated one owner for 1,202
+handwritten files; the new app-less lookup, RosterModel, and SpeakingEval
+page-save CTests passed 3/3. `git diff --check` passed. No full suite ran. The
+adapter test does not cover unpaired surrogates or exhaustively compare Qt
+whitespace; RosterModel's public setup always supplies base name columns, so
+the missing-column guard cannot be reached through that route.
+
+F249 is selected: extract Speaking Evaluation AI-batch student eligibility
+into a Qt-free Application policy. Pass simple facts (trimmed name presence,
+grade, and whether each observation section has an item), preserving first-
+failure order: missing name, unsupported grade, missing Did Well observations,
+then missing Needs Improvement observations. The dialog keeps translated
+reason text and row rendering; preserve eligible rows checked only when there
+is no existing comment, and keep review status, prompts, comment application,
+and overwrite confirmation in place. Add policy cases and focused UI reason/
+row-state coverage. Paired scans differed; this pure eligibility decision was
+selected for its contained Application boundary, while the roster first-empty
+row query is deferred. Phase 2 remains In Progress/Open; Gates 1 and 2 remain
+Partial.

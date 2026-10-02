@@ -9618,16 +9618,26 @@ limits: no exhaustive Qt whitespace-code-point comparison; partial editability
 cannot occur in the current SpeakingEvalModel because both name cells are
 editable, though per-cell checks remain at the UI boundary.
 
-F248 is selected: extract `StudentNameUtils::duplicateNameRows` into Qt-free
-Application for RosterModel and SpeakingEvalModel, sharing F247's trimmed
-UTF-16 U+001F pair-key helper where clean. Preserve invalid row/column handling,
-incomplete names, case-sensitive exact matching, collision semantics,
-selected-row exclusion, and candidate row order. Keep column selection,
-prompts/actions, and duplicate resolution in the models/page. Proposed tests:
-standalone invalid-index, trim, order, and collision cases; both model-wrapper
-tests; and a focused Speaking Evaluation page duplicate-flow regression where
-practical. Paired scans differed: the alternative was AI-batch eligibility/
-review status. The shared cross-model lookup is narrower and reuses F247's
-pair-key rule. The cumulative Gate 1 map is historical and ends at F143
+F248, source commit `8886b46f`, extracts duplicate peer-row lookup into Qt-free
+Application. Fresh Windows x64 Debug/Ninja/MSVC 19.51/Qt 6.12 verification in
+`build/f248_independent_x64_debug` used a CMake ownership audit: one explicit
+owner for 1,202 handwritten sources. All three focused CTests passed:
+`ClassMngrNextApplicationStudentNamePairLookupTests`,
+`ClassMngrRosterModelTests`, and `ClassMngrSpeakingEvalPageSaveTests`.
+`git diff --check` passed. No full suite ran. Coverage limits: no adapter test
+for unpaired surrogates or exhaustive Qt-whitespace comparison; the missing
+RosterModel name-column guard cannot be reached through public `setRoster`.
+
+F249 is selected: extract AI batch student eligibility into Qt-free Application.
+Preserve first-failure order (no name, unsupported grade, missing Did Well
+observations, missing Needs Improvement observations) and eligibility facts:
+either trimmed name present, grade 4–6, and both observation lists nonempty.
+Keep existing translated reasons and checked/enabled behavior. Scope the policy
+and result header, dialog adapter, app-less tests/CMake, and focused UI reason/
+state coverage in the existing batch-report test target. Leave comment review
+status, prompt creation, comment application, and overwrite confirmation
+untouched. Paired scans diverged; this focused pure decision was selected over
+the first-empty roster query, which is parked. The cumulative Gate 1 map is
+historical and ends at F143
 ([map](03-Phase-2-Progress-Log.md#L7570)); Gates 1 and 2 remain Partial. Phase
 2 remains In Progress/Open.

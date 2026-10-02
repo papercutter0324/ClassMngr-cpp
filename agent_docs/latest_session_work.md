@@ -4985,3 +4985,34 @@ exclusion, and candidate order. Keep column selection and duplicate prompts,
 actions, and resolution in the models/page. Add app-less policy cases, model
 wrapper checks, and a focused Speaking Evaluation duplicate-resolution
 regression. Phase 2 remains In Progress/Open, with Gates 1 and 2 Partial.
+
+## Current continuation - 2026-10-02 (F248 accepted; F249 implementation started)
+
+The user asked to assume F196 complete, continue F218, commit each slice, and
+begin the next. F218 was already accepted in the plan history; the checked-out
+branch had advanced through F245. Continue from the current branch position
+without replaying accepted work. Active deployment ID remains
+`qt-rewrite-phase2-resume-20260928`.
+
+F248 source commit `8886b46f` extracts Qt-free student name-pair peer lookup
+shared by RosterModel and SpeakingEvalModel, reuses F247's trimmed UTF-16
+U+001F key, and removes the unused Core duplicate lookup. Independent fresh
+x64 Debug verification in `build/f248_independent_x64_debug` confirmed one
+owner for 1,202 handwritten sources and passed the new app-less lookup,
+RosterModel, and SpeakingEval page-save CTests (3/3). `git diff --check` passed.
+The full suite was not run. Verification did not cover unpaired surrogates
+through model adapters or every Qt whitespace code point; RosterModel's public
+setup always supplies base name columns, preventing direct test of its missing-
+column guard.
+
+Two independent F249 scans proposed different candidates. Select the Qt-free
+Speaking Evaluation AI-batch student-eligibility decision, leaving comment
+review status, prompts, comment application, and overwrite confirmation at
+their owners. Preserve first-failure reason order (missing name, unsupported
+grade, missing Did Well observations, missing Needs Improvement observations),
+the current translated text, and row check/enabled state. The roster first-empty
+row query is deferred. Formal phase-plan docs are being updated to accept F248
+and select F249. Next: finish the plan/document handoff, implement F249 with
+focused Application and dialog coverage, run independent focused verification,
+commit the source slice, then document and select its successor. Phase 2 stays
+In Progress/Open; Gates 1 and 2 remain Partial.
