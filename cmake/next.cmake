@@ -103,6 +103,7 @@ set(CLASSMNGR_NEXT_APPLICATION_SOURCES
     src/next/application/roster_custom_column_removal_policy.h
     src/next/application/roster_snapshot.h
     src/next/application/roster_row_transfer_preparation.h
+    src/next/application/roster_transfer_target_eligibility.h
     src/next/application/roster_row_reordering.h
     src/next/application/roster_row_removal.h
     src/next/application/student_korean_name_suffix_suggestion.h

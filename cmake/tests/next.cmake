@@ -186,6 +186,37 @@ add_test(
     COMMAND ClassMngrNextApplicationRosterRowTransferPreparationTests
 )
 
+# Keep roster transfer-target eligibility independent of Qt.
+add_executable(
+    ClassMngrNextApplicationRosterTransferTargetEligibilityTests
+    tests/next_application_roster_transfer_target_eligibility_tests.cpp
+)
+target_compile_features(
+    ClassMngrNextApplicationRosterTransferTargetEligibilityTests
+    PRIVATE
+        cxx_std_23
+)
+set_target_properties(
+    ClassMngrNextApplicationRosterTransferTargetEligibilityTests
+    PROPERTIES
+        AUTOMOC OFF
+        AUTOUIC OFF
+        AUTORCC OFF
+)
+set_property(
+    TARGET ClassMngrNextApplicationRosterTransferTargetEligibilityTests
+    PROPERTY CLASSMNGR_STANDALONE_CPP_TEST TRUE
+)
+target_link_libraries(
+    ClassMngrNextApplicationRosterTransferTargetEligibilityTests
+    PRIVATE
+        ClassMngrNext::Application
+)
+add_test(
+    NAME ClassMngrNextApplicationRosterTransferTargetEligibilityTests
+    COMMAND ClassMngrNextApplicationRosterTransferTargetEligibilityTests
+)
+
 # Keep Korean student-name suffix selection independent of Qt.
 add_executable(
     ClassMngrNextApplicationStudentKoreanNameSuffixSuggestionTests

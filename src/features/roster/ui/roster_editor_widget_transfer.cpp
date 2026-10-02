@@ -7,6 +7,8 @@
 #include "core/utils/sidebar_node_naming.h"
 #include "features/roster/ui/roster_model.h"
 #include "features/roster/ui/roster_table_view.h"
+#include "next/application/roster_transfer_target_eligibility.h"
+#include "ui/shared/qt_text_adapter.h"
 
 #include <QAction>
 #include <QHash>
@@ -93,15 +95,23 @@ void RosterEditorWidget::showRosterContextMenu(
     auto* rosterService = m_services ? m_services->rosterService() : nullptr;
 
     const QString currentGrade =
-        classService && m_classroom.id > 0
+        classService
+            && ClassMngr::Next::Application::hasValidRosterTransferSourceId(
+                m_classroom.id
+                )
             ? classService->classInfo(m_classroom.id)
                   .value_or(ClassInfo{})
                   .classGrade
-                  .trimmed()
             : QString();
     QList<TransferClassTarget> targets;
 
-    if (canRemove && classService && rosterService && !currentGrade.isEmpty())
+    if (canRemove
+        && classService
+        && rosterService
+        && ClassMngr::Next::Application::isRosterTransferSourceEligible(
+            m_classroom.id,
+            Ui::QtTextAdapter::toUtf16String(currentGrade)
+            ))
     {
         const Result<QList<Classroom>> classes = classService->classes();
         if (!classes)
@@ -117,14 +127,22 @@ void RosterEditorWidget::showRosterContextMenu(
         for (const Classroom& classroom : classes.value_or(
                  QList<Classroom>{}))
         {
-            if (classroom.id <= 0 || classroom.id == m_classroom.id)
+            if (!ClassMngr::Next::Application::shouldReadRosterTransferTargetClassInfo(
+                    m_classroom.id,
+                    classroom.id
+                    ))
             {
                 continue;
             }
 
             const ClassInfo targetInfo =
                 classService->classInfo(classroom.id).value_or(ClassInfo{});
-            if (targetInfo.classGrade.trimmed() != currentGrade)
+            if (!ClassMngr::Next::Application::isRosterTransferTargetEligible(
+                    m_classroom.id,
+                    Ui::QtTextAdapter::toUtf16String(currentGrade),
+                    classroom.id,
+                    Ui::QtTextAdapter::toUtf16String(targetInfo.classGrade)
+                    ))
             {
                 continue;
             }
