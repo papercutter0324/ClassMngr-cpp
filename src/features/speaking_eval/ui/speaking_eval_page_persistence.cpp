@@ -1,14 +1,10 @@
 #include "speaking_eval_page_p.h"
 
-#include "domain/validation/speaking_eval_validator.h"
+#include "features/speaking_eval/ui/speaking_eval_page_validation_adapter.h"
 #include "next/application/speaking_evaluation_save_use_case.h"
 #include "next/platform/application_services_speaking_evaluation_save_port.h"
 #include "ui/shared/dialogs/user_prompt_service.h"
 #include "ui/shared/validation/form_validation_binder.h"
-
-#include <string>
-#include <utility>
-#include <vector>
 
 void SpeakingEvalPage::saveData()
 {
@@ -76,12 +72,21 @@ bool SpeakingEvalPage::saveEvaluationInternal(
 
     updateEvaluationValidation();
 
-    const ValidationResult validation = SpeakingEvalValidator::validate(
+    const auto request = SpeakingEvalPageValidationAdapter::makeSaveRequest(
         m_classroom.id,
         m_evaluationName,
-        SpeakingEvalValidator::normalized(m_model->rows()),
+        m_model->rows(),
+        m_model->changedCells(),
         confirmQuestionableLengths
         );
+    const auto applicationValidation =
+        ClassMngr::Next::Application::validateAndNormalizeSpeakingEvaluation(
+            request
+            );
+    const ValidationResult validation =
+        SpeakingEvalPageValidationAdapter::toFormValidation(
+            applicationValidation
+            );
     if (validation.hasErrors())
     {
         updateActions();
@@ -90,50 +95,12 @@ bool SpeakingEvalPage::saveEvaluationInternal(
     }
 
     if (confirmQuestionableLengths
-        && !confirmQuestionableKoreanNameLengths())
+        && !confirmQuestionableKoreanNameLengths(applicationValidation))
     {
         focusFirstEvaluationError();
         return false;
     }
 
-    const auto classId = ClassMngr::Next::Domain::ClassId::fromString(
-        std::to_string(m_classroom.id)
-        );
-    if (!classId)
-    {
-        return false;
-    }
-
-    ClassMngr::Next::Application::SpeakingEvaluationSnapshot snapshot;
-    const SpeakingEvalRows rows = m_model->rows();
-    snapshot.rows.reserve(static_cast<std::size_t>(rows.size()));
-    for (const QStringList& sourceRow : rows)
-    {
-        std::vector<std::u16string> row;
-        row.reserve(static_cast<std::size_t>(sourceRow.size()));
-        for (const QString& cell : sourceRow)
-        {
-            row.push_back(cell.toStdU16String());
-        }
-        snapshot.rows.push_back(std::move(row));
-    }
-
-    const QList<SpeakingEvalCellChange> changedCells =
-        m_model->changedCells();
-    snapshot.changedCells.reserve(
-        static_cast<std::size_t>(changedCells.size())
-        );
-    for (const SpeakingEvalCellChange& change : changedCells)
-    {
-        snapshot.changedCells.push_back({change.row, change.column});
-    }
-
-    const ClassMngr::Next::Application::SpeakingEvaluationSaveRequest request{
-        .classId = *classId,
-        .evaluationName = m_evaluationName.toStdU16String(),
-        .evaluation = std::move(snapshot),
-        .allowQuestionableKoreanNameLengths = confirmQuestionableLengths
-    };
     const ClassMngr::Next::Platform::
         ApplicationServicesSpeakingEvaluationSavePort port(m_services);
     const auto saved =
@@ -175,7 +142,9 @@ bool SpeakingEvalPage::saveEvaluationInternal(
     return true;
 }
 
-QStringList SpeakingEvalPage::questionableKoreanNameRows() const
+QStringList SpeakingEvalPage::questionableKoreanNameRows(
+    const ClassMngr::Next::Application::SpeakingEvaluationValidationResult& validation
+    ) const
 {
     if (!m_model)
     {
@@ -185,19 +154,23 @@ QStringList SpeakingEvalPage::questionableKoreanNameRows() const
     QStringList names;
     const int koreanColumn = SpeakingEval::toInt(SpeakingEvalColumn::KoreanName);
     const SpeakingEvalRows rows = m_model->rows();
-    for (int row = 0; row < rows.size(); ++row)
+    QList<int> questionableRows;
+    for (const auto& issue : validation.issues)
     {
-        const QString koreanName = rows[row].value(koreanColumn);
-        const auto issues = StudentNameUtils::validateKoreanName(koreanName);
-        if (!issues.contains(StudentNameUtils::ValidationIssue::KoreanTooShort)
-            && !issues.contains(StudentNameUtils::ValidationIssue::KoreanTooLong))
+        if ((issue.code != "student_name.korean.too_short"
+             && issue.code != "student_name.korean.too_long")
+            || issue.row < 0
+            || issue.row >= rows.size()
+            || questionableRows.contains(issue.row))
         {
             continue;
         }
 
+        questionableRows.append(issue.row);
+        const QString koreanName = rows[issue.row].value(koreanColumn);
         names.append(
             tr("Row %1: %2")
-                .arg(row + 1)
+                .arg(issue.row + 1)
                 .arg(koreanName)
             );
     }
@@ -205,9 +178,11 @@ QStringList SpeakingEvalPage::questionableKoreanNameRows() const
     return names;
 }
 
-bool SpeakingEvalPage::confirmQuestionableKoreanNameLengths()
+bool SpeakingEvalPage::confirmQuestionableKoreanNameLengths(
+    const ClassMngr::Next::Application::SpeakingEvaluationValidationResult& validation
+    )
 {
-    const QStringList names = questionableKoreanNameRows();
+    const QStringList names = questionableKoreanNameRows(validation);
     if (names.isEmpty())
     {
         return true;

@@ -3,10 +3,8 @@
 #include "data/database/database_session.h"
 #include "data/repositories/speaking_eval_repository.h"
 #include "domain/models/speaking_evaluation.h"
-#include "domain/validation/speaking_eval_validator.h"
 
 #include <QByteArray>
-#include <QStringList>
 
 #include <charconv>
 #include <exception>
@@ -90,28 +88,6 @@ std::string toStdString(const QString& value)
     return bytes.toStdString();
 }
 
-QString validationError(
-    const QString& subject,
-    const ValidationResult& validation
-    )
-{
-    QStringList details;
-    for (const ValidationIssue& issue : validation.errors())
-    {
-        QString detail = issue.field.isEmpty()
-            ? issue.code
-            : QStringLiteral("%1: %2").arg(issue.field, issue.code);
-        if (issue.row >= 0 && !issue.field.contains(QChar(u'[')))
-        {
-            detail.prepend(QStringLiteral("row %1, ").arg(issue.row + 1));
-        }
-        details.append(detail);
-    }
-
-    return QStringLiteral("%1 validation failed: %2")
-        .arg(subject, details.join(QStringLiteral("; ")));
-}
-
 Domain::Result<void> failure(
     const Domain::ErrorCode code,
     std::string message
@@ -165,27 +141,6 @@ saveEvaluation(
 
     try
     {
-        const QString normalizedName = legacyText(request.evaluationName).trimmed();
-        const SpeakingEvalRows normalizedRows = SpeakingEvalValidator::normalized(
-            legacyRows(request.evaluation.rows)
-            );
-        const ValidationResult validation = SpeakingEvalValidator::validate(
-            *classId,
-            normalizedName,
-            normalizedRows,
-            request.allowQuestionableKoreanNameLengths
-            );
-        if (validation.hasErrors())
-        {
-            return failure(
-                Domain::ErrorCode::Technical,
-                toStdString(validationError(
-                    QStringLiteral("Speaking evaluation"),
-                    validation
-                    ))
-                );
-        }
-
         SpeakingEvalRepository* const repository =
             m_session->speakingEvalRepository();
         if (!repository)
@@ -198,8 +153,8 @@ saveEvaluation(
 
         const Status saved = repository->saveSpeakingEval(
             *classId,
-            normalizedName,
-            normalizedRows,
+            legacyText(request.evaluationName),
+            legacyRows(request.evaluation.rows),
             legacyChanges(request.evaluation.changedCells)
             );
         if (!saved)

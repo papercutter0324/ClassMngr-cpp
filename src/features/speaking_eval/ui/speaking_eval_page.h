@@ -7,6 +7,7 @@
 #include "features/classes/models/class_tab_navigation_model.h"
 #include "features/schedule/ui/schedule_view_model.h"
 #include "features/speaking_eval/ui/speaking_eval_table_view.h"
+#include "next/application/speaking_evaluation_validation.h"
 
 #include <QList>
 #include <QString>
@@ -167,8 +168,12 @@ private:
         bool confirmQuestionableKoreanNameLengths = false
         );
 
-    [[nodiscard]] QStringList questionableKoreanNameRows() const;
-    bool confirmQuestionableKoreanNameLengths();
+    [[nodiscard]] QStringList questionableKoreanNameRows(
+        const ClassMngr::Next::Application::SpeakingEvaluationValidationResult& validation
+        ) const;
+    bool confirmQuestionableKoreanNameLengths(
+        const ClassMngr::Next::Application::SpeakingEvaluationValidationResult& validation
+        );
 
     void updateEvaluationValidation();
     void focusFirstEvaluationError();

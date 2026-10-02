@@ -2,6 +2,7 @@
 
 #include "next/domain/domain_types.h"
 #include "next/domain/operation_result.h"
+#include "next/application/speaking_evaluation_validation.h"
 
 #include <charconv>
 #include <string>
@@ -10,44 +11,6 @@
 
 namespace ClassMngr::Next::Application
 {
-
-inline constexpr int SpeakingEvaluationRowCount = 25;
-inline constexpr int SpeakingEvaluationColumnCount = 11;
-
-struct SpeakingEvaluationCellChange final
-{
-    int row = -1;
-    int column = -1;
-
-    friend bool operator==(
-        const SpeakingEvaluationCellChange&,
-        const SpeakingEvaluationCellChange&
-        ) = default;
-};
-
-struct SpeakingEvaluationSnapshot final
-{
-    std::vector<std::vector<std::u16string>> rows;
-    std::vector<SpeakingEvaluationCellChange> changedCells;
-
-    friend bool operator==(
-        const SpeakingEvaluationSnapshot&,
-        const SpeakingEvaluationSnapshot&
-        ) = default;
-};
-
-struct SpeakingEvaluationSaveRequest final
-{
-    Domain::ClassId classId;
-    std::u16string evaluationName;
-    SpeakingEvaluationSnapshot evaluation;
-    bool allowQuestionableKoreanNameLengths = false;
-
-    friend bool operator==(
-        const SpeakingEvaluationSaveRequest&,
-        const SpeakingEvaluationSaveRequest&
-        ) = default;
-};
 
 class SpeakingEvaluationSavePort
 {
@@ -72,11 +35,6 @@ public:
             return failure("Class ID must be a canonical positive integer.");
         }
 
-        if (request.evaluationName.empty())
-        {
-            return failure("Evaluation name must not be empty.");
-        }
-
         if (!hasCompleteMatrix(request.evaluation.rows))
         {
             return failure(
@@ -98,7 +56,14 @@ public:
             }
         }
 
-        return port.saveEvaluation(request);
+        const SpeakingEvaluationValidationResult validation =
+            validateAndNormalizeSpeakingEvaluation(request);
+        if (validation.hasErrors())
+        {
+            return failure("Speaking evaluation content is invalid.");
+        }
+
+        return port.saveEvaluation(validation.normalizedRequest);
     }
 
 private:

@@ -104,6 +104,7 @@ set(CLASSMNGR_NEXT_APPLICATION_SOURCES
     src/next/application/speaking_evaluation_query.h
     src/next/application/speaking_evaluation_roster_score_import_use_case.h
     src/next/application/speaking_evaluation_save_use_case.h
+    src/next/application/speaking_evaluation_validation.h
     src/next/application/class_details_page_snapshot.h
     src/next/application/class_details_page_read_port.h
     src/next/application/class_details_page_query.h

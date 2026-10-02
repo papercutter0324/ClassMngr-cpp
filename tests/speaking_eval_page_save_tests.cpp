@@ -17,9 +17,11 @@
 #include "ui/shared/pages/autosave_coordinator.h"
 #include "ui/shared/pages/page_header.h"
 #include "ui/shared/widgets/navigation_tab_widget.h"
+#include "ui/shared/validation/form_validation_binder.h"
 
 #include <QCoreApplication>
 #include <QEvent>
+#include <QLabel>
 #include <QSignalSpy>
 #include <QPushButton>
 #include <QTemporaryDir>
@@ -197,9 +199,15 @@ manualValidationAndConfirmedSaveKeepTheirCurrentTiming()
     auto* saveButton = page.findChild<QPushButton*>(
         QStringLiteral("speakingEvalSaveButton")
         );
+    auto* validationBinder = page.findChild<FormValidationBinder*>();
+    auto* validationMessage = page.findChild<QLabel*>(
+        QStringLiteral("speakingEvalValidationMessage")
+        );
     QVERIFY(model);
     QVERIFY(table);
     QVERIFY(saveButton);
+    QVERIFY(validationBinder);
+    QVERIFY(validationMessage);
 
     QVERIFY(setStudent(model, 0, QStringLiteral("Alice"), QStringLiteral("\uAE40\uBBFC\uC9C0")));
     saveButton->click();
@@ -210,10 +218,48 @@ manualValidationAndConfirmedSaveKeepTheirCurrentTiming()
 
     QVERIFY(model->setData(
         model->index(0, SpeakingEval::toInt(SpeakingEvalColumn::KoreanName)),
+        QStringLiteral("\uAC00\uB098"),
+        Qt::EditRole
+        ));
+    const ValidationIssues unusualNameIssues =
+        validationBinder->validation().forField(
+            QStringLiteral("rows[0].Korean Name")
+            );
+    QCOMPARE(unusualNameIssues.size(), 1);
+    QCOMPARE(
+        unusualNameIssues.constFirst().code,
+        QStringLiteral("student_name.korean.unusual_length")
+        );
+    QVERIFY(unusualNameIssues.constFirst().isWarning());
+    QCOMPARE(
+        validationMessage->property("formValidationSeverity").toString(),
+        QStringLiteral("warning")
+        );
+
+    QVERIFY(model->setData(
+        model->index(0, SpeakingEval::toInt(SpeakingEvalColumn::KoreanName)),
         QStringLiteral("\uAE40"),
         Qt::EditRole
         ));
     QVERIFY(page.hasUnsavedChanges());
+    const ValidationIssues koreanNameIssues =
+        validationBinder->validation().forField(
+            QStringLiteral("rows[0].Korean Name")
+            );
+    QCOMPARE(koreanNameIssues.size(), 1);
+    QCOMPARE(
+        koreanNameIssues.constFirst().code,
+        QStringLiteral("student_name.korean.too_short")
+        );
+    QVERIFY(koreanNameIssues.constFirst().isError());
+    QCOMPARE(
+        validationMessage->property("formValidationSeverity").toString(),
+        QStringLiteral("error")
+        );
+    QCOMPARE(
+        validationMessage->text(),
+        QStringLiteral("Correct the highlighted evaluation cells.")
+        );
 
     page.saveData();
     QVERIFY(page.hasUnsavedChanges());
@@ -224,10 +270,32 @@ manualValidationAndConfirmedSaveKeepTheirCurrentTiming()
         model->index(0, SpeakingEval::toInt(SpeakingEvalColumn::KoreanName))
         );
 
+    prompts.scriptedChoices.enqueue(PromptChoice::Rejected);
+    QVERIFY(!page.saveChanges());
+    QVERIFY(page.hasUnsavedChanges());
+    QCOMPARE(prompts.confirmations.size(), 1);
+    QCOMPARE(
+        prompts.confirmations.constFirst().title,
+        QStringLiteral("Verify Korean Name Lengths")
+        );
+    QCOMPARE(prompts.messages.size(), 1);
+    QCOMPARE(
+        table->currentIndex(),
+        model->index(0, SpeakingEval::toInt(SpeakingEvalColumn::KoreanName))
+        );
+
+    const auto unchanged = fixture.services.speakingEvaluationService()->evaluation(
+        fixture.classIds.first(),
+        QStringLiteral("Winter")
+        );
+    QVERIFY(unchanged);
+    QCOMPARE(unchanged->at(0).at(1), QStringLiteral("Alice"));
+    QCOMPARE(unchanged->at(0).at(2), QStringLiteral("\uAE40\uBBFC\uC9C0"));
+
     prompts.scriptedChoices.enqueue(PromptChoice::Accepted);
     QVERIFY(page.saveChanges());
     QVERIFY(!page.hasUnsavedChanges());
-    QCOMPARE(prompts.confirmations.size(), 1);
+    QCOMPARE(prompts.confirmations.size(), 2);
     QCOMPARE(
         prompts.confirmations.constFirst().title,
         QStringLiteral("Verify Korean Name Lengths")

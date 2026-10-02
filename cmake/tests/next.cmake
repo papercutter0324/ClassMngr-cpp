@@ -462,13 +462,34 @@ classmngr_add_qt_test(
         Qt6::Test
 )
 
-classmngr_add_qt_test(
-    NAME NextApplicationSpeakingEvaluationSaveUseCase
-    SOURCES
-        tests/next_application_speaking_evaluation_save_use_case_tests.cpp
-    LIBRARIES
+qt_add_executable(
+    ClassMngrNextApplicationSpeakingEvaluationSaveUseCaseTests
+    tests/next_application_speaking_evaluation_save_use_case_tests.cpp
+)
+target_compile_features(
+    ClassMngrNextApplicationSpeakingEvaluationSaveUseCaseTests
+    PRIVATE
+        cxx_std_23
+)
+target_include_directories(
+    ClassMngrNextApplicationSpeakingEvaluationSaveUseCaseTests
+    PRIVATE
+        "${PROJECT_SOURCE_DIR}/src"
+)
+target_link_libraries(
+    ClassMngrNextApplicationSpeakingEvaluationSaveUseCaseTests
+    PRIVATE
+        ClassMngrBuildSettings
         ClassMngrNext::Application
         Qt6::Test
+)
+set_property(
+    TARGET ClassMngrNextApplicationSpeakingEvaluationSaveUseCaseTests
+    PROPERTY CLASSMNGR_STANDALONE_CPP_TEST TRUE
+)
+add_test(
+    NAME ClassMngrNextApplicationSpeakingEvaluationSaveUseCaseTests
+    COMMAND ClassMngrNextApplicationSpeakingEvaluationSaveUseCaseTests
 )
 
 classmngr_add_qt_test(

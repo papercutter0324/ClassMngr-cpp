@@ -1,6 +1,6 @@
 #include "speaking_eval_page_p.h"
 
-#include "domain/validation/speaking_eval_validator.h"
+#include "features/speaking_eval/ui/speaking_eval_page_validation_adapter.h"
 #include "ui/shared/validation/form_validation_binder.h"
 
 void SpeakingEvalPage::buildUi()
@@ -477,12 +477,21 @@ void SpeakingEvalPage::updateEvaluationValidation()
         return;
     }
 
-    const SpeakingEvalRows rows = SpeakingEvalValidator::normalized(m_model->rows());
-    const ValidationResult validation = SpeakingEvalValidator::validate(
+    const auto request = SpeakingEvalPageValidationAdapter::makeSaveRequest(
         m_classroom.id,
         m_evaluationName,
-        rows
+        m_model->rows(),
+        {},
+        false
         );
+    const auto applicationValidation =
+        ClassMngr::Next::Application::validateAndNormalizeSpeakingEvaluation(
+            request
+            );
+    const ValidationResult validation =
+        SpeakingEvalPageValidationAdapter::toFormValidation(
+            applicationValidation
+            );
 
     m_updatingValidation = true;
     m_validationBinder->setValidation(

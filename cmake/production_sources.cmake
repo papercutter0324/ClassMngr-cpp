@@ -497,6 +497,8 @@ set(CLASSMNGR_FEATURES_SOURCES
     "src/features/speaking_eval/ui/speaking_eval_page_p.h"
     "src/features/speaking_eval/ui/speaking_eval_page_persistence.cpp"
     "src/features/speaking_eval/ui/speaking_eval_page_ui.cpp"
+    "src/features/speaking_eval/ui/speaking_eval_page_validation_adapter.cpp"
+    "src/features/speaking_eval/ui/speaking_eval_page_validation_adapter.h"
     "src/features/speaking_eval/ui/speaking_eval_private_notes_editor.cpp"
     "src/features/speaking_eval/ui/speaking_eval_private_notes_editor.h"
     "src/features/speaking_eval/ui/speaking_eval_report_assets_p.cpp"

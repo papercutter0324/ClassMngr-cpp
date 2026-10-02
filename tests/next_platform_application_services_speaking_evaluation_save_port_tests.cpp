@@ -2,6 +2,7 @@
 #include "core/application_services.h"
 #include "data/data_service.h"
 #include "data/database/database_session.h"
+#include "domain/validation/speaking_eval_validator.h"
 #include "next/application/speaking_evaluation_save_use_case.h"
 #include "next/platform/application_services_speaking_evaluation_save_port.h"
 
@@ -11,6 +12,7 @@
 #include <QtTest/QtTest>
 
 #include <algorithm>
+#include <optional>
 #include <string>
 #include <utility>
 #include <vector>
@@ -79,6 +81,23 @@ Application::SpeakingEvaluationSaveRequest request(const int classId)
     };
 }
 
+class RecordingSpeakingEvaluationSavePort final
+    : public Application::SpeakingEvaluationSavePort
+{
+public:
+    [[nodiscard]] Domain::Result<void> saveEvaluation(
+        const Application::SpeakingEvaluationSaveRequest& request
+        ) const override
+    {
+        ++callCount;
+        savedRequest = request;
+        return Domain::Result<void>::success();
+    }
+
+    mutable int callCount = 0;
+    mutable std::optional<Application::SpeakingEvaluationSaveRequest> savedRequest;
+};
+
 }
 
 class NextPlatformApplicationServicesSpeakingEvaluationSavePortTests final
@@ -90,6 +109,8 @@ private slots:
     void savesCompleteMatrixAndAppliesExactChangedCellDelta();
     void normalizesNameAndScoreAliasBeforePersisting();
     void validationRejectsInvalidRowsBeforePersistence();
+    void appValidationMatchesLegacySpeakingEvaluationRules();
+    void questionableKoreanNameFlagMatchesLegacySeverityAndSaveDecision();
     void repositoryWriteFailureMapsTechnicalAndRollsBack();
     void forwardsQuestionableKoreanNameDecision();
     void closedSessionFailsWithoutDataServiceFallback();
@@ -172,6 +193,8 @@ normalizesNameAndScoreAliasBeforePersisting()
 
     Application::SpeakingEvaluationSaveRequest saveRequest = request(*createdClass);
     saveRequest.evaluationName = u"  Alias Review  ";
+    saveRequest.evaluation.rows[0][1] = u"  sTUDENT   a ";
+    saveRequest.evaluation.rows[0][2] = u" \uAE40 \uBBFC \uC9C0 ";
     saveRequest.evaluation.rows[0][3] = u" 5 ";
 
     Platform::ApplicationServicesSpeakingEvaluationSavePort port(services);
@@ -190,6 +213,8 @@ normalizesNameAndScoreAliasBeforePersisting()
         );
     QVERIFY(persisted);
     QCOMPARE(persisted->size(), 25);
+    QCOMPARE(persisted->at(0).at(1), QStringLiteral("Student A"));
+    QCOMPARE(persisted->at(0).at(2), QStringLiteral("\uAE40\uBBFC\uC9C0"));
     QCOMPARE(persisted->at(0).at(3), QStringLiteral("A+"));
 }
 
@@ -216,8 +241,8 @@ validationRejectsInvalidRowsBeforePersistence()
         port
         );
     QVERIFY(!rejectedNew);
-    QCOMPARE(rejectedNew.error().code, Domain::ErrorCode::Technical);
-    QVERIFY(!rejectedNew.error().recoverable);
+    QCOMPARE(rejectedNew.error().code, Domain::ErrorCode::InvalidInput);
+    QVERIFY(rejectedNew.error().recoverable);
 
     const auto absentEvaluation = services.speakingEvaluationService()->evaluation(
         *createdClass,
@@ -247,8 +272,8 @@ validationRejectsInvalidRowsBeforePersistence()
         port
         );
     QVERIFY(!rejectedUpdate);
-    QCOMPARE(rejectedUpdate.error().code, Domain::ErrorCode::Technical);
-    QVERIFY(!rejectedUpdate.error().recoverable);
+    QCOMPARE(rejectedUpdate.error().code, Domain::ErrorCode::InvalidInput);
+    QVERIFY(rejectedUpdate.error().recoverable);
 
     const auto afterUpdate = services.speakingEvaluationService()->evaluation(
         *createdClass,
@@ -256,6 +281,187 @@ validationRejectsInvalidRowsBeforePersistence()
         );
     QVERIFY(afterUpdate);
     QCOMPARE(*afterUpdate, *beforeUpdate);
+}
+
+void NextPlatformApplicationServicesSpeakingEvaluationSavePortTests::
+appValidationMatchesLegacySpeakingEvaluationRules()
+{
+    auto saveRequest = request(42);
+    saveRequest.evaluationName = u"  Parity Review  ";
+    for (std::vector<std::u16string>& row : saveRequest.evaluation.rows)
+    {
+        std::fill(row.begin(), row.end(), std::u16string{});
+    }
+    saveRequest.evaluation.rows[0][1] = u"  Alice  ";
+    saveRequest.evaluation.rows[0][2] = u"\uAE40";
+    saveRequest.evaluation.rows[1][1] = u"Zo\u00EB!";
+    saveRequest.evaluation.rows[1][2] = u"\uAC00\uB098";
+    saveRequest.evaluation.rows[2][1] = u"Alice";
+    saveRequest.evaluation.rows[2][2] = u"\uAE40";
+    saveRequest.evaluation.rows[2][3] = u"D";
+    saveRequest.evaluation.rows[2][9] = std::u16string(451, u'c');
+    saveRequest.evaluation.rows[3][1] = u"Notes";
+    saveRequest.evaluation.rows[3][2] = u"\uAE40\uBBFC\uC9C0";
+    saveRequest.evaluation.rows[3][10] = std::u16string(10001, u'n');
+    saveRequest.evaluation.rows[4][0] = u" 4 ";
+    saveRequest.evaluation.rows[4][1] = u"  j. r. sMITH ";
+    saveRequest.evaluation.rows[4][2] = u" \uAE40 \uBBFC \uC9C0 (a) ";
+    saveRequest.evaluation.rows[4][3] = u"5";
+    saveRequest.evaluation.rows[5][1] = u"BadSuffix";
+    saveRequest.evaluation.rows[5][2] = u"AB(a)";
+    saveRequest.allowQuestionableKoreanNameLengths = false;
+
+    const auto actual = validateAndNormalizeSpeakingEvaluation(saveRequest);
+
+    SpeakingEvalRows legacyRows;
+    legacyRows.reserve(static_cast<qsizetype>(saveRequest.evaluation.rows.size()));
+    for (const std::vector<std::u16string>& sourceRow : saveRequest.evaluation.rows)
+    {
+        QStringList row;
+        row.reserve(static_cast<qsizetype>(sourceRow.size()));
+        for (const std::u16string& value : sourceRow)
+        {
+            row.append(QString::fromStdU16String(value));
+        }
+        legacyRows.append(std::move(row));
+    }
+    const SpeakingEvalRows normalizedLegacyRows =
+        SpeakingEvalValidator::normalized(legacyRows);
+    QCOMPARE(
+        actual.normalizedRequest.evaluationName,
+        QString::fromStdU16String(saveRequest.evaluationName).trimmed().toStdU16String()
+        );
+    QCOMPARE(
+        actual.normalizedRequest.evaluation.rows.size(),
+        static_cast<std::size_t>(normalizedLegacyRows.size())
+        );
+    for (std::size_t row = 0;
+         row < actual.normalizedRequest.evaluation.rows.size();
+         ++row)
+    {
+        QCOMPARE(
+            actual.normalizedRequest.evaluation.rows[row].size(),
+            static_cast<std::size_t>(normalizedLegacyRows.at(
+                static_cast<qsizetype>(row)
+                ).size())
+            );
+        for (std::size_t column = 0;
+             column < actual.normalizedRequest.evaluation.rows[row].size();
+             ++column)
+        {
+            QCOMPARE(
+                actual.normalizedRequest.evaluation.rows[row][column],
+                normalizedLegacyRows.at(static_cast<qsizetype>(row))
+                    .at(static_cast<qsizetype>(column))
+                    .toStdU16String()
+                );
+        }
+    }
+    const ValidationResult legacy = SpeakingEvalValidator::validate(
+        42,
+        QString::fromStdU16String(saveRequest.evaluationName),
+        normalizedLegacyRows,
+        saveRequest.allowQuestionableKoreanNameLengths
+        );
+
+    QCOMPARE(actual.issues.size(), static_cast<std::size_t>(legacy.issues().size()));
+    for (std::size_t index = 0; index < actual.issues.size(); ++index)
+    {
+        const auto& appIssue = actual.issues[index];
+        const ValidationIssue& legacyIssue =
+            legacy.issues().at(static_cast<qsizetype>(index));
+        QCOMPARE(QString::fromStdString(appIssue.code), legacyIssue.code);
+        QCOMPARE(QString::fromStdString(appIssue.field), legacyIssue.field);
+        QCOMPARE(appIssue.row, legacyIssue.row);
+        QCOMPARE(appIssue.column, legacyIssue.column);
+        QCOMPARE(
+            appIssue.severity == Application::SpeakingEvaluationValidationSeverity::Warning,
+            legacyIssue.severity == ValidationSeverity::Warning
+            );
+    }
+}
+
+void NextPlatformApplicationServicesSpeakingEvaluationSavePortTests::
+questionableKoreanNameFlagMatchesLegacySeverityAndSaveDecision()
+{
+    auto saveRequest = request(42);
+    for (std::vector<std::u16string>& row : saveRequest.evaluation.rows)
+    {
+        std::fill(row.begin(), row.end(), std::u16string{});
+    }
+    saveRequest.evaluation.rows[0][1] = u"Alice";
+    saveRequest.evaluation.rows[0][2] = u"\uAE40";
+
+    SpeakingEvalRows legacyRows;
+    legacyRows.reserve(static_cast<qsizetype>(saveRequest.evaluation.rows.size()));
+    for (const std::vector<std::u16string>& sourceRow : saveRequest.evaluation.rows)
+    {
+        QStringList row;
+        row.reserve(static_cast<qsizetype>(sourceRow.size()));
+        for (const std::u16string& value : sourceRow)
+        {
+            row.append(QString::fromStdU16String(value));
+        }
+        legacyRows.append(std::move(row));
+    }
+    const SpeakingEvalRows normalizedLegacyRows =
+        SpeakingEvalValidator::normalized(legacyRows);
+
+    for (const bool allowQuestionableLength : {false, true})
+    {
+        saveRequest.allowQuestionableKoreanNameLengths = allowQuestionableLength;
+        const auto actual = validateAndNormalizeSpeakingEvaluation(saveRequest);
+        const ValidationResult legacy = SpeakingEvalValidator::validate(
+            42,
+            QString::fromStdU16String(saveRequest.evaluationName),
+            normalizedLegacyRows,
+            allowQuestionableLength
+            );
+
+        QCOMPARE(actual.issues.size(), static_cast<std::size_t>(legacy.issues().size()));
+        QCOMPARE(actual.issues.size(), std::size_t{1});
+        const auto& appIssue = actual.issues.front();
+        const ValidationIssue& legacyIssue = legacy.issues().front();
+        QCOMPARE(QString::fromStdString(appIssue.code), legacyIssue.code);
+        QCOMPARE(QString::fromStdString(appIssue.field), legacyIssue.field);
+        QCOMPARE(appIssue.row, legacyIssue.row);
+        QCOMPARE(appIssue.column, legacyIssue.column);
+        QCOMPARE(
+            appIssue.severity == Application::SpeakingEvaluationValidationSeverity::Warning,
+            legacyIssue.severity == ValidationSeverity::Warning
+            );
+        QCOMPARE(QString::fromStdString(appIssue.code),
+            QStringLiteral("student_name.korean.too_short"));
+        QCOMPARE(QString::fromStdString(appIssue.field),
+            QStringLiteral("rows[0].Korean Name"));
+        QCOMPARE(appIssue.row, 0);
+        QCOMPARE(appIssue.column, 2);
+
+        const bool expectedWarning = allowQuestionableLength;
+        QCOMPARE(
+            appIssue.severity == Application::SpeakingEvaluationValidationSeverity::Warning,
+            expectedWarning
+            );
+        QCOMPARE(actual.hasErrors(), !expectedWarning);
+        QCOMPARE(legacy.hasErrors(), !expectedWarning);
+
+        RecordingSpeakingEvaluationSavePort port;
+        const auto saved = Application::SpeakingEvaluationSaveUseCase::execute(
+            saveRequest,
+            port
+            );
+        QCOMPARE(static_cast<bool>(saved), expectedWarning);
+        QCOMPARE(port.callCount, expectedWarning ? 1 : 0);
+        QCOMPARE(
+            port.savedRequest.has_value(),
+            expectedWarning
+            );
+        if (expectedWarning)
+        {
+            QVERIFY(port.savedRequest);
+            QCOMPARE(port.savedRequest->allowQuestionableKoreanNameLengths, true);
+        }
+    }
 }
 
 void NextPlatformApplicationServicesSpeakingEvaluationSavePortTests::
@@ -346,7 +552,8 @@ forwardsQuestionableKoreanNameDecision()
         port
         );
     QVERIFY(!saved);
-    QCOMPARE(saved.error().code, Domain::ErrorCode::Technical);
+    QCOMPARE(saved.error().code, Domain::ErrorCode::InvalidInput);
+    QVERIFY(saved.error().recoverable);
 
     saveRequest.allowQuestionableKoreanNameLengths = true;
     saved = Application::SpeakingEvaluationSaveUseCase::execute(
