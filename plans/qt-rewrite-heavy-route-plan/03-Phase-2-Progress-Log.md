@@ -9457,3 +9457,30 @@ cannot silently change. ApplyRequest already carries the v2 write data; the
 narrow current-state validation request is insufficient, while a second
 persistence command would duplicate translation. Phase 2 remains
 In Progress/Open; Gates 1 and 2 remain Partial.
+
+### Progress update - 2026-10-02 (F236 accepted; F237 selected)
+
+F236, source commit `5877bba0`, carries structured typed policy,
+teacher-target, and fresh-state errors through Repository -> Platform ->
+dialog, including fresh-state context and overlap start/end times. The dialog
+uses the established formatter and a direct test confirms errors remain visible;
+legacy `apply(plan)` keeps localized `QString` behavior and SQL/transaction
+failures remain message-only. Windows x64 Debug verification completed 330
+actions and found 1 owner for 1,174 handwritten sources. Application and
+Platform CTests passed 2/2; 11 selected repository functions and 4 selected
+dialog functions passed, including the visibility assertion. `git diff --check`
+passed. No full suite ran.
+
+F237 is selected: move Speaking Evaluation normalization and content validation
+into a Qt-free contract shared by the save use case and page feedback, advancing
+the broader evaluation-editing Gate 1 gap. Acceptance preserves baseline score
+aliases, name normalization, issue codes/locations/messages, empty-row,
+duplicate, name, score, comment, and note behavior, the Korean-name-length
+option, and changed-cell behavior. Invalid requests must not reach the port;
+active-session persistence, rollback, and representative UI/save behavior must
+remain intact. Compare representative cases with the legacy baseline and run
+focused Application, Platform, and page-save tests. Two Explorer candidates
+disagreed; this seam was selected because broader evaluation editing is named
+as a Gate 1 gap. Class Transfer typed apply is deferred given its wider
+transaction surface and lack of a more directly named current gap. Phase 2
+remains In Progress/Open; Gates 1 and 2 remain Partial.

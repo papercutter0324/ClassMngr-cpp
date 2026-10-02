@@ -80,7 +80,7 @@ is accepted in source commit `e8a2a5b5`; F230 is accepted in source commit
 `547ccb5b`; F231 is accepted in source commit `6ebf6d33`; F232 is accepted in
 source commit `075b4335`; F233 is accepted in source commit `2cb853e9`; F234
 is accepted in source commit `d6d4bdc6`; F235 is accepted in source commit
-`b52029a6`; F236 is selected.
+`b52029a6`; F236 is accepted in source commit `5877bba0`; F237 is selected.
 F196 and F197 use
 only the active open session's
 `SettingsRepository` and preserve their keys, conversions, defaults, and
@@ -2878,34 +2878,27 @@ stale/overlap rejection, write-failure rollback, and intensive mapping
 coverage passed. Source ownership found one owner for 1,172 files, and
 `git diff --check` passed; no full suite ran.
 
-## Current Phase 2 position - 2026-10-02 (F235 accepted; F236 selected)
+## Current Phase 2 position - 2026-10-02 (F236 accepted; F237 selected)
 
-F234 source commit `d6d4bdc6` adds a Qt-free typed ApplyRequest validator used
-by both `ScheduleImportApplyUseCase` and direct
-`ScheduleImportRepository::applyTyped()` calls. It preserves validation
-order: plan eligibility, typed intensive-mode validity, then teacher target
-shape. An invalid intensive-mode enum on a normal schedule is rejected at
-both boundaries; diagnostics still take precedence. Localized message
-formatting remains at the UI and persistence edges, and the legacy plan
-validator remains unchanged.
+F236 source commit `5877bba0` carries structured typed policy, teacher-target,
+and fresh-state failures from Repository through Platform to the review dialog.
+Fresh-state codes and context are preserved, including overlap start/end times;
+the dialog uses its existing formatter and stays visible after failure. The
+legacy `apply(plan)` API retains its localized text result, while SQL and
+transaction failures remain message-only. Independent x64 Debug verification
+built 330 actions and validated one owner for 1,174 handwritten sources.
+Application and Platform CTests passed 2/2; 11 focused repository functions
+and 4 dialog functions passed. The dialog test directly checks visibility after
+failure. `git diff --check` passed; no full suite ran.
 
-Independent VsDevCmd x64 configure/build validated one owner for 1,174
-handwritten sources. The Application ApplyUseCase, Platform ApplyPort, and
-Schedule Import repository CTests passed 3/3; `git diff --check` passed. No
-full suite ran.
-
-F235 source commit `b52029a6` preserves exact typed teacher and class target
-IDs through fresh-state validation. Canonical `1` targets apply, while `01`
-teacher and class targets reject before writes with persisted snapshots
-unchanged. Independent focused verification passed the exact-ID slot 3/0 and
-the Schedule Import repository, Application ApplyUseCase, and Platform ApplyPort
-CTest gates 3/3; source ownership found one owner for 1,174 handwritten files.
-`git diff --check` passed. No full suite ran.
-
-F236 is selected to preserve typed policy and teacher-target issues plus fresh-
-state validation codes and details through the repository and Platform path.
-Keep SQL/transaction errors message-only, retain legacy `apply(plan)` behavior,
-and use the dialog's existing state-error formatting. Acceptance covers
-pre-write stale teacher/class targets and schedule overlap with unchanged
-snapshots, dialog messaging, legacy behavior, and rollback/error reporting.
-Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial.
+F237 is selected to move Speaking Evaluation normalization and content
+validation into a Qt-free contract shared by the save use case and page
+feedback. This advances Gate 1's documented gap in broader evaluation editing.
+Preserve the baseline normalization, validation issues and field locations,
+changed-cell behavior, questionable Korean-name-length option, page messaging,
+active-session persistence, and rollback. Acceptance covers aliases, Unicode,
+empty rows, duplicate names, score/comment/note validation, invalid-request
+port suppression, and representative Platform/page compatibility. Class
+Transfer typed apply was considered but deferred because its transaction
+surface is wider and it is not the currently named gate gap. Phase 2 remains
+In Progress/Open; Gates 1 and 2 remain Partial.

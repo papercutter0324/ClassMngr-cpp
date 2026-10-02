@@ -2032,10 +2032,19 @@ parse and reserialize the IDs before validation: the typed value `01` must not
 select the persisted canonical ID `1`. Convert only at the SQL adapter after
 state validation, and cover both teacher and class targets before writes.
 
-## 2026-10-02 - F236 structured Schedule Import failures selected
+## 2026-10-02 - F236 structured Schedule Import failures accepted
 
 Carry structured policy, teacher-target, and fresh-state validation failures
 through the typed Repository and Platform path so the dialog can use its
 existing issue formatters. Keep SQL/transaction failures message-only and
-preserve the legacy plan API. Test the reported codes/details, pre-write
-rejection with unchanged state, dialog messaging, and rollback behavior.
+preserve the legacy plan API. Keep overlap start/end context in its typed
+error. A dialog result code alone does not prove it stayed open; show it and
+assert visibility before and after the failure.
+
+## 2026-10-02 - F237 Speaking Evaluation validation selected
+
+Choose the documented broader evaluation-editing gap for the next app-less
+slice. Share Qt-free normalization and validation between the save use case and
+page feedback, preserving baseline issue locations/messages and the questionable
+Korean-name-length option. Defer typed Class Transfer apply because its
+transaction boundary is wider and is not the current named gate gap.

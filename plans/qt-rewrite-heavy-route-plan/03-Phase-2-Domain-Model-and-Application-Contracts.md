@@ -77,10 +77,12 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
   which plan eligibility runs first, followed by the intensive-mode check and
   teacher target check. Localized formatting stays at the edges, and the legacy
   plan validator is unchanged. F235 is accepted: repository state validation
-  preserves exact typed teacher and class target IDs, rejecting noncanonical
-  aliases such as `01` before writes. F236 is selected to preserve structured
-  typed policy and target failures, including fresh-state validation codes and
-  details, through the repository, Platform, and dialog path.
+  preserves exact typed teacher and class target IDs, rejecting aliases such as
+  `01` before writes. F236 is accepted: structured typed policy, teacher-target,
+  and fresh-state errors carry through Repository -> Platform -> dialog, while
+  legacy `apply(plan)` stays localized and SQL/transaction failures remain
+  message-only. F237 is selected for app-less Speaking Evaluation validation
+  and normalization shared by the save use case and page feedback.
   The prior F123 candidate wording is historical;
   current Teacher Profile integration status is recorded in the progress log.
   Gates 1 and 2
@@ -237,22 +239,29 @@ No new v2 production path depends on DataService, MainWindow, PageManager, or a 
 
 Earlier verified slices and cumulative exit-gate snapshots are archived in the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 
-## Latest progress update - 2026-10-02 (F235 accepted; F236 selected)
+## Latest progress update - 2026-10-02 (F236 accepted; F237 selected)
 
-F235, source commit `b52029a6`, preserves typed teacher/class target IDs through
-repository state validation. Canonical `1` applied; noncanonical `01` was
-rejected for both target types before writes, with snapshots unchanged. The
-independent exact-ID QtTest slot passed (3 cases, 0 failures); Schedule Import
-repository, Application ApplyUseCase, and Platform ApplyPort CTests passed
-3/3. Source ownership found 1 owner for 1,174 handwritten files;
-`git diff --check` passed. No full suite was run.
+F236, source commit `5877bba0`, carries structured typed policy,
+teacher-target, and fresh-state errors through Repository -> Platform ->
+dialog, including fresh-state context and overlap start/end times. The dialog
+uses the established formatter and a direct test confirms errors remain visible;
+legacy `apply(plan)` keeps localized `QString` behavior and SQL/transaction
+failures remain message-only. Windows x64 Debug verification completed 330
+actions and validated one owner for 1,174 handwritten sources. Application and
+Platform CTests passed 2/2; 11 selected repository functions and 4 selected
+dialog functions passed, including the visibility assertion. `git diff --check`
+passed; no full suite ran.
 
-F236 is selected to preserve structured typed policy and teacher-target
-failures, plus fresh-state validation error codes and details, through the
-typed Repository -> Platform -> dialog path. Message-only SQL/transaction
-failures and legacy `apply(plan)` behavior remain intact. Acceptance checks
-cover structured issues/codes/details; stale teacher/class targets and
-schedule overlap rejected before writes with snapshots unchanged; established
-dialog messages; intact rollback and technical errors; and representative
-legacy-path compatibility. Two independent Explorer lanes agreed on this seam.
-Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial.
+F237 is selected: move Speaking Evaluation normalization and content validation
+into a Qt-free contract shared by the save use case and page feedback, advancing
+the broader evaluation-editing Gate 1 gap. Preserve score aliases and name
+normalization; issue codes, locations, and messages; empty-row, duplicate,
+name, score, comment, and note behavior; the Korean-name-length option and
+changed-cell behavior; invalid requests not reaching the port; active-session
+persistence and rollback; and representative UI/save behavior. Compare cases
+with the legacy baseline and run focused Application, Platform, and page-save
+tests. Two Explorer candidates disagreed; this seam was chosen because the
+broader evaluation-editing gap is named in Gate 1. Class Transfer typed apply
+is deferred given its wider transaction surface and lack of a more directly
+named current gap. Phase 2 remains In Progress/Open; Gates 1 and 2 remain
+Partial.

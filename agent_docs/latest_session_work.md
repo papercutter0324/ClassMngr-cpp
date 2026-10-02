@@ -4852,19 +4852,21 @@ handwritten sources. The Application ApplyUseCase, Platform ApplyPort, and
 Schedule Import repository CTests passed 3/3; `git diff --check` passed. No
 full suite ran.
 
-F235 source commit `b52029a6` preserves exact typed teacher and class target
-IDs through fresh-state validation. Canonical `1` applies; `01` rejects for
-both target types before writes with persisted snapshots unchanged. Independent
-verification passed the exact-ID slot 3/0 and the Schedule Import repository,
-Application ApplyUseCase, and Platform ApplyPort CTests 3/3. Ownership found
-one owner for 1,174 handwritten sources, and `git diff --check` passed. No full
-suite ran.
+F236 source commit `5877bba0` preserves typed policy, teacher-target, and
+fresh-state validation issues across Repository, Platform, and dialog. State
+codes/context include overlap start/end times. Independent x64 Debug build
+completed 330 actions and source ownership found one owner for 1,174
+handwritten files. Application and Platform CTests passed 2/2; 11 focused
+repository functions and 4 dialog functions passed, including direct dialog
+visibility after failure. `git diff --check` passed. No full suite ran.
 
-F236 is selected to carry policy and teacher-target issues plus fresh-state
-validation codes/details through Repository and Platform. SQL/transaction
-errors remain message-only, and legacy `apply(plan)` keeps its existing
-behavior. Acceptance checks pre-write stale teacher/class targets and schedule
-overlap with unchanged snapshots, dialog error text, and transaction rollback.
-Next: implement and independently verify F236, update its acceptance record,
-commit the slice, and select the following slice. Phase 2 remains In
-Progress/Open with Gates 1 and 2 Partial.
+F237 is selected to make Speaking Evaluation normalization and content
+validation part of the Qt-free save contract and reuse it for page feedback.
+The slice addresses Gate 1's documented broader evaluation-editing gap. Preserve
+baseline aliases, name normalization, validation codes/locations and messages,
+the questionable Korean-name-length option, changed-cell behavior, and the
+active-session persistence and rollback paths. Acceptance covers the
+normalization/validation matrix, suppression of invalid writes, and focused
+Application, Platform, and page-save checks. Next: implement and independently
+verify F237, update the formal plan/logs, commit it, then select the following
+slice. Phase 2 remains In Progress/Open with Gates 1 and 2 Partial.
