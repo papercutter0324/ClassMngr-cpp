@@ -110,6 +110,7 @@ set(CLASSMNGR_NEXT_APPLICATION_SOURCES
     src/next/application/roster_read_query.h
     src/next/application/roster_save_use_case.h
     src/next/application/speaking_evaluation_query.h
+    src/next/application/speaking_evaluation_roster_name_import_plan.h
     src/next/application/speaking_evaluation_roster_score_import_use_case.h
     src/next/application/speaking_evaluation_save_use_case.h
     src/next/application/speaking_evaluation_validation.h

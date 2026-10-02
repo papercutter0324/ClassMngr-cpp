@@ -6,6 +6,7 @@
 #include "data/repositories/class_info_repository.h"
 #include "domain/models/class_info.h"
 #include "domain/models/classroom.h"
+#include "domain/models/roster.h"
 #include "domain/models/speaking_evaluation.h"
 #include "domain/models/teacher.h"
 #include "features/speaking_eval/ui/speaking_eval_model.h"
@@ -25,6 +26,7 @@
 #include <QLabel>
 #include <QSignalSpy>
 #include <QPushButton>
+#include <QSqlDatabase>
 #include <QTemporaryDir>
 #include <QSqlError>
 #include <QSqlQuery>
@@ -115,6 +117,74 @@ bool setStudent(
             );
 }
 
+bool seedRosterWithoutValidation(
+    QSqlDatabase database,
+    const int classId,
+    const Roster& roster,
+    QString* error
+    )
+{
+    QSqlQuery query(database);
+    for (const QString& statement : {
+             QStringLiteral("DELETE FROM roster_columns WHERE class_id=?"),
+             QStringLiteral("DELETE FROM roster_data WHERE class_id=?")
+         })
+    {
+        query.prepare(statement);
+        query.addBindValue(classId);
+        if (!query.exec())
+        {
+            *error = query.lastError().text();
+            return false;
+        }
+    }
+
+    for (int column = 0; column < roster.columns.size(); ++column)
+    {
+        query.prepare(
+            "INSERT INTO roster_columns (class_id, name, position, width) "
+            "VALUES (?, ?, ?, ?)"
+            );
+        query.addBindValue(classId);
+        query.addBindValue(roster.columns[column]);
+        query.addBindValue(column);
+        query.addBindValue(0);
+        if (!query.exec())
+        {
+            *error = query.lastError().text();
+            return false;
+        }
+    }
+
+    for (int row = 0; row < roster.rows.size(); ++row)
+    {
+        for (int column = 0; column < roster.columns.size(); ++column)
+        {
+            const QString value = roster.rows[row].value(column);
+            if (value.isEmpty())
+            {
+                continue;
+            }
+
+            query.prepare(
+                "INSERT INTO roster_data (class_id, row_index, col_index, value) "
+                "VALUES (?, ?, ?, ?)"
+                );
+            query.addBindValue(classId);
+            query.addBindValue(row);
+            query.addBindValue(column);
+            query.addBindValue(value);
+            if (!query.exec())
+            {
+                *error = query.lastError().text();
+                return false;
+            }
+        }
+    }
+
+    return true;
+}
+
 }
 
 class SpeakingEvalPageSaveTests final : public QObject
@@ -136,6 +206,7 @@ private slots:
     void failedReadFallsBackToBlankGridAndCleanState();
     void speakingEvalModelSuggestionMatchesLegacyHelper();
     void suffixChoiceAppliesSuggestedNameThroughExistingPageFlow();
+    void importNamesButtonAppliesRosterPairsAndPreservesMessages();
 };
 
 void SpeakingEvalPageSaveTests::
@@ -1079,6 +1150,101 @@ suffixChoiceAppliesSuggestedNameThroughExistingPageFlow()
         table->currentIndex(),
         model->index(1, SpeakingEval::toInt(SpeakingEvalColumn::KoreanName))
         );
+}
+
+void SpeakingEvalPageSaveTests::
+importNamesButtonAppliesRosterPairsAndPreservesMessages()
+{
+    SpeakingEvalPageFixture fixture;
+    QString error;
+    QVERIFY2(fixture.initialize(1, &error), qPrintable(error));
+
+    Roster roster;
+    roster.columns = {
+        QStringLiteral("english"),
+        QStringLiteral("English"),
+        QStringLiteral("kOrEaN")
+    };
+    roster.rows = {
+        {
+            QStringLiteral(" Alice "),
+            QStringLiteral("Wrong Alice"),
+            QStringLiteral(" \uAE40\uBBFC\uC9C0 ")
+        },
+        {
+            QStringLiteral("Bob"),
+            QStringLiteral("Wrong Bob"),
+            QStringLiteral("\uC774\uC608\uC740")
+        }
+    };
+    // Keep duplicate mixed-case headers in storage so the page's
+    // case-insensitive first-column lookup is exercised before normalization.
+    QVERIFY2(
+        seedRosterWithoutValidation(
+            fixture.services.databaseSession()->database(),
+            fixture.classIds.first(),
+            roster,
+            &error
+            ),
+        qPrintable(error)
+        );
+
+    FakeUserPromptService prompts;
+    ScopedPromptService promptScope(&prompts);
+
+    SpeakingEvalPage page(&fixture.services);
+    page.setDatabaseOpen(true);
+    page.setSaveMode(SaveMode::Manual);
+    page.loadEvaluation(
+        Classroom(fixture.classNames.first(), fixture.classIds.first()),
+        QStringLiteral("Winter")
+        );
+
+    auto* model = page.findChild<SpeakingEvalModel*>();
+    QVERIFY(model);
+    QVERIFY(!page.hasUnsavedChanges());
+
+    const QList<QPushButton*> buttons = page.findChildren<QPushButton*>();
+    QPushButton* importNamesButton = nullptr;
+    for (QPushButton* button : buttons)
+    {
+        if (button->text() == QStringLiteral("Import Names"))
+        {
+            QVERIFY(!importNamesButton);
+            importNamesButton = button;
+        }
+    }
+    QVERIFY(importNamesButton);
+    QVERIFY(importNamesButton->isEnabled());
+
+    page.show();
+    QCoreApplication::processEvents();
+    QTest::mouseClick(importNamesButton, Qt::LeftButton);
+
+    const int englishColumn = SpeakingEval::toInt(SpeakingEvalColumn::EnglishName);
+    const int koreanColumn = SpeakingEval::toInt(SpeakingEvalColumn::KoreanName);
+    QCOMPARE(model->data(model->index(0, englishColumn)).toString(), QStringLiteral("Alice"));
+    QCOMPARE(model->data(model->index(0, koreanColumn)).toString(), QStringLiteral("\uAE40\uBBFC\uC9C0"));
+    QCOMPARE(model->data(model->index(1, englishColumn)).toString(), QStringLiteral("Bob"));
+    QCOMPARE(model->data(model->index(1, koreanColumn)).toString(), QStringLiteral("\uC774\uC608\uC740"));
+    QVERIFY(model->data(model->index(2, englishColumn)).toString().isEmpty());
+    QVERIFY(model->data(model->index(2, koreanColumn)).toString().isEmpty());
+    QVERIFY(page.hasUnsavedChanges());
+    QCOMPARE(prompts.messages.size(), 1);
+    QCOMPARE(prompts.messages.constFirst().title, QStringLiteral("Import Names"));
+    QCOMPARE(prompts.messages.constFirst().message, QStringLiteral("Roster names imported successfully."));
+    QCOMPARE(prompts.messages.constFirst().severity, PromptSeverity::Information);
+
+    QTest::mouseClick(importNamesButton, Qt::LeftButton);
+
+    QCOMPARE(model->data(model->index(0, englishColumn)).toString(), QStringLiteral("Alice"));
+    QCOMPARE(model->data(model->index(1, englishColumn)).toString(), QStringLiteral("Bob"));
+    QVERIFY(page.hasUnsavedChanges());
+    QCOMPARE(prompts.messages.size(), 2);
+    QCOMPARE(prompts.messages.constLast().title, QStringLiteral("Import Names"));
+    QCOMPARE(prompts.messages.constLast().message, QStringLiteral("Names are already up to date."));
+    QCOMPARE(prompts.messages.constLast().severity, PromptSeverity::Information);
+    QVERIFY(prompts.actionPrompts.isEmpty());
 }
 
 QTEST_MAIN(SpeakingEvalPageSaveTests)

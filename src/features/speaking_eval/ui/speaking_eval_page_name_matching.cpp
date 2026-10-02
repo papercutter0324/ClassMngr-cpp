@@ -1,5 +1,9 @@
 #include "speaking_eval_page_p.h"
+#include "next/application/speaking_evaluation_roster_name_import_plan.h"
 #include "ui/shared/dialogs/user_prompt_service.h"
+#include "ui/shared/qt_text_adapter.h"
+
+#include <vector>
 
 QList<SpeakingEvalCellEdit> SpeakingEvalPage::nameImportChanges(
     const QStringList& rosterColumns,
@@ -31,34 +35,61 @@ QList<SpeakingEvalCellEdit> SpeakingEvalPage::nameImportChanges(
     const int evaluationKoreanColumn =
         SpeakingEval::toInt(SpeakingEvalColumn::KoreanName);
 
-    const SpeakingEvalRows evaluationRows =
-        m_model->rows();
+    const SpeakingEvalRows evaluationRows = m_model->rows();
+    std::vector<ClassMngr::Next::Application::
+        SpeakingEvaluationRosterNamePair> projectedRosterNames;
+    projectedRosterNames.reserve(
+        static_cast<std::size_t>(rosterRows.size())
+        );
 
-    const QHash<QString, QList<int>> rowsByNamePair =
-        StudentNameUtils::rowsByNamePair(
-            evaluationRows,
-            evaluationEnglishColumn,
-            evaluationKoreanColumn
+    for (const QStringList& rosterRow : rosterRows)
+    {
+        const QString englishName =
+            rosterEnglishColumn < rosterRow.size()
+                ? rosterRow[rosterEnglishColumn]
+                : QString();
+        const QString koreanName =
+            rosterKoreanColumn < rosterRow.size()
+                ? rosterRow[rosterKoreanColumn]
+                : QString();
+
+        projectedRosterNames.push_back(
+            {
+                Ui::QtTextAdapter::toUtf16String(englishName),
+                Ui::QtTextAdapter::toUtf16String(koreanName)
+            }
             );
+    }
 
-    QList<int> availableRows;
+    std::vector<ClassMngr::Next::Application::
+        SpeakingEvaluationRosterNameEvaluationRow> projectedEvaluationRows;
+    projectedEvaluationRows.reserve(
+        static_cast<std::size_t>(evaluationRows.size())
+        );
 
     for (int row = 0; row < evaluationRows.size(); ++row)
     {
-        if (
-            evaluationRows[row]
-                .value(evaluationEnglishColumn)
-                .trimmed()
-                .isEmpty()
-            && evaluationRows[row]
-                   .value(evaluationKoreanColumn)
-                   .trimmed()
-                   .isEmpty()
-            )
-        {
-            availableRows.append(row);
-        }
+        projectedEvaluationRows.push_back(
+            {
+                row,
+                {
+                    Ui::QtTextAdapter::toUtf16String(
+                        evaluationRows[row].value(evaluationEnglishColumn)
+                        ),
+                    Ui::QtTextAdapter::toUtf16String(
+                        evaluationRows[row].value(evaluationKoreanColumn)
+                        )
+                }
+            }
+            );
     }
+
+    const auto assignments =
+        ClassMngr::Next::Application::
+            planSpeakingEvaluationRosterNameImport(
+                projectedRosterNames,
+                projectedEvaluationRows
+                );
 
     const auto appendChange =
         [this, &changes](int row, SpeakingEvalColumn column, const QString& value)
@@ -95,58 +126,23 @@ QList<SpeakingEvalCellEdit> SpeakingEvalPage::nameImportChanges(
                 );
         };
 
-    QSet<QString> importedNamePairs;
-    int availableRowIndex = 0;
-
-    for (const QStringList& rosterRow : rosterRows)
+    for (const auto& assignment : assignments)
     {
-        const QString englishName =
-            rosterEnglishColumn < rosterRow.size()
-                ? rosterRow[rosterEnglishColumn].trimmed()
-                : QString();
-
-        const QString koreanName =
-            rosterKoreanColumn < rosterRow.size()
-                ? rosterRow[rosterKoreanColumn].trimmed()
-                : QString();
-
-        const QString namePairKey =
-            StudentNameUtils::namePairKey(
-                englishName,
-                koreanName
-                );
-
-        if (
-            namePairKey.isEmpty()
-            || importedNamePairs.contains(namePairKey)
-            || rowsByNamePair.contains(namePairKey)
-            )
-        {
-            continue;
-        }
-
-        if (availableRowIndex >= availableRows.size())
-        {
-            break;
-        }
-
-        importedNamePairs.insert(namePairKey);
-
-        const int targetRow =
-            availableRows[availableRowIndex++];
-
         appendChange(
-            targetRow,
+            assignment.targetRow,
             SpeakingEvalColumn::EnglishName,
-            englishName
+            Ui::QtTextAdapter::fromUtf16String(
+                assignment.names.englishName
+                )
             );
 
         appendChange(
-            targetRow,
+            assignment.targetRow,
             SpeakingEvalColumn::KoreanName,
-            koreanName
+            Ui::QtTextAdapter::fromUtf16String(
+                assignment.names.koreanName
+                )
             );
-
     }
 
     return changes;
