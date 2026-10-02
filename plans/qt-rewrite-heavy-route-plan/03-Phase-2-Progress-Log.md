@@ -9646,19 +9646,34 @@ full suite ran. Clipboard slots `aiPromptPreviewCopiesAnAnonymousPrompt` and
 are outside F249, but no pre-F249 baseline or full batch CTest was run. Treat
 this as a reproduced environment limitation, not a proven baseline.
 
-F250 is selected: extract the documented first-empty roster-row query shared
-by `RosterModel::firstEmptyRow()` and `roster_row_transfer_preparation.h` into
-Qt-free Application. Preserve Qt-compatible trimming across all cells,
-first-blank ordering, `-1` for full rows, RosterModel's 25-row padding, and
-transfer rejection precedence/destination. Add the query and app-less
-test/CMake registration. Adapt `src/features/roster/ui/roster_model_columns.cpp`
-and `src/next/application/roster_row_transfer_preparation.h`, with focused
-coverage in `tests/roster_model_tests.cpp` and
-`tests/next_application_roster_row_transfer_preparation_tests.cpp`; verify the
-policy, model, and transfer-preparation CTests. Paired scans diverged; the
-alternative was the AI batch comment-review policy. Main selected this
-previously parked query because it removes a duplicated first-empty/full
-decision across UI and Application. The cumulative Gate 1 map is historical
-and ends at F143
+F250, source commit `4753ce3b`, extracts shared first-empty roster-row
+availability. Fresh `build/f250_independent_x64_debug` x64 Debug/Ninja/MSVC
+19.51/Qt 6.12 verification and CMake ownership validation found one owner for
+1,206 handwritten sources. Three focused CTests passed:
+`ClassMngrNextApplicationRosterRowAvailabilityTests`,
+`ClassMngrRosterModelTests`, and
+`ClassMngrNextApplicationRosterRowTransferPreparationTests`. `git diff --check`
+and new-file hygiene passed; no full suite ran. The policy trims all cells and
+returns the lowest empty index or `rows.size()` sentinel; RosterModel maps a
+full 25-row roster to -1. Transfer preserves source/full/duplicate rejection
+order and first-destination selection.
+
+F251 is selected: extract deterministic per-comment review quality from
+`SpeakingEvalAiBatchDialog::updateReviewRow()`. The UI computes normalized
+UTF-16 length with `QString::simplified().size()` and passes it, plus
+`SpeakingEval::CommentMinLength`/`SpeakingEval::CommentMaxLength` from the
+Qt-facing `speaking_evaluation.h`, into policy or another clean shared-value
+boundary.
+Avoid a duplicate 450 constant and keep the >420 preferred threshold
+single-sourced. Preserve empty-comment
+parser/current-status behavior, warning order and placeholder warning, invalid
+unchecked state, valid default-checked state when previously unchecked, exact
+localized text, and Apply aggregation in the UI. Leave overwrite, application, and
+undo flow untouched. Scope the Application policy/result header, app-less
+tests for empty, 99/100, 420/421, 450/451, placeholder, and combined-warning
+cases with UTF-16 length as input; adapt `speaking_eval_ai_batch_dialog.cpp`,
+register in `cmake/next.cmake` and `cmake/tests/next.cmake`, and cover UI reason/
+state in `speaking_eval_batch_report_service_tests.cpp`. Paired scans agree on
+this slice. The cumulative Gate 1 map is historical and ends at F143
 ([map](03-Phase-2-Progress-Log.md#L7570)); Gates 1 and 2 remain Partial. Phase
 2 remains In Progress/Open.

@@ -4986,7 +4986,7 @@ actions, and resolution in the models/page. Add app-less policy cases, model
 wrapper checks, and a focused Speaking Evaluation duplicate-resolution
 regression. Phase 2 remains In Progress/Open, with Gates 1 and 2 Partial.
 
-## Current continuation - 2026-10-02 (F249 accepted; F250 selected)
+## Current continuation - 2026-10-02 (F250 accepted; F251 selected)
 
 The user asked to assume F196 complete, continue F218, commit each slice, and
 begin the next. At task start, F218 was already accepted and the branch had
@@ -5015,14 +5015,23 @@ passed. Two unrelated clipboard slots failed individually with
 the fresh environment but were not tested against a pre-F249 baseline; no full
 batch CTest or suite ran.
 
-Paired F250 scans differed between AI-batch comment-review policy and the
-documented, parked first-empty roster-row query. Select the shared row query to
-remove duplicated model/Application first-empty decisions from RosterModel and
-F244 transfer preparation. Preserve Qt-compatible whitespace checks across
-all cells, first-blank ordering, no-row/full behavior, 25-row model padding,
-and transfer rejection precedence. Phase-plan docs now record F249 accepted
-and F250 selected. Next: implement F250 with app-less, RosterModel, and transfer
-preparation coverage, independently verify, commit source, then record
-acceptance and select the next slice. Phase 2 remains In Progress/Open; Gates 1
-and 2 remain Partial. Active deployment ID is
+F250 source commit `4753ce3b` extracts shared Qt-free roster-row availability
+logic. Fresh independent x64 Debug verification in
+`build/f250_independent_x64_debug` validated one owner for 1,206 handwritten
+sources. The app-less row query, RosterModel, and transfer-preparation CTests
+passed 3/3. Coverage includes whitespace-only cells, first-row ordering,
+full-roster sentinel/25-row `-1`, and transfer failure precedence. Diff and
+new-file hygiene passed; no full suite ran.
+
+Paired F251 scans agreed on extracting AI batch per-comment review quality from
+`SpeakingEvalAiBatchDialog::updateReviewRow()` into Qt-free Application. Keep
+comment normalization and UTF-16 `QString::size()` at the UI edge; preserve
+empty-comment parser/current status, 100/450 length boundaries, the >420
+preferred warning, placeholder warning/order, checkbox behavior, and Apply
+aggregation. Do not move localization, parser statuses, overwrite handling,
+comment application, or undoable table mutation. Avoid a duplicate legacy 450
+constant. Phase-plan docs now record F250 accepted and F251 selected. Next:
+implement and independently verify F251 with boundary and focused dialog tests,
+commit source, then record acceptance and select its successor. Phase 2 remains
+In Progress/Open; Gates 1 and 2 remain Partial. Active deployment ID is
 `qt-rewrite-phase2-resume-20260928`.

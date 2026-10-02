@@ -2884,7 +2884,7 @@ stale/overlap rejection, write-failure rollback, and intensive mapping
 coverage passed. Source ownership found one owner for 1,172 files, and
 `git diff --check` passed; no full suite ran.
 
-## Current Phase 2 position - 2026-10-02 (F249 accepted; F250 selected)
+## Current Phase 2 position - 2026-10-02 (F250 accepted; F251 selected)
 
 F236 source commit `5877bba0` carries structured typed policy, teacher-target,
 and fresh-state failures from Repository through Platform to the review dialog.
@@ -3037,12 +3037,24 @@ passed; no full suite ran. Two unrelated clipboard functions reproduced
 `OleSetClipboard`/`OpenClipboard Failed` in the fresh environment and are not
 proven against a pre-F249 baseline.
 
-F250 is selected to extract a shared Qt-free first-empty roster-row query and
-reuse it from `RosterModel::firstEmptyRow()` and roster transfer preparation.
-Preserve Qt-compatible trimming across every cell, first blank row order,
-no-row/full behavior, the model's 25-row padding, and transfer rejection
-precedence. Add app-less query tests and focused RosterModel and transfer-
-preparation checks. Paired scans differed; choose the already parked row query
-because it removes duplicated UI/Application decisions from F244, while AI
-batch comment-review policy remains a later candidate. Phase 2 remains In
-Progress/Open; Gates 1 and 2 remain Partial.
+F250 source commit `4753ce3b` extracts a shared Qt-free roster-row availability
+query. It treats a row as occupied when any cell remains after Qt-compatible
+trimming and returns the first empty row or `rows.size()`. RosterModel projects
+its QString rows through the UTF-16 adapter and returns `-1` for a full 25-row
+roster. Transfer preparation reuses the same occupancy and first-empty logic
+while preserving source-empty/full/duplicate rejection order and destination.
+Independent fresh x64 Debug verification validated one owner for 1,206
+handwritten sources; the app-less query, RosterModel, and transfer-preparation
+CTests passed 3/3. `git diff --check` and new-file hygiene passed; no full suite
+ran.
+
+F251 is selected: extract the AI batch per-comment review-quality decision
+from `SpeakingEvalAiBatchDialog::updateReviewRow()` into Qt-free Application.
+Keep `QString::simplified()` and UTF-16 `size()` at the dialog edge; preserve
+empty-comment parser/current status, length thresholds (100 minimum, 450 hard
+maximum, warning above 420), placeholder warning and order, validity and
+checkbox defaults, localized messages, and Apply aggregation. Keep overwrite,
+comment application, undoable table mutation, parsing, and normalization at
+their owners. Avoid duplicating the legacy 450 constant; pass the current
+thresholds through the UI boundary or define one clean shared source. Paired
+scans agreed. Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial.

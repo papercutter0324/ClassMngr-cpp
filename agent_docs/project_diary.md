@@ -2174,3 +2174,11 @@ comparison, so record them as unresolved environment limits. For the next
 slice, choose the documented shared first-empty roster-row query to remove the
 duplicate model/transfer decision; defer the more involved AI comment-review
 policy until its legacy length thresholds have a clear shared source.
+
+## 2026-10-02 - F250 row availability accepted; F251 selected
+
+Share row occupancy and first-empty ordering once so RosterModel and transfer
+preparation use the same trim rule. Reuse the existing Qt-compatible UTF-16
+boundary; do not keep the now-unused model helper. The next AI comment-review
+policy should take normalized UTF-16 length as input, retain empty parser status
+behavior and warning order, and avoid duplicating the legacy maximum constant.
