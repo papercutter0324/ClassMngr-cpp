@@ -124,6 +124,15 @@ ClassMngr::Next::Application::ScheduleImportApplyRequest typedCreateRequest(
     return request;
 }
 
+QString typedApplyFailureMessage(
+    const ScheduleImportTypedApplyResult& result
+    )
+{
+    return result.has_value()
+        ? QString()
+        : QString::fromStdU16String(result.error().message);
+}
+
 template <typename Id>
 int legacyTestId(const std::optional<Id>& id)
 {
@@ -5822,10 +5831,38 @@ void ScheduleImportTests::typedApplyRejectsStaleSelectedClassBeforeWrites()
         ScheduleImportRepository repository(database);
         const auto imported = repository.applyTyped(request);
         QVERIFY(!imported.has_value());
-        const QString staleError = imported.error();
+        QVERIFY(imported.error().stateValidationError.has_value());
+        QCOMPARE(
+            imported.error().stateValidationError->code,
+            ClassMngr::Next::Application::
+                ScheduleImportStateValidationErrorCode::SelectedClassUnavailable
+            );
+        const QString staleError = typedApplyFailureMessage(imported);
         QVERIFY2(staleError.contains(
             QStringLiteral("selected class is no longer available")),
             qPrintable(staleError));
+        QVERIFY(!imported.error().policyIssue.has_value());
+        QVERIFY(!imported.error().teacherTargetIssue.has_value());
+        QCOMPARE(persistedScheduleImportSnapshot(database), before);
+
+        const auto unavailableTeacherId =
+            ClassMngr::Next::Domain::TeacherId::fromString(
+                std::to_string(teacherId + 1000));
+        QVERIFY(unavailableTeacherId.has_value());
+        request.teachers[0].targetTeacherId = *unavailableTeacherId;
+        request.classes[0].action =
+            ClassMngr::Next::Application::ScheduleImportReviewClassAction::CreateNew;
+        request.classes[0].targetClassId.reset();
+        const auto staleTeacher = repository.applyTyped(request);
+        QVERIFY(!staleTeacher.has_value());
+        QVERIFY(staleTeacher.error().stateValidationError.has_value());
+        QCOMPARE(
+            staleTeacher.error().stateValidationError->code,
+            ClassMngr::Next::Application::
+                ScheduleImportStateValidationErrorCode::SelectedTeacherUnavailable
+            );
+        QVERIFY(!staleTeacher.error().policyIssue.has_value());
+        QVERIFY(!staleTeacher.error().teacherTargetIssue.has_value());
         QCOMPARE(persistedScheduleImportSnapshot(database), before);
 
         database.close();
@@ -5888,9 +5925,7 @@ void ScheduleImportTests::typedApplyPreservesExactTargetIdsThroughStateValidatio
         canonicalTargets.classes[0].targetClassId = *canonicalClassId;
 
         const auto canonicalResult = repository.applyTyped(canonicalTargets);
-        const QString canonicalError = canonicalResult.has_value()
-            ? QString()
-            : canonicalResult.error();
+        const QString canonicalError = typedApplyFailureMessage(canonicalResult);
         QVERIFY2(
             canonicalResult.has_value(),
             qPrintable(canonicalError)
@@ -5910,11 +5945,17 @@ void ScheduleImportTests::typedApplyPreservesExactTargetIdsThroughStateValidatio
         const auto noncanonicalTeacherResult =
             repository.applyTyped(noncanonicalTeacherTarget);
         QVERIFY(!noncanonicalTeacherResult.has_value());
+        QVERIFY(noncanonicalTeacherResult.error().stateValidationError.has_value());
+        QCOMPARE(
+            noncanonicalTeacherResult.error().stateValidationError->code,
+            ClassMngr::Next::Application::
+                ScheduleImportStateValidationErrorCode::SelectedTeacherUnavailable
+            );
         QVERIFY2(
-            noncanonicalTeacherResult.error().contains(
+            typedApplyFailureMessage(noncanonicalTeacherResult).contains(
                 QStringLiteral("selected Korean teacher is no longer available"),
                 Qt::CaseInsensitive),
-            qPrintable(noncanonicalTeacherResult.error())
+            qPrintable(typedApplyFailureMessage(noncanonicalTeacherResult))
             );
         QCOMPARE(
             persistedScheduleImportSnapshot(database, true),
@@ -5938,11 +5979,17 @@ void ScheduleImportTests::typedApplyPreservesExactTargetIdsThroughStateValidatio
         const auto noncanonicalClassResult =
             repository.applyTyped(noncanonicalClassTarget);
         QVERIFY(!noncanonicalClassResult.has_value());
+        QVERIFY(noncanonicalClassResult.error().stateValidationError.has_value());
+        QCOMPARE(
+            noncanonicalClassResult.error().stateValidationError->code,
+            ClassMngr::Next::Application::
+                ScheduleImportStateValidationErrorCode::SelectedClassUnavailable
+            );
         QVERIFY2(
-            noncanonicalClassResult.error().contains(
+            typedApplyFailureMessage(noncanonicalClassResult).contains(
                 QStringLiteral("selected class is no longer available"),
                 Qt::CaseInsensitive),
-            qPrintable(noncanonicalClassResult.error())
+            qPrintable(typedApplyFailureMessage(noncanonicalClassResult))
             );
         QCOMPARE(
             persistedScheduleImportSnapshot(database, true),
@@ -5971,9 +6018,35 @@ void ScheduleImportTests::typedApplyRejectsOverlappingSchedulesBeforeWrites()
             typedCandidate(u"\uBC15", u"E5", u"Apollo")
         });
         ScheduleImportRepository repository(database);
+        const QStringList before = persistedScheduleImportSnapshot(database);
         const auto imported = repository.applyTyped(request);
         QVERIFY(!imported.has_value());
-        QVERIFY(imported.error().contains(QStringLiteral("overlaps")));
+        QVERIFY(imported.error().stateValidationError.has_value());
+        QCOMPARE(
+            imported.error().stateValidationError->code,
+            ClassMngr::Next::Application::
+                ScheduleImportStateValidationErrorCode::ProjectedScheduleOverlap
+            );
+        QCOMPARE(
+            imported.error().stateValidationError->classLabel,
+            std::string("E5 Zeus")
+            );
+        QCOMPARE(
+            imported.error().stateValidationError->conflictingClassLabel,
+            std::string("E5 Apollo")
+            );
+        QCOMPARE(imported.error().stateValidationError->day, std::string("Monday"));
+        QCOMPARE(
+            imported.error().stateValidationError->startTime,
+            std::string("4:00 PM")
+            );
+        QCOMPARE(
+            imported.error().stateValidationError->endTime,
+            std::string("4:55 PM")
+            );
+        QVERIFY(!imported.error().policyIssue.has_value());
+        QVERIFY(!imported.error().teacherTargetIssue.has_value());
+        QVERIFY(typedApplyFailureMessage(imported).contains(QStringLiteral("overlaps")));
 
         QSqlQuery query(database);
         execOrFail(query, QStringLiteral("SELECT COUNT(*) FROM teachers"));
@@ -5985,6 +6058,7 @@ void ScheduleImportTests::typedApplyRejectsOverlappingSchedulesBeforeWrites()
         execOrFail(query, QStringLiteral("SELECT COUNT(*) FROM class_times"));
         QVERIFY(query.next());
         QCOMPARE(query.value(0).toInt(), 0);
+        QCOMPARE(persistedScheduleImportSnapshot(database), before);
         database.close();
     }
     QSqlDatabase::removeDatabase(connectionName);
@@ -6018,7 +6092,10 @@ void ScheduleImportTests::typedWriteFailureRollsBackEveryChange()
         ScheduleImportRepository repository(database);
         const auto imported = repository.applyTyped(request);
         QVERIFY(!imported.has_value());
-        QVERIFY(imported.error().contains(
+        QVERIFY(!imported.error().policyIssue.has_value());
+        QVERIFY(!imported.error().teacherTargetIssue.has_value());
+        QVERIFY(!imported.error().stateValidationError.has_value());
+        QVERIFY(typedApplyFailureMessage(imported).contains(
             QStringLiteral("forced typed schedule failure")));
         QCOMPARE(persistedScheduleImportSnapshot(database, true), before);
 
@@ -6080,9 +6157,7 @@ void ScheduleImportTests::typedIntensiveApplyMapsModeAndSlotState()
 
         ScheduleImportRepository repository(database);
         const auto imported = repository.applyTyped(request);
-        const QString importError = imported.has_value()
-            ? QString()
-            : imported.error();
+        const QString importError = typedApplyFailureMessage(imported);
         QVERIFY2(imported.has_value(), qPrintable(importError));
         QCOMPARE(imported->teachersCreated, 1);
         QCOMPARE(imported->classesCreated, 1);
@@ -6161,9 +6236,7 @@ void ScheduleImportTests::typedAndLegacyApplyShareNormalAndIntensiveResults()
             ScheduleImportRepository typedRepository(typedDatabase);
             ScheduleImportRepository legacyRepository(legacyDatabase);
             const auto typedResult = typedRepository.applyTyped(typedRequest);
-            const QString typedError = typedResult.has_value()
-                ? QString()
-                : typedResult.error();
+            const QString typedError = typedApplyFailureMessage(typedResult);
             QVERIFY2(typedResult.has_value(), qPrintable(typedError));
 
             const auto legacyResult = legacyRepository.apply(
@@ -6424,10 +6497,16 @@ void ScheduleImportTests::typedApplyRejectsInvalidEnumsBeforeWrites()
         const auto invalidNormalModeResult =
             repository.applyTyped(invalidNormalScheduleMode);
         QVERIFY(!invalidNormalModeResult.has_value());
+        QVERIFY(invalidNormalModeResult.error().policyIssue.has_value());
+        QCOMPARE(
+            invalidNormalModeResult.error().policyIssue->code,
+            ClassMngr::Next::Application::
+                ScheduleImportPlanEligibilityIssueCode::InvalidIntensiveMode
+            );
         QVERIFY2(
-            invalidNormalModeResult.error().contains(
+            typedApplyFailureMessage(invalidNormalModeResult).contains(
                 QStringLiteral("Choose how the existing intensive schedule should be handled.")),
-            qPrintable(invalidNormalModeResult.error())
+            qPrintable(typedApplyFailureMessage(invalidNormalModeResult))
             );
         QCOMPARE(persistedScheduleImportSnapshot(database), before);
 
@@ -6436,10 +6515,16 @@ void ScheduleImportTests::typedApplyRejectsInvalidEnumsBeforeWrites()
         const auto invalidModeAndDiagnosticsResult =
             repository.applyTyped(invalidNormalScheduleMode);
         QVERIFY(!invalidModeAndDiagnosticsResult.has_value());
+        QVERIFY(invalidModeAndDiagnosticsResult.error().policyIssue.has_value());
+        QCOMPARE(
+            invalidModeAndDiagnosticsResult.error().policyIssue->code,
+            ClassMngr::Next::Application::
+                ScheduleImportPlanEligibilityIssueCode::UnacknowledgedDiagnostics
+            );
         QVERIFY2(
-            invalidModeAndDiagnosticsResult.error().contains(
+            typedApplyFailureMessage(invalidModeAndDiagnosticsResult).contains(
                 QStringLiteral("Unrecognized timetable cells must be acknowledged")),
-            qPrintable(invalidModeAndDiagnosticsResult.error())
+            qPrintable(typedApplyFailureMessage(invalidModeAndDiagnosticsResult))
             );
         QCOMPARE(persistedScheduleImportSnapshot(database), before);
 
@@ -6494,10 +6579,16 @@ void ScheduleImportTests::typedApplyRejectsMalformedResolutionShapesBeforeWrites
         outOfRangeCandidate.classes[0].candidateIndex = 1;
         const auto outOfRangeResult = repository.applyTyped(outOfRangeCandidate);
         QVERIFY(!outOfRangeResult.has_value());
+        QVERIFY(outOfRangeResult.error().policyIssue.has_value());
+        QCOMPARE(
+            outOfRangeResult.error().policyIssue->code,
+            ClassMngr::Next::Application::
+                ScheduleImportPlanEligibilityIssueCode::InvalidReviewDecision
+            );
         QVERIFY2(
-            outOfRangeResult.error().contains(
+            typedApplyFailureMessage(outOfRangeResult).contains(
                 QStringLiteral("invalid or duplicate resolution")),
-            qPrintable(outOfRangeResult.error())
+            qPrintable(typedApplyFailureMessage(outOfRangeResult))
             );
         QCOMPARE(persistedScheduleImportSnapshot(database, true), before);
 
@@ -6508,11 +6599,17 @@ void ScheduleImportTests::typedApplyRejectsMalformedResolutionShapesBeforeWrites
         const auto createdTeacherResult =
             repository.applyTyped(createdTeacherWithTarget);
         QVERIFY(!createdTeacherResult.has_value());
+        QVERIFY(createdTeacherResult.error().teacherTargetIssue.has_value());
+        QCOMPARE(
+            createdTeacherResult.error().teacherTargetIssue->code,
+            ClassMngr::Next::Application::
+                ScheduleImportApplyTeacherTargetIssueCode::NonExistingTeacherHasTarget
+            );
         QVERIFY2(
-            createdTeacherResult.error().contains(
+            typedApplyFailureMessage(createdTeacherResult).contains(
                 QStringLiteral("cannot use an existing teacher"),
                 Qt::CaseInsensitive),
-            qPrintable(createdTeacherResult.error())
+            qPrintable(typedApplyFailureMessage(createdTeacherResult))
             );
         QCOMPARE(persistedScheduleImportSnapshot(database, true), before);
 
@@ -6524,10 +6621,16 @@ void ScheduleImportTests::typedApplyRejectsMalformedResolutionShapesBeforeWrites
         const auto reusedTeacherResult =
             repository.applyTyped(reusedTeacherWithoutTarget);
         QVERIFY(!reusedTeacherResult.has_value());
+        QVERIFY(reusedTeacherResult.error().teacherTargetIssue.has_value());
+        QCOMPARE(
+            reusedTeacherResult.error().teacherTargetIssue->code,
+            ClassMngr::Next::Application::
+                ScheduleImportApplyTeacherTargetIssueCode::ExistingTeacherMissingTarget
+            );
         QVERIFY2(
-            reusedTeacherResult.error().contains(
+            typedApplyFailureMessage(reusedTeacherResult).contains(
                 QStringLiteral("Choose an existing Korean teacher")),
-            qPrintable(reusedTeacherResult.error())
+            qPrintable(typedApplyFailureMessage(reusedTeacherResult))
             );
         QCOMPARE(persistedScheduleImportSnapshot(database, true), before);
 
@@ -6537,11 +6640,12 @@ void ScheduleImportTests::typedApplyRejectsMalformedResolutionShapesBeforeWrites
         createdClassWithTarget.classes[0].targetClassId = *existingClassId;
         const auto createdClassResult = repository.applyTyped(createdClassWithTarget);
         QVERIFY(!createdClassResult.has_value());
+        QVERIFY(createdClassResult.error().policyIssue.has_value());
         QVERIFY2(
-            createdClassResult.error().contains(
+            typedApplyFailureMessage(createdClassResult).contains(
                 QStringLiteral("newly created class cannot have an existing target"),
                 Qt::CaseInsensitive),
-            qPrintable(createdClassResult.error())
+            qPrintable(typedApplyFailureMessage(createdClassResult))
             );
         QCOMPARE(persistedScheduleImportSnapshot(database, true), before);
 
@@ -6554,11 +6658,12 @@ void ScheduleImportTests::typedApplyRejectsMalformedResolutionShapesBeforeWrites
         const auto updatedClassResult =
             repository.applyTyped(updatedClassWithoutTarget);
         QVERIFY(!updatedClassResult.has_value());
+        QVERIFY(updatedClassResult.error().policyIssue.has_value());
         QVERIFY2(
-            updatedClassResult.error().contains(
+            typedApplyFailureMessage(updatedClassResult).contains(
                 QStringLiteral("updated class must have a unique existing target"),
                 Qt::CaseInsensitive),
-            qPrintable(updatedClassResult.error())
+            qPrintable(typedApplyFailureMessage(updatedClassResult))
             );
         QCOMPARE(persistedScheduleImportSnapshot(database, true), before);
 

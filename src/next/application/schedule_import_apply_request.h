@@ -1,6 +1,7 @@
 #pragma once
 
 #include "next/application/schedule_import_plan_validation.h"
+#include "next/application/schedule_import_state_validation.h"
 
 #include <expected>
 #include <optional>
@@ -108,6 +109,7 @@ struct ScheduleImportApplyFailure final
     std::u16string message;
     std::optional<ScheduleImportPlanEligibilityIssue> policyIssue;
     std::optional<ScheduleImportApplyTeacherTargetIssue> teacherTargetIssue;
+    std::optional<ScheduleImportStateValidationError> stateValidationError;
 };
 
 using ScheduleImportApplyResult =

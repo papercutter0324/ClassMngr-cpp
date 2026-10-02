@@ -123,6 +123,7 @@ private slots:
     void suppliedWorkbookBuildsStagedReview();
     void permanentConflictWorkbookPresentsReviewWarning();
     void applyUsesConfirmationAndReportsRepositoryOutcome();
+    void applyDisplaysFreshStateValidationFailure();
     void policyFailureMessageRetainsLegacyText();
     void reviewModelBuildsTypedApplyRequest();
 };
@@ -4157,6 +4158,92 @@ void ScheduleImportDialogTests::applyUsesConfirmationAndReportsRepositoryOutcome
 
     const QStringList importedProfileName = {QStringLiteral("Alice")};
     QCOMPARE(persistedProfileNames(), importedProfileName);
+}
+
+void ScheduleImportDialogTests::applyDisplaysFreshStateValidationFailure()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+
+    ApplicationServices services;
+    const Status opened = services.openDatabase(
+        directory.filePath(QStringLiteral("schedule-import-state-error.sqlite"))
+        );
+    QVERIFY2(
+        opened.has_value(),
+        qPrintable(opened.has_value() ? QString() : opened.error())
+        );
+
+    const Result<Teacher> teacher = services.teacherService()->teacher(7);
+    QVERIFY(teacher);
+    ScheduleImportReviewRequest request = classSkipRequest(*teacher);
+
+    struct LateClassMutationPrompt final : IUserPromptService
+    {
+        void showMessage(const PromptRequest& request) override
+        {
+            messages.push_back(request);
+        }
+
+        void showMessageAsync(const PromptRequest&) override
+        {
+        }
+
+        PromptChoice confirm(const PromptRequest& request) override
+        {
+            confirmations.push_back(request);
+            ScheduleWidgetTestStubs::setClassGrade(42, QStringLiteral("E5"));
+            return PromptChoice::Accepted;
+        }
+
+        UnsavedChangesChoice confirmUnsavedChanges(
+            const UnsavedChangesRequest&
+            ) override
+        {
+            return UnsavedChangesChoice::Cancel;
+        }
+
+        QString chooseAction(const ActionPromptRequest&) override
+        {
+            return QString();
+        }
+
+        QVector<PromptRequest> messages;
+        QVector<PromptRequest> confirmations;
+    } prompts;
+    DialogServices::setUserPromptServiceForTesting(&prompts);
+
+    ScheduleImportReviewDialog review(&services, request);
+    QVERIFY(review.prepare());
+    review.show();
+    QVERIFY(review.isVisible());
+    auto* classAction = review.findChild<QComboBox*>(
+        QStringLiteral("scheduleImportClassAction_0"));
+    auto* apply = review.findChild<QPushButton*>(
+        QStringLiteral("scheduleImportAcceptButton"));
+    QVERIFY(classAction && apply);
+
+    const int skipIndex = actionIndex(
+        classAction,
+        ScheduleImportClassAction::Skip
+        );
+    QVERIFY(skipIndex >= 0);
+    classAction->setItemData(skipIndex, 42, Qt::UserRole + 1);
+    classAction->setCurrentIndex(skipIndex);
+    QVERIFY(apply->isEnabled());
+
+    apply->click();
+
+    QCOMPARE(prompts.confirmations.size(), 1);
+    QCOMPARE(prompts.messages.size(), 1);
+    QCOMPARE(
+        prompts.messages.constLast().message,
+        QStringLiteral(
+            "A skipped imported class can preserve only its unique exact existing match."
+            )
+        );
+    QVERIFY(review.isVisible());
+    QCOMPARE(review.result(), 0);
 }
 
 void ScheduleImportDialogTests::policyFailureMessageRetainsLegacyText()

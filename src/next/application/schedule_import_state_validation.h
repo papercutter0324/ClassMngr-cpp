@@ -197,6 +197,8 @@ validateScheduleImportState(
         error.conflictingClassLabel =
             conflicts.front().conflictingClassLabel;
         error.day = conflicts.front().time.dayLabel;
+        error.startTime = conflicts.front().time.startLabel;
+        error.endTime = conflicts.front().time.endLabel;
         return error;
     }
 

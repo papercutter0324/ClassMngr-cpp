@@ -2262,6 +2262,10 @@ void ScheduleImportReviewDialog::applyImport()
                 request,
                 *summary.error().policyIssue
                 );
+        if (summary.error().stateValidationError)
+            error = stateValidationMessage(
+                *summary.error().stateValidationError
+                );
         DialogServices::showWarning(
             this,
             tr("Import Schedule"),

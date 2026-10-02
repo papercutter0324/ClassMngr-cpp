@@ -72,6 +72,7 @@ private slots:
     void reportsUnavailableAndClosedSession();
     void preservesLegacyScheduleServiceRoute();
     void mapsSummaryAndFailure();
+    void preservesStructuredRepositoryFailures();
 };
 
 void ScheduleImportApplyPortTests::
@@ -249,6 +250,114 @@ void ScheduleImportApplyPortTests::mapsSummaryAndFailure()
     QVERIFY(!failed);
     QCOMPARE(failed.error().message, std::u16string(u"database failed"));
     QVERIFY(!failed.error().policyIssue.has_value());
+}
+
+void ScheduleImportApplyPortTests::preservesStructuredRepositoryFailures()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+
+    ApplicationServices services;
+    const Status opened = services.openDatabase(
+        directory.filePath(QStringLiteral("structured-apply.sqlite"))
+        );
+    const QString openError = opened.has_value() ? QString() : opened.error();
+    QVERIFY2(opened.has_value(), qPrintable(openError));
+
+    Platform::ApplicationServicesScheduleImportApplyPort port(&services);
+
+    auto policyRequest = typedRequest();
+    policyRequest.diagnosticsAcknowledged = false;
+    const auto policyFailure = port.applyScheduleImport(policyRequest);
+    QVERIFY(!policyFailure);
+    QVERIFY(policyFailure.error().policyIssue.has_value());
+    QCOMPARE(
+        policyFailure.error().policyIssue->code,
+        Application::ScheduleImportPlanEligibilityIssueCode::
+            UnacknowledgedDiagnostics
+        );
+    QVERIFY(!policyFailure.error().teacherTargetIssue.has_value());
+    QVERIFY(!policyFailure.error().stateValidationError.has_value());
+
+    auto teacherRequest = typedRequest();
+    teacherRequest.teachers[0].action =
+        Application::ScheduleImportReviewTeacherAction::Reuse;
+    const auto teacherFailure = port.applyScheduleImport(teacherRequest);
+    QVERIFY(!teacherFailure);
+    QVERIFY(teacherFailure.error().teacherTargetIssue.has_value());
+    QCOMPARE(
+        teacherFailure.error().teacherTargetIssue->code,
+        Application::ScheduleImportApplyTeacherTargetIssueCode::
+            ExistingTeacherMissingTarget
+        );
+    QCOMPARE(
+        teacherFailure.error().teacherTargetIssue->teacherKey,
+        std::u16string(u"\uAE40")
+        );
+    QVERIFY(!teacherFailure.error().policyIssue.has_value());
+    QVERIFY(!teacherFailure.error().stateValidationError.has_value());
+
+    auto overlappingRequest = typedRequest();
+    auto secondCandidate = overlappingRequest.candidates.front();
+    secondCandidate.teacherKey = u"\uBC15";
+    secondCandidate.teacherName = u"\uBC15";
+    secondCandidate.grade = u"E5";
+    secondCandidate.level = u"Apollo";
+    overlappingRequest.candidates.push_back(secondCandidate);
+    overlappingRequest.teachers.push_back({
+        u"\uBC15",
+        Application::ScheduleImportReviewTeacherAction::Create,
+        std::nullopt,
+        u"413"
+    });
+    overlappingRequest.classes.push_back({
+        1,
+        Application::ScheduleImportReviewClassAction::CreateNew,
+        std::nullopt,
+        u"#123456",
+        u"#FFFFFF"
+    });
+
+    const auto overlapFailure = port.applyScheduleImport(overlappingRequest);
+    QVERIFY(!overlapFailure);
+    QVERIFY2(
+        overlapFailure.error().stateValidationError.has_value(),
+        qPrintable(QString::fromStdU16String(overlapFailure.error().message))
+        );
+    QCOMPARE(
+        overlapFailure.error().stateValidationError->code,
+        Application::ScheduleImportStateValidationErrorCode::
+            ProjectedScheduleOverlap
+        );
+    QCOMPARE(
+        overlapFailure.error().stateValidationError->classLabel,
+        std::string("E4 Hercules")
+        );
+    QCOMPARE(
+        overlapFailure.error().stateValidationError->conflictingClassLabel,
+        std::string("E5 Apollo")
+        );
+    QCOMPARE(overlapFailure.error().stateValidationError->day, std::string("Monday"));
+    QCOMPARE(
+        overlapFailure.error().stateValidationError->startTime,
+        std::string("4:00 PM")
+        );
+    QCOMPARE(
+        overlapFailure.error().stateValidationError->endTime,
+        std::string("4:50 PM")
+        );
+    QVERIFY(!overlapFailure.error().policyIssue.has_value());
+    QVERIFY(!overlapFailure.error().teacherTargetIssue.has_value());
+
+    QSqlQuery countQuery(services.databaseSession()->database());
+    requireQuery(countQuery, QStringLiteral(
+        "SELECT (SELECT COUNT(*) FROM teachers), "
+        "(SELECT COUNT(*) FROM classes), "
+        "(SELECT COUNT(*) FROM class_times)"));
+    QVERIFY(countQuery.next());
+    QCOMPARE(countQuery.value(0).toInt(), 0);
+    QCOMPARE(countQuery.value(1).toInt(), 0);
+    QCOMPARE(countQuery.value(2).toInt(), 0);
 }
 
 QTEST_GUILESS_MAIN(ScheduleImportApplyPortTests)

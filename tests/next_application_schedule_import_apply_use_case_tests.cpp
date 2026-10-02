@@ -132,4 +132,30 @@ int main()
     port.result = std::unexpected(ScheduleImportApplyFailure{u"write failed", std::nullopt});
     const auto failed = ScheduleImportApplyUseCase::execute(validRequest(), port);
     require(!failed && failed.error().message == u"write failed" && port.calls == 2);
+
+    ScheduleImportApplyFailure stateFailure;
+    stateFailure.message = u"The proposed schedule overlaps.";
+    stateFailure.stateValidationError = ScheduleImportStateValidationError{
+        ScheduleImportStateValidationErrorCode::ProjectedScheduleOverlap,
+        "E5 Zeus",
+        "E5 Apollo",
+        "Monday",
+        "4:00 PM",
+        "4:55 PM"
+    };
+    port.result = std::unexpected(stateFailure);
+    const auto stateFailed = ScheduleImportApplyUseCase::execute(
+        validRequest(),
+        port
+        );
+    require(!stateFailed && port.calls == 3);
+    require(stateFailed.error().stateValidationError.has_value());
+    require(stateFailed.error().stateValidationError->code
+        == ScheduleImportStateValidationErrorCode::ProjectedScheduleOverlap);
+    require(stateFailed.error().stateValidationError->classLabel == "E5 Zeus");
+    require(stateFailed.error().stateValidationError->conflictingClassLabel
+        == "E5 Apollo");
+    require(stateFailed.error().stateValidationError->day == "Monday");
+    require(stateFailed.error().stateValidationError->startTime == "4:00 PM");
+    require(stateFailed.error().stateValidationError->endTime == "4:55 PM");
 }

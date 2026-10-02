@@ -35,6 +35,28 @@ scheduleImportApplyResult(
     };
 }
 
+[[nodiscard]] inline Application::ScheduleImportApplyResult
+scheduleImportTypedApplyResult(
+    const ScheduleImportTypedApplyResult& result
+    )
+{
+    if (!result)
+    {
+        return std::unexpected(result.error());
+    }
+
+    return Application::ScheduleImportApplySummary{
+        result->teachersCreated,
+        result->teachersUpdated,
+        result->classesCreated,
+        result->classesUpdated,
+        result->classesSkipped,
+        result->schedulesCleared,
+        result->ignoredCells,
+        result->profileNameUpdated
+    };
+}
+
 class ApplicationServicesScheduleImportApplyPort final
     : public Application::ScheduleImportApplyWritePort
 {
@@ -64,7 +86,7 @@ public:
             return unavailableFailure();
         }
 
-        return scheduleImportApplyResult(repository->applyTyped(request));
+        return scheduleImportTypedApplyResult(repository->applyTyped(request));
     }
 
 private:

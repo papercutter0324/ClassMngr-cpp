@@ -1070,29 +1070,48 @@ Result<ScheduleImportSummary> ScheduleImportRepository::apply(
     {
         return std::unexpected(validatedPlan.error());
     }
-    return applyCore(applyRequestFromLegacyPlan(plan));
+    const ApplyCoreResult result = applyCore(applyRequestFromLegacyPlan(plan));
+    if (!result)
+    {
+        return std::unexpected(result.error().message);
+    }
+    return *result;
 }
 
-Result<ScheduleImportSummary> ScheduleImportRepository::applyTyped(
+ScheduleImportTypedApplyResult ScheduleImportRepository::applyTyped(
     const ScheduleImportApplyRequest& request
     )
 {
     if (!m_database.isOpen())
     {
-        return std::unexpected(
-            QObject::tr("No Teacher Profile is open.")
-            );
+        return std::unexpected(ScheduleImportApplyFailure{
+            u"No Teacher Profile is open."
+        });
     }
 
     if (const auto failure = validateScheduleImportApplyRequest(request))
     {
-        return std::unexpected(applyValidationFailureMessage(request, *failure));
+        ScheduleImportApplyFailure typedFailure;
+        typedFailure.message =
+            applyValidationFailureMessage(request, *failure).toStdU16String();
+        typedFailure.policyIssue = failure->policyIssue;
+        typedFailure.teacherTargetIssue = failure->teacherTargetIssue;
+        return std::unexpected(std::move(typedFailure));
     }
 
-    return applyCore(request);
+    const ApplyCoreResult result = applyCore(request);
+    if (!result)
+    {
+        ScheduleImportApplyFailure typedFailure;
+        typedFailure.message = result.error().message.toStdU16String();
+        typedFailure.stateValidationError =
+            result.error().stateValidationError;
+        return std::unexpected(std::move(typedFailure));
+    }
+    return *result;
 }
 
-Result<ScheduleImportSummary> ScheduleImportRepository::applyCore(
+ScheduleImportRepository::ApplyCoreResult ScheduleImportRepository::applyCore(
     const ScheduleImportApplyRequest& request
     )
 {
@@ -1158,7 +1177,10 @@ Result<ScheduleImportSummary> ScheduleImportRepository::applyCore(
         );
     if (currentState)
     {
-        return std::unexpected(stateValidationMessage(*currentState));
+        return std::unexpected(ApplyCoreFailure{
+            stateValidationMessage(*currentState),
+            *currentState
+        });
     }
 
     ScheduleImportSummary summary;
