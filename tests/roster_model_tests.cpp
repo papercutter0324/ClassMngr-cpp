@@ -26,6 +26,7 @@ private slots:
     void moveRosterRowMovesSourceToEarlierDestination();
     void moveRosterRowRejectsEmptyAndSameRows();
     void moveRosterRowRefreshesValidationAndEmitsModelChanges();
+    void firstEmptyRowUsesLowestBlankAndReturnsNoRowWhenFull();
     void insertTransferredRowUsesFirstEmptyRow();
     void insertTransferredRowCopiesOnlyMatchingColumns();
     void insertTransferredRowRejectsFullTargetRoster();
@@ -639,6 +640,47 @@ void RosterModelTests::moveRosterRowRefreshesValidationAndEmitsModelChanges()
         changedSpy.constFirst().at(1).value<QModelIndex>().row(),
         model.rowCount() - 1
         );
+}
+
+void RosterModelTests::
+firstEmptyRowUsesLowestBlankAndReturnsNoRowWhenFull()
+{
+    RosterModel emptyModel;
+    QCOMPARE(emptyModel.firstEmptyRow(), 0);
+
+    Roster roster;
+    roster.columns = Roster::BaseColumns;
+    roster.rows = {
+        studentRow(
+            QStringLiteral("Amy"),
+            QStringLiteral("\uAE40\uBBFC\uC9C0")
+            ),
+        QStringList(Roster::BaseColumns.size(), QString()),
+        studentRow(
+            QStringLiteral("Cal"),
+            QStringLiteral("\uC774\uC608\uC740")
+            )
+    };
+
+    RosterModel model;
+    model.setRoster(roster);
+    QCOMPARE(model.firstEmptyRow(), 1);
+
+    Roster fullRoster;
+    fullRoster.columns = Roster::BaseColumns;
+    for (int rowIndex = 0; rowIndex < RosterUi::RowCount; ++rowIndex)
+    {
+        fullRoster.rows.append(
+            studentRow(
+                QStringLiteral("Student%1").arg(rowIndex),
+                QString()
+                )
+            );
+    }
+    model.setRoster(fullRoster);
+
+    QCOMPARE(model.rowCount(), RosterUi::RowCount);
+    QCOMPARE(model.firstEmptyRow(), -1);
 }
 
 void RosterModelTests::insertTransferredRowUsesFirstEmptyRow()

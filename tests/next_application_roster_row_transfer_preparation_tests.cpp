@@ -193,7 +193,7 @@ bool incompletePairsRemainAllowedAndFirstEmptySlotWins()
         {u"English", u"Korean", u"Review"},
         {
             {u"Amy", u"\uAE40\uBBFC\uC9C0", u"occupied"},
-            {u" \t", u"\u00a0", u""},
+            {u" \t", u"\u00a0", u"\u3000"},
             {u"", u"", u""}
         },
         {u"English", u"Korean", u"Review"},

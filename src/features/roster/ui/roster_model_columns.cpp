@@ -2,11 +2,11 @@
 
 #include "features/roster/ui/roster_constants.h"
 #include "ui/shared/qt_text_adapter.h"
+#include "next/application/roster_row_availability.h"
 #include "next/application/roster_custom_column_append.h"
 #include "next/application/roster_custom_column_name_policy.h"
 #include "next/application/roster_custom_column_removal_policy.h"
 
-#include <algorithm>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -79,6 +79,19 @@ QList<QStringList> qtRows(
     return result;
 }
 
+std::vector<std::vector<std::u16string>> applicationRows(
+    const QList<QStringList>& rows
+    )
+{
+    std::vector<std::vector<std::u16string>> result;
+    result.reserve(static_cast<std::size_t>(rows.size()));
+    for (const QStringList& sourceRow : rows)
+    {
+        result.push_back(toUtf16(sourceRow));
+    }
+    return result;
+}
+
 } // namespace
 
 QString RosterModel::columnName(
@@ -107,15 +120,12 @@ QStringList RosterModel::rowValues(
 
 int RosterModel::firstEmptyRow() const
 {
-    for (int row = 0; row < m_rows.size(); ++row)
-    {
-        if (!rowHasData(m_rows[row]))
-        {
-            return row;
-        }
-    }
-
-    return -1;
+    const auto rows = applicationRows(m_rows);
+    const std::size_t firstEmpty =
+        ClassMngr::Next::Application::firstEmptyRosterRow(rows);
+    return firstEmpty < rows.size()
+        ? static_cast<int>(firstEmpty)
+        : -1;
 }
 
 bool RosterModel::isRequiredColumn(
@@ -353,20 +363,6 @@ QStringList RosterModel::mappedTransferRow(
     }
 
     return mappedRow;
-}
-
-bool RosterModel::rowHasData(
-    const QStringList& row
-    ) const
-{
-    return std::any_of(
-        row.constBegin(),
-        row.constEnd(),
-        [](const QString& value)
-        {
-            return !value.trimmed().isEmpty();
-        }
-        );
 }
 
 void RosterModel::rebuildRows(

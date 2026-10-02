@@ -2,6 +2,7 @@
 
 #include "next/application/qt_compatible_text.h"
 #include "next/application/roster_custom_column_name_policy.h"
+#include "next/application/roster_row_availability.h"
 #include "next/application/speaking_evaluation_validation.h"
 #include "next/domain/student_name_pair.h"
 
@@ -82,20 +83,6 @@ template <typename CaseInsensitiveEquals>
     }
 
     return columns.size();
-}
-
-[[nodiscard]] inline bool rowHasData(
-    const std::vector<std::u16string>& row
-    )
-{
-    for (const std::u16string& cell : row)
-    {
-        if (!trimQtWhitespace(cell).empty())
-        {
-            return true;
-        }
-    }
-    return false;
 }
 
 template <typename CaseInsensitiveEquals>
@@ -221,22 +208,15 @@ prepareRosterRowTransfer(
             );
 
     using Rejection = RosterRowTransferPreparationRejection;
-    if (!RosterRowTransferPreparationDetail::rowHasData(mappedRow))
+    if (!rosterRowHasData(mappedRow))
     {
         return RosterRowTransferPreparationError{
             .rejection = Rejection::SourceRowHasNoData
         };
     }
 
-    std::size_t destinationRow = targetRows.size();
-    for (std::size_t rowIndex = 0; rowIndex < targetRows.size(); ++rowIndex)
-    {
-        if (!RosterRowTransferPreparationDetail::rowHasData(targetRows[rowIndex]))
-        {
-            destinationRow = rowIndex;
-            break;
-        }
-    }
+    const std::size_t destinationRow =
+        firstEmptyRosterRow(targetRows);
     if (destinationRow == targetRows.size())
     {
         return RosterRowTransferPreparationError{
@@ -273,6 +253,11 @@ prepareRosterRowTransfer(
                     );
             for (const std::vector<std::u16string>& existingRow : targetRows)
             {
+                if (!rosterRowHasData(existingRow))
+                {
+                    continue;
+                }
+
                 const auto existingPair =
                     RosterRowTransferPreparationDetail::completeNamePair(
                         existingRow,

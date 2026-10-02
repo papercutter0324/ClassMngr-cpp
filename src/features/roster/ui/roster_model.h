@@ -179,10 +179,6 @@ private:
         const QStringList& sourceRow
         ) const;
 
-    bool rowHasData(
-        const QStringList& row
-        ) const;
-
     void rebuildRows(
         const Roster& roster
         );
