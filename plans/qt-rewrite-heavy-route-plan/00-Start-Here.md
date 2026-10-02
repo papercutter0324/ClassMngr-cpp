@@ -6,30 +6,9 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-02
-- Current milestone: Phase 2 remains in progress. F204 (Class Day Filter Reset
-  Policy), F205 (Class Selection Reset Policy), F206 (Custom Color Palette
-  preferences), and F207 (Sub Prep Personal Zoom preferences) are accepted;
-  F208 (Sub Prep saved-content preferences), F209 (speaking-evaluation save),
-  F210 (recent-workspace history policy), F211 (speaking-evaluation read-port
-  extraction), F212 (upcoming-birthday schedule policy), F213 (default
-  evaluation selection), and F214 (class day-filter matching policy) are
-  accepted. F215 (automatic-update startup eligibility), F216
-  (skipped-update-version policy), F217 (roster-score import), F218
-  (Speaking Evaluation class-tab read integration), F219 (Schedule Import
-  live-state validation), F220 (Schedule Import plan eligibility policy), and
-  F221 (typed Schedule Import current-state snapshot read), F222
-  (Schedule Import resolution choices from the typed snapshot), and F223
-  (Schedule Import matching projection using the typed snapshot), and F224
-  (remove the legacy Schedule Import service-availability guard) are accepted.
-  F225 (Schedule Import apply use case and typed write port), F226
-  (review readiness), and F227 (review-summary projection) are accepted. F228
-  (cleared-schedule count projection), F229 (typed state-to-schedule
-  projection for review-preview construction), and F230 (UI-built typed
-  Schedule Import apply request), F231 (apply-request decision projection),
-  and F232 (session-bound typed Schedule Import apply through the active-session
-  repository) are accepted. F233 (shared typed repository-core input with a
-  validated v1 `ScheduleImportPlan` adapter) is selected.
-  Gates 1 and 2 remain Partial, with broader feature migration,
+- Current milestone: Phase 2 remains in progress. F242 (Qt-free custom-column
+  removal eligibility) is accepted; F243 (app-less custom-column append) is
+  selected. Gates 1 and 2 remain Partial, with broader feature migration,
   parity, and 96-class Release memory evidence still open. See the
   [Phase 2 progress log](03-Phase-2-Progress-Log.md) for current scope and
   acceptance evidence.

@@ -4905,10 +4905,19 @@ Independent fresh x64 Debug verification built four focused targets; CTest
 passed 4/4. Ownership found one owner for 1,188 handwritten files, and
 `git diff --check` plus new-file whitespace checks passed. No full suite ran.
 
-F242 is selected to extract custom-column removal eligibility into a Qt-free
-policy. Preserve invalid-index and required-column rejection and existing
-messages; keep column mutation, notifications, validation refresh, dirty state,
-width/layout work, destructive confirmation, and autosave at their existing
-boundaries. Two independent scans converged on this remaining named Gate 1
-roster-editing gap. Phase 2 remains In Progress/Open; Gates 1 and 2 remain
-Partial.
+F242 source commit `5525cade` extracts custom-column removal eligibility into
+a Qt-free Application policy. It preserves invalid-index and required-column
+rejection, the Autumn-to-Fall alias, Qt comparison, and existing messages.
+`RosterModel` retains mutation, notifications, validation refresh, dirty state,
+width/layout work, destructive confirmation, and autosave. Fresh x64
+Debug/Ninja/MSVC 19.51/Qt 6.12 verification validated one owner for 1,190
+handwritten sources; five focused CTests passed. Diff and new-file whitespace
+checks passed. No full suite ran.
+
+F243 is selected to extract the Qt-free custom-column append operation over
+roster columns and rows, reusing F241 name admission. Keep model notifications,
+validation refresh, dirty state, and widget width/layout, selection, and
+autosave behavior at their current boundaries. Two independent scans compared
+this narrow continuation with transfer-row mapping/admission; the append
+operation was selected as the more focused adjacent contract. Phase 2 remains
+In Progress/Open; Gates 1 and 2 remain Partial.

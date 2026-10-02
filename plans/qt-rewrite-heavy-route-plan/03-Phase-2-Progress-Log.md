@@ -9549,11 +9549,24 @@ owner for 1,188 handwritten files. Four focused CTests passed: column policy,
 RosterModel, row removal, and roster-widget save. `git diff --check` and all
 new-file whitespace checks passed; no full suite ran.
 
-F242 is selected: extract custom-column removal eligibility into a Qt-free
-policy for invalid indexes and required-column protection. Keep column
-mutation, model notifications, validation refresh, dirty state, width/layout,
-destructive confirmation, and autosave at their existing boundaries. Two
-independent scans converged on this named Gate 1 roster-editing gap. The
-cumulative Gate 1 map is historical and ends at F143
+F242, source commit `5525cade`, factors invalid-index and required-column
+removal eligibility into Qt-free Application policy, preserving Autumn-to-Fall
+and Qt comparison semantics. Mutation, model notifications, validation/dirty
+state, layout/width, confirmation, and autosave remain at their current owners.
+Independent fresh x64 Debug/Ninja/MSVC 19.51.36257/Qt 6.12 verification used
+CMake 4.4.2, reached build action 324/325, and validated one explicit owner for
+1,190 handwritten sources. Five focused CTests passed: custom-column removal
+policy, RosterModel, roster-editor widget save, row removal, and custom-column
+name policy. `git diff --check` passed; both new files passed LF, final-newline,
+and trailing-whitespace checks. No full suite ran.
+
+F243 is selected: add a Qt-free custom-column append operation over roster
+columns and rows, appending the admitted normalized name and one empty cell per
+existing row. Keep model signals, validation, dirty behavior, and widget
+width/layout/selection/autosave at their existing owners. Two independent scans
+identified this adjacent candidate; one ranked transfer-row mapping/admission
+as another policy option, while the narrower direct continuation from F241 was
+selected. F243 is selected, not accepted or implemented. The cumulative Gate 1
+map is historical and ends at F143
 ([map](03-Phase-2-Progress-Log.md#L7570)); Gates 1 and 2 remain Partial. Phase
 2 remains In Progress/Open.

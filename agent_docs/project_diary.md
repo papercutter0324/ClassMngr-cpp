@@ -2067,3 +2067,13 @@ standard-string BOM interpretation; that same lossless adapter protects the
 adjacent row move/removal contracts. The next bounded Gate 1 gap is
 custom-column removal eligibility, with mutation and layout remaining at the
 model/widget boundary.
+
+## 2026-10-02 - F242 custom-column removal eligibility accepted; F243 selected
+
+Reuse F241's normalization and injected Qt case-insensitive comparison for
+custom-column removal eligibility, while keeping actual mutation, notifications,
+validation, dirty state, and widget effects at their current owners. The paired
+scan also found transfer-row mapping/admission; choose the narrower adjacent
+custom-column append operation for F243, reusing F241 name admission and leaving
+model signals and widget width/layout/selection/autosave at the existing
+boundaries.

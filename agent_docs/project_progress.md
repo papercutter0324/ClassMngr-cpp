@@ -83,7 +83,8 @@ is accepted in source commit `d6d4bdc6`; F235 is accepted in source commit
 `b52029a6`; F236 is accepted in source commit `5877bba0`; F237 is accepted in
 source commit `8ef76074`; F238 is accepted in source commit `7b832bcc`; F239 is
 accepted in source commit `d3e9cded`; F240 is accepted in source commit
-`4be18aa5`; F241 is accepted in source commit `746ef0bb`; F242 is selected.
+`4be18aa5`; F241 is accepted in source commit `746ef0bb`; F242 is accepted in
+source commit `5525cade`; F243 is selected.
 F196 and F197 use
 only the active open session's
 `SettingsRepository` and preserve their keys, conversions, defaults, and
@@ -2881,7 +2882,7 @@ stale/overlap rejection, write-failure rollback, and intensive mapping
 coverage passed. Source ownership found one owner for 1,172 files, and
 `git diff --check` passed; no full suite ran.
 
-## Current Phase 2 position - 2026-10-02 (F241 accepted; F242 selected)
+## Current Phase 2 position - 2026-10-02 (F242 accepted; F243 selected)
 
 F236 source commit `5877bba0` carries structured typed policy, teacher-target,
 and fresh-state failures from Repository through Platform to the review dialog.
@@ -2944,10 +2945,19 @@ Independent fresh x64 Debug verification built four focused targets; CTest
 passed 4/4. Ownership found one owner for 1,188 handwritten files, and
 `git diff --check` plus new-file whitespace checks passed. No full suite ran.
 
-F242 is selected to extract custom-column removal eligibility into a Qt-free
-policy. Preserve invalid-index and required-column rejection and existing
-messages; keep column mutation, notifications, validation refresh, dirty state,
-width/layout work, destructive confirmation, and autosave at their existing
-boundaries. Two independent scans converged on this remaining named Gate 1
-roster-editing gap. Phase 2 remains In Progress/Open; Gates 1 and 2 remain
-Partial.
+F242 source commit `5525cade` extracts custom-column removal eligibility into
+a Qt-free Application policy. It preserves invalid-index and required-column
+rejection, the Autumn-to-Fall alias, Qt comparison, and existing messages.
+`RosterModel` retains mutation, notifications, validation refresh, dirty state,
+width/layout work, destructive confirmation, and autosave. Fresh x64
+Debug/Ninja/MSVC 19.51/Qt 6.12 verification validated one owner for 1,190
+handwritten sources; five focused CTests passed. Diff and new-file whitespace
+checks passed. No full suite ran.
+
+F243 is selected to extract the Qt-free custom-column append operation over
+roster columns and rows, reusing F241 name admission. Keep model notifications,
+validation refresh, dirty state, and widget width/layout, selection, and
+autosave behavior at their current boundaries. Two independent scans compared
+this narrow continuation with transfer-row mapping/admission; the append
+operation was selected as the more focused adjacent contract. Phase 2 remains
+In Progress/Open; Gates 1 and 2 remain Partial.
