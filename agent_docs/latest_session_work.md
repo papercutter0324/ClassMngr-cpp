@@ -4986,7 +4986,7 @@ actions, and resolution in the models/page. Add app-less policy cases, model
 wrapper checks, and a focused Speaking Evaluation duplicate-resolution
 regression. Phase 2 remains In Progress/Open, with Gates 1 and 2 Partial.
 
-## Current continuation - 2026-10-02 (F250 accepted; F251 selected)
+## Current continuation - 2026-10-02 (F251 accepted; F252 selected)
 
 The user asked to assume F196 complete, continue F218, commit each slice, and
 begin the next. At task start, F218 was already accepted and the branch had
@@ -5023,15 +5023,27 @@ passed 3/3. Coverage includes whitespace-only cells, first-row ordering,
 full-roster sentinel/25-row `-1`, and transfer failure precedence. Diff and
 new-file hygiene passed; no full suite ran.
 
-Paired F251 scans agreed on extracting AI batch per-comment review quality from
-`SpeakingEvalAiBatchDialog::updateReviewRow()` into Qt-free Application. Keep
-comment normalization and UTF-16 `QString::size()` at the UI edge; preserve
-empty-comment parser/current status, 100/450 length boundaries, the >420
-preferred warning, placeholder warning/order, checkbox behavior, and Apply
-aggregation. Do not move localization, parser statuses, overwrite handling,
-comment application, or undoable table mutation. Avoid a duplicate legacy 450
-constant. Phase-plan docs now record F250 accepted and F251 selected. Next:
-implement and independently verify F251 with boundary and focused dialog tests,
-commit source, then record acceptance and select its successor. Phase 2 remains
-In Progress/Open; Gates 1 and 2 remain Partial. Active deployment ID is
+F251 source commit `ed548438` extracts AI batch per-comment review quality from
+`SpeakingEvalAiBatchDialog::updateReviewRow()` into Qt-free Application. The
+final fresh x64 Debug verification in `build/f251_independent_x64_debug`
+validated one owner for 1,208 handwritten files. The app-less quality CTest
+passed 1/1; dialog functions
+`aiBatchDialogAssessesCommentQualityAndPreservesStatuses`,
+`aiBatchDialogSelectsEligibleStudentsAndReviewsValidComments`, and
+`aiPromptBuilderUsesObservationsAndSelectedVoice` passed. Prompt wording stayed
+unchanged, with the preferred threshold single-sourced at 420. Diff and
+new-file hygiene passed; no full batch CTest or suite ran.
+
+F252 is selected to extract accepted AI batch comment planning from
+`SpeakingEvalAiBatchDialog::applyComments()`. Pass checked/valid state, report
+index, exact current comment, already-simplified replacement UTF-16 text, and
+report count. Preserve row order, invalid-index filtering, exact no-op
+filtering, Qt-compatible trimmed blank detection, and overwrite count. Keep
+QString adaptation, localized confirmation, acceptance state, and page/table
+mutation/undo in the UI. The paired scans differed: the alternative was
+extracting the initial-checkbox default rule. Choose planning because it also
+owns the overwrite decision; defer that presentation rule. Next: implement and
+independently verify F252, commit the source slice, then record its acceptance
+and select the successor. Phase 2 remains In Progress/Open; Gates 1 and 2
+remain Partial. Active deployment ID is
 `qt-rewrite-phase2-resume-20260928`.

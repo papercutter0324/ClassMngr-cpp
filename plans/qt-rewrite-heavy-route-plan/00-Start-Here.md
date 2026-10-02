@@ -6,9 +6,9 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-02
-- Current milestone: Phase 2 remains in progress. F250 (Qt-free first-empty
-  roster-row lookup) is accepted; F251 (Qt-free AI batch comment-quality
-  policy) is selected. Gates 1 and 2 remain Partial, with
+- Current milestone: Phase 2 remains in progress. F251 (AI batch comment-quality
+  policy) is accepted; F252 (Qt-free AI batch accepted-comment planning) is
+  selected. Gates 1 and 2 remain Partial, with
   broader feature migration, parity, and 96-class Release memory evidence still
   open.
   See the

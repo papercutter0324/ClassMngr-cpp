@@ -9658,22 +9658,37 @@ returns the lowest empty index or `rows.size()` sentinel; RosterModel maps a
 full 25-row roster to -1. Transfer preserves source/full/duplicate rejection
 order and first-destination selection.
 
-F251 is selected: extract deterministic per-comment review quality from
-`SpeakingEvalAiBatchDialog::updateReviewRow()`. The UI computes normalized
-UTF-16 length with `QString::simplified().size()` and passes it, plus
-`SpeakingEval::CommentMinLength`/`SpeakingEval::CommentMaxLength` from the
-Qt-facing `speaking_evaluation.h`, into policy or another clean shared-value
-boundary.
-Avoid a duplicate 450 constant and keep the >420 preferred threshold
-single-sourced. Preserve empty-comment
-parser/current-status behavior, warning order and placeholder warning, invalid
-unchecked state, valid default-checked state when previously unchecked, exact
-localized text, and Apply aggregation in the UI. Leave overwrite, application, and
-undo flow untouched. Scope the Application policy/result header, app-less
-tests for empty, 99/100, 420/421, 450/451, placeholder, and combined-warning
-cases with UTF-16 length as input; adapt `speaking_eval_ai_batch_dialog.cpp`,
-register in `cmake/next.cmake` and `cmake/tests/next.cmake`, and cover UI reason/
-state in `speaking_eval_batch_report_service_tests.cpp`. Paired scans agree on
-this slice. The cumulative Gate 1 map is historical and ends at F143
+F251, source commit `ed548438`, extracts deterministic per-comment AI review
+quality. Fresh/reconfigured `build/f251_independent_x64_debug` Windows 11 x64
+Debug/Ninja/MSVC 19.51/CMake 4.4.2/Qt 6.12 verification rebuilt policy/UI
+targets and found one owner for 1,208 handwritten sources. The app-less
+comment-quality CTest passed 1/1; UI slots
+`aiBatchDialogAssessesCommentQualityAndPreservesStatuses`,
+`aiBatchDialogSelectsEligibleStudentsAndReviewsValidComments`, and
+`aiPromptBuilderUsesObservationsAndSelectedVoice` passed. Prompt output still
+contains `between 100 and 420 characters, including spaces`. The production
+420 threshold is single-sourced as `SpeakingEval::CommentPreferredMaxLength`
+for prompt builder and dialog; the dialog passes existing 100/450 min/max. An initial
+independent pass flagged the prompt literal; F251 centralized it and the final
+independent pass passed. The unrelated Next validation constant
+`SpeakingEvaluationMaximumCommentLength=450` predates F251. `git diff --check`
+and new-file hygiene passed; no full batch CTest or suite ran.
+
+F252 is selected: extract Qt-free accepted AI batch comment planning from
+`SpeakingEvalAiBatchDialog::applyComments()`. Inputs carry checked/valid state,
+report index, exact current and already-normalized replacement UTF-16 text, and
+report count; the UI keeps `QString::simplified()`. Preserve row order,
+report-index bounds, exact-pair no-op skipping, Qt-compatible trimmed counting
+of nonblank old comments, and return typed accepted assignments plus overwrite
+count. Keep parsing/text adaptation, localized overwrite confirmation,
+accepted-dialog state, page/table mutation, and undo in the UI. Add an
+Application plan header, app-less tests/CMake, adapt
+`speaking_eval_ai_batch_dialog.cpp`, and extend
+`speaking_eval_batch_report_service_tests.cpp`. Focus tests on checked/valid
+filtering, invalid indexes, no-op filtering, overwrite count, order/text
+preservation, and the UI confirmation gate. Paired scans differed: the
+alternative was a boolean default-inclusion rule. Choose the actual planning
+and overwrite decision; defer that presentation rule. The cumulative Gate 1
+map is historical and ends at F143
 ([map](03-Phase-2-Progress-Log.md#L7570)); Gates 1 and 2 remain Partial. Phase
 2 remains In Progress/Open.

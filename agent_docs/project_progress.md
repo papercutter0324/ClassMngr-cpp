@@ -86,7 +86,11 @@ accepted in source commit `d3e9cded`; F240 is accepted in source commit
 `4be18aa5`; F241 is accepted in source commit `746ef0bb`; F242 is accepted in
 source commit `5525cade`; F243 is accepted in source commit `68260142`; F244
 is accepted in source commit `86fe782f`; F245 is accepted in source commit
-`99c95146`; F246 is selected.
+`99c95146`; F246 is accepted in source commit `b1a86db2`; F247 is accepted
+in source commit `7021e657`; F248 is accepted in source commit `8886b46f`;
+F249 is accepted in source commit `828d5014`; F250 is accepted in source
+commit `4753ce3b`; F251 is accepted in source commit `ed548438`; F252 is
+selected.
 F196 and F197 use
 only the active open session's
 `SettingsRepository` and preserve their keys, conversions, defaults, and
@@ -2884,7 +2888,7 @@ stale/overlap rejection, write-failure rollback, and intensive mapping
 coverage passed. Source ownership found one owner for 1,172 files, and
 `git diff --check` passed; no full suite ran.
 
-## Current Phase 2 position - 2026-10-02 (F250 accepted; F251 selected)
+## Current Phase 2 position - 2026-10-02 (F251 accepted; F252 selected)
 
 F236 source commit `5877bba0` carries structured typed policy, teacher-target,
 and fresh-state failures from Repository through Platform to the review dialog.
@@ -3048,13 +3052,24 @@ handwritten sources; the app-less query, RosterModel, and transfer-preparation
 CTests passed 3/3. `git diff --check` and new-file hygiene passed; no full suite
 ran.
 
-F251 is selected: extract the AI batch per-comment review-quality decision
-from `SpeakingEvalAiBatchDialog::updateReviewRow()` into Qt-free Application.
-Keep `QString::simplified()` and UTF-16 `size()` at the dialog edge; preserve
-empty-comment parser/current status, length thresholds (100 minimum, 450 hard
-maximum, warning above 420), placeholder warning and order, validity and
-checkbox defaults, localized messages, and Apply aggregation. Keep overwrite,
-comment application, undoable table mutation, parsing, and normalization at
-their owners. Avoid duplicating the legacy 450 constant; pass the current
-thresholds through the UI boundary or define one clean shared source. Paired
-scans agreed. Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial.
+F251 source commit `ed548438` extracts AI batch per-comment review quality
+from `SpeakingEvalAiBatchDialog::updateReviewRow()`. Fresh independent x64
+Debug verification in `build/f251_independent_x64_debug` validated one owner
+for 1,208 handwritten files; the app-less quality test and three focused dialog
+functions passed. The 420 preferred threshold is shared by the prompt builder
+and dialog through `SpeakingEval::CommentPreferredMaxLength`; rendered prompt
+wording is unchanged. The hard maximum is passed from the existing domain
+constant. `git diff --check` and new-file hygiene passed. No full batch CTest
+or suite ran.
+
+F252 is selected: extract accepted AI batch comment planning from
+`SpeakingEvalAiBatchDialog::applyComments()` into Qt-free Application. Keep
+`QString::simplified()` at the UI edge and pass checked/valid state, report
+index, current and replacement UTF-16 values, and report count. Preserve row
+order, index bounds, exact unchanged-value skipping, Qt-compatible blank
+checking, accepted assignments, and overwrite count. Keep parsing and text
+adaptation, localized confirmation, dialog acceptance, page/table mutation,
+and undo in the UI. Paired scans differed between this planner and the initial
+checkbox default rule; choose the planning/overwrite decision and defer the
+presentation rule. Phase 2 remains In Progress/Open; Gates 1 and 2 remain
+Partial.

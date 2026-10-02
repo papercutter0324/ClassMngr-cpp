@@ -2182,3 +2182,14 @@ preparation use the same trim rule. Reuse the existing Qt-compatible UTF-16
 boundary; do not keep the now-unused model helper. The next AI comment-review
 policy should take normalized UTF-16 length as input, retain empty parser status
 behavior and warning order, and avoid duplicating the legacy maximum constant.
+
+## 2026-10-02 - F251 AI comment quality accepted; F252 selected
+
+F251 centralizes the preferred 420-character threshold with the prompt builder
+and keeps the 450-character hard maximum sourced from the existing domain
+constant. Independent x64 Debug verification passed the app-less policy and
+three focused dialog functions; prompt wording remained unchanged. For F252,
+extract the accepted-comment planning loop, including exact no-op filtering and
+overwrite counting, while leaving QString normalization, localized confirmation,
+and page/table mutation at the UI edge. Paired scans also proposed moving the
+checkbox default rule; defer that presentation-only policy.
