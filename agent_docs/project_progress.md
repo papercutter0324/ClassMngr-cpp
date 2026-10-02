@@ -2874,31 +2874,28 @@ stale/overlap rejection, write-failure rollback, and intensive mapping
 coverage passed. Source ownership found one owner for 1,172 files, and
 `git diff --check` passed; no full suite ran.
 
-## Current Phase 2 position - 2026-10-02 (F233 accepted; F234 selected)
+## Current Phase 2 position - 2026-10-02 (F234 accepted; F235 selected)
 
-F233 source commit `2cb853e9` makes typed `ScheduleImportApplyRequest` the
-shared repository-core input. The legacy `ScheduleImportPlan` API remains a
-validated v1 edge adapter; both paths use the same fresh-state reads,
-validation, transaction, rollback, and summary logic. The Application
-request type now has its own Qt-free header.
+F234 source commit `d6d4bdc6` adds a Qt-free typed ApplyRequest validator used
+by both `ScheduleImportApplyUseCase` and direct
+`ScheduleImportRepository::applyTyped()` calls. It preserves validation
+order: plan eligibility, typed intensive-mode validity, then teacher target
+shape. An invalid intensive-mode enum on a normal schedule is rejected at
+both boundaries; diagnostics still take precedence. Localized message
+formatting remains at the UI and persistence edges, and the legacy plan
+validator remains unchanged.
 
-The Application ApplyUseCase, Platform ApplyPort, and Schedule Import
-repository CTests passed 3/3. Direct malformed-request verification covered
-an out-of-range candidate index and four teacher/class action-target
-mismatches; each failure left the persisted snapshot unchanged. The malformed
-slot passed 3 QtTest cases, and the repository CTest passed 1/1. The focused
-dialog Apply and policy-message slots passed. The full Dialog aggregate had
-34 passes and only the three established baseline failures:
-`acceptedReviewCanTearDownSourceDialog`, `mismatchedProfileRequiresConfirmation`,
-and `reviewPreviewUsesSavedScheduleDisplaySettings`. Source ownership found
-one owner for 1,173 handwritten files, and `git diff --check` passed. No full
-suite ran.
+Independent VsDevCmd x64 configure/build validated one owner for 1,174
+handwritten sources. The Application ApplyUseCase, Platform ApplyPort, and
+Schedule Import repository CTests passed 3/3; `git diff --check` passed. No
+full suite ran.
 
-F234 is selected to centralize typed ApplyRequest validation in a Qt-free
-Application helper used by both the ApplyUseCase and direct repository
-entrypoint. Keep direct repository validation, the v1 plan validator, and
-localized error formatting at their existing boundaries. Explicitly reject
-an invalid intensive-mode enum for normal schedules at both entrypoints; the
-repository already rejects it while the UseCase currently accepts it. Keep
-validation order and detailed messages stable. Phase 2 remains In
-Progress/Open; Gates 1 and 2 remain Partial.
+F235 is selected to preserve exact typed teacher and class target IDs through
+the repository's fresh-state validation. `applyTyped()` currently parses and
+re-serializes these values before comparison, which can make noncanonical ID
+`01` alias persisted ID `1`. Retain the typed values through validation, then
+convert them where SQL needs integers. Verify canonical `1` still applies,
+while `01` rejects for teacher and class targets before writes with persisted
+snapshots unchanged. Keep the change at the repository boundary and leave
+Application ID rules alone. Phase 2 remains In Progress/Open; Gates 1 and 2
+remain Partial.

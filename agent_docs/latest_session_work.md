@@ -4838,12 +4838,26 @@ dialog Apply and policy-message checks passed. The full Dialog aggregate had
 found one owner for 1,173 handwritten files; `git diff --check` passed. No full
 suite ran.
 
-F234 is selected to centralize typed ApplyRequest validation in one Qt-free
-Application helper used by both `ScheduleImportApplyUseCase` and direct
-repository calls. Keep repository validation for callers that bypass the
-UseCase, retain the legacy plan-validation edge, and keep localized error
-formatting at the UI or persistence edge. Resolve the current mismatch by
-rejecting an invalid intensive-mode enum for normal schedules at both
-entrypoints while preserving validation order and detailed messages. The two
-independent Explorer lanes agree on this seam. Next: begin F234 implementation.
-Phase 2 remains In Progress/Open with Gates 1 and 2 Partial.
+F234 source commit `d6d4bdc6` is accepted. The new Qt-free
+`schedule_import_apply_validation.h` is used by both the UseCase and direct
+repository typed entrypoint. It checks plan eligibility first, then whether
+the intensive mode is valid, then teacher target shape. Invalid mode enum
+values on normal schedules are rejected at both boundaries; diagnostic
+failures keep their precedence. Localized error formatting stays at the UI
+and persistence edges. The v1 `ScheduleImportPlanValidator::validate` path is
+unchanged.
+
+Independent VsDevCmd x64 configure/build validated one owner for 1,174
+handwritten sources. The Application ApplyUseCase, Platform ApplyPort, and
+Schedule Import repository CTests passed 3/3; `git diff --check` passed. No
+full suite ran.
+
+F235 is selected to preserve typed teacher and class target IDs through the
+repository's fresh-state check. Current `applyTyped()` parses and reserializes
+IDs before comparison, so a typed `01` can alias a persisted `1`. Keep the
+exact typed ID until state validation finishes, and convert only at SQL use
+sites. Verify canonical teacher/class target `1` still applies and noncanonical
+`01` is rejected before writes with persisted snapshots unchanged. One
+independent lane identified structured failure preservation across repository
+and Platform as a separate later seam; keep it out of F235. Next: begin F235
+implementation. Phase 2 remains In Progress/Open with Gates 1 and 2 Partial.

@@ -2017,10 +2017,17 @@ preserve their validated results while sharing fresh-state and transactional
 behavior. Direct typed requests need their own malformed-index and
 action-target rejection coverage because they bypass the legacy plan edge.
 
-## 2026-10-02 - F234 typed apply validation
+## 2026-10-02 - F234 shared typed apply validation accepted
 
-Centralize typed ApplyRequest validation for the UseCase and direct repository
-entrypoint, while keeping the repository boundary check and localized message
-formatting. Reject an invalid intensive-mode enum even for a normal schedule
-at both entrypoints so the same typed request cannot pass one boundary and
-fail the other. Preserve the v1 ScheduleImportPlan validation path.
+Keep the same typed ApplyRequest validation at both the UseCase and direct
+repository boundary. Validate plan eligibility first, then reject invalid
+intensive-mode enum values even on normal schedules, then check teacher target
+shape. This closes a boundary mismatch while preserving diagnostic ordering,
+localized edge messages, and the v1 ScheduleImportPlan validator.
+
+## 2026-10-02 - F235 exact typed target IDs
+
+Keep typed teacher and class IDs intact through fresh-state comparison. Do not
+parse and reserialize the IDs before validation: the typed value `01` must not
+select the persisted canonical ID `1`. Convert only at the SQL adapter after
+state validation, and cover both teacher and class targets before writes.

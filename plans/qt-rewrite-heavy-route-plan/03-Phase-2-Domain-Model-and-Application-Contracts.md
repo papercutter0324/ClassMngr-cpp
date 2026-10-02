@@ -72,8 +72,14 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
   F229's typed preview projection, F230's UI-built typed apply request, F231's
   apply-request decision projection, and F232's session-bound typed apply are
   accepted. F233 is accepted: the typed apply request is the shared repository
-  core input and the validated v1 plan is an edge adapter. F234 is selected to
-  centralize typed apply-request validation for the UseCase and repository.
+  core input and the validated v1 plan is an edge adapter. F234 is accepted:
+  the UseCase and direct typed repository entry share Qt-free validation in
+  which plan eligibility runs first, followed by the intensive-mode check and
+  teacher target check. Localized formatting stays at the edges, and the legacy
+  plan validator is unchanged. F235 is selected to preserve exact typed
+  teacher and class target IDs through repository state validation, rejecting
+  noncanonical aliases such
+  as `01` before writes.
   The prior F123 candidate wording is historical;
   current Teacher Profile integration status is recorded in the progress log.
   Gates 1 and 2
@@ -230,7 +236,7 @@ No new v2 production path depends on DataService, MainWindow, PageManager, or a 
 
 Earlier verified slices and cumulative exit-gate snapshots are archived in the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 
-## Latest progress update - 2026-10-02 (F233 accepted; F234 selected)
+## Latest progress update - 2026-10-02 (F234 accepted; F235 selected)
 
 F233, source commit `2cb853e9`, makes `ScheduleImportApplyRequest` the shared
 repository-core input. The validated v1 `ScheduleImportPlan` remains an edge
@@ -246,10 +252,21 @@ The independent focused dialog slots passed. The full dialog aggregate had
 `reviewPreviewUsesSavedScheduleDisplaySettings`. Source ownership found 1,173
 files; `git diff --check` passed. No full suite was run.
 
-F234 is selected to centralize Qt-free `ScheduleImportApplyRequest`
-validation for the UseCase and direct repository entry point. Preserve
-repository direct-call validation, the validated v1 plan edge, validation
-order, and detailed boundary-local messages. Add coverage rejecting an invalid
-intensive-mode enum for a normal schedule at both boundaries; the repository
-currently rejects it while the UseCase accepts it. Phase 2 remains
-In Progress/Open; Gates 1 and 2 remain Partial.
+F234, source commit `d6d4bdc6`, adds Qt-free
+`schedule_import_apply_validation.h`, shared by the UseCase and direct
+`ScheduleImportRepository::applyTyped()`. Both reject invalid intensive-mode
+values even for normal schedules, while plan-eligibility diagnostics retain
+precedence. Localized formatting remains at the UseCase/repository edges and
+the legacy plan validator is unchanged. Independent x64 configure/build found
+1,174 handwritten source owners; the ApplyUseCase, Platform ApplyPort, and
+Schedule Import repository CTests passed 3/3; `git diff --check` passed. No
+full suite was run.
+
+F235 is selected to keep original typed teacher/class target IDs intact through
+repository fresh-state validation, converting them only at SQL use sites after
+validation. Acceptance requires canonical `1` to apply and noncanonical `01`
+to be rejected for both target types before writes, with persisted snapshots
+unchanged. Scope is the repository boundary; Application numeric rules stay
+unchanged. Structured-failure preservation across repository and Platform is a
+separate later seam. Phase 2 remains In Progress/Open; Gates 1 and 2 remain
+Partial.
