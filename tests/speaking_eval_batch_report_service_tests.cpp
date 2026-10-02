@@ -441,6 +441,7 @@ private slots:
     void aiPromptBuilderUsesObservationsAndSelectedVoice();
     void aiBatchPromptAnonymizesUpToFullClass();
     void aiBatchResponseParserHandlesPartialAndMalformedBlocks();
+    void aiBatchDialogDisplaysEligibilityReasonsAndCheckState();
     void aiBatchDialogSelectsEligibleStudentsAndReviewsValidComments();
     void aiPromptButtonsRequireCompleteInput();
     void aiPromptPreviewCopiesAnAnonymousPrompt();
@@ -1719,6 +1720,148 @@ void SpeakingEvalBatchReportServiceTests::
         result.unknownIds,
         QStringList{ QStringLiteral("STUDENT_99") }
         );
+}
+
+void SpeakingEvalBatchReportServiceTests::
+    aiBatchDialogDisplaysEligibilityReasonsAndCheckState()
+{
+    const auto makeReport = [](
+        const QString& displayName,
+        const QString& englishName,
+        const QString& koreanName,
+        const int grade,
+        const QString& notes,
+        const QString& comments,
+        const int sourceRow
+        )
+    {
+        SpeakingEvalReportData report;
+        report.englishName = englishName;
+        report.koreanName = koreanName;
+        report.grade = grade;
+        report.notes = notes;
+        report.comments = comments;
+        return SpeakingEvalBatchReportService::StudentReport{
+            displayName,
+            report,
+            sourceRow
+        };
+    };
+
+    const QString completeNotes =
+        QStringLiteral(
+            "[Did Well]\nClear pronunciation\n"
+            "[Needs Improvement]\nAdd supporting details"
+            );
+    const QString missingDidWellNotes =
+        QStringLiteral(
+            "[Did Well]\n\n"
+            "[Needs Improvement]\nAdd supporting details"
+            );
+    const QString missingNeedsImprovementNotes =
+        QStringLiteral(
+            "[Did Well]\nClear pronunciation\n"
+            "[Needs Improvement]\n"
+            );
+
+    SpeakingEvalAiBatchDialog dialog(
+        {
+            makeReport(
+                QStringLiteral("No name"),
+                QStringLiteral(" \t "),
+                QStringLiteral("\u3000"),
+                0,
+                QString(),
+                QString(),
+                0
+                ),
+            makeReport(
+                QStringLiteral("Unsupported"),
+                QStringLiteral("Alice"),
+                QString(),
+                7,
+                QString(),
+                QString(),
+                1
+                ),
+            makeReport(
+                QStringLiteral("Missing Did Well"),
+                QStringLiteral("Bob"),
+                QString(),
+                5,
+                missingDidWellNotes,
+                QString(),
+                2
+                ),
+            makeReport(
+                QStringLiteral("Missing Needs Improvement"),
+                QStringLiteral("Carol"),
+                QString(),
+                5,
+                missingNeedsImprovementNotes,
+                QString(),
+                3
+                ),
+            makeReport(
+                QStringLiteral("Ready"),
+                QStringLiteral("David"),
+                QString(),
+                4,
+                completeNotes,
+                QString(),
+                4
+                ),
+            makeReport(
+                QStringLiteral("Korean only"),
+                QStringLiteral(" \t "),
+                QStringLiteral("\uAE40\uBBFC\uC9C0"),
+                5,
+                completeNotes,
+                QString(),
+                5
+                ),
+            makeReport(
+                QStringLiteral("Existing comment"),
+                QStringLiteral("Eun"),
+                QString(),
+                6,
+                completeNotes,
+                QStringLiteral("Already has a comment"),
+                6
+                )
+        }
+        );
+
+    auto* selection =
+        dialog.findChild<QTableWidget*>(
+            QStringLiteral("speakingEvalAiBatchSelectionTable")
+            );
+    QVERIFY(selection);
+    QCOMPARE(selection->rowCount(), 7);
+
+    const QStringList expectedReasons{
+        QStringLiteral("Student name is missing."),
+        QStringLiteral("AI comments are available for grades E4 through E6."),
+        QStringLiteral("Add at least one Did Well note."),
+        QStringLiteral("Add at least one Needs Improvement note.")
+    };
+    for (int row = 0; row < expectedReasons.size(); ++row)
+    {
+        QVERIFY(!(selection->item(row, 0)->flags() & Qt::ItemIsEnabled));
+        QCOMPARE(selection->item(row, 0)->checkState(), Qt::Unchecked);
+        QCOMPARE(selection->item(row, 2)->text(), expectedReasons.at(row));
+    }
+
+    QVERIFY(selection->item(4, 0)->flags() & Qt::ItemIsEnabled);
+    QCOMPARE(selection->item(4, 0)->checkState(), Qt::Checked);
+    QCOMPARE(selection->item(4, 2)->text(), QStringLiteral("Ready"));
+
+    QVERIFY(selection->item(5, 0)->flags() & Qt::ItemIsEnabled);
+    QCOMPARE(selection->item(5, 0)->checkState(), Qt::Checked);
+    QCOMPARE(selection->item(5, 2)->text(), QStringLiteral("Ready"));
+
+    QVERIFY(selection->item(6, 0)->flags() & Qt::ItemIsEnabled);
+    QCOMPARE(selection->item(6, 0)->checkState(), Qt::Unchecked);
 }
 
 void SpeakingEvalBatchReportServiceTests::

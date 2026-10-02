@@ -3,6 +3,7 @@
 
 #include "domain/models/speaking_evaluation.h"
 #include "features/speaking_eval/services/speaking_eval_ai_prompt.h"
+#include "next/application/speaking_evaluation_ai_batch_eligibility.h"
 #include "next/platform/settings_manager_ai_comment_custom_website_port.h"
 #include "next/platform/settings_manager_ai_comment_provider_preferences_port.h"
 #include "next/platform/settings_manager_ai_comment_voice_preferences_port.h"
@@ -174,43 +175,48 @@ QString unavailableReason(
     const SpeakingEvalBatchReportService::StudentReport& report
     )
 {
-    if (
-        report.report.englishName.trimmed().isEmpty()
-        && report.report.koreanName.trimmed().isEmpty()
-        )
+    const PrivateNotes notes =
+        splitPrivateNotes(report.report.notes);
+    const auto reason =
+        ClassMngr::Next::Application::
+            speakingEvaluationAiBatchEligibilityReason({
+                .hasTrimmedStudentName =
+                    !report.report.englishName.trimmed().isEmpty()
+                    || !report.report.koreanName.trimmed().isEmpty(),
+                .grade = report.report.grade,
+                .hasDidWellItem =
+                    !speakingEvalAiObservationItems(
+                        notes.didWell
+                        ).isEmpty(),
+                .hasNeedsImprovementItem =
+                    !speakingEvalAiObservationItems(
+                        notes.needsImprovement
+                        ).isEmpty()
+            });
+
+    using ClassMngr::Next::Application::
+        SpeakingEvaluationAiBatchEligibilityReason;
+    switch (reason)
     {
+    case SpeakingEvaluationAiBatchEligibilityReason::Eligible:
+        return {};
+    case SpeakingEvaluationAiBatchEligibilityReason::MissingName:
         return QCoreApplication::translate(
             "SpeakingEvalAiBatchDialog",
             "Student name is missing."
             );
-    }
-    if (report.report.grade < 4 || report.report.grade > 6)
-    {
+    case SpeakingEvaluationAiBatchEligibilityReason::UnsupportedGrade:
         return QCoreApplication::translate(
             "SpeakingEvalAiBatchDialog",
             "AI comments are available for grades E4 through E6."
             );
-    }
-
-    const PrivateNotes notes =
-        splitPrivateNotes(report.report.notes);
-    if (
-        speakingEvalAiObservationItems(
-            notes.didWell
-            ).isEmpty()
-        )
-    {
+    case SpeakingEvaluationAiBatchEligibilityReason::MissingDidWellItem:
         return QCoreApplication::translate(
             "SpeakingEvalAiBatchDialog",
             "Add at least one Did Well note."
             );
-    }
-    if (
-        speakingEvalAiObservationItems(
-            notes.needsImprovement
-            ).isEmpty()
-        )
-    {
+    case SpeakingEvaluationAiBatchEligibilityReason::
+        MissingNeedsImprovementItem:
         return QCoreApplication::translate(
             "SpeakingEvalAiBatchDialog",
             "Add at least one Needs Improvement note."

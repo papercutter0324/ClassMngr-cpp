@@ -310,6 +310,37 @@ add_test(
     COMMAND ClassMngrNextApplicationStudentNamePairLookupTests
 )
 
+# Keep speaking-evaluation AI batch eligibility independent of Qt.
+add_executable(
+    ClassMngrNextApplicationSpeakingEvaluationAiBatchEligibilityTests
+    tests/next_application_speaking_evaluation_ai_batch_eligibility_tests.cpp
+)
+target_compile_features(
+    ClassMngrNextApplicationSpeakingEvaluationAiBatchEligibilityTests
+    PRIVATE
+        cxx_std_23
+)
+set_target_properties(
+    ClassMngrNextApplicationSpeakingEvaluationAiBatchEligibilityTests
+    PROPERTIES
+        AUTOMOC OFF
+        AUTOUIC OFF
+        AUTORCC OFF
+)
+set_property(
+    TARGET ClassMngrNextApplicationSpeakingEvaluationAiBatchEligibilityTests
+    PROPERTY CLASSMNGR_STANDALONE_CPP_TEST TRUE
+)
+target_link_libraries(
+    ClassMngrNextApplicationSpeakingEvaluationAiBatchEligibilityTests
+    PRIVATE
+        ClassMngrNext::Application
+)
+add_test(
+    NAME ClassMngrNextApplicationSpeakingEvaluationAiBatchEligibilityTests
+    COMMAND ClassMngrNextApplicationSpeakingEvaluationAiBatchEligibilityTests
+)
+
 # Keep the cycle-selection rule independent of Qt and the legacy runtime.
 add_executable(
     ClassMngrNextApplicationEvaluationDefaultSelectionTests
