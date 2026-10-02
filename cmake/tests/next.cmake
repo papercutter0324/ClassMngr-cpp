@@ -434,6 +434,37 @@ add_test(
     COMMAND ClassMngrNextApplicationSpeakingEvaluationAiBatchAcceptedCommentPlanTests
 )
 
+# Keep stored speaking-evaluation private-note splitting independent of Qt.
+add_executable(
+    ClassMngrNextApplicationSpeakingEvaluationPrivateNotesSplitTests
+    tests/next_application_speaking_evaluation_private_notes_split_tests.cpp
+)
+target_compile_features(
+    ClassMngrNextApplicationSpeakingEvaluationPrivateNotesSplitTests
+    PRIVATE
+        cxx_std_23
+)
+set_target_properties(
+    ClassMngrNextApplicationSpeakingEvaluationPrivateNotesSplitTests
+    PROPERTIES
+        AUTOMOC OFF
+        AUTOUIC OFF
+        AUTORCC OFF
+)
+set_property(
+    TARGET ClassMngrNextApplicationSpeakingEvaluationPrivateNotesSplitTests
+    PROPERTY CLASSMNGR_STANDALONE_CPP_TEST TRUE
+)
+target_link_libraries(
+    ClassMngrNextApplicationSpeakingEvaluationPrivateNotesSplitTests
+    PRIVATE
+        ClassMngrNext::Application
+)
+add_test(
+    NAME ClassMngrNextApplicationSpeakingEvaluationPrivateNotesSplitTests
+    COMMAND ClassMngrNextApplicationSpeakingEvaluationPrivateNotesSplitTests
+)
+
 # Keep the cycle-selection rule independent of Qt and the legacy runtime.
 add_executable(
     ClassMngrNextApplicationEvaluationDefaultSelectionTests

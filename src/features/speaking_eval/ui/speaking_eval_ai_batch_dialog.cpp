@@ -6,10 +6,12 @@
 #include "next/application/speaking_evaluation_ai_batch_accepted_comment_plan.h"
 #include "next/application/speaking_evaluation_ai_batch_comment_quality.h"
 #include "next/application/speaking_evaluation_ai_batch_eligibility.h"
+#include "next/application/speaking_evaluation_private_notes_split.h"
 #include "next/platform/settings_manager_ai_comment_custom_website_port.h"
 #include "next/platform/settings_manager_ai_comment_provider_preferences_port.h"
 #include "next/platform/settings_manager_ai_comment_voice_preferences_port.h"
 #include "ui/shared/state/ai_comment_options.h"
+#include "ui/shared/qt_text_adapter.h"
 #include "ui/shared/widgets/text_fit_push_button.h"
 #include "ui/shared/widgets/text_fit_dialog_button_box.h"
 
@@ -64,47 +66,6 @@ enum ItemDataRole
     HadPlaceholderRole,
     ReviewValidRole
 };
-
-struct PrivateNotes
-{
-    QString didWell;
-    QString needsImprovement;
-};
-
-PrivateNotes splitPrivateNotes(
-    const QString& notes
-    )
-{
-    const QString didWellMarker =
-        QStringLiteral("[Did Well]\n");
-    const QString needsImprovementMarker =
-        QStringLiteral("\n[Needs Improvement]\n");
-
-    if (!notes.startsWith(didWellMarker))
-    {
-        return { notes, {} };
-    }
-
-    const qsizetype separator =
-        notes.indexOf(
-            needsImprovementMarker,
-            didWellMarker.size()
-            );
-    if (separator < 0)
-    {
-        return { notes, {} };
-    }
-
-    return {
-        notes.mid(
-            didWellMarker.size(),
-            separator - didWellMarker.size()
-            ),
-        notes.mid(
-            separator + needsImprovementMarker.size()
-            )
-    };
-}
 
 AiCommentProvider preferredProvider()
 {
@@ -179,8 +140,13 @@ QString unavailableReason(
     const SpeakingEvalBatchReportService::StudentReport& report
     )
 {
-    const PrivateNotes notes =
-        splitPrivateNotes(report.report.notes);
+    const auto notes =
+        ClassMngr::Next::Application::
+            splitSpeakingEvaluationPrivateNotes(
+                Ui::QtTextAdapter::toUtf16String(
+                    report.report.notes
+                    )
+                );
     const auto reason =
         ClassMngr::Next::Application::
             speakingEvaluationAiBatchEligibilityReason({
@@ -190,11 +156,15 @@ QString unavailableReason(
                 .grade = report.report.grade,
                 .hasDidWellItem =
                     !speakingEvalAiObservationItems(
-                        notes.didWell
+                        Ui::QtTextAdapter::fromUtf16String(
+                            notes.didWell
+                            )
                         ).isEmpty(),
                 .hasNeedsImprovementItem =
                     !speakingEvalAiObservationItems(
-                        notes.needsImprovement
+                        Ui::QtTextAdapter::fromUtf16String(
+                            notes.needsImprovement
+                            )
                         ).isEmpty()
             });
 
@@ -731,16 +701,25 @@ void SpeakingEvalAiBatchDialog::createPrompt()
         }
         const auto& report =
             m_reports.at(reportIndex);
-        const PrivateNotes notes =
-            splitPrivateNotes(report.report.notes);
+        const auto notes =
+            ClassMngr::Next::Application::
+                splitSpeakingEvaluationPrivateNotes(
+                    Ui::QtTextAdapter::toUtf16String(
+                        report.report.notes
+                        )
+                    );
         input.students.append(
             {
                 item->data(StudentIdRole).toString(),
                 report.report.grade,
                 report.report.englishName,
                 report.report.koreanName,
-                notes.didWell,
-                notes.needsImprovement
+                Ui::QtTextAdapter::fromUtf16String(
+                    notes.didWell
+                    ),
+                Ui::QtTextAdapter::fromUtf16String(
+                    notes.needsImprovement
+                    )
             }
             );
         m_selectedReportIndexes.append(reportIndex);

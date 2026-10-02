@@ -1,5 +1,8 @@
 #include "speaking_eval_private_notes_editor.h"
 
+#include "next/application/speaking_evaluation_private_notes_split.h"
+#include "ui/shared/qt_text_adapter.h"
+
 #include <QHBoxLayout>
 #include <QInputMethodEvent>
 #include <QKeyEvent>
@@ -12,12 +15,6 @@
 
 namespace
 {
-
-struct PrivateNotes
-{
-    QString didWell;
-    QString needsImprovement;
-};
 
 const QString& bulletPrefix()
 {
@@ -65,39 +62,6 @@ QString bulletListText(
     }
 
     return lines.join(QLatin1Char('\n'));
-}
-
-PrivateNotes splitPrivateNotes(
-    const QString& notes
-    )
-{
-    const QString didWellMarker =
-        QStringLiteral("[Did Well]\n");
-    const QString needsImprovementMarker =
-        QStringLiteral("\n[Needs Improvement]\n");
-
-    if (!notes.startsWith(didWellMarker))
-    {
-        return { notes, {} };
-    }
-
-    const qsizetype separator =
-        notes.indexOf(
-            needsImprovementMarker,
-            didWellMarker.size()
-            );
-    if (separator < 0)
-    {
-        return { notes, {} };
-    }
-
-    return {
-        notes.mid(
-            didWellMarker.size(),
-            separator - didWellMarker.size()
-            ),
-        notes.mid(separator + needsImprovementMarker.size())
-    };
 }
 
 QString joinPrivateNotes(
@@ -327,17 +291,24 @@ void SpeakingEvalPrivateNotesEditor::setNotes(
     const QString& notes
     )
 {
-    const PrivateNotes parts =
-        splitPrivateNotes(notes);
+    const auto parts =
+        ClassMngr::Next::Application::
+            splitSpeakingEvaluationPrivateNotes(
+                Ui::QtTextAdapter::toUtf16String(notes)
+                );
     const QSignalBlocker didWellBlocker(m_didWellEdit);
     const QSignalBlocker needsImprovementBlocker(
         m_needsImprovementEdit
         );
     m_didWellEdit->setPlainText(
-        bulletListText(parts.didWell)
+        bulletListText(
+            Ui::QtTextAdapter::fromUtf16String(parts.didWell)
+            )
         );
     m_needsImprovementEdit->setPlainText(
-        bulletListText(parts.needsImprovement)
+        bulletListText(
+            Ui::QtTextAdapter::fromUtf16String(parts.needsImprovement)
+            )
         );
 }
 
