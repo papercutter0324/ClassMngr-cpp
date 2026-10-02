@@ -219,6 +219,7 @@ qt_add_executable(ClassMngrBasePageTests
         src/features/roster/ui/roster_model_names.cpp
         src/features/roster/ui/roster_model_rows.cpp
         src/features/roster/ui/roster_model_validation.cpp
+        src/features/roster/ui/roster_qt_text_adapter.h
     )
 
     target_compile_features(ClassMngrRosterModelTests

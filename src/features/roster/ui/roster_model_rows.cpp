@@ -1,6 +1,7 @@
 #include "roster_model.h"
 
 #include "core/utils/student_name_utils.h"
+#include "features/roster/ui/roster_qt_text_adapter.h"
 #include "next/application/roster_row_removal.h"
 #include "next/application/roster_row_reordering.h"
 
@@ -18,7 +19,9 @@ ClassMngr::Next::Application::RosterSnapshot applicationSnapshot(
     snapshot.columns.reserve(static_cast<std::size_t>(columns.size()));
     for (const QString& column : columns)
     {
-        snapshot.columns.push_back(column.toStdU16String());
+        snapshot.columns.push_back(
+            RosterUi::QtTextAdapter::toUtf16String(column)
+            );
     }
 
     snapshot.rows.reserve(static_cast<std::size_t>(rows.size()));
@@ -28,7 +31,7 @@ ClassMngr::Next::Application::RosterSnapshot applicationSnapshot(
         row.reserve(static_cast<std::size_t>(sourceRow.size()));
         for (const QString& cell : sourceRow)
         {
-            row.push_back(cell.toStdU16String());
+            row.push_back(RosterUi::QtTextAdapter::toUtf16String(cell));
         }
         snapshot.rows.push_back(std::move(row));
     }
@@ -48,7 +51,7 @@ QList<QStringList> qtRows(
         row.reserve(static_cast<qsizetype>(sourceRow.size()));
         for (const std::u16string& cell : sourceRow)
         {
-            row.append(QString::fromStdU16String(cell));
+            row.append(RosterUi::QtTextAdapter::fromUtf16String(cell));
         }
         converted.append(std::move(row));
     }

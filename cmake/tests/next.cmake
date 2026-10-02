@@ -62,6 +62,37 @@ add_test(
     COMMAND ClassMngrNextApplicationRosterRowRemovalTests
 )
 
+# Keep custom roster-column naming policy independent of Qt.
+add_executable(
+    ClassMngrNextApplicationRosterCustomColumnNamePolicyTests
+    tests/next_application_roster_custom_column_name_policy_tests.cpp
+)
+target_compile_features(
+    ClassMngrNextApplicationRosterCustomColumnNamePolicyTests
+    PRIVATE
+        cxx_std_23
+)
+set_target_properties(
+    ClassMngrNextApplicationRosterCustomColumnNamePolicyTests
+    PROPERTIES
+        AUTOMOC OFF
+        AUTOUIC OFF
+        AUTORCC OFF
+)
+set_property(
+    TARGET ClassMngrNextApplicationRosterCustomColumnNamePolicyTests
+    PROPERTY CLASSMNGR_STANDALONE_CPP_TEST TRUE
+)
+target_link_libraries(
+    ClassMngrNextApplicationRosterCustomColumnNamePolicyTests
+    PRIVATE
+        ClassMngrNext::Application
+)
+add_test(
+    NAME ClassMngrNextApplicationRosterCustomColumnNamePolicyTests
+    COMMAND ClassMngrNextApplicationRosterCustomColumnNamePolicyTests
+)
+
 # Keep the cycle-selection rule independent of Qt and the legacy runtime.
 add_executable(
     ClassMngrNextApplicationEvaluationDefaultSelectionTests

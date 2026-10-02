@@ -1,8 +1,42 @@
 #include "roster_model.h"
 
 #include "features/roster/ui/roster_constants.h"
+#include "features/roster/ui/roster_qt_text_adapter.h"
+#include "next/application/roster_custom_column_name_policy.h"
 
 #include <algorithm>
+#include <string>
+#include <string_view>
+#include <vector>
+
+namespace
+{
+
+std::vector<std::u16string> toUtf16(
+    const QStringList& values
+    )
+{
+    std::vector<std::u16string> result;
+    result.reserve(static_cast<std::size_t>(values.size()));
+    for (const QString& value : values)
+    {
+        result.push_back(RosterUi::QtTextAdapter::toUtf16String(value));
+    }
+    return result;
+}
+
+bool qtCaseInsensitiveEquals(
+    const std::u16string_view left,
+    const std::u16string_view right
+    )
+{
+    return RosterUi::QtTextAdapter::fromUtf16String(left).compare(
+        RosterUi::QtTextAdapter::fromUtf16String(right),
+        Qt::CaseInsensitive
+        ) == 0;
+}
+
+} // namespace
 
 QString RosterModel::columnName(
     int column
@@ -62,34 +96,31 @@ bool RosterModel::canAddColumn(
     QString* reason
     ) const
 {
-    const QString normalized =
-        normalizedColumnName(name);
+    using ClassMngr::Next::Application::RosterCustomColumnNameRejection;
+    const auto admission =
+        ClassMngr::Next::Application::admitRosterCustomColumnName(
+            RosterUi::QtTextAdapter::toUtf16String(name),
+            toUtf16(m_columns),
+            toUtf16(Roster::BaseColumns),
+            qtCaseInsensitiveEquals
+            );
 
-    if (normalized.isEmpty())
+    if (!admission.accepted())
     {
-        if (reason)
+        if (reason && admission.rejection)
         {
-            *reason = tr("Column name cannot be empty.");
-        }
-
-        return false;
-    }
-
-    if (findColumn(normalized, m_columns) >= 0)
-    {
-        if (reason)
-        {
-            *reason = tr("A column with that name already exists.");
-        }
-
-        return false;
-    }
-
-    if (isRequiredColumn(normalized))
-    {
-        if (reason)
-        {
-            *reason = tr("Required roster columns already exist.");
+            switch (*admission.rejection)
+            {
+            case RosterCustomColumnNameRejection::Empty:
+                *reason = tr("Column name cannot be empty.");
+                break;
+            case RosterCustomColumnNameRejection::Duplicate:
+                *reason = tr("A column with that name already exists.");
+                break;
+            case RosterCustomColumnNameRejection::RequiredColumn:
+                *reason = tr("Required roster columns already exist.");
+                break;
+            }
         }
 
         return false;
@@ -206,15 +237,12 @@ QString RosterModel::normalizedColumnName(
     const QString& name
     ) const
 {
-    const QString normalized =
-        name.simplified();
-
-    if (normalized.compare(QStringLiteral("Autumn"), Qt::CaseInsensitive) == 0)
-    {
-        return QStringLiteral("Fall");
-    }
-
-    return normalized;
+    return RosterUi::QtTextAdapter::fromUtf16String(
+        ClassMngr::Next::Application::normalizeRosterCustomColumnName(
+            RosterUi::QtTextAdapter::toUtf16String(name),
+            qtCaseInsensitiveEquals
+            )
+        );
 }
 
 int RosterModel::findColumn(

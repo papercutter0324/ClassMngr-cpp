@@ -241,6 +241,7 @@ qt_add_executable(ClassMngrClassesPageTests
         src/features/roster/ui/roster_model_names.cpp
         src/features/roster/ui/roster_model_rows.cpp
         src/features/roster/ui/roster_model_validation.cpp
+        src/features/roster/ui/roster_qt_text_adapter.h
         src/features/roster/ui/roster_table_view.cpp
         src/features/schedule/schedule_settings_preferences.cpp
         src/features/schedule/schedule_settings_preferences.h

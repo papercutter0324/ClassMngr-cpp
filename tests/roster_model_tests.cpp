@@ -2,9 +2,14 @@
 
 #include "domain/models/roster.h"
 #include "features/roster/ui/roster_constants.h"
+#include "features/roster/ui/roster_qt_text_adapter.h"
+#include "next/application/roster_custom_column_name_policy.h"
 
 #include <QCoreApplication>
 #include <QtTest>
+
+#include <string>
+#include <string_view>
 
 class RosterModelTests : public QObject
 {
@@ -23,6 +28,11 @@ private slots:
     void insertTransferredRowCopiesOnlyMatchingColumns();
     void insertTransferredRowRejectsFullTargetRoster();
     void transferredRowDetectsDuplicateStudentPair();
+    void customColumnAdmissionMatchesLegacyQtNamingRules();
+    void customColumnWhitespaceNormalizationMatchesQString();
+    void insertCustomColumnPreservesRowsSignalsAndDirtyState();
+    void transferredRowMappingUsesCustomColumnNormalization();
+    void rowPoliciesPreserveLeadingBomContent();
     void namePairHelpersDetectDuplicatesAndSuggestSuffix();
     void duplicatePairValidationTrimsNamesAndSkipsIncompleteRows();
     void structuredValidationMarksAndClearsAffectedCells();
@@ -68,6 +78,69 @@ QStringList studentRow(
     }
 
     return values;
+}
+
+QString legacyNormalizedColumnName(
+    const QString& name
+    )
+{
+    const QString normalized = name.simplified();
+    if (normalized.compare(QStringLiteral("Autumn"), Qt::CaseInsensitive) == 0)
+    {
+        return QStringLiteral("Fall");
+    }
+    return normalized;
+}
+
+bool legacyCanAddColumn(
+    const QString& name,
+    const QStringList& columns,
+    QString* reason
+    )
+{
+    const QString normalized = legacyNormalizedColumnName(name);
+    if (normalized.isEmpty())
+    {
+        if (reason)
+        {
+            *reason = QStringLiteral("Column name cannot be empty.");
+        }
+        return false;
+    }
+
+    for (const QString& column : columns)
+    {
+        if (
+            legacyNormalizedColumnName(column).compare(
+                legacyNormalizedColumnName(normalized),
+                Qt::CaseInsensitive
+                ) == 0
+            )
+        {
+            if (reason)
+            {
+                *reason = QStringLiteral(
+                    "A column with that name already exists."
+                    );
+            }
+            return false;
+        }
+    }
+
+    for (const QString& required : Roster::BaseColumns)
+    {
+        if (required.compare(normalized, Qt::CaseInsensitive) == 0)
+        {
+            if (reason)
+            {
+                *reason = QStringLiteral(
+                    "Required roster columns already exist."
+                    );
+            }
+            return false;
+        }
+    }
+    return true;
 }
 
 } // namespace
@@ -761,6 +834,250 @@ void RosterModelTests::transferredRowDetectsDuplicateStudentPair()
                 )
             )
         );
+}
+
+void RosterModelTests::customColumnAdmissionMatchesLegacyQtNamingRules()
+{
+    Roster roster;
+    roster.columns = Roster::BaseColumns;
+    roster.columns.append(
+        {
+            QStringLiteral("Review"),
+            QStringLiteral("Honors List"),
+            QString::fromUtf8("Caf\xC3\xA9"),
+            QString::fromUtf8("Stra\xC3\x9F\x65"),
+            QString::fromUtf8("\xCE\xA3igma"),
+            QString::fromUtf8("\xE2\x84\xAA" "elvin")
+        }
+        );
+
+    RosterModel model;
+    model.setRoster(roster);
+
+    const QStringList candidates{
+        QString(),
+        QStringLiteral(" \t\u00a0\u2003 "),
+        QStringLiteral(" review "),
+        QStringLiteral("Honors\t\u00a0 List"),
+        QString::fromUtf8("CAF\xC3\x89"),
+        QString::fromUtf8("STRA\xE1\xBA\x9E" "E"),
+        QString::fromUtf8("\xCF\x82IGMA"),
+        QStringLiteral("kelvin"),
+        QStringLiteral("Fall"),
+        QStringLiteral(" aUtUmN "),
+        QStringLiteral("Parent Contact")
+    };
+
+    for (const QString& candidate : candidates)
+    {
+        QString oldReason;
+        QString newReason;
+        const bool expected = legacyCanAddColumn(
+            candidate,
+            model.columnNames(),
+            &oldReason
+            );
+        const bool actual = model.canAddColumn(candidate, &newReason);
+        QCOMPARE(actual, expected);
+        QCOMPARE(newReason, oldReason);
+    }
+
+    const QStringList originalColumns = model.columnNames();
+    for (const QString& rejected : {
+             QString(),
+             QStringLiteral("Review"),
+             QStringLiteral("Fall"),
+             QStringLiteral("Autumn")
+         })
+    {
+        QVERIFY(!model.insertCustomColumn(rejected));
+        QCOMPARE(model.columnNames(), originalColumns);
+        QVERIFY(!model.isDirty());
+    }
+}
+
+void RosterModelTests::customColumnWhitespaceNormalizationMatchesQString()
+{
+    using ClassMngr::Next::Application::simplifyQtWhitespace;
+
+    for (unsigned int codeUnit = 0; codeUnit <= 0xffff; ++codeUnit)
+    {
+        const QChar character(static_cast<ushort>(codeUnit));
+        QString input;
+        input += character;
+        input += QStringLiteral("Roster");
+        input += character;
+        input += character;
+        input += QStringLiteral("Column");
+        input += character;
+        const QString expected = input.simplified();
+        const QString actual = RosterUi::QtTextAdapter::fromUtf16String(
+            simplifyQtWhitespace(
+                RosterUi::QtTextAdapter::toUtf16String(input)
+                )
+            );
+        if (actual != expected)
+        {
+            QFAIL(
+                qPrintable(
+                    QStringLiteral("QString::simplified parity failed at U+%1.")
+                        .arg(codeUnit, 4, 16, QLatin1Char('0'))
+                    )
+                );
+        }
+    }
+}
+
+void RosterModelTests::insertCustomColumnPreservesRowsSignalsAndDirtyState()
+{
+    Roster roster;
+    roster.columns = Roster::BaseColumns;
+    roster.columns.append(QStringLiteral("Review"));
+    roster.rows = {
+        {
+            QStringLiteral("Amy"),
+            QStringLiteral("\uAE40\uBBFC\uC9C0"),
+            QStringLiteral("A"),
+            QString(),
+            QStringLiteral("B"),
+            QStringLiteral("C"),
+            QStringLiteral("Teacher note")
+        },
+        {
+            QStringLiteral("Ben"),
+            QStringLiteral("\uC774\uC11C\uC900"),
+            QStringLiteral("B"),
+            QStringLiteral("Contest"),
+            QString(),
+            QStringLiteral("A"),
+            QStringLiteral("Family note")
+        }
+    };
+
+    RosterModel model;
+    model.setRoster(roster);
+    const auto before = model.toRoster();
+    const int oldColumnCount = model.columnCount();
+    const int newColumn = oldColumnCount;
+
+    model.setDomainValidation(ValidationResult(ValidationIssue{
+        .code = QStringLiteral("roster.student_name.required"),
+        .field = QStringLiteral("rows[0].English"),
+        .row = 0,
+        .column = 0
+    }));
+    const QStringList priorValidation = model.errorsForCell(0, 0);
+    QVERIFY(!priorValidation.isEmpty());
+
+    QSignalSpy aboutToInsertSpy(
+        &model,
+        &QAbstractItemModel::columnsAboutToBeInserted
+        );
+    QSignalSpy insertedSpy(
+        &model,
+        &QAbstractItemModel::columnsInserted
+        );
+    QSignalSpy dirtySpy(
+        &model,
+        &RosterModel::dirtyChanged
+        );
+    QVERIFY(aboutToInsertSpy.isValid());
+    QVERIFY(insertedSpy.isValid());
+    QVERIFY(dirtySpy.isValid());
+
+    const QString newName = QStringLiteral("  Parent\t\u00a0 Contact  ");
+    QVERIFY(model.canAddColumn(newName));
+    QVERIFY(model.insertCustomColumn(newName));
+
+    QCOMPARE(aboutToInsertSpy.count(), 1);
+    QCOMPARE(insertedSpy.count(), 1);
+    QCOMPARE(dirtySpy.count(), 1);
+    QCOMPARE(dirtySpy.constFirst().at(0).toBool(), true);
+    QVERIFY(model.isDirty());
+    QCOMPARE(model.columnCount(), oldColumnCount + 1);
+    QCOMPARE(model.columnName(newColumn), QStringLiteral("Parent Contact"));
+    QCOMPARE(model.errorsForCell(0, 0), priorValidation);
+
+    const auto after = model.toRoster();
+    QCOMPARE(after.rows.size(), before.rows.size());
+    for (int rowIndex = 0; rowIndex < before.rows.size(); ++rowIndex)
+    {
+        QCOMPARE(after.rows[rowIndex].size(), before.rows[rowIndex].size() + 1);
+        for (int column = 0; column < oldColumnCount; ++column)
+        {
+            QCOMPARE(after.rows[rowIndex][column], before.rows[rowIndex][column]);
+        }
+        QVERIFY(after.rows[rowIndex][newColumn].isEmpty());
+    }
+}
+
+void RosterModelTests::transferredRowMappingUsesCustomColumnNormalization()
+{
+    Roster roster;
+    roster.columns = Roster::BaseColumns;
+    roster.columns.append(QStringLiteral("Review Queue"));
+
+    RosterModel model;
+    model.setRoster(roster);
+
+    const QStringList sourceColumns{
+        QStringLiteral("English"),
+        QStringLiteral("Korean"),
+        QStringLiteral("Winter"),
+        QStringLiteral("Speech Contest"),
+        QStringLiteral("Summer"),
+        QStringLiteral("Autumn"),
+        QStringLiteral(" Review\t\u00a0 Queue ")
+    };
+    const QStringList sourceRow{
+        QStringLiteral("Chris"),
+        QStringLiteral("\uAE40\uD604\uC6B0"),
+        QStringLiteral("A"),
+        QStringLiteral("B"),
+        QStringLiteral("C"),
+        QStringLiteral("Fall score"),
+        QStringLiteral("Moved note")
+    };
+
+    QString reason;
+    QVERIFY(model.insertTransferredRow(sourceColumns, sourceRow, &reason));
+    QCOMPARE(model.rowValues(0)[5], QStringLiteral("Fall score"));
+    QCOMPARE(model.rowValues(0)[6], QStringLiteral("Moved note"));
+}
+
+void RosterModelTests::rowPoliciesPreserveLeadingBomContent()
+{
+    const QString bom(1, QChar(0xfeff));
+    QVERIFY(!bom.trimmed().isEmpty());
+
+    Roster roster;
+    roster.columns = Roster::BaseColumns;
+    roster.columns.append(QStringLiteral("Review"));
+    roster.rows = {
+        {
+            QString(),
+            QString(),
+            QString(),
+            QString(),
+            QString(),
+            QString(),
+            bom
+        }
+    };
+
+    RosterModel removalModel;
+    removalModel.setRoster(roster);
+    QCOMPARE(removalModel.rowValues(0).at(6), bom);
+    QVERIFY(removalModel.canRemoveRow(0));
+    QVERIFY(removalModel.removeRosterRow(0));
+    QVERIFY(removalModel.rowValues(0).at(6).isEmpty());
+
+    RosterModel moveModel;
+    moveModel.setRoster(roster);
+    QCOMPARE(moveModel.rowValues(0).at(6), bom);
+    QVERIFY(moveModel.canMoveRow(0, 1));
+    QVERIFY(moveModel.moveRosterRow(0, 1));
+    QCOMPARE(moveModel.rowValues(1).at(6), bom);
 }
 
 void RosterModelTests::namePairHelpersDetectDuplicatesAndSuggestSuffix()

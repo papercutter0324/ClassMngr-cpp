@@ -98,6 +98,7 @@ set(CLASSMNGR_NEXT_APPLICATION_SOURCES
     src/next/application/class_details_validation_context_query.h
     src/next/application/class_details_validation_policy.h
     src/next/application/qt_compatible_text.h
+    src/next/application/roster_custom_column_name_policy.h
     src/next/application/roster_snapshot.h
     src/next/application/roster_row_reordering.h
     src/next/application/roster_row_removal.h
