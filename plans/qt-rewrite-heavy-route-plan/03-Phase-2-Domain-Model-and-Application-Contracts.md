@@ -117,8 +117,9 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
   extra-info class-list read, and F275 for the class-delete chooser's
   class-list read, F276 for the sidebar's upcoming birthday Native English and
   GS directory reads, F277 for the roster transfer menu's class-list read,
-  and F278 for the initial-setup wizard's teacher-existence reads are accepted.
-  F279 is selected for the sidebar's selected-teacher profile read.
+  and F278 for the initial-setup wizard's teacher-existence reads are accepted;
+  F279 for the sidebar's selected-teacher profile read is accepted. F280 is
+  selected for the sidebar teacher-delete chooser's teacher-list read.
   The prior F123 candidate wording is historical;
   current Teacher Profile integration status is recorded in the progress log.
   Gates 1 and 2
@@ -555,16 +556,32 @@ directly, and the three selected CTests passed. Logs are preserved under
 `build/p2_f278_verify_logs/`. Non-fatal resource/font warnings occurred; the
 full suite was not run.
 
-F279 is selected to migrate only the selected-teacher profile read in
-`SidebarController::deleteTeacher()` through the accepted
+F279, committed as `a1701f54`, routes only the selected-teacher profile read
+inside `SidebarController::deleteTeacher()` through the accepted
 `TeacherProfileReadQuery` and `ApplicationServicesTeacherProfileReadPort`.
-Preserve the service guard, confirmation text and cancel behavior, delete flow,
-and the existing `Delete Teacher` / `The teacher could not be loaded.` warning
-on read failure. Leave the teacher-list read in
-`promptForTeacherToDelete()` and the post-create profile read in `addTeacher()`
-unchanged. Add caller-level success coverage that cancels after checking the
-display name and verifies the teacher remains, plus failure coverage for the
-warning and no confirmation; retain the profile query and adapter CTests. The
+The service guard, confirmation text, cancel behavior, delete flow, and
+`Delete Teacher` / `The teacher could not be loaded.` warning remain intact. The
+teacher-list read in `promptForTeacherToDelete()` and post-create read in
+`addTeacher()` are unchanged. Caller tests confirm that a stale sidebar label
+does not replace the profile display name, cancellation leaves the teacher in
+place, and a failed profile read shows the warning without a confirmation.
+Fresh Windows x64 Debug/Ninja verification built the navigation, profile query,
+and profile adapter test targets. Both new slots passed directly, and all three
+selected CTests passed. Logs are preserved under `build/p2_f279_verify_logs/`;
+non-fatal resource/font warnings occurred and the full suite was not run. The
 profile adapter requires an active session whereas the legacy service can fall
-back to DataService. Phase 2 remains In Progress/Open; Gates 1 and 2 remain
-Partial.
+back to DataService.
+
+F280 is selected to migrate only the teacher-list read in
+`SidebarController::promptForTeacherToDelete()` through the accepted
+`InitialSetupTeacherChoicesReadQuery` and
+`ApplicationServicesInitialSetupTeacherChoicesReadPort`. Preserve repository
+order, formatted labels, the existing warning (`Delete Teacher` /
+`Teachers could not be loaded.`), and the early return when no usable records
+remain. Keep the selected-profile read in `deleteTeacher()` and
+`updateActionStates()` unchanged. On success, verify the chooser label and
+selected ID; on failure, verify the warning without a chooser or confirmation.
+Retain the teacher-choice query and adapter CTests. The query rejects the full
+list if any ID is invalid/duplicated, where the old chooser skipped nonpositive
+IDs, and the adapter requires an active session unlike the legacy DataService
+fallback. Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial.
