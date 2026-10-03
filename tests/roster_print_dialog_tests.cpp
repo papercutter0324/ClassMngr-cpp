@@ -4,8 +4,10 @@
 #include "domain/models/class_info.h"
 #include "domain/models/classroom.h"
 #include "domain/models/roster.h"
+#include "domain/models/testing_class.h"
 #include "domain/models/teacher.h"
 #include "features/roster/ui/roster_print_dialog.h"
+#include "fakes/fake_user_prompt_service.h"
 
 #include <QApplication>
 #include <QCheckBox>
@@ -192,6 +194,8 @@ private slots:
     void classListReadFailureShowsWarningAndLeavesListEnabledAndEmpty();
     void teacherReadFailureRetainsClassFieldsAndDefaultTeacherFormatting();
     void classFieldsReadFailureUsesDefaultClassFormatting();
+    void currentClassOnlyUsesTestingClassRecord();
+    void currentClassOnlyDetailsReadFailureIsSilentAndLeavesListEmpty();
     void extraInfoColumnsComeFromSelectedClassRostersAndKeepChecksOnRefresh();
     void failedRosterReadProvidesNoExtraInfoColumns();
 };
@@ -462,6 +466,122 @@ void RosterPrintDialogTests::classFieldsReadFailureUsesDefaultClassFormatting()
     QCOMPARE(list->item(1)->data(Qt::UserRole).toInt(), otherId);
     QCOMPARE(list->item(1)->text(), defaultClassDisplayName());
     QCOMPARE(list->item(1)->checkState(), Qt::Unchecked);
+}
+
+void RosterPrintDialogTests::currentClassOnlyUsesTestingClassRecord()
+{
+    RosterPrintDialogFixture fixture;
+    QString error;
+    QVERIFY2(fixture.initialize(&error), qPrintable(error));
+
+    int regularClassId = 0;
+    QVERIFY2(fixture.createClass(
+                 QStringLiteral("Regular Class"),
+                 QStringLiteral("E4"),
+                 QStringLiteral("Theseus"),
+                 -1,
+                 {},
+                 &regularClassId,
+                 &error
+                 ), qPrintable(error));
+    QVERIFY(regularClassId > 0);
+
+    TestingClass testingClass;
+    testingClass.name = QStringLiteral("Friday Testing Class");
+    testingClass.grade = QStringLiteral("M1");
+    testingClass.level = QStringLiteral("Major");
+    testingClass.room = QStringLiteral("401");
+    const auto created = fixture.services.scheduleService()->createTestingClass(
+        testingClass
+        );
+    QVERIFY(created);
+
+    RosterPrintDialog dialog(
+        &fixture.services,
+        *created,
+        RosterTemplatePrintService::Scope::CurrentClass,
+        RosterPrintDialog::Action::Print,
+        nullptr,
+        true
+        );
+    QListWidget* const list = classListFor(dialog);
+    QVERIFY(list);
+    QCOMPARE(list->count(), 1);
+    const QListWidgetItem* const item = list->item(0);
+    QVERIFY(item);
+    QCOMPARE(item->data(Qt::UserRole).toInt(), *created);
+    QCOMPARE(item->checkState(), Qt::Checked);
+    QVERIFY(item->text().contains(testingClass.name));
+    QVERIFY(item->text().contains(testingClass.grade));
+    QVERIFY(item->text().contains(testingClass.level));
+    QCOMPARE(dialog.selectedClassIds(), QList<int>({*created}));
+}
+
+void RosterPrintDialogTests::
+currentClassOnlyDetailsReadFailureIsSilentAndLeavesListEmpty()
+{
+    RosterPrintDialogFixture fixture;
+    QString error;
+    QVERIFY2(fixture.initialize(&error), qPrintable(error));
+
+    int regularClassId = 0;
+    QVERIFY2(fixture.createClass(
+                 QStringLiteral("Regular Class"),
+                 QStringLiteral("E4"),
+                 QStringLiteral("Theseus"),
+                 -1,
+                 {},
+                 &regularClassId,
+                 &error
+                 ), qPrintable(error));
+    QVERIFY(regularClassId > 0);
+
+    TestingClass testingClass;
+    testingClass.name = QStringLiteral("Testing Class With Missing Details");
+    testingClass.grade = QStringLiteral("M1");
+    testingClass.level = QStringLiteral("Major");
+    testingClass.room = QStringLiteral("401");
+    const auto created = fixture.services.scheduleService()->createTestingClass(
+        testingClass
+        );
+    QVERIFY(created);
+
+    QSqlQuery removeTestingDetails(
+        fixture.services.databaseSession()->database()
+        );
+    removeTestingDetails.prepare(QStringLiteral(
+        "DELETE FROM testing_classes WHERE class_id=?"
+        ));
+    removeTestingDetails.addBindValue(*created);
+    QVERIFY2(removeTestingDetails.exec(),
+             qPrintable(removeTestingDetails.lastError().text()));
+    QCOMPARE(removeTestingDetails.numRowsAffected(), 1);
+
+    QVERIFY(fixture.services.databaseSession()->isOpen());
+    QVERIFY(fixture.services.classService()->isAvailable());
+    QVERIFY(fixture.services.teacherService()->isAvailable());
+    QVERIFY(fixture.services.scheduleService()->isAvailable());
+
+    FakeUserPromptService prompts;
+    DialogServices::setUserPromptServiceForTesting(&prompts);
+    RosterPrintDialog dialog(
+        &fixture.services,
+        *created,
+        RosterTemplatePrintService::Scope::CurrentClass,
+        RosterPrintDialog::Action::Print,
+        nullptr,
+        true
+        );
+
+    QVERIFY(prompts.messages.isEmpty());
+    QVERIFY(prompts.asynchronousMessages.isEmpty());
+    QVERIFY(prompts.confirmations.isEmpty());
+    QVERIFY(QApplication::activeModalWidget() == nullptr);
+
+    QListWidget* const list = classListFor(dialog);
+    QVERIFY(list);
+    QCOMPARE(list->count(), 0);
+    QVERIFY(dialog.selectedClassIds().isEmpty());
 }
 
 void RosterPrintDialogTests::

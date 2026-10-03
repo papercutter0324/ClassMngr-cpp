@@ -9,10 +9,12 @@
 #include "next/application/classes_list_read_query.h"
 #include "next/application/roster_read_query.h"
 #include "next/application/selected_class_subtitle_read_query.h"
+#include "next/application/testing_class_details_read_query.h"
 #include "next/domain/domain_types.h"
 #include "next/platform/application_services_classes_list_read_port.h"
 #include "next/platform/application_services_roster_read_port.h"
 #include "next/platform/application_services_selected_class_subtitle_read_port.h"
+#include "next/platform/application_services_testing_class_details_read_port.h"
 #include "ui/shared/widgets/no_wheel_combobox.h"
 #include "ui/shared/widgets/text_fit_dialog_button_box.h"
 #include "ui/shared/widgets/text_fit_push_button.h"
@@ -1277,33 +1279,54 @@ void RosterPrintDialog::loadClasses()
 
     if (m_currentClassOnly)
     {
-        const Result<TestingClass> testingClass =
-            scheduleService->testingClass(
-                m_currentClassId
-                );
-        if (testingClass)
+        if (m_currentClassId > 0)
         {
-            m_currentClassDisplayName =
-                QStringLiteral("%1 — %2 %3")
-                    .arg(
-                        testingClass->name,
-                        testingClass->grade,
-                        testingClass->level
-                        );
-            auto* item =
-                new QListWidgetItem(
-                    m_currentClassDisplayName,
-                    m_classList
+            const auto typedClassId =
+                ClassMngr::Next::Domain::ClassId::fromString(
+                    std::to_string(m_currentClassId)
                     );
-            item->setFlags(
-                item->flags()
-                | Qt::ItemIsUserCheckable
-                );
-            item->setCheckState(Qt::Checked);
-            item->setData(
-                Qt::UserRole,
-                testingClass->classId
-                );
+            if (typedClassId)
+            {
+                ClassMngr::Next::Platform::
+                    ApplicationServicesTestingClassDetailsReadPort readPort(
+                        *m_services
+                        );
+                const ClassMngr::Next::Application::
+                    TestingClassDetailsReadQuery query{
+                        .classId = *typedClassId
+                    };
+                const auto testingClass =
+                    ClassMngr::Next::Application::
+                        TestingClassDetailsReadQueryHandler::execute(
+                            query,
+                            readPort
+                            );
+                if (testingClass)
+                {
+                    const auto& fields = testingClass.value();
+                    m_currentClassDisplayName =
+                        QStringLiteral("%1 — %2 %3")
+                            .arg(
+                                QString::fromStdU16String(fields.name),
+                                QString::fromStdU16String(fields.grade),
+                                QString::fromStdU16String(fields.level)
+                                );
+                    auto* item =
+                        new QListWidgetItem(
+                            m_currentClassDisplayName,
+                            m_classList
+                            );
+                    item->setFlags(
+                        item->flags()
+                        | Qt::ItemIsUserCheckable
+                        );
+                    item->setCheckState(Qt::Checked);
+                    item->setData(
+                        Qt::UserRole,
+                        m_currentClassId
+                        );
+                }
+            }
         }
         return;
     }
