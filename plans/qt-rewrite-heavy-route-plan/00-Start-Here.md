@@ -5,7 +5,7 @@
 - Overall status: In progress
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
-- Last updated: 2026-10-03
+- Last updated: 2026-10-04
 - Current milestone: Phase 2 remains in progress. F253 (Qt-free private-notes
   splitter), F254 (Qt-free roster-score assignment planning), F255 (single-
   report AI eligibility policy reuse), F256 (typed roster read cutover for
@@ -46,7 +46,10 @@
   Dashboard) is accepted; F298 (`SidebarController::addClass()` post-create
   reread) remains deferred pending a decision on read-failure warning and
   navigation behavior; F299 (Class Analytics dashboard read/use case) is
-  selected, and its separate missed-slice completeness audit is complete.
+  accepted; its separate missed-slice completeness audit found no additional
+  direct legacy-read routes and recorded F302-F305 as batching candidates.
+  F300 (reduce repeated per-matching-class destination-label query calls in
+  ClassImportDialog) is selected next.
   Gates 1 and 2 remain Partial, with broader feature
   migration, parity, and 96-class Release memory evidence still open.
   See the

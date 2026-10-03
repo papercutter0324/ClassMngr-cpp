@@ -10833,3 +10833,43 @@ The second sweep identified four genuine post-migration query fan-out
 opportunities, independently classified as separate batching/aggregation
 work: F302-F305, added after F301 in Batch 3. This audit is distinct from the
 F298-start Batch 3 discovery of F300-F301. F299 remains selected/current.
+
+### Progress update - 2026-10-04 (F299 accepted; F300 selected)
+
+F299, committed as `250fc6d2addd77559f376d0aae872f4aab849a60`, adds a Qt-free
+Class Analytics query/calculator and compact roster/evaluation DTOs and ports.
+Its active-session SQL adapter reads only roster-name columns and six evaluation
+scores. Platform name semantics preserve `StudentNameUtils` normalization and
+`QLocale` ordering. `ClassAnalyticsPage` routes through the query and preserves
+its empty state on no-data or read failure.
+
+App-less tests cover canonical evaluation-read order, current-roster filtering,
+All/named/unknown selection, historical global YTD, duplicate consolidation,
+partial scores, name identity behavior, and structured failure. SQL tests cover
+compact mapping, missing evaluation as successful empty input,
+punctuation/Korean suffix matching, and query failure. Page tests cover
+no-data/error and successful ranking-model name/average/grade mapping.
+
+Fresh independent Windows x64 Debug/Ninja configure in
+`build/f299_verify_ninja` passed the ownership gate for 1,265 handwritten
+sources, built six targets (`ClassMngr`, query, adapter, page, and two legacy
+analytics fixtures), and passed five focused CTests. After a success-path page
+test delta, an independent rebuild and focused page CTest passed 1/1.
+`git diff --check` passed. Logs:
+`build/f299_verify_ninja_{configure,build,ctest_focused,page_rebuild,page_recheck_ctest}.log`.
+The full suite was not run. Configure had nonfatal optional
+`WrapVulkanHeaders`/`Vulkan_INCLUDE_DIR` and `vswhere.exe` messages; MSVC was
+found.
+
+The page success test checks selected ranking mappings only; there is no
+runtime side-by-side full-dashboard comparison against the legacy service or
+direct UI assertion for summary, class-shape, and YTD mapping. This limitation
+was accepted for the slice; it does not establish full parity or Phase 2
+completion. The F299-start completeness audit remains distinct from the earlier
+F298-start Batch 3 discovery: independent sweeps found no additional direct
+legacy-read paths, while F302-F305 remain separate query fan-out candidates
+after F301. F298 remains deferred pending a semantic decision on read-failure
+warning/no-navigation behavior. F300 is selected next: reduce repeated
+per-matching-class `SelectedClassSubtitleReadQuery` calls for ClassImportDialog
+destination labels after F262; F301-F305 remain ordered candidates. Phase 2
+remains In Progress/Open; Gates 1 and 2 remain Partial.

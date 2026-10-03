@@ -15,13 +15,12 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Depends on: Phase 1
 - Blocks: Persistence, bootstrap, shared UI, and feature migration
 - Owner: Unassigned
-- Last updated: 2026-10-03
+- Last updated: 2026-10-04
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F299 is selected to add an application-facing Class Analytics
-  dashboard read/use case for current-roster and historical/YTD projections.
-  Its separate F299-start Phase 2 missed-slice completeness audit is complete
-  and recorded below; F299 remains current.
+- Current note: F300 is selected to reduce repeated per-matching-class
+  `SelectedClassSubtitleReadQuery` calls for ClassImportDialog destination
+  labels after F262.
 
 ### Slice discovery batches
 
@@ -97,7 +96,7 @@ one to this phase's progress log before replacing it.
 No other slices were found.
 
 3. **Batch 3**
-   1. F300 candidate — Reduce repeated per-matching-class
+   1. F300 selected — Reduce repeated per-matching-class
       `SelectedClassSubtitleReadQuery` calls for destination labels in
       `ClassImportDialog`. This is query fan-out after F262's query migration,
       not a remaining direct service read.
@@ -278,23 +277,32 @@ No new v2 production path depends on DataService, MainWindow, PageManager, or a 
 
 Earlier verified slices and cumulative exit-gate snapshots are archived in the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 
-## Latest Progress Update - 2026-10-03 (F297 accepted)
+## Latest Progress Update - 2026-10-04 (F299 accepted)
 
-F297, committed as `2e2ce2c4c109a7ba55f0d2365ef2c6bc7cf41aac`, routes Campus
-Dashboard's selected-campus detail read through an application query while
-preserving save-before-read and silent missing-campus behavior. Fresh Windows
-x64 Debug/Ninja verification in `build/f297_verify_ninja` passed the CMake
-ownership gate at 1,259 handwritten sources and built `ClassMngr` plus the
-query, adapter, and dashboard test targets. Three focused CTests passed; after
-the final dashboard-test-only updates, an independent dashboard CTest rerun
-passed 1/1. `git diff --check` passed; the full suite was not run.
+F299, committed as `250fc6d2addd77559f376d0aae872f4aab849a60`, adds a Qt-free
+Class Analytics query/calculator and compact roster/evaluation DTOs and ports.
+The active-session SQL adapter reads only roster-name columns and six evaluation
+scores; platform name handling preserves `StudentNameUtils` normalization and
+`QLocale` ordering. `ClassAnalyticsPage` uses the query and preserves its empty
+state on no-data or read failure.
 
-F298 remains deferred after review: `ClassService::create()` returns
-`Result<int>` and repository last-insert ID, so the identity is mechanically
-available, but read-failure warning/no-navigation behavior was deliberately
-added in `cd60f95b`, and `openClass()` may select another class or none. No test
-clarifies the intended post-create failure behavior. F299 remains selected and
-current for the Class Analytics dashboard read/use case. Its separate
-missed-slice completeness audit is complete: no additional direct-read routes
-were found, and F302-F305 were appended to Batch 3 as query fan-out candidates.
-Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial.
+App-less coverage includes canonical evaluation-read order, current-roster
+filtering, All/named/unknown selection, historical global YTD, duplicate
+consolidation, partial scores, name identity, and structured failure. SQL tests
+cover compact mapping, missing evaluation as successful empty input,
+punctuation/Korean suffix matching, and query failure. Page tests cover
+no-data/error and successful ranking-model name/average/grade mapping.
+Fresh independent Windows x64 Debug/Ninja verification passed the ownership
+gate for 1,265 handwritten sources, built six targets, and passed five focused
+CTests. After a success-path page-test delta, an independent page rebuild and
+CTest passed 1/1. `git diff --check` passed. Logs are under
+`build/f299_verify_ninja_{configure,build,ctest_focused,page_rebuild,page_recheck_ctest}.log`;
+the full suite was not run. Configure reported nonfatal optional
+`WrapVulkanHeaders`/`Vulkan_INCLUDE_DIR` and `vswhere.exe` messages; MSVC was
+found.
+
+The page success test checks selected ranking mappings only; no runtime
+side-by-side legacy-dashboard comparison or direct UI assertions cover summary,
+class-shape, and YTD mapping. This accepted slice does not establish full
+parity or Phase 2 completion. Phase 2 remains In Progress/Open; Gates 1 and 2
+remain Partial.
