@@ -8,6 +8,8 @@
 #include "domain/models/classroom.h"
 #include "domain/models/teacher.h"
 #include "features/classes/models/class_tab_navigation_model.h"
+#include "next/application/classes_list_read_query.h"
+#include "next/platform/application_services_classes_list_read_port.h"
 #include "ui/shared/constants/gui_constants.h"
 #include "ui/shared/styles/roles.h"
 #include "ui/shared/utils/widget_sizing.h"
@@ -16,6 +18,10 @@
 #include "ui/shared/dialogs/user_prompt_service.h"
 
 #include <algorithm>
+#include <charconv>
+#include <string>
+#include <system_error>
+#include <utility>
 
 #include <QFrame>
 #include <QGridLayout>
@@ -32,6 +38,49 @@ constexpr int CompactFieldWidth = 170;
 constexpr int ClassTabContentTopMargin = 16;
 const QString NotAvailableText =
     QStringLiteral("N/A");
+
+QList<Classroom> classroomsFromListSnapshot(
+    const ClassMngr::Next::Application::ClassesListSnapshot& snapshot
+    )
+{
+    QList<Classroom> classrooms;
+    classrooms.reserve(static_cast<qsizetype>(snapshot.classes.size()));
+    for (const auto& entry : snapshot.classes)
+    {
+        int classId = 0;
+        const std::string& classIdValue = entry.classId.value();
+        const auto [end, error] = std::from_chars(
+            classIdValue.data(),
+            classIdValue.data() + classIdValue.size(),
+            classId
+            );
+        Q_ASSERT(
+            error == std::errc{}
+            && end == classIdValue.data() + classIdValue.size()
+            && classId > 0
+            );
+        if (error != std::errc{}
+            || end != classIdValue.data() + classIdValue.size()
+            || classId <= 0)
+        {
+            continue;
+        }
+
+        Classroom classroom;
+        classroom.id = classId;
+        classroom.name = QString::fromStdU16String(entry.className);
+        classrooms.append(std::move(classroom));
+    }
+    return classrooms;
+}
+
+QString classesListErrorMessage(const std::string& message)
+{
+    return QString::fromUtf8(
+        message.data(),
+        static_cast<qsizetype>(message.size())
+        );
+}
 
 struct ClassSummary
 {
@@ -452,20 +501,24 @@ void MyClassesPage::rebuildClassInformation()
 
     QList<ClassSummary> summaries;
 
-    const Result<QList<Classroom>> classes =
-        classService->classes();
+    ClassMngr::Next::Platform::
+        ApplicationServicesClassesListReadPort readPort(m_services);
+    const ClassMngr::Next::Application::ClassesListReadQuery query(readPort);
+    const auto classes = query.execute();
     if (!classes)
     {
         DialogServices::showWarning(
             this,
             tr("Load Classes"),
             tr("Class information could not be loaded."),
-            classes.error()
+            classesListErrorMessage(classes.error().message)
             );
         return;
     }
 
-    for (const Classroom& classroom : *classes)
+    const QList<Classroom> classrooms =
+        classroomsFromListSnapshot(classes.value());
+    for (const Classroom& classroom : classrooms)
     {
         ClassSummary summary;
         summary.classroom = classroom;

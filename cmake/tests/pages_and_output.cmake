@@ -19,6 +19,15 @@ classmngr_add_qt_test(
     OFFSCREEN
 )
 
+classmngr_add_qt_test(
+    NAME MyClassesPage
+    SOURCES
+        tests/my_classes_page_tests.cpp
+    LIBRARIES
+        Qt6::Test
+        Qt6::Widgets
+    OFFSCREEN
+)
 
 classmngr_add_qt_test(
     NAME TypedSignatureRenderer
