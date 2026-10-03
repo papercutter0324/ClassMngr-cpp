@@ -4,6 +4,8 @@
 #include "core/application_services.h"
 #include "core/fontmanager.h"
 #include "next/application/classes_list_read_query.h"
+#include "next/application/roster_read_query.h"
+#include "next/application/roster_snapshot.h"
 #include "ui/shared/printing/pdf_print_service.h"
 
 #include <QColor>

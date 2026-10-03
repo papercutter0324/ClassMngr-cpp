@@ -63,13 +63,13 @@ QStringList daysWithValues(
 
 ::Result<QList<RosterClassData>> loadRosterClassData(
     ClassService* classService,
-    RosterService* rosterService,
+    const ClassMngr::Next::Application::RosterReadPort* rosterReadPort,
     const QList<int>& classIds
     )
 {
     QList<RosterClassData> result;
 
-    if (!classService || !rosterService)
+    if (!classService || !rosterReadPort)
     {
         return result;
     }
@@ -91,15 +91,71 @@ QStringList daysWithValues(
             return std::unexpected(info.error());
         }
 
-        const ::Result<Roster> roster =
-            rosterService->roster(classId);
+        const auto typedClassId =
+            ClassMngr::Next::Domain::ClassId::fromString(
+                std::to_string(classId)
+                );
+        if (!typedClassId)
+        {
+            return std::unexpected(
+                QObject::tr("Roster data is not available.")
+                );
+        }
+
+        const ClassMngr::Next::Application::RosterReadResult roster =
+            ClassMngr::Next::Application::RosterReadUseCase::execute(
+                {
+                    .classId = *typedClassId
+                },
+                *rosterReadPort
+                );
         if (!roster)
         {
-            return std::unexpected(roster.error());
+            const std::string& message = roster.error().message;
+            return std::unexpected(
+                message.empty()
+                    ? QObject::tr("Roster data is not available.")
+                    : QString::fromUtf8(
+                        message.data(),
+                        static_cast<qsizetype>(message.size())
+                        )
+                );
         }
 
         data.info = *info;
-        data.roster = *roster;
+        const ClassMngr::Next::Application::RosterSnapshot& snapshot =
+            roster.value();
+        data.roster.columns.reserve(
+            static_cast<qsizetype>(snapshot.columns.size())
+            );
+        for (const std::u16string& column : snapshot.columns)
+        {
+            data.roster.columns.append(
+                QString::fromStdU16String(column)
+                );
+        }
+
+        data.roster.columnWidths.reserve(
+            static_cast<qsizetype>(snapshot.columnWidths.size())
+            );
+        for (const int width : snapshot.columnWidths)
+        {
+            data.roster.columnWidths.append(width);
+        }
+
+        data.roster.rows.reserve(
+            static_cast<qsizetype>(snapshot.rows.size())
+            );
+        for (const std::vector<std::u16string>& snapshotRow : snapshot.rows)
+        {
+            QStringList row;
+            row.reserve(static_cast<qsizetype>(snapshotRow.size()));
+            for (const std::u16string& cell : snapshotRow)
+            {
+                row.append(QString::fromStdU16String(cell));
+            }
+            data.roster.rows.append(std::move(row));
+        }
 
         if (data.classroom.id > 0)
         {
@@ -122,10 +178,7 @@ Result loadRosterClassesForRequest(
 
     ClassService* classService =
         request.services->classService();
-    RosterService* rosterService =
-        request.services->rosterService();
-
-    if (!classService || !rosterService)
+    if (!classService || !request.rosterReadPort)
     {
         return failed(QObject::tr("Roster data is not available."));
     }
@@ -194,7 +247,11 @@ Result loadRosterClassesForRequest(
     if (rosterClasses)
     {
         const ::Result<QList<RosterClassData>> loadedRosterClasses =
-            loadRosterClassData(classService, rosterService, classIds);
+            loadRosterClassData(
+                classService,
+                request.rosterReadPort,
+                classIds
+                );
         if (!loadedRosterClasses)
         {
             return failed(loadedRosterClasses.error());

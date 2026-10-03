@@ -11,6 +11,7 @@
 #include "next/application/classes_list_read_query.h"
 #include "next/domain/domain_types.h"
 #include "next/platform/application_services_classes_list_read_port.h"
+#include "next/platform/application_services_roster_read_port.h"
 #include "next/platform/application_services_speaking_evaluation_read_port.h"
 
 #include <QDialog>
@@ -200,10 +201,13 @@ void RosterEditorWidget::outputRosters(
     request.services = m_services;
     ClassMngr::Next::Platform::ApplicationServicesClassesListReadPort
         classesReadPort(m_services);
+    ClassMngr::Next::Platform::ApplicationServicesRosterReadPort
+        rosterReadPort(m_services);
     const ClassMngr::Next::Application::ClassesListReadQuery classesQuery(
         classesReadPort
         );
     request.classesListReadQuery = &classesQuery;
+    request.rosterReadPort = &rosterReadPort;
     request.currentClassId = m_classroom.id;
     request.scope = dialog.selectedScope();
     request.selectedClassIds = dialog.selectedClassIds();

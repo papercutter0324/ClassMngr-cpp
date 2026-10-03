@@ -794,10 +794,13 @@ void RosterPrintDialog::updatePreview()
     request.services = m_services;
     ClassMngr::Next::Platform::ApplicationServicesClassesListReadPort
         classesReadPort(m_services);
+    ClassMngr::Next::Platform::ApplicationServicesRosterReadPort
+        rosterReadPort(m_services);
     const ClassMngr::Next::Application::ClassesListReadQuery classesQuery(
         classesReadPort
         );
     request.classesListReadQuery = &classesQuery;
+    request.rosterReadPort = &rosterReadPort;
     request.currentClassId = m_currentClassId;
     request.scope = selectedScope();
     request.selectedClassIds = selectedClassIds();
