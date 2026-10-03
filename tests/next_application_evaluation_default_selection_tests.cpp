@@ -2,12 +2,16 @@
 
 #include <array>
 #include <cstdlib>
+#include <string_view>
 
 using ClassMngr::Next::Application::EvaluationDefaultPolicy;
 using ClassMngr::Next::Application::EvaluationPeriod;
 using ClassMngr::Next::Application::EvaluationRows;
+using ClassMngr::Next::Application::kStoredEvaluationNames;
 using ClassMngr::Next::Application::evaluationRowsHaveContent;
+using ClassMngr::Next::Application::normalizeStoredEvaluationName;
 using ClassMngr::Next::Application::selectDefaultEvaluationPeriod;
+using ClassMngr::Next::Application::storedEvaluationName;
 
 namespace
 {
@@ -25,10 +29,46 @@ constexpr std::array<CycleCase, 4> CycleCases{{
     {EvaluationPeriod::Fall, EvaluationPeriod::Summer}
 }};
 
+constexpr std::array<EvaluationPeriod, 4> OrderedPeriods{{
+    EvaluationPeriod::Winter,
+    EvaluationPeriod::Spring,
+    EvaluationPeriod::Summer,
+    EvaluationPeriod::Fall
+}};
+
 } // namespace
 
 int main()
 {
+    constexpr std::array<std::u16string_view, 4> ExpectedStoredNames{{
+        u"Winter",
+        u"Speech Contest",
+        u"Summer",
+        u"Fall"
+    }};
+    if (kStoredEvaluationNames != ExpectedStoredNames)
+    {
+        return EXIT_FAILURE;
+    }
+
+    for (std::size_t index = 0; index < OrderedPeriods.size(); ++index)
+    {
+        const std::u16string_view expectedName = ExpectedStoredNames[index];
+        if (storedEvaluationName(OrderedPeriods[index]) != expectedName
+            || normalizeStoredEvaluationName(expectedName) != expectedName)
+        {
+            return EXIT_FAILURE;
+        }
+    }
+
+    constexpr auto InvalidPeriod = static_cast<EvaluationPeriod>(255);
+    if (!storedEvaluationName(InvalidPeriod).empty()
+        || normalizeStoredEvaluationName(u"") != u"Winter"
+        || normalizeStoredEvaluationName(u"Unrecognized") != u"Winter")
+    {
+        return EXIT_FAILURE;
+    }
+
     if (evaluationRowsHaveContent({}))
     {
         return EXIT_FAILURE;
@@ -106,7 +146,6 @@ int main()
         }
     }
 
-    constexpr auto InvalidPeriod = static_cast<EvaluationPeriod>(255);
     if (selectDefaultEvaluationPeriod(
             EvaluationDefaultPolicy::CurrentOrPreviousTerm,
             InvalidPeriod,

@@ -1,6 +1,7 @@
 #include "features/classes/services/speaking_analytics.h"
 
 #include "core/utils/student_name_utils.h"
+#include "next/application/evaluation_default_selection.h"
 
 #include <QHash>
 #include <QLocale>
@@ -67,12 +68,18 @@ QString criterionLabel(const CriterionSlice& slice)
 
 QStringList evaluationNames()
 {
-    return {
-        QStringLiteral("Winter"),
-        QStringLiteral("Speech Contest"),
-        QStringLiteral("Summer"),
-        QStringLiteral("Fall")
-    };
+    QStringList names;
+    names.reserve(static_cast<qsizetype>(
+        ClassMngr::Next::Application::kStoredEvaluationNames.size()
+        ));
+    for (const std::u16string_view storedName :
+         ClassMngr::Next::Application::kStoredEvaluationNames)
+    {
+        names.append(
+            QString::fromStdU16String(std::u16string(storedName))
+            );
+    }
+    return names;
 }
 
 double roundTo3(double value)

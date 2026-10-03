@@ -25,19 +25,6 @@ std::optional<EvaluationPeriod> evaluationPeriodFor(AcademicTerm term)
     return std::nullopt;
 }
 
-QString evaluationNameForPeriod(EvaluationPeriod period)
-{
-    switch (period)
-    {
-    case EvaluationPeriod::Winter: return QStringLiteral("Winter");
-    case EvaluationPeriod::Spring: return QStringLiteral("Speech Contest");
-    case EvaluationPeriod::Summer: return QStringLiteral("Summer");
-    case EvaluationPeriod::Fall: return QStringLiteral("Fall");
-    }
-
-    return {};
-}
-
 } // namespace
 
 namespace EvaluationDefaultSelection::Private
@@ -77,7 +64,14 @@ namespace EvaluationDefaultSelection
 QString evaluationNameForTerm(AcademicTerm term)
 {
     const auto period = evaluationPeriodFor(term);
-    return period ? evaluationNameForPeriod(*period) : QString{};
+    if (!period)
+    {
+        return {};
+    }
+
+    const std::u16string_view storedName =
+        ClassMngr::Next::Application::storedEvaluationName(*period);
+    return QString::fromStdU16String(std::u16string(storedName));
 }
 
 bool isPopulated(const SpeakingEvalRows& rows)
@@ -131,8 +125,14 @@ QString forTermSchedule(
             *currentPeriod,
             currentTermEvaluationIsPopulated
             );
-    return selectedPeriod ? evaluationNameForPeriod(*selectedPeriod)
-                          : QString{};
+    if (!selectedPeriod)
+    {
+        return {};
+    }
+
+    const std::u16string_view storedName =
+        ClassMngr::Next::Application::storedEvaluationName(*selectedPeriod);
+    return QString::fromStdU16String(std::u16string(storedName));
 }
 
 } // namespace EvaluationDefaultSelection

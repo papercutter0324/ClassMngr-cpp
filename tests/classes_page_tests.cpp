@@ -1,6 +1,8 @@
 #include "core/application_services.h"
 #include "app/services/feature_services.h"
 #include "data/data_service.h"
+#include "data/database/database_session.h"
+#include "data/repositories/speaking_eval_repository.h"
 #include "features/classes/ui/class_co_teacher_page.h"
 #include "features/classes/ui/class_details_page.h"
 #include "features/classes/ui/classes_page.h"
@@ -30,6 +32,8 @@
 #include <QLabel>
 #include <QLayout>
 #include <QPushButton>
+#include <QSqlError>
+#include <QSqlQuery>
 #include <QSet>
 #include <QTableView>
 #include <QTemporaryDir>
@@ -60,11 +64,6 @@ extern int repositoryClassListReadCount;
 extern int legacyClassInfoReadCount;
 extern int selectedClassSubtitleReadCount;
 extern int selectedClassSubtitleTeacherReadCount;
-void setSpeakingEvaluation(
-    int classId,
-    const QString& evaluationName,
-    const SpeakingEvalRows& rows
-    );
 QString settingValue(const QString& key);
 }
 
@@ -190,6 +189,7 @@ private slots:
     void filterPillsKeepStaticWidthsWhenPageResizes();
     void classInfoShowsInlineValidationAndBlocksManualSave();
     void speakingEvaluationShowsInlineValidationAndBlocksManualSave();
+    void evaluationComboUsesCanonicalStoredNames();
     void evaluationsSectionShowsSelectedSpeakingEvaluation();
     void evaluationTemplatePackReleasesAndReacquiresAcrossSections();
     void headerKeyboardReplacesEmbeddedRosterButton();
@@ -1535,22 +1535,52 @@ void ClassesPageTests::speakingEvaluationShowsInlineValidationAndBlocksManualSav
 
 void ClassesPageTests::evaluationsSectionShowsSelectedSpeakingEvaluation()
 {
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(openDatabase(services, directory));
+
     SpeakingEvalRows winter = SpeakingEval::emptyRows();
     winter[0][SpeakingEval::toInt(SpeakingEvalColumn::EnglishName)] =
         QStringLiteral("Winter Student");
     SpeakingEvalRows summer = SpeakingEval::emptyRows();
     summer[0][SpeakingEval::toInt(SpeakingEvalColumn::EnglishName)] =
         QStringLiteral("Summer Student");
-    ScheduleWidgetTestStubs::setSpeakingEvaluation(
+    DatabaseSession* const session = services.databaseSession();
+    QVERIFY(session);
+    QSqlQuery classInsert(session->database());
+    classInsert.prepare(
+        QStringLiteral("INSERT INTO classes (id, name) VALUES (?, ?)")
+        );
+    classInsert.addBindValue(42);
+    classInsert.addBindValue(QStringLiteral("Class 42"));
+    QVERIFY2(
+        classInsert.exec(),
+        qPrintable(classInsert.lastError().text())
+        );
+
+    SpeakingEvalRepository* const repository =
+        session->speakingEvalRepository();
+    QVERIFY(repository);
+    const Status winterSaved = repository->saveSpeakingEval(
         42,
         QStringLiteral("Winter"),
-        winter);
-    ScheduleWidgetTestStubs::setSpeakingEvaluation(
+        winter
+        );
+    if (!winterSaved.has_value())
+    {
+        QFAIL(qPrintable(winterSaved.error()));
+    }
+    const Status summerSaved = repository->saveSpeakingEval(
         42,
         QStringLiteral("Summer"),
-        summer);
+        summer
+        );
+    if (!summerSaved.has_value())
+    {
+        QFAIL(qPrintable(summerSaved.error()));
+    }
 
-    ApplicationServices services;
     ClassesPage page(&services);
     page.resize(1200, 800);
     QVERIFY(page.openEvaluation(42, QStringLiteral("Winter")));
@@ -1625,6 +1655,25 @@ void ClassesPageTests::evaluationsSectionShowsSelectedSpeakingEvaluation()
             .data()
             .toString(),
         QStringLiteral("Summer Student"));
+}
+
+void ClassesPageTests::evaluationComboUsesCanonicalStoredNames()
+{
+    ApplicationServices services;
+    ClassesPage page(&services);
+    page.resize(1200, 800);
+    QVERIFY(page.openEvaluation(42, QStringLiteral("Winter")));
+    page.show();
+    QApplication::processEvents();
+
+    auto* evaluationCombo = page.findChild<QComboBox*>(
+        QStringLiteral("classEvaluationsEvaluationCombo"));
+    QVERIFY(evaluationCombo);
+    QCOMPARE(evaluationCombo->count(), 4);
+    QCOMPARE(evaluationCombo->itemText(0), QStringLiteral("Winter"));
+    QCOMPARE(evaluationCombo->itemText(1), QStringLiteral("Speech Contest"));
+    QCOMPARE(evaluationCombo->itemText(2), QStringLiteral("Summer"));
+    QCOMPARE(evaluationCombo->itemText(3), QStringLiteral("Fall"));
 }
 
 void ClassesPageTests::

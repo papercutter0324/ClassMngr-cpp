@@ -22,6 +22,7 @@
 #include "features/speaking_eval/ui/speaking_eval_report_dialog.h"
 #include "features/speaking_eval/ui/speaking_eval_header_view.h"
 #include "features/classes/models/class_tab_navigation_model.h"
+#include "next/application/evaluation_default_selection.h"
 #include "next/application/roster_read_query.h"
 #include "next/application/selected_class_subtitle_read_query.h"
 #include "next/platform/application_services_roster_read_port.h"
@@ -220,12 +221,21 @@ ClassInfo readReportClassInfoForSpeakingEvaluationPage(
 
 const QStringList& evaluationNames()
 {
-    static const QStringList names{
-        QStringLiteral("Winter"),
-        QStringLiteral("Speech Contest"),
-        QStringLiteral("Summer"),
-        QStringLiteral("Fall")
-    };
+    static const QStringList names = []
+    {
+        QStringList canonicalNames;
+        canonicalNames.reserve(static_cast<qsizetype>(
+            ClassMngr::Next::Application::kStoredEvaluationNames.size()
+            ));
+        for (const std::u16string_view storedName :
+             ClassMngr::Next::Application::kStoredEvaluationNames)
+        {
+            canonicalNames.append(
+                QString::fromStdU16String(std::u16string(storedName))
+                );
+        }
+        return canonicalNames;
+    }();
 
     return names;
 }
@@ -234,22 +244,23 @@ QString evaluationLabel(
     const QString& evaluationName
     )
 {
-    if (evaluationName == QStringLiteral("Winter"))
+    const QStringList& storedNames = evaluationNames();
+    if (evaluationName == storedNames.at(0))
     {
         return QObject::tr("Winter");
     }
 
-    if (evaluationName == QStringLiteral("Speech Contest"))
+    if (evaluationName == storedNames.at(1))
     {
         return QObject::tr("Speech Contest");
     }
 
-    if (evaluationName == QStringLiteral("Summer"))
+    if (evaluationName == storedNames.at(2))
     {
         return QObject::tr("Summer");
     }
 
-    if (evaluationName == QStringLiteral("Fall"))
+    if (evaluationName == storedNames.at(3))
     {
         return QObject::tr("Fall");
     }
@@ -261,9 +272,12 @@ QString normalizedEvaluationName(
     const QString& evaluationName
     )
 {
-    return evaluationNames().contains(evaluationName)
-        ? evaluationName
-        : evaluationNames().constFirst();
+    const std::u16string storedName = evaluationName.toStdU16String();
+    const std::u16string_view normalizedName =
+        ClassMngr::Next::Application::normalizeStoredEvaluationName(
+            storedName
+            );
+    return QString::fromStdU16String(std::u16string(normalizedName));
 }
 
 QString sidebarClassDisplayName(
