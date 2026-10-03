@@ -57,8 +57,7 @@ void SidebarController::exportClasses()
     }
 
     ClassExportDialog dialog(
-        classes,
-        teachers,
+        m_services,
         m_sidebar
         );
 
@@ -191,7 +190,11 @@ void SidebarController::importClasses()
     }
 
     ClassImportDialog dialog(
-        classes, teachers, *package, *preview, m_sidebar);
+        m_services,
+        *package,
+        *preview,
+        m_sidebar
+        );
 
     if (dialog.exec() != QDialog::Accepted)
     {

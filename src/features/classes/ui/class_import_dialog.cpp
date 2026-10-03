@@ -2,10 +2,14 @@
 #include "ui/shared/widgets/text_fit_dialog_button_box.h"
 
 #include "app/services/feature_services.h"
+#include "core/application_services.h"
 #include "core/result.h"
 #include "core/utils/sidebar_node_naming.h"
 #include "domain/models/classroom.h"
 #include "next/application/class_transfer_projection.h"
+#include "next/application/selected_class_subtitle_read_query.h"
+#include "next/domain/domain_types.h"
+#include "next/platform/application_services_selected_class_subtitle_read_port.h"
 
 #include <QComboBox>
 #include <QDialogButtonBox>
@@ -20,6 +24,7 @@
 #include <algorithm>
 #include <optional>
 #include <string>
+#include <utility>
 
 namespace
 {
@@ -73,20 +78,66 @@ QString packageClassDisplayName(
 }
 
 QString destinationClassDisplayName(
+    ApplicationServices* applicationServices,
     ClassService* classService,
-    TeacherService* teacherService,
     int classId
     )
 {
     const Classroom classroom = classService->classroom(classId)
         .value_or(Classroom{});
-    const ClassInfo info = classService->classInfo(classId).value_or(ClassInfo{});
+    ClassInfo info;
     Teacher teacher;
 
-    if (info.teacherId > 0)
+    const auto selectedClassId =
+        ClassMngr::Next::Domain::ClassId::fromString(
+            std::to_string(classId)
+            );
+    if (applicationServices && selectedClassId)
     {
-        teacher = teacherService->teacher(info.teacherId)
-            .value_or(Teacher{});
+        ClassMngr::Next::Platform::
+            ApplicationServicesSelectedClassSubtitleReadPort readPort(
+                applicationServices
+                );
+        const ClassMngr::Next::Application::SelectedClassSubtitleReadQuery query(
+            readPort
+            );
+        const auto loadedSubtitle = query.execute(*selectedClassId);
+        if (loadedSubtitle && loadedSubtitle.value().classFields)
+        {
+            const auto& subtitle = loadedSubtitle.value();
+            const auto& fields = subtitle.classFields.value();
+            info.classGrade = QString::fromStdU16String(fields.classGrade);
+            info.classLevel = QString::fromStdU16String(fields.classLevel);
+            info.classTimes.reserve(
+                static_cast<qsizetype>(fields.regularSchedule.size())
+                );
+            for (const auto& row : fields.regularSchedule)
+            {
+                ClassTime time;
+                time.day = QString::fromStdU16String(row.day);
+                time.startTime = QString::fromStdU16String(row.startTime);
+                time.endTime.clear();
+                info.classTimes.append(std::move(time));
+            }
+
+            if (subtitle.assignedTeacher && subtitle.assignedTeacher.value())
+            {
+                const auto& teacherFields =
+                    subtitle.assignedTeacher.value().value();
+                teacher.teacherKr = QString::fromStdU16String(
+                    teacherFields.teacherKr
+                    );
+                teacher.teacherEn = QString::fromStdU16String(
+                    teacherFields.teacherEn
+                    );
+                teacher.preferredRomanization = QString::fromStdU16String(
+                    teacherFields.preferredRomanization
+                    );
+                teacher.preferredName = QString::fromStdU16String(
+                    teacherFields.preferredName
+                    );
+            }
+        }
     }
 
     const QString display = SidebarNodeNaming::formatClassDisplayName(
@@ -441,8 +492,7 @@ QString reviewIssueMessage(
 }
 
 ClassImportDialog::ClassImportDialog(
-    ClassService* classService,
-    TeacherService* teacherService,
+    ApplicationServices* applicationServices,
     const ClassTransferPackage& package,
     const ClassImportPreview& preview,
     QWidget* parent
@@ -451,6 +501,12 @@ ClassImportDialog::ClassImportDialog(
     , m_package(package)
     , m_preview(preview)
 {
+    auto* classService = applicationServices
+        ? applicationServices->classService()
+        : nullptr;
+    auto* teacherService = applicationServices
+        ? applicationServices->teacherService()
+        : nullptr;
     setWindowTitle(tr("Import Classes"));
     setModal(true);
     resize(820, 640);
@@ -501,7 +557,7 @@ ClassImportDialog::ClassImportDialog(
                 combo,
                 tr("Replace: %1").arg(
                     destinationClassDisplayName(
-                        classService, teacherService, classId)),
+                        applicationServices, classService, classId)),
                 static_cast<int>(ClassImportAction::Replace),
                 classId
                 );

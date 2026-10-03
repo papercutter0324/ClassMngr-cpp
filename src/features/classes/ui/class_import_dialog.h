@@ -6,11 +6,10 @@
 #include <QList>
 #include <QString>
 
-class ClassService;
+class ApplicationServices;
 class QComboBox;
 class QLabel;
 class QPushButton;
-class TeacherService;
 
 class ClassImportDialog : public DialogShell
 {
@@ -18,8 +17,7 @@ class ClassImportDialog : public DialogShell
 
 public:
     explicit ClassImportDialog(
-        ClassService* classService,
-        TeacherService* teacherService,
+        ApplicationServices* applicationServices,
         const ClassTransferPackage& package,
         const ClassImportPreview& preview,
         QWidget* parent = nullptr

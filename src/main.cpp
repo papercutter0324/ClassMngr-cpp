@@ -3292,8 +3292,7 @@ void scheduleStartupPerformanceClassTransferLifecycle(
                 );
 
             auto* dialog = new ClassImportDialog(
-                classService,
-                teacherService,
+                services,
                 package,
                 preview,
                 page

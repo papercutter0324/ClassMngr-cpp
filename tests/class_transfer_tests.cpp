@@ -1,5 +1,6 @@
 #include "data/data_service.h"
 #include "app/services/feature_services.h"
+#include "core/application_services.h"
 #include "core/utils/file_name_utils.h"
 #include "data/database/database_session.h"
 #include "features/classes/services/class_transfer_json_codec.h"
@@ -26,6 +27,7 @@
 #include <QtTest>
 
 #include <algorithm>
+#include <memory>
 #include <optional>
 
 namespace
@@ -60,6 +62,26 @@ int createdTeacherId(DataService& service, const Teacher& teacher)
 int createdClassId(DataService& service, const QString& name)
 {
     return service.createClass(name).value_or(-1);
+}
+
+std::unique_ptr<ApplicationServices> openApplicationServicesForCurrentDatabase(
+    DataService& dataService,
+    QString* error
+    )
+{
+    auto applicationServices = std::make_unique<ApplicationServices>();
+    const Status opened = applicationServices->openDatabase(
+        dataService.currentDatabasePath());
+    if (!opened)
+    {
+        if (error)
+        {
+            *error = opened.error();
+        }
+        return {};
+    }
+
+    return applicationServices;
 }
 
 ClassInfo completeClassInfo(
@@ -340,8 +362,12 @@ private slots:
     void dialogRejectsDuplicateReplacementTargets();
     void applyRejectsReplacementOutsideCurrentPreviewMatches();
     void exportDialogStartsClearAndSortsClassesAlphabetically();
+    void exportDialogUsesDefaultFormattingWhenClassFieldsCannotLoad();
+    void exportDialogKeepsClassFieldsWhenTeacherCannotLoad();
     void filesystemSafeJsonFileName();
     void importDialogRequiresAmbiguousTeacherResolution();
+    void importDialogUsesDefaultFormattingWhenClassFieldsCannotLoad();
+    void importDialogKeepsClassFieldsWhenTeacherCannotLoad();
 };
 
 void ClassTransferTests::jsonRoundTripPreservesCompletePackage()
@@ -1143,15 +1169,18 @@ void ClassTransferTests::
         QList<int>({destinationClass})
         );
 
-    ClassService classes(service.databaseSession(), &service);
-    TeacherService teachers(service.databaseSession(), &service);
+    QString applicationServicesError;
+    const auto applicationServices =
+        openApplicationServicesForCurrentDatabase(
+            service, &applicationServicesError);
+    QVERIFY2(applicationServices, qPrintable(applicationServicesError));
     const QString reviewFontFamily = loadReviewFontFamily();
     if (!reviewFontFamily.isEmpty())
     {
         QApplication::setFont(QFont(reviewFontFamily));
     }
     ClassImportDialog dialog(
-        &classes, &teachers, *package, *preview);
+        applicationServices.get(), *package, *preview);
     auto* classChoice = dialog.findChild<QComboBox*>(
         QStringLiteral("classImportChoice_0"));
     auto* teacherChoice = dialog.findChild<QComboBox*>(
@@ -1443,9 +1472,12 @@ void ClassTransferTests::
     QCOMPARE(preview->classes.first().matchingClassIds,
              QList<int>({destinationClass}));
 
-    ClassService classes(service.databaseSession(), &service);
-    TeacherService teachers(service.databaseSession(), &service);
-    ClassImportDialog dialog(&classes, &teachers, *package, *preview);
+    QString applicationServicesError;
+    const auto applicationServices =
+        openApplicationServicesForCurrentDatabase(
+            service, &applicationServicesError);
+    QVERIFY2(applicationServices, qPrintable(applicationServicesError));
+    ClassImportDialog dialog(applicationServices.get(), *package, *preview);
     auto* classChoice = dialog.findChild<QComboBox*>(
         QStringLiteral("classImportChoice_0"));
     auto* teacherChoice = dialog.findChild<QComboBox*>(
@@ -1555,9 +1587,12 @@ void ClassTransferTests::requiredSuccessFixtureTraversesReviewAndPersistsResults
     QCOMPARE(preview->classes.first().packageClassIndex, 0);
     QCOMPARE(preview->classes.first().matchingClassIds, QList<int>{});
 
-    ClassService classes(service.databaseSession(), &service);
-    TeacherService teachers(service.databaseSession(), &service);
-    ClassImportDialog dialog(&classes, &teachers, *package, *preview);
+    QString applicationServicesError;
+    const auto applicationServices =
+        openApplicationServicesForCurrentDatabase(
+            service, &applicationServicesError);
+    QVERIFY2(applicationServices, qPrintable(applicationServicesError));
+    ClassImportDialog dialog(applicationServices.get(), *package, *preview);
     auto* classChoice = dialog.findChild<QComboBox*>(
         QStringLiteral("classImportChoice_0"));
     auto* teacherChoice = dialog.findChild<QComboBox*>(
@@ -1678,9 +1713,12 @@ void ClassTransferTests::successFixtureReplacesMatchingTeacherThroughReview()
     QCOMPARE(preview->classes.first().packageClassIndex, 0);
     QCOMPARE(preview->classes.first().matchingClassIds, QList<int>{});
 
-    ClassService classes(service.databaseSession(), &service);
-    TeacherService teachers(service.databaseSession(), &service);
-    ClassImportDialog dialog(&classes, &teachers, *package, *preview);
+    QString applicationServicesError;
+    const auto applicationServices =
+        openApplicationServicesForCurrentDatabase(
+            service, &applicationServicesError);
+    QVERIFY2(applicationServices, qPrintable(applicationServicesError));
+    ClassImportDialog dialog(applicationServices.get(), *package, *preview);
     auto* classChoice = dialog.findChild<QComboBox*>(
         QStringLiteral("classImportChoice_0"));
     auto* teacherChoice = dialog.findChild<QComboBox*>(
@@ -1813,9 +1851,12 @@ void ClassTransferTests::successFixtureReplacesMatchingDestinationAndChildren()
         QList<int>({destinationClass})
         );
 
-    ClassService classes(service.databaseSession(), &service);
-    TeacherService teachers(service.databaseSession(), &service);
-    ClassImportDialog dialog(&classes, &teachers, *package, *preview);
+    QString applicationServicesError;
+    const auto applicationServices =
+        openApplicationServicesForCurrentDatabase(
+            service, &applicationServicesError);
+    QVERIFY2(applicationServices, qPrintable(applicationServicesError));
+    ClassImportDialog dialog(applicationServices.get(), *package, *preview);
     auto* classChoice = dialog.findChild<QComboBox*>(
         QStringLiteral("classImportChoice_0"));
     auto* importButton = dialog.findChild<QPushButton*>(
@@ -2024,9 +2065,12 @@ void ClassTransferTests::successFixtureClassReplacementMatchesCommonInputState()
     QCOMPARE(preview->classes.first().matchingClassIds,
              QList<int>({destinationClass}));
 
-    ClassService classes(service.databaseSession(), &service);
-    TeacherService teachers(service.databaseSession(), &service);
-    ClassImportDialog dialog(&classes, &teachers, *package, *preview);
+    QString applicationServicesError;
+    const auto applicationServices =
+        openApplicationServicesForCurrentDatabase(
+            service, &applicationServicesError);
+    QVERIFY2(applicationServices, qPrintable(applicationServicesError));
+    ClassImportDialog dialog(applicationServices.get(), *package, *preview);
     auto* classChoice = dialog.findChild<QComboBox*>(
         QStringLiteral("classImportChoice_0"));
     auto* teacherChoice = dialog.findChild<QComboBox*>(
@@ -2037,6 +2081,8 @@ void ClassTransferTests::successFixtureClassReplacementMatchesCommonInputState()
     QVERIFY(teacherChoice);
     QVERIFY(importButton);
     QCOMPARE(classChoice->count(), 3);
+    QCOMPARE(classChoice->itemText(1),
+             QStringLiteral("Replace: E3 Orion • Alex • Thurs (11:00)"));
     QCOMPARE(classChoice->itemData(0, Qt::UserRole).toInt(),
              static_cast<int>(ClassImportAction::Create));
     QCOMPARE(classChoice->itemData(1, Qt::UserRole).toInt(),
@@ -2246,34 +2292,40 @@ void ClassTransferTests::exportDialogStartsClearAndSortsClassesAlphabetically()
     DataService service;
     QVERIFY(service.openDatabase(
         directory.filePath(QStringLiteral("dialog.db"))).has_value());
+    const int teacherId = createdTeacherId(service, completeTeacher());
+    QVERIFY(teacherId > 0);
     const int zuluClass = createdClassId(service, QStringLiteral("Zulu"));
     const int alphaClass = createdClassId(service, QStringLiteral("Alpha"));
     const int mikeClass = createdClassId(service, QStringLiteral("Mike"));
 
-    ClassInfo zuluInfo;
-    zuluInfo.classId = zuluClass;
-    zuluInfo.classGrade = QStringLiteral("Zulu");
-    QVERIFY(service.saveClassInfo(zuluInfo));
+    QVERIFY(service.saveClassInfo(completeClassInfo(
+        zuluClass, teacherId, QStringLiteral("E4"), QStringLiteral("Zulu"),
+        QStringLiteral("Wednesday"))));
+    QVERIFY(service.saveClassInfo(completeClassInfo(
+        alphaClass, teacherId, QStringLiteral("E4"), QStringLiteral("Alpha"),
+        QStringLiteral("Monday"))));
+    QVERIFY(service.saveClassInfo(completeClassInfo(
+        mikeClass, teacherId, QStringLiteral("E4"), QStringLiteral("Mike"),
+        QStringLiteral("Tuesday"))));
 
-    ClassInfo alphaInfo;
-    alphaInfo.classId = alphaClass;
-    alphaInfo.classGrade = QStringLiteral("Alpha");
-    QVERIFY(service.saveClassInfo(alphaInfo));
-
-    ClassInfo mikeInfo;
-    mikeInfo.classId = mikeClass;
-    mikeInfo.classGrade = QStringLiteral("Mike");
-    QVERIFY(service.saveClassInfo(mikeInfo));
-
-    ClassService classes(service.databaseSession(), &service);
-    TeacherService teachers(service.databaseSession(), &service);
-    ClassExportDialog dialog(&classes, &teachers);
+    QString applicationServicesError;
+    const auto applicationServices =
+        openApplicationServicesForCurrentDatabase(
+            service, &applicationServicesError);
+    QVERIFY2(applicationServices, qPrintable(applicationServicesError));
+    ClassExportDialog dialog(applicationServices.get());
     QCOMPARE(dialog.selectedClassIds(), QList<int>());
 
     auto* classList = dialog.findChild<QListWidget*>(
         QStringLiteral("classExportList"));
     QVERIFY(classList);
     QCOMPARE(classList->count(), 3);
+    QCOMPARE(classList->item(0)->text(),
+             QStringLiteral("E4 Alpha • Gim Allekseu • Mon (4:00)"));
+    QCOMPARE(classList->item(1)->text(),
+             QStringLiteral("E4 Mike • Gim Allekseu • Tues (4:00)"));
+    QCOMPARE(classList->item(2)->text(),
+             QStringLiteral("E4 Zulu • Gim Allekseu • Wed (4:00)"));
     QCOMPARE(classList->item(0)->data(Qt::UserRole).toInt(), alphaClass);
     QCOMPARE(classList->item(1)->data(Qt::UserRole).toInt(), mikeClass);
     QCOMPARE(classList->item(2)->data(Qt::UserRole).toInt(), zuluClass);
@@ -2291,6 +2343,76 @@ void ClassTransferTests::exportDialogStartsClearAndSortsClassesAlphabetically()
     classList->item(1)->setCheckState(Qt::Checked);
     QCOMPARE(dialog.selectedClassIds(), QList<int>({mikeClass}));
     QVERIFY(exportButton->isEnabled());
+}
+
+void ClassTransferTests::exportDialogUsesDefaultFormattingWhenClassFieldsCannotLoad()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    DataService service;
+    QVERIFY(service.openDatabase(
+        directory.filePath(QStringLiteral("dialog.db"))).has_value());
+    const int teacherId = createdTeacherId(service, completeTeacher());
+    QVERIFY(teacherId > 0);
+    const int classId = createdClassId(service, QStringLiteral("Stored class"));
+    QVERIFY(classId > 0);
+    QVERIFY(service.saveClassInfo(completeClassInfo(
+        classId, teacherId, QStringLiteral("E4"), QStringLiteral("Orion"),
+        QStringLiteral("Monday"))));
+
+    QString applicationServicesError;
+    const auto applicationServices =
+        openApplicationServicesForCurrentDatabase(
+            service, &applicationServicesError);
+    QVERIFY2(applicationServices, qPrintable(applicationServicesError));
+    QSqlQuery dropClassTimes(applicationServices->databaseSession()->database());
+    QVERIFY2(dropClassTimes.exec(QStringLiteral("DROP TABLE class_times")),
+             qPrintable(dropClassTimes.lastError().text()));
+
+    ClassExportDialog dialog(applicationServices.get());
+    auto* classList = dialog.findChild<QListWidget*>(
+        QStringLiteral("classExportList"));
+    QVERIFY(classList);
+    QCOMPARE(classList->count(), 1);
+    QCOMPARE(classList->item(0)->text(),
+             QStringLiteral("Unknown Class • No Teacher"));
+    QCOMPARE(classList->item(0)->data(Qt::UserRole).toInt(), classId);
+    QCOMPARE(classList->item(0)->checkState(), Qt::Unchecked);
+}
+
+void ClassTransferTests::exportDialogKeepsClassFieldsWhenTeacherCannotLoad()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    DataService service;
+    QVERIFY(service.openDatabase(
+        directory.filePath(QStringLiteral("dialog.db"))).has_value());
+    const int teacherId = createdTeacherId(service, completeTeacher());
+    QVERIFY(teacherId > 0);
+    const int classId = createdClassId(service, QStringLiteral("Stored class"));
+    QVERIFY(classId > 0);
+    QVERIFY(service.saveClassInfo(completeClassInfo(
+        classId, teacherId, QStringLiteral("E4"), QStringLiteral("Orion"),
+        QStringLiteral("Monday"))));
+
+    QString applicationServicesError;
+    const auto applicationServices =
+        openApplicationServicesForCurrentDatabase(
+            service, &applicationServicesError);
+    QVERIFY2(applicationServices, qPrintable(applicationServicesError));
+    QSqlQuery dropTeachers(applicationServices->databaseSession()->database());
+    QVERIFY2(dropTeachers.exec(QStringLiteral("DROP TABLE teachers")),
+             qPrintable(dropTeachers.lastError().text()));
+
+    ClassExportDialog dialog(applicationServices.get());
+    auto* classList = dialog.findChild<QListWidget*>(
+        QStringLiteral("classExportList"));
+    QVERIFY(classList);
+    QCOMPARE(classList->count(), 1);
+    QCOMPARE(classList->item(0)->text(),
+             QStringLiteral("E4 Orion • No Teacher • Mon (4:00)"));
+    QCOMPARE(classList->item(0)->data(Qt::UserRole).toInt(), classId);
+    QCOMPARE(classList->item(0)->checkState(), Qt::Unchecked);
 }
 
 void ClassTransferTests::filesystemSafeJsonFileName()
@@ -2359,10 +2481,13 @@ void ClassTransferTests::importDialogRequiresAmbiguousTeacherResolution()
     QVERIFY(preview.has_value());
     QCOMPARE(preview->teachers.first().matchingTeacherIds.size(), 2);
 
-    ClassService classes(service.databaseSession(), &service);
-    TeacherService teachers(service.databaseSession(), &service);
+    QString applicationServicesError;
+    const auto applicationServices =
+        openApplicationServicesForCurrentDatabase(
+            service, &applicationServicesError);
+    QVERIFY2(applicationServices, qPrintable(applicationServicesError));
     ClassImportDialog dialog(
-        &classes, &teachers, *package, *preview);
+        applicationServices.get(), *package, *preview);
     auto* importButton = dialog.findChild<QPushButton*>(
         QStringLiteral("importClassesButton"));
     auto* teacherChoice = dialog.findChild<QComboBox*>(
@@ -2432,9 +2557,12 @@ void ClassTransferTests::dialogRejectsDuplicateReplacementTargets()
     QCOMPARE(preview->classes[1].matchingClassIds,
              QList<int>({destinationClass}));
 
-    ClassService classes(service.databaseSession(), &service);
-    TeacherService teachers(service.databaseSession(), &service);
-    ClassImportDialog dialog(&classes, &teachers, *package, *preview);
+    QString applicationServicesError;
+    const auto applicationServices =
+        openApplicationServicesForCurrentDatabase(
+            service, &applicationServicesError);
+    QVERIFY2(applicationServices, qPrintable(applicationServicesError));
+    ClassImportDialog dialog(applicationServices.get(), *package, *preview);
     auto* firstChoice = dialog.findChild<QComboBox*>(
         QStringLiteral("classImportChoice_0"));
     auto* secondChoice = dialog.findChild<QComboBox*>(

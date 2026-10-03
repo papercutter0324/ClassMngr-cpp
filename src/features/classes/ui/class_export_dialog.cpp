@@ -3,6 +3,10 @@
 
 #include "app/services/feature_services.h"
 #include "core/utils/sidebar_node_naming.h"
+#include "core/application_services.h"
+#include "next/application/selected_class_subtitle_read_query.h"
+#include "next/domain/domain_types.h"
+#include "next/platform/application_services_selected_class_subtitle_read_port.h"
 #include "domain/models/class_info.h"
 #include "domain/models/classroom.h"
 #include "domain/models/teacher.h"
@@ -18,23 +22,69 @@
 #include <QVBoxLayout>
 
 #include <algorithm>
+#include <string>
 #include <utility>
 
 namespace
 {
 QString classDisplayName(
-    ClassService* classService,
-    TeacherService* teacherService,
+    ApplicationServices* applicationServices,
     const Classroom& classroom
     )
 {
-    const ClassInfo info = classService->classInfo(classroom.id).value_or(ClassInfo{});
+    ClassInfo info;
     Teacher teacher;
 
-    if (info.teacherId > 0)
+    const auto selectedClassId =
+        ClassMngr::Next::Domain::ClassId::fromString(
+            std::to_string(classroom.id)
+            );
+    if (applicationServices && selectedClassId)
     {
-        teacher = teacherService->teacher(info.teacherId)
-            .value_or(Teacher{});
+        ClassMngr::Next::Platform::
+            ApplicationServicesSelectedClassSubtitleReadPort readPort(
+                applicationServices
+                );
+        const ClassMngr::Next::Application::SelectedClassSubtitleReadQuery query(
+            readPort
+            );
+        const auto loadedSubtitle = query.execute(*selectedClassId);
+        if (loadedSubtitle && loadedSubtitle.value().classFields)
+        {
+            const auto& subtitle = loadedSubtitle.value();
+            const auto& fields = subtitle.classFields.value();
+            info.classGrade = QString::fromStdU16String(fields.classGrade);
+            info.classLevel = QString::fromStdU16String(fields.classLevel);
+            info.classTimes.reserve(
+                static_cast<qsizetype>(fields.regularSchedule.size())
+                );
+            for (const auto& row : fields.regularSchedule)
+            {
+                ClassTime time;
+                time.day = QString::fromStdU16String(row.day);
+                time.startTime = QString::fromStdU16String(row.startTime);
+                time.endTime.clear();
+                info.classTimes.append(std::move(time));
+            }
+
+            if (subtitle.assignedTeacher && subtitle.assignedTeacher.value())
+            {
+                const auto& teacherFields =
+                    subtitle.assignedTeacher.value().value();
+                teacher.teacherKr = QString::fromStdU16String(
+                    teacherFields.teacherKr
+                    );
+                teacher.teacherEn = QString::fromStdU16String(
+                    teacherFields.teacherEn
+                    );
+                teacher.preferredRomanization = QString::fromStdU16String(
+                    teacherFields.preferredRomanization
+                    );
+                teacher.preferredName = QString::fromStdU16String(
+                    teacherFields.preferredName
+                    );
+            }
+        }
     }
 
     const QString formatted =
@@ -52,15 +102,21 @@ QString classDisplayName(
 
     return QObject::tr("Class %1").arg(classroom.id);
 }
+
 }
 
 ClassExportDialog::ClassExportDialog(
-    ClassService* classService,
-    TeacherService* teacherService,
+    ApplicationServices* applicationServices,
     QWidget* parent
     )
     : DialogShell(QStringLiteral("classExport"), parent)
 {
+    auto* classService = applicationServices
+        ? applicationServices->classService()
+        : nullptr;
+    auto* teacherService = applicationServices
+        ? applicationServices->teacherService()
+        : nullptr;
     setWindowTitle(tr("Export Classes"));
     setModal(true);
     resize(620, 480);
@@ -94,7 +150,7 @@ ClassExportDialog::ClassExportDialog(
                  QList<Classroom>{}))
         {
             classes.append({
-                classDisplayName(classService, teacherService, classroom),
+                classDisplayName(applicationServices, classroom),
                 classroom.id
             });
         }

@@ -4,10 +4,9 @@
 
 #include <QList>
 
-class ClassService;
+class ApplicationServices;
 class QListWidget;
 class QPushButton;
-class TeacherService;
 
 class ClassExportDialog : public DialogShell
 {
@@ -15,8 +14,7 @@ class ClassExportDialog : public DialogShell
 
 public:
     explicit ClassExportDialog(
-        ClassService* classService,
-        TeacherService* teacherService,
+        ApplicationServices* applicationServices,
         QWidget* parent = nullptr
         );
 
