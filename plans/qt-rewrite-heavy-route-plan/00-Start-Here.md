@@ -27,9 +27,10 @@
   read), F278 (initial-setup wizard teacher-existence reads), and F279
   (sidebar selected-teacher profile read), F280 (sidebar teacher-delete
   chooser teacher-list read), F281 (sidebar teacher-list refresh read), and
-  F282 (sidebar action-state list reads), and F283 (My Classes roster-backed
-  student counts) are accepted; F284 (recheck the selected class before delete
-  confirmation) is selected.
+  F282 (sidebar action-state list reads), F283 (My Classes roster-backed
+  student counts), and F284 (recheck the selected class before delete
+  confirmation) are accepted; F285 (load the created teacher through the
+  teacher-profile query) is selected.
   Gates 1 and 2 remain Partial, with broader feature
   migration, parity, and 96-class Release memory evidence still open.
   See the
@@ -64,15 +65,28 @@
 
 Statuses are intentionally conservative. A phase is not In progress until its work has started in the repository, and it is not Complete until its exit gate has passed.
 
-## Phase progress logs
+## Phase notes, slice batches, and progress logs
 
-Each phase document should contain only its most recent progress entry. When a
-new entry is added, move the previous entry to a sibling file named from the
-phase plan and ending in `-Progress-Log.md` (for example,
-`03-Phase-2-Progress-Log.md`), then link to that archive in the phase document.
-Preserve historical entries in their original order. This includes
-verified-slice reports and dated exit-gate snapshots; keep requirements,
-decisions, and current status in the phase document.
+- Keep each phase plan's `Current note` limited to the latest information that
+  is relevant to the current or next slice. Move stale progress details to that
+  phase's progress log; keep durable requirements and decisions in their
+  appropriate plan sections.
+- Keep only the most recent slice commit in the phase plan's
+  `Latest Progress Update` section. When a newer progress update is written,
+  move the previous update into that phase's progress log before replacing it.
+- Discover upcoming slices in ordered batches of up to ten (or all remaining
+  slices when fewer than ten remain) and record each batch in its phase plan's
+  `Slice discovery batches` section. Work through the recorded slices in order.
+  Begin discovering and recording the next batch when starting work on the
+  second-last slice in the current batch. If a discovery pass finds fewer than
+  ten slices, add the standalone line `No other slices were found.` after that
+  batch.
+- Use a sibling file named from the phase plan and ending in `-Progress-Log.md`
+  when that phase has one (for example,
+  `03-Phase-2-Progress-Log.md`); otherwise use its `Progress log` section.
+  Preserve historical entries in date order, including verified-slice reports
+  and dated exit-gate snapshots. Keep requirements, decisions, and current
+  status in the phase plan.
 
 ## Cross-cutting memory remediation
 

@@ -10480,3 +10480,26 @@ The full-list query can reject unrelated invalid or duplicate IDs, and its
 adapter requires an active database session where the legacy class service
 could fall back to DataService. Phase 2 remains In Progress/Open; Gates 1 and 2
 remain Partial.
+
+### Progress update - 2026-10-03 (F284 accepted; F285 selected)
+
+F284, committed as `d1a7e04b`, routes `SidebarController::deleteClass()`'s
+post-selection class reload through the accepted classes-list query and
+adapter. Query failure or a missing selected ID preserves the existing warning
+and returns before confirmation or deletion. The service guard and successful
+delete flow remain unchanged. Caller tests cover a failed list reload and a
+selected class removed after chooser selection. The focused build succeeded
+and the NavigationTeacherRead, classes-list query, and adapter CTests passed
+3/3. Logs are under `build/p2_f284_verify_logs/`; no full suite ran. The
+full-list query can reject unrelated invalid or duplicate IDs, and its adapter
+requires an active database session where the legacy service could fall back
+to DataService.
+
+F285 is selected to route the post-create profile reload in
+`SidebarController::addTeacher()` through the accepted teacher-profile query
+and adapter. Preserve creation, sidebar refresh order, the existing warning,
+new-teacher selection, profile loading, and navigation. Add caller coverage
+for successful profile loading and retain the NavigationTeacherRead, profile
+query, and adapter CTests. The adapter requires an active session, and the
+consecutive create/refresh/read calls make failure injection a caller-test
+consideration. Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial.
