@@ -3,6 +3,7 @@
 
 #include "features/speaking_eval/services/speaking_eval_ai_prompt.h"
 #include "features/speaking_eval/ui/speaking_eval_private_notes_editor.h"
+#include "next/application/speaking_evaluation_ai_batch_eligibility.h"
 #include "next/platform/settings_manager_ai_comment_custom_website_port.h"
 #include "next/platform/settings_manager_ai_comment_provider_preferences_port.h"
 #include "next/platform/settings_manager_ai_comment_voice_preferences_port.h"
@@ -829,35 +830,40 @@ QString SpeakingEvalReportDialog::aiPromptUnavailableReason() const
     {
         return tr("Select a student to create an AI prompt.");
     }
-    if (
-        report->report.englishName.trimmed().isEmpty()
-        && report->report.koreanName.trimmed().isEmpty()
-        )
+
+    using ClassMngr::Next::Application::
+        SpeakingEvaluationAiBatchEligibilityReason;
+    const auto reason =
+        ClassMngr::Next::Application::
+            speakingEvaluationAiBatchEligibilityReason({
+                .hasTrimmedStudentName =
+                    !report->report.englishName.trimmed().isEmpty()
+                    || !report->report.koreanName.trimmed().isEmpty(),
+                .grade = report->report.grade,
+                .hasDidWellItem =
+                    m_notesFields
+                    && !speakingEvalAiObservationItems(
+                        m_notesFields->didWellNotes()
+                        ).isEmpty(),
+                .hasNeedsImprovementItem =
+                    m_notesFields
+                    && !speakingEvalAiObservationItems(
+                        m_notesFields->needsImprovementNotes()
+                        ).isEmpty()
+            });
+
+    switch (reason)
     {
+    case SpeakingEvaluationAiBatchEligibilityReason::Eligible:
+        return {};
+    case SpeakingEvaluationAiBatchEligibilityReason::MissingName:
         return tr("Enter the student's name to create an AI prompt.");
-    }
-    if (
-        report->report.grade < 4
-        || report->report.grade > 6
-        )
-    {
+    case SpeakingEvaluationAiBatchEligibilityReason::UnsupportedGrade:
         return tr("AI prompts are available for grades E4 through E6.");
-    }
-    if (
-        !m_notesFields
-        || speakingEvalAiObservationItems(
-            m_notesFields->didWellNotes()
-            ).isEmpty()
-        )
-    {
+    case SpeakingEvaluationAiBatchEligibilityReason::MissingDidWellItem:
         return tr("Add at least one Did Well note.");
-    }
-    if (
-        speakingEvalAiObservationItems(
-            m_notesFields->needsImprovementNotes()
-            ).isEmpty()
-        )
-    {
+    case SpeakingEvaluationAiBatchEligibilityReason::
+        MissingNeedsImprovementItem:
         return tr("Add at least one Needs Improvement note.");
     }
     return {};

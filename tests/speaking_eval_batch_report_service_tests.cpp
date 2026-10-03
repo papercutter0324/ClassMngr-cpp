@@ -2324,7 +2324,7 @@ void SpeakingEvalBatchReportServiceTests::
     aiPromptButtonsRequireCompleteInput()
 {
     SpeakingEvalReportData reportData;
-    reportData.englishName = QStringLiteral("Student");
+    reportData.koreanName = QString::fromUtf8("\xED\x95\x99\xEC\x83\x9D");
     reportData.grade = 5;
     reportData.notes =
         QStringLiteral(
@@ -2360,6 +2360,8 @@ void SpeakingEvalBatchReportServiceTests::
     QVERIFY(copyOpenButton);
     QVERIFY(didWellEdit);
     QVERIFY(needsImprovementEdit);
+    QVERIFY(reportData.englishName.trimmed().isEmpty());
+    QVERIFY(!reportData.koreanName.trimmed().isEmpty());
     QVERIFY(previewButton->isEnabled());
     QVERIFY(copyOpenButton->isEnabled());
 
@@ -2401,6 +2403,25 @@ void SpeakingEvalBatchReportServiceTests::
         unknownGradeButton->toolTip().contains(
             QStringLiteral("E4 through E6")
             )
+        );
+
+    SpeakingEvalReportData incompleteReportData;
+    incompleteReportData.grade = 0;
+    SpeakingEvalReportDialog incompleteInputDialog(
+        { { QStringLiteral("Unnamed Student"), incompleteReportData } },
+        0,
+        nullptr,
+        true
+        );
+    auto* incompleteInputButton =
+        incompleteInputDialog.findChild<QPushButton*>(
+            QStringLiteral("speakingEvalPreviewAiPromptButton")
+            );
+    QVERIFY(incompleteInputButton);
+    QVERIFY(!incompleteInputButton->isEnabled());
+    QCOMPARE(
+        incompleteInputButton->toolTip(),
+        QStringLiteral("Enter the student's name to create an AI prompt.")
         );
 }
 
