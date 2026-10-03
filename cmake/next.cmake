@@ -113,6 +113,7 @@ set(CLASSMNGR_NEXT_APPLICATION_SOURCES
     src/next/application/roster_save_use_case.h
     src/next/application/speaking_evaluation_query.h
     src/next/application/speaking_evaluation_roster_name_import_plan.h
+    src/next/application/speaking_evaluation_roster_score_row_assignments.h
     src/next/application/speaking_evaluation_ai_batch_eligibility.h
     src/next/application/speaking_evaluation_ai_batch_comment_quality.h
     src/next/application/speaking_evaluation_ai_batch_accepted_comment_plan.h

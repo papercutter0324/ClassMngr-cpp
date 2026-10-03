@@ -310,6 +310,37 @@ add_test(
     COMMAND ClassMngrNextApplicationSpeakingEvaluationRosterNameImportPlanTests
 )
 
+# Keep speaking-evaluation score-to-roster assignment independent of Qt.
+add_executable(
+    ClassMngrNextApplicationSpeakingEvaluationRosterScoreRowAssignmentsTests
+    tests/next_application_speaking_evaluation_roster_score_row_assignments_tests.cpp
+)
+target_compile_features(
+    ClassMngrNextApplicationSpeakingEvaluationRosterScoreRowAssignmentsTests
+    PRIVATE
+        cxx_std_23
+)
+set_target_properties(
+    ClassMngrNextApplicationSpeakingEvaluationRosterScoreRowAssignmentsTests
+    PROPERTIES
+        AUTOMOC OFF
+        AUTOUIC OFF
+        AUTORCC OFF
+)
+set_property(
+    TARGET ClassMngrNextApplicationSpeakingEvaluationRosterScoreRowAssignmentsTests
+    PROPERTY CLASSMNGR_STANDALONE_CPP_TEST TRUE
+)
+target_link_libraries(
+    ClassMngrNextApplicationSpeakingEvaluationRosterScoreRowAssignmentsTests
+    PRIVATE
+        ClassMngrNext::Application
+)
+add_test(
+    NAME ClassMngrNextApplicationSpeakingEvaluationRosterScoreRowAssignmentsTests
+    COMMAND ClassMngrNextApplicationSpeakingEvaluationRosterScoreRowAssignmentsTests
+)
+
 # Keep student name-pair lookup independent of Qt.
 add_executable(
     ClassMngrNextApplicationStudentNamePairLookupTests

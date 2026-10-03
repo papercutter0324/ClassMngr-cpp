@@ -7,14 +7,16 @@
 #include "features/roster/ui/roster_print_dialog.h"
 #include "features/roster/services/roster_template_print_service.h"
 #include "next/application/speaking_evaluation_roster_score_import_use_case.h"
+#include "next/application/speaking_evaluation_roster_score_row_assignments.h"
 #include "next/domain/domain_types.h"
-#include "next/domain/student_name_pair.h"
 #include "next/platform/application_services_speaking_evaluation_read_port.h"
 
 #include <QDialog>
 
-#include <map>
+#include <optional>
 #include <string>
+#include <utility>
+#include <vector>
 
 void RosterEditorWidget::importScores()
 {
@@ -90,67 +92,54 @@ void RosterEditorWidget::importScores()
             continue;
         }
 
-        std::map<
-            ClassMngr::Next::Domain::StudentNamePair,
-            std::u16string
-            > lookup;
-        for (const auto& score : importedScores.value())
+        std::vector<
+            ClassMngr::Next::Application::SpeakingEvaluationRosterScoreRow
+            > rosterRows;
+        const int rosterRowCount = m_model->rowCount();
+        rosterRows.reserve(static_cast<std::size_t>(rosterRowCount));
+        for (int row = 0; row < rosterRowCount; ++row)
         {
-            const auto namePair =
-                ClassMngr::Next::Domain::StudentNamePair::fromNames(
-                    score.englishName,
-                    score.koreanName
-                    );
-            if (!namePair)
+            const QModelIndex scoreIndex = m_model->index(row, scoreColumn);
+            std::optional<std::u16string> currentGrade;
+            if (scoreIndex.isValid())
             {
-                continue;
+                currentGrade = scoreIndex.data(Qt::EditRole).toString().toStdU16String();
             }
 
-            // Preserve QHash::insert's last-write-wins behavior for duplicate
-            // imported student pairs.
-            lookup.insert_or_assign(
-                *namePair,
-                score.finalGrade
-                );
+            rosterRows.push_back({
+                .names = {
+                    m_model->index(row, englishColumn)
+                        .data(Qt::EditRole)
+                        .toString()
+                        .toStdU16String(),
+                    m_model->index(row, koreanColumn)
+                        .data(Qt::EditRole)
+                        .toString()
+                        .toStdU16String()
+                },
+                .currentGrade = std::move(currentGrade)
+            });
         }
 
-        for (int row = 0; row < m_model->rowCount(); ++row)
-        {
-            const QString englishName = m_model->index(row, englishColumn)
-                                            .data(Qt::EditRole)
-                                            .toString()
-                                            .trimmed();
-            const QString koreanName = m_model->index(row, koreanColumn)
-                                           .data(Qt::EditRole)
-                                           .toString()
-                                           .trimmed();
-            const auto namePair =
-                ClassMngr::Next::Domain::StudentNamePair::fromNames(
-                    englishName.toStdU16String(),
-                    koreanName.toStdU16String()
+        const auto assignments =
+            ClassMngr::Next::Application::
+                speakingEvaluationRosterScoreRowAssignments(
+                    rosterRows,
+                    importedScores.value()
                     );
-            if (!namePair)
-            {
-                continue;
-            }
-
-            const auto score = lookup.find(*namePair);
-            if (score == lookup.end())
+        for (const auto& assignment : assignments)
+        {
+            const int row = static_cast<int>(assignment.rosterRowIndex);
+            const QModelIndex index = m_model->index(row, scoreColumn);
+            if (!index.isValid())
             {
                 continue;
             }
 
             const QString finalGrade = QString::fromUtf16(
-                score->second.data(),
-                static_cast<qsizetype>(score->second.size())
+                assignment.finalGrade.data(),
+                static_cast<qsizetype>(assignment.finalGrade.size())
                 );
-
-            const QModelIndex index = m_model->index(row, scoreColumn);
-            if (!index.isValid() || index.data(Qt::EditRole).toString() == finalGrade)
-            {
-                continue;
-            }
-
             if (m_model->setData(index, finalGrade, Qt::EditRole))
             {
                 ++changeCount;
