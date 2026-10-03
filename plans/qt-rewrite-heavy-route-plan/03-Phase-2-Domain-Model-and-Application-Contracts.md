@@ -18,9 +18,9 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-04
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F300 is selected to reduce repeated per-matching-class
-  `SelectedClassSubtitleReadQuery` calls for ClassImportDialog destination
-  labels after F262.
+- Current note: F301 is selected to reduce per-class
+  `SelectedClassSubtitleReadQuery` calls in ClassExportDialog after its
+  classes-list load.
 
 ### Slice discovery batches
 
@@ -277,32 +277,29 @@ No new v2 production path depends on DataService, MainWindow, PageManager, or a 
 
 Earlier verified slices and cumulative exit-gate snapshots are archived in the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 
-## Latest Progress Update - 2026-10-04 (F299 accepted)
+## Latest Progress Update - 2026-10-04 (F300 accepted)
 
-F299, committed as `250fc6d2addd77559f376d0aae872f4aab849a60`, adds a Qt-free
-Class Analytics query/calculator and compact roster/evaluation DTOs and ports.
-The active-session SQL adapter reads only roster-name columns and six evaluation
-scores; platform name handling preserves `StudentNameUtils` normalization and
-`QLocale` ordering. `ClassAnalyticsPage` uses the query and preserves its empty
-state on no-data or read failure.
+F300, committed as `885adbf6f301be03dc437bfc7c774e4e5f913f47`, adds
+`SelectedClassSubtitleBatchReadQuery` and its read port, with an active-session
+`ApplicationServicesSelectedClassSubtitleBatchReadPort`. ClassImportDialog
+collects canonical destination IDs from valid preview rows and deduplicates
+them for one ordered batch query. It renders replacement choices from the
+original preview IDs, preserving order and duplicates; unavailable batch data
+keeps the existing formatted-label fallback.
 
-App-less coverage includes canonical evaluation-read order, current-roster
-filtering, All/named/unknown selection, historical global YTD, duplicate
-consolidation, partial scores, name identity, and structured failure. SQL tests
-cover compact mapping, missing evaluation as successful empty input,
-punctuation/Korean suffix matching, and query failure. Page tests cover
-no-data/error and successful ranking-model name/average/grade mapping.
-Fresh independent Windows x64 Debug/Ninja verification passed the ownership
-gate for 1,265 handwritten sources, built six targets, and passed five focused
-CTests. After a success-path page-test delta, an independent page rebuild and
-CTest passed 1/1. `git diff --check` passed. Logs are under
-`build/f299_verify_ninja_{configure,build,ctest_focused,page_rebuild,page_recheck_ctest}.log`;
-the full suite was not run. Configure reported nonfatal optional
-`WrapVulkanHeaders`/`Vulkan_INCLUDE_DIR` and `vswhere.exe` messages; MSVC was
-found.
+The application query validates canonical positive unique IDs before reading,
+skips the port for empty input, and validates result count and identifier order.
+The adapter makes one class batch read (metadata and regular-schedule
+statements) and, when assigned teachers exist, one batch read for distinct
+teacher IDs. Per-class class or teacher read failures remain represented in
+their respective snapshot fields.
 
-The page success test checks selected ranking mappings only; no runtime
-side-by-side legacy-dashboard comparison or direct UI assertions cover summary,
-class-shape, and YTD mapping. This accepted slice does not establish full
-parity or Phase 2 completion. Phase 2 remains In Progress/Open; Gates 1 and 2
-remain Partial.
+Independent Windows x64 Debug/Ninja verification passed the CMake ownership
+gate at 1,270 handwritten sources and built `ClassMngr` plus the query,
+adapter, dialog, and single-read test targets. Five focused CTests passed:
+`ClassMngrClassTransferTests`, the batch and single application query tests,
+and the batch and single platform adapter tests. `git diff --check` passed;
+the full suite was not run, and no further F300 limitation was identified.
+Logs are under
+`build/f300_verify_ninja/verification_logs/`. Phase 2 remains In Progress/Open;
+Gates 1 and 2 remain Partial.

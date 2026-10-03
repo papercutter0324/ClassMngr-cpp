@@ -10873,3 +10873,38 @@ warning/no-navigation behavior. F300 is selected next: reduce repeated
 per-matching-class `SelectedClassSubtitleReadQuery` calls for ClassImportDialog
 destination labels after F262; F301-F305 remain ordered candidates. Phase 2
 remains In Progress/Open; Gates 1 and 2 remain Partial.
+
+### Progress update - 2026-10-04 (F300 accepted; F301 selected)
+
+F300, committed as `885adbf6f301be03dc437bfc7c774e4e5f913f47`, adds
+`SelectedClassSubtitleBatchReadQuery` and `SelectedClassSubtitleBatchReadPort`,
+with an active-session `ApplicationServicesSelectedClassSubtitleBatchReadPort`.
+ClassImportDialog collects canonical destination IDs across valid preview
+rows, deduplicates them for one ordered batch query, then renders choices from
+the original matching-ID lists so their order and duplicates remain visible.
+When batch data is unavailable, the existing formatted destination-label
+fallback remains in use.
+
+The application query validates canonical positive, unique IDs before port
+access, skips the port for empty input, and checks returned count and ID order.
+The adapter makes one class batch repository call, covering one metadata and
+one regular-schedule statement; assigned teachers are deduplicated and use
+one batch repository call/statement when present. Read failures remain scoped
+to their class or assigned-teacher snapshot fields.
+
+Independent fresh Windows x64 Debug/Ninja configure passed the CMake ownership
+gate at 1,270 handwritten sources. `ClassMngr` and the query, adapter, dialog,
+and single-read test targets built. These five focused CTests passed:
+`ClassMngrClassTransferTests`,
+`ClassMngrNextApplicationSelectedClassSubtitleBatchReadQueryTests`,
+`ClassMngrNextApplicationSelectedClassSubtitleReadQueryTests`,
+`ClassMngrNextPlatformApplicationServicesSelectedClassSubtitleBatchReadPortTests`,
+and `ClassMngrNextPlatformApplicationServicesSelectedClassSubtitleReadPortTests`.
+`git diff --check` passed; the full suite was not run, and no further F300
+limitation was identified. Logs are under
+`build/f300_verify_ninja/verification_logs/`.
+
+F301 is selected to batch ClassExportDialog's per-class selected-subtitle reads
+after its classes-list load. The F299 completeness audit, F298 deferral, and
+ordered Batch 3 candidates remain unchanged. Phase 2 remains In Progress/Open;
+Gates 1 and 2 remain Partial.
