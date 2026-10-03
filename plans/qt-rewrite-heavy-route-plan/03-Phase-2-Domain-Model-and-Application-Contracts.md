@@ -18,8 +18,8 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-03
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F293 is selected to add the class-teacher-assignment read for
-  sidebar refresh.
+- Current note: F294 is selected to add the latest-import-date read for teacher
+  import.
 
 ### Slice discovery batches
 
@@ -56,7 +56,10 @@ one to this phase's progress log before replacing it.
       its accepted class-list, roster-count, and full teacher-profile queries.
    8. F292 — Route the sidebar's Korean birthday-directory read through the
       accepted query and adapter.
-   9. F293 — Add an accepted class-teacher-assignment read for sidebar refresh.
+   9. F293 — Route sidebar class-teacher assignments through the accepted
+      typed query, snapshot, and port with an active-session
+      `ApplicationServices` adapter, preserving unassigned classes and
+      existing sidebar behavior.
    10. F294 — Add an accepted latest-import-date read for teacher import.
 
 2. **Batch 2**
@@ -236,19 +239,39 @@ No new v2 production path depends on DataService, MainWindow, PageManager, or a 
 
 Earlier verified slices and cumulative exit-gate snapshots are archived in the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 
-## Latest Progress Update - 2026-10-03 (F292 accepted)
+## Latest Progress Update - 2026-10-03 (F293 accepted)
 
-F292, committed as `1617d71f`, adds a Qt-free Korean birthday-directory query,
-snapshot, and port with an `ApplicationServices` adapter, and removes the
-sidebar's Korean birthday read dependency on `TeacherService`. The compact
-projection retains raw birthday and preferred-name fallback fields. The
-sidebar preserves silent returns for typed NotFound or unavailable session,
-Korean-first warning and early stop on technical read failure, and later Native
-English/GS warning precedence. Fresh Windows x64 Ninja/MSVC 19.51.36257 and Qt
-6.12 verification built `ClassMngr` and six focused targets; all six focused
-CTests passed. The CMake ownership gate reported 1,236 handwritten sources,
-and `git diff --check` passed. Logs are under
-`build/p2_f292_independent_verify_ninja/`. The adapter test does not runtime-spy
-repository call count; source inspection confirms one `getAllTeachers()` call.
-The full suite was not run. Phase 2 remains In Progress/Open; Gates 1 and 2
-remain Partial.
+F293, committed as `51e7da7a9ad0f660e07a1f0cb5319a9dc66ae306`, adds a Qt-free
+assignment snapshot, read port, and query with an active-session
+`ApplicationServices` adapter over
+`ClassInfoRepository::loadClassTeacherAssignments()`. Sidebar refresh uses the
+query; the assignment-read and availability paths no longer depend on
+`ClassService` or `TeacherService`. Action-state availability now checks the
+active database session directly. The snapshot has one row per regular
+class, including unassigned rows; only positive teacher assignments carry
+a typed teacher ID. Sidebar refresh still clears
+nodes, attempts both teacher-choice and assignment reads, preserves
+teacher-choice error precedence, sorting and deduplication, unassigned-row
+action availability, warning/action updates, and silent no-session behavior.
+
+Fresh independent Windows x64 verification used Ninja/MSVC 19.51.36257 and Qt
+6.12.0. The CMake ownership gate reported 1,242 handwritten files; `ClassMngr`
+and six focused targets built in 376 steps. These six CTests passed 6/6:
+`ClassMngrNextApplicationClassTeacherAssignmentsReadQueryTests`,
+`ClassMngrNextPlatformApplicationServicesClassTeacherAssignmentsReadPortTests`,
+`ClassMngrNavigationTeacherReadTests`,
+`ClassMngrTestingClassRepositoryTests`,
+`ClassMngrNavigationTeacherReadParityTests`, and
+`ClassMngrNextPlatformApplicationServicesInitialSetupTeacherChoicesReadPortTests`.
+After a test-only repair added direct exact sidebar-order assertions,
+`ClassMngrNavigationTeacherReadTests` rebuilt and passed 1/1. `git diff --check`
+passed. Logs are under
+`build/p2_f293_independent_verify_ninja_20261003/` (configure, focused build,
+focused CTest, and navigation-recheck logs). Nonfatal environment warnings:
+VSDevCmd could not find `vswhere.exe`; 27 object-path-length warnings.
+Repository call count and malformed database teacher IDs were source-inspected,
+not runtime-spied; sidebar order is directly asserted. The full suite was not
+run.
+
+F294 is selected to add a latest-import-date read for teacher import. Phase 2
+remains In Progress/Open; Gates 1 and 2 remain Partial.

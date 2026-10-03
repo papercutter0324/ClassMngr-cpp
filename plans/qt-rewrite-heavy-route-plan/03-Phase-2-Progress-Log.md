@@ -10671,7 +10671,43 @@ and six focused targets, and passed these six CTests: `ClassMngrNextApplicationK
 repository call count; source inspection confirms one `getAllTeachers()` call.
 The full suite was not run.
 
-F293 is selected to add the accepted class-teacher-assignment read for sidebar
-refresh. Begin discovering the next batch when F293 work starts, because it is
-the second-last slice in Batch 1. Phase 2 remains In Progress/Open; Gates 1 and
-2 remain Partial.
+When F293 work began, its second-last-in-Batch-1 discovery trigger was applied;
+Batch 2 is recorded in the phase plan (commit `67376ac7`). Phase 2 remains
+In Progress/Open; Gates 1 and 2 remain Partial.
+
+### Progress update - 2026-10-03 (F293 accepted; F294 selected)
+
+F293, committed as `51e7da7a9ad0f660e07a1f0cb5319a9dc66ae306`, adds a Qt-free
+assignment snapshot, read port, and query with an active-session
+`ApplicationServices` adapter over
+`ClassInfoRepository::loadClassTeacherAssignments()`. Sidebar refresh uses the
+query; the assignment-read and availability paths no longer depend on
+`ClassService` or `TeacherService`. Action-state availability now checks the
+active database session directly. The snapshot has one row per regular
+class, including unassigned rows; only positive teacher assignments carry
+a typed teacher ID. Sidebar refresh still clears
+nodes, attempts both teacher-choice and assignment reads, preserves
+teacher-choice error precedence, sorting and deduplication, unassigned-row
+action availability, warning/action updates, and silent no-session behavior.
+
+Fresh independent Windows x64 verification used Ninja/MSVC 19.51.36257 and Qt
+6.12.0. The CMake ownership gate reported 1,242 handwritten files; `ClassMngr`
+and six focused targets built in 376 steps. These six CTests passed 6/6:
+`ClassMngrNextApplicationClassTeacherAssignmentsReadQueryTests`,
+`ClassMngrNextPlatformApplicationServicesClassTeacherAssignmentsReadPortTests`,
+`ClassMngrNavigationTeacherReadTests`,
+`ClassMngrTestingClassRepositoryTests`,
+`ClassMngrNavigationTeacherReadParityTests`, and
+`ClassMngrNextPlatformApplicationServicesInitialSetupTeacherChoicesReadPortTests`.
+After a test-only repair added direct exact sidebar-order assertions,
+`ClassMngrNavigationTeacherReadTests` rebuilt and passed 1/1. `git diff --check`
+passed. Logs are under
+`build/p2_f293_independent_verify_ninja_20261003/` (configure, focused build,
+focused CTest, and navigation-recheck logs). Nonfatal environment warnings:
+VSDevCmd could not find `vswhere.exe`; 27 object-path-length warnings.
+Repository call count and malformed database teacher IDs were source-inspected,
+not runtime-spied; sidebar order is directly asserted. The full suite was not
+run.
+
+F294 is selected to add a latest-import-date read for teacher import. Phase 2
+remains In Progress/Open; Gates 1 and 2 remain Partial.
