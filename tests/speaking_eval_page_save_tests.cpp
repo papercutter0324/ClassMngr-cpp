@@ -23,12 +23,17 @@
 #include "ui/shared/validation/form_validation_binder.h"
 
 #include <QCoreApplication>
+#include <QApplication>
+#include <QDialog>
+#include <QDir>
 #include <QEvent>
 #include <QLabel>
+#include <QLineEdit>
 #include <QSignalSpy>
 #include <QPushButton>
 #include <QSqlDatabase>
 #include <QTemporaryDir>
+#include <QTimer>
 #include <QSqlError>
 #include <QSqlQuery>
 #include <QtTest/QtTest>
@@ -206,6 +211,97 @@ QPushButton* findImportNamesButton(SpeakingEvalPage& page)
     return importNamesButton;
 }
 
+bool saveSubtitleForReportTests(
+    ApplicationServices& services,
+    const int classId,
+    const QString& grade,
+    const QString& level,
+    const QString& englishTeacher,
+    const QString& koreanTeacher,
+    QString* error
+    )
+{
+    Teacher teacher;
+    teacher.teacherEn = englishTeacher;
+    teacher.teacherKr = koreanTeacher;
+    teacher.preferredRomanization = QStringLiteral("Romanized");
+    teacher.preferredName = englishTeacher;
+    const auto teacherId = services.teacherService()->create(teacher);
+    if (!teacherId)
+    {
+        *error = teacherId.error();
+        return false;
+    }
+
+    const auto loaded = services.classService()->classInfo(classId);
+    if (!loaded)
+    {
+        *error = loaded.error();
+        return false;
+    }
+
+    ClassInfo classInfo = *loaded;
+    classInfo.teacherId = *teacherId;
+    classInfo.classGrade = grade;
+    classInfo.classLevel = level;
+    classInfo.classTimes = {
+        {
+            .day = QStringLiteral("Monday"),
+            .startTime = QStringLiteral("4:00 PM"),
+            .endTime = QStringLiteral("4:50 PM")
+        },
+        {
+            .day = QStringLiteral("Wednesday"),
+            .startTime = QStringLiteral("5:00 PM"),
+            .endTime = QStringLiteral("5:50 PM")
+        }
+    };
+    classInfo.intensiveTimes = {
+        {
+            .day = QStringLiteral("Tuesday"),
+            .startTime = QStringLiteral("7:00 PM"),
+            .endTime = QStringLiteral("7:50 PM")
+        }
+    };
+    const Status saved = services.classService()->saveClassInfo(classInfo);
+    if (!saved)
+    {
+        *error = saved.error();
+        return false;
+    }
+
+    return true;
+}
+
+struct OutputDirectoryCapture final
+{
+    bool foundLineEdit = false;
+    QString directory;
+};
+
+OutputDirectoryCapture openSaveAsAndCaptureDirectory(SpeakingEvalPage& page)
+{
+    OutputDirectoryCapture capture;
+    QTimer::singleShot(0, &page, [&capture]
+    {
+        QWidget* const modal = QApplication::activeModalWidget();
+        auto* const directoryEdit = modal
+            ? modal->findChild<QLineEdit*>()
+            : nullptr;
+        if (directoryEdit)
+        {
+            capture.foundLineEdit = true;
+            capture.directory = directoryEdit->text();
+        }
+
+        if (auto* const dialog = qobject_cast<QDialog*>(modal))
+        {
+            dialog->reject();
+        }
+    });
+    page.saveCurrentPageAs();
+    return capture;
+}
 
 }
 
@@ -233,6 +329,11 @@ private slots:
     void emptyRosterImportShowsNoDataWarningWithoutMutation();
     void unavailableRosterImportShowsNoDataWarningWithoutMutation();
     void missingImportColumnsShowsWarningWithoutMutation();
+    void reportClassInfoProjectionMapsSubtitleFields();
+    void reportClassInfoProjectionDefaultsWhenClassFieldsFail();
+    void reportClassInfoProjectionDefaultsWhenOuterReadFails();
+    void reportClassInfoProjectionKeepsClassFieldsWhenTeacherReadFails();
+    void outputReportsUsesProjectedRegularSchedule();
 };
 
 void SpeakingEvalPageSaveTests::
@@ -1498,6 +1599,211 @@ missingImportColumnsShowsWarningWithoutMutation()
         QStringLiteral("Roster must contain 'English' and 'Korean' columns.")
         );
     QCOMPARE(prompts.messages.constFirst().severity, PromptSeverity::Warning);
+}
+
+void SpeakingEvalPageSaveTests::
+reportClassInfoProjectionMapsSubtitleFields()
+{
+    SpeakingEvalPageFixture fixture;
+    QString error;
+    QVERIFY2(fixture.initialize(1, &error), qPrintable(error));
+    QVERIFY2(
+        saveSubtitleForReportTests(
+            fixture.services,
+            fixture.classIds.first(),
+            QStringLiteral("E5"),
+            QStringLiteral("Athena"),
+            QStringLiteral("English Teacher"),
+            QStringLiteral("\uAE40\uBBFC\uC9C0"),
+            &error
+            ),
+        qPrintable(error)
+        );
+
+    const ClassInfo projected =
+        readReportClassInfoForSpeakingEvaluationPage(
+            &fixture.services,
+            fixture.classIds.first()
+            );
+
+    QCOMPARE(projected.classGrade, QStringLiteral("E5"));
+    QCOMPARE(projected.classLevel, QStringLiteral("Athena"));
+    QCOMPARE(projected.classTimes.size(), 2);
+    QCOMPARE(projected.classTimes.at(0).day, QStringLiteral("Monday"));
+    QCOMPARE(projected.classTimes.at(0).startTime, QStringLiteral("4:00 PM"));
+    QVERIFY(projected.classTimes.at(0).endTime.isEmpty());
+    QCOMPARE(projected.classTimes.at(1).day, QStringLiteral("Wednesday"));
+    QCOMPARE(projected.classTimes.at(1).startTime, QStringLiteral("5:00 PM"));
+    QVERIFY(projected.classTimes.at(1).endTime.isEmpty());
+    QCOMPARE(projected.teacherEn, QStringLiteral("English Teacher"));
+    QCOMPARE(projected.teacherKr, QStringLiteral("\uAE40\uBBFC\uC9C0"));
+    QVERIFY(projected.intensiveTimes.isEmpty());
+}
+
+void SpeakingEvalPageSaveTests::
+reportClassInfoProjectionDefaultsWhenClassFieldsFail()
+{
+    SpeakingEvalPageFixture fixture;
+    QString error;
+    QVERIFY2(fixture.initialize(1, &error), qPrintable(error));
+    QVERIFY2(
+        saveSubtitleForReportTests(
+            fixture.services,
+            fixture.classIds.first(),
+            QStringLiteral("E5"),
+            QStringLiteral("Athena"),
+            QStringLiteral("English Teacher"),
+            QStringLiteral("\uAE40\uBBFC\uC9C0"),
+            &error
+            ),
+        qPrintable(error)
+        );
+
+    QSqlQuery dropRegularSchedule(
+        fixture.services.databaseSession()->database()
+        );
+    QVERIFY2(
+        dropRegularSchedule.exec(QStringLiteral("DROP TABLE class_times")),
+        qPrintable(dropRegularSchedule.lastError().text())
+        );
+
+    const ClassInfo projected =
+        readReportClassInfoForSpeakingEvaluationPage(
+            &fixture.services,
+            fixture.classIds.first()
+            );
+    QVERIFY(projected.classGrade.isEmpty());
+    QVERIFY(projected.classLevel.isEmpty());
+    QVERIFY(projected.classTimes.isEmpty());
+    QVERIFY(projected.teacherEn.isEmpty());
+    QVERIFY(projected.teacherKr.isEmpty());
+}
+
+void SpeakingEvalPageSaveTests::
+reportClassInfoProjectionDefaultsWhenOuterReadFails()
+{
+    SpeakingEvalPageFixture fixture;
+    QString error;
+    QVERIFY2(fixture.initialize(1, &error), qPrintable(error));
+    QVERIFY2(
+        saveSubtitleForReportTests(
+            fixture.services,
+            fixture.classIds.first(),
+            QStringLiteral("E5"),
+            QStringLiteral("Athena"),
+            QStringLiteral("English Teacher"),
+            QStringLiteral("\uAE40\uBBFC\uC9C0"),
+            &error
+            ),
+        qPrintable(error)
+        );
+
+    fixture.services.closeDatabase();
+    const ClassInfo projected =
+        readReportClassInfoForSpeakingEvaluationPage(
+            &fixture.services,
+            fixture.classIds.first()
+            );
+    QVERIFY(projected.classGrade.isEmpty());
+    QVERIFY(projected.classLevel.isEmpty());
+    QVERIFY(projected.classTimes.isEmpty());
+    QVERIFY(projected.teacherEn.isEmpty());
+    QVERIFY(projected.teacherKr.isEmpty());
+}
+
+void SpeakingEvalPageSaveTests::
+reportClassInfoProjectionKeepsClassFieldsWhenTeacherReadFails()
+{
+    SpeakingEvalPageFixture fixture;
+    QString error;
+    QVERIFY2(fixture.initialize(1, &error), qPrintable(error));
+    QVERIFY2(
+        saveSubtitleForReportTests(
+            fixture.services,
+            fixture.classIds.first(),
+            QStringLiteral("E5"),
+            QStringLiteral("Athena"),
+            QStringLiteral("English Teacher"),
+            QStringLiteral("\uAE40\uBBFC\uC9C0"),
+            &error
+            ),
+        qPrintable(error)
+        );
+
+    QSqlQuery disableForeignKeys(
+        fixture.services.databaseSession()->database()
+        );
+    QVERIFY2(
+        disableForeignKeys.exec(QStringLiteral("PRAGMA foreign_keys=OFF")),
+        qPrintable(disableForeignKeys.lastError().text())
+        );
+    QSqlQuery dropTeacherTable(
+        fixture.services.databaseSession()->database()
+        );
+    QVERIFY2(
+        dropTeacherTable.exec(QStringLiteral("DROP TABLE teachers")),
+        qPrintable(dropTeacherTable.lastError().text())
+        );
+
+    const ClassInfo projected =
+        readReportClassInfoForSpeakingEvaluationPage(
+            &fixture.services,
+            fixture.classIds.first()
+            );
+    QCOMPARE(projected.classGrade, QStringLiteral("E5"));
+    QCOMPARE(projected.classLevel, QStringLiteral("Athena"));
+    QCOMPARE(projected.classTimes.size(), 2);
+    QCOMPARE(projected.classTimes.at(0).day, QStringLiteral("Monday"));
+    QCOMPARE(projected.classTimes.at(0).startTime, QStringLiteral("4:00 PM"));
+    QVERIFY(projected.teacherEn.isEmpty());
+    QVERIFY(projected.teacherKr.isEmpty());
+}
+
+void SpeakingEvalPageSaveTests::
+outputReportsUsesProjectedRegularSchedule()
+{
+    SpeakingEvalPageFixture fixture;
+    QString error;
+    QVERIFY2(fixture.initialize(1, &error), qPrintable(error));
+    QVERIFY2(
+        saveSubtitleForReportTests(
+            fixture.services,
+            fixture.classIds.first(),
+            QStringLiteral("E5"),
+            QStringLiteral("Athena"),
+            QStringLiteral("English Teacher"),
+            QStringLiteral("\uAE40\uBBFC\uC9C0"),
+            &error
+            ),
+        qPrintable(error)
+        );
+
+    SpeakingEvalPage page(&fixture.services);
+    page.setSaveMode(SaveMode::Manual);
+    page.loadEvaluation(
+        Classroom(fixture.classNames.first(), fixture.classIds.first()),
+        QStringLiteral("Winter")
+        );
+    auto* const model = page.findChild<SpeakingEvalModel*>();
+    QVERIFY(model);
+    QVERIFY(setStudent(
+        model,
+        0,
+        QStringLiteral("Alice"),
+        QStringLiteral("\uAE40\uBBFC\uC9C0")
+        ));
+
+    page.show();
+    QCoreApplication::processEvents();
+    const OutputDirectoryCapture outputCapture =
+        openSaveAsAndCaptureDirectory(page);
+    QVERIFY(outputCapture.foundLineEdit);
+    const QString normalizedOutputDirectory =
+        QDir::fromNativeSeparators(outputCapture.directory);
+    QVERIFY(normalizedOutputDirectory.contains(
+        QStringLiteral("/E5 Athena (MW - 4pm)/Winter")
+        ));
+    QVERIFY(!normalizedOutputDirectory.contains(QStringLiteral("Tuesday")));
 }
 
 QTEST_MAIN(SpeakingEvalPageSaveTests)

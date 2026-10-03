@@ -21,8 +21,8 @@ struct SelectedClassSubtitleScheduleRow final
         ) = default;
 };
 
-// This projection contains only the class values consumed by
-// SidebarNodeNaming::formatClassDisplayName.
+// This projection contains the class values consumed by sidebar naming and
+// speaking-evaluation report context.
 struct SelectedClassSubtitleFields final
 {
     std::u16string classGrade;
@@ -35,7 +35,8 @@ struct SelectedClassSubtitleFields final
         ) = default;
 };
 
-// These are the only Teacher values used by preferredDisplayName().
+// These are the Teacher values used by preferredDisplayName() and speaking-
+// evaluation report headers.
 struct SelectedClassSubtitleTeacherFields final
 {
     std::u16string teacherKr;

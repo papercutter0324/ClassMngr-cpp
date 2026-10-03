@@ -319,9 +319,10 @@ void SpeakingEvalPage::showReports()
 
     if (m_services && m_services->classService())
     {
-        classInfo =
-            m_services->classService()->classInfo(m_classroom.id)
-                .value_or(ClassInfo{});
+        classInfo = readReportClassInfoForSpeakingEvaluationPage(
+            m_services,
+            m_classroom.id
+            );
         signatureImage = QByteArray::fromStdString(
             ClassMngr::Next::Platform::
                 ApplicationServicesPersonalSignatureImagePort(
@@ -392,12 +393,10 @@ void SpeakingEvalPage::generateClassAiComments()
     ClassInfo classInfo;
     if (m_services && m_services->classService())
     {
-        classInfo =
-            m_services
-                ->classService()
-                ->classInfo(
-                    m_classroom.id
-                    ).value_or(ClassInfo{});
+        classInfo = readReportClassInfoForSpeakingEvaluationPage(
+            m_services,
+            m_classroom.id
+            );
     }
 
     const QList<SpeakingEvalBatchReportService::StudentReport> reports =
@@ -463,9 +462,10 @@ void SpeakingEvalPage::outputReports(
     QByteArray signatureImage;
     if (m_services && m_services->classService())
     {
-        classInfo =
-            m_services->classService()->classInfo(m_classroom.id)
-                .value_or(ClassInfo{});
+        classInfo = readReportClassInfoForSpeakingEvaluationPage(
+            m_services,
+            m_classroom.id
+            );
         signatureImage = QByteArray::fromStdString(
             ClassMngr::Next::Platform::
                 ApplicationServicesPersonalSignatureImagePort(

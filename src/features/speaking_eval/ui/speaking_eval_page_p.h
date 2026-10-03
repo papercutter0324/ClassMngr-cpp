@@ -154,6 +154,70 @@ ClassTabNavigation::ScheduleSource scheduleSourceForMode(
         : ClassTabNavigation::ScheduleSource::Regular;
 }
 
+ClassInfo readReportClassInfoForSpeakingEvaluationPage(
+    ApplicationServices* services,
+    int classId
+    )
+{
+    if (!services || classId <= 0)
+    {
+        return {};
+    }
+
+    const auto selectedClassId =
+        ClassMngr::Next::Domain::ClassId::fromString(
+            std::to_string(classId)
+            );
+    if (!selectedClassId)
+    {
+        return {};
+    }
+
+    ClassMngr::Next::Platform::
+        ApplicationServicesSelectedClassSubtitleReadPort readPort(services);
+    const ClassMngr::Next::Application::SelectedClassSubtitleReadQuery query(
+        readPort
+        );
+    const auto loadedSubtitle = query.execute(*selectedClassId);
+    if (!loadedSubtitle || !loadedSubtitle.value().classFields)
+    {
+        return {};
+    }
+
+    const auto& subtitle = loadedSubtitle.value();
+    const auto& fields = subtitle.classFields.value();
+    ClassInfo classInfo;
+    classInfo.classGrade = QString::fromStdU16String(fields.classGrade);
+    classInfo.classLevel = QString::fromStdU16String(fields.classLevel);
+    classInfo.classTimes.reserve(
+        static_cast<qsizetype>(fields.regularSchedule.size())
+        );
+    for (const auto& row : fields.regularSchedule)
+    {
+        ClassTime time;
+        time.day = QString::fromStdU16String(row.day);
+        time.startTime = QString::fromStdU16String(row.startTime);
+        time.endTime.clear();
+        classInfo.classTimes.append(std::move(time));
+    }
+
+    if (subtitle.assignedTeacher)
+    {
+        const auto& assignedTeacher = subtitle.assignedTeacher.value();
+        if (assignedTeacher)
+        {
+            classInfo.teacherKr = QString::fromStdU16String(
+                assignedTeacher->teacherKr
+                );
+            classInfo.teacherEn = QString::fromStdU16String(
+                assignedTeacher->teacherEn
+                );
+        }
+    }
+
+    return classInfo;
+}
+
 const QStringList& evaluationNames()
 {
     static const QStringList names{
