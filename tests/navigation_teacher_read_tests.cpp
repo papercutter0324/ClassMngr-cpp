@@ -21,6 +21,7 @@
 #include <QDialogButtonBox>
 #include <QLineEdit>
 #include <QPushButton>
+#include <QSqlError>
 #include <QSqlQuery>
 #include <QStringList>
 #include <QTemporaryDir>
@@ -229,6 +230,7 @@ private slots:
     void rawNonpositiveAndMissingIdsReturnBeforeLeaveConfirmation();
     void successfulReadConfirmsBeforeLoadingAndShowingTeacher();
     void classDeleteChooserUsesSubtitleLabelsAndConfirmsSelectedClass();
+    void classListReadFailureShowsWarningWithoutOpeningChooser();
     void classFieldsFailureUsesDefaultSubtitleAndNoTeacherFallback();
     void assignedTeacherFailureKeepsClassFieldsAndUsesNoTeacher();
     void classDeleteChooserRequiresAnActiveSession();
@@ -455,6 +457,94 @@ classDeleteChooserUsesSubtitleLabelsAndConfirmsSelectedClass()
     QVERIFY(confirmation.destructive);
     QVERIFY(services.classService()->classroom(alphaClassId));
     QVERIFY(!services.classService()->classroom(betaClassId));
+}
+
+void NavigationTeacherReadTests::
+classListReadFailureShowsWarningWithoutOpeningChooser()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+
+    int classId = -1;
+    createClassWithSubtitle(
+        services,
+        QStringLiteral("Stored class before list failure"),
+        -1,
+        QStringLiteral("E4"),
+        QStringLiteral("Orion"),
+        QStringLiteral("Monday"),
+        QStringLiteral("4:00 PM"),
+        classId
+        );
+    QVERIFY(classId > 0);
+
+    QSqlQuery disableForeignKeys(services.databaseSession()->database());
+    QVERIFY(disableForeignKeys.exec(QStringLiteral("PRAGMA foreign_keys=OFF")));
+    QSqlQuery dropClasses(services.databaseSession()->database());
+    QVERIFY2(dropClasses.exec(QStringLiteral("DROP TABLE classes")),
+             qPrintable(dropClasses.lastError().text()));
+    QVERIFY(services.databaseSession()->isOpen());
+    QVERIFY(services.classService()->isAvailable());
+
+    PageManager pages;
+    Sidebar sidebar;
+    SidebarController controller(&services, &sidebar, &pages);
+    FakeUserPromptService prompts;
+    DialogServices::setUserPromptServiceForTesting(&prompts);
+
+    bool chooserOpened = false;
+    QTimer::singleShot(
+        0,
+        &controller,
+        [&chooserOpened]
+        {
+            QDialog* dialog = qobject_cast<QDialog*>(
+                QApplication::activeModalWidget()
+                );
+            if (!dialog)
+            {
+                for (QWidget* widget : QApplication::topLevelWidgets())
+                {
+                    auto* const candidate = qobject_cast<QDialog*>(widget);
+                    if (candidate
+                        && candidate->objectName()
+                            == QStringLiteral("sidebarRecordSelectionDialog"))
+                    {
+                        dialog = candidate;
+                        break;
+                    }
+                }
+            }
+
+            if (dialog)
+            {
+                chooserOpened = true;
+                dialog->reject();
+            }
+        }
+        );
+
+    QVERIFY(QMetaObject::invokeMethod(
+        &controller,
+        "deleteClass",
+        Qt::DirectConnection
+        ));
+    QCoreApplication::processEvents();
+
+    QVERIFY(!chooserOpened);
+    QCOMPARE(prompts.messages.size(), 1);
+    const PromptRequest& warning = prompts.messages.constFirst();
+    QCOMPARE(warning.title, QStringLiteral("Delete Class"));
+    QCOMPARE(warning.message, QStringLiteral("Classes could not be loaded."));
+    QVERIFY(!warning.details.trimmed().isEmpty());
+    QVERIFY(warning.details.contains(QStringLiteral("classes"),
+                                    Qt::CaseInsensitive));
+    QCOMPARE(warning.severity, PromptSeverity::Warning);
+    QVERIFY(prompts.asynchronousMessages.isEmpty());
+    QVERIFY(prompts.confirmations.isEmpty());
+    QVERIFY(QApplication::activeModalWidget() == nullptr);
 }
 
 void NavigationTeacherReadTests::

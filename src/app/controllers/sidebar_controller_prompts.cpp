@@ -2,13 +2,28 @@
 #include "ui/shared/dialogs/user_prompt_service.h"
 
 #include "app/services/feature_services.h"
+#include "next/application/classes_list_read_query.h"
 #include "next/application/selected_class_subtitle_read_query.h"
+#include "next/platform/application_services_classes_list_read_port.h"
 #include "next/platform/application_services_selected_class_subtitle_read_port.h"
 
+#include <charconv>
 #include <string>
+#include <system_error>
 #include <utility>
 
 using namespace SidebarControllerPrivate;
+
+namespace
+{
+QString classesListErrorMessage(const std::string& message)
+{
+    return QString::fromUtf8(
+        message.data(),
+        static_cast<qsizetype>(message.size())
+        );
+}
+}
 
 int SidebarController::promptForClassToDelete() const
 {
@@ -21,20 +36,49 @@ int SidebarController::promptForClassToDelete() const
     }
 
     QList<QPair<QString, int>> records;
-    const Result<QList<Classroom>> loadedClasses = classes->classes();
+    ClassMngr::Next::Platform::
+        ApplicationServicesClassesListReadPort readPort(m_services);
+    const ClassMngr::Next::Application::ClassesListReadQuery query(readPort);
+    const auto loadedClasses = query.execute();
     if (!loadedClasses)
     {
         DialogServices::showWarning(
             m_sidebar,
             tr("Delete Class"),
             tr("Classes could not be loaded."),
-            loadedClasses.error()
+            classesListErrorMessage(loadedClasses.error().message)
             );
         return -1;
     }
 
-    for (const Classroom& classroom : *loadedClasses)
+    for (const auto& entry : loadedClasses.value().classes)
     {
+        int classId = 0;
+        const std::string& classIdValue = entry.classId.value();
+        const auto [end, conversionError] = std::from_chars(
+            classIdValue.data(),
+            classIdValue.data() + classIdValue.size(),
+            classId
+            );
+        if (conversionError != std::errc{}
+            || end != classIdValue.data() + classIdValue.size()
+            || classId <= 0
+            || std::to_string(classId) != classIdValue)
+        {
+            DialogServices::showWarning(
+                m_sidebar,
+                tr("Delete Class"),
+                tr("Classes could not be loaded."),
+                classesListErrorMessage(
+                    "The classes list contains an invalid class identifier."
+                    )
+                );
+            return -1;
+        }
+
+        Classroom classroom;
+        classroom.id = classId;
+        classroom.name = QString::fromStdU16String(entry.className);
         if (classroom.id <= 0)
         {
             continue;
