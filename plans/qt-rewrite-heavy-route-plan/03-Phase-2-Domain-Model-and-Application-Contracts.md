@@ -18,9 +18,10 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-03
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F288 is selected to route the Campus Dashboard selector list
-  through the accepted campus-directory port while preserving order, campus
-  codes, and role-specific labels.
+- Current note: F289 is selected to route roster-template class-scope
+  enumeration through the accepted classes-list query. Inject the query at the
+  print-service boundary; production must provide the real adapter, while the
+  service test uses a valid fake query boundary.
 
 ### Slice discovery batches
 
@@ -206,16 +207,17 @@ No new v2 production path depends on DataService, MainWindow, PageManager, or a 
 
 Earlier verified slices and cumulative exit-gate snapshots are archived in the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 
-## Latest Progress Update - 2026-10-03 (F287 accepted)
+## Latest Progress Update - 2026-10-03 (F288 accepted)
 
-F287, committed as `16b77b79`, removes the unreachable direct class lookup from
-`ClassImportDialog::destinationClassDisplayName()`. The formatter always
-returns a nonempty label, so the previous `classroom(classId)` name fallback
-could not affect current output. The existing caller test still expects
-`Unknown Class • No Teacher` when subtitle fields cannot load. Fresh Windows
-x64 Debug/Ninja verification built the class-transfer target in 315 steps; the
-`ClassMngrClassTransferTests` CTest passed 1/1 and the focused caller case
-passed 3/3 QtTest entries. Logs are under `build/p2_f287_verify_logs/`. The
-documents-resource warning was non-fatal; the configure wrapper reported exit
-1 despite successful generation, target build, and tests. The full suite was
-not run. Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial.
+F288, committed as `b2c807b1`, routes `CampusDashboardPage::loadCampuses()`
+through `CalendarPageCampusDirectoryQueryAdapter`, preserving campus codes,
+repository order, selector labels, and current/stored-selection fallback. The
+caller tests cover all 13 bundled campuses, ordering, role-specific labels, and
+selection behavior; missing and whitespace optional codes remain covered at
+the adapter layer. The independent `ClassMngrCampusDashboardPageTests` and
+`ClassMngrNextPlatformCalendarPageCampusDirectoryQueryTests` CTests passed 2/2.
+Logs are under `build/p2_f288_verify_ninja_*` and
+`build/p2_f288_verify_logs/`. The initial Visual Studio generator attempt was
+replaced by a successful Ninja configure/build/CTest run; the optional Vulkan
+header warning was non-fatal. The full suite was not run. Phase 2 remains
+In Progress/Open; Gates 1 and 2 remain Partial.

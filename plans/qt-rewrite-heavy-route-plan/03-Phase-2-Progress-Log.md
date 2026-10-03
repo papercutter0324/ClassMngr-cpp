@@ -10552,10 +10552,25 @@ documents-resource warning was non-fatal; the configure wrapper reported exit
 1 despite successful generation, target build, and tests. The full suite was
 not run.
 
-F288 is selected to route `CampusDashboardPage::loadCampuses()` through the
-accepted `CalendarPageCampusDirectoryQueryPort` and adapter. Preserve repository
-ordering, omission of default/unreadable campus files, the stored/current
-selection fallback, and admin/non-admin label formatting including optional
-campus codes. Keep the full selected-campus `loadCampus()` read and all editing
-behavior unchanged. Retain the CampusDashboard caller and campus-directory
-adapter CTests. Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial.
+### Progress update - 2026-10-03 (F288 accepted; F289 selected)
+
+F288, committed as `b2c807b1`, routes `CampusDashboardPage::loadCampuses()`
+through `CalendarPageCampusDirectoryQueryAdapter`, preserving campus codes,
+repository order, selector labels, and current/stored-selection fallback. The
+caller tests cover all 13 bundled campuses, ordering, role-specific labels, and
+selection behavior; missing and whitespace optional codes remain covered at
+the adapter layer. The independent `ClassMngrCampusDashboardPageTests` and
+`ClassMngrNextPlatformCalendarPageCampusDirectoryQueryTests` CTests passed 2/2.
+Logs are under `build/p2_f288_verify_ninja_*` and
+`build/p2_f288_verify_logs/`. The initial Visual Studio generator attempt was
+replaced by a successful Ninja configure/build/CTest run; the optional Vulkan
+header warning was non-fatal. The full suite was not run.
+
+F289 is selected to route roster-template print class-scope enumeration
+through the accepted classes-list query. Inject `ClassesListReadQuery` at the
+print-service boundary; the production caller must provide the real
+`ApplicationServicesClassesListReadPort` adapter, and the service test must
+exercise that same query boundary with a fake. Do not pass the adapter an
+unconstructed `ApplicationServices` test object. Preserve all/current/selected
+scope resolution and class order, then verify the real adapter independently.
+Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial.
