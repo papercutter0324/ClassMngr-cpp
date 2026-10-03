@@ -234,6 +234,15 @@ bool invokeDeleteClassSelecting(
         );
 }
 
+bool invokeDeleteTeacher(SidebarController& controller)
+{
+    return QMetaObject::invokeMethod(
+        &controller,
+        "deleteTeacher",
+        Qt::DirectConnection
+        );
+}
+
 bool invokeUpcomingBirthdays(
     SidebarController& controller,
     BirthdayDialogObservation& observation
@@ -351,6 +360,8 @@ private slots:
     void cleanup();
     void rawNonpositiveAndMissingIdsReturnBeforeLeaveConfirmation();
     void successfulReadConfirmsBeforeLoadingAndShowingTeacher();
+    void selectedTeacherDeleteConfirmsProfileDisplayNameAndCanBeCanceled();
+    void selectedTeacherProfileReadFailureWarnsWithoutConfirmation();
     void classDeleteChooserUsesSubtitleLabelsAndConfirmsSelectedClass();
     void classListReadFailureShowsWarningWithoutOpeningChooser();
     void classFieldsFailureUsesDefaultSubtitleAndNoTeacherFallback();
@@ -493,6 +504,113 @@ successfulReadConfirmsBeforeLoadingAndShowingTeacher()
     QVERIFY(header);
     QVERIFY(header->title().contains(QStringLiteral("Target Display")));
     QVERIFY(!page->hasUnsavedChanges());
+}
+
+void NavigationTeacherReadTests::
+selectedTeacherDeleteConfirmsProfileDisplayNameAndCanBeCanceled()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+
+    Teacher selected = teacherFixture(
+        QStringLiteral("Selected Teacher Korean"),
+        QStringLiteral("Selected Teacher English"),
+        QStringLiteral("Selected Display Name")
+        );
+    QVERIFY(persistTeacher(services, selected) > 0);
+
+    PageManager pages;
+    Sidebar sidebar;
+    sidebar.addTeacherNode(
+        QStringLiteral("Stale Sidebar Label"),
+        selected.id,
+        false
+        );
+    sidebar.selectTeacher(selected.id);
+    QCOMPARE(sidebar.getSelectedTeacherId(), selected.id);
+
+    SidebarController controller(&services, &sidebar, &pages);
+    FakeUserPromptService prompts;
+    prompts.scriptedChoices.enqueue(PromptChoice::Rejected);
+    DialogServices::setUserPromptServiceForTesting(&prompts);
+
+    QVERIFY(invokeDeleteTeacher(controller));
+
+    QCOMPARE(prompts.confirmations.size(), 1);
+    const PromptRequest& confirmation = prompts.confirmations.constFirst();
+    QCOMPARE(confirmation.title, QStringLiteral("Delete Teacher"));
+    QCOMPARE(
+        confirmation.message,
+        QStringLiteral("Delete 'Selected Display Name'?")
+        );
+    QCOMPARE(confirmation.acceptText, QStringLiteral("Delete"));
+    QCOMPARE(confirmation.rejectText, QStringLiteral("Cancel"));
+    QVERIFY(confirmation.destructive);
+    QVERIFY(prompts.messages.isEmpty());
+    QVERIFY(prompts.asynchronousMessages.isEmpty());
+
+    const auto remaining = services.teacherService()->teacher(selected.id);
+    QVERIFY(remaining);
+    QCOMPARE(remaining->id, selected.id);
+    QCOMPARE(
+        remaining->preferredName,
+        QStringLiteral("Selected Display Name")
+        );
+}
+
+void NavigationTeacherReadTests::
+selectedTeacherProfileReadFailureWarnsWithoutConfirmation()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+
+    Teacher selected = teacherFixture(
+        QStringLiteral("Selected Teacher Korean"),
+        QStringLiteral("Selected Teacher English"),
+        QStringLiteral("Selected Display Name")
+        );
+    QVERIFY(persistTeacher(services, selected) > 0);
+
+    Sidebar sidebar;
+    sidebar.addTeacherNode(
+        QStringLiteral("Selected Display Name"),
+        selected.id,
+        false
+        );
+    sidebar.selectTeacher(selected.id);
+    QCOMPARE(sidebar.getSelectedTeacherId(), selected.id);
+
+    QSqlQuery dropTeachers(services.databaseSession()->database());
+    QVERIFY2(dropTeachers.exec(QStringLiteral("DROP TABLE teachers")),
+             qPrintable(dropTeachers.lastError().text()));
+    const Result<Teacher> expectedProfileRead =
+        services.teacherService()->teacher(selected.id);
+    QVERIFY(!expectedProfileRead);
+    QVERIFY(!expectedProfileRead.error().trimmed().isEmpty());
+
+    PageManager pages;
+    SidebarController controller(&services, &sidebar, &pages);
+    FakeUserPromptService prompts;
+    DialogServices::setUserPromptServiceForTesting(&prompts);
+
+    QVERIFY(invokeDeleteTeacher(controller));
+
+    QCOMPARE(prompts.messages.size(), 1);
+    const PromptRequest& warning = prompts.messages.constFirst();
+    QCOMPARE(warning.severity, PromptSeverity::Warning);
+    QCOMPARE(warning.title, QStringLiteral("Delete Teacher"));
+    QCOMPARE(
+        warning.message,
+        QStringLiteral("The teacher could not be loaded.")
+        );
+    QCOMPARE(warning.details, expectedProfileRead.error());
+    QVERIFY(prompts.confirmations.isEmpty());
+    QVERIFY(prompts.asynchronousMessages.isEmpty());
+    QCOMPARE(sidebar.getSelectedTeacherId(), selected.id);
 }
 
 void NavigationTeacherReadTests::

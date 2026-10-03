@@ -1,7 +1,12 @@
 #include "sidebar_controller_p.h"
 
 #include "app/services/feature_services.h"
+#include "next/application/teacher_profile_read_query.h"
+#include "next/domain/domain_types.h"
+#include "next/platform/application_services_teacher_profile_read_port.h"
 #include "ui/shared/dialogs/user_prompt_service.h"
+
+#include <string>
 
 using namespace SidebarControllerPrivate;
 
@@ -102,28 +107,52 @@ void SidebarController::deleteTeacher()
         return;
     }
 
-    const Result<Teacher> teacher =
-        teachers->teacher(
-            teacherId
+    const auto typedTeacherId =
+        ClassMngr::Next::Domain::TeacherId::fromString(
+            std::to_string(teacherId)
             );
+    if (!typedTeacherId)
+    {
+        return;
+    }
 
-    if (!teacher)
+    ClassMngr::Next::Platform::
+        ApplicationServicesTeacherProfileReadPort readPort(m_services);
+    const ClassMngr::Next::Application::TeacherProfileReadQuery query(
+        readPort
+        );
+    const auto profile = query.execute(*typedTeacherId);
+
+    if (!profile)
     {
         DialogServices::showWarning(
             m_sidebar,
             tr("Delete Teacher"),
             tr("The teacher could not be loaded."),
-            teacher.error()
+            QString::fromUtf8(
+                profile.error().message.data(),
+                static_cast<qsizetype>(profile.error().message.size())
+                )
             );
         return;
     }
 
-    if (!confirmDeleteTeacher(*teacher))
+    const auto& fields = profile.value().fields;
+    Teacher teacher;
+    teacher.id = teacherId;
+    teacher.teacherKr = QString::fromStdU16String(fields.teacherKr);
+    teacher.teacherEn = QString::fromStdU16String(fields.teacherEn);
+    teacher.preferredRomanization = QString::fromStdU16String(
+        fields.preferredRomanization
+        );
+    teacher.preferredName = QString::fromStdU16String(fields.preferredName);
+
+    if (!confirmDeleteTeacher(teacher))
     {
         return;
     }
 
-    const Status removed = teachers->remove(teacher->id);
+    const Status removed = teachers->remove(teacher.id);
     if (!removed)
     {
         DialogServices::showWarning(
