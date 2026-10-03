@@ -1,11 +1,9 @@
 #include "class_import_dialog.h"
 #include "ui/shared/widgets/text_fit_dialog_button_box.h"
 
-#include "app/services/feature_services.h"
 #include "core/application_services.h"
 #include "core/result.h"
 #include "core/utils/sidebar_node_naming.h"
-#include "domain/models/classroom.h"
 #include "next/application/class_transfer_projection.h"
 #include "next/application/selected_class_subtitle_read_query.h"
 #include "next/application/teacher_profile_read_query.h"
@@ -81,12 +79,9 @@ QString packageClassDisplayName(
 
 QString destinationClassDisplayName(
     ApplicationServices* applicationServices,
-    ClassService* classService,
     int classId
     )
 {
-    const Classroom classroom = classService->classroom(classId)
-        .value_or(Classroom{});
     ClassInfo info;
     Teacher teacher;
 
@@ -148,11 +143,6 @@ QString destinationClassDisplayName(
     if (!display.isEmpty())
     {
         return display;
-    }
-
-    if (!classroom.name.trimmed().isEmpty())
-    {
-        return classroom.name.trimmed();
     }
 
     return QObject::tr("Class %1").arg(classId);
@@ -533,10 +523,6 @@ ClassImportDialog::ClassImportDialog(
     , m_package(package)
     , m_preview(preview)
 {
-    auto* classService = applicationServices
-        ? applicationServices->classService()
-        : nullptr;
-
     setWindowTitle(tr("Import Classes"));
     setModal(true);
     resize(820, 640);
@@ -587,7 +573,7 @@ ClassImportDialog::ClassImportDialog(
                 combo,
                 tr("Replace: %1").arg(
                     destinationClassDisplayName(
-                        applicationServices, classService, classId)),
+                        applicationServices, classId)),
                 static_cast<int>(ClassImportAction::Replace),
                 classId
                 );
