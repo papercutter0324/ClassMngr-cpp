@@ -37,7 +37,6 @@ namespace
 bool g_hasOpenDatabase = false;
 bool g_hasFeatureServices = false;
 QList<Classroom> g_classes;
-QHash<int, Classroom> g_classesById;
 QHash<int, ClassInfo> g_classInfo;
 QHash<int, Roster> g_rosters;
 QList<int> g_classInfoReadOrder;
@@ -68,7 +67,6 @@ void resetServiceStubs()
     g_hasOpenDatabase = false;
     g_hasFeatureServices = false;
     g_classes.clear();
-    g_classesById.clear();
     g_classInfo.clear();
     g_rosters.clear();
     g_classInfoReadOrder.clear();
@@ -253,11 +251,6 @@ Result<Classroom> ClassService::classroom(
         {
             return classroom;
         }
-    }
-
-    if (g_classesById.contains(classId))
-    {
-        return g_classesById.value(classId);
     }
 
     Classroom classroom;
@@ -845,6 +838,8 @@ private slots:
     void requestSaveRostersPdfPropagatesRosterReadFailureBeforeOutput();
     void requestSaveRostersPdfUsesSelectedClassScope();
     void requestSaveRostersPdfUsesClassesListOrderForAllClasses();
+    void requestPreviewUsesClassesListNameWhenClassInfoHasNoLabel();
+    void requestRejectsSelectedClassOutsideClassesListWithoutCurrentName();
     void requestSaveRostersPdfPreservesRosterSnapshotOutput();
     void buildByDayCellValuesMapsClassToTimeBlock();
     void buildByDayCellValuesWritesTwentyFiveStudentRows();
@@ -1072,11 +1067,11 @@ void RosterTemplatePrintServiceTests::
     QCOMPARE(
         g_classReadOrder,
         QList<QString>({
-            QStringLiteral("classroom:42"),
             QStringLiteral("classInfo:42"),
             QStringLiteral("roster:42")
         })
         );
+    QVERIFY(!g_classReadOrder.contains(QStringLiteral("classroom:42")));
     QVERIFY(!g_classReadOrder.contains(QStringLiteral("classroom:43")));
     QVERIFY(!g_classReadOrder.contains(QStringLiteral("classInfo:43")));
     QVERIFY(!g_classReadOrder.contains(QStringLiteral("roster:43")));
@@ -1163,7 +1158,6 @@ void RosterTemplatePrintServiceTests::requestSaveRostersPdfUsesSelectedClassScop
     QCOMPARE(
         g_classReadOrder,
         QList<QString>({
-            QStringLiteral("classroom:20"),
             QStringLiteral("classInfo:20"),
             QStringLiteral("roster:20")
         })
@@ -1233,13 +1227,10 @@ void RosterTemplatePrintServiceTests::
     QCOMPARE(
         g_classReadOrder,
         QList<QString>({
-            QStringLiteral("classroom:30"),
             QStringLiteral("classInfo:30"),
             QStringLiteral("roster:30"),
-            QStringLiteral("classroom:10"),
             QStringLiteral("classInfo:10"),
             QStringLiteral("roster:10"),
-            QStringLiteral("classroom:20"),
             QStringLiteral("classInfo:20"),
             QStringLiteral("roster:20")
         })
@@ -1247,6 +1238,103 @@ void RosterTemplatePrintServiceTests::
 
     QPdfDocument document;
     loadDocument(document, path, 3);
+}
+
+void RosterTemplatePrintServiceTests::
+    requestPreviewUsesClassesListNameWhenClassInfoHasNoLabel()
+{
+    resetServiceStubs();
+    g_hasOpenDatabase = true;
+    g_hasFeatureServices = true;
+
+    auto classData = sampleRosterClass(
+        41,
+        QStringLiteral("Monday"),
+        QStringLiteral("4:00 PM")
+        );
+    classData.info.classGrade.clear();
+    classData.info.classLevel.clear();
+    g_classes = {classData.classroom};
+    g_classInfo.insert(classData.classroom.id, classData.info);
+    g_rosters.insert(classData.classroom.id, classData.roster);
+
+    FakeClassesListQuery classesList;
+    FakeRosterReadPort rosterReadPort;
+
+    RosterTemplatePrintService::Request request;
+    request.services = fakeApplicationServices();
+    request.classesListReadQuery = &classesList.query;
+    request.rosterReadPort = &rosterReadPort;
+    request.scope = RosterTemplatePrintService::Scope::AllClasses;
+
+    QString errorMessage;
+    const QImage firstPreview =
+        RosterTemplatePrintService::renderTemplatePreview(
+            request,
+            QSize(420, 260),
+            true,
+            &errorMessage
+            );
+    QVERIFY2(!firstPreview.isNull(), qPrintable(errorMessage));
+    QVERIFY(errorMessage.isEmpty());
+
+    g_classes[0].name = QStringLiteral("Changed Fallback Label");
+    const QImage renamedPreview =
+        RosterTemplatePrintService::renderTemplatePreview(
+            request,
+            QSize(420, 260),
+            true,
+            &errorMessage
+            );
+    QVERIFY2(!renamedPreview.isNull(), qPrintable(errorMessage));
+    QVERIFY(firstPreview != renamedPreview);
+    QCOMPARE(classesList.port.readCount, 2);
+    QCOMPARE(g_classInfoReadOrder, QList<int>({41, 41}));
+    QCOMPARE(rosterReadPort.readClassIds, QList<int>({41, 41}));
+    QCOMPARE(
+        g_classReadOrder,
+        QList<QString>({
+            QStringLiteral("classInfo:41"),
+            QStringLiteral("roster:41"),
+            QStringLiteral("classInfo:41"),
+            QStringLiteral("roster:41")
+        })
+        );
+}
+
+void RosterTemplatePrintServiceTests::
+    requestRejectsSelectedClassOutsideClassesListWithoutCurrentName()
+{
+    resetServiceStubs();
+    g_hasOpenDatabase = true;
+    g_hasFeatureServices = true;
+
+    FakeClassesListQuery classesList;
+    FakeRosterReadPort rosterReadPort;
+    QTemporaryDir temporaryDirectory;
+    QVERIFY(temporaryDirectory.isValid());
+
+    RosterTemplatePrintService::Request request;
+    request.services = fakeApplicationServices();
+    request.classesListReadQuery = &classesList.query;
+    request.rosterReadPort = &rosterReadPort;
+    request.currentClassId = 50;
+    request.scope = RosterTemplatePrintService::Scope::SelectedClasses;
+    request.selectedClassIds = {51};
+
+    const RosterTemplatePrintService::Result result =
+        RosterTemplatePrintService::saveRostersPdf(
+            request,
+            temporaryDirectory.filePath(
+                QStringLiteral("missing-selected-class.pdf")
+                )
+            );
+
+    QCOMPARE(result.status, RosterTemplatePrintService::Status::Failed);
+    QCOMPARE(classesList.port.readCount, 1);
+    QVERIFY(g_classInfoReadOrder.isEmpty());
+    QVERIFY(rosterReadPort.readClassIds.isEmpty());
+    QVERIFY(g_classReadOrder.isEmpty());
 }
 
 void RosterTemplatePrintServiceTests::
@@ -1924,7 +2012,6 @@ void RosterTemplatePrintServiceTests::requestSaveRostersPdfUsesSelectedTemplate(
     QCOMPARE(
         g_classReadOrder,
         QList<QString>({
-            QStringLiteral("classroom:20"),
             QStringLiteral("classInfo:20"),
             QStringLiteral("roster:20")
         })
@@ -1958,12 +2045,9 @@ void RosterTemplatePrintServiceTests
     Classroom testingClass;
     testingClass.id = 50;
     testingClass.name = QStringLiteral("Writing Lab");
-    g_classesById.insert(testingClass.id, testingClass);
 
     ClassInfo info;
     info.classId = testingClass.id;
-    info.classGrade = QStringLiteral("M2");
-    info.classLevel = QStringLiteral("Mixed (All)");
     g_classInfo.insert(testingClass.id, info);
 
     Roster roster;
@@ -1990,6 +2074,7 @@ void RosterTemplatePrintServiceTests
     request.classesListReadQuery = &classesList.query;
     request.rosterReadPort = &rosterReadPort;
     request.currentClassId = testingClass.id;
+    request.currentClassName = testingClass.name;
     request.scope =
         RosterTemplatePrintService::Scope::CurrentClass;
     request.templateId =
@@ -2012,14 +2097,29 @@ void RosterTemplatePrintServiceTests
     QCOMPARE(
         g_classReadOrder,
         QList<QString>({
-            QStringLiteral("classroom:50"),
             QStringLiteral("classInfo:50"),
             QStringLiteral("roster:50")
         })
         );
+    QVERIFY(!g_classReadOrder.contains(QStringLiteral("classroom:50")));
+
+    RosterTemplatePrintService::RosterClassData expectedClass;
+    expectedClass.classroom = testingClass;
+    expectedClass.info = info;
+    expectedClass.roster = roster;
+    const QString expectedPath = savePdf(
+        temporaryDirectory,
+        {expectedClass},
+        QStringLiteral("expected-testing-class-roster.pdf"),
+        RosterTemplatePrintService::TemplateId::PerClassWithExtraInfo
+        );
+    QVERIFY(!expectedPath.isEmpty());
 
     QPdfDocument document;
     loadDocument(document, currentPath, 1);
+    QPdfDocument expectedDocument;
+    loadDocument(expectedDocument, expectedPath, 1);
+    QVERIFY(renderPage(document) == renderPage(expectedDocument));
 
     request.scope =
         RosterTemplatePrintService::Scope::AllClasses;

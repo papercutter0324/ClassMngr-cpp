@@ -64,7 +64,10 @@ QStringList daysWithValues(
 ::Result<QList<RosterClassData>> loadRosterClassData(
     ClassService* classService,
     const ClassMngr::Next::Application::RosterReadPort* rosterReadPort,
-    const QList<int>& classIds
+    const QList<int>& classIds,
+    const QList<Classroom>& classrooms,
+    int currentClassId,
+    const QString& currentClassName
     )
 {
     QList<RosterClassData> result;
@@ -77,13 +80,33 @@ QStringList daysWithValues(
     for (int classId : classIds)
     {
         RosterClassData data;
-        const ::Result<Classroom> classroom =
-            classService->classroom(classId);
-        if (!classroom)
+        data.classroom.id = classId;
+        const auto listedClass = std::find_if(
+            classrooms.cbegin(),
+            classrooms.cend(),
+            [classId](const Classroom& classroom)
+            {
+                return classroom.id == classId;
+            }
+            );
+        if (listedClass != classrooms.cend())
         {
-            return std::unexpected(classroom.error());
+            data.classroom.name = listedClass->name;
         }
-        data.classroom = *classroom;
+        else if (
+            classId == currentClassId
+            && !currentClassName.trimmed().isEmpty()
+            )
+        {
+            data.classroom.name = currentClassName;
+        }
+        else
+        {
+            return std::unexpected(
+                QObject::tr("Roster data is not available.")
+                );
+        }
+
         const ::Result<ClassInfo> info =
             classService->classInfo(classId);
         if (!info)
@@ -250,7 +273,10 @@ Result loadRosterClassesForRequest(
             loadRosterClassData(
                 classService,
                 request.rosterReadPort,
-                classIds
+                classIds,
+                classrooms,
+                request.currentClassId,
+                request.currentClassName
                 );
         if (!loadedRosterClasses)
         {

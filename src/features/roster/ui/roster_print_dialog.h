@@ -73,6 +73,7 @@ private:
     int m_currentClassId = -1;
     RosterTemplatePrintService::Scope m_defaultScope =
         RosterTemplatePrintService::Scope::AllClasses;
+    QString m_currentClassName;
     QString m_currentClassDisplayName;
     Action m_selectedAction = Action::Print;
     QString m_selectedSavePath;

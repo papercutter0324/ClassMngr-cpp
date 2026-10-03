@@ -209,6 +209,7 @@ void RosterEditorWidget::outputRosters(
     request.classesListReadQuery = &classesQuery;
     request.rosterReadPort = &rosterReadPort;
     request.currentClassId = m_classroom.id;
+    request.currentClassName = m_classroom.name;
     request.scope = dialog.selectedScope();
     request.selectedClassIds = dialog.selectedClassIds();
     request.templateId = dialog.selectedTemplateId();

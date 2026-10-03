@@ -50,6 +50,7 @@ struct Request
     const ClassMngr::Next::Application::RosterReadPort*
         rosterReadPort = nullptr;
     int currentClassId = -1;
+    QString currentClassName;
     Scope scope = Scope::AllClasses;
     QList<int> selectedClassIds;
     TemplateId templateId = TemplateId::ByDay;

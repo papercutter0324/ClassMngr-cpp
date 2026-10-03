@@ -802,6 +802,7 @@ void RosterPrintDialog::updatePreview()
     request.classesListReadQuery = &classesQuery;
     request.rosterReadPort = &rosterReadPort;
     request.currentClassId = m_currentClassId;
+    request.currentClassName = m_currentClassName;
     request.scope = selectedScope();
     request.selectedClassIds = selectedClassIds();
     request.templateId = selectedTemplateId();
@@ -1319,6 +1320,8 @@ void RosterPrintDialog::loadClasses()
                 if (testingClass)
                 {
                     const auto& fields = testingClass.value();
+                    m_currentClassName =
+                        QString::fromStdU16String(fields.name);
                     m_currentClassDisplayName =
                         QStringLiteral("%1 — %2 %3")
                             .arg(
@@ -1431,6 +1434,7 @@ void RosterPrintDialog::loadClasses()
 
         if (classroom.id == m_currentClassId)
         {
+            m_currentClassName = classroom.name;
             m_currentClassDisplayName =
                 displayName;
         }
