@@ -665,6 +665,7 @@ private slots:
     void refreshTeacherSidebarReturnsSilentlyWithoutAnActiveSession();
     void updateActionStatesClassListFailureDisablesClassActionsOnly();
     void classDeleteChooserUsesSubtitleLabelsAndConfirmsSelectedClass();
+    void emptyClassDeleteChooserDoesNotReadSubtitles();
     void classListReadFailureShowsWarningWithoutOpeningChooser();
     void classListReloadFailureAfterChooserWarnsBeforeConfirmation();
     void selectedClassMissingFromReloadWarnsBeforeConfirmation();
@@ -1578,6 +1579,17 @@ classDeleteChooserUsesSubtitleLabelsAndConfirmsSelectedClass()
     QVERIFY(alphaClassId > 0);
     QVERIFY(betaClassId > 0);
 
+    ClassInfoRepository* const classRepository =
+        services.databaseSession()->classInfoRepository();
+    TeacherRepository* const teacherRepository =
+        services.databaseSession()->teacherRepository();
+    QVERIFY(classRepository);
+    QVERIFY(teacherRepository);
+    const ClassSubtitleBatchReadMetrics classMetricsBefore =
+        classRepository->classSubtitleBatchReadMetrics();
+    const TeacherDisplayNameBatchReadMetrics teacherMetricsBefore =
+        teacherRepository->teacherDisplayNameBatchReadMetrics();
+
     PageManager pages;
     Sidebar sidebar;
     SidebarController controller(&services, &sidebar, &pages);
@@ -1586,8 +1598,30 @@ classDeleteChooserUsesSubtitleLabelsAndConfirmsSelectedClass()
     DialogServices::setUserPromptServiceForTesting(&prompts);
 
     RecordSelectionObservation observation;
+    QString mutationError;
+    const auto updateSubtitleAfterChooserPopulation = [&]
+    {
+        ClassInfo updatedInfo;
+        updatedInfo.classId = betaClassId;
+        updatedInfo.teacherId = betaTeacher.id;
+        updatedInfo.classGrade = QStringLiteral(" E6 ");
+        updatedInfo.classLevel = QStringLiteral(" Altair ");
+        updatedInfo.classTimes = {
+            {QStringLiteral("Wednesday"),
+             QStringLiteral("6:00 PM"),
+             QStringLiteral("6:55 PM")}
+        };
+        const Status updated = classRepository->saveClassInfo(updatedInfo);
+        if (!updated)
+        {
+            mutationError = updated.error();
+        }
+    };
     QVERIFY(invokeDeleteClassSelecting(
-        controller, betaClassId, observation));
+        controller,
+        betaClassId,
+        observation,
+        updateSubtitleAfterChooserPopulation));
 
     QVERIFY(observation.found);
     QVERIFY(observation.selected);
@@ -1606,19 +1640,81 @@ classDeleteChooserUsesSubtitleLabelsAndConfirmsSelectedClass()
             QStringLiteral("Beta Display"),
             QStringLiteral("Tues (5:00)")));
 
+    QVERIFY2(mutationError.isEmpty(), qPrintable(mutationError));
+
     QCOMPARE(prompts.confirmations.size(), 1);
     const PromptRequest confirmation = prompts.confirmations.first();
     QCOMPARE(confirmation.title, QStringLiteral("Delete Class"));
     QCOMPARE(confirmation.message,
         QStringLiteral("Delete '%1'?").arg(displayLabel(
-            QStringLiteral("E5 Vega"),
+            QStringLiteral("E6 Altair"),
             QStringLiteral("Beta Display"),
-            QStringLiteral("Tues (5:00)"))));
+            QStringLiteral("Wed (6:00)"))));
     QCOMPARE(confirmation.acceptText, QStringLiteral("Delete"));
     QCOMPARE(confirmation.rejectText, QStringLiteral("Cancel"));
     QVERIFY(confirmation.destructive);
     QVERIFY(services.classService()->classroom(alphaClassId));
     QVERIFY(!services.classService()->classroom(betaClassId));
+
+    const ClassSubtitleBatchReadMetrics classMetricsAfter =
+        classRepository->classSubtitleBatchReadMetrics();
+    QCOMPARE(classMetricsAfter.callCount - classMetricsBefore.callCount, 1);
+    QCOMPARE(classMetricsAfter.requestedClassCount
+                 - classMetricsBefore.requestedClassCount,
+             2);
+    QCOMPARE(classMetricsAfter.metadataStatementCount
+                 - classMetricsBefore.metadataStatementCount,
+             1);
+    QCOMPARE(classMetricsAfter.regularScheduleStatementCount
+                 - classMetricsBefore.regularScheduleStatementCount,
+             1);
+
+    const TeacherDisplayNameBatchReadMetrics teacherMetricsAfter =
+        teacherRepository->teacherDisplayNameBatchReadMetrics();
+    QCOMPARE(teacherMetricsAfter.callCount - teacherMetricsBefore.callCount, 1);
+    QCOMPARE(teacherMetricsAfter.statementCount
+                 - teacherMetricsBefore.statementCount,
+             1);
+}
+
+void NavigationTeacherReadTests::
+emptyClassDeleteChooserDoesNotReadSubtitles()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+
+    ClassInfoRepository* const classRepository =
+        services.databaseSession()->classInfoRepository();
+    QVERIFY(classRepository);
+    const ClassSubtitleBatchReadMetrics metricsBefore =
+        classRepository->classSubtitleBatchReadMetrics();
+
+    PageManager pages;
+    Sidebar sidebar;
+    SidebarController controller(&services, &sidebar, &pages);
+    FakeUserPromptService prompts;
+    DialogServices::setUserPromptServiceForTesting(&prompts);
+
+    QVERIFY(QMetaObject::invokeMethod(
+        &controller,
+        "deleteClass",
+        Qt::DirectConnection
+        ));
+
+    const ClassSubtitleBatchReadMetrics metricsAfter =
+        classRepository->classSubtitleBatchReadMetrics();
+    QCOMPARE(metricsAfter.callCount, metricsBefore.callCount);
+    QCOMPARE(metricsAfter.requestedClassCount,
+             metricsBefore.requestedClassCount);
+    QCOMPARE(metricsAfter.metadataStatementCount,
+             metricsBefore.metadataStatementCount);
+    QCOMPARE(metricsAfter.regularScheduleStatementCount,
+             metricsBefore.regularScheduleStatementCount);
+    QVERIFY(prompts.messages.isEmpty());
+    QVERIFY(prompts.confirmations.isEmpty());
+    QVERIFY(QApplication::activeModalWidget() == nullptr);
 }
 
 void NavigationTeacherReadTests::

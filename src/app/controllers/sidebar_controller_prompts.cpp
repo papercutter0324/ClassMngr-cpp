@@ -4,15 +4,21 @@
 #include "app/services/feature_services.h"
 #include "next/application/classes_list_read_query.h"
 #include "next/application/initial_setup_teacher_choices_read_query.h"
+#include "next/application/selected_class_subtitle_batch_read_query.h"
 #include "next/application/selected_class_subtitle_read_query.h"
+#include "next/domain/domain_types.h"
 #include "next/platform/application_services_classes_list_read_port.h"
 #include "next/platform/application_services_initial_setup_teacher_choices_read_port.h"
+#include "next/platform/application_services_selected_class_subtitle_batch_read_port.h"
 #include "next/platform/application_services_selected_class_subtitle_read_port.h"
+
+#include <QCoreApplication>
 
 #include <charconv>
 #include <string>
 #include <system_error>
 #include <utility>
+#include <vector>
 
 using namespace SidebarControllerPrivate;
 
@@ -33,6 +39,91 @@ QString teacherChoicesErrorMessage(const std::string& message)
         static_cast<qsizetype>(message.size())
         );
 }
+
+QString classNumberDisplayName(const int classId)
+{
+    return QCoreApplication::translate(
+        "SidebarController",
+        "Class %1"
+        ).arg(classId);
+}
+
+QString storedClassDisplayName(const Classroom& classroom)
+{
+    const QString name = classroom.name.trimmed();
+    return name.isEmpty()
+        ? classNumberDisplayName(classroom.id)
+        : name;
+}
+
+QString formattedClassDisplayName(
+    const Classroom& classroom,
+    const ClassMngr::Next::Application::SelectedClassSubtitleReadSnapshot*
+        subtitle
+    )
+{
+    ClassInfo classInfo;
+    Teacher teacher;
+
+    if (subtitle && subtitle->classFields)
+    {
+        const auto& fields = subtitle->classFields.value();
+        classInfo.classGrade = QString::fromStdU16String(
+            fields.classGrade
+            );
+        classInfo.classLevel = QString::fromStdU16String(
+            fields.classLevel
+            );
+        classInfo.classTimes.reserve(
+            static_cast<qsizetype>(fields.regularSchedule.size())
+            );
+        for (const auto& row : fields.regularSchedule)
+        {
+            ClassTime time;
+            time.day = QString::fromStdU16String(row.day);
+            time.startTime = QString::fromStdU16String(row.startTime);
+            time.endTime.clear();
+            classInfo.classTimes.append(std::move(time));
+        }
+
+        if (subtitle->assignedTeacher && subtitle->assignedTeacher.value())
+        {
+            const auto& teacherFields =
+                subtitle->assignedTeacher.value().value();
+            teacher.teacherKr = QString::fromStdU16String(
+                teacherFields.teacherKr
+                );
+            teacher.teacherEn = QString::fromStdU16String(
+                teacherFields.teacherEn
+                );
+            teacher.preferredRomanization = QString::fromStdU16String(
+                teacherFields.preferredRomanization
+                );
+            teacher.preferredName = QString::fromStdU16String(
+                teacherFields.preferredName
+                );
+        }
+    }
+
+    QString displayName =
+        SidebarNodeNaming::formatClassDisplayName(
+            classInfo,
+            teacher
+            )
+            .trimmed();
+
+    if (displayName.isEmpty())
+    {
+        displayName = classroom.name.trimmed();
+    }
+
+    if (displayName.isEmpty())
+    {
+        displayName = classNumberDisplayName(classroom.id);
+    }
+
+    return displayName;
+}
 }
 
 int SidebarController::promptForClassToDelete() const
@@ -45,7 +136,12 @@ int SidebarController::promptForClassToDelete() const
         return -1;
     }
 
-    QList<QPair<QString, int>> records;
+    auto* teachers =
+        openTeacherService(m_services);
+    const bool canReadSubtitles = classes && teachers;
+
+    QList<Classroom> classrooms;
+    std::vector<ClassMngr::Next::Domain::ClassId> classIds;
     ClassMngr::Next::Platform::
         ApplicationServicesClassesListReadPort readPort(m_services);
     const ClassMngr::Next::Application::ClassesListReadQuery query(readPort);
@@ -94,17 +190,79 @@ int SidebarController::promptForClassToDelete() const
             continue;
         }
 
-        records.append(
-            {
-                classDisplayName(classroom),
-                classroom.id
-            }
-            );
+        const auto typedClassId =
+            ClassMngr::Next::Domain::ClassId::fromString(classIdValue);
+        if (!typedClassId)
+        {
+            DialogServices::showWarning(
+                m_sidebar,
+                tr("Delete Class"),
+                tr("Classes could not be loaded."),
+                classesListErrorMessage(
+                    "The classes list contains an invalid class identifier."
+                    )
+                );
+            return -1;
+        }
+
+        classIds.push_back(*typedClassId);
+        classrooms.append(std::move(classroom));
     }
 
-    if (records.isEmpty())
+    if (classrooms.isEmpty())
     {
         return -1;
+    }
+
+    QList<QPair<QString, int>> records;
+    if (!canReadSubtitles)
+    {
+        for (const Classroom& classroom : classrooms)
+        {
+            records.append(
+                {
+                    storedClassDisplayName(classroom),
+                    classroom.id
+                }
+                );
+        }
+    }
+    else
+    {
+        std::vector<
+            ClassMngr::Next::Application::SelectedClassSubtitleReadSnapshot
+            > subtitles;
+        if (!classIds.empty())
+        {
+            ClassMngr::Next::Platform::
+                ApplicationServicesSelectedClassSubtitleBatchReadPort
+                    subtitleReadPort(m_services);
+            const ClassMngr::Next::Application::
+                SelectedClassSubtitleBatchReadQuery subtitleQuery(
+                    subtitleReadPort
+                    );
+            const auto loadedSubtitles = subtitleQuery.execute(classIds);
+            if (loadedSubtitles)
+            {
+                subtitles = std::move(loadedSubtitles.value());
+            }
+        }
+
+        for (std::size_t index = 0; index < classrooms.size(); ++index)
+        {
+            const Classroom& classroom = classrooms.at(
+                static_cast<qsizetype>(index)
+                );
+            const auto* subtitle = index < subtitles.size()
+                ? &subtitles[index]
+                : nullptr;
+            records.append(
+                {
+                    formattedClassDisplayName(classroom, subtitle),
+                    classroom.id
+                }
+                );
+        }
     }
 
     return chooseRecord(
@@ -206,13 +364,8 @@ QString SidebarController::classDisplayName(
 
     if (!classes || !teachers)
     {
-        return classroom.name.trimmed().isEmpty()
-            ? tr("Class %1").arg(classroom.id)
-            : classroom.name.trimmed();
+        return storedClassDisplayName(classroom);
     }
-
-    ClassInfo classInfo;
-    Teacher teacher;
 
     const auto classId = ClassMngr::Next::Domain::ClassId::fromString(
         std::to_string(classroom.id)
@@ -226,70 +379,13 @@ QString SidebarController::classDisplayName(
         const ClassMngr::Next::Application::SelectedClassSubtitleReadQuery
             query(readPort);
         const auto loadedSubtitle = query.execute(*classId);
-        if (loadedSubtitle && loadedSubtitle.value().classFields)
-        {
-            const auto& subtitle = loadedSubtitle.value();
-            const auto& fields = subtitle.classFields.value();
-            classInfo.classGrade = QString::fromStdU16String(
-                fields.classGrade
-                );
-            classInfo.classLevel = QString::fromStdU16String(
-                fields.classLevel
-                );
-            classInfo.classTimes.reserve(
-                static_cast<qsizetype>(fields.regularSchedule.size())
-                );
-            for (const auto& row : fields.regularSchedule)
-            {
-                ClassTime time;
-                time.day = QString::fromStdU16String(row.day);
-                time.startTime = QString::fromStdU16String(row.startTime);
-                time.endTime.clear();
-                classInfo.classTimes.append(std::move(time));
-            }
-
-            if (subtitle.assignedTeacher
-                && subtitle.assignedTeacher.value())
-            {
-                const auto& teacherFields =
-                    subtitle.assignedTeacher.value().value();
-                teacher.teacherKr = QString::fromStdU16String(
-                    teacherFields.teacherKr
-                    );
-                teacher.teacherEn = QString::fromStdU16String(
-                    teacherFields.teacherEn
-                    );
-                teacher.preferredRomanization = QString::fromStdU16String(
-                    teacherFields.preferredRomanization
-                    );
-                teacher.preferredName = QString::fromStdU16String(
-                    teacherFields.preferredName
-                    );
-            }
-        }
+        return formattedClassDisplayName(
+            classroom,
+            loadedSubtitle ? &loadedSubtitle.value() : nullptr
+            );
     }
 
-    QString displayName =
-        SidebarNodeNaming::formatClassDisplayName(
-            classInfo,
-            teacher
-            )
-            .trimmed();
-
-    if (displayName.isEmpty())
-    {
-        displayName =
-            classroom.name.trimmed();
-    }
-
-    if (displayName.isEmpty())
-    {
-        displayName =
-            tr("Class %1")
-                .arg(classroom.id);
-    }
-
-    return displayName;
+    return formattedClassDisplayName(classroom, nullptr);
 }
 
 bool SidebarController::confirmDeleteClass(
