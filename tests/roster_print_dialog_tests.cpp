@@ -12,9 +12,11 @@
 #include <QComboBox>
 #include <QListWidget>
 #include <QListWidgetItem>
+#include <QMessageBox>
 #include <QSqlError>
 #include <QSqlQuery>
 #include <QTemporaryDir>
+#include <QTimer>
 #include <QtTest/QtTest>
 #include <QUuid>
 
@@ -187,6 +189,7 @@ class RosterPrintDialogTests final : public QObject
 private slots:
     void cleanup();
     void selectedClassListPreservesOrderIdsAndCheckState();
+    void classListReadFailureShowsWarningAndLeavesListEnabledAndEmpty();
     void teacherReadFailureRetainsClassFieldsAndDefaultTeacherFormatting();
     void classFieldsReadFailureUsesDefaultClassFormatting();
     void extraInfoColumnsComeFromSelectedClassRostersAndKeepChecksOnRefresh();
@@ -282,6 +285,73 @@ void RosterPrintDialogTests::selectedClassListPreservesOrderIdsAndCheckState()
             );
     }
     QCOMPARE(dialog.selectedClassIds(), QList<int>({mikeId}));
+}
+
+void RosterPrintDialogTests::
+classListReadFailureShowsWarningAndLeavesListEnabledAndEmpty()
+{
+    RosterPrintDialogFixture fixture;
+    QString error;
+    QVERIFY2(fixture.initialize(&error), qPrintable(error));
+
+    int currentId = 0;
+    QVERIFY2(fixture.createClass(
+                 QStringLiteral("Current"),
+                 QStringLiteral("E4"),
+                 QStringLiteral("Theseus"),
+                 -1,
+                 {},
+                 &currentId,
+                 &error
+                 ), qPrintable(error));
+
+    QSqlQuery dropClasses(fixture.services.databaseSession()->database());
+    QVERIFY2(dropClasses.exec(QStringLiteral("DROP TABLE classes")),
+             qPrintable(dropClasses.lastError().text()));
+
+    QString warningTitle;
+    QString warningText;
+    QString warningDetails;
+    bool warningCaptured = false;
+    QTimer::singleShot(
+        0,
+        [&]()
+        {
+            auto* warning = qobject_cast<QMessageBox*>(
+                QApplication::activeModalWidget());
+            if (!warning)
+            {
+                return;
+            }
+
+            warningTitle = warning->windowTitle();
+            warningText = warning->text();
+            warningDetails = warning->detailedText();
+            warningCaptured = true;
+            warning->accept();
+        }
+        );
+
+    RosterPrintDialog dialog(
+        &fixture.services,
+        currentId,
+        RosterTemplatePrintService::Scope::SelectedClasses,
+        RosterPrintDialog::Action::Print
+        );
+
+    QVERIFY(warningCaptured);
+    QCOMPARE(warningTitle, QStringLiteral("Print Rosters"));
+    QCOMPARE(warningText, QStringLiteral("Classes could not be loaded."));
+    QVERIFY2(!warningDetails.isEmpty(),
+             "The class-list error details were not shown.");
+    QVERIFY(warningDetails.contains(QStringLiteral("classes"),
+                                    Qt::CaseInsensitive));
+
+    QListWidget* const list = classListFor(dialog);
+    QVERIFY(list);
+    QCOMPARE(list->count(), 0);
+    QVERIFY(list->isEnabled());
+    QCOMPARE(dialog.selectedClassIds(), QList<int>());
 }
 
 void RosterPrintDialogTests::

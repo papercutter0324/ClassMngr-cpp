@@ -6,11 +6,13 @@
 #include "domain/models/class_info.h"
 #include "ui/shared/widgets/marquee_item_delegate.h"
 #include "domain/models/teacher.h"
-#include "next/application/selected_class_subtitle_read_query.h"
+#include "next/application/classes_list_read_query.h"
 #include "next/application/roster_read_query.h"
+#include "next/application/selected_class_subtitle_read_query.h"
 #include "next/domain/domain_types.h"
-#include "next/platform/application_services_selected_class_subtitle_read_port.h"
+#include "next/platform/application_services_classes_list_read_port.h"
 #include "next/platform/application_services_roster_read_port.h"
+#include "next/platform/application_services_selected_class_subtitle_read_port.h"
 #include "ui/shared/widgets/no_wheel_combobox.h"
 #include "ui/shared/widgets/text_fit_dialog_button_box.h"
 #include "ui/shared/widgets/text_fit_push_button.h"
@@ -49,7 +51,9 @@
 #include <QVBoxLayout>
 #include <QVariant>
 
+#include <charconv>
 #include <string>
+#include <system_error>
 #include <utility>
 
 namespace
@@ -68,6 +72,49 @@ constexpr int SelectedClassesHeightMultiplier = 2;
 constexpr int SelectedClassesItemSpacing = 4;
 constexpr int MaximumDialogWidthMultiplier = 3;
 constexpr int MaximumDialogWidthDivisor = 2;
+
+QList<Classroom> classroomsFromListSnapshot(
+    const ClassMngr::Next::Application::ClassesListSnapshot& snapshot
+    )
+{
+    QList<Classroom> classrooms;
+    classrooms.reserve(static_cast<qsizetype>(snapshot.classes.size()));
+    for (const auto& entry : snapshot.classes)
+    {
+        int classId = 0;
+        const std::string& classIdValue = entry.classId.value();
+        const auto [end, error] = std::from_chars(
+            classIdValue.data(),
+            classIdValue.data() + classIdValue.size(),
+            classId
+            );
+        Q_ASSERT(
+            error == std::errc{}
+            && end == classIdValue.data() + classIdValue.size()
+            && classId > 0
+            );
+        if (error != std::errc{}
+            || end != classIdValue.data() + classIdValue.size()
+            || classId <= 0)
+        {
+            continue;
+        }
+
+        Classroom classroom;
+        classroom.id = classId;
+        classroom.name = QString::fromStdU16String(entry.className);
+        classrooms.append(std::move(classroom));
+    }
+    return classrooms;
+}
+
+QString classesListErrorMessage(const std::string& message)
+{
+    return QString::fromUtf8(
+        message.data(),
+        static_cast<qsizetype>(message.size())
+        );
+}
 
 int scopeId(
     RosterTemplatePrintService::Scope scope
@@ -1261,19 +1308,23 @@ void RosterPrintDialog::loadClasses()
         return;
     }
 
-    const Result<QList<Classroom>> classes =
-        classService->classes();
+    ClassMngr::Next::Platform::
+        ApplicationServicesClassesListReadPort readPort(m_services);
+    const ClassMngr::Next::Application::ClassesListReadQuery query(readPort);
+    const auto classes = query.execute();
     if (!classes)
     {
         DialogServices::showWarning(
             this,
             tr("Print Rosters"),
             tr("Classes could not be loaded."),
-            classes.error()
+            classesListErrorMessage(classes.error().message)
             );
         return;
     }
-    for (const Classroom& classroom : *classes)
+    const QList<Classroom> classrooms =
+        classroomsFromListSnapshot(classes.value());
+    for (const Classroom& classroom : classrooms)
     {
         ClassInfo classInfo;
         Teacher teacher;
