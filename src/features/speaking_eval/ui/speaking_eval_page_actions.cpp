@@ -128,12 +128,10 @@ void SpeakingEvalPage::importNames()
         return;
     }
 
-    const Roster roster =
-        m_services
-            ->rosterService()
-            ->roster(
-                m_classroom.id
-                ).value_or(Roster{});
+    const Roster roster = readRosterForSpeakingEvaluationPage(
+        m_services,
+        m_classroom.id
+        );
 
     if (roster.rows.isEmpty())
     {

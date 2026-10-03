@@ -470,12 +470,10 @@ QList<QStringList> SpeakingEvalPage::unmatchedRosterNamePairs() const
         return candidates;
     }
 
-    const Roster roster =
-        m_services
-            ->rosterService()
-            ->roster(
-                m_classroom.id
-                ).value_or(Roster{});
+    const Roster roster = readRosterForSpeakingEvaluationPage(
+        m_services,
+        m_classroom.id
+        );
 
     const int englishColumn =
         findColumn(

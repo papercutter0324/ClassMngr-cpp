@@ -10,6 +10,7 @@
 #include "domain/models/speaking_evaluation.h"
 #include "domain/models/teacher.h"
 #include "features/speaking_eval/ui/speaking_eval_model.h"
+#include "features/speaking_eval/ui/speaking_eval_page_p.h"
 #include "features/speaking_eval/ui/speaking_eval_page.h"
 #include "features/speaking_eval/ui/speaking_eval_table_view.h"
 #include "fakes/fake_user_prompt_service.h"
@@ -185,6 +186,27 @@ bool seedRosterWithoutValidation(
     return true;
 }
 
+QPushButton* findImportNamesButton(SpeakingEvalPage& page)
+{
+    QPushButton* importNamesButton = nullptr;
+    for (QPushButton* button : page.findChildren<QPushButton*>())
+    {
+        if (button->text() != QStringLiteral("Import Names"))
+        {
+            continue;
+        }
+
+        if (importNamesButton)
+        {
+            return nullptr;
+        }
+        importNamesButton = button;
+    }
+
+    return importNamesButton;
+}
+
+
 }
 
 class SpeakingEvalPageSaveTests final : public QObject
@@ -208,6 +230,9 @@ private slots:
     void suffixChoiceAppliesSuggestedNameThroughExistingPageFlow();
     void duplicateLocateSelectsFirstPeerRow();
     void importNamesButtonAppliesRosterPairsAndPreservesMessages();
+    void emptyRosterImportShowsNoDataWarningWithoutMutation();
+    void unavailableRosterImportShowsNoDataWarningWithoutMutation();
+    void missingImportColumnsShowsWarningWithoutMutation();
 };
 
 void SpeakingEvalPageSaveTests::
@@ -1302,6 +1327,177 @@ importNamesButtonAppliesRosterPairsAndPreservesMessages()
     QCOMPARE(prompts.messages.constLast().message, QStringLiteral("Names are already up to date."));
     QCOMPARE(prompts.messages.constLast().severity, PromptSeverity::Information);
     QVERIFY(prompts.actionPrompts.isEmpty());
+}
+
+void SpeakingEvalPageSaveTests::
+emptyRosterImportShowsNoDataWarningWithoutMutation()
+{
+    SpeakingEvalPageFixture fixture;
+    QString error;
+    QVERIFY2(fixture.initialize(1, &error), qPrintable(error));
+
+    Roster roster;
+    roster.columns = {
+        QStringLiteral("English"),
+        QStringLiteral("Korean")
+    };
+    QVERIFY2(
+        seedRosterWithoutValidation(
+            fixture.services.databaseSession()->database(),
+            fixture.classIds.first(),
+            roster,
+            &error
+            ),
+        qPrintable(error)
+        );
+
+    FakeUserPromptService prompts;
+    ScopedPromptService promptScope(&prompts);
+
+    SpeakingEvalPage page(&fixture.services);
+    page.setSaveMode(SaveMode::Manual);
+    page.loadEvaluation(
+        Classroom(fixture.classNames.first(), fixture.classIds.first()),
+        QStringLiteral("Winter")
+        );
+
+    auto* model = page.findChild<SpeakingEvalModel*>();
+    QPushButton* importNamesButton = findImportNamesButton(page);
+    QVERIFY(model);
+    QVERIFY(importNamesButton);
+    const SpeakingEvalRows before = model->rows();
+    const bool wasDirty = page.hasUnsavedChanges();
+
+    page.show();
+    QCoreApplication::processEvents();
+    QTest::mouseClick(importNamesButton, Qt::LeftButton);
+
+    QCOMPARE(model->rows(), before);
+    QCOMPARE(page.hasUnsavedChanges(), wasDirty);
+    QCOMPARE(prompts.messages.size(), 1);
+    QCOMPARE(prompts.messages.constFirst().title, QStringLiteral("Import Names"));
+    QCOMPARE(prompts.messages.constFirst().message, QStringLiteral("No roster data found."));
+    QCOMPARE(prompts.messages.constFirst().severity, PromptSeverity::Warning);
+}
+
+void SpeakingEvalPageSaveTests::
+unavailableRosterImportShowsNoDataWarningWithoutMutation()
+{
+    SpeakingEvalPageFixture fixture;
+    QString error;
+    QVERIFY2(fixture.initialize(1, &error), qPrintable(error));
+
+    Roster roster;
+    roster.columns = {
+        QStringLiteral("English"),
+        QStringLiteral("Korean")
+    };
+    roster.rows = {
+        {
+            QStringLiteral("Roster Student"),
+            QStringLiteral("\uAE40\uBBFC\uC9C0")
+        }
+    };
+    QVERIFY2(
+        seedRosterWithoutValidation(
+            fixture.services.databaseSession()->database(),
+            fixture.classIds.first(),
+            roster,
+            &error
+            ),
+        qPrintable(error)
+        );
+
+    SpeakingEvalPage page(&fixture.services);
+    page.setSaveMode(SaveMode::Manual);
+    page.loadEvaluation(
+        Classroom(fixture.classNames.first(), fixture.classIds.first()),
+        QStringLiteral("Winter")
+        );
+
+    QSqlQuery dropDataTable(fixture.services.databaseSession()->database());
+    QVERIFY2(
+        dropDataTable.exec(QStringLiteral("DROP TABLE roster_data")),
+        qPrintable(dropDataTable.lastError().text())
+        );
+
+    FakeUserPromptService prompts;
+    ScopedPromptService promptScope(&prompts);
+    auto* model = page.findChild<SpeakingEvalModel*>();
+    QPushButton* importNamesButton = findImportNamesButton(page);
+    QVERIFY(model);
+    QVERIFY(importNamesButton);
+    const SpeakingEvalRows before = model->rows();
+    const bool wasDirty = page.hasUnsavedChanges();
+
+    page.show();
+    QCoreApplication::processEvents();
+    QTest::mouseClick(importNamesButton, Qt::LeftButton);
+
+    QCOMPARE(model->rows(), before);
+    QCOMPARE(page.hasUnsavedChanges(), wasDirty);
+    QCOMPARE(prompts.messages.size(), 1);
+    QCOMPARE(prompts.messages.constFirst().title, QStringLiteral("Import Names"));
+    QCOMPARE(prompts.messages.constFirst().message, QStringLiteral("No roster data found."));
+    QCOMPARE(prompts.messages.constFirst().severity, PromptSeverity::Warning);
+}
+
+void SpeakingEvalPageSaveTests::
+missingImportColumnsShowsWarningWithoutMutation()
+{
+    SpeakingEvalPageFixture fixture;
+    QString error;
+    QVERIFY2(fixture.initialize(1, &error), qPrintable(error));
+
+    Roster roster;
+    roster.columns = {
+        QStringLiteral("English")
+    };
+    roster.rows = {
+        {
+            QStringLiteral("Roster Student")
+        }
+    };
+    QVERIFY2(
+        seedRosterWithoutValidation(
+            fixture.services.databaseSession()->database(),
+            fixture.classIds.first(),
+            roster,
+            &error
+            ),
+        qPrintable(error)
+        );
+
+    FakeUserPromptService prompts;
+    ScopedPromptService promptScope(&prompts);
+
+    SpeakingEvalPage page(&fixture.services);
+    page.setSaveMode(SaveMode::Manual);
+    page.loadEvaluation(
+        Classroom(fixture.classNames.first(), fixture.classIds.first()),
+        QStringLiteral("Winter")
+        );
+
+    auto* model = page.findChild<SpeakingEvalModel*>();
+    QPushButton* importNamesButton = findImportNamesButton(page);
+    QVERIFY(model);
+    QVERIFY(importNamesButton);
+    const SpeakingEvalRows before = model->rows();
+    const bool wasDirty = page.hasUnsavedChanges();
+
+    page.show();
+    QCoreApplication::processEvents();
+    QTest::mouseClick(importNamesButton, Qt::LeftButton);
+
+    QCOMPARE(model->rows(), before);
+    QCOMPARE(page.hasUnsavedChanges(), wasDirty);
+    QCOMPARE(prompts.messages.size(), 1);
+    QCOMPARE(prompts.messages.constFirst().title, QStringLiteral("Import Names"));
+    QCOMPARE(
+        prompts.messages.constFirst().message,
+        QStringLiteral("Roster must contain 'English' and 'Korean' columns.")
+        );
+    QCOMPARE(prompts.messages.constFirst().severity, PromptSeverity::Warning);
 }
 
 QTEST_MAIN(SpeakingEvalPageSaveTests)
