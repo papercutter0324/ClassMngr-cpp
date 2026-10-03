@@ -34,6 +34,15 @@ struct ClassSubtitleReadRecord final
     QList<ClassTime> regularTimes;
 };
 
+struct ClassSubtitleBatchReadRecord final
+{
+    int classId = -1;
+    int teacherId = -1;
+    QString grade;
+    QString level;
+    QList<ClassTime> regularTimes;
+};
+
 struct RosterPrintClassInfoReadRecord final
 {
     int classId = -1;
@@ -65,6 +74,14 @@ struct ScheduleClassInfoReadMetrics final
     int intensiveScheduleStatementCount = 0;
 };
 
+struct ClassSubtitleBatchReadMetrics final
+{
+    int callCount = 0;
+    int requestedClassCount = 0;
+    int metadataStatementCount = 0;
+    int regularScheduleStatementCount = 0;
+};
+
 class ClassInfoRepository
 {
 public:
@@ -88,6 +105,8 @@ public:
     [[nodiscard]] Result<ClassSubtitleReadRecord> loadClassSubtitleRecord(
         int classId
         );
+    [[nodiscard]] Result<QList<ClassSubtitleBatchReadRecord>>
+        loadClassSubtitleRecords(const QList<int>& classIds);
     [[nodiscard]] Result<RosterPrintClassInfoReadRecord>
         loadRosterPrintClassInfoRecord(int classId);
 
@@ -97,6 +116,8 @@ public:
         classesNavigationReadMetrics() const noexcept;
     [[nodiscard]] const ScheduleClassInfoReadMetrics&
         scheduleClassInfoReadMetrics() const noexcept;
+    [[nodiscard]] const ClassSubtitleBatchReadMetrics&
+        classSubtitleBatchReadMetrics() const noexcept;
 
     [[nodiscard]] Result<SubPrepClassDetailsRecord>
         loadSubPrepClassDetails(int classId);
@@ -134,4 +155,5 @@ private:
     QSqlDatabase& m_database;
     ClassesNavigationReadMetrics m_classesNavigationReadMetrics;
     ScheduleClassInfoReadMetrics m_scheduleClassInfoReadMetrics;
+    ClassSubtitleBatchReadMetrics m_classSubtitleBatchReadMetrics;
 };

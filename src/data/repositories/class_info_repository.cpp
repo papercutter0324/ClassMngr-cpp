@@ -729,6 +729,129 @@ Result<ClassSubtitleReadRecord> ClassInfoRepository::loadClassSubtitleRecord(
     return record;
 }
 
+Result<QList<ClassSubtitleBatchReadRecord>>
+ClassInfoRepository::loadClassSubtitleRecords(
+    const QList<int>& classIds
+    )
+{
+    ++m_classSubtitleBatchReadMetrics.callCount;
+    if (classIds.isEmpty())
+    {
+        return QList<ClassSubtitleBatchReadRecord>{};
+    }
+
+    QSet<int> seenClassIds;
+    QStringList requestedValues;
+    requestedValues.reserve(classIds.size());
+    for (qsizetype index = 0; index < classIds.size(); ++index)
+    {
+        const int classId = classIds[index];
+        if (classId <= 0 || seenClassIds.contains(classId))
+        {
+            return std::unexpected(
+                QObject::tr(
+                    "Loading class subtitles failed: class identifiers must be positive and unique."
+                    )
+                );
+        }
+
+        seenClassIds.insert(classId);
+        requestedValues.append(QStringLiteral("(%1, %2)")
+            .arg(classId)
+            .arg(index));
+    }
+    m_classSubtitleBatchReadMetrics.requestedClassCount +=
+        static_cast<int>(classIds.size());
+
+    const QString requestedTable = QStringLiteral(
+        "WITH requested(class_id, ordinal) AS (VALUES %1)"
+        ).arg(requestedValues.join(QStringLiteral(", ")));
+    QList<ClassSubtitleBatchReadRecord> records;
+    records.reserve(classIds.size());
+    QHash<int, qsizetype> indexByClassId;
+    indexByClassId.reserve(classIds.size());
+
+    QSqlQuery metadataQuery(m_database);
+    ++m_classSubtitleBatchReadMetrics.metadataStatementCount;
+    const auto loadedMetadata = SqlQueryUtils::execute(
+        metadataQuery,
+        requestedTable + QStringLiteral(R"(
+            SELECT requested.class_id,
+                   ci.class_id AS class_info_class_id,
+                   ci.teacher_id,
+                   ci.class_grade,
+                   ci.class_level
+            FROM requested
+            LEFT JOIN class_info ci ON ci.class_id = requested.class_id
+            ORDER BY requested.ordinal
+        )"),
+        QObject::tr("Loading class subtitle metadata")
+        );
+    if (!loadedMetadata)
+    {
+        return std::unexpected(loadedMetadata.error().userMessage());
+    }
+
+    while (metadataQuery.next())
+    {
+        ClassSubtitleBatchReadRecord record;
+        record.classId = metadataQuery.value("class_id").toInt();
+        if (!metadataQuery.value("class_info_class_id").isNull())
+        {
+            const QVariant teacherId = metadataQuery.value("teacher_id");
+            record.teacherId = teacherId.isNull() ? -1 : teacherId.toInt();
+            record.grade = metadataQuery.value("class_grade").toString();
+            record.level = metadataQuery.value("class_level").toString();
+        }
+
+        indexByClassId.insert(record.classId, records.size());
+        records.append(std::move(record));
+    }
+
+    if (records.size() != classIds.size())
+    {
+        return std::unexpected(QObject::tr(
+            "Loading class subtitles failed: the metadata query returned an incomplete class list."
+            ));
+    }
+
+    QSqlQuery scheduleQuery(m_database);
+    ++m_classSubtitleBatchReadMetrics.regularScheduleStatementCount;
+    const auto loadedSchedule = SqlQueryUtils::execute(
+        scheduleQuery,
+        requestedTable + QStringLiteral(R"(
+            SELECT schedule.class_id, schedule.day, schedule.start_time
+            FROM requested
+            INNER JOIN class_times schedule
+            ON schedule.class_id = requested.class_id
+            ORDER BY requested.ordinal, schedule.id
+        )"),
+        QObject::tr("Loading class subtitle regular schedules")
+        );
+    if (!loadedSchedule)
+    {
+        return std::unexpected(loadedSchedule.error().userMessage());
+    }
+
+    while (scheduleQuery.next())
+    {
+        const int classId = scheduleQuery.value("class_id").toInt();
+        const auto recordIndex = indexByClassId.constFind(classId);
+        if (recordIndex == indexByClassId.cend())
+        {
+            continue;
+        }
+
+        records[*recordIndex].regularTimes.append({
+            scheduleQuery.value("day").toString(),
+            scheduleQuery.value("start_time").toString(),
+            QString{}
+        });
+    }
+
+    return records;
+}
+
 Result<RosterPrintClassInfoReadRecord>
 ClassInfoRepository::loadRosterPrintClassInfoRecord(
     int classId
@@ -1022,6 +1145,12 @@ const ScheduleClassInfoReadMetrics&
 ClassInfoRepository::scheduleClassInfoReadMetrics() const noexcept
 {
     return m_scheduleClassInfoReadMetrics;
+}
+
+const ClassSubtitleBatchReadMetrics&
+ClassInfoRepository::classSubtitleBatchReadMetrics() const noexcept
+{
+    return m_classSubtitleBatchReadMetrics;
 }
 
 Result<SubPrepClassDetailsRecord>

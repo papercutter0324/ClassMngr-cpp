@@ -7,6 +7,7 @@
 #include <QObject>
 #include <QSqlError>
 #include <QSqlQuery>
+#include <QSet>
 #include <QStringList>
 
 namespace
@@ -355,6 +356,80 @@ TeacherRepository::loadTeacherDisplayNameFields(
         query.value("preferred_romanization").toString(),
         query.value("preferred_name").toString()
     };
+}
+
+Result<QList<TeacherDisplayNameBatchReadRecord>>
+TeacherRepository::loadTeacherDisplayNameRecords(
+    const QList<int>& teacherIds
+    )
+{
+    ++m_teacherDisplayNameBatchReadMetrics.callCount;
+    if (teacherIds.isEmpty())
+    {
+        return QList<TeacherDisplayNameBatchReadRecord>{};
+    }
+
+    QSet<int> seenTeacherIds;
+    QStringList requestedValues;
+    requestedValues.reserve(teacherIds.size());
+    for (qsizetype index = 0; index < teacherIds.size(); ++index)
+    {
+        const int teacherId = teacherIds[index];
+        if (teacherId <= 0 || seenTeacherIds.contains(teacherId))
+        {
+            return std::unexpected(QObject::tr(
+                "Loading teacher display names failed: teacher identifiers must be positive and unique."
+                ));
+        }
+
+        seenTeacherIds.insert(teacherId);
+        requestedValues.append(QStringLiteral("(%1, %2)")
+            .arg(teacherId)
+            .arg(index));
+    }
+
+    QSqlQuery query(m_database);
+    ++m_teacherDisplayNameBatchReadMetrics.statementCount;
+    const QString queryText = QStringLiteral(R"(
+        WITH requested(teacher_id, ordinal) AS (VALUES %1)
+        SELECT requested.teacher_id,
+               teachers.teacher_kr,
+               teachers.teacher_en,
+               teachers.preferred_romanization,
+               teachers.preferred_name
+        FROM requested
+        INNER JOIN teachers ON teachers.id = requested.teacher_id
+        ORDER BY requested.ordinal
+    )").arg(requestedValues.join(QStringLiteral(", ")));
+    const auto executed = SqlQueryUtils::execute(
+        query,
+        queryText,
+        QObject::tr("Loading teacher display names")
+        );
+    if (!executed)
+    {
+        return std::unexpected(executed.error().userMessage());
+    }
+
+    QList<TeacherDisplayNameBatchReadRecord> records;
+    while (query.next())
+    {
+        records.append({
+            query.value("teacher_id").toInt(),
+            query.value("teacher_kr").toString(),
+            query.value("teacher_en").toString(),
+            query.value("preferred_romanization").toString(),
+            query.value("preferred_name").toString()
+        });
+    }
+
+    return records;
+}
+
+const TeacherDisplayNameBatchReadMetrics&
+TeacherRepository::teacherDisplayNameBatchReadMetrics() const noexcept
+{
+    return m_teacherDisplayNameBatchReadMetrics;
 }
 
 Result<QList<Teacher>> TeacherRepository::getAllTeachers()

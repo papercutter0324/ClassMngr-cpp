@@ -3,6 +3,8 @@
 #include "core/application_services.h"
 #include "core/utils/file_name_utils.h"
 #include "data/database/database_session.h"
+#include "data/repositories/class_info_repository.h"
+#include "data/repositories/teacher_repository.h"
 #include "features/classes/services/class_transfer_json_codec.h"
 #include "features/classes/ui/class_export_dialog.h"
 #include "features/classes/ui/class_import_dialog.h"
@@ -358,6 +360,7 @@ private slots:
     void successFixtureReplacesMatchingTeacherThroughReview();
     void successFixtureReplacesMatchingDestinationAndChildren();
     void successFixtureClassReplacementMatchesCommonInputState();
+    void importDialogBatchesDistinctDestinationSubtitleReads();
     void malformedNonpositiveReviewTargetsAreRejectedAtLegacyBoundary();
     void permanentConflictFixturePresentsReviewAndRejectsScheduleCollision();
     void conflictFixtureMatchesCommonInputBaselineAndRejectsWithoutWrites();
@@ -2205,6 +2208,193 @@ void ClassTransferTests::successFixtureClassReplacementMatchesCommonInputState()
         *snapshot, QCryptographicHash::Sha256).toHex();
     QVERIFY2(snapshotHash == QByteArrayLiteral("ae65cb0a14393a9da0c9a546320f233531e324a4ef0bbfeee7f1a8306701ee6b"),
              snapshotHash.constData());
+}
+
+void ClassTransferTests::importDialogBatchesDistinctDestinationSubtitleReads()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    DataService service;
+    QVERIFY(service.openDatabase(
+        directory.filePath(QStringLiteral("destination.db"))).has_value());
+
+    Teacher displayTeacher = completeTeacher();
+    displayTeacher.preferredRomanization = QStringLiteral("Alex");
+    displayTeacher.preferredName = QStringLiteral("Alex");
+    const int destinationTeacher = createdTeacherId(service, displayTeacher);
+    const int destinationClassA = addCompleteClass(
+        service,
+        destinationTeacher,
+        QStringLiteral("Local A"),
+        QStringLiteral("E3"),
+        QStringLiteral("Orion"),
+        QStringLiteral("Thursday"),
+        QStringLiteral("Student A"),
+        QStringLiteral("Evaluation A"),
+        QStringLiteral("11:00 AM"),
+        QStringLiteral("11:50 AM")
+        );
+    const int destinationClassB = addCompleteClass(
+        service,
+        destinationTeacher,
+        QStringLiteral("Local B"),
+        QStringLiteral("E4"),
+        QStringLiteral("Hydra"),
+        QStringLiteral("Wednesday"),
+        QStringLiteral("Student B"),
+        QStringLiteral("Evaluation B"),
+        QStringLiteral("2:00 PM"),
+        QStringLiteral("2:50 PM")
+        );
+    const int destinationClassC = addCompleteClass(
+        service,
+        destinationTeacher,
+        QStringLiteral("Local C"),
+        QStringLiteral("M1"),
+        QStringLiteral("Pegasus"),
+        QStringLiteral("Tuesday"),
+        QStringLiteral("Student C"),
+        QStringLiteral("Evaluation C"),
+        QStringLiteral("3:00 PM"),
+        QStringLiteral("3:50 PM")
+        );
+    QVERIFY(destinationClassA > 0);
+    QVERIFY(destinationClassB > 0);
+    QVERIFY(destinationClassC > 0);
+
+    QString applicationServicesError;
+    const auto applicationServices = openApplicationServicesForCurrentDatabase(
+        service,
+        &applicationServicesError
+        );
+    QVERIFY2(applicationServices, qPrintable(applicationServicesError));
+    DatabaseSession* const session = applicationServices->databaseSession();
+    QVERIFY(session);
+    ClassInfoRepository* const classRepository = session->classInfoRepository();
+    TeacherRepository* const teacherRepository = session->teacherRepository();
+    QVERIFY(classRepository);
+    QVERIFY(teacherRepository);
+
+    ClassTransferPackage package;
+    ClassTransferClass incomingA;
+    incomingA.key = QStringLiteral("incoming-a");
+    incomingA.name = QStringLiteral("Incoming A");
+    incomingA.info = completeClassInfo(
+        -1, -1, QStringLiteral("E3"), QStringLiteral("Orion"),
+        QStringLiteral("Thursday")
+        );
+    package.classes.append(incomingA);
+    ClassTransferClass incomingB;
+    incomingB.key = QStringLiteral("incoming-b");
+    incomingB.name = QStringLiteral("Incoming B");
+    incomingB.info = completeClassInfo(
+        -1, -1, QStringLiteral("E4"), QStringLiteral("Hydra"),
+        QStringLiteral("Wednesday")
+        );
+    package.classes.append(incomingB);
+
+    ClassImportPreview preview;
+    preview.classes.append(ClassImportClassPreview{
+        0,
+        {destinationClassB, destinationClassA, destinationClassB}
+    });
+    preview.classes.append(ClassImportClassPreview{
+        1,
+        {destinationClassA, destinationClassB}
+    });
+    preview.classes.append(ClassImportClassPreview{
+        99,
+        {destinationClassC}
+    });
+
+    const ClassSubtitleBatchReadMetrics classMetricsBefore =
+        classRepository->classSubtitleBatchReadMetrics();
+    const TeacherDisplayNameBatchReadMetrics teacherMetricsBefore =
+        teacherRepository->teacherDisplayNameBatchReadMetrics();
+    ClassImportDialog dialog(applicationServices.get(), package, preview);
+
+    auto* classChoiceA = dialog.findChild<QComboBox*>(
+        QStringLiteral("classImportChoice_0"));
+    auto* classChoiceB = dialog.findChild<QComboBox*>(
+        QStringLiteral("classImportChoice_1"));
+    QVERIFY(classChoiceA);
+    QVERIFY(classChoiceB);
+    QCOMPARE(classChoiceA->count(), 5);
+    QCOMPARE(classChoiceA->itemText(1),
+             QStringLiteral("Replace: E4 Hydra • Alex • Wed (2:00)"));
+    QCOMPARE(classChoiceA->itemText(2),
+             QStringLiteral("Replace: E3 Orion • Alex • Thurs (11:00)"));
+    QCOMPARE(classChoiceA->itemText(3),
+             QStringLiteral("Replace: E4 Hydra • Alex • Wed (2:00)"));
+    QCOMPARE(classChoiceA->itemData(1, Qt::UserRole + 1).toInt(),
+             destinationClassB);
+    QCOMPARE(classChoiceA->itemData(2, Qt::UserRole + 1).toInt(),
+             destinationClassA);
+    QCOMPARE(classChoiceA->itemData(3, Qt::UserRole + 1).toInt(),
+             destinationClassB);
+    QCOMPARE(classChoiceB->count(), 4);
+    QCOMPARE(classChoiceB->itemText(1),
+             QStringLiteral("Replace: E3 Orion • Alex • Thurs (11:00)"));
+    QCOMPARE(classChoiceB->itemText(2),
+             QStringLiteral("Replace: E4 Hydra • Alex • Wed (2:00)"));
+    QCOMPARE(classChoiceB->itemData(1, Qt::UserRole + 1).toInt(),
+             destinationClassA);
+    QCOMPARE(classChoiceB->itemData(2, Qt::UserRole + 1).toInt(),
+             destinationClassB);
+
+    const ClassSubtitleBatchReadMetrics classMetricsAfterBatch =
+        classRepository->classSubtitleBatchReadMetrics();
+    const TeacherDisplayNameBatchReadMetrics teacherMetricsAfterBatch =
+        teacherRepository->teacherDisplayNameBatchReadMetrics();
+    QCOMPARE(classMetricsAfterBatch.callCount - classMetricsBefore.callCount, 1);
+    QCOMPARE(classMetricsAfterBatch.requestedClassCount
+                 - classMetricsBefore.requestedClassCount,
+             2);
+    QCOMPARE(classMetricsAfterBatch.metadataStatementCount
+                 - classMetricsBefore.metadataStatementCount,
+             1);
+    QCOMPARE(classMetricsAfterBatch.regularScheduleStatementCount
+                 - classMetricsBefore.regularScheduleStatementCount,
+             1);
+    QCOMPARE(teacherMetricsAfterBatch.callCount - teacherMetricsBefore.callCount,
+             1);
+    QCOMPARE(teacherMetricsAfterBatch.statementCount
+                 - teacherMetricsBefore.statementCount,
+             1);
+
+    ClassImportPreview noMatchesPreview;
+    noMatchesPreview.classes.append(
+        ClassImportClassPreview{0, QList<int>{}}
+        );
+    noMatchesPreview.classes.append(
+        ClassImportClassPreview{99, {destinationClassC}}
+        );
+    ClassImportDialog noMatchesDialog(
+        applicationServices.get(),
+        package,
+        noMatchesPreview
+        );
+    QVERIFY(noMatchesDialog.findChild<QComboBox*>(
+        QStringLiteral("classImportChoice_0")));
+    QVERIFY(!noMatchesDialog.findChild<QComboBox*>(
+        QStringLiteral("classImportChoice_99")));
+
+    const ClassSubtitleBatchReadMetrics classMetricsAfterNoMatches =
+        classRepository->classSubtitleBatchReadMetrics();
+    const TeacherDisplayNameBatchReadMetrics teacherMetricsAfterNoMatches =
+        teacherRepository->teacherDisplayNameBatchReadMetrics();
+    QCOMPARE(classMetricsAfterNoMatches.callCount,
+             classMetricsAfterBatch.callCount);
+    QCOMPARE(classMetricsAfterNoMatches.requestedClassCount,
+             classMetricsAfterBatch.requestedClassCount);
+    QCOMPARE(classMetricsAfterNoMatches.metadataStatementCount,
+             classMetricsAfterBatch.metadataStatementCount);
+    QCOMPARE(classMetricsAfterNoMatches.regularScheduleStatementCount,
+             classMetricsAfterBatch.regularScheduleStatementCount);
+    QCOMPARE(teacherMetricsAfterNoMatches.callCount,
+             teacherMetricsAfterBatch.callCount);
+    QCOMPARE(teacherMetricsAfterNoMatches.statementCount,
+             teacherMetricsAfterBatch.statementCount);
 }
 
 void ClassTransferTests::malformedNonpositiveReviewTargetsAreRejectedAtLegacyBoundary()

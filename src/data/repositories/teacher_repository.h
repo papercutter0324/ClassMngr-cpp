@@ -14,6 +14,21 @@ struct TeacherDisplayNameReadRecord final
     QString preferredName;
 };
 
+struct TeacherDisplayNameBatchReadRecord final
+{
+    int teacherId = -1;
+    QString teacherKr;
+    QString teacherEn;
+    QString preferredRomanization;
+    QString preferredName;
+};
+
+struct TeacherDisplayNameBatchReadMetrics final
+{
+    int callCount = 0;
+    int statementCount = 0;
+};
+
 class TeacherRepository
 {
 public:
@@ -38,6 +53,10 @@ public:
         );
     [[nodiscard]] Result<TeacherDisplayNameReadRecord>
         loadTeacherDisplayNameFields(int teacherId);
+    [[nodiscard]] Result<QList<TeacherDisplayNameBatchReadRecord>>
+        loadTeacherDisplayNameRecords(const QList<int>& teacherIds);
+    [[nodiscard]] const TeacherDisplayNameBatchReadMetrics&
+        teacherDisplayNameBatchReadMetrics() const noexcept;
 
     [[nodiscard]] Result<QList<Teacher>> getAllTeachers();
 
@@ -47,4 +66,5 @@ public:
 
 private:
     QSqlDatabase& m_database;
+    TeacherDisplayNameBatchReadMetrics m_teacherDisplayNameBatchReadMetrics;
 };
