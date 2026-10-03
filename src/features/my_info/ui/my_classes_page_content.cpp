@@ -9,8 +9,10 @@
 #include "domain/models/teacher.h"
 #include "features/classes/models/class_tab_navigation_model.h"
 #include "next/application/classes_list_read_query.h"
+#include "next/application/roster_read_query.h"
 #include "next/application/teacher_profile_read_query.h"
 #include "next/platform/application_services_classes_list_read_port.h"
+#include "next/platform/application_services_roster_read_port.h"
 #include "next/platform/application_services_teacher_profile_read_port.h"
 #include "ui/shared/constants/gui_constants.h"
 #include "ui/shared/styles/roles.h"
@@ -21,6 +23,7 @@
 
 #include <algorithm>
 #include <charconv>
+#include <cstddef>
 #include <string>
 #include <system_error>
 #include <utility>
@@ -82,6 +85,59 @@ QString classesListErrorMessage(const std::string& message)
         message.data(),
         static_cast<qsizetype>(message.size())
         );
+}
+
+int studentCountFromRosterSnapshot(
+    const ClassMngr::Next::Application::RosterSnapshot& snapshot
+    )
+{
+    qsizetype englishColumn = -1;
+    qsizetype koreanColumn = -1;
+    for (qsizetype column = 0;
+         column < static_cast<qsizetype>(snapshot.columns.size());
+         ++column)
+    {
+        const QString name = QString::fromStdU16String(
+            snapshot.columns[static_cast<std::size_t>(column)]
+            );
+        if (englishColumn < 0 && name == QStringLiteral("English"))
+        {
+            englishColumn = column;
+        }
+        if (koreanColumn < 0 && name == QStringLiteral("Korean"))
+        {
+            koreanColumn = column;
+        }
+    }
+
+    if (englishColumn < 0 && koreanColumn < 0)
+    {
+        return 0;
+    }
+
+    int count = 0;
+    for (const auto& row : snapshot.rows)
+    {
+        const bool hasEnglish =
+            englishColumn >= 0
+            && static_cast<std::size_t>(englishColumn) < row.size()
+            && !QString::fromStdU16String(
+                    row[static_cast<std::size_t>(englishColumn)]
+                    ).trimmed().isEmpty();
+        const bool hasKorean =
+            koreanColumn >= 0
+            && static_cast<std::size_t>(koreanColumn) < row.size()
+            && !QString::fromStdU16String(
+                    row[static_cast<std::size_t>(koreanColumn)]
+                    ).trimmed().isEmpty();
+
+        if (hasEnglish || hasKorean)
+        {
+            ++count;
+        }
+    }
+
+    return count;
 }
 
 struct ClassSummary
@@ -528,10 +584,29 @@ void MyClassesPage::rebuildClassInformation()
             classService->classInfo(
                 classroom.id
                 ).value_or(ClassInfo{});
-        summary.studentCount =
-            rosterService->studentCount(
-                classroom.id
-                ).value_or(0);
+        const auto typedClassId =
+            ClassMngr::Next::Domain::ClassId::fromString(
+                std::to_string(classroom.id)
+                );
+        if (typedClassId)
+        {
+            ClassMngr::Next::Platform::
+                ApplicationServicesRosterReadPort readPort(m_services);
+            const ClassMngr::Next::Application::RosterReadQuery query{
+                .classId = *typedClassId
+            };
+            const auto loadedRoster =
+                ClassMngr::Next::Application::RosterReadUseCase::execute(
+                    query,
+                    readPort
+                    );
+            if (loadedRoster)
+            {
+                summary.studentCount = studentCountFromRosterSnapshot(
+                    loadedRoster.value()
+                    );
+            }
+        }
 
         if (summary.info.teacherId > 0)
         {

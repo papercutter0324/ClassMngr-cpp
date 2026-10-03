@@ -3,12 +3,14 @@
 #include "data/database/database_session.h"
 #include "data/repositories/teacher_repository.h"
 #include "domain/models/class_info.h"
+#include "domain/models/roster.h"
 #include "features/my_info/ui/my_classes_page.h"
 #include "ui/shared/widgets/navigation_tab_widget.h"
 
 #include <QApplication>
 #include <QCoreApplication>
 #include <QEvent>
+#include <QGridLayout>
 #include <QLabel>
 #include <QLineEdit>
 #include <QMessageBox>
@@ -20,6 +22,8 @@
 #include <QTimer>
 #include <QUuid>
 #include <QtTest/QtTest>
+
+#include <utility>
 
 namespace
 {
@@ -217,6 +221,102 @@ QString classTabLabel(
         + QChar(0x2022) + QStringLiteral(" No time");
 }
 
+QLabel* infoRowValueLabelFor(
+    QWidget& root,
+    const QString& labelText
+    )
+{
+    for (QGridLayout* const grid : root.findChildren<QGridLayout*>())
+    {
+        for (int row = 0; row < grid->rowCount(); ++row)
+        {
+            QLayoutItem* const labelItem = grid->itemAtPosition(row, 0);
+            auto* const label = labelItem
+                ? qobject_cast<QLabel*>(labelItem->widget())
+                : nullptr;
+            if (!label || label->text() != labelText)
+            {
+                continue;
+            }
+
+            QLayoutItem* const valueItem = grid->itemAtPosition(row, 1);
+            return valueItem
+                ? qobject_cast<QLabel*>(valueItem->widget())
+                : nullptr;
+        }
+    }
+
+    return nullptr;
+}
+
+Roster rosterWithNamedRows()
+{
+    Roster roster;
+    roster.columns = Roster::BaseColumns;
+    roster.columnWidths = {140, 140, 80, 100, 80, 80};
+    roster.rows = {
+        {QStringLiteral("Alice"), QStringLiteral("\uAE40\uBBFC\uC9C0")},
+        {QStringLiteral("Charlie"), QStringLiteral("\uBC15\uC9C0\uC6D0")},
+        {QStringLiteral("David"), QStringLiteral("\uC774\uC218\uC9C4")},
+        {QStringLiteral("Eve"), QStringLiteral("\uD64D\uAE38\uB3D9")}
+    };
+    return roster;
+}
+
+bool saveRoster(
+    MyClassesPageFixture& fixture,
+    const int classId,
+    const Roster& roster,
+    QString* error
+    )
+{
+    const Status saved = fixture.services.rosterService()->saveRoster(
+        classId,
+        roster
+        );
+    if (!saved)
+    {
+        *error = saved.error();
+        return false;
+    }
+    return true;
+}
+
+bool updateRosterCell(
+    MyClassesPageFixture& fixture,
+    const int classId,
+    const int rowIndex,
+    const int columnIndex,
+    const QString& value,
+    QString* error
+    )
+{
+    QSqlQuery update(fixture.services.databaseSession()->database());
+    if (!update.prepare(QStringLiteral(
+            "UPDATE roster_data SET value=? "
+            "WHERE class_id=? AND row_index=? AND col_index=?")))
+    {
+        *error = update.lastError().text();
+        return false;
+    }
+
+    update.addBindValue(value);
+    update.addBindValue(classId);
+    update.addBindValue(rowIndex);
+    update.addBindValue(columnIndex);
+    if (!update.exec())
+    {
+        *error = update.lastError().text();
+        return false;
+    }
+    if (update.numRowsAffected() != 1)
+    {
+        *error = QStringLiteral("Expected to update one roster cell.");
+        return false;
+    }
+    return true;
+}
+
 }
 
 class MyClassesPageTests final : public QObject
@@ -229,6 +329,9 @@ private slots:
     void failedClassListReadClearsRenderedContentAndShowsWarning();
     void assignedTeacherProfileProjectsAllConsumedUtf16Fields();
     void failedTeacherProfileKeepsClassAndUsesSilentUnassignedFallback();
+    void rosterCountUsesNonblankEnglishOrKoreanCells();
+    void rosterReadFailureKeepsClassAndShowsZeroStudentCount();
+    void rosterWithoutNameColumnsShowsZeroStudentCount();
 };
 
 void MyClassesPageTests::
@@ -645,6 +748,223 @@ failedClassListReadClearsRenderedContentAndShowsWarning()
     QVERIFY(labelsWithText(page, QStringLiteral("E4 - Theseus")).isEmpty());
     QVERIFY(labelsWithText(
         page, QStringLiteral("No classes available.")).isEmpty());
+}
+
+void MyClassesPageTests::
+rosterCountUsesNonblankEnglishOrKoreanCells()
+{
+    MyClassesPageFixture fixture;
+    QString error;
+    QVERIFY2(fixture.initialize(&error), qPrintable(error));
+
+    int classId = 0;
+    QVERIFY2(fixture.createClass(
+                 QStringLiteral("Roster count class"),
+                 QStringLiteral("E4"),
+                 QStringLiteral("Theseus"),
+                 &classId,
+                 &error
+                 ), qPrintable(error));
+
+    const Roster roster = rosterWithNamedRows();
+    QVERIFY2(saveRoster(fixture, classId, roster, &error), qPrintable(error));
+    QVERIFY2(updateRosterCell(
+                 fixture,
+                 classId,
+                 1,
+                 0,
+                 QStringLiteral(" \t "),
+                 &error
+                 ), qPrintable(error));
+    QVERIFY2(updateRosterCell(
+                 fixture,
+                 classId,
+                 2,
+                 1,
+                 QStringLiteral("  "),
+                 &error
+                 ), qPrintable(error));
+    QVERIFY2(updateRosterCell(
+                 fixture,
+                 classId,
+                 3,
+                 0,
+                 QStringLiteral(" \n "),
+                 &error
+                 ), qPrintable(error));
+    QVERIFY2(updateRosterCell(
+                 fixture,
+                 classId,
+                 3,
+                 1,
+                 QStringLiteral(" \t "),
+                 &error
+                 ), qPrintable(error));
+
+    MyClassesPage page(&fixture.services);
+    page.resize(900, 700);
+    page.refresh();
+    page.show();
+    QApplication::processEvents();
+
+    NavigationTabWidget* const tabs = classTabsFor(page);
+    QVERIFY(tabs);
+    QCOMPARE(tabs->count(), 1);
+    QWidget* const classPage = tabs->widget(0);
+    QVERIFY(classPage);
+    QCOMPARE(classPage->property("class_id").toInt(), classId);
+    QLabel* const count = infoRowValueLabelFor(
+        *classPage,
+        QStringLiteral("# of Students")
+        );
+    QVERIFY(count);
+    QVERIFY(count->isVisible());
+    QCOMPARE(count->text(), QStringLiteral("3"));
+}
+
+void MyClassesPageTests::
+rosterReadFailureKeepsClassAndShowsZeroStudentCount()
+{
+    MyClassesPageFixture fixture;
+    QString error;
+    QVERIFY2(fixture.initialize(&error), qPrintable(error));
+
+    int classId = 0;
+    QVERIFY2(fixture.createClass(
+                 QStringLiteral("Roster failure class"),
+                 QStringLiteral("E4"),
+                 QStringLiteral("Theseus"),
+                 &classId,
+                 &error
+                 ), qPrintable(error));
+    QVERIFY2(saveRoster(
+                 fixture,
+                 classId,
+                 rosterWithNamedRows(),
+                 &error
+                 ), qPrintable(error));
+
+    MyClassesPage page(&fixture.services);
+    page.resize(900, 700);
+    page.refresh();
+    page.show();
+    QApplication::processEvents();
+
+    NavigationTabWidget* tabs = classTabsFor(page);
+    QVERIFY(tabs);
+    QCOMPARE(tabs->count(), 1);
+    QCOMPARE(tabs->widget(0)->property("class_id").toInt(), classId);
+    QLabel* const initialCount = infoRowValueLabelFor(
+        *tabs->widget(0),
+        QStringLiteral("# of Students")
+        );
+    QVERIFY(initialCount);
+    QCOMPARE(initialCount->text(), QStringLiteral("4"));
+
+    QSqlQuery dropRosterData(
+        fixture.services.databaseSession()->database());
+    QVERIFY2(dropRosterData.exec(QStringLiteral("DROP TABLE roster_data")),
+             qPrintable(dropRosterData.lastError().text()));
+    const Result<int> expectedRosterReadFailure =
+        fixture.services.rosterService()->studentCount(classId);
+    QVERIFY(!expectedRosterReadFailure);
+    QVERIFY(!expectedRosterReadFailure.error().trimmed().isEmpty());
+
+    bool warningCaptured = false;
+    QTimer::singleShot(
+        0,
+        &page,
+        [&warningCaptured]()
+        {
+            auto* const warning = qobject_cast<QMessageBox*>(
+                QApplication::activeModalWidget());
+            if (!warning)
+            {
+                return;
+            }
+
+            warningCaptured = true;
+            warning->accept();
+        }
+        );
+    page.refresh();
+    QApplication::processEvents();
+
+    QVERIFY(!warningCaptured);
+    QCoreApplication::sendPostedEvents(nullptr, QEvent::DeferredDelete);
+    tabs = classTabsFor(page);
+    QVERIFY(tabs);
+    QCOMPARE(tabs->count(), 1);
+    QWidget* const classPage = tabs->widget(0);
+    QVERIFY(classPage);
+    QCOMPARE(classPage->property("class_id").toInt(), classId);
+    QLabel* const count = infoRowValueLabelFor(
+        *classPage,
+        QStringLiteral("# of Students")
+        );
+    QVERIFY(count);
+    QVERIFY(count->isVisible());
+    QCOMPARE(count->text(), QStringLiteral("0"));
+    QCOMPARE(labelsWithText(page, QStringLiteral("E4 - Theseus")).size(), 1);
+}
+
+void MyClassesPageTests::rosterWithoutNameColumnsShowsZeroStudentCount()
+{
+    MyClassesPageFixture fixture;
+    QString error;
+    QVERIFY2(fixture.initialize(&error), qPrintable(error));
+
+    int classId = 0;
+    QVERIFY2(fixture.createClass(
+                 QStringLiteral("Roster name columns class"),
+                 QStringLiteral("E4"),
+                 QStringLiteral("Theseus"),
+                 &classId,
+                 &error
+                 ), qPrintable(error));
+    QVERIFY2(saveRoster(
+                 fixture,
+                 classId,
+                 rosterWithNamedRows(),
+                 &error
+                 ), qPrintable(error));
+
+    QSqlQuery renameNameColumn(
+        fixture.services.databaseSession()->database());
+    QVERIFY2(renameNameColumn.prepare(QStringLiteral(
+                 "UPDATE roster_columns SET name=? "
+                 "WHERE class_id=? AND name=?")),
+             qPrintable(renameNameColumn.lastError().text()));
+    for (const auto& [originalName, renamedName] : {
+             std::pair{QStringLiteral("English"), QStringLiteral("English name")},
+             std::pair{QStringLiteral("Korean"), QStringLiteral("Korean name")}
+         })
+    {
+        renameNameColumn.bindValue(0, renamedName);
+        renameNameColumn.bindValue(1, classId);
+        renameNameColumn.bindValue(2, originalName);
+        QVERIFY2(renameNameColumn.exec(),
+                 qPrintable(renameNameColumn.lastError().text()));
+        QCOMPARE(renameNameColumn.numRowsAffected(), 1);
+    }
+
+    MyClassesPage page(&fixture.services);
+    page.resize(900, 700);
+    page.refresh();
+    page.show();
+    QApplication::processEvents();
+
+    NavigationTabWidget* const tabs = classTabsFor(page);
+    QVERIFY(tabs);
+    QCOMPARE(tabs->count(), 1);
+    QCOMPARE(tabs->widget(0)->property("class_id").toInt(), classId);
+    QLabel* const count = infoRowValueLabelFor(
+        *tabs->widget(0),
+        QStringLiteral("# of Students")
+        );
+    QVERIFY(count);
+    QVERIFY(count->isVisible());
+    QCOMPARE(count->text(), QStringLiteral("0"));
 }
 
 QTEST_MAIN(MyClassesPageTests)
