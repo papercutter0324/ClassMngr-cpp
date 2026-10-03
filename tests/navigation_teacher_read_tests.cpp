@@ -489,6 +489,7 @@ private slots:
     void teacherChoiceReadFailureWarnsWithoutChooserOrConfirmation();
     void refreshTeacherSidebarShowsAssignedAndUnassignedTeachers();
     void refreshTeacherSidebarFailureWarnsClearsNodesAndUpdatesActions();
+    void updateActionStatesClassListFailureDisablesClassActionsOnly();
     void classDeleteChooserUsesSubtitleLabelsAndConfirmsSelectedClass();
     void classListReadFailureShowsWarningWithoutOpeningChooser();
     void classFieldsFailureUsesDefaultSubtitleAndNoTeacherFallback();
@@ -1026,6 +1027,73 @@ refreshTeacherSidebarFailureWarnsClearsNodesAndUpdatesActions()
     QVERIFY(!actions.deleteTeacher->isEnabled());
     QVERIFY(actions.deleteClass->isEnabled());
     QVERIFY(actions.importTeachers->isEnabled());
+}
+
+void NavigationTeacherReadTests::
+updateActionStatesClassListFailureDisablesClassActionsOnly()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+
+    Teacher teacher = teacherFixture(
+        QStringLiteral("Available Teacher Korean"),
+        QStringLiteral("Available Teacher English"),
+        QStringLiteral("Available Teacher Display")
+        );
+    QVERIFY(persistTeacher(services, teacher) > 0);
+    int classId = -1;
+    createClassWithSubtitle(
+        services,
+        QStringLiteral("Class List Failure Fixture"),
+        teacher.id,
+        QStringLiteral("E4"),
+        QStringLiteral("Orion"),
+        QStringLiteral("Monday"),
+        QStringLiteral("4:00 PM"),
+        classId
+        );
+    QVERIFY(classId > 0);
+
+    ActionRegistry actions;
+    actions.createActions();
+    PageManager pages;
+    Sidebar sidebar;
+    SidebarController controller(&services, &sidebar, &pages);
+    controller.connectActions(actions);
+    QVERIFY(actions.deleteClass->isEnabled());
+    QVERIFY(actions.exportClasses->isEnabled());
+    QVERIFY(actions.deleteTeacher->isEnabled());
+
+    QSqlQuery disableForeignKeys(services.databaseSession()->database());
+    QVERIFY(disableForeignKeys.exec(QStringLiteral("PRAGMA foreign_keys=OFF")));
+    QSqlQuery dropClasses(services.databaseSession()->database());
+    QVERIFY2(dropClasses.exec(QStringLiteral("DROP TABLE classes")),
+             qPrintable(dropClasses.lastError().text()));
+
+    const Result<QList<Classroom>> expectedClassesRead =
+        services.classService()->classes();
+    QVERIFY(!expectedClassesRead);
+    QVERIFY(!expectedClassesRead.error().trimmed().isEmpty());
+    const Result<QList<Teacher>> expectedTeachersRead =
+        services.teacherService()->teachers();
+    QVERIFY(expectedTeachersRead);
+    QCOMPARE(expectedTeachersRead->size(), 1);
+    QCOMPARE(expectedTeachersRead->first().id, teacher.id);
+
+    FakeUserPromptService prompts;
+    DialogServices::setUserPromptServiceForTesting(&prompts);
+    controller.handleClassInfoSaved(classId);
+
+    QVERIFY(!actions.deleteClass->isEnabled());
+    QVERIFY(!actions.exportClasses->isEnabled());
+    QVERIFY(actions.deleteTeacher->isEnabled());
+    QVERIFY(actions.importClasses->isEnabled());
+    QVERIFY(actions.importTeachers->isEnabled());
+    QVERIFY(prompts.messages.isEmpty());
+    QVERIFY(prompts.confirmations.isEmpty());
+    QVERIFY(prompts.asynchronousMessages.isEmpty());
 }
 
 void NavigationTeacherReadTests::

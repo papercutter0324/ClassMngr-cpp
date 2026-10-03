@@ -345,12 +345,24 @@ void SidebarController::updateActionStates()
         return;
     }
 
-    const Result<QList<Classroom>> loadedClasses = classes->classes();
-    const Result<QList<Teacher>> loadedTeachers = teachers->teachers();
+    ClassMngr::Next::Platform::
+        ApplicationServicesClassesListReadPort classesReadPort(m_services);
+    const ClassMngr::Next::Application::ClassesListReadQuery classesQuery(
+        classesReadPort
+        );
+    const auto loadedClasses = classesQuery.execute();
+
+    ClassMngr::Next::Platform::
+        ApplicationServicesInitialSetupTeacherChoicesReadPort teachersReadPort(
+            m_services
+            );
+    const ClassMngr::Next::Application::
+        InitialSetupTeacherChoicesReadQuery teachersQuery(teachersReadPort);
+    const auto loadedTeachers = teachersQuery.execute();
 
     updateActionStates(
-        loadedClasses && !loadedClasses->isEmpty(),
-        loadedTeachers && !loadedTeachers->isEmpty()
+        loadedClasses && !loadedClasses.value().classes.empty(),
+        loadedTeachers && !loadedTeachers.value().teachers.empty()
         );
 }
 
