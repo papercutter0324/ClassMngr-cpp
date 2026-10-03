@@ -1,6 +1,7 @@
 #include "app/services/feature_services.h"
 #include "core/application_services.h"
 #include "data/database/database_session.h"
+#include "data/repositories/class_info_repository.h"
 #include "data/repositories/teacher_repository.h"
 #include "domain/models/class_info.h"
 #include "domain/models/roster.h"
@@ -328,6 +329,7 @@ private slots:
     void successfulEmptyListShowsEmptyState();
     void failedClassListReadClearsRenderedContentAndShowsWarning();
     void assignedTeacherProfileProjectsAllConsumedUtf16Fields();
+    void classInformationFieldsAndTeacherAssociationUseTypedReads();
     void failedTeacherProfileKeepsClassAndUsesSilentUnassignedFallback();
     void rosterCountUsesNonblankEnglishOrKoreanCells();
     void rosterReadFailureKeepsClassAndShowsZeroStudentCount();
@@ -463,6 +465,139 @@ assignedTeacherProfileProjectsAllConsumedUtf16Fields()
         *englishClassPage, englishTeacher.notes);
     QCOMPARE(notes.size(), 1);
     QVERIFY(notes.constFirst()->isReadOnly());
+}
+
+void MyClassesPageTests::
+classInformationFieldsAndTeacherAssociationUseTypedReads()
+{
+    MyClassesPageFixture fixture;
+    QString error;
+    QVERIFY2(fixture.initialize(&error), qPrintable(error));
+
+    Teacher teacher;
+    teacher.teacherEn = QStringLiteral("Assigned My Classes Teacher");
+    teacher.roomNumber = QStringLiteral("Room 12");
+    int teacherId = 0;
+    QVERIFY2(fixture.createTeacher(teacher, &teacherId, &error),
+             qPrintable(error));
+
+    int classId = 0;
+    QVERIFY2(fixture.createClass(
+                 QStringLiteral("Displayed details class"),
+                 QStringLiteral("E4"),
+                 QStringLiteral("Theseus"),
+                 &classId,
+                 &error
+                 ), qPrintable(error));
+    QVERIFY2(fixture.assignTeacher(classId, teacherId, &error),
+             qPrintable(error));
+
+    auto loadedInfo = fixture.services.classService()->classInfo(classId);
+    QVERIFY(loadedInfo);
+    ClassInfo info = loadedInfo.value();
+    info.classTimes = {
+        {
+            .day = QStringLiteral("Tuesday"),
+            .startTime = QStringLiteral("11:05 am"),
+            .endTime = QStringLiteral("12:05 pm")
+        },
+        {
+            .day = QStringLiteral("Monday"),
+            .startTime = QStringLiteral("9:00 AM"),
+            .endTime = QStringLiteral("9:45 AM")
+        }
+    };
+    info.intensiveTimes = {
+        {
+            .day = QStringLiteral("Friday"),
+            .startTime = QStringLiteral("02:00 PM"),
+            .endTime = QStringLiteral("04:00 PM")
+        }
+    };
+    info.notes = QStringLiteral("Class notes\nUTF-16 \U0001F9ED");
+    info.timeFillerActivities = QStringLiteral("Filler \U0001F4DA");
+    QVERIFY(fixture.services.databaseSession()->classInfoRepository()
+        ->saveClassInfo(info));
+
+    MyClassesPage page(&fixture.services);
+    page.resize(900, 700);
+    page.refresh();
+    page.show();
+    QApplication::processEvents();
+
+    NavigationTabWidget* tabs = classTabsFor(page);
+    QVERIFY(tabs);
+    QCOMPARE(tabs->count(), 1);
+    QWidget* classPage = tabs->widget(0);
+    QVERIFY(classPage);
+    QCOMPARE(classPage->property("class_id").toInt(), classId);
+    QCOMPARE(labelsWithText(*classPage, QStringLiteral("Assigned My Classes Teacher - Room Room 12"))
+                 .size(), 1);
+    QCOMPARE(labelsWithText(*classPage, QStringLiteral("E4 - Theseus")).size(), 1);
+
+    QLabel* const regularSchedule = infoRowValueLabelFor(
+        *classPage,
+        QStringLiteral("Regular")
+        );
+    QVERIFY(regularSchedule);
+    QCOMPARE(regularSchedule->text(), QStringLiteral(
+        "Tues 11:05 am-12:05 pm; Mon 9:00 AM-9:45 AM"));
+    QLabel* const intensiveSchedule = infoRowValueLabelFor(
+        *classPage,
+        QStringLiteral("Intensive")
+        );
+    QVERIFY(intensiveSchedule);
+    QCOMPARE(intensiveSchedule->text(), QStringLiteral("Fri 02:00 PM-04:00 PM"));
+    const QList<QTextEdit*> classNotes = textEditsWithContent(
+        *classPage,
+        QStringLiteral("Class notes\nUTF-16 \U0001F9ED")
+        );
+    QCOMPARE(classNotes.size(), 1);
+    QCOMPARE(textEditsWithContent(
+                 *classPage,
+                 QStringLiteral("Filler \U0001F4DA")
+                 ).size(), 1);
+
+    QSqlQuery dropClassInfo(
+        fixture.services.databaseSession()->database());
+    QVERIFY2(dropClassInfo.exec(QStringLiteral("DROP TABLE class_info")),
+             qPrintable(dropClassInfo.lastError().text()));
+
+    bool warningCaptured = false;
+    QTimer::singleShot(
+        0,
+        &page,
+        [&warningCaptured]()
+        {
+            auto* const warning = qobject_cast<QMessageBox*>(
+                QApplication::activeModalWidget());
+            if (warning)
+            {
+                warningCaptured = true;
+                warning->accept();
+            }
+        }
+        );
+    page.refresh();
+    QApplication::processEvents();
+
+    QVERIFY(!warningCaptured);
+    QCoreApplication::sendPostedEvents(nullptr, QEvent::DeferredDelete);
+    tabs = classTabsFor(page);
+    QVERIFY(tabs);
+    QCOMPARE(tabs->count(), 1);
+    classPage = tabs->widget(0);
+    QVERIFY(classPage);
+    QCOMPARE(classPage->property("class_id").toInt(), classId);
+    QCOMPARE(labelsWithText(*classPage, QStringLiteral("Unassigned")).size(), 1);
+    QLabel* const scheduleFallback = infoRowValueLabelFor(
+        *classPage,
+        QStringLiteral("Schedule")
+        );
+    QVERIFY(scheduleFallback);
+    QCOMPARE(scheduleFallback->text(), QStringLiteral("N/A"));
+    QCOMPARE(textEditsWithContent(*classPage, QString()).size(), 2);
+    QCOMPARE(textEditsWithContent(*classPage, QStringLiteral("N/A")).size(), 1);
 }
 
 void MyClassesPageTests::
