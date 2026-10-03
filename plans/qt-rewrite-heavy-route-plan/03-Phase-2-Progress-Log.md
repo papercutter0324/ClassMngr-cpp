@@ -10457,3 +10457,26 @@ display and class-list/read behavior unchanged. Extend the existing
 zero fallback on read failure; retain the roster query and adapter CTests. The
 count projection must match the legacy QString trimming and row/column bounds
 behavior. Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial.
+
+### Progress update - 2026-10-03 (F283 accepted; F284 selected)
+
+F283, committed as `9c884c97`, routes MyClassesPage per-class roster reads
+through the accepted RosterReadUseCase and active-session adapter. Its row
+count matches the legacy behavior: either trimmed English or Korean name
+counts once; missing name columns and read failure display zero. The
+`# of Students` label and class-list behavior remain unchanged. The focused
+build succeeded and the MyClassesPage, roster-query, and roster-adapter CTests
+passed 3/3. Logs are under `build/p2_f283_verify_logs/`; no full suite ran.
+
+F284 is selected to replace the post-selection `classroom(classId)` read in
+`SidebarController::deleteClass()` with the accepted classes-list query and
+adapter. Recheck that the chosen ID is still present before confirmation. On
+query failure or a missing selected ID, preserve the existing Delete Class
+warning and stop without confirmation or deletion. Keep the delete service
+guard, confirmation content, and removal flow unchanged. Add caller coverage
+for a selected-class reload failure after the chooser has accepted a choice;
+retain the NavigationTeacherRead, classes-list query, and adapter CTests.
+The full-list query can reject unrelated invalid or duplicate IDs, and its
+adapter requires an active database session where the legacy class service
+could fall back to DataService. Phase 2 remains In Progress/Open; Gates 1 and 2
+remain Partial.
