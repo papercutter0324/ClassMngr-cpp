@@ -331,6 +331,99 @@ Result<Roster> RosterRepository::loadRoster(
     return roster;
 }
 
+Result<QList<RosterRepository::ColumnNamesForClass>>
+RosterRepository::loadRosterColumnNamesForClasses(
+    const QList<int>& classIds
+    )
+{
+    if (classIds.isEmpty())
+    {
+        return QList<ColumnNamesForClass>{};
+    }
+
+    QList<ColumnNamesForClass> records;
+    records.reserve(classIds.size());
+    QHash<int, qsizetype> recordIndexByClassId;
+    recordIndexByClassId.reserve(classIds.size());
+    QStringList requestedClasses;
+    requestedClasses.reserve(classIds.size());
+
+    for (qsizetype index = 0; index < classIds.size(); ++index)
+    {
+        const int classId = classIds.at(index);
+        if (classId <= 0 || recordIndexByClassId.contains(classId))
+        {
+            return std::unexpected(
+                QObject::tr("Loading roster columns failed: class ids must be positive and unique.")
+                );
+        }
+
+        recordIndexByClassId.insert(classId, index);
+        records.append({.classId = classId});
+        requestedClasses.append(
+            QStringLiteral("(%1, %2)")
+                .arg(classId)
+                .arg(index)
+            );
+    }
+
+    const QString queryText = QStringLiteral(R"(
+        WITH requested(class_id, request_order) AS (
+            VALUES %1
+        )
+        SELECT
+            requested.class_id AS class_id,
+            roster_columns.name AS name
+        FROM requested
+        LEFT JOIN roster_columns
+            ON roster_columns.class_id=requested.class_id
+        ORDER BY
+            requested.request_order,
+            roster_columns.position,
+            roster_columns.id
+    )").arg(requestedClasses.join(QStringLiteral(", ")));
+
+    QSqlQuery query(m_database);
+    if (!query.prepare(queryText))
+    {
+        return std::unexpected(
+            QObject::tr("Preparing roster column batch read failed: %1")
+                .arg(query.lastError().text())
+            );
+    }
+
+    const auto loadedColumns = SqlQueryUtils::executePrepared(
+        query,
+        QObject::tr("Loading roster column names"),
+        QObject::tr("%1 classes").arg(classIds.size())
+        );
+    if (!loadedColumns)
+    {
+        return std::unexpected(loadedColumns.error().userMessage());
+    }
+
+    while (query.next())
+    {
+        if (query.value("name").isNull())
+        {
+            continue;
+        }
+
+        const int classId = query.value("class_id").toInt();
+        const auto recordIndex = recordIndexByClassId.constFind(classId);
+        if (recordIndex == recordIndexByClassId.cend())
+        {
+            return std::unexpected(
+                QObject::tr("Loading roster column names returned an unexpected class id.")
+                );
+        }
+
+        records[*recordIndex].columns.append(query.value("name").toString());
+    }
+
+    return records;
+}
+
 Result<Roster> RosterRepository::loadRosterForOutput(
     const int classId,
     const QStringList& requestedColumns,

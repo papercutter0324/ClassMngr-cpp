@@ -7,12 +7,14 @@
 #include "ui/shared/widgets/marquee_item_delegate.h"
 #include "domain/models/teacher.h"
 #include "next/application/classes_list_read_query.h"
+#include "next/application/roster_column_names_batch_read_query.h"
 #include "next/application/roster_print_class_info_read_query.h"
 #include "next/application/roster_read_query.h"
 #include "next/application/selected_class_subtitle_batch_read_query.h"
 #include "next/application/testing_class_details_read_query.h"
 #include "next/domain/domain_types.h"
 #include "next/platform/application_services_classes_list_read_port.h"
+#include "next/platform/application_services_roster_column_names_batch_read_port.h"
 #include "next/platform/application_services_roster_print_class_info_read_port.h"
 #include "next/platform/application_services_roster_read_port.h"
 #include "next/platform/application_services_selected_class_subtitle_batch_read_port.h"
@@ -552,37 +554,47 @@ void RosterPrintDialog::updateExtraInfoColumns()
             );
     QList<RosterTemplatePrintService::RosterClassData> rosterClasses;
     rosterClasses.reserve(classIds.size());
-
-    const ClassMngr::Next::Platform::ApplicationServicesRosterReadPort
-        rosterReadPort(m_services);
-    for (int classId : classIds)
+    std::vector<ClassMngr::Next::Domain::ClassId> typedClassIds;
+    typedClassIds.reserve(static_cast<std::size_t>(classIds.size()));
+    std::vector<std::size_t> rosterClassIndexes;
+    rosterClassIndexes.reserve(static_cast<std::size_t>(classIds.size()));
+    for (qsizetype index = 0; index < classIds.size(); ++index)
     {
-        RosterTemplatePrintService::RosterClassData data;
+        rosterClasses.append(
+            RosterTemplatePrintService::RosterClassData{}
+            );
         const auto typedClassId =
             ClassMngr::Next::Domain::ClassId::fromString(
-                std::to_string(classId)
+                std::to_string(classIds.at(index))
                 );
         if (typedClassId)
         {
-            const ClassMngr::Next::Application::RosterReadQuery query{
-                .classId = *typedClassId
-            };
-            const auto loadedRoster =
-                ClassMngr::Next::Application::RosterReadUseCase::execute(
-                    query,
-                    rosterReadPort
-                    );
-            if (loadedRoster)
+            typedClassIds.push_back(*typedClassId);
+            rosterClassIndexes.push_back(static_cast<std::size_t>(index));
+        }
+    }
+
+    const ClassMngr::Next::Platform::
+        ApplicationServicesRosterColumnNamesBatchReadPort rosterReadPort(
+            m_services
+            );
+    const ClassMngr::Next::Application::RosterColumnNamesBatchReadQuery
+        rosterReadQuery(rosterReadPort);
+    const auto loadedRosters = rosterReadQuery.execute(typedClassIds);
+    if (loadedRosters)
+    {
+        for (std::size_t index = 0;
+             index < loadedRosters.value().size();
+             ++index)
+        {
+            RosterTemplatePrintService::RosterClassData& data =
+                rosterClasses[static_cast<qsizetype>(rosterClassIndexes[index])];
+            for (const std::u16string& column :
+                 loadedRosters.value().at(index).columns)
             {
-                for (const std::u16string& column : loadedRoster.value().columns)
-                {
-                    data.roster.columns.append(
-                        QString::fromStdU16String(column)
-                        );
-                }
+                data.roster.columns.append(QString::fromStdU16String(column));
             }
         }
-        rosterClasses.append(data);
     }
 
     const QStringList columns =

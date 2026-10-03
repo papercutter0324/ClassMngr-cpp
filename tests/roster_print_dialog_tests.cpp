@@ -51,6 +51,40 @@ QString defaultClassDisplayName()
         + QStringLiteral(" No Teacher");
 }
 
+bool appendRawRosterColumns(
+    ApplicationServices& services,
+    const int classId,
+    const QStringList& columns,
+    QString* error
+    )
+{
+    QSqlQuery insert(services.databaseSession()->database());
+    if (!insert.prepare(QStringLiteral(
+            "INSERT INTO roster_columns (class_id, name, position, width) "
+            "VALUES (?, ?, ?, ?)"
+            )))
+    {
+        *error = insert.lastError().text();
+        return false;
+    }
+
+    int position = Roster::BaseColumns.size();
+    for (const QString& column : columns)
+    {
+        insert.bindValue(0, classId);
+        insert.bindValue(1, column);
+        insert.bindValue(2, position);
+        insert.bindValue(3, 120);
+        if (!insert.exec())
+        {
+            *error = insert.lastError().text();
+            return false;
+        }
+        ++position;
+    }
+    return true;
+}
+
 class RosterPrintDialogFixture final
 {
 public:
@@ -200,6 +234,8 @@ private slots:
     void currentClassOnlyUsesTestingClassRecord();
     void currentClassOnlyDetailsReadFailureIsSilentAndLeavesListEmpty();
     void extraInfoColumnsComeFromSelectedClassRostersAndKeepChecksOnRefresh();
+    void extraInfoColumnUnionKeepsScopeOrderAndFiltersNames();
+    void emptyRosterDoesNotDiscardOtherClassesExtraColumns();
     void failedRosterReadProvidesNoExtraInfoColumns();
     void classListReadFailurePreservesRenderedExtraInfoControls();
 };
@@ -758,6 +794,178 @@ extraInfoColumnsComeFromSelectedClassRostersAndKeepChecksOnRefresh()
              QStringList({QStringLiteral("Shared Notes")}));
 }
 
+void RosterPrintDialogTests::
+extraInfoColumnUnionKeepsScopeOrderAndFiltersNames()
+{
+    RosterPrintDialogFixture fixture;
+    QString error;
+    QVERIFY2(fixture.initialize(&error), qPrintable(error));
+
+    int alphaId = 0;
+    int betaId = 0;
+    QVERIFY2(fixture.createClass(
+                 QStringLiteral("Alpha"),
+                 QStringLiteral("E4"),
+                 QStringLiteral("Theseus"),
+                 -1,
+                 {},
+                 &alphaId,
+                 &error
+                 ), qPrintable(error));
+    QVERIFY2(fixture.createClass(
+                 QStringLiteral("Beta"),
+                 QStringLiteral("E5"),
+                 QStringLiteral("Apollo"),
+                 -1,
+                 {},
+                 &betaId,
+                 &error
+                 ), qPrintable(error));
+    QVERIFY2(fixture.saveRoster(alphaId, {}, &error), qPrintable(error));
+    QVERIFY2(fixture.saveRoster(betaId, {}, &error), qPrintable(error));
+    QVERIFY2(appendRawRosterColumns(
+                 fixture.services,
+                 alphaId,
+                 {
+                     QStringLiteral("  Alpha Notes  "),
+                     QStringLiteral(" SHARED "),
+                     QStringLiteral("shared"),
+                     QStringLiteral(" English "),
+                     QStringLiteral("Autumn"),
+                     QStringLiteral("   "),
+                     QStringLiteral("alpha tail")
+                 },
+                 &error
+                 ), qPrintable(error));
+    QVERIFY2(appendRawRosterColumns(
+                 fixture.services,
+                 betaId,
+                 {
+                     QStringLiteral("Beta Notes"),
+                     QStringLiteral("shared"),
+                     QStringLiteral("BETA notes"),
+                     QStringLiteral("Second"),
+                     QStringLiteral(" Korean "),
+                     QStringLiteral("Autumn"),
+                     QStringLiteral("Beta Tail")
+                 },
+                 &error
+                 ), qPrintable(error));
+
+    RosterPrintDialog dialog(
+        &fixture.services,
+        alphaId,
+        RosterTemplatePrintService::Scope::SelectedClasses,
+        RosterPrintDialog::Action::Print
+        );
+    QListWidget* const classList = classListFor(dialog);
+    QVERIFY(classList);
+    QCOMPARE(classList->count(), 2);
+    QCOMPARE(classList->item(0)->data(Qt::UserRole).toInt(), alphaId);
+    QCOMPARE(classList->item(1)->data(Qt::UserRole).toInt(), betaId);
+
+    auto* const templateCombo = dialog.findChild<QComboBox*>(
+        QStringLiteral("templateCombo"));
+    QVERIFY(templateCombo);
+    const int extraInfoIndex = templateCombo->findData(
+        static_cast<int>(
+            RosterTemplatePrintService::TemplateId::PerClassWithExtraInfo));
+    QVERIFY(extraInfoIndex >= 0);
+    templateCombo->setCurrentIndex(extraInfoIndex);
+    classList->item(1)->setCheckState(Qt::Checked);
+
+    const QStringList expected{
+        QStringLiteral("Alpha Notes"),
+        QStringLiteral("SHARED"),
+        QStringLiteral("alpha tail"),
+        QStringLiteral("Beta Notes"),
+        QStringLiteral("Second"),
+        QStringLiteral("Beta Tail")
+    };
+    QCOMPARE(extraColumnLabelsFor(dialog), expected);
+
+    QCheckBox* shared = extraColumnCheckBoxFor(
+        dialog,
+        QStringLiteral("SHARED")
+        );
+    QVERIFY(shared);
+    shared->setChecked(true);
+    QCOMPARE(dialog.selectedExtraColumns(), QStringList({QStringLiteral("SHARED")}));
+
+    classList->item(1)->setCheckState(Qt::Unchecked);
+    QCOMPARE(
+        extraColumnLabelsFor(dialog),
+        (QStringList{
+            QStringLiteral("Alpha Notes"),
+            QStringLiteral("SHARED"),
+            QStringLiteral("alpha tail")
+        })
+        );
+    shared = extraColumnCheckBoxFor(dialog, QStringLiteral("SHARED"));
+    QVERIFY(shared);
+    QVERIFY(shared->isChecked());
+    QCOMPARE(dialog.selectedExtraColumns(), QStringList({QStringLiteral("SHARED")}));
+
+    classList->item(1)->setCheckState(Qt::Checked);
+    QCOMPARE(extraColumnLabelsFor(dialog), expected);
+    shared = extraColumnCheckBoxFor(dialog, QStringLiteral("SHARED"));
+    QVERIFY(shared);
+    QVERIFY(shared->isChecked());
+}
+
+void RosterPrintDialogTests::
+emptyRosterDoesNotDiscardOtherClassesExtraColumns()
+{
+    RosterPrintDialogFixture fixture;
+    QString error;
+    QVERIFY2(fixture.initialize(&error), qPrintable(error));
+
+    int alphaId = 0;
+    int betaId = 0;
+    QVERIFY2(fixture.createClass(
+                 QStringLiteral("Alpha Empty"),
+                 QStringLiteral("E4"),
+                 QStringLiteral("Theseus"),
+                 -1,
+                 {},
+                 &alphaId,
+                 &error
+                 ), qPrintable(error));
+    QVERIFY2(fixture.createClass(
+                 QStringLiteral("Beta With Roster"),
+                 QStringLiteral("E5"),
+                 QStringLiteral("Apollo"),
+                 -1,
+                 {},
+                 &betaId,
+                 &error
+                 ), qPrintable(error));
+    QVERIFY2(fixture.saveRoster(
+                 betaId,
+                 {QStringLiteral("Beta Notes")},
+                 &error
+                 ), qPrintable(error));
+
+    RosterPrintDialog dialog(
+        &fixture.services,
+        alphaId,
+        RosterTemplatePrintService::Scope::AllClasses,
+        RosterPrintDialog::Action::Print
+        );
+    auto* const templateCombo = dialog.findChild<QComboBox*>(
+        QStringLiteral("templateCombo"));
+    QVERIFY(templateCombo);
+    const int extraInfoIndex = templateCombo->findData(
+        static_cast<int>(
+            RosterTemplatePrintService::TemplateId::PerClassWithExtraInfo));
+    QVERIFY(extraInfoIndex >= 0);
+    templateCombo->setCurrentIndex(extraInfoIndex);
+
+    QCOMPARE(extraColumnLabelsFor(dialog), QStringList({
+        QStringLiteral("Beta Notes")
+    }));
+}
+
 void RosterPrintDialogTests::failedRosterReadProvidesNoExtraInfoColumns()
 {
     RosterPrintDialogFixture fixture;
@@ -799,10 +1007,16 @@ void RosterPrintDialogTests::failedRosterReadProvidesNoExtraInfoColumns()
         static_cast<int>(
             RosterTemplatePrintService::TemplateId::PerClassWithExtraInfo));
     QVERIFY(extraInfoIndex >= 0);
+    FakeUserPromptService prompts;
+    DialogServices::setUserPromptServiceForTesting(&prompts);
     templateCombo->setCurrentIndex(extraInfoIndex);
 
     QVERIFY(extraColumnLabelsFor(dialog).isEmpty());
     QVERIFY(dialog.selectedExtraColumns().isEmpty());
+    QVERIFY(prompts.messages.isEmpty());
+    QVERIFY(prompts.asynchronousMessages.isEmpty());
+    QVERIFY(prompts.confirmations.isEmpty());
+    QVERIFY(QApplication::activeModalWidget() == nullptr);
 }
 
 void RosterPrintDialogTests::

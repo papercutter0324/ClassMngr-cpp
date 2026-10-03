@@ -21,6 +21,12 @@ inline constexpr std::size_t kRosterRepositoryOutputMaxTextBytes =
 class RosterRepository
 {
 public:
+    struct ColumnNamesForClass final
+    {
+        int classId = 0;
+        QStringList columns;
+    };
+
     explicit RosterRepository(
         QSqlDatabase& database
         );
@@ -36,6 +42,13 @@ public:
 
     [[nodiscard]] Result<Roster> loadRoster(
         int classId
+        );
+
+    // Reads ordered column names for every requested class in one statement.
+    // Classes without roster columns are returned with an empty column list.
+    [[nodiscard]] Result<QList<ColumnNamesForClass>>
+    loadRosterColumnNamesForClasses(
+        const QList<int>& classIds
         );
 
     // Loads only the requested columns and rejects row, cell, or UTF-8 byte
