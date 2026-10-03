@@ -6,6 +6,9 @@
 #include "domain/models/class_info.h"
 #include "ui/shared/widgets/marquee_item_delegate.h"
 #include "domain/models/teacher.h"
+#include "next/application/selected_class_subtitle_read_query.h"
+#include "next/domain/domain_types.h"
+#include "next/platform/application_services_selected_class_subtitle_read_port.h"
 #include "ui/shared/widgets/no_wheel_combobox.h"
 #include "ui/shared/widgets/text_fit_dialog_button_box.h"
 #include "ui/shared/widgets/text_fit_push_button.h"
@@ -44,6 +47,9 @@
 #include <QVBoxLayout>
 #include <QVariant>
 
+#include <string>
+#include <utility>
+
 namespace
 {
 constexpr int AllClassesId = 0;
@@ -60,7 +66,6 @@ constexpr int SelectedClassesHeightMultiplier = 2;
 constexpr int SelectedClassesItemSpacing = 4;
 constexpr int MaximumDialogWidthMultiplier = 3;
 constexpr int MaximumDialogWidthDivisor = 2;
-
 
 int scopeId(
     RosterTemplatePrintService::Scope scope
@@ -1244,17 +1249,63 @@ void RosterPrintDialog::loadClasses()
     }
     for (const Classroom& classroom : *classes)
     {
-        const ClassInfo classInfo =
-            classService->classInfo(
-                classroom.id
-                ).value_or(ClassInfo{});
-
+        ClassInfo classInfo;
         Teacher teacher;
 
-        if (classInfo.teacherId > 0)
+        const auto selectedClassId =
+            ClassMngr::Next::Domain::ClassId::fromString(
+                std::to_string(classroom.id)
+                );
+        if (selectedClassId)
         {
-            teacher = teacherService->teacher(classInfo.teacherId)
-                .value_or(Teacher{});
+            ClassMngr::Next::Platform::
+                ApplicationServicesSelectedClassSubtitleReadPort readPort(
+                    m_services
+                    );
+            const ClassMngr::Next::Application::
+                SelectedClassSubtitleReadQuery query(readPort);
+            const auto loadedSubtitle = query.execute(*selectedClassId);
+            if (loadedSubtitle && loadedSubtitle.value().classFields)
+            {
+                const auto& subtitle = loadedSubtitle.value();
+                const auto& fields = subtitle.classFields.value();
+                classInfo.classGrade = QString::fromStdU16String(
+                    fields.classGrade
+                    );
+                classInfo.classLevel = QString::fromStdU16String(
+                    fields.classLevel
+                    );
+                classInfo.classTimes.reserve(
+                    static_cast<qsizetype>(fields.regularSchedule.size())
+                    );
+                for (const auto& row : fields.regularSchedule)
+                {
+                    ClassTime time;
+                    time.day = QString::fromStdU16String(row.day);
+                    time.startTime = QString::fromStdU16String(row.startTime);
+                    time.endTime.clear();
+                    classInfo.classTimes.append(std::move(time));
+                }
+
+                if (subtitle.assignedTeacher
+                    && subtitle.assignedTeacher.value())
+                {
+                    const auto& teacherFields =
+                        subtitle.assignedTeacher.value().value();
+                    teacher.teacherKr = QString::fromStdU16String(
+                        teacherFields.teacherKr
+                        );
+                    teacher.teacherEn = QString::fromStdU16String(
+                        teacherFields.teacherEn
+                        );
+                    teacher.preferredRomanization = QString::fromStdU16String(
+                        teacherFields.preferredRomanization
+                        );
+                    teacher.preferredName = QString::fromStdU16String(
+                        teacherFields.preferredName
+                        );
+                }
+            }
         }
 
         const QString displayName =

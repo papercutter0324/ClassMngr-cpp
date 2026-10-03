@@ -190,6 +190,15 @@ classmngr_add_qt_test(
     OFFSCREEN
 )
 
+classmngr_add_qt_test(
+    NAME RosterPrintDialog
+    SOURCES
+        tests/roster_print_dialog_tests.cpp
+    LIBRARIES
+        Qt6::Test
+        Qt6::Widgets
+    OFFSCREEN
+)
 
 classmngr_add_qt_test(
     NAME SpeakingEvalPageSave
