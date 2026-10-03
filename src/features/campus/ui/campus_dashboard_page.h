@@ -5,9 +5,11 @@
 #include "ui/shared/pages/basepage.h"
 #include "domain/models/campus_info.h"
 #include "features/campus/data/campus_json_repository.h"
+#include "next/application/campus_dashboard_selected_campus_read_port.h"
 
 #include <QList>
 #include <QPointer>
+#include <QString>
 
 class QComboBox;
 class QCheckBox;
@@ -24,6 +26,15 @@ class QWidget;
 class CampusMapPreview;
 class SectionCard;
 
+struct CampusDashboardPageDependencies final
+{
+    QString campusDirectory;
+    // Optional, non-owning application-boundary dependency. The production
+    // adapter is constructed from the same directory when this is null.
+    const ClassMngr::Next::Application::CampusDashboardSelectedCampusReadPort*
+        selectedCampusReadPort = nullptr;
+};
+
 class CampusDashboardPage : public BasePage
 {
     Q_OBJECT
@@ -32,6 +43,11 @@ public:
 
     explicit CampusDashboardPage(
         bool adminMode,
+        QWidget *parent = nullptr
+        );
+    CampusDashboardPage(
+        bool adminMode,
+        CampusDashboardPageDependencies dependencies,
         QWidget *parent = nullptr
         );
 
@@ -314,7 +330,10 @@ private:
     SaveMode m_saveMode = SaveMode::Automatic;
     int m_currentCampusComboIndex = -1;
 
+    QString m_campusDirectory;
     CampusJsonRepository m_repository;
+    const ClassMngr::Next::Application::CampusDashboardSelectedCampusReadPort*
+        m_selectedCampusReadPort = nullptr;
     CampusInfo m_currentCampus;
 
     QTimer* m_saveTimer = nullptr;

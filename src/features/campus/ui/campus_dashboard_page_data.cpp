@@ -73,7 +73,9 @@ void CampusDashboardPage::loadCampuses()
 {
     const auto campuses =
         ClassMngr::Next::Platform::
-            CalendarPageCampusDirectoryQueryAdapter().loadCampuses();
+            CalendarPageCampusDirectoryQueryAdapter(
+                m_campusDirectory
+                ).loadCampuses();
 
     const QSignalBlocker blocker(m_campusCombo);
 

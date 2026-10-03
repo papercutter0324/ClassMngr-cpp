@@ -57,6 +57,9 @@ void CampusDashboardPage::buildUi()
 
         m_campusNameEdit =
             new QLineEdit(this);
+        m_campusNameEdit->setObjectName(
+            QStringLiteral("campusNameEdit")
+            );
 
         m_campusNameEdit->setMinimumWidth(180);
         m_campusNameEdit->setMaximumWidth(260);

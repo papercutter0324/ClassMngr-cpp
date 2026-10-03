@@ -4,26 +4,118 @@
 #include "features/campus/ui/campus_map_preview.h"
 
 #include "core/resource_paths.h"
+#include "next/application/campus_dashboard_selected_campus_read_query.h"
+#include "next/platform/campus_dashboard_selected_campus_read_adapter.h"
 #include "next/platform/settings_manager_last_selected_campus_port.h"
 
 #include <QCheckBox>
 #include <QComboBox>
+#include <QJsonArray>
+#include <QJsonDocument>
 #include <QLabel>
 #include <QPushButton>
 #include <QTabWidget>
 #include <QTimer>
 
+#include <utility>
+
 namespace Detail = CampusDashboardPageDetail;
+
+namespace
+{
+QString fromUtf8(const std::string& value)
+{
+    return QString::fromUtf8(value.data(), static_cast<qsizetype>(value.size()));
+}
+
+QJsonObject jsonObjectFromUtf8(const std::string& json)
+{
+    return QJsonDocument::fromJson(QByteArray::fromStdString(json))
+        .object();
+}
+
+QJsonArray jsonArrayFromUtf8(const std::string& json)
+{
+    return QJsonDocument::fromJson(QByteArray::fromStdString(json))
+        .array();
+}
+
+QStringList stringListFromUtf8(const std::vector<std::string>& values)
+{
+    QStringList result;
+    result.reserve(static_cast<qsizetype>(values.size()));
+    for (const std::string& value : values)
+    {
+        result.append(fromUtf8(value));
+    }
+    return result;
+}
+
+CampusInfo campusInfoFromSnapshot(
+    const ClassMngr::Next::Application::
+        CampusDashboardSelectedCampusSnapshot& snapshot
+    )
+{
+    CampusInfo campus;
+    campus.id = fromUtf8(snapshot.id.value());
+    campus.campusName = fromUtf8(snapshot.campusName);
+    campus.campusCode = fromUtf8(snapshot.campusCode);
+    campus.buildingName = fromUtf8(snapshot.buildingName);
+    campus.buildingNameKr = fromUtf8(snapshot.buildingNameKr);
+    campus.address = fromUtf8(snapshot.address);
+    campus.phoneNumber = fromUtf8(snapshot.phoneNumber);
+    campus.officeNumber = fromUtf8(snapshot.officeNumber);
+    campus.directionsAddressEn =
+        jsonObjectFromUtf8(snapshot.directionsAddressEnJson);
+    campus.directionsAddressKr =
+        jsonObjectFromUtf8(snapshot.directionsAddressKrJson);
+    campus.directionsNote = fromUtf8(snapshot.directionsNote);
+    campus.transitSteps = stringListFromUtf8(snapshot.transitSteps);
+    campus.arrivalInfo = fromUtf8(snapshot.arrivalInfo);
+    campus.imageMain = fromUtf8(snapshot.imageMain);
+    campus.mapImagePaths = stringListFromUtf8(snapshot.mapImagePaths);
+    campus.naverMapUrl = fromUtf8(snapshot.naverMapUrl);
+    campus.kakaoMapUrl = fromUtf8(snapshot.kakaoMapUrl);
+    campus.officeWifi = fromUtf8(snapshot.officeWifi);
+    campus.officeWifiPassword = fromUtf8(snapshot.officeWifiPassword);
+    campus.printerName = fromUtf8(snapshot.printerName);
+    campus.printerSteps = fromUtf8(snapshot.printerSteps);
+    campus.printerDriverUrl = fromUtf8(snapshot.printerDriverUrl);
+    campus.printerDriverUrlUnavailable = snapshot.printerDriverUrlUnavailable;
+    campus.photocopierCode = fromUtf8(snapshot.photocopierCode);
+    campus.housingLocations = jsonArrayFromUtf8(snapshot.housingLocationsJson);
+    return campus;
+}
+}
 
 CampusDashboardPage::CampusDashboardPage(
     bool adminMode,
     QWidget *parent
     )
+    : CampusDashboardPage(
+          adminMode,
+          CampusDashboardPageDependencies{
+              .campusDirectory = ResourcePaths::Campuses::directory()
+          },
+          parent
+          )
+{
+}
+
+CampusDashboardPage::CampusDashboardPage(
+    bool adminMode,
+    CampusDashboardPageDependencies dependencies,
+    QWidget *parent
+    )
     : BasePage(parent)
     , m_adminMode(adminMode)
-    , m_repository(
-        ResourcePaths::Campuses::directory()
+    , m_campusDirectory(
+        dependencies.campusDirectory.trimmed().isEmpty()
+            ? ResourcePaths::Campuses::directory()
+            : std::move(dependencies.campusDirectory)
         )
+    , m_repository(m_campusDirectory)
+    , m_selectedCampusReadPort(dependencies.selectedCampusReadPort)
 {
     buildUi();
     applyAdminMode();
@@ -490,16 +582,41 @@ void CampusDashboardPage::loadSelectedCampus()
         return;
     }
 
-    const std::optional<CampusInfo> campus =
-        m_repository.loadCampus(campusId);
+    const ClassMngr::Next::Application::
+        CampusDashboardSelectedCampusReadRequest request{
+            .campusId = campusId.toUtf8().toStdString()
+        };
 
-    if (!campus.has_value())
+    ClassMngr::Next::Application::
+        CampusDashboardSelectedCampusReadResult result = [&]()
+    {
+        if (m_selectedCampusReadPort)
+        {
+            return ClassMngr::Next::Application::
+                CampusDashboardSelectedCampusReadQuery::execute(
+                    request,
+                    *m_selectedCampusReadPort
+                    );
+        }
+
+        ClassMngr::Next::Platform::
+            CampusDashboardSelectedCampusReadAdapter adapter(
+                m_campusDirectory
+                );
+        return ClassMngr::Next::Application::
+            CampusDashboardSelectedCampusReadQuery::execute(
+                request,
+                adapter
+                );
+    }();
+
+    if (!result || !result.value().has_value())
     {
         return;
     }
 
     m_currentCampus =
-        campus.value();
+        campusInfoFromSnapshot(result.value().value());
     m_currentCampusComboIndex =
         m_campusCombo->currentIndex();
 

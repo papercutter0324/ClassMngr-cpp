@@ -1,5 +1,36 @@
 include_guard(GLOBAL)
 
+# Keep selected-campus ID validation and read-result semantics Qt-free.
+add_executable(
+    ClassMngrNextApplicationCampusDashboardSelectedCampusReadQueryTests
+    tests/next_application_campus_dashboard_selected_campus_read_query_tests.cpp
+)
+target_compile_features(
+    ClassMngrNextApplicationCampusDashboardSelectedCampusReadQueryTests
+    PRIVATE
+        cxx_std_23
+)
+set_target_properties(
+    ClassMngrNextApplicationCampusDashboardSelectedCampusReadQueryTests
+    PROPERTIES
+        AUTOMOC OFF
+        AUTOUIC OFF
+        AUTORCC OFF
+)
+set_property(
+    TARGET ClassMngrNextApplicationCampusDashboardSelectedCampusReadQueryTests
+    PROPERTY CLASSMNGR_STANDALONE_CPP_TEST TRUE
+)
+target_link_libraries(
+    ClassMngrNextApplicationCampusDashboardSelectedCampusReadQueryTests
+    PRIVATE
+        ClassMngrNext::Application
+)
+add_test(
+    NAME ClassMngrNextApplicationCampusDashboardSelectedCampusReadQueryTests
+    COMMAND ClassMngrNextApplicationCampusDashboardSelectedCampusReadQueryTests
+)
+
 # Keep roster-print class-info ID and repository-result policy independent of Qt.
 add_executable(
     ClassMngrNextApplicationRosterPrintClassInfoReadQueryTests
@@ -2492,6 +2523,15 @@ classmngr_add_qt_test(
     NAME NextPlatformCalendarPageCampusDirectoryQuery
     SOURCES
         tests/next_platform_calendar_page_campus_directory_query_adapter_tests.cpp
+    LIBRARIES
+        ClassMngrNext::Platform
+        Qt6::Test
+)
+
+classmngr_add_qt_test(
+    NAME NextPlatformCampusDashboardSelectedCampusReadAdapter
+    SOURCES
+        tests/next_platform_campus_dashboard_selected_campus_read_adapter_tests.cpp
     LIBRARIES
         ClassMngrNext::Platform
         Qt6::Test

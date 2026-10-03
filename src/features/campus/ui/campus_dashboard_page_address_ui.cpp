@@ -68,6 +68,9 @@ QWidget* CampusDashboardPage::createAddressTab()
 
     m_buildingEdit =
         new QLineEdit(m_directionsEnglishAddress.container);
+    m_buildingEdit->setObjectName(
+        QStringLiteral("campusBuildingNameEdit")
+        );
 
     m_phoneEdit =
         new QLineEdit(m_directionsEnglishAddress.container);
