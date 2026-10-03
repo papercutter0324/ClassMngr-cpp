@@ -2,14 +2,16 @@
 #include "ui/shared/widgets/text_fit_dialog_button_box.h"
 
 #include "app/services/feature_services.h"
-#include "core/utils/sidebar_node_naming.h"
 #include "core/application_services.h"
-#include "next/application/selected_class_subtitle_read_query.h"
-#include "next/domain/domain_types.h"
-#include "next/platform/application_services_selected_class_subtitle_read_port.h"
+#include "core/utils/sidebar_node_naming.h"
 #include "domain/models/class_info.h"
 #include "domain/models/classroom.h"
 #include "domain/models/teacher.h"
+#include "next/application/classes_list_read_query.h"
+#include "next/application/selected_class_subtitle_read_query.h"
+#include "next/domain/domain_types.h"
+#include "next/platform/application_services_classes_list_read_port.h"
+#include "next/platform/application_services_selected_class_subtitle_read_port.h"
 #include "ui/shared/dialogs/user_prompt_service.h"
 #include "ui/shared/widgets/text_fit_push_button.h"
 
@@ -22,7 +24,9 @@
 #include <QVBoxLayout>
 
 #include <algorithm>
+#include <charconv>
 #include <string>
+#include <system_error>
 #include <utility>
 
 namespace
@@ -103,6 +107,13 @@ QString classDisplayName(
     return QObject::tr("Class %1").arg(classroom.id);
 }
 
+QString classesListErrorMessage(const std::string& message)
+{
+    return QString::fromUtf8(
+        message.data(),
+        static_cast<qsizetype>(message.size())
+        );
+}
 }
 
 ClassExportDialog::ClassExportDialog(
@@ -117,6 +128,7 @@ ClassExportDialog::ClassExportDialog(
     auto* teacherService = applicationServices
         ? applicationServices->teacherService()
         : nullptr;
+
     setWindowTitle(tr("Export Classes"));
     setModal(true);
     resize(620, 480);
@@ -134,25 +146,54 @@ ClassExportDialog::ClassExportDialog(
     if (classService && teacherService)
     {
         QList<QPair<QString, int>> classes;
-        const Result<QList<Classroom>> loadedClasses =
-            classService->classes();
+        ClassMngr::Next::Platform::
+            ApplicationServicesClassesListReadPort readPort(
+                applicationServices
+                );
+        const ClassMngr::Next::Application::ClassesListReadQuery query(
+            readPort
+            );
+        const auto loadedClasses = query.execute();
         if (!loadedClasses)
         {
             DialogServices::showWarning(
                 this,
                 tr("Export Classes"),
                 tr("Classes could not be loaded."),
-                loadedClasses.error()
+                classesListErrorMessage(loadedClasses.error().message)
                 );
         }
-
-        for (const Classroom& classroom : loadedClasses.value_or(
-                 QList<Classroom>{}))
+        else
         {
-            classes.append({
-                classDisplayName(applicationServices, classroom),
-                classroom.id
-            });
+            for (const auto& entry : loadedClasses.value().classes)
+            {
+                int classId = 0;
+                const std::string& classIdValue = entry.classId.value();
+                const auto [end, conversionError] = std::from_chars(
+                    classIdValue.data(),
+                    classIdValue.data() + classIdValue.size(),
+                    classId
+                    );
+                Q_ASSERT(
+                    conversionError == std::errc{}
+                    && end == classIdValue.data() + classIdValue.size()
+                    && classId > 0
+                    );
+                if (conversionError != std::errc{}
+                    || end != classIdValue.data() + classIdValue.size()
+                    || classId <= 0)
+                {
+                    continue;
+                }
+
+                Classroom classroom;
+                classroom.id = classId;
+                classroom.name = QString::fromStdU16String(entry.className);
+                classes.append({
+                    classDisplayName(applicationServices, classroom),
+                    classroom.id
+                });
+            }
         }
 
         QCollator collator;

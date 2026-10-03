@@ -24,6 +24,8 @@
 #include <QSqlQuery>
 #include <QSqlRecord>
 #include <QTemporaryDir>
+#include <QTimer>
+#include <QMessageBox>
 #include <QtTest>
 
 #include <algorithm>
@@ -362,6 +364,7 @@ private slots:
     void dialogRejectsDuplicateReplacementTargets();
     void applyRejectsReplacementOutsideCurrentPreviewMatches();
     void exportDialogStartsClearAndSortsClassesAlphabetically();
+    void exportDialogShowsWarningAndStaysEmptyWhenClassListCannotLoad();
     void exportDialogUsesDefaultFormattingWhenClassFieldsCannotLoad();
     void exportDialogKeepsClassFieldsWhenTeacherCannotLoad();
     void filesystemSafeJsonFileName();
@@ -2348,6 +2351,69 @@ void ClassTransferTests::exportDialogStartsClearAndSortsClassesAlphabetically()
     classList->item(1)->setCheckState(Qt::Checked);
     QCOMPARE(dialog.selectedClassIds(), QList<int>({mikeClass}));
     QVERIFY(exportButton->isEnabled());
+}
+
+void ClassTransferTests::
+exportDialogShowsWarningAndStaysEmptyWhenClassListCannotLoad()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    DataService service;
+    QVERIFY(service.openDatabase(
+        directory.filePath(QStringLiteral("dialog.db"))).has_value());
+
+    QString applicationServicesError;
+    const auto applicationServices =
+        openApplicationServicesForCurrentDatabase(
+            service, &applicationServicesError);
+    QVERIFY2(applicationServices, qPrintable(applicationServicesError));
+    QSqlQuery dropClasses(applicationServices->databaseSession()->database());
+    QVERIFY2(dropClasses.exec(QStringLiteral("DROP TABLE classes")),
+             qPrintable(dropClasses.lastError().text()));
+
+    QString warningTitle;
+    QString warningText;
+    QString warningDetails;
+    bool warningCaptured = false;
+    QTimer::singleShot(
+        0,
+        [&]()
+        {
+            auto* warning = qobject_cast<QMessageBox*>(
+                QApplication::activeModalWidget());
+            if (!warning)
+            {
+                return;
+            }
+
+            warningTitle = warning->windowTitle();
+            warningText = warning->text();
+            warningDetails = warning->detailedText();
+            warningCaptured = true;
+            warning->accept();
+        }
+        );
+
+    ClassExportDialog dialog(applicationServices.get());
+
+    QVERIFY(warningCaptured);
+    QCOMPARE(warningTitle, QStringLiteral("Export Classes"));
+    QCOMPARE(warningText, QStringLiteral("Classes could not be loaded."));
+    QVERIFY2(!warningDetails.isEmpty(), "The database error details were not shown.");
+    QVERIFY(warningDetails.contains(QStringLiteral("classes"),
+                                    Qt::CaseInsensitive));
+
+    auto* classList = dialog.findChild<QListWidget*>(
+        QStringLiteral("classExportList"));
+    QVERIFY(classList);
+    QCOMPARE(classList->count(), 0);
+    QVERIFY(classList->isEnabled());
+    QCOMPARE(dialog.selectedClassIds(), QList<int>());
+
+    auto* exportButton = dialog.findChild<QPushButton*>(
+        QStringLiteral("exportClassesButton"));
+    QVERIFY(exportButton);
+    QVERIFY(!exportButton->isEnabled());
 }
 
 void ClassTransferTests::exportDialogUsesDefaultFormattingWhenClassFieldsCannotLoad()
