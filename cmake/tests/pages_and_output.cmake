@@ -19,6 +19,7 @@ classmngr_add_qt_test(
     OFFSCREEN
 )
 
+
 classmngr_add_qt_test(
     NAME TypedSignatureRenderer
     SOURCES
@@ -178,6 +179,17 @@ classmngr_add_qt_test(
         Qt6::Widgets
     OFFSCREEN
 )
+
+classmngr_add_qt_test(
+    NAME RosterTransferMenu
+    SOURCES
+        tests/roster_transfer_menu_tests.cpp
+    LIBRARIES
+        Qt6::Test
+        Qt6::Widgets
+    OFFSCREEN
+)
+
 
 classmngr_add_qt_test(
     NAME SpeakingEvalPageSave

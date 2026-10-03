@@ -8,6 +8,9 @@
 #include "features/roster/ui/roster_model.h"
 #include "features/roster/ui/roster_table_view.h"
 #include "next/application/roster_transfer_target_eligibility.h"
+#include "next/application/selected_class_subtitle_read_query.h"
+#include "next/domain/domain_types.h"
+#include "next/platform/application_services_selected_class_subtitle_read_port.h"
 #include "ui/shared/qt_text_adapter.h"
 
 #include <QAction>
@@ -17,6 +20,7 @@
 #include <QTimer>
 
 #include <algorithm>
+#include <string>
 #include <utility>
 
 namespace
@@ -29,27 +33,81 @@ struct TransferClassTarget
     bool full = false;
 };
 
-QString sidebarClassDisplayName(
-    ClassService* classService,
-    TeacherService* teacherService,
+struct TransferClassMetadata
+{
+    QString grade;
+    QString displayName;
+};
+
+TransferClassMetadata readTransferClassMetadata(
+    ApplicationServices* services,
     int classId
     )
 {
-    if (!classService || !teacherService || classId <= 0)
+    if (!services || classId <= 0)
     {
         return {};
     }
 
-    const ClassInfo classInfo =
-        classService->classInfo(classId).value_or(ClassInfo{});
-    Teacher teacher;
-    if (classInfo.teacherId > 0)
+    const auto selectedClassId =
+        ClassMngr::Next::Domain::ClassId::fromString(
+            std::to_string(classId)
+            );
+    if (!selectedClassId)
     {
-        teacher = teacherService->teacher(classInfo.teacherId)
-            .value_or(Teacher{});
+        return {};
     }
 
-    return SidebarNodeNaming::formatClassDisplayName(classInfo, teacher);
+    ClassMngr::Next::Platform::
+        ApplicationServicesSelectedClassSubtitleReadPort readPort(services);
+    const ClassMngr::Next::Application::SelectedClassSubtitleReadQuery query(
+        readPort
+        );
+    const auto loadedSubtitle = query.execute(*selectedClassId);
+    if (!loadedSubtitle || !loadedSubtitle.value().classFields)
+    {
+        return {};
+    }
+
+    const auto& subtitle = loadedSubtitle.value();
+    const auto& fields = subtitle.classFields.value();
+    ClassInfo classInfo;
+    classInfo.classGrade = QString::fromStdU16String(fields.classGrade);
+    classInfo.classLevel = QString::fromStdU16String(fields.classLevel);
+    classInfo.classTimes.reserve(
+        static_cast<qsizetype>(fields.regularSchedule.size())
+        );
+    for (const auto& row : fields.regularSchedule)
+    {
+        ClassTime time;
+        time.day = QString::fromStdU16String(row.day);
+        time.startTime = QString::fromStdU16String(row.startTime);
+        time.endTime.clear();
+        classInfo.classTimes.append(std::move(time));
+    }
+
+    Teacher teacher;
+    if (subtitle.assignedTeacher && subtitle.assignedTeacher.value())
+    {
+        const auto& teacherFields = subtitle.assignedTeacher.value().value();
+        teacher.teacherKr = QString::fromStdU16String(
+            teacherFields.teacherKr
+            );
+        teacher.teacherEn = QString::fromStdU16String(
+            teacherFields.teacherEn
+            );
+        teacher.preferredRomanization = QString::fromStdU16String(
+            teacherFields.preferredRomanization
+            );
+        teacher.preferredName = QString::fromStdU16String(
+            teacherFields.preferredName
+            );
+    }
+
+    return {
+        classInfo.classGrade,
+        SidebarNodeNaming::formatClassDisplayName(classInfo, teacher)
+    };
 }
 
 } // namespace
@@ -91,18 +149,16 @@ void RosterEditorWidget::showRosterContextMenu(
     }
     QHash<QAction*, int> transferActions;
     auto* classService = m_services ? m_services->classService() : nullptr;
-    auto* teacherService = m_services ? m_services->teacherService() : nullptr;
     auto* rosterService = m_services ? m_services->rosterService() : nullptr;
 
-    const QString currentGrade =
+    const TransferClassMetadata sourceMetadata =
         classService
             && ClassMngr::Next::Application::hasValidRosterTransferSourceId(
                 m_classroom.id
                 )
-            ? classService->classInfo(m_classroom.id)
-                  .value_or(ClassInfo{})
-                  .classGrade
-            : QString();
+            ? readTransferClassMetadata(m_services, m_classroom.id)
+            : TransferClassMetadata{};
+    const QString currentGrade = sourceMetadata.grade;
     QList<TransferClassTarget> targets;
 
     if (canRemove
@@ -135,13 +191,13 @@ void RosterEditorWidget::showRosterContextMenu(
                 continue;
             }
 
-            const ClassInfo targetInfo =
-                classService->classInfo(classroom.id).value_or(ClassInfo{});
+            const TransferClassMetadata targetMetadata =
+                readTransferClassMetadata(m_services, classroom.id);
             if (!ClassMngr::Next::Application::isRosterTransferTargetEligible(
                     m_classroom.id,
                     Ui::QtTextAdapter::toUtf16String(currentGrade),
                     classroom.id,
-                    Ui::QtTextAdapter::toUtf16String(targetInfo.classGrade)
+                    Ui::QtTextAdapter::toUtf16String(targetMetadata.grade)
                     ))
             {
                 continue;
@@ -153,11 +209,7 @@ void RosterEditorWidget::showRosterContextMenu(
                 );
             TransferClassTarget target;
             target.classId = classroom.id;
-            target.label = sidebarClassDisplayName(
-                classService,
-                teacherService,
-                classroom.id
-                );
+            target.label = targetMetadata.displayName;
             if (target.label.trimmed().isEmpty())
             {
                 target.label = classroom.name.trimmed().isEmpty()
