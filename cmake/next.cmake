@@ -120,6 +120,8 @@ set(CLASSMNGR_NEXT_APPLICATION_SOURCES
     src/next/application/roster_row_removal.h
     src/next/application/student_korean_name_suffix_suggestion.h
     src/next/application/roster_read_query.h
+    src/next/application/class_analytics_dashboard_read_port.h
+    src/next/application/class_analytics_dashboard_read_query.h
     src/next/application/roster_print_class_info_read_snapshot.h
     src/next/application/roster_print_class_info_read_port.h
     src/next/application/roster_print_class_info_read_query.h
@@ -339,6 +341,7 @@ set(CLASSMNGR_NEXT_PLATFORM_SOURCES
     src/next/platform/application_services_class_details_validation_context_port.h
     src/next/platform/application_services_classes_navigation_read_port.h
     src/next/platform/application_services_roster_read_port.h
+    src/next/platform/application_services_class_analytics_dashboard_read_port.h
     src/next/platform/application_services_roster_print_class_info_read_port.h
     src/next/platform/application_services_roster_save_port.h
     src/next/platform/application_services_speaking_evaluation_read_port.h

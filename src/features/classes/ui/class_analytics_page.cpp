@@ -8,6 +8,8 @@
 #include "features/classes/ui/class_analytics_ranking_delegate.h"
 #include "features/classes/ui/class_analytics_ranking_header.h"
 #include "features/classes/ui/class_analytics_ranking_model.h"
+#include "next/application/class_analytics_dashboard_read_query.h"
+#include "next/platform/application_services_class_analytics_dashboard_read_port.h"
 #include "ui/shared/constants/gui_constants.h"
 #include "ui/shared/pages/scrollable_page_body.h"
 #include "ui/shared/styles/roles.h"
@@ -29,6 +31,9 @@
 #include <QTimer>
 #include <QVBoxLayout>
 
+#include <memory>
+#include <string>
+
 namespace
 {
 
@@ -43,6 +48,88 @@ constexpr int kRankingEnglishColumnWidth = 160;
 constexpr int kRankingKoreanColumnWidth = 140;
 constexpr int kRankingAverageColumnWidth = 90;
 constexpr int kRankingCriterionColumnCount = 6;
+
+namespace ApplicationAnalytics = ClassMngr::Next::Application;
+
+QString toQString(const std::u16string& value)
+{
+    return QString::fromStdU16String(value);
+}
+
+SpeakingAnalytics::Snapshot toUiSnapshot(
+    const ApplicationAnalytics::ClassAnalyticsSnapshot& source
+)
+{
+    SpeakingAnalytics::Snapshot snapshot;
+    snapshot.hasData = source.hasData;
+    snapshot.classAverage3 = source.classAverage3;
+    snapshot.classAverageLetter = toQString(source.classAverageLetter);
+    snapshot.rosterStudentCount = static_cast<int>(source.rosterStudentCount);
+    snapshot.fullyScoredCount = static_cast<int>(source.fullyScoredCount);
+    for (const auto& sourceSlice : source.criteria)
+    {
+        SpeakingAnalytics::CriterionSlice slice;
+        slice.order = static_cast<int>(snapshot.criteria.size());
+        slice.name = toQString(sourceSlice.name);
+        slice.students = sourceSlice.students;
+        slice.average3 = sourceSlice.average3;
+        slice.hasData = sourceSlice.hasData;
+        for (int grade = 1; grade <= 5; ++grade)
+        {
+            const int count = sourceSlice.distribution[
+                static_cast<std::size_t>(grade - 1)];
+            if (count > 0)
+            {
+                slice.distribution.insert(
+                    SpeakingAnalytics::numberToGrade(grade), count);
+            }
+        }
+        snapshot.criteria.append(std::move(slice));
+    }
+    for (const std::u16string& name : source.strongestNames)
+        snapshot.strongestNames.append(toQString(name));
+    for (const std::u16string& name : source.focusNames)
+        snapshot.focusNames.append(toQString(name));
+    for (const std::u16string& label : source.strongestLabels)
+        snapshot.strongestLabels.append(toQString(label));
+    for (const std::u16string& label : source.focusLabels)
+        snapshot.focusLabels.append(toQString(label));
+    for (const std::u16string& letter : source.overallLetters)
+        snapshot.overallLetters.append(toQString(letter));
+    for (const auto& sourceRank : source.rankings)
+    {
+        SpeakingAnalytics::StudentRank rank;
+        rank.englishName = toQString(sourceRank.englishName);
+        rank.koreanName = toQString(sourceRank.koreanName);
+        rank.overall3 = sourceRank.overall3;
+        rank.overallLetter = toQString(sourceRank.overallLetter);
+        for (const std::u16string& letter : sourceRank.criterionLetters)
+            rank.criterionLetters.append(toQString(letter));
+        rank.fullyScored = sourceRank.fullyScored;
+        snapshot.rankings.append(std::move(rank));
+    }
+    return snapshot;
+}
+
+SpeakingEvaluationDashboard toUiDashboard(
+    const ApplicationAnalytics::ClassAnalyticsDashboard& source
+)
+{
+    SpeakingEvaluationDashboard dashboard;
+    dashboard.selectedSnapshot = toUiSnapshot(source.selectedSnapshot);
+    dashboard.classShapeEvaluationName = toQString(
+        source.classShapeEvaluationName);
+    dashboard.classShapeSnapshot = toUiSnapshot(source.classShapeSnapshot);
+    for (const auto& sourcePoint : source.yearToDatePoints)
+    {
+        dashboard.yearToDatePoints.append({
+            .evaluationName = toQString(sourcePoint.evaluationName),
+            .classAverage3 = sourcePoint.classAverage3,
+            .classAverageLetter = toQString(sourcePoint.classAverageLetter)
+        });
+    }
+    return dashboard;
+}
 
 QLabel* addStatValue(SectionCard* card)
 {
@@ -153,8 +240,19 @@ ClassAnalyticsPage::ClassAnalyticsPage(
     bool embedded,
     QWidget* parent
     )
+    : ClassAnalyticsPage(services, {}, embedded, parent)
+{
+}
+
+ClassAnalyticsPage::ClassAnalyticsPage(
+    ApplicationServices* services,
+    ClassAnalyticsPageReadDependencies readDependencies,
+    bool embedded,
+    QWidget* parent
+    )
     : BasePage(parent)
     , m_services(services)
+    , m_readDependencies(readDependencies)
     , m_embedded(embedded)
 {
     Q_ASSERT(m_services);
@@ -329,6 +427,7 @@ void ClassAnalyticsPage::buildUi()
     content->addWidget(m_rankingCard);
 
     m_emptyLabel = new QLabel(body);
+    m_emptyLabel->setObjectName(QStringLiteral("classAnalyticsEmptyLabel"));
     m_emptyLabel->setAlignment(Qt::AlignCenter);
     m_emptyLabel->setWordWrap(true);
     m_emptyLabel->setFont(FontManager::getUiFont(12));
@@ -523,11 +622,39 @@ void ClassAnalyticsPage::rebuild()
     SpeakingEvaluationDashboard dashboard;
     if (m_services && m_classId >= 0)
     {
-        if (const auto* service = m_services->speakingEvaluationService())
+        std::unique_ptr<
+            ClassMngr::Next::Platform::
+                ApplicationServicesClassAnalyticsDashboardReadPort>
+            productionAdapter;
+        const ApplicationAnalytics::ClassAnalyticsDashboardReadPort* readPort =
+            m_readDependencies.readPort;
+        const ApplicationAnalytics::ClassAnalyticsNameSemanticsPort* names =
+            m_readDependencies.nameSemantics;
+        if (!readPort || !names)
         {
-            dashboard = service->analyticsDashboard(
-                m_classId, selectedEvaluationName())
-                .value_or(SpeakingEvaluationDashboard{});
+            productionAdapter = std::make_unique<
+                ClassMngr::Next::Platform::
+                    ApplicationServicesClassAnalyticsDashboardReadPort>(
+                        m_services);
+            if (!readPort) readPort = productionAdapter.get();
+            if (!names) names = productionAdapter.get();
+        }
+
+        const auto classId = ClassMngr::Next::Domain::ClassId::fromString(
+            std::to_string(m_classId));
+        if (classId && readPort && names)
+        {
+            const ApplicationAnalytics::ClassAnalyticsDashboardReadRequest
+                request{
+                    .classId = *classId,
+                    .evaluationSelection =
+                        selectedEvaluationName().toStdU16String()
+                };
+            const auto result =
+                ApplicationAnalytics::ClassAnalyticsDashboardReadQuery::execute(
+                    request, *readPort, *names);
+            if (result)
+                dashboard = toUiDashboard(result.value());
         }
     }
 

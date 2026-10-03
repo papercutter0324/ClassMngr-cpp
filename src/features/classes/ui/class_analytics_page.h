@@ -2,6 +2,7 @@
 
 #include "domain/models/classroom.h"
 #include "features/classes/services/speaking_analytics.h"
+#include "next/application/class_analytics_dashboard_read_port.h"
 #include "ui/shared/pages/basepage.h"
 
 #include <QList>
@@ -22,6 +23,14 @@ class SectionCard;
 class QWidget;
 struct SpeakingEvaluationDashboard;
 
+struct ClassAnalyticsPageReadDependencies final
+{
+    const ClassMngr::Next::Application::ClassAnalyticsDashboardReadPort*
+        readPort = nullptr;
+    const ClassMngr::Next::Application::ClassAnalyticsNameSemanticsPort*
+        nameSemantics = nullptr;
+};
+
 // Read-only dashboard for speaking-evaluation results in a class.
 class ClassAnalyticsPage : public BasePage
 {
@@ -30,6 +39,12 @@ class ClassAnalyticsPage : public BasePage
 public:
     explicit ClassAnalyticsPage(
         ApplicationServices* services,
+        bool embedded = false,
+        QWidget* parent = nullptr
+        );
+    ClassAnalyticsPage(
+        ApplicationServices* services,
+        ClassAnalyticsPageReadDependencies readDependencies,
         bool embedded = false,
         QWidget* parent = nullptr
         );
@@ -74,6 +89,7 @@ private:
         ) const;
 
     ApplicationServices* m_services = nullptr;
+    ClassAnalyticsPageReadDependencies m_readDependencies;
     bool m_embedded = false;
     int m_classId = -1;
     bool m_rebuilding = false;

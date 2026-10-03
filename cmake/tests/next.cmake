@@ -1,5 +1,47 @@
 include_guard(GLOBAL)
 
+# Class Analytics composition/calculation must remain Qt-free.
+add_executable(
+    ClassMngrNextApplicationClassAnalyticsDashboardReadQueryTests
+    tests/next_application_class_analytics_dashboard_read_query_tests.cpp
+)
+target_compile_features(
+    ClassMngrNextApplicationClassAnalyticsDashboardReadQueryTests
+    PRIVATE
+        cxx_std_23
+)
+set_target_properties(
+    ClassMngrNextApplicationClassAnalyticsDashboardReadQueryTests
+    PROPERTIES
+        AUTOMOC OFF
+        AUTOUIC OFF
+        AUTORCC OFF
+)
+set_property(
+    TARGET ClassMngrNextApplicationClassAnalyticsDashboardReadQueryTests
+    PROPERTY CLASSMNGR_STANDALONE_CPP_TEST TRUE
+)
+target_link_libraries(
+    ClassMngrNextApplicationClassAnalyticsDashboardReadQueryTests
+    PRIVATE
+        ClassMngrNext::Application
+)
+add_test(
+    NAME ClassMngrNextApplicationClassAnalyticsDashboardReadQueryTests
+    COMMAND ClassMngrNextApplicationClassAnalyticsDashboardReadQueryTests
+)
+
+classmngr_add_qt_test(
+    NAME NextPlatformApplicationServicesClassAnalyticsDashboardReadPort
+    SOURCES
+        tests/next_platform_application_services_class_analytics_dashboard_read_port_tests.cpp
+    LIBRARIES
+        ClassMngrNext::Platform
+        Qt6::Sql
+        Qt6::Test
+    OFFSCREEN
+)
+
 # Keep selected-campus ID validation and read-result semantics Qt-free.
 add_executable(
     ClassMngrNextApplicationCampusDashboardSelectedCampusReadQueryTests

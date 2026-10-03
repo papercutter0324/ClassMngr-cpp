@@ -239,6 +239,18 @@ classmngr_add_qt_test(
     OFFSCREEN
 )
 
+classmngr_add_qt_test(
+    NAME ClassAnalyticsPage
+    SOURCES
+        tests/class_analytics_page_tests.cpp
+    LIBRARIES
+        ClassMngrNext::Platform
+        Qt6::Sql
+        Qt6::Test
+        Qt6::Widgets
+    OFFSCREEN
+)
+
 qt_add_executable(ClassMngrClassesPageTests
         tests/classes_page_tests.cpp
         src/core/utils/colorutils.cpp
