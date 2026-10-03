@@ -368,6 +368,7 @@ private slots:
     void importDialogRequiresAmbiguousTeacherResolution();
     void importDialogUsesDefaultFormattingWhenClassFieldsCannotLoad();
     void importDialogKeepsClassFieldsWhenTeacherCannotLoad();
+    void importDialogUsesNewTeacherLabelWhenTeacherProfileCannotLoad();
 };
 
 void ClassTransferTests::jsonRoundTripPreservesCompletePackage()
@@ -2092,6 +2093,10 @@ void ClassTransferTests::successFixtureClassReplacementMatchesCommonInputState()
     QCOMPARE(classChoice->itemData(2, Qt::UserRole).toInt(),
              static_cast<int>(ClassImportAction::Skip));
     QCOMPARE(teacherChoice->count(), 2);
+    QCOMPARE(teacherChoice->itemText(0),
+             QStringLiteral("Keep local: Alex"));
+    QCOMPARE(teacherChoice->itemText(1),
+             QStringLiteral("Replace local: Alex"));
     QCOMPARE(teacherChoice->itemData(0, Qt::UserRole).toInt(),
              static_cast<int>(TeacherImportAction::KeepExisting));
     QCOMPARE(teacherChoice->itemData(0, Qt::UserRole + 1).toInt(),
@@ -2480,6 +2485,8 @@ void ClassTransferTests::importDialogRequiresAmbiguousTeacherResolution()
     const auto preview = service.previewClassImport(*package);
     QVERIFY(preview.has_value());
     QCOMPARE(preview->teachers.first().matchingTeacherIds.size(), 2);
+    QCOMPARE(preview->teachers.first().matchingTeacherIds,
+             QList<int>({1, 2}));
 
     QString applicationServicesError;
     const auto applicationServices =
@@ -2495,12 +2502,201 @@ void ClassTransferTests::importDialogRequiresAmbiguousTeacherResolution()
             + package->teachers.first().key);
     QVERIFY(importButton);
     QVERIFY(teacherChoice);
+    QCOMPARE(teacherChoice->count(), 6);
+    QCOMPARE(teacherChoice->itemText(0),
+             QStringLiteral("Choose a teacher resolution…"));
+    QCOMPARE(teacherChoice->itemText(1),
+             QStringLiteral("Create new teacher"));
+    QCOMPARE(teacherChoice->itemText(2),
+             QStringLiteral("Keep local: Gim Allekseu"));
+    QCOMPARE(teacherChoice->itemText(3),
+             QStringLiteral("Replace local: Gim Allekseu"));
+    QCOMPARE(teacherChoice->itemText(4),
+             QStringLiteral("Keep local: Gim Allekseu"));
+    QCOMPARE(teacherChoice->itemText(5),
+             QStringLiteral("Replace local: Gim Allekseu"));
+    QCOMPARE(teacherChoice->itemData(0, Qt::UserRole).toInt(), -1);
+    QCOMPARE(teacherChoice->itemData(0, Qt::UserRole + 1).toInt(), -1);
+    QCOMPARE(teacherChoice->itemData(1, Qt::UserRole).toInt(),
+             static_cast<int>(TeacherImportAction::Create));
+    QCOMPARE(teacherChoice->itemData(1, Qt::UserRole + 1).toInt(), -1);
+    QCOMPARE(teacherChoice->itemData(2, Qt::UserRole).toInt(),
+             static_cast<int>(TeacherImportAction::KeepExisting));
+    QCOMPARE(teacherChoice->itemData(2, Qt::UserRole + 1).toInt(), 1);
+    QCOMPARE(teacherChoice->itemData(3, Qt::UserRole).toInt(),
+             static_cast<int>(TeacherImportAction::ReplaceExisting));
+    QCOMPARE(teacherChoice->itemData(3, Qt::UserRole + 1).toInt(), 1);
+    QCOMPARE(teacherChoice->itemData(4, Qt::UserRole).toInt(),
+             static_cast<int>(TeacherImportAction::KeepExisting));
+    QCOMPARE(teacherChoice->itemData(4, Qt::UserRole + 1).toInt(), 2);
+    QCOMPARE(teacherChoice->itemData(5, Qt::UserRole).toInt(),
+             static_cast<int>(TeacherImportAction::ReplaceExisting));
+    QCOMPARE(teacherChoice->itemData(5, Qt::UserRole + 1).toInt(), 2);
     QVERIFY(!importButton->isEnabled());
 
     teacherChoice->setCurrentIndex(1);
     QVERIFY(importButton->isEnabled());
     QCOMPARE(dialog.importPlan().teachers.first().action,
              TeacherImportAction::Create);
+}
+
+void ClassTransferTests::importDialogUsesDefaultFormattingWhenClassFieldsCannotLoad()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    DataService service;
+    QVERIFY(service.openDatabase(
+        directory.filePath(QStringLiteral("source.db"))).has_value());
+    const int sourceTeacher = createdTeacherId(service, completeTeacher());
+    const int sourceClass = addCompleteClass(
+        service, sourceTeacher, QStringLiteral("Incoming"),
+        QStringLiteral("E4"), QStringLiteral("Orion"),
+        QStringLiteral("Monday"), QStringLiteral("Incoming student"));
+    QVERIFY(sourceClass > 0);
+    const auto package = service.buildClassTransferPackage({sourceClass});
+    QVERIFY(package.has_value());
+
+    QVERIFY(service.openDatabase(
+        directory.filePath(QStringLiteral("destination.db"))).has_value());
+    const int destinationTeacher =
+        createdTeacherId(service, completeTeacher());
+    const int destinationClass = addCompleteClass(
+        service, destinationTeacher, QStringLiteral("Destination"),
+        QStringLiteral("E4"), QStringLiteral("Orion"),
+        QStringLiteral("Monday"), QStringLiteral("Destination student"));
+    QVERIFY(destinationClass > 0);
+    const auto preview = service.previewClassImport(*package);
+    QVERIFY2(preview, preview ? "" : qPrintable(preview.error()));
+    QCOMPARE(preview->classes.first().matchingClassIds,
+             QList<int>({destinationClass}));
+
+    QString applicationServicesError;
+    const auto applicationServices =
+        openApplicationServicesForCurrentDatabase(
+            service, &applicationServicesError);
+    QVERIFY2(applicationServices, qPrintable(applicationServicesError));
+    QSqlQuery dropClassTimes(applicationServices->databaseSession()->database());
+    QVERIFY2(dropClassTimes.exec(QStringLiteral("DROP TABLE class_times")),
+             qPrintable(dropClassTimes.lastError().text()));
+
+    ClassImportDialog dialog(applicationServices.get(), *package, *preview);
+    auto* classChoice = dialog.findChild<QComboBox*>(
+        QStringLiteral("classImportChoice_0"));
+    QVERIFY(classChoice);
+    QCOMPARE(classChoice->count(), 3);
+    QCOMPARE(classChoice->itemText(1),
+             QStringLiteral("Replace: Unknown Class • No Teacher"));
+    QCOMPARE(classChoice->itemData(1, Qt::UserRole + 1).toInt(),
+             destinationClass);
+}
+
+void ClassTransferTests::importDialogKeepsClassFieldsWhenTeacherCannotLoad()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    DataService service;
+    QVERIFY(service.openDatabase(
+        directory.filePath(QStringLiteral("source.db"))).has_value());
+    const int sourceTeacher = createdTeacherId(service, completeTeacher());
+    const int sourceClass = addCompleteClass(
+        service, sourceTeacher, QStringLiteral("Incoming"),
+        QStringLiteral("E4"), QStringLiteral("Orion"),
+        QStringLiteral("Monday"), QStringLiteral("Incoming student"));
+    QVERIFY(sourceClass > 0);
+    const auto package = service.buildClassTransferPackage({sourceClass});
+    QVERIFY(package.has_value());
+
+    QVERIFY(service.openDatabase(
+        directory.filePath(QStringLiteral("destination.db"))).has_value());
+    const int destinationTeacher =
+        createdTeacherId(service, completeTeacher());
+    const int destinationClass = addCompleteClass(
+        service, destinationTeacher, QStringLiteral("Destination"),
+        QStringLiteral("E4"), QStringLiteral("Orion"),
+        QStringLiteral("Monday"), QStringLiteral("Destination student"));
+    QVERIFY(destinationClass > 0);
+    const auto preview = service.previewClassImport(*package);
+    QVERIFY2(preview, preview ? "" : qPrintable(preview.error()));
+    QCOMPARE(preview->classes.first().matchingClassIds,
+             QList<int>({destinationClass}));
+
+    QString applicationServicesError;
+    const auto applicationServices =
+        openApplicationServicesForCurrentDatabase(
+            service, &applicationServicesError);
+    QVERIFY2(applicationServices, qPrintable(applicationServicesError));
+    QSqlQuery dropTeachers(applicationServices->databaseSession()->database());
+    QVERIFY2(dropTeachers.exec(QStringLiteral("DROP TABLE teachers")),
+             qPrintable(dropTeachers.lastError().text()));
+
+    ClassImportDialog dialog(applicationServices.get(), *package, *preview);
+    auto* classChoice = dialog.findChild<QComboBox*>(
+        QStringLiteral("classImportChoice_0"));
+    QVERIFY(classChoice);
+    QCOMPARE(classChoice->count(), 3);
+    QCOMPARE(classChoice->itemText(1),
+             QStringLiteral("Replace: E4 Orion • No Teacher • Mon (4:00)"));
+    QCOMPARE(classChoice->itemData(1, Qt::UserRole + 1).toInt(),
+             destinationClass);
+}
+
+void ClassTransferTests::importDialogUsesNewTeacherLabelWhenTeacherProfileCannotLoad()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    DataService service;
+    QVERIFY(service.openDatabase(
+        directory.filePath(QStringLiteral("source.db"))).has_value());
+    const int sourceTeacher = createdTeacherId(service, completeTeacher());
+    const int sourceClass = addCompleteClass(
+        service, sourceTeacher, QStringLiteral("Incoming"),
+        QStringLiteral("E4"), QStringLiteral("Orion"),
+        QStringLiteral("Monday"), QStringLiteral("Incoming student"));
+    QVERIFY(sourceClass > 0);
+    const auto package = service.buildClassTransferPackage({sourceClass});
+    QVERIFY(package.has_value());
+
+    QVERIFY(service.openDatabase(
+        directory.filePath(QStringLiteral("destination.db"))).has_value());
+    const int destinationTeacher =
+        createdTeacherId(service, completeTeacher());
+    const int destinationClass = addCompleteClass(
+        service, destinationTeacher, QStringLiteral("Destination"),
+        QStringLiteral("E4"), QStringLiteral("Orion"),
+        QStringLiteral("Monday"), QStringLiteral("Destination student"));
+    QVERIFY(destinationClass > 0);
+    const auto preview = service.previewClassImport(*package);
+    QVERIFY2(preview, preview ? "" : qPrintable(preview.error()));
+    QCOMPARE(preview->teachers.first().matchingTeacherIds,
+             QList<int>({destinationTeacher}));
+
+    QString applicationServicesError;
+    const auto applicationServices =
+        openApplicationServicesForCurrentDatabase(
+            service, &applicationServicesError);
+    QVERIFY2(applicationServices, qPrintable(applicationServicesError));
+    QSqlQuery dropTeachers(applicationServices->databaseSession()->database());
+    QVERIFY2(dropTeachers.exec(QStringLiteral("DROP TABLE teachers")),
+             qPrintable(dropTeachers.lastError().text()));
+
+    ClassImportDialog dialog(applicationServices.get(), *package, *preview);
+    auto* teacherChoice = dialog.findChild<QComboBox*>(
+        QStringLiteral("teacherImportChoice_")
+            + package->teachers.first().key);
+    QVERIFY(teacherChoice);
+    QCOMPARE(teacherChoice->count(), 2);
+    QCOMPARE(teacherChoice->itemText(0),
+             QStringLiteral("Keep local: New Teacher"));
+    QCOMPARE(teacherChoice->itemText(1),
+             QStringLiteral("Replace local: New Teacher"));
+    QCOMPARE(teacherChoice->itemData(0, Qt::UserRole).toInt(),
+             static_cast<int>(TeacherImportAction::KeepExisting));
+    QCOMPARE(teacherChoice->itemData(0, Qt::UserRole + 1).toInt(),
+             destinationTeacher);
+    QCOMPARE(teacherChoice->itemData(1, Qt::UserRole).toInt(),
+             static_cast<int>(TeacherImportAction::ReplaceExisting));
+    QCOMPARE(teacherChoice->itemData(1, Qt::UserRole + 1).toInt(),
+             destinationTeacher);
 }
 
 void ClassTransferTests::dialogRejectsDuplicateReplacementTargets()

@@ -8,8 +8,10 @@
 #include "domain/models/classroom.h"
 #include "next/application/class_transfer_projection.h"
 #include "next/application/selected_class_subtitle_read_query.h"
+#include "next/application/teacher_profile_read_query.h"
 #include "next/domain/domain_types.h"
 #include "next/platform/application_services_selected_class_subtitle_read_port.h"
+#include "next/platform/application_services_teacher_profile_read_port.h"
 
 #include <QComboBox>
 #include <QDialogButtonBox>
@@ -157,12 +159,42 @@ QString destinationClassDisplayName(
 }
 
 QString destinationTeacherDisplayName(
-    TeacherService* teacherService,
+    ApplicationServices* applicationServices,
     int teacherId
     )
 {
-    const Teacher teacher = teacherService->teacher(teacherId)
-        .value_or(Teacher{});
+    Teacher teacher;
+    if (applicationServices && teacherId > 0)
+    {
+        const auto typedTeacherId =
+            ClassMngr::Next::Domain::TeacherId::fromString(
+                std::to_string(teacherId)
+                );
+        if (typedTeacherId)
+        {
+            ClassMngr::Next::Platform::
+                ApplicationServicesTeacherProfileReadPort readPort(
+                    applicationServices
+                    );
+            const ClassMngr::Next::Application::TeacherProfileReadQuery query(
+                readPort
+                );
+            const auto loadedProfile = query.execute(*typedTeacherId);
+            if (loadedProfile)
+            {
+                const auto& fields = loadedProfile.value().fields;
+                teacher.teacherKr = QString::fromStdU16String(fields.teacherKr);
+                teacher.teacherEn = QString::fromStdU16String(fields.teacherEn);
+                teacher.preferredRomanization = QString::fromStdU16String(
+                    fields.preferredRomanization
+                    );
+                teacher.preferredName = QString::fromStdU16String(
+                    fields.preferredName
+                    );
+            }
+        }
+    }
+
     const QString display =
         SidebarNodeNaming::formatTeacherDisplayName(teacher).trimmed();
 
@@ -504,9 +536,7 @@ ClassImportDialog::ClassImportDialog(
     auto* classService = applicationServices
         ? applicationServices->classService()
         : nullptr;
-    auto* teacherService = applicationServices
-        ? applicationServices->teacherService()
-        : nullptr;
+
     setWindowTitle(tr("Import Classes"));
     setModal(true);
     resize(820, 640);
@@ -612,7 +642,7 @@ ClassImportDialog::ClassImportDialog(
         {
             const int teacherId = teacherPreview.matchingTeacherIds.first();
             const QString localName = destinationTeacherDisplayName(
-                teacherService, teacherId);
+                applicationServices, teacherId);
             addChoice(
                 combo,
                 tr("Keep local: %1").arg(localName),
@@ -638,7 +668,7 @@ ClassImportDialog::ClassImportDialog(
             for (int teacherId : teacherPreview.matchingTeacherIds)
             {
                 const QString localName = destinationTeacherDisplayName(
-                    teacherService, teacherId);
+                    applicationServices, teacherId);
                 addChoice(
                     combo,
                     tr("Keep local: %1").arg(localName),
