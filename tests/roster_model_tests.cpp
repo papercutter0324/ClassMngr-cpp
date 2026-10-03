@@ -39,6 +39,7 @@ private slots:
     void insertCustomColumnPreservesRowsSignalsAndDirtyState();
     void customColumnRemovalPreservesRulesAndRejectionMessages();
     void legacyAutumnHeaderRemainsARequiredRemovalAlias();
+    void evaluationColumnsAreReadOnlyWhileCustomColumnsRemainEditable();
     void removeCustomColumnPreservesRowsValidationSignalsAndDirtyState();
     void transferredRowMappingUsesCustomColumnNormalization();
     void koreanNameSuffixSuggestionMatchesLegacyQt();
@@ -1267,6 +1268,39 @@ void RosterModelTests::legacyAutumnHeaderRemainsARequiredRemovalAlias()
     QString reason;
     QVERIFY(!model.canRemoveColumn(5, &reason));
     QCOMPARE(reason, QStringLiteral("Required roster columns cannot be removed."));
+}
+
+void RosterModelTests::
+evaluationColumnsAreReadOnlyWhileCustomColumnsRemainEditable()
+{
+    Roster roster;
+    roster.columns = Roster::BaseColumns;
+    roster.columns[5] = QStringLiteral("Autumn");
+    roster.columns.append(QStringLiteral("Teacher Notes"));
+    roster.rows = {
+        studentRow(
+            QStringLiteral("Amy"),
+            QStringLiteral("\uAE40\uBBFC\uC9C0")
+            ) + QStringList{QStringLiteral("Existing note")}
+    };
+
+    RosterModel model;
+    model.setRoster(roster);
+
+    QCOMPARE(model.columnName(5), QStringLiteral("Fall"));
+    QCOMPARE(model.columnName(6), QStringLiteral("Teacher Notes"));
+    for (int column = 2; column <= 5; ++column)
+    {
+        QVERIFY(
+            !model.flags(model.index(0, column)).testFlag(Qt::ItemIsEditable)
+            );
+    }
+
+    const QModelIndex customCell = model.index(0, 6);
+    QVERIFY(model.flags(customCell).testFlag(Qt::ItemIsEditable));
+    QVERIFY(model.setData(customCell, QStringLiteral("Updated note")));
+    QCOMPARE(model.data(customCell).toString(), QStringLiteral("Updated note"));
+    QVERIFY(model.isDirty());
 }
 
 void RosterModelTests::removeCustomColumnPreservesRowsValidationSignalsAndDirtyState()

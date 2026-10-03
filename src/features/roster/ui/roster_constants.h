@@ -1,9 +1,13 @@
 #pragma once
 
 #include "domain/models/roster.h"
+#include "next/application/roster_evaluation_column_policy.h"
 
 #include <QColor>
 #include <QString>
+
+#include <string>
+#include <string_view>
 
 namespace RosterUi
 {
@@ -45,11 +49,18 @@ inline bool isEvaluationColumn(
     const QString& name
     )
 {
-    return name.compare(QStringLiteral("Winter"), Qt::CaseInsensitive) == 0
-        || name.compare(QStringLiteral("Speech Contest"), Qt::CaseInsensitive) == 0
-        || name.compare(QStringLiteral("Summer"), Qt::CaseInsensitive) == 0
-        || name.compare(QStringLiteral("Fall"), Qt::CaseInsensitive) == 0
-        || name.compare(QStringLiteral("Autumn"), Qt::CaseInsensitive) == 0;
+    return ClassMngr::Next::Application::isRosterEvaluationColumnName(
+        name,
+        [](const QString& columnName, std::u16string_view evaluationName)
+        {
+            return columnName.compare(
+                       QString::fromStdU16String(
+                           std::u16string(evaluationName)
+                           ),
+                       Qt::CaseInsensitive
+                       ) == 0;
+        }
+        );
 }
 
 inline QString columnGroup(

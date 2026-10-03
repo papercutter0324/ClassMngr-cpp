@@ -1,4 +1,5 @@
 #include "next/application/evaluation_default_selection.h"
+#include "next/application/roster_evaluation_column_policy.h"
 
 #include <array>
 #include <cstdlib>
@@ -10,6 +11,7 @@ using ClassMngr::Next::Application::EvaluationRows;
 using ClassMngr::Next::Application::kStoredEvaluationNames;
 using ClassMngr::Next::Application::evaluationRowsHaveContent;
 using ClassMngr::Next::Application::normalizeStoredEvaluationName;
+using ClassMngr::Next::Application::isRosterEvaluationColumnName;
 using ClassMngr::Next::Application::selectDefaultEvaluationPeriod;
 using ClassMngr::Next::Application::storedEvaluationName;
 
@@ -35,6 +37,34 @@ constexpr std::array<EvaluationPeriod, 4> OrderedPeriods{{
     EvaluationPeriod::Summer,
     EvaluationPeriod::Fall
 }};
+
+constexpr char16_t asciiLowercase(const char16_t value) noexcept
+{
+    return value >= u'A' && value <= u'Z'
+        ? static_cast<char16_t>(value + (u'a' - u'A'))
+        : value;
+}
+
+constexpr bool asciiCaseInsensitiveEquals(
+    const std::u16string_view left,
+    const std::u16string_view right
+    ) noexcept
+{
+    if (left.size() != right.size())
+    {
+        return false;
+    }
+
+    for (std::size_t index = 0; index < left.size(); ++index)
+    {
+        if (asciiLowercase(left[index]) != asciiLowercase(right[index]))
+        {
+            return false;
+        }
+    }
+
+    return true;
+}
 
 } // namespace
 
@@ -65,6 +95,37 @@ int main()
     if (!storedEvaluationName(InvalidPeriod).empty()
         || normalizeStoredEvaluationName(u"") != u"Winter"
         || normalizeStoredEvaluationName(u"Unrecognized") != u"Winter")
+    {
+        return EXIT_FAILURE;
+    }
+
+    constexpr std::array<std::u16string_view, 4> LowercaseStoredNames{{
+        u"winter",
+        u"speech contest",
+        u"summer",
+        u"fall"
+    }};
+    for (std::size_t index = 0; index < ExpectedStoredNames.size(); ++index)
+    {
+        if (!isRosterEvaluationColumnName(
+                ExpectedStoredNames[index],
+                asciiCaseInsensitiveEquals
+                )
+            || !isRosterEvaluationColumnName(
+                   LowercaseStoredNames[index],
+                   asciiCaseInsensitiveEquals
+                   ))
+        {
+            return EXIT_FAILURE;
+        }
+    }
+
+    if (!isRosterEvaluationColumnName(u"Autumn", asciiCaseInsensitiveEquals)
+        || !isRosterEvaluationColumnName(u"aUtUmN", asciiCaseInsensitiveEquals)
+        || isRosterEvaluationColumnName(u"Midterm", asciiCaseInsensitiveEquals)
+        || isRosterEvaluationColumnName(u" Winter", asciiCaseInsensitiveEquals)
+        || isRosterEvaluationColumnName(u"Fall ", asciiCaseInsensitiveEquals)
+        || isRosterEvaluationColumnName(u" Autumn ", asciiCaseInsensitiveEquals))
     {
         return EXIT_FAILURE;
     }
