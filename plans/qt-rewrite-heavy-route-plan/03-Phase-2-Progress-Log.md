@@ -10570,7 +10570,8 @@ F289 is selected to route roster-template print class-scope enumeration
 through the accepted classes-list query. Inject `ClassesListReadQuery` at the
 print-service boundary; the production caller must provide the real
 `ApplicationServicesClassesListReadPort` adapter, and the service test must
-exercise that same query boundary with a fake. Do not pass the adapter an
-unconstructed `ApplicationServices` test object. Preserve all/current/selected
-scope resolution and class order, then verify the real adapter independently.
+exercise the real query over a fake `ClassesListReadPort`. Do not pass the
+adapter an unconstructed `ApplicationServices` test object. Preserve
+all/current/selected scope resolution and class order, then verify the real
+adapter independently.
 Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial.

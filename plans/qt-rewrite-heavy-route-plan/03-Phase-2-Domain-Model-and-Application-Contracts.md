@@ -21,7 +21,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Current note: F289 is selected to route roster-template class-scope
   enumeration through the accepted classes-list query. Inject the query at the
   print-service boundary; production must provide the real adapter, while the
-  service test uses a valid fake query boundary.
+  service test supplies a fake `ClassesListReadPort` to the real query.
 
 ### Slice discovery batches
 
