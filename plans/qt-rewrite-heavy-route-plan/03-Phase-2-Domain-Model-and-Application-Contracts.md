@@ -18,8 +18,9 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-04
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F302 is selected to batch class-delete chooser subtitle-label
-  queries following F275, reusing the accepted subtitle batch API.
+- Current note: F303 is selected to batch RosterPrintDialog per-class
+  selected-subtitle queries after F261, preserving its current-class-only
+  branch.
 
 ### Slice discovery batches
 
@@ -99,12 +100,13 @@ No other slices were found.
       `SelectedClassSubtitleReadQuery` calls for destination labels in
       `ClassImportDialog`. This is query fan-out after F262's query migration,
       not a remaining direct service read.
-   2. F301 selected — Reduce per-class selected-subtitle query calls in
+   2. F301 accepted — Reduce per-class selected-subtitle query calls in
       `ClassExportDialog` after its classes-list load. This is query fan-out
       following F262/F266, not a remaining direct service read.
-   3. F302 candidate (discovered in separate F299 audit) — Batch class-delete
-      chooser subtitle-label queries following F275.
-   4. F303 candidate (discovered in separate F299 audit) — Batch
+   3. F302 accepted (discovered in separate F299 audit) — Batch class-delete
+      chooser subtitle-label queries following F275, reusing the accepted
+      subtitle batch API.
+   4. F303 selected (discovered in separate F299 audit) — Batch
       `RosterPrintDialog` per-class selected-subtitle queries after F261;
       preserve the current-class-only branch.
    5. F304 candidate (discovered in separate F299 audit) — Batch
@@ -276,30 +278,42 @@ No new v2 production path depends on DataService, MainWindow, PageManager, or a 
 
 Earlier verified slices and cumulative exit-gate snapshots are archived in the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 
-## Latest Progress Update - 2026-10-04 (F301 accepted)
+## Latest Progress Update - 2026-10-04 (F302 accepted; F303 selected)
 
-F301, committed as `77411a5474e178ab278efec519c5aee3b8de64bb`, reuses the
-accepted `SelectedClassSubtitleBatchReadQuery` and port in ClassExportDialog.
-After the accepted class-list read, the dialog gathers valid IDs, runs one
-batch query when the list is nonempty, maps snapshots by ID, and formats the
-subtitle labels. It preserves the exact formatter behavior, failed
-class/teacher fallback, class-list warning, case-insensitive/numeric sort then
-ID, user-role ID, unchecked initial state, and selection behavior.
+F302, committed as `1ffc88a32a3b12bc0354deac2f485d61abb15ef9`, reuses
+`SelectedClassSubtitleBatchReadQuery` and the active-session adapter in the
+class-delete chooser. For nonempty class IDs, it batches subtitle labels when
+both services are available while preserving class-list order and IDs,
+class-list errors, empty-list early return, blank item and selection/cancel
+behavior, and the stored-name/`Class N` fallback when either service is
+unavailable. Class-data failures retain default formatting; teacher-data
+failures retain class details with `No Teacher`. After selection, confirmation
+still makes a fresh one-class read; an integration test changes the subtitle
+after chooser population and checks the fresh confirmation text.
 
-The three-class UI test asserts one batch call for three requested IDs, one
-metadata SQL statement, one regular-schedule statement, and one teacher batch
-statement. A new empty-list UI test asserts zero batch reads. Fresh independent
-Windows x64 MSVC/Ninja Debug configure passed the CMake ownership gate at
-1,270 handwritten sources; `ClassMngr`, `ClassMngrClassTransferTests`, and the
-batch application-query and platform-adapter targets built. These three
-focused CTests passed: `ClassMngrClassTransferTests`,
-`ClassMngrNextApplicationSelectedClassSubtitleBatchReadQueryTests`, and
-`ClassMngrNextPlatformApplicationServicesSelectedClassSubtitleBatchReadPortTests`.
-Independent source review found one guarded batch query and no per-class
-single query. `git diff --check` passed; the full suite was not run. Logs are
-under `build/f301_verify_ninja/verification_logs/`.
+The two-class integration test asserts one batch class-repository call, one
+metadata statement, one schedule statement, one teacher batch statement,
+original labels/order, selected ID, and deletion. The empty-list UI test asserts
+no batch reads and no modal. Fresh independent Windows x64 MSVC/Ninja Debug
+configure passed the ownership gate at 1,270 handwritten sources. `ClassMngr`,
+`ClassMngrNavigationTeacherReadTests`, the classes-list query target, and single
+and batch subtitle application-query and adapter targets built; six focused
+CTests passed. Independent source review confirmed one guarded batch query in
+the chooser and no per-class single query; the separate confirmation read
+remains. `git diff --check` passed. Logs are under
+`build/f302_verify_ninja/` (`configure.log`, `build-targets.log`,
+`build-targets-recheck.log`, `ctest-focused.log`). Nonfatal `vswhere.exe` and
+optional Vulkan messages occurred. The full suite was not run.
 
-F302 is selected to batch class-delete chooser subtitle-label queries
-following F275. F299's separate completeness audit, F298's semantic deferral,
-and the ordered F303-F305 candidates remain unchanged. Phase 2 remains In
-Progress/Open; Gates 1 and 2 remain Partial.
+Coverage limits: the fallback for class-service available/teacher-service
+unavailable is source-reviewed but not directly integration-tested; current
+services derive availability from the same database session, and the existing
+no-session test exits before showing the chooser. No chooser-cancel or
+all-item-ID enumeration test was added; the integration test verifies label
+order and selects/deletes the Beta ID.
+
+F303 is selected to batch `RosterPrintDialog` per-class selected-subtitle reads
+after F261 while preserving its current-class-only branch. F298 remains
+deferred pending the read-failure warning/navigation decision, and F299's
+separate completeness audit remains distinct from Batch 3 discovery. Phase 2
+remains In Progress/Open; Gates 1 and 2 remain Partial.

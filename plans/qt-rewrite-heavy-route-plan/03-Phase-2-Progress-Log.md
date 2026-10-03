@@ -10936,3 +10936,43 @@ F302 is selected to batch class-delete chooser subtitle-label queries
 following F275. F299's separate completeness audit and F298's semantic
 deferral remain unchanged. Phase 2 remains In Progress/Open; Gates 1 and 2
 remain Partial.
+
+### Progress update - 2026-10-04 (F302 accepted; F303 selected)
+
+F302, committed as `1ffc88a32a3b12bc0354deac2f485d61abb15ef9`, reuses
+`SelectedClassSubtitleBatchReadQuery` and the active-session adapter in the
+class-delete chooser. For nonempty class IDs, it batches subtitle labels when
+both services are available while preserving class-list order and IDs,
+class-list errors, empty-list early return, blank item and selection/cancel
+behavior, and the stored-name/`Class N` fallback when either service is
+unavailable. Class-data failures retain default formatting; teacher-data
+failures retain class details with `No Teacher`. After selection, confirmation
+still makes a fresh one-class read; an integration test changes the subtitle
+after chooser population and checks the fresh confirmation text.
+
+The two-class integration test asserts one batch class-repository call, one
+metadata statement, one schedule statement, one teacher batch statement,
+original labels/order, selected ID, and deletion. The empty-list UI test asserts
+no batch reads and no modal. Fresh independent Windows x64 MSVC/Ninja Debug
+configure passed the ownership gate at 1,270 handwritten sources. `ClassMngr`,
+`ClassMngrNavigationTeacherReadTests`, the classes-list query target, and single
+and batch subtitle application-query and adapter targets built; six focused
+CTests passed. Independent source review confirmed one guarded batch query in
+the chooser and no per-class single query; the separate confirmation read
+remains. `git diff --check` passed. Logs are under
+`build/f302_verify_ninja/` (`configure.log`, `build-targets.log`,
+`build-targets-recheck.log`, `ctest-focused.log`). Nonfatal `vswhere.exe` and
+optional Vulkan messages occurred. The full suite was not run.
+
+Coverage limits: the fallback for class-service available/teacher-service
+unavailable is source-reviewed but not directly integration-tested; current
+services derive availability from the same database session, and the existing
+no-session test exits before showing the chooser. No chooser-cancel or
+all-item-ID enumeration test was added; the integration test verifies label
+order and selects/deletes the Beta ID.
+
+F303 is selected to batch `RosterPrintDialog` per-class selected-subtitle reads
+after F261 while preserving its current-class-only branch. F298 remains
+deferred pending the read-failure warning/navigation decision, and F299's
+separate completeness audit remains distinct from Batch 3 discovery. Phase 2
+remains In Progress/Open; Gates 1 and 2 remain Partial.
