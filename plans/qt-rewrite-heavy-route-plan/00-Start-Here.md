@@ -31,8 +31,9 @@
   student counts), and F284 (recheck the selected class before delete
   confirmation) are accepted; F285 is deferred because required-name
   validation prevents its post-create profile read from being reached; F286
-  (use the workspace session location for FileController create/open state)
-  is selected.
+  (use the workspace session location for FileController create/open state) is
+  accepted; F287 (ClassImportDialog destination class-name fallback read) is
+  selected.
   Gates 1 and 2 remain Partial, with broader feature
   migration, parity, and 96-class Release memory evidence still open.
   See the

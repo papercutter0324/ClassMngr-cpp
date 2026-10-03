@@ -18,8 +18,9 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-03
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F286 is selected to use the returned workspace session
-  location for FileController's successful create/open current-file state.
+- Current note: F287 is selected to route ClassImportDialog's destination
+  class-name fallback through the accepted classes-list query while preserving
+  subtitle, name, and `Class N` fallback order.
 
 ### Slice discovery batches
 
@@ -205,18 +206,19 @@ No new v2 production path depends on DataService, MainWindow, PageManager, or a 
 
 Earlier verified slices and cumulative exit-gate snapshots are archived in the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 
-## Latest Progress Update - 2026-10-03 (F284 accepted)
+## Latest Progress Update - 2026-10-03 (F286 accepted)
 
-F284, committed as `d1a7e04b`, routes `SidebarController::deleteClass()`'s
-post-selection class reload through the accepted classes-list query and
-adapter. Query failure or a missing selected ID preserves the existing warning
-and returns before confirmation or deletion. The service guard and successful
-delete flow remain unchanged. Caller tests cover a failed list reload and a
-selected class removed after chooser selection. The focused build succeeded
-and the NavigationTeacherRead, classes-list query, and adapter CTests passed
-3/3. Logs are under `build/p2_f284_verify_logs/`; no full suite ran. The
-full-list query can reject unrelated invalid or duplicate IDs, and its adapter
-requires an active database session where the legacy service could fall back
-to DataService.
-
-Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial.
+F286, committed as `8c5d3a01`, sets FileController's current-file path after
+successful workspace create/open from the returned `WorkspaceSession`
+location, converted from UTF-8 at the controller boundary. Create still
+updates recent history from `m_currentFile`; open still passes the original
+`filePath` to recent-history handling. Unicode create/open caller cases cover
+normalized current-file state, open-history deduplication, and directory
+behavior. Fresh focused verification built the FileController lifecycle and
+workspace-port targets; their CTests passed 2/2, and both Unicode slots passed
+directly (4/4 QtTest entries including setup and cleanup). Logs are under
+`build/p2_f286_verify_logs/`; the full suite was not run. The lifecycle cases
+use concrete services, so they do not force session and service paths to
+diverge; source review confirms FileController now selects the returned
+session location. Phase 2 remains In Progress/Open; Gates 1 and 2 remain
+Partial.

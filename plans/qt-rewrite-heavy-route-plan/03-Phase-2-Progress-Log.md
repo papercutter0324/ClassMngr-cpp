@@ -10513,3 +10513,28 @@ FileControllerWorkspaceLifecycle and workspace-port CTests, including Unicode
 path coverage if the existing assertions do not exercise it. Compare returned
 session locations with the previous normalized service path before accepting.
 Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial.
+
+### Progress update - 2026-10-03 (F286 accepted; F287 selected)
+
+F286, committed as `8c5d3a01`, sets FileController's current-file path after
+successful workspace create/open from the returned `WorkspaceSession`
+location, converted from UTF-8 at the controller boundary. Create still
+updates recent history from `m_currentFile`; open still passes the original
+`filePath` to recent-history handling. Unicode create/open caller cases cover
+normalized current-file state, open-history deduplication, and directory
+behavior. Fresh focused verification built the FileController lifecycle and
+workspace-port targets; their CTests passed 2/2, and both Unicode slots passed
+directly (4/4 QtTest entries including setup and cleanup). Logs are under
+`build/p2_f286_verify_logs/`; non-fatal missing-documents-resource warnings
+occurred and the full suite was not run. The lifecycle cases use concrete
+services, so they do not force session and service paths to diverge; source
+review confirms FileController now selects the returned session location.
+
+F287 is selected to route `ClassImportDialog::destinationClassDisplayName()`'s
+class-name fallback through the accepted classes-list query and adapter.
+Preserve the existing formatted-subtitle, classroom-name, then `Class N`
+fallback order and label behavior; read the list once for dialog candidates.
+Retain `ClassMngrClassTransferTests`, the classes-list query tests, and the
+classes-list adapter tests. The shared query rejects unrelated invalid or
+duplicate IDs and the adapter requires an active session. Phase 2 remains In
+Progress/Open; Gates 1 and 2 remain Partial.
