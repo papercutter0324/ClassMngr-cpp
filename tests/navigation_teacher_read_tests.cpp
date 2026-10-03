@@ -7,9 +7,15 @@
 #include "data/repositories/class_info_repository.h"
 #include "data/repositories/teacher_repository.h"
 #include "domain/models/class_info.h"
+#include "domain/models/gs_team_member.h"
+#include "domain/models/native_english_teacher.h"
 #include "domain/models/teacher.h"
 #include "features/teacher/ui/teacher_info_page.h"
 #include "fakes/fake_user_prompt_service.h"
+#include "next/application/gs_team_directory_read_query.h"
+#include "next/application/native_english_teacher_directory_read_query.h"
+#include "next/platform/application_services_gs_team_directory_read_port.h"
+#include "next/platform/application_services_native_english_teacher_directory_read_port.h"
 #include "ui/shared/dialogs/user_prompt_service.h"
 #include "ui/shared/pages/page_header.h"
 #include "ui/shared/pages/pagemanager.h"
@@ -19,6 +25,7 @@
 #include <QComboBox>
 #include <QDialog>
 #include <QDialogButtonBox>
+#include <QLabel>
 #include <QLineEdit>
 #include <QPushButton>
 #include <QSqlError>
@@ -83,6 +90,14 @@ struct RecordSelectionObservation
     bool accepted = false;
     int selectedId = -1;
     QStringList labels;
+};
+
+struct BirthdayDialogObservation
+{
+    bool modalOpened = false;
+    bool upcomingBirthdaysOpened = false;
+    QStringList entryNames;
+    QStringList entryDetails;
 };
 
 QString displayLabel(
@@ -219,6 +234,113 @@ bool invokeDeleteClassSelecting(
         );
 }
 
+bool invokeUpcomingBirthdays(
+    SidebarController& controller,
+    BirthdayDialogObservation& observation
+    )
+{
+    QTimer::singleShot(
+        0,
+        &controller,
+        [&observation]
+        {
+            QDialog* dialog = qobject_cast<QDialog*>(
+                QApplication::activeModalWidget()
+                );
+            if (!dialog)
+            {
+                for (QWidget* widget : QApplication::topLevelWidgets())
+                {
+                    auto* candidate = qobject_cast<QDialog*>(widget);
+                    if (candidate && candidate->isVisible())
+                    {
+                        dialog = candidate;
+                        break;
+                    }
+                }
+            }
+
+            if (!dialog)
+            {
+                return;
+            }
+
+            observation.modalOpened = true;
+            observation.upcomingBirthdaysOpened =
+                dialog->objectName()
+                    == QStringLiteral("upcomingBirthdaysDialog");
+            if (observation.upcomingBirthdaysOpened)
+            {
+                const auto labels = dialog->findChildren<QLabel*>();
+                for (QLabel* label : labels)
+                {
+                    if (label->objectName().endsWith(QStringLiteral("Name")))
+                    {
+                        observation.entryNames.append(label->text());
+                        QString detailObjectName = label->objectName();
+                        detailObjectName.replace(
+                            QStringLiteral("Name"),
+                            QStringLiteral("Detail")
+                            );
+                        if (auto* detail = dialog->findChild<QLabel*>(
+                                detailObjectName))
+                        {
+                            observation.entryDetails.append(detail->text());
+                        }
+                    }
+                }
+            }
+
+            dialog->reject();
+        }
+        );
+
+    return QMetaObject::invokeMethod(
+        &controller,
+        "showUpcomingBirthdays",
+        Qt::DirectConnection
+        );
+}
+
+QString birthdayForOffset(const int daysFromToday)
+{
+    return QDate::currentDate().addDays(daysFromToday)
+        .toString(QStringLiteral("MM-dd"));
+}
+
+QString directoryReadDetails(
+    ApplicationServices& services,
+    const bool nativeEnglish
+    )
+{
+    if (nativeEnglish)
+    {
+        ClassMngr::Next::Platform::
+            ApplicationServicesNativeEnglishTeacherDirectoryReadPort port(
+                &services);
+        const ClassMngr::Next::Application::
+            NativeEnglishTeacherDirectoryReadQuery query(port);
+        const auto result = query.execute();
+        return result
+            ? QString()
+            : QString::fromUtf8(
+                result.error().message.data(),
+                static_cast<qsizetype>(result.error().message.size())
+                );
+    }
+
+    ClassMngr::Next::Platform::
+        ApplicationServicesGsTeamDirectoryReadPort port(&services);
+    const ClassMngr::Next::Application::GsTeamDirectoryReadQuery query(port);
+    const auto result = query.execute();
+    return result
+        ? QString()
+        : QString::fromUtf8(
+            result.error().message.data(),
+            static_cast<qsizetype>(result.error().message.size())
+            );
+}
+
 }
 
 class NavigationTeacherReadTests final : public QObject
@@ -234,6 +356,9 @@ private slots:
     void classFieldsFailureUsesDefaultSubtitleAndNoTeacherFallback();
     void assignedTeacherFailureKeepsClassFieldsAndUsesNoTeacher();
     void classDeleteChooserRequiresAnActiveSession();
+    void upcomingBirthdaysActionShowsEntriesFromAllStaffDirectories();
+    void upcomingBirthdaysActionShowsWarningWhenGsDirectoryReadFails();
+    void upcomingBirthdaysActionPrefersNativeEnglishErrorWhenBothReadsFail();
 };
 
 void NavigationTeacherReadTests::cleanup()
@@ -690,6 +815,148 @@ classDeleteChooserRequiresAnActiveSession()
         ));
     QCOMPARE(prompts.confirmations.size(), 0);
     QVERIFY(prompts.messages.isEmpty());
+    QVERIFY(QApplication::activeModalWidget() == nullptr);
+}
+
+void NavigationTeacherReadTests::
+upcomingBirthdaysActionShowsEntriesFromAllStaffDirectories()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+
+    Teacher koreanTeacher = teacherFixture(
+        QStringLiteral("Korean Teacher"),
+        QStringLiteral("Korean Teacher"),
+        QStringLiteral("Korean Birthday Entry")
+        );
+    koreanTeacher.birthday = birthdayForOffset(0);
+    QVERIFY(persistTeacher(services, koreanTeacher) > 0);
+
+    const auto nativeEnglishSaved =
+        services.teacherService()->saveNativeEnglishTeacherDirectory(
+            {{
+                .name = QStringLiteral("Native English Birthday Entry"),
+                .position = QStringLiteral("NET"),
+                .birthday = birthdayForOffset(1)
+            }},
+            {}
+            );
+    QVERIFY(nativeEnglishSaved);
+
+    const auto gsTeamSaved = services.teacherService()->saveGsTeamDirectory(
+        {{
+            .name = QStringLiteral("GS Birthday Entry"),
+            .position = QStringLiteral("M1"),
+            .birthday = birthdayForOffset(2)
+        }},
+        {}
+        );
+    QVERIFY(gsTeamSaved);
+
+    PageManager pages;
+    Sidebar sidebar;
+    SidebarController controller(&services, &sidebar, &pages);
+    FakeUserPromptService prompts;
+    DialogServices::setUserPromptServiceForTesting(&prompts);
+
+    BirthdayDialogObservation observation;
+    QVERIFY(invokeUpcomingBirthdays(controller, observation));
+
+    QVERIFY(observation.modalOpened);
+    QVERIFY(observation.upcomingBirthdaysOpened);
+    QCOMPARE(observation.entryNames.size(), 3);
+    QVERIFY(observation.entryNames.contains(
+        QStringLiteral("Korean Birthday Entry")));
+    QVERIFY(observation.entryNames.contains(
+        QStringLiteral("Native English Birthday Entry")));
+    QVERIFY(observation.entryNames.contains(
+        QStringLiteral("GS Birthday Entry")));
+    QCOMPARE(observation.entryDetails.size(), 3);
+    const QString details = observation.entryDetails.join(QLatin1Char('\n'));
+    QVERIFY(details.contains(QStringLiteral("Korean Teacher")));
+    QVERIFY(details.contains(QStringLiteral("Native English Teacher")));
+    QVERIFY(details.contains(QStringLiteral("GS Team")));
+    QVERIFY(prompts.messages.isEmpty());
+    QVERIFY(prompts.confirmations.isEmpty());
+}
+
+void NavigationTeacherReadTests::
+upcomingBirthdaysActionShowsWarningWhenGsDirectoryReadFails()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+
+    QSqlQuery dropGsTeam(services.databaseSession()->database());
+    QVERIFY(dropGsTeam.exec(QStringLiteral("DROP TABLE gs_team")));
+    const QString expectedDetails = directoryReadDetails(services, false);
+    QVERIFY(!expectedDetails.isEmpty());
+
+    PageManager pages;
+    Sidebar sidebar;
+    SidebarController controller(&services, &sidebar, &pages);
+    FakeUserPromptService prompts;
+    DialogServices::setUserPromptServiceForTesting(&prompts);
+
+    BirthdayDialogObservation observation;
+    QVERIFY(invokeUpcomingBirthdays(controller, observation));
+    QApplication::processEvents();
+
+    QCOMPARE(prompts.messages.size(), 1);
+    const PromptRequest warning = prompts.messages.first();
+    QCOMPARE(warning.severity, PromptSeverity::Warning);
+    QCOMPARE(warning.title, QStringLiteral("Upcoming Birthdays"));
+    QCOMPARE(warning.message, QStringLiteral("Birthdays could not be loaded."));
+    QCOMPARE(warning.details, expectedDetails);
+    QVERIFY(warning.details.contains(QStringLiteral("GS Team")));
+    QVERIFY(!observation.modalOpened);
+    QVERIFY(!observation.upcomingBirthdaysOpened);
+    QVERIFY(QApplication::activeModalWidget() == nullptr);
+}
+
+void NavigationTeacherReadTests::
+upcomingBirthdaysActionPrefersNativeEnglishErrorWhenBothReadsFail()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+
+    QSqlQuery dropNativeEnglish(
+        services.databaseSession()->database());
+    QVERIFY(dropNativeEnglish.exec(
+        QStringLiteral("DROP TABLE native_english_teachers")));
+    QSqlQuery dropGsTeam(services.databaseSession()->database());
+    QVERIFY(dropGsTeam.exec(QStringLiteral("DROP TABLE gs_team")));
+
+    const QString nativeEnglishDetails = directoryReadDetails(services, true);
+    const QString gsTeamDetails = directoryReadDetails(services, false);
+    QVERIFY(!nativeEnglishDetails.isEmpty());
+    QVERIFY(!gsTeamDetails.isEmpty());
+    QVERIFY(nativeEnglishDetails != gsTeamDetails);
+
+    PageManager pages;
+    Sidebar sidebar;
+    SidebarController controller(&services, &sidebar, &pages);
+    FakeUserPromptService prompts;
+    DialogServices::setUserPromptServiceForTesting(&prompts);
+
+    BirthdayDialogObservation observation;
+    QVERIFY(invokeUpcomingBirthdays(controller, observation));
+    QApplication::processEvents();
+
+    QCOMPARE(prompts.messages.size(), 1);
+    const PromptRequest warning = prompts.messages.first();
+    QCOMPARE(warning.severity, PromptSeverity::Warning);
+    QCOMPARE(warning.title, QStringLiteral("Upcoming Birthdays"));
+    QCOMPARE(warning.message, QStringLiteral("Birthdays could not be loaded."));
+    QCOMPARE(warning.details, nativeEnglishDetails);
+    QVERIFY(warning.details != gsTeamDetails);
+    QVERIFY(!observation.modalOpened);
+    QVERIFY(!observation.upcomingBirthdaysOpened);
     QVERIFY(QApplication::activeModalWidget() == nullptr);
 }
 
