@@ -98,7 +98,7 @@ row/cell limits before matrix allocation, streams SQL rows, and checks each
 cell's original byte size before conversion. Data lifecycle coverage passes
 1/1. The Platform adapter still must enforce aggregate budgets while building
 the Application input. See the [Phase 2 contract
-update](03-Phase-2-Domain-Model-and-Application-Contracts.md#progress-update---2026-09-24-sub-prep-bounded-roster-repository-read).
+update](03-Phase-2-Progress-Log.md#progress-update---2026-09-24-sub-prep-bounded-roster-repository-read).
 
 Output/package/PDF migration is wired through the operation-scoped roster
 source. F8 compares the 96-class information-sheet and Daily roster PDFs with

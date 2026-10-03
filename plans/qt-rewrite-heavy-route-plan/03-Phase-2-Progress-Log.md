@@ -10625,3 +10625,25 @@ the accepted class-details and class-notes projections, subject to
 field-parity review. Preserve the displayed fields and teacher association;
 record any legacy fields not represented by the accepted projections before
 cutting over. Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial.
+
+### Progress update - 2026-10-03 (F291 accepted; F292 selected)
+
+F291, committed as `31f92c73`, adds a dedicated compact My Classes
+class-information query, snapshot, and port with one `ApplicationServices`
+adapter read; the accepted class-list, roster-count, and full teacher-profile
+queries remain. The evidence-based re-scope followed field-parity review:
+class-details and class-notes projections both omit `teacherId`, and each
+adapter loads full `ClassInfo`, so composing them would lose the teacher
+association and duplicate repository reads. An isolated Windows x64
+Debug/Ninja build compiled all three targets; source ownership validated 1,230
+handwritten sources. `ClassMngrNextApplicationMyClassesClassInformationReadQueryTests`,
+`ClassMngrNextPlatformApplicationServicesMyClassesClassInformationReadPortTests`,
+and `ClassMngrMyClassesPageTests` passed 3/3. Toolchain: MSVC 19.51.36257.0 and
+Qt 6.12.0. `git diff --check` passed. Logs are under
+`build/p2_f291_independent_verify/`. Plain PowerShell could not locate `cl.exe`;
+configuration succeeded from the Visual Studio developer shell. Non-fatal
+`vswhere.exe` and long-path warnings occurred. The full suite was not run.
+
+F292 is selected to add a Korean-teacher birthday-directory query and adapter
+for the sidebar birthday schedule. Phase 2 remains In Progress/Open; Gates 1
+and 2 remain Partial.

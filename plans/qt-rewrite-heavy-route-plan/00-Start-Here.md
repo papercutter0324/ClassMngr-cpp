@@ -36,8 +36,9 @@
   F288 (Campus Dashboard selector campus-directory read), F289 (roster-template
   print class-scope enumeration through the classes-list query), and F290
   (roster-template print per-class roster read through the roster query) are
-  accepted; F291 (My Classes full-info read composed from class-details and
-  class-notes projections, subject to field-parity review) is selected.
+  accepted; F291 (My Classes dedicated compact class-information
+  query/snapshot/port with one ApplicationServices adapter read) is accepted;
+  F292 (Korean-teacher birthday-directory read) is selected.
   Gates 1 and 2 remain Partial, with broader feature
   migration, parity, and 96-class Release memory evidence still open.
   See the

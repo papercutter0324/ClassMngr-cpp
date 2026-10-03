@@ -2912,7 +2912,7 @@ Qt-free `CalendarEventImportSaveRequest` and
 ordered `CalendarService::saveEvents()` transaction. F36 verifies the live
 service path through this batch-save boundary; see the handoff below and the
 Phase 2 plan's
-[typed calendar import batch-save update](03-Phase-2-Domain-Model-and-Application-Contracts.md#progress-update---2026-09-24-typed-calendar-import-batch-save-boundary)
+[typed calendar import batch-save update](03-Phase-2-Progress-Log.md#progress-update---2026-09-24-typed-calendar-import-batch-save-boundary)
 for adapter details. Workbook parsing and campus-directory lookup remain
 legacy.
 
@@ -2994,7 +2994,7 @@ type/time-status normalization, and ISO date conversion remain in Qt adapters.
 The key excludes times, database ID, and repeat-series ID. The read port retains
 result order, availability/failure behavior, and access beyond the general
 projection cap. See the Phase 2 plan's
-[F50 signature-identity update](03-Phase-2-Domain-Model-and-Application-Contracts.md#progress-update---2026-09-25-f50-calendar-import-signature-identity).
+[F50 signature-identity update](03-Phase-2-Progress-Log.md#progress-update---2026-09-25-f50-calendar-import-signature-identity).
 
 
 ## Personal display-name caller boundary - 2026-09-24
@@ -3015,7 +3015,7 @@ guard and aggregate personal-details save. Initial Setup retains its
 availability guard, fills only a blank name field, and uses the aggregate save
 path. The Setup prefilled-name reinitialization case has no direct assertion,
 though the fill-only-if-blank source condition remains. See the [verified F20
-migration and verification limits](03-Phase-2-Domain-Model-and-Application-Contracts.md#progress-update---2026-09-24-f20-my-information-and-initial-setup-migration).
+migration and verification limits](03-Phase-2-Progress-Log.md#progress-update---2026-09-24-f20-my-information-and-initial-setup-migration).
 
 ## Verified F21 unused class-navigation preferences cleanup
 

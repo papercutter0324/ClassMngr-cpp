@@ -18,9 +18,8 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-03
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F291 is selected to replace My Classes' per-class full-info
-  read by composing accepted class-details and class-notes projections, subject
-  to field-parity review.
+- Current note: F292 is selected to add a Korean-teacher birthday-directory
+  query and adapter for the sidebar birthday schedule.
 
 ### Slice discovery batches
 
@@ -52,8 +51,9 @@ one to this phase's progress log before replacing it.
       the accepted classes-list query.
    6. F290 — Route roster-template printing's per-class roster read through the
       accepted roster query.
-   7. F291 — Replace My Classes' per-class full-info read by composing accepted
-      class-details and class-notes projections, subject to field-parity review.
+   7. F291 — Provide My Classes a dedicated compact class-information
+      query/snapshot/port with one `ApplicationServices` adapter read; retain
+      its accepted class-list, roster-count, and full teacher-profile queries.
    8. F292 — Add an accepted Korean-teacher birthday-directory read for the
       sidebar birthday schedule.
    9. F293 — Add an accepted class-teacher-assignment read for sidebar refresh.
@@ -206,18 +206,19 @@ No new v2 production path depends on DataService, MainWindow, PageManager, or a 
 
 Earlier verified slices and cumulative exit-gate snapshots are archived in the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 
-## Latest Progress Update - 2026-10-03 (F290 accepted)
+## Latest Progress Update - 2026-10-03 (F291 accepted)
 
-F290, committed as `2e8f3cb8`, routes roster-template per-class roster reads
-through `RosterReadUseCase` and the accepted roster port while preserving
-class-detail reads and per-class order. Both editor save/print and live-preview
-callers construct the production roster adapter. The complete roster snapshot
-conversion preserves columns, widths, rows, sparse cells, and UTF-16 text; a
-rendered PDF comparison covers Unicode and sparse-row output. The focused
-`ClassMngrFeatures` and print-service builds passed. The print-dialog, print
-service, roster query, and production roster-adapter CTests passed 4/4; after
-adding a multi-class early-stop assertion, the print-service CTest passed again
-1/1. Logs are under `build/p2_f290_verify_logs/`. A non-fatal `vswhere.exe`
-environment warning was resolved by adding the Visual Studio Installer
-directory to `PATH`. The full suite was not run. Phase 2 remains In Progress/
-Open; Gates 1 and 2 remain Partial.
+F291, committed as `31f92c73`, routes My Classes' per-class class-information
+read through a dedicated compact query, snapshot, and port with one
+`ApplicationServices` adapter read. The class-list, roster-count, and full
+teacher-profile queries remain in place. Field-parity review found that the
+accepted class-details and class-notes projections both omit `teacherId`, and
+each adapter loads full `ClassInfo`; composing them would lose the teacher
+association and duplicate repository reads. Fresh isolated Windows x64
+Debug/Ninja verification compiled all three targets, validated ownership of
+1,230 handwritten sources, and passed the query, adapter, and My Classes CTests
+3/3. `git diff --check` passed. Logs are under
+`build/p2_f291_independent_verify/`. Configure first failed to locate `cl.exe`
+in plain PowerShell, then succeeded from the Visual Studio developer shell;
+non-fatal `vswhere.exe` and long-path warnings occurred. The full suite was not
+run. Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial.
