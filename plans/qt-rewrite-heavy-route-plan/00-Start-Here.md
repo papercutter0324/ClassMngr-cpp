@@ -34,17 +34,12 @@
   See the
   [Phase 2 progress log](03-Phase-2-Progress-Log.md) for current scope and
   acceptance evidence.
-- Current blocker: official Phase 1 targets are Windows x64 and macOS
-  universal. On commit `57f5dff6`, Windows x64 passed 66/66; macOS Debug failed
-  after GitHub reported runner communication loss. The user observed the
-  updater test, but no job log or JUnit artifact confirms it as the cause.
-  Windows and macOS Packaged Release runs passed. Local Windows x64 Debug
-  configure/build and CTest passed 66/66 on `4dbe3ca7`; that remains valid
-  evidence independent of hosted results. Phase 1 Build Quality has not run.
-  Linux and Windows ARM64 are unofficial and deferred; their current failures
-  or missing native launch evidence are not Phase 1 blockers. See the Phase 1
-  plan's GitHub Actions test-reliability section. Phase 0 is complete; Phase 1
-  remains in progress.
+- Phase 1 is complete. Its 2026-09-19 closure update records passing hosted
+  baseline jobs for Windows x64 and macOS universal, the Phase 1 Build Quality
+  and Dialog policy workflows, and packaged Release workflows. Linux x64 and
+  Windows ARM64 also passed as informational jobs; they were not required for
+  closure. See the [Phase 1 plan](02-Phase-1-Build-System-and-Repository-Structure.md)
+  for the run evidence. Phase 0 is complete; Phase 2 remains in progress.
 - Release target: ClassMngr v2 with feature parity, no splash screen, no resource packs, and Windows startup memory below 250 MiB
 
 ### Phase status
@@ -52,7 +47,7 @@
 | Phase | File | Status | Default route | Depends on |
 |---|---|---|---|---|
 | 0 | 01-Phase-0-Product-Contract-and-Baseline.md | Complete | Heavy | None |
-| 1 | 02-Phase-1-Build-System-and-Repository-Structure.md | In progress | Heavy | 0 |
+| 1 | 02-Phase-1-Build-System-and-Repository-Structure.md | Complete | Heavy | 0 |
 | 2 | 03-Phase-2-Domain-Model-and-Application-Contracts.md | In progress | Heavy | 1 |
 | 3 | 04-Phase-3-Persistence-Rewrite.md | Not started | Heavy | 1, 2 |
 | 4 | 05-Phase-4-Resource-Loader-and-Packaging.md | Not started | Heavy | 1 |
