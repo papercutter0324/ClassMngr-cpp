@@ -3,8 +3,10 @@
 
 #include "app/services/feature_services.h"
 #include "next/application/classes_list_read_query.h"
+#include "next/application/initial_setup_teacher_choices_read_query.h"
 #include "next/application/selected_class_subtitle_read_query.h"
 #include "next/platform/application_services_classes_list_read_port.h"
+#include "next/platform/application_services_initial_setup_teacher_choices_read_port.h"
 #include "next/platform/application_services_selected_class_subtitle_read_port.h"
 
 #include <charconv>
@@ -17,6 +19,14 @@ using namespace SidebarControllerPrivate;
 namespace
 {
 QString classesListErrorMessage(const std::string& message)
+{
+    return QString::fromUtf8(
+        message.data(),
+        static_cast<qsizetype>(message.size())
+        );
+}
+
+QString teacherChoicesErrorMessage(const std::string& message)
 {
     return QString::fromUtf8(
         message.data(),
@@ -116,24 +126,51 @@ int SidebarController::promptForTeacherToDelete() const
     }
 
     QList<QPair<QString, int>> records;
-    const Result<QList<Teacher>> loadedTeachers = teachers->teachers();
+    ClassMngr::Next::Platform::
+        ApplicationServicesInitialSetupTeacherChoicesReadPort readPort(
+            m_services
+            );
+    const ClassMngr::Next::Application::
+        InitialSetupTeacherChoicesReadQuery query(readPort);
+    const auto loadedTeachers = query.execute();
     if (!loadedTeachers)
     {
         DialogServices::showWarning(
             m_sidebar,
             tr("Delete Teacher"),
             tr("Teachers could not be loaded."),
-            loadedTeachers.error()
+            teacherChoicesErrorMessage(loadedTeachers.error().message)
             );
         return -1;
     }
 
-    for (const Teacher& teacher : *loadedTeachers)
+    for (const auto& choice : loadedTeachers.value().teachers)
     {
-        if (teacher.id <= 0)
+        int teacherId = 0;
+        const std::string& teacherIdValue = choice.teacherId.value();
+        const auto [end, conversionError] = std::from_chars(
+            teacherIdValue.data(),
+            teacherIdValue.data() + teacherIdValue.size(),
+            teacherId
+            );
+        if (conversionError != std::errc{}
+            || end != teacherIdValue.data() + teacherIdValue.size()
+            || teacherId <= 0
+            || std::to_string(teacherId) != teacherIdValue)
         {
             continue;
         }
+
+        Teacher teacher;
+        teacher.id = teacherId;
+        teacher.teacherKr = QString::fromStdU16String(choice.teacherKr);
+        teacher.teacherEn = QString::fromStdU16String(choice.teacherEn);
+        teacher.preferredRomanization = QString::fromStdU16String(
+            choice.preferredRomanization
+            );
+        teacher.preferredName = QString::fromStdU16String(
+            choice.preferredName
+            );
 
         records.append(
             {

@@ -243,6 +243,84 @@ bool invokeDeleteTeacher(SidebarController& controller)
         );
 }
 
+bool invokeDeleteTeacherSelecting(
+    SidebarController& controller,
+    const int teacherId,
+    RecordSelectionObservation& observation
+    )
+{
+    QTimer::singleShot(
+        0,
+        &controller,
+        [&observation, teacherId]
+        {
+            QDialog* dialog = qobject_cast<QDialog*>(
+                QApplication::activeModalWidget()
+                );
+            if (!dialog)
+            {
+                for (QWidget* widget : QApplication::topLevelWidgets())
+                {
+                    auto* candidate = qobject_cast<QDialog*>(widget);
+                    if (candidate
+                        && candidate->objectName()
+                            == QStringLiteral("sidebarRecordSelectionDialog"))
+                    {
+                        dialog = candidate;
+                        break;
+                    }
+                }
+            }
+
+            if (!dialog)
+            {
+                return;
+            }
+
+            observation.found = true;
+            auto* combo = dialog->findChild<QComboBox*>(
+                QStringLiteral("sidebarRecordSelectionCombo")
+                );
+            auto* buttons = dialog->findChild<QDialogButtonBox*>(
+                QStringLiteral("sidebarRecordSelectionButtonBox")
+                );
+            auto* acceptButton = buttons
+                ? buttons->button(QDialogButtonBox::Ok)
+                : nullptr;
+            if (!combo || !acceptButton)
+            {
+                dialog->reject();
+                return;
+            }
+
+            for (int index = 0; index < combo->count(); ++index)
+            {
+                observation.labels.append(combo->itemText(index));
+            }
+
+            const int selectedIndex = combo->findData(teacherId);
+            if (selectedIndex >= 0)
+            {
+                combo->setCurrentIndex(selectedIndex);
+                observation.selected = true;
+                observation.selectedId = combo->currentData().toInt();
+            }
+
+            if (observation.selected && acceptButton->isEnabled())
+            {
+                acceptButton->click();
+                observation.accepted = true;
+            }
+            else
+            {
+                dialog->reject();
+            }
+        }
+        );
+
+    return invokeDeleteTeacher(controller);
+}
+
 bool invokeUpcomingBirthdays(
     SidebarController& controller,
     BirthdayDialogObservation& observation
@@ -362,6 +440,8 @@ private slots:
     void successfulReadConfirmsBeforeLoadingAndShowingTeacher();
     void selectedTeacherDeleteConfirmsProfileDisplayNameAndCanBeCanceled();
     void selectedTeacherProfileReadFailureWarnsWithoutConfirmation();
+    void teacherDeleteChooserUsesTeacherChoiceLabelAndCancelsSelectedId();
+    void teacherChoiceReadFailureWarnsWithoutChooserOrConfirmation();
     void classDeleteChooserUsesSubtitleLabelsAndConfirmsSelectedClass();
     void classListReadFailureShowsWarningWithoutOpeningChooser();
     void classFieldsFailureUsesDefaultSubtitleAndNoTeacherFallback();
@@ -611,6 +691,107 @@ selectedTeacherProfileReadFailureWarnsWithoutConfirmation()
     QVERIFY(prompts.confirmations.isEmpty());
     QVERIFY(prompts.asynchronousMessages.isEmpty());
     QCOMPARE(sidebar.getSelectedTeacherId(), selected.id);
+}
+
+void NavigationTeacherReadTests::
+teacherDeleteChooserUsesTeacherChoiceLabelAndCancelsSelectedId()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+
+    Teacher teacher = teacherFixture(
+        QStringLiteral("Chooser Teacher Korean"),
+        QStringLiteral("Chooser Teacher English"),
+        QStringLiteral("Teacher Chooser Display")
+        );
+    QVERIFY(persistTeacher(services, teacher) > 0);
+
+    PageManager pages;
+    Sidebar sidebar;
+    SidebarController controller(&services, &sidebar, &pages);
+    FakeUserPromptService prompts;
+    prompts.scriptedChoices.enqueue(PromptChoice::Rejected);
+    DialogServices::setUserPromptServiceForTesting(&prompts);
+
+    RecordSelectionObservation observation;
+    QVERIFY(invokeDeleteTeacherSelecting(
+        controller,
+        teacher.id,
+        observation
+        ));
+
+    QVERIFY(observation.found);
+    QVERIFY(observation.selected);
+    QVERIFY(observation.accepted);
+    QCOMPARE(observation.selectedId, teacher.id);
+    QCOMPARE(
+        observation.labels,
+        QStringList({QString(), QStringLiteral("Teacher Chooser Display")})
+        );
+    QCOMPARE(prompts.confirmations.size(), 1);
+    const PromptRequest& confirmation = prompts.confirmations.constFirst();
+    QCOMPARE(confirmation.title, QStringLiteral("Delete Teacher"));
+    QCOMPARE(
+        confirmation.message,
+        QStringLiteral("Delete 'Teacher Chooser Display'?")
+        );
+    QCOMPARE(confirmation.acceptText, QStringLiteral("Delete"));
+    QCOMPARE(confirmation.rejectText, QStringLiteral("Cancel"));
+    QVERIFY(confirmation.destructive);
+    QVERIFY(prompts.messages.isEmpty());
+    QVERIFY(prompts.asynchronousMessages.isEmpty());
+    QVERIFY(services.teacherService()->teacher(teacher.id));
+}
+
+void NavigationTeacherReadTests::
+teacherChoiceReadFailureWarnsWithoutChooserOrConfirmation()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+
+    Teacher teacher = teacherFixture(
+        QStringLiteral("Chooser Teacher Korean"),
+        QStringLiteral("Chooser Teacher English"),
+        QStringLiteral("Teacher Chooser Display")
+        );
+    QVERIFY(persistTeacher(services, teacher) > 0);
+
+    QSqlQuery dropTeachers(services.databaseSession()->database());
+    QVERIFY2(dropTeachers.exec(QStringLiteral("DROP TABLE teachers")),
+             qPrintable(dropTeachers.lastError().text()));
+    const Result<QList<Teacher>> expectedChoicesRead =
+        services.teacherService()->teachers();
+    QVERIFY(!expectedChoicesRead);
+    QVERIFY(!expectedChoicesRead.error().trimmed().isEmpty());
+
+    PageManager pages;
+    Sidebar sidebar;
+    SidebarController controller(&services, &sidebar, &pages);
+    FakeUserPromptService prompts;
+    DialogServices::setUserPromptServiceForTesting(&prompts);
+
+    RecordSelectionObservation observation;
+    QVERIFY(invokeDeleteTeacherSelecting(
+        controller,
+        teacher.id,
+        observation
+        ));
+    QCoreApplication::processEvents();
+
+    QVERIFY(!observation.found);
+    QCOMPARE(prompts.messages.size(), 1);
+    const PromptRequest& warning = prompts.messages.constFirst();
+    QCOMPARE(warning.severity, PromptSeverity::Warning);
+    QCOMPARE(warning.title, QStringLiteral("Delete Teacher"));
+    QCOMPARE(warning.message, QStringLiteral("Teachers could not be loaded."));
+    QCOMPARE(warning.details, expectedChoicesRead.error());
+    QVERIFY(prompts.confirmations.isEmpty());
+    QVERIFY(prompts.asynchronousMessages.isEmpty());
+    QVERIFY(QApplication::activeModalWidget() == nullptr);
 }
 
 void NavigationTeacherReadTests::
