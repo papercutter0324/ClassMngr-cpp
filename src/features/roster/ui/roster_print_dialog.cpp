@@ -520,25 +520,31 @@ void RosterPrintDialog::updateExtraInfoColumns()
     QStringList previouslyChecked =
         selectedExtraColumns();
 
-    const Result<QList<Classroom>> classes =
-        classService->classes();
+    ClassMngr::Next::Platform::
+        ApplicationServicesClassesListReadPort classesReadPort(m_services);
+    const ClassMngr::Next::Application::ClassesListReadQuery classesQuery(
+        classesReadPort
+        );
+    const auto classes = classesQuery.execute();
     if (!classes)
     {
         DialogServices::showWarning(
             this,
             tr("Print Rosters"),
             tr("Classes could not be loaded."),
-            classes.error()
+            classesListErrorMessage(classes.error().message)
             );
         updatePreview();
         return;
     }
+    const QList<Classroom> classrooms =
+        classroomsFromListSnapshot(classes.value());
     const QList<int> classIds =
         RosterTemplatePrintService::resolveClassIds(
             selectedScope(),
             m_currentClassId,
             selectedClassIds(),
-            *classes
+            classrooms
             );
     QList<RosterTemplatePrintService::RosterClassData> rosterClasses;
     rosterClasses.reserve(classIds.size());
