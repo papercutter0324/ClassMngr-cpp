@@ -5,12 +5,27 @@
 - Overall status: In progress
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
-- Last updated: 2026-10-02
-- Current milestone: Phase 2 remains in progress. F252 (Qt-free AI batch
-  accepted-comment planning) is accepted; F253 (Qt-free private-notes splitter)
-  is selected. Gates 1 and 2 remain Partial, with
-  broader feature migration, parity, and 96-class Release memory evidence still
-  open.
+- Last updated: 2026-10-03
+- Current milestone: Phase 2 remains in progress. F253 (Qt-free private-notes
+  splitter), F254 (Qt-free roster-score assignment planning), F255 (single-
+  report AI eligibility policy reuse), F256 (typed roster read cutover for
+  Speaking Evaluation name workflows), F257 (selected-class report-context
+  reads), and F258 (canonical evaluation-name policy) are accepted; F259
+  (roster-transfer target metadata cutover), F260 (roster evaluation-column
+  classification), F261 (RosterPrintDialog class-label reads), F262
+  (Class Transfer dialog class-label reads), F263 (matched-teacher labels in
+  ClassImportDialog), F264 (optional roster reads in RosterPrintDialog),
+  F265 (transfer-menu target-roster reads), F266 (ClassExportDialog class-list
+  reads), F267 (RosterPrintDialog normal class-list read), F268
+  (MyClassesPage class-list read), F269 (setup wizard teacher-choice list
+  read), F270 (MyClassesPage assigned-teacher profile read), F271 (sidebar
+  delete-prompt class display-name read), F272 (RosterPrintDialog
+  current-class-only testing-class read), F273 (transfer-time target-roster
+  read), and F274 (RosterPrintDialog extra-info class-list read) are accepted;
+  F275 (class-delete chooser class-list read) is accepted; F276 (upcoming
+  Native English and GS birthday-directory reads) is selected.
+  Gates 1 and 2 remain Partial, with broader feature
+  migration, parity, and 96-class Release memory evidence still open.
   See the
   [Phase 2 progress log](03-Phase-2-Progress-Log.md) for current scope and
   acceptance evidence.

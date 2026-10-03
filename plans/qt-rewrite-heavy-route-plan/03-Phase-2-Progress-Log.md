@@ -9703,3 +9703,629 @@ both consumers; defer parser extraction. The cumulative Gate 1 map is
 historical and ends at F143
 ([map](03-Phase-2-Progress-Log.md#L7570)); Gates 1 and 2 remain Partial. Phase
 2 remains In Progress/Open.
+
+### Progress update - 2026-10-02 (F253 accepted; F254 selected)
+
+F253, source commit `8975e825`, extracts the shared private-notes split rule
+into a UTF-16 Qt-free Application policy used by both
+`SpeakingEvalAiBatchDialog` and `SpeakingEvalPrivateNotesEditor`. It preserves
+the exact opening and first separator markers, whole-input fallback when either
+marker is missing, repeated later separators, and body whitespace/newlines.
+Independent Windows x64 Debug verification built both focused targets; the
+app-less policy CTest passed 1/1, and five existing dialog/editor UI slots
+passed individually. CMake ownership is explicit, and
+`git diff HEAD^ HEAD --check` passed. Exact whitespace/Unicode edge cases are
+asserted at the policy layer; UI slots cover ordinary formatted and legacy
+notes. The full suite did not run.
+
+F254 is selected to move roster score-to-row matching and changed-assignment
+planning from `RosterEditorWidget::importScores()` into a Qt-free Application
+policy. Preserve trimmed exact English/Korean pair matching, last imported
+duplicate wins, skipping incomplete and unmatched pairs, skipping unchanged
+grades, roster-row order, and existing import/use-case results. Keep evaluation
+column lookup, Qt model access and writes, autosave, and localized messages in
+the widget. The app-less policy tests will cover duplicate, incomplete,
+unmatched, unchanged, and ordered assignments; retain the focused roster score
+import UI tests. AI response parsing remains deferred. Gates 1 and 2 remain
+Partial, and Phase 2 remains In Progress/Open.
+
+### Progress update - 2026-10-03 (F257 accepted; F258 selected)
+
+F255 routes `SpeakingEvalReportDialog::aiPromptUnavailableReason()` through
+the accepted Qt-free `speakingEvaluationAiBatchEligibilityReason` policy. The
+dialog retains its no-selected-report guard and exact localized tooltip
+messages; name, grade, Did Well, and Needs Improvement remain the ordered
+first-failure checks. The focused UI test covers Korean-only names and missing-
+name priority when multiple inputs are invalid. Fresh independent Windows x64
+Debug/Ninja verification validated one owner for 1,214 handwritten sources,
+built `ClassMngrFeatures` and
+`ClassMngrSpeakingEvalBatchReportServiceTests`, and passed the focused slot
+(3 passed, 0 failed including setup/cleanup). `git diff --check` passed. The
+Visual Studio preset attempt hit FileTracker access failure; the independent
+Ninja/MSVC build succeeded. No full suite ran.
+
+F256 routes `SpeakingEvalPage::importNames()` and
+`unmatchedRosterNamePairs()` through the existing `RosterReadUseCase` and
+`ApplicationServicesRosterReadPort`, removing their direct roster-data reads.
+Preserve service/class guards, empty/error fallback behavior, missing-column
+warning and no-op result, F247 name-import planning, and duplicate-resolution
+candidate order/filtering. Keep QString conversion and localized messaging at
+the feature edge. Focused coverage includes a two-row ordered import, empty and
+unavailable reads, missing columns, suffix resolution, and duplicate-location
+behavior. Fresh independent Windows x64 Debug/Ninja verification with MSVC
+19.51 and Qt 6.12 validated one owner for 1,214 handwritten sources, built
+`ClassMngrFeatures` and `ClassMngrSpeakingEvalPageSaveTests`, and passed the six
+focused QtTest slots (3 passed each including setup/cleanup); the focused page
+CTest target passed 1/1. `git diff --check` passed with line-ending notices.
+The build emitted non-fatal object-path warnings; the UI run logged non-fatal
+resource, font, keyboard-SVG, and offscreen-size warnings. No full suite ran.
+No direct nonempty candidate-list assertion was added; the candidate algorithm
+is unchanged, and the ordered roster-import test exercises the same read and
+conversion path. The independent tester assessed this as non-blocking. Gates 1
+and 2 remain Partial.
+
+F257 routes `SpeakingEvalPage::showReports()`,
+`generateClassAiComments()`, and `outputReports()` through the existing
+selected-class subtitle read contract. Preserve the service guards and default
+`ClassInfo` fallback on failed class reads; keep successfully read class fields
+when the optional teacher read fails; retain signature-image reads and their
+guards. The existing grade, level, schedule, and teacher projection covers
+these consumers; its scope comment now names report context. Fresh independent
+Windows x64 Debug/Ninja verification built `ClassMngrFeatures` and
+`ClassMngrSpeakingEvalPageSaveTests`; the page target passed 26/26, and the
+selected CTest set passed 7/7. The batch report service reported 38 passed and
+5 skipped for PowerPoint integration. `git diff --check` passed with line-ending
+notices. Signature-port, signature-processor, and report-widget tests passed;
+source review confirms both page call sites retain and forward signature bytes.
+No new page-level signature-render assertion was retained. Non-fatal CTest
+environment warnings included missing optional documents/font/keyboard
+resources and offscreen size hints. No full suite ran.
+
+F258 is selected to move the ordered stored evaluation-name vocabulary and
+unknown/empty-to-Winter fallback into the existing Qt-free Application
+evaluation-selection contract. Preserve the order Winter, Speech Contest,
+Summer, Fall and the Spring-to-Speech-Contest mapping. Keep localized labels
+and calendar `AcademicTerm` conversion at the feature edge. Extend the existing
+app-less Application tests for ordered names, period mapping, and fallback;
+retain the Classes UI label/order assertions. Phase 2 remains In Progress/Open.
+
+### Progress update - 2026-10-03 (F254 accepted; F255 selected)
+
+F254 adds the Qt-free `speakingEvaluationRosterScoreRowAssignments` policy and
+routes `RosterEditorWidget::importScores()` through it. The policy trims
+QString-compatible names, matches complete exact English/Korean pairs, keeps
+the last imported duplicate, skips incomplete/unmatched pairs and unchanged
+grades, and returns assignments in roster-row order. The widget retains column
+lookup, Qt model reads/writes, successful-write counting, autosave, action
+refresh, and localized messages. A fresh independent Windows x64 Debug/Ninja
+build validated one explicit owner for 1,214 handwritten sources; the policy,
+F217 use-case, and roster-widget import CTests passed 3/3. `git diff --check`
+passed. No full suite ran.
+
+F255 is selected to reuse the accepted
+`speakingEvaluationAiBatchEligibilityReason` policy in
+`SpeakingEvalReportDialog::aiPromptUnavailableReason()`. Keep the no-selected-
+report guard and translated dialog messages at the UI edge; preserve name,
+grade, Did Well, then Needs Improvement first-failure order, including the
+current missing-editor behavior. Extend the report-dialog test with missing
+name and first-failure assertions, retaining existing tooltip checks. AI
+response grammar and observation parsing remain deferred. Gates 1 and 2 remain
+Partial, and Phase 2 remains In Progress/Open.
+
+### Progress update - 2026-10-03 (F258 accepted; F259 selected)
+
+F258 centralizes the ordered stored evaluation names and exact Winter fallback
+in the Qt-free Application evaluation-selection contract. AcademicTerm mapping
+and localized labels remain at the feature edge. Fresh Windows x64
+Debug/Ninja verification built ClassMngrFeatures and the app-less evaluation,
+Classes page, and Speaking Evaluation page test targets. The app-less contract
+test passed 1/1; the focused Classes UI name/order test, Speaking Evaluation
+switch test, and existing combined Classes slot all passed. The combined slot's
+student-row fixture now seeds SpeakingEvalRepository, and its existing
+assertions remain unchanged. git diff --check passed. Qt emitted non-fatal
+resource/font/offscreen warnings; no full suite ran.
+
+F259 is selected to route roster-transfer source/target metadata reads in
+RosterEditorWidget::showRosterContextMenu() through the accepted
+SelectedClassSubtitleReadQuery. Preserve same-grade eligibility, empty-grade
+exclusion, menu labels and ordering, roster-full checks, class-list loading,
+and transfer writes. Add focused UI coverage for same/different grade,
+target labels/order, and read-failure fallback while retaining F246 app-less
+eligibility and subtitle-read tests. Defer typed transfer apply. Phase 2 remains
+In Progress/Open; Gates 1 and 2 remain Partial.
+
+### Progress update - 2026-10-03 (F259 accepted; F260 selected)
+
+F259 routes roster-transfer source and target metadata reads through the
+accepted SelectedClassSubtitleReadQuery. Class-list loading, roster-full checks,
+same-grade eligibility, sorting, menu text, fallback names, and transfer writes
+remain at their existing owners. Fresh Windows x64 Debug/Ninja verification
+built ClassMngrFeatures, the new transfer-menu UI target, and the existing
+eligibility/subtitle query/adapter targets. The three focused UI cases and the
+selected CTest set passed 4/4, including sorted same-grade labels, different
+and empty-grade exclusion, teacher-read failure retaining class fields with
+the No Teacher label, and class-fields read failure. git diff --check passed.
+Non-fatal configure and offscreen/resource warnings occurred; no full suite ran.
+The focused UI tests cover menu contents and metadata failures, not activating
+a transfer action.
+
+F260 is selected to centralize Qt-free roster evaluation-column
+classification. Reuse the canonical stored names with the legacy Autumn alias;
+preserve case-insensitive exact matching without trimming and keep Qt
+comparison at the Roster UI edge. Extend the app-less evaluation contract tests
+for the four canonical names, Autumn, case variants, unknowns, and
+whitespace-padded values. Add a RosterModel editability regression for
+read-only evaluation columns and editable custom columns, retaining the
+existing Autumn header/removal behavior and custom-column normalization. Phase
+2 remains In Progress/Open; Gates 1 and 2 remain Partial.
+
+### Progress update - 2026-10-03 (F260 accepted; F261 selected)
+
+F260 centralizes roster evaluation-column classification in a Qt-free
+Application policy that reuses F258's canonical names and recognizes the
+legacy Autumn alias. The caller supplies case-insensitive comparison semantics;
+matching remains exact and does not trim. Roster grouping, width, and
+editability use the shared policy, while Autumn-to-Fall normalization and
+header behavior remain unchanged. Fresh Windows x64 Debug/Ninja verification
+built ClassMngrFeatures and the app-less evaluation and RosterModel targets.
+Both focused CTests passed; the two model slots passed, and git diff --check
+passed. Configure emitted non-fatal vswhere, Vulkan-header, and object-path
+warnings. No full suite ran.
+
+F261 is selected to route RosterPrintDialog::loadClasses() class and teacher
+metadata reads through the accepted SelectedClassSubtitleReadQuery. Preserve
+the service-availability guards, class-list order, formatted labels,
+current-class selection and checked state, and the currentClassOnly
+TestingClass path. Preserve default-class formatting on class-field read
+failure and class details with the default No Teacher label when the optional
+teacher read fails. Add focused dialog UI coverage for labels/order/IDs/check
+state and both metadata failure outcomes, retaining the selected-class query
+and adapter tests. Phase 2 remains In Progress/Open; Gates 1 and 2 remain
+Partial.
+
+### Progress update - 2026-10-03 (F261 accepted; F262 selected)
+
+F261 routes RosterPrintDialog normal class-label metadata reads through the
+accepted SelectedClassSubtitleReadQuery. The dialog retains its service
+availability guards, list order, item IDs and checked state, current-class
+display projection, and currentClassOnly TestingClass path. Fresh Windows x64
+Debug/Ninja verification built ClassMngrFeatures, the new dialog UI target, and
+the selected-class subtitle query/adapter targets. Four focused UI cases and
+the selected CTest set passed 3/3. Coverage includes class read failure using
+the former default ClassInfo/Teacher formatting and teacher read failure
+preserving class fields with the No Teacher label. git diff --check passed.
+Non-fatal configure/offscreen/resource warnings occurred; no full suite ran.
+PDF generation was not exercised.
+
+F262 is selected to route only the assigned-class label reads in
+ClassImportDialog and ClassExportDialog through the accepted
+SelectedClassSubtitleReadQuery. Pass ApplicationServices to the dialogs for
+the query adapter while retaining feature-service uses for class lists and
+other existing operations. Preserve SidebarNodeNaming output, classroom-name
+and Class-N fallbacks, export sorting/IDs/check state, import replacement
+choices, teacher matching, and transfer planning. Keep the separate arbitrary
+destination-teacher lookup and typed transfer behavior unchanged. Extend the
+existing class-transfer UI tests for labels, ordering, IDs/checks, and read
+failures while retaining selected-class query and adapter tests. Phase 2
+remains In Progress/Open; Gates 1 and 2 remain Partial.
+
+### Progress update - 2026-10-03 (F262 accepted; F263 candidate discovery)
+
+F262 routes assigned-class label metadata reads in ClassImportDialog and
+ClassExportDialog through the accepted SelectedClassSubtitleReadQuery.
+ApplicationServices is an explicit dialog input; class-list loading, import
+teacher matching, transfer planning, and the arbitrary destination-teacher
+lookup remain at their prior owners. SidebarNodeNaming output, fallbacks,
+export sorting/IDs/check state, and import replacement choices are preserved.
+Fresh Windows x64 Debug/Ninja verification built ClassMngrFeatures, the class
+transfer UI target, and the selected-class subtitle query/adapter targets.
+Nine focused QtTest slots passed (11 passes including init/cleanup), the
+selected query/adapter CTests passed 2/2, and git diff --check passed. Added
+coverage checks visible labels and metadata-read failures while retaining
+existing transfer assertions. Non-fatal configure/resource/font warnings
+occurred; no full suite ran.
+
+F263 candidate discovery is underway; Phase 2 remains In Progress/Open and
+Gates 1 and 2 remain Partial.
+
+### Progress update - 2026-10-03 (F262 accepted; F263 selected)
+
+F263 is selected to route only ClassImportDialog's matched-teacher display
+reads through the accepted TeacherProfileReadQuery and its ApplicationServices
+adapter. Preserve SidebarNodeNaming formatting and the current New Teacher /
+Teacher-ID fallback behavior, Keep local and Replace local choices and IDs,
+teacher matching, transfer planning, and F262's class-label read. Add visible
+label assertions for single and ambiguous matches plus a profile-read failure
+case; retain query and adapter tests. Phase 2 remains In Progress/Open; Gates
+1 and 2 remain Partial.
+
+### Progress update - 2026-10-03 (F263 accepted; F264 candidate discovery)
+
+F263 routes only ClassImportDialog's matched-teacher display reads through the
+accepted TeacherProfileReadQuery and ApplicationServices adapter. It maps the
+four display-name fields into the existing formatter and preserves current
+New Teacher / Teacher-ID fallback behavior, Keep local and Replace local
+choices and IDs, teacher matching, transfer planning, and F262's class-label
+read. Fresh Windows x64 Debug/Ninja verification built ClassMngrFeatures, the
+ClassTransfer UI test target, and TeacherProfileReadQuery plus adapter test
+targets. Ten focused ClassTransfer slots passed (12 QtTest passes including
+setup/cleanup), the query/adapter CTests passed 2/2, and global/test-file
+git diff --check passed. Coverage checks single and ambiguous labels, choice
+IDs, and a profile-read failure while retaining existing plan assertions. The
+unique build tree was removed after logs were preserved under
+`build/p2_f263_verify_logs/`. Non-fatal vswhere, Vulkan-header, object-path,
+resource, and font warnings occurred; no full suite ran.
+
+F264 candidate discovery is underway; Phase 2 remains In Progress/Open and
+Gates 1 and 2 remain Partial.
+
+### Progress update - 2026-10-03 (F263 accepted; F264 selected)
+
+F264 is selected to route only the optional per-class roster reads in
+RosterPrintDialog::updateExtraInfoColumns() through RosterReadUseCase and the
+accepted ApplicationServicesRosterReadPort. Keep the existing class/scope
+resolution, service-availability guards, extra-column order, checked-column
+restoration, and empty-roster behavior on read failure. Project only the
+snapshot columns needed by availablePerClassExtraInfoColumns(), not roster
+rows or widths. Extend the existing UI target for discovered columns,
+checkbox restoration, and a failed-read case; retain roster query and adapter
+tests. Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial.
+
+### Progress update - 2026-10-03 (F264 accepted; F265 candidate discovery)
+
+F264 routes only the optional per-class roster reads in
+RosterPrintDialog::updateExtraInfoColumns() through RosterReadUseCase and the
+accepted ApplicationServicesRosterReadPort. It projects only snapshot columns
+needed by availablePerClassExtraInfoColumns(), not roster rows or widths. Class
+resolution/list failures, service-availability and layout guards, extra-column
+order, checked-column restoration, preview behavior, and empty-roster fallback
+remain intact. Fresh Windows x64 Debug/Ninja verification built
+ClassMngrFeatures, the RosterPrintDialog UI test target, and roster read-use
+case/adapter test targets. Six focused UI slots passed (8 QtTest passes
+including setup/cleanup), the roster query/adapter CTests passed 2/2, and
+git diff --check passed; a direct whitespace check covered the untracked UI
+test file. The unique build tree was removed after logs were preserved under
+`build/p2_f264_verify_logs/`. Non-fatal vswhere, Vulkan-header, object-path,
+resource, and font warnings occurred; no full suite ran.
+
+F265 candidate discovery is underway; Phase 2 remains In Progress/Open and
+Gates 1 and 2 remain Partial.
+
+### Progress update - 2026-10-03 (F264 accepted; F265 selected)
+
+F265 is selected to route only the target-roster read used for fullness in
+RosterEditorWidget::showRosterContextMenu() through RosterReadUseCase and the
+accepted ApplicationServicesRosterReadPort. Preserve F259's metadata path,
+same-grade filtering, labels, sort order, and failed-read empty-roster
+fallback. Continue to use RosterModel::setRoster() and firstEmptyRow() so the
+25-row UI padding determines fullness; project snapshot columns and rows into
+the UI Roster value and leave widths at their prior default. Keep the separate
+transferRosterRow() read/write path unchanged. Add focused menu coverage for a
+full disabled target and a failed target read; retain app-less query and
+adapter tests. Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial.
+
+### Progress update - 2026-10-03 (F265 accepted; F266 candidate discovery)
+
+F265 routes only the target-roster read used for fullness in
+RosterEditorWidget::showRosterContextMenu() through RosterReadUseCase and the
+accepted ApplicationServicesRosterReadPort. The UI projection preserves
+snapshot columns and rows while leaving column widths at their prior default;
+RosterModel::setRoster() still pads to 25 rows before firstEmptyRow() decides
+fullness. F259 metadata, same-grade filtering, labels/order, and the separate
+transferRosterRow() read/write flow remain unchanged. Fresh Windows x64
+Debug/Ninja verification built ClassMngrFeatures, the transfer-menu UI target,
+and roster query/adapter targets. All five focused menu slots passed; the menu
+CTest passed 1/1 and the roster query/adapter CTests passed 2/2. git diff
+--check and direct whitespace inspection passed. The unique build tree was
+removed after logs were preserved under `build/p2_f265_verify_logs/`.
+Non-fatal vswhere, Vulkan-header, object-path, resource, font, and platform
+plugin warnings occurred; no full suite ran.
+
+F266 is selected to route only the class-list read in ClassExportDialog
+through the accepted ClassesListReadQuery and
+ApplicationServicesClassesListReadPort. Preserve the current service-presence
+guard, F262's selected-class label query and fallbacks, QCollator sorting,
+IDs, unchecked initial items, export-button behavior, and export flow. On list
+read failure, keep the existing warning, empty list, and disabled Export
+button; the list itself remains enabled. Add focused failure coverage and
+retain the class-transfer sorting/selection tests plus list query/adapter
+tests. Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial.
+
+### Progress update - 2026-10-03 (F266 accepted)
+
+F266 routes only the class-list read in ClassExportDialog through the accepted
+ClassesListReadQuery and ApplicationServicesClassesListReadPort. Class IDs and
+UTF-16 names are projected at the UI edge. The service-presence guard, F262
+selected-class label query and fallbacks, QCollator ordering, IDs, unchecked
+initial items, Export enablement, and export flow remain unchanged. On a read
+failure, the existing warning is preserved with structured error details; the
+list stays empty and enabled, and Export stays disabled. A focused test drops
+the classes table and captures the warning and dialog state. Fresh Windows x64
+Debug/Ninja verification built ClassMngrFeatures, ClassMngrClassTransferTests,
+and the classes-list query and adapter test targets. Four focused export list
+slots passed (6 QtTest passes including setup and cleanup); the query and
+adapter CTests passed 2/2. git diff --check passed. The unique build tree was
+removed after logs were preserved under `build/p2_f266_verify_logs/`. Non-fatal
+Vulkan, zlib fallback, vswhere, resource/font, and offscreen size-hint warnings
+occurred; the full suite was not run. Phase 2 remains In Progress/Open; Gates 1
+and 2 remain Partial.
+
+### Progress update - 2026-10-03 (F267 accepted)
+
+F267 routes only the normal class-list read in
+RosterPrintDialog::loadClasses() through the accepted ClassesListReadQuery and
+ApplicationServicesClassesListReadPort. ApplicationServices creates the
+feature services and the list adapter from the same DatabaseSession, so the
+current service-availability guards retain their active-session invariant.
+The current service-availability guards, repository order, class IDs, checked
+state, selected-class label query, warning and empty-list failure behavior,
+and current-class-only TestingClass branch are preserved. The new UI test
+drops the classes table, captures the warning details, and verifies the class
+list is empty and enabled. Fresh Windows x64 Debug/Ninja verification built
+ClassMngrFeatures, ClassMngrRosterPrintDialogTests, and the list query/adapter
+test targets. The
+focused RosterPrintDialog CTest and both supporting CTests passed 3/3; direct
+execution of the new QtTest slot passed 3/3 including setup and cleanup.
+git diff --check and direct trailing-whitespace inspection passed. The unique
+build tree was removed after logs were preserved under
+`build/p2_f267_verify_logs/`. Non-fatal Vulkan, zlib fallback, vswhere, and
+offscreen Qt resource/font/size-hint warnings occurred; the full suite and
+other platforms were not run. Phase 2 remains In Progress/Open; Gates 1 and 2
+remain Partial.
+
+### Progress update - 2026-10-03 (F268 accepted)
+
+F268 routes only the class-list read in MyClassesPage::rebuildClassInformation()
+through the accepted ClassesListReadQuery and
+ApplicationServicesClassesListReadPort. Typed class IDs and UTF-16 names are
+projected into the existing Classroom inputs. The service guards,
+clear-before-read order, failure warning and return, empty-list state,
+per-class detail/count/teacher reads, class order, visible titles, navigation,
+and selected-class restoration remain intact. A new focused page test target
+covers ordering and labels, selection restoration, empty data, and a failed
+list read after existing content was rendered. Fresh Windows x64 Debug/Ninja
+verification passed CMake source-ownership validation and built
+ClassMngrFeatures, ClassMngrMyClassesPageTests, and the list query/adapter test
+targets. The MyClassesPage CTest and both supporting CTests passed 3/3; direct
+execution of all three UI cases passed 5/5 including setup and cleanup.
+git diff --check and direct test-file whitespace inspection passed. The unique
+build tree was removed after logs were preserved under
+`build/p2_f268_verify_logs/`. Non-fatal vswhere, Vulkan, zlib fallback, and
+offscreen Qt resource/font/size-hint warnings occurred; the full suite and
+other platforms were not run. Phase 2 remains In Progress/Open; Gates 1 and 2
+remain Partial.
+
+### Progress update - 2026-10-03 (F268 accepted; F269 selected)
+
+F269 is selected to route only the teacher-choice list read in
+ClassDetailsWizardPage::initializePage() through a new Qt-free
+InitialSetupTeacherChoicesReadQuery and active-session Platform adapter. Its
+snapshot will carry typed teacher IDs and the UTF-16 name fields used by
+Teacher::preferredDisplayName(). Preserve repository order, display labels,
+single-teacher auto-selection, the existing `Load Teachers` warning, and the
+empty combo on failure. FileController creates the initial setup database
+before launching the wizard, so the active-session adapter matches this path;
+keep the existing teacher-service availability guard and leave the separate
+personal-details and teacher-entry empty-list guards unchanged. Add app-less
+query and Platform adapter tests plus focused wizard tests for ordered labels,
+single-teacher selection, and read failure. Phase 2 remains In Progress/Open;
+Gates 1 and 2 remain Partial.
+
+### Progress update - 2026-10-03 (F269 accepted)
+
+F269 routes only the teacher-choice list read in
+ClassDetailsWizardPage::initializePage() through the new Qt-free
+InitialSetupTeacherChoicesReadQuery and active-session Platform adapter. Its
+snapshot carries typed teacher IDs and the UTF-16 fields used by
+Teacher::preferredDisplayName(). FileController creates the initial setup
+database before launching the wizard. The service guard, repository order,
+display labels, multiple-teacher placeholder, sole-teacher auto-selection,
+warning, and empty-combo failure behavior remain intact; the other wizard
+teacher reads are unchanged. The app-less query, adapter, and focused UI tests
+cover field mapping, ordering, validation, selection, and failure behavior.
+Fresh Windows x64 Debug/Ninja verification built ClassMngrFeatures,
+ClassMngrInitialSetupWizardTests, and both new boundary test targets. All three
+CTests passed; the two focused wizard slots passed 4/4 including setup and
+cleanup. `git diff --check` and direct whitespace inspection passed. The unique
+build tree was removed after logs were preserved under
+`build/p2_f269_verify_logs/`. Non-fatal vswhere, Vulkan, zlib fallback, and
+offscreen Qt resource/font warnings occurred; the full suite was not run.
+Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial.
+
+### Progress update - 2026-10-03 (F269 accepted; F270 selected)
+
+F270 is selected to route only the assigned-teacher read in
+MyClassesPage::rebuildClassInformation() through the accepted
+TeacherProfileReadQuery and ApplicationServicesTeacherProfileReadPort. Preserve
+the zero-ID skip, silent Teacher{} fallback on read failure, class navigation
+labels, and teacher-card fields by projecting the returned profile at the UI
+edge and setting Teacher.id only after a successful read. Keep the existing
+teacher-service availability guard, F268 class-list query, class-info and
+roster-count reads unchanged. Add focused page tests for complete teacher
+profile projection and the failed-read fallback; retain the teacher-profile
+query and adapter CTests. Phase 2 remains In Progress/Open; Gates 1 and 2
+remain Partial.
+
+### Progress update - 2026-10-03 (F270 accepted)
+
+F270 routes only the assigned-teacher read in
+MyClassesPage::rebuildClassInformation() through the accepted
+TeacherProfileReadQuery and ApplicationServicesTeacherProfileReadPort. The
+zero-ID skip, silent Teacher{} fallback on read failure, class navigation
+labels, and teacher-card fields remain intact; returned profile values are
+projected at the UI edge, and Teacher.id is set only after a successful,
+identity-matched read. The service-availability guard, F268 class-list query,
+class-info, and roster-count reads are unchanged. Focused UI tests cover the
+consumed profile fields, including UTF-16 text, and a missing assigned teacher
+with retained class content and no warning. Fresh Windows x64 Debug/Ninja
+verification built ClassMngrFeatures, ClassMngrMyClassesPageTests, and the
+teacher-profile query and adapter test targets. The MyClassesPage and both
+supporting CTests passed 3/3; both new UI slots passed directly.
+`git diff --check` and direct test-file whitespace inspection passed. The
+unique build tree was removed after logs were preserved under
+`build/p2_f270_verify_logs/`. Non-fatal vswhere, optional Vulkan, Qt resource
+and font, and offscreen size-hint warnings occurred; the full suite and other
+platforms were not run. Phase 2 remains In Progress/Open; Gates 1 and 2 remain
+Partial.
+
+### Progress update - 2026-10-03 (F270 accepted; F271 selected)
+
+F271 is selected to route only SidebarController::classDisplayName()'s
+selected-class and optional assigned-teacher reads through the accepted
+SelectedClassSubtitleReadQuery and
+ApplicationServicesSelectedClassSubtitleReadPort. Preserve the service
+availability fallback, SidebarNodeNaming formatting, trimmed class-name and
+`Class N` fallbacks, the `No Teacher` fallback, and delete choice/confirmation
+flow. Extend the existing NavigationTeacherRead target to cover the chooser
+label and confirmation message plus separate class-field and teacher-field
+read failures. Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial.
+
+### Progress update - 2026-10-03 (F271 accepted)
+
+F271 routes only SidebarController::classDisplayName()'s selected-class and
+optional assigned-teacher reads through the accepted
+SelectedClassSubtitleReadQuery and
+ApplicationServicesSelectedClassSubtitleReadPort. The service guards,
+SidebarNodeNaming formatting, trimmed classroom-name and `Class N` fallback
+chain, and delete choice/confirmation flow remain intact. Focused tests exercise
+the real record-selection dialog, selected label and confirmation message,
+class-fields failure formatting, assigned-teacher failure retaining class
+fields with the `No Teacher` fallback, and the no-active-session guard. On the
+valid-ID public chooser path, the formatter always supplies a nonempty default
+subtitle, so the final `Class N` fallback cannot be reached. Fresh Windows x64
+MSVC 19.51 Debug/Ninja verification built ClassMngrFeatures,
+ClassMngrNavigationTeacherReadTests, and the selected-subtitle query and adapter
+test targets. All three CTests and all four new UI slots passed. `git diff
+--check` found no whitespace errors; direct test-file whitespace inspection
+passed. The unique build tree was removed after logs were preserved under
+`build/p2_f271_verify_logs/`. Non-fatal vswhere, optional Vulkan, Qt resource and
+font, and offscreen size-hint warnings occurred; the full suite and other
+platforms were not run. Phase 2 remains In Progress/Open; Gates 1 and 2 remain
+Partial.
+
+### Progress update - 2026-10-03 (F271 accepted; F272 selected)
+
+F272 is selected to route only the current-class-only testing-class read in
+RosterPrintDialog::loadClasses() through the accepted
+TestingClassDetailsReadQueryHandler and
+ApplicationServicesTestingClassDetailsReadPort. Preserve the service guards,
+display name/grade/level formatting, checked item, class ID, and silent empty
+list on read failure. Extend the existing RosterPrintDialog tests with a
+current-class-only failure case and retain the testing-class query and adapter
+CTests. Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial.
+
+### Progress update - 2026-10-03 (F272 accepted)
+
+F272 routes only the current-class-only testing-class read in
+RosterPrintDialog::loadClasses() through the accepted
+TestingClassDetailsReadQueryHandler and
+ApplicationServicesTestingClassDetailsReadPort. The service guards,
+display-name/grade/level formatting, checked item, class ID, branch return, and
+silent empty-list behavior on invalid ID or read failure remain intact. A new
+UI test removes the testing-class details row while the session and services
+remain available; it verifies the list and selected IDs are empty and no prompt
+appears. The existing current-class-only success test remains covered. Fresh
+Windows x64 Debug/Ninja verification built ClassMngrFeatures,
+ClassMngrRosterPrintDialogTests, and the testing-class query and adapter test
+targets. The new UI slot passed directly (3 QtTest passes including setup and
+cleanup); all three selected CTests passed. `git diff --check` and direct
+test-file whitespace inspection passed. The unique build tree was removed
+after logs were preserved under `build/p2_f272_verify_logs/`. Non-fatal
+vswhere, Qt resource, and font-directory warnings occurred; the full suite and
+other platforms were not run. Phase 2 remains In Progress/Open; Gates 1 and 2
+remain Partial.
+
+### Progress update - 2026-10-03 (F272 accepted; F273 selected)
+
+F273 is selected to route only the fresh target-roster read in
+RosterEditorWidget::transferRosterRow() through the accepted
+RosterReadUseCase and ApplicationServicesRosterReadPort. Keep the read after
+transfer validation and at transfer time. Preserve the empty-Roster fallback
+on failure, custom columns and widths, row mapping, paired source/target saves,
+and current warning/source-row behavior. Add an integration test that triggers
+the actual transfer and checks source removal plus target data and widths;
+retain the roster query and adapter CTests. Phase 2 remains In Progress/Open;
+Gates 1 and 2 remain Partial.
+
+### Progress update - 2026-10-03 (F273 accepted)
+
+F273 routes only the fresh target-roster read in
+RosterEditorWidget::transferRosterRow() through the accepted RosterReadUseCase
+and ApplicationServicesRosterReadPort. The read stays after transfer
+validation and at transfer time. The empty-Roster fallback on failure, custom
+columns and widths, row mapping, paired source/target saves, and current
+warning/source-row behavior remain intact. The integration test opens the real
+menu, changes the target roster after menu construction, then selects the
+target action; it verifies source-row removal and preservation of target rows,
+custom columns, and widths. Fresh Windows x64 Debug/Ninja verification built
+ClassMngrFeatures, ClassMngrRosterTransferMenuTests, and the roster query and
+adapter test targets. The new UI slot passed directly (3 QtTest passes
+including setup and cleanup); all three selected CTests passed.
+`git diff --check` and direct test-file whitespace inspection passed. The
+unique build tree was removed after logs were preserved under
+`build/p2_f273_verify_logs/`. Non-fatal missing-vswhere, optional Vulkan,
+bundled-zlib fallback, and offscreen Qt resource/font/window warnings occurred;
+the full suite was not run. Phase 2 remains In Progress/Open; Gates 1 and 2
+remain Partial.
+
+### Progress update - 2026-10-03 (F273 accepted; F274 selected)
+
+F274 is selected to route only the class-list read inside
+RosterPrintDialog::updateExtraInfoColumns() through the accepted
+ClassesListReadQuery and ApplicationServicesClassesListReadPort. Preserve
+class-ID resolution, the existing warning and preview update on failure,
+column ordering and checked-state restoration. Leave the accepted F264 roster
+reads untouched. Extend the existing RosterPrintDialog tests with a failure
+after existing extra-info controls have been rendered, checking the warning
+and preserved controls; retain the classes-list query and adapter CTests. Phase
+2 remains In Progress/Open; Gates 1 and 2 remain Partial.
+
+### Progress update - 2026-10-03 (F274 accepted)
+
+F274 routes only the class-list read inside
+RosterPrintDialog::updateExtraInfoColumns() through the accepted
+ClassesListReadQuery and ApplicationServicesClassesListReadPort. Class-ID
+resolution, the existing warning and preview update on failure, column order,
+and checked-state restoration remain intact; accepted F264 roster reads are
+unchanged. The UI failure test drops the classes table after rendering and
+checking extra-info controls, then confirms the warning and preserved control
+state. Fresh Windows x64 Debug/Ninja verification built ClassMngrFeatures,
+ClassMngrRosterPrintDialogTests, and the classes-list query and adapter test
+targets. The new UI slot passed directly (3 QtTest passes including setup and
+cleanup); all three selected CTests passed. `git diff --check` and direct
+test-file whitespace inspection passed. The unique build tree was removed
+after logs were preserved under `build/p2_f274_verify_logs/`. Non-fatal
+vswhere, optional Vulkan, Qt bundled-zlib, resource-pack and font-directory
+warnings occurred; the full suite was not run. Phase 2 remains In Progress/Open;
+Gates 1 and 2 remain Partial.
+
+### Progress update - 2026-10-03 (F275 accepted; F276 selected)
+
+F275, committed as `59b3887e`, routes only the class-list read in
+SidebarController::promptForClassToDelete() through the accepted
+ClassesListReadQuery and ApplicationServicesClassesListReadPort. The
+service-availability return, existing `Delete Class` warning on read failure,
+positive unique IDs, list order, F271 labels, and selected-ID flow remain
+intact. The shared query rejects corrupt invalid or duplicate IDs so they reach
+the existing warning instead of being silently skipped. The new
+NavigationTeacherRead case confirms that a list-read failure shows the warning
+without opening a chooser or confirmation. Fresh Windows x64 Debug/Ninja
+verification built ClassMngrFeatures and the NavigationTeacherRead, classes
+list query, and classes-list adapter test targets. The focused UI case passed
+3/3 including setup and cleanup; the three CTests passed 3/3. `git diff --check`
+and `git show --check` passed. Logs are preserved under
+`build/p2_f275_verify_logs/`; the temporary build was removed. The full suite
+was not run. Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial.
+
+F276 is selected to migrate only the Native English and GS birthday-directory
+reads in `SidebarController::loadUpcomingBirthdaySchedule()` through the
+existing directory-list queries and active-session Platform adapters. Keep the
+full Korean-teacher read direct and preserve the read order: full teachers,
+Native English directory, then GS team directory. Project each snapshot into
+the fields consumed by the existing birthday schedule builder; preserve the
+date range, schedule builder, `Birthdays could not be loaded.` warning, and
+Native English diagnostic precedence when both directory reads fail. Add
+caller-level success and failure coverage that checks the birthday dialog on
+success and the warning with no dialog on failure; retain the directory query
+and adapter CTests. Phase 2 remains In Progress/Open; Gates 1 and 2 remain
+Partial.
