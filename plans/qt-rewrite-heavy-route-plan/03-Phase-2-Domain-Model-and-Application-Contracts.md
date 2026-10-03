@@ -119,9 +119,9 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
   GS directory reads, F277 for the roster transfer menu's class-list read,
   and F278 for the initial-setup wizard's teacher-existence reads are accepted;
   F279 for the sidebar's selected-teacher profile read and F280 for the sidebar
-  teacher-delete chooser's teacher-list read, and F281 for the sidebar's
-  teacher-list refresh read are accepted. F282 is selected for sidebar action-
-  state list reads.
+  teacher-delete chooser's teacher-list read, F281 for the sidebar's teacher-
+  list refresh read, and F282 for sidebar action-state list reads are accepted.
+  F283 is selected for My Classes roster-backed student counts.
   The prior F123 candidate wording is historical;
   current Teacher Profile integration status is recorded in the progress log.
   Gates 1 and 2
@@ -607,18 +607,29 @@ occurred and the full suite was not run. The query rejects the full list when
 any teacher ID is invalid or duplicated, and the adapter requires an active
 session unlike the legacy DataService fallback.
 
-F282 is selected to migrate only the class and teacher list reads in the
+F282, committed as `63ef995c`, routes the class and teacher list reads in the
 no-argument `SidebarController::updateActionStates()` through the accepted
-`ClassesListReadQuery` / `ApplicationServicesClassesListReadPort` and
-`InitialSetupTeacherChoicesReadQuery` /
-`ApplicationServicesInitialSetupTeacherChoicesReadPort`. Preserve the early
-return when no actions are registered, service-availability guard, and
-classes-then-teachers read order. Failed or empty reads continue to disable
-only their respective data-dependent actions without a warning. Retain F281's
-teacher-read failure case and add a class-list failure case with teachers still
-available; verify class actions disable while teacher deletion remains enabled.
-Run the NavigationTeacherRead target and both query/adapter CTest pairs. Both
-adapters require an active session, and both
-queries reject invalid or duplicate IDs; such failures disable the
-corresponding actions where legacy reads could have reported a nonempty list.
-Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial.
+class-list and teacher-choice queries and active-session adapters. The
+no-actions early return, service-availability guard, classes-then-teachers
+order, and behavior that failed or empty reads disable only their respective
+data-dependent actions without a warning remain intact. The caller failure
+case confirms that class-list failure disables class actions while the teacher
+list remains usable; F281's test retains the complementary teacher-read
+failure case. Fresh Windows x64 Debug/Ninja verification built
+NavigationTeacherRead plus both query and adapter test pairs; all five CTests
+passed. Logs are preserved under `build/p2_f282_verify_logs/`. The isolated
+slot invocation exited successfully but produced no console output, so the
+full CTest target is the verification evidence. No full suite ran. Active-
+session requirements and invalid/duplicate-ID rejection can disable actions
+where legacy reads could have found records.
+
+F283 is selected to migrate only the per-class roster read used for student
+counts in `MyClassesPage::refresh()` through the accepted `RosterReadUseCase`
+and `ApplicationServicesRosterReadPort`. Preserve count semantics: count a row
+when the trimmed English or Korean cell is nonblank, return zero when neither
+column exists, and keep failure-as-zero. Keep the existing `# of Students`
+display and class-list/read behavior unchanged. Extend the existing
+`MyClassesPage` caller tests to cover populated and blank roster rows plus the
+zero fallback on read failure; retain the roster query and adapter CTests. The
+count projection must match the legacy QString trimming and row/column bounds
+behavior. Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial.
