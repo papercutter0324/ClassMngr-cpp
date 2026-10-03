@@ -16,6 +16,7 @@
 #include "next/application/native_english_teacher_directory_read_query.h"
 #include "next/platform/application_services_gs_team_directory_read_port.h"
 #include "next/platform/application_services_native_english_teacher_directory_read_port.h"
+#include "ui/shared/actions/action_registry.h"
 #include "ui/shared/dialogs/user_prompt_service.h"
 #include "ui/shared/pages/page_header.h"
 #include "ui/shared/pages/pagemanager.h"
@@ -34,6 +35,8 @@
 #include <QTemporaryDir>
 #include <QTextEdit>
 #include <QTimer>
+#include <QTreeWidget>
+#include <QTreeWidgetItem>
 #include <QUuid>
 #include <QtTest/QtTest>
 
@@ -115,6 +118,48 @@ QString displayLabel(
             + schedule;
     }
     return label;
+}
+
+QTreeWidgetItem* treeItemWithKey(
+    QTreeWidget* tree,
+    const QString& key
+    )
+{
+    if (!tree)
+    {
+        return nullptr;
+    }
+    for (int index = 0; index < tree->topLevelItemCount(); ++index)
+    {
+        QTreeWidgetItem* const item = tree->topLevelItem(index);
+        if (item
+            && item->data(0, Qt::UserRole + 4).toString() == key)
+        {
+            return item;
+        }
+    }
+    return nullptr;
+}
+
+QTreeWidgetItem* childItemWithKey(
+    QTreeWidgetItem* parent,
+    const QString& key
+    )
+{
+    if (!parent)
+    {
+        return nullptr;
+    }
+    for (int index = 0; index < parent->childCount(); ++index)
+    {
+        QTreeWidgetItem* const item = parent->child(index);
+        if (item
+            && item->data(0, Qt::UserRole + 4).toString() == key)
+        {
+            return item;
+        }
+    }
+    return nullptr;
 }
 
 void createClassWithSubtitle(
@@ -442,6 +487,8 @@ private slots:
     void selectedTeacherProfileReadFailureWarnsWithoutConfirmation();
     void teacherDeleteChooserUsesTeacherChoiceLabelAndCancelsSelectedId();
     void teacherChoiceReadFailureWarnsWithoutChooserOrConfirmation();
+    void refreshTeacherSidebarShowsAssignedAndUnassignedTeachers();
+    void refreshTeacherSidebarFailureWarnsClearsNodesAndUpdatesActions();
     void classDeleteChooserUsesSubtitleLabelsAndConfirmsSelectedClass();
     void classListReadFailureShowsWarningWithoutOpeningChooser();
     void classFieldsFailureUsesDefaultSubtitleAndNoTeacherFallback();
@@ -792,6 +839,193 @@ teacherChoiceReadFailureWarnsWithoutChooserOrConfirmation()
     QVERIFY(prompts.confirmations.isEmpty());
     QVERIFY(prompts.asynchronousMessages.isEmpty());
     QVERIFY(QApplication::activeModalWidget() == nullptr);
+}
+
+void NavigationTeacherReadTests::
+refreshTeacherSidebarShowsAssignedAndUnassignedTeachers()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+
+    Teacher assigned = teacherFixture(
+        QStringLiteral("Assigned Korean"),
+        QStringLiteral("Assigned English"),
+        QStringLiteral("Assigned Display")
+        );
+    Teacher unassigned = teacherFixture(
+        QStringLiteral("Unassigned Korean"),
+        QStringLiteral("Unassigned English"),
+        QStringLiteral("Unassigned Display")
+        );
+    QVERIFY(persistTeacher(services, assigned) > 0);
+    QVERIFY(persistTeacher(services, unassigned) > 0);
+
+    int classId = -1;
+    createClassWithSubtitle(
+        services,
+        QStringLiteral("Assigned teacher class"),
+        assigned.id,
+        QStringLiteral("E4"),
+        QStringLiteral("Orion"),
+        QStringLiteral("Monday"),
+        QStringLiteral("4:00 PM"),
+        classId
+        );
+    QVERIFY(classId > 0);
+
+    ActionRegistry actions;
+    actions.createActions();
+    PageManager pages;
+    Sidebar sidebar;
+    SidebarController controller(&services, &sidebar, &pages);
+    controller.connectActions(actions);
+    FakeUserPromptService prompts;
+    DialogServices::setUserPromptServiceForTesting(&prompts);
+
+    controller.refreshTeacherSidebar();
+
+    auto* const tree = sidebar.findChild<QTreeWidget*>(
+        QStringLiteral("sidebarTree")
+        );
+    QVERIFY(tree);
+    auto* const coTeachers = treeItemWithKey(
+        tree,
+        QStringLiteral("co_teachers")
+        );
+    auto* const campusStaff = treeItemWithKey(
+        tree,
+        QStringLiteral("campus_staff")
+        );
+    auto* const koreanTeachers = childItemWithKey(
+        campusStaff,
+        QStringLiteral("teachers_all_korean")
+        );
+    QVERIFY(coTeachers);
+    QVERIFY(koreanTeachers);
+
+    QCOMPARE(coTeachers->childCount(), 1);
+    QCOMPARE(coTeachers->child(0)->text(0), QStringLiteral("Assigned Display"));
+    QCOMPARE(
+        coTeachers->child(0)->data(0, Qt::UserRole + 3).toInt(),
+        assigned.id
+        );
+
+    QCOMPARE(koreanTeachers->childCount(), 2);
+    QStringList allTeacherLabels;
+    QList<int> allTeacherIds;
+    for (int index = 0; index < koreanTeachers->childCount(); ++index)
+    {
+        QTreeWidgetItem* const item = koreanTeachers->child(index);
+        allTeacherLabels.append(item->text(0));
+        allTeacherIds.append(item->data(0, Qt::UserRole + 3).toInt());
+    }
+    allTeacherLabels.sort();
+    QCOMPARE(
+        allTeacherLabels,
+        QStringList({
+            QStringLiteral("Assigned Display"),
+            QStringLiteral("Unassigned Display")
+        })
+        );
+    QVERIFY(allTeacherIds.contains(assigned.id));
+    QVERIFY(allTeacherIds.contains(unassigned.id));
+    QVERIFY(actions.deleteTeacher->isEnabled());
+    QVERIFY(actions.deleteClass->isEnabled());
+    QVERIFY(prompts.messages.isEmpty());
+    QVERIFY(prompts.asynchronousMessages.isEmpty());
+}
+
+void NavigationTeacherReadTests::
+refreshTeacherSidebarFailureWarnsClearsNodesAndUpdatesActions()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+
+    Teacher assigned = teacherFixture(
+        QStringLiteral("Assigned Korean"),
+        QStringLiteral("Assigned English"),
+        QStringLiteral("Assigned Display")
+        );
+    QVERIFY(persistTeacher(services, assigned) > 0);
+
+    int classId = -1;
+    createClassWithSubtitle(
+        services,
+        QStringLiteral("Assigned teacher class"),
+        assigned.id,
+        QStringLiteral("E4"),
+        QStringLiteral("Orion"),
+        QStringLiteral("Monday"),
+        QStringLiteral("4:00 PM"),
+        classId
+        );
+    QVERIFY(classId > 0);
+
+    ActionRegistry actions;
+    actions.createActions();
+    PageManager pages;
+    Sidebar sidebar;
+    SidebarController controller(&services, &sidebar, &pages);
+    controller.connectActions(actions);
+    controller.refreshTeacherSidebar();
+
+    auto* const tree = sidebar.findChild<QTreeWidget*>(
+        QStringLiteral("sidebarTree")
+        );
+    QVERIFY(tree);
+    auto* const coTeachers = treeItemWithKey(
+        tree,
+        QStringLiteral("co_teachers")
+        );
+    auto* const campusStaff = treeItemWithKey(
+        tree,
+        QStringLiteral("campus_staff")
+        );
+    auto* const koreanTeachers = childItemWithKey(
+        campusStaff,
+        QStringLiteral("teachers_all_korean")
+        );
+    QVERIFY(coTeachers);
+    QVERIFY(koreanTeachers);
+    QCOMPARE(coTeachers->childCount(), 1);
+    QCOMPARE(koreanTeachers->childCount(), 1);
+    QVERIFY(actions.deleteTeacher->isEnabled());
+    QVERIFY(actions.deleteClass->isEnabled());
+
+    QSqlQuery disableForeignKeys(services.databaseSession()->database());
+    QVERIFY(disableForeignKeys.exec(QStringLiteral("PRAGMA foreign_keys=OFF")));
+    QSqlQuery dropTeachers(services.databaseSession()->database());
+    QVERIFY2(dropTeachers.exec(QStringLiteral("DROP TABLE teachers")),
+             qPrintable(dropTeachers.lastError().text()));
+    const Result<QList<Teacher>> expectedTeachersRead =
+        services.teacherService()->teachers();
+    QVERIFY(!expectedTeachersRead);
+    QVERIFY(!expectedTeachersRead.error().trimmed().isEmpty());
+
+    FakeUserPromptService prompts;
+    DialogServices::setUserPromptServiceForTesting(&prompts);
+    controller.refreshTeacherSidebar();
+
+    QCOMPARE(coTeachers->childCount(), 0);
+    QCOMPARE(koreanTeachers->childCount(), 0);
+    QCOMPARE(prompts.messages.size(), 1);
+    const PromptRequest& warning = prompts.messages.constFirst();
+    QCOMPARE(warning.severity, PromptSeverity::Warning);
+    QCOMPARE(warning.title, QStringLiteral("Load Teachers"));
+    QCOMPARE(
+        warning.message,
+        QStringLiteral("Teachers and their classes could not be loaded.")
+        );
+    QCOMPARE(warning.details, expectedTeachersRead.error());
+    QVERIFY(prompts.confirmations.isEmpty());
+    QVERIFY(prompts.asynchronousMessages.isEmpty());
+    QVERIFY(!actions.deleteTeacher->isEnabled());
+    QVERIFY(actions.deleteClass->isEnabled());
+    QVERIFY(actions.importTeachers->isEnabled());
 }
 
 void NavigationTeacherReadTests::
