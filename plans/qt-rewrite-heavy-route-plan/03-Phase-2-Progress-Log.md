@@ -10537,3 +10537,25 @@ fields are unavailable, so the class-name and `Class N` branches cannot
 contribute to current output. Preserve the committed fallback label and retain
 the `ClassMngrClassTransferTests` caller case. Phase 2 remains In Progress/Open;
 Gates 1 and 2 remain Partial.
+
+### Progress update - 2026-10-03 (F287 accepted; F288 selected)
+
+F287, committed as `16b77b79`, removes the unreachable direct class lookup from
+`ClassImportDialog::destinationClassDisplayName()`. The formatter always
+returns a nonempty label, so the prior `classroom(classId)` name fallback could
+not affect current output. The existing caller test still expects
+`Unknown Class • No Teacher` when subtitle fields cannot load. Fresh Windows
+x64 Debug/Ninja verification built the class-transfer target in 315 steps; the
+`ClassMngrClassTransferTests` CTest passed 1/1 and the focused caller case
+passed 3/3 QtTest entries. Logs are under `build/p2_f287_verify_logs/`. The
+documents-resource warning was non-fatal; the configure wrapper reported exit
+1 despite successful generation, target build, and tests. The full suite was
+not run.
+
+F288 is selected to route `CampusDashboardPage::loadCampuses()` through the
+accepted `CalendarPageCampusDirectoryQueryPort` and adapter. Preserve repository
+ordering, omission of default/unreadable campus files, the stored/current
+selection fallback, and admin/non-admin label formatting including optional
+campus codes. Keep the full selected-campus `loadCampus()` read and all editing
+behavior unchanged. Retain the CampusDashboard caller and campus-directory
+adapter CTests. Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial.

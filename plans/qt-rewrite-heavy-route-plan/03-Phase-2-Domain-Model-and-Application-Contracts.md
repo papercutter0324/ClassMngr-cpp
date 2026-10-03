@@ -18,8 +18,9 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-03
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F287 is selected to remove ClassImportDialog's unreachable
-  direct class lookup while preserving its existing formatted fallback label.
+- Current note: F288 is selected to route the Campus Dashboard selector list
+  through the accepted campus-directory port while preserving order, campus
+  codes, and role-specific labels.
 
 ### Slice discovery batches
 
@@ -205,19 +206,16 @@ No new v2 production path depends on DataService, MainWindow, PageManager, or a 
 
 Earlier verified slices and cumulative exit-gate snapshots are archived in the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 
-## Latest Progress Update - 2026-10-03 (F286 accepted)
+## Latest Progress Update - 2026-10-03 (F287 accepted)
 
-F286, committed as `8c5d3a01`, sets FileController's current-file path after
-successful workspace create/open from the returned `WorkspaceSession`
-location, converted from UTF-8 at the controller boundary. Create still
-updates recent history from `m_currentFile`; open still passes the original
-`filePath` to recent-history handling. Unicode create/open caller cases cover
-normalized current-file state, open-history deduplication, and directory
-behavior. Fresh focused verification built the FileController lifecycle and
-workspace-port targets; their CTests passed 2/2, and both Unicode slots passed
-directly (4/4 QtTest entries including setup and cleanup). Logs are under
-`build/p2_f286_verify_logs/`; the full suite was not run. The lifecycle cases
-use concrete services, so they do not force session and service paths to
-diverge; source review confirms FileController now selects the returned
-session location. Phase 2 remains In Progress/Open; Gates 1 and 2 remain
-Partial.
+F287, committed as `16b77b79`, removes the unreachable direct class lookup from
+`ClassImportDialog::destinationClassDisplayName()`. The formatter always
+returns a nonempty label, so the previous `classroom(classId)` name fallback
+could not affect current output. The existing caller test still expects
+`Unknown Class • No Teacher` when subtitle fields cannot load. Fresh Windows
+x64 Debug/Ninja verification built the class-transfer target in 315 steps; the
+`ClassMngrClassTransferTests` CTest passed 1/1 and the focused caller case
+passed 3/3 QtTest entries. Logs are under `build/p2_f287_verify_logs/`. The
+documents-resource warning was non-fatal; the configure wrapper reported exit
+1 despite successful generation, target build, and tests. The full suite was
+not run. Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial.
