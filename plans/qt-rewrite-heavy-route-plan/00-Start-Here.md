@@ -47,13 +47,15 @@
   reread) remains deferred pending a decision on read-failure warning and
   navigation behavior; F299 (Class Analytics dashboard read/use case) is
   accepted; its separate missed-slice completeness audit found no additional
-  direct legacy-read routes and recorded F302-F305 as batching candidates.
+  direct legacy-read routes and identified F302-F305 as batching candidates.
   F300 (batch ClassImportDialog destination-label subtitle reads), F301
   (batch ClassExportDialog selected-subtitle reads), F302 (batch class-delete
-  chooser subtitle-label reads following F275), and F303 (batch RosterPrintDialog
-  per-class subtitle reads after F261) are accepted; F304 (batch RosterPrintDialog
-  extra-column roster reads after F264) is selected next, preserving scope,
-  column union, and failure fallback.
+  chooser subtitle-label reads following F275), F303 (batch RosterPrintDialog
+  per-class subtitle reads after F261), and F304 (batch RosterPrintDialog
+  extra-column roster reads after F264) are accepted; F305 (batch transfer-menu
+  target metadata, capacity, and roster reads after F259/F265) is selected
+  next, distinct from F273's transfer-time target read. Batch 4 (F306-F315) is
+  recorded.
   Gates 1 and 2 remain Partial, with broader feature
   migration, parity, and 96-class Release memory evidence still open.
   See the

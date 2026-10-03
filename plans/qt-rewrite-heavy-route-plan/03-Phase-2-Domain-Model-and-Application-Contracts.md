@@ -18,8 +18,11 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-04
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F304 is selected to batch RosterPrintDialog extra-column roster
-  reads after F264, preserving scope, column union, and failure fallback.
+- Current note: F305 is selected to batch transfer-menu target metadata,
+  capacity, and roster reads after F259/F265, keeping its loop distinct
+  from F273's transfer-time target read. Batch 4 (F306-F315) is recorded; carry
+  the fixed up-to-four-evaluation roster score-import read into Batch 5
+  discovery at F314 start.
 
 ### Slice discovery batches
 
@@ -108,14 +111,51 @@ No other slices were found.
    4. F303 accepted (discovered in separate F299 audit) — Batch
       `RosterPrintDialog` per-class selected-subtitle queries after F261;
       preserve the current-class-only branch.
-   5. F304 selected (discovered in separate F299 audit) — Batch
+   5. F304 accepted (discovered in separate F299 audit) — Batch
       `RosterPrintDialog` extra-column roster reads after F264; preserve scope,
       column union, and failure fallback.
-   6. F305 candidate (discovered in separate F299 audit) — Batch transfer-menu
-      target metadata and target-roster reads after F259/F265; keep distinct
-      from F273's transfer-time target read.
+   6. F305 selected (discovered in separate F299 audit) — Batch transfer-menu
+      target metadata, capacity, and roster reads after F259/F265; keep
+      distinct from F273's transfer-time target read.
 
 No other slices were found.
+
+4. **Batch 4**
+   1. F306 — Batch My Classes compact per-class class-information reads after
+      F291; preserve class-info/default/failure outcome separately from roster
+      and teacher inputs.
+   2. F307 — Batch My Classes assigned-teacher profile reads after F270;
+      preserve class-to-teacher association, class order, and profile-failure
+      behavior.
+   3. F308 — Batch My Classes roster-backed student-count reads after F283;
+      preserve exact English/Korean, trim/whitespace, and zero-on-failure
+      behavior.
+   4. F309 — Batch Sub Prep information-sheet per-class roster counts after
+      F179; preserve schedule order, zero fallback, and equivalent read
+      metrics.
+   5. F310 — Batch ClassImportDialog matched-teacher alternative display-name
+      reads; separate from F300 class subtitles; preserve choice
+      order/duplicates, formatting, and `Teacher N` fallback.
+   6. F311 — Batch Sub Prep roster-output per-class class-name and compact
+      metadata reads; preserve schedule order, classes without meetings,
+      identity checks, failure-before-partial-output, and aggregate output
+      bounds.
+   7. F312 — Purpose-fit projection for initial-setup teacher choices; preserve
+      ID/name/preferred display fields, repository order, validation, and error
+      behavior.
+   8. F313 — Purpose-fit projection for testing-teacher choices; preserve
+      ID/Korean-name/room, repository order, blank-name filtering and selection
+      behavior, and current recoverability semantics.
+   9. F314 — Purpose-fit projection for co-teacher choices; preserve exact
+      profile/network fields, repository order, ID validation, and error
+      behavior.
+   10. F315 — Purpose-fit Korean teacher birthday-directory projection;
+       preserve birthday/name/preferred-display fields, raw values, repository
+       order, and downstream filtering.
+
+At F314 start, discover Batch 5 and reconsider the carried-forward fixed
+up-to-four-evaluation roster score-import read. F305's transfer-menu
+capacity/roster loop is already in Batch 3 and must not be duplicated.
 
 #### F299 completeness audit checkpoint
 
@@ -277,34 +317,36 @@ No new v2 production path depends on DataService, MainWindow, PageManager, or a 
 
 Earlier verified slices and cumulative exit-gate snapshots are archived in the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 
-## Latest Progress Update - 2026-10-04 (F303 accepted; F304 selected)
+## Latest Progress Update - 2026-10-04 (F304 accepted; F305 selected)
 
-F303, committed as `27914312e1a7539ba55d4059847ca583c5cda9a6`, batches
-`RosterPrintDialog` subtitle reads in the normal class-list path. It preserves
-class-list order and IDs, label formatting, default class/teacher failure
-behavior, checked state, selected IDs, and the current-class display label.
-The current-class-only path remains on its separate
-`TestingClassDetailsReadQuery` branch and returns before normal list/batch
-reads.
+F304, committed as `2852290e7c51709e8c64d3361ff5ec1bad2d9366`, adds a Qt-free
+typed batch roster-extra-info Application contract and active-session Platform
+adapter. `RosterPrintDialog` sends resolved IDs in their existing order to one
+query and maps name-only results back to the existing roster slots; the
+existing union, filtering, and selection flow remains. The repository prepares
+and executes one query selecting only `roster_columns` class IDs/names, ordered
+by request order, column position, and ID. Empty or missing-column classes
+return successful empty slots. No roster rows, widths, or output-only limit are
+included. Query failure remains silent with no extra columns; the class-list
+error path is unchanged.
 
-The three-class integration test asserts exact labels, order, IDs, and checked
-state; three requested IDs; one batch call; one metadata and one schedule SQL
-statement; and one teacher batch call and statement. The current-class-only
-test retains testing-class display, ID, and checked assertions and verifies
-zero batch metrics. Fresh independent Windows x64 MSVC/Ninja Debug configure
-passed the CMake ownership gate at 1,270 handwritten sources. `ClassMngr`,
-`ClassMngrRosterPrintDialogTests`, and the batch application-query and platform
-adapter targets built. These three focused CTests passed:
-`ClassMngrRosterPrintDialogTests`,
-`ClassMngrNextApplicationSelectedClassSubtitleBatchReadQueryTests`, and
-`ClassMngrNextPlatformApplicationServicesSelectedClassSubtitleBatchReadPortTests`.
-`git diff --check` passed. Logs are under `build/f303_verify_ninja/`
-(`configure.log`, `build-targets.log`, `ctest-focused.log`, and
-`diff-check.log`). Optional `vswhere.exe`, pthread-probe, Vulkan, and line-ending
-messages were nonfatal. The full suite was not run.
+Independent fresh Windows x64 Debug/Ninja verification passed the source-
+ownership configure gate at 1,276 handwritten files (1,278 workspace inventory
+after platform filtering). `ClassMngr` and six focused targets built; six
+focused CTests passed for the dialog, print service, batch Application
+contract, existing roster read, batch Platform adapter, and roster-output
+source. `git diff --check` passed. Logs are under
+`build/f304_verify_ninja/` (`configure3.log`, `build.log`, and
+`focused-ctest.log`). The full suite was not run. No runtime SQL trace or
+counter asserts statement count; source evidence shows one prepared repository
+query and one batch use-case call. Keep this fresh verification tree for
+continued Phase 2 work.
 
-F304 is selected to batch `RosterPrintDialog` extra-column roster reads after
-F264, preserving scope, column union, and failure fallback. F298 remains
-deferred pending the read-failure warning/navigation decision, and F299's
-separate completeness audit remains distinct from Batch 3 discovery. Phase 2
-remains In Progress/Open; Gates 1 and 2 remain Partial.
+F305 is selected to batch transfer-menu target metadata, capacity, and roster
+reads after F259/F265, keeping its loop distinct from F273's
+transfer-time target read. Batch 4 (F306-F315) is recorded; at F314 start,
+discover Batch 5 and reconsider the carried-forward fixed up-to-four-evaluation
+roster score-import read. F298 remains deferred pending the read-failure
+warning/navigation decision, and F299's separate completeness audit remains
+distinct from Batch 3 discovery. Phase 2 remains In Progress/Open; Gates 1 and
+2 remain Partial.

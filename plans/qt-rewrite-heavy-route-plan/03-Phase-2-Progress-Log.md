@@ -11008,3 +11008,35 @@ F264, preserving scope, column union, and failure fallback. F298 remains
 deferred pending the read-failure warning/navigation decision, and F299's
 separate completeness audit remains distinct from Batch 3 discovery. Phase 2
 remains In Progress/Open; Gates 1 and 2 remain Partial.
+
+### Progress update - 2026-10-04 (F304 accepted; F305 selected)
+
+F304, committed as `2852290e7c51709e8c64d3361ff5ec1bad2d9366`, adds a Qt-free
+typed batch roster-extra-info Application contract and active-session Platform
+adapter. `RosterPrintDialog` passes resolved IDs in their existing order to one
+query, then maps name-only results back to the existing roster slots. The
+existing union/filter/selection flow remains. The repository prepares and
+executes one query selecting only `roster_columns` class IDs and names, ordered
+by request order, column position, and ID. Empty or missing-column classes
+return successful empty slots. No roster rows, widths, or output-only limit are
+included. Query failure remains silent with no extra columns; the class-list
+error path remains intact.
+
+Independent fresh Windows x64 Debug/Ninja verification passed the source-
+ownership configure gate at 1,276 handwritten files (1,278 workspace inventory
+after platform filtering). `ClassMngr` and six focused targets built; six
+focused CTests passed for the dialog, print service, batch Application
+contract, existing roster read, batch Platform adapter, and roster-output
+source. `git diff --check` passed. Logs are under
+`build/f304_verify_ninja/` (`configure3.log`, `build.log`, and
+`focused-ctest.log`). The full suite was not run. No runtime SQL trace or
+counter asserts statement count; accepted evidence is the one prepared
+repository query and one batch use-case call visible in source. Keep this fresh
+verification tree for continued Phase 2 work.
+
+F305 is selected to batch transfer-menu target metadata, capacity, and roster
+reads after F259/F265; its loop is the existing Batch 3 item and is
+distinct from F273's transfer-time target read. Batch 4 records F306-F315. The
+fixed up-to-four-evaluation roster score-import read remains a separate
+candidate for Batch 5 discovery at F314 start; it has no F number yet. Phase 2
+remains In Progress/Open; Gates 1 and 2 remain Partial.
