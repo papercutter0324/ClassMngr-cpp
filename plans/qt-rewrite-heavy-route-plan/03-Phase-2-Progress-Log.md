@@ -10495,11 +10495,21 @@ full-list query can reject unrelated invalid or duplicate IDs, and its adapter
 requires an active database session where the legacy service could fall back
 to DataService.
 
-F285 is selected to route the post-create profile reload in
-`SidebarController::addTeacher()` through the accepted teacher-profile query
-and adapter. Preserve creation, sidebar refresh order, the existing warning,
-new-teacher selection, profile loading, and navigation. Add caller coverage
-for successful profile loading and retain the NavigationTeacherRead, profile
-query, and adapter CTests. The adapter requires an active session, and the
-consecutive create/refresh/read calls make failure injection a caller-test
-consideration. Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial.
+F285 was deferred before implementation. `SidebarController::addTeacher()`
+creates a default blank `Teacher`, but `TeacherService::create()` applies
+`TeacherValidator`, which rejects a blank Korean name, English name, and
+preferred romanization with `teacher.name.required`. This validation was added
+in commit `399fd1ae`, after the blank-draft flow was introduced in `1edfe38c`.
+The controller therefore returns before the profile read. Changing creation
+validation or adding a name-entry step would change a product/domain contract;
+a test seam that pretends blank creation succeeded would not verify production
+behavior. Revisit this migration after the blank-draft contract is clarified.
+
+F286 is selected to use the successful `WorkspaceSession` location returned by
+the coordinator when FileController sets its current-file state after create
+or open, removing the redundant service-path read. Preserve path normalization,
+recent-workspace updates, and open-path handling. Retain the
+FileControllerWorkspaceLifecycle and workspace-port CTests, including Unicode
+path coverage if the existing assertions do not exercise it. Compare returned
+session locations with the previous normalized service path before accepting.
+Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial.

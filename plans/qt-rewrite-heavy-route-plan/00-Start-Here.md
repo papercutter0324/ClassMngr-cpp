@@ -29,8 +29,10 @@
   chooser teacher-list read), F281 (sidebar teacher-list refresh read), and
   F282 (sidebar action-state list reads), F283 (My Classes roster-backed
   student counts), and F284 (recheck the selected class before delete
-  confirmation) are accepted; F285 (load the created teacher through the
-  teacher-profile query) is selected.
+  confirmation) are accepted; F285 is deferred because required-name
+  validation prevents its post-create profile read from being reached; F286
+  (use the workspace session location for FileController create/open state)
+  is selected.
   Gates 1 and 2 remain Partial, with broader feature
   migration, parity, and 96-class Release memory evidence still open.
   See the

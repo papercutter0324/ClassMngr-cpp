@@ -18,8 +18,8 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-03
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F285 is selected to load the created teacher through the
-  teacher-profile query.
+- Current note: F286 is selected to use the returned workspace session
+  location for FileController's successful create/open current-file state.
 
 ### Slice discovery batches
 
@@ -38,8 +38,9 @@ one to this phase's progress log before replacing it.
 #### Recorded batches
 
 1. **Batch 1**
-   1. F285 — Route `SidebarController::addTeacher()`'s post-create profile
-      reload through the accepted teacher-profile query.
+   1. F285 — Deferred before implementation: `addTeacher()` creates a blank
+      teacher, but required-name validation rejects it before the profile read.
+      Revisit after the blank-draft creation contract is clarified.
    2. F286 — Use the returned workspace session location for FileController's
       successful create/open current-file state.
    3. F287 — Route ClassImportDialog's destination-class name fallback through
@@ -204,7 +205,7 @@ No new v2 production path depends on DataService, MainWindow, PageManager, or a 
 
 Earlier verified slices and cumulative exit-gate snapshots are archived in the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 
-## Latest Progress Update - 2026-10-03 (F284 accepted; F285 selected)
+## Latest Progress Update - 2026-10-03 (F284 accepted)
 
 F284, committed as `d1a7e04b`, routes `SidebarController::deleteClass()`'s
 post-selection class reload through the accepted classes-list query and
@@ -218,11 +219,4 @@ full-list query can reject unrelated invalid or duplicate IDs, and its adapter
 requires an active database session where the legacy service could fall back
 to DataService.
 
-F285 is selected to route the post-create profile reload in
-`SidebarController::addTeacher()` through the accepted teacher-profile query
-and adapter. Preserve creation, sidebar refresh order, the existing warning,
-new-teacher selection, profile loading, and navigation. Add caller coverage
-for successful profile loading and retain the NavigationTeacherRead, profile
-query, and adapter CTests. The adapter requires an active session, and the
-consecutive create/refresh/read calls make failure injection a caller-test
-consideration. Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial.
+Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial.
