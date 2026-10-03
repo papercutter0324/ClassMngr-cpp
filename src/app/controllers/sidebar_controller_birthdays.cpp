@@ -1,17 +1,21 @@
-#include "sidebar_controller_p.h"
+#include "sidebar_controller.h"
 
-#include "app/services/feature_services.h"
+#include "domain/models/gs_team_member.h"
+#include "domain/models/native_english_teacher.h"
+#include "domain/models/teacher.h"
 #include "features/teacher/ui/upcoming_birthdays_dialog.h"
 #include "next/application/gs_team_directory_read_query.h"
+#include "next/application/korean_teacher_birthday_directory_read_query.h"
 #include "next/application/native_english_teacher_directory_read_query.h"
 #include "next/platform/application_services_gs_team_directory_read_port.h"
+#include "next/platform/application_services_korean_teacher_birthday_directory_read_port.h"
 #include "next/platform/application_services_native_english_teacher_directory_read_port.h"
 #include "next/platform/settings_manager_upcoming_birthday_dismissal_port.h"
 #include "ui/shared/dialogs/user_prompt_service.h"
+#include "ui/shared/widgets/sidebar/sidebar.h"
 
 #include <string>
-
-using namespace SidebarControllerPrivate;
+#include <utility>
 
 namespace
 {
@@ -29,22 +33,47 @@ SidebarController::loadUpcomingBirthdaySchedule(
     const QDate& referenceDate
     ) const
 {
-    auto* teachers = openTeacherService(m_services);
-    if (!teachers)
-    {
-        return std::nullopt;
-    }
+    ClassMngr::Next::Platform::
+        ApplicationServicesKoreanTeacherBirthdayDirectoryReadPort
+            koreanTeacherReadPort(m_services);
+    const ClassMngr::Next::Application::
+        KoreanTeacherBirthdayDirectoryReadQuery koreanTeacherReadQuery(
+            koreanTeacherReadPort);
+    const ClassMngr::Next::Application::
+        KoreanTeacherBirthdayDirectoryReadResult koreanTeacherDirectory =
+            koreanTeacherReadQuery.execute();
 
-    const Result<QList<Teacher>> loadedTeachers = teachers->teachers();
-    if (!loadedTeachers)
+    if (!koreanTeacherDirectory)
     {
+        if (koreanTeacherDirectory.error().code
+            == ClassMngr::Next::Domain::ErrorCode::NotFound)
+        {
+            return std::nullopt;
+        }
+
         DialogServices::showWarning(
             m_sidebar,
             tr("Upcoming Birthdays"),
             tr("Birthdays could not be loaded."),
-            loadedTeachers.error()
+            directoryReadErrorDetails(koreanTeacherDirectory.error().message)
             );
         return std::nullopt;
+    }
+
+    QList<Teacher> koreanTeachers;
+    koreanTeachers.reserve(
+        static_cast<qsizetype>(koreanTeacherDirectory.value().size())
+        );
+    for (const auto& entry : koreanTeacherDirectory.value())
+    {
+        Teacher teacher;
+        teacher.birthday = QString::fromStdU16String(entry.birthday);
+        teacher.teacherKr = QString::fromStdU16String(entry.teacherKr);
+        teacher.teacherEn = QString::fromStdU16String(entry.teacherEn);
+        teacher.preferredRomanization = QString::fromStdU16String(
+            entry.preferredRomanization);
+        teacher.preferredName = QString::fromStdU16String(entry.preferredName);
+        koreanTeachers.append(std::move(teacher));
     }
 
     ClassMngr::Next::Platform::
@@ -113,7 +142,7 @@ SidebarController::loadUpcomingBirthdaySchedule(
     }
 
     return UpcomingBirthdaySchedule::build(
-        *loadedTeachers,
+        koreanTeachers,
         nativeEnglishTeachers,
         gsTeamMembers,
         referenceDate

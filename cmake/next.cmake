@@ -193,6 +193,9 @@ set(CLASSMNGR_NEXT_APPLICATION_SOURCES
     src/next/application/import_job_state.h
     src/next/application/korean_teacher_import_update.h
     src/next/application/native_english_teacher_import_update.h
+    src/next/application/korean_teacher_birthday_directory_read_snapshot.h
+    src/next/application/korean_teacher_birthday_directory_read_port.h
+    src/next/application/korean_teacher_birthday_directory_read_query.h
     src/next/application/native_english_teacher_directory_read_snapshot.h
     src/next/application/native_english_teacher_directory_read_port.h
     src/next/application/native_english_teacher_directory_read_query.h
@@ -337,6 +340,7 @@ set(CLASSMNGR_NEXT_PLATFORM_SOURCES
     src/next/platform/application_services_classes_list_read_port.h
     src/next/platform/application_services_teacher_profile_edit_persistence_port.h
     src/next/platform/application_services_teacher_profile_read_port.h
+    src/next/platform/application_services_korean_teacher_birthday_directory_read_port.h
     src/next/platform/application_services_native_english_teacher_directory_read_port.h
     src/next/platform/application_services_native_english_teacher_directory_save_port.h
     src/next/platform/application_services_gs_team_directory_read_port.h

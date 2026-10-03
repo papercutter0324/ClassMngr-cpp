@@ -13,8 +13,10 @@
 #include "features/teacher/ui/teacher_info_page.h"
 #include "fakes/fake_user_prompt_service.h"
 #include "next/application/gs_team_directory_read_query.h"
+#include "next/application/korean_teacher_birthday_directory_read_query.h"
 #include "next/application/native_english_teacher_directory_read_query.h"
 #include "next/platform/application_services_gs_team_directory_read_port.h"
+#include "next/platform/application_services_korean_teacher_birthday_directory_read_port.h"
 #include "next/platform/application_services_native_english_teacher_directory_read_port.h"
 #include "ui/shared/actions/action_registry.h"
 #include "ui/shared/dialogs/user_prompt_service.h"
@@ -480,6 +482,22 @@ QString directoryReadDetails(
             );
 }
 
+QString koreanBirthdayDirectoryReadDetails(ApplicationServices& services)
+{
+    ClassMngr::Next::Platform::
+        ApplicationServicesKoreanTeacherBirthdayDirectoryReadPort port(
+            &services);
+    const ClassMngr::Next::Application::
+        KoreanTeacherBirthdayDirectoryReadQuery query(port);
+    const auto result = query.execute();
+    return result
+        ? QString()
+        : QString::fromUtf8(
+            result.error().message.data(),
+            static_cast<qsizetype>(result.error().message.size())
+            );
+}
+
 }
 
 class NavigationTeacherReadTests final : public QObject
@@ -505,6 +523,8 @@ private slots:
     void assignedTeacherFailureKeepsClassFieldsAndUsesNoTeacher();
     void classDeleteChooserRequiresAnActiveSession();
     void upcomingBirthdaysActionShowsEntriesFromAllStaffDirectories();
+    void upcomingBirthdaysActionWarnsOnKoreanDirectoryFailureFirst();
+    void upcomingBirthdaysActionReturnsSilentlyWithoutAnActiveSession();
     void upcomingBirthdaysActionShowsWarningWhenGsDirectoryReadFails();
     void upcomingBirthdaysActionPrefersNativeEnglishErrorWhenBothReadsFail();
 };
@@ -1655,6 +1675,68 @@ upcomingBirthdaysActionShowsEntriesFromAllStaffDirectories()
     QVERIFY(details.contains(QStringLiteral("GS Team")));
     QVERIFY(prompts.messages.isEmpty());
     QVERIFY(prompts.confirmations.isEmpty());
+}
+
+void NavigationTeacherReadTests::
+upcomingBirthdaysActionWarnsOnKoreanDirectoryFailureFirst()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+
+    QSqlQuery dropTeachers(services.databaseSession()->database());
+    QVERIFY(dropTeachers.exec(QStringLiteral("DROP TABLE teachers")));
+    const QString expectedDetails =
+        koreanBirthdayDirectoryReadDetails(services);
+    QVERIFY(!expectedDetails.isEmpty());
+
+    QSqlQuery dropNativeEnglish(services.databaseSession()->database());
+    QVERIFY(dropNativeEnglish.exec(
+        QStringLiteral("DROP TABLE native_english_teachers")));
+    QSqlQuery dropGsTeam(services.databaseSession()->database());
+    QVERIFY(dropGsTeam.exec(QStringLiteral("DROP TABLE gs_team")));
+
+    PageManager pages;
+    Sidebar sidebar;
+    SidebarController controller(&services, &sidebar, &pages);
+    FakeUserPromptService prompts;
+    DialogServices::setUserPromptServiceForTesting(&prompts);
+
+    BirthdayDialogObservation observation;
+    QVERIFY(invokeUpcomingBirthdays(controller, observation));
+    QApplication::processEvents();
+
+    QCOMPARE(prompts.messages.size(), 1);
+    const PromptRequest warning = prompts.messages.first();
+    QCOMPARE(warning.severity, PromptSeverity::Warning);
+    QCOMPARE(warning.title, QStringLiteral("Upcoming Birthdays"));
+    QCOMPARE(warning.message, QStringLiteral("Birthdays could not be loaded."));
+    QCOMPARE(warning.details, expectedDetails);
+    QVERIFY(!observation.modalOpened);
+    QVERIFY(!observation.upcomingBirthdaysOpened);
+    QVERIFY(QApplication::activeModalWidget() == nullptr);
+}
+
+void NavigationTeacherReadTests::
+upcomingBirthdaysActionReturnsSilentlyWithoutAnActiveSession()
+{
+    ApplicationServices services;
+    PageManager pages;
+    Sidebar sidebar;
+    SidebarController controller(&services, &sidebar, &pages);
+    FakeUserPromptService prompts;
+    DialogServices::setUserPromptServiceForTesting(&prompts);
+
+    BirthdayDialogObservation observation;
+    QVERIFY(invokeUpcomingBirthdays(controller, observation));
+    QApplication::processEvents();
+
+    QVERIFY(prompts.messages.isEmpty());
+    QVERIFY(prompts.confirmations.isEmpty());
+    QVERIFY(!observation.modalOpened);
+    QVERIFY(!observation.upcomingBirthdaysOpened);
+    QVERIFY(QApplication::activeModalWidget() == nullptr);
 }
 
 void NavigationTeacherReadTests::
