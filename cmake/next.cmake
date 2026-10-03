@@ -92,6 +92,9 @@ set(CLASSMNGR_NEXT_APPLICATION_SOURCES
     src/next/application/initial_setup_teacher_choices_read_snapshot.h
     src/next/application/initial_setup_teacher_choices_read_port.h
     src/next/application/initial_setup_teacher_choices_read_query.h
+    src/next/application/class_teacher_assignments_read_snapshot.h
+    src/next/application/class_teacher_assignments_read_port.h
+    src/next/application/class_teacher_assignments_read_query.h
     src/next/application/classes_list_read_snapshot.h
     src/next/application/classes_list_read_port.h
     src/next/application/classes_list_read_query.h
@@ -337,6 +340,7 @@ set(CLASSMNGR_NEXT_PLATFORM_SOURCES
     src/next/platform/application_services_class_co_teacher_page_read_port.h
     src/next/platform/application_services_class_co_teacher_teacher_choices_read_port.h
     src/next/platform/application_services_initial_setup_teacher_choices_read_port.h
+    src/next/platform/application_services_class_teacher_assignments_read_port.h
     src/next/platform/application_services_classes_list_read_port.h
     src/next/platform/application_services_teacher_profile_edit_persistence_port.h
     src/next/platform/application_services_teacher_profile_read_port.h

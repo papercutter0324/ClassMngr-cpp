@@ -334,17 +334,6 @@ void SidebarController::updateActionStates()
         return;
     }
 
-    auto* classes =
-        openClassService(m_services);
-    auto* teachers =
-        openTeacherService(m_services);
-
-    if (!classes || !teachers)
-    {
-        updateActionStates(false, false);
-        return;
-    }
-
     ClassMngr::Next::Platform::
         ApplicationServicesClassesListReadPort classesReadPort(m_services);
     const ClassMngr::Next::Application::ClassesListReadQuery classesQuery(
@@ -377,8 +366,7 @@ void SidebarController::updateActionStates(
     }
 
     const bool servicesAvailable =
-        openClassService(m_services)
-        && openTeacherService(m_services);
+        m_services && m_services->hasOpenDatabase();
 
     if (m_actions->importClasses)
     {

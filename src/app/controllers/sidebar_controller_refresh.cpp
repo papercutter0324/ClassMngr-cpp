@@ -1,7 +1,8 @@
 #include "sidebar_controller_p.h"
 
-#include "app/services/feature_services.h"
+#include "next/application/class_teacher_assignments_read_query.h"
 #include "next/application/initial_setup_teacher_choices_read_query.h"
+#include "next/platform/application_services_class_teacher_assignments_read_port.h"
 #include "next/platform/application_services_initial_setup_teacher_choices_read_port.h"
 #include "ui/shared/dialogs/user_prompt_service.h"
 
@@ -21,6 +22,15 @@ QString teacherChoicesErrorMessage(const std::string& message)
         static_cast<qsizetype>(message.size())
         );
 }
+
+bool isUnavailableSessionError(
+    const ClassMngr::Next::Domain::OperationError& error,
+    const char* expectedMessage
+    )
+{
+    return error.code == ClassMngr::Next::Domain::ErrorCode::NotFound
+        && error.message == expectedMessage;
+}
 }
 
 void SidebarController::refreshTeacherSidebar()
@@ -32,17 +42,6 @@ void SidebarController::refreshTeacherSidebar()
 
     m_sidebar->clearTeachers();
 
-    auto* classes =
-        openClassService(m_services);
-    auto* teacherService =
-        openTeacherService(m_services);
-
-    if (!classes || !teacherService)
-    {
-        updateActionStates();
-        return;
-    }
-
     ClassMngr::Next::Platform::
         ApplicationServicesInitialSetupTeacherChoicesReadPort readPort(
             m_services
@@ -50,10 +49,31 @@ void SidebarController::refreshTeacherSidebar()
     const ClassMngr::Next::Application::
         InitialSetupTeacherChoicesReadQuery query(readPort);
     const auto teacherChoices = query.execute();
-    const Result<QList<ClassTeacherAssignment>> assignments =
-        classes->classTeacherAssignments();
+    ClassMngr::Next::Platform::
+        ApplicationServicesClassTeacherAssignmentsReadPort
+            assignmentsReadPort(m_services);
+    const ClassMngr::Next::Application::
+        ClassTeacherAssignmentsReadQuery assignmentsQuery(
+            assignmentsReadPort);
+    const auto assignments = assignmentsQuery.execute();
     if (!teacherChoices || !assignments)
     {
+        const bool teacherSessionUnavailable = !teacherChoices
+            && isUnavailableSessionError(
+                teacherChoices.error(),
+                "The active database session for initial setup teacher choices is unavailable."
+                );
+        const bool assignmentsSessionUnavailable = !assignments
+            && isUnavailableSessionError(
+                assignments.error(),
+                "The active database session for class teacher assignments is unavailable."
+                );
+        if (teacherSessionUnavailable && assignmentsSessionUnavailable)
+        {
+            updateActionStates();
+            return;
+        }
+
         DialogServices::showWarning(
             m_sidebar,
             tr("Load Teachers"),
@@ -62,7 +82,9 @@ void SidebarController::refreshTeacherSidebar()
                 ? teacherChoicesErrorMessage(
                     teacherChoices.error().message
                     )
-                : assignments.error()
+                : teacherChoicesErrorMessage(
+                    assignments.error().message
+                    )
             );
         updateActionStates();
         return;
@@ -118,13 +140,26 @@ void SidebarController::refreshTeacherSidebar()
     QSet<int> myTeacherIds;
     QList<Teacher> myTeachers;
 
-    for (const ClassTeacherAssignment& assignment : *assignments)
+    for (const auto& assignment : assignments.value().assignments)
     {
-        const int teacherId =
-            assignment.teacherId;
+        if (!assignment.teacherId)
+        {
+            continue;
+        }
+
+        int teacherId = 0;
+        const std::string& teacherIdValue = assignment.teacherId->value();
+        const auto [end, conversionError] = std::from_chars(
+            teacherIdValue.data(),
+            teacherIdValue.data() + teacherIdValue.size(),
+            teacherId
+            );
 
         if (
-            teacherId <= 0
+            conversionError != std::errc{}
+            || end != teacherIdValue.data() + teacherIdValue.size()
+            || teacherId <= 0
+            || std::to_string(teacherId) != teacherIdValue
             || myTeacherIds.contains(teacherId)
             || !teachersById.contains(teacherId)
             )
@@ -169,7 +204,7 @@ void SidebarController::refreshTeacherSidebar()
     }
 
     updateActionStates(
-        !assignments->isEmpty(),
+        !assignments.value().assignments.empty(),
         !teachers.isEmpty()
         );
 }
