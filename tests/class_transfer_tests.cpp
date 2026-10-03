@@ -367,6 +367,7 @@ private slots:
     void dialogRejectsDuplicateReplacementTargets();
     void applyRejectsReplacementOutsideCurrentPreviewMatches();
     void exportDialogStartsClearAndSortsClassesAlphabetically();
+    void exportDialogSkipsSubtitleBatchReadForEmptyClassList();
     void exportDialogShowsWarningAndStaysEmptyWhenClassListCannotLoad();
     void exportDialogUsesDefaultFormattingWhenClassFieldsCannotLoad();
     void exportDialogKeepsClassFieldsWhenTeacherCannotLoad();
@@ -2511,6 +2512,17 @@ void ClassTransferTests::exportDialogStartsClearAndSortsClassesAlphabetically()
         openApplicationServicesForCurrentDatabase(
             service, &applicationServicesError);
     QVERIFY2(applicationServices, qPrintable(applicationServicesError));
+    DatabaseSession* const session = applicationServices->databaseSession();
+    QVERIFY(session);
+    ClassInfoRepository* const classRepository = session->classInfoRepository();
+    TeacherRepository* const teacherRepository = session->teacherRepository();
+    QVERIFY(classRepository);
+    QVERIFY(teacherRepository);
+    const ClassSubtitleBatchReadMetrics classMetricsBefore =
+        classRepository->classSubtitleBatchReadMetrics();
+    const TeacherDisplayNameBatchReadMetrics teacherMetricsBefore =
+        teacherRepository->teacherDisplayNameBatchReadMetrics();
+
     ClassExportDialog dialog(applicationServices.get());
     QCOMPARE(dialog.selectedClassIds(), QList<int>());
 
@@ -2528,6 +2540,26 @@ void ClassTransferTests::exportDialogStartsClearAndSortsClassesAlphabetically()
     QCOMPARE(classList->item(1)->data(Qt::UserRole).toInt(), mikeClass);
     QCOMPARE(classList->item(2)->data(Qt::UserRole).toInt(), zuluClass);
 
+    const ClassSubtitleBatchReadMetrics classMetricsAfter =
+        classRepository->classSubtitleBatchReadMetrics();
+    const TeacherDisplayNameBatchReadMetrics teacherMetricsAfter =
+        teacherRepository->teacherDisplayNameBatchReadMetrics();
+    QCOMPARE(classMetricsAfter.callCount - classMetricsBefore.callCount, 1);
+    QCOMPARE(classMetricsAfter.requestedClassCount
+                 - classMetricsBefore.requestedClassCount,
+             3);
+    QCOMPARE(classMetricsAfter.metadataStatementCount
+                 - classMetricsBefore.metadataStatementCount,
+             1);
+    QCOMPARE(classMetricsAfter.regularScheduleStatementCount
+                 - classMetricsBefore.regularScheduleStatementCount,
+             1);
+    QCOMPARE(teacherMetricsAfter.callCount - teacherMetricsBefore.callCount,
+             1);
+    QCOMPARE(teacherMetricsAfter.statementCount
+                 - teacherMetricsBefore.statementCount,
+             1);
+
     for (int index = 0; index < classList->count(); ++index)
     {
         QCOMPARE(classList->item(index)->checkState(), Qt::Unchecked);
@@ -2541,6 +2573,55 @@ void ClassTransferTests::exportDialogStartsClearAndSortsClassesAlphabetically()
     classList->item(1)->setCheckState(Qt::Checked);
     QCOMPARE(dialog.selectedClassIds(), QList<int>({mikeClass}));
     QVERIFY(exportButton->isEnabled());
+}
+
+void ClassTransferTests::
+exportDialogSkipsSubtitleBatchReadForEmptyClassList()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    DataService service;
+    QVERIFY(service.openDatabase(
+        directory.filePath(QStringLiteral("dialog.db"))).has_value());
+
+    QString applicationServicesError;
+    const auto applicationServices =
+        openApplicationServicesForCurrentDatabase(
+            service, &applicationServicesError);
+    QVERIFY2(applicationServices, qPrintable(applicationServicesError));
+    DatabaseSession* const session = applicationServices->databaseSession();
+    QVERIFY(session);
+    ClassInfoRepository* const classRepository = session->classInfoRepository();
+    TeacherRepository* const teacherRepository = session->teacherRepository();
+    QVERIFY(classRepository);
+    QVERIFY(teacherRepository);
+    const ClassSubtitleBatchReadMetrics classMetricsBefore =
+        classRepository->classSubtitleBatchReadMetrics();
+    const TeacherDisplayNameBatchReadMetrics teacherMetricsBefore =
+        teacherRepository->teacherDisplayNameBatchReadMetrics();
+
+    ClassExportDialog dialog(applicationServices.get());
+
+    auto* classList = dialog.findChild<QListWidget*>(
+        QStringLiteral("classExportList"));
+    QVERIFY(classList);
+    QCOMPARE(classList->count(), 0);
+    QCOMPARE(dialog.selectedClassIds(), QList<int>());
+
+    const ClassSubtitleBatchReadMetrics classMetricsAfter =
+        classRepository->classSubtitleBatchReadMetrics();
+    const TeacherDisplayNameBatchReadMetrics teacherMetricsAfter =
+        teacherRepository->teacherDisplayNameBatchReadMetrics();
+    QCOMPARE(classMetricsAfter.callCount, classMetricsBefore.callCount);
+    QCOMPARE(classMetricsAfter.requestedClassCount,
+             classMetricsBefore.requestedClassCount);
+    QCOMPARE(classMetricsAfter.metadataStatementCount,
+             classMetricsBefore.metadataStatementCount);
+    QCOMPARE(classMetricsAfter.regularScheduleStatementCount,
+             classMetricsBefore.regularScheduleStatementCount);
+    QCOMPARE(teacherMetricsAfter.callCount, teacherMetricsBefore.callCount);
+    QCOMPARE(teacherMetricsAfter.statementCount,
+             teacherMetricsBefore.statementCount);
 }
 
 void ClassTransferTests::

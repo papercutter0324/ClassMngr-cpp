@@ -8,10 +8,11 @@
 #include "domain/models/classroom.h"
 #include "domain/models/teacher.h"
 #include "next/application/classes_list_read_query.h"
-#include "next/application/selected_class_subtitle_read_query.h"
+#include "next/application/selected_class_subtitle_batch_read_query.h"
+#include "next/application/selected_class_subtitle_read_snapshot.h"
 #include "next/domain/domain_types.h"
 #include "next/platform/application_services_classes_list_read_port.h"
-#include "next/platform/application_services_selected_class_subtitle_read_port.h"
+#include "next/platform/application_services_selected_class_subtitle_batch_read_port.h"
 #include "ui/shared/dialogs/user_prompt_service.h"
 #include "ui/shared/widgets/text_fit_push_button.h"
 
@@ -27,67 +28,54 @@
 #include <charconv>
 #include <string>
 #include <system_error>
+#include <unordered_map>
 #include <utility>
+#include <vector>
 
 namespace
 {
 QString classDisplayName(
-    ApplicationServices* applicationServices,
-    const Classroom& classroom
+    const Classroom& classroom,
+    const ClassMngr::Next::Application::SelectedClassSubtitleReadSnapshot*
+        subtitle
     )
 {
     ClassInfo info;
     Teacher teacher;
 
-    const auto selectedClassId =
-        ClassMngr::Next::Domain::ClassId::fromString(
-            std::to_string(classroom.id)
-            );
-    if (applicationServices && selectedClassId)
+    if (subtitle && subtitle->classFields)
     {
-        ClassMngr::Next::Platform::
-            ApplicationServicesSelectedClassSubtitleReadPort readPort(
-                applicationServices
-                );
-        const ClassMngr::Next::Application::SelectedClassSubtitleReadQuery query(
-            readPort
+        const auto& fields = subtitle->classFields.value();
+        info.classGrade = QString::fromStdU16String(fields.classGrade);
+        info.classLevel = QString::fromStdU16String(fields.classLevel);
+        info.classTimes.reserve(
+            static_cast<qsizetype>(fields.regularSchedule.size())
             );
-        const auto loadedSubtitle = query.execute(*selectedClassId);
-        if (loadedSubtitle && loadedSubtitle.value().classFields)
+        for (const auto& row : fields.regularSchedule)
         {
-            const auto& subtitle = loadedSubtitle.value();
-            const auto& fields = subtitle.classFields.value();
-            info.classGrade = QString::fromStdU16String(fields.classGrade);
-            info.classLevel = QString::fromStdU16String(fields.classLevel);
-            info.classTimes.reserve(
-                static_cast<qsizetype>(fields.regularSchedule.size())
-                );
-            for (const auto& row : fields.regularSchedule)
-            {
-                ClassTime time;
-                time.day = QString::fromStdU16String(row.day);
-                time.startTime = QString::fromStdU16String(row.startTime);
-                time.endTime.clear();
-                info.classTimes.append(std::move(time));
-            }
+            ClassTime time;
+            time.day = QString::fromStdU16String(row.day);
+            time.startTime = QString::fromStdU16String(row.startTime);
+            time.endTime.clear();
+            info.classTimes.append(std::move(time));
+        }
 
-            if (subtitle.assignedTeacher && subtitle.assignedTeacher.value())
-            {
-                const auto& teacherFields =
-                    subtitle.assignedTeacher.value().value();
-                teacher.teacherKr = QString::fromStdU16String(
-                    teacherFields.teacherKr
-                    );
-                teacher.teacherEn = QString::fromStdU16String(
-                    teacherFields.teacherEn
-                    );
-                teacher.preferredRomanization = QString::fromStdU16String(
-                    teacherFields.preferredRomanization
-                    );
-                teacher.preferredName = QString::fromStdU16String(
-                    teacherFields.preferredName
-                    );
-            }
+        if (subtitle->assignedTeacher && subtitle->assignedTeacher.value())
+        {
+            const auto& teacherFields =
+                subtitle->assignedTeacher.value().value();
+            teacher.teacherKr = QString::fromStdU16String(
+                teacherFields.teacherKr
+                );
+            teacher.teacherEn = QString::fromStdU16String(
+                teacherFields.teacherEn
+                );
+            teacher.preferredRomanization = QString::fromStdU16String(
+                teacherFields.preferredRomanization
+                );
+            teacher.preferredName = QString::fromStdU16String(
+                teacherFields.preferredName
+                );
         }
     }
 
@@ -165,6 +153,12 @@ ClassExportDialog::ClassExportDialog(
         }
         else
         {
+            QList<Classroom> classrooms;
+            classrooms.reserve(
+                static_cast<qsizetype>(loadedClasses.value().classes.size())
+                );
+            std::vector<ClassMngr::Next::Domain::ClassId> classIds;
+            classIds.reserve(loadedClasses.value().classes.size());
             for (const auto& entry : loadedClasses.value().classes)
             {
                 int classId = 0;
@@ -189,8 +183,51 @@ ClassExportDialog::ClassExportDialog(
                 Classroom classroom;
                 classroom.id = classId;
                 classroom.name = QString::fromStdU16String(entry.className);
+                classrooms.append(std::move(classroom));
+                classIds.push_back(entry.classId);
+            }
+
+            std::unordered_map<
+                std::string,
+                ClassMngr::Next::Application::SelectedClassSubtitleReadSnapshot
+                > subtitlesByClassId;
+            if (!classIds.empty())
+            {
+                ClassMngr::Next::Platform::
+                    ApplicationServicesSelectedClassSubtitleBatchReadPort
+                        subtitleReadPort(applicationServices);
+                const ClassMngr::Next::Application::
+                    SelectedClassSubtitleBatchReadQuery subtitleQuery(
+                        subtitleReadPort
+                        );
+                auto loadedSubtitles = subtitleQuery.execute(classIds);
+                if (loadedSubtitles)
+                {
+                    subtitlesByClassId.reserve(
+                        loadedSubtitles.value().size()
+                        );
+                    for (auto& subtitle : loadedSubtitles.value())
+                    {
+                        std::string classId = subtitle.classId.value();
+                        subtitlesByClassId.emplace(
+                            std::move(classId),
+                            std::move(subtitle)
+                            );
+                    }
+                }
+            }
+
+            for (const Classroom& classroom : std::as_const(classrooms))
+            {
+                const auto subtitle = subtitlesByClassId.find(
+                    std::to_string(classroom.id)
+                    );
                 classes.append({
-                    classDisplayName(applicationServices, classroom),
+                    classDisplayName(
+                        classroom,
+                        subtitle == subtitlesByClassId.end()
+                            ? nullptr
+                            : &subtitle->second),
                     classroom.id
                 });
             }
