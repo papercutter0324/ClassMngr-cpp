@@ -18,8 +18,9 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-03
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F294 is selected to add the latest-import-date read for teacher
-  import.
+- Current note: F295 is selected to pass accepted classes-list ID/name data
+  through the roster-template print pipeline and remove its per-class
+  `classroom()` lookup.
 
 ### Slice discovery batches
 
@@ -239,39 +240,33 @@ No new v2 production path depends on DataService, MainWindow, PageManager, or a 
 
 Earlier verified slices and cumulative exit-gate snapshots are archived in the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 
-## Latest Progress Update - 2026-10-03 (F293 accepted)
+## Latest Progress Update - 2026-10-03 (F294 accepted)
 
-F293, committed as `51e7da7a9ad0f660e07a1f0cb5319a9dc66ae306`, adds a Qt-free
-assignment snapshot, read port, and query with an active-session
-`ApplicationServices` adapter over
-`ClassInfoRepository::loadClassTeacherAssignments()`. Sidebar refresh uses the
-query; the assignment-read and availability paths no longer depend on
-`ClassService` or `TeacherService`. Action-state availability now checks the
-active database session directly. The snapshot has one row per regular
-class, including unassigned rows; only positive teacher assignments carry
-a typed teacher ID. Sidebar refresh still clears
-nodes, attempts both teacher-choice and assignment reads, preserves
-teacher-choice error precedence, sorting and deduplication, unassigned-row
-action availability, warning/action updates, and silent no-session behavior.
+F294, committed as `d16614817d5e7512881f046bd37ee0398db45577`, adds a Qt-free
+latest teacher-import source-date query returning an optional canonical ISO
+date. Its active-session `ApplicationServices` adapter reads
+`teacher_import/latest_source_date` once. Missing, empty, or malformed dates
+produce a successful absent value; unavailable persistence or read failure
+produces a failed result. Sidebar pre-apply comparison uses the query while
+the legacy `TeacherService` remains for import apply. Newer or missing dates
+bypass confirmation; equal or older dates retain confirmation, and
+cancellation, read-failure warning/stop, and silent no-session behavior remain.
+Unused latest-date compatibility reads were removed from `TeacherService` and
+`DataService`.
 
-Fresh independent Windows x64 verification used Ninja/MSVC 19.51.36257 and Qt
-6.12.0. The CMake ownership gate reported 1,242 handwritten files; `ClassMngr`
-and six focused targets built in 376 steps. These six CTests passed 6/6:
-`ClassMngrNextApplicationClassTeacherAssignmentsReadQueryTests`,
-`ClassMngrNextPlatformApplicationServicesClassTeacherAssignmentsReadPortTests`,
-`ClassMngrNavigationTeacherReadTests`,
-`ClassMngrTestingClassRepositoryTests`,
-`ClassMngrNavigationTeacherReadParityTests`, and
-`ClassMngrNextPlatformApplicationServicesInitialSetupTeacherChoicesReadPortTests`.
-After a test-only repair added direct exact sidebar-order assertions,
-`ClassMngrNavigationTeacherReadTests` rebuilt and passed 1/1. `git diff --check`
-passed. Logs are under
-`build/p2_f293_independent_verify_ninja_20261003/` (configure, focused build,
-focused CTest, and navigation-recheck logs). Nonfatal environment warnings:
-VSDevCmd could not find `vswhere.exe`; 27 object-path-length warnings.
-Repository call count and malformed database teacher IDs were source-inspected,
-not runtime-spied; sidebar order is directly asserted. The full suite was not
-run.
+Fresh Windows x64 Debug/Ninja/MSVC verification used Qt 6.12 and passed the
+CMake ownership gate at 1,247 handwritten files. The navigation controller
+and two new query/adapter targets built; three focused CTests passed. After a
+test repair, the navigation target rebuilt and its CTest passed 1/1. Five
+import-related QtTest slots passed; the reported three QtTest entries included
+setup and cleanup. Accepted-confirmation integration asserted confirmation,
+completion, saved source date, and imported rows in Native-English and GS
+tables only; read-failure coverage asserted warning, no completion, and empty
+rows in all three tables. `git diff --check` passed. Logs are under
+`build/f294v/`; nonfatal environment messages covered missing `vswhere.exe`,
+optional Vulkan headers, the documents resource pack, and Qt offscreen/font
+warnings. The full 309-test suite was not run.
 
-F294 is selected to add a latest-import-date read for teacher import. Phase 2
-remains In Progress/Open; Gates 1 and 2 remain Partial.
+F295 is selected to pass accepted classes-list ID/name data through the
+roster-template print pipeline and remove its per-class `classroom()` lookup.
+Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial.

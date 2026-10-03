@@ -10709,5 +10709,35 @@ Repository call count and malformed database teacher IDs were source-inspected,
 not runtime-spied; sidebar order is directly asserted. The full suite was not
 run.
 
-F294 is selected to add a latest-import-date read for teacher import. Phase 2
-remains In Progress/Open; Gates 1 and 2 remain Partial.
+Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial.
+
+### Progress update - 2026-10-03 (F294 accepted; F295 selected)
+
+F294, committed as `d16614817d5e7512881f046bd37ee0398db45577`, adds a Qt-free
+latest teacher-import source-date query returning an optional canonical ISO
+date. Its active-session `ApplicationServices` adapter reads
+`teacher_import/latest_source_date` once. Missing, empty, or malformed dates
+produce a successful absent value; unavailable persistence or read failure
+produces a failed result. Sidebar pre-apply comparison uses the query while
+the legacy `TeacherService` remains for import apply. Newer or missing dates
+bypass confirmation; equal or older dates retain confirmation, and
+cancellation, read-failure warning/stop, and silent no-session behavior remain.
+Unused latest-date compatibility reads were removed from `TeacherService` and
+`DataService`.
+
+Fresh Windows x64 Debug/Ninja/MSVC verification used Qt 6.12 and passed the
+CMake ownership gate at 1,247 handwritten files. The navigation controller
+and two new query/adapter targets built; three focused CTests passed. After a
+test repair, the navigation target rebuilt and its CTest passed 1/1. Five
+import-related QtTest slots passed; the reported three QtTest entries included
+setup and cleanup. Accepted-confirmation integration asserted confirmation,
+completion, saved source date, and imported rows in Native-English and GS
+tables only; read-failure coverage asserted warning, no completion, and empty
+rows in all three tables. `git diff --check` passed. Logs are under
+`build/f294v/`; nonfatal environment messages covered missing `vswhere.exe`,
+optional Vulkan headers, the documents resource pack, and Qt offscreen/font
+warnings. The full 309-test suite was not run.
+
+F295 is selected to pass accepted classes-list ID/name data through the
+roster-template print pipeline and remove its per-class `classroom()` lookup.
+Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial.

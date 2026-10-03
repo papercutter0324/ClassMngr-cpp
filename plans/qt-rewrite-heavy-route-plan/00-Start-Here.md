@@ -39,8 +39,8 @@
   accepted; F291 (My Classes dedicated compact class-information
   query/snapshot/port with one ApplicationServices adapter read) is accepted;
   F292 (sidebar Korean birthday-directory read) is accepted; F293 (sidebar
-  class-teacher-assignment read) is accepted; F294 (latest-import-date
-  read for teacher import) is selected.
+  class-teacher-assignment read) and F294 (latest-import-date read for teacher
+  import) are accepted; F295 is selected.
   Gates 1 and 2 remain Partial, with broader feature
   migration, parity, and 96-class Release memory evidence still open.
   See the
