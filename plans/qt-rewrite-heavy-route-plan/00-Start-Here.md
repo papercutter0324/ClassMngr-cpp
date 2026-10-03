@@ -22,9 +22,10 @@
   delete-prompt class display-name read), F272 (RosterPrintDialog
   current-class-only testing-class read), F273 (transfer-time target-roster
   read), and F274 (RosterPrintDialog extra-info class-list read) are accepted;
-  F275 (class-delete chooser class-list read) and F276 (upcoming Native
-  English and GS birthday-directory reads) are accepted; F277 (roster
-  transfer-menu class-list read) is selected.
+  F275 (class-delete chooser class-list read), F276 (upcoming Native English
+  and GS birthday-directory reads), and F277 (roster transfer-menu class-list
+  read) are accepted; F278 (initial-setup wizard teacher-existence reads) is
+  selected.
   Gates 1 and 2 remain Partial, with broader feature
   migration, parity, and 96-class Release memory evidence still open.
   See the

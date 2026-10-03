@@ -115,9 +115,10 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
   F272 for RosterPrintDialog's current-class-only testing-class read, F273 for
   the transfer-time target-roster read, and F274 for RosterPrintDialog's
   extra-info class-list read, and F275 for the class-delete chooser's
-  class-list read and F276 for the sidebar's upcoming birthday Native English
-  and GS directory reads are accepted. F277 is selected for the roster
-  transfer menu's class-list read.
+  class-list read, F276 for the sidebar's upcoming birthday Native English and
+  GS directory reads, and F277 for the roster transfer menu's class-list read
+  are accepted. F278 is selected for the initial-setup wizard's teacher-
+  existence reads.
   The prior F123 candidate wording is historical;
   current Teacher Profile integration status is recorded in the progress log.
   Gates 1 and 2
@@ -520,14 +521,31 @@ and `git show --check` passed. Logs are preserved under
 `build/p2_f276_verify_logs/`. Non-fatal missing-documents-resource-pack and
 offscreen Qt sizing warnings occurred; the full suite was not run.
 
-F277 is selected to migrate only the direct class-list read in
+F277, committed as `54ec8a66`, routes only the direct class-list read in
 `RosterEditorWidget::showRosterContextMenu()` through the accepted
-`ClassesListReadQuery` and `ApplicationServicesClassesListReadPort`. Preserve
-when the read runs, target eligibility and sorting, the existing “Transfer
-classes could not be loaded.” warning, disabled transfer menu on failure, and
-target-label fallback. Leave the adjacent roster read, metadata, and transfer
-behavior unchanged. Add caller-level failure coverage for the warning and
-disabled “No same-grade classes” result; retain the query and adapter CTests.
-The shared query's invalid/duplicate-ID rejection is a stricter failure
-condition than the former direct service read. Phase 2 remains In Progress/Open;
-Gates 1 and 2 remain Partial.
+`ClassesListReadQuery` and `ApplicationServicesClassesListReadPort`. The read
+remains inside the existing eligibility branch; target eligibility, sorting,
+label fallback, disabled menu behavior, and the existing warning are preserved.
+The adjacent roster read and metadata behavior remain unchanged. The new caller
+case preserves usable class metadata while making the class-list query fail,
+then checks the warning and disabled `No same-grade classes` action. The shared
+query's invalid/duplicate-ID rejection is a stricter failure condition than the
+former direct service read. Fresh Windows x64 Debug/Ninja verification built
+the `RosterTransferMenu`, class-list query, and adapter test targets. The added
+slot passed directly (3 QtTest passes including setup and cleanup); all three
+selected CTests passed. `git diff --check` and `git show --check` passed. Logs
+are preserved under `build/p2_f277_verify_logs/`. Non-fatal document-resource,
+font, SVG, and offscreen-plugin warnings occurred; the full suite was not run.
+
+F278 is selected to migrate only the two direct teacher-existence reads in
+`PersonalDetailsWizardPage::nextId()` and `TeacherEntryWizardPage::validatePage()`
+through the accepted `InitialSetupTeacherChoicesReadQuery` and
+`ApplicationServicesInitialSetupTeacherChoicesReadPort`. Preserve the
+schedule-import early return, page routing, blank-entry skip behavior, and the
+existing failure-as-empty fallback; do not add warnings to either check. Leave
+teacher creation and the Class Details teacher-choice population path
+unchanged. Add focused `InitialSetupWizard` caller coverage for page routing,
+blank-entry skipping when teachers exist, and the read-failure fallback; retain
+the query and adapter CTests. The adapter requires an open database session,
+unlike the legacy service fallback, and the query rejects invalid/duplicate
+teacher IDs. Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial.
