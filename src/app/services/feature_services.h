@@ -97,7 +97,6 @@ public:
         const QList<int>& deletedIds
         ) const;
     Result<TeacherImportSummary> importTeachers(const TeacherImportPlan& plan) const;
-    [[nodiscard]] Result<QDate> latestImportDate() const;
 };
 
 class ClassService final : public FeatureService

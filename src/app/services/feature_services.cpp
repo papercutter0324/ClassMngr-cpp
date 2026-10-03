@@ -401,25 +401,6 @@ Result<TeacherImportSummary> TeacherService::importTeachers(
         : Result<TeacherImportSummary>(std::unexpected(unavailableError()));
 }
 
-Result<QDate> TeacherService::latestImportDate() const
-{
-    const QString key =
-        QString::fromLatin1(TeacherImportRepository::LatestSourceDateSetting);
-    if (auto* repository = session() ? session()->settingsRepository() : nullptr)
-    {
-        const Result<QVariant> value = repository->loadSetting(key);
-        if (!value)
-        {
-            return std::unexpected(value.error());
-        }
-
-        return QDate::fromString(value->toString(), Qt::ISODate);
-    }
-    return dataService()
-        ? dataService()->latestTeacherImportDate()
-        : Result<QDate>(std::unexpected(unavailableError()));
-}
-
 Result<int> ClassService::create(const QString& name) const
 {
     if (auto* repository = session() ? session()->classRepository() : nullptr)

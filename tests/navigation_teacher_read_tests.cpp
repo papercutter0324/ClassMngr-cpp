@@ -5,12 +5,15 @@
 #include "core/resource_packs/resource_pack_manager.h"
 #include "data/database/database_session.h"
 #include "data/repositories/class_info_repository.h"
+#include "data/repositories/settings_repository.h"
+#include "data/repositories/teacher_import_repository.h"
 #include "data/repositories/teacher_repository.h"
 #include "domain/models/class_info.h"
 #include "domain/models/gs_team_member.h"
 #include "domain/models/native_english_teacher.h"
 #include "domain/models/teacher.h"
 #include "features/teacher/ui/teacher_info_page.h"
+#include "features/teacher/ui/teacher_import_dialog.h"
 #include "fakes/fake_user_prompt_service.h"
 #include "next/application/class_teacher_assignments_read_query.h"
 #include "next/application/gs_team_directory_read_query.h"
@@ -32,6 +35,8 @@
 #include <QComboBox>
 #include <QDialog>
 #include <QDialogButtonBox>
+#include <QDir>
+#include <QFileInfo>
 #include <QLabel>
 #include <QLineEdit>
 #include <QPushButton>
@@ -47,6 +52,7 @@
 #include <QtTest/QtTest>
 
 #include <functional>
+#include <optional>
 
 namespace
 {
@@ -58,6 +64,112 @@ QString databasePath(QTemporaryDir& directory)
             QUuid::createUuid().toString(QUuid::WithoutBraces)
             )
         );
+}
+
+QString teacherImportFixturePath()
+{
+    return QDir(QFileInfo(QString::fromUtf8(__FILE__)).absolutePath()).filePath(
+        QStringLiteral("fixtures/teacher_import/sectioned_review.xlsx"));
+}
+
+struct TeacherImportDialogObservation
+{
+    bool found = false;
+    bool accepted = false;
+};
+
+bool invokeTeacherImportDialog(
+    SidebarController& controller,
+    const bool accept,
+    TeacherImportDialogObservation& observation
+    )
+{
+    QTimer poll;
+    poll.setInterval(10);
+    QTimer timeout;
+    timeout.setSingleShot(true);
+
+    const auto findDialog = []() -> TeacherImportDialog*
+    {
+        auto* active = qobject_cast<TeacherImportDialog*>(
+            QApplication::activeModalWidget());
+        if (active)
+        {
+            return active;
+        }
+        for (QWidget* widget : QApplication::topLevelWidgets())
+        {
+            auto* candidate = qobject_cast<TeacherImportDialog*>(widget);
+            if (candidate
+                && candidate->objectName() == QStringLiteral("teacherImport"))
+            {
+                return candidate;
+            }
+        }
+        return nullptr;
+    };
+
+    QObject::connect(
+        &poll,
+        &QTimer::timeout,
+        &controller,
+        [&]
+        {
+            TeacherImportDialog* const dialog = findDialog();
+            if (!dialog)
+            {
+                return;
+            }
+            observation.found = true;
+            if (!accept)
+            {
+                poll.stop();
+                dialog->reject();
+                return;
+            }
+
+            auto* const pathEdit = dialog->findChild<QLineEdit*>(
+                QStringLiteral("teacherImportFilePath"));
+            auto* const acceptButton = dialog->findChild<QPushButton*>(
+                QStringLiteral("teacherImportAcceptButton"));
+            if (!pathEdit || !acceptButton)
+            {
+                poll.stop();
+                dialog->reject();
+                return;
+            }
+            if (pathEdit->text().isEmpty())
+            {
+                dialog->setFilePath(teacherImportFixturePath());
+            }
+            if (acceptButton->isEnabled())
+            {
+                observation.accepted = true;
+                poll.stop();
+                acceptButton->click();
+            }
+        });
+    QObject::connect(
+        &timeout,
+        &QTimer::timeout,
+        &controller,
+        [&]
+        {
+            if (TeacherImportDialog* const dialog = findDialog())
+            {
+                dialog->reject();
+            }
+        });
+
+    poll.start();
+    timeout.start(15000);
+    const bool invoked = QMetaObject::invokeMethod(
+        &controller,
+        "importTeachers",
+        Qt::DirectConnection);
+    poll.stop();
+    timeout.stop();
+    return invoked && observation.found && (!accept || observation.accepted);
 }
 
 Teacher teacherFixture(
@@ -564,6 +676,11 @@ private slots:
     void upcomingBirthdaysActionReturnsSilentlyWithoutAnActiveSession();
     void upcomingBirthdaysActionShowsWarningWhenGsDirectoryReadFails();
     void upcomingBirthdaysActionPrefersNativeEnglishErrorWhenBothReadsFail();
+    void teacherImportEqualAndOlderVersionsAskBeforeApplying();
+    void teacherImportAcceptedEqualVersionAppliesWorkbook();
+    void teacherImportNewerAndMissingVersionsProceedWithoutPrompt();
+    void teacherImportLatestDateReadFailureWarnsAndStops();
+    void teacherImportDialogCancelAndNoSessionStaySilent();
 };
 
 void NavigationTeacherReadTests::cleanup()
@@ -2104,6 +2221,259 @@ upcomingBirthdaysActionPrefersNativeEnglishErrorWhenBothReadsFail()
     QVERIFY(warning.details != gsTeamDetails);
     QVERIFY(!observation.modalOpened);
     QVERIFY(!observation.upcomingBirthdaysOpened);
+    QVERIFY(QApplication::activeModalWidget() == nullptr);
+}
+
+void NavigationTeacherReadTests::
+teacherImportEqualAndOlderVersionsAskBeforeApplying()
+{
+    const QString fixturePath = teacherImportFixturePath();
+    QVERIFY(QFileInfo::exists(fixturePath));
+
+    const QVector<QPair<QString, bool>> cases{
+        {QStringLiteral("2026-09-01"), true},
+        {QStringLiteral("2026-10-01"), false}
+    };
+    for (const auto& [currentDate, versionsMatch] : cases)
+    {
+        QTemporaryDir directory;
+        QVERIFY(directory.isValid());
+        ApplicationServices services;
+        QVERIFY(services.openDatabase(databasePath(directory)));
+        QVERIFY(services.databaseSession()->settingsRepository()->saveSetting(
+            QString::fromLatin1(
+                TeacherImportRepository::LatestSourceDateSetting),
+            currentDate));
+
+        PageManager pages;
+        Sidebar sidebar;
+        SidebarController controller(&services, &sidebar, &pages);
+        FakeUserPromptService prompts;
+        DialogServices::setUserPromptServiceForTesting(&prompts);
+
+        TeacherImportDialogObservation observation;
+        QVERIFY(invokeTeacherImportDialog(controller, true, observation));
+
+        QCOMPARE(prompts.confirmations.size(), 1);
+        const PromptRequest& confirmation = prompts.confirmations.first();
+        QCOMPARE(confirmation.title, QStringLiteral("Import Teachers"));
+        QCOMPARE(confirmation.acceptText, QStringLiteral("Continue"));
+        QCOMPARE(confirmation.rejectText, QStringLiteral("Cancel"));
+        QCOMPARE(
+            confirmation.message,
+            versionsMatch
+                ? QStringLiteral(
+                      "The selected file's version appears to match the current data. Do you wish to continue?\n"
+                      "    File Version: 2026-09-01\n"
+                      "    Current Version: 2026-09-01")
+                : QStringLiteral(
+                      "The selected file appears to be older version than the current data. Do you wish to continue?\n"
+                      "    File Version: 2026-09-01\n"
+                      "    Current Version: 2026-10-01"));
+        QVERIFY(prompts.messages.isEmpty());
+        QVERIFY(prompts.asynchronousMessages.isEmpty());
+        QVERIFY(QApplication::activeModalWidget() == nullptr);
+
+        QSqlQuery importedCount(services.databaseSession()->database());
+        QVERIFY(importedCount.exec(QStringLiteral(
+            "SELECT COUNT(*) FROM native_english_teachers")));
+        QVERIFY(importedCount.next());
+        QCOMPARE(importedCount.value(0).toInt(), 0);
+    }
+}
+
+void NavigationTeacherReadTests::
+teacherImportAcceptedEqualVersionAppliesWorkbook()
+{
+    const QString fixturePath = teacherImportFixturePath();
+    QVERIFY(QFileInfo::exists(fixturePath));
+
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+    QVERIFY(services.databaseSession()->settingsRepository()->saveSetting(
+        QString::fromLatin1(
+            TeacherImportRepository::LatestSourceDateSetting),
+        QStringLiteral("2026-09-01")));
+
+    PageManager pages;
+    Sidebar sidebar;
+    SidebarController controller(&services, &sidebar, &pages);
+    FakeUserPromptService prompts;
+    prompts.scriptedChoices.enqueue(PromptChoice::Accepted);
+    DialogServices::setUserPromptServiceForTesting(&prompts);
+
+    TeacherImportDialogObservation observation;
+    QVERIFY(invokeTeacherImportDialog(controller, true, observation));
+
+    QCOMPARE(prompts.confirmations.size(), 1);
+    QCOMPARE(prompts.confirmations.first().title, QStringLiteral("Import Teachers"));
+    QCOMPARE(
+        prompts.confirmations.first().message,
+        QStringLiteral(
+            "The selected file's version appears to match the current data. Do you wish to continue?\n"
+            "    File Version: 2026-09-01\n"
+            "    Current Version: 2026-09-01"));
+    QCOMPARE(prompts.messages.size(), 1);
+    QCOMPARE(prompts.messages.first().severity, PromptSeverity::Information);
+    QVERIFY(prompts.messages.first().message.startsWith(
+        QStringLiteral("Import complete.")));
+
+    QSqlQuery importedNativeEnglish(
+        services.databaseSession()->database());
+    QVERIFY(importedNativeEnglish.exec(QStringLiteral(
+        "SELECT COUNT(*) FROM native_english_teachers")));
+    QVERIFY(importedNativeEnglish.next());
+    QVERIFY(importedNativeEnglish.value(0).toInt() > 0);
+
+    QSqlQuery importedGsTeam(services.databaseSession()->database());
+    QVERIFY(importedGsTeam.exec(QStringLiteral(
+        "SELECT COUNT(*) FROM gs_team")));
+    QVERIFY(importedGsTeam.next());
+    QVERIFY(importedGsTeam.value(0).toInt() > 0);
+
+    QSqlQuery savedDate(services.databaseSession()->database());
+    savedDate.prepare(QStringLiteral(
+        "SELECT value FROM app_settings WHERE key=?"));
+    savedDate.addBindValue(QString::fromLatin1(
+        TeacherImportRepository::LatestSourceDateSetting));
+    QVERIFY(savedDate.exec());
+    QVERIFY(savedDate.next());
+    QCOMPARE(savedDate.value(0).toString(), QStringLiteral("2026-09-01"));
+}
+
+void NavigationTeacherReadTests::
+teacherImportNewerAndMissingVersionsProceedWithoutPrompt()
+{
+    const QString fixturePath = teacherImportFixturePath();
+    QVERIFY(QFileInfo::exists(fixturePath));
+
+    const QVector<std::optional<QString>> priorDates{
+        QStringLiteral("2026-08-31"),
+        std::nullopt
+    };
+    for (const std::optional<QString>& priorDate : priorDates)
+    {
+        QTemporaryDir directory;
+        QVERIFY(directory.isValid());
+        ApplicationServices services;
+        QVERIFY(services.openDatabase(databasePath(directory)));
+        if (priorDate)
+        {
+            QVERIFY(services.databaseSession()->settingsRepository()->saveSetting(
+                QString::fromLatin1(
+                    TeacherImportRepository::LatestSourceDateSetting),
+                *priorDate));
+        }
+
+        PageManager pages;
+        Sidebar sidebar;
+        SidebarController controller(&services, &sidebar, &pages);
+        FakeUserPromptService prompts;
+        DialogServices::setUserPromptServiceForTesting(&prompts);
+
+        TeacherImportDialogObservation observation;
+        QVERIFY(invokeTeacherImportDialog(controller, true, observation));
+
+        QVERIFY(prompts.confirmations.isEmpty());
+        QCOMPARE(prompts.messages.size(), 1);
+        QCOMPARE(prompts.messages.first().severity, PromptSeverity::Information);
+        QCOMPARE(prompts.messages.first().title, QStringLiteral("Import Teachers"));
+        QVERIFY(prompts.messages.first().message.startsWith(
+            QStringLiteral("Import complete.")));
+
+        QSqlQuery savedDate(services.databaseSession()->database());
+        savedDate.prepare(QStringLiteral(
+            "SELECT value FROM app_settings WHERE key=?"));
+        savedDate.addBindValue(QString::fromLatin1(
+            TeacherImportRepository::LatestSourceDateSetting));
+        QVERIFY(savedDate.exec());
+        QVERIFY(savedDate.next());
+        QCOMPARE(savedDate.value(0).toString(), QStringLiteral("2026-09-01"));
+    }
+}
+
+void NavigationTeacherReadTests::
+teacherImportLatestDateReadFailureWarnsAndStops()
+{
+    const QString fixturePath = teacherImportFixturePath();
+    QVERIFY(QFileInfo::exists(fixturePath));
+
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+    QSqlQuery dropSettings(services.databaseSession()->database());
+    QVERIFY(dropSettings.exec(QStringLiteral("DROP TABLE app_settings")));
+
+    PageManager pages;
+    Sidebar sidebar;
+    SidebarController controller(&services, &sidebar, &pages);
+    FakeUserPromptService prompts;
+    DialogServices::setUserPromptServiceForTesting(&prompts);
+
+    TeacherImportDialogObservation observation;
+    QVERIFY(invokeTeacherImportDialog(controller, true, observation));
+
+    QVERIFY(prompts.confirmations.isEmpty());
+    QCOMPARE(prompts.messages.size(), 1);
+    QCOMPARE(prompts.messages.first().severity, PromptSeverity::Warning);
+    QCOMPARE(prompts.messages.first().title, QStringLiteral("Import Teachers"));
+    QVERIFY(!prompts.messages.first().message.isEmpty());
+    QVERIFY(!prompts.messages.first().message.startsWith(
+        QStringLiteral("Import complete.")));
+    QVERIFY(prompts.asynchronousMessages.isEmpty());
+
+    for (const QString& table : {
+             QStringLiteral("teachers"),
+             QStringLiteral("native_english_teachers"),
+             QStringLiteral("gs_team")})
+    {
+        QSqlQuery importedCount(services.databaseSession()->database());
+        QVERIFY(importedCount.exec(
+            QStringLiteral("SELECT COUNT(*) FROM ") + table));
+        QVERIFY(importedCount.next());
+        QCOMPARE(importedCount.value(0).toInt(), 0);
+    }
+}
+
+void NavigationTeacherReadTests::
+teacherImportDialogCancelAndNoSessionStaySilent()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+    QSqlQuery dropSettings(services.databaseSession()->database());
+    QVERIFY(dropSettings.exec(QStringLiteral("DROP TABLE app_settings")));
+
+    PageManager pages;
+    Sidebar sidebar;
+    SidebarController controller(&services, &sidebar, &pages);
+    FakeUserPromptService prompts;
+    DialogServices::setUserPromptServiceForTesting(&prompts);
+
+    TeacherImportDialogObservation observation;
+    QVERIFY(invokeTeacherImportDialog(controller, false, observation));
+    QVERIFY(prompts.messages.isEmpty());
+    QVERIFY(prompts.confirmations.isEmpty());
+    QVERIFY(prompts.asynchronousMessages.isEmpty());
+
+    ApplicationServices noSessionServices;
+    PageManager noSessionPages;
+    Sidebar noSessionSidebar;
+    SidebarController noSessionController(
+        &noSessionServices,
+        &noSessionSidebar,
+        &noSessionPages);
+    QVERIFY(QMetaObject::invokeMethod(
+        &noSessionController,
+        "importTeachers",
+        Qt::DirectConnection));
+    QApplication::processEvents();
+    QVERIFY(prompts.messages.isEmpty());
+    QVERIFY(prompts.confirmations.isEmpty());
     QVERIFY(QApplication::activeModalWidget() == nullptr);
 }
 

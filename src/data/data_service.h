@@ -136,8 +136,6 @@ public:
         const TeacherImportPlan& plan
         );
 
-    [[nodiscard]] Result<QDate> latestTeacherImportDate();
-
 
 
     // =====================================================

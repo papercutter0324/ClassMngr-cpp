@@ -260,19 +260,6 @@ Result<TeacherImportSummary> DataService::importTeachers(
     return m_session->teacherImportRepository()->importTeachers(plan);
 }
 
-Result<QDate> DataService::latestTeacherImportDate()
-{
-    const Result<QVariant> value = loadSetting(
-        QString::fromLatin1(TeacherImportRepository::LatestSourceDateSetting)
-        );
-    if (!value)
-    {
-        return std::unexpected(value.error());
-    }
-
-    return QDate::fromString(value->toString(), Qt::ISODate);
-}
-
 Result<int> DataService::createClass(
     const QString &name
     )

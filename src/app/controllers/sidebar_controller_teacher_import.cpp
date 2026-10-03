@@ -7,6 +7,11 @@ using namespace SidebarControllerPrivate;
 
 #include "features/teacher/ui/staff_directory_page.h"
 #include "features/teacher/ui/teacher_import_dialog.h"
+#include "next/application/teacher_import_latest_source_date_read_query.h"
+#include "next/platform/application_services_teacher_import_latest_source_date_read_port.h"
+
+#include <optional>
+#include <string>
 
 
 void SidebarController::importTeachers()
@@ -24,19 +29,39 @@ void SidebarController::importTeachers()
     }
 
     const TeacherImportPlan plan = dialog.importPlan();
-    const Result<QDate> previousDateResult = teachers->latestImportDate();
+    ClassMngr::Next::Platform::
+        ApplicationServicesTeacherImportLatestSourceDateReadPort readPort(
+            m_services);
+    const ClassMngr::Next::Application::
+        TeacherImportLatestSourceDateReadQuery query(readPort);
+    const ClassMngr::Next::Application::
+        TeacherImportLatestSourceDateReadResult previousDateResult =
+            query.execute();
     if (!previousDateResult)
     {
         DialogServices::showWarning(
             m_sidebar,
             tr("Import Teachers"),
-            previousDateResult.error()
+            QString::fromUtf8(
+                previousDateResult.error().message.data(),
+                static_cast<qsizetype>(
+                    previousDateResult.error().message.size()))
             );
         return;
     }
 
-    const QDate previousDate = *previousDateResult;
-    if (previousDate.isValid() && plan.sourceDate <= previousDate)
+    const std::optional<std::string>& previousDateText =
+        previousDateResult.value();
+    const QDate previousDate = previousDateText
+        ? QDate::fromString(
+              QString::fromUtf8(
+                  previousDateText->data(),
+                  static_cast<qsizetype>(previousDateText->size())),
+              Qt::ISODate)
+        : QDate();
+    if (previousDate.isValid()
+        && plan.sourceDate.isValid()
+        && plan.sourceDate <= previousDate)
     {
         const bool versionsMatch = plan.sourceDate == previousDate;
         const QString confirmationMessage =
