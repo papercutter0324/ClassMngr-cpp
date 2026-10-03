@@ -7,8 +7,10 @@
 #include "ui/shared/widgets/marquee_item_delegate.h"
 #include "domain/models/teacher.h"
 #include "next/application/selected_class_subtitle_read_query.h"
+#include "next/application/roster_read_query.h"
 #include "next/domain/domain_types.h"
 #include "next/platform/application_services_selected_class_subtitle_read_port.h"
+#include "next/platform/application_services_roster_read_port.h"
 #include "ui/shared/widgets/no_wheel_combobox.h"
 #include "ui/shared/widgets/text_fit_dialog_button_box.h"
 #include "ui/shared/widgets/text_fit_push_button.h"
@@ -492,11 +494,35 @@ void RosterPrintDialog::updateExtraInfoColumns()
     QList<RosterTemplatePrintService::RosterClassData> rosterClasses;
     rosterClasses.reserve(classIds.size());
 
+    const ClassMngr::Next::Platform::ApplicationServicesRosterReadPort
+        rosterReadPort(m_services);
     for (int classId : classIds)
     {
         RosterTemplatePrintService::RosterClassData data;
-        data.roster =
-            rosterService->roster(classId).value_or(Roster{});
+        const auto typedClassId =
+            ClassMngr::Next::Domain::ClassId::fromString(
+                std::to_string(classId)
+                );
+        if (typedClassId)
+        {
+            const ClassMngr::Next::Application::RosterReadQuery query{
+                .classId = *typedClassId
+            };
+            const auto loadedRoster =
+                ClassMngr::Next::Application::RosterReadUseCase::execute(
+                    query,
+                    rosterReadPort
+                    );
+            if (loadedRoster)
+            {
+                for (const std::u16string& column : loadedRoster.value().columns)
+                {
+                    data.roster.columns.append(
+                        QString::fromStdU16String(column)
+                        );
+                }
+            }
+        }
         rosterClasses.append(data);
     }
 
