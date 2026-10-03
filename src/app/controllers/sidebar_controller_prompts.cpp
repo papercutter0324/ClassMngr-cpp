@@ -2,6 +2,11 @@
 #include "ui/shared/dialogs/user_prompt_service.h"
 
 #include "app/services/feature_services.h"
+#include "next/application/selected_class_subtitle_read_query.h"
+#include "next/platform/application_services_selected_class_subtitle_read_port.h"
+
+#include <string>
+#include <utility>
 
 using namespace SidebarControllerPrivate;
 
@@ -125,17 +130,62 @@ QString SidebarController::classDisplayName(
             : classroom.name.trimmed();
     }
 
-    const ClassInfo classInfo =
-        classes->classInfo(
-            classroom.id
-            ).value_or(ClassInfo{});
-
+    ClassInfo classInfo;
     Teacher teacher;
 
-    if (classInfo.teacherId > 0)
+    const auto classId = ClassMngr::Next::Domain::ClassId::fromString(
+        std::to_string(classroom.id)
+        );
+    if (classId)
     {
-        teacher = teachers->teacher(classInfo.teacherId)
-            .value_or(Teacher{});
+        ClassMngr::Next::Platform::
+            ApplicationServicesSelectedClassSubtitleReadPort readPort(
+                m_services
+                );
+        const ClassMngr::Next::Application::SelectedClassSubtitleReadQuery
+            query(readPort);
+        const auto loadedSubtitle = query.execute(*classId);
+        if (loadedSubtitle && loadedSubtitle.value().classFields)
+        {
+            const auto& subtitle = loadedSubtitle.value();
+            const auto& fields = subtitle.classFields.value();
+            classInfo.classGrade = QString::fromStdU16String(
+                fields.classGrade
+                );
+            classInfo.classLevel = QString::fromStdU16String(
+                fields.classLevel
+                );
+            classInfo.classTimes.reserve(
+                static_cast<qsizetype>(fields.regularSchedule.size())
+                );
+            for (const auto& row : fields.regularSchedule)
+            {
+                ClassTime time;
+                time.day = QString::fromStdU16String(row.day);
+                time.startTime = QString::fromStdU16String(row.startTime);
+                time.endTime.clear();
+                classInfo.classTimes.append(std::move(time));
+            }
+
+            if (subtitle.assignedTeacher
+                && subtitle.assignedTeacher.value())
+            {
+                const auto& teacherFields =
+                    subtitle.assignedTeacher.value().value();
+                teacher.teacherKr = QString::fromStdU16String(
+                    teacherFields.teacherKr
+                    );
+                teacher.teacherEn = QString::fromStdU16String(
+                    teacherFields.teacherEn
+                    );
+                teacher.preferredRomanization = QString::fromStdU16String(
+                    teacherFields.preferredRomanization
+                    );
+                teacher.preferredName = QString::fromStdU16String(
+                    teacherFields.preferredName
+                    );
+            }
+        }
     }
 
     QString displayName =
