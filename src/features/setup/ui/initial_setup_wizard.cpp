@@ -567,9 +567,19 @@ public:
         {
             return InitialSetupWizard::CompletionPage;
         }
-        if (!setup->teacherService()
-            || setup->teacherService()->teachers()
-                .value_or(QList<Teacher>{}).isEmpty())
+        if (!setup->teacherService())
+        {
+            return InitialSetupWizard::TeacherEntryPage;
+        }
+
+        ClassMngr::Next::Platform::
+            ApplicationServicesInitialSetupTeacherChoicesReadPort readPort(
+                setup->services()
+                );
+        const ClassMngr::Next::Application::
+            InitialSetupTeacherChoicesReadQuery query(readPort);
+        const auto teachers = query.execute();
+        if (!teachers || teachers.value().teachers.empty())
         {
             return InitialSetupWizard::TeacherEntryPage;
         }
@@ -691,11 +701,18 @@ public:
         if (currentFieldsEmpty())
         {
             auto* setup = setupWizard(this);
-            if (setup && setup->teacherService()
-                && !setup->teacherService()->teachers()
-                    .value_or(QList<Teacher>{}).isEmpty())
+            if (setup && setup->teacherService())
             {
-                return true;
+                ClassMngr::Next::Platform::
+                    ApplicationServicesInitialSetupTeacherChoicesReadPort
+                        readPort(setup->services());
+                const ClassMngr::Next::Application::
+                    InitialSetupTeacherChoicesReadQuery query(readPort);
+                const auto teachers = query.execute();
+                if (teachers && !teachers.value().teachers.empty())
+                {
+                    return true;
+                }
             }
         }
         return saveCurrentTeacher(false);

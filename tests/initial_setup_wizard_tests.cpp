@@ -101,6 +101,34 @@ bool executeSql(
     return query.exec(statement);
 }
 
+bool addTeacher(ApplicationServices& services, const QString& name)
+{
+    Teacher teacher;
+    teacher.teacherEn = name;
+    teacher.teacherKr = QStringLiteral("Korean Name");
+    teacher.preferredName = name;
+    TeacherRepository* const repository =
+        services.databaseSession()->teacherRepository();
+    if (!repository)
+    {
+        return false;
+    }
+    return repository->createTeacher(teacher).has_value();
+}
+
+struct ScopedUserPromptService final
+{
+    explicit ScopedUserPromptService(IUserPromptService* service)
+    {
+        DialogServices::setUserPromptServiceForTesting(service);
+    }
+
+    ~ScopedUserPromptService()
+    {
+        DialogServices::setUserPromptServiceForTesting(nullptr);
+    }
+};
+
 } // namespace
 
 class InitialSetupWizardTests : public QObject
@@ -116,6 +144,10 @@ private slots:
     void missingAndUnavailableDisplayNameStayEmpty();
     void classDetailsShowsOrderedPreferredTeacherNamesAndSelectsSingleTeacher();
     void classDetailsShowsTeacherReadFailureAndLeavesChoicesEmpty();
+    void personalDetailsRoutesToClassDetailsWhenTeachersExist();
+    void personalDetailsRoutesToTeacherEntryWhenNoTeachersExist();
+    void blankTeacherEntrySkipsWhenTeachersExist();
+    void teacherChoiceReadFailuresBehaveAsEmptyWithoutWarnings();
     void unavailableSettingsBlockPersonalDetailsValidationWithoutMutation();
     void aggregateSavePreservesAllPersonalDetailsWithoutDataLoss();
     void aggregateSaveFailureLeavesAllPersonalDetailsUnchanged();
@@ -231,6 +263,123 @@ classDetailsShowsTeacherReadFailureAndLeavesChoicesEmpty()
         QStringLiteral("setupClassTeacher"));
     QVERIFY(teachers);
     QCOMPARE(teachers->count(), 0);
+}
+
+void InitialSetupWizardTests::
+personalDetailsRoutesToClassDetailsWhenTeachersExist()
+{
+    ApplicationServices services;
+    QVERIFY(openDatabase(services, m_directory));
+    QVERIFY(addTeacher(services, QStringLiteral("Existing Teacher")));
+
+    InitialSetupWizard wizard(&services);
+    showPersonalDetailsPage(wizard);
+
+    auto* name = wizard.findChild<QLineEdit*>(
+        QStringLiteral("setupUserName")
+        );
+    auto* next = wizard.button(QWizard::NextButton);
+    QVERIFY(name);
+    QVERIFY(next);
+    name->setText(QStringLiteral("Setup User"));
+    next->click();
+    QApplication::processEvents();
+
+    QCOMPARE(wizard.currentId(), InitialSetupWizard::ClassDetailsPage);
+}
+
+void InitialSetupWizardTests::
+personalDetailsRoutesToTeacherEntryWhenNoTeachersExist()
+{
+    ApplicationServices services;
+    QVERIFY(openDatabase(services, m_directory));
+
+    InitialSetupWizard wizard(&services);
+    showPersonalDetailsPage(wizard);
+
+    auto* name = wizard.findChild<QLineEdit*>(
+        QStringLiteral("setupUserName")
+        );
+    auto* next = wizard.button(QWizard::NextButton);
+    QVERIFY(name);
+    QVERIFY(next);
+    name->setText(QStringLiteral("Setup User"));
+    next->click();
+    QApplication::processEvents();
+
+    QCOMPARE(wizard.currentId(), InitialSetupWizard::TeacherEntryPage);
+}
+
+void InitialSetupWizardTests::blankTeacherEntrySkipsWhenTeachersExist()
+{
+    ApplicationServices services;
+    QVERIFY(openDatabase(services, m_directory));
+    QVERIFY(addTeacher(services, QStringLiteral("Existing Teacher")));
+
+    InitialSetupWizard wizard(&services);
+    wizard.setStartId(InitialSetupWizard::TeacherEntryPage);
+    wizard.show();
+    QApplication::processEvents();
+    QCOMPARE(wizard.currentId(), InitialSetupWizard::TeacherEntryPage);
+
+    auto* next = wizard.button(QWizard::NextButton);
+    QVERIFY(next);
+    next->click();
+    QApplication::processEvents();
+
+    QCOMPARE(wizard.currentId(), InitialSetupWizard::ClassDetailsPage);
+}
+
+void InitialSetupWizardTests::
+teacherChoiceReadFailuresBehaveAsEmptyWithoutWarnings()
+{
+    ApplicationServices services;
+    QVERIFY(openDatabase(services, m_directory));
+    QVERIFY(executeSql(services, QStringLiteral("DROP TABLE teachers")));
+
+    FakeUserPromptService prompts;
+    [[maybe_unused]] const ScopedUserPromptService promptService(&prompts);
+    InitialSetupWizard wizard(&services);
+    showPersonalDetailsPage(wizard);
+
+    auto* name = wizard.findChild<QLineEdit*>(
+        QStringLiteral("setupUserName")
+        );
+    auto* next = wizard.button(QWizard::NextButton);
+    QVERIFY(name);
+    QVERIFY(next);
+    name->setText(QStringLiteral("Setup User"));
+    next->click();
+    QApplication::processEvents();
+
+    QCOMPARE(wizard.currentId(), InitialSetupWizard::TeacherEntryPage);
+    QVERIFY2(prompts.messages.isEmpty(),
+             "A failed routing read should behave like an empty list without warning.");
+    QVERIFY(prompts.asynchronousMessages.isEmpty());
+
+    next->click();
+    QApplication::processEvents();
+
+    QCOMPARE(wizard.currentId(), InitialSetupWizard::TeacherEntryPage);
+    QCOMPARE(prompts.messages.size(), 1);
+    QCOMPARE(
+        prompts.messages.constFirst().severity,
+        PromptSeverity::Information
+        );
+    QCOMPARE(
+        prompts.messages.constFirst().title,
+        QStringLiteral("Teacher Information")
+        );
+    QVERIFY(
+        prompts.messages.constFirst().message.contains(
+            QStringLiteral("Complete at least")
+            )
+        );
+    for (const PromptRequest& prompt : prompts.messages)
+    {
+        QVERIFY(prompt.severity != PromptSeverity::Warning);
+    }
+    QVERIFY(prompts.asynchronousMessages.isEmpty());
 }
 
 void InitialSetupWizardTests::keyboardIsAvailableAtTextEntryStages()
