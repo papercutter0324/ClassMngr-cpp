@@ -444,6 +444,7 @@ class RosterTransferMenuTests final : public QObject
 private slots:
     void cleanup();
     void sameGradeTargetsAreSortedAndDifferentOrEmptyGradesAreExcluded();
+    void classListReadFailureWarnsAndShowsNoSameGradeTargets();
     void teacherReadFailureKeepsClassFieldsInDisplayLabel();
     void classFieldsReadFailureShowsNoSameGradeTargets();
     void fullSameGradeTargetIsLabeledAndDisabled();
@@ -534,6 +535,75 @@ sameGradeTargetsAreSortedAndDifferentOrEmptyGradesAreExcluded()
         })
         );
     QCOMPARE(menu.enabled, QList<bool>({true, true}));
+}
+
+void RosterTransferMenuTests::
+classListReadFailureWarnsAndShowsNoSameGradeTargets()
+{
+    RosterTransferMenuFixture fixture;
+    QString error;
+    QVERIFY2(fixture.initialize(&error), qPrintable(error));
+
+    int sourceId = 0;
+    int targetId = 0;
+    QVERIFY2(fixture.createClass(
+                 QStringLiteral("Source database name"),
+                 QStringLiteral("E4"),
+                 QStringLiteral("Perseus"),
+                 -1,
+                 &sourceId,
+                 &error
+                 ), qPrintable(error));
+    QVERIFY2(fixture.createClass(
+                 QStringLiteral("Target database name"),
+                 QStringLiteral("E4"),
+                 QStringLiteral("Hercules"),
+                 -1,
+                 &targetId,
+                 &error
+                 ), qPrintable(error));
+    QVERIFY(targetId > 0);
+    QVERIFY2(fixture.addRosterRow(sourceId, &error), qPrintable(error));
+
+    // Fail only the class-list query. Class and class-field metadata remain
+    // available, so the caller reaches the list read with usable source data.
+    QSqlQuery dropTestingClasses(
+        fixture.services.databaseSession()->database()
+        );
+    QVERIFY2(
+        dropTestingClasses.exec(QStringLiteral("DROP TABLE testing_classes")),
+             qPrintable(dropTestingClasses.lastError().text()));
+
+    FakeUserPromptService prompts;
+    DialogServices::setUserPromptServiceForTesting(&prompts);
+    RosterEditorWidget editor(&fixture.services);
+    editor.loadClass(Classroom(QStringLiteral("Source page name"), sourceId));
+    editor.show();
+    QApplication::processEvents();
+    auto* const table = editor.findChild<RosterTableView*>(
+        QStringLiteral("rosterTable")
+        );
+    QVERIFY(table);
+
+    const TransferMenuSnapshot menu = openTransferMenu(editor, table);
+    QVERIFY(menu.invocationSucceeded);
+    QVERIFY(menu.transferMenuFound);
+    QCOMPARE(
+        menu.labels,
+        QStringList({QStringLiteral("No same-grade classes")})
+        );
+    QCOMPARE(menu.enabled, QList<bool>({false}));
+
+    QCOMPARE(prompts.messages.size(), 1);
+    const PromptRequest& warning = prompts.messages.constFirst();
+    QCOMPARE(warning.severity, PromptSeverity::Warning);
+    QCOMPARE(warning.title, QStringLiteral("Transfer Student"));
+    QCOMPARE(
+        warning.message,
+        QStringLiteral("Transfer classes could not be loaded.")
+        );
+    QVERIFY(!warning.details.trimmed().isEmpty());
+    QVERIFY(prompts.asynchronousMessages.isEmpty());
 }
 
 void RosterTransferMenuTests::

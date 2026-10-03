@@ -7,10 +7,12 @@
 #include "core/utils/sidebar_node_naming.h"
 #include "features/roster/ui/roster_model.h"
 #include "features/roster/ui/roster_table_view.h"
+#include "next/application/classes_list_read_query.h"
 #include "next/application/roster_read_query.h"
 #include "next/application/roster_transfer_target_eligibility.h"
 #include "next/application/selected_class_subtitle_read_query.h"
 #include "next/domain/domain_types.h"
+#include "next/platform/application_services_classes_list_read_port.h"
 #include "next/platform/application_services_roster_read_port.h"
 #include "next/platform/application_services_selected_class_subtitle_read_port.h"
 #include "ui/shared/qt_text_adapter.h"
@@ -22,7 +24,9 @@
 #include <QTimer>
 
 #include <algorithm>
+#include <charconv>
 #include <string>
+#include <system_error>
 #include <utility>
 
 namespace
@@ -40,6 +44,49 @@ struct TransferClassMetadata
     QString grade;
     QString displayName;
 };
+
+QList<Classroom> classroomsFromListSnapshot(
+    const ClassMngr::Next::Application::ClassesListSnapshot& snapshot
+    )
+{
+    QList<Classroom> classrooms;
+    classrooms.reserve(static_cast<qsizetype>(snapshot.classes.size()));
+    for (const auto& entry : snapshot.classes)
+    {
+        int classId = 0;
+        const std::string& classIdValue = entry.classId.value();
+        const auto [end, error] = std::from_chars(
+            classIdValue.data(),
+            classIdValue.data() + classIdValue.size(),
+            classId
+            );
+        Q_ASSERT(
+            error == std::errc{}
+            && end == classIdValue.data() + classIdValue.size()
+            && classId > 0
+            );
+        if (error != std::errc{}
+            || end != classIdValue.data() + classIdValue.size()
+            || classId <= 0)
+        {
+            continue;
+        }
+
+        Classroom classroom;
+        classroom.id = classId;
+        classroom.name = QString::fromStdU16String(entry.className);
+        classrooms.append(std::move(classroom));
+    }
+    return classrooms;
+}
+
+QString classesListErrorMessage(const std::string& message)
+{
+    return QString::fromUtf8(
+        message.data(),
+        static_cast<qsizetype>(message.size())
+        );
+}
 
 Roster rosterFromSnapshot(
     const ClassMngr::Next::Application::RosterSnapshot& snapshot
@@ -205,19 +252,28 @@ void RosterEditorWidget::showRosterContextMenu(
             Ui::QtTextAdapter::toUtf16String(currentGrade)
             ))
     {
-        const Result<QList<Classroom>> classes = classService->classes();
+        ClassMngr::Next::Platform::
+            ApplicationServicesClassesListReadPort readPort(m_services);
+        const ClassMngr::Next::Application::ClassesListReadQuery query(
+            readPort
+            );
+        const auto classes = query.execute();
+        QList<Classroom> availableClasses;
         if (!classes)
         {
             DialogServices::showWarning(
                 this,
                 tr("Transfer Student"),
                 tr("Transfer classes could not be loaded."),
-                classes.error()
+                classesListErrorMessage(classes.error().message)
                 );
             transferMenu->setEnabled(false);
         }
-        for (const Classroom& classroom : classes.value_or(
-                 QList<Classroom>{}))
+        else
+        {
+            availableClasses = classroomsFromListSnapshot(classes.value());
+        }
+        for (const Classroom& classroom : availableClasses)
         {
             if (!ClassMngr::Next::Application::shouldReadRosterTransferTargetClassInfo(
                     m_classroom.id,
