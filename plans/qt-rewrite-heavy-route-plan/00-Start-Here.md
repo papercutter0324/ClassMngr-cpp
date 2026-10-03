@@ -52,10 +52,11 @@
   (batch ClassExportDialog selected-subtitle reads), F302 (batch class-delete
   chooser subtitle-label reads following F275), F303 (batch RosterPrintDialog
   per-class subtitle reads after F261), and F304 (batch RosterPrintDialog
-  extra-column roster reads after F264) are accepted; F305 (batch transfer-menu
-  target metadata, capacity, and roster reads after F259/F265) is selected
-  next, distinct from F273's transfer-time target read. Batch 4 (F306-F315) is
-  recorded.
+  extra-column roster reads after F264) and F305 (batch transfer-menu target
+  metadata, capacity, and roster reads after F259/F265) are accepted; F305
+  remains distinct from F273's transfer-time target read. F306 (batch My
+  Classes compact class-information reads after F291) is selected. Batch 4
+  (F306-F315) is recorded.
   Gates 1 and 2 remain Partial, with broader feature
   migration, parity, and 96-class Release memory evidence still open.
   See the

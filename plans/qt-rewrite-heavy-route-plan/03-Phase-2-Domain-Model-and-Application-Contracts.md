@@ -18,11 +18,11 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-04
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F305 is selected to batch transfer-menu target metadata,
-  capacity, and roster reads after F259/F265, keeping its loop distinct
-  from F273's transfer-time target read. Batch 4 (F306-F315) is recorded; carry
-  the fixed up-to-four-evaluation roster score-import read into Batch 5
-  discovery at F314 start.
+- Current note: F306 is selected to batch My Classes compact class-information
+  reads after F291, preserving class-info/default/failure outcomes separately
+  from roster and teacher inputs. Batch 4 (F306-F315) is recorded; at F314
+  start, discover Batch 5 and reconsider the fixed up-to-four-evaluation
+  roster score-import read.
 
 ### Slice discovery batches
 
@@ -114,7 +114,7 @@ No other slices were found.
    5. F304 accepted (discovered in separate F299 audit) — Batch
       `RosterPrintDialog` extra-column roster reads after F264; preserve scope,
       column union, and failure fallback.
-   6. F305 selected (discovered in separate F299 audit) — Batch transfer-menu
+   6. F305 accepted (discovered in separate F299 audit) — Batch transfer-menu
       target metadata, capacity, and roster reads after F259/F265; keep
       distinct from F273's transfer-time target read.
 
@@ -317,36 +317,43 @@ No new v2 production path depends on DataService, MainWindow, PageManager, or a 
 
 Earlier verified slices and cumulative exit-gate snapshots are archived in the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 
-## Latest Progress Update - 2026-10-04 (F304 accepted; F305 selected)
+## Latest Progress Update - 2026-10-04 (F305 accepted; F306 selected)
 
-F304, committed as `2852290e7c51709e8c64d3361ff5ec1bad2d9366`, adds a Qt-free
-typed batch roster-extra-info Application contract and active-session Platform
-adapter. `RosterPrintDialog` sends resolved IDs in their existing order to one
-query and maps name-only results back to the existing roster slots; the
-existing union, filtering, and selection flow remains. The repository prepares
-and executes one query selecting only `roster_columns` class IDs/names, ordered
-by request order, column position, and ID. Empty or missing-column classes
-return successful empty slots. No roster rows, widths, or output-only limit are
-included. Query failure remains silent with no extra columns; the class-list
-error path is unchanged.
+F305, committed as `c4720ba67ff6d5f35e26ee9da017f2d0c369293e`, batches
+transfer-menu candidate subtitle metadata with
+`SelectedClassSubtitleBatchReadQuery` after source metadata/class-list flow.
+Eligible targets use one typed batch capacity use case and active-session
+Platform call. Its Application contract returns only class IDs and first-empty-
+row indices. A Qt-free roster-column projection is shared by `RosterModel` and
+the capacity adapter; the adapter receives existing `Roster::BaseColumns`, and
+the shared 25-row limit applies to both UI and capacity. The repository reuses
+the ordered-column-name batch query and adds a forward-only batched sparse-cell
+stream for row indices 0-24, processing capacity incrementally without
+returning full roster snapshots or cell text to the menu. F273's fresh
+transfer-time target roster read is unchanged.
 
-Independent fresh Windows x64 Debug/Ninja verification passed the source-
-ownership configure gate at 1,276 handwritten files (1,278 workspace inventory
-after platform filtering). `ClassMngr` and six focused targets built; six
-focused CTests passed for the dialog, print service, batch Application
-contract, existing roster read, batch Platform adapter, and roster-output
-source. `git diff --check` passed. Logs are under
-`build/f304_verify_ninja/` (`configure3.log`, `build.log`, and
-`focused-ctest.log`). The full suite was not run. No runtime SQL trace or
-counter asserts statement count; source evidence shows one prepared repository
-query and one batch use-case call. Keep this fresh verification tree for
-continued Phase 2 work.
+Menu labels/order and class-field/teacher-field failure distinctions remain.
+Capacity failure stays silent and fail-open to the first slot; class-field
+metadata failures exclude a target, teacher failure keeps class fields with
+`No Teacher`, and the class-list warning path remains. No runtime query-count
+or memory instrumentation was added; batching and bounded streaming are
+supported by source inspection.
 
-F305 is selected to batch transfer-menu target metadata, capacity, and roster
-reads after F259/F265, keeping its loop distinct from F273's
-transfer-time target read. Batch 4 (F306-F315) is recorded; at F314 start,
-discover Batch 5 and reconsider the carried-forward fixed up-to-four-evaluation
-roster score-import read. F298 remains deferred pending the read-failure
-warning/navigation decision, and F299's separate completeness audit remains
-distinct from Batch 3 discovery. Phase 2 remains In Progress/Open; Gates 1 and
-2 remain Partial.
+Executor verification configured `build/f304_verify_ninja`, passed source
+ownership at 1,283 handwritten files, built affected production/test targets,
+and passed focused CTest 8/8 plus `git diff --check` (line-ending conversion
+warnings only). An independent Tester reconfigured the same tree, rebuilt the
+touched dependency graph in 327 Ninja steps, built
+`ClassMngrRosterModelTests`, `ClassMngrRosterTransferMenuTests`,
+`ClassMngrNextApplicationRosterAvailabilityBatchReadQueryTests`, and
+`ClassMngrNextPlatformApplicationServicesRosterReadPortTests`, then passed
+focused CTest 4/4 and `git diff --check`. The tester log is
+`build/f304_verify_ninja/Testing/Temporary/LastTest.log`. These are separate
+focused passes; the full suite was not run.
+
+F306 is selected to batch My Classes compact class-information reads after
+F291, preserving class-info/default/failure outcomes separately from roster
+and teacher inputs. Batch 4 (F306-F315) remains ordered; at F314 start, discover
+Batch 5 and reconsider the fixed up-to-four-evaluation roster score-import
+read. F298 remains deferred pending the read-failure warning/navigation
+decision. Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial.

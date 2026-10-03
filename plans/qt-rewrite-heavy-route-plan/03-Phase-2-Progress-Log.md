@@ -11040,3 +11040,46 @@ distinct from F273's transfer-time target read. Batch 4 records F306-F315. The
 fixed up-to-four-evaluation roster score-import read remains a separate
 candidate for Batch 5 discovery at F314 start; it has no F number yet. Phase 2
 remains In Progress/Open; Gates 1 and 2 remain Partial.
+
+### Progress update - 2026-10-04 (F305 accepted; F306 selected)
+
+F305, committed as `c4720ba67ff6d5f35e26ee9da017f2d0c369293e`, batches
+transfer-menu candidate subtitle metadata with
+`SelectedClassSubtitleBatchReadQuery` after source metadata/class-list flow.
+Eligible targets use one typed batch capacity use case and active-session
+Platform call. Its Application contract returns only class IDs and first-empty-
+row indices. A Qt-free roster-column projection is shared by `RosterModel` and
+the capacity adapter; the adapter receives existing `Roster::BaseColumns`, and
+the shared 25-row limit applies to both UI and capacity. The repository reuses
+the ordered-column-name batch query and adds a forward-only batched sparse-cell
+stream for row indices 0-24, processing capacity incrementally without
+returning full roster snapshots or cell text to the menu. F273's fresh
+transfer-time target roster read is unchanged.
+
+Menu labels/order and class-field/teacher-field failure distinctions remain.
+Capacity failure stays silent and fail-open to the first slot; class-field
+metadata failures exclude a target, teacher failure keeps class fields with
+`No Teacher`, and the class-list warning path remains. No runtime query-count
+or memory instrumentation was added; batching and bounded streaming are
+supported by source inspection.
+
+Executor verification configured `build/f304_verify_ninja`, passed source
+ownership at 1,283 handwritten files, built affected production/test targets,
+and passed focused CTest 8/8 plus `git diff --check` (line-ending conversion
+warnings only). An independent Tester reconfigured the same tree, rebuilt the
+touched dependency graph in 327 Ninja steps, built
+`ClassMngrRosterModelTests`, `ClassMngrRosterTransferMenuTests`,
+`ClassMngrNextApplicationRosterAvailabilityBatchReadQueryTests`, and
+`ClassMngrNextPlatformApplicationServicesRosterReadPortTests`, then passed
+focused CTest 4/4 and `git diff --check`. The tester log is
+`build/f304_verify_ninja/Testing/Temporary/LastTest.log`. These are separate
+focused passes; the full suite was not run.
+
+F306 is selected to batch My Classes compact class-information reads after
+F291, preserving class-info/default/failure outcomes separately from roster
+and teacher inputs. Batch 4's remaining F307-F315 order is unchanged; at F314
+start, discover Batch 5 and reconsider the fixed up-to-four-evaluation roster
+score-import read. F298 remains deferred pending the read-failure
+warning/navigation decision, and F299's separate completeness audit remains
+distinct from Batch 3 discovery. Phase 2 remains In Progress/Open; Gates 1 and
+2 remain Partial.
