@@ -40,6 +40,8 @@
 #include <QUuid>
 #include <QtTest/QtTest>
 
+#include <functional>
+
 namespace
 {
 
@@ -200,13 +202,14 @@ void createClassWithSubtitle(
 bool invokeDeleteClassSelecting(
     SidebarController& controller,
     const int classId,
-    RecordSelectionObservation& observation
+    RecordSelectionObservation& observation,
+    const std::function<void()>& beforeAccept = {}
     )
 {
     QTimer::singleShot(
         0,
         &controller,
-        [&observation, classId]
+        [&observation, classId, beforeAccept]
         {
             QDialog* dialog = qobject_cast<QDialog*>(
                 QApplication::activeModalWidget()
@@ -262,6 +265,10 @@ bool invokeDeleteClassSelecting(
 
             if (observation.selected && acceptButton->isEnabled())
             {
+                if (beforeAccept)
+                {
+                    beforeAccept();
+                }
                 acceptButton->click();
                 observation.accepted = true;
             }
@@ -492,6 +499,8 @@ private slots:
     void updateActionStatesClassListFailureDisablesClassActionsOnly();
     void classDeleteChooserUsesSubtitleLabelsAndConfirmsSelectedClass();
     void classListReadFailureShowsWarningWithoutOpeningChooser();
+    void classListReloadFailureAfterChooserWarnsBeforeConfirmation();
+    void selectedClassMissingFromReloadWarnsBeforeConfirmation();
     void classFieldsFailureUsesDefaultSubtitleAndNoTeacherFallback();
     void assignedTeacherFailureKeepsClassFieldsAndUsesNoTeacher();
     void classDeleteChooserRequiresAnActiveSession();
@@ -1270,6 +1279,171 @@ classListReadFailureShowsWarningWithoutOpeningChooser()
     QCOMPARE(warning.severity, PromptSeverity::Warning);
     QVERIFY(prompts.asynchronousMessages.isEmpty());
     QVERIFY(prompts.confirmations.isEmpty());
+    QVERIFY(QApplication::activeModalWidget() == nullptr);
+}
+
+void NavigationTeacherReadTests::
+classListReloadFailureAfterChooserWarnsBeforeConfirmation()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+
+    int classId = -1;
+    createClassWithSubtitle(
+        services,
+        QStringLiteral("Class before reload failure"),
+        -1,
+        QStringLiteral("E4"),
+        QStringLiteral("Orion"),
+        QStringLiteral("Monday"),
+        QStringLiteral("4:00 PM"),
+        classId
+        );
+    QVERIFY(classId > 0);
+
+    PageManager pages;
+    Sidebar sidebar;
+    SidebarController controller(&services, &sidebar, &pages);
+    FakeUserPromptService prompts;
+    DialogServices::setUserPromptServiceForTesting(&prompts);
+
+    bool classesTableDropped = false;
+    QString mutationError;
+    const auto dropClassesAfterChooserPopulation = [&]
+    {
+        QSqlQuery disableForeignKeys(
+            services.databaseSession()->database());
+        if (!disableForeignKeys.exec(QStringLiteral("PRAGMA foreign_keys=OFF")))
+        {
+            mutationError = disableForeignKeys.lastError().text();
+            return;
+        }
+
+        QSqlQuery dropClasses(services.databaseSession()->database());
+        if (!dropClasses.exec(QStringLiteral("DROP TABLE classes")))
+        {
+            mutationError = dropClasses.lastError().text();
+            return;
+        }
+        classesTableDropped = true;
+    };
+
+    RecordSelectionObservation observation;
+    QVERIFY(invokeDeleteClassSelecting(
+        controller,
+        classId,
+        observation,
+        dropClassesAfterChooserPopulation
+        ));
+
+    QVERIFY(observation.found);
+    QVERIFY(observation.selected);
+    QVERIFY(observation.accepted);
+    QCOMPARE(observation.selectedId, classId);
+    QVERIFY2(classesTableDropped, qPrintable(mutationError));
+
+    const auto expectedClassesRead = services.classService()->classes();
+    QVERIFY(!expectedClassesRead);
+    QVERIFY(!expectedClassesRead.error().trimmed().isEmpty());
+    const auto expectedClassRead = services.classService()->classroom(classId);
+    QVERIFY(!expectedClassRead);
+    QVERIFY(!expectedClassRead.error().trimmed().isEmpty());
+    QVERIFY(expectedClassesRead.error() != expectedClassRead.error());
+
+    QCOMPARE(prompts.messages.size(), 1);
+    const PromptRequest& warning = prompts.messages.constFirst();
+    QCOMPARE(warning.severity, PromptSeverity::Warning);
+    QCOMPARE(warning.title, QStringLiteral("Delete Class"));
+    QCOMPARE(warning.message, QStringLiteral("The class could not be loaded."));
+    QCOMPARE(warning.details, expectedClassesRead.error());
+    QVERIFY(prompts.confirmations.isEmpty());
+    QVERIFY(prompts.asynchronousMessages.isEmpty());
+    QVERIFY(QApplication::activeModalWidget() == nullptr);
+}
+
+void NavigationTeacherReadTests::
+selectedClassMissingFromReloadWarnsBeforeConfirmation()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+
+    int retainedClassId = -1;
+    int selectedClassId = -1;
+    createClassWithSubtitle(
+        services,
+        QStringLiteral("Retained class"),
+        -1,
+        QStringLiteral("E4"),
+        QStringLiteral("Orion"),
+        QStringLiteral("Monday"),
+        QStringLiteral("4:00 PM"),
+        retainedClassId
+        );
+    createClassWithSubtitle(
+        services,
+        QStringLiteral("Selected class to remove"),
+        -1,
+        QStringLiteral("E5"),
+        QStringLiteral("Vega"),
+        QStringLiteral("Tuesday"),
+        QStringLiteral("5:00 PM"),
+        selectedClassId
+        );
+    QVERIFY(retainedClassId > 0);
+    QVERIFY(selectedClassId > 0);
+
+    PageManager pages;
+    Sidebar sidebar;
+    SidebarController controller(&services, &sidebar, &pages);
+    FakeUserPromptService prompts;
+    DialogServices::setUserPromptServiceForTesting(&prompts);
+
+    bool selectedClassRemoved = false;
+    QString mutationError;
+    const auto removeSelectedClassAfterChooserPopulation = [&]
+    {
+        const Status removed = services.classService()->remove(selectedClassId);
+        if (!removed)
+        {
+            mutationError = removed.error();
+            return;
+        }
+        selectedClassRemoved = true;
+    };
+
+    RecordSelectionObservation observation;
+    QVERIFY(invokeDeleteClassSelecting(
+        controller,
+        selectedClassId,
+        observation,
+        removeSelectedClassAfterChooserPopulation
+        ));
+
+    QVERIFY(observation.found);
+    QVERIFY(observation.selected);
+    QVERIFY(observation.accepted);
+    QCOMPARE(observation.selectedId, selectedClassId);
+    QCOMPARE(observation.labels.size(), 3);
+    QVERIFY2(selectedClassRemoved, qPrintable(mutationError));
+
+    const auto refreshedClasses = services.classService()->classes();
+    QVERIFY(refreshedClasses);
+    QCOMPARE(refreshedClasses->size(), 1);
+    QCOMPARE(refreshedClasses->first().id, retainedClassId);
+    QVERIFY(!services.classService()->classroom(selectedClassId));
+
+    QCOMPARE(prompts.messages.size(), 1);
+    const PromptRequest& warning = prompts.messages.constFirst();
+    QCOMPARE(warning.severity, PromptSeverity::Warning);
+    QCOMPARE(warning.title, QStringLiteral("Delete Class"));
+    QCOMPARE(warning.message, QStringLiteral("The class could not be loaded."));
+    QCOMPARE(warning.details, QStringLiteral("The selected class could not be found."));
+    QVERIFY(prompts.confirmations.isEmpty());
+    QVERIFY(prompts.asynchronousMessages.isEmpty());
     QVERIFY(QApplication::activeModalWidget() == nullptr);
 }
 

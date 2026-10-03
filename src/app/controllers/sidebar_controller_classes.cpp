@@ -1,7 +1,11 @@
 #include "sidebar_controller_p.h"
 
 #include "app/services/feature_services.h"
+#include "next/application/classes_list_read_query.h"
+#include "next/platform/application_services_classes_list_read_port.h"
 #include "ui/shared/dialogs/user_prompt_service.h"
+
+#include <string>
 
 using namespace SidebarControllerPrivate;
 
@@ -84,23 +88,65 @@ void SidebarController::deleteClass()
         return;
     }
 
-    const Result<Classroom> classroom =
-        classes->classroom(
-            classId
+    const auto typedClassId =
+        ClassMngr::Next::Domain::ClassId::fromString(
+            std::to_string(classId)
             );
-
-    if (!classroom)
+    if (!typedClassId)
     {
         DialogServices::showWarning(
             m_sidebar,
             tr("Delete Class"),
             tr("The class could not be loaded."),
-            classroom.error()
+            tr("The selected class identifier is invalid.")
             );
         return;
     }
 
-    if (!confirmDeleteClass(*classroom))
+    ClassMngr::Next::Platform::
+        ApplicationServicesClassesListReadPort readPort(m_services);
+    const ClassMngr::Next::Application::ClassesListReadQuery query(readPort);
+    const auto loadedClasses = query.execute();
+    if (!loadedClasses)
+    {
+        DialogServices::showWarning(
+            m_sidebar,
+            tr("Delete Class"),
+            tr("The class could not be loaded."),
+            QString::fromUtf8(
+                loadedClasses.error().message.data(),
+                static_cast<qsizetype>(loadedClasses.error().message.size())
+                )
+            );
+        return;
+    }
+
+    Classroom classroom;
+    bool foundClass = false;
+    for (const auto& entry : loadedClasses.value().classes)
+    {
+        if (entry.classId != *typedClassId)
+        {
+            continue;
+        }
+
+        classroom.id = classId;
+        classroom.name = QString::fromStdU16String(entry.className);
+        foundClass = true;
+        break;
+    }
+    if (!foundClass)
+    {
+        DialogServices::showWarning(
+            m_sidebar,
+            tr("Delete Class"),
+            tr("The class could not be loaded."),
+            tr("The selected class could not be found.")
+            );
+        return;
+    }
+
+    if (!confirmDeleteClass(classroom))
     {
         return;
     }
@@ -110,7 +156,7 @@ void SidebarController::deleteClass()
         return;
     }
 
-    const Status removed = classes->remove(classroom->id);
+    const Status removed = classes->remove(classroom.id);
     if (!removed)
     {
         DialogServices::showWarning(
