@@ -10317,15 +10317,33 @@ and `git show --check` passed. Logs are preserved under
 `build/p2_f275_verify_logs/`; the temporary build was removed. The full suite
 was not run. Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial.
 
-F276 is selected to migrate only the Native English and GS birthday-directory
-reads in `SidebarController::loadUpcomingBirthdaySchedule()` through the
-existing directory-list queries and active-session Platform adapters. Keep the
-full Korean-teacher read direct and preserve the read order: full teachers,
-Native English directory, then GS team directory. Project each snapshot into
-the fields consumed by the existing birthday schedule builder; preserve the
-date range, schedule builder, `Birthdays could not be loaded.` warning, and
-Native English diagnostic precedence when both directory reads fail. Add
-caller-level success and failure coverage that checks the birthday dialog on
-success and the warning with no dialog on failure; retain the directory query
-and adapter CTests. Phase 2 remains In Progress/Open; Gates 1 and 2 remain
-Partial.
+### Progress update - 2026-10-03 (F276 accepted; F277 selected)
+
+F276, committed as `2572d29d`, routes the Native English and GS birthday-
+directory reads in `SidebarController::loadUpcomingBirthdaySchedule()` through
+the existing directory-list queries and active-session Platform adapters. The
+full Korean-teacher read remains direct and the order is preserved: full
+teachers, Native English directory, then GS team directory. Snapshot fields
+are projected into the existing schedule builder; the date range, schedule
+builder, `Birthdays could not be loaded.` warning, and Native English
+diagnostic precedence when both directory reads fail remain unchanged. Three
+caller-level cases verify entries from all staff directories, the warning
+without a dialog for a GS read failure, and Native English diagnostic
+precedence when both directory reads fail. Fresh Windows x64 Debug/Ninja
+verification built `ClassMngrNavigationTeacherReadTests`; the three added
+slots passed directly and the focused CTest target passed 1/1. `git diff --check`
+and `git show --check` passed. Logs are preserved under
+`build/p2_f276_verify_logs/`. Non-fatal missing-documents-resource-pack and
+offscreen Qt sizing warnings occurred; the full suite was not run.
+
+F277 is selected to migrate only the direct class-list read in
+`RosterEditorWidget::showRosterContextMenu()` through the accepted
+`ClassesListReadQuery` and `ApplicationServicesClassesListReadPort`. Preserve
+when the read runs, target eligibility and sorting, the existing “Transfer
+classes could not be loaded.” warning, disabled transfer menu on failure, and
+target-label fallback. Leave the adjacent roster read, metadata, and transfer
+behavior unchanged. Add caller-level failure coverage for the warning and
+disabled “No same-grade classes” result; retain the query and adapter CTests.
+The shared query's invalid/duplicate-ID rejection is a stricter failure
+condition than the former direct service read. Phase 2 remains In Progress/Open;
+Gates 1 and 2 remain Partial.
