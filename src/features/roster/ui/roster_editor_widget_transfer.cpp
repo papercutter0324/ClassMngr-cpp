@@ -41,6 +41,40 @@ struct TransferClassMetadata
     QString displayName;
 };
 
+Roster rosterFromSnapshot(
+    const ClassMngr::Next::Application::RosterSnapshot& snapshot
+    )
+{
+    Roster roster;
+    roster.columns.reserve(static_cast<qsizetype>(snapshot.columns.size()));
+    for (const auto& column : snapshot.columns)
+    {
+        roster.columns.append(QString::fromStdU16String(column));
+    }
+
+    roster.columnWidths.reserve(
+        static_cast<qsizetype>(snapshot.columnWidths.size())
+        );
+    for (const int width : snapshot.columnWidths)
+    {
+        roster.columnWidths.append(width);
+    }
+
+    roster.rows.reserve(static_cast<qsizetype>(snapshot.rows.size()));
+    for (const auto& snapshotRow : snapshot.rows)
+    {
+        QStringList row;
+        row.reserve(static_cast<qsizetype>(snapshotRow.size()));
+        for (const auto& cell : snapshotRow)
+        {
+            row.append(QString::fromStdU16String(cell));
+        }
+        roster.rows.append(std::move(row));
+    }
+
+    return roster;
+}
+
 TransferClassMetadata readTransferClassMetadata(
     ApplicationServices* services,
     int classId
@@ -341,8 +375,28 @@ void RosterEditorWidget::transferRosterRow(
     auto* rosterService = m_services->rosterService();
     const QStringList sourceColumns = m_model->columnNames();
     const QStringList sourceRow = m_model->rowValues(row);
-    const Roster targetSourceRoster =
-        rosterService->roster(targetClassId).value_or(Roster{});
+    Roster targetSourceRoster;
+    const auto typedTargetClassId =
+        ClassMngr::Next::Domain::ClassId::fromString(
+            std::to_string(targetClassId)
+            );
+    if (typedTargetClassId)
+    {
+        ClassMngr::Next::Platform::
+            ApplicationServicesRosterReadPort readPort(m_services);
+        const ClassMngr::Next::Application::RosterReadQuery query{
+            .classId = *typedTargetClassId
+        };
+        const auto loadedRoster =
+            ClassMngr::Next::Application::RosterReadUseCase::execute(
+                query,
+                readPort
+                );
+        if (loadedRoster)
+        {
+            targetSourceRoster = rosterFromSnapshot(loadedRoster.value());
+        }
+    }
     RosterModel targetModel;
     targetModel.setRoster(targetSourceRoster);
 
