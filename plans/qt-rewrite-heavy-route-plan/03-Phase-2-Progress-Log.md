@@ -10354,15 +10354,36 @@ selected CTests passed. `git diff --check` and `git show --check` passed. Logs
 are preserved under `build/p2_f277_verify_logs/`. Non-fatal document-resource,
 font, SVG, and offscreen-plugin warnings occurred; the full suite was not run.
 
-F278 is selected to migrate only the two direct teacher-existence reads in
-`PersonalDetailsWizardPage::nextId()` and `TeacherEntryWizardPage::validatePage()`
-through the accepted `InitialSetupTeacherChoicesReadQuery` and
-`ApplicationServicesInitialSetupTeacherChoicesReadPort`. Preserve the
-schedule-import early return, page routing, blank-entry skip behavior, and the
-existing failure-as-empty fallback; do not add warnings to either check. Leave
-teacher creation and the Class Details teacher-choice population path
-unchanged. Add focused `InitialSetupWizard` caller coverage for page routing,
-blank-entry skipping when teachers exist, and the read-failure fallback; retain
-the query and adapter CTests. The adapter requires an open database session,
-unlike the legacy service fallback, and the query rejects invalid/duplicate
-teacher IDs. Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial.
+### Progress update - 2026-10-03 (F278 accepted; F279 selected)
+
+F278, committed as `11ae1b59`, routes the teacher-existence reads in
+`PersonalDetailsWizardPage::nextId()` and
+`TeacherEntryWizardPage::validatePage()` through the accepted
+`InitialSetupTeacherChoicesReadQuery` and
+`ApplicationServicesInitialSetupTeacherChoicesReadPort`. Schedule-import
+routing, page selection, blank-entry skipping, and the failure-as-empty
+fallback remain intact; no warnings were added to either check. Teacher
+creation and Class Details teacher-choice population remain unchanged. Four
+caller cases cover routing for populated and empty directories, skipping a
+blank teacher entry when teachers exist, and treating failed reads as empty
+without warnings. Active-session requirements and invalid/duplicate-ID query
+validation are stricter than the legacy service call; those failures use the
+same empty-list fallback. Fresh Windows x64 Debug/Ninja verification built
+only the wizard, query, and adapter test targets. All four added slots passed
+directly, and the three selected CTests passed. Logs are preserved under
+`build/p2_f278_verify_logs/`. Non-fatal resource/font warnings occurred; the
+full suite was not run.
+
+F279 is selected to migrate only the selected-teacher profile read in
+`SidebarController::deleteTeacher()` through the accepted
+`TeacherProfileReadQuery` and `ApplicationServicesTeacherProfileReadPort`.
+Preserve the service guard, confirmation text and cancel behavior, delete flow,
+and the existing `Delete Teacher` / `The teacher could not be loaded.` warning
+on read failure. Leave the teacher-list read in
+`promptForTeacherToDelete()` and the post-create profile read in `addTeacher()`
+unchanged. Add caller-level success coverage that cancels after checking the
+display name and verifies the teacher remains, plus failure coverage for the
+warning and no confirmation; retain the profile query and adapter CTests. The
+profile adapter requires an active session whereas the legacy service can fall
+back to DataService. Phase 2 remains In Progress/Open; Gates 1 and 2 remain
+Partial.
