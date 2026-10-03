@@ -18,9 +18,9 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-03
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F290 is selected to route roster-template printing's per-class
-  roster read through the accepted roster query while preserving class-detail
-  reads, class order, and print output.
+- Current note: F291 is selected to replace My Classes' per-class full-info
+  read by composing accepted class-details and class-notes projections, subject
+  to field-parity review.
 
 ### Slice discovery batches
 
@@ -206,19 +206,18 @@ No new v2 production path depends on DataService, MainWindow, PageManager, or a 
 
 Earlier verified slices and cumulative exit-gate snapshots are archived in the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 
-## Latest Progress Update - 2026-10-03 (F289 accepted)
+## Latest Progress Update - 2026-10-03 (F290 accepted)
 
-F289, committed as `4b2dcc9f`, routes roster-template class-scope enumeration
-through the accepted `ClassesListReadQuery`. Both the editor save/print caller
-and live-preview caller construct the production
-`ApplicationServicesClassesListReadPort`; class-detail and roster reads remain
-unchanged. The focused `ClassMngrFeatures` build compiled the changed callers.
-The roster print service, classes-list query, and production classes-list
-adapter CTests passed 3/3. Logs are under
-`build/p2_f289_verify_logs/`. An initial Visual Studio environment attempt
-reported missing `vswhere.exe`; adding the Visual Studio Installer directory
-resolved it. The successful final build had no compiler warnings. The service
-test uses a fake read port, while the platform-port test exercises the real
-adapter; UI caller wiring was compile-verified, not runtime integration-tested.
-The full suite was not run. Phase 2 remains In Progress/Open; Gates 1 and 2
-remain Partial.
+F290, committed as `2e8f3cb8`, routes roster-template per-class roster reads
+through `RosterReadUseCase` and the accepted roster port while preserving
+class-detail reads and per-class order. Both editor save/print and live-preview
+callers construct the production roster adapter. The complete roster snapshot
+conversion preserves columns, widths, rows, sparse cells, and UTF-16 text; a
+rendered PDF comparison covers Unicode and sparse-row output. The focused
+`ClassMngrFeatures` and print-service builds passed. The print-dialog, print
+service, roster query, and production roster-adapter CTests passed 4/4; after
+adding a multi-class early-stop assertion, the print-service CTest passed again
+1/1. Logs are under `build/p2_f290_verify_logs/`. A non-fatal `vswhere.exe`
+environment warning was resolved by adding the Visual Studio Installer
+directory to `PATH`. The full suite was not run. Phase 2 remains In Progress/
+Open; Gates 1 and 2 remain Partial.

@@ -10600,3 +10600,28 @@ through the accepted roster query. Preserve class-scope resolution and order,
 class-detail reads, missing-roster handling, and printed output. Retain the
 roster print service caller tests and verify the real roster adapter
 independently. Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial.
+
+### Progress update - 2026-10-03 (F290 accepted; F291 selected)
+
+F290, committed as `2e8f3cb8`, routes roster-template per-class roster reads
+through `RosterReadUseCase` and the accepted roster port while preserving
+class-detail reads and per-class order. Both editor save/print and live-preview
+callers construct the production roster adapter. The complete roster snapshot
+conversion preserves columns, widths, rows, sparse cells, and UTF-16 text; a
+rendered PDF comparison covers Unicode and sparse-row output. The focused
+`ClassMngrFeatures` and print-service builds passed. The print-dialog, print
+service, roster query, and production roster-adapter CTests passed 4/4:
+`ClassMngrRosterPrintDialogTests`,
+`ClassMngrRosterTemplatePrintServiceTests`,
+`ClassMngrNextApplicationRosterReadQueryTests`, and
+`ClassMngrNextPlatformApplicationServicesRosterReadPortTests`. After adding a
+multi-class early-stop assertion, the print-service CTest passed again 1/1.
+Logs are under `build/p2_f290_verify_logs/`. A non-fatal `vswhere.exe`
+environment warning was resolved by adding the Visual Studio Installer
+directory to `PATH`. The full suite was not run.
+
+F291 is selected to replace My Classes' per-class full-info read by composing
+the accepted class-details and class-notes projections, subject to
+field-parity review. Preserve the displayed fields and teacher association;
+record any legacy fields not represented by the accepted projections before
+cutting over. Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial.
