@@ -18,9 +18,8 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-04
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F303 is selected to batch RosterPrintDialog per-class
-  selected-subtitle queries after F261, preserving its current-class-only
-  branch.
+- Current note: F304 is selected to batch RosterPrintDialog extra-column roster
+  reads after F264, preserving scope, column union, and failure fallback.
 
 ### Slice discovery batches
 
@@ -106,10 +105,10 @@ No other slices were found.
    3. F302 accepted (discovered in separate F299 audit) — Batch class-delete
       chooser subtitle-label queries following F275, reusing the accepted
       subtitle batch API.
-   4. F303 selected (discovered in separate F299 audit) — Batch
+   4. F303 accepted (discovered in separate F299 audit) — Batch
       `RosterPrintDialog` per-class selected-subtitle queries after F261;
       preserve the current-class-only branch.
-   5. F304 candidate (discovered in separate F299 audit) — Batch
+   5. F304 selected (discovered in separate F299 audit) — Batch
       `RosterPrintDialog` extra-column roster reads after F264; preserve scope,
       column union, and failure fallback.
    6. F305 candidate (discovered in separate F299 audit) — Batch transfer-menu
@@ -278,42 +277,34 @@ No new v2 production path depends on DataService, MainWindow, PageManager, or a 
 
 Earlier verified slices and cumulative exit-gate snapshots are archived in the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 
-## Latest Progress Update - 2026-10-04 (F302 accepted; F303 selected)
+## Latest Progress Update - 2026-10-04 (F303 accepted; F304 selected)
 
-F302, committed as `1ffc88a32a3b12bc0354deac2f485d61abb15ef9`, reuses
-`SelectedClassSubtitleBatchReadQuery` and the active-session adapter in the
-class-delete chooser. For nonempty class IDs, it batches subtitle labels when
-both services are available while preserving class-list order and IDs,
-class-list errors, empty-list early return, blank item and selection/cancel
-behavior, and the stored-name/`Class N` fallback when either service is
-unavailable. Class-data failures retain default formatting; teacher-data
-failures retain class details with `No Teacher`. After selection, confirmation
-still makes a fresh one-class read; an integration test changes the subtitle
-after chooser population and checks the fresh confirmation text.
+F303, committed as `27914312e1a7539ba55d4059847ca583c5cda9a6`, batches
+`RosterPrintDialog` subtitle reads in the normal class-list path. It preserves
+class-list order and IDs, label formatting, default class/teacher failure
+behavior, checked state, selected IDs, and the current-class display label.
+The current-class-only path remains on its separate
+`TestingClassDetailsReadQuery` branch and returns before normal list/batch
+reads.
 
-The two-class integration test asserts one batch class-repository call, one
-metadata statement, one schedule statement, one teacher batch statement,
-original labels/order, selected ID, and deletion. The empty-list UI test asserts
-no batch reads and no modal. Fresh independent Windows x64 MSVC/Ninja Debug
-configure passed the ownership gate at 1,270 handwritten sources. `ClassMngr`,
-`ClassMngrNavigationTeacherReadTests`, the classes-list query target, and single
-and batch subtitle application-query and adapter targets built; six focused
-CTests passed. Independent source review confirmed one guarded batch query in
-the chooser and no per-class single query; the separate confirmation read
-remains. `git diff --check` passed. Logs are under
-`build/f302_verify_ninja/` (`configure.log`, `build-targets.log`,
-`build-targets-recheck.log`, `ctest-focused.log`). Nonfatal `vswhere.exe` and
-optional Vulkan messages occurred. The full suite was not run.
+The three-class integration test asserts exact labels, order, IDs, and checked
+state; three requested IDs; one batch call; one metadata and one schedule SQL
+statement; and one teacher batch call and statement. The current-class-only
+test retains testing-class display, ID, and checked assertions and verifies
+zero batch metrics. Fresh independent Windows x64 MSVC/Ninja Debug configure
+passed the CMake ownership gate at 1,270 handwritten sources. `ClassMngr`,
+`ClassMngrRosterPrintDialogTests`, and the batch application-query and platform
+adapter targets built. These three focused CTests passed:
+`ClassMngrRosterPrintDialogTests`,
+`ClassMngrNextApplicationSelectedClassSubtitleBatchReadQueryTests`, and
+`ClassMngrNextPlatformApplicationServicesSelectedClassSubtitleBatchReadPortTests`.
+`git diff --check` passed. Logs are under `build/f303_verify_ninja/`
+(`configure.log`, `build-targets.log`, `ctest-focused.log`, and
+`diff-check.log`). Optional `vswhere.exe`, pthread-probe, Vulkan, and line-ending
+messages were nonfatal. The full suite was not run.
 
-Coverage limits: the fallback for class-service available/teacher-service
-unavailable is source-reviewed but not directly integration-tested; current
-services derive availability from the same database session, and the existing
-no-session test exits before showing the chooser. No chooser-cancel or
-all-item-ID enumeration test was added; the integration test verifies label
-order and selects/deletes the Beta ID.
-
-F303 is selected to batch `RosterPrintDialog` per-class selected-subtitle reads
-after F261 while preserving its current-class-only branch. F298 remains
+F304 is selected to batch `RosterPrintDialog` extra-column roster reads after
+F264, preserving scope, column union, and failure fallback. F298 remains
 deferred pending the read-failure warning/navigation decision, and F299's
 separate completeness audit remains distinct from Batch 3 discovery. Phase 2
 remains In Progress/Open; Gates 1 and 2 remain Partial.

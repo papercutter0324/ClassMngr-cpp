@@ -49,10 +49,11 @@
   accepted; its separate missed-slice completeness audit found no additional
   direct legacy-read routes and recorded F302-F305 as batching candidates.
   F300 (batch ClassImportDialog destination-label subtitle reads), F301
-  (batch ClassExportDialog selected-subtitle reads), and F302 (batch
-  class-delete chooser subtitle-label reads following F275) are accepted; F303
-  (batch RosterPrintDialog per-class subtitle reads after F261) is selected
-  next, preserving its current-class-only branch.
+  (batch ClassExportDialog selected-subtitle reads), F302 (batch class-delete
+  chooser subtitle-label reads following F275), and F303 (batch RosterPrintDialog
+  per-class subtitle reads after F261) are accepted; F304 (batch RosterPrintDialog
+  extra-column roster reads after F264) is selected next, preserving scope,
+  column union, and failure fallback.
   Gates 1 and 2 remain Partial, with broader feature
   migration, parity, and 96-class Release memory evidence still open.
   See the

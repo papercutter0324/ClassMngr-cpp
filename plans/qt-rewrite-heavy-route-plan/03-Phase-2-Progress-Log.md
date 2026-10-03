@@ -10976,3 +10976,35 @@ after F261 while preserving its current-class-only branch. F298 remains
 deferred pending the read-failure warning/navigation decision, and F299's
 separate completeness audit remains distinct from Batch 3 discovery. Phase 2
 remains In Progress/Open; Gates 1 and 2 remain Partial.
+
+### Progress update - 2026-10-04 (F303 accepted; F304 selected)
+
+F303, committed as `27914312e1a7539ba55d4059847ca583c5cda9a6`, batches
+`RosterPrintDialog` subtitle reads in the normal class-list path. It preserves
+class-list order and IDs, label formatting, default class/teacher failure
+behavior, checked state, selected IDs, and the current-class display label.
+The current-class-only path remains on its separate
+`TestingClassDetailsReadQuery` branch and returns before normal list/batch
+reads.
+
+The three-class integration test asserts exact labels, order, IDs, and checked
+state; three requested IDs; one batch call; one metadata and one schedule SQL
+statement; and one teacher batch call and statement. The current-class-only
+test retains testing-class display, ID, and checked assertions and verifies
+zero batch metrics. Fresh independent Windows x64 MSVC/Ninja Debug configure
+passed the CMake ownership gate at 1,270 handwritten sources. `ClassMngr`,
+`ClassMngrRosterPrintDialogTests`, and the batch application-query and platform
+adapter targets built. These three focused CTests passed:
+`ClassMngrRosterPrintDialogTests`,
+`ClassMngrNextApplicationSelectedClassSubtitleBatchReadQueryTests`, and
+`ClassMngrNextPlatformApplicationServicesSelectedClassSubtitleBatchReadPortTests`.
+`git diff --check` passed. Logs are under `build/f303_verify_ninja/`
+(`configure.log`, `build-targets.log`, `ctest-focused.log`, and
+`diff-check.log`). Optional `vswhere.exe`, pthread-probe, Vulkan, and line-ending
+messages were nonfatal. The full suite was not run.
+
+F304 is selected to batch `RosterPrintDialog` extra-column roster reads after
+F264, preserving scope, column union, and failure fallback. F298 remains
+deferred pending the read-failure warning/navigation decision, and F299's
+separate completeness audit remains distinct from Batch 3 discovery. Phase 2
+remains In Progress/Open; Gates 1 and 2 remain Partial.
