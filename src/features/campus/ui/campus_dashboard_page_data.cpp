@@ -5,6 +5,7 @@
 
 #include "campus_dashboard_page_detail.h"
 #include "features/campus/ui/campus_map_preview.h"
+#include "next/platform/calendar_page_campus_directory_query_adapter.h"
 #include "next/platform/settings_manager_last_selected_campus_port.h"
 #include "ui/shared/constants/gui_constants.h"
 #include "ui/shared/utils/widget_sizing.h"
@@ -70,8 +71,9 @@ QString mapLink(
 
 void CampusDashboardPage::loadCampuses()
 {
-    const QList<CampusInfo> campuses =
-        m_repository.loadCampuses();
+    const auto campuses =
+        ClassMngr::Next::Platform::
+            CalendarPageCampusDirectoryQueryAdapter().loadCampuses();
 
     const QSignalBlocker blocker(m_campusCombo);
 
@@ -80,15 +82,25 @@ void CampusDashboardPage::loadCampuses()
 
     m_campusCombo->clear();
 
-    for (const CampusInfo& campus : campuses)
+    for (const auto& campusMetadata : campuses)
     {
+        CampusInfo campus;
+        campus.id = QString::fromStdString(campusMetadata.id);
+        campus.campusName =
+            QString::fromStdString(campusMetadata.campusName);
+        if (campusMetadata.campusCode.has_value())
+        {
+            campus.campusCode =
+                QString::fromStdString(*campusMetadata.campusCode);
+        }
+
         m_campusCombo->addItem(
             campusDisplayName(campus),
             campus.id
             );
     }
 
-    if (campuses.isEmpty())
+    if (campuses.empty())
     {
         updateCampusSelectorWidth();
         return;
