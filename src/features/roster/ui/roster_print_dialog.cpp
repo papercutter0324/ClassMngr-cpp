@@ -9,13 +9,13 @@
 #include "next/application/classes_list_read_query.h"
 #include "next/application/roster_print_class_info_read_query.h"
 #include "next/application/roster_read_query.h"
-#include "next/application/selected_class_subtitle_read_query.h"
+#include "next/application/selected_class_subtitle_batch_read_query.h"
 #include "next/application/testing_class_details_read_query.h"
 #include "next/domain/domain_types.h"
 #include "next/platform/application_services_classes_list_read_port.h"
 #include "next/platform/application_services_roster_print_class_info_read_port.h"
 #include "next/platform/application_services_roster_read_port.h"
-#include "next/platform/application_services_selected_class_subtitle_read_port.h"
+#include "next/platform/application_services_selected_class_subtitle_batch_read_port.h"
 #include "next/platform/application_services_testing_class_details_read_port.h"
 #include "ui/shared/widgets/no_wheel_combobox.h"
 #include "ui/shared/widgets/text_fit_dialog_button_box.h"
@@ -56,9 +56,11 @@
 #include <QVariant>
 
 #include <charconv>
+#include <optional>
 #include <string>
 #include <system_error>
 #include <utility>
+#include <vector>
 
 namespace
 {
@@ -1374,27 +1376,54 @@ void RosterPrintDialog::loadClasses()
     }
     const QList<Classroom> classrooms =
         classroomsFromListSnapshot(classes.value());
+
+    std::vector<ClassMngr::Next::Domain::ClassId> selectedClassIds;
+    std::vector<std::optional<std::size_t>> subtitleIndexes;
+    selectedClassIds.reserve(static_cast<std::size_t>(classrooms.size()));
+    subtitleIndexes.reserve(static_cast<std::size_t>(classrooms.size()));
     for (const Classroom& classroom : classrooms)
     {
-        ClassInfo classInfo;
-        Teacher teacher;
-
         const auto selectedClassId =
             ClassMngr::Next::Domain::ClassId::fromString(
                 std::to_string(classroom.id)
                 );
         if (selectedClassId)
         {
-            ClassMngr::Next::Platform::
-                ApplicationServicesSelectedClassSubtitleReadPort readPort(
-                    m_services
-                    );
-            const ClassMngr::Next::Application::
-                SelectedClassSubtitleReadQuery query(readPort);
-            const auto loadedSubtitle = query.execute(*selectedClassId);
-            if (loadedSubtitle && loadedSubtitle.value().classFields)
+            subtitleIndexes.emplace_back(selectedClassIds.size());
+            selectedClassIds.push_back(*selectedClassId);
+        }
+        else
+        {
+            subtitleIndexes.emplace_back(std::nullopt);
+        }
+    }
+
+    ClassMngr::Next::Platform::
+        ApplicationServicesSelectedClassSubtitleBatchReadPort subtitleReadPort(
+            m_services
+            );
+    const ClassMngr::Next::Application::
+        SelectedClassSubtitleBatchReadQuery subtitleQuery(subtitleReadPort);
+    const auto loadedSubtitles = subtitleQuery.execute(selectedClassIds);
+
+    for (std::size_t index = 0;
+         index < static_cast<std::size_t>(classrooms.size());
+         ++index)
+    {
+        const Classroom& classroom =
+            classrooms.at(static_cast<qsizetype>(index));
+        ClassInfo classInfo;
+        Teacher teacher;
+
+        if (loadedSubtitles
+            && subtitleIndexes[index]
+            && *subtitleIndexes[index] < loadedSubtitles.value().size())
+        {
+            const auto& subtitle = loadedSubtitles.value().at(
+                *subtitleIndexes[index]
+                );
+            if (subtitle.classFields)
             {
-                const auto& subtitle = loadedSubtitle.value();
                 const auto& fields = subtitle.classFields.value();
                 classInfo.classGrade = QString::fromStdU16String(
                     fields.classGrade

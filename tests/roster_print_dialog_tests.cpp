@@ -1,6 +1,8 @@
 #include "app/services/feature_services.h"
 #include "core/application_services.h"
 #include "data/database/database_session.h"
+#include "data/repositories/class_info_repository.h"
+#include "data/repositories/teacher_repository.h"
 #include "domain/models/class_info.h"
 #include "domain/models/classroom.h"
 #include "domain/models/roster.h"
@@ -250,6 +252,17 @@ void RosterPrintDialogTests::selectedClassListPreservesOrderIdsAndCheckState()
                  &error
                  ), qPrintable(error));
 
+    ClassInfoRepository* const classRepository =
+        fixture.services.databaseSession()->classInfoRepository();
+    TeacherRepository* const teacherRepository =
+        fixture.services.databaseSession()->teacherRepository();
+    QVERIFY(classRepository);
+    QVERIFY(teacherRepository);
+    const ClassSubtitleBatchReadMetrics classMetricsBefore =
+        classRepository->classSubtitleBatchReadMetrics();
+    const TeacherDisplayNameBatchReadMetrics teacherMetricsBefore =
+        teacherRepository->teacherDisplayNameBatchReadMetrics();
+
     RosterPrintDialog dialog(
         &fixture.services,
         mikeId,
@@ -291,6 +304,25 @@ void RosterPrintDialogTests::selectedClassListPreservesOrderIdsAndCheckState()
             );
     }
     QCOMPARE(dialog.selectedClassIds(), QList<int>({mikeId}));
+
+    const ClassSubtitleBatchReadMetrics classMetricsAfter =
+        classRepository->classSubtitleBatchReadMetrics();
+    const TeacherDisplayNameBatchReadMetrics teacherMetricsAfter =
+        teacherRepository->teacherDisplayNameBatchReadMetrics();
+    QCOMPARE(classMetricsAfter.callCount - classMetricsBefore.callCount, 1);
+    QCOMPARE(classMetricsAfter.requestedClassCount
+                 - classMetricsBefore.requestedClassCount,
+             expectedIds.size());
+    QCOMPARE(classMetricsAfter.metadataStatementCount
+                 - classMetricsBefore.metadataStatementCount,
+             1);
+    QCOMPARE(classMetricsAfter.regularScheduleStatementCount
+                 - classMetricsBefore.regularScheduleStatementCount,
+             1);
+    QCOMPARE(teacherMetricsAfter.callCount - teacherMetricsBefore.callCount, 1);
+    QCOMPARE(teacherMetricsAfter.statementCount
+                 - teacherMetricsBefore.statementCount,
+             1);
 }
 
 void RosterPrintDialogTests::
@@ -498,6 +530,17 @@ void RosterPrintDialogTests::currentClassOnlyUsesTestingClassRecord()
         );
     QVERIFY(created);
 
+    ClassInfoRepository* const classRepository =
+        fixture.services.databaseSession()->classInfoRepository();
+    TeacherRepository* const teacherRepository =
+        fixture.services.databaseSession()->teacherRepository();
+    QVERIFY(classRepository);
+    QVERIFY(teacherRepository);
+    const ClassSubtitleBatchReadMetrics classMetricsBefore =
+        classRepository->classSubtitleBatchReadMetrics();
+    const TeacherDisplayNameBatchReadMetrics teacherMetricsBefore =
+        teacherRepository->teacherDisplayNameBatchReadMetrics();
+
     RosterPrintDialog dialog(
         &fixture.services,
         *created,
@@ -517,6 +560,21 @@ void RosterPrintDialogTests::currentClassOnlyUsesTestingClassRecord()
     QVERIFY(item->text().contains(testingClass.grade));
     QVERIFY(item->text().contains(testingClass.level));
     QCOMPARE(dialog.selectedClassIds(), QList<int>({*created}));
+
+    const ClassSubtitleBatchReadMetrics classMetricsAfter =
+        classRepository->classSubtitleBatchReadMetrics();
+    const TeacherDisplayNameBatchReadMetrics teacherMetricsAfter =
+        teacherRepository->teacherDisplayNameBatchReadMetrics();
+    QCOMPARE(classMetricsAfter.callCount, classMetricsBefore.callCount);
+    QCOMPARE(classMetricsAfter.requestedClassCount,
+             classMetricsBefore.requestedClassCount);
+    QCOMPARE(classMetricsAfter.metadataStatementCount,
+             classMetricsBefore.metadataStatementCount);
+    QCOMPARE(classMetricsAfter.regularScheduleStatementCount,
+             classMetricsBefore.regularScheduleStatementCount);
+    QCOMPARE(teacherMetricsAfter.callCount, teacherMetricsBefore.callCount);
+    QCOMPARE(teacherMetricsAfter.statementCount,
+             teacherMetricsBefore.statementCount);
 }
 
 void RosterPrintDialogTests::
