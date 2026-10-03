@@ -26,8 +26,8 @@
   and GS birthday-directory reads), F277 (roster transfer-menu class-list
   read), F278 (initial-setup wizard teacher-existence reads), and F279
   (sidebar selected-teacher profile read), and F280 (sidebar teacher-delete
-  chooser teacher-list read) are accepted; F281 (sidebar teacher-list refresh
-  read) is selected.
+  chooser teacher-list read) and F281 (sidebar teacher-list refresh read) are
+  accepted; F282 (sidebar action-state list reads) is selected.
   Gates 1 and 2 remain Partial, with broader feature
   migration, parity, and 96-class Release memory evidence still open.
   See the

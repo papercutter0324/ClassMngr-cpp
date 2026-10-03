@@ -10410,16 +10410,37 @@ not run. The query rejects a list containing invalid or duplicate IDs, where
 the old chooser skipped nonpositive IDs, and its adapter requires an active
 session unlike the legacy DataService fallback.
 
-F281 is selected to migrate only the teacher-list read and projection in
+### Progress update - 2026-10-03 (F281 accepted; F282 selected)
+
+F281, committed as `0287bc62`, routes the teacher-list read and projection in
 `SidebarController::refreshTeacherSidebar()` through the accepted
 `InitialSetupTeacherChoicesReadQuery` and
-`ApplicationServicesInitialSetupTeacherChoicesReadPort`. Preserve service
-guards, read order (teacher list before class-teacher assignments), existing
-failure behavior with teacher-read diagnostic precedence, sidebar clearing,
-action-state update, assignment matching, sorting, labels, and assigned /
-unassigned grouping. Add caller-level success coverage for names and grouping,
-plus teacher-list failure coverage for the existing warning and cleared nodes;
-retain the teacher-choice query and adapter CTests. The query rejects the full
-list when any teacher ID is invalid or duplicated, and the adapter requires an
-active session unlike the legacy DataService fallback. Phase 2 remains In
-Progress/Open; Gates 1 and 2 remain Partial.
+`ApplicationServicesInitialSetupTeacherChoicesReadPort`. Service guards, read
+order (teacher list before class-teacher assignments), evaluation of both
+reads before failure handling, teacher-read diagnostic precedence, sidebar
+clearing, action-state update, assignment matching, sorting, labels, and
+assigned/unassigned grouping remain intact. Caller tests cover assigned and
+unassigned names/IDs and a teacher-list failure that warns, clears teacher
+groups, and updates action states. Fresh Windows x64 Debug/Ninja verification
+built the NavigationTeacherRead, teacher-choice query, and adapter targets.
+Both added slots passed directly; the three selected CTests passed. Logs are
+preserved under `build/p2_f281_verify_logs/`; non-fatal resource/font warnings
+occurred and the full suite was not run. The query rejects the full list when
+any teacher ID is invalid or duplicated, and the adapter requires an active
+session unlike the legacy DataService fallback.
+
+F282 is selected to migrate only the class and teacher list reads in the
+no-argument `SidebarController::updateActionStates()` through the accepted
+`ClassesListReadQuery` / `ApplicationServicesClassesListReadPort` and
+`InitialSetupTeacherChoicesReadQuery` /
+`ApplicationServicesInitialSetupTeacherChoicesReadPort`. Preserve the early
+return when no actions are registered, service-availability guard, and
+classes-then-teachers read order. Failed or empty reads continue to disable
+only their respective data-dependent actions without a warning. Retain F281's
+teacher-read failure case and add a class-list failure case with teachers still
+available; verify class actions disable while teacher deletion remains enabled.
+Run the NavigationTeacherRead target and both query/adapter CTest pairs. Both
+adapters require an active session, and both
+queries reject invalid or duplicate IDs; such failures disable the
+corresponding actions where legacy reads could have reported a nonempty list.
+Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial.
