@@ -18,9 +18,10 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-03
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F295 is selected to pass accepted classes-list ID/name data
-  through the roster-template print pipeline and remove its per-class
-  `classroom()` lookup.
+- Current note: F296 is selected to route roster-template printing's per-class
+  full class-information read through a purpose-fit application projection. The
+  printer needs room and Zoom details beyond the class-list and subtitle
+  projections.
 
 ### Slice discovery batches
 
@@ -240,33 +241,22 @@ No new v2 production path depends on DataService, MainWindow, PageManager, or a 
 
 Earlier verified slices and cumulative exit-gate snapshots are archived in the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 
-## Latest Progress Update - 2026-10-03 (F294 accepted)
+## Latest Progress Update - 2026-10-03 (F295 accepted)
 
-F294, committed as `d16614817d5e7512881f046bd37ee0398db45577`, adds a Qt-free
-latest teacher-import source-date query returning an optional canonical ISO
-date. Its active-session `ApplicationServices` adapter reads
-`teacher_import/latest_source_date` once. Missing, empty, or malformed dates
-produce a successful absent value; unavailable persistence or read failure
-produces a failed result. Sidebar pre-apply comparison uses the query while
-the legacy `TeacherService` remains for import apply. Newer or missing dates
-bypass confirmation; equal or older dates retain confirmation, and
-cancellation, read-failure warning/stop, and silent no-session behavior remain.
-Unused latest-date compatibility reads were removed from `TeacherService` and
-`DataService`.
+F295, committed as `1d0e318aa26ec1ed0148749dbf781440b769d5af`, reuses class
+labels from the accepted classes-list projection, removing per-class
+`classroom()` reads while retaining one class-information read and roster query
+per resolved class. The request carries only the scalar current-class name, so
+out-of-list current/testing classes remain supported without retaining a
+duplicate class-list snapshot. `RosterClassData` keeps the label for its
+class-grade/level then name fallback.
 
-Fresh Windows x64 Debug/Ninja/MSVC verification used Qt 6.12 and passed the
-CMake ownership gate at 1,247 handwritten files. The navigation controller
-and two new query/adapter targets built; three focused CTests passed. After a
-test repair, the navigation target rebuilt and its CTest passed 1/1. Five
-import-related QtTest slots passed; the reported three QtTest entries included
-setup and cleanup. Accepted-confirmation integration asserted confirmation,
-completion, saved source date, and imported rows in Native-English and GS
-tables only; read-failure coverage asserted warning, no completion, and empty
-rows in all three tables. `git diff --check` passed. Logs are under
-`build/f294v/`; nonfatal environment messages covered missing `vswhere.exe`,
-optional Vulkan headers, the documents resource pack, and Qt offscreen/font
-warnings. The full 309-test suite was not run.
-
-F295 is selected to pass accepted classes-list ID/name data through the
-roster-template print pipeline and remove its per-class `classroom()` lookup.
-Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial.
+Fresh independent Ninja/MSVC x64 Debug/Qt 6.12 configure and build compiled
+`ClassMngr`, `ClassMngrRosterTemplatePrintServiceTests`, and
+`ClassMngrRosterPrintDialogTests`. The CMake ownership gate passed for 1,247
+handwritten sources; both focused CTests and `git diff --check` passed. Logs
+are under `build/f295v/`. The full suite was not run. One internal-request
+limitation remains: invalid non-current selected IDs absent from both the
+classes list and current-class name fail before reads with the generic
+"Roster data is not available." error. The production dialog selects from the
+classes list, and the out-of-list current/testing-class case remains supported.

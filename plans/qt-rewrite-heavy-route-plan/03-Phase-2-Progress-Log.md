@@ -10741,3 +10741,38 @@ warnings. The full 309-test suite was not run.
 F295 is selected to pass accepted classes-list ID/name data through the
 roster-template print pipeline and remove its per-class `classroom()` lookup.
 Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial.
+
+### Progress update - 2026-10-03 (F295 accepted; F296 selected)
+
+F295, committed as `1d0e318aa26ec1ed0148749dbf781440b769d5af`, reuses names
+from the accepted classes-list projection in the roster-template loader and
+removes its per-class `classroom()` read. Each resolved class still gets one
+class-information read and the accepted roster query. `RosterClassData` keeps
+the label for the existing class-grade/level then name fallback. The editor
+passes the raw known current-class name as scalar `Request.currentClassName`
+through final print/save; dialog testing-class details pass it to live preview.
+This preserves an out-of-list current/testing class without a duplicate full
+class-list snapshot in the request.
+
+Tests cover the classes-list fallback label, all/selected ordering and read
+order, out-of-list current-only printing with PDF comparison, and invalid
+non-current selected IDs absent from the list/name failing before class-info
+or roster reads. Fresh independent Ninja/MSVC x64 Debug/Qt 6.12 configure and
+build compiled `ClassMngr`, `ClassMngrRosterTemplatePrintServiceTests`, and
+`ClassMngrRosterPrintDialogTests`. The CMake ownership gate passed for 1,247
+handwritten sources; both focused CTests and `git diff --check` passed. Logs
+are under `build/f295v/`. Nonfatal messages covered missing `vswhere.exe`,
+unavailable optional Vulkan headers, and line-ending conversion warnings. The
+full suite was not run.
+
+A scoped internal-request limitation remains: an invalid non-current selected
+ID absent from the authoritative list/current-name input fails before reads
+with the generic "Roster data is not available." error; previously,
+`classroom()` could load a valid unlisted ID or return a repository-specific
+missing-class error. Production dialog selections come from the classes list,
+and the excluded current/testing-class case remains supported explicitly.
+
+F296 is selected to route roster-template printing's per-class full
+class-information read through a purpose-fit application projection because
+the printer needs room and Zoom details beyond class-list/subtitle
+projections. Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial.
