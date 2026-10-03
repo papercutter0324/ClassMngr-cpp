@@ -59,6 +59,36 @@ one to this phase's progress log before replacing it.
    9. F293 — Add an accepted class-teacher-assignment read for sidebar refresh.
    10. F294 — Add an accepted latest-import-date read for teacher import.
 
+2. **Batch 2**
+   1. F295 — Pass accepted classes-list ID/name data through the roster-template
+      print pipeline to remove the per-class `classroom()` lookup. F289 already
+      migrates scope enumeration; the extra read remains in
+      `src/features/roster/services/roster_template_print_private_service.inc:64-87`.
+   2. F296 — Route roster-template printing's per-class full class-information
+      read through a purpose-fit application projection. The printer also needs
+      room and Zoom details beyond class-list/subtitle projections; see
+      `src/features/roster/services/roster_template_print_private_service.inc:81-88`
+      and `src/features/roster/services/roster_template_print_shared_data.inc:343`.
+   3. F297 — Add a selected-campus detail read for Campus Dashboard. Although
+      F288 migrates the selector list, `CampusDashboardPage::loadSelectedCampus()`
+      still calls `m_repository.loadCampus()` for address, directions, map,
+      transit, and office fields (`src/features/campus/ui/campus_dashboard_page.cpp:471`);
+      preserve save-before-read and silent missing-campus behavior.
+   4. F298 — Deferred before implementation: `SidebarController::addClass()`
+      re-reads the class only to reuse the ID returned by `create()`, but read
+      failure shows a dedicated warning and prevents navigation
+      (`src/app/controllers/sidebar_controller_classes.cpp:41-59`). Revisit when
+      post-create failure semantics are clarified.
+   5. F299 — Add an application-facing Class Analytics dashboard read/use case
+      for current-roster and historical/YTD projections. `ClassAnalyticsPage::rebuild()`
+      still calls `SpeakingEvaluationService::analyticsDashboard()`
+      (`src/features/classes/ui/class_analytics_page.cpp:524`), which reads
+      roster/evaluation data and composes analytics in
+      `src/features/classes/services/feature_services.cpp:1470`; the accepted
+      single-evaluation read does not cover this dashboard composition.
+
+No other slices were found.
+
 ## Objective
 
 Create a stable, testable application core that is independent of widget construction, page visibility, and the legacy data facade.
