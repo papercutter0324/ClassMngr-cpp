@@ -9,7 +9,9 @@
 #include "domain/models/teacher.h"
 #include "features/classes/models/class_tab_navigation_model.h"
 #include "next/application/classes_list_read_query.h"
+#include "next/application/teacher_profile_read_query.h"
 #include "next/platform/application_services_classes_list_read_port.h"
+#include "next/platform/application_services_teacher_profile_read_port.h"
 #include "ui/shared/constants/gui_constants.h"
 #include "ui/shared/styles/roles.h"
 #include "ui/shared/utils/widget_sizing.h"
@@ -533,9 +535,62 @@ void MyClassesPage::rebuildClassInformation()
 
         if (summary.info.teacherId > 0)
         {
-            summary.teacher = teacherService
-                ->teacher(summary.info.teacherId)
-                .value_or(Teacher{});
+            const auto typedTeacherId =
+                ClassMngr::Next::Domain::TeacherId::fromString(
+                    std::to_string(summary.info.teacherId)
+                    );
+            if (typedTeacherId)
+            {
+                ClassMngr::Next::Platform::
+                    ApplicationServicesTeacherProfileReadPort readPort(
+                        m_services
+                        );
+                const ClassMngr::Next::Application::TeacherProfileReadQuery
+                    query(readPort);
+                const auto loadedTeacher = query.execute(*typedTeacherId);
+                if (loadedTeacher
+                    && loadedTeacher.value().teacherId == *typedTeacherId)
+                {
+                    const auto& fields = loadedTeacher.value().fields;
+                    summary.teacher.id = summary.info.teacherId;
+                    summary.teacher.teacherKr = QString::fromStdU16String(
+                        fields.teacherKr
+                        );
+                    summary.teacher.teacherEn = QString::fromStdU16String(
+                        fields.teacherEn
+                        );
+                    summary.teacher.preferredRomanization =
+                        QString::fromStdU16String(
+                            fields.preferredRomanization
+                            );
+                    summary.teacher.preferredName = QString::fromStdU16String(
+                        fields.preferredName
+                        );
+                    summary.teacher.roomNumber = QString::fromStdU16String(
+                        fields.roomNumber
+                        );
+                    summary.teacher.internetType = QString::fromStdU16String(
+                        fields.internetType
+                        );
+                    summary.teacher.wifiName = QString::fromStdU16String(
+                        fields.wifiName
+                        );
+                    summary.teacher.wifiPassword = QString::fromStdU16String(
+                        fields.wifiPassword
+                        );
+                    summary.teacher.projectionType =
+                        QString::fromStdU16String(fields.projectionType);
+                    summary.teacher.zoomId = QString::fromStdU16String(
+                        fields.zoomId
+                        );
+                    summary.teacher.zoomPassword = QString::fromStdU16String(
+                        fields.zoomPassword
+                        );
+                    summary.teacher.notes = QString::fromStdU16String(
+                        fields.notes
+                        );
+                }
+            }
         }
 
         summary.displayName =
