@@ -118,8 +118,9 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
   class-list read, F276 for the sidebar's upcoming birthday Native English and
   GS directory reads, F277 for the roster transfer menu's class-list read,
   and F278 for the initial-setup wizard's teacher-existence reads are accepted;
-  F279 for the sidebar's selected-teacher profile read is accepted. F280 is
-  selected for the sidebar teacher-delete chooser's teacher-list read.
+  F279 for the sidebar's selected-teacher profile read and F280 for the sidebar
+  teacher-delete chooser's teacher-list read are accepted. F281 is selected for
+  the sidebar's teacher-list refresh read.
   The prior F123 candidate wording is historical;
   current Teacher Profile integration status is recorded in the progress log.
   Gates 1 and 2
@@ -572,16 +573,32 @@ non-fatal resource/font warnings occurred and the full suite was not run. The
 profile adapter requires an active session whereas the legacy service can fall
 back to DataService.
 
-F280 is selected to migrate only the teacher-list read in
+F280, committed as `84daa9eb`, routes the teacher-list read in
 `SidebarController::promptForTeacherToDelete()` through the accepted
 `InitialSetupTeacherChoicesReadQuery` and
-`ApplicationServicesInitialSetupTeacherChoicesReadPort`. Preserve repository
-order, formatted labels, the existing warning (`Delete Teacher` /
-`Teachers could not be loaded.`), and the early return when no usable records
-remain. Keep the selected-profile read in `deleteTeacher()` and
-`updateActionStates()` unchanged. On success, verify the chooser label and
-selected ID; on failure, verify the warning without a chooser or confirmation.
-Retain the teacher-choice query and adapter CTests. The query rejects the full
-list if any ID is invalid/duplicated, where the old chooser skipped nonpositive
-IDs, and the adapter requires an active session unlike the legacy DataService
-fallback. Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial.
+`ApplicationServicesInitialSetupTeacherChoicesReadPort`. Repository order,
+formatted labels, positive selected IDs, the existing warning, and the early
+return when no usable records remain are preserved. Caller tests verify the
+expected label and selected ID on success, then cancel; on read failure, the
+existing warning appears without a chooser or confirmation. Fresh Windows x64
+Debug/Ninja verification built the NavigationTeacherRead, teacher-choice query,
+and adapter test targets. Both new slots passed directly and the three selected
+CTests passed. Logs are preserved under `build/p2_f280_verify_logs/`; non-fatal
+resource/font and offscreen size-hint warnings occurred, and the full suite was
+not run. The query rejects a list containing invalid or duplicate IDs, where
+the old chooser skipped nonpositive IDs, and its adapter requires an active
+session unlike the legacy DataService fallback.
+
+F281 is selected to migrate only the teacher-list read and projection in
+`SidebarController::refreshTeacherSidebar()` through the accepted
+`InitialSetupTeacherChoicesReadQuery` and
+`ApplicationServicesInitialSetupTeacherChoicesReadPort`. Preserve service
+guards, read order (teacher list before class-teacher assignments), existing
+failure behavior with teacher-read diagnostic precedence, sidebar clearing,
+action-state update, assignment matching, sorting, labels, and assigned /
+unassigned grouping. Add caller-level success coverage for names and grouping,
+plus teacher-list failure coverage for the existing warning and cleared nodes;
+retain the teacher-choice query and adapter CTests. The query rejects the full
+list when any teacher ID is invalid or duplicated, and the adapter requires an
+active session unlike the legacy DataService fallback. Phase 2 remains In
+Progress/Open; Gates 1 and 2 remain Partial.
