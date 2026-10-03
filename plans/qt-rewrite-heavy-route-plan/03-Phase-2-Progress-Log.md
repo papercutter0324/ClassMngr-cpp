@@ -10530,11 +10530,10 @@ occurred and the full suite was not run. The lifecycle cases use concrete
 services, so they do not force session and service paths to diverge; source
 review confirms FileController now selects the returned session location.
 
-F287 is selected to route `ClassImportDialog::destinationClassDisplayName()`'s
-class-name fallback through the accepted classes-list query and adapter.
-Preserve the existing formatted-subtitle, classroom-name, then `Class N`
-fallback order and label behavior; read the list once for dialog candidates.
-Retain `ClassMngrClassTransferTests`, the classes-list query tests, and the
-classes-list adapter tests. The shared query rejects unrelated invalid or
-duplicate IDs and the adapter requires an active session. Phase 2 remains In
-Progress/Open; Gates 1 and 2 remain Partial.
+F287 is selected to remove the direct `classroom(classId)` lookup from
+`ClassImportDialog::destinationClassDisplayName()`. The formatter always
+returns a nonempty label, including `Unknown Class • No Teacher` when subtitle
+fields are unavailable, so the class-name and `Class N` branches cannot
+contribute to current output. Preserve the committed fallback label and retain
+the `ClassMngrClassTransferTests` caller case. Phase 2 remains In Progress/Open;
+Gates 1 and 2 remain Partial.

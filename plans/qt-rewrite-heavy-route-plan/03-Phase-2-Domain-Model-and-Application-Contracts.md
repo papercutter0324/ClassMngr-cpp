@@ -18,9 +18,8 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-03
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F287 is selected to route ClassImportDialog's destination
-  class-name fallback through the accepted classes-list query while preserving
-  subtitle, name, and `Class N` fallback order.
+- Current note: F287 is selected to remove ClassImportDialog's unreachable
+  direct class lookup while preserving its existing formatted fallback label.
 
 ### Slice discovery batches
 
@@ -44,8 +43,8 @@ one to this phase's progress log before replacing it.
       Revisit after the blank-draft creation contract is clarified.
    2. F286 — Use the returned workspace session location for FileController's
       successful create/open current-file state.
-   3. F287 — Route ClassImportDialog's destination-class name fallback through
-      the accepted classes-list query.
+   3. F287 — Remove ClassImportDialog's unreachable direct class-name lookup;
+      preserve the existing formatted label when subtitle data is unavailable.
    4. F288 — Route the Campus Dashboard selector list through its accepted
       campus-directory query.
    5. F289 — Route roster-template printing's class-scope enumeration through
