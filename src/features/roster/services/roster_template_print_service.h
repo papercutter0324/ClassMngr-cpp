@@ -15,6 +15,11 @@
 class ApplicationServices;
 class QWidget;
 
+namespace ClassMngr::Next::Application
+{
+class ClassesListReadQuery;
+}
+
 namespace RosterTemplatePrintService
 {
 
@@ -39,6 +44,8 @@ struct Request
 {
     QWidget* parent = nullptr;
     ApplicationServices* services = nullptr;
+    const ClassMngr::Next::Application::ClassesListReadQuery*
+        classesListReadQuery = nullptr;
     int currentClassId = -1;
     Scope scope = Scope::AllClasses;
     QList<int> selectedClassIds;

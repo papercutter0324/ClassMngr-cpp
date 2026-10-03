@@ -130,18 +130,60 @@ Result loadRosterClassesForRequest(
         return failed(QObject::tr("Roster data is not available."));
     }
 
-    const ::Result<QList<Classroom>> classes =
-        classService->classes();
+    if (!request.classesListReadQuery)
+    {
+        return failed(QObject::tr("Classes could not be loaded."));
+    }
+
+    const ClassMngr::Next::Application::ClassesListReadResult classes =
+        request.classesListReadQuery->execute();
     if (!classes)
     {
-        return failed(classes.error());
+        const std::string& message = classes.error().message;
+        return failed(
+            message.empty()
+                ? QObject::tr("Classes could not be loaded.")
+                : QString::fromUtf8(
+                    message.data(),
+                    static_cast<qsizetype>(message.size())
+                    )
+            );
     }
+
+    QList<Classroom> classrooms;
+    classrooms.reserve(
+        static_cast<qsizetype>(classes.value().classes.size())
+        );
+    for (const auto& entry : classes.value().classes)
+    {
+        int classId = 0;
+        const std::string& classIdValue = entry.classId.value();
+        const auto [end, error] = std::from_chars(
+            classIdValue.data(),
+            classIdValue.data() + classIdValue.size(),
+            classId
+            );
+        if (
+            error != std::errc{}
+            || end != classIdValue.data() + classIdValue.size()
+            || classId <= 0
+            )
+        {
+            return failed(QObject::tr("Classes could not be loaded."));
+        }
+
+        Classroom classroom;
+        classroom.id = classId;
+        classroom.name = QString::fromStdU16String(entry.className);
+        classrooms.append(std::move(classroom));
+    }
+
     const QList<int> classIds =
         resolveClassIds(
             request.scope,
             request.currentClassId,
             request.selectedClassIds,
-            *classes
+            classrooms
             );
 
     if (classIds.isEmpty())

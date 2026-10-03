@@ -792,6 +792,12 @@ void RosterPrintDialog::updatePreview()
     RosterTemplatePrintService::Request request;
     request.parent = this;
     request.services = m_services;
+    ClassMngr::Next::Platform::ApplicationServicesClassesListReadPort
+        classesReadPort(m_services);
+    const ClassMngr::Next::Application::ClassesListReadQuery classesQuery(
+        classesReadPort
+        );
+    request.classesListReadQuery = &classesQuery;
     request.currentClassId = m_currentClassId;
     request.scope = selectedScope();
     request.selectedClassIds = selectedClassIds();

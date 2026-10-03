@@ -3,6 +3,9 @@
 
 #include "app/services/feature_services.h"
 #include "core/application_services.h"
+#include "next/application/classes_list_read_port.h"
+#include "next/application/classes_list_read_query.h"
+#include "next/application/classes_list_read_snapshot.h"
 #include "ui/shared/printing/pdf_print_service.h"
 
 #include <QtTest>
@@ -20,6 +23,8 @@
 
 #include <algorithm>
 #include <cmath>
+#include <optional>
+#include <string>
 #include <utility>
 
 namespace
@@ -30,6 +35,7 @@ QList<Classroom> g_classes;
 QHash<int, Classroom> g_classesById;
 QHash<int, ClassInfo> g_classInfo;
 QHash<int, Roster> g_rosters;
+QList<int> g_classInfoReadOrder;
 
 alignas(ApplicationServices) unsigned char
     g_fakeApplicationServicesStorage[sizeof(ApplicationServices)];
@@ -67,7 +73,70 @@ void resetServiceStubs()
     g_classesById.clear();
     g_classInfo.clear();
     g_rosters.clear();
+    g_classInfoReadOrder.clear();
 }
+
+class FakeClassesListReadPort final
+    : public ClassMngr::Next::Application::ClassesListReadPort
+{
+public:
+    mutable int readCount = 0;
+    std::optional<std::string> failureMessage;
+
+    [[nodiscard]] ClassMngr::Next::Application::ClassesListReadResult
+    readClassesList() const override
+    {
+        ++readCount;
+        using namespace ClassMngr::Next;
+        if (failureMessage)
+        {
+            return Application::ClassesListReadResult::failure({
+                .code = Domain::ErrorCode::Technical,
+                .message = *failureMessage,
+                .recoverable = false
+            });
+        }
+
+        Application::ClassesListSnapshot snapshot;
+        snapshot.classes.reserve(
+            static_cast<std::size_t>(g_classes.size())
+            );
+        for (const Classroom& classroom : std::as_const(g_classes))
+        {
+            const auto classId = Domain::ClassId::fromString(
+                std::to_string(classroom.id)
+                );
+            if (!classId)
+            {
+                return Application::ClassesListReadResult::failure({
+                    .code = Domain::ErrorCode::Validation,
+                    .message = "test classes list contains an invalid ID",
+                    .recoverable = false
+                });
+            }
+
+            snapshot.classes.push_back({
+                .classId = *classId,
+                .className = classroom.name.toStdU16String()
+            });
+        }
+
+        return Application::ClassesListReadResult::success(
+            std::move(snapshot)
+            );
+    }
+};
+
+struct FakeClassesListQuery final
+{
+    FakeClassesListReadPort port;
+    ClassMngr::Next::Application::ClassesListReadQuery query;
+
+    FakeClassesListQuery()
+        : query(port)
+    {
+    }
+};
 }
 
 bool ApplicationServices::hasOpenDatabase() const
@@ -120,6 +189,7 @@ Result<ClassInfo> ClassService::classInfo(
     int classId
     ) const
 {
+    g_classInfoReadOrder.append(classId);
     if (g_classInfo.contains(classId))
     {
         return g_classInfo.value(classId);
@@ -695,7 +765,9 @@ private slots:
     void resolveClassIdsUsesRequestedScope();
     void requestSaveRostersPdfRejectsEmptyPath();
     void requestSaveRostersPdfRejectsMissingDatabase();
+    void requestSaveRostersPdfPropagatesClassesListQueryFailure();
     void requestSaveRostersPdfUsesSelectedClassScope();
+    void requestSaveRostersPdfUsesClassesListOrderForAllClasses();
     void buildByDayCellValuesMapsClassToTimeBlock();
     void buildByDayCellValuesWritesTwentyFiveStudentRows();
     void buildByDayCellValuesUsesTeacherFallback();
@@ -833,6 +905,39 @@ void RosterTemplatePrintServiceTests::requestSaveRostersPdfRejectsMissingDatabas
     QVERIFY(result.message.contains(QStringLiteral("No Teacher Profile")));
 }
 
+void RosterTemplatePrintServiceTests::
+    requestSaveRostersPdfPropagatesClassesListQueryFailure()
+{
+    resetServiceStubs();
+    g_hasOpenDatabase = true;
+    g_hasFeatureServices = true;
+
+    FakeClassesListQuery classesList;
+    classesList.port.failureMessage = "injected classes-list failure";
+
+    QTemporaryDir temporaryDirectory;
+    QVERIFY(temporaryDirectory.isValid());
+
+    RosterTemplatePrintService::Request request;
+    request.services = fakeApplicationServices();
+    request.classesListReadQuery = &classesList.query;
+
+    const RosterTemplatePrintService::Result result =
+        RosterTemplatePrintService::saveRostersPdf(
+            request,
+            temporaryDirectory.filePath(QStringLiteral("failed.pdf"))
+            );
+
+    QCOMPARE(result.status, RosterTemplatePrintService::Status::Failed);
+    QVERIFY(
+        result.message.contains(
+            QStringLiteral("injected classes-list failure")
+            )
+        );
+    QCOMPARE(classesList.port.readCount, 1);
+    QVERIFY(g_classInfoReadOrder.isEmpty());
+}
+
 void RosterTemplatePrintServiceTests::requestSaveRostersPdfUsesSelectedClassScope()
 {
     resetServiceStubs();
@@ -878,6 +983,8 @@ void RosterTemplatePrintServiceTests::requestSaveRostersPdfUsesSelectedClassScop
         duplicateClass.roster
         );
 
+    FakeClassesListQuery classesList;
+
     QTemporaryDir temporaryDirectory;
     QVERIFY(temporaryDirectory.isValid());
 
@@ -887,6 +994,7 @@ void RosterTemplatePrintServiceTests::requestSaveRostersPdfUsesSelectedClassScop
     RosterTemplatePrintService::Request request;
     request.services =
         fakeApplicationServices();
+    request.classesListReadQuery = &classesList.query;
     request.currentClassId =
         currentClass.id;
     request.scope =
@@ -902,6 +1010,8 @@ void RosterTemplatePrintServiceTests::requestSaveRostersPdfUsesSelectedClassScop
             );
 
     QCOMPARE(result.status, RosterTemplatePrintService::Status::Sent);
+    QCOMPARE(classesList.port.readCount, 1);
+    QCOMPARE(g_classInfoReadOrder, QList<int>({20}));
 
     QPdfDocument document;
     loadDocument(
@@ -909,6 +1019,61 @@ void RosterTemplatePrintServiceTests::requestSaveRostersPdfUsesSelectedClassScop
         path,
         1
         );
+}
+
+void RosterTemplatePrintServiceTests::
+    requestSaveRostersPdfUsesClassesListOrderForAllClasses()
+{
+    resetServiceStubs();
+    g_hasOpenDatabase = true;
+    g_hasFeatureServices = true;
+
+    const QList<RosterTemplatePrintService::RosterClassData> classes{
+        sampleRosterClass(
+            30,
+            QStringLiteral("Monday"),
+            QStringLiteral("4:00 PM")
+            ),
+        sampleRosterClass(
+            10,
+            QStringLiteral("Tuesday"),
+            QStringLiteral("4:00 PM")
+            ),
+        sampleRosterClass(
+            20,
+            QStringLiteral("Wednesday"),
+            QStringLiteral("4:00 PM")
+            )
+    };
+    for (const auto& data : classes)
+    {
+        g_classes.append(data.classroom);
+        g_classInfo.insert(data.classroom.id, data.info);
+        g_rosters.insert(data.classroom.id, data.roster);
+    }
+
+    FakeClassesListQuery classesList;
+    QTemporaryDir temporaryDirectory;
+    QVERIFY(temporaryDirectory.isValid());
+
+    RosterTemplatePrintService::Request request;
+    request.services = fakeApplicationServices();
+    request.classesListReadQuery = &classesList.query;
+    request.scope = RosterTemplatePrintService::Scope::AllClasses;
+    request.templateId =
+        RosterTemplatePrintService::TemplateId::PerClassWithExtraInfo;
+
+    const QString path =
+        temporaryDirectory.filePath(QStringLiteral("all-rosters.pdf"));
+    const RosterTemplatePrintService::Result result =
+        RosterTemplatePrintService::saveRostersPdf(request, path);
+
+    QCOMPARE(result.status, RosterTemplatePrintService::Status::Sent);
+    QCOMPARE(classesList.port.readCount, 1);
+    QCOMPARE(g_classInfoReadOrder, QList<int>({30, 10, 20}));
+
+    QPdfDocument document;
+    loadDocument(document, path, 3);
 }
 
 void RosterTemplatePrintServiceTests::buildByDayCellValuesMapsClassToTimeBlock()
@@ -1475,6 +1640,8 @@ void RosterTemplatePrintServiceTests::requestSaveRostersPdfUsesSelectedTemplate(
         selectedClass.roster
         );
 
+    FakeClassesListQuery classesList;
+
     QTemporaryDir temporaryDirectory;
     QVERIFY(temporaryDirectory.isValid());
 
@@ -1484,6 +1651,7 @@ void RosterTemplatePrintServiceTests::requestSaveRostersPdfUsesSelectedTemplate(
     RosterTemplatePrintService::Request request;
     request.services =
         fakeApplicationServices();
+    request.classesListReadQuery = &classesList.query;
     request.currentClassId =
         selectedClass.classroom.id;
     request.scope =
@@ -1498,6 +1666,8 @@ void RosterTemplatePrintServiceTests::requestSaveRostersPdfUsesSelectedTemplate(
             );
 
     QCOMPARE(result.status, RosterTemplatePrintService::Status::Sent);
+    QCOMPARE(classesList.port.readCount, 1);
+    QCOMPARE(g_classInfoReadOrder, QList<int>({20}));
 
     QPdfDocument document;
     loadDocument(
@@ -1548,11 +1718,14 @@ void RosterTemplatePrintServiceTests
     };
     g_rosters.insert(testingClass.id, roster);
 
+    FakeClassesListQuery classesList;
+
     QTemporaryDir temporaryDirectory;
     QVERIFY(temporaryDirectory.isValid());
 
     RosterTemplatePrintService::Request request;
     request.services = fakeApplicationServices();
+    request.classesListReadQuery = &classesList.query;
     request.currentClassId = testingClass.id;
     request.scope =
         RosterTemplatePrintService::Scope::CurrentClass;

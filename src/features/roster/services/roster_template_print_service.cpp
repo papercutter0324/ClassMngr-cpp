@@ -3,6 +3,7 @@
 #include "app/services/feature_services.h"
 #include "core/application_services.h"
 #include "core/fontmanager.h"
+#include "next/application/classes_list_read_query.h"
 #include "ui/shared/printing/pdf_print_service.h"
 
 #include <QColor>
@@ -25,6 +26,8 @@
 #include <QVector>
 
 #include <algorithm>
+#include <charconv>
+#include <string>
 
 namespace RosterTemplatePrintService
 {

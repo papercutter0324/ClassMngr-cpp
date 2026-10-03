@@ -8,7 +8,9 @@
 #include "features/roster/services/roster_template_print_service.h"
 #include "next/application/speaking_evaluation_roster_score_import_use_case.h"
 #include "next/application/speaking_evaluation_roster_score_row_assignments.h"
+#include "next/application/classes_list_read_query.h"
 #include "next/domain/domain_types.h"
+#include "next/platform/application_services_classes_list_read_port.h"
 #include "next/platform/application_services_speaking_evaluation_read_port.h"
 
 #include <QDialog>
@@ -196,6 +198,12 @@ void RosterEditorWidget::outputRosters(
     RosterTemplatePrintService::Request request;
     request.parent = this;
     request.services = m_services;
+    ClassMngr::Next::Platform::ApplicationServicesClassesListReadPort
+        classesReadPort(m_services);
+    const ClassMngr::Next::Application::ClassesListReadQuery classesQuery(
+        classesReadPort
+        );
+    request.classesListReadQuery = &classesQuery;
     request.currentClassId = m_classroom.id;
     request.scope = dialog.selectedScope();
     request.selectedClassIds = dialog.selectedClassIds();
