@@ -60,6 +60,16 @@ QString qtPath(
         static_cast<qsizetype>(path.value().size())
         );
 }
+
+QString qtWorkspacePath(
+    const ClassMngr::Next::Application::WorkspaceLocation& path
+    )
+{
+    return QString::fromUtf8(
+        path.value().data(),
+        static_cast<qsizetype>(path.value().size())
+        );
+}
 }
 
 FileController::FileController(
@@ -354,8 +364,7 @@ bool FileController::createNewDatabaseInteractive(
         return false;
     }
 
-    m_currentFile =
-        m_services->currentDatabasePath();
+    m_currentFile = qtWorkspacePath(created.value().location());
 
     updateRecentFiles(m_currentFile);
 
@@ -633,8 +642,7 @@ bool FileController::loadDatabase(
         return false;
     }
 
-    m_currentFile =
-        m_services->currentDatabasePath();
+    m_currentFile = qtWorkspacePath(opened.value().location());
 
     updateRecentFiles(filePath);
 

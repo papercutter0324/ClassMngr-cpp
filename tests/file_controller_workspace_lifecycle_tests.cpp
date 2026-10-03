@@ -227,6 +227,8 @@ private slots:
     void storedDirectoryFallbackIsUsedByFileDialogs();
     void startupPersistsDirectoryThroughTypedPort();
     void normalCreateUsesCoordinatorAndUpdatesRecent();
+    void normalCreateUsesUnicodeSessionLocationForCurrentFile();
+    void normalOpenUsesUnicodeSessionLocationAndPreservesHistory();
     void recentFilesDeduplicateRawAndNormalizedPaths();
     void recentFilesKeepNewestFirstAndCapAtTen();
     void pruningRemovesMissingPathAndClearsLastFile();
@@ -408,6 +410,114 @@ void FileControllerWorkspaceLifecycleTests::normalCreateUsesCoordinatorAndUpdate
     QCOMPARE(
         fileDialogs.saveFileRequests.constFirst().defaultSuffix,
         QStringLiteral("tps")
+        );
+}
+
+void FileControllerWorkspaceLifecycleTests::
+normalCreateUsesUnicodeSessionLocationForCurrentFile()
+{
+    QTemporaryDir workspaceRoot;
+    QVERIFY(workspaceRoot.isValid());
+
+    const QString unicodeDirectory = QDir(workspaceRoot.path()).filePath(
+        QString::fromUtf8("\xED\x95\x99\xEA\xB5\x90")
+        );
+    const QString rawPath = QDir(unicodeDirectory).filePath(
+        QString::fromUtf8("\xEA\xB5\x90\xEC\x82\xAC")
+        );
+    const QString normalizedPath = QFileInfo(
+        rawPath + QStringLiteral(".tps")
+        ).absoluteFilePath();
+
+    FakeFileDialogService fileDialogs;
+    fileDialogs.scriptedSaveFiles.enqueue(
+        std::optional<QString>(rawPath)
+        );
+    fileDialogs.scriptedSaveFiles.enqueue(std::nullopt);
+    DialogServices::setFileDialogServiceForTesting(&fileDialogs);
+
+    ApplicationServices services;
+    FileController controller(&services, nullptr);
+    ActionRegistry actions;
+    connectFileActions(controller, actions);
+
+    QVERIFY(controller.createNewDatabaseInteractive());
+    QCOMPARE(services.currentDatabasePath(), normalizedPath);
+    QCOMPARE(
+        SettingsManager::instance().getRecentFiles(),
+        QStringList{normalizedPath}
+        );
+    QVERIFY(actions.saveFile->isEnabled());
+    actions.saveFile->trigger();
+    QCOMPARE(fileDialogs.saveFileRequests.size(), 1);
+
+    SettingsManager::instance().setLastDatabaseDirectory(
+        workspaceRoot.path()
+        );
+    QVERIFY(!controller.createNewDatabaseInteractive());
+
+    QCOMPARE(fileDialogs.saveFileRequests.size(), 2);
+    QCOMPARE(
+        fileDialogs.saveFileRequests.constLast().initialDirectory,
+        QFileInfo(normalizedPath).absolutePath()
+        );
+}
+
+void FileControllerWorkspaceLifecycleTests::
+normalOpenUsesUnicodeSessionLocationAndPreservesHistory()
+{
+    QTemporaryDir workspaceRoot;
+    QVERIFY(workspaceRoot.isValid());
+
+    const QString unicodeDirectory = QDir(workspaceRoot.path()).filePath(
+        QString::fromUtf8("\xED\x95\x99\xEA\xB5\x90")
+        );
+    QVERIFY(QDir().mkpath(unicodeDirectory));
+    const QString rawPath = QDir(unicodeDirectory).filePath(
+        QString::fromUtf8("\xEA\xB5\x90\xEC\x82\xAC")
+        );
+    const QString normalizedPath = QFileInfo(
+        rawPath + QStringLiteral(".tps")
+        ).absoluteFilePath();
+    const QString otherPath = QFileInfo(
+        workspaceRoot.filePath(QStringLiteral("other-workspace.tps"))
+        ).absoluteFilePath();
+
+    ApplicationServices seedServices;
+    QVERIFY(seedServices.openDatabase(normalizedPath));
+    seedServices.closeDatabase();
+
+    SettingsManager& settings = SettingsManager::instance();
+    settings.setRecentFiles({rawPath, normalizedPath, otherPath});
+    settings.setLastFile(rawPath);
+
+    FakeFileDialogService fileDialogs;
+    fileDialogs.scriptedSaveFiles.enqueue(std::nullopt);
+    DialogServices::setFileDialogServiceForTesting(&fileDialogs);
+
+    ApplicationServices services;
+    FileController controller(&services, nullptr);
+    ActionRegistry actions;
+    connectFileActions(controller, actions);
+    controller.loadDatabaseOnStartup(rawPath);
+
+    QCOMPARE(services.currentDatabasePath(), normalizedPath);
+    QCOMPARE(
+        settings.getRecentFiles(),
+        (QStringList{normalizedPath, otherPath})
+        );
+    QCOMPARE(settings.getLastFile(), normalizedPath);
+    QVERIFY(actions.saveFile->isEnabled());
+    actions.saveFile->trigger();
+    QVERIFY(fileDialogs.saveFileRequests.isEmpty());
+
+    settings.setLastDatabaseDirectory(workspaceRoot.path());
+    QVERIFY(!controller.createNewDatabaseInteractive());
+
+    QCOMPARE(fileDialogs.saveFileRequests.size(), 1);
+    QCOMPARE(
+        fileDialogs.saveFileRequests.constFirst().initialDirectory,
+        QFileInfo(normalizedPath).absolutePath()
         );
 }
 
