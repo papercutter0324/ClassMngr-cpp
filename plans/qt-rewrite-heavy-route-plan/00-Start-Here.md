@@ -38,7 +38,8 @@
   (roster-template print per-class roster read through the roster query) are
   accepted; F291 (My Classes dedicated compact class-information
   query/snapshot/port with one ApplicationServices adapter read) is accepted;
-  F292 (Korean-teacher birthday-directory read) is selected.
+  F292 (sidebar Korean birthday-directory read) is accepted; F293 (sidebar
+  class-teacher-assignment read) is selected.
   Gates 1 and 2 remain Partial, with broader feature
   migration, parity, and 96-class Release memory evidence still open.
   See the

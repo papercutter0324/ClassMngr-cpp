@@ -10647,3 +10647,31 @@ configuration succeeded from the Visual Studio developer shell. Non-fatal
 F292 is selected to add a Korean-teacher birthday-directory query and adapter
 for the sidebar birthday schedule. Phase 2 remains In Progress/Open; Gates 1
 and 2 remain Partial.
+
+### Progress update - 2026-10-03 (F292 accepted; F293 selected)
+
+F292, committed as `1617d71f3df12717391562a37200c5b70da9c215`, adds a Qt-free
+Korean birthday-directory query, snapshot, and port with an
+`ApplicationServices` adapter, and removes the sidebar's Korean birthday read
+dependency on `TeacherService`. The compact projection carries raw birthday
+and preferred-name fallback fields. The sidebar preserves silent returns for
+typed NotFound or unavailable session; technical read failures retain the
+Korean-first warning and early stop, ahead of later Native English and GS
+warning handling.
+
+Independent fresh Windows x64 Ninja/MSVC 19.51.36257 and Qt 6.12 verification
+passed the CMake ownership gate (1,236 handwritten sources), built `ClassMngr`
+and six focused targets, and passed these six CTests: `ClassMngrNextApplicationKoreanTeacherBirthdayDirectoryReadQueryTests`,
+`ClassMngrNextPlatformApplicationServicesKoreanTeacherBirthdayDirectoryReadPortTests`,
+`ClassMngrNavigationTeacherReadTests`,
+`ClassMngrNavigationTeacherReadParityTests`,
+`ClassMngrNextApplicationUpcomingBirthdayScheduleUseCaseTests`, and
+`ClassMngrUpcomingBirthdaysTests`. `git diff --check` passed. Logs are under
+`build/p2_f292_independent_verify_ninja/`. The adapter test does not runtime-spy
+repository call count; source inspection confirms one `getAllTeachers()` call.
+The full suite was not run.
+
+F293 is selected to add the accepted class-teacher-assignment read for sidebar
+refresh. Begin discovering the next batch when F293 work starts, because it is
+the second-last slice in Batch 1. Phase 2 remains In Progress/Open; Gates 1 and
+2 remain Partial.

@@ -18,8 +18,8 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-03
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F292 is selected to add a Korean-teacher birthday-directory
-  query and adapter for the sidebar birthday schedule.
+- Current note: F293 is selected to add the class-teacher-assignment read for
+  sidebar refresh.
 
 ### Slice discovery batches
 
@@ -54,8 +54,8 @@ one to this phase's progress log before replacing it.
    7. F291 — Provide My Classes a dedicated compact class-information
       query/snapshot/port with one `ApplicationServices` adapter read; retain
       its accepted class-list, roster-count, and full teacher-profile queries.
-   8. F292 — Add an accepted Korean-teacher birthday-directory read for the
-      sidebar birthday schedule.
+   8. F292 — Route the sidebar's Korean birthday-directory read through the
+      accepted query and adapter.
    9. F293 — Add an accepted class-teacher-assignment read for sidebar refresh.
    10. F294 — Add an accepted latest-import-date read for teacher import.
 
@@ -206,19 +206,19 @@ No new v2 production path depends on DataService, MainWindow, PageManager, or a 
 
 Earlier verified slices and cumulative exit-gate snapshots are archived in the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 
-## Latest Progress Update - 2026-10-03 (F291 accepted)
+## Latest Progress Update - 2026-10-03 (F292 accepted)
 
-F291, committed as `31f92c73`, routes My Classes' per-class class-information
-read through a dedicated compact query, snapshot, and port with one
-`ApplicationServices` adapter read. The class-list, roster-count, and full
-teacher-profile queries remain in place. Field-parity review found that the
-accepted class-details and class-notes projections both omit `teacherId`, and
-each adapter loads full `ClassInfo`; composing them would lose the teacher
-association and duplicate repository reads. Fresh isolated Windows x64
-Debug/Ninja verification compiled all three targets, validated ownership of
-1,230 handwritten sources, and passed the query, adapter, and My Classes CTests
-3/3. `git diff --check` passed. Logs are under
-`build/p2_f291_independent_verify/`. Configure first failed to locate `cl.exe`
-in plain PowerShell, then succeeded from the Visual Studio developer shell;
-non-fatal `vswhere.exe` and long-path warnings occurred. The full suite was not
-run. Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial.
+F292, committed as `1617d71f`, adds a Qt-free Korean birthday-directory query,
+snapshot, and port with an `ApplicationServices` adapter, and removes the
+sidebar's Korean birthday read dependency on `TeacherService`. The compact
+projection retains raw birthday and preferred-name fallback fields. The
+sidebar preserves silent returns for typed NotFound or unavailable session,
+Korean-first warning and early stop on technical read failure, and later Native
+English/GS warning precedence. Fresh Windows x64 Ninja/MSVC 19.51.36257 and Qt
+6.12 verification built `ClassMngr` and six focused targets; all six focused
+CTests passed. The CMake ownership gate reported 1,236 handwritten sources,
+and `git diff --check` passed. Logs are under
+`build/p2_f292_independent_verify_ninja/`. The adapter test does not runtime-spy
+repository call count; source inspection confirms one `getAllTeachers()` call.
+The full suite was not run. Phase 2 remains In Progress/Open; Gates 1 and 2
+remain Partial.
