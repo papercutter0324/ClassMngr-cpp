@@ -33,9 +33,10 @@
   validation prevents its post-create profile read from being reached; F286
   (use the workspace session location for FileController create/open state) is
   accepted; F287 (remove ClassImportDialog's unreachable direct class lookup)
-  and F288 (Campus Dashboard selector campus-directory read) are accepted;
-  F289 (roster-template print class-scope enumeration through the classes-list
-  query) is selected.
+  F288 (Campus Dashboard selector campus-directory read) and F289
+  (roster-template print class-scope enumeration through the classes-list query)
+  are accepted; F290 (roster-template print per-class roster read through the
+  roster query) is selected.
   Gates 1 and 2 remain Partial, with broader feature
   migration, parity, and 96-class Release memory evidence still open.
   See the

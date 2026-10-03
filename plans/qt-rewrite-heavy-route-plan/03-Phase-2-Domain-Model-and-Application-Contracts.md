@@ -18,10 +18,9 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-03
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F289 is selected to route roster-template class-scope
-  enumeration through the accepted classes-list query. Inject the query at the
-  print-service boundary; production must provide the real adapter, while the
-  service test supplies a fake `ClassesListReadPort` to the real query.
+- Current note: F290 is selected to route roster-template printing's per-class
+  roster read through the accepted roster query while preserving class-detail
+  reads, class order, and print output.
 
 ### Slice discovery batches
 
@@ -207,17 +206,19 @@ No new v2 production path depends on DataService, MainWindow, PageManager, or a 
 
 Earlier verified slices and cumulative exit-gate snapshots are archived in the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 
-## Latest Progress Update - 2026-10-03 (F288 accepted)
+## Latest Progress Update - 2026-10-03 (F289 accepted)
 
-F288, committed as `b2c807b1`, routes `CampusDashboardPage::loadCampuses()`
-through `CalendarPageCampusDirectoryQueryAdapter`, preserving campus codes,
-repository order, selector labels, and current/stored-selection fallback. The
-caller tests cover all 13 bundled campuses, ordering, role-specific labels, and
-selection behavior; missing and whitespace optional codes remain covered at
-the adapter layer. The independent `ClassMngrCampusDashboardPageTests` and
-`ClassMngrNextPlatformCalendarPageCampusDirectoryQueryTests` CTests passed 2/2.
-Logs are under `build/p2_f288_verify_ninja_*` and
-`build/p2_f288_verify_logs/`. The initial Visual Studio generator attempt was
-replaced by a successful Ninja configure/build/CTest run; the optional Vulkan
-header warning was non-fatal. The full suite was not run. Phase 2 remains
-In Progress/Open; Gates 1 and 2 remain Partial.
+F289, committed as `4b2dcc9f`, routes roster-template class-scope enumeration
+through the accepted `ClassesListReadQuery`. Both the editor save/print caller
+and live-preview caller construct the production
+`ApplicationServicesClassesListReadPort`; class-detail and roster reads remain
+unchanged. The focused `ClassMngrFeatures` build compiled the changed callers.
+The roster print service, classes-list query, and production classes-list
+adapter CTests passed 3/3. Logs are under
+`build/p2_f289_verify_logs/`. An initial Visual Studio environment attempt
+reported missing `vswhere.exe`; adding the Visual Studio Installer directory
+resolved it. The successful final build had no compiler warnings. The service
+test uses a fake read port, while the platform-port test exercises the real
+adapter; UI caller wiring was compile-verified, not runtime integration-tested.
+The full suite was not run. Phase 2 remains In Progress/Open; Gates 1 and 2
+remain Partial.

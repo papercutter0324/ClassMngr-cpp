@@ -10575,3 +10575,28 @@ adapter an unconstructed `ApplicationServices` test object. Preserve
 all/current/selected scope resolution and class order, then verify the real
 adapter independently.
 Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial.
+
+### Progress update - 2026-10-03 (F289 accepted; F290 selected)
+
+F289, committed as `4b2dcc9f`, routes roster-template class-scope enumeration
+through the accepted `ClassesListReadQuery`. Both the editor save/print caller
+and live-preview caller construct the production
+`ApplicationServicesClassesListReadPort`; class-detail and roster reads remain
+unchanged. The focused `ClassMngrFeatures` build compiled the changed callers.
+The roster print service, classes-list query, and production classes-list
+adapter CTests passed 3/3:
+`ClassMngrRosterTemplatePrintServiceTests`,
+`ClassMngrNextApplicationClassesListReadQueryTests`, and
+`ClassMngrNextPlatformApplicationServicesClassesListReadPortTests`. Logs are
+under `build/p2_f289_verify_logs/`. An initial Visual Studio environment
+attempt reported missing `vswhere.exe`; adding the Visual Studio Installer
+directory resolved it. The successful final build had no compiler warnings.
+The service test uses a fake read port, while the platform-port test exercises
+the real adapter; UI caller wiring was compile-verified, not runtime
+integration-tested. The full suite was not run.
+
+F290 is selected to route roster-template printing's per-class roster read
+through the accepted roster query. Preserve class-scope resolution and order,
+class-detail reads, missing-roster handling, and printed output. Retain the
+roster print service caller tests and verify the real roster adapter
+independently. Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial.
