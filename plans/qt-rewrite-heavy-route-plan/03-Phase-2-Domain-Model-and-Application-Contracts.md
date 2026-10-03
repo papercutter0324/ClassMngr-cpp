@@ -18,9 +18,8 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-04
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F301 is selected to reduce per-class
-  `SelectedClassSubtitleReadQuery` calls in ClassExportDialog after its
-  classes-list load.
+- Current note: F302 is selected to batch class-delete chooser subtitle-label
+  queries following F275, reusing the accepted subtitle batch API.
 
 ### Slice discovery batches
 
@@ -96,11 +95,11 @@ one to this phase's progress log before replacing it.
 No other slices were found.
 
 3. **Batch 3**
-   1. F300 selected — Reduce repeated per-matching-class
+   1. F300 accepted — Reduce repeated per-matching-class
       `SelectedClassSubtitleReadQuery` calls for destination labels in
       `ClassImportDialog`. This is query fan-out after F262's query migration,
       not a remaining direct service read.
-   2. F301 candidate — Reduce per-class selected-subtitle query calls in
+   2. F301 selected — Reduce per-class selected-subtitle query calls in
       `ClassExportDialog` after its classes-list load. This is query fan-out
       following F262/F266, not a remaining direct service read.
    3. F302 candidate (discovered in separate F299 audit) — Batch class-delete
@@ -277,29 +276,30 @@ No new v2 production path depends on DataService, MainWindow, PageManager, or a 
 
 Earlier verified slices and cumulative exit-gate snapshots are archived in the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 
-## Latest Progress Update - 2026-10-04 (F300 accepted)
+## Latest Progress Update - 2026-10-04 (F301 accepted)
 
-F300, committed as `885adbf6f301be03dc437bfc7c774e4e5f913f47`, adds
-`SelectedClassSubtitleBatchReadQuery` and its read port, with an active-session
-`ApplicationServicesSelectedClassSubtitleBatchReadPort`. ClassImportDialog
-collects canonical destination IDs from valid preview rows and deduplicates
-them for one ordered batch query. It renders replacement choices from the
-original preview IDs, preserving order and duplicates; unavailable batch data
-keeps the existing formatted-label fallback.
+F301, committed as `77411a5474e178ab278efec519c5aee3b8de64bb`, reuses the
+accepted `SelectedClassSubtitleBatchReadQuery` and port in ClassExportDialog.
+After the accepted class-list read, the dialog gathers valid IDs, runs one
+batch query when the list is nonempty, maps snapshots by ID, and formats the
+subtitle labels. It preserves the exact formatter behavior, failed
+class/teacher fallback, class-list warning, case-insensitive/numeric sort then
+ID, user-role ID, unchecked initial state, and selection behavior.
 
-The application query validates canonical positive unique IDs before reading,
-skips the port for empty input, and validates result count and identifier order.
-The adapter makes one class batch read (metadata and regular-schedule
-statements) and, when assigned teachers exist, one batch read for distinct
-teacher IDs. Per-class class or teacher read failures remain represented in
-their respective snapshot fields.
+The three-class UI test asserts one batch call for three requested IDs, one
+metadata SQL statement, one regular-schedule statement, and one teacher batch
+statement. A new empty-list UI test asserts zero batch reads. Fresh independent
+Windows x64 MSVC/Ninja Debug configure passed the CMake ownership gate at
+1,270 handwritten sources; `ClassMngr`, `ClassMngrClassTransferTests`, and the
+batch application-query and platform-adapter targets built. These three
+focused CTests passed: `ClassMngrClassTransferTests`,
+`ClassMngrNextApplicationSelectedClassSubtitleBatchReadQueryTests`, and
+`ClassMngrNextPlatformApplicationServicesSelectedClassSubtitleBatchReadPortTests`.
+Independent source review found one guarded batch query and no per-class
+single query. `git diff --check` passed; the full suite was not run. Logs are
+under `build/f301_verify_ninja/verification_logs/`.
 
-Independent Windows x64 Debug/Ninja verification passed the CMake ownership
-gate at 1,270 handwritten sources and built `ClassMngr` plus the query,
-adapter, dialog, and single-read test targets. Five focused CTests passed:
-`ClassMngrClassTransferTests`, the batch and single application query tests,
-and the batch and single platform adapter tests. `git diff --check` passed;
-the full suite was not run, and no further F300 limitation was identified.
-Logs are under
-`build/f300_verify_ninja/verification_logs/`. Phase 2 remains In Progress/Open;
-Gates 1 and 2 remain Partial.
+F302 is selected to batch class-delete chooser subtitle-label queries
+following F275. F299's separate completeness audit, F298's semantic deferral,
+and the ordered F303-F305 candidates remain unchanged. Phase 2 remains In
+Progress/Open; Gates 1 and 2 remain Partial.

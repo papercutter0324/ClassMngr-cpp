@@ -10908,3 +10908,31 @@ F301 is selected to batch ClassExportDialog's per-class selected-subtitle reads
 after its classes-list load. The F299 completeness audit, F298 deferral, and
 ordered Batch 3 candidates remain unchanged. Phase 2 remains In Progress/Open;
 Gates 1 and 2 remain Partial.
+
+### Progress update - 2026-10-04 (F301 accepted; F302 selected)
+
+F301, committed as `77411a5474e178ab278efec519c5aee3b8de64bb`, reuses the
+accepted `SelectedClassSubtitleBatchReadQuery` and port in ClassExportDialog.
+After the accepted class-list read, the dialog gathers valid IDs, runs one
+batch query when the list is nonempty, maps snapshots by ID, and formats the
+subtitle labels. It preserves the exact formatter behavior, failed
+class/teacher fallback, class-list warning, case-insensitive/numeric sort then
+ID, user-role ID, unchecked initial state, and selection behavior.
+
+The three-class UI test asserts one batch call for three requested IDs, one
+metadata SQL statement, one regular-schedule statement, and one teacher batch
+statement. A new empty-list UI test asserts zero batch reads. Fresh independent
+Windows x64 MSVC/Ninja Debug configure passed the CMake ownership gate at
+1,270 handwritten sources; `ClassMngr`, `ClassMngrClassTransferTests`, and the
+batch application-query and platform-adapter targets built. These three
+focused CTests passed: `ClassMngrClassTransferTests`,
+`ClassMngrNextApplicationSelectedClassSubtitleBatchReadQueryTests`, and
+`ClassMngrNextPlatformApplicationServicesSelectedClassSubtitleBatchReadPortTests`.
+Independent source review found one guarded batch query and no per-class
+single query. `git diff --check` passed; the full suite was not run. Logs are
+under `build/f301_verify_ninja/verification_logs/`.
+
+F302 is selected to batch class-delete chooser subtitle-label queries
+following F275. F299's separate completeness audit and F298's semantic
+deferral remain unchanged. Phase 2 remains In Progress/Open; Gates 1 and 2
+remain Partial.
