@@ -10776,3 +10776,30 @@ F296 is selected to route roster-template printing's per-class full
 class-information read through a purpose-fit application projection because
 the printer needs room and Zoom details beyond class-list/subtitle
 projections. Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial.
+
+### Progress update - 2026-10-03 (F296 accepted; F297 selected)
+
+F296, committed as `6d98d602d673b532fb57e37d6ce76a669160df5f`, adds a Qt-free
+roster-print class-information query, snapshot, and active-session adapter.
+The repository reads only the template's class grade/level, teacher names,
+room, Wi-Fi and Zoom fields, and regular schedule; it skips intensive times.
+If the metadata row is absent, the read keeps blank metadata and returns any
+regular schedule. The query validates canonical IDs, propagates errors, and
+rejects mismatched result IDs. Roster printing uses the compact projection,
+and the Sub Prep consumer was adapted to cache its existing display name
+after `RosterClassData` became purpose-fit.
+
+Fresh independent Windows x64 Debug/Ninja verification passed the CMake
+ownership gate at 1,253 handwritten sources. Five focused CTests passed:
+`ClassMngrNextApplicationRosterPrintClassInfoReadQueryTests`,
+`ClassMngrNextPlatformApplicationServicesRosterPrintClassInfoReadPortTests`,
+`ClassMngrRosterTemplatePrintServiceTests`,
+`ClassMngrSubPrepPackageServiceTests`, and
+`ClassMngrRosterPrintDialogTests`; the targeted roster service recheck passed
+1/1. Verification artifacts are under `build/f296v_verify_20261003/`; the full
+suite was not run.
+
+F297 is selected to route Campus Dashboard's selected-campus detail read
+through an application query. Preserve save-before-read behavior and the
+silent return when the selected campus is missing. Phase 2 remains
+In Progress/Open; Gates 1 and 2 remain Partial.

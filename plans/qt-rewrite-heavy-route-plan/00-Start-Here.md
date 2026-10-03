@@ -41,8 +41,9 @@
   F292 (sidebar Korean birthday-directory read) is accepted; F293 (sidebar
   class-teacher-assignment read) is accepted; F294 (latest-import-date read for
   teacher import) is accepted; F295 (roster-template reuse of classes-list
-  names) is accepted; F296 (purpose-fit full class-information projection for
-  roster-template printing) is selected.
+  names) and F296 (purpose-fit class-information projection for roster-template
+  printing) are accepted; F297 (selected-campus detail read for Campus
+  Dashboard) is selected.
   Gates 1 and 2 remain Partial, with broader feature
   migration, parity, and 96-class Release memory evidence still open.
   See the

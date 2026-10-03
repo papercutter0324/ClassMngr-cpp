@@ -18,10 +18,9 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-03
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F296 is selected to route roster-template printing's per-class
-  full class-information read through a purpose-fit application projection. The
-  printer needs room and Zoom details beyond the class-list and subtitle
-  projections.
+- Current note: F297 is selected to route Campus Dashboard's selected-campus
+  detail read through an application query. Preserve save-before-read behavior
+  and the silent return when the selected campus is missing.
 
 ### Slice discovery batches
 
@@ -93,6 +92,12 @@ one to this phase's progress log before replacing it.
       single-evaluation read does not cover this dashboard composition.
 
 No other slices were found.
+
+#### F299 completeness audit checkpoint
+
+At F299 start, perform a separate completeness audit for Phase 2 slices missed
+in earlier discovery or work. Keep this distinct from the planned Batch 3
+discovery at F298 start.
 
 ## Objective
 
@@ -241,22 +246,26 @@ No new v2 production path depends on DataService, MainWindow, PageManager, or a 
 
 Earlier verified slices and cumulative exit-gate snapshots are archived in the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 
-## Latest Progress Update - 2026-10-03 (F295 accepted)
+## Latest Progress Update - 2026-10-03 (F296 accepted)
 
-F295, committed as `1d0e318aa26ec1ed0148749dbf781440b769d5af`, reuses class
-labels from the accepted classes-list projection, removing per-class
-`classroom()` reads while retaining one class-information read and roster query
-per resolved class. The request carries only the scalar current-class name, so
-out-of-list current/testing classes remain supported without retaining a
-duplicate class-list snapshot. `RosterClassData` keeps the label for its
-class-grade/level then name fallback.
+F296, committed as `6d98d602d673b532fb57e37d6ce76a669160df5f`, adds a Qt-free
+roster-print class-information query, snapshot, and active-session adapter.
+The repository reads only the template's class grade/level, teacher names,
+room, Wi-Fi and Zoom fields, and regular schedule; it skips intensive times.
+If the metadata row is absent, the read keeps blank metadata and returns any
+regular schedule. The query validates canonical IDs, propagates errors, and
+rejects mismatched result IDs. Roster printing uses the compact projection,
+and the Sub Prep consumer was adapted to cache its existing display name
+after `RosterClassData` became purpose-fit.
 
-Fresh independent Ninja/MSVC x64 Debug/Qt 6.12 configure and build compiled
-`ClassMngr`, `ClassMngrRosterTemplatePrintServiceTests`, and
-`ClassMngrRosterPrintDialogTests`. The CMake ownership gate passed for 1,247
-handwritten sources; both focused CTests and `git diff --check` passed. Logs
-are under `build/f295v/`. The full suite was not run. One internal-request
-limitation remains: invalid non-current selected IDs absent from both the
-classes list and current-class name fail before reads with the generic
-"Roster data is not available." error. The production dialog selects from the
-classes list, and the out-of-list current/testing-class case remains supported.
+Fresh independent Windows x64 Debug/Ninja verification passed the CMake
+ownership gate at 1,253 handwritten sources. Five focused CTests passed:
+`ClassMngrNextApplicationRosterPrintClassInfoReadQueryTests`,
+`ClassMngrNextPlatformApplicationServicesRosterPrintClassInfoReadPortTests`,
+`ClassMngrRosterTemplatePrintServiceTests`,
+`ClassMngrSubPrepPackageServiceTests`, and
+`ClassMngrRosterPrintDialogTests`; the targeted roster service recheck passed
+1/1. The full suite was not run. F297 is selected to route Campus Dashboard's
+selected-campus detail read through an application query, preserving
+save-before-read and silent missing-campus behavior. Phase 2 remains
+In Progress/Open; Gates 1 and 2 remain Partial.
