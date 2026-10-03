@@ -7,9 +7,11 @@
 #include "core/utils/sidebar_node_naming.h"
 #include "features/roster/ui/roster_model.h"
 #include "features/roster/ui/roster_table_view.h"
+#include "next/application/roster_read_query.h"
 #include "next/application/roster_transfer_target_eligibility.h"
 #include "next/application/selected_class_subtitle_read_query.h"
 #include "next/domain/domain_types.h"
+#include "next/platform/application_services_roster_read_port.h"
 #include "next/platform/application_services_selected_class_subtitle_read_port.h"
 #include "ui/shared/qt_text_adapter.h"
 
@@ -203,10 +205,50 @@ void RosterEditorWidget::showRosterContextMenu(
                 continue;
             }
 
+            Roster targetRoster;
+            const auto typedClassId =
+                ClassMngr::Next::Domain::ClassId::fromString(
+                    std::to_string(classroom.id)
+                    );
+            if (typedClassId)
+            {
+                ClassMngr::Next::Platform::
+                    ApplicationServicesRosterReadPort readPort(m_services);
+                const ClassMngr::Next::Application::RosterReadQuery query{
+                    .classId = *typedClassId
+                };
+                const auto loadedRoster =
+                    ClassMngr::Next::Application::RosterReadUseCase::execute(
+                        query,
+                        readPort
+                        );
+                if (loadedRoster)
+                {
+                    const auto& snapshot = loadedRoster.value();
+                    for (const auto& column : snapshot.columns)
+                    {
+                        targetRoster.columns.append(
+                            QString::fromStdU16String(column)
+                            );
+                    }
+
+                    for (const auto& snapshotRow : snapshot.rows)
+                    {
+                        QStringList row;
+                        row.reserve(
+                            static_cast<qsizetype>(snapshotRow.size())
+                            );
+                        for (const auto& cell : snapshotRow)
+                        {
+                            row.append(QString::fromStdU16String(cell));
+                        }
+                        targetRoster.rows.append(std::move(row));
+                    }
+                }
+            }
+
             RosterModel targetModel;
-            targetModel.setRoster(
-                rosterService->roster(classroom.id).value_or(Roster{})
-                );
+            targetModel.setRoster(targetRoster);
             TransferClassTarget target;
             target.classId = classroom.id;
             target.label = targetMetadata.displayName;

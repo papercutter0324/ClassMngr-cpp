@@ -116,7 +116,33 @@ struct RosterTransferMenuFixture final
         return true;
     }
 
-
+    bool addFullRoster(int classId, QString* error)
+    {
+        Roster roster;
+        roster.columns = Roster::BaseColumns;
+        for (int rowIndex = 0; rowIndex < 25; ++rowIndex)
+        {
+            roster.rows.append({
+                QStringLiteral("Student ")
+                    + QChar(static_cast<ushort>(u'A' + rowIndex)),
+                QString::fromUtf16(u"\uAE40\uBBFC\uC9C0"),
+                QString(),
+                QString(),
+                QString(),
+                QString()
+            });
+        }
+        const Status saved = services.rosterService()->saveRoster(
+            classId,
+            roster
+            );
+        if (!saved)
+        {
+            *error = saved.error();
+            return false;
+        }
+        return true;
+    }
 };
 
 struct TransferMenuSnapshot final
@@ -223,6 +249,8 @@ private slots:
     void sameGradeTargetsAreSortedAndDifferentOrEmptyGradesAreExcluded();
     void teacherReadFailureKeepsClassFieldsInDisplayLabel();
     void classFieldsReadFailureShowsNoSameGradeTargets();
+    void fullSameGradeTargetIsLabeledAndDisabled();
+    void targetRosterReadFailureBehavesLikeEmptyRoster();
 };
 
 void RosterTransferMenuTests::cleanup()
@@ -415,6 +443,114 @@ classFieldsReadFailureShowsNoSameGradeTargets()
     QVERIFY(menu.transferMenuFound);
     QCOMPARE(menu.labels, QStringList({QStringLiteral("No same-grade classes")}));
     QCOMPARE(menu.enabled, QList<bool>({false}));
+}
+
+void RosterTransferMenuTests::fullSameGradeTargetIsLabeledAndDisabled()
+{
+    RosterTransferMenuFixture fixture;
+    QString error;
+    QVERIFY2(fixture.initialize(&error), qPrintable(error));
+
+    int sourceId = 0;
+    int targetId = 0;
+    QVERIFY2(fixture.createClass(
+                 QStringLiteral("Source database name"),
+                 QStringLiteral("E4"),
+                 QStringLiteral("Perseus"),
+                 -1,
+                 &sourceId,
+                 &error
+                 ), qPrintable(error));
+    QVERIFY2(fixture.createClass(
+                 QStringLiteral("Full target database name"),
+                 QStringLiteral("E4"),
+                 QStringLiteral("Theseus"),
+                 -1,
+                 &targetId,
+                 &error
+                 ), qPrintable(error));
+    QVERIFY(targetId > 0);
+    QVERIFY2(fixture.addRosterRow(sourceId, &error), qPrintable(error));
+    QVERIFY2(fixture.addFullRoster(targetId, &error), qPrintable(error));
+
+    RosterEditorWidget editor(&fixture.services);
+    editor.loadClass(Classroom(QStringLiteral("Source page name"), sourceId));
+    editor.show();
+    QApplication::processEvents();
+    auto* const table = editor.findChild<RosterTableView*>(
+        QStringLiteral("rosterTable")
+        );
+    QVERIFY(table);
+
+    const TransferMenuSnapshot menu = openTransferMenu(editor, table);
+    QVERIFY(menu.invocationSucceeded);
+    QVERIFY(menu.transferMenuFound);
+    QCOMPARE(
+        menu.labels,
+        QStringList({
+            displayLabel(QStringLiteral("E4"), QStringLiteral("Theseus"))
+                + QStringLiteral(" (full)")
+        })
+        );
+    QCOMPARE(menu.enabled, QList<bool>({false}));
+}
+
+void RosterTransferMenuTests::
+targetRosterReadFailureBehavesLikeEmptyRoster()
+{
+    RosterTransferMenuFixture fixture;
+    QString error;
+    QVERIFY2(fixture.initialize(&error), qPrintable(error));
+
+    int sourceId = 0;
+    int targetId = 0;
+    QVERIFY2(fixture.createClass(
+                 QStringLiteral("Source database name"),
+                 QStringLiteral("E4"),
+                 QStringLiteral("Perseus"),
+                 -1,
+                 &sourceId,
+                 &error
+                 ), qPrintable(error));
+    QVERIFY2(fixture.createClass(
+                 QStringLiteral("Target database name"),
+                 QStringLiteral("E4"),
+                 QStringLiteral("Theseus"),
+                 -1,
+                 &targetId,
+                 &error
+                 ), qPrintable(error));
+    QVERIFY(targetId > 0);
+    QVERIFY2(fixture.addRosterRow(sourceId, &error), qPrintable(error));
+
+    RosterEditorWidget editor(&fixture.services);
+    editor.loadClass(Classroom(QStringLiteral("Source page name"), sourceId));
+    editor.show();
+    QApplication::processEvents();
+    auto* const table = editor.findChild<RosterTableView*>(
+        QStringLiteral("rosterTable")
+        );
+    QVERIFY(table);
+    auto* const sourceModel = qobject_cast<RosterModel*>(table->model());
+    QVERIFY(sourceModel);
+    QCOMPARE(sourceModel->firstEmptyRow(), 1);
+
+    QSqlQuery dropRosterColumns(
+        fixture.services.databaseSession()->database()
+        );
+    QVERIFY2(dropRosterColumns.exec(QStringLiteral("DROP TABLE roster_columns")),
+             qPrintable(dropRosterColumns.lastError().text()));
+
+    const TransferMenuSnapshot menu = openTransferMenu(editor, table);
+    QVERIFY(menu.invocationSucceeded);
+    QVERIFY(menu.transferMenuFound);
+    QCOMPARE(
+        menu.labels,
+        QStringList({
+            displayLabel(QStringLiteral("E4"), QStringLiteral("Theseus"))
+        })
+        );
+    QCOMPARE(menu.enabled, QList<bool>({true}));
 }
 
 QTEST_MAIN(RosterTransferMenuTests)
