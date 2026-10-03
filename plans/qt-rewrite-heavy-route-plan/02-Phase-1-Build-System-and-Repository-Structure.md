@@ -25,6 +25,24 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
   passed. Phase 1's hosted acceptance gate is closed. The additive Phase 2
   domain-contract slice is locally verified on top of that baseline.
 
+### Slice discovery batches
+
+Discover upcoming slices in ordered batches of up to ten (or all remaining
+slices if fewer than ten remain). Record each batch as an ordered list under
+`Recorded batches` below and work through those slices in order. Begin discovering
+and recording the next batch when starting work on the second-last slice in the
+current batch. If a discovery pass finds fewer than ten slices, add the exact
+standalone line `No other slices were found.` beneath that batch.
+
+Keep the Status `Current note` limited to the latest information relevant to the
+current or next slice. Keep only the most recent slice commit in the
+`Latest Progress Update` section. When writing a newer update, move the previous
+one to this phase's progress log before replacing it.
+
+#### Recorded batches
+
+Add each ordered discovery result here as it is found.
+
 ## Objective
 
 Create a v2 build structure that reflects architectural boundaries and supports parallel migration without destabilizing the existing application.
