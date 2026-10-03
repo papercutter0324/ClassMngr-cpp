@@ -9,6 +9,7 @@
 #include <QStringList>
 
 #include <cstddef>
+#include <functional>
 
 inline constexpr std::size_t kRosterRepositoryOutputMaxColumns = 128;
 inline constexpr std::size_t kRosterRepositoryOutputMaxRows = 4'096;
@@ -49,6 +50,14 @@ public:
     [[nodiscard]] Result<QList<ColumnNamesForClass>>
     loadRosterColumnNamesForClasses(
         const QList<int>& classIds
+        );
+
+    // Streams sparse cells for the requested classes without materializing
+    // roster snapshots. Rows outside [0, rowLimit) are omitted.
+    [[nodiscard]] Status forEachRosterDataCellForClasses(
+        const QList<int>& classIds,
+        int rowLimit,
+        const std::function<void(int, int, int, const QString&)>& consumer
         );
 
     // Loads only the requested columns and rejects row, cell, or UTF-8 byte

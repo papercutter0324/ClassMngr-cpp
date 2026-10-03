@@ -366,7 +366,8 @@ QStringList RosterModel::mappedTransferRow(
 }
 
 void RosterModel::rebuildRows(
-    const Roster& roster
+    const Roster& roster,
+    const ClassMngr::Next::Application::RosterColumnProjection& projection
     )
 {
     m_rows.clear();
@@ -383,15 +384,17 @@ void RosterModel::rebuildRows(
 
         for (int column = 0; column < m_columns.size(); ++column)
         {
-            const int sourceColumn =
-                findColumn(
-                    m_columns[column],
-                    roster.columns
-                    );
+            const auto& projectedColumn = projection.columns().at(
+                static_cast<std::size_t>(column)
+                );
 
             const QString value =
-                sourceColumn >= 0 && sourceColumn < sourceRow.size()
-                    ? sourceRow[sourceColumn]
+                projectedColumn.sourceColumnIndex
+                    && *projectedColumn.sourceColumnIndex
+                        < static_cast<std::size_t>(sourceRow.size())
+                    ? sourceRow[static_cast<qsizetype>(
+                        *projectedColumn.sourceColumnIndex
+                        )]
                     : QString();
 
             row.append(

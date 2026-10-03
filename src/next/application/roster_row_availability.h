@@ -9,6 +9,10 @@
 namespace ClassMngr::Next::Application
 {
 
+// RosterModel displays this many rows, and transfer capacity uses the same
+// modeled range.
+inline constexpr std::size_t RosterModeledRowCount = 25;
+
 [[nodiscard]] inline bool rosterRowHasData(
     const std::vector<std::u16string>& row
     )

@@ -1086,6 +1086,15 @@ classmngr_add_qt_test(
 )
 
 classmngr_add_qt_test(
+    NAME NextApplicationRosterAvailabilityBatchReadQuery
+    SOURCES
+        tests/next_application_roster_availability_batch_read_query_tests.cpp
+    LIBRARIES
+        ClassMngrNext::Application
+        Qt6::Test
+)
+
+classmngr_add_qt_test(
     NAME NextApplicationScheduleBuilderSourceSnapshot
     SOURCES
         tests/next_application_schedule_builder_source_snapshot_tests.cpp

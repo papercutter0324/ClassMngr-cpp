@@ -449,6 +449,7 @@ private slots:
     void classFieldsReadFailureShowsNoSameGradeTargets();
     void fullSameGradeTargetIsLabeledAndDisabled();
     void targetRosterReadFailureBehavesLikeEmptyRoster();
+    void targetRosterCellReadFailureBehavesLikeEmptyRoster();
     void menuTransferUsesFreshTargetRosterAndPreservesCustomColumnsAndWidths();
 };
 
@@ -808,6 +809,63 @@ targetRosterReadFailureBehavesLikeEmptyRoster()
         );
     QVERIFY2(dropRosterColumns.exec(QStringLiteral("DROP TABLE roster_columns")),
              qPrintable(dropRosterColumns.lastError().text()));
+
+    const TransferMenuSnapshot menu = openTransferMenu(editor, table);
+    QVERIFY(menu.invocationSucceeded);
+    QVERIFY(menu.transferMenuFound);
+    QCOMPARE(
+        menu.labels,
+        QStringList({
+            displayLabel(QStringLiteral("E4"), QStringLiteral("Theseus"))
+        })
+        );
+    QCOMPARE(menu.enabled, QList<bool>({true}));
+}
+
+void RosterTransferMenuTests::
+targetRosterCellReadFailureBehavesLikeEmptyRoster()
+{
+    RosterTransferMenuFixture fixture;
+    QString error;
+    QVERIFY2(fixture.initialize(&error), qPrintable(error));
+
+    int sourceId = 0;
+    int targetId = 0;
+    QVERIFY2(fixture.createClass(
+                 QStringLiteral("Source database name"),
+                 QStringLiteral("E4"),
+                 QStringLiteral("Perseus"),
+                 -1,
+                 &sourceId,
+                 &error
+                 ), qPrintable(error));
+    QVERIFY2(fixture.createClass(
+                 QStringLiteral("Target database name"),
+                 QStringLiteral("E4"),
+                 QStringLiteral("Theseus"),
+                 -1,
+                 &targetId,
+                 &error
+                 ), qPrintable(error));
+    QVERIFY(targetId > 0);
+    QVERIFY2(fixture.addRosterRow(sourceId, &error), qPrintable(error));
+
+    RosterEditorWidget editor(&fixture.services);
+    editor.loadClass(Classroom(QStringLiteral("Source page name"), sourceId));
+    editor.show();
+    QApplication::processEvents();
+    auto* const table = editor.findChild<RosterTableView*>(
+        QStringLiteral("rosterTable")
+        );
+    QVERIFY(table);
+
+    // Column metadata succeeds; the streamed cell query fails. The prior
+    // menu behavior treated an unreadable target roster as empty.
+    QSqlQuery dropRosterData(
+        fixture.services.databaseSession()->database()
+        );
+    QVERIFY2(dropRosterData.exec(QStringLiteral("DROP TABLE roster_data")),
+             qPrintable(dropRosterData.lastError().text()));
 
     const TransferMenuSnapshot menu = openTransferMenu(editor, table);
     QVERIFY(menu.invocationSucceeded);

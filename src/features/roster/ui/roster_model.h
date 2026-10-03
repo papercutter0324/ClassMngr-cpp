@@ -2,6 +2,7 @@
 
 #include "domain/models/roster.h"
 #include "domain/validation/validation_result.h"
+#include "next/application/roster_column_projection.h"
 
 #include <QAbstractTableModel>
 #include <QHash>
@@ -180,7 +181,8 @@ private:
         ) const;
 
     void rebuildRows(
-        const Roster& roster
+        const Roster& roster,
+        const ClassMngr::Next::Application::RosterColumnProjection& projection
         );
 
     QString normalizeCell(

@@ -8,12 +8,16 @@
 #include "features/roster/ui/roster_model.h"
 #include "features/roster/ui/roster_table_view.h"
 #include "next/application/classes_list_read_query.h"
+#include "next/application/roster_availability_batch_read_query.h"
 #include "next/application/roster_read_query.h"
 #include "next/application/roster_transfer_target_eligibility.h"
+#include "next/application/selected_class_subtitle_batch_read_query.h"
 #include "next/application/selected_class_subtitle_read_query.h"
 #include "next/domain/domain_types.h"
 #include "next/platform/application_services_classes_list_read_port.h"
+#include "next/platform/application_services_roster_availability_batch_read_port.h"
 #include "next/platform/application_services_roster_read_port.h"
+#include "next/platform/application_services_selected_class_subtitle_batch_read_port.h"
 #include "next/platform/application_services_selected_class_subtitle_read_port.h"
 #include "ui/shared/qt_text_adapter.h"
 
@@ -28,6 +32,7 @@
 #include <string>
 #include <system_error>
 #include <utility>
+#include <vector>
 
 namespace
 {
@@ -122,37 +127,15 @@ Roster rosterFromSnapshot(
     return roster;
 }
 
-TransferClassMetadata readTransferClassMetadata(
-    ApplicationServices* services,
-    int classId
+std::optional<TransferClassMetadata> transferClassMetadataFromSnapshot(
+    const ClassMngr::Next::Application::SelectedClassSubtitleReadSnapshot& subtitle
     )
 {
-    if (!services || classId <= 0)
+    if (!subtitle.classFields)
     {
-        return {};
+        return std::nullopt;
     }
 
-    const auto selectedClassId =
-        ClassMngr::Next::Domain::ClassId::fromString(
-            std::to_string(classId)
-            );
-    if (!selectedClassId)
-    {
-        return {};
-    }
-
-    ClassMngr::Next::Platform::
-        ApplicationServicesSelectedClassSubtitleReadPort readPort(services);
-    const ClassMngr::Next::Application::SelectedClassSubtitleReadQuery query(
-        readPort
-        );
-    const auto loadedSubtitle = query.execute(*selectedClassId);
-    if (!loadedSubtitle || !loadedSubtitle.value().classFields)
-    {
-        return {};
-    }
-
-    const auto& subtitle = loadedSubtitle.value();
     const auto& fields = subtitle.classFields.value();
     ClassInfo classInfo;
     classInfo.classGrade = QString::fromStdU16String(fields.classGrade);
@@ -187,10 +170,44 @@ TransferClassMetadata readTransferClassMetadata(
             );
     }
 
-    return {
+    return TransferClassMetadata{
         classInfo.classGrade,
         SidebarNodeNaming::formatClassDisplayName(classInfo, teacher)
     };
+}
+
+TransferClassMetadata readTransferClassMetadata(
+    ApplicationServices* services,
+    int classId
+    )
+{
+    if (!services || classId <= 0)
+    {
+        return {};
+    }
+
+    const auto selectedClassId =
+        ClassMngr::Next::Domain::ClassId::fromString(
+            std::to_string(classId)
+            );
+    if (!selectedClassId)
+    {
+        return {};
+    }
+
+    ClassMngr::Next::Platform::
+        ApplicationServicesSelectedClassSubtitleReadPort readPort(services);
+    const ClassMngr::Next::Application::SelectedClassSubtitleReadQuery query(
+        readPort
+        );
+    const auto loadedSubtitle = query.execute(*selectedClassId);
+    if (!loadedSubtitle)
+    {
+        return {};
+    }
+
+    return transferClassMetadataFromSnapshot(loadedSubtitle.value())
+        .value_or(TransferClassMetadata{});
 }
 
 } // namespace
@@ -273,6 +290,12 @@ void RosterEditorWidget::showRosterContextMenu(
         {
             availableClasses = classroomsFromListSnapshot(classes.value());
         }
+        QList<Classroom> candidateClasses;
+        std::vector<ClassMngr::Next::Domain::ClassId> candidateClassIds;
+        candidateClasses.reserve(availableClasses.size());
+        candidateClassIds.reserve(
+            static_cast<std::size_t>(availableClasses.size())
+            );
         for (const Classroom& classroom : availableClasses)
         {
             if (!ClassMngr::Next::Application::shouldReadRosterTransferTargetClassInfo(
@@ -283,73 +306,118 @@ void RosterEditorWidget::showRosterContextMenu(
                 continue;
             }
 
-            const TransferClassMetadata targetMetadata =
-                readTransferClassMetadata(m_services, classroom.id);
-            if (!ClassMngr::Next::Application::isRosterTransferTargetEligible(
-                    m_classroom.id,
-                    Ui::QtTextAdapter::toUtf16String(currentGrade),
-                    classroom.id,
-                    Ui::QtTextAdapter::toUtf16String(targetMetadata.grade)
-                    ))
-            {
-                continue;
-            }
-
-            Roster targetRoster;
             const auto typedClassId =
                 ClassMngr::Next::Domain::ClassId::fromString(
                     std::to_string(classroom.id)
                     );
-            if (typedClassId)
+            if (!typedClassId)
             {
-                ClassMngr::Next::Platform::
-                    ApplicationServicesRosterReadPort readPort(m_services);
-                const ClassMngr::Next::Application::RosterReadQuery query{
-                    .classId = *typedClassId
-                };
-                const auto loadedRoster =
-                    ClassMngr::Next::Application::RosterReadUseCase::execute(
-                        query,
-                        readPort
-                        );
-                if (loadedRoster)
+                continue;
+            }
+
+            candidateClasses.append(classroom);
+            candidateClassIds.push_back(*typedClassId);
+        }
+
+        if (!candidateClassIds.empty())
+        {
+            ClassMngr::Next::Platform::
+                ApplicationServicesSelectedClassSubtitleBatchReadPort
+                    subtitleReadPort(m_services);
+            const ClassMngr::Next::Application::
+                SelectedClassSubtitleBatchReadQuery subtitleQuery(
+                    subtitleReadPort
+                    );
+            const auto subtitles = subtitleQuery.execute(candidateClassIds);
+            if (subtitles)
+            {
+                for (std::size_t index = 0;
+                     index < candidateClasses.size();
+                     ++index)
                 {
-                    const auto& snapshot = loadedRoster.value();
-                    for (const auto& column : snapshot.columns)
-                    {
-                        targetRoster.columns.append(
-                            QString::fromStdU16String(column)
+                    const Classroom& classroom = candidateClasses.at(
+                        static_cast<qsizetype>(index)
+                        );
+                    const auto targetMetadata =
+                        transferClassMetadataFromSnapshot(
+                            subtitles.value().at(index)
                             );
+                    if (!targetMetadata
+                        || !ClassMngr::Next::Application::
+                            isRosterTransferTargetEligible(
+                                m_classroom.id,
+                                Ui::QtTextAdapter::toUtf16String(currentGrade),
+                                classroom.id,
+                                Ui::QtTextAdapter::toUtf16String(
+                                    targetMetadata->grade
+                                    )
+                                ))
+                    {
+                        continue;
                     }
 
-                    for (const auto& snapshotRow : snapshot.rows)
+                    TransferClassTarget target;
+                    target.classId = classroom.id;
+                    target.label = targetMetadata->displayName;
+                    if (target.label.trimmed().isEmpty())
                     {
-                        QStringList row;
-                        row.reserve(
-                            static_cast<qsizetype>(snapshotRow.size())
-                            );
-                        for (const auto& cell : snapshotRow)
-                        {
-                            row.append(QString::fromStdU16String(cell));
-                        }
-                        targetRoster.rows.append(std::move(row));
+                        target.label = classroom.name.trimmed().isEmpty()
+                            ? tr("Class %1").arg(classroom.id)
+                            : classroom.name.trimmed();
                     }
+                    targets.append(std::move(target));
+                }
+            }
+        }
+
+        if (!targets.isEmpty())
+        {
+            std::vector<ClassMngr::Next::Domain::ClassId> targetClassIds;
+            targetClassIds.reserve(static_cast<std::size_t>(targets.size()));
+            for (const TransferClassTarget& target : std::as_const(targets))
+            {
+                const auto typedClassId =
+                    ClassMngr::Next::Domain::ClassId::fromString(
+                        std::to_string(target.classId)
+                        );
+                if (typedClassId)
+                {
+                    targetClassIds.push_back(*typedClassId);
                 }
             }
 
-            RosterModel targetModel;
-            targetModel.setRoster(targetRoster);
-            TransferClassTarget target;
-            target.classId = classroom.id;
-            target.label = targetMetadata.displayName;
-            if (target.label.trimmed().isEmpty())
+            std::vector<std::u16string> baseColumnNames;
+            baseColumnNames.reserve(
+                static_cast<std::size_t>(Roster::BaseColumns.size())
+                );
+            for (const QString& column : Roster::BaseColumns)
             {
-                target.label = classroom.name.trimmed().isEmpty()
-                    ? tr("Class %1").arg(classroom.id)
-                    : classroom.name.trimmed();
+                baseColumnNames.push_back(
+                    Ui::QtTextAdapter::toUtf16String(column)
+                    );
             }
-            target.full = targetModel.firstEmptyRow() < 0;
-            targets.append(target);
+
+            ClassMngr::Next::Platform::
+                ApplicationServicesRosterAvailabilityBatchReadPort
+                    availabilityReadPort(m_services);
+            const ClassMngr::Next::Application::
+                RosterAvailabilityBatchReadQuery availabilityQuery(
+                    availabilityReadPort
+                    );
+            const auto availability = availabilityQuery.execute(
+                targetClassIds,
+                baseColumnNames
+                );
+            if (availability
+                && availability.value().size()
+                    == static_cast<std::size_t>(targets.size()))
+            {
+                for (std::size_t index = 0; index < targets.size(); ++index)
+                {
+                    targets[static_cast<qsizetype>(index)].full =
+                        availability.value()[index].firstEmptyRow < 0;
+                }
+            }
         }
 
         std::sort(

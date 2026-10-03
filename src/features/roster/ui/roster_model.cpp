@@ -1,11 +1,37 @@
 #include "roster_model.h"
 
 #include "features/roster/ui/roster_constants.h"
+#include "ui/shared/qt_text_adapter.h"
 
+#include <string>
+#include <string_view>
 #include <utility>
+#include <vector>
 
 namespace
 {
+std::vector<std::u16string> toUtf16Strings(const QStringList& values)
+{
+    std::vector<std::u16string> result;
+    result.reserve(static_cast<std::size_t>(values.size()));
+    for (const QString& value : values)
+    {
+        result.push_back(Ui::QtTextAdapter::toUtf16String(value));
+    }
+    return result;
+}
+
+bool qtCaseInsensitiveEquals(
+    const std::u16string_view left,
+    const std::u16string_view right
+    )
+{
+    return Ui::QtTextAdapter::fromUtf16String(left).compare(
+        Ui::QtTextAdapter::fromUtf16String(right),
+        Qt::CaseInsensitive
+        ) == 0;
+}
+
 QString domainValidationMessage(const ValidationIssue& issue)
 {
     if (issue.code.endsWith(QStringLiteral(".required")))
@@ -274,27 +300,20 @@ void RosterModel::setRoster(
 {
     beginResetModel();
 
-    m_columns =
-        Roster::BaseColumns;
-
-    for (const QString& column : roster.columns)
+    const auto projection =
+        ClassMngr::Next::Application::RosterColumnProjection::create(
+            toUtf16Strings(roster.columns),
+            toUtf16Strings(Roster::BaseColumns),
+            qtCaseInsensitiveEquals
+            );
+    m_columns.clear();
+    m_columns.reserve(static_cast<qsizetype>(projection.columns().size()));
+    for (const auto& column : projection.columns())
     {
-        const QString normalized =
-            normalizedColumnName(column);
-
-        if (
-            normalized.isEmpty()
-            || isRequiredColumn(normalized)
-            || findColumn(normalized, m_columns) >= 0
-            )
-        {
-            continue;
-        }
-
-        m_columns.append(normalized);
+        m_columns.append(Ui::QtTextAdapter::fromUtf16String(column.name));
     }
 
-    rebuildRows(roster);
+    rebuildRows(roster, projection);
     validateAll();
     m_domainValidationErrors.clear();
 

@@ -4,6 +4,7 @@
 #include "domain/models/roster.h"
 #include "features/roster/ui/roster_constants.h"
 #include "ui/shared/qt_text_adapter.h"
+#include "next/application/roster_availability_accumulator.h"
 #include "next/application/roster_custom_column_name_policy.h"
 #include "next/application/speaking_evaluation_validation.h"
 
@@ -12,6 +13,7 @@
 
 #include <string>
 #include <string_view>
+#include <vector>
 
 class RosterModelTests : public QObject
 {
@@ -27,6 +29,7 @@ private slots:
     void moveRosterRowRejectsEmptyAndSameRows();
     void moveRosterRowRefreshesValidationAndEmitsModelChanges();
     void firstEmptyRowUsesLowestBlankAndReturnsNoRowWhenFull();
+    void sharedAvailabilityProjectionMatchesModelNameCellOccupancy();
     void insertTransferredRowUsesFirstEmptyRow();
     void insertTransferredRowCopiesOnlyMatchingColumns();
     void insertTransferredRowRejectsFullTargetRoster();
@@ -102,6 +105,17 @@ QString legacyNormalizedColumnName(
         return QStringLiteral("Fall");
     }
     return normalized;
+}
+
+bool qtCaseInsensitiveEquals(
+    const std::u16string_view left,
+    const std::u16string_view right
+    )
+{
+    return Ui::QtTextAdapter::fromUtf16String(left).compare(
+        Ui::QtTextAdapter::fromUtf16String(right),
+        Qt::CaseInsensitive
+        ) == 0;
 }
 
 bool legacyCanAddColumn(
@@ -682,6 +696,84 @@ firstEmptyRowUsesLowestBlankAndReturnsNoRowWhenFull()
 
     QCOMPARE(model.rowCount(), RosterUi::RowCount);
     QCOMPARE(model.firstEmptyRow(), -1);
+}
+
+void RosterModelTests::
+sharedAvailabilityProjectionMatchesModelNameCellOccupancy()
+{
+    const char16_t malformedCodeUnit[] = {
+        static_cast<char16_t>(0xD800),
+        u'\0'
+    };
+    const QStringList rawNames{
+        QString(),
+        QStringLiteral(" \t "),
+        QString::fromUtf16(u"\u2003"),
+        QStringLiteral("!!!"),
+        QStringLiteral("A---"),
+        QString::fromUtf16(u" \u674E "),
+        QString::fromUtf16(u" \uAE40\uBBFC\uC9C0 "),
+        QString::fromUtf16(malformedCodeUnit, 1)
+    };
+
+    std::vector<std::u16string> baseColumnNames;
+    baseColumnNames.reserve(static_cast<std::size_t>(Roster::BaseColumns.size()));
+    for (const QString& column : Roster::BaseColumns)
+    {
+        baseColumnNames.push_back(Ui::QtTextAdapter::toUtf16String(column));
+    }
+
+    for (const QString& nameColumn : {
+             QStringLiteral("English"),
+             QStringLiteral("Korean")
+         })
+    {
+        const int sourceColumn = Roster::BaseColumns.indexOf(nameColumn);
+        QVERIFY(sourceColumn >= 0);
+
+        for (const QString& rawName : rawNames)
+        {
+            Roster roster;
+            roster.columns = Roster::BaseColumns;
+            QStringList firstRow(
+                Roster::BaseColumns.size(),
+                QString()
+                );
+            firstRow[sourceColumn] = rawName;
+            roster.rows.append(firstRow);
+
+            RosterModel model;
+            model.setRoster(roster);
+
+            std::vector<std::u16string> storedColumnNames;
+            storedColumnNames.reserve(
+                static_cast<std::size_t>(roster.columns.size())
+                );
+            for (const QString& column : roster.columns)
+            {
+                storedColumnNames.push_back(
+                    Ui::QtTextAdapter::toUtf16String(column)
+                    );
+            }
+            ClassMngr::Next::Application::RosterAvailabilityAccumulator
+                availability(
+                    storedColumnNames,
+                    baseColumnNames,
+                    qtCaseInsensitiveEquals
+                    );
+            availability.observeCell(
+                0,
+                sourceColumn,
+                Ui::QtTextAdapter::toUtf16String(rawName)
+                );
+
+            QCOMPARE(model.firstEmptyRow(), availability.firstEmptyRow());
+            QCOMPARE(
+                availability.firstEmptyRow(),
+                rawName.trimmed().isEmpty() ? 0 : 1
+                );
+        }
+    }
 }
 
 void RosterModelTests::insertTransferredRowUsesFirstEmptyRow()

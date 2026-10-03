@@ -9,6 +9,7 @@
 #include <QObject>
 #include <QSqlError>
 #include <QSqlQuery>
+#include <QSet>
 
 #include <vector>
 
@@ -422,6 +423,99 @@ RosterRepository::loadRosterColumnNamesForClasses(
     }
 
     return records;
+}
+
+Status RosterRepository::forEachRosterDataCellForClasses(
+    const QList<int>& classIds,
+    const int rowLimit,
+    const std::function<void(int, int, int, const QString&)>& consumer
+    )
+{
+    if (classIds.isEmpty())
+    {
+        return {};
+    }
+    if (rowLimit <= 0 || !consumer)
+    {
+        return std::unexpected(
+            QObject::tr("Loading roster availability failed: invalid request.")
+            );
+    }
+
+    QStringList requestedClasses;
+    requestedClasses.reserve(classIds.size());
+    QSet<int> seenClassIds;
+    seenClassIds.reserve(classIds.size());
+    for (qsizetype index = 0; index < classIds.size(); ++index)
+    {
+        const int classId = classIds.at(index);
+        if (classId <= 0 || seenClassIds.contains(classId))
+        {
+            return std::unexpected(
+                QObject::tr("Loading roster availability failed: class ids must be positive and unique.")
+                );
+        }
+
+        seenClassIds.insert(classId);
+        requestedClasses.append(
+            QStringLiteral("(%1, %2)")
+                .arg(classId)
+                .arg(index)
+            );
+    }
+
+    const QString queryText = QStringLiteral(R"(
+        WITH requested(class_id, request_order) AS (
+            VALUES %1
+        )
+        SELECT
+            requested.class_id AS class_id,
+            roster_data.row_index AS row_index,
+            roster_data.col_index AS col_index,
+            roster_data.value AS value
+        FROM requested
+        JOIN roster_data
+            ON roster_data.class_id=requested.class_id
+        WHERE roster_data.row_index >= 0
+            AND roster_data.row_index < ?
+        ORDER BY
+            requested.request_order,
+            roster_data.row_index,
+            roster_data.col_index
+    )").arg(requestedClasses.join(QStringLiteral(", ")));
+
+    QSqlQuery query(m_database);
+    query.setForwardOnly(true);
+    if (!query.prepare(queryText))
+    {
+        return std::unexpected(
+            QObject::tr("Preparing roster availability read failed: %1")
+                .arg(query.lastError().text())
+            );
+    }
+    query.addBindValue(rowLimit);
+
+    const auto loadedCells = SqlQueryUtils::executePrepared(
+        query,
+        QObject::tr("Loading roster availability cells"),
+        QObject::tr("%1 classes").arg(classIds.size())
+        );
+    if (!loadedCells)
+    {
+        return std::unexpected(loadedCells.error().userMessage());
+    }
+
+    while (query.next())
+    {
+        consumer(
+            query.value("class_id").toInt(),
+            query.value("row_index").toInt(),
+            query.value("col_index").toInt(),
+            query.value("value").toString()
+            );
+    }
+
+    return {};
 }
 
 Result<Roster> RosterRepository::loadRosterForOutput(
