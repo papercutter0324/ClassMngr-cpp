@@ -2599,6 +2599,25 @@ classmngr_add_qt_test(
 )
 
 classmngr_add_qt_test(
+    NAME NextApplicationInitialSetupTeacherChoicesReadQuery
+    SOURCES
+        tests/next_application_initial_setup_teacher_choices_read_query_tests.cpp
+    LIBRARIES
+        ClassMngrNext::Application
+        Qt6::Test
+)
+
+classmngr_add_qt_test(
+    NAME NextPlatformApplicationServicesInitialSetupTeacherChoicesReadPort
+    SOURCES
+        tests/next_platform_application_services_initial_setup_teacher_choices_read_port_tests.cpp
+    LIBRARIES
+        ClassMngrNext::Platform
+        Qt6::Test
+    OFFSCREEN
+)
+
+classmngr_add_qt_test(
     NAME NextPlatformApplicationServicesTestingClassDetailsReadPort
     SOURCES
         tests/next_platform_application_services_testing_class_details_read_port_tests.cpp

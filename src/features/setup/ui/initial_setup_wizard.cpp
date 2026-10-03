@@ -8,6 +8,8 @@
 #include "features/my_info/data/signature_image_processor.h"
 #include "features/schedule/ui/schedule_import_dialog.h"
 #include "features/teacher/ui/teacher_import_dialog.h"
+#include "next/application/initial_setup_teacher_choices_read_query.h"
+#include "next/platform/application_services_initial_setup_teacher_choices_read_port.h"
 #include "next/platform/application_services_current_campus_preferences_port.h"
 #include "next/platform/application_services_custom_color_palette_preferences_port.h"
 #include "next/platform/application_services_personal_display_name_preferences_port.h"
@@ -24,6 +26,9 @@
 #include "ui/shared/widgets/text_fit_push_button.h"
 
 #include <algorithm>
+#include <charconv>
+#include <string>
+#include <system_error>
 
 #include <cstddef>
 
@@ -53,6 +58,31 @@ namespace
 InitialSetupWizard* setupWizard(const QWizardPage* page)
 {
     return qobject_cast<InitialSetupWizard*>(page->window());
+}
+
+bool teacherIdAsInt(
+    const ClassMngr::Next::Domain::TeacherId& teacherId,
+    int& value
+    )
+{
+    const std::string& storedValue = teacherId.value();
+    const auto [end, error] = std::from_chars(
+        storedValue.data(),
+        storedValue.data() + storedValue.size(),
+        value
+        );
+    return error == std::errc{}
+        && end == storedValue.data() + storedValue.size()
+        && value > 0
+        && std::to_string(value) == storedValue;
+}
+
+QString initialSetupTeacherChoicesErrorMessage(const std::string& message)
+{
+    return QString::fromUtf8(
+        message.data(),
+        static_cast<qsizetype>(message.size())
+        );
 }
 
 QLabel* explanatoryLabel(const QString& text, QWidget* parent)
@@ -932,27 +962,50 @@ public:
             return;
         }
 
-        const Result<QList<Teacher>> teachers =
-            setup->teacherService()->teachers();
+        ClassMngr::Next::Platform::
+            ApplicationServicesInitialSetupTeacherChoicesReadPort readPort(
+                setup->services()
+                );
+        const ClassMngr::Next::Application::
+            InitialSetupTeacherChoicesReadQuery query(readPort);
+        const auto teachers = query.execute();
         if (!teachers)
         {
             DialogServices::showWarning(
                 this,
                 tr("Load Teachers"),
                 tr("Teachers could not be loaded."),
-                teachers.error()
+                initialSetupTeacherChoicesErrorMessage(
+                    teachers.error().message
+                    )
                 );
             return;
         }
-        if (teachers->size() > 1)
+        const auto& choices = teachers.value().teachers;
+        if (choices.size() > 1)
         {
             m_teacher->addItem(tr("Select a teacher..."), -1);
         }
-        for (const Teacher& teacher : *teachers)
+        for (const auto& choice : choices)
         {
-            m_teacher->addItem(teacher.preferredDisplayName(), teacher.id);
+            int teacherId = 0;
+            if (!teacherIdAsInt(choice.teacherId, teacherId))
+            {
+                continue;
+            }
+
+            Teacher teacher;
+            teacher.teacherKr = QString::fromStdU16String(choice.teacherKr);
+            teacher.teacherEn = QString::fromStdU16String(choice.teacherEn);
+            teacher.preferredRomanization = QString::fromStdU16String(
+                choice.preferredRomanization
+                );
+            teacher.preferredName = QString::fromStdU16String(
+                choice.preferredName
+                );
+            m_teacher->addItem(teacher.preferredDisplayName(), teacherId);
         }
-        if (teachers->size() == 1)
+        if (choices.size() == 1)
         {
             m_teacher->setCurrentIndex(0);
         }

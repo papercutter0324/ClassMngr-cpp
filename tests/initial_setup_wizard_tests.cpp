@@ -1,6 +1,7 @@
 #include "core/application_services.h"
 #include "data/data_service.h"
 #include "data/database/database_session.h"
+#include "data/repositories/teacher_repository.h"
 #include "features/setup/ui/initial_setup_wizard.h"
 #include "fakes/fake_user_prompt_service.h"
 #include "ui/shared/widgets/on_screen_keyboard.h"
@@ -10,6 +11,7 @@
 
 #include <QApplication>
 #include <QBuffer>
+#include <QComboBox>
 #include <QImage>
 #include <QLabel>
 #include <QLineEdit>
@@ -112,6 +114,8 @@ private slots:
     void missingInvalidAndUnavailableSignatureImagesStayEmpty();
     void storedDisplayNamePreservesUtf8AndWhitespace();
     void missingAndUnavailableDisplayNameStayEmpty();
+    void classDetailsShowsOrderedPreferredTeacherNamesAndSelectsSingleTeacher();
+    void classDetailsShowsTeacherReadFailureAndLeavesChoicesEmpty();
     void unavailableSettingsBlockPersonalDetailsValidationWithoutMutation();
     void aggregateSavePreservesAllPersonalDetailsWithoutDataLoss();
     void aggregateSaveFailureLeavesAllPersonalDetailsUnchanged();
@@ -120,6 +124,114 @@ private slots:
 private:
     QTemporaryDir m_directory;
 };
+
+void InitialSetupWizardTests::
+classDetailsShowsOrderedPreferredTeacherNamesAndSelectsSingleTeacher()
+{
+    ApplicationServices services;
+    QVERIFY(openDatabase(services, m_directory));
+    QVERIFY(services.teacherService());
+
+    Teacher romanizedTeacher;
+    romanizedTeacher.teacherEn = QString();
+    romanizedTeacher.teacherKr = QStringLiteral("Korean Beta");
+    romanizedTeacher.preferredRomanization = QStringLiteral("Roman Beta");
+    TeacherRepository* const teacherRepository =
+        services.databaseSession()->teacherRepository();
+    QVERIFY(teacherRepository);
+    const auto romanizedId = teacherRepository->createTeacher(romanizedTeacher);
+    QVERIFY(romanizedId);
+
+    Teacher englishTeacher;
+    englishTeacher.teacherEn = QStringLiteral("Alpha");
+    englishTeacher.teacherKr = QStringLiteral("Korean Alpha");
+    englishTeacher.preferredRomanization = QStringLiteral("Roman Alpha");
+    const auto englishId = teacherRepository->createTeacher(englishTeacher);
+    QVERIFY(englishId);
+
+    Teacher preferredTeacher;
+    preferredTeacher.teacherEn = QStringLiteral("Zulu");
+    preferredTeacher.teacherKr = QStringLiteral("Korean Zulu");
+    preferredTeacher.preferredRomanization = QStringLiteral("Roman Zulu");
+    preferredTeacher.preferredName = QStringLiteral("Preferred Zulu");
+    const auto preferredId = teacherRepository->createTeacher(preferredTeacher);
+    QVERIFY(preferredId);
+
+    InitialSetupWizard wizard(&services);
+    wizard.setStartId(InitialSetupWizard::ClassDetailsPage);
+    wizard.show();
+    QApplication::processEvents();
+
+    QCOMPARE(wizard.currentId(), InitialSetupWizard::ClassDetailsPage);
+    auto* teachers = wizard.findChild<QComboBox*>(
+        QStringLiteral("setupClassTeacher"));
+    QVERIFY(teachers);
+    QCOMPARE(teachers->count(), 4);
+    QCOMPARE(teachers->itemText(0), QStringLiteral("Select a teacher..."));
+    QCOMPARE(teachers->itemData(0).toInt(), -1);
+    QCOMPARE(teachers->itemText(1), QStringLiteral("Roman Beta"));
+    QCOMPARE(teachers->itemData(1).toInt(), romanizedId.value());
+    QCOMPARE(teachers->itemText(2), QStringLiteral("Alpha"));
+    QCOMPARE(teachers->itemData(2).toInt(), englishId.value());
+    QCOMPARE(teachers->itemText(3), QStringLiteral("Preferred Zulu"));
+    QCOMPARE(teachers->itemData(3).toInt(), preferredId.value());
+
+    ApplicationServices singleTeacherServices;
+    QVERIFY(openDatabase(singleTeacherServices, m_directory));
+    Teacher onlyTeacher;
+    onlyTeacher.teacherEn = QStringLiteral("Only Teacher");
+    onlyTeacher.teacherKr = QStringLiteral("Korean Name");
+    TeacherRepository* const singleTeacherRepository =
+        singleTeacherServices.databaseSession()->teacherRepository();
+    QVERIFY(singleTeacherRepository);
+    const auto onlyTeacherId =
+        singleTeacherRepository->createTeacher(onlyTeacher);
+    QVERIFY(onlyTeacherId);
+
+    InitialSetupWizard singleTeacherWizard(&singleTeacherServices);
+    singleTeacherWizard.setStartId(InitialSetupWizard::ClassDetailsPage);
+    singleTeacherWizard.show();
+    QApplication::processEvents();
+
+    auto* singleChoice = singleTeacherWizard.findChild<QComboBox*>(
+        QStringLiteral("setupClassTeacher"));
+    QVERIFY(singleChoice);
+    QCOMPARE(singleChoice->count(), 1);
+    QCOMPARE(singleChoice->currentIndex(), 0);
+    QCOMPARE(singleChoice->currentText(), QStringLiteral("Only Teacher"));
+    QCOMPARE(singleChoice->currentData().toInt(), onlyTeacherId.value());
+}
+
+void InitialSetupWizardTests::
+classDetailsShowsTeacherReadFailureAndLeavesChoicesEmpty()
+{
+    ApplicationServices services;
+    QVERIFY(openDatabase(services, m_directory));
+    QVERIFY(executeSql(services, QStringLiteral("DROP TABLE teachers")));
+
+    FakeUserPromptService prompts;
+    DialogServices::setUserPromptServiceForTesting(&prompts);
+
+    InitialSetupWizard wizard(&services);
+    wizard.setStartId(InitialSetupWizard::ClassDetailsPage);
+    wizard.show();
+    QApplication::processEvents();
+
+    DialogServices::setUserPromptServiceForTesting(nullptr);
+    QCOMPARE(prompts.messages.size(), 1);
+    QCOMPARE(prompts.messages.constFirst().title, QStringLiteral("Load Teachers"));
+    QCOMPARE(
+        prompts.messages.constFirst().message,
+        QStringLiteral("Teachers could not be loaded.")
+        );
+    QVERIFY(!prompts.messages.constFirst().details.trimmed().isEmpty());
+    QCOMPARE(prompts.messages.constFirst().severity, PromptSeverity::Warning);
+
+    auto* teachers = wizard.findChild<QComboBox*>(
+        QStringLiteral("setupClassTeacher"));
+    QVERIFY(teachers);
+    QCOMPARE(teachers->count(), 0);
+}
 
 void InitialSetupWizardTests::keyboardIsAvailableAtTextEntryStages()
 {
