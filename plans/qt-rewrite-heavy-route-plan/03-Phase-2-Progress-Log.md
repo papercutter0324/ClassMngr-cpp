@@ -10803,3 +10803,33 @@ F297 is selected to route Campus Dashboard's selected-campus detail read
 through an application query. Preserve save-before-read behavior and the
 silent return when the selected campus is missing. Phase 2 remains
 In Progress/Open; Gates 1 and 2 remain Partial.
+
+### Progress update - 2026-10-03 (F297 accepted; F298 deferred; F299 selected)
+
+F297, committed as `2e2ce2c4c109a7ba55f0d2365ef2c6bc7cf41aac`, routes Campus
+Dashboard's selected-campus detail read through an application query while
+preserving save-before-read and silent missing-campus behavior. Fresh Windows
+x64 Debug/Ninja verification in `build/f297_verify_ninja` passed the CMake
+ownership gate at 1,259 handwritten sources and built `ClassMngr` plus the
+query, adapter, and dashboard test targets. Three focused CTests passed; after
+the final dashboard-test-only updates, an independent dashboard CTest rerun
+passed 1/1. `git diff --check` passed; the full suite was not run.
+
+F298 remains deferred after review. `ClassService::create()` returns
+`Result<int>` and repository last-insert ID, so the identity is mechanically
+available, but read-failure warning/no-navigation behavior was deliberately
+added in `cd60f95b`, and `openClass()` may select another class or none. No test
+clarifies the intended post-create failure behavior, so defer pending a
+semantic decision. F299 is selected for the Class Analytics dashboard
+read/use case. Its start includes a separate Phase 2 missed-slice completeness
+audit; this is distinct from the Batch 3 discovery recorded at F298 start.
+Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial.
+
+### Audit update - 2026-10-03 (F299-start completeness audit)
+
+Two independent read-only sweeps found no missed direct legacy-read routes
+outside recorded work; `SidebarController::getTeacherById()` has no callers.
+The second sweep identified four genuine post-migration query fan-out
+opportunities, independently classified as separate batching/aggregation
+work: F302-F305, added after F301 in Batch 3. This audit is distinct from the
+F298-start Batch 3 discovery of F300-F301. F299 remains selected/current.

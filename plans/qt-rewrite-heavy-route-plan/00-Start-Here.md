@@ -43,7 +43,10 @@
   teacher import) is accepted; F295 (roster-template reuse of classes-list
   names) and F296 (purpose-fit class-information projection for roster-template
   printing) are accepted; F297 (selected-campus detail read for Campus
-  Dashboard) is selected.
+  Dashboard) is accepted; F298 (`SidebarController::addClass()` post-create
+  reread) remains deferred pending a decision on read-failure warning and
+  navigation behavior; F299 (Class Analytics dashboard read/use case) is
+  selected, and its separate missed-slice completeness audit is complete.
   Gates 1 and 2 remain Partial, with broader feature
   migration, parity, and 96-class Release memory evidence still open.
   See the

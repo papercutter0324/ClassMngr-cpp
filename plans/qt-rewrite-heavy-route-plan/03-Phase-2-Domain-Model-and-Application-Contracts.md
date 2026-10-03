@@ -18,9 +18,10 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-03
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F297 is selected to route Campus Dashboard's selected-campus
-  detail read through an application query. Preserve save-before-read behavior
-  and the silent return when the selected campus is missing.
+- Current note: F299 is selected to add an application-facing Class Analytics
+  dashboard read/use case for current-roster and historical/YTD projections.
+  Its separate F299-start Phase 2 missed-slice completeness audit is complete
+  and recorded below; F299 remains current.
 
 ### Slice discovery batches
 
@@ -75,21 +76,45 @@ one to this phase's progress log before replacing it.
       and `src/features/roster/services/roster_template_print_shared_data.inc:343`.
    3. F297 — Add a selected-campus detail read for Campus Dashboard. Although
       F288 migrates the selector list, `CampusDashboardPage::loadSelectedCampus()`
-      still calls `m_repository.loadCampus()` for address, directions, map,
-      transit, and office fields (`src/features/campus/ui/campus_dashboard_page.cpp:471`);
-      preserve save-before-read and silent missing-campus behavior.
-   4. F298 — Deferred before implementation: `SidebarController::addClass()`
-      re-reads the class only to reuse the ID returned by `create()`, but read
-      failure shows a dedicated warning and prevents navigation
-      (`src/app/controllers/sidebar_controller_classes.cpp:41-59`). Revisit when
-      post-create failure semantics are clarified.
+      directly read `m_repository.loadCampus()` for address, directions, map,
+      transit, and office fields before F297; preserve
+      save-before-read and silent missing-campus behavior.
+   4. F298 — Deferred after review: `SidebarController::addClass()` re-reads
+      the class only to reuse the ID returned by `create()`. The identity is
+      mechanically available from `ClassService::create()`'s `Result<int>` and
+      repository last-insert ID, but removing the read changes its dedicated
+      failure warning/no-navigation behavior; `openClass()` can select another
+      class or none. No test clarifies the intended post-create failure
+      behavior, so defer pending a semantic decision.
    5. F299 — Add an application-facing Class Analytics dashboard read/use case
       for current-roster and historical/YTD projections. `ClassAnalyticsPage::rebuild()`
       still calls `SpeakingEvaluationService::analyticsDashboard()`
-      (`src/features/classes/ui/class_analytics_page.cpp:524`), which reads
+      (`src/features/classes/ui/class_analytics_page.cpp:528`), which reads
       roster/evaluation data and composes analytics in
       `src/features/classes/services/feature_services.cpp:1470`; the accepted
       single-evaluation read does not cover this dashboard composition.
+
+No other slices were found.
+
+3. **Batch 3**
+   1. F300 candidate — Reduce repeated per-matching-class
+      `SelectedClassSubtitleReadQuery` calls for destination labels in
+      `ClassImportDialog`. This is query fan-out after F262's query migration,
+      not a remaining direct service read.
+   2. F301 candidate — Reduce per-class selected-subtitle query calls in
+      `ClassExportDialog` after its classes-list load. This is query fan-out
+      following F262/F266, not a remaining direct service read.
+   3. F302 candidate (discovered in separate F299 audit) — Batch class-delete
+      chooser subtitle-label queries following F275.
+   4. F303 candidate (discovered in separate F299 audit) — Batch
+      `RosterPrintDialog` per-class selected-subtitle queries after F261;
+      preserve the current-class-only branch.
+   5. F304 candidate (discovered in separate F299 audit) — Batch
+      `RosterPrintDialog` extra-column roster reads after F264; preserve scope,
+      column union, and failure fallback.
+   6. F305 candidate (discovered in separate F299 audit) — Batch transfer-menu
+      target metadata and target-roster reads after F259/F265; keep distinct
+      from F273's transfer-time target read.
 
 No other slices were found.
 
@@ -98,6 +123,13 @@ No other slices were found.
 At F299 start, perform a separate completeness audit for Phase 2 slices missed
 in earlier discovery or work. Keep this distinct from the planned Batch 3
 discovery at F298 start.
+
+Audit result — 2026-10-03: Two independent read-only sweeps found no missed
+direct legacy-read routes outside recorded work; `SidebarController::getTeacherById()`
+has no callers. The second sweep found four genuine post-migration query
+fan-out candidates, independently classified as separate batching/aggregation
+opportunities: F302-F305, appended after F301 in Batch 3. This F299 audit is
+distinct from Batch 3's F298-start discovery of F300-F301.
 
 ## Objective
 
@@ -246,26 +278,23 @@ No new v2 production path depends on DataService, MainWindow, PageManager, or a 
 
 Earlier verified slices and cumulative exit-gate snapshots are archived in the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 
-## Latest Progress Update - 2026-10-03 (F296 accepted)
+## Latest Progress Update - 2026-10-03 (F297 accepted)
 
-F296, committed as `6d98d602d673b532fb57e37d6ce76a669160df5f`, adds a Qt-free
-roster-print class-information query, snapshot, and active-session adapter.
-The repository reads only the template's class grade/level, teacher names,
-room, Wi-Fi and Zoom fields, and regular schedule; it skips intensive times.
-If the metadata row is absent, the read keeps blank metadata and returns any
-regular schedule. The query validates canonical IDs, propagates errors, and
-rejects mismatched result IDs. Roster printing uses the compact projection,
-and the Sub Prep consumer was adapted to cache its existing display name
-after `RosterClassData` became purpose-fit.
+F297, committed as `2e2ce2c4c109a7ba55f0d2365ef2c6bc7cf41aac`, routes Campus
+Dashboard's selected-campus detail read through an application query while
+preserving save-before-read and silent missing-campus behavior. Fresh Windows
+x64 Debug/Ninja verification in `build/f297_verify_ninja` passed the CMake
+ownership gate at 1,259 handwritten sources and built `ClassMngr` plus the
+query, adapter, and dashboard test targets. Three focused CTests passed; after
+the final dashboard-test-only updates, an independent dashboard CTest rerun
+passed 1/1. `git diff --check` passed; the full suite was not run.
 
-Fresh independent Windows x64 Debug/Ninja verification passed the CMake
-ownership gate at 1,253 handwritten sources. Five focused CTests passed:
-`ClassMngrNextApplicationRosterPrintClassInfoReadQueryTests`,
-`ClassMngrNextPlatformApplicationServicesRosterPrintClassInfoReadPortTests`,
-`ClassMngrRosterTemplatePrintServiceTests`,
-`ClassMngrSubPrepPackageServiceTests`, and
-`ClassMngrRosterPrintDialogTests`; the targeted roster service recheck passed
-1/1. The full suite was not run. F297 is selected to route Campus Dashboard's
-selected-campus detail read through an application query, preserving
-save-before-read and silent missing-campus behavior. Phase 2 remains
-In Progress/Open; Gates 1 and 2 remain Partial.
+F298 remains deferred after review: `ClassService::create()` returns
+`Result<int>` and repository last-insert ID, so the identity is mechanically
+available, but read-failure warning/no-navigation behavior was deliberately
+added in `cd60f95b`, and `openClass()` may select another class or none. No test
+clarifies the intended post-create failure behavior. F299 remains selected and
+current for the Class Analytics dashboard read/use case. Its separate
+missed-slice completeness audit is complete: no additional direct-read routes
+were found, and F302-F305 were appended to Batch 3 as query fan-out candidates.
+Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial.
