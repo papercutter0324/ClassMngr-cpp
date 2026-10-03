@@ -1,6 +1,7 @@
 #include "features/sub_prep/services/sub_prep_package_service.h"
 
 #include "core/utils/sidebar_node_naming.h"
+#include "domain/models/class_info.h"
 #include "domain/models/teacher.h"
 #include "ui/shared/printing/pdf_print_service.h"
 
@@ -36,6 +37,7 @@ struct PackageClass
 {
     RosterTemplatePrintService::RosterClassData rosterData;
     Teacher teacher;
+    QString displayName;
     QString folderName;
 };
 
@@ -323,9 +325,7 @@ QList<PackageClass> loadPackageClasses(
         packageClass.rosterData.classroom.id = *classId;
         packageClass.rosterData.classroom.name = *classroomName;
 
-        ClassInfo& info = packageClass.rosterData.info;
-        info.classId = *classId;
-        info.teacherId = -1;
+        auto& info = packageClass.rosterData.classInfo;
         info.classGrade = *grade;
         info.classLevel = *level;
         info.teacherEn = *classTeacherEnglishName;
@@ -349,7 +349,6 @@ QList<PackageClass> loadPackageClasses(
                 }
                 return {};
             }
-            info.teacherId = *teacherId;
             packageClass.teacher = teachersById.value(*teacherId);
         }
         else
@@ -357,6 +356,9 @@ QList<PackageClass> loadPackageClasses(
             packageClass.teacher.id = -1;
         }
 
+        ClassInfo displayInfo;
+        displayInfo.classGrade = *grade;
+        displayInfo.classLevel = *level;
         for (const auto& sourceMeeting : sourceClass.meetings)
         {
             const auto day = weekdayLabel(sourceMeeting.weekday);
@@ -372,8 +374,13 @@ QList<PackageClass> loadPackageClasses(
                 }
                 return {};
             }
-            info.classTimes.append({*day, *startTime, *endTime});
+            info.regularSchedule.append({*day, *startTime, *endTime});
+            displayInfo.classTimes.append({*day, *startTime, *endTime});
         }
+        packageClass.displayName = SidebarNodeNaming::formatClassDisplayName(
+            displayInfo,
+            packageClass.teacher
+            );
 
         Roster& roster = packageClass.rosterData.roster;
         for (const std::string& sourceColumn : sourceClass.rosterColumns)
@@ -426,18 +433,11 @@ QList<PackageClass> loadPackageClasses(
         result.end(),
         [](const PackageClass& left, const PackageClass& right)
         {
-            const QString leftName =
-                SidebarNodeNaming::formatClassDisplayName(
-                    left.rosterData.info,
-                    left.teacher
-                    );
-            const QString rightName =
-                SidebarNodeNaming::formatClassDisplayName(
-                    right.rosterData.info,
-                    right.teacher
-                    );
             const int comparison =
-                QString::localeAwareCompare(leftName, rightName);
+                QString::localeAwareCompare(
+                    left.displayName,
+                    right.displayName
+                    );
 
             return comparison != 0
                 ? comparison < 0
@@ -451,10 +451,7 @@ QList<PackageClass> loadPackageClasses(
     {
         packageClass.folderName =
             uniqueFolderName(
-                SidebarNodeNaming::formatClassDisplayName(
-                    packageClass.rosterData.info,
-                    packageClass.teacher
-                    ),
+                packageClass.displayName,
                 &usedNames
                 );
         packageClass.teacher = {};

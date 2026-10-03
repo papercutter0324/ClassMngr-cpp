@@ -117,7 +117,7 @@ struct RosterPrintLayout
 struct DailyClassSection
 {
     RosterClassData data;
-    ClassTime time;
+    RosterPrintScheduleTime time;
     int inputIndex = 0;
 };
 
@@ -346,14 +346,14 @@ QString classLabel(
 {
     QStringList parts;
 
-    if (!data.info.classGrade.trimmed().isEmpty())
+    if (!data.classInfo.classGrade.trimmed().isEmpty())
     {
-        parts.append(data.info.classGrade.trimmed());
+        parts.append(data.classInfo.classGrade.trimmed());
     }
 
-    if (!data.info.classLevel.trimmed().isEmpty())
+    if (!data.classInfo.classLevel.trimmed().isEmpty())
     {
-        parts.append(data.info.classLevel.trimmed());
+        parts.append(data.classInfo.classLevel.trimmed());
     }
 
     const QString label =
@@ -365,7 +365,7 @@ QString classLabel(
 }
 
 QString teacherRoomLabel(
-    const ClassInfo& info
+    const RosterPrintClassInfo& info
     )
 {
     QString teacher =
@@ -393,7 +393,7 @@ QString teacherRoomLabel(
 }
 
 QString teacherLabel(
-    const ClassInfo& info
+    const RosterPrintClassInfo& info
     )
 {
     const QString teacher =
@@ -419,26 +419,26 @@ QString fallbackText(
 
 QString dailyClassHeader(
     const RosterClassData& data,
-    const ClassTime& time
+    const RosterPrintScheduleTime& time
     )
 {
     const QString teacher =
         fallbackText(
             QStringLiteral("N/A"),
-            teacherLabel(data.info)
+            teacherLabel(data.classInfo)
             );
     const QString room =
         fallbackText(
             QStringLiteral("N/A"),
-            data.info.roomNumber
+            data.classInfo.roomNumber
             );
     const QString zoom =
         fallbackText(
             QStringLiteral("N/A"),
-            data.info.zoomId
+            data.classInfo.zoomId
             );
     const QString password =
-        data.info.zoomPassword.trimmed();
+        data.classInfo.zoomPassword.trimmed();
 
     QString zoomLabel =
         QStringLiteral("Zoom: %1")
@@ -567,12 +567,12 @@ QStringList limitedPerClassExtraColumns(
 }
 
 QStringList perClassTimeLabels(
-    const QList<ClassTime>& classTimes
+    const QList<RosterPrintScheduleTime>& classTimes
     )
 {
     QStringList labels;
 
-    for (const ClassTime& time : classTimes)
+    for (const RosterPrintScheduleTime& time : classTimes)
     {
         const QString day =
             time.day.trimmed();

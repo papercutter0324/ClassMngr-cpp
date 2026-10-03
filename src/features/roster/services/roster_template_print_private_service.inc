@@ -62,7 +62,8 @@ QStringList daysWithValues(
 }
 
 ::Result<QList<RosterClassData>> loadRosterClassData(
-    ClassService* classService,
+    const ClassMngr::Next::Application::RosterPrintClassInfoReadQuery*
+        rosterPrintClassInfoReadQuery,
     const ClassMngr::Next::Application::RosterReadPort* rosterReadPort,
     const QList<int>& classIds,
     const QList<Classroom>& classrooms,
@@ -72,7 +73,7 @@ QStringList daysWithValues(
 {
     QList<RosterClassData> result;
 
-    if (!classService || !rosterReadPort)
+    if (!rosterPrintClassInfoReadQuery || !rosterReadPort)
     {
         return result;
     }
@@ -107,13 +108,6 @@ QStringList daysWithValues(
                 );
         }
 
-        const ::Result<ClassInfo> info =
-            classService->classInfo(classId);
-        if (!info)
-        {
-            return std::unexpected(info.error());
-        }
-
         const auto typedClassId =
             ClassMngr::Next::Domain::ClassId::fromString(
                 std::to_string(classId)
@@ -122,6 +116,22 @@ QStringList daysWithValues(
         {
             return std::unexpected(
                 QObject::tr("Roster data is not available.")
+                );
+        }
+
+        const ClassMngr::Next::Application::
+            RosterPrintClassInfoReadResult classInfo =
+                rosterPrintClassInfoReadQuery->execute(*typedClassId);
+        if (!classInfo)
+        {
+            const std::string& message = classInfo.error().message;
+            return std::unexpected(
+                message.empty()
+                    ? QObject::tr("Roster data is not available.")
+                    : QString::fromUtf8(
+                        message.data(),
+                        static_cast<qsizetype>(message.size())
+                        )
                 );
         }
 
@@ -145,7 +155,48 @@ QStringList daysWithValues(
                 );
         }
 
-        data.info = *info;
+        const auto& classInfoSnapshot = classInfo.value();
+        data.classInfo.classGrade = QString::fromStdU16String(
+            classInfoSnapshot.classGrade
+            );
+        data.classInfo.classLevel = QString::fromStdU16String(
+            classInfoSnapshot.classLevel
+            );
+        data.classInfo.teacherEn = QString::fromStdU16String(
+            classInfoSnapshot.teacherEn
+            );
+        data.classInfo.teacherKr = QString::fromStdU16String(
+            classInfoSnapshot.teacherKr
+            );
+        data.classInfo.roomNumber = QString::fromStdU16String(
+            classInfoSnapshot.roomNumber
+            );
+        data.classInfo.wifiName = QString::fromStdU16String(
+            classInfoSnapshot.wifiName
+            );
+        data.classInfo.wifiPassword = QString::fromStdU16String(
+            classInfoSnapshot.wifiPassword
+            );
+        data.classInfo.zoomId = QString::fromStdU16String(
+            classInfoSnapshot.zoomId
+            );
+        data.classInfo.zoomPassword = QString::fromStdU16String(
+            classInfoSnapshot.zoomPassword
+            );
+        data.classInfo.regularSchedule.reserve(
+            static_cast<qsizetype>(
+                classInfoSnapshot.regularSchedule.size()
+                )
+            );
+        for (const auto& row : classInfoSnapshot.regularSchedule)
+        {
+            data.classInfo.regularSchedule.append({
+                QString::fromStdU16String(row.day),
+                QString::fromStdU16String(row.startTime),
+                QString::fromStdU16String(row.endTime)
+            });
+        }
+
         const ClassMngr::Next::Application::RosterSnapshot& snapshot =
             roster.value();
         data.roster.columns.reserve(
@@ -199,9 +250,7 @@ Result loadRosterClassesForRequest(
         return failed(QObject::tr("No Teacher Profile is open."));
     }
 
-    ClassService* classService =
-        request.services->classService();
-    if (!classService || !request.rosterReadPort)
+    if (!request.rosterPrintClassInfoReadQuery || !request.rosterReadPort)
     {
         return failed(QObject::tr("Roster data is not available."));
     }
@@ -271,7 +320,7 @@ Result loadRosterClassesForRequest(
     {
         const ::Result<QList<RosterClassData>> loadedRosterClasses =
             loadRosterClassData(
-                classService,
+                request.rosterPrintClassInfoReadQuery,
                 request.rosterReadPort,
                 classIds,
                 classrooms,

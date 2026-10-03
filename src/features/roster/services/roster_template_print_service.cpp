@@ -4,6 +4,7 @@
 #include "core/application_services.h"
 #include "core/fontmanager.h"
 #include "next/application/classes_list_read_query.h"
+#include "next/application/roster_print_class_info_read_query.h"
 #include "next/application/roster_read_query.h"
 #include "next/application/roster_snapshot.h"
 #include "ui/shared/printing/pdf_print_service.h"
@@ -255,7 +256,8 @@ QList<RosterCellValue> buildByDayCellValues(
         const int koreanColumn =
             rosterColumnIndex(data.roster, QStringLiteral("Korean"));
 
-        for (const ClassTime& time : data.info.classTimes)
+        for (const RosterPrintScheduleTime& time :
+             data.classInfo.regularSchedule)
         {
             const QString day =
                 time.day.trimmed();
@@ -292,11 +294,17 @@ QList<RosterCellValue> buildByDayCellValues(
             occupiedSlots.insert(slotKey);
 
             appendCellValue(values, day, column, LevelRow, classLabel(data));
-            appendCellValue(values, day, column, TeacherRoomRow, teacherRoomLabel(data.info));
-            appendCellValue(values, day, column, WifiRow, data.info.wifiName);
-            appendCellValue(values, day, column, WifiPasswordRow, data.info.wifiPassword);
-            appendCellValue(values, day, column, ZoomRow, data.info.zoomId);
-            appendCellValue(values, day, column, ZoomPasswordRow, data.info.zoomPassword);
+            appendCellValue(
+                values,
+                day,
+                column,
+                TeacherRoomRow,
+                teacherRoomLabel(data.classInfo)
+                );
+            appendCellValue(values, day, column, WifiRow, data.classInfo.wifiName);
+            appendCellValue(values, day, column, WifiPasswordRow, data.classInfo.wifiPassword);
+            appendCellValue(values, day, column, ZoomRow, data.classInfo.zoomId);
+            appendCellValue(values, day, column, ZoomPasswordRow, data.classInfo.zoomPassword);
 
             int writtenStudentCount = 0;
             for (const QStringList& row : data.roster.rows)
@@ -345,7 +353,8 @@ QList<RosterCellValue> buildDailyCellValues(
 
         for (const RosterClassData& data : classes)
         {
-            for (const ClassTime& time : data.info.classTimes)
+            for (const RosterPrintScheduleTime& time :
+                 data.classInfo.regularSchedule)
             {
                 if (time.day.trimmed() != day)
                 {
@@ -544,7 +553,7 @@ QList<RosterCellValue> buildPerClassExtraInfoCellValues(
         appendCellValue(values, pageKey, 1, 1, QStringLiteral("Level"));
         appendCellValue(values, pageKey, 2, 1, classLabel(data));
         appendCellValue(values, pageKey, 3, 1, QStringLiteral("Room"));
-        appendCellValue(values, pageKey, 4, 1, data.info.roomNumber);
+        appendCellValue(values, pageKey, 4, 1, data.classInfo.roomNumber);
 
         appendCellValue(values, pageKey, 1, 2, QStringLiteral("Days/Times"));
         appendCellValue(
@@ -552,20 +561,22 @@ QList<RosterCellValue> buildPerClassExtraInfoCellValues(
             pageKey,
             2,
             2,
-            perClassTimeLabels(data.info.classTimes).join(QStringLiteral("; "))
+            perClassTimeLabels(data.classInfo.regularSchedule).join(
+                QStringLiteral("; ")
+                )
             );
         appendCellValue(values, pageKey, 3, 2, QStringLiteral("Wifi"));
-        appendCellValue(values, pageKey, 4, 2, data.info.wifiName);
+        appendCellValue(values, pageKey, 4, 2, data.classInfo.wifiName);
 
         appendCellValue(values, pageKey, 1, 3, QStringLiteral("Teacher"));
-        appendCellValue(values, pageKey, 2, 3, teacherLabel(data.info));
+        appendCellValue(values, pageKey, 2, 3, teacherLabel(data.classInfo));
         appendCellValue(values, pageKey, 3, 3, QStringLiteral("Wifi Password"));
-        appendCellValue(values, pageKey, 4, 3, data.info.wifiPassword);
+        appendCellValue(values, pageKey, 4, 3, data.classInfo.wifiPassword);
 
         appendCellValue(values, pageKey, 1, 4, QStringLiteral("ZOOM"));
-        appendCellValue(values, pageKey, 2, 4, data.info.zoomId);
+        appendCellValue(values, pageKey, 2, 4, data.classInfo.zoomId);
         appendCellValue(values, pageKey, 3, 4, QStringLiteral("Zoom Password"));
-        appendCellValue(values, pageKey, 4, 4, data.info.zoomPassword);
+        appendCellValue(values, pageKey, 4, 4, data.classInfo.zoomPassword);
 
         appendCellValue(values, pageKey, PerClassIndexColumn, PerClassHeaderRow, QStringLiteral("No."));
         appendCellValue(values, pageKey, PerClassEnglishColumn, PerClassHeaderRow, QStringLiteral("English Name"));

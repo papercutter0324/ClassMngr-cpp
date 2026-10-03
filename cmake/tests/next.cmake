@@ -1,5 +1,36 @@
 include_guard(GLOBAL)
 
+# Keep roster-print class-info ID and repository-result policy independent of Qt.
+add_executable(
+    ClassMngrNextApplicationRosterPrintClassInfoReadQueryTests
+    tests/next_application_roster_print_class_info_read_query_tests.cpp
+)
+target_compile_features(
+    ClassMngrNextApplicationRosterPrintClassInfoReadQueryTests
+    PRIVATE
+        cxx_std_23
+)
+set_target_properties(
+    ClassMngrNextApplicationRosterPrintClassInfoReadQueryTests
+    PROPERTIES
+        AUTOMOC OFF
+        AUTOUIC OFF
+        AUTORCC OFF
+)
+set_property(
+    TARGET ClassMngrNextApplicationRosterPrintClassInfoReadQueryTests
+    PROPERTY CLASSMNGR_STANDALONE_CPP_TEST TRUE
+)
+target_link_libraries(
+    ClassMngrNextApplicationRosterPrintClassInfoReadQueryTests
+    PRIVATE
+        ClassMngrNext::Application
+)
+add_test(
+    NAME ClassMngrNextApplicationRosterPrintClassInfoReadQueryTests
+    COMMAND ClassMngrNextApplicationRosterPrintClassInfoReadQueryTests
+)
+
 # Keep complete-row reordering independent of Qt and the feature runtime.
 add_executable(
     ClassMngrNextApplicationRosterRowReorderingTests
@@ -2181,6 +2212,16 @@ classmngr_add_qt_test(
     NAME NextPlatformApplicationServicesSelectedClassSubtitleReadPort
     SOURCES
         tests/next_platform_application_services_selected_class_subtitle_read_port_tests.cpp
+    LIBRARIES
+        ClassMngrNext::Platform
+        Qt6::Test
+    OFFSCREEN
+)
+
+classmngr_add_qt_test(
+    NAME NextPlatformApplicationServicesRosterPrintClassInfoReadPort
+    SOURCES
+        tests/next_platform_application_services_roster_print_class_info_read_port_tests.cpp
     LIBRARIES
         ClassMngrNext::Platform
         Qt6::Test

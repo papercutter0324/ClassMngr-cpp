@@ -34,6 +34,21 @@ struct ClassSubtitleReadRecord final
     QList<ClassTime> regularTimes;
 };
 
+struct RosterPrintClassInfoReadRecord final
+{
+    int classId = -1;
+    QString classGrade;
+    QString classLevel;
+    QString teacherEnglishName;
+    QString teacherKoreanName;
+    QString roomNumber;
+    QString wifiName;
+    QString wifiPassword;
+    QString zoomId;
+    QString zoomPassword;
+    QList<ClassTime> regularTimes;
+};
+
 struct ClassesNavigationReadMetrics final
 {
     int metadataStatementCount = 0;
@@ -73,6 +88,8 @@ public:
     [[nodiscard]] Result<ClassSubtitleReadRecord> loadClassSubtitleRecord(
         int classId
         );
+    [[nodiscard]] Result<RosterPrintClassInfoReadRecord>
+        loadRosterPrintClassInfoRecord(int classId);
 
     [[nodiscard]] Result<QList<ClassNavigationReadRecord>>
         loadClassesNavigationRecords(const QList<int>& classIds);

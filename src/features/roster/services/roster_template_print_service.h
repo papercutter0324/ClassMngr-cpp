@@ -1,7 +1,6 @@
 #pragma once
 
 #include "domain/models/document_output_result.h"
-#include "domain/models/class_info.h"
 #include "domain/models/classroom.h"
 #include "domain/models/roster.h"
 
@@ -19,6 +18,7 @@ namespace ClassMngr::Next::Application
 {
 class ClassesListReadQuery;
 class RosterReadPort;
+class RosterPrintClassInfoReadQuery;
 }
 
 namespace RosterTemplatePrintService
@@ -49,6 +49,8 @@ struct Request
         classesListReadQuery = nullptr;
     const ClassMngr::Next::Application::RosterReadPort*
         rosterReadPort = nullptr;
+    const ClassMngr::Next::Application::RosterPrintClassInfoReadQuery*
+        rosterPrintClassInfoReadQuery = nullptr;
     int currentClassId = -1;
     QString currentClassName;
     Scope scope = Scope::AllClasses;
@@ -67,10 +69,31 @@ struct RosterCellValue
     QString value;
 };
 
+struct RosterPrintScheduleTime
+{
+    QString day;
+    QString startTime;
+    QString endTime;
+};
+
+struct RosterPrintClassInfo
+{
+    QString classGrade;
+    QString classLevel;
+    QString teacherEn;
+    QString teacherKr;
+    QString roomNumber;
+    QString wifiName;
+    QString wifiPassword;
+    QString zoomId;
+    QString zoomPassword;
+    QList<RosterPrintScheduleTime> regularSchedule;
+};
+
 struct RosterClassData
 {
     Classroom classroom;
-    ClassInfo info;
+    RosterPrintClassInfo classInfo;
     Roster roster;
 };
 

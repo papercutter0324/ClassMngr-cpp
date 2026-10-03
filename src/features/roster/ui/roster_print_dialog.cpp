@@ -7,11 +7,13 @@
 #include "ui/shared/widgets/marquee_item_delegate.h"
 #include "domain/models/teacher.h"
 #include "next/application/classes_list_read_query.h"
+#include "next/application/roster_print_class_info_read_query.h"
 #include "next/application/roster_read_query.h"
 #include "next/application/selected_class_subtitle_read_query.h"
 #include "next/application/testing_class_details_read_query.h"
 #include "next/domain/domain_types.h"
 #include "next/platform/application_services_classes_list_read_port.h"
+#include "next/platform/application_services_roster_print_class_info_read_port.h"
 #include "next/platform/application_services_roster_read_port.h"
 #include "next/platform/application_services_selected_class_subtitle_read_port.h"
 #include "next/platform/application_services_testing_class_details_read_port.h"
@@ -796,11 +798,18 @@ void RosterPrintDialog::updatePreview()
         classesReadPort(m_services);
     ClassMngr::Next::Platform::ApplicationServicesRosterReadPort
         rosterReadPort(m_services);
+    ClassMngr::Next::Platform::
+        ApplicationServicesRosterPrintClassInfoReadPort classInfoReadPort(
+            m_services
+            );
     const ClassMngr::Next::Application::ClassesListReadQuery classesQuery(
         classesReadPort
         );
+    const ClassMngr::Next::Application::RosterPrintClassInfoReadQuery
+        classInfoQuery(classInfoReadPort);
     request.classesListReadQuery = &classesQuery;
     request.rosterReadPort = &rosterReadPort;
+    request.rosterPrintClassInfoReadQuery = &classInfoQuery;
     request.currentClassId = m_currentClassId;
     request.currentClassName = m_currentClassName;
     request.scope = selectedScope();
