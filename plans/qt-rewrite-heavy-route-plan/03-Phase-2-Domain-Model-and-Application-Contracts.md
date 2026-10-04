@@ -20,7 +20,9 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Exit gate: Open
 - Current note: F320 is accepted. F321 is selected for purpose-fit Native
   English and GS Team birthday projections while preserving schedule fields,
-  source ordering, and current warning behavior.
+  source ordering, and current warning behavior. Batch 6 (F323-F332) is
+  recorded for after Batch 5, beginning with Schedule Import apply-time class
+  information reads.
 
 ### Slice discovery batches
 
@@ -56,6 +58,36 @@ Accepted slices are removed from active tracking; their implementation and accep
    preserve sparse-row sizing and the compact English/Korean projection.
 
 No other slices were found.
+
+#### Recorded batch: Batch 6
+
+1. F323 - Batch Schedule Import apply-time class-information reads; preserve
+   class order, per-class defaults, schedule fields, and transaction error
+   behavior.
+2. F324 - Batch Class Transfer package-export evaluation rows; preserve class
+   and evaluation order, sparse row indexes, full cells, and abort behavior.
+3. F325 - Batch Class Transfer plan-validation schedule reads; preserve
+   destination order, replaced-class skips, schedule conflict results, and
+   failure behavior.
+4. F326 - Batch Sub Prep information-sheet assigned-teacher profile reads;
+   preserve selected scope, first-seen association, missing-profile behavior,
+   and read failures.
+5. F327 - Purpose-fit Schedule Import teacher reads across current-state
+   snapshot and apply validation; preserve teacher order, Korean-name matching,
+   room data, and failure behavior. Exclude stale preview unless an active
+   caller is found.
+6. F328 - Batch Class Transfer preview destination-matching inputs; preserve
+   class order, conditional teacher-name reads, matching behavior, and errors.
+7. F329 - Batch Class Transfer package-export assigned-teacher profiles;
+   preserve first-seen teacher keys, profile identity, and transaction errors.
+8. F330 - Batch Class Transfer package-export class-information and full
+   roster reads; preserve class order, full output fields, sparse rows, and
+   first-failure behavior.
+9. F331 - Purpose-fit selected-teacher display reads for Class Notes and
+   Co-Teacher pages; preserve preferred-name fallback and per-page errors.
+10. F332 - Purpose-fit class-detail reads for Class Notes and Co-Teacher pages;
+    preserve consumed class/schedule fields and per-page read behavior.
+
 #### F299 completeness audit checkpoint
 
 At F299 start, perform a separate completeness audit for Phase 2 slices missed

@@ -11503,3 +11503,14 @@ F321 is selected from Batch 5 for purpose-fit Native English and GS Team
 birthday projections, preserving schedule fields, source order, and warning
 behavior. F298 remains deferred pending its warning/navigation decision.
 Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial.
+
+### Slice discovery update - 2026-10-04 (Batch 6 recorded at F321 start)
+
+Two independent read-only sweeps were compared at the second-last slice of
+Batch 5. Batch 6 records ten ordered candidates, F323-F332, across Schedule
+Import, Class Transfer, Sub Prep, Class Notes, and Co-Teacher paths. The
+Class Transfer package-export work is separated into evaluation rows, assigned
+teacher profiles, and class-information/full-roster reads so each slice can
+retain its own field mapping and failure order. The candidates are distinct
+from accepted F316-F320 and active F321-F322. Deferred F285/F298 remain
+unchanged.
