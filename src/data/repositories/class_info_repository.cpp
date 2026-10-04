@@ -1677,6 +1677,7 @@ ClassInfoRepository::loadClassesNavigationRecords(
         SELECT
             requested.class_id,
             ci.class_id AS class_info_class_id,
+            ci.teacher_id,
             ci.class_grade,
             ci.class_level,
             t.teacher_en,
@@ -1713,6 +1714,8 @@ ClassInfoRepository::loadClassesNavigationRecords(
             !metadataQuery.value("class_info_class_id").isNull();
         if (record.hasClassInfo)
         {
+            const QVariant teacherId = metadataQuery.value("teacher_id");
+            record.teacherId = teacherId.isNull() ? -1 : teacherId.toInt();
             record.grade = metadataQuery.value("class_grade").toString();
             record.level = metadataQuery.value("class_level").toString();
             record.teacherEnglishName =

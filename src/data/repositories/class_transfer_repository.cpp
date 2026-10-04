@@ -790,56 +790,72 @@ Result<ClassImportPreview> buildPreview(
         matchingRequest.destinationClasses.reserve(
             static_cast<std::size_t>(destinationClasses->size())
             );
+        QList<int> destinationClassIds;
+        destinationClassIds.reserve(destinationClasses->size());
         for (const Classroom& destination : *destinationClasses)
         {
-            const Result<ClassInfo> destinationInfo =
-                classInfoRepository.loadClassInfo(destination.id);
-            if (!destinationInfo)
+            destinationClassIds.append(destination.id);
+        }
+
+        if (!destinationClassIds.isEmpty())
+        {
+            const Result<QList<ClassNavigationReadRecord>> destinationInfoRecords =
+                classInfoRepository.loadClassesNavigationRecords(
+                    destinationClassIds);
+            if (!destinationInfoRecords)
             {
-                return std::unexpected(destinationInfo.error());
+                return std::unexpected(destinationInfoRecords.error());
             }
 
-            const QString grade = normalized(destinationInfo->classGrade);
-            const QString level = normalized(destinationInfo->classLevel);
-            std::optional<ClassTransferMatchingDestinationTeacher>
-                destinationTeacher;
-            if (destinationInfo->teacherId > 0)
+            for (qsizetype index = 0;
+                 index < destinationClasses->size();
+                 ++index)
             {
-                const auto typedTeacherId = applicationId<
-                    ClassMngr::Next::Domain::TeacherId>(
-                        destinationInfo->teacherId);
-                ClassTransferMatchingTeacherNames names;
-                if (hasSourceTeacherForCourse(
-                        grade.toStdString(), level.toStdString()))
+                const Classroom& destination = destinationClasses->at(index);
+                const ClassNavigationReadRecord& destinationInfo =
+                    destinationInfoRecords->at(index);
+                const QString grade = normalized(destinationInfo.grade);
+                const QString level = normalized(destinationInfo.level);
+                std::optional<ClassTransferMatchingDestinationTeacher>
+                    destinationTeacher;
+                if (destinationInfo.teacherId > 0)
                 {
-                    const Result<Teacher> teacher =
-                        teacherRepository.getTeacher(destinationInfo->teacherId);
-                    if (!teacher)
+                    const auto typedTeacherId = applicationId<
+                        ClassMngr::Next::Domain::TeacherId>(
+                            destinationInfo.teacherId);
+                    ClassTransferMatchingTeacherNames names;
+                    if (hasSourceTeacherForCourse(
+                            grade.toStdString(), level.toStdString()))
                     {
-                        return std::unexpected(teacher.error());
+                        const Result<Teacher> teacher =
+                            teacherRepository.getTeacher(destinationInfo.teacherId);
+                        if (!teacher)
+                        {
+                            return std::unexpected(teacher.error());
+                        }
+
+                        names = {
+                            normalized(teacher->teacherEn).toStdString(),
+                            normalized(teacher->teacherKr).toStdString()
+                        };
                     }
 
-                    names = {
-                        normalized(teacher->teacherEn).toStdString(),
-                        normalized(teacher->teacherKr).toStdString()
+                    destinationTeacher = ClassTransferMatchingDestinationTeacher{
+                        typedTeacherId,
+                        std::move(names)
                     };
                 }
 
-                destinationTeacher = ClassTransferMatchingDestinationTeacher{
-                    typedTeacherId,
-                    std::move(names)
-                };
+                const auto typedId = applicationId<
+                    ClassMngr::Next::Domain::ClassId>(destination.id);
+                legacyClassIds.emplace(typedId, destination.id);
+                matchingRequest.destinationClasses.push_back({
+                    typedId,
+                    grade.toStdString(),
+                    level.toStdString(),
+                    std::move(destinationTeacher)
+                });
             }
-
-            const auto typedId = applicationId<
-                ClassMngr::Next::Domain::ClassId>(destination.id);
-            legacyClassIds.emplace(typedId, destination.id);
-            matchingRequest.destinationClasses.push_back({
-                typedId,
-                grade.toStdString(),
-                level.toStdString(),
-                std::move(destinationTeacher)
-            });
         }
     }
 

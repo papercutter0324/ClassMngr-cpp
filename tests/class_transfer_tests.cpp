@@ -351,6 +351,11 @@ private slots:
     void importsCompleteClassesAndDeduplicatesTeacher();
     void previewMatchesCourseAndTeacherIgnoringSchedule();
     void previewPreservesQtNameAndCourseNormalization();
+    void previewBatchesDestinationClassInfoInClassOrder();
+    void previewUsesConditionalAssignedTeacherNames();
+    void previewUsesClassInfoDefaultsWhenMissingOrUnassigned();
+    void previewFailsWhenDestinationClassInfoBatchReadFails();
+    void previewSkipsClassInfoBatchWhenThereAreNoDestinations();
     void replacementRetainsIdAndClearsOldChildren();
     void teacherReplacementImportsCompleteSnapshot();
     void scheduleConflictLeavesDestinationUnchanged();
@@ -1627,6 +1632,14 @@ void ClassTransferTests::incompleteCourseSignatureDoesNotMatch()
     destinationInfo.classGrade = QStringLiteral("E4");
     QVERIFY(service.saveClassInfo(destinationInfo));
 
+    const QSqlDatabase database = service.databaseSession()->database();
+    QSqlQuery schemaQuery(database);
+    QVERIFY2(
+        schemaQuery.exec(QStringLiteral(
+            "ALTER TABLE class_intensive_times "
+            "RENAME COLUMN day TO unavailable_day")),
+        qPrintable(schemaQuery.lastError().text()));
+
     const auto preview = service.previewClassImport(*package);
     QVERIFY(preview.has_value());
     QVERIFY(preview->classes.first().matchingClassIds.isEmpty());
@@ -1731,6 +1744,357 @@ void ClassTransferTests::previewPreservesQtNameAndCourseNormalization()
         );
     QVERIFY(!preview->classes.first().matchingClassIds.contains(
         wrongTeacherClass));
+}
+
+void ClassTransferTests::previewBatchesDestinationClassInfoInClassOrder()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    DataService service;
+    QVERIFY(service.openDatabase(
+        directory.filePath(QStringLiteral("source.db"))).has_value());
+    const int sourceTeacher = createdTeacherId(
+        service, completeTeacher(QStringLiteral("Shared Teacher")));
+    const int sourceClass = addCompleteClass(
+        service,
+        sourceTeacher,
+        QStringLiteral("Source Class"),
+        QStringLiteral("E4"),
+        QStringLiteral("Perseus"),
+        QStringLiteral("Monday"),
+        QStringLiteral("Source Student")
+        );
+    const auto package = service.buildClassTransferPackage({sourceClass});
+    QVERIFY(package.has_value());
+
+    QVERIFY(service.openDatabase(
+        directory.filePath(QStringLiteral("destination.db"))).has_value());
+    const int destinationTeacher = createdTeacherId(
+        service, completeTeacher(QStringLiteral("Shared Teacher")));
+    const int zuluDestination = addCompleteClass(
+        service,
+        destinationTeacher,
+        QStringLiteral("Z Destination"),
+        QStringLiteral("E4"),
+        QStringLiteral("Perseus"),
+        QStringLiteral("Tuesday"),
+        QStringLiteral("Zulu Student")
+        );
+    const int alphaDestination = addCompleteClass(
+        service,
+        destinationTeacher,
+        QStringLiteral("A Destination"),
+        QStringLiteral("E4"),
+        QStringLiteral("Perseus"),
+        QStringLiteral("Wednesday"),
+        QStringLiteral("Alpha Student")
+        );
+    QVERIFY(zuluDestination > 0);
+    QVERIFY(alphaDestination > 0);
+
+    const Result<QList<Classroom>> destinationClasses = service.getClasses();
+    QVERIFY(destinationClasses.has_value());
+    QCOMPARE(destinationClasses->size(), 2);
+    QCOMPARE(destinationClasses->at(0).id, alphaDestination);
+    QCOMPARE(destinationClasses->at(1).id, zuluDestination);
+
+    const auto preview = service.previewClassImport(*package);
+    QVERIFY2(preview.has_value(),
+             preview ? "" : qPrintable(preview.error()));
+    QCOMPARE(
+        preview->classes.first().matchingClassIds,
+        QList<int>({alphaDestination, zuluDestination})
+        );
+}
+
+void ClassTransferTests::previewUsesConditionalAssignedTeacherNames()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    DataService service;
+    QVERIFY(service.openDatabase(
+        directory.filePath(QStringLiteral("source.db"))).has_value());
+    const int sourceTeacher = createdTeacherId(
+        service, completeTeacher(QStringLiteral("Source Teacher")));
+    const int sourceClass = addCompleteClass(
+        service,
+        sourceTeacher,
+        QStringLiteral("Source Class"),
+        QStringLiteral("E4"),
+        QStringLiteral("Perseus"),
+        QStringLiteral("Monday"),
+        QStringLiteral("Source Student")
+        );
+    const auto package = service.buildClassTransferPackage({sourceClass});
+    QVERIFY(package.has_value());
+
+    QVERIFY(service.openDatabase(
+        directory.filePath(QStringLiteral("destination.db"))).has_value());
+    const int matchingTeacher = createdTeacherId(
+        service, completeTeacher(QStringLiteral("Source Teacher")));
+    const int unrelatedTeacher = createdTeacherId(
+        service, completeTeacher(QStringLiteral("Unrelated Teacher")));
+    const int sameCourseMatch = addCompleteClass(
+        service,
+        matchingTeacher,
+        QStringLiteral("Same Course Match"),
+        QStringLiteral("E4"),
+        QStringLiteral("Perseus"),
+        QStringLiteral("Tuesday"),
+        QStringLiteral("Matching Student")
+        );
+    const int sameCourseOtherTeacher = addCompleteClass(
+        service,
+        unrelatedTeacher,
+        QStringLiteral("Same Course Other Teacher"),
+        QStringLiteral("E4"),
+        QStringLiteral("Perseus"),
+        QStringLiteral("Wednesday"),
+        QStringLiteral("Other Teacher Student")
+        );
+    const int sameCourseUnassigned = createdClassId(
+        service, QStringLiteral("Same Course Unassigned"));
+    ClassInfo unassignedInfo = completeClassInfo(
+        sameCourseUnassigned,
+        -1,
+        QStringLiteral("E4"),
+        QStringLiteral("Perseus"),
+        QStringLiteral("Thursday")
+        );
+    QVERIFY(service.saveClassInfo(unassignedInfo).has_value());
+    const int unrelatedCourseAssigned = addCompleteClass(
+        service,
+        unrelatedTeacher,
+        QStringLiteral("Unrelated Course Assigned"),
+        QStringLiteral("E5"),
+        QStringLiteral("Athena"),
+        QStringLiteral("Friday"),
+        QStringLiteral("Unrelated Course Student")
+        );
+    QVERIFY(sameCourseMatch > 0);
+    QVERIFY(sameCourseOtherTeacher > 0);
+    QVERIFY(sameCourseUnassigned > 0);
+    QVERIFY(unrelatedCourseAssigned > 0);
+
+    const QSqlDatabase database = service.databaseSession()->database();
+    QSqlQuery foreignKeyQuery(database);
+    QVERIFY2(
+        foreignKeyQuery.exec(QStringLiteral("PRAGMA foreign_keys = OFF")),
+        qPrintable(foreignKeyQuery.lastError().text()));
+    QSqlQuery foreignKeyStateQuery(database);
+    QVERIFY2(
+        foreignKeyStateQuery.exec(QStringLiteral("PRAGMA foreign_keys")),
+        qPrintable(foreignKeyStateQuery.lastError().text()));
+    QVERIFY(foreignKeyStateQuery.next());
+    QCOMPARE(foreignKeyStateQuery.value(0).toInt(), 0);
+
+    QSqlQuery setMissingTeacher(database);
+    setMissingTeacher.prepare(QStringLiteral(
+        "UPDATE class_info SET teacher_id = ? WHERE class_id = ?"));
+    setMissingTeacher.addBindValue(999999);
+    setMissingTeacher.addBindValue(unrelatedCourseAssigned);
+    QVERIFY2(setMissingTeacher.exec(),
+             qPrintable(setMissingTeacher.lastError().text()));
+    QCOMPARE(setMissingTeacher.numRowsAffected(), 1);
+
+    const auto preview = service.previewClassImport(*package);
+    QVERIFY2(preview.has_value(),
+             preview ? "" : qPrintable(preview.error()));
+    QCOMPARE(
+        preview->classes.first().matchingClassIds,
+        QList<int>({sameCourseMatch})
+        );
+
+    QSqlQuery moveBrokenAssignmentToSourceCourse(database);
+    moveBrokenAssignmentToSourceCourse.prepare(QStringLiteral(
+        "UPDATE class_info SET class_grade = ?, class_level = ? "
+        "WHERE class_id = ?"));
+    moveBrokenAssignmentToSourceCourse.addBindValue(QStringLiteral("E4"));
+    moveBrokenAssignmentToSourceCourse.addBindValue(QStringLiteral("Perseus"));
+    moveBrokenAssignmentToSourceCourse.addBindValue(unrelatedCourseAssigned);
+    QVERIFY2(moveBrokenAssignmentToSourceCourse.exec(),
+             qPrintable(moveBrokenAssignmentToSourceCourse.lastError().text()));
+    QCOMPARE(moveBrokenAssignmentToSourceCourse.numRowsAffected(), 1);
+
+    const auto missingTeacherPreview = service.previewClassImport(*package);
+    QVERIFY(!missingTeacherPreview.has_value());
+    QVERIFY(missingTeacherPreview.error().contains(QStringLiteral(
+        "Loading teacher failed for teacher id 999999")));
+}
+
+void ClassTransferTests::
+    previewUsesClassInfoDefaultsWhenMissingOrUnassigned()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    DataService service;
+    QVERIFY(service.openDatabase(
+        directory.filePath(QStringLiteral("source.db"))).has_value());
+    const int sourceTeacher = createdTeacherId(
+        service, completeTeacher(QStringLiteral("Shared Teacher")));
+    const int sourceClass = addCompleteClass(
+        service,
+        sourceTeacher,
+        QStringLiteral("Source Class"),
+        QStringLiteral("E4"),
+        QStringLiteral("Perseus"),
+        QStringLiteral("Monday"),
+        QStringLiteral("Source Student")
+        );
+    const auto package = service.buildClassTransferPackage({sourceClass});
+    QVERIFY(package.has_value());
+
+    QVERIFY(service.openDatabase(
+        directory.filePath(QStringLiteral("destination.db"))).has_value());
+    const int destinationTeacher = createdTeacherId(
+        service, completeTeacher(QStringLiteral("Shared Teacher")));
+    const int missingInfoClass = addCompleteClass(
+        service,
+        destinationTeacher,
+        QStringLiteral("Missing Info"),
+        QStringLiteral("E4"),
+        QStringLiteral("Perseus"),
+        QStringLiteral("Tuesday"),
+        QStringLiteral("Missing Info Student")
+        );
+    const int unassignedClass = addCompleteClass(
+        service,
+        destinationTeacher,
+        QStringLiteral("Unassigned Info"),
+        QStringLiteral("E4"),
+        QStringLiteral("Perseus"),
+        QStringLiteral("Wednesday"),
+        QStringLiteral("Unassigned Student")
+        );
+    QVERIFY(missingInfoClass > 0);
+    QVERIFY(unassignedClass > 0);
+
+    const QSqlDatabase database = service.databaseSession()->database();
+    QSqlQuery deleteClassInfo(database);
+    deleteClassInfo.prepare(QStringLiteral(
+        "DELETE FROM class_info WHERE class_id = ?"));
+    deleteClassInfo.addBindValue(missingInfoClass);
+    QVERIFY2(deleteClassInfo.exec(),
+             qPrintable(deleteClassInfo.lastError().text()));
+    QCOMPARE(deleteClassInfo.numRowsAffected(), 1);
+
+    QSqlQuery clearTeacher(database);
+    clearTeacher.prepare(QStringLiteral(
+        "UPDATE class_info SET teacher_id = NULL WHERE class_id = ?"));
+    clearTeacher.addBindValue(unassignedClass);
+    QVERIFY2(clearTeacher.exec(), qPrintable(clearTeacher.lastError().text()));
+    QCOMPARE(clearTeacher.numRowsAffected(), 1);
+
+    QSqlDatabase repositoryDatabase =
+        service.databaseSession()->database();
+    ClassInfoRepository classInfoRepository(repositoryDatabase);
+    const auto records = classInfoRepository.loadClassesNavigationRecords({
+        missingInfoClass,
+        unassignedClass
+    });
+    QVERIFY2(records.has_value(),
+             records ? "" : qPrintable(records.error()));
+    QCOMPARE(records->size(), 2);
+    QCOMPARE(records->at(0).classId, missingInfoClass);
+    QVERIFY(!records->at(0).hasClassInfo);
+    QCOMPARE(records->at(0).teacherId, -1);
+    QVERIFY(records->at(0).grade.isEmpty());
+    QVERIFY(records->at(0).level.isEmpty());
+    QCOMPARE(records->at(1).classId, unassignedClass);
+    QVERIFY(records->at(1).hasClassInfo);
+    QCOMPARE(records->at(1).teacherId, -1);
+    QCOMPARE(records->at(1).grade, QStringLiteral("E4"));
+    QCOMPARE(records->at(1).level, QStringLiteral("Perseus"));
+
+    const auto preview = service.previewClassImport(*package);
+    QVERIFY2(preview.has_value(),
+             preview ? "" : qPrintable(preview.error()));
+    QVERIFY(preview->classes.first().matchingClassIds.isEmpty());
+}
+
+void ClassTransferTests::previewFailsWhenDestinationClassInfoBatchReadFails()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    DataService service;
+    QVERIFY(service.openDatabase(
+        directory.filePath(QStringLiteral("source.db"))).has_value());
+    const int sourceTeacher = createdTeacherId(service, completeTeacher());
+    const int sourceClass = addCompleteClass(
+        service,
+        sourceTeacher,
+        QStringLiteral("Source Class"),
+        QStringLiteral("E4"),
+        QStringLiteral("Perseus"),
+        QStringLiteral("Monday"),
+        QStringLiteral("Source Student")
+        );
+    const auto package = service.buildClassTransferPackage({sourceClass});
+    QVERIFY(package.has_value());
+
+    QVERIFY(service.openDatabase(
+        directory.filePath(QStringLiteral("destination.db"))).has_value());
+    const int destinationTeacher = createdTeacherId(
+        service, completeTeacher());
+    const int destinationClass = addCompleteClass(
+        service,
+        destinationTeacher,
+        QStringLiteral("Destination Class"),
+        QStringLiteral("E4"),
+        QStringLiteral("Perseus"),
+        QStringLiteral("Tuesday"),
+        QStringLiteral("Destination Student")
+        );
+    QVERIFY(destinationClass > 0);
+
+    const QSqlDatabase database = service.databaseSession()->database();
+    QSqlQuery schemaQuery(database);
+    QVERIFY2(
+        schemaQuery.exec(QStringLiteral(
+            "ALTER TABLE class_times RENAME COLUMN day TO unavailable_day")),
+        qPrintable(schemaQuery.lastError().text()));
+
+    const auto preview = service.previewClassImport(*package);
+    QVERIFY(!preview.has_value());
+    QVERIFY(preview.error().contains(QStringLiteral(
+        "Loading regular classes navigation schedules failed")));
+    QVERIFY(preview.error().contains(QStringLiteral("unavailable_day"))
+            || preview.error().contains(QStringLiteral("schedule.day")));
+}
+
+void ClassTransferTests::previewSkipsClassInfoBatchWhenThereAreNoDestinations()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    DataService service;
+    QVERIFY(service.openDatabase(
+        directory.filePath(QStringLiteral("source.db"))).has_value());
+    const int sourceTeacher = createdTeacherId(service, completeTeacher());
+    const int sourceClass = addCompleteClass(
+        service,
+        sourceTeacher,
+        QStringLiteral("Source Class"),
+        QStringLiteral("E4"),
+        QStringLiteral("Perseus"),
+        QStringLiteral("Monday"),
+        QStringLiteral("Source Student")
+        );
+    const auto package = service.buildClassTransferPackage({sourceClass});
+    QVERIFY(package.has_value());
+
+    QVERIFY(service.openDatabase(
+        directory.filePath(QStringLiteral("destination.db"))).has_value());
+    const QSqlDatabase database = service.databaseSession()->database();
+    QSqlQuery schemaQuery(database);
+    QVERIFY2(
+        schemaQuery.exec(QStringLiteral(
+            "ALTER TABLE class_times RENAME COLUMN day TO unavailable_day")),
+        qPrintable(schemaQuery.lastError().text()));
+
+    const auto preview = service.previewClassImport(*package);
+    QVERIFY2(preview.has_value(),
+             preview ? "" : qPrintable(preview.error()));
+    QVERIFY(preview->classes.first().matchingClassIds.isEmpty());
 }
 
 void ClassTransferTests::
