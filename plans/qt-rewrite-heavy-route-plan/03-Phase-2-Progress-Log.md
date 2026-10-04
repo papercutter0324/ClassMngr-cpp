@@ -11620,3 +11620,24 @@ F325 is selected to batch Class Transfer plan-validation schedule reads while
 preserving destination order, replaced-class skips, schedule conflict
 results, and failure behavior. Phase 2 remains In Progress/Open; Gates 1 and
 2 remain Partial.
+
+### F325 accepted / F326 selected - 2026-10-05
+
+F325, committed as
+`af6e50e6c489c5b6bee265f9acc3c584c76e60f0`, batches Class Transfer schedule
+preflight reads. It excludes replaced destinations, loads navigation records
+for eligible destination IDs in one batch, and validates those records in
+destination order, preserving regular and intensive schedule conflict order.
+The read includes schedule rows when a destination has no `class_info` record;
+batch-read failures still abort before writes.
+
+Tests cover schedules without class information, destination order and
+replaced/skipped-class exclusions, and read failure before writes. Fresh
+Windows x64 Debug/Ninja/MSVC verification ran the focused
+`ClassMngrClassTransferTests` CTest successfully (1/1); committed-patch
+whitespace check passed. The test log is under
+`build/f325_fresh_ninja/Testing/Temporary/LastTest.log`. No full suite ran.
+F326 is selected to batch Sub Prep information-sheet assigned-teacher profile
+reads while preserving selected scope, first-seen association, missing-profile
+behavior, and read failures. Phase 2 remains In Progress/Open; Gates 1 and 2
+remain Partial.

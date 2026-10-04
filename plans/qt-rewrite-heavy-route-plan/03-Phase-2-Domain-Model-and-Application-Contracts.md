@@ -18,9 +18,9 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-05
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F325 is selected to batch Class Transfer plan-validation
-  schedule reads while preserving destination order, replaced-class skips,
-  schedule conflict results, and failure behavior.
+- Current note: F326 is selected to batch Sub Prep information-sheet
+  assigned-teacher profile reads while preserving selected scope, first-seen
+  association, missing-profile behavior, and read failures.
 
 ### Slice discovery batches
 
@@ -50,26 +50,23 @@ Accepted slices are removed from active tracking; their implementation and accep
 
 #### Active batch: Batch 6
 
-1. F325 - Batch Class Transfer plan-validation schedule reads; preserve
-   destination order, replaced-class skips, schedule conflict results, and
-   failure behavior.
-2. F326 - Batch Sub Prep information-sheet assigned-teacher profile reads;
+1. F326 - Batch Sub Prep information-sheet assigned-teacher profile reads;
    preserve selected scope, first-seen association, missing-profile behavior,
    and read failures.
-3. F327 - Purpose-fit Schedule Import teacher reads across current-state
+2. F327 - Purpose-fit Schedule Import teacher reads across current-state
    snapshot and apply validation; preserve teacher order, Korean-name matching,
    room data, and failure behavior. Exclude stale preview unless an active
    caller is found.
-4. F328 - Batch Class Transfer preview destination-matching inputs; preserve
+3. F328 - Batch Class Transfer preview destination-matching inputs; preserve
    class order, conditional teacher-name reads, matching behavior, and errors.
-5. F329 - Batch Class Transfer package-export assigned-teacher profiles;
+4. F329 - Batch Class Transfer package-export assigned-teacher profiles;
    preserve first-seen teacher keys, profile identity, and transaction errors.
-6. F330 - Batch Class Transfer package-export class-information and full
+5. F330 - Batch Class Transfer package-export class-information and full
    roster reads; preserve class order, full output fields, sparse rows, and
    first-failure behavior.
-7. F331 - Purpose-fit selected-teacher display reads for Class Notes and
+6. F331 - Purpose-fit selected-teacher display reads for Class Notes and
    Co-Teacher pages; preserve preferred-name fallback and per-page errors.
-8. F332 - Purpose-fit class-detail reads for Class Notes and Co-Teacher pages;
+7. F332 - Purpose-fit class-detail reads for Class Notes and Co-Teacher pages;
     preserve consumed class/schedule fields and per-page read behavior.
 
 #### F299 completeness audit checkpoint
@@ -232,22 +229,20 @@ No new v2 production path depends on DataService, MainWindow, PageManager, or a 
 
 Earlier verified slices and cumulative exit-gate snapshots are archived in the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 
-## Latest Progress Update - 2026-10-05 (F324 accepted; F325 selected)
+## Latest Progress Update - 2026-10-05 (F325 accepted; F326 selected)
 
-F324, committed as
-`1368077f9477e88b05bb4094cb30d3d3f33eb7a7`, keeps the per-class ordered
-evaluation-metadata query and its no-row-query short circuit when metadata is
-empty. Otherwise, one class-scoped `speaking_eval_data` query replaces one
-query per evaluation. Results map by evaluation ID, select all 11 cells, keep
-25 row slots and sparse indexes, skip out-of-range indexes, and map NULL to
-empty.
+F325, committed as
+`af6e50e6c489c5b6bee265f9acc3c584c76e60f0`, batches Class Transfer schedule
+preflight reads. It excludes replaced destinations, loads navigation records
+for eligible destination IDs in one batch, and validates those records in
+destination order, preserving regular and intensive schedule conflict order.
+The read includes schedule rows when a destination has no `class_info` record;
+batch-read failures still abort before writes.
 
-Class order, transactional package construction, query-error propagation, and
-controller build-before-save behavior remain unchanged. Tests cover class and
-evaluation order, sparse holes, all cells, NULLs, out-of-range rows, the
-empty-metadata short circuit, and row-read failure. Fresh independent Windows x64
-Debug/Ninja/MSVC configure validated 1,329 handwritten sources; the class-
-transfer target built, focused CTest passed 1/1, and `git diff --check` passed.
-Logs are under `build/p2_f324_independent_*.log`. The query bound was confirmed
-by source review; no runtime instrumentation or full-suite run was used. Phase
-2 remains In Progress/Open; Gates 1 and 2 remain Partial.
+Tests cover schedules without class information, destination order and
+replaced/skipped-class exclusions, and read failure before writes. Fresh
+Windows x64 Debug/Ninja/MSVC verification ran the focused
+`ClassMngrClassTransferTests` CTest successfully (1/1); committed-patch
+whitespace check passed. The test log is under
+`build/f325_fresh_ninja/Testing/Temporary/LastTest.log`. No full suite ran.
+Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial.
