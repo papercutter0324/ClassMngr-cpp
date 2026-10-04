@@ -18,9 +18,9 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-05
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F329 is selected to batch Class Transfer package-export
-  assigned-teacher profile reads while preserving first-seen teacher keys,
-  profile identity, and transaction errors.
+- Current note: F330 is selected to batch Class Transfer package-export
+  class-information and full-roster reads while preserving class order, full
+  output fields, sparse rows, and first-failure behavior.
 
 ### Slice discovery batches
 
@@ -50,14 +50,12 @@ Accepted slices are removed from active tracking; their implementation and accep
 
 #### Active batch: Batch 6
 
-1. F329 - Batch Class Transfer package-export assigned-teacher profiles;
-   preserve first-seen teacher keys, profile identity, and transaction errors.
-2. F330 - Batch Class Transfer package-export class-information and full
+1. F330 - Batch Class Transfer package-export class-information and full
    roster reads; preserve class order, full output fields, sparse rows, and
    first-failure behavior.
-3. F331 - Purpose-fit selected-teacher display reads for Class Notes and
+2. F331 - Purpose-fit selected-teacher display reads for Class Notes and
    Co-Teacher pages; preserve preferred-name fallback and per-page errors.
-4. F332 - Purpose-fit class-detail reads for Class Notes and Co-Teacher pages;
+3. F332 - Purpose-fit class-detail reads for Class Notes and Co-Teacher pages;
     preserve consumed class/schedule fields and per-page read behavior.
 
 #### F299 completeness audit checkpoint
@@ -220,24 +218,22 @@ No new v2 production path depends on DataService, MainWindow, PageManager, or a 
 
 Earlier verified slices and cumulative exit-gate snapshots are archived in the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 
-## Latest Progress Update - 2026-10-05 (F328 accepted; F329 selected)
+## Latest Progress Update - 2026-10-05 (F329 accepted; F330 selected)
 
-F328, committed as
-`940d4711eb872321df6047b2e66b3c23503e13e0`, batches Class Transfer preview
-destination class information through `loadClassesNavigationRecords()`. For a
-nonempty destination set, this ordered batch uses one metadata statement and
-two schedule statements, independent of destination count; it is skipped when
-there are no destinations. The navigation metadata batch and initial
-`getAllTeachers()` query still read teacher names. The additional per-destination
-`getTeacher()` profile lookup remains conditional on a positive assigned
-teacher ID and a matching source-course grade/level. Destination order,
-matching, and error propagation are preserved.
+F329, committed as
+`95f96cea27d685100422f5a7cdd7b5f66e3db893`, batches distinct positive teacher
+profiles in first-seen order during Class Transfer package export. It preserves
+teacher keys, repeated assignments, complete teacher identity and profile
+fields, and the returned error precedence. The batch query bound was confirmed
+by source inspection because `buildPackage()`'s local repository has no metrics.
 
-Tests cover destination order, conditional per-destination profile lookup,
-batch-read failure, and the no-destination short circuit. Fresh independent
-Windows x64 Debug/Ninja/MSVC configure validated one owner for 1,329
-handwritten sources; `ClassMngrClassTransferTests` built in 316 steps and
-focused CTest passed 1/1.
-`git diff --check` passed. The CTest log is under
-`build/f328_tester_20261005_ninja/Testing/Temporary/LastTest.log`. No full
-suite ran. Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial.
+Tests verify teacher keys and repeated assignments, full profile identity and
+fields, and teacher/evaluation/roster error precedence. Class-info precedence
+and transaction rollback have no dedicated assertions; source and RAII paths
+were reviewed. Staging may read later classes in the processed prefix before
+replaying an earlier teacher error, but the read-only work stays in the
+existing transaction and returned precedence is preserved. Fresh VS2026/Ninja
+configure validated ownership for 1,329 handwritten sources; the final
+incremental `ClassMngrClassTransferTests` build succeeded and focused CTest
+passed 1/1. `git diff --check` passed. No full suite ran. Phase 2 remains In
+Progress/Open; Gates 1 and 2 remain Partial.

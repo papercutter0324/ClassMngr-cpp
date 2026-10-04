@@ -11710,3 +11710,26 @@ suite ran. F329 is selected to batch Class Transfer package-export assigned-
 teacher profiles while preserving first-seen teacher keys, profile identity,
 and transaction errors. Phase 2 remains In Progress/Open; Gates 1 and 2
 remain Partial.
+
+### F329 accepted / F330 selected - 2026-10-05
+
+F329, committed as
+`95f96cea27d685100422f5a7cdd7b5f66e3db893`, batches distinct positive teacher
+profiles in first-seen order during Class Transfer package export. It preserves
+teacher keys, repeated assignments, complete teacher identity and profile
+fields, and the returned error precedence. The batch query bound was confirmed
+by source inspection because `buildPackage()`'s local repository has no metrics.
+
+Tests verify teacher keys and repeated assignments, full profile identity and
+fields, and teacher/evaluation/roster error precedence. Class-info precedence
+and transaction rollback have no dedicated assertions; source and RAII paths
+were reviewed. Staging may read later classes in the processed prefix before
+replaying an earlier teacher error, but the read-only work stays in the
+existing transaction and returned precedence is preserved. Fresh VS2026/Ninja
+configure validated ownership for 1,329 handwritten sources; the final
+incremental `ClassMngrClassTransferTests` build succeeded and focused CTest
+passed 1/1. `git diff --check` passed. No full suite ran. F330 is selected to
+batch Class Transfer package-export class-information and full-roster reads
+while preserving class order, full output fields, sparse rows, and
+first-failure behavior. Phase 2 remains In Progress/Open; Gates 1 and 2 remain
+Partial.
