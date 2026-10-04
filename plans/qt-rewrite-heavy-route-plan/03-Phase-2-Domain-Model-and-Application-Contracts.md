@@ -18,9 +18,10 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-05
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F326 is selected to batch Sub Prep information-sheet
-  assigned-teacher profile reads while preserving selected scope, first-seen
-  association, missing-profile behavior, and read failures.
+- Current note: F327 is selected to batch Schedule Import teacher reads across
+  current-state snapshot and apply validation while preserving teacher order,
+  Korean-name matching, room data, and failure behavior. Exclude stale preview
+  unless an active caller is found.
 
 ### Slice discovery batches
 
@@ -50,23 +51,20 @@ Accepted slices are removed from active tracking; their implementation and accep
 
 #### Active batch: Batch 6
 
-1. F326 - Batch Sub Prep information-sheet assigned-teacher profile reads;
-   preserve selected scope, first-seen association, missing-profile behavior,
-   and read failures.
-2. F327 - Purpose-fit Schedule Import teacher reads across current-state
+1. F327 - Purpose-fit Schedule Import teacher reads across current-state
    snapshot and apply validation; preserve teacher order, Korean-name matching,
    room data, and failure behavior. Exclude stale preview unless an active
    caller is found.
-3. F328 - Batch Class Transfer preview destination-matching inputs; preserve
+2. F328 - Batch Class Transfer preview destination-matching inputs; preserve
    class order, conditional teacher-name reads, matching behavior, and errors.
-4. F329 - Batch Class Transfer package-export assigned-teacher profiles;
+3. F329 - Batch Class Transfer package-export assigned-teacher profiles;
    preserve first-seen teacher keys, profile identity, and transaction errors.
-5. F330 - Batch Class Transfer package-export class-information and full
+4. F330 - Batch Class Transfer package-export class-information and full
    roster reads; preserve class order, full output fields, sparse rows, and
    first-failure behavior.
-6. F331 - Purpose-fit selected-teacher display reads for Class Notes and
+5. F331 - Purpose-fit selected-teacher display reads for Class Notes and
    Co-Teacher pages; preserve preferred-name fallback and per-page errors.
-7. F332 - Purpose-fit class-detail reads for Class Notes and Co-Teacher pages;
+6. F332 - Purpose-fit class-detail reads for Class Notes and Co-Teacher pages;
     preserve consumed class/schedule fields and per-page read behavior.
 
 #### F299 completeness audit checkpoint
@@ -229,20 +227,22 @@ No new v2 production path depends on DataService, MainWindow, PageManager, or a 
 
 Earlier verified slices and cumulative exit-gate snapshots are archived in the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 
-## Latest Progress Update - 2026-10-05 (F325 accepted; F326 selected)
+## Latest Progress Update - 2026-10-05 (F326 accepted; F327 selected)
 
-F325, committed as
-`af6e50e6c489c5b6bee265f9acc3c584c76e60f0`, batches Class Transfer schedule
-preflight reads. It excludes replaced destinations, loads navigation records
-for eligible destination IDs in one batch, and validates those records in
-destination order, preserving regular and intensive schedule conflict order.
-The read includes schedule rows when a destination has no `class_info` record;
-batch-read failures still abort before writes.
+F326, committed as
+`b6851ceac872752038e39b08a112b5ed63430946`, batches Sub Prep information-sheet
+assigned-teacher profile reads. It deduplicates positive teacher IDs in first
+reference order, loads profiles once, validates the returned count and order,
+and reuses profiles for repeated assignments. Unassigned classes cause no
+teacher-profile read; selected class order is preserved.
 
-Tests cover schedules without class information, destination order and
-replaced/skipped-class exclusions, and read failure before writes. Fresh
-Windows x64 Debug/Ninja/MSVC verification ran the focused
-`ClassMngrClassTransferTests` CTest successfully (1/1); committed-patch
-whitespace check passed. The test log is under
-`build/f325_fresh_ninja/Testing/Temporary/LastTest.log`. No full suite ran.
-Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial.
+Tests verify first-reference order, repeated-teacher deduplication, the
+unassigned no-read path, and batch metrics. Fresh Windows x64 Debug/Ninja/MSVC
+verification passed the focused
+`ClassMngrNextPlatformApplicationServicesSubPrepPrintSourcePortTests` CTest
+(1/1); committed-patch whitespace check passed. The CTest log is under
+`build/f326_fresh_ninja/Testing/Temporary/LastTest.log`. Limitation: direct
+technical profile-read error classification is not exercised through this
+port because the earlier `loadClassInfosForScheduleScope` query filters orphan
+teachers; repository batch-fallback tests exist. No full suite ran. Phase 2
+remains In Progress/Open; Gates 1 and 2 remain Partial.

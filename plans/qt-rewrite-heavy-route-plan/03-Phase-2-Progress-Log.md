@@ -11641,3 +11641,26 @@ F326 is selected to batch Sub Prep information-sheet assigned-teacher profile
 reads while preserving selected scope, first-seen association, missing-profile
 behavior, and read failures. Phase 2 remains In Progress/Open; Gates 1 and 2
 remain Partial.
+
+### F326 accepted / F327 selected - 2026-10-05
+
+F326, committed as
+`b6851ceac872752038e39b08a112b5ed63430946`, batches Sub Prep information-sheet
+assigned-teacher profile reads. It deduplicates positive teacher IDs in first
+reference order, loads profiles once, validates the returned count and order,
+and reuses profiles for repeated assignments. Unassigned classes cause no
+teacher-profile read; selected class order is preserved.
+
+Tests verify first-reference order, repeated-teacher deduplication, the
+unassigned no-read path, and batch metrics. Fresh Windows x64 Debug/Ninja/MSVC
+verification passed the focused
+`ClassMngrNextPlatformApplicationServicesSubPrepPrintSourcePortTests` CTest
+(1/1); committed-patch whitespace check passed. The CTest log is under
+`build/f326_fresh_ninja/Testing/Temporary/LastTest.log`. Limitation: direct
+technical profile-read error classification is not exercised through this
+port because the earlier `loadClassInfosForScheduleScope` query filters orphan
+teachers; repository batch-fallback tests exist. No full suite ran. F327 is
+selected to batch Schedule Import teacher reads across current-state snapshot
+and apply validation while preserving teacher order, Korean-name matching,
+room data, and failure behavior. Exclude stale preview unless an active caller
+is found. Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial.

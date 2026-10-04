@@ -54,11 +54,11 @@
   per-class subtitle reads after F261), and F304 (batch RosterPrintDialog
   extra-column roster reads after F264) and F305 (batch transfer-menu target
   metadata, capacity, and roster reads after F259/F265) are accepted; F305
-  remains distinct from F273's transfer-time target read. F306-F325 are
-  accepted; F326 (batch Sub Prep information-sheet assigned-teacher profile
-  reads while preserving selected scope, first-seen association,
-  missing-profile behavior, and read failures) is selected. Batch 6
-  (F326-F332) remains active.
+  remains distinct from F273's transfer-time target read. F306-F326 are
+  accepted; F327 (batch Schedule Import teacher reads across current-state
+  snapshot and apply validation while preserving teacher order, Korean-name
+  matching, room data, and failure behavior) is selected. Batch 6
+  (F327-F332) remains active.
   Gates 1 and 2 remain Partial, with broader feature
   migration, parity, and 96-class Release memory evidence still open.
   See the
