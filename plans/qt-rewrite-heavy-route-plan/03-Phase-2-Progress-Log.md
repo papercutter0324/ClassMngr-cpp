@@ -11401,3 +11401,30 @@ distinct assigned teacher profiles, preserving selected-scope filtering,
 first-seen association, teacher identity validation, and source-error
 behavior. F298 remains deferred pending its warning/navigation decision.
 Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial.
+
+### Progress update - 2026-10-04 (F317 accepted; F318 selected)
+
+F317, committed as
+`c17bfcc9d25030984b485c44c7c21483c575ff9a`, removes per-class teacher-profile
+reads from the Sub Prep roster-output source port. It gathers distinct
+positive teacher IDs after schedule-scope filtering and in selected-class
+order, then uses the existing batched profile repository read once. The port
+preserves first-seen association, profile fields, identity checks, errors,
+and all-or-failure source behavior.
+
+Executor self-check and fresh independent Windows x64 Debug/Ninja/MSVC
+verification passed. The independent configure validated 1,305 handwritten
+source files; the Sub Prep Platform, Application, and package-service targets
+built. Focused CTest passed 3/3. Tests cover batch count, first-seen ordering
+and deduplication, empty teacher assignments, stale-profile failure, and no
+partial source. An independent review found the out-of-scope teacher was not
+distinct in the scope fixture; that fixture was strengthened with a distinct
+teacher and independently rechecked, passing the Platform target 1/1.
+`git diff --check` passed. Logs are under build/f317v/ and
+build/p2_f317_coverage_*; the full suite was not run.
+
+F318 is selected from Batch 5 to batch roster-template print per-class
+class-information and roster reads while preserving class order, current-class
+name fallback, printed fields, and abort-on-read-failure behavior. F298 remains
+deferred pending its warning/navigation decision. Phase 2 remains
+In Progress/Open; Gates 1 and 2 remain Partial.
