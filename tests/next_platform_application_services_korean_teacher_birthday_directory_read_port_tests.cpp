@@ -58,9 +58,9 @@ bool seedTeachers(ApplicationServices& services)
         QStringLiteral("02-03")
         );
     const auto first = services.databaseSession()->teacherRepository()
-        ->createTeacher(zulu);
-    const auto second = services.databaseSession()->teacherRepository()
         ->createTeacher(alpha);
+    const auto second = services.databaseSession()->teacherRepository()
+        ->createTeacher(zulu);
     return first && second;
 }
 
@@ -72,9 +72,39 @@ class NextPlatformApplicationServicesKoreanTeacherBirthdayDirectoryReadPortTests
     Q_OBJECT
 
 private slots:
+    void repositoryReadsOnlyDirectoryFieldsInEnglishOrder();
     void readsOnlyBirthdayAndDisplayNameFieldsInRepositoryOrder();
+    void preservesSuccessfulEmptyDirectoryResults();
     void distinguishesUnavailableSessionFromRepositoryFailure();
 };
+
+void NextPlatformApplicationServicesKoreanTeacherBirthdayDirectoryReadPortTests::
+repositoryReadsOnlyDirectoryFieldsInEnglishOrder()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+    QVERIFY(seedTeachers(services));
+    TeacherRepository* const repository =
+        services.databaseSession()->teacherRepository();
+    QVERIFY(repository);
+
+    const auto result =
+        repository->loadKoreanTeacherBirthdayDirectoryRecords();
+
+    QVERIFY(result);
+    QCOMPARE(result->size(), 2);
+    QCOMPARE(result->at(0).birthday, QStringLiteral(" 12-31 "));
+    QCOMPARE(result->at(0).teacherKr, QStringLiteral("  \uAE40\uC120\uC0DD  "));
+    QCOMPARE(result->at(0).teacherEn, QStringLiteral(" Zulu "));
+    QCOMPARE(result->at(0).preferredRomanization,
+        QStringLiteral(" Z Romanization "));
+    QCOMPARE(result->at(0).preferredName, QStringLiteral(" Preferred Zulu "));
+    QCOMPARE(result->at(1).birthday, QStringLiteral("02-03"));
+    QCOMPARE(result->at(1).teacherEn, QStringLiteral("Alpha"));
+}
 
 void NextPlatformApplicationServicesKoreanTeacherBirthdayDirectoryReadPortTests::
 readsOnlyBirthdayAndDisplayNameFieldsInRepositoryOrder()
@@ -108,6 +138,23 @@ readsOnlyBirthdayAndDisplayNameFieldsInRepositoryOrder()
     QCOMPARE(result.value()[1].preferredRomanization,
         std::u16string(u"A Romanization"));
     QCOMPARE(result.value()[1].preferredName, std::u16string());
+}
+
+void NextPlatformApplicationServicesKoreanTeacherBirthdayDirectoryReadPortTests::
+preservesSuccessfulEmptyDirectoryResults()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+    Platform::ApplicationServicesKoreanTeacherBirthdayDirectoryReadPort port(
+        &services);
+
+    const auto result = port.readKoreanTeacherBirthdayDirectory();
+
+    QVERIFY(result);
+    QVERIFY(result.value().empty());
 }
 
 void NextPlatformApplicationServicesKoreanTeacherBirthdayDirectoryReadPortTests::

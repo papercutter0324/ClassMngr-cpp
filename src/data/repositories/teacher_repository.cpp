@@ -746,6 +746,50 @@ TeacherRepository::loadClassCoTeacherTeacherChoiceRecords()
     return teachers;
 }
 
+Result<QList<KoreanTeacherBirthdayDirectoryReadRecord>>
+TeacherRepository::loadKoreanTeacherBirthdayDirectoryRecords()
+{
+    QList<KoreanTeacherBirthdayDirectoryReadRecord> teachers;
+
+    QSqlQuery query(m_database);
+    const auto executed = SqlQueryUtils::execute(
+        query,
+        QStringLiteral(R"(
+            SELECT
+                birthday,
+                teacher_kr,
+                teacher_en,
+                preferred_romanization,
+                preferred_name
+            FROM teachers
+            ORDER BY teacher_en
+        )"),
+        QObject::tr("Loading teachers")
+        );
+    if (!executed)
+    {
+        return std::unexpected(executed.error().userMessage());
+    }
+
+    while (query.next())
+    {
+        teachers.append({
+            query.value(QStringLiteral("birthday")).toString(),
+            query.value(QStringLiteral("teacher_kr")).toString(),
+            query.value(QStringLiteral("teacher_en")).toString(),
+            query.value(QStringLiteral("preferred_romanization")).toString(),
+            query.value(QStringLiteral("preferred_name")).toString()
+        });
+    }
+
+    if (query.lastError().isValid())
+    {
+        return std::unexpected(query.lastError().text());
+    }
+
+    return teachers;
+}
+
 Status TeacherRepository::deleteTeacher(
     int teacherId
     )

@@ -46,7 +46,8 @@ public:
 
         try
         {
-            const Result<QList<Teacher>> loaded = repository->getAllTeachers();
+            const Result<QList<KoreanTeacherBirthdayDirectoryReadRecord>> loaded =
+                repository->loadKoreanTeacherBirthdayDirectoryRecords();
             if (!loaded)
             {
                 return Application::KoreanTeacherBirthdayDirectoryReadResult::failure(
@@ -55,7 +56,7 @@ public:
 
             Application::KoreanTeacherBirthdayDirectorySnapshot snapshot;
             snapshot.reserve(static_cast<std::size_t>(loaded->size()));
-            for (const Teacher& teacher : *loaded)
+            for (const KoreanTeacherBirthdayDirectoryReadRecord& teacher : *loaded)
             {
                 snapshot.push_back({
                     .birthday = teacher.birthday.toStdU16String(),

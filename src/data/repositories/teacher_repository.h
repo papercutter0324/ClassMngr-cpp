@@ -44,6 +44,15 @@ struct ClassCoTeacherTeacherChoiceReadRecord final
     QString zoomPassword;
 };
 
+struct KoreanTeacherBirthdayDirectoryReadRecord final
+{
+    QString birthday;
+    QString teacherKr;
+    QString teacherEn;
+    QString preferredRomanization;
+    QString preferredName;
+};
+
 struct TeacherDisplayNameBatchReadRecord final
 {
     int teacherId = -1;
@@ -114,6 +123,8 @@ public:
         loadTestingTeacherChoiceRecords();
     [[nodiscard]] Result<QList<ClassCoTeacherTeacherChoiceReadRecord>>
         loadClassCoTeacherTeacherChoiceRecords();
+    [[nodiscard]] Result<QList<KoreanTeacherBirthdayDirectoryReadRecord>>
+        loadKoreanTeacherBirthdayDirectoryRecords();
 
     [[nodiscard]] Status deleteTeacher(
         int teacherId
