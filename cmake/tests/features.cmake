@@ -488,6 +488,23 @@ qt_add_executable(ClassMngrClassTransferTests
     )
 
     add_test(
+        NAME ClassMngrTestingClassesPageTeacherChoiceTests
+        COMMAND ClassMngrTestingClassesPageTests
+            testingTeacherChoicesPopulateOrderedTrimmedChoicesAndRestoreSelection
+            emptySuccessfulTestingTeacherChoicesKeepNoneSelectedWithoutWarning
+            unavailableTestingTeacherChoicesQueryIsSilent
+            testingTeacherChoicesQueryFailureShowsExactWarning
+    )
+
+    set_tests_properties(
+        ClassMngrTestingClassesPageTeacherChoiceTests
+        PROPERTIES
+            ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
+            ENVIRONMENT_MODIFICATION
+                "PATH=path_list_prepend:$<TARGET_FILE_DIR:Qt6::Core>"
+    )
+
+    add_test(
         NAME ClassMngrTestingClassesPageF145UpdateTests
         COMMAND ClassMngrTestingClassesPageTests
             existingTestingClassUpdateRetainsSelectionAndRefreshesList

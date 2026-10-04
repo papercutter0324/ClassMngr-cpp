@@ -53,8 +53,8 @@ public:
 
         try
         {
-            const Result<QList<Teacher>> loaded =
-                repository->getAllTeachers();
+            const Result<QList<TestingTeacherChoiceReadRecord>> loaded =
+                repository->loadTestingTeacherChoiceRecords();
             if (!loaded)
             {
                 return failure(
@@ -67,9 +67,9 @@ public:
             snapshot.choices.reserve(
                 static_cast<std::size_t>(loaded->size())
                 );
-            for (const Teacher& teacher : *loaded)
+            for (const TestingTeacherChoiceReadRecord& teacher : *loaded)
             {
-                if (teacher.id <= 0)
+                if (teacher.teacherId <= 0)
                 {
                     return failure(
                         Domain::ErrorCode::Validation,
@@ -78,7 +78,7 @@ public:
                 }
 
                 const auto teacherId = Domain::TeacherId::fromString(
-                    std::to_string(teacher.id)
+                    std::to_string(teacher.teacherId)
                     );
                 if (!teacherId)
                 {
@@ -91,7 +91,7 @@ public:
                 snapshot.choices.push_back({
                     .teacherId = *teacherId,
                     .name = teacher.teacherKr.toStdU16String(),
-                    .room = teacher.roomNumber.toStdU16String()
+                    .room = teacher.room.toStdU16String()
                 });
             }
 

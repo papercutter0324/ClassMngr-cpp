@@ -1063,6 +1063,22 @@ testingTeacherChoicesPopulateOrderedTrimmedChoicesAndRestoreSelection()
     QCOMPARE(teacherCombo->itemData(1).toInt(), 23);
     QCOMPARE(teacherCombo->currentData().toInt(), 23);
     QCOMPARE(teacherCombo->currentText(), QStringLiteral("이선생"));
+    teacherChoicesReadPort.result = ClassMngr::Next::Application::
+        TestingTeacherChoicesReadResult::success({
+            .choices = {
+                {
+                    .teacherId = typedTeacherId(21),
+                    .name = u"Teacher 21",
+                    .room = u"Room 21"
+                }
+            }
+        });
+    page.refresh();
+
+    QCOMPARE(teacherChoicesReadPort.callCount, 3);
+    QCOMPARE(teacherCombo->count(), 2);
+    QCOMPARE(teacherCombo->currentText(), QStringLiteral("None"));
+    QCOMPARE(teacherCombo->currentData().toInt(), -1);
 }
 
 void TestingClassesPageTests::

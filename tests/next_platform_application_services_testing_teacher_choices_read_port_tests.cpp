@@ -58,14 +58,14 @@ class NextPlatformApplicationServicesTestingTeacherChoicesReadPortTests
     Q_OBJECT
 
 private slots:
-    void readsAllChoiceFieldsInRepositoryOrderFromTheActiveSession();
+    void readsProjectedChoiceFieldsInRepositoryOrderFromTheActiveSession();
     void preservesSuccessfulEmptyRepositoryResults();
     void treatsUnavailableSessionsAsNotFound();
     void forwardsTeacherRepositoryFailuresWithoutFallback();
 };
 
 void NextPlatformApplicationServicesTestingTeacherChoicesReadPortTests::
-readsAllChoiceFieldsInRepositoryOrderFromTheActiveSession()
+readsProjectedChoiceFieldsInRepositoryOrderFromTheActiveSession()
 {
     QTemporaryDir directory;
     QVERIFY(directory.isValid());

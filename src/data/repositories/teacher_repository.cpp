@@ -657,6 +657,41 @@ TeacherRepository::loadInitialSetupTeacherChoiceRecords()
     return teachers;
 }
 
+Result<QList<TestingTeacherChoiceReadRecord>>
+TeacherRepository::loadTestingTeacherChoiceRecords()
+{
+    QList<TestingTeacherChoiceReadRecord> teachers;
+
+    QSqlQuery query(m_database);
+    const auto executed = SqlQueryUtils::execute(
+        query,
+        QStringLiteral(R"(
+            SELECT
+                id,
+                teacher_kr,
+                room_number
+            FROM teachers
+            ORDER BY teacher_en
+        )"),
+        QObject::tr("Loading teachers")
+        );
+    if (!executed)
+    {
+        return std::unexpected(executed.error().userMessage());
+    }
+
+    while (query.next())
+    {
+        teachers.append({
+            query.value(QStringLiteral("id")).toInt(),
+            query.value(QStringLiteral("teacher_kr")).toString(),
+            query.value(QStringLiteral("room_number")).toString()
+        });
+    }
+
+    return teachers;
+}
+
 Status TeacherRepository::deleteTeacher(
     int teacherId
     )
