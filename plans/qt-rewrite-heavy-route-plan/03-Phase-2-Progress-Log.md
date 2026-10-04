@@ -11593,3 +11593,30 @@ metrics seam. F324 is selected from Batch 6 to batch Class Transfer
 package-export evaluation-row reads while preserving class and evaluation
 order, sparse row indexes, full cells, and abort behavior. Phase 2 remains In
 Progress/Open; Gates 1 and 2 remain Partial.
+
+### F324 accepted / F325 selected - 2026-10-05
+
+F324, committed as
+`1368077f9477e88b05bb4094cb30d3d3f33eb7a7`, keeps the per-class ordered
+evaluation-metadata query and its no-row-query short circuit when metadata is
+empty. Otherwise, one class-scoped `speaking_eval_data` query replaces one
+query per evaluation. Results map by evaluation ID, select all 11 cells, keep
+25 row slots and sparse indexes, skip out-of-range indexes, and map NULL to
+empty.
+
+Class order, transactional package construction, query-error propagation, and
+controller build-before-save behavior remain unchanged. Tests cover class and
+evaluation order, sparse holes, all cells, NULL-to-empty, out-of-range rows,
+no evaluations when the row table is absent, and row-read failure with an
+evaluation present. Fresh independent Windows x64 Debug/Ninja/MSVC configure
+validated 1,329 handwritten sources; the class-transfer target built, focused
+CTest passed 1/1, and `git diff --check` passed. Logs are
+`build/p2_f324_independent_configure.log`,
+`build/p2_f324_independent_build.log`,
+`build/p2_f324_independent_build_final.log`, and
+`build/p2_f324_independent_ctest_retry.log`. The query bound was confirmed by
+source review; no runtime SQL instrumentation or full-suite run was used.
+F325 is selected to batch Class Transfer plan-validation schedule reads while
+preserving destination order, replaced-class skips, schedule conflict
+results, and failure behavior. Phase 2 remains In Progress/Open; Gates 1 and
+2 remain Partial.

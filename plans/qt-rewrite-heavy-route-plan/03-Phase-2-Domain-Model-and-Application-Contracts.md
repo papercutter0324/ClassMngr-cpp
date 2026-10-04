@@ -18,9 +18,9 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-05
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F324 is selected to batch Class Transfer package-export
-  evaluation-row reads while preserving class and evaluation order, sparse
-  row indexes, full cells, and abort behavior.
+- Current note: F325 is selected to batch Class Transfer plan-validation
+  schedule reads while preserving destination order, replaced-class skips,
+  schedule conflict results, and failure behavior.
 
 ### Slice discovery batches
 
@@ -50,28 +50,26 @@ Accepted slices are removed from active tracking; their implementation and accep
 
 #### Active batch: Batch 6
 
-1. F324 - Batch Class Transfer package-export evaluation rows; preserve class
-   and evaluation order, sparse row indexes, full cells, and abort behavior.
-2. F325 - Batch Class Transfer plan-validation schedule reads; preserve
+1. F325 - Batch Class Transfer plan-validation schedule reads; preserve
    destination order, replaced-class skips, schedule conflict results, and
    failure behavior.
-3. F326 - Batch Sub Prep information-sheet assigned-teacher profile reads;
+2. F326 - Batch Sub Prep information-sheet assigned-teacher profile reads;
    preserve selected scope, first-seen association, missing-profile behavior,
    and read failures.
-4. F327 - Purpose-fit Schedule Import teacher reads across current-state
+3. F327 - Purpose-fit Schedule Import teacher reads across current-state
    snapshot and apply validation; preserve teacher order, Korean-name matching,
    room data, and failure behavior. Exclude stale preview unless an active
    caller is found.
-5. F328 - Batch Class Transfer preview destination-matching inputs; preserve
+4. F328 - Batch Class Transfer preview destination-matching inputs; preserve
    class order, conditional teacher-name reads, matching behavior, and errors.
-6. F329 - Batch Class Transfer package-export assigned-teacher profiles;
+5. F329 - Batch Class Transfer package-export assigned-teacher profiles;
    preserve first-seen teacher keys, profile identity, and transaction errors.
-7. F330 - Batch Class Transfer package-export class-information and full
+6. F330 - Batch Class Transfer package-export class-information and full
    roster reads; preserve class order, full output fields, sparse rows, and
    first-failure behavior.
-8. F331 - Purpose-fit selected-teacher display reads for Class Notes and
+7. F331 - Purpose-fit selected-teacher display reads for Class Notes and
    Co-Teacher pages; preserve preferred-name fallback and per-page errors.
-9. F332 - Purpose-fit class-detail reads for Class Notes and Co-Teacher pages;
+8. F332 - Purpose-fit class-detail reads for Class Notes and Co-Teacher pages;
     preserve consumed class/schedule fields and per-page read behavior.
 
 #### F299 completeness audit checkpoint
@@ -234,23 +232,22 @@ No new v2 production path depends on DataService, MainWindow, PageManager, or a 
 
 Earlier verified slices and cumulative exit-gate snapshots are archived in the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 
-## Latest Progress Update - 2026-10-05 (F323 accepted; F324 selected)
+## Latest Progress Update - 2026-10-05 (F324 accepted; F325 selected)
 
-F323, committed as
-`e6bdd44d05f2d4c8de8a906e6def051f87d3e3b6`, batches apply-time class
-information reads in `ScheduleImportRepository::applyCore`. After transaction
-start and the existing teacher/class reads, apply loads class information once
-with `ClassInfoRepository::loadScheduleClassInfos()` before validation or
-writes, indexes the results by ID, and retains `existingClasses` iteration
-order for downstream validation. The separate snapshot path and preview reads
-are unchanged.
+F324, committed as
+`1368077f9477e88b05bb4094cb30d3d3f33eb7a7`, keeps the per-class ordered
+evaluation-metadata query and its no-row-query short circuit when metadata is
+empty. Otherwise, one class-scoped `speaking_eval_data` query replaces one
+query per evaluation. Results map by evaluation ID, select all 11 cells, keep
+25 row slots and sparse indexes, skip out-of-range indexes, and map NULL to
+empty.
 
-Tests cover reversed class/batch order, defaults, regular and intensive
-schedules, repository batch metrics, and a missing intensive-table batch-read
-failure before writes; persisted state remains unchanged and the connection
-can begin a later transaction. Fresh independent Windows x64 Debug/Ninja/MSVC
-configure validated 1,329 handwritten source files; the target built in 316
-steps, focused CTest passed 1/1, and `git diff --check` passed. Evidence is
-under `C:\Users\wfelt\AppData\Local\Temp\f323_verify_20261005_72b3b7e8\`.
-The batch-call count was confirmed by source review; applyCore has no local
-metrics seam. Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial.
+Class order, transactional package construction, query-error propagation, and
+controller build-before-save behavior remain unchanged. Tests cover class and
+evaluation order, sparse holes, all cells, NULLs, out-of-range rows, the
+empty-metadata short circuit, and row-read failure. Fresh independent Windows x64
+Debug/Ninja/MSVC configure validated 1,329 handwritten sources; the class-
+transfer target built, focused CTest passed 1/1, and `git diff --check` passed.
+Logs are under `build/p2_f324_independent_*.log`. The query bound was confirmed
+by source review; no runtime instrumentation or full-suite run was used. Phase
+2 remains In Progress/Open; Gates 1 and 2 remain Partial.
