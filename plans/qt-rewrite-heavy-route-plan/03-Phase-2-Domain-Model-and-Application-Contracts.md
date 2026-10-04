@@ -18,9 +18,9 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-05
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F331 is selected for purpose-fit selected-teacher display reads
-  for Class Notes and Co-Teacher pages, preserving preferred-name fallback and
-  per-page errors.
+- Current note: F332 is selected for purpose-fit class-detail reads for Class
+  Notes and Co-Teacher pages, preserving consumed class/schedule fields and
+  per-page read behavior.
 
 ### Slice discovery batches
 
@@ -50,9 +50,7 @@ Accepted slices are removed from active tracking; their implementation and accep
 
 #### Active batch: Batch 6
 
-1. F331 - Purpose-fit selected-teacher display reads for Class Notes and
-   Co-Teacher pages; preserve preferred-name fallback and per-page errors.
-2. F332 - Purpose-fit class-detail reads for Class Notes and Co-Teacher pages;
+1. F332 - Purpose-fit class-detail reads for Class Notes and Co-Teacher pages;
     preserve consumed class/schedule fields and per-page read behavior.
 
 #### F299 completeness audit checkpoint
@@ -215,23 +213,24 @@ No new v2 production path depends on DataService, MainWindow, PageManager, or a 
 
 Earlier verified slices and cumulative exit-gate snapshots are archived in the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 
-## Latest Progress Update - 2026-10-05 (F330 accepted; F331 selected)
+## Latest Progress Update - 2026-10-05 (F331 accepted; F332 selected)
 
-F330, committed as
-`a8d3004323d9b399fcf8f83bf845362c43a807bb`, batches Class Transfer package-
-export class information and full rosters. The class-info batch preserves all
-fields/defaults and ordered regular/intensive schedules; the roster batch
-preserves columns, widths, and sparse rows. `buildPackage()` falls back to
-ordered scalar reads after global or malformed batch results and replays
-failures in info → roster → teacher → evaluation order, with selection and
-class-lookup failures deferred.
+F331, committed as
+`95ba0e1bd62182ba9d1e5310a35c9e40860f73d2`, narrows the Class Notes and
+Co-Teacher teacher display reads to the shared
+`TeacherRepository::loadTeacherDisplayNameFields(int)` helper. For a positive
+assigned ID, each port uses one statement to load four display fields instead
+of `SELECT *`; nonpositive IDs skip that read.
+Both ports map the fields into `Teacher` and reuse `preferredDisplayName`:
+trimmed preferred name, English name, romanization, then Korean name. This
+narrowed projection does not reduce round trips; its query bound was
+source-inspected because no direct scalar query-count metric exists.
 
-Fresh VS2026 x64/Ninja configure validated ownership for 1,329 handwritten
-sources; `ClassMngrClassTransferTests` and
-`ClassMngrRosterTemplatePrintServiceTests` built, focused CTest passed 2/2,
-and `git diff --check` passed. No full suite ran. Successful-path query bounds
-were source-inspected because there are no integration metrics: three
-class-info statements and one roster-column statement plus an optional cell
-statement. No synthetic misordered batch-result injection, direct query-count
-metric, or export selection-size bound for the SQL `VALUES` inputs was
-established. Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial.
+Regressions cover fallback and isolated SQL projection failures while
+preserving class fields; Co-Teacher assertions retain exact selected IDs.
+Earlier cases cover preferred names, missing teachers, nonpositive IDs, and
+independent errors. Final VS2026 x64/Ninja verification rebuilt the Co-Teacher
+target after the exact-ID assertion adjustment; the combined
+`NextPlatformApplicationServicesClass(Notes|CoTeacher)PageReadPort` CTest
+passed 2/2. `git diff --check` was clean, with only LF-to-CRLF warnings. No
+full suite ran. Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial.

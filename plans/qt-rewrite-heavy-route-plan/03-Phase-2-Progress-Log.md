@@ -11757,3 +11757,28 @@ established. F331 is selected for purpose-fit selected-teacher display reads
 for Class Notes and Co-Teacher pages, preserving preferred-name fallback and
 per-page errors. Phase 2 remains In Progress/Open; Gates 1 and 2 remain
 Partial.
+
+### F331 accepted / F332 selected - 2026-10-05
+
+F331, committed as
+`95ba0e1bd62182ba9d1e5310a35c9e40860f73d2`, narrows the Class Notes and
+Co-Teacher teacher display reads to the shared
+`TeacherRepository::loadTeacherDisplayNameFields(int)` helper. For a positive
+assigned ID, each port uses one statement to load four display fields instead
+of `SELECT *`; nonpositive IDs skip that read.
+Both ports map the fields into `Teacher` and reuse `preferredDisplayName`:
+trimmed preferred name, English name, romanization, then Korean name. This
+narrowed projection does not reduce round trips; its query bound was
+source-inspected because no direct scalar query-count metric exists.
+
+Regressions cover fallback and isolated SQL projection failures while
+preserving class fields; Co-Teacher assertions retain exact selected IDs.
+Earlier cases cover preferred names, missing teachers, nonpositive IDs, and
+independent errors. Final VS2026 x64/Ninja verification rebuilt the Co-Teacher
+target after the exact-ID assertion adjustment; the combined
+`NextPlatformApplicationServicesClass(Notes|CoTeacher)PageReadPort` CTest
+passed 2/2. `git diff --check` was clean, with only LF-to-CRLF warnings. No
+full suite ran. F332 is selected for purpose-fit class-detail reads for Class
+Notes and Co-Teacher pages, preserving consumed class/schedule fields and
+per-page read behavior. Phase 2 remains In Progress/Open; Gates 1 and 2 remain
+Partial.
