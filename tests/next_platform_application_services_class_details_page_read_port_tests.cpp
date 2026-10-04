@@ -40,8 +40,10 @@ class NextPlatformApplicationServicesClassDetailsPageReadPortTests final
 
 private slots:
     void readsFieldsOrderedRawSchedulesTeacherAndRosterFromSession();
+    void missingMetadataRetainsDefaultsAndReadsSchedules();
     void unavailableSessionReturnsIndependentSourceFailures();
     void classReadFailureDoesNotDiscardRosterCount();
+    void intensiveScheduleReadFailureDoesNotDiscardRosterCount();
     void teacherReadFailureDoesNotDiscardClassOrRoster();
     void rosterReadFailureDoesNotDiscardClassOrTeacher();
     void nonCanonicalClassIdReturnsInvalidInputOutcomes();
@@ -190,6 +192,12 @@ readsFieldsOrderedRawSchedulesTeacherAndRosterFromSession()
              std::string("Preferred Teacher"));
     QCOMPARE(snapshot.studentCount.value(), 1);
 
+    const auto& metrics = services.databaseSession()->classInfoRepository()
+                              ->classDetailsPageReadMetrics();
+    QCOMPARE(metrics.callCount, 1);
+    QCOMPARE(metrics.metadataStatementCount, 1);
+    QCOMPARE(metrics.scheduleStatementCount, 1);
+
     const auto classWithoutTeacher = services.classService()->create(
         QStringLiteral("Class Details Read Fallback")
         );
@@ -201,6 +209,94 @@ readsFieldsOrderedRawSchedulesTeacherAndRosterFromSession()
     QVERIFY(fallback.value().teacherDisplayName.value().empty());
     QVERIFY(fallback.value().studentCount);
     QCOMPARE(fallback.value().studentCount.value(), 0);
+}
+
+void NextPlatformApplicationServicesClassDetailsPageReadPortTests::
+missingMetadataRetainsDefaultsAndReadsSchedules()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+
+    const auto createdClass = services.classService()->create(
+        QStringLiteral("Class Details Without Metadata")
+        );
+    QVERIFY(createdClass);
+    QSqlQuery removeMetadata(services.databaseSession()->database());
+    removeMetadata.prepare(QStringLiteral(
+        "DELETE FROM class_info WHERE class_id=?"
+        ));
+    removeMetadata.addBindValue(*createdClass);
+    QVERIFY2(removeMetadata.exec(), qPrintable(removeMetadata.lastError().text()));
+
+    const auto insertSchedule = [
+        database = services.databaseSession()->database(), createdClass
+        ](
+        const QString& table,
+        const QString& day,
+        const QString& start,
+        const QString& end
+        )
+    {
+        QSqlQuery query(database);
+        query.prepare(QStringLiteral(
+            "INSERT INTO %1 (class_id, day, start_time, end_time) "
+            "VALUES (?, ?, ?, ?)"
+            ).arg(table));
+        query.addBindValue(*createdClass);
+        query.addBindValue(day);
+        query.addBindValue(start);
+        query.addBindValue(end);
+        return query.exec();
+    };
+    QVERIFY(insertSchedule(
+        QStringLiteral("class_times"),
+        QStringLiteral("Legacy regular day"),
+        QStringLiteral("raw regular start"),
+        QStringLiteral("raw regular end")
+        ));
+    QVERIFY(insertSchedule(
+        QStringLiteral("class_intensive_times"),
+        QStringLiteral("Legacy intensive day"),
+        QStringLiteral("raw intensive start"),
+        QStringLiteral("raw intensive end")
+        ));
+
+    Platform::ApplicationServicesClassDetailsPageReadPort port(services);
+    const Application::ClassDetailsPageQuery query(port);
+    const auto loaded = query.execute(classId(*createdClass));
+    QVERIFY(loaded);
+    const auto& snapshot = loaded.value();
+    QVERIFY(snapshot.classFields);
+    QVERIFY(snapshot.teacherDisplayName);
+    QVERIFY(snapshot.teacherDisplayName.value().empty());
+    QVERIFY(snapshot.studentCount);
+    QCOMPARE(snapshot.studentCount.value(), 0);
+
+    const auto& fields = snapshot.classFields.value();
+    QVERIFY(fields.classGrade.empty());
+    QVERIFY(fields.classLevel.empty());
+    QVERIFY(fields.readingBook.empty());
+    QVERIFY(fields.essayBook.empty());
+    QCOMPARE(fields.classColor, std::string("#FFFFFF"));
+    QCOMPARE(fields.fontColor, std::string("#000000"));
+    QCOMPARE(fields.regularSchedule.size(), std::size_t(1));
+    QVERIFY((fields.regularSchedule.front() ==
+        Application::ClassDetailsPageScheduleRow{
+            "Legacy regular day", "raw regular start", "raw regular end"
+        }));
+    QCOMPARE(fields.intensiveSchedule.size(), std::size_t(1));
+    QVERIFY((fields.intensiveSchedule.front() ==
+        Application::ClassDetailsPageScheduleRow{
+            "Legacy intensive day", "raw intensive start", "raw intensive end"
+        }));
+
+    const auto& metrics = services.databaseSession()->classInfoRepository()
+                              ->classDetailsPageReadMetrics();
+    QCOMPARE(metrics.callCount, 1);
+    QCOMPARE(metrics.metadataStatementCount, 1);
+    QCOMPARE(metrics.scheduleStatementCount, 1);
 }
 
 void NextPlatformApplicationServicesClassDetailsPageReadPortTests::
@@ -244,6 +340,41 @@ classReadFailureDoesNotDiscardRosterCount()
     QVERIFY(result);
     const auto& snapshot = result.value();
     QVERIFY(!snapshot.classFields);
+    QCOMPARE(snapshot.classFields.error().code, Domain::ErrorCode::Technical);
+    QVERIFY(QString::fromStdString(snapshot.classFields.error().message)
+        .contains(QStringLiteral("Loading regular class times")));
+    QVERIFY(!snapshot.teacherDisplayName);
+    QVERIFY(snapshot.studentCount);
+    QCOMPARE(snapshot.studentCount.value(), 0);
+}
+
+void NextPlatformApplicationServicesClassDetailsPageReadPortTests::
+intensiveScheduleReadFailureDoesNotDiscardRosterCount()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+
+    QSqlQuery damageClassRead(services.databaseSession()->database());
+    QVERIFY2(
+        damageClassRead.exec(QStringLiteral(
+            "DROP TABLE class_intensive_times")),
+        qPrintable(damageClassRead.lastError().text())
+        );
+
+    Platform::ApplicationServicesClassDetailsPageReadPort port(services);
+    const auto result = port.readClassDetailsPage(classId(42));
+
+    QVERIFY(result);
+    const auto& snapshot = result.value();
+    QVERIFY(!snapshot.classFields);
+    QCOMPARE(snapshot.classFields.error().code, Domain::ErrorCode::Technical);
+    const QString classFieldError = QString::fromStdString(
+        snapshot.classFields.error().message);
+    QVERIFY2(classFieldError.contains(
+                 QStringLiteral("Loading intensive class times")),
+             qPrintable(classFieldError));
     QVERIFY(!snapshot.teacherDisplayName);
     QVERIFY(snapshot.studentCount);
     QCOMPARE(snapshot.studentCount.value(), 0);

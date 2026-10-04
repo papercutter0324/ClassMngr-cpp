@@ -96,7 +96,7 @@ public:
         RosterRepository* const rosterRepository =
             session->rosterRepository();
 
-        std::optional<ClassInfo> loadedClassInfo;
+        std::optional<ClassDetailsPageReadRecord> loadedClassDetails;
         if (!classInfoRepository)
         {
             snapshot.classFields = classFieldsFailure(
@@ -112,8 +112,9 @@ public:
         {
             try
             {
-                const ::Result<ClassInfo> source =
-                    classInfoRepository->loadClassInfo(*legacyClassId);
+                const ::Result<ClassDetailsPageReadRecord> source =
+                    classInfoRepository->loadClassDetailsPageRecord(
+                        *legacyClassId);
                 if (!source)
                 {
                     const Domain::OperationError error = fromRepositoryError(
@@ -128,7 +129,7 @@ public:
                 }
                 else
                 {
-                    loadedClassInfo = *source;
+                    loadedClassDetails = *source;
                     snapshot.classFields =
                         Domain::Result<
                             Application::ClassDetailsPageFields
@@ -159,9 +160,9 @@ public:
             }
         }
 
-        if (loadedClassInfo.has_value())
+        if (loadedClassDetails.has_value())
         {
-            if (loadedClassInfo->teacherId <= 0)
+            if (loadedClassDetails->teacherId <= 0)
             {
                 snapshot.teacherDisplayName =
                     Domain::Result<std::string>::success({});
@@ -179,7 +180,7 @@ public:
                 {
                     const ::Result<TeacherDisplayNameReadRecord> source =
                         teacherRepository->loadTeacherDisplayNameFields(
-                            loadedClassInfo->teacherId
+                            loadedClassDetails->teacherId
                             );
                     if (!source)
                     {
@@ -301,7 +302,7 @@ private:
     }
 
     [[nodiscard]] static Application::ClassDetailsPageFields fields(
-        const ClassInfo& source
+        const ClassDetailsPageReadRecord& source
         )
     {
         Application::ClassDetailsPageFields value;
@@ -312,12 +313,12 @@ private:
         value.classColor = utf8(source.classColor);
         value.fontColor = utf8(source.fontColor);
         value.regularSchedule.reserve(
-            static_cast<std::size_t>(source.classTimes.size())
+            static_cast<std::size_t>(source.regularTimes.size())
             );
         value.intensiveSchedule.reserve(
             static_cast<std::size_t>(source.intensiveTimes.size())
             );
-        for (const ClassTime& row : source.classTimes)
+        for (const ClassTime& row : source.regularTimes)
         {
             value.regularSchedule.push_back({
                 utf8(row.day),

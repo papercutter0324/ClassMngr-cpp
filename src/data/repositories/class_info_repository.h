@@ -54,6 +54,20 @@ struct ClassPageDetailsReadRecord final
     QString timeFillerActivities;
 };
 
+struct ClassDetailsPageReadRecord final
+{
+    int classId = -1;
+    int teacherId = -1;
+    QString classGrade;
+    QString classLevel;
+    QString readingBook;
+    QString essayBook;
+    QString classColor{"#FFFFFF"};
+    QString fontColor{"#000000"};
+    QList<ClassTime> regularTimes;
+    QList<ClassTime> intensiveTimes;
+};
+
 struct ClassSubtitleBatchReadRecord final
 {
     int classId = -1;
@@ -149,6 +163,13 @@ struct ClassPageDetailsReadMetrics final
     int regularScheduleStatementCount = 0;
 };
 
+struct ClassDetailsPageReadMetrics final
+{
+    int callCount = 0;
+    int metadataStatementCount = 0;
+    int scheduleStatementCount = 0;
+};
+
 struct ClassSubtitleBatchReadMetrics final
 {
     int callCount = 0;
@@ -190,6 +211,8 @@ public:
     [[nodiscard]] Result<ClassPageDetailsReadRecord> loadClassPageDetails(
         int classId
         );
+    [[nodiscard]] Result<ClassDetailsPageReadRecord>
+        loadClassDetailsPageRecord(int classId);
     [[nodiscard]] Result<QList<ClassInfo>> loadClassInfoRecords(
         const QList<int>& classIds
         );
@@ -215,6 +238,8 @@ public:
         scheduleClassInfoReadMetrics() const noexcept;
     [[nodiscard]] const ClassPageDetailsReadMetrics&
         classPageDetailsReadMetrics() const noexcept;
+    [[nodiscard]] const ClassDetailsPageReadMetrics&
+        classDetailsPageReadMetrics() const noexcept;
     [[nodiscard]] const ClassSubtitleBatchReadMetrics&
         classSubtitleBatchReadMetrics() const noexcept;
     [[nodiscard]] const MyClassesClassInformationBatchReadMetrics&
@@ -264,6 +289,7 @@ private:
     ClassesNavigationReadMetrics m_classesNavigationReadMetrics;
     ScheduleClassInfoReadMetrics m_scheduleClassInfoReadMetrics;
     ClassPageDetailsReadMetrics m_classPageDetailsReadMetrics;
+    ClassDetailsPageReadMetrics m_classDetailsPageReadMetrics;
     ClassSubtitleBatchReadMetrics m_classSubtitleBatchReadMetrics;
     MyClassesClassInformationBatchReadMetrics
         m_myClassesClassInformationBatchReadMetrics;

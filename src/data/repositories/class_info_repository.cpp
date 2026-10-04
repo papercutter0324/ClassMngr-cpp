@@ -735,6 +735,138 @@ Result<ClassPageDetailsReadRecord> ClassInfoRepository::loadClassPageDetails(
     return record;
 }
 
+Result<ClassDetailsPageReadRecord>
+ClassInfoRepository::loadClassDetailsPageRecord(const int classId)
+{
+    ++m_classDetailsPageReadMetrics.callCount;
+    if (classId <= 0)
+    {
+        return std::unexpected(
+            QObject::tr("Loading class information failed: invalid class id %1.")
+                .arg(classId)
+            );
+    }
+
+    const QString identity = QObject::tr("class id %1").arg(classId);
+    ClassDetailsPageReadRecord record;
+    record.classId = classId;
+
+    QSqlQuery metadataQuery(m_database);
+    metadataQuery.prepare(R"(
+        SELECT teacher_id, class_grade, class_level,
+               reading_book, essay_book, class_color, font_color
+        FROM class_info
+        WHERE class_id = ?
+    )");
+    metadataQuery.addBindValue(classId);
+    ++m_classDetailsPageReadMetrics.metadataStatementCount;
+    const auto loadedMetadata = SqlQueryUtils::executePrepared(
+        metadataQuery,
+        QObject::tr("Loading class information"),
+        identity
+        );
+    if (!loadedMetadata)
+    {
+        return std::unexpected(loadedMetadata.error().userMessage());
+    }
+
+    if (metadataQuery.next())
+    {
+        const QVariant teacherId = metadataQuery.value("teacher_id");
+        record.teacherId = teacherId.isNull() ? -1 : teacherId.toInt();
+        record.classGrade = metadataQuery.value("class_grade").toString();
+        record.classLevel = metadataQuery.value("class_level").toString();
+        record.readingBook = metadataQuery.value("reading_book").toString();
+        record.essayBook = metadataQuery.value("essay_book").toString();
+
+        const QString classColor =
+            metadataQuery.value("class_color").toString();
+        if (!classColor.isEmpty())
+        {
+            record.classColor = classColor;
+        }
+
+        const QString fontColor =
+            metadataQuery.value("font_color").toString();
+        if (!fontColor.isEmpty())
+        {
+            record.fontColor = fontColor;
+        }
+    }
+
+    QSqlQuery scheduleQuery(m_database);
+    const QString scheduleStatement = QStringLiteral(R"(
+        SELECT schedule_type, id, day, start_time, end_time
+        FROM (
+            SELECT 0 AS schedule_type, id, day, start_time, end_time
+            FROM class_times
+            WHERE class_id = ?
+
+            UNION ALL
+
+            SELECT 1 AS schedule_type, id, day, start_time, end_time
+            FROM class_intensive_times
+            WHERE class_id = ?
+        )
+        ORDER BY schedule_type, id
+    )");
+    ++m_classDetailsPageReadMetrics.scheduleStatementCount;
+    const auto scheduleErrorMessage = [](
+        SqlQueryUtils::ExecutionError error
+        )
+    {
+        const QString errorDetails = error.sqlError.text()
+            + QChar(' ') + error.databaseError
+            + QChar(' ') + error.driverError;
+        if (errorDetails.contains(
+                QStringLiteral("class_intensive_times"),
+                Qt::CaseInsensitive))
+        {
+            error.action = QObject::tr("Loading intensive class times");
+        }
+        return error.userMessage();
+    };
+    if (!scheduleQuery.prepare(scheduleStatement))
+    {
+        const SqlQueryUtils::ExecutionError error = SqlQueryUtils::errorFor(
+            scheduleQuery,
+            QObject::tr("Loading regular class times"),
+            scheduleStatement,
+            identity
+            );
+        return std::unexpected(scheduleErrorMessage(error));
+    }
+    scheduleQuery.addBindValue(classId);
+    scheduleQuery.addBindValue(classId);
+    const auto loadedSchedules = SqlQueryUtils::executePrepared(
+        scheduleQuery,
+        QObject::tr("Loading regular class times"),
+        identity
+        );
+    if (!loadedSchedules)
+    {
+        return std::unexpected(scheduleErrorMessage(loadedSchedules.error()));
+    }
+
+    while (scheduleQuery.next())
+    {
+        ClassTime time;
+        time.day = scheduleQuery.value("day").toString();
+        time.startTime = scheduleQuery.value("start_time").toString();
+        time.endTime = scheduleQuery.value("end_time").toString();
+        if (scheduleQuery.value("schedule_type").toInt() == 0)
+        {
+            record.regularTimes.append(time);
+        }
+        else
+        {
+            record.intensiveTimes.append(time);
+        }
+    }
+
+    return record;
+}
+
 Result<QList<ClassInfo>> ClassInfoRepository::loadClassInfoRecords(
     const QList<int>& classIds
     )
@@ -2198,6 +2330,12 @@ const ClassPageDetailsReadMetrics&
 ClassInfoRepository::classPageDetailsReadMetrics() const noexcept
 {
     return m_classPageDetailsReadMetrics;
+}
+
+const ClassDetailsPageReadMetrics&
+ClassInfoRepository::classDetailsPageReadMetrics() const noexcept
+{
+    return m_classDetailsPageReadMetrics;
 }
 
 const ClassSubtitleBatchReadMetrics&
