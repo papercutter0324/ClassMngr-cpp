@@ -2,6 +2,7 @@
 #include "core/application_services.h"
 #include "data/database/database_session.h"
 #include "data/repositories/class_info_repository.h"
+#include "data/repositories/roster_repository.h"
 #include "data/repositories/teacher_repository.h"
 #include "domain/models/class_info.h"
 #include "domain/models/roster.h"
@@ -333,6 +334,7 @@ private slots:
     void classInformationBatchFailureKeepsEachClassInListOrder();
     void failedTeacherProfileKeepsClassAndUsesSilentUnassignedFallback();
     void rosterCountUsesNonblankEnglishOrKoreanCells();
+    void studentCountBatchRunsOnceAndKeepsClassOrder();
     void rosterReadFailureKeepsClassAndShowsZeroStudentCount();
     void rosterWithoutNameColumnsShowsZeroStudentCount();
 };
@@ -738,6 +740,11 @@ classInformationBatchFailureKeepsEachClassInListOrder()
     QVERIFY(teacherRepository);
     const TeacherProfileBatchReadMetrics beforeInformationFailureRefresh =
         teacherRepository->teacherProfileBatchReadMetrics();
+    RosterRepository* const rosterRepository = fixture.services
+        .databaseSession()->rosterRepository();
+    QVERIFY(rosterRepository);
+    const auto beforeInformationFailureCounts =
+        rosterRepository->myClassesStudentCountBatchReadMetrics();
     page.refresh();
     QCoreApplication::sendPostedEvents(nullptr, QEvent::DeferredDelete);
     QApplication::processEvents();
@@ -766,6 +773,18 @@ classInformationBatchFailureKeepsEachClassInListOrder()
              afterSuccess.intensiveScheduleStatementCount);
     QCOMPARE(afterFailure.fallbackClassReadCount,
              afterSuccess.fallbackClassReadCount + 3);
+    const auto afterInformationFailureCounts =
+        rosterRepository->myClassesStudentCountBatchReadMetrics();
+    QCOMPARE(afterInformationFailureCounts.callCount,
+             beforeInformationFailureCounts.callCount + 1);
+    QCOMPARE(afterInformationFailureCounts.requestedClassCount,
+             beforeInformationFailureCounts.requestedClassCount + 3);
+    QCOMPARE(afterInformationFailureCounts.columnStatementCount,
+             beforeInformationFailureCounts.columnStatementCount + 1);
+    QCOMPARE(afterInformationFailureCounts.dataStatementCount,
+             beforeInformationFailureCounts.dataStatementCount + 1);
+    QCOMPARE(afterInformationFailureCounts.fallbackClassReadCount,
+             beforeInformationFailureCounts.fallbackClassReadCount);
     tabs = classTabsFor(page);
     QVERIFY(tabs);
     QCOMPARE(tabs->count(), 3);
@@ -1222,6 +1241,11 @@ rosterReadFailureKeepsClassAndShowsZeroStudentCount()
         fixture.services.rosterService()->studentCount(classId);
     QVERIFY(!expectedRosterReadFailure);
     QVERIFY(!expectedRosterReadFailure.error().trimmed().isEmpty());
+    RosterRepository* const rosterRepository = fixture.services
+        .databaseSession()->rosterRepository();
+    QVERIFY(rosterRepository);
+    const auto metricsBeforeFailure =
+        rosterRepository->myClassesStudentCountBatchReadMetrics();
 
     bool warningCaptured = false;
     QTimer::singleShot(
@@ -1259,6 +1283,127 @@ rosterReadFailureKeepsClassAndShowsZeroStudentCount()
     QVERIFY(count->isVisible());
     QCOMPARE(count->text(), QStringLiteral("0"));
     QCOMPARE(labelsWithText(page, QStringLiteral("E4 - Theseus")).size(), 1);
+    const auto metricsAfterFailure =
+        rosterRepository->myClassesStudentCountBatchReadMetrics();
+    QCOMPARE(metricsAfterFailure.callCount, metricsBeforeFailure.callCount + 1);
+    QCOMPARE(metricsAfterFailure.requestedClassCount,
+             metricsBeforeFailure.requestedClassCount + 1);
+    QCOMPARE(metricsAfterFailure.fallbackClassReadCount,
+             metricsBeforeFailure.fallbackClassReadCount + 1);
+}
+
+void MyClassesPageTests::studentCountBatchRunsOnceAndKeepsClassOrder()
+{
+    MyClassesPageFixture fixture;
+    QString error;
+    QVERIFY2(fixture.initialize(&error), qPrintable(error));
+
+    int firstClassId = 0;
+    int secondClassId = 0;
+    int thirdClassId = 0;
+    QVERIFY2(fixture.createClass(
+                 QStringLiteral("First roster batch class"),
+                 QStringLiteral("E4"),
+                 QStringLiteral("Theseus"),
+                 &firstClassId,
+                 &error
+                 ), qPrintable(error));
+    QVERIFY2(fixture.createClass(
+                 QStringLiteral("Second roster batch class"),
+                 QStringLiteral("E5"),
+                 QStringLiteral("Artemis"),
+                 &secondClassId,
+                 &error
+                 ), qPrintable(error));
+    const bool thirdClassCreated = fixture.createClass(
+        QStringLiteral("Third roster batch class"),
+        QStringLiteral("E6"),
+        QStringLiteral("Gaia"),
+        &thirdClassId,
+        &error
+        );
+    QVERIFY2(thirdClassCreated, qPrintable(error));
+
+    const Roster validRoster = rosterWithNamedRows();
+    QVERIFY2(saveRoster(fixture, firstClassId, validRoster, &error),
+             qPrintable(error));
+    QVERIFY2(saveRoster(fixture, secondClassId, validRoster, &error),
+             qPrintable(error));
+    QVERIFY2(saveRoster(fixture, thirdClassId, validRoster, &error),
+             qPrintable(error));
+
+    const auto clearNameCells =
+        [&fixture, &error](const int targetClassId, const int rowIndex)
+    {
+        return updateRosterCell(
+                   fixture,
+                   targetClassId,
+                   rowIndex,
+                   0,
+                   QStringLiteral(" \u2003 "),
+                   &error
+                   )
+            && updateRosterCell(
+                   fixture,
+                   targetClassId,
+                   rowIndex,
+                   1,
+                   QStringLiteral(" \t "),
+                   &error
+                   );
+    };
+    for (const int rowIndex : {2, 3})
+    {
+        QVERIFY2(clearNameCells(firstClassId, rowIndex), qPrintable(error));
+    }
+    for (const int rowIndex : {0, 1, 3})
+    {
+        QVERIFY2(clearNameCells(secondClassId, rowIndex), qPrintable(error));
+    }
+    for (const int rowIndex : {0, 1, 2, 3})
+    {
+        QVERIFY2(clearNameCells(thirdClassId, rowIndex), qPrintable(error));
+    }
+
+    RosterRepository* const repository = fixture.services.databaseSession()
+        ->rosterRepository();
+    QVERIFY(repository);
+    const auto before = repository->myClassesStudentCountBatchReadMetrics();
+
+    MyClassesPage page(&fixture.services);
+    page.resize(900, 700);
+    page.refresh();
+    page.show();
+    QApplication::processEvents();
+
+    NavigationTabWidget* const tabs = classTabsFor(page);
+    QVERIFY(tabs);
+    QCOMPARE(tabs->count(), 3);
+    const int expectedClassIds[] = {
+        firstClassId, secondClassId, thirdClassId
+    };
+    const QString expectedCounts[] = {
+        QStringLiteral("2"), QStringLiteral("1"), QStringLiteral("0")
+    };
+    for (int index = 0; index < 3; ++index)
+    {
+        QWidget* const classPage = tabs->widget(index);
+        QVERIFY(classPage);
+        QCOMPARE(classPage->property("class_id").toInt(), expectedClassIds[index]);
+        QLabel* const count = infoRowValueLabelFor(
+            *classPage,
+            QStringLiteral("# of Students")
+            );
+        QVERIFY(count);
+        QCOMPARE(count->text(), expectedCounts[index]);
+    }
+
+    const auto after = repository->myClassesStudentCountBatchReadMetrics();
+    QCOMPARE(after.callCount, before.callCount + 1);
+    QCOMPARE(after.requestedClassCount, before.requestedClassCount + 3);
+    QCOMPARE(after.columnStatementCount, before.columnStatementCount + 1);
+    QCOMPARE(after.dataStatementCount, before.dataStatementCount + 1);
+    QCOMPARE(after.fallbackClassReadCount, before.fallbackClassReadCount);
 }
 
 void MyClassesPageTests::rosterWithoutNameColumnsShowsZeroStudentCount()

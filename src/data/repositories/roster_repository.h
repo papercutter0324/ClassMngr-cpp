@@ -28,6 +28,21 @@ public:
         QStringList columns;
     };
 
+    struct MyClassesStudentCountReadEntry final
+    {
+        int classId = 0;
+        Result<int> studentCount;
+    };
+
+    struct MyClassesStudentCountBatchReadMetrics final
+    {
+        int callCount = 0;
+        int requestedClassCount = 0;
+        int columnStatementCount = 0;
+        int dataStatementCount = 0;
+        int fallbackClassReadCount = 0;
+    };
+
     explicit RosterRepository(
         QSqlDatabase& database
         );
@@ -51,6 +66,15 @@ public:
     loadRosterColumnNamesForClasses(
         const QList<int>& classIds
         );
+
+    // Counts nonblank English/Korean cells without constructing roster rows.
+    // A successful batch uses one ordered column read and one sparse cell read.
+    [[nodiscard]] Result<QList<MyClassesStudentCountReadEntry>>
+    loadMyClassesStudentCountRecords(
+        const QList<int>& classIds
+        );
+    [[nodiscard]] const MyClassesStudentCountBatchReadMetrics&
+    myClassesStudentCountBatchReadMetrics() const noexcept;
 
     // Streams sparse cells for the requested classes without materializing
     // roster snapshots. Rows outside [0, rowLimit) are omitted.
@@ -79,6 +103,9 @@ private:
         int classId,
         const Roster& roster
         );
+    [[nodiscard]] Result<int> loadMyClassesStudentCountRecord(int classId);
 
     QSqlDatabase& m_database;
+    MyClassesStudentCountBatchReadMetrics
+        m_myClassesStudentCountBatchReadMetrics;
 };

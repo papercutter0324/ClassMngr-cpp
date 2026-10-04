@@ -422,7 +422,206 @@ RosterRepository::loadRosterColumnNamesForClasses(
         records[*recordIndex].columns.append(query.value("name").toString());
     }
 
+    if (query.lastError().isValid())
+    {
+        return std::unexpected(
+            QObject::tr("Reading roster column batch failed: %1")
+                .arg(query.lastError().text())
+            );
+    }
+
     return records;
+}
+
+Result<QList<RosterRepository::MyClassesStudentCountReadEntry>>
+RosterRepository::loadMyClassesStudentCountRecords(
+    const QList<int>& classIds
+    )
+{
+    if (classIds.isEmpty())
+    {
+        return QList<MyClassesStudentCountReadEntry>{};
+    }
+
+    ++m_myClassesStudentCountBatchReadMetrics.callCount;
+    m_myClassesStudentCountBatchReadMetrics.requestedClassCount +=
+        classIds.size();
+
+    QSet<int> seenClassIds;
+    seenClassIds.reserve(classIds.size());
+    QHash<int, qsizetype> requestIndexByClassId;
+    requestIndexByClassId.reserve(classIds.size());
+    for (qsizetype index = 0; index < classIds.size(); ++index)
+    {
+        const int classId = classIds.at(index);
+        if (classId <= 0 || seenClassIds.contains(classId))
+        {
+            return std::unexpected(QObject::tr(
+                "Loading My Classes student counts failed: class ids must be positive and unique."
+                ));
+        }
+        seenClassIds.insert(classId);
+        requestIndexByClassId.insert(classId, index);
+    }
+
+    const auto readIndividually =
+        [this, &classIds]()
+        -> Result<QList<MyClassesStudentCountReadEntry>>
+    {
+        QList<MyClassesStudentCountReadEntry> entries;
+        entries.reserve(classIds.size());
+        for (const int classId : classIds)
+        {
+            ++m_myClassesStudentCountBatchReadMetrics.fallbackClassReadCount;
+            entries.append({
+                classId,
+                loadMyClassesStudentCountRecord(classId)
+            });
+        }
+        return entries;
+    };
+
+    ++m_myClassesStudentCountBatchReadMetrics.columnStatementCount;
+    const auto loadedColumns = loadRosterColumnNamesForClasses(classIds);
+    if (!loadedColumns || loadedColumns->size() != classIds.size())
+    {
+        return readIndividually();
+    }
+
+    QStringList requestedValues;
+    requestedValues.reserve(classIds.size());
+    for (qsizetype index = 0; index < classIds.size(); ++index)
+    {
+        const ColumnNamesForClass& record = loadedColumns->at(index);
+        if (record.classId != classIds.at(index))
+        {
+            return readIndividually();
+        }
+
+        const int englishColumn = record.columns.indexOf(
+            QStringLiteral("English")
+            );
+        const int koreanColumn = record.columns.indexOf(
+            QStringLiteral("Korean")
+            );
+        requestedValues.append(
+            QStringLiteral("(%1, %2, %3, %4)")
+                .arg(classIds.at(index))
+                .arg(index)
+                .arg(englishColumn)
+                .arg(koreanColumn)
+            );
+    }
+
+    const QString queryText = QStringLiteral(R"(
+        WITH requested(
+            class_id,
+            request_order,
+            english_column,
+            korean_column
+        ) AS (VALUES %1)
+        SELECT requested.class_id AS class_id,
+               requested.request_order AS request_order,
+               roster_data.row_index AS row_index,
+               roster_data.value AS value
+        FROM requested
+        JOIN roster_data
+            ON roster_data.class_id=requested.class_id
+        WHERE roster_data.row_index >= 0
+            AND (
+                (requested.english_column >= 0
+                    AND roster_data.col_index=requested.english_column)
+                OR
+                (requested.korean_column >= 0
+                    AND roster_data.col_index=requested.korean_column)
+            )
+        ORDER BY
+            requested.request_order,
+            roster_data.row_index,
+            roster_data.col_index
+    )").arg(requestedValues.join(QStringLiteral(", ")));
+
+    QSqlQuery query(m_database);
+    query.setForwardOnly(true);
+    ++m_myClassesStudentCountBatchReadMetrics.dataStatementCount;
+    const auto loadedCells = SqlQueryUtils::execute(
+        query,
+        queryText,
+        QObject::tr("Loading My Classes student-count cells"),
+        QObject::tr("%1 classes").arg(classIds.size())
+        );
+    if (!loadedCells)
+    {
+        query.finish();
+        return readIndividually();
+    }
+
+    std::vector<int> counts(static_cast<std::size_t>(classIds.size()), 0);
+    int currentRequestOrder = -1;
+    int currentRowIndex = -1;
+    bool currentRowHasStudent = false;
+    const auto finishCurrentRow = [&]()
+    {
+        if (currentRowHasStudent
+            && currentRequestOrder >= 0
+            && currentRequestOrder < classIds.size())
+        {
+            ++counts[static_cast<std::size_t>(currentRequestOrder)];
+        }
+    };
+
+    while (query.next())
+    {
+        const int classId = query.value("class_id").toInt();
+        const int requestOrder = query.value("request_order").toInt();
+        const int rowIndex = query.value("row_index").toInt();
+        if (requestOrder < 0
+            || requestOrder >= classIds.size()
+            || classIds.at(requestOrder) != classId
+            || !requestIndexByClassId.contains(classId)
+            || rowIndex < 0)
+        {
+            query.finish();
+            return readIndividually();
+        }
+
+        if (requestOrder != currentRequestOrder
+            || rowIndex != currentRowIndex)
+        {
+            finishCurrentRow();
+            currentRequestOrder = requestOrder;
+            currentRowIndex = rowIndex;
+            currentRowHasStudent = false;
+        }
+
+        if (!query.value("value").toString().trimmed().isEmpty())
+        {
+            currentRowHasStudent = true;
+        }
+    }
+    if (query.lastError().isValid())
+    {
+        query.finish();
+        return readIndividually();
+    }
+    finishCurrentRow();
+
+    QList<MyClassesStudentCountReadEntry> entries;
+    entries.reserve(classIds.size());
+    for (std::size_t index = 0; index < counts.size(); ++index)
+    {
+        entries.append({
+            classIds.at(static_cast<qsizetype>(index)),
+            Result<int>{counts[index]}
+        });
+    }
+    return entries;
+}
+
+const RosterRepository::MyClassesStudentCountBatchReadMetrics&
+RosterRepository::myClassesStudentCountBatchReadMetrics() const noexcept
+{
+    return m_myClassesStudentCountBatchReadMetrics;
 }
 
 Status RosterRepository::forEachRosterDataCellForClasses(
@@ -516,6 +715,115 @@ Status RosterRepository::forEachRosterDataCellForClasses(
     }
 
     return {};
+}
+
+Result<int> RosterRepository::loadMyClassesStudentCountRecord(
+    const int classId
+    )
+{
+    if (classId <= 0)
+    {
+        return std::unexpected(
+            QObject::tr("Loading My Classes student count failed: invalid class id %1.")
+                .arg(classId)
+            );
+    }
+
+    ++m_myClassesStudentCountBatchReadMetrics.columnStatementCount;
+    const auto loadedColumns = loadRosterColumnNamesForClasses({classId});
+    if (!loadedColumns)
+    {
+        return std::unexpected(loadedColumns.error());
+    }
+    if (loadedColumns->size() != 1 || loadedColumns->front().classId != classId)
+    {
+        return std::unexpected(QObject::tr(
+            "Loading My Classes student count failed: roster columns returned an incomplete class record."
+            ));
+    }
+
+    const QStringList& columns = loadedColumns->front().columns;
+    const int englishColumn = columns.indexOf(QStringLiteral("English"));
+    const int koreanColumn = columns.indexOf(QStringLiteral("Korean"));
+    if (englishColumn < 0 && koreanColumn < 0)
+    {
+        return 0;
+    }
+
+    QSqlQuery query(m_database);
+    query.setForwardOnly(true);
+    if (!query.prepare(R"(
+        SELECT row_index, value
+        FROM roster_data
+        WHERE class_id=?
+            AND row_index >= 0
+            AND (
+                (? >= 0 AND col_index=?)
+                OR
+                (? >= 0 AND col_index=?)
+            )
+        ORDER BY row_index, col_index
+    )"))
+    {
+        return std::unexpected(
+            QObject::tr("Preparing My Classes student-count read failed: %1")
+                .arg(query.lastError().text())
+            );
+    }
+    query.addBindValue(classId);
+    query.addBindValue(englishColumn);
+    query.addBindValue(englishColumn);
+    query.addBindValue(koreanColumn);
+    query.addBindValue(koreanColumn);
+
+    ++m_myClassesStudentCountBatchReadMetrics.dataStatementCount;
+    const auto loadedCells = SqlQueryUtils::executePrepared(
+        query,
+        QObject::tr("Loading My Classes student-count cells"),
+        QObject::tr("class id %1").arg(classId)
+        );
+    if (!loadedCells)
+    {
+        return std::unexpected(loadedCells.error().userMessage());
+    }
+
+    int count = 0;
+    int currentRowIndex = -1;
+    bool currentRowHasStudent = false;
+    const auto finishCurrentRow = [&]()
+    {
+        if (currentRowIndex >= 0 && currentRowHasStudent)
+        {
+            ++count;
+        }
+    };
+    while (query.next())
+    {
+        const int rowIndex = query.value("row_index").toInt();
+        if (rowIndex < 0)
+        {
+            continue;
+        }
+        if (rowIndex != currentRowIndex)
+        {
+            finishCurrentRow();
+            currentRowIndex = rowIndex;
+            currentRowHasStudent = false;
+        }
+        if (!query.value("value").toString().trimmed().isEmpty())
+        {
+            currentRowHasStudent = true;
+        }
+    }
+    if (query.lastError().isValid())
+    {
+        return std::unexpected(
+            QObject::tr("Reading My Classes student-count cells failed: %1")
+                .arg(query.lastError().text())
+            );
+    }
+    finishCurrentRow();
+    return count;
 }
 
 Result<Roster> RosterRepository::loadRosterForOutput(
