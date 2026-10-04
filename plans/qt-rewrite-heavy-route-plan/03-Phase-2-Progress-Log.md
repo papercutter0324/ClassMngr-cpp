@@ -11782,3 +11782,33 @@ full suite ran. F332 is selected for purpose-fit class-detail reads for Class
 Notes and Co-Teacher pages, preserving consumed class/schedule fields and
 per-page read behavior. Phase 2 remains In Progress/Open; Gates 1 and 2 remain
 Partial.
+
+### Slice discovery update - 2026-10-05 (Batch 7 recorded at F332 acceptance)
+
+Two independent read-only sweeps found six distinct bounded candidates for
+Batch 7. Their ranked order is recorded in the plan's Active Batch 7 list.
+Class Transfer preview teacher-profile reuse is first; the remaining candidates
+cover Class Details projection, Schedule Editor projection, Selected Class
+Grade scalar reads, reuse of the F332 reader for Class Details validation, and
+ClassImportDialog boundary cleanup. No other slices were found.
+
+### F332 accepted / F333 selected - 2026-10-05
+
+F332, committed as
+`760559a1dbb7fd663bb27fc9bb0d5a45b8a911d1`, adds purpose-fit class-detail
+reads for Class Notes and Co-Teacher pages, preserving the class and schedule
+fields they consume and each page's read behavior. Independent VS2026
+x64/Ninja verification passed the focused Notes and Co-Teacher CTest 2/2.
+`git diff --check` was clean except for line-ending notices. No full suite ran.
+
+Batch 6 is complete. F333 is selected from Batch 7 to reuse teacher profiles
+already loaded by Class Transfer preview's initial `getAllTeachers()` call,
+keyed by ID, instead of making a `getTeacher()` profile read for each
+qualifying destination class. Preserve the conditional positive assigned ID
+and matching source course, first failure and returned error, destination
+order, and EN/KR normalization. Retain the `getTeacher()` fallback only when
+the positive conditional ID is unexpectedly absent from the loaded profiles,
+preserving the existing missing-teacher error. The source-inspected bound is no
+per-qualifying-class full-profile SELECT for present profiles; a rare missing-ID
+fallback remains. F333 is selected, not implemented or verified. Phase 2
+remains In Progress/Open; Gates 1 and 2 remain Partial.

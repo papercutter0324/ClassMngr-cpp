@@ -18,9 +18,13 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-05
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F332 is selected for purpose-fit class-detail reads for Class
-  Notes and Co-Teacher pages, preserving consumed class/schedule fields and
-  per-page read behavior.
+- Current note: F333 is selected to reuse the teacher profiles already loaded
+  by Class Transfer preview, keyed by ID, while preserving conditional reads,
+  first-error behavior, destination order, and EN/KR normalization. Keep the
+  `getTeacher()` fallback for a positive assigned ID missing from the initial
+  profile list so the existing missing-teacher error remains. Source-inspected
+  bound: no per-qualifying-class full-profile SELECT for present profiles; a
+  rare missing-ID fallback remains.
 
 ### Slice discovery batches
 
@@ -48,10 +52,20 @@ Accepted slices are removed from active tracking; their implementation and accep
   failure warning/no-navigation behavior; revisit after that behavior is
   clarified.
 
-#### Active batch: Batch 6
+#### Active batch: Batch 7
 
-1. F332 - Purpose-fit class-detail reads for Class Notes and Co-Teacher pages;
-    preserve consumed class/schedule fields and per-page read behavior.
+1. F333 - Reuse Class Transfer preview's initially loaded teacher profiles by
+   ID; preserve conditional behavior, first failure, destination order, and
+   EN/KR normalization, with a `getTeacher()` fallback for an unexpectedly
+   absent positive ID.
+2. F334 - Add a purpose-fit projection for Class Details page reads.
+3. F335 - Combine Schedule Editor projection reads into one statement.
+4. F336 - Narrow Selected Class Grade reads to the consumed scalar fields.
+5. F337 - Reuse the F332 class-details reader for Class Details validation
+   context.
+6. F338 - Clean up the ClassImportDialog boundary.
+
+No other slices were found.
 
 #### F299 completeness audit checkpoint
 
@@ -213,24 +227,23 @@ No new v2 production path depends on DataService, MainWindow, PageManager, or a 
 
 Earlier verified slices and cumulative exit-gate snapshots are archived in the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 
-## Latest Progress Update - 2026-10-05 (F331 accepted; F332 selected)
+## Latest Progress Update - 2026-10-05 (F332 accepted; F333 selected)
 
-F331, committed as
-`95ba0e1bd62182ba9d1e5310a35c9e40860f73d2`, narrows the Class Notes and
-Co-Teacher teacher display reads to the shared
-`TeacherRepository::loadTeacherDisplayNameFields(int)` helper. For a positive
-assigned ID, each port uses one statement to load four display fields instead
-of `SELECT *`; nonpositive IDs skip that read.
-Both ports map the fields into `Teacher` and reuse `preferredDisplayName`:
-trimmed preferred name, English name, romanization, then Korean name. This
-narrowed projection does not reduce round trips; its query bound was
-source-inspected because no direct scalar query-count metric exists.
+F332, committed as
+`760559a1dbb7fd663bb27fc9bb0d5a45b8a911d1`, adds purpose-fit class-detail
+reads for Class Notes and Co-Teacher pages, preserving the class and schedule
+fields they consume and each page's read behavior. Independent VS2026
+x64/Ninja verification passed the focused Notes and Co-Teacher CTest 2/2.
+`git diff --check` was clean except for line-ending notices; no full suite ran.
 
-Regressions cover fallback and isolated SQL projection failures while
-preserving class fields; Co-Teacher assertions retain exact selected IDs.
-Earlier cases cover preferred names, missing teachers, nonpositive IDs, and
-independent errors. Final VS2026 x64/Ninja verification rebuilt the Co-Teacher
-target after the exact-ID assertion adjustment; the combined
-`NextPlatformApplicationServicesClass(Notes|CoTeacher)PageReadPort` CTest
-passed 2/2. `git diff --check` was clean, with only LF-to-CRLF warnings. No
-full suite ran. Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial.
+Batch 6 is complete. F333 is selected from Batch 7 to reuse the profiles
+already returned by Class Transfer preview's initial `getAllTeachers()` call
+instead of issuing a full-profile `getTeacher()` read for each qualifying
+destination class. Preserve the positive-ID/source-course condition, first
+failure and returned error, destination order, and EN/KR normalization. Keep
+the `getTeacher()` fallback only when a conditional positive ID is unexpectedly
+absent from the loaded profiles, preserving the existing missing-teacher error.
+The source-inspected bound is no per-qualifying-class full-profile SELECT for
+present profiles; a rare missing-ID fallback remains. This slice is selected,
+not implemented or verified. Phase 2 remains In Progress/Open; Gates 1 and 2
+remain Partial.

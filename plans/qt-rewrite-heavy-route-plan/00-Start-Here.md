@@ -57,7 +57,9 @@
   remains distinct from F273's transfer-time target read. F306-F331 are
   accepted; F332 (purpose-fit class-detail reads for Class Notes and
   Co-Teacher pages, preserving consumed class/schedule fields and per-page
-  read behavior) is selected. Batch 6 (F332) remains active.
+  read behavior) is accepted. F333 (Class Transfer preview assigned-teacher
+  profile reuse) is selected. Batch 6 is complete; Batch 7 (F333-F338) is
+  active.
   Gates 1 and 2 remain Partial, with broader feature
   migration, parity, and 96-class Release memory evidence still open.
   See the
