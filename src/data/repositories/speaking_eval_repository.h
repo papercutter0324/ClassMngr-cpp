@@ -6,6 +6,13 @@
 #include <QList>
 #include <QSqlDatabase>
 #include <QString>
+#include <QStringList>
+
+struct SpeakingEvalNamedRows
+{
+    QString evaluationName;
+    SpeakingEvalRows rows;
+};
 
 class SpeakingEvalRepository
 {
@@ -24,6 +31,11 @@ public:
     [[nodiscard]] Result<SpeakingEvalRows> loadSpeakingEval(
         int classId,
         const QString& evaluationName
+        );
+
+    [[nodiscard]] Result<QList<SpeakingEvalNamedRows>> loadSpeakingEvalBatch(
+        int classId,
+        const QStringList& evaluationNames
         );
 
     [[nodiscard]] Result<QList<SpeakingEvalScore>> buildRosterScoreImport(

@@ -1,7 +1,9 @@
 #include "next/application/speaking_evaluation_roster_score_import_use_case.h"
+#include "next/application/speaking_evaluation_roster_score_import_batch_use_case.h"
 
 #include <array>
 #include <cstdlib>
+#include <functional>
 #include <iostream>
 #include <string>
 #include <string_view>
@@ -22,14 +24,41 @@ public:
         ) const override
     {
         requests.push_back(query);
+        if (responder)
+        {
+            return responder(query);
+        }
         return result;
     }
 
     mutable std::vector<SpeakingEvaluationReadQuery> requests;
+    std::function<SpeakingEvaluationReadResult(
+        const SpeakingEvaluationReadQuery&)> responder;
     SpeakingEvaluationReadResult result =
         SpeakingEvaluationReadResult::failure({
             .code = Domain::ErrorCode::Technical,
             .message = "The fake speaking-evaluation port was not configured.",
+            .recoverable = false
+        });
+};
+
+class FakeSpeakingEvaluationReadBatchPort final
+    : public SpeakingEvaluationReadBatchPort
+{
+public:
+    [[nodiscard]] SpeakingEvaluationReadBatchResult readEvaluations(
+        const SpeakingEvaluationReadBatchQuery& query
+        ) const override
+    {
+        requests.push_back(query);
+        return result;
+    }
+
+    mutable std::vector<SpeakingEvaluationReadBatchQuery> requests;
+    SpeakingEvaluationReadBatchResult result =
+        SpeakingEvaluationReadBatchResult::failure({
+            .code = Domain::ErrorCode::Technical,
+            .message = "The fake speaking evaluation batch was not configured.",
             .recoverable = false
         });
 };
@@ -39,6 +68,16 @@ SpeakingEvaluationReadQuery query()
     return {
         .classId = *Domain::ClassId::fromString("42"),
         .evaluationName = u"Winter"
+    };
+}
+
+SpeakingEvaluationReadBatchQuery batchQuery(
+    std::vector<std::u16string> names
+    )
+{
+    return {
+        .classId = *Domain::ClassId::fromString("42"),
+        .evaluationNames = std::move(names)
     };
 }
 
@@ -263,6 +302,186 @@ bool preservesAnEmptySuccessfulRead()
                   "An empty successful read must produce no scores.");
 }
 
+bool importsOrderedBatchResultsIncludingEmptyEvaluations()
+{
+    const SpeakingEvaluationReadBatchQuery requested = batchQuery({
+        u"Winter", u"Speech Contest", u"Summer"
+    });
+    FakeSpeakingEvaluationReadBatchPort batchPort;
+    batchPort.result = SpeakingEvaluationReadBatchResult::success({
+        .evaluations = {
+            snapshot(
+                { .classId = requested.classId, .evaluationName = u"Winter" },
+                { scoreRow(
+                    u" Winter Student ",
+                    u" \uAE40\uACA8\uC6B8 ",
+                    {u"A+", u"A+", u"A+", u"A+", u"A+", u"A+"}
+                    ) }
+                ),
+            snapshot(
+                { .classId = requested.classId, .evaluationName = u"Speech Contest" },
+                {}
+                ),
+            snapshot(
+                { .classId = requested.classId, .evaluationName = u"Summer" },
+                {}
+                )
+        }
+    });
+    FakeSpeakingEvaluationReadPort singlePort;
+
+    const auto result = SpeakingEvaluationRosterScoreImportBatchUseCase::execute(
+        requested,
+        batchPort,
+        singlePort
+        );
+
+    return expect(result.hasValue(), "A complete batch must import successfully.")
+        && expect(batchPort.requests.size() == 1,
+                  "All requested evaluations must use one batch read.")
+        && expect(batchPort.requests.front() == requested,
+                  "The batch must preserve the requested fixed order.")
+        && expect(singlePort.requests.empty(),
+                  "Successful batch reads must not use the single-read fallback.")
+        && expect(result.value().size() == 3,
+                  "Each requested evaluation must retain its own result slot.")
+        && expect(result.value()[0].hasValue()
+                      && result.value()[0].value().size() == 1,
+                  "The first ordered evaluation must keep its score rows.")
+        && expect(result.value()[0].value()[0].englishName == u"Winter Student",
+                  "The existing score parser must be reused for batch rows.")
+        && expect(result.value()[1].hasValue()
+                      && result.value()[1].value().empty(),
+                  "A missing evaluation must remain a successful empty result.")
+        && expect(result.value()[2].hasValue()
+                      && result.value()[2].value().empty(),
+                  "An evaluation without data rows must remain empty.");
+}
+
+bool emptyBatchSkipsBatchAndSinglePorts()
+{
+    FakeSpeakingEvaluationReadBatchPort batchPort;
+    FakeSpeakingEvaluationReadPort singlePort;
+
+    const auto result = SpeakingEvaluationRosterScoreImportBatchUseCase::execute(
+        batchQuery({}),
+        batchPort,
+        singlePort
+        );
+
+    return expect(result.hasValue(), "An empty request is a successful no-op.")
+        && expect(result.value().empty(), "An empty request has no result items.")
+        && expect(batchPort.requests.empty(),
+                  "An empty request must not invoke the batch adapter.")
+        && expect(singlePort.requests.empty(),
+                  "An empty request must not invoke single-read fallback.");
+}
+
+bool batchQueryValidatesRequestAndReturnedOrder()
+{
+    FakeSpeakingEvaluationReadBatchPort batchPort;
+    const auto invalidRequest = SpeakingEvaluationReadBatchQueryHandler::execute(
+        batchQuery({u"Winter", {}}),
+        batchPort
+        );
+    if (!expect(!invalidRequest,
+                "Empty evaluation names must fail batch validation.")
+        || !expect(invalidRequest.error().code == Domain::ErrorCode::InvalidInput,
+                   "Invalid batch names must report InvalidInput.")
+        || !expect(batchPort.requests.empty(),
+                   "Invalid requests must not reach the adapter."))
+    {
+        return false;
+    }
+
+    const SpeakingEvaluationReadBatchQuery requested = batchQuery({
+        u"Winter", u"Summer"
+    });
+    batchPort.result = SpeakingEvaluationReadBatchResult::success({
+        .evaluations = {
+            snapshot(
+                { .classId = requested.classId, .evaluationName = u"Summer" },
+                {}
+                ),
+            snapshot(
+                { .classId = requested.classId, .evaluationName = u"Winter" },
+                {}
+                )
+        }
+    });
+    const auto misordered = SpeakingEvaluationReadBatchQueryHandler::execute(
+        requested,
+        batchPort
+        );
+    return expect(!misordered,
+                  "Misordered batch responses must be rejected.")
+        && expect(misordered.error().code == Domain::ErrorCode::Validation,
+                  "A response order mismatch must be a validation failure.");
+}
+
+bool batchFailureFallsBackIndependentlyInOriginalOrder()
+{
+    const SpeakingEvaluationReadBatchQuery requested = batchQuery({
+        u"Winter", u"Speech Contest", u"Summer"
+    });
+    FakeSpeakingEvaluationReadBatchPort batchPort;
+    batchPort.result = SpeakingEvaluationReadBatchResult::failure({
+        .code = Domain::ErrorCode::Technical,
+        .message = "batch unavailable",
+        .recoverable = true
+    });
+    FakeSpeakingEvaluationReadPort singlePort;
+    singlePort.responder = [](const SpeakingEvaluationReadQuery& query)
+    {
+        if (query.evaluationName == u"Winter")
+        {
+            return SpeakingEvaluationReadResult::failure({
+                .code = Domain::ErrorCode::Technical,
+                .message = "Winter unavailable",
+                .recoverable = true
+            });
+        }
+
+        return SpeakingEvaluationReadResult::success(snapshot(
+            query,
+            { scoreRow(
+                query.evaluationName == u"Speech Contest"
+                    ? u"Speech Student"
+                    : u"Summer Student",
+                u"\uAE40\uD559\uC0DD",
+                {u"B+", u"B+", u"B+", u"B+", u"B+", u"B+"}
+                ) }
+            ));
+    };
+
+    const auto result = SpeakingEvaluationRosterScoreImportBatchUseCase::execute(
+        requested,
+        batchPort,
+        singlePort
+        );
+
+    return expect(result.hasValue(),
+                  "Single-read failures must remain isolated result items.")
+        && expect(batchPort.requests.size() == 1,
+                  "The failed batch must be attempted once.")
+        && expect(singlePort.requests.size() == 3,
+                  "Fallback must attempt every requested evaluation.")
+        && expect(singlePort.requests[0].evaluationName == u"Winter"
+                      && singlePort.requests[1].evaluationName == u"Speech Contest"
+                      && singlePort.requests[2].evaluationName == u"Summer",
+                  "Fallback must preserve the original destination order.")
+        && expect(result.value().size() == 3,
+                  "Fallback must produce one result for every requested item.")
+        && expect(!result.value()[0],
+                  "A failed first evaluation must remain failed on its own.")
+        && expect(result.value()[1]
+                      && result.value()[1].value()[0].englishName == u"Speech Student",
+                  "A later evaluation must still import after an earlier failure.")
+        && expect(result.value()[2]
+                      && result.value()[2].value()[0].englishName == u"Summer Student",
+                  "Fallback must continue after successful siblings.");
+}
+
 } // namespace
 
 int main()
@@ -271,6 +490,10 @@ int main()
             && skipsMalformedRowsAndReturnsNotApplicableForInvalidGrades()
             && propagatesReadFailuresAndRejectsIdentityMismatch()
             && preservesAnEmptySuccessfulRead()
+            && importsOrderedBatchResultsIncludingEmptyEvaluations()
+            && emptyBatchSkipsBatchAndSinglePorts()
+            && batchQueryValidatesRequestAndReturnedOrder()
+            && batchFailureFallsBackIndependentlyInOriginalOrder()
         ? EXIT_SUCCESS
         : EXIT_FAILURE;
 }

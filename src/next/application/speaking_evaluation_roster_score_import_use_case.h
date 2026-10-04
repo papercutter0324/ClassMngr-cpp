@@ -47,9 +47,17 @@ public:
                 );
         }
 
+        return SpeakingEvaluationRosterScoreImportResult::success(
+            scoresFromSnapshot(source.value())
+            );
+    }
+
+    [[nodiscard]] static std::vector<SpeakingEvaluationRosterScore>
+    scoresFromSnapshot(const SpeakingEvaluationReadSnapshot& source)
+    {
         std::vector<SpeakingEvaluationRosterScore> scores;
-        scores.reserve(source.value().rows.size());
-        for (const std::vector<std::u16string>& row : source.value().rows)
+        scores.reserve(source.rows.size());
+        for (const std::vector<std::u16string>& row : source.rows)
         {
             if (row.size() < RequiredStoredColumnCount)
             {
@@ -94,9 +102,7 @@ public:
             });
         }
 
-        return SpeakingEvaluationRosterScoreImportResult::success(
-            std::move(scores)
-            );
+        return scores;
     }
 
 private:

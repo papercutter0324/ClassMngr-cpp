@@ -6,7 +6,7 @@
 #include "features/roster/ui/roster_model.h"
 #include "features/roster/ui/roster_print_dialog.h"
 #include "features/roster/services/roster_template_print_service.h"
-#include "next/application/speaking_evaluation_roster_score_import_use_case.h"
+#include "next/application/speaking_evaluation_roster_score_import_batch_use_case.h"
 #include "next/application/speaking_evaluation_roster_score_row_assignments.h"
 #include "next/application/classes_list_read_query.h"
 #include "next/application/roster_print_class_info_read_query.h"
@@ -14,6 +14,7 @@
 #include "next/platform/application_services_classes_list_read_port.h"
 #include "next/platform/application_services_roster_print_class_info_read_port.h"
 #include "next/platform/application_services_roster_read_port.h"
+#include "next/platform/application_services_speaking_evaluation_batch_read_port.h"
 #include "next/platform/application_services_speaking_evaluation_read_port.h"
 
 #include <QDialog>
@@ -72,9 +73,12 @@ void RosterEditorWidget::importScores()
         QStringLiteral("Fall")
     };
 
-    int changeCount = 0;
-    ClassMngr::Next::Platform::ApplicationServicesSpeakingEvaluationReadPort
-        evaluationPort(m_services);
+    std::vector<std::u16string> requestedEvaluationNames;
+    std::vector<int> scoreColumns;
+    requestedEvaluationNames.reserve(
+        static_cast<std::size_t>(evaluationColumns.size())
+        );
+    scoreColumns.reserve(static_cast<std::size_t>(evaluationColumns.size()));
     for (const QString& evaluationName : evaluationColumns)
     {
         const int scoreColumn = findModelColumn(evaluationName);
@@ -83,71 +87,95 @@ void RosterEditorWidget::importScores()
             continue;
         }
 
-        const auto importedScores =
-            ClassMngr::Next::Application::
-                SpeakingEvaluationRosterScoreImportUseCase::execute(
-                    {
-                        .classId = *classId,
-                        .evaluationName = evaluationName.toStdU16String()
-                    },
-                    evaluationPort
-                    );
-        if (!importedScores || importedScores.value().empty())
-        {
-            continue;
-        }
+        requestedEvaluationNames.push_back(evaluationName.toStdU16String());
+        scoreColumns.push_back(scoreColumn);
+    }
 
-        std::vector<
-            ClassMngr::Next::Application::SpeakingEvaluationRosterScoreRow
-            > rosterRows;
-        const int rosterRowCount = m_model->rowCount();
-        rosterRows.reserve(static_cast<std::size_t>(rosterRowCount));
-        for (int row = 0; row < rosterRowCount; ++row)
-        {
-            const QModelIndex scoreIndex = m_model->index(row, scoreColumn);
-            std::optional<std::u16string> currentGrade;
-            if (scoreIndex.isValid())
+    int changeCount = 0;
+    ClassMngr::Next::Platform::ApplicationServicesSpeakingEvaluationReadPort
+        singleEvaluationPort(m_services);
+    ClassMngr::Next::Platform::
+        ApplicationServicesSpeakingEvaluationBatchReadPort batchEvaluationPort(
+            m_services
+            );
+    const auto importedEvaluations = ClassMngr::Next::Application::
+        SpeakingEvaluationRosterScoreImportBatchUseCase::execute(
             {
-                currentGrade = scoreIndex.data(Qt::EditRole).toString().toStdU16String();
-            }
-
-            rosterRows.push_back({
-                .names = {
-                    m_model->index(row, englishColumn)
-                        .data(Qt::EditRole)
-                        .toString()
-                        .toStdU16String(),
-                    m_model->index(row, koreanColumn)
-                        .data(Qt::EditRole)
-                        .toString()
-                        .toStdU16String()
-                },
-                .currentGrade = std::move(currentGrade)
-            });
-        }
-
-        const auto assignments =
-            ClassMngr::Next::Application::
-                speakingEvaluationRosterScoreRowAssignments(
-                    rosterRows,
-                    importedScores.value()
-                    );
-        for (const auto& assignment : assignments)
+                .classId = *classId,
+                .evaluationNames = requestedEvaluationNames
+            },
+            batchEvaluationPort,
+            singleEvaluationPort
+            );
+    if (importedEvaluations)
+    {
+        for (std::size_t evaluationIndex = 0;
+             evaluationIndex < requestedEvaluationNames.size();
+             ++evaluationIndex)
         {
-            const int row = static_cast<int>(assignment.rosterRowIndex);
-            const QModelIndex index = m_model->index(row, scoreColumn);
-            if (!index.isValid())
+            const auto& importedScores =
+                importedEvaluations.value()[evaluationIndex];
+            if (!importedScores || importedScores.value().empty())
             {
                 continue;
             }
 
-            const QString finalGrade = QString::fromUtf16(
-                assignment.finalGrade.data(),
-                static_cast<qsizetype>(assignment.finalGrade.size())
-                );
-            if (m_model->setData(index, finalGrade, Qt::EditRole))
+            const int scoreColumn = scoreColumns[evaluationIndex];
+
+            std::vector<
+                ClassMngr::Next::Application::SpeakingEvaluationRosterScoreRow
+                > rosterRows;
+            const int rosterRowCount = m_model->rowCount();
+            rosterRows.reserve(static_cast<std::size_t>(rosterRowCount));
+            for (int row = 0; row < rosterRowCount; ++row)
             {
-                ++changeCount;
+                const QModelIndex scoreIndex = m_model->index(row, scoreColumn);
+                std::optional<std::u16string> currentGrade;
+                if (scoreIndex.isValid())
+                {
+                    currentGrade = scoreIndex.data(Qt::EditRole)
+                        .toString()
+                        .toStdU16String();
+                }
+
+                rosterRows.push_back({
+                    .names = {
+                        m_model->index(row, englishColumn)
+                            .data(Qt::EditRole)
+                            .toString()
+                            .toStdU16String(),
+                        m_model->index(row, koreanColumn)
+                            .data(Qt::EditRole)
+                            .toString()
+                            .toStdU16String()
+                    },
+                    .currentGrade = std::move(currentGrade)
+                });
+            }
+
+            const auto assignments =
+                ClassMngr::Next::Application::
+                    speakingEvaluationRosterScoreRowAssignments(
+                        rosterRows,
+                        importedScores.value()
+                        );
+            for (const auto& assignment : assignments)
+            {
+                const int row = static_cast<int>(assignment.rosterRowIndex);
+                const QModelIndex index = m_model->index(row, scoreColumn);
+                if (!index.isValid())
+                {
+                    continue;
+                }
+
+                const QString finalGrade = QString::fromUtf16(
+                    assignment.finalGrade.data(),
+                    static_cast<qsizetype>(assignment.finalGrade.size())
+                    );
+                if (m_model->setData(index, finalGrade, Qt::EditRole))
+                {
+                    ++changeCount;
+                }
             }
         }
     }

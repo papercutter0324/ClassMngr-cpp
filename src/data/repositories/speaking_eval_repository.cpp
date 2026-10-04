@@ -339,6 +339,155 @@ Result<SpeakingEvalRows> SpeakingEvalRepository::loadSpeakingEval(
     return rows;
 }
 
+Result<QList<SpeakingEvalNamedRows>>
+SpeakingEvalRepository::loadSpeakingEvalBatch(
+    const int classId,
+    const QStringList& evaluationNames
+    )
+{
+    QList<SpeakingEvalNamedRows> evaluations;
+    evaluations.reserve(evaluationNames.size());
+    for (const QString& evaluationName : evaluationNames)
+    {
+        evaluations.append({
+            .evaluationName = evaluationName,
+            .rows = {}
+        });
+    }
+
+    if (evaluationNames.isEmpty())
+    {
+        return evaluations;
+    }
+
+    if (classId <= 0)
+    {
+        return std::unexpected(
+            QObject::tr(
+                "Loading speaking evaluations failed: invalid class id or "
+                "evaluation name."
+                )
+            );
+    }
+
+    for (const QString& evaluationName : evaluationNames)
+    {
+        if (evaluationName.trimmed().isEmpty())
+        {
+            return std::unexpected(
+                QObject::tr(
+                    "Loading speaking evaluations failed: invalid class id "
+                    "or evaluation name."
+                    )
+                );
+        }
+    }
+
+    QStringList requestedValues;
+    requestedValues.reserve(evaluationNames.size());
+    for (qsizetype index = 0; index < evaluationNames.size(); ++index)
+    {
+        requestedValues.append(QStringLiteral("(?, ?)"));
+    }
+
+    const QString queryText = QStringLiteral(R"(
+        WITH requested(ordinal, evaluation_name) AS (
+            VALUES %1
+        )
+        SELECT
+            requested.ordinal,
+            requested.evaluation_name,
+            speaking_evaluations.id,
+            speaking_eval_data.row_index,
+            speaking_eval_data.col_0,
+            speaking_eval_data.col_1,
+            speaking_eval_data.col_2,
+            speaking_eval_data.col_3,
+            speaking_eval_data.col_4,
+            speaking_eval_data.col_5,
+            speaking_eval_data.col_6,
+            speaking_eval_data.col_7,
+            speaking_eval_data.col_8,
+            speaking_eval_data.col_9,
+            speaking_eval_data.col_10
+        FROM requested
+        LEFT JOIN speaking_evaluations
+            ON speaking_evaluations.class_id=?
+            AND speaking_evaluations.evaluation_name=requested.evaluation_name
+        LEFT JOIN speaking_eval_data
+            ON speaking_eval_data.evaluation_id=speaking_evaluations.id
+        ORDER BY requested.ordinal, speaking_eval_data.row_index
+    )").arg(requestedValues.join(QStringLiteral(", ")));
+
+    QSqlQuery query(m_database);
+    query.prepare(queryText);
+    for (qsizetype index = 0; index < evaluationNames.size(); ++index)
+    {
+        query.addBindValue(index);
+        query.addBindValue(evaluationNames.at(index));
+    }
+    query.addBindValue(classId);
+
+    const QString identity = QObject::tr(
+        "class id %1, %2 requested speaking evaluations"
+        )
+        .arg(classId)
+        .arg(evaluationNames.size());
+    const auto loaded = SqlQueryUtils::executePrepared(
+        query,
+        QObject::tr("Loading speaking evaluations"),
+        identity
+        );
+    if (!loaded)
+    {
+        return std::unexpected(loaded.error().userMessage());
+    }
+
+    while (query.next())
+    {
+        bool ordinalValid = false;
+        const int ordinal = query.value(0).toInt(&ordinalValid);
+        if (!ordinalValid || ordinal < 0 || ordinal >= evaluations.size())
+        {
+            return std::unexpected(
+                QObject::tr(
+                    "Loading speaking evaluations failed: the database "
+                    "returned an invalid requested evaluation position."
+                    )
+                );
+        }
+
+        // LEFT JOIN preserves requested evaluations with no matching record
+        // or no stored rows as successful empty results.
+        if (query.value(3).isNull())
+        {
+            continue;
+        }
+
+        QStringList row;
+        row.reserve(SpeakingEval::ColumnCount);
+        for (int column = 0; column < SpeakingEval::ColumnCount; ++column)
+        {
+            row.append(query.value(4 + column).toString());
+        }
+        evaluations[ordinal].rows.append(std::move(row));
+    }
+
+    if (query.lastError().isValid())
+    {
+        return std::unexpected(
+            SqlQueryUtils::errorFor(
+                query,
+                QObject::tr("Loading speaking evaluations"),
+                queryText,
+                identity
+                ).userMessage()
+            );
+    }
+
+    return evaluations;
+}
+
 Result<QList<SpeakingEvalScore>> SpeakingEvalRepository::buildRosterScoreImport(
     int classId,
     const QString& evaluationName
