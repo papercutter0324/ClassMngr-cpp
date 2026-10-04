@@ -29,6 +29,20 @@ struct TeacherDisplayNameBatchReadMetrics final
     int statementCount = 0;
 };
 
+struct TeacherProfileBatchReadRecord final
+{
+    int teacherId = -1;
+    Result<Teacher> profile;
+};
+
+struct TeacherProfileBatchReadMetrics final
+{
+    int callCount = 0;
+    int requestedTeacherCount = 0;
+    int statementCount = 0;
+    int fallbackSingleReadCount = 0;
+};
+
 class TeacherRepository
 {
 public:
@@ -57,6 +71,10 @@ public:
         loadTeacherDisplayNameRecords(const QList<int>& teacherIds);
     [[nodiscard]] const TeacherDisplayNameBatchReadMetrics&
         teacherDisplayNameBatchReadMetrics() const noexcept;
+    [[nodiscard]] Result<QList<TeacherProfileBatchReadRecord>>
+        loadTeacherProfileRecords(const QList<int>& teacherIds);
+    [[nodiscard]] const TeacherProfileBatchReadMetrics&
+        teacherProfileBatchReadMetrics() const noexcept;
 
     [[nodiscard]] Result<QList<Teacher>> getAllTeachers();
 
@@ -67,4 +85,5 @@ public:
 private:
     QSqlDatabase& m_database;
     TeacherDisplayNameBatchReadMetrics m_teacherDisplayNameBatchReadMetrics;
+    TeacherProfileBatchReadMetrics m_teacherProfileBatchReadMetrics;
 };

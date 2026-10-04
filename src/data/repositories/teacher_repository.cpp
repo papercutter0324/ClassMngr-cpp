@@ -432,6 +432,159 @@ TeacherRepository::teacherDisplayNameBatchReadMetrics() const noexcept
     return m_teacherDisplayNameBatchReadMetrics;
 }
 
+Result<QList<TeacherProfileBatchReadRecord>>
+TeacherRepository::loadTeacherProfileRecords(
+    const QList<int>& teacherIds
+    )
+{
+    if (teacherIds.isEmpty())
+    {
+        return QList<TeacherProfileBatchReadRecord>{};
+    }
+
+    ++m_teacherProfileBatchReadMetrics.callCount;
+    m_teacherProfileBatchReadMetrics.requestedTeacherCount +=
+        teacherIds.size();
+
+    QSet<int> seenTeacherIds;
+    QStringList requestedValues;
+    requestedValues.reserve(teacherIds.size());
+    for (qsizetype index = 0; index < teacherIds.size(); ++index)
+    {
+        const int teacherId = teacherIds[index];
+        if (teacherId <= 0 || seenTeacherIds.contains(teacherId))
+        {
+            return std::unexpected(QObject::tr(
+                "Loading teacher profiles failed: teacher identifiers must be positive and unique."
+                ));
+        }
+
+        seenTeacherIds.insert(teacherId);
+        requestedValues.append(QStringLiteral("(?, %1)").arg(index));
+    }
+
+    QSqlQuery query(m_database);
+    const QString queryText = QStringLiteral(R"(
+        WITH requested(teacher_id, ordinal) AS (VALUES %1)
+        SELECT requested.teacher_id AS requested_teacher_id,
+               requested.ordinal AS requested_ordinal,
+               teachers.id,
+               teachers.teacher_kr,
+               teachers.teacher_en,
+               teachers.preferred_romanization,
+               teachers.preferred_name,
+               teachers.room_number,
+               teachers.birthday,
+               teachers.phone_number,
+               teachers.wifi_name,
+               teachers.wifi_password,
+               teachers.internet_type,
+               teachers.zoom_id,
+               teachers.zoom_password,
+               teachers.projection_type,
+               teachers.notes
+        FROM requested
+        LEFT JOIN teachers ON teachers.id = requested.teacher_id
+        ORDER BY requested.ordinal
+    )").arg(requestedValues.join(QStringLiteral(", ")));
+    if (!query.prepare(queryText))
+    {
+        ++m_teacherProfileBatchReadMetrics.statementCount;
+        QList<TeacherProfileBatchReadRecord> entries;
+        entries.reserve(teacherIds.size());
+        for (const int teacherId : teacherIds)
+        {
+            ++m_teacherProfileBatchReadMetrics.fallbackSingleReadCount;
+            entries.append({teacherId, getTeacher(teacherId)});
+        }
+        return entries;
+    }
+
+    for (const int teacherId : teacherIds)
+    {
+        query.addBindValue(teacherId);
+    }
+
+    ++m_teacherProfileBatchReadMetrics.statementCount;
+    const auto executed = SqlQueryUtils::executePrepared(
+        query,
+        QObject::tr("Loading teacher profiles"),
+        QStringLiteral("assigned teachers")
+        );
+    if (!executed)
+    {
+        QList<TeacherProfileBatchReadRecord> entries;
+        entries.reserve(teacherIds.size());
+        for (const int teacherId : teacherIds)
+        {
+            ++m_teacherProfileBatchReadMetrics.fallbackSingleReadCount;
+            entries.append({teacherId, getTeacher(teacherId)});
+        }
+        return entries;
+    }
+
+    QList<TeacherProfileBatchReadRecord> entries;
+    entries.reserve(teacherIds.size());
+    qsizetype rowIndex = 0;
+    while (query.next())
+    {
+        if (rowIndex >= teacherIds.size())
+        {
+            return std::unexpected(QObject::tr(
+                "Loading teacher profiles failed: the database returned an unexpected number of records."
+                ));
+        }
+
+        const int requestedTeacherId = teacherIds[rowIndex];
+        if (query.value("requested_teacher_id").toInt()
+                != requestedTeacherId
+            || query.value("requested_ordinal").toInt() != rowIndex)
+        {
+            return std::unexpected(QObject::tr(
+                "Loading teacher profiles failed: the database returned records in a different identifier order."
+                ));
+        }
+
+        if (query.value("id").isNull())
+        {
+            entries.append({
+                requestedTeacherId,
+                std::unexpected(QObject::tr(
+                    "Loading teacher failed for %1: no matching record exists."
+                    ).arg(teacherIdentity(requestedTeacherId)))
+            });
+            ++rowIndex;
+            continue;
+        }
+
+        Teacher teacher = teacherFromQuery(query);
+        if (teacher.id != requestedTeacherId)
+        {
+            return std::unexpected(QObject::tr(
+                "Loading teacher profiles failed: a database record returned a different teacher identifier."
+                ));
+        }
+
+        entries.append({requestedTeacherId, std::move(teacher)});
+        ++rowIndex;
+    }
+
+    if (rowIndex != teacherIds.size())
+    {
+        return std::unexpected(QObject::tr(
+            "Loading teacher profiles failed: the database returned an incomplete record list."
+            ));
+    }
+
+    return entries;
+}
+
+const TeacherProfileBatchReadMetrics&
+TeacherRepository::teacherProfileBatchReadMetrics() const noexcept
+{
+    return m_teacherProfileBatchReadMetrics;
+}
+
 Result<QList<Teacher>> TeacherRepository::getAllTeachers()
 {
     QList<Teacher> teachers;

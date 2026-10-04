@@ -379,6 +379,7 @@ assignedTeacherProfileProjectsAllConsumedUtf16Fields()
 
     int englishClassId = 0;
     int koreanClassId = 0;
+    int secondEnglishClassId = 0;
     QVERIFY2(fixture.createClass(
                  QStringLiteral("Alpha class"),
                  QStringLiteral("E4"),
@@ -393,6 +394,13 @@ assignedTeacherProfileProjectsAllConsumedUtf16Fields()
                  &koreanClassId,
                  &error
                  ), qPrintable(error));
+    QVERIFY2(fixture.createClass(
+                 QStringLiteral("Gamma class"),
+                 QStringLiteral("E4"),
+                 QStringLiteral("Theseus"),
+                 &secondEnglishClassId,
+                 &error
+                 ), qPrintable(error));
     QVERIFY2(fixture.assignTeacher(
                  englishClassId,
                  englishTeacherId,
@@ -403,20 +411,44 @@ assignedTeacherProfileProjectsAllConsumedUtf16Fields()
                  koreanTeacherId,
                  &error
                  ), qPrintable(error));
+    QVERIFY2(fixture.assignTeacher(
+                 secondEnglishClassId,
+                 englishTeacherId,
+                 &error
+                 ), qPrintable(error));
 
+    TeacherRepository* const teacherRepository =
+        fixture.services.databaseSession()->teacherRepository();
+    QVERIFY(teacherRepository);
+    const TeacherProfileBatchReadMetrics beforeProfiles =
+        teacherRepository->teacherProfileBatchReadMetrics();
     MyClassesPage page(&fixture.services);
     page.resize(900, 700);
     page.refresh();
     page.show();
     QApplication::processEvents();
 
+    const TeacherProfileBatchReadMetrics afterProfiles =
+        teacherRepository->teacherProfileBatchReadMetrics();
+    QCOMPARE(afterProfiles.callCount, beforeProfiles.callCount + 1);
+    QCOMPARE(afterProfiles.requestedTeacherCount,
+             beforeProfiles.requestedTeacherCount + 2);
+    QCOMPARE(afterProfiles.statementCount, beforeProfiles.statementCount + 1);
+    QCOMPARE(afterProfiles.fallbackSingleReadCount,
+             beforeProfiles.fallbackSingleReadCount);
+
     NavigationTabWidget* const tabs = classTabsFor(page);
     QVERIFY(tabs);
-    QCOMPARE(tabs->count(), 2);
+    QCOMPARE(tabs->count(), 3);
     const int englishTabIndex = tabIndexForClass(*tabs, englishClassId);
     const int koreanTabIndex = tabIndexForClass(*tabs, koreanClassId);
+    const int secondEnglishTabIndex =
+        tabIndexForClass(*tabs, secondEnglishClassId);
     QVERIFY(englishTabIndex >= 0);
     QVERIFY(koreanTabIndex >= 0);
+    QVERIFY(secondEnglishTabIndex >= 0);
+    QVERIFY(englishTabIndex < koreanTabIndex);
+    QVERIFY(koreanTabIndex < secondEnglishTabIndex);
 
     const QString baseLabel = classTabLabel(
         QStringLiteral("E4"), QStringLiteral("Theseus"));
@@ -424,11 +456,18 @@ assignedTeacherProfileProjectsAllConsumedUtf16Fields()
         tabs->tabText(englishTabIndex),
         baseLabel + QLatin1Char(' ') + QChar(0x2022)
             + QLatin1Char(' ') + englishTeacher.teacherEn
+            + QStringLiteral(" #%1").arg(englishClassId)
         );
     QCOMPARE(
         tabs->tabText(koreanTabIndex),
         baseLabel + QLatin1Char(' ') + QChar(0x2022)
             + QLatin1Char(' ') + koreanTeacher.teacherKr
+        );
+    QCOMPARE(
+        tabs->tabText(secondEnglishTabIndex),
+        baseLabel + QLatin1Char(' ') + QChar(0x2022)
+            + QLatin1Char(' ') + englishTeacher.teacherEn
+            + QStringLiteral(" #%1").arg(secondEnglishClassId)
         );
 
     QWidget* const englishClassPage = tabs->widget(englishTabIndex);
@@ -444,6 +483,13 @@ assignedTeacherProfileProjectsAllConsumedUtf16Fields()
         labelsWithText(
             *tabs->widget(koreanTabIndex),
             koreanTeacher.preferredRomanization
+            ).size(),
+        1
+        );
+    QCOMPARE(
+        labelsWithText(
+            *tabs->widget(secondEnglishTabIndex),
+            expectedEnglishHeading
             ).size(),
         1
         );
@@ -466,6 +512,12 @@ assignedTeacherProfileProjectsAllConsumedUtf16Fields()
         *englishClassPage, englishTeacher.notes);
     QCOMPARE(notes.size(), 1);
     QVERIFY(notes.constFirst()->isReadOnly());
+    const QList<QTextEdit*> repeatedTeacherNotes = textEditsWithContent(
+        *tabs->widget(secondEnglishTabIndex),
+        englishTeacher.notes
+        );
+    QCOMPARE(repeatedTeacherNotes.size(), 1);
+    QVERIFY(repeatedTeacherNotes.constFirst()->isReadOnly());
 }
 
 void MyClassesPageTests::
@@ -681,9 +733,25 @@ classInformationBatchFailureKeepsEachClassInListOrder()
     QVERIFY2(dropClassInfo.exec(QStringLiteral("DROP TABLE class_info")),
              qPrintable(dropClassInfo.lastError().text()));
 
+    TeacherRepository* const teacherRepository =
+        fixture.services.databaseSession()->teacherRepository();
+    QVERIFY(teacherRepository);
+    const TeacherProfileBatchReadMetrics beforeInformationFailureRefresh =
+        teacherRepository->teacherProfileBatchReadMetrics();
     page.refresh();
     QCoreApplication::sendPostedEvents(nullptr, QEvent::DeferredDelete);
     QApplication::processEvents();
+
+    const TeacherProfileBatchReadMetrics afterInformationFailureRefresh =
+        teacherRepository->teacherProfileBatchReadMetrics();
+    QCOMPARE(afterInformationFailureRefresh.callCount,
+             beforeInformationFailureRefresh.callCount);
+    QCOMPARE(afterInformationFailureRefresh.requestedTeacherCount,
+             beforeInformationFailureRefresh.requestedTeacherCount);
+    QCOMPARE(afterInformationFailureRefresh.statementCount,
+             beforeInformationFailureRefresh.statementCount);
+    QCOMPARE(afterInformationFailureRefresh.fallbackSingleReadCount,
+             beforeInformationFailureRefresh.fallbackSingleReadCount);
 
     const MyClassesClassInformationBatchReadMetrics afterFailure =
         repository->myClassesClassInformationBatchReadMetrics();
@@ -746,11 +814,27 @@ failedTeacherProfileKeepsClassAndUsesSilentUnassignedFallback()
     QVERIFY2(fixture.assignTeacher(classId, teacherId, &error),
              qPrintable(error));
 
+    TeacherRepository* const teacherRepository =
+        fixture.services.databaseSession()->teacherRepository();
+    QVERIFY(teacherRepository);
+    const TeacherProfileBatchReadMetrics beforeFirstRefresh =
+        teacherRepository->teacherProfileBatchReadMetrics();
     MyClassesPage page(&fixture.services);
     page.resize(900, 700);
     page.refresh();
     page.show();
     QApplication::processEvents();
+
+    const TeacherProfileBatchReadMetrics afterFirstRefresh =
+        teacherRepository->teacherProfileBatchReadMetrics();
+    QCOMPARE(afterFirstRefresh.callCount,
+             beforeFirstRefresh.callCount + 1);
+    QCOMPARE(afterFirstRefresh.requestedTeacherCount,
+             beforeFirstRefresh.requestedTeacherCount + 1);
+    QCOMPARE(afterFirstRefresh.statementCount,
+             beforeFirstRefresh.statementCount + 1);
+    QCOMPARE(afterFirstRefresh.fallbackSingleReadCount,
+             beforeFirstRefresh.fallbackSingleReadCount);
 
     NavigationTabWidget* tabs = classTabsFor(page);
     QVERIFY(tabs);
@@ -789,8 +873,21 @@ failedTeacherProfileKeepsClassAndUsesSilentUnassignedFallback()
         }
         );
 
+    const TeacherProfileBatchReadMetrics beforeFailedProfileRefresh =
+        teacherRepository->teacherProfileBatchReadMetrics();
     page.refresh();
     QApplication::processEvents();
+
+    const TeacherProfileBatchReadMetrics afterFailedProfileRefresh =
+        teacherRepository->teacherProfileBatchReadMetrics();
+    QCOMPARE(afterFailedProfileRefresh.callCount,
+             beforeFailedProfileRefresh.callCount + 1);
+    QCOMPARE(afterFailedProfileRefresh.requestedTeacherCount,
+             beforeFailedProfileRefresh.requestedTeacherCount + 1);
+    QCOMPARE(afterFailedProfileRefresh.statementCount,
+             beforeFailedProfileRefresh.statementCount + 1);
+    QCOMPARE(afterFailedProfileRefresh.fallbackSingleReadCount,
+             beforeFailedProfileRefresh.fallbackSingleReadCount);
 
     QVERIFY(!warningCaptured);
     QCoreApplication::sendPostedEvents(nullptr, QEvent::DeferredDelete);
