@@ -23,6 +23,7 @@
 #include <optional>
 #include <string>
 #include <unordered_set>
+#include <utility>
 #include <vector>
 
 namespace
@@ -1440,77 +1441,191 @@ Result<ClassTransferPackage> ClassTransferRepository::buildPackage(
     ClassInfoRepository classInfoRepository(m_database);
     RosterRepository rosterRepository(m_database);
     TeacherRepository teacherRepository(m_database);
+
+    struct PendingClassExport
+    {
+        int selectedIndex = -1;
+        QString name;
+        ClassInfo info;
+        Roster roster;
+        QList<ClassTransferEvaluation> evaluations;
+        QString evaluationError;
+        int teacherId = -1;
+    };
+
     ClassTransferPackage package;
     package.exportedAtUtc = QDateTime::currentDateTimeUtc();
     QSet<int> seenClasses;
-    QHash<int, QString> teacherKeys;
+    QSet<int> seenTeachers;
+    QList<int> teacherIds;
+    QList<PendingClassExport> pendingClasses;
+    pendingClasses.reserve(classIds.size());
+    QString selectionOrReadError;
 
+    // Gather the ordered class data prefix first. Stop on the first failure
+    // that is already observable; teacher errors are replayed against this
+    // prefix after their distinct profiles have been loaded in one batch.
     for (int index = 0; index < classIds.size(); ++index)
     {
         const int classId = classIds[index];
 
         if (classId <= 0 || seenClasses.contains(classId))
         {
-            return std::unexpected(
-                QObject::tr("The class selection contains an invalid or duplicate class.")
-                );
+            selectionOrReadError = QObject::tr(
+                "The class selection contains an invalid or duplicate class.");
+            break;
         }
 
         const Result<Classroom> classroom =
             classRepository.getClassById(classId);
         if (!classroom)
         {
-            return std::unexpected(classroom.error());
+            selectionOrReadError = classroom.error();
+            break;
         }
 
         seenClasses.insert(classId);
-        ClassTransferClass transferClass;
-        transferClass.key = QStringLiteral("class-%1").arg(index + 1);
-        transferClass.name = classroom->name;
         const Result<ClassInfo> info = classInfoRepository.loadClassInfo(classId);
         if (!info)
         {
-            return std::unexpected(info.error());
+            selectionOrReadError = info.error();
+            break;
         }
 
         const Result<Roster> roster = rosterRepository.loadRoster(classId);
         if (!roster)
         {
-            return std::unexpected(roster.error());
+            selectionOrReadError = roster.error();
+            break;
         }
 
-        transferClass.info = *info;
-        transferClass.roster = *roster;
-
-        if (transferClass.info.teacherId > 0)
+        PendingClassExport pending;
+        pending.selectedIndex = index;
+        pending.name = classroom->name;
+        pending.info = *info;
+        pending.roster = *roster;
+        pending.teacherId = info->teacherId;
+        if (pending.teacherId > 0 && !seenTeachers.contains(pending.teacherId))
         {
-            const int teacherId = transferClass.info.teacherId;
+            seenTeachers.insert(pending.teacherId);
+            teacherIds.append(pending.teacherId);
+        }
 
-            if (!teacherKeys.contains(teacherId))
+        // The original per-class sequence looked up the assigned teacher
+        // before reading evaluations, so include this ID before recording an
+        // evaluation failure.
+        pending.evaluations = loadEvaluations(
+            m_database, classId, &pending.evaluationError);
+        pendingClasses.append(std::move(pending));
+
+        if (!pendingClasses.last().evaluationError.isEmpty())
+        {
+            break;
+        }
+    }
+
+    QHash<int, Teacher> teachersById;
+    QHash<int, QString> teacherErrorsById;
+    QString teacherBatchError;
+    if (!teacherIds.isEmpty())
+    {
+        const Result<QList<TeacherProfileBatchReadRecord>> teacherProfiles =
+            teacherRepository.loadTeacherProfileRecords(teacherIds);
+        if (!teacherProfiles)
+        {
+            // A batch-level failure occupies the first assigned-teacher
+            // profile's position in the original sequence.
+            teacherBatchError = teacherProfiles.error();
+        }
+        else if (teacherProfiles->size() != teacherIds.size())
+        {
+            teacherBatchError = QObject::tr(
+                "Loading teacher profiles failed: the database returned an unexpected number of records.");
+        }
+        else
+        {
+            for (qsizetype index = 0; index < teacherIds.size(); ++index)
             {
-                const Result<Teacher> teacher =
-                    teacherRepository.getTeacher(teacherId);
-                if (!teacher)
+                const int teacherId = teacherIds[index];
+                const TeacherProfileBatchReadRecord& record =
+                    teacherProfiles->at(index);
+                if (record.teacherId != teacherId)
                 {
-                    return std::unexpected(teacher.error());
+                    teacherBatchError = QObject::tr(
+                        "Loading teacher profiles failed: the database returned records in a different identifier order.");
+                    break;
                 }
 
-                const QString key =
-                    QStringLiteral("teacher-%1").arg(teacherKeys.size() + 1);
-                teacherKeys.insert(teacherId, key);
-                package.teachers.append({key, *teacher});
-            }
+                if (!record.profile)
+                {
+                    teacherErrorsById.insert(teacherId, record.profile.error());
+                    continue;
+                }
 
-            transferClass.teacherKey = teacherKeys.value(teacherId);
+                if (record.profile->id != teacherId)
+                {
+                    teacherBatchError = QObject::tr(
+                        "Loading teacher profiles failed: a database record returned a different teacher identifier.");
+                    break;
+                }
+
+                teachersById.insert(teacherId, *record.profile);
+            }
+        }
+    }
+
+    // Replay staged outcomes in their original order so an earlier teacher
+    // or evaluation failure keeps precedence over a later selection or read
+    // failure.
+    for (const PendingClassExport& pending : pendingClasses)
+    {
+        if (pending.teacherId > 0)
+        {
+            if (!teacherBatchError.isEmpty())
+            {
+                return std::unexpected(teacherBatchError);
+            }
+            const auto teacherError =
+                teacherErrorsById.constFind(pending.teacherId);
+            if (teacherError != teacherErrorsById.cend())
+            {
+                return std::unexpected(*teacherError);
+            }
         }
 
-        QString evaluationError;
-        transferClass.evaluations = loadEvaluations(
-            m_database, classId, &evaluationError);
-
-        if (!evaluationError.isEmpty())
+        if (!pending.evaluationError.isEmpty())
         {
-            return std::unexpected(evaluationError);
+            return std::unexpected(pending.evaluationError);
+        }
+    }
+
+    if (!selectionOrReadError.isEmpty())
+    {
+        return std::unexpected(selectionOrReadError);
+    }
+
+    QHash<int, QString> teacherKeys;
+    for (const int teacherId : teacherIds)
+    {
+        const QString key =
+            QStringLiteral("teacher-%1").arg(package.teachers.size() + 1);
+        teacherKeys.insert(teacherId, key);
+        package.teachers.append({key, teachersById.value(teacherId)});
+    }
+
+    for (PendingClassExport& pending : pendingClasses)
+    {
+        ClassTransferClass transferClass;
+        transferClass.key = QStringLiteral("class-%1")
+            .arg(pending.selectedIndex + 1);
+        transferClass.name = pending.name;
+        transferClass.info = std::move(pending.info);
+        transferClass.roster = std::move(pending.roster);
+        transferClass.evaluations = std::move(pending.evaluations);
+
+        if (pending.teacherId > 0)
+        {
+            transferClass.teacherKey = teacherKeys.value(pending.teacherId);
         }
 
         transferClass.info.classId = -1;
