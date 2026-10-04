@@ -14,6 +14,15 @@ struct TeacherDisplayNameReadRecord final
     QString preferredName;
 };
 
+struct InitialSetupTeacherChoiceReadRecord final
+{
+    int teacherId = -1;
+    QString teacherKr;
+    QString teacherEn;
+    QString preferredRomanization;
+    QString preferredName;
+};
+
 struct TeacherDisplayNameBatchReadRecord final
 {
     int teacherId = -1;
@@ -78,6 +87,8 @@ public:
         teacherProfileBatchReadMetrics() const noexcept;
 
     [[nodiscard]] Result<QList<Teacher>> getAllTeachers();
+    [[nodiscard]] Result<QList<InitialSetupTeacherChoiceReadRecord>>
+        loadInitialSetupTeacherChoiceRecords();
 
     [[nodiscard]] Status deleteTeacher(
         int teacherId

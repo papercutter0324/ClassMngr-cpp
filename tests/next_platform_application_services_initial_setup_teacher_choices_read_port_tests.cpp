@@ -61,6 +61,7 @@ class NextPlatformApplicationServicesInitialSetupTeacherChoicesReadPortTests
 private slots:
     void mapsAllTeacherFieldsInRepositoryOrderFromTheActiveSession();
     void preservesSuccessfulEmptyRepositoryResult();
+    void reportsUnavailableSessionAsRecoverableNotFound();
     void reportsTeacherRepositoryReadFailure();
 };
 
@@ -85,11 +86,25 @@ mapsAllTeacherFieldsInRepositoryOrderFromTheActiveSession()
     QVERIFY(zuluId);
     const auto alphaId = repository->createTeacher(teacher(
         QStringLiteral("  \uAE40\uC120\uC0DD  "),
-        QStringLiteral("Alpha"),
+        QStringLiteral("  Alpha  "),
         QStringLiteral("  Roman Alpha  "),
         QStringLiteral("  Preferred Alpha  ")
         ));
     QVERIFY(alphaId);
+
+    const auto repositoryRecords =
+        repository->loadInitialSetupTeacherChoiceRecords();
+    QVERIFY(repositoryRecords);
+    QCOMPARE(repositoryRecords->size(), 2);
+    QCOMPARE(repositoryRecords->at(0).teacherId, alphaId.value());
+    QCOMPARE(repositoryRecords->at(0).teacherKr,
+             QStringLiteral("  \uAE40\uC120\uC0DD  "));
+    QCOMPARE(repositoryRecords->at(0).teacherEn, QStringLiteral("  Alpha  "));
+    QCOMPARE(repositoryRecords->at(0).preferredRomanization,
+             QStringLiteral("  Roman Alpha  "));
+    QCOMPARE(repositoryRecords->at(0).preferredName,
+             QStringLiteral("  Preferred Alpha  "));
+    QCOMPARE(repositoryRecords->at(1).teacherId, zuluId.value());
 
     Platform::ApplicationServicesInitialSetupTeacherChoicesReadPort port(
         &services
@@ -102,7 +117,7 @@ mapsAllTeacherFieldsInRepositoryOrderFromTheActiveSession()
     const auto& alpha = result.value().teachers[0];
     QCOMPARE(alpha.teacherId, teacherId(alphaId.value()));
     QCOMPARE(alpha.teacherKr, std::u16string(u"  \uAE40\uC120\uC0DD  "));
-    QCOMPARE(alpha.teacherEn, std::u16string(u"Alpha"));
+    QCOMPARE(alpha.teacherEn, std::u16string(u"  Alpha  "));
     QCOMPARE(alpha.preferredRomanization, std::u16string(u"  Roman Alpha  "));
     QCOMPARE(alpha.preferredName, std::u16string(u"  Preferred Alpha  "));
 
@@ -130,6 +145,22 @@ preservesSuccessfulEmptyRepositoryResult()
 
     QVERIFY(result);
     QVERIFY(result.value().teachers.empty());
+}
+
+void NextPlatformApplicationServicesInitialSetupTeacherChoicesReadPortTests::
+reportsUnavailableSessionAsRecoverableNotFound()
+{
+    ApplicationServices services;
+    Platform::ApplicationServicesInitialSetupTeacherChoicesReadPort port(
+        &services
+        );
+
+    const auto result = port.readInitialSetupTeacherChoices();
+
+    QVERIFY(!result);
+    QCOMPARE(result.error().code, Domain::ErrorCode::NotFound);
+    QVERIFY(result.error().recoverable);
+    QVERIFY(!result.error().message.empty());
 }
 
 void NextPlatformApplicationServicesInitialSetupTeacherChoicesReadPortTests::
