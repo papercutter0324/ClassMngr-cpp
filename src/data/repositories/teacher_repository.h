@@ -26,6 +26,7 @@ struct TeacherDisplayNameBatchReadRecord final
 struct TeacherDisplayNameBatchReadMetrics final
 {
     int callCount = 0;
+    int requestedTeacherCount = 0;
     int statementCount = 0;
 };
 

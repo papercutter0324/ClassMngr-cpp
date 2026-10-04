@@ -369,6 +369,9 @@ TeacherRepository::loadTeacherDisplayNameRecords(
         return QList<TeacherDisplayNameBatchReadRecord>{};
     }
 
+    m_teacherDisplayNameBatchReadMetrics.requestedTeacherCount +=
+        teacherIds.size();
+
     QSet<int> seenTeacherIds;
     QStringList requestedValues;
     requestedValues.reserve(teacherIds.size());

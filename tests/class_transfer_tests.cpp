@@ -373,6 +373,8 @@ private slots:
     void exportDialogKeepsClassFieldsWhenTeacherCannotLoad();
     void filesystemSafeJsonFileName();
     void importDialogRequiresAmbiguousTeacherResolution();
+    void importDialogBatchesDistinctMatchedTeacherDisplayNameReads();
+    void importDialogFallsBackToIndividualTeacherProfilesAfterBatchFailure();
     void importDialogUsesDefaultFormattingWhenClassFieldsCannotLoad();
     void importDialogKeepsClassFieldsWhenTeacherCannotLoad();
     void importDialogUsesNewTeacherLabelWhenTeacherProfileCannotLoad();
@@ -2877,6 +2879,277 @@ void ClassTransferTests::importDialogRequiresAmbiguousTeacherResolution()
              TeacherImportAction::Create);
 }
 
+void ClassTransferTests::
+importDialogBatchesDistinctMatchedTeacherDisplayNameReads()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    DataService service;
+    QVERIFY(service.openDatabase(
+        directory.filePath(QStringLiteral("destination.db"))).has_value());
+
+    Teacher preferredTeacher = completeTeacher(QStringLiteral("English One"));
+    preferredTeacher.preferredRomanization = QStringLiteral("Romanized One");
+    preferredTeacher.preferredName = QStringLiteral("Preferred One");
+    const int preferredId = createdTeacherId(service, preferredTeacher);
+
+    Teacher englishTeacher = completeTeacher(QStringLiteral("English Two"));
+    englishTeacher.preferredRomanization = QStringLiteral("Romanized Two");
+    englishTeacher.preferredName.clear();
+    const int englishId = createdTeacherId(service, englishTeacher);
+
+    Teacher romanizedTeacher = completeTeacher(QStringLiteral("English Three"));
+    romanizedTeacher.preferredRomanization = QStringLiteral("Romanized Three");
+    romanizedTeacher.preferredName.clear();
+    const int romanizedId = createdTeacherId(service, romanizedTeacher);
+
+    Teacher koreanTeacher = completeTeacher(QStringLiteral("English Four"));
+    koreanTeacher.preferredRomanization.clear();
+    koreanTeacher.preferredName.clear();
+    const int koreanId = createdTeacherId(service, koreanTeacher);
+    QVERIFY(preferredId > 0);
+    QVERIFY(englishId > 0);
+    QVERIFY(romanizedId > 0);
+    QVERIFY(koreanId > 0);
+
+    QString applicationServicesError;
+    const auto applicationServices = openApplicationServicesForCurrentDatabase(
+        service,
+        &applicationServicesError
+        );
+    QVERIFY2(applicationServices, qPrintable(applicationServicesError));
+    DatabaseSession* const session = applicationServices->databaseSession();
+    QVERIFY(session);
+    TeacherRepository* const teacherRepository = session->teacherRepository();
+    QVERIFY(teacherRepository);
+
+    const auto clearEnglishName =
+        [teacherRepository](const int teacherId)
+    {
+        const Result<Teacher> loaded = teacherRepository->getTeacher(teacherId);
+        if (!loaded)
+        {
+            return false;
+        }
+        Teacher updated = loaded.value();
+        updated.teacherEn.clear();
+        return teacherRepository->updateTeacher(updated).has_value();
+    };
+    const auto clearNamesExceptKorean =
+        [teacherRepository](const int teacherId)
+    {
+        const Result<Teacher> loaded = teacherRepository->getTeacher(teacherId);
+        if (!loaded)
+        {
+            return false;
+        }
+        Teacher updated = loaded.value();
+        updated.teacherEn.clear();
+        updated.preferredRomanization.clear();
+        updated.preferredName.clear();
+        updated.teacherKr = QStringLiteral("Korean Four");
+        return teacherRepository->updateTeacher(updated).has_value();
+    };
+    QVERIFY(clearEnglishName(romanizedId));
+    QVERIFY(clearNamesExceptKorean(koreanId));
+
+    ClassTransferPackage package;
+    package.teachers.append({
+        QStringLiteral("incoming-one"),
+        completeTeacher()
+    });
+    package.teachers.append({
+        QStringLiteral("incoming-two"),
+        completeTeacher()
+    });
+    package.teachers.append({
+        QStringLiteral("incoming-empty"),
+        completeTeacher()
+    });
+
+    ClassImportPreview preview;
+    preview.teachers.append({
+        QStringLiteral("incoming-one"),
+        QList<int>{preferredId, preferredId, englishId}
+    });
+    preview.teachers.append({
+        QStringLiteral("missing-package-teacher"),
+        QList<int>{romanizedId}
+    });
+    preview.teachers.append({
+        QStringLiteral("incoming-two"),
+        QList<int>{englishId, romanizedId, koreanId, 999999, preferredId}
+    });
+    preview.teachers.append({
+        QStringLiteral("incoming-empty"),
+        QList<int>{}
+    });
+
+    const TeacherDisplayNameBatchReadMetrics before =
+        teacherRepository->teacherDisplayNameBatchReadMetrics();
+    ClassImportDialog dialog(applicationServices.get(), package, preview);
+
+    auto* firstChoice = dialog.findChild<QComboBox*>(
+        QStringLiteral("teacherImportChoice_incoming-one"));
+    auto* secondChoice = dialog.findChild<QComboBox*>(
+        QStringLiteral("teacherImportChoice_incoming-two"));
+    auto* emptyChoice = dialog.findChild<QComboBox*>(
+        QStringLiteral("teacherImportChoice_incoming-empty"));
+    QVERIFY(firstChoice);
+    QVERIFY(secondChoice);
+    QVERIFY(emptyChoice);
+    QVERIFY(!dialog.findChild<QComboBox*>(
+        QStringLiteral("teacherImportChoice_missing-package-teacher")));
+
+    QCOMPARE(firstChoice->count(), 8);
+    QCOMPARE(firstChoice->itemText(0),
+             QStringLiteral("Choose a teacher resolution…"));
+    QCOMPARE(firstChoice->itemText(1), QStringLiteral("Create new teacher"));
+    QCOMPARE(firstChoice->itemText(2),
+             QStringLiteral("Keep local: Preferred One"));
+    QCOMPARE(firstChoice->itemText(3),
+             QStringLiteral("Replace local: Preferred One"));
+    QCOMPARE(firstChoice->itemText(4),
+             QStringLiteral("Keep local: Preferred One"));
+    QCOMPARE(firstChoice->itemText(5),
+             QStringLiteral("Replace local: Preferred One"));
+    QCOMPARE(firstChoice->itemText(6),
+             QStringLiteral("Keep local: English Two"));
+    QCOMPARE(firstChoice->itemText(7),
+             QStringLiteral("Replace local: English Two"));
+    QCOMPARE(firstChoice->itemData(2, Qt::UserRole).toInt(),
+             static_cast<int>(TeacherImportAction::KeepExisting));
+    QCOMPARE(firstChoice->itemData(2, Qt::UserRole + 1).toInt(), preferredId);
+    QCOMPARE(firstChoice->itemData(4, Qt::UserRole + 1).toInt(), preferredId);
+    QCOMPARE(firstChoice->itemData(6, Qt::UserRole + 1).toInt(), englishId);
+
+    QCOMPARE(secondChoice->count(), 12);
+    QCOMPARE(secondChoice->itemText(2),
+             QStringLiteral("Keep local: English Two"));
+    QCOMPARE(secondChoice->itemText(3),
+             QStringLiteral("Replace local: English Two"));
+    QCOMPARE(secondChoice->itemText(4),
+             QStringLiteral("Keep local: Romanized Three"));
+    QCOMPARE(secondChoice->itemText(5),
+             QStringLiteral("Replace local: Romanized Three"));
+    QCOMPARE(secondChoice->itemText(6),
+             QStringLiteral("Keep local: Korean Four"));
+    QCOMPARE(secondChoice->itemText(7),
+             QStringLiteral("Replace local: Korean Four"));
+    QCOMPARE(secondChoice->itemText(8),
+             QStringLiteral("Keep local: New Teacher"));
+    QCOMPARE(secondChoice->itemText(9),
+             QStringLiteral("Replace local: New Teacher"));
+    QCOMPARE(secondChoice->itemText(10),
+             QStringLiteral("Keep local: Preferred One"));
+    QCOMPARE(secondChoice->itemText(11),
+             QStringLiteral("Replace local: Preferred One"));
+    QCOMPARE(secondChoice->itemData(2, Qt::UserRole + 1).toInt(), englishId);
+    QCOMPARE(secondChoice->itemData(4, Qt::UserRole + 1).toInt(), romanizedId);
+    QCOMPARE(secondChoice->itemData(6, Qt::UserRole + 1).toInt(), koreanId);
+    QCOMPARE(secondChoice->itemData(8, Qt::UserRole + 1).toInt(), 999999);
+    QCOMPARE(secondChoice->itemData(10, Qt::UserRole + 1).toInt(), preferredId);
+    QCOMPARE(emptyChoice->count(), 1);
+    QCOMPARE(emptyChoice->itemText(0), QStringLiteral("Create new teacher"));
+
+    const TeacherDisplayNameBatchReadMetrics after =
+        teacherRepository->teacherDisplayNameBatchReadMetrics();
+    QCOMPARE(after.callCount - before.callCount, 1);
+    QCOMPARE(after.requestedTeacherCount - before.requestedTeacherCount, 5);
+    QCOMPARE(after.statementCount - before.statementCount, 1);
+
+    ClassImportPreview noReadPreview;
+    noReadPreview.teachers.append({
+        QStringLiteral("incoming-one"),
+        QList<int>{}
+    });
+    noReadPreview.teachers.append({
+        QStringLiteral("missing-package-teacher"),
+        QList<int>{preferredId}
+    });
+    ClassImportDialog noReadDialog(
+        applicationServices.get(), package, noReadPreview);
+    QVERIFY(noReadDialog.findChild<QComboBox*>(
+        QStringLiteral("teacherImportChoice_incoming-one")));
+    QVERIFY(!noReadDialog.findChild<QComboBox*>(
+        QStringLiteral("teacherImportChoice_missing-package-teacher")));
+    const TeacherDisplayNameBatchReadMetrics afterNoRead =
+        teacherRepository->teacherDisplayNameBatchReadMetrics();
+    QCOMPARE(afterNoRead.callCount, after.callCount);
+    QCOMPARE(afterNoRead.requestedTeacherCount, after.requestedTeacherCount);
+    QCOMPARE(afterNoRead.statementCount, after.statementCount);
+}
+
+void ClassTransferTests::
+importDialogFallsBackToIndividualTeacherProfilesAfterBatchFailure()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    DataService service;
+    QVERIFY(service.openDatabase(
+        directory.filePath(QStringLiteral("destination.db"))).has_value());
+
+    Teacher romanizedTeacher = completeTeacher(QStringLiteral(""));
+    romanizedTeacher.preferredRomanization = QStringLiteral("Romanized One");
+    romanizedTeacher.preferredName.clear();
+    const int romanizedId = createdTeacherId(service, romanizedTeacher);
+    Teacher englishTeacher = completeTeacher(QStringLiteral("English Two"));
+    englishTeacher.preferredRomanization = QStringLiteral("Romanized Two");
+    englishTeacher.preferredName.clear();
+    const int englishId = createdTeacherId(service, englishTeacher);
+    QVERIFY(romanizedId > 0);
+    QVERIFY(englishId > 0);
+
+    QString applicationServicesError;
+    const auto applicationServices = openApplicationServicesForCurrentDatabase(
+        service,
+        &applicationServicesError
+        );
+    QVERIFY2(applicationServices, qPrintable(applicationServicesError));
+    DatabaseSession* const session = applicationServices->databaseSession();
+    QVERIFY(session);
+    TeacherRepository* const teacherRepository = session->teacherRepository();
+    QVERIFY(teacherRepository);
+    const TeacherDisplayNameBatchReadMetrics before =
+        teacherRepository->teacherDisplayNameBatchReadMetrics();
+
+    QSqlQuery renameColumn(session->database());
+    QVERIFY2(renameColumn.exec(QStringLiteral(
+        "ALTER TABLE teachers RENAME COLUMN preferred_name TO old_preferred_name"
+        )), qPrintable(renameColumn.lastError().text()));
+
+    ClassTransferPackage package;
+    package.teachers.append({
+        QStringLiteral("incoming"),
+        completeTeacher()
+    });
+    ClassImportPreview preview;
+    preview.teachers.append({
+        QStringLiteral("incoming"),
+        QList<int>{romanizedId, englishId}
+    });
+
+    ClassImportDialog dialog(applicationServices.get(), package, preview);
+    auto* teacherChoice = dialog.findChild<QComboBox*>(
+        QStringLiteral("teacherImportChoice_incoming"));
+    QVERIFY(teacherChoice);
+    QCOMPARE(teacherChoice->count(), 6);
+    QCOMPARE(teacherChoice->itemText(2),
+             QStringLiteral("Keep local: Romanized One"));
+    QCOMPARE(teacherChoice->itemText(3),
+             QStringLiteral("Replace local: Romanized One"));
+    QCOMPARE(teacherChoice->itemText(4),
+             QStringLiteral("Keep local: English Two"));
+    QCOMPARE(teacherChoice->itemText(5),
+             QStringLiteral("Replace local: English Two"));
+
+    const TeacherDisplayNameBatchReadMetrics after =
+        teacherRepository->teacherDisplayNameBatchReadMetrics();
+    QCOMPARE(after.callCount - before.callCount, 1);
+    QCOMPARE(after.requestedTeacherCount - before.requestedTeacherCount, 2);
+    QCOMPARE(after.statementCount - before.statementCount, 1);
+}
+
 void ClassTransferTests::importDialogUsesDefaultFormattingWhenClassFieldsCannotLoad()
 {
     QTemporaryDir directory;
@@ -3002,16 +3275,22 @@ void ClassTransferTests::importDialogUsesNewTeacherLabelWhenTeacherProfileCannot
         QStringLiteral("E4"), QStringLiteral("Orion"),
         QStringLiteral("Monday"), QStringLiteral("Destination student"));
     QVERIFY(destinationClass > 0);
-    const auto preview = service.previewClassImport(*package);
+    auto preview = service.previewClassImport(*package);
     QVERIFY2(preview, preview ? "" : qPrintable(preview.error()));
     QCOMPARE(preview->teachers.first().matchingTeacherIds,
              QList<int>({destinationTeacher}));
+    preview->classes.clear();
 
     QString applicationServicesError;
     const auto applicationServices =
         openApplicationServicesForCurrentDatabase(
             service, &applicationServicesError);
     QVERIFY2(applicationServices, qPrintable(applicationServicesError));
+    TeacherRepository* const teacherRepository =
+        applicationServices->databaseSession()->teacherRepository();
+    QVERIFY(teacherRepository);
+    const TeacherDisplayNameBatchReadMetrics before =
+        teacherRepository->teacherDisplayNameBatchReadMetrics();
     QSqlQuery dropTeachers(applicationServices->databaseSession()->database());
     QVERIFY2(dropTeachers.exec(QStringLiteral("DROP TABLE teachers")),
              qPrintable(dropTeachers.lastError().text()));
@@ -3034,6 +3313,12 @@ void ClassTransferTests::importDialogUsesNewTeacherLabelWhenTeacherProfileCannot
              static_cast<int>(TeacherImportAction::ReplaceExisting));
     QCOMPARE(teacherChoice->itemData(1, Qt::UserRole + 1).toInt(),
              destinationTeacher);
+
+    const TeacherDisplayNameBatchReadMetrics after =
+        teacherRepository->teacherDisplayNameBatchReadMetrics();
+    QCOMPARE(after.callCount - before.callCount, 1);
+    QCOMPARE(after.requestedTeacherCount - before.requestedTeacherCount, 1);
+    QCOMPARE(after.statementCount - before.statementCount, 1);
 }
 
 void ClassTransferTests::dialogRejectsDuplicateReplacementTargets()

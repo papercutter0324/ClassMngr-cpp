@@ -4,6 +4,8 @@
 #include "core/application_services.h"
 #include "core/result.h"
 #include "core/utils/sidebar_node_naming.h"
+#include "data/database/database_session.h"
+#include "data/repositories/teacher_repository.h"
 #include "next/application/class_transfer_projection.h"
 #include "next/application/selected_class_subtitle_batch_read_query.h"
 #include "next/application/teacher_profile_read_query.h"
@@ -178,6 +180,149 @@ QString destinationTeacherDisplayName(
     return display.isEmpty()
         ? QObject::tr("Teacher %1").arg(teacherId)
         : display;
+}
+
+QString destinationTeacherDisplayName(
+    const TeacherDisplayNameBatchReadRecord* fields,
+    const int teacherId
+    )
+{
+    Teacher teacher;
+    if (fields)
+    {
+        teacher.teacherKr = fields->teacherKr;
+        teacher.teacherEn = fields->teacherEn;
+        teacher.preferredRomanization = fields->preferredRomanization;
+        teacher.preferredName = fields->preferredName;
+    }
+
+    const QString display =
+        SidebarNodeNaming::formatTeacherDisplayName(teacher).trimmed();
+
+    return display.isEmpty()
+        ? QObject::tr("Teacher %1").arg(teacherId)
+        : display;
+}
+
+using DestinationTeacherDisplayNames = std::unordered_map<int, QString>;
+
+DestinationTeacherDisplayNames destinationTeacherDisplayNames(
+    ApplicationServices* applicationServices,
+    const ClassTransferPackage& package,
+    const ClassImportPreview& preview
+    )
+{
+    QList<int> teacherIds;
+    std::unordered_set<int> seenTeacherIds;
+    for (const ClassImportTeacherPreview& teacherPreview : preview.teachers)
+    {
+        if (!packageTeacher(package, teacherPreview.teacherKey))
+        {
+            continue;
+        }
+
+        for (const int teacherId : teacherPreview.matchingTeacherIds)
+        {
+            if (teacherId > 0 && seenTeacherIds.insert(teacherId).second)
+            {
+                teacherIds.append(teacherId);
+            }
+        }
+    }
+
+    DestinationTeacherDisplayNames displayNames;
+    if (teacherIds.isEmpty())
+    {
+        return displayNames;
+    }
+
+    DatabaseSession* const session = applicationServices
+        ? applicationServices->databaseSession()
+        : nullptr;
+    TeacherRepository* const repository =
+        session && session->isOpen()
+        ? session->teacherRepository()
+        : nullptr;
+
+    std::optional<QList<TeacherDisplayNameBatchReadRecord>> batchRecords;
+    if (repository)
+    {
+        try
+        {
+            const Result<QList<TeacherDisplayNameBatchReadRecord>> loaded =
+                repository->loadTeacherDisplayNameRecords(teacherIds);
+            if (loaded)
+            {
+                batchRecords = loaded.value();
+            }
+        }
+        catch (...)
+        {
+        }
+    }
+
+    if (batchRecords)
+    {
+        displayNames.reserve(
+            static_cast<std::size_t>(batchRecords->size())
+            );
+        for (const TeacherDisplayNameBatchReadRecord& record : *batchRecords)
+        {
+            if (seenTeacherIds.contains(record.teacherId))
+            {
+                displayNames.emplace(
+                    record.teacherId,
+                    destinationTeacherDisplayName(&record, record.teacherId)
+                    );
+            }
+        }
+        return displayNames;
+    }
+
+    // A failed batch must not hide readable siblings. Retry each requested
+    // teacher through the existing single-profile path independently.
+    displayNames.reserve(static_cast<std::size_t>(teacherIds.size()));
+    for (const int teacherId : teacherIds)
+    {
+        try
+        {
+            displayNames.emplace(
+                teacherId,
+                destinationTeacherDisplayName(
+                    applicationServices,
+                    teacherId
+                    )
+                );
+        }
+        catch (...)
+        {
+            displayNames.emplace(
+                teacherId,
+                destinationTeacherDisplayName(
+                    static_cast<ApplicationServices*>(nullptr),
+                    teacherId
+                    )
+                );
+        }
+    }
+    return displayNames;
+}
+
+QString destinationTeacherDisplayName(
+    const DestinationTeacherDisplayNames& displayNames,
+    const int teacherId
+    )
+{
+    const auto displayName = displayNames.find(teacherId);
+    if (displayName != displayNames.end())
+    {
+        return displayName->second;
+    }
+
+    return destinationTeacherDisplayName(
+        static_cast<const TeacherDisplayNameBatchReadRecord*>(nullptr),
+        teacherId
+        );
 }
 
 void addChoice(
@@ -643,6 +788,12 @@ ClassImportDialog::ClassImportDialog(
 
     auto* teacherForm = new QFormLayout;
     teacherForm->setFieldGrowthPolicy(QFormLayout::AllNonFixedFieldsGrow);
+    const DestinationTeacherDisplayNames destinationTeacherNames =
+        destinationTeacherDisplayNames(
+            applicationServices,
+            package,
+            preview
+            );
 
     for (const ClassImportTeacherPreview& teacherPreview : preview.teachers)
     {
@@ -671,7 +822,9 @@ ClassImportDialog::ClassImportDialog(
         {
             const int teacherId = teacherPreview.matchingTeacherIds.first();
             const QString localName = destinationTeacherDisplayName(
-                applicationServices, teacherId);
+                destinationTeacherNames,
+                teacherId
+                );
             addChoice(
                 combo,
                 tr("Keep local: %1").arg(localName),
@@ -697,7 +850,9 @@ ClassImportDialog::ClassImportDialog(
             for (int teacherId : teacherPreview.matchingTeacherIds)
             {
                 const QString localName = destinationTeacherDisplayName(
-                    applicationServices, teacherId);
+                    destinationTeacherNames,
+                    teacherId
+                    );
                 addChoice(
                     combo,
                     tr("Keep local: %1").arg(localName),
