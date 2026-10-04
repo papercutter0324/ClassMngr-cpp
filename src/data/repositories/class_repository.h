@@ -10,6 +10,14 @@
 class ClassRepository
 {
 public:
+    struct ReadMetrics final
+    {
+        int getClassByIdCallCount = 0;
+        int getClassesByIdsCallCount = 0;
+        int requestedClassCount = 0;
+        int batchStatementCount = 0;
+    };
+
     explicit ClassRepository(
         QSqlDatabase& database
         );
@@ -23,6 +31,10 @@ public:
     [[nodiscard]] Result<Classroom> getClassById(
         int classId
         );
+    [[nodiscard]] Result<QList<Classroom>> getClassesByIds(
+        const QList<int>& classIds
+        );
+    [[nodiscard]] const ReadMetrics& readMetrics() const noexcept;
 
     [[nodiscard]] Status updateClassName(
         int classId,
@@ -35,4 +47,5 @@ public:
 
 private:
     QSqlDatabase& m_database;
+    ReadMetrics m_readMetrics;
 };

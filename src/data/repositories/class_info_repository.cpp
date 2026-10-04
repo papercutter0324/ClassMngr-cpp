@@ -1287,6 +1287,156 @@ ClassInfoRepository::loadRosterPrintClassInfoRecord(
     return record;
 }
 
+Result<QList<SubPrepRosterOutputClassInfoReadRecord>>
+ClassInfoRepository::loadSubPrepRosterOutputClassInfoRecords(
+    const QList<int>& classIds
+    )
+{
+    if (classIds.isEmpty())
+    {
+        return QList<SubPrepRosterOutputClassInfoReadRecord>{};
+    }
+
+    ++m_subPrepRosterOutputClassInfoBatchReadMetrics.callCount;
+    m_subPrepRosterOutputClassInfoBatchReadMetrics.requestedClassCount +=
+        classIds.size();
+
+    QSet<int> seenClassIds;
+    QStringList requestedValues;
+    requestedValues.reserve(classIds.size());
+    for (qsizetype index = 0; index < classIds.size(); ++index)
+    {
+        const int classId = classIds[index];
+        if (classId <= 0 || seenClassIds.contains(classId))
+        {
+            return std::unexpected(QObject::tr(
+                "Loading Sub Prep roster output class information failed: class identifiers must be positive and unique."
+                ));
+        }
+
+        seenClassIds.insert(classId);
+        requestedValues.append(QStringLiteral("(%1, %2)")
+            .arg(classId)
+            .arg(index));
+    }
+
+    QSqlQuery query(m_database);
+    query.setForwardOnly(true);
+    ++m_subPrepRosterOutputClassInfoBatchReadMetrics.statementCount;
+    const auto loaded = SqlQueryUtils::execute(
+        query,
+        QStringLiteral(R"(
+            WITH requested(class_id, ordinal) AS (VALUES %1)
+            SELECT requested.class_id AS requested_class_id,
+                   ci.class_id AS class_info_class_id,
+                   ci.teacher_id,
+                   ci.class_grade,
+                   ci.class_level,
+                   teachers.teacher_en,
+                   teachers.teacher_kr,
+                   teachers.room_number,
+                   teachers.wifi_name,
+                   teachers.wifi_password,
+                   teachers.zoom_id,
+                   teachers.zoom_password
+            FROM requested
+            LEFT JOIN class_info ci ON ci.class_id = requested.class_id
+            LEFT JOIN teachers ON teachers.id = ci.teacher_id
+            ORDER BY requested.ordinal
+        )").arg(requestedValues.join(QStringLiteral(", "))),
+        QObject::tr("Loading Sub Prep roster output class information"),
+        QObject::tr("class ids %1").arg(requestedValues.join(
+            QStringLiteral(", ")
+            ))
+        );
+    if (!loaded)
+    {
+        return std::unexpected(loaded.error().userMessage());
+    }
+
+    QList<SubPrepRosterOutputClassInfoReadRecord> records;
+    records.reserve(classIds.size());
+    while (query.next())
+    {
+        const int requestedClassId =
+            query.value(QStringLiteral("requested_class_id")).toInt();
+        if (records.size() >= classIds.size()
+            || requestedClassId != classIds[records.size()])
+        {
+            return std::unexpected(QObject::tr(
+                "Loading Sub Prep roster output class information failed: returned class order did not match the request."
+                ));
+        }
+
+        SubPrepRosterOutputClassInfoReadRecord record;
+        const QVariant classInfoClassId = query.value(
+            QStringLiteral("class_info_class_id")
+            );
+        if (classInfoClassId.isNull())
+        {
+            return std::unexpected(
+                QObject::tr(
+                    "Loading Sub Prep roster output class information failed for class id %1: no matching record exists."
+                    ).arg(requestedClassId)
+                );
+        }
+
+        record.classId = classInfoClassId.toInt();
+        if (record.classId != requestedClassId)
+        {
+            return std::unexpected(QObject::tr(
+                "Loading Sub Prep roster output class information failed: returned class identity did not match the request."
+                ));
+        }
+
+        const QVariant teacherId = query.value(
+            QStringLiteral("teacher_id")
+            );
+        record.teacherId = teacherId.isNull() ? -1 : teacherId.toInt();
+        record.classGrade = query.value(
+            QStringLiteral("class_grade")
+            ).toString();
+        record.classLevel = query.value(
+            QStringLiteral("class_level")
+            ).toString();
+        record.teacherEnglishName = query.value(
+            QStringLiteral("teacher_en")
+            ).toString();
+        record.teacherKoreanName = query.value(
+            QStringLiteral("teacher_kr")
+            ).toString();
+        record.roomNumber = query.value(
+            QStringLiteral("room_number")
+            ).toString();
+        record.wifiName = query.value(
+            QStringLiteral("wifi_name")
+            ).toString();
+        record.wifiPassword = query.value(
+            QStringLiteral("wifi_password")
+            ).toString();
+        record.zoomId = query.value(
+            QStringLiteral("zoom_id")
+            ).toString();
+        record.zoomPassword = query.value(
+            QStringLiteral("zoom_password")
+            ).toString();
+        records.append(std::move(record));
+    }
+
+    if (query.lastError().isValid())
+    {
+        return std::unexpected(query.lastError().text());
+    }
+    if (records.size() != classIds.size())
+    {
+        return std::unexpected(QObject::tr(
+            "Loading Sub Prep roster output class information failed: the database returned an incomplete result."
+            ));
+    }
+
+    return records;
+}
+
 Result<QList<ClassNavigationReadRecord>>
 ClassInfoRepository::loadClassesNavigationRecords(
     const QList<int>& classIds
@@ -1494,6 +1644,12 @@ const MyClassesClassInformationBatchReadMetrics&
 ClassInfoRepository::myClassesClassInformationBatchReadMetrics() const noexcept
 {
     return m_myClassesClassInformationBatchReadMetrics;
+}
+
+const SubPrepRosterOutputClassInfoBatchReadMetrics&
+ClassInfoRepository::subPrepRosterOutputClassInfoBatchReadMetrics() const noexcept
+{
+    return m_subPrepRosterOutputClassInfoBatchReadMetrics;
 }
 
 Result<SubPrepClassDetailsRecord>

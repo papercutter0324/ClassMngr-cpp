@@ -184,6 +184,9 @@ private slots:
     void unavailableSessionsDoNotFallBackToDataService();
     void staleTeacherFailureDoesNotReturnPartialInput();
     void activeSessionScheduleReadFailureIsTechnical();
+    void classNameBatchFailureAbortsSource();
+    void classInfoBatchFailureAbortsSource();
+    void classInfoBatchRejectsMissingMetadataRecord();
     void rejectsOutOfBoundRosterAndClassText();
 
 private:
@@ -244,6 +247,20 @@ readsSelectedClassesModeAndRequestedRosterColumns()
         rosterWithColumns()
         ));
 
+    DatabaseSession* const session = services.databaseSession();
+    QVERIFY(session);
+    ClassRepository* const classRepository = session->classRepository();
+    ClassInfoRepository* const classInfoRepository =
+        session->classInfoRepository();
+    QVERIFY(classRepository);
+    QVERIFY(classInfoRepository);
+    const ClassRepository::ReadMetrics classReadMetricsBefore =
+        classRepository->readMetrics();
+    const auto classInfoBatchMetricsBefore =
+        classInfoRepository->subPrepRosterOutputClassInfoBatchReadMetrics();
+    const ScheduleClassInfoReadMetrics scheduleReadMetricsBefore =
+        classInfoRepository->scheduleClassInfoReadMetrics();
+
     ApplicationServicesSubPrepRosterOutputSourcePort port(services);
     const SubPrepRosterOutputSourceQuery query(port);
     const auto requested = requestFor(
@@ -302,6 +319,50 @@ readsSelectedClassesModeAndRequestedRosterColumns()
             "First note"
         })
         );
+
+    const ClassRepository::ReadMetrics classReadMetricsAfter =
+        classRepository->readMetrics();
+    QCOMPARE(
+        classReadMetricsAfter.getClassByIdCallCount
+            - classReadMetricsBefore.getClassByIdCallCount,
+        0
+        );
+    QCOMPARE(
+        classReadMetricsAfter.getClassesByIdsCallCount
+            - classReadMetricsBefore.getClassesByIdsCallCount,
+        1
+        );
+    QCOMPARE(
+        classReadMetricsAfter.requestedClassCount
+            - classReadMetricsBefore.requestedClassCount,
+        2
+        );
+    QCOMPARE(
+        classReadMetricsAfter.batchStatementCount
+            - classReadMetricsBefore.batchStatementCount,
+        1
+        );
+    const auto classInfoBatchMetricsAfter =
+        classInfoRepository->subPrepRosterOutputClassInfoBatchReadMetrics();
+    QCOMPARE(
+        classInfoBatchMetricsAfter.callCount
+            - classInfoBatchMetricsBefore.callCount,
+        1
+        );
+    QCOMPARE(
+        classInfoBatchMetricsAfter.requestedClassCount
+            - classInfoBatchMetricsBefore.requestedClassCount,
+        2
+        );
+    QCOMPARE(
+        classInfoBatchMetricsAfter.statementCount
+            - classInfoBatchMetricsBefore.statementCount,
+        1
+        );
+    QCOMPARE(
+        classInfoRepository->scheduleClassInfoReadMetrics().singleClassInfoReadCount,
+        scheduleReadMetricsBefore.singleClassInfoReadCount
+        );
 }
 
 void NextPlatformApplicationServicesSubPrepRosterOutputSourcePortTests::
@@ -336,9 +397,29 @@ includesUnassignedTeacherAndUsesSelectedMode()
     const std::vector<ClassId> ids{classId(intensiveClass)};
     const std::vector<SubPrepWeekday> days{SubPrepWeekday::Monday};
 
+    DatabaseSession* const session = services.databaseSession();
+    QVERIFY(session);
+    ClassRepository* const classRepository = session->classRepository();
+    ClassInfoRepository* const classInfoRepository =
+        session->classInfoRepository();
+    QVERIFY(classRepository);
+    QVERIFY(classInfoRepository);
+    const ClassRepository::ReadMetrics classMetricsBefore =
+        classRepository->readMetrics();
+    const auto classInfoMetricsBefore =
+        classInfoRepository->subPrepRosterOutputClassInfoBatchReadMetrics();
+
     const auto regular = query.execute(requestFor(ids, days));
     QVERIFY(regular);
     QVERIFY(regular.value().empty());
+    QCOMPARE(
+        classRepository->readMetrics().getClassesByIdsCallCount,
+        classMetricsBefore.getClassesByIdsCallCount
+        );
+    QCOMPARE(
+        classInfoRepository->subPrepRosterOutputClassInfoBatchReadMetrics().callCount,
+        classInfoMetricsBefore.callCount
+        );
 
     const auto intensive = query.execute(
         requestFor(ids, days, ScheduleViewMode::Intensive)
@@ -350,6 +431,21 @@ includesUnassignedTeacherAndUsesSelectedMode()
     QCOMPARE(
         intensive.value().classes().front().meetings.front().startTime,
         std::string("3:00 PM")
+        );
+    QCOMPARE(
+        classRepository->readMetrics().getClassByIdCallCount
+            - classMetricsBefore.getClassByIdCallCount,
+        0
+        );
+    QCOMPARE(
+        classRepository->readMetrics().getClassesByIdsCallCount
+            - classMetricsBefore.getClassesByIdsCallCount,
+        1
+        );
+    QCOMPARE(
+        classInfoRepository->subPrepRosterOutputClassInfoBatchReadMetrics().callCount
+            - classInfoMetricsBefore.callCount,
+        1
         );
 }
 
@@ -478,6 +574,179 @@ activeSessionScheduleReadFailureIsTechnical()
     QVERIFY(!result);
     QCOMPARE(result.error().code, ErrorCode::Technical);
     QVERIFY(!result.error().message.empty());
+}
+
+void NextPlatformApplicationServicesSubPrepRosterOutputSourcePortTests::
+classNameBatchFailureAbortsSource()
+{
+    ApplicationServices services;
+    QVERIFY(openDatabase(services, m_directory));
+    const int teacher = createTeacher(services);
+    QVERIFY(teacher > 0);
+    const int classIdValue = createClass(
+        services,
+        QStringLiteral("Class name query failure"),
+        teacher,
+        QStringLiteral("E4"),
+        QStringLiteral("Theseus"),
+        QStringLiteral("Monday"),
+        QStringLiteral("9:00 AM"),
+        QStringLiteral("10:00 AM")
+        );
+    QVERIFY(classIdValue > 0);
+    QVERIFY(services.rosterService()->saveRoster(
+        classIdValue,
+        rosterWithColumns()
+        ));
+
+    DatabaseSession* const session = services.databaseSession();
+    QVERIFY(session);
+    ClassRepository* const classRepository = session->classRepository();
+    ClassInfoRepository* const classInfoRepository =
+        session->classInfoRepository();
+    QVERIFY(classRepository);
+    QVERIFY(classInfoRepository);
+    const ClassRepository::ReadMetrics classMetricsBefore =
+        classRepository->readMetrics();
+    const auto classInfoMetricsBefore =
+        classInfoRepository->subPrepRosterOutputClassInfoBatchReadMetrics();
+
+    QVERIFY(executeSql(
+        services,
+        QStringLiteral("ALTER TABLE classes RENAME COLUMN name TO old_name")
+        ));
+
+    ApplicationServicesSubPrepRosterOutputSourcePort port(services);
+    const auto result = port.loadSource(requestFor(
+        {classId(classIdValue)},
+        {SubPrepWeekday::Monday}
+        ));
+
+    QVERIFY(!result);
+    QCOMPARE(result.error().code, ErrorCode::Technical);
+    QCOMPARE(
+        classRepository->readMetrics().getClassByIdCallCount
+            - classMetricsBefore.getClassByIdCallCount,
+        0
+        );
+    QCOMPARE(
+        classRepository->readMetrics().getClassesByIdsCallCount
+            - classMetricsBefore.getClassesByIdsCallCount,
+        1
+        );
+    QCOMPARE(
+        classInfoRepository->subPrepRosterOutputClassInfoBatchReadMetrics().callCount,
+        classInfoMetricsBefore.callCount
+        );
+}
+
+void NextPlatformApplicationServicesSubPrepRosterOutputSourcePortTests::
+classInfoBatchFailureAbortsSource()
+{
+    ApplicationServices services;
+    QVERIFY(openDatabase(services, m_directory));
+    const int teacher = createTeacher(services);
+    QVERIFY(teacher > 0);
+    const int classIdValue = createClass(
+        services,
+        QStringLiteral("Class details query failure"),
+        teacher,
+        QStringLiteral("E4"),
+        QStringLiteral("Theseus"),
+        QStringLiteral("Monday"),
+        QStringLiteral("9:00 AM"),
+        QStringLiteral("10:00 AM")
+        );
+    QVERIFY(classIdValue > 0);
+    QVERIFY(services.rosterService()->saveRoster(
+        classIdValue,
+        rosterWithColumns()
+        ));
+
+    DatabaseSession* const session = services.databaseSession();
+    QVERIFY(session);
+    ClassRepository* const classRepository = session->classRepository();
+    ClassInfoRepository* const classInfoRepository =
+        session->classInfoRepository();
+    QVERIFY(classRepository);
+    QVERIFY(classInfoRepository);
+    const ClassRepository::ReadMetrics classMetricsBefore =
+        classRepository->readMetrics();
+    const auto classInfoMetricsBefore =
+        classInfoRepository->subPrepRosterOutputClassInfoBatchReadMetrics();
+    const ScheduleClassInfoReadMetrics scheduleReadMetricsBefore =
+        classInfoRepository->scheduleClassInfoReadMetrics();
+
+    QVERIFY(executeSql(
+        services,
+        QStringLiteral(
+            "ALTER TABLE teachers RENAME COLUMN room_number TO old_room_number"
+            )
+        ));
+
+    ApplicationServicesSubPrepRosterOutputSourcePort port(services);
+    const auto result = port.loadSource(requestFor(
+        {classId(classIdValue)},
+        {SubPrepWeekday::Monday}
+        ));
+
+    QVERIFY(!result);
+    QCOMPARE(result.error().code, ErrorCode::Technical);
+    QCOMPARE(
+        classRepository->readMetrics().getClassesByIdsCallCount
+            - classMetricsBefore.getClassesByIdsCallCount,
+        1
+        );
+    QCOMPARE(
+        classInfoRepository->subPrepRosterOutputClassInfoBatchReadMetrics().callCount
+            - classInfoMetricsBefore.callCount,
+        1
+        );
+    QCOMPARE(
+        classInfoRepository->scheduleClassInfoReadMetrics().singleClassInfoReadCount,
+        scheduleReadMetricsBefore.singleClassInfoReadCount
+        );
+}
+
+void NextPlatformApplicationServicesSubPrepRosterOutputSourcePortTests::
+classInfoBatchRejectsMissingMetadataRecord()
+{
+    ApplicationServices services;
+    QVERIFY(openDatabase(services, m_directory));
+    const auto createdClass = services.classService()->create(
+        QStringLiteral("Class without information")
+        );
+    QVERIFY(createdClass);
+    QVERIFY(*createdClass > 0);
+
+    DatabaseSession* const session = services.databaseSession();
+    QVERIFY(session);
+    ClassInfoRepository* const classInfoRepository =
+        session->classInfoRepository();
+    QVERIFY(classInfoRepository);
+
+    ApplicationServicesSubPrepRosterOutputSourcePort port(services);
+    const auto source = port.loadSource(requestFor(
+        {classId(*createdClass)},
+        {SubPrepWeekday::Monday}
+        ));
+    QVERIFY(source);
+    QVERIFY(source.value().classes.empty());
+
+    const auto before =
+        classInfoRepository->subPrepRosterOutputClassInfoBatchReadMetrics();
+    const auto loaded =
+        classInfoRepository->loadSubPrepRosterOutputClassInfoRecords(
+            {*createdClass}
+            );
+    QVERIFY(!loaded);
+    QVERIFY(loaded.error().contains(QStringLiteral("no matching record")));
+
+    const auto after =
+        classInfoRepository->subPrepRosterOutputClassInfoBatchReadMetrics();
+    QCOMPARE(after.callCount - before.callCount, 1);
+    QCOMPARE(after.requestedClassCount - before.requestedClassCount, 1);
+    QCOMPARE(after.statementCount - before.statementCount, 1);
 }
 
 void NextPlatformApplicationServicesSubPrepRosterOutputSourcePortTests::

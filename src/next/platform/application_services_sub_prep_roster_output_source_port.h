@@ -266,6 +266,98 @@ public:
                 }
             }
 
+            QList<int> scopedClassIds;
+            scopedClassIds.reserve(legacyClassIds.size());
+            for (const int classId : legacyClassIds)
+            {
+                if (scheduleByClassId.contains(classId))
+                {
+                    scopedClassIds.append(classId);
+                }
+            }
+
+            QList<Classroom> loadedClassrooms;
+            QList<SubPrepRosterOutputClassInfoReadRecord> loadedClassInfos;
+            if (!scopedClassIds.isEmpty())
+            {
+                const ::Result<QList<Classroom>> loadedClasses =
+                    classRepository->getClassesByIds(scopedClassIds);
+                if (!loadedClasses)
+                {
+                    if (!session->isOpen())
+                    {
+                        return failure(
+                            Domain::ErrorCode::NotFound,
+                            "The active database session became unavailable while loading selected classes."
+                            );
+                    }
+                    return repositoryFailure(
+                        loadedClasses.error(),
+                        "A selected Sub Prep class could not be loaded."
+                        );
+                }
+                loadedClassrooms = loadedClasses.value();
+                if (loadedClassrooms.size() != scopedClassIds.size())
+                {
+                    return failure(
+                        Domain::ErrorCode::Validation,
+                        "Selected Sub Prep classes do not match the requested scope."
+                        );
+                }
+                for (qsizetype index = 0;
+                     index < scopedClassIds.size();
+                     ++index)
+                {
+                    if (loadedClassrooms[index].id != scopedClassIds[index])
+                    {
+                        return failure(
+                            Domain::ErrorCode::Validation,
+                            "Loaded class identity does not match the selected class."
+                            );
+                    }
+                }
+
+                const auto loadedClassInfoRecords =
+                    classInfoRepository->loadSubPrepRosterOutputClassInfoRecords(
+                        scopedClassIds
+                        );
+                if (!loadedClassInfoRecords)
+                {
+                    if (!session->isOpen())
+                    {
+                        return failure(
+                            Domain::ErrorCode::NotFound,
+                            "The active database session became unavailable while loading class output details."
+                            );
+                    }
+                    return repositoryFailure(
+                        loadedClassInfoRecords.error(),
+                        "Selected Sub Prep class output details could not be loaded."
+                        );
+                }
+                loadedClassInfos = loadedClassInfoRecords.value();
+                if (loadedClassInfos.size() != scopedClassIds.size())
+                {
+                    return failure(
+                        Domain::ErrorCode::Validation,
+                        "Selected Sub Prep class output details do not match the requested scope."
+                        );
+                }
+                for (qsizetype index = 0;
+                     index < scopedClassIds.size();
+                     ++index)
+                {
+                    if (loadedClassInfos[index].classId
+                        != scopedClassIds[index])
+                    {
+                        return failure(
+                            Domain::ErrorCode::Validation,
+                            "Loaded class information identity does not match the selected class."
+                            );
+                    }
+                }
+            }
+
             Application::SubPrepRosterOutputSourceInput source;
             source.classes.reserve(request.selectedClassIds.size());
             std::unordered_set<int> copiedTeacherIds;
@@ -273,6 +365,7 @@ public:
             std::size_t totalRows = 0;
             std::size_t totalCells = 0;
             std::size_t totalTextBytes = 0;
+            qsizetype scopedClassIndex = 0;
 
             for (std::size_t selectedIndex = 0;
                  selectedIndex < request.selectedClassIds.size();
@@ -289,49 +382,22 @@ public:
                     continue;
                 }
 
-                const ::Result<Classroom> classroom =
-                    classRepository->getClassById(classId);
-                if (!classroom)
-                {
-                    if (!session->isOpen())
-                    {
-                        return failure(
-                            Domain::ErrorCode::NotFound,
-                            "The active database session became unavailable while loading a selected class."
-                            );
-                    }
-                    return repositoryFailure(
-                        classroom.error(),
-                        "A selected Sub Prep class could not be loaded."
-                        );
-                }
-                if (classroom->id != classId)
+                if (scopedClassIndex >= loadedClassrooms.size()
+                    || scopedClassIndex >= loadedClassInfos.size())
                 {
                     return failure(
                         Domain::ErrorCode::Validation,
-                        "Loaded class identity does not match the selected class."
+                        "Selected Sub Prep class data is incomplete."
                         );
                 }
-
-                const ::Result<ClassInfo> loadedInfo =
-                    classInfoRepository->loadClassInfo(classId);
-                if (!loadedInfo)
-                {
-                    if (!session->isOpen())
-                    {
-                        return failure(
-                            Domain::ErrorCode::NotFound,
-                            "The active database session became unavailable while loading class output details."
-                            );
-                    }
-                    return repositoryFailure(
-                        loadedInfo.error(),
-                        "Selected Sub Prep class output details could not be loaded."
-                        );
-                }
-                const ClassInfo& info = loadedInfo.value();
+                const Classroom& classroom =
+                    loadedClassrooms[scopedClassIndex];
+                const SubPrepRosterOutputClassInfoReadRecord& info =
+                    loadedClassInfos[scopedClassIndex];
+                ++scopedClassIndex;
                 const ClassInfo& scheduleInfo = *schedule.value();
-                if (info.classId != classId
+                if (classroom.id != classId
+                    || info.classId != classId
                     || info.teacherId != scheduleInfo.teacherId)
                 {
                     return failure(
@@ -343,7 +409,7 @@ public:
                 Application::SubPrepRosterOutputClass classRecord{
                     request.selectedClassIds[selectedIndex]};
                 if (!copyBoundedUtf8(
-                    classroom->name,
+                    classroom.name,
                     Application::kSubPrepRosterOutputMaxClassNameBytes,
                     &totalTextBytes,
                     &classRecord.classroomName
@@ -361,13 +427,13 @@ public:
                     &classRecord.level
                     )
                     || !copyBoundedUtf8(
-                    info.teacherEn,
+                    info.teacherEnglishName,
                     Application::kSubPrepPrintSourceMaxEnglishNameLength,
                     &totalTextBytes,
                     &classRecord.classTeacherEnglishName
                     )
                     || !copyBoundedUtf8(
-                    info.teacherKr,
+                    info.teacherKoreanName,
                     Application::kSubPrepPrintSourceMaxKoreanNameLength,
                     &totalTextBytes,
                     &classRecord.classTeacherKoreanName

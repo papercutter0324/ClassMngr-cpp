@@ -7,6 +7,8 @@
 #include <QObject>
 #include <QSqlError>
 #include <QSqlQuery>
+#include <QSet>
+#include <QStringList>
 
 #include <utility>
 
@@ -120,6 +122,7 @@ Result<Classroom> ClassRepository::getClassById(
     int classId
     )
 {
+    ++m_readMetrics.getClassByIdCallCount;
     if (classId <= 0)
     {
         return std::unexpected(
@@ -165,6 +168,117 @@ Result<Classroom> ClassRepository::getClassById(
         query.value("name").toString();
 
     return classroom;
+}
+
+Result<QList<Classroom>> ClassRepository::getClassesByIds(
+    const QList<int>& classIds
+    )
+{
+    if (classIds.isEmpty())
+    {
+        return QList<Classroom>{};
+    }
+
+    ++m_readMetrics.getClassesByIdsCallCount;
+    m_readMetrics.requestedClassCount += classIds.size();
+
+    QSet<int> seenClassIds;
+    QStringList requestedValues;
+    requestedValues.reserve(classIds.size());
+    for (qsizetype index = 0; index < classIds.size(); ++index)
+    {
+        const int classId = classIds[index];
+        if (classId <= 0 || seenClassIds.contains(classId))
+        {
+            return std::unexpected(QObject::tr(
+                "Loading classes failed: class identifiers must be positive and unique."
+                ));
+        }
+
+        seenClassIds.insert(classId);
+        requestedValues.append(QStringLiteral("(%1, %2)")
+            .arg(classId)
+            .arg(index));
+    }
+
+    QSqlQuery query(m_database);
+    query.setForwardOnly(true);
+    ++m_readMetrics.batchStatementCount;
+    const auto loaded = SqlQueryUtils::execute(
+        query,
+        QStringLiteral(R"(
+            WITH requested(class_id, ordinal) AS (VALUES %1)
+            SELECT requested.class_id AS requested_class_id,
+                   classes.id AS class_id,
+                   classes.name AS class_name
+            FROM requested
+            LEFT JOIN classes ON classes.id = requested.class_id
+            ORDER BY requested.ordinal
+        )").arg(requestedValues.join(QStringLiteral(", "))),
+        QObject::tr("Loading selected classes"),
+        QObject::tr("class ids %1").arg(requestedValues.join(
+            QStringLiteral(", ")
+            ))
+        );
+    if (!loaded)
+    {
+        return std::unexpected(loaded.error().userMessage());
+    }
+
+    QList<Classroom> classrooms;
+    classrooms.reserve(classIds.size());
+    while (query.next())
+    {
+        const int requestedClassId =
+            query.value(QStringLiteral("requested_class_id")).toInt();
+        const QVariant loadedClassId = query.value(QStringLiteral("class_id"));
+        if (classrooms.size() >= classIds.size()
+            || requestedClassId != classIds[classrooms.size()])
+        {
+            return std::unexpected(QObject::tr(
+                "Loading selected classes failed: returned class order did not match the request."
+                ));
+        }
+        if (loadedClassId.isNull())
+        {
+            return std::unexpected(
+                QObject::tr(
+                    "Loading class failed for class id %1: no matching record exists."
+                    ).arg(requestedClassId)
+                );
+        }
+
+        const int classId = loadedClassId.toInt();
+        if (classId != requestedClassId)
+        {
+            return std::unexpected(QObject::tr(
+                "Loading selected classes failed: returned class identity did not match the request."
+                ));
+        }
+
+        classrooms.append(Classroom(
+            query.value(QStringLiteral("class_name")).toString(),
+            classId
+            ));
+    }
+
+    if (query.lastError().isValid())
+    {
+        return std::unexpected(query.lastError().text());
+    }
+    if (classrooms.size() != classIds.size())
+    {
+        return std::unexpected(QObject::tr(
+            "Loading selected classes failed: the database returned an incomplete result."
+            ));
+    }
+
+    return classrooms;
+}
+
+const ClassRepository::ReadMetrics& ClassRepository::readMetrics() const noexcept
+{
+    return m_readMetrics;
 }
 
 Status ClassRepository::updateClassName(
