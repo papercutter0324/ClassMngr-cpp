@@ -136,7 +136,8 @@ public:
     ClassAnalyticsRosterNames roster;
     std::array<ClassAnalyticsEvaluationRows, 4> evaluations;
     mutable std::vector<std::u16string> calls;
-    std::optional<ClassAnalyticsEvaluation> failedEvaluation;
+    mutable int evaluationBatchReadCount = 0;
+    bool failEvaluationBatch = false;
 
     [[nodiscard]] Domain::Result<ClassAnalyticsRosterNames> readRosterNames(
         const Domain::ClassId& classId
@@ -147,23 +148,24 @@ public:
         return Domain::Result<ClassAnalyticsRosterNames>::success(roster);
     }
 
-    [[nodiscard]] Domain::Result<ClassAnalyticsEvaluationRows> readEvaluation(
-        const Domain::ClassId& classId,
-        const ClassAnalyticsEvaluation evaluation
+    [[nodiscard]] Domain::Result<ClassAnalyticsEvaluationBatch>
+    readEvaluationBatch(
+        const Domain::ClassId& classId
         ) const override
     {
         (void)classId;
-        calls.push_back(std::u16string(classAnalyticsEvaluationName(evaluation)));
-        if (failedEvaluation == evaluation)
+        ++evaluationBatchReadCount;
+        calls.push_back(u"evaluation batch");
+        if (failEvaluationBatch)
         {
-            return Domain::Result<ClassAnalyticsEvaluationRows>::failure({
+            return Domain::Result<ClassAnalyticsEvaluationBatch>::failure({
                 .code = Domain::ErrorCode::Technical,
-                .message = "evaluation read failed",
+                .message = "evaluation batch read failed",
                 .recoverable = true
             });
         }
-        return Domain::Result<ClassAnalyticsEvaluationRows>::success(
-            evaluations[static_cast<std::size_t>(evaluation)]);
+        return Domain::Result<ClassAnalyticsEvaluationBatch>::success(
+            evaluations);
     }
 };
 
@@ -213,7 +215,8 @@ void canonicalOrderLatestClassShapeAndYtd()
     const auto result = run(port, names);
     assert(result);
     assert((port.calls == std::vector<std::u16string>{
-        u"roster", u"Winter", u"Speech Contest", u"Summer", u"Fall" }));
+        u"roster", u"evaluation batch" }));
+    assert(port.evaluationBatchReadCount == 1);
     assert(result.value().selectedSnapshot.hasData);
     assert(result.value().selectedSnapshot.rankings.size() == 1);
     // All aggregates every current score, including Fall's partial score.
@@ -301,18 +304,37 @@ void missingAndUnknownSelectionKeepGlobalYtdWhileUnknownSelectionIsEmpty()
     assert(result.value().yearToDatePoints.front().evaluationName == u"Fall");
 }
 
+void selectedEvaluationStillReadsEveryYtdInputInOneBatch()
+{
+    FakeReadPort port;
+    port.evaluations[0].push_back(row(u"Current", u"", u"B"));
+    port.evaluations[3].push_back(row(u"Current", u"", u"A"));
+    const TestNameSemantics names;
+
+    const auto result = run(port, names, u"Winter");
+    assert(result);
+    assert(port.evaluationBatchReadCount == 1);
+    assert((port.calls == std::vector<std::u16string>{
+        u"roster", u"evaluation batch" }));
+    assert(result.value().selectedSnapshot.classAverageLetter == u"B");
+    assert(result.value().yearToDatePoints.size() == 2);
+    assert(result.value().yearToDatePoints[0].evaluationName == u"Winter");
+    assert(result.value().yearToDatePoints[1].evaluationName == u"Fall");
+}
+
 void readFailureReturnsNoPartialDashboard()
 {
     FakeReadPort port;
     port.evaluations[0].push_back(row(u"Current", u"", u"A"));
-    port.failedEvaluation = ClassAnalyticsEvaluation::Summer;
+    port.failEvaluationBatch = true;
     const TestNameSemantics names;
 
     const auto result = run(port, names);
     assert(!result);
     assert(result.error().code == Domain::ErrorCode::Technical);
     assert((port.calls == std::vector<std::u16string>{
-        u"roster", u"Winter", u"Speech Contest", u"Summer" }));
+        u"roster", u"evaluation batch" }));
+    assert(port.evaluationBatchReadCount == 1);
 }
 
 void invalidClassIdDoesNotRead()
@@ -336,6 +358,7 @@ int main()
     duplicateRowsConsolidateAndRankingTiesUseNamePort();
     emptyRosterLeavesEvaluationRowsUnfilteredAndPartialScoresDoNotMakeYtd();
     missingAndUnknownSelectionKeepGlobalYtdWhileUnknownSelectionIsEmpty();
+    selectedEvaluationStillReadsEveryYtdInputInOneBatch();
     readFailureReturnsNoPartialDashboard();
     invalidClassIdDoesNotRead();
     return 0;

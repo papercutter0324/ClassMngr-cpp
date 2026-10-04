@@ -522,20 +522,22 @@ public:
         std::array<EvaluationView, kClassAnalyticsEvaluationNames.size()>
             evaluations;
 
+        const auto loadedEvaluations =
+            readPort.readEvaluationBatch(query.classId);
+        if (!loadedEvaluations)
+        {
+            return ClassAnalyticsDashboardResult::failure(
+                loadedEvaluations.error());
+        }
+
         for (std::size_t index = 0;
              index < kClassAnalyticsEvaluationNames.size();
              ++index)
         {
             const auto evaluation = static_cast<ClassAnalyticsEvaluation>(index);
-            const auto loaded = readPort.readEvaluation(query.classId, evaluation);
-            if (!loaded)
-            {
-                return ClassAnalyticsDashboardResult::failure(loaded.error());
-            }
-
             EvaluationView& view = evaluations[index];
             view.evaluation = evaluation;
-            view.rawRows = loaded.value();
+            view.rawRows = loadedEvaluations.value()[index];
             view.filteredRows = filterByRoster(
                 view.rawRows, roster.value(), names);
             view.filteredSnapshot = compute(

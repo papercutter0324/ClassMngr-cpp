@@ -19,7 +19,7 @@ class EmptyDashboardReadPort final : public ClassAnalyticsDashboardReadPort
 {
 public:
     mutable int rosterReadCount = 0;
-    mutable std::vector<ClassAnalyticsEvaluation> evaluationReads;
+    mutable int evaluationBatchReadCount = 0;
     bool failRoster = false;
     ClassAnalyticsRosterNames roster;
     std::array<ClassAnalyticsEvaluationRows, 4> evaluations;
@@ -41,15 +41,15 @@ public:
         return Domain::Result<ClassAnalyticsRosterNames>::success(roster);
     }
 
-    [[nodiscard]] Domain::Result<ClassAnalyticsEvaluationRows> readEvaluation(
-        const Domain::ClassId& classId,
-        const ClassAnalyticsEvaluation evaluation
+    [[nodiscard]] Domain::Result<ClassAnalyticsEvaluationBatch>
+    readEvaluationBatch(
+        const Domain::ClassId& classId
         ) const override
     {
         (void)classId;
-        evaluationReads.push_back(evaluation);
-        return Domain::Result<ClassAnalyticsEvaluationRows>::success(
-            evaluations[static_cast<std::size_t>(evaluation)]);
+        ++evaluationBatchReadCount;
+        return Domain::Result<ClassAnalyticsEvaluationBatch>::success(
+            evaluations);
     }
 };
 
@@ -133,20 +133,14 @@ void ClassAnalyticsPageTests::readFailureAndNoDataUseTheExistingEmptyState()
     QVERIFY(emptyLabel);
     QVERIFY(emptyLabel->isVisible());
     QCOMPARE(readPort.rosterReadCount, 1);
-    QVERIFY((readPort.evaluationReads
-             == std::vector<ClassAnalyticsEvaluation>{
-                 ClassAnalyticsEvaluation::Winter,
-                 ClassAnalyticsEvaluation::SpeechContest,
-                 ClassAnalyticsEvaluation::Summer,
-                 ClassAnalyticsEvaluation::Fall
-             }));
+    QCOMPARE(readPort.evaluationBatchReadCount, 1);
 
     readPort.failRoster = true;
     page.refresh();
     QCoreApplication::processEvents();
     QVERIFY(emptyLabel->isVisible());
     QCOMPARE(readPort.rosterReadCount, 2);
-    QVERIFY(readPort.evaluationReads.size() == std::size_t{4});
+    QCOMPARE(readPort.evaluationBatchReadCount, 1);
 }
 
 void ClassAnalyticsPageTests::successfulDashboardMapsResultsIntoRankingModel()

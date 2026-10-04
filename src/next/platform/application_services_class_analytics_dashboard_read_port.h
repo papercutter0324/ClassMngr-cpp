@@ -230,87 +230,94 @@ public:
         }
     }
 
-    [[nodiscard]] Domain::Result<Application::ClassAnalyticsEvaluationRows>
-    readEvaluation(
-        const Domain::ClassId& classId,
-        const Application::ClassAnalyticsEvaluation evaluation
+    [[nodiscard]] Domain::Result<Application::ClassAnalyticsEvaluationBatch>
+    readEvaluationBatch(
+        const Domain::ClassId& classId
         ) const override
     {
         const std::optional<int> legacyId = legacyClassId(classId.value());
         if (!legacyId)
         {
-            return failure<Application::ClassAnalyticsEvaluationRows>(
+            return failure<Application::ClassAnalyticsEvaluationBatch>(
                 Domain::ErrorCode::InvalidInput,
                 "Class ID must be a canonical positive integer.");
-        }
-        const std::u16string_view name =
-            Application::classAnalyticsEvaluationName(evaluation);
-        if (name.empty())
-        {
-            return failure<Application::ClassAnalyticsEvaluationRows>(
-                Domain::ErrorCode::InvalidInput,
-                "Class analytics evaluation is not canonical.");
         }
 
         QSqlDatabase database;
         if (!activeDatabase(database))
         {
-            return unavailableFailure<Application::ClassAnalyticsEvaluationRows>();
+            return unavailableFailure<Application::ClassAnalyticsEvaluationBatch>();
         }
 
         try
         {
-            QSqlQuery evaluationQuery(database);
-            evaluationQuery.prepare(R"(
-                SELECT id
-                FROM speaking_evaluations
-                WHERE class_id=? AND evaluation_name=?
-            )");
-            evaluationQuery.addBindValue(*legacyId);
-            evaluationQuery.addBindValue(QString::fromStdU16String(
-                std::u16string(name)));
-            auto executed = SqlQueryUtils::executePrepared(
-                evaluationQuery,
-                QStringLiteral("Loading speaking evaluation"),
-                QStringLiteral("evaluation '%1' for class id %2")
-                    .arg(QString::fromStdU16String(std::u16string(name)))
-                    .arg(*legacyId));
-            if (!executed)
-            {
-                return sqlFailure<Application::ClassAnalyticsEvaluationRows>(
-                    executed.error().userMessage());
-            }
-            if (!evaluationQuery.next())
-            {
-                return Domain::Result<
-                    Application::ClassAnalyticsEvaluationRows>::success({});
-            }
-
-            const int evaluationId = evaluationQuery.value("id").toInt();
             QSqlQuery rowsQuery(database);
             rowsQuery.prepare(R"(
-                SELECT col_1, col_2, col_3, col_4, col_5, col_6,
-                       col_7, col_8
-                FROM speaking_eval_data
-                WHERE evaluation_id=?
-                ORDER BY row_index
+                WITH requested(evaluation_name, request_order) AS (
+                    VALUES (?, 0), (?, 1), (?, 2), (?, 3)
+                )
+                SELECT requested.request_order AS request_order,
+                       data.evaluation_id AS data_evaluation_id,
+                       data.row_index AS row_index,
+                       data.col_1 AS col_1,
+                       data.col_2 AS col_2,
+                       data.col_3 AS col_3,
+                       data.col_4 AS col_4,
+                       data.col_5 AS col_5,
+                       data.col_6 AS col_6,
+                       data.col_7 AS col_7,
+                       data.col_8 AS col_8
+                FROM requested
+                LEFT JOIN speaking_evaluations evaluation
+                    ON evaluation.class_id=?
+                   AND evaluation.evaluation_name=requested.evaluation_name
+                LEFT JOIN speaking_eval_data data
+                    ON data.evaluation_id=evaluation.id
+                ORDER BY requested.request_order, data.row_index
             )");
-            rowsQuery.addBindValue(evaluationId);
-            executed = SqlQueryUtils::executePrepared(
+            for (const std::u16string_view name :
+                 Application::kClassAnalyticsEvaluationNames)
+            {
+                rowsQuery.addBindValue(
+                    QString::fromStdU16String(std::u16string(name))
+                    );
+            }
+            rowsQuery.addBindValue(*legacyId);
+            const auto executed = SqlQueryUtils::executePrepared(
                 rowsQuery,
-                QStringLiteral("Loading speaking evaluation rows"),
-                QStringLiteral("evaluation '%1' for class id %2")
-                    .arg(QString::fromStdU16String(std::u16string(name)))
-                    .arg(*legacyId));
+                QStringLiteral("Loading Class Analytics evaluations"),
+                classIdentity(*legacyId));
             if (!executed)
             {
-                return sqlFailure<Application::ClassAnalyticsEvaluationRows>(
+                return sqlFailure<Application::ClassAnalyticsEvaluationBatch>(
                     executed.error().userMessage());
             }
 
-            Application::ClassAnalyticsEvaluationRows rows;
+            Application::ClassAnalyticsEvaluationBatch batch;
+            std::array<bool, Application::kClassAnalyticsEvaluationNames.size()>
+                seenRequests{};
             while (rowsQuery.next())
             {
+                bool requestOrderIsValid = false;
+                const int requestOrder = rowsQuery.value("request_order")
+                    .toInt(&requestOrderIsValid);
+                if (!requestOrderIsValid
+                    || requestOrder < 0
+                    || requestOrder >= static_cast<int>(batch.size()))
+                {
+                    return technicalFailure<
+                        Application::ClassAnalyticsEvaluationBatch>(
+                            "Class Analytics returned an invalid evaluation order.");
+                }
+                seenRequests[static_cast<std::size_t>(requestOrder)] = true;
+
+                // LEFT JOIN contributes one placeholder row for a missing
+                // evaluation or an evaluation with no stored score rows.
+                if (rowsQuery.value("data_evaluation_id").isNull())
+                {
+                    continue;
+                }
+
                 Application::ClassAnalyticsEvaluationRow row;
                 row.englishName = rowsQuery.value("col_1")
                     .toString().toStdU16String();
@@ -322,21 +329,35 @@ public:
                         QStringLiteral("col_%1").arg(score + 3))
                         .toString().toStdU16String();
                 }
-                rows.push_back(std::move(row));
+                batch[static_cast<std::size_t>(requestOrder)].push_back(
+                    std::move(row));
             }
-            return Domain::Result<
-                Application::ClassAnalyticsEvaluationRows>::success(
-                    std::move(rows));
+            if (rowsQuery.lastError().isValid())
+            {
+                return sqlFailure<Application::ClassAnalyticsEvaluationBatch>(
+                    rowsQuery.lastError().text());
+            }
+            for (const bool seen : seenRequests)
+            {
+                if (!seen)
+                {
+                    return technicalFailure<
+                        Application::ClassAnalyticsEvaluationBatch>(
+                            "Class Analytics returned an incomplete evaluation batch.");
+                }
+            }
+            return Domain::Result<Application::ClassAnalyticsEvaluationBatch>::
+                success(std::move(batch));
         }
         catch (const std::exception&)
         {
-            return technicalFailure<Application::ClassAnalyticsEvaluationRows>(
-                "Speaking evaluation rows could not be loaded.");
+            return technicalFailure<Application::ClassAnalyticsEvaluationBatch>(
+                "Class Analytics evaluations could not be loaded.");
         }
         catch (...)
         {
-            return technicalFailure<Application::ClassAnalyticsEvaluationRows>(
-                "Speaking evaluation rows could not be loaded.");
+            return technicalFailure<Application::ClassAnalyticsEvaluationBatch>(
+                "Class Analytics evaluations could not be loaded.");
         }
     }
 

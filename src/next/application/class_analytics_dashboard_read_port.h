@@ -56,6 +56,10 @@ struct ClassAnalyticsEvaluationRow final
 using ClassAnalyticsEvaluationRows =
     std::vector<ClassAnalyticsEvaluationRow>;
 
+using ClassAnalyticsEvaluationBatch =
+    std::array<ClassAnalyticsEvaluationRows,
+               kClassAnalyticsEvaluationNames.size()>;
+
 class ClassAnalyticsDashboardReadPort
 {
 public:
@@ -64,11 +68,11 @@ public:
     [[nodiscard]] virtual Domain::Result<ClassAnalyticsRosterNames>
     readRosterNames(const Domain::ClassId& classId) const = 0;
 
-    // An evaluation with no stored record is a successful empty row set.
-    [[nodiscard]] virtual Domain::Result<ClassAnalyticsEvaluationRows>
-    readEvaluation(
-        const Domain::ClassId& classId,
-        ClassAnalyticsEvaluation evaluation
+    // Missing evaluations and evaluations without stored rows are successful
+    // empty entries at their canonical position in the batch.
+    [[nodiscard]] virtual Domain::Result<ClassAnalyticsEvaluationBatch>
+    readEvaluationBatch(
+        const Domain::ClassId& classId
         ) const = 0;
 };
 
