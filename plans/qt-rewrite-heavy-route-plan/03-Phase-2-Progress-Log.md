@@ -11110,3 +11110,30 @@ F307 is selected to batch My Classes assigned-teacher profile reads after F270,
 preserving class-to-teacher association, class order, and profile-failure
 behavior. F308-F315 remain ordered in Batch 4. Phase 2 remains In Progress/Open;
 Gates 1 and 2 remain Partial.
+
+### Progress update - 2026-10-04 (F307 accepted; F308 selected)
+
+F307, committed as
+`4c4c1e0d20aa097308465eb2ad50bd279d9e29c7`, batches My Classes full assigned-
+teacher profiles after F270. Only IDs from successful F306 class-information
+results are requested. The page deduplicates them in first-seen class order,
+then reuses each profile for all associated classes while preserving class
+order. The batch projection includes all 14 profile fields. The successful
+path uses one set-based SQL statement; batch SQL failure falls back to
+individual reads. Per-teacher failures stay isolated and keep the silent
+Unassigned fallback; roster reads remain separate.
+
+Executor self-check and fresh independent Windows x64 Debug/Ninja verification
+passed. The independent configure validated 1,295 handwritten source files;
+ClassMngr and all five focused test targets built. Focused CTest passed 5/5:
+ClassMngrMyClassesPageTests, both My Classes teacher-profile Application and
+Platform tests, and both F306 class-information Application and Platform
+regression tests. `git diff --check` passed. The full suite and other platform
+builds were not run. Independent logs are under build/f307v/ (configure.log,
+build.log, focused_ctest.log); executor logs are under build/p2_f291_impl_ninja/
+and build/.
+
+F308 is selected to batch My Classes roster-backed student-count reads after
+F283, preserving exact English/Korean selection, QString trimming, and
+zero-on-failure behavior. F309-F315 remain ordered in Batch 4. Phase 2 remains
+In Progress/Open; Gates 1 and 2 remain Partial.
