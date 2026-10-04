@@ -18,13 +18,13 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-05
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F333 is selected to reuse the teacher profiles already loaded
-  by Class Transfer preview, keyed by ID, while preserving conditional reads,
-  first-error behavior, destination order, and EN/KR normalization. Keep the
-  `getTeacher()` fallback for a positive assigned ID missing from the initial
-  profile list so the existing missing-teacher error remains. Source-inspected
-  bound: no per-qualifying-class full-profile SELECT for present profiles; a
-  rare missing-ID fallback remains.
+- Current note: F334 is selected for a purpose-fit Class Details projection.
+  Preserve requested/canonical class IDs; grade/level, books, class/font
+  colors; ordered regular/intensive schedules; missing class-info defaults;
+  existing class-field error mapping; and independent teacher-display/roster
+  results. Target two class-info statements (metadata plus a combined tagged
+  `UNION ALL` schedule read ordered by source-tag/id), down from the three in
+  `loadClassInfo()`. F334 is selected, not implemented.
 
 ### Slice discovery batches
 
@@ -54,16 +54,14 @@ Accepted slices are removed from active tracking; their implementation and accep
 
 #### Active batch: Batch 7
 
-1. F333 - Reuse Class Transfer preview's initially loaded teacher profiles by
-   ID; preserve conditional behavior, first failure, destination order, and
-   EN/KR normalization, with a `getTeacher()` fallback for an unexpectedly
-   absent positive ID.
-2. F334 - Add a purpose-fit projection for Class Details page reads.
-3. F335 - Combine Schedule Editor projection reads into one statement.
-4. F336 - Narrow Selected Class Grade reads to the consumed scalar fields.
-5. F337 - Reuse the F332 class-details reader for Class Details validation
+1. F334 - Add a purpose-fit Class Details projection, preserving requested
+   and canonical IDs, consumed metadata/schedules, defaults, error mapping,
+   and independent teacher-display/roster results.
+2. F335 - Combine Schedule Editor projection reads into one statement.
+3. F336 - Narrow Selected Class Grade reads to the consumed scalar fields.
+4. F337 - Reuse the F332 class-details reader for Class Details validation
    context.
-6. F338 - Clean up the ClassImportDialog boundary.
+5. F338 - Clean up the ClassImportDialog boundary.
 
 No other slices were found.
 
@@ -227,23 +225,20 @@ No new v2 production path depends on DataService, MainWindow, PageManager, or a 
 
 Earlier verified slices and cumulative exit-gate snapshots are archived in the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 
-## Latest Progress Update - 2026-10-05 (F332 accepted; F333 selected)
+## Latest Progress Update - 2026-10-05 (F333 accepted; F334 selected)
 
-F332, committed as
-`760559a1dbb7fd663bb27fc9bb0d5a45b8a911d1`, adds purpose-fit class-detail
-reads for Class Notes and Co-Teacher pages, preserving the class and schedule
-fields they consume and each page's read behavior. Independent VS2026
-x64/Ninja verification passed the focused Notes and Co-Teacher CTest 2/2.
-`git diff --check` was clean except for line-ending notices; no full suite ran.
+F333, committed as
+`062f109ea58c5e2e0e3b1bd19f69e620d1fc693d`, indexes normalized English and
+Korean names from Class Transfer preview's initial `getAllTeachers()` result
+by ID and reuses them for qualifying class assignments. `getTeacher()` remains
+only as a fallback when a conditional positive ID is absent from that list,
+preserving the existing missing-teacher error. The query bound is
+source-inspected, not instrumented: present profiles cause no per-class
+full-profile SELECT; the rare missing-ID fallback remains.
 
-Batch 6 is complete. F333 is selected from Batch 7 to reuse the profiles
-already returned by Class Transfer preview's initial `getAllTeachers()` call
-instead of issuing a full-profile `getTeacher()` read for each qualifying
-destination class. Preserve the positive-ID/source-course condition, first
-failure and returned error, destination order, and EN/KR normalization. Keep
-the `getTeacher()` fallback only when a conditional positive ID is unexpectedly
-absent from the loaded profiles, preserving the existing missing-teacher error.
-The source-inspected bound is no per-qualifying-class full-profile SELECT for
-present profiles; a rare missing-ID fallback remains. This slice is selected,
-not implemented or verified. Phase 2 remains In Progress/Open; Gates 1 and 2
-remain Partial.
+Independent VS2026 x64/Ninja Debug configure validated 1,329 handwritten
+source files; `ClassMngrClassTransferTests` built, focused CTest
+`^ClassMngrClassTransferTests$` passed 1/1, and `git diff --check` exited 0.
+No full suite ran. F334 is selected for the Class Details projection described
+in the Current note; it is not implemented. Phase 2 remains In Progress/Open;
+Gates 1 and 2 remain Partial.

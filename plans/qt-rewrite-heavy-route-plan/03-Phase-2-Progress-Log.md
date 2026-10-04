@@ -11786,11 +11786,17 @@ Partial.
 ### Slice discovery update - 2026-10-05 (Batch 7 recorded at F332 acceptance)
 
 Two independent read-only sweeps found six distinct bounded candidates for
-Batch 7. Their ranked order is recorded in the plan's Active Batch 7 list.
-Class Transfer preview teacher-profile reuse is first; the remaining candidates
-cover Class Details projection, Schedule Editor projection, Selected Class
-Grade scalar reads, reuse of the F332 reader for Class Details validation, and
-ClassImportDialog boundary cleanup. No other slices were found.
+Batch 7, ranked as follows:
+
+1. F333 - Reuse Class Transfer preview's initially loaded teacher profiles by
+   ID.
+2. F334 - Add a purpose-fit Class Details projection.
+3. F335 - Combine Schedule Editor projection reads into one statement.
+4. F336 - Narrow Selected Class Grade reads to consumed scalar fields.
+5. F337 - Reuse the F332 reader for Class Details validation context.
+6. F338 - Clean up the ClassImportDialog boundary.
+
+No other slices were found.
 
 ### F332 accepted / F333 selected - 2026-10-05
 
@@ -11811,4 +11817,27 @@ the positive conditional ID is unexpectedly absent from the loaded profiles,
 preserving the existing missing-teacher error. The source-inspected bound is no
 per-qualifying-class full-profile SELECT for present profiles; a rare missing-ID
 fallback remains. F333 is selected, not implemented or verified. Phase 2
+remains In Progress/Open; Gates 1 and 2 remain Partial.
+
+### F333 accepted / F334 selected - 2026-10-05
+
+F333, committed as
+`062f109ea58c5e2e0e3b1bd19f69e620d1fc693d`, indexes normalized English and
+Korean names from Class Transfer preview's initial `getAllTeachers()` result
+by ID and reuses them for qualifying class assignments. `getTeacher()` remains
+only as a fallback when the conditional positive ID is absent from that list,
+preserving the existing missing-teacher error. The query bound is
+source-inspected, not instrumented: present profiles cause no per-class
+full-profile SELECT, while the rare missing-ID fallback remains.
+
+Independent VS2026 x64/Ninja Debug configure validated 1,329 handwritten
+source files; `ClassMngrClassTransferTests` built, focused CTest
+`^ClassMngrClassTransferTests$` passed 1/1, and `git diff --check` exited 0.
+No full suite ran. F334 is selected for a purpose-fit Class Details projection.
+Preserve requested/canonical class IDs; grade/level, books, class/font colors;
+ordered regular/intensive schedule contents; missing class-info defaults; the
+same class-field error mapping; and independent teacher-display/roster results.
+The target is two class-info statements (metadata plus a combined tagged
+`UNION ALL` schedule read ordered by source-tag/id), compared with the three
+statements in `loadClassInfo()`. F334 is selected, not implemented. Phase 2
 remains In Progress/Open; Gates 1 and 2 remain Partial.
