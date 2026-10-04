@@ -11198,3 +11198,30 @@ The active batch text now records those existing behaviors. F310 is selected
 to batch matched-teacher alternative display-name reads, separate from F300
 class subtitles. F311-F315 remain ordered in Batch 4. Phase 2 remains In
 Progress/Open; Gates 1 and 2 remain Partial.
+
+### Progress update - 2026-10-04 (F310 accepted; F311 selected)
+
+F310, committed as
+`825e5b898990b918daad2f3cbb530704264eb7d0`, batches matched-teacher
+alternative display-name reads in ClassImportDialog, independently from F300
+class-subtitle reads. It reads unique positive teacher IDs for package-backed
+preview rows once, then maps names over the original match lists, preserving
+choice order and duplicate choices. Missing profiles retain the existing
+“New Teacher” label; a batch failure falls back to individual profile reads
+so successful siblings remain available. Empty and skipped rows perform no
+batch read.
+
+Executor self-check and fresh independent Windows x64 Debug/Ninja verification
+passed. The independent configure validated 1,301 handwritten source files;
+ClassMngr and all three focused test targets built. Focused CTest passed 3/3:
+ClassMngrClassTransferTests and the F300 class-subtitle Application/Platform
+regression tests. `git diff --check` passed. Independent logs are under
+build/f310v/ (configure.log, build.log, focused_ctest.log, diff_check.log);
+executor logs are under build/. The full suite was not run.
+
+F311 is selected to batch Sub Prep roster-output per-class class-name and
+compact metadata reads. Read-only discovery confirmed that classes without a
+meeting in the selected scope are omitted, class and metadata identities are
+validated, and any source read failure aborts before package output begins.
+F312-F315 remain ordered in Batch 4. Phase 2 remains In Progress/Open; Gates 1
+and 2 remain Partial.

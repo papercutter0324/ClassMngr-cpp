@@ -18,12 +18,12 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-04
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F309 is accepted. F310 is selected to batch ClassImportDialog
-  matched-teacher alternative display-name reads, preserving choice order and
-  duplicates, formatting, and the current “New Teacher” fallback for an
-  unreadable profile. F311-F315 remain in Batch 4; at F314 start, discover
-  Batch 5 and reconsider the fixed up-to-four-evaluation roster score-import
-  read.
+- Current note: F310 is accepted. F311 is selected to batch Sub Prep
+  roster-output per-class class-name and compact metadata reads, preserving
+  schedule order, omission of classes without a meeting in the selected
+  scope, identity checks, failure-before-partial-output, and aggregate output
+  bounds. F312-F315 remain in Batch 4; at F314 start, discover Batch 5 and
+  reconsider the fixed up-to-four-evaluation roster score-import read.
 
 ### Slice discovery batches
 
@@ -53,24 +53,20 @@ Accepted slices are removed from active tracking; their implementation and accep
 
 #### Active batch: Batch 4
 
-1. F310 - Batch ClassImportDialog matched-teacher alternative display-name
-   reads; separate from F300 class subtitles; preserve choice
-   order/duplicates, formatting, and the current “New Teacher” fallback when a
-   profile cannot be read.
-2. F311 - Batch Sub Prep roster-output per-class class-name and compact
+1. F311 - Batch Sub Prep roster-output per-class class-name and compact
    metadata reads; preserve schedule order, omission of classes without
    meetings in the selected scope, identity checks,
    failure-before-partial-output, and aggregate output bounds.
-3. F312 - Purpose-fit projection for initial-setup teacher choices; preserve
+2. F312 - Purpose-fit projection for initial-setup teacher choices; preserve
    ID/name/preferred display fields, repository order, validation, and error
    behavior.
-4. F313 - Purpose-fit projection for testing-teacher choices; preserve
+3. F313 - Purpose-fit projection for testing-teacher choices; preserve
    ID/Korean-name/room, repository order, blank-name filtering and selection
    behavior, and current recoverability semantics.
-5. F314 - Purpose-fit projection for co-teacher choices; preserve exact
+4. F314 - Purpose-fit projection for co-teacher choices; preserve exact
    profile/network fields, repository order, ID validation, and error
    behavior.
-6. F315 - Purpose-fit Korean teacher birthday-directory projection;
+5. F315 - Purpose-fit Korean teacher birthday-directory projection;
    preserve birthday/name/preferred-display fields, raw values, repository
    order, and downstream filtering.
 
@@ -237,39 +233,31 @@ No new v2 production path depends on DataService, MainWindow, PageManager, or a 
 
 Earlier verified slices and cumulative exit-gate snapshots are archived in the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 
-## Latest Progress Update - 2026-10-04 (F309 accepted; F310 selected)
+## Latest Progress Update - 2026-10-04 (F310 accepted; F311 selected)
 
-F309, committed as
-`a87edb3147577cf52d92e35e5d8587792df7883a`, batches Sub Prep information-sheet
-roster count reads after schedule and teacher filtering. The print-source port
-requests counts only for included classes, preserves source order, and leaves
-each class in place with a zero count when its roster read fails. The
-repository reads roster columns and sparse cells in set-based statements,
-preserving exact first English/Korean selection, QString trimming, and one
-count per row.
-
-Successful class counts emit the legacy `sub-prep-roster-query` metrics with
-the original class ID, column count, materialized row count, cell count, and
-returned student count. Missing name headers still emit a zero-count event;
-failed per-class reads emit no event. Event failures stay isolated from the
-class output.
+F310, committed as
+`825e5b898990b918daad2f3cbb530704264eb7d0`, batches matched-teacher
+alternative display-name reads in ClassImportDialog, independently from F300
+class-subtitle reads. It reads unique positive teacher IDs for package-backed
+preview rows once, then maps names over the original match lists, preserving
+choice order and duplicate choices. Missing profiles retain the existing
+“New Teacher” label; a batch failure falls back to individual profile reads
+so successful siblings remain available. Empty and skipped rows perform no
+batch read.
 
 Executor self-check and fresh independent Windows x64 Debug/Ninja verification
 passed. The independent configure validated 1,301 handwritten source files;
-ClassMngr and all seven focused test targets built. Focused CTest passed 7/7:
-the My Classes student-count page/Application/Platform regression tests, both
-Sub Prep print-source Application/Platform tests, the Sub Prep print-source
-mapper test, and the DataService lifecycle test. `git diff --check` passed.
-Independent logs are under build/f309v/ (configure.log, build.log,
-focused_ctest.log, diff_check.log); executor logs are under build/.
-The full suite was not run.
+ClassMngr and all three focused test targets built. Focused CTest passed 3/3:
+ClassMngrClassTransferTests and the F300 class-subtitle Application/Platform
+regression tests. `git diff --check` passed. Independent logs are under
+build/f310v/ (configure.log, build.log, focused_ctest.log, diff_check.log);
+executor logs are under build/. The full suite was not run.
 
-Read-only discovery for F310 confirmed that an unreadable matched teacher
-profile currently displays “New Teacher,” and F311 discovery confirmed that
-classes without a meeting in the selected scope are omitted from roster output.
-The active batch text now records those existing behaviors. F310 is selected
-to batch matched-teacher alternative display-name reads, separate from F300
-class subtitles. F311-F315 remain in Batch 4; at F314 start, discover Batch 5
-and reconsider the fixed up-to-four-evaluation roster score-import read. F298
+F311 is selected to batch Sub Prep roster-output per-class class-name and
+compact metadata reads. Read-only discovery confirmed that classes without a
+meeting in the selected scope are omitted, class and metadata identities are
+validated, and any source read failure aborts before package output begins.
+F312-F315 remain ordered in Batch 4; at F314 start, discover Batch 5 and
+reconsider the fixed up-to-four-evaluation roster score-import read. F298
 remains deferred pending its warning/navigation decision. Phase 2 remains In
 Progress/Open; Gates 1 and 2 remain Partial.
