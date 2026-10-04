@@ -11372,3 +11372,32 @@ import evaluation reads while preserving fixed column order, absent-column
 skips, per-evaluation failure isolation, and score assignment. F298 remains
 deferred pending its warning/navigation decision. Phase 2 remains
 In Progress/Open; Gates 1 and 2 remain Partial.
+
+### Progress update - 2026-10-04 (F316 accepted; F317 selected)
+
+F316, committed as
+`e9a4705c6bf31235b84da1ae60947b0b80103ae7`, batches the roster score-import
+read for present Winter, Speech Contest, Summer, and Fall destinations. The
+normal path uses one ordered set-based read for evaluation identities and all
+11 raw score cells; empty requests do no work, and missing or empty evaluations
+remain successful empty results. A failed or invalid batch result falls back
+to the existing per-evaluation read in destination order, preserving error
+isolation. The existing score parser and roster assignment behavior remain.
+The shared single-read contract and F299 Class Analytics path are unchanged.
+
+Executor self-check and fresh independent Windows x64 Debug/Ninja/MSVC
+verification passed. The independent configure validated 1,305 handwritten
+source files; the Application, Platform, and roster-editor targets built.
+Focused CTest passed 3/3. Coverage checks batch ordering and row mapping,
+empty input, missing/empty evaluations, fixed destination behavior, and
+failure fallback where an earlier retry fails and a later destination imports.
+`git diff --check` passed. Independent logs are under build/f316v/;
+executor logs are under build/. The full suite was not run; malformed-response
+fallback was reviewed by source control flow but was not tested in combination
+with a rejected batch response.
+
+F317 is selected from Batch 5 to batch Sub Prep roster-output reads for
+distinct assigned teacher profiles, preserving selected-scope filtering,
+first-seen association, teacher identity validation, and source-error
+behavior. F298 remains deferred pending its warning/navigation decision.
+Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial.

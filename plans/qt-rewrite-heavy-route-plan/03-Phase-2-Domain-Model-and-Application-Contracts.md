@@ -18,9 +18,10 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-04
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F315 is accepted. F316 is selected to batch roster score-import
-  evaluation reads while preserving fixed column order, absent-column skips,
-  per-evaluation failure isolation, and score assignment.
+- Current note: F316 is accepted. F317 is selected to batch Sub Prep
+  roster-output reads for distinct assigned teacher profiles while preserving
+  selected-scope filtering, first-seen association, teacher identity
+  validation, and source-error behavior.
 
 ### Slice discovery batches
 
@@ -50,24 +51,21 @@ Accepted slices are removed from active tracking; their implementation and accep
 
 #### Active batch: Batch 5
 
-1. F316 - Batch roster score-import evaluation reads; preserve fixed column
-   order, skip absent columns, isolate per-evaluation failure/empty results,
-   and preserve score assignment.
-2. F317 - Batch Sub Prep roster-output reads for distinct assigned teacher
+1. F317 - Batch Sub Prep roster-output reads for distinct assigned teacher
    profiles; preserve selected-scope filtering, first-seen association,
    teacher identity validation, and source-error behavior.
-3. F318 - Batch roster-template print per-class class-information and roster
+2. F318 - Batch roster-template print per-class class-information and roster
    reads; preserve class order, current-class name fallback, printed fields,
    and abort-on-read-failure behavior.
-4. F319 - Batch Class Analytics typed evaluation reads; preserve canonical
+3. F319 - Batch Class Analytics typed evaluation reads; preserve canonical
    evaluation order, missing-evaluation-as-empty behavior, roster filtering,
    YTD cohorts, and whole-dashboard failure behavior.
-5. F320 - Purpose-fit Speaking Evaluation roster-name projection; preserve
+4. F320 - Purpose-fit Speaking Evaluation roster-name projection; preserve
    English/Korean column selection, row order, trimming, and name-pair
    matching behavior.
-6. F321 - Purpose-fit Native English and GS Team birthday projections;
+5. F321 - Purpose-fit Native English and GS Team birthday projections;
    preserve schedule fields, source ordering, and current warning behavior.
-7. F322 - Reduce Class Analytics roster-name fixed SQL read sequence;
+6. F322 - Reduce Class Analytics roster-name fixed SQL read sequence;
    preserve sparse-row sizing and the compact English/Korean projection.
 
 No other slices were found.
@@ -231,27 +229,31 @@ No new v2 production path depends on DataService, MainWindow, PageManager, or a 
 
 Earlier verified slices and cumulative exit-gate snapshots are archived in the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 
-## Latest Progress Update - 2026-10-04 (F315 accepted; F316 selected)
+## Latest Progress Update - 2026-10-04 (F316 accepted; F317 selected)
 
-F315, committed as
-`82bad469d008b30e44006707faaecf5aab2feaa5`, adds a purpose-fit repository
-projection for the Korean teacher birthday directory. It selects birthday,
-Korean and English names, preferred romanization, and preferred name, ordered
-by `teacher_en`. The Platform port preserves raw values and repository order;
-`getAllTeachers()` and Native English/GS birthday reads remain unchanged.
+F316, committed as
+`e9a4705c6bf31235b84da1ae60947b0b80103ae7`, batches the roster score-import
+read for present Winter, Speech Contest, Summer, and Fall destinations. The
+normal path uses one ordered set-based read for evaluation identities and all
+11 raw score cells; empty requests do no work, and missing or empty evaluations
+remain successful empty results. A failed or invalid batch result falls back
+to the existing per-evaluation read in destination order, preserving error
+isolation. The existing score parser and roster assignment behavior remain.
+The shared single-read contract and F299 Class Analytics path are unchanged.
 
 Executor self-check and fresh independent Windows x64 Debug/Ninja/MSVC
-verification passed. The independent configure validated 1,301 handwritten
-source files; the Application query, Platform port, and navigation targets
-built. Focused CTest passed 3/3. Tests cover the exact projection and order,
-raw values, empty success, unavailable-session and repository-failure
-mapping, and Korean-source warning behavior. `git diff --check` passed.
-Independent logs are under build/f315v/; executor logs are under build/.
-The full suite was not run; exception mapping was source-reviewed but not
-explicitly injected.
+verification passed. The independent configure validated 1,305 handwritten
+source files; the Application, Platform, and roster-editor targets built.
+Focused CTest passed 3/3. Coverage checks batch ordering and row mapping,
+empty input, missing/empty evaluations, fixed destination behavior, and
+failure fallback where an earlier retry fails and a later destination imports.
+`git diff --check` passed. Independent logs are under build/f316v/;
+executor logs are under build/. The full suite was not run; malformed-response
+fallback was reviewed by source control flow but was not tested in combination
+with a rejected batch response.
 
-F316 is selected from the previously recorded Batch 5: batch roster score-
-import evaluation reads while preserving fixed column order, absent-column
-skips, per-evaluation failure isolation, and score assignment. F298 remains
-deferred pending its warning/navigation decision. Phase 2 remains
-In Progress/Open; Gates 1 and 2 remain Partial.
+F317 is selected from Batch 5 to batch Sub Prep roster-output reads for
+distinct assigned teacher profiles, preserving selected-scope filtering,
+first-seen association, teacher identity validation, and source-error
+behavior. F298 remains deferred pending its warning/navigation decision.
+Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial.
