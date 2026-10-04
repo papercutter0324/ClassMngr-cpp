@@ -11258,3 +11258,33 @@ choice projection needs only the ID and four raw display fields. F313-F315
 remain ordered in Batch 4; at F314 start, discover Batch 5 and reconsider the
 fixed up-to-four-evaluation roster score-import read. Phase 2 remains
 In Progress/Open; Gates 1 and 2 remain Partial.
+
+### Progress update - 2026-10-04 (F312 accepted; F313 selected)
+
+F312, committed as
+`334920b61237ffa733c29a2445c44079b576ffcc`, adds a purpose-fit repository
+projection for initial-setup teacher choices. It selects only teacher ID,
+Korean name, English name, preferred romanization, and preferred name,
+ordered by `teacher_en`. The Platform port maps raw fields into the existing
+snapshot; `getAllTeachers()` and its other consumers remain unchanged.
+
+Executor self-check and fresh independent Windows x64 Debug/Ninja/MSVC
+verification passed. The independent configure validated 1,301 handwritten
+source files; ClassMngr and all three focused test targets built. Focused
+CTest passed 3/3: the initial-setup Platform port, Application query, and
+wizard tests. Coverage checks field mapping, raw strings, repository order,
+empty results, session/query failures, and wizard presentation behavior.
+`git diff --check` passed. Independent logs are under build/f312v/
+(configure.log, build.log, focused_ctest.log, diff_check.log); executor logs
+are under build/. The full suite was not run.
+
+F313 is selected to use a purpose-fit projection for testing-teacher
+choices, preserving teacher ID, Korean name, room, repository order, and raw
+values for the page to filter and display. Read-only discovery confirmed
+that the page removes blank Korean names, restores selection by ID where
+possible, and otherwise selects the built-in None choice. Unavailable sessions
+remain nonrecoverable NotFound errors; repository errors remain recoverable
+Technical errors. F314-F315 remain ordered in Batch 4; at F314 start,
+discover Batch 5 and reconsider the fixed up-to-four-evaluation roster
+score-import read. Phase 2 remains In Progress/Open; Gates 1 and 2 remain
+Partial.

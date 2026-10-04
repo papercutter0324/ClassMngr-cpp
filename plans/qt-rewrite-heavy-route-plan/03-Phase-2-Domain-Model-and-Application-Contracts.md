@@ -18,12 +18,13 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-04
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F311 is accepted. F312 is selected to use a purpose-fit
-  projection for initial-setup teacher choices, preserving ID, Korean and
-  English names, preferred romanization/name, repository order, validation,
-  and error behavior. F313-F315 remain in Batch 4; at F314 start, discover
-  Batch 5 and reconsider the fixed up-to-four-evaluation roster score-import
-  read.
+- Current note: F312 is accepted. F313 is selected to use a purpose-fit
+  projection for testing-teacher choices, preserving teacher ID, Korean
+  name, room, repository order, blank-name filtering, selection restoration,
+  and recoverability behavior. Missing sessions remain nonrecoverable
+  NotFound results; repository failures remain recoverable Technical
+  results. F314-F315 remain in Batch 4; at F314 start, discover Batch 5 and
+  reconsider the fixed up-to-four-evaluation roster score-import read.
 
 ### Slice discovery batches
 
@@ -53,16 +54,13 @@ Accepted slices are removed from active tracking; their implementation and accep
 
 #### Active batch: Batch 4
 
-1. F312 - Purpose-fit projection for initial-setup teacher choices; preserve
-   ID/name/preferred display fields, repository order, validation, and error
-   behavior.
-2. F313 - Purpose-fit projection for testing-teacher choices; preserve
+1. F313 - Purpose-fit projection for testing-teacher choices; preserve
    ID/Korean-name/room, repository order, blank-name filtering and selection
    behavior, and current recoverability semantics.
-3. F314 - Purpose-fit projection for co-teacher choices; preserve exact
+2. F314 - Purpose-fit projection for co-teacher choices; preserve exact
    profile/network fields, repository order, ID validation, and error
    behavior.
-4. F315 - Purpose-fit Korean teacher birthday-directory projection;
+3. F315 - Purpose-fit Korean teacher birthday-directory projection;
    preserve birthday/name/preferred-display fields, raw values, repository
    order, and downstream filtering.
 
@@ -229,36 +227,32 @@ No new v2 production path depends on DataService, MainWindow, PageManager, or a 
 
 Earlier verified slices and cumulative exit-gate snapshots are archived in the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 
-## Latest Progress Update - 2026-10-04 (F311 accepted; F312 selected)
+## Latest Progress Update - 2026-10-04 (F312 accepted; F313 selected)
 
-F311, committed as
-`167bb72f8d96fe56dc24e2206f1ca5a4761dfc74`, batches Sub Prep roster-output
-class-name and compact metadata reads for selected classes with meetings in
-the selected schedule scope. Names and class information are fetched in one
-ordered batch each. Classes without selected meetings remain omitted and
-schedule order is preserved. Missing class-information rows and query errors
-fail instead of producing blank metadata. Class, class-information, teacher
-assignment, and teacher identity checks remain. Teacher-profile and bounded
-roster reads remain separate; output bounds are unchanged.
+F312, committed as
+`334920b61237ffa733c29a2445c44079b576ffcc`, adds a purpose-fit repository
+projection for initial-setup teacher choices. It selects only teacher ID,
+Korean name, English name, preferred romanization, and preferred name,
+ordered by `teacher_en`. The Platform port maps raw fields into the existing
+snapshot; `getAllTeachers()` and its other consumers remain unchanged.
 
 Executor self-check and fresh independent Windows x64 Debug/Ninja/MSVC
 verification passed. The independent configure validated 1,301 handwritten
 source files; ClassMngr and all three focused test targets built. Focused
-CTest passed 3/3: the Sub Prep package-service, Application source-query, and
-Platform source-port tests. They cover reduced class/metadata read fan-out,
-ordering, scope omission, query failures, missing metadata, bounds, and no
-final package left after a source-read failure. `git diff --check` passed.
-Independent logs are under build/f311v2/ (configure.log, build.log,
-focused_ctest.log, diff_check.log); executor logs are under build/. The full
-suite was not run. Temporary package staging may be created before the source
-read and is cleaned on failure; no final package is committed.
+CTest passed 3/3: the initial-setup Platform port, Application query, and
+wizard tests. Coverage checks field mapping, raw strings, repository order,
+empty results, session/query failures, and wizard presentation behavior.
+`git diff --check` passed. Independent logs are under build/f312v/
+(configure.log, build.log, focused_ctest.log, diff_check.log); executor logs
+are under build/. The full suite was not run.
 
-F312 is selected to use a purpose-fit projection for initial-setup teacher
-choices, preserving ID, Korean and English names, preferred romanization/name,
-repository order, validation, and error behavior. Read-only discovery
-confirmed the current read selects all teacher columns in one query; the
-choice projection needs only the ID and four raw display fields. F313-F315
-remain in Batch 4; at F314 start, discover Batch 5 and reconsider the fixed
-up-to-four-evaluation roster score-import read. F298 remains deferred pending
-its warning/navigation decision. Phase 2 remains In Progress/Open; Gates 1
-and 2 remain Partial.
+F313 is selected to use a purpose-fit projection for testing-teacher
+choices, preserving teacher ID, Korean name, room, repository order, and raw
+values for the page to filter and display. Read-only discovery confirmed
+that the page removes blank Korean names, restores selection by ID where
+possible, and otherwise selects the built-in None choice. Unavailable sessions
+remain nonrecoverable NotFound errors; repository errors remain recoverable
+Technical errors. F314-F315 remain in Batch 4; at F314 start, discover Batch
+5 and reconsider the fixed up-to-four-evaluation roster score-import read.
+F298 remains deferred pending its warning/navigation decision. Phase 2 remains
+In Progress/Open; Gates 1 and 2 remain Partial.
