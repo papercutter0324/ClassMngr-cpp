@@ -692,6 +692,60 @@ TeacherRepository::loadTestingTeacherChoiceRecords()
     return teachers;
 }
 
+Result<QList<ClassCoTeacherTeacherChoiceReadRecord>>
+TeacherRepository::loadClassCoTeacherTeacherChoiceRecords()
+{
+    QList<ClassCoTeacherTeacherChoiceReadRecord> teachers;
+
+    QSqlQuery query(m_database);
+    const auto executed = SqlQueryUtils::execute(
+        query,
+        QStringLiteral(R"(
+            SELECT
+                id,
+                teacher_kr,
+                teacher_en,
+                room_number,
+                internet_type,
+                wifi_name,
+                wifi_password,
+                projection_type,
+                zoom_id,
+                zoom_password
+            FROM teachers
+            ORDER BY teacher_en
+        )"),
+        QObject::tr("Loading teachers")
+        );
+    if (!executed)
+    {
+        return std::unexpected(executed.error().userMessage());
+    }
+
+    while (query.next())
+    {
+        teachers.append({
+            query.value(QStringLiteral("id")).toInt(),
+            query.value(QStringLiteral("teacher_kr")).toString(),
+            query.value(QStringLiteral("teacher_en")).toString(),
+            query.value(QStringLiteral("room_number")).toString(),
+            query.value(QStringLiteral("internet_type")).toString(),
+            query.value(QStringLiteral("wifi_name")).toString(),
+            query.value(QStringLiteral("wifi_password")).toString(),
+            query.value(QStringLiteral("projection_type")).toString(),
+            query.value(QStringLiteral("zoom_id")).toString(),
+            query.value(QStringLiteral("zoom_password")).toString()
+        });
+    }
+
+    if (query.lastError().isValid())
+    {
+        return std::unexpected(query.lastError().text());
+    }
+
+    return teachers;
+}
+
 Status TeacherRepository::deleteTeacher(
     int teacherId
     )

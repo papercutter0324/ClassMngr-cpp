@@ -30,6 +30,20 @@ struct TestingTeacherChoiceReadRecord final
     QString room;
 };
 
+struct ClassCoTeacherTeacherChoiceReadRecord final
+{
+    int teacherId = -1;
+    QString teacherKr;
+    QString teacherEn;
+    QString roomNumber;
+    QString internetType;
+    QString wifiName;
+    QString wifiPassword;
+    QString projectionType;
+    QString zoomId;
+    QString zoomPassword;
+};
+
 struct TeacherDisplayNameBatchReadRecord final
 {
     int teacherId = -1;
@@ -98,6 +112,8 @@ public:
         loadInitialSetupTeacherChoiceRecords();
     [[nodiscard]] Result<QList<TestingTeacherChoiceReadRecord>>
         loadTestingTeacherChoiceRecords();
+    [[nodiscard]] Result<QList<ClassCoTeacherTeacherChoiceReadRecord>>
+        loadClassCoTeacherTeacherChoiceRecords();
 
     [[nodiscard]] Status deleteTeacher(
         int teacherId
