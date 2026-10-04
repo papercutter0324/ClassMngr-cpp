@@ -1,6 +1,7 @@
 #pragma once
 
 #include "core/application_services.h"
+#include "core/startup_profiler.h"
 #include "data/database/database_session.h"
 #include "data/repositories/class_info_repository.h"
 #include "data/repositories/roster_repository.h"
@@ -231,6 +232,13 @@ public:
                 > teachersByLegacyId;
             teachersByLegacyId.reserve(request.selectedClassIds.size());
 
+            QList<int> rosterReadClassIds;
+            rosterReadClassIds.reserve(
+                static_cast<qsizetype>(request.selectedClassIds.size())
+                );
+            std::unordered_set<int> rosterClassIdsSeen;
+            rosterClassIdsSeen.reserve(request.selectedClassIds.size());
+
             for (std::size_t index = 0;
                  index < request.selectedClassIds.size();
                  ++index)
@@ -388,17 +396,6 @@ public:
                 }
                 totalMeetings += classRecord.meetings.size();
 
-                // Resolve the teacher before the roster read. Roster failures
-                // retain the legacy count-zero fallback.
-                const ::Result<int> studentCount =
-                    rosterRepository->getRosterStudentCount(legacyClassId);
-                if (studentCount)
-                {
-                    classRecord.studentCount = static_cast<std::size_t>(
-                        std::max(0, studentCount.value())
-                        );
-                }
-
                 if (newlyLoadedTeacher)
                 {
                     teacher = teachersByLegacyId.emplace(
@@ -411,6 +408,103 @@ public:
                 }
 
                 source.classes.push_back(std::move(classRecord));
+                if (rosterClassIdsSeen.insert(legacyClassId).second)
+                {
+                    rosterReadClassIds.append(legacyClassId);
+                }
+            }
+
+            // Scope and teacher filtering are complete. Read only counts for
+            // classes that will be present in the output, while preserving
+            // the independent count-zero fallback for each failed roster.
+            if (!rosterReadClassIds.isEmpty())
+            {
+                const auto loadedRosterCounts =
+                    rosterRepository->loadSubPrepStudentCountRecords(
+                        rosterReadClassIds
+                        );
+                if (loadedRosterCounts
+                    && loadedRosterCounts->size()
+                        == rosterReadClassIds.size())
+                {
+                    std::unordered_map<
+                        int,
+                        const RosterRepository::SubPrepStudentCountReadEntry*
+                        > rosterCountsByClassId;
+                    rosterCountsByClassId.reserve(
+                        static_cast<std::size_t>(loadedRosterCounts->size())
+                        );
+                    bool recordsMatchRequest = true;
+                    for (std::size_t index = 0;
+                         index < static_cast<std::size_t>(
+                             loadedRosterCounts->size()
+                             );
+                         ++index)
+                    {
+                        const auto& entry = loadedRosterCounts->at(
+                            static_cast<qsizetype>(index)
+                            );
+                        if (entry.classId
+                                != rosterReadClassIds.at(
+                                    static_cast<qsizetype>(index)
+                                    )
+                            || !rosterCountsByClassId.emplace(
+                                entry.classId,
+                                &entry
+                                ).second)
+                        {
+                            recordsMatchRequest = false;
+                            break;
+                        }
+                    }
+
+                    if (recordsMatchRequest)
+                    {
+                        for (Application::SubPrepPrintClass& classRecord :
+                             source.classes)
+                        {
+                            const auto legacyClassId =
+                                legacyId(classRecord.id.value());
+                            if (!legacyClassId)
+                            {
+                                continue;
+                            }
+                            const auto record = rosterCountsByClassId.find(
+                                *legacyClassId
+                                );
+                            if (record == rosterCountsByClassId.end()
+                                || !record->second->studentCount)
+                            {
+                                continue;
+                            }
+
+                            const auto& countRecord = *record->second;
+                            classRecord.studentCount =
+                                static_cast<std::size_t>(
+                                    std::max(
+                                        0,
+                                        countRecord.studentCount.value()
+                                        )
+                                    );
+
+                            // A metrics hook must not suppress this or later
+                            // class records if instrumentation fails.
+                            try
+                            {
+                                StartupProfiler::recordSubPrepRosterQuery(
+                                    countRecord.classId,
+                                    countRecord.columnCount,
+                                    countRecord.rowCount,
+                                    countRecord.cellCount,
+                                    countRecord.studentCount.value()
+                                    );
+                            }
+                            catch (...)
+                            {
+                            }
+                        }
+                    }
+                }
             }
 
             return Application::SubPrepPrintSourceReadResult::success(

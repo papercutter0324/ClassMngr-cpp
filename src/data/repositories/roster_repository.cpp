@@ -11,6 +11,7 @@
 #include <QSqlQuery>
 #include <QSet>
 
+#include <algorithm>
 #include <vector>
 
 RosterRepository::RosterRepository(
@@ -624,6 +625,247 @@ RosterRepository::myClassesStudentCountBatchReadMetrics() const noexcept
     return m_myClassesStudentCountBatchReadMetrics;
 }
 
+Result<QList<RosterRepository::SubPrepStudentCountReadEntry>>
+RosterRepository::loadSubPrepStudentCountRecords(
+    const QList<int>& classIds
+    )
+{
+    if (classIds.isEmpty())
+    {
+        return QList<SubPrepStudentCountReadEntry>{};
+    }
+
+    ++m_subPrepStudentCountBatchReadMetrics.callCount;
+    m_subPrepStudentCountBatchReadMetrics.requestedClassCount +=
+        classIds.size();
+
+    QSet<int> seenClassIds;
+    seenClassIds.reserve(classIds.size());
+    QHash<int, qsizetype> requestIndexByClassId;
+    requestIndexByClassId.reserve(classIds.size());
+    for (qsizetype index = 0; index < classIds.size(); ++index)
+    {
+        const int classId = classIds.at(index);
+        if (classId <= 0 || seenClassIds.contains(classId))
+        {
+            return std::unexpected(QObject::tr(
+                "Loading Sub Prep student counts failed: class ids must be positive and unique."
+                ));
+        }
+        seenClassIds.insert(classId);
+        requestIndexByClassId.insert(classId, index);
+    }
+
+    const auto readIndividually =
+        [this, &classIds]()
+        -> Result<QList<SubPrepStudentCountReadEntry>>
+    {
+        QList<SubPrepStudentCountReadEntry> entries;
+        entries.reserve(classIds.size());
+        for (const int classId : classIds)
+        {
+            ++m_subPrepStudentCountBatchReadMetrics.fallbackClassReadCount;
+            const auto loaded = loadSubPrepStudentCountRecord(classId);
+            if (loaded)
+            {
+                entries.append(loaded.value());
+            }
+            else
+            {
+                entries.append({
+                    classId,
+                    Result<int>{std::unexpected(loaded.error())},
+                    0,
+                    0,
+                    0
+                });
+            }
+        }
+        return entries;
+    };
+
+    ++m_subPrepStudentCountBatchReadMetrics.columnStatementCount;
+    const auto loadedColumns = loadRosterColumnNamesForClasses(classIds);
+    if (!loadedColumns || loadedColumns->size() != classIds.size())
+    {
+        return readIndividually();
+    }
+
+    QList<SubPrepStudentCountReadEntry> entries;
+    entries.reserve(classIds.size());
+    QStringList requestedValues;
+    requestedValues.reserve(classIds.size());
+    std::vector<int> englishColumns(
+        static_cast<std::size_t>(classIds.size()),
+        -1
+        );
+    std::vector<int> koreanColumns(
+        static_cast<std::size_t>(classIds.size()),
+        -1
+        );
+    for (qsizetype index = 0; index < classIds.size(); ++index)
+    {
+        const ColumnNamesForClass& record = loadedColumns->at(index);
+        if (record.classId != classIds.at(index))
+        {
+            return readIndividually();
+        }
+
+        const int englishColumn = record.columns.indexOf(
+            QStringLiteral("English")
+            );
+        const int koreanColumn = record.columns.indexOf(
+            QStringLiteral("Korean")
+            );
+        englishColumns[static_cast<std::size_t>(index)] = englishColumn;
+        koreanColumns[static_cast<std::size_t>(index)] = koreanColumn;
+        entries.append({
+            .classId = record.classId,
+            .studentCount = 0,
+            .columnCount = static_cast<int>(record.columns.size()),
+            .rowCount = 0,
+            .cellCount = 0
+        });
+
+        // loadRoster() returns immediately after the column query when there
+        // are no columns. Preserve that success case without touching
+        // roster_data.
+        if (!record.columns.isEmpty())
+        {
+            requestedValues.append(
+                QStringLiteral("(%1, %2, %3)")
+                    .arg(record.classId)
+                    .arg(index)
+                    .arg(record.columns.size())
+                );
+        }
+    }
+
+    if (requestedValues.isEmpty())
+    {
+        return entries;
+    }
+
+    const QString queryText = QStringLiteral(R"(
+        WITH requested(class_id, request_order, column_count) AS (
+            VALUES %1
+        )
+        SELECT requested.class_id AS class_id,
+               requested.request_order AS request_order,
+               roster_data.row_index AS row_index,
+               roster_data.col_index AS col_index,
+               roster_data.value AS value
+        FROM requested
+        JOIN roster_data
+            ON roster_data.class_id=requested.class_id
+        WHERE roster_data.row_index >= 0
+            AND roster_data.col_index >= 0
+            AND roster_data.col_index < requested.column_count
+        ORDER BY
+            requested.request_order,
+            roster_data.row_index,
+            roster_data.col_index
+    )").arg(requestedValues.join(QStringLiteral(", ")));
+
+    QSqlQuery query(m_database);
+    query.setForwardOnly(true);
+    ++m_subPrepStudentCountBatchReadMetrics.dataStatementCount;
+    const auto loadedCells = SqlQueryUtils::execute(
+        query,
+        queryText,
+        QObject::tr("Loading Sub Prep student-count cells"),
+        QObject::tr("%1 classes").arg(requestedValues.size())
+        );
+    if (!loadedCells)
+    {
+        query.finish();
+        return readIndividually();
+    }
+
+    std::vector<int> rowCounts(static_cast<std::size_t>(classIds.size()), 0);
+    std::vector<int> studentCounts(
+        static_cast<std::size_t>(classIds.size()),
+        0
+        );
+    int currentRequestOrder = -1;
+    int currentRowIndex = -1;
+    bool currentRowHasStudent = false;
+    const auto finishCurrentRow = [&]()
+    {
+        if (currentRowHasStudent
+            && currentRequestOrder >= 0
+            && currentRequestOrder < classIds.size())
+        {
+            ++studentCounts[static_cast<std::size_t>(currentRequestOrder)];
+        }
+    };
+
+    while (query.next())
+    {
+        const int classId = query.value("class_id").toInt();
+        const int requestOrder = query.value("request_order").toInt();
+        const int rowIndex = query.value("row_index").toInt();
+        const int columnIndex = query.value("col_index").toInt();
+        if (requestOrder < 0
+            || requestOrder >= classIds.size()
+            || classIds.at(requestOrder) != classId
+            || !requestIndexByClassId.contains(classId)
+            || entries.at(requestOrder).classId != classId
+            || rowIndex < 0)
+        {
+            query.finish();
+            return readIndividually();
+        }
+
+        rowCounts[static_cast<std::size_t>(requestOrder)] = std::max(
+            rowCounts[static_cast<std::size_t>(requestOrder)],
+            rowIndex + 1
+            );
+
+        if (requestOrder != currentRequestOrder
+            || rowIndex != currentRowIndex)
+        {
+            finishCurrentRow();
+            currentRequestOrder = requestOrder;
+            currentRowIndex = rowIndex;
+            currentRowHasStudent = false;
+        }
+
+        const std::size_t requestOffset =
+            static_cast<std::size_t>(requestOrder);
+        if (columnIndex == englishColumns[requestOffset]
+            || columnIndex == koreanColumns[requestOffset])
+        {
+            if (!query.value("value").toString().trimmed().isEmpty())
+            {
+                currentRowHasStudent = true;
+            }
+        }
+    }
+    if (query.lastError().isValid())
+    {
+        query.finish();
+        return readIndividually();
+    }
+    finishCurrentRow();
+
+    for (qsizetype index = 0; index < entries.size(); ++index)
+    {
+        const std::size_t offset = static_cast<std::size_t>(index);
+        entries[index].studentCount = studentCounts[offset];
+        entries[index].rowCount = rowCounts[offset];
+        entries[index].cellCount =
+            entries[index].rowCount * entries[index].columnCount;
+    }
+    return entries;
+}
+
+const RosterRepository::SubPrepStudentCountBatchReadMetrics&
+RosterRepository::subPrepStudentCountBatchReadMetrics() const noexcept
+{
+    return m_subPrepStudentCountBatchReadMetrics;
+}
+
 Status RosterRepository::forEachRosterDataCellForClasses(
     const QList<int>& classIds,
     const int rowLimit,
@@ -1168,10 +1410,19 @@ Result<Roster> RosterRepository::loadRosterForOutput(
     return roster;
 }
 
-Result<int> RosterRepository::getRosterStudentCount(
-    int classId
+Result<RosterRepository::SubPrepStudentCountReadEntry>
+RosterRepository::loadSubPrepStudentCountRecord(
+    const int classId
     )
 {
+    if (classId <= 0)
+    {
+        return std::unexpected(
+            QObject::tr("Loading Sub Prep student count failed: invalid class id %1.")
+                .arg(classId)
+            );
+    }
+
     const Result<Roster> roster =
         loadRoster(classId);
     if (!roster)
@@ -1195,45 +1446,54 @@ Result<int> RosterRepository::getRosterStudentCount(
         cellCount += row.size();
     }
 
-    if (englishColumn < 0 && koreanColumn < 0)
+    int count = 0;
+    if (englishColumn >= 0 || koreanColumn >= 0)
     {
-        StartupProfiler::recordSubPrepRosterQuery(
-            classId,
-            roster->columns.size(),
-            roster->rows.size(),
-            cellCount,
-            0
-            );
-        return 0;
+        for (const QStringList& row : roster->rows)
+        {
+            const bool hasEnglish =
+                englishColumn >= 0
+                && englishColumn < row.size()
+                && !row[englishColumn].trimmed().isEmpty();
+
+            const bool hasKorean =
+                koreanColumn >= 0
+                && koreanColumn < row.size()
+                && !row[koreanColumn].trimmed().isEmpty();
+
+            if (hasEnglish || hasKorean)
+            {
+                ++count;
+            }
+        }
     }
 
-    int count = 0;
+    return SubPrepStudentCountReadEntry{
+        .classId = classId,
+        .studentCount = count,
+        .columnCount = static_cast<int>(roster->columns.size()),
+        .rowCount = static_cast<int>(roster->rows.size()),
+        .cellCount = cellCount
+    };
+}
 
-    for (const QStringList& row : roster->rows)
+Result<int> RosterRepository::getRosterStudentCount(
+    const int classId
+    )
+{
+    const auto loaded = loadSubPrepStudentCountRecord(classId);
+    if (!loaded)
     {
-        const bool hasEnglish =
-            englishColumn >= 0
-            && englishColumn < row.size()
-            && !row[englishColumn].trimmed().isEmpty();
-
-        const bool hasKorean =
-            koreanColumn >= 0
-            && koreanColumn < row.size()
-            && !row[koreanColumn].trimmed().isEmpty();
-
-        if (hasEnglish || hasKorean)
-        {
-            ++count;
-        }
+        return std::unexpected(loaded.error());
     }
 
     StartupProfiler::recordSubPrepRosterQuery(
         classId,
-        roster->columns.size(),
-        roster->rows.size(),
-        cellCount,
-        count
+        loaded->columnCount,
+        loaded->rowCount,
+        loaded->cellCount,
+        loaded->studentCount.value()
         );
 
-    return count;
+    return loaded->studentCount.value();
 }

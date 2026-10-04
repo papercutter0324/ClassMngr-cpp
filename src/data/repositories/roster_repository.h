@@ -43,6 +43,24 @@ public:
         int fallbackClassReadCount = 0;
     };
 
+    struct SubPrepStudentCountReadEntry final
+    {
+        int classId = 0;
+        Result<int> studentCount = 0;
+        int columnCount = 0;
+        int rowCount = 0;
+        int cellCount = 0;
+    };
+
+    struct SubPrepStudentCountBatchReadMetrics final
+    {
+        int callCount = 0;
+        int requestedClassCount = 0;
+        int columnStatementCount = 0;
+        int dataStatementCount = 0;
+        int fallbackClassReadCount = 0;
+    };
+
     explicit RosterRepository(
         QSqlDatabase& database
         );
@@ -76,6 +94,15 @@ public:
     [[nodiscard]] const MyClassesStudentCountBatchReadMetrics&
     myClassesStudentCountBatchReadMetrics() const noexcept;
 
+    // Reads Sub Prep print counts and legacy profiler dimensions in set based
+    // statements. Failures stay local to each class in the returned entries.
+    [[nodiscard]] Result<QList<SubPrepStudentCountReadEntry>>
+    loadSubPrepStudentCountRecords(
+        const QList<int>& classIds
+        );
+    [[nodiscard]] const SubPrepStudentCountBatchReadMetrics&
+    subPrepStudentCountBatchReadMetrics() const noexcept;
+
     // Streams sparse cells for the requested classes without materializing
     // roster snapshots. Rows outside [0, rowLimit) are omitted.
     [[nodiscard]] Status forEachRosterDataCellForClasses(
@@ -104,8 +131,12 @@ private:
         const Roster& roster
         );
     [[nodiscard]] Result<int> loadMyClassesStudentCountRecord(int classId);
+    [[nodiscard]] Result<SubPrepStudentCountReadEntry>
+    loadSubPrepStudentCountRecord(int classId);
 
     QSqlDatabase& m_database;
     MyClassesStudentCountBatchReadMetrics
         m_myClassesStudentCountBatchReadMetrics;
+    SubPrepStudentCountBatchReadMetrics
+        m_subPrepStudentCountBatchReadMetrics;
 };

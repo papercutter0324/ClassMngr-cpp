@@ -1,4 +1,5 @@
 #include "core/application_services.h"
+#include "core/startup_profiler.h"
 #include "app/services/feature_services.h"
 #include "data/data_service.h"
 #include "data/database/database_session.h"
@@ -273,6 +274,9 @@ private slots:
     void selectedClassDetailsSqlRepositoryFailureIsTechnical();
     void selectedClassDetailsUsesMissingTeacherFallbackAndBoundsFields();
     void projectsSelectedClassesInRequestOrderAndCopiesFilteredSource();
+    void batchesRosterCountsAfterPrintScopeAndPreservesLegacyMetrics();
+    void rosterBatchFailureFallsBackPerClassAndKeepsSuccessfulSibling();
+    void omittedPrintClassesDoNotReadRosters();
     void selectsIntensiveTimesAndOmitsClassesOutsideSelectedDays();
     void supportsUnassignedAndMissingTeachersAndEmptyRosterFallback();
     void unavailableSessionsDoNotFallBackToDataService();
@@ -1386,6 +1390,324 @@ selectsIntensiveTimesAndOmitsClassesOutsideSelectedDays()
     QCOMPARE(result.value().classes[0].meetings[0].weekday, SubPrepWeekday::Monday);
     QCOMPARE(result.value().classes[0].meetings[0].startTime, std::string("2:00 PM"));
     QCOMPARE(result.value().teachers.size(), std::size_t(1));
+}
+
+void NextPlatformApplicationServicesSubPrepPrintSourcePortTests::
+batchesRosterCountsAfterPrintScopeAndPreservesLegacyMetrics()
+{
+    ApplicationServices services;
+    QVERIFY(openDatabase(services, m_directory));
+    const int teacher = createTeacher(
+        services,
+        QStringLiteral("Roster batch"),
+        QStringLiteral("Roster batch"),
+        QStringLiteral("roster-batch")
+        );
+    QVERIFY(teacher > 0);
+
+    const int noNameColumnsClass = createClass(
+        services,
+        QStringLiteral("No name columns"),
+        teacher,
+        QStringLiteral("E4"),
+        QStringLiteral("Perseus"),
+        QStringLiteral(""),
+        QStringLiteral("#FFFFFF"),
+        QStringLiteral("#000000"),
+        {
+            {QStringLiteral("Monday"), QStringLiteral("8:00 AM"), QStringLiteral("8:45 AM")}
+        }
+        );
+    const int populatedClass = createClass(
+        services,
+        QStringLiteral("Sparse populated"),
+        teacher,
+        QStringLiteral("E5"),
+        QStringLiteral("Apollo"),
+        QStringLiteral(""),
+        QStringLiteral("#FFFFFF"),
+        QStringLiteral("#000000"),
+        {
+            {QStringLiteral("Monday"), QStringLiteral("9:00 AM"), QStringLiteral("9:45 AM")}
+        }
+        );
+    const int outOfScopeClass = createClass(
+        services,
+        QStringLiteral("Out of scope"),
+        teacher,
+        QStringLiteral("E4"),
+        QStringLiteral("Odysseus"),
+        QStringLiteral(""),
+        QStringLiteral("#FFFFFF"),
+        QStringLiteral("#000000"),
+        {
+            {QStringLiteral("Tuesday"), QStringLiteral("11:00 AM"), QStringLiteral("11:45 AM")}
+        }
+        );
+    QVERIFY(noNameColumnsClass > 0);
+    QVERIFY(populatedClass > 0);
+    QVERIFY(outOfScopeClass > 0);
+
+    RosterRepository* const rosterRepository = services.databaseSession()
+        ? services.databaseSession()->rosterRepository()
+        : nullptr;
+    QVERIFY(rosterRepository);
+
+    Roster noNameColumnsRoster;
+    noNameColumnsRoster.columns = {QStringLiteral("Notes")};
+    noNameColumnsRoster.rows = {
+        QStringList{QString()},
+        QStringList{QStringLiteral("No name data")}
+    };
+    QVERIFY(rosterRepository->saveRoster(
+        noNameColumnsClass,
+        noNameColumnsRoster
+        ));
+
+    Roster sparseRoster;
+    sparseRoster.columns = {
+        QStringLiteral("English"),
+        QStringLiteral("English"),
+        QStringLiteral("Korean"),
+        QStringLiteral("english"),
+        QStringLiteral("Notes")
+    };
+    for (int rowIndex = 0; rowIndex < 28; ++rowIndex)
+    {
+        sparseRoster.rows.append(QStringList{
+            QString(), QString(), QString(), QString(), QString()
+        });
+    }
+    sparseRoster.rows[0][0] = QString::fromUtf8("\xC2\xA0");
+    sparseRoster.rows[1][1] = QStringLiteral("Duplicate English ignored");
+    sparseRoster.rows[1][2] = QString::fromUtf8("\xE2\x80\x83");
+    sparseRoster.rows[2][2] = QString::fromUtf8("\xED\x95\x99\xEC\x83\x9D");
+    sparseRoster.rows[27][0] = QStringLiteral("Last sparse row");
+    QVERIFY(rosterRepository->saveRoster(
+        populatedClass,
+        sparseRoster
+        ));
+    StartupProfiler profiler;
+    StartupProfiler::activate(&profiler);
+    StartupProfiler::setSubPrepDiagnosticsActive(true);
+
+    ApplicationServicesSubPrepPrintSourcePort port(services);
+    const auto result = port.loadSource(requestFor(
+        {
+            classId(noNameColumnsClass),
+            classId(populatedClass),
+            classId(outOfScopeClass)
+        },
+        {SubPrepWeekday::Monday},
+        ScheduleViewMode::Regular
+        ));
+
+    const QList<StartupProfilingEvent> events = profiler.events();
+    StartupProfiler::setSubPrepDiagnosticsActive(false);
+    StartupProfiler::activate(nullptr);
+
+    QVERIFY(result);
+    QCOMPARE(result.value().classes.size(), std::size_t(2));
+    QCOMPARE(result.value().classes[0].id, classId(noNameColumnsClass));
+    QCOMPARE(result.value().classes[1].id, classId(populatedClass));
+    QCOMPARE(result.value().classes[0].studentCount, std::size_t(0));
+    QCOMPARE(result.value().classes[1].studentCount, std::size_t(2));
+    QCOMPARE(result.value().teachers.size(), std::size_t(1));
+
+    const auto& metrics =
+        rosterRepository->subPrepStudentCountBatchReadMetrics();
+    QCOMPARE(metrics.callCount, 1);
+    QCOMPARE(metrics.requestedClassCount, 2);
+    QCOMPARE(metrics.columnStatementCount, 1);
+    QCOMPARE(metrics.dataStatementCount, 1);
+    QCOMPARE(metrics.fallbackClassReadCount, 0);
+
+    QCOMPARE(events.size(), 2);
+    QCOMPARE(events[0].name, QStringLiteral("sub-prep-roster-query"));
+    QCOMPARE(
+        events[0].detail,
+        QStringLiteral(
+            "classId=%1; columns=1; rows=2; cells=2; returnedStudents=0"
+            ).arg(noNameColumnsClass)
+        );
+    QCOMPARE(events[1].name, QStringLiteral("sub-prep-roster-query"));
+    QCOMPARE(
+        events[1].detail,
+        QStringLiteral(
+            "classId=%1; columns=5; rows=28; cells=140; returnedStudents=2"
+            ).arg(populatedClass)
+        );
+}
+
+void NextPlatformApplicationServicesSubPrepPrintSourcePortTests::
+rosterBatchFailureFallsBackPerClassAndKeepsSuccessfulSibling()
+{
+    ApplicationServices services;
+    QVERIFY(openDatabase(services, m_directory));
+    const int teacher = createTeacher(
+        services,
+        QStringLiteral("Roster fallback"),
+        QStringLiteral("Roster fallback"),
+        QStringLiteral("roster-fallback-batch")
+        );
+    QVERIFY(teacher > 0);
+    const int classWithData = createClass(
+        services,
+        QStringLiteral("Data read fails"),
+        teacher,
+        QStringLiteral("E4"),
+        QStringLiteral("Perseus"),
+        QStringLiteral(""),
+        QStringLiteral("#FFFFFF"),
+        QStringLiteral("#000000"),
+        {
+            {QStringLiteral("Monday"), QStringLiteral("8:00 AM"), QStringLiteral("8:45 AM")}
+        }
+        );
+    const int classWithoutColumns = createClass(
+        services,
+        QStringLiteral("Empty roster"),
+        teacher,
+        QStringLiteral("E5"),
+        QStringLiteral("Apollo"),
+        QStringLiteral(""),
+        QStringLiteral("#FFFFFF"),
+        QStringLiteral("#000000"),
+        {
+            {QStringLiteral("Monday"), QStringLiteral("9:00 AM"), QStringLiteral("9:45 AM")}
+        }
+        );
+    QVERIFY(classWithData > 0);
+    QVERIFY(classWithoutColumns > 0);
+    RosterRepository* const rosterRepository = services.databaseSession()
+        ? services.databaseSession()->rosterRepository()
+        : nullptr;
+    QVERIFY(rosterRepository);
+    QVERIFY(rosterRepository->saveRoster(
+        classWithData,
+        rosterWithTwoStudents()
+        ));
+    QVERIFY(rosterRepository->saveRoster(
+        classWithoutColumns,
+        Roster{}
+        ));
+    QVERIFY(executeSql(services, QStringLiteral("DROP TABLE roster_data")));
+
+    StartupProfiler profiler;
+    StartupProfiler::activate(&profiler);
+    StartupProfiler::setSubPrepDiagnosticsActive(true);
+
+    ApplicationServicesSubPrepPrintSourcePort port(services);
+    const auto result = port.loadSource(requestFor(
+        {classId(classWithData), classId(classWithoutColumns)},
+        {SubPrepWeekday::Monday},
+        ScheduleViewMode::Regular
+        ));
+
+    const QList<StartupProfilingEvent> events = profiler.events();
+    StartupProfiler::setSubPrepDiagnosticsActive(false);
+    StartupProfiler::activate(nullptr);
+
+    QVERIFY(result);
+    QCOMPARE(result.value().classes.size(), std::size_t(2));
+    QCOMPARE(result.value().classes[0].id, classId(classWithData));
+    QCOMPARE(result.value().classes[1].id, classId(classWithoutColumns));
+    QCOMPARE(result.value().classes[0].studentCount, std::size_t(0));
+    QCOMPARE(result.value().classes[1].studentCount, std::size_t(0));
+    QCOMPARE(result.value().teachers.size(), std::size_t(1));
+
+    const auto& metrics =
+        rosterRepository->subPrepStudentCountBatchReadMetrics();
+    QCOMPARE(metrics.callCount, 1);
+    QCOMPARE(metrics.requestedClassCount, 2);
+    QCOMPARE(metrics.columnStatementCount, 1);
+    QCOMPARE(metrics.dataStatementCount, 1);
+    QCOMPARE(metrics.fallbackClassReadCount, 2);
+
+    QCOMPARE(events.size(), 1);
+    QCOMPARE(events[0].name, QStringLiteral("sub-prep-roster-query"));
+    QCOMPARE(
+        events[0].detail,
+        QStringLiteral(
+            "classId=%1; columns=0; rows=0; cells=0; returnedStudents=0"
+            ).arg(classWithoutColumns)
+        );
+}
+
+void NextPlatformApplicationServicesSubPrepPrintSourcePortTests::
+omittedPrintClassesDoNotReadRosters()
+{
+    ApplicationServices services;
+    QVERIFY(openDatabase(services, m_directory));
+    const int teacher = createTeacher(
+        services,
+        QStringLiteral("Omitted roster"),
+        QStringLiteral("Omitted roster"),
+        QStringLiteral("omitted-roster")
+        );
+    QVERIFY(teacher > 0);
+    const int outOfScopeClass = createClass(
+        services,
+        QStringLiteral("Out of scope"),
+        teacher,
+        QStringLiteral("E4"),
+        QStringLiteral("Perseus"),
+        QStringLiteral(""),
+        QStringLiteral("#FFFFFF"),
+        QStringLiteral("#000000"),
+        {
+            {QStringLiteral("Tuesday"), QStringLiteral("8:00 AM"), QStringLiteral("8:45 AM")}
+        }
+        );
+    const int missingTeacherClass = createClass(
+        services,
+        QStringLiteral("Missing teacher"),
+        teacher,
+        QStringLiteral("E5"),
+        QStringLiteral("Apollo"),
+        QStringLiteral(""),
+        QStringLiteral("#FFFFFF"),
+        QStringLiteral("#000000"),
+        {
+            {QStringLiteral("Monday"), QStringLiteral("9:00 AM"), QStringLiteral("9:45 AM")}
+        }
+        );
+    QVERIFY(outOfScopeClass > 0);
+    QVERIFY(missingTeacherClass > 0);
+    QVERIFY(executeSql(services, QStringLiteral("PRAGMA foreign_keys = OFF")));
+    QSqlQuery missingTeacherAssignment(
+        services.databaseSession()->database()
+        );
+    QVERIFY(missingTeacherAssignment.prepare(QStringLiteral(
+        "UPDATE class_info SET teacher_id = ? WHERE class_id = ?"
+        )));
+    missingTeacherAssignment.addBindValue(999999);
+    missingTeacherAssignment.addBindValue(missingTeacherClass);
+    QVERIFY2(
+        missingTeacherAssignment.exec(),
+        qPrintable(missingTeacherAssignment.lastError().text())
+        );
+    QVERIFY(executeSql(services, QStringLiteral("PRAGMA foreign_keys = ON")));
+    RosterRepository* const rosterRepository = services.databaseSession()
+        ? services.databaseSession()->rosterRepository()
+        : nullptr;
+    QVERIFY(rosterRepository);
+
+    ApplicationServicesSubPrepPrintSourcePort port(services);
+    const auto result = port.loadSource(requestFor(
+        {classId(outOfScopeClass), classId(missingTeacherClass)},
+        {SubPrepWeekday::Monday},
+        ScheduleViewMode::Regular
+        ));
+
+    QVERIFY(result);
+    QVERIFY(result.value().classes.empty());
+    const auto& metrics =
+        rosterRepository->subPrepStudentCountBatchReadMetrics();
+    QCOMPARE(metrics.callCount, 0);
+    QCOMPARE(metrics.columnStatementCount, 0);
+    QCOMPARE(metrics.dataStatementCount, 0);
+    QCOMPARE(metrics.fallbackClassReadCount, 0);
 }
 
 void NextPlatformApplicationServicesSubPrepPrintSourcePortTests::
