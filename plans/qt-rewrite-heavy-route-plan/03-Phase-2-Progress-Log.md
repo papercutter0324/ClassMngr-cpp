@@ -11318,3 +11318,32 @@ and error behavior. At F314 start, discover Batch 5 and reconsider the fixed
 up-to-four-evaluation roster score-import read. F315 remains in Batch 4;
 F298 remains deferred pending its warning/navigation decision. Phase 2
 remains In Progress/Open; Gates 1 and 2 remain Partial.
+
+### Progress update - 2026-10-04 (F314 accepted; F315 selected)
+
+F314, committed as
+`15ffd504d2e5778488eddb529b88fcf4a101d923`, adds a distinct purpose-fit
+repository projection for co-teacher choices. It selects teacher ID, Korean
+and English names, room, internet type, Wi-Fi name/password, projection
+type, and Zoom ID/password, ordered by `teacher_en`. The Platform port
+preserves raw values; the broader `getAllTeachers()` and F312/F313 paths
+remain unchanged.
+
+Executor self-check and fresh independent Windows x64 Debug/Ninja/MSVC
+verification passed. The independent configure validated 1,301 handwritten
+source files; ClassMngr and all three focused targets built. Focused CTest
+passed 3/3: the co-teacher Application query, Platform port, and feature
+page tests. Coverage checks ordered/raw projection, empty results, invalid
+IDs, recoverability, and page warn/clear-state behavior. `git diff --check`
+passed. Independent logs are under build/f314v/ (configure.log, build.log,
+ctest_corrected.log, diff_check_final.log); executor logs are under build/.
+The full suite was not run; missing-repository and exception branches were
+source-reviewed but not explicitly injected.
+
+At F314 start, two independent read-only audits recorded Batch 5 (F316-F322).
+The roster score-import read remains distinct from F299 analytics; six
+additional fan-out/projection candidates were recorded, and no other strong
+candidates surfaced. F315 is selected for a purpose-fit Korean teacher
+birthday-directory projection, preserving birthday/name/preferred-display
+fields, raw values, repository order, and downstream filtering. Phase 2 remains
+In Progress/Open; Gates 1 and 2 remain Partial.

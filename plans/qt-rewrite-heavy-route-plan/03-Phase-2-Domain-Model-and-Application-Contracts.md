@@ -18,11 +18,10 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-04
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F313 is accepted. F314 is selected to use a purpose-fit
-  projection for co-teacher choices, preserving exact profile/network fields,
-  repository order, ID validation, and error behavior. At F314 start, discover
-  Batch 5 and reconsider the fixed up-to-four-evaluation roster score-import
-  read. F315 remains in Batch 4.
+- Current note: F314 is accepted. F315 is selected for a purpose-fit Korean
+  teacher birthday-directory projection, preserving birthday/name/preferred-
+  display fields, raw values, repository order, and downstream filtering.
+  Batch 5 (F316-F322) is recorded; F316 batches roster score-import reads.
 
 ### Slice discovery batches
 
@@ -52,16 +51,36 @@ Accepted slices are removed from active tracking; their implementation and accep
 
 #### Active batch: Batch 4
 
-1. F314 - Purpose-fit projection for co-teacher choices; preserve exact
-   profile/network fields, repository order, ID validation, and error
-   behavior.
-2. F315 - Purpose-fit Korean teacher birthday-directory projection;
+1. F315 - Purpose-fit Korean teacher birthday-directory projection;
    preserve birthday/name/preferred-display fields, raw values, repository
    order, and downstream filtering.
 
-At F314 start, discover Batch 5 and reconsider the fixed up-to-four-evaluation
-roster score-import read. F305's transfer-menu capacity/roster loop is already
-accepted and must not be duplicated.
+F305's transfer-menu capacity/roster loop remains accepted and must not be
+duplicated.
+
+#### Recorded batch: Batch 5
+
+1. F316 - Batch roster score-import evaluation reads; preserve fixed column
+   order, skip absent columns, isolate per-evaluation failure/empty results,
+   and preserve score assignment.
+2. F317 - Batch Sub Prep roster-output reads for distinct assigned teacher
+   profiles; preserve selected-scope filtering, first-seen association,
+   teacher identity validation, and source-error behavior.
+3. F318 - Batch roster-template print per-class class-information and roster
+   reads; preserve class order, current-class name fallback, printed fields,
+   and abort-on-read-failure behavior.
+4. F319 - Batch Class Analytics typed evaluation reads; preserve canonical
+   evaluation order, missing-evaluation-as-empty behavior, roster filtering,
+   YTD cohorts, and whole-dashboard failure behavior.
+5. F320 - Purpose-fit Speaking Evaluation roster-name projection; preserve
+   English/Korean column selection, row order, trimming, and name-pair
+   matching behavior.
+6. F321 - Purpose-fit Native English and GS Team birthday projections;
+   preserve schedule fields, source ordering, and current warning behavior.
+7. F322 - Reduce Class Analytics roster-name fixed SQL read sequence;
+   preserve sparse-row sizing and the compact English/Korean projection.
+
+No other slices were found.
 #### F299 completeness audit checkpoint
 
 At F299 start, perform a separate completeness audit for Phase 2 slices missed
@@ -222,32 +241,33 @@ No new v2 production path depends on DataService, MainWindow, PageManager, or a 
 
 Earlier verified slices and cumulative exit-gate snapshots are archived in the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 
-## Latest Progress Update - 2026-10-04 (F313 accepted; F314 selected)
+## Latest Progress Update - 2026-10-04 (F314 accepted; F315 selected)
 
-F313, committed as
-`443f6bb4d44829c2cbc5e6480db935e96a22a58b`, adds a purpose-fit repository
-projection for testing-teacher choices. It selects only teacher ID, Korean
-name, and room, ordered by `teacher_en`; the Platform port preserves raw
-values. The page continues to filter blank Korean names, trim display/room
-values, preserve repository order, and restore selection by ID or fall back
-to None. Unavailable sessions remain nonrecoverable NotFound results;
-repository errors remain recoverable Technical results.
+F314, committed as
+`15ffd504d2e5778488eddb529b88fcf4a101d923`, adds a distinct purpose-fit
+repository projection for co-teacher choices. It selects teacher ID, Korean
+and English names, room, internet type, Wi-Fi name/password, projection
+type, and Zoom ID/password, ordered by `teacher_en`. The Platform port
+preserves raw values; the broader `getAllTeachers()` and F312/F313 paths
+remain unchanged.
 
 Executor self-check and fresh independent Windows x64 Debug/Ninja/MSVC
 verification passed. The independent configure validated 1,301 handwritten
-source files; ClassMngr and the Platform, Application, and isolated page
-targets built. Focused CTest passed 3/3, including the four F313 page cases
-for ordering/selection, empty choices, silent NotFound handling, and
-warning behavior on query failure. `git diff --check` passed. Independent
-logs are under build/f313v/ (configure.log, build.log, ctest.log,
-page_focused_verbose.log, diff_check.log); executor logs are under build/.
-The broad ClassMngrTestingClassesPageTests suite was not run: the executor
-previously hit a 300-second stall in `outputAvailabilityFollowsRosterTabAndLoadedClass`,
-before the F313 cases. The focused F313 registration passed independently.
+source files; ClassMngr and all three focused targets built. Focused CTest
+passed 3/3: the co-teacher Application query, Platform port, and feature
+page tests. Coverage checks ordered/raw projection, empty results, invalid
+IDs, recoverability, and page warn/clear-state behavior. `git diff --check`
+passed. Independent logs are under build/f314v/ (configure.log, build.log,
+ctest_corrected.log, diff_check_final.log); executor logs are under build/.
+The full suite was not run; missing-repository and exception branches were
+source-reviewed but not explicitly injected.
 
-F314 is selected for a purpose-fit projection for co-teacher choices,
-preserving exact profile/network fields, repository order, ID validation,
-and error behavior. At F314 start, discover Batch 5 and reconsider the fixed
-up-to-four-evaluation roster score-import read. F315 remains in Batch 4;
-F298 remains deferred pending its warning/navigation decision. Phase 2
-remains In Progress/Open; Gates 1 and 2 remain Partial.
+At F314 start, two independent read-only audits recorded Batch 5 (F316-F322).
+The roster score-import read remains distinct from F299 analytics; six
+additional fan-out/projection candidates were recorded, and no other strong
+candidates surfaced. F315 is selected for a purpose-fit Korean teacher
+birthday-directory projection, preserving birthday/name/preferred-display
+fields, raw values, repository order, and downstream filtering. Batch 5 is
+recorded in the active plan. F298 remains deferred pending its warning/
+navigation decision. Phase 2 remains In Progress/Open; Gates 1 and 2 remain
+Partial.
