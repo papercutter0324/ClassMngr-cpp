@@ -4,6 +4,7 @@
 #include "data/data_service.h"
 #include "data/database/database_session.h"
 #include "data/repositories/class_info_repository.h"
+#include "data/repositories/teacher_repository.h"
 #include "domain/models/roster.h"
 #include "domain/models/teacher.h"
 #include "next/application/sub_prep_print_source_query.h"
@@ -274,6 +275,7 @@ private slots:
     void selectedClassDetailsSqlRepositoryFailureIsTechnical();
     void selectedClassDetailsUsesMissingTeacherFallbackAndBoundsFields();
     void projectsSelectedClassesInRequestOrderAndCopiesFilteredSource();
+    void batchesTeacherProfilesInFirstReferenceOrderWithoutUnassignedReads();
     void batchesRosterCountsAfterPrintScopeAndPreservesLegacyMetrics();
     void rosterBatchFailureFallsBackPerClassAndKeepsSuccessfulSibling();
     void omittedPrintClassesDoNotReadRosters();
@@ -1324,6 +1326,141 @@ projectsSelectedClassesInRequestOrderAndCopiesFilteredSource()
     QVERIFY(source == previous);
     QCOMPARE(source.teachers[0].room, std::string("Room one"));
     QCOMPARE(source.classes[0].meetings[0].startTime, std::string("10:00 AM"));
+}
+
+void NextPlatformApplicationServicesSubPrepPrintSourcePortTests::
+batchesTeacherProfilesInFirstReferenceOrderWithoutUnassignedReads()
+{
+    ApplicationServices services;
+    QVERIFY(openDatabase(services, m_directory));
+
+    const int firstTeacher = createTeacher(
+        services,
+        QStringLiteral("First teacher"),
+        QStringLiteral("First teacher"),
+        QStringLiteral("first")
+        );
+    const int secondTeacher = createTeacher(
+        services,
+        QStringLiteral("Second teacher"),
+        QStringLiteral("Second teacher"),
+        QStringLiteral("second")
+        );
+    QVERIFY(firstTeacher > 0);
+    QVERIFY(secondTeacher > 0);
+
+    const auto createScheduledClass = [&](
+        const QString& name,
+        const QString& level,
+        const int assignedTeacherId,
+        const QString& day,
+        const QString& startTime,
+        const QString& endTime
+        )
+    {
+        return createClass(
+            services,
+            name,
+            assignedTeacherId,
+            QStringLiteral("E4"),
+            level,
+            QString(),
+            QStringLiteral("#FFFFFF"),
+            QStringLiteral("#000000"),
+            {
+                {day, startTime, endTime}
+            }
+            );
+    };
+
+    const int unassignedClass = createScheduledClass(
+        QStringLiteral("Unassigned"),
+        QStringLiteral("Theseus"),
+        -1,
+        QStringLiteral("Monday"),
+        QStringLiteral("8:00 AM"),
+        QStringLiteral("8:45 AM")
+        );
+    const int secondTeacherFirstClass = createScheduledClass(
+        QStringLiteral("Second teacher first"),
+        QStringLiteral("Perseus"),
+        secondTeacher,
+        QStringLiteral("Tuesday"),
+        QStringLiteral("9:00 AM"),
+        QStringLiteral("9:45 AM")
+        );
+    const int firstTeacherClass = createScheduledClass(
+        QStringLiteral("First teacher second"),
+        QStringLiteral("Odysseus"),
+        firstTeacher,
+        QStringLiteral("Monday"),
+        QStringLiteral("9:00 AM"),
+        QStringLiteral("9:45 AM")
+        );
+    const int secondTeacherRepeatedClass = createScheduledClass(
+        QStringLiteral("Second teacher repeated"),
+        QStringLiteral("Hercules"),
+        secondTeacher,
+        QStringLiteral("Friday"),
+        QStringLiteral("9:00 AM"),
+        QStringLiteral("9:45 AM")
+        );
+    QVERIFY(unassignedClass > 0);
+    QVERIFY(secondTeacherFirstClass > 0);
+    QVERIFY(firstTeacherClass > 0);
+    QVERIFY(secondTeacherRepeatedClass > 0);
+
+    TeacherRepository* const teacherRepository = services.databaseSession()
+        ? services.databaseSession()->teacherRepository()
+        : nullptr;
+    QVERIFY(teacherRepository);
+    ApplicationServicesSubPrepPrintSourcePort port(services);
+
+    const auto unassignedResult = port.loadSource(requestFor(
+        {classId(unassignedClass)},
+        {SubPrepWeekday::Monday},
+        ScheduleViewMode::Regular
+        ));
+    QVERIFY(unassignedResult);
+    QVERIFY(unassignedResult.value().classes.empty());
+    QVERIFY(unassignedResult.value().teachers.empty());
+    const auto& emptyMetrics =
+        teacherRepository->teacherProfileBatchReadMetrics();
+    QCOMPARE(emptyMetrics.callCount, 0);
+    QCOMPARE(emptyMetrics.requestedTeacherCount, 0);
+    QCOMPARE(emptyMetrics.statementCount, 0);
+    QCOMPARE(emptyMetrics.fallbackSingleReadCount, 0);
+
+    const auto result = port.loadSource(requestFor(
+        {
+            classId(secondTeacherFirstClass),
+            classId(firstTeacherClass),
+            classId(secondTeacherRepeatedClass)
+        },
+        {
+            SubPrepWeekday::Monday,
+            SubPrepWeekday::Tuesday,
+            SubPrepWeekday::Friday
+        },
+        ScheduleViewMode::Regular
+        ));
+
+    QVERIFY(result);
+    const SubPrepPrintSourceInput& source = result.value();
+    QCOMPARE(source.classes.size(), std::size_t(3));
+    QCOMPARE(source.classes[0].id, classId(secondTeacherFirstClass));
+    QCOMPARE(source.classes[1].id, classId(firstTeacherClass));
+    QCOMPARE(source.classes[2].id, classId(secondTeacherRepeatedClass));
+    QCOMPARE(source.teachers.size(), std::size_t(2));
+    QCOMPARE(source.teachers[0].id, teacherId(secondTeacher));
+    QCOMPARE(source.teachers[1].id, teacherId(firstTeacher));
+
+    const auto& metrics =
+        teacherRepository->teacherProfileBatchReadMetrics();
+    QCOMPARE(metrics.callCount, 1);
+    QCOMPARE(metrics.requestedTeacherCount, 2);
+    QCOMPARE(metrics.statementCount, 1);
+    QCOMPARE(metrics.fallbackSingleReadCount, 0);
 }
 
 void NextPlatformApplicationServicesSubPrepPrintSourcePortTests::

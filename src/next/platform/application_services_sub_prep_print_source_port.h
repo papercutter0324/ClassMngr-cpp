@@ -232,6 +232,77 @@ public:
                 > teachersByLegacyId;
             teachersByLegacyId.reserve(request.selectedClassIds.size());
 
+            QList<int> teacherReadIds;
+            teacherReadIds.reserve(
+                static_cast<qsizetype>(request.selectedClassIds.size())
+                );
+            std::unordered_set<int> teacherIdsSeen;
+            teacherIdsSeen.reserve(request.selectedClassIds.size());
+            for (const int legacyClassId : legacyClassIds)
+            {
+                const auto infoEntry = infosByLegacyId.find(legacyClassId);
+                if (infoEntry == infosByLegacyId.end())
+                {
+                    continue;
+                }
+
+                const int assignedTeacherId = infoEntry->second->teacherId;
+                if (assignedTeacherId > 0
+                    && teacherIdsSeen.insert(assignedTeacherId).second)
+                {
+                    teacherReadIds.append(assignedTeacherId);
+                }
+            }
+
+            using TeacherProfileBatchResult = ::Result<
+                QList<TeacherProfileBatchReadRecord>
+                >;
+            std::optional<TeacherProfileBatchResult> loadedTeacherProfiles;
+            std::unordered_map<
+                int,
+                const TeacherProfileBatchReadRecord*
+                > teacherProfilesByLegacyId;
+            teacherProfilesByLegacyId.reserve(teacherReadIds.size());
+            if (!teacherReadIds.isEmpty())
+            {
+                loadedTeacherProfiles.emplace(
+                    teacherRepository->loadTeacherProfileRecords(
+                        teacherReadIds
+                        )
+                    );
+                if (loadedTeacherProfiles->has_value())
+                {
+                    const QList<TeacherProfileBatchReadRecord>& records =
+                        loadedTeacherProfiles->value();
+                    if (records.size() != teacherReadIds.size())
+                    {
+                        return failure(
+                            Domain::ErrorCode::Validation,
+                            "The teacher profile batch did not match the requested assignments."
+                            );
+                    }
+
+                    for (qsizetype index = 0;
+                         index < records.size();
+                         ++index)
+                    {
+                        const TeacherProfileBatchReadRecord& record =
+                            records[index];
+                        if (record.teacherId != teacherReadIds[index]
+                            || !teacherProfilesByLegacyId.emplace(
+                                record.teacherId,
+                                &record
+                                ).second)
+                        {
+                            return failure(
+                                Domain::ErrorCode::Validation,
+                                "The teacher profile batch returned an unexpected assignment order."
+                                );
+                        }
+                    }
+                }
+            }
+
             QList<int> rosterReadClassIds;
             rosterReadClassIds.reserve(
                 static_cast<qsizetype>(request.selectedClassIds.size())
@@ -321,8 +392,35 @@ public:
                 std::optional<Application::SubPrepPrintTeacher> newlyLoadedTeacher;
                 if (teacher == teachersByLegacyId.end())
                 {
-                    const ::Result<Teacher> loadedTeacher =
-                        teacherRepository->getTeacher(assignedTeacherId);
+                    if (loadedTeacherProfiles
+                        && !loadedTeacherProfiles->has_value())
+                    {
+                        if (!session->isOpen())
+                        {
+                            return failure(
+                                Domain::ErrorCode::NotFound,
+                                "The active database session became unavailable while loading Sub Prep print data."
+                                );
+                        }
+
+                        return repositoryFailure(
+                            loadedTeacherProfiles->error(),
+                            "A Sub Prep print teacher could not be loaded."
+                            );
+                    }
+
+                    const auto profileEntry =
+                        teacherProfilesByLegacyId.find(assignedTeacherId);
+                    if (profileEntry == teacherProfilesByLegacyId.end())
+                    {
+                        return failure(
+                            Domain::ErrorCode::Validation,
+                            "A requested teacher profile was not included in the batch read."
+                            );
+                    }
+
+                    const ::Result<Teacher>& loadedTeacher =
+                        profileEntry->second->profile;
                     if (!loadedTeacher)
                     {
                         if (!session->isOpen())
