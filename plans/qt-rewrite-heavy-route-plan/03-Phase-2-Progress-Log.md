@@ -11347,3 +11347,28 @@ candidates surfaced. F315 is selected for a purpose-fit Korean teacher
 birthday-directory projection, preserving birthday/name/preferred-display
 fields, raw values, repository order, and downstream filtering. Phase 2 remains
 In Progress/Open; Gates 1 and 2 remain Partial.
+
+### Progress update - 2026-10-04 (F315 accepted; F316 selected)
+
+F315, committed as
+`82bad469d008b30e44006707faaecf5aab2feaa5`, adds a purpose-fit repository
+projection for the Korean teacher birthday directory. It selects birthday,
+Korean and English names, preferred romanization, and preferred name, ordered
+by `teacher_en`. The Platform port preserves raw values and repository order;
+`getAllTeachers()` and Native English/GS birthday reads remain unchanged.
+
+Executor self-check and fresh independent Windows x64 Debug/Ninja/MSVC
+verification passed. The independent configure validated 1,301 handwritten
+source files; the Application query, Platform port, and navigation targets
+built. Focused CTest passed 3/3. Tests cover the exact projection and order,
+raw values, empty success, unavailable-session and repository-failure
+mapping, and Korean-source warning behavior. `git diff --check` passed.
+Independent logs are under build/f315v/; executor logs are under build/.
+The full suite was not run; exception mapping was source-reviewed but not
+explicitly injected.
+
+F316 is selected from the previously recorded Batch 5: batch roster score-
+import evaluation reads while preserving fixed column order, absent-column
+skips, per-evaluation failure isolation, and score assignment. F298 remains
+deferred pending its warning/navigation decision. Phase 2 remains
+In Progress/Open; Gates 1 and 2 remain Partial.
