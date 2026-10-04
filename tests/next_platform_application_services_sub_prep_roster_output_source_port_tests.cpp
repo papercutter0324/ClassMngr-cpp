@@ -2,6 +2,7 @@
 #include "app/services/feature_services.h"
 #include "data/data_service.h"
 #include "data/database/database_session.h"
+#include "data/repositories/teacher_repository.h"
 #include "domain/models/roster.h"
 #include "next/application/sub_prep_roster_output_source_query.h"
 #include "next/platform/application_services_sub_prep_roster_output_source_port.h"
@@ -67,12 +68,15 @@ bool executeSql(ApplicationServices& services, const QString& statement)
     return query.exec(statement);
 }
 
-int createTeacher(ApplicationServices& services)
+int createTeacher(
+    ApplicationServices& services,
+    const QString& englishName = QStringLiteral("Teacher English")
+    )
 {
     Teacher teacher;
     teacher.teacherKr = QString::fromUtf8("\xEA\xB0\x80\xEB\x82\x98");
-    teacher.teacherEn = QStringLiteral("Teacher English");
-    teacher.preferredName = QStringLiteral("Teacher English");
+    teacher.teacherEn = englishName;
+    teacher.preferredName = englishName;
     teacher.preferredRomanization = QStringLiteral("Romanized Name");
     teacher.roomNumber = QStringLiteral("Teacher Room");
     teacher.wifiName = QStringLiteral("Teacher Network");
@@ -179,6 +183,7 @@ class NextPlatformApplicationServicesSubPrepRosterOutputSourcePortTests final
 private slots:
     void initTestCase();
     void readsSelectedClassesModeAndRequestedRosterColumns();
+    void batchesDistinctAssignedTeachersInFirstSeenOrder();
     void includesUnassignedTeacherAndUsesSelectedMode();
     void emptyScopeAndNoncanonicalIdsAvoidDatabaseReads();
     void unavailableSessionsDoNotFallBackToDataService();
@@ -205,7 +210,13 @@ readsSelectedClassesModeAndRequestedRosterColumns()
     ApplicationServices services;
     QVERIFY(openDatabase(services, m_directory));
     const int teacher = createTeacher(services);
+    const int outsideTeacher = createTeacher(
+        services,
+        QStringLiteral("Outside teacher")
+        );
     QVERIFY(teacher > 0);
+    QVERIFY(outsideTeacher > 0);
+    QVERIFY(outsideTeacher != teacher);
 
     const int firstClass = createClass(
         services,
@@ -230,7 +241,7 @@ readsSelectedClassesModeAndRequestedRosterColumns()
     const int outsideSelectedDays = createClass(
         services,
         QStringLiteral("Tuesday class"),
-        teacher,
+        outsideTeacher,
         QStringLiteral("E6"),
         QStringLiteral("Helios"),
         QStringLiteral("Tuesday"),
@@ -260,6 +271,10 @@ readsSelectedClassesModeAndRequestedRosterColumns()
         classInfoRepository->subPrepRosterOutputClassInfoBatchReadMetrics();
     const ScheduleClassInfoReadMetrics scheduleReadMetricsBefore =
         classInfoRepository->scheduleClassInfoReadMetrics();
+    TeacherRepository* const teacherRepository = session->teacherRepository();
+    QVERIFY(teacherRepository);
+    const TeacherProfileBatchReadMetrics teacherProfileMetricsBefore =
+        teacherRepository->teacherProfileBatchReadMetrics();
 
     ApplicationServicesSubPrepRosterOutputSourcePort port(services);
     const SubPrepRosterOutputSourceQuery query(port);
@@ -363,6 +378,131 @@ readsSelectedClassesModeAndRequestedRosterColumns()
         classInfoRepository->scheduleClassInfoReadMetrics().singleClassInfoReadCount,
         scheduleReadMetricsBefore.singleClassInfoReadCount
         );
+    const TeacherProfileBatchReadMetrics teacherProfileMetricsAfter =
+        teacherRepository->teacherProfileBatchReadMetrics();
+    QCOMPARE(
+        teacherProfileMetricsAfter.callCount
+            - teacherProfileMetricsBefore.callCount,
+        1
+        );
+    QCOMPARE(
+        teacherProfileMetricsAfter.requestedTeacherCount
+            - teacherProfileMetricsBefore.requestedTeacherCount,
+        1
+        );
+    QCOMPARE(
+        teacherProfileMetricsAfter.statementCount
+            - teacherProfileMetricsBefore.statementCount,
+        1
+        );
+    QCOMPARE(
+        teacherProfileMetricsAfter.fallbackSingleReadCount
+            - teacherProfileMetricsBefore.fallbackSingleReadCount,
+        0
+        );
+}
+
+void NextPlatformApplicationServicesSubPrepRosterOutputSourcePortTests::
+batchesDistinctAssignedTeachersInFirstSeenOrder()
+{
+    ApplicationServices services;
+    QVERIFY(openDatabase(services, m_directory));
+    const int firstTeacher = createTeacher(
+        services,
+        QStringLiteral("First teacher")
+        );
+    const int secondTeacher = createTeacher(
+        services,
+        QStringLiteral("Second teacher")
+        );
+    QVERIFY(firstTeacher > 0);
+    QVERIFY(secondTeacher > 0);
+
+    const int secondTeacherFirstClass = createClass(
+        services,
+        QStringLiteral("Second teacher first"),
+        secondTeacher,
+        QStringLiteral("E4"),
+        QStringLiteral("Theseus"),
+        QStringLiteral("Monday"),
+        QStringLiteral("9:00 AM"),
+        QStringLiteral("10:00 AM")
+        );
+    const int firstTeacherClass = createClass(
+        services,
+        QStringLiteral("First teacher class"),
+        firstTeacher,
+        QStringLiteral("E5"),
+        QStringLiteral("Artemis"),
+        QStringLiteral("Monday"),
+        QStringLiteral("10:00 AM"),
+        QStringLiteral("11:00 AM")
+        );
+    const int secondTeacherAgainClass = createClass(
+        services,
+        QStringLiteral("Second teacher again"),
+        secondTeacher,
+        QStringLiteral("E6"),
+        QStringLiteral("Helios"),
+        QStringLiteral("Monday"),
+        QStringLiteral("11:00 AM"),
+        QStringLiteral("12:00 PM")
+        );
+    QVERIFY(secondTeacherFirstClass > 0);
+    QVERIFY(firstTeacherClass > 0);
+    QVERIFY(secondTeacherAgainClass > 0);
+    for (const int classIdValue : {
+             secondTeacherFirstClass,
+             firstTeacherClass,
+             secondTeacherAgainClass
+         })
+    {
+        QVERIFY(services.rosterService()->saveRoster(
+            classIdValue,
+            rosterWithColumns()
+            ));
+    }
+
+    DatabaseSession* const session = services.databaseSession();
+    QVERIFY(session);
+    TeacherRepository* const teacherRepository = session->teacherRepository();
+    QVERIFY(teacherRepository);
+    const TeacherProfileBatchReadMetrics before =
+        teacherRepository->teacherProfileBatchReadMetrics();
+
+    ApplicationServicesSubPrepRosterOutputSourcePort port(services);
+    const auto result = port.loadSource(requestFor(
+        {
+            classId(secondTeacherFirstClass),
+            classId(firstTeacherClass),
+            classId(secondTeacherAgainClass)
+        },
+        {SubPrepWeekday::Monday}
+        ));
+
+    QVERIFY(result);
+    QCOMPARE(result.value().classes.size(), std::size_t(3));
+    QCOMPARE(result.value().classes[0].id, classId(secondTeacherFirstClass));
+    QCOMPARE(result.value().classes[1].id, classId(firstTeacherClass));
+    QCOMPARE(result.value().classes[2].id, classId(secondTeacherAgainClass));
+    QCOMPARE(result.value().teachers.size(), std::size_t(2));
+    QVERIFY(result.value().teachers[0].id == teacherId(secondTeacher));
+    QVERIFY(result.value().teachers[1].id == teacherId(firstTeacher));
+    QCOMPARE(
+        result.value().teachers[0].englishName,
+        std::string("Second Teacher")
+        );
+    QCOMPARE(
+        result.value().teachers[1].englishName,
+        std::string("First Teacher")
+        );
+
+    const TeacherProfileBatchReadMetrics after =
+        teacherRepository->teacherProfileBatchReadMetrics();
+    QCOMPARE(after.callCount - before.callCount, 1);
+    QCOMPARE(after.requestedTeacherCount - before.requestedTeacherCount, 2);
+    QCOMPARE(after.statementCount - before.statementCount, 1);
+    QCOMPARE(after.fallbackSingleReadCount - before.fallbackSingleReadCount, 0);
 }
 
 void NextPlatformApplicationServicesSubPrepRosterOutputSourcePortTests::
@@ -404,10 +544,14 @@ includesUnassignedTeacherAndUsesSelectedMode()
         session->classInfoRepository();
     QVERIFY(classRepository);
     QVERIFY(classInfoRepository);
+    TeacherRepository* const teacherRepository = session->teacherRepository();
+    QVERIFY(teacherRepository);
     const ClassRepository::ReadMetrics classMetricsBefore =
         classRepository->readMetrics();
     const auto classInfoMetricsBefore =
         classInfoRepository->subPrepRosterOutputClassInfoBatchReadMetrics();
+    const TeacherProfileBatchReadMetrics teacherProfileMetricsBefore =
+        teacherRepository->teacherProfileBatchReadMetrics();
 
     const auto regular = query.execute(requestFor(ids, days));
     QVERIFY(regular);
@@ -446,6 +590,28 @@ includesUnassignedTeacherAndUsesSelectedMode()
         classInfoRepository->subPrepRosterOutputClassInfoBatchReadMetrics().callCount
             - classInfoMetricsBefore.callCount,
         1
+        );
+    const TeacherProfileBatchReadMetrics teacherProfileMetricsAfter =
+        teacherRepository->teacherProfileBatchReadMetrics();
+    QCOMPARE(
+        teacherProfileMetricsAfter.callCount
+            - teacherProfileMetricsBefore.callCount,
+        0
+        );
+    QCOMPARE(
+        teacherProfileMetricsAfter.requestedTeacherCount
+            - teacherProfileMetricsBefore.requestedTeacherCount,
+        0
+        );
+    QCOMPARE(
+        teacherProfileMetricsAfter.statementCount
+            - teacherProfileMetricsBefore.statementCount,
+        0
+        );
+    QCOMPARE(
+        teacherProfileMetricsAfter.fallbackSingleReadCount
+            - teacherProfileMetricsBefore.fallbackSingleReadCount,
+        0
         );
 }
 
@@ -546,6 +712,12 @@ staleTeacherFailureDoesNotReturnPartialInput()
         ));
     QVERIFY(executeSql(services, QStringLiteral("PRAGMA foreign_keys = ON")));
 
+    TeacherRepository* const teacherRepository =
+        services.databaseSession()->teacherRepository();
+    QVERIFY(teacherRepository);
+    const TeacherProfileBatchReadMetrics teacherProfileMetricsBefore =
+        teacherRepository->teacherProfileBatchReadMetrics();
+
     ApplicationServicesSubPrepRosterOutputSourcePort port(services);
     const auto result = port.loadSource(requestFor(
         {classId(firstClass), classId(staleTeacherClass)},
@@ -556,6 +728,28 @@ staleTeacherFailureDoesNotReturnPartialInput()
     QVERIFY(!result.hasValue());
     QCOMPARE(result.error().code, ErrorCode::NotFound);
     QVERIFY(!result.error().message.empty());
+    const TeacherProfileBatchReadMetrics teacherProfileMetricsAfter =
+        teacherRepository->teacherProfileBatchReadMetrics();
+    QCOMPARE(
+        teacherProfileMetricsAfter.callCount
+            - teacherProfileMetricsBefore.callCount,
+        1
+        );
+    QCOMPARE(
+        teacherProfileMetricsAfter.requestedTeacherCount
+            - teacherProfileMetricsBefore.requestedTeacherCount,
+        1
+        );
+    QCOMPARE(
+        teacherProfileMetricsAfter.statementCount
+            - teacherProfileMetricsBefore.statementCount,
+        1
+        );
+    QCOMPARE(
+        teacherProfileMetricsAfter.fallbackSingleReadCount
+            - teacherProfileMetricsBefore.fallbackSingleReadCount,
+        0
+        );
 }
 
 void NextPlatformApplicationServicesSubPrepRosterOutputSourcePortTests::

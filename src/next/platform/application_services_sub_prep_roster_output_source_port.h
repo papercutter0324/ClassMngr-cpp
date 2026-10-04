@@ -358,6 +358,84 @@ public:
                 }
             }
 
+            QList<int> requestedTeacherIds;
+            requestedTeacherIds.reserve(loadedClassInfos.size());
+            QHash<int, qsizetype> teacherProfileIndexById;
+            teacherProfileIndexById.reserve(loadedClassInfos.size());
+            for (qsizetype index = 0; index < loadedClassInfos.size(); ++index)
+            {
+                const int classId = scopedClassIds[index];
+                const Classroom& classroom = loadedClassrooms[index];
+                const SubPrepRosterOutputClassInfoReadRecord& info =
+                    loadedClassInfos[index];
+                const auto schedule = scheduleByClassId.constFind(classId);
+                if (schedule == scheduleByClassId.cend()
+                    || classroom.id != classId
+                    || info.classId != classId
+                    || info.teacherId != schedule.value()->teacherId)
+                {
+                    return failure(
+                        Domain::ErrorCode::Validation,
+                        "Loaded class output details do not match the selected schedule."
+                        );
+                }
+
+                if (info.teacherId > 0
+                    && !teacherProfileIndexById.contains(info.teacherId))
+                {
+                    teacherProfileIndexById.insert(
+                        info.teacherId,
+                        requestedTeacherIds.size()
+                        );
+                    requestedTeacherIds.append(info.teacherId);
+                }
+            }
+
+            QList<TeacherProfileBatchReadRecord> loadedTeacherProfiles;
+            if (!requestedTeacherIds.isEmpty())
+            {
+                const ::Result<QList<TeacherProfileBatchReadRecord>> loadedProfiles =
+                    teacherRepository->loadTeacherProfileRecords(
+                        requestedTeacherIds
+                        );
+                if (!loadedProfiles)
+                {
+                    if (!session->isOpen())
+                    {
+                        return failure(
+                            Domain::ErrorCode::NotFound,
+                            "The active database session became unavailable while loading roster output."
+                            );
+                    }
+                    return repositoryFailure(
+                        loadedProfiles.error(),
+                        "Selected class teachers could not be loaded."
+                        );
+                }
+
+                loadedTeacherProfiles = loadedProfiles.value();
+                if (loadedTeacherProfiles.size() != requestedTeacherIds.size())
+                {
+                    return failure(
+                        Domain::ErrorCode::Validation,
+                        "Selected class teachers do not match the requested scope."
+                        );
+                }
+                for (qsizetype index = 0;
+                     index < requestedTeacherIds.size();
+                     ++index)
+                {
+                    if (loadedTeacherProfiles[index].teacherId
+                        != requestedTeacherIds[index])
+                    {
+                        return failure(
+                            Domain::ErrorCode::Validation,
+                            "Loaded teacher identity does not match the requested teacher."
+                            );
+                    }
+                }
+            }
+
             Application::SubPrepRosterOutputSourceInput source;
             source.classes.reserve(request.selectedClassIds.size());
             std::unordered_set<int> copiedTeacherIds;
@@ -480,8 +558,18 @@ public:
                     classRecord.teacherId = teacherId(info.teacherId);
                     if (copiedTeacherIds.insert(info.teacherId).second)
                     {
-                        const ::Result<Teacher> loadedTeacher =
-                            teacherRepository->getTeacher(info.teacherId);
+                        const qsizetype teacherProfileIndex =
+                            teacherProfileIndexById.value(info.teacherId, -1);
+                        if (teacherProfileIndex < 0
+                            || teacherProfileIndex >= loadedTeacherProfiles.size())
+                        {
+                            return failure(
+                                Domain::ErrorCode::Validation,
+                                "A selected class teacher was not included in the profile batch."
+                                );
+                        }
+                        const ::Result<Teacher>& loadedTeacher =
+                            loadedTeacherProfiles[teacherProfileIndex].profile;
                         if (!loadedTeacher)
                         {
                             if (!session->isOpen())
