@@ -23,9 +23,9 @@
 #include "features/speaking_eval/ui/speaking_eval_header_view.h"
 #include "features/classes/models/class_tab_navigation_model.h"
 #include "next/application/evaluation_default_selection.h"
-#include "next/application/roster_read_query.h"
+#include "next/application/speaking_evaluation_roster_names_read_query.h"
 #include "next/application/selected_class_subtitle_read_query.h"
-#include "next/platform/application_services_roster_read_port.h"
+#include "next/platform/application_services_speaking_evaluation_roster_names_read_port.h"
 #include "next/platform/application_services_selected_class_subtitle_read_port.h"
 #include "ui/shared/constants/gui_constants.h"
 #include "ui/shared/styles/roles.h"
@@ -53,6 +53,7 @@
 #include <QUndoStack>
 #include <QVBoxLayout>
 
+#include <optional>
 #include <string>
 #include <utility>
 #include <vector>
@@ -62,14 +63,16 @@ namespace
 
 constexpr int DayFilterSpacer = 16;
 
-Roster readRosterForSpeakingEvaluationPage(
+std::optional<ClassMngr::Next::Application::
+    SpeakingEvaluationRosterNamesReadSnapshot>
+readRosterNamesForSpeakingEvaluationPage(
     ApplicationServices* services,
     int classId
     )
 {
     if (!services || classId <= 0)
     {
-        return {};
+        return std::nullopt;
     }
 
     const auto typedClassId =
@@ -78,52 +81,28 @@ Roster readRosterForSpeakingEvaluationPage(
             );
     if (!typedClassId)
     {
-        return {};
+        return std::nullopt;
     }
 
-    const ClassMngr::Next::Application::RosterReadQuery query{
+    const ClassMngr::Next::Application::
+        SpeakingEvaluationRosterNamesReadRequest query{
         .classId = *typedClassId
     };
     const ClassMngr::Next::Platform::
-        ApplicationServicesRosterReadPort port(services);
-    const ClassMngr::Next::Application::RosterReadResult loaded =
-        ClassMngr::Next::Application::RosterReadUseCase::execute(
+        ApplicationServicesSpeakingEvaluationRosterNamesReadPort port(services);
+    ClassMngr::Next::Application::
+        SpeakingEvaluationRosterNamesReadResult loaded =
+        ClassMngr::Next::Application::
+            SpeakingEvaluationRosterNamesReadQuery::execute(
             query,
             port
             );
     if (!loaded)
     {
-        return {};
+        return std::nullopt;
     }
 
-    const ClassMngr::Next::Application::RosterSnapshot& snapshot =
-        loaded.value();
-    Roster roster;
-    for (const std::u16string& column : snapshot.columns)
-    {
-        roster.columns.append(
-            Ui::QtTextAdapter::fromUtf16String(column)
-            );
-    }
-
-    for (const int width : snapshot.columnWidths)
-    {
-        roster.columnWidths.append(width);
-    }
-
-    for (const std::vector<std::u16string>& snapshotRow : snapshot.rows)
-    {
-        QStringList row;
-        for (const std::u16string& cell : snapshotRow)
-        {
-            row.append(
-                Ui::QtTextAdapter::fromUtf16String(cell)
-                );
-        }
-        roster.rows.append(std::move(row));
-    }
-
-    return roster;
+    return std::move(loaded.value());
 }
 
 struct DayFilterButtonDefinition
@@ -350,22 +329,6 @@ QString sidebarClassDisplayName(
         classInfo,
         teacher
         );
-}
-
-int findColumn(
-    const QStringList& columns,
-    const QString& name
-    )
-{
-    for (int column = 0; column < columns.size(); ++column)
-    {
-        if (columns[column].compare(name, Qt::CaseInsensitive) == 0)
-        {
-            return column;
-        }
-    }
-
-    return -1;
 }
 
 void clearLayout(

@@ -24,9 +24,11 @@
 
 #include <QCoreApplication>
 #include <QApplication>
+#include <QComboBox>
 #include <QDialog>
 #include <QDir>
 #include <QEvent>
+#include <QInputDialog>
 #include <QLabel>
 #include <QLineEdit>
 #include <QSignalSpy>
@@ -325,6 +327,7 @@ private slots:
     void speakingEvalModelSuggestionMatchesLegacyHelper();
     void suffixChoiceAppliesSuggestedNameThroughExistingPageFlow();
     void duplicateLocateSelectsFirstPeerRow();
+    void duplicateRosterMatchesKeepTrimmedFirstSeenOrder();
     void importNamesButtonAppliesRosterPairsAndPreservesMessages();
     void emptyRosterImportShowsNoDataWarningWithoutMutation();
     void unavailableRosterImportShowsNoDataWarningWithoutMutation();
@@ -1336,6 +1339,119 @@ void SpeakingEvalPageSaveTests::duplicateLocateSelectsFirstPeerRow()
 }
 
 void SpeakingEvalPageSaveTests::
+duplicateRosterMatchesKeepTrimmedFirstSeenOrder()
+{
+    SpeakingEvalPageFixture fixture;
+    QString error;
+    QVERIFY2(fixture.initialize(1, &error), qPrintable(error));
+
+    Roster roster;
+    roster.columns = {
+        QStringLiteral("English"),
+        QStringLiteral("Korean")
+    };
+    roster.rows = {
+        {QStringLiteral(" Current "), QStringLiteral(" 김민수 ")},
+        {QStringLiteral(" Zoe "), QStringLiteral(" 조은 ")},
+        {QStringLiteral("Amy"), QStringLiteral("김희")},
+        {QStringLiteral("Zoe"), QStringLiteral("조은")},
+        {QStringLiteral(" "), QStringLiteral("정하")}
+    };
+    QVERIFY2(
+        seedRosterWithoutValidation(
+            fixture.services.databaseSession()->database(),
+            fixture.classIds.first(),
+            roster,
+            &error
+            ),
+        qPrintable(error)
+        );
+
+    FakeUserPromptService prompts;
+    ScopedPromptService promptScope(&prompts);
+
+    SpeakingEvalPage page(&fixture.services);
+    page.setSaveMode(SaveMode::Manual);
+    page.loadEvaluation(
+        Classroom(fixture.classNames.first(), fixture.classIds.first()),
+        QStringLiteral("Winter")
+        );
+    auto* model = page.findChild<SpeakingEvalModel*>();
+    QVERIFY(model);
+    QVERIFY(setStudent(
+        model,
+        0,
+        QStringLiteral("Current"),
+        QStringLiteral("김민수")
+        ));
+    QVERIFY(setStudent(
+        model,
+        1,
+        QStringLiteral("Other"),
+        QStringLiteral("이수민")
+        ));
+
+    QStringList rosterOptions;
+    bool dialogShown = false;
+    QTimer::singleShot(
+        0,
+        &page,
+        [&rosterOptions, &dialogShown]
+        {
+            auto* const dialog = qobject_cast<QInputDialog*>(
+                QApplication::activeModalWidget()
+                );
+            if (!dialog)
+            {
+                return;
+            }
+            dialogShown = dialog->windowTitle()
+                == QStringLiteral("Match Roster Student");
+            if (auto* const choices = dialog->findChild<QComboBox*>())
+            {
+                for (int index = 0; index < choices->count(); ++index)
+                {
+                    rosterOptions.append(choices->itemText(index));
+                }
+            }
+            dialog->accept();
+        }
+        );
+    prompts.scriptedActionIds.enqueue(QStringLiteral("match"));
+    QVERIFY(model->setData(
+        model->index(1, SpeakingEval::toInt(SpeakingEvalColumn::EnglishName)),
+        QStringLiteral("Current"),
+        Qt::EditRole
+        ));
+    QVERIFY(model->setData(
+        model->index(1, SpeakingEval::toInt(SpeakingEvalColumn::KoreanName)),
+        QStringLiteral("김민수"),
+        Qt::EditRole
+        ));
+
+    QVERIFY(dialogShown);
+    QCOMPARE(
+        rosterOptions,
+        (QStringList{
+            QStringLiteral("Zoe / 조은"),
+            QStringLiteral("Amy / 김희")
+        })
+        );
+    QCOMPARE(
+        model->data(
+            model->index(1, SpeakingEval::toInt(SpeakingEvalColumn::EnglishName))
+            ).toString(),
+        QStringLiteral("Zoe")
+        );
+    QCOMPARE(
+        model->data(
+            model->index(1, SpeakingEval::toInt(SpeakingEvalColumn::KoreanName))
+            ).toString(),
+        QStringLiteral("조은")
+        );
+}
+
+void SpeakingEvalPageSaveTests::
 importNamesButtonAppliesRosterPairsAndPreservesMessages()
 {
     SpeakingEvalPageFixture fixture;
@@ -1552,11 +1668,11 @@ missingImportColumnsShowsWarningWithoutMutation()
 
     Roster roster;
     roster.columns = {
-        QStringLiteral("English")
+        QStringLiteral("Notes")
     };
     roster.rows = {
         {
-            QStringLiteral("Roster Student")
+            QStringLiteral("Unrelated roster data")
         }
     };
     QVERIFY2(

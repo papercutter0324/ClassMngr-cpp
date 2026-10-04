@@ -444,6 +444,37 @@ add_test(
     COMMAND ClassMngrNextApplicationSpeakingEvaluationRosterNameImportPlanTests
 )
 
+add_executable(
+    ClassMngrNextApplicationSpeakingEvaluationRosterNamesReadQueryTests
+    tests/next_application_speaking_evaluation_roster_names_read_query_tests.cpp
+)
+target_compile_features(
+    ClassMngrNextApplicationSpeakingEvaluationRosterNamesReadQueryTests
+    PRIVATE
+        cxx_std_23
+)
+set_target_properties(
+    ClassMngrNextApplicationSpeakingEvaluationRosterNamesReadQueryTests
+    PROPERTIES
+        AUTOMOC ON
+        AUTOUIC OFF
+        AUTORCC OFF
+)
+set_property(
+    TARGET ClassMngrNextApplicationSpeakingEvaluationRosterNamesReadQueryTests
+    PROPERTY CLASSMNGR_STANDALONE_CPP_TEST TRUE
+)
+target_link_libraries(
+    ClassMngrNextApplicationSpeakingEvaluationRosterNamesReadQueryTests
+    PRIVATE
+        ClassMngrNext::Application
+        Qt6::Test
+)
+add_test(
+    NAME ClassMngrNextApplicationSpeakingEvaluationRosterNamesReadQueryTests
+    COMMAND ClassMngrNextApplicationSpeakingEvaluationRosterNamesReadQueryTests
+)
+
 # Keep speaking-evaluation score-to-roster assignment independent of Qt.
 add_executable(
     ClassMngrNextApplicationSpeakingEvaluationRosterScoreRowAssignmentsTests
@@ -2309,6 +2340,16 @@ classmngr_add_qt_test(
     NAME NextPlatformApplicationServicesRosterReadPort
     SOURCES
         tests/next_platform_application_services_roster_read_port_tests.cpp
+    LIBRARIES
+        ClassMngrNext::Platform
+        Qt6::Test
+    OFFSCREEN
+)
+
+classmngr_add_qt_test(
+    NAME NextPlatformApplicationServicesSpeakingEvaluationRosterNamesReadPort
+    SOURCES
+        tests/next_platform_application_services_speaking_evaluation_roster_names_read_port_tests.cpp
     LIBRARIES
         ClassMngrNext::Platform
         Qt6::Test

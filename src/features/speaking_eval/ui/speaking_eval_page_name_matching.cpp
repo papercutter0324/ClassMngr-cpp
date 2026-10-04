@@ -6,25 +6,13 @@
 #include <vector>
 
 QList<SpeakingEvalCellEdit> SpeakingEvalPage::nameImportChanges(
-    const QStringList& rosterColumns,
-    const QList<QStringList>& rosterRows
+    const ClassMngr::Next::Application::
+        SpeakingEvaluationRosterNamesReadSnapshot& roster
     ) const
 {
     QList<SpeakingEvalCellEdit> changes;
 
-    const int rosterEnglishColumn =
-        findColumn(
-            rosterColumns,
-            QStringLiteral("English")
-            );
-
-    const int rosterKoreanColumn =
-        findColumn(
-            rosterColumns,
-            QStringLiteral("Korean")
-            );
-
-    if (rosterEnglishColumn < 0 || rosterKoreanColumn < 0)
+    if (!roster.hasEnglishColumn || !roster.hasKoreanColumn)
     {
         return changes;
     }
@@ -39,24 +27,15 @@ QList<SpeakingEvalCellEdit> SpeakingEvalPage::nameImportChanges(
     std::vector<ClassMngr::Next::Application::
         SpeakingEvaluationRosterNamePair> projectedRosterNames;
     projectedRosterNames.reserve(
-        static_cast<std::size_t>(rosterRows.size())
+        roster.rows.size()
         );
 
-    for (const QStringList& rosterRow : rosterRows)
+    for (const auto& rosterRow : roster.rows)
     {
-        const QString englishName =
-            rosterEnglishColumn < rosterRow.size()
-                ? rosterRow[rosterEnglishColumn]
-                : QString();
-        const QString koreanName =
-            rosterKoreanColumn < rosterRow.size()
-                ? rosterRow[rosterKoreanColumn]
-                : QString();
-
         projectedRosterNames.push_back(
             {
-                Ui::QtTextAdapter::toUtf16String(englishName),
-                Ui::QtTextAdapter::toUtf16String(koreanName)
+                rosterRow.englishName,
+                rosterRow.koreanName
             }
             );
     }
@@ -470,41 +449,31 @@ QList<QStringList> SpeakingEvalPage::unmatchedRosterNamePairs() const
         return candidates;
     }
 
-    const Roster roster = readRosterForSpeakingEvaluationPage(
+    const auto roster = readRosterNamesForSpeakingEvaluationPage(
         m_services,
         m_classroom.id
         );
 
-    const int englishColumn =
-        findColumn(
-            roster.columns,
-            QStringLiteral("English")
-            );
-
-    const int koreanColumn =
-        findColumn(
-            roster.columns,
-            QStringLiteral("Korean")
-            );
-
-    if (englishColumn < 0 || koreanColumn < 0)
+    if (
+        !roster
+        || !roster->hasEnglishColumn
+        || !roster->hasKoreanColumn
+        )
     {
         return candidates;
     }
 
     QSet<QString> seen;
 
-    for (const QStringList& row : roster.rows)
+    for (const auto& row : roster->rows)
     {
-        const QString englishName =
-            englishColumn < row.size()
-                ? row[englishColumn].trimmed()
-                : QString();
+        const QString englishName = Ui::QtTextAdapter::fromUtf16String(
+            row.englishName
+            ).trimmed();
 
-        const QString koreanName =
-            koreanColumn < row.size()
-                ? row[koreanColumn].trimmed()
-                : QString();
+        const QString koreanName = Ui::QtTextAdapter::fromUtf16String(
+            row.koreanName
+            ).trimmed();
 
         if (
             englishName.isEmpty()

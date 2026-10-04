@@ -128,12 +128,12 @@ void SpeakingEvalPage::importNames()
         return;
     }
 
-    const Roster roster = readRosterForSpeakingEvaluationPage(
+    const auto roster = readRosterNamesForSpeakingEvaluationPage(
         m_services,
         m_classroom.id
         );
 
-    if (roster.rows.isEmpty())
+    if (!roster || roster->rows.empty())
     {
         DialogServices::showWarning(
             this,
@@ -143,16 +143,7 @@ void SpeakingEvalPage::importNames()
         return;
     }
 
-    if (
-        findColumn(
-            roster.columns,
-            QStringLiteral("English")
-            ) < 0
-        || findColumn(
-            roster.columns,
-            QStringLiteral("Korean")
-            ) < 0
-        )
+    if (!roster->hasEnglishColumn || !roster->hasKoreanColumn)
     {
         DialogServices::showWarning(
             this,
@@ -164,8 +155,7 @@ void SpeakingEvalPage::importNames()
 
     const QList<SpeakingEvalCellEdit> changes =
         nameImportChanges(
-            roster.columns,
-            roster.rows
+            *roster
             );
 
     if (changes.isEmpty())

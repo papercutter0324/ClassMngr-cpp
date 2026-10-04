@@ -140,6 +140,9 @@ set(CLASSMNGR_NEXT_APPLICATION_SOURCES
     src/next/application/speaking_evaluation_query.h
     src/next/application/speaking_evaluation_batch_read_query.h
     src/next/application/speaking_evaluation_roster_name_import_plan.h
+    src/next/application/speaking_evaluation_roster_names_read_snapshot.h
+    src/next/application/speaking_evaluation_roster_names_read_port.h
+    src/next/application/speaking_evaluation_roster_names_read_query.h
     src/next/application/speaking_evaluation_roster_score_row_assignments.h
     src/next/application/speaking_evaluation_ai_batch_eligibility.h
     src/next/application/speaking_evaluation_ai_batch_comment_quality.h
@@ -373,6 +376,7 @@ set(CLASSMNGR_NEXT_PLATFORM_SOURCES
     src/next/platform/application_services_roster_template_print_source_read_port.h
     src/next/platform/application_services_roster_save_port.h
     src/next/platform/application_services_speaking_evaluation_read_port.h
+    src/next/platform/application_services_speaking_evaluation_roster_names_read_port.h
     src/next/platform/application_services_speaking_evaluation_batch_read_port.h
     src/next/platform/application_services_speaking_evaluation_save_port.h
     src/next/platform/application_services_class_details_page_read_port.h

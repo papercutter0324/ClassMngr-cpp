@@ -66,6 +66,19 @@ public:
         int cellCount = 0;
     };
 
+    struct SpeakingEvaluationRosterNamePairReadRecord final
+    {
+        QString englishName;
+        QString koreanName;
+    };
+
+    struct SpeakingEvaluationRosterNamesReadRecord final
+    {
+        bool hasEnglishColumn = false;
+        bool hasKoreanColumn = false;
+        QList<SpeakingEvaluationRosterNamePairReadRecord> rows;
+    };
+
     struct SubPrepStudentCountBatchReadMetrics final
     {
         int callCount = 0;
@@ -91,6 +104,12 @@ public:
     [[nodiscard]] Result<Roster> loadRoster(
         int classId
         );
+
+    // Reads only the first English/Korean name columns and preserves the
+    // legacy materialized-row shape, including sparse rows caused by any
+    // valid roster cell.
+    [[nodiscard]] Result<SpeakingEvaluationRosterNamesReadRecord>
+    loadSpeakingEvaluationRosterNames(int classId);
 
     [[nodiscard]] Result<QList<TemplatePrintReadRecord>>
     loadRostersForTemplatePrint(const QList<int>& classIds);

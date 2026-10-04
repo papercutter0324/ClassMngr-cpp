@@ -333,6 +333,157 @@ Result<Roster> RosterRepository::loadRoster(
     return roster;
 }
 
+Result<RosterRepository::SpeakingEvaluationRosterNamesReadRecord>
+RosterRepository::loadSpeakingEvaluationRosterNames(
+    const int classId
+    )
+{
+    if (classId <= 0)
+    {
+        return std::unexpected(
+            QObject::tr(
+                "Loading Speaking Evaluation roster names failed: "
+                "invalid class id %1."
+                ).arg(classId)
+            );
+    }
+
+    SpeakingEvaluationRosterNamesReadRecord record;
+    int englishColumn = -1;
+    int koreanColumn = -1;
+    int columnCount = 0;
+    QSqlQuery columnsQuery(m_database);
+    columnsQuery.prepare(R"(
+        SELECT name
+        FROM roster_columns
+        WHERE class_id=?
+        ORDER BY position, id
+    )");
+    columnsQuery.addBindValue(classId);
+
+    const QString identity = QObject::tr("class id %1").arg(classId);
+    const auto loadedColumns = SqlQueryUtils::executePrepared(
+        columnsQuery,
+        QObject::tr("Loading Speaking Evaluation roster name columns"),
+        identity
+        );
+    if (!loadedColumns)
+    {
+        return std::unexpected(loadedColumns.error().userMessage());
+    }
+
+    while (columnsQuery.next())
+    {
+        const QString columnName = columnsQuery.value(0).toString();
+        if (
+            englishColumn < 0
+            && columnName.compare(
+                QStringLiteral("English"), Qt::CaseInsensitive) == 0
+            )
+        {
+            englishColumn = columnCount;
+        }
+        if (
+            koreanColumn < 0
+            && columnName.compare(
+                QStringLiteral("Korean"), Qt::CaseInsensitive) == 0
+            )
+        {
+            koreanColumn = columnCount;
+        }
+        ++columnCount;
+    }
+    if (columnsQuery.lastError().isValid())
+    {
+        return std::unexpected(
+            QObject::tr(
+                "Loading Speaking Evaluation roster name columns failed "
+                "for %1: %2"
+                ).arg(identity, columnsQuery.lastError().text())
+            );
+    }
+
+    record.hasEnglishColumn = englishColumn >= 0;
+    record.hasKoreanColumn = koreanColumn >= 0;
+    if (columnCount == 0)
+    {
+        return record;
+    }
+
+    QSqlQuery rowsQuery(m_database);
+    rowsQuery.prepare(R"(
+        WITH valid_rows AS (
+            SELECT DISTINCT row_index
+            FROM roster_data
+            WHERE class_id=?
+              AND row_index >= 0
+              AND col_index >= 0
+              AND col_index < ?
+        )
+        SELECT
+            valid_rows.row_index,
+            english.value AS english_name,
+            korean.value AS korean_name
+        FROM valid_rows
+        LEFT JOIN roster_data AS english
+            ON english.class_id=?
+           AND english.row_index=valid_rows.row_index
+           AND english.col_index=?
+        LEFT JOIN roster_data AS korean
+            ON korean.class_id=?
+           AND korean.row_index=valid_rows.row_index
+           AND korean.col_index=?
+        ORDER BY valid_rows.row_index
+    )");
+    rowsQuery.addBindValue(classId);
+    rowsQuery.addBindValue(columnCount);
+    rowsQuery.addBindValue(classId);
+    rowsQuery.addBindValue(englishColumn);
+    rowsQuery.addBindValue(classId);
+    rowsQuery.addBindValue(koreanColumn);
+
+    const auto loadedRows = SqlQueryUtils::executePrepared(
+        rowsQuery,
+        QObject::tr("Loading Speaking Evaluation roster names"),
+        identity
+        );
+    if (!loadedRows)
+    {
+        return std::unexpected(loadedRows.error().userMessage());
+    }
+
+    while (rowsQuery.next())
+    {
+        const int rowIndex = rowsQuery.value(0).toInt();
+        if (rowIndex < 0)
+        {
+            continue;
+        }
+
+        while (record.rows.size() <= rowIndex)
+        {
+            record.rows.append(
+                SpeakingEvaluationRosterNamePairReadRecord{}
+                );
+        }
+
+        record.rows[rowIndex].englishName =
+            rowsQuery.value(1).toString();
+        record.rows[rowIndex].koreanName =
+            rowsQuery.value(2).toString();
+    }
+    if (rowsQuery.lastError().isValid())
+    {
+        return std::unexpected(
+            QObject::tr(
+                "Loading Speaking Evaluation roster names failed for %1: %2"
+                ).arg(identity, rowsQuery.lastError().text())
+            );
+    }
+
+    return record;
+}
+
 Result<QList<RosterRepository::TemplatePrintReadRecord>>
 RosterRepository::loadRostersForTemplatePrint(
     const QList<int>& classIds

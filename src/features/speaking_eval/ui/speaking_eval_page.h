@@ -8,6 +8,7 @@
 #include "features/schedule/ui/schedule_view_model.h"
 #include "features/speaking_eval/ui/speaking_eval_table_view.h"
 #include "next/application/speaking_evaluation_validation.h"
+#include "next/application/speaking_evaluation_roster_names_read_snapshot.h"
 
 #include <QList>
 #include <QString>
@@ -180,8 +181,8 @@ private:
     void scheduleAutosave();
 
     QList<SpeakingEvalCellEdit> nameImportChanges(
-        const QStringList& rosterColumns,
-        const QList<QStringList>& rosterRows
+        const ClassMngr::Next::Application::
+            SpeakingEvaluationRosterNamesReadSnapshot& roster
         ) const;
 
     void handleNameCellChanged(
