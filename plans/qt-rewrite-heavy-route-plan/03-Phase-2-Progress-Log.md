@@ -11664,3 +11664,24 @@ selected to batch Schedule Import teacher reads across current-state snapshot
 and apply validation while preserving teacher order, Korean-name matching,
 room data, and failure behavior. Exclude stale preview unless an active caller
 is found. Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial.
+
+### F327 accepted / F328 selected - 2026-10-05
+
+F327, committed as
+`e4409e917f9cdaadfeefe14ef0cdfa80129be569`, adds a purpose-fit teacher read
+for Schedule Import containing only ID, Korean name, and room number, ordered
+by English name. The current-state snapshot port and apply validation use it
+instead of loading full teacher records, preserving repository order,
+Korean-name matching, room data, and failure behavior; preview reads remain
+unchanged.
+
+The snapshot regression preserves repository order and raw Korean-name and
+room values, and checks one query. The apply regression verifies a teacher-read
+failure rolls back before writes. Fresh independent Windows x64 Debug/Ninja/
+MSVC configure validated one owner for 1,329 handwritten sources; both the
+snapshot-port and `ClassMngrScheduleImportTests` targets built, focused CTest
+passed 2/2, and `git diff --check` passed. Evidence is under
+`build/f327_independent_20261005_ninja/`. No full suite ran. F328 is selected
+to batch Class Transfer preview destination-matching inputs while preserving
+class order, conditional teacher-name reads, matching behavior, and errors.
+Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial.
