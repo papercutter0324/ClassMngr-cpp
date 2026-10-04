@@ -85,6 +85,24 @@ bool updateTeacherId(
     return query.exec() && query.numRowsAffected() == 1;
 }
 
+bool insertRegularTime(
+    ApplicationServices& services,
+    const int classIdValue,
+    const QString& day,
+    const QString& startTime
+    )
+{
+    QSqlQuery query(services.databaseSession()->database());
+    query.prepare(QStringLiteral(
+        "INSERT INTO class_times (class_id, day, start_time) "
+        "VALUES (?, ?, ?)"
+        ));
+    query.addBindValue(classIdValue);
+    query.addBindValue(day);
+    query.addBindValue(startTime);
+    return query.exec();
+}
+
 }
 
 class NextPlatformApplicationServicesClassCoTeacherPageReadPortTests final
@@ -98,8 +116,10 @@ private slots:
     void treatsNonpositiveTeacherIdsAsUnassignedAndPreservesClassFields();
     void unavailableSessionDoesNotUseDataServiceFallback();
     void classAndTeacherSourceFailuresRemainIndependent();
+    void metadataQueryFailureKeepsPageErrorMapping();
     void teacherDisplayNameUsesTrimmedFallbackOrder();
     void teacherProjectionFailurePreservesSelectedTeacherAndClassFields();
+    void missingClassInfoKeepsScheduleAndUnknownClassUsesDefaults();
 };
 
 void NextPlatformApplicationServicesClassCoTeacherPageReadPortTests::
@@ -136,6 +156,12 @@ mapsAssignedClassAndPreferredTeacherFromActiveSession()
             {u"Wednesday", u"4:00 PM"}
         }));
     QVERIFY(result.value().teacherDisplayName.value() == u"Preferred Display");
+
+    const auto& metrics = services.databaseSession()->classInfoRepository()
+                              ->classPageDetailsReadMetrics();
+    QCOMPARE(metrics.callCount, 1);
+    QCOMPARE(metrics.metadataStatementCount, 1);
+    QCOMPARE(metrics.regularScheduleStatementCount, 1);
 }
 
 void NextPlatformApplicationServicesClassCoTeacherPageReadPortTests::
@@ -275,6 +301,47 @@ classAndTeacherSourceFailuresRemainIndependent()
     QVERIFY(!result.value().classFields);
     QCOMPARE(result.value().classFields.error().code, Domain::ErrorCode::Technical);
     QVERIFY(!result.value().teacherDisplayName);
+    QVERIFY(result.value().classFields.error().message.starts_with(
+        "Loading regular class times failed"
+        ));
+    QCOMPARE(result.value().teacherDisplayName.error().message,
+             std::string("The co-teacher display name is unavailable."));
+}
+
+void NextPlatformApplicationServicesClassCoTeacherPageReadPortTests::
+metadataQueryFailureKeepsPageErrorMapping()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+    const int id = createClass(services, QStringLiteral("Broken co-teacher metadata"));
+    QVERIFY(id > 0);
+
+    QSqlQuery query(services.databaseSession()->database());
+    QVERIFY2(query.exec(QStringLiteral("DROP TABLE class_info")),
+             qPrintable(query.lastError().text()));
+
+    Platform::ApplicationServicesClassCoTeacherPageReadPort port(&services);
+    const auto result = port.readClassCoTeacherPage(classId(id));
+
+    QVERIFY(result);
+    QVERIFY(!result.value().classFields);
+    QCOMPARE(result.value().classFields.error().code, Domain::ErrorCode::Technical);
+    QVERIFY(result.value().classFields.error().message.starts_with(
+        "Loading class information failed"
+        ));
+    QVERIFY(!result.value().teacherDisplayName);
+    QCOMPARE(result.value().teacherDisplayName.error().code,
+             Domain::ErrorCode::NotFound);
+    QCOMPARE(result.value().teacherDisplayName.error().message,
+             std::string("The co-teacher display name is unavailable."));
+
+    const auto& metrics = services.databaseSession()->classInfoRepository()
+                              ->classPageDetailsReadMetrics();
+    QCOMPARE(metrics.callCount, 1);
+    QCOMPARE(metrics.metadataStatementCount, 1);
+    QCOMPARE(metrics.regularScheduleStatementCount, 0);
 }
 
 void NextPlatformApplicationServicesClassCoTeacherPageReadPortTests::
@@ -371,6 +438,67 @@ teacherProjectionFailurePreservesSelectedTeacherAndClassFields()
              Domain::ErrorCode::Technical);
     QVERIFY(result.value().classFields.value().classGrade == u"E4");
     QVERIFY(result.value().classFields.value().classLevel == u"Theseus");
+}
+
+void NextPlatformApplicationServicesClassCoTeacherPageReadPortTests::
+missingClassInfoKeepsScheduleAndUnknownClassUsesDefaults()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+    const int id = createClass(
+        services,
+        QStringLiteral("Schedule without co-teacher metadata")
+        );
+    QVERIFY(id > 0);
+    QSqlQuery metadataQuery(services.databaseSession()->database());
+    metadataQuery.prepare(QStringLiteral(
+        "SELECT COUNT(*) FROM class_info WHERE class_id=?"
+        ));
+    metadataQuery.addBindValue(id);
+    QVERIFY2(metadataQuery.exec(), qPrintable(metadataQuery.lastError().text()));
+    QVERIFY(metadataQuery.next());
+    QCOMPARE(metadataQuery.value(0).toInt(), 0);
+    QVERIFY(insertRegularTime(
+        services,
+        id,
+        QStringLiteral("Wednesday"),
+        QStringLiteral("2:00 PM")
+        ));
+    QVERIFY(insertRegularTime(
+        services,
+        id,
+        QStringLiteral("Monday"),
+        QStringLiteral("1:00 PM")
+        ));
+
+    Platform::ApplicationServicesClassCoTeacherPageReadPort port(&services);
+    const auto scheduled = port.readClassCoTeacherPage(classId(id));
+    QVERIFY(scheduled);
+    QVERIFY(scheduled.value().classFields);
+    QVERIFY(scheduled.value().teacherDisplayName);
+    const auto& fields = scheduled.value().classFields.value();
+    QVERIFY(!fields.selectedTeacherId);
+    QVERIFY(fields.classGrade.empty());
+    QVERIFY(fields.classLevel.empty());
+    QVERIFY((fields.regularSchedule == std::vector<
+        Application::ClassCoTeacherPageScheduleRow>{
+            {u"Wednesday", u"2:00 PM"},
+            {u"Monday", u"1:00 PM"}
+        }));
+    QVERIFY(scheduled.value().teacherDisplayName.value().empty());
+
+    const auto unknown = port.readClassCoTeacherPage(classId(812345));
+    QVERIFY(unknown);
+    QVERIFY(unknown.value().classId == classId(812345));
+    QVERIFY(unknown.value().classFields);
+    QVERIFY(unknown.value().teacherDisplayName);
+    QVERIFY(!unknown.value().classFields.value().selectedTeacherId);
+    QVERIFY(unknown.value().classFields.value().classGrade.empty());
+    QVERIFY(unknown.value().classFields.value().classLevel.empty());
+    QVERIFY(unknown.value().classFields.value().regularSchedule.empty());
+    QVERIFY(unknown.value().teacherDisplayName.value().empty());
 }
 
 QTEST_MAIN(NextPlatformApplicationServicesClassCoTeacherPageReadPortTests)

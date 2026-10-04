@@ -66,11 +66,14 @@ public:
                 );
         }
 
-        Result<ClassInfo> loadedInfo = [&]() -> Result<ClassInfo>
+        Result<ClassPageDetailsReadRecord> loadedInfo =
+            [&]() -> Result<ClassPageDetailsReadRecord>
         {
             try
             {
-                return classInfoRepository->loadClassInfo(*legacyClassId);
+                return classInfoRepository->loadClassPageDetails(
+                    *legacyClassId
+                    );
             }
             catch (const std::exception&)
             {
@@ -119,9 +122,9 @@ public:
         fields.classGrade = loadedInfo->classGrade.toStdU16String();
         fields.classLevel = loadedInfo->classLevel.toStdU16String();
         fields.regularSchedule.reserve(
-            static_cast<std::size_t>(loadedInfo->classTimes.size())
+            static_cast<std::size_t>(loadedInfo->regularTimes.size())
             );
-        for (const ClassTime& time : loadedInfo->classTimes)
+        for (const ClassPageDetailsRegularTime& time : loadedInfo->regularTimes)
         {
             fields.regularSchedule.push_back({
                 .day = time.day.toStdU16String(),

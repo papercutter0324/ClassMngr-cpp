@@ -657,6 +657,84 @@ Result<ClassInfo> ClassInfoRepository::loadClassInfo(
     return info;
 }
 
+Result<ClassPageDetailsReadRecord> ClassInfoRepository::loadClassPageDetails(
+    const int classId
+    )
+{
+    ++m_classPageDetailsReadMetrics.callCount;
+    if (classId <= 0)
+    {
+        return std::unexpected(
+            QObject::tr("Loading class information failed: invalid class id %1.")
+                .arg(classId)
+            );
+    }
+
+    const QString identity = QObject::tr("class id %1").arg(classId);
+    ClassPageDetailsReadRecord record;
+    record.classId = classId;
+
+    QSqlQuery metadataQuery(m_database);
+    metadataQuery.prepare(R"(
+        SELECT teacher_id, class_grade, class_level, notes,
+               time_filler_activities
+        FROM class_info
+        WHERE class_id = ?
+    )");
+    metadataQuery.addBindValue(classId);
+    ++m_classPageDetailsReadMetrics.metadataStatementCount;
+    const auto loadedMetadata = SqlQueryUtils::executePrepared(
+        metadataQuery,
+        QObject::tr("Loading class information"),
+        identity
+        );
+    if (!loadedMetadata)
+    {
+        return std::unexpected(loadedMetadata.error().userMessage());
+    }
+
+    if (metadataQuery.next())
+    {
+        const QVariant teacherId = metadataQuery.value("teacher_id");
+        record.teacherId = teacherId.isNull() ? -1 : teacherId.toInt();
+        record.classGrade = metadataQuery.value("class_grade").toString();
+        record.classLevel = metadataQuery.value("class_level").toString();
+        record.notes = metadataQuery.value("notes").toString();
+        record.timeFillerActivities = metadataQuery.value(
+            "time_filler_activities"
+            ).toString();
+    }
+
+    QSqlQuery regularScheduleQuery(m_database);
+    regularScheduleQuery.prepare(R"(
+        SELECT day, start_time
+        FROM class_times
+        WHERE class_id = ?
+        ORDER BY id
+    )");
+    regularScheduleQuery.addBindValue(classId);
+    ++m_classPageDetailsReadMetrics.regularScheduleStatementCount;
+    const auto loadedRegularSchedule = SqlQueryUtils::executePrepared(
+        regularScheduleQuery,
+        QObject::tr("Loading regular class times"),
+        identity
+        );
+    if (!loadedRegularSchedule)
+    {
+        return std::unexpected(loadedRegularSchedule.error().userMessage());
+    }
+
+    while (regularScheduleQuery.next())
+    {
+        record.regularTimes.append({
+            regularScheduleQuery.value("day").toString(),
+            regularScheduleQuery.value("start_time").toString()
+        });
+    }
+
+    return record;
+}
+
 Result<QList<ClassInfo>> ClassInfoRepository::loadClassInfoRecords(
     const QList<int>& classIds
     )
@@ -2114,6 +2192,12 @@ const ScheduleClassInfoReadMetrics&
 ClassInfoRepository::scheduleClassInfoReadMetrics() const noexcept
 {
     return m_scheduleClassInfoReadMetrics;
+}
+
+const ClassPageDetailsReadMetrics&
+ClassInfoRepository::classPageDetailsReadMetrics() const noexcept
+{
+    return m_classPageDetailsReadMetrics;
 }
 
 const ClassSubtitleBatchReadMetrics&

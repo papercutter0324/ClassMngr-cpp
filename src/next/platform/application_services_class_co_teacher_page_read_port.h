@@ -61,11 +61,14 @@ public:
                 ));
         }
 
-        Result<ClassInfo> loadedInfo = [&]() -> Result<ClassInfo>
+        Result<ClassPageDetailsReadRecord> loadedInfo =
+            [&]() -> Result<ClassPageDetailsReadRecord>
         {
             try
             {
-                return classInfoRepository->loadClassInfo(*legacyClassId);
+                return classInfoRepository->loadClassPageDetails(
+                    *legacyClassId
+                    );
             }
             catch (const std::exception&)
             {
@@ -224,7 +227,7 @@ private:
     }
 
     [[nodiscard]] static Application::ClassCoTeacherPageFields projectClassFields(
-        const ClassInfo& info,
+        const ClassPageDetailsReadRecord& info,
         std::optional<Domain::TeacherId> selectedTeacherId
         )
     {
@@ -233,9 +236,9 @@ private:
         fields.classGrade = info.classGrade.toStdU16String();
         fields.classLevel = info.classLevel.toStdU16String();
         fields.regularSchedule.reserve(
-            static_cast<std::size_t>(info.classTimes.size())
+            static_cast<std::size_t>(info.regularTimes.size())
             );
-        for (const ClassTime& time : info.classTimes)
+        for (const ClassPageDetailsRegularTime& time : info.regularTimes)
         {
             fields.regularSchedule.push_back({
                 .day = time.day.toStdU16String(),
