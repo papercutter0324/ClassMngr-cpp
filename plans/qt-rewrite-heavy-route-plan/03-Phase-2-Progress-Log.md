@@ -11569,3 +11569,27 @@ selected from Batch 6 to batch Schedule Import apply-time class-information
 reads while preserving class order, per-class defaults, schedule fields, and
 transaction error behavior. Phase 2 remains In Progress/Open; Gates 1 and 2
 remain Partial.
+
+### F323 accepted / F324 selected - 2026-10-05
+
+F323, committed as
+`e6bdd44d05f2d4c8de8a906e6def051f87d3e3b6`, batches apply-time class
+information reads in `ScheduleImportRepository::applyCore`. After transaction
+start and the existing teacher/class reads, apply loads class information once
+with `ClassInfoRepository::loadScheduleClassInfos()` before validation or
+writes, indexes the results by ID, and retains `existingClasses` iteration
+order for downstream validation. The separate snapshot path and preview reads
+are unchanged.
+
+Tests cover reversed class/batch order, defaults, regular and intensive
+schedules, repository batch metrics, and a missing intensive-table batch-read
+failure before writes; persisted state remains unchanged and the connection
+can begin a later transaction. Fresh independent Windows x64 Debug/Ninja/MSVC
+configure validated 1,329 handwritten source files; the target built in 316
+steps, focused CTest passed 1/1, and `git diff --check` passed. Evidence is
+under `C:\Users\wfelt\AppData\Local\Temp\f323_verify_20261005_72b3b7e8\`.
+The batch-call count was confirmed by source review; applyCore has no local
+metrics seam. F324 is selected from Batch 6 to batch Class Transfer
+package-export evaluation-row reads while preserving class and evaluation
+order, sparse row indexes, full cells, and abort behavior. Phase 2 remains In
+Progress/Open; Gates 1 and 2 remain Partial.
