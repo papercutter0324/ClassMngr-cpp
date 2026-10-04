@@ -11137,3 +11137,29 @@ F308 is selected to batch My Classes roster-backed student-count reads after
 F283, preserving exact English/Korean selection, QString trimming, and
 zero-on-failure behavior. F309-F315 remain ordered in Batch 4. Phase 2 remains
 In Progress/Open; Gates 1 and 2 remain Partial.
+
+### Progress update - 2026-10-04 (F308 accepted; F309 selected)
+
+F308, committed as
+`cff4c0dcfb0893cb43e473096247cc8a28c51be8`, batches My Classes roster-backed
+student-count reads after F283. A narrow Application query and active-session
+Platform port carry per-class count results; the repository uses set-based
+column and sparse-cell reads, preserving the first exact English/Korean
+columns, QString trimming, one count per row, and zero-on-failure behavior.
+Query failures retry per class, and counts remain separate from class
+information and teacher profiles.
+
+Executor self-check and fresh independent Windows x64 Debug/Ninja verification
+passed. The independent configure validated 1,301 handwritten source files;
+ClassMngr and all eight focused targets built. Focused CTest passed 7/7:
+ClassMngrMyClassesPageTests, both F308 student-count Application/Platform
+tests, both F306 class-information Application/Platform regressions, and both
+F307 teacher-profile Application/Platform regressions. `git diff --check`
+passed. Independent logs are under build/f308v/ (configure.log, build.log,
+focused_ctest.log); executor logs are under build/p2_f291_impl_ninja/ and
+build/. The full suite and other platform builds were not run.
+
+F309 is selected to batch Sub Prep information-sheet per-class roster counts
+after F179, preserving schedule order, zero fallback, and equivalent read
+metrics. F310-F315 remain ordered in Batch 4. Phase 2 remains In Progress/Open;
+Gates 1 and 2 remain Partial.
