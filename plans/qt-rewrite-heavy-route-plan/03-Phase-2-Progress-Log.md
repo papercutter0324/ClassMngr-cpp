@@ -11514,3 +11514,28 @@ teacher profiles, and class-information/full-roster reads so each slice can
 retain its own field mapping and failure order. The candidates are distinct
 from accepted F316-F320 and active F321-F322. Deferred F285/F298 remain
 unchanged.
+
+### F321 accepted / F322 selected - 2026-10-04
+
+F321, committed as
+`0cf920978c8958c6596e31af1eaa254b5cea1357`, adds purpose-fit birthday
+projections for Native English and GS Team. Native English reads raw name,
+position, and birthday; GS Team also reads Korean name for display fallback.
+Both projections preserve repository ordering, including GS's exact-empty-name
+fallback, and retain blank/null-mapped rows for existing downstream handling.
+The shared full-directory readers remain unchanged for staff-directory use.
+The Sidebar still attempts both reads and keeps its existing warning,
+Native-error-precedence, and dialog behavior.
+
+Fresh independent Windows x64 Debug/Ninja/MSVC configure and build passed; the
+configure validated 1,329 handwritten source files. Focused CTest passed 9/9,
+including new Application and Platform projection coverage, four
+full-directory regressions, and `NavigationTeacherRead`. `git diff --check`
+passed. Logs are under `build/f321v/`. One query per source was verified by
+source review rather than SQL-count instrumentation.
+
+F322 is selected from Batch 5 to reduce Class Analytics roster-name fixed SQL
+reads while preserving sparse-row sizing and the compact English/Korean
+projection. Batch 6 (F323-F332), recorded at F321 start, remains queued for
+after Batch 5. F298 remains deferred; Phase 2 remains In Progress/Open, with
+Gates 1 and 2 Partial.

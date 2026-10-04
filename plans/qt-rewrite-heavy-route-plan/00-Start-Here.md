@@ -54,9 +54,10 @@
   per-class subtitle reads after F261), and F304 (batch RosterPrintDialog
   extra-column roster reads after F264) and F305 (batch transfer-menu target
   metadata, capacity, and roster reads after F259/F265) are accepted; F305
-  remains distinct from F273's transfer-time target read. F306-F320 are
-  accepted; F321 (purpose-fit Native English and GS Team birthday projections)
-  is selected. Batch 5 (F316-F322) is active; Batch 6 (F323-F332) is recorded.
+  remains distinct from F273's transfer-time target read. F306-F321 are
+  accepted; F322 (reduce Class Analytics roster-name fixed SQL reads while
+  preserving sparse-row sizing and the compact English/Korean projection) is
+  selected. Batch 5 (F316-F322) is active; Batch 6 (F323-F332) is recorded.
   Gates 1 and 2 remain Partial, with broader feature
   migration, parity, and 96-class Release memory evidence still open.
   See the

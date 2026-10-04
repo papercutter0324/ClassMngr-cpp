@@ -18,11 +18,11 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-04
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F320 is accepted. F321 is selected for purpose-fit Native
-  English and GS Team birthday projections while preserving schedule fields,
-  source ordering, and current warning behavior. Batch 6 (F323-F332) is
-  recorded for after Batch 5, beginning with Schedule Import apply-time class
-  information reads.
+- Current note: F321 is accepted. F322 is selected to reduce the Class
+  Analytics roster-name fixed SQL reads while preserving sparse-row sizing and
+  the compact English/Korean projection. Batch 6 (F323-F332) is recorded for
+  after Batch 5, beginning with Schedule Import apply-time class information
+  reads.
 
 ### Slice discovery batches
 
@@ -52,9 +52,7 @@ Accepted slices are removed from active tracking; their implementation and accep
 
 #### Active batch: Batch 5
 
-1. F321 - Purpose-fit Native English and GS Team birthday projections;
-   preserve schedule fields, source ordering, and current warning behavior.
-2. F322 - Reduce Class Analytics roster-name fixed SQL read sequence;
+1. F322 - Reduce Class Analytics roster-name fixed SQL read sequence;
    preserve sparse-row sizing and the compact English/Korean projection.
 
 No other slices were found.
@@ -248,26 +246,24 @@ No new v2 production path depends on DataService, MainWindow, PageManager, or a 
 
 Earlier verified slices and cumulative exit-gate snapshots are archived in the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 
-## Latest Progress Update - 2026-10-04 (F320 accepted; F321 selected)
+## Latest Progress Update - 2026-10-04 (F321 accepted; F322 selected)
 
-F320, committed as
-`6d7532d380c79fb42cf8a173dbe4d0586a184e3a`, adds a purpose-fit roster-name
-projection for Speaking Evaluation. Both Import Names and duplicate-name
-resolution now receive ordered raw English/Korean pairs, first matching
-case-insensitive headers, and legacy row-existence information without loading
-full roster cells. Sparse gaps, unrelated blank data rows, no-column behavior,
-warning order, and existing trimming/matching logic are preserved.
+F321, committed as
+`0cf920978c8958c6596e31af1eaa254b5cea1357`, adds purpose-fit birthday
+projections for Native English and GS Team. They return only the fields used
+by the schedule, preserve each directory's repository order including GS's
+exact-empty-name fallback, and retain blank/null-mapped rows for existing
+downstream handling. The shared full-directory readers remain unchanged for
+staff-directory use, and the existing warning and error-precedence behavior is
+preserved.
 
-Executor self-check and fresh independent Windows x64 Debug/Ninja/MSVC
-verification passed. The independent configure validated 1,317 handwritten
-source files; the new Application/Platform targets, name-import plan, and
-Speaking Evaluation page targets built. Focused CTest passed 4/4, and
-`git diff --check` passed. Logs are under build/f320v/; executor logs are
-under build/. The full suite was not run. The review found no defect; tied
-duplicate-header positions and NULL selected name cells were source-reviewed
-but not directly tested.
+Fresh independent Windows x64 Debug/Ninja/MSVC configure and build passed; the
+configure validated 1,329 handwritten source files. Focused CTest passed 9/9,
+including the new projections and full-directory regressions, and
+`git diff --check` passed. Logs are under `build/f321v/`. One query per source
+was verified by source review rather than SQL-count instrumentation.
 
-F321 is selected from Batch 5 for purpose-fit Native English and GS Team
-birthday projections, preserving schedule fields, source order, and warning
-behavior. F298 remains deferred pending its warning/navigation decision.
+F322 is selected from Batch 5 to reduce Class Analytics roster-name fixed SQL
+reads while preserving sparse-row sizing and the compact English/Korean
+projection. F298 remains deferred pending its warning/navigation decision.
 Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial.
