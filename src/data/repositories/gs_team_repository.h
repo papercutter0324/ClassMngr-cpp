@@ -6,12 +6,22 @@
 #include <QList>
 #include <QSqlDatabase>
 
+struct GsTeamBirthdayReadRecord final
+{
+    QString name;
+    QString koreanName;
+    QString position;
+    QString birthday;
+};
+
 class GsTeamRepository
 {
 public:
     explicit GsTeamRepository(QSqlDatabase& database);
 
     [[nodiscard]] Result<QList<GsTeamMember>> getAll() const;
+    [[nodiscard]] Result<QList<GsTeamBirthdayReadRecord>>
+        loadBirthdayDirectoryReadRecords() const;
 
     [[nodiscard]] Status saveDirectory(
         const QList<GsTeamMember>& members,

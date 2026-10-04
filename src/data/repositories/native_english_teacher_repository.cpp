@@ -76,6 +76,53 @@ Result<QList<NativeEnglishTeacher>> NativeEnglishTeacherRepository::getAll() con
     return result;
 }
 
+Result<QList<NativeEnglishTeacherBirthdayReadRecord>>
+NativeEnglishTeacherRepository::loadBirthdayDirectoryReadRecords() const
+{
+    QList<NativeEnglishTeacherBirthdayReadRecord> result;
+    QSqlQuery query(m_database);
+
+    const auto executed = SqlQueryUtils::execute(
+        query,
+        QStringLiteral(R"(
+        SELECT name, position, birthday
+        FROM native_english_teachers
+        ORDER BY CASE position
+            WHEN 'Co-ordinator' THEN 1
+            WHEN 'Team Leader' THEN 2
+            WHEN 'M3 Song''s' THEN 3
+            WHEN 'M2 Song''s' THEN 4
+            WHEN 'M1 Song''s' THEN 5
+            WHEN 'E6 Song''s' THEN 6
+            WHEN 'E5 Athena' THEN 7
+            WHEN 'NET' THEN 8
+            ELSE 9
+        END, name COLLATE NOCASE, id
+    )"),
+        QObject::tr("Loading Native English Teacher directory")
+        );
+    if (!executed)
+    {
+        return std::unexpected(executed.error().userMessage());
+    }
+
+    while (query.next())
+    {
+        result.append({
+            query.value(QStringLiteral("name")).toString(),
+            query.value(QStringLiteral("position")).toString(),
+            query.value(QStringLiteral("birthday")).toString()
+        });
+    }
+
+    if (query.lastError().isValid())
+    {
+        return std::unexpected(query.lastError().text());
+    }
+
+    return result;
+}
+
 Status NativeEnglishTeacherRepository::saveDirectory(
     const QList<NativeEnglishTeacher>& teachers,
     const QList<int>& deletedIds

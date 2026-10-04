@@ -4,12 +4,12 @@
 #include "domain/models/native_english_teacher.h"
 #include "domain/models/teacher.h"
 #include "features/teacher/ui/upcoming_birthdays_dialog.h"
-#include "next/application/gs_team_directory_read_query.h"
+#include "next/application/gs_team_birthday_directory_read_query.h"
 #include "next/application/korean_teacher_birthday_directory_read_query.h"
-#include "next/application/native_english_teacher_directory_read_query.h"
-#include "next/platform/application_services_gs_team_directory_read_port.h"
+#include "next/application/native_english_teacher_birthday_directory_read_query.h"
+#include "next/platform/application_services_gs_team_birthday_directory_read_port.h"
 #include "next/platform/application_services_korean_teacher_birthday_directory_read_port.h"
-#include "next/platform/application_services_native_english_teacher_directory_read_port.h"
+#include "next/platform/application_services_native_english_teacher_birthday_directory_read_port.h"
 #include "next/platform/settings_manager_upcoming_birthday_dismissal_port.h"
 #include "ui/shared/dialogs/user_prompt_service.h"
 #include "ui/shared/widgets/sidebar/sidebar.h"
@@ -77,32 +77,34 @@ SidebarController::loadUpcomingBirthdaySchedule(
     }
 
     ClassMngr::Next::Platform::
-        ApplicationServicesNativeEnglishTeacherDirectoryReadPort
-            nativeEnglishReadPort(m_services);
+        ApplicationServicesNativeEnglishTeacherBirthdayDirectoryReadPort
+            nativeEnglishBirthdayReadPort(m_services);
     const ClassMngr::Next::Application::
-        NativeEnglishTeacherDirectoryReadQuery nativeEnglishReadQuery(
-            nativeEnglishReadPort);
+        NativeEnglishTeacherBirthdayDirectoryReadQuery
+            nativeEnglishBirthdayReadQuery(nativeEnglishBirthdayReadPort);
     const ClassMngr::Next::Application::
-        NativeEnglishTeacherDirectoryReadResult nativeEnglishDirectory =
-            nativeEnglishReadQuery.execute();
+        NativeEnglishTeacherBirthdayDirectoryReadResult
+            nativeEnglishBirthdayDirectory =
+                nativeEnglishBirthdayReadQuery.execute();
 
     ClassMngr::Next::Platform::
-        ApplicationServicesGsTeamDirectoryReadPort gsTeamReadPort(m_services);
-    const ClassMngr::Next::Application::GsTeamDirectoryReadQuery
-        gsTeamReadQuery(gsTeamReadPort);
-    const ClassMngr::Next::Application::GsTeamDirectoryReadResult
-        gsTeamDirectory = gsTeamReadQuery.execute();
+        ApplicationServicesGsTeamBirthdayDirectoryReadPort
+            gsTeamBirthdayReadPort(m_services);
+    const ClassMngr::Next::Application::GsTeamBirthdayDirectoryReadQuery
+        gsTeamBirthdayReadQuery(gsTeamBirthdayReadPort);
+    const ClassMngr::Next::Application::GsTeamBirthdayDirectoryReadResult
+        gsTeamBirthdayDirectory = gsTeamBirthdayReadQuery.execute();
 
-    if (!nativeEnglishDirectory || !gsTeamDirectory)
+    if (!nativeEnglishBirthdayDirectory || !gsTeamBirthdayDirectory)
     {
         DialogServices::showWarning(
             m_sidebar,
             tr("Upcoming Birthdays"),
             tr("Birthdays could not be loaded."),
             directoryReadErrorDetails(
-                !nativeEnglishDirectory
-                    ? nativeEnglishDirectory.error().message
-                    : gsTeamDirectory.error().message
+                !nativeEnglishBirthdayDirectory
+                    ? nativeEnglishBirthdayDirectory.error().message
+                    : gsTeamBirthdayDirectory.error().message
                 )
             );
         return std::nullopt;
@@ -110,33 +112,27 @@ SidebarController::loadUpcomingBirthdaySchedule(
 
     QList<NativeEnglishTeacher> nativeEnglishTeachers;
     nativeEnglishTeachers.reserve(
-        static_cast<qsizetype>(nativeEnglishDirectory.value().size())
+        static_cast<qsizetype>(nativeEnglishBirthdayDirectory.value().size())
         );
-    for (const auto& entry : nativeEnglishDirectory.value())
+    for (const auto& entry : nativeEnglishBirthdayDirectory.value())
     {
         nativeEnglishTeachers.append({
-            .id = entry.id.value(),
             .name = QString::fromStdU16String(entry.name),
             .position = QString::fromStdU16String(entry.position),
-            .phoneNumber = QString::fromStdU16String(entry.phoneNumber),
-            .birthday = QString::fromStdU16String(entry.birthday),
-            .nationality = QString::fromStdU16String(entry.nationality),
-            .email = QString::fromStdU16String(entry.email)
+            .birthday = QString::fromStdU16String(entry.birthday)
         });
     }
 
     QList<GsTeamMember> gsTeamMembers;
     gsTeamMembers.reserve(
-        static_cast<qsizetype>(gsTeamDirectory.value().size())
+        static_cast<qsizetype>(gsTeamBirthdayDirectory.value().size())
         );
-    for (const auto& entry : gsTeamDirectory.value())
+    for (const auto& entry : gsTeamBirthdayDirectory.value())
     {
         gsTeamMembers.append({
-            .id = entry.id.value(),
             .name = QString::fromStdU16String(entry.name),
             .koreanName = QString::fromStdU16String(entry.koreanName),
             .position = QString::fromStdU16String(entry.position),
-            .phoneNumber = QString::fromStdU16String(entry.phoneNumber),
             .birthday = QString::fromStdU16String(entry.birthday)
         });
     }

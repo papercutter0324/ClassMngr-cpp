@@ -16,15 +16,15 @@
 #include "features/teacher/ui/teacher_import_dialog.h"
 #include "fakes/fake_user_prompt_service.h"
 #include "next/application/class_teacher_assignments_read_query.h"
-#include "next/application/gs_team_directory_read_query.h"
+#include "next/application/gs_team_birthday_directory_read_query.h"
 #include "next/application/initial_setup_teacher_choices_read_query.h"
 #include "next/application/korean_teacher_birthday_directory_read_query.h"
-#include "next/application/native_english_teacher_directory_read_query.h"
-#include "next/platform/application_services_gs_team_directory_read_port.h"
+#include "next/application/native_english_teacher_birthday_directory_read_query.h"
+#include "next/platform/application_services_gs_team_birthday_directory_read_port.h"
 #include "next/platform/application_services_class_teacher_assignments_read_port.h"
 #include "next/platform/application_services_initial_setup_teacher_choices_read_port.h"
 #include "next/platform/application_services_korean_teacher_birthday_directory_read_port.h"
-#include "next/platform/application_services_native_english_teacher_directory_read_port.h"
+#include "next/platform/application_services_native_english_teacher_birthday_directory_read_port.h"
 #include "ui/shared/actions/action_registry.h"
 #include "ui/shared/dialogs/user_prompt_service.h"
 #include "ui/shared/pages/page_header.h"
@@ -573,10 +573,10 @@ QString directoryReadDetails(
     if (nativeEnglish)
     {
         ClassMngr::Next::Platform::
-            ApplicationServicesNativeEnglishTeacherDirectoryReadPort port(
+            ApplicationServicesNativeEnglishTeacherBirthdayDirectoryReadPort port(
                 &services);
         const ClassMngr::Next::Application::
-            NativeEnglishTeacherDirectoryReadQuery query(port);
+            NativeEnglishTeacherBirthdayDirectoryReadQuery query(port);
         const auto result = query.execute();
         return result
             ? QString()
@@ -587,8 +587,9 @@ QString directoryReadDetails(
     }
 
     ClassMngr::Next::Platform::
-        ApplicationServicesGsTeamDirectoryReadPort port(&services);
-    const ClassMngr::Next::Application::GsTeamDirectoryReadQuery query(port);
+        ApplicationServicesGsTeamBirthdayDirectoryReadPort port(&services);
+    const ClassMngr::Next::Application::GsTeamBirthdayDirectoryReadQuery query(
+        port);
     const auto result = query.execute();
     return result
         ? QString()

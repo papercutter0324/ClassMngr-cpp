@@ -1912,6 +1912,15 @@ classmngr_add_qt_test(
 )
 
 classmngr_add_qt_test(
+    NAME NextApplicationNativeEnglishTeacherBirthdayDirectoryReadQuery
+    SOURCES
+        tests/next_application_native_english_teacher_birthday_directory_read_query_tests.cpp
+    LIBRARIES
+        ClassMngrNext::Application
+        Qt6::Test
+)
+
+classmngr_add_qt_test(
     NAME NextApplicationKoreanTeacherBirthdayDirectoryReadQuery
     SOURCES
         tests/next_application_korean_teacher_birthday_directory_read_query_tests.cpp
@@ -1946,6 +1955,15 @@ classmngr_add_qt_test(
     NAME NextApplicationGsTeamDirectoryReadQuery
     SOURCES
         tests/next_application_gs_team_directory_read_query_tests.cpp
+    LIBRARIES
+        ClassMngrNext::Application
+        Qt6::Test
+)
+
+classmngr_add_qt_test(
+    NAME NextApplicationGsTeamBirthdayDirectoryReadQuery
+    SOURCES
+        tests/next_application_gs_team_birthday_directory_read_query_tests.cpp
     LIBRARIES
         ClassMngrNext::Application
         Qt6::Test
@@ -2558,6 +2576,16 @@ classmngr_add_qt_test(
 )
 
 classmngr_add_qt_test(
+    NAME NextPlatformApplicationServicesNativeEnglishTeacherBirthdayDirectoryReadPort
+    SOURCES
+        tests/next_platform_application_services_native_english_teacher_birthday_directory_read_port_tests.cpp
+    LIBRARIES
+        ClassMngrNext::Platform
+        Qt6::Test
+    OFFSCREEN
+)
+
+classmngr_add_qt_test(
     NAME NextPlatformApplicationServicesKoreanTeacherBirthdayDirectoryReadPort
     SOURCES
         tests/next_platform_application_services_korean_teacher_birthday_directory_read_port_tests.cpp
@@ -2591,6 +2619,16 @@ classmngr_add_qt_test(
     NAME NextPlatformApplicationServicesGsTeamDirectoryReadPort
     SOURCES
         tests/next_platform_application_services_gs_team_directory_read_port_tests.cpp
+    LIBRARIES
+        ClassMngrNext::Platform
+        Qt6::Test
+    OFFSCREEN
+)
+
+classmngr_add_qt_test(
+    NAME NextPlatformApplicationServicesGsTeamBirthdayDirectoryReadPort
+    SOURCES
+        tests/next_platform_application_services_gs_team_birthday_directory_read_port_tests.cpp
     LIBRARIES
         ClassMngrNext::Platform
         Qt6::Test

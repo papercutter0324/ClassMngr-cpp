@@ -234,6 +234,9 @@ set(CLASSMNGR_NEXT_APPLICATION_SOURCES
     src/next/application/korean_teacher_birthday_directory_read_snapshot.h
     src/next/application/korean_teacher_birthday_directory_read_port.h
     src/next/application/korean_teacher_birthday_directory_read_query.h
+    src/next/application/native_english_teacher_birthday_directory_read_snapshot.h
+    src/next/application/native_english_teacher_birthday_directory_read_port.h
+    src/next/application/native_english_teacher_birthday_directory_read_query.h
     src/next/application/native_english_teacher_directory_read_snapshot.h
     src/next/application/native_english_teacher_directory_read_port.h
     src/next/application/native_english_teacher_directory_read_query.h
@@ -248,6 +251,9 @@ set(CLASSMNGR_NEXT_APPLICATION_SOURCES
     src/next/application/gs_team_directory_read_snapshot.h
     src/next/application/gs_team_directory_read_port.h
     src/next/application/gs_team_directory_read_query.h
+    src/next/application/gs_team_birthday_directory_read_snapshot.h
+    src/next/application/gs_team_birthday_directory_read_port.h
+    src/next/application/gs_team_birthday_directory_read_query.h
     src/next/application/gs_team_import_update.h
     src/next/application/teacher_import_plan_validation.h
     src/next/application/teacher_import_match_cardinality.h
@@ -395,9 +401,11 @@ set(CLASSMNGR_NEXT_PLATFORM_SOURCES
     src/next/platform/application_services_teacher_profile_read_port.h
     src/next/platform/application_services_teacher_import_latest_source_date_read_port.h
     src/next/platform/application_services_korean_teacher_birthday_directory_read_port.h
+    src/next/platform/application_services_native_english_teacher_birthday_directory_read_port.h
     src/next/platform/application_services_native_english_teacher_directory_read_port.h
     src/next/platform/application_services_native_english_teacher_directory_save_port.h
     src/next/platform/application_services_gs_team_directory_read_port.h
+    src/next/platform/application_services_gs_team_birthday_directory_read_port.h
     src/next/platform/application_services_gs_team_directory_save_port.h
     src/next/platform/application_services_current_campus_preferences_port.h
     src/next/platform/application_services_middle_school_analytics_preferences_port.h

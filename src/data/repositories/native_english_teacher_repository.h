@@ -6,12 +6,21 @@
 #include <QList>
 #include <QSqlDatabase>
 
+struct NativeEnglishTeacherBirthdayReadRecord final
+{
+    QString name;
+    QString position;
+    QString birthday;
+};
+
 class NativeEnglishTeacherRepository
 {
 public:
     explicit NativeEnglishTeacherRepository(QSqlDatabase& database);
 
     [[nodiscard]] Result<QList<NativeEnglishTeacher>> getAll() const;
+    [[nodiscard]] Result<QList<NativeEnglishTeacherBirthdayReadRecord>>
+        loadBirthdayDirectoryReadRecords() const;
 
     [[nodiscard]] Status saveDirectory(
         const QList<NativeEnglishTeacher>& teachers,

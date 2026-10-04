@@ -73,6 +73,55 @@ Result<QList<GsTeamMember>> GsTeamRepository::getAll() const
     return result;
 }
 
+Result<QList<GsTeamBirthdayReadRecord>>
+GsTeamRepository::loadBirthdayDirectoryReadRecords() const
+{
+    QList<GsTeamBirthdayReadRecord> result;
+    QSqlQuery query(m_database);
+
+    const auto executed = SqlQueryUtils::execute(
+        query,
+        QStringLiteral(R"(
+        SELECT name, korean_name, position, birthday
+        FROM gs_team
+        ORDER BY CASE position
+            WHEN 'Branch Manager' THEN 1
+            WHEN 'M3' THEN 2
+            WHEN 'M2' THEN 3
+            WHEN 'M1' THEN 4
+            WHEN 'C3' THEN 5
+            WHEN 'C2' THEN 6
+            WHEN 'C1' THEN 7
+            ELSE 8
+        END,
+        CASE WHEN name='' THEN korean_name ELSE name END COLLATE NOCASE,
+        id
+    )"),
+        QObject::tr("Loading GS Team directory")
+        );
+    if (!executed)
+    {
+        return std::unexpected(executed.error().userMessage());
+    }
+
+    while (query.next())
+    {
+        result.append({
+            query.value(QStringLiteral("name")).toString(),
+            query.value(QStringLiteral("korean_name")).toString(),
+            query.value(QStringLiteral("position")).toString(),
+            query.value(QStringLiteral("birthday")).toString()
+        });
+    }
+
+    if (query.lastError().isValid())
+    {
+        return std::unexpected(query.lastError().text());
+    }
+
+    return result;
+}
+
 Status GsTeamRepository::saveDirectory(
     const QList<GsTeamMember>& members,
     const QList<int>& deletedIds
