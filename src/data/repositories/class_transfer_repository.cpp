@@ -720,6 +720,7 @@ Result<ClassImportPreview> buildPreview(
     }
 
     std::map<ClassMngr::Next::Domain::TeacherId, int> legacyTeacherIds;
+    QHash<int, ClassTransferMatchingTeacherNames> destinationTeacherNamesById;
     matchingRequest.destinationTeachers.reserve(
         static_cast<std::size_t>(destinationTeachers->size())
         );
@@ -727,13 +728,15 @@ Result<ClassImportPreview> buildPreview(
     {
         const auto typedId = applicationId<
             ClassMngr::Next::Domain::TeacherId>(destination.id);
+        const ClassTransferMatchingTeacherNames names{
+            normalized(destination.teacherEn).toStdString(),
+            normalized(destination.teacherKr).toStdString()
+        };
         legacyTeacherIds.emplace(typedId, destination.id);
+        destinationTeacherNamesById.insert(destination.id, names);
         matchingRequest.destinationTeachers.push_back({
             typedId,
-            {
-                normalized(destination.teacherEn).toStdString(),
-                normalized(destination.teacherKr).toStdString()
-            }
+            names
         });
     }
 
@@ -828,17 +831,28 @@ Result<ClassImportPreview> buildPreview(
                     if (hasSourceTeacherForCourse(
                             grade.toStdString(), level.toStdString()))
                     {
-                        const Result<Teacher> teacher =
-                            teacherRepository.getTeacher(destinationInfo.teacherId);
-                        if (!teacher)
+                        const auto teacherNames =
+                            destinationTeacherNamesById.constFind(
+                                destinationInfo.teacherId);
+                        if (teacherNames != destinationTeacherNamesById.cend())
                         {
-                            return std::unexpected(teacher.error());
+                            names = *teacherNames;
                         }
+                        else
+                        {
+                            const Result<Teacher> teacher =
+                                teacherRepository.getTeacher(
+                                    destinationInfo.teacherId);
+                            if (!teacher)
+                            {
+                                return std::unexpected(teacher.error());
+                            }
 
-                        names = {
-                            normalized(teacher->teacherEn).toStdString(),
-                            normalized(teacher->teacherKr).toStdString()
-                        };
+                            names = {
+                                normalized(teacher->teacherEn).toStdString(),
+                                normalized(teacher->teacherKr).toStdString()
+                            };
+                        }
                     }
 
                     destinationTeacher = ClassTransferMatchingDestinationTeacher{
