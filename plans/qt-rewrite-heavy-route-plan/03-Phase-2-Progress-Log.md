@@ -11479,3 +11479,27 @@ roster-name projection, preserving English/Korean column selection, row order,
 trimming, and name-pair matching. F298 remains deferred pending its
 warning/navigation decision. Phase 2 remains In Progress/Open; Gates 1 and 2
 remain Partial.
+
+### Progress update - 2026-10-04 (F320 accepted; F321 selected)
+
+F320, committed as
+`6d7532d380c79fb42cf8a173dbe4d0586a184e3a`, adds a purpose-fit roster-name
+projection for Speaking Evaluation. Both Import Names and duplicate-name
+resolution now receive ordered raw English/Korean pairs, first matching
+case-insensitive headers, and legacy row-existence information without loading
+full roster cells. Sparse gaps, unrelated blank data rows, no-column behavior,
+warning order, and existing trimming/matching logic are preserved.
+
+Executor self-check and fresh independent Windows x64 Debug/Ninja/MSVC
+verification passed. The independent configure validated 1,317 handwritten
+source files; the new Application/Platform targets, name-import plan, and
+Speaking Evaluation page targets built. Focused CTest passed 4/4, and
+`git diff --check` passed. Logs are under build/f320v/; executor logs are
+under build/. The full suite was not run. The review found no defect; tied
+duplicate-header positions and NULL selected name cells were source-reviewed
+but not directly tested.
+
+F321 is selected from Batch 5 for purpose-fit Native English and GS Team
+birthday projections, preserving schedule fields, source order, and warning
+behavior. F298 remains deferred pending its warning/navigation decision.
+Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial.

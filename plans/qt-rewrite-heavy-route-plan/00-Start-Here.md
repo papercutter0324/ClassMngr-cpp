@@ -54,9 +54,9 @@
   per-class subtitle reads after F261), and F304 (batch RosterPrintDialog
   extra-column roster reads after F264) and F305 (batch transfer-menu target
   metadata, capacity, and roster reads after F259/F265) are accepted; F305
-  remains distinct from F273's transfer-time target read. F306-F319 are
-  accepted; F320 (purpose-fit Speaking Evaluation roster-name projection) is
-  selected. Batch 5 (F316-F322) is active.
+  remains distinct from F273's transfer-time target read. F306-F320 are
+  accepted; F321 (purpose-fit Native English and GS Team birthday projections)
+  is selected. Batch 5 (F316-F322) is active.
   Gates 1 and 2 remain Partial, with broader feature
   migration, parity, and 96-class Release memory evidence still open.
   See the
