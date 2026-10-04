@@ -18,13 +18,11 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-04
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F312 is accepted. F313 is selected to use a purpose-fit
-  projection for testing-teacher choices, preserving teacher ID, Korean
-  name, room, repository order, blank-name filtering, selection restoration,
-  and recoverability behavior. Missing sessions remain nonrecoverable
-  NotFound results; repository failures remain recoverable Technical
-  results. F314-F315 remain in Batch 4; at F314 start, discover Batch 5 and
-  reconsider the fixed up-to-four-evaluation roster score-import read.
+- Current note: F313 is accepted. F314 is selected to use a purpose-fit
+  projection for co-teacher choices, preserving exact profile/network fields,
+  repository order, ID validation, and error behavior. At F314 start, discover
+  Batch 5 and reconsider the fixed up-to-four-evaluation roster score-import
+  read. F315 remains in Batch 4.
 
 ### Slice discovery batches
 
@@ -54,13 +52,10 @@ Accepted slices are removed from active tracking; their implementation and accep
 
 #### Active batch: Batch 4
 
-1. F313 - Purpose-fit projection for testing-teacher choices; preserve
-   ID/Korean-name/room, repository order, blank-name filtering and selection
-   behavior, and current recoverability semantics.
-2. F314 - Purpose-fit projection for co-teacher choices; preserve exact
+1. F314 - Purpose-fit projection for co-teacher choices; preserve exact
    profile/network fields, repository order, ID validation, and error
    behavior.
-3. F315 - Purpose-fit Korean teacher birthday-directory projection;
+2. F315 - Purpose-fit Korean teacher birthday-directory projection;
    preserve birthday/name/preferred-display fields, raw values, repository
    order, and downstream filtering.
 
@@ -227,32 +222,32 @@ No new v2 production path depends on DataService, MainWindow, PageManager, or a 
 
 Earlier verified slices and cumulative exit-gate snapshots are archived in the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 
-## Latest Progress Update - 2026-10-04 (F312 accepted; F313 selected)
+## Latest Progress Update - 2026-10-04 (F313 accepted; F314 selected)
 
-F312, committed as
-`334920b61237ffa733c29a2445c44079b576ffcc`, adds a purpose-fit repository
-projection for initial-setup teacher choices. It selects only teacher ID,
-Korean name, English name, preferred romanization, and preferred name,
-ordered by `teacher_en`. The Platform port maps raw fields into the existing
-snapshot; `getAllTeachers()` and its other consumers remain unchanged.
+F313, committed as
+`443f6bb4d44829c2cbc5e6480db935e96a22a58b`, adds a purpose-fit repository
+projection for testing-teacher choices. It selects only teacher ID, Korean
+name, and room, ordered by `teacher_en`; the Platform port preserves raw
+values. The page continues to filter blank Korean names, trim display/room
+values, preserve repository order, and restore selection by ID or fall back
+to None. Unavailable sessions remain nonrecoverable NotFound results;
+repository errors remain recoverable Technical results.
 
 Executor self-check and fresh independent Windows x64 Debug/Ninja/MSVC
 verification passed. The independent configure validated 1,301 handwritten
-source files; ClassMngr and all three focused test targets built. Focused
-CTest passed 3/3: the initial-setup Platform port, Application query, and
-wizard tests. Coverage checks field mapping, raw strings, repository order,
-empty results, session/query failures, and wizard presentation behavior.
-`git diff --check` passed. Independent logs are under build/f312v/
-(configure.log, build.log, focused_ctest.log, diff_check.log); executor logs
-are under build/. The full suite was not run.
+source files; ClassMngr and the Platform, Application, and isolated page
+targets built. Focused CTest passed 3/3, including the four F313 page cases
+for ordering/selection, empty choices, silent NotFound handling, and
+warning behavior on query failure. `git diff --check` passed. Independent
+logs are under build/f313v/ (configure.log, build.log, ctest.log,
+page_focused_verbose.log, diff_check.log); executor logs are under build/.
+The broad ClassMngrTestingClassesPageTests suite was not run: the executor
+previously hit a 300-second stall in `outputAvailabilityFollowsRosterTabAndLoadedClass`,
+before the F313 cases. The focused F313 registration passed independently.
 
-F313 is selected to use a purpose-fit projection for testing-teacher
-choices, preserving teacher ID, Korean name, room, repository order, and raw
-values for the page to filter and display. Read-only discovery confirmed
-that the page removes blank Korean names, restores selection by ID where
-possible, and otherwise selects the built-in None choice. Unavailable sessions
-remain nonrecoverable NotFound errors; repository errors remain recoverable
-Technical errors. F314-F315 remain in Batch 4; at F314 start, discover Batch
-5 and reconsider the fixed up-to-four-evaluation roster score-import read.
-F298 remains deferred pending its warning/navigation decision. Phase 2 remains
-In Progress/Open; Gates 1 and 2 remain Partial.
+F314 is selected for a purpose-fit projection for co-teacher choices,
+preserving exact profile/network fields, repository order, ID validation,
+and error behavior. At F314 start, discover Batch 5 and reconsider the fixed
+up-to-four-evaluation roster score-import read. F315 remains in Batch 4;
+F298 remains deferred pending its warning/navigation decision. Phase 2
+remains In Progress/Open; Gates 1 and 2 remain Partial.

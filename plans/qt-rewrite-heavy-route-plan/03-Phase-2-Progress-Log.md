@@ -11288,3 +11288,33 @@ Technical errors. F314-F315 remain ordered in Batch 4; at F314 start,
 discover Batch 5 and reconsider the fixed up-to-four-evaluation roster
 score-import read. Phase 2 remains In Progress/Open; Gates 1 and 2 remain
 Partial.
+
+### Progress update - 2026-10-04 (F313 accepted; F314 selected)
+
+F313, committed as
+`443f6bb4d44829c2cbc5e6480db935e96a22a58b`, adds a purpose-fit repository
+projection for testing-teacher choices. It selects only teacher ID, Korean
+name, and room, ordered by `teacher_en`; the Platform port preserves raw
+values. The page continues to filter blank Korean names, trim display/room
+values, preserve repository order, and restore selection by ID or fall back
+to None. Unavailable sessions remain nonrecoverable NotFound results;
+repository errors remain recoverable Technical results.
+
+Executor self-check and fresh independent Windows x64 Debug/Ninja/MSVC
+verification passed. The independent configure validated 1,301 handwritten
+source files; ClassMngr and the Platform, Application, and isolated page
+targets built. Focused CTest passed 3/3, including the four F313 page cases
+for ordering/selection, empty choices, silent NotFound handling, and
+warning behavior on query failure. `git diff --check` passed. Independent
+logs are under build/f313v/ (configure.log, build.log, ctest.log,
+page_focused_verbose.log, diff_check.log); executor logs are under build/.
+The broad ClassMngrTestingClassesPageTests suite was not run: the executor
+previously hit a 300-second stall in `outputAvailabilityFollowsRosterTabAndLoadedClass`,
+before the F313 cases. The focused F313 registration passed independently.
+
+F314 is selected for a purpose-fit projection for co-teacher choices,
+preserving exact profile/network fields, repository order, ID validation,
+and error behavior. At F314 start, discover Batch 5 and reconsider the fixed
+up-to-four-evaluation roster score-import read. F315 remains in Batch 4;
+F298 remains deferred pending its warning/navigation decision. Phase 2
+remains In Progress/Open; Gates 1 and 2 remain Partial.
