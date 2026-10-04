@@ -985,6 +985,8 @@ Status preflightSchedules(
         return std::unexpected(destinationClasses.error());
     }
 
+    QList<Classroom> eligibleDestinationClasses;
+    QList<int> eligibleDestinationClassIds;
     for (const Classroom& classroom : *destinationClasses)
     {
         if (replacedClassIds.contains(classroom.id))
@@ -992,38 +994,55 @@ Status preflightSchedules(
             continue;
         }
 
-        const Result<ClassInfo> info =
-            classInfoRepository.loadClassInfo(classroom.id);
-        if (!info)
+        eligibleDestinationClasses.append(classroom);
+        eligibleDestinationClassIds.append(classroom.id);
+    }
+
+    if (!eligibleDestinationClassIds.isEmpty())
+    {
+        const Result<QList<ClassNavigationReadRecord>> destinationRecords =
+            classInfoRepository.loadClassesNavigationRecords(
+                eligibleDestinationClassIds);
+        if (!destinationRecords)
         {
-            return std::unexpected(info.error());
+            return std::unexpected(destinationRecords.error());
         }
 
-        const QString label = destinationClassLabel(classroom, *info);
-        Status status = appendAndValidateTimes(
-            &existingSchedules,
-            label,
-            info->classTimes,
-            QObject::tr("regular"),
-            TransferTimeCategory::Regular
-            );
-
-        if (!status)
+        for (qsizetype index = 0; index < destinationRecords->size(); ++index)
         {
-            return status;
-        }
+            const Classroom& classroom = eligibleDestinationClasses.at(index);
+            const ClassNavigationReadRecord& record =
+                destinationRecords->at(index);
+            ClassInfo info;
+            info.classGrade = record.grade;
+            info.classLevel = record.level;
 
-        status = appendAndValidateTimes(
-            &existingSchedules,
-            label,
-            info->intensiveTimes,
-            QObject::tr("intensive"),
-            TransferTimeCategory::Intensive
-            );
+            const QString label = destinationClassLabel(classroom, info);
+            Status status = appendAndValidateTimes(
+                &existingSchedules,
+                label,
+                record.regularTimes,
+                QObject::tr("regular"),
+                TransferTimeCategory::Regular
+                );
 
-        if (!status)
-        {
-            return status;
+            if (!status)
+            {
+                return status;
+            }
+
+            status = appendAndValidateTimes(
+                &existingSchedules,
+                label,
+                record.intensiveTimes,
+                QObject::tr("intensive"),
+                TransferTimeCategory::Intensive
+                );
+
+            if (!status)
+            {
+                return status;
+            }
         }
     }
 

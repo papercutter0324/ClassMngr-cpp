@@ -1780,10 +1780,6 @@ ClassInfoRepository::loadClassesNavigationRecords(
             }
 
             ClassNavigationReadRecord& record = records[*recordIndex];
-            if (!record.hasClassInfo)
-            {
-                continue;
-            }
 
             ClassTime time;
             time.day = timesQuery.value("day").toString();

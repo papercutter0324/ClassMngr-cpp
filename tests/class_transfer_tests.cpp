@@ -354,6 +354,9 @@ private slots:
     void replacementRetainsIdAndClearsOldChildren();
     void teacherReplacementImportsCompleteSnapshot();
     void scheduleConflictLeavesDestinationUnchanged();
+    void schedulePreflightIncludesSchedulesWithoutClassInfo();
+    void schedulePreflightPreservesOrderSkipAndReplaceExclusion();
+    void schedulePreflightReadFailureAbortsBeforeWrites();
     void schedulePreflightParsesSundayOvernightAndEqualEndpoints();
     void importedClassesConflictAtomically();
     void databaseFailureRollsBackAllWrites();
@@ -1055,6 +1058,340 @@ void ClassTransferTests::scheduleConflictLeavesDestinationUnchanged()
              classesBefore);
     QCOMPARE(service.loadRoster(destinationClass)->rows.first().first(),
              QStringLiteral("Destination Student"));
+}
+
+void ClassTransferTests::schedulePreflightIncludesSchedulesWithoutClassInfo()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    DataService service;
+    QVERIFY(service.openDatabase(
+        directory.filePath(QStringLiteral("source.db"))).has_value());
+    const int sourceTeacher = createdTeacherId(service, completeTeacher());
+    const int sourceClass = addCompleteClass(
+        service,
+        sourceTeacher,
+        QStringLiteral("Source Class"),
+        QStringLiteral("E4"),
+        QStringLiteral("Apollo"),
+        QStringLiteral("Monday"),
+        QStringLiteral("Source Student")
+        );
+    QVERIFY(sourceClass > 0);
+    const auto package = service.buildClassTransferPackage({sourceClass});
+    QVERIFY(package.has_value());
+
+    QVERIFY(service.openDatabase(
+        directory.filePath(QStringLiteral("destination.db"))).has_value());
+    const int destinationTeacher = createdTeacherId(
+        service, completeTeacher(QStringLiteral("Destination Teacher")));
+    const int destinationClass = addCompleteClass(
+        service,
+        destinationTeacher,
+        QStringLiteral("Info-less Destination"),
+        QStringLiteral("E6"),
+        QStringLiteral("Gaia"),
+        QStringLiteral("Monday"),
+        QStringLiteral("Destination Student")
+        );
+    QVERIFY(destinationClass > 0);
+
+    const QSqlDatabase database = service.databaseSession()->database();
+    QSqlQuery removeClassInfo(database);
+    removeClassInfo.prepare(QStringLiteral(
+        "DELETE FROM class_info WHERE class_id = ?"));
+    removeClassInfo.addBindValue(destinationClass);
+    QVERIFY2(removeClassInfo.exec(),
+             qPrintable(removeClassInfo.lastError().text()));
+    QCOMPARE(removeClassInfo.numRowsAffected(), 1);
+
+    QSqlQuery remainingSchedules(database);
+    remainingSchedules.prepare(QStringLiteral(
+        "SELECT COUNT(*) FROM class_times WHERE class_id = ?"));
+    remainingSchedules.addBindValue(destinationClass);
+    QVERIFY2(remainingSchedules.exec(),
+             qPrintable(remainingSchedules.lastError().text()));
+    QVERIFY(remainingSchedules.next());
+    QCOMPARE(remainingSchedules.value(0).toInt(), 1);
+
+    QString error;
+    const auto changesBefore = sqliteTotalChanges(database, &error);
+    QVERIFY2(changesBefore.has_value(), qPrintable(error));
+    const int teachersBefore = service.getAllTeachers()
+        .value_or(QList<Teacher>{}).size();
+    const int classesBefore = service.getClasses()
+        .value_or(QList<Classroom>{}).size();
+
+    const auto result = service.importClasses(
+        *package, createAllPlan(*package));
+    QVERIFY(!result.has_value());
+    QCOMPARE(
+        result.error(),
+        QStringLiteral(
+            "Schedule conflicts prevent this import:\n\n"
+            "Regular schedule: E4 Apollo \u2014 Monday 4:00 PM\u20134:50 PM "
+            "conflicts with Info-less Destination \u2014 Monday 4:00 PM\u20134:50 PM\n"
+            "Intensive schedule: E4 Apollo \u2014 Monday 10:00 AM\u201310:55 AM "
+            "conflicts with Info-less Destination \u2014 Monday 10:00 AM\u201310:55 AM"));
+    QCOMPARE(service.getAllTeachers().value_or(QList<Teacher>{}).size(),
+             teachersBefore);
+    QCOMPARE(service.getClasses().value_or(QList<Classroom>{}).size(),
+             classesBefore);
+    const auto changesAfter = sqliteTotalChanges(database, &error);
+    QVERIFY2(changesAfter.has_value(), qPrintable(error));
+    QCOMPARE(*changesAfter - *changesBefore, qlonglong(0));
+}
+
+void ClassTransferTests::
+    schedulePreflightPreservesOrderSkipAndReplaceExclusion()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    DataService service;
+    QVERIFY(service.openDatabase(
+        directory.filePath(QStringLiteral("source.db"))).has_value());
+    const int sourceTeacher = createdTeacherId(
+        service, completeTeacher(QStringLiteral("Shared Teacher")));
+    const int sourceClass = addCompleteClass(
+        service,
+        sourceTeacher,
+        QStringLiteral("Source Class"),
+        QStringLiteral("E4"),
+        QStringLiteral("Apollo"),
+        QStringLiteral("Monday"),
+        QStringLiteral("Source Student")
+        );
+    QVERIFY(sourceClass > 0);
+    const auto sourcePackage = service.buildClassTransferPackage({sourceClass});
+    QVERIFY(sourcePackage.has_value());
+    ClassTransferPackage package = *sourcePackage;
+
+    ClassTransferClass replacementClass = package.classes.first();
+    replacementClass.key = QStringLiteral("class-replace");
+    replacementClass.info.classGrade = QStringLiteral("E5");
+    replacementClass.info.classLevel = QStringLiteral("Match");
+    replacementClass.info.classTimes = {{
+        QStringLiteral("Thursday"),
+        QStringLiteral("4:00 PM"),
+        QStringLiteral("4:50 PM")
+    }};
+    replacementClass.info.intensiveTimes = {{
+        QStringLiteral("Thursday"),
+        QStringLiteral("10:00 AM"),
+        QStringLiteral("10:55 AM")
+    }};
+
+    ClassTransferClass skippedClass = package.classes.first();
+    skippedClass.key = QStringLiteral("class-skip");
+    skippedClass.info.classGrade = QStringLiteral("E7");
+    skippedClass.info.classLevel = QStringLiteral("SkipOnly");
+    skippedClass.info.classTimes = {{
+        QStringLiteral("Tuesday"),
+        QStringLiteral("4:00 PM"),
+        QStringLiteral("4:50 PM")
+    }};
+    skippedClass.info.intensiveTimes = {{
+        QStringLiteral("Tuesday"),
+        QStringLiteral("10:00 AM"),
+        QStringLiteral("10:55 AM")
+    }};
+
+    package.classes[0].info.classTimes = {{
+        QStringLiteral("Monday"),
+        QStringLiteral("4:00 PM"),
+        QStringLiteral("4:50 PM")
+    }};
+    package.classes[0].info.intensiveTimes = {{
+        QStringLiteral("Wednesday"),
+        QStringLiteral("10:00 AM"),
+        QStringLiteral("10:55 AM")
+    }};
+    package.classes.append(replacementClass);
+    package.classes.append(skippedClass);
+
+    QVERIFY(service.openDatabase(
+        directory.filePath(QStringLiteral("destination.db"))).has_value());
+    const int destinationTeacher = createdTeacherId(
+        service, completeTeacher(QStringLiteral("Shared Teacher")));
+    const auto addDestinationClass = [&service, destinationTeacher](
+        const QString& storedName,
+        const QString& grade,
+        const QString& level,
+        const QString& regularDay,
+        const QString& intensiveDay,
+        const QString& intensiveStart,
+        const QString& intensiveEnd,
+        const QString& studentName) -> int
+    {
+        const int classId = createdClassId(service, storedName);
+        if (classId <= 0)
+        {
+            return -1;
+        }
+
+        ClassInfo info = completeClassInfo(
+            classId, destinationTeacher, grade, level, regularDay);
+        info.intensiveTimes = {{intensiveDay, intensiveStart, intensiveEnd}};
+        if (!service.saveClassInfo(info)
+            || !service.saveRoster(classId, completeRoster(studentName))
+            || !service.saveSpeakingEval(
+                classId,
+                QStringLiteral("Custom Evaluation"),
+                completeEvaluation(studentName)))
+        {
+            return -1;
+        }
+
+        return classId;
+    };
+    const int firstDestination = addDestinationClass(
+        QStringLiteral("A First"),
+        QStringLiteral("E6"),
+        QStringLiteral("Alpha"),
+        QStringLiteral("Monday"),
+        QStringLiteral("Wednesday"),
+        QStringLiteral("10:00 AM"),
+        QStringLiteral("10:55 AM"),
+        QStringLiteral("First Student"));
+    const int replacedDestination = addDestinationClass(
+        QStringLiteral("B Replaced"),
+        QStringLiteral("E5"),
+        QStringLiteral("Match"),
+        QStringLiteral("Monday"),
+        QStringLiteral("Wednesday"),
+        QStringLiteral("10:05 AM"),
+        QStringLiteral("11:00 AM"),
+        QStringLiteral("Replaced Student"));
+    const int thirdDestination = addDestinationClass(
+        QStringLiteral("C Third"),
+        QStringLiteral("E6"),
+        QStringLiteral("Gamma"),
+        QStringLiteral("Monday"),
+        QStringLiteral("Wednesday"),
+        QStringLiteral("10:10 AM"),
+        QStringLiteral("11:05 AM"),
+        QStringLiteral("Third Student"));
+    const int skippedDestination = addDestinationClass(
+        QStringLiteral("D Skip Target"),
+        QStringLiteral("E7"),
+        QStringLiteral("SkipOnly"),
+        QStringLiteral("Tuesday"),
+        QStringLiteral("Tuesday"),
+        QStringLiteral("10:15 AM"),
+        QStringLiteral("11:10 AM"),
+        QStringLiteral("Skipped Destination Student"));
+    QVERIFY(firstDestination > 0);
+    QVERIFY(replacedDestination > 0);
+    QVERIFY(thirdDestination > 0);
+    QVERIFY(skippedDestination > 0);
+
+    const Result<QList<Classroom>> destinationClasses = service.getClasses();
+    QVERIFY(destinationClasses);
+    QCOMPARE(destinationClasses->size(), 4);
+    QCOMPARE(destinationClasses->at(0).id, firstDestination);
+    QCOMPARE(destinationClasses->at(1).id, replacedDestination);
+    QCOMPARE(destinationClasses->at(2).id, thirdDestination);
+    QCOMPARE(destinationClasses->at(3).id, skippedDestination);
+
+    ClassImportPlan plan = createAllPlan(package);
+    plan.classes[1] = {
+        1, ClassImportAction::Replace, replacedDestination};
+    plan.classes[2] = {2, ClassImportAction::Skip, -1};
+    plan.teachers[0] = {
+        package.teachers.first().key,
+        TeacherImportAction::KeepExisting,
+        destinationTeacher
+    };
+    QString error;
+    const QSqlDatabase database = service.databaseSession()->database();
+    const auto changesBefore = sqliteTotalChanges(database, &error);
+    QVERIFY2(changesBefore.has_value(), qPrintable(error));
+
+    const auto result = service.importClasses(package, plan);
+    QVERIFY(!result.has_value());
+    QCOMPARE(
+        result.error(),
+        QStringLiteral(
+            "Schedule conflicts prevent this import:\n\n"
+            "Regular schedule: E4 Apollo \u2014 Monday 4:00 PM\u20134:50 PM "
+            "conflicts with E6 Alpha \u2014 Monday 4:00 PM\u20134:50 PM\n"
+            "Regular schedule: E4 Apollo \u2014 Monday 4:00 PM\u20134:50 PM "
+            "conflicts with E6 Gamma \u2014 Monday 4:00 PM\u20134:50 PM\n"
+            "Intensive schedule: E4 Apollo \u2014 Wednesday 10:00 AM\u201310:55 AM "
+            "conflicts with E6 Alpha \u2014 Wednesday 10:00 AM\u201310:55 AM\n"
+            "Intensive schedule: E4 Apollo \u2014 Wednesday 10:00 AM\u201310:55 AM "
+            "conflicts with E6 Gamma \u2014 Wednesday 10:10 AM\u201311:05 AM"));
+    const auto changesAfter = sqliteTotalChanges(database, &error);
+    QVERIFY2(changesAfter.has_value(), qPrintable(error));
+    QCOMPARE(*changesAfter - *changesBefore, qlonglong(0));
+    QCOMPARE(service.getAllTeachers().value_or(QList<Teacher>{}).size(), 1);
+    QCOMPARE(service.getClasses().value_or(QList<Classroom>{}).size(), 4);
+}
+
+void ClassTransferTests::schedulePreflightReadFailureAbortsBeforeWrites()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    DataService service;
+    QVERIFY(service.openDatabase(
+        directory.filePath(QStringLiteral("source.db"))).has_value());
+    const int sourceTeacher = createdTeacherId(service, completeTeacher());
+    const int sourceClass = addCompleteClass(
+        service,
+        sourceTeacher,
+        QStringLiteral("Source Class"),
+        QStringLiteral("E4"),
+        QStringLiteral("Apollo"),
+        QStringLiteral("Monday"),
+        QStringLiteral("Source Student")
+        );
+    const auto package = service.buildClassTransferPackage({sourceClass});
+    QVERIFY(package.has_value());
+
+    QVERIFY(service.openDatabase(
+        directory.filePath(QStringLiteral("destination.db"))).has_value());
+    const int destinationTeacher = createdTeacherId(
+        service, completeTeacher(QStringLiteral("Destination Teacher")));
+    const int destinationClass = addCompleteClass(
+        service,
+        destinationTeacher,
+        QStringLiteral("Destination Class"),
+        QStringLiteral("E6"),
+        QStringLiteral("Gaia"),
+        QStringLiteral("Tuesday"),
+        QStringLiteral("Destination Student")
+        );
+    QVERIFY(destinationClass > 0);
+
+    const QSqlDatabase database = service.databaseSession()->database();
+    QSqlQuery schemaQuery(database);
+    QVERIFY2(
+        schemaQuery.exec(QStringLiteral(
+            "ALTER TABLE class_intensive_times "
+            "RENAME COLUMN day TO unavailable_day")),
+        qPrintable(schemaQuery.lastError().text()));
+    QString error;
+    const auto changesBefore = sqliteTotalChanges(database, &error);
+    QVERIFY2(changesBefore.has_value(), qPrintable(error));
+    const int teachersBefore = service.getAllTeachers()
+        .value_or(QList<Teacher>{}).size();
+    const int classesBefore = service.getClasses()
+        .value_or(QList<Classroom>{}).size();
+
+    const auto result = service.importClasses(
+        *package, createAllPlan(*package));
+    QVERIFY(!result.has_value());
+    QVERIFY(result.error().contains(QStringLiteral(
+        "Loading intensive classes navigation schedules failed")));
+    QVERIFY(result.error().contains(QStringLiteral("unavailable_day"))
+            || result.error().contains(QStringLiteral("schedule.day")));
+    QCOMPARE(service.getAllTeachers().value_or(QList<Teacher>{}).size(),
+             teachersBefore);
+    QCOMPARE(service.getClasses().value_or(QList<Classroom>{}).size(),
+             classesBefore);
+    const auto changesAfter = sqliteTotalChanges(database, &error);
+    QVERIFY2(changesAfter.has_value(), qPrintable(error));
+    QCOMPARE(*changesAfter - *changesBefore, qlonglong(0));
 }
 
 void ClassTransferTests::
