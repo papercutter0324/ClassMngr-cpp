@@ -18,10 +18,9 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-04
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F318 is accepted. F319 is selected to batch Class Analytics
-  typed evaluation reads while preserving canonical evaluation order,
-  missing-evaluation-as-empty behavior, roster filtering, YTD cohorts, and
-  whole-dashboard failure behavior.
+- Current note: F319 is accepted. F320 is selected for a purpose-fit Speaking
+  Evaluation roster-name projection while preserving English/Korean column
+  selection, row order, trimming, and name-pair matching behavior.
 
 ### Slice discovery batches
 
@@ -51,15 +50,12 @@ Accepted slices are removed from active tracking; their implementation and accep
 
 #### Active batch: Batch 5
 
-1. F319 - Batch Class Analytics typed evaluation reads; preserve canonical
-   evaluation order, missing-evaluation-as-empty behavior, roster filtering,
-   YTD cohorts, and whole-dashboard failure behavior.
-2. F320 - Purpose-fit Speaking Evaluation roster-name projection; preserve
+1. F320 - Purpose-fit Speaking Evaluation roster-name projection; preserve
    English/Korean column selection, row order, trimming, and name-pair
    matching behavior.
-3. F321 - Purpose-fit Native English and GS Team birthday projections;
+2. F321 - Purpose-fit Native English and GS Team birthday projections;
    preserve schedule fields, source ordering, and current warning behavior.
-4. F322 - Reduce Class Analytics roster-name fixed SQL read sequence;
+3. F322 - Reduce Class Analytics roster-name fixed SQL read sequence;
    preserve sparse-row sizing and the compact English/Korean projection.
 
 No other slices were found.
@@ -223,29 +219,26 @@ No new v2 production path depends on DataService, MainWindow, PageManager, or a 
 
 Earlier verified slices and cumulative exit-gate snapshots are archived in the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 
-## Latest Progress Update - 2026-10-04 (F318 accepted; F319 selected)
+## Latest Progress Update - 2026-10-04 (F319 accepted; F320 selected)
 
-F318, committed as
-`76b8b85fedc4e78c4a8e5990024e9469ff10c67a`, adds a print-specific batch
-source query for full class-information/schedule and roster data. The normal
-path uses two ordered class-info reads, a roster columns/widths read, and a
-cell read only when at least one requested roster has columns. It preserves
-class order, missing-class-info blank defaults with schedule data, empty
-rosters, sparse row padding, printed fields, and the current-class name
-fallback. Failed or invalid batch results use the original per-class
-class-info-then-roster path, preserving failure order and no-partial-output.
+F319, committed as
+`7a4dad745be6709f04fcebbe1ca717cf7ed3adab`, batches Class Analytics' four
+canonical evaluation reads into one typed port call and one class-scoped SQL
+query. The projection contains only English/Korean names and six score fields
+(`col_1`–`col_8`); comments and notes remain outside the Analytics contract.
+Missing and present-but-empty evaluations remain empty slots, and any batch
+read failure fails the whole dashboard. The roster-first order, filtering,
+selection behavior, YTD cohorts, and other calculations remain unchanged.
 
 Executor self-check and fresh independent Windows x64 Debug/Ninja/MSVC
 verification passed. The independent configure validated 1,311 handwritten
-source files; the new Application/Platform batch targets, print service, and
-existing class-info/roster query and adapter targets built. Focused CTest
-passed 7/7, and `git diff --check` passed. Logs are under build/f318v/;
-executor logs are under build/. The full suite was not run; malformed batch
-identity fallback was source-reviewed and the error/fallback behavior was
-covered separately, but not in a combined service test.
+source files; the Application, Platform, and page targets built. Focused CTest
+passed 3/3, and `git diff --check` passed. Logs are under build/f319v/;
+executor logs are under build/. The full suite was not run; one-query behavior
+was confirmed by source review, not an instrumented statement-count test.
 
-F319 is selected from Batch 5 to batch Class Analytics typed evaluation reads,
-preserving canonical evaluation order, missing-evaluation-as-empty behavior,
-roster filtering, YTD cohorts, and whole-dashboard failure behavior. F298
-remains deferred pending its warning/navigation decision. Phase 2 remains
-In Progress/Open; Gates 1 and 2 remain Partial.
+F320 is selected from Batch 5 for a purpose-fit Speaking Evaluation
+roster-name projection, preserving English/Korean column selection, row order,
+trimming, and name-pair matching. F298 remains deferred pending its
+warning/navigation decision. Phase 2 remains In Progress/Open; Gates 1 and 2
+remain Partial.

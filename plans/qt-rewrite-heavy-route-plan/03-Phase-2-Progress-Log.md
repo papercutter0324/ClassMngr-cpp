@@ -11455,3 +11455,27 @@ preserving canonical evaluation order, missing-evaluation-as-empty behavior,
 roster filtering, YTD cohorts, and whole-dashboard failure behavior. F298
 remains deferred pending its warning/navigation decision. Phase 2 remains
 In Progress/Open; Gates 1 and 2 remain Partial.
+
+### Progress update - 2026-10-04 (F319 accepted; F320 selected)
+
+F319, committed as
+`7a4dad745be6709f04fcebbe1ca717cf7ed3adab`, batches Class Analytics' four
+canonical evaluation reads into one typed port call and one class-scoped SQL
+query. The projection contains only English/Korean names and six score fields
+(`col_1`–`col_8`); comments and notes remain outside the Analytics contract.
+Missing and present-but-empty evaluations remain empty slots, and any batch
+read failure fails the whole dashboard. The roster-first order, filtering,
+selection behavior, YTD cohorts, and other calculations remain unchanged.
+
+Executor self-check and fresh independent Windows x64 Debug/Ninja/MSVC
+verification passed. The independent configure validated 1,311 handwritten
+source files; the Application, Platform, and page targets built. Focused CTest
+passed 3/3, and `git diff --check` passed. Logs are under build/f319v/;
+executor logs are under build/. The full suite was not run; one-query behavior
+was confirmed by source review, not an instrumented statement-count test.
+
+F320 is selected from Batch 5 for a purpose-fit Speaking Evaluation
+roster-name projection, preserving English/Korean column selection, row order,
+trimming, and name-pair matching. F298 remains deferred pending its
+warning/navigation decision. Phase 2 remains In Progress/Open; Gates 1 and 2
+remain Partial.
