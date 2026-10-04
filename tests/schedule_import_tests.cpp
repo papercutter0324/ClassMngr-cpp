@@ -1,4 +1,6 @@
 #include "data/database/database_schema_manager.h"
+#include "data/repositories/class_info_repository.h"
+#include "data/repositories/class_repository.h"
 #include "data/repositories/schedule_import_repository.h"
 #include "domain/rules/schedule_import_rules.h"
 #include "features/schedule/import/schedule_workbook_parser.h"
@@ -61,6 +63,8 @@ private slots:
     void staleSelectedClassPreservesPersistedSnapshotBeforeWrites();
     void conflictsRollBackBeforeWrites();
     void writeFailureRollsBackEveryChange();
+    void applyUsesBatchedClassInfoByIdAndPreservesClassOrder();
+    void applyBatchReadFailureRollsBackBeforeWrites();
     void typedApplyRejectsStaleSelectedClassBeforeWrites();
     void typedApplyPreservesExactTargetIdsThroughStateValidation();
     void typedApplyRejectsOverlappingSchedulesBeforeWrites();
@@ -5767,6 +5771,268 @@ void ScheduleImportTests::writeFailureRollsBackEveryChange()
             );
         QVERIFY(query.next());
         QCOMPARE(query.value(0).toInt(), 0);
+        database.close();
+    }
+    QSqlDatabase::removeDatabase(connectionName);
+}
+
+void ScheduleImportTests::applyUsesBatchedClassInfoByIdAndPreservesClassOrder()
+{
+    using namespace ClassMngr::Next::Application;
+
+    const QString connectionName =
+        QStringLiteral("schedule-import-batched-class-info-%1")
+            .arg(QUuid::createUuid().toString());
+    {
+        QSqlDatabase database = QSqlDatabase::addDatabase(
+            QStringLiteral("QSQLITE"), connectionName);
+        database.setDatabaseName(QStringLiteral(":memory:"));
+        QVERIFY(database.open());
+        QVERIFY(DatabaseSchemaManager::ensureSchema(database).has_value());
+
+        QSqlQuery query(database);
+        query.prepare(QStringLiteral(
+            "INSERT INTO teachers (id, teacher_kr, room_number) "
+            "VALUES (11, ?, '413')"));
+        query.addBindValue(QString::fromUtf16(u"\uAE40"));
+        QVERIFY2(query.exec(), qPrintable(query.lastError().text()));
+        execOrFail(query, QStringLiteral(
+            "INSERT INTO classes (id, name) VALUES "
+            "(101, 'Same name'), (102, 'Same name'), (103, 'Same name')"));
+        execOrFail(query, QStringLiteral(
+            "CREATE INDEX classes_name_desc_id "
+            "ON classes (name ASC, id DESC)"));
+        execOrFail(query, QStringLiteral(
+            "INSERT INTO class_info "
+            "(class_id, teacher_id, class_grade, class_level, "
+            "class_color, font_color) "
+            "VALUES (101, 11, 'E5', 'Zeus', '#123456', '#FFFFFF')"));
+        execOrFail(query, QStringLiteral(
+            "INSERT INTO class_info "
+            "(class_id, teacher_id, class_grade, class_level, "
+            "class_color, font_color) "
+            "VALUES (102, NULL, 'E4', 'Ares', '', '')"));
+        execOrFail(query, QStringLiteral(
+            "INSERT INTO class_times "
+            "(id, class_id, day, start_time, end_time) VALUES "
+            "(20, 101, 'Tuesday', '2:00 PM', '2:50 PM'), "
+            "(10, 101, 'Monday', '4:00 PM', '4:55 PM'), "
+            "(30, 103, 'Friday', '1:00 PM', '1:50 PM')"));
+        execOrFail(query, QStringLiteral(
+            "INSERT INTO class_intensive_times "
+            "(id, class_id, day, start_time, end_time) VALUES "
+            "(20, 101, 'Thursday', '2:00 PM', '2:50 PM'), "
+            "(10, 101, 'Monday', '4:00 PM', '4:55 PM'), "
+            "(30, 103, 'Friday', '3:00 PM', '3:50 PM')"));
+
+        ClassRepository classRepository(database);
+        const auto existingClasses = classRepository.getClasses();
+        QVERIFY(existingClasses.has_value());
+        QCOMPARE(existingClasses->size(), 3);
+        QCOMPARE(existingClasses->at(0).id, 103);
+        QCOMPARE(existingClasses->at(1).id, 102);
+        QCOMPARE(existingClasses->at(2).id, 101);
+
+        ClassInfoRepository classInfoRepository(database);
+        const auto classInfos = classInfoRepository.loadScheduleClassInfos();
+        QVERIFY(classInfos.has_value());
+        QCOMPARE(classInfos->size(), 3);
+        QCOMPARE(classInfos->at(0).classId, 101);
+        QCOMPARE(classInfos->at(1).classId, 102);
+        QCOMPARE(classInfos->at(2).classId, 103);
+        QCOMPARE(classInfos->at(0).classColor, QStringLiteral("#123456"));
+        QCOMPARE(classInfos->at(1).teacherId, -1);
+        QCOMPARE(classInfos->at(1).classColor, QStringLiteral("#FFFFFF"));
+        QCOMPARE(classInfos->at(1).fontColor, QStringLiteral("#000000"));
+        QCOMPARE(classInfos->at(2).teacherId, -1);
+        QCOMPARE(classInfos->at(2).classColor, QStringLiteral("#FFFFFF"));
+        QCOMPARE(classInfos->at(2).fontColor, QStringLiteral("#000000"));
+        QCOMPARE(classInfos->at(0).classTimes.size(), 2);
+        QCOMPARE(classInfos->at(0).classTimes.at(0).day, QStringLiteral("Monday"));
+        QCOMPARE(classInfos->at(0).classTimes.at(1).day, QStringLiteral("Tuesday"));
+        QCOMPARE(classInfos->at(0).intensiveTimes.size(), 2);
+        QCOMPARE(classInfos->at(0).intensiveTimes.at(0).day, QStringLiteral("Monday"));
+        QCOMPARE(classInfos->at(0).intensiveTimes.at(1).day, QStringLiteral("Thursday"));
+        QCOMPARE(classInfos->at(2).classTimes.size(), 1);
+        QCOMPARE(classInfos->at(2).intensiveTimes.size(), 1);
+        const ScheduleClassInfoReadMetrics& metrics =
+            classInfoRepository.scheduleClassInfoReadMetrics();
+        QCOMPARE(metrics.scheduleClassInfosCallCount, 1);
+        QCOMPARE(metrics.singleClassInfoReadCount, 0);
+        QCOMPARE(metrics.metadataStatementCount, 1);
+        QCOMPARE(metrics.regularScheduleStatementCount, 1);
+        QCOMPARE(metrics.intensiveScheduleStatementCount, 1);
+
+        const auto teacherId =
+            ClassMngr::Next::Domain::TeacherId::fromString("11");
+        const auto classId =
+            ClassMngr::Next::Domain::ClassId::fromString("101");
+        QVERIFY(teacherId.has_value());
+        QVERIFY(classId.has_value());
+
+        auto skippedExactClass = typedCreateRequest({
+            typedCandidate(u"\uAE40", u"E5", u"Zeus")
+        });
+        skippedExactClass.teachers[0].action =
+            ScheduleImportReviewTeacherAction::Reuse;
+        skippedExactClass.teachers[0].targetTeacherId = *teacherId;
+        skippedExactClass.classes[0].action =
+            ScheduleImportReviewClassAction::Skip;
+        skippedExactClass.classes[0].targetClassId = *classId;
+
+        ScheduleImportRepository repository(database);
+        const auto skippedResult = repository.applyTyped(skippedExactClass);
+        QVERIFY2(
+            skippedResult.has_value(),
+            qPrintable(typedApplyFailureMessage(skippedResult))
+            );
+        QCOMPARE(skippedResult->classesSkipped, 1);
+
+        auto regularConflict = typedCreateRequest({
+            typedCandidate(u"\uAE40", u"E5", u"Zeus"),
+            typedCandidate(u"\uBC15", u"E5", u"Apollo")
+        });
+        regularConflict.teachers[0].action =
+            ScheduleImportReviewTeacherAction::Reuse;
+        regularConflict.teachers[0].targetTeacherId = *teacherId;
+        regularConflict.classes[0].action =
+            ScheduleImportReviewClassAction::Skip;
+        regularConflict.classes[0].targetClassId = *classId;
+        const QStringList beforeRegularConflict =
+            persistedScheduleImportSnapshot(database, true);
+        const auto regularResult = repository.applyTyped(regularConflict);
+        QVERIFY(!regularResult.has_value());
+        QVERIFY(regularResult.error().stateValidationError.has_value());
+        QCOMPARE(
+            regularResult.error().stateValidationError->code,
+            ScheduleImportStateValidationErrorCode::ProjectedScheduleOverlap
+            );
+        QCOMPARE(
+            regularResult.error().stateValidationError->classLabel,
+            std::string("E5 Zeus")
+            );
+        QCOMPARE(
+            regularResult.error().stateValidationError->conflictingClassLabel,
+            std::string("E5 Apollo")
+            );
+        QCOMPARE(
+            persistedScheduleImportSnapshot(database, true),
+            beforeRegularConflict
+            );
+
+        auto intensiveConflict = typedCreateRequest({
+            typedCandidate(u"\uAE40", u"E5", u"Zeus"),
+            typedCandidate(u"\uBC15", u"E5", u"Apollo")
+        });
+        intensiveConflict.intensiveSchedule = true;
+        intensiveConflict.teachers[0].action =
+            ScheduleImportReviewTeacherAction::Reuse;
+        intensiveConflict.teachers[0].targetTeacherId = *teacherId;
+        intensiveConflict.classes[0].action =
+            ScheduleImportReviewClassAction::Skip;
+        intensiveConflict.classes[0].targetClassId = *classId;
+        const QStringList beforeIntensiveConflict =
+            persistedScheduleImportSnapshot(database, true);
+        const auto intensiveResult = repository.applyTyped(intensiveConflict);
+        QVERIFY(!intensiveResult.has_value());
+        QVERIFY(intensiveResult.error().stateValidationError.has_value());
+        QCOMPARE(
+            intensiveResult.error().stateValidationError->code,
+            ScheduleImportStateValidationErrorCode::ProjectedScheduleOverlap
+            );
+        QCOMPARE(
+            intensiveResult.error().stateValidationError->classLabel,
+            std::string("E5 Zeus")
+            );
+        QCOMPARE(
+            intensiveResult.error().stateValidationError->conflictingClassLabel,
+            std::string("E5 Apollo")
+            );
+        QCOMPARE(
+            persistedScheduleImportSnapshot(database, true),
+            beforeIntensiveConflict
+            );
+
+        database.close();
+    }
+    QSqlDatabase::removeDatabase(connectionName);
+}
+
+void ScheduleImportTests::applyBatchReadFailureRollsBackBeforeWrites()
+{
+    using namespace ClassMngr::Next::Application;
+
+    const QString connectionName =
+        QStringLiteral("schedule-import-batch-read-failure-%1")
+            .arg(QUuid::createUuid().toString());
+    {
+        QSqlDatabase database = QSqlDatabase::addDatabase(
+            QStringLiteral("QSQLITE"), connectionName);
+        database.setDatabaseName(QStringLiteral(":memory:"));
+        QVERIFY(database.open());
+        QVERIFY(DatabaseSchemaManager::ensureSchema(database).has_value());
+
+        QSqlQuery query(database);
+        query.prepare(QStringLiteral(
+            "INSERT INTO teachers (id, teacher_kr, room_number) "
+            "VALUES (11, ?, '413')"));
+        query.addBindValue(QString::fromUtf16(u"\uAE40"));
+        QVERIFY2(query.exec(), qPrintable(query.lastError().text()));
+        execOrFail(query, QStringLiteral(
+            "INSERT INTO classes (id, name) VALUES (101, 'Existing')"));
+        execOrFail(query, QStringLiteral(
+            "INSERT INTO class_info "
+            "(class_id, teacher_id, class_grade, class_level) "
+            "VALUES (101, 11, 'E3', 'Low')"));
+        execOrFail(query, QStringLiteral(
+            "CREATE TRIGGER reject_premature_apply_write "
+            "BEFORE UPDATE ON teachers BEGIN "
+            "SELECT RAISE(ABORT, 'write ran before batch read completed'); "
+            "END"));
+
+        const QStringList beforeFailure =
+            persistedScheduleImportSnapshot(database);
+        execOrFail(query, QStringLiteral(
+            "DROP TABLE class_intensive_times"));
+
+        auto request = typedCreateRequest({
+            typedCandidate(u"\uAE40", u"E5", u"Zeus")
+        });
+        const auto teacherId =
+            ClassMngr::Next::Domain::TeacherId::fromString("11");
+        QVERIFY(teacherId.has_value());
+        request.teachers[0].action =
+            ScheduleImportReviewTeacherAction::UpdateRoom;
+        request.teachers[0].targetTeacherId = *teacherId;
+        request.teachers[0].selectedRoom = u"413";
+
+        ScheduleImportRepository repository(database);
+        const auto failed = repository.applyTyped(request);
+        QVERIFY(!failed.has_value());
+        QVERIFY2(
+            typedApplyFailureMessage(failed).contains(
+                QStringLiteral("class_intensive_times")),
+            qPrintable(typedApplyFailureMessage(failed))
+            );
+        QVERIFY(!typedApplyFailureMessage(failed).contains(
+            QStringLiteral("write ran before batch read completed")));
+
+        execOrFail(query, QStringLiteral(
+            "CREATE TABLE class_intensive_times ("
+            "id INTEGER PRIMARY KEY AUTOINCREMENT, "
+            "class_id INTEGER, day TEXT, start_time TEXT, end_time TEXT, "
+            "UNIQUE(day, start_time))"));
+        QCOMPARE(
+            persistedScheduleImportSnapshot(database),
+            beforeFailure
+            );
+        execOrFail(query, QStringLiteral(
+            "SELECT room_number FROM teachers WHERE id=11"));
+        QVERIFY(query.next());
+        QCOMPARE(query.value(0).toString(), QStringLiteral("413"));
+
+        QVERIFY(database.transaction());
+        QVERIFY(database.rollback());
         database.close();
     }
     QSqlDatabase::removeDatabase(connectionName);

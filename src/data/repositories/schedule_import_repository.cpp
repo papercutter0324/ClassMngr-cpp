@@ -1143,17 +1143,30 @@ ScheduleImportRepository::ApplyCoreResult ScheduleImportRepository::applyCore(
         return std::unexpected(existingClasses.error());
     }
 
+    const Result<QList<ClassInfo>> existingClassInfos =
+        classInfoRepository.loadScheduleClassInfos();
+    if (!existingClassInfos)
+    {
+        return std::unexpected(existingClassInfos.error());
+    }
+
+    QHash<int, ClassInfo> existingInfoById;
+    existingInfoById.reserve(existingClassInfos->size());
+    for (const ClassInfo& info : *existingClassInfos)
+    {
+        existingInfoById.insert(info.classId, info);
+    }
+
     QHash<int, ClassInfo> existingInfo;
+    existingInfo.reserve(existingClasses->size());
+    // Join batch rows by ID while keeping the class repository's order.
     for (const Classroom& classroom : *existingClasses)
     {
-        const Result<ClassInfo> info =
-            classInfoRepository.loadClassInfo(classroom.id);
-        if (!info)
+        const auto info = existingInfoById.constFind(classroom.id);
+        if (info != existingInfoById.cend())
         {
-            return std::unexpected(info.error());
+            existingInfo.insert(classroom.id, info.value());
         }
-
-        existingInfo.insert(classroom.id, *info);
     }
 
     StartupProfiler::recordScheduleImportApplyInputs(
