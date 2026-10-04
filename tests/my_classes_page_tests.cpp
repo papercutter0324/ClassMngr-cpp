@@ -330,6 +330,7 @@ private slots:
     void failedClassListReadClearsRenderedContentAndShowsWarning();
     void assignedTeacherProfileProjectsAllConsumedUtf16Fields();
     void classInformationFieldsAndTeacherAssociationUseTypedReads();
+    void classInformationBatchFailureKeepsEachClassInListOrder();
     void failedTeacherProfileKeepsClassAndUsesSilentUnassignedFallback();
     void rosterCountUsesNonblankEnglishOrKoreanCells();
     void rosterReadFailureKeepsClassAndShowsZeroStudentCount();
@@ -598,6 +599,126 @@ classInformationFieldsAndTeacherAssociationUseTypedReads()
     QCOMPARE(scheduleFallback->text(), QStringLiteral("N/A"));
     QCOMPARE(textEditsWithContent(*classPage, QString()).size(), 2);
     QCOMPARE(textEditsWithContent(*classPage, QStringLiteral("N/A")).size(), 1);
+}
+
+void MyClassesPageTests::
+classInformationBatchFailureKeepsEachClassInListOrder()
+{
+    MyClassesPageFixture fixture;
+    QString error;
+    QVERIFY2(fixture.initialize(&error), qPrintable(error));
+
+    int betaId = 0;
+    int alphaId = 0;
+    int missingInfoId = 0;
+    QVERIFY2(fixture.createClass(
+                 QStringLiteral("Beta information failure class"),
+                 QStringLiteral("E5"),
+                 QStringLiteral("Artemis"),
+                 &betaId,
+                 &error
+                 ), qPrintable(error));
+    QVERIFY2(fixture.createClass(
+                 QStringLiteral("Alpha information failure class"),
+                 QStringLiteral("E4"),
+                 QStringLiteral("Theseus"),
+                 &alphaId,
+                 &error
+                 ), qPrintable(error));
+    QVERIFY2(fixture.createClass(
+                 QStringLiteral("Gamma information default class"),
+                 QStringLiteral("E6"),
+                 QStringLiteral("Gaia"),
+                 &missingInfoId,
+                 &error
+                 ), qPrintable(error));
+
+    QSqlQuery deleteMissingInfo(
+        fixture.services.databaseSession()->database());
+    deleteMissingInfo.prepare(QStringLiteral(
+        "DELETE FROM class_info WHERE class_id=?"));
+    deleteMissingInfo.addBindValue(missingInfoId);
+    QVERIFY2(deleteMissingInfo.exec(),
+             qPrintable(deleteMissingInfo.lastError().text()));
+
+    ClassInfoRepository* const repository = fixture.services.databaseSession()
+        ->classInfoRepository();
+    QVERIFY(repository);
+    const MyClassesClassInformationBatchReadMetrics before =
+        repository->myClassesClassInformationBatchReadMetrics();
+
+    MyClassesPage page(&fixture.services);
+    page.resize(900, 700);
+    page.show();
+    page.refresh();
+    QApplication::processEvents();
+
+    const MyClassesClassInformationBatchReadMetrics afterSuccess =
+        repository->myClassesClassInformationBatchReadMetrics();
+    QCOMPARE(afterSuccess.callCount, before.callCount + 1);
+    QCOMPARE(afterSuccess.requestedClassCount, before.requestedClassCount + 3);
+    QCOMPARE(afterSuccess.metadataStatementCount,
+             before.metadataStatementCount + 1);
+    QCOMPARE(afterSuccess.regularScheduleStatementCount,
+             before.regularScheduleStatementCount + 1);
+    QCOMPARE(afterSuccess.intensiveScheduleStatementCount,
+             before.intensiveScheduleStatementCount + 1);
+    QCOMPARE(afterSuccess.fallbackClassReadCount,
+             before.fallbackClassReadCount);
+    NavigationTabWidget* tabs = classTabsFor(page);
+    QVERIFY(tabs);
+    QCOMPARE(tabs->count(), 3);
+    QCOMPARE(tabs->widget(0)->property("class_id").toInt(), alphaId);
+    QCOMPARE(tabs->widget(1)->property("class_id").toInt(), betaId);
+    QCOMPARE(tabs->widget(2)->property("class_id").toInt(), missingInfoId);
+    QCOMPARE(tabs->tabText(2),
+             QStringLiteral("Gamma information default class ")
+                 + QChar(0x2022) + QStringLiteral(" No time"));
+    QCOMPARE(labelsWithText(*tabs->widget(2), QStringLiteral("Unassigned")).size(), 1);
+
+    QSqlQuery dropClassInfo(
+        fixture.services.databaseSession()->database());
+    QVERIFY2(dropClassInfo.exec(QStringLiteral("DROP TABLE class_info")),
+             qPrintable(dropClassInfo.lastError().text()));
+
+    page.refresh();
+    QCoreApplication::sendPostedEvents(nullptr, QEvent::DeferredDelete);
+    QApplication::processEvents();
+
+    const MyClassesClassInformationBatchReadMetrics afterFailure =
+        repository->myClassesClassInformationBatchReadMetrics();
+    QCOMPARE(afterFailure.callCount, afterSuccess.callCount + 1);
+    QCOMPARE(afterFailure.requestedClassCount,
+             afterSuccess.requestedClassCount + 3);
+    QCOMPARE(afterFailure.metadataStatementCount,
+             afterSuccess.metadataStatementCount + 1);
+    QCOMPARE(afterFailure.regularScheduleStatementCount,
+             afterSuccess.regularScheduleStatementCount);
+    QCOMPARE(afterFailure.intensiveScheduleStatementCount,
+             afterSuccess.intensiveScheduleStatementCount);
+    QCOMPARE(afterFailure.fallbackClassReadCount,
+             afterSuccess.fallbackClassReadCount + 3);
+    tabs = classTabsFor(page);
+    QVERIFY(tabs);
+    QCOMPARE(tabs->count(), 3);
+    QCOMPARE(tabs->widget(0)->property("class_id").toInt(), alphaId);
+    QCOMPARE(tabs->widget(1)->property("class_id").toInt(), betaId);
+    QCOMPARE(tabs->widget(2)->property("class_id").toInt(), missingInfoId);
+    for (QWidget* const classPage : {
+             tabs->widget(0),
+             tabs->widget(1),
+             tabs->widget(2)
+         })
+    {
+        QVERIFY(classPage);
+        QCOMPARE(labelsWithText(*classPage, QStringLiteral("Unassigned")).size(), 1);
+        QLabel* const schedule = infoRowValueLabelFor(
+            *classPage,
+            QStringLiteral("Schedule")
+            );
+        QVERIFY(schedule);
+        QCOMPARE(schedule->text(), QStringLiteral("N/A"));
+    }
 }
 
 void MyClassesPageTests::

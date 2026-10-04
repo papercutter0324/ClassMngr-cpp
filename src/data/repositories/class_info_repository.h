@@ -13,6 +13,8 @@
 #include <QString>
 #include <QStringList>
 
+#include <vector>
+
 struct ClassNavigationReadRecord final
 {
     int classId = -1;
@@ -41,6 +43,24 @@ struct ClassSubtitleBatchReadRecord final
     QString grade;
     QString level;
     QList<ClassTime> regularTimes;
+};
+
+struct MyClassesClassInformationReadRecord final
+{
+    int classId = -1;
+    int teacherId = -1;
+    QString classGrade;
+    QString classLevel;
+    QList<ClassTime> regularTimes;
+    QList<ClassTime> intensiveTimes;
+    QString notes;
+    QString timeFillerActivities;
+};
+
+struct MyClassesClassInformationBatchReadEntry final
+{
+    int classId = -1;
+    Result<MyClassesClassInformationReadRecord> information;
 };
 
 struct RosterPrintClassInfoReadRecord final
@@ -82,6 +102,16 @@ struct ClassSubtitleBatchReadMetrics final
     int regularScheduleStatementCount = 0;
 };
 
+struct MyClassesClassInformationBatchReadMetrics final
+{
+    int callCount = 0;
+    int requestedClassCount = 0;
+    int metadataStatementCount = 0;
+    int regularScheduleStatementCount = 0;
+    int intensiveScheduleStatementCount = 0;
+    int fallbackClassReadCount = 0;
+};
+
 class ClassInfoRepository
 {
 public:
@@ -107,6 +137,8 @@ public:
         );
     [[nodiscard]] Result<QList<ClassSubtitleBatchReadRecord>>
         loadClassSubtitleRecords(const QList<int>& classIds);
+    [[nodiscard]] Result<std::vector<MyClassesClassInformationBatchReadEntry>>
+        loadMyClassesClassInformationRecords(const QList<int>& classIds);
     [[nodiscard]] Result<RosterPrintClassInfoReadRecord>
         loadRosterPrintClassInfoRecord(int classId);
 
@@ -118,6 +150,8 @@ public:
         scheduleClassInfoReadMetrics() const noexcept;
     [[nodiscard]] const ClassSubtitleBatchReadMetrics&
         classSubtitleBatchReadMetrics() const noexcept;
+    [[nodiscard]] const MyClassesClassInformationBatchReadMetrics&
+        myClassesClassInformationBatchReadMetrics() const noexcept;
 
     [[nodiscard]] Result<SubPrepClassDetailsRecord>
         loadSubPrepClassDetails(int classId);
@@ -152,8 +186,13 @@ public:
         );
 
 private:
+    [[nodiscard]] Result<MyClassesClassInformationReadRecord>
+        loadMyClassesClassInformationRecord(int classId);
+
     QSqlDatabase& m_database;
     ClassesNavigationReadMetrics m_classesNavigationReadMetrics;
     ScheduleClassInfoReadMetrics m_scheduleClassInfoReadMetrics;
     ClassSubtitleBatchReadMetrics m_classSubtitleBatchReadMetrics;
+    MyClassesClassInformationBatchReadMetrics
+        m_myClassesClassInformationBatchReadMetrics;
 };

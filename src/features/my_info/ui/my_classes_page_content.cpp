@@ -9,11 +9,11 @@
 #include "domain/models/teacher.h"
 #include "features/classes/models/class_tab_navigation_model.h"
 #include "next/application/classes_list_read_query.h"
-#include "next/application/my_classes_class_information_read_query.h"
+#include "next/application/my_classes_class_information_batch_read_query.h"
 #include "next/application/roster_read_query.h"
 #include "next/application/teacher_profile_read_query.h"
 #include "next/platform/application_services_classes_list_read_port.h"
-#include "next/platform/application_services_my_classes_class_information_read_port.h"
+#include "next/platform/application_services_my_classes_class_information_batch_read_port.h"
 #include "next/platform/application_services_roster_read_port.h"
 #include "next/platform/application_services_teacher_profile_read_port.h"
 #include "ui/shared/constants/gui_constants.h"
@@ -30,6 +30,7 @@
 #include <string>
 #include <system_error>
 #include <utility>
+#include <vector>
 
 #include <QFrame>
 #include <QGridLayout>
@@ -615,6 +616,11 @@ void MyClassesPage::rebuildClassInformation()
 
     const QList<Classroom> classrooms =
         classroomsFromListSnapshot(classes.value());
+    summaries.reserve(classrooms.size());
+    std::vector<ClassMngr::Next::Domain::ClassId> classInformationIds;
+    classInformationIds.reserve(static_cast<std::size_t>(classrooms.size()));
+    std::vector<std::size_t> summaryIndexes;
+    summaryIndexes.reserve(static_cast<std::size_t>(classrooms.size()));
     for (const Classroom& classroom : classrooms)
     {
         ClassSummary summary;
@@ -625,25 +631,57 @@ void MyClassesPage::rebuildClassInformation()
                 );
         if (typedClassId)
         {
-            ClassMngr::Next::Platform::
-                ApplicationServicesMyClassesClassInformationReadPort
-                    classInformationReadPort(m_services);
-            const ClassMngr::Next::Application::
-                MyClassesClassInformationReadQuery classInformationQuery(
-                    classInformationReadPort
-                    );
-            const auto loadedClassInformation =
-                classInformationQuery.execute(*typedClassId);
-            if (loadedClassInformation)
+            classInformationIds.push_back(*typedClassId);
+            summaryIndexes.push_back(
+                static_cast<std::size_t>(summaries.size())
+                );
+        }
+        summaries.append(std::move(summary));
+    }
+
+    if (!classInformationIds.empty())
+    {
+        ClassMngr::Next::Platform::
+            ApplicationServicesMyClassesClassInformationBatchReadPort
+                classInformationReadPort(m_services);
+        const ClassMngr::Next::Application::
+            MyClassesClassInformationBatchReadQuery classInformationQuery(
+                classInformationReadPort
+                );
+        const auto loadedClassInformation =
+            classInformationQuery.execute(classInformationIds);
+        if (loadedClassInformation)
+        {
+            const auto& entries = loadedClassInformation.value();
+            for (std::size_t index = 0; index < entries.size(); ++index)
             {
-                const auto& fields = loadedClassInformation.value().fields;
+                const auto& entry = entries[index];
+                if (!entry.information)
+                {
+                    continue;
+                }
+
+                ClassSummary& summary = summaries[
+                    static_cast<qsizetype>(summaryIndexes[index])
+                    ];
+                const auto& fields = entry.information.value();
                 summary.info = classInfoFromMyClassesSnapshot(
                     fields,
-                    classroom.id
+                    summary.classroom.id
                     );
                 summary.teacherId = fields.teacherId;
             }
+        }
+    }
 
+    for (ClassSummary& summary : summaries)
+    {
+        const auto typedClassId =
+            ClassMngr::Next::Domain::ClassId::fromString(
+                std::to_string(summary.classroom.id)
+                );
+        if (typedClassId)
+        {
             ClassMngr::Next::Platform::
                 ApplicationServicesRosterReadPort readPort(m_services);
             const ClassMngr::Next::Application::RosterReadQuery query{
@@ -718,11 +756,9 @@ void MyClassesPage::rebuildClassInformation()
 
         summary.displayName =
             classTitleText(
-                classroom,
+                summary.classroom,
                 summary.info
                 );
-
-        summaries.append(summary);
     }
 
     if (summaries.isEmpty())

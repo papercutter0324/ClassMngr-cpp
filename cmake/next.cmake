@@ -150,6 +150,9 @@ set(CLASSMNGR_NEXT_APPLICATION_SOURCES
     src/next/application/my_classes_class_information_snapshot.h
     src/next/application/my_classes_class_information_read_port.h
     src/next/application/my_classes_class_information_read_query.h
+    src/next/application/my_classes_class_information_batch_read_snapshot.h
+    src/next/application/my_classes_class_information_batch_read_port.h
+    src/next/application/my_classes_class_information_batch_read_query.h
     src/next/application/selected_class_subtitle_read_snapshot.h
     src/next/application/selected_class_subtitle_read_port.h
     src/next/application/selected_class_subtitle_read_query.h
@@ -361,6 +364,7 @@ set(CLASSMNGR_NEXT_PLATFORM_SOURCES
     src/next/platform/application_services_speaking_evaluation_save_port.h
     src/next/platform/application_services_class_details_page_read_port.h
     src/next/platform/application_services_my_classes_class_information_read_port.h
+    src/next/platform/application_services_my_classes_class_information_batch_read_port.h
     src/next/platform/application_services_schedule_editor_class_info_read_port.h
     src/next/platform/application_services_class_co_teacher_assignment_port.h
     src/next/platform/application_services_class_co_teacher_page_read_port.h
