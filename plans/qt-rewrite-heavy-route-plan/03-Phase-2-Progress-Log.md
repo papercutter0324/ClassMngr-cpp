@@ -11225,3 +11225,36 @@ meeting in the selected scope are omitted, class and metadata identities are
 validated, and any source read failure aborts before package output begins.
 F312-F315 remain ordered in Batch 4. Phase 2 remains In Progress/Open; Gates 1
 and 2 remain Partial.
+
+### Progress update - 2026-10-04 (F311 accepted; F312 selected)
+
+F311, committed as
+`167bb72f8d96fe56dc24e2206f1ca5a4761dfc74`, batches Sub Prep roster-output
+class-name and compact metadata reads for selected classes with meetings in
+the selected schedule scope. Names and class information are fetched in one
+ordered batch each. Classes without selected meetings remain omitted and
+schedule order is preserved. Missing class-information rows and query errors
+fail instead of producing blank metadata. Class, class-information, teacher
+assignment, and teacher identity checks remain. Teacher-profile and bounded
+roster reads remain separate; output bounds are unchanged.
+
+Executor self-check and fresh independent Windows x64 Debug/Ninja/MSVC
+verification passed. The independent configure validated 1,301 handwritten
+source files; ClassMngr and all three focused test targets built. Focused
+CTest passed 3/3: the Sub Prep package-service, Application source-query, and
+Platform source-port tests. They cover reduced class/metadata read fan-out,
+ordering, scope omission, query failures, missing metadata, bounds, and no
+final package left after a source-read failure. `git diff --check` passed.
+Independent logs are under build/f311v2/ (configure.log, build.log,
+focused_ctest.log, diff_check.log); executor logs are under build/. The full
+suite was not run. Temporary package staging may be created before the source
+read and is cleaned on failure; no final package is committed.
+
+F312 is selected to use a purpose-fit projection for initial-setup teacher
+choices, preserving ID, Korean and English names, preferred romanization/name,
+repository order, validation, and error behavior. Read-only discovery
+confirmed the current read selects all teacher columns in one query; the
+choice projection needs only the ID and four raw display fields. F313-F315
+remain ordered in Batch 4; at F314 start, discover Batch 5 and reconsider the
+fixed up-to-four-evaluation roster score-import read. Phase 2 remains
+In Progress/Open; Gates 1 and 2 remain Partial.
