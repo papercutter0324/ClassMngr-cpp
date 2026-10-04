@@ -277,15 +277,21 @@ private:
 
         try
         {
-            const Result<Teacher> loaded = repository->getTeacher(teacherId);
+            const Result<TeacherDisplayNameReadRecord> loaded =
+                repository->loadTeacherDisplayNameFields(teacherId);
             if (!loaded)
             {
                 return failure<std::u16string>(
                     fromLegacyError(loaded.error())
                     );
             }
+            Teacher teacher;
+            teacher.teacherKr = loaded->teacherKr;
+            teacher.teacherEn = loaded->teacherEn;
+            teacher.preferredRomanization = loaded->preferredRomanization;
+            teacher.preferredName = loaded->preferredName;
             return Domain::Result<std::u16string>::success(
-                loaded->preferredDisplayName().toStdU16String()
+                teacher.preferredDisplayName().toStdU16String()
                 );
         }
         catch (const std::exception&)

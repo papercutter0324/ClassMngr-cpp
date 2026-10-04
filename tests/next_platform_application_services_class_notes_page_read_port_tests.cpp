@@ -12,6 +12,7 @@
 #include <QtTest/QtTest>
 
 #include <string>
+#include <vector>
 
 using namespace ClassMngr::Next;
 
@@ -67,8 +68,10 @@ private slots:
     void readsProjectedFieldsAndPreferredTeacherNameFromActiveSession();
     void unavailableSessionDoesNotUseDataServiceFallback();
     void skipsNonpositiveTeacherId();
+    void teacherDisplayNameUsesTrimmedFallbackOrder();
     void classFieldFailureIsReportedIndependently();
     void teacherFailurePreservesClassTextFields();
+    void teacherProjectionFailurePreservesClassTextFields();
 };
 
 void NextPlatformApplicationServicesClassNotesPageReadPortTests::
@@ -155,6 +158,62 @@ skipsNonpositiveTeacherId()
 }
 
 void NextPlatformApplicationServicesClassNotesPageReadPortTests::
+teacherDisplayNameUsesTrimmedFallbackOrder()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+
+    std::vector<Teacher> teachers(3);
+    teachers[0].teacherKr = QStringLiteral("Korean fallback");
+    teachers[0].teacherEn = QStringLiteral("  English fallback  ");
+    teachers[0].preferredRomanization = QStringLiteral("Romanization fallback");
+    teachers[0].preferredName = QStringLiteral(" \t ");
+    teachers[1].teacherKr = QStringLiteral("Korean fallback");
+    teachers[1].teacherEn = QStringLiteral(" \t ");
+    teachers[1].preferredRomanization =
+        QStringLiteral("  Romanization fallback  ");
+    teachers[1].preferredName = QStringLiteral(" ");
+    teachers[2].teacherKr = QStringLiteral("  Korean fallback  ");
+    teachers[2].teacherEn = QStringLiteral(" ");
+    teachers[2].preferredRomanization = QStringLiteral(" \t ");
+    teachers[2].preferredName = QStringLiteral(" ");
+    const std::vector<std::u16string> expectedNames = {
+        u"English fallback",
+        u"Romanization fallback",
+        u"Korean fallback"
+    };
+
+    Platform::ApplicationServicesClassNotesPageReadPort port(&services);
+    for (std::size_t index = 0; index < teachers.size(); ++index)
+    {
+        const int id = createClass(
+            services,
+            QStringLiteral("Teacher fallback class %1").arg(
+                static_cast<qulonglong>(index)
+                )
+            );
+        QVERIFY(id > 0);
+        const auto teacherId = services.databaseSession()
+                                   ->teacherRepository()
+                                   ->createTeacher(teachers[index]);
+        QVERIFY(teacherId);
+        ClassInfo info = makeClassInfo(id);
+        info.teacherId = *teacherId;
+        QVERIFY(services.databaseSession()->classInfoRepository()
+                    ->saveClassInfo(info));
+
+        const auto result = port.readClassNotesPage(classId(id));
+        QVERIFY(result);
+        QVERIFY(result.value().classFields);
+        QVERIFY(result.value().teacherDisplayName);
+        QVERIFY(result.value().teacherDisplayName.value()
+            == expectedNames[index]);
+    }
+}
+
+void NextPlatformApplicationServicesClassNotesPageReadPortTests::
 classFieldFailureIsReportedIndependently()
 {
     QTemporaryDir directory;
@@ -218,6 +277,49 @@ teacherFailurePreservesClassTextFields()
     QVERIFY(result.value().classFields);
     QVERIFY(!result.value().teacherDisplayName);
     QCOMPARE(result.value().teacherDisplayName.error().code, Domain::ErrorCode::NotFound);
+    QVERIFY(result.value().classFields.value().notes == u"  exact notes \U0001F642  ");
+    QVERIFY(result.value().classFields.value().timeFillerActivities
+        == u"  exact activities  ");
+}
+
+void NextPlatformApplicationServicesClassNotesPageReadPortTests::
+teacherProjectionFailurePreservesClassTextFields()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+    const int id = createClass(
+        services,
+        QStringLiteral("Teacher projection failure")
+        );
+    QVERIFY(id > 0);
+
+    Teacher teacher;
+    teacher.teacherEn = QStringLiteral("Teacher name");
+    const auto teacherId =
+        services.databaseSession()->teacherRepository()->createTeacher(teacher);
+    QVERIFY(teacherId);
+    ClassInfo info = makeClassInfo(id);
+    info.teacherId = *teacherId;
+    QVERIFY(services.databaseSession()->classInfoRepository()
+                ->saveClassInfo(info));
+
+    QSqlQuery query(services.databaseSession()->database());
+    QVERIFY2(query.exec(QStringLiteral(
+                 "ALTER TABLE teachers RENAME COLUMN preferred_romanization "
+                 "TO legacy_preferred_romanization"
+                 )),
+             qPrintable(query.lastError().text()));
+
+    Platform::ApplicationServicesClassNotesPageReadPort port(&services);
+    const auto result = port.readClassNotesPage(classId(id));
+
+    QVERIFY(result);
+    QVERIFY(result.value().classFields);
+    QVERIFY(!result.value().teacherDisplayName);
+    QCOMPARE(result.value().teacherDisplayName.error().code,
+             Domain::ErrorCode::Technical);
     QVERIFY(result.value().classFields.value().notes == u"  exact notes \U0001F642  ");
     QVERIFY(result.value().classFields.value().timeFillerActivities
         == u"  exact activities  ");

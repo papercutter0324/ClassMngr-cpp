@@ -98,6 +98,8 @@ private slots:
     void treatsNonpositiveTeacherIdsAsUnassignedAndPreservesClassFields();
     void unavailableSessionDoesNotUseDataServiceFallback();
     void classAndTeacherSourceFailuresRemainIndependent();
+    void teacherDisplayNameUsesTrimmedFallbackOrder();
+    void teacherProjectionFailurePreservesSelectedTeacherAndClassFields();
 };
 
 void NextPlatformApplicationServicesClassCoTeacherPageReadPortTests::
@@ -258,6 +260,8 @@ classAndTeacherSourceFailuresRemainIndependent()
     QVERIFY(result);
     QVERIFY(result.value().classFields);
     QVERIFY(result.value().classFields.value().selectedTeacherId.has_value());
+    QVERIFY(result.value().classFields.value().selectedTeacherId.value()
+        == *Domain::TeacherId::fromString("812345"));
     QVERIFY(!result.value().teacherDisplayName);
     QCOMPARE(result.value().teacherDisplayName.error().code,
              Domain::ErrorCode::NotFound);
@@ -271,6 +275,102 @@ classAndTeacherSourceFailuresRemainIndependent()
     QVERIFY(!result.value().classFields);
     QCOMPARE(result.value().classFields.error().code, Domain::ErrorCode::Technical);
     QVERIFY(!result.value().teacherDisplayName);
+}
+
+void NextPlatformApplicationServicesClassCoTeacherPageReadPortTests::
+teacherDisplayNameUsesTrimmedFallbackOrder()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+
+    std::vector<Teacher> teachers(3);
+    teachers[0].teacherKr = QStringLiteral("Korean fallback");
+    teachers[0].teacherEn = QStringLiteral("  English fallback  ");
+    teachers[0].preferredRomanization = QStringLiteral("Romanization fallback");
+    teachers[0].preferredName = QStringLiteral(" \t ");
+    teachers[1].teacherKr = QStringLiteral("Korean fallback");
+    teachers[1].teacherEn = QStringLiteral(" \t ");
+    teachers[1].preferredRomanization =
+        QStringLiteral("  Romanization fallback  ");
+    teachers[1].preferredName = QStringLiteral(" ");
+    teachers[2].teacherKr = QStringLiteral("  Korean fallback  ");
+    teachers[2].teacherEn = QStringLiteral(" ");
+    teachers[2].preferredRomanization = QStringLiteral(" \t ");
+    teachers[2].preferredName = QStringLiteral(" ");
+    const std::vector<std::u16string> expectedNames = {
+        u"English fallback",
+        u"Romanization fallback",
+        u"Korean fallback"
+    };
+
+    Platform::ApplicationServicesClassCoTeacherPageReadPort port(&services);
+    for (std::size_t index = 0; index < teachers.size(); ++index)
+    {
+        const int id = createClass(
+            services,
+            QStringLiteral("Co-teacher fallback class %1").arg(
+                static_cast<qulonglong>(index)
+                )
+            );
+        const auto teacherId = services.databaseSession()
+                                   ->teacherRepository()
+                                   ->createTeacher(teachers[index]);
+        QVERIFY(id > 0);
+        QVERIFY(teacherId);
+        QVERIFY(services.databaseSession()->classInfoRepository()->saveClassInfo(
+            classInfo(id, *teacherId)
+            ));
+
+        const auto result = port.readClassCoTeacherPage(classId(id));
+        QVERIFY(result);
+        QVERIFY(result.value().classFields);
+        QVERIFY(result.value().teacherDisplayName);
+        QVERIFY(result.value().classFields.value().selectedTeacherId.has_value());
+        QVERIFY(result.value().teacherDisplayName.value()
+            == expectedNames[index]);
+    }
+}
+
+void NextPlatformApplicationServicesClassCoTeacherPageReadPortTests::
+teacherProjectionFailurePreservesSelectedTeacherAndClassFields()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+    const int id = createClass(
+        services,
+        QStringLiteral("Co-teacher projection failure")
+        );
+    const int teacherId = createTeacher(services);
+    QVERIFY(id > 0);
+    QVERIFY(teacherId > 0);
+    QVERIFY(services.databaseSession()->classInfoRepository()->saveClassInfo(
+        classInfo(id, teacherId)
+        ));
+
+    QSqlQuery query(services.databaseSession()->database());
+    QVERIFY2(query.exec(QStringLiteral(
+                 "ALTER TABLE teachers RENAME COLUMN preferred_romanization "
+                 "TO legacy_preferred_romanization"
+                 )),
+             qPrintable(query.lastError().text()));
+
+    Platform::ApplicationServicesClassCoTeacherPageReadPort port(&services);
+    const auto result = port.readClassCoTeacherPage(classId(id));
+
+    QVERIFY(result);
+    QVERIFY(result.value().classFields);
+    QVERIFY(result.value().classFields.value().selectedTeacherId.has_value());
+    QVERIFY(result.value().classFields.value().selectedTeacherId.value()
+        == *Domain::TeacherId::fromString(std::to_string(teacherId)));
+    QVERIFY(!result.value().teacherDisplayName);
+    QCOMPARE(result.value().teacherDisplayName.error().code,
+             Domain::ErrorCode::Technical);
+    QVERIFY(result.value().classFields.value().classGrade == u"E4");
+    QVERIFY(result.value().classFields.value().classLevel == u"Theseus");
 }
 
 QTEST_MAIN(NextPlatformApplicationServicesClassCoTeacherPageReadPortTests)
