@@ -618,6 +618,47 @@ Result<QList<Teacher>> TeacherRepository::getAllTeachers()
     return teachers;
 }
 
+Result<QList<ScheduleImportTeacherReadRecord>>
+TeacherRepository::loadScheduleImportTeacherRecords()
+{
+    ++m_scheduleImportTeacherReadMetrics.callCount;
+
+    QList<ScheduleImportTeacherReadRecord> teachers;
+    QSqlQuery query(m_database);
+    ++m_scheduleImportTeacherReadMetrics.statementCount;
+
+    const auto executed = SqlQueryUtils::execute(
+        query,
+        QStringLiteral(R"(
+            SELECT id, teacher_kr, room_number
+            FROM teachers
+            ORDER BY teacher_en
+        )"),
+        QObject::tr("Loading schedule import teachers")
+        );
+    if (!executed)
+    {
+        return std::unexpected(executed.error().userMessage());
+    }
+
+    while (query.next())
+    {
+        teachers.append({
+            query.value(QStringLiteral("id")).toInt(),
+            query.value(QStringLiteral("teacher_kr")).toString(),
+            query.value(QStringLiteral("room_number")).toString()
+        });
+    }
+
+    return teachers;
+}
+
+const ScheduleImportTeacherReadMetrics&
+TeacherRepository::scheduleImportTeacherReadMetrics() const noexcept
+{
+    return m_scheduleImportTeacherReadMetrics;
+}
+
 Result<QList<InitialSetupTeacherChoiceReadRecord>>
 TeacherRepository::loadInitialSetupTeacherChoiceRecords()
 {

@@ -264,6 +264,17 @@ mapsActiveSessionRecordsInRepositoryOrder()
     QVERIFY(legacyOrder);
     QVERIFY(teacherOrder);
 
+    TeacherRepository* const teacherRepository =
+        services.databaseSession()->teacherRepository();
+    const ScheduleImportTeacherReadMetrics teacherMetricsBefore =
+        teacherRepository->scheduleImportTeacherReadMetrics();
+    QSqlQuery renameUnusedTeacherField(database);
+    QVERIFY2(
+        renameUnusedTeacherField.exec(QStringLiteral(
+            "ALTER TABLE teachers RENAME COLUMN notes TO unused_profile_notes")),
+        qPrintable(renameUnusedTeacherField.lastError().text())
+        );
+
     Platform::ApplicationServicesScheduleImportStateSnapshotPort port(services);
     const auto result = Application::ScheduleImportStateSnapshotQueryHandler::
         execute({}, port);
@@ -277,9 +288,19 @@ mapsActiveSessionRecordsInRepositoryOrder()
              static_cast<std::size_t>(teacherOrder->size()));
     for (std::size_t index = 0; index < snapshot->teachers.size(); ++index)
     {
+        const Teacher& expectedTeacher =
+            (*teacherOrder)[static_cast<qsizetype>(index)];
         QCOMPARE(
             snapshot->teachers[index].id.value(),
-            std::to_string((*teacherOrder)[static_cast<qsizetype>(index)].id)
+            std::to_string(expectedTeacher.id)
+            );
+        QCOMPARE(
+            snapshot->teachers[index].koreanName,
+            expectedTeacher.teacherKr.toStdU16String()
+            );
+        QCOMPARE(
+            snapshot->teachers[index].roomNumber,
+            expectedTeacher.roomNumber.toStdU16String()
             );
     }
     QCOMPARE(snapshot->classes.size(),
@@ -335,6 +356,33 @@ mapsActiveSessionRecordsInRepositoryOrder()
     QVERIFY(unusedTeacher != snapshot->teachers.end());
     QCOMPARE(unusedTeacher->koreanName, std::u16string(u"\uBC15 \uC120\uC0DD\uB2D8"));
     QCOMPARE(unusedTeacher->roomNumber, std::u16string(u"415"));
+
+    const auto assignedTeacher = std::find_if(
+        snapshot->teachers.begin(),
+        snapshot->teachers.end(),
+        [teacherIdValue](const auto& value)
+        {
+            return value.id.value() == std::to_string(teacherIdValue);
+        }
+        );
+    QVERIFY(assignedTeacher != snapshot->teachers.end());
+    QCOMPARE(
+        assignedTeacher->koreanName,
+        std::u16string(u"  \uAE40 \uC120\uC0DD\uB2D8  ")
+        );
+    QCOMPARE(assignedTeacher->roomNumber, std::u16string(u" Room 9 "));
+
+    const ScheduleImportTeacherReadMetrics teacherMetricsAfter =
+        teacherRepository->scheduleImportTeacherReadMetrics();
+    QCOMPARE(
+        teacherMetricsAfter.callCount - teacherMetricsBefore.callCount,
+        1
+        );
+    QCOMPARE(
+        teacherMetricsAfter.statementCount
+            - teacherMetricsBefore.statementCount,
+        1
+        );
 
     const ScheduleClassInfoReadMetrics& metrics = services
         .databaseSession()

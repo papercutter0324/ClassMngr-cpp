@@ -30,6 +30,19 @@ struct TestingTeacherChoiceReadRecord final
     QString room;
 };
 
+struct ScheduleImportTeacherReadRecord final
+{
+    int teacherId = -1;
+    QString teacherKr;
+    QString roomNumber;
+};
+
+struct ScheduleImportTeacherReadMetrics final
+{
+    int callCount = 0;
+    int statementCount = 0;
+};
+
 struct ClassCoTeacherTeacherChoiceReadRecord final
 {
     int teacherId = -1;
@@ -117,6 +130,10 @@ public:
         teacherProfileBatchReadMetrics() const noexcept;
 
     [[nodiscard]] Result<QList<Teacher>> getAllTeachers();
+    [[nodiscard]] Result<QList<ScheduleImportTeacherReadRecord>>
+        loadScheduleImportTeacherRecords();
+    [[nodiscard]] const ScheduleImportTeacherReadMetrics&
+        scheduleImportTeacherReadMetrics() const noexcept;
     [[nodiscard]] Result<QList<InitialSetupTeacherChoiceReadRecord>>
         loadInitialSetupTeacherChoiceRecords();
     [[nodiscard]] Result<QList<TestingTeacherChoiceReadRecord>>
@@ -132,6 +149,7 @@ public:
 
 private:
     QSqlDatabase& m_database;
+    ScheduleImportTeacherReadMetrics m_scheduleImportTeacherReadMetrics;
     TeacherDisplayNameBatchReadMetrics m_teacherDisplayNameBatchReadMetrics;
     TeacherProfileBatchReadMetrics m_teacherProfileBatchReadMetrics;
 };

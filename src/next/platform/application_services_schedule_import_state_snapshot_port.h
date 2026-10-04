@@ -85,8 +85,9 @@ public:
             // detail read is re-indexed back into the class repository order.
             const Result<QList<Classroom>> loadedClasses =
                 classRepository->getClasses();
-            const Result<QList<Teacher>> loadedTeachers =
-                teacherRepository->getAllTeachers();
+            const Result<QList<ScheduleImportTeacherReadRecord>>
+                loadedTeachers =
+                    teacherRepository->loadScheduleImportTeacherRecords();
             if (!loadedClasses)
             {
                 return readFailure(
@@ -151,19 +152,19 @@ public:
             snapshot.teachers.reserve(
                 static_cast<std::size_t>(loadedTeachers->size())
                 );
-            QHash<int, const Teacher*> teacherById;
+            QHash<int, const ScheduleImportTeacherReadRecord*> teacherById;
             teacherById.reserve(loadedTeachers->size());
-            for (const Teacher& teacher : *loadedTeachers)
+            for (const ScheduleImportTeacherReadRecord& teacher : *loadedTeachers)
             {
                 const std::optional<Domain::TeacherId> id =
-                    canonicalId<Domain::TeacherId>(teacher.id);
-                if (!id || teacherById.contains(teacher.id))
+                    canonicalId<Domain::TeacherId>(teacher.teacherId);
+                if (!id || teacherById.contains(teacher.teacherId))
                 {
                     return invalidSnapshot(
                         "The teacher source returned an invalid or duplicate teacher ID."
                         );
                 }
-                teacherById.insert(teacher.id, &teacher);
+                teacherById.insert(teacher.teacherId, &teacher);
                 snapshot.teachers.push_back({
                     *id,
                     teacher.teacherKr.toStdU16String(),

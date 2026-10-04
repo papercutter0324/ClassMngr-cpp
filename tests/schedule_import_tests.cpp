@@ -65,6 +65,7 @@ private slots:
     void writeFailureRollsBackEveryChange();
     void applyUsesBatchedClassInfoByIdAndPreservesClassOrder();
     void applyBatchReadFailureRollsBackBeforeWrites();
+    void applyTeacherReadFailureRollsBackBeforeWrites();
     void typedApplyRejectsStaleSelectedClassBeforeWrites();
     void typedApplyPreservesExactTargetIdsThroughStateValidation();
     void typedApplyRejectsOverlappingSchedulesBeforeWrites();
@@ -6032,6 +6033,67 @@ void ScheduleImportTests::applyBatchReadFailureRollsBackBeforeWrites()
         QCOMPARE(query.value(0).toString(), QStringLiteral("413"));
 
         QVERIFY(database.transaction());
+        QVERIFY(database.rollback());
+        database.close();
+    }
+    QSqlDatabase::removeDatabase(connectionName);
+}
+
+void ScheduleImportTests::applyTeacherReadFailureRollsBackBeforeWrites()
+{
+    using namespace ClassMngr::Next::Application;
+
+    const QString connectionName =
+        QStringLiteral("schedule-import-teacher-read-failure-%1")
+            .arg(QUuid::createUuid().toString());
+    {
+        QSqlDatabase database = QSqlDatabase::addDatabase(
+            QStringLiteral("QSQLITE"), connectionName);
+        database.setDatabaseName(QStringLiteral(":memory:"));
+        QVERIFY(database.open());
+        QVERIFY(DatabaseSchemaManager::ensureSchema(database).has_value());
+
+        QSqlQuery query(database);
+        query.prepare(QStringLiteral(
+            "INSERT INTO teachers (id, teacher_kr, teacher_en, room_number) "
+            "VALUES (11, ?, 'Existing English Name', '413')"));
+        query.addBindValue(QString::fromUtf16(u"\uAE40"));
+        QVERIFY2(query.exec(), qPrintable(query.lastError().text()));
+        execOrFail(query, QStringLiteral(
+            "INSERT INTO classes (id, name) VALUES (101, 'Existing')"));
+        execOrFail(query, QStringLiteral(
+            "INSERT INTO class_info "
+            "(class_id, teacher_id, class_grade, class_level) "
+            "VALUES (101, 11, 'E3', 'Low')"));
+        const QStringList beforeFailure =
+            persistedScheduleImportSnapshot(database);
+
+        execOrFail(query, QStringLiteral(
+            "ALTER TABLE teachers RENAME COLUMN teacher_kr "
+            "TO teacher_kr_unavailable"));
+
+        ScheduleImportRepository repository(database);
+        const auto failed = repository.applyTyped(typedCreateRequest({
+            typedCandidate(u"\uBC15", u"E5", u"Zeus")
+        }));
+        QVERIFY(!failed.has_value());
+        QVERIFY2(
+            typedApplyFailureMessage(failed).contains(
+                QStringLiteral("teacher_kr"),
+                Qt::CaseInsensitive
+                ),
+            qPrintable(typedApplyFailureMessage(failed))
+            );
+
+        execOrFail(query, QStringLiteral(
+            "ALTER TABLE teachers RENAME COLUMN teacher_kr_unavailable "
+            "TO teacher_kr"));
+        QCOMPARE(
+            persistedScheduleImportSnapshot(database),
+            beforeFailure
+            );
+
+        QVERIFY2(database.transaction(), qPrintable(database.lastError().text()));
         QVERIFY(database.rollback());
         database.close();
     }

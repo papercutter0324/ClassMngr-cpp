@@ -544,7 +544,7 @@ std::vector<ScheduleImportStateTime> stateTimes(
 
 ScheduleImportStateValidationRequest stateValidationRequest(
     const ScheduleImportApplyRequest& applyRequest,
-    const QList<Teacher>& existingTeachers,
+    const QList<ScheduleImportTeacherReadRecord>& existingTeachers,
     const QList<Classroom>& existingClasses,
     const QHash<int, ClassInfo>& existingInfo
     )
@@ -678,11 +678,11 @@ ScheduleImportStateValidationRequest stateValidationRequest(
     request.existingTeachers.reserve(
         static_cast<std::size_t>(existingTeachers.size())
         );
-    for (const Teacher& teacher : existingTeachers)
+    for (const ScheduleImportTeacherReadRecord& teacher : existingTeachers)
     {
         request.existingTeachers.push_back(
             {
-                teacherDomainId(teacher.id),
+                teacherDomainId(teacher.teacherId),
                 utf8String(teacherKey(teacher.teacherKr))
             }
             );
@@ -1129,8 +1129,8 @@ ScheduleImportRepository::ApplyCoreResult ScheduleImportRepository::applyCore(
     TeacherRepository teacherRepository(m_database);
     ClassRepository classRepository(m_database);
     ClassInfoRepository classInfoRepository(m_database);
-    const Result<QList<Teacher>> existingTeachers =
-        teacherRepository.getAllTeachers();
+    const Result<QList<ScheduleImportTeacherReadRecord>> existingTeachers =
+        teacherRepository.loadScheduleImportTeacherRecords();
     if (!existingTeachers)
     {
         return std::unexpected(existingTeachers.error());
