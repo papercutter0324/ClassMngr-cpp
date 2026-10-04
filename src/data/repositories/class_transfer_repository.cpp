@@ -348,6 +348,7 @@ QList<ClassTransferEvaluation> loadEvaluations(
     )
 {
     QList<ClassTransferEvaluation> evaluations;
+    QHash<int, int> evaluationIndexById;
     QSqlQuery evaluationQuery(database);
 
     evaluationQuery.prepare(R"(
@@ -367,45 +368,59 @@ QList<ClassTransferEvaluation> loadEvaluations(
 
     while (evaluationQuery.next())
     {
+        const int evaluationId = evaluationQuery.value("id").toInt();
         ClassTransferEvaluation evaluation;
         evaluation.name = evaluationQuery.value("evaluation_name").toString();
         evaluation.rows = SpeakingEval::emptyRows();
-
-        QSqlQuery rowQuery(database);
-        rowQuery.prepare(R"(
-            SELECT *
-            FROM speaking_eval_data
-            WHERE evaluation_id=?
-            ORDER BY row_index
-        )");
-        rowQuery.addBindValue(evaluationQuery.value("id"));
-
-        if (!rowQuery.exec())
-        {
-            *errorMessage = QObject::tr("Unable to read speaking evaluation rows: %1")
-                .arg(rowQuery.lastError().text());
-            return {};
-        }
-
-        while (rowQuery.next())
-        {
-            const int rowIndex = rowQuery.value("row_index").toInt();
-
-            if (rowIndex < 0 || rowIndex >= SpeakingEval::RowCount)
-            {
-                continue;
-            }
-
-            for (int column = 0; column < SpeakingEval::ColumnCount; ++column)
-            {
-                evaluation.rows[rowIndex][column] =
-                    rowQuery.value(
-                        QStringLiteral("col_%1").arg(column)
-                        ).toString();
-            }
-        }
-
+        evaluationIndexById.insert(evaluationId, evaluations.size());
         evaluations.append(evaluation);
+    }
+
+    if (evaluations.isEmpty())
+    {
+        return evaluations;
+    }
+
+    QSqlQuery rowQuery(database);
+    rowQuery.prepare(R"(
+        SELECT evaluation_id, row_index,
+            col_0, col_1, col_2, col_3, col_4, col_5,
+            col_6, col_7, col_8, col_9, col_10
+        FROM speaking_eval_data
+        WHERE evaluation_id IN (
+            SELECT id
+            FROM speaking_evaluations
+            WHERE class_id=?
+        )
+        ORDER BY evaluation_id, row_index
+    )");
+    rowQuery.addBindValue(classId);
+
+    if (!rowQuery.exec())
+    {
+        *errorMessage = QObject::tr("Unable to read speaking evaluation rows: %1")
+            .arg(rowQuery.lastError().text());
+        return {};
+    }
+
+    while (rowQuery.next())
+    {
+        const auto evaluationIndex = evaluationIndexById.constFind(
+            rowQuery.value("evaluation_id").toInt());
+        const int rowIndex = rowQuery.value("row_index").toInt();
+
+        if (evaluationIndex == evaluationIndexById.cend()
+            || rowIndex < 0 || rowIndex >= SpeakingEval::RowCount)
+        {
+            continue;
+        }
+
+        ClassTransferEvaluation& evaluation = evaluations[*evaluationIndex];
+        for (int column = 0; column < SpeakingEval::ColumnCount; ++column)
+        {
+            evaluation.rows[rowIndex][column] =
+                rowQuery.value(column + 2).toString();
+        }
     }
 
     return evaluations;

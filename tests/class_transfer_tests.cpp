@@ -345,6 +345,9 @@ class ClassTransferTests : public QObject
 
 private slots:
     void jsonRoundTripPreservesCompletePackage();
+    void exportPreservesSelectedClassAndSparseEvaluationRowOrder();
+    void exportSkipsRowQueryWhenNoEvaluationsExist();
+    void exportFailsWhenEvaluationRowsCannotBeRead();
     void importsCompleteClassesAndDeduplicatesTeacher();
     void previewMatchesCourseAndTeacherIgnoringSchedule();
     void previewPreservesQtNameAndCourseNormalization();
@@ -489,6 +492,266 @@ void ClassTransferTests::jsonRoundTripPreservesCompletePackage()
     QVERIFY(legacyPackage->teachers.first().teacher.preferredName.isEmpty());
     QVERIFY(legacyPackage->teachers.first().teacher.birthday.isEmpty());
     QVERIFY(legacyPackage->teachers.first().teacher.phoneNumber.isEmpty());
+}
+
+void ClassTransferTests::
+    exportPreservesSelectedClassAndSparseEvaluationRowOrder()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    DataService service;
+    QVERIFY(service.openDatabase(
+        directory.filePath(QStringLiteral("source.db"))).has_value());
+
+    const int teacherId = createdTeacherId(service, completeTeacher());
+    const int firstClassId = addCompleteClass(
+        service,
+        teacherId,
+        QStringLiteral("First Class"),
+        QStringLiteral("E4"),
+        QStringLiteral("Orion"),
+        QStringLiteral("Monday"),
+        QStringLiteral("First Student"),
+        QStringLiteral("First Evaluation")
+        );
+    const int secondClassId = addCompleteClass(
+        service,
+        teacherId,
+        QStringLiteral("Second Class"),
+        QStringLiteral("E5"),
+        QStringLiteral("Pegasus"),
+        QStringLiteral("Tuesday"),
+        QStringLiteral("Second Student"),
+        QStringLiteral("Second Class Evaluation")
+        );
+    QVERIFY(firstClassId > 0);
+    QVERIFY(secondClassId > 0);
+
+    QSqlDatabase database = service.databaseSession()->database();
+    auto evaluationIdFor = [&](int classId, const QString& name)
+    {
+        QSqlQuery query(database);
+        query.prepare(R"(
+            SELECT id
+            FROM speaking_evaluations
+            WHERE class_id=? AND evaluation_name=?
+        )");
+        query.addBindValue(classId);
+        query.addBindValue(name);
+        if (!query.exec() || !query.next())
+        {
+            return -1;
+        }
+        return query.value(0).toInt();
+    };
+    auto insertEvaluation = [&](int classId, const QString& name)
+    {
+        QSqlQuery query(database);
+        query.prepare(R"(
+            INSERT INTO speaking_evaluations (class_id, evaluation_name)
+            VALUES (?, ?)
+        )");
+        query.addBindValue(classId);
+        query.addBindValue(name);
+        if (!query.exec())
+        {
+            return -1;
+        }
+        return query.lastInsertId().toInt();
+    };
+    auto clearEvaluationRows = [&](int evaluationId)
+    {
+        QSqlQuery query(database);
+        query.prepare(
+            "DELETE FROM speaking_eval_data WHERE evaluation_id=?");
+        query.addBindValue(evaluationId);
+        return query.exec();
+    };
+    auto insertEvaluationRow = [&](
+        int evaluationId,
+        int rowIndex,
+        const QStringList& values,
+        int nullColumn = -1
+        )
+    {
+        QStringList columns{
+            QStringLiteral("evaluation_id"), QStringLiteral("row_index")};
+        QStringList placeholders{QStringLiteral("?"), QStringLiteral("?")};
+        for (int column = 0; column < SpeakingEval::ColumnCount; ++column)
+        {
+            columns.append(QStringLiteral("col_%1").arg(column));
+            placeholders.append(
+                column == nullColumn ? QStringLiteral("NULL")
+                                     : QStringLiteral("?"));
+        }
+
+        QSqlQuery query(database);
+        query.prepare(
+            QStringLiteral("INSERT INTO speaking_eval_data (%1) VALUES (%2)")
+                .arg(columns.join(QStringLiteral(", ")),
+                     placeholders.join(QStringLiteral(", "))));
+        query.addBindValue(evaluationId);
+        query.addBindValue(rowIndex);
+        for (int column = 0; column < SpeakingEval::ColumnCount; ++column)
+        {
+            if (column != nullColumn)
+            {
+                query.addBindValue(values.value(column));
+            }
+        }
+        return query.exec();
+    };
+
+    const int firstEvaluationId = evaluationIdFor(
+        firstClassId, QStringLiteral("First Evaluation"));
+    const int secondClassEvaluationId = evaluationIdFor(
+        secondClassId, QStringLiteral("Second Class Evaluation"));
+    const int secondEvaluationId = insertEvaluation(
+        firstClassId, QStringLiteral("Second Evaluation"));
+    QVERIFY(firstEvaluationId > 0);
+    QVERIFY(secondClassEvaluationId > 0);
+    QVERIFY(secondEvaluationId > firstEvaluationId);
+    QVERIFY(clearEvaluationRows(firstEvaluationId));
+    QVERIFY(clearEvaluationRows(secondClassEvaluationId));
+
+    QStringList rowTwoValues;
+    QStringList rowTwentyFourValues;
+    for (int column = 0; column < SpeakingEval::ColumnCount; ++column)
+    {
+        rowTwoValues.append(QStringLiteral("row2-col%1").arg(column));
+        rowTwentyFourValues.append(
+            QStringLiteral("row24-col%1").arg(column));
+    }
+    QVERIFY(insertEvaluationRow(firstEvaluationId, 2, rowTwoValues));
+    QVERIFY(insertEvaluationRow(
+        firstEvaluationId, 24, rowTwentyFourValues, 6));
+    QSqlQuery ignoreCheckConstraints(database);
+    QVERIFY(ignoreCheckConstraints.exec(
+        QStringLiteral("PRAGMA ignore_check_constraints=ON")));
+    QVERIFY(insertEvaluationRow(
+        firstEvaluationId, -1,
+        QStringList(SpeakingEval::ColumnCount, QStringLiteral("ignored"))));
+    QVERIFY(ignoreCheckConstraints.exec(
+        QStringLiteral("PRAGMA ignore_check_constraints=OFF")));
+    QVERIFY(insertEvaluationRow(
+        firstEvaluationId, SpeakingEval::RowCount,
+        QStringList(SpeakingEval::ColumnCount, QStringLiteral("ignored"))));
+
+    const auto package = service.buildClassTransferPackage(
+        {secondClassId, firstClassId});
+    QVERIFY2(package.has_value(),
+             package ? "" : qPrintable(package.error()));
+    QCOMPARE(package->classes.size(), 2);
+    QCOMPARE(package->classes[0].name, QStringLiteral("Second Class"));
+    QCOMPARE(package->classes[1].name, QStringLiteral("First Class"));
+
+    const QList<ClassTransferEvaluation>& secondClassEvaluations =
+        package->classes[0].evaluations;
+    QCOMPARE(secondClassEvaluations.size(), 1);
+    QCOMPARE(secondClassEvaluations[0].name,
+             QStringLiteral("Second Class Evaluation"));
+    QCOMPARE(secondClassEvaluations[0].rows.size(), SpeakingEval::RowCount);
+    for (const QStringList& row : secondClassEvaluations[0].rows)
+    {
+        QCOMPARE(row.size(), SpeakingEval::ColumnCount);
+        for (const QString& cell : row)
+        {
+            QVERIFY(cell.isEmpty());
+        }
+    }
+
+    const QList<ClassTransferEvaluation>& firstClassEvaluations =
+        package->classes[1].evaluations;
+    QCOMPARE(firstClassEvaluations.size(), 2);
+    QCOMPARE(firstClassEvaluations[0].name,
+             QStringLiteral("First Evaluation"));
+    QCOMPARE(firstClassEvaluations[1].name,
+             QStringLiteral("Second Evaluation"));
+    QCOMPARE(firstClassEvaluations[0].rows.size(), SpeakingEval::RowCount);
+    for (const int rowIndex : {0, 1, 3, 4, 23})
+    {
+        QCOMPARE(
+            firstClassEvaluations[0].rows[rowIndex],
+            QStringList(SpeakingEval::ColumnCount, QString()));
+    }
+    QCOMPARE(firstClassEvaluations[0].rows[2], rowTwoValues);
+    rowTwentyFourValues[6].clear();
+    QCOMPARE(firstClassEvaluations[0].rows[24], rowTwentyFourValues);
+    QCOMPARE(firstClassEvaluations[1].rows.size(), SpeakingEval::RowCount);
+    for (const QStringList& row : firstClassEvaluations[1].rows)
+    {
+        QCOMPARE(row.size(), SpeakingEval::ColumnCount);
+        for (const QString& cell : row)
+        {
+            QVERIFY(cell.isEmpty());
+        }
+    }
+}
+
+void ClassTransferTests::exportSkipsRowQueryWhenNoEvaluationsExist()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    DataService service;
+    QVERIFY(service.openDatabase(
+        directory.filePath(QStringLiteral("source.db"))).has_value());
+
+    const int teacherId = createdTeacherId(service, completeTeacher());
+    const int classId = createdClassId(
+        service, QStringLiteral("Empty Evaluation Export"));
+    QVERIFY(classId > 0);
+    QVERIFY(service.saveClassInfo(completeClassInfo(
+        classId,
+        teacherId,
+        QStringLiteral("E4"),
+        QStringLiteral("Orion"),
+        QStringLiteral("Monday")
+        )));
+    QVERIFY(service.saveRoster(
+        classId, completeRoster(QStringLiteral("Student"))));
+
+    QSqlQuery dropRows(service.databaseSession()->database());
+    QVERIFY2(dropRows.exec(QStringLiteral("DROP TABLE speaking_eval_data")),
+             qPrintable(dropRows.lastError().text()));
+
+    const auto package = service.buildClassTransferPackage({classId});
+    QVERIFY2(package.has_value(),
+             package ? "" : qPrintable(package.error()));
+    QCOMPARE(package->classes.size(), 1);
+    QCOMPARE(package->classes.first().name,
+             QStringLiteral("Empty Evaluation Export"));
+    QVERIFY(package->classes.first().evaluations.isEmpty());
+}
+
+void ClassTransferTests::exportFailsWhenEvaluationRowsCannotBeRead()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    DataService service;
+    QVERIFY(service.openDatabase(
+        directory.filePath(QStringLiteral("source.db"))).has_value());
+
+    const int teacherId = createdTeacherId(service, completeTeacher());
+    const int classId = addCompleteClass(
+        service,
+        teacherId,
+        QStringLiteral("Export Class"),
+        QStringLiteral("E4"),
+        QStringLiteral("Orion"),
+        QStringLiteral("Monday"),
+        QStringLiteral("Student"),
+        QStringLiteral("Evaluation")
+        );
+    QVERIFY(classId > 0);
+
+    QSqlQuery dropRows(service.databaseSession()->database());
+    QVERIFY2(dropRows.exec(QStringLiteral("DROP TABLE speaking_eval_data")),
+             qPrintable(dropRows.lastError().text()));
+
+    const auto package = service.buildClassTransferPackage({classId});
+    QVERIFY(!package.has_value());
+    QVERIFY(package.error().contains(
+        QStringLiteral("Unable to read speaking evaluation rows:")));
 }
 
 void ClassTransferTests::importsCompleteClassesAndDeduplicatesTeacher()
