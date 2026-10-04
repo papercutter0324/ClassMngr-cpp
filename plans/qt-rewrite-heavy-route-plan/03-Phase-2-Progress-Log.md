@@ -11163,3 +11163,38 @@ F309 is selected to batch Sub Prep information-sheet per-class roster counts
 after F179, preserving schedule order, zero fallback, and equivalent read
 metrics. F310-F315 remain ordered in Batch 4. Phase 2 remains In Progress/Open;
 Gates 1 and 2 remain Partial.
+
+### Progress update - 2026-10-04 (F309 accepted; F310 selected)
+
+F309, committed as
+`a87edb3147577cf52d92e35e5d8587792df7883a`, batches Sub Prep information-sheet
+roster count reads after schedule and teacher filtering. The print-source port
+requests counts only for included classes, preserves source order, and leaves
+each class in place with a zero count when its roster read fails. The
+repository reads roster columns and sparse cells in set-based statements,
+preserving exact first English/Korean selection, QString trimming, and one
+count per row.
+
+Successful class counts emit the legacy `sub-prep-roster-query` metrics with
+the original class ID, column count, materialized row count, cell count, and
+returned student count. Missing name headers still emit a zero-count event;
+failed per-class reads emit no event. Event failures stay isolated from the
+class output.
+
+Executor self-check and fresh independent Windows x64 Debug/Ninja verification
+passed. The independent configure validated 1,301 handwritten source files;
+ClassMngr and all seven focused test targets built. Focused CTest passed 7/7:
+the My Classes student-count page/Application/Platform regression tests, both
+Sub Prep print-source Application/Platform tests, the Sub Prep print-source
+mapper test, and the DataService lifecycle test. `git diff --check` passed.
+Independent logs are under build/f309v/ (configure.log, build.log,
+focused_ctest.log, diff_check.log); executor logs are under build/.
+The full suite was not run.
+
+Read-only discovery for F310 confirmed that an unreadable matched teacher
+profile currently displays “New Teacher,” and F311 discovery confirmed that
+classes without a meeting in the selected scope are omitted from roster output.
+The active batch text now records those existing behaviors. F310 is selected
+to batch matched-teacher alternative display-name reads, separate from F300
+class subtitles. F311-F315 remain ordered in Batch 4. Phase 2 remains In
+Progress/Open; Gates 1 and 2 remain Partial.
