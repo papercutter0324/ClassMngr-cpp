@@ -484,20 +484,25 @@ RosterRepository::loadSpeakingEvaluationRosterNames(
     return record;
 }
 
-Result<QList<RosterRepository::TemplatePrintReadRecord>>
-RosterRepository::loadRostersForTemplatePrint(
-    const QList<int>& classIds
+Result<QList<RosterRepository::FullRosterReadRecord>>
+RosterRepository::loadFullRostersImpl(
+    const QList<int>& classIds,
+    TemplatePrintBatchReadMetrics* templatePrintMetrics,
+    const bool templatePrintContext
     )
 {
     if (classIds.isEmpty())
     {
-        return QList<TemplatePrintReadRecord>{};
+        return QList<FullRosterReadRecord>{};
     }
 
-    ++m_templatePrintBatchReadMetrics.callCount;
-    m_templatePrintBatchReadMetrics.requestedClassCount += classIds.size();
+    if (templatePrintMetrics)
+    {
+        ++templatePrintMetrics->callCount;
+        templatePrintMetrics->requestedClassCount += classIds.size();
+    }
 
-    QList<TemplatePrintReadRecord> records;
+    QList<FullRosterReadRecord> records;
     records.reserve(classIds.size());
     QHash<int, qsizetype> requestIndexByClassId;
     requestIndexByClassId.reserve(classIds.size());
@@ -508,9 +513,11 @@ RosterRepository::loadRostersForTemplatePrint(
         const int classId = classIds.at(index);
         if (classId <= 0 || requestIndexByClassId.contains(classId))
         {
-            return std::unexpected(QObject::tr(
-                "Loading template print rosters failed: class ids must be positive and unique."
-                ));
+            return std::unexpected(templatePrintContext
+                ? QObject::tr(
+                    "Loading template print rosters failed: class ids must be positive and unique.")
+                : QObject::tr(
+                    "Loading full rosters failed: class ids must be positive and unique."));
         }
 
         requestIndexByClassId.insert(classId, index);
@@ -522,7 +529,10 @@ RosterRepository::loadRostersForTemplatePrint(
 
     QSqlQuery columnsQuery(m_database);
     columnsQuery.setForwardOnly(true);
-    ++m_templatePrintBatchReadMetrics.columnStatementCount;
+    if (templatePrintMetrics)
+    {
+        ++templatePrintMetrics->columnStatementCount;
+    }
     const QString columnsQueryText = QStringLiteral(R"(
         WITH requested(class_id, request_order) AS (VALUES %1)
         SELECT requested.class_id AS requested_class_id,
@@ -538,10 +548,13 @@ RosterRepository::loadRostersForTemplatePrint(
             roster_columns.position,
             roster_columns.id
     )").arg(requestedValues.join(QStringLiteral(", ")));
+    const QString columnsAction = templatePrintContext
+        ? QObject::tr("Loading template print roster columns")
+        : QObject::tr("Loading full roster columns");
     const auto loadedColumns = SqlQueryUtils::execute(
         columnsQuery,
         columnsQueryText,
-        QObject::tr("Loading template print roster columns"),
+        columnsAction,
         QObject::tr("%1 classes").arg(classIds.size())
         );
     if (!loadedColumns)
@@ -575,15 +588,19 @@ RosterRepository::loadRostersForTemplatePrint(
     if (columnsQuery.lastError().isValid())
     {
         return std::unexpected(
-            QObject::tr("Reading template print roster columns failed: %1")
+            (templatePrintContext
+                ? QObject::tr("Reading template print roster columns failed: %1")
+                : QObject::tr("Reading full roster columns failed: %1"))
                 .arg(columnsQuery.lastError().text())
             );
     }
     if (invalidColumnIdentity)
     {
-        return std::unexpected(QObject::tr(
-            "Loading template print roster columns returned an invalid class identity."
-            ));
+        return std::unexpected(templatePrintContext
+            ? QObject::tr(
+                "Loading template print roster columns returned an invalid class identity.")
+            : QObject::tr(
+                "Loading full roster columns returned an invalid class identity."));
     }
 
     bool anyColumns = false;
@@ -591,7 +608,7 @@ RosterRepository::loadRostersForTemplatePrint(
     cellRequestValues.reserve(classIds.size());
     for (qsizetype index = 0; index < records.size(); ++index)
     {
-        const TemplatePrintReadRecord& record = records.at(index);
+        const FullRosterReadRecord& record = records.at(index);
         if (!record.roster.columns.isEmpty())
         {
             anyColumns = true;
@@ -611,7 +628,10 @@ RosterRepository::loadRostersForTemplatePrint(
 
     QSqlQuery cellsQuery(m_database);
     cellsQuery.setForwardOnly(true);
-    ++m_templatePrintBatchReadMetrics.cellStatementCount;
+    if (templatePrintMetrics)
+    {
+        ++templatePrintMetrics->cellStatementCount;
+    }
     const QString cellsQueryText = QStringLiteral(R"(
         WITH requested(class_id, request_order, column_count) AS (VALUES %1)
         SELECT requested.class_id AS requested_class_id,
@@ -630,10 +650,13 @@ RosterRepository::loadRostersForTemplatePrint(
             roster_data.row_index,
             roster_data.col_index
     )").arg(cellRequestValues.join(QStringLiteral(", ")));
+    const QString cellsAction = templatePrintContext
+        ? QObject::tr("Loading template print roster cells")
+        : QObject::tr("Loading full roster cells");
     const auto loadedCells = SqlQueryUtils::execute(
         cellsQuery,
         cellsQueryText,
-        QObject::tr("Loading template print roster cells"),
+        cellsAction,
         QObject::tr("%1 classes").arg(classIds.size())
         );
     if (!loadedCells)
@@ -679,18 +702,39 @@ RosterRepository::loadRostersForTemplatePrint(
     if (cellsQuery.lastError().isValid())
     {
         return std::unexpected(
-            QObject::tr("Reading template print roster cells failed: %1")
+            (templatePrintContext
+                ? QObject::tr("Reading template print roster cells failed: %1")
+                : QObject::tr("Reading full roster cells failed: %1"))
                 .arg(cellsQuery.lastError().text())
             );
     }
     if (invalidCellIdentity)
     {
-        return std::unexpected(QObject::tr(
-            "Loading template print roster cells returned an invalid class identity."
-            ));
+        return std::unexpected(templatePrintContext
+            ? QObject::tr(
+                "Loading template print roster cells returned an invalid class identity.")
+            : QObject::tr(
+                "Loading full roster cells returned an invalid class identity."));
     }
 
     return records;
+}
+
+Result<QList<RosterRepository::FullRosterReadRecord>>
+RosterRepository::loadFullRosters(
+    const QList<int>& classIds
+    )
+{
+    return loadFullRostersImpl(classIds, nullptr, false);
+}
+
+Result<QList<RosterRepository::TemplatePrintReadRecord>>
+RosterRepository::loadRostersForTemplatePrint(
+    const QList<int>& classIds
+    )
+{
+    return loadFullRostersImpl(
+        classIds, &m_templatePrintBatchReadMetrics, true);
 }
 
 const RosterRepository::TemplatePrintBatchReadMetrics&

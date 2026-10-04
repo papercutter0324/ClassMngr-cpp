@@ -163,6 +163,9 @@ public:
     [[nodiscard]] Result<ClassInfo> loadClassInfo(
         int classId
         );
+    [[nodiscard]] Result<QList<ClassInfo>> loadClassInfoRecords(
+        const QList<int>& classIds
+        );
     [[nodiscard]] Result<ClassSubtitleReadRecord> loadClassSubtitleRecord(
         int classId
         );

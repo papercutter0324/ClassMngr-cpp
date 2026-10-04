@@ -657,6 +657,288 @@ Result<ClassInfo> ClassInfoRepository::loadClassInfo(
     return info;
 }
 
+Result<QList<ClassInfo>> ClassInfoRepository::loadClassInfoRecords(
+    const QList<int>& classIds
+    )
+{
+    if (classIds.isEmpty())
+    {
+        return QList<ClassInfo>{};
+    }
+
+    QSet<int> seenClassIds;
+    QStringList requestedValues;
+    requestedValues.reserve(classIds.size());
+    for (qsizetype index = 0; index < classIds.size(); ++index)
+    {
+        const int classId = classIds[index];
+        if (classId <= 0 || seenClassIds.contains(classId))
+        {
+            return std::unexpected(QObject::tr(
+                "Loading class information records failed: class identifiers must be positive and unique."
+                ));
+        }
+
+        seenClassIds.insert(classId);
+        requestedValues.append(QStringLiteral("(%1, %2)")
+            .arg(classId)
+            .arg(index));
+    }
+
+    QList<ClassInfo> records;
+    records.reserve(classIds.size());
+    for (const int classId : classIds)
+    {
+        ClassInfo info;
+        info.classId = classId;
+        records.append(std::move(info));
+    }
+
+    const QString requestedTable = QStringLiteral(
+        "WITH requested(class_id, ordinal) AS (VALUES %1)"
+        ).arg(requestedValues.join(QStringLiteral(", ")));
+
+    QSqlQuery metadataQuery(m_database);
+    metadataQuery.setForwardOnly(true);
+    const auto loadedMetadata = SqlQueryUtils::execute(
+        metadataQuery,
+        requestedTable + QStringLiteral(R"(
+            SELECT requested.class_id AS requested_class_id,
+                   requested.ordinal AS requested_ordinal,
+                   ci.class_id AS class_info_class_id,
+                   ci.teacher_id,
+                   teachers.teacher_kr,
+                   teachers.teacher_en,
+                   teachers.preferred_name,
+                   teachers.room_number,
+                   teachers.wifi_name,
+                   teachers.wifi_password,
+                   teachers.internet_type,
+                   teachers.zoom_id,
+                   teachers.zoom_password,
+                   teachers.projection_type,
+                   ci.class_grade,
+                   ci.class_level,
+                   ci.reading_book,
+                   ci.essay_book,
+                   ci.class_color,
+                   ci.font_color,
+                   ci.notes,
+                   ci.time_filler_activities
+            FROM requested
+            LEFT JOIN class_info ci ON ci.class_id = requested.class_id
+            LEFT JOIN teachers ON teachers.id = ci.teacher_id
+            ORDER BY requested.ordinal
+        )"),
+        QObject::tr("Loading class information record metadata"),
+        QObject::tr("%1 classes").arg(classIds.size())
+        );
+    if (!loadedMetadata)
+    {
+        return std::unexpected(loadedMetadata.error().userMessage());
+    }
+
+    qsizetype metadataCount = 0;
+    while (metadataQuery.next())
+    {
+        const int classId = metadataQuery.value(
+            QStringLiteral("requested_class_id")
+            ).toInt();
+        const int requestOrder = metadataQuery.value(
+            QStringLiteral("requested_ordinal")
+            ).toInt();
+        if (requestOrder < 0
+            || requestOrder >= classIds.size()
+            || classIds[requestOrder] != classId)
+        {
+            return std::unexpected(QObject::tr(
+                "Loading class information records failed: returned class order did not match the request."
+                ));
+        }
+
+        ++metadataCount;
+        if (metadataQuery.value(
+                QStringLiteral("class_info_class_id")
+                ).isNull())
+        {
+            continue;
+        }
+
+        ClassInfo& info = records[requestOrder];
+        const QVariant teacherId = metadataQuery.value(
+            QStringLiteral("teacher_id")
+            );
+        info.teacherId = teacherId.isNull() ? -1 : teacherId.toInt();
+        info.teacherKr = metadataQuery.value(
+            QStringLiteral("teacher_kr")
+            ).toString();
+        info.teacherEn = metadataQuery.value(
+            QStringLiteral("teacher_en")
+            ).toString();
+        info.teacherPreferredName = metadataQuery.value(
+            QStringLiteral("preferred_name")
+            ).toString();
+        info.roomNumber = metadataQuery.value(
+            QStringLiteral("room_number")
+            ).toString();
+        info.wifiName = metadataQuery.value(
+            QStringLiteral("wifi_name")
+            ).toString();
+        info.wifiPassword = metadataQuery.value(
+            QStringLiteral("wifi_password")
+            ).toString();
+        info.internetType = normalizedInternetType(
+            metadataQuery.value(QStringLiteral("internet_type")).toString()
+            );
+        info.zoomId = metadataQuery.value(
+            QStringLiteral("zoom_id")
+            ).toString();
+        info.zoomPassword = metadataQuery.value(
+            QStringLiteral("zoom_password")
+            ).toString();
+        info.projectionType = normalizedProjectionType(
+            metadataQuery.value(QStringLiteral("projection_type")).toString()
+            );
+        info.classGrade = metadataQuery.value(
+            QStringLiteral("class_grade")
+            ).toString();
+        info.classLevel = metadataQuery.value(
+            QStringLiteral("class_level")
+            ).toString();
+        info.readingBook = metadataQuery.value(
+            QStringLiteral("reading_book")
+            ).toString();
+        info.essayBook = metadataQuery.value(
+            QStringLiteral("essay_book")
+            ).toString();
+
+        const QString classColor = metadataQuery.value(
+            QStringLiteral("class_color")
+            ).toString();
+        if (!classColor.isEmpty())
+        {
+            info.classColor = classColor;
+        }
+
+        const QString fontColor = metadataQuery.value(
+            QStringLiteral("font_color")
+            ).toString();
+        if (!fontColor.isEmpty())
+        {
+            info.fontColor = fontColor;
+        }
+
+        info.notes = metadataQuery.value(
+            QStringLiteral("notes")
+            ).toString();
+        info.timeFillerActivities = metadataQuery.value(
+            QStringLiteral("time_filler_activities")
+            ).toString();
+    }
+    if (metadataQuery.lastError().isValid())
+    {
+        return std::unexpected(metadataQuery.lastError().text());
+    }
+    if (metadataCount != classIds.size())
+    {
+        return std::unexpected(QObject::tr(
+            "Loading class information records failed: metadata returned an incomplete class list."
+            ));
+    }
+
+    const auto loadTimes = [this, &classIds, &records, &requestedTable](
+        const QString& table,
+        const QString& action,
+        const bool intensive
+        ) -> Status
+    {
+        QSqlQuery scheduleQuery(m_database);
+        scheduleQuery.setForwardOnly(true);
+        const QString queryText = requestedTable + QStringLiteral(R"(
+            SELECT requested.class_id AS requested_class_id,
+                   requested.ordinal AS requested_ordinal,
+                   schedule.day,
+                   schedule.start_time,
+                   schedule.end_time
+            FROM requested
+            INNER JOIN %1 schedule
+            ON schedule.class_id = requested.class_id
+            ORDER BY requested.ordinal, schedule.id
+        )").arg(table);
+        const auto loaded = SqlQueryUtils::execute(
+            scheduleQuery,
+            queryText,
+            action,
+            QObject::tr("%1 classes").arg(classIds.size())
+            );
+        if (!loaded)
+        {
+            return std::unexpected(loaded.error().userMessage());
+        }
+
+        while (scheduleQuery.next())
+        {
+            const int classId = scheduleQuery.value(
+                QStringLiteral("requested_class_id")
+                ).toInt();
+            const int requestOrder = scheduleQuery.value(
+                QStringLiteral("requested_ordinal")
+                ).toInt();
+            if (requestOrder < 0
+                || requestOrder >= classIds.size()
+                || classIds[requestOrder] != classId)
+            {
+                return std::unexpected(QObject::tr(
+                    "Loading class information records failed: returned schedule order did not match the request."
+                    ));
+            }
+
+            ClassTime time;
+            time.day = scheduleQuery.value(QStringLiteral("day")).toString();
+            time.startTime = scheduleQuery.value(
+                QStringLiteral("start_time")
+                ).toString();
+            time.endTime = scheduleQuery.value(
+                QStringLiteral("end_time")
+                ).toString();
+            if (intensive)
+            {
+                records[requestOrder].intensiveTimes.append(std::move(time));
+            }
+            else
+            {
+                records[requestOrder].classTimes.append(std::move(time));
+            }
+        }
+
+        if (scheduleQuery.lastError().isValid())
+        {
+            return std::unexpected(scheduleQuery.lastError().text());
+        }
+        return {};
+    };
+
+    if (const Status loadedRegular = loadTimes(
+            QStringLiteral("class_times"),
+            QObject::tr("Loading regular class information schedules"),
+            false
+            ); !loadedRegular)
+    {
+        return std::unexpected(loadedRegular.error());
+    }
+
+    if (const Status loadedIntensive = loadTimes(
+            QStringLiteral("class_intensive_times"),
+            QObject::tr("Loading intensive class information schedules"),
+            true
+            ); !loadedIntensive)
+    {
+        return std::unexpected(loadedIntensive.error());
+    }
+
+    return records;
+}
+
 Result<ClassSubtitleReadRecord> ClassInfoRepository::loadClassSubtitleRecord(
     int classId
     )

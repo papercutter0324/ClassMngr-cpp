@@ -1444,10 +1444,13 @@ Result<ClassTransferPackage> ClassTransferRepository::buildPackage(
 
     struct PendingClassExport
     {
+        int classId = -1;
         int selectedIndex = -1;
         QString name;
         ClassInfo info;
+        QString infoError;
         Roster roster;
+        QString rosterError;
         QList<ClassTransferEvaluation> evaluations;
         QString evaluationError;
         int teacherId = -1;
@@ -1462,9 +1465,9 @@ Result<ClassTransferPackage> ClassTransferRepository::buildPackage(
     pendingClasses.reserve(classIds.size());
     QString selectionOrReadError;
 
-    // Gather the ordered class data prefix first. Stop on the first failure
-    // that is already observable; teacher errors are replayed against this
-    // prefix after their distinct profiles have been loaded in one batch.
+    // Resolve selections in order and stop at the first known selection or
+    // class lookup failure. Only this validated prefix is passed to the data
+    // batches, so a later invalid selection cannot mask an earlier failure.
     for (int index = 0; index < classIds.size(); ++index)
     {
         const int classId = classIds[index];
@@ -1485,40 +1488,125 @@ Result<ClassTransferPackage> ClassTransferRepository::buildPackage(
         }
 
         seenClasses.insert(classId);
-        const Result<ClassInfo> info = classInfoRepository.loadClassInfo(classId);
-        if (!info)
-        {
-            selectionOrReadError = info.error();
-            break;
-        }
-
-        const Result<Roster> roster = rosterRepository.loadRoster(classId);
-        if (!roster)
-        {
-            selectionOrReadError = roster.error();
-            break;
-        }
-
         PendingClassExport pending;
+        pending.classId = classId;
         pending.selectedIndex = index;
         pending.name = classroom->name;
-        pending.info = *info;
-        pending.roster = *roster;
-        pending.teacherId = info->teacherId;
+        pendingClasses.append(std::move(pending));
+    }
+
+    QList<int> exportClassIds;
+    exportClassIds.reserve(pendingClasses.size());
+    for (const PendingClassExport& pending : pendingClasses)
+    {
+        exportClassIds.append(pending.classId);
+    }
+
+    auto classInfoRecords =
+        classInfoRepository.loadClassInfoRecords(exportClassIds);
+    bool classInfoBatchMatchesRequest =
+        classInfoRecords.has_value()
+        && classInfoRecords->size() == pendingClasses.size();
+    if (classInfoBatchMatchesRequest)
+    {
+        for (qsizetype index = 0; index < pendingClasses.size(); ++index)
+        {
+            if (classInfoRecords->at(index).classId
+                != pendingClasses.at(index).classId)
+            {
+                classInfoBatchMatchesRequest = false;
+                break;
+            }
+        }
+    }
+
+    if (classInfoBatchMatchesRequest)
+    {
+        for (qsizetype index = 0; index < pendingClasses.size(); ++index)
+        {
+            pendingClasses[index].info =
+                std::move((*classInfoRecords)[index]);
+        }
+    }
+    else
+    {
+        for (PendingClassExport& pending : pendingClasses)
+        {
+            Result<ClassInfo> info =
+                classInfoRepository.loadClassInfo(pending.classId);
+            if (info)
+            {
+                pending.info = std::move(*info);
+            }
+            else
+            {
+                pending.infoError = info.error();
+            }
+        }
+    }
+
+    auto rosterRecords = rosterRepository.loadFullRosters(exportClassIds);
+    bool rosterBatchMatchesRequest =
+        rosterRecords.has_value()
+        && rosterRecords->size() == pendingClasses.size();
+    if (rosterBatchMatchesRequest)
+    {
+        for (qsizetype index = 0; index < pendingClasses.size(); ++index)
+        {
+            if (rosterRecords->at(index).classId
+                != pendingClasses.at(index).classId)
+            {
+                rosterBatchMatchesRequest = false;
+                break;
+            }
+        }
+    }
+
+    if (rosterBatchMatchesRequest)
+    {
+        for (qsizetype index = 0; index < pendingClasses.size(); ++index)
+        {
+            pendingClasses[index].roster =
+                std::move((*rosterRecords)[index].roster);
+        }
+    }
+    else
+    {
+        for (PendingClassExport& pending : pendingClasses)
+        {
+            Result<Roster> roster =
+                rosterRepository.loadRoster(pending.classId);
+            if (roster)
+            {
+                pending.roster = std::move(*roster);
+            }
+            else
+            {
+                pending.rosterError = roster.error();
+            }
+        }
+    }
+
+    // Discover the first known info/roster/evaluation failure in the original
+    // per-class sequence. Teacher IDs are collected only after info and roster
+    // succeed, and before evaluations, to retain their former read order.
+    for (PendingClassExport& pending : pendingClasses)
+    {
+        if (!pending.infoError.isEmpty() || !pending.rosterError.isEmpty())
+        {
+            break;
+        }
+
+        pending.teacherId = pending.info.teacherId;
         if (pending.teacherId > 0 && !seenTeachers.contains(pending.teacherId))
         {
             seenTeachers.insert(pending.teacherId);
             teacherIds.append(pending.teacherId);
         }
 
-        // The original per-class sequence looked up the assigned teacher
-        // before reading evaluations, so include this ID before recording an
-        // evaluation failure.
         pending.evaluations = loadEvaluations(
-            m_database, classId, &pending.evaluationError);
-        pendingClasses.append(std::move(pending));
-
-        if (!pendingClasses.last().evaluationError.isEmpty())
+            m_database, pending.classId, &pending.evaluationError);
+        if (!pending.evaluationError.isEmpty())
         {
             break;
         }
@@ -1575,10 +1663,19 @@ Result<ClassTransferPackage> ClassTransferRepository::buildPackage(
     }
 
     // Replay staged outcomes in their original order so an earlier teacher
-    // or evaluation failure keeps precedence over a later selection or read
-    // failure.
+    // or evaluation failure keeps precedence over a later info, roster,
+    // selection, or class lookup failure.
     for (const PendingClassExport& pending : pendingClasses)
     {
+        if (!pending.infoError.isEmpty())
+        {
+            return std::unexpected(pending.infoError);
+        }
+        if (!pending.rosterError.isEmpty())
+        {
+            return std::unexpected(pending.rosterError);
+        }
+
         if (pending.teacherId > 0)
         {
             if (!teacherBatchError.isEmpty())

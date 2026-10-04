@@ -28,11 +28,13 @@ public:
         QStringList columns;
     };
 
-    struct TemplatePrintReadRecord final
+    struct FullRosterReadRecord final
     {
         int classId = 0;
         Roster roster;
     };
+
+    using TemplatePrintReadRecord = FullRosterReadRecord;
 
     struct TemplatePrintBatchReadMetrics final
     {
@@ -113,6 +115,10 @@ public:
 
     [[nodiscard]] Result<QList<TemplatePrintReadRecord>>
     loadRostersForTemplatePrint(const QList<int>& classIds);
+    // Loads complete roster snapshots in request order, including widths and
+    // sparse row shape. Uses one column read and, when needed, one cell read.
+    [[nodiscard]] Result<QList<FullRosterReadRecord>>
+    loadFullRosters(const QList<int>& classIds);
     [[nodiscard]] const TemplatePrintBatchReadMetrics&
     templatePrintBatchReadMetrics() const noexcept;
 
@@ -171,6 +177,11 @@ private:
     [[nodiscard]] Result<int> loadMyClassesStudentCountRecord(int classId);
     [[nodiscard]] Result<SubPrepStudentCountReadEntry>
     loadSubPrepStudentCountRecord(int classId);
+    [[nodiscard]] Result<QList<FullRosterReadRecord>> loadFullRostersImpl(
+        const QList<int>& classIds,
+        TemplatePrintBatchReadMetrics* templatePrintMetrics,
+        bool templatePrintContext
+        );
 
     QSqlDatabase& m_database;
     MyClassesStudentCountBatchReadMetrics

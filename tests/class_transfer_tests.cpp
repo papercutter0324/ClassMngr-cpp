@@ -349,6 +349,10 @@ private slots:
     void exportSkipsRowQueryWhenNoEvaluationsExist();
     void exportFailsWhenEvaluationRowsCannotBeRead();
     void exportBatchesDistinctTeacherProfilesInFirstSeenOrder();
+    void exportBatchesFullClassInfoAndRosterInSelectionOrder();
+    void exportClassInfoBatchFailureFallsBackToFirstScalarError();
+    void exportRosterBatchFailureReplaysEarlierTeacherFailure();
+    void exportEarlierTeacherFailurePrecedesLaterInvalidSelection();
     void exportMissingTeacherPrecedesEvaluationReadFailure();
     void exportRosterReadFailurePrecedesMissingTeacher();
     void importsCompleteClassesAndDeduplicatesTeacher();
@@ -844,6 +848,362 @@ void ClassTransferTests::exportBatchesDistinctTeacherProfilesInFirstSeenOrder()
     QCOMPARE(package->classes[1].teacherKey, QStringLiteral("teacher-2"));
     QCOMPARE(package->classes[2].teacherKey, QStringLiteral("teacher-1"));
     QVERIFY(package->classes[3].teacherKey.isEmpty());
+}
+
+void ClassTransferTests::exportBatchesFullClassInfoAndRosterInSelectionOrder()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    DataService service;
+    QVERIFY(service.openDatabase(
+        directory.filePath(QStringLiteral("source.db"))).has_value());
+
+    const int firstTeacherId =
+        createdTeacherId(service, completeTeacher(QStringLiteral("First")));
+    const int secondTeacherId =
+        createdTeacherId(service, completeTeacher(QStringLiteral("Second")));
+    QVERIFY(firstTeacherId > 0);
+    QVERIFY(secondTeacherId > 0);
+
+    const int firstCreatedClass =
+        createdClassId(service, QStringLiteral("Created First"));
+    const int secondCreatedClass =
+        createdClassId(service, QStringLiteral("Created Second"));
+    const int classWithoutInfo =
+        createdClassId(service, QStringLiteral("Class Without Info"));
+    QVERIFY(firstCreatedClass > 0);
+    QVERIFY(secondCreatedClass > 0);
+    QVERIFY(classWithoutInfo > 0);
+
+    ClassInfo firstInfo = completeClassInfo(
+        firstCreatedClass,
+        firstTeacherId,
+        QStringLiteral("E4"),
+        QStringLiteral("Orion"),
+        QStringLiteral("Friday")
+        );
+    firstInfo.classTimes = {
+        {QStringLiteral("Friday"), QStringLiteral("3:00 PM"),
+         QStringLiteral("3:50 PM")},
+        {QStringLiteral("Monday"), QStringLiteral("4:00 PM"),
+         QStringLiteral("4:50 PM")},
+        {QStringLiteral("Wednesday"), QStringLiteral("5:00 PM"),
+         QStringLiteral("5:50 PM")}
+    };
+    firstInfo.intensiveTimes = {
+        {QStringLiteral("Tuesday"), QStringLiteral("9:00 AM"),
+         QStringLiteral("9:55 AM")},
+        {QStringLiteral("Thursday"), QStringLiteral("10:00 AM"),
+         QStringLiteral("10:55 AM")}
+    };
+    firstInfo.readingBook = QStringLiteral("Batch Reading Book");
+    firstInfo.essayBook = QStringLiteral("Batch Essay Book");
+    firstInfo.classColor = QStringLiteral("#112233");
+    firstInfo.fontColor = QStringLiteral("#DDEEFF");
+    firstInfo.notes = QStringLiteral("First class notes");
+    firstInfo.timeFillerActivities = QStringLiteral("First filler");
+    QVERIFY(service.saveClassInfo(firstInfo));
+
+    ClassInfo secondInfo = completeClassInfo(
+        secondCreatedClass,
+        secondTeacherId,
+        QStringLiteral("E5"),
+        QStringLiteral("Apollo"),
+        QStringLiteral("Tuesday")
+        );
+    secondInfo.classTimes = {
+        {QStringLiteral("Sunday"), QStringLiteral("1:00 PM"),
+         QStringLiteral("1:50 PM")},
+        {QStringLiteral("Monday"), QStringLiteral("2:00 PM"),
+         QStringLiteral("2:50 PM")}
+    };
+    secondInfo.intensiveTimes = {
+        {QStringLiteral("Saturday"), QStringLiteral("11:00 AM"),
+         QStringLiteral("11:55 AM")}
+    };
+    secondInfo.readingBook = QStringLiteral("Second Reading Book");
+    secondInfo.essayBook = QStringLiteral("Second Essay Book");
+    secondInfo.classColor = QStringLiteral("#445566");
+    secondInfo.fontColor = QStringLiteral("#AABBCC");
+    secondInfo.notes = QStringLiteral("Second class notes");
+    secondInfo.timeFillerActivities = QStringLiteral("Second filler");
+    QVERIFY(service.saveClassInfo(secondInfo));
+
+    Roster firstRoster;
+    firstRoster.columns = {
+        QStringLiteral("English"),
+        QStringLiteral("Korean"),
+        QStringLiteral("Memo")
+    };
+    firstRoster.columnWidths = {171, 219, 263};
+    firstRoster.rows = {
+        {QStringLiteral("Avery"), QStringLiteral("First Student"),
+         QStringLiteral("Row zero")},
+        {QString(), QString(), QString()},
+        {QString(), QString(), QString()},
+        {QString(), QString(), QString()},
+        {QStringLiteral("Sparse row"), QString(), QStringLiteral("Last cell")}
+    };
+    QVERIFY(service.saveRoster(firstCreatedClass, firstRoster));
+
+    Roster secondRoster;
+    secondRoster.columns = {
+        QStringLiteral("Student"),
+        QStringLiteral("Status")
+    };
+    secondRoster.columnWidths = {147, 231};
+    secondRoster.rows = {
+        {QStringLiteral("Second Student"), QStringLiteral("Active")}
+    };
+    QVERIFY(service.saveRoster(secondCreatedClass, secondRoster));
+
+    const QList<int> selectedClassIds{
+        secondCreatedClass, firstCreatedClass, classWithoutInfo};
+    const auto package = service.buildClassTransferPackage(selectedClassIds);
+    QVERIFY2(package.has_value(),
+             package ? "" : qPrintable(package.error()));
+    QCOMPARE(package->classes.size(), 3);
+    QCOMPARE(package->classes[0].name, QStringLiteral("Created Second"));
+    QCOMPARE(package->classes[1].name, QStringLiteral("Created First"));
+    QCOMPARE(package->classes[2].name, QStringLiteral("Class Without Info"));
+
+    const auto compareExportedInfo = [](
+        const ClassInfo& actual,
+        const ClassInfo& persisted
+        )
+    {
+        ClassInfo expected = persisted;
+        expected.classId = -1;
+        expected.teacherId = -1;
+        expected.teacherKr.clear();
+        expected.teacherEn.clear();
+        expected.roomNumber.clear();
+        expected.wifiName.clear();
+        expected.wifiPassword.clear();
+        expected.internetType.clear();
+        expected.zoomId.clear();
+        expected.zoomPassword.clear();
+        expected.projectionType.clear();
+
+        QCOMPARE(actual.classId, expected.classId);
+        QCOMPARE(actual.teacherId, expected.teacherId);
+        QCOMPARE(actual.teacherKr, expected.teacherKr);
+        QCOMPARE(actual.teacherEn, expected.teacherEn);
+        QCOMPARE(actual.teacherPreferredName, expected.teacherPreferredName);
+        QCOMPARE(actual.roomNumber, expected.roomNumber);
+        QCOMPARE(actual.wifiName, expected.wifiName);
+        QCOMPARE(actual.wifiPassword, expected.wifiPassword);
+        QCOMPARE(actual.internetType, expected.internetType);
+        QCOMPARE(actual.zoomId, expected.zoomId);
+        QCOMPARE(actual.zoomPassword, expected.zoomPassword);
+        QCOMPARE(actual.projectionType, expected.projectionType);
+        QCOMPARE(actual.classGrade, expected.classGrade);
+        QCOMPARE(actual.classLevel, expected.classLevel);
+        QCOMPARE(actual.readingBook, expected.readingBook);
+        QCOMPARE(actual.essayBook, expected.essayBook);
+        QCOMPARE(actual.classColor, expected.classColor);
+        QCOMPARE(actual.fontColor, expected.fontColor);
+        QCOMPARE(actual.notes, expected.notes);
+        QCOMPARE(actual.timeFillerActivities, expected.timeFillerActivities);
+        QCOMPARE(actual.classTimes.size(), expected.classTimes.size());
+        for (qsizetype index = 0;
+             index < qMin(actual.classTimes.size(), expected.classTimes.size());
+             ++index)
+        {
+            QCOMPARE(actual.classTimes[index].day,
+                     expected.classTimes[index].day);
+            QCOMPARE(actual.classTimes[index].startTime,
+                     expected.classTimes[index].startTime);
+            QCOMPARE(actual.classTimes[index].endTime,
+                     expected.classTimes[index].endTime);
+        }
+        QCOMPARE(actual.intensiveTimes.size(), expected.intensiveTimes.size());
+        for (qsizetype index = 0;
+             index < qMin(actual.intensiveTimes.size(),
+                          expected.intensiveTimes.size());
+             ++index)
+        {
+            QCOMPARE(actual.intensiveTimes[index].day,
+                     expected.intensiveTimes[index].day);
+            QCOMPARE(actual.intensiveTimes[index].startTime,
+                     expected.intensiveTimes[index].startTime);
+            QCOMPARE(actual.intensiveTimes[index].endTime,
+                     expected.intensiveTimes[index].endTime);
+        }
+    };
+
+    const Result<ClassInfo> expectedSecondInfo =
+        service.loadClassInfo(secondCreatedClass);
+    const Result<ClassInfo> expectedFirstInfo =
+        service.loadClassInfo(firstCreatedClass);
+    const Result<ClassInfo> expectedEmptyInfo =
+        service.loadClassInfo(classWithoutInfo);
+    QVERIFY(expectedSecondInfo);
+    QVERIFY(expectedFirstInfo);
+    QVERIFY(expectedEmptyInfo);
+    compareExportedInfo(package->classes[0].info, *expectedSecondInfo);
+    compareExportedInfo(package->classes[1].info, *expectedFirstInfo);
+    compareExportedInfo(package->classes[2].info, *expectedEmptyInfo);
+    QCOMPARE(package->classes[0].info.classTimes[0].day,
+             QStringLiteral("Sunday"));
+    QCOMPARE(package->classes[0].info.classTimes[1].day,
+             QStringLiteral("Monday"));
+    QCOMPARE(package->classes[1].info.classTimes[0].day,
+             QStringLiteral("Friday"));
+    QCOMPARE(package->classes[1].info.classTimes[1].day,
+             QStringLiteral("Monday"));
+    QCOMPARE(package->classes[1].info.classTimes[2].day,
+             QStringLiteral("Wednesday"));
+    QCOMPARE(package->classes[2].info.classColor, QStringLiteral("#FFFFFF"));
+    QCOMPARE(package->classes[2].info.fontColor, QStringLiteral("#000000"));
+
+    const auto compareRoster = [](
+        const Roster& actual,
+        const Roster& expected
+        )
+    {
+        QCOMPARE(actual.columns, expected.columns);
+        QCOMPARE(actual.columnWidths, expected.columnWidths);
+        QCOMPARE(actual.rows.size(), expected.rows.size());
+        for (qsizetype index = 0;
+             index < qMin(actual.rows.size(), expected.rows.size());
+             ++index)
+        {
+            QCOMPARE(actual.rows[index], expected.rows[index]);
+        }
+    };
+    const Result<Roster> expectedSecondRoster =
+        service.loadRoster(secondCreatedClass);
+    const Result<Roster> expectedFirstRoster =
+        service.loadRoster(firstCreatedClass);
+    const Result<Roster> expectedEmptyRoster =
+        service.loadRoster(classWithoutInfo);
+    QVERIFY(expectedSecondRoster);
+    QVERIFY(expectedFirstRoster);
+    QVERIFY(expectedEmptyRoster);
+    compareRoster(package->classes[0].roster, *expectedSecondRoster);
+    compareRoster(package->classes[1].roster, *expectedFirstRoster);
+    compareRoster(package->classes[2].roster, *expectedEmptyRoster);
+    QCOMPARE(package->classes[1].roster.rows.size(), 5);
+    QCOMPARE(package->classes[1].roster.rows[4][0],
+             QStringLiteral("Sparse row"));
+    QCOMPARE(package->classes[1].roster.rows[4][2],
+             QStringLiteral("Last cell"));
+}
+
+void ClassTransferTests::exportRosterBatchFailureReplaysEarlierTeacherFailure()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    DataService service;
+    QVERIFY(service.openDatabase(
+        directory.filePath(QStringLiteral("source.db"))).has_value());
+
+    const int teacherId = createdTeacherId(service, completeTeacher());
+    const int firstClass = addCompleteClass(
+        service, teacherId, QStringLiteral("No Column Class"),
+        QStringLiteral("E4"), QStringLiteral("Orion"), QStringLiteral("Monday"),
+        QStringLiteral("Student"));
+    const int secondClass = addCompleteClass(
+        service, teacherId, QStringLiteral("Roster Data Failure Class"),
+        QStringLiteral("E5"), QStringLiteral("Apollo"), QStringLiteral("Tuesday"),
+        QStringLiteral("Second Student"));
+    QVERIFY(firstClass > 0);
+    QVERIFY(secondClass > 0);
+    QVERIFY(service.saveRoster(firstClass, Roster{}));
+
+    QSqlQuery disableForeignKeys(service.databaseSession()->database());
+    QVERIFY2(disableForeignKeys.exec(QStringLiteral("PRAGMA foreign_keys=OFF")),
+             qPrintable(disableForeignKeys.lastError().text()));
+    QSqlQuery setMissingTeacher(service.databaseSession()->database());
+    setMissingTeacher.prepare(QStringLiteral(
+        "UPDATE class_info SET teacher_id=? WHERE class_id=?"));
+    setMissingTeacher.addBindValue(900003);
+    setMissingTeacher.addBindValue(firstClass);
+    QVERIFY2(setMissingTeacher.exec(),
+             qPrintable(setMissingTeacher.lastError().text()));
+    QSqlQuery enableForeignKeys(service.databaseSession()->database());
+    QVERIFY2(enableForeignKeys.exec(QStringLiteral("PRAGMA foreign_keys=ON")),
+             qPrintable(enableForeignKeys.lastError().text()));
+
+    QSqlQuery dropRosterData(service.databaseSession()->database());
+    QVERIFY2(dropRosterData.exec(QStringLiteral("DROP TABLE roster_data")),
+             qPrintable(dropRosterData.lastError().text()));
+
+    const auto package = service.buildClassTransferPackage(
+        {firstClass, secondClass});
+    QVERIFY(!package.has_value());
+    QVERIFY(package.error().contains(QStringLiteral("Loading teacher failed")));
+    QVERIFY(package.error().contains(QStringLiteral("900003")));
+}
+
+void ClassTransferTests::exportClassInfoBatchFailureFallsBackToFirstScalarError()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    DataService service;
+    QVERIFY(service.openDatabase(
+        directory.filePath(QStringLiteral("source.db"))).has_value());
+
+    const int teacherId = createdTeacherId(service, completeTeacher());
+    const int firstClass = addCompleteClass(
+        service, teacherId, QStringLiteral("First Schedule Failure"),
+        QStringLiteral("E4"), QStringLiteral("Orion"), QStringLiteral("Monday"),
+        QStringLiteral("Student"));
+    const int secondClass = addCompleteClass(
+        service, teacherId, QStringLiteral("Second Schedule Failure"),
+        QStringLiteral("E5"), QStringLiteral("Apollo"), QStringLiteral("Tuesday"),
+        QStringLiteral("Second Student"));
+    QVERIFY(firstClass > 0);
+    QVERIFY(secondClass > 0);
+
+    QSqlQuery dropSchedules(service.databaseSession()->database());
+    QVERIFY2(dropSchedules.exec(QStringLiteral("DROP TABLE class_times")),
+             qPrintable(dropSchedules.lastError().text()));
+
+    const auto package = service.buildClassTransferPackage(
+        {firstClass, secondClass});
+    QVERIFY(!package.has_value());
+    QVERIFY(package.error().contains(
+        QStringLiteral("Loading regular class times failed")));
+    QVERIFY(package.error().contains(QString::number(firstClass)));
+    QVERIFY(!package.error().contains(QString::number(secondClass)));
+}
+
+void ClassTransferTests::exportEarlierTeacherFailurePrecedesLaterInvalidSelection()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    DataService service;
+    QVERIFY(service.openDatabase(
+        directory.filePath(QStringLiteral("source.db"))).has_value());
+
+    const int teacherId = createdTeacherId(service, completeTeacher());
+    const int classId = addCompleteClass(
+        service, teacherId, QStringLiteral("Teacher Before Invalid Selection"),
+        QStringLiteral("E4"), QStringLiteral("Orion"), QStringLiteral("Monday"),
+        QStringLiteral("Student"));
+    QVERIFY(classId > 0);
+
+    QSqlQuery disableForeignKeys(service.databaseSession()->database());
+    QVERIFY2(disableForeignKeys.exec(QStringLiteral("PRAGMA foreign_keys=OFF")),
+             qPrintable(disableForeignKeys.lastError().text()));
+    QSqlQuery setMissingTeacher(service.databaseSession()->database());
+    setMissingTeacher.prepare(QStringLiteral(
+        "UPDATE class_info SET teacher_id=? WHERE class_id=?"));
+    setMissingTeacher.addBindValue(900004);
+    setMissingTeacher.addBindValue(classId);
+    QVERIFY2(setMissingTeacher.exec(),
+             qPrintable(setMissingTeacher.lastError().text()));
+    QSqlQuery enableForeignKeys(service.databaseSession()->database());
+    QVERIFY2(enableForeignKeys.exec(QStringLiteral("PRAGMA foreign_keys=ON")),
+             qPrintable(enableForeignKeys.lastError().text()));
+
+    const auto package = service.buildClassTransferPackage({classId, 0});
+    QVERIFY(!package.has_value());
+    QVERIFY(package.error().contains(QStringLiteral("Loading teacher failed")));
+    QVERIFY(package.error().contains(QStringLiteral("900004")));
+    QVERIFY(!package.error().contains(QStringLiteral("invalid or duplicate class")));
 }
 
 void ClassTransferTests::exportMissingTeacherPrecedesEvaluationReadFailure()
