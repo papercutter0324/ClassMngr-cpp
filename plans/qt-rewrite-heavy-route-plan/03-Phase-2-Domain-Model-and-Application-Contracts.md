@@ -18,9 +18,9 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-05
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F328 is selected to batch Class Transfer preview
-  destination-matching inputs while preserving class order, conditional
-  teacher-name reads, matching behavior, and errors.
+- Current note: F329 is selected to batch Class Transfer package-export
+  assigned-teacher profile reads while preserving first-seen teacher keys,
+  profile identity, and transaction errors.
 
 ### Slice discovery batches
 
@@ -50,16 +50,14 @@ Accepted slices are removed from active tracking; their implementation and accep
 
 #### Active batch: Batch 6
 
-1. F328 - Batch Class Transfer preview destination-matching inputs; preserve
-   class order, conditional teacher-name reads, matching behavior, and errors.
-2. F329 - Batch Class Transfer package-export assigned-teacher profiles;
+1. F329 - Batch Class Transfer package-export assigned-teacher profiles;
    preserve first-seen teacher keys, profile identity, and transaction errors.
-3. F330 - Batch Class Transfer package-export class-information and full
+2. F330 - Batch Class Transfer package-export class-information and full
    roster reads; preserve class order, full output fields, sparse rows, and
    first-failure behavior.
-4. F331 - Purpose-fit selected-teacher display reads for Class Notes and
+3. F331 - Purpose-fit selected-teacher display reads for Class Notes and
    Co-Teacher pages; preserve preferred-name fallback and per-page errors.
-5. F332 - Purpose-fit class-detail reads for Class Notes and Co-Teacher pages;
+4. F332 - Purpose-fit class-detail reads for Class Notes and Co-Teacher pages;
     preserve consumed class/schedule fields and per-page read behavior.
 
 #### F299 completeness audit checkpoint
@@ -222,21 +220,24 @@ No new v2 production path depends on DataService, MainWindow, PageManager, or a 
 
 Earlier verified slices and cumulative exit-gate snapshots are archived in the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 
-## Latest Progress Update - 2026-10-05 (F327 accepted; F328 selected)
+## Latest Progress Update - 2026-10-05 (F328 accepted; F329 selected)
 
-F327, committed as
-`e4409e917f9cdaadfeefe14ef0cdfa80129be569`, adds a purpose-fit teacher read
-for Schedule Import containing only ID, Korean name, and room number, ordered
-by English name. The current-state snapshot port and apply validation use it
-instead of loading full teacher records, preserving repository order,
-Korean-name matching, room data, and failure behavior; preview reads remain
-unchanged.
+F328, committed as
+`940d4711eb872321df6047b2e66b3c23503e13e0`, batches Class Transfer preview
+destination class information through `loadClassesNavigationRecords()`. For a
+nonempty destination set, this ordered batch uses one metadata statement and
+two schedule statements, independent of destination count; it is skipped when
+there are no destinations. The navigation metadata batch and initial
+`getAllTeachers()` query still read teacher names. The additional per-destination
+`getTeacher()` profile lookup remains conditional on a positive assigned
+teacher ID and a matching source-course grade/level. Destination order,
+matching, and error propagation are preserved.
 
-The snapshot regression preserves repository order and raw Korean-name and
-room values, and checks one query. The apply regression verifies a teacher-read
-failure rolls back before writes. Fresh independent Windows x64 Debug/Ninja/
-MSVC configure validated one owner for 1,329 handwritten sources; both the
-snapshot-port and `ClassMngrScheduleImportTests` targets built, focused CTest
-passed 2/2, and `git diff --check` passed. Evidence is under
-`build/f327_independent_20261005_ninja/`. No full suite ran. Phase 2 remains In
-Progress/Open; Gates 1 and 2 remain Partial.
+Tests cover destination order, conditional per-destination profile lookup,
+batch-read failure, and the no-destination short circuit. Fresh independent
+Windows x64 Debug/Ninja/MSVC configure validated one owner for 1,329
+handwritten sources; `ClassMngrClassTransferTests` built in 316 steps and
+focused CTest passed 1/1.
+`git diff --check` passed. The CTest log is under
+`build/f328_tester_20261005_ninja/Testing/Temporary/LastTest.log`. No full
+suite ran. Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial.

@@ -11685,3 +11685,28 @@ passed 2/2, and `git diff --check` passed. Evidence is under
 to batch Class Transfer preview destination-matching inputs while preserving
 class order, conditional teacher-name reads, matching behavior, and errors.
 Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial.
+
+### F328 accepted / F329 selected - 2026-10-05
+
+F328, committed as
+`940d4711eb872321df6047b2e66b3c23503e13e0`, batches Class Transfer preview
+destination class information through `loadClassesNavigationRecords()`. For a
+nonempty destination set, this ordered batch uses one metadata statement and
+two schedule statements, independent of destination count; it is skipped when
+there are no destinations. The navigation metadata batch and initial
+`getAllTeachers()` query still read teacher names. The additional per-destination
+`getTeacher()` profile lookup remains conditional on a positive assigned
+teacher ID and a matching source-course grade/level. Destination order,
+matching, and error propagation are preserved.
+
+Tests cover destination order, conditional per-destination profile lookup,
+batch-read failure, and the no-destination short circuit. Fresh independent
+Windows x64 Debug/Ninja/MSVC configure validated one owner for 1,329
+handwritten sources; `ClassMngrClassTransferTests` built in 316 steps and
+focused CTest passed 1/1.
+`git diff --check` passed. The CTest log is under
+`build/f328_tester_20261005_ninja/Testing/Temporary/LastTest.log`. No full
+suite ran. F329 is selected to batch Class Transfer package-export assigned-
+teacher profiles while preserving first-seen teacher keys, profile identity,
+and transaction errors. Phase 2 remains In Progress/Open; Gates 1 and 2
+remain Partial.
