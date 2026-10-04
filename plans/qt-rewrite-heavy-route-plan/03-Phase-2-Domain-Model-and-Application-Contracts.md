@@ -18,9 +18,9 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-05
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F330 is selected to batch Class Transfer package-export
-  class-information and full-roster reads while preserving class order, full
-  output fields, sparse rows, and first-failure behavior.
+- Current note: F331 is selected for purpose-fit selected-teacher display reads
+  for Class Notes and Co-Teacher pages, preserving preferred-name fallback and
+  per-page errors.
 
 ### Slice discovery batches
 
@@ -50,12 +50,9 @@ Accepted slices are removed from active tracking; their implementation and accep
 
 #### Active batch: Batch 6
 
-1. F330 - Batch Class Transfer package-export class-information and full
-   roster reads; preserve class order, full output fields, sparse rows, and
-   first-failure behavior.
-2. F331 - Purpose-fit selected-teacher display reads for Class Notes and
+1. F331 - Purpose-fit selected-teacher display reads for Class Notes and
    Co-Teacher pages; preserve preferred-name fallback and per-page errors.
-3. F332 - Purpose-fit class-detail reads for Class Notes and Co-Teacher pages;
+2. F332 - Purpose-fit class-detail reads for Class Notes and Co-Teacher pages;
     preserve consumed class/schedule fields and per-page read behavior.
 
 #### F299 completeness audit checkpoint
@@ -218,22 +215,23 @@ No new v2 production path depends on DataService, MainWindow, PageManager, or a 
 
 Earlier verified slices and cumulative exit-gate snapshots are archived in the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 
-## Latest Progress Update - 2026-10-05 (F329 accepted; F330 selected)
+## Latest Progress Update - 2026-10-05 (F330 accepted; F331 selected)
 
-F329, committed as
-`95f96cea27d685100422f5a7cdd7b5f66e3db893`, batches distinct positive teacher
-profiles in first-seen order during Class Transfer package export. It preserves
-teacher keys, repeated assignments, complete teacher identity and profile
-fields, and the returned error precedence. The batch query bound was confirmed
-by source inspection because `buildPackage()`'s local repository has no metrics.
+F330, committed as
+`a8d3004323d9b399fcf8f83bf845362c43a807bb`, batches Class Transfer package-
+export class information and full rosters. The class-info batch preserves all
+fields/defaults and ordered regular/intensive schedules; the roster batch
+preserves columns, widths, and sparse rows. `buildPackage()` falls back to
+ordered scalar reads after global or malformed batch results and replays
+failures in info → roster → teacher → evaluation order, with selection and
+class-lookup failures deferred.
 
-Tests verify teacher keys and repeated assignments, full profile identity and
-fields, and teacher/evaluation/roster error precedence. Class-info precedence
-and transaction rollback have no dedicated assertions; source and RAII paths
-were reviewed. Staging may read later classes in the processed prefix before
-replaying an earlier teacher error, but the read-only work stays in the
-existing transaction and returned precedence is preserved. Fresh VS2026/Ninja
-configure validated ownership for 1,329 handwritten sources; the final
-incremental `ClassMngrClassTransferTests` build succeeded and focused CTest
-passed 1/1. `git diff --check` passed. No full suite ran. Phase 2 remains In
-Progress/Open; Gates 1 and 2 remain Partial.
+Fresh VS2026 x64/Ninja configure validated ownership for 1,329 handwritten
+sources; `ClassMngrClassTransferTests` and
+`ClassMngrRosterTemplatePrintServiceTests` built, focused CTest passed 2/2,
+and `git diff --check` passed. No full suite ran. Successful-path query bounds
+were source-inspected because there are no integration metrics: three
+class-info statements and one roster-column statement plus an optional cell
+statement. No synthetic misordered batch-result injection, direct query-count
+metric, or export selection-size bound for the SQL `VALUES` inputs was
+established. Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial.

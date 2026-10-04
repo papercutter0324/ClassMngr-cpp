@@ -11733,3 +11733,27 @@ batch Class Transfer package-export class-information and full-roster reads
 while preserving class order, full output fields, sparse rows, and
 first-failure behavior. Phase 2 remains In Progress/Open; Gates 1 and 2 remain
 Partial.
+
+### F330 accepted / F331 selected - 2026-10-05
+
+F330, committed as
+`a8d3004323d9b399fcf8f83bf845362c43a807bb`, batches Class Transfer package-
+export class information and full rosters. The class-info batch preserves all
+fields/defaults and ordered regular/intensive schedules; the roster batch
+preserves columns, widths, and sparse rows. `buildPackage()` falls back to
+ordered scalar reads after global or malformed batch results and replays
+failures in info → roster → teacher → evaluation order, with selection and
+class-lookup failures deferred.
+
+Fresh VS2026 x64/Ninja configure validated ownership for 1,329 handwritten
+sources; `ClassMngrClassTransferTests` and
+`ClassMngrRosterTemplatePrintServiceTests` built, focused CTest passed 2/2,
+and `git diff --check` passed. No full suite ran. Successful-path query bounds
+were source-inspected because there are no integration metrics: three
+class-info statements and one roster-column statement plus an optional cell
+statement. No synthetic misordered batch-result injection, direct query-count
+metric, or export selection-size bound for the SQL `VALUES` inputs was
+established. F331 is selected for purpose-fit selected-teacher display reads
+for Class Notes and Co-Teacher pages, preserving preferred-name fallback and
+per-page errors. Phase 2 remains In Progress/Open; Gates 1 and 2 remain
+Partial.

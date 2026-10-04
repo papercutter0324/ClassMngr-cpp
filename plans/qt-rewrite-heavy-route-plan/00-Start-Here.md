@@ -54,11 +54,10 @@
   per-class subtitle reads after F261), and F304 (batch RosterPrintDialog
   extra-column roster reads after F264) and F305 (batch transfer-menu target
   metadata, capacity, and roster reads after F259/F265) are accepted; F305
-  remains distinct from F273's transfer-time target read. F306-F329 are
-  accepted; F330 (batch Class Transfer package-export class-information and
-  full-roster reads while preserving class order, full output fields, sparse
-  rows, and first-failure behavior) is selected. Batch 6 (F330-F332) remains
-  active.
+  remains distinct from F273's transfer-time target read. F306-F330 are
+  accepted; F331 (purpose-fit selected-teacher display reads for Class Notes
+  and Co-Teacher pages, preserving preferred-name fallback and per-page
+  errors) is selected. Batch 6 (F331-F332) remains active.
   Gates 1 and 2 remain Partial, with broader feature
   migration, parity, and 96-class Release memory evidence still open.
   See the
