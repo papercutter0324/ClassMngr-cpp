@@ -18,10 +18,10 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-04
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F317 is accepted. F318 is selected to batch roster-template
-  print class-information and roster reads while preserving class order,
-  current-class name fallback, printed fields, and abort-on-read-failure
-  behavior.
+- Current note: F318 is accepted. F319 is selected to batch Class Analytics
+  typed evaluation reads while preserving canonical evaluation order,
+  missing-evaluation-as-empty behavior, roster filtering, YTD cohorts, and
+  whole-dashboard failure behavior.
 
 ### Slice discovery batches
 
@@ -51,18 +51,15 @@ Accepted slices are removed from active tracking; their implementation and accep
 
 #### Active batch: Batch 5
 
-1. F318 - Batch roster-template print per-class class-information and roster
-   reads; preserve class order, current-class name fallback, printed fields,
-   and abort-on-read-failure behavior.
-2. F319 - Batch Class Analytics typed evaluation reads; preserve canonical
+1. F319 - Batch Class Analytics typed evaluation reads; preserve canonical
    evaluation order, missing-evaluation-as-empty behavior, roster filtering,
    YTD cohorts, and whole-dashboard failure behavior.
-3. F320 - Purpose-fit Speaking Evaluation roster-name projection; preserve
+2. F320 - Purpose-fit Speaking Evaluation roster-name projection; preserve
    English/Korean column selection, row order, trimming, and name-pair
    matching behavior.
-4. F321 - Purpose-fit Native English and GS Team birthday projections;
+3. F321 - Purpose-fit Native English and GS Team birthday projections;
    preserve schedule fields, source ordering, and current warning behavior.
-5. F322 - Reduce Class Analytics roster-name fixed SQL read sequence;
+4. F322 - Reduce Class Analytics roster-name fixed SQL read sequence;
    preserve sparse-row sizing and the compact English/Korean projection.
 
 No other slices were found.
@@ -226,29 +223,29 @@ No new v2 production path depends on DataService, MainWindow, PageManager, or a 
 
 Earlier verified slices and cumulative exit-gate snapshots are archived in the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 
-## Latest Progress Update - 2026-10-04 (F317 accepted; F318 selected)
+## Latest Progress Update - 2026-10-04 (F318 accepted; F319 selected)
 
-F317, committed as
-`c17bfcc9d25030984b485c44c7c21483c575ff9a`, removes per-class teacher-profile
-reads from the Sub Prep roster-output source port. It gathers distinct
-positive teacher IDs after schedule-scope filtering and in selected-class
-order, then uses the existing batched profile repository read once. The port
-preserves first-seen association, profile fields, identity checks, errors,
-and all-or-failure source behavior.
+F318, committed as
+`76b8b85fedc4e78c4a8e5990024e9469ff10c67a`, adds a print-specific batch
+source query for full class-information/schedule and roster data. The normal
+path uses two ordered class-info reads, a roster columns/widths read, and a
+cell read only when at least one requested roster has columns. It preserves
+class order, missing-class-info blank defaults with schedule data, empty
+rosters, sparse row padding, printed fields, and the current-class name
+fallback. Failed or invalid batch results use the original per-class
+class-info-then-roster path, preserving failure order and no-partial-output.
 
 Executor self-check and fresh independent Windows x64 Debug/Ninja/MSVC
-verification passed. The independent configure validated 1,305 handwritten
-source files; the Sub Prep Platform, Application, and package-service targets
-built. Focused CTest passed 3/3. Tests cover batch count, first-seen ordering
-and deduplication, empty teacher assignments, stale-profile failure, and no
-partial source. An independent review found the out-of-scope teacher was not
-distinct in the scope fixture; that fixture was strengthened with a distinct
-teacher and independently rechecked, passing the Platform target 1/1.
-`git diff --check` passed. Logs are under build/f317v/ and
-build/p2_f317_coverage_*; the full suite was not run.
+verification passed. The independent configure validated 1,311 handwritten
+source files; the new Application/Platform batch targets, print service, and
+existing class-info/roster query and adapter targets built. Focused CTest
+passed 7/7, and `git diff --check` passed. Logs are under build/f318v/;
+executor logs are under build/. The full suite was not run; malformed batch
+identity fallback was source-reviewed and the error/fallback behavior was
+covered separately, but not in a combined service test.
 
-F318 is selected from Batch 5 to batch roster-template print per-class
-class-information and roster reads while preserving class order, current-class
-name fallback, printed fields, and abort-on-read-failure behavior. F298 remains
-deferred pending its warning/navigation decision. Phase 2 remains
+F319 is selected from Batch 5 to batch Class Analytics typed evaluation reads,
+preserving canonical evaluation order, missing-evaluation-as-empty behavior,
+roster filtering, YTD cohorts, and whole-dashboard failure behavior. F298
+remains deferred pending its warning/navigation decision. Phase 2 remains
 In Progress/Open; Gates 1 and 2 remain Partial.

@@ -11428,3 +11428,30 @@ class-information and roster reads while preserving class order, current-class
 name fallback, printed fields, and abort-on-read-failure behavior. F298 remains
 deferred pending its warning/navigation decision. Phase 2 remains
 In Progress/Open; Gates 1 and 2 remain Partial.
+
+### Progress update - 2026-10-04 (F318 accepted; F319 selected)
+
+F318, committed as
+`76b8b85fedc4e78c4a8e5990024e9469ff10c67a`, adds a print-specific batch
+source query for full class-information/schedule and roster data. The normal
+path uses two ordered class-info reads, a roster columns/widths read, and a
+cell read only when at least one requested roster has columns. It preserves
+class order, missing-class-info blank defaults with schedule data, empty
+rosters, sparse row padding, printed fields, and the current-class name
+fallback. Failed or invalid batch results use the original per-class
+class-info-then-roster path, preserving failure order and no-partial-output.
+
+Executor self-check and fresh independent Windows x64 Debug/Ninja/MSVC
+verification passed. The independent configure validated 1,311 handwritten
+source files; the new Application/Platform batch targets, print service, and
+existing class-info/roster query and adapter targets built. Focused CTest
+passed 7/7, and `git diff --check` passed. Logs are under build/f318v/;
+executor logs are under build/. The full suite was not run; malformed batch
+identity fallback was source-reviewed and the error/fallback behavior was
+covered separately, but not in a combined service test.
+
+F319 is selected from Batch 5 to batch Class Analytics typed evaluation reads,
+preserving canonical evaluation order, missing-evaluation-as-empty behavior,
+roster filtering, YTD cohorts, and whole-dashboard failure behavior. F298
+remains deferred pending its warning/navigation decision. Phase 2 remains
+In Progress/Open; Gates 1 and 2 remain Partial.
