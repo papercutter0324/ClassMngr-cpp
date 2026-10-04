@@ -11083,3 +11083,30 @@ score-import read. F298 remains deferred pending the read-failure
 warning/navigation decision, and F299's separate completeness audit remains
 distinct from Batch 3 discovery. Phase 2 remains In Progress/Open; Gates 1 and
 2 remain Partial.
+
+### Progress update - 2026-10-04 (F306 accepted; F307 selected)
+
+F306, committed as d5b8710a7ab6c457a6ad4394e98c4ee69ef5e2db, adds a typed batch
+Application query/port and an active-session Platform adapter for My Classes
+compact class information. ClassInfoRepository reads metadata, regular
+schedules, and intensive schedules in one batch call using three set-based
+statements, preserving class-list order and schedule row order. Each class
+keeps its own success or failure result. Missing metadata remains a successful default;
+batch statement failure retries class reads individually. The page preserves
+its silent default fallback, and roster counts and full teacher profiles
+remain separate inputs.
+
+Executor self-check passed. Fresh independent Windows x64 Debug/Ninja configure
+validated 1,289 handwritten source files; ClassMngr and the affected page,
+Application, and Platform targets built. Focused CTest passed 3/3:
+ClassMngrMyClassesPageTests,
+ClassMngrNextApplicationMyClassesClassInformationBatchReadQueryTests, and
+ClassMngrNextPlatformApplicationServicesMyClassesClassInformationBatchReadPortTests.
+git diff --check passed. The full suite and other platforms were not run.
+Independent logs are under build/f306v/ (configure.log, build.log, ctest.log);
+executor logs are under build/p2_f291_impl_ninja/ and build/.
+
+F307 is selected to batch My Classes assigned-teacher profile reads after F270,
+preserving class-to-teacher association, class order, and profile-failure
+behavior. F308-F315 remain ordered in Batch 4. Phase 2 remains In Progress/Open;
+Gates 1 and 2 remain Partial.

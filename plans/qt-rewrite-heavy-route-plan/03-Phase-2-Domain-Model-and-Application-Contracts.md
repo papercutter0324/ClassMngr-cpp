@@ -18,11 +18,11 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-04
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F306 is selected to batch My Classes compact class-information
-  reads after F291, preserving class-info/default/failure outcomes separately
-  from roster and teacher inputs. Batch 4 (F306-F315) is recorded; at F314
-  start, discover Batch 5 and reconsider the fixed up-to-four-evaluation
-  roster score-import read.
+- Current note: F306 is accepted. F307 is selected to batch My Classes
+  assigned-teacher profile reads after F270, preserving class-to-teacher
+  association, class order, and profile-failure behavior. F308-F315 remain in
+  Batch 4; at F314 start, discover Batch 5 and reconsider the fixed
+  up-to-four-evaluation roster score-import read.
 
 ### Slice discovery batches
 
@@ -52,37 +52,34 @@ Accepted slices are removed from active tracking; their implementation and accep
 
 #### Active batch: Batch 4
 
-1. F306 - Batch My Classes compact per-class class-information reads after
-      F291; preserve class-info/default/failure outcome separately from roster
-      and teacher inputs.
-2. F307 - Batch My Classes assigned-teacher profile reads after F270;
-      preserve class-to-teacher association, class order, and profile-failure
-      behavior.
-3. F308 - Batch My Classes roster-backed student-count reads after F283;
-      preserve exact English/Korean, trim/whitespace, and zero-on-failure
-      behavior.
-4. F309 - Batch Sub Prep information-sheet per-class roster counts after
-      F179; preserve schedule order, zero fallback, and equivalent read
-      metrics.
-5. F310 - Batch ClassImportDialog matched-teacher alternative display-name
-      reads; separate from F300 class subtitles; preserve choice
-      order/duplicates, formatting, and Teacher N fallback.
-6. F311 - Batch Sub Prep roster-output per-class class-name and compact
-      metadata reads; preserve schedule order, classes without meetings,
-      identity checks, failure-before-partial-output, and aggregate output
-      bounds.
-7. F312 - Purpose-fit projection for initial-setup teacher choices; preserve
-      ID/name/preferred display fields, repository order, validation, and error
-      behavior.
-8. F313 - Purpose-fit projection for testing-teacher choices; preserve
-      ID/Korean-name/room, repository order, blank-name filtering and selection
-      behavior, and current recoverability semantics.
-9. F314 - Purpose-fit projection for co-teacher choices; preserve exact
-      profile/network fields, repository order, ID validation, and error
-      behavior.
-10. F315 - Purpose-fit Korean teacher birthday-directory projection;
-       preserve birthday/name/preferred-display fields, raw values, repository
-       order, and downstream filtering.
+1. F307 - Batch My Classes assigned-teacher profile reads after F270;
+   preserve class-to-teacher association, class order, and profile-failure
+   behavior.
+2. F308 - Batch My Classes roster-backed student-count reads after F283;
+   preserve exact English/Korean, trim/whitespace, and zero-on-failure
+   behavior.
+3. F309 - Batch Sub Prep information-sheet per-class roster counts after
+   F179; preserve schedule order, zero fallback, and equivalent read
+   metrics.
+4. F310 - Batch ClassImportDialog matched-teacher alternative display-name
+   reads; separate from F300 class subtitles; preserve choice
+   order/duplicates, formatting, and Teacher N fallback.
+5. F311 - Batch Sub Prep roster-output per-class class-name and compact
+   metadata reads; preserve schedule order, classes without meetings,
+   identity checks, failure-before-partial-output, and aggregate output
+   bounds.
+6. F312 - Purpose-fit projection for initial-setup teacher choices; preserve
+   ID/name/preferred display fields, repository order, validation, and error
+   behavior.
+7. F313 - Purpose-fit projection for testing-teacher choices; preserve
+   ID/Korean-name/room, repository order, blank-name filtering and selection
+   behavior, and current recoverability semantics.
+8. F314 - Purpose-fit projection for co-teacher choices; preserve exact
+   profile/network fields, repository order, ID validation, and error
+   behavior.
+9. F315 - Purpose-fit Korean teacher birthday-directory projection;
+   preserve birthday/name/preferred-display fields, raw values, repository
+   order, and downstream filtering.
 
 At F314 start, discover Batch 5 and reconsider the fixed up-to-four-evaluation
 roster score-import read. F305's transfer-menu capacity/roster loop is already
@@ -247,43 +244,30 @@ No new v2 production path depends on DataService, MainWindow, PageManager, or a 
 
 Earlier verified slices and cumulative exit-gate snapshots are archived in the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 
-## Latest Progress Update - 2026-10-04 (F305 accepted; F306 selected)
+## Latest Progress Update - 2026-10-04 (F306 accepted; F307 selected)
 
-F305, committed as `c4720ba67ff6d5f35e26ee9da017f2d0c369293e`, batches
-transfer-menu candidate subtitle metadata with
-`SelectedClassSubtitleBatchReadQuery` after source metadata/class-list flow.
-Eligible targets use one typed batch capacity use case and active-session
-Platform call. Its Application contract returns only class IDs and first-empty-
-row indices. A Qt-free roster-column projection is shared by `RosterModel` and
-the capacity adapter; the adapter receives existing `Roster::BaseColumns`, and
-the shared 25-row limit applies to both UI and capacity. The repository reuses
-the ordered-column-name batch query and adds a forward-only batched sparse-cell
-stream for row indices 0-24, processing capacity incrementally without
-returning full roster snapshots or cell text to the menu. F273's fresh
-transfer-time target roster read is unchanged.
+F306, committed as d5b8710a7ab6c457a6ad4394e98c4ee69ef5e2db, adds a typed
+batch Application query/port and an active-session Platform adapter for My
+Classes compact class information. ClassInfoRepository reads metadata,
+regular schedules, and intensive schedules in one batch call using three
+set-based statements, preserving class-list order and schedule row order. Each
+class keeps its own success or failure result. A missing metadata row remains a successful default;
+a failed batch statement retries class reads individually. The page retains
+its silent default fallback and keeps roster counts and full teacher profiles
+on their separate reads.
 
-Menu labels/order and class-field/teacher-field failure distinctions remain.
-Capacity failure stays silent and fail-open to the first slot; class-field
-metadata failures exclude a target, teacher failure keeps class fields with
-`No Teacher`, and the class-list warning path remains. No runtime query-count
-or memory instrumentation was added; batching and bounded streaming are
-supported by source inspection.
+Fresh independent Windows x64 Debug/Ninja configure passed source ownership at
+1,289 handwritten files. ClassMngr and the affected page, Application, and
+Platform test targets built; focused CTest passed 3/3:
+ClassMngrMyClassesPageTests,
+ClassMngrNextApplicationMyClassesClassInformationBatchReadQueryTests, and
+ClassMngrNextPlatformApplicationServicesMyClassesClassInformationBatchReadPortTests.
+git diff --check passed. The full suite and other platform builds were not run.
+Logs are under build/f306v/ (configure.log, build.log, ctest.log).
 
-Executor verification configured `build/f304_verify_ninja`, passed source
-ownership at 1,283 handwritten files, built affected production/test targets,
-and passed focused CTest 8/8 plus `git diff --check` (line-ending conversion
-warnings only). An independent Tester reconfigured the same tree, rebuilt the
-touched dependency graph in 327 Ninja steps, built
-`ClassMngrRosterModelTests`, `ClassMngrRosterTransferMenuTests`,
-`ClassMngrNextApplicationRosterAvailabilityBatchReadQueryTests`, and
-`ClassMngrNextPlatformApplicationServicesRosterReadPortTests`, then passed
-focused CTest 4/4 and `git diff --check`. The tester log is
-`build/f304_verify_ninja/Testing/Temporary/LastTest.log`. These are separate
-focused passes; the full suite was not run.
-
-F306 is selected to batch My Classes compact class-information reads after
-F291, preserving class-info/default/failure outcomes separately from roster
-and teacher inputs. Batch 4 (F306-F315) remains ordered; at F314 start, discover
-Batch 5 and reconsider the fixed up-to-four-evaluation roster score-import
-read. F298 remains deferred pending the read-failure warning/navigation
+F307 is selected to batch My Classes assigned-teacher profile reads after
+F270, preserving class-to-teacher association, class order, and the silent
+profile-failure fallback. F308-F315 remain ordered in Batch 4; at F314 start,
+discover Batch 5 and reconsider the fixed up-to-four-evaluation roster
+score-import read. F298 remains deferred pending its warning/navigation
 decision. Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial.
