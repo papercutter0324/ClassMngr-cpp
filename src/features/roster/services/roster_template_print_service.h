@@ -19,6 +19,7 @@ namespace ClassMngr::Next::Application
 class ClassesListReadQuery;
 class RosterReadPort;
 class RosterPrintClassInfoReadQuery;
+class RosterTemplatePrintSourceReadQuery;
 }
 
 namespace RosterTemplatePrintService
@@ -51,6 +52,8 @@ struct Request
         rosterReadPort = nullptr;
     const ClassMngr::Next::Application::RosterPrintClassInfoReadQuery*
         rosterPrintClassInfoReadQuery = nullptr;
+    const ClassMngr::Next::Application::RosterTemplatePrintSourceReadQuery*
+        rosterTemplatePrintSourceReadQuery = nullptr;
     int currentClassId = -1;
     QString currentClassName;
     Scope scope = Scope::AllClasses;

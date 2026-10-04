@@ -333,6 +333,221 @@ Result<Roster> RosterRepository::loadRoster(
     return roster;
 }
 
+Result<QList<RosterRepository::TemplatePrintReadRecord>>
+RosterRepository::loadRostersForTemplatePrint(
+    const QList<int>& classIds
+    )
+{
+    if (classIds.isEmpty())
+    {
+        return QList<TemplatePrintReadRecord>{};
+    }
+
+    ++m_templatePrintBatchReadMetrics.callCount;
+    m_templatePrintBatchReadMetrics.requestedClassCount += classIds.size();
+
+    QList<TemplatePrintReadRecord> records;
+    records.reserve(classIds.size());
+    QHash<int, qsizetype> requestIndexByClassId;
+    requestIndexByClassId.reserve(classIds.size());
+    QStringList requestedValues;
+    requestedValues.reserve(classIds.size());
+    for (qsizetype index = 0; index < classIds.size(); ++index)
+    {
+        const int classId = classIds.at(index);
+        if (classId <= 0 || requestIndexByClassId.contains(classId))
+        {
+            return std::unexpected(QObject::tr(
+                "Loading template print rosters failed: class ids must be positive and unique."
+                ));
+        }
+
+        requestIndexByClassId.insert(classId, index);
+        requestedValues.append(
+            QStringLiteral("(%1, %2)").arg(classId).arg(index)
+            );
+        records.append({.classId = classId});
+    }
+
+    QSqlQuery columnsQuery(m_database);
+    columnsQuery.setForwardOnly(true);
+    ++m_templatePrintBatchReadMetrics.columnStatementCount;
+    const QString columnsQueryText = QStringLiteral(R"(
+        WITH requested(class_id, request_order) AS (VALUES %1)
+        SELECT requested.class_id AS requested_class_id,
+               requested.request_order AS request_order,
+               roster_columns.id AS column_id,
+               roster_columns.name AS name,
+               roster_columns.width AS width
+        FROM requested
+        LEFT JOIN roster_columns
+            ON roster_columns.class_id=requested.class_id
+        ORDER BY
+            requested.request_order,
+            roster_columns.position,
+            roster_columns.id
+    )").arg(requestedValues.join(QStringLiteral(", ")));
+    const auto loadedColumns = SqlQueryUtils::execute(
+        columnsQuery,
+        columnsQueryText,
+        QObject::tr("Loading template print roster columns"),
+        QObject::tr("%1 classes").arg(classIds.size())
+        );
+    if (!loadedColumns)
+    {
+        return std::unexpected(loadedColumns.error().userMessage());
+    }
+
+    bool invalidColumnIdentity = false;
+    while (columnsQuery.next())
+    {
+        const int classId = columnsQuery.value("requested_class_id").toInt();
+        const int requestOrder = columnsQuery.value("request_order").toInt();
+        if (requestOrder < 0
+            || requestOrder >= classIds.size()
+            || classIds.at(requestOrder) != classId
+            || !requestIndexByClassId.contains(classId))
+        {
+            invalidColumnIdentity = true;
+            break;
+        }
+
+        if (columnsQuery.value("column_id").isNull())
+        {
+            continue;
+        }
+
+        Roster& roster = records[requestOrder].roster;
+        roster.columns.append(columnsQuery.value("name").toString());
+        roster.columnWidths.append(columnsQuery.value("width").toInt());
+    }
+    if (columnsQuery.lastError().isValid())
+    {
+        return std::unexpected(
+            QObject::tr("Reading template print roster columns failed: %1")
+                .arg(columnsQuery.lastError().text())
+            );
+    }
+    if (invalidColumnIdentity)
+    {
+        return std::unexpected(QObject::tr(
+            "Loading template print roster columns returned an invalid class identity."
+            ));
+    }
+
+    bool anyColumns = false;
+    QStringList cellRequestValues;
+    cellRequestValues.reserve(classIds.size());
+    for (qsizetype index = 0; index < records.size(); ++index)
+    {
+        const TemplatePrintReadRecord& record = records.at(index);
+        if (!record.roster.columns.isEmpty())
+        {
+            anyColumns = true;
+        }
+        cellRequestValues.append(
+            QStringLiteral("(%1, %2, %3)")
+                .arg(record.classId)
+                .arg(index)
+                .arg(record.roster.columns.size())
+            );
+    }
+
+    if (!anyColumns)
+    {
+        return records;
+    }
+
+    QSqlQuery cellsQuery(m_database);
+    cellsQuery.setForwardOnly(true);
+    ++m_templatePrintBatchReadMetrics.cellStatementCount;
+    const QString cellsQueryText = QStringLiteral(R"(
+        WITH requested(class_id, request_order, column_count) AS (VALUES %1)
+        SELECT requested.class_id AS requested_class_id,
+               requested.request_order AS request_order,
+               roster_data.row_index AS row_index,
+               roster_data.col_index AS col_index,
+               roster_data.value AS value
+        FROM requested
+        INNER JOIN roster_data
+            ON roster_data.class_id=requested.class_id
+        WHERE roster_data.row_index >= 0
+            AND roster_data.col_index >= 0
+            AND roster_data.col_index < requested.column_count
+        ORDER BY
+            requested.request_order,
+            roster_data.row_index,
+            roster_data.col_index
+    )").arg(cellRequestValues.join(QStringLiteral(", ")));
+    const auto loadedCells = SqlQueryUtils::execute(
+        cellsQuery,
+        cellsQueryText,
+        QObject::tr("Loading template print roster cells"),
+        QObject::tr("%1 classes").arg(classIds.size())
+        );
+    if (!loadedCells)
+    {
+        return std::unexpected(loadedCells.error().userMessage());
+    }
+
+    bool invalidCellIdentity = false;
+    while (cellsQuery.next())
+    {
+        const int classId = cellsQuery.value("requested_class_id").toInt();
+        const int requestOrder = cellsQuery.value("request_order").toInt();
+        const int rowIndex = cellsQuery.value("row_index").toInt();
+        const int columnIndex = cellsQuery.value("col_index").toInt();
+        if (requestOrder < 0
+            || requestOrder >= classIds.size()
+            || classIds.at(requestOrder) != classId
+            || !requestIndexByClassId.contains(classId)
+            || rowIndex < 0
+            || columnIndex < 0
+            || columnIndex >= records[requestOrder].roster.columns.size())
+        {
+            invalidCellIdentity = true;
+            break;
+        }
+
+        Roster& roster = records[requestOrder].roster;
+        while (roster.rows.size() <= rowIndex)
+        {
+            QStringList emptyRow;
+            emptyRow.reserve(roster.columns.size());
+            for (qsizetype column = 0;
+                 column < roster.columns.size();
+                 ++column)
+            {
+                emptyRow.append(QString());
+            }
+            roster.rows.append(std::move(emptyRow));
+        }
+        roster.rows[rowIndex][columnIndex] =
+            cellsQuery.value("value").toString();
+    }
+    if (cellsQuery.lastError().isValid())
+    {
+        return std::unexpected(
+            QObject::tr("Reading template print roster cells failed: %1")
+                .arg(cellsQuery.lastError().text())
+            );
+    }
+    if (invalidCellIdentity)
+    {
+        return std::unexpected(QObject::tr(
+            "Loading template print roster cells returned an invalid class identity."
+            ));
+    }
+
+    return records;
+}
+
+const RosterRepository::TemplatePrintBatchReadMetrics&
+RosterRepository::templatePrintBatchReadMetrics() const noexcept
+{
+    return m_templatePrintBatchReadMetrics;
+}
+
 Result<QList<RosterRepository::ColumnNamesForClass>>
 RosterRepository::loadRosterColumnNamesForClasses(
     const QList<int>& classIds

@@ -62,6 +62,8 @@ QStringList daysWithValues(
 }
 
 ::Result<QList<RosterClassData>> loadRosterClassData(
+    const ClassMngr::Next::Application::RosterTemplatePrintSourceReadQuery*
+        templatePrintSourceReadQuery,
     const ClassMngr::Next::Application::RosterPrintClassInfoReadQuery*
         rosterPrintClassInfoReadQuery,
     const ClassMngr::Next::Application::RosterReadPort* rosterReadPort,
@@ -76,6 +78,167 @@ QStringList daysWithValues(
     if (!rosterPrintClassInfoReadQuery || !rosterReadPort)
     {
         return result;
+    }
+
+    if (templatePrintSourceReadQuery)
+    {
+        std::vector<ClassMngr::Next::Domain::ClassId> typedClassIds;
+        typedClassIds.reserve(static_cast<std::size_t>(classIds.size()));
+        bool allClassIdsAreCanonical = true;
+        for (const int classId : classIds)
+        {
+            const auto typedClassId =
+                ClassMngr::Next::Domain::ClassId::fromString(
+                    std::to_string(classId)
+                    );
+            if (!typedClassId)
+            {
+                allClassIdsAreCanonical = false;
+                break;
+            }
+            typedClassIds.push_back(*typedClassId);
+        }
+
+        if (allClassIdsAreCanonical
+            && typedClassIds.size() == static_cast<std::size_t>(classIds.size()))
+        {
+            const auto loadedBatch =
+                templatePrintSourceReadQuery->execute(typedClassIds);
+            if (loadedBatch
+                && loadedBatch.value().size()
+                    == static_cast<std::size_t>(classIds.size()))
+            {
+                QList<RosterClassData> batchResult;
+                batchResult.reserve(classIds.size());
+                bool validBatch = true;
+                for (qsizetype index = 0; index < classIds.size(); ++index)
+                {
+                    const int classId = classIds.at(index);
+                    const auto& entry = loadedBatch.value()[
+                        static_cast<std::size_t>(index)
+                        ];
+                    if (entry.classId != typedClassIds[
+                            static_cast<std::size_t>(index)]
+                        || entry.classInfo.classId != typedClassIds[
+                            static_cast<std::size_t>(index)])
+                    {
+                        validBatch = false;
+                        break;
+                    }
+
+                    RosterClassData data;
+                    data.classroom.id = classId;
+                    const auto listedClass = std::find_if(
+                        classrooms.cbegin(),
+                        classrooms.cend(),
+                        [classId](const Classroom& classroom)
+                        {
+                            return classroom.id == classId;
+                        }
+                        );
+                    if (listedClass != classrooms.cend())
+                    {
+                        data.classroom.name = listedClass->name;
+                    }
+                    else if (classId == currentClassId
+                        && !currentClassName.trimmed().isEmpty())
+                    {
+                        data.classroom.name = currentClassName;
+                    }
+                    else
+                    {
+                        validBatch = false;
+                        break;
+                    }
+
+                    const auto& classInfo = entry.classInfo;
+                    data.classInfo.classGrade = QString::fromStdU16String(
+                        classInfo.classGrade
+                        );
+                    data.classInfo.classLevel = QString::fromStdU16String(
+                        classInfo.classLevel
+                        );
+                    data.classInfo.teacherEn = QString::fromStdU16String(
+                        classInfo.teacherEn
+                        );
+                    data.classInfo.teacherKr = QString::fromStdU16String(
+                        classInfo.teacherKr
+                        );
+                    data.classInfo.roomNumber = QString::fromStdU16String(
+                        classInfo.roomNumber
+                        );
+                    data.classInfo.wifiName = QString::fromStdU16String(
+                        classInfo.wifiName
+                        );
+                    data.classInfo.wifiPassword = QString::fromStdU16String(
+                        classInfo.wifiPassword
+                        );
+                    data.classInfo.zoomId = QString::fromStdU16String(
+                        classInfo.zoomId
+                        );
+                    data.classInfo.zoomPassword = QString::fromStdU16String(
+                        classInfo.zoomPassword
+                        );
+                    data.classInfo.regularSchedule.reserve(
+                        static_cast<qsizetype>(
+                            classInfo.regularSchedule.size()
+                            )
+                        );
+                    for (const auto& row : classInfo.regularSchedule)
+                    {
+                        data.classInfo.regularSchedule.append(
+                            RosterPrintScheduleTime{
+                            QString::fromStdU16String(row.day),
+                            QString::fromStdU16String(row.startTime),
+                            QString::fromStdU16String(row.endTime)
+                            }
+                            );
+                    }
+
+                    const auto& roster = entry.roster;
+                    data.roster.columns.reserve(
+                        static_cast<qsizetype>(roster.columns.size())
+                        );
+                    for (const std::u16string& column : roster.columns)
+                    {
+                        data.roster.columns.append(
+                            QString::fromStdU16String(column)
+                            );
+                    }
+                    data.roster.columnWidths.reserve(
+                        static_cast<qsizetype>(roster.columnWidths.size())
+                        );
+                    for (const int width : roster.columnWidths)
+                    {
+                        data.roster.columnWidths.append(width);
+                    }
+                    data.roster.rows.reserve(
+                        static_cast<qsizetype>(roster.rows.size())
+                        );
+                    for (const std::vector<std::u16string>& snapshotRow :
+                         roster.rows)
+                    {
+                        QStringList row;
+                        row.reserve(
+                            static_cast<qsizetype>(snapshotRow.size())
+                            );
+                        for (const std::u16string& cell : snapshotRow)
+                        {
+                            row.append(QString::fromStdU16String(cell));
+                        }
+                        data.roster.rows.append(std::move(row));
+                    }
+
+                    batchResult.append(std::move(data));
+                }
+
+                if (validBatch
+                    && batchResult.size() == classIds.size())
+                {
+                    return batchResult;
+                }
+            }
+        }
     }
 
     for (int classId : classIds)
@@ -320,6 +483,7 @@ Result loadRosterClassesForRequest(
     {
         const ::Result<QList<RosterClassData>> loadedRosterClasses =
             loadRosterClassData(
+                request.rosterTemplatePrintSourceReadQuery,
                 request.rosterPrintClassInfoReadQuery,
                 request.rosterReadPort,
                 classIds,

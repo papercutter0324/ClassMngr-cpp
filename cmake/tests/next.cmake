@@ -104,6 +104,36 @@ add_test(
     COMMAND ClassMngrNextApplicationRosterPrintClassInfoReadQueryTests
 )
 
+add_executable(
+    ClassMngrNextApplicationRosterTemplatePrintSourceReadQueryTests
+    tests/next_application_roster_template_print_source_read_query_tests.cpp
+)
+target_compile_features(
+    ClassMngrNextApplicationRosterTemplatePrintSourceReadQueryTests
+    PRIVATE
+        cxx_std_23
+)
+set_target_properties(
+    ClassMngrNextApplicationRosterTemplatePrintSourceReadQueryTests
+    PROPERTIES
+        AUTOMOC OFF
+        AUTOUIC OFF
+        AUTORCC OFF
+)
+set_property(
+    TARGET ClassMngrNextApplicationRosterTemplatePrintSourceReadQueryTests
+    PROPERTY CLASSMNGR_STANDALONE_CPP_TEST TRUE
+)
+target_link_libraries(
+    ClassMngrNextApplicationRosterTemplatePrintSourceReadQueryTests
+    PRIVATE
+        ClassMngrNext::Application
+)
+add_test(
+    NAME ClassMngrNextApplicationRosterTemplatePrintSourceReadQueryTests
+    COMMAND ClassMngrNextApplicationRosterTemplatePrintSourceReadQueryTests
+)
+
 # Keep complete-row reordering independent of Qt and the feature runtime.
 add_executable(
     ClassMngrNextApplicationRosterRowReorderingTests
@@ -2401,6 +2431,17 @@ classmngr_add_qt_test(
         tests/next_platform_application_services_roster_print_class_info_read_port_tests.cpp
     LIBRARIES
         ClassMngrNext::Platform
+        Qt6::Test
+    OFFSCREEN
+)
+
+classmngr_add_qt_test(
+    NAME NextPlatformApplicationServicesRosterTemplatePrintSourceReadPort
+    SOURCES
+        tests/next_platform_application_services_roster_template_print_source_read_port_tests.cpp
+    LIBRARIES
+        ClassMngrNext::Platform
+        Qt6::Sql
         Qt6::Test
     OFFSCREEN
 )

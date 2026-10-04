@@ -7,6 +7,7 @@
 #include "next/application/roster_print_class_info_read_query.h"
 #include "next/application/roster_read_query.h"
 #include "next/application/classes_list_read_snapshot.h"
+#include "next/application/roster_template_print_source_read_query.h"
 #include "ui/shared/printing/pdf_print_service.h"
 
 #include <QtTest>
@@ -42,6 +43,9 @@ QList<int> g_classInfoReadOrder;
 QList<QString> g_classReadOrder;
 std::optional<int> g_failingRosterClassId;
 std::optional<int> g_failingClassInfoClassId;
+QList<int> g_templatePrintBatchClassIds;
+int g_templatePrintBatchReadCount = 0;
+std::optional<std::string> g_templatePrintBatchFailureMessage;
 std::string g_rosterFailureMessage = "injected roster read failure";
 std::string g_classInfoFailureMessage =
     "injected roster print class-info read failure";
@@ -65,6 +69,9 @@ void resetServiceStubs()
     g_classReadOrder.clear();
     g_failingRosterClassId.reset();
     g_failingClassInfoClassId.reset();
+    g_templatePrintBatchClassIds.clear();
+    g_templatePrintBatchReadCount = 0;
+    g_templatePrintBatchFailureMessage.reset();
     g_rosterFailureMessage = "injected roster read failure";
     g_classInfoFailureMessage =
         "injected roster print class-info read failure";
@@ -287,6 +294,111 @@ public:
 
         return ClassMngr::Next::Application::
             RosterPrintClassInfoReadResult::success(std::move(snapshot));
+    }
+};
+
+class FakeRosterTemplatePrintSourceReadPort final
+    : public ClassMngr::Next::Application::
+          RosterTemplatePrintSourceReadPort
+{
+public:
+    mutable int readCount = 0;
+
+    [[nodiscard]] ClassMngr::Next::Application::
+        RosterTemplatePrintSourceReadResult readRosterTemplatePrintSource(
+            const ClassMngr::Next::Application::
+                RosterTemplatePrintSourceReadRequest& query
+            ) const override
+    {
+        using namespace ClassMngr::Next;
+        ++readCount;
+        ++g_templatePrintBatchReadCount;
+        g_templatePrintBatchClassIds.clear();
+        for (const Domain::ClassId& typedId : query.classIds)
+        {
+            int classId = 0;
+            const std::string& value = typedId.value();
+            const auto [end, error] = std::from_chars(
+                value.data(),
+                value.data() + value.size(),
+                classId
+                );
+            if (error != std::errc{}
+                || end != value.data() + value.size()
+                || classId <= 0)
+            {
+                return Application::RosterTemplatePrintSourceReadResult::failure({
+                    .code = Domain::ErrorCode::InvalidInput,
+                    .message = "test print batch received an invalid class ID",
+                    .recoverable = false
+                });
+            }
+            g_templatePrintBatchClassIds.append(classId);
+        }
+
+        if (g_templatePrintBatchFailureMessage)
+        {
+            return Application::RosterTemplatePrintSourceReadResult::failure({
+                .code = Domain::ErrorCode::Technical,
+                .message = *g_templatePrintBatchFailureMessage,
+                .recoverable = false
+            });
+        }
+
+        Application::RosterTemplatePrintSourceReadSnapshot snapshots;
+        snapshots.reserve(query.classIds.size());
+        for (std::size_t index = 0; index < query.classIds.size(); ++index)
+        {
+            const int classId = g_templatePrintBatchClassIds.at(
+                static_cast<qsizetype>(index)
+                );
+            Application::RosterPrintClassInfoReadSnapshot classInfoSnapshot(
+                query.classIds[index]
+                );
+            const auto info = g_classInfo.constFind(classId);
+            if (info != g_classInfo.cend())
+            {
+                classInfoSnapshot.classGrade = info->classGrade.toStdU16String();
+                classInfoSnapshot.classLevel = info->classLevel.toStdU16String();
+                classInfoSnapshot.teacherEn = info->teacherEn.toStdU16String();
+                classInfoSnapshot.teacherKr = info->teacherKr.toStdU16String();
+                classInfoSnapshot.roomNumber = info->roomNumber.toStdU16String();
+                classInfoSnapshot.wifiName = info->wifiName.toStdU16String();
+                classInfoSnapshot.wifiPassword =
+                    info->wifiPassword.toStdU16String();
+                classInfoSnapshot.zoomId = info->zoomId.toStdU16String();
+                classInfoSnapshot.zoomPassword =
+                    info->zoomPassword.toStdU16String();
+                for (const auto& time : info->regularSchedule)
+                {
+                    classInfoSnapshot.regularSchedule.push_back({
+                        time.day.toStdU16String(),
+                        time.startTime.toStdU16String(),
+                        time.endTime.toStdU16String()
+                    });
+                }
+            }
+
+            snapshots.emplace_back(
+                query.classIds[index],
+                std::move(classInfoSnapshot),
+                rosterSnapshot(g_rosters.value(classId))
+                );
+        }
+        return Application::RosterTemplatePrintSourceReadResult::success(
+            std::move(snapshots)
+            );
+    }
+};
+
+struct FakeRosterTemplatePrintSourceQuery final
+{
+    FakeRosterTemplatePrintSourceReadPort port;
+    ClassMngr::Next::Application::RosterTemplatePrintSourceReadQuery query;
+
+    FakeRosterTemplatePrintSourceQuery()
+        : query(port)
+    {
     }
 };
 
@@ -882,6 +994,8 @@ private slots:
     void buildPerClassExtraInfoCellValuesMapsSelectedColumnsAndMissingCells();
     void buildPerClassExtraInfoCellValuesCapsColumnsByOrientation();
     void requestSaveRostersPdfUsesSelectedTemplate();
+    void requestSaveRostersPdfUsesOrderedTemplatePrintBatch();
+    void batchFailureFallsBackInClassOrderBeforeOutput();
     void currentClassPrintSupportsClassExcludedFromRegularList();
     void dailyPdfUsesA4PortraitAndContinuesOverflowPages();
     void perClassWithExtraInfoPdfHonorsPortraitAndLandscape();
@@ -2211,6 +2325,177 @@ void RosterTemplatePrintServiceTests::requestSaveRostersPdfUsesSelectedTemplate(
     QVERIFY(std::abs(pageSize.height() - a4Points.height()) < 1.0);
 }
 
+void RosterTemplatePrintServiceTests::
+requestSaveRostersPdfUsesOrderedTemplatePrintBatch()
+{
+    resetServiceStubs();
+    g_hasOpenDatabase = true;
+
+    auto firstClass = sampleRosterClass(
+        81,
+        QStringLiteral("Monday"),
+        QStringLiteral("3:00 PM"),
+        QStringLiteral("E4"),
+        QStringLiteral("Apollo"),
+        QStringLiteral("First Teacher"),
+        QStringLiteral("첫째 선생님"),
+        QStringLiteral("Room A")
+        );
+    firstClass.classInfo.wifiName = QStringLiteral("First WiFi");
+    firstClass.classInfo.wifiPassword = QStringLiteral("First WiFi secret");
+    firstClass.classInfo.zoomId = QStringLiteral("First Zoom");
+    firstClass.classInfo.zoomPassword = QStringLiteral("First Zoom secret");
+    firstClass.roster.columns.append(QStringLiteral("Notes"));
+    firstClass.roster.columnWidths = {120, 140, 180};
+    firstClass.roster.rows[0].append(QStringLiteral("First note"));
+    firstClass.roster.rows[1].append(QString());
+
+    auto secondClass = sampleRosterClass(
+        82,
+        QStringLiteral("Tuesday"),
+        QStringLiteral("4:00 PM"),
+        QStringLiteral("E5"),
+        QStringLiteral("Odyssey"),
+        QStringLiteral("Second Teacher"),
+        QStringLiteral("둘째 선생님"),
+        QStringLiteral("Room B")
+        );
+    secondClass.classInfo.wifiName = QStringLiteral("Second WiFi");
+    secondClass.classInfo.wifiPassword = QStringLiteral("Second WiFi secret");
+    secondClass.classInfo.zoomId = QStringLiteral("Second Zoom");
+    secondClass.classInfo.zoomPassword = QStringLiteral("Second Zoom secret");
+    secondClass.roster.columns.append(QStringLiteral("Notes"));
+    secondClass.roster.columnWidths = {121, 141, 181};
+    secondClass.roster.rows[0].append(QStringLiteral("Second note"));
+    secondClass.roster.rows[1].append(QString());
+
+    g_classes = {firstClass.classroom, secondClass.classroom};
+    g_classInfo.insert(firstClass.classroom.id, firstClass.classInfo);
+    g_classInfo.insert(secondClass.classroom.id, secondClass.classInfo);
+    g_rosters.insert(firstClass.classroom.id, firstClass.roster);
+    g_rosters.insert(secondClass.classroom.id, secondClass.roster);
+
+    QTemporaryDir temporaryDirectory;
+    QVERIFY(temporaryDirectory.isValid());
+    const QList<RosterTemplatePrintService::RosterClassData> expectedClasses{
+        secondClass,
+        firstClass
+    };
+    const QString expectedPath = savePdf(
+        temporaryDirectory,
+        expectedClasses,
+        QStringLiteral("expected-batched-template-print.pdf"),
+        RosterTemplatePrintService::TemplateId::PerClassWithExtraInfo,
+        {QStringLiteral("Notes")}
+        );
+    QVERIFY(!expectedPath.isEmpty());
+
+    FakeClassesListQuery classesList;
+    FakeRosterReadPort rosterReadPort;
+    FakeRosterTemplatePrintSourceQuery batchRead;
+    RosterTemplatePrintService::Request request;
+    request.services = fakeApplicationServices();
+    request.classesListReadQuery = &classesList.query;
+    request.rosterReadPort = &rosterReadPort;
+    request.rosterPrintClassInfoReadQuery = &g_rosterPrintClassInfoReadQuery;
+    request.rosterTemplatePrintSourceReadQuery = &batchRead.query;
+    request.scope = RosterTemplatePrintService::Scope::SelectedClasses;
+    request.selectedClassIds = {
+        secondClass.classroom.id,
+        firstClass.classroom.id
+    };
+    request.templateId =
+        RosterTemplatePrintService::TemplateId::PerClassWithExtraInfo;
+    request.selectedExtraColumns = {QStringLiteral("Notes")};
+
+    const QString actualPath = temporaryDirectory.filePath(
+        QStringLiteral("actual-batched-template-print.pdf")
+        );
+    const auto result =
+        RosterTemplatePrintService::saveRostersPdf(request, actualPath);
+    QCOMPARE(result.status, RosterTemplatePrintService::Status::Sent);
+    QCOMPARE(batchRead.port.readCount, 1);
+    QCOMPARE(
+        g_templatePrintBatchClassIds,
+        QList<int>({secondClass.classroom.id, firstClass.classroom.id})
+        );
+    QVERIFY(g_classInfoReadOrder.isEmpty());
+    QVERIFY(rosterReadPort.readClassIds.isEmpty());
+    QVERIFY(g_classReadOrder.isEmpty());
+
+    QPdfDocument expectedDocument;
+    QPdfDocument actualDocument;
+    loadDocument(expectedDocument, expectedPath, 2);
+    loadDocument(actualDocument, actualPath, 2);
+    QVERIFY(renderPage(actualDocument, 0) == renderPage(expectedDocument, 0));
+    QVERIFY(renderPage(actualDocument, 1) == renderPage(expectedDocument, 1));
+}
+
+void RosterTemplatePrintServiceTests::
+batchFailureFallsBackInClassOrderBeforeOutput()
+{
+    resetServiceStubs();
+    g_hasOpenDatabase = true;
+
+    const auto firstClass = sampleRosterClass(
+        83,
+        QStringLiteral("Monday"),
+        QStringLiteral("3:00 PM")
+        );
+    const auto laterClass = sampleRosterClass(
+        84,
+        QStringLiteral("Tuesday"),
+        QStringLiteral("4:00 PM")
+        );
+    g_classes = {firstClass.classroom, laterClass.classroom};
+    g_classInfo.insert(firstClass.classroom.id, firstClass.classInfo);
+    g_classInfo.insert(laterClass.classroom.id, laterClass.classInfo);
+    g_rosters.insert(firstClass.classroom.id, firstClass.roster);
+    g_rosters.insert(laterClass.classroom.id, laterClass.roster);
+    g_templatePrintBatchFailureMessage = "injected template-print batch failure";
+    g_failingRosterClassId = firstClass.classroom.id;
+    g_rosterFailureMessage = "first class roster failed";
+    g_failingClassInfoClassId = laterClass.classroom.id;
+
+    FakeClassesListQuery classesList;
+    FakeRosterReadPort rosterReadPort;
+    FakeRosterTemplatePrintSourceQuery batchRead;
+    RosterTemplatePrintService::Request request;
+    request.services = fakeApplicationServices();
+    request.classesListReadQuery = &classesList.query;
+    request.rosterReadPort = &rosterReadPort;
+    request.rosterPrintClassInfoReadQuery = &g_rosterPrintClassInfoReadQuery;
+    request.rosterTemplatePrintSourceReadQuery = &batchRead.query;
+    request.scope = RosterTemplatePrintService::Scope::SelectedClasses;
+    request.selectedClassIds = {
+        firstClass.classroom.id,
+        laterClass.classroom.id
+    };
+
+    QTemporaryDir temporaryDirectory;
+    QVERIFY(temporaryDirectory.isValid());
+    const QString outputPath = temporaryDirectory.filePath(
+        QStringLiteral("failed-batch-fallback.pdf")
+        );
+    const auto result =
+        RosterTemplatePrintService::saveRostersPdf(request, outputPath);
+    QCOMPARE(result.status, RosterTemplatePrintService::Status::Failed);
+    QCOMPARE(result.message, QStringLiteral("first class roster failed"));
+    QCOMPARE(batchRead.port.readCount, 1);
+    QCOMPARE(
+        g_templatePrintBatchClassIds,
+        QList<int>({firstClass.classroom.id, laterClass.classroom.id})
+        );
+    QCOMPARE(
+        g_classReadOrder,
+        QList<QString>({
+            QStringLiteral("rosterPrintClassInfo:83"),
+            QStringLiteral("roster:83")
+        })
+        );
+    QVERIFY(!QFileInfo::exists(outputPath));
+}
+
 void RosterTemplatePrintServiceTests
     ::currentClassPrintSupportsClassExcludedFromRegularList()
 {
@@ -2239,6 +2524,7 @@ void RosterTemplatePrintServiceTests
 
     FakeClassesListQuery classesList;
     FakeRosterReadPort rosterReadPort;
+    FakeRosterTemplatePrintSourceQuery batchRead;
 
     QTemporaryDir temporaryDirectory;
     QVERIFY(temporaryDirectory.isValid());
@@ -2248,6 +2534,7 @@ void RosterTemplatePrintServiceTests
     request.classesListReadQuery = &classesList.query;
     request.rosterReadPort = &rosterReadPort;
     request.rosterPrintClassInfoReadQuery = &g_rosterPrintClassInfoReadQuery;
+    request.rosterTemplatePrintSourceReadQuery = &batchRead.query;
     request.currentClassId = testingClass.id;
     request.currentClassName = testingClass.name;
     request.scope =
@@ -2268,15 +2555,10 @@ void RosterTemplatePrintServiceTests
         currentResult.status,
         RosterTemplatePrintService::Status::Sent
         );
-    QCOMPARE(rosterReadPort.readClassIds, QList<int>({50}));
-    QCOMPARE(
-        g_classReadOrder,
-        QList<QString>({
-            QStringLiteral("rosterPrintClassInfo:50"),
-            QStringLiteral("roster:50")
-        })
-        );
-    QVERIFY(!g_classReadOrder.contains(QStringLiteral("classroom:50")));
+    QCOMPARE(batchRead.port.readCount, 1);
+    QCOMPARE(g_templatePrintBatchClassIds, QList<int>({50}));
+    QVERIFY(rosterReadPort.readClassIds.isEmpty());
+    QVERIFY(g_classReadOrder.isEmpty());
 
     RosterTemplatePrintService::RosterClassData expectedClass;
     expectedClass.classroom = testingClass;
@@ -2309,6 +2591,7 @@ void RosterTemplatePrintServiceTests
         bulkResult.status,
         RosterTemplatePrintService::Status::Failed
         );
+    QCOMPARE(batchRead.port.readCount, 1);
 }
 
 void RosterTemplatePrintServiceTests::

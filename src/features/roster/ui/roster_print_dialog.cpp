@@ -10,6 +10,7 @@
 #include "next/application/roster_column_names_batch_read_query.h"
 #include "next/application/roster_print_class_info_read_query.h"
 #include "next/application/roster_read_query.h"
+#include "next/application/roster_template_print_source_read_query.h"
 #include "next/application/selected_class_subtitle_batch_read_query.h"
 #include "next/application/testing_class_details_read_query.h"
 #include "next/domain/domain_types.h"
@@ -17,6 +18,7 @@
 #include "next/platform/application_services_roster_column_names_batch_read_port.h"
 #include "next/platform/application_services_roster_print_class_info_read_port.h"
 #include "next/platform/application_services_roster_read_port.h"
+#include "next/platform/application_services_roster_template_print_source_read_port.h"
 #include "next/platform/application_services_selected_class_subtitle_batch_read_port.h"
 #include "next/platform/application_services_testing_class_details_read_port.h"
 #include "ui/shared/widgets/no_wheel_combobox.h"
@@ -816,14 +818,20 @@ void RosterPrintDialog::updatePreview()
         ApplicationServicesRosterPrintClassInfoReadPort classInfoReadPort(
             m_services
             );
+    ClassMngr::Next::Platform::
+        ApplicationServicesRosterTemplatePrintSourceReadPort
+            templatePrintSourceReadPort(m_services);
     const ClassMngr::Next::Application::ClassesListReadQuery classesQuery(
         classesReadPort
         );
     const ClassMngr::Next::Application::RosterPrintClassInfoReadQuery
         classInfoQuery(classInfoReadPort);
+    const ClassMngr::Next::Application::RosterTemplatePrintSourceReadQuery
+        templatePrintSourceQuery(templatePrintSourceReadPort);
     request.classesListReadQuery = &classesQuery;
     request.rosterReadPort = &rosterReadPort;
     request.rosterPrintClassInfoReadQuery = &classInfoQuery;
+    request.rosterTemplatePrintSourceReadQuery = &templatePrintSourceQuery;
     request.currentClassId = m_currentClassId;
     request.currentClassName = m_currentClassName;
     request.scope = selectedScope();

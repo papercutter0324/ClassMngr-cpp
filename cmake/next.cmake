@@ -133,6 +133,9 @@ set(CLASSMNGR_NEXT_APPLICATION_SOURCES
     src/next/application/roster_print_class_info_read_snapshot.h
     src/next/application/roster_print_class_info_read_port.h
     src/next/application/roster_print_class_info_read_query.h
+    src/next/application/roster_template_print_source_read_snapshot.h
+    src/next/application/roster_template_print_source_read_port.h
+    src/next/application/roster_template_print_source_read_query.h
     src/next/application/roster_save_use_case.h
     src/next/application/speaking_evaluation_query.h
     src/next/application/speaking_evaluation_batch_read_query.h
@@ -367,6 +370,7 @@ set(CLASSMNGR_NEXT_PLATFORM_SOURCES
     src/next/platform/application_services_roster_availability_batch_read_port.h
     src/next/platform/application_services_class_analytics_dashboard_read_port.h
     src/next/platform/application_services_roster_print_class_info_read_port.h
+    src/next/platform/application_services_roster_template_print_source_read_port.h
     src/next/platform/application_services_roster_save_port.h
     src/next/platform/application_services_speaking_evaluation_read_port.h
     src/next/platform/application_services_speaking_evaluation_batch_read_port.h

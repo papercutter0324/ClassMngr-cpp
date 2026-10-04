@@ -1287,6 +1287,207 @@ ClassInfoRepository::loadRosterPrintClassInfoRecord(
     return record;
 }
 
+Result<QList<RosterPrintClassInfoReadRecord>>
+ClassInfoRepository::loadRosterPrintClassInfoRecords(
+    const QList<int>& classIds
+    )
+{
+    if (classIds.isEmpty())
+    {
+        return QList<RosterPrintClassInfoReadRecord>{};
+    }
+
+    ++m_rosterPrintClassInfoBatchReadMetrics.callCount;
+    m_rosterPrintClassInfoBatchReadMetrics.requestedClassCount +=
+        classIds.size();
+
+    QHash<int, qsizetype> requestIndexByClassId;
+    requestIndexByClassId.reserve(classIds.size());
+    QStringList requestedValues;
+    requestedValues.reserve(classIds.size());
+    QList<RosterPrintClassInfoReadRecord> records;
+    records.reserve(classIds.size());
+    for (qsizetype index = 0; index < classIds.size(); ++index)
+    {
+        const int classId = classIds.at(index);
+        if (classId <= 0 || requestIndexByClassId.contains(classId))
+        {
+            return std::unexpected(QObject::tr(
+                "Loading roster print class information failed: class ids must be positive and unique."
+                ));
+        }
+
+        requestIndexByClassId.insert(classId, index);
+        requestedValues.append(
+            QStringLiteral("(%1, %2)").arg(classId).arg(index)
+            );
+        RosterPrintClassInfoReadRecord record;
+        record.classId = classId;
+        records.append(std::move(record));
+    }
+
+    QStringList metadataRowsSeen;
+    metadataRowsSeen.reserve(classIds.size());
+    for (qsizetype index = 0; index < classIds.size(); ++index)
+    {
+        metadataRowsSeen.append(QStringLiteral("0"));
+    }
+
+    QSqlQuery metadataQuery(m_database);
+    metadataQuery.setForwardOnly(true);
+    ++m_rosterPrintClassInfoBatchReadMetrics.metadataStatementCount;
+    const QString metadataQueryText = QStringLiteral(R"(
+        WITH requested(class_id, request_order) AS (VALUES %1)
+        SELECT requested.class_id AS requested_class_id,
+               requested.request_order AS request_order,
+               ci.class_id AS class_info_class_id,
+               ci.class_grade AS class_grade,
+               ci.class_level AS class_level,
+               teachers.teacher_en AS teacher_en,
+               teachers.teacher_kr AS teacher_kr,
+               teachers.room_number AS room_number,
+               teachers.wifi_name AS wifi_name,
+               teachers.wifi_password AS wifi_password,
+               teachers.zoom_id AS zoom_id,
+               teachers.zoom_password AS zoom_password
+        FROM requested
+        LEFT JOIN class_info ci ON ci.class_id=requested.class_id
+        LEFT JOIN teachers ON teachers.id=ci.teacher_id
+        ORDER BY requested.request_order
+    )").arg(requestedValues.join(QStringLiteral(", ")));
+    const auto loadedMetadata = SqlQueryUtils::execute(
+        metadataQuery,
+        metadataQueryText,
+        QObject::tr("Loading roster print class information metadata"),
+        QObject::tr("%1 classes").arg(classIds.size())
+        );
+    if (!loadedMetadata)
+    {
+        return std::unexpected(loadedMetadata.error().userMessage());
+    }
+
+    bool invalidMetadataIdentity = false;
+    while (metadataQuery.next())
+    {
+        const int classId = metadataQuery.value("requested_class_id").toInt();
+        const int requestOrder = metadataQuery.value("request_order").toInt();
+        if (requestOrder < 0
+            || requestOrder >= classIds.size()
+            || classIds.at(requestOrder) != classId
+            || !requestIndexByClassId.contains(classId)
+            || metadataRowsSeen[requestOrder] == QStringLiteral("1"))
+        {
+            invalidMetadataIdentity = true;
+            break;
+        }
+        metadataRowsSeen[requestOrder] = QStringLiteral("1");
+
+        if (metadataQuery.value("class_info_class_id").isNull())
+        {
+            continue;
+        }
+        if (metadataQuery.value("class_info_class_id").toInt() != classId)
+        {
+            invalidMetadataIdentity = true;
+            break;
+        }
+
+        RosterPrintClassInfoReadRecord& record = records[requestOrder];
+        record.classGrade = metadataQuery.value("class_grade").toString();
+        record.classLevel = metadataQuery.value("class_level").toString();
+        record.teacherEnglishName = metadataQuery.value("teacher_en").toString();
+        record.teacherKoreanName = metadataQuery.value("teacher_kr").toString();
+        record.roomNumber = metadataQuery.value("room_number").toString();
+        record.wifiName = metadataQuery.value("wifi_name").toString();
+        record.wifiPassword = metadataQuery.value("wifi_password").toString();
+        record.zoomId = metadataQuery.value("zoom_id").toString();
+        record.zoomPassword = metadataQuery.value("zoom_password").toString();
+    }
+    if (metadataQuery.lastError().isValid())
+    {
+        return std::unexpected(
+            QObject::tr("Reading roster print class information metadata failed: %1")
+                .arg(metadataQuery.lastError().text())
+            );
+    }
+    for (const QString& seen : metadataRowsSeen)
+    {
+        if (seen != QStringLiteral("1"))
+        {
+            invalidMetadataIdentity = true;
+            break;
+        }
+    }
+    if (invalidMetadataIdentity)
+    {
+        return std::unexpected(QObject::tr(
+            "Loading roster print class information returned an invalid class identity."
+            ));
+    }
+
+    QSqlQuery scheduleQuery(m_database);
+    scheduleQuery.setForwardOnly(true);
+    ++m_rosterPrintClassInfoBatchReadMetrics.regularScheduleStatementCount;
+    const QString scheduleQueryText = QStringLiteral(R"(
+        WITH requested(class_id, request_order) AS (VALUES %1)
+        SELECT requested.class_id AS requested_class_id,
+               requested.request_order AS request_order,
+               schedule.day AS day,
+               schedule.start_time AS start_time,
+               schedule.end_time AS end_time
+        FROM requested
+        INNER JOIN class_times schedule
+            ON schedule.class_id=requested.class_id
+        ORDER BY requested.request_order, schedule.id
+    )").arg(requestedValues.join(QStringLiteral(", ")));
+    const auto loadedSchedule = SqlQueryUtils::execute(
+        scheduleQuery,
+        scheduleQueryText,
+        QObject::tr("Loading roster print regular schedules"),
+        QObject::tr("%1 classes").arg(classIds.size())
+        );
+    if (!loadedSchedule)
+    {
+        return std::unexpected(loadedSchedule.error().userMessage());
+    }
+
+    bool invalidScheduleIdentity = false;
+    while (scheduleQuery.next())
+    {
+        const int classId = scheduleQuery.value("requested_class_id").toInt();
+        const int requestOrder = scheduleQuery.value("request_order").toInt();
+        if (requestOrder < 0
+            || requestOrder >= classIds.size()
+            || classIds.at(requestOrder) != classId
+            || !requestIndexByClassId.contains(classId))
+        {
+            invalidScheduleIdentity = true;
+            break;
+        }
+
+        records[requestOrder].regularTimes.append({
+            scheduleQuery.value("day").toString(),
+            scheduleQuery.value("start_time").toString(),
+            scheduleQuery.value("end_time").toString()
+        });
+    }
+    if (scheduleQuery.lastError().isValid())
+    {
+        return std::unexpected(
+            QObject::tr("Reading roster print regular schedules failed: %1")
+                .arg(scheduleQuery.lastError().text())
+            );
+    }
+    if (invalidScheduleIdentity)
+    {
+        return std::unexpected(QObject::tr(
+            "Loading roster print regular schedules returned an invalid class identity."
+            ));
+    }
+
+    return records;
+}
+
 Result<QList<SubPrepRosterOutputClassInfoReadRecord>>
 ClassInfoRepository::loadSubPrepRosterOutputClassInfoRecords(
     const QList<int>& classIds
@@ -1650,6 +1851,12 @@ const SubPrepRosterOutputClassInfoBatchReadMetrics&
 ClassInfoRepository::subPrepRosterOutputClassInfoBatchReadMetrics() const noexcept
 {
     return m_subPrepRosterOutputClassInfoBatchReadMetrics;
+}
+
+const RosterPrintClassInfoBatchReadMetrics&
+ClassInfoRepository::rosterPrintClassInfoBatchReadMetrics() const noexcept
+{
+    return m_rosterPrintClassInfoBatchReadMetrics;
 }
 
 Result<SubPrepClassDetailsRecord>

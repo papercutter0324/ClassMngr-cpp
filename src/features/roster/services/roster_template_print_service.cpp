@@ -7,6 +7,7 @@
 #include "next/application/roster_print_class_info_read_query.h"
 #include "next/application/roster_read_query.h"
 #include "next/application/roster_snapshot.h"
+#include "next/application/roster_template_print_source_read_query.h"
 #include "ui/shared/printing/pdf_print_service.h"
 
 #include <QColor>

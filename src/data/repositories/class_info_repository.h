@@ -78,6 +78,14 @@ struct RosterPrintClassInfoReadRecord final
     QList<ClassTime> regularTimes;
 };
 
+struct RosterPrintClassInfoBatchReadMetrics final
+{
+    int callCount = 0;
+    int requestedClassCount = 0;
+    int metadataStatementCount = 0;
+    int regularScheduleStatementCount = 0;
+};
+
 struct SubPrepRosterOutputClassInfoReadRecord final
 {
     int classId = -1;
@@ -163,6 +171,8 @@ public:
         loadMyClassesClassInformationRecords(const QList<int>& classIds);
     [[nodiscard]] Result<RosterPrintClassInfoReadRecord>
         loadRosterPrintClassInfoRecord(int classId);
+    [[nodiscard]] Result<QList<RosterPrintClassInfoReadRecord>>
+        loadRosterPrintClassInfoRecords(const QList<int>& classIds);
     [[nodiscard]] Result<QList<SubPrepRosterOutputClassInfoReadRecord>>
         loadSubPrepRosterOutputClassInfoRecords(const QList<int>& classIds);
 
@@ -178,6 +188,8 @@ public:
         myClassesClassInformationBatchReadMetrics() const noexcept;
     [[nodiscard]] const SubPrepRosterOutputClassInfoBatchReadMetrics&
         subPrepRosterOutputClassInfoBatchReadMetrics() const noexcept;
+    [[nodiscard]] const RosterPrintClassInfoBatchReadMetrics&
+        rosterPrintClassInfoBatchReadMetrics() const noexcept;
 
     [[nodiscard]] Result<SubPrepClassDetailsRecord>
         loadSubPrepClassDetails(int classId);
@@ -223,4 +235,6 @@ private:
         m_myClassesClassInformationBatchReadMetrics;
     SubPrepRosterOutputClassInfoBatchReadMetrics
         m_subPrepRosterOutputClassInfoBatchReadMetrics;
+    RosterPrintClassInfoBatchReadMetrics
+        m_rosterPrintClassInfoBatchReadMetrics;
 };

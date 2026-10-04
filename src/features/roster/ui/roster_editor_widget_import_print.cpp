@@ -10,10 +10,12 @@
 #include "next/application/speaking_evaluation_roster_score_row_assignments.h"
 #include "next/application/classes_list_read_query.h"
 #include "next/application/roster_print_class_info_read_query.h"
+#include "next/application/roster_template_print_source_read_query.h"
 #include "next/domain/domain_types.h"
 #include "next/platform/application_services_classes_list_read_port.h"
 #include "next/platform/application_services_roster_print_class_info_read_port.h"
 #include "next/platform/application_services_roster_read_port.h"
+#include "next/platform/application_services_roster_template_print_source_read_port.h"
 #include "next/platform/application_services_speaking_evaluation_batch_read_port.h"
 #include "next/platform/application_services_speaking_evaluation_read_port.h"
 
@@ -237,14 +239,20 @@ void RosterEditorWidget::outputRosters(
         ApplicationServicesRosterPrintClassInfoReadPort classInfoReadPort(
             m_services
             );
+    ClassMngr::Next::Platform::
+        ApplicationServicesRosterTemplatePrintSourceReadPort
+            templatePrintSourceReadPort(m_services);
     const ClassMngr::Next::Application::ClassesListReadQuery classesQuery(
         classesReadPort
         );
     const ClassMngr::Next::Application::RosterPrintClassInfoReadQuery
         classInfoQuery(classInfoReadPort);
+    const ClassMngr::Next::Application::RosterTemplatePrintSourceReadQuery
+        templatePrintSourceQuery(templatePrintSourceReadPort);
     request.classesListReadQuery = &classesQuery;
     request.rosterReadPort = &rosterReadPort;
     request.rosterPrintClassInfoReadQuery = &classInfoQuery;
+    request.rosterTemplatePrintSourceReadQuery = &templatePrintSourceQuery;
     request.currentClassId = m_classroom.id;
     request.currentClassName = m_classroom.name;
     request.scope = dialog.selectedScope();

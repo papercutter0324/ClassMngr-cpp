@@ -28,6 +28,20 @@ public:
         QStringList columns;
     };
 
+    struct TemplatePrintReadRecord final
+    {
+        int classId = 0;
+        Roster roster;
+    };
+
+    struct TemplatePrintBatchReadMetrics final
+    {
+        int callCount = 0;
+        int requestedClassCount = 0;
+        int columnStatementCount = 0;
+        int cellStatementCount = 0;
+    };
+
     struct MyClassesStudentCountReadEntry final
     {
         int classId = 0;
@@ -77,6 +91,11 @@ public:
     [[nodiscard]] Result<Roster> loadRoster(
         int classId
         );
+
+    [[nodiscard]] Result<QList<TemplatePrintReadRecord>>
+    loadRostersForTemplatePrint(const QList<int>& classIds);
+    [[nodiscard]] const TemplatePrintBatchReadMetrics&
+    templatePrintBatchReadMetrics() const noexcept;
 
     // Reads ordered column names for every requested class in one statement.
     // Classes without roster columns are returned with an empty column list.
@@ -139,4 +158,5 @@ private:
         m_myClassesStudentCountBatchReadMetrics;
     SubPrepStudentCountBatchReadMetrics
         m_subPrepStudentCountBatchReadMetrics;
+    TemplatePrintBatchReadMetrics m_templatePrintBatchReadMetrics;
 };
