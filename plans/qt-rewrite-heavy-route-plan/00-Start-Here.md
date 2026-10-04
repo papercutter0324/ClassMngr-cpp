@@ -5,7 +5,7 @@
 - Overall status: In progress
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
-- Last updated: 2026-10-04
+- Last updated: 2026-10-05
 - Current milestone: Phase 2 remains in progress. F253 (Qt-free private-notes
   splitter), F254 (Qt-free roster-score assignment planning), F255 (single-
   report AI eligibility policy reuse), F256 (typed roster read cutover for
@@ -54,10 +54,10 @@
   per-class subtitle reads after F261), and F304 (batch RosterPrintDialog
   extra-column roster reads after F264) and F305 (batch transfer-menu target
   metadata, capacity, and roster reads after F259/F265) are accepted; F305
-  remains distinct from F273's transfer-time target read. F306-F321 are
-  accepted; F322 (reduce Class Analytics roster-name fixed SQL reads while
-  preserving sparse-row sizing and the compact English/Korean projection) is
-  selected. Batch 5 (F316-F322) is active; Batch 6 (F323-F332) is recorded.
+  remains distinct from F273's transfer-time target read. F306-F322 are
+  accepted; F323 (batch Schedule Import apply-time class-information reads
+  while preserving class order, per-class defaults, schedule fields, and
+  transaction error behavior) is selected. Batch 6 (F323-F332) is active.
   Gates 1 and 2 remain Partial, with broader feature
   migration, parity, and 96-class Release memory evidence still open.
   See the

@@ -11539,3 +11539,33 @@ reads while preserving sparse-row sizing and the compact English/Korean
 projection. Batch 6 (F323-F332), recorded at F321 start, remains queued for
 after Batch 5. F298 remains deferred; Phase 2 remains In Progress/Open, with
 Gates 1 and 2 Partial.
+
+### F322 accepted / F323 selected - 2026-10-05
+
+F322, committed as
+`76861fcb78df99be4c394bf2cf63864e14984dca`, changes `readRosterNames()` to
+use the existing zero-column guard and one combined SQL query for header
+indices, maximum valid materialized row sizing, and selected name cells (at
+most two SQL reads, down from up to four). It preserves exact `English` and
+`Korean` header selection by `(position,id)`, duplicate first-header choice,
+all-column sparse-row sizing, empty holes, compact name values, and the
+no-column short-circuit.
+
+The Qt-free Application contract, dashboard read order, and four-evaluation
+batch are unchanged. Tests cover sparse sizing from unrelated Notes cells,
+blank holes, exact and case-mismatched headers, duplicate and absent headers,
+compact projection, empty-roster success without `roster_data`, and structured
+Technical failure when columns exist but `roster_data` does not.
+
+Fresh independent Windows x64 Debug/Ninja/MSVC configure validated 1,329
+handwritten source files; the target built, focused CTest passed 1/1, and
+`git diff --check` passed. Evidence is in
+`build/p2_f322_independent_configure.log`,
+`build/p2_f322_independent_build.log`,
+`build/p2_f322_independent_ctest.log`, and
+`build/p2_f322_independent_diff_check.log`. The query-count improvement was
+verified by source review; no runtime SQL instrumentation was added. F323 is
+selected from Batch 6 to batch Schedule Import apply-time class-information
+reads while preserving class order, per-class defaults, schedule fields, and
+transaction error behavior. Phase 2 remains In Progress/Open; Gates 1 and 2
+remain Partial.

@@ -15,14 +15,12 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Depends on: Phase 1
 - Blocks: Persistence, bootstrap, shared UI, and feature migration
 - Owner: Unassigned
-- Last updated: 2026-10-04
+- Last updated: 2026-10-05
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F321 is accepted. F322 is selected to reduce the Class
-  Analytics roster-name fixed SQL reads while preserving sparse-row sizing and
-  the compact English/Korean projection. Batch 6 (F323-F332) is recorded for
-  after Batch 5, beginning with Schedule Import apply-time class information
-  reads.
+- Current note: F322 is accepted. F323 is selected to batch Schedule Import
+  apply-time class-information reads while preserving class order, per-class
+  defaults, schedule fields, and transaction error behavior.
 
 ### Slice discovery batches
 
@@ -50,14 +48,7 @@ Accepted slices are removed from active tracking; their implementation and accep
   failure warning/no-navigation behavior; revisit after that behavior is
   clarified.
 
-#### Active batch: Batch 5
-
-1. F322 - Reduce Class Analytics roster-name fixed SQL read sequence;
-   preserve sparse-row sizing and the compact English/Korean projection.
-
-No other slices were found.
-
-#### Recorded batch: Batch 6
+#### Active batch: Batch 6
 
 1. F323 - Batch Schedule Import apply-time class-information reads; preserve
    class order, per-class defaults, schedule fields, and transaction error
@@ -246,24 +237,26 @@ No new v2 production path depends on DataService, MainWindow, PageManager, or a 
 
 Earlier verified slices and cumulative exit-gate snapshots are archived in the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 
-## Latest Progress Update - 2026-10-04 (F321 accepted; F322 selected)
+## Latest Progress Update - 2026-10-05 (F322 accepted; F323 selected)
 
-F321, committed as
-`0cf920978c8958c6596e31af1eaa254b5cea1357`, adds purpose-fit birthday
-projections for Native English and GS Team. They return only the fields used
-by the schedule, preserve each directory's repository order including GS's
-exact-empty-name fallback, and retain blank/null-mapped rows for existing
-downstream handling. The shared full-directory readers remain unchanged for
-staff-directory use, and the existing warning and error-precedence behavior is
-preserved.
+F322, committed as
+`76861fcb78df99be4c394bf2cf63864e14984dca`, changes `readRosterNames()` to
+use the existing zero-column guard and one combined SQL query for header
+indices, maximum valid materialized row sizing, and selected name cells (at
+most two SQL reads, down from up to four). It preserves exact `English` and
+`Korean` header selection by `(position,id)`, duplicate first-header choice,
+all-column sparse-row sizing, empty holes, compact name values, and the
+no-column short-circuit.
 
-Fresh independent Windows x64 Debug/Ninja/MSVC configure and build passed; the
-configure validated 1,329 handwritten source files. Focused CTest passed 9/9,
-including the new projections and full-directory regressions, and
-`git diff --check` passed. Logs are under `build/f321v/`. One query per source
-was verified by source review rather than SQL-count instrumentation.
+The Qt-free Application contract, dashboard read order, and four-evaluation
+batch are unchanged. Tests cover sparse sizing from unrelated Notes cells,
+blank holes, exact and case-mismatched headers, duplicate and absent headers,
+compact projection, empty-roster success without `roster_data`, and structured
+Technical failure when columns exist but `roster_data` does not.
 
-F322 is selected from Batch 5 to reduce Class Analytics roster-name fixed SQL
-reads while preserving sparse-row sizing and the compact English/Korean
-projection. F298 remains deferred pending its warning/navigation decision.
-Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial.
+Fresh independent Windows x64 Debug/Ninja/MSVC configure validated 1,329
+handwritten source files; the target built, focused CTest passed 1/1, and
+`git diff --check` passed. Logs are under `build/p2_f322_independent_*.log`.
+The query-count improvement was verified by source review; no runtime SQL
+instrumentation was added. Phase 2 remains In Progress/Open; Gates 1 and 2
+remain Partial.
