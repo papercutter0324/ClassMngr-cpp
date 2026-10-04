@@ -11783,7 +11783,7 @@ Notes and Co-Teacher pages, preserving consumed class/schedule fields and
 per-page read behavior. Phase 2 remains In Progress/Open; Gates 1 and 2 remain
 Partial.
 
-### Slice discovery update - 2026-10-05 (Batch 7 recorded at F332 acceptance)
+### Slice discovery update - 2026-10-05 (Batch 7 recorded)
 
 Two independent read-only sweeps found six distinct bounded candidates for
 Batch 7, ranked as follows:
@@ -11841,3 +11841,30 @@ The target is two class-info statements (metadata plus a combined tagged
 `UNION ALL` schedule read ordered by source-tag/id), compared with the three
 statements in `loadClassInfo()`. F334 is selected, not implemented. Phase 2
 remains In Progress/Open; Gates 1 and 2 remain Partial.
+
+### F334 accepted / F335 selected - 2026-10-05
+
+F334, committed as
+`812c61a05835eb5c1bc1fdae5c8820aaf3b78866`, adds
+`ClassDetailsPageReadRecord` with two class-info statements: metadata plus a
+tagged `UNION ALL` schedule read ordered by source/id. Only the Class Details
+page port is redirected. The reader preserves independent teacher/roster
+results, missing-metadata defaults while retaining schedules, and the prior
+regular/intensive visible error labels.
+
+Tests cover the two-statement metrics, defaults with schedule rows,
+field/order mapping, and regular/intensive SQL failures with Technical
+classification and an independent roster outcome. Fresh VS2026 x64/Ninja
+Debug configure passed the 1,329-file ownership audit; the focused
+`ClassMngrNextPlatformApplicationServicesClassDetailsPageReadPortTests` target
+built and CTest passed 1/1. `git diff --check` was clean; no full suite ran.
+Configure had nonfatal Visual Studio and long-path notices. Error-label
+selection reads SQLite/Qt error text for the table name; this was verified on
+the current SQLite driver.
+
+F335 is selected for a one-statement Schedule Editor class-info projection
+using `LEFT JOIN`. Preserve requested/canonical and selected IDs, grade/level,
+books, colors, teacher Korean name, and room; white/black color defaults;
+baseline blank teacher fields for missing teacher/class-info; repository error
+mapping; and non-class-info outcomes. This slice is selected, not implemented.
+Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial.

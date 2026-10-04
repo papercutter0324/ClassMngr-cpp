@@ -18,13 +18,13 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-05
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F334 is selected for a purpose-fit Class Details projection.
-  Preserve requested/canonical class IDs; grade/level, books, class/font
-  colors; ordered regular/intensive schedules; missing class-info defaults;
-  existing class-field error mapping; and independent teacher-display/roster
-  results. Target two class-info statements (metadata plus a combined tagged
-  `UNION ALL` schedule read ordered by source-tag/id), down from the three in
-  `loadClassInfo()`. F334 is selected, not implemented.
+- Current note: F335 is selected for a purpose-fit Schedule Editor
+  class-info projection. Preserve requested/canonical and selected IDs,
+  grade/level, books, colors, teacher Korean name, and room; white/black color
+  defaults; baseline blank teacher fields for missing teacher/class-info;
+  repository error mapping; and non-class-info outcomes. Replace
+  `loadClassInfo()`'s three statements with one purpose-fit `LEFT JOIN`
+  statement. F335 is selected, not implemented.
 
 ### Slice discovery batches
 
@@ -54,14 +54,12 @@ Accepted slices are removed from active tracking; their implementation and accep
 
 #### Active batch: Batch 7
 
-1. F334 - Add a purpose-fit Class Details projection, preserving requested
-   and canonical IDs, consumed metadata/schedules, defaults, error mapping,
-   and independent teacher-display/roster results.
-2. F335 - Combine Schedule Editor projection reads into one statement.
-3. F336 - Narrow Selected Class Grade reads to the consumed scalar fields.
-4. F337 - Reuse the F332 class-details reader for Class Details validation
+1. F335 - Add a one-statement Schedule Editor class-info projection with a
+   `LEFT JOIN`, preserving IDs, consumed fields, defaults, and error mapping.
+2. F336 - Narrow Selected Class Grade reads to the consumed scalar fields.
+3. F337 - Reuse the F332 class-details reader for Class Details validation
    context.
-5. F338 - Clean up the ClassImportDialog boundary.
+4. F338 - Clean up the ClassImportDialog boundary.
 
 No other slices were found.
 
@@ -225,20 +223,26 @@ No new v2 production path depends on DataService, MainWindow, PageManager, or a 
 
 Earlier verified slices and cumulative exit-gate snapshots are archived in the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 
-## Latest Progress Update - 2026-10-05 (F333 accepted; F334 selected)
+## Latest Progress Update - 2026-10-05 (F334 accepted; F335 selected)
 
-F333, committed as
-`062f109ea58c5e2e0e3b1bd19f69e620d1fc693d`, indexes normalized English and
-Korean names from Class Transfer preview's initial `getAllTeachers()` result
-by ID and reuses them for qualifying class assignments. `getTeacher()` remains
-only as a fallback when a conditional positive ID is absent from that list,
-preserving the existing missing-teacher error. The query bound is
-source-inspected, not instrumented: present profiles cause no per-class
-full-profile SELECT; the rare missing-ID fallback remains.
+F334, committed as
+`812c61a05835eb5c1bc1fdae5c8820aaf3b78866`, adds
+`ClassDetailsPageReadRecord` using two class-info statements: metadata and a
+tagged `UNION ALL` schedule read ordered by source/id. Only the Class Details
+page port changed. It preserves independent teacher/roster results, missing-
+metadata defaults while retaining schedule rows, and the prior regular and
+intensive visible error labels.
 
-Independent VS2026 x64/Ninja Debug configure validated 1,329 handwritten
-source files; `ClassMngrClassTransferTests` built, focused CTest
-`^ClassMngrClassTransferTests$` passed 1/1, and `git diff --check` exited 0.
-No full suite ran. F334 is selected for the Class Details projection described
-in the Current note; it is not implemented. Phase 2 remains In Progress/Open;
-Gates 1 and 2 remain Partial.
+Tests cover two-statement metrics, defaults with schedule rows, field/order
+mapping, and regular/intensive SQL failures with Technical classification and
+independent roster results. Fresh VS2026 x64/Ninja Debug configure passed the
+1,329-file ownership audit; the focused
+`ClassMngrNextPlatformApplicationServicesClassDetailsPageReadPortTests` target
+built and CTest passed 1/1. `git diff --check` was clean; no full suite ran.
+Configure reported nonfatal Visual Studio and long-path notices. Error-label
+selection reads SQLite/Qt error text for the table name; this was verified on
+the current SQLite driver.
+
+F335 is selected for the Schedule Editor projection described in the Current
+note; it is not implemented. Phase 2 remains In Progress/Open; Gates 1 and 2
+remain Partial.
