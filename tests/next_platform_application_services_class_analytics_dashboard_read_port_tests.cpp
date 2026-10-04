@@ -45,6 +45,7 @@ class NextPlatformApplicationServicesClassAnalyticsDashboardReadPortTests final
 
 private slots:
     void readsOnlyRosterNamesAndExactEvaluationScoreProjection();
+    void sparseRosterSizingUsesUnrelatedCellsAndFirstExactHeaders();
     void missingEvaluationIsSuccessfulEmptyInput();
     void activeSessionQueryFailureIsStructured();
 };
@@ -191,6 +192,95 @@ readsOnlyRosterNamesAndExactEvaluationScoreProjection()
 }
 
 void NextPlatformApplicationServicesClassAnalyticsDashboardReadPortTests::
+sparseRosterSizingUsesUnrelatedCellsAndFirstExactHeaders()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(
+        directory.filePath(QStringLiteral("class-analytics-sparse.db"))));
+    const auto classId = services.classService()->create(
+        QStringLiteral("Sparse analytics"));
+    QVERIFY(classId);
+    const auto absentNamesClassId = services.classService()->create(
+        QStringLiteral("Absent analytics names"));
+    QVERIFY(absentNamesClassId);
+
+    QSqlQuery insertColumn(services.databaseSession()->database());
+    insertColumn.prepare(R"(
+        INSERT INTO roster_columns (class_id, name, position, width)
+        VALUES (?, ?, ?, 100)
+    )");
+    const auto addColumn = [&](const int ownerId, const QString& name,
+                               const int position) {
+        insertColumn.bindValue(0, ownerId);
+        insertColumn.bindValue(1, name);
+        insertColumn.bindValue(2, position);
+        return insertColumn.exec();
+    };
+    // Insert IDs out of display order so the first exact English header is
+    // selected by (position, id), not by insertion order.
+    QVERIFY(addColumn(*classId, QStringLiteral("English"), 2));
+    QVERIFY(addColumn(*classId, QStringLiteral("Korean"), 1));
+    QVERIFY(addColumn(*classId, QStringLiteral("English"), 0));
+    QVERIFY(addColumn(*classId, QStringLiteral("Notes"), 3));
+    QVERIFY(addColumn(*classId, QStringLiteral("english"), 4));
+    QVERIFY(addColumn(*absentNamesClassId, QStringLiteral("Notes"), 0));
+
+    QSqlQuery insertCell(services.databaseSession()->database());
+    insertCell.prepare(R"(
+        INSERT INTO roster_data (class_id, row_index, col_index, value)
+        VALUES (?, ?, ?, ?)
+    )");
+    const auto addCell = [&](const int ownerId, const int row, const int column,
+                             const QString& value) {
+        insertCell.bindValue(0, ownerId);
+        insertCell.bindValue(1, row);
+        insertCell.bindValue(2, column);
+        insertCell.bindValue(3, value);
+        return insertCell.exec();
+    };
+    QVERIFY(addCell(*classId, 0, 0, QStringLiteral("Chosen English")));
+    QVERIFY(addCell(*classId, 2, 1, QStringLiteral("Chosen Korean")));
+    QVERIFY(addCell(*classId, 2, 2,
+                    QStringLiteral("duplicate-english-private-marker")));
+    QVERIFY(addCell(*classId, 4, 3,
+                    QStringLiteral("unrelated-private-marker")));
+    QVERIFY(addCell(*absentNamesClassId, 3, 0,
+                    QStringLiteral("absent-header-private-marker")));
+
+    const auto typedClassId = Domain::ClassId::fromString(
+        std::to_string(*classId));
+    const auto typedAbsentNamesClassId = Domain::ClassId::fromString(
+        std::to_string(*absentNamesClassId));
+    QVERIFY(typedClassId);
+    QVERIFY(typedAbsentNamesClassId);
+    Platform::ApplicationServicesClassAnalyticsDashboardReadPort port(services);
+
+    const auto roster = port.readRosterNames(*typedClassId);
+    QVERIFY(roster);
+    QVERIFY(roster.value().hasEnglishColumn);
+    QVERIFY(roster.value().hasKoreanColumn);
+    QCOMPARE(roster.value().rowCount, std::size_t{5});
+    QVERIFY((roster.value().englishNames == std::vector<std::u16string>{
+        u"Chosen English", u"", u"", u"", u""
+    }));
+    QVERIFY((roster.value().koreanNames == std::vector<std::u16string>{
+        u"", u"", u"Chosen Korean", u"", u""
+    }));
+
+    const auto absentHeaders = port.readRosterNames(*typedAbsentNamesClassId);
+    QVERIFY(absentHeaders);
+    QVERIFY(!absentHeaders.value().hasEnglishColumn);
+    QVERIFY(!absentHeaders.value().hasKoreanColumn);
+    QCOMPARE(absentHeaders.value().rowCount, std::size_t{4});
+    QVERIFY(absentHeaders.value().englishNames
+            == std::vector<std::u16string>(4));
+    QVERIFY(absentHeaders.value().koreanNames
+            == std::vector<std::u16string>(4));
+}
+
+void NextPlatformApplicationServicesClassAnalyticsDashboardReadPortTests::
 missingEvaluationIsSuccessfulEmptyInput()
 {
     QTemporaryDir directory;
@@ -245,9 +335,33 @@ activeSessionQueryFailureIsStructured()
         std::to_string(*classId));
     QVERIFY(typedClassId);
 
+    QSqlQuery dropRosterData(services.databaseSession()->database());
+    QVERIFY(dropRosterData.exec(QStringLiteral("DROP TABLE roster_data")));
+    Platform::ApplicationServicesClassAnalyticsDashboardReadPort port(services);
+
+    QSqlQuery removeRosterColumns(services.databaseSession()->database());
+    removeRosterColumns.prepare(
+        QStringLiteral("DELETE FROM roster_columns WHERE class_id=?"));
+    removeRosterColumns.addBindValue(*classId);
+    QVERIFY(removeRosterColumns.exec());
+    const auto emptyRoster = port.readRosterNames(*typedClassId);
+    QVERIFY(emptyRoster);
+    QCOMPARE(emptyRoster.value().rowCount, std::size_t{0});
+
+    QSqlQuery insertRosterColumn(services.databaseSession()->database());
+    insertRosterColumn.prepare(R"(
+        INSERT INTO roster_columns (class_id, name, position, width)
+        VALUES (?, 'English', 0, 100)
+    )");
+    insertRosterColumn.addBindValue(*classId);
+    QVERIFY(insertRosterColumn.exec());
+    const auto rosterFailure = port.readRosterNames(*typedClassId);
+    QVERIFY(!rosterFailure);
+    QCOMPARE(rosterFailure.error().code, Domain::ErrorCode::Technical);
+    QVERIFY(!rosterFailure.error().message.empty());
+
     QSqlQuery drop(services.databaseSession()->database());
     QVERIFY(drop.exec(QStringLiteral("DROP TABLE speaking_eval_data")));
-    Platform::ApplicationServicesClassAnalyticsDashboardReadPort port(services);
     const auto failed = port.readEvaluationBatch(*typedClassId);
     QVERIFY(!failed);
     QCOMPARE(failed.error().code, Domain::ErrorCode::Technical);

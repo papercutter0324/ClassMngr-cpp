@@ -80,85 +80,95 @@ public:
                 return technicalFailure<Application::ClassAnalyticsRosterNames>(
                     "Roster column count could not be read.");
             }
-            const int columnCount = columnCountQuery.value(0).toInt();
-            if (columnCount <= 0)
+            if (columnCountQuery.value(0).toInt() <= 0)
             {
                 return Domain::Result<
                     Application::ClassAnalyticsRosterNames>::success(
                         std::move(roster));
             }
 
-            int englishColumn = -1;
-            int koreanColumn = -1;
-            QSqlQuery nameColumnsQuery(database);
-            nameColumnsQuery.prepare(R"(
-                SELECT selected.name,
-                       (
-                           SELECT COUNT(*) - 1
-                           FROM roster_columns preceding
-                           WHERE preceding.class_id=selected.class_id
-                             AND (
-                                 preceding.position < selected.position
-                                 OR (preceding.position = selected.position
-                                     AND preceding.id <= selected.id)
-                             )
-                       ) AS column_index
-                FROM roster_columns selected
-                WHERE selected.class_id=?
-                  AND selected.name IN ('English', 'Korean')
-                ORDER BY selected.position, selected.id
+            QSqlQuery rosterQuery(database);
+            rosterQuery.prepare(R"(
+                WITH requested(class_id) AS (VALUES (?)),
+                ranked_columns AS (
+                    SELECT selected.name,
+                           (
+                               SELECT COUNT(*) - 1
+                               FROM roster_columns preceding
+                               WHERE preceding.class_id=selected.class_id
+                                 AND (
+                                     preceding.position < selected.position
+                                     OR (preceding.position = selected.position
+                                         AND preceding.id <= selected.id)
+                                 )
+                           ) AS column_index
+                    FROM roster_columns selected
+                    JOIN requested
+                      ON requested.class_id=selected.class_id
+                ),
+                metadata AS (
+                    SELECT COUNT(*) AS column_count,
+                           MIN(CASE WHEN name='English'
+                                    THEN column_index END) AS english_column,
+                           MIN(CASE WHEN name='Korean'
+                                    THEN column_index END) AS korean_column
+                    FROM ranked_columns
+                ),
+                sizing AS (
+                    SELECT MAX(data.row_index) AS maximum_row
+                    FROM roster_data data
+                    JOIN requested
+                      ON requested.class_id=data.class_id
+                    CROSS JOIN metadata
+                    WHERE data.row_index>=0
+                      AND data.col_index>=0
+                      AND data.col_index<metadata.column_count
+                )
+                SELECT metadata.english_column,
+                       metadata.korean_column,
+                       sizing.maximum_row,
+                       names.row_index,
+                       names.col_index,
+                       names.value
+                FROM metadata
+                CROSS JOIN sizing
+                LEFT JOIN roster_data names
+                  ON names.class_id=(SELECT class_id FROM requested)
+                 AND names.row_index>=0
+                 AND names.row_index<=sizing.maximum_row
+                 AND (names.col_index=metadata.english_column
+                      OR names.col_index=metadata.korean_column)
+                ORDER BY names.row_index, names.col_index
             )");
-            nameColumnsQuery.addBindValue(*legacyId);
+            rosterQuery.addBindValue(*legacyId);
             executed = SqlQueryUtils::executePrepared(
-                nameColumnsQuery, QStringLiteral("Loading roster name columns"),
+                rosterQuery, QStringLiteral("Loading roster names"),
                 classIdentity(*legacyId));
             if (!executed)
             {
                 return sqlFailure<Application::ClassAnalyticsRosterNames>(
                     executed.error().userMessage());
             }
-            while (nameColumnsQuery.next())
+            if (!rosterQuery.next())
             {
-                const QString name = nameColumnsQuery.value("name").toString();
-                const int column =
-                    nameColumnsQuery.value("column_index").toInt();
-                if (name == QStringLiteral("English") && englishColumn < 0)
-                {
-                    englishColumn = column;
-                }
-                else if (name == QStringLiteral("Korean") && koreanColumn < 0)
-                {
-                    koreanColumn = column;
-                }
+                return technicalFailure<Application::ClassAnalyticsRosterNames>(
+                    "Roster names could not be read.");
             }
+
+            const QVariant englishColumnValue =
+                rosterQuery.value("english_column");
+            const QVariant koreanColumnValue =
+                rosterQuery.value("korean_column");
+            const int englishColumn = englishColumnValue.isNull()
+                ? -1
+                : englishColumnValue.toInt();
+            const int koreanColumn = koreanColumnValue.isNull()
+                ? -1
+                : koreanColumnValue.toInt();
             roster.hasEnglishColumn = englishColumn >= 0;
             roster.hasKoreanColumn = koreanColumn >= 0;
 
-            QSqlQuery maximumRowQuery(database);
-            maximumRowQuery.prepare(R"(
-                SELECT MAX(row_index)
-                FROM roster_data
-                WHERE class_id=?
-                  AND row_index>=0
-                  AND col_index>=0
-                  AND col_index<?
-            )");
-            maximumRowQuery.addBindValue(*legacyId);
-            maximumRowQuery.addBindValue(columnCount);
-            executed = SqlQueryUtils::executePrepared(
-                maximumRowQuery, QStringLiteral("Sizing roster rows"),
-                classIdentity(*legacyId));
-            if (!executed)
-            {
-                return sqlFailure<Application::ClassAnalyticsRosterNames>(
-                    executed.error().userMessage());
-            }
-            if (!maximumRowQuery.next())
-            {
-                return technicalFailure<Application::ClassAnalyticsRosterNames>(
-                    "Roster row count could not be read.");
-            }
-            const QVariant maximumRow = maximumRowQuery.value(0);
+            const QVariant maximumRow = rosterQuery.value("maximum_row");
             roster.rowCount = maximumRow.isNull()
                 ? 0
                 : static_cast<std::size_t>(maximumRow.toInt() + 1);
@@ -172,48 +182,31 @@ public:
                         std::move(roster));
             }
 
-            QSqlQuery namesQuery(database);
-            namesQuery.prepare(R"(
-                SELECT row_index, col_index, value
-                FROM roster_data
-                WHERE class_id=?
-                  AND row_index>=0
-                  AND row_index<?
-                  AND (col_index=? OR col_index=?)
-                ORDER BY row_index, col_index
-            )");
-            namesQuery.addBindValue(*legacyId);
-            namesQuery.addBindValue(static_cast<qulonglong>(roster.rowCount));
-            namesQuery.addBindValue(englishColumn);
-            namesQuery.addBindValue(koreanColumn);
-            executed = SqlQueryUtils::executePrepared(
-                namesQuery, QStringLiteral("Loading roster student names"),
-                classIdentity(*legacyId));
-            if (!executed)
+            do
             {
-                return sqlFailure<Application::ClassAnalyticsRosterNames>(
-                    executed.error().userMessage());
-            }
-            while (namesQuery.next())
-            {
-                const int row = namesQuery.value("row_index").toInt();
-                const int column = namesQuery.value("col_index").toInt();
-                if (row < 0
-                    || static_cast<std::size_t>(row) >= roster.rowCount)
+                if (!rosterQuery.value("row_index").isNull())
                 {
-                    continue;
-                }
-                const std::u16string value = namesQuery.value("value")
-                    .toString().toStdU16String();
-                if (column == englishColumn)
-                {
-                    roster.englishNames[static_cast<std::size_t>(row)] = value;
-                }
-                if (column == koreanColumn)
-                {
-                    roster.koreanNames[static_cast<std::size_t>(row)] = value;
+                    const int row = rosterQuery.value("row_index").toInt();
+                    const int column = rosterQuery.value("col_index").toInt();
+                    if (row >= 0
+                        && static_cast<std::size_t>(row) < roster.rowCount)
+                    {
+                        const std::u16string value = rosterQuery.value("value")
+                            .toString().toStdU16String();
+                        if (column == englishColumn)
+                        {
+                            roster.englishNames[
+                                static_cast<std::size_t>(row)] = value;
+                        }
+                        if (column == koreanColumn)
+                        {
+                            roster.koreanNames[
+                                static_cast<std::size_t>(row)] = value;
+                        }
+                    }
                 }
             }
+            while (rosterQuery.next());
             return Domain::Result<
                 Application::ClassAnalyticsRosterNames>::success(
                     std::move(roster));
