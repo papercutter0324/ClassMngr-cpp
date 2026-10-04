@@ -38,125 +38,55 @@ current or next slice. Keep only the most recent slice commit in the
 `Latest Progress Update` section. When writing a newer update, move the previous
 one to this phase's progress log before replacing it.
 
-#### Recorded batches
+#### Deferred candidates
 
-1. **Batch 1**
-   1. F285 — Deferred before implementation: `addTeacher()` creates a blank
-      teacher, but required-name validation rejects it before the profile read.
-      Revisit after the blank-draft creation contract is clarified.
-   2. F286 — Use the returned workspace session location for FileController's
-      successful create/open current-file state.
-   3. F287 — Remove ClassImportDialog's unreachable direct class-name lookup;
-      preserve the existing formatted label when subtitle data is unavailable.
-   4. F288 — Route the Campus Dashboard selector list through its accepted
-      campus-directory query.
-   5. F289 — Route roster-template printing's class-scope enumeration through
-      the accepted classes-list query.
-   6. F290 — Route roster-template printing's per-class roster read through the
-      accepted roster query.
-   7. F291 — Provide My Classes a dedicated compact class-information
-      query/snapshot/port with one `ApplicationServices` adapter read; retain
-      its accepted class-list, roster-count, and full teacher-profile queries.
-   8. F292 — Route the sidebar's Korean birthday-directory read through the
-      accepted query and adapter.
-   9. F293 — Route sidebar class-teacher assignments through the accepted
-      typed query, snapshot, and port with an active-session
-      `ApplicationServices` adapter, preserving unassigned classes and
-      existing sidebar behavior.
-   10. F294 — Add an accepted latest-import-date read for teacher import.
+Accepted slices are removed from active tracking; their implementation and acceptance evidence remain in the chronological [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 
-2. **Batch 2**
-   1. F295 — Pass accepted classes-list ID/name data through the roster-template
-      print pipeline to remove the per-class `classroom()` lookup. F289 already
-      migrates scope enumeration; the extra read remains in
-      `src/features/roster/services/roster_template_print_private_service.inc:64-87`.
-   2. F296 — Route roster-template printing's per-class full class-information
-      read through a purpose-fit application projection. The printer also needs
-      room and Zoom details beyond class-list/subtitle projections; see
-      `src/features/roster/services/roster_template_print_private_service.inc:81-88`
-      and `src/features/roster/services/roster_template_print_shared_data.inc:343`.
-   3. F297 — Add a selected-campus detail read for Campus Dashboard. Although
-      F288 migrates the selector list, `CampusDashboardPage::loadSelectedCampus()`
-      directly read `m_repository.loadCampus()` for address, directions, map,
-      transit, and office fields before F297; preserve
-      save-before-read and silent missing-campus behavior.
-   4. F298 — Deferred after review: `SidebarController::addClass()` re-reads
-      the class only to reuse the ID returned by `create()`. The identity is
-      mechanically available from `ClassService::create()`'s `Result<int>` and
-      repository last-insert ID, but removing the read changes its dedicated
-      failure warning/no-navigation behavior; `openClass()` can select another
-      class or none. No test clarifies the intended post-create failure
-      behavior, so defer pending a semantic decision.
-   5. F299 — Add an application-facing Class Analytics dashboard read/use case
-      for current-roster and historical/YTD projections. `ClassAnalyticsPage::rebuild()`
-      still calls `SpeakingEvaluationService::analyticsDashboard()`
-      (`src/features/classes/ui/class_analytics_page.cpp:528`), which reads
-      roster/evaluation data and composes analytics in
-      `src/features/classes/services/feature_services.cpp:1470`; the accepted
-      single-evaluation read does not cover this dashboard composition.
+- F285 - Deferred before implementation: addTeacher() creates a blank
+  teacher, but required-name validation rejects it before the profile read.
+  Revisit after the blank-draft creation contract is clarified.
+- F298 - Deferred after review: SidebarController::addClass() re-reads the
+  class only to reuse the ID returned by create(). Removing the read changes its
+  failure warning/no-navigation behavior; revisit after that behavior is
+  clarified.
 
-No other slices were found.
+#### Active batch: Batch 4
 
-3. **Batch 3**
-   1. F300 accepted — Reduce repeated per-matching-class
-      `SelectedClassSubtitleReadQuery` calls for destination labels in
-      `ClassImportDialog`. This is query fan-out after F262's query migration,
-      not a remaining direct service read.
-   2. F301 accepted — Reduce per-class selected-subtitle query calls in
-      `ClassExportDialog` after its classes-list load. This is query fan-out
-      following F262/F266, not a remaining direct service read.
-   3. F302 accepted (discovered in separate F299 audit) — Batch class-delete
-      chooser subtitle-label queries following F275, reusing the accepted
-      subtitle batch API.
-   4. F303 accepted (discovered in separate F299 audit) — Batch
-      `RosterPrintDialog` per-class selected-subtitle queries after F261;
-      preserve the current-class-only branch.
-   5. F304 accepted (discovered in separate F299 audit) — Batch
-      `RosterPrintDialog` extra-column roster reads after F264; preserve scope,
-      column union, and failure fallback.
-   6. F305 accepted (discovered in separate F299 audit) — Batch transfer-menu
-      target metadata, capacity, and roster reads after F259/F265; keep
-      distinct from F273's transfer-time target read.
-
-No other slices were found.
-
-4. **Batch 4**
-   1. F306 — Batch My Classes compact per-class class-information reads after
+1. F306 - Batch My Classes compact per-class class-information reads after
       F291; preserve class-info/default/failure outcome separately from roster
       and teacher inputs.
-   2. F307 — Batch My Classes assigned-teacher profile reads after F270;
+2. F307 - Batch My Classes assigned-teacher profile reads after F270;
       preserve class-to-teacher association, class order, and profile-failure
       behavior.
-   3. F308 — Batch My Classes roster-backed student-count reads after F283;
+3. F308 - Batch My Classes roster-backed student-count reads after F283;
       preserve exact English/Korean, trim/whitespace, and zero-on-failure
       behavior.
-   4. F309 — Batch Sub Prep information-sheet per-class roster counts after
+4. F309 - Batch Sub Prep information-sheet per-class roster counts after
       F179; preserve schedule order, zero fallback, and equivalent read
       metrics.
-   5. F310 — Batch ClassImportDialog matched-teacher alternative display-name
+5. F310 - Batch ClassImportDialog matched-teacher alternative display-name
       reads; separate from F300 class subtitles; preserve choice
-      order/duplicates, formatting, and `Teacher N` fallback.
-   6. F311 — Batch Sub Prep roster-output per-class class-name and compact
+      order/duplicates, formatting, and Teacher N fallback.
+6. F311 - Batch Sub Prep roster-output per-class class-name and compact
       metadata reads; preserve schedule order, classes without meetings,
       identity checks, failure-before-partial-output, and aggregate output
       bounds.
-   7. F312 — Purpose-fit projection for initial-setup teacher choices; preserve
+7. F312 - Purpose-fit projection for initial-setup teacher choices; preserve
       ID/name/preferred display fields, repository order, validation, and error
       behavior.
-   8. F313 — Purpose-fit projection for testing-teacher choices; preserve
+8. F313 - Purpose-fit projection for testing-teacher choices; preserve
       ID/Korean-name/room, repository order, blank-name filtering and selection
       behavior, and current recoverability semantics.
-   9. F314 — Purpose-fit projection for co-teacher choices; preserve exact
+9. F314 - Purpose-fit projection for co-teacher choices; preserve exact
       profile/network fields, repository order, ID validation, and error
       behavior.
-   10. F315 — Purpose-fit Korean teacher birthday-directory projection;
+10. F315 - Purpose-fit Korean teacher birthday-directory projection;
        preserve birthday/name/preferred-display fields, raw values, repository
        order, and downstream filtering.
 
-At F314 start, discover Batch 5 and reconsider the carried-forward fixed
-up-to-four-evaluation roster score-import read. F305's transfer-menu
-capacity/roster loop is already in Batch 3 and must not be duplicated.
-
+At F314 start, discover Batch 5 and reconsider the fixed up-to-four-evaluation
+roster score-import read. F305's transfer-menu capacity/roster loop is already
+accepted and must not be duplicated.
 #### F299 completeness audit checkpoint
 
 At F299 start, perform a separate completeness audit for Phase 2 slices missed
