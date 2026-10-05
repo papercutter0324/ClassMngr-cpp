@@ -30,6 +30,16 @@ classmngr_add_qt_test(
 )
 
 classmngr_add_qt_test(
+    NAME MyClassesPageTeacherDisplayParity
+    SOURCES
+        tests/my_classes_page_teacher_display_parity_tests.cpp
+    LIBRARIES
+        Qt6::Test
+        Qt6::Widgets
+    OFFSCREEN
+)
+
+classmngr_add_qt_test(
     NAME TypedSignatureRenderer
     SOURCES
         tests/typed_signature_renderer_tests.cpp
