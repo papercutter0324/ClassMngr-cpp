@@ -12478,3 +12478,30 @@ stale DataService include while retaining the shared review-request type.
 F359 is selected, not implemented or verified. Batch 9 is complete; Batch 10
 is active with F360-F361 queued. Phase 2 remains In Progress/Open; Gates 1 and
 2 remain Partial.
+
+### F359 accepted / F360 selected - 2026-10-06
+
+F359, committed as
+`25f5520ed861ba8453b633c33cf736b0449a81df` (`Phase2 - Retire Schedule Import
+compatibility helper (F359)`), removes unused `openScheduleImportService` and
+its helper-only `.cpp`/CMake entries, plus stale production DataService and
+presentation includes. `ScheduleImportReviewRequest` remains byte-for-byte;
+the test-fixture DataService include remains.
+
+Fresh current and pinned-baseline configure and dialog-target builds succeeded.
+The focused current CTest timed out at 300.49 seconds (exit `0xc0000409`) in
+`compactFlowAndReviewPresentation`; the exact F358-baseline CTest was stopped
+at about 320 seconds. Independent direct-slot runs on both revisions passed
+`reviewModelBuildsTypedApplyRequest` and
+`reviewPrepareClosedSessionUsesSnapshotWarning`; the slots
+`reviewRefreshUsesFreshTypedStateSnapshot`,
+`suppliedWorkbookBuildsStagedReview`, and
+`compactFlowAndReviewPresentation` stalled at the same database-not-open /
+offscreen warning point. This is a baseline-equivalent focused-test limitation;
+the dialog target built, but its full CTest did not pass. No full suite ran.
+
+F360 is selected for Testing Classes cancel/failure page parity: add the missing
+`loadTestingTeacherChoiceRecords` test-support read and compare current/baseline
+warning and page outcomes for F145-F147. F360 is selected, not implemented or
+verified; F361 remains queued. Batch 9 is complete; Batch 10 is active. Phase 2
+remains In Progress/Open; Gates 1 and 2 remain Partial.

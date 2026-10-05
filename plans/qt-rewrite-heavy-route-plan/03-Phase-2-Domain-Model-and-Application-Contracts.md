@@ -32,10 +32,11 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-06
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F359 is selected to retire the unused Schedule Import
-  compatibility helper and stale DataService include while retaining the
-  shared review-request type. F359 is selected, not implemented or verified.
-  Batch 9 is complete; Batch 10 is active with F360-F361 queued.
+- Current note: F360 is selected for Testing Classes cancel/failure page
+  parity. Add the missing `loadTestingTeacherChoiceRecords` test-support read
+  and compare current/baseline warning and page outcomes for F145-F147. F360
+  is selected, not implemented or verified; F361 remains queued. Batch 9 is
+  complete; Batch 10 is active.
 
 ### Slice discovery batches
 
@@ -110,7 +111,7 @@ No other slices were found.
 3. F356 - Remove Speaking Evaluation compatibility-service availability gates around existing typed roster-name/selected-subtitle reads; preserve closed-session/read-failure behavior (accepted; commit `6378c369`).
 4. F357 - Remove Roster Print compatibility gates around existing typed class/teacher/subtitle/extra-column reads; preserve session/errors and keep distinct from F302-F305 batching (accepted; commit `10f7060a`).
 5. F358 - Remove orphan My Classes single-class information read contract/adapter/tests (no production callers); retain the F291 batch path (accepted; commit `6bca3311`).
-6. F359 - Retire the unused Schedule Import compatibility helper and stale DataService include; retain the shared review-request type.
+6. F359 - Retire the unused Schedule Import compatibility helper and stale DataService include; retain the shared review-request type (accepted; commit `25f5520e`).
 7. F360 - Testing Classes cancel/failure page parity; add the missing `loadTestingTeacherChoiceRecords` test-support read and compare current/baseline warning/page outcomes for F145-F147.
 8. F361 - Class Analytics full-page baseline parity for summary/class-shape/YTD visible mappings; keep accepted query work unchanged.
 
@@ -118,9 +119,9 @@ No other slices were found.
 
 #### Active batch: Batch 10
 
-1. F354-F358 - Accepted: Class Transfer package-build Application contract; Co-teacher assignment purpose-fit persistence boundary; Speaking Evaluation and Roster Print typed-read compatibility gates; retire the unused My Classes single-class information read contract while retaining the F291 batch path.
-2. F359 - Selected/current: retire the unused Schedule Import compatibility helper and stale DataService include; retain the shared review-request type.
-3. F360-F361 - Queued in the recorded order above.
+1. F354-F359 - Accepted: Class Transfer package-build Application contract; Co-teacher assignment purpose-fit persistence boundary; Speaking Evaluation and Roster Print typed-read compatibility gates; retire the unused My Classes single-class information read contract while retaining the F291 batch path; retire the unused Schedule Import compatibility helper while retaining the shared review-request type.
+2. F360 - Selected/current: Testing Classes cancel/failure page parity; add the missing `loadTestingTeacherChoiceRecords` test-support read and compare current/baseline warning/page outcomes for F145-F147.
+3. F361 - Queued: Class Analytics full-page baseline parity for summary/class-shape/YTD visible mappings; keep accepted query work unchanged.
 
 #### F299 completeness audit checkpoint
 
@@ -282,23 +283,29 @@ No new v2 production path depends on DataService, MainWindow, PageManager, or a 
 
 Earlier verified slices and cumulative exit-gate snapshots are archived in the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 
-## Latest Progress Update - 2026-10-06 (F358 accepted; F359 selected)
+## Latest Progress Update - 2026-10-06 (F359 accepted; F360 selected)
 
-F358, committed as
-`6bca33113e0e37c568dee2f3a66f85634052ab6a` (`Phase2 - Retire unused My Classes
-single-read contract (F358)`), removes the orphan single-class read query and
-port, Platform adapter, two tests, and registrations. It retains shared
-schedule/fields DTOs, generic `loadClassInfo` and its read metric,
-`ClassInfoRepository`'s read record and method, and all F291 batch APIs and
-tests.
+F359, committed as
+`25f5520ed861ba8453b633c33cf736b0449a81df` (`Phase2 - Retire Schedule Import
+compatibility helper (F359)`), removes unused `openScheduleImportService` and
+its helper-only `.cpp`/CMake entries, plus stale production DataService and
+presentation includes. `ScheduleImportReviewRequest` remains byte-for-byte;
+the test-fixture DataService include remains.
 
-Independent fresh current and pinned-F357-baseline builds each passed the same
-three focused CTests for the My Classes page and F291 Application/Platform
-batch. One-owner audits covered 1,348 current and 1,353 baseline handwritten
-sources, matching the five deletions. No full suite ran.
+Fresh current and pinned-baseline configure and dialog-target builds succeeded.
+The focused current CTest timed out at 300.49 seconds (exit `0xc0000409`) in
+`compactFlowAndReviewPresentation`; the exact F358-baseline CTest was stopped
+at about 320 seconds. In independent direct-slot runs on both revisions,
+`reviewModelBuildsTypedApplyRequest` and
+`reviewPrepareClosedSessionUsesSnapshotWarning` passed, while
+`reviewRefreshUsesFreshTypedStateSnapshot`,
+`suppliedWorkbookBuildsStagedReview`, and
+`compactFlowAndReviewPresentation` stalled at the same database-not-open /
+offscreen warning point. This is a baseline-equivalent focused-test limitation;
+the dialog target built, but its full CTest did not pass. No full suite ran.
 
-F359 is selected to retire the unused Schedule Import compatibility helper and
-stale DataService include while retaining the shared review-request type.
-F359 is selected, not implemented or verified. Batch 9 is complete; Batch 10
-is active with F360-F361 queued. Phase 2 remains In Progress/Open; Gates 1 and
-2 remain Partial.
+F360 is selected for Testing Classes cancel/failure page parity: add the missing
+`loadTestingTeacherChoiceRecords` test-support read and compare current/baseline
+warning and page outcomes for F145-F147. F360 is selected, not implemented or
+verified; F361 remains queued. Batch 9 is complete; Batch 10 is active. Phase 2
+remains In Progress/Open; Gates 1 and 2 remain Partial.
