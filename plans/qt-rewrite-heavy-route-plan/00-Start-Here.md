@@ -61,11 +61,12 @@
   profile reuse) is accepted; F334 (purpose-fit Class Details projection) is
   accepted; F335 (one-statement Schedule Editor class-info projection) is
   accepted; F336 (one-column Selected Class Grade read), F337 (reuse the F332
-  class-details reader for Class Details validation context), and F338 (move
-  the import-dialog teacher batch read to v2) are accepted; F339 (purpose-fit
-  Schedule Testing class-choice projection) is selected. Batch 6 is complete;
-  Batch 7 (F337-F338) is complete; Batch 8 (F339-F344) is active, with F339
-  selected and F340-F344 queued.
+  class-details reader for Class Details validation context), F338 (move the
+  import-dialog teacher batch read to v2), and F339 (narrow Schedule Testing
+  class choices) are accepted; F340 (narrow Sub Prep roster-output
+  schedule-scope class reads) is selected. Batch 6 is complete; Batch 7
+  (F337-F338) is complete; Batch 8 (F339-F344) remains active, with F340
+  selected and F341-F344 queued.
   Gates 1 and 2 remain Partial, with broader feature
   migration, parity, and 96-class Release memory evidence still open.
   See the

@@ -12000,3 +12000,31 @@ test. Use focused target
 F339 is selected, not implemented. Batch 7 is complete; Batch 8 is active with
 F340-F344 queued. Phase 2 remains In Progress/Open; Gates 1 and 2 remain
 Partial.
+
+### F339 accepted / F340 selected - 2026-10-05
+
+F339, committed as `1d2b6810` (`Phase2 - Narrow Schedule Testing class
+choices (F339)`), adds a purpose-fit repository record and read selecting class
+ID, name, grade, level, and room. Only the existing v2 port consumes it;
+generic `loadTestingClasses()` remains unchanged. The read preserves the
+`testing_classes`-to-`classes` inner join, `class_info` left join, grade/level/
+name/ID order, blank grade/level defaults when class info is missing, room,
+successful empty results, Technical repository failures, and one statement.
+
+Tests cover missing-class-info behavior and the one-statement metric. Fresh
+independent VS2026 x64/Ninja Debug configure validated 1,334 files; repository
+and port targets built; focused CTest passed 2/2. `git diff --check` exited 0.
+No full suite ran; configure had known nonfatal warnings.
+
+F340 is selected to narrow Sub Prep roster-output schedule-scope class reads
+from `loadClassInfosForScheduleScope(..., includeUnassignedTeachers=true)` to
+class ID, assigned teacher ID, and selected-scope schedule records, removing
+grade/level/colors/notes repeated per meeting. Preserve selected-day/type
+filtering, schedule order, output caps, unassigned-class inclusion, missing-
+`class_info` failures, identity checks, and source failure behavior. Keep the
+one-query bound and add or retain an explicit one-statement assertion when
+feasible. Focused target:
+`NextPlatformApplicationServicesSubPrepRosterOutputSourcePort`.
+F340 is selected, not implemented. Batch 7 is complete; Batch 8 remains active
+with F341-F344 queued. Phase 2 remains In Progress/Open; Gates 1 and 2 remain
+Partial.

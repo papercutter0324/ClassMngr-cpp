@@ -18,17 +18,18 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-05
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F339 is selected for a purpose-fit Schedule Testing
-  class-choice projection, narrowing the current nine-field reader to class ID
-  and name, grade, level, and room while removing unused teacher ID, colors,
-  notes from the projection. Preserve the inner `testing_classes`-to-`classes`
-  join and left `class_info` join/defaults, grade/level/name/ID order, successful empty
-  results, Technical errors, and one-query bound; add a statement-metric
-  assertion and missing-class-info test. Focused target:
-  `ClassMngrNextPlatformApplicationServicesScheduleTestingClassChoicesReadPort`.
-  F339 is selected, not implemented.
-  Batch 7 is complete; Batch 8 remains active with F340-F344 queued.
-
+- Current note: F340 is selected to narrow Sub Prep roster-output
+  schedule-scope class reads currently provided by
+  `loadClassInfosForScheduleScope(..., includeUnassignedTeachers=true)`. Keep
+  only class ID, assigned teacher ID, and selected-scope schedule records;
+  remove grade/level/colors/notes repeated per meeting. Preserve selected-
+  day/type filtering, schedule order, output caps, unassigned-class inclusion,
+  missing-`class_info` failures, identity checks, and source failure behavior.
+  Keep the one-query bound and add or retain an explicit one-statement
+  assertion when feasible. Focused target:
+  `NextPlatformApplicationServicesSubPrepRosterOutputSourcePort`. F340 is
+  selected, not implemented. Batch 7 is complete; Batch 8 remains active with
+  F341-F344 queued.
 ### Slice discovery batches
 
 Discover upcoming slices in ordered batches of up to ten (or all remaining
@@ -89,13 +90,12 @@ No other slices were found.
 
 #### Active batch: Batch 8
 
-1. F339 - Selected/current: purpose-fit Schedule Testing class-choice
-   projection.
-2. F340 - Queued: narrow Sub Prep roster-output teacher-profile fields.
-3. F341 - Queued: narrow Sub Prep schedule-scope rows.
-4. F342 - Queued: narrow My Classes assigned-teacher batch projection.
-5. F343 - Queued: narrow Schedule Import snapshot class-info projection.
-6. F344 - Queued: remove redundant compatibility-service availability gates
+1. F340 - Selected/current: narrow Sub Prep roster-output schedule-scope class
+   reads.
+2. F341 - Queued: narrow Sub Prep schedule-scope rows.
+3. F342 - Queued: narrow My Classes assigned-teacher batch projection.
+4. F343 - Queued: narrow Schedule Import snapshot class-info projection.
+5. F344 - Queued: remove redundant compatibility-service availability gates
    from migrated Classes/My Classes pages.
 
 #### F299 completeness audit checkpoint
@@ -258,36 +258,30 @@ No new v2 production path depends on DataService, MainWindow, PageManager, or a 
 
 Earlier verified slices and cumulative exit-gate snapshots are archived in the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 
-## Latest Progress Update - 2026-10-05 (F338 accepted; F339 selected)
+## Latest Progress Update - 2026-10-05 (F339 accepted; F340 selected)
 
-F338, committed as `d0bb41ab` (`Phase2 - Move import dialog teacher batch
-read to v2 (F338)`), removes direct `DatabaseSession`/`TeacherRepository` batch
-access from ClassImportDialog by routing it through a purpose-fit Qt-free
-application query and ApplicationServices adapter. The query reads exactly
-four UTF-16 display fields and validates canonical, requested, and output
-identity, uniqueness, and order. It preserves package-backed
-preview filtering, unique positive teacher IDs, duplicate choice rows,
-`SidebarNodeNaming`, the exact `New Teacher` missing-profile label, partial
-batch results, individual profile retries after batch failure, and no-read
-cases.
+F339, committed as `1d2b6810` (`Phase2 - Narrow Schedule Testing class
+choices (F339)`), adds a purpose-fit repository record and read selecting class
+ID, name, grade, level, and room. Only the existing v2 port consumes it;
+generic `loadTestingClasses()` remains unchanged. The read preserves the
+`testing_classes`-to-`classes` inner join, `class_info` left join, grade/level/
+name/ID order, blank grade/level defaults when class info is missing, room,
+successful empty results, Technical repository failures, and one statement.
 
-Fresh independent VS2026 x64/Ninja configure validated 1,334 handwritten
-files. Query, adapter, and ClassTransfer targets built; focused CTest passed
-3/3. The added
-`ClassTransferTests::importDialogRequestsOnlyUniquePositiveTeacherIds` test
-was independently rebuilt and its focused CTest passed 1/1, asserting
-nonpositive filtering, deduplication, original UI candidate IDs, and one
-statement. `git diff --check` passed. No full suite ran; configure had known
-nonfatal warnings.
+Tests cover missing-class-info behavior and the one-statement metric. Fresh
+independent VS2026 x64/Ninja Debug configure validated 1,334 files; repository
+and port targets built; focused CTest passed 2/2. `git diff --check` exited 0.
+No full suite ran; configure had known nonfatal warnings.
 
-F339 is selected for a purpose-fit Schedule Testing class-choice projection.
-Narrow the reader to class ID/name, grade, level, and room, removing unused
-teacher ID, colors, and notes from the projection. Preserve the inner
-`testing_classes`-to-`classes` join, left `class_info` join and defaults,
-grade/level/name/ID order, successful empty results, Technical errors, and a
-one-query bound; add a statement-metric assertion and missing-class-info
-test. Use focused target
-`ClassMngrNextPlatformApplicationServicesScheduleTestingClassChoicesReadPort`.
-F339 is selected, not implemented. Batch 7 is complete; Batch 8 remains active
-with F340-F344 queued. Phase 2 remains In Progress/Open; Gates 1 and 2 remain
+F340 is selected to narrow Sub Prep roster-output schedule-scope class reads
+from `loadClassInfosForScheduleScope(..., includeUnassignedTeachers=true)` to
+class ID, assigned teacher ID, and selected-scope schedule records, removing
+grade/level/colors/notes repeated per meeting. Preserve selected-day/type
+filtering, schedule order, output caps, unassigned-class inclusion, missing-
+`class_info` failures, identity checks, and source failure behavior. Keep the
+one-query bound and add or retain an explicit one-statement assertion when
+feasible. Focused target:
+`NextPlatformApplicationServicesSubPrepRosterOutputSourcePort`.
+F340 is selected, not implemented. Batch 7 is complete; Batch 8 remains active
+with F341-F344 queued. Phase 2 remains In Progress/Open; Gates 1 and 2 remain
 Partial.
