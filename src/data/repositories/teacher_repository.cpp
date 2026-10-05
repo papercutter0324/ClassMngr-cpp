@@ -588,6 +588,150 @@ TeacherRepository::teacherProfileBatchReadMetrics() const noexcept
     return m_teacherProfileBatchReadMetrics;
 }
 
+Result<QList<SubPrepRosterOutputTeacherProfileBatchReadRecord>>
+TeacherRepository::loadSubPrepRosterOutputTeacherProfileRecords(
+    const QList<int>& teacherIds
+    )
+{
+    if (teacherIds.isEmpty())
+    {
+        return QList<SubPrepRosterOutputTeacherProfileBatchReadRecord>{};
+    }
+
+    ++m_subPrepRosterOutputTeacherProfileBatchReadMetrics.callCount;
+    m_subPrepRosterOutputTeacherProfileBatchReadMetrics.requestedTeacherCount +=
+        teacherIds.size();
+
+    QSet<int> seenTeacherIds;
+    QStringList requestedValues;
+    requestedValues.reserve(teacherIds.size());
+    for (qsizetype index = 0; index < teacherIds.size(); ++index)
+    {
+        const int teacherId = teacherIds[index];
+        if (teacherId <= 0 || seenTeacherIds.contains(teacherId))
+        {
+            return std::unexpected(QObject::tr(
+                "Loading Sub Prep roster-output teacher profiles failed: "
+                "teacher identifiers must be positive and unique."
+                ));
+        }
+
+        seenTeacherIds.insert(teacherId);
+        requestedValues.append(QStringLiteral("(?, %1)").arg(index));
+    }
+
+    QSqlQuery query(m_database);
+    const QString queryText = QStringLiteral(R"(
+        WITH requested(teacher_id, ordinal) AS (VALUES %1)
+        SELECT requested.teacher_id AS requested_teacher_id,
+               requested.ordinal AS requested_ordinal,
+               teachers.id,
+               teachers.teacher_kr,
+               teachers.teacher_en,
+               teachers.preferred_romanization,
+               teachers.preferred_name
+        FROM requested
+        LEFT JOIN teachers ON teachers.id = requested.teacher_id
+        ORDER BY requested.ordinal
+    )").arg(requestedValues.join(QStringLiteral(", ")));
+    if (!query.prepare(queryText))
+    {
+        ++m_subPrepRosterOutputTeacherProfileBatchReadMetrics.statementCount;
+        return std::unexpected(query.lastError().text());
+    }
+
+    for (const int teacherId : teacherIds)
+    {
+        query.addBindValue(teacherId);
+    }
+
+    ++m_subPrepRosterOutputTeacherProfileBatchReadMetrics.statementCount;
+    const auto executed = SqlQueryUtils::executePrepared(
+        query,
+        QObject::tr("Loading Sub Prep roster-output teacher profiles"),
+        QStringLiteral("assigned teachers")
+        );
+    if (!executed)
+    {
+        return std::unexpected(executed.error().userMessage());
+    }
+
+    QList<SubPrepRosterOutputTeacherProfileBatchReadRecord> entries;
+    entries.reserve(teacherIds.size());
+    qsizetype rowIndex = 0;
+    while (query.next())
+    {
+        if (rowIndex >= teacherIds.size())
+        {
+            return std::unexpected(QObject::tr(
+                "Loading Sub Prep roster-output teacher profiles failed: "
+                "the database returned an unexpected number of records."
+                ));
+        }
+
+        const int requestedTeacherId = teacherIds[rowIndex];
+        if (query.value("requested_teacher_id").toInt()
+                != requestedTeacherId
+            || query.value("requested_ordinal").toInt() != rowIndex)
+        {
+            return std::unexpected(QObject::tr(
+                "Loading Sub Prep roster-output teacher profiles failed: "
+                "the database returned records in a different identifier order."
+                ));
+        }
+
+        if (query.value("id").isNull())
+        {
+            entries.append({
+                requestedTeacherId,
+                std::unexpected(QObject::tr(
+                    "Loading teacher failed for %1: no matching record exists."
+                    ).arg(teacherIdentity(requestedTeacherId)))
+            });
+            ++rowIndex;
+            continue;
+        }
+
+        const int returnedTeacherId = query.value("id").toInt();
+        if (returnedTeacherId != requestedTeacherId)
+        {
+            return std::unexpected(QObject::tr(
+                "Loading Sub Prep roster-output teacher failed for %1: "
+                "the database returned a different teacher identifier."
+                ).arg(teacherIdentity(requestedTeacherId)));
+        }
+
+        entries.append({
+            requestedTeacherId,
+            SubPrepRosterOutputTeacherProfileReadFields{
+                .teacherId = returnedTeacherId,
+                .teacherKr = query.value("teacher_kr").toString(),
+                .teacherEn = query.value("teacher_en").toString(),
+                .preferredRomanization = query.value(
+                    "preferred_romanization").toString(),
+                .preferredName = query.value("preferred_name").toString()
+            }
+        });
+        ++rowIndex;
+    }
+
+    if (rowIndex != teacherIds.size())
+    {
+        return std::unexpected(QObject::tr(
+            "Loading Sub Prep roster-output teacher profiles failed: "
+            "the database returned an incomplete record list."
+            ));
+    }
+
+    return entries;
+}
+
+const SubPrepRosterOutputTeacherProfileBatchReadMetrics&
+TeacherRepository::subPrepRosterOutputTeacherProfileBatchReadMetrics() const noexcept
+{
+    return m_subPrepRosterOutputTeacherProfileBatchReadMetrics;
+}
+
 Result<QList<MyClassesTeacherProfileBatchReadRecord>>
 TeacherRepository::loadMyClassesTeacherProfileRecords(
     const QList<int>& teacherIds

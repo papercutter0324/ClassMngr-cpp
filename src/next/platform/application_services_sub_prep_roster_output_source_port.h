@@ -390,11 +390,14 @@ public:
                 }
             }
 
-            QList<TeacherProfileBatchReadRecord> loadedTeacherProfiles;
+            QList<SubPrepRosterOutputTeacherProfileBatchReadRecord>
+                loadedTeacherProfiles;
             if (!requestedTeacherIds.isEmpty())
             {
-                const ::Result<QList<TeacherProfileBatchReadRecord>> loadedProfiles =
-                    teacherRepository->loadTeacherProfileRecords(
+                const ::Result<QList<
+                    SubPrepRosterOutputTeacherProfileBatchReadRecord>>
+                    loadedProfiles =
+                    teacherRepository->loadSubPrepRosterOutputTeacherProfileRecords(
                         requestedTeacherIds
                         );
                 if (!loadedProfiles)
@@ -424,7 +427,7 @@ public:
                      index < requestedTeacherIds.size();
                      ++index)
                 {
-                    if (loadedTeacherProfiles[index].teacherId
+                    if (loadedTeacherProfiles[index].requestedTeacherId
                         != requestedTeacherIds[index])
                     {
                         return failure(
@@ -568,7 +571,9 @@ public:
                                 "A selected class teacher was not included in the profile batch."
                                 );
                         }
-                        const ::Result<Teacher>& loadedTeacher =
+                        const ::Result<
+                            SubPrepRosterOutputTeacherProfileReadFields>&
+                            loadedTeacher =
                             loadedTeacherProfiles[teacherProfileIndex].profile;
                         if (!loadedTeacher)
                         {
@@ -584,7 +589,7 @@ public:
                                 "The selected class teacher could not be loaded."
                                 );
                         }
-                        if (loadedTeacher->id != info.teacherId)
+                        if (loadedTeacher->teacherId != info.teacherId)
                         {
                             return failure(
                                 Domain::ErrorCode::Validation,
