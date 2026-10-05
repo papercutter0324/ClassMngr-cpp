@@ -12255,3 +12255,23 @@ F349 is selected for Testing Classes delete transition baseline parity
 evidence. F349 is selected, not implemented or verified. F350-F353 remain
 queued in order. Batch 8 is complete; Batch 9 is active. Phase 2 remains In
 Progress/Open; Gates 1 and 2 remain Partial.
+
+### F349 accepted / F350 selected - 2026-10-05
+
+F349, committed as
+`5c698aa71dc25d20d978ce0dc3ad16d6644b3141`, records Testing Classes
+clean-delete parity. Current and pinned-baseline paths matched all eight
+fields. A fresh current-source ownership audit covered 1,343 handwritten
+sources; independent fresh build and focused parity, repository, Application,
+and Platform checks passed.
+
+The independent review also surfaced the pre-existing F147 page-target issue:
+cancel/failure slots show an extra `Load Teachers` warning because
+`ScheduleWidgetTestSupport` omits `loadTestingTeacherChoiceRecords`. This is
+outside F349; its target and source remain unchanged. Retain this issue as a
+follow-up.
+
+F350 is selected for Testing Classes create/update persistence baseline parity.
+F350 is selected, not implemented or verified. F351-F353 remain queued in
+order. Batch 8 is complete; Batch 9 is active. Phase 2 remains In Progress/Open;
+Gates 1 and 2 remain Partial.
