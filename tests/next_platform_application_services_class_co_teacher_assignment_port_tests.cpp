@@ -7,6 +7,8 @@
 
 #include <QSqlError>
 #include <QSqlQuery>
+#include <QSqlRecord>
+#include <QStringList>
 #include <QTemporaryDir>
 #include <QUuid>
 #include <QtTest/QtTest>
@@ -179,6 +181,83 @@ bool sameCompleteClassInfo(const ClassInfo& actual, const ClassInfo& expected)
         && sameTeacherMetadata(actual, expected);
 }
 
+QVariantList rawClassInfoFields(QSqlDatabase database, const int classId)
+{
+    QSqlQuery query(database);
+    query.prepare(QStringLiteral(
+        "SELECT class_grade, class_level, reading_book, essay_book, "
+        "class_color, font_color, notes, time_filler_activities "
+        "FROM class_info WHERE class_id=?"
+        ));
+    query.addBindValue(classId);
+    if (!query.exec() || !query.next())
+    {
+        qFatal("Raw class info row must be readable in test setup.");
+    }
+
+    QVariantList values;
+    for (int column = 0; column < query.record().count(); ++column)
+    {
+        values.append(query.value(column));
+    }
+    return values;
+}
+
+QList<QVariantList> rawScheduleRows(
+    QSqlDatabase database,
+    const int classId,
+    const QString& tableName
+    )
+{
+    QSqlQuery query(database);
+    query.prepare(QStringLiteral(
+        "SELECT id, day, start_time, end_time FROM %1 "
+        "WHERE class_id=? ORDER BY id"
+        ).arg(tableName));
+    query.addBindValue(classId);
+    if (!query.exec())
+    {
+        qFatal("Raw schedule rows must be readable in test setup.");
+    }
+
+    QList<QVariantList> rows;
+    while (query.next())
+    {
+        QVariantList row;
+        for (int column = 0; column < query.record().count(); ++column)
+        {
+            row.append(query.value(column));
+        }
+        rows.append(row);
+    }
+    return rows;
+}
+
+int scheduleWriteAuditCount(QSqlDatabase database)
+{
+    QSqlQuery query(database);
+    if (!query.exec(QStringLiteral("SELECT COUNT(*) FROM schedule_write_audit"))
+        || !query.next())
+    {
+        qFatal("Schedule write audit count must be readable in test setup.");
+    }
+    return query.value(0).toInt();
+}
+
+QVariant readRawTeacherId(QSqlDatabase database, const int classId)
+{
+    QSqlQuery query(database);
+    query.prepare(QStringLiteral(
+        "SELECT teacher_id FROM class_info WHERE class_id=?"
+        ));
+    query.addBindValue(classId);
+    if (!query.exec() || !query.next())
+    {
+        qFatal("Raw class teacher id must be readable in test setup.");
+    }
+    return query.value(0);
+}
+
 }
 
 class NextPlatformApplicationServicesClassCoTeacherAssignmentPortTests final
@@ -193,7 +272,9 @@ private slots:
     void regularScheduleConflictUsesLegacyMessageAndPreservesState();
     void intensiveScheduleConflictUsesLegacyMessageAndPreservesState();
     void regularConflictPrecedesIntensiveConflict();
-    void repositoryFailureRollsBackClassInfoAndSchedules();
+    void assignmentPreservesRawMetadataAndScheduleRows();
+    void assignmentCreatesMissingClassInfoRowWithDefaults();
+    void teacherIdStatementFailurePreservesClassInfoAndSchedules();
     void unavailableSessionReturnsStructuredFailure();
 };
 
@@ -252,6 +333,11 @@ assignmentUpdatesOnlyTeacherAndSupportsUnassignedState()
         ->loadClassInfo(*createdClass);
     QVERIFY(persistedOriginal);
 
+    ClassInfoRepository* const repository = services.databaseSession()
+        ->classInfoRepository();
+    QVERIFY(repository);
+    const int readsBeforeAssignment = repository
+        ->scheduleClassInfoReadMetrics().singleClassInfoReadCount;
     Platform::ApplicationServicesClassCoTeacherAssignmentPort port(services);
     const auto assigned = Application::ClassCoTeacherAssignmentUseCase::execute(
         *createdClass,
@@ -259,6 +345,10 @@ assignmentUpdatesOnlyTeacherAndSupportsUnassignedState()
         port
         );
     QVERIFY(assigned);
+    QCOMPARE(
+        repository->scheduleClassInfoReadMetrics().singleClassInfoReadCount,
+        readsBeforeAssignment
+        );
 
     auto afterAssign = services.classService()->classInfo(*createdClass);
     QVERIFY(afterAssign);
@@ -271,6 +361,8 @@ assignmentUpdatesOnlyTeacherAndSupportsUnassignedState()
         ));
     QVERIFY(sameTeacherMetadata(*afterAssign, expectedAssigned));
 
+    const int readsBeforeUnassignment = repository
+        ->scheduleClassInfoReadMetrics().singleClassInfoReadCount;
     const auto unassigned =
         Application::ClassCoTeacherAssignmentUseCase::execute(
             *createdClass,
@@ -278,6 +370,14 @@ assignmentUpdatesOnlyTeacherAndSupportsUnassignedState()
             port
             );
     QVERIFY(unassigned);
+    QCOMPARE(
+        repository->scheduleClassInfoReadMetrics().singleClassInfoReadCount,
+        readsBeforeUnassignment
+        );
+    QVERIFY(readRawTeacherId(
+        services.databaseSession()->database(),
+        *createdClass
+        ).isNull());
 
     const auto afterUnassign = services.classService()->classInfo(*createdClass);
     QVERIFY(afterUnassign);
@@ -360,6 +460,19 @@ malformedClassIdIsRejectedWithoutChangingPersistedFields()
     });
     QVERIFY(!invalidTeacher);
     QCOMPARE(invalidTeacher.error().code, Domain::ErrorCode::InvalidInput);
+
+    const int unknownClassId = classId + 100000;
+    const auto unknownClass =
+        Application::ClassCoTeacherAssignmentUseCase::execute(
+            unknownClassId,
+            assignedTeacherId,
+            port
+            );
+    QVERIFY(!unknownClass);
+    QCOMPARE(unknownClass.error().code, Domain::ErrorCode::Technical);
+    QVERIFY(QString::fromStdString(unknownClass.error().message).contains(
+        QStringLiteral("class not found")
+        ));
 
     const auto savedAfter = repository->loadClassInfo(classId);
     QVERIFY(savedAfter);
@@ -669,7 +782,268 @@ regularConflictPrecedesIntensiveConflict()
 }
 
 void NextPlatformApplicationServicesClassCoTeacherAssignmentPortTests::
-repositoryFailureRollsBackClassInfoAndSchedules()
+assignmentPreservesRawMetadataAndScheduleRows()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+    const int selectedClassId = createClass(
+        services,
+        QStringLiteral("Raw Co-Teacher Assignment")
+        );
+    const int originalTeacherId = createTeacher(
+        services,
+        QStringLiteral("Original Teacher")
+        );
+    const int assignedTeacherId = createTeacher(
+        services,
+        QStringLiteral("Assigned Teacher")
+        );
+    QVERIFY(selectedClassId > 0);
+    QVERIFY(originalTeacherId > 0);
+    QVERIFY(assignedTeacherId > 0);
+
+    QSqlDatabase database = services.databaseSession()->database();
+    QSqlQuery insertInfo(database);
+    insertInfo.prepare(QStringLiteral(
+        "INSERT INTO class_info (class_id, teacher_id, class_grade, "
+        "class_level, reading_book, essay_book, class_color, font_color, "
+        "notes, time_filler_activities) "
+        "VALUES (?, ?, NULL, '', '  ', NULL, '', NULL, '   ', '')"
+        ));
+    insertInfo.addBindValue(selectedClassId);
+    insertInfo.addBindValue(originalTeacherId);
+    QVERIFY2(insertInfo.exec(), qPrintable(insertInfo.lastError().text()));
+
+    QSqlQuery insertRegular(database);
+    insertRegular.prepare(QStringLiteral(
+        "INSERT INTO class_times (class_id, day, start_time, end_time) "
+        "VALUES (?, ?, ?, ?)"
+        ));
+    insertRegular.addBindValue(selectedClassId);
+    insertRegular.addBindValue(QStringLiteral("Monday"));
+    insertRegular.addBindValue(QStringLiteral("9:00 AM"));
+    insertRegular.addBindValue(QStringLiteral("9:50 AM"));
+    QVERIFY2(insertRegular.exec(), qPrintable(insertRegular.lastError().text()));
+
+    QSqlQuery insertIntensive(database);
+    insertIntensive.prepare(QStringLiteral(
+        "INSERT INTO class_intensive_times "
+        "(class_id, day, start_time, end_time) VALUES (?, ?, ?, ?)"
+        ));
+    insertIntensive.addBindValue(selectedClassId);
+    insertIntensive.addBindValue(QStringLiteral("Friday"));
+    insertIntensive.addBindValue(QStringLiteral("10:00 AM"));
+    insertIntensive.addBindValue(QStringLiteral("10:50 AM"));
+    QVERIFY2(
+        insertIntensive.exec(),
+        qPrintable(insertIntensive.lastError().text())
+        );
+
+    QSqlQuery createScheduleWriteAudit(database);
+    QVERIFY2(
+        createScheduleWriteAudit.exec(QStringLiteral(
+            "CREATE TABLE schedule_write_audit ("
+            "table_name TEXT NOT NULL, operation TEXT NOT NULL)"
+            )),
+        qPrintable(createScheduleWriteAudit.lastError().text())
+        );
+    const QStringList auditedTables = {
+        QStringLiteral("class_times"),
+        QStringLiteral("class_intensive_times")
+    };
+    const QStringList auditedOperations = {
+        QStringLiteral("INSERT"),
+        QStringLiteral("UPDATE"),
+        QStringLiteral("DELETE")
+    };
+    for (const QString& tableName : auditedTables)
+    {
+        for (const QString& operation : auditedOperations)
+        {
+            const QString triggerName = QStringLiteral("audit_%1_%2")
+                .arg(tableName, operation.toLower());
+            QSqlQuery installAuditTrigger(database);
+            QVERIFY2(
+                installAuditTrigger.exec(QStringLiteral(
+                    "CREATE TRIGGER %1 AFTER %2 ON %3 "
+                    "BEGIN INSERT INTO schedule_write_audit "
+                    "(table_name, operation) VALUES ('%3', '%2'); END"
+                    ).arg(triggerName, operation, tableName)),
+                qPrintable(installAuditTrigger.lastError().text())
+                );
+        }
+    }
+    QCOMPARE(scheduleWriteAuditCount(database), 0);
+
+    const QVariantList rawInfoBefore = rawClassInfoFields(
+        database,
+        selectedClassId
+        );
+    QVERIFY(rawInfoBefore.at(0).isNull());
+    QCOMPARE(rawInfoBefore.at(1).toString(), QString());
+    QCOMPARE(rawInfoBefore.at(2).toString(), QStringLiteral("  "));
+    QVERIFY(rawInfoBefore.at(3).isNull());
+    QCOMPARE(rawInfoBefore.at(4).toString(), QString());
+    QVERIFY(rawInfoBefore.at(5).isNull());
+    QCOMPARE(rawInfoBefore.at(6).toString(), QStringLiteral("   "));
+    QCOMPARE(rawInfoBefore.at(7).toString(), QString());
+    const QList<QVariantList> rawRegularBefore = rawScheduleRows(
+        database,
+        selectedClassId,
+        QStringLiteral("class_times")
+        );
+    const QList<QVariantList> rawIntensiveBefore = rawScheduleRows(
+        database,
+        selectedClassId,
+        QStringLiteral("class_intensive_times")
+        );
+    QVERIFY(!rawRegularBefore.isEmpty());
+    QVERIFY(!rawIntensiveBefore.isEmpty());
+
+    ClassInfoRepository* const repository =
+        services.databaseSession()->classInfoRepository();
+    QVERIFY(repository);
+    const int readsBefore = repository
+        ->scheduleClassInfoReadMetrics().singleClassInfoReadCount;
+    Platform::ApplicationServicesClassCoTeacherAssignmentPort port(services);
+    const auto result = Application::ClassCoTeacherAssignmentUseCase::execute(
+        selectedClassId,
+        assignedTeacherId,
+        port
+        );
+    QVERIFY(result);
+    QCOMPARE(
+        repository->scheduleClassInfoReadMetrics().singleClassInfoReadCount,
+        readsBefore
+        );
+    QCOMPARE(scheduleWriteAuditCount(database), 0);
+
+    QCOMPARE(
+        rawClassInfoFields(database, selectedClassId),
+        rawInfoBefore
+        );
+    QCOMPARE(readRawTeacherId(database, selectedClassId).toInt(), assignedTeacherId);
+    QCOMPARE(
+        rawScheduleRows(database, selectedClassId, QStringLiteral("class_times")),
+        rawRegularBefore
+        );
+    QCOMPARE(
+        rawScheduleRows(
+            database,
+            selectedClassId,
+            QStringLiteral("class_intensive_times")
+            ),
+        rawIntensiveBefore
+        );
+
+    const int readsBeforeUnassignment = repository
+        ->scheduleClassInfoReadMetrics().singleClassInfoReadCount;
+    const auto unassigned = Application::ClassCoTeacherAssignmentUseCase::execute(
+        selectedClassId,
+        -1,
+        port
+        );
+    QVERIFY(unassigned);
+    QCOMPARE(
+        repository->scheduleClassInfoReadMetrics().singleClassInfoReadCount,
+        readsBeforeUnassignment
+        );
+    QCOMPARE(scheduleWriteAuditCount(database), 0);
+    QVERIFY(readRawTeacherId(database, selectedClassId).isNull());
+    QCOMPARE(
+        rawClassInfoFields(database, selectedClassId),
+        rawInfoBefore
+        );
+    QCOMPARE(
+        rawScheduleRows(database, selectedClassId, QStringLiteral("class_times")),
+        rawRegularBefore
+        );
+    QCOMPARE(
+        rawScheduleRows(
+            database,
+            selectedClassId,
+            QStringLiteral("class_intensive_times")
+            ),
+        rawIntensiveBefore
+        );
+}
+
+void NextPlatformApplicationServicesClassCoTeacherAssignmentPortTests::
+assignmentCreatesMissingClassInfoRowWithDefaults()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+    const int classId = createClass(
+        services,
+        QStringLiteral("Missing Co-Teacher Metadata")
+        );
+    const int assignedTeacherId = createTeacher(
+        services,
+        QStringLiteral("Assigned Teacher")
+        );
+    QVERIFY(classId > 0);
+    QVERIFY(assignedTeacherId > 0);
+
+    QSqlDatabase database = services.databaseSession()->database();
+    QSqlQuery beforeCount(database);
+    QVERIFY(beforeCount.exec(QStringLiteral(
+        "SELECT COUNT(*) FROM class_info WHERE class_id=%1"
+        ).arg(classId)));
+    QVERIFY(beforeCount.next());
+    QCOMPARE(beforeCount.value(0).toInt(), 0);
+
+    ClassInfoRepository* const repository =
+        services.databaseSession()->classInfoRepository();
+    QVERIFY(repository);
+    const int readsBefore = repository
+        ->scheduleClassInfoReadMetrics().singleClassInfoReadCount;
+    Platform::ApplicationServicesClassCoTeacherAssignmentPort port(services);
+    const auto assigned = Application::ClassCoTeacherAssignmentUseCase::execute(
+        classId,
+        assignedTeacherId,
+        port
+        );
+    QVERIFY(assigned);
+    QCOMPARE(
+        repository->scheduleClassInfoReadMetrics().singleClassInfoReadCount,
+        readsBefore
+        );
+
+    QSqlQuery after(database);
+    after.prepare(QStringLiteral(
+        "SELECT teacher_id, class_grade, class_level, reading_book, "
+        "essay_book, class_color, font_color, notes, time_filler_activities "
+        "FROM class_info WHERE class_id=?"
+        ));
+    after.addBindValue(classId);
+    QVERIFY2(after.exec(), qPrintable(after.lastError().text()));
+    QVERIFY(after.next());
+    QCOMPARE(after.value(0).toInt(), assignedTeacherId);
+    QVERIFY(after.value(1).isNull());
+    QVERIFY(after.value(2).isNull());
+    QVERIFY(after.value(3).isNull());
+    QVERIFY(after.value(4).isNull());
+    QCOMPARE(after.value(5).toString(), QStringLiteral("#FFFFFF"));
+    QCOMPARE(after.value(6).toString(), QStringLiteral("#000000"));
+    QVERIFY(after.value(7).isNull());
+    QVERIFY(after.value(8).isNull());
+    QVERIFY(rawScheduleRows(database, classId, QStringLiteral("class_times"))
+        .isEmpty());
+    QVERIFY(rawScheduleRows(
+        database,
+        classId,
+        QStringLiteral("class_intensive_times")
+        ).isEmpty());
+}
+
+void NextPlatformApplicationServicesClassCoTeacherAssignmentPortTests::
+teacherIdStatementFailurePreservesClassInfoAndSchedules()
 {
     QTemporaryDir directory;
     QVERIFY(directory.isValid());
@@ -718,9 +1092,9 @@ repositoryFailureRollsBackClassInfoAndSchedules()
     QSqlQuery installFailure(services.databaseSession()->database());
     QVERIFY2(
         installFailure.exec(QStringLiteral(
-            "CREATE TRIGGER fail_co_teacher_intensive_schedule_insert "
-            "BEFORE INSERT ON class_intensive_times "
-            "BEGIN SELECT RAISE(FAIL, 'forced co-teacher save failure'); END"
+            "CREATE TRIGGER fail_co_teacher_teacher_id_update "
+            "BEFORE UPDATE OF teacher_id ON class_info "
+            "BEGIN SELECT RAISE(FAIL, 'forced co-teacher update failure'); END"
             )),
         qPrintable(installFailure.lastError().text())
         );
@@ -734,7 +1108,7 @@ repositoryFailureRollsBackClassInfoAndSchedules()
     QVERIFY(!result);
     QCOMPARE(result.error().code, Domain::ErrorCode::Technical);
     QVERIFY(QString::fromStdString(result.error().message).contains(
-        QStringLiteral("forced co-teacher save failure")
+        QStringLiteral("forced co-teacher update failure")
         ));
 
     const auto savedAfter = repository->loadClassInfo(selectedClassId);

@@ -489,6 +489,72 @@ Status ClassInfoRepository::saveClassNotes(
     return {};
 }
 
+Status ClassInfoRepository::saveClassCoTeacherAssignment(
+    const int classId,
+    const std::optional<int> teacherId
+    )
+{
+    if (classId <= 0)
+    {
+        return std::unexpected(
+            QObject::tr(
+                "Saving class information failed: invalid class id %1."
+                ).arg(classId)
+            );
+    }
+
+    DatabaseTransaction transaction(m_database);
+    if (!transaction.started())
+    {
+        return std::unexpected(
+            QObject::tr(
+                "Starting class information save transaction failed for "
+                "class id %1: %2"
+                ).arg(classId)
+                 .arg(m_database.lastError().text())
+            );
+    }
+
+    QSqlQuery query(m_database);
+    query.prepare(R"(
+        INSERT INTO class_info (
+            class_id,
+            teacher_id
+        )
+        VALUES (?, ?)
+
+        ON CONFLICT(class_id)
+        DO UPDATE SET
+            teacher_id=excluded.teacher_id
+    )");
+    query.addBindValue(classId);
+    query.addBindValue(
+        teacherId ? QVariant(*teacherId) : QVariant()
+        );
+
+    const QString identity = QObject::tr("class id %1").arg(classId);
+    const auto executed = SqlQueryUtils::executePrepared(
+        query,
+        QObject::tr("Saving class information"),
+        identity
+        );
+    if (!executed)
+    {
+        return std::unexpected(executed.error().userMessage());
+    }
+
+    if (!transaction.commit())
+    {
+        return std::unexpected(
+            QObject::tr(
+                "Committing class information failed for %1: %2"
+                ).arg(identity, m_database.lastError().text())
+            );
+    }
+
+    return {};
+}
+
 Result<ClassInfo> ClassInfoRepository::loadClassInfo(
     int classId
     )
@@ -655,6 +721,132 @@ Result<ClassInfo> ClassInfoRepository::loadClassInfo(
     }
 
     return info;
+}
+
+Result<ClassCoTeacherAssignmentValidationSnapshotReadRecord>
+ClassInfoRepository::loadClassCoTeacherAssignmentValidationSnapshot(
+    const int classId
+    )
+{
+    if (classId <= 0)
+    {
+        return std::unexpected(
+            QObject::tr("Loading class information failed: invalid class id %1.")
+                .arg(classId)
+            );
+    }
+
+    ClassCoTeacherAssignmentValidationSnapshotReadRecord snapshot;
+    snapshot.classId = classId;
+
+    const QString identity = QObject::tr("class id %1").arg(classId);
+    QSqlQuery query(m_database);
+    query.prepare(R"(
+        SELECT
+            classes.id AS class_id,
+            class_info.class_grade,
+            class_info.class_level,
+            class_info.reading_book,
+            class_info.essay_book,
+            class_info.class_color,
+            class_info.font_color,
+            class_info.notes,
+            class_info.time_filler_activities
+        FROM classes
+        LEFT JOIN class_info
+        ON class_info.class_id = classes.id
+        WHERE classes.id = ?
+    )");
+    query.addBindValue(classId);
+
+    const auto loadedInfo = SqlQueryUtils::executePrepared(
+        query,
+        QObject::tr("Loading class information"),
+        identity
+        );
+    if (!loadedInfo)
+    {
+        return std::unexpected(loadedInfo.error().userMessage());
+    }
+    if (!query.next())
+    {
+        return std::unexpected(
+            QObject::tr("Loading class information failed for %1: class not found.")
+                .arg(identity)
+            );
+    }
+
+    snapshot.classGrade = query.value("class_grade").toString();
+    snapshot.classLevel = query.value("class_level").toString();
+    snapshot.readingBook = query.value("reading_book").toString();
+    snapshot.essayBook = query.value("essay_book").toString();
+    const QString classColor = query.value("class_color").toString();
+    if (!classColor.isEmpty())
+    {
+        snapshot.classColor = classColor;
+    }
+    const QString fontColor = query.value("font_color").toString();
+    if (!fontColor.isEmpty())
+    {
+        snapshot.fontColor = fontColor;
+    }
+    snapshot.notes = query.value("notes").toString();
+    snapshot.timeFillerActivities =
+        query.value("time_filler_activities").toString();
+
+    query.prepare(R"(
+        SELECT day, start_time, end_time
+        FROM class_times
+        WHERE class_id = ?
+        ORDER BY id
+    )");
+    query.addBindValue(classId);
+
+    const auto loadedRegularTimes = SqlQueryUtils::executePrepared(
+        query,
+        QObject::tr("Loading regular class times"),
+        identity
+        );
+    if (!loadedRegularTimes)
+    {
+        return std::unexpected(loadedRegularTimes.error().userMessage());
+    }
+    while (query.next())
+    {
+        snapshot.regularTimes.append({
+            query.value("day").toString(),
+            query.value("start_time").toString(),
+            query.value("end_time").toString()
+        });
+    }
+
+    query.prepare(R"(
+        SELECT day, start_time, end_time
+        FROM class_intensive_times
+        WHERE class_id = ?
+        ORDER BY id
+    )");
+    query.addBindValue(classId);
+
+    const auto loadedIntensiveTimes = SqlQueryUtils::executePrepared(
+        query,
+        QObject::tr("Loading intensive class times"),
+        identity
+        );
+    if (!loadedIntensiveTimes)
+    {
+        return std::unexpected(loadedIntensiveTimes.error().userMessage());
+    }
+    while (query.next())
+    {
+        snapshot.intensiveTimes.append({
+            query.value("day").toString(),
+            query.value("start_time").toString(),
+            query.value("end_time").toString()
+        });
+    }
+
+    return snapshot;
 }
 
 Result<ScheduleEditorClassInfoReadRecord>

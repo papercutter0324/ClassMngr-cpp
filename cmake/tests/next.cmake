@@ -2691,6 +2691,16 @@ classmngr_add_qt_test(
 )
 
 classmngr_add_qt_test(
+    NAME ClassCoTeacherAssignmentPersistenceParity
+    SOURCES
+        tests/class_co_teacher_assignment_persistence_parity_tests.cpp
+    LIBRARIES
+        ClassMngrNext::Platform
+        Qt6::Test
+    OFFSCREEN
+)
+
+classmngr_add_qt_test(
     NAME NextFeatureClassCoTeacherPage
     SOURCES
         tests/next_feature_class_co_teacher_page_tests.cpp

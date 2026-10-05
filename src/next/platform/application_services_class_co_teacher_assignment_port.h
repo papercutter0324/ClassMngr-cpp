@@ -91,15 +91,28 @@ public:
 
         try
         {
-            const Result<ClassInfo> loaded =
-                repository->loadClassInfo(*classId);
+            const Result<ClassCoTeacherAssignmentValidationSnapshotReadRecord>
+                loaded = repository->loadClassCoTeacherAssignmentValidationSnapshot(
+                    *classId
+                    );
             if (!loaded)
             {
                 return repositoryFailure(session, loaded.error());
             }
 
-            ClassInfo info = *loaded;
+            ClassInfo info;
+            info.classId = loaded->classId;
             info.teacherId = *teacherId;
+            info.classGrade = loaded->classGrade;
+            info.classLevel = loaded->classLevel;
+            info.readingBook = loaded->readingBook;
+            info.essayBook = loaded->essayBook;
+            info.classColor = loaded->classColor;
+            info.fontColor = loaded->fontColor;
+            info.notes = loaded->notes;
+            info.timeFillerActivities = loaded->timeFillerActivities;
+            info.classTimes = loaded->regularTimes;
+            info.intensiveTimes = loaded->intensiveTimes;
 
             const ClassInfo normalized = ClassInfoValidator::normalized(info);
             const ValidationResult validation =
@@ -134,7 +147,12 @@ public:
                 return repositoryFailure(session, intensiveConflicts.error());
             }
 
-            const Status saved = repository->saveClassInfo(normalized);
+            const Status saved = repository->saveClassCoTeacherAssignment(
+                normalized.classId,
+                normalized.teacherId > 0
+                    ? std::optional<int>{normalized.teacherId}
+                    : std::nullopt
+                );
             if (!saved)
             {
                 return repositoryFailure(session, saved.error());

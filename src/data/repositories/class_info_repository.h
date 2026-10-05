@@ -13,6 +13,7 @@
 #include <QString>
 #include <QStringList>
 
+#include <optional>
 #include <vector>
 
 struct ClassNavigationReadRecord final
@@ -64,6 +65,21 @@ struct ClassDetailsPageReadRecord final
     QString essayBook;
     QString classColor{"#FFFFFF"};
     QString fontColor{"#000000"};
+    QList<ClassTime> regularTimes;
+    QList<ClassTime> intensiveTimes;
+};
+
+struct ClassCoTeacherAssignmentValidationSnapshotReadRecord final
+{
+    int classId = -1;
+    QString classGrade;
+    QString classLevel;
+    QString readingBook;
+    QString essayBook;
+    QString classColor{"#FFFFFF"};
+    QString fontColor{"#000000"};
+    QString notes;
+    QString timeFillerActivities;
     QList<ClassTime> regularTimes;
     QList<ClassTime> intensiveTimes;
 };
@@ -269,10 +285,16 @@ public:
         const QString& notes,
         const QString& timeFillerActivities
         );
+    [[nodiscard]] Status saveClassCoTeacherAssignment(
+        int classId,
+        std::optional<int> teacherId
+        );
 
     [[nodiscard]] Result<ClassInfo> loadClassInfo(
         int classId
         );
+    [[nodiscard]] Result<ClassCoTeacherAssignmentValidationSnapshotReadRecord>
+        loadClassCoTeacherAssignmentValidationSnapshot(int classId);
     [[nodiscard]] Result<ClassPageDetailsReadRecord> loadClassPageDetails(
         int classId
         );
