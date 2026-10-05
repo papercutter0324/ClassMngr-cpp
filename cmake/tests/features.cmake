@@ -57,6 +57,28 @@ qt_add_executable(ClassMngrClassTransferTests
         COMMAND ClassMngrClassTransferTests
     )
 
+    add_test(
+        NAME ClassMngrClassImportTeacherChoiceRegressionTests
+        COMMAND ClassMngrClassTransferTests
+            importsCompleteClassesAndDeduplicatesTeacher
+            previewMatchesCourseAndTeacherIgnoringSchedule
+            teacherReplacementImportsCompleteSnapshot
+            importDialogRequiresAmbiguousTeacherResolution
+    )
+    set_tests_properties(ClassMngrClassImportTeacherChoiceRegressionTests
+        PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
+    )
+
+    classmngr_add_qt_test(
+        NAME ClassImportTeacherChoiceParity
+        SOURCES
+            tests/class_import_teacher_choice_parity_tests.cpp
+        LIBRARIES
+            Qt6::Test
+            Qt6::Widgets
+        OFFSCREEN
+    )
+
     qt_add_executable(ClassMngrCalendarImportTests
         tests/calendar_import_tests.cpp
         src/features/calendar/calendar_event_campus_filter.cpp
