@@ -401,7 +401,6 @@ qt_add_executable(ClassMngrScheduleImportDialogTests
         src/features/schedule/ui/schedule_editor_dialog.h
         src/features/schedule/ui/schedule_import_dialog.cpp
         src/features/schedule/ui/schedule_import_dialog.h
-        src/features/schedule/ui/schedule_import_dialog_shared.cpp
         src/features/schedule/ui/schedule_import_dialog_shared.h
         src/features/schedule/ui/schedule_import_review_presentation.cpp
         src/features/schedule/ui/schedule_import_review_presentation.h

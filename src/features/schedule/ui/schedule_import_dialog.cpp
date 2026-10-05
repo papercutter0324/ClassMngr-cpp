@@ -4,7 +4,6 @@
 
 #include "core/application_services.h"
 #include "core/startup_profiler.h"
-#include "data/data_service.h"
 #include "features/schedule/import/schedule_workbook_parser.h"
 #include "features/schedule/ui/schedule_import_dialog_shared.h"
 #include "features/schedule/ui/schedule_import_review_dialog.h"

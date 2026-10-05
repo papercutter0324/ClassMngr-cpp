@@ -3,7 +3,6 @@
 #include "core/utils/colorutils.h"
 #include "domain/rules/schedule_import_rules.h"
 #include "features/classes/config/class_info_config.h"
-#include "features/schedule/ui/schedule_import_dialog_shared.h"
 #include "features/schedule/ui/schedule_time_formatter.h"
 #include "features/schedule/ui/schedule_widget.h"
 #include "features/teacher/import/teacher_import_name_utils.h"

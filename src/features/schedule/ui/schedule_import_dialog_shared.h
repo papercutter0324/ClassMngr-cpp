@@ -4,9 +4,6 @@
 
 #include <QString>
 
-class ApplicationServices;
-class ScheduleService;
-
 struct ScheduleImportReviewRequest
 {
     ScheduleImportUserBlock user;
@@ -14,7 +11,3 @@ struct ScheduleImportReviewRequest
     QString profileName;
     bool updateProfileName = false;
 };
-
-[[nodiscard]] ScheduleService* openScheduleImportService(
-    ApplicationServices* services
-    );
