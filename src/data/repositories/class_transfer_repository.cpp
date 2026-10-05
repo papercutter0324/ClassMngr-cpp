@@ -1188,7 +1188,7 @@ ClassTransferRepository::ClassTransferRepository(
 {
 }
 
-Result<ClassTransferPackage> ClassTransferRepository::buildPackage(
+Result<ClassTransferExportSource> ClassTransferRepository::readExportSource(
     const QList<int>& classIds
     )
 {
@@ -1217,28 +1217,11 @@ Result<ClassTransferPackage> ClassTransferRepository::buildPackage(
     RosterRepository rosterRepository(m_database);
     TeacherRepository teacherRepository(m_database);
 
-    struct PendingClassExport
-    {
-        int classId = -1;
-        int selectedIndex = -1;
-        QString name;
-        ClassInfo info;
-        QString infoError;
-        Roster roster;
-        QString rosterError;
-        QList<ClassTransferEvaluation> evaluations;
-        QString evaluationError;
-        int teacherId = -1;
-    };
-
-    ClassTransferPackage package;
-    package.exportedAtUtc = QDateTime::currentDateTimeUtc();
+    ClassTransferExportSource source;
+    source.exportedAtUtc = QDateTime::currentDateTimeUtc();
     QSet<int> seenClasses;
     QSet<int> seenTeachers;
-    QList<int> teacherIds;
-    QList<PendingClassExport> pendingClasses;
-    pendingClasses.reserve(classIds.size());
-    QString selectionOrReadError;
+    source.classes.reserve(classIds.size());
 
     // Resolve selections in order and stop at the first known selection or
     // class lookup failure. Only this validated prefix is passed to the data
@@ -1249,7 +1232,7 @@ Result<ClassTransferPackage> ClassTransferRepository::buildPackage(
 
         if (classId <= 0 || seenClasses.contains(classId))
         {
-            selectionOrReadError = QObject::tr(
+            source.selectionOrReadError = QObject::tr(
                 "The class selection contains an invalid or duplicate class.");
             break;
         }
@@ -1258,21 +1241,21 @@ Result<ClassTransferPackage> ClassTransferRepository::buildPackage(
             classRepository.getClassById(classId);
         if (!classroom)
         {
-            selectionOrReadError = classroom.error();
+            source.selectionOrReadError = classroom.error();
             break;
         }
 
         seenClasses.insert(classId);
-        PendingClassExport pending;
+        ClassTransferExportSourceClass pending;
         pending.classId = classId;
         pending.selectedIndex = index;
         pending.name = classroom->name;
-        pendingClasses.append(std::move(pending));
+        source.classes.append(std::move(pending));
     }
 
     QList<int> exportClassIds;
-    exportClassIds.reserve(pendingClasses.size());
-    for (const PendingClassExport& pending : pendingClasses)
+    exportClassIds.reserve(source.classes.size());
+    for (const ClassTransferExportSourceClass& pending : source.classes)
     {
         exportClassIds.append(pending.classId);
     }
@@ -1281,13 +1264,13 @@ Result<ClassTransferPackage> ClassTransferRepository::buildPackage(
         classInfoRepository.loadClassInfoRecords(exportClassIds);
     bool classInfoBatchMatchesRequest =
         classInfoRecords.has_value()
-        && classInfoRecords->size() == pendingClasses.size();
+        && classInfoRecords->size() == source.classes.size();
     if (classInfoBatchMatchesRequest)
     {
-        for (qsizetype index = 0; index < pendingClasses.size(); ++index)
+        for (qsizetype index = 0; index < source.classes.size(); ++index)
         {
             if (classInfoRecords->at(index).classId
-                != pendingClasses.at(index).classId)
+                != source.classes.at(index).classId)
             {
                 classInfoBatchMatchesRequest = false;
                 break;
@@ -1297,15 +1280,15 @@ Result<ClassTransferPackage> ClassTransferRepository::buildPackage(
 
     if (classInfoBatchMatchesRequest)
     {
-        for (qsizetype index = 0; index < pendingClasses.size(); ++index)
+        for (qsizetype index = 0; index < source.classes.size(); ++index)
         {
-            pendingClasses[index].info =
+            source.classes[index].info =
                 std::move((*classInfoRecords)[index]);
         }
     }
     else
     {
-        for (PendingClassExport& pending : pendingClasses)
+        for (ClassTransferExportSourceClass& pending : source.classes)
         {
             Result<ClassInfo> info =
                 classInfoRepository.loadClassInfo(pending.classId);
@@ -1323,13 +1306,13 @@ Result<ClassTransferPackage> ClassTransferRepository::buildPackage(
     auto rosterRecords = rosterRepository.loadFullRosters(exportClassIds);
     bool rosterBatchMatchesRequest =
         rosterRecords.has_value()
-        && rosterRecords->size() == pendingClasses.size();
+        && rosterRecords->size() == source.classes.size();
     if (rosterBatchMatchesRequest)
     {
-        for (qsizetype index = 0; index < pendingClasses.size(); ++index)
+        for (qsizetype index = 0; index < source.classes.size(); ++index)
         {
             if (rosterRecords->at(index).classId
-                != pendingClasses.at(index).classId)
+                != source.classes.at(index).classId)
             {
                 rosterBatchMatchesRequest = false;
                 break;
@@ -1339,15 +1322,15 @@ Result<ClassTransferPackage> ClassTransferRepository::buildPackage(
 
     if (rosterBatchMatchesRequest)
     {
-        for (qsizetype index = 0; index < pendingClasses.size(); ++index)
+        for (qsizetype index = 0; index < source.classes.size(); ++index)
         {
-            pendingClasses[index].roster =
+            source.classes[index].roster =
                 std::move((*rosterRecords)[index].roster);
         }
     }
     else
     {
-        for (PendingClassExport& pending : pendingClasses)
+        for (ClassTransferExportSourceClass& pending : source.classes)
         {
             Result<Roster> roster =
                 rosterRepository.loadRoster(pending.classId);
@@ -1365,7 +1348,7 @@ Result<ClassTransferPackage> ClassTransferRepository::buildPackage(
     // Discover the first known info/roster/evaluation failure in the original
     // per-class sequence. Teacher IDs are collected only after info and roster
     // succeed, and before evaluations, to retain their former read order.
-    for (PendingClassExport& pending : pendingClasses)
+    for (ClassTransferExportSourceClass& pending : source.classes)
     {
         if (!pending.infoError.isEmpty() || !pending.rosterError.isEmpty())
         {
@@ -1376,9 +1359,10 @@ Result<ClassTransferPackage> ClassTransferRepository::buildPackage(
         if (pending.teacherId > 0 && !seenTeachers.contains(pending.teacherId))
         {
             seenTeachers.insert(pending.teacherId);
-            teacherIds.append(pending.teacherId);
+            source.teacherIds.append(pending.teacherId);
         }
 
+        pending.evaluationAttempted = true;
         pending.evaluations = loadEvaluations(
             m_database, pending.classId, &pending.evaluationError);
         if (!pending.evaluationError.isEmpty())
@@ -1387,60 +1371,84 @@ Result<ClassTransferPackage> ClassTransferRepository::buildPackage(
         }
     }
 
-    QHash<int, Teacher> teachersById;
-    QHash<int, QString> teacherErrorsById;
-    QString teacherBatchError;
-    if (!teacherIds.isEmpty())
+    if (!source.teacherIds.isEmpty())
     {
         const Result<QList<TeacherProfileBatchReadRecord>> teacherProfiles =
-            teacherRepository.loadTeacherProfileRecords(teacherIds);
+            teacherRepository.loadTeacherProfileRecords(source.teacherIds);
         if (!teacherProfiles)
         {
             // A batch-level failure occupies the first assigned-teacher
             // profile's position in the original sequence.
-            teacherBatchError = teacherProfiles.error();
+            source.teacherBatchError = teacherProfiles.error();
         }
-        else if (teacherProfiles->size() != teacherIds.size())
+        else if (teacherProfiles->size() != source.teacherIds.size())
         {
-            teacherBatchError = QObject::tr(
+            source.teacherBatchError = QObject::tr(
                 "Loading teacher profiles failed: the database returned an unexpected number of records.");
         }
         else
         {
-            for (qsizetype index = 0; index < teacherIds.size(); ++index)
+            for (qsizetype index = 0; index < source.teacherIds.size(); ++index)
             {
-                const int teacherId = teacherIds[index];
+                const int teacherId = source.teacherIds[index];
                 const TeacherProfileBatchReadRecord& record =
                     teacherProfiles->at(index);
                 if (record.teacherId != teacherId)
                 {
-                    teacherBatchError = QObject::tr(
+                    source.teacherBatchError = QObject::tr(
                         "Loading teacher profiles failed: the database returned records in a different identifier order.");
                     break;
                 }
 
                 if (!record.profile)
                 {
-                    teacherErrorsById.insert(teacherId, record.profile.error());
+                    source.teacherErrorsById.insert(teacherId, record.profile.error());
                     continue;
                 }
 
                 if (record.profile->id != teacherId)
                 {
-                    teacherBatchError = QObject::tr(
+                    source.teacherBatchError = QObject::tr(
                         "Loading teacher profiles failed: a database record returned a different teacher identifier.");
                     break;
                 }
 
-                teachersById.insert(teacherId, *record.profile);
+                source.teachersById.insert(teacherId, *record.profile);
             }
         }
     }
 
+    bool readFailed = !source.selectionOrReadError.isEmpty()
+        || !source.teacherBatchError.isEmpty() || !source.teacherErrorsById.isEmpty();
+    for (const auto& pending : source.classes)
+        readFailed = readFailed || !pending.infoError.isEmpty()
+            || !pending.rosterError.isEmpty() || !pending.evaluationError.isEmpty();
+    if (readFailed)
+        return source; // Transaction destructor rolls back, exactly as error replay did.
+
+    if (!transaction.commit())
+        return std::unexpected(QObject::tr("Unable to finish the class export transaction: %1")
+            .arg(m_database.lastError().text()));
+    return source;
+}
+
+Result<ClassTransferPackage> ClassTransferRepository::buildPackage(const QList<int>& classIds)
+{
+    auto loaded = readExportSource(classIds);
+    if (!loaded)
+        return std::unexpected(loaded.error());
+    auto& pendingClasses = loaded->classes;
+    const auto& teacherIds = loaded->teacherIds;
+    const auto& teachersById = loaded->teachersById;
+    const auto& teacherErrorsById = loaded->teacherErrorsById;
+    const auto& teacherBatchError = loaded->teacherBatchError;
+    const auto& selectionOrReadError = loaded->selectionOrReadError;
+    ClassTransferPackage package;
+    package.exportedAtUtc = loaded->exportedAtUtc;
     // Replay staged outcomes in their original order so an earlier teacher
     // or evaluation failure keeps precedence over a later info, roster,
     // selection, or class lookup failure.
-    for (const PendingClassExport& pending : pendingClasses)
+    for (const ClassTransferExportSourceClass& pending : pendingClasses)
     {
         if (!pending.infoError.isEmpty())
         {
@@ -1485,7 +1493,7 @@ Result<ClassTransferPackage> ClassTransferRepository::buildPackage(
         package.teachers.append({key, teachersById.value(teacherId)});
     }
 
-    for (PendingClassExport& pending : pendingClasses)
+    for (ClassTransferExportSourceClass& pending : pendingClasses)
     {
         ClassTransferClass transferClass;
         transferClass.key = QStringLiteral("class-%1")
@@ -1512,14 +1520,6 @@ Result<ClassTransferPackage> ClassTransferRepository::buildPackage(
         transferClass.info.zoomPassword.clear();
         transferClass.info.projectionType.clear();
         package.classes.append(transferClass);
-    }
-
-    if (!transaction.commit())
-    {
-        return std::unexpected(
-            QObject::tr("Unable to finish the class export transaction: %1")
-                .arg(m_database.lastError().text())
-            );
     }
 
     return package;

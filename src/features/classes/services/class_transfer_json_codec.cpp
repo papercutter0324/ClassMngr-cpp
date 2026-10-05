@@ -651,6 +651,82 @@ Result<ClassTransferClass> classFromJson(
 
     return result;
 }
+using namespace ClassMngr::Next::Application;
+QString exportText(const ClassExportText& value) { return QString::fromStdU16String(value); }
+QJsonArray exportRows(const ClassExportRows& rows)
+{
+    QJsonArray result;
+    for (const auto& row : rows)
+    {
+        QJsonArray cells;
+        for (const auto& cell : row)
+            cells.append(exportText(cell));
+        result.append(cells);
+    }
+    return result;
+}
+QJsonArray timesToJson(const std::vector<ClassExportTime>& times)
+{
+    QJsonArray result;
+    for (const auto& time : times)
+        result.append(QJsonObject{{QStringLiteral("day"), exportText(time.day)},
+            {QStringLiteral("start_time"), exportText(time.startTime)},
+            {QStringLiteral("end_time"), exportText(time.endTime)}});
+    return result;
+}
+QJsonObject teacherToJson(const ClassExportTeacher& value)
+{
+    return {{QStringLiteral("key"), exportText(value.key)},
+        {QStringLiteral("teacher_kr"), exportText(value.teacher.teacherKr)},
+        {QStringLiteral("teacher_en"), exportText(value.teacher.teacherEn)},
+        {QStringLiteral("preferred_romanization"), exportText(value.teacher.preferredRomanization)},
+        {QStringLiteral("preferred_name"), exportText(value.teacher.preferredName)},
+        {QStringLiteral("room_number"), exportText(value.teacher.roomNumber)},
+        {QStringLiteral("birthday"), exportText(value.teacher.birthday)},
+        {QStringLiteral("phone_number"), exportText(value.teacher.phoneNumber)},
+        {QStringLiteral("wifi_name"), exportText(value.teacher.wifiName)},
+        {QStringLiteral("wifi_password"), exportText(value.teacher.wifiPassword)},
+        {QStringLiteral("internet_type"), exportText(value.teacher.internetType)},
+        {QStringLiteral("zoom_id"), exportText(value.teacher.zoomId)},
+        {QStringLiteral("zoom_password"), exportText(value.teacher.zoomPassword)},
+        {QStringLiteral("projection_type"), exportText(value.teacher.projectionType)},
+        {QStringLiteral("notes"), exportText(value.teacher.notes)}};
+}
+QJsonObject classInfoToJson(const ClassExportInfo& value)
+{
+    return {
+        {QStringLiteral("class_grade"), exportText(value.classGrade)},
+        {QStringLiteral("class_level"), exportText(value.classLevel)},
+        {QStringLiteral("reading_book"), exportText(value.readingBook)},
+        {QStringLiteral("essay_book"), exportText(value.essayBook)},
+        {QStringLiteral("class_color"), exportText(value.classColor)},
+        {QStringLiteral("font_color"), exportText(value.fontColor)},
+        {QStringLiteral("notes"), exportText(value.notes)},
+        {QStringLiteral("time_filler_activities"), exportText(value.timeFillerActivities)},
+        {QStringLiteral("regular_times"), timesToJson(value.classTimes)},
+        {QStringLiteral("intensive_times"), timesToJson(value.intensiveTimes)}};
+}
+QJsonObject rosterToJson(const ClassExportRoster& value)
+{
+    QJsonArray columns, widths;
+    for (const auto& column : value.columns) columns.append(exportText(column));
+    for (const int width : value.columnWidths) widths.append(width);
+    return {{QStringLiteral("columns"), columns}, {QStringLiteral("column_widths"), widths},
+        {QStringLiteral("rows"), exportRows(value.rows)}};
+}
+QJsonObject classToJson(const ClassExportClass& value)
+{
+    QJsonArray evaluations;
+    for (const auto& evaluation : value.evaluations)
+        evaluations.append(QJsonObject{{QStringLiteral("name"), exportText(evaluation.name)},
+            {QStringLiteral("rows"), exportRows(evaluation.rows)}});
+    return {{QStringLiteral("key"), exportText(value.key)}, {QStringLiteral("name"), exportText(value.name)},
+        {QStringLiteral("teacher_ref"), exportText(value.teacherKey)},
+        {QStringLiteral("info"), classInfoToJson(value.info)},
+        {QStringLiteral("roster"), rosterToJson(value.roster)},
+        {QStringLiteral("speaking_evaluations"), evaluations}};
+}
+
 }
 
 QJsonObject ClassTransferJsonCodec::toJson(
@@ -682,6 +758,16 @@ QJsonObject ClassTransferJsonCodec::toJson(
         {QStringLiteral("teachers"), teachers},
         {QStringLiteral("classes"), classes}
     };
+}
+
+QJsonObject ClassTransferJsonCodec::toJson(const ClassTransferExportPackage& package)
+{
+    QJsonArray teachers, classes;
+    for (const auto& teacher : package.teachers) teachers.append(teacherToJson(teacher));
+    for (const auto& classroom : package.classes) classes.append(classToJson(classroom));
+    return {{QStringLiteral("format"), FormatName}, {QStringLiteral("version"), package.version},
+        {QStringLiteral("exported_at_utc"), QString::fromStdString(package.exportedAtUtc)},
+        {QStringLiteral("teachers"), teachers}, {QStringLiteral("classes"), classes}};
 }
 
 Result<ClassTransferPackage> ClassTransferJsonCodec::fromJson(
@@ -834,6 +920,49 @@ Result<ClassTransferPackage> ClassTransferJsonCodec::fromJson(
 Status ClassTransferJsonCodec::saveFile(
     const QString& filePath,
     const ClassTransferPackage& package
+    )
+{
+    if (filePath.trimmed().isEmpty())
+    {
+        return std::unexpected(QObject::tr("No export path was provided."));
+    }
+
+    QSaveFile file(filePath);
+
+    if (!file.open(QIODevice::WriteOnly | QIODevice::Text))
+    {
+        return std::unexpected(
+            QObject::tr("Unable to open the class package for writing:\n%1")
+                .arg(file.errorString())
+            );
+    }
+
+    const QByteArray bytes =
+        QJsonDocument(toJson(package)).toJson(QJsonDocument::Indented);
+
+    if (file.write(bytes) != bytes.size())
+    {
+        file.cancelWriting();
+        return std::unexpected(
+            QObject::tr("Unable to write the class package:\n%1")
+                .arg(file.errorString())
+            );
+    }
+
+    if (!file.commit())
+    {
+        return std::unexpected(
+            QObject::tr("Unable to finish writing the class package:\n%1")
+                .arg(file.errorString())
+            );
+    }
+
+    return {};
+}
+
+Status ClassTransferJsonCodec::saveFile(
+    const QString& filePath,
+    const ClassTransferExportPackage& package
     )
 {
     if (filePath.trimmed().isEmpty())

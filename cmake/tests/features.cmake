@@ -1,3 +1,10 @@
+classmngr_add_qt_test(
+    NAME ClassTransferExportCodecParity
+    SOURCES tests/class_transfer_export_codec_parity_tests.cpp
+    LIBRARIES Qt6::Test Qt6::Widgets
+    OFFSCREEN
+)
+
 qt_add_executable(ClassMngrClassTransferTests
         tests/class_transfer_tests.cpp
         src/core/utils/sidebar_node_naming.cpp

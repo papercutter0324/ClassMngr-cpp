@@ -1372,6 +1372,19 @@ classmngr_add_qt_test(
 )
 
 classmngr_add_qt_test(
+    NAME NextApplicationClassTransferExportQuery
+    SOURCES tests/next_application_class_transfer_export_query_tests.cpp
+    LIBRARIES ClassMngrNext::Application Qt6::Test
+)
+
+classmngr_add_qt_test(
+    NAME NextPlatformClassTransferExportSource
+    SOURCES tests/next_platform_class_transfer_export_source_tests.cpp
+    LIBRARIES Qt6::Test Qt6::Widgets
+    OFFSCREEN
+)
+
+classmngr_add_qt_test(
     NAME NextApplicationScheduleView
     SOURCES
         tests/next_application_schedule_view_tests.cpp

@@ -192,6 +192,7 @@ set(CLASSMNGR_NEXT_APPLICATION_SOURCES
     src/next/application/sub_prep_roster_output_source_query.h
     src/next/application/sub_prep_class_details_query.h
     src/next/application/sub_prep_class_information_state.h
+    src/next/application/class_transfer_export_query.h
     src/next/application/class_transfer_projection.h
     src/next/application/class_transfer_apply_request.h
     src/next/application/class_transfer_matching_policy.h
@@ -318,6 +319,7 @@ set(CLASSMNGR_NEXT_APPLICATION_SOURCES
 )
 
 set(CLASSMNGR_NEXT_PLATFORM_SOURCES
+    src/next/platform/application_services_class_transfer_export_source_read_port.h
     src/next/platform/class_transfer_apply_legacy_adapter.h
     src/next/platform/legacy_workspace_gateway.h
     src/next/platform/initial_setup_lifecycle_adapter.h

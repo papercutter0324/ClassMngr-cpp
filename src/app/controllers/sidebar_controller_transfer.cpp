@@ -7,6 +7,7 @@ using namespace SidebarControllerPrivate;
 
 #include "core/utils/file_name_utils.h"
 #include "features/classes/services/class_transfer_json_codec.h"
+#include "next/platform/application_services_class_transfer_export_source_read_port.h"
 #include "features/classes/ui/class_export_dialog.h"
 #include "features/classes/ui/class_import_dialog.h"
 #include "ui/shared/dialogs/file_dialog_service.h"
@@ -109,19 +110,23 @@ void SidebarController::saveClassExport(
         return;
     }
 
-    const auto package =
-        classes->buildTransferPackage(classIds);
+    ClassMngr::Next::Application::ClassTransferExportRequest request;
+    for (const int classId : classIds)
+        request.classIds.push_back(*ClassMngr::Next::Domain::ClassId::fromString(std::to_string(classId)));
+    ClassMngr::Next::Platform::ApplicationServicesClassTransferExportSourceReadPort source(*m_services);
+    const auto package = ClassMngr::Next::Application::ClassTransferExportQuery(source).execute(request);
 
     if (!package)
     {
         DialogServices::showWarning(
-            m_sidebar, dialogTitle, package.error());
+            m_sidebar, dialogTitle, QString::fromUtf8(package.error().message.data(),
+                static_cast<qsizetype>(package.error().message.size())));
         return;
     }
 
     const QString filePath = normalizedJsonPath(*selection);
     const Status saved = ClassTransferJsonCodec::saveFile(
-        filePath, *package);
+        filePath, package.value());
 
     if (!saved)
     {
