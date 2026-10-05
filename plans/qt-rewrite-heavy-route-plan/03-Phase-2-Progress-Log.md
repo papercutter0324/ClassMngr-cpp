@@ -12317,3 +12317,21 @@ F352 is selected for Class Import teacher-choice display baseline parity. F352
 is selected, not implemented or verified. F353 remains queued. Batch 8 is
 complete; Batch 9 is active. Phase 2 remains In Progress/Open; Gates 1 and 2
 remain Partial.
+
+### F352 accepted / F353 selected - 2026-10-05
+
+F352, committed as
+`96a59df84b2a12b6f1d2c197e183c09b56485511`, records Class Import teacher-choice
+display baseline parity. Three scenarios and four data executions produced
+ASCII JSON transcripts that parsed and matched. The current owner audit covered
+1,346 handwritten sources. Current focused CTest passed 4/4 and baseline parity
+passed 1/1. Baseline overlay verification covered 969 files, with identical
+test/registration changes and three minimum Qt substitutions.
+
+The F145/F146 teacher-query setup gap remains a follow-up; its details are
+recorded in the F350 entry above. These are focused results; no full-suite pass
+is claimed.
+
+F353 is selected for Sub Prep roster-output semantic baseline parity. F353 is
+selected, not implemented or verified. Batch 9 has no remaining queued slice.
+Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial.

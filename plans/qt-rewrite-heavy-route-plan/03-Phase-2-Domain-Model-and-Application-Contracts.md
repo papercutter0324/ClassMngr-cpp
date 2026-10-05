@@ -18,9 +18,9 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-05
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F352 is selected for Class Import teacher-choice display
-  baseline parity. F352 is selected, not implemented or verified. Batch 8 is
-  complete; Batch 9 is active with F353 queued.
+- Current note: F353 is selected for Sub Prep roster-output semantic baseline
+  parity. F353 is selected, not implemented or verified. Batch 8 is complete;
+  Batch 9 is active with F353 current and no queued slices remaining.
 
 ### Slice discovery batches
 
@@ -83,15 +83,14 @@ No other slices were found.
 5. F349 - Testing Classes delete transition baseline parity evidence (accepted; commit `5c698aa7`).
 6. F350 - Testing Classes create/update persistence baseline parity (accepted; commit `d167a541`).
 7. F351 - My Classes assigned-teacher display baseline parity (accepted; commit `1ecc5b09`).
-8. F352 - Class Import teacher-choice display baseline parity (selected/current).
-9. F353 - Sub Prep roster-output semantic baseline parity.
+8. F352 - Class Import teacher-choice display baseline parity (accepted; commit `96a59df8`).
+9. F353 - Sub Prep roster-output semantic baseline parity (selected/current).
 
 No other slices were found.
 
 #### Active batch: Batch 9
 
-1. F352 - Selected/current: Class Import teacher-choice display baseline parity.
-2. F353 - Queued in the recorded order above.
+1. F353 - Selected/current: Sub Prep roster-output semantic baseline parity.
 
 #### F299 completeness audit checkpoint
 
@@ -253,22 +252,21 @@ No new v2 production path depends on DataService, MainWindow, PageManager, or a 
 
 Earlier verified slices and cumulative exit-gate snapshots are archived in the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 
-## Latest Progress Update - 2026-10-05 (F351 accepted; F352 selected)
+## Latest Progress Update - 2026-10-05 (F352 accepted; F353 selected)
 
-F351, committed as
-`1ecc5b09344099b6bbfb9ee148ce76ec93bfd55a`, records My Classes assigned-teacher
-display baseline parity. Three current and pinned-baseline semantic transcripts,
-including Unicode profile fields, parsed and matched. The current owner audit
-covered 1,345 handwritten sources. Current focused CTest passed 4/4 and
-baseline parity passed 1/1. Baseline overlay verification covered 969 files;
-test/registration changes were identical, with only three minimum Qt
-substitutions.
+F352, committed as
+`96a59df84b2a12b6f1d2c197e183c09b56485511`, records Class Import teacher-choice
+display baseline parity. Three scenarios and four data executions produced
+ASCII JSON transcripts that parsed and matched. The current owner audit covered
+1,346 handwritten sources. Current focused CTest passed 4/4 and baseline parity
+passed 1/1. Baseline overlay verification covered 969 files, with identical
+test/registration changes and three minimum Qt substitutions.
 
 The F145/F146 teacher-query setup gap remains a follow-up as documented in the
 progress log. These are focused results; no full-suite pass is claimed. Phase 2
 remains In Progress/Open; Gates 1 and 2 remain Partial.
 
-F352 is selected for Class Import teacher-choice display baseline parity. F352
-is selected, not implemented or verified. Batch 8 is complete; Batch 9 is active
-with F353 queued. Batch 9's parity items are evidence gaps, not established
-functional defects.
+F353 is selected for Sub Prep roster-output semantic baseline parity. F353 is
+selected, not implemented or verified. Batch 8 is complete; Batch 9 is active
+with F353 current and no queued slices remaining. Batch 9's parity items are
+evidence gaps, not established functional defects.
