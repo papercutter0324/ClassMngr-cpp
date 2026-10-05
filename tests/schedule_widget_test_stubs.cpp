@@ -835,6 +835,30 @@ Result<QList<Teacher>> TeacherRepository::getAllTeachers()
     return DataService().getAllTeachers();
 }
 
+Result<QList<TestingTeacherChoiceReadRecord>>
+TeacherRepository::loadTestingTeacherChoiceRecords()
+{
+    const Result<QList<Teacher>> loadedTeachers =
+        DataService().getAllTeachers();
+    if (!loadedTeachers)
+    {
+        return std::unexpected(loadedTeachers.error());
+    }
+
+    QList<TestingTeacherChoiceReadRecord> records;
+    records.reserve(loadedTeachers->size());
+    for (const Teacher& teacher : *loadedTeachers)
+    {
+        records.append({
+            .teacherId = teacher.id,
+            .teacherKr = teacher.teacherKr,
+            .room = teacher.roomNumber
+        });
+    }
+
+    return records;
+}
+
 Result<TeacherDisplayNameReadRecord>
 TeacherRepository::loadTeacherDisplayNameFields(const int teacherId)
 {

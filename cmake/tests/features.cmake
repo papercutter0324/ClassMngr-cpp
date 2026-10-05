@@ -460,6 +460,17 @@ qt_add_executable(ClassMngrClassTransferTests
         OFFSCREEN
     )
 
+    classmngr_add_qt_test(
+        NAME TestingClassesPageCancelFailureParity
+        SOURCES
+            tests/testing_classes_page_cancel_failure_parity_tests.cpp
+        LIBRARIES
+            ClassMngrScheduleWidgetTestSupport
+            Qt6::Test
+            Qt6::Widgets
+        OFFSCREEN
+    )
+
     qt_add_executable(ClassMngrTestingClassesPageTests
         tests/testing_classes_page_tests.cpp
         src/core/utils/colorutils.cpp
