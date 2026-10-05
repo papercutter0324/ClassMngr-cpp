@@ -12527,3 +12527,39 @@ F361 is selected for Class Analytics full-page baseline parity across summary,
 class-shape, and YTD visible mappings; keep accepted query work unchanged. F361
 is selected, not implemented or verified. Batch 9 is complete; Batch 10 is
 active. Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial.
+
+### F361 accepted / Batch 11 recorded; F362 selected - 2026-10-06
+
+F361, committed as
+`c1ebeb8f193a4b66067fc5129f331ad634c95e3e` (`Phase2 - Add Class Analytics
+page mapping parity (F361)`), adds only
+`tests/class_analytics_page_read_parity_tests.cpp` and its registration in
+`cmake/tests/pages_and_output.cmake`.
+
+Fresh Windows x64 Ninja Debug builds with MSVC 19.51 x64 and Qt 6.12.0 passed
+for current and exact F360 baseline
+`ef2ef6fcd1986d8dbbdcedf663419e5fc6e9aa33`. The focused
+`ClassMngrClassAnalyticsPageReadParityTests` CTest passed 1/1 on each revision;
+QtTest reported 4 passed, 0 failed, and 0 skipped on each. The baseline overlay
+contained exactly the two F361 test/CMake paths, byte-identical to current, with
+no production changes. Ownership counted 1,348 handwritten sources at the
+predecessor; CMake reported 1,349 sources for both current and overlaid
+baseline. `git diff --check` passed.
+
+`F361_TRANSCRIPT` matched after CRLF-to-LF normalization; SHA-256:
+`6590C38A885FF3551D9123FBEA3CCD4E501A893630D37EC3F26CFC7CDBE4DA95`. Verified
+mappings include All summary A · 3.5, 2 / 3, and Summer shape A:1/B+:1; Winter
+summary B+ · 3.0 and Winter shape A:1/B:1; both retain YTD Winter B+/3.0,
+Speech Contest A/4.0, and Summer A/3.5. Empty state covers the hidden empty
+label and charts. Qt emitted offscreen resource/font and
+`propagateSizeHints` warnings while assertions passed. Baseline archive revision
+was `unknown` and unused by the test. No full suite ran.
+
+F362 is selected for the Sidebar class deletion Application boundary, preserving
+the pre-confirm read warning, confirmation and page-leave guard order, cascade,
+and rollback. It is selected, not implemented or verified. Two independent
+read-only gate scans identified at least eleven candidates without establishing
+that discovery is exhausted. The lower-ranked Schedule testing-assignment gate
+remains for later discovery.
+Batch 10 is complete; Batch 11 is active. Phase 2 remains In Progress/Open;
+Gates 1 and 2 remain Partial.

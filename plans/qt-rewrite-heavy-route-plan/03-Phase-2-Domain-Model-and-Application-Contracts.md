@@ -32,10 +32,10 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-06
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F361 is selected for Class Analytics full-page baseline
-  parity across summary, class-shape, and YTD visible mappings; keep accepted
-  query work unchanged. F361 is selected, not implemented or verified. Batch 9
-  is complete; Batch 10 is active.
+- Current note: F362 is selected for the Sidebar class deletion Application
+  boundary. Preserve the pre-confirm read warning, confirmation and page-leave
+  guard order, cascade, and rollback. F362 is selected, not implemented or
+  verified. Batches 9 and 10 are complete; Batch 11 is active.
 
 ### Slice discovery batches
 
@@ -103,7 +103,7 @@ No other slices were found.
 
 No other slices were found.
 
-##### Batch 10
+##### Batch 10 (complete)
 
 1. F354 - Class Transfer package-build Application contract; distinct from F348 apply request and F330 repository read batching; preserve package fields/order/read failures, with no assumed selection-size bound.
 2. F355 - Co-teacher assignment purpose-fit persistence boundary; avoid hydrating/rewriting full ClassInfo for teacherId while preserving validation/conflict and unrelated fields (accepted; commit `0f93cbe6`).
@@ -112,14 +112,30 @@ No other slices were found.
 5. F358 - Remove orphan My Classes single-class information read contract/adapter/tests (no production callers); retain the F291 batch path (accepted; commit `6bca3311`).
 6. F359 - Retire the unused Schedule Import compatibility helper and stale DataService include; retain the shared review-request type (accepted; commit `25f5520e`).
 7. F360 - Testing Classes cancel/failure page parity; add the missing `loadTestingTeacherChoiceRecords` test-support read and compare current/baseline warning/page outcomes for F145-F147 (accepted; commit `94431d81`).
-8. F361 - Class Analytics full-page baseline parity for summary/class-shape/YTD visible mappings; keep accepted query work unchanged.
+8. F361 - Class Analytics full-page baseline parity for summary/class-shape/YTD visible mappings; keep accepted query work unchanged (accepted; commit `c1ebeb8f`).
 
-No other slices were found.
+##### Batch 11
 
-#### Active batch: Batch 10
+1. F362 - Sidebar class deletion Application boundary: preserve pre-confirm read warning, confirmation and page-leave guard order, cascade, and rollback.
+2. F363 - Sidebar teacher deletion Application boundary.
+3. F364 - Clear Testing Layout command transition.
+4. F365 - Initial Setup Wizard class create/save.
+5. F366 - Initial Setup Wizard validated teacher create.
+6. F367 - Class Transfer persisted apply boundary (F348 request validation is already accepted).
+7. F368 - Teacher Import UI apply integration using the existing Next use case.
+8. F369 - Schedule Editor baseline parity.
+9. F370 - Class Export picker baseline parity.
+10. F371 - Roster Transfer remaining legacy availability gates.
 
-1. F354-F360 - Accepted: Class Transfer package-build Application contract; Co-teacher assignment purpose-fit persistence boundary; Speaking Evaluation and Roster Print typed-read compatibility gates; retire the unused My Classes single-class information read contract while retaining the F291 batch path; retire the unused Schedule Import compatibility helper while retaining the shared review-request type; Testing Classes cancel/failure page parity.
-2. F361 - Selected/current: Class Analytics full-page baseline parity for summary/class-shape/YTD visible mappings; keep accepted query work unchanged.
+Two independent read-only gate scans identified at least eleven candidates
+without establishing that discovery is exhausted. The lower-ranked Schedule
+testing-assignment gate remains for later discovery.
+
+#### Active batch: Batch 11
+
+1. F354-F361 - Accepted: Batch 10 is complete through Class Analytics page mapping parity.
+2. F362 - Selected/current: Sidebar class deletion Application boundary; preserve the pre-confirm read warning, confirmation and page-leave guard order, cascade, and rollback.
+3. F363-F371 - Queued in the recorded Batch 11 order.
 
 #### F299 completeness audit checkpoint
 
@@ -281,24 +297,22 @@ No new v2 production path depends on DataService, MainWindow, PageManager, or a 
 
 Earlier verified slices and cumulative exit-gate snapshots are archived in the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 
-## Latest Progress Update - 2026-10-06 (F360 accepted; F361 selected)
+## Latest Progress Update - 2026-10-06 (F361 accepted; F362 selected)
 
-F360, committed as
-`94431d8120bef45463e395e5712a32bd14afd46c` (`Phase2 - Add Testing Classes
-cancel/failure parity (F360)`), adds the typed
-`loadTestingTeacherChoiceRecords()` test-support read using existing teacher 7/8
-fixtures. Its parity harness covers F145 update failure, F146 create
-failure/pending slot, and F147 cancel and delete failure, including exact
-warnings, draft state, and prompt state.
+F361, committed as
+`c1ebeb8f193a4b66067fc5129f331ad634c95e3e` (`Phase2 - Add Class Analytics
+page mapping parity (F361)`), adds the page-mapping parity harness and CMake
+registration. Fresh current and exact-F360-baseline Windows x64 Ninja Debug
+builds passed; `ClassMngrClassAnalyticsPageReadParityTests` passed 1/1 on each
+with 4 QtTest passes. The two-path baseline overlay was byte-identical to
+current and contained no production changes.
 
-Independent current and exact-F359-baseline builds passed the same five focused
-CTests. Both ownership audits covered 1,348 handwritten sources. Four ASCII
-JSON transcripts matched byte-for-byte; LF-normalized SHA-256:
-`20B126D8675FB5C0B6184CEA04A79A639B3AE055F8316E2D563E70AFA9954DD9`. The
-baseline overlay contained exactly three test-only paths and no production
-changes. No full suite ran.
+The normalized `F361_TRANSCRIPT` SHA-256 is
+`6590C38A885FF3551D9123FBEA3CCD4E501A893630D37EC3F26CFC7CDBE4DA95`. The
+focused mappings, including empty state, matched; no full suite ran.
 
-F361 is selected for Class Analytics full-page baseline parity across summary,
-class-shape, and YTD visible mappings; keep accepted query work unchanged. F361
-is selected, not implemented or verified. Batch 9 is complete; Batch 10 is
-active. Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial.
+F362 is selected for the Sidebar class deletion Application boundary, preserving
+pre-confirm warning, confirmation and page-leave guard order, cascade, and
+rollback. F362 is selected, not implemented or verified. Batch 10 is complete;
+Batch 11 is active. Phase 2 remains In Progress/Open; Gates 1 and 2 remain
+Partial.
