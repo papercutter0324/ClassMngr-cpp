@@ -11916,3 +11916,52 @@ missing-row defaults, and Technical errors. The target is two statements
 unused regular schedules and no intensive schedules. F337 is selected, not
 implemented. It is the second-last Batch 7 slice, and Batch 8 discovery is
 underway. Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial.
+
+### Slice discovery update - 2026-10-05 (Batch 8 recorded at F337 start)
+
+Two independent read-only sweeps found six bounded candidates for Batch 8, in
+this order:
+
+1. F339 - Add a purpose-fit Schedule Testing class-choice projection; drop
+   unused teacher ID, colors, notes, and the unused teacher join while
+   preserving joins, order, defaults, and errors.
+2. F340 - Narrow Sub Prep roster-output teacher-profile fields to teacher ID,
+   EN/KR names, preferred name, and romanization; preserve per-ID failures,
+   order, and identity.
+3. F341 - Narrow Sub Prep schedule-scope rows to consumed class ID, teacher ID,
+   and schedule while preserving scope, order, caps, unassigned rows, and
+   missing-information behavior.
+4. F342 - Narrow the My Classes assigned-teacher batch projection to consumed
+   profile fields while retaining identity and per-teacher failures.
+5. F343 - Narrow the Schedule Import snapshot class-info projection while
+   preserving classes-then-teachers-then-schedules error precedence.
+6. F344 - Remove redundant compatibility-service availability gates from
+   migrated Classes/My Classes pages while preserving the no-session early
+   return and query-failure warnings.
+
+No other slices were found.
+
+### F337 accepted / F338 selected - 2026-10-05
+
+F337, committed as `97dfdf81` (`Phase2 - Reuse class details reader for
+validation (F337)`), switches the Class Details validation-context port from
+`loadClassInfo()` to F332's `loadClassPageDetails()`. It preserves mapped class
+ID, teacher ID and sentinels 0 and -2, exact notes/time-filler text, and
+missing-row defaults. The reader performs two metadata and two regular
+schedule statements across two reads; a missing row uses one plus one. No
+intensive schedule is read.
+
+Fresh independent VS2026 x64/Ninja Debug configure validated 1,329 handwritten
+sources; `ClassMngrNextPlatformApplicationServicesClassDetailsValidationContextPortTests`
+built 316/316; focused CTest passed 1/1; and `git diff --check` exited 0. No
+full suite ran. Configure emitted only nonfatal existing `vswhere` and
+long-path warnings.
+
+F338 is selected to move ClassImportDialog's direct
+`DatabaseSession`/`TeacherRepository::loadTeacherDisplayNameRecords` batch read
+behind a purpose-fit v2 application query and ApplicationServices platform
+adapter. Preserve package-backed preview filtering, unique positive teacher
+IDs, current display labels and fallback, and per-teacher profile fallback if
+the batch operation fails. F338 is selected, not implemented. Batch 7 remains
+active with only F338 remaining; Batch 8 (F339-F344) discovery is queued. Phase
+2 remains In Progress/Open; Gates 1 and 2 remain Partial.

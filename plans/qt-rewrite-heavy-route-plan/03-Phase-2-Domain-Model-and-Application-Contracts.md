@@ -18,13 +18,14 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-05
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F337 is selected to switch the Class Details validation
-  context port from `loadClassInfo()` to the F332
-  `loadClassPageDetails()` reader. Preserve matched/request IDs, the teacher-ID
-  sentinel, exact notes/filler text, missing-row defaults, and Technical
-  errors. Target two statements (metadata plus regular schedule) instead of
-  three; the reader will include unused regular schedules and no intensive
-  schedules. Batch 8 discovery is underway. F337 is selected, not implemented.
+- Current note: F338 is selected to move ClassImportDialog's direct
+  `DatabaseSession`/`TeacherRepository::loadTeacherDisplayNameRecords` batch
+  read behind a purpose-fit v2 application query and ApplicationServices
+  platform adapter. Preserve package-backed preview filtering, unique positive
+  teacher IDs, current display labels and fallback, and per-teacher profile
+  fallback if the batch operation fails. F338 is selected, not implemented.
+  Batch 7 remains active with only F338 remaining; Batch 8 (F339-F344)
+  discovery is queued.
 
 ### Slice discovery batches
 
@@ -52,13 +53,40 @@ Accepted slices are removed from active tracking; their implementation and accep
   failure warning/no-navigation behavior; revisit after that behavior is
   clarified.
 
-#### Active batch: Batch 7
+#### Recorded batches
+
+##### Batch 7
 
 1. F337 - Reuse the F332 class-details reader for Class Details validation
    context.
 2. F338 - Clean up the ClassImportDialog boundary.
 
 No other slices were found.
+
+##### Batch 8
+
+1. F339 - Add a purpose-fit Schedule Testing class-choice projection; drop
+   unused teacher ID, colors, notes, and the unused teacher join while
+   preserving joins, order, defaults, and errors.
+2. F340 - Narrow Sub Prep roster-output teacher-profile fields to teacher ID,
+   EN/KR names, preferred name, and romanization; preserve per-ID failures,
+   order, and identity.
+3. F341 - Narrow Sub Prep schedule-scope rows to consumed class ID, teacher ID,
+   and schedule while preserving scope, order, caps, unassigned rows, and
+   missing-information behavior.
+4. F342 - Narrow the My Classes assigned-teacher batch projection to consumed
+   profile fields while retaining identity and per-teacher failures.
+5. F343 - Narrow the Schedule Import snapshot class-info projection while
+   preserving classes-then-teachers-then-schedules error precedence.
+6. F344 - Remove redundant compatibility-service availability gates from
+   migrated Classes/My Classes pages while preserving the no-session early
+   return and query-failure warnings.
+
+No other slices were found.
+
+#### Active batch: Batch 7
+
+1. F338 - Clean up the ClassImportDialog boundary.
 
 #### F299 completeness audit checkpoint
 
@@ -220,22 +248,27 @@ No new v2 production path depends on DataService, MainWindow, PageManager, or a 
 
 Earlier verified slices and cumulative exit-gate snapshots are archived in the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 
-## Latest Progress Update - 2026-10-05 (F336 accepted; F337 selected)
+## Latest Progress Update - 2026-10-05 (F337 accepted; F338 selected)
 
-F336, committed as
-`59bf62feb6d9a708e91dd2daaf1f460c744f8e0b`, adds a purpose-fit repository
-reader that performs one `SELECT class_grade`, returns the requested ID, and
-returns a blank grade for a missing row. It preserves grade whitespace and
-uses the existing action's Technical error mapping; only the Selected Class
-Grade port changed.
+F337, committed as `97dfdf81` (`Phase2 - Reuse class details reader for
+validation (F337)`), switches the Class Details validation-context port from
+`loadClassInfo()` to F332's `loadClassPageDetails()`. It preserves mapped class
+ID, teacher ID and sentinels 0 and -2, exact notes/time-filler text, and
+missing-row defaults. The reader performs two metadata and two regular
+schedule statements across two reads; a missing row uses one plus one. No
+intensive schedule is read.
 
-Tests cover the exact value ` M2 `, requested IDs, missing and empty rows, one
-statement per call, and a dropped `class_info` table producing a Technical
-error. Fresh VS2026 x64/Ninja Debug configure passed the 1,329-file ownership
-audit; `ClassMngrNextPlatformApplicationServicesSelectedClassGradeReadPortTests`
-built in 316/316 steps and focused CTest passed 1/1. `git diff --check` exited
-0; no full suite ran. Configure had nonfatal `vswhere` and long-path warnings.
+Fresh VS2026 x64/Ninja Debug configure validated 1,329 handwritten sources;
+the focused
+`ClassMngrNextPlatformApplicationServicesClassDetailsValidationContextPortTests`
+target built 316/316 and focused CTest passed 1/1. `git diff --check` exited 0.
+No full suite ran; configure emitted only nonfatal existing `vswhere` and
+long-path warnings.
 
-F337 is selected for the Class Details validation-context reader described in
-the Current note; it is not implemented. Batch 8 discovery is underway. Phase 2
-remains In Progress/Open; Gates 1 and 2 remain Partial.
+F338 is selected to move ClassImportDialog's direct
+`DatabaseSession`/`TeacherRepository::loadTeacherDisplayNameRecords` batch read
+behind a purpose-fit v2 application query and ApplicationServices platform
+adapter. Preserve package-backed preview filtering, unique positive teacher
+IDs, current display labels and fallback, and per-teacher profile fallback if
+the batch operation fails. F338 is selected, not implemented. Phase 2 remains
+In Progress/Open; Gates 1 and 2 remain Partial.
