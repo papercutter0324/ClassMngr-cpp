@@ -12196,3 +12196,32 @@ F346 is selected for the roster row-transfer application workflow (source
 removal, read, preparation, and atomic save). F346 is selected, not implemented
 or verified. F347-F353 remain queued in order. Batch 8 is complete; Batch 9 is
 active. Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial.
+
+### F346 accepted / F347 selected - 2026-10-05
+
+F346, committed as
+`5435cd0a1beb0faebde9e7ad74e19c6555ecc6a7`, adds a typed roster row-transfer
+use case. It checks canonical/distinct IDs and source-row removal before a
+fresh target read, reproduces the 25-row RosterModel projection (base/custom
+columns, cell/header normalization, width mapping including Autumn-to-Fall and
+raw-header custom widths, and BOM decoding), prepares insertion, then calls
+one typed save port. The Platform adapter invokes `RosterService::saveRosters`
+once, preserving batch validation and transaction behavior.
+
+UI validation and confirmation remain in place; live model/autosave/selection
+updates occur only after success. Apply-path target-read errors report and
+abort instead of attempting a blank-target transfer; menu-time availability
+behavior is unchanged. Read/save failure integration cases preserve source
+data, model, dirty/autosave/timer/selection state, including rollback on target
+write failure.
+
+Independent verification: fresh VS2026 x64/Ninja Debug configure exited 0 and
+audited one owner for 1,339 handwritten sources. The focused use-case and
+roster-transfer-menu targets built; CTest passed 2/2. Standalone Application
+compilation without Qt include/lib paths passed. `git diff --check` and the
+new-file trailing-whitespace scan were clean. No full suite ran.
+
+F347 is selected for Class Details save orchestration. F347 is selected, not
+implemented or verified. F348-F353 remain queued in order. Batch 8 is complete;
+Batch 9 is active. Phase 2 remains In Progress/Open; Gates 1 and 2 remain
+Partial.

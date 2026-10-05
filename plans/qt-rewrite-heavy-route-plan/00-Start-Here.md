@@ -69,9 +69,10 @@
   projection) are accepted; F344 (remove compatibility-service availability
   gates in migrated Classes/My Classes) and F345 (app-less roster save
   normalization and validation policy) are accepted; F346 (roster row-transfer
-  application workflow) is selected. Batch 6 is complete;
+  application workflow) is accepted; F347 (Class Details save orchestration)
+  is selected. Batch 6 is complete;
   Batch 7 (F337-F338) and Batch 8 (F339-F344) are complete; Batch 9
-  (F345-F353) is active with F346 current and F347-F353 queued.
+  (F345-F353) is active with F347 current and F348-F353 queued.
   Gates 1 and 2 remain Partial, with broader feature
   migration, parity, and 96-class Release memory evidence still open.
   See the

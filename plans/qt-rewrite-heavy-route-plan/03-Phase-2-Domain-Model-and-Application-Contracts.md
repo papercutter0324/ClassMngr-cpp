@@ -18,10 +18,9 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-05
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F346 is selected for the roster row-transfer application
-  workflow covering source removal, read, preparation, and atomic save. F346
-  is selected, not implemented. Batch 8 is complete; Batch 9 is active with
-  F347-F353 queued.
+- Current note: F347 is selected for Class Details save orchestration. F347 is
+  selected, not implemented. Batch 8 is complete; Batch 9 is active with
+  F348-F353 queued.
 
 ### Slice discovery batches
 
@@ -78,8 +77,8 @@ No other slices were found.
 ##### Batch 9
 
 1. F345 - App-less roster-save normalization and validation policy (accepted; commit `40625856`).
-2. F346 - Roster row-transfer application workflow (source removal/read/prepare/atomic save; selected/current).
-3. F347 - Class Details save orchestration.
+2. F346 - Roster row-transfer application workflow (source removal/read/prepare/atomic save; accepted; commit `5435cd0a`).
+3. F347 - Class Details save orchestration (selected/current).
 4. F348 - Class Transfer typed apply validation/request.
 5. F349 - Testing Classes delete transition baseline parity evidence.
 6. F350 - Testing Classes create/update persistence baseline parity.
@@ -91,9 +90,8 @@ No other slices were found.
 
 #### Active batch: Batch 9
 
-1. F346 - Selected/current: roster row-transfer application workflow (source
-   removal, read, preparation, and atomic save).
-2. F347-F353 - Queued in the recorded order above.
+1. F347 - Selected/current: Class Details save orchestration.
+2. F348-F353 - Queued in the recorded order above.
 
 #### F299 completeness audit checkpoint
 
@@ -255,26 +253,28 @@ No new v2 production path depends on DataService, MainWindow, PageManager, or a 
 
 Earlier verified slices and cumulative exit-gate snapshots are archived in the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 
-## Latest Progress Update - 2026-10-05 (F345 accepted; F346 selected)
+## Latest Progress Update - 2026-10-05 (F346 accepted; F347 selected)
 
-F345, committed as `40625856d5af8f41fbf951f156300d191658591c`, extracts a
-Qt-free roster-save normalization and validation policy over `RosterSnapshot`
-and the Korean-length flag. Invalid snapshots are rejected in Application
-before the save-port/session check; valid snapshots with a closed session
-retain the existing Platform NotFound. Prepared logical text crosses the port,
-avoiding two Qt decodes. The policy preserves exact Qt normalization, issue
-order, UI focus/messages, and port suppression.
+F346, committed as `5435cd0a1beb0faebde9e7ad74e19c6555ecc6a7`, adds a typed
+roster row-transfer use case. It validates canonical/distinct IDs and source
+row removal before a fresh target read, reproduces the 25-row RosterModel
+projection (base/custom columns, cell/header normalization, width mapping,
+Autumn-to-Fall and raw-header custom widths, BOM decoding), prepares insertion,
+and invokes one typed save port. The Platform adapter calls
+`RosterService::saveRosters` once, retaining batch validation/transaction
+behavior. UI validation/confirmation remain; live model/autosave/selection
+updates only after success. Apply-path target-read errors now report and abort;
+menu-time availability behavior is unchanged.
 
-Qt 6.12 behavior parity was differentially checked for Unicode whitespace and
-case, malformed UTF-16, structural/cell limits, duplicate pairs, Korean flags,
-and BOM storage. Fresh VS2026 x64/Ninja Debug configure audited 1,336
-handwritten sources; three focused targets built, CTest passed 3/3, the
-standalone Qt-free policy compile passed, and `git diff --check` was clean. No
-full suite ran. The F344 baseline ClassesPage CTest stall remains documented
-in the progress log.
+Fresh VS2026 x64/Ninja Debug configure audited 1,339 handwritten sources;
+both focused targets built and CTest passed 2/2. A standalone Application
+compile without Qt include/lib paths passed; `git diff --check` and the new-file
+trailing-whitespace scan were clean. Read/save failure cases preserve source
+data, model/dirty/autosave/timer/selection state, including target-write
+transaction rollback. No full suite ran. The F344 baseline ClassesPage CTest
+stall remains documented in the progress log.
 
-F346 is selected for the roster row-transfer application workflow covering
-source removal, read, preparation, and atomic save. F346 is selected, not
-implemented or verified. Batch 8 is complete; Batch 9 is active with F347-F353
+F347 is selected for Class Details save orchestration. F347 is selected, not
+implemented or verified. Batch 8 is complete; Batch 9 is active with F348-F353
 queued. Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial.
 Batch 9's parity items are evidence gaps, not established functional defects.
