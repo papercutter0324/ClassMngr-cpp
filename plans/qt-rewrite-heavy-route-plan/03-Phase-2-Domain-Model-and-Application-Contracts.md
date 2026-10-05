@@ -18,11 +18,11 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-06
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F355 is selected for a Co-teacher assignment purpose-fit
-  persistence boundary. Avoid hydrating and rewriting full ClassInfo just to
-  change teacherId; preserve validation, conflict handling, and unrelated
-  fields. F355 is selected, not implemented or verified. Batch 9 is complete;
-  Batch 10 is active with F356-F361 queued.
+- Current note: F356 is selected to remove Speaking Evaluation compatibility-
+  service availability gates around existing typed roster-name and selected-
+  subtitle reads. Preserve closed-session and read-failure behavior. F356 is
+  selected, not implemented or verified. Batch 9 is complete; Batch 10 is
+  active with F357-F361 queued.
 
 ### Slice discovery batches
 
@@ -93,7 +93,7 @@ No other slices were found.
 ##### Batch 10
 
 1. F354 - Class Transfer package-build Application contract; distinct from F348 apply request and F330 repository read batching; preserve package fields/order/read failures, with no assumed selection-size bound.
-2. F355 - Co-teacher assignment purpose-fit persistence boundary; avoid hydrating/rewriting full ClassInfo for teacherId while preserving validation/conflict and unrelated fields.
+2. F355 - Co-teacher assignment purpose-fit persistence boundary; avoid hydrating/rewriting full ClassInfo for teacherId while preserving validation/conflict and unrelated fields (accepted; commit `0f93cbe6`).
 3. F356 - Remove Speaking Evaluation compatibility-service availability gates around existing typed roster-name/selected-subtitle reads; preserve closed-session/read-failure behavior.
 4. F357 - Remove Roster Print compatibility gates around existing typed class/teacher/subtitle/extra-column reads; preserve session/errors and keep distinct from F302-F305 batching.
 5. F358 - Remove orphan My Classes single-class information read contract/adapter/tests (no production callers); retain the F291 batch path.
@@ -105,8 +105,9 @@ No other slices were found.
 
 #### Active batch: Batch 10
 
-1. F354 - Selected/current: Class Transfer package-build Application contract.
-2. F355-F361 - Queued in the recorded order above.
+1. F354-F355 - Accepted: Class Transfer package-build Application contract; Co-teacher assignment purpose-fit persistence boundary.
+2. F356 - Selected/current: remove Speaking Evaluation compatibility-service availability gates around existing typed roster-name and selected-subtitle reads; preserve closed-session/read-failure behavior.
+3. F357-F361 - Queued in the recorded order above.
 
 #### F299 completeness audit checkpoint
 
@@ -268,25 +269,25 @@ No new v2 production path depends on DataService, MainWindow, PageManager, or a 
 
 Earlier verified slices and cumulative exit-gate snapshots are archived in the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 
-## Latest Progress Update - 2026-10-06 (F354 accepted; F355 selected)
+## Latest Progress Update - 2026-10-06 (F355 accepted; F356 selected)
 
-F354, committed as
-`2ad7f7b7db9a65c240f90e3d4c0efc8670fda7d0` (`Phase2 - Add Class Transfer
-package-build Application contract (F354)`), adds the Qt-free package-build
-Application contract while preserving the full export payload, ordering,
-staged error behavior, and unbounded selections. Fresh current
-configure/ownership audit covered 1,352 handwritten sources; focused current
-CTest passed 4/4 and pinned-baseline parity passed 1/1. The independent tester
-repeated both. Nine ASCII JSON transcripts matched byte-for-byte after
-timestamp-only normalization; SHA-256:
-`9f27c2f9af4a262a77f8ebe95b9f3e76b38d715742d059e061d0b278dfe6896e`.
-Thirteen source hashes were frozen. The unavailable warning preserves
-`No Teacher Profile service is available.` UI flow was static-checked, not
-controller-interaction tested. Focused evidence only; no full suite ran.
+F355, committed as
+`0f93cbe661908999603ffd5c45b9bdcccaad1bb3` (`Phase2 - Add purpose-fit
+co-teacher assignment persistence (F355)`), uses a purpose-fit validation
+snapshot and prepared `teacher_id`-only upsert. SQL `NULL` unassigns, and a
+missing `class_info` row receives compatible defaults. Validation, conflict,
+and failure behavior remain; unrelated metadata and schedules are preserved,
+both schedule-table write-audit triggers remain silent, and full-ClassInfo
+read count does not increase. Fresh current ownership audit covered 1,353
+handwritten sources; seven focused CTests passed. Baseline parity passed 1/1
+with only the parity test and CMake registration overlaid. Five transcript
+rows matched; LF-normalized SHA-256:
+`336FDC58CD6D92C784A7EC60873D5E2861C41AD3D7EE5EB5F2027189FC605784`.
+Focused evidence only; no full suite ran.
 
-F355 is selected for the Co-teacher assignment purpose-fit persistence
-boundary. Avoid hydrating and rewriting full ClassInfo just to change
-teacherId; preserve validation, conflict handling, and unrelated fields. F355
-is selected, not implemented or verified. Batch 9 is complete; Batch 10 is
-active with F356-F361 queued. Phase 2 remains In Progress/Open; Gates 1 and 2
+F356 is selected to remove Speaking Evaluation compatibility-service
+availability gates around existing typed roster-name and selected-subtitle
+reads while preserving closed-session and read-failure behavior. F356 is
+selected, not implemented or verified. Batch 9 is complete; Batch 10 is
+active with F357-F361 queued. Phase 2 remains In Progress/Open; Gates 1 and 2
 remain Partial.

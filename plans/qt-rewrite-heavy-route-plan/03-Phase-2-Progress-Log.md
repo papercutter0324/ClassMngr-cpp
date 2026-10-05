@@ -12390,3 +12390,26 @@ preserving validation, conflict handling, and unrelated fields. F355 is
 selected, not implemented or verified. Batch 9 is complete; Batch 10 remains
 active with F356-F361 queued. Phase 2 remains In Progress/Open; Gates 1 and 2
 remain Partial.
+
+### F355 accepted / F356 selected - 2026-10-06
+
+F355, committed as
+`0f93cbe661908999603ffd5c45b9bdcccaad1bb3` (`Phase2 - Add purpose-fit
+co-teacher assignment persistence (F355)`), uses a purpose-fit validation
+snapshot and prepared `teacher_id`-only upsert. SQL `NULL` unassigns, and a
+missing `class_info` row receives compatible defaults. Validation, conflict,
+and failure behavior remain; unrelated metadata and schedules are preserved,
+both schedule-table write-audit triggers remain silent, and full-ClassInfo
+read count does not increase. Fresh current ownership audit covered 1,353
+handwritten sources; seven focused CTests passed. Baseline parity passed 1/1
+with only the parity test and CMake registration overlaid. Five transcript
+rows matched; LF-normalized SHA-256:
+`336FDC58CD6D92C784A7EC60873D5E2861C41AD3D7EE5EB5F2027189FC605784`.
+Focused evidence only; no full suite ran.
+
+F356 is selected to remove Speaking Evaluation compatibility-service
+availability gates around existing typed roster-name and selected-subtitle
+reads while preserving closed-session and read-failure behavior. F356 is
+selected, not implemented or verified. F357-F361 remain queued. Batch 9 is
+complete; Batch 10 is active. Phase 2 remains In Progress/Open; Gates 1 and 2
+remain Partial.
