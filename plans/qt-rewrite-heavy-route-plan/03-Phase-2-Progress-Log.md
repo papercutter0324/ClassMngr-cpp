@@ -11922,25 +11922,15 @@ underway. Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial.
 Two independent read-only sweeps found six bounded candidates for Batch 8, in
 this order:
 
-1. F339 - Add a purpose-fit Schedule Testing class-choice projection; drop
-   unused teacher ID, colors, and notes from the projection while preserving
-   the `testing_classes`-to-`classes` inner join, the `class_info` left join,
-   order, defaults, and errors.
-2. F340 - Narrow Sub Prep roster-output schedule-scope rows to class ID,
-   teacher ID, and selected meetings; preserve filters, order, caps,
-   unassigned-teacher inclusion, and INNER JOIN missing-metadata behavior.
-3. F341 - Narrow the Sub Prep roster-output teacher-profile projection to
-   teacher ID, EN/KR names, preferred name, and romanization; preserve package
-   semantics, per-ID failures, order, and identity.
-4. F342 - Narrow the My Classes assigned-teacher batch projection to actual
-   consumed fields: English/Korean, preferred name/romanization, room, internet
-   type, Wi-Fi name/password, projection type, Zoom ID/password, and notes; only
-   birthday and phone are unused.
-5. F343 - Narrow the Schedule Import snapshot class-info projection while
-   preserving classes-then-teachers-then-schedules error precedence.
-6. F344 - Remove redundant compatibility-service availability gates from
-   migrated Classes/My Classes pages while preserving the no-session early
-   return and query-failure warnings.
+1. F339 - Schedule Testing class-choice projection (accepted).
+2. F340 - Sub Prep roster-output schedule-scope projection (accepted; commit
+   `f02a7778`).
+3. F341 - My Classes assigned-teacher profile batch projection (accepted;
+   commit `71ea53da`).
+4. F342 - Sub Prep roster-output teacher-profile projection (selected/current).
+5. F343 - Schedule Import snapshot class-info projection (queued).
+6. F344 - Remove redundant compatibility-service availability gates in
+   migrated Classes/My Classes (queued).
 
 No other slices were found.
 
@@ -12022,8 +12012,9 @@ F340 is selected to narrow Sub Prep roster-output schedule-scope class reads
 from `loadClassInfosForScheduleScope(..., includeUnassignedTeachers=true)` to
 class ID, assigned teacher ID, and selected-scope schedule records, removing
 grade/level/colors/notes repeated per meeting. Preserve selected-day/type
-filtering, schedule order, output caps, unassigned-class inclusion, missing-
-`class_info` failures, identity checks, and source failure behavior. Keep the
+filtering, schedule order, output caps, unassigned-class inclusion, INNER JOIN omission/empty-success for absent
+`class_info`, the separate metadata-reader error if called or if data changes
+after the schedule read, identity checks, and source failure behavior. Keep the
 one-query bound and add or retain an explicit one-statement assertion when
 feasible. Focused target:
 `NextPlatformApplicationServicesSubPrepRosterOutputSourcePort`.
@@ -12069,3 +12060,35 @@ preferred romanization. Preserve package semantics, per-ID failures, order,
 identity, and batch errors. F341 is selected, not implemented or verified.
 Batch 8 remains active with F342-F344 queued. Phase 2 remains In Progress/Open;
 Gates 1 and 2 remain Partial.
+
+### Batch 8 source-alignment correction - 2026-10-05
+
+Final source review found two active-label mismatches: F340's committed
+schedule-scope implementation had been described as F341 in the original
+candidate list, and F341's source commit is the My Classes candidate previously
+recorded as F342. The recorded order and current selection now match the source
+commit IDs. No commit history was rewritten.
+
+### F341 accepted / F342 selected - 2026-10-05
+
+F341, committed as `71ea53da` (`Phase2 - Narrow My Classes teacher profile
+batch (F341)`), adds a Qt-free 12-field My Classes snapshot and a dedicated
+repository batch read with metrics. Teacher ID remains separate. The snapshot
+covers the page's consumed fields, including preferred name/romanization and
+room; it omits only birthday and phone. Generic `loadTeacherProfileRecords()`
+remains unchanged. Results preserve batch order and identity, per-teacher errors,
+visible page values, and missing-profile behavior, including the `Unassigned`
+and `N/A` fallbacks.
+
+Fresh independent VS2026 x64/Ninja configure validated 1,334 files; three
+targets built in 324 steps; focused CTest passed 3/3. `git diff --check` exited
+0. No full suite ran; no material gaps were reported.
+
+F342 is selected to narrow the Sub Prep roster-output teacher-profile batch to
+teacher ID and EN/KR names, preferred name, and preferred romanization.
+Preserve per-ID failure entries, returned order and identity, output fallback
+labels, and one statement. Focused target:
+`NextPlatformApplicationServicesSubPrepRosterOutputSourcePort`. F342 remains
+selected, not implemented or verified. F343-F344 remain queued. Batch 8 is
+active; Batch 7 is complete. Phase 2 remains In Progress/Open; Gates 1 and 2
+remain Partial.
