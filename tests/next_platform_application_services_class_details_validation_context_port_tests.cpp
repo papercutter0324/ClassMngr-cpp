@@ -143,6 +143,12 @@ readsSentinelTeacherIdAndExactTextFromActiveRepository()
         negativeResult.value().timeFillerActivities,
         activities.toStdU16String()
         );
+
+    const auto& metrics = session->classInfoRepository()
+        ->classPageDetailsReadMetrics();
+    QCOMPARE(metrics.callCount, 2);
+    QCOMPARE(metrics.metadataStatementCount, 2);
+    QCOMPARE(metrics.regularScheduleStatementCount, 2);
 }
 
 void NextPlatformApplicationServicesClassDetailsValidationContextPortTests::
@@ -172,6 +178,12 @@ missingClassInfoRowPreservesRepositoryDefaults()
     QCOMPARE(result.value().teacherId, -1);
     QVERIFY(result.value().notes.empty());
     QVERIFY(result.value().timeFillerActivities.empty());
+
+    const auto& metrics = services.databaseSession()->classInfoRepository()
+        ->classPageDetailsReadMetrics();
+    QCOMPARE(metrics.callCount, 1);
+    QCOMPARE(metrics.metadataStatementCount, 1);
+    QCOMPARE(metrics.regularScheduleStatementCount, 1);
 }
 
 void NextPlatformApplicationServicesClassDetailsValidationContextPortTests::

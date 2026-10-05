@@ -65,9 +65,9 @@ public:
         try
         {
             // Keep this read on the active session repository. A successful
-            // missing-row read retains ClassInfoRepository's default values.
-            const Result<ClassInfo> loaded =
-                repository->loadClassInfo(*legacyClassId);
+            // missing-row read retains the page reader's default values.
+            const Result<ClassPageDetailsReadRecord> loaded =
+                repository->loadClassPageDetails(*legacyClassId);
             if (!loaded)
             {
                 return failure(
