@@ -164,10 +164,14 @@ mapsActiveSessionRecordsInRepositoryOrder()
     const int testingOnly = services.classService()->create(
         QStringLiteral("Testing only")
         ).value_or(-1);
+    const int missingInfo = services.classService()->create(
+        QStringLiteral("Missing metadata")
+        ).value_or(-1);
     QVERIFY(firstDuplicate > 0);
     QVERIFY(secondDuplicate > 0);
     QVERIFY(unassigned > 0);
     QVERIFY(testingOnly > 0);
+    QVERIFY(missingInfo > 0);
 
     const QSqlDatabase database = services.databaseSession()->database();
     int teacherIdValue = -1;
@@ -268,11 +272,31 @@ mapsActiveSessionRecordsInRepositoryOrder()
         services.databaseSession()->teacherRepository();
     const ScheduleImportTeacherReadMetrics teacherMetricsBefore =
         teacherRepository->scheduleImportTeacherReadMetrics();
+    ClassInfoRepository* const classInfoRepository =
+        services.databaseSession()->classInfoRepository();
+    const ScheduleImportStateSnapshotClassInfoReadMetrics
+        snapshotClassInfoMetricsBefore = classInfoRepository
+            ->scheduleImportStateSnapshotClassInfoReadMetrics();
+    const ScheduleClassInfoReadMetrics genericClassInfoMetricsBefore =
+        classInfoRepository->scheduleClassInfoReadMetrics();
     QSqlQuery renameUnusedTeacherField(database);
     QVERIFY2(
         renameUnusedTeacherField.exec(QStringLiteral(
             "ALTER TABLE teachers RENAME COLUMN notes TO unused_profile_notes")),
         qPrintable(renameUnusedTeacherField.lastError().text())
+        );
+    QSqlQuery renameUnusedClassInfoField(database);
+    QVERIFY2(
+        renameUnusedClassInfoField.exec(QStringLiteral(
+            "ALTER TABLE class_info RENAME COLUMN font_color TO unused_font_color")),
+        qPrintable(renameUnusedClassInfoField.lastError().text())
+        );
+    QSqlQuery renameUnusedTeacherPreferredName(database);
+    QVERIFY2(
+        renameUnusedTeacherPreferredName.exec(QStringLiteral(
+            "ALTER TABLE teachers RENAME COLUMN preferred_name "
+            "TO unused_teacher_preferred_name")),
+        qPrintable(renameUnusedTeacherPreferredName.lastError().text())
         );
 
     Platform::ApplicationServicesScheduleImportStateSnapshotPort port(services);
@@ -325,13 +349,20 @@ mapsActiveSessionRecordsInRepositoryOrder()
     QVERIFY(assigned->teacherId == teacherId(teacherIdValue));
     QCOMPARE(assigned->className, std::u16string(u"Duplicate"));
     QCOMPARE(assigned->grade, std::u16string(u" E4 "));
+    QCOMPARE(assigned->level, std::u16string(u"Hercules"));
     QCOMPARE(assigned->classColor, std::u16string(u"#123456"));
     QCOMPARE(assigned->roomNumber, std::u16string(u" Room 9 "));
     QCOMPARE(assigned->normalTimes.size(), std::size_t(2));
     QCOMPARE(assigned->normalTimes[0].day, std::u16string(u" Raw Monday "));
     QCOMPARE(assigned->normalTimes[0].startTime, std::u16string(u"bad start"));
+    QCOMPARE(assigned->normalTimes[0].endTime, std::u16string(u"opaque end"));
     QCOMPARE(assigned->normalTimes[1].day, std::u16string(u"Thursday"));
+    QCOMPARE(assigned->normalTimes[1].startTime, std::u16string(u"5:00 PM"));
+    QCOMPARE(assigned->normalTimes[1].endTime, std::u16string(u"5:50 PM"));
     QCOMPARE(assigned->intensiveTimes.size(), std::size_t(1));
+    QCOMPARE(assigned->intensiveTimes[0].day, std::u16string(u"Friday"));
+    QCOMPARE(assigned->intensiveTimes[0].startTime, std::u16string(u"9:00 AM"));
+    QCOMPARE(assigned->intensiveTimes[0].endTime, std::u16string(u"9:50 AM"));
 
     const auto unassignedSnapshot = std::find_if(
         snapshot->classes.begin(),
@@ -344,6 +375,24 @@ mapsActiveSessionRecordsInRepositoryOrder()
     QVERIFY(unassignedSnapshot != snapshot->classes.end());
     QVERIFY(unassignedSnapshot->teacherId == teacherId(-1));
     QCOMPARE(unassignedSnapshot->classColor, std::u16string(u"#223344"));
+
+    const auto missingInfoSnapshot = std::find_if(
+        snapshot->classes.begin(),
+        snapshot->classes.end(),
+        [missingInfo](const auto& value)
+        {
+            return value.id.value() == std::to_string(missingInfo);
+        }
+        );
+    QVERIFY(missingInfoSnapshot != snapshot->classes.end());
+    QVERIFY(missingInfoSnapshot->teacherId == teacherId(-1));
+    QCOMPARE(missingInfoSnapshot->className, std::u16string(u"Missing metadata"));
+    QVERIFY(missingInfoSnapshot->grade.empty());
+    QVERIFY(missingInfoSnapshot->level.empty());
+    QCOMPARE(missingInfoSnapshot->classColor, std::u16string(u"#FFFFFF"));
+    QVERIFY(missingInfoSnapshot->roomNumber.empty());
+    QVERIFY(missingInfoSnapshot->normalTimes.empty());
+    QVERIFY(missingInfoSnapshot->intensiveTimes.empty());
 
     const auto unusedTeacher = std::find_if(
         snapshot->teachers.begin(),
@@ -384,15 +433,52 @@ mapsActiveSessionRecordsInRepositoryOrder()
         1
         );
 
-    const ScheduleClassInfoReadMetrics& metrics = services
-        .databaseSession()
-        ->classInfoRepository()
-        ->scheduleClassInfoReadMetrics();
-    QCOMPARE(metrics.scheduleClassInfosCallCount, 1);
-    QCOMPARE(metrics.singleClassInfoReadCount, 0);
-    QCOMPARE(metrics.metadataStatementCount, 1);
-    QCOMPARE(metrics.regularScheduleStatementCount, 1);
-    QCOMPARE(metrics.intensiveScheduleStatementCount, 1);
+    const ScheduleImportStateSnapshotClassInfoReadMetrics
+        snapshotClassInfoMetricsAfter = classInfoRepository
+            ->scheduleImportStateSnapshotClassInfoReadMetrics();
+    QCOMPARE(
+        snapshotClassInfoMetricsAfter.callCount
+            - snapshotClassInfoMetricsBefore.callCount,
+        1
+        );
+    QCOMPARE(
+        snapshotClassInfoMetricsAfter.metadataStatementCount
+            - snapshotClassInfoMetricsBefore.metadataStatementCount,
+        1
+        );
+    QCOMPARE(
+        snapshotClassInfoMetricsAfter.regularScheduleStatementCount
+            - snapshotClassInfoMetricsBefore.regularScheduleStatementCount,
+        1
+        );
+    QCOMPARE(
+        snapshotClassInfoMetricsAfter.intensiveScheduleStatementCount
+            - snapshotClassInfoMetricsBefore.intensiveScheduleStatementCount,
+        1
+        );
+
+    const ScheduleClassInfoReadMetrics genericClassInfoMetricsAfter =
+        classInfoRepository->scheduleClassInfoReadMetrics();
+    QCOMPARE(
+        genericClassInfoMetricsAfter.scheduleClassInfosCallCount
+            - genericClassInfoMetricsBefore.scheduleClassInfosCallCount,
+        0
+        );
+    QCOMPARE(
+        genericClassInfoMetricsAfter.metadataStatementCount
+            - genericClassInfoMetricsBefore.metadataStatementCount,
+        0
+        );
+    QCOMPARE(
+        genericClassInfoMetricsAfter.regularScheduleStatementCount
+            - genericClassInfoMetricsBefore.regularScheduleStatementCount,
+        0
+        );
+    QCOMPARE(
+        genericClassInfoMetricsAfter.intensiveScheduleStatementCount
+            - genericClassInfoMetricsBefore.intensiveScheduleStatementCount,
+        0
+        );
 }
 
 void NextPlatformApplicationServicesScheduleImportStateSnapshotPortTests::

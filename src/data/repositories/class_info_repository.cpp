@@ -2441,6 +2441,12 @@ ClassInfoRepository::scheduleClassInfoReadMetrics() const noexcept
     return m_scheduleClassInfoReadMetrics;
 }
 
+const ScheduleImportStateSnapshotClassInfoReadMetrics&
+ClassInfoRepository::scheduleImportStateSnapshotClassInfoReadMetrics() const noexcept
+{
+    return m_scheduleImportStateSnapshotClassInfoReadMetrics;
+}
+
 const ClassPageDetailsReadMetrics&
 ClassInfoRepository::classPageDetailsReadMetrics() const noexcept
 {
@@ -3605,6 +3611,144 @@ Result<QList<ClassInfo>> ClassInfoRepository::loadScheduleClassInfos()
     if (const Status status = loadTimes(
             QStringLiteral("class_intensive_times"),
             &ClassInfo::intensiveTimes,
+            true
+            ); !status)
+    {
+        return std::unexpected(status.error());
+    }
+
+    return infos;
+}
+
+Result<QList<ScheduleImportStateSnapshotClassInfoReadRecord>>
+ClassInfoRepository::loadScheduleImportStateSnapshotClassInfos()
+{
+    ++m_scheduleImportStateSnapshotClassInfoReadMetrics.callCount;
+    QList<ScheduleImportStateSnapshotClassInfoReadRecord> infos;
+    QHash<int, qsizetype> indexesByClassId;
+    QSqlQuery query(m_database);
+
+    ++m_scheduleImportStateSnapshotClassInfoReadMetrics.metadataStatementCount;
+    const auto loadedClasses = SqlQueryUtils::execute(
+        query,
+        QStringLiteral(R"(
+            SELECT
+                c.id AS class_id,
+                ci.teacher_id,
+                ci.class_grade,
+                ci.class_level,
+                ci.class_color,
+                t.room_number
+            FROM classes c
+            LEFT JOIN testing_classes tc
+            ON tc.class_id = c.id
+            LEFT JOIN class_info ci
+            ON ci.class_id = c.id
+            LEFT JOIN teachers t
+            ON t.id = ci.teacher_id
+            WHERE tc.class_id IS NULL
+            ORDER BY c.name, c.id
+        )"),
+        QObject::tr("Loading schedule class information")
+        );
+    if (!loadedClasses)
+    {
+        return std::unexpected(loadedClasses.error().userMessage());
+    }
+
+    while (query.next())
+    {
+        ScheduleImportStateSnapshotClassInfoReadRecord info;
+        info.classId = query.value(QStringLiteral("class_id")).toInt();
+        const QVariant teacherId = query.value(QStringLiteral("teacher_id"));
+        info.teacherId = teacherId.isNull() ? -1 : teacherId.toInt();
+        info.classGrade = query.value(QStringLiteral("class_grade")).toString();
+        info.classLevel = query.value(QStringLiteral("class_level")).toString();
+
+        const QString classColor =
+            query.value(QStringLiteral("class_color")).toString();
+        if (!classColor.isEmpty())
+        {
+            info.classColor = classColor;
+        }
+
+        info.roomNumber = query.value(QStringLiteral("room_number")).toString();
+        indexesByClassId.insert(info.classId, infos.size());
+        infos.append(std::move(info));
+    }
+
+    const auto loadTimes = [&]<typename Times>(
+        const QString& tableName,
+        Times ScheduleImportStateSnapshotClassInfoReadRecord::* times,
+        const bool intensive
+        ) -> Status
+    {
+        QSqlQuery timesQuery(m_database);
+        if (intensive)
+        {
+            ++m_scheduleImportStateSnapshotClassInfoReadMetrics
+                  .intensiveScheduleStatementCount;
+        }
+        else
+        {
+            ++m_scheduleImportStateSnapshotClassInfoReadMetrics
+                  .regularScheduleStatementCount;
+        }
+
+        const auto executed = SqlQueryUtils::execute(
+            timesQuery,
+            QStringLiteral(R"(
+                SELECT
+                    times.class_id,
+                    times.day,
+                    times.start_time,
+                    times.end_time
+                FROM %1 times
+                INNER JOIN classes c
+                ON c.id = times.class_id
+                LEFT JOIN testing_classes tc
+                ON tc.class_id = c.id
+                WHERE tc.class_id IS NULL
+                ORDER BY c.name, c.id, times.id
+            )").arg(tableName),
+            QObject::tr("Loading schedule class times")
+            );
+        if (!executed)
+        {
+            return std::unexpected(executed.error().userMessage());
+        }
+
+        while (timesQuery.next())
+        {
+            const auto index = indexesByClassId.constFind(
+                timesQuery.value(QStringLiteral("class_id")).toInt()
+                );
+            if (index == indexesByClassId.cend())
+            {
+                continue;
+            }
+
+            (infos[*index].*times).append({
+                timesQuery.value(QStringLiteral("day")).toString(),
+                timesQuery.value(QStringLiteral("start_time")).toString(),
+                timesQuery.value(QStringLiteral("end_time")).toString()
+            });
+        }
+
+        return {};
+    };
+
+    if (const Status status = loadTimes(
+            QStringLiteral("class_times"),
+            &ScheduleImportStateSnapshotClassInfoReadRecord::regularTimes,
+            false
+            ); !status)
+    {
+        return std::unexpected(status.error());
+    }
+    if (const Status status = loadTimes(
+            QStringLiteral("class_intensive_times"),
+            &ScheduleImportStateSnapshotClassInfoReadRecord::intensiveTimes,
             true
             ); !status)
     {

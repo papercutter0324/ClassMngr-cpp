@@ -81,8 +81,8 @@ public:
         try
         {
             // Retain the legacy source ordering exactly: class names first,
-            // all teachers second, then each class's detail. The aggregate
-            // detail read is re-indexed back into the class repository order.
+            // all teachers second, then each class's schedule details. The
+            // detail projection is re-indexed into the class repository order.
             const Result<QList<Classroom>> loadedClasses =
                 classRepository->getClasses();
             const Result<QList<ScheduleImportTeacherReadRecord>>
@@ -103,8 +103,10 @@ public:
                     );
             }
 
-            const Result<QList<ClassInfo>> loadedClassInfos =
-                classInfoRepository->loadScheduleClassInfos();
+            const Result<QList<
+                ScheduleImportStateSnapshotClassInfoReadRecord>>
+                loadedClassInfos =
+                classInfoRepository->loadScheduleImportStateSnapshotClassInfos();
             if (!loadedClassInfos)
             {
                 return readFailure(
@@ -113,9 +115,13 @@ public:
                     );
             }
 
-            QHash<int, const ClassInfo*> classInfoById;
+            QHash<
+                int,
+                const ScheduleImportStateSnapshotClassInfoReadRecord*>
+                classInfoById;
             classInfoById.reserve(loadedClassInfos->size());
-            for (const ClassInfo& info : *loadedClassInfos)
+            for (const ScheduleImportStateSnapshotClassInfoReadRecord& info :
+                 *loadedClassInfos)
             {
                 if (info.classId <= 0
                     || classInfoById.contains(info.classId))
@@ -177,7 +183,8 @@ public:
                 );
             for (const Classroom& classroom : *loadedClasses)
             {
-                const ClassInfo& info = *classInfoById.value(classroom.id);
+                const ScheduleImportStateSnapshotClassInfoReadRecord& info =
+                    *classInfoById.value(classroom.id);
                 const std::optional<Domain::ClassId> classId =
                     canonicalId<Domain::ClassId>(classroom.id);
                 const std::optional<Domain::TeacherId> teacherId =
@@ -198,7 +205,7 @@ public:
                     info.classGrade.toStdU16String(),
                     info.classLevel.toStdU16String(),
                     info.classColor.toStdU16String(),
-                    scheduleTimes(info.classTimes),
+                    scheduleTimes(info.regularTimes),
                     scheduleTimes(info.intensiveTimes),
                     info.roomNumber.toStdU16String()
                 });

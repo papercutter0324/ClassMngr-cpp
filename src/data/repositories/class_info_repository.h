@@ -189,6 +189,26 @@ struct ScheduleClassInfoReadMetrics final
     int intensiveScheduleStatementCount = 0;
 };
 
+struct ScheduleImportStateSnapshotClassInfoReadRecord final
+{
+    int classId = -1;
+    int teacherId = -1;
+    QString classGrade;
+    QString classLevel;
+    QString classColor{"#FFFFFF"};
+    QString roomNumber;
+    QList<ClassTime> regularTimes;
+    QList<ClassTime> intensiveTimes;
+};
+
+struct ScheduleImportStateSnapshotClassInfoReadMetrics final
+{
+    int callCount = 0;
+    int metadataStatementCount = 0;
+    int regularScheduleStatementCount = 0;
+    int intensiveScheduleStatementCount = 0;
+};
+
 struct ClassPageDetailsReadMetrics final
 {
     int callCount = 0;
@@ -337,6 +357,11 @@ public:
         loadClassTeacherAssignments();
 
     [[nodiscard]] Result<QList<ClassInfo>> loadScheduleClassInfos();
+    [[nodiscard]] Result<
+        QList<ScheduleImportStateSnapshotClassInfoReadRecord>>
+        loadScheduleImportStateSnapshotClassInfos();
+    [[nodiscard]] const ScheduleImportStateSnapshotClassInfoReadMetrics&
+        scheduleImportStateSnapshotClassInfoReadMetrics() const noexcept;
 
     [[nodiscard]] Result<QList<ClassConflict>> getClassTimeConflicts(
         int classId,
@@ -351,6 +376,8 @@ private:
     QSqlDatabase& m_database;
     ClassesNavigationReadMetrics m_classesNavigationReadMetrics;
     ScheduleClassInfoReadMetrics m_scheduleClassInfoReadMetrics;
+    ScheduleImportStateSnapshotClassInfoReadMetrics
+        m_scheduleImportStateSnapshotClassInfoReadMetrics;
     ClassPageDetailsReadMetrics m_classPageDetailsReadMetrics;
     ClassDetailsPageReadMetrics m_classDetailsPageReadMetrics;
     ScheduleEditorClassInfoReadMetrics m_scheduleEditorClassInfoReadMetrics;
