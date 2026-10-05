@@ -10,6 +10,12 @@
 #include "features/roster/ui/roster_table_view.h"
 #include "fakes/fake_user_prompt_service.h"
 #include "ui/shared/dialogs/user_prompt_service.h"
+#include "ui/shared/pages/autosave_coordinator.h"
+#include "ui/shared/qt_text_adapter.h"
+#include "next/application/roster_row_transfer_use_case.h"
+
+#include <functional>
+#include <optional>
 
 #include <QAction>
 #include <QApplication>
@@ -239,7 +245,8 @@ TransferMenuActionSnapshot triggerTransferMenuAction(
     const QString& targetLabel,
     ApplicationServices& services,
     int targetClassId,
-    const Roster& targetRosterAfterMenuSnapshot
+    const Roster& targetRosterAfterMenuSnapshot,
+    const std::function<void()>& beforeActivation = {}
     )
 {
     TransferMenuActionSnapshot snapshot;
@@ -261,7 +268,7 @@ TransferMenuActionSnapshot triggerTransferMenuAction(
         &QTimer::timeout,
         &editor,
         [&snapshot, &editor, &services, targetClassId,
-         &targetRosterAfterMenuSnapshot, targetLabel]
+         &targetRosterAfterMenuSnapshot, &beforeActivation, targetLabel]
         {
             QMenu* contextMenu = nullptr;
             QAction* transferRootAction = nullptr;
@@ -367,6 +374,8 @@ TransferMenuActionSnapshot triggerTransferMenuAction(
                 return;
             }
             snapshot.targetRosterUpdated = true;
+            if (beforeActivation)
+                beforeActivation();
 
             const QRect targetActionRect =
                 transferMenu->actionGeometry(targetAction);
@@ -451,6 +460,9 @@ private slots:
     void targetRosterReadFailureBehavesLikeEmptyRoster();
     void targetRosterCellReadFailureBehavesLikeEmptyRoster();
     void menuTransferUsesFreshTargetRosterAndPreservesCustomColumnsAndWidths();
+    void applyFailureKeepsSourceAndAutosaveState_data();
+    void applyFailureKeepsSourceAndAutosaveState();
+    void workflowProjectionMatchesRosterModel();
 };
 
 void RosterTransferMenuTests::cleanup()
@@ -1010,6 +1022,177 @@ menuTransferUsesFreshTargetRosterAndPreservesCustomColumnsAndWidths()
     QStringList expectedTransferredRow = sourceRow;
     expectedTransferredRow.append(QString());
     QCOMPARE(targetAfter->rows.at(1), expectedTransferredRow);
+}
+
+
+void RosterTransferMenuTests::applyFailureKeepsSourceAndAutosaveState_data()
+{
+    QTest::addColumn<bool>("failRead");
+    QTest::newRow("fresh read failure") << true;
+    QTest::newRow("second save rollback") << false;
+}
+
+void RosterTransferMenuTests::applyFailureKeepsSourceAndAutosaveState()
+{
+    QFETCH(bool, failRead);
+    RosterTransferMenuFixture fixture;
+    QString error;
+    QVERIFY2(fixture.initialize(&error), qPrintable(error));
+    int sourceId = 0;
+    int targetId = 0;
+    QVERIFY2(fixture.createClass("Source", "E4", "Perseus", -1, &sourceId, &error), qPrintable(error));
+    QVERIFY2(fixture.createClass("Target", "E4", "Theseus", -1, &targetId, &error), qPrintable(error));
+    QVERIFY2(fixture.addRosterRow(sourceId, &error), qPrintable(error));
+    const auto storedSource = fixture.services.rosterService()->roster(sourceId);
+    QVERIFY(storedSource);
+
+    FakeUserPromptService prompts;
+    DialogServices::setUserPromptServiceForTesting(&prompts);
+    RosterEditorWidget editor(&fixture.services);
+    editor.loadClass(Classroom("Source", sourceId));
+    editor.show();
+    QApplication::processEvents();
+    auto* table = editor.findChild<RosterTableView*>("rosterTable");
+    QVERIFY(table);
+    auto* model = qobject_cast<RosterModel*>(table->model());
+    auto* autosave = editor.findChild<AutosaveCoordinator*>();
+    QVERIFY(model);
+    QVERIFY(autosave);
+    autosave->setDebounceInterval(60'000);
+    QVERIFY(model->setData(model->index(0, 2), "Unsaved edit", Qt::EditRole));
+    QVERIFY(model->isDirty());
+    QVERIFY(editor.hasUnsavedChanges());
+    QVERIFY(autosave->isDirty());
+    const auto modelBefore = model->toRoster();
+    auto* timer = autosave->findChild<QTimer*>();
+    QVERIFY(timer);
+    QVERIFY(timer->isActive());
+    const int intervalBefore = timer->interval();
+    table->setCurrentIndex(model->index(0, 0));
+    const auto selectionBefore = table->currentIndex();
+    QSignalSpy cleanSpy(autosave, &AutosaveCoordinator::dirtyChanged);
+
+    Roster target;
+    target.columns = Roster::BaseColumns;
+    target.rows = {{"Target Student", QString::fromUtf16(u"\uBC15\uC9C0\uBBFC"), "", "", "", ""}};
+    bool faultInstalled = false;
+    QString faultError;
+    const auto action = triggerTransferMenuAction(editor, table,
+        displayLabel("E4", "Theseus"), fixture.services, targetId, target, [&]
+        {
+            QSqlQuery query(fixture.services.databaseSession()->database());
+            faultInstalled = query.exec(failRead
+                ? QStringLiteral("ALTER TABLE roster_columns RENAME TO unavailable_roster_columns")
+                : QStringLiteral("CREATE TRIGGER reject_target_transfer BEFORE INSERT ON roster_data "
+                    "WHEN NEW.class_id = %1 BEGIN SELECT RAISE(ABORT, 'second roster save rejected'); END;")
+                    .arg(targetId));
+            faultError = query.lastError().text();
+        });
+    QVERIFY2(faultInstalled, qPrintable(faultError));
+    QVERIFY(action.targetActionTriggered);
+    QCOMPARE(prompts.messages.size(), 1);
+    QCOMPARE(prompts.messages[0].title, QStringLiteral("Cannot Transfer Student"));
+    QVERIFY(!prompts.messages[0].message.isEmpty());
+    QVERIFY(prompts.confirmations.isEmpty());
+    QCOMPARE(model->toRoster().columns, modelBefore.columns);
+    QCOMPARE(model->toRoster().rows, modelBefore.rows);
+    QVERIFY(model->isDirty());
+    QVERIFY(editor.hasUnsavedChanges());
+    QVERIFY(autosave->isDirty());
+    QCOMPARE(cleanSpy.size(), 0);
+    QVERIFY(timer->isActive());
+    QCOMPARE(timer->interval(), intervalBefore);
+    QCOMPARE(table->currentIndex(), selectionBefore);
+
+    if (failRead)
+    {
+        QSqlQuery restore(fixture.services.databaseSession()->database());
+        QVERIFY2(restore.exec("ALTER TABLE unavailable_roster_columns RENAME TO roster_columns"),
+            qPrintable(restore.lastError().text()));
+    }
+    const auto sourceAfter = fixture.services.rosterService()->roster(sourceId);
+    const auto targetAfter = fixture.services.rosterService()->roster(targetId);
+    QVERIFY(sourceAfter);
+    QVERIFY(targetAfter);
+    QCOMPARE(sourceAfter->columns, storedSource->columns);
+    QCOMPARE(sourceAfter->rows, storedSource->rows);
+    QCOMPARE(targetAfter->columns, target.columns);
+    QCOMPARE(targetAfter->rows, target.rows);
+}
+
+void RosterTransferMenuTests::workflowProjectionMatchesRosterModel()
+{
+    using namespace ClassMngr::Next;
+    using namespace Application;
+    struct Ports final : RosterReadPort, RosterRowTransferSavePort
+    {
+        RosterSnapshot stored;
+        mutable std::optional<RosterRowTransferSaveRequest> saved;
+        RosterReadResult readRoster(const RosterReadQuery&) const override
+        { return RosterReadResult::success(stored); }
+        Domain::Result<void> saveTransfer(const RosterRowTransferSaveRequest& request) const override
+        { saved = request; return Domain::Result<void>::success(); }
+    } ports;
+    const auto snapshot = [](const Roster& roster)
+    {
+        RosterSnapshot result;
+        for (const auto& column : roster.columns)
+            result.columns.push_back(Ui::QtTextAdapter::toUtf16String(column));
+        for (const auto& row : roster.rows)
+        {
+            std::vector<std::u16string> values;
+            for (const auto& cell : row)
+                values.push_back(Ui::QtTextAdapter::toUtf16String(cell));
+            result.rows.push_back(std::move(values));
+        }
+        for (int width : roster.columnWidths) result.columnWidths.push_back(width);
+        return result;
+    };
+    const auto equals = [](std::u16string_view a, std::u16string_view b)
+    { return Ui::QtTextAdapter::fromUtf16String(a).compare(
+        Ui::QtTextAdapter::fromUtf16String(b), Qt::CaseInsensitive) == 0; };
+
+    Roster stored;
+    stored.columns = {" Advisor\t Notes ", "korean", Ui::QtTextAdapter::fromUtf16String(u"\uFEFFAutumn"), "English", "advisor notes", "Extra"};
+    stored.columnWidths = {201,202,203,204,205,206};
+    // Pin target normalization against the model, including ASCII-regex and
+    // Unicode whitespace differences in Korean names and malformed text.
+    stored.rows = {
+        {" note\t with  spaces ", QString::fromUtf16(u" \uBC15 \uC9C0\uBBFC(a) "), " fall\t value ", " oTHER  STUDENT ", "ignored", " preserve  me "},
+        {"", QString::fromUtf16(u"\uAE40\u00a0\uBBFC\uC9C0"), "", QString::fromUtf16(u"\u00e9 bad"), "", ""},
+        {"", "", "", "", "", ""}
+    };
+    while (stored.rows.size() < 27)
+        stored.rows.append({"tail", "", "", "", "", ""});
+    stored.rows[0][5] = Ui::QtTextAdapter::fromUtf16String(u"\uFEFF\uFEFF keep  BOM ");
+    stored.rows[1][5] = Ui::QtTextAdapter::fromUtf16String(u"\uFFFE\u4100");
+    ports.stored = snapshot(stored);
+    const auto before = ports.stored;
+    Roster decoded = stored;
+    for (auto& column : decoded.columns)
+        column = QString::fromStdU16String(Ui::QtTextAdapter::toUtf16String(column));
+    for (auto& row : decoded.rows)
+        for (auto& cell : row)
+            cell = QString::fromStdU16String(Ui::QtTextAdapter::toUtf16String(cell));
+    RosterModel expected;
+    expected.setRoster(decoded);
+    const QStringList sourceRow{"Transferred", QString::fromUtf16(u"\uAE40\uBBFC\uC9C0"), "", "", "", "Source fall"};
+    QVERIFY(expected.insertTransferredRow(Roster::BaseColumns, sourceRow));
+    const auto expectedRoster = snapshot(expected.toRoster());
+    Roster source;
+    source.columns = Roster::BaseColumns;
+    source.rows = {sourceRow};
+    const auto result = RosterRowTransferUseCase::execute({
+        *Domain::ClassId::fromString("1"), *Domain::ClassId::fromString("2"),
+        snapshot(source), 0, snapshot(source).columns}, ports, ports, equals);
+    QVERIFY(std::holds_alternative<RosterRowTransferSuccess>(result));
+    QVERIFY(ports.saved);
+    QCOMPARE(ports.saved->targetRoster.columns, expectedRoster.columns);
+    QCOMPARE(ports.saved->targetRoster.rows, expectedRoster.rows);
+    QCOMPARE(ports.saved->targetRoster.rows.size(), std::size_t(25));
+    QCOMPARE(ports.saved->targetRoster.columnWidths,
+        (std::vector<int>{204,202,0,0,0,203,205,206}));
+    QVERIFY(ports.stored == before);
 }
 
 QTEST_MAIN(RosterTransferMenuTests)

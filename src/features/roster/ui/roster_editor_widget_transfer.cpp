@@ -9,7 +9,7 @@
 #include "features/roster/ui/roster_table_view.h"
 #include "next/application/classes_list_read_query.h"
 #include "next/application/roster_availability_batch_read_query.h"
-#include "next/application/roster_read_query.h"
+#include "next/application/roster_row_transfer_use_case.h"
 #include "next/application/roster_transfer_target_eligibility.h"
 #include "next/application/selected_class_subtitle_batch_read_query.h"
 #include "next/application/selected_class_subtitle_read_query.h"
@@ -17,6 +17,7 @@
 #include "next/platform/application_services_classes_list_read_port.h"
 #include "next/platform/application_services_roster_availability_batch_read_port.h"
 #include "next/platform/application_services_roster_read_port.h"
+#include "next/platform/application_services_roster_row_transfer_save_port.h"
 #include "next/platform/application_services_selected_class_subtitle_batch_read_port.h"
 #include "next/platform/application_services_selected_class_subtitle_read_port.h"
 #include "ui/shared/qt_text_adapter.h"
@@ -93,38 +94,48 @@ QString classesListErrorMessage(const std::string& message)
         );
 }
 
-Roster rosterFromSnapshot(
-    const ClassMngr::Next::Application::RosterSnapshot& snapshot
-    )
+ClassMngr::Next::Application::RosterSnapshot applicationSnapshot(const Roster& roster)
 {
-    Roster roster;
-    roster.columns.reserve(static_cast<qsizetype>(snapshot.columns.size()));
-    for (const auto& column : snapshot.columns)
+    ClassMngr::Next::Application::RosterSnapshot snapshot;
+    for (const auto& column : roster.columns)
+        snapshot.columns.push_back(Ui::QtTextAdapter::toUtf16String(column));
+    for (int width : roster.columnWidths)
+        snapshot.columnWidths.push_back(width);
+    for (const auto& sourceRow : roster.rows)
     {
-        roster.columns.append(QString::fromStdU16String(column));
+        std::vector<std::u16string> row;
+        for (const auto& cell : sourceRow)
+            row.push_back(Ui::QtTextAdapter::toUtf16String(cell));
+        snapshot.rows.push_back(std::move(row));
     }
+    return snapshot;
+}
 
-    roster.columnWidths.reserve(
-        static_cast<qsizetype>(snapshot.columnWidths.size())
-        );
-    for (const int width : snapshot.columnWidths)
+QString transferFailureMessage(
+    const ClassMngr::Next::Application::RosterRowTransferResult& result)
+{
+    using namespace ClassMngr::Next::Application;
+    if (const auto* error = std::get_if<RosterRowRemovalError>(&result))
+        return error->code == RosterRowRemovalErrorCode::InvalidRowIndex
+            ? RosterModel::tr("Select a student row to remove.")
+            : RosterModel::tr("Selected row is already empty.");
+    if (const auto* error = std::get_if<RosterRowTransferPreparationError>(&result))
     {
-        roster.columnWidths.append(width);
-    }
-
-    roster.rows.reserve(static_cast<qsizetype>(snapshot.rows.size()));
-    for (const auto& snapshotRow : snapshot.rows)
-    {
-        QStringList row;
-        row.reserve(static_cast<qsizetype>(snapshotRow.size()));
-        for (const auto& cell : snapshotRow)
+        switch (error->rejection)
         {
-            row.append(QString::fromStdU16String(cell));
+        case RosterRowTransferPreparationRejection::SourceRowHasNoData:
+            return RosterModel::tr("Selected row is empty.");
+        case RosterRowTransferPreparationRejection::TargetRosterIsFull:
+            return RosterModel::tr("Target roster is full.");
+        case RosterRowTransferPreparationRejection::DuplicateStudentNamePair:
+            return RosterModel::tr("Target roster already contains this student.");
         }
-        roster.rows.append(std::move(row));
     }
-
-    return roster;
+    if (const auto* error =
+            std::get_if<ClassMngr::Next::Domain::OperationError>(&result))
+        return QString::fromUtf8(error->message.data(),
+            static_cast<qsizetype>(error->message.size()));
+    return {};
 }
 
 std::optional<TransferClassMetadata> transferClassMetadataFromSnapshot(
@@ -496,66 +507,41 @@ void RosterEditorWidget::transferRosterRow(
         return;
     }
 
-    auto* rosterService = m_services->rosterService();
-    const QStringList sourceColumns = m_model->columnNames();
-    const QStringList sourceRow = m_model->rowValues(row);
-    Roster targetSourceRoster;
-    const auto typedTargetClassId =
-        ClassMngr::Next::Domain::ClassId::fromString(
-            std::to_string(targetClassId)
-            );
-    if (typedTargetClassId)
-    {
-        ClassMngr::Next::Platform::
-            ApplicationServicesRosterReadPort readPort(m_services);
-        const ClassMngr::Next::Application::RosterReadQuery query{
-            .classId = *typedTargetClassId
-        };
-        const auto loadedRoster =
-            ClassMngr::Next::Application::RosterReadUseCase::execute(
-                query,
-                readPort
-                );
-        if (loadedRoster)
-        {
-            targetSourceRoster = rosterFromSnapshot(loadedRoster.value());
-        }
-    }
-    RosterModel targetModel;
-    targetModel.setRoster(targetSourceRoster);
-
-    reason.clear();
-    if (!targetModel.insertTransferredRow(sourceColumns, sourceRow, &reason))
-    {
-        DialogServices::showWarning(
-            this,
-            tr("Cannot Transfer Student"),
-            reason.isEmpty()
-                ? tr("The student could not be transferred.")
-                : reason
-            );
+    const auto sourceId = ClassMngr::Next::Domain::ClassId::fromString(
+        std::to_string(m_classroom.id));
+    const auto targetId = ClassMngr::Next::Domain::ClassId::fromString(
+        std::to_string(targetClassId));
+    if (!sourceId || !targetId)
         return;
-    }
+    std::vector<std::u16string> baseColumns;
+    for (const auto& column : Roster::BaseColumns)
+        baseColumns.push_back(Ui::QtTextAdapter::toUtf16String(column));
 
-    Roster targetRoster = targetModel.toRoster();
-    targetRoster.columnWidths = normalizedColumnWidths(
-        targetSourceRoster,
-        targetRoster.columns
-        );
-    const Roster sourceRoster = rosterWithRowRemoved(row);
-    const Status saved = rosterService->saveRosters(
-        {
-            qMakePair(m_classroom.id, sourceRoster),
-            qMakePair(targetClassId, targetRoster)
-        }
-        );
-    if (!saved)
+    const ClassMngr::Next::Application::RosterRowTransferRequest request{
+        .sourceClassId = *sourceId,
+        .targetClassId = *targetId,
+        .sourceRoster = applicationSnapshot(currentRosterForSave()),
+        .sourceRow = row,
+        .baseColumnNames = std::move(baseColumns)
+    };
+    ClassMngr::Next::Platform::ApplicationServicesRosterReadPort readPort(m_services);
+    ClassMngr::Next::Platform::ApplicationServicesRosterRowTransferSavePort savePort(
+        m_services);
+    const auto transferred =
+        ClassMngr::Next::Application::RosterRowTransferUseCase::execute(
+            request, readPort, savePort,
+            [](std::u16string_view left, std::u16string_view right)
+            {
+                return Ui::QtTextAdapter::fromUtf16String(left).compare(
+                    Ui::QtTextAdapter::fromUtf16String(right),
+                    Qt::CaseInsensitive) == 0;
+            });
+    if (!std::holds_alternative<
+            ClassMngr::Next::Application::RosterRowTransferSuccess>(transferred))
     {
-        DialogServices::showWarning(
-            this,
-            tr("Cannot Transfer Student"),
-            saved.error()
-            );
+        reason = transferFailureMessage(transferred);
+        DialogServices::showWarning(this, tr("Cannot Transfer Student"),
+            reason.isEmpty() ? tr("The student could not be transferred.") : reason);
         return;
     }
 
@@ -578,23 +564,4 @@ void RosterEditorWidget::transferRosterRow(
     }
 
     updateActions();
-}
-
-Roster RosterEditorWidget::rosterWithRowRemoved(
-    int row
-    ) const
-{
-    Roster roster = currentRosterForSave();
-    if (row < 0 || row >= roster.rows.size())
-    {
-        return roster;
-    }
-
-    const int lastRow = roster.rows.size() - 1;
-    for (int sourceRow = row + 1; sourceRow <= lastRow; ++sourceRow)
-    {
-        roster.rows[sourceRow - 1] = roster.rows[sourceRow];
-    }
-    roster.rows[lastRow] = QStringList(roster.columns.size(), QString());
-    return roster;
 }

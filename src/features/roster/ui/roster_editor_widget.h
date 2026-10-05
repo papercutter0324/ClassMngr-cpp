@@ -145,10 +145,6 @@ private:
 
     Roster currentRosterForSave() const;
 
-    Roster rosterWithRowRemoved(
-        int row
-        ) const;
-
     QVector<int> normalizedColumnWidths(
         const Roster& roster,
         const QStringList& columns

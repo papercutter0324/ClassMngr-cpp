@@ -121,6 +121,7 @@ set(CLASSMNGR_NEXT_APPLICATION_SOURCES
     src/next/application/roster_availability_batch_read_snapshot.h
     src/next/application/roster_availability_batch_read_port.h
     src/next/application/roster_availability_batch_read_query.h
+    src/next/application/roster_row_transfer_use_case.h
     src/next/application/roster_row_transfer_preparation.h
     src/next/application/roster_transfer_target_eligibility.h
     src/next/application/roster_evaluation_column_policy.h
@@ -378,6 +379,7 @@ set(CLASSMNGR_NEXT_PLATFORM_SOURCES
     src/next/platform/application_services_class_details_schedule_conflict_port.h
     src/next/platform/application_services_class_details_validation_context_port.h
     src/next/platform/application_services_classes_navigation_read_port.h
+    src/next/platform/application_services_roster_row_transfer_save_port.h
     src/next/platform/application_services_roster_read_port.h
     src/next/platform/application_services_roster_column_names_batch_read_port.h
     src/next/platform/application_services_roster_availability_batch_read_port.h
