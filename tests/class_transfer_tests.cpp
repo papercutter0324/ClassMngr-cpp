@@ -391,6 +391,7 @@ private slots:
     void exportDialogKeepsClassFieldsWhenTeacherCannotLoad();
     void filesystemSafeJsonFileName();
     void importDialogRequiresAmbiguousTeacherResolution();
+    void importDialogRequestsOnlyUniquePositiveTeacherIds();
     void importDialogBatchesDistinctMatchedTeacherDisplayNameReads();
     void importDialogFallsBackToIndividualTeacherProfilesAfterBatchFailure();
     void importDialogUsesDefaultFormattingWhenClassFieldsCannotLoad();
@@ -4364,6 +4365,66 @@ void ClassTransferTests::importDialogRequiresAmbiguousTeacherResolution()
     QVERIFY(importButton->isEnabled());
     QCOMPARE(dialog.importPlan().teachers.first().action,
              TeacherImportAction::Create);
+}
+
+void ClassTransferTests::
+importDialogRequestsOnlyUniquePositiveTeacherIds()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    DataService service;
+    QVERIFY(service.openDatabase(
+        directory.filePath(QStringLiteral("destination.db"))).has_value());
+
+    Teacher firstTeacher = completeTeacher(QStringLiteral("English One"));
+    firstTeacher.preferredName = QStringLiteral("Local One");
+    const int firstId = createdTeacherId(service, firstTeacher);
+    Teacher secondTeacher = completeTeacher(QStringLiteral("English Two"));
+    secondTeacher.preferredName = QStringLiteral("Local Two");
+    const int secondId = createdTeacherId(service, secondTeacher);
+    QVERIFY(firstId > 0);
+    QVERIFY(secondId > firstId);
+
+    QString applicationServicesError;
+    const auto applicationServices = openApplicationServicesForCurrentDatabase(
+        service,
+        &applicationServicesError
+        );
+    QVERIFY2(applicationServices, qPrintable(applicationServicesError));
+    TeacherRepository* const teacherRepository =
+        applicationServices->databaseSession()->teacherRepository();
+    QVERIFY(teacherRepository);
+
+    ClassTransferPackage package;
+    package.teachers.append({
+        QStringLiteral("incoming"), completeTeacher()
+    });
+    ClassImportPreview preview;
+    preview.teachers.append({
+        QStringLiteral("incoming"),
+        QList<int>{0, -17, firstId, firstId, secondId, secondId}
+    });
+
+    const TeacherDisplayNameBatchReadMetrics before =
+        teacherRepository->teacherDisplayNameBatchReadMetrics();
+    ClassImportDialog dialog(applicationServices.get(), package, preview);
+
+    auto* teacherChoice = dialog.findChild<QComboBox*>(
+        QStringLiteral("teacherImportChoice_incoming"));
+    QVERIFY(teacherChoice);
+    QCOMPARE(teacherChoice->count(), 14);
+    QCOMPARE(teacherChoice->itemData(2, Qt::UserRole + 1).toInt(), 0);
+    QCOMPARE(teacherChoice->itemData(4, Qt::UserRole + 1).toInt(), -17);
+    QCOMPARE(teacherChoice->itemText(6), QStringLiteral("Keep local: Local One"));
+    QCOMPARE(teacherChoice->itemData(6, Qt::UserRole + 1).toInt(), firstId);
+    QCOMPARE(teacherChoice->itemText(10), QStringLiteral("Keep local: Local Two"));
+    QCOMPARE(teacherChoice->itemData(10, Qt::UserRole + 1).toInt(), secondId);
+
+    const TeacherDisplayNameBatchReadMetrics after =
+        teacherRepository->teacherDisplayNameBatchReadMetrics();
+    QCOMPARE(after.callCount - before.callCount, 1);
+    QCOMPARE(after.requestedTeacherCount - before.requestedTeacherCount, 2);
+    QCOMPARE(after.statementCount - before.statementCount, 1);
 }
 
 void ClassTransferTests::

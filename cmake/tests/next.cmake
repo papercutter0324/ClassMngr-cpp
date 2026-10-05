@@ -1894,6 +1894,15 @@ classmngr_add_qt_test(
 )
 
 classmngr_add_qt_test(
+    NAME NextApplicationTeacherDisplayNameBatchReadQuery
+    SOURCES
+        tests/next_application_teacher_display_name_batch_read_query_tests.cpp
+    LIBRARIES
+        ClassMngrNext::Application
+        Qt6::Test
+)
+
+classmngr_add_qt_test(
     NAME NextApplicationTeacherImportLatestSourceDateReadQuery
     SOURCES
         tests/next_application_teacher_import_latest_source_date_read_query_tests.cpp
@@ -2549,6 +2558,16 @@ classmngr_add_qt_test(
     NAME NextPlatformApplicationServicesTeacherProfileReadPort
     SOURCES
         tests/next_platform_application_services_teacher_profile_read_port_tests.cpp
+    LIBRARIES
+        ClassMngrNext::Platform
+        Qt6::Test
+    OFFSCREEN
+)
+
+classmngr_add_qt_test(
+    NAME NextPlatformApplicationServicesTeacherDisplayNameBatchReadPort
+    SOURCES
+        tests/next_platform_application_services_teacher_display_name_batch_read_port_tests.cpp
     LIBRARIES
         ClassMngrNext::Platform
         Qt6::Test

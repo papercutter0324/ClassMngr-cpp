@@ -4,13 +4,13 @@
 #include "core/application_services.h"
 #include "core/result.h"
 #include "core/utils/sidebar_node_naming.h"
-#include "data/database/database_session.h"
-#include "data/repositories/teacher_repository.h"
 #include "next/application/class_transfer_projection.h"
 #include "next/application/selected_class_subtitle_batch_read_query.h"
+#include "next/application/teacher_display_name_batch_read_query.h"
 #include "next/application/teacher_profile_read_query.h"
 #include "next/domain/domain_types.h"
 #include "next/platform/application_services_selected_class_subtitle_batch_read_port.h"
+#include "next/platform/application_services_teacher_display_name_batch_read_port.h"
 #include "next/platform/application_services_teacher_profile_read_port.h"
 
 #include <QComboBox>
@@ -183,17 +183,21 @@ QString destinationTeacherDisplayName(
 }
 
 QString destinationTeacherDisplayName(
-    const TeacherDisplayNameBatchReadRecord* fields,
+    const ClassMngr::Next::Application::TeacherDisplayNameFields* fields,
     const int teacherId
     )
 {
     Teacher teacher;
     if (fields)
     {
-        teacher.teacherKr = fields->teacherKr;
-        teacher.teacherEn = fields->teacherEn;
-        teacher.preferredRomanization = fields->preferredRomanization;
-        teacher.preferredName = fields->preferredName;
+        teacher.teacherKr = QString::fromStdU16String(fields->teacherKr);
+        teacher.teacherEn = QString::fromStdU16String(fields->teacherEn);
+        teacher.preferredRomanization = QString::fromStdU16String(
+            fields->preferredRomanization
+            );
+        teacher.preferredName = QString::fromStdU16String(
+            fields->preferredName
+            );
     }
 
     const QString display =
@@ -212,7 +216,7 @@ DestinationTeacherDisplayNames destinationTeacherDisplayNames(
     const ClassImportPreview& preview
     )
 {
-    QList<int> teacherIds;
+    std::vector<ClassMngr::Next::Domain::TeacherId> teacherIds;
     std::unordered_set<int> seenTeacherIds;
     for (const ClassImportTeacherPreview& teacherPreview : preview.teachers)
     {
@@ -225,40 +229,39 @@ DestinationTeacherDisplayNames destinationTeacherDisplayNames(
         {
             if (teacherId > 0 && seenTeacherIds.insert(teacherId).second)
             {
-                teacherIds.append(teacherId);
+                teacherIds.push_back(*
+                    ClassMngr::Next::Domain::TeacherId::fromString(
+                        std::to_string(teacherId)));
             }
         }
     }
 
     DestinationTeacherDisplayNames displayNames;
-    if (teacherIds.isEmpty())
+    if (teacherIds.empty())
     {
         return displayNames;
     }
 
-    DatabaseSession* const session = applicationServices
-        ? applicationServices->databaseSession()
-        : nullptr;
-    TeacherRepository* const repository =
-        session && session->isOpen()
-        ? session->teacherRepository()
-        : nullptr;
-
-    std::optional<QList<TeacherDisplayNameBatchReadRecord>> batchRecords;
-    if (repository)
+    std::optional<std::vector<
+        ClassMngr::Next::Application::TeacherDisplayNameBatchReadSnapshot
+        >> batchRecords;
+    try
     {
-        try
+        ClassMngr::Next::Platform::
+            ApplicationServicesTeacherDisplayNameBatchReadPort readPort(
+                applicationServices
+                );
+        const ClassMngr::Next::Application::
+            TeacherDisplayNameBatchReadQuery query(readPort);
+        const auto loaded = query.execute(teacherIds);
+        if (loaded)
         {
-            const Result<QList<TeacherDisplayNameBatchReadRecord>> loaded =
-                repository->loadTeacherDisplayNameRecords(teacherIds);
-            if (loaded)
-            {
-                batchRecords = loaded.value();
-            }
+            batchRecords = loaded.value();
         }
-        catch (...)
-        {
-        }
+    }
+    catch (...)
+    {
+        // Preserve the per-teacher fallback if the batch boundary throws.
     }
 
     if (batchRecords)
@@ -266,15 +269,13 @@ DestinationTeacherDisplayNames destinationTeacherDisplayNames(
         displayNames.reserve(
             static_cast<std::size_t>(batchRecords->size())
             );
-        for (const TeacherDisplayNameBatchReadRecord& record : *batchRecords)
+        for (const auto& record : *batchRecords)
         {
-            if (seenTeacherIds.contains(record.teacherId))
-            {
-                displayNames.emplace(
-                    record.teacherId,
-                    destinationTeacherDisplayName(&record, record.teacherId)
-                    );
-            }
+            const int teacherId = std::stoi(record.teacherId.value());
+            displayNames.emplace(
+                teacherId,
+                destinationTeacherDisplayName(&record.fields, teacherId)
+                );
         }
         return displayNames;
     }
@@ -282,25 +283,26 @@ DestinationTeacherDisplayNames destinationTeacherDisplayNames(
     // A failed batch must not hide readable siblings. Retry each requested
     // teacher through the existing single-profile path independently.
     displayNames.reserve(static_cast<std::size_t>(teacherIds.size()));
-    for (const int teacherId : teacherIds)
+    for (const auto& teacherId : teacherIds)
     {
+        const int legacyTeacherId = std::stoi(teacherId.value());
         try
         {
             displayNames.emplace(
-                teacherId,
+                legacyTeacherId,
                 destinationTeacherDisplayName(
                     applicationServices,
-                    teacherId
+                    legacyTeacherId
                     )
                 );
         }
         catch (...)
         {
             displayNames.emplace(
-                teacherId,
+                legacyTeacherId,
                 destinationTeacherDisplayName(
                     static_cast<ApplicationServices*>(nullptr),
-                    teacherId
+                    legacyTeacherId
                     )
                 );
         }
@@ -320,7 +322,9 @@ QString destinationTeacherDisplayName(
     }
 
     return destinationTeacherDisplayName(
-        static_cast<const TeacherDisplayNameBatchReadRecord*>(nullptr),
+        static_cast<
+            const ClassMngr::Next::Application::TeacherDisplayNameFields*>(
+                nullptr),
         teacherId
         );
 }
