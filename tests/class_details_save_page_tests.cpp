@@ -245,7 +245,10 @@ private slots:
     void invalidFieldsBlockTheSavePort();
     void malformedScheduleBlocksConflictQueriesAndFocusesItsField();
     void freshInvalidContextBlocksBeforeConflictAndSave();
+    void contextReadFailureFallsBackAndContinuesSaveOrder_data();
     void contextReadFailureFallsBackAndContinuesSaveOrder();
+    void policyAcceptedRawTimeStillFailsConflictConversion_data();
+    void policyAcceptedRawTimeStillFailsConflictConversion();
     void regularAndIntensiveConflictsBlockTheSavePort();
     void regularConflictShortCircuitsIntensiveAndKeepsSameNameWording();
     void intensiveConflictFollowsAnEmptyRegularQuery();
@@ -635,8 +638,16 @@ void ClassDetailsSavePageTests::freshInvalidContextBlocksBeforeConflictAndSave()
     QVERIFY(foundTeacherIssue);
 }
 
+void ClassDetailsSavePageTests::contextReadFailureFallsBackAndContinuesSaveOrder_data()
+{
+    QTest::addColumn<bool>("mismatchedContext");
+    QTest::newRow("context read failure") << false;
+    QTest::newRow("context identity mismatch") << true;
+}
+
 void ClassDetailsSavePageTests::contextReadFailureFallsBackAndContinuesSaveOrder()
 {
+    QFETCH(bool, mismatchedContext);
     QTemporaryDir directory;
     QVERIFY(directory.isValid());
     ApplicationServices services;
@@ -654,8 +665,11 @@ void ClassDetailsSavePageTests::contextReadFailureFallsBackAndContinuesSaveOrder
     conflictPort.events = &events;
     RecordingClassDetailsValidationContextPort contextPort;
     contextPort.events = &events;
-    contextPort.result =
-        Application::ClassDetailsValidationContextPortResult::failure({
+    contextPort.result = mismatchedContext
+        ? Application::ClassDetailsValidationContextPortResult::success({
+            *Domain::ClassId::fromString(std::to_string(classId + 1)),
+            0, std::u16string(10001, u'x'), {}})
+        : Application::ClassDetailsValidationContextPortResult::failure({
             .code = Domain::ErrorCode::Technical,
             .message = "validation context repository read failed",
             .recoverable = true
@@ -684,6 +698,8 @@ void ClassDetailsSavePageTests::contextReadFailureFallsBackAndContinuesSaveOrder
     QVERIFY(page.saveChanges());
     QCOMPARE(contextPort.callCount, 1);
     QCOMPARE(conflictPort.requests.size(), std::size_t(2));
+    QVERIFY(conflictPort.requests[0].candidateTimes.empty());
+    QVERIFY(conflictPort.requests[1].candidateTimes.empty());
     QCOMPARE(savePort.callCount, 1);
     QCOMPARE(events.size(), std::size_t(4));
     QCOMPARE(events[0], std::string("context"));
@@ -1126,6 +1142,63 @@ void ClassDetailsSavePageTests::noninteractiveConflictBlocksSilently()
     QCOMPARE(conflictPort.requests.size(), std::size_t(1));
     QCOMPARE(savePort.callCount, 0);
     QVERIFY(page.hasUnsavedChanges());
+}
+
+
+void ClassDetailsSavePageTests::policyAcceptedRawTimeStillFailsConflictConversion_data()
+{
+    QTest::addColumn<bool>("intensive");
+    QTest::newRow("regular raw end time") << false;
+    QTest::newRow("intensive raw end time") << true;
+}
+
+void ClassDetailsSavePageTests::policyAcceptedRawTimeStillFailsConflictConversion()
+{
+    QFETCH(bool, intensive);
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+    const int classId = createClass(services, "Raw Schedule Conversion");
+    QVERIFY(classId > 0);
+    RecordingClassDetailsSavePort savePort;
+    RecordingClassDetailsScheduleConflictPort conflictPort;
+    RecordingClassDetailsValidationContextPort contextPort;
+    std::vector<std::string> events;
+    savePort.events = &events;
+    conflictPort.events = &events;
+    contextPort.events = &events;
+    ClassDetailsPage page(&services, false, nullptr, &savePort, nullptr,
+        &conflictPort, &contextPort);
+    page.setSaveMode(SaveMode::Manual);
+    page.loadClass(Classroom("Raw Schedule Conversion", classId));
+    chooseDetails(page);
+    ClassTimeRow* row = addScheduleRow(page,
+        intensive ? ScheduleType::Intensive : ScheduleType::Regular);
+    QVERIFY(row);
+    setSchedule(row, "Monday", "9:00 AM", "9:55 AM");
+    row->endCombo()->addItem("09:55");
+    row->endCombo()->setCurrentText("09:55");
+    auto* binder = page.findChild<FormValidationBinder*>();
+    QVERIFY(binder);
+    QVERIFY(!binder->hasErrors()); // Policy accepts and normalizes HH:mm.
+    auto* header = page.findChild<PageHeader*>();
+    QVERIFY(header);
+    const QString subtitleBefore = header->subtitle();
+    QSignalSpy savedSpy(&page, &ClassDetailsPage::classInfoSaved);
+    QString title;
+    QString message;
+    QVERIFY(!saveAndAcceptWarning(page, &title, &message));
+    QCOMPARE(title, intensive ? QStringLiteral("Intensive Schedule Conflicts")
+                             : QStringLiteral("Regular Schedule Conflicts"));
+    QCOMPARE(message, QStringLiteral("Class schedule values could not be checked."));
+    QCOMPARE(events, (intensive ? std::vector<std::string>{"context","regular"}
+                               : std::vector<std::string>{"context"}));
+    QCOMPARE(savePort.callCount, 0);
+    QCOMPARE(savedSpy.size(), 0);
+    QVERIFY(page.hasUnsavedChanges());
+    QVERIFY(!binder->hasErrors());
+    QCOMPARE(header->subtitle(), subtitleBefore);
 }
 
 QTEST_MAIN(ClassDetailsSavePageTests)

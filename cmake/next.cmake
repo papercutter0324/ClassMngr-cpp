@@ -103,6 +103,7 @@ set(CLASSMNGR_NEXT_APPLICATION_SOURCES
     src/next/application/classes_list_read_query.h
     src/next/application/classes_navigation_snapshot.h
     src/next/application/class_details_save_use_case.h
+    src/next/application/class_details_save_workflow.h
     src/next/application/class_details_schedule_conflict_query.h
     src/next/application/class_details_validation_context_query.h
     src/next/application/class_details_validation_policy.h

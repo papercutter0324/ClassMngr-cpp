@@ -24,6 +24,7 @@ class ClassDetailsSavePort;
 class ClassDetailsPageReadPort;
 class ClassDetailsScheduleConflictPort;
 class ClassDetailsValidationContextPort;
+struct ClassDetailsSaveWorkflowConflict;
 }
 
 class QLabel;
@@ -86,10 +87,8 @@ private:
         bool showMessages
         );
 
-    bool showScheduleConflicts(
-        const QList<ClassTime>& times,
-        ScheduleType type,
-        const QString& title,
+    void showScheduleConflicts(
+        const ClassMngr::Next::Application::ClassDetailsSaveWorkflowConflict& result,
         bool showMessage
         );
 

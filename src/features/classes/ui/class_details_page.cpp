@@ -16,9 +16,8 @@
 #include "domain/models/class_info.h"
 #include "domain/models/teacher.h"
 #include "features/classes/config/class_info_config.h"
-#include "domain/rules/schedule_value_parser.h"
 #include "domain/validation/validation_result.h"
-#include "next/application/class_details_save_use_case.h"
+#include "next/application/class_details_save_workflow.h"
 #include "next/application/class_details_validation_policy.h"
 #include "next/application/class_details_schedule_conflict_query.h"
 #include "next/application/class_details_validation_context_query.h"
@@ -36,7 +35,6 @@
 #include <QComboBox>
 #include <QLabel>
 #include <QPushButton>
-#include <QTime>
 #include <QStringList>
 #include <QVBoxLayout>
 #include <QWidget>
@@ -63,83 +61,6 @@ SectionCard* addSectionCard(
         );
 
     return card;
-}
-
-std::optional<ClassMngr::Next::Domain::ScheduleTime> toDomainScheduleTime(
-    const ClassTime& time
-    )
-{
-    const auto day = ScheduleValueParser::parseWeekday(time.day);
-    const auto parseNormalizedTime = [](const QString& value)
-        -> std::optional<QTime>
-    {
-        const QTime parsed = QTime::fromString(
-            value,
-            QStringLiteral("h:mm AP")
-            );
-        if (!parsed.isValid()
-            || parsed.toString(QStringLiteral("h:mm AP")) != value)
-        {
-            return std::nullopt;
-        }
-
-        return parsed;
-    };
-    const auto start = parseNormalizedTime(time.startTime);
-    const auto end = parseNormalizedTime(time.endTime);
-    if (!day || !start || !end)
-    {
-        return std::nullopt;
-    }
-
-    return ClassMngr::Next::Domain::ScheduleTime::fromMinutes(
-        static_cast<int>(day->value),
-        start->hour() * 60 + start->minute(),
-        end->hour() * 60 + end->minute()
-        );
-}
-
-std::optional<std::vector<ClassMngr::Next::Domain::ScheduleTime>>
-toDomainScheduleTimes(const QList<ClassTime>& times)
-{
-    std::vector<ClassMngr::Next::Domain::ScheduleTime> result;
-    result.reserve(static_cast<std::size_t>(times.size()));
-    for (const ClassTime& time : times)
-    {
-        const auto converted = toDomainScheduleTime(time);
-        if (!converted)
-        {
-            return std::nullopt;
-        }
-        result.push_back(*converted);
-    }
-    return result;
-}
-
-std::optional<ClassMngr::Next::Application::ClassDetailsSaveRequest>
-classDetailsSaveRequest(const ClassInfo& info)
-{
-    const auto classId = ClassMngr::Next::Domain::ClassId::fromString(
-        std::to_string(info.classId)
-        );
-    const auto regularTimes = toDomainScheduleTimes(info.classTimes);
-    const auto intensiveTimes = toDomainScheduleTimes(info.intensiveTimes);
-    if (!classId || !regularTimes || !intensiveTimes)
-    {
-        return std::nullopt;
-    }
-
-    return ClassMngr::Next::Application::ClassDetailsSaveRequest{
-        .classId = *classId,
-        .classGrade = info.classGrade.toStdU16String(),
-        .classLevel = info.classLevel.toStdU16String(),
-        .readingBook = info.readingBook.toStdU16String(),
-        .essayBook = info.essayBook.toStdU16String(),
-        .classColor = info.classColor.toStdU16String(),
-        .fontColor = info.fontColor.toStdU16String(),
-        .regularTimes = *regularTimes,
-        .intensiveTimes = *intensiveTimes
-    };
 }
 
 QString displayText(const std::string& value)
@@ -1133,122 +1054,53 @@ bool ClassDetailsPage::saveClassInfoInternal(
     }
 
     ClassInfo info = classInfoFromForm();
-    const auto typedClassId =
-        ClassMngr::Next::Domain::ClassId::fromString(
-            std::to_string(m_classroom.id)
-            );
-    if (typedClassId)
-    {
-        ClassMngr::Next::Platform::
-            ApplicationServicesClassDetailsValidationContextPort defaultPort(
-                m_services
-                );
-        const ClassMngr::Next::Application::
-            ClassDetailsValidationContextPort& contextPort =
-                m_validationContextPort
-                    ? *m_validationContextPort
-                    : defaultPort;
-        const auto context = ClassMngr::Next::Application::
-            ClassDetailsValidationContextQuery::execute(
-                *typedClassId,
-                contextPort
-                );
-        if (context)
-        {
-            const auto& values = context.value();
-            info.teacherId = values.teacherId;
-            info.notes = QString::fromStdU16String(values.notes);
-            info.timeFillerActivities = QString::fromStdU16String(
-                values.timeFillerActivities
-                );
-        }
-        else
-        {
-            const ClassInfo emptyContext;
-            info.teacherId = emptyContext.teacherId;
-            info.notes = emptyContext.notes;
-            info.timeFillerActivities = emptyContext.timeFillerActivities;
-        }
-    }
-    else
-    {
-        const ClassInfo emptyContext;
-        info.teacherId = emptyContext.teacherId;
-        info.notes = emptyContext.notes;
-        info.timeFillerActivities = emptyContext.timeFillerActivities;
-    }
+    ClassMngr::Next::Platform::ApplicationServicesClassDetailsValidationContextPort
+        defaultContextPort(m_services);
+    ClassMngr::Next::Platform::ApplicationServicesClassDetailsScheduleConflictPort
+        defaultConflictPort(m_services);
+    ClassMngr::Next::Platform::ApplicationServicesClassDetailsSavePort
+        defaultSavePort(m_services);
+    const auto saved = ClassMngr::Next::Application::ClassDetailsSaveWorkflow::execute(
+        {.input = classDetailsValidationInput(info)},
+        classDetailsValidationCatalog(),
+        m_validationContextPort ? *m_validationContextPort : defaultContextPort,
+        m_scheduleConflictPort ? *m_scheduleConflictPort : defaultConflictPort,
+        m_savePort ? *m_savePort : defaultSavePort);
 
     refreshScheduleValidationBindings();
-    const auto validation = validateClassDetailsInput(info);
-    m_validationBinder->setValidation(legacyValidationResult(validation));
-    if (m_validationBinder->hasErrors())
+    if (const auto* validation = std::get_if<
+            ClassMngr::Next::Application::ClassDetailsValidationOutput>(&saved))
     {
+        m_validationBinder->setValidation(legacyValidationResult(*validation));
         m_validationBinder->focusFirstError();
         return false;
     }
-
-    if (
-        showScheduleConflicts(
-            info.classTimes,
-            ScheduleType::Regular,
-            tr("Regular Schedule Conflicts"),
-            showMessages
-            )
-        )
+    m_validationBinder->setValidation(ValidationResult{});
+    if (const auto* conflicts = std::get_if<
+            ClassMngr::Next::Application::ClassDetailsSaveWorkflowConflict>(&saved))
     {
+        showScheduleConflicts(*conflicts, showMessages);
         return false;
     }
-
-    if (
-        showScheduleConflicts(
-            info.intensiveTimes,
-            ScheduleType::Intensive,
-            tr("Intensive Schedule Conflicts"),
-            showMessages
-            )
-        )
+    if (const auto* failure = std::get_if<
+            ClassMngr::Next::Application::ClassDetailsSaveWorkflowFailure>(&saved))
     {
-        return false;
-    }
-
-    const ClassInfo normalizedInfo = normalizedClassDetailsInfo(
-        info,
-        validation.normalized
-        );
-    const auto request = classDetailsSaveRequest(normalizedInfo);
-    ClassMngr::Next::Platform::
-        ApplicationServicesClassDetailsSavePort defaultSavePort(m_services);
-    const ClassMngr::Next::Application::ClassDetailsSavePort& savePort =
-        m_savePort ? *m_savePort : defaultSavePort;
-    const ClassMngr::Next::Domain::Result<void> saved = request
-        ? ClassMngr::Next::Application::ClassDetailsSaveUseCase::execute(
-              *request,
-              savePort
-              )
-        : ClassMngr::Next::Domain::Result<void>::failure({
-              .code = ClassMngr::Next::Domain::ErrorCode::Validation,
-              .message = "Class schedule values could not be converted.",
-              .recoverable = true
-          });
-
-    if (!saved)
-    {
-        m_autosave->markDirty(false);
-
+        using Stage = ClassMngr::Next::Application::ClassDetailsSaveWorkflowStage;
+        if (failure->stage == Stage::Save)
+            m_autosave->markDirty(false);
         if (showMessages)
         {
-            DialogServices::showWarning(
-                this,
-                tr("Save Class Information"),
-                QString::fromUtf8(
-                    saved.error().message.data(),
-                    static_cast<qsizetype>(saved.error().message.size())
-                    )
-                );
+            const QString title = failure->stage == Stage::RegularConflicts
+                ? tr("Regular Schedule Conflicts")
+                : failure->stage == Stage::IntensiveConflicts
+                    ? tr("Intensive Schedule Conflicts") : tr("Save Class Information");
+            DialogServices::showWarning(this, title, displayText(failure->error.message));
         }
-
         return false;
     }
+    const auto& success = std::get<
+        ClassMngr::Next::Application::ClassDetailsSaveWorkflowSuccess>(saved);
+    info = normalizedClassDetailsInfo(info, success.normalized);
 
     clearDirty();
 
@@ -1351,85 +1203,17 @@ void ClassDetailsPage::retranslateUi()
     updateActions();
 }
 
-bool ClassDetailsPage::showScheduleConflicts(
-    const QList<ClassTime>& times,
-    ScheduleType type,
-    const QString& title,
+void ClassDetailsPage::showScheduleConflicts(
+    const ClassMngr::Next::Application::ClassDetailsSaveWorkflowConflict& result,
     bool showMessage
     )
 {
-    const auto typedClassId =
-        ClassMngr::Next::Domain::ClassId::fromString(
-            std::to_string(m_classroom.id)
-            );
-    const auto typedTimes = toDomainScheduleTimes(times);
-
-    const auto loadedConflicts = [&]()
-        -> ClassMngr::Next::Application::
-            ClassDetailsScheduleConflictResult
-    {
-        if (!typedClassId || !typedTimes)
-        {
-            return ClassMngr::Next::Application::
-                ClassDetailsScheduleConflictResult::failure({
-                    .code = ClassMngr::Next::Domain::ErrorCode::Validation,
-                    .message = "Class schedule values could not be checked.",
-                    .recoverable = true
-                });
-        }
-
-        const ClassMngr::Next::Application::
-            ClassDetailsScheduleConflictRequest request{
-                .classId = *typedClassId,
-                .mode = type == ScheduleType::Regular
-                    ? ClassMngr::Next::Application::
-                          ClassDetailsScheduleMode::Regular
-                    : ClassMngr::Next::Application::
-                          ClassDetailsScheduleMode::Intensive,
-                .candidateTimes = *typedTimes
-            };
-
-        ClassMngr::Next::Platform::
-            ApplicationServicesClassDetailsScheduleConflictPort defaultPort(
-                m_services
-                );
-        const ClassMngr::Next::Application::
-            ClassDetailsScheduleConflictPort& port =
-                m_scheduleConflictPort
-                    ? *m_scheduleConflictPort
-                    : defaultPort;
-
-        return ClassMngr::Next::Application::
-            ClassDetailsScheduleConflictQuery::execute(request, port);
-    }();
-
-    if (!loadedConflicts)
-    {
-        if (showMessage)
-        {
-            DialogServices::showWarning(
-                this,
-                title,
-                displayText(loadedConflicts.error().message)
-                );
-        }
-
-        return true;
-    }
-
-    const std::vector<
-        ClassMngr::Next::Application::ClassDetailsScheduleConflict
-        >& conflicts = loadedConflicts.value();
-
-    if (conflicts.empty())
-    {
-        return false;
-    }
-
     if (!showMessage)
-    {
-        return true;
-    }
+        return;
+    const QString title = result.mode ==
+        ClassMngr::Next::Application::ClassDetailsScheduleMode::Regular
+        ? tr("Regular Schedule Conflicts") : tr("Intensive Schedule Conflicts");
+    const auto& conflicts = result.conflicts;
 
     QStringList details;
 
@@ -1463,5 +1247,4 @@ bool ClassDetailsPage::showScheduleConflicts(
             .arg(details.join('\n'))
         );
 
-    return true;
 }
