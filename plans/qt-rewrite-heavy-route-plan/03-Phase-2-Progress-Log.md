@@ -12297,3 +12297,23 @@ F351 is selected for My Classes assigned-teacher display baseline parity.
 F351 is selected, not implemented or verified. F352-F353 remain queued in
 order. Batch 8 is complete; Batch 9 is active. Phase 2 remains In Progress/Open;
 Gates 1 and 2 remain Partial.
+
+### F351 accepted / F352 selected - 2026-10-05
+
+F351, committed as
+`1ecc5b09344099b6bbfb9ee148ce76ec93bfd55a`, records My Classes assigned-teacher
+display baseline parity. Three current and pinned-baseline semantic transcripts,
+including Unicode profile fields, parsed and matched. The current owner audit
+covered 1,345 handwritten sources. Current focused CTest passed 4/4 and
+baseline parity passed 1/1. Baseline overlay verification covered 969 files;
+test/registration changes were identical, with only three minimum Qt
+substitutions.
+
+The existing F145/F146 teacher-query setup gap remains a follow-up; its details
+are recorded in the F350 entry above. These are focused results; no full-suite
+pass is claimed.
+
+F352 is selected for Class Import teacher-choice display baseline parity. F352
+is selected, not implemented or verified. F353 remains queued. Batch 8 is
+complete; Batch 9 is active. Phase 2 remains In Progress/Open; Gates 1 and 2
+remain Partial.
