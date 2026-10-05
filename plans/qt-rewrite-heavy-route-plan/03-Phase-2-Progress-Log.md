@@ -12457,3 +12457,24 @@ contract, adapter, and tests, which have no production callers; retain the F291
 batch path. F358 is selected, not implemented or verified. Batch 9 is complete;
 Batch 10 is active with F359-F361 queued. Phase 2 remains In Progress/Open;
 Gates 1 and 2 remain Partial.
+
+### F358 accepted / F359 selected - 2026-10-06
+
+F358, committed as
+`6bca33113e0e37c568dee2f3a66f85634052ab6a` (`Phase2 - Retire unused My Classes
+single-read contract (F358)`), removes the orphan single-class read query and
+port, Platform adapter, two tests, and registrations. Shared schedule/fields
+DTOs, generic `loadClassInfo` and its read metric, the
+`ClassInfoRepository` read record and method, and all F291 batch APIs and tests
+remain.
+
+Independent fresh current and pinned-F357-baseline builds each passed the same
+three focused CTests for the My Classes page and F291 Application/Platform
+batch. One-owner audits covered 1,348 current and 1,353 baseline handwritten
+sources, matching the five deletions. No full suite ran.
+
+F359 is selected to retire the unused Schedule Import compatibility helper and
+stale DataService include while retaining the shared review-request type.
+F359 is selected, not implemented or verified. Batch 9 is complete; Batch 10
+is active with F360-F361 queued. Phase 2 remains In Progress/Open; Gates 1 and
+2 remain Partial.
