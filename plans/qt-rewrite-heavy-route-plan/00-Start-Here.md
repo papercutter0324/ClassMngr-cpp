@@ -80,13 +80,14 @@
   boundary), F356 (remove Speaking Evaluation compatibility-service gates
   around typed roster-name and selected-subtitle reads), F357 (remove Roster
   Print compatibility gates around typed class, teacher, subtitle, and
-  extra-column reads), and F358 (retire the unused My Classes single-class
-  information read contract while retaining the F291 batch path), and F359
+  extra-column reads), F358 (retire the unused My Classes single-class
+  information read contract while retaining the F291 batch path), F359
   (retire the unused Schedule Import compatibility helper while retaining the
-  shared review-request type) are accepted.
+  shared review-request type), and F360 (Testing Classes cancel/failure page
+  parity) are accepted.
   Batch 6 is complete; Batch 7 (F337-F338), Batch 8 (F339-F344), and Batch 9
-  (F345-F353) are complete; Batch 10 (F354-F361) is active with F358-F359
-  accepted, F360 current, and F361 queued.
+  (F345-F353) are complete; Batch 10 (F354-F361) is active with F354-F360
+  accepted and F361 current.
   Gates 1 and 2 remain Partial, with broader feature
   migration, parity, and 96-class Release memory evidence still open.
   See the

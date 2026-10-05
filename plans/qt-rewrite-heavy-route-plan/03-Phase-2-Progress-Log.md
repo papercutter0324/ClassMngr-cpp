@@ -12505,3 +12505,25 @@ F360 is selected for Testing Classes cancel/failure page parity: add the missing
 warning and page outcomes for F145-F147. F360 is selected, not implemented or
 verified; F361 remains queued. Batch 9 is complete; Batch 10 is active. Phase 2
 remains In Progress/Open; Gates 1 and 2 remain Partial.
+
+### F360 accepted / F361 selected - 2026-10-06
+
+F360, committed as
+`94431d8120bef45463e395e5712a32bd14afd46c` (`Phase2 - Add Testing Classes
+cancel/failure parity (F360)`), adds the typed
+`loadTestingTeacherChoiceRecords()` test-support read using existing teacher 7/8
+fixtures. Its parity harness covers F145 update failure, F146 create
+failure/pending slot, and F147 cancel and delete failure, including exact
+warnings, draft state, and prompt state.
+
+Independent current and exact-F359-baseline builds passed the same five focused
+CTests. Both ownership audits covered 1,348 handwritten sources. Four ASCII
+JSON transcripts matched byte-for-byte; LF-normalized SHA-256:
+`20B126D8675FB5C0B6184CEA04A79A639B3AE055F8316E2D563E70AFA9954DD9`. The
+baseline overlay contained exactly three test-only paths and no production
+changes. No full suite ran.
+
+F361 is selected for Class Analytics full-page baseline parity across summary,
+class-shape, and YTD visible mappings; keep accepted query work unchanged. F361
+is selected, not implemented or verified. Batch 9 is complete; Batch 10 is
+active. Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial.
