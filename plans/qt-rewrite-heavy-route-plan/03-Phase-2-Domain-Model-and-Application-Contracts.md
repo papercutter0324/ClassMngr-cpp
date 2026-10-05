@@ -18,14 +18,10 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-05
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F342 is selected to narrow the Sub Prep roster-output
-  teacher-profile batch to teacher ID and the four consumed display fields:
-  EN/KR names, preferred name, and preferred romanization. Preserve per-ID
-  failure entries, returned order and identity, output fallback labels, and
-  one statement. Focused target:
-  `NextPlatformApplicationServicesSubPrepRosterOutputSourcePort`. F342 is
-  selected, not implemented or verified. Batch 8 remains active with F343-F344
-  queued.
+- Current note: F343 is selected for the Schedule Import snapshot class-info
+  projection, preserving classes-then-teachers-then-schedules error precedence.
+  F343 is selected, not implemented or verified. Batch 8 remains active with
+  F344 queued.
 
 ### Slice discovery batches
 
@@ -70,8 +66,9 @@ No other slices were found.
    `f02a7778`).
 3. F341 - My Classes assigned-teacher profile batch projection (accepted;
    commit `71ea53da`).
-4. F342 - Sub Prep roster-output teacher-profile projection (selected/current).
-5. F343 - Schedule Import snapshot class-info projection (queued).
+4. F342 - Sub Prep roster-output teacher-profile projection (accepted;
+   commit `fe190a1a`).
+5. F343 - Schedule Import snapshot class-info projection (selected/current).
 6. F344 - Remove redundant compatibility-service availability gates in
    migrated Classes/My Classes (queued).
 
@@ -79,10 +76,8 @@ No other slices were found.
 
 #### Active batch: Batch 8
 
-1. F342 - Selected/current: narrow the Sub Prep roster-output teacher-profile
-   batch to consumed fields.
-2. F343 - Queued: narrow Schedule Import snapshot class-info projection.
-3. F344 - Queued: remove redundant compatibility-service availability gates
+1. F343 - Selected/current: Schedule Import snapshot class-info projection.
+2. F344 - Queued: remove redundant compatibility-service availability gates
    in migrated Classes/My Classes pages.
 
 #### F299 completeness audit checkpoint
@@ -245,26 +240,20 @@ No new v2 production path depends on DataService, MainWindow, PageManager, or a 
 
 Earlier verified slices and cumulative exit-gate snapshots are archived in the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 
-## Latest Progress Update - 2026-10-05 (F341 accepted; F342 selected)
+## Latest Progress Update - 2026-10-05 (F342 accepted; F343 selected)
 
-F341, committed as `71ea53da` (`Phase2 - Narrow My Classes teacher profile
-batch (F341)`), adds a Qt-free 12-field My Classes snapshot and a dedicated
-repository batch read with metrics. Teacher ID remains separate. The snapshot
-covers the page's consumed fields, including preferred name/romanization and
-room; it omits only birthday and phone. Generic `loadTeacherProfileRecords()`
-remains unchanged. Results preserve batch order and identity, per-teacher errors,
-visible page values, and missing-profile behavior, including the `Unassigned`
-and `N/A` fallbacks.
+F342, committed as `fe190a1a`, narrows the Sub Prep roster-output
+teacher-profile batch to teacher ID and the four consumed display fields:
+EN/KR names, preferred name, and preferred romanization. It preserves per-ID
+failure entries, returned order and identity, output fallback labels, and the
+one-statement bound.
 
-Fresh independent VS2026 x64/Ninja configure validated 1,334 files; three
-targets built in 324 steps; focused CTest passed 3/3. `git diff --check` exited
-0. No full suite ran; no material gaps were reported.
+Fresh independent VS2026 x64/Ninja configure audited 1,334 files; the focused
+snapshot/source-port target built and CTest passed 1/1. `git diff --check` was
+clean. No full suite ran.
 
-F342 is selected to narrow the Sub Prep roster-output teacher-profile batch to
-teacher ID and EN/KR names, preferred name, and preferred romanization.
-Preserve per-ID failure entries, returned order and identity, output fallback
-labels, and one statement. Focused target:
-`NextPlatformApplicationServicesSubPrepRosterOutputSourcePort`. F342 remains
-selected, not implemented or verified. F343-F344 remain queued. Batch 8 is
-active; Batch 7 is complete. Phase 2 remains In Progress/Open; Gates 1 and 2
-remain Partial.
+F343 is selected for the Schedule Import snapshot class-info projection,
+preserving classes-then-teachers-then-schedules error precedence. F343 remains
+selected, not implemented or verified; F344 remains queued. Batch 8 is active;
+Batch 7 is complete. Phase 2 remains In Progress/Open; Gates 1 and 2 remain
+Partial.

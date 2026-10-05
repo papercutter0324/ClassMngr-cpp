@@ -63,11 +63,12 @@
   accepted; F336 (one-column Selected Class Grade read), F337 (reuse the F332
   class-details reader for Class Details validation context), F338 (move the
   import-dialog teacher batch read to v2), F339 (narrow Schedule Testing
-  class choices), F340 (narrow Sub Prep roster schedule reads), and F341
-  (narrow My Classes assigned-teacher profile batch) are accepted; F342
-  (narrow Sub Prep roster-output teacher profiles) is selected. Batch 6 is
-  complete; Batch 7 (F337-F338) is complete; Batch 8 (F339-F344) remains
-  active, with F342 selected and F343-F344 queued.
+  class choices), F340 (narrow Sub Prep roster schedule reads), F341 (narrow
+  My Classes assigned-teacher profile batch), and F342 (narrow Sub Prep
+  roster-output teacher profiles) are accepted; F343 (narrow Schedule Import
+  snapshot class-info projection) is selected. Batch 6 is complete; Batch 7
+  (F337-F338) is complete; Batch 8 (F339-F344) remains active, with F343
+  selected and F344 queued.
   Gates 1 and 2 remain Partial, with broader feature
   migration, parity, and 96-class Release memory evidence still open.
   See the

@@ -12092,3 +12092,21 @@ labels, and one statement. Focused target:
 selected, not implemented or verified. F343-F344 remain queued. Batch 8 is
 active; Batch 7 is complete. Phase 2 remains In Progress/Open; Gates 1 and 2
 remain Partial.
+
+### F342 accepted / F343 selected - 2026-10-05
+
+F342, committed as `fe190a1a`, narrows the Sub Prep roster-output
+teacher-profile batch to teacher ID and the four consumed display fields:
+EN/KR names, preferred name, and preferred romanization. It preserves per-ID
+failure entries, returned order and identity, output fallback labels, and the
+one-statement bound.
+
+Fresh independent VS2026 x64/Ninja configure audited 1,334 files; the focused
+snapshot/source-port target built and CTest passed 1/1. `git diff --check` was
+clean. No full suite ran.
+
+F343 is selected for the Schedule Import snapshot class-info projection,
+preserving classes-then-teachers-then-schedules error precedence. F343 remains
+selected, not implemented or verified; F344 remains queued. Batch 8 is active;
+Batch 7 is complete. Phase 2 remains In Progress/Open; Gates 1 and 2 remain
+Partial.
