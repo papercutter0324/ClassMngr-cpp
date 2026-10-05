@@ -2483,6 +2483,12 @@ ClassInfoRepository::subPrepRosterOutputClassInfoBatchReadMetrics() const noexce
     return m_subPrepRosterOutputClassInfoBatchReadMetrics;
 }
 
+const SubPrepRosterOutputScheduleBatchReadMetrics&
+ClassInfoRepository::subPrepRosterOutputScheduleBatchReadMetrics() const noexcept
+{
+    return m_subPrepRosterOutputScheduleBatchReadMetrics;
+}
+
 const RosterPrintClassInfoBatchReadMetrics&
 ClassInfoRepository::rosterPrintClassInfoBatchReadMetrics() const noexcept
 {
@@ -3229,6 +3235,196 @@ Result<QList<ClassInfo>> ClassInfoRepository::loadClassInfosForScheduleScope(
     }
 
     return infos;
+}
+
+Result<QList<SubPrepRosterOutputScheduleReadRecord>>
+ClassInfoRepository::loadSubPrepRosterOutputScheduleRecords(
+    const QList<int>& classIds,
+    const QStringList& selectedDays,
+    const ScheduleType type,
+    const int maxMeetingsPerClass,
+    const int maxTotalMeetings
+    )
+{
+    if (classIds.isEmpty() || selectedDays.isEmpty())
+    {
+        return QList<SubPrepRosterOutputScheduleReadRecord>{};
+    }
+
+    ++m_subPrepRosterOutputScheduleBatchReadMetrics.callCount;
+    m_subPrepRosterOutputScheduleBatchReadMetrics.requestedClassCount +=
+        classIds.size();
+
+    if (type != ScheduleType::Regular && type != ScheduleType::Intensive)
+    {
+        return std::unexpected(
+            QObject::tr("Loading scoped Sub Prep roster-output schedule failed: invalid schedule type.")
+            );
+    }
+
+    if (maxMeetingsPerClass < 0
+        || maxMeetingsPerClass == std::numeric_limits<int>::max()
+        || maxTotalMeetings < 0
+        || maxTotalMeetings == std::numeric_limits<int>::max())
+    {
+        return std::unexpected(
+            QObject::tr("Loading scoped Sub Prep roster-output schedule failed: invalid meeting limit.")
+            );
+    }
+
+    QSet<int> seenClassIds;
+    QStringList classIdValues;
+    QStringList requestedIds;
+    classIdValues.reserve(classIds.size());
+    requestedIds.reserve(classIds.size());
+    for (const int classId : classIds)
+    {
+        if (classId <= 0 || seenClassIds.contains(classId))
+        {
+            return std::unexpected(
+                QObject::tr(
+                    "Loading scoped Sub Prep roster-output schedule failed: class identifiers must be positive and unique."
+                    )
+                );
+        }
+
+        seenClassIds.insert(classId);
+        const QString value = QString::number(classId);
+        classIdValues.append(value);
+        requestedIds.append(value);
+    }
+
+    static const QStringList validDays{
+        QStringLiteral("Monday"),
+        QStringLiteral("Tuesday"),
+        QStringLiteral("Wednesday"),
+        QStringLiteral("Thursday"),
+        QStringLiteral("Friday"),
+        QStringLiteral("Saturday"),
+        QStringLiteral("Sunday")
+    };
+    QSet<QString> seenDays;
+    for (const QString& day : selectedDays)
+    {
+        if (!validDays.contains(day) || seenDays.contains(day))
+        {
+            return std::unexpected(
+                QObject::tr(
+                    "Loading scoped Sub Prep roster-output schedule failed: selected weekdays must be valid and unique."
+                    )
+                );
+        }
+        seenDays.insert(day);
+    }
+
+    QStringList dayPlaceholders;
+    dayPlaceholders.fill(QStringLiteral("?"), selectedDays.size());
+
+    const QString timesTable = type == ScheduleType::Regular
+        ? QStringLiteral("class_times")
+        : QStringLiteral("class_intensive_times");
+    const QString queryText = QStringLiteral(R"(
+        WITH scoped_times AS (
+            SELECT
+                times.class_id,
+                times.id,
+                times.day,
+                times.start_time,
+                times.end_time,
+                assigned_info.teacher_id
+            FROM %1 times
+            INNER JOIN class_info assigned_info
+            ON assigned_info.class_id = times.class_id
+            WHERE times.class_id IN (%2)
+              AND times.day IN (%3)
+        ),
+        ranked_times AS (
+            SELECT
+                class_id,
+                teacher_id,
+                id,
+                day,
+                start_time,
+                end_time,
+                ROW_NUMBER() OVER (
+                    PARTITION BY class_id
+                    ORDER BY id
+                ) AS class_schedule_order,
+                ROW_NUMBER() OVER (
+                    ORDER BY class_id, id
+                ) AS total_schedule_order
+            FROM scoped_times
+        )
+        SELECT
+            class_id AS schedule_class_id,
+            teacher_id,
+            day,
+            start_time,
+            end_time
+        FROM ranked_times
+        WHERE class_schedule_order <= ?
+          AND total_schedule_order <= ?
+        ORDER BY class_id, id
+    )").arg(
+        timesTable,
+        classIdValues.join(QStringLiteral(", ")),
+        dayPlaceholders.join(QStringLiteral(", "))
+        );
+
+    const QString identity = QObject::tr("class ids %1, selected days %2")
+        .arg(requestedIds.join(QStringLiteral(", ")))
+        .arg(selectedDays.join(QStringLiteral(", ")));
+
+    QList<SubPrepRosterOutputScheduleReadRecord> records;
+    QHash<int, qsizetype> indexesByClassId;
+    QSqlQuery query(m_database);
+    query.setForwardOnly(true);
+    query.prepare(queryText);
+    for (const QString& day : selectedDays)
+    {
+        query.addBindValue(day);
+    }
+    query.addBindValue(maxMeetingsPerClass + 1);
+    query.addBindValue(maxTotalMeetings + 1);
+
+    ++m_subPrepRosterOutputScheduleBatchReadMetrics.statementCount;
+    const auto executed = SqlQueryUtils::executePrepared(
+        query,
+        QObject::tr("Loading scoped Sub Prep roster-output schedule"),
+        identity
+        );
+    if (!executed)
+    {
+        return std::unexpected(executed.error().userMessage());
+    }
+
+    while (query.next())
+    {
+        const int classId = query.value(
+            QStringLiteral("schedule_class_id")
+            ).toInt();
+        auto index = indexesByClassId.constFind(classId);
+        if (index == indexesByClassId.cend())
+        {
+            SubPrepRosterOutputScheduleReadRecord record;
+            record.classId = classId;
+            const QVariant teacherId = query.value(
+                QStringLiteral("teacher_id")
+                );
+            record.teacherId = teacherId.isNull() ? -1 : teacherId.toInt();
+            indexesByClassId.insert(classId, records.size());
+            records.append(std::move(record));
+            index = indexesByClassId.constFind(classId);
+        }
+
+        records[*index].meetings.append({
+            query.value(QStringLiteral("day")).toString(),
+            query.value(QStringLiteral("start_time")).toString(),
+            query.value(QStringLiteral("end_time")).toString()
+        });
+    }
+
+    return records;
 }
 
 Result<QList<ClassTeacherAssignment>>

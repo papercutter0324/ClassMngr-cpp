@@ -186,8 +186,9 @@ public:
                 request.mode == Application::ScheduleViewMode::Intensive
                 ? ScheduleType::Intensive
                 : ScheduleType::Regular;
-            const ::Result<QList<ClassInfo>> loadedSchedule =
-                classInfoRepository->loadClassInfosForScheduleScope(
+            const ::Result<QList<SubPrepRosterOutputScheduleReadRecord>>
+                loadedSchedule =
+                classInfoRepository->loadSubPrepRosterOutputScheduleRecords(
                     legacyClassIds,
                     selectedDays,
                     scheduleType,
@@ -196,8 +197,7 @@ public:
                         ),
                     static_cast<int>(
                         Application::kSubPrepPrintSourceMaxMeetings
-                        ),
-                    true
+                        )
                     );
             if (!loadedSchedule)
             {
@@ -214,10 +214,12 @@ public:
                     );
             }
 
-            QHash<int, const ClassInfo*> scheduleByClassId;
+            QHash<int, const SubPrepRosterOutputScheduleReadRecord*>
+                scheduleByClassId;
             scheduleByClassId.reserve(loadedSchedule->size());
             std::size_t totalMeetings = 0;
-            for (const ClassInfo& scheduleInfo : loadedSchedule.value())
+            for (const SubPrepRosterOutputScheduleReadRecord& scheduleInfo :
+                 loadedSchedule.value())
             {
                 if (scheduleInfo.classId <= 0
                     || scheduleByClassId.contains(scheduleInfo.classId))
@@ -229,10 +231,7 @@ public:
                 }
                 scheduleByClassId.insert(scheduleInfo.classId, &scheduleInfo);
 
-                const QList<ClassTime>& meetings =
-                    scheduleType == ScheduleType::Intensive
-                    ? scheduleInfo.intensiveTimes
-                    : scheduleInfo.classTimes;
+                const QList<ClassTime>& meetings = scheduleInfo.meetings;
                 if (meetings.size()
                     > static_cast<qsizetype>(
                         Application::kSubPrepPrintSourceMaxMeetingsPerClass
@@ -473,7 +472,8 @@ public:
                 const SubPrepRosterOutputClassInfoReadRecord& info =
                     loadedClassInfos[scopedClassIndex];
                 ++scopedClassIndex;
-                const ClassInfo& scheduleInfo = *schedule.value();
+                const SubPrepRosterOutputScheduleReadRecord& scheduleInfo =
+                    *schedule.value();
                 if (classroom.id != classId
                     || info.classId != classId
                     || info.teacherId != scheduleInfo.teacherId)
@@ -628,10 +628,7 @@ public:
                     }
                 }
 
-                const QList<ClassTime>& selectedMeetings =
-                    scheduleType == ScheduleType::Intensive
-                    ? scheduleInfo.intensiveTimes
-                    : scheduleInfo.classTimes;
+                const QList<ClassTime>& selectedMeetings = scheduleInfo.meetings;
                 classRecord.meetings.reserve(
                     static_cast<std::size_t>(selectedMeetings.size())
                     );

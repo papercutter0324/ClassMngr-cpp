@@ -193,6 +193,8 @@ private slots:
     void classInfoBatchFailureAbortsSource();
     void classInfoBatchRejectsMissingMetadataRecord();
     void rejectsOutOfBoundRosterAndClassText();
+    void rejectsScheduleMeetingOverflow();
+    void rejectsAggregateMeetingOverflow();
 
 private:
     QTemporaryDir m_directory;
@@ -251,6 +253,14 @@ readsSelectedClassesModeAndRequestedRosterColumns()
     QVERIFY(firstClass > 0);
     QVERIFY(secondClass > 0);
     QVERIFY(outsideSelectedDays > 0);
+    QVERIFY(executeSql(
+        services,
+        QStringLiteral(
+            "INSERT INTO class_times (class_id, day, start_time, end_time) "
+            "VALUES (%1, 'Monday', '12:00 PM', '1:00 PM'), "
+            "(%1, 'Tuesday', '2:00 PM', '3:00 PM')"
+            ).arg(secondClass)
+        ));
     QVERIFY(services.rosterService()->saveRoster(firstClass, rosterWithColumns()));
     QVERIFY(services.rosterService()->saveRoster(secondClass, rosterWithColumns()));
     QVERIFY(services.rosterService()->saveRoster(
@@ -269,6 +279,8 @@ readsSelectedClassesModeAndRequestedRosterColumns()
         classRepository->readMetrics();
     const auto classInfoBatchMetricsBefore =
         classInfoRepository->subPrepRosterOutputClassInfoBatchReadMetrics();
+    const auto scheduleBatchMetricsBefore =
+        classInfoRepository->subPrepRosterOutputScheduleBatchReadMetrics();
     const ScheduleClassInfoReadMetrics scheduleReadMetricsBefore =
         classInfoRepository->scheduleClassInfoReadMetrics();
     TeacherRepository* const teacherRepository = session->teacherRepository();
@@ -318,9 +330,11 @@ readsSelectedClassesModeAndRequestedRosterColumns()
     QCOMPARE(first.wifiPassword, std::string("Teacher WiFi Password"));
     QCOMPARE(first.zoomId, std::string("teacher-zoom-id"));
     QCOMPARE(first.zoomPassword, std::string("teacher-zoom-password"));
-    QCOMPARE(first.meetings.size(), std::size_t(1));
+    QCOMPARE(first.meetings.size(), std::size_t(2));
     QCOMPARE(first.meetings.front().weekday, SubPrepWeekday::Monday);
     QCOMPARE(first.meetings.front().startTime, std::string("11:00 AM"));
+    QCOMPARE(first.meetings.back().weekday, SubPrepWeekday::Monday);
+    QCOMPARE(first.meetings.back().startTime, std::string("12:00 PM"));
     QCOMPARE(
         first.rosterColumns,
         (std::vector<std::string>{"English", "Korean", "Notes"})
@@ -372,6 +386,22 @@ readsSelectedClassesModeAndRequestedRosterColumns()
     QCOMPARE(
         classInfoBatchMetricsAfter.statementCount
             - classInfoBatchMetricsBefore.statementCount,
+        1
+        );
+    const auto scheduleBatchMetricsAfter =
+        classInfoRepository->subPrepRosterOutputScheduleBatchReadMetrics();
+    QCOMPARE(
+        scheduleBatchMetricsAfter.callCount - scheduleBatchMetricsBefore.callCount,
+        1
+        );
+    QCOMPARE(
+        scheduleBatchMetricsAfter.requestedClassCount
+            - scheduleBatchMetricsBefore.requestedClassCount,
+        3
+        );
+    QCOMPARE(
+        scheduleBatchMetricsAfter.statementCount
+            - scheduleBatchMetricsBefore.statementCount,
         1
         );
     QCOMPARE(
@@ -550,6 +580,8 @@ includesUnassignedTeacherAndUsesSelectedMode()
         classRepository->readMetrics();
     const auto classInfoMetricsBefore =
         classInfoRepository->subPrepRosterOutputClassInfoBatchReadMetrics();
+    const auto scheduleMetricsBefore =
+        classInfoRepository->subPrepRosterOutputScheduleBatchReadMetrics();
     const TeacherProfileBatchReadMetrics teacherProfileMetricsBefore =
         teacherRepository->teacherProfileBatchReadMetrics();
 
@@ -563,6 +595,17 @@ includesUnassignedTeacherAndUsesSelectedMode()
     QCOMPARE(
         classInfoRepository->subPrepRosterOutputClassInfoBatchReadMetrics().callCount,
         classInfoMetricsBefore.callCount
+        );
+    const auto scheduleMetricsAfterRegular =
+        classInfoRepository->subPrepRosterOutputScheduleBatchReadMetrics();
+    QCOMPARE(
+        scheduleMetricsAfterRegular.callCount - scheduleMetricsBefore.callCount,
+        1
+        );
+    QCOMPARE(
+        scheduleMetricsAfterRegular.statementCount
+            - scheduleMetricsBefore.statementCount,
+        1
         );
 
     const auto intensive = query.execute(
@@ -590,6 +633,17 @@ includesUnassignedTeacherAndUsesSelectedMode()
         classInfoRepository->subPrepRosterOutputClassInfoBatchReadMetrics().callCount
             - classInfoMetricsBefore.callCount,
         1
+        );
+    const auto scheduleMetricsAfterIntensive =
+        classInfoRepository->subPrepRosterOutputScheduleBatchReadMetrics();
+    QCOMPARE(
+        scheduleMetricsAfterIntensive.callCount - scheduleMetricsBefore.callCount,
+        2
+        );
+    QCOMPARE(
+        scheduleMetricsAfterIntensive.statementCount
+            - scheduleMetricsBefore.statementCount,
+        2
         );
     const TeacherProfileBatchReadMetrics teacherProfileMetricsAfter =
         teacherRepository->teacherProfileBatchReadMetrics();
@@ -759,6 +813,14 @@ activeSessionScheduleReadFailureIsTechnical()
     QVERIFY(openDatabase(services, m_directory));
     QVERIFY(executeSql(services, QStringLiteral("DROP TABLE class_times")));
 
+    DatabaseSession* const session = services.databaseSession();
+    QVERIFY(session);
+    ClassInfoRepository* const classInfoRepository =
+        session->classInfoRepository();
+    QVERIFY(classInfoRepository);
+    const auto scheduleMetricsBefore =
+        classInfoRepository->subPrepRosterOutputScheduleBatchReadMetrics();
+
     ApplicationServicesSubPrepRosterOutputSourcePort port(services);
     const auto result = port.loadSource(requestFor(
         {classId(1)},
@@ -768,6 +830,14 @@ activeSessionScheduleReadFailureIsTechnical()
     QVERIFY(!result);
     QCOMPARE(result.error().code, ErrorCode::Technical);
     QVERIFY(!result.error().message.empty());
+    const auto scheduleMetricsAfter =
+        classInfoRepository->subPrepRosterOutputScheduleBatchReadMetrics();
+    QCOMPARE(scheduleMetricsAfter.callCount - scheduleMetricsBefore.callCount, 1);
+    QCOMPARE(
+        scheduleMetricsAfter.statementCount
+            - scheduleMetricsBefore.statementCount,
+        1
+        );
 }
 
 void NextPlatformApplicationServicesSubPrepRosterOutputSourcePortTests::
@@ -1001,6 +1071,172 @@ rejectsOutOfBoundRosterAndClassText()
     const auto oversizedField = port.loadSource(request);
     QVERIFY(!oversizedField);
     QCOMPARE(oversizedField.error().code, ErrorCode::Validation);
+}
+
+void NextPlatformApplicationServicesSubPrepRosterOutputSourcePortTests::
+rejectsScheduleMeetingOverflow()
+{
+    ApplicationServices services;
+    QVERIFY(openDatabase(services, m_directory));
+    const int classIdValue = createClass(
+        services,
+        QStringLiteral("Schedule meeting overflow"),
+        -1,
+        QStringLiteral("E4"),
+        QStringLiteral("Hercules"),
+        QStringLiteral("Monday"),
+        QStringLiteral("9:00 AM"),
+        QStringLiteral("10:00 AM")
+        );
+    QVERIFY(classIdValue > 0);
+    for (int index = 0; index < 64; ++index)
+    {
+        QVERIFY(executeSql(
+            services,
+            QStringLiteral(
+                "INSERT INTO class_times (class_id, day, start_time, end_time) "
+                "VALUES (%1, 'Monday', '11:00 AM', '12:00 PM')"
+                ).arg(classIdValue)
+            ));
+    }
+
+    DatabaseSession* const session = services.databaseSession();
+    QVERIFY(session);
+    ClassInfoRepository* const classInfoRepository =
+        session->classInfoRepository();
+    QVERIFY(classInfoRepository);
+    const auto scheduleMetricsBefore =
+        classInfoRepository->subPrepRosterOutputScheduleBatchReadMetrics();
+
+    ApplicationServicesSubPrepRosterOutputSourcePort port(services);
+    const auto result = port.loadSource(requestFor(
+        {classId(classIdValue)},
+        {SubPrepWeekday::Monday}
+        ));
+
+    QVERIFY(!result);
+    QCOMPARE(result.error().code, ErrorCode::Validation);
+    const auto scheduleMetricsAfter =
+        classInfoRepository->subPrepRosterOutputScheduleBatchReadMetrics();
+    QCOMPARE(scheduleMetricsAfter.callCount - scheduleMetricsBefore.callCount, 1);
+    QCOMPARE(
+        scheduleMetricsAfter.statementCount
+            - scheduleMetricsBefore.statementCount,
+        1
+        );
+}
+
+void NextPlatformApplicationServicesSubPrepRosterOutputSourcePortTests::
+rejectsAggregateMeetingOverflow()
+{
+    constexpr std::size_t classMeetingLimit =
+        kSubPrepPrintSourceMaxMeetingsPerClass;
+    constexpr std::size_t aggregateMeetingLimit =
+        kSubPrepPrintSourceMaxMeetings;
+    constexpr std::size_t classCount =
+        aggregateMeetingLimit / classMeetingLimit + 1;
+    constexpr std::size_t finalClassMeetingCount =
+        aggregateMeetingLimit % classMeetingLimit + 1;
+    static_assert(classCount <= kSubPrepPrintSourceMaxClassIds);
+
+    ApplicationServices services;
+    QVERIFY(openDatabase(services, m_directory));
+    DatabaseSession* const session = services.databaseSession();
+    QVERIFY(session);
+    ClassInfoRepository* const classInfoRepository =
+        session->classInfoRepository();
+    QVERIFY(classInfoRepository);
+
+    constexpr int firstClassId = 700'000;
+    std::vector<ClassId> selectedClassIds;
+    selectedClassIds.reserve(classCount);
+    QStringList classValues;
+    classValues.reserve(static_cast<qsizetype>(classCount));
+    QStringList classInfoValues;
+    classInfoValues.reserve(static_cast<qsizetype>(classCount));
+    QStringList scheduleValues;
+    scheduleValues.reserve(static_cast<qsizetype>(aggregateMeetingLimit + 1));
+
+    for (std::size_t classIndex = 0; classIndex < classCount; ++classIndex)
+    {
+        const int id = firstClassId + static_cast<int>(classIndex);
+        selectedClassIds.push_back(classId(id));
+        classValues.append(QStringLiteral(
+            "(%1, 'aggregate-overflow-%2')"
+            ).arg(id).arg(classIndex));
+        classInfoValues.append(QStringLiteral("(%1, NULL)").arg(id));
+
+        const std::size_t meetingCount = classIndex + 1 == classCount
+            ? finalClassMeetingCount
+            : classMeetingLimit;
+        for (std::size_t meetingIndex = 0;
+             meetingIndex < meetingCount;
+             ++meetingIndex)
+        {
+            scheduleValues.append(QStringLiteral(
+                "(%1, 'Monday', '9:00 AM', '10:00 AM')"
+                ).arg(id));
+        }
+    }
+
+    QSqlDatabase database = session->database();
+    QVERIFY(database.transaction());
+    QVERIFY(executeSql(
+        services,
+        QStringLiteral("INSERT INTO classes (id, name) VALUES %1")
+            .arg(classValues.join(QStringLiteral(", ")))
+        ));
+    QVERIFY(executeSql(
+        services,
+        QStringLiteral(
+            "INSERT INTO class_info (class_id, teacher_id) VALUES %1"
+            ).arg(classInfoValues.join(QStringLiteral(", ")))
+        ));
+
+    constexpr qsizetype rowsPerStatement = 512;
+    for (qsizetype offset = 0; offset < scheduleValues.size();
+         offset += rowsPerStatement)
+    {
+        const QStringList rows = scheduleValues.mid(
+            offset,
+            rowsPerStatement
+            );
+        QVERIFY(executeSql(
+            services,
+            QStringLiteral(
+                "INSERT INTO class_times (class_id, day, start_time, end_time) "
+                "VALUES %1"
+                ).arg(rows.join(QStringLiteral(", ")))
+            ));
+    }
+    QVERIFY(database.commit());
+
+    const auto scheduleMetricsBefore =
+        classInfoRepository->subPrepRosterOutputScheduleBatchReadMetrics();
+    ApplicationServicesSubPrepRosterOutputSourcePort port(services);
+    const auto result = port.loadSource(requestFor(
+        selectedClassIds,
+        {SubPrepWeekday::Monday}
+        ));
+
+    QVERIFY(!result);
+    QCOMPARE(result.error().code, ErrorCode::Validation);
+    QVERIFY(
+        result.error().message.find("total limit") != std::string::npos
+        );
+    const auto scheduleMetricsAfter =
+        classInfoRepository->subPrepRosterOutputScheduleBatchReadMetrics();
+    QCOMPARE(scheduleMetricsAfter.callCount - scheduleMetricsBefore.callCount, 1);
+    QCOMPARE(
+        scheduleMetricsAfter.requestedClassCount
+            - scheduleMetricsBefore.requestedClassCount,
+        static_cast<int>(classCount)
+        );
+    QCOMPARE(
+        scheduleMetricsAfter.statementCount
+            - scheduleMetricsBefore.statementCount,
+        1
+        );
 }
 
 QTEST_GUILESS_MAIN(NextPlatformApplicationServicesSubPrepRosterOutputSourcePortTests)

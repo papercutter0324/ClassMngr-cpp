@@ -159,6 +159,20 @@ struct SubPrepRosterOutputClassInfoBatchReadMetrics final
     int statementCount = 0;
 };
 
+struct SubPrepRosterOutputScheduleReadRecord final
+{
+    int classId = -1;
+    int teacherId = -1;
+    QList<ClassTime> meetings;
+};
+
+struct SubPrepRosterOutputScheduleBatchReadMetrics final
+{
+    int callCount = 0;
+    int requestedClassCount = 0;
+    int statementCount = 0;
+};
+
 struct ClassesNavigationReadMetrics final
 {
     int metadataStatementCount = 0;
@@ -264,6 +278,14 @@ public:
         loadRosterPrintClassInfoRecords(const QList<int>& classIds);
     [[nodiscard]] Result<QList<SubPrepRosterOutputClassInfoReadRecord>>
         loadSubPrepRosterOutputClassInfoRecords(const QList<int>& classIds);
+    [[nodiscard]] Result<QList<SubPrepRosterOutputScheduleReadRecord>>
+        loadSubPrepRosterOutputScheduleRecords(
+            const QList<int>& classIds,
+            const QStringList& selectedDays,
+            ScheduleType type,
+            int maxMeetingsPerClass,
+            int maxTotalMeetings
+            );
 
     [[nodiscard]] Result<QList<ClassNavigationReadRecord>>
         loadClassesNavigationRecords(const QList<int>& classIds);
@@ -285,6 +307,8 @@ public:
         myClassesClassInformationBatchReadMetrics() const noexcept;
     [[nodiscard]] const SubPrepRosterOutputClassInfoBatchReadMetrics&
         subPrepRosterOutputClassInfoBatchReadMetrics() const noexcept;
+    [[nodiscard]] const SubPrepRosterOutputScheduleBatchReadMetrics&
+        subPrepRosterOutputScheduleBatchReadMetrics() const noexcept;
     [[nodiscard]] const RosterPrintClassInfoBatchReadMetrics&
         rosterPrintClassInfoBatchReadMetrics() const noexcept;
 
@@ -336,6 +360,8 @@ private:
         m_myClassesClassInformationBatchReadMetrics;
     SubPrepRosterOutputClassInfoBatchReadMetrics
         m_subPrepRosterOutputClassInfoBatchReadMetrics;
+    SubPrepRosterOutputScheduleBatchReadMetrics
+        m_subPrepRosterOutputScheduleBatchReadMetrics;
     RosterPrintClassInfoBatchReadMetrics
         m_rosterPrintClassInfoBatchReadMetrics;
 };
