@@ -139,7 +139,7 @@ ClassInfo classInfoFromMyClassesSnapshot(
 }
 
 Teacher teacherFromMyClassesProfile(
-    const ClassMngr::Next::Domain::TeacherProfileFields& fields
+    const ClassMngr::Next::Application::MyClassesTeacherProfileFields& fields
     )
 {
     Teacher teacher;
@@ -150,8 +150,6 @@ Teacher teacherFromMyClassesProfile(
         );
     teacher.preferredName = QString::fromStdU16String(fields.preferredName);
     teacher.roomNumber = QString::fromStdU16String(fields.roomNumber);
-    teacher.birthday = QString::fromStdU16String(fields.birthday);
-    teacher.phoneNumber = QString::fromStdU16String(fields.phoneNumber);
     teacher.internetType = QString::fromStdU16String(fields.internetType);
     teacher.wifiName = QString::fromStdU16String(fields.wifiName);
     teacher.wifiPassword = QString::fromStdU16String(fields.wifiPassword);

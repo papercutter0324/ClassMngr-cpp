@@ -111,12 +111,12 @@ public:
                 );
         }
 
-        Result<QList<TeacherProfileBatchReadRecord>> loaded = [&]()
-            -> Result<QList<TeacherProfileBatchReadRecord>>
+        Result<QList<MyClassesTeacherProfileBatchReadRecord>> loaded = [&]()
+            -> Result<QList<MyClassesTeacherProfileBatchReadRecord>>
         {
             try
             {
-                return repository->loadTeacherProfileRecords(
+                return repository->loadMyClassesTeacherProfileRecords(
                     legacyTeacherIds
                     );
             }
@@ -155,19 +155,19 @@ public:
         entries.reserve(teacherIds.size());
         for (std::size_t index = 0; index < teacherIds.size(); ++index)
         {
-            const TeacherProfileBatchReadRecord& source = loaded->at(
+            const MyClassesTeacherProfileBatchReadRecord& source = loaded->at(
                 static_cast<qsizetype>(index)
                 );
-            if (source.teacherId != legacyTeacherIds.at(
+            if (source.requestedTeacherId != legacyTeacherIds.at(
                     static_cast<qsizetype>(index)))
             {
                 entries.push_back({
                     .teacherId = teacherIds[index],
                     .profile = Domain::Result<
-                        Domain::TeacherProfileFields
+                        Application::MyClassesTeacherProfileFields
                         >::failure(error(
                             Domain::ErrorCode::Validation,
-                            "The Teacher Profile repository returned records in a different identifier order.",
+                            "The My Classes Teacher Profile repository returned records in a different identifier order.",
                             false
                             ))
                 });
@@ -179,22 +179,22 @@ public:
                 entries.push_back({
                     .teacherId = teacherIds[index],
                     .profile = Domain::Result<
-                        Domain::TeacherProfileFields
+                        Application::MyClassesTeacherProfileFields
                         >::failure(repositoryError(source.profile.error()))
                 });
                 continue;
             }
 
-            if (source.profile->id != legacyTeacherIds.at(
+            if (source.profile->teacherId != legacyTeacherIds.at(
                     static_cast<qsizetype>(index)))
             {
                 entries.push_back({
                     .teacherId = teacherIds[index],
                     .profile = Domain::Result<
-                        Domain::TeacherProfileFields
+                        Application::MyClassesTeacherProfileFields
                         >::failure(error(
                             Domain::ErrorCode::Validation,
-                            "The Teacher Profile repository returned a different teacher identifier.",
+                            "The My Classes Teacher Profile repository returned a different teacher identifier.",
                             false
                             ))
                 });
@@ -204,8 +204,9 @@ public:
             entries.push_back({
                 .teacherId = teacherIds[index],
                 .profile = Domain::Result<
-                    Domain::TeacherProfileFields
-                    >::success(profileFieldsFromTeacher(source.profile.value()))
+                    Application::MyClassesTeacherProfileFields
+                    >::success(profileFieldsFromReadFields(
+                        source.profile.value()))
             });
         }
 
@@ -236,26 +237,25 @@ private:
         return parsed;
     }
 
-    [[nodiscard]] static Domain::TeacherProfileFields profileFieldsFromTeacher(
-        const Teacher& teacher
+    [[nodiscard]] static Application::MyClassesTeacherProfileFields
+    profileFieldsFromReadFields(
+        const MyClassesTeacherProfileReadFields& fields
         )
     {
         return {
-            .teacherKr = teacher.teacherKr.toStdU16String(),
-            .teacherEn = teacher.teacherEn.toStdU16String(),
+            .teacherKr = fields.teacherKr.toStdU16String(),
+            .teacherEn = fields.teacherEn.toStdU16String(),
             .preferredRomanization =
-                teacher.preferredRomanization.toStdU16String(),
-            .preferredName = teacher.preferredName.toStdU16String(),
-            .roomNumber = teacher.roomNumber.toStdU16String(),
-            .birthday = teacher.birthday.toStdU16String(),
-            .phoneNumber = teacher.phoneNumber.toStdU16String(),
-            .wifiName = teacher.wifiName.toStdU16String(),
-            .wifiPassword = teacher.wifiPassword.toStdU16String(),
-            .internetType = teacher.internetType.toStdU16String(),
-            .zoomId = teacher.zoomId.toStdU16String(),
-            .zoomPassword = teacher.zoomPassword.toStdU16String(),
-            .projectionType = teacher.projectionType.toStdU16String(),
-            .notes = teacher.notes.toStdU16String()
+                fields.preferredRomanization.toStdU16String(),
+            .preferredName = fields.preferredName.toStdU16String(),
+            .roomNumber = fields.roomNumber.toStdU16String(),
+            .wifiName = fields.wifiName.toStdU16String(),
+            .wifiPassword = fields.wifiPassword.toStdU16String(),
+            .internetType = fields.internetType.toStdU16String(),
+            .zoomId = fields.zoomId.toStdU16String(),
+            .zoomPassword = fields.zoomPassword.toStdU16String(),
+            .projectionType = fields.projectionType.toStdU16String(),
+            .notes = fields.notes.toStdU16String()
         };
     }
 
@@ -299,7 +299,7 @@ private:
             entries.push_back({
                 .teacherId = teacherId,
                 .profile = Domain::Result<
-                    Domain::TeacherProfileFields
+                    Application::MyClassesTeacherProfileFields
                     >::failure(failure)
             });
         }

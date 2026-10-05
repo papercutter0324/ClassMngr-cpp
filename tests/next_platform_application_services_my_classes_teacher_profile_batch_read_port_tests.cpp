@@ -67,14 +67,14 @@ class NextPlatformApplicationServicesMyClassesTeacherProfileBatchReadPortTests
     Q_OBJECT
 
 private slots:
-    void readsFullProfilesInRequestedOrderAndKeepsMissingTeacherFailure();
+    void readsConsumedFieldsInRequestedOrderAndKeepsMissingTeacherFailure();
     void batchSqlFailurePreservesIndependentPerTeacherFailures();
     void emptyInputAvoidsRepositoryWork();
     void reportsUnavailableServicesPerTeacher();
 };
 
 void NextPlatformApplicationServicesMyClassesTeacherProfileBatchReadPortTests::
-readsFullProfilesInRequestedOrderAndKeepsMissingTeacherFailure()
+readsConsumedFieldsInRequestedOrderAndKeepsMissingTeacherFailure()
 {
     QTemporaryDir directory;
     QVERIFY(directory.isValid());
@@ -89,7 +89,9 @@ readsFullProfilesInRequestedOrderAndKeepsMissingTeacherFailure()
     TeacherRepository* const repository = services.databaseSession()
         ->teacherRepository();
     QVERIFY(repository);
-    const TeacherProfileBatchReadMetrics before =
+    const MyClassesTeacherProfileBatchReadMetrics before =
+        repository->myClassesTeacherProfileBatchReadMetrics();
+    const TeacherProfileBatchReadMetrics broadBefore =
         repository->teacherProfileBatchReadMetrics();
 
     Platform::ApplicationServicesMyClassesTeacherProfileBatchReadPort port(
@@ -112,7 +114,7 @@ readsFullProfilesInRequestedOrderAndKeepsMissingTeacherFailure()
 
     QVERIFY(loaded.value()[1].teacherId == requested[1]);
     QVERIFY(loaded.value()[1].profile);
-    const Domain::TeacherProfileFields& fields =
+    const Application::MyClassesTeacherProfileFields& fields =
         loaded.value()[1].profile.value();
     QVERIFY(fields.teacherKr == expected.teacherKr.toStdU16String());
     QVERIFY(fields.teacherEn == expected.teacherEn.toStdU16String());
@@ -120,8 +122,6 @@ readsFullProfilesInRequestedOrderAndKeepsMissingTeacherFailure()
         == expected.preferredRomanization.toStdU16String());
     QVERIFY(fields.preferredName == expected.preferredName.toStdU16String());
     QVERIFY(fields.roomNumber == expected.roomNumber.toStdU16String());
-    QVERIFY(fields.birthday == expected.birthday.toStdU16String());
-    QVERIFY(fields.phoneNumber == expected.phoneNumber.toStdU16String());
     QVERIFY(fields.wifiName == expected.wifiName.toStdU16String());
     QVERIFY(fields.wifiPassword == expected.wifiPassword.toStdU16String());
     QVERIFY(fields.internetType == expected.internetType.toStdU16String());
@@ -130,13 +130,15 @@ readsFullProfilesInRequestedOrderAndKeepsMissingTeacherFailure()
     QVERIFY(fields.projectionType == expected.projectionType.toStdU16String());
     QVERIFY(fields.notes == expected.notes.toStdU16String());
 
-    const TeacherProfileBatchReadMetrics after =
-        repository->teacherProfileBatchReadMetrics();
+    const MyClassesTeacherProfileBatchReadMetrics after =
+        repository->myClassesTeacherProfileBatchReadMetrics();
     QCOMPARE(after.callCount, before.callCount + 1);
     QCOMPARE(after.requestedTeacherCount, before.requestedTeacherCount + 2);
     QCOMPARE(after.statementCount, before.statementCount + 1);
-    QCOMPARE(after.fallbackSingleReadCount,
-             before.fallbackSingleReadCount);
+    const TeacherProfileBatchReadMetrics broadAfter =
+        repository->teacherProfileBatchReadMetrics();
+    QCOMPARE(broadAfter.callCount, broadBefore.callCount);
+    QCOMPARE(broadAfter.statementCount, broadBefore.statementCount);
 }
 
 void NextPlatformApplicationServicesMyClassesTeacherProfileBatchReadPortTests::
@@ -150,8 +152,8 @@ batchSqlFailurePreservesIndependentPerTeacherFailures()
     TeacherRepository* const repository = services.databaseSession()
         ->teacherRepository();
     QVERIFY(repository);
-    const TeacherProfileBatchReadMetrics before =
-        repository->teacherProfileBatchReadMetrics();
+    const MyClassesTeacherProfileBatchReadMetrics before =
+        repository->myClassesTeacherProfileBatchReadMetrics();
 
     QSqlQuery dropTeachers(services.databaseSession()->database());
     QVERIFY2(dropTeachers.exec(QStringLiteral("DROP TABLE teachers")),
@@ -177,13 +179,11 @@ batchSqlFailurePreservesIndependentPerTeacherFailures()
         QVERIFY(!loaded.value()[index].profile.error().message.empty());
     }
 
-    const TeacherProfileBatchReadMetrics after =
-        repository->teacherProfileBatchReadMetrics();
+    const MyClassesTeacherProfileBatchReadMetrics after =
+        repository->myClassesTeacherProfileBatchReadMetrics();
     QCOMPARE(after.callCount, before.callCount + 1);
     QCOMPARE(after.requestedTeacherCount, before.requestedTeacherCount + 2);
     QCOMPARE(after.statementCount, before.statementCount + 1);
-    QCOMPARE(after.fallbackSingleReadCount,
-             before.fallbackSingleReadCount + 2);
 }
 
 void NextPlatformApplicationServicesMyClassesTeacherProfileBatchReadPortTests::
@@ -196,8 +196,8 @@ emptyInputAvoidsRepositoryWork()
     TeacherRepository* const repository = services.databaseSession()
         ->teacherRepository();
     QVERIFY(repository);
-    const TeacherProfileBatchReadMetrics before =
-        repository->teacherProfileBatchReadMetrics();
+    const MyClassesTeacherProfileBatchReadMetrics before =
+        repository->myClassesTeacherProfileBatchReadMetrics();
 
     Platform::ApplicationServicesMyClassesTeacherProfileBatchReadPort port(
         services
@@ -206,13 +206,11 @@ emptyInputAvoidsRepositoryWork()
 
     QVERIFY(loaded);
     QVERIFY(loaded.value().empty());
-    const TeacherProfileBatchReadMetrics after =
-        repository->teacherProfileBatchReadMetrics();
+    const MyClassesTeacherProfileBatchReadMetrics after =
+        repository->myClassesTeacherProfileBatchReadMetrics();
     QCOMPARE(after.callCount, before.callCount);
     QCOMPARE(after.requestedTeacherCount, before.requestedTeacherCount);
     QCOMPARE(after.statementCount, before.statementCount);
-    QCOMPARE(after.fallbackSingleReadCount,
-             before.fallbackSingleReadCount);
 }
 
 void NextPlatformApplicationServicesMyClassesTeacherProfileBatchReadPortTests::

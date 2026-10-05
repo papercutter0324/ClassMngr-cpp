@@ -96,6 +96,36 @@ struct TeacherProfileBatchReadMetrics final
     int fallbackSingleReadCount = 0;
 };
 
+struct MyClassesTeacherProfileReadFields final
+{
+    int teacherId = -1;
+    QString teacherKr;
+    QString teacherEn;
+    QString preferredRomanization;
+    QString preferredName;
+    QString roomNumber;
+    QString wifiName;
+    QString wifiPassword;
+    QString internetType;
+    QString zoomId;
+    QString zoomPassword;
+    QString projectionType;
+    QString notes;
+};
+
+struct MyClassesTeacherProfileBatchReadRecord final
+{
+    int requestedTeacherId = -1;
+    Result<MyClassesTeacherProfileReadFields> profile;
+};
+
+struct MyClassesTeacherProfileBatchReadMetrics final
+{
+    int callCount = 0;
+    int requestedTeacherCount = 0;
+    int statementCount = 0;
+};
+
 class TeacherRepository
 {
 public:
@@ -128,6 +158,10 @@ public:
         loadTeacherProfileRecords(const QList<int>& teacherIds);
     [[nodiscard]] const TeacherProfileBatchReadMetrics&
         teacherProfileBatchReadMetrics() const noexcept;
+    [[nodiscard]] Result<QList<MyClassesTeacherProfileBatchReadRecord>>
+        loadMyClassesTeacherProfileRecords(const QList<int>& teacherIds);
+    [[nodiscard]] const MyClassesTeacherProfileBatchReadMetrics&
+        myClassesTeacherProfileBatchReadMetrics() const noexcept;
 
     [[nodiscard]] Result<QList<Teacher>> getAllTeachers();
     [[nodiscard]] Result<QList<ScheduleImportTeacherReadRecord>>
@@ -152,4 +186,6 @@ private:
     ScheduleImportTeacherReadMetrics m_scheduleImportTeacherReadMetrics;
     TeacherDisplayNameBatchReadMetrics m_teacherDisplayNameBatchReadMetrics;
     TeacherProfileBatchReadMetrics m_teacherProfileBatchReadMetrics;
+    MyClassesTeacherProfileBatchReadMetrics
+        m_myClassesTeacherProfileBatchReadMetrics;
 };

@@ -422,22 +422,20 @@ assignedTeacherProfileProjectsAllConsumedUtf16Fields()
     TeacherRepository* const teacherRepository =
         fixture.services.databaseSession()->teacherRepository();
     QVERIFY(teacherRepository);
-    const TeacherProfileBatchReadMetrics beforeProfiles =
-        teacherRepository->teacherProfileBatchReadMetrics();
+    const MyClassesTeacherProfileBatchReadMetrics beforeProfiles =
+        teacherRepository->myClassesTeacherProfileBatchReadMetrics();
     MyClassesPage page(&fixture.services);
     page.resize(900, 700);
     page.refresh();
     page.show();
     QApplication::processEvents();
 
-    const TeacherProfileBatchReadMetrics afterProfiles =
-        teacherRepository->teacherProfileBatchReadMetrics();
+    const MyClassesTeacherProfileBatchReadMetrics afterProfiles =
+        teacherRepository->myClassesTeacherProfileBatchReadMetrics();
     QCOMPARE(afterProfiles.callCount, beforeProfiles.callCount + 1);
     QCOMPARE(afterProfiles.requestedTeacherCount,
              beforeProfiles.requestedTeacherCount + 2);
     QCOMPARE(afterProfiles.statementCount, beforeProfiles.statementCount + 1);
-    QCOMPARE(afterProfiles.fallbackSingleReadCount,
-             beforeProfiles.fallbackSingleReadCount);
 
     NavigationTabWidget* const tabs = classTabsFor(page);
     QVERIFY(tabs);
@@ -738,8 +736,9 @@ classInformationBatchFailureKeepsEachClassInListOrder()
     TeacherRepository* const teacherRepository =
         fixture.services.databaseSession()->teacherRepository();
     QVERIFY(teacherRepository);
-    const TeacherProfileBatchReadMetrics beforeInformationFailureRefresh =
-        teacherRepository->teacherProfileBatchReadMetrics();
+    const MyClassesTeacherProfileBatchReadMetrics
+        beforeInformationFailureRefresh =
+            teacherRepository->myClassesTeacherProfileBatchReadMetrics();
     RosterRepository* const rosterRepository = fixture.services
         .databaseSession()->rosterRepository();
     QVERIFY(rosterRepository);
@@ -749,16 +748,15 @@ classInformationBatchFailureKeepsEachClassInListOrder()
     QCoreApplication::sendPostedEvents(nullptr, QEvent::DeferredDelete);
     QApplication::processEvents();
 
-    const TeacherProfileBatchReadMetrics afterInformationFailureRefresh =
-        teacherRepository->teacherProfileBatchReadMetrics();
+    const MyClassesTeacherProfileBatchReadMetrics
+        afterInformationFailureRefresh =
+            teacherRepository->myClassesTeacherProfileBatchReadMetrics();
     QCOMPARE(afterInformationFailureRefresh.callCount,
              beforeInformationFailureRefresh.callCount);
     QCOMPARE(afterInformationFailureRefresh.requestedTeacherCount,
              beforeInformationFailureRefresh.requestedTeacherCount);
     QCOMPARE(afterInformationFailureRefresh.statementCount,
              beforeInformationFailureRefresh.statementCount);
-    QCOMPARE(afterInformationFailureRefresh.fallbackSingleReadCount,
-             beforeInformationFailureRefresh.fallbackSingleReadCount);
 
     const MyClassesClassInformationBatchReadMetrics afterFailure =
         repository->myClassesClassInformationBatchReadMetrics();
@@ -836,24 +834,22 @@ failedTeacherProfileKeepsClassAndUsesSilentUnassignedFallback()
     TeacherRepository* const teacherRepository =
         fixture.services.databaseSession()->teacherRepository();
     QVERIFY(teacherRepository);
-    const TeacherProfileBatchReadMetrics beforeFirstRefresh =
-        teacherRepository->teacherProfileBatchReadMetrics();
+    const MyClassesTeacherProfileBatchReadMetrics beforeFirstRefresh =
+        teacherRepository->myClassesTeacherProfileBatchReadMetrics();
     MyClassesPage page(&fixture.services);
     page.resize(900, 700);
     page.refresh();
     page.show();
     QApplication::processEvents();
 
-    const TeacherProfileBatchReadMetrics afterFirstRefresh =
-        teacherRepository->teacherProfileBatchReadMetrics();
+    const MyClassesTeacherProfileBatchReadMetrics afterFirstRefresh =
+        teacherRepository->myClassesTeacherProfileBatchReadMetrics();
     QCOMPARE(afterFirstRefresh.callCount,
              beforeFirstRefresh.callCount + 1);
     QCOMPARE(afterFirstRefresh.requestedTeacherCount,
              beforeFirstRefresh.requestedTeacherCount + 1);
     QCOMPARE(afterFirstRefresh.statementCount,
              beforeFirstRefresh.statementCount + 1);
-    QCOMPARE(afterFirstRefresh.fallbackSingleReadCount,
-             beforeFirstRefresh.fallbackSingleReadCount);
 
     NavigationTabWidget* tabs = classTabsFor(page);
     QVERIFY(tabs);
@@ -892,21 +888,19 @@ failedTeacherProfileKeepsClassAndUsesSilentUnassignedFallback()
         }
         );
 
-    const TeacherProfileBatchReadMetrics beforeFailedProfileRefresh =
-        teacherRepository->teacherProfileBatchReadMetrics();
+    const MyClassesTeacherProfileBatchReadMetrics beforeFailedProfileRefresh =
+        teacherRepository->myClassesTeacherProfileBatchReadMetrics();
     page.refresh();
     QApplication::processEvents();
 
-    const TeacherProfileBatchReadMetrics afterFailedProfileRefresh =
-        teacherRepository->teacherProfileBatchReadMetrics();
+    const MyClassesTeacherProfileBatchReadMetrics afterFailedProfileRefresh =
+        teacherRepository->myClassesTeacherProfileBatchReadMetrics();
     QCOMPARE(afterFailedProfileRefresh.callCount,
              beforeFailedProfileRefresh.callCount + 1);
     QCOMPARE(afterFailedProfileRefresh.requestedTeacherCount,
              beforeFailedProfileRefresh.requestedTeacherCount + 1);
     QCOMPARE(afterFailedProfileRefresh.statementCount,
              beforeFailedProfileRefresh.statementCount + 1);
-    QCOMPARE(afterFailedProfileRefresh.fallbackSingleReadCount,
-             beforeFailedProfileRefresh.fallbackSingleReadCount);
 
     QVERIFY(!warningCaptured);
     QCoreApplication::sendPostedEvents(nullptr, QEvent::DeferredDelete);

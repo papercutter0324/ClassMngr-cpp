@@ -18,12 +18,14 @@ Domain::TeacherId teacherId(const std::string& value)
 
 Application::MyClassesTeacherProfileBatchReadEntry successfulEntry(
     const Domain::TeacherId& id,
-    Domain::TeacherProfileFields fields = {}
+    Application::MyClassesTeacherProfileFields fields = {}
     )
 {
     return {
         .teacherId = id,
-        .profile = Domain::Result<Domain::TeacherProfileFields>::success(
+        .profile = Domain::Result<
+            Application::MyClassesTeacherProfileFields
+            >::success(
             std::move(fields)
             )
     };
@@ -88,14 +90,12 @@ preservesOrderedPerTeacherSuccessAndFailure()
     const std::vector<Domain::TeacherId> requested{
         teacherId("42"), teacherId("7"), teacherId("100")
     };
-    Domain::TeacherProfileFields fields{
+    Application::MyClassesTeacherProfileFields fields{
         .teacherKr = u"\uD55C\uAD6D\uC5B4",
         .teacherEn = u"English teacher",
         .preferredRomanization = u"Romanized name",
         .preferredName = u"Preferred name",
         .roomNumber = u"Room 12",
-        .birthday = u"03-14",
-        .phoneNumber = u"010-1234-5678",
         .wifiName = u"Class WiFi",
         .wifiPassword = u"WiFi password",
         .internetType = u"Both",
@@ -108,7 +108,9 @@ preservesOrderedPerTeacherSuccessAndFailure()
         successfulEntry(requested[0], fields),
         {
             .teacherId = requested[1],
-            .profile = Domain::Result<Domain::TeacherProfileFields>::failure({
+            .profile = Domain::Result<
+                Application::MyClassesTeacherProfileFields
+                >::failure({
                 .code = Domain::ErrorCode::Technical,
                 .message = "teacher 7 could not be read",
                 .recoverable = false
