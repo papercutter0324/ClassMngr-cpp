@@ -72,6 +72,10 @@ readsSelectedClassGradeFromActiveRepository()
     QVERIFY(result);
     QVERIFY(result.value().classId == typedClassId(id));
     QVERIFY(result.value().classGrade == " M2 ");
+    const auto& metrics = services.databaseSession()
+        ->classInfoRepository()->selectedClassGradeReadMetrics();
+    QCOMPARE(metrics.callCount, 1);
+    QCOMPARE(metrics.statementCount, 1);
 }
 
 void NextPlatformApplicationServicesSelectedClassGradeReadPortTests::
@@ -97,14 +101,27 @@ preservesMissingOrEmptyGrade()
     QVERIFY(services.databaseSession()->classInfoRepository()
         ->saveClassInfo(emptyInfo));
 
+    QSqlQuery query(services.databaseSession()->database());
+    query.prepare(QStringLiteral(
+        "DELETE FROM class_info WHERE class_id = ?"
+        ));
+    query.addBindValue(missingId);
+    QVERIFY2(query.exec(), qPrintable(query.lastError().text()));
+
     Platform::ApplicationServicesSelectedClassGradeReadPort port(services);
     const auto missing = port.readSelectedClassGrade(typedClassId(missingId));
     const auto empty = port.readSelectedClassGrade(typedClassId(emptyId));
 
     QVERIFY(missing);
     QVERIFY(empty);
+    QVERIFY(missing.value().classId == typedClassId(missingId));
+    QVERIFY(empty.value().classId == typedClassId(emptyId));
     QVERIFY(missing.value().classGrade.empty());
     QVERIFY(empty.value().classGrade.empty());
+    const auto& metrics = services.databaseSession()
+        ->classInfoRepository()->selectedClassGradeReadMetrics();
+    QCOMPARE(metrics.callCount, 2);
+    QCOMPARE(metrics.statementCount, 2);
 }
 
 void NextPlatformApplicationServicesSelectedClassGradeReadPortTests::
@@ -154,7 +171,7 @@ repositoryFailureIsReturned()
     QVERIFY(id > 0);
 
     QSqlQuery query(services.databaseSession()->database());
-    QVERIFY2(query.exec(QStringLiteral("DROP TABLE class_times")),
+    QVERIFY2(query.exec(QStringLiteral("DROP TABLE class_info")),
              qPrintable(query.lastError().text()));
 
     Platform::ApplicationServicesSelectedClassGradeReadPort port(services);
@@ -162,6 +179,8 @@ repositoryFailureIsReturned()
 
     QVERIFY(!result);
     QCOMPARE(result.error().code, Domain::ErrorCode::Technical);
+    QVERIFY(result.error().message.find("Loading class information")
+        != std::string::npos);
 }
 
 QTEST_MAIN(NextPlatformApplicationServicesSelectedClassGradeReadPortTests)

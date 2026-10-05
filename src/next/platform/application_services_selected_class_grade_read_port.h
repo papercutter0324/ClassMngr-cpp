@@ -62,11 +62,14 @@ public:
                 );
         }
 
-        Result<ClassInfo> source = [&]() -> Result<ClassInfo>
+        Result<SelectedClassGradeReadRecord> source = [&]()
+            -> Result<SelectedClassGradeReadRecord>
         {
             try
             {
-                return repository->loadClassInfo(*legacyClassId);
+                return repository->loadSelectedClassGradeRecord(
+                    *legacyClassId
+                    );
             }
             catch (const std::exception&)
             {

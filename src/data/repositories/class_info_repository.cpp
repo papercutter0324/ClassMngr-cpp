@@ -730,6 +730,48 @@ ClassInfoRepository::loadScheduleEditorClassInfoRecord(const int classId)
     return record;
 }
 
+Result<SelectedClassGradeReadRecord>
+ClassInfoRepository::loadSelectedClassGradeRecord(const int classId)
+{
+    ++m_selectedClassGradeReadMetrics.callCount;
+    if (classId <= 0)
+    {
+        return std::unexpected(
+            QObject::tr("Loading class information failed: invalid class id %1.")
+                .arg(classId)
+            );
+    }
+
+    SelectedClassGradeReadRecord record;
+    record.classId = classId;
+
+    QSqlQuery query(m_database);
+    query.prepare(R"(
+        SELECT class_grade
+        FROM class_info
+        WHERE class_id = ?
+    )");
+    query.addBindValue(classId);
+
+    ++m_selectedClassGradeReadMetrics.statementCount;
+    const auto loaded = SqlQueryUtils::executePrepared(
+        query,
+        QObject::tr("Loading class information"),
+        QObject::tr("class id %1").arg(classId)
+        );
+    if (!loaded)
+    {
+        return std::unexpected(loaded.error().userMessage());
+    }
+
+    if (query.next())
+    {
+        record.classGrade = query.value("class_grade").toString();
+    }
+
+    return record;
+}
+
 Result<ClassPageDetailsReadRecord> ClassInfoRepository::loadClassPageDetails(
     const int classId
     )
@@ -2415,6 +2457,12 @@ const ScheduleEditorClassInfoReadMetrics&
 ClassInfoRepository::scheduleEditorClassInfoReadMetrics() const noexcept
 {
     return m_scheduleEditorClassInfoReadMetrics;
+}
+
+const SelectedClassGradeReadMetrics&
+ClassInfoRepository::selectedClassGradeReadMetrics() const noexcept
+{
+    return m_selectedClassGradeReadMetrics;
 }
 
 const ClassSubtitleBatchReadMetrics&

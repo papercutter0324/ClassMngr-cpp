@@ -81,6 +81,12 @@ struct ScheduleEditorClassInfoReadRecord final
     QString roomNumber;
 };
 
+struct SelectedClassGradeReadRecord final
+{
+    int classId = -1;
+    QString classGrade;
+};
+
 struct ClassSubtitleBatchReadRecord final
 {
     int classId = -1;
@@ -189,6 +195,12 @@ struct ScheduleEditorClassInfoReadMetrics final
     int statementCount = 0;
 };
 
+struct SelectedClassGradeReadMetrics final
+{
+    int callCount = 0;
+    int statementCount = 0;
+};
+
 struct ClassSubtitleBatchReadMetrics final
 {
     int callCount = 0;
@@ -234,6 +246,8 @@ public:
         loadClassDetailsPageRecord(int classId);
     [[nodiscard]] Result<ScheduleEditorClassInfoReadRecord>
         loadScheduleEditorClassInfoRecord(int classId);
+    [[nodiscard]] Result<SelectedClassGradeReadRecord>
+        loadSelectedClassGradeRecord(int classId);
     [[nodiscard]] Result<QList<ClassInfo>> loadClassInfoRecords(
         const QList<int>& classIds
         );
@@ -263,6 +277,8 @@ public:
         classDetailsPageReadMetrics() const noexcept;
     [[nodiscard]] const ScheduleEditorClassInfoReadMetrics&
         scheduleEditorClassInfoReadMetrics() const noexcept;
+    [[nodiscard]] const SelectedClassGradeReadMetrics&
+        selectedClassGradeReadMetrics() const noexcept;
     [[nodiscard]] const ClassSubtitleBatchReadMetrics&
         classSubtitleBatchReadMetrics() const noexcept;
     [[nodiscard]] const MyClassesClassInformationBatchReadMetrics&
@@ -314,6 +330,7 @@ private:
     ClassPageDetailsReadMetrics m_classPageDetailsReadMetrics;
     ClassDetailsPageReadMetrics m_classDetailsPageReadMetrics;
     ScheduleEditorClassInfoReadMetrics m_scheduleEditorClassInfoReadMetrics;
+    SelectedClassGradeReadMetrics m_selectedClassGradeReadMetrics;
     ClassSubtitleBatchReadMetrics m_classSubtitleBatchReadMetrics;
     MyClassesClassInformationBatchReadMetrics
         m_myClassesClassInformationBatchReadMetrics;
