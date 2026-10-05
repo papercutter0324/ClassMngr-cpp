@@ -18,9 +18,9 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-05
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F350 is selected for Testing Classes create/update persistence
-  baseline parity. F350 is selected, not implemented or verified. Batch 8 is
-  complete; Batch 9 is active with F351-F353 queued.
+- Current note: F351 is selected for My Classes assigned-teacher display
+  baseline parity. F351 is selected, not implemented or verified. Batch 8 is
+  complete; Batch 9 is active with F352-F353 queued.
 
 ### Slice discovery batches
 
@@ -81,8 +81,8 @@ No other slices were found.
 3. F347 - Class Details save orchestration (accepted; commit `b4bfcbc4`).
 4. F348 - Class Transfer typed apply validation/request (accepted; commit `1af24ebb`).
 5. F349 - Testing Classes delete transition baseline parity evidence (accepted; commit `5c698aa7`).
-6. F350 - Testing Classes create/update persistence baseline parity (selected/current).
-7. F351 - My Classes assigned-teacher display baseline parity.
+6. F350 - Testing Classes create/update persistence baseline parity (accepted; commit `d167a541`).
+7. F351 - My Classes assigned-teacher display baseline parity (selected/current).
 8. F352 - Class Import teacher-choice display baseline parity.
 9. F353 - Sub Prep roster-output semantic baseline parity.
 
@@ -90,9 +90,9 @@ No other slices were found.
 
 #### Active batch: Batch 9
 
-1. F350 - Selected/current: Testing Classes create/update persistence baseline
+1. F351 - Selected/current: My Classes assigned-teacher display baseline
    parity.
-2. F351-F353 - Queued in the recorded order above.
+2. F352-F353 - Queued in the recorded order above.
 
 #### F299 completeness audit checkpoint
 
@@ -254,23 +254,27 @@ No new v2 production path depends on DataService, MainWindow, PageManager, or a 
 
 Earlier verified slices and cumulative exit-gate snapshots are archived in the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 
-## Latest Progress Update - 2026-10-05 (F349 accepted; F350 selected)
+## Latest Progress Update - 2026-10-05 (F350 accepted; F351 selected)
 
-F349, committed as
-`5c698aa71dc25d20d978ce0dc3ad16d6644b3141`, records Testing Classes clean-delete
-baseline parity. The current and pinned-baseline paths matched all eight
-fields. A fresh current-source ownership audit covered 1,343 handwritten
-sources; independent fresh build and focused parity, repository, Application,
-and Platform checks passed.
+F350, committed as
+`d167a541bb934c4cfce6115942661dbc73ebc4a6`, records Testing Classes
+create/update persistence baseline parity. Three current and pinned-baseline
+semantic transcripts matched exactly. The fresh owner audit covered 1,344
+handwritten sources. The baseline overlay was restricted to identical
+test/registration changes plus three minimum Qt substitutions.
 
-The existing F147 page-target issue remains a follow-up: cancel/failure slots
-show an extra `Load Teachers` warning because `ScheduleWidgetTestSupport`
-omits `loadTestingTeacherChoiceRecords`. This is outside F349; its target and
-source were unchanged. The F344 baseline ClassesPage CTest stall also remains
-documented in the progress log.
+The independent fresh build and focused semantic parity, repository,
+Application, and Platform checks passed. The current focused CTest passed 6/8;
+F145 and F146 each timed out after 30 seconds because of the same teacher-query
+support gap noted in the existing F147 page-target follow-up, not an F350
+regression. Cancel/failure slots show an extra `Load Teachers` warning because
+`ScheduleWidgetTestSupport` omits `loadTestingTeacherChoiceRecords`. This
+remains a follow-up outside F349/F350; their targets and source were unchanged.
+The F344 baseline ClassesPage CTest stall also remains documented in the
+progress log.
 
-F350 is selected for Testing Classes create/update persistence baseline parity.
-F350 is selected, not implemented or verified. Batch 8 is complete; Batch 9
-is active with F351-F353 queued. Phase 2 remains In Progress/Open; Gates 1 and
+F351 is selected for My Classes assigned-teacher display baseline parity.
+F351 is selected, not implemented or verified. Batch 8 is complete; Batch 9
+is active with F352-F353 queued. Phase 2 remains In Progress/Open; Gates 1 and
 2 remain Partial. Batch 9's parity items are evidence gaps, not established
 functional defects.

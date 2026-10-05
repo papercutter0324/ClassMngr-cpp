@@ -71,11 +71,12 @@
   normalization and validation policy) are accepted; F346 (roster row-transfer
   application workflow) and F347 (Class Details save orchestration) are
   accepted; F348 (Class Transfer typed apply validation/request) is accepted;
-  F349 (Testing Classes delete transition baseline parity evidence) is
-  accepted; F350 (Testing Classes create/update persistence baseline parity)
-  is selected. Batch 6 is complete;
+  F349 (Testing Classes delete transition baseline parity evidence) and F350
+  (Testing Classes create/update persistence baseline parity) are accepted;
+  F351 (My Classes assigned-teacher display baseline parity) is selected.
+  Batch 6 is complete;
   Batch 7 (F337-F338) and Batch 8 (F339-F344) are complete; Batch 9
-  (F345-F353) is active with F350 current and F351-F353 queued.
+  (F345-F353) is active with F351 current and F352-F353 queued.
   Gates 1 and 2 remain Partial, with broader feature
   migration, parity, and 96-class Release memory evidence still open.
   See the

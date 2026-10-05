@@ -12275,3 +12275,25 @@ F350 is selected for Testing Classes create/update persistence baseline parity.
 F350 is selected, not implemented or verified. F351-F353 remain queued in
 order. Batch 8 is complete; Batch 9 is active. Phase 2 remains In Progress/Open;
 Gates 1 and 2 remain Partial.
+
+### F350 accepted / F351 selected - 2026-10-05
+
+F350, committed as
+`d167a541bb934c4cfce6115942661dbc73ebc4a6`, records Testing Classes
+create/update persistence baseline parity. Three current and pinned-baseline
+semantic transcripts matched exactly. The fresh owner audit covered 1,344
+handwritten sources. The baseline overlay was restricted to identical
+test/registration changes plus three minimum Qt substitutions.
+
+The independent fresh build and focused semantic parity, repository,
+Application, and Platform checks passed. The current focused CTest passed 6/8;
+F145 and F146 timed out after 30 seconds because of the same teacher-query
+support gap noted in the F147 page-target follow-up, not an F350 regression.
+Cancel/failure slots have an extra `Load Teachers` warning because
+`ScheduleWidgetTestSupport` omits `loadTestingTeacherChoiceRecords`. This
+remains a follow-up; F349/F350 source and targets were unchanged.
+
+F351 is selected for My Classes assigned-teacher display baseline parity.
+F351 is selected, not implemented or verified. F352-F353 remain queued in
+order. Batch 8 is complete; Batch 9 is active. Phase 2 remains In Progress/Open;
+Gates 1 and 2 remain Partial.
