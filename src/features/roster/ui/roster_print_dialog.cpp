@@ -1,6 +1,5 @@
 #include "features/roster/ui/roster_print_dialog.h"
 
-#include "app/services/feature_services.h"
 #include "core/application_services.h"
 #include "core/utils/sidebar_node_naming.h"
 #include "domain/models/class_info.h"
@@ -500,25 +499,14 @@ void RosterPrintDialog::updateTemplateOptionsVisibility()
 
 void RosterPrintDialog::updateExtraInfoColumns()
 {
-    auto* classService =
-        m_services
-            ? m_services->classService()
-            : nullptr;
-    auto* rosterService =
-        m_services
-            ? m_services->rosterService()
-            : nullptr;
-
     if (
         selectedTemplateId()
             != RosterTemplatePrintService::TemplateId::PerClassWithExtraInfo
         ||
         !m_extraColumnGridLayout
         || !m_extraColumnOptionsWidget
-        || !classService
-        || !classService->isAvailable()
-        || !rosterService
-        || !rosterService->isAvailable()
+        || !m_services
+        || !m_services->hasOpenDatabase()
         )
     {
         updatePreview();
@@ -1303,23 +1291,7 @@ void RosterPrintDialog::updateMinimumWidthForCurrentClassName()
 
 void RosterPrintDialog::loadClasses()
 {
-    if (!m_classList || !m_services)
-    {
-        return;
-    }
-
-    auto* classService = m_services->classService();
-    auto* teacherService = m_services->teacherService();
-    auto* scheduleService = m_services->scheduleService();
-
-    if (
-        !classService
-        || !classService->isAvailable()
-        || !teacherService
-        || !teacherService->isAvailable()
-        || !scheduleService
-        || !scheduleService->isAvailable()
-        )
+    if (!m_classList || !m_services || !m_services->hasOpenDatabase())
     {
         return;
     }

@@ -228,12 +228,14 @@ class RosterPrintDialogTests final : public QObject
 private slots:
     void cleanup();
     void selectedClassListPreservesOrderIdsAndCheckState();
+    void closedDatabaseLeavesClassListEmptyAndSilent();
     void classListReadFailureShowsWarningAndLeavesListEnabledAndEmpty();
     void teacherReadFailureRetainsClassFieldsAndDefaultTeacherFormatting();
     void classFieldsReadFailureUsesDefaultClassFormatting();
     void currentClassOnlyUsesTestingClassRecord();
     void currentClassOnlyDetailsReadFailureIsSilentAndLeavesListEmpty();
     void extraInfoColumnsComeFromSelectedClassRostersAndKeepChecksOnRefresh();
+    void closedDatabasePreservesExtraInfoControlsAndIsSilent();
     void extraInfoColumnUnionKeepsScopeOrderAndFiltersNames();
     void emptyRosterDoesNotDiscardOtherClassesExtraColumns();
     void failedRosterReadProvidesNoExtraInfoColumns();
@@ -243,6 +245,35 @@ private slots:
 void RosterPrintDialogTests::cleanup()
 {
     DialogServices::setUserPromptServiceForTesting(nullptr);
+}
+
+void RosterPrintDialogTests::closedDatabaseLeavesClassListEmptyAndSilent()
+{
+    RosterPrintDialogFixture fixture;
+    QString error;
+    QVERIFY2(fixture.initialize(&error), qPrintable(error));
+    QVERIFY(fixture.services.hasOpenDatabase());
+    fixture.services.closeDatabase();
+    QVERIFY(!fixture.services.hasOpenDatabase());
+
+    FakeUserPromptService prompts;
+    DialogServices::setUserPromptServiceForTesting(&prompts);
+    RosterPrintDialog dialog(
+        &fixture.services,
+        123,
+        RosterTemplatePrintService::Scope::SelectedClasses,
+        RosterPrintDialog::Action::Print
+        );
+
+    QListWidget* const list = classListFor(dialog);
+    QVERIFY(list);
+    QCOMPARE(list->count(), 0);
+    QVERIFY(list->isEnabled());
+    QVERIFY(dialog.selectedClassIds().isEmpty());
+    QVERIFY(prompts.messages.isEmpty());
+    QVERIFY(prompts.asynchronousMessages.isEmpty());
+    QVERIFY(prompts.confirmations.isEmpty());
+    QVERIFY(QApplication::activeModalWidget() == nullptr);
 }
 
 void RosterPrintDialogTests::selectedClassListPreservesOrderIdsAndCheckState()
@@ -1013,6 +1044,77 @@ void RosterPrintDialogTests::failedRosterReadProvidesNoExtraInfoColumns()
 
     QVERIFY(extraColumnLabelsFor(dialog).isEmpty());
     QVERIFY(dialog.selectedExtraColumns().isEmpty());
+    QVERIFY(prompts.messages.isEmpty());
+    QVERIFY(prompts.asynchronousMessages.isEmpty());
+    QVERIFY(prompts.confirmations.isEmpty());
+    QVERIFY(QApplication::activeModalWidget() == nullptr);
+}
+
+void RosterPrintDialogTests::
+closedDatabasePreservesExtraInfoControlsAndIsSilent()
+{
+    RosterPrintDialogFixture fixture;
+    QString error;
+    QVERIFY2(fixture.initialize(&error), qPrintable(error));
+
+    int classId = 0;
+    QVERIFY2(fixture.createClass(
+                 QStringLiteral("Class with extra info"),
+                 QStringLiteral("E4"),
+                 QStringLiteral("Theseus"),
+                 -1,
+                 {},
+                 &classId,
+                 &error
+                 ), qPrintable(error));
+    QVERIFY2(fixture.saveRoster(
+                 classId,
+                 {QStringLiteral("Private Notes")},
+                 &error
+                 ), qPrintable(error));
+
+    RosterPrintDialog dialog(
+        &fixture.services,
+        classId,
+        RosterTemplatePrintService::Scope::CurrentClass,
+        RosterPrintDialog::Action::Print
+        );
+    auto* const templateCombo = dialog.findChild<QComboBox*>(
+        QStringLiteral("templateCombo")
+        );
+    QVERIFY(templateCombo);
+    const int extraInfoIndex = templateCombo->findData(
+        static_cast<int>(
+            RosterTemplatePrintService::TemplateId::PerClassWithExtraInfo
+            )
+        );
+    QVERIFY(extraInfoIndex >= 0);
+    templateCombo->setCurrentIndex(extraInfoIndex);
+
+    const QStringList labelsBefore = extraColumnLabelsFor(dialog);
+    QCOMPARE(labelsBefore, QStringList({QStringLiteral("Private Notes")}));
+    QCheckBox* const privateNotes = extraColumnCheckBoxFor(
+        dialog,
+        QStringLiteral("Private Notes")
+        );
+    QVERIFY(privateNotes);
+    privateNotes->setChecked(true);
+    const QStringList selectionBefore = dialog.selectedExtraColumns();
+    QCOMPARE(selectionBefore, QStringList({QStringLiteral("Private Notes")}));
+
+    FakeUserPromptService prompts;
+    DialogServices::setUserPromptServiceForTesting(&prompts);
+    fixture.services.closeDatabase();
+    QVERIFY(!fixture.services.hasOpenDatabase());
+    QVERIFY(QMetaObject::invokeMethod(
+        &dialog,
+        "updateExtraInfoColumns",
+        Qt::DirectConnection
+        ));
+
+    QCOMPARE(extraColumnLabelsFor(dialog), labelsBefore);
+    QVERIFY(privateNotes->isChecked());
+    QCOMPARE(dialog.selectedExtraColumns(), selectionBefore);
     QVERIFY(prompts.messages.isEmpty());
     QVERIFY(prompts.asynchronousMessages.isEmpty());
     QVERIFY(prompts.confirmations.isEmpty());
