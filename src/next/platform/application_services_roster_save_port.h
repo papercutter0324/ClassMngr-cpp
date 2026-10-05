@@ -4,7 +4,6 @@
 #include "data/database/database_session.h"
 #include "data/repositories/roster_repository.h"
 #include "domain/models/roster.h"
-#include "domain/validation/roster_validator.h"
 #include "next/application/roster_save_use_case.h"
 
 #include <QByteArray>
@@ -19,6 +18,14 @@
 
 namespace ClassMngr::Next::Platform
 {
+
+[[nodiscard]] inline bool rosterSaveCaseInsensitiveEquals(
+    const std::u16string_view left, const std::u16string_view right)
+{
+    return QStringView(left.data(), static_cast<qsizetype>(left.size())).compare(
+        QStringView(right.data(), static_cast<qsizetype>(right.size())),
+        Qt::CaseInsensitive) == 0;
+}
 
 class ApplicationServicesRosterSavePort final
     : public Application::RosterSavePort
@@ -52,7 +59,7 @@ public:
         ) = delete;
 
     [[nodiscard]] Domain::Result<void> saveRoster(
-        const Application::RosterSaveRequest& request
+        const Application::PreparedRosterSaveRequest& request
         ) const override
     {
         const std::optional<int> classId = legacyClassId(
@@ -84,24 +91,9 @@ public:
 
         try
         {
-            const Roster normalized = RosterValidator::normalized(
-                legacyRoster(request.roster)
-                );
-            const ValidationResult validation = RosterValidator::validate(
-                normalized,
-                request.allowQuestionableKoreanNameLengths
-                );
-            if (validation.hasErrors())
-            {
-                return failure(
-                    Domain::ErrorCode::Technical,
-                    toStdString(validationError(validation))
-                    );
-            }
-
             const Status saved = repository->saveRoster(
                 *classId,
-                normalized
+                legacyRoster(request.roster)
                 );
             if (!saved)
             {
@@ -153,10 +145,11 @@ private:
 
     [[nodiscard]] static QString legacyText(const std::u16string& value)
     {
-        return QString::fromUtf16(
-            value.data(),
-            static_cast<qsizetype>(value.size())
-            );
+        QString result;
+        result.reserve(static_cast<qsizetype>(value.size()));
+        for (const char16_t unit : value)
+            result.append(QChar(unit));
+        return result;
     }
 
     [[nodiscard]] static Roster legacyRoster(
@@ -197,27 +190,6 @@ private:
     {
         const QByteArray bytes = value.toUtf8();
         return bytes.toStdString();
-    }
-
-    [[nodiscard]] static QString validationError(
-        const ValidationResult& validation
-        )
-    {
-        QStringList details;
-        for (const ValidationIssue& issue : validation.errors())
-        {
-            QString detail = issue.field.isEmpty()
-                ? issue.code
-                : QStringLiteral("%1: %2").arg(issue.field, issue.code);
-            if (issue.row >= 0 && !issue.field.contains(QChar(u'[')))
-            {
-                detail.prepend(QStringLiteral("row %1, ").arg(issue.row + 1));
-            }
-            details.append(detail);
-        }
-
-        return QStringLiteral("Roster validation failed: %1")
-            .arg(details.join(QStringLiteral("; ")));
     }
 
     [[nodiscard]] static Domain::Result<void> failure(

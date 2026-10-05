@@ -378,6 +378,7 @@ set(CLASSMNGR_FEATURES_SOURCES
     "src/features/roster/ui/roster_column_layout_controller.h"
     "src/features/roster/ui/roster_constants.h"
     "src/features/roster/ui/roster_editor_widget.cpp"
+    "src/features/roster/ui/roster_save_validation_adapter.h"
     "src/features/roster/ui/roster_editor_widget.h"
     "src/features/roster/ui/roster_editor_widget_columns.cpp"
     "src/features/roster/ui/roster_editor_widget_import_print.cpp"

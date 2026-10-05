@@ -3,13 +3,12 @@
 
 #include "core/application_services.h"
 #include "app/services/feature_services.h"
-#include "core/utils/student_name_utils.h"
 #include "features/roster/ui/roster_column_layout_controller.h"
 #include "features/roster/ui/roster_constants.h"
 #include "features/roster/ui/roster_header_view.h"
 #include "features/roster/ui/roster_model.h"
 #include "features/roster/ui/roster_table_view.h"
-#include "domain/validation/roster_validator.h"
+#include "features/roster/ui/roster_save_validation_adapter.h"
 #include "next/application/roster_read_query.h"
 #include "next/application/roster_save_use_case.h"
 #include "next/platform/application_services_roster_read_port.h"
@@ -356,7 +355,8 @@ bool RosterEditorWidget::saveRosterInternal(
         );
     const auto saved = ClassMngr::Next::Application::RosterSaveUseCase::execute(
         request,
-        port
+        port,
+        ClassMngr::Next::Platform::rosterSaveCaseInsensitiveEquals
         );
     if (!saved)
     {
@@ -389,11 +389,11 @@ bool RosterEditorWidget::validateRosterBeforeSave(
     Q_UNUSED(showValidationMessages);
 
     updateRosterValidation();
-    const ValidationResult validation = RosterValidator::validate(
-        RosterValidator::normalized(currentRosterForSave()),
-        confirmQuestionableLengths
-        );
-    if (validation.hasErrors())
+    const auto prepared = ClassMngr::Next::Application::prepareRosterSaveText(
+        applicationRosterSnapshot(currentRosterForSave()),
+        confirmQuestionableLengths,
+        ClassMngr::Next::Platform::rosterSaveCaseInsensitiveEquals);
+    if (prepared.hasErrors())
     {
         focusFirstRosterError();
         return false;
@@ -416,28 +416,23 @@ QStringList RosterEditorWidget::questionableKoreanNameRows() const
         return {};
     }
 
-    const int koreanColumn = m_model->koreanNameColumn();
-    if (koreanColumn < 0)
-    {
-        return {};
-    }
-
     QStringList names;
     const Roster roster = m_model->toRoster();
-    for (int row = 0; row < roster.rows.size(); ++row)
+    const auto prepared = ClassMngr::Next::Application::prepareRosterSaveText(
+        applicationRosterSnapshot(roster), false,
+        ClassMngr::Next::Platform::rosterSaveCaseInsensitiveEquals);
+    for (const auto& issue : prepared.issues)
     {
-        const QString koreanName = roster.rows[row].value(koreanColumn);
-        const auto issues = StudentNameUtils::validateKoreanName(koreanName);
-        if (!issues.contains(StudentNameUtils::ValidationIssue::KoreanTooShort)
-            && !issues.contains(StudentNameUtils::ValidationIssue::KoreanTooLong))
+        if (issue.code != "student_name.korean.too_short"
+            && issue.code != "student_name.korean.too_long")
         {
             continue;
         }
 
         names.append(
             tr("Row %1: %2")
-                .arg(row + 1)
-                .arg(koreanName)
+                .arg(issue.row + 1)
+                .arg(roster.rows.value(issue.row).value(issue.column))
             );
     }
 
@@ -478,8 +473,10 @@ void RosterEditorWidget::updateRosterValidation()
         return;
     }
 
-    const Roster roster = RosterValidator::normalized(currentRosterForSave());
-    const ValidationResult validation = RosterValidator::validate(roster);
+    const auto prepared = ClassMngr::Next::Application::prepareRosterSaveText(
+        applicationRosterSnapshot(currentRosterForSave()), false,
+        ClassMngr::Next::Platform::rosterSaveCaseInsensitiveEquals);
+    const ValidationResult validation = RosterSaveValidationAdapter::validation(prepared);
 
     m_updatingValidation = true;
     m_validationBinder->setValidation(

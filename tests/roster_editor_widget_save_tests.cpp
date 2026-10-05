@@ -153,6 +153,8 @@ private slots:
     void invalidRosterSaveSelectsFirstInvalidCell();
     void autosaveFailureRemainsSilentAndDirty();
     void confirmedInteractiveSaveAllowsQuestionableKoreanNameLength();
+    void rejectedQuestionableLengthKeepsFocusDirtyAndStorage();
+    void literalLeadingBomInNameRemainsInvalid();
     void failedRosterSaveKeepsTestingClassSelection();
     void loadClassPreservesModelNormalizationWidthsAndCleanState();
     void emptyAndFailedReadsKeepBlankRosterAndRefreshOutputCapabilities();
@@ -748,6 +750,8 @@ confirmedInteractiveSaveAllowsQuestionableKoreanNameLength()
     QCOMPARE(prompts.confirmations.size(), 1);
     QCOMPARE(prompts.confirmations.constFirst().title,
         QStringLiteral("Verify Korean Name Lengths"));
+    QCOMPARE(prompts.confirmations.constFirst().acceptText, QStringLiteral("Save Anyway"));
+    QCOMPARE(prompts.confirmations.constFirst().rejectText, QStringLiteral("Go Back"));
 
     const auto persisted = fixture.services.rosterService()->roster(fixture.classId);
     QVERIFY(persisted);
@@ -912,6 +916,78 @@ emptyAndFailedReadsKeepBlankRosterAndRefreshOutputCapabilities()
     QCOMPARE(capabilitiesSpy.count(), 3);
     QVERIFY(!editor.outputCapabilities().printEnabled);
     QVERIFY(!editor.outputCapabilities().saveAsEnabled);
+}
+
+
+void RosterEditorWidgetSaveTests::rejectedQuestionableLengthKeepsFocusDirtyAndStorage()
+{
+    RosterEditorFixture fixture;
+    QString error;
+    QVERIFY2(fixture.initialize(&error), qPrintable(error));
+    FakeUserPromptService prompts;
+    prompts.scriptedChoices.enqueue(PromptChoice::Rejected);
+    ScopedPromptService promptScope(&prompts);
+    RosterEditorWidget editor(&fixture.services);
+    editor.loadClass(Classroom(QStringLiteral("Go Back"), fixture.classId));
+    editor.setSaveMode(SaveMode::Manual);
+    auto* model = editor.findChild<RosterModel*>();
+    auto* table = editor.findChild<RosterTableView*>(QStringLiteral("rosterTable"));
+    QVERIFY(model);
+    QVERIFY(table);
+    QVERIFY(setStudent(model, 0, QStringLiteral("Dana"), QStringLiteral("\uAE40")));
+    const int korean = columnByName(model, QStringLiteral("Korean"));
+    table->setCurrentIndex(model->index(3, 0));
+    QVERIFY(!editor.saveChanges());
+    QVERIFY(editor.hasUnsavedChanges());
+    QCOMPARE(table->currentIndex(), model->index(0, korean));
+    QVERIFY(!model->data(model->index(0, korean), Qt::ToolTipRole).toString().isEmpty());
+    QCOMPARE(prompts.confirmations.size(), 1);
+    const auto& confirmation = prompts.confirmations.constFirst();
+    QCOMPARE(confirmation.title, QStringLiteral("Verify Korean Name Lengths"));
+    QCOMPARE(confirmation.message, QStringLiteral(
+        "These Korean names have 1 or 5+ syllables and may be incorrect:\n"
+        "Row 1: \uAE40\n\nSave them anyway?"));
+    QCOMPARE(confirmation.acceptText, QStringLiteral("Save Anyway"));
+    QCOMPARE(confirmation.rejectText, QStringLiteral("Go Back"));
+    QVERIFY(prompts.messages.isEmpty());
+    const auto stored = fixture.services.rosterService()->roster(fixture.classId);
+    QVERIFY(stored);
+    QVERIFY(stored->rows.isEmpty());
+}
+
+
+void RosterEditorWidgetSaveTests::literalLeadingBomInNameRemainsInvalid()
+{
+    RosterEditorFixture fixture;
+    QString error;
+    QVERIFY2(fixture.initialize(&error), qPrintable(error));
+    FakeUserPromptService prompts;
+    ScopedPromptService promptScope(&prompts);
+    RosterEditorWidget editor(&fixture.services);
+    editor.loadClass(Classroom(QStringLiteral("BOM preservation"), fixture.classId));
+    editor.setSaveMode(SaveMode::Manual);
+    auto* model = editor.findChild<RosterModel*>();
+    auto* table = editor.findChild<RosterTableView*>(QStringLiteral("rosterTable"));
+    QVERIFY(model);
+    QVERIFY(table);
+    const int korean = columnByName(model, QStringLiteral("Korean"));
+    QVERIFY(model->setData(model->index(0, korean), QStringLiteral("\uAE40\uBBFC\uC9C0"), Qt::EditRole));
+    for (const auto bom : {char16_t(0xfeff), char16_t(0xfffe)})
+    {
+        const QString malformed = QString(QChar(bom)) + QStringLiteral("Alice");
+        const int english = columnByName(model, QStringLiteral("English"));
+        QVERIFY(model->setData(model->index(0, english), malformed, Qt::EditRole));
+        QCOMPARE(model->data(model->index(0, english)).toString(), malformed);
+        QVERIFY(!editor.saveChanges());
+        QCOMPARE(table->currentIndex(), model->index(0, english));
+        QVERIFY(editor.hasUnsavedChanges());
+        QVERIFY(!model->data(model->index(0, english), Qt::ToolTipRole).toString().isEmpty());
+    }
+    QVERIFY(prompts.confirmations.isEmpty());
+    QVERIFY(prompts.messages.isEmpty());
+    const auto stored = fixture.services.rosterService()->roster(fixture.classId);
+    QVERIFY(stored);
+    QVERIFY(stored->rows.isEmpty());
 }
 
 QTEST_MAIN(RosterEditorWidgetSaveTests)

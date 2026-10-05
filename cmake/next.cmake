@@ -137,6 +137,7 @@ set(CLASSMNGR_NEXT_APPLICATION_SOURCES
     src/next/application/roster_template_print_source_read_port.h
     src/next/application/roster_template_print_source_read_query.h
     src/next/application/roster_save_use_case.h
+    src/next/application/roster_save_preparation.h
     src/next/application/speaking_evaluation_query.h
     src/next/application/speaking_evaluation_batch_read_query.h
     src/next/application/speaking_evaluation_roster_name_import_plan.h
