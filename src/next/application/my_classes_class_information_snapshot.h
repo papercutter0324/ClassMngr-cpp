@@ -37,10 +37,4 @@ struct MyClassesClassInformationFields final
         ) = default;
 };
 
-struct MyClassesClassInformationSnapshot final
-{
-    Domain::ClassId classId;
-    MyClassesClassInformationFields fields;
-};
-
 } // namespace ClassMngr::Next::Application
