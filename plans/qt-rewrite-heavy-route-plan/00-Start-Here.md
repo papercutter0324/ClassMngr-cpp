@@ -73,11 +73,12 @@
   accepted; F348 (Class Transfer typed apply validation/request) is accepted;
   F349 (Testing Classes delete transition baseline parity evidence), F350
   (Testing Classes create/update persistence baseline parity), F351 (My
-  Classes assigned-teacher display baseline parity), and F352 (Class Import
-  teacher-choice display baseline parity) are accepted; F353 (Sub Prep
-  roster-output semantic baseline parity) is selected. Batch 6 is complete;
-  Batch 7 (F337-F338) and Batch 8 (F339-F344) are complete; Batch 9
-  (F345-F353) is active with F353 current and no queued Batch 9 slices.
+  Classes assigned-teacher display baseline parity), F352 (Class Import
+  teacher-choice display baseline parity), and F353 (Sub Prep roster-output
+  semantic baseline parity) are accepted. Batch 6 is complete;
+  Batch 7 (F337-F338), Batch 8 (F339-F344), and Batch 9 (F345-F353) are
+  complete; Batch 10 (F354-F361) is active with F354 current and F355-F361
+  queued.
   Gates 1 and 2 remain Partial, with broader feature
   migration, parity, and 96-class Release memory evidence still open.
   See the

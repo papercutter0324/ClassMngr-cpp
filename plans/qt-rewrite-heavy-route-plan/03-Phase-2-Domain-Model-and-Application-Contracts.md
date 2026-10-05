@@ -18,9 +18,11 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-05
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F353 is selected for Sub Prep roster-output semantic baseline
-  parity. F353 is selected, not implemented or verified. Batch 8 is complete;
-  Batch 9 is active with F353 current and no queued slices remaining.
+- Current note: F354 is selected for a Class Transfer package-build Application
+  contract, distinct from F348's apply request and F330's repository read
+  batching. Preserve package fields/order/read failures; assume no selection-
+  size bound. F354 is selected, not implemented or verified. Batch 9 is
+  complete; Batch 10 is active with F355-F361 queued.
 
 ### Slice discovery batches
 
@@ -74,7 +76,7 @@ No other slices were found.
 
 No other slices were found.
 
-##### Batch 9
+##### Batch 9 (complete)
 
 1. F345 - App-less roster-save normalization and validation policy (accepted; commit `40625856`).
 2. F346 - Roster row-transfer application workflow (source removal/read/prepare/atomic save; accepted; commit `5435cd0a`).
@@ -84,13 +86,27 @@ No other slices were found.
 6. F350 - Testing Classes create/update persistence baseline parity (accepted; commit `d167a541`).
 7. F351 - My Classes assigned-teacher display baseline parity (accepted; commit `1ecc5b09`).
 8. F352 - Class Import teacher-choice display baseline parity (accepted; commit `96a59df8`).
-9. F353 - Sub Prep roster-output semantic baseline parity (selected/current).
+9. F353 - Sub Prep roster-output semantic baseline parity (accepted; commit `f2bd4e71`).
 
 No other slices were found.
 
-#### Active batch: Batch 9
+##### Batch 10
 
-1. F353 - Selected/current: Sub Prep roster-output semantic baseline parity.
+1. F354 - Class Transfer package-build Application contract; distinct from F348 apply request and F330 repository read batching; preserve package fields/order/read failures, with no assumed selection-size bound.
+2. F355 - Co-teacher assignment purpose-fit persistence boundary; avoid hydrating/rewriting full ClassInfo for teacherId while preserving validation/conflict and unrelated fields.
+3. F356 - Remove Speaking Evaluation compatibility-service availability gates around existing typed roster-name/selected-subtitle reads; preserve closed-session/read-failure behavior.
+4. F357 - Remove Roster Print compatibility gates around existing typed class/teacher/subtitle/extra-column reads; preserve session/errors and keep distinct from F302-F305 batching.
+5. F358 - Remove orphan My Classes single-class information read contract/adapter/tests (no production callers); retain the F291 batch path.
+6. F359 - Retire the unused Schedule Import compatibility helper and stale DataService include; retain the shared review-request type.
+7. F360 - Testing Classes cancel/failure page parity; add the missing `loadTestingTeacherChoiceRecords` test-support read and compare current/baseline warning/page outcomes for F145-F147.
+8. F361 - Class Analytics full-page baseline parity for summary/class-shape/YTD visible mappings; keep accepted query work unchanged.
+
+No other slices were found.
+
+#### Active batch: Batch 10
+
+1. F354 - Selected/current: Class Transfer package-build Application contract.
+2. F355-F361 - Queued in the recorded order above.
 
 #### F299 completeness audit checkpoint
 
@@ -252,21 +268,22 @@ No new v2 production path depends on DataService, MainWindow, PageManager, or a 
 
 Earlier verified slices and cumulative exit-gate snapshots are archived in the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 
-## Latest Progress Update - 2026-10-05 (F352 accepted; F353 selected)
+## Latest Progress Update - 2026-10-05 (F353 accepted; F354 selected)
 
-F352, committed as
-`96a59df84b2a12b6f1d2c197e183c09b56485511`, records Class Import teacher-choice
-display baseline parity. Three scenarios and four data executions produced
-ASCII JSON transcripts that parsed and matched. The current owner audit covered
-1,346 handwritten sources. Current focused CTest passed 4/4 and baseline parity
-passed 1/1. Baseline overlay verification covered 969 files, with identical
-test/registration changes and three minimum Qt substitutions.
+F353, committed as
+`f2bd4e710d23e5a6b4354626f42adbcbe4c9e340`, adds the parity test and CMake
+registration. Fresh VS2026 x64/Ninja Debug configure audited 1,347 handwritten
+sources. Focused current CTest passed 5/5 across parity, package, renderer,
+Application query, and Platform port targets; pinned-baseline parity CTest
+passed 1/1. Three ASCII JSON transcripts parsed and matched; the LF transcript
+SHA-256 is `78f34cf4b268841226673db6ebd151b3a8f3e4c0bcefef61f5c0c23c64df9ba1`.
+The 969-file baseline overlay audit passed with only identical source/registration
+changes and three minimum Qt substitutions. These are focused results; no full
+suite ran.
 
-The F145/F146 teacher-query setup gap remains a follow-up as documented in the
-progress log. These are focused results; no full-suite pass is claimed. Phase 2
-remains In Progress/Open; Gates 1 and 2 remain Partial.
-
-F353 is selected for Sub Prep roster-output semantic baseline parity. F353 is
-selected, not implemented or verified. Batch 8 is complete; Batch 9 is active
-with F353 current and no queued slices remaining. Batch 9's parity items are
-evidence gaps, not established functional defects.
+F354 is selected for a Class Transfer package-build Application contract,
+distinct from F348's apply request and F330's repository read batching.
+Preserve package fields, order, and read failures; assume no selection-size
+bound. F354 is selected, not implemented or verified. Batch 9 is complete;
+Batch 10 is active with F355-F361 queued. Phase 2 remains In Progress/Open;
+Gates 1 and 2 remain Partial.

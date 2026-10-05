@@ -12335,3 +12335,34 @@ is claimed.
 F353 is selected for Sub Prep roster-output semantic baseline parity. F353 is
 selected, not implemented or verified. Batch 9 has no remaining queued slice.
 Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial.
+
+### F353 accepted / Batch 10 recorded; F354 selected - 2026-10-05
+
+F353, committed as
+`f2bd4e710d23e5a6b4354626f42adbcbe4c9e340`, adds the parity test and CMake
+registration. Fresh VS2026 x64/Ninja Debug configure audited 1,347 handwritten
+sources. Focused current CTest passed 5/5 across parity, package, renderer,
+Application query, and Platform port targets; pinned-baseline parity CTest
+passed 1/1. Three ASCII JSON transcripts parsed and matched; the LF transcript
+SHA-256 is `78f34cf4b268841226673db6ebd151b3a8f3e4c0bcefef61f5c0c23c64df9ba1`.
+The 969-file baseline overlay audit passed with only identical source/registration
+changes and three minimum Qt substitutions. Focused evidence only; no full
+suite ran.
+
+Batch 10 candidates are recorded in this order:
+
+1. F354 - Class Transfer package-build Application contract; distinct from F348 apply request and F330 repository read batching; preserve package fields/order/read failures, with no assumed selection-size bound.
+2. F355 - Co-teacher assignment purpose-fit persistence boundary; avoid hydrating/rewriting full ClassInfo for teacherId while preserving validation/conflict and unrelated fields.
+3. F356 - Remove Speaking Evaluation compatibility-service availability gates around existing typed roster-name/selected-subtitle reads; preserve closed-session/read-failure behavior.
+4. F357 - Remove Roster Print compatibility gates around existing typed class/teacher/subtitle/extra-column reads; preserve session/errors and keep distinct from F302-F305 batching.
+5. F358 - Remove orphan My Classes single-class information read contract/adapter/tests (no production callers); retain the F291 batch path.
+6. F359 - Retire the unused Schedule Import compatibility helper and stale DataService include; retain the shared review-request type.
+7. F360 - Testing Classes cancel/failure page parity; add the missing `loadTestingTeacherChoiceRecords` test-support read and compare current/baseline warning/page outcomes for F145-F147.
+8. F361 - Class Analytics full-page baseline parity for summary/class-shape/YTD visible mappings; keep accepted query work unchanged.
+
+No other slices were found.
+
+F354 is selected as the next slice. Preserve package fields/order/read failures
+and assume no selection-size bound. Batch 9 is complete; Batch 10 is active
+with F355-F361 queued. Phase 2 remains In Progress/Open; Gates 1 and 2 remain
+Partial.
