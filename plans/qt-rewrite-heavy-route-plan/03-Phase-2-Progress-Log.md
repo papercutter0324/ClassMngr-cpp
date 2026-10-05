@@ -11926,14 +11926,16 @@ this order:
    unused teacher ID, colors, and notes from the projection while preserving
    the `testing_classes`-to-`classes` inner join, the `class_info` left join,
    order, defaults, and errors.
-2. F340 - Narrow Sub Prep roster-output teacher-profile fields to teacher ID,
-   EN/KR names, preferred name, and romanization; preserve per-ID failures,
-   order, and identity.
-3. F341 - Narrow Sub Prep schedule-scope rows to consumed class ID, teacher ID,
-   and schedule while preserving scope, order, caps, unassigned rows, and
-   missing-information behavior.
-4. F342 - Narrow the My Classes assigned-teacher batch projection to consumed
-   profile fields while retaining identity and per-teacher failures.
+2. F340 - Narrow Sub Prep roster-output schedule-scope rows to class ID,
+   teacher ID, and selected meetings; preserve filters, order, caps,
+   unassigned-teacher inclusion, and INNER JOIN missing-metadata behavior.
+3. F341 - Narrow the Sub Prep roster-output teacher-profile projection to
+   teacher ID, EN/KR names, preferred name, and romanization; preserve package
+   semantics, per-ID failures, order, and identity.
+4. F342 - Narrow the My Classes assigned-teacher batch projection to actual
+   consumed fields: English/Korean, preferred name/romanization, room, internet
+   type, Wi-Fi name/password, projection type, Zoom ID/password, and notes; only
+   birthday and phone are unused.
 5. F343 - Narrow the Schedule Import snapshot class-info projection while
    preserving classes-then-teachers-then-schedules error precedence.
 6. F344 - Remove redundant compatibility-service availability gates from
@@ -12028,3 +12030,42 @@ feasible. Focused target:
 F340 is selected, not implemented. Batch 7 is complete; Batch 8 remains active
 with F341-F344 queued. Phase 2 remains In Progress/Open; Gates 1 and 2 remain
 Partial.
+
+### Batch 8 tracking correction - 2026-10-05
+
+During active selection, review found the F340/F341 descriptions reversed in
+tracking. The recorded candidates now assign F340 to the accepted Sub Prep
+roster-output schedule-scope read and F341 to the next teacher-profile
+projection, aligning slice IDs with source commit `f02a7778`. No Git history
+changed.
+
+### F340 accepted / F341 selected - 2026-10-05
+
+F340, committed as `f02a7778` (`Phase2 - Narrow Sub Prep roster schedule
+reads (F340)`), adds a purpose-fit repository scope read containing only class
+ID, teacher ID, and selected meetings. Sub Prep roster-output uses it; generic
+`loadClassInfosForScheduleScope` and Sub Prep print remain unchanged. The
+reader preserves selected day/type filtering, selected-meeting order,
+unassigned-teacher inclusion, class/teacher identity, per-class and aggregate
+meeting caps, and one statement with metrics.
+
+Both old and new schedule-scope queries use an INNER JOIN to `class_info`, so
+a selected schedule with no class-info row is omitted, so the port succeeds
+with no output for that class. The separate metadata batch reader reports a missing-record
+error if called directly or if metadata disappears after the schedule read.
+
+Tests cover missing-class-info/empty-scope behavior, repository query errors,
+unassigned teachers, filtering/order, per-class overflow, and aggregate
+overflow. Fresh independent VS2026 x64/Ninja configure exited 0 and the source
+ownership audit validated 1,334 handwritten sources. The focused
+`NextPlatformApplicationServicesSubPrepRosterOutputSourcePort` target rebuilt
+and CTest passed 1/1. The aggregate regression adds 16,385 meetings across 257
+classes (each at or below 64) and asserts Validation plus one statement.
+`git diff --check` exited 0. No full suite ran; configure had known nonfatal `vswhere` and line-ending warnings.
+
+F341 is selected for the Sub Prep roster-output teacher-profile batch
+projection. The consumer uses teacher ID, EN/KR names, preferred name, and
+preferred romanization. Preserve package semantics, per-ID failures, order,
+identity, and batch errors. F341 is selected, not implemented or verified.
+Batch 8 remains active with F342-F344 queued. Phase 2 remains In Progress/Open;
+Gates 1 and 2 remain Partial.
