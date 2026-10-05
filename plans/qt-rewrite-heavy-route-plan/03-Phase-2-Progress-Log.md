@@ -12110,3 +12110,22 @@ preserving classes-then-teachers-then-schedules error precedence. F343 remains
 selected, not implemented or verified; F344 remains queued. Batch 8 is active;
 Batch 7 is complete. Phase 2 remains In Progress/Open; Gates 1 and 2 remain
 Partial.
+
+### F343 accepted / F344 selected - 2026-10-05
+
+F343, committed as `50dfdc80`, adds a dedicated Schedule Import snapshot
+projection that omits `font_color` and class-info teacher display names. It
+preserves the three-statement pattern and source precedence; generic
+`loadScheduleClassInfos` remains unchanged.
+
+Fresh independent VS2026 x64/Ninja Debug configure audited 1,334 files. The
+focused `ScheduleImportStateSnapshotPort` target built and CTest passed 1/1.
+Precedence cases are tested separately; independent review confirmed code order
+remains Classes -> Teachers -> ClassSchedules and found no behavior regression.
+`git diff --check` passed. No full suite ran.
+
+F344 is selected to remove redundant compatibility-service availability gates
+from migrated Classes/My Classes pages. Preserve the no-session early return
+and query-failure warnings. F344 is selected, not implemented. Batch 8 remains
+active with F344 current. Phase 2 remains In Progress/Open; Gates 1 and 2 remain
+Partial.

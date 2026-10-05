@@ -18,10 +18,10 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-05
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F343 is selected for the Schedule Import snapshot class-info
-  projection, preserving classes-then-teachers-then-schedules error precedence.
-  F343 is selected, not implemented or verified. Batch 8 remains active with
-  F344 queued.
+- Current note: F344 is selected to remove redundant compatibility-service
+  availability gates from migrated Classes/My Classes pages. Preserve the
+  no-session early return and query-failure warnings. F344 is selected, not
+  implemented. Batch 8 remains active with F344 current.
 
 ### Slice discovery batches
 
@@ -68,17 +68,17 @@ No other slices were found.
    commit `71ea53da`).
 4. F342 - Sub Prep roster-output teacher-profile projection (accepted;
    commit `fe190a1a`).
-5. F343 - Schedule Import snapshot class-info projection (selected/current).
+5. F343 - Schedule Import snapshot class-info projection (accepted; commit
+   `50dfdc80`).
 6. F344 - Remove redundant compatibility-service availability gates in
-   migrated Classes/My Classes (queued).
+   migrated Classes/My Classes (selected/current).
 
 No other slices were found.
 
 #### Active batch: Batch 8
 
-1. F343 - Selected/current: Schedule Import snapshot class-info projection.
-2. F344 - Queued: remove redundant compatibility-service availability gates
-   in migrated Classes/My Classes pages.
+1. F344 - Selected/current: remove redundant compatibility-service availability
+   gates in migrated Classes/My Classes pages.
 
 #### F299 completeness audit checkpoint
 
@@ -240,20 +240,21 @@ No new v2 production path depends on DataService, MainWindow, PageManager, or a 
 
 Earlier verified slices and cumulative exit-gate snapshots are archived in the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 
-## Latest Progress Update - 2026-10-05 (F342 accepted; F343 selected)
+## Latest Progress Update - 2026-10-05 (F343 accepted; F344 selected)
 
-F342, committed as `fe190a1a`, narrows the Sub Prep roster-output
-teacher-profile batch to teacher ID and the four consumed display fields:
-EN/KR names, preferred name, and preferred romanization. It preserves per-ID
-failure entries, returned order and identity, output fallback labels, and the
-one-statement bound.
+F343, committed as `50dfdc80`, adds a dedicated Schedule Import snapshot
+projection that omits `font_color` and class-info teacher display names. It
+preserves the three-statement pattern and source precedence; generic
+`loadScheduleClassInfos` remains unchanged.
 
-Fresh independent VS2026 x64/Ninja configure audited 1,334 files; the focused
-snapshot/source-port target built and CTest passed 1/1. `git diff --check` was
-clean. No full suite ran.
+Fresh independent VS2026 x64/Ninja Debug configure audited 1,334 files. The
+focused `ScheduleImportStateSnapshotPort` target built and CTest passed 1/1.
+Precedence cases are tested separately; independent review confirmed code order
+remains Classes -> Teachers -> ClassSchedules and found no behavior regression.
+`git diff --check` passed. No full suite ran.
 
-F343 is selected for the Schedule Import snapshot class-info projection,
-preserving classes-then-teachers-then-schedules error precedence. F343 remains
-selected, not implemented or verified; F344 remains queued. Batch 8 is active;
-Batch 7 is complete. Phase 2 remains In Progress/Open; Gates 1 and 2 remain
+F344 is selected to remove redundant compatibility-service availability gates
+from migrated Classes/My Classes pages. Preserve the no-session early return
+and query-failure warnings. F344 is selected, not implemented. Batch 8 remains
+active with F344 current. Phase 2 remains In Progress/Open; Gates 1 and 2 remain
 Partial.
