@@ -12174,3 +12174,25 @@ preserving exact Qt normalization, issue order, UI focus/messages, and port
 suppression. F345 is selected, not implemented or verified. F346-F353 remain
 queued in order. Phase 2 remains In Progress/Open; Gates 1 and 2 remain
 Partial.
+
+### F345 accepted / F346 selected - 2026-10-05
+
+F345, committed as
+`40625856d5af8f41fbf951f156300d191658591c`, adds a Qt-free roster-save
+normalization/validation policy over `RosterSnapshot` and the Korean-length
+flag. Invalid snapshots are rejected in Application before the save-port or
+session check; valid snapshots with a closed session still receive the existing
+Platform NotFound. Prepared logical text crosses the port, avoiding two Qt
+decodes. The policy preserves exact Qt normalization, issue order, UI
+focus/messages, and port suppression. Qt 6.12 behavior parity was differentially
+checked for Unicode whitespace/case, malformed UTF-16, structural/cell limits,
+duplicate pairs, Korean flags, and BOM storage.
+
+Fresh VS2026 x64/Ninja Debug configure audited 1,336 handwritten sources;
+three focused targets built and CTest passed 3/3. The standalone Qt-free
+policy compile passed and `git diff --check` was clean. No full suite ran.
+
+F346 is selected for the roster row-transfer application workflow (source
+removal, read, preparation, and atomic save). F346 is selected, not implemented
+or verified. F347-F353 remain queued in order. Batch 8 is complete; Batch 9 is
+active. Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial.

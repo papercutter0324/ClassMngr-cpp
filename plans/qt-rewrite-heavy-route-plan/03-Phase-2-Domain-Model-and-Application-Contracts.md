@@ -18,13 +18,10 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-05
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F345 is selected to extract roster-save normalization and
-  validation into a Qt-free application policy over `RosterSnapshot` and the
-  Korean-length flag. This revisits F171's earlier choice to keep raw-snapshot
-  validation in Platform: the bounded policy is shared by the use case and
-  widget while preserving exact Qt normalization, issue order, UI
-  focus/messages, and port suppression. F345 is selected, not implemented.
-  Batch 8 is complete; Batch 9 is active with F346-F353 queued.
+- Current note: F346 is selected for the roster row-transfer application
+  workflow covering source removal, read, preparation, and atomic save. F346
+  is selected, not implemented. Batch 8 is complete; Batch 9 is active with
+  F347-F353 queued.
 
 ### Slice discovery batches
 
@@ -80,8 +77,8 @@ No other slices were found.
 
 ##### Batch 9
 
-1. F345 - App-less roster-save normalization and validation policy (selected/current).
-2. F346 - Roster row-transfer application workflow (source removal/read/prepare/atomic save).
+1. F345 - App-less roster-save normalization and validation policy (accepted; commit `40625856`).
+2. F346 - Roster row-transfer application workflow (source removal/read/prepare/atomic save; selected/current).
 3. F347 - Class Details save orchestration.
 4. F348 - Class Transfer typed apply validation/request.
 5. F349 - Testing Classes delete transition baseline parity evidence.
@@ -94,9 +91,9 @@ No other slices were found.
 
 #### Active batch: Batch 9
 
-1. F345 - Selected/current: app-less roster-save normalization and validation
-   policy over `RosterSnapshot` plus the Korean-length flag.
-2. F346-F353 - Queued in the recorded order above.
+1. F346 - Selected/current: roster row-transfer application workflow (source
+   removal, read, preparation, and atomic save).
+2. F347-F353 - Queued in the recorded order above.
 
 #### F299 completeness audit checkpoint
 
@@ -258,24 +255,26 @@ No new v2 production path depends on DataService, MainWindow, PageManager, or a 
 
 Earlier verified slices and cumulative exit-gate snapshots are archived in the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 
-## Latest Progress Update - 2026-10-05 (F344 accepted; F345 selected)
+## Latest Progress Update - 2026-10-05 (F345 accepted; F346 selected)
 
-F344, committed as `1bffb008`, replaces the service-level availability gates
-with null-guarded `ApplicationServices::hasOpenDatabase()` checks while
-preserving quiet closed-session behavior. My Classes CTest passed 1/1 and both
-new ClassesPage slots passed. The full ClassesPage CTest stalled in
-`classDetailsAndCoTeacherTabsSeparateTheirSectionCards`; the stall reproduced
-with the old gates restored, so it is recorded as a test limitation rather
-than attributed to F344.
+F345, committed as `40625856d5af8f41fbf951f156300d191658591c`, extracts a
+Qt-free roster-save normalization and validation policy over `RosterSnapshot`
+and the Korean-length flag. Invalid snapshots are rejected in Application
+before the save-port/session check; valid snapshots with a closed session
+retain the existing Platform NotFound. Prepared logical text crosses the port,
+avoiding two Qt decodes. The policy preserves exact Qt normalization, issue
+order, UI focus/messages, and port suppression.
 
-Fresh VS2026 x64/Ninja configure audited 1,334 sources; both targets built and
-`git diff --check` was clean. No full suite ran.
+Qt 6.12 behavior parity was differentially checked for Unicode whitespace and
+case, malformed UTF-16, structural/cell limits, duplicate pairs, Korean flags,
+and BOM storage. Fresh VS2026 x64/Ninja Debug configure audited 1,336
+handwritten sources; three focused targets built, CTest passed 3/3, the
+standalone Qt-free policy compile passed, and `git diff --check` was clean. No
+full suite ran. The F344 baseline ClassesPage CTest stall remains documented
+in the progress log.
 
-F345 is selected from Batch 9 for a Qt-free roster-save normalization and
-validation contract over existing `RosterSnapshot` plus the Korean-length
-flag. This revisits F171's earlier Platform decision and shares the policy
-across use case/widget, preserving exact Qt normalization, issue order, UI
-focus/messages, and port suppression. F345 is selected, not implemented or
-verified. Batch 8 is complete; Batch 9 is active with F346-F353 queued. Phase 2
-remains In Progress/Open; Gates 1 and 2 remain Partial. Batch 9's parity items
-are evidence gaps, not established functional defects.
+F346 is selected for the roster row-transfer application workflow covering
+source removal, read, preparation, and atomic save. F346 is selected, not
+implemented or verified. Batch 8 is complete; Batch 9 is active with F347-F353
+queued. Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial.
+Batch 9's parity items are evidence gaps, not established functional defects.
