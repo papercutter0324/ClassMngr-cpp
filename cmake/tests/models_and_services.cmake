@@ -162,6 +162,17 @@ qt_add_executable(ClassMngrBasePageTests
             WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}"
     )
 
+    classmngr_add_qt_test(
+        NAME SubPrepRosterOutputParity
+        SOURCES
+            tests/sub_prep_roster_output_parity_tests.cpp
+        LIBRARIES
+            Qt6::Test
+            Qt6::Widgets
+            Qt6::Pdf
+        OFFSCREEN
+    )
+
     qt_add_executable(ClassMngrSubPrepPackageServiceTests
         tests/sub_prep_package_service_tests.cpp
         src/core/fontmanager.cpp
