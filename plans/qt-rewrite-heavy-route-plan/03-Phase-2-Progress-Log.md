@@ -11868,3 +11868,26 @@ books, colors, teacher Korean name, and room; white/black color defaults;
 baseline blank teacher fields for missing teacher/class-info; repository error
 mapping; and non-class-info outcomes. This slice is selected, not implemented.
 Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial.
+
+### F335 accepted / F336 selected - 2026-10-05
+
+F335, committed as
+`65696eabe100591a9fd4985e30e7dbd1ab124667`, adds
+`loadScheduleEditorClassInfoRecord()` with one purpose-fit metadata `LEFT JOIN`
+for Schedule Editor. Only the consuming page port uses it, and schedules are
+not read. The projection preserves the requested ID, default colors and blank
+fields, including blank values for missing or dangling left-joined teachers,
+and Technical failure classification.
+
+Tests cover all fields, one-statement metrics, absent-`class_info` defaults,
+dangling teachers, and a dropped metadata table. Fresh VS2026 x64/Ninja Debug
+configure passed the 1,329-file ownership audit; the focused
+`ClassMngrNextPlatformApplicationServicesScheduleEditorClassInfoReadPortTests`
+target built and CTest passed 1/1. `git diff --check` exited 0; no full suite
+ran. Configure had recurring nonfatal `vswhere` and long-path warnings.
+
+F336 is selected to narrow the Selected Class Grade port from
+`loadClassInfo()` to a one-column, one-query read. Preserve requested/canonical
+class ID, grade value, blank success when metadata is missing or empty, and
+Technical/error classification. F336 is selected, not implemented. Phase 2
+remains In Progress/Open; Gates 1 and 2 remain Partial.

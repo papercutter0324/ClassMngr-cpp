@@ -18,13 +18,10 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-05
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F335 is selected for a purpose-fit Schedule Editor
-  class-info projection. Preserve requested/canonical and selected IDs,
-  grade/level, books, colors, teacher Korean name, and room; white/black color
-  defaults; baseline blank teacher fields for missing teacher/class-info;
-  repository error mapping; and non-class-info outcomes. Replace
-  `loadClassInfo()`'s three statements with one purpose-fit `LEFT JOIN`
-  statement. F335 is selected, not implemented.
+- Current note: F336 is selected to narrow Selected Class Grade reads from
+  `loadClassInfo()` to one column in one query. Preserve requested/canonical
+  class ID, grade value, blank success when metadata is missing or empty, and
+  Technical/error classification. F336 is selected, not implemented.
 
 ### Slice discovery batches
 
@@ -54,12 +51,10 @@ Accepted slices are removed from active tracking; their implementation and accep
 
 #### Active batch: Batch 7
 
-1. F335 - Add a one-statement Schedule Editor class-info projection with a
-   `LEFT JOIN`, preserving IDs, consumed fields, defaults, and error mapping.
-2. F336 - Narrow Selected Class Grade reads to the consumed scalar fields.
-3. F337 - Reuse the F332 class-details reader for Class Details validation
+1. F336 - Narrow Selected Class Grade reads to the consumed scalar fields.
+2. F337 - Reuse the F332 class-details reader for Class Details validation
    context.
-4. F338 - Clean up the ClassImportDialog boundary.
+3. F338 - Clean up the ClassImportDialog boundary.
 
 No other slices were found.
 
@@ -223,26 +218,23 @@ No new v2 production path depends on DataService, MainWindow, PageManager, or a 
 
 Earlier verified slices and cumulative exit-gate snapshots are archived in the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 
-## Latest Progress Update - 2026-10-05 (F334 accepted; F335 selected)
+## Latest Progress Update - 2026-10-05 (F335 accepted; F336 selected)
 
-F334, committed as
-`812c61a05835eb5c1bc1fdae5c8820aaf3b78866`, adds
-`ClassDetailsPageReadRecord` using two class-info statements: metadata and a
-tagged `UNION ALL` schedule read ordered by source/id. Only the Class Details
-page port changed. It preserves independent teacher/roster results, missing-
-metadata defaults while retaining schedule rows, and the prior regular and
-intensive visible error labels.
+F335, committed as
+`65696eabe100591a9fd4985e30e7dbd1ab124667`, adds
+`loadScheduleEditorClassInfoRecord()` with one purpose-fit metadata `LEFT JOIN`
+for Schedule Editor; only that consuming page port uses it. It does not read
+schedules. The projection preserves the requested ID, defaults and blank
+fields, including blank values for missing or dangling left-joined teachers,
+and the existing Technical failure classification.
 
-Tests cover two-statement metrics, defaults with schedule rows, field/order
-mapping, and regular/intensive SQL failures with Technical classification and
-independent roster results. Fresh VS2026 x64/Ninja Debug configure passed the
-1,329-file ownership audit; the focused
-`ClassMngrNextPlatformApplicationServicesClassDetailsPageReadPortTests` target
-built and CTest passed 1/1. `git diff --check` was clean; no full suite ran.
-Configure reported nonfatal Visual Studio and long-path notices. Error-label
-selection reads SQLite/Qt error text for the table name; this was verified on
-the current SQLite driver.
+Tests cover all fields, one-statement metrics, absent-`class_info` defaults,
+dangling teachers, and a dropped metadata table. Fresh VS2026 x64/Ninja Debug
+configure passed the 1,329-file ownership audit; the focused
+`ClassMngrNextPlatformApplicationServicesScheduleEditorClassInfoReadPortTests`
+target built and CTest passed 1/1. `git diff --check` exited 0; no full suite
+ran. Configure had recurring nonfatal `vswhere` and long-path warnings.
 
-F335 is selected for the Schedule Editor projection described in the Current
-note; it is not implemented. Phase 2 remains In Progress/Open; Gates 1 and 2
-remain Partial.
+F336 is selected to narrow Selected Class Grade reads as described in the
+Current note; it is not implemented. Phase 2 remains In Progress/Open; Gates 1
+and 2 remain Partial.

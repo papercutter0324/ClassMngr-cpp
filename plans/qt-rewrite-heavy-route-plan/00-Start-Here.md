@@ -59,8 +59,9 @@
   Co-Teacher pages, preserving consumed class/schedule fields and per-page
   read behavior) is accepted; F333 (Class Transfer preview assigned-teacher
   profile reuse) is accepted; F334 (purpose-fit Class Details projection) is
-  accepted. F335 (one-statement Schedule Editor class-info projection) is
-  selected. Batch 6 is complete; Batch 7 (F335-F338) remains active.
+  accepted; F335 (one-statement Schedule Editor class-info projection) is
+  accepted. F336 (one-column Selected Class Grade read) is selected. Batch 6
+  is complete; Batch 7 (F336-F338) remains active.
   Gates 1 and 2 remain Partial, with broader feature
   migration, parity, and 96-class Release memory evidence still open.
   See the
