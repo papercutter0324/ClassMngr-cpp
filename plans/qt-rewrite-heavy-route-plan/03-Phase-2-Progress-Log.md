@@ -12435,3 +12435,25 @@ typed class/teacher/subtitle/extra-column reads. Preserve session and errors,
 and keep this distinct from F302-F305 batching. F357 is selected, not
 implemented or verified. Batch 9 is complete; Batch 10 is active with F358-F361
 queued. Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial.
+
+### F357 accepted / F358 selected - 2026-10-06
+
+F357, committed as
+`10f7060a4bc65757063962abc72e84da78794314` (`Phase2 - Remove Roster Print
+compatibility gates (F357)`), replaces compatibility `FeatureService::isAvailable()`
+gates with direct `ApplicationServices::hasOpenDatabase()` checks at the two
+UI edges. Typed class-list, subtitle, and roster-column queries and F302-F304
+batching remain; closed-session behavior stays quiet. Two closed-session UI
+tests cover the empty/silent class list and preservation of extra-column
+controls and selections without a prompt.
+
+Independent fresh current and pinned-F356-baseline builds passed all seven
+focused CTests; both ownership audits covered 1,353 handwritten sources. The
+baseline used only a test-source overlay for the new closed-session cases, with
+no production overlay. No full suite ran.
+
+F358 is selected to retire the orphan My Classes single-class information read
+contract, adapter, and tests, which have no production callers; retain the F291
+batch path. F358 is selected, not implemented or verified. Batch 9 is complete;
+Batch 10 is active with F359-F361 queued. Phase 2 remains In Progress/Open;
+Gates 1 and 2 remain Partial.

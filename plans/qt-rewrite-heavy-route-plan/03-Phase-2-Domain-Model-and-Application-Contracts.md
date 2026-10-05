@@ -18,11 +18,10 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-06
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F357 is selected to remove Roster Print compatibility gates
-  around existing typed class/teacher/subtitle/extra-column reads. Preserve
-  session and errors; keep this distinct from F302-F305 batching. F357 is
-  selected, not implemented or verified. Batch 9 is complete; Batch 10 is
-  active with F358-F361 queued.
+- Current note: F358 is selected to retire the orphan My Classes single-class
+  information read contract, adapter, and tests, which have no production
+  callers. Retain the F291 batch path. F358 is selected, not implemented or
+  verified. Batch 9 is complete; Batch 10 is active with F359-F361 queued.
 
 ### Slice discovery batches
 
@@ -95,7 +94,7 @@ No other slices were found.
 1. F354 - Class Transfer package-build Application contract; distinct from F348 apply request and F330 repository read batching; preserve package fields/order/read failures, with no assumed selection-size bound.
 2. F355 - Co-teacher assignment purpose-fit persistence boundary; avoid hydrating/rewriting full ClassInfo for teacherId while preserving validation/conflict and unrelated fields (accepted; commit `0f93cbe6`).
 3. F356 - Remove Speaking Evaluation compatibility-service availability gates around existing typed roster-name/selected-subtitle reads; preserve closed-session/read-failure behavior (accepted; commit `6378c369`).
-4. F357 - Remove Roster Print compatibility gates around existing typed class/teacher/subtitle/extra-column reads; preserve session/errors and keep distinct from F302-F305 batching.
+4. F357 - Remove Roster Print compatibility gates around existing typed class/teacher/subtitle/extra-column reads; preserve session/errors and keep distinct from F302-F305 batching (accepted; commit `10f7060a`).
 5. F358 - Remove orphan My Classes single-class information read contract/adapter/tests (no production callers); retain the F291 batch path.
 6. F359 - Retire the unused Schedule Import compatibility helper and stale DataService include; retain the shared review-request type.
 7. F360 - Testing Classes cancel/failure page parity; add the missing `loadTestingTeacherChoiceRecords` test-support read and compare current/baseline warning/page outcomes for F145-F147.
@@ -105,9 +104,9 @@ No other slices were found.
 
 #### Active batch: Batch 10
 
-1. F354-F356 - Accepted: Class Transfer package-build Application contract; Co-teacher assignment purpose-fit persistence boundary; Speaking Evaluation typed-read compatibility gates.
-2. F357 - Selected/current: remove Roster Print compatibility gates around existing typed class/teacher/subtitle/extra-column reads; preserve session/errors and keep distinct from F302-F305 batching.
-3. F358-F361 - Queued in the recorded order above.
+1. F354-F357 - Accepted: Class Transfer package-build Application contract; Co-teacher assignment purpose-fit persistence boundary; Speaking Evaluation and Roster Print typed-read compatibility gates.
+2. F358 - Selected/current: retire the orphan My Classes single-class information read contract/adapter/tests (no production callers); retain the F291 batch path.
+3. F359-F361 - Queued in the recorded order above.
 
 #### F299 completeness audit checkpoint
 
@@ -269,24 +268,24 @@ No new v2 production path depends on DataService, MainWindow, PageManager, or a 
 
 Earlier verified slices and cumulative exit-gate snapshots are archived in the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 
-## Latest Progress Update - 2026-10-06 (F356 accepted; F357 selected)
+## Latest Progress Update - 2026-10-06 (F357 accepted; F358 selected)
 
-F356, committed as
-`6378c369ac8738741ad64581c02e9cdc6f688caf` (`Phase2 - Remove Speaking
-Evaluation compatibility read gates (F356)`), removes redundant
-`rosterService()` and `classService()` availability gates around Speaking
-Evaluation's typed roster-name and selected-subtitle reads. It retains the
-`m_services`, class-ID, and page-model guards, query contracts, closed-session
-and read-failure behavior, and signature reads; a direct closed-session roster
-NotFound test was added.
+F357, committed as
+`10f7060a4bc65757063962abc72e84da78794314` (`Phase2 - Remove Roster Print
+compatibility gates (F357)`), replaces compatibility `FeatureService::isAvailable()`
+gates with direct `ApplicationServices::hasOpenDatabase()` checks at the two
+UI edges. Typed class-list, subtitle, and roster-column queries and F302-F304
+batching remain; closed-session behavior stays quiet. Two closed-session UI
+tests cover the empty/silent class list and preservation of extra-column
+controls and selections without a prompt.
 
-Fresh current and pinned-F355-baseline builds passed the same 8/8 focused
-CTests. Both ownership audits covered 1,353 handwritten sources. The pinned
-baseline was `c3f9f314`; its overlay added only the roster test source, with no
-production overlays. No full suite ran.
+Independent fresh current and pinned-F356-baseline builds passed all seven
+focused CTests; both ownership audits covered 1,353 handwritten sources. The
+baseline used only a test-source overlay for the new closed-session cases, with
+no production overlay. No full suite ran.
 
-F357 is selected to remove Roster Print compatibility gates around existing
-typed class/teacher/subtitle/extra-column reads. Preserve session and errors,
-and keep this distinct from F302-F305 batching. F357 is selected, not
-implemented or verified. Batch 9 is complete; Batch 10 is active with F358-F361
-queued. Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial.
+F358 is selected to retire the orphan My Classes single-class information read
+contract, adapter, and tests, which have no production callers; retain the F291
+batch path. F358 is selected, not implemented or verified. Batch 9 is complete;
+Batch 10 is active with F359-F361 queued. Phase 2 remains In Progress/Open;
+Gates 1 and 2 remain Partial.
