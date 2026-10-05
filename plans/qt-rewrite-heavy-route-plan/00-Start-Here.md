@@ -76,11 +76,12 @@
   Classes assigned-teacher display baseline parity), F352 (Class Import
   teacher-choice display baseline parity), and F353 (Sub Prep roster-output
   semantic baseline parity) are accepted. F354 (Class Transfer package-build
-  Application contract) and F355 (Co-teacher assignment purpose-fit
-  persistence boundary) are accepted. Batch 6 is complete;
-  Batch 7 (F337-F338), Batch 8 (F339-F344), and Batch 9 (F345-F353) are
-  complete; Batch 10 (F354-F361) is active with F356 current and F357-F361
-  queued.
+  Application contract), F355 (Co-teacher assignment purpose-fit persistence
+  boundary), and F356 (remove Speaking Evaluation compatibility-service gates
+  around typed roster-name and selected-subtitle reads) are accepted. Batch 6
+  is complete; Batch 7 (F337-F338), Batch 8 (F339-F344), and Batch 9
+  (F345-F353) are complete; Batch 10 (F354-F361) is active with F357 current
+  and F358-F361 queued.
   Gates 1 and 2 remain Partial, with broader feature
   migration, parity, and 96-class Release memory evidence still open.
   See the

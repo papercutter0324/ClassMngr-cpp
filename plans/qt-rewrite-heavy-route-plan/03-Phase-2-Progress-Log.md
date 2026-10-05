@@ -12413,3 +12413,25 @@ reads while preserving closed-session and read-failure behavior. F356 is
 selected, not implemented or verified. F357-F361 remain queued. Batch 9 is
 complete; Batch 10 is active. Phase 2 remains In Progress/Open; Gates 1 and 2
 remain Partial.
+
+### F356 accepted / F357 selected - 2026-10-06
+
+F356, committed as
+`6378c369ac8738741ad64581c02e9cdc6f688caf` (`Phase2 - Remove Speaking
+Evaluation compatibility read gates (F356)`), removes redundant
+`rosterService()` and `classService()` availability gates around Speaking
+Evaluation's typed roster-name and selected-subtitle reads. It retains the
+`m_services`, class-ID, and page-model guards, query contracts, closed-session
+and read-failure behavior, and signature reads; a direct closed-session roster
+NotFound test was added.
+
+Fresh current and pinned-F355-baseline builds passed the same 8/8 focused
+CTests. Both ownership audits covered 1,353 handwritten sources. The pinned
+baseline was `c3f9f314`; its overlay added only the roster test source, with no
+production overlays. No full suite ran.
+
+F357 is selected to remove Roster Print compatibility gates around existing
+typed class/teacher/subtitle/extra-column reads. Preserve session and errors,
+and keep this distinct from F302-F305 batching. F357 is selected, not
+implemented or verified. Batch 9 is complete; Batch 10 is active with F358-F361
+queued. Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial.

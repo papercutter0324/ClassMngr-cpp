@@ -18,11 +18,11 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-06
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F356 is selected to remove Speaking Evaluation compatibility-
-  service availability gates around existing typed roster-name and selected-
-  subtitle reads. Preserve closed-session and read-failure behavior. F356 is
+- Current note: F357 is selected to remove Roster Print compatibility gates
+  around existing typed class/teacher/subtitle/extra-column reads. Preserve
+  session and errors; keep this distinct from F302-F305 batching. F357 is
   selected, not implemented or verified. Batch 9 is complete; Batch 10 is
-  active with F357-F361 queued.
+  active with F358-F361 queued.
 
 ### Slice discovery batches
 
@@ -94,7 +94,7 @@ No other slices were found.
 
 1. F354 - Class Transfer package-build Application contract; distinct from F348 apply request and F330 repository read batching; preserve package fields/order/read failures, with no assumed selection-size bound.
 2. F355 - Co-teacher assignment purpose-fit persistence boundary; avoid hydrating/rewriting full ClassInfo for teacherId while preserving validation/conflict and unrelated fields (accepted; commit `0f93cbe6`).
-3. F356 - Remove Speaking Evaluation compatibility-service availability gates around existing typed roster-name/selected-subtitle reads; preserve closed-session/read-failure behavior.
+3. F356 - Remove Speaking Evaluation compatibility-service availability gates around existing typed roster-name/selected-subtitle reads; preserve closed-session/read-failure behavior (accepted; commit `6378c369`).
 4. F357 - Remove Roster Print compatibility gates around existing typed class/teacher/subtitle/extra-column reads; preserve session/errors and keep distinct from F302-F305 batching.
 5. F358 - Remove orphan My Classes single-class information read contract/adapter/tests (no production callers); retain the F291 batch path.
 6. F359 - Retire the unused Schedule Import compatibility helper and stale DataService include; retain the shared review-request type.
@@ -105,9 +105,9 @@ No other slices were found.
 
 #### Active batch: Batch 10
 
-1. F354-F355 - Accepted: Class Transfer package-build Application contract; Co-teacher assignment purpose-fit persistence boundary.
-2. F356 - Selected/current: remove Speaking Evaluation compatibility-service availability gates around existing typed roster-name and selected-subtitle reads; preserve closed-session/read-failure behavior.
-3. F357-F361 - Queued in the recorded order above.
+1. F354-F356 - Accepted: Class Transfer package-build Application contract; Co-teacher assignment purpose-fit persistence boundary; Speaking Evaluation typed-read compatibility gates.
+2. F357 - Selected/current: remove Roster Print compatibility gates around existing typed class/teacher/subtitle/extra-column reads; preserve session/errors and keep distinct from F302-F305 batching.
+3. F358-F361 - Queued in the recorded order above.
 
 #### F299 completeness audit checkpoint
 
@@ -269,25 +269,24 @@ No new v2 production path depends on DataService, MainWindow, PageManager, or a 
 
 Earlier verified slices and cumulative exit-gate snapshots are archived in the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 
-## Latest Progress Update - 2026-10-06 (F355 accepted; F356 selected)
+## Latest Progress Update - 2026-10-06 (F356 accepted; F357 selected)
 
-F355, committed as
-`0f93cbe661908999603ffd5c45b9bdcccaad1bb3` (`Phase2 - Add purpose-fit
-co-teacher assignment persistence (F355)`), uses a purpose-fit validation
-snapshot and prepared `teacher_id`-only upsert. SQL `NULL` unassigns, and a
-missing `class_info` row receives compatible defaults. Validation, conflict,
-and failure behavior remain; unrelated metadata and schedules are preserved,
-both schedule-table write-audit triggers remain silent, and full-ClassInfo
-read count does not increase. Fresh current ownership audit covered 1,353
-handwritten sources; seven focused CTests passed. Baseline parity passed 1/1
-with only the parity test and CMake registration overlaid. Five transcript
-rows matched; LF-normalized SHA-256:
-`336FDC58CD6D92C784A7EC60873D5E2861C41AD3D7EE5EB5F2027189FC605784`.
-Focused evidence only; no full suite ran.
+F356, committed as
+`6378c369ac8738741ad64581c02e9cdc6f688caf` (`Phase2 - Remove Speaking
+Evaluation compatibility read gates (F356)`), removes redundant
+`rosterService()` and `classService()` availability gates around Speaking
+Evaluation's typed roster-name and selected-subtitle reads. It retains the
+`m_services`, class-ID, and page-model guards, query contracts, closed-session
+and read-failure behavior, and signature reads; a direct closed-session roster
+NotFound test was added.
 
-F356 is selected to remove Speaking Evaluation compatibility-service
-availability gates around existing typed roster-name and selected-subtitle
-reads while preserving closed-session and read-failure behavior. F356 is
-selected, not implemented or verified. Batch 9 is complete; Batch 10 is
-active with F357-F361 queued. Phase 2 remains In Progress/Open; Gates 1 and 2
-remain Partial.
+Fresh current and pinned-F355-baseline builds passed the same 8/8 focused
+CTests. Both ownership audits covered 1,353 handwritten sources. The pinned
+baseline was `c3f9f314`; its overlay added only the roster test source, with no
+production overlays. No full suite ran.
+
+F357 is selected to remove Roster Print compatibility gates around existing
+typed class/teacher/subtitle/extra-column reads. Preserve session and errors,
+and keep this distinct from F302-F305 batching. F357 is selected, not
+implemented or verified. Batch 9 is complete; Batch 10 is active with F358-F361
+queued. Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial.
