@@ -15,14 +15,14 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Depends on: Phase 1
 - Blocks: Persistence, bootstrap, shared UI, and feature migration
 - Owner: Unassigned
-- Last updated: 2026-10-05
+- Last updated: 2026-10-06
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F354 is selected for a Class Transfer package-build Application
-  contract, distinct from F348's apply request and F330's repository read
-  batching. Preserve package fields/order/read failures; assume no selection-
-  size bound. F354 is selected, not implemented or verified. Batch 9 is
-  complete; Batch 10 is active with F355-F361 queued.
+- Current note: F355 is selected for a Co-teacher assignment purpose-fit
+  persistence boundary. Avoid hydrating and rewriting full ClassInfo just to
+  change teacherId; preserve validation, conflict handling, and unrelated
+  fields. F355 is selected, not implemented or verified. Batch 9 is complete;
+  Batch 10 is active with F356-F361 queued.
 
 ### Slice discovery batches
 
@@ -268,22 +268,25 @@ No new v2 production path depends on DataService, MainWindow, PageManager, or a 
 
 Earlier verified slices and cumulative exit-gate snapshots are archived in the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 
-## Latest Progress Update - 2026-10-05 (F353 accepted; F354 selected)
+## Latest Progress Update - 2026-10-06 (F354 accepted; F355 selected)
 
-F353, committed as
-`f2bd4e710d23e5a6b4354626f42adbcbe4c9e340`, adds the parity test and CMake
-registration. Fresh VS2026 x64/Ninja Debug configure audited 1,347 handwritten
-sources. Focused current CTest passed 5/5 across parity, package, renderer,
-Application query, and Platform port targets; pinned-baseline parity CTest
-passed 1/1. Three ASCII JSON transcripts parsed and matched; the LF transcript
-SHA-256 is `78f34cf4b268841226673db6ebd151b3a8f3e4c0bcefef61f5c0c23c64df9ba1`.
-The 969-file baseline overlay audit passed with only identical source/registration
-changes and three minimum Qt substitutions. These are focused results; no full
-suite ran.
+F354, committed as
+`2ad7f7b7db9a65c240f90e3d4c0efc8670fda7d0` (`Phase2 - Add Class Transfer
+package-build Application contract (F354)`), adds the Qt-free package-build
+Application contract while preserving the full export payload, ordering,
+staged error behavior, and unbounded selections. Fresh current
+configure/ownership audit covered 1,352 handwritten sources; focused current
+CTest passed 4/4 and pinned-baseline parity passed 1/1. The independent tester
+repeated both. Nine ASCII JSON transcripts matched byte-for-byte after
+timestamp-only normalization; SHA-256:
+`9f27c2f9af4a262a77f8ebe95b9f3e76b38d715742d059e061d0b278dfe6896e`.
+Thirteen source hashes were frozen. The unavailable warning preserves
+`No Teacher Profile service is available.` UI flow was static-checked, not
+controller-interaction tested. Focused evidence only; no full suite ran.
 
-F354 is selected for a Class Transfer package-build Application contract,
-distinct from F348's apply request and F330's repository read batching.
-Preserve package fields, order, and read failures; assume no selection-size
-bound. F354 is selected, not implemented or verified. Batch 9 is complete;
-Batch 10 is active with F355-F361 queued. Phase 2 remains In Progress/Open;
-Gates 1 and 2 remain Partial.
+F355 is selected for the Co-teacher assignment purpose-fit persistence
+boundary. Avoid hydrating and rewriting full ClassInfo just to change
+teacherId; preserve validation, conflict handling, and unrelated fields. F355
+is selected, not implemented or verified. Batch 9 is complete; Batch 10 is
+active with F356-F361 queued. Phase 2 remains In Progress/Open; Gates 1 and 2
+remain Partial.

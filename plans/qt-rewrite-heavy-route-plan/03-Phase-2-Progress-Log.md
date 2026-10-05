@@ -12366,3 +12366,27 @@ F354 is selected as the next slice. Preserve package fields/order/read failures
 and assume no selection-size bound. Batch 9 is complete; Batch 10 is active
 with F355-F361 queued. Phase 2 remains In Progress/Open; Gates 1 and 2 remain
 Partial.
+
+### F354 accepted / F355 selected - 2026-10-06
+
+F354, committed as
+`2ad7f7b7db9a65c240f90e3d4c0efc8670fda7d0` (`Phase2 - Add Class Transfer
+package-build Application contract (F354)`), adds the Qt-free package-build
+Application contract while preserving the full export payload and order,
+staged error behavior, and unbounded selections. Fresh current configure and
+ownership audit covered 1,352 handwritten sources. Focused current CTest passed
+4/4; pinned-baseline parity passed 1/1. The independent tester repeated both.
+Nine ASCII JSON transcripts matched byte-for-byte after timestamp-only
+normalization; SHA-256:
+`9f27c2f9af4a262a77f8ebe95b9f3e76b38d715742d059e061d0b278dfe6896e`.
+Thirteen source hashes were frozen. The unavailable warning preserves the
+corrected text `No Teacher Profile service is available.` UI flow was
+static-checked, not controller-interaction tested. Focused evidence only; no
+full suite ran.
+
+F355 is selected for a Co-teacher assignment purpose-fit persistence boundary:
+avoid hydrating and rewriting full ClassInfo just to change teacherId while
+preserving validation, conflict handling, and unrelated fields. F355 is
+selected, not implemented or verified. Batch 9 is complete; Batch 10 remains
+active with F356-F361 queued. Phase 2 remains In Progress/Open; Gates 1 and 2
+remain Partial.
