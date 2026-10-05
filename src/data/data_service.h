@@ -6,6 +6,7 @@
 #include "domain/models/class_info.h"
 #include "domain/models/class_conflict.h"
 #include "domain/models/class_transfer.h"
+#include "next/application/class_transfer_apply_request.h"
 #include "domain/models/classroom.h"
 #include "domain/models/intensive_slot_state.h"
 #include "domain/models/testing_block.h"
@@ -172,6 +173,11 @@ public:
     [[nodiscard]] Result<ClassImportSummary> importClasses(
         const ClassTransferPackage& package,
         const ClassImportPlan& plan
+        );
+
+    [[nodiscard]] Result<ClassImportSummary> importClasses(
+        const ClassTransferPackage& package,
+        const ClassMngr::Next::Application::ClassTransferApplyRequest& request
         );
 
     [[nodiscard]] Result<ScheduleImportPreview> previewScheduleImport(

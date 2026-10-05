@@ -8,6 +8,8 @@
 #include "features/classes/services/class_transfer_json_codec.h"
 #include "features/classes/ui/class_export_dialog.h"
 #include "features/classes/ui/class_import_dialog.h"
+#include "next/platform/class_transfer_apply_legacy_adapter.h"
+#include "data/repositories/class_transfer_repository.h"
 
 #include <QApplication>
 #include <QComboBox>
@@ -383,7 +385,12 @@ private slots:
     void permanentConflictFixturePresentsReviewAndRejectsScheduleCollision();
     void conflictFixtureMatchesCommonInputBaselineAndRejectsWithoutWrites();
     void dialogRejectsDuplicateReplacementTargets();
+    void applyRejectsReplacementOutsideCurrentPreviewMatches_data();
     void applyRejectsReplacementOutsideCurrentPreviewMatches();
+    void typedApplyRevalidatesStaleTeacherAndMakesNoWrites();
+    void typedDialogRequestMatchesCompatibilityPlanAndGating();
+    void featureServiceApplyNormalizesAndRejectsInvalidPayload_data();
+    void featureServiceApplyNormalizesAndRejectsInvalidPayload();
     void exportDialogStartsClearAndSortsClassesAlphabetically();
     void exportDialogSkipsSubtitleBatchReadForEmptyClassList();
     void exportDialogShowsWarningAndStaysEmptyWhenClassListCannotLoad();
@@ -2810,7 +2817,7 @@ void ClassTransferTests::
              TeacherImportAction::ReplaceExisting);
     QCOMPARE(skipPlan.teachers.first().targetTeacherId, destinationTeacher);
 
-    const auto skipped = service.importClasses(*package, skipPlan);
+    const auto skipped = service.importClasses(*package, dialog.applyRequest());
     QVERIFY2(skipped.has_value(),
              skipped ? "" : qPrintable(skipped.error()));
     QVERIFY(skipped->createdClassIds.isEmpty());
@@ -3106,7 +3113,7 @@ void ClassTransferTests::requiredSuccessFixtureTraversesReviewAndPersistsResults
     QCOMPARE(dialog.importPlan().teachers.first().action,
              TeacherImportAction::Create);
 
-    const auto summary = service.importClasses(*package, dialog.importPlan());
+    const auto summary = service.importClasses(*package, dialog.applyRequest());
     QVERIFY2(summary.has_value(), summary ? "" : qPrintable(summary.error()));
     QCOMPARE(summary->createdClassIds.size(), 1);
     QVERIFY(summary->replacedClassIds.isEmpty());
@@ -3254,7 +3261,7 @@ void ClassTransferTests::successFixtureReplacesMatchingTeacherThroughReview()
              TeacherImportAction::ReplaceExisting);
     QCOMPARE(plan.teachers.first().targetTeacherId, destinationTeacher);
 
-    const auto summary = service.importClasses(*package, plan);
+    const auto summary = service.importClasses(*package, dialog.applyRequest());
     QVERIFY2(summary.has_value(), summary ? "" : qPrintable(summary.error()));
     QCOMPARE(summary->createdClassIds.size(), 1);
     QVERIFY(summary->replacedClassIds.isEmpty());
@@ -3445,7 +3452,7 @@ void ClassTransferTests::successFixtureReplacesMatchingDestinationAndChildren()
     QCOMPARE(dialog.importPlan().teachers.first().targetTeacherId,
              destinationTeacher);
 
-    const auto summary = service.importClasses(*package, dialog.importPlan());
+    const auto summary = service.importClasses(*package, dialog.applyRequest());
     QVERIFY2(summary.has_value(), summary ? "" : qPrintable(summary.error()));
     QVERIFY(summary->createdClassIds.isEmpty());
     QCOMPARE(summary->replacedClassIds, QList<int>({destinationClass}));
@@ -4952,8 +4959,16 @@ void ClassTransferTests::dialogRejectsDuplicateReplacementTargets()
         );
 }
 
+void ClassTransferTests::applyRejectsReplacementOutsideCurrentPreviewMatches_data()
+{
+    QTest::addColumn<bool>("typedApply");
+    QTest::newRow("legacy plan") << false;
+    QTest::newRow("typed choices") << true;
+}
+
 void ClassTransferTests::applyRejectsReplacementOutsideCurrentPreviewMatches()
 {
+    QFETCH(bool, typedApply);
     QTemporaryDir directory;
     QVERIFY(directory.isValid());
     DataService service;
@@ -5013,7 +5028,14 @@ void ClassTransferTests::applyRejectsReplacementOutsideCurrentPreviewMatches()
     const Result<Roster> rosterBefore = service.loadRoster(destinationClass);
     QVERIFY(rosterBefore);
 
-    const auto result = service.importClasses(*package, plan);
+    QString error;
+    const auto database = service.databaseSession()->database();
+    const auto snapshotBefore = persistedDatabaseSnapshot(database, &error);
+    const auto changesBefore = sqliteTotalChanges(database, &error);
+    QVERIFY2(snapshotBefore && changesBefore, qPrintable(error));
+    const auto result = typedApply
+        ? service.importClasses(*package, ClassMngr::Next::Platform::classTransferApplyRequest(plan))
+        : service.importClasses(*package, plan);
     QVERIFY(!result.has_value());
     QVERIFY(result.error().contains(
         QStringLiteral("replacement class is not one of the inferred matches")));
@@ -5028,6 +5050,171 @@ void ClassTransferTests::applyRejectsReplacementOutsideCurrentPreviewMatches()
              infoBefore->classColor);
     QCOMPARE(service.loadRoster(destinationClass)->rows.first().first(),
              rosterBefore->rows.first().first());
+    const auto snapshotAfter = persistedDatabaseSnapshot(database, &error);
+    const auto changesAfter = sqliteTotalChanges(database, &error);
+    QVERIFY2(snapshotAfter && changesAfter, qPrintable(error));
+    QCOMPARE(*snapshotAfter, *snapshotBefore);
+    QCOMPARE(*changesAfter, *changesBefore);
+
+}
+
+
+void ClassTransferTests::typedApplyRevalidatesStaleTeacherAndMakesNoWrites()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    DataService service;
+    QVERIFY(service.openDatabase(directory.filePath("source.db")));
+    const int sourceTeacher = createdTeacherId(service, completeTeacher());
+    const int sourceClass = addCompleteClass(service, sourceTeacher, "Incoming", "E4", "Perseus",
+        "Monday", "Incoming Student");
+    QVERIFY(sourceTeacher > 0 && sourceClass > 0);
+    const auto package = service.buildClassTransferPackage({sourceClass});
+    QVERIFY(package);
+    QVERIFY(service.openDatabase(directory.filePath("destination.db")));
+    const int targetTeacher = createdTeacherId(service, completeTeacher());
+    QVERIFY(targetTeacher > 0);
+    const auto preview = service.previewClassImport(*package);
+    QVERIFY(preview);
+    QCOMPARE(preview->teachers[0].matchingTeacherIds, QList<int>{targetTeacher});
+    auto legacy = createAllPlan(*package);
+    legacy.teachers[0] = {package->teachers[0].key, TeacherImportAction::ReplaceExisting, targetTeacher};
+    const auto choices = ClassMngr::Next::Platform::classTransferApplyRequest(legacy);
+    const auto oldCandidates = ClassMngr::Next::Platform::classTransferApplyCandidates(*package, *preview);
+    QVERIFY(oldCandidates);
+    QVERIFY(ClassMngr::Next::Application::validateClassTransferApplyRequest(choices, *oldCandidates).accepted());
+    QSqlQuery changeTeacher(service.databaseSession()->database());
+    changeTeacher.prepare("UPDATE teachers SET teacher_kr=?, teacher_en=?, preferred_romanization=?, preferred_name=? WHERE id=?");
+    for (int index = 0; index < 4; ++index) changeTeacher.addBindValue("Different");
+    changeTeacher.addBindValue(targetTeacher);
+    QVERIFY2(changeTeacher.exec(), qPrintable(changeTeacher.lastError().text()));
+    QCOMPARE(changeTeacher.numRowsAffected(), qint64(1));
+    QString error;
+    const auto database = service.databaseSession()->database();
+    const auto before = persistedDatabaseSnapshot(database, &error);
+    const auto changesBefore = sqliteTotalChanges(database, &error);
+    QVERIFY2(before && changesBefore, qPrintable(error));
+    const auto result = service.databaseSession()->classTransferRepository()->importClasses(*package, choices);
+    QVERIFY(!result);
+    QCOMPARE(result.error(), QStringLiteral("A selected teacher is not one of the inferred matches."));
+    const auto after = persistedDatabaseSnapshot(database, &error);
+    const auto changesAfter = sqliteTotalChanges(database, &error);
+    QVERIFY2(after && changesAfter, qPrintable(error));
+    QCOMPARE(*after, *before);
+    QCOMPARE(*changesAfter, *changesBefore);
+}
+
+void ClassTransferTests::typedDialogRequestMatchesCompatibilityPlanAndGating()
+{
+    const auto package = ClassTransferJsonCodec::loadFile(
+        QDir(QStringLiteral(CLASSMNGR_SOURCE_DIR)).filePath("tests/fixtures/transfers/success_source.json"));
+    QVERIFY(package);
+    ClassImportPreview preview;
+    for (int index = 0; index < package->classes.size(); ++index)
+        preview.classes.append(ClassImportClassPreview{index, {}});
+    for (const auto& teacher : package->teachers)
+        preview.teachers.append(ClassImportTeacherPreview{teacher.key, {}});
+    ClassImportDialog dialog(nullptr, *package, preview);
+    const auto legacy = dialog.importPlan();
+    const auto typed = dialog.applyRequest();
+    QCOMPARE(typed.classes.size(), static_cast<std::size_t>(legacy.classes.size()));
+    QCOMPARE(typed.teachers.size(), static_cast<std::size_t>(legacy.teachers.size()));
+    for (std::size_t index = 0; index < typed.classes.size(); ++index)
+    {
+        QCOMPARE(typed.classes[index].packageClassIndex, legacy.classes[index].packageClassIndex);
+        QCOMPARE(typed.classes[index].action, ClassMngr::Next::Application::ClassTransferReviewClassAction::Create);
+        QVERIFY(!typed.classes[index].targetClassId);
+    }
+    for (std::size_t index = 0; index < typed.teachers.size(); ++index)
+    {
+        QCOMPARE(typed.teachers[index].teacherKey, legacy.teachers[index].teacherKey.toStdString());
+        QCOMPARE(typed.teachers[index].action, ClassMngr::Next::Application::ClassTransferReviewTeacherAction::Create);
+        QVERIFY(!typed.teachers[index].targetTeacherId);
+    }
+    auto* button = dialog.findChild<QPushButton*>("importClassesButton");
+    auto* label = dialog.findChild<QLabel*>("importValidationLabel");
+    auto* choice = dialog.findChild<QComboBox*>("classImportChoice_0");
+    QVERIFY(button && label && choice);
+    QVERIFY(button->isEnabled());
+    const int faultIndex = choice->count();
+    choice->addItem("Malformed choice");
+    choice->setItemData(faultIndex, 99, Qt::UserRole);
+    choice->setItemData(faultIndex, 0, Qt::UserRole + 1);
+    choice->setCurrentIndex(faultIndex);
+    QVERIFY(!button->isEnabled());
+    QCOMPARE(label->text(), QStringLiteral("The class import plan contains an invalid or duplicate class entry."));
+    QCOMPARE(dialog.applyRequest().classes[0].action,
+        ClassMngr::Next::Application::ClassTransferReviewClassAction::Invalid);
+    QCOMPARE(dialog.importPlan().classes[0].action, static_cast<ClassImportAction>(99));
+}
+
+
+void ClassTransferTests::featureServiceApplyNormalizesAndRejectsInvalidPayload_data()
+{
+    QTest::addColumn<bool>("typedApply");
+    QTest::newRow("legacy plan") << false;
+    QTest::newRow("typed choices") << true;
+}
+
+void ClassTransferTests::featureServiceApplyNormalizesAndRejectsInvalidPayload()
+{
+    QFETCH(bool, typedApply);
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(directory.filePath("destination.db")));
+    auto* classes = services.classService();
+    QVERIFY(classes);
+    ClassTransferPackage package;
+    Teacher teacher = completeTeacher();
+    teacher.teacherEn = QStringLiteral("  Alex   Kim  ");
+    teacher.roomNumber = QStringLiteral("  504  ");
+    package.teachers.append(ClassTransferTeacher{QStringLiteral("teacher-normalization"), teacher});
+    ClassTransferClass transferred;
+    transferred.key = QStringLiteral("class-normalization");
+    transferred.name = QStringLiteral("Normalized class");
+    transferred.teacherKey = package.teachers[0].key;
+    transferred.info.classGrade = QStringLiteral(" e4 ");
+    transferred.info.classLevel = QStringLiteral(" perseus ");
+    transferred.info.notes = QStringLiteral("  Class notes  ");
+    transferred.roster = completeRoster(QStringLiteral("Student"));
+    package.classes.append(transferred);
+    const auto plan = createAllPlan(package);
+    const auto request = ClassMngr::Next::Platform::classTransferApplyRequest(plan);
+    const auto result = typedApply ? classes->importClasses(package, request)
+                                  : classes->importClasses(package, plan);
+    QVERIFY2(result, result ? "" : qPrintable(result.error()));
+    QCOMPARE(result->createdClassIds.size(), 1);
+    auto* data = services.dataService();
+    QVERIFY(data);
+    const auto info = data->loadClassInfo(result->createdClassIds[0]);
+    QVERIFY(info);
+    QCOMPARE(info->classGrade, QStringLiteral("E4"));
+    QCOMPARE(info->classLevel, QStringLiteral("Perseus"));
+    QCOMPARE(info->notes, QStringLiteral("Class notes"));
+    const auto savedTeacher = data->getTeacher(info->teacherId);
+    QVERIFY(savedTeacher);
+    QCOMPARE(savedTeacher->teacherEn, QStringLiteral("Alex Kim"));
+    QCOMPARE(savedTeacher->roomNumber, QStringLiteral("504"));
+    QCOMPARE(package.teachers[0].teacher.teacherEn, QStringLiteral("  Alex   Kim  "));
+    QCOMPARE(package.classes[0].info.classGrade, QStringLiteral(" e4 "));
+    QCOMPARE(package.classes[0].info.classId, -1);
+
+    QString error;
+    const auto database = services.databaseSession()->database();
+    const auto before = persistedDatabaseSnapshot(database, &error);
+    const auto changesBefore = sqliteTotalChanges(database, &error);
+    QVERIFY2(before && changesBefore, qPrintable(error));
+    package.classes[0].info.classGrade = QStringLiteral("Invalid grade");
+    const auto rejected = typedApply ? classes->importClasses(package, request)
+                                    : classes->importClasses(package, plan);
+    QVERIFY(!rejected);
+    QVERIFY(rejected.error().contains(QStringLiteral("class_info.value.not_allowed")));
+    const auto after = persistedDatabaseSnapshot(database, &error);
+    const auto changesAfter = sqliteTotalChanges(database, &error);
+    QVERIFY2(after && changesAfter, qPrintable(error));
+    QCOMPARE(*after, *before);
+    QCOMPARE(*changesAfter, *changesBefore);
 }
 
 QTEST_MAIN(ClassTransferTests)

@@ -193,6 +193,7 @@ set(CLASSMNGR_NEXT_APPLICATION_SOURCES
     src/next/application/sub_prep_class_details_query.h
     src/next/application/sub_prep_class_information_state.h
     src/next/application/class_transfer_projection.h
+    src/next/application/class_transfer_apply_request.h
     src/next/application/class_transfer_matching_policy.h
     src/next/application/document_catalog_projection.h
     src/next/application/document_catalog_use_case.h
@@ -317,6 +318,7 @@ set(CLASSMNGR_NEXT_APPLICATION_SOURCES
 )
 
 set(CLASSMNGR_NEXT_PLATFORM_SOURCES
+    src/next/platform/class_transfer_apply_legacy_adapter.h
     src/next/platform/legacy_workspace_gateway.h
     src/next/platform/initial_setup_lifecycle_adapter.h
     src/next/platform/application_services_academic_calendar_schedule_preferences_port.h

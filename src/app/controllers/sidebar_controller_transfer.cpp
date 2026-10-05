@@ -203,7 +203,7 @@ void SidebarController::importClasses()
 
     const QStringList selectedKeys = m_sidebar->selectedKeys();
     const auto summary = classes->importClasses(
-        *package, dialog.importPlan());
+        *package, dialog.applyRequest());
 
     if (!summary)
     {

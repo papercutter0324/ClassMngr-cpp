@@ -1,10 +1,12 @@
 #include "next/application/class_summary_projection.h"
 #include "next/application/class_transfer_matching_policy.h"
 #include "next/application/class_transfer_projection.h"
+#include "next/application/class_transfer_apply_request.h"
 #include "next/application/schedule_view_projection.h"
 
 #include <QtTest/QtTest>
 
+#include <algorithm>
 #include <cstddef>
 #include <cstdint>
 #include <optional>
@@ -230,6 +232,10 @@ private slots:
     void scheduleOverlapPolicyWrapsSundayOvernightIntoMonday();
     void scheduleOverlapPolicyTreatsEqualEndpointsAsTwentyFourHours();
     void existingNextContractsRemainUsable();
+    void applyRequestKeepsChoicesSeparateAndPreservesOrder();
+    void applyValidationRetainsDecisionIssuesAndOrder();
+    void applyValidationRejectsMalformedTargetsBeforeDecisionIssues();
+
 };
 
 void NextApplicationClassTransferTests::validBoundedPackageRetainsCompactFieldsAndCounts()
@@ -1283,6 +1289,111 @@ void NextApplicationClassTransferTests::existingNextContractsRemainUsable()
     QVERIFY(ScheduleViewProjection::validate(scheduleInput));
     const auto schedule = ScheduleViewProjection::create(std::move(scheduleInput));
     QVERIFY(schedule);
+}
+
+
+void NextApplicationClassTransferTests::applyRequestKeepsChoicesSeparateAndPreservesOrder()
+{
+    const auto review = validReviewRequest();
+    ClassTransferApplyRequest choices{review.classResolutions, review.teacherResolutions};
+    const ClassTransferApplyCandidates candidates{review.classes, review.teachers};
+    const auto mapped = classTransferApplyReviewRequest(choices, candidates);
+    QCOMPARE(mapped.classes.size(), review.classes.size());
+    QCOMPARE(mapped.teachers.size(), review.teachers.size());
+    QCOMPARE(mapped.classResolutions.size(), choices.classes.size());
+    QCOMPARE(mapped.teacherResolutions.size(), choices.teachers.size());
+    for (std::size_t index = 0; index < choices.classes.size(); ++index)
+    {
+        QCOMPARE(mapped.classResolutions[index].packageClassIndex, choices.classes[index].packageClassIndex);
+        QCOMPARE(mapped.classResolutions[index].action, choices.classes[index].action);
+        QCOMPARE(mapped.classResolutions[index].targetClassId, choices.classes[index].targetClassId);
+    }
+    for (std::size_t index = 0; index < choices.teachers.size(); ++index)
+    {
+        QCOMPARE(mapped.teacherResolutions[index].teacherKey, choices.teachers[index].teacherKey);
+        QCOMPARE(mapped.teacherResolutions[index].action, choices.teachers[index].action);
+        QCOMPARE(mapped.teacherResolutions[index].targetTeacherId, choices.teachers[index].targetTeacherId);
+    }
+    static_assert(std::is_same_v<decltype(choices.classes[0].targetClassId), std::optional<ClassId>>);
+    static_assert(std::is_same_v<decltype(choices.teachers[0].targetTeacherId), std::optional<TeacherId>>);
+    QVERIFY(validateClassTransferApplyRequest(choices, candidates).accepted());
+    auto fresh = candidates;
+    fresh.classes[0].matchingClassIds.clear();
+    const auto stale = validateClassTransferApplyRequest(choices, fresh);
+    QVERIFY(hasReviewIssue(stale, ClassTransferReviewDecisionIssueCode::ClassTargetNotInMatchSet));
+    // The request still contains only the chosen ID, independent of either match set.
+    QCOMPARE(choices.classes[0].targetClassId, review.classResolutions[0].targetClassId);
+}
+
+void NextApplicationClassTransferTests::applyValidationRetainsDecisionIssuesAndOrder()
+{
+    const auto baseline = validReviewRequest();
+    std::vector<ClassTransferReviewDecisionRequest> cases{baseline};
+    auto value = baseline; value.classResolutions.erase(value.classResolutions.begin()); cases.push_back(value);
+    value = baseline; value.teacherResolutions.pop_back(); cases.push_back(value);
+    value = baseline; value.classResolutions.push_back(value.classResolutions.front()); cases.push_back(value);
+    value = baseline; value.teacherResolutions.push_back(value.teacherResolutions.front()); cases.push_back(value);
+    value = baseline; value.classResolutions[0].action = static_cast<ClassTransferReviewClassAction>(99); cases.push_back(value);
+    value = baseline; value.teacherResolutions[0].action = static_cast<ClassTransferReviewTeacherAction>(99); cases.push_back(value);
+    value = baseline; value.classResolutions[1].action = ClassTransferReviewClassAction::Replace;
+    value.classResolutions[1].targetClassId = reviewClassId(41); cases.push_back(value);
+    value = baseline; value.teacherResolutions[0].action = ClassTransferReviewTeacherAction::ReplaceExisting;
+    value.teacherResolutions[0].targetTeacherId = reviewTeacherId(12);
+    value.teacherResolutions[1].action = ClassTransferReviewTeacherAction::ReplaceExisting;
+    value.teacherResolutions[1].targetTeacherId = reviewTeacherId(12); cases.push_back(value);
+    value = baseline; value.classResolutions[0].targetClassId.reset(); cases.push_back(value);
+    value = baseline; value.teacherResolutions[1].targetTeacherId.reset(); cases.push_back(value);
+    value = baseline; value.classResolutions[0].targetClassId = reviewClassId(99); cases.push_back(value);
+    value = baseline; value.teacherResolutions[1].targetTeacherId = reviewTeacherId(99); cases.push_back(value);
+    value = baseline; value.classResolutions[1].targetClassId = reviewClassId(43); cases.push_back(value);
+    value = baseline; value.teacherResolutions[3].targetTeacherId = reviewTeacherId(13); cases.push_back(value);
+    value = baseline; value.classResolutions.push_back({99,ClassTransferReviewClassAction::Create,{}});
+    value.teacherResolutions.push_back({"unknown",ClassTransferReviewTeacherAction::Create,{}}); cases.push_back(value);
+    value = baseline; value.classResolutions[0].packageClassIndex = -1;
+    value.teacherResolutions[0].teacherKey.clear(); cases.push_back(value);
+    value = baseline; value.classResolutions.clear(); value.teacherResolutions.clear(); cases.push_back(value);
+    for (const auto& review : cases)
+    {
+        const auto expected = validateClassTransferReviewDecisions(review);
+        const auto actual = validateClassTransferApplyRequest(
+            {review.classResolutions,review.teacherResolutions}, {review.classes,review.teachers});
+        QCOMPARE(actual.issues.size(), expected.issues.size());
+        for (std::size_t index = 0; index < actual.issues.size(); ++index)
+        {
+            QCOMPARE(actual.issues[index].code, expected.issues[index].code);
+            QCOMPARE(actual.issues[index].packageClassIndex, expected.issues[index].packageClassIndex);
+            QCOMPARE(actual.issues[index].teacherKey, expected.issues[index].teacherKey);
+            QCOMPARE(actual.issues[index].targetClassId, expected.issues[index].targetClassId);
+            QCOMPARE(actual.issues[index].targetTeacherId, expected.issues[index].targetTeacherId);
+        }
+    }
+}
+
+void NextApplicationClassTransferTests::applyValidationRejectsMalformedTargetsBeforeDecisionIssues()
+{
+    const auto review = validReviewRequest();
+    const ClassTransferApplyCandidates candidates{review.classes, review.teachers};
+    for (std::string raw : {"0","-2","01","+1","1 ","x","2147483648"})
+    {
+        ClassTransferApplyRequest choices{review.classResolutions,review.teacherResolutions};
+        choices.classes[0].targetClassId = *ClassId::fromString(raw);
+        choices.classes.push_back(choices.classes[0]);
+        auto result = validateClassTransferApplyRequest(choices, candidates);
+        QCOMPARE(result.issues.size(), std::size_t(1));
+        QCOMPARE(result.issues[0].code, ClassTransferReviewDecisionIssueCode::ReplaceClassMissingTarget);
+        choices.classes[0].action = ClassTransferReviewClassAction::Create;
+        result = validateClassTransferApplyRequest(choices, candidates);
+        QCOMPARE(result.issues[0].code, ClassTransferReviewDecisionIssueCode::NonReplaceClassHasTarget);
+        choices = {review.classResolutions,review.teacherResolutions};
+        choices.classes[0].action = static_cast<ClassTransferReviewClassAction>(99);
+        choices.teachers[0].targetTeacherId = *TeacherId::fromString(raw);
+        result = validateClassTransferApplyRequest(choices, candidates);
+        QCOMPARE(result.issues.size(), std::size_t(1));
+        QCOMPARE(result.issues[0].code, ClassTransferReviewDecisionIssueCode::CreateTeacherHasTarget);
+        choices.teachers[0].action = ClassTransferReviewTeacherAction::KeepExisting;
+        result = validateClassTransferApplyRequest(choices, candidates);
+        QCOMPARE(result.issues[0].code, ClassTransferReviewDecisionIssueCode::TeacherActionMissingTarget);
+    }
 }
 
 QTEST_APPLESS_MAIN(NextApplicationClassTransferTests)

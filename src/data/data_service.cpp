@@ -1,4 +1,5 @@
 #include "data_service.h"
+#include "next/platform/class_transfer_apply_legacy_adapter.h"
 
 #include "data/database/database_file_operations.h"
 #include "data/database/database_session.h"
@@ -360,6 +361,15 @@ Result<ClassImportSummary> DataService::importClasses(
     const ClassImportPlan& plan
     )
 {
+    return importClasses(package,
+        ClassMngr::Next::Platform::classTransferApplyRequest(plan));
+}
+
+Result<ClassImportSummary> DataService::importClasses(
+    const ClassTransferPackage& package,
+    const ClassMngr::Next::Application::ClassTransferApplyRequest& request
+    )
+{
     if (!m_session->classTransferRepository())
     {
         return std::unexpected(
@@ -367,7 +377,7 @@ Result<ClassImportSummary> DataService::importClasses(
             );
     }
 
-    return m_session->classTransferRepository()->importClasses(package, plan);
+    return m_session->classTransferRepository()->importClasses(package, request);
 }
 
 Result<ScheduleImportPreview> DataService::previewScheduleImport(

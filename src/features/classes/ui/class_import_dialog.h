@@ -1,6 +1,7 @@
 #pragma once
 
 #include "domain/models/class_transfer.h"
+#include "next/application/class_transfer_apply_request.h"
 #include "ui/shared/dialogs/dialog_shell.h"
 
 #include <QList>
@@ -24,6 +25,7 @@ public:
         );
 
     [[nodiscard]] ClassImportPlan importPlan() const;
+    [[nodiscard]] ClassMngr::Next::Application::ClassTransferApplyRequest applyRequest() const;
 
 private:
     struct ClassRow

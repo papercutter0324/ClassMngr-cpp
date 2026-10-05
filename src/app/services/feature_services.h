@@ -7,6 +7,7 @@
 #include "domain/models/class_info.h"
 #include "domain/models/class_teacher_assignment.h"
 #include "domain/models/class_transfer.h"
+#include "next/application/class_transfer_apply_request.h"
 #include "domain/models/classroom.h"
 #include "domain/models/gs_team_member.h"
 #include "domain/models/intensive_slot_state.h"
@@ -146,6 +147,11 @@ public:
     Result<ClassImportSummary> importClasses(
         const ClassTransferPackage& package,
         const ClassImportPlan& plan
+        ) const;
+
+    Result<ClassImportSummary> importClasses(
+        const ClassTransferPackage& package,
+        const ClassMngr::Next::Application::ClassTransferApplyRequest& request
         ) const;
 };
 

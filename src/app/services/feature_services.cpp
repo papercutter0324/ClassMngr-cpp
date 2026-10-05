@@ -1,4 +1,5 @@
 #include "feature_services.h"
+#include "next/platform/class_transfer_apply_legacy_adapter.h"
 
 #include "data/data_service.h"
 #include "data/database/database_session.h"
@@ -700,6 +701,15 @@ Result<ClassImportSummary> ClassService::importClasses(
     const ClassImportPlan& plan
     ) const
 {
+    return importClasses(package,
+        ClassMngr::Next::Platform::classTransferApplyRequest(plan));
+}
+
+Result<ClassImportSummary> ClassService::importClasses(
+    const ClassTransferPackage& package,
+    const ClassMngr::Next::Application::ClassTransferApplyRequest& request
+    ) const
+{
     ClassTransferPackage normalizedPackage = package;
     ValidationResult validation;
 
@@ -745,10 +755,10 @@ Result<ClassImportSummary> ClassService::importClasses(
     if (auto* repository = session()
             ? session()->classTransferRepository() : nullptr)
     {
-        return repository->importClasses(normalizedPackage, plan);
+        return repository->importClasses(normalizedPackage, request);
     }
     return dataService()
-        ? dataService()->importClasses(normalizedPackage, plan)
+        ? dataService()->importClasses(normalizedPackage, request)
         : Result<ClassImportSummary>(std::unexpected(unavailableError()));
 }
 

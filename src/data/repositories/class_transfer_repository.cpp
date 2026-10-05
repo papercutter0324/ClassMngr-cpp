@@ -1,4 +1,5 @@
 #include "class_transfer_repository.h"
+#include "next/platform/class_transfer_apply_legacy_adapter.h"
 
 #include "core/result.h"
 #include "data/database/database_transaction.h"
@@ -50,247 +51,6 @@ template <typename TypedId>
 TypedId applicationId(const int legacyId)
 {
     return *TypedId::fromString(std::to_string(legacyId));
-}
-
-template <typename TypedId>
-Result<TypedId> typedReviewId(
-    const int legacyId,
-    const QString& description
-    )
-{
-    if (legacyId <= 0)
-    {
-        return std::unexpected(
-            QObject::tr("The %1 contains an invalid destination ID.")
-                .arg(description));
-    }
-    return *TypedId::fromString(std::to_string(legacyId));
-}
-
-QString reviewIssueMessage(
-    const ClassMngr::Next::Application::ClassTransferReviewDecisionIssueCode code
-    );
-
-template <typename TypedId>
-Result<std::optional<TypedId>> typedReviewTarget(
-    const int legacyId,
-    const QString& description,
-    const ClassMngr::Next::Application::ClassTransferReviewClassAction action
-    )
-{
-    if (legacyId == -1)
-    {
-        return std::optional<TypedId>{};
-    }
-    using Action =
-        ClassMngr::Next::Application::ClassTransferReviewClassAction;
-    using IssueCode =
-        ClassMngr::Next::Application::ClassTransferReviewDecisionIssueCode;
-    if (legacyId <= 0)
-    {
-        if (action == Action::Invalid || action == Action::Unselected)
-        {
-            return std::optional<TypedId>{};
-        }
-        return std::unexpected(reviewIssueMessage(
-            action == Action::Replace
-                ? IssueCode::ReplaceClassMissingTarget
-                : IssueCode::NonReplaceClassHasTarget));
-    }
-    const Result<TypedId> typedId = typedReviewId<TypedId>(
-        legacyId, description);
-    if (!typedId)
-    {
-        return std::unexpected(typedId.error());
-    }
-    return std::optional<TypedId>{*typedId};
-}
-
-template <typename TypedId>
-Result<std::optional<TypedId>> typedReviewTarget(
-    const int legacyId,
-    const QString& description,
-    const ClassMngr::Next::Application::ClassTransferReviewTeacherAction action
-    )
-{
-    if (legacyId == -1)
-    {
-        return std::optional<TypedId>{};
-    }
-    using Action =
-        ClassMngr::Next::Application::ClassTransferReviewTeacherAction;
-    using IssueCode =
-        ClassMngr::Next::Application::ClassTransferReviewDecisionIssueCode;
-    if (legacyId <= 0)
-    {
-        if (action == Action::Invalid || action == Action::Unselected)
-        {
-            return std::optional<TypedId>{};
-        }
-        return std::unexpected(reviewIssueMessage(
-            action == Action::Create
-                ? IssueCode::CreateTeacherHasTarget
-                : IssueCode::TeacherActionMissingTarget));
-    }
-    const Result<TypedId> typedId = typedReviewId<TypedId>(
-        legacyId, description);
-    if (!typedId)
-    {
-        return std::unexpected(typedId.error());
-    }
-    return std::optional<TypedId>{*typedId};
-}
-
-std::string decisionKey(const QString& value)
-{
-    return value.trimmed().isEmpty() ? std::string{} : value.toStdString();
-}
-
-Result<ClassMngr::Next::Application::ClassTransferReviewDecisionRequest>
-reviewDecisionRequest(
-    const ClassTransferPackage& package,
-    const ClassImportPreview& preview,
-    const ClassImportPlan& plan
-    )
-{
-    using namespace ClassMngr::Next::Application;
-    using ClassId = ClassMngr::Next::Domain::ClassId;
-    using TeacherId = ClassMngr::Next::Domain::TeacherId;
-    ClassTransferReviewDecisionRequest request;
-
-    for (int index = 0; index < package.classes.size(); ++index)
-    {
-        ClassTransferReviewClassCandidate candidate;
-        candidate.packageClassIndex = index;
-        const auto previewEntry = std::find_if(
-            preview.classes.cbegin(),
-            preview.classes.cend(),
-            [index](const ClassImportClassPreview& item)
-            {
-                return item.packageClassIndex == index;
-            }
-            );
-        if (previewEntry != preview.classes.cend())
-        {
-            candidate.matchingClassIds.reserve(
-                static_cast<std::size_t>(previewEntry->matchingClassIds.size())
-            );
-            for (const int classId : previewEntry->matchingClassIds)
-            {
-                const Result<ClassId> typedId = typedReviewId<ClassId>(
-                    classId, QObject::tr("class import preview"));
-                if (!typedId)
-                {
-                    return std::unexpected(typedId.error());
-                }
-                candidate.matchingClassIds.push_back(*typedId);
-            }
-        }
-        request.classes.push_back(std::move(candidate));
-    }
-
-    for (const ClassTransferTeacher& transferTeacher : package.teachers)
-    {
-        ClassTransferReviewTeacherCandidate candidate;
-        candidate.teacherKey = decisionKey(transferTeacher.key);
-        const auto previewEntry = std::find_if(
-            preview.teachers.cbegin(),
-            preview.teachers.cend(),
-            [&transferTeacher](const ClassImportTeacherPreview& item)
-            {
-                return item.teacherKey == transferTeacher.key;
-            }
-            );
-        if (previewEntry != preview.teachers.cend())
-        {
-            candidate.matchingTeacherIds.reserve(
-                static_cast<std::size_t>(previewEntry->matchingTeacherIds.size())
-            );
-            for (const int teacherId : previewEntry->matchingTeacherIds)
-            {
-                const Result<TeacherId> typedId = typedReviewId<TeacherId>(
-                    teacherId, QObject::tr("teacher import preview"));
-                if (!typedId)
-                {
-                    return std::unexpected(typedId.error());
-                }
-                candidate.matchingTeacherIds.push_back(*typedId);
-            }
-        }
-        request.teachers.push_back(std::move(candidate));
-    }
-
-    request.classResolutions.reserve(
-        static_cast<std::size_t>(plan.classes.size())
-        );
-    for (const ClassImportResolution& resolution : plan.classes)
-    {
-        using ReviewAction = ClassTransferReviewClassAction;
-        ReviewAction action = ReviewAction::Invalid;
-        switch (resolution.action)
-        {
-        case ClassImportAction::Create:
-            action = ReviewAction::Create;
-            break;
-        case ClassImportAction::Replace:
-            action = ReviewAction::Replace;
-            break;
-        case ClassImportAction::Skip:
-            action = ReviewAction::Skip;
-            break;
-        }
-        const Result<std::optional<ClassId>> targetId =
-            typedReviewTarget<ClassId>(
-                resolution.targetClassId,
-                QObject::tr("class import plan"),
-                action);
-        if (!targetId)
-        {
-            return std::unexpected(targetId.error());
-        }
-        request.classResolutions.push_back({
-            resolution.packageClassIndex,
-            action,
-            *targetId
-        });
-    }
-
-    request.teacherResolutions.reserve(
-        static_cast<std::size_t>(plan.teachers.size())
-        );
-    for (const TeacherImportResolution& resolution : plan.teachers)
-    {
-        using ReviewAction = ClassTransferReviewTeacherAction;
-        ReviewAction action = ReviewAction::Invalid;
-        switch (resolution.action)
-        {
-        case TeacherImportAction::Create:
-            action = ReviewAction::Create;
-            break;
-        case TeacherImportAction::KeepExisting:
-            action = ReviewAction::KeepExisting;
-            break;
-        case TeacherImportAction::ReplaceExisting:
-            action = ReviewAction::ReplaceExisting;
-            break;
-        }
-        const Result<std::optional<TeacherId>> targetId =
-            typedReviewTarget<TeacherId>(
-                resolution.targetTeacherId,
-                QObject::tr("teacher import plan"),
-                action);
-        if (!targetId)
-        {
-            return std::unexpected(targetId.error());
-        }
-        request.teacherResolutions.push_back({
-            decisionKey(resolution.teacherKey),
-            action,
-            *targetId
-        });
-    }
-
-    return request;
 }
 
 QString reviewIssueMessage(
@@ -909,7 +669,7 @@ Result<ClassImportPreview> buildPreview(
 Result<ValidatedPlan> validatePlan(
     QSqlDatabase& database,
     const ClassTransferPackage& package,
-    const ClassImportPlan& plan
+    const ClassMngr::Next::Application::ClassTransferApplyRequest& choices
     )
 {
     const auto previewResult = buildPreview(database, package);
@@ -919,21 +679,22 @@ Result<ValidatedPlan> validatePlan(
         return std::unexpected(previewResult.error());
     }
 
-    const auto request = reviewDecisionRequest(package, *previewResult, plan);
-    if (!request)
-    {
-        return std::unexpected(request.error());
-    }
-
-    const auto decision =
-        ClassMngr::Next::Application::validateClassTransferReviewDecisions(
-            *request
-            );
+    const auto candidates = ClassMngr::Next::Platform::classTransferApplyCandidates(
+        package, *previewResult, true);
+    if (!candidates)
+        return std::unexpected(candidates.error());
+    auto request = choices;
+    for (auto& resolution : request.teachers)
+        if (QString::fromStdString(resolution.teacherKey).trimmed().isEmpty())
+            resolution.teacherKey.clear();
+    const auto decision = ClassMngr::Next::Application::validateClassTransferApplyRequest(
+        request, *candidates);
     if (!decision.accepted())
     {
         return std::unexpected(reviewIssueMessage(decision.issues.front().code));
     }
 
+    const auto plan = ClassMngr::Next::Platform::validatedClassTransferLegacyPlan(request);
     ValidatedPlan validated;
     for (const ClassImportResolution& resolution : plan.classes)
     {
@@ -1781,12 +1542,21 @@ Result<ClassImportSummary> ClassTransferRepository::importClasses(
     const ClassImportPlan& plan
     )
 {
+    return importClasses(package,
+        ClassMngr::Next::Platform::classTransferApplyRequest(plan));
+}
+
+Result<ClassImportSummary> ClassTransferRepository::importClasses(
+    const ClassTransferPackage& package,
+    const ClassMngr::Next::Application::ClassTransferApplyRequest& request
+    )
+{
     if (!m_database.isOpen())
     {
         return std::unexpected(QObject::tr("No Teacher Profile is open."));
     }
 
-    const auto validatedResult = validatePlan(m_database, package, plan);
+    const auto validatedResult = validatePlan(m_database, package, request);
 
     if (!validatedResult)
     {
