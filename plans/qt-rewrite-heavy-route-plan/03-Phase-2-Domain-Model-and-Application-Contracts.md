@@ -18,10 +18,13 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-05
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F336 is selected to narrow Selected Class Grade reads from
-  `loadClassInfo()` to one column in one query. Preserve requested/canonical
-  class ID, grade value, blank success when metadata is missing or empty, and
-  Technical/error classification. F336 is selected, not implemented.
+- Current note: F337 is selected to switch the Class Details validation
+  context port from `loadClassInfo()` to the F332
+  `loadClassPageDetails()` reader. Preserve matched/request IDs, the teacher-ID
+  sentinel, exact notes/filler text, missing-row defaults, and Technical
+  errors. Target two statements (metadata plus regular schedule) instead of
+  three; the reader will include unused regular schedules and no intensive
+  schedules. Batch 8 discovery is underway. F337 is selected, not implemented.
 
 ### Slice discovery batches
 
@@ -51,10 +54,9 @@ Accepted slices are removed from active tracking; their implementation and accep
 
 #### Active batch: Batch 7
 
-1. F336 - Narrow Selected Class Grade reads to the consumed scalar fields.
-2. F337 - Reuse the F332 class-details reader for Class Details validation
+1. F337 - Reuse the F332 class-details reader for Class Details validation
    context.
-3. F338 - Clean up the ClassImportDialog boundary.
+2. F338 - Clean up the ClassImportDialog boundary.
 
 No other slices were found.
 
@@ -218,23 +220,22 @@ No new v2 production path depends on DataService, MainWindow, PageManager, or a 
 
 Earlier verified slices and cumulative exit-gate snapshots are archived in the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 
-## Latest Progress Update - 2026-10-05 (F335 accepted; F336 selected)
+## Latest Progress Update - 2026-10-05 (F336 accepted; F337 selected)
 
-F335, committed as
-`65696eabe100591a9fd4985e30e7dbd1ab124667`, adds
-`loadScheduleEditorClassInfoRecord()` with one purpose-fit metadata `LEFT JOIN`
-for Schedule Editor; only that consuming page port uses it. It does not read
-schedules. The projection preserves the requested ID, defaults and blank
-fields, including blank values for missing or dangling left-joined teachers,
-and the existing Technical failure classification.
+F336, committed as
+`59bf62feb6d9a708e91dd2daaf1f460c744f8e0b`, adds a purpose-fit repository
+reader that performs one `SELECT class_grade`, returns the requested ID, and
+returns a blank grade for a missing row. It preserves grade whitespace and
+uses the existing action's Technical error mapping; only the Selected Class
+Grade port changed.
 
-Tests cover all fields, one-statement metrics, absent-`class_info` defaults,
-dangling teachers, and a dropped metadata table. Fresh VS2026 x64/Ninja Debug
-configure passed the 1,329-file ownership audit; the focused
-`ClassMngrNextPlatformApplicationServicesScheduleEditorClassInfoReadPortTests`
-target built and CTest passed 1/1. `git diff --check` exited 0; no full suite
-ran. Configure had recurring nonfatal `vswhere` and long-path warnings.
+Tests cover the exact value ` M2 `, requested IDs, missing and empty rows, one
+statement per call, and a dropped `class_info` table producing a Technical
+error. Fresh VS2026 x64/Ninja Debug configure passed the 1,329-file ownership
+audit; `ClassMngrNextPlatformApplicationServicesSelectedClassGradeReadPortTests`
+built in 316/316 steps and focused CTest passed 1/1. `git diff --check` exited
+0; no full suite ran. Configure had nonfatal `vswhere` and long-path warnings.
 
-F336 is selected to narrow Selected Class Grade reads as described in the
-Current note; it is not implemented. Phase 2 remains In Progress/Open; Gates 1
-and 2 remain Partial.
+F337 is selected for the Class Details validation-context reader described in
+the Current note; it is not implemented. Batch 8 discovery is underway. Phase 2
+remains In Progress/Open; Gates 1 and 2 remain Partial.

@@ -11891,3 +11891,28 @@ F336 is selected to narrow the Selected Class Grade port from
 class ID, grade value, blank success when metadata is missing or empty, and
 Technical/error classification. F336 is selected, not implemented. Phase 2
 remains In Progress/Open; Gates 1 and 2 remain Partial.
+
+### F336 accepted / F337 selected - 2026-10-05
+
+F336, committed as
+`59bf62feb6d9a708e91dd2daaf1f460c744f8e0b`, adds a purpose-fit repository
+reader that performs one `SELECT class_grade`, returns the requested ID, and
+returns a blank grade when the row is missing. It preserves whitespace and
+uses the existing action's Technical mapping; only the Selected Class Grade
+port changed.
+
+Tests cover the exact value ` M2 `, requested IDs, missing and empty rows, one
+statement per call, and a dropped `class_info` table producing a Technical
+error. Fresh VS2026 x64/Ninja Debug configure passed the 1,329-file ownership
+audit; `ClassMngrNextPlatformApplicationServicesSelectedClassGradeReadPortTests`
+built in 316/316 steps and focused CTest passed 1/1. `git diff --check` exited
+0; no full suite ran. Configure had nonfatal `vswhere` and long-path warnings.
+
+F337 is selected to switch the Class Details validation-context port from
+`loadClassInfo()` to the F332 `loadClassPageDetails()` reader. Preserve
+matched/request IDs, the teacher-ID sentinel, exact notes/filler text,
+missing-row defaults, and Technical errors. The target is two statements
+(metadata and regular schedule) instead of three; the planned read includes
+unused regular schedules and no intensive schedules. F337 is selected, not
+implemented. It is the second-last Batch 7 slice, and Batch 8 discovery is
+underway. Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial.

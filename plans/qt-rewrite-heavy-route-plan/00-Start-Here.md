@@ -60,8 +60,10 @@
   read behavior) is accepted; F333 (Class Transfer preview assigned-teacher
   profile reuse) is accepted; F334 (purpose-fit Class Details projection) is
   accepted; F335 (one-statement Schedule Editor class-info projection) is
-  accepted. F336 (one-column Selected Class Grade read) is selected. Batch 6
-  is complete; Batch 7 (F336-F338) remains active.
+  accepted; F336 (one-column Selected Class Grade read) is accepted. F337
+  (reuse the F332 class-details reader for Class Details validation context)
+  is selected. Batch 6 is complete; Batch 7 (F337-F338) remains active, with
+  Batch 8 discovery underway.
   Gates 1 and 2 remain Partial, with broader feature
   migration, parity, and 96-class Release memory evidence still open.
   See the
