@@ -328,6 +328,7 @@ class MyClassesPageTests final : public QObject
 private slots:
     void classesRenderInOrderWithTitlesAndSelectionRestoredById();
     void successfulEmptyListShowsEmptyState();
+    void closedSessionRefreshIsQuietAndKeepsRenderedContent();
     void failedClassListReadClearsRenderedContentAndShowsWarning();
     void assignedTeacherProfileProjectsAllConsumedUtf16Fields();
     void classInformationFieldsAndTeacherAssociationUseTypedReads();
@@ -1032,6 +1033,66 @@ void MyClassesPageTests::successfulEmptyListShowsEmptyState()
     QLabel* const title = page.findChild<QLabel*>(QStringLiteral("pageTitle"));
     QVERIFY(title);
     QCOMPARE(title->text(), QStringLiteral("Class Information"));
+}
+
+void MyClassesPageTests::closedSessionRefreshIsQuietAndKeepsRenderedContent()
+{
+    MyClassesPageFixture fixture;
+    QString error;
+    QVERIFY2(fixture.initialize(&error), qPrintable(error));
+
+    int classId = 0;
+    QVERIFY2(fixture.createClass(
+                 QStringLiteral("Current class"),
+                 QStringLiteral("E4"),
+                 QStringLiteral("Theseus"),
+                 &classId,
+                 &error
+                 ), qPrintable(error));
+
+    MyClassesPage page(&fixture.services);
+    page.resize(900, 700);
+    page.refresh();
+
+    NavigationTabWidget* const tabs = classTabsFor(page);
+    QVERIFY(tabs);
+    QCOMPARE(tabs->count(), 1);
+    const QString initialTabText = classTabLabel(
+        QStringLiteral("E4"),
+        QStringLiteral("Theseus")
+        );
+    QCOMPARE(tabs->tabText(0), initialTabText);
+    QPointer<NavigationTabWidget> tabsGuard(tabs);
+
+    fixture.services.closeDatabase();
+    QVERIFY(!fixture.services.hasOpenDatabase());
+
+    bool warningShown = false;
+    QTimer::singleShot(0, &page, [&warningShown]
+    {
+        auto* const warning = qobject_cast<QMessageBox*>(
+            QApplication::activeModalWidget()
+            );
+        if (warning)
+        {
+            warningShown = true;
+            warning->accept();
+        }
+    });
+    page.refresh();
+    QApplication::processEvents();
+
+    QVERIFY(!warningShown);
+    QVERIFY(tabsGuard);
+    QCOMPARE(classTabsFor(page), tabsGuard.data());
+    QCOMPARE(tabsGuard->count(), 1);
+    QCOMPARE(tabsGuard->tabText(0), initialTabText);
+    QWidget* const retainedClassPage = tabsGuard->widget(0);
+    QVERIFY(retainedClassPage);
+    QCOMPARE(labelsWithText(
+        *retainedClassPage,
+        QStringLiteral("E4 - Theseus")
+        ).size(), 1);
 }
 
 void MyClassesPageTests::

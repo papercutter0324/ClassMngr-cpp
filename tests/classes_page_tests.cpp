@@ -161,6 +161,8 @@ class ClassesPageTests : public QObject
 private slots:
     void init();
     void nestedEditorsAreDeferredUntilTheirSectionIsOpened();
+    void closedSessionOpenClassClearsSelectionAndReleasesEvaluationResources();
+    void classInfoSaveEmitsWhenRefreshIsSkippedWithoutSession();
     void classDetailsAndCoTeacherTabsSeparateTheirSectionCards();
     void middleSchoolAnalyticsAndEvaluationsTabsFollowPreference();
     void selectedClassGradeFailureFailsOpenWithoutDataServiceFallback();
@@ -235,6 +237,58 @@ void ClassesPageTests::nestedEditorsAreDeferredUntilTheirSectionIsOpened()
     QVERIFY(!page.isEditorInstantiated(ClassesSection::Roster));
     QVERIFY(!page.isEditorInstantiated(ClassesSection::CoTeacher));
     QVERIFY(!page.isEditorInstantiated(ClassesSection::Notes));
+}
+
+void ClassesPageTests::
+closedSessionOpenClassClearsSelectionAndReleasesEvaluationResources()
+{
+    ApplicationServices services;
+    ClassesPage page(&services);
+    ResourcePackManager& resourcePacks = ResourcePackManager::instance();
+
+    QVERIFY(page.openClass(42, ClassesSection::Evaluations));
+    QCOMPARE(page.currentClassId(), 42);
+    QCOMPARE(page.currentSection(), ClassesSection::Evaluations);
+    QVERIFY(resourcePacks.isMounted(QStringLiteral("templates")));
+
+    ScheduleWidgetTestStubs::setDatabaseSessionOpen(false);
+    QVERIFY(!services.hasOpenDatabase());
+    QVERIFY(!page.openClass(42, ClassesSection::Details));
+
+    QCOMPARE(page.currentClassId(), -1);
+    QCOMPARE(page.currentSection(), ClassesSection::Details);
+    QVERIFY(!resourcePacks.isMounted(QStringLiteral("templates")));
+    ScheduleWidgetTestStubs::setDatabaseSessionOpen(true);
+}
+
+void ClassesPageTests::
+classInfoSaveEmitsWhenRefreshIsSkippedWithoutSession()
+{
+    ApplicationServices services;
+    ClassesPage page(&services);
+    QVERIFY(page.openClass(42, ClassesSection::Details));
+
+    auto* const details = page.findChild<ClassDetailsPage*>();
+    QVERIFY(details);
+    QSignalSpy savedSignal(&page, &ClassesPage::classInfoSaved);
+    const int classListReadsBefore =
+        ScheduleWidgetTestStubs::repositoryClassListReadCount;
+
+    ScheduleWidgetTestStubs::setDatabaseSessionOpen(false);
+    QVERIFY(!services.hasOpenDatabase());
+    QVERIFY(QMetaObject::invokeMethod(
+        details,
+        "classInfoSaved",
+        Qt::DirectConnection,
+        Q_ARG(int, 42)
+        ));
+
+    QCOMPARE(savedSignal.size(), 1);
+    QCOMPARE(
+        ScheduleWidgetTestStubs::repositoryClassListReadCount,
+        classListReadsBefore
+        );
+    ScheduleWidgetTestStubs::setDatabaseSessionOpen(true);
 }
 
 void ClassesPageTests::classDetailsAndCoTeacherTabsSeparateTheirSectionCards()

@@ -239,11 +239,7 @@ bool ClassesPage::openClass(
         }
     }
 
-    auto* classService =
-        m_services
-            ? m_services->classService()
-            : nullptr;
-    if (!classService || !classService->isAvailable())
+    if (!m_services || !m_services->hasOpenDatabase())
     {
         if (m_currentSection == ClassesSection::Evaluations
             && section != ClassesSection::Evaluations)
@@ -1310,15 +1306,11 @@ void ClassesPage::rebuildSectionTabs()
 
     bool hideMiddleSchoolAnalyticsAndEvaluations = false;
     const Classroom classroom = classroomById(m_currentClassId);
-    auto* classService =
-        m_services
-            ? m_services->classService()
-            : nullptr;
     if (
         !m_showMiddleSchoolAnalyticsAndEvaluations
         && classroom.id > 0
-        && classService
-        && classService->isAvailable()
+        && m_services
+        && m_services->hasOpenDatabase()
         )
     {
         const std::optional<ClassMngr::Next::Domain::ClassId> classId =
@@ -2350,12 +2342,7 @@ void ClassesPage::handleClassInfoSaved(
     int classId
     )
 {
-    auto* classService =
-        m_services
-            ? m_services->classService()
-            : nullptr;
-
-    if (classService && classService->isAvailable())
+    if (m_services && m_services->hasOpenDatabase())
     {
         ClassMngr::Next::Platform::
             ApplicationServicesClassesListReadPort readPort(m_services);

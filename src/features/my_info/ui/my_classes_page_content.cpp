@@ -539,26 +539,9 @@ void MyClassesPage::refreshGeneratedContent()
 }
 void MyClassesPage::rebuildClassInformation()
 {
-    ClassService* classService =
-        m_services
-            ? m_services->classService()
-            : nullptr;
-    TeacherService* teacherService =
-        m_services
-            ? m_services->teacherService()
-            : nullptr;
-    RosterService* rosterService =
-        m_services
-            ? m_services->rosterService()
-            : nullptr;
-
     if (
-        !classService
-        || !classService->isAvailable()
-        || !teacherService
-        || !teacherService->isAvailable()
-        || !rosterService
-        || !rosterService->isAvailable()
+        !m_services
+        || !m_services->hasOpenDatabase()
         || !m_classInformationLayout
         )
     {
