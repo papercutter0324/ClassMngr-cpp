@@ -12129,3 +12129,48 @@ from migrated Classes/My Classes pages. Preserve the no-session early return
 and query-failure warnings. F344 is selected, not implemented. Batch 8 remains
 active with F344 current. Phase 2 remains In Progress/Open; Gates 1 and 2 remain
 Partial.
+
+### F344 accepted - 2026-10-05
+
+F344, committed as `1bffb008`, replaces service-level availability gates in
+migrated Classes/My Classes pages with null-guarded
+`ApplicationServices::hasOpenDatabase()` checks and preserves quiet behavior
+when the session is closed. My Classes CTest passed 1/1 and both new
+ClassesPage slots passed. The full ClassesPage CTest stalled in
+`classDetailsAndCoTeacherTabsSeparateTheirSectionCards`; the stall reproduced
+with the old gates restored, so it is not evidence of an F344 regression.
+
+Fresh VS2026 x64/Ninja configure audited 1,334 sources; both targets built and
+`git diff --check` was clean. No full suite ran.
+
+### Slice discovery update - 2026-10-05 (Batch 9 recorded)
+
+Two independent exit-gate sweeps identified these bounded follow-up candidates
+in order:
+
+1. F345 - App-less roster-save normalization and validation policy.
+2. F346 - Roster row-transfer application workflow (source removal/read/prepare/atomic save).
+3. F347 - Class Details save orchestration.
+4. F348 - Class Transfer typed apply validation/request.
+5. F349 - Testing Classes delete transition baseline parity evidence.
+6. F350 - Testing Classes create/update persistence baseline parity.
+7. F351 - My Classes assigned-teacher display baseline parity.
+8. F352 - Class Import teacher-choice display baseline parity.
+9. F353 - Sub Prep roster-output semantic baseline parity.
+
+No other slices were found.
+
+Gate 2 parity candidates are evidence gaps; the sweeps did not establish
+functional defects.
+
+### F344 accepted / F345 selected - 2026-10-05
+
+F344 acceptance and verification are recorded above. F344 closes Batch 8.
+F345 is selected for an app-less roster-save normalization/validation contract
+over existing `RosterSnapshot` plus the Korean-length flag. This explicitly
+revisits F171's earlier choice to keep raw-snapshot validation in Platform:
+the bounded scope shares a Qt-free policy across use case and widget while
+preserving exact Qt normalization, issue order, UI focus/messages, and port
+suppression. F345 is selected, not implemented or verified. F346-F353 remain
+queued in order. Phase 2 remains In Progress/Open; Gates 1 and 2 remain
+Partial.

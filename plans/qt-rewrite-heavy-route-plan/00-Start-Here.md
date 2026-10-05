@@ -67,9 +67,10 @@
   My Classes assigned-teacher profile batch), F342 (narrow Sub Prep roster-
   output teacher profiles), and F343 (narrow Schedule Import snapshot class-info
   projection) are accepted; F344 (remove compatibility-service availability
-  gates in migrated Classes/My Classes) is selected. Batch 6 is complete;
-  Batch 7 (F337-F338) is complete; Batch 8 (F339-F344) remains active with
-  F344 selected.
+  gates in migrated Classes/My Classes) is accepted; F345 (app-less roster
+  save normalization and validation policy) is selected. Batch 6 is complete;
+  Batch 7 (F337-F338) and Batch 8 (F339-F344) are complete; Batch 9
+  (F345-F353) is active with F345 current and F346-F353 queued.
   Gates 1 and 2 remain Partial, with broader feature
   migration, parity, and 96-class Release memory evidence still open.
   See the

@@ -18,10 +18,13 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-05
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F344 is selected to remove redundant compatibility-service
-  availability gates from migrated Classes/My Classes pages. Preserve the
-  no-session early return and query-failure warnings. F344 is selected, not
-  implemented. Batch 8 remains active with F344 current.
+- Current note: F345 is selected to extract roster-save normalization and
+  validation into a Qt-free application policy over `RosterSnapshot` and the
+  Korean-length flag. This revisits F171's earlier choice to keep raw-snapshot
+  validation in Platform: the bounded policy is shared by the use case and
+  widget while preserving exact Qt normalization, issue order, UI
+  focus/messages, and port suppression. F345 is selected, not implemented.
+  Batch 8 is complete; Batch 9 is active with F346-F353 queued.
 
 ### Slice discovery batches
 
@@ -59,7 +62,7 @@ Accepted slices are removed from active tracking; their implementation and accep
 
 No other slices were found.
 
-##### Batch 8
+##### Batch 8 (complete)
 
 1. F339 - Schedule Testing class-choice projection (accepted).
 2. F340 - Sub Prep roster-output schedule-scope projection (accepted; commit
@@ -71,14 +74,29 @@ No other slices were found.
 5. F343 - Schedule Import snapshot class-info projection (accepted; commit
    `50dfdc80`).
 6. F344 - Remove redundant compatibility-service availability gates in
-   migrated Classes/My Classes (selected/current).
+   migrated Classes/My Classes (accepted; commit `1bffb008`).
 
 No other slices were found.
 
-#### Active batch: Batch 8
+##### Batch 9
 
-1. F344 - Selected/current: remove redundant compatibility-service availability
-   gates in migrated Classes/My Classes pages.
+1. F345 - App-less roster-save normalization and validation policy (selected/current).
+2. F346 - Roster row-transfer application workflow (source removal/read/prepare/atomic save).
+3. F347 - Class Details save orchestration.
+4. F348 - Class Transfer typed apply validation/request.
+5. F349 - Testing Classes delete transition baseline parity evidence.
+6. F350 - Testing Classes create/update persistence baseline parity.
+7. F351 - My Classes assigned-teacher display baseline parity.
+8. F352 - Class Import teacher-choice display baseline parity.
+9. F353 - Sub Prep roster-output semantic baseline parity.
+
+No other slices were found.
+
+#### Active batch: Batch 9
+
+1. F345 - Selected/current: app-less roster-save normalization and validation
+   policy over `RosterSnapshot` plus the Korean-length flag.
+2. F346-F353 - Queued in the recorded order above.
 
 #### F299 completeness audit checkpoint
 
@@ -240,21 +258,24 @@ No new v2 production path depends on DataService, MainWindow, PageManager, or a 
 
 Earlier verified slices and cumulative exit-gate snapshots are archived in the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 
-## Latest Progress Update - 2026-10-05 (F343 accepted; F344 selected)
+## Latest Progress Update - 2026-10-05 (F344 accepted; F345 selected)
 
-F343, committed as `50dfdc80`, adds a dedicated Schedule Import snapshot
-projection that omits `font_color` and class-info teacher display names. It
-preserves the three-statement pattern and source precedence; generic
-`loadScheduleClassInfos` remains unchanged.
+F344, committed as `1bffb008`, replaces the service-level availability gates
+with null-guarded `ApplicationServices::hasOpenDatabase()` checks while
+preserving quiet closed-session behavior. My Classes CTest passed 1/1 and both
+new ClassesPage slots passed. The full ClassesPage CTest stalled in
+`classDetailsAndCoTeacherTabsSeparateTheirSectionCards`; the stall reproduced
+with the old gates restored, so it is recorded as a test limitation rather
+than attributed to F344.
 
-Fresh independent VS2026 x64/Ninja Debug configure audited 1,334 files. The
-focused `ScheduleImportStateSnapshotPort` target built and CTest passed 1/1.
-Precedence cases are tested separately; independent review confirmed code order
-remains Classes -> Teachers -> ClassSchedules and found no behavior regression.
-`git diff --check` passed. No full suite ran.
+Fresh VS2026 x64/Ninja configure audited 1,334 sources; both targets built and
+`git diff --check` was clean. No full suite ran.
 
-F344 is selected to remove redundant compatibility-service availability gates
-from migrated Classes/My Classes pages. Preserve the no-session early return
-and query-failure warnings. F344 is selected, not implemented. Batch 8 remains
-active with F344 current. Phase 2 remains In Progress/Open; Gates 1 and 2 remain
-Partial.
+F345 is selected from Batch 9 for a Qt-free roster-save normalization and
+validation contract over existing `RosterSnapshot` plus the Korean-length
+flag. This revisits F171's earlier Platform decision and shares the policy
+across use case/widget, preserving exact Qt normalization, issue order, UI
+focus/messages, and port suppression. F345 is selected, not implemented or
+verified. Batch 8 is complete; Batch 9 is active with F346-F353 queued. Phase 2
+remains In Progress/Open; Gates 1 and 2 remain Partial. Batch 9's parity items
+are evidence gaps, not established functional defects.
