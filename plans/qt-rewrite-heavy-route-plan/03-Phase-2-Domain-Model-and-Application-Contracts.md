@@ -18,9 +18,9 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-05
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F347 is selected for Class Details save orchestration. F347 is
-  selected, not implemented. Batch 8 is complete; Batch 9 is active with
-  F348-F353 queued.
+- Current note: F348 is selected for Class Transfer typed apply
+  validation/request. F348 is selected, not implemented. Batch 8 is complete;
+  Batch 9 is active with F349-F353 queued.
 
 ### Slice discovery batches
 
@@ -78,8 +78,8 @@ No other slices were found.
 
 1. F345 - App-less roster-save normalization and validation policy (accepted; commit `40625856`).
 2. F346 - Roster row-transfer application workflow (source removal/read/prepare/atomic save; accepted; commit `5435cd0a`).
-3. F347 - Class Details save orchestration (selected/current).
-4. F348 - Class Transfer typed apply validation/request.
+3. F347 - Class Details save orchestration (accepted; commit `b4bfcbc4`).
+4. F348 - Class Transfer typed apply validation/request (selected/current).
 5. F349 - Testing Classes delete transition baseline parity evidence.
 6. F350 - Testing Classes create/update persistence baseline parity.
 7. F351 - My Classes assigned-teacher display baseline parity.
@@ -90,8 +90,8 @@ No other slices were found.
 
 #### Active batch: Batch 9
 
-1. F347 - Selected/current: Class Details save orchestration.
-2. F348-F353 - Queued in the recorded order above.
+1. F348 - Selected/current: Class Transfer typed apply validation/request.
+2. F349-F353 - Queued in the recorded order above.
 
 #### F299 completeness audit checkpoint
 
@@ -253,28 +253,20 @@ No new v2 production path depends on DataService, MainWindow, PageManager, or a 
 
 Earlier verified slices and cumulative exit-gate snapshots are archived in the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 
-## Latest Progress Update - 2026-10-05 (F346 accepted; F347 selected)
+## Latest Progress Update - 2026-10-05 (F347 accepted; F348 selected)
 
-F346, committed as `5435cd0a1beb0faebde9e7ad74e19c6555ecc6a7`, adds a typed
-roster row-transfer use case. It validates canonical/distinct IDs and source
-row removal before a fresh target read, reproduces the 25-row RosterModel
-projection (base/custom columns, cell/header normalization, width mapping,
-Autumn-to-Fall and raw-header custom widths, BOM decoding), prepares insertion,
-and invokes one typed save port. The Platform adapter calls
-`RosterService::saveRosters` once, retaining batch validation/transaction
-behavior. UI validation/confirmation remain; live model/autosave/selection
-updates only after success. Apply-path target-read errors now report and abort;
-menu-time availability behavior is unchanged.
+F347, committed as
+`b4bfcbc4607daeb825a13bad2b849e57139c05fc`, implements Class Details save
+orchestration. Independent verification used a fresh source-ownership audit
+covering 1,340 handwritten sources, focused CTest 4/4, a Qt-free compile, and
+`git diff --check`.
 
-Fresh VS2026 x64/Ninja Debug configure audited 1,339 handwritten sources;
-both focused targets built and CTest passed 2/2. A standalone Application
-compile without Qt include/lib paths passed; `git diff --check` and the new-file
-trailing-whitespace scan were clean. Read/save failure cases preserve source
-data, model/dirty/autosave/timer/selection state, including target-write
-transaction rollback. No full suite ran. The F344 baseline ClassesPage CTest
+Evidence logs are under `build/p2_f347_independent_*`. These are focused
+results; no full-suite pass is claimed. The F344 baseline ClassesPage CTest
 stall remains documented in the progress log.
 
-F347 is selected for Class Details save orchestration. F347 is selected, not
-implemented or verified. Batch 8 is complete; Batch 9 is active with F348-F353
-queued. Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial.
-Batch 9's parity items are evidence gaps, not established functional defects.
+F348 is selected for Class Transfer typed apply validation/request. F348 is
+selected, not implemented or verified. Batch 8 is complete; Batch 9 is active
+with F349-F353 queued. Phase 2 remains In Progress/Open; Gates 1 and 2 remain
+Partial. Batch 9's parity items are evidence gaps, not established functional
+defects.

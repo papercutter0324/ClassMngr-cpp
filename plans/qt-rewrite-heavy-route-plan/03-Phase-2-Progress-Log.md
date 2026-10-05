@@ -12225,3 +12225,18 @@ F347 is selected for Class Details save orchestration. F347 is selected, not
 implemented or verified. F348-F353 remain queued in order. Batch 8 is complete;
 Batch 9 is active. Phase 2 remains In Progress/Open; Gates 1 and 2 remain
 Partial.
+
+### F347 accepted / F348 selected - 2026-10-05
+
+F347, committed as
+`b4bfcbc4607daeb825a13bad2b849e57139c05fc`, implements Class Details save
+orchestration. Independent verification used a fresh source-ownership audit
+covering 1,340 handwritten sources, focused CTest 4/4, a Qt-free compile, and
+`git diff --check`. Evidence logs are under
+`build/p2_f347_independent_*`. These are focused results; no full-suite pass is
+claimed.
+
+F348 is selected for Class Transfer typed apply validation/request. F348 is
+selected, not implemented or verified. F349-F353 remain queued in order. Batch
+8 is complete; Batch 9 is active. Phase 2 remains In Progress/Open; Gates 1 and
+2 remain Partial.
