@@ -18,14 +18,16 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-05
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F338 is selected to move ClassImportDialog's direct
-  `DatabaseSession`/`TeacherRepository::loadTeacherDisplayNameRecords` batch
-  read behind a purpose-fit v2 application query and ApplicationServices
-  platform adapter. Preserve package-backed preview filtering, unique positive
-  teacher IDs, current display labels and fallback, and per-teacher profile
-  fallback if the batch operation fails. F338 is selected, not implemented.
-  Batch 7 remains active with only F338 remaining; Batch 8 (F339-F344)
-  discovery is queued.
+- Current note: F339 is selected for a purpose-fit Schedule Testing
+  class-choice projection, narrowing the current nine-field reader to class ID
+  and name, grade, level, and room while removing unused teacher ID, colors,
+  notes from the projection. Preserve the inner `testing_classes`-to-`classes`
+  join and left `class_info` join/defaults, grade/level/name/ID order, successful empty
+  results, Technical errors, and one-query bound; add a statement-metric
+  assertion and missing-class-info test. Focused target:
+  `ClassMngrNextPlatformApplicationServicesScheduleTestingClassChoicesReadPort`.
+  F339 is selected, not implemented.
+  Batch 7 is complete; Batch 8 remains active with F340-F344 queued.
 
 ### Slice discovery batches
 
@@ -55,7 +57,7 @@ Accepted slices are removed from active tracking; their implementation and accep
 
 #### Recorded batches
 
-##### Batch 7
+##### Batch 7 (complete)
 
 1. F337 - Reuse the F332 class-details reader for Class Details validation
    context.
@@ -66,8 +68,9 @@ No other slices were found.
 ##### Batch 8
 
 1. F339 - Add a purpose-fit Schedule Testing class-choice projection; drop
-   unused teacher ID, colors, notes, and the unused teacher join while
-   preserving joins, order, defaults, and errors.
+   unused teacher ID, colors, and notes from the projection while preserving
+   the `testing_classes`-to-`classes` inner join, the `class_info` left join,
+   order, defaults, and errors.
 2. F340 - Narrow Sub Prep roster-output teacher-profile fields to teacher ID,
    EN/KR names, preferred name, and romanization; preserve per-ID failures,
    order, and identity.
@@ -84,9 +87,16 @@ No other slices were found.
 
 No other slices were found.
 
-#### Active batch: Batch 7
+#### Active batch: Batch 8
 
-1. F338 - Clean up the ClassImportDialog boundary.
+1. F339 - Selected/current: purpose-fit Schedule Testing class-choice
+   projection.
+2. F340 - Queued: narrow Sub Prep roster-output teacher-profile fields.
+3. F341 - Queued: narrow Sub Prep schedule-scope rows.
+4. F342 - Queued: narrow My Classes assigned-teacher batch projection.
+5. F343 - Queued: narrow Schedule Import snapshot class-info projection.
+6. F344 - Queued: remove redundant compatibility-service availability gates
+   from migrated Classes/My Classes pages.
 
 #### F299 completeness audit checkpoint
 
@@ -248,27 +258,36 @@ No new v2 production path depends on DataService, MainWindow, PageManager, or a 
 
 Earlier verified slices and cumulative exit-gate snapshots are archived in the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 
-## Latest Progress Update - 2026-10-05 (F337 accepted; F338 selected)
+## Latest Progress Update - 2026-10-05 (F338 accepted; F339 selected)
 
-F337, committed as `97dfdf81` (`Phase2 - Reuse class details reader for
-validation (F337)`), switches the Class Details validation-context port from
-`loadClassInfo()` to F332's `loadClassPageDetails()`. It preserves mapped class
-ID, teacher ID and sentinels 0 and -2, exact notes/time-filler text, and
-missing-row defaults. The reader performs two metadata and two regular
-schedule statements across two reads; a missing row uses one plus one. No
-intensive schedule is read.
+F338, committed as `d0bb41ab` (`Phase2 - Move import dialog teacher batch
+read to v2 (F338)`), removes direct `DatabaseSession`/`TeacherRepository` batch
+access from ClassImportDialog by routing it through a purpose-fit Qt-free
+application query and ApplicationServices adapter. The query reads exactly
+four UTF-16 display fields and validates canonical, requested, and output
+identity, uniqueness, and order. It preserves package-backed
+preview filtering, unique positive teacher IDs, duplicate choice rows,
+`SidebarNodeNaming`, the exact `New Teacher` missing-profile label, partial
+batch results, individual profile retries after batch failure, and no-read
+cases.
 
-Fresh VS2026 x64/Ninja Debug configure validated 1,329 handwritten sources;
-the focused
-`ClassMngrNextPlatformApplicationServicesClassDetailsValidationContextPortTests`
-target built 316/316 and focused CTest passed 1/1. `git diff --check` exited 0.
-No full suite ran; configure emitted only nonfatal existing `vswhere` and
-long-path warnings.
+Fresh independent VS2026 x64/Ninja configure validated 1,334 handwritten
+files. Query, adapter, and ClassTransfer targets built; focused CTest passed
+3/3. The added
+`ClassTransferTests::importDialogRequestsOnlyUniquePositiveTeacherIds` test
+was independently rebuilt and its focused CTest passed 1/1, asserting
+nonpositive filtering, deduplication, original UI candidate IDs, and one
+statement. `git diff --check` passed. No full suite ran; configure had known
+nonfatal warnings.
 
-F338 is selected to move ClassImportDialog's direct
-`DatabaseSession`/`TeacherRepository::loadTeacherDisplayNameRecords` batch read
-behind a purpose-fit v2 application query and ApplicationServices platform
-adapter. Preserve package-backed preview filtering, unique positive teacher
-IDs, current display labels and fallback, and per-teacher profile fallback if
-the batch operation fails. F338 is selected, not implemented. Phase 2 remains
-In Progress/Open; Gates 1 and 2 remain Partial.
+F339 is selected for a purpose-fit Schedule Testing class-choice projection.
+Narrow the reader to class ID/name, grade, level, and room, removing unused
+teacher ID, colors, and notes from the projection. Preserve the inner
+`testing_classes`-to-`classes` join, left `class_info` join and defaults,
+grade/level/name/ID order, successful empty results, Technical errors, and a
+one-query bound; add a statement-metric assertion and missing-class-info
+test. Use focused target
+`ClassMngrNextPlatformApplicationServicesScheduleTestingClassChoicesReadPort`.
+F339 is selected, not implemented. Batch 7 is complete; Batch 8 remains active
+with F340-F344 queued. Phase 2 remains In Progress/Open; Gates 1 and 2 remain
+Partial.
