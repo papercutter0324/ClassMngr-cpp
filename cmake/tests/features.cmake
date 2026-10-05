@@ -411,6 +411,16 @@ qt_add_executable(ClassMngrClassTransferTests
         COMMAND ClassMngrScheduleWidgetTests
     )
 
+    classmngr_add_qt_test(
+        NAME TestingClassesPageDeleteParity
+        SOURCES
+            tests/testing_classes_page_delete_parity_tests.cpp
+        LIBRARIES
+            Qt6::Test
+            Qt6::Widgets
+        OFFSCREEN
+    )
+
     qt_add_executable(ClassMngrTestingClassesPageTests
         tests/testing_classes_page_tests.cpp
         src/core/utils/colorutils.cpp
