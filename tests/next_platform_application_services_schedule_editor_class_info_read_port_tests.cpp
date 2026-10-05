@@ -100,6 +100,7 @@ class NextPlatformApplicationServicesScheduleEditorClassInfoReadPortTests
 
 private slots:
     void readsEveryFieldFromTheActiveSessionRepository();
+    void readsDefaultsWithoutMetadataAndBlanksForDanglingTeacher();
     void nullMissingAndClosedSessionsDoNotUseServiceFallback();
     void forwardsRepositoryReadFailure();
 };
@@ -118,10 +119,6 @@ readsEveryFieldFromTheActiveSessionRepository()
     DatabaseSession* const session = services.databaseSession();
     QVERIFY(session);
     QVERIFY(session->isOpen());
-    const auto& metricsBefore =
-        session->classInfoRepository()->scheduleClassInfoReadMetrics();
-    const int readsBefore = metricsBefore.singleClassInfoReadCount;
-
     Platform::ApplicationServicesScheduleEditorClassInfoReadPort port(
         &services
         );
@@ -140,9 +137,92 @@ readsEveryFieldFromTheActiveSessionRepository()
         .roomNumber = u"308"
     };
     QVERIFY(loaded.value() == expected);
-    QCOMPARE(session->classInfoRepository()
-        ->scheduleClassInfoReadMetrics().singleClassInfoReadCount,
-        readsBefore + 1);
+    const auto& metrics = session->classInfoRepository()
+        ->scheduleEditorClassInfoReadMetrics();
+    QCOMPARE(metrics.callCount, 1);
+    QCOMPARE(metrics.statementCount, 1);
+}
+
+void NextPlatformApplicationServicesScheduleEditorClassInfoReadPortTests::
+readsDefaultsWithoutMetadataAndBlanksForDanglingTeacher()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+    const auto createdClass = services.classService()->create(
+        QStringLiteral("Schedule Editor Missing Metadata Test")
+        );
+    QVERIFY(createdClass);
+
+    QSqlDatabase database = services.databaseSession()->database();
+    QSqlQuery query(database);
+    query.prepare(QStringLiteral(
+        "DELETE FROM class_info WHERE class_id = ?"
+        ));
+    query.addBindValue(*createdClass);
+    QVERIFY2(query.exec(), qPrintable(query.lastError().text()));
+
+    Platform::ApplicationServicesScheduleEditorClassInfoReadPort port(
+        &services
+        );
+    const Domain::ClassId expectedClassId = classId(*createdClass);
+    const auto missingMetadata =
+        port.readScheduleEditorClassInfo(expectedClassId);
+
+    QVERIFY(missingMetadata);
+    const Application::ScheduleEditorClassInfoSnapshot defaults{
+        .classId = expectedClassId,
+        .classGrade = u"",
+        .classLevel = u"",
+        .readingBook = u"",
+        .essayBook = u"",
+        .classColor = u"#FFFFFF",
+        .fontColor = u"#000000",
+        .teacherKoreanName = u"",
+        .roomNumber = u""
+    };
+    QVERIFY(missingMetadata.value() == defaults);
+
+    QVERIFY2(query.exec(QStringLiteral("PRAGMA foreign_keys = OFF")),
+        qPrintable(query.lastError().text()));
+    query.prepare(QStringLiteral(R"(
+        INSERT INTO class_info (
+            class_id, teacher_id, class_grade, class_level,
+            reading_book, essay_book, class_color, font_color
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    )"));
+    query.addBindValue(*createdClass);
+    query.addBindValue(987654);
+    query.addBindValue(QStringLiteral("E5"));
+    query.addBindValue(QStringLiteral("Aeneid"));
+    query.addBindValue(QStringLiteral("Reading Book"));
+    query.addBindValue(QStringLiteral("Essay Book"));
+    query.addBindValue(QStringLiteral("#AABBCC"));
+    query.addBindValue(QStringLiteral("#112233"));
+    QVERIFY2(query.exec(), qPrintable(query.lastError().text()));
+
+    const auto danglingTeacher =
+        port.readScheduleEditorClassInfo(expectedClassId);
+
+    QVERIFY(danglingTeacher);
+    const Application::ScheduleEditorClassInfoSnapshot expectedDangling{
+        .classId = expectedClassId,
+        .classGrade = u"E5",
+        .classLevel = u"Aeneid",
+        .readingBook = u"Reading Book",
+        .essayBook = u"Essay Book",
+        .classColor = u"#AABBCC",
+        .fontColor = u"#112233",
+        .teacherKoreanName = u"",
+        .roomNumber = u""
+    };
+    QVERIFY(danglingTeacher.value() == expectedDangling);
+
+    const auto& metrics = services.databaseSession()->classInfoRepository()
+        ->scheduleEditorClassInfoReadMetrics();
+    QCOMPARE(metrics.callCount, 2);
+    QCOMPARE(metrics.statementCount, 2);
 }
 
 void NextPlatformApplicationServicesScheduleEditorClassInfoReadPortTests::

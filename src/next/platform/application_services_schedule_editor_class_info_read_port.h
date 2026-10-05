@@ -60,8 +60,8 @@ public:
 
         try
         {
-            const Result<ClassInfo> loaded =
-                repository->loadClassInfo(*legacyClassId);
+            const Result<ScheduleEditorClassInfoReadRecord> loaded =
+                repository->loadScheduleEditorClassInfoRecord(*legacyClassId);
             if (!loaded)
             {
                 return failure(
@@ -89,7 +89,8 @@ public:
                 .essayBook = loaded->essayBook.toStdU16String(),
                 .classColor = loaded->classColor.toStdU16String(),
                 .fontColor = loaded->fontColor.toStdU16String(),
-                .teacherKoreanName = loaded->teacherKr.toStdU16String(),
+                .teacherKoreanName =
+                    loaded->teacherKoreanName.toStdU16String(),
                 .roomNumber = loaded->roomNumber.toStdU16String()
             });
         }

@@ -657,6 +657,79 @@ Result<ClassInfo> ClassInfoRepository::loadClassInfo(
     return info;
 }
 
+Result<ScheduleEditorClassInfoReadRecord>
+ClassInfoRepository::loadScheduleEditorClassInfoRecord(const int classId)
+{
+    ++m_scheduleEditorClassInfoReadMetrics.callCount;
+    if (classId <= 0)
+    {
+        return std::unexpected(
+            QObject::tr("Loading class information failed: invalid class id %1.")
+                .arg(classId)
+            );
+    }
+
+    const QString identity = QObject::tr("class id %1").arg(classId);
+    ScheduleEditorClassInfoReadRecord record;
+    record.classId = classId;
+
+    QSqlQuery query(m_database);
+    query.prepare(R"(
+        WITH requested(class_id) AS (VALUES (?))
+        SELECT requested.class_id AS requested_class_id,
+               ci.class_grade AS class_grade,
+               ci.class_level AS class_level,
+               ci.reading_book AS reading_book,
+               ci.essay_book AS essay_book,
+               ci.class_color AS class_color,
+               ci.font_color AS font_color,
+               teachers.teacher_kr AS teacher_korean_name,
+               teachers.room_number AS room_number
+        FROM requested
+        LEFT JOIN class_info ci ON ci.class_id = requested.class_id
+        LEFT JOIN teachers ON teachers.id = ci.teacher_id
+    )");
+    query.addBindValue(classId);
+
+    ++m_scheduleEditorClassInfoReadMetrics.statementCount;
+    const auto loaded = SqlQueryUtils::executePrepared(
+        query,
+        QObject::tr("Loading class information"),
+        identity
+        );
+    if (!loaded)
+    {
+        return std::unexpected(loaded.error().userMessage());
+    }
+
+    if (query.next())
+    {
+        record.classId = query.value("requested_class_id").toInt();
+        record.classGrade = query.value("class_grade").toString();
+        record.classLevel = query.value("class_level").toString();
+        record.readingBook = query.value("reading_book").toString();
+        record.essayBook = query.value("essay_book").toString();
+
+        const QString classColor = query.value("class_color").toString();
+        if (!classColor.isEmpty())
+        {
+            record.classColor = classColor;
+        }
+
+        const QString fontColor = query.value("font_color").toString();
+        if (!fontColor.isEmpty())
+        {
+            record.fontColor = fontColor;
+        }
+
+        record.teacherKoreanName =
+            query.value("teacher_korean_name").toString();
+        record.roomNumber = query.value("room_number").toString();
+    }
+
+    return record;
+}
+
 Result<ClassPageDetailsReadRecord> ClassInfoRepository::loadClassPageDetails(
     const int classId
     )
@@ -2336,6 +2409,12 @@ const ClassDetailsPageReadMetrics&
 ClassInfoRepository::classDetailsPageReadMetrics() const noexcept
 {
     return m_classDetailsPageReadMetrics;
+}
+
+const ScheduleEditorClassInfoReadMetrics&
+ClassInfoRepository::scheduleEditorClassInfoReadMetrics() const noexcept
+{
+    return m_scheduleEditorClassInfoReadMetrics;
 }
 
 const ClassSubtitleBatchReadMetrics&
