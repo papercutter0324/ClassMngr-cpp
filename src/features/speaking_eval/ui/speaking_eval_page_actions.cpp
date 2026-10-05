@@ -121,7 +121,6 @@ void SpeakingEvalPage::importNames()
 {
     if (
         !m_services
-        || !m_services->rosterService()
         || m_classroom.id <= 0
         )
     {
@@ -307,7 +306,7 @@ void SpeakingEvalPage::showReports()
     ClassInfo classInfo;
     QByteArray signatureImage;
 
-    if (m_services && m_services->classService())
+    if (m_services)
     {
         classInfo = readReportClassInfoForSpeakingEvaluationPage(
             m_services,
@@ -381,7 +380,7 @@ void SpeakingEvalPage::generateClassAiComments()
     }
 
     ClassInfo classInfo;
-    if (m_services && m_services->classService())
+    if (m_services)
     {
         classInfo = readReportClassInfoForSpeakingEvaluationPage(
             m_services,
@@ -450,7 +449,7 @@ void SpeakingEvalPage::outputReports(
 
     ClassInfo classInfo;
     QByteArray signatureImage;
-    if (m_services && m_services->classService())
+    if (m_services)
     {
         classInfo = readReportClassInfoForSpeakingEvaluationPage(
             m_services,

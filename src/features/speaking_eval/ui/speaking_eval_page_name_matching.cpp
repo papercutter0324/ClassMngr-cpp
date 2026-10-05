@@ -441,7 +441,6 @@ QList<QStringList> SpeakingEvalPage::unmatchedRosterNamePairs() const
 
     if (
         !m_services
-        || !m_services->rosterService()
         || !m_model
         || m_classroom.id <= 0
         )

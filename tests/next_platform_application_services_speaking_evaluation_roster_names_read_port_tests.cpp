@@ -118,12 +118,29 @@ class NextPlatformApplicationServicesSpeakingEvaluationRosterNamesReadPortTests 
     Q_OBJECT
 
 private slots:
+    void missingSessionReturnsNotFound();
     void readsFirstCaseInsensitiveHeadersAndLegacySparseRows();
     void preservesMissingHeadersAndRowsMaterializedByUnrelatedCells();
     void skipsCellReadWhenNoColumnsExist();
     void emptyRosterWithNameColumnsIsSuccessful();
     void repositoryFailureIsStructured();
 };
+
+void NextPlatformApplicationServicesSpeakingEvaluationRosterNamesReadPortTests::
+missingSessionReturnsNotFound()
+{
+    ApplicationServices services;
+    Platform::ApplicationServicesSpeakingEvaluationRosterNamesReadPort port(
+        &services);
+    const auto result = Application::
+        SpeakingEvaluationRosterNamesReadQuery::execute(
+            request(42),
+            port
+            );
+
+    QVERIFY(!result);
+    QCOMPARE(result.error().code, Domain::ErrorCode::NotFound);
+}
 
 void NextPlatformApplicationServicesSpeakingEvaluationRosterNamesReadPortTests::
 readsFirstCaseInsensitiveHeadersAndLegacySparseRows()
