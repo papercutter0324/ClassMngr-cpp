@@ -54,8 +54,8 @@ public:
 
         try
         {
-            const Result<QList<TestingClass>> loaded =
-                repository->loadTestingClasses();
+            const Result<QList<TestingClassChoiceRecord>> loaded =
+                repository->loadTestingClassChoices();
             if (!loaded)
             {
                 return failure(
@@ -68,7 +68,7 @@ public:
             snapshot.choices.reserve(
                 static_cast<std::size_t>(loaded->size())
                 );
-            for (const TestingClass& testingClass : *loaded)
+            for (const TestingClassChoiceRecord& testingClass : *loaded)
             {
                 const std::string legacyClassId =
                     std::to_string(testingClass.classId);

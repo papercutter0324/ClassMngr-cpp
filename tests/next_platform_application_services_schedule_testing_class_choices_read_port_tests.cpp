@@ -5,6 +5,7 @@
 #include "next/application/schedule_testing_class_choices_query.h"
 #include "next/platform/application_services_schedule_testing_class_choices_read_port.h"
 
+#include <QSqlError>
 #include <QSqlDatabase>
 #include <QSqlQuery>
 #include <QTemporaryDir>
@@ -61,6 +62,7 @@ class NextPlatformApplicationServicesScheduleTestingClassChoicesReadPortTests
 
 private slots:
     void readsOrderedCompactChoicesFromTheActiveSession();
+    void keepsTestingClassesWithoutClassInfoWithBlankGradeAndLevel();
     void preservesSuccessfulEmptyRepositoryResults();
     void treatsUnavailableSessionsAsNotFoundWithoutFallback();
     void forwardsTestingClassRepositoryFailures();
@@ -103,6 +105,9 @@ readsOrderedCompactChoicesFromTheActiveSession()
         ));
     QVERIFY(createdE5Lower);
 
+    const TestingClassChoicesReadMetrics before =
+        repository->testingClassChoicesReadMetrics();
+
     Platform::ApplicationServicesScheduleTestingClassChoicesReadPort port(
         services
         );
@@ -111,8 +116,12 @@ readsOrderedCompactChoicesFromTheActiveSession()
             {},
             port
             );
+    const TestingClassChoicesReadMetrics after =
+        repository->testingClassChoicesReadMetrics();
 
     QVERIFY(result);
+    QCOMPARE(after.callCount - before.callCount, 1);
+    QCOMPARE(after.statementCount - before.statementCount, 1);
     QCOMPARE(result.value().choices.size(), std::size_t(3));
     QCOMPARE(result.value().choices[0].classId, classId(*createdE5Lower));
     QCOMPARE(result.value().choices[0].name,
@@ -133,6 +142,62 @@ readsOrderedCompactChoicesFromTheActiveSession()
     QCOMPARE(result.value().choices[2].grade, std::u16string(u"M2"));
     QCOMPARE(result.value().choices[2].level, std::u16string(u"A Level"));
     QCOMPARE(result.value().choices[2].room, std::u16string(u"Library"));
+}
+
+void NextPlatformApplicationServicesScheduleTestingClassChoicesReadPortTests::
+keepsTestingClassesWithoutClassInfoWithBlankGradeAndLevel()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+    DatabaseSession* const session = services.databaseSession();
+    QVERIFY(session);
+    TestingClassRepository* const repository =
+        session->testingClassRepository();
+    QVERIFY(repository);
+
+    const auto created = repository->createTestingClass(testingClass(
+        QStringLiteral("Class Info Removed"),
+        QStringLiteral("M1"),
+        QStringLiteral("Major"),
+        QStringLiteral("Retained Room")
+        ));
+    QVERIFY(created);
+
+    QSqlQuery removeClassInfo(session->database());
+    removeClassInfo.prepare(QStringLiteral(
+        "DELETE FROM class_info WHERE class_id=?"
+        ));
+    removeClassInfo.addBindValue(*created);
+    QVERIFY2(
+        removeClassInfo.exec(),
+        qPrintable(removeClassInfo.lastError().text())
+        );
+
+    Platform::ApplicationServicesScheduleTestingClassChoicesReadPort port(
+        services
+        );
+    const auto result =
+        Application::ScheduleTestingClassChoicesReadQueryHandler::execute(
+            {},
+            port
+            );
+
+    QVERIFY(result);
+    QCOMPARE(result.value().choices.size(), std::size_t(1));
+    QCOMPARE(result.value().choices[0].classId, classId(*created));
+    QCOMPARE(
+        result.value().choices[0].name,
+        std::u16string(u"Class Info Removed")
+        );
+    QVERIFY(result.value().choices[0].grade.empty());
+    QVERIFY(result.value().choices[0].level.empty());
+    QCOMPARE(
+        result.value().choices[0].room,
+        std::u16string(u"Retained Room")
+        );
 }
 
 void NextPlatformApplicationServicesScheduleTestingClassChoicesReadPortTests::

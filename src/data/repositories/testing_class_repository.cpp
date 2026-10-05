@@ -453,6 +453,52 @@ TestingClassRepository::loadTestingClasses()
     return testingClasses;
 }
 
+Result<QList<TestingClassChoiceRecord>>
+TestingClassRepository::loadTestingClassChoices()
+{
+    ++m_testingClassChoicesReadMetrics.callCount;
+
+    QList<TestingClassChoiceRecord> choices;
+    QSqlQuery query(m_database);
+    ++m_testingClassChoicesReadMetrics.statementCount;
+    if (!query.exec(QStringLiteral(R"(
+            SELECT
+                c.id AS class_id,
+                c.name,
+                ci.class_grade,
+                ci.class_level,
+                tc.room
+            FROM testing_classes tc
+            JOIN classes c ON c.id = tc.class_id
+            LEFT JOIN class_info ci ON ci.class_id = tc.class_id
+            ORDER BY ci.class_grade, ci.class_level, c.name, c.id
+        )")))
+    {
+        return std::unexpected(
+            queryFailure(query, QObject::tr("Loading testing classes"))
+            );
+    }
+
+    while (query.next())
+    {
+        choices.append({
+            .classId = query.value(QStringLiteral("class_id")).toInt(),
+            .name = query.value(QStringLiteral("name")).toString(),
+            .grade = query.value(QStringLiteral("class_grade")).toString(),
+            .level = query.value(QStringLiteral("class_level")).toString(),
+            .room = query.value(QStringLiteral("room")).toString()
+        });
+    }
+
+    return choices;
+}
+
+const TestingClassChoicesReadMetrics&
+TestingClassRepository::testingClassChoicesReadMetrics() const noexcept
+{
+    return m_testingClassChoicesReadMetrics;
+}
+
 Status TestingClassRepository::deleteTestingClass(
     int classId
     )
