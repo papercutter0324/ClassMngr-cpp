@@ -12240,3 +12240,18 @@ F348 is selected for Class Transfer typed apply validation/request. F348 is
 selected, not implemented or verified. F349-F353 remain queued in order. Batch
 8 is complete; Batch 9 is active. Phase 2 remains In Progress/Open; Gates 1 and
 2 remain Partial.
+
+### F348 accepted / F349 selected - 2026-10-05
+
+F348, committed as
+`1af24ebb1c77087fe29a55217131c3ea9a2e43a0`, implements Class Transfer typed
+apply validation/request. Independent verification used a fresh ownership
+audit of 1,342 handwritten sources, a 320-step focused build, CTest 2/2, a
+standalone Qt-free compile, and clean diff/new-header whitespace checks.
+Evidence logs are under `build/p2_f348_independent_verify3_*`. These are
+focused results; no full-suite pass is claimed.
+
+F349 is selected for Testing Classes delete transition baseline parity
+evidence. F349 is selected, not implemented or verified. F350-F353 remain
+queued in order. Batch 8 is complete; Batch 9 is active. Phase 2 remains In
+Progress/Open; Gates 1 and 2 remain Partial.

@@ -70,10 +70,11 @@
   gates in migrated Classes/My Classes) and F345 (app-less roster save
   normalization and validation policy) are accepted; F346 (roster row-transfer
   application workflow) and F347 (Class Details save orchestration) are
-  accepted; F348 (Class Transfer typed apply validation/request) is selected.
-  Batch 6 is complete;
+  accepted; F348 (Class Transfer typed apply validation/request) is accepted;
+  F349 (Testing Classes delete transition baseline parity evidence) is
+  selected. Batch 6 is complete;
   Batch 7 (F337-F338) and Batch 8 (F339-F344) are complete; Batch 9
-  (F345-F353) is active with F348 current and F349-F353 queued.
+  (F345-F353) is active with F349 current and F350-F353 queued.
   Gates 1 and 2 remain Partial, with broader feature
   migration, parity, and 96-class Release memory evidence still open.
   See the
