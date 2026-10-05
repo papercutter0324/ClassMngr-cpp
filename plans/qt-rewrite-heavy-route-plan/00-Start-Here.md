@@ -141,6 +141,20 @@ Statuses are intentionally conservative. A phase is not In progress until its wo
   and dated exit-gate snapshots. Keep requirements, decisions, and current
   status in the phase plan.
 
+## Build and test verification
+
+- For routine slice checks, reuse a configured build tree and build the
+  affected test targets and their dependencies. Let the build system recompile
+  changed or out-of-date inputs; a fresh build is not required for every slice.
+- Use a fresh build tree when changing the build system, toolchain, or
+  dependency configuration; when stale artifacts could explain a result; or
+  when a phase gate explicitly requires clean-checkout evidence.
+- Keep any phase-specific full builds, test suites, platform matrices, and
+  packaging checks required by an exit gate.
+- Record whether verification used an incremental or fresh build, which targets
+  were built, and which tests ran. Describe focused results as focused; do not
+  report them as a full-suite pass.
+
 ## Cross-cutting memory remediation
 
 The audit of large-data and widget-heavy paths is tracked in the

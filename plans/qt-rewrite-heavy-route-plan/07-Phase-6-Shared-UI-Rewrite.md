@@ -8,6 +8,20 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - At each start or resume, explicitly select Heavy and reread this phase plan and [00-Start-Here.md](00-Start-Here.md). Follow the active `AGENTS.md` Heavy-route instructions and `~/.codex/codex_workflow/heavy_route.md`, including their delegation, verification, and deployment-state requirements.
 - A new session, handoff, or context reset does not change the route. Do not continue under Light or Medium. If a required Heavy-route step blocks progress, report the blocker before implementation instead of silently switching routes.
 
+## Build and test verification
+
+- For routine slice checks, reuse a configured build tree and build the
+  affected test targets and their dependencies. Let the build system recompile
+  changed or out-of-date inputs; a fresh build is not required for every slice.
+- Use a fresh build tree when changing the build system, toolchain, or
+  dependency configuration; when stale artifacts could explain a result; or
+  when a phase gate explicitly requires clean-checkout evidence.
+- Keep any phase-specific full builds, test suites, platform matrices, and
+  packaging checks required by an exit gate. Record whether verification used
+  an incremental or fresh build, which targets were built, and which tests
+  ran. Describe focused results as focused; do not report them as a full-suite
+  pass.
+
 ## Status
 
 - Status: Not started
