@@ -130,6 +130,16 @@ classmngr_add_qt_test(
 )
 
 classmngr_add_qt_test(
+    NAME SidebarTeacherDeleteParity
+    SOURCES
+        tests/sidebar_teacher_delete_parity_tests.cpp
+    LIBRARIES
+        Qt6::Test
+        Qt6::Widgets
+    OFFSCREEN
+)
+
+classmngr_add_qt_test(
     NAME StaffDirectoryNativeEnglishRead
     SOURCES
         tests/staff_directory_native_english_read_tests.cpp

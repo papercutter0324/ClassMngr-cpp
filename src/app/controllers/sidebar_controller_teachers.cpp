@@ -1,8 +1,10 @@
 #include "sidebar_controller_p.h"
 
 #include "app/services/feature_services.h"
+#include "next/application/teacher_delete_use_case.h"
 #include "next/application/teacher_profile_read_query.h"
 #include "next/domain/domain_types.h"
+#include "next/platform/application_services_teacher_delete_port.h"
 #include "next/platform/application_services_teacher_profile_read_port.h"
 #include "ui/shared/dialogs/user_prompt_service.h"
 
@@ -152,14 +154,26 @@ void SidebarController::deleteTeacher()
         return;
     }
 
-    const Status removed = teachers->remove(teacher.id);
+    ClassMngr::Next::Platform::
+        ApplicationServicesTeacherDeletePort deletePort(m_services);
+    const ClassMngr::Next::Application::TeacherDeleteRequest deleteRequest{
+        .teacherId = *typedTeacherId
+    };
+    const auto removed =
+        ClassMngr::Next::Application::TeacherDeleteUseCase::execute(
+            deleteRequest,
+            deletePort
+            );
     if (!removed)
     {
         DialogServices::showWarning(
             m_sidebar,
             tr("Delete Teacher"),
             tr("The teacher could not be deleted."),
-            removed.error()
+            QString::fromUtf8(
+                removed.error().message.data(),
+                static_cast<qsizetype>(removed.error().message.size())
+                )
             );
         return;
     }
