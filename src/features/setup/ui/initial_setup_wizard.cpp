@@ -9,6 +9,10 @@
 #include "features/schedule/ui/schedule_import_dialog.h"
 #include "features/teacher/ui/teacher_import_dialog.h"
 #include "next/application/initial_setup_teacher_choices_read_query.h"
+#include "next/application/class_create_use_case.h"
+#include "next/application/class_details_save_use_case.h"
+#include "next/platform/application_services_class_create_port.h"
+#include "next/platform/application_services_class_details_save_port.h"
 #include "next/platform/application_services_initial_setup_teacher_choices_read_port.h"
 #include "next/platform/application_services_current_campus_preferences_port.h"
 #include "next/platform/application_services_custom_color_palette_preferences_port.h"
@@ -27,8 +31,10 @@
 
 #include <algorithm>
 #include <charconv>
+#include <optional>
 #include <string>
 #include <system_error>
+#include <vector>
 
 #include <cstddef>
 
@@ -51,10 +57,56 @@
 #include <QScrollArea>
 #include <QSignalBlocker>
 #include <QTimer>
+#include <QTime>
 #include <QVBoxLayout>
 
 namespace
 {
+std::optional<std::vector<ClassMngr::Next::Domain::ScheduleTime>>
+typedScheduleTimes(const QList<ClassTime>& values)
+{
+    using ClassMngr::Next::Domain::ScheduleTime;
+
+    const QStringList days{
+        QStringLiteral("Monday"), QStringLiteral("Tuesday"),
+        QStringLiteral("Wednesday"), QStringLiteral("Thursday"),
+        QStringLiteral("Friday"), QStringLiteral("Saturday"),
+        QStringLiteral("Sunday")
+    };
+
+    std::vector<ScheduleTime> result;
+    result.reserve(static_cast<std::size_t>(values.size()));
+    for (const ClassTime& value : values)
+    {
+        const int weekday = days.indexOf(value.day);
+        const QTime start = QTime::fromString(
+            value.startTime,
+            QStringLiteral("h:mm AP")
+            );
+        const QTime end = QTime::fromString(
+            value.endTime,
+            QStringLiteral("h:mm AP")
+            );
+        if (weekday < 0 || !start.isValid() || !end.isValid())
+        {
+            return std::nullopt;
+        }
+
+        const auto time = ScheduleTime::fromMinutes(
+            weekday,
+            start.hour() * 60 + start.minute(),
+            end.hour() * 60 + end.minute()
+            );
+        if (!time)
+        {
+            return std::nullopt;
+        }
+        result.push_back(*time);
+    }
+
+    return result;
+}
+
 InitialSetupWizard* setupWizard(const QWizardPage* page)
 {
     return qobject_cast<InitialSetupWizard*>(page->window());
@@ -1158,17 +1210,31 @@ public:
         int classId = setup->createdClassId();
         if (classId <= 0)
         {
-            const Result<int> created =
-                setup->classService()->create(QString());
+            ClassMngr::Next::Platform::ApplicationServicesClassCreatePort
+                createPort(setup->services());
+            const auto created =
+                ClassMngr::Next::Application::ClassCreateUseCase::execute(
+                    {}, createPort
+                    );
             if (!created)
             {
                 DialogServices::showWarning(
                     this, tr("Create Class"),
                     tr("The class could not be created."),
-                    created.error());
+                    QString::fromUtf8(created.error().message.c_str()));
                 return false;
             }
-            classId = *created;
+
+            bool classIdOk = false;
+            classId = QString::fromStdString(created.value().value())
+                .toInt(&classIdOk);
+            if (!classIdOk || classId <= 0)
+            {
+                DialogServices::showWarning(
+                    this, tr("Create Class"),
+                    tr("The class could not be created."));
+                return false;
+            }
             setup->setCreatedClassId(classId);
         }
         if (classId <= 0)
@@ -1180,7 +1246,46 @@ public:
         }
 
         info.classId = classId;
-        if (!setup->classService()->saveClassInfo(info))
+        const auto regularTimes = typedScheduleTimes(info.classTimes);
+        const auto intensiveTimes = typedScheduleTimes(info.intensiveTimes);
+        const auto typedClassId =
+            ClassMngr::Next::Domain::ClassId::fromString(
+                std::to_string(classId)
+                );
+        const auto teacherId = info.teacherId > 0
+            ? ClassMngr::Next::Domain::TeacherId::fromString(
+                std::to_string(info.teacherId)
+                )
+            : std::optional<ClassMngr::Next::Domain::TeacherId>{};
+        if (!regularTimes || !intensiveTimes || !typedClassId
+            || (info.teacherId > 0 && !teacherId))
+        {
+            DialogServices::showWarning(
+                this, tr("Create Class"),
+                tr("The class information could not be saved."));
+            return false;
+        }
+
+        const ClassMngr::Next::Application::ClassDetailsSaveRequest request{
+            .classId = *typedClassId,
+            .classGrade = info.classGrade.toStdU16String(),
+            .classLevel = info.classLevel.toStdU16String(),
+            .readingBook = info.readingBook.toStdU16String(),
+            .essayBook = info.essayBook.toStdU16String(),
+            .classColor = info.classColor.toStdU16String(),
+            .fontColor = info.fontColor.toStdU16String(),
+            .regularTimes = *regularTimes,
+            .intensiveTimes = *intensiveTimes,
+            .teacherId = teacherId
+        };
+        ClassMngr::Next::Platform::ApplicationServicesClassDetailsSavePort
+            detailsSavePort(setup->services());
+        const auto saved =
+            ClassMngr::Next::Application::ClassDetailsSaveUseCase::execute(
+                request,
+                detailsSavePort
+                );
+        if (!saved)
         {
             DialogServices::showWarning(
                 this, tr("Create Class"),

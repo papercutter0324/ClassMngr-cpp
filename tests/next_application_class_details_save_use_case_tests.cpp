@@ -131,6 +131,8 @@ private slots:
     void invalidClassIdsDoNotReachPort();
     void validRequestPreservesTypedScheduleValues();
     void forwardsRequestsWithAbsentSchedules();
+    void forwardsOptionalTeacherOverride();
+    void invalidOptionalTeacherIdsDoNotReachPort();
     void preservesPortFailure();
     void workflowSuccessNormalizesAndPreservesStageOrder();
     void workflowQueriesEmptySchedulesAndKeepsOptionalPayload();
@@ -202,6 +204,41 @@ forwardsRequestsWithAbsentSchedules()
     QCOMPARE(port.lastRequest->fontColor, std::u16string(u"#654321"));
     QVERIFY(!port.lastRequest->regularTimes.has_value());
     QVERIFY(!port.lastRequest->intensiveTimes.has_value());
+}
+
+void NextApplicationClassDetailsSaveUseCaseTests::
+forwardsOptionalTeacherOverride()
+{
+    RecordingSavePort port;
+    Application::ClassDetailsSaveRequest value = request("42");
+    value.teacherId = Domain::TeacherId::fromString("8");
+
+    const auto result =
+        Application::ClassDetailsSaveUseCase::execute(value, port);
+
+    QVERIFY(result);
+    QCOMPARE(port.callCount, 1);
+    QVERIFY(port.lastRequest->teacherId.has_value());
+    QCOMPARE(port.lastRequest->teacherId->value(), std::string("8"));
+}
+
+void NextApplicationClassDetailsSaveUseCaseTests::
+invalidOptionalTeacherIdsDoNotReachPort()
+{
+    RecordingSavePort port;
+    for (const std::string teacherId : {"0", "08", "-2", "2147483648"})
+    {
+        Application::ClassDetailsSaveRequest value = request("42");
+        value.teacherId = Domain::TeacherId::fromString(teacherId);
+
+        const auto result =
+            Application::ClassDetailsSaveUseCase::execute(value, port);
+
+        QVERIFY(!result);
+        QCOMPARE(result.error().code, Domain::ErrorCode::InvalidInput);
+    }
+    QCOMPARE(port.callCount, 0);
+    QVERIFY(!port.lastRequest.has_value());
 }
 
 void NextApplicationClassDetailsSaveUseCaseTests::preservesPortFailure()

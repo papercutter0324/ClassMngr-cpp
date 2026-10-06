@@ -102,6 +102,19 @@ public:
             info.essayBook = legacyText(request.essayBook);
             info.classColor = legacyText(request.classColor);
             info.fontColor = legacyText(request.fontColor);
+            if (request.teacherId)
+            {
+                const std::optional<int> teacherId =
+                    legacyClassId(request.teacherId->value());
+                if (!teacherId)
+                {
+                    return failure(
+                        Domain::ErrorCode::InvalidInput,
+                        "Teacher ID must be a canonical positive integer."
+                        );
+                }
+                info.teacherId = *teacherId;
+            }
             if (request.regularTimes)
             {
                 info.classTimes = legacyTimes(*request.regularTimes);

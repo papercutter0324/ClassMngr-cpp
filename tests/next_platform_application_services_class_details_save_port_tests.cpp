@@ -88,6 +88,7 @@ class NextPlatformApplicationServicesClassDetailsSavePortTests final
 
 private slots:
     void savesEditedFieldsAndPreservesHiddenClassInfo();
+    void teacherOverrideIsAppliedToSavedClassInfo();
     void absentSchedulesPreservePersistedSchedulesIndependently();
     void unavailableSessionReturnsStructuredFailure();
     void classInfoReadFailureReturnsTechnicalFailure();
@@ -197,6 +198,43 @@ savesEditedFieldsAndPreservesHiddenClassInfo()
         ));
     QVERIFY(request.regularTimes.has_value());
     QVERIFY(request.intensiveTimes.has_value());
+}
+
+void NextPlatformApplicationServicesClassDetailsSavePortTests::
+teacherOverrideIsAppliedToSavedClassInfo()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+
+    const auto createdClass = services.classService()->create(
+        QStringLiteral("Teacher Override Save Test")
+        );
+    QVERIFY(createdClass);
+    const int originalTeacherId = createTeacher(services);
+    const int selectedTeacherId = createTeacher(services);
+    QVERIFY(originalTeacherId > 0);
+    QVERIFY(selectedTeacherId > 0);
+
+    auto original = services.classService()->classInfo(*createdClass);
+    QVERIFY(original);
+    original->teacherId = originalTeacherId;
+    QVERIFY(services.classService()->saveClassInfo(*original));
+
+    Application::ClassDetailsSaveRequest request =
+        requestForClass(*createdClass);
+    request.teacherId = Domain::TeacherId::fromString(
+        std::to_string(selectedTeacherId)
+        );
+    Platform::ApplicationServicesClassDetailsSavePort port(services);
+    const auto result =
+        Application::ClassDetailsSaveUseCase::execute(request, port);
+
+    QVERIFY(result);
+    const auto saved = services.classService()->classInfo(*createdClass);
+    QVERIFY(saved);
+    QCOMPARE(saved->teacherId, selectedTeacherId);
 }
 
 void NextPlatformApplicationServicesClassDetailsSavePortTests::

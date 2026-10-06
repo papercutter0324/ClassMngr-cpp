@@ -107,6 +107,8 @@ set(CLASSMNGR_NEXT_APPLICATION_SOURCES
     src/next/application/teacher_delete_use_case.h
     src/next/application/classes_navigation_snapshot.h
     src/next/application/class_details_save_use_case.h
+    src/next/application/class_create.h
+    src/next/application/class_create_use_case.h
     src/next/application/class_details_save_workflow.h
     src/next/application/class_details_schedule_conflict_query.h
     src/next/application/class_details_validation_context_query.h
@@ -386,6 +388,7 @@ set(CLASSMNGR_NEXT_PLATFORM_SOURCES
     src/next/platform/application_services_selected_class_subtitle_batch_read_port.h
     src/next/platform/application_services_teacher_display_name_batch_read_port.h
     src/next/platform/application_services_class_details_save_port.h
+    src/next/platform/application_services_class_create_port.h
     src/next/platform/application_services_class_details_schedule_conflict_port.h
     src/next/platform/application_services_class_details_validation_context_port.h
     src/next/platform/application_services_classes_navigation_read_port.h
