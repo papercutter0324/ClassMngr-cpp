@@ -293,6 +293,8 @@ set(CLASSMNGR_NEXT_APPLICATION_SOURCES
     src/next/application/schedule_testing_assignment_read_query.h
     src/next/application/schedule_testing_assignment_save.h
     src/next/application/schedule_testing_assignment_save_use_case.h
+    src/next/application/schedule_testing_layout_clear_port.h
+    src/next/application/schedule_testing_layout_clear_use_case.h
     src/next/application/schedule_slot_state_save.h
     src/next/application/schedule_slot_state_save_use_case.h
     src/next/application/schedule_import_overlap_projection.h
@@ -368,6 +370,7 @@ set(CLASSMNGR_NEXT_PLATFORM_SOURCES
     src/next/platform/application_services_testing_teacher_choices_read_port.h
     src/next/platform/application_services_schedule_testing_assignment_read_port.h
     src/next/platform/application_services_schedule_testing_assignment_save_port.h
+    src/next/platform/application_services_schedule_testing_layout_clear_port.h
     src/next/platform/application_services_schedule_builder_source_port.h
     src/next/platform/application_services_schedule_import_state_snapshot_port.h
     src/next/platform/application_services_schedule_import_apply_port.h

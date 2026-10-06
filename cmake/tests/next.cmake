@@ -2999,6 +2999,15 @@ classmngr_add_qt_test(
 )
 
 classmngr_add_qt_test(
+    NAME NextApplicationScheduleTestingLayoutClearUseCase
+    SOURCES
+        tests/next_application_schedule_testing_layout_clear_use_case_tests.cpp
+    LIBRARIES
+        ClassMngrNext::Application
+        Qt6::Test
+)
+
+classmngr_add_qt_test(
     NAME NextApplicationScheduleSlotStateSave
     SOURCES
         tests/next_application_schedule_slot_state_save_tests.cpp
@@ -3158,6 +3167,16 @@ classmngr_add_qt_test(
     NAME NextPlatformApplicationServicesScheduleTestingAssignmentSavePort
     SOURCES
         tests/next_platform_application_services_schedule_testing_assignment_save_port_tests.cpp
+    LIBRARIES
+        ClassMngrNext::Platform
+        Qt6::Test
+    OFFSCREEN
+)
+
+classmngr_add_qt_test(
+    NAME NextPlatformApplicationServicesScheduleTestingLayoutClearPort
+    SOURCES
+        tests/next_platform_application_services_schedule_testing_layout_clear_port_tests.cpp
     LIBRARIES
         ClassMngrNext::Platform
         Qt6::Test

@@ -140,6 +140,18 @@ classmngr_add_qt_test(
 )
 
 classmngr_add_qt_test(
+    NAME ScheduleTestingLayoutClearParity
+    SOURCES
+        tests/schedule_testing_layout_clear_parity_tests.cpp
+    LIBRARIES
+        Qt6::Test
+        Qt6::Widgets
+    DEPENDENCIES
+        ClassMngrcampusesResourcePack
+    OFFSCREEN
+)
+
+classmngr_add_qt_test(
     NAME StaffDirectoryNativeEnglishRead
     SOURCES
         tests/staff_directory_native_english_read_tests.cpp

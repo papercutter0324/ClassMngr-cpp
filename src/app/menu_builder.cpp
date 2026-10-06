@@ -5,6 +5,8 @@
 #include "features/calendar/ui/calendar_page.h"
 #include "features/calendar/ui/calendar_preferences_panel.h"
 #include "mainwindow.h"
+#include "next/application/schedule_testing_layout_clear_use_case.h"
+#include "next/platform/application_services_schedule_testing_layout_clear_port.h"
 #include "next/platform/application_services_class_day_filter_reset_policy_port.h"
 #include "next/platform/application_services_class_selection_reset_policy_port.h"
 #include "next/platform/application_services_class_visibility_preferences_port.h"
@@ -196,12 +198,13 @@ QVBoxLayout* pageLayout(
 
 void clearTestingLayout(MainWindow* window)
 {
-    auto* scheduleService =
-        window && window->services()
-            ? window->services()->scheduleService()
-            : nullptr;
+    ClassMngr::Next::Platform::
+        ApplicationServicesScheduleTestingLayoutClearPort clearPort(
+            window ? window->services() : nullptr
+            );
 
-    if (!scheduleService || !scheduleService->isAvailable())
+    if (!ClassMngr::Next::Application::
+            ScheduleTestingLayoutClearUseCase::isAvailable(clearPort))
     {
         DialogServices::showWarning(
             window,
@@ -226,13 +229,18 @@ void clearTestingLayout(MainWindow* window)
         return;
     }
 
-    const Status result = scheduleService->clearTestingAssignments();
+    const auto result =
+        ClassMngr::Next::Application::
+            ScheduleTestingLayoutClearUseCase::execute(clearPort);
     if (!result)
     {
         DialogServices::showWarning(
             window,
             preferencesText("Clear Testing Layout"),
-            result.error()
+            QString::fromUtf8(
+                result.error().message.data(),
+                static_cast<qsizetype>(result.error().message.size())
+                )
             );
         return;
     }
