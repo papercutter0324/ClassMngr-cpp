@@ -161,8 +161,8 @@ private slots:
     void successfulReadMapsAllFieldsAndPreservesBooksOnSave();
     void gradeChangeClearsBothBooksAndOmitsSchedules();
     void levelChangeClearsBothBooksAndOmitsSchedules();
-    void failedReadLeavesSilentEmptyDefaults_data();
-    void failedReadLeavesSilentEmptyDefaults();
+    void failedReadBlocksSaveAndKeepsDialogOpen_data();
+    void failedReadBlocksSaveAndKeepsDialogOpen();
     void notFoundKeepsDialogOpenWithoutWarning();
     void otherFailureShowsExistingWarningAndKeepsDialogOpen();
 };
@@ -324,7 +324,7 @@ levelChangeClearsBothBooksAndOmitsSchedules()
 }
 
 void ScheduleEditorDialogTests::
-failedReadLeavesSilentEmptyDefaults_data()
+failedReadBlocksSaveAndKeepsDialogOpen_data()
 {
     QTest::addColumn<int>("errorCode");
     QTest::addColumn<QString>("errorMessage");
@@ -336,7 +336,7 @@ failedReadLeavesSilentEmptyDefaults_data()
         << QStringLiteral("active session unavailable");
 }
 
-void ScheduleEditorDialogTests::failedReadLeavesSilentEmptyDefaults()
+void ScheduleEditorDialogTests::failedReadBlocksSaveAndKeepsDialogOpen()
 {
     QFETCH(int, errorCode);
     QFETCH(QString, errorMessage);
@@ -366,20 +366,29 @@ void ScheduleEditorDialogTests::failedReadLeavesSilentEmptyDefaults()
 
     dialog.show();
     QTRY_VERIFY(dialog.isVisible());
+    QString warningTitle;
+    QString warningText;
+    bool warningAccepted = false;
+    QTimer::singleShot(0, [&]
+    {
+        const auto prompt = DialogServices::promptTestDriver().activePrompt();
+        if (!prompt)
+        {
+            return;
+        }
+        warningTitle = prompt->title;
+        warningText = prompt->text;
+        warningAccepted = DialogServices::promptTestDriver().accept(prompt->id);
+    });
     QVERIFY(clickSave(dialog));
-    QCOMPARE(savePort.callCount, 1);
-    QVERIFY(savePort.lastRequest.has_value());
-    const Application::ClassDetailsSaveRequest& request =
-        *savePort.lastRequest;
-    QCOMPARE(request.classId.value(), std::string("42"));
-    QVERIFY(request.classGrade.empty());
-    QVERIFY(request.classLevel.empty());
-    QVERIFY(request.readingBook.empty());
-    QVERIFY(request.essayBook.empty());
-    QCOMPARE(request.classColor, std::u16string(u"#FFFFFF"));
-    QCOMPARE(request.fontColor, std::u16string(u"#000000"));
-    verifySchedulesOmitted(request);
-    QCOMPARE(dialog.result(), static_cast<int>(QDialog::Accepted));
+    QCOMPARE(savePort.callCount, 0);
+    QVERIFY(!savePort.lastRequest.has_value());
+    QVERIFY(warningAccepted);
+    QCOMPARE(warningTitle, QStringLiteral("Could Not Save"));
+    QCOMPARE(warningText,
+        QStringLiteral("The class information could not be saved."));
+    QVERIFY(dialog.isVisible());
+    QVERIFY(!DialogServices::promptTestDriver().activePrompt().has_value());
 }
 
 void ScheduleEditorDialogTests::notFoundKeepsDialogOpenWithoutWarning()

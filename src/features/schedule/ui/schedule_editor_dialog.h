@@ -69,6 +69,7 @@ private:
     QString m_originalLevel;
     QString m_classColor{"#FFFFFF"};
     QString m_fontColor{"#000000"};
+    bool m_hasLoadedData = false;
     bool m_loadingData = false;
 
     QLineEdit* m_teacherKrEdit = nullptr;

@@ -137,6 +137,16 @@ void ScheduleEditorDialog::chooseFontColor()
 
 void ScheduleEditorDialog::saveChanges()
 {
+    if (!m_hasLoadedData)
+    {
+        DialogServices::showWarning(
+            this,
+            tr("Could Not Save"),
+            tr("The class information could not be saved.")
+            );
+        return;
+    }
+
     const auto classId = ClassMngr::Next::Domain::ClassId::fromString(
         std::to_string(m_classId)
         );
@@ -419,6 +429,7 @@ void ScheduleEditorDialog::loadData()
 
         updateColorPreviews();
         m_loadingData = false;
+        m_hasLoadedData = true;
     };
 
     if (m_readPort)

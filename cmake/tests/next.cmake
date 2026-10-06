@@ -1095,6 +1095,18 @@ classmngr_add_qt_test(
 )
 
 classmngr_add_qt_test(
+    NAME NextScheduleEditorDialogParity
+    SOURCES
+        tests/schedule_editor_dialog_parity_tests.cpp
+    LIBRARIES
+        ClassMngrNext::Application
+        Qt6::Sql
+        Qt6::Test
+        Qt6::Widgets
+    OFFSCREEN
+)
+
+classmngr_add_qt_test(
     NAME NextApplicationClassDetailsScheduleConflictQuery
     SOURCES
         tests/next_application_class_details_schedule_conflict_query_tests.cpp
