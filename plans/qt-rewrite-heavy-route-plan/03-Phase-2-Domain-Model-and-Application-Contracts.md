@@ -32,16 +32,8 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-06
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F364 is selected for the Clear Testing Layout command
-  transition. Use a dedicated stateless typed Application use case/port and an
-  active-session Platform adapter calling
-  `TestingBlockRepository::clearTestingAssignments()` directly, with no
-  ScheduleService/DataService fallback. Preserve the availability warning
-  before confirmation; cancel means no write or refresh; write failure warns,
-  skips refresh, and retains rows atomically; success clears all
-  `schedule_testing_blocks` while preserving saved testing classes/rosters and
-  unrelated class data, then refreshes Schedule/Workspace views. Avoid new UX.
-  F364 is selected, not implemented or verified. Batches 9 and 10 are
+- Current note: F365 is selected for Initial Setup Wizard class create/save.
+  F365 is selected, not implemented or verified. Batches 9 and 10 are
   complete; Batch 11 is active.
 
 ### Slice discovery batches
@@ -125,7 +117,7 @@ No other slices were found.
 
 1. F362 - Sidebar class deletion Application boundary: preserve pre-confirm read warning, confirmation and page-leave guard order, cascade, and rollback (accepted; commit `88f02d36`).
 2. F363 - Sidebar regular-teacher deletion Application boundary; preserve chooser, profile-read, warning, confirmation, write, and sidebar-refresh behavior (accepted; commit `93f2c2f7`).
-3. F364 - Clear Testing Layout command transition; use a stateless typed Application use case/port and direct active-session Platform adapter; preserve warning, cancel/failure no-refresh, atomic failure retention, success data preservation, and Schedule/Workspace refresh.
+3. F364 - Clear Testing Layout command transition; use a stateless typed Application use case/port and direct active-session Platform adapter; preserve warning, cancel/failure no-refresh, atomic failure retention, success data preservation, and Schedule/Workspace refresh (accepted; commit `f3afb54f`).
 4. F365 - Initial Setup Wizard class create/save.
 5. F366 - Initial Setup Wizard validated teacher create.
 6. F367 - Class Transfer persisted apply boundary (F348 request validation is already accepted).
@@ -140,9 +132,9 @@ testing-assignment gate remains for later discovery.
 
 #### Active batch: Batch 11
 
-1. F354-F363 - Accepted: Batch 10 is complete through Class Analytics page mapping parity and both Sidebar deletion boundaries.
-2. F364 - Selected/current: Clear Testing Layout command transition.
-3. F365-F371 - Queued in the recorded Batch 11 order.
+1. F354-F364 - Accepted: Batch 10 is complete through Class Analytics page mapping parity, both Sidebar deletion boundaries, and Clear Testing Layout.
+2. F365 - Selected/current: Initial Setup Wizard class create/save.
+3. F366-F371 - Queued in the recorded Batch 11 order.
 
 #### F299 completeness audit checkpoint
 
@@ -304,25 +296,23 @@ No new v2 production path depends on DataService, MainWindow, PageManager, or a 
 
 Earlier verified slices and cumulative exit-gate snapshots are archived in the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 
-## Latest Progress Update - 2026-10-06 (F363 accepted; F364 selected)
+## Latest Progress Update - 2026-10-06 (F364 accepted; F365 selected)
 
-F363, committed as
-`93f2c2f7be3ddaa20414fbc78679d3202fdf1cd6` (`Phase2 - Migrate sidebar
-teacher deletion boundary (F363)`), completes the Sidebar regular-teacher
-deletion Application boundary. Five current focused CTests passed; the pinned
-F362 baseline passed 2/2. The exact two-file baseline overlay and diff/ownership
-audits passed. Normalized `F363_TRANSCRIPT` SHA-256:
-`65E80007F19AA29BB5C58C375587D2E6C9559B8AF94DE9ABF98788B809A10891`.
+F364, committed as
+`f3afb54f98808bf84c20cf29593e0b4a7c795529` (`Phase2 - Migrate clear testing
+layout command boundary (F364)`), implements the stateless typed Application
+clear-layout use case/port and direct active-session Platform call to
+`TestingBlockRepository::clearTestingAssignments()`.
 
-F364 is selected for the Clear Testing Layout command transition. Use a
-dedicated stateless typed Application use case/port and an active-session
-Platform adapter calling
-`TestingBlockRepository::clearTestingAssignments()` directly, without a
-ScheduleService/DataService fallback. Preserve the availability warning before
-confirmation; cancel does not write or refresh; write failure warns, skips
-refresh, and retains rows atomically; success clears all
-`schedule_testing_blocks` while preserving saved testing classes/rosters and
-unrelated class data, then refreshes Schedule/Workspace views. Avoid new UX.
-F364 is selected, not implemented or verified. Batch 11 remains active with
-F365-F371 queued. Phase 2 remains In Progress/Open; Gates 1 and 2 remain
-Partial.
+Current focused CTests passed 7/8; the pinned F363 baseline
+`93f2c2f76d4077377019a5d07564ad0b060e7b84` passed 5/6. All F364 targets plus
+repository, Workspace, menu, and navigation targets passed.
+`ClassMngrScheduleWidgetTests` had identical 24 passed / 16 failed and failure
+locations on current and baseline; this was confirmed pre-existing. Four
+LF-normalized parity transcript rows matched; SHA-256:
+`A9406D44B9D9EB2B8C2C64E18B2F05E155CA9A36EEFCCFA7BD6CC1791CE25DDB`. The exact
+two-file baseline overlay and one-owner/diff/whitespace audits passed.
+
+F365 is selected for Initial Setup Wizard class create/save. F365 is selected,
+not implemented or verified. Batch 11 remains active with F366-F371 queued.
+Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial.

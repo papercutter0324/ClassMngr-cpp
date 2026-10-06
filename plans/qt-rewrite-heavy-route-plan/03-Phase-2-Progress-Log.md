@@ -12631,3 +12631,29 @@ warns, skips refresh, and retains rows atomically; success clears all
 unrelated class data, then refreshes Schedule/Workspace views. Avoid new UX.
 F364 is selected, not implemented or verified. Batch 11 remains active with
 F365-F371 queued. Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial.
+
+### F364 accepted / F365 selected - 2026-10-06
+
+F364, committed as
+`f3afb54f98808bf84c20cf29593e0b4a7c795529` (`Phase2 - Migrate clear testing
+layout command boundary (F364)`), implements the stateless typed Application
+clear-layout use case/port and direct active-session Platform call to
+`TestingBlockRepository::clearTestingAssignments()`. It preserves the warning,
+cancel, write-failure, atomic-retention, success-clearing, data-preservation, and
+Schedule/Workspace refresh behavior recorded in the preceding selection entry.
+
+Current focused CTests passed 7/8; pinned F363 baseline tests passed 5/6. All
+F364 targets plus repository, Workspace, menu, and navigation targets passed.
+`ClassMngrScheduleWidgetTests` reported the same 24 passed / 16 failed with
+identical failure lines and locations on current and baseline; this was
+confirmed pre-existing. Four LF-normalized parity transcript rows were
+identical; SHA-256:
+`A9406D44B9D9EB2B8C2C64E18B2F05E155CA9A36EEFCCFA7BD6CC1791CE25DDB`. The exact
+F363 baseline source
+`93f2c2f76d4077377019a5d07564ad0b060e7b84` used a two-file overlay containing
+only the parity source and `cmake/tests/pages_and_output.cmake`. One-owner, diff,
+and whitespace audits passed.
+
+F365 is selected for Initial Setup Wizard class create/save. It is selected,
+not implemented or verified. Batch 11 remains active with F366-F371 queued.
+Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial.
