@@ -12756,3 +12756,18 @@ behavior.
 F370 is selected in Batch 11 order for “Class Export picker baseline parity.”
 Its acceptance matrix is not yet established. Batch 11 remains active with
 F371 queued. Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial.
+
+### F370 accepted / F371 selected - 2026-10-07
+
+F370, committed as
+`f0ce74dbe633f58ac40c3d58cd032c432f3090a4` (`Phase2 - Add Class Export picker
+baseline parity`), is accepted. The Tester built the shared overlay at pinned
+baseline `a5dea57f13ce0c1f5c5f80dcf870c558e8383872`; baseline parity CTest
+passed 1/1 and current focused CTests passed 7/7. Eight normalized JSON rows
+matched byte-for-byte. SHA-256:
+`9F7EC10B625A2AE62D35A61AA8D0801B892A7472DD271F548A7DB30C8CA3A528`.
+
+F371 is selected in Batch 11 order for “Roster Transfer remaining legacy
+availability gates.” Discovery is in progress and its acceptance matrix is not
+yet established. Batch 11 remains active. Phase 2 remains In Progress/Open;
+Gates 1 and 2 remain Partial.

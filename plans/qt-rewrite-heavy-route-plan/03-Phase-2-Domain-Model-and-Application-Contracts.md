@@ -40,9 +40,9 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-07
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F370 is selected for “Class Export picker baseline parity.”
-  Its acceptance matrix is not yet established. Batch 11 remains active with
-  F371 queued.
+- Current note: F371 is selected for “Roster Transfer remaining legacy
+  availability gates.” Discovery is in progress and its acceptance matrix is
+  not yet established. Batch 11 remains active.
 
 ### Slice discovery batches
 
@@ -131,8 +131,8 @@ No other slices were found.
 6. F367 - Class Transfer persisted apply boundary (accepted; commit `11f0ce62`; F348 request validation is already accepted).
 7. F368 - Teacher Import UI apply integration using the existing Next use case (accepted; commit `cb0622ef`).
 8. F369 - Schedule Editor baseline parity (accepted; commit `a4d4cd98`).
-9. F370 - Class Export picker baseline parity (selected/current; acceptance matrix not yet established).
-10. F371 - Roster Transfer remaining legacy availability gates.
+9. F370 - Class Export picker baseline parity (accepted; commit `f0ce74db`).
+10. F371 - Roster Transfer remaining legacy availability gates (selected/current; discovery in progress, acceptance matrix not established).
 
 Two independent read-only gate scans identified at least eleven candidates
 without establishing that discovery is exhausted. The lower-ranked Schedule
@@ -145,8 +145,8 @@ testing-assignment gate remains for later discovery.
 3. F367 - Accepted: Class Transfer persisted apply boundary (commit `11f0ce62`); F348 request validation is already accepted.
 4. F368 - Accepted: Teacher Import UI apply integration using the existing Next use case (commit `cb0622ef`).
 5. F369 - Accepted: Schedule Editor baseline parity (commit `a4d4cd98`).
-6. F370 - Selected/current: Class Export picker baseline parity; acceptance matrix not yet established.
-7. F371 - Queued in the recorded Batch 11 order.
+6. F370 - Accepted: Class Export picker baseline parity (commit `f0ce74db`).
+7. F371 - Selected/current: Roster Transfer remaining legacy availability gates; discovery in progress, acceptance matrix not established.
 
 #### F299 completeness audit checkpoint
 
@@ -308,18 +308,17 @@ No new v2 production path depends on DataService, MainWindow, PageManager, or a 
 
 Earlier verified slices and cumulative exit-gate snapshots are archived in the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 
-## Latest Progress Update - 2026-10-07 (F369 accepted; F370 selected)
+## Latest Progress Update - 2026-10-07 (F370 accepted; F371 selected)
 
-F369, committed as
-`a4d4cd98866bdd680b6d68bba30a48792f235533` (`Phase2 - Migrate Schedule Editor
+F370, committed as
+`f0ce74dbe633f58ac40c3d58cd032c432f3090a4` (`Phase2 - Add Class Export picker
 baseline parity`), is accepted. The Tester built the shared overlay at pinned
-baseline `cc15eced5a8d60ea119aa94c841d1833c1ec10da`; baseline parity CTest
-passed 1/1 and current focused CTests passed 6/6. Six normalized parity rows
+baseline `a5dea57f13ce0c1f5c5f80dcf870c558e8383872`; baseline parity CTest
+passed 1/1 and current focused CTests passed 7/7. Eight normalized JSON rows
 matched byte-for-byte. SHA-256:
-`419AB7D2777A4B690F9FC0FED408125207228C5362C7801F4B7F62818CD90E58`. The
-transient initial-read failure now matches baseline warning/open/no-write
-behavior.
+`9F7EC10B625A2AE62D35A61AA8D0801B892A7472DD271F548A7DB30C8CA3A528`.
 
-F370 is selected in recorded order for “Class Export picker baseline parity.”
-Its acceptance matrix is not yet established. Batch 11 remains active with
-F371 queued. Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial.
+F371 is selected in recorded order for “Roster Transfer remaining legacy
+availability gates.” Discovery is in progress and its acceptance matrix is not
+yet established. Batch 11 remains active. Phase 2 remains In Progress/Open;
+Gates 1 and 2 remain Partial.
