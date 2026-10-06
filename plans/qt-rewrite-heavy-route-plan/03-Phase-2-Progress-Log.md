@@ -12657,3 +12657,22 @@ and whitespace audits passed.
 F365 is selected for Initial Setup Wizard class create/save. It is selected,
 not implemented or verified. Batch 11 remains active with F366-F371 queued.
 Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial.
+
+### F365 accepted / F366 selected - 2026-10-06
+
+F365, committed as
+`2797e8bc687b7e5f3e6f4db7722f01723cf4e352` (`Phase2 - Migrate Initial Setup
+Wizard class create/save boundary (F365)`), completes the Initial Setup Wizard
+class create/save Application boundary.
+
+Fresh current and pinned F364 baseline builds reported 355/355 and 339/339,
+respectively. Current focused CTest passed 10/10; pinned F364 baseline passed
+6/6. The parity harness ran five QtTest cases on each. Three LF-normalized
+`F365_TRANSCRIPT` rows matched byte-for-byte; SHA-256:
+`355A013E4C8326327DD699BBD3CF395D1C5E4CEDD252EBD71321BDC97E9C6F06`. The exact
+two-file baseline overlay and owner/diff/whitespace audits passed. Identical
+environment QWARNs were non-fatal.
+
+F366 is selected for Initial Setup Wizard validated teacher create. It is
+selected, not implemented or verified. Batch 11 remains active with F367-F371
+queued. Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial.
