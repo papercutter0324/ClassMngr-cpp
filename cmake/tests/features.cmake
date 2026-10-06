@@ -97,6 +97,17 @@ qt_add_executable(ClassMngrClassTransferTests
         OFFSCREEN
     )
 
+    classmngr_add_qt_test(
+        NAME ClassExportDialogParity
+        SOURCES
+            tests/class_export_dialog_parity_tests.cpp
+        LIBRARIES
+            Qt6::Sql
+            Qt6::Test
+            Qt6::Widgets
+        OFFSCREEN
+    )
+
     qt_add_executable(ClassMngrCalendarImportTests
         tests/calendar_import_tests.cpp
         src/features/calendar/calendar_event_campus_filter.cpp
