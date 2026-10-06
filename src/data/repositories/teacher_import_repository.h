@@ -2,8 +2,10 @@
 
 #include "core/result.h"
 #include "domain/models/teacher_import.h"
+#include "next/application/teacher_import_use_case.h"
 
 #include <QSqlDatabase>
+#include <QString>
 
 class TeacherImportRepository
 {
@@ -15,6 +17,16 @@ public:
 
     [[nodiscard]] Result<TeacherImportSummary> importTeachers(
         const TeacherImportPlan& plan
+        );
+
+    [[nodiscard]] static QString legacyErrorMessage(
+        const ClassMngr::Next::Application::TeacherImportUseCaseError& error
+        );
+    [[nodiscard]] static TeacherImportSummary legacySummary(
+        const ClassMngr::Next::Application::TeacherImportUseCaseResult& result
+        );
+    static void logRollbackFailure(
+        const ClassMngr::Next::Application::TeacherImportUseCaseError& error
         );
 
 private:

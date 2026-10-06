@@ -9,6 +9,7 @@ using namespace SidebarControllerPrivate;
 #include "features/teacher/ui/teacher_import_dialog.h"
 #include "next/application/teacher_import_latest_source_date_read_query.h"
 #include "next/platform/application_services_teacher_import_latest_source_date_read_port.h"
+#include "next/platform/application_services_teacher_import_apply_port.h"
 
 #include <optional>
 #include <string>
@@ -87,8 +88,9 @@ void SidebarController::importTeachers()
         }
     }
 
-    const Result<TeacherImportSummary> imported =
-        teachers->importTeachers(plan);
+    const ClassMngr::Next::Platform::
+        ApplicationServicesTeacherImportApplyPort applyPort(m_services);
+    const Result<TeacherImportSummary> imported = applyPort.apply(plan);
     if (!imported)
     {
         DialogServices::showWarning(

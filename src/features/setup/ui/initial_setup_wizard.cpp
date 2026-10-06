@@ -8,6 +8,7 @@
 #include "features/my_info/data/signature_image_processor.h"
 #include "features/schedule/ui/schedule_import_dialog.h"
 #include "features/teacher/ui/teacher_import_dialog.h"
+#include "next/platform/application_services_teacher_import_apply_port.h"
 #include "next/application/initial_setup_teacher_choices_read_query.h"
 #include "next/application/class_create_use_case.h"
 #include "next/application/class_details_save_use_case.h"
@@ -252,7 +253,7 @@ public:
         connect(importButton, &QPushButton::clicked, this, [this]()
         {
             auto* setup = setupWizard(this);
-            if (!setup || !setup->teacherService())
+            if (!setup)
             {
                 return;
             }
@@ -264,8 +265,11 @@ public:
                 return;
             }
 
+            const ClassMngr::Next::Platform::
+                ApplicationServicesTeacherImportApplyPort applyPort(
+                    setup->services());
             const Result<TeacherImportSummary> imported =
-                setup->teacherService()->importTeachers(dialog.importPlan());
+                applyPort.apply(dialog.importPlan());
             if (!imported)
             {
                 DialogServices::showWarning(

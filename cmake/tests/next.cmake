@@ -2605,6 +2605,16 @@ classmngr_add_qt_test(
 )
 
 classmngr_add_qt_test(
+    NAME NextPlatformApplicationServicesTeacherImportApplyPort
+    SOURCES
+        tests/next_platform_application_services_teacher_import_apply_port_tests.cpp
+    LIBRARIES
+        ClassMngrNext::Platform
+        Qt6::Test
+    OFFSCREEN
+)
+
+classmngr_add_qt_test(
     NAME NextPlatformApplicationServicesNativeEnglishTeacherDirectoryReadPort
     SOURCES
         tests/next_platform_application_services_native_english_teacher_directory_read_port_tests.cpp

@@ -24,6 +24,7 @@
 #include "domain/validation/roster_validator.h"
 #include "domain/validation/speaking_eval_validator.h"
 #include "domain/validation/teacher_validator.h"
+#include "domain/validation/teacher_import_plan_preparation.h"
 #include "domain/validation/validation_rules.h"
 
 #include <QDebug>
@@ -375,31 +376,19 @@ Result<TeacherImportSummary> TeacherService::importTeachers(
     const TeacherImportPlan& plan
     ) const
 {
-    TeacherImportPlan normalizedPlan = plan;
-    ValidationResult validation;
-    for (int index = 0; index < normalizedPlan.koreanTeachers.size(); ++index)
+    const auto normalizedPlan =
+        ClassMngr::Domain::prepareTeacherImportPlan(plan);
+    if (!normalizedPlan)
     {
-        Teacher& teacher = normalizedPlan.koreanTeachers[index];
-        teacher = TeacherValidator::normalized(teacher);
-        appendImportedValidation(
-            validation,
-            TeacherValidator::validate(teacher),
-            QStringLiteral("koreanTeachers[%1]").arg(index)
-            );
-    }
-    if (validation.hasErrors())
-    {
-        return std::unexpected(
-            validationError(QStringLiteral("Teacher import"), validation)
-            );
+        return std::unexpected(normalizedPlan.error());
     }
 
     if (auto* repository = session() ? session()->teacherImportRepository() : nullptr)
     {
-        return repository->importTeachers(normalizedPlan);
+        return repository->importTeachers(*normalizedPlan);
     }
     return dataService()
-        ? dataService()->importTeachers(normalizedPlan)
+        ? dataService()->importTeachers(*normalizedPlan)
         : Result<TeacherImportSummary>(std::unexpected(unavailableError()));
 }
 

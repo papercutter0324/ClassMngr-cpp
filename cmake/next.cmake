@@ -273,6 +273,7 @@ set(CLASSMNGR_NEXT_APPLICATION_SOURCES
     src/next/application/teacher_import_plan_validation.h
     src/next/application/teacher_import_match_cardinality.h
     src/next/application/teacher_import_use_case.h
+    src/next/application/teacher_import_plan_mapper.h
     src/next/application/teacher_import_latest_source_date_read_port.h
     src/next/application/teacher_import_latest_source_date_read_query.h
     src/next/application/teacher_profile_edit_use_case.h
@@ -426,6 +427,7 @@ set(CLASSMNGR_NEXT_PLATFORM_SOURCES
     src/next/platform/application_services_teacher_profile_edit_persistence_port.h
     src/next/platform/application_services_teacher_profile_read_port.h
     src/next/platform/application_services_teacher_import_latest_source_date_read_port.h
+    src/next/platform/application_services_teacher_import_apply_port.h
     src/next/platform/application_services_korean_teacher_birthday_directory_read_port.h
     src/next/platform/application_services_native_english_teacher_birthday_directory_read_port.h
     src/next/platform/application_services_native_english_teacher_directory_read_port.h

@@ -1,4 +1,14 @@
 classmngr_add_qt_test(
+    NAME TeacherImportUiApplyParity
+    SOURCES
+        tests/teacher_import_ui_apply_parity_tests.cpp
+    LIBRARIES
+        Qt6::Test
+        Qt6::Widgets
+    OFFSCREEN
+)
+
+classmngr_add_qt_test(
     NAME PageManager
     SOURCES
         tests/pagemanager_tests.cpp

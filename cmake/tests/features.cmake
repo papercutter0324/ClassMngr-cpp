@@ -27,6 +27,7 @@ qt_add_executable(ClassMngrClassTransferTests
         src/data/repositories/speaking_eval_repository.cpp
         src/data/repositories/teacher_repository.cpp
         src/data/repositories/teacher_import_repository.cpp
+        src/data/repositories/teacher_import_sql_persistence_adapter.cpp
         src/domain/models/classroom.cpp
         src/domain/models/roster.cpp
         src/features/classes/config/class_info_config.cpp
@@ -174,6 +175,7 @@ qt_add_executable(ClassMngrClassTransferTests
         src/data/database/database_transaction.cpp
         src/data/repositories/gs_team_repository.cpp
         src/data/repositories/teacher_import_repository.cpp
+        src/data/repositories/teacher_import_sql_persistence_adapter.cpp
         src/features/calendar/calendar_workbook_reader.cpp
         src/features/teacher/import/sectioned_contact_list_template.cpp
         src/features/teacher/import/teacher_import_file_validator.cpp
