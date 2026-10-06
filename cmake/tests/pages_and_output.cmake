@@ -82,6 +82,29 @@ classmngr_add_qt_test(
     OFFSCREEN
 )
 
+classmngr_add_qt_test(
+    NAME InitialSetupWizardTeacherCreateParity
+    SOURCES
+        tests/initial_setup_wizard_teacher_create_parity_tests.cpp
+    LIBRARIES
+        Qt6::Test
+        Qt6::Widgets
+    DEPENDENCIES
+        ClassMngrcampusesResourcePack
+        ClassMngrdocumentsResourcePack
+    OFFSCREEN
+)
+
+qt_add_resources(
+    ClassMngrInitialSetupWizardTeacherCreateParityTests
+    initial_setup_teacher_create_parity_keyboard_test_resources
+    PREFIX "/"
+    BASE "${PROJECT_SOURCE_DIR}/resources"
+    FILES
+        resources/assets/icons/keyboard_dark.svg
+        resources/assets/icons/keyboard_light.svg
+)
+
 qt_add_resources(
     ClassMngrInitialSetupWizardClassCreateSaveParityTests
     initial_setup_parity_keyboard_test_resources

@@ -2999,6 +2999,15 @@ classmngr_add_qt_test(
 )
 
 classmngr_add_qt_test(
+    NAME NextApplicationTeacherCreateUseCase
+    SOURCES
+        tests/next_application_teacher_create_use_case_tests.cpp
+    LIBRARIES
+        ClassMngrNext::Application
+        Qt6::Test
+)
+
+classmngr_add_qt_test(
     NAME NextApplicationScheduleTestingAssignmentSaveUseCase
     SOURCES
         tests/next_application_schedule_testing_assignment_save_use_case_tests.cpp
@@ -3176,6 +3185,16 @@ classmngr_add_qt_test(
     NAME NextPlatformApplicationServicesTeacherDeletePort
     SOURCES
         tests/next_platform_application_services_teacher_delete_port_tests.cpp
+    LIBRARIES
+        ClassMngrNext::Platform
+        Qt6::Test
+    OFFSCREEN
+)
+
+classmngr_add_qt_test(
+    NAME NextPlatformApplicationServicesTeacherCreatePort
+    SOURCES
+        tests/next_platform_application_services_teacher_create_port_tests.cpp
     LIBRARIES
         ClassMngrNext::Platform
         Qt6::Test

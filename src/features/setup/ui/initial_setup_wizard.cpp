@@ -11,9 +11,11 @@
 #include "next/application/initial_setup_teacher_choices_read_query.h"
 #include "next/application/class_create_use_case.h"
 #include "next/application/class_details_save_use_case.h"
+#include "next/application/teacher_create_use_case.h"
 #include "next/platform/application_services_class_create_port.h"
 #include "next/platform/application_services_class_details_save_port.h"
 #include "next/platform/application_services_initial_setup_teacher_choices_read_port.h"
+#include "next/platform/application_services_teacher_create_port.h"
 #include "next/platform/application_services_current_campus_preferences_port.h"
 #include "next/platform/application_services_custom_color_palette_preferences_port.h"
 #include "next/platform/application_services_personal_display_name_preferences_port.h"
@@ -34,6 +36,7 @@
 #include <optional>
 #include <string>
 #include <system_error>
+#include <utility>
 #include <vector>
 
 #include <cstddef>
@@ -130,6 +133,14 @@ bool teacherIdAsInt(
 }
 
 QString initialSetupTeacherChoicesErrorMessage(const std::string& message)
+{
+    return QString::fromUtf8(
+        message.data(),
+        static_cast<qsizetype>(message.size())
+        );
+}
+
+QString initialSetupTeacherCreateErrorMessage(const std::string& message)
 {
     return QString::fromUtf8(
         message.data(),
@@ -860,7 +871,7 @@ private:
         }
 
         auto* setup = setupWizard(this);
-        if (!setup || !setup->teacherService())
+        if (!setup)
         {
             return false;
         }
@@ -886,14 +897,38 @@ private:
         teacher.zoomId = m_zoomId->text().trimmed();
         teacher.zoomPassword = m_zoomPassword->text();
 
-        const Result<int> created =
-            setup->teacherService()->create(teacher);
+        ClassMngr::Next::Domain::TeacherProfileFields fields{
+            .teacherKr = teacher.teacherKr.toStdU16String(),
+            .teacherEn = teacher.teacherEn.toStdU16String(),
+            .preferredRomanization =
+                teacher.preferredRomanization.toStdU16String(),
+            .preferredName = teacher.preferredName.toStdU16String(),
+            .roomNumber = teacher.roomNumber.toStdU16String(),
+            .wifiName = teacher.wifiName.toStdU16String(),
+            .wifiPassword = teacher.wifiPassword.toStdU16String(),
+            .internetType = teacher.internetType.toStdU16String(),
+            .zoomId = teacher.zoomId.toStdU16String(),
+            .zoomPassword = teacher.zoomPassword.toStdU16String(),
+            .projectionType = teacher.projectionType.toStdU16String()
+        };
+        const ClassMngr::Next::Application::TeacherCreateRequest request{
+            .fields = std::move(fields)
+        };
+        ClassMngr::Next::Platform::ApplicationServicesTeacherCreatePort
+            createPort(setup->services());
+        const auto created =
+            ClassMngr::Next::Application::TeacherCreateUseCase::execute(
+                request,
+                createPort
+                );
         if (!created)
         {
             DialogServices::showWarning(
                 this, tr("Teacher Information"),
                 tr("The teacher could not be saved."),
-                created.error());
+                initialSetupTeacherCreateErrorMessage(
+                    created.error().message
+                    ));
             return false;
         }
 
