@@ -12676,3 +12676,31 @@ environment QWARNs were non-fatal.
 F366 is selected for Initial Setup Wizard validated teacher create. It is
 selected, not implemented or verified. Batch 11 remains active with F367-F371
 queued. Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial.
+
+### F366 accepted / F367 selected - 2026-10-06
+
+F366, committed as
+`cb8bd18813a2e2676f81782755e3de60757c2c5f` (`Phase2 - Migrate Initial Setup
+Wizard validated teacher create boundary (F366)`), completes the validated
+teacher-create Application boundary.
+
+Fresh current Ninja Debug build completed 347 steps and focused CTest passed
+8/8. The exact pinned F365 source baseline
+`2797e8bc687b7e5f3e6f4db7722f01723cf4e352` used a fresh build of 339 steps and
+overlay CTest passed 6/6. Each parity run reported six QtTest cases. Four
+LF-normalized transcript rows matched byte-for-byte; SHA-256:
+`FF2D291196B7249F655AA780EBF2FEACF34EC1634F3B65AA206624FFBA7BCEC6`.
+
+The exact two-file baseline overlay contained
+`tests/initial_setup_wizard_teacher_create_parity_tests.cpp` (SHA-256
+`4BBE12F30399BE96EF18FDB6C754242B96F5A397653D37284DAF9D12D656E215`) and
+`cmake/tests/pages_and_output.cmake` (SHA-256
+`95F9EC070532ADDCED37631640340DB49C4F727DA41E116A9256AD5EB5EB5F82`). Ownership
+audit found one explicit owner for 1,379 handwritten source files; diff and
+whitespace audits passed with only LF-to-CRLF notices. The same Qt font warning
+appeared in both environments and was non-fatal.
+
+F367 is selected for the Class Transfer persisted apply boundary; F348 request
+validation was already accepted. F367 is selected, not implemented or verified.
+Batch 11 remains active with F368-F371 queued. Phase 2 remains In Progress/Open;
+Gates 1 and 2 remain Partial.

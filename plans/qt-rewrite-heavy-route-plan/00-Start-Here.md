@@ -86,11 +86,12 @@
   shared review-request type), F360 (Testing Classes cancel/failure page
   parity), F361 (Class Analytics page mapping parity), F362 (Sidebar class
   deletion Application boundary), F363 (Sidebar regular-teacher deletion
-  Application boundary), F364 (Clear Testing Layout command transition), and
-  F365 (Initial Setup Wizard class create/save) are accepted.
+  Application boundary), F364 (Clear Testing Layout command transition),
+  F365 (Initial Setup Wizard class create/save), and F366 (Initial Setup Wizard
+  validated teacher create) are accepted.
   Batch 6 is complete; Batch 7 (F337-F338), Batch 8 (F339-F344), Batch 9
   (F345-F353), and Batch 10 (F354-F361) are complete; Batch 11 (F362-F371)
-  is active with F366 current and F367-F371 queued.
+  is active with F367 current and F368-F371 queued.
   Gates 1 and 2 remain Partial, with broader feature
   migration, parity, and 96-class Release memory evidence still open.
   See the

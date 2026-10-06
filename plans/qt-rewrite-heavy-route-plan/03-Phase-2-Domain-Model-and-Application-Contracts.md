@@ -32,9 +32,9 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-06
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F366 is selected for Initial Setup Wizard validated teacher
-  create. F366 is selected, not implemented or verified. Batches 9 and 10 are
-  complete; Batch 11 is active.
+- Current note: F367 is selected for the Class Transfer persisted apply
+  boundary; F348 request validation is already accepted. F367 is selected, not
+  implemented or verified. Batches 9 and 10 are complete; Batch 11 is active.
 
 ### Slice discovery batches
 
@@ -119,7 +119,7 @@ No other slices were found.
 2. F363 - Sidebar regular-teacher deletion Application boundary; preserve chooser, profile-read, warning, confirmation, write, and sidebar-refresh behavior (accepted; commit `93f2c2f7`).
 3. F364 - Clear Testing Layout command transition; use a stateless typed Application use case/port and direct active-session Platform adapter; preserve warning, cancel/failure no-refresh, atomic failure retention, success data preservation, and Schedule/Workspace refresh (accepted; commit `f3afb54f`).
 4. F365 - Initial Setup Wizard class create/save (accepted; commit `2797e8bc`).
-5. F366 - Initial Setup Wizard validated teacher create.
+5. F366 - Initial Setup Wizard validated teacher create (accepted; commit `cb8bd188`).
 6. F367 - Class Transfer persisted apply boundary (F348 request validation is already accepted).
 7. F368 - Teacher Import UI apply integration using the existing Next use case.
 8. F369 - Schedule Editor baseline parity.
@@ -132,9 +132,10 @@ testing-assignment gate remains for later discovery.
 
 #### Active batch: Batch 11
 
-1. F354-F365 - Accepted: Batch 10 is complete through Class Analytics page mapping parity, both Sidebar deletion boundaries, Clear Testing Layout, and Initial Setup Wizard class create/save.
-2. F366 - Selected/current: Initial Setup Wizard validated teacher create.
-3. F367-F371 - Queued in the recorded Batch 11 order.
+1. F354-F361 - Accepted: Batch 10 is complete through Class Analytics page mapping parity.
+2. F362-F366 - Accepted in Batch 11 through both Sidebar deletion boundaries, Clear Testing Layout, and Initial Setup Wizard class create/save and validated teacher create.
+3. F367 - Selected/current: Class Transfer persisted apply boundary; F348 request validation is already accepted.
+4. F368-F371 - Queued in the recorded Batch 11 order.
 
 #### F299 completeness audit checkpoint
 
@@ -296,21 +297,22 @@ No new v2 production path depends on DataService, MainWindow, PageManager, or a 
 
 Earlier verified slices and cumulative exit-gate snapshots are archived in the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 
-## Latest Progress Update - 2026-10-06 (F365 accepted; F366 selected)
+## Latest Progress Update - 2026-10-06 (F366 accepted; F367 selected)
 
-F365, committed as
-`2797e8bc687b7e5f3e6f4db7722f01723cf4e352` (`Phase2 - Migrate Initial Setup
-Wizard class create/save boundary (F365)`), completes the Initial Setup Wizard
-class create/save Application boundary.
+F366, committed as
+`cb8bd18813a2e2676f81782755e3de60757c2c5f` (`Phase2 - Migrate Initial Setup
+Wizard validated teacher create boundary (F366)`), completes the validated
+teacher-create Application boundary.
 
-Fresh current and pinned F364 baseline builds reported 355/355 and 339/339,
-respectively. Current focused CTest passed 10/10; pinned baseline passed 6/6.
-The parity harness ran five QtTest cases on each. Three LF-normalized
-`F365_TRANSCRIPT` rows matched byte-for-byte; SHA-256:
-`355A013E4C8326327DD699BBD3CF395D1C5E4CEDD252EBD71321BDC97E9C6F06`. The exact
-two-file baseline overlay and owner/diff/whitespace audits passed; identical
-environment QWARNs were non-fatal.
+Fresh current Ninja Debug build completed 347 steps; focused CTest passed 8/8.
+The exact pinned F365 baseline `2797e8bc687b7e5f3e6f4db7722f01723cf4e352` had
+a fresh 339-step build and overlay CTest passed 6/6. Each parity run reported
+six QtTest cases. Four LF-normalized transcript rows matched byte-for-byte;
+SHA-256: `FF2D291196B7249F655AA780EBF2FEACF34EC1634F3B65AA206624FFBA7BCEC6`. The
+two-file overlay and ownership/diff/whitespace audits passed. Identical Qt font
+warnings were non-fatal.
 
-F366 is selected for Initial Setup Wizard validated teacher create. F366 is
-selected, not implemented or verified. Batch 11 remains active with F367-F371
-queued. Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial.
+F367 is selected for the Class Transfer persisted apply boundary; F348 request
+validation was already accepted. F367 is selected, not implemented or verified.
+Batch 11 remains active with F368-F371 queued. Phase 2 remains In Progress/Open;
+Gates 1 and 2 remain Partial.
