@@ -37,12 +37,11 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Depends on: Phase 1
 - Blocks: Persistence, bootstrap, shared UI, and feature migration
 - Owner: Unassigned
-- Last updated: 2026-10-06
+- Last updated: 2026-10-07
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F367 is selected for the Class Transfer persisted apply
-  boundary; F348 request validation is already accepted. F367 is selected, not
-  implemented or verified. Batches 9 and 10 are complete; Batch 11 is active.
+- Current note: F368 is selected: “Teacher Import UI apply integration using
+  the existing Next use case.” Batch 11 remains active with F369-F371 queued.
 
 ### Slice discovery batches
 
@@ -128,8 +127,8 @@ No other slices were found.
 3. F364 - Clear Testing Layout command transition; use a stateless typed Application use case/port and direct active-session Platform adapter; preserve warning, cancel/failure no-refresh, atomic failure retention, success data preservation, and Schedule/Workspace refresh (accepted; commit `f3afb54f`).
 4. F365 - Initial Setup Wizard class create/save (accepted; commit `2797e8bc`).
 5. F366 - Initial Setup Wizard validated teacher create (accepted; commit `cb8bd188`).
-6. F367 - Class Transfer persisted apply boundary (F348 request validation is already accepted).
-7. F368 - Teacher Import UI apply integration using the existing Next use case.
+6. F367 - Class Transfer persisted apply boundary (accepted; commit `11f0ce62`; F348 request validation is already accepted).
+7. F368 - Teacher Import UI apply integration using the existing Next use case (selected/current).
 8. F369 - Schedule Editor baseline parity.
 9. F370 - Class Export picker baseline parity.
 10. F371 - Roster Transfer remaining legacy availability gates.
@@ -142,8 +141,9 @@ testing-assignment gate remains for later discovery.
 
 1. F354-F361 - Accepted: Batch 10 is complete through Class Analytics page mapping parity.
 2. F362-F366 - Accepted in Batch 11 through both Sidebar deletion boundaries, Clear Testing Layout, and Initial Setup Wizard class create/save and validated teacher create.
-3. F367 - Selected/current: Class Transfer persisted apply boundary; F348 request validation is already accepted.
-4. F368-F371 - Queued in the recorded Batch 11 order.
+3. F367 - Accepted: Class Transfer persisted apply boundary (commit `11f0ce62`); F348 request validation is already accepted.
+4. F368 - Selected/current: Teacher Import UI apply integration using the existing Next use case.
+5. F369-F371 - Queued in the recorded Batch 11 order.
 
 #### F299 completeness audit checkpoint
 
@@ -305,22 +305,23 @@ No new v2 production path depends on DataService, MainWindow, PageManager, or a 
 
 Earlier verified slices and cumulative exit-gate snapshots are archived in the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 
-## Latest Progress Update - 2026-10-06 (F366 accepted; F367 selected)
+## Latest Progress Update - 2026-10-07 (F367 accepted; F368 selected)
 
-F366, committed as
-`cb8bd18813a2e2676f81782755e3de60757c2c5f` (`Phase2 - Migrate Initial Setup
-Wizard validated teacher create boundary (F366)`), completes the validated
-teacher-create Application boundary.
+F367, committed as
+`11f0ce622aa6f18e2d243a32fe0594776a357966` (`Phase2 - Migrate Class Transfer
+typed apply boundary`), completes the Class Transfer persisted apply boundary.
 
-Fresh current Ninja Debug build completed 347 steps; focused CTest passed 8/8.
-The exact pinned F365 baseline `2797e8bc687b7e5f3e6f4db7722f01723cf4e352` had
-a fresh 339-step build and overlay CTest passed 6/6. Each parity run reported
-six QtTest cases. Four LF-normalized transcript rows matched byte-for-byte;
-SHA-256: `FF2D291196B7249F655AA780EBF2FEACF34EC1634F3B65AA206624FFBA7BCEC6`. The
-two-file overlay and ownership/diff/whitespace audits passed. Identical Qt font
-warnings were non-fatal.
+Independent current Ninja/MSVC 19.51/Qt 6.12 verification passed CTest 6/6;
+the pinned F366 baseline passed 4/4. The same seven selected legacy transfer
+cases ran on both, with QtTest reporting 9 passed / 0 failed including
+init/cleanup. F367 parity was 7/7 on each side: five rows were identical and
+there were no byte differences. Normalized SHA-256:
+`755A9B7B5B2F4A3D18CAA0B24E6A9C2F3A3F90070E186476C0A2B395E61369D2`. The
+baseline overlay contained only `cmake/tests/features.cmake` and
+`tests/sidebar_class_transfer_apply_parity_tests.cpp`. Source-owner counts were
+1,387 current / 1,380 baseline. `git diff --check` was clean. Both environments
+showed matching nonfatal Qt resource/font warnings. No full suite ran.
 
-F367 is selected for the Class Transfer persisted apply boundary; F348 request
-validation was already accepted. F367 is selected, not implemented or verified.
-Batch 11 remains active with F368-F371 queued. Phase 2 remains In Progress/Open;
-Gates 1 and 2 remain Partial.
+F368 is selected: “Teacher Import UI apply integration using the existing Next
+use case.” Batch 11 remains active with F369-F371 queued. Phase 2 remains In
+Progress/Open; Gates 1 and 2 remain Partial.

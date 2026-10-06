@@ -12704,3 +12704,25 @@ F367 is selected for the Class Transfer persisted apply boundary; F348 request
 validation was already accepted. F367 is selected, not implemented or verified.
 Batch 11 remains active with F368-F371 queued. Phase 2 remains In Progress/Open;
 Gates 1 and 2 remain Partial.
+
+### F367 accepted / F368 selected - 2026-10-07
+
+F367, committed as
+`11f0ce622aa6f18e2d243a32fe0594776a357966` (`Phase2 - Migrate Class Transfer
+typed apply boundary`), completes the Class Transfer persisted apply boundary.
+F348 request validation was already accepted.
+
+Independent current Ninja/MSVC 19.51/Qt 6.12 verification passed CTest 6/6;
+the pinned F366 baseline passed 4/4. The same seven selected legacy transfer
+cases ran on both, with QtTest reporting 9 passed / 0 failed including
+init/cleanup. F367 parity passed 7/7 on each side: five rows were identical
+with no byte differences. Normalized SHA-256:
+`755A9B7B5B2F4A3D18CAA0B24E6A9C2F3A3F90070E186476C0A2B395E61369D2`. The
+baseline overlay contained only `cmake/tests/features.cmake` and
+`tests/sidebar_class_transfer_apply_parity_tests.cpp`. Source-owner counts were
+1,387 current / 1,380 baseline. `git diff --check` was clean. Both environments
+showed matching nonfatal Qt resource/font warnings. No full suite ran.
+
+F368 is selected: “Teacher Import UI apply integration using the existing Next
+use case.” Batch 11 remains active with F369-F371 queued. Phase 2 remains In
+Progress/Open; Gates 1 and 2 remain Partial.

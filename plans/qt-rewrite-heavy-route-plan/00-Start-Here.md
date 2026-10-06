@@ -5,7 +5,7 @@
 - Overall status: In progress
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
-- Last updated: 2026-10-06
+- Last updated: 2026-10-07
 - Current milestone: Phase 2 remains in progress. F253 (Qt-free private-notes
   splitter), F254 (Qt-free roster-score assignment planning), F255 (single-
   report AI eligibility policy reuse), F256 (typed roster read cutover for
@@ -87,11 +87,13 @@
   parity), F361 (Class Analytics page mapping parity), F362 (Sidebar class
   deletion Application boundary), F363 (Sidebar regular-teacher deletion
   Application boundary), F364 (Clear Testing Layout command transition),
-  F365 (Initial Setup Wizard class create/save), and F366 (Initial Setup Wizard
-  validated teacher create) are accepted.
+  F365 (Initial Setup Wizard class create/save), F366 (Initial Setup Wizard
+  validated teacher create), and F367 (Class Transfer persisted apply
+  boundary) are accepted.
   Batch 6 is complete; Batch 7 (F337-F338), Batch 8 (F339-F344), Batch 9
   (F345-F353), and Batch 10 (F354-F361) are complete; Batch 11 (F362-F371)
-  is active with F367 current and F368-F371 queued.
+  is active with F368 (Teacher Import UI apply integration using the existing
+  Next use case) current and F369-F371 queued.
   Gates 1 and 2 remain Partial, with broader feature
   migration, parity, and 96-class Release memory evidence still open.
   See the
