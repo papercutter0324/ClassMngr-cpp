@@ -12740,3 +12740,19 @@ F369 is selected in Batch 11 order for “Schedule Editor baseline parity.” It
 discovery found no exact acceptance matrix, so its scope is not fully pinned.
 Batch 11 remains active with F370-F371 queued. Phase 2 remains In Progress/Open;
 Gates 1 and 2 remain Partial.
+
+### F369 accepted / F370 selected - 2026-10-07
+
+F369, committed as
+`a4d4cd98866bdd680b6d68bba30a48792f235533` (`Phase2 - Migrate Schedule Editor
+baseline parity`), is accepted. The Tester built the shared overlay at pinned
+baseline `cc15eced5a8d60ea119aa94c841d1833c1ec10da`; baseline parity CTest
+passed 1/1 and current focused CTests passed 6/6. Six normalized parity rows
+matched byte-for-byte. SHA-256:
+`419AB7D2777A4B690F9FC0FED408125207228C5362C7801F4B7F62818CD90E58`. The
+transient initial-read failure now matches baseline warning/open/no-write
+behavior.
+
+F370 is selected in Batch 11 order for “Class Export picker baseline parity.”
+Its acceptance matrix is not yet established. Batch 11 remains active with
+F371 queued. Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial.

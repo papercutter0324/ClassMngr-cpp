@@ -89,12 +89,12 @@
   Application boundary), F364 (Clear Testing Layout command transition),
   F365 (Initial Setup Wizard class create/save), F366 (Initial Setup Wizard
   validated teacher create), F367 (Class Transfer persisted apply boundary),
-  and F368 (Teacher Import UI apply integration using the existing Next use
-  case) are accepted.
+  F368 (Teacher Import UI apply integration using the existing Next use case),
+  and F369 (Schedule Editor baseline parity) are accepted.
   Batch 6 is complete; Batch 7 (F337-F338), Batch 8 (F339-F344), Batch 9
   (F345-F353), and Batch 10 (F354-F361) are complete; Batch 11 (F362-F371)
-  is active with F369 (Schedule Editor baseline parity) current and F370-F371
-  queued. F369's exact acceptance matrix is not established yet.
+  is active with F370 (Class Export picker baseline parity) current and F371
+  queued. F370's acceptance matrix is not established yet.
   Gates 1 and 2 remain Partial, with broader feature
   migration, parity, and 96-class Release memory evidence still open.
   See the

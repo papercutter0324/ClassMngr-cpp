@@ -40,9 +40,9 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-07
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F369 is selected for “Schedule Editor baseline parity.” Its
-  discovery found no exact acceptance matrix, so its scope is not fully pinned.
-  Batch 11 remains active with F370-F371 queued.
+- Current note: F370 is selected for “Class Export picker baseline parity.”
+  Its acceptance matrix is not yet established. Batch 11 remains active with
+  F371 queued.
 
 ### Slice discovery batches
 
@@ -130,8 +130,8 @@ No other slices were found.
 5. F366 - Initial Setup Wizard validated teacher create (accepted; commit `cb8bd188`).
 6. F367 - Class Transfer persisted apply boundary (accepted; commit `11f0ce62`; F348 request validation is already accepted).
 7. F368 - Teacher Import UI apply integration using the existing Next use case (accepted; commit `cb0622ef`).
-8. F369 - Schedule Editor baseline parity (selected/current; exact acceptance matrix not established).
-9. F370 - Class Export picker baseline parity.
+8. F369 - Schedule Editor baseline parity (accepted; commit `a4d4cd98`).
+9. F370 - Class Export picker baseline parity (selected/current; acceptance matrix not yet established).
 10. F371 - Roster Transfer remaining legacy availability gates.
 
 Two independent read-only gate scans identified at least eleven candidates
@@ -144,8 +144,9 @@ testing-assignment gate remains for later discovery.
 2. F362-F366 - Accepted in Batch 11 through both Sidebar deletion boundaries, Clear Testing Layout, and Initial Setup Wizard class create/save and validated teacher create.
 3. F367 - Accepted: Class Transfer persisted apply boundary (commit `11f0ce62`); F348 request validation is already accepted.
 4. F368 - Accepted: Teacher Import UI apply integration using the existing Next use case (commit `cb0622ef`).
-5. F369 - Selected/current: Schedule Editor baseline parity; exact acceptance matrix not established.
-6. F370-F371 - Queued in the recorded Batch 11 order.
+5. F369 - Accepted: Schedule Editor baseline parity (commit `a4d4cd98`).
+6. F370 - Selected/current: Class Export picker baseline parity; acceptance matrix not yet established.
+7. F371 - Queued in the recorded Batch 11 order.
 
 #### F299 completeness audit checkpoint
 
@@ -307,17 +308,18 @@ No new v2 production path depends on DataService, MainWindow, PageManager, or a 
 
 Earlier verified slices and cumulative exit-gate snapshots are archived in the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 
-## Latest Progress Update - 2026-10-07 (F368 accepted; F369 selected)
+## Latest Progress Update - 2026-10-07 (F369 accepted; F370 selected)
 
-F368, committed as
-`cb0622efe4933808a7335c5a6739142bbce20de3` (`Phase2 - Migrate Teacher Import
-UI apply integration`), is accepted.
+F369, committed as
+`a4d4cd98866bdd680b6d68bba30a48792f235533` (`Phase2 - Migrate Schedule Editor
+baseline parity`), is accepted. The Tester built the shared overlay at pinned
+baseline `cc15eced5a8d60ea119aa94c841d1833c1ec10da`; baseline parity CTest
+passed 1/1 and current focused CTests passed 6/6. Six normalized parity rows
+matched byte-for-byte. SHA-256:
+`419AB7D2777A4B690F9FC0FED408125207228C5362C7801F4B7F62818CD90E58`. The
+transient initial-read failure now matches baseline warning/open/no-write
+behavior.
 
-The Tester report passed focused CTests 10/10 and confirmed byte identity
-between the current and F367-baseline UI transcripts. Normalized SHA-256:
-`10144DFCCCDC22716AEBBDA4FE00454513EB31EF4CBDB71A448AF07171AD1862`.
-
-F369 is selected in recorded order for “Schedule Editor baseline parity.” Its
-discovery found no exact acceptance matrix, so the scope is not fully pinned.
-Batch 11 remains active with F370-F371 queued. Phase 2 remains In Progress/Open;
-Gates 1 and 2 remain Partial.
+F370 is selected in recorded order for “Class Export picker baseline parity.”
+Its acceptance matrix is not yet established. Batch 11 remains active with
+F371 queued. Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial.
