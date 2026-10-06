@@ -141,6 +141,8 @@ set(CLASSMNGR_DOMAIN_SOURCES
     "src/domain/validation/calendar_event_validator.h"
     "src/domain/validation/class_info_validator.cpp"
     "src/domain/validation/class_info_validator.h"
+    "src/domain/validation/class_transfer_package_validator.cpp"
+    "src/domain/validation/class_transfer_package_validator.h"
     "src/domain/validation/class_time_validator.cpp"
     "src/domain/validation/class_time_validator.h"
     "src/domain/validation/roster_validator.cpp"

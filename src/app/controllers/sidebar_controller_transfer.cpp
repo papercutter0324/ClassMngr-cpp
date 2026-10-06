@@ -10,6 +10,8 @@ using namespace SidebarControllerPrivate;
 #include "next/platform/application_services_class_transfer_export_source_read_port.h"
 #include "features/classes/ui/class_export_dialog.h"
 #include "features/classes/ui/class_import_dialog.h"
+#include "next/application/class_transfer_apply_use_case.h"
+#include "next/platform/application_services_class_transfer_apply_port.h"
 #include "ui/shared/dialogs/file_dialog_service.h"
 
 #include <QDir>
@@ -207,28 +209,49 @@ void SidebarController::importClasses()
     }
 
     const QStringList selectedKeys = m_sidebar->selectedKeys();
-    const auto summary = classes->importClasses(
-        *package, dialog.applyRequest());
+    ClassMngr::Next::Application::ClassTransferApplyCommand command{
+        .package = *package,
+        .choices = dialog.applyRequest()
+    };
+    ClassMngr::Next::Platform::ApplicationServicesClassTransferApplyPort port(
+        *m_services
+        );
+    const auto summary =
+        ClassMngr::Next::Application::ClassTransferApplyUseCase::execute(
+            command,
+            port
+            );
 
     if (!summary)
     {
         DialogServices::showWarning(
-            m_sidebar, tr("Import Classes"), summary.error());
+            m_sidebar,
+            tr("Import Classes"),
+            QString::fromUtf8(summary.error().message.data(),
+                static_cast<qsizetype>(summary.error().message.size()))
+            );
         return;
     }
+    const auto& importedSummary = summary.value();
 
     refreshAllSidebars();
     m_pages->refreshAll();
 
     int firstAffectedClassId = -1;
 
-    if (!summary->createdClassIds.isEmpty())
+    if (!importedSummary.createdClassIds.empty())
     {
-        firstAffectedClassId = summary->createdClassIds.first();
+        const auto id = ClassMngr::Next::Application::classTransferApplyDestinationId(
+            importedSummary.createdClassIds.front()
+            );
+        firstAffectedClassId = id.value_or(-1);
     }
-    else if (!summary->replacedClassIds.isEmpty())
+    else if (!importedSummary.replacedClassIds.empty())
     {
-        firstAffectedClassId = summary->replacedClassIds.first();
+        const auto id = ClassMngr::Next::Application::classTransferApplyDestinationId(
+            importedSummary.replacedClassIds.front()
+            );
+        firstAffectedClassId = id.value_or(-1);
     }
 
     if (firstAffectedClassId > 0)
@@ -254,8 +277,8 @@ void SidebarController::importClasses()
         m_sidebar,
         tr("Import Classes"),
         tr("Import complete. Created: %1, replaced: %2, skipped: %3.")
-            .arg(summary->createdClassIds.size())
-            .arg(summary->replacedClassIds.size())
-            .arg(summary->skippedClassCount)
+            .arg(importedSummary.createdClassIds.size())
+            .arg(importedSummary.replacedClassIds.size())
+            .arg(importedSummary.skippedClassCount)
         );
 }

@@ -1363,6 +1363,19 @@ classmngr_add_qt_test(
 )
 
 classmngr_add_qt_test(
+    NAME NextApplicationClassTransferApplyUseCase
+    SOURCES tests/next_application_class_transfer_apply_use_case_tests.cpp
+    LIBRARIES ClassMngrNext::Application Qt6::Core Qt6::Test
+)
+
+classmngr_add_qt_test(
+    NAME NextPlatformApplicationServicesClassTransferApplyPort
+    SOURCES tests/next_platform_application_services_class_transfer_apply_port_tests.cpp
+    LIBRARIES Qt6::Test Qt6::Widgets
+    OFFSCREEN
+)
+
+classmngr_add_qt_test(
     NAME NextApplicationClassTransferExportQuery
     SOURCES tests/next_application_class_transfer_export_query_tests.cpp
     LIBRARIES ClassMngrNext::Application Qt6::Test

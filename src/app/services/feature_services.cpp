@@ -20,6 +20,7 @@
 #include "data/repositories/testing_class_repository.h"
 #include "domain/validation/calendar_event_validator.h"
 #include "domain/validation/class_info_validator.h"
+#include "domain/validation/class_transfer_package_validator.h"
 #include "domain/validation/roster_validator.h"
 #include "domain/validation/speaking_eval_validator.h"
 #include "domain/validation/teacher_validator.h"
@@ -710,55 +711,20 @@ Result<ClassImportSummary> ClassService::importClasses(
     const ClassMngr::Next::Application::ClassTransferApplyRequest& request
     ) const
 {
-    ClassTransferPackage normalizedPackage = package;
-    ValidationResult validation;
-
-    for (int index = 0; index < normalizedPackage.teachers.size(); ++index)
+    const auto normalizedPackage =
+        ClassTransferPackageValidator::normalizedAndValidated(package);
+    if (!normalizedPackage)
     {
-        ClassTransferTeacher& teacher = normalizedPackage.teachers[index];
-        teacher.teacher = TeacherValidator::normalized(teacher.teacher);
-        appendImportedValidation(
-            validation,
-            TeacherValidator::validate(teacher.teacher),
-            QStringLiteral("teachers[%1]").arg(index)
-            );
-    }
-
-    for (int index = 0; index < normalizedPackage.classes.size(); ++index)
-    {
-        ClassTransferClass& transferredClass = normalizedPackage.classes[index];
-        transferredClass.info = ClassInfoValidator::normalized(
-            transferredClass.info
-            );
-
-        // Class-transfer JSON deliberately omits the local class identity.
-        // Validate that payload with a non-persisted placeholder; the import
-        // repository assigns the destination ID when it creates the class.
-        if (transferredClass.info.classId == -1)
-        {
-            transferredClass.info.classId = 1;
-        }
-        appendImportedValidation(
-            validation,
-            ClassInfoValidator::validate(transferredClass.info),
-            QStringLiteral("classes[%1].info").arg(index)
-            );
-    }
-
-    if (validation.hasErrors())
-    {
-        return std::unexpected(
-            validationError(QStringLiteral("Class import"), validation)
-            );
+        return std::unexpected(normalizedPackage.error());
     }
 
     if (auto* repository = session()
             ? session()->classTransferRepository() : nullptr)
     {
-        return repository->importClasses(normalizedPackage, request);
+        return repository->importClasses(*normalizedPackage, request);
     }
     return dataService()
-        ? dataService()->importClasses(normalizedPackage, request)
+        ? dataService()->importClasses(*normalizedPackage, request)
         : Result<ClassImportSummary>(std::unexpected(unavailableError()));
 }
 
