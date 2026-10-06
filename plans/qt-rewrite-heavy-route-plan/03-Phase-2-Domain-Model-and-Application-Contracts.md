@@ -32,10 +32,12 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-06
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F362 is selected for the Sidebar class deletion Application
-  boundary. Preserve the pre-confirm read warning, confirmation and page-leave
-  guard order, cascade, and rollback. F362 is selected, not implemented or
-  verified. Batches 9 and 10 are complete; Batch 11 is active.
+- Current note: F363 is selected for the Sidebar regular-teacher deletion
+  Application boundary. Preserve its chooser, profile-read, warning,
+  confirmation, write, and sidebar-refresh behavior. Do not add a leave guard,
+  page clearing, or navigation; those differ from baseline and require a
+  separate product decision. F363 is selected, not implemented or verified.
+  Batches 9 and 10 are complete; Batch 11 is active.
 
 ### Slice discovery batches
 
@@ -116,8 +118,8 @@ No other slices were found.
 
 ##### Batch 11
 
-1. F362 - Sidebar class deletion Application boundary: preserve pre-confirm read warning, confirmation and page-leave guard order, cascade, and rollback.
-2. F363 - Sidebar teacher deletion Application boundary.
+1. F362 - Sidebar class deletion Application boundary: preserve pre-confirm read warning, confirmation and page-leave guard order, cascade, and rollback (accepted; commit `88f02d36`).
+2. F363 - Sidebar regular-teacher deletion Application boundary; preserve chooser, profile-read, warning, confirmation, write, and sidebar-refresh behavior.
 3. F364 - Clear Testing Layout command transition.
 4. F365 - Initial Setup Wizard class create/save.
 5. F366 - Initial Setup Wizard validated teacher create.
@@ -133,9 +135,9 @@ testing-assignment gate remains for later discovery.
 
 #### Active batch: Batch 11
 
-1. F354-F361 - Accepted: Batch 10 is complete through Class Analytics page mapping parity.
-2. F362 - Selected/current: Sidebar class deletion Application boundary; preserve the pre-confirm read warning, confirmation and page-leave guard order, cascade, and rollback.
-3. F363-F371 - Queued in the recorded Batch 11 order.
+1. F354-F362 - Accepted: Batch 10 is complete through Class Analytics page mapping parity and Sidebar class deletion.
+2. F363 - Selected/current: Sidebar regular-teacher deletion Application boundary.
+3. F364-F371 - Queued in the recorded Batch 11 order.
 
 #### F299 completeness audit checkpoint
 
@@ -297,22 +299,24 @@ No new v2 production path depends on DataService, MainWindow, PageManager, or a 
 
 Earlier verified slices and cumulative exit-gate snapshots are archived in the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 
-## Latest Progress Update - 2026-10-06 (F361 accepted; F362 selected)
+## Latest Progress Update - 2026-10-06 (F362 accepted; F363 selected)
 
-F361, committed as
-`c1ebeb8f193a4b66067fc5129f331ad634c95e3e` (`Phase2 - Add Class Analytics
-page mapping parity (F361)`), adds the page-mapping parity harness and CMake
-registration. Fresh current and exact-F360-baseline Windows x64 Ninja Debug
-builds passed; `ClassMngrClassAnalyticsPageReadParityTests` passed 1/1 on each
-with 4 QtTest passes. The two-path baseline overlay was byte-identical to
-current and contained no production changes.
+F362, committed as
+`88f02d36099b0be4705d4dd105d46e1744319a79` (`Phase2 - Migrate sidebar class
+deletion boundary (F362)`), moves regular Sidebar class deletion to the typed
+Application request/use case/port. The adapter uses the active session's
+`ClassRepository` directly. Controller confirmation and navigation ordering is
+preserved.
 
-The normalized `F361_TRANSCRIPT` SHA-256 is
-`6590C38A885FF3551D9123FBEA3CCD4E501A893630D37EC3F26CFC7CDBE4DA95`. The
-focused mappings, including empty state, matched; no full suite ran.
+Current focused CTests passed 4/4. The exact F361 baseline passed 2/2 focused
+CTests in a fresh separate Debug/Ninja tree; current used an incremental tree.
+Four normalized `F362_TRANSCRIPT` records matched; SHA-256:
+`72F163E0E49F945B5A1A5B5E69EDE7334FDF6C10AD293C694B43394DC777BB69`. No full
+suite ran.
 
-F362 is selected for the Sidebar class deletion Application boundary, preserving
-pre-confirm warning, confirmation and page-leave guard order, cascade, and
-rollback. F362 is selected, not implemented or verified. Batch 10 is complete;
-Batch 11 is active. Phase 2 remains In Progress/Open; Gates 1 and 2 remain
-Partial.
+F363 is selected for the Sidebar regular-teacher deletion Application boundary.
+Preserve its chooser, profile-read, warning, confirmation, write, and
+sidebar-refresh behavior. Do not add a leave guard, page clearing, or
+navigation; those differ from baseline and require a separate product decision.
+F363 is selected, not implemented or verified. Batch 10 is complete; Batch 11
+is active. Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial.

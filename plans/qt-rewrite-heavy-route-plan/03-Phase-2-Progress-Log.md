@@ -12563,3 +12563,43 @@ that discovery is exhausted. The lower-ranked Schedule testing-assignment gate
 remains for later discovery.
 Batch 10 is complete; Batch 11 is active. Phase 2 remains In Progress/Open;
 Gates 1 and 2 remain Partial.
+
+### F362 accepted / F363 selected - 2026-10-06
+
+F362, committed as
+`88f02d36099b0be4705d4dd105d46e1744319a79` (`Phase2 - Migrate sidebar
+class deletion boundary (F362)`), moves regular Sidebar class deletion to the
+typed `ClassDeleteRequest`, Application use case/port, and
+`ApplicationServicesClassDeletePort`. The Platform port uses the active open
+session's `ClassRepository` directly, without a ClassService/DataService
+fallback. The controller retains its chooser, warning, confirmation,
+leave-guard, and refresh/navigation order; deletion-only chooser and
+confirmation-label reads no longer depend on the compatibility-service
+availability gate.
+
+Current focused CTests passed 4/4:
+`ClassMngrNextApplicationClassDeleteUseCaseTests`,
+`ClassMngrNextPlatformApplicationServicesClassDeletePortTests`,
+`ClassMngrSidebarClassDeleteParityTests`, and
+`ClassMngrNavigationTeacherReadTests`. The parity scenarios cover confirmation
+cancel, leave-guard cancel, write failure, success/navigation; the existing
+Navigation target covers reload failure and a missing selected class. Current
+targets used an existing incremental Debug/Ninja tree and reported no work.
+
+The exact F361 baseline
+`c1ebeb8f193a4b66067fc5129f331ad634c95e3e` used a fresh separate Debug/Ninja
+tree; its two focused CTests passed 2/2. The baseline overlay contained only
+`tests/sidebar_class_delete_parity_tests.cpp` and
+`cmake/tests/pages_and_output.cmake`, both byte-identical to current; no F362
+production or Application/Platform test paths were overlaid. Ownership audit
+counted 1,355 current vs. 1,350 baseline-overlay source owners. Four ASCII
+`F362_TRANSCRIPT` records matched after LF normalization; SHA-256:
+`72F163E0E49F945B5A1A5B5E69EDE7334FDF6C10AD293C694B43394DC777BB69`. `git
+diff --check` passed; no full suite ran.
+
+F363 is selected for the Sidebar regular-teacher deletion Application boundary.
+Preserve chooser, profile-read, warning, confirmation, write, and sidebar-refresh
+behavior. Do not add a leave guard, page clearing, or navigation; these differ
+from baseline and require a separate product decision. F363 is selected, not
+implemented or verified. Batch 10 is complete; Batch 11 remains active. Phase 2
+remains In Progress/Open; Gates 1 and 2 remain Partial.
