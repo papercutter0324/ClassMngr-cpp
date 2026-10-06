@@ -2,6 +2,7 @@
 #include "ui/shared/dialogs/user_prompt_service.h"
 
 #include "app/services/feature_services.h"
+#include "data/database/database_session.h"
 #include "next/application/classes_list_read_query.h"
 #include "next/application/initial_setup_teacher_choices_read_query.h"
 #include "next/application/selected_class_subtitle_batch_read_query.h"
@@ -128,17 +129,14 @@ QString formattedClassDisplayName(
 
 int SidebarController::promptForClassToDelete() const
 {
-    auto* classes =
-        openClassService(m_services);
-
-    if (!classes)
+    DatabaseSession* const session =
+        m_services ? m_services->databaseSession() : nullptr;
+    if (!session || !session->isOpen())
     {
         return -1;
     }
 
-    auto* teachers =
-        openTeacherService(m_services);
-    const bool canReadSubtitles = classes && teachers;
+    const bool canReadSubtitles = true;
 
     QList<Classroom> classrooms;
     std::vector<ClassMngr::Next::Domain::ClassId> classIds;
@@ -357,12 +355,9 @@ QString SidebarController::classDisplayName(
     const Classroom& classroom
     ) const
 {
-    auto* classes =
-        openClassService(m_services);
-    auto* teachers =
-        openTeacherService(m_services);
-
-    if (!classes || !teachers)
+    DatabaseSession* const session =
+        m_services ? m_services->databaseSession() : nullptr;
+    if (!session || !session->isOpen())
     {
         return storedClassDisplayName(classroom);
     }

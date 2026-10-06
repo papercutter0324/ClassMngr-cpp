@@ -1,7 +1,9 @@
 #include "sidebar_controller_p.h"
 
 #include "app/services/feature_services.h"
+#include "next/application/class_delete_use_case.h"
 #include "next/application/classes_list_read_query.h"
+#include "next/platform/application_services_class_delete_port.h"
 #include "next/platform/application_services_classes_list_read_port.h"
 #include "ui/shared/dialogs/user_prompt_service.h"
 
@@ -80,14 +82,6 @@ void SidebarController::deleteClass()
         return;
     }
 
-    auto* classes =
-        openClassService(m_services);
-
-    if (!classes)
-    {
-        return;
-    }
-
     const auto typedClassId =
         ClassMngr::Next::Domain::ClassId::fromString(
             std::to_string(classId)
@@ -156,14 +150,26 @@ void SidebarController::deleteClass()
         return;
     }
 
-    const Status removed = classes->remove(classroom.id);
+    ClassMngr::Next::Platform::ApplicationServicesClassDeletePort deletePort(
+        m_services
+        );
+    const auto removed =
+        ClassMngr::Next::Application::ClassDeleteUseCase::execute(
+            ClassMngr::Next::Application::ClassDeleteRequest{
+                .classId = *typedClassId
+            },
+            deletePort
+            );
     if (!removed)
     {
         DialogServices::showWarning(
             m_sidebar,
             tr("Delete Class"),
             tr("The class could not be deleted."),
-            removed.error()
+            QString::fromUtf8(
+                removed.error().message.data(),
+                static_cast<qsizetype>(removed.error().message.size())
+                )
             );
         return;
     }
