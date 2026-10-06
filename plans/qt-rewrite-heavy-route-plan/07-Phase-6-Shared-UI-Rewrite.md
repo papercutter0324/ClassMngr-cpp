@@ -10,17 +10,25 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 
 ## Build and test verification
 
-- For routine slice checks, reuse a configured build tree and build the
-  affected test targets and their dependencies. Let the build system recompile
-  changed or out-of-date inputs; a fresh build is not required for every slice.
-- Use a fresh build tree when changing the build system, toolchain, or
-  dependency configuration; when stale artifacts could explain a result; or
-  when a phase gate explicitly requires clean-checkout evidence.
+- Use `build/windows-x64-debug` as the standard local Windows x64 Debug
+  build folder for slice work. Reuse this same configured folder across
+  slices and phases; do not create slice-, task-, or reviewer-specific build
+  folders. Build the affected targets and their dependencies, and let the
+  build system recompile changed or out-of-date inputs.
+- If a fresh build is needed, empty the applicable standard build folder
+  before configuring and building in it. For Windows x64 Debug, keep using
+  `build/windows-x64-debug`; do not create a new folder for the fresh build.
+  Apply the same rule when changing the build system, toolchain, or
+  dependency configuration; when stale artifacts could explain a result;
+  or when a phase gate explicitly requires clean-checkout evidence.
+- A gate requiring another platform or configuration must use that CMake
+  preset's standard `build/<preset-name>` folder and reuse it for that
+  preset, rather than creating a slice-specific folder.
 - Keep any phase-specific full builds, test suites, platform matrices, and
-  packaging checks required by an exit gate. Record whether verification used
-  an incremental or fresh build, which targets were built, and which tests
-  ran. Describe focused results as focused; do not report them as a full-suite
-  pass.
+  packaging checks required by an exit gate. Record whether verification
+  used an incremental or fresh build, which targets were built, and which
+  tests ran. Describe focused results as focused; do not report them as a
+  full-suite pass.
 
 ## Status
 
