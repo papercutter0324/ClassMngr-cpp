@@ -84,11 +84,12 @@
   information read contract while retaining the F291 batch path), F359
   (retire the unused Schedule Import compatibility helper while retaining the
   shared review-request type), F360 (Testing Classes cancel/failure page
-  parity), F361 (Class Analytics page mapping parity), and F362 (Sidebar class
-  deletion Application boundary) are accepted.
+  parity), F361 (Class Analytics page mapping parity), F362 (Sidebar class
+  deletion Application boundary), and F363 (Sidebar regular-teacher deletion
+  Application boundary) are accepted.
   Batch 6 is complete; Batch 7 (F337-F338), Batch 8 (F339-F344), Batch 9
   (F345-F353), and Batch 10 (F354-F361) are complete; Batch 11 (F362-F371)
-  is active with F363 current and F364-F371 queued.
+  is active with F364 current and F365-F371 queued.
   Gates 1 and 2 remain Partial, with broader feature
   migration, parity, and 96-class Release memory evidence still open.
   See the

@@ -12603,3 +12603,31 @@ behavior. Do not add a leave guard, page clearing, or navigation; these differ
 from baseline and require a separate product decision. F363 is selected, not
 implemented or verified. Batch 10 is complete; Batch 11 remains active. Phase 2
 remains In Progress/Open; Gates 1 and 2 remain Partial.
+
+### F363 accepted / F364 selected - 2026-10-06
+
+F363, committed as
+`93f2c2f7be3ddaa20414fbc78679d3202fdf1cd6` (`Phase2 - Migrate sidebar
+teacher deletion boundary (F363)`), completes the Sidebar regular-teacher
+deletion Application boundary. Preserve the chooser, profile-read, warning,
+confirmation, write, and sidebar-refresh behavior; do not add a leave guard,
+page clearing, or navigation, which differ from baseline and require a separate
+product decision.
+
+Five current focused CTests passed; the pinned F362 baseline passed 2/2. The
+baseline used an exact two-file overlay. The normalized `F363_TRANSCRIPT`
+matched; SHA-256:
+`65E80007F19AA29BB5C58C375587D2E6C9559B8AF94DE9ABF98788B809A10891`. Diff and
+ownership audits passed.
+
+F364 is selected for the Clear Testing Layout command transition. Use a
+dedicated stateless typed Application use case/port; the active-session
+Platform adapter calls
+`TestingBlockRepository::clearTestingAssignments()` directly, without a
+ScheduleService/DataService fallback. Preserve the current availability
+warning before confirmation; cancel performs no write or refresh; write failure
+warns, skips refresh, and retains rows atomically; success clears all
+`schedule_testing_blocks` while preserving saved testing classes/rosters and
+unrelated class data, then refreshes Schedule/Workspace views. Avoid new UX.
+F364 is selected, not implemented or verified. Batch 11 remains active with
+F365-F371 queued. Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial.
