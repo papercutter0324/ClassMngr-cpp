@@ -40,8 +40,9 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-07
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F368 is selected: “Teacher Import UI apply integration using
-  the existing Next use case.” Batch 11 remains active with F369-F371 queued.
+- Current note: F369 is selected for “Schedule Editor baseline parity.” Its
+  discovery found no exact acceptance matrix, so its scope is not fully pinned.
+  Batch 11 remains active with F370-F371 queued.
 
 ### Slice discovery batches
 
@@ -128,8 +129,8 @@ No other slices were found.
 4. F365 - Initial Setup Wizard class create/save (accepted; commit `2797e8bc`).
 5. F366 - Initial Setup Wizard validated teacher create (accepted; commit `cb8bd188`).
 6. F367 - Class Transfer persisted apply boundary (accepted; commit `11f0ce62`; F348 request validation is already accepted).
-7. F368 - Teacher Import UI apply integration using the existing Next use case (selected/current).
-8. F369 - Schedule Editor baseline parity.
+7. F368 - Teacher Import UI apply integration using the existing Next use case (accepted; commit `cb0622ef`).
+8. F369 - Schedule Editor baseline parity (selected/current; exact acceptance matrix not established).
 9. F370 - Class Export picker baseline parity.
 10. F371 - Roster Transfer remaining legacy availability gates.
 
@@ -142,8 +143,9 @@ testing-assignment gate remains for later discovery.
 1. F354-F361 - Accepted: Batch 10 is complete through Class Analytics page mapping parity.
 2. F362-F366 - Accepted in Batch 11 through both Sidebar deletion boundaries, Clear Testing Layout, and Initial Setup Wizard class create/save and validated teacher create.
 3. F367 - Accepted: Class Transfer persisted apply boundary (commit `11f0ce62`); F348 request validation is already accepted.
-4. F368 - Selected/current: Teacher Import UI apply integration using the existing Next use case.
-5. F369-F371 - Queued in the recorded Batch 11 order.
+4. F368 - Accepted: Teacher Import UI apply integration using the existing Next use case (commit `cb0622ef`).
+5. F369 - Selected/current: Schedule Editor baseline parity; exact acceptance matrix not established.
+6. F370-F371 - Queued in the recorded Batch 11 order.
 
 #### F299 completeness audit checkpoint
 
@@ -305,23 +307,17 @@ No new v2 production path depends on DataService, MainWindow, PageManager, or a 
 
 Earlier verified slices and cumulative exit-gate snapshots are archived in the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 
-## Latest Progress Update - 2026-10-07 (F367 accepted; F368 selected)
+## Latest Progress Update - 2026-10-07 (F368 accepted; F369 selected)
 
-F367, committed as
-`11f0ce622aa6f18e2d243a32fe0594776a357966` (`Phase2 - Migrate Class Transfer
-typed apply boundary`), completes the Class Transfer persisted apply boundary.
+F368, committed as
+`cb0622efe4933808a7335c5a6739142bbce20de3` (`Phase2 - Migrate Teacher Import
+UI apply integration`), is accepted.
 
-Independent current Ninja/MSVC 19.51/Qt 6.12 verification passed CTest 6/6;
-the pinned F366 baseline passed 4/4. The same seven selected legacy transfer
-cases ran on both, with QtTest reporting 9 passed / 0 failed including
-init/cleanup. F367 parity was 7/7 on each side: five rows were identical and
-there were no byte differences. Normalized SHA-256:
-`755A9B7B5B2F4A3D18CAA0B24E6A9C2F3A3F90070E186476C0A2B395E61369D2`. The
-baseline overlay contained only `cmake/tests/features.cmake` and
-`tests/sidebar_class_transfer_apply_parity_tests.cpp`. Source-owner counts were
-1,387 current / 1,380 baseline. `git diff --check` was clean. Both environments
-showed matching nonfatal Qt resource/font warnings. No full suite ran.
+The Tester report passed focused CTests 10/10 and confirmed byte identity
+between the current and F367-baseline UI transcripts. Normalized SHA-256:
+`10144DFCCCDC22716AEBBDA4FE00454513EB31EF4CBDB71A448AF07171AD1862`.
 
-F368 is selected: “Teacher Import UI apply integration using the existing Next
-use case.” Batch 11 remains active with F369-F371 queued. Phase 2 remains In
-Progress/Open; Gates 1 and 2 remain Partial.
+F369 is selected in recorded order for “Schedule Editor baseline parity.” Its
+discovery found no exact acceptance matrix, so the scope is not fully pinned.
+Batch 11 remains active with F370-F371 queued. Phase 2 remains In Progress/Open;
+Gates 1 and 2 remain Partial.

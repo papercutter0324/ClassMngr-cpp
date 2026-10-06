@@ -12726,3 +12726,17 @@ showed matching nonfatal Qt resource/font warnings. No full suite ran.
 F368 is selected: “Teacher Import UI apply integration using the existing Next
 use case.” Batch 11 remains active with F369-F371 queued. Phase 2 remains In
 Progress/Open; Gates 1 and 2 remain Partial.
+
+### F368 accepted / F369 selected - 2026-10-07
+
+F368, committed as
+`cb0622efe4933808a7335c5a6739142bbce20de3` (`Phase2 - Migrate Teacher Import
+UI apply integration`), is accepted. The Tester report passed focused CTests
+10/10 and confirmed byte identity between the current and F367-baseline UI
+transcripts. Normalized SHA-256:
+`10144DFCCCDC22716AEBBDA4FE00454513EB31EF4CBDB71A448AF07171AD1862`.
+
+F369 is selected in Batch 11 order for “Schedule Editor baseline parity.” Its
+discovery found no exact acceptance matrix, so its scope is not fully pinned.
+Batch 11 remains active with F370-F371 queued. Phase 2 remains In Progress/Open;
+Gates 1 and 2 remain Partial.
