@@ -12772,14 +12772,17 @@ availability gates.” Discovery is in progress and its acceptance matrix is not
 yet established. Batch 11 remains active. Phase 2 remains In Progress/Open;
 Gates 1 and 2 remain Partial.
 
-### Batch 11 reported complete / F372-F380 accepted / F381 selected - 2026-10-07
+### Historical remote handoff / F372-F380 accepted / F381 selected - 2026-10-07
 
-The user reports F367-F371 were completed on another device, but that work was
-not synced at this handoff. At handoff, local HEAD was `2614e196`, a
-documentation-pruning commit after the F366 source commit `cb8bd188`; the local
-log still recorded F367 as selected. Batch 11 local implementation and
-acceptance evidence therefore stopped at F366. The remote completion is
-unaudited here; no commit hashes or acceptance results are inferred.
+At the remote-branch handoff, F367-F370 were absent from that remote
+branch; their acceptance evidence had not yet been synced into this checkout.
+F371 was skipped on that device because work had already begun here; it was
+not independently accepted there. At the time, local HEAD was `2614e196`, a
+documentation-pruning commit after F366 source commit `cb8bd188`; local
+progress recorded F367 as selected and Batch 11 evidence ended at F366. This
+describes that handoff only: first-parent history through `bedaf490` now
+contains F367-F370 acceptance evidence; this checkout later accepted F371 in
+`fdad5c79`.
 
 Two independent discovery passes identified ten viable Batch 12 candidates;
 discovery is not exhaustive. The ordered active list is in the Phase 2 plan.
@@ -12895,9 +12898,9 @@ selected, not implemented or verified. Phase 2 remains In Progress/Open; Gates
 ### Batch 12 complete / F382 accepted / requested stop point - 2026-10-07
 
 F381, the Classes landing route availability gate, is accepted in source commit
-`e4df4a40`. Batch 12 is complete. The prior Batch 11 status remains
-user-reported as completed on another device but unsynced and unaudited in this
-checkout; local Batch 11 evidence still ends at F366.
+`e4df4a40`. Batch 12 is complete. The earlier handoff snapshot above is
+historical and has been superseded by the first-parent merge and later F371
+acceptance in this checkout.
 
 Two independent discovery reports supported selecting F382, Calendar month-
 grid visible projection parity. F382 is accepted in source commit `8eadd8bb`.
@@ -12910,7 +12913,84 @@ F383 Calendar upcoming-events panel parity, F384 Calendar Preferences reset UI
 parity, F385 Schedule Editor persisted-save parity, and F386 Staff Directory
 navigation parity remain provisional, exploratory candidates—not selected or
 accepted. They group Calendar visible behavior and preferences with Schedule
-Editor persistence and Staff Directory navigation. At the user's requested
-stop point after F382's commit, Batch 13 began with F382; continuation stops
-there and no later slice is selected or started. Phase 2 remains In Progress/Open,
-and Gates 1 and 2 remain Partial.
+Editor persistence and Staff Directory navigation. At the user's earlier
+requested stop point after F382's commit, Batch 13 began with F382; no later
+slice had been selected or started at that time. That stop point is superseded
+by the later F371 acceptance and F383 selection below. Phase 2 remains
+In Progress/Open, and Gates 1 and 2 remain Partial.
+
+### Post-merge reconciliation / F371 accepted here / F383 selected - 2026-10-07
+
+F371, accepted in this checkout as source commit `fdad5c79` (`Phase2 - Replace
+Roster navigation availability gate (F371)`), covers the `class_roster` route
+gate. It preserves closed-session silence and dirty-page state, routes an
+open session to Roster after confirmation, and leaves an invalid ID as a no-op.
+
+Independent current and pinned-`bedaf49059a1da21af27cb9c16ab89b7dd69507` verification each
+passed the focused parity CTest 1/1. Three normalized JSONL rows were
+byte-identical. SHA-256:
+`fddb1ff4e541fd8a34a3e58c374215a72199e79efa68ecdae47f31c79928fc22`.
+
+F371 was skipped on the other device because work had already begun here and
+was not independently accepted there; this checkout accepted it in the commit
+above. F367-F370 acceptance evidence is now present through first-parent
+`bedaf490`. F370 acceptance details remain in the earlier log entry.
+
+At this reconciliation, F383 was selected/current for Calendar upcoming-events
+panel parity. Discovery was in progress and its acceptance matrix was not
+established; F384-F386 were provisional/unselected. Batch 11 (F362-F371) and
+Batch 12 (F372-F381) were complete; Batch 13 was active with F382 accepted
+and F383 selected/current. The bounded discovery update below supersedes this
+point-in-time note. Phase 2 remains In Progress/Open; Gates 1 and 2 remain
+Partial.
+
+### Batch 13 bounded discovery complete / F383 remains selected - 2026-10-07
+
+Batch 13 begins with accepted F382, Calendar month-grid visible projection
+parity. F383, Calendar upcoming-events panel parity, remains selected/current;
+its acceptance matrix is established below; implementation has not started.
+
+Two independent scans found fewer than ten candidates in the bounded
+Calendar and NavigationController parity review. They did not establish
+repository-wide discovery exhaustion. The ordered findings and dispositions are:
+
+1. F383 - Calendar upcoming-events panel parity (selected/current).
+2. F384 - Calendar Preferences term-default restoration UI parity.
+3. F385 - Schedule Editor persisted-save parity; retired as a duplicate of
+   accepted F369 and excluded from active tracking.
+4. F386 - Staff Directory parity for the uncovered gate that covers a closed
+   session before leave confirmation.
+5. F387 - Calendar Preferences event-reset confirmation/delete/failure/refresh
+   UI parity. This is distinct from F384 term-default restoration.
+6. F388 - Class Details/Notes/student-Evaluation route availability matrix.
+7. F389 - My Info route navigation gate parity.
+8. F390 - Sub Prep route gate parity.
+
+No other slices were found.
+
+Batch 13 remains active; F384 and F386-F390 are provisional/unselected. Phase 2
+remains In Progress/Open; Gates 1 and 2 remain Partial.
+
+### F383 acceptance matrix established / implementation pending - 2026-10-07
+
+F383, Calendar upcoming-events panel parity, remains selected/current. The
+matrix verifies exact visible row tuples (stable event ID, date span/text,
+time/all-day/unknown mapping, title, event-type badge) and order for:
+
+1. Current Month for the displayed month, including a representative multi-day event and a Holiday event,
+   while excluding an outside-month sentinel.
+2. Next 30 Days from one captured `QDate::currentDate()`, including today and
+   +30 and excluding +31, and one event-type filter toggle.
+3. Next 10 Events with more than ten rows, deterministic date/time/title/ID
+   ordering, and a ten-row cap.
+4. An empty completed range displaying its empty label.
+
+Wait for cache range completion; do not assert transient loading or redesign
+failed-load behavior. No query-count assertions or legacy-panel comparison.
+
+Pin pre-slice baseline
+`fdad5c797e407241731d113dbd1a451ad37fcfdb`; use the existing
+CalendarPageEventMutationParity test source/target with a test-only overlay and
+require a byte-identical transcript. This records planned verification, not a
+claim that implementation or tests have run. F383 remains selected/current;
+Phase 2 remains In Progress/Open and Gates 1 and 2 remain Partial.

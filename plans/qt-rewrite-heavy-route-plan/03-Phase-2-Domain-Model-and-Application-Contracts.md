@@ -40,12 +40,15 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-07
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F382 was accepted in source commit `8eadd8bb`. At the user's
-  requested stop point after this commit, no next slice is being started.
-  F383-F386 remain provisional and unselected. F367-F371 completion remains
-  user-reported and unsynced here; Batch 11 local evidence ends at F366. Batch
-  12 is closed. Batch 13 began with F382; continuation stops there and no later
-  slice is selected or started.
+- Current note: F371 is accepted in this checkout as source commit
+  `fdad5c79` (`Phase2 - Replace Roster navigation availability gate (F371)`).
+  F371 was skipped on the other device because work had already begun here;
+  it was not independently accepted there. Batch 11 (F362-F371) and Batch 12
+  (F372-F381) are complete. F382 is accepted. Batch 13 (F382-F390) is
+  active with F383 (Calendar upcoming-events panel parity) selected/current.
+  Bounded discovery and F383's acceptance matrix are established;
+  implementation and verification remain pending. F384 and F386-F390 remain
+  provisional/unselected.
 
 ### Slice discovery batches
 
@@ -70,12 +73,49 @@ log](03-Phase-2-Progress-Log.md).
   failure warning/no-navigation behavior; revisit after that behavior is
   clarified.
 
-#### Batch 13 remaining candidates (unselected)
+#### Active batch: Batch 13
 
-1. F383 - Provisional, not selected: Calendar upcoming-events panel parity.
-2. F384 - Provisional, not selected: Calendar Preferences reset UI parity.
-3. F385 - Provisional, not selected: Schedule Editor persisted-save parity.
-4. F386 - Provisional, not selected: Staff Directory navigation parity.
+1. F383 - Selected/current: Calendar upcoming-events panel parity; bounded
+   discovery and acceptance matrix are established. Implementation remains
+   pending.
+2. F384 - Provisional, not selected: Calendar Preferences term-default
+   restoration UI parity.
+3. F386 - Provisional, not selected: Staff Directory parity for the uncovered
+   closed-session-before-leave-confirmation gate.
+4. F387 - Provisional, not selected: Calendar Preferences event-reset
+   confirmation, delete, failure, and refresh UI parity.
+5. F388 - Provisional, not selected: Class Details/Notes/student-Evaluation
+   route availability matrix.
+6. F389 - Provisional, not selected: My Info route navigation gate parity.
+7. F390 - Provisional, not selected: Sub Prep route gate parity.
+
+The two independent scans were bounded to Calendar and NavigationController
+parity review; they do not establish repository-wide discovery exhaustion.
+No other slices were found.
+
+**F383 acceptance matrix (established; implementation pending):**
+
+Verify exact visible event row tuples (stable event ID, date span/text,
+time/all-day/unknown mapping, title, event-type badge) and order on the Calendar
+upcoming-events panel for:
+
+1. Current Month for the displayed month, including a representative multi-day
+   event and a Holiday event, while excluding an outside-month sentinel.
+2. Next 30 Days using one captured `QDate::currentDate()`, including today and
+   +30 and excluding +31, plus one event-type filter toggle.
+3. Next 10 Events with more than ten rows, deterministic date/time/title/ID
+   ordering, and a ten-row cap.
+4. An empty completed range showing its empty label.
+
+Wait for cache range completion; do not assert transient loading or redesign
+failed-load behavior. Do not add query-count assertions or a legacy-panel
+comparison.
+
+For parity, pin pre-slice baseline
+`fdad5c797e407241731d113dbd1a451ad37fcfdb`, use the existing
+CalendarPageEventMutationParity test source/target with a test-only overlay, and
+require a byte-identical transcript.
+
 
 ## Objective
 
