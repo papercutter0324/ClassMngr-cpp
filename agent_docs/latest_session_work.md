@@ -4986,14 +4986,41 @@ actions, and resolution in the models/page. Add app-less policy cases, model
 wrapper checks, and a focused Speaking Evaluation duplicate-resolution
 regression. Phase 2 remains In Progress/Open, with Gates 1 and 2 Partial.
 
-## Current continuation - 2026-10-07 (F366 accepted; F367 selected)
+## Current continuation - 2026-10-07 (F382 accepted; stop point)
 
 Phase 2 remains In Progress/Open under deployment `phase2_resume_20260929` on
-the Heavy route. F366 is accepted in source commit `cb8bd188`. F367 is selected
-for the Class Transfer persisted apply boundary; it has not been implemented or
-verified. F348 request validation is already accepted. Batch 11 remains active
-with F368-F371 queued. Gates 1 and 2 remain Partial.
+the Heavy route. The user requested stopping after F382 is committed; do not
+start F383 without a new instruction. Batch 12 is complete. F367-F371 are
+reported by the user as completed on another device, but remain unsynced and
+unaudited here; local Batch 11 evidence ends at F366. No remote commit hashes
+or acceptance results are inferred. Gates 1 and 2 remain Partial.
 
-Continue with the F367 acceptance scope in the [Phase 2 plan](../plans/qt-rewrite-heavy-route-plan/03-Phase-2-Domain-Model-and-Application-Contracts.md).
-The [Phase 2 progress log](../plans/qt-rewrite-heavy-route-plan/03-Phase-2-Progress-Log.md)
-contains the detailed evidence for accepted slices, including F366.
+Accepted source commits in this continuation:
+
+- F378 `773efe39`: Schedule Testing preference suppression integration, test-only.
+- F379 `1f82706c`: Calendar repeat-series page mutation projection, test-only.
+- F380 `a1855996`: Sub Prep information-sheet output, test-only. Its focused
+  page test verifies the generated information PDF. The roster writer stub
+  reports success without writing a roster PDF, so roster rendering remains
+  covered lower down.
+- F381 `e4df4a40`: Classes landing route availability guard, test-only.
+- F382 `8eadd8bb`: Calendar month-grid visible projection, test-only.
+
+For F381, both focused route slots passed in implementation and independent
+runs. Empty open workspaces reach Classes without selecting an editor; an
+unavailable database returns before prompting to leave dirty Teacher Info.
+
+For F382, `ClassMngrCalendarPageEventMutationParityTests` built successfully.
+The `monthGridCellsMatchCalendarEventModelDateProjection` slot passed in both
+implementation and independent runs (3 passed including init/cleanup). The test
+compares instantiated QML cell event IDs, titles, types, and ordering with
+`CalendarEventModel::eventsForDate` for November 10-12, verifies a multi-day
+Workshop on all three dates, and verifies that only the November 11 Holiday
+cell has `redDay` set. No separate legacy month grid was found, so this
+establishes the current QML/model projection contract rather than a historical
+view comparison. `git diff --check` passed; no full suite ran.
+
+F383-F386 remain provisional discovery candidates and are not selected. The
+[Phase 2 plan](../plans/qt-rewrite-heavy-route-plan/03-Phase-2-Domain-Model-and-Application-Contracts.md)
+and [progress log](../plans/qt-rewrite-heavy-route-plan/03-Phase-2-Progress-Log.md)
+contain the batch discovery and detailed preceding-slice evidence.

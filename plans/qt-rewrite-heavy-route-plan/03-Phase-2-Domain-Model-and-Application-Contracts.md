@@ -32,8 +32,12 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-07
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F367 is selected for the Class Transfer persisted apply
-  boundary. It is not implemented or verified. Batch 11 remains active.
+- Current note: F382 was accepted in source commit `8eadd8bb`. At the user's
+  requested stop point after this commit, no next slice is being started.
+  F383-F386 remain provisional and unselected. F367-F371 completion remains
+  user-reported and unsynced here; Batch 11 local evidence ends at F366. Batch
+  12 is closed. Batch 13 began with F382; continuation stops there and no later
+  slice is selected or started.
 
 ### Slice discovery batches
 
@@ -58,15 +62,12 @@ log](03-Phase-2-Progress-Log.md).
   failure warning/no-navigation behavior; revisit after that behavior is
   clarified.
 
-#### Active batch: Batch 11
+#### Batch 13 remaining candidates (unselected)
 
-1. F367 - Selected/current: Class Transfer persisted apply boundary.
-2. F368 - Teacher Import UI apply integration using the existing Next use case.
-3. F369 - Schedule Editor baseline parity.
-4. F370 - Class Export picker baseline parity.
-5. F371 - Roster Transfer remaining legacy availability gates.
-
-The Schedule testing-assignment opportunity remains for future discovery.
+1. F383 - Provisional, not selected: Calendar upcoming-events panel parity.
+2. F384 - Provisional, not selected: Calendar Preferences reset UI parity.
+3. F385 - Provisional, not selected: Schedule Editor persisted-save parity.
+4. F386 - Provisional, not selected: Staff Directory navigation parity.
 
 ## Objective
 

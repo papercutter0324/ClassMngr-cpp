@@ -2842,3 +2842,15 @@ observation parsing with their existing owners. Paired scans differed: the
 alternative was AI-batch response parsing. Choose the shared exact duplicate
 as a narrower reusable boundary; defer response-parser extraction. Phase 2
 remains In Progress/Open; Gates 1 and 2 remain Partial.
+
+## 2026-10-07 — Batch 12 complete; F382 accepted
+
+Deployment `phase2_resume_20260929` continues in Phase 2 on the Heavy route.
+Batch 12 is complete at F381. F382 is accepted as the first completed slice
+from the discovered Batch 13. The user requested stopping after its commit;
+F383-F386 remain provisional and unselected. Phase 2 remains In Progress/Open,
+with Gates 1 and 2 Partial.
+
+The user reports F367-F371 were completed on another device, but they remain
+unsynced and unaudited in this checkout; local Batch 11 evidence still ends at
+F366. No remote commits or acceptance results are inferred.
