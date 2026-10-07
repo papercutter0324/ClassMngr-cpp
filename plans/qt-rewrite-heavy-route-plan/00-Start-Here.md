@@ -5,7 +5,7 @@
 - Overall status: In progress
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
-- Last updated: 2026-10-07
+- Last updated: 2026-10-08
 - Current milestone: Phase 2 remains in progress. F253 (Qt-free private-notes
   splitter), F254 (Qt-free roster-score assignment planning), F255 (single-
   report AI eligibility policy reuse), F256 (typed roster read cutover for
@@ -96,10 +96,11 @@
   Batch 6 is complete; Batch 7 (F337-F338), Batch 8 (F339-F344), Batch 9
   (F345-F353), and Batch 10 (F354-F361) are complete. Batch 11 (F362-F371)
   and Batch 12 (F372-F381) are complete; Batch 13 (F382-F390) is active with
-  F382 accepted and F383 (Calendar upcoming-events panel parity) current.
-  Bounded F383 discovery and its acceptance matrix are established;
-  implementation and verification remain pending. F384 and F386-F390 remain
-  provisional/unselected.
+  F382 and F383 accepted and F384 (Calendar Preferences term-default
+  restoration UI parity) current. F383 passed independent current/baseline
+  verification. F384's bounded discovery and acceptance matrix are established;
+  implementation and verification remain pending. F385 is retired as a
+  duplicate of F369; F386-F390 remain provisional/unselected.
   Gates 1 and 2 remain Partial, with broader feature
   migration, parity, and 96-class Release memory evidence still open.
   See the

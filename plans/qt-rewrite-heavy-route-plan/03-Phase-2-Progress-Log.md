@@ -12994,3 +12994,38 @@ CalendarPageEventMutationParity test source/target with a test-only overlay and
 require a byte-identical transcript. This records planned verification, not a
 claim that implementation or tests have run. F383 remains selected/current;
 Phase 2 remains In Progress/Open and Gates 1 and 2 remain Partial.
+
+### F383 accepted / F384 selected - 2026-10-08
+
+F383, Calendar upcoming-events panel parity, is accepted in source commit
+`fe24d66bbc9045f71d8af7f43b092501e831a60f` (`Phase2 - Add Calendar upcoming
+panel parity (F383)`). The independent Tester built the current and pinned
+F371-source-baseline overlay; focused CTest passed 1/1 on each, and direct
+QtTest passed 9/9 on each. The single-file overlay was
+`tests/calendar_page_event_mutation_parity_tests.cpp`. Four normalized visible
+row transcripts matched byte-for-byte; SHA-256:
+`a59dd9089a6191950f70a35728c00eb281e691dec418043313086ef0540118a0`.
+The matrix covers Current Month, Next 30 Days boundaries and event-type
+filtering, Next 10 Events ordering/cap, and the completed empty-range label.
+
+F384, Calendar Preferences term-default restoration UI parity, is selected.
+Two independent discovery passes found that Restore Term Defaults stages the
+selected academic year's default schedules in the editors, enables linked
+school schedules, and disables the linked Middle School fields; persistence is
+a separate Save action. F387's event-reset flow is outside this slice.
+
+The F384 acceptance matrix seeds non-default schedules for both schools,
+selects academic year 2026, and clicks `preferencesCalendarRestoreDefaults`.
+It checks each school's exact displayed term start dates and week counts:
+Elementary (2025-12-29/11, 2026-03-16/19, 2026-07-27/11,
+2026-10-12/11) and Middle School (2025-12-29/11, 2026-03-16/19,
+2026-07-27/4, 2026-08-24/18). It also checks the link option is on, linked
+Middle School Winter/Spring week and Winter/Spring/Summer date fields are
+disabled, and restore alone leaves the provider's persisted schedules
+unchanged without emitting `calendarPreferencesChanged`. Do not click Save or
+exercise event reset. Pin pre-slice baseline
+`fe24d66bbc9045f71d8af7f43b092501e831a60f`; use an offscreen widget test with
+a test-only overlay and require a byte-identical transcript. This records the
+acceptance plan, not completed implementation or verification. F385 remains
+retired as a duplicate of F369. Phase 2 remains In Progress/Open; Gates 1 and 2
+remain Partial.

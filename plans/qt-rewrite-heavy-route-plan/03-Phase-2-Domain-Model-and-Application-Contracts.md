@@ -37,7 +37,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Depends on: Phase 1
 - Blocks: Persistence, bootstrap, shared UI, and feature migration
 - Owner: Unassigned
-- Last updated: 2026-10-07
+- Last updated: 2026-10-08
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
 - Current note: F371 is accepted in this checkout as source commit
@@ -45,10 +45,11 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
   F371 was skipped on the other device because work had already begun here;
   it was not independently accepted there. Batch 11 (F362-F371) and Batch 12
   (F372-F381) are complete. F382 is accepted. Batch 13 (F382-F390) is
-  active with F383 (Calendar upcoming-events panel parity) selected/current.
-  Bounded discovery and F383's acceptance matrix are established;
-  implementation and verification remain pending. F384 and F386-F390 remain
-  provisional/unselected.
+  active with F382 and F383 accepted and F384 (Calendar Preferences term-default
+  restoration UI parity) selected/current. F383 passed independent
+  current/baseline verification. F384's bounded discovery and acceptance
+  matrix are established; implementation and verification remain pending.
+  F385 is retired as a duplicate of F369; F386-F390 remain provisional/unselected.
 
 ### Slice discovery batches
 
@@ -75,46 +76,41 @@ log](03-Phase-2-Progress-Log.md).
 
 #### Active batch: Batch 13
 
-1. F383 - Selected/current: Calendar upcoming-events panel parity; bounded
-   discovery and acceptance matrix are established. Implementation remains
-   pending.
-2. F384 - Provisional, not selected: Calendar Preferences term-default
-   restoration UI parity.
-3. F386 - Provisional, not selected: Staff Directory parity for the uncovered
+1. F384 - Selected/current: Calendar Preferences term-default restoration UI
+   parity; bounded discovery and acceptance matrix are established.
+2. F386 - Provisional, not selected: Staff Directory parity for the uncovered
    closed-session-before-leave-confirmation gate.
-4. F387 - Provisional, not selected: Calendar Preferences event-reset
+3. F387 - Provisional, not selected: Calendar Preferences event-reset
    confirmation, delete, failure, and refresh UI parity.
-5. F388 - Provisional, not selected: Class Details/Notes/student-Evaluation
+4. F388 - Provisional, not selected: Class Details/Notes/student-Evaluation
    route availability matrix.
-6. F389 - Provisional, not selected: My Info route navigation gate parity.
-7. F390 - Provisional, not selected: Sub Prep route gate parity.
+5. F389 - Provisional, not selected: My Info route navigation gate parity.
+6. F390 - Provisional, not selected: Sub Prep route gate parity.
 
 The two independent scans were bounded to Calendar and NavigationController
 parity review; they do not establish repository-wide discovery exhaustion.
 No other slices were found.
 
-**F383 acceptance matrix (established; implementation pending):**
+**F384 acceptance matrix (established; implementation pending):**
 
-Verify exact visible event row tuples (stable event ID, date span/text,
-time/all-day/unknown mapping, title, event-type badge) and order on the Calendar
-upcoming-events panel for:
+Seed non-default term schedules for Elementary and Middle School, select
+academic year 2026, and click `preferencesCalendarRestoreDefaults`. Verify the
+displayed start date and week count for every term:
 
-1. Current Month for the displayed month, including a representative multi-day
-   event and a Holiday event, while excluding an outside-month sentinel.
-2. Next 30 Days using one captured `QDate::currentDate()`, including today and
-   +30 and excluding +31, plus one event-type filter toggle.
-3. Next 10 Events with more than ten rows, deterministic date/time/title/ID
-   ordering, and a ten-row cap.
-4. An empty completed range showing its empty label.
+| School | Winter | Spring | Summer | Fall |
+|---|---|---|---|---|
+| Elementary | 2025-12-29 / 11 | 2026-03-16 / 19 | 2026-07-27 / 11 | 2026-10-12 / 11 |
+| Middle School | 2025-12-29 / 11 | 2026-03-16 / 19 | 2026-07-27 / 4 | 2026-08-24 / 18 |
 
-Wait for cache range completion; do not assert transient loading or redesign
-failed-load behavior. Do not add query-count assertions or a legacy-panel
-comparison.
+Also verify the link option becomes checked, Middle School Winter/Spring week
+fields and Winter/Spring/Summer date fields become disabled, and restore alone
+leaves persisted schedules unchanged without emitting
+`calendarPreferencesChanged`. Do not click Save or exercise the separate
+calendar-event reset (F387).
 
-For parity, pin pre-slice baseline
-`fdad5c797e407241731d113dbd1a451ad37fcfdb`, use the existing
-CalendarPageEventMutationParity test source/target with a test-only overlay, and
-require a byte-identical transcript.
+Pin pre-slice baseline
+`fe24d66bbc9045f71d8af7f43b092501e831a60f`; use an offscreen Qt widget test
+with a test-only overlay and require a byte-identical transcript.
 
 
 ## Objective
