@@ -188,6 +188,84 @@ QString expectedEventRow(
         );
 }
 
+void appendQuickItems(
+    QQuickItem* parent,
+    QList<QQuickItem*>& items
+    )
+{
+    if (!parent)
+    {
+        return;
+    }
+
+    for (QQuickItem* const child : parent->childItems())
+    {
+        items.append(child);
+        appendQuickItems(child, items);
+    }
+}
+
+QQuickItem* monthGridCell(
+    QQuickItem* root,
+    const QDate& date
+    )
+{
+    QList<QQuickItem*> items;
+    appendQuickItems(root, items);
+
+    for (QQuickItem* const item : items)
+    {
+        const QMetaObject* const metaObject = item->metaObject();
+        if (
+            metaObject->indexOfProperty("dayEvents") < 0
+            || metaObject->indexOfProperty("activeMonth") < 0
+            || metaObject->indexOfProperty("year") < 0
+            || metaObject->indexOfProperty("month") < 0
+            || metaObject->indexOfProperty("day") < 0
+            )
+        {
+            continue;
+        }
+
+        if (!item->property("activeMonth").toBool())
+        {
+            continue;
+        }
+
+        const QDate cellDate(
+            item->property("year").toInt(),
+            item->property("month").toInt() + 1,
+            item->property("day").toInt()
+            );
+        if (cellDate == date)
+        {
+            return item;
+        }
+    }
+
+    return nullptr;
+}
+
+QStringList eventProjectionRows(const QVariantList& events)
+{
+    QStringList rows;
+    for (const QVariant& event : events)
+    {
+        const QVariantMap values = event.toMap();
+        QJsonArray row;
+        row.append(values.value(QStringLiteral("id")).toInt());
+        row.append(values.value(QStringLiteral("title")).toString());
+        row.append(values.value(QStringLiteral("eventType")).toString());
+        rows.append(
+            QString::fromUtf8(
+                QJsonDocument(row).toJson(QJsonDocument::Compact)
+                )
+            );
+    }
+
+    return rows;
+}
+
 int eventIdForTitle(ApplicationServices& services, const QString& title)
 {
     QSqlQuery query(services.databaseSession()->database());
@@ -501,6 +579,7 @@ class CalendarPageEventMutationParityTests final : public QObject
 private slots:
     void ordinaryCreateEditAndDeleteUseCalendarPageSignals();
     void repeatSeriesSuffixEditUsesCalendarPageSignalAndRefreshesProjection();
+    void monthGridCellsMatchCalendarEventModelDateProjection();
 };
 
 void CalendarPageEventMutationParityTests::
@@ -1060,6 +1139,141 @@ repeatSeriesSuffixEditUsesCalendarPageSignalAndRefreshesProjection()
         {QStringLiteral("calendar_projection_refreshed"), true},
         {QStringLiteral("old_suffix_dates_empty"), true}
     });
+}
+
+void CalendarPageEventMutationParityTests::
+monthGridCellsMatchCalendarEventModelDateProjection()
+{
+    CalendarWorkspace workspace;
+    QString setupError;
+    QVERIFY2(
+        initializeWorkspace(workspace, &setupError),
+        qPrintable(setupError)
+        );
+
+    const QDate firstOfMonth(2026, 11, 1);
+    const QDate multiDayStart(2026, 11, 10);
+    const QDate holidayDate(2026, 11, 11);
+    const QDate multiDayEnd(2026, 11, 12);
+
+    CalendarEvent multiDayEvent;
+    multiDayEvent.title = QStringLiteral("F382 Multi Day Workshop");
+    multiDayEvent.eventType = QStringLiteral("Workshop");
+    multiDayEvent.timeStatus = QStringLiteral("Timed");
+    multiDayEvent.startDate = multiDayStart;
+    multiDayEvent.startTime = QTime(9, 0);
+    multiDayEvent.endDate = multiDayEnd;
+    multiDayEvent.endTime = QTime(10, 0);
+    const auto multiDaySaved = workspace.services.databaseSession()
+        ->calendarEventRepository()
+        ->saveCalendarEvent(multiDayEvent);
+    if (!multiDaySaved.has_value())
+    {
+        setupError = multiDaySaved.error();
+    }
+    QVERIFY2(multiDaySaved.has_value(), qPrintable(setupError));
+    const int multiDayId = *multiDaySaved;
+
+    CalendarEvent holidayEvent;
+    holidayEvent.title = QStringLiteral("F382 In Month Holiday");
+    holidayEvent.eventType = QStringLiteral("Holiday");
+    holidayEvent.timeStatus = QStringLiteral("Timed");
+    holidayEvent.startDate = holidayDate;
+    holidayEvent.startTime = QTime(13, 0);
+    holidayEvent.endDate = holidayDate;
+    holidayEvent.endTime = QTime(14, 0);
+    const auto holidaySaved = workspace.services.databaseSession()
+        ->calendarEventRepository()
+        ->saveCalendarEvent(holidayEvent);
+    if (!holidaySaved.has_value())
+    {
+        setupError = holidaySaved.error();
+    }
+    QVERIFY2(holidaySaved.has_value(), qPrintable(setupError));
+    const int holidayId = *holidaySaved;
+
+    CalendarPage page(&workspace.services);
+    QQuickItem* const root = calendarRoot(page);
+    QVERIFY(root);
+    QVERIFY(root->setProperty(
+        "shownDate",
+        QDateTime(firstOfMonth, QTime(0, 0))
+        ));
+    QCOMPARE(
+        root->property("shownDate").toDateTime().date(),
+        firstOfMonth
+        );
+
+    CalendarEventModel* const model = calendarModel(page);
+    QVERIFY(model);
+    QTRY_VERIFY_WITH_TIMEOUT(
+        model->isMonthLoaded(firstOfMonth.year(), firstOfMonth.month()),
+        5000
+        );
+
+    const QList<QDate> selectedDates{
+        multiDayStart,
+        holidayDate,
+        multiDayEnd
+    };
+    for (const QDate& date : selectedDates)
+    {
+        QQuickItem* const cell = monthGridCell(root, date);
+        QVERIFY2(
+            cell,
+            qPrintable(QStringLiteral("No active month-grid cell for %1")
+                .arg(date.toString(Qt::ISODate)))
+            );
+
+        const QVariantList expectedProjection = model->eventsForDate(
+            date.year(),
+            date.month(),
+            date.day()
+            );
+        QTRY_COMPARE_WITH_TIMEOUT(
+            eventProjectionRows(cell->property("dayEvents").toList()),
+            eventProjectionRows(expectedProjection),
+            5000
+            );
+    }
+
+    QQuickItem* const startCell = monthGridCell(root, multiDayStart);
+    QQuickItem* const holidayCell = monthGridCell(root, holidayDate);
+    QQuickItem* const endCell = monthGridCell(root, multiDayEnd);
+    QVERIFY(startCell);
+    QVERIFY(holidayCell);
+    QVERIFY(endCell);
+
+    const QStringList multiDayRow{
+        QString::fromUtf8(QJsonDocument(QJsonArray{
+            multiDayId,
+            QStringLiteral("F382 Multi Day Workshop"),
+            QStringLiteral("Workshop")
+        }).toJson(QJsonDocument::Compact))
+    };
+    const QStringList holidayDayRows{
+        multiDayRow.first(),
+        QString::fromUtf8(QJsonDocument(QJsonArray{
+            holidayId,
+            QStringLiteral("F382 In Month Holiday"),
+            QStringLiteral("Holiday")
+        }).toJson(QJsonDocument::Compact))
+    };
+    QCOMPARE(
+        eventProjectionRows(startCell->property("dayEvents").toList()),
+        multiDayRow
+        );
+    QCOMPARE(
+        eventProjectionRows(holidayCell->property("dayEvents").toList()),
+        holidayDayRows
+        );
+    QCOMPARE(
+        eventProjectionRows(endCell->property("dayEvents").toList()),
+        multiDayRow
+        );
+    QCOMPARE(holidayCell->property("redDay").toBool(), true);
+    QCOMPARE(startCell->property("redDay").toBool(), false);
+    QCOMPARE(endCell->property("redDay").toBool(), false);
 }
 
 QTEST_MAIN(CalendarPageEventMutationParityTests)
