@@ -230,6 +230,26 @@ classmngr_add_qt_test(
 )
 
 classmngr_add_qt_test(
+    NAME NavigationRosterSessionParity
+    SOURCES
+        tests/navigation_roster_session_parity_tests.cpp
+    LIBRARIES
+        Qt6::Test
+        Qt6::Widgets
+    OFFSCREEN
+)
+
+qt_add_resources(
+    ClassMngrNavigationRosterSessionParityTests
+    navigation_roster_session_parity_keyboard_resources
+    PREFIX "/"
+    BASE "${PROJECT_SOURCE_DIR}/resources"
+    FILES
+        resources/assets/icons/keyboard_dark.svg
+        resources/assets/icons/keyboard_light.svg
+)
+
+classmngr_add_qt_test(
     NAME SidebarClassDeleteParity
     SOURCES
         tests/sidebar_class_delete_parity_tests.cpp

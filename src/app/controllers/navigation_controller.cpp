@@ -707,7 +707,7 @@ void NavigationController::handleRoster(
 {
     if (
         !m_services
-        || !m_services->classService()->isAvailable()
+        || !m_services->hasOpenDatabase()
         || data.classId <= 0
         )
     {
