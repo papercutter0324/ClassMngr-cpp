@@ -5,6 +5,13 @@
 #include "features/calendar/ui/calendar_event_dialog.h"
 #include "features/calendar/ui/calendar_event_model.h"
 #include "features/calendar/ui/calendar_page.h"
+#include "next/platform/application_services_schedule_display_preferences_port.h"
+#include "ui/shared/widgets/navigation_tab_widget.h"
+#include <QFrame>
+#include <QHBoxLayout>
+#include <QLabel>
+#include <QVBoxLayout>
+#include <cstdio>
 
 #include <QAbstractButton>
 #include <QApplication>
@@ -570,6 +577,235 @@ void emitF379Transcript(const QJsonObject& transcript)
                 );
 }
 
+
+QString upcomingRowJson(
+    const int id,
+    const QString& date,
+    const QString& time,
+    const QString& title,
+    const QString& eventType
+    )
+{
+    return QString::fromUtf8(
+        QJsonDocument(QJsonArray{
+            id,
+            date,
+            time,
+            title,
+            eventType
+        }).toJson(QJsonDocument::Compact)
+        );
+}
+
+QStringList visibleUpcomingRows(QWidget* scopePage)
+{
+    QStringList rows;
+    if (!scopePage || !scopePage->layout())
+    {
+        return rows;
+    }
+
+    auto* const pageLayout =
+        qobject_cast<QVBoxLayout*>(scopePage->layout());
+    if (!pageLayout || pageLayout->count() < 2)
+    {
+        return rows;
+    }
+
+    QWidget* const listWidget =
+        pageLayout->itemAt(1)->widget();
+    auto* const listLayout =
+        listWidget
+            ? qobject_cast<QVBoxLayout*>(listWidget->layout())
+            : nullptr;
+    if (!listLayout)
+    {
+        return rows;
+    }
+
+    for (int index = 0; index < listLayout->count(); ++index)
+    {
+        QWidget* const widget =
+            listLayout->itemAt(index)->widget();
+        auto* const row =
+            qobject_cast<QFrame*>(widget);
+        if (
+            !row
+            || row->objectName()
+                != QStringLiteral("upcomingCalendarEventRow")
+        )
+        {
+            continue;
+        }
+
+        auto* const rowLayout =
+            qobject_cast<QHBoxLayout*>(row->layout());
+        if (!rowLayout || rowLayout->count() != 4)
+        {
+            rows.append(QStringLiteral("<malformed-visible-row>"));
+            continue;
+        }
+
+        auto* const date =
+            qobject_cast<QLabel*>(rowLayout->itemAt(0)->widget());
+        auto* const time =
+            qobject_cast<QLabel*>(rowLayout->itemAt(1)->widget());
+        auto* const title =
+            qobject_cast<QLabel*>(rowLayout->itemAt(2)->widget());
+        auto* const eventType =
+            qobject_cast<QPushButton*>(rowLayout->itemAt(3)->widget());
+        if (!date || !time || !title || !eventType)
+        {
+            rows.append(QStringLiteral("<malformed-visible-row>"));
+            continue;
+        }
+
+        rows.append(upcomingRowJson(
+            row->property("calendarEventId").toInt(),
+            date->text(),
+            time->text(),
+            title->text(),
+            eventType->text()
+            ));
+    }
+
+    return rows;
+}
+
+QString visibleUpcomingEmptyLabel(QWidget* scopePage)
+{
+    if (!scopePage || !scopePage->layout())
+    {
+        return {};
+    }
+
+    auto* const pageLayout =
+        qobject_cast<QVBoxLayout*>(scopePage->layout());
+    if (!pageLayout || pageLayout->count() < 2)
+    {
+        return {};
+    }
+
+    QWidget* const listWidget =
+        pageLayout->itemAt(1)->widget();
+    if (!listWidget)
+    {
+        return {};
+    }
+
+    for (QLabel* const label : listWidget->findChildren<QLabel*>())
+    {
+        if (label->objectName() == QStringLiteral("sectionSubtitle"))
+        {
+            return label->text();
+        }
+    }
+
+    return {};
+}
+
+NavigationTabWidget* upcomingTabs(CalendarPage& page)
+{
+    return page.findChild<NavigationTabWidget*>(
+        QStringLiteral("calendarUpcomingTabs")
+        );
+}
+
+int saveFixtureEvent(
+    CalendarWorkspace& workspace,
+    const CalendarEvent& event,
+    QString* error
+    )
+{
+    const auto saved = workspace.services.databaseSession()
+        ->calendarEventRepository()
+        ->saveCalendarEvent(event);
+    if (!saved)
+    {
+        if (error)
+        {
+            *error = saved.error();
+        }
+        return -1;
+    }
+
+    return *saved;
+}
+
+bool removePreservedFixtureEvent(
+    CalendarWorkspace& workspace,
+    QString* error
+    )
+{
+    QSqlQuery query(
+        workspace.services.databaseSession()->database()
+        );
+    query.prepare(QStringLiteral(
+        "DELETE FROM calendar_events WHERE id=?"
+        ));
+    query.addBindValue(workspace.preservedEventId);
+    if (!query.exec())
+    {
+        if (error)
+        {
+            *error = query.lastError().text();
+        }
+        return false;
+    }
+
+    return true;
+}
+
+bool enable24HourFixtureTime(
+    CalendarWorkspace& workspace,
+    QString* error
+    )
+{
+    ClassMngr::Next::Platform::
+        ApplicationServicesScheduleDisplayPreferencesPort preferences(
+            workspace.services
+            );
+    const auto saved = preferences.save({
+        .use24HourTime = true,
+        .showEnglishNames = false,
+        .showWeekends = false,
+        .showAllIntensiveHours = false,
+        .testingAffectsM1 = false
+    });
+    if (!saved)
+    {
+        if (error)
+        {
+            *error = QStringLiteral(
+                "Could not set 24-hour calendar display preference."
+                );
+        }
+        return false;
+    }
+
+    return true;
+}
+
+QJsonArray transcriptRows(const QStringList& rows)
+{
+    QJsonArray result;
+    for (const QString& row : rows)
+    {
+        result.append(row);
+    }
+    return result;
+}
+
+void emitF383Transcript(const QJsonObject& transcript)
+{
+    const QByteArray line =
+        QByteArrayLiteral("F383_TRANSCRIPT=")
+        + QJsonDocument(transcript).toJson(QJsonDocument::Compact);
+    std::fwrite(line.constData(), 1, static_cast<std::size_t>(line.size()), stdout);
+    std::fputc(10, stdout);
+    std::fflush(stdout);
+}
+
 }
 
 class CalendarPageEventMutationParityTests final : public QObject
@@ -580,6 +816,10 @@ private slots:
     void ordinaryCreateEditAndDeleteUseCalendarPageSignals();
     void repeatSeriesSuffixEditUsesCalendarPageSignalAndRefreshesProjection();
     void monthGridCellsMatchCalendarEventModelDateProjection();
+    void currentMonthUpcomingRowsMatchVisibleCalendarRange();
+    void next30DaysIncludesBoundariesAndFiltersEventTypes();
+    void nextTenUpcomingEventsUseStableVisibleOrderAndLimit();
+    void completedEmptyUpcomingRangeShowsItsEmptyLabel();
 };
 
 void CalendarPageEventMutationParityTests::
@@ -1274,6 +1514,466 @@ monthGridCellsMatchCalendarEventModelDateProjection()
     QCOMPARE(holidayCell->property("redDay").toBool(), true);
     QCOMPARE(startCell->property("redDay").toBool(), false);
     QCOMPARE(endCell->property("redDay").toBool(), false);
+}
+
+
+void CalendarPageEventMutationParityTests::
+currentMonthUpcomingRowsMatchVisibleCalendarRange()
+{
+    CalendarWorkspace workspace;
+    QString setupError;
+    QVERIFY2(
+        initializeWorkspace(workspace, &setupError),
+        qPrintable(setupError)
+        );
+    QVERIFY2(
+        removePreservedFixtureEvent(workspace, &setupError),
+        qPrintable(setupError)
+        );
+    QVERIFY2(
+        enable24HourFixtureTime(workspace, &setupError),
+        qPrintable(setupError)
+        );
+
+    const QDate today = QDate::currentDate();
+    const QDate firstOfDisplayedMonth =
+        QDate(today.year(), today.month(), 1).addMonths(1);
+    const QDate multiDayStart =
+        firstOfDisplayedMonth.addDays(3);
+    const QDate multiDayEnd =
+        firstOfDisplayedMonth.addDays(5);
+    const QDate holidayDate =
+        firstOfDisplayedMonth.addDays(8);
+    const QDate unknownTimeDate =
+        firstOfDisplayedMonth.addDays(11);
+    const QDate outsideMonthDate =
+        firstOfDisplayedMonth.addMonths(1).addDays(2);
+
+    CalendarEvent multiDay;
+    multiDay.title = QStringLiteral("F383 Multi Day Timed");
+    multiDay.eventType = QStringLiteral("Workshop");
+    multiDay.timeStatus = QStringLiteral("Timed");
+    multiDay.startDate = multiDayStart;
+    multiDay.startTime = QTime(9, 15);
+    multiDay.endDate = multiDayEnd;
+    multiDay.endTime = QTime(10, 45);
+    const int multiDayId =
+        saveFixtureEvent(workspace, multiDay, &setupError);
+    QVERIFY2(multiDayId > 0, qPrintable(setupError));
+
+    CalendarEvent holiday;
+    holiday.title = QStringLiteral("F383 All Day Holiday");
+    holiday.eventType = QStringLiteral("Holiday");
+    holiday.timeStatus = QStringLiteral("Timed");
+    holiday.allDay = true;
+    holiday.startDate = holidayDate;
+    holiday.endDate = holidayDate;
+    const int holidayId =
+        saveFixtureEvent(workspace, holiday, &setupError);
+    QVERIFY2(holidayId > 0, qPrintable(setupError));
+
+    CalendarEvent unknownTime;
+    unknownTime.title = QStringLiteral("F383 Unknown Time Event");
+    unknownTime.eventType = QStringLiteral("Other");
+    unknownTime.timeStatus = QStringLiteral("Unknown");
+    unknownTime.startDate = unknownTimeDate;
+    unknownTime.endDate = unknownTimeDate;
+    const int unknownTimeId =
+        saveFixtureEvent(workspace, unknownTime, &setupError);
+    QVERIFY2(unknownTimeId > 0, qPrintable(setupError));
+
+    CalendarEvent outsideMonth;
+    outsideMonth.title = QStringLiteral("F383 Outside Month Sentinel");
+    outsideMonth.eventType = QStringLiteral("Meeting");
+    outsideMonth.timeStatus = QStringLiteral("Timed");
+    outsideMonth.startDate = outsideMonthDate;
+    outsideMonth.startTime = QTime(8, 0);
+    outsideMonth.endDate = outsideMonthDate;
+    outsideMonth.endTime = QTime(9, 0);
+    const int outsideMonthId =
+        saveFixtureEvent(workspace, outsideMonth, &setupError);
+    QVERIFY2(outsideMonthId > 0, qPrintable(setupError));
+
+    CalendarPage page(&workspace.services);
+    QQuickItem* const root = calendarRoot(page);
+    QVERIFY(root);
+    QVERIFY(root->setProperty(
+        "shownDate",
+        QDateTime(firstOfDisplayedMonth, QTime(0, 0))
+        ));
+    QCOMPARE(
+        root->property("shownDate").toDateTime().date(),
+        firstOfDisplayedMonth
+        );
+
+    CalendarEventModel* const model = calendarModel(page);
+    QVERIFY(model);
+    QTRY_VERIFY_WITH_TIMEOUT(
+        model->isMonthLoaded(
+            firstOfDisplayedMonth.year(),
+            firstOfDisplayedMonth.month()
+            ),
+        10000
+        );
+
+    NavigationTabWidget* const tabs = upcomingTabs(page);
+    QVERIFY(tabs);
+    QCOMPARE(tabs->currentIndex(), 0);
+
+    const QStringList expectedRows{
+        upcomingRowJson(
+            multiDayId,
+            QStringLiteral("%1 - %2")
+                .arg(
+                    multiDayStart.toString(QStringLiteral("MMM d")),
+                    multiDayEnd.toString(QStringLiteral("MMM d yyyy"))
+                    ),
+            QStringLiteral("09:15 - 10:45"),
+            multiDay.title,
+            QStringLiteral("Workshop")
+            ),
+        upcomingRowJson(
+            holidayId,
+            holidayDate.toString(QStringLiteral("MMM d")),
+            QStringLiteral("All day"),
+            holiday.title,
+            QStringLiteral("Holiday")
+            ),
+        upcomingRowJson(
+            unknownTimeId,
+            unknownTimeDate.toString(QStringLiteral("MMM d")),
+            QStringLiteral("Unknown Time"),
+            unknownTime.title,
+            QStringLiteral("Other")
+            )
+    };
+    QTRY_COMPARE_WITH_TIMEOUT(
+        visibleUpcomingRows(tabs->currentWidget()),
+        expectedRows,
+        10000
+        );
+    const QStringList actualRows =
+        visibleUpcomingRows(tabs->currentWidget());
+    QCOMPARE(actualRows, expectedRows);
+    const QString outsideMonthRow = upcomingRowJson(
+        outsideMonthId,
+        outsideMonthDate.toString(QStringLiteral("MMM d")),
+        QStringLiteral("08:00 - 09:00"),
+        outsideMonth.title,
+        QStringLiteral("Meeting")
+        );
+    QVERIFY(!actualRows.contains(outsideMonthRow));
+
+    emitF383Transcript({
+        {QStringLiteral("scenario"), QStringLiteral("current_month")},
+        {
+            QStringLiteral("displayed_month"),
+            firstOfDisplayedMonth.toString(QStringLiteral("yyyy-MM"))
+        },
+        {QStringLiteral("rows"), transcriptRows(actualRows)}
+    });
+}
+
+void CalendarPageEventMutationParityTests::
+next30DaysIncludesBoundariesAndFiltersEventTypes()
+{
+    CalendarWorkspace workspace;
+    QString setupError;
+    QVERIFY2(
+        initializeWorkspace(workspace, &setupError),
+        qPrintable(setupError)
+        );
+    QVERIFY2(
+        removePreservedFixtureEvent(workspace, &setupError),
+        qPrintable(setupError)
+        );
+    QVERIFY2(
+        enable24HourFixtureTime(workspace, &setupError),
+        qPrintable(setupError)
+        );
+
+    const QDate today = QDate::currentDate();
+    const QDate lastIncluded = today.addDays(30);
+    const QDate excluded = today.addDays(31);
+
+    CalendarEvent todayEvent;
+    todayEvent.title = QStringLiteral("F383 Today Boundary");
+    todayEvent.eventType = QStringLiteral("Workshop");
+    todayEvent.timeStatus = QStringLiteral("Timed");
+    todayEvent.startDate = today;
+    todayEvent.startTime = QTime(8, 30);
+    todayEvent.endDate = today;
+    todayEvent.endTime = QTime(9, 0);
+    const int todayId =
+        saveFixtureEvent(workspace, todayEvent, &setupError);
+    QVERIFY2(todayId > 0, qPrintable(setupError));
+
+    CalendarEvent holiday;
+    holiday.title = QStringLiteral("F383 Filtered Holiday");
+    holiday.eventType = QStringLiteral("Holiday");
+    holiday.timeStatus = QStringLiteral("Timed");
+    holiday.startDate = today.addDays(5);
+    holiday.startTime = QTime(12, 0);
+    holiday.endDate = holiday.startDate;
+    holiday.endTime = QTime(13, 0);
+    const int holidayId =
+        saveFixtureEvent(workspace, holiday, &setupError);
+    QVERIFY2(holidayId > 0, qPrintable(setupError));
+
+    CalendarEvent lastIncludedEvent;
+    lastIncludedEvent.title = QStringLiteral("F383 Day Thirty Boundary");
+    lastIncludedEvent.eventType = QStringLiteral("Workshop");
+    lastIncludedEvent.timeStatus = QStringLiteral("Timed");
+    lastIncludedEvent.allDay = true;
+    lastIncludedEvent.startDate = lastIncluded;
+    lastIncludedEvent.endDate = lastIncluded;
+    const int lastIncludedId =
+        saveFixtureEvent(workspace, lastIncludedEvent, &setupError);
+    QVERIFY2(lastIncludedId > 0, qPrintable(setupError));
+
+    CalendarEvent outsideRange;
+    outsideRange.title = QStringLiteral("F383 Day Thirty One Sentinel");
+    outsideRange.eventType = QStringLiteral("Workshop");
+    outsideRange.timeStatus = QStringLiteral("Timed");
+    outsideRange.startDate = excluded;
+    outsideRange.startTime = QTime(7, 0);
+    outsideRange.endDate = excluded;
+    outsideRange.endTime = QTime(8, 0);
+    const int excludedId =
+        saveFixtureEvent(workspace, outsideRange, &setupError);
+    QVERIFY2(excludedId > 0, qPrintable(setupError));
+
+    CalendarPage page(&workspace.services);
+    NavigationTabWidget* const tabs = upcomingTabs(page);
+    QVERIFY(tabs);
+    tabs->setCurrentIndex(1);
+    QCOMPARE(tabs->currentIndex(), 1);
+
+    const QStringList expectedBeforeFilter{
+        upcomingRowJson(
+            todayId,
+            today.toString(QStringLiteral("MMM d")),
+            QStringLiteral("08:30 - 09:00"),
+            todayEvent.title,
+            QStringLiteral("Workshop")
+            ),
+        upcomingRowJson(
+            holidayId,
+            holiday.startDate.toString(QStringLiteral("MMM d")),
+            QStringLiteral("12:00 - 13:00"),
+            holiday.title,
+            QStringLiteral("Holiday")
+            ),
+        upcomingRowJson(
+            lastIncludedId,
+            lastIncluded.toString(QStringLiteral("MMM d")),
+            QStringLiteral("All day"),
+            lastIncludedEvent.title,
+            QStringLiteral("Workshop")
+            )
+    };
+    QTRY_COMPARE_WITH_TIMEOUT(
+        visibleUpcomingRows(tabs->currentWidget()),
+        expectedBeforeFilter,
+        15000
+        );
+    const QStringList actualBeforeFilter =
+        visibleUpcomingRows(tabs->currentWidget());
+    QCOMPARE(actualBeforeFilter, expectedBeforeFilter);
+    const QString dayThirtyOneRow = upcomingRowJson(
+        excludedId,
+        excluded.toString(QStringLiteral("MMM d")),
+        QStringLiteral("07:00 - 08:00"),
+        outsideRange.title,
+        QStringLiteral("Workshop")
+        );
+    QVERIFY(!actualBeforeFilter.contains(dayThirtyOneRow));
+
+    QPushButton* holidayFilter = nullptr;
+    for (QPushButton* const button : tabs->currentWidget()
+             ->findChildren<QPushButton*>())
+    {
+        if (
+            button->property("eventType").toString()
+                == QStringLiteral("Holiday")
+        )
+        {
+            holidayFilter = button;
+            break;
+        }
+    }
+    QVERIFY(holidayFilter);
+    QVERIFY(holidayFilter->isChecked());
+    holidayFilter->click();
+    QVERIFY(!holidayFilter->isChecked());
+
+    const QStringList expectedAfterFilter{
+        expectedBeforeFilter.at(0),
+        expectedBeforeFilter.at(2)
+    };
+    QTRY_COMPARE_WITH_TIMEOUT(
+        visibleUpcomingRows(tabs->currentWidget()),
+        expectedAfterFilter,
+        5000
+        );
+    const QStringList actualAfterFilter =
+        visibleUpcomingRows(tabs->currentWidget());
+    QCOMPARE(actualAfterFilter, expectedAfterFilter);
+
+    emitF383Transcript({
+        {QStringLiteral("scenario"), QStringLiteral("next_30_days")},
+        {QStringLiteral("today"), today.toString(Qt::ISODate)},
+        {QStringLiteral("last_included"), lastIncluded.toString(Qt::ISODate)},
+        {QStringLiteral("excluded"), excluded.toString(Qt::ISODate)},
+        {QStringLiteral("filter_toggled_off"), QStringLiteral("Holiday")},
+        {QStringLiteral("before_filter"), transcriptRows(actualBeforeFilter)},
+        {QStringLiteral("after_filter"), transcriptRows(actualAfterFilter)}
+    });
+}
+
+void CalendarPageEventMutationParityTests::
+nextTenUpcomingEventsUseStableVisibleOrderAndLimit()
+{
+    CalendarWorkspace workspace;
+    QString setupError;
+    QVERIFY2(
+        initializeWorkspace(workspace, &setupError),
+        qPrintable(setupError)
+        );
+    QVERIFY2(
+        removePreservedFixtureEvent(workspace, &setupError),
+        qPrintable(setupError)
+        );
+    QVERIFY2(
+        enable24HourFixtureTime(workspace, &setupError),
+        qPrintable(setupError)
+        );
+
+    const QDate today = QDate::currentDate();
+    struct InputEvent final
+    {
+        int dayOffset;
+        QTime startTime;
+        QString title;
+    };
+    const QList<InputEvent> inputEvents{
+        {1, QTime(10, 0), QStringLiteral("F383 Zulu")},
+        {1, QTime(9, 0), QStringLiteral("F383 Alpha")},
+        {1, QTime(9, 0), QStringLiteral("F383 Alpha")},
+        {1, QTime(9, 0), QStringLiteral("F383 Gamma")},
+        {2, QTime(8, 0), QStringLiteral("F383 Beta")},
+        {2, QTime(9, 0), QStringLiteral("F383 Delta")},
+        {2, QTime(9, 0), QStringLiteral("F383 Zeta")},
+        {2, QTime(12, 0), QStringLiteral("F383 Alpha")},
+        {3, QTime(10, 0), QStringLiteral("F383 Solo")},
+        {3, QTime(10, 0), QStringLiteral("F383 Aardvark")},
+        {3, QTime(8, 0), QStringLiteral("F383 Second")},
+        {3, QTime(9, 0), QStringLiteral("F383 Last")}
+    };
+
+    QList<int> eventIds;
+    for (const InputEvent& input : inputEvents)
+    {
+        CalendarEvent event;
+        event.title = input.title;
+        event.eventType = QStringLiteral("Workshop");
+        event.timeStatus = QStringLiteral("Timed");
+        event.startDate = today.addDays(input.dayOffset);
+        event.startTime = input.startTime;
+        event.endDate = event.startDate;
+        event.endTime = input.startTime.addSecs(3600);
+        const int id = saveFixtureEvent(workspace, event, &setupError);
+        QVERIFY2(id > 0, qPrintable(setupError));
+        eventIds.append(id);
+    }
+    QCOMPARE(eventIds.size(), 12);
+
+    CalendarPage page(&workspace.services);
+    NavigationTabWidget* const tabs = upcomingTabs(page);
+    QVERIFY(tabs);
+    tabs->setCurrentIndex(2);
+    QCOMPARE(tabs->currentIndex(), 2);
+
+    const QList<int> expectedOrder{
+        1, 2, 3, 0, 4, 5, 6, 7, 10, 11
+    };
+    QStringList expectedRows;
+    for (const int inputIndex : expectedOrder)
+    {
+        const InputEvent& input = inputEvents.at(inputIndex);
+        const QDate eventDate = today.addDays(input.dayOffset);
+        const QTime endTime = input.startTime.addSecs(3600);
+        expectedRows.append(upcomingRowJson(
+            eventIds.at(inputIndex),
+            eventDate.toString(QStringLiteral("MMM d")),
+            QStringLiteral("%1 - %2")
+                .arg(
+                    input.startTime.toString(QStringLiteral("HH:mm")),
+                    endTime.toString(QStringLiteral("HH:mm"))
+                    ),
+            input.title,
+            QStringLiteral("Workshop")
+            ));
+    }
+
+    QTRY_COMPARE_WITH_TIMEOUT(
+        visibleUpcomingRows(tabs->currentWidget()),
+        expectedRows,
+        20000
+        );
+    const QStringList actualRows =
+        visibleUpcomingRows(tabs->currentWidget());
+    QCOMPARE(actualRows, expectedRows);
+    QCOMPARE(actualRows.size(), 10);
+
+    emitF383Transcript({
+        {QStringLiteral("scenario"), QStringLiteral("next_10_events")},
+        {QStringLiteral("today"), today.toString(Qt::ISODate)},
+        {QStringLiteral("seed_count"), inputEvents.size()},
+        {QStringLiteral("visible_count"), expectedRows.size()},
+        {QStringLiteral("rows"), transcriptRows(actualRows)}
+    });
+}
+
+void CalendarPageEventMutationParityTests::
+completedEmptyUpcomingRangeShowsItsEmptyLabel()
+{
+    CalendarWorkspace workspace;
+    QString setupError;
+    QVERIFY2(
+        initializeWorkspace(workspace, &setupError),
+        qPrintable(setupError)
+        );
+    QVERIFY2(
+        removePreservedFixtureEvent(workspace, &setupError),
+        qPrintable(setupError)
+        );
+
+    const QDate today = QDate::currentDate();
+    CalendarPage page(&workspace.services);
+    NavigationTabWidget* const tabs = upcomingTabs(page);
+    QVERIFY(tabs);
+    tabs->setCurrentIndex(1);
+    QCOMPARE(tabs->currentIndex(), 1);
+
+    QTRY_COMPARE_WITH_TIMEOUT(
+        visibleUpcomingEmptyLabel(tabs->currentWidget()),
+        QStringLiteral("No upcoming events."),
+        15000
+        );
+    const QStringList rows =
+        visibleUpcomingRows(tabs->currentWidget());
+    QVERIFY(rows.isEmpty());
+
+    emitF383Transcript({
+        {QStringLiteral("scenario"), QStringLiteral("empty_completed_range")},
+        {QStringLiteral("today"), today.toString(Qt::ISODate)},
+        {QStringLiteral("rows"), transcriptRows(rows)},
+        {
+            QStringLiteral("empty_label"),
+            visibleUpcomingEmptyLabel(tabs->currentWidget())
+        }
+    });
 }
 
 QTEST_MAIN(CalendarPageEventMutationParityTests)
