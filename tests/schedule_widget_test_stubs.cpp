@@ -79,7 +79,6 @@ QString lastSavedSlotDefaultState;
 Status slotSaveResult;
 Theme configuredTheme = Theme::Dark;
 bool themeAvailable = false;
-bool databaseOpen = true;
 bool databaseSessionOpen = true;
 bool intensiveSlotStateRepositoryAvailable = true;
 bool testingAssignmentRepositoryAvailable = true;
@@ -187,7 +186,6 @@ void reset()
     slotSaveResult = {};
     configuredTheme = Theme::Dark;
     themeAvailable = false;
-    databaseOpen = true;
     databaseSessionOpen = true;
     intensiveSlotStateRepositoryAvailable = true;
     testingAssignmentRepositoryAvailable = true;
@@ -223,7 +221,6 @@ void setDatabaseOpen(
     bool open
     )
 {
-    databaseOpen = open;
     databaseSessionOpen = open;
 }
 
@@ -1141,7 +1138,7 @@ DataService::~DataService() = default;
 
 bool DataService::isOpen() const
 {
-    return ScheduleWidgetTestStubs::databaseOpen;
+    return ScheduleWidgetTestStubs::databaseSessionOpen;
 }
 
 DatabaseSession* DataService::databaseSession() const
