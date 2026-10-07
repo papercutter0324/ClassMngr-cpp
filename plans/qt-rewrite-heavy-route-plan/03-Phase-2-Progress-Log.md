@@ -13029,3 +13029,33 @@ a test-only overlay and require a byte-identical transcript. This records the
 acceptance plan, not completed implementation or verification. F385 remains
 retired as a duplicate of F369. Phase 2 remains In Progress/Open; Gates 1 and 2
 remain Partial.
+
+### F384 accepted / requested stop point - 2026-10-08
+
+F384, Calendar Preferences term-default restoration UI parity, is accepted in
+this slice commit. It adds the offscreen target
+`ClassMngrCalendarPreferencesRestoreDefaultsTests` in
+`tests/calendar_preferences_restore_defaults_tests.cpp` and its registration
+in `cmake/tests/pages_and_output.cmake`; no production files changed.
+
+The independent Tester accepted the exact `fe24d66bbc9045f71d8af7f43b092501e831a60f`
+baseline overlay. Configure and focused target builds succeeded on current and
+baseline; focused CTest passed 1/1 and direct QtTest passed 3/3 on each. The
+overlay contained exactly the new test source and CMake registration. All eight
+2026 date/week values, linked-state controls, unchanged provider/persisted
+schedules, zero writes, and zero `calendarPreferencesChanged` emissions were
+verified. Current and baseline canonical transcripts matched byte-for-byte;
+SHA-256: `5a9eff69b7c24c261eef4e24d6d4a59fcc47ee285ac3d5128219039daffbad7c`.
+`git diff --check` passed. No full suite ran.
+
+Executor and Tester logs are under
+`C:\\Users\\wfelt\\AppData\\Local\\Temp\\F384-VERIFY-1-20261007162332\\`;
+the executor transcript is `build/f384_calendar_preferences_qtest_20261008.txt`.
+Non-fatal warnings covered the optional documents resource pack, Qt font path,
+and offscreen size-hint support. The first executor build lacked the MSVC
+include environment; the supported `VsDevCmd.bat` retry passed.
+
+F385 remains retired as a duplicate of F369. F386-F390 remain provisional and
+unselected. At the user's request, stop after this acceptance commit without
+starting another slice. Phase 2 remains In Progress/Open; Gates 1 and 2 remain
+Partial.

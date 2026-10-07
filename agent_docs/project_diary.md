@@ -2218,3 +2218,15 @@ be tested by enumerating instantiated QML cells and comparing their event rows
 with `CalendarEventModel`; no separate legacy month grid was found, so the
 coverage records the current projection contract rather than a historical-view
 comparison.
+
+## 2026-10-08 - F384 Calendar Preferences restoration accepted
+
+F384 verifies that Restore Term Defaults stages the selected year's schedules in
+the Calendar Preferences editors, checks linked schedules, and disables the
+dependent Middle School controls without writing preferences or emitting the
+calendar-change signal. Pin the academic year and seed both schools so date and
+week expectations remain deterministic; saving is a separate action.
+Independent current and pinned-baseline verification passed.
+
+The user requested a stop immediately after the F384 acceptance commit. Phase 2
+remains open, and no next slice is selected.

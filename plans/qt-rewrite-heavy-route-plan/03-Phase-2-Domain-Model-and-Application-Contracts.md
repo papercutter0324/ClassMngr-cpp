@@ -45,11 +45,11 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
   F371 was skipped on the other device because work had already begun here;
   it was not independently accepted there. Batch 11 (F362-F371) and Batch 12
   (F372-F381) are complete. F382 is accepted. Batch 13 (F382-F390) is
-  active with F382 and F383 accepted and F384 (Calendar Preferences term-default
-  restoration UI parity) selected/current. F383 passed independent
-  current/baseline verification. F384's bounded discovery and acceptance
-  matrix are established; implementation and verification remain pending.
-  F385 is retired as a duplicate of F369; F386-F390 remain provisional/unselected.
+  active with F382-F384 accepted. F384 (Calendar Preferences term-default
+  restoration UI parity) passed independent current/baseline verification.
+  F385 is retired as a duplicate of F369; F386-F390 remain provisional and
+  unselected. The user requested a stop immediately after the F384 acceptance
+  commit; no next slice has been started.
 
 ### Slice discovery batches
 
@@ -76,42 +76,18 @@ log](03-Phase-2-Progress-Log.md).
 
 #### Active batch: Batch 13
 
-1. F384 - Selected/current: Calendar Preferences term-default restoration UI
-   parity; bounded discovery and acceptance matrix are established.
-2. F386 - Provisional, not selected: Staff Directory parity for the uncovered
+1. F386 - Provisional, not selected: Staff Directory parity for the uncovered
    closed-session-before-leave-confirmation gate.
-3. F387 - Provisional, not selected: Calendar Preferences event-reset
+2. F387 - Provisional, not selected: Calendar Preferences event-reset
    confirmation, delete, failure, and refresh UI parity.
-4. F388 - Provisional, not selected: Class Details/Notes/student-Evaluation
+3. F388 - Provisional, not selected: Class Details/Notes/student-Evaluation
    route availability matrix.
-5. F389 - Provisional, not selected: My Info route navigation gate parity.
-6. F390 - Provisional, not selected: Sub Prep route gate parity.
+4. F389 - Provisional, not selected: My Info route navigation gate parity.
+5. F390 - Provisional, not selected: Sub Prep route gate parity.
 
 The two independent scans were bounded to Calendar and NavigationController
 parity review; they do not establish repository-wide discovery exhaustion.
 No other slices were found.
-
-**F384 acceptance matrix (established; implementation pending):**
-
-Seed non-default term schedules for Elementary and Middle School, select
-academic year 2026, and click `preferencesCalendarRestoreDefaults`. Verify the
-displayed start date and week count for every term:
-
-| School | Winter | Spring | Summer | Fall |
-|---|---|---|---|---|
-| Elementary | 2025-12-29 / 11 | 2026-03-16 / 19 | 2026-07-27 / 11 | 2026-10-12 / 11 |
-| Middle School | 2025-12-29 / 11 | 2026-03-16 / 19 | 2026-07-27 / 4 | 2026-08-24 / 18 |
-
-Also verify the link option becomes checked, Middle School Winter/Spring week
-fields and Winter/Spring/Summer date fields become disabled, and restore alone
-leaves persisted schedules unchanged without emitting
-`calendarPreferencesChanged`. Do not click Save or exercise the separate
-calendar-event reset (F387).
-
-Pin pre-slice baseline
-`fe24d66bbc9045f71d8af7f43b092501e831a60f`; use an offscreen Qt widget test
-with a test-only overlay and require a byte-identical transcript.
-
 
 ## Objective
 

@@ -169,6 +169,16 @@ classmngr_add_qt_test(
     OFFSCREEN
 )
 
+classmngr_add_qt_test(
+    NAME CalendarPreferencesRestoreDefaults
+    SOURCES
+        tests/calendar_preferences_restore_defaults_tests.cpp
+    LIBRARIES
+        Qt6::Test
+        Qt6::Widgets
+    OFFSCREEN
+)
+
 qt_add_resources(
     ClassMngrCalendarPageEventMutationParityTests
     calendar_page_event_mutation_qml_test_resources

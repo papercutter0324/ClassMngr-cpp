@@ -1,7 +1,7 @@
 # Project Progress
 
 Active deployment plan: Qt Rewrite Phase 2 — Domain Model and Application Contracts.
-Current deployment: phase2_resume_20260929 (executing). Route: Heavy.
+Current deployment: phase2_resume_20260929 (paused after F384 acceptance commit). Route: Heavy.
 Phase 1 hosted acceptance is closed on commit `0883009d`; the local branch adds
 continued Phase 2 domain and application-contract work on top of that verified
 baseline.
@@ -53,16 +53,15 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current state - 2026-10-07
+### Current state - 2026-10-08
 
-Phase 2 remains In Progress/Open under deployment `phase2_resume_20260929`.
-F366 is accepted in source commit `cb8bd188`; F367 is selected for the Class
-Transfer persisted apply boundary. F348 request validation is already accepted.
-Batches 9 and 10 are complete; Batch 11 is active, with F368-F371 queued.
-Gates 1 and 2 remain Partial. The current slice and detailed acceptance
-records are maintained in the [Phase 2 plan](../plans/qt-rewrite-heavy-route-plan/03-Phase-2-Domain-Model-and-Application-Contracts.md)
+Phase 2 remains In Progress/Open under deployment `phase2_resume_20260929`,
+paused after the user-requested F384 acceptance commit. F371 and F382-F384 are
+accepted; Batches 11 and 12 are complete and Batch 13 is active. F385 is retired
+as a duplicate of F369. F386-F390 remain provisional and unselected; no next
+slice has been started. Gates 1 and 2 remain Partial. The current slice and
+detailed acceptance records are maintained in the [Phase 2 plan](../plans/qt-rewrite-heavy-route-plan/03-Phase-2-Domain-Model-and-Application-Contracts.md)
 and [Phase 2 progress log](../plans/qt-rewrite-heavy-route-plan/03-Phase-2-Progress-Log.md).
-
 ### Earlier Phase 2 detail - 2026-09-26
 
 F44 adds Qt-free Teacher Import review-decision validation shared by production
