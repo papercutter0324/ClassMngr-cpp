@@ -1,6 +1,8 @@
 #include "core/application_services.h"
 #include "app/services/feature_services.h"
+#include "fakes/fake_user_prompt_service.h"
 #include "data/data_service.h"
+#include "data/database/database_schema_manager.h"
 #include "features/sub_prep/ui/sub_prep_page.h"
 #include "features/sub_prep/ui/sub_prep_class_information_list_model.h"
 #include "features/sub_prep/ui/sub_prep_print_dialog.h"
@@ -26,18 +28,27 @@
 #include <QDialog>
 #include <QDateEdit>
 #include <QDir>
+#include <QFileInfo>
 #include <QGridLayout>
 #include <QListView>
 #include <QMetaObject>
+#include <QPdfDocument>
 #include <QPushButton>
 #include <QSignalBlocker>
 #include <QTextEdit>
 #include <QTemporaryDir>
 #include <QStandardPaths>
+#include <QSqlDatabase>
+#include <QSqlError>
+#include <QSqlQuery>
 #include <QTimer>
 #include <QVBoxLayout>
+#include <QJsonArray>
+#include <QJsonDocument>
+#include <QJsonObject>
 
 #include <string>
+#include <memory>
 #include <unordered_set>
 #include <utility>
 #include <vector>
@@ -161,11 +172,49 @@ public:
         const SubPrepPrintSourceRequest& request
         ) override
     {
+        ++loadCount;
         lastRequest = request;
-        return SubPrepPrintSourceReadResult::success({});
+        SubPrepPrintSourceInput selectedInput;
+        std::vector<ClassMngr::Next::Domain::TeacherId>
+            selectedTeacherIds;
+        for (const SubPrepPrintClass& classRecord : sourceInput.classes)
+        {
+            if (std::find(
+                    request.selectedClassIds.cbegin(),
+                    request.selectedClassIds.cend(),
+                    classRecord.id
+                    ) == request.selectedClassIds.cend())
+            {
+                continue;
+            }
+
+            selectedInput.classes.push_back(classRecord);
+            if (classRecord.teacherId)
+            {
+                selectedTeacherIds.push_back(*classRecord.teacherId);
+            }
+        }
+
+        for (const SubPrepPrintTeacher& teacher : sourceInput.teachers)
+        {
+            if (std::find(
+                    selectedTeacherIds.cbegin(),
+                    selectedTeacherIds.cend(),
+                    teacher.id
+                    ) != selectedTeacherIds.cend())
+            {
+                selectedInput.teachers.push_back(teacher);
+            }
+        }
+
+        return SubPrepPrintSourceReadResult::success(
+            std::move(selectedInput)
+            );
     }
 
+    int loadCount = 0;
     SubPrepPrintSourceRequest lastRequest;
+    SubPrepPrintSourceInput sourceInput;
 };
 
 class SubPrepTestCalendarIntervalsReadPort final
@@ -275,6 +324,7 @@ class SubPrepPageTests : public QObject
 
 private slots:
     void init();
+    void cleanup();
     void sectionsAppearInRequestedOrderAndUseExpectedEditability();
     void headerKeyboardOpensUntargeted();
     void gradeAndLevelTabsSelectOneClassAndPreserveSelection();
@@ -293,11 +343,32 @@ private slots:
     void packageFolderNamesCoverDateRangesAndUnsafeCharacters();
     void printDialogRequiresAndSavesMissingUserName();
     void clearDatabaseStateStopsAutosaveAndRemovesLoadedContent();
+    void pageGenerationUsesSelectedTypedPrintSourceAndWritesInformationPdf();
+
+private:
+    std::unique_ptr<QTemporaryDir> m_generationDatabaseDirectory;
+    QSqlDatabase m_generationDatabase;
+    bool m_generationDatabaseCreated = false;
 };
 
 void SubPrepPageTests::init()
 {
     ScheduleWidgetTestStubs::reset();
+}
+
+void SubPrepPageTests::cleanup()
+{
+    if (m_generationDatabaseCreated)
+    {
+        m_generationDatabase.close();
+        m_generationDatabase = QSqlDatabase();
+        if (QSqlDatabase::contains(QSqlDatabase::defaultConnection))
+        {
+            QSqlDatabase::removeDatabase(QSqlDatabase::defaultConnection);
+        }
+        m_generationDatabaseCreated = false;
+    }
+    m_generationDatabaseDirectory.reset();
 }
 
 void SubPrepPageTests::headerKeyboardOpensUntargeted()
@@ -1952,6 +2023,408 @@ printDialogCalendarReadUsesTwoYearWindowAndFallsBackOnFailure()
         calendarIntervalsReadPort.lastRequest.endDate.value(),
         expectedEndDate.toString(Qt::ISODate).toStdString()
         );
+}
+
+void SubPrepPageTests::
+pageGenerationUsesSelectedTypedPrintSourceAndWritesInformationPdf()
+{
+    QTemporaryDir outputRoot;
+    QVERIFY(outputRoot.isValid());
+
+    m_generationDatabaseDirectory = std::make_unique<QTemporaryDir>();
+    QVERIFY(m_generationDatabaseDirectory->isValid());
+    QVERIFY(!QSqlDatabase::contains(QSqlDatabase::defaultConnection));
+    m_generationDatabase = QSqlDatabase::addDatabase(
+        QStringLiteral("QSQLITE")
+        );
+    m_generationDatabaseCreated = true;
+    m_generationDatabase.setDatabaseName(
+        m_generationDatabaseDirectory->filePath(
+            QStringLiteral("sub-prep-page-tests.tps")
+            )
+        );
+    QVERIFY(m_generationDatabase.open());
+    QVERIFY(DatabaseSchemaManager::ensureSchema(m_generationDatabase));
+
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(
+        m_generationDatabaseDirectory->filePath(
+            QStringLiteral("sub-prep-page-tests.tps")
+            )
+        ));
+
+    QString databaseSeedError;
+    const auto executeSeed =
+        [this, &databaseSeedError](
+            const QString& sql,
+            const QVariantList& values
+        )
+        {
+            QSqlQuery query(m_generationDatabase);
+            if (!query.prepare(sql))
+            {
+                databaseSeedError = query.lastError().text();
+                return false;
+            }
+            for (const QVariant& value : values)
+            {
+                query.addBindValue(value);
+            }
+            if (!query.exec())
+            {
+                databaseSeedError = query.lastError().text();
+                return false;
+            }
+            return true;
+        };
+    QVERIFY2(executeSeed(
+        QStringLiteral(
+            "INSERT INTO teachers (id, teacher_en, teacher_kr, "
+            "preferred_romanization, preferred_name, room_number, "
+            "wifi_name, wifi_password, internet_type, zoom_id, "
+            "zoom_password, projection_type, notes) "
+            "VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+            ),
+        {
+            QStringLiteral("F380 Roster Teacher"),
+            QStringLiteral("F380 Roster Teacher KR"),
+            QStringLiteral("F380 Roster Teacher"),
+            QStringLiteral("F380 Roster Teacher"),
+            QStringLiteral("418"),
+            QStringLiteral("F380 WiFi"),
+            QStringLiteral("F380 WiFi Password"),
+            QStringLiteral("WiFi"),
+            QStringLiteral("f380.zoom"),
+            QStringLiteral("F380 Zoom Password"),
+            QStringLiteral("HDMI"),
+            QStringLiteral("F380 Roster Teacher Note")
+        }
+        ), qPrintable(databaseSeedError));
+    QVERIFY2(executeSeed(
+        QStringLiteral("INSERT INTO classes (id, name) VALUES (42, ?)"),
+        {QStringLiteral("F380 Package Class")}
+        ), qPrintable(databaseSeedError));
+    QVERIFY2(executeSeed(
+        QStringLiteral(
+            "INSERT INTO class_info (class_id, teacher_id, class_grade, "
+            "class_level, class_color, font_color) "
+            "VALUES (42, 1, 'E4', 'F380 Package Class', '#ffffff', '#000000')"
+            ),
+        {}
+        ), qPrintable(databaseSeedError));
+    QVERIFY2(executeSeed(
+        QStringLiteral(
+            "INSERT INTO class_times (class_id, day, start_time, end_time) "
+            "VALUES (42, 'Tuesday', '4:00 PM', '4:50 PM')"
+            ),
+        {}
+        ), qPrintable(databaseSeedError));
+    for (const auto& column : {
+             QPair<QString, int>{QStringLiteral("English"), 0},
+             QPair<QString, int>{QStringLiteral("Korean"), 1}
+         })
+    {
+        QVERIFY2(executeSeed(
+            QStringLiteral(
+                "INSERT INTO roster_columns (class_id, name, position, width) "
+                "VALUES (42, ?, ?, 0)"
+                ),
+            {column.first, column.second}
+            ), qPrintable(databaseSeedError));
+    }
+    QVERIFY2(executeSeed(
+        QStringLiteral(
+            "INSERT INTO roster_data (class_id, row_index, col_index, value) "
+            "VALUES (42, 0, 0, 'F380 Roster Student')"
+            ),
+        {}
+        ), qPrintable(databaseSeedError));
+    QVERIFY2(executeSeed(
+        QStringLiteral(
+            "INSERT INTO roster_data (class_id, row_index, col_index, value) "
+            "VALUES (42, 0, 1, 'F380 Roster Student KR')"
+            ),
+        {}
+        ), qPrintable(databaseSeedError));
+
+    const int selectedClassId = 42;
+
+    const auto selectedId = typedClassId(selectedClassId);
+    const auto selectedTeacherId = typedTeacherId(701);
+    const auto unselectedTeacherId = typedTeacherId(702);
+
+    SubPrepTestCalendarIntervalsReadPort calendarIntervalsReadPort;
+    SubPrepPageHarness harness(&services, calendarIntervalsReadPort);
+    harness.printSourceReadPort.sourceInput.teachers = {
+        {
+            .id = selectedTeacherId,
+            .englishName = "F380_SELECTED_TEACHER",
+            .room = "F380_SELECTED_ROOM",
+            .teacherNotes = "F380_SELECTED_TEACHER_NOTE"
+        },
+        {
+            .id = unselectedTeacherId,
+            .englishName = "F380_UNSELECTED_SENTINEL",
+            .room = "F380_UNSELECTED_ROOM"
+        }
+    };
+    harness.printSourceReadPort.sourceInput.classes = {
+        {
+            .id = selectedId,
+            .teacherId = selectedTeacherId,
+            .grade = "F380_SELECTED_GRADE",
+            .level = "F380_SELECTED_CLASS",
+            .classNotes = "F380_SELECTED_CLASS_NOTE",
+            .classColor = "#ffffff",
+            .fontColor = "#000000",
+            .studentCount = 1,
+            .meetings = {
+                {
+                    .weekday = SubPrepWeekday::Tuesday,
+                    .startTime = "4:00 PM",
+                    .endTime = "4:50 PM"
+                }
+            }
+        },
+        {
+            .id = typedClassId(900),
+            .teacherId = unselectedTeacherId,
+            .grade = "F380_UNSELECTED_GRADE",
+            .level = "F380_UNSELECTED_SENTINEL",
+            .classNotes = "F380_UNSELECTED_NOTE",
+            .meetings = {
+                {
+                    .weekday = SubPrepWeekday::Tuesday,
+                    .startTime = "5:00 PM",
+                    .endTime = "5:50 PM"
+                }
+            }
+        }
+    };
+
+    activatePage(harness.page);
+
+    bool dialogOpened = false;
+    bool dialogAccepted = false;
+    QString dialogAutomationError;
+    QTimer::singleShot(
+        0,
+        [&]
+        {
+            auto* dialog = qobject_cast<SubPrepPrintDialog*>(
+                QApplication::activeModalWidget()
+                );
+            if (!dialog)
+            {
+                dialogAutomationError = QStringLiteral(
+                    "Sub Prep print dialog did not open."
+                    );
+                return;
+            }
+            dialogOpened = true;
+
+            auto* tuesdayCheck = dialog->findChild<QCheckBox*>(
+                QStringLiteral("subPrepPrintTuesdayCheckBox")
+                );
+            auto* targetEdit = dialog->findChild<QLineEdit*>(
+                QStringLiteral("subPrepTargetFolderEdit")
+                );
+            auto* nameEdit = dialog->findChild<QLineEdit*>(
+                QStringLiteral("subPrepUserNameEdit")
+                );
+            auto* openFolderCheck = dialog->findChild<QCheckBox*>(
+                QStringLiteral("subPrepOpenFolderCheckBox")
+                );
+            auto* acceptButton = dialog->findChild<QPushButton*>(
+                QStringLiteral("subPrepGenerateOkButton")
+                );
+            if (
+                !tuesdayCheck
+                || !targetEdit
+                || !nameEdit
+                || !openFolderCheck
+                || !acceptButton
+            )
+            {
+                dialogAutomationError = QStringLiteral(
+                    "Sub Prep print dialog controls are incomplete."
+                    );
+                dialog->reject();
+                return;
+            }
+
+            for (const QString& day : QStringList{
+                     QStringLiteral("Monday"),
+                     QStringLiteral("Tuesday"),
+                     QStringLiteral("Wednesday"),
+                     QStringLiteral("Thursday"),
+                     QStringLiteral("Friday")
+                 })
+            {
+                auto* dayCheck = dialog->findChild<QCheckBox*>(
+                    QStringLiteral("subPrepPrint%1CheckBox").arg(day)
+                    );
+                if (!dayCheck)
+                {
+                    dialogAutomationError = QStringLiteral(
+                        "A weekday selection control is missing."
+                        );
+                    dialog->reject();
+                    return;
+                }
+                dayCheck->setChecked(false);
+            }
+
+            tuesdayCheck->setChecked(true);
+            targetEdit->setText(outputRoot.path());
+            nameEdit->setText(QStringLiteral("F380"));
+            openFolderCheck->setChecked(false);
+            acceptButton->click();
+            dialogAccepted = dialog->result() == QDialog::Accepted;
+        }
+        );
+
+    FakeUserPromptService promptService;
+    DialogServices::setUserPromptServiceForTesting(&promptService);
+    const bool generationInvoked = QMetaObject::invokeMethod(
+        &harness.page,
+        "generateSubPrep",
+        Qt::DirectConnection
+        );
+    DialogServices::setUserPromptServiceForTesting(nullptr);
+    QVERIFY(generationInvoked);
+
+    QVERIFY2(dialogOpened, qPrintable(dialogAutomationError));
+    QVERIFY2(dialogAccepted, qPrintable(dialogAutomationError));
+    const QStringList generationMessages = [&promptService]
+    {
+        QStringList messages;
+        for (const PromptRequest& prompt : promptService.messages)
+        {
+            messages.append(
+                QStringLiteral("%1: %2").arg(prompt.title, prompt.message)
+                );
+        }
+        return messages;
+    }();
+    QVERIFY2(
+        promptService.messages.isEmpty(),
+        qPrintable(generationMessages.join(QLatin1Char('\n')))
+        );
+    QCOMPARE(harness.printSourceReadPort.loadCount, 1);
+    QCOMPARE(
+        harness.printSourceReadPort.lastRequest.selectedClassIds.size(),
+        std::size_t(1)
+        );
+    QCOMPARE(
+        harness.printSourceReadPort.lastRequest.selectedClassIds.front().value(),
+        std::string("42")
+        );
+    QCOMPARE(
+        harness.printSourceReadPort.lastRequest.selectedDays.size(),
+        std::size_t(1)
+        );
+    QCOMPARE(
+        static_cast<int>(
+            harness.printSourceReadPort.lastRequest.selectedDays.front()
+            ),
+        static_cast<int>(SubPrepWeekday::Tuesday)
+        );
+    QCOMPARE(
+        harness.printSourceReadPort.lastRequest.mode,
+        ScheduleViewMode::Regular
+        );
+
+    const QStringList packageDirectories = QDir(outputRoot.path()).entryList(
+        QDir::Dirs | QDir::NoDotAndDotDot,
+        QDir::Name
+        );
+    QCOMPARE(packageDirectories.size(), 1);
+    const QString outputDirectory = QDir(outputRoot.path()).filePath(
+        packageDirectories.first()
+        );
+    QVERIFY(QFileInfo(outputDirectory).isDir());
+    const QStringList classDirectories = QDir(outputDirectory).entryList(
+        QDir::Dirs | QDir::NoDotAndDotDot,
+        QDir::Name
+        );
+    QCOMPARE(classDirectories.size(), 1);
+    const QString selectedClassDirectory = QDir(outputDirectory).filePath(
+        classDirectories.first()
+        );
+    QVERIFY(QFileInfo(selectedClassDirectory).isDir());
+    const QString informationPdfPath = QDir(outputDirectory).filePath(
+        QStringLiteral("Sub Prep.pdf")
+        );
+    const QFileInfo informationPdfInfo(informationPdfPath);
+    QVERIFY(informationPdfInfo.exists());
+    QVERIFY(informationPdfInfo.size() > 0);
+
+    QPdfDocument informationPdf;
+    QCOMPARE(
+        informationPdf.load(informationPdfPath),
+        QPdfDocument::Error::None
+        );
+    QCOMPARE(informationPdf.status(), QPdfDocument::Status::Ready);
+    QVERIFY(informationPdf.pageCount() > 0);
+    QStringList informationPdfPages;
+    for (int index = 0; index < informationPdf.pageCount(); ++index)
+    {
+        informationPdfPages.append(
+            informationPdf.getAllText(index).text()
+            );
+    }
+    const QString informationPdfText =
+        informationPdfPages.join(QLatin1Char(' '));
+    QVERIFY(informationPdfText.contains(
+        QStringLiteral("F380_SELECTED_GRADE")
+        ));
+    QVERIFY(informationPdfText.contains(
+        QStringLiteral("F380_SELECTED_CLASS")
+        ));
+    QVERIFY(informationPdfText.contains(
+        QStringLiteral("F380_SELECTED_CLASS_NOTE")
+        ));
+    QVERIFY(informationPdfText.contains(
+        QStringLiteral("F380_SELECTED_TEACHER")
+        ));
+    QVERIFY(!informationPdfText.contains(
+        QStringLiteral("F380_UNSELECTED_SENTINEL")
+        ));
+
+    const QJsonObject transcript{
+        {QStringLiteral("case"),
+         QStringLiteral("sub_prep_page_generation")},
+        {QStringLiteral("package"),
+         QJsonObject{
+             {QStringLiteral("directory"), true},
+             {QStringLiteral("selected_class_directory"), true},
+             {QStringLiteral("roster_writer_stubbed"), true}
+         }},
+        {QStringLiteral("generation_warning_count"),
+         promptService.messages.size()},
+        {QStringLiteral("request"),
+         QJsonObject{
+             {QStringLiteral("class_ids"), QJsonArray{"42"}},
+             {QStringLiteral("days"), QJsonArray{"Tuesday"}},
+             {QStringLiteral("mode"), QStringLiteral("regular")}
+         }},
+        {QStringLiteral("pdf"),
+         QJsonObject{
+             {QStringLiteral("loadable"), true},
+             {QStringLiteral("nonempty"), informationPdfInfo.size() > 0},
+             {QStringLiteral("selected_class"), true},
+             {QStringLiteral("selected_teacher"), true},
+             {QStringLiteral("excluded_sentinel"), true}
+         }}
+    };
+    qInfo().noquote()
+        << "F380_TRANSCRIPT="
+        << QString::fromUtf8(
+               QJsonDocument(transcript)
+                   .toJson(QJsonDocument::Compact)
+                   .constData()
+               );
 }
 
 void SubPrepPageTests

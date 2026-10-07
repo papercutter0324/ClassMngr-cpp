@@ -10,6 +10,7 @@
 #include "core/application_services.h"
 #include "core/startup_profiler.h"
 #include "core/theme_service.h"
+#include "data/database/database_session.h"
 #include "features/schedule/ui/schedule_editor_dialog.h"
 #include "features/schedule/ui/schedule_print_dialog.h"
 #include "features/schedule/ui/testing_assignment_dialog.h"
@@ -523,12 +524,12 @@ void ScheduleWidget::editTestingAssignment(
     const TestingAssignment* existingAssignment
     )
 {
-    auto* scheduleService =
+    DatabaseSession* const session =
         m_services
-            ? m_services->scheduleService()
+            ? m_services->databaseSession()
             : nullptr;
 
-    if (!scheduleService || !scheduleService->isAvailable())
+    if (!session || !session->isOpen())
     {
         DialogServices::showWarning(
             this,

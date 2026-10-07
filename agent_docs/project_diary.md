@@ -2205,3 +2205,16 @@ dialog slots. For F253, share the exactly duplicated Did Well/Needs Improvement
 section splitter between the AI batch dialog and private-notes editor. Keep its
 legacy malformed-input fallback and section whitespace intact; leave joining,
 bullet editing, and AI response parsing for separate slices.
+
+## 2026-10-07 - Page and QML projection coverage lessons
+
+When a page-level writer stub reports success, assert the artifact the page
+actually owns. The Sub Prep page test verifies its information sheet; roster
+PDF rendering remains lower-level coverage because the test stub writes no
+roster PDF. Navigation availability guards belong before dirty-page leave
+confirmation; the Classes route now has focused coverage for both an empty
+open workspace and an unavailable database. Calendar month-grid projection can
+be tested by enumerating instantiated QML cells and comparing their event rows
+with `CalendarEventModel`; no separate legacy month grid was found, so the
+coverage records the current projection contract rather than a historical-view
+comparison.

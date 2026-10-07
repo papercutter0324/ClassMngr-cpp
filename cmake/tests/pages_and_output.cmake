@@ -50,6 +50,17 @@ classmngr_add_qt_test(
 )
 
 classmngr_add_qt_test(
+    NAME MyClassesPageSummaryParity
+    SOURCES
+        tests/my_classes_page_summary_parity_tests.cpp
+    LIBRARIES
+        Qt6::Sql
+        Qt6::Test
+        Qt6::Widgets
+    OFFSCREEN
+)
+
+classmngr_add_qt_test(
     NAME TypedSignatureRenderer
     SOURCES
         tests/typed_signature_renderer_tests.cpp
@@ -133,6 +144,49 @@ classmngr_add_qt_test(
         Qt6::Test
         Qt6::Widgets
     OFFSCREEN
+)
+
+classmngr_add_qt_test(
+    NAME ClassNotesPageSaveParity
+    SOURCES
+        tests/class_notes_page_save_parity_tests.cpp
+    LIBRARIES
+        Qt6::Sql
+        Qt6::Test
+        Qt6::Widgets
+    OFFSCREEN
+)
+
+classmngr_add_qt_test(
+    NAME CalendarPageEventMutationParity
+    SOURCES
+        tests/calendar_page_event_mutation_parity_tests.cpp
+    LIBRARIES
+        Qt6::QuickWidgets
+        Qt6::Sql
+        Qt6::Test
+        Qt6::Widgets
+    OFFSCREEN
+)
+
+qt_add_resources(
+    ClassMngrCalendarPageEventMutationParityTests
+    calendar_page_event_mutation_qml_test_resources
+    PREFIX "/qt/qml/ClassMngr/Calendar"
+    BASE "${PROJECT_SOURCE_DIR}/src/features/calendar/ui/qml"
+    FILES
+        "${PROJECT_SOURCE_DIR}/src/features/calendar/ui/qml/EventCalendar.qml"
+        "${PROJECT_SOURCE_DIR}/src/features/calendar/ui/qml/MonthGridDelegate.qml"
+)
+
+qt_add_resources(
+    ClassMngrCalendarPageEventMutationParityTests
+    calendar_page_event_mutation_keyboard_test_resources
+    PREFIX "/"
+    BASE "${PROJECT_SOURCE_DIR}/resources"
+    FILES
+        resources/assets/icons/keyboard_dark.svg
+        resources/assets/icons/keyboard_light.svg
 )
 
 classmngr_add_qt_test(
@@ -311,6 +365,16 @@ classmngr_add_qt_test(
     NAME SpeakingEvalPageSave
     SOURCES
         tests/speaking_eval_page_save_tests.cpp
+    LIBRARIES
+        Qt6::Test
+        Qt6::Widgets
+    OFFSCREEN
+)
+
+classmngr_add_qt_test(
+    NAME SpeakingEvalPageSaveParity
+    SOURCES
+        tests/speaking_eval_page_save_parity_tests.cpp
     LIBRARIES
         Qt6::Test
         Qt6::Widgets

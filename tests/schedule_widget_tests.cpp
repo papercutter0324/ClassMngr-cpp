@@ -78,6 +78,7 @@ extern QString lastPrintRequestUserName;
 void reset();
 void setCurrentTheme(Theme theme);
 void setDatabaseOpen(bool open);
+void setDatabaseSessionOpen(bool open);
 void setIntensiveSlotStates(QList<IntensiveSlotState> states);
 void setIntensiveSlotStateReadFailure(const QString& error);
 void setIntensiveSlotStateRepositoryAvailable(bool available);
@@ -376,6 +377,30 @@ bool interactWithTestingAssignmentCell(
     return invoked && dialogFound && scriptSucceeded;
 }
 
+bool prepareTestingAssignmentSchedule(
+    ApplicationServices& services,
+    ScheduleWidget& widget,
+    const bool testingAffectsM1
+    )
+{
+    ClassMngr::Next::Platform::
+        ApplicationServicesScheduleDisplayPreferencesPort preferencesPort(
+            services
+            );
+    if (!preferencesPort.save({.testingAffectsM1 = testingAffectsM1}))
+    {
+        return false;
+    }
+
+    widget.refreshSchedule();
+    return QMetaObject::invokeMethod(
+        &widget,
+        "setDisplayMode",
+        Qt::DirectConnection,
+        Q_ARG(int, static_cast<int>(ScheduleDisplayMode::Testing))
+        );
+}
+
 bool clickTestingAssignmentDialogButton(
     TestingAssignmentDialog* dialog,
     const QDialogButtonBox::StandardButton standardButton
@@ -599,6 +624,7 @@ private slots:
     void testingAssignmentDialogSupportsEveryAction();
     void testingAssignmentWritesMapActionsAndReloadSuccessfulState();
     void testingAssignmentCancelAndManageDoNotWriteOrReload();
+    void unavailableTestingAssignmentSessionWarnsBeforeDialog();
     void failedTestingAssignmentWriteWarnsAndDoesNotReload();
     void readOnlyPresentationHidesControlsAndIgnoresClicks();
     void sourceQueryBuildsRegularIntensiveAndTestingSchedules();
@@ -1463,18 +1489,8 @@ testingAssignmentWritesMapActionsAndReloadSuccessfulState()
     QVERIFY(services.openDatabase(scheduleWidgetDatabasePath(directory)));
     ApplicationServicesDatabaseGuard databaseGuard(services);
     QVERIFY(seedTestingClassRecords(services, {testingClass}));
-    saveSettingOrFail(
-        services.dataService(),
-        QStringLiteral("schedule_display_mode"),
-        QStringLiteral("testing")
-        );
-    saveSettingOrFail(
-        services.dataService(),
-        QStringLiteral("schedule_testing_affects_m1"),
-        QStringLiteral("true")
-        );
     ScheduleWidget widget(&services);
-    widget.refreshSchedule();
+    QVERIFY(prepareTestingAssignmentSchedule(services, widget, true));
 
     const QString day = QStringLiteral("Wednesday");
     const QString startTime = QStringLiteral("16:00");
@@ -1708,18 +1724,8 @@ testingAssignmentCancelAndManageDoNotWriteOrReload()
         services,
         {testingClass, earlierTestingClass}
         ));
-    saveSettingOrFail(
-        services.dataService(),
-        QStringLiteral("schedule_display_mode"),
-        QStringLiteral("testing")
-        );
-    saveSettingOrFail(
-        services.dataService(),
-        QStringLiteral("schedule_testing_affects_m1"),
-        QStringLiteral("true")
-        );
     ScheduleWidget widget(&services);
-    widget.refreshSchedule();
+    QVERIFY(prepareTestingAssignmentSchedule(services, widget, true));
 
     const QString day = QStringLiteral("Wednesday");
     const QString startTime = QStringLiteral("16:00");
@@ -1788,6 +1794,107 @@ testingAssignmentCancelAndManageDoNotWriteOrReload()
 }
 
 void ScheduleWidgetTests::
+unavailableTestingAssignmentSessionWarnsBeforeDialog()
+{
+    FakeUserPromptService prompts;
+    DialogServices::setUserPromptServiceForTesting(&prompts);
+
+    ScheduleViewModel preview;
+    preview.days = {QStringLiteral("Wednesday")};
+    ScheduleRowView previewRow;
+    previewRow.timeLabel = QStringLiteral("16:00");
+    ScheduleCellView previewCell;
+    previewCell.day = QStringLiteral("Wednesday");
+    previewCell.timeLabel = previewRow.timeLabel;
+    previewCell.slotState = scheduleTestingSlotState();
+    previewRow.cells.append(previewCell);
+    preview.rows.append(previewRow);
+
+    ScheduleWidget missingServicesWidget(nullptr);
+    missingServicesWidget.setPreviewModel(preview);
+    bool missingServicesDialogShown = false;
+    static_cast<void>(interactWithTestingAssignmentCell(
+        missingServicesWidget,
+        previewCell.day,
+        previewCell.timeLabel,
+        [&missingServicesDialogShown](TestingAssignmentDialog* dialog)
+        {
+            missingServicesDialogShown = true;
+            dialog->reject();
+            return true;
+        }
+        ));
+
+    QVERIFY(!missingServicesDialogShown);
+    QCOMPARE(prompts.messages.size(), 1);
+    QCOMPARE(prompts.messages.constFirst().title,
+             QStringLiteral("Testing Assignment"));
+    QCOMPARE(prompts.messages.constFirst().severity, PromptSeverity::Warning);
+    QCOMPARE(prompts.messages.constFirst().message,
+             QStringLiteral("No Teacher Profile is open."));
+    QCOMPARE(ScheduleWidgetTestStubs::testingAssignmentWriteCount, 0);
+
+    prompts.messages.clear();
+    ScheduleWidgetTestStubs::setIncludeMiddleSchoolClasses(true);
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(scheduleWidgetDatabasePath(directory)));
+    ApplicationServicesDatabaseGuard databaseGuard(services);
+    ScheduleWidget widget(&services);
+    QVERIFY(prepareTestingAssignmentSchedule(services, widget, true));
+
+    const QString day = QStringLiteral("Wednesday");
+    const QString timeLabel = QStringLiteral("16:00");
+    const ScheduleCellView* cell = findScheduleCell(
+        widget.scheduleModel(),
+        day,
+        timeLabel
+        );
+    QVERIFY(cell);
+    QVERIFY(cell->testingBlockCreationEnabled);
+    const int scheduleReadCount =
+        ScheduleWidgetTestStubs::scheduleClassInfoReadCount;
+    const int assignmentReadCount =
+        ScheduleWidgetTestStubs::testingAssignmentsReadCount;
+    const int slotStateReadCount =
+        ScheduleWidgetTestStubs::slotStateReadCount;
+    QVERIFY(services.databaseSession()->isOpen());
+    QVERIFY(services.scheduleService()->isAvailable());
+    ScheduleWidgetTestStubs::setDatabaseSessionOpen(false);
+    QVERIFY(!services.databaseSession()->isOpen());
+    QVERIFY(!services.scheduleService()->isAvailable());
+
+    bool closedSessionDialogShown = false;
+    static_cast<void>(interactWithTestingAssignmentCell(
+        widget,
+        day,
+        timeLabel,
+        [&closedSessionDialogShown](TestingAssignmentDialog* dialog)
+        {
+            closedSessionDialogShown = true;
+            dialog->reject();
+            return true;
+        }
+        ));
+
+    QVERIFY(!closedSessionDialogShown);
+    QCOMPARE(prompts.messages.size(), 1);
+    QCOMPARE(prompts.messages.constFirst().title,
+             QStringLiteral("Testing Assignment"));
+    QCOMPARE(prompts.messages.constFirst().severity, PromptSeverity::Warning);
+    QCOMPARE(prompts.messages.constFirst().message,
+             QStringLiteral("No Teacher Profile is open."));
+    QCOMPARE(ScheduleWidgetTestStubs::testingAssignmentWriteCount, 0);
+    QCOMPARE(ScheduleWidgetTestStubs::scheduleClassInfoReadCount,
+             scheduleReadCount);
+    QCOMPARE(ScheduleWidgetTestStubs::testingAssignmentsReadCount,
+             assignmentReadCount);
+    QCOMPARE(ScheduleWidgetTestStubs::slotStateReadCount,
+             slotStateReadCount);
+}
+
+void ScheduleWidgetTests::
 failedTestingAssignmentWriteWarnsAndDoesNotReload()
 {
     ScheduleWidgetTestStubs::setIncludeMiddleSchoolClasses(true);
@@ -1800,14 +1907,13 @@ failedTestingAssignmentWriteWarnsAndDoesNotReload()
         QStringLiteral("injected testing assignment write failure")
         );
 
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
     ApplicationServices services;
-    saveSettingOrFail(
-        services.dataService(),
-        QStringLiteral("schedule_display_mode"),
-        QStringLiteral("testing")
-        );
+    QVERIFY(services.openDatabase(scheduleWidgetDatabasePath(directory)));
+    ApplicationServicesDatabaseGuard databaseGuard(services);
     ScheduleWidget widget(&services);
-    widget.refreshSchedule();
+    QVERIFY(prepareTestingAssignmentSchedule(services, widget, true));
     const int readCount = ScheduleWidgetTestStubs::testingAssignmentsReadCount;
     const ScheduleViewModel beforeModel = widget.scheduleModel();
     const ScheduleCellView* before = findScheduleCell(

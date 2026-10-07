@@ -7,13 +7,17 @@
 #include "domain/models/testing_class.h"
 #include "features/my_info/ui/my_workspace_page.h"
 #include "features/schedule/ui/schedule_page.h"
+#include "features/schedule/ui/schedule_widget.h"
+#include "next/platform/application_services_schedule_display_preferences_port.h"
 #include "ui/shared/dialogs/user_prompt_service.h"
 #include "ui/shared/pages/pagemanager.h"
 
 #include <QAction>
 #include <QApplication>
+#include <QCheckBox>
 #include <QDialog>
 #include <QFile>
+#include <QLabel>
 #include <QPushButton>
 #include <QQueue>
 #include <QSqlDatabase>
@@ -97,6 +101,8 @@ struct SeedIds
     int firstTestingClass = -1;
     int secondTestingClass = -1;
     int unrelatedClass = -1;
+    int regularM1Class = -1;
+    int regularM2Class = -1;
 };
 
 bool executeSql(
@@ -272,6 +278,90 @@ bool seedLayout(ApplicationServices& services, SeedIds* ids)
             );
 }
 
+bool seedRegularTestingPreferenceClassesInDatabase(
+    ApplicationServices& services,
+    SeedIds* ids
+    )
+{
+    if (!ids || !services.databaseSession())
+    {
+        return false;
+    }
+
+    ClassRepository* const classes =
+        services.databaseSession()->classRepository();
+    if (!classes)
+    {
+        return false;
+    }
+
+    const auto createClass = [
+        &services,
+        classes
+    ](
+        const QString& name,
+        const QString& grade,
+        const QString& level,
+        const QString& day,
+        const QString& startTime,
+        const QString& endTime,
+        int* classId
+    )
+    {
+        if (!classId)
+        {
+            return false;
+        }
+
+        const auto created = classes->createClass(name);
+        if (!created)
+        {
+            return false;
+        }
+        *classId = *created;
+
+        const QSqlDatabase database =
+            services.databaseSession()->database();
+        return executeSql(
+                   database,
+                   QStringLiteral(
+                       "INSERT INTO class_info "
+                       "(class_id, class_grade, class_level, notes) "
+                       "VALUES (?, ?, ?, ?)"
+                       ),
+                   {*classId, grade, level, name}
+                   )
+            && executeSql(
+                database,
+                QStringLiteral(
+                    "INSERT INTO class_times "
+                    "(class_id, day, start_time, end_time) "
+                    "VALUES (?, ?, ?, ?)"
+                    ),
+                {*classId, day, startTime, endTime}
+                );
+    };
+
+    return createClass(
+               QStringLiteral("Regular M1 Parity Class"),
+               QStringLiteral("M1"),
+               QStringLiteral("Solis"),
+               QStringLiteral("Monday"),
+               QStringLiteral("16:00"),
+               QStringLiteral("16:50"),
+               &ids->regularM1Class
+               )
+        && createClass(
+            QStringLiteral("Regular M2 Parity Class"),
+            QStringLiteral("M2"),
+            QStringLiteral("Leo"),
+            QStringLiteral("Tuesday"),
+            QStringLiteral("17:00"),
+            QStringLiteral("17:50"),
+            &ids->regularM2Class
+            );
+}
+
 class LayoutClearFixture final
 {
 public:
@@ -396,6 +486,71 @@ public:
         return foundDialog && foundScheduleTab && foundClearButton;
     }
 
+    bool enableTestingAffectsM1ThroughPreferences()
+    {
+        QAction* const action = window
+            ? window->findChild<QAction*>(QStringLiteral("preferencesAction"))
+            : nullptr;
+        if (!action)
+        {
+            return false;
+        }
+
+        QTimer::singleShot(0, window.get(), [this]()
+        {
+            auto* const dialog = qobject_cast<QDialog*>(
+                QApplication::activeModalWidget()
+                );
+            if (!dialog)
+            {
+                return;
+            }
+            foundPreferenceDialog = true;
+
+            auto* const tabs = dialog->findChild<QTabWidget*>(
+                QStringLiteral("preferencesTabs")
+                );
+            auto* const scheduleTab = dialog->findChild<QWidget*>(
+                QStringLiteral("preferencesScheduleTab")
+                );
+            if (tabs && scheduleTab)
+            {
+                tabs->setCurrentWidget(scheduleTab);
+                foundScheduleTab = true;
+            }
+
+            auto* const affectsM1 = dialog->findChild<QCheckBox*>(
+                QStringLiteral("preferencesScheduleTestingAffectsM1")
+                );
+            if (affectsM1)
+            {
+                foundTestingAffectsM1CheckBox = true;
+                testingAffectsM1CheckBoxWasInitiallyUnchecked =
+                    !affectsM1->isChecked();
+                affectsM1->click();
+                testingAffectsM1CheckBoxEnabled = affectsM1->isChecked();
+            }
+
+            dialog->accept();
+        });
+
+        action->trigger();
+        return foundPreferenceDialog
+            && foundScheduleTab
+            && foundTestingAffectsM1CheckBox
+            && testingAffectsM1CheckBoxWasInitiallyUnchecked
+            && testingAffectsM1CheckBoxEnabled;
+    }
+
+    bool seedRegularTestingPreferenceClasses()
+    {
+        return window && window->services()
+            && seedRegularTestingPreferenceClassesInDatabase(
+                *window->services(),
+                &ids
+                );
+    }
+
     bool seed()
     {
         return window && window->services()
@@ -510,12 +665,21 @@ public:
     bool foundDialog = false;
     bool foundScheduleTab = false;
     bool foundClearButton = false;
+    bool foundPreferenceDialog = false;
+    bool foundTestingAffectsM1CheckBox = false;
+    bool testingAffectsM1CheckBoxWasInitiallyUnchecked = false;
+    bool testingAffectsM1CheckBoxEnabled = false;
     QString scheduleViewError;
 };
 
 void emitTranscript(const QString& json)
 {
     qInfo().noquote() << QStringLiteral("F364_TRANSCRIPT=") + json;
+}
+
+void emitF378Transcript(const QString& json)
+{
+    qInfo().noquote() << QStringLiteral("F378_TRANSCRIPT=") + json;
 }
 
 QString jsonBool(const bool value)
@@ -534,6 +698,7 @@ private slots:
     void confirmationCancelLeavesRowsAndViewsUntouched();
     void writeFailureWarnsAndPreservesRowsWithoutRefresh();
     void successClearsLayoutPreservesSavedDataAndRefreshesViews();
+    void preferencesToggleTestingGradeVisibilityAndRefreshesSchedule();
 };
 
 void ScheduleTestingLayoutClearParityTests::
@@ -731,6 +896,85 @@ successClearsLayoutPreservesSavedDataAndRefreshesViews()
         "\"workspace_testing_assignments_after\":0,"
         "\"standalone_testing_assignments_after\":0,"
         "\"unrelated_schedule_entry_preserved\":true}"
+        ));
+}
+
+void ScheduleTestingLayoutClearParityTests::
+preferencesToggleTestingGradeVisibilityAndRefreshesSchedule()
+{
+    LayoutClearFixture fixture(true);
+    QVERIFY(fixture.databaseFileReady);
+    QVERIFY(fixture.databaseReady);
+    QVERIFY(fixture.seedRegularTestingPreferenceClasses());
+    QVERIFY2(fixture.prepareScheduleViews(),
+             qPrintable(fixture.scheduleViewError));
+    QVERIFY(fixture.workspaceSchedule);
+    QVERIFY(fixture.workspaceSchedule->isVisible());
+
+    ScheduleWidget* const widget =
+        fixture.workspaceSchedule->findChild<ScheduleWidget*>();
+    QVERIFY(widget);
+    QCOMPARE(widget->displayState().displayMode,
+             ScheduleDisplayMode::Testing);
+
+    ClassMngr::Next::Platform::
+        ApplicationServicesScheduleDisplayPreferencesPort preferencesPort(
+            *fixture.window->services()
+            );
+    const auto initialPreferences = preferencesPort.load();
+    QVERIFY(initialPreferences);
+    QVERIFY(!initialPreferences.value().testingAffectsM1);
+    QVERIFY(!widget->displayState().testingAffectsM1);
+
+    const QSet<int> initiallyVisibleClasses = widget->visibleClassIds();
+    QVERIFY(initiallyVisibleClasses.contains(fixture.ids.regularM1Class));
+    QVERIFY(!initiallyVisibleClasses.contains(fixture.ids.regularM2Class));
+    QCOMPARE(LayoutClearFixture::testingAssignmentCount(
+                 fixture.workspaceSchedule), 0);
+
+    auto* const banner = widget->findChild<QLabel*>(
+        QStringLiteral("scheduleTestingBanner")
+        );
+    QVERIFY(banner);
+    QCOMPARE(
+        banner->text(),
+        QStringLiteral(
+            "Testing View — M2 and M3 classes are hidden; M1 classes remain"
+            )
+        );
+
+    QVERIFY(fixture.enableTestingAffectsM1ThroughPreferences());
+
+    const auto savedPreferences = preferencesPort.load();
+    QVERIFY(savedPreferences);
+    QVERIFY(savedPreferences.value().testingAffectsM1);
+    QCOMPARE(widget->displayState().displayMode,
+             ScheduleDisplayMode::Testing);
+    QVERIFY(widget->displayState().testingAffectsM1);
+
+    const QSet<int> visibleClassesAfterPreferenceChange =
+        widget->visibleClassIds();
+    QVERIFY(!visibleClassesAfterPreferenceChange.contains(
+        fixture.ids.regularM1Class
+        ));
+    QVERIFY(!visibleClassesAfterPreferenceChange.contains(
+        fixture.ids.regularM2Class
+        ));
+    QCOMPARE(LayoutClearFixture::testingAssignmentCount(
+                 fixture.workspaceSchedule), 0);
+    QCOMPARE(
+        banner->text(),
+        QStringLiteral("Testing View — M1, M2, and M3 classes are hidden")
+        );
+
+    emitF378Transcript(QStringLiteral(
+        "{\"case\":\"testing_grade_preference\","
+        "\"before\":{\"m1_visible\":true,\"m2_visible\":false,"
+        "\"testing_affects_m1\":false,"
+        "\"banner\":\"m2_m3_hidden_m1_remains\"},"
+        "\"after\":{\"m1_visible\":false,\"m2_visible\":false,"
+        "\"testing_affects_m1\":true,\"preference_persisted\":true,"
+        "\"banner\":\"m1_m2_m3_hidden\"}}"
         ));
 }
 

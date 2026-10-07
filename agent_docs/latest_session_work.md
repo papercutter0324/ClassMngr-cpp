@@ -4986,74 +4986,41 @@ actions, and resolution in the models/page. Add app-less policy cases, model
 wrapper checks, and a focused Speaking Evaluation duplicate-resolution
 regression. Phase 2 remains In Progress/Open, with Gates 1 and 2 Partial.
 
-## Current continuation - 2026-10-02 (F252 accepted; F253 selected)
+## Current continuation - 2026-10-07 (F382 accepted; stop point)
 
-The user asked to assume F196 complete, continue F218, commit each slice, and
-begin the next. At task start, F218 was already accepted and the branch had
-advanced through F245. This continuation proceeded from that branch position
-without replaying accepted work. Active deployment ID remains
-`qt-rewrite-phase2-resume-20260928`.
+Phase 2 remains In Progress/Open under deployment `phase2_resume_20260929` on
+the Heavy route. The user requested stopping after F382 is committed; do not
+start F383 without a new instruction. Batch 12 is complete. F367-F371 are
+reported by the user as completed on another device, but remain unsynced and
+unaudited here; local Batch 11 evidence ends at F366. No remote commit hashes
+or acceptance results are inferred. Gates 1 and 2 remain Partial.
 
-F248 source commit `8886b46f` extracts Qt-free student name-pair peer lookup
-shared by RosterModel and SpeakingEvalModel, reuses F247's trimmed UTF-16
-U+001F key, and removes the unused Core duplicate lookup. Independent fresh
-x64 Debug verification in `build/f248_independent_x64_debug` confirmed one
-owner for 1,202 handwritten sources and passed the app-less lookup, RosterModel,
-and SpeakingEval page-save CTests (3/3). `git diff --check` passed; no full
-suite ran. The adapter tests did not cover unpaired surrogates or every Qt
-whitespace code point; RosterModel's public setup always supplies base name
-columns, so its missing-column guard could not be reached.
+Accepted source commits in this continuation:
 
-F249 source commit `828d5014` extracts AI-batch student eligibility into a
-Qt-free Application policy with the existing first-failure order. Fresh
-verification in `build/f249_independent_x64_debug` confirmed one owner for
-1,204 handwritten sources; the app-less CTest passed 1/1 and the two relevant
-dialog slots passed individually, covering each reason, row state, both name
-alternatives, and existing comments. `git diff --check` and new-file hygiene
-passed. Two unrelated clipboard slots failed individually with
-`OleSetClipboard/OpenClipboard Failed` and empty paste text. They reproduce in
-the fresh environment but were not tested against a pre-F249 baseline; no full
-batch CTest or suite ran.
+- F378 `773efe39`: Schedule Testing preference suppression integration, test-only.
+- F379 `1f82706c`: Calendar repeat-series page mutation projection, test-only.
+- F380 `a1855996`: Sub Prep information-sheet output, test-only. Its focused
+  page test verifies the generated information PDF. The roster writer stub
+  reports success without writing a roster PDF, so roster rendering remains
+  covered lower down.
+- F381 `e4df4a40`: Classes landing route availability guard, test-only.
+- F382 `8eadd8bb`: Calendar month-grid visible projection, test-only.
 
-F250 source commit `4753ce3b` extracts shared Qt-free roster-row availability
-logic. Fresh independent x64 Debug verification in
-`build/f250_independent_x64_debug` validated one owner for 1,206 handwritten
-sources. The app-less row query, RosterModel, and transfer-preparation CTests
-passed 3/3. Coverage includes whitespace-only cells, first-row ordering,
-full-roster sentinel/25-row `-1`, and transfer failure precedence. Diff and
-new-file hygiene passed; no full suite ran.
+For F381, both focused route slots passed in implementation and independent
+runs. Empty open workspaces reach Classes without selecting an editor; an
+unavailable database returns before prompting to leave dirty Teacher Info.
 
-F251 source commit `ed548438` extracts AI batch per-comment review quality from
-`SpeakingEvalAiBatchDialog::updateReviewRow()` into Qt-free Application. The
-final fresh x64 Debug verification in `build/f251_independent_x64_debug`
-validated one owner for 1,208 handwritten files. The app-less quality CTest
-passed 1/1; dialog functions
-`aiBatchDialogAssessesCommentQualityAndPreservesStatuses`,
-`aiBatchDialogSelectsEligibleStudentsAndReviewsValidComments`, and
-`aiPromptBuilderUsesObservationsAndSelectedVoice` passed. Prompt wording stayed
-unchanged, with the preferred threshold single-sourced at 420. Diff and
-new-file hygiene passed; no full batch CTest or suite ran.
+For F382, `ClassMngrCalendarPageEventMutationParityTests` built successfully.
+The `monthGridCellsMatchCalendarEventModelDateProjection` slot passed in both
+implementation and independent runs (3 passed including init/cleanup). The test
+compares instantiated QML cell event IDs, titles, types, and ordering with
+`CalendarEventModel::eventsForDate` for November 10-12, verifies a multi-day
+Workshop on all three dates, and verifies that only the November 11 Holiday
+cell has `redDay` set. No separate legacy month grid was found, so this
+establishes the current QML/model projection contract rather than a historical
+view comparison. `git diff --check` passed; no full suite ran.
 
-F252 source commit `6f41f8a2` extracts accepted AI batch comment planning from
-`SpeakingEvalAiBatchDialog::applyComments()`. Fresh independent x64 Debug
-verification in `build/f252_independent_x64_debug` validated one owner for
-1,210 handwritten sources. The app-less planner CTest passed 1/1, and dialog
-slots `aiBatchDialogConfirmsAcceptedCommentOverwrites` and
-`aiBatchDialogSelectsEligibleStudentsAndReviewsValidComments` passed. Coverage
-includes selection/validity and index filters, exact no-op filtering, overwrite
-count, order, UTF-16 values, and confirmation rejection/acceptance. Diff and
-new-file hygiene passed; no full suite ran.
-
-F253 is selected to extract the duplicated private-notes section splitter
-from `SpeakingEvalAiBatchDialog` and `SpeakingEvalPrivateNotesEditor` into
-Qt-free Application. Preserve the exact `[Did Well]\n` prefix and first
-`\n[Needs Improvement]\n` separator, whitespace/newlines, and fallback to
-entire input as Did Well with empty Needs Improvement if either marker is
-missing. Keep serialization, bullet-list editing/normalization, prompt
-redaction, and observation parsing with their existing owners. The paired
-scans differed: the alternative was extracting AI-batch response parsing.
-Choose the identical duplicated splitter as a narrower shared boundary and
-defer response parsing. Next: implement and independently verify F253, commit
-its source, then record acceptance and select its successor. Phase 2 remains
-In Progress/Open; Gates 1 and 2 remain Partial. Active deployment ID is
-`qt-rewrite-phase2-resume-20260928`.
+F383-F386 remain provisional discovery candidates and are not selected. The
+[Phase 2 plan](../plans/qt-rewrite-heavy-route-plan/03-Phase-2-Domain-Model-and-Application-Contracts.md)
+and [progress log](../plans/qt-rewrite-heavy-route-plan/03-Phase-2-Progress-Log.md)
+contain the batch discovery and detailed preceding-slice evidence.

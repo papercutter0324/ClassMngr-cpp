@@ -12771,3 +12771,146 @@ F371 is selected in Batch 11 order for “Roster Transfer remaining legacy
 availability gates.” Discovery is in progress and its acceptance matrix is not
 yet established. Batch 11 remains active. Phase 2 remains In Progress/Open;
 Gates 1 and 2 remain Partial.
+
+### Batch 11 reported complete / F372-F380 accepted / F381 selected - 2026-10-07
+
+The user reports F367-F371 were completed on another device, but that work was
+not synced at this handoff. At handoff, local HEAD was `2614e196`, a
+documentation-pruning commit after the F366 source commit `cb8bd188`; the local
+log still recorded F367 as selected. Batch 11 local implementation and
+acceptance evidence therefore stopped at F366. The remote completion is
+unaudited here; no commit hashes or acceptance results are inferred.
+
+Two independent discovery passes identified ten viable Batch 12 candidates;
+discovery is not exhaustive. The ordered active list is in the Phase 2 plan.
+F372, the Schedule Testing assignment availability gate, is accepted in source
+commit `95e3a19e930ef8556aead19bbe58cb116398facc` (`Phase2 - Remove Schedule
+Testing assignment service gate (F372)`). The executor built
+`ClassMngrScheduleWidgetTests`; the independent Tester ran the four guard/action
+cases together, with 6 passed and 0 failed including init/cleanup. The full
+target reported 28 passed and 13 failed. Those failures are outside F372's
+gate/action cases, but no baseline comparison was completed, so they remain
+unclassified. `git diff --check` passed.
+
+The selection rationale was:
+`schedule_widget.cpp` lines 526-543 checks `ScheduleService::isAvailable()`
+before the typed class-choice read and dialog, while accepted actions map to
+the typed save request/use case at lines 569-616. The read and save Platform
+ports use `DatabaseSession` directly. Existing `schedule_widget_tests.cpp`
+covers assignment action mapping, cancel/manage, and choice-read/write
+failures, but not the outer service gate.
+
+F373 is selected for Class Notes save-page baseline parity. The save path is in
+`class_notes_page.cpp` around line 206; current page-save tests exist, while
+existing page parity covers reads and discard only. F373 is accepted in source
+commit `f28a17f0a1ab39cb862de5061e3b6382e1d86bbd`. Independent current and exact
+F372 source baseline overlay runs each passed 4/4; Tester canonical JSONL
+transcript records matched byte-for-byte, SHA-256
+`F954D1AF69E1B7A28E5746DA93CB1C322669854C81F0EF200B65A35E10A7ADD5`. The
+executor's alternate hash normalization was not reproduced; use the Tester
+canonical hash. Exact SQLite error suffix and save-button text were verified
+only on Windows/Qt 6.12.
+
+F374, My Classes full visible summary mapping parity, is accepted in source
+commit `17cc8e2b88391f2c54fd092ac862470cc3089644`. Acceptance covers ordered
+class-card/tab summary values, counts, schedules, notes/filler, empty state, and
+class-info failure; teacher-profile projection remains covered by F351. The
+executor's manual focused runs passed 4/4 twice. Three transcript records
+(1,075 bytes) matched the F373 test-only overlay using the unchanged F373
+Runtime.lib; SHA-256: `FF947F798C124D64EDB756ED07F56A2DA09DB76CD1545D28098865E33E2B16FB`.
+CMake regeneration stopped after 11m34s without further output, so CTest on the
+registered target remained unverified. The resource-pack warning was non-fatal.
+
+F375, ordinary nonrepeat CalendarPage create/edit/delete parity, is accepted in
+local commit `8932303d3da7722eeddd6073e8a3c347c31c743a`. It verifies exact
+persisted event sets and preservation of an unrelated event; the production
+path includes target-local Calendar QML and keyboard SVG resources. CMake
+configure/generation and a 1,382-source ownership audit completed. Focused CTest
+passed 1/1, and the independent CTest passed 1/1. Current and exact F374-overlay
+transcript SHA-256 matched:
+`D145C70AFA3EEFE09F36978548CEDAC7885E47AF89D179F8FC23C88342BA138D`. No full
+suite ran.
+
+F376, ClassesPage selection/filter baseline parity, is accepted in commit
+`1b719113`. It adds only one canonical six-snapshot QtTest slot to the existing
+`tests/classes_page_tests.cpp`, with no production or CMake changes. Coverage
+includes initial All/E4, Thursday fallback to All, class 44 selected off-filter
+with E4 visible, Intensive-to-Testing using regular days, and null serialization
+when filter controls are absent. The current focused VS build succeeded; the
+selected method passed twice, with QtTest reporting 3 passed including
+init/cleanup per run. Current and exact predecessor test-source overlay
+transcripts matched; SHA-256: `0789CC333287C22A354C121BC75DB5F231B2861419B3E8F66CF747077AE60F63`. No
+separate baseline worktree or full suite ran.
+
+F377, Speaking Evaluation save-page parity, is accepted in commit
+`f84fc41aac31b3c5b4a98437d081a74f744a53d3`. It adds the test-only
+`SpeakingEvalPageSaveParity` target and source. Manual saves verified visible
+and persisted English `After`, unchanged Korean and note sentinel, clean state,
+and exactly one information `Saved` notice. CMake configure succeeded in
+592.8 seconds followed by 33.9 seconds of generation; the focused VS x64 build
+succeeded, CTest passed 1/1, and direct QtTest passed 3/3. Transcript SHA-256:
+`658C147D6A3D0DB4C6BD61C2090B864B6BD8B6CA82DE9307B94EB5FADB9B1A1B`; it is
+ASCII-safe and contains the Korean UTF-8 hex `eab980ebafbceca780`. The
+`git diff --check` result was clean. Existing resource-pack, font, and
+keyboard-asset warnings were non-fatal. No historical runtime overlay was run;
+predecessor API/fake compatibility was checked statically.
+
+F378, the Schedule Testing-mode suppression integration slice, is accepted in
+commit `773efe39b96b75b89e468a24a22d8a04ee862266` as test-only in
+`tests/schedule_testing_layout_clear_parity_tests.cpp`; no CMake or production
+files changed. The focused VS x64 build succeeded, and independent direct
+QtTest passed 3/3. `F378_TRANSCRIPT`:
+```json
+{"case":"testing_grade_preference","before":{"m1_visible":true,"m2_visible":false,"testing_affects_m1":false,"banner":"m2_m3_hidden_m1_remains"},"after":{"m1_visible":false,"m2_visible":false,"testing_affects_m1":true,"preference_persisted":true,"banner":"m1_m2_m3_hidden"}}
+```
+`git diff --check` was clean. No full suite ran.
+
+F379, Calendar repeat-series page parity, is accepted in commit
+`1f82706c12977961b60f7299146df3f2dc58fb8b`. The test-only source is
+`tests/calendar_page_event_mutation_parity_tests.cpp`. The focused target build
+succeeded; implementation and independent direct QtTest runs each passed 3/3.
+`F379_TRANSCRIPT`:
+```json
+{"calendar_projection_refreshed":true,"earlier_unchanged":true,"ids":[2,3,4],"middle_and_following_updated":true,"old_suffix_dates_empty":true,"series_id":"F379-fixed-repeat-series","suffix_ids_and_series_preserved":true,"unrelated_unchanged":true}
+```
+No CMake or production changes were made, and no broader suite ran. The
+documents-resource warning was non-blocking.
+
+F380, Sub Prep information-sheet output parity, is accepted in commit
+`a1855996c43ede5117efd8e000b94e6b81a58eb1`. The focused
+`ClassMngrSubPrepPageTests` slot passed 3/3 on both implementation and
+independent Tester runs; the build succeeded. Acceptance asserts the page-
+selected class/day/regular typed request; a loadable, nonempty `Sub Prep.pdf`
+with selected class/teacher facts and no unselected sentinel; package and
+selected-class directories; and zero generation warnings. QtPdf text
+extraction required `QT_QPA_PLATFORM=offscreen` and
+`QT_QPA_FONTDIR=C:\Windows\Fonts`. The roster writer stub reports success
+without writing a roster PDF, so roster rendering remains covered lower down.
+`git diff --check` was clean.
+
+F381 is selected for the Classes landing route availability gate. It is
+selected, not implemented or verified. Phase 2 remains In Progress/Open; Gates
+1 and 2 remain Partial.
+
+### Batch 12 complete / F382 accepted / requested stop point - 2026-10-07
+
+F381, the Classes landing route availability gate, is accepted in source commit
+`e4df4a40`. Batch 12 is complete. The prior Batch 11 status remains
+user-reported as completed on another device but unsynced and unaudited in this
+checkout; local Batch 11 evidence still ends at F366.
+
+Two independent discovery reports supported selecting F382, Calendar month-
+grid visible projection parity. F382 is accepted in source commit `8eadd8bb`.
+Its acceptance scope was bounded to checking actual QML day-cell event-list
+content and order against `CalendarEventModel` for seeded in-month dates on a
+fixed displayed month, including multi-day coverage and Holiday marking. No
+separate legacy grid was found, so no comparison against one is claimed.
+
+F383 Calendar upcoming-events panel parity, F384 Calendar Preferences reset UI
+parity, F385 Schedule Editor persisted-save parity, and F386 Staff Directory
+navigation parity remain provisional, exploratory candidates—not selected or
+accepted. They group Calendar visible behavior and preferences with Schedule
+Editor persistence and Staff Directory navigation. At the user's requested
+stop point after F382's commit, Batch 13 began with F382; continuation stops
+there and no later slice is selected or started. Phase 2 remains In Progress/Open,
+and Gates 1 and 2 remain Partial.

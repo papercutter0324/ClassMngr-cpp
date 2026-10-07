@@ -29,6 +29,9 @@
 #include <QApplication>
 #include <QAbstractButton>
 #include <QComboBox>
+#include <QJsonArray>
+#include <QJsonDocument>
+#include <QJsonObject>
 #include <QLabel>
 #include <QLayout>
 #include <QPushButton>
@@ -152,6 +155,153 @@ NavigationPillButton* navigationPillButton(
         : buttons.last();
 }
 
+QString classRole(
+    int classId
+    )
+{
+    switch (classId)
+    {
+    case 42:
+        return QStringLiteral("e4_primary");
+    case 43:
+        return QStringLiteral("e5_secondary");
+    case 44:
+        return QStringLiteral("e4_monday_alternative");
+    default:
+        return QStringLiteral("none");
+    }
+}
+
+QString classRole(
+    const QWidget* page
+    )
+{
+    return page
+        ? classRole(page->property("class_id").toInt())
+        : QStringLiteral("none");
+}
+
+QString gradeRole(
+    const QWidget* page
+    )
+{
+    if (!page)
+    {
+        return QStringLiteral("none");
+    }
+
+    const QString grade = page->property("classGrade").toString();
+    if (grade == QStringLiteral("__all_grades__"))
+    {
+        return QStringLiteral("all");
+    }
+    if (grade.isEmpty())
+    {
+        return QStringLiteral("other");
+    }
+
+    return grade.toLower();
+}
+
+QByteArray classesPageVisibleStateJson(
+    ClassesPage* page,
+    const QString& step,
+    const QString& scheduleMode
+    )
+{
+    QJsonArray gradeTabsJson;
+    QJsonArray groupsJson;
+    NavigationTabWidget* tabs = gradeTabs(page);
+    if (tabs)
+    {
+        for (int gradeIndex = 0; gradeIndex < tabs->count(); ++gradeIndex)
+        {
+            QWidget* gradePage = tabs->widget(gradeIndex);
+            const QString grade = gradeRole(gradePage);
+            gradeTabsJson.append(grade);
+
+            QJsonArray classRolesJson;
+            const auto* classTabs =
+                gradePage
+                    ? gradePage->findChild<NavigationTabWidget*>(
+                        QStringLiteral("classesLevelTabs")
+                        )
+                    : nullptr;
+            if (classTabs)
+            {
+                for (
+                    int classIndex = 0;
+                    classIndex < classTabs->count();
+                    ++classIndex
+                    )
+                {
+                    classRolesJson.append(
+                        classRole(classTabs->widget(classIndex))
+                        );
+                }
+            }
+
+            groupsJson.append(
+                QJsonObject{
+                    {QStringLiteral("classes"), classRolesJson},
+                    {QStringLiteral("grade"), grade}
+                }
+                );
+        }
+    }
+
+    QJsonObject dayPillsJson;
+    const QList<QPair<QString, QString>> dayPills{
+        {QStringLiteral("monday"), QStringLiteral("classesMondayFilterButton")},
+        {QStringLiteral("tuesday"), QStringLiteral("classesTuesdayFilterButton")},
+        {QStringLiteral("wednesday"), QStringLiteral("classesWednesdayFilterButton")},
+        {QStringLiteral("thursday"), QStringLiteral("classesThursdayFilterButton")},
+        {QStringLiteral("friday"), QStringLiteral("classesFridayFilterButton")},
+        {QStringLiteral("weekend"), QStringLiteral("classesWeekendFilterButton")}
+    };
+    for (const auto& [day, objectName] : dayPills)
+    {
+        const QAbstractButton* button = dayFilterButton(page, objectName);
+        dayPillsJson.insert(
+            day,
+            button
+                ? QJsonValue(button->isChecked())
+                : QJsonValue(QJsonValue::Null)
+            );
+    }
+
+    QWidget* selectedGradePage = tabs ? tabs->currentWidget() : nullptr;
+    const auto* selectedClassTabs = selectedGradePage
+        ? selectedGradePage->findChild<NavigationTabWidget*>(
+            QStringLiteral("classesLevelTabs")
+            )
+        : nullptr;
+
+    const QJsonObject snapshot{
+        {QStringLiteral("current_class_role"), classRole(page->currentClassId())},
+        {QStringLiteral("day_pills"), dayPillsJson},
+        {QStringLiteral("grade_tabs"), gradeTabsJson},
+        {QStringLiteral("groups"), groupsJson},
+        {
+            QStringLiteral("selected_class_tab_role"),
+            classRole(
+                selectedClassTabs
+                    ? selectedClassTabs->currentWidget()
+                    : nullptr
+                )
+        },
+        {QStringLiteral("selected_grade_role"), gradeRole(selectedGradePage)},
+        {
+            QStringLiteral("selection_visible"),
+            tabs && tabs->selectionVisible()
+        },
+        {QStringLiteral("step"), step},
+        {QStringLiteral("schedule_mode"), scheduleMode}
+    };
+
+    return QJsonDocument(snapshot).toJson(QJsonDocument::Compact);
+}
+
 }
 
 class ClassesPageTests : public QObject
@@ -186,6 +336,7 @@ private slots:
     void classInfoSaveRefreshesNavigationSnapshot();
     void dayFilterSelectsAllWhenSelectedGradeDisappears();
     void selectedGradeRemainsVisibleWhenCurrentClassIsFilteredOut();
+    void navigationVisibleStateHasCanonicalParitySnapshots();
     void navigationControlsUsePills();
     void navigationRowsUseUniformSpacing();
     void filterPillsKeepStaticWidthsWhenPageResizes();
@@ -1377,6 +1528,227 @@ void ClassesPageTests::selectedGradeRemainsVisibleWhenCurrentClassIsFilteredOut(
     QCOMPARE(page.currentClassId(), 44);
     QCOMPARE(tabs->tabText(tabs->currentIndex()), QStringLiteral("E4"));
     QVERIFY(tabs->selectionVisible());
+}
+
+void ClassesPageTests::navigationVisibleStateHasCanonicalParitySnapshots()
+{
+    const auto verifySnapshot = [](
+        ClassesPage* page,
+        const QString& step,
+        const QString& scheduleMode,
+        const QByteArray& expected
+        )
+    {
+        const QByteArray actual = classesPageVisibleStateJson(
+            page,
+            step,
+            scheduleMode
+            );
+        qInfo().noquote()
+            << QStringLiteral("F376_JSON %1")
+                .arg(QString::fromLatin1(actual));
+        QCOMPARE(actual, expected);
+    };
+
+    {
+        ApplicationServices services;
+        ClassesPage page(&services);
+        QVERIFY(page.openClass(42));
+
+        verifySnapshot(
+            &page,
+            QStringLiteral("initial_all_e4"),
+            QStringLiteral("regular"),
+            QByteArrayLiteral(
+                "{\"current_class_role\":\"e4_primary\","
+                "\"day_pills\":{\"friday\":false,\"monday\":false,"
+                "\"thursday\":false,\"tuesday\":false,"
+                "\"wednesday\":false,\"weekend\":false},"
+                "\"grade_tabs\":[\"e4\",\"e5\",\"all\"],"
+                "\"groups\":[{\"classes\":[\"e4_primary\"],\"grade\":\"e4\"},"
+                "{\"classes\":[\"e5_secondary\"],\"grade\":\"e5\"},"
+                "{\"classes\":[\"e4_primary\",\"e5_secondary\"],\"grade\":\"all\"}],"
+                "\"schedule_mode\":\"regular\","
+                "\"selected_class_tab_role\":\"e4_primary\","
+                "\"selected_grade_role\":\"all\","
+                "\"selection_visible\":true,\"step\":\"initial_all_e4\"}"
+                )
+            );
+    }
+
+    {
+        ScheduleWidgetTestStubs::reset();
+        ScheduleWidgetTestStubs::setIncludeAdditionalClass(true);
+        ApplicationServices services;
+        ClassesPage page(&services);
+        QVERIFY(page.openClass(42));
+
+        auto* tabs = gradeTabs(&page);
+        QVERIFY(tabs);
+        tabs->setCurrentIndex(0);
+        QApplication::processEvents();
+        verifySnapshot(
+            &page,
+            QStringLiteral("selected_e4"),
+            QStringLiteral("regular"),
+            QByteArrayLiteral(
+                "{\"current_class_role\":\"e4_primary\","
+                "\"day_pills\":{\"friday\":false,\"monday\":false,"
+                "\"thursday\":false,\"tuesday\":false,"
+                "\"wednesday\":false,\"weekend\":false},"
+                "\"grade_tabs\":[\"e4\",\"e5\",\"all\"],"
+                "\"groups\":[{\"classes\":[\"e4_primary\"],\"grade\":\"e4\"},"
+                "{\"classes\":[\"e5_secondary\"],\"grade\":\"e5\"},"
+                "{\"classes\":[\"e4_primary\",\"e5_secondary\"],\"grade\":\"all\"}],"
+                "\"schedule_mode\":\"regular\","
+                "\"selected_class_tab_role\":\"e4_primary\","
+                "\"selected_grade_role\":\"e4\","
+                "\"selection_visible\":true,\"step\":\"selected_e4\"}"
+                )
+            );
+
+        auto* thursday = dayFilterButton(
+            &page,
+            QStringLiteral("classesThursdayFilterButton")
+            );
+        QVERIFY(thursday);
+        thursday->click();
+        QApplication::processEvents();
+        verifySnapshot(
+            &page,
+            QStringLiteral("thursday_fallback_all_retains_e4"),
+            QStringLiteral("regular"),
+            QByteArrayLiteral(
+                "{\"current_class_role\":\"e4_primary\","
+                "\"day_pills\":{\"friday\":false,\"monday\":false,"
+                "\"thursday\":true,\"tuesday\":false,"
+                "\"wednesday\":false,\"weekend\":false},"
+                "\"grade_tabs\":[\"e5\",\"all\"],"
+                "\"groups\":[{\"classes\":[\"e5_secondary\"],\"grade\":\"e5\"},"
+                "{\"classes\":[\"e5_secondary\"],\"grade\":\"all\"}],"
+                "\"schedule_mode\":\"regular\","
+                "\"selected_class_tab_role\":\"e5_secondary\","
+                "\"selected_grade_role\":\"all\","
+                "\"selection_visible\":true,"
+                "\"step\":\"thursday_fallback_all_retains_e4\"}"
+                )
+            );
+    }
+
+    {
+        ScheduleWidgetTestStubs::reset();
+        ScheduleWidgetTestStubs::setIncludeAdditionalClass(true);
+        ScheduleWidgetTestStubs::setIncludeAlternativeMatchingClass(true);
+        ApplicationServices services;
+        ClassesPage page(&services);
+        QVERIFY(page.openClass(42));
+
+        auto* tabs = gradeTabs(&page);
+        QVERIFY(tabs);
+        tabs->setCurrentIndex(0);
+        QApplication::processEvents();
+
+        auto* monday = dayFilterButton(
+            &page,
+            QStringLiteral("classesMondayFilterButton")
+            );
+        QVERIFY(monday);
+        monday->click();
+        QApplication::processEvents();
+        auto* tuesday = dayFilterButton(
+            &page,
+            QStringLiteral("classesTuesdayFilterButton")
+            );
+        QVERIFY(tuesday);
+        tuesday->click();
+        QApplication::processEvents();
+        monday = dayFilterButton(
+            &page,
+            QStringLiteral("classesMondayFilterButton")
+            );
+        QVERIFY(monday);
+        monday->click();
+        QApplication::processEvents();
+        verifySnapshot(
+            &page,
+            QStringLiteral("tuesday_keeps_e4_visible_with_alternative_selected"),
+            QStringLiteral("regular"),
+            QByteArrayLiteral(
+                "{\"current_class_role\":\"e4_monday_alternative\","
+                "\"day_pills\":{\"friday\":false,\"monday\":false,"
+                "\"thursday\":false,\"tuesday\":true,"
+                "\"wednesday\":false,\"weekend\":false},"
+                "\"grade_tabs\":[\"e4\",\"all\"],"
+                "\"groups\":[{\"classes\":[\"e4_primary\"],\"grade\":\"e4\"},"
+                "{\"classes\":[\"e4_primary\"],\"grade\":\"all\"}],"
+                "\"schedule_mode\":\"regular\","
+                "\"selected_class_tab_role\":\"e4_primary\","
+                "\"selected_grade_role\":\"e4\","
+                "\"selection_visible\":true,"
+                "\"step\":\"tuesday_keeps_e4_visible_with_alternative_selected\"}"
+                )
+            );
+    }
+
+    {
+        ScheduleWidgetTestStubs::reset();
+        ScheduleWidgetTestStubs::setIncludeAdditionalClass(true);
+        ScheduleWidgetTestStubs::setExistingIntensiveHours(true);
+        ScheduleWidgetTestStubs::setDistinctIntensiveDays(true);
+        ApplicationServices services;
+        ClassesPage page(&services);
+        QVERIFY(page.openClass(42));
+
+        auto* tuesday = dayFilterButton(
+            &page,
+            QStringLiteral("classesTuesdayFilterButton")
+            );
+        QVERIFY(tuesday);
+        tuesday->click();
+        QApplication::processEvents();
+
+        page.setScheduleDisplayMode(ScheduleDisplayMode::Intensive);
+        QApplication::processEvents();
+        verifySnapshot(
+            &page,
+            QStringLiteral("intensive_tuesday_no_match"),
+            QStringLiteral("intensive"),
+            QByteArrayLiteral(
+                "{\"current_class_role\":\"e4_primary\","
+                "\"day_pills\":{\"friday\":false,\"monday\":false,"
+                "\"thursday\":false,\"tuesday\":true,"
+                "\"wednesday\":false,\"weekend\":false},"
+                "\"grade_tabs\":[],\"groups\":[],"
+                "\"schedule_mode\":\"intensive\","
+                "\"selected_class_tab_role\":\"none\","
+                "\"selected_grade_role\":\"none\","
+                "\"selection_visible\":false,"
+                "\"step\":\"intensive_tuesday_no_match\"}"
+                )
+            );
+
+        page.setScheduleDisplayMode(ScheduleDisplayMode::Testing);
+        QApplication::processEvents();
+        verifySnapshot(
+            &page,
+            QStringLiteral("testing_uses_regular_tuesday"),
+            QStringLiteral("testing"),
+            QByteArrayLiteral(
+                "{\"current_class_role\":\"e4_primary\","
+                "\"day_pills\":{\"friday\":false,\"monday\":false,"
+                "\"thursday\":false,\"tuesday\":true,"
+                "\"wednesday\":false,\"weekend\":false},"
+                "\"grade_tabs\":[\"e4\",\"all\"],"
+                "\"groups\":[{\"classes\":[\"e4_primary\"],\"grade\":\"e4\"},"
+                "{\"classes\":[\"e4_primary\"],\"grade\":\"all\"}],"
+                "\"schedule_mode\":\"testing\","
+                "\"selected_class_tab_role\":\"e4_primary\","
+                "\"selected_grade_role\":\"all\","
+                "\"selection_visible\":true,"
+                "\"step\":\"testing_uses_regular_tuesday\"}"
+                )
+            );
+    }
 }
 
 void ClassesPageTests::navigationControlsUsePills()
