@@ -3,16 +3,19 @@
 #include "data/repositories/calendar_event_repository.h"
 #include "domain/models/calendar_event.h"
 #include "features/calendar/ui/calendar_event_dialog.h"
+#include "features/calendar/ui/calendar_event_model.h"
 #include "features/calendar/ui/calendar_page.h"
 
 #include <QAbstractButton>
 #include <QApplication>
 #include <QDateEdit>
+#include <QDateTime>
 #include <QDialogButtonBox>
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QLineEdit>
+#include <QQmlContext>
 #include <QPushButton>
 #include <QQuickItem>
 #include <QQuickWidget>
@@ -161,7 +164,8 @@ QString expectedEventRow(
     const QString& startDate,
     const QString& startTime,
     const QString& endDate,
-    const QString& endTime
+    const QString& endTime,
+    const QString& repeatSeriesId = QString()
     )
 {
     QJsonArray row;
@@ -169,7 +173,11 @@ QString expectedEventRow(
     row.append(title);
     row.append(eventType);
     row.append(QStringLiteral("Timed"));
-    row.append(QJsonValue(QJsonValue::Null));
+    row.append(
+        repeatSeriesId.isEmpty()
+            ? QJsonValue(QJsonValue::Null)
+            : QJsonValue(repeatSeriesId)
+        );
     row.append(0);
     row.append(startDate);
     row.append(startTime);
@@ -205,11 +213,28 @@ QQuickItem* calendarRoot(CalendarPage& page)
     return calendarViews.constFirst()->rootObject();
 }
 
+CalendarEventModel* calendarModel(CalendarPage& page)
+{
+    const QList<QQuickWidget*> calendarViews =
+        page.findChildren<QQuickWidget*>();
+    if (calendarViews.size() != 1)
+    {
+        return nullptr;
+    }
+
+    QObject* const provider = calendarViews.constFirst()
+        ->rootContext()
+        ->contextProperty(QStringLiteral("calendarEventProvider"))
+        .value<QObject*>();
+    return qobject_cast<CalendarEventModel*>(provider);
+}
+
 bool applyDialogValues(
     CalendarEventDialog* dialog,
     const EventDialogValues& values,
     const bool deleting,
-    QString* error
+    QString* error,
+    const bool thisAndFollowing = false
     )
 {
     auto* buttonBox = dialog->findChild<QDialogButtonBox*>();
@@ -291,6 +316,44 @@ bool applyDialogValues(
     }
 
     selectedType->click();
+
+    if (thisAndFollowing)
+    {
+        QRadioButton* scopeButton = nullptr;
+        for (QRadioButton* button : dialog->findChildren<QRadioButton*>())
+        {
+            if (button->text()
+                == QStringLiteral("This and following events"))
+            {
+                scopeButton = button;
+                break;
+            }
+        }
+        if (!scopeButton)
+        {
+            if (error)
+            {
+                *error = QStringLiteral(
+                    "Calendar repeat-series scope option was not found."
+                    );
+            }
+            return false;
+        }
+
+        scopeButton->click();
+        if (dialog->seriesEditScope()
+            != CalendarEventSeriesEditScope::ThisAndFollowingEvents)
+        {
+            if (error)
+            {
+                *error = QStringLiteral(
+                    "Calendar repeat-series scope option was not selected."
+                    );
+            }
+            return false;
+        }
+    }
+
     save->click();
     return true;
 }
@@ -300,7 +363,8 @@ bool activateAndHandleDialog(
     const std::function<bool(QQuickItem*)>& activate,
     const EventDialogValues& values,
     const bool deleting,
-    QString* error
+    QString* error,
+    const bool thisAndFollowing = false
     )
 {
     QQuickItem* const root = calendarRoot(page);
@@ -338,7 +402,8 @@ bool activateAndHandleDialog(
                 dialog,
                 values,
                 deleting,
-                &interactionError
+                &interactionError,
+                thisAndFollowing
                 );
         }
         );
@@ -418,6 +483,15 @@ void emitTranscript(const QJsonObject& transcript)
                 );
 }
 
+void emitF379Transcript(const QJsonObject& transcript)
+{
+    qInfo().noquote()
+        << QStringLiteral("F379_TRANSCRIPT=")
+            + QString::fromUtf8(
+                QJsonDocument(transcript).toJson(QJsonDocument::Compact)
+                );
+}
+
 }
 
 class CalendarPageEventMutationParityTests final : public QObject
@@ -426,6 +500,7 @@ class CalendarPageEventMutationParityTests final : public QObject
 
 private slots:
     void ordinaryCreateEditAndDeleteUseCalendarPageSignals();
+    void repeatSeriesSuffixEditUsesCalendarPageSignalAndRefreshesProjection();
 };
 
 void CalendarPageEventMutationParityTests::
@@ -639,6 +714,351 @@ ordinaryCreateEditAndDeleteUseCalendarPageSignals()
         {QStringLiteral("after_create"), afterCreateTranscript},
         {QStringLiteral("after_update"), afterUpdateTranscript},
         {QStringLiteral("after_delete"), afterDeleteTranscript}
+    });
+}
+
+void CalendarPageEventMutationParityTests::
+repeatSeriesSuffixEditUsesCalendarPageSignalAndRefreshesProjection()
+{
+    CalendarWorkspace workspace;
+    QString setupError;
+    QVERIFY2(
+        initializeWorkspace(workspace, &setupError),
+        qPrintable(setupError)
+        );
+
+    const QDate today = QDate::currentDate();
+    const QDate firstOfMonth(today.year(), today.month(), 1);
+    const QDate earlierDate = firstOfMonth;
+    const QDate selectedDate = firstOfMonth.addDays(7);
+    const QDate followingDate = firstOfMonth.addDays(14);
+    const QString seriesId = QStringLiteral("F379-fixed-repeat-series");
+
+    const auto saveOccurrence =
+        [&workspace, &setupError, &seriesId](
+            const QString& title,
+            const QDate& date
+            )
+        {
+            CalendarEvent event;
+            event.title = title;
+            event.eventType = QStringLiteral("Meeting");
+            event.timeStatus = QStringLiteral("Timed");
+            event.repeatSeriesId = seriesId;
+            event.startDate = date;
+            event.startTime = QTime(9, 0);
+            event.endDate = date;
+            event.endTime = QTime(10, 0);
+
+            const auto saved = workspace.services.databaseSession()
+                ->calendarEventRepository()
+                ->saveCalendarEvent(event);
+            if (!saved)
+            {
+                setupError = saved.error();
+                return -1;
+            }
+
+            return *saved;
+        };
+
+    const int earlierId = saveOccurrence(
+        QStringLiteral("F379 Earlier Occurrence"),
+        earlierDate
+        );
+    const int selectedId = saveOccurrence(
+        QStringLiteral("F379 Selected Occurrence"),
+        selectedDate
+        );
+    const int followingId = saveOccurrence(
+        QStringLiteral("F379 Following Occurrence"),
+        followingDate
+        );
+    QVERIFY2(earlierId > 0, qPrintable(setupError));
+    QVERIFY2(selectedId > 0, qPrintable(setupError));
+    QVERIFY2(followingId > 0, qPrintable(setupError));
+    QCOMPARE(workspace.preservedEventId, 1);
+    QCOMPARE(earlierId, 2);
+    QCOMPARE(selectedId, 3);
+    QCOMPARE(followingId, 4);
+
+    const auto dateText = [](const QDate& date)
+    {
+        return date.toString(Qt::ISODate);
+    };
+    const PersistedEventRows beforeEdit = persistedEventRows(
+        workspace.services
+        );
+    QVERIFY2(beforeEdit.succeeded, qPrintable(beforeEdit.error));
+    QCOMPARE(
+        beforeEdit.rows,
+        QStringList({
+            expectedEventRow(
+                workspace.preservedEventId,
+                QStringLiteral("F375 Preserved Ordinary"),
+                QStringLiteral("Holiday"),
+                QStringLiteral("2026-10-22"),
+                QStringLiteral("11:00"),
+                QStringLiteral("2026-10-22"),
+                QStringLiteral("12:00")
+                ),
+            expectedEventRow(
+                earlierId,
+                QStringLiteral("F379 Earlier Occurrence"),
+                QStringLiteral("Meeting"),
+                dateText(earlierDate),
+                QStringLiteral("09:00"),
+                dateText(earlierDate),
+                QStringLiteral("10:00"),
+                seriesId
+                ),
+            expectedEventRow(
+                selectedId,
+                QStringLiteral("F379 Selected Occurrence"),
+                QStringLiteral("Meeting"),
+                dateText(selectedDate),
+                QStringLiteral("09:00"),
+                dateText(selectedDate),
+                QStringLiteral("10:00"),
+                seriesId
+                ),
+            expectedEventRow(
+                followingId,
+                QStringLiteral("F379 Following Occurrence"),
+                QStringLiteral("Meeting"),
+                dateText(followingDate),
+                QStringLiteral("09:00"),
+                dateText(followingDate),
+                QStringLiteral("10:00"),
+                seriesId
+                )
+        })
+        );
+
+    CalendarPage page(&workspace.services);
+    QQuickItem* const root = calendarRoot(page);
+    QVERIFY(root);
+    QVERIFY(
+        root->metaObject()->indexOfSignal("eventActivated(int)") >= 0
+        );
+    QVERIFY(
+        root->metaObject()->indexOfSignal(
+            "displayedMonthChanged(int,int)"
+            ) >= 0
+        );
+    QVERIFY(QMetaObject::invokeMethod(
+        root,
+        "displayedMonthChanged",
+        Qt::DirectConnection,
+        Q_ARG(int, firstOfMonth.year()),
+        Q_ARG(int, firstOfMonth.month())
+        ));
+
+    CalendarEventModel* const model = calendarModel(page);
+    QVERIFY(model);
+    QTRY_VERIFY_WITH_TIMEOUT(
+        model->isMonthLoaded(firstOfMonth.year(), firstOfMonth.month()),
+        5000
+        );
+    QCOMPARE(
+        model->eventsForDate(
+            earlierDate.year(),
+            earlierDate.month(),
+            earlierDate.day()
+            ).size(),
+        1
+        );
+
+    const QDate editedDate = selectedDate.addDays(1);
+    const QDate shiftedFollowingDate = followingDate.addDays(1);
+    const EventDialogValues editedValues{
+        QStringLiteral("F379 Revised Workshop"),
+        editedDate,
+        QTime(10, 15),
+        editedDate,
+        QTime(11, 45),
+        QStringLiteral("Workshop")
+    };
+    const int modelRevisionBeforeEdit = model->revision();
+    QString interactionError;
+    QVERIFY2(
+        activateAndHandleDialog(
+            page,
+            [selectedId](QQuickItem* calendarRootObject)
+            {
+                return QMetaObject::invokeMethod(
+                    calendarRootObject,
+                    "eventActivated",
+                    Qt::DirectConnection,
+                    Q_ARG(int, selectedId)
+                    );
+            },
+            editedValues,
+            false,
+            &interactionError,
+            true
+            ),
+        qPrintable(interactionError)
+        );
+
+    QTRY_VERIFY_WITH_TIMEOUT(
+        model->revision() > modelRevisionBeforeEdit,
+        5000
+        );
+    QTRY_VERIFY_WITH_TIMEOUT(
+        model->isMonthLoaded(firstOfMonth.year(), firstOfMonth.month()),
+        5000
+        );
+
+    const PersistedEventRows afterEdit = persistedEventRows(
+        workspace.services
+        );
+    QVERIFY2(afterEdit.succeeded, qPrintable(afterEdit.error));
+    QCOMPARE(
+        afterEdit.rows,
+        QStringList({
+            expectedEventRow(
+                workspace.preservedEventId,
+                QStringLiteral("F375 Preserved Ordinary"),
+                QStringLiteral("Holiday"),
+                QStringLiteral("2026-10-22"),
+                QStringLiteral("11:00"),
+                QStringLiteral("2026-10-22"),
+                QStringLiteral("12:00")
+                ),
+            expectedEventRow(
+                earlierId,
+                QStringLiteral("F379 Earlier Occurrence"),
+                QStringLiteral("Meeting"),
+                dateText(earlierDate),
+                QStringLiteral("09:00"),
+                dateText(earlierDate),
+                QStringLiteral("10:00"),
+                seriesId
+                ),
+            expectedEventRow(
+                selectedId,
+                QStringLiteral("F379 Revised Workshop"),
+                QStringLiteral("Workshop"),
+                dateText(editedDate),
+                QStringLiteral("10:15"),
+                dateText(editedDate),
+                QStringLiteral("11:45"),
+                seriesId
+                ),
+            expectedEventRow(
+                followingId,
+                QStringLiteral("F379 Revised Workshop"),
+                QStringLiteral("Workshop"),
+                dateText(shiftedFollowingDate),
+                QStringLiteral("10:15"),
+                dateText(shiftedFollowingDate),
+                QStringLiteral("11:45"),
+                seriesId
+                )
+        })
+        );
+
+    const auto eventAtDate = [model](const QDate& date)
+    {
+        return model->eventsForDate(
+            date.year(),
+            date.month(),
+            date.day()
+            );
+    };
+    const QVariantList earlierProjection = eventAtDate(earlierDate);
+    const QVariantList selectedOldDateProjection = eventAtDate(selectedDate);
+    const QVariantList selectedNewDateProjection = eventAtDate(editedDate);
+    const QVariantList followingOldDateProjection = eventAtDate(followingDate);
+    const QVariantList followingNewDateProjection =
+        eventAtDate(shiftedFollowingDate);
+
+    QCOMPARE(earlierProjection.size(), 1);
+    QCOMPARE(
+        earlierProjection.first().toMap().value(QStringLiteral("id")).toInt(),
+        earlierId
+        );
+    QCOMPARE(
+        earlierProjection.first().toMap().value(QStringLiteral("title")).toString(),
+        QStringLiteral("F379 Earlier Occurrence")
+        );
+    QVERIFY(selectedOldDateProjection.isEmpty());
+    QVERIFY(followingOldDateProjection.isEmpty());
+    QCOMPARE(selectedNewDateProjection.size(), 1);
+    QCOMPARE(followingNewDateProjection.size(), 1);
+
+    const QVariantMap selectedProjection =
+        selectedNewDateProjection.first().toMap();
+    QCOMPARE(selectedProjection.value(QStringLiteral("id")).toInt(), selectedId);
+    QCOMPARE(
+        selectedProjection.value(QStringLiteral("title")).toString(),
+        QStringLiteral("F379 Revised Workshop")
+        );
+    QCOMPARE(
+        selectedProjection.value(QStringLiteral("eventType")).toString(),
+        QStringLiteral("Workshop")
+        );
+    QCOMPARE(
+        selectedProjection.value(QStringLiteral("start")).toDateTime().date(),
+        editedDate
+        );
+    QCOMPARE(
+        selectedProjection.value(QStringLiteral("start")).toDateTime().time(),
+        QTime(10, 15)
+        );
+    QCOMPARE(
+        selectedProjection.value(QStringLiteral("end")).toDateTime().date(),
+        editedDate
+        );
+    QCOMPARE(
+        selectedProjection.value(QStringLiteral("end")).toDateTime().time(),
+        QTime(11, 45)
+        );
+
+    const QVariantMap followingProjection =
+        followingNewDateProjection.first().toMap();
+    QCOMPARE(
+        followingProjection.value(QStringLiteral("id")).toInt(),
+        followingId
+        );
+    QCOMPARE(
+        followingProjection.value(QStringLiteral("title")).toString(),
+        QStringLiteral("F379 Revised Workshop")
+        );
+    QCOMPARE(
+        followingProjection.value(QStringLiteral("eventType")).toString(),
+        QStringLiteral("Workshop")
+        );
+    QCOMPARE(
+        followingProjection.value(QStringLiteral("start")).toDateTime().date(),
+        shiftedFollowingDate
+        );
+    QCOMPARE(
+        followingProjection.value(QStringLiteral("start")).toDateTime().time(),
+        QTime(10, 15)
+        );
+    QCOMPARE(
+        followingProjection.value(QStringLiteral("end")).toDateTime().date(),
+        shiftedFollowingDate
+        );
+    QCOMPARE(
+        followingProjection.value(QStringLiteral("end")).toDateTime().time(),
+        QTime(11, 45)
+        );
+
+    emitF379Transcript({
+        {QStringLiteral("series_id"), seriesId},
+        {
+            QStringLiteral("ids"),
+            QJsonArray({earlierId, selectedId, followingId})
+        },
+        {QStringLiteral("earlier_unchanged"), true},
+        {QStringLiteral("middle_and_following_updated"), true},
+        {QStringLiteral("unrelated_unchanged"), true},
+        {QStringLiteral("suffix_ids_and_series_preserved"), true},
+        {QStringLiteral("calendar_projection_refreshed"), true},
+        {QStringLiteral("old_suffix_dates_empty"), true}
     });
 }
 
