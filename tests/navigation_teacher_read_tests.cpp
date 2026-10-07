@@ -12,6 +12,7 @@
 #include "domain/models/gs_team_member.h"
 #include "domain/models/native_english_teacher.h"
 #include "domain/models/teacher.h"
+#include "features/classes/ui/classes_page.h"
 #include "features/teacher/ui/teacher_info_page.h"
 #include "features/teacher/ui/teacher_import_dialog.h"
 #include "fakes/fake_user_prompt_service.h"
@@ -64,6 +65,16 @@ QString databasePath(QTemporaryDir& directory)
             QUuid::createUuid().toString(QUuid::WithoutBraces)
             )
         );
+}
+
+NavigationData classesLandingRoute()
+{
+    return {
+        .path = {QStringLiteral("Classes")},
+        .keys = {QStringLiteral("classes")},
+        .routeKey = QStringLiteral("classes"),
+        .type = NodeType::Page
+    };
 }
 
 QString teacherImportFixturePath()
@@ -683,6 +694,8 @@ private slots:
     void teacherImportNewerAndMissingVersionsProceedWithoutPrompt();
     void teacherImportLatestDateReadFailureWarnsAndStops();
     void teacherImportDialogCancelAndNoSessionStaySilent();
+    void openEmptyWorkspaceShowsClassesWithoutSelectingAnEditor();
+    void unavailableWorkspaceReturnsBeforeTeacherLeaveConfirmation();
 };
 
 void NavigationTeacherReadTests::cleanup()
@@ -2572,6 +2585,110 @@ teacherImportDialogCancelAndNoSessionStaySilent()
     QVERIFY(prompts.messages.isEmpty());
     QVERIFY(prompts.confirmations.isEmpty());
     QVERIFY(QApplication::activeModalWidget() == nullptr);
+}
+
+void NavigationTeacherReadTests::
+openEmptyWorkspaceShowsClassesWithoutSelectingAnEditor()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+    QVERIFY(services.hasOpenDatabase());
+    const auto storedClasses = services.classService()->classes();
+    QVERIFY(storedClasses);
+    QVERIFY(storedClasses->isEmpty());
+
+    PageManager pages;
+    pages.initialize(&services, false);
+    QVERIFY(!pages.isPageInstantiated(PageType::Classes));
+
+    ResourcePackManager resources(
+        directory.filePath(QStringLiteral("resources")),
+        directory.filePath(QStringLiteral("baseline"))
+        );
+    Sidebar sidebar;
+    NavigationController navigation(&services, &sidebar, &pages, resources);
+    FakeUserPromptService prompts;
+    DialogServices::setUserPromptServiceForTesting(&prompts);
+
+    navigation.handleNavigation(classesLandingRoute());
+
+    QVERIFY(pages.isPageInstantiated(PageType::Classes));
+    QVERIFY(pages.isCurrentPage(PageType::Classes));
+    ClassesPage* const classesPage = pages.classesPage();
+    QVERIFY(classesPage);
+    QCOMPARE(classesPage->currentClassId(), -1);
+    QVERIFY(!classesPage->isEditorInstantiated(ClassesSection::Details));
+    QVERIFY(!classesPage->isEditorInstantiated(ClassesSection::Roster));
+    QVERIFY(!classesPage->isEditorInstantiated(ClassesSection::Analytics));
+    QVERIFY(!classesPage->isEditorInstantiated(ClassesSection::Evaluations));
+    QVERIFY(!classesPage->isEditorInstantiated(ClassesSection::CoTeacher));
+    QVERIFY(!classesPage->isEditorInstantiated(ClassesSection::Notes));
+    QVERIFY(prompts.messages.isEmpty());
+    QVERIFY(prompts.asynchronousMessages.isEmpty());
+    QVERIFY(prompts.confirmations.isEmpty());
+    QVERIFY(prompts.unsavedChangesConfirmations.isEmpty());
+    QVERIFY(prompts.actionPrompts.isEmpty());
+}
+
+void NavigationTeacherReadTests::
+unavailableWorkspaceReturnsBeforeTeacherLeaveConfirmation()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+
+    Teacher selected = teacherFixture(
+        QStringLiteral("Selected Teacher Korean"),
+        QStringLiteral("Dirty Teacher"),
+        QStringLiteral("Dirty Teacher")
+        );
+    QVERIFY(persistTeacher(services, selected) > 0);
+
+    PageManager pages;
+    pages.initialize(&services, false);
+    pages.showPage(PageType::TeacherInfo);
+    TeacherInfoPage* const teacherPage = pages.teacherPage();
+    QVERIFY(teacherPage);
+    teacherPage->setSaveMode(SaveMode::Manual);
+    teacherPage->loadTeacher(selected);
+    auto* const notesEdit = teacherPage->findChild<QTextEdit*>(
+        QStringLiteral("teacherNotesEdit")
+        );
+    QVERIFY(notesEdit);
+    notesEdit->setPlainText(QStringLiteral("Unsaved notes"));
+    QVERIFY(teacherPage->hasUnsavedChanges());
+
+    services.closeDatabase();
+    QVERIFY(!services.hasOpenDatabase());
+    QVERIFY(!services.classService()->isAvailable());
+
+    ResourcePackManager resources(
+        directory.filePath(QStringLiteral("resources")),
+        directory.filePath(QStringLiteral("baseline"))
+        );
+    Sidebar sidebar;
+    NavigationController navigation(&services, &sidebar, &pages, resources);
+    FakeUserPromptService prompts;
+    DialogServices::setUserPromptServiceForTesting(&prompts);
+
+    navigation.handleNavigation(classesLandingRoute());
+
+    QVERIFY(pages.isCurrentPage(PageType::TeacherInfo));
+    QCOMPARE(pages.currentWidget(), teacherPage);
+    QVERIFY(teacherPage->hasUnsavedChanges());
+    QCOMPARE(notesEdit->toPlainText(), QStringLiteral("Unsaved notes"));
+    QVERIFY(!pages.isPageInstantiated(PageType::Classes));
+    QVERIFY(!pages.classesPage());
+    QVERIFY(prompts.messages.isEmpty());
+    QVERIFY(prompts.asynchronousMessages.isEmpty());
+    QVERIFY(prompts.confirmations.isEmpty());
+    QVERIFY(prompts.unsavedChangesConfirmations.isEmpty());
+    QVERIFY(prompts.actionPrompts.isEmpty());
 }
 
 QTEST_MAIN(NavigationTeacherReadTests)
