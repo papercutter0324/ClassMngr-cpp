@@ -44,12 +44,11 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
   `fdad5c79` (`Phase2 - Replace Roster navigation availability gate (F371)`).
   F371 was skipped on the other device because work had already begun here;
   it was not independently accepted there. Batch 11 (F362-F371) and Batch 12
-  (F372-F381) are complete. F382 is accepted. Batch 13 (F382-F390) is
-  active with F382-F384 accepted. F384 (Calendar Preferences term-default
-  restoration UI parity) passed independent current/baseline verification.
-  F385 is retired as a duplicate of F369; F386-F390 remain provisional and
-  unselected. The user requested a stop immediately after the F384 acceptance
-  commit; no next slice has been started.
+  (F372-F381) are complete. F382-F386 are accepted in Batch 13; F385 is
+  retired as a duplicate of F369. F386 Staff Directory closed-session
+  navigation parity is accepted in this checkout. F387 Calendar Preferences
+  event-reset parity is selected/current. Its matrix and immediate pre-slice
+  pin to the F386 acceptance commit are recorded in the progress log.
 
 ### Slice discovery batches
 
@@ -76,14 +75,12 @@ log](03-Phase-2-Progress-Log.md).
 
 #### Active batch: Batch 13
 
-1. F386 - Provisional, not selected: Staff Directory parity for the uncovered
-   closed-session-before-leave-confirmation gate.
-2. F387 - Provisional, not selected: Calendar Preferences event-reset
-   confirmation, delete, failure, and refresh UI parity.
-3. F388 - Provisional, not selected: Class Details/Notes/student-Evaluation
+1. F387 - Selected/current: Calendar Preferences event-reset confirmation,
+   delete, failure, and refresh UI parity.
+2. F388 - Provisional, not selected: Class Details/Notes/student-Evaluation
    route availability matrix.
-4. F389 - Provisional, not selected: My Info route navigation gate parity.
-5. F390 - Provisional, not selected: Sub Prep route gate parity.
+3. F389 - Provisional, not selected: My Info route navigation gate parity.
+4. F390 - Provisional, not selected: Sub Prep route gate parity.
 
 The two independent scans were bounded to Calendar and NavigationController
 parity review; they do not establish repository-wide discovery exhaustion.

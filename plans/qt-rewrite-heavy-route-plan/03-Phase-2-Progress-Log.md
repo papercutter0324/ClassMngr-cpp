@@ -13059,3 +13059,75 @@ F385 remains retired as a duplicate of F369. F386-F390 remain provisional and
 unselected. At the user's request, stop after this acceptance commit without
 starting another slice. Phase 2 remains In Progress/Open; Gates 1 and 2 remain
 Partial.
+
+### F386 selected/current / acceptance matrix established - 2026-10-08
+
+F386, Staff Directory navigation parity for the closed-session-before-leave-
+confirmation gate, is selected/current in Batch 13. Its pre-slice source is
+`90e18680ebd3496cc5991dbfb9e823404e1df44a` (F384 accepted). The fixed matrix
+covers both `native_english_teachers` and `gs_team`: start with a dirty
+`TeacherInfo` page and exact unsaved notes content, close the workspace before
+dispatch, then assert no leave confirmation, warning, or other prompt; the
+current page, teacher identity, notes, and dirty state remain unchanged; and
+the requested Staff Directory page is neither created nor shown. Sidebar
+highlight behavior is excluded, and production routing remains unchanged.
+
+The current-source self-check used `build/windows-x64-debug`, configured
+with the available MSVC x64 environment and Qt 6.12 using NMake. The Windows
+preset was not usable in this runner because its NMake generator rejects the
+preset x64 platform; direct configuration in the shared directory succeeded.
+The focused `ClassMngrStaffDirectoryClosedSessionNavigationParityTests`
+target built, and focused CTest passed 1/1. Direct QtTest emitted two
+normalized JSONL rows, one per route; both recorded the unchanged dirty
+`TeacherInfo` page and notes, no requested page creation or display, and zero
+prompts, leave confirmations, and Qt warnings. The raw current transcript is
+`build/windows-x64-debug/f386-current-normalized.jsonl`; SHA-256:
+`c99738b62b11916539fd74dd8b523bb053960ac94534e0fcfd11924249d8e349`. No
+full suite ran.
+
+Independent verification remains pending. Apply only the new test source and
+its registration in `cmake/tests/pages_and_output.cmake` to the pinned source,
+run the focused target, and require byte-identical normalized JSONL
+transcripts. F386 remains selected/current, pending independent verification
+and main acceptance. Phase 2 remains In Progress/Open; Gates 1 and 2 remain
+Partial.
+
+### F386 accepted / F387 selected and matrix established - 2026-10-08
+
+F386, Staff Directory closed-session navigation parity, is accepted in this
+source commit. The focused `ClassMngrStaffDirectoryClosedSessionNavigationParityTests`
+target passed CTest 1/1 on the current source; direct QtTest passed with one
+row for each route. The independent Tester passed both route keys and the
+assigned matrix on current and baseline. On pre-slice source
+`90e18680ebd3496cc5991dbfb9e823404e1df44a`, the only build-relevant overlay
+was the F386 test source and its CMake registration. Current, baseline, and
+Executor transcripts were each 718 bytes and byte-identical; SHA-256:
+`c99738b62b11916539fd74dd8b523bb053960ac94534e0fcfd11924249d8e349`.
+`git diff --check` passed. No production or unrelated files changed, and no
+full suite ran. The current-source transcript is
+`build/windows-x64-debug/f386-current-normalized.jsonl`.
+
+F387, Calendar Preferences event-reset confirmation, deletion, failure, and
+refresh parity, is selected/current. Its fixed matrix is:
+
+1. Closed/unavailable session: seed an event, close the session, and click
+   Reset. Assert no confirmation, mutation, success status, or
+   `calendarPreferencesChanged` signal; reopen and verify the event remains.
+2. Cancel: verify the destructive confirmation presents Reset and Cancel
+   choices, then choose Cancel. Assert the event persists with no success status
+   or signal.
+3. Delete failure after confirmation: close the session while the prompt is open,
+   then choose Reset. Assert a warning, verify the event remains after
+   reopening, and assert no success status or signal. This exercises the
+   apply-time session recheck without production injection.
+4. Success and refresh: with an event visible in the Calendar month, confirm
+   Reset. Assert the event is deleted, success status appears,
+   `calendarPreferencesChanged(true)` emits once, and after asynchronous cache
+   completion the visible event disappears. Do not assert request counts; an
+   empty event list is the existing reset behavior.
+
+F387 may extend the existing Calendar Preferences restore-defaults test
+target. The immediate pre-slice source is the F386 acceptance commit that
+contains this F387 matrix. F387 implementation has not started; the current
+tree changes remain test-only unless bounded discovery proves otherwise.
+Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial.

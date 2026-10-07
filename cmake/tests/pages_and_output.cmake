@@ -249,6 +249,16 @@ classmngr_add_qt_test(
     OFFSCREEN
 )
 
+classmngr_add_qt_test(
+    NAME StaffDirectoryClosedSessionNavigationParity
+    SOURCES
+        tests/staff_directory_closed_session_navigation_parity_tests.cpp
+    LIBRARIES
+        Qt6::Test
+        Qt6::Widgets
+    OFFSCREEN
+)
+
 qt_add_resources(
     ClassMngrNavigationRosterSessionParityTests
     navigation_roster_session_parity_keyboard_resources
