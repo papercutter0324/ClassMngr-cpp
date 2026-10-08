@@ -115,12 +115,14 @@ Document Catalog retranslation integration are accepted with focused
 evidence. F398 FileController same-path workspace-open parity is accepted:
 the focused coordinator, FileController, and MainWindow targets built, CTest
 passed 3/3, and all three direct QtTest cases passed. Batch 16 is complete.
-F399 Close File action parity and F400 Open File action dirty-page gate are
-accepted and committed. F401 Recent-workspace menu selection and missing-path
-pruning is accepted and ready to commit. Batch 17 remains active; F402 is queued
-after the F401 commit and F403 follows. Begin Batch 18 discovery when F402
-starts.
-See the Phase 2 progress log for F400-F401 acceptance and bounded discovery
+F399 Close File action parity, F400 Open File action dirty-page gate, and
+F401 Recent-workspace menu selection and missing-path pruning are accepted and
+committed (F401: `2121ce59`). Batch 17 remains active. F402 MainWindow
+application-exit confirmation is accepted and ready to commit; F403 Dynamic
+Teacher Sidebar leaf navigation is queued after the F402 commit. Batch 18
+discovery is complete: ten provisional candidates are recorded for after F403
+and remain provisional until Batch 17 completes.
+See the Phase 2 progress log for F400-F402 acceptance and Batch 18 discovery
 evidence.
   Gates 1 and 2 remain Partial, with broader feature
   migration, parity, and 96-class Release memory evidence still open.

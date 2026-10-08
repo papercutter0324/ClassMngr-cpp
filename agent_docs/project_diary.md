@@ -2462,3 +2462,16 @@ behaviors, so the slice changes tests only. The missing-path case uses a clean
 page; this slice does not change the existing dirty-page prompt order. The
 focused Ninja fallback target built and CTest passed 1/1 (1.02 s); no full suite
 ran.
+
+
+## 2026-10-08 - F402 MainWindow application-exit confirmation accepted
+
+A real visible MainWindow test exercises the application-exit QCloseEvent via
+`QWidget::close()` with an open workspace and dirty Details draft. Cancel rejects
+the close and preserves the exact session/path, page, tab, Sidebar selection,
+draft, and dirty state; Discard accepts a second close and restores the saved
+draft. No production change was needed. The focused Ninja/MSVC/Qt 6.12 target
+built and filtered CTest passed 1/1 (0.34 s). No full suite ran; the standard
+Visual Studio tree remains blocked before source compilation by the existing
+FileTracker/CommonApplicationData issue. Batch 17 advances to F403 after the
+F402 commit; the ten Batch 18 candidates activate after F403.

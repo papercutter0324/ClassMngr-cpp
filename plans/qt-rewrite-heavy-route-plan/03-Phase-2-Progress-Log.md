@@ -14051,3 +14051,129 @@ Visual Studio tree was not used for this slice. No full suite ran.
 Batch 17 remains active. F401 is accepted and ready to commit; F402 is queued
 after the F401 commit, with F403 following. Batch 18 discovery is due when F402
 starts. Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial.
+
+### F402 selected/current / acceptance matrix established - 2026-10-08
+
+F402 covers `QCloseEvent` through `QWidget::close()` on a real visible MainWindow
+with an open workspace and dirty My Workspace Details draft. It is distinct from
+F399, which covers the FileController Close File QAction. Clean-page close and
+OS/process shutdown are excluded.
+
+Acceptance matrix:
+
+1. Call `window.close()` with the leave prompt scripted to Cancel. The close must
+   be rejected. Verify the window remains visible; the exact database session and
+   path, page/tab/Sidebar selection, draft, and dirty state are preserved; and
+   exactly one leave prompt was shown.
+2. Call `window.close()` again with the prompt scripted to Discard. Verify close is
+   accepted, the window hides, the draft is clean, and the total prompt count is
+   two.
+
+F402 is the second-last slice in Batch 17, so Batch 18 discovery is underway at
+the required trigger. Discovery candidates have not been recorded yet.
+
+### F402 accepted / ready to commit - 2026-10-08
+
+The independently verified real-window close test covers a dirty My Workspace
+Details draft through `window.close()`. Scripted Cancel rejects close and preserves
+the visible window, exact database session/path, page/tab/Sidebar selection,
+draft, and dirty state with one leave prompt. A second close with scripted
+Discard is accepted, hides the window, leaves the draft clean, and brings the
+prompt count to two. Focused CTest passed 1/1 (0.34 s). F402 is accepted and
+ready to commit; F403 is queued after the F402 commit.
+
+### Batch 18 discovered at F402 - 2026-10-08
+
+At the required second-last-slice trigger, two independent bounded reviews
+completed: Reviewer A's application-boundary sweep covered PageManager and
+FileController save-choice gates plus MainWindow Save As/Export integration;
+Reviewer B's route-producer sweep covered QAction, Sidebar root/section, and
+page-handoff paths. The reconciled ordered candidates below are for after F403.
+Batch 18 remains provisional until Batch 17 completes. These bounded reviews do
+not establish repository-wide discovery exhaustion.
+
+1. **F404 - Save choice on Open/Close File actions.** Evidence:
+   `PageManager::confirmCurrentPageCanLeave`
+   (`src/ui/shared/pages/pagemanager.cpp:485`), `FileController::openFile`
+   (`src/app/controllers/file_controller.cpp:557`), and
+   `FileController::closeFile` (`src/app/controllers/file_controller.cpp:740`).
+   Cover Open → Save → chooser cancel
+   leaving the same workspace clean, and Close → Save completing the no-workspace
+   transition.
+2. **F405 - MainWindow Save As and Export action integration.** Evidence:
+   `FileController::connectActions`/`saveAsFile`/`exportAsFile`
+   (`src/app/controllers/file_controller.cpp:168-178,680-738`); existing controller
+   action cases in `tests/file_controller_workspace_lifecycle_tests.cpp:1682,1904`.
+   Add real MainWindow
+   actions: Save As changes active location/history; Export preserves active
+   session, path, and current page.
+3. **F406 - Manage Campuses QAction transition.** Evidence: action registration/menu
+   (`src/ui/shared/actions/action_registry.cpp:1588-1591`; `src/app/menu_builder.cpp:1350`),
+   `MainWindow::connectSignals` (`src/app/mainwindow.cpp:1079-1097`); current campus route
+   test synthesizes `NavigationData` (`tests/campus_route_navigation_parity_tests.cpp:442-510`).
+   Cover the real QAction's leave gate and transition to Campus Dashboard
+   Information.
+4. **F407 - Schedule↔Testing Classes handoff.** Evidence:
+   `ScheduleWidget::testingClassesRequested`
+   (`src/features/schedule/ui/schedule_widget.cpp:562,801`),
+   MainWindow request/return connections (`src/app/mainwindow.cpp:873-909,920-955`), and
+   `TestingClassesPage::returnToScheduleRequested`
+   (`src/features/classes/ui/testing_classes_page.cpp:855`);
+   the widget test observes the signal (`tests/schedule_widget_tests.cpp:1748-1755`).
+   Cover the MainWindow handoff in both schedule contexts and the source-dependent
+   return route through the page-leave guard.
+5. **F408 - Dynamic Teacher Sidebar selection/state after retranslation.** Evidence:
+   `MainWindow::retranslateUi` snapshots/restores keys, teacher ID, and expansion
+   (`src/app/mainwindow.cpp:546-613`); dynamic teachers refresh through
+   `SidebarController::refreshTeacherSidebar`
+   (`src/app/controllers/sidebar_controller_refresh.cpp:36`)
+   and `Sidebar::selectByKeys` (`src/ui/shared/widgets/sidebar/sidebar_tree.cpp:282-340`).
+   Existing MainWindow
+   retranslation coverage targets Document Catalog only
+   (`tests/mainwindow_document_catalog_retranslation_parity_tests.cpp:114-198`).
+   Cover a selected dynamic Teacher leaf through a language-action rebuild and
+   verify its captured selection/state is restored.
+6. **F409 - My Workspace Sidebar root producer-to-handler integration.** Evidence:
+   top-level `NodeType::Page` node (`src/ui/shared/widgets/sidebar/sidebar_definitions.cpp:16-19`),
+   Sidebar selection emission
+   (`src/ui/shared/widgets/sidebar/sidebar_selection.cpp:120-255`), MainWindow wiring
+   (`src/app/mainwindow.cpp:784-789`), and NavigationController dispatch
+   (`src/app/controllers/navigation_controller.cpp:198-228,354-363`). The route matrix builds
+   `NodeType::Page` directly (`tests/my_info_route_navigation_parity_tests.cpp:130-149,334-396`).
+   Cover the production root click through the Sidebar-to-handler path.
+7. **F410 - Classes Sidebar root integration.** Evidence: top-level `NodeType::Page` node
+   (`src/ui/shared/widgets/sidebar/sidebar_definitions.cpp:22-25`), MainWindow signal wiring
+   (`src/app/mainwindow.cpp:784-789`), and page route handling
+   (`src/app/controllers/navigation_controller.cpp:322-352`). Existing route coverage synthesizes a
+   `NodeType::Page` (`tests/class_route_availability_parity_tests.cpp:177-205,377-422`).
+   Cover the actual Classes root producer through the production handler; establish
+   exact root-click assertions when the slice starts.
+8. **F411 - Sub Prep Sidebar root integration.** Evidence: top-level `NodeType::Page` node
+   (`src/ui/shared/widgets/sidebar/sidebar_definitions.cpp:28-31`), MainWindow signal wiring
+   (`src/app/mainwindow.cpp:784-789`), and `NavigationController::handleSubPrep`
+   (`src/app/controllers/navigation_controller.cpp:208-214,365-369,484-535`). Cover the real Sidebar
+   root click into the handler's top-level Sub Prep path; the exact focused
+   assertions are set at slice start.
+9. **F412 - Campus Sidebar root plus section producer integration.** Evidence:
+   root/section nodes (`src/ui/shared/widgets/sidebar/sidebar_definitions.cpp:127-135`),
+   Sidebar signal producer
+   (`src/ui/shared/widgets/sidebar/sidebar_selection.cpp:120-255`), and
+   `NavigationController::handleCampus`
+   (`src/app/controllers/navigation_controller.cpp:613-705`). Current route coverage
+   fabricates root
+   and page events (`tests/campus_route_navigation_parity_tests.cpp:149-169,442-510`).
+   Cover real Sidebar root and section clicks through the MainWindow route.
+10. **F413 - Initial Setup success navigation from the empty-state button.** Evidence:
+    button signal (`src/ui/shared/pages/basepage.cpp:144-149,272-276`), PageManager forwarding
+    (`src/ui/shared/pages/pagemanager.cpp:283-292`), MainWindow entry/success path
+    (`src/app/mainwindow.cpp:656-663,1145-1197`), and button signal-only test
+    (`tests/basepage_tests.cpp:248-280`). Cover successful completion through the
+    real MainWindow flow to My Workspace/Schedule and Sidebar refresh.
+
+The Staff Directory and Classes service-availability-gate cleanup suggestions
+are excluded as separate candidates: F394 Classes landing and F396 Staff Directory
+exercise the user-visible route
+outcomes, and no distinct user-visible acceptance delta was established. Also
+excluded are the empty-state Open Profile forwarding-only follow-up, the
+Initial Setup replacement failure-path contract, synthetic routes without a
+production producer, and deferred F285/F298 follow-ups.

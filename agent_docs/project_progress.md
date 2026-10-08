@@ -2857,7 +2857,7 @@ unsynced and unaudited in this checkout; local Batch 11 evidence still ends at
 F366. No remote commits or acceptance results are inferred.
 
 
-## Current Position — 2026-10-08 (F401 accepted; F402 queued)
+## Current Position — 2026-10-08 (F402 current; Batch 18 discovery underway)
 
 Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial. F386-F393
 are accepted as recorded in the Phase 2 progress log. The seven Teacher Profile
@@ -2882,14 +2882,32 @@ The standard Visual Studio tree remains blocked before source compilation in
 ZERO_CHECK by the current shell's FileTracker CommonApplicationData path
 resolution; no system settings changed. No full suite ran.
 
-F401 Recent-workspace menu selection and missing-path pruning is accepted
-with no production changes. Two new MainWindow tests use the production Recent
-menu to open a different existing workspace without a chooser and to prune a
-missing path while verifying the warning, history/menu updates, and exact active
-session/page preservation. The focused Ninja/MSVC/Qt 6.12 target built and
-filtered CTest passed 1/1 (1.02 s); incremental build with no warnings. No full
-suite ran; the standard Visual Studio tree was not used for this slice.
+The seven Teacher Profile Edit MSVC diagnostics were rechecked against the
+current source: the focused x64 MSVC/Qt 6.12 Ninja target built and its filtered
+CTest passed 1/1. The diagnostics refer to pre-fix code already corrected in
+commit `0b128601`; no source changes were needed for this report.
 
-Batch 17 remains active; F402 is next queued after the F401 commit, followed
-by F403. Batch 18 discovery is due when F402 starts. The user-modified
-`latest_session_work.md` remains untouched.
+F401 Recent-workspace menu selection and missing-path pruning is accepted
+and committed as `2121ce59`, with no production changes. Two new
+MainWindow tests use the production Recent menu to open a different existing
+workspace without a chooser and to prune a missing path while verifying the
+warning, history/menu updates, and exact active session/page preservation.
+The focused Ninja/MSVC/Qt 6.12 target built and filtered CTest passed 1/1
+(1.02 s); incremental build with no warnings. No full suite ran; the standard
+Visual Studio tree was not used for this slice.
+
+F402 MainWindow application-exit confirmation is accepted and ready to
+commit, with no production changes. A real visible MainWindow test exercises
+QWidget::close() with a dirty Details draft and open workspace. Cancel rejects
+close while preserving the window, exact session/path, page, tab, Sidebar
+selection, draft, and dirty state. A second close with Discard is accepted and
+restores the persisted draft. The focused Ninja/MSVC/Qt 6.12 target built and
+filtered CTest passed 1/1 (0.34 s); CMake reconfigured and emitted optional
+WrapVulkanHeaders and known object-path-length warnings, with no LNK4006.
+No full suite ran. The standard Visual Studio tree remains blocked before
+source compilation by the existing FileTracker/CommonApplicationData issue.
+
+Batch 17 remains active. F402 is accepted and ready to commit; F403 Dynamic
+Teacher Sidebar leaf navigation is queued after that commit. Batch 18 discovery
+is complete with ten provisional candidates to activate after F403. The
+user-modified `latest_session_work.md` remains untouched.
