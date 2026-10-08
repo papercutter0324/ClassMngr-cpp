@@ -171,13 +171,16 @@ synchronization is committed (`f4bc5282`). F416 Document Catalog rendered
   8a21da618870ba4308415aaf5927fa1393af6e97 (branch ahead 29). F445 is committed as
   d9180f1c465976dfdd707382a1e615108aed9387 (branch ahead 30). F446 is committed as
   4b34a3b8a15a062377a245607228097fb43ee46b (branch ahead 31). F447 is committed as
-  d5b130bd0558146185ebf4cdeab885bde6956fec (branch ahead 32); Batch 23 is complete and
-  Batch 24 is active with F448, “Cover New File QAction open-profile success,” selected/current.
-  The independent Tester found empty A made a file-existence check weak; the test change now
-  seeds and verifies A details. F448 is accepted in this changeset and ready to commit: target
-  build passed, the selected slot passed 3 incidents/0 failures, and filtered CTest passed 1/1. Independent
-  source review approved the persistence and active-B assertions, but its command run was blocked
-  by helper_unknown_error: setup refresh had errors. A Qt font-directory warning appeared. F435
+  d5b130bd0558146185ebf4cdeab885bde6956fec (branch ahead 32); Batch 23 is complete. F448,
+  “Phase2 - Cover New File QAction open-profile success (F448),” is committed as
+  f825a388db1897bc42cacf43c488850fa48a9de8 (branch ahead 33); Batch 24 is complete. Batch 25
+  is active with F449, “Cover Exit QAction close-confirmation handoff,” accepted in this changeset
+  and ready to commit. The QAction is connected through MainWindow::close(); target
+  ClassMngrMainWindowExitConfirmationParityTests passed target build, selected slot 3/0, full
+  target QtTest 5, and filtered CTest 1/1; diff check was clean. Independent Tester reran the
+  focused checks successfully. The MSBuild FileTracker error required the existing Ninja tree; Qt
+  font and line-ending notices were reported without whitespace errors. F448 acceptance remains in
+  the progress log, including the reviewer command limitation. F435
   covers no-database New Profile creation and picker metadata; F444 covers Open File replacement.
   F285 stays deferred. See the
   progress log. Gates 1 and 2 remain Partial,

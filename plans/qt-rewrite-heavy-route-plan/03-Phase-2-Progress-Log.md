@@ -16581,4 +16581,47 @@ with 0 failures; filtered CTest passed 1/1. git diff --check was clean. Independ
 source review approved the strengthened checks: seeded name/campus survive fresh-service readback,
 and B remains active/open. The reviewer’s command execution was blocked by
 helper_unknown_error: setup refresh had errors. The existing Qt font-directory warning appeared.
-F448 is accepted in this changeset and ready to commit; Batch 24 remains active until commit.
+F448 was accepted in this changeset and ready to commit; Batch 24 remained active until its commit.
+
+### F448 committed - 2026-10-09
+
+F448, “Phase2 - Cover New File QAction open-profile success (F448),” was committed as
+f825a388db1897bc42cacf43c488850fa48a9de8 on Qt-Rewrite (branch ahead 33). Batch 24 is
+complete. Batch 25 is active; two read-only reviews are starting bounded QAction coverage
+discovery for F449. No F449 candidate title or acceptance matrix is selected or recorded yet.
+F448 acceptance and verification, including the independent-review command limitation, remain
+recorded above.
+
+### F449 acceptance matrix recorded before implementation - 2026-10-09
+
+Candidate: “Cover Exit QAction close-confirmation handoff (F449).” Two independent source reviews
+confirmed ActionRegistry::exitApp is added to the File menu but has no project-level signal
+connection. Existing exit tests call window.close() and no test references exitApp. Connect the
+real QAction to MainWindow::close() in MainWindow controller/action wiring so it traverses
+closeEvent.
+
+In mainwindow_exit_confirmation_parity_tests.cpp, seed a persisted baseline name; start a clean
+file-backed profile in Manual Save; edit a distinct draft. Script FakeUserPromptService with
+UnsavedChangesChoice::Cancel,
+trigger window.actions().exitApp, and verify the window remains visible, the draft remains dirty,
+active path/session remain, and the close prompt is recorded. Then script Discard and trigger the
+same QAction; verify the second prompt is consumed, the window is hidden, and a fresh-service read
+returns the persisted baseline name. This exercises the real QAction through closeEvent.
+
+QtTest class: MainWindowExitConfirmationParityTests; build target and CTest:
+ClassMngrMainWindowExitConfirmationParityTests. Exclude F446’s Save choice, OS shutdown, and
+multi-window behavior. This matrix was recorded before implementation.
+
+### F449 acceptance update - 2026-10-09
+
+The real exitApp QAction is connected in src/app/mainwindow.cpp; coverage is in
+tests/mainwindow_exit_confirmation_parity_tests.cpp. The Ninja target build passed. The selected
+slot passed 3 incidents with 0 failures; the full target QtTest passed 5 (three slots plus
+setup/cleanup), and filtered CTest ClassMngrMainWindowExitConfirmationParityTests passed 1/1.
+git diff --check was clean.
+
+The MSBuild tree hit an environment FileTracker access-denied error, so the executor used the
+initialized MSVC environment with the existing Ninja build tree. The independent Tester reran the
+target, slot, and CTest successfully; it reported the known Qt font-directory warning and LF-to-CRLF
+notices without whitespace errors. F449 is accepted in this changeset and ready to commit. Batch 25
+remains active until commit.

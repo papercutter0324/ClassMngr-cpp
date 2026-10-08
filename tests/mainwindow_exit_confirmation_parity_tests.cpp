@@ -56,6 +56,7 @@ private slots:
     void initTestCase();
     void closeCancelPreservesDraftBeforeDiscardAcceptsClose();
     void closeSavePersistsPersonalName();
+    void exitActionCancelPreservesDraftBeforeDiscardAcceptsClose();
 
 private:
     QTemporaryDir m_settingsDirectory;
@@ -277,6 +278,132 @@ void MainWindowExitConfirmationParityTests::closeSavePersistsPersonalName()
             .load()
             .name,
         draftName
+        );
+    verificationServices.closeDatabase();
+}
+
+void MainWindowExitConfirmationParityTests::
+exitActionCancelPreservesDraftBeforeDiscardAcceptsClose()
+{
+    QTemporaryDir workspaceRoot;
+    QVERIFY(workspaceRoot.isValid());
+
+    const QString workspacePath = QFileInfo(
+        workspaceRoot.filePath(QStringLiteral("exit-action-workspace.tps"))
+        ).absoluteFilePath();
+
+    const QString baselineName =
+        QStringLiteral("F449 persisted baseline");
+    ApplicationServices seedServices;
+    QVERIFY(seedServices.openDatabase(workspacePath));
+    PersonalDetails baselineDetails;
+    baselineDetails.name = baselineName;
+    QVERIFY(
+        PersonalDetailsRepository(seedServices.settingsService())
+            .save(baselineDetails)
+        );
+    seedServices.closeDatabase();
+
+    LanguageService languageService;
+    QVERIFY(languageService.setLanguage(Language::English));
+
+    MainWindowStartupOptions startupOptions;
+    startupOptions.loadMostRecentDatabase = false;
+    startupOptions.initialDatabasePath = workspacePath;
+
+    FakeUserPromptService prompts;
+    const UserPromptServiceScope promptScope(&prompts);
+
+    MainWindow window(
+        [](const QString&) {},
+        false,
+        &languageService,
+        nullptr,
+        std::move(startupOptions)
+        );
+    window.show();
+    QApplication::processEvents();
+    QVERIFY(window.isVisible());
+
+    ApplicationServices* const services = window.services();
+    QVERIFY(services);
+    QVERIFY(services->hasOpenDatabase());
+    QCOMPARE(services->currentDatabasePath(), workspacePath);
+    auto* const activeSession = services->databaseSession();
+    QVERIFY(activeSession);
+
+    PageManager* const pages = window.pageManager();
+    QVERIFY(pages);
+    QVERIFY(pages->isCurrentPage(PageType::MyWorkspace));
+    MyWorkspacePage* const workspace = pages->myWorkspacePage();
+    QVERIFY(workspace);
+    workspace->openTab(WorkspaceTab::Details);
+    pages->setSaveMode(SaveMode::Manual);
+
+    PersonalDetailsPage* const details = workspace->personalDetailsPage();
+    QVERIFY(details);
+    QLineEdit* const nameEditor = personalNameEditor(details);
+    QVERIFY(nameEditor);
+    QCOMPARE(nameEditor->text(), baselineName);
+
+    const QString draftName =
+        QStringLiteral("F449 unsaved exit-action draft");
+    QVERIFY(draftName != baselineName);
+    nameEditor->setText(draftName);
+    QVERIFY(details->hasUnsavedChanges());
+    QVERIFY(workspace->hasUnsavedChanges());
+
+    Sidebar* const sidebar = window.findChild<Sidebar*>();
+    QVERIFY(sidebar);
+    QCOMPARE(
+        sidebar->selectedKeys(),
+        QStringList{QStringLiteral("my_workspace")}
+        );
+    const QString activePageIdentifier = pages->currentPageIdentifier();
+    QVERIFY(!activePageIdentifier.isEmpty());
+
+    QAction* const exitAction = window.actions().exitApp;
+    QVERIFY(exitAction);
+    prompts.scriptedUnsavedChangesChoices.enqueue(
+        UnsavedChangesChoice::Cancel
+        );
+    exitAction->trigger();
+
+    QVERIFY(window.isVisible());
+    QCOMPARE(prompts.unsavedChangesConfirmations.size(), 1);
+    QVERIFY(prompts.scriptedUnsavedChangesChoices.isEmpty());
+    QVERIFY(services == window.services());
+    QVERIFY(services->hasOpenDatabase());
+    QVERIFY(services->databaseSession() == activeSession);
+    QCOMPARE(services->currentDatabasePath(), workspacePath);
+    QVERIFY(pages->isCurrentPage(PageType::MyWorkspace));
+    QCOMPARE(pages->currentPageIdentifier(), activePageIdentifier);
+    QCOMPARE(workspace->currentTab(), WorkspaceTab::Details);
+    QCOMPARE(nameEditor->text(), draftName);
+    QVERIFY(details->hasUnsavedChanges());
+    QVERIFY(workspace->hasUnsavedChanges());
+    QCOMPARE(
+        sidebar->selectedKeys(),
+        QStringList{QStringLiteral("my_workspace")}
+        );
+
+    prompts.scriptedUnsavedChangesChoices.enqueue(
+        UnsavedChangesChoice::Discard
+        );
+    exitAction->trigger();
+
+    QVERIFY(!window.isVisible());
+    QCOMPARE(prompts.unsavedChangesConfirmations.size(), 2);
+    QVERIFY(prompts.scriptedUnsavedChangesChoices.isEmpty());
+
+    services->closeDatabase();
+    ApplicationServices verificationServices;
+    QVERIFY(verificationServices.openDatabase(workspacePath));
+    QCOMPARE(
+        PersonalDetailsRepository(verificationServices.settingsService())
+            .load()
+            .name,
+        baselineName
         );
     verificationServices.closeDatabase();
 }

@@ -479,6 +479,19 @@ void MainWindow::createActions()
 
 void MainWindow::connectControllers()
 {
+    if (m_actions.exitApp)
+    {
+        connect(
+            m_actions.exitApp,
+            &QAction::triggered,
+            this,
+            [this]()
+            {
+                close();
+            }
+            );
+    }
+
     m_sidebarController =
         std::make_unique<SidebarController>(
             m_services.get(),
