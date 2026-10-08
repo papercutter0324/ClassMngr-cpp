@@ -163,11 +163,12 @@ synchronization is committed (`f4bc5282`). F416 Document Catalog rendered
   committed as 0c2ceca6; Batch 21 is complete. F439, Delete Teacher QAction
   confirmation success, is committed as a0c50d2d (branch ahead 24). Batch 22 is
   F440, “Phase2 - Cover Export Classes JSON output (F440),” is committed as
-  01d1559c (branch ahead 25). Batch 22 is active with F441 Import Classes QAction
-  apply with a create-only fixture accepted in this changeset and ready to commit.
-  F442 Import Teachers QAction apply is next after commit; F443-F446 remain provisional.
-  F285 stays deferred; same-path Open remains unselected pending a contract. See the
-  progress log. Gates 1 and 2 remain Partial,
+  01d1559c (branch ahead 25). F441, Import Classes QAction apply success, is
+  committed as 75a559ae (branch ahead 26). Batch 22 is active with F442 Import
+  Teachers QAction apply is accepted in this changeset and ready to commit. After
+  the F442 commit, pause as requested. F443 Delete Class QAction is next on resume;
+  its discovery and implementation have not started. F444-F446 remain provisional.
+  F285 stays deferred; same-path Open remains unselected pending a contract. Gates 1 and 2 remain Partial,
   with broader feature migration, parity, and 96-class Release memory evidence still open.
   See the
   [Phase 2 progress log](03-Phase-2-Progress-Log.md) for current scope and

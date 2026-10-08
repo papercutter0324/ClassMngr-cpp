@@ -3250,3 +3250,18 @@ F441 adds successful apply coverage beside F426 in MainWindowCloseFileParityTest
 ## 2026-10-09 - F441 Import Classes QAction apply accepted
 
 The test drives the real Import Classes QAction, scripted ClassTransfer JSON picker, real ClassImportDialog, explicit Create choice, and Import apply from an empty destination using a one-class package with no teachers. It verifies one new class and full expected ClassInfo, zero teacher rows with teacherId -1, exact Created: 1/replaced: 0/skipped: 0 information summary, no other prompt, Classes page with imported ID/Details active, sidebar route classes, and stable session/path. Executor and independent Tester passed Ninja Debug target build, exact CTest 1/1, target QtTest 10/10, and selected case 3/3. No compiler warnings; Qt font/offscreen notices only. No full-suite run or production/CMake change. F441 is accepted and ready to commit. F442 Import Teachers QAction apply is next after this commit; Batch 22 remains active.
+
+
+## 2026-10-09 - F441 committed; F442 selected
+
+F441 committed as 75a559ae7bad175cba106d0377bcf59c506cd247 (Phase2 - Cover Import Classes QAction apply success (F441)); branch is ahead by 26. The six-path commit contains the test-only source change and accepted matrix/results; diff checks passed. latest_session_work.md and unrelated %SystemDrive%/ remain outside slice commits. Batch 22 remains active. F442 Import Teachers QAction apply is selected/current and bounded read-only discovery is underway; F443-F446 remain provisional.
+
+
+## 2026-10-09 - F442 Import Teachers MainWindow success matrix recorded
+
+Add a successful Import Teachers case to MainWindowManageCampusesParityTests, complementing F431’s page-leave gate. Use an empty temporary database and clean MyWorkspace, plus checked-in tests/fixtures/teacher_import/sectioned_review.xlsx. Browse through the real TeacherImportDialog using one OpenFileRequest for purpose ImportWorkbook and Excel Workbooks (*.xlsx). Allow asynchronous validation with a bounded 15-second watchdog; assert Valid File and Import enabled, then set M1 to Select candidate 0, M2 to None, and H1 to All before clicking Import. This yields 2 Korean teachers (Hong/Park), 1 Native English teacher (Alex), and 1 GS Team member (Taylor) with no prior records/date, avoiding update or old-date confirmation. Assert exact created/updated/unchanged summary counts, new database category records and refreshed Korean sidebar entries, one Import Teachers information prompt and no warning/confirmation; current workspace page, session, and path remain stable. Target/CTest: ClassMngrMainWindowManageCampusesParityTests. Matrix recorded before implementation; no implementation has started.
+
+
+## 2026-10-09 - F442 Import Teachers MainWindow apply accepted
+
+The new case browses the checked-in XLSX through the real MainWindow QAction and TeacherImportDialog. It waits for async validation, applies M1 candidate 0 / M2 None / H1 All from a clean workspace, and verifies 2 Korean records (Hong/Park), 1 Native English (Alex), and 1 GS Team member (Taylor), all created with no updates/unchanged. It checks category table counts, Korean sidebar IDs/labels, source date, exact success summary, no warning/date confirmation, and stable MyWorkspace/session/path. Executor and independent Tester passed Ninja Debug target build, exact CTest 1/1, target QtTest 7/7, and selected case 3/3. No compiler warnings; Qt font/offscreen notices only. No full-suite run or production/CMake change. F442 is accepted and ready to commit. The user asked to pause after this commit; F443 Delete Class QAction is next on resume, but no F443 discovery or implementation has started.

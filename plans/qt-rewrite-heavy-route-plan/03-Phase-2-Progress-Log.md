@@ -16217,3 +16217,58 @@ changed; there were no production or CMake changes.
 F441 is accepted in this changeset and ready to commit. F442 Import Teachers
 QAction apply is next after the F441 commit. Batch 22 remains active; F443-F446
 remain provisional.
+
+### F441 committed / F442 selected-current - 2026-10-09
+
+F441, “Phase2 - Cover Import Classes QAction apply success (F441),” is
+committed as 75a559ae7bad175cba106d0377bcf59c506cd247 on Qt-Rewrite (branch
+ahead 26). Its create-only package, actual QAction/dialog apply results, and
+focused verification remain recorded above. Batch 22 remains active with F442
+Import Teachers QAction apply selected/current. Bounded read-only discovery is
+underway; no F442 acceptance matrix or implementation has started. F443-F446
+remain provisional. F285 successful New Teacher remains deferred, and same-path
+Open remains unselected pending its contract.
+
+### F442 acceptance matrix recorded before implementation - 2026-10-09
+
+Extend tests/mainwindow_manage_campuses_parity_tests.cpp in the
+ClassMngrMainWindowManageCampusesParityTests target. Use an empty destination and
+a clean MyWorkspace. The checked-in teacher_import/sectioned_review.xlsx fixture
+contains one Native Alex, one GS Taylor, two M1 candidates, and M2/H1 groups.
+Choose M1 Select candidate0, M2 None, and H1 All; expect two Korean teachers
+(Hong/Park), one Native, and one GS (four total). The fixture counts are confirmed
+in tests/teacher_import_tests.cpp:1695-1737.
+
+Trigger the actual Import Teachers QAction, browse through the real
+TeacherImportDialog, and import using one scripted ImportWorkbook openFile request
+with filter Excel Workbooks (*.xlsx). Wait asynchronously for Valid File and
+Import-enabled state under a bounded 15-second watchdog, then apply. Assert the
+import is created-only: expected category counts, zero updated/unchanged, and
+Korean teachers in Sidebar. Verify exactly the expected success info, no warning or
+date-confirmation prompt, and stable current page, session, and path.
+
+Build target ClassMngrMainWindowManageCampusesParityTests and run exact CTest
+^ClassMngrMainWindowManageCampusesParityTests$. This successful apply case is
+distinct from F431's dirty-page leave gate. F442 remains selected/current with this
+matrix recorded before implementation; implementation has not started.
+
+### F442 accepted in this changeset - 2026-10-09
+
+The actual Import Teachers QAction browsed through the real TeacherImportDialog,
+validated the workbook asynchronously, and applied the reviewed M1[0]/M2 None/H1
+All selections. Against an empty destination it created only two Korean, one
+Native, and one GS teacher. The created-only summary was Created 4, updated 0,
+unchanged 0; the Korean Sidebar refreshed. MyWorkspace, session, and path remained
+stable.
+
+Executor and independent Tester each passed the Ninja Debug target build, exact
+CTest ^ClassMngrMainWindowManageCampusesParityTests$ (1/1), direct target QtTest
+(7/7), and selected case (3/3). There were no compiler warnings; Qt font/offscreen
+notices only. The full suite was not run. Only
+tests/mainwindow_manage_campuses_parity_tests.cpp changed; there were no production
+or CMake changes.
+
+F442 is accepted in this changeset and ready to commit. The user requested a pause
+after this commit. F443 Delete Class QAction is next on resume; its discovery and
+implementation have not started. Batch 22 remains active through the F442 commit;
+F444-F446 remain provisional.

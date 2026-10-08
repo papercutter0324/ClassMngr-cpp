@@ -3061,3 +3061,18 @@ F441 will exercise the real MainWindow Import Classes QAction through picker, re
 ## 2026-10-09 - F441 Import Classes MainWindow apply accepted
 
 The F441 test imported a valid one-class, no-teacher package through the actual QAction, JSON picker, review dialog, Create selection, and Apply button. The empty destination now contains one class with its complete expected ClassInfo and no teachers; the class remains unassigned. The exact completion summary is Created 1/replaced 0/skipped 0. The Classes page shows the imported ID in Details, sidebar route is classes, and session/path remain stable. Executor and independent Tester passed the focused target build, CTest 1/1, QtTest 10/10, and selected case 3/3. No compiler warnings; Qt font/offscreen notices only. No full suite or production/CMake change. F441 is accepted and ready to commit; F442 Import Teachers QAction apply follows.
+
+
+## 2026-10-09 - F441 committed; F442 selected
+
+F441 committed as 75a559ae7bad175cba106d0377bcf59c506cd247 (Phase2 - Cover Import Classes QAction apply success (F441)); branch is ahead by 26. The exact six approved paths were committed; source change was test-only and diff checks passed. latest_session_work.md and unrelated %SystemDrive%/ remain excluded. Batch 22 is active with F442 Import Teachers QAction apply selected/current for bounded context discovery; F443-F446 remain provisional.
+
+
+## 2026-10-09 - F442 Import Teachers QAction apply matrix
+
+F442 will use the known checked-in sectioned_review.xlsx fixture and an empty destination so the path exercises only creates, not matching/update behavior. Trigger the actual MainWindow Import Teachers QAction, browse via the fake file picker, wait for async validation, set M1 candidate 0 / M2 None / H1 All, then accept the real TeacherImportDialog. The fixture plan imports Korean Hong and Park, Native English Alex, and GS Taylor (2/1/1). Assert one browse request, enabled Valid File state, created counts with zero updated/unchanged, refreshed Korean sidebar entries, exact information summary/no warning or date confirmation, and stable MyWorkspace/session/path. Use the 15-second bounded modal/workbook-validation watchdog. Target/CTest: ClassMngrMainWindowManageCampusesParityTests. Matrix recorded before implementation.
+
+
+## 2026-10-09 - F442 Import Teachers success accepted; pause after commit
+
+F442 drove the real Import Teachers QAction, Browse picker, asynchronous workbook validation, review choices, and apply path from a fresh database. The checked-in workbook with M1 candidate 0 / M2 None / H1 All created Hong and Park, Alex, and Taylor (2 Korean, 1 Native English, 1 GS), with zero updates/unchanged; the Korean sidebar refreshed and the exact category summary was shown. No warning or date-confirmation prompt appeared, and MyWorkspace/session/path remained stable. Executor and independent Tester passed target build, exact CTest 1/1, target QtTest 7/7, and selected case 3/3. No compiler warnings; Qt font/offscreen notices only. No full suite or production/CMake change. F442 is accepted and ready to commit. Per user request, pause after its commit; F443 Delete Class QAction is next on resume and has not started.
