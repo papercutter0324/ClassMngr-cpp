@@ -2850,3 +2850,11 @@ F427 Schedule Save As/PDF output is committed as bbdf10e85ba2c5a61066ed6fd32a7c8
 ## 2026-10-09 - F428 canceled profile Save As accepted
 
 The MainWindow cancellation case explicitly queues std::nullopt and triggers the real saveAsFile QAction. It verifies the .tps request and unchanged session/path/page/Sidebar/recent-file settings, with no destination or prompts. Executor and independent focused CTest passed 1/1; target QtTest passed 6/6 and the selected case 3/3. No production code changed; no full suite ran. F428 is accepted and ready to commit.
+
+## 2026-10-09 - F428 committed / F429 selected
+
+F428 canceled database profile Save As is committed as b82bddaa59c57d88f773370e94b3163df9055f33. Executor and independent exact CTest passed 1/1; direct target QtTest passed 6/6 and the selected case passed 3/3. Explicit cancellation preserved the open profile and settings. F429 Document Catalog PDF viewer Save As through MainWindow is selected from Batch 21.
+
+## 2026-10-09 - F429 Document Catalog PDF Save As accepted
+
+The new MainWindow test follows the rendered document leaf to a ready PdfViewerPage, triggers the real saveCurrentPageAs QAction, and verifies the GeneratedPdf save request, byte-identical catalog PDF copy, and QPdfDocument validity. Viewer/content/path/page/Sidebar state remains stable, no database is open, and no external URL is launched. Executor and independent CTest passed 1/1; target QtTest passed 4/4 and the selected case 3/3. One include was fixed and a nonfatal LNK4075 remained. No full suite ran. F429 is accepted and ready to commit.

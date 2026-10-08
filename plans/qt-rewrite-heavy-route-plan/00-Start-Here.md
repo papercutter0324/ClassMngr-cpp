@@ -146,10 +146,10 @@ synchronization is committed (`f4bc5282`). F416 Document Catalog rendered
   F425 Upcoming Birthdays QAction is committed as 37588279.
   F426 Class Transfer import QAction is committed as 249d57b1.
   F427 Schedule Save As/PDF output is committed as bbdf10e8.
-  F428 canceled database profile Save As is accepted in this changeset;
-  its acceptance evidence is in the Phase 2 progress log. Batch 21 surfaced ten
-  provisional candidates after F428; F429 is next.
-  Gates 1 and 2 remain Partial, with broader feature
+  F428 canceled database profile Save As is committed as b82bddaa.
+  F429 Document Catalog viewer Save As is accepted in this changeset;
+  its acceptance evidence is in the Phase 2 progress log. F430 Schedule Print
+  QAction is next; Batch 21 has ten provisional candidates.Gates 1 and 2 remain Partial, with broader feature
   migration, parity, and 96-class Release memory evidence still open.
   See the
   [Phase 2 progress log](03-Phase-2-Progress-Log.md) for current scope and

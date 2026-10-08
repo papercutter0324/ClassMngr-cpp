@@ -1,8 +1,13 @@
 #include "app/mainwindow.h"
+#include "core/application_services.h"
 #include "core/language_service.h"
 #include "core/resource_packs/resource_pack_manager.h"
+#include "fakes/fake_file_dialog_service.h"
+#include "fakes/fake_user_prompt_service.h"
 #include "next/application/document_content_session.h"
 #include "next/platform/settings_manager_language_preferences_port.h"
+#include "ui/shared/dialogs/file_dialog_service.h"
+#include "ui/shared/dialogs/user_prompt_service.h"
 #include "ui/shared/pages/pagemanager.h"
 #include "ui/shared/pages/pdf_viewer_page.h"
 #include "ui/shared/widgets/sidebar/sidebar.h"
@@ -10,18 +15,22 @@
 
 #include <QAction>
 #include <QApplication>
+#include <QDesktopServices>
 #include <QDir>
 #include <QFile>
 #include <QMessageLogContext>
 #include <QMessageBox>
 #include <QMenu>
+#include <QPdfDocument>
 #include <QSignalSpy>
 #include <QTemporaryDir>
 #include <QTreeWidget>
+#include <QUrl>
 #include <QVector>
 #include <QtTest>
 
 #include <cstdio>
+#include <optional>
 #include <utility>
 
 namespace
@@ -153,6 +162,71 @@ public:
 private:
     QtMessageHandler m_previous = nullptr;
 };
+
+class CapturedFileUrlHandler final : public QObject
+{
+    Q_OBJECT
+
+public:
+    QList<QUrl> urls;
+
+public slots:
+    void capture(const QUrl& url)
+    {
+        urls.append(url);
+    }
+};
+
+class FileUrlHandlerRegistration final
+{
+public:
+    explicit FileUrlHandlerRegistration(CapturedFileUrlHandler* receiver)
+    {
+        QDesktopServices::setUrlHandler(
+            QStringLiteral("file"),
+            receiver,
+            "capture"
+            );
+    }
+
+    ~FileUrlHandlerRegistration()
+    {
+        QDesktopServices::unsetUrlHandler(QStringLiteral("file"));
+    }
+
+    FileUrlHandlerRegistration(const FileUrlHandlerRegistration&) = delete;
+    FileUrlHandlerRegistration& operator=(
+        const FileUrlHandlerRegistration&
+        ) = delete;
+};
+
+class FileDialogServiceScope final
+{
+public:
+    explicit FileDialogServiceScope(IFileDialogService* service)
+    {
+        DialogServices::setFileDialogServiceForTesting(service);
+    }
+
+    ~FileDialogServiceScope()
+    {
+        DialogServices::setFileDialogServiceForTesting(nullptr);
+    }
+};
+
+class UserPromptServiceScope final
+{
+public:
+    explicit UserPromptServiceScope(IUserPromptService* service)
+    {
+        DialogServices::setUserPromptServiceForTesting(service);
+    }
+
+    ~UserPromptServiceScope()
+    {
+        DialogServices::setUserPromptServiceForTesting(nullptr);
+    }
+};
 }
 
 class MainWindowDocumentCatalogRetranslationParityTests final
@@ -163,6 +237,7 @@ class MainWindowDocumentCatalogRetranslationParityTests final
 private slots:
     void initTestCase();
     void languageActionsPreserveDocumentSidebarExpansion();
+    void saveCurrentPageAsExportsCatalogPdfWithoutLeavingViewer();
 
 private:
     QTemporaryDir m_settingsDirectory;
@@ -479,6 +554,221 @@ void MainWindowDocumentCatalogRetranslationParityTests::
     }
     QVERIFY2(warnings.isEmpty(),
         qPrintable(warnings.isEmpty() ? QString() : warnings.constFirst()));
+}
+
+void MainWindowDocumentCatalogRetranslationParityTests::
+    saveCurrentPageAsExportsCatalogPdfWithoutLeavingViewer()
+{
+    LanguageService languageService;
+    QVERIFY(languageService.setLanguage(Language::English));
+
+    MainWindowStartupOptions startupOptions;
+    startupOptions.loadMostRecentDatabase = false;
+
+    FakeFileDialogService fileDialogs;
+    FakeUserPromptService prompts;
+    const FileDialogServiceScope fileDialogScope(&fileDialogs);
+    const UserPromptServiceScope promptScope(&prompts);
+    CapturedFileUrlHandler fileUrlHandler;
+    const FileUrlHandlerRegistration fileUrlHandlerRegistration(
+        &fileUrlHandler
+        );
+
+    MainWindow window(
+        [](const QString&) {},
+        false,
+        &languageService,
+        nullptr,
+        std::move(startupOptions)
+        );
+    window.show();
+    QApplication::processEvents();
+
+    ApplicationServices* const services = window.services();
+    QVERIFY(services);
+    QVERIFY(!services->hasOpenDatabase());
+
+    Sidebar* const sidebar = window.findChild<Sidebar*>();
+    QVERIFY(sidebar);
+    QTreeWidget* const tree = sidebar->findChild<QTreeWidget*>(
+        QStringLiteral("sidebarTree")
+        );
+    QVERIFY(tree);
+    PageManager* const pages = window.pageManager();
+    QVERIFY(pages);
+    QVERIFY(pages->isCurrentPage(PageType::CampusDashboard));
+
+    const QString documentId = QString::fromLatin1(RequestedDocumentId);
+    const QStringList expectedDocumentKeyPath = keyPath(
+        QStringLiteral("document"),
+        QStringLiteral("document_guides"),
+        documentId
+        );
+    QTreeWidgetItem* documents = topLevelWithKey(
+        tree,
+        QStringLiteral("document")
+        );
+    QVERIFY(documents);
+    documents->setExpanded(true);
+    QTreeWidgetItem* guides = childWithKey(
+        documents,
+        QStringLiteral("document_guides")
+        );
+    QVERIFY(guides);
+    guides->setExpanded(true);
+    QTreeWidgetItem* const documentLeaf = childWithKey(guides, documentId);
+    QVERIFY(documentLeaf);
+    QCOMPARE(itemKeyPath(documentLeaf), expectedDocumentKeyPath);
+    QCOMPARE(
+        documentLeaf->data(0, Qt::UserRole).toInt(),
+        static_cast<int>(NodeType::Page)
+        );
+
+    tree->scrollToItem(documentLeaf);
+    QApplication::processEvents();
+    const QRect documentLeafRect = tree->visualItemRect(documentLeaf);
+    QVERIFY(documentLeafRect.isValid());
+    QVERIFY(!documentLeafRect.isEmpty());
+    const QRect visibleDocumentLeafRect = documentLeafRect.intersected(
+        tree->viewport()->rect()
+        );
+    QVERIFY(!visibleDocumentLeafRect.isEmpty());
+
+    QSignalSpy routeEvents(sidebar, &Sidebar::itemSelected);
+    QVERIFY(routeEvents.isValid());
+    QTest::mouseClick(
+        tree->viewport(),
+        Qt::LeftButton,
+        Qt::NoModifier,
+        visibleDocumentLeafRect.center()
+        );
+    QCOMPARE(routeEvents.count(), 1);
+    const NavigationData route = qvariant_cast<NavigationData>(
+        routeEvents.at(0).at(0)
+        );
+    QVERIFY(route.type == NodeType::Page);
+    QCOMPARE(route.keys, expectedDocumentKeyPath);
+    QCOMPARE(route.routeKey, documentId);
+    QCOMPARE(sidebar->selectedKeys(), expectedDocumentKeyPath);
+
+    QTRY_VERIFY(pages->isCurrentPage(PageType::PdfViewer));
+    QTRY_VERIFY(pages->pdfViewerPage() != nullptr);
+    PdfViewerPage* const viewer = pages->pdfViewerPage();
+    QTRY_VERIFY(viewer->hasLoadedDocument());
+    QTRY_VERIFY(
+        viewer->documentContentSnapshot().phase()
+            == ClassMngr::Next::Application::DocumentContentPhase::Ready
+        );
+    QCOMPARE(pages->currentWidget(), static_cast<QWidget*>(viewer));
+
+    const auto readyContent = viewer->documentContentSnapshot();
+    QVERIFY(readyContent.reference().has_value());
+    QCOMPARE(
+        QString::fromUtf8(readyContent.reference()->value().c_str()),
+        QString::fromLatin1(ExpectedDocumentReference)
+        );
+    const QString documentsRoot = ResourcePackManager::instance()
+        .activeRoot(QStringLiteral("documents"));
+    QVERIFY(!documentsRoot.isEmpty());
+    const QString sourcePdfPath = QDir(documentsRoot).filePath(
+        QString::fromLatin1(ExpectedDocumentRelativePath)
+        );
+    QVERIFY(QFile::exists(sourcePdfPath));
+    QCOMPARE(viewer->currentFilePath(), sourcePdfPath);
+    const QStringList selectedSidebarKeys = sidebar->selectedKeys();
+    QCOMPARE(selectedSidebarKeys, expectedDocumentKeyPath);
+    const QString activePageIdentifier = pages->currentPageIdentifier();
+    QVERIFY(!activePageIdentifier.isEmpty());
+    QVERIFY(!services->hasOpenDatabase());
+
+    QAction* const saveCurrentPageAsAction =
+        window.actions().saveCurrentPageAs;
+    QVERIFY(saveCurrentPageAsAction);
+    QVERIFY(saveCurrentPageAsAction->isEnabled());
+
+    QTemporaryDir exportDirectory;
+    QVERIFY(exportDirectory.isValid());
+    const QString outputPdfPath = QFileInfo(
+        exportDirectory.filePath(QStringLiteral("lesson-planning-copy.pdf"))
+        ).absoluteFilePath();
+    fileDialogs.scriptedSaveFileSelections.enqueue(
+        std::optional<SaveFileSelection>(
+            SaveFileSelection{
+                .path = outputPdfPath,
+                .openAfterSaving = false
+            }
+            )
+        );
+    QCOMPARE(fileDialogs.scriptedSaveFileSelections.size(), 1);
+    QVERIFY(!fileDialogs.scriptedSaveFileSelections.head()->openAfterSaving);
+
+    QVector<QString> warnings;
+    {
+        ScopedWarningCapture warningCapture(warnings);
+        saveCurrentPageAsAction->trigger();
+    }
+
+    QCOMPARE(fileDialogs.saveFileWithOptionsRequests.size(), 1);
+    QCOMPARE(fileDialogs.openFileRequests.size(), 0);
+    QCOMPARE(fileDialogs.openFilesRequests.size(), 0);
+    QCOMPARE(fileDialogs.saveFileRequests.size(), 0);
+    QCOMPARE(fileDialogs.directoryRequests.size(), 0);
+    QVERIFY(fileDialogs.scriptedSaveFileSelections.isEmpty());
+
+    const SaveFileRequest request =
+        fileDialogs.saveFileWithOptionsRequests.constFirst();
+    QVERIFY(request.parent == viewer);
+    QCOMPARE(request.title, QStringLiteral("Export File"));
+    QVERIFY(request.purpose == FileDialogPurpose::GeneratedPdf);
+    QCOMPARE(
+        request.suggestedFileName,
+        QStringLiteral("DYB Lesson Planning Guide.pdf")
+        );
+    QCOMPARE(
+        request.nameFilters,
+        (QStringList{
+            QStringLiteral("PDF Files (*.pdf)"),
+            QStringLiteral("All Files (*)")
+        })
+        );
+    QCOMPARE(request.defaultSuffix, QStringLiteral("pdf"));
+    QCOMPARE(request.openAfterSavingText, QStringLiteral("Open after saving"));
+
+    QVERIFY(QFile::exists(outputPdfPath));
+    QFile sourcePdf(sourcePdfPath);
+    QVERIFY(sourcePdf.open(QIODevice::ReadOnly));
+    QFile copiedPdf(outputPdfPath);
+    QVERIFY(copiedPdf.open(QIODevice::ReadOnly));
+    QCOMPARE(copiedPdf.readAll(), sourcePdf.readAll());
+
+    QPdfDocument exportedDocument;
+    QCOMPARE(exportedDocument.load(outputPdfPath), QPdfDocument::Error::None);
+    QCOMPARE(exportedDocument.status(), QPdfDocument::Status::Ready);
+    QVERIFY(exportedDocument.pageCount() >= 1);
+
+    QCOMPARE(pages->pdfViewerPage(), viewer);
+    QVERIFY(pages->isCurrentPage(PageType::PdfViewer));
+    QCOMPARE(pages->currentWidget(), static_cast<QWidget*>(viewer));
+    QCOMPARE(pages->currentPageIdentifier(), activePageIdentifier);
+    QVERIFY(viewer->hasLoadedDocument());
+    QCOMPARE(viewer->currentFilePath(), sourcePdfPath);
+    QVERIFY(viewer->documentContentSnapshot() == readyContent);
+    QCOMPARE(sidebar->selectedKeys(), selectedSidebarKeys);
+    QVERIFY(!services->hasOpenDatabase());
+
+    QVERIFY(warnings.isEmpty());
+    QVERIFY(fileUrlHandler.urls.isEmpty());
+    QVERIFY(prompts.messages.isEmpty());
+    QVERIFY(prompts.asynchronousMessages.isEmpty());
+    QVERIFY(prompts.confirmations.isEmpty());
+    QVERIFY(prompts.unsavedChangesConfirmations.isEmpty());
+    QVERIFY(prompts.actionPrompts.isEmpty());
+    QVERIFY(QApplication::activeModalWidget() == nullptr);
+    for (QWidget* topLevel : QApplication::topLevelWidgets())
+    {
+        const auto* messageBox = qobject_cast<QMessageBox*>(topLevel);
+        QVERIFY(!messageBox || !messageBox->isVisible());
+    }
 }
 
 QTEST_MAIN(MainWindowDocumentCatalogRetranslationParityTests)
