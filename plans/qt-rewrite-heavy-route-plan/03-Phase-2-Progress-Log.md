@@ -13732,3 +13732,57 @@ open-session dirty-exit parity selected/current, F397 MainWindow Document
 Catalog retranslation integration provisional, and F398 FileController
 same-path workspace-open parity provisional. Batch 16 discovery was recorded
 when F394 began. Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial.
+
+### F396 selected/current / acceptance matrix established - 2026-10-08
+
+F396 covers the production Staff Directory routes native_english_teachers and
+gs_team from a dirty Teacher Info page while the workspace remains open.
+Drive each route from its real production Sidebar leaf and pass the emitted
+route payload through NavigationController. Existing tests cover closed-session
+route parity, clean navigation, and portions of each destination behavior, but
+not this open-session dirty-page transition.
+
+The focused matrix is:
+
+1. Cross both routes with Cancel and Discard from a dirty Teacher Info page,
+   for four route/outcome rows. Assert each Sidebar leaf emits its expected
+   path and route key before navigation dispatch.
+2. For each Cancel row, assert exactly one leave confirmation, the same Teacher
+   Info page and complete dirty form snapshot remain, the unsaved Teacher edit
+   remains absent from persistence, the destination directory is not created or
+   shown, and the workspace session remains open.
+3. For each Discard row, assert exactly one confirmation, the matching Native
+   English or GS Team page becomes current and loads its seeded directory data,
+   the Teacher Info draft is not persisted, and the workspace session remains
+   open.
+
+Closed-session behavior and dirty exits from an already-open directory page
+are covered elsewhere and excluded. Synthetic routes without a production
+Sidebar leaf are excluded. Use the standard build/windows-x64-debug tree and
+a focused offscreen Qt navigation test; do not run the full suite. Phase 2
+remains In Progress/Open; Gates 1 and 2 remain Partial.
+
+### F396 accepted - 2026-10-08
+
+F396 is accepted on pre-slice commit 5c8c907c (F395). The new
+tests/staff_directory_open_session_navigation_parity_tests.cpp clicks both
+production Sidebar leaves, checks each emitted route payload, then dispatches
+through NavigationController with an open workspace and dirty Teacher Info.
+The four cases verify Native English and GS Team with Cancel and Discard. Cancel
+preserves the complete dirty form and existing persisted teacher, leaves the
+destination uncreated, and retains the open session. Discard shows and loads
+the correct directory with seeded rows, drops the Teacher Info edit without
+persisting it, and retains the open session. No production source changed.
+The focused target and keyboard icon resources are registered in
+cmake/tests/pages_and_output.cmake.
+
+The incremental standard-tree build of
+ClassMngrStaffDirectoryOpenSessionNavigationParityTests passed. Focused CTest
+passed 1/1; direct offscreen QtTest invocations of all four cases exited 0.
+Qt setup reported the missing font directory and the offscreen plugin
+propagateSizeHints() limitation; the route-scoped warning assertion passed in
+all cases. The initially missing keyboard icon was resolved by registering its
+resources. CMake diff hygiene and new-source trailing-whitespace checks passed.
+No full suite ran. Batch 16 advances to F397 MainWindow Document Catalog
+retranslation integration; F398 same-path workspace-open parity remains
+provisional. Batch 17 discovery begins at F397 start.

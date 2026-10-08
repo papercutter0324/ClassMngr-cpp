@@ -2857,45 +2857,24 @@ unsynced and unaudited in this checkout; local Batch 11 evidence still ends at
 F366. No remote commits or acceptance results are inferred.
 
 
-## Current Position — 2026-10-08 (F394 in progress)
+## Current Position — 2026-10-08 (F397 selected/current)
 
-Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial. F386 is
-accepted at `b3f9105e7c9160b2d862683d324f9dfd3cffc91d`, and F387 Calendar
-Preferences event-reset parity is accepted. F388 Class Details/Notes/student
-Evaluation route availability parity is accepted from source commit `32455d85`.
-Its focused Windows x64 Debug CTest passed 1/1; six normalized observations
-verified all three routes with open and closed database sessions. The closed
-session rows preserved the dirty page and emitted no prompts; the open rows
-navigated after one discard confirmation, including Winter selection for
-student Evaluation. F389 My Info route navigation gate parity is accepted on
-source `f877acac`; independent focused build and CTest passed, and the direct
-QtTest transcript contains all eight route/session rows. Closed rows preserve
-the dirty Teacher Info page with no prompt, warning, new page, or activation;
-open rows select the exact tab after one discard confirmation. Transcript
-SHA-256: `4d725cd4826c2913dbe97d49b1d10a4173d09c5f9a488a7634119096fe7e8c7d`.
-The seven user-supplied MSVC build errors in the Teacher Profile Edit
-persistence target are fixed in commit `0b128601`; the named target and
-standard all-target build passed independent build-only verification with zero
-errors. F390 Sub Prep route gate parity is accepted on that source; focused
-CTest passed 1/1 and direct QtTest verified four route/session rows. Batch 13
-is complete. F391 Teacher route closed-session gate parity is accepted on
-pre-slice source `fdc360c3`. Its new closed-database case preserves the same
-Teacher Info page, selected profile fields, exact unsaved notes, and dirty
-state, with no prompts or captured Qt warnings. The focused target build
-passed, focused CTest passed 1/1, independent direct invocation of the new
-QtTest case exited 0, and `git diff --check` passed; no full suite ran. Batch
-14 and F392 Campus Directory root/section navigation parity are accepted on
-pre-slice source `a7df1fc5`. Its ten-row test covers cancellation, all five
-child destinations, root defaulting to Information, and same-page section
-switching. The target build passed, focused CTest passed 1/1, and independent
-direct QtTest passed 12/12 including setup and cleanup. F393 Document Catalog
-route confirmation and PDF Viewer navigation parity is accepted on pre-slice
-source `41da57c5`; its target build passed with zero errors, focused CTest
-passed 1/1, and three direct QtTest cases passed. The route resolves document
-resources before prompting, preserving dirty input if a resource is missing;
-the tests cover the real Sidebar leaf, cancellation, successful PDF Ready state,
-capabilities, and missing-resource handling. Batch 15 is active with F394
-Classes landing open-session confirmation parity selected/current and F395
-Campus Dashboard typed save boundary provisional. Batch 16 discovery begins at
-F394. The Phase 2 progress log records the acceptance and bounded discovery
-evidence. The user-modified `latest_session_work.md` remains untouched.
+Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial. F386-F393 are
+accepted as recorded in the Phase 2 progress log. The seven Teacher Profile
+Edit MSVC diagnostics were fixed in commit 0b128601; the named target and
+standard all-target build passed earlier, and the exact affected persistence
+target rebuilt successfully at current HEAD with no reported errors or
+LNK4006 warnings.
+
+F394 Classes landing open-session confirmation parity and F395 Campus
+Dashboard typed save boundary are accepted. F396 Staff Directory open-session
+dirty-exit parity is accepted on pre-slice source 5c8c907c. Its four focused
+cases drive the production Sidebar leaves for Native English and GS Team
+through NavigationController, covering Cancel preservation and Discard
+navigation with the workspace open. The focused Windows x64 Debug target build
+passed, focused CTest passed 1/1, and all four direct offscreen QtTest cases
+passed; no full suite ran. Batch 16 is active with F397 MainWindow Document
+Catalog retranslation integration selected/current and F398 FileController
+same-path workspace-open parity provisional. Batch 17 discovery is due at F397
+start. The Phase 2 progress log records the acceptance matrices and bounded
+discovery evidence. The user-modified latest_session_work.md remains untouched.

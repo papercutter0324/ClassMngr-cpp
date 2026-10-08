@@ -2372,3 +2372,34 @@ F393 completes Batch 14. Batch 15 is active with F394 Classes landing
 open-session confirmation parity selected/current and F395 Campus Dashboard
 typed save boundary provisional. F394 is the second-last slice in this batch,
 so Batch 16 discovery begins as F394 work starts.
+
+
+## 2026-10-08 - F394 Classes landing route parity accepted
+
+F394 adds open-session confirmation coverage from dirty Teacher Info to the
+real Classes landing route. Cancel preserves the source form and does not
+create Classes; Discard lands on the empty Classes page without persisting the
+draft. Its focused target build, CTest, and two direct QtTest invocations
+passed.
+
+
+## 2026-10-08 - F395 Campus Dashboard typed save boundary accepted
+
+F395 shares a Qt-free CampusDashboardCampusSnapshot between selected-campus
+reads and a typed save port, with a Platform adapter delegating to the
+existing repository. Save failures retain the dirty draft and stop campus
+switch or New Campus transitions. Focused Application, Platform, and page
+builds and CTests passed 3/3; direct cases covered the value contract,
+canonical repository round-trip, error mapping, and page behavior.
+
+
+## 2026-10-08 - F396 Staff Directory open-session dirty-exit parity accepted
+
+F396 verifies both production Staff Directory Sidebar routes from dirty Teacher
+Info with the workspace open. Real route payloads pass through
+NavigationController. Cancel preserves the complete dirty form and does not
+create the destination; Discard loads the requested seeded directory without
+persisting the edit. The focused build and CTest passed, as did all four direct
+QtTest cases. The production controller already met the behavior, so this
+slice required test and CMake registration changes only. The next selected
+slice is F397; Batch 17 discovery is due when it starts.

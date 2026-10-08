@@ -40,13 +40,13 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-08
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F395 Campus Dashboard typed save boundary is accepted. Batch 15
-  is complete; Batch 16 is active with F396 Staff Directory open-session
-  dirty-exit parity selected/current, followed by F397 MainWindow Document
-  Catalog retranslation and F398 same-path workspace-open parity. See the
-  Phase 2 progress log for acceptance and discovery evidence. Gates 1 and 2
-  remain Partial.
-
+- Current note: F396 Staff Directory open-session dirty-exit parity is
+  accepted with focused build, CTest, and four direct QtTest cases. Batch 16
+  is active with F397 MainWindow Document Catalog retranslation integration
+  selected/current and F398 FileController same-path workspace-open parity
+  provisional. Batch 17 discovery is due as F397 starts. See the Phase 2
+  progress log for acceptance and discovery evidence. Gates 1 and 2 remain
+  Partial.
 ### Slice discovery batches
 
 Discover upcoming slices in ordered batches of up to ten (or all remaining
@@ -72,9 +72,8 @@ log](03-Phase-2-Progress-Log.md).
 
 #### Active batch: Batch 16
 
-1. F396 - Selected/current: Staff Directory dirty-exit parity with an open session.
-2. F397 - Provisional: MainWindow Document Catalog retranslation integration.
-3. F398 - Provisional: FileController same-path workspace-open parity.
+1. F397 - Selected/current: MainWindow Document Catalog retranslation integration.
+2. F398 - Provisional: FileController same-path workspace-open parity.
 
 Batch 16 was discovered at F394 start through independent route-producer and
 application-boundary reviews. It is bounded to the reviewed Phase 2 plan and
