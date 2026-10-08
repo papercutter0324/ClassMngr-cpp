@@ -64,9 +64,8 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
   Sidebar leaf through MainWindow/viewer is committed (`a4082f80`). Batch 19
   resumed with F417 Staff Directory rendered leaf through MainWindow
   independently accepted and committed (`d04d9bb0`). F418 Schedule Import through MainWindow apply and Sidebar refresh is committed;
-  F419 MainWindow output action state is committed. F420 Class/Schedule save
-  signal refresh is accepted and ready to commit; F421 Useful Links URL handoff
-  remains queued. See the Phase 2 progress log for acceptance and test evidence.
+  F419 MainWindow output action state is committed. F420 Class/Schedule save signal refresh is committed as 4c10f0d1; F421 Useful
+  Links URL handoff is accepted and ready to commit. See the Phase 2 progress log for acceptance and test evidence.
   Gates 1 and 2
   remain Partial; see the progress log for slice evidence.
 
@@ -107,15 +106,14 @@ log](03-Phase-2-Progress-Log.md).
    Sidebar refresh.
 6. F419 - Committed (`e2ad222b`): MainWindow Print/Save Current Page As
    action capability and enabled state.
-7. F420 - Accepted, ready to commit: Class/Schedule save signal to Sidebar
+7. F420 - Committed (4c10f0d1): Class/Schedule save signal to Sidebar
    action-state refresh.
-8. F421 - Queued: Useful Links URL handoff.
+8. F421 - Accepted, ready to commit: Useful Links URL handoff.
 
-No other slices were found.
+Batch 20 read-only reviews surfaced additional provisional candidates after F421; see the Phase 2 progress log.
 
 Batch 19 resumed after F416. F417 is committed as `d04d9bb0`, F418 as
-`ea755736`, F419 as `e2ad222b`, and F420 is accepted and ready to commit; F421 Useful Links URL handoff remains
-queued.
+`ea755736`, F419 as `e2ad222b`, and F420 is committed as 4c10f0d1; F421 Useful Links URL handoff is accepted and ready to commit.
 
 Batch 18 was discovered at F402 start from two independent bounded reviews and
 activated after F403 committed as `28e881cd`; it completed when F413 committed

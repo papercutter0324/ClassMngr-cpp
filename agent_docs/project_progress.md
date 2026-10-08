@@ -70,12 +70,12 @@ is committed as e2ad222b. Its Executor and independent focused CTest runs
 passed 1/1 each, and direct QtTest passed 3/3 including init/cleanup. The actual
 MainWindow actions track a Ready PDF and return disabled after viewer release;
 the workspace remains closed. No production change was needed. F420
-Class/Schedule save signal to Sidebar action-state refresh is accepted and
-ready to commit; F421 Useful Links URL handoff remains queued until the F420
-commit. Executor and independent Tester focused CTest passed 1/1 each, and
-direct QtTest passed 9/9 each. The first independent run caught an invalid
-fixture teacher name; the repaired fixture passed both save paths. F385 is
-retired as a duplicate of F369.
+Class/Schedule save signal to Sidebar action-state refresh is committed as
+4c10f0d1. Executor and independent Tester focused CTest passed 1/1 each,
+and direct QtTest passed 9/9 each. The first independent run caught an invalid
+fixture teacher name; the repaired fixture passed both save paths. F421 Useful Links URL handoff is accepted and ready to commit; focused build
+passed, independent CTest passed 1/1, and independent QtTest passed 4/4. Batch 20
+candidates after F421 remain provisional. F385 is retired as a duplicate of F369.
 The seven user-reported MSVC build errors in
 the Teacher Profile Edit persistence target are fixed and independently
 verified in both the named target and all-target build, committed as

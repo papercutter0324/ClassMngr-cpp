@@ -15169,3 +15169,70 @@ font-directory notice and offscreen propagateSizeHints warnings; repository
 fonts loaded, no focused test process remained, and no full suite ran. F420 is
 accepted and ready to commit; F421 Useful Links URL handoff remains queued
 until the F420 commit.
+
+
+### F420 committed / F421 selected/current - 2026-10-09
+
+F420 Class/Schedule save signal to Sidebar action-state refresh is committed
+as 4c10f0d1 with its integration cases and acceptance record. The six-path
+commit is complete; the existing modified session note and unrelated
+untracked entry remain outside it. F421 Useful Links URL handoff is now
+selected/current. Its focused acceptance matrix follows.
+
+### F421 provisional acceptance matrix - 2026-10-09
+
+1. Extend MainWindowCampusSidebarNavigationTests in the existing MainWindow
+   Campus Sidebar navigation target. Register a scoped Qt HTTPS URL handler,
+   expand the rendered Useful Links root, and click each of the seven rendered
+   URL leaves through the real Sidebar itemClicked route. Verify one captured
+   QUrl per leaf in definition order and match each URL to its node key and
+   configured destination.
+2. Verify the URL handoff does not emit Sidebar::itemSelected or navigate:
+   the current page/widget remain unchanged, selected items are cleared, and
+   selectedKeys continues to identify the current Useful Links/root path and
+   clicked leaf as established by the current-item contract.
+3. Always unset the global HTTPS handler before its receiver is destroyed.
+   No external browser should launch. The test proves the application hands
+   the expected URLs to Qt; it does not prove network reachability or browser
+   success. Source/tests contain no existing HTTPS handler registration, but
+   the Qt hook is global and cannot restore a prior handler.
+4. Build ClassMngrMainWindowCampusSidebarNavigationTests and run the exact
+   registered CTest test with filter
+   ^ClassMngrMainWindowCampusSidebarNavigationTests$. No full suite.
+
+Evidence: Useful Links defines seven HTTPS URL leaves
+(src/ui/shared/widgets/sidebar/sidebar_definitions.cpp:62-130). Sidebar sends
+URL leaves to QDesktopServices::openUrl, clears selection, and returns without
+emitting itemSelected (src/ui/shared/widgets/sidebar/sidebar_selection.cpp:205-222).
+MainWindow routes itemSelected to NavigationController
+(src/app/mainwindow.cpp:784-789). selectedKeys reads the current item
+(src/ui/shared/widgets/sidebar/sidebar_tree.cpp:275); the selected-items state
+is cleared. Existing structure coverage checks ordering only. The focused test
+file is tests/mainwindow_campus_sidebar_navigation_tests.cpp. CMake declares
+NAME MainWindowCampusSidebarNavigation, which registers
+ClassMngrMainWindowCampusSidebarNavigationTests (cmake/tests/pages_and_output.cmake:731).
+
+
+### F421 implementation and independent verification accepted, ready to commit - 2026-10-09
+
+The existing MainWindow Campus Sidebar navigation target now clicks all seven
+rendered Useful Links URL leaves through the production Sidebar itemClicked path.
+A scoped QDesktopServices HTTPS handler captures each handoff; the test checks
+the exact key/destination table and captured QUrl, one call per leaf, no
+itemSelected/navigation event, unchanged page/widget, cleared selected items,
+and the current root/leaf selectedKeys. RAII unsets the handler before its
+receiver is destroyed. No external browser launch or production code change.
+
+The first independent run exposed two test-only setup issues. Qt rejected the
+SLOT(capture(QUrl)) signature because setUrlHandler expects the bare slot name;
+the registration now supplies capture. The first CTest filter matched no test;
+the actual registered test name is ClassMngrMainWindowCampusSidebarNavigationTests
+and the acceptance record now uses its exact name. The corrected executor build
+passed without warnings and exact CTest passed 1/1. The independent Tester
+rebuilt and passed the same CTest 1/1 and direct QtTest 4/4 (0 failures,
+0 skipped). No handler warning remained. The only runtime notice was Qt's
+missing system font directory; repository fonts loaded, no test process
+remained, and no full suite ran.
+
+F421 is accepted and ready to commit. Batch 20 candidates after F421 remain
+provisional until the next slice is selected.

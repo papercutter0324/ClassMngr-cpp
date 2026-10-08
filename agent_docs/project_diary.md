@@ -2779,3 +2779,13 @@ teacher name before either save route ran; after correcting it and retaining
 the service error, both routes passed. No production change was needed. Qt
 font-directory and offscreen sizing notices remained non-failing; no full suite
 ran. F420 is accepted and ready to commit; F421 remains queued.
+
+
+## 2026-10-09 - F420 committed / F421 selected-current
+
+F420 is committed as 4c10f0d1. Its two MainWindow save paths independently passed focused CTest and QtTest, confirming class action refresh, persistence, and session continuity. F421 Useful Links URL handoff is selected/current. Qt supports capturing the real HTTPS openUrl request with a scoped URL handler; the test will also preserve the no-navigation and Sidebar current-item behavior.
+
+
+## 2026-10-09 - F421 Useful Links URL handoff accepted
+
+F421 covers all seven rendered HTTPS leaves through the MainWindow Sidebar and captures the real Qt openUrl handoff without launching a browser. It verifies exact destinations, no navigation, unchanged page, cleared selection, and current root/leaf keys. The initial runtime exposed an invalid setUrlHandler method signature and a CTest filter mismatch; both were corrected. Executor and independent CTest passed 1/1, and independent QtTest passed 4/4. Only Qt's system-font-directory notice remained; repository fonts loaded. No production change or full-suite run was needed. F421 is accepted and ready to commit.
