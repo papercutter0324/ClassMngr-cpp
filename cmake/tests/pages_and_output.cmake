@@ -174,9 +174,31 @@ classmngr_add_qt_test(
     SOURCES
         tests/calendar_preferences_restore_defaults_tests.cpp
     LIBRARIES
+        Qt6::QuickWidgets
+        Qt6::Sql
         Qt6::Test
         Qt6::Widgets
     OFFSCREEN
+)
+
+qt_add_resources(
+    ClassMngrCalendarPreferencesRestoreDefaultsTests
+    calendar_preferences_event_reset_qml_test_resources
+    PREFIX "/qt/qml/ClassMngr/Calendar"
+    BASE "${PROJECT_SOURCE_DIR}/src/features/calendar/ui/qml"
+    FILES
+        "${PROJECT_SOURCE_DIR}/src/features/calendar/ui/qml/EventCalendar.qml"
+        "${PROJECT_SOURCE_DIR}/src/features/calendar/ui/qml/MonthGridDelegate.qml"
+)
+
+qt_add_resources(
+    ClassMngrCalendarPreferencesRestoreDefaultsTests
+    calendar_preferences_event_reset_keyboard_test_resources
+    PREFIX "/"
+    BASE "${PROJECT_SOURCE_DIR}/resources"
+    FILES
+        resources/assets/icons/keyboard_dark.svg
+        resources/assets/icons/keyboard_light.svg
 )
 
 qt_add_resources(

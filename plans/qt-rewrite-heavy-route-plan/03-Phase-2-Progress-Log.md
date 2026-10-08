@@ -13131,3 +13131,27 @@ target. The immediate pre-slice source is the F386 acceptance commit that
 contains this F387 matrix. F387 implementation has not started; the current
 tree changes remain test-only unless bounded discovery proves otherwise.
 Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial.
+
+### F387 accepted - 2026-10-08
+
+F387, Calendar Preferences event-reset confirmation, deletion, failure, and
+refresh parity, is accepted on pre-slice source
+`b3f9105e7c9160b2d862683d324f9dfd3cffc91d` (F386). The only build-relevant
+overlay is `tests/calendar_preferences_restore_defaults_tests.cpp` and its
+CMake registration/resources in `cmake/tests/pages_and_output.cmake`; no
+production sources changed.
+
+An incremental build of
+`ClassMngrCalendarPreferencesRestoreDefaultsTests` and focused CTest passed
+1/1 in `build/windows-x64-debug`. The canonical transcript verifies no prompt,
+mutation, success status, or signal with a closed session; preserved events
+and no success effects on Cancel; the warning and event preservation after the
+session closes during confirmation; and successful deletion, one
+`calendarPreferencesChanged(true)` emission, success status, and disappearance
+from the visible Calendar month after cache completion. Two repeated final
+runs produced byte-identical transcript JSON; SHA-256:
+`92e809f1c75833bfdc181eb10e1587ae6ef8c3a9e9d0eb030afa2d08d59d9a80`.
+`git diff --check` passed. No full suite ran.
+
+F388-F390 remain provisional and unselected. Phase 2 remains In Progress/Open;
+Gates 1 and 2 remain Partial.

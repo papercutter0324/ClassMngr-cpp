@@ -2230,3 +2230,13 @@ Independent current and pinned-baseline verification passed.
 
 The user requested a stop immediately after the F384 acceptance commit. Phase 2
 remains open, and no next slice is selected.
+
+
+## 2026-10-08 - Staff Directory closed-session navigation gate
+
+When a workspace is closed, each Staff Directory route must be rejected before prompting a dirty page to close. F386 covers both Native English and GS Team routes and checks prompt absence, destination-page absence, and preservation of the current dirty page. This supplements tests for open-session routing and sessions that close during confirmation.
+
+
+## 2026-10-08 - F387 Calendar Preferences event-reset parity
+
+F387 covers unavailable-session rejection, cancel behavior, failure after the destructive prompt, and successful reset with Calendar cache refresh. Its focused target passes on the pinned F386 production source with only the test source and CMake registration overlaid. Repeated canonical transcripts match; no production files changed.
