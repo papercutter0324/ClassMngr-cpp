@@ -14862,3 +14862,33 @@ The focused VS 18 x64 Debug target built successfully, and its exact filtered
 CTest passed 1/1 in 0.46 s independently. No LNK4006 warnings were reported and
 no production change was needed. F415 is accepted and ready to commit; Batch 19
 remains active with F415 selected/current and F416-F421 queued.
+
+### F415 committed / F416 selected/current - 2026-10-08
+
+F415 Campus Dashboard page-tab-to-Sidebar synchronization is committed as
+`f4bc5282`. Batch 19 remains active with F416 selected/current and F417-F421
+queued.
+
+### F416 implementation complete / independently verified / accepted and committed in this changeset - 2026-10-09
+
+The test-only extension in
+`tests/mainwindow_document_catalog_retranslation_parity_tests.cpp` starts a
+real no-database MainWindow on Campus Dashboard, confirms no PDF viewer is
+instantiated, and QTest-clicks the rendered
+`document_guides_lesson_planning` leaf without manual dispatch or connection.
+It observes exactly one production Sidebar `itemSelected` route with Page type,
+full key path `document/document_guides/document_guides_lesson_planning`, and
+matching leaf route key and selected Sidebar keys. The viewer becomes current;
+its content session reaches `Ready` with the expected resource URI/reference,
+resolved pack PDF path, and print/save capabilities. No visible modal or
+message box appeared, and no Qt warning or critical was captured during
+navigation. No production change or runtime defect was found.
+
+Executor build of `ClassMngrMainWindowDocumentCatalogRetranslationParityTests`
+under VS 18 x64 Debug and its exact filtered CTest passed 1/1. The build
+reported MSVC `LNK4075` (`/INCREMENTAL` ignored because `/FORCE` is set); the
+independent Tester rebuilt the same target and its exact filtered CTest passed
+1/1 in 0.72 s without reproducing that warning. No full suite was run. F416 is
+accepted and committed in this changeset. Batch 19 remains active but is paused
+after F416; F417 is next and F417-F421 remain queued, not selected/current.
+This run stops after F416.

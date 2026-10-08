@@ -131,10 +131,12 @@ F411 Sub Prep Sidebar root integration is committed (`3e5dbea4`); F412 Campus
 Sidebar root/section producer integration is committed (`76661791`); F413
 Initial Setup success navigation is committed (`5d8a941a`), completing Batch 18.
 F414 Teacher profile save preserving the selected duplicate Sidebar occurrence
-is committed (`6fb39b2b`). Batch 19 is active with F415 Campus Dashboard
-page-tab-to-Sidebar synchronization selected/current and accepted, ready to
-commit; F416-F421 remain queued. See the Phase 2 progress log for acceptance
-evidence.
+is committed (`6fb39b2b`). F415 Campus Dashboard page-tab-to-Sidebar
+synchronization is committed (`f4bc5282`). F416 Document Catalog rendered
+Sidebar leaf through MainWindow/viewer is accepted and committed in this
+changeset. Batch 19 remains active but is paused after F416; F417 is next and
+F417-F421 remain queued, not selected/current. This run stops after F416. See
+the Phase 2 progress log for acceptance and test evidence.
   Gates 1 and 2 remain Partial, with broader feature
   migration, parity, and 96-class Release memory evidence still open.
   See the

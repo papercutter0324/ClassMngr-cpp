@@ -1,22 +1,36 @@
 #include "app/mainwindow.h"
 #include "core/language_service.h"
 #include "core/resource_packs/resource_pack_manager.h"
+#include "next/application/document_content_session.h"
 #include "next/platform/settings_manager_language_preferences_port.h"
 #include "ui/shared/pages/pagemanager.h"
+#include "ui/shared/pages/pdf_viewer_page.h"
 #include "ui/shared/widgets/sidebar/sidebar.h"
+#include "ui/shared/widgets/sidebar/sidebar_types.h"
 
 #include <QAction>
 #include <QApplication>
+#include <QDir>
+#include <QFile>
+#include <QMessageLogContext>
+#include <QMessageBox>
 #include <QSignalSpy>
 #include <QTemporaryDir>
 #include <QTreeWidget>
+#include <QVector>
 #include <QtTest>
 
+#include <cstdio>
 #include <utility>
 
 namespace
 {
 constexpr int KeyRole = Qt::UserRole + 4;
+constexpr auto RequestedDocumentId = "document_guides_lesson_planning";
+constexpr auto ExpectedDocumentReference =
+    "resource://documents/Guides/DYB Lesson Planning Guide.pdf";
+constexpr auto ExpectedDocumentRelativePath =
+    "Guides/DYB Lesson Planning Guide.pdf";
 
 QTreeWidgetItem* childWithKey(
     QTreeWidgetItem* parent,
@@ -79,6 +93,65 @@ QStringList keyPath(
     }
     return keys;
 }
+
+QStringList itemKeyPath(
+    QTreeWidgetItem* item
+    )
+{
+    QStringList keys;
+    for (QTreeWidgetItem* current = item; current; current = current->parent())
+    {
+        keys.prepend(current->data(0, KeyRole).toString());
+    }
+    return keys;
+}
+
+QVector<QString>* capturedWarnings = nullptr;
+QtMessageHandler previousMessageHandler = nullptr;
+
+void captureQtWarning(
+    const QtMsgType type,
+    const QMessageLogContext& context,
+    const QString& message
+    )
+{
+    if (capturedWarnings && (type == QtWarningMsg || type == QtCriticalMsg))
+    {
+        capturedWarnings->append(message);
+    }
+    if (previousMessageHandler)
+    {
+        previousMessageHandler(type, context, message);
+    }
+    else
+    {
+        std::fprintf(stderr, "%s\n", message.toLocal8Bit().constData());
+    }
+}
+
+class ScopedWarningCapture final
+{
+public:
+    explicit ScopedWarningCapture(QVector<QString>& warnings)
+        : m_previous(qInstallMessageHandler(captureQtWarning))
+    {
+        capturedWarnings = &warnings;
+        previousMessageHandler = m_previous;
+    }
+
+    ~ScopedWarningCapture()
+    {
+        qInstallMessageHandler(m_previous);
+        capturedWarnings = nullptr;
+        previousMessageHandler = nullptr;
+    }
+
+    ScopedWarningCapture(const ScopedWarningCapture&) = delete;
+    ScopedWarningCapture& operator=(const ScopedWarningCapture&) = delete;
+
+private:
+    QtMessageHandler m_previous = nullptr;
+};
 }
 
 class MainWindowDocumentCatalogRetranslationParityTests final
@@ -139,6 +212,7 @@ void MainWindowDocumentCatalogRetranslationParityTests::
     PageManager* const pages = window.pageManager();
     QVERIFY(pages);
     QVERIFY(pages->isCurrentPage(PageType::CampusDashboard));
+    QVERIFY(!pages->isDatabaseOpen());
 
     const QStringList selectedKeys = sidebar->selectedKeys();
     QCOMPARE(
@@ -290,6 +364,93 @@ void MainWindowDocumentCatalogRetranslationParityTests::
             .activeRoot(QStringLiteral("documents"))
             .isEmpty()
         );
+
+    QVERIFY(!pages->pdfViewerPage());
+    const QString documentId = QString::fromLatin1(RequestedDocumentId);
+    const QStringList expectedDocumentKeyPath = keyPath(
+        QStringLiteral("document"),
+        QStringLiteral("document_guides"),
+        documentId
+        );
+    documents->setExpanded(true);
+    guides->setExpanded(true);
+    QTreeWidgetItem* const documentLeaf = childWithKey(guides, documentId);
+    QVERIFY(documentLeaf);
+    QCOMPARE(itemKeyPath(documentLeaf), expectedDocumentKeyPath);
+    QCOMPARE(
+        documentLeaf->data(0, Qt::UserRole).toInt(),
+        static_cast<int>(NodeType::Page)
+        );
+    QVERIFY(documentLeaf->flags() & Qt::ItemIsSelectable);
+    QApplication::processEvents();
+    tree->scrollToItem(documentLeaf);
+    QApplication::processEvents();
+    const QRect documentLeafRect = tree->visualItemRect(documentLeaf);
+    QVERIFY(documentLeafRect.isValid());
+    QVERIFY(!documentLeafRect.isEmpty());
+    const QRect visibleDocumentLeafRect = documentLeafRect.intersected(
+        tree->viewport()->rect()
+        );
+    QVERIFY(!visibleDocumentLeafRect.isEmpty());
+
+    QSignalSpy documentRouteEvents(sidebar, &Sidebar::itemSelected);
+    QVERIFY(documentRouteEvents.isValid());
+    QVector<QString> warnings;
+    {
+        ScopedWarningCapture warningCapture(warnings);
+        QTest::mouseClick(
+            tree->viewport(),
+            Qt::LeftButton,
+            Qt::NoModifier,
+            visibleDocumentLeafRect.center()
+            );
+        QCOMPARE(documentRouteEvents.count(), 1);
+        const QList<QVariant> routeArguments = documentRouteEvents.at(0);
+        QCOMPARE(routeArguments.size(), 1);
+        const NavigationData route = qvariant_cast<NavigationData>(
+            routeArguments.at(0)
+            );
+        QVERIFY(route.type == NodeType::Page);
+        QCOMPARE(route.keys, expectedDocumentKeyPath);
+        QCOMPARE(route.routeKey, documentId);
+        QCOMPARE(sidebar->selectedKeys(), expectedDocumentKeyPath);
+
+        QTRY_VERIFY(pages->isCurrentPage(PageType::PdfViewer));
+        QTRY_VERIFY(pages->pdfViewerPage() != nullptr);
+        PdfViewerPage* const viewer = pages->pdfViewerPage();
+        QTRY_VERIFY(viewer->hasLoadedDocument());
+        QTRY_VERIFY(
+            viewer->documentContentSnapshot().phase()
+                == ClassMngr::Next::Application::DocumentContentPhase::Ready
+            );
+        QCOMPARE(window.pageManager()->currentWidget(),
+            static_cast<QWidget*>(viewer));
+
+        const QString documentsRoot = ResourcePackManager::instance()
+            .activeRoot(QStringLiteral("documents"));
+        QVERIFY(!documentsRoot.isEmpty());
+        const QString expectedPdfPath = QDir(documentsRoot).filePath(
+            QString::fromLatin1(ExpectedDocumentRelativePath)
+            );
+        QVERIFY(QFile::exists(expectedPdfPath));
+        QCOMPARE(viewer->currentFilePath(), expectedPdfPath);
+        const auto contentSnapshot = viewer->documentContentSnapshot();
+        QVERIFY(contentSnapshot.reference().has_value());
+        QCOMPARE(
+            QString::fromUtf8(contentSnapshot.reference()->value().c_str()),
+            QString::fromLatin1(ExpectedDocumentReference)
+            );
+        QVERIFY(viewer->outputCapabilities().printEnabled);
+        QVERIFY(viewer->outputCapabilities().saveAsEnabled);
+        QVERIFY(QApplication::activeModalWidget() == nullptr);
+        for (QWidget* topLevel : QApplication::topLevelWidgets())
+        {
+            const auto* messageBox = qobject_cast<QMessageBox*>(topLevel);
+            QVERIFY(!messageBox || !messageBox->isVisible());
+        }
+    }
+    QVERIFY2(warnings.isEmpty(),
+        qPrintable(warnings.isEmpty() ? QString() : warnings.constFirst()));
 }
 
 QTEST_MAIN(MainWindowDocumentCatalogRetranslationParityTests)

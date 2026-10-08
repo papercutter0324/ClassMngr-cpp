@@ -2677,3 +2677,21 @@ session/path remained active. The focused VS 18 x64 Debug target rebuilt;
 independent filtered CTest passed 1/1 (0.46 s). No LNK4006 warnings occurred.
 No production change was needed. F415 is accepted and ready to commit; F416
 remains queued until the commit.
+
+## 2026-10-08 - F415 committed / F416 selected-current
+
+F415 Campus Dashboard page-tab-to-Sidebar synchronization is committed as
+`f4bc5282`. Its focused target rebuilt and its independent filtered CTest
+passed 1/1 (0.46 s), with no LNK4006 warnings and no production change. Batch
+19 continues with F416 Document Catalog rendered Sidebar leaf through
+MainWindow and viewer selected/current; bounded source discovery is underway.
+F417-F421 remain queued.
+
+## 2026-10-09 - F416 Document Catalog MainWindow viewer integration accepted
+
+F416 adds a test-only MainWindow click on a rendered Document Catalog leaf,
+covering the production route connection through a Ready PDF viewer. The test
+checks the viewer is not instantiated before the click, route and selected
+keys, resource reference/path, print/save capability, and absence of
+navigation-time modal dialogs or Qt warnings. Independent focused CTest passed
+1/1. Keep F417 queued: the user requested stopping after the F416 commit.

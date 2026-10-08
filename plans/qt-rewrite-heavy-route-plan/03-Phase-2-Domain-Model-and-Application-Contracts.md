@@ -60,8 +60,11 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
   navigation is committed (`5d8a941a`), completing Batch 18. Batch 19 is active
   with F414 Teacher profile save preserving the selected duplicate Sidebar
   occurrence committed (`6fb39b2b`); F415 Campus Dashboard page-tab-to-Sidebar
-  synchronization selected/current and accepted, ready to commit; F416-F421
-  remain queued. See the Phase 2 progress log for acceptance evidence. Gates 1 and 2
+  synchronization is committed (`f4bc5282`). F416 Document Catalog rendered
+  Sidebar leaf through MainWindow/viewer is accepted and committed in this
+  changeset. Batch 19 remains active but is paused after F416; F417 is next and
+  F417-F421 remain queued, not selected/current. This run stops after F416. See
+  the Phase 2 progress log for acceptance and test evidence. Gates 1 and 2
   remain Partial; see the progress log for slice evidence.
 
 ### Slice discovery batches
@@ -91,10 +94,10 @@ log](03-Phase-2-Progress-Log.md).
 
 1. F414 - Committed (`6fb39b2b`): Teacher profile save preserves the selected
    duplicate Sidebar occurrence.
-2. F415 - Selected/current; accepted / ready to commit: Campus Dashboard
-   page-tab-to-Sidebar synchronization.
-3. F416 - Queued: Document Catalog rendered Sidebar leaf through MainWindow
-   and viewer.
+2. F415 - Committed (`f4bc5282`): Campus Dashboard page-tab-to-Sidebar
+   synchronization.
+3. F416 - Committed in this changeset: Document Catalog rendered Sidebar leaf
+   through MainWindow and viewer.
 4. F417 - Queued: Staff Directory rendered leaf through MainWindow.
 5. F418 - Queued: Schedule Import through MainWindow apply and Sidebar refresh.
 6. F419 - Queued: MainWindow Print/Save Current Page As action capability and
@@ -103,6 +106,9 @@ log](03-Phase-2-Progress-Log.md).
 8. F421 - Queued: Useful Links URL handoff.
 
 No other slices were found.
+
+Batch 19 remains active but is paused after F416. F417 is next and remains
+queued, not selected/current; this run stops after F416.
 
 Batch 18 was discovered at F402 start from two independent bounded reviews and
 activated after F403 committed as `28e881cd`; it completed when F413 committed

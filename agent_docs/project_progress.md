@@ -53,16 +53,18 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current state - 2026-10-08
+### Current state - 2026-10-09
 
 Phase 2 remains In Progress/Open under deployment
-`phase2_f387_resume_20261008`. F371, F382-F384, and F386-F395 are accepted;
-Batches 11-15 are complete and Batch 16 is active with F396 selected/current,
-followed by F397-F398 provisional. F385 is retired as a duplicate of F369. The seven
-user-reported MSVC build errors in the Teacher Profile Edit persistence target
-are fixed and independently verified in both the named target and all-target
-build, committed as `0b128601`. Gates 1 and 2 remain Partial. The current slice and
-detailed acceptance records are maintained in the [Phase 2 plan](../plans/qt-rewrite-heavy-route-plan/03-Phase-2-Domain-Model-and-Application-Contracts.md)
+`phase2_f387_resume_20261008`. Batches 11-18 are complete. Batch 19 is paused
+after F416 at the user's request: F414 and F415 are committed, and F416's
+Document Catalog MainWindow-to-viewer integration test is accepted and included
+in this slice commit. F417-F421 remain queued; no next slice was started. F385
+is retired as a duplicate of F369. The seven user-reported MSVC build errors in
+the Teacher Profile Edit persistence target are fixed and independently
+verified in both the named target and all-target build, committed as
+`0b128601`. Gates 1 and 2 remain Partial. The current slice and detailed
+acceptance records are maintained in the [Phase 2 plan](../plans/qt-rewrite-heavy-route-plan/03-Phase-2-Domain-Model-and-Application-Contracts.md)
 and [Phase 2 progress log](../plans/qt-rewrite-heavy-route-plan/03-Phase-2-Progress-Log.md).
 ### Earlier Phase 2 detail - 2026-09-26
 
@@ -3051,7 +3053,10 @@ and stable database session/path. Independent VS 18 x64 Debug target build
 passed; the exact filtered CTest passed 1/1 (1.52 s), and direct QtTest passed
 5/5. No LNK4006 warnings occurred. F414 is committed as `6fb39b2b`. Batch 19
 continues with F415 Campus Dashboard page-tab-to-Sidebar synchronization
-selected/current, accepted and ready to commit. F416-F421 remain queued.
+selected/current, accepted and ready to commit. F415 is committed as
+`f4bc5282`. F416 Document Catalog rendered Sidebar leaf through MainWindow and
+viewer is selected/current; bounded source discovery is underway. F417-F421
+remain queued.
 
 F415 uses the existing MainWindow/open-session fixture to QTest-click all five
 Campus Dashboard tabs without a test-side signal connection. Each click emits
@@ -3059,3 +3064,15 @@ the expected section key, synchronizes the Sidebar path, preserves the current
 page and database session/path, and emits no extra Sidebar route event. The
 focused VS 18 x64 Debug target rebuilt; independent filtered CTest passed 1/1
 (0.46 s). No LNK4006 warnings occurred, and no production change was needed.
+
+F416 extends the real MainWindow retranslation test with a rendered
+`document_guides_lesson_planning` Sidebar leaf click through the production
+route connection. It confirms the PDF viewer was uninstantiated before the
+click, one expected route and selected key path, a Ready content session with
+the expected resource reference/path and print/save capabilities, and no
+navigation-time modal or Qt warning. No production change was needed. The
+focused target built under VS 18 x64 Debug; executor and independent CTest runs
+passed 1/1. The executor build reported `LNK4075` (`/INCREMENTAL` ignored due
+to `/FORCE`); the independent build did not reproduce it. No full suite ran.
+F416 is accepted and included in this slice commit. At the user's request, work
+stops after this commit; F417-F421 remain queued.
