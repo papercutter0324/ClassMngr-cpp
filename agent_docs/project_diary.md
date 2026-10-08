@@ -2822,3 +2822,11 @@ F424 is committed as 3342963b. Offscreen QtTest did not produce a context-menu e
 ## 2026-10-09 - F425 Upcoming Birthdays QAction accepted
 
 The real MainWindow action opens the modal with birthday entries and directory details from all three staff sources, while leaving page, Sidebar, database session/path, prompt queues, and dismissal preference unchanged. Existing controller tests did not cover the QAction connection. The MainWindow case reuses the established teacher-directory persistence path; the first fixture seed attempt did not populate it correctly. Independent focused CTest and QtTest passed. No production code changed.
+
+## 2026-10-09 - F425 committed / F426 selected
+
+F425 is committed as 37588279. The ActionRegistry Upcoming Birthdays QAction displayed seeded current-date entries across three directories; no controller shortcut was used. F426 will isolate the Import Classes QAction-to-file-picker connection with a canceled FakeFileDialogService request, since existing direct-controller tests already cover import apply behavior.
+
+## 2026-10-09 - F426 Class Transfer import QAction accepted
+
+The real Import Classes QAction reaches the file-dialog boundary with the ClassTransfer purpose, active database directory, and JSON filter. A scripted cancellation leaves the workspace unchanged. Existing controller tests already cover successful apply, so this slice isolates the missing QAction-to-controller connection. Independent focused CTest and QtTest passed; no production code changed.

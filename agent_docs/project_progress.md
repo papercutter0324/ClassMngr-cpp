@@ -82,9 +82,11 @@ executor and independent focused CTest passed 1/1 each, direct target QtTest
 passed 11/11, and independent targeted QtTest passed 3/3. The live mode
 handoff updated the loaded Classes page before navigation. F424 Sidebar Add Class context-menu handler is committed as 3342963b;
 executor and independent CTest passed 1/1 each, executor target QtTest
-passed 4/4, and independent focused case passed 3/3. F425 Upcoming Birthdays QAction passed executor and independent focused
-CTest 1/1 each, executor target QtTest 5/5, and independent selected-case
-QtTest 3/3. It is accepted in this changeset; remaining Batch 20 candidates
+passed 4/4, and independent focused case passed 3/3. F425 Upcoming Birthdays QAction is committed as 37588279; executor and
+independent CTest passed 1/1 each, executor target QtTest passed 5/5, and
+independent selected-case QtTest passed 3/3. F426 Class Transfer import QAction passed executor and independent focused
+CTest 1/1 each, executor direct target QtTest 6/6, and independent focused
+case 3/3. It is accepted in this changeset; remaining Batch 20 candidates
 stay provisional. F385 is retired as a duplicate of F369.
 The seven user-reported MSVC build errors in
 the Teacher Profile Edit persistence target are fixed and independently

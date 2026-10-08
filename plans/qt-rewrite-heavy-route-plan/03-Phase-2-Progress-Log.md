@@ -15372,3 +15372,28 @@ The MainWindow integration test triggers the enabled ActionRegistry upcomingBirt
 Executor and independent Tester focused builds passed without warnings. Exact registered CTest passed 1/1 in both runs. Executor direct target QtTest passed 5/5 and the new case passed 3/3; independent QtTest of upcomingBirthdaysActionShowsEntriesFromAllStaffDirectories passed 3/3 including setup and cleanup. The first executor fixture attempt used a teacher creation call that did not seed the directory as expected; it was corrected to the repository persistence pattern and all checks passed. The standard launcher failed before process start; elevated retries passed. Runtime notices were Qt's missing system font directory (repository fonts loaded) and an offscreen propagateSizeHints() warning. No full suite ran and no focused process remains.
 
 F425 is accepted and included with this slice record. Remaining Batch 20 candidates stay provisional.
+
+### F425 committed / F426 selected-current - 2026-10-09
+
+F425 Upcoming Birthdays QAction is committed as 37588279bddd614f259079422b5804805031f5b2. Executor and independent exact registered CTest passed 1/1 each; executor target QtTest passed 5/5 and the new case passed 3/3; independent selected-case QtTest passed 3/3. The real ActionRegistry action displayed current birthday entries from all three staff directories. No production code changed.
+
+### F426 provisional acceptance matrix - 2026-10-09
+
+Scope: verify the MainWindow Import Classes QAction reaches the real SidebarController and requests a Class Transfer file through the fakeable file-dialog boundary.
+
+1. Extend tests/mainwindow_close_file_parity_tests.cpp and reuse its MainWindow temporary-database fixture and prompt fake. Assert window.actions().importClasses exists and is enabled while the database is open. Start from the clean My Workspace page.
+2. Install a scoped FakeFileDialogService configured to cancel. Trigger window.actions().importClasses itself. Do not invoke SidebarController::importClasses or call its slot directly.
+3. Assert exactly one open-file request was recorded with the ClassTransfer purpose, the active database directory as its initial directory, and a JSON filter. Verify cancellation leaves the current page and Sidebar selection unchanged, keeps the same database session/path open, causes no prompt/confirmation, and imports no classes.
+4. Build MainWindowCloseFileParityTests, run exact registered CTest filter ^ClassMngrMainWindowCloseFileParityTests$, and direct QtTest for the focused target. No full suite.
+
+Evidence: ActionRegistry creates Import Classes and MenuBuilder adds it to the Classes menu (src/ui/shared/actions/action_registry.cpp:685-689; src/app/menu_builder.cpp:1295-1312). MainWindow connects SidebarController (src/app/mainwindow.cpp:480-489,541-544); SidebarController connects the action's triggered signal to importClasses (src/app/controllers/sidebar_controller.cpp:37-42). The handler checks open services and page-leave state, requests a JSON picker with ClassTransfer purpose and active database directory, then returns immediately on cancellation (src/app/controllers/sidebar_controller_transfer.cpp:149-181). Existing SidebarClassTransferApplyParity tests cover cancellation and successful apply, but invoke the handler directly (tests/sidebar_class_transfer_apply_parity_tests.cpp:124-188,332-361). MainWindowCloseFileParity already uses a fake prompt and fake file dialog and records importClasses in action-state checks (tests/mainwindow_close_file_parity_tests.cpp:163-198,354-366,231-250); its exact registered test is ClassMngrMainWindowCloseFileParityTests (cmake/tests/pages_and_output.cmake:765-777).
+
+F426 is selected for implementation after this matrix is recorded. Later Batch 20 candidates remain provisional.
+
+### F426 implementation and independent verification accepted - 2026-10-09
+
+The MainWindow integration test triggers the enabled Import Classes ActionRegistry QAction on a clean page with the temporary database open. A scoped FakeFileDialogService records one ClassTransfer request with the active database directory and JSON filter, then returns cancellation. The page and Sidebar selection remain unchanged, the same session/path remains open, no prompt or modal appears, and no classes are imported. The test does not invoke SidebarController. Existing SidebarClassTransferApplyParity tests cover the downstream apply behavior. No production code changed.
+
+Executor and independent Tester focused builds passed without warnings. Exact registered CTest passed 1/1 in both runs; executor direct target QtTest passed 6/6 and the new case passed 3/3; independent selected-case QtTest passed 3/3 including setup and cleanup. The standard launcher failed before process start; elevated retries passed. The only runtime notice was Qt's missing system font directory. No full suite ran and no focused process remains.
+
+F426 is accepted and included with this slice record. Remaining Batch 20 candidates stay provisional.

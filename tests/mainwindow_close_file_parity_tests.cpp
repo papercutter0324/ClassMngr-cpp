@@ -29,6 +29,7 @@
 #include <QTreeWidget>
 #include <QtTest>
 
+#include <optional>
 #include <utility>
 
 namespace
@@ -149,6 +150,7 @@ private slots:
     void closeFileCancelPreservesDraftBeforeDiscardClosesWorkspace();
     void closeFileSavePersistsDraftBeforeClosingWorkspace();
     void upcomingBirthdaysActionShowsEntriesFromAllStaffDirectories();
+    void importClassesActionRequestsJsonAndCancellationIsSilent();
 
 private:
     QTemporaryDir m_settingsDirectory;
@@ -716,6 +718,115 @@ upcomingBirthdaysActionShowsEntriesFromAllStaffDirectories()
         SettingsManager::instance().get(dismissalDateKey),
         dismissalDateBefore
         );
+}
+
+void MainWindowCloseFileParityTests::
+importClassesActionRequestsJsonAndCancellationIsSilent()
+{
+    QTemporaryDir workspaceRoot;
+    QVERIFY(workspaceRoot.isValid());
+
+    const QString workspacePath = QFileInfo(
+        workspaceRoot.filePath(QStringLiteral("import-classes-cancel.tps"))
+        ).absoluteFilePath();
+
+    ApplicationServices seedServices;
+    QVERIFY(seedServices.openDatabase(workspacePath));
+    seedServices.closeDatabase();
+
+    LanguageService languageService;
+    QVERIFY(languageService.setLanguage(Language::English));
+
+    MainWindowStartupOptions startupOptions;
+    startupOptions.loadMostRecentDatabase = false;
+    startupOptions.initialDatabasePath = workspacePath;
+
+    FakeUserPromptService prompts;
+    FakeFileDialogService fileDialogs;
+    fileDialogs.scriptedOpenFiles.enqueue(std::nullopt);
+    const UserPromptServiceScope promptScope(&prompts);
+    const FileDialogServiceScope fileDialogScope(&fileDialogs);
+
+    MainWindow window(
+        [](const QString&) {},
+        false,
+        &languageService,
+        nullptr,
+        std::move(startupOptions)
+        );
+    window.show();
+    QApplication::processEvents();
+
+    ApplicationServices* const services = window.services();
+    QVERIFY(services);
+    QVERIFY(services->hasOpenDatabase());
+    QCOMPARE(services->currentDatabasePath(), workspacePath);
+    auto* const activeSession = services->databaseSession();
+    QVERIFY(activeSession);
+    ClassService* const classService = services->classService();
+    QVERIFY(classService);
+
+    const auto classesBefore = classService->classes();
+    QVERIFY(classesBefore);
+    QVERIFY(classesBefore->isEmpty());
+
+    PageManager* const pages = window.pageManager();
+    QVERIFY(pages);
+    QVERIFY(pages->isCurrentPage(PageType::MyWorkspace));
+    MyWorkspacePage* const workspace = pages->myWorkspacePage();
+    QVERIFY(workspace);
+    QVERIFY(!workspace->hasUnsavedChanges());
+    QWidget* const currentWidget = pages->currentWidget();
+    QVERIFY(currentWidget);
+    const QString currentPageIdentifier = pages->currentPageIdentifier();
+    QVERIFY(!currentPageIdentifier.isEmpty());
+
+    Sidebar* const sidebar = window.findChild<Sidebar*>();
+    QVERIFY(sidebar);
+    const QStringList sidebarKeys = sidebar->selectedKeys();
+    QCOMPARE(sidebarKeys, QStringList{QStringLiteral("my_workspace")});
+
+    QAction* const importClassesAction = window.actions().importClasses;
+    QVERIFY(importClassesAction);
+    QVERIFY(importClassesAction->isEnabled());
+    importClassesAction->trigger();
+    QApplication::processEvents();
+
+    QCOMPARE(fileDialogs.openFileRequests.size(), 1);
+    QCOMPARE(fileDialogs.openFilesRequests.size(), 0);
+    QCOMPARE(fileDialogs.saveFileRequests.size(), 0);
+    QCOMPARE(fileDialogs.saveFileWithOptionsRequests.size(), 0);
+    QCOMPARE(fileDialogs.directoryRequests.size(), 0);
+
+    const OpenFileRequest request = fileDialogs.openFileRequests.constFirst();
+    QVERIFY(request.purpose == FileDialogPurpose::ClassTransfer);
+    QCOMPARE(
+        request.initialDirectory,
+        QFileInfo(workspacePath).absolutePath()
+        );
+    QCOMPARE(
+        request.nameFilters,
+        QStringList{QStringLiteral("JSON Files (*.json)")}
+        );
+
+    QVERIFY(pages->isCurrentPage(PageType::MyWorkspace));
+    QCOMPARE(pages->currentWidget(), currentWidget);
+    QCOMPARE(pages->currentPageIdentifier(), currentPageIdentifier);
+    QCOMPARE(sidebar->selectedKeys(), sidebarKeys);
+    QVERIFY(services->hasOpenDatabase());
+    QCOMPARE(services->databaseSession(), activeSession);
+    QCOMPARE(services->currentDatabasePath(), workspacePath);
+
+    const auto classesAfter = classService->classes();
+    QVERIFY(classesAfter);
+    QVERIFY(classesAfter->isEmpty());
+
+    QVERIFY(prompts.messages.isEmpty());
+    QVERIFY(prompts.asynchronousMessages.isEmpty());
+    QVERIFY(prompts.confirmations.isEmpty());
+    QVERIFY(prompts.unsavedChangesConfirmations.isEmpty());
+    QVERIFY(prompts.actionPrompts.isEmpty());
+    QVERIFY(QApplication::activeModalWidget() == nullptr);
 }
 
 QTEST_MAIN(MainWindowCloseFileParityTests)
