@@ -14349,3 +14349,52 @@ session/path/actions. MainWindow now calls
 `CampusDashboardPage::showInformation()` after showing the reused Dashboard,
 closing the Sidebar/page mismatch. F407 is queued after the F406 commit;
 F408-F413 follow in active Batch 18.
+
+### F406 committed / F407 selected/current - 2026-10-08
+
+F406 is committed as `28b27998`, completing the accepted Manage Campuses
+transition. Batch 18 remains active with F407 selected/current and F408-F413
+queued.
+
+### F407 selected/current / provisional acceptance matrix - 2026-10-08
+
+1. From standalone Schedule and from My Workspace → Schedule, trigger the real
+   ScheduleWidget Testing Classes button, then the real Testing Classes back
+   button. Verify each return reaches the correct source page/tab and preserves
+   the active session/path and Sidebar.
+2. Exercise the cell-dialog Manage Classes producer once with an empty class-
+   choice list so `TestingAssignmentDialog::selectedClassId()` supplies its
+   natural non-positive class ID, plus a specific day/time. Verify MainWindow
+   forwards it and creating the class persists the requested slot.
+3. From a dirty Testing Classes draft, Cancel must keep that page, draft, and
+   dirty state; Discard must complete the source-dependent return.
+
+Existing widget/page tests cover component behavior independently, not the
+MainWindow route and forwarding integration. Evidence: ScheduleWidget producers
+(`src/features/schedule/ui/schedule_widget.cpp:557-567,795-807`); MainWindow
+request/return connections (`src/app/mainwindow.cpp:873-909,920-955`); Testing
+Classes back signal (`src/features/classes/ui/testing_classes_page.cpp:849-857`);
+widget signal test (`tests/schedule_widget_tests.cpp:1748-1794`); pending-slot page
+test (`tests/testing_classes_page_tests.cpp:1806-1889`);
+`TestingAssignmentDialog::selectedClassId()` reads `currentData().toInt()`
+(`src/features/schedule/ui/testing_assignment_dialog.cpp:87-91`), whose natural
+non-positive result selects MainWindow’s pending-slot path. F407 is
+selected/current; this matrix is provisional, verification is pending, and F407
+is not accepted.
+
+### F407 implementation complete / focused verification passed - 2026-10-08
+
+F407 is accepted and ready to commit. Real ScheduleWidget Testing Classes and
+Testing Classes back actions cover standalone Schedule and My Workspace →
+Schedule, returning to the correct source page/tab and preserving active
+session/path/Sidebar. The cell-dialog Manage Classes path forwards the empty
+choice list’s natural non-positive ID plus a specific day/time; class creation
+persists the requested slot. Cancel preserves the dirty Testing Classes page,
+draft, and dirty state; Discard completes the source-dependent return.
+
+The cell-dialog route now uses `QTest::mouseClick` on the rendered table
+viewport, covering the actual `QTableWidget` `cellClicked` connection and
+downstream handoff. Focused target
+`ClassMngrMainWindowScheduleTestingClassesHandoffParityTests` built with
+Ninja/MSVC; focused CTest passed 1/1 (1.54 s) on 2026-10-08. F408 is queued
+after the F407 commit; F409-F413 follow in active Batch 18.

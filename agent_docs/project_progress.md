@@ -2940,4 +2940,23 @@ and preserves session/path/actions. MainWindow now calls
 closing the Sidebar/page mismatch. The focused `ClassMngrMainWindowManageCampusesParityTests`
 target built under VS 18 x64 with Ninja/MSVC; simple-name filtered CTest passed
 1/1 with both Cancel/Discard cases. F407 is queued after the F406 commit;
-F408-F413 follow. The user-modified latest_session_work.md remains untouched.
+F408-F413 follow.
+
+F406 is committed as 28b27998, completing the accepted Manage Campuses
+transition.
+
+F407 Schedule↔Testing Classes handoff is implementation complete and accepted,
+ready to commit. Real Testing Classes/back actions cover standalone Schedule and
+My Workspace → Schedule, returning to the correct source page/tab and preserving
+active session/path/Sidebar. The cell-dialog Manage Classes producer forwards the
+empty choice list’s natural non-positive ID plus a specific day/time; class
+creation persists the requested slot. Cancel preserves dirty Testing Classes
+state; Discard completes the source-dependent return. The cell-dialog route now uses `QTest::mouseClick` on the rendered table
+viewport, covering the actual `QTableWidget` `cellClicked` connection and
+downstream handoff. Focused target
+`ClassMngrMainWindowScheduleTestingClassesHandoffParityTests` built with
+Ninja/MSVC; CTest passed 1/1 (1.54 s) on 2026-10-08. F408 is queued after the
+F407 commit;
+F409-F413 follow.
+
+The user-modified latest_session_work.md remains untouched.
