@@ -56,9 +56,10 @@ the staged-package report probe passed. Cross-platform CI and local
 ### Current state - 2026-10-08
 
 Phase 2 remains In Progress/Open under deployment
-`phase2_f387_resume_20261008`. F371, F382-F384, and F386-F390 are accepted;
-Batches 11-13 are complete and Batch 14 is active with F391 selected/current.
-F385 is retired as a duplicate of F369. The seven
+`phase2_f387_resume_20261008`. F371, F382-F384, and F386-F394 are accepted;
+Batches 11-14 are complete and Batch 15 is active with F394 accepted and F395
+selected/current. Batch 16 was discovered and is queued after F395. F385 is
+retired as a duplicate of F369. The seven
 user-reported MSVC build errors in the Teacher Profile Edit persistence target
 are fixed and independently verified in both the named target and all-target
 build, committed as `0b128601`. Gates 1 and 2 remain Partial. The current slice and

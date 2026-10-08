@@ -108,11 +108,13 @@
   F392 Campus Directory root/section navigation confirmation and destination
   parity is accepted. F393 Document Catalog route confirmation and PDF Viewer
   navigation parity is accepted on pre-slice source `41da57c5`; its focused
-  target, CTest, and three direct QtTest cases passed. Batch 15 is active with
-  F394 Classes landing open-session confirmation parity selected/current and
-  F395 Campus Dashboard typed save boundary provisional. Batch 16 discovery
-  begins as F394 starts. See the Phase 2 progress log for slice acceptance,
-  build-error repair, and bounded discovery evidence.
+  target, CTest, and three direct QtTest cases passed. F394 Classes landing
+  open-session confirmation parity is accepted; its focused target, CTest, and
+  both direct cases passed. Batch 15 is active with F394 accepted and F395
+  Campus Dashboard typed save boundary selected/current. Batch 16 discovery is
+  recorded in the Phase 2 progress log and activates after F395. See the Phase
+  2 progress log for slice acceptance, build-error repair, and bounded
+  discovery evidence.
   Gates 1 and 2 remain Partial, with broader feature
   migration, parity, and 96-class Release memory evidence still open.
   See the

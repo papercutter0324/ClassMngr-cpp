@@ -31,6 +31,10 @@
 - ApplicationServices is the preferred application boundary. DataService
   remains as a compatibility facade while callers migrate; UI/controllers
   should not add direct repository usage.
+- Navigation parity needs a dirty-page case with an open workspace as well as
+  closed-session and clean-landing cases. Verify Cancel preserves the complete
+  form and page state, and verify Discard against persisted data so UI reset is
+  not mistaken for discarding the edit.
 - Feature-scoped assets are produced as standalone RCC resource packs. Do not
   assume every asset belongs in the main executable bundle; follow
   cmake/resources.cmake when changing packaging.

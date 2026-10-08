@@ -40,12 +40,11 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-08
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F393 Document Catalog route confirmation and PDF Viewer
-  navigation parity is accepted on pre-slice source `41da57c5`; its focused
-  target, CTest, and three direct QtTest cases passed. Batch 15 is active with
-  F394 Classes landing open-session confirmation parity selected/current and
-  F395 Campus Dashboard typed save boundary provisional. Batch 16 discovery
-  begins as F394 starts. Gates 1 and 2 remain Partial.
+- Current note: F394 Classes landing open-session confirmation parity is
+  accepted. Batch 15 remains active with F394 accepted and F395 Campus
+  Dashboard typed save boundary selected/current. Batch 16 was discovered at
+  F394 start and activates after F395. See the Phase 2 progress log for
+  acceptance and discovery evidence. Gates 1 and 2 remain Partial.
 
 ### Slice discovery batches
 
@@ -72,8 +71,8 @@ log](03-Phase-2-Progress-Log.md).
 
 #### Active batch: Batch 15
 
-1. F394 - Selected/current: Classes landing open-session confirmation parity.
-2. F395 - Provisional: Campus Dashboard typed save boundary.
+1. F394 - Accepted: Classes landing open-session confirmation parity.
+2. F395 - Selected/current: Campus Dashboard typed save boundary.
 
 Batch 15 was bounded to remaining application navigation transitions and
 selected-campus write boundaries, compared against current source, tests, and

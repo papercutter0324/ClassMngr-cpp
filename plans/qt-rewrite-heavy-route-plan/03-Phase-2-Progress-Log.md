@@ -13573,3 +13573,79 @@ F393 completes Batch 14. Batch 15 is now active with F394 Classes landing
 open-session confirmation parity selected/current and F395 Campus Dashboard
 typed save boundary provisional. F394 is the second-last slice in this
 two-slice batch, so Batch 16 discovery begins as F394 work starts.
+
+### Batch 16 discovered at F394 - 2026-10-08
+
+The bounded discovery pass ran at the required second-last-slice point. The
+independent route-producer and application-boundary reviews surfaced the
+following ordered candidates for after Batch 15:
+
+1. **F396 - Staff Directory dirty-exit parity with an open session.** Exercise
+   the production `native_english_teachers` and `gs_team` Sidebar routes from a
+   dirty page, covering Cancel preservation and Discard navigation while the
+   workspace remains open. Existing coverage addresses closed-session parity,
+   clean navigation, and other halves of these routes, but not this open-session
+   dirty-page transition.
+2. **F397 - MainWindow Document Catalog retranslation integration.** Verify a
+   locale change refreshes live catalog labels while preserving Sidebar
+   selection and expansion state. The catalog port and Sidebar are tested
+   independently; this production MainWindow composition is not.
+3. **F398 - FileController same-path workspace-open parity.** Cover the
+   production open path when the requested normalized path is already active,
+   asserting the observed legacy/coordinator behavior and consistent active
+   workspace, path history, and UI actions for its success or failure outcome.
+   The migration map records no direct same-path integration coverage.
+
+The initial-setup failure while replacing an active workspace was not queued:
+the intended preservation contract after the active session closes is not
+established. Other reviewed candidates were duplicates, lacked a production
+route producer, or had no bounded caller contract in the reviewed Phase 2
+scope. This discovery was bounded to the Phase 2 plan and migration map,
+progress history, and candidate source/tests identified by the two independent
+reviews; it does not claim repository-wide discovery exhaustion.
+No other slices were found.
+
+### F394 selected/current / acceptance matrix established - 2026-10-08
+
+F394 covers entering the Classes landing page through the real `classes` Page
+route while a workspace database is open and a different current page is dirty.
+The existing tests cover a clean open-session landing and a dirty-page return
+when the database is closed; they do not cover the open-session dirty-page
+confirmation transition.
+
+The focused matrix is:
+
+1. From dirty Teacher Info with an open workspace, dispatch the `classes` Page
+   route and cancel. Assert the exact source page and unsaved form snapshot
+   remain, Classes is not instantiated, and exactly one leave confirmation is
+   recorded.
+2. From the same dirty state, dispatch the route and discard. Assert exactly
+   one confirmation, Classes becomes current at its landing state with no class
+   selected or editor active, and the discarded edit is not persisted.
+
+The closed-session cross-product is already covered and excluded. Dispatching
+the route while Classes is already current is also outside this transition
+slice. Use the standard `build/windows-x64-debug` tree and focused offscreen
+`ClassMngrNavigationTeacherReadTests`; do not run the full suite. Phase 2 remains
+In Progress/Open; Gates 1 and 2 remain Partial.
+
+### F394 accepted - 2026-10-08
+
+F394 is accepted on pre-slice commit `a61daeaf` (F393). The change is confined
+to `tests/navigation_teacher_read_tests.cpp`. Its Cancel case confirms the
+open workspace, records exactly one leave prompt, preserves the same Teacher
+Info page and complete editable form snapshot, retains dirty state, and does not
+instantiate Classes. Its Discard case records one prompt, lands on Classes with
+no class selected or editor active, and reads the database to confirm the
+unsaved edit was not persisted.
+
+The incremental standard-tree build of
+`ClassMngrNavigationTeacherReadTests` passed. Focused CTest
+`ClassMngrNavigationTeacherReadTests` passed 1/1. Independent direct QtTest
+invocation of each new case exited 0 and reported 3 passed, 0 failed, including
+setup and cleanup. `git diff --check` passed for the test and progress-log
+changes. Direct QtTest output included setup/UI warnings for an absent Qt font
+directory and `:/assets/icons/keyboard_light.svg`; bundled fonts were found and
+loaded, and the warnings did not fail either case. No production files changed
+and no full suite ran. Batch 15 advances to F395 Campus Dashboard typed save
+boundary; Batch 16 remains queued until F395 completes.

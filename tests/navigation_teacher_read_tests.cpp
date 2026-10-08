@@ -79,6 +79,61 @@ NavigationData classesLandingRoute()
     };
 }
 
+std::optional<QStringList> teacherInfoFormSnapshot(TeacherInfoPage& page)
+{
+    QStringList snapshot{
+        QString::number(page.teacher().id)
+    };
+
+    const QStringList lineEditNames{
+        QStringLiteral("teacherKrEdit"),
+        QStringLiteral("teacherEnEdit"),
+        QStringLiteral("preferredRomanizationEdit"),
+        QStringLiteral("roomNumberEdit"),
+        QStringLiteral("birthdayEdit"),
+        QStringLiteral("phoneNumberEdit"),
+        QStringLiteral("wifiNameEdit"),
+        QStringLiteral("wifiPasswordEdit"),
+        QStringLiteral("zoomIdEdit"),
+        QStringLiteral("zoomPasswordEdit")
+    };
+    for (const QString& objectName : lineEditNames)
+    {
+        QLineEdit* const field = page.findChild<QLineEdit*>(objectName);
+        if (!field)
+        {
+            return std::nullopt;
+        }
+        snapshot.append(field->text());
+    }
+
+    QTextEdit* const notes = page.findChild<QTextEdit*>(
+        QStringLiteral("teacherNotesEdit")
+        );
+    if (!notes)
+    {
+        return std::nullopt;
+    }
+    snapshot.append(notes->toPlainText());
+
+    const QStringList comboBoxNames{
+        QStringLiteral("preferredNameCombo"),
+        QStringLiteral("internetTypeCombo"),
+        QStringLiteral("projectionTypeCombo")
+    };
+    for (const QString& objectName : comboBoxNames)
+    {
+        QComboBox* const field = page.findChild<QComboBox*>(objectName);
+        if (!field)
+        {
+            return std::nullopt;
+        }
+        snapshot.append(field->currentText());
+    }
+
+    return snapshot;
+}
+
 QString teacherImportFixturePath()
 {
     return QDir(QFileInfo(QString::fromUtf8(__FILE__)).absolutePath()).filePath(
@@ -735,6 +790,8 @@ private slots:
     void teacherImportLatestDateReadFailureWarnsAndStops();
     void teacherImportDialogCancelAndNoSessionStaySilent();
     void openEmptyWorkspaceShowsClassesWithoutSelectingAnEditor();
+    void classesLandingCancelPreservesDirtyTeacherFormSnapshot();
+    void classesLandingDiscardShowsLandingWithoutSavingDirtyEdit();
     void unavailableWorkspaceReturnsBeforeTeacherLeaveConfirmation();
 };
 
@@ -2757,6 +2814,190 @@ openEmptyWorkspaceShowsClassesWithoutSelectingAnEditor()
     QVERIFY(prompts.confirmations.isEmpty());
     QVERIFY(prompts.unsavedChangesConfirmations.isEmpty());
     QVERIFY(prompts.actionPrompts.isEmpty());
+}
+
+void NavigationTeacherReadTests::
+classesLandingCancelPreservesDirtyTeacherFormSnapshot()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+    QVERIFY(services.hasOpenDatabase());
+    QVERIFY(services.classService()->isAvailable());
+
+    Teacher selected = teacherFixture(
+        QStringLiteral("Current Teacher Korean"),
+        QStringLiteral("Current Teacher"),
+        QStringLiteral("Current Display")
+        );
+    selected.notes = QStringLiteral("Persisted teacher notes");
+    selected.roomNumber = QStringLiteral("Room 12");
+    selected.phoneNumber = QStringLiteral("010-1111-2222");
+    selected.wifiName = QStringLiteral("Current Wi-Fi");
+    QVERIFY(persistTeacher(services, selected) > 0);
+    const auto storedClasses = services.classService()->classes();
+    QVERIFY(storedClasses);
+    QVERIFY(storedClasses->isEmpty());
+
+    ResourcePackManager resources(
+        directory.filePath(QStringLiteral("resources")),
+        directory.filePath(QStringLiteral("baseline"))
+        );
+    PageManager pages;
+    pages.initialize(&services, false);
+    pages.showPage(PageType::TeacherInfo);
+    TeacherInfoPage* const teacherPage = pages.teacherPage();
+    QVERIFY(teacherPage);
+    teacherPage->setSaveMode(SaveMode::Manual);
+    teacherPage->loadTeacher(selected);
+    QTextEdit* const notesEdit = teacherPage->findChild<QTextEdit*>(
+        QStringLiteral("teacherNotesEdit")
+        );
+    QVERIFY(notesEdit);
+    const auto persistedFormSnapshot = teacherInfoFormSnapshot(*teacherPage);
+    QVERIFY(persistedFormSnapshot.has_value());
+
+    const QString exactUnsavedNotes = QStringLiteral(
+        "Exact unsaved Teacher Info notes for Classes Cancel"
+        );
+    notesEdit->setPlainText(exactUnsavedNotes);
+    QVERIFY(teacherPage->hasUnsavedChanges());
+    QCOMPARE(notesEdit->toPlainText(), exactUnsavedNotes);
+    const auto dirtyFormSnapshot = teacherInfoFormSnapshot(*teacherPage);
+    QVERIFY(dirtyFormSnapshot.has_value());
+    QVERIFY(*dirtyFormSnapshot != *persistedFormSnapshot);
+
+    Sidebar sidebar;
+    NavigationController navigation(&services, &sidebar, &pages, resources);
+    FakeUserPromptService prompts;
+    prompts.scriptedUnsavedChangesChoices.enqueue(
+        UnsavedChangesChoice::Cancel
+        );
+    DialogServices::setUserPromptServiceForTesting(&prompts);
+
+    QVERIFY(!pages.isPageInstantiated(PageType::Classes));
+    navigation.handleNavigation(classesLandingRoute());
+
+    QCOMPARE(prompts.unsavedChangesConfirmations.size(), 1);
+    QCOMPARE(prompts.unsavedChangesConfirmations.constFirst().title,
+        QStringLiteral("Unsaved Teacher Changes"));
+    QVERIFY(prompts.messages.isEmpty());
+    QVERIFY(prompts.asynchronousMessages.isEmpty());
+    QVERIFY(prompts.confirmations.isEmpty());
+    QVERIFY(prompts.actionPrompts.isEmpty());
+    QVERIFY(pages.isCurrentPage(PageType::TeacherInfo));
+    QCOMPARE(pages.currentWidget(), static_cast<QWidget*>(teacherPage));
+    QCOMPARE(pages.teacherPage(), teacherPage);
+    QVERIFY(!pages.isPageInstantiated(PageType::Classes));
+    QVERIFY(pages.classesPage() == nullptr);
+    QVERIFY(teacherPage->hasUnsavedChanges());
+    QCOMPARE(notesEdit->toPlainText(), exactUnsavedNotes);
+    const auto formAfterCancel = teacherInfoFormSnapshot(*teacherPage);
+    QVERIFY(formAfterCancel.has_value());
+    QCOMPARE(*formAfterCancel, *dirtyFormSnapshot);
+
+    const auto persistedAfterCancel =
+        services.teacherService()->teacher(selected.id);
+    QVERIFY(persistedAfterCancel);
+    QCOMPARE(persistedAfterCancel->notes, selected.notes);
+}
+
+void NavigationTeacherReadTests::
+classesLandingDiscardShowsLandingWithoutSavingDirtyEdit()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+    QVERIFY(services.hasOpenDatabase());
+    QVERIFY(services.classService()->isAvailable());
+
+    Teacher selected = teacherFixture(
+        QStringLiteral("Current Teacher Korean"),
+        QStringLiteral("Current Teacher"),
+        QStringLiteral("Current Display")
+        );
+    selected.notes = QStringLiteral("Persisted teacher notes");
+    selected.roomNumber = QStringLiteral("Room 12");
+    selected.phoneNumber = QStringLiteral("010-1111-2222");
+    selected.wifiName = QStringLiteral("Current Wi-Fi");
+    QVERIFY(persistTeacher(services, selected) > 0);
+    const auto storedClasses = services.classService()->classes();
+    QVERIFY(storedClasses);
+    QVERIFY(storedClasses->isEmpty());
+
+    ResourcePackManager resources(
+        directory.filePath(QStringLiteral("resources")),
+        directory.filePath(QStringLiteral("baseline"))
+        );
+    PageManager pages;
+    pages.initialize(&services, false);
+    pages.showPage(PageType::TeacherInfo);
+    TeacherInfoPage* const teacherPage = pages.teacherPage();
+    QVERIFY(teacherPage);
+    teacherPage->setSaveMode(SaveMode::Manual);
+    teacherPage->loadTeacher(selected);
+    QTextEdit* const notesEdit = teacherPage->findChild<QTextEdit*>(
+        QStringLiteral("teacherNotesEdit")
+        );
+    QVERIFY(notesEdit);
+    const auto persistedFormSnapshot = teacherInfoFormSnapshot(*teacherPage);
+    QVERIFY(persistedFormSnapshot.has_value());
+
+    const QString exactUnsavedNotes = QStringLiteral(
+        "Exact unsaved Teacher Info notes for Classes Discard"
+        );
+    notesEdit->setPlainText(exactUnsavedNotes);
+    QVERIFY(teacherPage->hasUnsavedChanges());
+    QCOMPARE(notesEdit->toPlainText(), exactUnsavedNotes);
+    const auto dirtyFormSnapshot = teacherInfoFormSnapshot(*teacherPage);
+    QVERIFY(dirtyFormSnapshot.has_value());
+    QVERIFY(*dirtyFormSnapshot != *persistedFormSnapshot);
+
+    Sidebar sidebar;
+    NavigationController navigation(&services, &sidebar, &pages, resources);
+    FakeUserPromptService prompts;
+    prompts.scriptedUnsavedChangesChoices.enqueue(
+        UnsavedChangesChoice::Discard
+        );
+    DialogServices::setUserPromptServiceForTesting(&prompts);
+
+    QVERIFY(!pages.isPageInstantiated(PageType::Classes));
+    navigation.handleNavigation(classesLandingRoute());
+
+    QCOMPARE(prompts.unsavedChangesConfirmations.size(), 1);
+    QCOMPARE(prompts.unsavedChangesConfirmations.constFirst().title,
+        QStringLiteral("Unsaved Teacher Changes"));
+    QVERIFY(prompts.messages.isEmpty());
+    QVERIFY(prompts.asynchronousMessages.isEmpty());
+    QVERIFY(prompts.confirmations.isEmpty());
+    QVERIFY(prompts.actionPrompts.isEmpty());
+    QVERIFY(pages.isPageInstantiated(PageType::Classes));
+    QVERIFY(pages.isCurrentPage(PageType::Classes));
+    ClassesPage* const classesPage = pages.classesPage();
+    QVERIFY(classesPage);
+    QCOMPARE(pages.currentWidget(), static_cast<QWidget*>(classesPage));
+    QCOMPARE(classesPage->currentClassId(), -1);
+    QVERIFY(!classesPage->isEditorInstantiated(ClassesSection::Details));
+    QVERIFY(!classesPage->isEditorInstantiated(ClassesSection::Roster));
+    QVERIFY(!classesPage->isEditorInstantiated(ClassesSection::Analytics));
+    QVERIFY(!classesPage->isEditorInstantiated(ClassesSection::Evaluations));
+    QVERIFY(!classesPage->isEditorInstantiated(ClassesSection::CoTeacher));
+    QVERIFY(!classesPage->isEditorInstantiated(ClassesSection::Notes));
+
+    QCOMPARE(pages.teacherPage(), teacherPage);
+    QVERIFY(!teacherPage->hasUnsavedChanges());
+    QCOMPARE(notesEdit->toPlainText(), selected.notes);
+    const auto formAfterDiscard = teacherInfoFormSnapshot(*teacherPage);
+    QVERIFY(formAfterDiscard.has_value());
+    QCOMPARE(*formAfterDiscard, *persistedFormSnapshot);
+    const auto persistedAfterDiscard =
+        services.teacherService()->teacher(selected.id);
+    QVERIFY(persistedAfterDiscard);
+    QCOMPARE(persistedAfterDiscard->notes, selected.notes);
 }
 
 void NavigationTeacherReadTests::
