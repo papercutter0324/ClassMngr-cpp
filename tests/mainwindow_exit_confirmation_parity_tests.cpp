@@ -3,6 +3,7 @@
 #include "core/language_service.h"
 #include "core/settingsmanager.h"
 #include "features/my_info/ui/my_workspace_page.h"
+#include "features/my_info/data/personal_details_repository.h"
 #include "features/my_info/ui/personal_details_page.h"
 #include "fakes/fake_user_prompt_service.h"
 #include "ui/shared/dialogs/user_prompt_service.h"
@@ -54,6 +55,7 @@ class MainWindowExitConfirmationParityTests final : public QObject
 private slots:
     void initTestCase();
     void closeCancelPreservesDraftBeforeDiscardAcceptsClose();
+    void closeSavePersistsPersonalName();
 
 private:
     QTemporaryDir m_settingsDirectory;
@@ -180,6 +182,103 @@ closeCancelPreservesDraftBeforeDiscardAcceptsClose()
     QCOMPARE(nameEditor->text(), persistedName);
     QVERIFY(!details->hasUnsavedChanges());
     QVERIFY(!workspace->hasUnsavedChanges());
+}
+
+void MainWindowExitConfirmationParityTests::closeSavePersistsPersonalName()
+{
+    QTemporaryDir workspaceRoot;
+    QVERIFY(workspaceRoot.isValid());
+
+    const QString workspacePath = QFileInfo(
+        workspaceRoot.filePath(QStringLiteral("save-on-exit-workspace.tps"))
+        ).absoluteFilePath();
+
+    const QString baselineName =
+        QStringLiteral("F446 persisted baseline");
+    ApplicationServices seedServices;
+    QVERIFY(seedServices.openDatabase(workspacePath));
+    PersonalDetails baselineDetails;
+    baselineDetails.name = baselineName;
+    QVERIFY(
+        PersonalDetailsRepository(seedServices.settingsService())
+            .save(baselineDetails)
+        );
+    seedServices.closeDatabase();
+
+    LanguageService languageService;
+    QVERIFY(languageService.setLanguage(Language::English));
+
+    MainWindowStartupOptions startupOptions;
+    startupOptions.loadMostRecentDatabase = false;
+    startupOptions.initialDatabasePath = workspacePath;
+
+    FakeUserPromptService prompts;
+    const UserPromptServiceScope promptScope(&prompts);
+
+    MainWindow window(
+        [](const QString&) {},
+        false,
+        &languageService,
+        nullptr,
+        std::move(startupOptions)
+        );
+    window.show();
+    QApplication::processEvents();
+    QVERIFY(window.isVisible());
+
+    ApplicationServices* const services = window.services();
+    QVERIFY(services);
+    QVERIFY(services->hasOpenDatabase());
+    QCOMPARE(services->currentDatabasePath(), workspacePath);
+
+    PageManager* const pages = window.pageManager();
+    QVERIFY(pages);
+    QVERIFY(pages->isCurrentPage(PageType::MyWorkspace));
+    MyWorkspacePage* const workspace = pages->myWorkspacePage();
+    QVERIFY(workspace);
+    workspace->openTab(WorkspaceTab::Details);
+    pages->setSaveMode(SaveMode::Manual);
+
+    PersonalDetailsPage* const details = workspace->personalDetailsPage();
+    QVERIFY(details);
+    QLineEdit* const nameEditor = personalNameEditor(details);
+    QVERIFY(nameEditor);
+
+    QCOMPARE(nameEditor->text(), baselineName);
+    const QString draftName = QStringLiteral("F446 close-save draft");
+    QVERIFY(draftName != baselineName);
+    nameEditor->setText(draftName);
+    QVERIFY(details->hasUnsavedChanges());
+    QVERIFY(workspace->hasUnsavedChanges());
+    QCOMPARE(prompts.unsavedChangesConfirmations.size(), 0);
+
+    prompts.scriptedUnsavedChangesChoices.enqueue(
+        UnsavedChangesChoice::Save
+        );
+    QVERIFY(window.close());
+    QVERIFY(!window.isVisible());
+    QCOMPARE(prompts.unsavedChangesConfirmations.size(), 1);
+    QVERIFY(prompts.scriptedUnsavedChangesChoices.isEmpty());
+    QVERIFY(!details->hasUnsavedChanges());
+    QVERIFY(!workspace->hasUnsavedChanges());
+    QCOMPARE(nameEditor->text(), draftName);
+    QVERIFY(prompts.confirmations.isEmpty());
+    QVERIFY(prompts.messages.isEmpty());
+    QVERIFY(prompts.asynchronousMessages.isEmpty());
+    QVERIFY(prompts.actionPrompts.isEmpty());
+    QVERIFY(QApplication::activeModalWidget() == nullptr);
+
+    services->closeDatabase();
+
+    ApplicationServices verificationServices;
+    QVERIFY(verificationServices.openDatabase(workspacePath));
+    QCOMPARE(
+        PersonalDetailsRepository(verificationServices.settingsService())
+            .load()
+            .name,
+        draftName
+        );
+    verificationServices.closeDatabase();
 }
 
 QTEST_MAIN(MainWindowExitConfirmationParityTests)

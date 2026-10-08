@@ -3297,6 +3297,8 @@ Verification: target build passed with no compiler warnings; the selected QtTest
 
 ## 2026-10-09 - F445 Save QAction persistence acceptance review
 
+F445 committed as `d9180f1c465976dfdd707382a1e615108aed9387`; branch is ahead by 30.
+
 Two independent read-only reviews support F445. The local source map found no MainWindow Save QAction persistence case in `MainWindowSaveAsExportParityTests`; a separate scope review found service-level persistence coverage only, which does not test the QAction integration. The scope review used a default-branch snapshot because local process setup failed, so local target details come from the source map.
 
 Acceptance: Start with a clean file-backed profile open on My Workspace Schedule and a nonempty current path. Begin an explicit transaction on the active DB connection, write a distinctive setting value, then trigger the real Save QAction. Verify the value persisted through a fresh connection/reopened profile, the path/page/sidebar stay stable, and no Save As picker, warning, or unsaved prompt appears. A transaction is required because an ordinary setting write auto-commits. Exclude Save As, commit-failure behavior, and claims about error reporting; the save path ignores the commit result.
@@ -3304,3 +3306,13 @@ Acceptance: Start with a clean file-backed profile open on My Workspace Schedule
 Source map: MainWindow Save QAction -> `FileController::saveFile()` -> `saveDatabase()` / workspace commit path. Focused class/target: `MainWindowSaveAsExportParityTests` / `ClassMngrMainWindowSaveAsExportParityTests`. F445 is accepted and ready to commit; F446 remains provisional.
 
 Verification: target build passed without compiler warnings; selected QtTest passed 3/3 functions, full target QtTest passed 8/8 functions, and exact filtered CTest `ClassMngrMainWindowSaveAsExportParityTests` passed 1/1. Independent source review approved the transaction, real QAction, fresh-connection readback, and UI-state assertions. `SettingsService::save()` stalled before the action, so the fixture stages the unique value with a prepared `QSqlQuery` on the same active connection inside the transaction; Save commits it and a fresh `ApplicationServices` reads it. One missing Qt font-directory runtime warning; no full suite or production/CMake changes.
+
+## 2026-10-09 - F446 Close-confirmation Save acceptance review
+
+Two independent reviews support F446. The local source map confirmed the existing exit test covers Cancel then Discard, while the supplied-source scope review identified Save-on-close as a distinct path from F445's File → Save QAction. The scope review could not access local files due process setup failure.
+
+Acceptance: In a file-backed profile, persist a known baseline personal name, use Manual Save, then edit it to a distinct draft name in My Details. Script the fake unsaved-changes prompt as Save and call `window.close()` through the real `closeEvent`. Verify the Save choice was issued, close was accepted and the window is hidden, with no second prompt. Reopen through fresh `ApplicationServices` and verify the exact draft name replaced the baseline. Manual mode prevents autosave races. Keep the existing Cancel/Discard case; exclude File → Save QAction behavior, Save As, save failure, and unrelated fields.
+
+Source map: `MainWindow::closeEvent()` -> `confirmCurrentPageCanLeave(true)` -> PageManager prompt -> current page `saveChanges()`; My Details saves through `saveMyInfoInternal()`. Focused class/target: `MainWindowExitConfirmationParityTests` / `ClassMngrMainWindowExitConfirmationParityTests`. F446 is accepted and ready to commit.
+
+Verification: target build passed without compiler warnings; selected QtTest passed 3 functions (setup, slot, cleanup); full target QtTest passed 4 functions (two slots, setup, cleanup); exact filtered CTest passed 1/1. Independent source review approved the baseline-to-draft flow, Save choice, normal close, and fresh-service persistence check. One Qt font-directory warning; no full suite or production/CMake changes. The first wrapped CTest regex invocation found no tests because cmd.exe retained the quotes; rerunning with the regex as one direct argument passed.

@@ -16429,3 +16429,62 @@ F445 is accepted in this changeset and ready to commit. The matrix exclusions re
 Save As, commit-failure behavior, same-path behavior, and error-reporting claims are out
 of scope because the save path ignores the commit result. F446 Save on window close
 remains provisional; Batch 22 remains active.
+
+### F445 committed - 2026-10-09
+
+F445 committed as d9180f1c465976dfdd707382a1e615108aed9387; branch is ahead by 30. Its acceptance matrix and
+verification remain recorded above. Batch 22 remains active with F446, “Cover Save as the close-window
+choice,” next as a provisional candidate. Existing bounded scope is to dirty a profile,
+close the window, choose Save, and verify persistence plus normal close; existing exit cases
+cover Cancel and Discard. Target: ClassMngrMainWindowExitConfirmationParityTests. No F446
+acceptance matrix or implementation has started.
+
+### F446 acceptance matrix recorded before implementation - 2026-10-09
+
+Two reviews support the slice. The scope reviewer relied on the supplied plan because
+local process setup failed; the source map was checked in the local Node REPL. Extend
+tests/mainwindow_exit_confirmation_parity_tests.cpp in
+MainWindowExitConfirmationParityTests / ClassMngrMainWindowExitConfirmationParityTests.
+Existing closeCancelPreservesDraftBeforeDiscardAcceptsClose() uses Manual Save and My
+Workspace Personal Details, but only scripts Cancel then Discard; it does not cover Save
+on close or verify the saved value after reopening.
+
+Use a file-backed profile and Manual Save. Save an initial personal name, then edit a
+distinct draft name. Script the fake unsaved-changes prompt as Save and call window.close()
+to exercise MainWindow::closeEvent. Assert the Save choice was consumed, close was accepted
+and the window is hidden, with no remaining prompt. Reopen the profile using fresh
+ApplicationServices and verify the changed name persisted. Manual mode prevents autosave
+races.
+
+Source path: MainWindow::closeEvent calls confirmCurrentPageCanLeave(true)
+(src/app/mainwindow.cpp:1421-1429; gate at :1215-1220); PageManager asks the current page
+and, for Save, calls saveChanges() and requires the page to become clean
+(src/ui/shared/pages/pagemanager.cpp:485-517). PersonalDetailsPage::saveChanges() calls
+saveMyInfoInternal() (src/features/my_info/ui/personal_details_page.cpp:127-130). Existing
+test source is tests/mainwindow_exit_confirmation_parity_tests.cpp:74-75,121-183; target
+registration is cmake/tests/pages_and_output.cmake:833-840,904-915.
+
+Exclude File→Save QAction details, Save As, save failure, and unrelated fields. At matrix record, F446 was selected/current and implementation had not started;
+acceptance follows below.
+
+### F446 accepted in this changeset - 2026-10-09
+
+The final case seeds and persists “F446 persisted baseline,” verifies it in MainWindow,
+then edits to “F446 close-save draft.” It scripts Save on the real window.close()/
+closeEvent path, verifies the single prompt was consumed, the close was accepted and the
+window hidden, the page clean, and no remaining prompt; a fresh ApplicationServices instance reads the exact
+draft. The existing Cancel/Discard case remains intact.
+
+The target build passed without compiler warnings. The selected QtTest had 3 pass
+incidents (setup, test, cleanup); the full target QtTest had 4 pass incidents (two slots,
+setup, cleanup). Exact filtered CTest ClassMngrMainWindowExitConfirmationParityTests
+passed 1/1. An independent source re-review approved the assertions after the baseline
+fix. Qt reported one font-directory warning. No full suite was run, and there were no
+production or CMake changes.
+
+An initial wrapped CTest regex attempt matched no tests because the filter retained
+quotes; the corrected direct exact filtered invocation passed 1/1.
+
+F446 is accepted in this changeset and ready to commit. The recorded matrix exclusions
+remain: File→Save QAction details, Save As, save failure, and unrelated fields. Batch 22
+remains active through the F446 commit.
