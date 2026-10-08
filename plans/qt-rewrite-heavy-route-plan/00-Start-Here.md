@@ -151,10 +151,11 @@ synchronization is committed (`f4bc5282`). F416 Document Catalog rendered
   progress log for acceptance evidence. F430 Schedule Print QAction is committed as
   aa7fca37. F431 Import Teachers QAction through MainWindow is committed as 2ac08388; see
   the progress log for its matrix and acceptance evidence. F432 Export Classes
-  QAction through its selection dialog and JSON picker is accepted in this changeset
-  and ready to commit. F433 New Teacher menu QAction is next after commit; F434-F438
-  remain provisional. Gates 1 and 2 remain Partial, with broader feature migration,
-  parity, and 96-class Release memory evidence still open.
+  QAction is committed as 4bfe3dc2; see the progress log for its acceptance evidence.
+  F433 New Teacher menu QAction is accepted in this changeset and ready to commit.
+  F434 Delete Teacher QAction confirmation through MainWindow is next after commit;
+  F435-F438 remain provisional. Gates 1 and 2 remain Partial, with broader
+  feature migration, parity, and 96-class Release memory evidence still open.
   See the
   [Phase 2 progress log](03-Phase-2-Progress-Log.md) for current scope and
   acceptance evidence.

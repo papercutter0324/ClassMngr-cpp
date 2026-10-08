@@ -2916,3 +2916,24 @@ F432 covers the real Export Classes QAction through the class selection dialog a
 
 
 The real MainWindow Export Classes QAction opened the class selection dialog, selected the seeded teacher-assigned class, and reached the fake JSON save picker. Explicit null cancellation preserved the class/table and workspace state without writing a JSON file. Independent review found classTimes missing from the first snapshot assertions; the executor added size/day/startTime/endTime comparisons and final independent verification passed. Executor and independent focused CTest passed 1/1, target QtTest 7/7, selected case 3/3. No production/CMake change or full-suite run. F432 is accepted; F433 is next after commit.
+
+
+
+## 2026-10-09 - F432 committed / F433 selected
+
+
+F432 is committed as 4bfe3dc27c1c3adbc2ca3824d290cffec7d805c0 with the six approved slice paths. Executor and independent focused CTest passed 1/1, direct target QtTest 7/7, and selected case 3/3 after adding the full classTimes snapshot comparison. F433 New Teacher menu QAction is selected next in Batch 21.
+
+
+
+## 2026-10-09 - F433 acceptance matrix recorded
+
+
+The New Teacher menu QAction currently attempts a blank teacher create, receives required-name validation failure, and shows an Add Teacher warning before any row insert or navigation. F433 will characterize that real MainWindow action path without changing the blank-draft contract; F285 remains deferred pending clarification. The matrix is recorded in the Phase 2 progress log before implementation.
+
+
+
+## 2026-10-09 - F433 New Teacher QAction accepted
+
+
+The real New Teacher QAction currently attempts a blank create and captures the expected Add Teacher warning containing teacher.name.required, with no database row or navigation. This is characterization only; F285 remains deferred. Executor and independent CTest passed 1/1, target QtTest 8/8, selected case 3/3. No production/CMake change or full-suite run. F433 is accepted; F434 is next after commit.

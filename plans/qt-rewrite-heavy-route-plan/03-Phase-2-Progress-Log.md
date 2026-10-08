@@ -15641,3 +15641,57 @@ Executor and independent Tester each built `MainWindowCloseFileParityTests`, pas
 This slice stops at picker cancellation; serialization and query output remain covered by the existing lower-level query/codec tests.
 
 F432 is accepted in this changeset and ready to commit. F433 New Teacher menu QAction is next after the F432 commit.
+
+### F432 committed / F433 selected-current - 2026-10-09
+
+F432, “Phase2 - Cover Export Classes QAction JSON picker cancellation (F432),” is committed as `4bfe3dc27c1c3adbc2ca3824d290cffec7d805c0` on Qt-Rewrite (branch ahead 17). Its acceptance matrix and focused verification, including the classTimes correction and independent recheck, remain recorded above. F433 New Teacher menu QAction is selected/current. Read-only context discovery is underway; no F433 matrix or implementation has started.
+
+### F433 acceptance matrix recorded before implementation - 2026-10-09
+
+This characterization covers the actual MainWindow New Teacher menu QAction and its current validation warning. It does not assert successful teacher creation and does not resolve deferred F285.
+
+1. Extend `tests/mainwindow_close_file_parity_tests.cpp` in the existing
+   `MainWindowCloseFileParityTests` target. Reuse its clean MainWindow fixture
+   and temporary empty database; do not seed a teacher or change CMake. Assert
+   `window.actions().newTeacher` exists and is enabled. Inject
+   `FakeUserPromptService`, then trigger the QAction itself, not the controller.
+2. Assert exactly one synchronous warning with title `Add Teacher` and required-name
+   validation detail `teacher.name.required`. Assert there is no additional or
+   asynchronous warning, information message, confirmation, or unsaved-change prompt.
+3. Verify no teacher row was inserted and no `TeacherInfoPage` was created or
+   selected. Confirm the current page/widget/identifier, Sidebar keys, open database
+   session/path, and enabled action remain unchanged.
+4. Build `MainWindowCloseFileParityTests`, run exact CTest filter
+   `^ClassMngrMainWindowCloseFileParityTests$`, then run direct target QtTest and
+   the selected new case. Do not run the full suite.
+
+Evidence: ActionRegistry creates `newTeacher` at
+`src/ui/shared/actions/action_registry.cpp:697-701`; menu construction is at
+`src/app/menu_builder.cpp:1313-1324`. MainWindow connects the SidebarController
+at `src/app/mainwindow.cpp:480-489` and enables the action with an open database
+at `:1349-1352`; the controller connects `newTeacher` at
+`src/app/controllers/sidebar_controller.cpp:51-56`. The handler attempts a
+default blank Teacher and warns on service failure
+(`src/app/controllers/sidebar_controller_teachers.cpp:25-46`). TeacherService
+validates before insert (`src/app/services/feature_services.cpp:220-235`); the
+blank name is rejected by `teacher.name.required`
+(`src/domain/validation/teacher_validator.cpp:175-187`), and warning text is
+formatted in `src/app/services/feature_services.cpp:40-60`. The existing MainWindow
+target fixture opens a temporary database but does not trigger `newTeacher`
+(`tests/mainwindow_close_file_parity_tests.cpp:411-430`). Lower-level create tests
+cover valid/invalid service behavior, not this QAction. Target registration is at
+`cmake/tests/pages_and_output.cmake:765-773`.
+
+Limit: this only characterizes the current blank-create validation warning and
+action connection. It does not assert successful teacher creation or resolve F285;
+if the future product contract changes, replace this characterization.
+
+This matrix records current behavior only; F433 acceptance evidence follows.
+
+### F433 characterization implementation and independent verification accepted - 2026-10-09
+
+Only `tests/mainwindow_close_file_parity_tests.cpp` changed; no production or CMake edits. `newTeacherActionShowsRequiredNameWarningWithoutNavigation()` triggers the real enabled QAction against an empty profile and captures exactly one synchronous Add Teacher warning containing `teacher.name.required`. There is no additional prompt or modal, no teacher row inserted, and no `TeacherInfoPage` created or selected. The current page/widget/identifier, Sidebar keys, open database session/path, and enabled action remain unchanged. This characterizes the current warning only; it makes no successful-creation claim and does not conflict with deferred F285.
+
+Executor and independent Tester each built `MainWindowCloseFileParityTests`, passed exact Debug CTest `^ClassMngrMainWindowCloseFileParityTests$` 1/1, direct target QtTest 8/8, and the selected case 3/3. The independent build object timestamp is later than the source. The executor first hit FileTracker access denied, then passed with `/p:TrackFileAccess=false`; the independent standard build passed without retry. Qt reported the missing system font directory (repository fonts loaded) and one offscreen `propagateSizeHints` notice in other dialog cases. No C++ warnings occurred; no focused process remains and no full suite ran.
+
+F433 is accepted in this changeset and ready to commit. F434 Delete Teacher QAction confirmation through MainWindow is next after the F433 commit. F285 remains deferred pending its blank-draft contract.

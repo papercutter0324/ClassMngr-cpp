@@ -320,6 +320,7 @@ private slots:
     void upcomingBirthdaysActionShowsEntriesFromAllStaffDirectories();
     void importClassesActionRequestsJsonAndCancellationIsSilent();
     void exportClassesActionReachesJsonPickerAndCancellationIsSilent();
+    void newTeacherActionShowsRequiredNameWarningWithoutNavigation();
 
 private:
     QTemporaryDir m_settingsDirectory;
@@ -1207,6 +1208,105 @@ exportClassesActionReachesJsonPickerAndCancellationIsSilent()
     QVERIFY(prompts.scriptedUnsavedChangesChoices.isEmpty());
     QVERIFY(prompts.scriptedActionIds.isEmpty());
     QVERIFY(QApplication::activeModalWidget() == nullptr);
+}
+
+void MainWindowCloseFileParityTests::
+newTeacherActionShowsRequiredNameWarningWithoutNavigation()
+{
+    QTemporaryDir workspaceRoot;
+    QVERIFY(workspaceRoot.isValid());
+
+    const QString workspacePath = QFileInfo(
+        workspaceRoot.filePath(QStringLiteral("new-teacher-validation.tps"))
+        ).absoluteFilePath();
+
+    ApplicationServices seedServices;
+    QVERIFY(seedServices.openDatabase(workspacePath));
+    seedServices.closeDatabase();
+
+    LanguageService languageService;
+    QVERIFY(languageService.setLanguage(Language::English));
+
+    MainWindowStartupOptions startupOptions;
+    startupOptions.loadMostRecentDatabase = false;
+    startupOptions.initialDatabasePath = workspacePath;
+
+    FakeUserPromptService prompts;
+    const UserPromptServiceScope promptScope(&prompts);
+
+    MainWindow window(
+        [](const QString&) {},
+        false,
+        &languageService,
+        nullptr,
+        std::move(startupOptions)
+        );
+    window.show();
+    QApplication::processEvents();
+
+    ApplicationServices* const services = window.services();
+    QVERIFY(services);
+    QVERIFY(services->hasOpenDatabase());
+    QCOMPARE(services->currentDatabasePath(), workspacePath);
+    DatabaseSession* const activeSession = services->databaseSession();
+    QVERIFY(activeSession);
+
+    TeacherService* const teacherService = services->teacherService();
+    QVERIFY(teacherService);
+    const auto teachersBefore = teacherService->teachers();
+    QVERIFY(teachersBefore);
+    QVERIFY(teachersBefore->isEmpty());
+
+    PageManager* const pages = window.pageManager();
+    QVERIFY(pages);
+    QVERIFY(pages->isCurrentPage(PageType::MyWorkspace));
+    QVERIFY(!pages->isPageInstantiated(PageType::TeacherInfo));
+    QVERIFY(pages->teacherPage() == nullptr);
+    QWidget* const currentWidget = pages->currentWidget();
+    QVERIFY(currentWidget);
+    const QString currentPageIdentifier = pages->currentPageIdentifier();
+    QVERIFY(!currentPageIdentifier.isEmpty());
+
+    Sidebar* const sidebar = window.findChild<Sidebar*>();
+    QVERIFY(sidebar);
+    const QStringList sidebarKeys = sidebar->selectedKeys();
+    QCOMPARE(sidebarKeys, QStringList{QStringLiteral("my_workspace")});
+
+    QAction* const newTeacherAction = window.actions().newTeacher;
+    QVERIFY(newTeacherAction);
+    QVERIFY(newTeacherAction->isEnabled());
+    newTeacherAction->trigger();
+    QApplication::processEvents();
+
+    QCOMPARE(prompts.messages.size(), 1);
+    const PromptRequest& warning = prompts.messages.constFirst();
+    QCOMPARE(warning.title, QStringLiteral("Add Teacher"));
+    QCOMPARE(warning.severity, PromptSeverity::Warning);
+    QVERIFY(warning.details.contains(QStringLiteral("teacher.name.required")));
+    QVERIFY(prompts.asynchronousMessages.isEmpty());
+    QVERIFY(prompts.confirmations.isEmpty());
+    QVERIFY(prompts.unsavedChangesConfirmations.isEmpty());
+    QVERIFY(prompts.actionPrompts.isEmpty());
+    QVERIFY(prompts.scriptedChoices.isEmpty());
+    QVERIFY(prompts.scriptedUnsavedChangesChoices.isEmpty());
+    QVERIFY(prompts.scriptedActionIds.isEmpty());
+    QVERIFY(QApplication::activeModalWidget() == nullptr);
+
+    const auto teachersAfter = teacherService->teachers();
+    QVERIFY(teachersAfter);
+    QVERIFY(teachersAfter->isEmpty());
+
+    QVERIFY(!pages->isCurrentPage(PageType::TeacherInfo));
+    QVERIFY(!pages->isPageInstantiated(PageType::TeacherInfo));
+    QVERIFY(pages->teacherPage() == nullptr);
+    QVERIFY(pages->isCurrentPage(PageType::MyWorkspace));
+    QCOMPARE(pages->currentWidget(), currentWidget);
+    QCOMPARE(pages->currentPageIdentifier(), currentPageIdentifier);
+    QCOMPARE(sidebar->selectedKeys(), sidebarKeys);
+    QVERIFY(services->hasOpenDatabase());
+    QCOMPARE(services->databaseSession(), activeSession);
+    QCOMPARE(services->currentDatabasePath(), workspacePath);
+    QVERIFY(newTeacherAction->isEnabled());
 }
 
 QTEST_MAIN(MainWindowCloseFileParityTests)
