@@ -15072,3 +15072,100 @@ repository Inter and Pretendard font assets loaded. No test process remained.
 `git diff --check` passed with a line-ending notice. No full suite was run.
 F419 is accepted and ready to commit; F420-F421 remain queued until the F419
 commit.
+
+### F419 committed / F420 selected/current - 2026-10-09
+
+F419 MainWindow Print/Save Current Page As action capability and enabled state
+is committed as `e2ad222b`. Its six-file commit contains the action-state
+integration assertions and acceptance record. Batch 19 continues with F420
+Class/Schedule save signal to Sidebar action-state refresh selected/current;
+F421 Useful Links URL handoff remains queued.
+
+
+### F420 provisional acceptance matrix - 2026-10-09
+
+1. Extend the existing MainWindow schedule/classes handoff integration target.
+   From its initially empty open workspace, verify the real deleteClass and
+   exportClasses actions start disabled. Save class details through the
+   actual Classes Details editor and verify both actions become enabled via
+   the production ClassesPage::classInfoSaved connection.
+2. Separately exercise the workspace Schedule page instance. Prepare a real
+   class and schedule entry after MainWindow's initial action-state calculation,
+   then edit/save that entry through the rendered Schedule cell and actual
+   Schedule Editor dialog. Verify the same class actions transition from
+   disabled to enabled via the production SchedulePage::classInfoSaved
+   connection. Do not invoke the controller slot or emit the signal from test
+   code; do not substitute the standalone Schedule page.
+3. Assert the saved class remains readable, the workspace session remains
+   open, and no unexpected prompt or warning occurs. Keep production unchanged
+   unless the integration exposes a defect.
+4. Executor and independent Tester run the focused
+   ClassMngrMainWindowScheduleTestingClassesHandoffParityTests target and
+   exact filtered CTest; no full suite.
+
+Evidence: MainWindow connects ClassesPage::classInfoSaved and each relevant
+SchedulePage::classInfoSaved instance to
+SidebarController::handleClassInfoSaved (src/app/mainwindow.cpp:791-830).
+The handler refreshes action predicates
+(src/app/controllers/sidebar_controller_refresh.cpp:217-222); class-dependent
+actions use the current classes read
+(src/app/controllers/sidebar_controller_prompts.cpp:421-446). Successful
+Class Details saves relay through ClassesPage
+(src/features/classes/ui/classes_page.cpp:1790-1796,2341-2370); Schedule
+Editor saves relay through ScheduleWidget and SchedulePage
+(src/features/schedule/ui/schedule_widget.cpp:501-518,
+src/features/schedule/ui/schedule_page.cpp:231-236). Existing lower-level
+signal tests and direct SidebarController handler coverage do not verify the
+MainWindow producer-to-action-state connections. The existing MainWindow
+fixture and focused target are in
+tests/mainwindow_schedule_testing_classes_handoff_parity_tests.cpp and
+cmake/tests/pages_and_output.cmake:861.
+
+### Batch 20 discovery review - provisional candidates after F421 - 2026-10-09
+
+Two independent read-only reviews found these bounded gaps; neither claims the
+Phase 2 backlog is exhausted. F421 Useful Links external URL handoff remains
+the queued slice. After F421, preserve these options for selection: F422
+Testing Classes edits refreshing Schedule views
+(src/app/mainwindow.cpp:957); F423 My Schedule display mode updating Classes
+(src/app/mainwindow.cpp:799); F424 Sidebar Add Class context-menu request reaching
+the MainWindow handler (src/app/mainwindow.cpp:489,
+src/app/controllers/sidebar_controller.cpp:79,
+src/app/controllers/sidebar_controller_classes.cpp:14); F425 Upcoming
+Birthdays QAction reaching its dialog handler
+(src/app/controllers/sidebar_controller.cpp:66, with existing direct
+showUpcomingBirthdays invocation tests); and F426 Class Transfer import QAction
+reaching its apply flow (src/app/controllers/sidebar_controller.cpp:37,
+with existing direct import/cancel coverage). Later candidates include Schedule
+Save As through MainWindow to PDF output and canceled database Save As behavior.
+These are provisional and remain to be prioritized after F421; F420 excludes
+the distinct Sidebar context-menu handoff in F424.
+
+
+### F420 implementation and independent verification accepted, ready to commit - 2026-10-09
+
+The MainWindow integration target now covers both production save connections.
+The Classes Details case creates a real class after the initial disabled action
+state, saves through the Details editor, and verifies deleteClass/exportClasses
+become enabled. The workspace Schedule case seeds a real class and schedule
+entry after startup, edits the rendered entry through Schedule Editor, and
+verifies the same transition. Both cases verify the expected page signal,
+persisted class details, open workspace session/path, and empty prompt queues.
+Neither calls SidebarController directly or emits the tested signal; no
+production code changed.
+
+The executor focused build passed with no build warnings; its exact filtered
+CTest passed 1/1 and direct QtTest passed 9/9. The independent Tester rebuilt
+the target and independently passed the same filtered CTest 1/1 and direct
+QtTest 9/9. The first independent run exposed a fixture-only failure: F420
+Integration Teacher exceeded the 20-character English-name limit. The fixture
+now uses Fixture Teacher, and seed errors retain the underlying service
+message. Tester confirmed both routes reach and pass their save flows.
+
+The standard launcher failed before process start for the independent run;
+the executor's initial build also hit Visual Studio FileTracker E_ACCESSDENIED.
+Authorized elevated retries completed. Runtime output had Qt's missing system
+font-directory notice and offscreen propagateSizeHints warnings; repository
+fonts loaded, no focused test process remained, and no full suite ran. F420 is
+accepted and ready to commit; F421 Useful Links URL handoff remains queued
+until the F420 commit.

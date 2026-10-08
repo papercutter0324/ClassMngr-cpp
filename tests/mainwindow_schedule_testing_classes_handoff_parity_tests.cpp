@@ -3,12 +3,16 @@
 #include "core/application_services.h"
 #include "core/language_service.h"
 #include "core/settingsmanager.h"
+#include "domain/models/class_info.h"
 #include "domain/models/testing_class.h"
+#include "domain/models/teacher.h"
+#include "features/classes/ui/classes_page.h"
 #include "features/classes/ui/testing_classes_page.h"
 #include "features/my_info/ui/my_workspace_page.h"
 #include "features/schedule/ui/schedule_import_dialog.h"
 #include "features/schedule/ui/schedule_import_review_dialog.h"
 #include "features/schedule/ui/schedule_cell_hit_test.h"
+#include "features/schedule/ui/schedule_editor_dialog.h"
 #include "features/schedule/ui/schedule_page.h"
 #include "features/schedule/ui/schedule_widget.h"
 #include "features/schedule/ui/testing_assignment_dialog.h"
@@ -362,6 +366,203 @@ bool scheduleModelContainsClassOnDay(
     return false;
 }
 
+bool seedClassWithSchedule(
+    ApplicationServices& services,
+    const QString& className,
+    int* classId,
+    QString* error
+    )
+{
+    if (!classId)
+    {
+        if (error)
+        {
+            *error = QStringLiteral("Class ID output is required.");
+        }
+        return false;
+    }
+
+    Teacher teacher;
+    teacher.teacherKr = QStringLiteral("\uAE40\uC120\uC0DD\uB2D8");
+    teacher.teacherEn = QStringLiteral("Fixture Teacher");
+    teacher.preferredRomanization = QStringLiteral("Fixture Teacher");
+    teacher.preferredName = QStringLiteral("Fixture Teacher");
+    teacher.roomNumber = QStringLiteral("F420 Room");
+    teacher.wifiName = QStringLiteral("F420 WiFi");
+    teacher.wifiPassword = QStringLiteral("f420-wifi-password");
+    teacher.internetType = QStringLiteral("Both");
+    teacher.zoomId = QStringLiteral("123 456 7890");
+    teacher.zoomPassword = QStringLiteral("f420-zoom-password");
+    teacher.projectionType = QStringLiteral("Any");
+    teacher.notes = QStringLiteral("F420 integration fixture teacher.");
+
+    const auto teacherResult = services.teacherService()->create(teacher);
+    if (!teacherResult || teacherResult.value() <= 0)
+    {
+        if (error)
+        {
+            *error = teacherResult
+                ? QStringLiteral("Could not create an F420 teacher ID.")
+                : QStringLiteral("Could not create the F420 teacher: %1")
+                    .arg(teacherResult.error());
+        }
+        return false;
+    }
+    const int teacherId = teacherResult.value();
+
+    const auto classResult = services.classService()->create(className);
+    if (!classResult || classResult.value() <= 0)
+    {
+        if (error)
+        {
+            *error = classResult
+                ? QStringLiteral("Could not create an F420 class ID.")
+                : QStringLiteral("Could not create the F420 class: %1")
+                    .arg(classResult.error());
+        }
+        return false;
+    }
+    const int createdClassId = classResult.value();
+
+    const auto infoResult = services.classService()->classInfo(createdClassId);
+    if (!infoResult)
+    {
+        if (error)
+        {
+            *error = QStringLiteral("Could not read the F420 class details: %1")
+                .arg(infoResult.error());
+        }
+        return false;
+    }
+
+    ClassInfo info = infoResult.value();
+    info.teacherId = teacherId;
+    info.classGrade = QStringLiteral("E5");
+    info.classLevel = QStringLiteral("Artemis");
+    info.classTimes = {
+        {
+            QStringLiteral("Monday"),
+            QStringLiteral("3:00 PM"),
+            QStringLiteral("3:55 PM")
+        }
+    };
+    const Status saveStatus = services.classService()->saveClassInfo(info);
+    if (!saveStatus)
+    {
+        if (error)
+        {
+            *error = QStringLiteral("Could not save the F420 class setup: %1")
+                .arg(saveStatus.error());
+        }
+        return false;
+    }
+
+    *classId = createdClassId;
+    return true;
+}
+
+using ScheduleEditorDialogScript =
+    std::function<bool(ScheduleEditorDialog*)>;
+
+bool interactWithScheduleEntryCell(
+    ScheduleWidget& widget,
+    const int classId,
+    const ScheduleEditorDialogScript& script
+    )
+{
+    QTableWidget* const table = widget.findChild<QTableWidget*>(
+        QStringLiteral("scheduleTable")
+        );
+    if (!table)
+    {
+        return false;
+    }
+
+    const ScheduleViewModel model = widget.scheduleModel();
+    for (qsizetype row = 0; row < model.rows.size(); ++row)
+    {
+        for (qsizetype dayIndex = 0;
+             dayIndex < model.days.size();
+             ++dayIndex)
+        {
+            const int column = static_cast<int>(dayIndex) + 1;
+            QWidget* const cell = table->cellWidget(
+                static_cast<int>(row),
+                column
+                );
+            const ScheduleCellHit hit = ScheduleCellHitTest::hit(cell);
+            if (hit.command != ScheduleCellCommand::EditClass
+                || hit.classId != classId)
+            {
+                continue;
+            }
+
+            bool dialogFound = false;
+            bool scriptSucceeded = false;
+            QTimer timer;
+            timer.setSingleShot(true);
+            QObject::connect(
+                &timer,
+                &QTimer::timeout,
+                &widget,
+                [&]
+                {
+                    for (QWidget* topLevel : QApplication::topLevelWidgets())
+                    {
+                        auto* dialog = qobject_cast<ScheduleEditorDialog*>(
+                            topLevel
+                            );
+                        if (!dialog)
+                        {
+                            continue;
+                        }
+
+                        dialogFound = true;
+                        scriptSucceeded = script(dialog);
+                        if (!scriptSucceeded)
+                        {
+                            dialog->reject();
+                        }
+                        return;
+                    }
+
+                    if (auto* modal = qobject_cast<ScheduleEditorDialog*>(
+                            QApplication::activeModalWidget()
+                            ))
+                    {
+                        modal->reject();
+                    }
+                }
+                );
+
+            const QModelIndex cellIndex = table->model()->index(
+                static_cast<int>(row),
+                column
+                );
+            table->scrollTo(cellIndex);
+            QApplication::processEvents();
+            const QRect cellRect = table->visualRect(cellIndex);
+            if (!cellRect.isValid())
+            {
+                timer.stop();
+                return false;
+            }
+
+            timer.start(0);
+            QTest::mouseClick(
+                table->viewport(),
+                Qt::LeftButton,
+                Qt::NoModifier,
+                cellRect.center()
+                );
+            timer.stop();
+            return dialogFound && scriptSucceeded;
+        }
+    }
+
+    return false;
+}
+
 bool clickTestingClassesButton(ScheduleWidget* widget)
 {
     if (!widget)
@@ -404,6 +605,8 @@ private slots:
     void dirtyTestingClassesReturnCancelThenDiscardUsesWorkspaceSource();
     void scheduleCellManageClassesPreservesRequestedSlotForNewClass();
     void scheduleImportPersistsAndRefreshesTeacherSidebar();
+    void classesDetailsSaveRefreshesClassActionsThroughMainWindow();
+    void workspaceScheduleEditorSaveRefreshesClassActionsThroughMainWindow();
 
 private:
     QTemporaryDir m_settingsDirectory;
@@ -1184,6 +1387,264 @@ scheduleImportPersistsAndRefreshesTeacherSidebar()
         importedClassInfo->classId,
         QStringLiteral("Friday")
         ));
+}
+
+void MainWindowScheduleTestingClassesHandoffParityTests::
+classesDetailsSaveRefreshesClassActionsThroughMainWindow()
+{
+    MainWindowFixture fixture;
+    QString setupError;
+    QVERIFY2(fixture.initialize(&setupError), qPrintable(setupError));
+
+    MainWindow* const window = fixture.window.get();
+    ApplicationServices* const services = window->services();
+    PageManager* const pages = window->pageManager();
+    QVERIFY(services);
+    QVERIFY(pages);
+    auto* const activeSession = services->databaseSession();
+    QVERIFY(activeSession);
+    const QString activePath = services->currentDatabasePath();
+
+    QAction* const deleteClassAction = window->actions().deleteClass;
+    QAction* const exportClassesAction = window->actions().exportClasses;
+    QVERIFY(deleteClassAction);
+    QVERIFY(exportClassesAction);
+    QVERIFY(!deleteClassAction->isEnabled());
+    QVERIFY(!exportClassesAction->isEnabled());
+
+    int classId = -1;
+    QString seedError;
+    QVERIFY2(
+        seedClassWithSchedule(
+            *services,
+            QStringLiteral("F420 Classes Details Save"),
+            &classId,
+            &seedError
+            ),
+        qPrintable(seedError)
+        );
+    QVERIFY(classId > 0);
+    QVERIFY(!deleteClassAction->isEnabled());
+    QVERIFY(!exportClassesAction->isEnabled());
+
+    pages->showPage(PageType::Classes);
+    QApplication::processEvents();
+    QVERIFY(pages->isCurrentPage(PageType::Classes));
+    ClassesPage* const classesPage = pages->classesPage();
+    QVERIFY(classesPage);
+    QVERIFY(classesPage->openClass(classId, ClassesSection::Details));
+    QCOMPARE(classesPage->currentClassId(), classId);
+    QCOMPARE(classesPage->currentSection(), ClassesSection::Details);
+    classesPage->setSaveMode(SaveMode::Manual);
+
+    QComboBox* const grade = classesPage->findChild<QComboBox*>(
+        QStringLiteral("classGradeCombo")
+        );
+    QComboBox* const level = classesPage->findChild<QComboBox*>(
+        QStringLiteral("classLevelCombo")
+        );
+    QComboBox* const readingBook = classesPage->findChild<QComboBox*>(
+        QStringLiteral("classReadingBookCombo")
+        );
+    QComboBox* const essayBook = classesPage->findChild<QComboBox*>(
+        QStringLiteral("classEssayBookCombo")
+        );
+    QPushButton* const saveButton = classesPage->findChild<QPushButton*>(
+        QStringLiteral("classInfoSaveButton")
+        );
+    QVERIFY(grade);
+    QVERIFY(level);
+    QVERIFY(readingBook);
+    QVERIFY(essayBook);
+    QVERIFY(saveButton);
+
+    QSignalSpy savedSpy(classesPage, &ClassesPage::classInfoSaved);
+    QVERIFY(savedSpy.isValid());
+
+    grade->setCurrentText(QStringLiteral("E4"));
+    level->setCurrentText(QStringLiteral("Theseus"));
+    readingBook->setCurrentText(QStringLiteral("Reading Explorer 1"));
+    essayBook->setCurrentText(QStringLiteral("4A"));
+    QVERIFY(classesPage->hasUnsavedChanges());
+    QVERIFY(!deleteClassAction->isEnabled());
+    QVERIFY(!exportClassesAction->isEnabled());
+
+    saveButton->click();
+    QApplication::processEvents();
+
+    QCOMPARE(savedSpy.size(), 1);
+    QCOMPARE(savedSpy.constFirst().at(0).toInt(), classId);
+    QVERIFY(deleteClassAction->isEnabled());
+    QVERIFY(exportClassesAction->isEnabled());
+    QVERIFY(!classesPage->hasUnsavedChanges());
+
+    const auto persisted = services->classService()->classInfo(classId);
+    QVERIFY(persisted);
+    QCOMPARE(persisted->classId, classId);
+    QCOMPARE(persisted->classGrade, QStringLiteral("E4"));
+    QCOMPARE(persisted->classLevel, QStringLiteral("Theseus"));
+    QCOMPARE(persisted->classTimes.size(), 1);
+    QCOMPARE(
+        persisted->classTimes.constFirst().day,
+        QStringLiteral("Monday")
+        );
+    QCOMPARE(
+        persisted->classTimes.constFirst().startTime,
+        QStringLiteral("3:00 PM")
+        );
+    QCOMPARE(
+        persisted->classTimes.constFirst().endTime,
+        QStringLiteral("3:55 PM")
+        );
+
+    QVERIFY(services->hasOpenDatabase());
+    QCOMPARE(services->databaseSession(), activeSession);
+    QCOMPARE(services->currentDatabasePath(), activePath);
+    assertNoPromptRequests(fixture.prompts);
+}
+
+void MainWindowScheduleTestingClassesHandoffParityTests::
+workspaceScheduleEditorSaveRefreshesClassActionsThroughMainWindow()
+{
+    MainWindowFixture fixture;
+    QString setupError;
+    QVERIFY2(fixture.initialize(&setupError), qPrintable(setupError));
+
+    MainWindow* const window = fixture.window.get();
+    ApplicationServices* const services = window->services();
+    PageManager* const pages = window->pageManager();
+    QVERIFY(services);
+    QVERIFY(pages);
+    auto* const activeSession = services->databaseSession();
+    QVERIFY(activeSession);
+    const QString activePath = services->currentDatabasePath();
+
+    QAction* const deleteClassAction = window->actions().deleteClass;
+    QAction* const exportClassesAction = window->actions().exportClasses;
+    QVERIFY(deleteClassAction);
+    QVERIFY(exportClassesAction);
+    QVERIFY(!deleteClassAction->isEnabled());
+    QVERIFY(!exportClassesAction->isEnabled());
+
+    MyWorkspacePage* const workspace = pages->myWorkspacePage();
+    QVERIFY(workspace);
+    workspace->openTab(WorkspaceTab::Schedule);
+    QApplication::processEvents();
+    QVERIFY(pages->isCurrentPage(PageType::MyWorkspace));
+    QCOMPARE(workspace->currentTab(), WorkspaceTab::Schedule);
+    const QStringList workspaceSidebarKeys{
+        QStringLiteral("my_workspace")
+    };
+    Sidebar* const sidebar = window->findChild<Sidebar*>();
+    QVERIFY(sidebar);
+    QCOMPARE(sidebar->selectedKeys(), workspaceSidebarKeys);
+
+    SchedulePage* const schedulePage = workspace->schedulePage();
+    QVERIFY(schedulePage);
+    ScheduleWidget* const scheduleWidget =
+        schedulePage->findChild<ScheduleWidget*>();
+    QVERIFY(scheduleWidget);
+    QCOMPARE(scheduleWidget->runtimeMetrics().modelEntryCount, 0);
+
+    int classId = -1;
+    QString seedError;
+    QVERIFY2(
+        seedClassWithSchedule(
+            *services,
+            QStringLiteral("F420 Workspace Schedule Save"),
+            &classId,
+            &seedError
+            ),
+        qPrintable(seedError)
+        );
+    QVERIFY(classId > 0);
+    QVERIFY(!deleteClassAction->isEnabled());
+    QVERIFY(!exportClassesAction->isEnabled());
+
+    scheduleWidget->refreshSchedule();
+    const ScheduleViewModel seededModel = scheduleWidget->scheduleModel();
+    QCOMPARE(scheduleWidget->runtimeMetrics().modelEntryCount, 1);
+    QVERIFY(scheduleModelContainsClassOnDay(
+        seededModel,
+        classId,
+        QStringLiteral("Monday")
+        ));
+
+    QSignalSpy savedSpy(schedulePage, &SchedulePage::classInfoSaved);
+    QVERIFY(savedSpy.isValid());
+    QVERIFY(interactWithScheduleEntryCell(
+        *scheduleWidget,
+        classId,
+        [](ScheduleEditorDialog* dialog)
+        {
+            if (!dialog)
+            {
+                return false;
+            }
+
+            const QList<QComboBox*> combos =
+                dialog->findChildren<QComboBox*>();
+            QPushButton* saveButton = nullptr;
+            for (QPushButton* button : dialog->findChildren<QPushButton*>())
+            {
+                if (button->text() == QStringLiteral("Save"))
+                {
+                    saveButton = button;
+                    break;
+                }
+            }
+            if (combos.size() != 2 || !saveButton)
+            {
+                return false;
+            }
+
+            if (combos.at(0)->currentText() != QStringLiteral("E5")
+                || combos.at(1)->currentText() != QStringLiteral("Artemis"))
+            {
+                return false;
+            }
+
+            combos.at(0)->setCurrentText(QStringLiteral("E4"));
+            combos.at(1)->setCurrentText(QStringLiteral("Theseus"));
+            QTest::mouseClick(saveButton, Qt::LeftButton);
+            return !dialog->isVisible();
+        }
+        ));
+    QApplication::processEvents();
+
+    QCOMPARE(savedSpy.size(), 1);
+    QCOMPARE(savedSpy.constFirst().at(0).toInt(), classId);
+    QVERIFY(deleteClassAction->isEnabled());
+    QVERIFY(exportClassesAction->isEnabled());
+
+    const auto persisted = services->classService()->classInfo(classId);
+    QVERIFY(persisted);
+    QCOMPARE(persisted->classId, classId);
+    QCOMPARE(persisted->classGrade, QStringLiteral("E4"));
+    QCOMPARE(persisted->classLevel, QStringLiteral("Theseus"));
+    QCOMPARE(persisted->classTimes.size(), 1);
+    QCOMPARE(
+        persisted->classTimes.constFirst().day,
+        QStringLiteral("Monday")
+        );
+    QCOMPARE(
+        persisted->classTimes.constFirst().startTime,
+        QStringLiteral("3:00 PM")
+        );
+    QCOMPARE(
+        persisted->classTimes.constFirst().endTime,
+        QStringLiteral("3:55 PM")
+        );
+
+    QVERIFY(pages->isCurrentPage(PageType::MyWorkspace));
+    QCOMPARE(pages->myWorkspacePage(), workspace);
+    QCOMPARE(workspace->currentTab(), WorkspaceTab::Schedule);
+    QCOMPARE(workspace->schedulePage(), schedulePage);
+    QCOMPARE(sidebar->selectedKeys(), workspaceSidebarKeys);
+    QVERIFY(services->hasOpenDatabase());
+    QCOMPARE(services->databaseSession(), activeSession);
+    QCOMPARE(services->currentDatabasePath(), activePath);
+    assertNoPromptRequests(fixture.prompts);
 }
 
 QTEST_MAIN(MainWindowScheduleTestingClassesHandoffParityTests)

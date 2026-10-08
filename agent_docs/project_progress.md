@@ -65,13 +65,17 @@ refresh is committed as `ea755736`. Its focused Executor and independent CTest
 runs passed 1/1 each, and direct QtTest passed 7/7 including init/cleanup.
 F418 verifies persisted teacher/class/time data, Sidebar refresh, visible
 Schedule refresh, expected prompts, and stable page, selection, session, and
-workspace path. No production change was needed. F419 MainWindow Print/Save
-Current Page As action capability and enabled state is accepted and ready to
-commit; F420-F421 remain queued. F419's executor and independent focused CTest
-runs passed 1/1 each, and direct QtTest passed 3/3 including init/cleanup. The
-actual MainWindow actions track a Ready PDF and return disabled after viewer
-release; the workspace remains closed. No production change was needed. F385
-is retired as a duplicate of F369.
+workspace path. No production change was needed. F419 MainWindow Print/Save Current Page As action capability and enabled state
+is committed as e2ad222b. Its Executor and independent focused CTest runs
+passed 1/1 each, and direct QtTest passed 3/3 including init/cleanup. The actual
+MainWindow actions track a Ready PDF and return disabled after viewer release;
+the workspace remains closed. No production change was needed. F420
+Class/Schedule save signal to Sidebar action-state refresh is accepted and
+ready to commit; F421 Useful Links URL handoff remains queued until the F420
+commit. Executor and independent Tester focused CTest passed 1/1 each, and
+direct QtTest passed 9/9 each. The first independent run caught an invalid
+fixture teacher name; the repaired fixture passed both save paths. F385 is
+retired as a duplicate of F369.
 The seven user-reported MSVC build errors in
 the Teacher Profile Edit persistence target are fixed and independently
 verified in both the named target and all-target build, committed as

@@ -138,8 +138,9 @@ synchronization is committed (`f4bc5282`). F416 Document Catalog rendered
   independently accepted and committed as `d04d9bb0`. F418 Schedule Import
   through MainWindow apply and Sidebar refresh is committed as `ea755736`.
   F419 MainWindow Print/Save Current Page As action capability and enabled
-  state is accepted and ready to commit; F420-F421 remain queued pending its
-  commit. See the Phase 2 progress log for evidence.
+  state is committed as `e2ad222b`. F420 Class/Schedule save signal to Sidebar
+  action-state refresh is accepted and ready to commit; F421 Useful Links URL
+  handoff remains queued until the F420 commit. See the Phase 2 progress log for evidence.
   Gates 1 and 2 remain Partial, with broader feature
   migration, parity, and 96-class Release memory evidence still open.
   See the

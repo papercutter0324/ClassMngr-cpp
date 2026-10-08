@@ -63,9 +63,10 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
   synchronization is committed (`f4bc5282`). F416 Document Catalog rendered
   Sidebar leaf through MainWindow/viewer is committed (`a4082f80`). Batch 19
   resumed with F417 Staff Directory rendered leaf through MainWindow
-  independently accepted and committed (`d04d9bb0`). F418 Schedule Import
-  through MainWindow apply and Sidebar refresh is selected/current; F419-F421
-  remain queued. See the Phase 2 progress log for acceptance and test evidence.
+  independently accepted and committed (`d04d9bb0`). F418 Schedule Import through MainWindow apply and Sidebar refresh is committed;
+  F419 MainWindow output action state is committed. F420 Class/Schedule save
+  signal refresh is accepted and ready to commit; F421 Useful Links URL handoff
+  remains queued. See the Phase 2 progress log for acceptance and test evidence.
   Gates 1 and 2
   remain Partial; see the progress log for slice evidence.
 
@@ -75,7 +76,7 @@ Discover upcoming slices in ordered batches of up to ten (or all remaining
 slices if fewer than ten remain). Keep only the active batch below. Begin
 discovering and recording the next batch when starting work on the second-last
 slice in the current batch. If a discovery pass finds fewer than ten slices,
-add the exact standalone line `No other slices were found.` beneath that batch.
+add the exact standalone line `Batch 20 read-only reviews have surfaced provisional candidates after F421; see the Phase 2 progress log.` beneath that batch.
 
 Keep the Status `Current note` limited to the latest information relevant to the
 current or next slice. Remove accepted slices from this plan; keep their
@@ -104,16 +105,17 @@ log](03-Phase-2-Progress-Log.md).
    MainWindow.
 5. F418 - Committed (`ea755736`): Schedule Import through MainWindow apply and
    Sidebar refresh.
-6. F419 - Accepted / ready to commit: MainWindow Print/Save Current Page As
+6. F419 - Committed (`e2ad222b`): MainWindow Print/Save Current Page As
    action capability and enabled state.
-7. F420 - Queued: Class/Schedule save signal to Sidebar action-state refresh.
+7. F420 - Accepted, ready to commit: Class/Schedule save signal to Sidebar
+   action-state refresh.
 8. F421 - Queued: Useful Links URL handoff.
 
 No other slices were found.
 
 Batch 19 resumed after F416. F417 is committed as `d04d9bb0`, F418 as
-`ea755736`, and F419 is accepted and ready to commit; F420-F421 remain queued
-until the F419 commit.
+`ea755736`, F419 as `e2ad222b`, and F420 is accepted and ready to commit; F421 Useful Links URL handoff remains
+queued.
 
 Batch 18 was discovered at F402 start from two independent bounded reviews and
 activated after F403 committed as `28e881cd`; it completed when F413 committed

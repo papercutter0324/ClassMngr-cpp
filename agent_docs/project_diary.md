@@ -2755,3 +2755,27 @@ independent elevated retry had no build warnings. Qt's missing `lib/fonts`
 directory notice occurred at runtime, but repository fonts loaded. No
 production change was needed; no process remained and no full suite ran. F419
 is accepted and ready to commit; F420-F421 remain queued until its commit.
+
+## 2026-10-09 - F419 committed / F420 selected-current
+
+F419 MainWindow Print/Save Current Page As action capability and enabled state
+is committed as `e2ad222b`. Its six-file commit covers disabled actions on
+Campus Dashboard, enabled actions for the Ready PDF, and disabled actions
+after document release, including the no-database end state. Executor and
+independent focused CTest runs passed 1/1; QtTest passed 3/3. F420
+Class/Schedule save signal to Sidebar action-state refresh is selected/current;
+F421 remains queued.
+
+
+## 2026-10-09 - F420 Class and Schedule save refresh accepted
+
+F420 proves that successful saves through Classes Details and the workspace
+Schedule Editor refresh the real Sidebar class actions in MainWindow. Both
+action pairs transition from disabled to enabled after the production page
+signal; the workspace remains open and the saved class details persist.
+Executor and independent focused CTest runs passed 1/1, and direct QtTest
+passed 9/9 each. The independent first run caught an overlength fixture
+teacher name before either save route ran; after correcting it and retaining
+the service error, both routes passed. No production change was needed. Qt
+font-directory and offscreen sizing notices remained non-failing; no full suite
+ran. F420 is accepted and ready to commit; F421 remains queued.
