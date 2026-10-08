@@ -14223,3 +14223,51 @@ and preserves source database data. The focused target built and CTest passed
 F403 is accepted and ready to commit. F404 Save choice on Open/Close File actions
 is queued as the first Batch 18 slice and activates after the F403 commit. Batch
 18 remains provisional until that commit.
+
+### F403 committed / Batch 17 complete - 2026-10-08
+
+F403 is committed as `28e881cd`, completing Batch 17. Batch 18 is activated with
+F404 selected/current; F405-F413 follow in discovered order.
+
+### F404 selected/current / acceptance matrix established - 2026-10-08
+
+1. **Open File → Save → chooser cancel.** From dirty My Workspace Details in a
+   real MainWindow, trigger the Open File QAction, script Save, and return
+   `nullopt` from the chooser. Assert exactly one prompt and one chooser; the same
+   session, path, page, Details tab, and Sidebar; the editor retains the draft
+   while the page and workspace are clean; and persisted `myInfo/name` equals
+   the draft.
+2. **Close File → Save.** From dirty Details in a real MainWindow, trigger the
+   Close File QAction and script Save. Assert one prompt and no chooser; the
+   database and path are closed; Campus Dashboard Information and its Sidebar
+   route are current; database-backed actions are disabled. Reopen the workspace
+   through separate ApplicationServices and assert the saved name persists.
+
+Evidence: `PageManager::confirmCurrentPageCanLeave`
+(`src/ui/shared/pages/pagemanager.cpp:485`); Open File in
+`FileController` (`src/app/controllers/file_controller.cpp:557`); Close File
+in `FileController` (`src/app/controllers/file_controller.cpp:740`); My Workspace
+save path (`src/ui/shared/pages/my_workspace_page.cpp:101`) and personal details
+save (`src/ui/shared/pages/personal_details_page.cpp:127`); test fakes
+`tests/fakes/fake_user_prompt_service.h` and
+`tests/fakes/fake_file_dialog_service.h`; existing real-window
+coverage in `tests/mainwindow_open_file_parity_tests.cpp` and
+`tests/mainwindow_close_file_parity_tests.cpp`.
+
+F404 is selected/current in active Batch 18; F405-F413 are queued. No F404
+acceptance result is recorded yet.
+
+### F404 accepted / ready to commit - 2026-10-08
+
+F404 is accepted with test-only changes. The real MainWindow Open File QAction
+case scripts Save and cancels the chooser: one prompt and one chooser, the same
+session/path/page/Details tab/Sidebar, editor draft retained, page and workspace
+clean, and persisted `myInfo/name` matching the draft. The real Close File QAction
+case scripts Save: one prompt and no chooser, database/path closed, Campus
+Dashboard Information and its Sidebar route current, and database-backed actions
+disabled; reopening through separate ApplicationServices confirms the saved name
+persisted.
+
+Both real MainWindow Open/Close targets built under VS 18 x64 with Ninja/MSVC and
+Qt 6.12; filtered CTest passed 2/2. No full suite ran. F404 is accepted and ready
+to commit; F405 is queued after the F404 commit in active Batch 18.

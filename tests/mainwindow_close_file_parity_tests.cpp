@@ -1,11 +1,14 @@
 #include "app/mainwindow.h"
+#include "app/services/feature_services.h"
 #include "core/application_services.h"
 #include "core/language_service.h"
 #include "core/settingsmanager.h"
 #include "features/campus/ui/campus_dashboard_page.h"
 #include "features/my_info/ui/my_workspace_page.h"
 #include "features/my_info/ui/personal_details_page.h"
+#include "fakes/fake_file_dialog_service.h"
 #include "fakes/fake_user_prompt_service.h"
+#include "ui/shared/dialogs/file_dialog_service.h"
 #include "ui/shared/dialogs/user_prompt_service.h"
 #include "ui/shared/pages/pagemanager.h"
 #include "ui/shared/widgets/sidebar/sidebar.h"
@@ -113,6 +116,20 @@ public:
         DialogServices::setUserPromptServiceForTesting(nullptr);
     }
 };
+
+class FileDialogServiceScope final
+{
+public:
+    explicit FileDialogServiceScope(IFileDialogService* service)
+    {
+        DialogServices::setFileDialogServiceForTesting(service);
+    }
+
+    ~FileDialogServiceScope()
+    {
+        DialogServices::setFileDialogServiceForTesting(nullptr);
+    }
+};
 }
 
 class MainWindowCloseFileParityTests final : public QObject
@@ -122,6 +139,7 @@ class MainWindowCloseFileParityTests final : public QObject
 private slots:
     void initTestCase();
     void closeFileCancelPreservesDraftBeforeDiscardClosesWorkspace();
+    void closeFileSavePersistsDraftBeforeClosingWorkspace();
 
 private:
     QTemporaryDir m_settingsDirectory;
@@ -310,6 +328,141 @@ closeFileCancelPreservesDraftBeforeDiscardClosesWorkspace()
     {
         QVERIFY(!action->isEnabled());
     }
+}
+
+void MainWindowCloseFileParityTests::
+closeFileSavePersistsDraftBeforeClosingWorkspace()
+{
+    QTemporaryDir workspaceRoot;
+    QVERIFY(workspaceRoot.isValid());
+
+    const QString workspacePath = QFileInfo(
+        workspaceRoot.filePath(QStringLiteral("save-close-workspace.tps"))
+        ).absoluteFilePath();
+
+    ApplicationServices seedServices;
+    QVERIFY(seedServices.openDatabase(workspacePath));
+    seedServices.closeDatabase();
+
+    LanguageService languageService;
+    QVERIFY(languageService.setLanguage(Language::English));
+
+    MainWindowStartupOptions startupOptions;
+    startupOptions.loadMostRecentDatabase = false;
+    startupOptions.initialDatabasePath = workspacePath;
+
+    FakeUserPromptService prompts;
+    FakeFileDialogService fileDialogs;
+    const UserPromptServiceScope promptScope(&prompts);
+    const FileDialogServiceScope fileDialogScope(&fileDialogs);
+
+    MainWindow window(
+        [](const QString&) {},
+        false,
+        &languageService,
+        nullptr,
+        std::move(startupOptions)
+        );
+    window.show();
+    QApplication::processEvents();
+
+    ApplicationServices* const services = window.services();
+    QVERIFY(services);
+    QVERIFY(services->hasOpenDatabase());
+    QCOMPARE(services->currentDatabasePath(), workspacePath);
+
+    PageManager* const pages = window.pageManager();
+    QVERIFY(pages);
+    QVERIFY(pages->isCurrentPage(PageType::MyWorkspace));
+
+    MyWorkspacePage* const workspace = pages->myWorkspacePage();
+    QVERIFY(workspace);
+    workspace->openTab(WorkspaceTab::Details);
+    pages->setSaveMode(SaveMode::Manual);
+
+    PersonalDetailsPage* const details = workspace->personalDetailsPage();
+    QVERIFY(details);
+    QLineEdit* const nameEditor = personalNameEditor(details);
+    QVERIFY(nameEditor);
+    const QString draft = QStringLiteral("Saved workspace profile draft");
+    nameEditor->setText(draft);
+    QVERIFY(details->hasUnsavedChanges());
+    QVERIFY(workspace->hasUnsavedChanges());
+
+    Sidebar* const sidebar = window.findChild<Sidebar*>();
+    QVERIFY(sidebar);
+    QTreeWidget* const tree = sidebar->findChild<QTreeWidget*>(
+        QStringLiteral("sidebarTree")
+        );
+    QVERIFY(tree);
+    QCOMPARE(
+        sidebar->selectedKeys(),
+        QStringList{QStringLiteral("my_workspace")}
+        );
+
+    QAction* const closeFileAction = window.actions().closeFile;
+    QVERIFY(closeFileAction);
+    QVERIFY(closeFileAction->isEnabled());
+
+    prompts.scriptedUnsavedChangesChoices.enqueue(
+        UnsavedChangesChoice::Save
+        );
+    closeFileAction->trigger();
+    QApplication::processEvents();
+
+    QCOMPARE(prompts.unsavedChangesConfirmations.size(), 1);
+    QCOMPARE(fileDialogs.openFileRequests.size(), 0);
+    QCOMPARE(fileDialogs.openFilesRequests.size(), 0);
+    QCOMPARE(fileDialogs.saveFileRequests.size(), 0);
+    QCOMPARE(fileDialogs.saveFileWithOptionsRequests.size(), 0);
+    QCOMPARE(fileDialogs.directoryRequests.size(), 0);
+
+    QVERIFY(!services->hasOpenDatabase());
+    QVERIFY(services->currentDatabasePath().isEmpty());
+    QVERIFY(pages->isCurrentPage(PageType::CampusDashboard));
+    QVERIFY(pages->campusDashboard());
+    QCOMPARE(
+        pages->campusDashboard()->currentSectionKey(),
+        QStringLiteral("campus_information")
+        );
+    QCOMPARE(
+        sidebar->selectedKeys(),
+        (QStringList{
+            QStringLiteral("campus_info"),
+            QStringLiteral("campus_information")
+        })
+        );
+
+    const QList<QAction*> databaseBackedActions{
+        window.actions().saveFile,
+        window.actions().saveAsFile,
+        window.actions().exportAsFile,
+        window.actions().closeFile,
+        window.actions().newClass,
+        window.actions().deleteClass,
+        window.actions().importClasses,
+        window.actions().exportClasses,
+        window.actions().newTeacher,
+        window.actions().deleteTeacher,
+        window.actions().upcomingBirthdays
+    };
+    for (QAction* const action : databaseBackedActions)
+    {
+        QVERIFY(action);
+        QVERIFY(!action->isEnabled());
+    }
+
+    ApplicationServices reopenedServices;
+    QVERIFY(reopenedServices.openDatabase(workspacePath));
+    QVERIFY(reopenedServices.settingsService());
+    QCOMPARE(
+        reopenedServices.settingsService()->loadOrDefault(
+            QStringLiteral("myInfo/name"),
+            QString()
+            ).toString(),
+        draft
+        );
+    reopenedServices.closeDatabase();
 }
 
 QTEST_MAIN(MainWindowCloseFileParityTests)

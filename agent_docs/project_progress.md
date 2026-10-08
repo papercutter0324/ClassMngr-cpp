@@ -2907,8 +2907,8 @@ WrapVulkanHeaders and known object-path-length warnings, with no LNK4006.
 No full suite ran. The standard Visual Studio tree remains blocked before
 source compilation by the existing FileTracker/CommonApplicationData issue.
 
-F403 Dynamic Teacher Sidebar leaf navigation is accepted and ready to
-commit, with no production changes. A real MainWindow test opens a seeded
+F403 Dynamic Teacher Sidebar leaf navigation is accepted and committed as
+28e881cd, with no production changes. A real MainWindow test opens a seeded
 workspace, uses the production refresh path, and clicks leaves in Co-Teachers
 and Korean Teachers. For each group, it verifies target teacher ID and stable
 route keys; Cancel preserves the dirty source page and exact draft, and Discard
@@ -2916,7 +2916,17 @@ loads the target with a clean page while leaving source persistence unchanged.
 The focused Ninja/MSVC/Qt 6.12 target built and CTest passed 1/1 (0.52 s); an
 independent filtered CTest also passed 1/1. No full suite ran.
 
-Batch 17 is complete after the F403 commit. F404 Save choice on Open/Close File
-actions is queued as the first Batch 18 slice and activates after the F403
-commit. Batch 18 has ten provisionally discovered candidates. The user-modified
-latest_session_work.md remains untouched.
+F403 is committed as 28e881cd, completing Batch 17. F404 Save choice on
+Open/Close File actions is accepted and ready to commit, with test-only changes.
+The Open File test scripts Save then chooser cancellation and verifies one prompt
+and chooser request, the same workspace/session/path/page/tab/Sidebar, visible
+draft with clean page/workspace, and persisted myInfo/name. The Close File test
+scripts Save and verifies one prompt/no chooser, closed session/path, Campus
+Dashboard Information route, disabled database actions, and persistence after
+reopening the workspace. Both focused Ninja/MSVC/Qt 6.12 targets built under the
+VS 18 x64 developer environment, and the filtered CTest passed 2/2. No full
+suite ran.
+
+Batch 18 remains active. F404 is accepted and ready to commit; F405 MainWindow
+Save As and Export action integration is queued after that commit, followed by
+F406-F413. The user-modified latest_session_work.md remains untouched.

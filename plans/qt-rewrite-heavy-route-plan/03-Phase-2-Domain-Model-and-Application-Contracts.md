@@ -41,13 +41,14 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
 - Current note: F400 Open File action dirty-page gate and F401 Recent-workspace
-  menu selection/missing-path pruning are accepted and committed (F401: `2121ce59`). F402 MainWindow application-exit confirmation
-  is committed (`9cbe39c9`); F403 Dynamic Teacher Sidebar leaf navigation is
-  accepted and ready to commit. Batch 17 remains active. Batch 18 discovery is
-  complete, with ten provisional candidates recorded. F404 Save choice on
-  Open/Close File actions is queued first and activates after the F403 commit;
-  Batch 18 remains provisional until then. Gates 1 and 2 remain Partial; see the
-  Phase 2 progress log for acceptance evidence.
+  menu selection/missing-path pruning are accepted and committed
+  (F401: `2121ce59`).
+  F402 MainWindow application-exit confirmation is committed (`9cbe39c9`);
+  F403 Dynamic Teacher Sidebar leaf navigation is committed (`28e881cd`),
+  completing Batch 17. Batch 18 is active. F404 Save choice on Open/Close File
+  actions is accepted and ready to commit; F405 is queued after the F404 commit,
+  with F406-F413 following. Gates 1 and 2 remain Partial; see the Phase 2
+  progress log for acceptance evidence.
 
 ### Slice discovery batches
 
@@ -72,18 +73,23 @@ log](03-Phase-2-Progress-Log.md).
   failure warning/no-navigation behavior; revisit after that behavior is
   clarified.
 
-#### Active batch: Batch 17
+#### Active batch: Batch 18
 
-1. F401 - Committed (`2121ce59`): Recent-workspace menu selection and
-   missing-path pruning.
-2. F402 - Committed (`9cbe39c9`): MainWindow application-exit confirmation.
-3. F403 - Accepted / ready to commit: Dynamic Teacher Sidebar leaf navigation.
+1. F404 - Accepted / ready to commit: Save choice on Open/Close File actions.
+2. F405 - Queued after the F404 commit: MainWindow Save As and
+   Export action integration.
+3. F406 - Queued: Manage Campuses QAction transition.
+4. F407 - Queued: Schedule↔Testing Classes handoff.
+5. F408 - Queued: Dynamic Teacher Sidebar selection/state during retranslation.
+6. F409 - Queued: My Workspace Sidebar root producer-to-handler integration.
+7. F410 - Queued: Classes Sidebar root integration.
+8. F411 - Queued: Sub Prep Sidebar root integration.
+9. F412 - Queued: Campus Sidebar root plus section producer integration.
+10. F413 - Queued: Initial Setup success navigation from the empty-state button.
 
-Batch 17 was discovered at F397 start through independent route-producer and
-application-boundary reviews. It is bounded to the reviewed Phase 2 plan and
-migration map, progress history, and candidate source/tests; it does not
-establish repository-wide discovery exhaustion.
-No other slices were found.
+Batch 18 was discovered at F402 start from two independent bounded reviews and
+activated after F403 committed as `28e881cd`. Its evidence and limits are in the
+Phase 2 progress log; discovery does not establish repository-wide exhaustion.
 
 ## Objective
 

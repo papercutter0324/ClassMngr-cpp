@@ -2488,3 +2488,15 @@ and path remain active. No production changes were needed. The focused
 Ninja/MSVC/Qt 6.12 target built and CTest passed 1/1 (0.52 s); independent
 filtered CTest passed 1/1. No full suite ran. F403 is ready to commit; F404 is
 the first Batch 18 candidate and activates after the F403 commit.
+
+
+## 2026-10-08 - F404 Save choice on Open/Close File accepted
+
+F404 adds real MainWindow action coverage for the Save choice on both Open File
+and Close File. Open→Save→chooser cancel persists the Details draft, clears
+dirty state, and preserves the same workspace/session/path/page/tab/Sidebar.
+Close→Save persists the draft, closes the workspace, routes to Campus Dashboard
+Information, disables database-backed actions, and remains persisted after the
+workspace is reopened. No production changes were needed. Both focused
+Ninja/MSVC/Qt 6.12 targets built under VS 18 x64, and filtered CTest passed 2/2.
+No full suite ran. Batch 18 continues with F405 queued after the F404 commit.

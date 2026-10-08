@@ -119,12 +119,10 @@ F399 Close File action parity, F400 Open File action dirty-page gate, and
 F401 Recent-workspace menu selection and missing-path pruning are accepted and
 committed (F401: `2121ce59`). F402 MainWindow application-exit confirmation
 is committed (`9cbe39c9`); F403 Dynamic Teacher Sidebar leaf navigation is
-accepted and ready to commit. Batch 17 remains active. Batch 18 discovery is
-complete, with ten provisional candidates recorded. F404 Save choice on Open/Close
-File actions is queued first and activates after the F403 commit; Batch 18 remains
-provisional until then.
-See the Phase 2 progress log for F400-F403 acceptance and Batch 18 discovery
-evidence.
+committed (`28e881cd`), completing Batch 17. Batch 18 is active.
+F404 Save choice on Open/Close File actions is accepted and ready to commit;
+F405 is queued after the F404 commit, with F406-F413 following. See the Phase 2
+progress log for F400-F404 acceptance evidence and Batch 18 discovery.
   Gates 1 and 2 remain Partial, with broader feature
   migration, parity, and 96-class Release memory evidence still open.
   See the
