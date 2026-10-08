@@ -61,11 +61,16 @@ after F416 at the user's request. F414 and F415 are committed, and F416's
 Document Catalog MainWindow-to-viewer integration test is accepted and
 committed. F417 Staff Directory rendered leaf through MainWindow is committed
 as `d04d9bb0`; F418 Schedule Import through MainWindow apply and Sidebar
-refresh is accepted and ready to commit, with F419-F421 queued. Its focused
-Executor and independent CTest runs passed 1/1 each, and direct QtTest passed
-7/7 including init/cleanup. F418 verifies persisted teacher/class/time data,
-Sidebar refresh, visible Schedule refresh, expected prompts, and stable page,
-selection, session, and workspace path. No production change was needed. F385
+refresh is committed as `ea755736`. Its focused Executor and independent CTest
+runs passed 1/1 each, and direct QtTest passed 7/7 including init/cleanup.
+F418 verifies persisted teacher/class/time data, Sidebar refresh, visible
+Schedule refresh, expected prompts, and stable page, selection, session, and
+workspace path. No production change was needed. F419 MainWindow Print/Save
+Current Page As action capability and enabled state is accepted and ready to
+commit; F420-F421 remain queued. F419's executor and independent focused CTest
+runs passed 1/1 each, and direct QtTest passed 3/3 including init/cleanup. The
+actual MainWindow actions track a Ready PDF and return disabled after viewer
+release; the workspace remains closed. No production change was needed. F385
 is retired as a duplicate of F369.
 The seven user-reported MSVC build errors in
 the Teacher Profile Edit persistence target are fixed and independently

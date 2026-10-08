@@ -2732,3 +2732,26 @@ init/cleanup. Qt emitted only missing-font-directory and offscreen
 `propagateSizeHints()` notices; the project fonts loaded and no test process
 remained. No production change was required, and no full suite ran. F418 is
 accepted and ready to commit; F419-F421 remain queued until its commit.
+
+## 2026-10-09 - F418 committed / F419 selected-current
+
+F418 Schedule Import through MainWindow apply and Sidebar refresh is committed
+as `ea755736`. The six-file commit contains the real MainWindow import
+integration and acceptance records. Executor and independent focused CTest
+runs passed 1/1; direct QtTest passed 7/7 including init/cleanup. F419
+MainWindow Print/Save Current Page As action capability and enabled state is
+selected/current; F420-F421 remain queued.
+
+## 2026-10-09 - F419 MainWindow output action state accepted
+
+F419 extends the real Document Catalog MainWindow integration to check the
+Print, Save As, and Print / Export actions from the unsupported Campus
+Dashboard through a Ready PDF and back after the viewer is released. The
+post-navigation state confirms no database is open. Existing route, resource,
+no-modal, and warning assertions remain. Executor and independent focused
+CTest runs passed 1/1 each; QtTest passed 3/3 including init/cleanup. The
+executor build reported `LNK4075`; its elevated retry succeeded, while the
+independent elevated retry had no build warnings. Qt's missing `lib/fonts`
+directory notice occurred at runtime, but repository fonts loaded. No
+production change was needed; no process remained and no full suite ran. F419
+is accepted and ready to commit; F420-F421 remain queued until its commit.

@@ -102,17 +102,18 @@ log](03-Phase-2-Progress-Log.md).
    through MainWindow and viewer.
 4. F417 - Committed (`d04d9bb0`): Staff Directory rendered leaf through
    MainWindow.
-5. F418 - Accepted / ready to commit: Schedule Import through MainWindow apply
-   and Sidebar refresh.
-6. F419 - Queued: MainWindow Print/Save Current Page As action capability and
-   enabled state.
+5. F418 - Committed (`ea755736`): Schedule Import through MainWindow apply and
+   Sidebar refresh.
+6. F419 - Accepted / ready to commit: MainWindow Print/Save Current Page As
+   action capability and enabled state.
 7. F420 - Queued: Class/Schedule save signal to Sidebar action-state refresh.
 8. F421 - Queued: Useful Links URL handoff.
 
 No other slices were found.
 
-Batch 19 resumed after F416. F417 is committed as `d04d9bb0`; F418 is accepted
-and ready to commit; F419-F421 remain queued until the F418 commit.
+Batch 19 resumed after F416. F417 is committed as `d04d9bb0`, F418 as
+`ea755736`, and F419 is accepted and ready to commit; F420-F421 remain queued
+until the F419 commit.
 
 Batch 18 was discovered at F402 start from two independent bounded reviews and
 activated after F403 committed as `28e881cd`; it completed when F413 committed

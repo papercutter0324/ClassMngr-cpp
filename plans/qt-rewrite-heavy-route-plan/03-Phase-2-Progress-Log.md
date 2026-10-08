@@ -15008,3 +15008,67 @@ offscreen `propagateSizeHints()` messages, while project font assets loaded.
 No test process remained. `git diff --check` passed with Git line-ending
 notices. No full suite was run. F418 is accepted and ready to commit; F419-F421
 remain queued until the F418 commit.
+
+### F418 committed / F419 selected/current - 2026-10-09
+
+F418 Schedule Import through MainWindow apply and Sidebar refresh is committed
+as `ea755736`. Its six-file commit contains the integration test and acceptance
+record. Batch 19 continues with F419 MainWindow Print/Save Current Page As
+action capability and enabled state selected/current; F420-F421 remain queued.
+
+### F419 selected/current / provisional acceptance matrix - 2026-10-09
+
+1. Extend the real MainWindow Document Catalog integration case, which starts
+   on Campus Dashboard Information with no database. Verify the actual
+   `Print`, `Save As...`, and `Print / Export` actions are present and disabled
+   while the current page has no output capabilities.
+2. QTest-click its rendered Document Catalog leaf through the production
+   Sidebar connection and wait for the PDF viewer's content session to become
+   Ready. Verify both viewer capabilities and the corresponding MainWindow
+   actions and menu are enabled.
+3. Navigate the PageManager back to Campus Dashboard through its public
+   `showPage` operation. Verify the document is released, output capabilities
+   are false, and both actions and the menu return to disabled. Do not call
+   MainWindow's private update method or add a test-side signal connection.
+4. Preserve the existing route payload, Sidebar selection, PDF resource,
+   no-modal, and warning assertions. No database session is opened or changed.
+
+Evidence: MainWindow connects the two actions to PageManager and routes
+`outputCapabilitiesChanged` to its production state updater, then performs an
+initial update (`src/app/mainwindow.cpp:622-654`). The updater maps each
+capability to its action and enables Print / Export when either is true
+(`src/app/mainwindow.cpp:1119-1147`). PageManager emits on navigation and
+forwards capability changes from the current page
+(`src/ui/shared/pages/pagemanager.cpp:308-319,328-379`). The existing
+`MainWindowDocumentCatalogRetranslationParity` test already starts on a
+non-output-capable Campus Dashboard and clicks a rendered document leaf through
+the real MainWindow to a Ready PDF viewer, but checks only the viewer's
+capabilities (`tests/mainwindow_document_catalog_retranslation_parity_tests.cpp:212-215,396-444`).
+PageManager's own PDF capability/release test covers only PageManager state
+(`tests/pagemanager_tests.cpp:162-202`). F419 is test-only unless the MainWindow
+action integration exposes a production defect.
+
+### F419 implementation complete / independently verified / accepted, ready to commit - 2026-10-09
+
+`tests/mainwindow_document_catalog_retranslation_parity_tests.cpp` now checks
+the real MainWindow `Print`, `Save As...`, and `Print / Export` actions. They
+start disabled on Campus Dashboard, become enabled after the real Sidebar leaf
+loads the PDF to Ready, and return to disabled when PageManager navigates back
+to Campus Dashboard and releases the document. The test verifies no database
+is open after that navigation. Existing route payload, Sidebar selection, PDF
+resource/path, no-modal, and warning assertions remain intact. No production
+change or defect was needed.
+
+Executor and independent Tester builds of
+`ClassMngrMainWindowDocumentCatalogRetranslationParityTests` succeeded in
+`build/windows-x64-debug`; each exact filtered CTest passed 1/1, and direct
+QtTest passed 3/3 (including init and cleanup). The executor's first build
+attempt hit the known Visual Studio `ZERO_CHECK` FileTracker access denial;
+the elevated build succeeded with linker warning `LNK4075` (`/INCREMENTAL`
+ignored due to `/FORCE`). The independent initial build launcher also failed
+before process start, and its elevated retry passed without build warnings.
+Qt runtime output included the missing Qt `lib/fonts` directory notice; the
+repository Inter and Pretendard font assets loaded. No test process remained.
+`git diff --check` passed with a line-ending notice. No full suite was run.
+F419 is accepted and ready to commit; F420-F421 remain queued until the F419
+commit.

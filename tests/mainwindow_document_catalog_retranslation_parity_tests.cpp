@@ -14,6 +14,7 @@
 #include <QFile>
 #include <QMessageLogContext>
 #include <QMessageBox>
+#include <QMenu>
 #include <QSignalSpy>
 #include <QTemporaryDir>
 #include <QTreeWidget>
@@ -213,6 +214,14 @@ void MainWindowDocumentCatalogRetranslationParityTests::
     QVERIFY(pages);
     QVERIFY(pages->isCurrentPage(PageType::CampusDashboard));
     QVERIFY(!pages->isDatabaseOpen());
+
+    const auto& actions = window.actions();
+    QVERIFY(actions.printCurrentPage);
+    QVERIFY(actions.saveCurrentPageAs);
+    QVERIFY(actions.printExportMenu);
+    QVERIFY(!actions.printCurrentPage->isEnabled());
+    QVERIFY(!actions.saveCurrentPageAs->isEnabled());
+    QVERIFY(!actions.printExportMenu->isEnabled());
 
     const QStringList selectedKeys = sidebar->selectedKeys();
     QCOMPARE(
@@ -442,12 +451,31 @@ void MainWindowDocumentCatalogRetranslationParityTests::
             );
         QVERIFY(viewer->outputCapabilities().printEnabled);
         QVERIFY(viewer->outputCapabilities().saveAsEnabled);
+        QVERIFY(actions.printCurrentPage->isEnabled());
+        QVERIFY(actions.saveCurrentPageAs->isEnabled());
+        QVERIFY(actions.printExportMenu->isEnabled());
         QVERIFY(QApplication::activeModalWidget() == nullptr);
         for (QWidget* topLevel : QApplication::topLevelWidgets())
         {
             const auto* messageBox = qobject_cast<QMessageBox*>(topLevel);
             QVERIFY(!messageBox || !messageBox->isVisible());
         }
+
+        pages->showPage(PageType::CampusDashboard);
+
+        QVERIFY(pages->isCurrentPage(PageType::CampusDashboard));
+        QVERIFY(!pages->isDatabaseOpen());
+        QVERIFY(!viewer->hasLoadedDocument());
+        QVERIFY(viewer->currentFilePath().isEmpty());
+        QCOMPARE(
+            viewer->documentContentSnapshot().phase(),
+            ClassMngr::Next::Application::DocumentContentPhase::Released
+            );
+        QVERIFY(!pages->outputCapabilities().printEnabled);
+        QVERIFY(!pages->outputCapabilities().saveAsEnabled);
+        QVERIFY(!actions.printCurrentPage->isEnabled());
+        QVERIFY(!actions.saveCurrentPageAs->isEnabled());
+        QVERIFY(!actions.printExportMenu->isEnabled());
     }
     QVERIFY2(warnings.isEmpty(),
         qPrintable(warnings.isEmpty() ? QString() : warnings.constFirst()));

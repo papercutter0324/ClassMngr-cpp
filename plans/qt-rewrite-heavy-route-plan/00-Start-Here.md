@@ -136,9 +136,10 @@ synchronization is committed (`f4bc5282`). F416 Document Catalog rendered
   Sidebar leaf through MainWindow/viewer is committed as `a4082f80`. Batch 19
   resumed with F417 Staff Directory rendered leaf through MainWindow
   independently accepted and committed as `d04d9bb0`. F418 Schedule Import
-  through MainWindow apply and Sidebar refresh is accepted and ready to commit;
-  F419-F421 remain queued pending its commit. See the Phase 2 progress log for
-  evidence.
+  through MainWindow apply and Sidebar refresh is committed as `ea755736`.
+  F419 MainWindow Print/Save Current Page As action capability and enabled
+  state is accepted and ready to commit; F420-F421 remain queued pending its
+  commit. See the Phase 2 progress log for evidence.
   Gates 1 and 2 remain Partial, with broader feature
   migration, parity, and 96-class Release memory evidence still open.
   See the
