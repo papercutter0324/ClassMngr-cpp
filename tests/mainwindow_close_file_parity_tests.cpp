@@ -3,6 +3,8 @@
 #include "core/application_services.h"
 #include "core/language_service.h"
 #include "core/settingsmanager.h"
+#include "data/database/database_session.h"
+#include "data/repositories/teacher_repository.h"
 #include "features/campus/ui/campus_dashboard_page.h"
 #include "features/my_info/ui/my_workspace_page.h"
 #include "features/my_info/ui/personal_details_page.h"
@@ -15,9 +17,15 @@
 
 #include <QAction>
 #include <QApplication>
+#include <QCheckBox>
+#include <QDate>
+#include <QDialog>
 #include <QFileInfo>
+#include <QHash>
+#include <QLabel>
 #include <QLineEdit>
 #include <QTemporaryDir>
+#include <QTimer>
 #include <QTreeWidget>
 #include <QtTest>
 
@@ -140,6 +148,7 @@ private slots:
     void initTestCase();
     void closeFileCancelPreservesDraftBeforeDiscardClosesWorkspace();
     void closeFileSavePersistsDraftBeforeClosingWorkspace();
+    void upcomingBirthdaysActionShowsEntriesFromAllStaffDirectories();
 
 private:
     QTemporaryDir m_settingsDirectory;
@@ -463,6 +472,250 @@ closeFileSavePersistsDraftBeforeClosingWorkspace()
         draft
         );
     reopenedServices.closeDatabase();
+}
+
+void MainWindowCloseFileParityTests::
+upcomingBirthdaysActionShowsEntriesFromAllStaffDirectories()
+{
+    QTemporaryDir workspaceRoot;
+    QVERIFY(workspaceRoot.isValid());
+
+    const QString workspacePath = QFileInfo(
+        workspaceRoot.filePath(QStringLiteral("upcoming-birthdays.tps"))
+        ).absoluteFilePath();
+
+    const QDate today = QDate::currentDate();
+    QVERIFY(today.isValid());
+    const auto birthdayForOffset = [&today](const int daysFromToday)
+    {
+        return today.addDays(daysFromToday).toString(
+            QStringLiteral("MM-dd")
+            );
+    };
+
+    ApplicationServices seedServices;
+    QVERIFY(seedServices.openDatabase(workspacePath));
+
+    Teacher koreanTeacher;
+    koreanTeacher.teacherKr = QStringLiteral("F425 Korean Teacher");
+    koreanTeacher.teacherEn = QStringLiteral("F425 Korean Teacher");
+    koreanTeacher.preferredName = QStringLiteral("F425 Korean Birthday");
+    koreanTeacher.roomNumber = QStringLiteral("Room 2");
+    koreanTeacher.birthday = birthdayForOffset(0);
+    koreanTeacher.phoneNumber = QStringLiteral("010-1234-5678");
+    koreanTeacher.wifiName = QStringLiteral("Teacher Wi-Fi");
+    koreanTeacher.wifiPassword = QStringLiteral("Teacher password");
+    koreanTeacher.internetType = QStringLiteral("Both");
+    koreanTeacher.zoomId = QStringLiteral("teacher.zoom");
+    koreanTeacher.zoomPassword = QStringLiteral("Zoom password");
+    koreanTeacher.projectionType = QStringLiteral("Zoom");
+    koreanTeacher.notes = QStringLiteral("Teacher notes");
+    const auto koreanTeacherId = seedServices.databaseSession()
+        ->teacherRepository()->createTeacher(koreanTeacher);
+    QVERIFY(koreanTeacherId);
+    QVERIFY(*koreanTeacherId > 0);
+
+    const auto nativeEnglishSaved =
+        seedServices.teacherService()->saveNativeEnglishTeacherDirectory(
+            {{
+                .name = QStringLiteral("F425 Native Birthday"),
+                .position = QStringLiteral("NET"),
+                .birthday = birthdayForOffset(1)
+            }},
+            {}
+            );
+    QVERIFY(nativeEnglishSaved);
+
+    const auto gsTeamSaved = seedServices.teacherService()->saveGsTeamDirectory(
+        {{
+            .name = QStringLiteral("F425 GS Birthday"),
+            .position = QStringLiteral("M1"),
+            .birthday = birthdayForOffset(2)
+        }},
+        {}
+        );
+    QVERIFY(gsTeamSaved);
+    seedServices.closeDatabase();
+
+    LanguageService languageService;
+    QVERIFY(languageService.setLanguage(Language::English));
+
+    MainWindowStartupOptions startupOptions;
+    startupOptions.loadMostRecentDatabase = false;
+    startupOptions.initialDatabasePath = workspacePath;
+
+    FakeUserPromptService prompts;
+    const UserPromptServiceScope promptScope(&prompts);
+
+    MainWindow window(
+        [](const QString&) {},
+        false,
+        &languageService,
+        nullptr,
+        std::move(startupOptions)
+        );
+    window.show();
+    QApplication::processEvents();
+
+    ApplicationServices* const services = window.services();
+    QVERIFY(services);
+    QVERIFY(services->hasOpenDatabase());
+    QCOMPARE(services->currentDatabasePath(), workspacePath);
+    auto* const activeSession = services->databaseSession();
+    QVERIFY(activeSession);
+
+    PageManager* const pages = window.pageManager();
+    QVERIFY(pages);
+    QVERIFY(pages->isCurrentPage(PageType::MyWorkspace));
+    QWidget* const currentWidget = pages->currentWidget();
+    QVERIFY(currentWidget);
+    const QString currentPageIdentifier = pages->currentPageIdentifier();
+    QVERIFY(!currentPageIdentifier.isEmpty());
+
+    Sidebar* const sidebar = window.findChild<Sidebar*>();
+    QVERIFY(sidebar);
+    const QStringList sidebarKeys = sidebar->selectedKeys();
+    QCOMPARE(sidebarKeys, QStringList{QStringLiteral("my_workspace")});
+
+    QAction* const upcomingBirthdaysAction =
+        window.actions().upcomingBirthdays;
+    QVERIFY(upcomingBirthdaysAction);
+    QVERIFY(upcomingBirthdaysAction->isEnabled());
+
+    const QString dismissalDateKey = QString::fromLatin1(
+        SettingsManager::Keys::UPCOMING_BIRTHDAYS_DISMISSED_DATE
+        );
+    const QVariant dismissalDateBefore = SettingsManager::instance().get(
+        dismissalDateKey
+        );
+    QVERIFY(!dismissalDateBefore.isValid());
+
+    bool observerRan = false;
+    bool modalFound = false;
+    bool dialogWasRejected = false;
+    bool dismissalCheckboxFound = false;
+    bool dismissalCheckboxWasChecked = true;
+    QString dialogObjectName;
+    QString observerError;
+    QStringList entryNames;
+    QHash<QString, QString> entryDetailsByName;
+
+    QTimer dialogObserver;
+    dialogObserver.setSingleShot(true);
+    QObject::connect(
+        &dialogObserver,
+        &QTimer::timeout,
+        &window,
+        [&]()
+        {
+            observerRan = true;
+            auto* const dialog = qobject_cast<QDialog*>(
+                QApplication::activeModalWidget()
+                );
+            if (!dialog)
+            {
+                observerError = QStringLiteral(
+                    "The Upcoming Birthdays action did not open a modal dialog."
+                    );
+                return;
+            }
+            modalFound = true;
+            dialogObjectName = dialog->objectName();
+
+            auto* const dismissForToday = dialog->findChild<QCheckBox*>(
+                QStringLiteral("upcomingBirthdaysDismissForTodayCheck")
+                );
+            dismissalCheckboxFound = dismissForToday != nullptr;
+            if (dismissForToday)
+            {
+                dismissalCheckboxWasChecked =
+                    dismissForToday->isChecked();
+            }
+
+            if (dialogObjectName
+                == QStringLiteral("upcomingBirthdaysDialog"))
+            {
+                for (QLabel* const nameLabel : dialog->findChildren<QLabel*>())
+                {
+                    if (!nameLabel->objectName().endsWith(
+                            QStringLiteral("Name")))
+                    {
+                        continue;
+                    }
+
+                    entryNames.append(nameLabel->text());
+                    QString detailObjectName = nameLabel->objectName();
+                    detailObjectName.replace(
+                        QStringLiteral("Name"),
+                        QStringLiteral("Detail")
+                        );
+                    if (QLabel* const detailLabel = dialog->findChild<QLabel*>(
+                            detailObjectName))
+                    {
+                        entryDetailsByName.insert(
+                            nameLabel->text(),
+                            detailLabel->text()
+                            );
+                    }
+                }
+            }
+            else
+            {
+                observerError = QStringLiteral(
+                    "The modal dialog was not Upcoming Birthdays."
+                    );
+            }
+
+            dialog->reject();
+            dialogWasRejected = true;
+        }
+        );
+    dialogObserver.start(0);
+
+    upcomingBirthdaysAction->trigger();
+    QApplication::processEvents();
+    dialogObserver.stop();
+
+    QVERIFY2(observerRan, qPrintable(observerError));
+    QVERIFY2(modalFound, qPrintable(observerError));
+    QVERIFY2(dialogWasRejected, qPrintable(observerError));
+    QCOMPARE(dialogObjectName, QStringLiteral("upcomingBirthdaysDialog"));
+    QVERIFY(dismissalCheckboxFound);
+    QVERIFY(!dismissalCheckboxWasChecked);
+
+    QCOMPARE(entryNames.size(), 3);
+    QVERIFY(entryNames.contains(QStringLiteral("F425 Korean Birthday")));
+    QVERIFY(entryNames.contains(QStringLiteral("F425 Native Birthday")));
+    QVERIFY(entryNames.contains(QStringLiteral("F425 GS Birthday")));
+    QCOMPARE(entryDetailsByName.size(), 3);
+    QVERIFY(entryDetailsByName.value(
+        QStringLiteral("F425 Korean Birthday")
+        ).contains(QStringLiteral("Korean Teacher")));
+    QVERIFY(entryDetailsByName.value(
+        QStringLiteral("F425 Native Birthday")
+        ).contains(QStringLiteral("Native English Teacher")));
+    QVERIFY(entryDetailsByName.value(
+        QStringLiteral("F425 GS Birthday")
+        ).contains(QStringLiteral("GS Team")));
+
+    QVERIFY(pages->isCurrentPage(PageType::MyWorkspace));
+    QCOMPARE(pages->currentWidget(), currentWidget);
+    QCOMPARE(pages->currentPageIdentifier(), currentPageIdentifier);
+    QCOMPARE(sidebar->selectedKeys(), sidebarKeys);
+    QVERIFY(services->hasOpenDatabase());
+    QCOMPARE(services->databaseSession(), activeSession);
+    QCOMPARE(services->currentDatabasePath(), workspacePath);
+
+    QVERIFY(prompts.messages.isEmpty());
+    QVERIFY(prompts.asynchronousMessages.isEmpty());
+    QVERIFY(prompts.confirmations.isEmpty());
+    QVERIFY(prompts.unsavedChangesConfirmations.isEmpty());
+    QVERIFY(prompts.actionPrompts.isEmpty());
+    QVERIFY(QApplication::activeModalWidget() == nullptr);
+    QCOMPARE(
+        SettingsManager::instance().get(dismissalDateKey),
+        dismissalDateBefore
+        );
 }
 
 QTEST_MAIN(MainWindowCloseFileParityTests)

@@ -2814,3 +2814,11 @@ F423 is committed as 34966439. The test proved My Workspace Schedule's Intensive
 ## 2026-10-09 - F424 Add Class context-menu handoff accepted
 
 The test now follows the Sidebar tree context-menu connection into the MainWindow SidebarController and verifies the created class opens in Details. Offscreen QtTest did not produce a context-menu event from a right-button mouse click alone; sending QContextMenuEvent through the viewport exercised the production connection. The existing signal-only test remains useful but cannot prove the handler path. Independent focused checks passed; no production code changed.
+
+## 2026-10-09 - F424 committed / F425 selected
+
+F424 is committed as 3342963b. Offscreen QtTest did not produce a context-menu event from a right-click alone; a viewport QContextMenuEvent exercised the production tree connection and Add Class QAction. F425 will trigger the ActionRegistry Upcoming Birthdays QAction and inspect current-date entries across all three staff directories; direct controller tests do not cover its QAction connection.
+
+## 2026-10-09 - F425 Upcoming Birthdays QAction accepted
+
+The real MainWindow action opens the modal with birthday entries and directory details from all three staff sources, while leaving page, Sidebar, database session/path, prompt queues, and dismissal preference unchanged. Existing controller tests did not cover the QAction connection. The MainWindow case reuses the established teacher-directory persistence path; the first fixture seed attempt did not populate it correctly. Independent focused CTest and QtTest passed. No production code changed.

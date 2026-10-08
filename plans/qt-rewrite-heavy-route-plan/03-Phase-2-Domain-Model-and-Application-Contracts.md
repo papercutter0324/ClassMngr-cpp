@@ -67,7 +67,8 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
   F419 MainWindow output action state is committed. F420 Class/Schedule save signal refresh is committed as 4c10f0d1; F421 Useful
   Links URL handoff is committed as 27c064e3. F422 Testing Classes edits refreshing both Schedule views is committed as
   08f44ac6. F423 My Schedule display-mode handoff to Classes is committed as 34966439.
-  F424 Sidebar Add Class context-menu handler is accepted in this changeset.
+  F424 Sidebar Add Class context-menu handler is committed as 3342963b.
+  F425 Upcoming Birthdays QAction is accepted in this changeset.
   See the Phase 2 progress log for acceptance and test evidence.
   Gates 1 and 2
   remain Partial; see the progress log for slice evidence.
@@ -114,7 +115,8 @@ log](03-Phase-2-Progress-Log.md).
 8. F421 - Committed (27c064e3): Useful Links URL handoff.
 9. F422 - Committed (08f44ac6): Testing Classes edits refreshing Schedule views.
 10. F423 - Committed (34966439): My Schedule display-mode handoff to Classes.
-11. F424 - Accepted in this changeset: Sidebar Add Class context-menu handler.
+11. F424 - Committed (3342963b): Sidebar Add Class context-menu handler.
+12. F425 - Accepted in this changeset: Upcoming Birthdays QAction.
 
 Batch 20 read-only reviews surfaced additional provisional candidates after F421; see the Phase 2 progress log.
 

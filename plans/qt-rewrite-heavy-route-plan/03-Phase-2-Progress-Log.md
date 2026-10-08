@@ -15346,3 +15346,29 @@ The MainWindow integration case opens a fresh database and triggers Add Class fr
 Executor and independent Tester focused builds passed without warnings. Executor exact registered-name CTest passed 1/1; isolated QtTest passed 3/3 and direct target QtTest passed 4/4. Independent exact registered-name CTest passed 1/1 and the focused new test passed 3/3 including init/cleanup. The independent Tester first used an unprefixed filter that matched no test, then reran the registered ClassMngrMainWindowClassesSidebarRootNavigationTests filter successfully. The ordinary launcher failed before process start; elevated retries passed. Runtime notices were Qt's missing system font directory (repository fonts loaded) and offscreen-plugin notices for unsupported raise()/keyboard grabbing. No focused process remains; no full suite ran.
 
 F424 is accepted and included with this slice record. Later Batch 20 candidates remain provisional.
+
+### F424 committed / F425 selected-current - 2026-10-09
+
+F424 Sidebar Add Class context-menu handoff is committed as 3342963b4c2d66f897b3e13d73af491f34061515. Executor and independent exact registered-name CTest passed 1/1 each; the new test passed executor QtTest 4/4 and independent focused QtTest 3/3. The test follows the actual tree context-menu connection and QAction into the MainWindow controller. No production code changed.
+
+### F425 provisional acceptance matrix - 2026-10-09
+
+Scope: verify the Upcoming Birthdays ActionRegistry QAction invokes its MainWindow-connected controller and presents current birthday data in the real dialog.
+
+1. Extend tests/mainwindow_close_file_parity_tests.cpp and its focused MainWindow target. Reuse its temporary-profile database setup and FakeUserPromptService scope. Assert window.actions().upcomingBirthdays exists and is enabled while the database is open.
+2. Seed one birthday entry in each supported directory with relative dates based on QDate::currentDate(): a Korean teacher today, a Native English teacher tomorrow, and a GS team member two days from today. Reuse the valid fixtures/storage paths from navigation_teacher_read_tests.cpp so all three production reads return entries.
+3. Record current page, Sidebar keys, database session/path. Arm a zero-delay QTimer that observes the active modal, confirms objectName upcomingBirthdaysDialog, captures each name/detail label, and rejects the dialog with dismiss-for-today unchecked. Trigger window.actions().upcomingBirthdays itself; do not invoke showUpcomingBirthdays or call the controller directly.
+4. Assert the action opens the real dialog and displays the seeded name and staff-type detail from all three directories. Confirm the current page and Sidebar keys did not change, the same database session/path remains open, no prompt-service warning/confirmation occurred, and no dismissal preference was written.
+5. Build MainWindowCloseFileParityTests, run exact registered CTest filter ^ClassMngrMainWindowCloseFileParityTests$, and direct QtTest for the focused target. No full suite.
+
+Evidence: action registration/text is in src/ui/shared/actions/action_registry.cpp:709-713 and action registry header:81-84; Teachers menu placement is src/app/menu_builder.cpp:1313-1324. MainWindow constructs/connects the SidebarController (src/app/mainwindow.cpp:105-114,475-489,541-544); its QAction connection is src/app/controllers/sidebar_controller.cpp:65-70. Database open state enables the action (src/app/mainwindow.cpp:1245-1250,1277-1286,1359-1362; src/app/controllers/sidebar_controller_prompts.cpp:459-475). The handler reads current date, shows UpcomingBirthdaysDialog modally, and persists dismissal only if checked (src/app/controllers/sidebar_controller_birthdays.cpp:147-167). Existing controller tests directly invoke the handler and verify all-directory entries (tests/navigation_teacher_read_tests.cpp:562-627,2316-2378) but do not cover the QAction connection. The MainWindow target and exact CTest name are registered in cmake/tests/pages_and_output.cmake:765-777 as ClassMngrMainWindowCloseFileParityTests.
+
+F425 is selected for implementation after this matrix is recorded. Later Batch 20 candidates remain provisional.
+
+### F425 implementation and independent verification accepted - 2026-10-09
+
+The MainWindow integration test triggers the enabled ActionRegistry upcomingBirthdays QAction, observes and rejects the real upcomingBirthdaysDialog with dismissal unchecked, and verifies the relative-date entries and staff-type details from Korean, Native English, and GS directories. It preserves the current page/Sidebar selection, open database session/path, prompt queues, and dismissal preference. The test does not invoke the controller directly. No production code changed.
+
+Executor and independent Tester focused builds passed without warnings. Exact registered CTest passed 1/1 in both runs. Executor direct target QtTest passed 5/5 and the new case passed 3/3; independent QtTest of upcomingBirthdaysActionShowsEntriesFromAllStaffDirectories passed 3/3 including setup and cleanup. The first executor fixture attempt used a teacher creation call that did not seed the directory as expected; it was corrected to the repository persistence pattern and all checks passed. The standard launcher failed before process start; elevated retries passed. Runtime notices were Qt's missing system font directory (repository fonts loaded) and an offscreen propagateSizeHints() warning. No full suite ran and no focused process remains.
+
+F425 is accepted and included with this slice record. Remaining Batch 20 candidates stay provisional.

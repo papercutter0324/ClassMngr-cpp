@@ -142,7 +142,8 @@ synchronization is committed (`f4bc5282`). F416 Document Catalog rendered
   action-state refresh is committed as 4c10f0d1; F421 Useful Links URL handoff
   is committed as 27c064e3. F422 Testing Classes edits refreshing both Schedule views is committed as
   08f44ac6. F423 My Schedule display-mode handoff to Classes is committed as 34966439.
-  F424 Sidebar Add Class context-menu handler is accepted in this changeset.
+  F424 Sidebar Add Class context-menu handler is committed as 3342963b.
+  F425 Upcoming Birthdays QAction is accepted in this changeset.
   See the Phase 2 progress log for evidence.
   Gates 1 and 2 remain Partial, with broader feature
   migration, parity, and 96-class Release memory evidence still open.
