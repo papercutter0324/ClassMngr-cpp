@@ -2549,10 +2549,12 @@ downstream handoff. Focused target
 `ClassMngrMainWindowScheduleTestingClassesHandoffParityTests` built with
 Ninja/MSVC; CTest passed 1/1 (1.54 s) on 2026-10-08.
 
-## 2026-10-08 - F408 committed / F409 discovery started
+## 2026-10-08 - F410 implementation complete / focused verification passed
 
 F407 is committed as `f639fbd3`; F408 Dynamic Teacher Sidebar
-selection/state after retranslation is committed as `9f92b78d`. Sidebar
+selection/state after retranslation is committed as `9f92b78d`; F409 My
+Workspace Sidebar root producer-to-handler integration is committed as
+`ee319df2`. Sidebar
 restoration now uses the saved stable key path plus teacher ID to restore the
 exact duplicate occurrence, falling back to ID-based selection if that
 occurrence no longer exists. The focused MainWindow test switches
@@ -2573,4 +2575,16 @@ checks its production payload, then verifies the current My Workspace page,
 Schedule tab, root selection, unchanged page instance, and open database
 session/path. It built under VS 18 x64 and filtered CTest passed 1/1 (0.37 s).
 A possible dirty-cancel selection mismatch remains source-inferred and outside
-F409. F410-F413 remain queued in Batch 18; discover Batch 19 when F412 starts.
+F409.
+
+F410 Classes Sidebar root integration is implemented and accepted. The new
+MainWindow test clicks the rendered Classes root, checks its actual payload
+(`Page`, displayed label, `classes` key/route, class ID -1), and verifies the
+Classes page, root selection, and unchanged open database session/path. The
+first run exposed a production teardown lifetime defect: QObject-owned pages
+kept non-owning service pointers but were destroyed after MainWindow's service
+member. `MainWindow::~MainWindow()` now deletes `m_pages` while
+`ApplicationServices` is alive, preserving normal page hide/teardown behavior.
+The focused target built under VS 18 x64 and independent CTest passed 1/1
+(0.32 s) after the fix. F411-F413 remain queued in Batch 18; discover Batch 19
+when F412 starts.

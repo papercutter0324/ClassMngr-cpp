@@ -1375,7 +1375,12 @@ void MainWindow::onSidebarItemSelected(
 // Destructor
 // =========================================================
 
-MainWindow::~MainWindow() = default;
+MainWindow::~MainWindow()
+{
+    // Pages hold non-owning service pointers and must die before m_services.
+    delete m_pages;
+    m_pages = nullptr;
+}
 
 
 

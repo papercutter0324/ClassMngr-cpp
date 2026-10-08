@@ -14508,3 +14508,60 @@ source-inferred and out of scope.
 x64 Debug environment; its exact registered CTest passed 1/1 in 0.37 s. No full
 suite was run. F409 is accepted and ready to commit. F410-F413 remain queued in
 active Batch 18; begin Batch 19 discovery when F412 starts.
+
+### F409 committed / F410 selected/current - 2026-10-08
+
+F409 is committed as `ee319df2`. Batch 18 remains active with F410
+selected/current and F411-F413 queued.
+
+### F410 selected/current / provisional acceptance matrix - 2026-10-08
+
+1. With the database open, QTest mouse-click the rendered `classes` root in the
+   actual Sidebar tree. Passively assert exactly one real `NavigationData`
+   payload: `NodeType::Page`, path [`rootItem->text(0)`], keys [`classes`],
+   routeKey `classes`, and natural `classId` -1. Read the displayed root label
+   from the tree item for a translation-neutral path assertion.
+2. Verify the real MainWindow handler makes `PageType::Classes` current,
+   selects the stable root key path, and preserves the open database session
+   and path. An open database is required because the route needs the class
+   service.
+
+Evidence: `classes` is a top-level `NodeType::Page` root
+(`src/ui/shared/widgets/sidebar/sidebar_definitions.cpp:21-25`). A rendered tree
+click reaches `Sidebar::onItemClicked` through the tree connection
+(`src/ui/shared/widgets/sidebar/sidebar.cpp:160`); the slot builds displayed
+path/stable keys/routeKey and emits `itemSelected`
+(`src/ui/shared/widgets/sidebar/sidebar_selection.cpp:229-255`). MainWindow
+connects that signal to `NavigationController::handleNavigation`
+(`src/app/mainwindow.cpp:784-789`). The open-session `classes` route checks the
+leave guard, loads Classes, and shows `PageType::Classes`
+(`src/app/controllers/navigation_controller.cpp:322-352`). Existing Sidebar
+structure coverage invokes the handler slot with `QMetaObject`
+(`tests/sidebar_structure_tests.cpp:354-390`); class route parity tests
+construct `NavigationData` directly
+(`tests/class_route_availability_parity_tests.cpp:177-205,377-422`). No test
+currently covers the rendered root click through MainWindow. This is a coverage
+gap; discovery did not establish a runtime defect. This matrix was provisional
+at selection; see the completion entry below. F411-F413 remain queued; begin
+Batch 19 discovery when F412 starts.
+
+### F410 implementation complete / focused verification passed - 2026-10-08
+
+The MainWindow integration test QTest-clicks the rendered `classes` root and
+asserts exactly one real payload (`NodeType::Page`, displayed-label path,
+`classes` key/route, and natural `classId == -1`). The real handler makes
+`PageType::Classes` current, keeps the stable root selected, and preserves the
+open database session and path
+(`tests/mainwindow_classes_sidebar_root_navigation_tests.cpp:95-161`).
+
+The initial CTest run exposed a shutdown lifetime defect: page objects retained
+non-owning service pointers but were destroyed after `ApplicationServices`.
+`MainWindow::~MainWindow()` now deletes `m_pages` while its services are still
+alive (`src/app/mainwindow.cpp:1378-1383`). After this fix,
+`ClassMngrMainWindowClassesSidebarRootNavigationTests` built under VS 18 x64
+Debug and the registered `MainWindowClassesSidebarRootNavigation` CTest passed
+1/1 in 0.32 s with normal QtTest completion and no lingering process. No full
+suite was run. F410 closes the root integration coverage gap and fixes the
+teardown defect found by the test. It is accepted and ready to commit;
+F411-F413 remain queued in active Batch 18. Begin Batch 19 discovery when F412
+starts.

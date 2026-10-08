@@ -2988,5 +2988,17 @@ gap: prior tests selected the root programmatically or fabricated the payload
 and called the controller directly. `ClassMngrMainWindowMyWorkspaceSidebarRootNavigationTests`
 built under VS 18 x64; filtered CTest passed 1/1 (0.37 s). No runtime defect
 was established; a possible dirty-cancel selection mismatch remains a separate
-source inference. F410-F413 remain queued in Batch 18; the next-batch discovery
-trigger is F412.
+source inference. F409 is committed as `ee319df2`.
+
+F410 Classes Sidebar root integration is implemented and accepted. The new
+MainWindow test clicks the rendered root, passively verifies the actual `Page`
+payload, displayed label, stable `classes` key/route, and natural class ID -1,
+then asserts the Classes page, selected root, and unchanged open database
+session/path. This closes the gap left by direct slot invocation and synthetic
+controller-route tests. Initial CTest exposed a production teardown lifetime
+defect: QObject-owned pages retained non-owning service pointers but were
+destroyed after MainWindow's `ApplicationServices` member. The destructor now
+deletes `m_pages` while services remain alive. `ClassMngrMainWindowClassesSidebarRootNavigationTests`
+built under VS 18 x64; independent filtered CTest passed 1/1 (0.32 s) after the
+fix. F411-F413 remain queued in Batch 18; the next-batch discovery trigger is
+F412.
