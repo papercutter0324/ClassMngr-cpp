@@ -15441,3 +15441,29 @@ F427 was the second-last known Batch 20 slice, so two independent bounded review
 The nested document-catalog folder metadata gap was not numbered because the production adapter constructs its catalog internally and the focused adapter fixture has no injection seam; inspect feasibility before selection (src/core/application_services.cpp:18; tests/next_platform_application_services_document_catalog_port_tests.cpp:68; resources/assets/documents/documents.json:3). Backup/recovery and legacy database import remain broader work packages without a bounded slice seam in this review.
 
 Batch 21 read-only reviews have surfaced ten provisional candidates after F428; see the Phase 2 progress log.
+
+### F427 committed / F428 selected - 2026-10-09
+
+F427 Schedule Save As/PDF output is committed as bbdf10e85ba2c5a61066ed6fd32a7c8993c0f04e with the test and five current-position documents. Executor and independent exact registered CTest passed 1/1 each; direct target QtTest passed 5/5 and the selected case passed 3/3. The real MainWindow action opened SchedulePrintDialog, and the actual Save As button produced a readable PDF. Branch Qt-Rewrite is ahead 12. The modified session handoff and unrelated untracked %SystemDrive%/ remain excluded from slice commits.
+
+### F428 provisional acceptance matrix - 2026-10-09
+
+Scope: verify cancellation of the database profile Save As flow through the real MainWindow saveAsFile QAction. This writes a .tps profile and is distinct from F427 current-page PDF output.
+
+1. Extend tests/mainwindow_save_as_export_parity_tests.cpp using its existing temporary profile, MainWindow, FakeFileDialogService, and FakeUserPromptService setup. Open a temporary database and assert window.actions().saveAsFile exists and is enabled.
+2. Explicitly enqueue std::nullopt in FakeFileDialogService.scriptedSaveFiles, then trigger window.actions().saveAsFile itself. Do not call FileController::saveAsFile or saveDatabaseAs directly.
+3. Assert exactly one SaveFileRequest with parent &window, title Save Teacher Profile, TeacherProfile purpose, active-profile directory as initialDirectory, filter ClassMngr Teacher Profile (*.tps), and default suffix tps. Verify the fake queue explicitly supplied cancellation.
+4. Assert cancellation leaves the same database session and source path open, current page and Sidebar selection unchanged, recent-files history and last-file setting unchanged, no destination file created, and no prompt/warning shown.
+5. Build MainWindowSaveAsExportParityTests, run exact registered CTest filter ^ClassMngrMainWindowSaveAsExportParityTests$, and run the target QtTest plus the selected cancellation case. No full suite.
+
+Evidence: File menu placement is in src/app/menu_builder.cpp:1222-1243; MainWindow connects FileController to the action in src/app/mainwindow.cpp:500-505, and FileController connects saveAsFile to saveAsFile() in src/app/controllers/file_controller.cpp:167-172. Open-database state enables the action (src/app/mainwindow.cpp:1245-1250,1270-1282,1314-1317). The handler checks for an open database, requests the picker with parent m_window, title Save Teacher Profile, TeacherProfile purpose, databaseDialogDirectory(), the .tps filter and suffix, then returns immediately on null selection before saveDatabaseAs (src/app/controllers/file_controller.cpp:680-707; databaseDialogDirectory resolves the active profile directory at :1266-1287). Existing MainWindow success coverage uses the real saveAsFile QAction, temporary profile, fake file picker and prompt service, and verifies session/path/recent-history changes on accepted Save As (tests/mainwindow_save_as_export_parity_tests.cpp:96-180). Existing FileController lifecycle tests cover accepted/failed paths but no MainWindow cancellation case (tests/file_controller_workspace_lifecycle_tests.cpp:1682-1902). The exact CTest is ClassMngrMainWindowSaveAsExportParityTests (cmake/tests/pages_and_output.cmake:847-859).
+
+F428 is selected for implementation after this matrix is recorded. The test must trigger the QAction and explicitly script null selection; do not rely on the fake's empty-queue default.
+
+### F428 implementation and independent verification accepted - 2026-10-09
+
+The new saveAsActionCancellationPreservesOpenProfile case explicitly enqueues and confirms consumption of std::nullopt, then triggers the real saveAsFile QAction. It checks one request with parent MainWindow, Save Teacher Profile title, TeacherProfile purpose, active profile directory, ClassMngr Teacher Profile (*.tps) filter and tps suffix. Cancellation preserves the same database session and source path, current My Workspace page/widget and Sidebar keys, recent files, last-file and last-directory settings; no destination appears and prompt queues remain empty. No FileController direct call or production change was used.
+
+Executor focused build passed without warnings; exact registered CTest passed 1/1, direct target QtTest passed 6/6, and the selected case passed 3/3 including setup and cleanup. Independent Tester ran the focused build command, exact Debug CTest (1/1), direct target QtTest (6/6), and selected case (3/3). The independent build tree was shared and its target object timestamp was later than the edited source. Qt reported its missing system-font directory, then loaded repository fonts. No focused process remains; no full suite ran.
+
+F428 is accepted in this changeset and ready to commit. F429 Document Catalog PDF viewer Save As is next after the F428 commit, from Batch 21.

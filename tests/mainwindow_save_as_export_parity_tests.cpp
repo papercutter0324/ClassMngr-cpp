@@ -63,6 +63,7 @@ private slots:
     void init();
     void cleanup();
     void saveAsActionMovesTheOpenSessionAndUpdatesRecentHistory();
+    void saveAsActionCancellationPreservesOpenProfile();
     void exportActionPreservesWorkspaceAndUpdatesExportDirectoryPreference();
     void saveCurrentPageAsActionWritesSchedulePdf();
 
@@ -177,6 +178,121 @@ saveAsActionMovesTheOpenSessionAndUpdatesRecentHistory()
     QVERIFY(window.actions().saveAsFile->isEnabled());
     QVERIFY(window.actions().exportAsFile->isEnabled());
     QVERIFY(window.actions().closeFile->isEnabled());
+}
+
+void MainWindowSaveAsExportParityTests::
+saveAsActionCancellationPreservesOpenProfile()
+{
+    QTemporaryDir workspaceRoot;
+    QVERIFY(workspaceRoot.isValid());
+
+    const QString sourcePath = QFileInfo(
+        workspaceRoot.filePath(QStringLiteral("source-workspace.tps"))
+        ).absoluteFilePath();
+    const QString destinationPath = QFileInfo(
+        workspaceRoot.filePath(QStringLiteral("cancelled-destination.tps"))
+        ).absoluteFilePath();
+    const QString sourceDirectory = QFileInfo(sourcePath).absolutePath();
+
+    ApplicationServices seedServices;
+    QVERIFY(seedServices.openDatabase(sourcePath));
+    seedServices.closeDatabase();
+
+    FakeFileDialogService fileDialogs;
+    fileDialogs.scriptedSaveFiles.enqueue(std::nullopt);
+    QCOMPARE(fileDialogs.scriptedSaveFiles.size(), 1);
+    QVERIFY(!fileDialogs.scriptedSaveFiles.head().has_value());
+    const FileDialogServiceScope fileDialogScope(&fileDialogs);
+
+    FakeUserPromptService prompts;
+    const UserPromptServiceScope promptScope(&prompts);
+
+    LanguageService languageService;
+    QVERIFY(languageService.setLanguage(Language::English));
+
+    MainWindowStartupOptions startupOptions;
+    startupOptions.loadMostRecentDatabase = false;
+    startupOptions.initialDatabasePath = sourcePath;
+
+    MainWindow window(
+        [](const QString&) {},
+        false,
+        &languageService,
+        nullptr,
+        std::move(startupOptions)
+        );
+    window.show();
+    QApplication::processEvents();
+
+    ApplicationServices* const services = window.services();
+    QVERIFY(services);
+    QVERIFY(services->hasOpenDatabase());
+    QCOMPARE(services->currentDatabasePath(), sourcePath);
+    DatabaseSession* const activeSession = services->databaseSession();
+    QVERIFY(activeSession);
+
+    PageManager* const pages = window.pageManager();
+    QVERIFY(pages);
+    QVERIFY(pages->isCurrentPage(PageType::MyWorkspace));
+    QWidget* const currentWidget = pages->currentWidget();
+    QVERIFY(currentWidget);
+    const QString currentPageIdentifier = pages->currentPageIdentifier();
+    QVERIFY(!currentPageIdentifier.isEmpty());
+
+    Sidebar* const sidebar = window.findChild<Sidebar*>();
+    QVERIFY(sidebar);
+    const QStringList sidebarKeys = sidebar->selectedKeys();
+    QCOMPARE(sidebarKeys, QStringList{QStringLiteral("my_workspace")});
+
+    SettingsManager& settings = SettingsManager::instance();
+    const QStringList sourceHistory{sourcePath};
+    QCOMPARE(settings.getRecentFiles(), sourceHistory);
+    QCOMPARE(settings.getLastFile(), sourcePath);
+    QCOMPARE(settings.getLastDatabaseDirectory(), sourceDirectory);
+
+    QVERIFY(!QFileInfo::exists(destinationPath));
+    QAction* const saveAsAction = window.actions().saveAsFile;
+    QVERIFY(saveAsAction);
+    QVERIFY(saveAsAction->isEnabled());
+    saveAsAction->trigger();
+    QApplication::processEvents();
+
+    QCOMPARE(fileDialogs.scriptedSaveFiles.size(), 0);
+    QCOMPARE(fileDialogs.saveFileRequests.size(), 1);
+    QCOMPARE(fileDialogs.openFileRequests.size(), 0);
+    QCOMPARE(fileDialogs.openFilesRequests.size(), 0);
+    QCOMPARE(fileDialogs.saveFileWithOptionsRequests.size(), 0);
+    QCOMPARE(fileDialogs.directoryRequests.size(), 0);
+
+    const SaveFileRequest request =
+        fileDialogs.saveFileRequests.constFirst();
+    QVERIFY(request.parent == &window);
+    QCOMPARE(request.title, QStringLiteral("Save Teacher Profile"));
+    QVERIFY(request.purpose == FileDialogPurpose::TeacherProfile);
+    QCOMPARE(request.initialDirectory, sourceDirectory);
+    QCOMPARE(
+        request.nameFilters,
+        QStringList{QStringLiteral("ClassMngr Teacher Profile (*.tps)")}
+        );
+    QCOMPARE(request.defaultSuffix, QStringLiteral("tps"));
+
+    QVERIFY(!QFileInfo::exists(destinationPath));
+    QVERIFY(services->hasOpenDatabase());
+    QCOMPARE(services->databaseSession(), activeSession);
+    QCOMPARE(services->currentDatabasePath(), sourcePath);
+    QVERIFY(pages->isCurrentPage(PageType::MyWorkspace));
+    QCOMPARE(pages->currentWidget(), currentWidget);
+    QCOMPARE(pages->currentPageIdentifier(), currentPageIdentifier);
+    QCOMPARE(sidebar->selectedKeys(), sidebarKeys);
+    QCOMPARE(settings.getRecentFiles(), sourceHistory);
+    QCOMPARE(settings.getLastFile(), sourcePath);
+    QCOMPARE(settings.getLastDatabaseDirectory(), sourceDirectory);
+    QVERIFY(prompts.messages.isEmpty());
+    QVERIFY(prompts.asynchronousMessages.isEmpty());
+    QVERIFY(prompts.confirmations.isEmpty());
+    QVERIFY(prompts.unsavedChangesConfirmations.isEmpty());
+    QVERIFY(prompts.actionPrompts.isEmpty());
+    QVERIFY(QApplication::activeModalWidget() == nullptr);
 }
 
 void MainWindowSaveAsExportParityTests::

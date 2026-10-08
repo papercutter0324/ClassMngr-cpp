@@ -145,9 +145,10 @@ synchronization is committed (`f4bc5282`). F416 Document Catalog rendered
   F424 Sidebar Add Class context-menu handler is committed as 3342963b.
   F425 Upcoming Birthdays QAction is committed as 37588279.
   F426 Class Transfer import QAction is committed as 249d57b1.
-  F427 Schedule Save As/PDF output is implemented and independently accepted,
-  ready to commit. Its acceptance evidence is in the Phase 2 progress log.
-  Batch 21 reviews surfaced ten provisional candidates after F428; F429 is next.
+  F427 Schedule Save As/PDF output is committed as bbdf10e8.
+  F428 canceled database profile Save As is accepted in this changeset;
+  its acceptance evidence is in the Phase 2 progress log. Batch 21 surfaced ten
+  provisional candidates after F428; F429 is next.
   Gates 1 and 2 remain Partial, with broader feature
   migration, parity, and 96-class Release memory evidence still open.
   See the

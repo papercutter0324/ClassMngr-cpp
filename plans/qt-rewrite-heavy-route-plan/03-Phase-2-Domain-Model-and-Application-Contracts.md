@@ -40,11 +40,11 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-09
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: Batch 20 is active. F422-F426 are committed; F427
-  Schedule Save As/PDF output is implemented and independently accepted,
-  ready to commit. F428 canceled profile Save As is the last Batch 20 candidate.
-  Batch 21 review is complete with ten provisional candidates after F428; see
-  the progress log. F429 is next after F428. Gates 1 and 2 remain Partial.
+- Current note: Batch 20 is active. F422-F426 are committed; F427 is
+  committed as bbdf10e8. F428 canceled database profile Save As is accepted in this changeset; see
+  the Phase 2 progress log for its acceptance evidence.
+  Batch 21 has ten provisional candidates after F428; F429 is next.
+  Gates 1 and 2 remain Partial.
 
 ### Slice discovery batches
 
@@ -76,14 +76,15 @@ log](03-Phase-2-Progress-Log.md).
 3. F424 - Committed (3342963b): Sidebar Add Class context-menu handler.
 4. F425 - Committed (37588279): Upcoming Birthdays QAction.
 5. F426 - Committed (249d57b1): Class Transfer import QAction.
-6. F427 - Accepted in this changeset: Schedule Save As/PDF output through MainWindow.
-7. F428 - Provisional: canceled database profile Save As through MainWindow.
+6. F427 - Committed (bbdf10e8): Schedule Save As/PDF output through MainWindow.
+7. F428 - Accepted in this changeset: canceled database profile Save As
+   through MainWindow.
 
 Batch 20 read-only reviews have surfaced provisional candidates after F421; see the Phase 2 progress log.
-Batch 21 reviews surfaced ten provisional candidates after F428; F429 is next.
+Batch 21 reviews surfaced ten provisional candidates after F428; see the Phase 2 progress log.
 
 Batch 19 completed with F421. Batch 20 was activated from the bounded review
-after F421; F422-F426 are committed and F427 is accepted, ready to commit.
+after F421; F422-F427 are committed, including F427 as bbdf10e8. F428 is accepted and ready to commit.
 Batch 21 discovery began with F427, the second-last known Batch 20 candidate,
 and is complete with ten provisional candidates after F428.
 

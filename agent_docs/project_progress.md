@@ -87,10 +87,14 @@ independent CTest passed 1/1 each, executor target QtTest passed 5/5, and
 independent selected-case QtTest passed 3/3. F426 Class Transfer import QAction is committed as
 249d57b11ce327923a6416d72e53e034b53cda3c. Executor and independent
 focused CTest passed 1/1 each; executor target QtTest passed 6/6 and
-independent selected-case QtTest passed 3/3. F427 Schedule Save As/PDF output is implemented and independently accepted,
-ready to commit. Executor and independent focused CTest passed 1/1 each;
-direct target QtTest passed 5/5 and the selected case passed 3/3. Batch 21
-reviews surfaced ten provisional candidates after F428; F429 is next.
+independent selected-case QtTest passed 3/3. F427 Schedule Save As/PDF output is committed as
+bbdf10e85ba2c5a61066ed6fd32a7c8993c0f04e. Executor and independent focused
+CTest passed 1/1 each; direct target QtTest passed 5/5 and the selected case
+passed 3/3. F428 canceled database profile Save As is implemented and independently
+accepted, ready to commit. Executor and independent exact CTest passed 1/1;
+direct target QtTest passed 6/6 and the selected case passed 3/3. F429 is next
+after F428; ten provisional Batch 21 candidates are recorded in the progress
+log.
 F385 is retired as a duplicate of F369.
 The seven user-reported MSVC build errors in
 the Teacher Profile Edit persistence target are fixed and independently
@@ -3108,5 +3112,5 @@ passed 1/1. The executor build reported `LNK4075` (`/INCREMENTAL` ignored due
 to `/FORCE`); the independent build did not reproduce it. No full suite ran.
 F416 was accepted and committed in its slice. Work paused after F416 at
 user request, then resumed through F426. Batch 20 is active; F426 is
-committed as 249d57b11ce327923a6416d72e53e034b53cda3c and F427 is implemented and independently accepted, ready to commit; verification and Batch 21 discovery are in the Phase 2 progress log. Batch 21 began when F427 started; two independent reviews surfaced ten
+committed as 249d57b11ce327923a6416d72e53e034b53cda3c and F427 is committed as bbdf10e85ba2c5a61066ed6fd32a7c8993c0f04e. F428 canceled database profile Save As is accepted and ready to commit. F429 is next after F428; the ten Batch 21 candidates are recorded. Batch 21 began when F427 started; two independent reviews surfaced ten
 provisional candidates after F428. See the Phase 2 progress log; F429 is next.

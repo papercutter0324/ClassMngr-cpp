@@ -2842,3 +2842,11 @@ started with F427 and surfaced ten provisional candidates after F428; F429 is ne
 The real MainWindow saveCurrentPageAs QAction opens SchedulePrintDialog and the test clicks its Save As button. The fake picker request and real PDF are verified, including QPdfDocument validity and stable page/session/path/prompt state. Executor and independent focused CTest both passed 1/1; direct QtTest passed 5/5 and the selected case passed 3/3. Independent CMake regeneration took 220.7 seconds, then the exact Debug CTest passed; no focused process remains. No production change or full-suite run was needed. F427 is accepted and ready to commit.
 
 Batch 21 was discovered while F427, the second-last known Batch 20 candidate, was current. Two bounded reviews surfaced ten provisional candidates after F428; F429 is recommended next once Batch 20 completes.
+
+## 2026-10-09 - F427 committed / F428 selected
+
+F427 Schedule Save As/PDF output is committed as bbdf10e85ba2c5a61066ed6fd32a7c8993c0f04e. Executor and independent focused CTest passed 1/1 each; direct target QtTest passed 5/5 and the new case passed 3/3. The real MainWindow action and SchedulePrintDialog button produced a valid PDF without changing page/session/path/prompt state. F428 is selected next: explicit cancellation of the separate database profile Save As action.
+
+## 2026-10-09 - F428 canceled profile Save As accepted
+
+The MainWindow cancellation case explicitly queues std::nullopt and triggers the real saveAsFile QAction. It verifies the .tps request and unchanged session/path/page/Sidebar/recent-file settings, with no destination or prompts. Executor and independent focused CTest passed 1/1; target QtTest passed 6/6 and the selected case 3/3. No production code changed; no full suite ran. F428 is accepted and ready to commit.
