@@ -2475,3 +2475,16 @@ built and filtered CTest passed 1/1 (0.34 s). No full suite ran; the standard
 Visual Studio tree remains blocked before source compilation by the existing
 FileTracker/CommonApplicationData issue. Batch 17 advances to F403 after the
 F402 commit; the ten Batch 18 candidates activate after F403.
+
+
+## 2026-10-08 - F403 Dynamic Teacher Sidebar leaf navigation accepted
+
+A real MainWindow integration test uses the production startup refresh to
+create Co-Teachers and Korean Teachers leaves, clicks each target, and checks
+the emitted teacher ID and stable route keys. For both groups, Cancel preserves
+the source Teacher Info page and exact dirty draft; Discard loads the target,
+cleans the page, and leaves source persistence unchanged. The workspace session
+and path remain active. No production changes were needed. The focused
+Ninja/MSVC/Qt 6.12 target built and CTest passed 1/1 (0.52 s); independent
+filtered CTest passed 1/1. No full suite ran. F403 is ready to commit; F404 is
+the first Batch 18 candidate and activates after the F403 commit.

@@ -14177,3 +14177,49 @@ outcomes, and no distinct user-visible acceptance delta was established. Also
 excluded are the empty-state Open Profile forwarding-only follow-up, the
 Initial Setup replacement failure-path contract, synthetic routes without a
 production producer, and deferred F285/F298 follow-ups.
+
+### F402 committed / F403 selected/current - 2026-10-08
+
+F402 is committed as `9cbe39c9`. F403 Dynamic Teacher Sidebar leaf navigation
+is selected/current in active Batch 17. Batch 18 is discovered with ten
+provisional candidates for after F403; it remains provisional until F403
+completes.
+
+### F403 selected/current / acceptance matrix established - 2026-10-08
+
+Use a real MainWindow with teacher leaves produced by the production refresh path.
+For each group, create dirty Teacher Info for one existing teacher, then click a
+different existing target leaf. Verify the emitted route carries the target ID
+and stable keys and reaches `NavigationController::handleTeacher`.
+
+| Target group | Leave choice | Acceptance |
+| --- | --- | --- |
+| Co-Teachers | Cancel | One prompt; route carries the clicked target ID and stable keys; original profile, page, exact dirty draft, and session remain. |
+| Co-Teachers | Discard | One prompt; route carries the clicked target ID and stable keys; target profile loads on Teacher Info, the draft is clean, and source database data is unchanged. |
+| Korean Teachers | Cancel | Same Cancel assertions for a target leaf in Korean Teachers. |
+| Korean Teachers | Discard | Same Discard assertions for a target leaf in Korean Teachers. |
+
+Evidence: `SidebarController::refreshTeacherSidebar`
+(`src/app/controllers/sidebar_controller_refresh.cpp:36,143-204`),
+`Sidebar::addTeacherNode`
+(`src/app/controllers/sidebar_teachers.cpp:3`), click payload
+(`src/ui/shared/widgets/sidebar/sidebar_selection.cpp:229`), MainWindow
+connection (`src/app/mainwindow.cpp:784`), and
+`NavigationController::handleTeacher`
+(`src/app/controllers/navigation_controller.cpp:146`). Existing refresh
+coverage checks nodes and IDs but not clicks; route tests hand-build payloads,
+and one manually invokes Discard instead of scripting the choice.
+
+### F403 accepted / ready to commit - 2026-10-08
+
+F403 is accepted with test-only changes. The real MainWindow test covers the
+production teacher refresh and target-leaf click for Co-Teachers and Korean
+Teachers with Cancel and Discard. It verifies emitted target IDs and stable keys;
+Cancel preserves the original profile, page, exact dirty draft, and session,
+while Discard loads the target profile on Teacher Info, leaves the draft clean,
+and preserves source database data. The focused target built and CTest passed
+1/1 (0.52 s); an independent filtered CTest passed 1/1. No production changes.
+
+F403 is accepted and ready to commit. F404 Save choice on Open/Close File actions
+is queued as the first Batch 18 slice and activates after the F403 commit. Batch
+18 remains provisional until that commit.

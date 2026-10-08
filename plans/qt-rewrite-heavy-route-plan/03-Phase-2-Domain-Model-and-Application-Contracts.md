@@ -41,13 +41,13 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
 - Current note: F400 Open File action dirty-page gate and F401 Recent-workspace
-  menu selection/missing-path pruning are accepted and committed (F401: `2121ce59`).
-  Batch 17 remains active. F402 MainWindow application-exit confirmation is
-  accepted and ready to commit; F403 Dynamic Teacher Sidebar leaf navigation is
-  queued after the F402 commit. Batch 18 discovery is complete, with ten
-  provisional candidates recorded for after F403; they remain provisional
-  until Batch 17 completes. Gates 1 and 2 remain Partial; see the Phase 2
-  progress log for acceptance evidence.
+  menu selection/missing-path pruning are accepted and committed (F401: `2121ce59`). F402 MainWindow application-exit confirmation
+  is committed (`9cbe39c9`); F403 Dynamic Teacher Sidebar leaf navigation is
+  accepted and ready to commit. Batch 17 remains active. Batch 18 discovery is
+  complete, with ten provisional candidates recorded. F404 Save choice on
+  Open/Close File actions is queued first and activates after the F403 commit;
+  Batch 18 remains provisional until then. Gates 1 and 2 remain Partial; see the
+  Phase 2 progress log for acceptance evidence.
 
 ### Slice discovery batches
 
@@ -76,8 +76,8 @@ log](03-Phase-2-Progress-Log.md).
 
 1. F401 - Committed (`2121ce59`): Recent-workspace menu selection and
    missing-path pruning.
-2. F402 - Accepted / ready to commit: MainWindow application-exit confirmation.
-3. F403 - Queued after the F402 commit: Dynamic Teacher Sidebar leaf navigation.
+2. F402 - Committed (`9cbe39c9`): MainWindow application-exit confirmation.
+3. F403 - Accepted / ready to commit: Dynamic Teacher Sidebar leaf navigation.
 
 Batch 17 was discovered at F397 start through independent route-producer and
 application-boundary reviews. It is bounded to the reviewed Phase 2 plan and

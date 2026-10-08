@@ -2896,8 +2896,8 @@ The focused Ninja/MSVC/Qt 6.12 target built and filtered CTest passed 1/1
 (1.02 s); incremental build with no warnings. No full suite ran; the standard
 Visual Studio tree was not used for this slice.
 
-F402 MainWindow application-exit confirmation is accepted and ready to
-commit, with no production changes. A real visible MainWindow test exercises
+F402 MainWindow application-exit confirmation is committed as 9cbe39c9,
+with no production changes. A real visible MainWindow test exercises
 QWidget::close() with a dirty Details draft and open workspace. Cancel rejects
 close while preserving the window, exact session/path, page, tab, Sidebar
 selection, draft, and dirty state. A second close with Discard is accepted and
@@ -2907,7 +2907,16 @@ WrapVulkanHeaders and known object-path-length warnings, with no LNK4006.
 No full suite ran. The standard Visual Studio tree remains blocked before
 source compilation by the existing FileTracker/CommonApplicationData issue.
 
-Batch 17 remains active. F402 is accepted and ready to commit; F403 Dynamic
-Teacher Sidebar leaf navigation is queued after that commit. Batch 18 discovery
-is complete with ten provisional candidates to activate after F403. The
-user-modified `latest_session_work.md` remains untouched.
+F403 Dynamic Teacher Sidebar leaf navigation is accepted and ready to
+commit, with no production changes. A real MainWindow test opens a seeded
+workspace, uses the production refresh path, and clicks leaves in Co-Teachers
+and Korean Teachers. For each group, it verifies target teacher ID and stable
+route keys; Cancel preserves the dirty source page and exact draft, and Discard
+loads the target with a clean page while leaving source persistence unchanged.
+The focused Ninja/MSVC/Qt 6.12 target built and CTest passed 1/1 (0.52 s); an
+independent filtered CTest also passed 1/1. No full suite ran.
+
+Batch 17 is complete after the F403 commit. F404 Save choice on Open/Close File
+actions is queued as the first Batch 18 slice and activates after the F403
+commit. Batch 18 has ten provisionally discovered candidates. The user-modified
+latest_session_work.md remains untouched.
