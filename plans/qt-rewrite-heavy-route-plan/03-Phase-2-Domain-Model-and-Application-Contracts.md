@@ -55,12 +55,13 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
   (`9f92b78d`). F409 My Workspace Sidebar root producer-to-handler integration
   is committed (`ee319df2`); F410 Classes Sidebar root integration is committed
   (`14723973`). F411 Sub Prep Sidebar root integration is committed
-  (`3e5dbea4`). Batch 18 remains active with F412 Campus Sidebar root/section
-  producer integration committed (`76661791`) and F413 Initial Setup success
-  navigation accepted and ready to commit. Batch 19 discovery completed at
-  F412 and remains provisional until Batch 18 completes; see the Phase 2
-  progress log for its bounded candidate evidence. Gates 1 and 2 remain
-  Partial; see the progress log for slice evidence.
+  (`3e5dbea4`); F412 Campus Sidebar root/section producer integration is
+  committed (`76661791`). F413 Initial Setup success
+  navigation is committed (`5d8a941a`), completing Batch 18. Batch 19 is active
+  with F414 Teacher profile save preserving the selected duplicate Sidebar
+  occurrence accepted and ready to commit; F415-F421 are queued. See the Phase
+  2 progress log for acceptance evidence and bounded discovery details. Gates
+  1 and 2 remain Partial; see the progress log for slice evidence.
 
 ### Slice discovery batches
 
@@ -85,31 +86,27 @@ log](03-Phase-2-Progress-Log.md).
   failure warning/no-navigation behavior; revisit after that behavior is
   clarified.
 
-#### Active batch: Batch 18
+#### Active batch: Batch 19
 
-1. F404 - Committed (`b445e102`): Save choice on Open/Close File actions.
-2. F405 - Committed (`07dc5864`): MainWindow Save As and Export action
-   integration.
-3. F406 - Committed (`28b27998`): Manage Campuses QAction transition.
-4. F407 - Committed (`f639fbd3`): Schedule↔Testing Classes handoff.
-5. F408 - Committed (`9f92b78d`): Dynamic Teacher Sidebar selection/state
-   during retranslation.
-6. F409 - Committed (`ee319df2`): My Workspace Sidebar root
-   producer-to-handler integration.
-7. F410 - Committed (`14723973`): Classes Sidebar root integration.
-8. F411 - Committed (`3e5dbea4`): Sub Prep Sidebar root integration.
-9. F412 - Committed (`76661791`): Campus Sidebar root plus section producer
-   integration.
-10. F413 - Accepted / ready to commit: Initial Setup success navigation from
-    the no-database empty-state button.
+1. F414 - Accepted / ready to commit: Teacher profile save preserves the
+   selected duplicate Sidebar occurrence.
+2. F415 - Queued: Campus Dashboard page-tab-to-Sidebar synchronization.
+3. F416 - Queued: Document Catalog rendered Sidebar leaf through MainWindow
+   and viewer.
+4. F417 - Queued: Staff Directory rendered leaf through MainWindow.
+5. F418 - Queued: Schedule Import through MainWindow apply and Sidebar refresh.
+6. F419 - Queued: MainWindow Print/Save Current Page As action capability and
+   enabled state.
+7. F420 - Queued: Class/Schedule save signal to Sidebar action-state refresh.
+8. F421 - Queued: Useful Links URL handoff.
+
+No other slices were found.
 
 Batch 18 was discovered at F402 start from two independent bounded reviews and
-activated after F403 committed as `28e881cd`. Its evidence and limits are in the
-Phase 2 progress log; discovery does not establish repository-wide exhaustion.
-Batch 19 was discovered at F412, the second-last slice in Batch 18. Its
-candidates remain provisional until Batch 18 completes; see the Phase 2
-progress log. This bounded discovery does not establish repository-wide
-exhaustion.
+activated after F403 committed as `28e881cd`; it completed when F413 committed
+as `5d8a941a`. Batch 19 was discovered at F412 and activated after Batch 18
+completed. Candidate evidence and limits are in the Phase 2 progress log; this
+bounded discovery does not establish repository-wide exhaustion.
 
 ## Objective
 

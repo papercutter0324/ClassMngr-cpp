@@ -3038,4 +3038,15 @@ Sidebar selection, and hidden empty-state banner. The VS 18 x64 Debug target
 rebuilt; independent filtered CTest passed 1/1 (0.46 s), with no lingering
 process. No production change or runtime defect was needed. F413 is ready to
 commit; Batch 18 is complete after its commit and Batch 19 candidates are ready
-to activate.
+to activate. F413 is committed as `5d8a941a`, completing Batch 18. Batch 19 is
+now active with F414 Teacher profile save preserving the selected duplicate
+Sidebar occurrence selected/current; F415-F421 follow in discovered order.
+
+F414 is accepted and ready to commit. Its MainWindow regression reproduced
+the occurrence shift before the fix: saving from Campus Staff → Korean
+Teachers selected the Co-Teachers occurrence. The save handler now restores
+the selected teacher key path after rebuilding the Sidebar. The valid manual
+Save flow verifies both updated leaves, persisted profile, clean current page,
+and stable database session/path. Independent VS 18 x64 Debug target build
+passed; the exact filtered CTest passed 1/1 (1.52 s), and direct QtTest passed
+5/5. No LNK4006 warnings occurred.

@@ -2637,3 +2637,23 @@ Sidebar selection, and hidden no-database banner. The VS 18 x64 Debug target
 rebuilt; independent filtered CTest passed 1/1 (0.46 s), with no lingering
 process. No production change or runtime defect was needed. Batch 19 remains
 provisional until F413 is committed and Batch 18 closes.
+
+## 2026-10-08 - F413 committed / Batch 18 complete / F414 selected-current
+
+F413 Initial Setup empty-state handoff is committed as `5d8a941a`, completing
+Batch 18. Its focused VS 18 x64 Debug target and independent registered CTest
+passed 1/1 (0.46 s). Batch 19 is active with F414 Teacher profile save
+preserving the selected duplicate Sidebar occurrence selected/current; F415-F421
+follow in discovery order.
+
+## 2026-10-08 - F414 Teacher profile save occurrence restoration accepted
+
+The focused MainWindow regression reproduced the selected duplicate shifting
+from Campus Staff → Korean Teachers to Co-Teachers after a successful manual
+profile save. The fix captures the selected key path before the Sidebar refresh
+and restores it when the saved teacher remains selected. The test verifies the
+updated duplicate labels, persisted profile, clean same page, no extra route or
+prompt, and stable database session/path. The focused VS 18 x64 Debug target
+rebuilt; independent filtered CTest passed 1/1 (1.52 s), and direct QtTest
+passed 5/5. No LNK4006 warnings occurred. F414 is accepted and ready to commit;
+F415 remains queued until that commit.

@@ -225,9 +225,25 @@ void SidebarController::handleTeacherSaved(
     int teacherId
     )
 {
+    const QStringList selectedKeys = m_sidebar
+        ? m_sidebar->selectedKeys()
+        : QStringList{};
+    const bool selectedTeacherIsSaved = m_sidebar
+        && m_sidebar->getSelectedTeacherId() == teacherId;
+
     refreshTeacherSidebar();
 
-    m_sidebar->selectTeacher(
-        teacherId
-        );
+    if (!m_sidebar)
+    {
+        return;
+    }
+
+    if (selectedTeacherIsSaved && !selectedKeys.isEmpty())
+    {
+        m_sidebar->selectByKeys(selectedKeys, teacherId);
+    }
+    else
+    {
+        m_sidebar->selectTeacher(teacherId);
+    }
 }

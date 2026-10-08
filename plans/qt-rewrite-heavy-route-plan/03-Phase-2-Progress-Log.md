@@ -14749,6 +14749,68 @@ MainWindow accepted-result branch through a direct signal handoff, not
 
 The focused target built successfully under VS 18 x64 Debug. Its exact
 registered CTest passed 1/1 in 0.46 s, and no process remained. No full suite
-was run. No production change or runtime defect was found. F413 is accepted and
-ready to commit; Batch 18 completes after its commit, and Batch 19 activates
-after Batch 18 completes.
+was run. No production change or runtime defect was found. At this point in
+the log, F413 was accepted and ready to commit; Batch 18 remained open and
+Batch 19 awaited activation.
+
+### F413 committed / Batch 18 complete / Batch 19 activated - 2026-10-08
+
+F413 Initial Setup success navigation is committed as `5d8a941a`, completing
+Batch 18. Batch 19 is active with F414 selected/current and F415-F421 queued;
+its candidates are no longer provisional.
+
+### F414 selected/current / acceptance matrix - 2026-10-08
+
+1. Seed an open temporary workspace with one assigned teacher appearing in
+   both Co-Teachers and Campus Staff → Korean Teachers. Launch MainWindow with
+   manual save enabled. QTest-click the rendered Korean Teachers duplicate
+   leaf and verify its stable key path and teacher ID.
+2. Change a non-membership display or sort field and click the real
+   `teacherInfoSaveButton`. Verify successful `TeacherInfoPage::teacherSaved`
+   flows through MainWindow to `SidebarController::handleTeacherSaved` and
+   refreshes/rebuilds the Sidebar.
+3. Verify the original Korean Teachers key path and teacher ID are selected on
+   the new leaf; both duplicate occurrences remain with updated display; the
+   same `TeacherInfoPage` stays current with the updated canonical profile and
+   clean state; the profile is persisted; no extra navigation or prompt occurs;
+   and the same database session and workspace path remain open.
+
+Dirty-cancel reselection is explicitly outside F414. This avoids membership
+changes. At selection, the occurrence shift was source-inferred; implementation
+later reproduced it before the fix. Evidence: successful save emits
+`teacherSaved` (`src/features/teacher/ui/teacher_info_page.cpp:1392-1425`),
+MainWindow forwards it to the Sidebar save handler
+(`src/app/mainwindow.cpp:976-989`), and teacher save refresh/rebuild and group
+ordering run through
+`src/app/controllers/sidebar_controller_refresh.cpp:140-204,224-234`.
+Selection currently uses the first matching occurrence
+(`src/ui/shared/widgets/sidebar/sidebar_selection.cpp:3-22`); duplicate leaf
+indexing and key-path restoration are in
+`src/ui/shared/widgets/sidebar/sidebar_teachers.cpp:3-37` and
+`src/ui/shared/widgets/sidebar/sidebar_tree.cpp:282-359`.
+
+F408's duplicate fixture/language coverage is in
+`refreshedTeacherLeavesDispatchCancelAndDiscard` and
+`languageSwitchPreservesDuplicateTeacherOccurrenceAndDraft` in
+`tests/mainwindow_teacher_sidebar_navigation_parity_tests.cpp`, but no
+MainWindow test covered the save-refresh path. The matrix was provisional at
+selection; the completion entry below records its acceptance.
+
+### F414 implementation complete / independently verified / accepted, ready to commit - 2026-10-08
+
+The pre-fix regression left the two-key Co-Teachers occurrence selected where
+the original three-key Campus Staff → Korean Teachers occurrence was expected.
+The narrow save handler now restores the existing key path for the saved
+teacher and retains ID-based fallback when that occurrence is unavailable.
+
+The valid manual Save flow checks updated labels for both duplicate leaves, the
+persisted preferred name, the same `TeacherInfoPage` current with its canonical
+profile updated and clean, no extra navigation or prompt, and the same open
+database session and workspace path. Dirty-cancel reselection remains outside
+F414.
+
+The focused target built independently under VS 18 x64 Debug. Its exact
+filtered CTest passed 1/1 in 1.52 s; the executor's direct QtTest run reported
+5 passed and 0 failed. No LNK4006 warnings were reported, and no full suite was
+run. F414 is accepted and ready to commit; Batch 19 remains active with F415
+queued and F416-F421 queued.
