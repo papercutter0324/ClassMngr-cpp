@@ -14454,3 +14454,57 @@ Focused target `ClassMngrMainWindowTeacherSidebarNavigationParityTests` built
 under VS 18 x64; filtered CTest passed 1/1 in 1.21 s. F408 is accepted and ready
 to commit. F409-F413 remain queued in active Batch 18; begin Batch 19 discovery
 when F412 starts, the second-last slice in this batch.
+
+### F408 committed / F409 selected/current - 2026-10-08
+
+F408 is committed as `9f92b78d`. Batch 18 remains active with F409
+selected/current and F410-F413 queued.
+
+### F409 selected/current / provisional acceptance matrix - 2026-10-08
+
+1. With a database open, QTest mouse-click the rendered `my_workspace` root in
+   the actual Sidebar tree. Without emitting a signal or calling the controller
+   directly, passively assert exactly one real `NavigationData` payload:
+   `NodeType::Page`, path [`rootItem->text(0)`], keys [`my_workspace`], and
+   routeKey `my_workspace`. Read the displayed root label from the tree item so
+   the path assertion is translation-neutral.
+2. Start with an existing My Workspace page instance current on Details. Verify
+   the click routes that same instance to Schedule, leaves the stable root key
+   path selected, and preserves the open database session and path.
+
+Evidence: My Workspace is a translated `NodeType::Page` root with stable key
+`my_workspace` (`src/ui/shared/widgets/sidebar/sidebar_definitions.cpp:13-18`).
+Sidebar click handling creates payload `path` from displayed item text and
+stable `keys` from item data before emitting `itemSelected`
+(`src/ui/shared/widgets/sidebar/sidebar_selection.cpp:120-255,308-348`); MainWindow
+connects that signal to `NavigationController::handleNavigation`
+(`src/app/mainwindow.cpp:786-788`). The controller dispatches the route to
+`handleMyInfo`; with an open database, the root defaults to Schedule, shows
+My Workspace, opens that tab, and selects the stable root key
+(`src/app/controllers/navigation_controller.cpp:198-361,537-610`). Existing
+Sidebar structure tests inspect/select the root programmatically
+(`tests/sidebar_structure_tests.cpp:364-390,455-512`), while the route matrix
+synthesizes `NavigationData` and calls the controller directly
+(`tests/my_info_route_navigation_parity_tests.cpp:130-148,334-396`). They do not
+cover the rendered root click through MainWindow to the real handler. This is a
+coverage gap; no runtime defect is established. This matrix was provisional at
+selection; see the completion entry below. F410-F413 remain queued; begin Batch
+19 discovery when F412 starts.
+
+### F409 implementation complete / focused verification passed - 2026-10-08
+
+The integration test clicks the rendered `my_workspace` root with QTest mouse
+input and passively observes exactly one actual `NavigationData` payload:
+`NodeType::Page`, path containing the displayed root label, keys
+[`my_workspace`], and routeKey `my_workspace`. The actual MainWindow handler
+reaches Schedule on the same existing My Workspace page instance, selects the
+stable root path, and preserves the open database session and path. The test
+uses the tree item's displayed label for its path assertion, keeping it
+translation-neutral. This closes an integration-test gap; discovery did not
+establish a runtime defect. The possible dirty-cancel selection mismatch stays
+source-inferred and out of scope.
+
+`ClassMngrMainWindowMyWorkspaceSidebarRootNavigationTests` built under the VS 18
+x64 Debug environment; its exact registered CTest passed 1/1 in 0.37 s. No full
+suite was run. F409 is accepted and ready to commit. F410-F413 remain queued in
+active Batch 18; begin Batch 19 discovery when F412 starts.

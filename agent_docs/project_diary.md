@@ -2549,17 +2549,28 @@ downstream handoff. Focused target
 `ClassMngrMainWindowScheduleTestingClassesHandoffParityTests` built with
 Ninja/MSVC; CTest passed 1/1 (1.54 s) on 2026-10-08.
 
-## 2026-10-08 - F408 implementation complete / focused verification passed
+## 2026-10-08 - F408 committed / F409 discovery started
 
-F407 is committed as `f639fbd3`. F408 Dynamic Teacher Sidebar selection/state
-after retranslation is implemented and accepted. Sidebar restoration now uses
-the saved stable key path plus teacher ID to restore the exact duplicate
-occurrence, falling back to ID-based selection if that occurrence no longer
-exists. The focused MainWindow test switches English↔Korean from both
-Co-Teachers and Campus Staff → Korean Teachers and verifies the occurrence,
-selected ID, expansion, no route event, Teacher Info identity, dirty manual-save
-draft and no prompt, delete action, database session/path, and dynamic teacher
-display. It also verifies translated group and internet-type labels while
-keeping the combo’s stable data and user draft intact. The focused target built
-under VS 18 x64; filtered CTest passed 1/1 (1.21 s). F409-F413 remain queued in
-Batch 18; discover Batch 19 at F412.
+F407 is committed as `f639fbd3`; F408 Dynamic Teacher Sidebar
+selection/state after retranslation is committed as `9f92b78d`. Sidebar
+restoration now uses the saved stable key path plus teacher ID to restore the
+exact duplicate occurrence, falling back to ID-based selection if that
+occurrence no longer exists. The focused MainWindow test switches
+English↔Korean from both Co-Teachers and Campus Staff → Korean Teachers and
+verifies the occurrence, selected ID, expansion, no route event, Teacher Info
+identity, dirty manual-save draft and no prompt, delete action, database
+session/path, and dynamic teacher display. It also verifies translated group
+and internet-type labels while keeping the combo’s stable data and user draft
+intact. The focused target built under VS 18 x64; filtered CTest passed 1/1
+(1.21 s).
+
+F409 My Workspace Sidebar root producer-to-handler integration is implemented
+and accepted. Existing route coverage synthesized `NavigationData` and called
+the controller directly, while Sidebar structure coverage selected the root
+programmatically; neither proved a real root click reached MainWindow’s
+connected handler. The new focused test clicks the rendered root and passively
+checks its production payload, then verifies the current My Workspace page,
+Schedule tab, root selection, unchanged page instance, and open database
+session/path. It built under VS 18 x64 and filtered CTest passed 1/1 (0.37 s).
+A possible dirty-cancel selection mismatch remains source-inferred and outside
+F409. F410-F413 remain queued in Batch 18; discover Batch 19 when F412 starts.

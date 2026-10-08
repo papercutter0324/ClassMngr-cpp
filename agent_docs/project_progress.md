@@ -2978,3 +2978,15 @@ localized combo assertion compares its stable data separately from its display
 text. `ClassMngrMainWindowTeacherSidebarNavigationParityTests` built under VS
 18 x64 and filtered CTest passed 1/1 (1.21 s). F409-F413 remain queued in
 Batch 18; the next-batch discovery trigger is F412.
+
+F408 is committed as `9f92b78d`. F409 My Workspace Sidebar root
+producer-to-handler integration is implemented and accepted. The focused test
+clicks the rendered root, passively verifies its actual `NavigationData`
+payload, then asserts the My Workspace page and instance, Schedule tab, root
+selection, and unchanged open database session/path. This closes a coverage
+gap: prior tests selected the root programmatically or fabricated the payload
+and called the controller directly. `ClassMngrMainWindowMyWorkspaceSidebarRootNavigationTests`
+built under VS 18 x64; filtered CTest passed 1/1 (0.37 s). No runtime defect
+was established; a possible dirty-cancel selection mismatch remains a separate
+source inference. F410-F413 remain queued in Batch 18; the next-batch discovery
+trigger is F412.
