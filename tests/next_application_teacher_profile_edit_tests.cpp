@@ -64,7 +64,7 @@ Domain::TeacherProfile profile(
     Domain::TeacherProfileFields value = fields()
     )
 {
-    const auto typedId = Domain::TeacherId::fromInt(id);
+    const auto typedId = Domain::TeacherId::fromString(std::to_string(id));
     require(typedId.has_value(), "test profile ID must be positive");
     return {.id = *typedId, .fields = std::move(value)};
 }
@@ -220,7 +220,7 @@ void validSavePreservesFieldsOrderAndCanonicalReturn()
     require(port.updates.size() == 1
                 && port.updates.front() == profile(8, normalized),
         "update should receive all canonical fields returned by the policy");
-    require(port.reloads.size() == 1 && port.reloads.front().value() == 8,
+    require(port.reloads.size() == 1 && port.reloads.front().value() == "8",
         "reload should use the checked typed ID");
     require(result.value() == port.canonical,
         "success should return the canonical reloaded profile");

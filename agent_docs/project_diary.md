@@ -2273,7 +2273,11 @@ selects the requested My Workspace tab after one Discard confirmation. The
 canonical transcript SHA-256 is
 `4d725cd4826c2913dbe97d49b1d10a4173d09c5f9a488a7634119096fe7e8c7d`.
 
-The user reported seven build errors to fix before F390. Their current
-diagnostics are not available in persisted build logs or the IDE surface, so
-the next slice remains unstarted pending the diagnostic list and a separate
-fix commit. Batch 14 remains inactive until Batch 13 is complete.
+The user supplied seven MSVC errors in the Teacher Profile Edit persistence
+target. The fix uses the shared string-backed `TeacherId` and keeps canonical
+positive integer conversion at the platform and UI boundaries. It updates two
+existing test sources after the first production repair exposed stale integer
+ID usage. The named target and standard all-target build passed independent
+build-only verification with zero errors; no test binaries or CTest ran. The
+repair commit is pending, and F390 remains unstarted until it is committed.
+Batch 14 remains inactive until Batch 13 is complete.

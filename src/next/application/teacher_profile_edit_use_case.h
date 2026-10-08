@@ -28,7 +28,9 @@ struct TeacherProfileEditRequest final
         )
     {
         return {
-            .id = Domain::TeacherId::fromInt(id),
+            .id = id > 0
+                ? Domain::TeacherId::fromString(std::to_string(id))
+                : std::nullopt,
             .fields = std::move(fields)
         };
     }

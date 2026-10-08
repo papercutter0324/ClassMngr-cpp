@@ -9,8 +9,11 @@
 #include <QByteArray>
 #include <QString>
 
+#include <charconv>
 #include <exception>
+#include <optional>
 #include <string>
+#include <system_error>
 #include <utility>
 
 namespace ClassMngr::Next::Platform
@@ -57,10 +60,16 @@ public:
             return Domain::Result<void>::failure(unavailableError());
         }
 
+        const std::optional<int> legacyId = legacyTeacherId(profile.id);
+        if (!legacyId)
+        {
+            return Domain::Result<void>::failure(invalidTeacherIdError());
+        }
+
         try
         {
             const Status result = repository->updateTeacher(
-                teacherFromProfile(profile));
+                teacherFromProfile(profile, *legacyId));
             if (!result)
             {
                 return Domain::Result<void>::failure(
@@ -85,6 +94,13 @@ public:
         const Domain::TeacherId id
         ) const override
     {
+        const std::optional<int> legacyId = legacyTeacherId(id);
+        if (!legacyId)
+        {
+            return Domain::Result<Domain::TeacherProfile>::failure(
+                invalidTeacherIdError());
+        }
+
         TeacherRepository* const repository = activeRepository();
         if (!repository)
         {
@@ -94,14 +110,14 @@ public:
 
         try
         {
-            const Result<Teacher> result = repository->getTeacher(id.value());
+            const Result<Teacher> result = repository->getTeacher(*legacyId);
             if (!result)
             {
                 return Domain::Result<Domain::TeacherProfile>::failure(
                     technicalError(result.error(),
                         QStringLiteral("Reloading teacher failed.")));
             }
-            if (result->id != id.value())
+            if (result->id != *legacyId)
             {
                 return Domain::Result<Domain::TeacherProfile>::failure(
                     technicalError(QStringLiteral(
@@ -126,6 +142,29 @@ public:
     }
 
 private:
+    [[nodiscard]] static std::optional<int> legacyTeacherId(
+        const Domain::TeacherId& id
+        )
+    {
+        const std::string& value = id.value();
+        int parsed = 0;
+        const auto [end, error] = std::from_chars(
+            value.data(),
+            value.data() + value.size(),
+            parsed
+            );
+        if (
+            error != std::errc{}
+            || end != value.data() + value.size()
+            || parsed <= 0
+            || std::to_string(parsed) != value
+            )
+        {
+            return std::nullopt;
+        }
+        return parsed;
+    }
+
     [[nodiscard]] TeacherRepository* activeRepository() const noexcept
     {
         DatabaseSession* const session =
@@ -156,12 +195,13 @@ private:
     }
 
     [[nodiscard]] static Teacher teacherFromProfile(
-        const Domain::TeacherProfile& profile
+        const Domain::TeacherProfile& profile,
+        const int legacyId
         )
     {
         const Domain::TeacherProfileFields& fields = profile.fields;
         return {
-            .id = profile.id.value(),
+            .id = legacyId,
             .teacherKr = legacyText(fields.teacherKr),
             .teacherEn = legacyText(fields.teacherEn),
             .preferredRomanization = legacyText(fields.preferredRomanization),
@@ -207,6 +247,15 @@ private:
         return {
             .code = Domain::ErrorCode::NotFound,
             .message = "No active Teacher Profile database session is available.",
+            .recoverable = true
+        };
+    }
+
+    [[nodiscard]] static Domain::OperationError invalidTeacherIdError()
+    {
+        return {
+            .code = Domain::ErrorCode::InvalidInput,
+            .message = "Teacher ID must be a canonical positive integer.",
             .recoverable = true
         };
     }

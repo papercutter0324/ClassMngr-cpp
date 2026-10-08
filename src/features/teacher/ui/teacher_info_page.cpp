@@ -44,8 +44,10 @@
 #include <QWidgetAction>
 
 #include <algorithm>
+#include <charconv>
 #include <optional>
 #include <string>
+#include <system_error>
 #include <utility>
 #include <vector>
 
@@ -296,6 +298,27 @@ void setComboTextWithFallback(
 namespace NextApplication = ClassMngr::Next::Application;
 namespace NextDomain = ClassMngr::Next::Domain;
 
+std::optional<int> legacyTeacherId(const NextDomain::TeacherId& id)
+{
+    const std::string& value = id.value();
+    int parsed = 0;
+    const auto [end, error] = std::from_chars(
+        value.data(),
+        value.data() + value.size(),
+        parsed
+        );
+    if (
+        error != std::errc{}
+        || end != value.data() + value.size()
+        || parsed <= 0
+        || std::to_string(parsed) != value
+        )
+    {
+        return std::nullopt;
+    }
+    return parsed;
+}
+
 NextDomain::TeacherProfileFields profileFieldsFromTeacher(
     const Teacher& teacher
     )
@@ -325,7 +348,7 @@ Teacher teacherFromProfile(
 {
     const NextDomain::TeacherProfileFields& fields = profile.fields;
     return {
-        .id = profile.id.value(),
+        .id = legacyTeacherId(profile.id).value_or(-1),
         .teacherKr = QString::fromStdU16String(fields.teacherKr),
         .teacherEn = QString::fromStdU16String(fields.teacherEn),
         .preferredRomanization = QString::fromStdU16String(

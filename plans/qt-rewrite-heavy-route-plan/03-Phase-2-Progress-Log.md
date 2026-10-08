@@ -13272,9 +13272,18 @@ the independent run's hash matches after normalizing Windows CRLF line endings.
 
 The executor build reported MSVC LNK4075 (`/INCREMENTAL` ignored due to
 `/FORCE`); the independent rebuild passed without warnings. No build errors
-were observed in this focused verification, and no full suite ran. At the
-user's request, the seven separately reported build errors must be fixed and
-committed before F390 starts; their current diagnostics are not available in
-the persisted logs or IDE surface. F390 remains provisional and unstarted;
-F391-F393 remain inactive until Batch 13 completes. Phase 2 remains In
-Progress/Open; Gates 1 and 2 remain Partial.
+were observed in this focused verification, and no full suite ran. The user
+then supplied seven errors from
+`ClassMngrNextPlatformApplicationServicesTeacherProfileEditPersistencePortTests.vcxproj`.
+The fix removes the duplicate integer-backed `TeacherId`, uses the shared
+string-backed v2 ID, and validates/converts it at the UI and platform edges
+before calling the legacy integer repository. Two existing test sources were
+updated to the shared ID contract. The initial repair exposed six stale test
+compile errors; after those updates, both the named target and
+`cmake --build --preset windows-x64-debug --parallel 4` passed with zero build
+errors. An independent Tester repeated both builds successfully and captured
+zero error lines. `git diff --check` passed. No test binary or CTest was run;
+LNK4006 warnings are excluded per the user's instruction. The repair commit is
+pending. F390 remains provisional and unstarted until that commit; F391-F393
+remain inactive until Batch 13 completes. Phase 2 remains In Progress/Open;
+Gates 1 and 2 remain Partial.

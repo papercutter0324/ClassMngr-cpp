@@ -11,6 +11,8 @@
 #include <QUuid>
 #include <QtTest/QtTest>
 
+#include <string>
+
 using namespace ClassMngr::Next;
 
 namespace
@@ -48,7 +50,7 @@ Domain::TeacherProfileFields fields()
 Domain::TeacherProfile profile(const int intId)
 {
     return {
-        .id = *Domain::TeacherId::fromInt(intId),
+        .id = *Domain::TeacherId::fromString(std::to_string(intId)),
         .fields = fields()
     };
 }
@@ -180,7 +182,8 @@ mapsUnavailableSessionAndRepositoryFailures()
     QVERIFY(fromUtf8(updateFailure.error().message).contains(
         QStringLiteral("injected profile update failure")));
 
-    const auto missingId = Domain::TeacherId::fromInt(teacherId + 1000);
+    const auto missingId = Domain::TeacherId::fromString(
+        std::to_string(teacherId + 1000));
     QVERIFY(missingId);
     const Domain::Result<Domain::TeacherProfile> reloadFailure =
         port.reload(*missingId);
@@ -190,7 +193,8 @@ mapsUnavailableSessionAndRepositoryFailures()
         QStringLiteral("no matching record"), Qt::CaseInsensitive));
 
     services.closeDatabase();
-    const auto closedSession = port.reload(*Domain::TeacherId::fromInt(teacherId));
+    const auto closedSession = port.reload(
+        *Domain::TeacherId::fromString(std::to_string(teacherId)));
     QVERIFY(!closedSession);
     QCOMPARE(closedSession.error().code, Domain::ErrorCode::NotFound);
 }

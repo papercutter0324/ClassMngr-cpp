@@ -101,11 +101,12 @@
   duplicate of F369. F387 Calendar Preferences event-reset parity and F388
   Class Details/Notes/student Evaluation route availability parity are
   accepted; F389 My Info route navigation gate parity is also accepted, and
-  F390 Sub Prep route gate parity remains provisional. Seven build errors were
-  reported for repair before F390; their current diagnostics are not present in
-  persisted logs or available through the IDE surface. Batch 14 bounded
-  discovery is recorded in the Phase 2 progress log. See that log for F389
-  acceptance evidence and its F388 source pin.
+  F390 Sub Prep route gate parity remains provisional. The seven user-reported
+  MSVC build errors in the Teacher Profile Edit persistence target are fixed;
+  the target and standard all-target builds passed independently with zero
+  errors, and the separate repair commit is pending before F390 begins. Batch
+  14 bounded discovery is recorded in the Phase 2 progress log. See that log
+  for F389 acceptance evidence and its F388 source pin.
   Gates 1 and 2 remain Partial, with broader feature
   migration, parity, and 96-class Release memory evidence still open.
   See the

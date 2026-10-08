@@ -42,12 +42,12 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Exit gate: Open
 - Current note: F389 My Info route navigation gate parity is accepted on
   pre-slice source `f877acac`; its eight-case route/session matrix passed
-  independent focused verification. The user reported seven build errors to
-  fix before the next slice, but their current diagnostics are not present in
-  persisted build logs or available through the IDE surface. F390 Sub Prep
-  route gate parity remains provisional and unstarted pending that fix. Batch
-  14 bounded discovery is recorded in the progress log and becomes active
-  after Batch 13. Gates 1 and 2 remain Partial.
+  independent focused verification. The seven user-reported MSVC build errors
+  in the Teacher Profile Edit persistence target are fixed and independently
+  verified by the target and standard all-target builds; the separate repair
+  commit is pending. F390 Sub Prep route gate parity remains provisional and
+  unstarted until that commit. Batch 14 bounded discovery is recorded in the
+  progress log and becomes active after Batch 13. Gates 1 and 2 remain Partial.
 
 ### Slice discovery batches
 

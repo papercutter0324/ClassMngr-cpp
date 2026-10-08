@@ -58,9 +58,10 @@ the staged-package report probe passed. Cross-platform CI and local
 Phase 2 remains In Progress/Open under deployment
 `phase2_f387_resume_20261008`. F371, F382-F384, and F386-F389 are accepted;
 Batches 11 and 12 are complete and Batch 13 remains active with F390
-provisional. F385 is retired as a duplicate of F369. The user reported seven
-build errors to fix before F390; their current diagnostics are not present in
-persisted logs or available through the IDE surface. Gates 1 and 2 remain
+provisional. F385 is retired as a duplicate of F369. The seven user-reported
+MSVC build errors in the Teacher Profile Edit persistence target are fixed and
+independently verified in both the named target and all-target build; the
+separate repair commit is pending before F390 begins. Gates 1 and 2 remain
 Partial. The current slice and
 detailed acceptance records are maintained in the [Phase 2 plan](../plans/qt-rewrite-heavy-route-plan/03-Phase-2-Domain-Model-and-Application-Contracts.md)
 and [Phase 2 progress log](../plans/qt-rewrite-heavy-route-plan/03-Phase-2-Progress-Log.md).
@@ -2873,7 +2874,8 @@ QtTest transcript contains all eight route/session rows. Closed rows preserve
 the dirty Teacher Info page with no prompt, warning, new page, or activation;
 open rows select the exact tab after one discard confirmation. Transcript
 SHA-256: `4d725cd4826c2913dbe97d49b1d10a4173d09c5f9a488a7634119096fe7e8c7d`.
-The user reported seven build errors to fix before F390, but the exact current
-diagnostics are not available in persisted logs or the IDE surface. F390
-remains provisional pending that fix. Bounded Batch 14 discovery found
-F391-F393, recorded in the Phase 2 progress log.
+The seven user-supplied MSVC build errors in the Teacher Profile Edit
+persistence target are fixed. The named target and standard all-target build
+passed independently with zero errors; no tests ran. The separate repair
+commit is pending, and F390 remains provisional until it completes. Bounded
+Batch 14 discovery found F391-F393, recorded in the Phase 2 progress log.
