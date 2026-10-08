@@ -2500,3 +2500,9 @@ Information, disables database-backed actions, and remains persisted after the
 workspace is reopened. No production changes were needed. Both focused
 Ninja/MSVC/Qt 6.12 targets built under VS 18 x64, and filtered CTest passed 2/2.
 No full suite ran. Batch 18 continues with F405 queued after the F404 commit.
+
+## 2026-10-08 - F405 MainWindow Save As and Export action integration accepted
+
+F405 is accepted and ready to commit. The target built under VS 18 x64 with
+Ninja/MSVC; CTest simple-name filter passed 1/1. Batch 18 remains active, with
+F406 queued after the F405 commit.

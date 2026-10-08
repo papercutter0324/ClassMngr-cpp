@@ -14271,3 +14271,41 @@ persisted.
 Both real MainWindow Open/Close targets built under VS 18 x64 with Ninja/MSVC and
 Qt 6.12; filtered CTest passed 2/2. No full suite ran. F404 is accepted and ready
 to commit; F405 is queued after the F404 commit in active Batch 18.
+
+### F404 committed / F405 selected/current - 2026-10-08
+
+F404 is committed as `b445e102`. Batch 18 remains active with F405 selected/current
+and F406-F413 queued.
+
+### F405 selected/current / acceptance matrix established - 2026-10-08
+
+This refines F405 to real MainWindow action integration for Save As and Export.
+
+1. **Save As action.** From an open workspace, trigger the real MainWindow Save As
+   QAction with a destination supplied by `FakeFileDialogService`. Assert the
+   dialog parent, title, and suffix; `.tps` file creation; the same
+   `DatabaseSession` now at the destination; recent history
+   `[destination, source]`; `lastFile` set to the destination; and open-workspace
+   actions remaining enabled.
+2. **Export action.** From My Workspace Details, trigger the real MainWindow Export
+   QAction. Assert export file creation; the same session, source path, current
+   page, Details tab, and Sidebar; unchanged source history and `lastFile`; and
+   the export-directory preference updated.
+
+Evidence: MainWindow wiring (`src/app/mainwindow.cpp:500-505`); FileController
+action connections (`src/app/controllers/file_controller.cpp:167-179`), Save As
+(`src/app/controllers/file_controller.cpp:680-738,956-1017`), and Export
+(`src/app/controllers/file_controller.cpp:1038-1087`); menu actions
+(`src/app/menu_builder.cpp:1241-1247`);
+`WorkspaceCoordinator::saveWorkspaceAs`/`exportWorkspace`
+(`src/next/application/workspace_coordinator.h:143-195`); existing controller
+cases (`tests/file_controller_workspace_lifecycle_tests.cpp:1682,1904`); real
+MainWindow fixture (`tests/mainwindow_open_file_parity_tests.cpp:81,129`) and
+`tests/fakes/fake_file_dialog_service.h`. F405 is selected/current; no acceptance
+result is recorded yet.
+
+### F405 accepted / ready to commit - 2026-10-08
+
+F405 is accepted and ready to commit. The target built under VS 18 x64 with
+Ninja/MSVC; CTest simple-name filter passed 1/1. Batch 18 remains active, with
+F406 queued after the F405 commit.

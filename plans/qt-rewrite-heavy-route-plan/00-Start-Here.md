@@ -120,9 +120,12 @@ F401 Recent-workspace menu selection and missing-path pruning are accepted and
 committed (F401: `2121ce59`). F402 MainWindow application-exit confirmation
 is committed (`9cbe39c9`); F403 Dynamic Teacher Sidebar leaf navigation is
 committed (`28e881cd`), completing Batch 17. Batch 18 is active.
-F404 Save choice on Open/Close File actions is accepted and ready to commit;
-F405 is queued after the F404 commit, with F406-F413 following. See the Phase 2
-progress log for F400-F404 acceptance evidence and Batch 18 discovery.
+F404 Save choice on Open/Close File actions is committed (`b445e102`).
+F405 MainWindow Save As and Export action integration is accepted and ready
+to commit; F406 is queued after the F405 commit, with F407-F413 following in
+active Batch 18. See the Phase 2
+progress log for F400-F404 acceptance evidence, the F405 matrix, and
+Batch 18 discovery.
   Gates 1 and 2 remain Partial, with broader feature
   migration, parity, and 96-class Release memory evidence still open.
   See the
