@@ -2858,3 +2858,19 @@ F428 canceled database profile Save As is committed as b82bddaa59c57d88f773370e9
 ## 2026-10-09 - F429 Document Catalog PDF Save As accepted
 
 The new MainWindow test follows the rendered document leaf to a ready PdfViewerPage, triggers the real saveCurrentPageAs QAction, and verifies the GeneratedPdf save request, byte-identical catalog PDF copy, and QPdfDocument validity. Viewer/content/path/page/Sidebar state remains stable, no database is open, and no external URL is launched. Executor and independent CTest passed 1/1; target QtTest passed 4/4 and the selected case 3/3. One include was fixed and a nonfatal LNK4075 remained. No full suite ran. F429 is accepted and ready to commit.
+
+
+
+## 2026-10-09 - F429 committed / F430 selected
+
+F429 Document Catalog viewer Save As is committed as 19f6024d113dda41e7e7a2b41acf27961160462b with the six approved slice paths. Batch 21 remains active, with F430 Schedule Print QAction selected/current.
+
+## 2026-10-09 - F430 acceptance matrix recorded
+
+F430 covers the real MainWindow Print QAction through the Schedule print-options dialog. The test will inspect the Print-mode dialog and reject it before the print service or native printer UI, then assert stable workspace state and no picker or prompt. The focused target and CTest are recorded in the Phase 2 progress log; successful physical printing is outside this slice.
+
+
+
+## 2026-10-09 - F430 Schedule Print QAction accepted
+
+The real MainWindow Print QAction entered the Schedule Print options dialog and the test rejected it before printer service/native printer UI. Executor and independent Tester each passed the focused CTest 1/1, direct target QtTest 7/7, and selected case 3/3. Workspace state, action state, and empty picker/prompt queues were verified; no production code or full-suite run. F430 is accepted and ready to commit. F431 is next after the commit.

@@ -15489,3 +15489,28 @@ F429 implementation and independent verification are accepted. The test clicks t
 Executor and independent Tester built the focused target and independently passed the exact registered CTest 1/1, direct target QtTest 4/4, and selected case 3/3 including setup/cleanup. The executor first added the missing ApplicationServices include; the final build reported nonfatal LNK4075 (/INCREMENTAL ignored due to /FORCE). The target object timestamp was later than the edited source for the independent run. Qt reported its missing system-font directory; repository fonts loaded. No focused process remains and no full suite ran.
 
 F429 is accepted in this changeset and ready to commit. F430 Schedule Print QAction is next from Batch 21.
+
+### F429 committed / F430 selected-current - 2026-10-09
+
+F429 Document Catalog PDF viewer Save As is committed as `19f6024d113dda41e7a7b2a41acf27961160462b` on Qt-Rewrite (branch ahead 14). Executor and independent Tester built the focused target and each passed the exact registered CTest 1/1, direct target QtTest 4/4, and selected case 3/3 including setup/cleanup. The real MainWindow QAction reached the viewer export path; no production code changed. F430 Schedule Print QAction is selected/current from Batch 21.
+
+### F430 acceptance matrix recorded before implementation - 2026-10-09
+
+This matrix is recorded before implementation. Scope is the MainWindow Print QAction to Schedule print-options entry and cancellation; it does not verify a successful printer job.
+
+1. Reuse the temporary-database MainWindow and My Workspace Schedule fixture in `tests/mainwindow_save_as_export_parity_tests.cpp`. Assert `window.actions().printCurrentPage` exists and is enabled, then trigger that QAction itself.
+2. In a bounded timer, inspect the active modal `SchedulePrintDialog`. Assert its title is `Print Schedule` and `selectedAction() == SchedulePrintDialog::Action::Print`. Find the actual `schedulePrintButton` by object name, record that it was found, and reject the dialog from the timer before the print service or native printer dialog is reached.
+3. Verify the timer ran, the expected dialog was active, its Print choice was selected, the real button was found, and rejection occurred. Assert no picker or prompt appeared. Preserve and verify the same current page and widget, database session and path, Sidebar selection, and enabled Print action.
+4. Build `MainWindowSaveAsExportParityTests`, run exact CTest filter `^ClassMngrMainWindowSaveAsExportParityTests$`, and run direct target QtTest plus the selected new case. Do not run the full suite.
+
+Evidence: ActionRegistry creates the Print action in `src/ui/shared/actions/action_registry.cpp:650`; MainWindow connects it in `src/app/mainwindow.cpp:622` and enables it from page capability at `mainwindow.cpp:1119`. My Workspace Schedule delegates through `src/features/my_info/ui/my_workspace_page.cpp:310-322` to Schedule at `src/features/schedule/ui/schedule_page.cpp:104`. `ScheduleOutputController` invokes the printer service only after dialog acceptance (`src/features/schedule/services/schedule_output_controller.cpp:14-60`). The dialog Print button object name is `schedulePrintButton` (`src/features/schedule/ui/schedule_print_dialog.cpp:150-174`). The focused target is registered in `cmake/tests/pages_and_output.cmake:847`.
+
+This matrix was recorded before implementation; acceptance evidence follows.
+
+### F430 implementation and independent verification accepted - 2026-10-09
+
+`printCurrentPageActionCancellationPreservesWorkspaceState()` in `tests/mainwindow_save_as_export_parity_tests.cpp` triggers the enabled real MainWindow Print QAction. A timer observed the Print-mode `SchedulePrintDialog`, verified its title and Print selection, found the actual `schedulePrintButton`, and rejected it during the nested modal event loop before printer service/native UI. Timer dispatch and rejection completed without a hang. The test verifies current page/widget, database session/path, Sidebar selection, enabled action, and empty picker/prompt queues. No production code changed; no physical printer job was attempted.
+
+Executor and independent Tester each built `MainWindowSaveAsExportParityTests`, passed the exact Debug CTest 1/1, direct target QtTest 7/7, and selected case 3/3 including init/cleanup. Tester rebuilt the changed source; its object timestamp is newer than the source. Executor’s first build hit ZERO_CHECK MSBuild FileTracker UnauthorizedAccess; retry with `/p:TrackFileAccess=false` passed. The independent standard build passed without retry. Qt reported the missing system font directory and unfinished/untranslated strings; repository fonts loaded, with no C++ compile warnings. No focused process remains and no full suite ran.
+
+F430 is accepted in this changeset and ready to commit. F431 Import Teachers QAction through MainWindow is next after the F430 commit.

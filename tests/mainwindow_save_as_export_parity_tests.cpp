@@ -65,6 +65,7 @@ private slots:
     void saveAsActionMovesTheOpenSessionAndUpdatesRecentHistory();
     void saveAsActionCancellationPreservesOpenProfile();
     void exportActionPreservesWorkspaceAndUpdatesExportDirectoryPreference();
+    void printCurrentPageActionCancellationPreservesWorkspaceState();
     void saveCurrentPageAsActionWritesSchedulePdf();
 
 private:
@@ -402,6 +403,168 @@ exportActionPreservesWorkspaceAndUpdatesExportDirectoryPreference()
     QCOMPARE(settings.getRecentFiles(), sourceHistory);
     QCOMPARE(settings.getLastFile(), sourcePath);
     QCOMPARE(settings.getLastDatabaseDirectory(), exportDirectory);
+}
+
+void MainWindowSaveAsExportParityTests::
+printCurrentPageActionCancellationPreservesWorkspaceState()
+{
+    QTemporaryDir workspaceRoot;
+    QVERIFY(workspaceRoot.isValid());
+
+    const QString sourcePath = QFileInfo(
+        workspaceRoot.filePath(QStringLiteral("schedule-print-workspace.tps"))
+        ).absoluteFilePath();
+
+    ApplicationServices seedServices;
+    QVERIFY(seedServices.openDatabase(sourcePath));
+    seedServices.closeDatabase();
+
+    FakeFileDialogService fileDialogs;
+    const FileDialogServiceScope fileDialogScope(&fileDialogs);
+
+    FakeUserPromptService prompts;
+    const UserPromptServiceScope promptScope(&prompts);
+
+    LanguageService languageService;
+    QVERIFY(languageService.setLanguage(Language::English));
+
+    MainWindowStartupOptions startupOptions;
+    startupOptions.loadMostRecentDatabase = false;
+    startupOptions.initialDatabasePath = sourcePath;
+
+    MainWindow window(
+        [](const QString&) {},
+        false,
+        &languageService,
+        nullptr,
+        std::move(startupOptions)
+        );
+    window.show();
+    QApplication::processEvents();
+
+    ApplicationServices* const services = window.services();
+    QVERIFY(services);
+    QVERIFY(services->hasOpenDatabase());
+    QCOMPARE(services->currentDatabasePath(), sourcePath);
+    DatabaseSession* const activeSession = services->databaseSession();
+    QVERIFY(activeSession);
+
+    PageManager* const pages = window.pageManager();
+    QVERIFY(pages);
+    QVERIFY(pages->isCurrentPage(PageType::MyWorkspace));
+    MyWorkspacePage* const workspace = pages->myWorkspacePage();
+    QVERIFY(workspace);
+    QCOMPARE(workspace->currentTab(), WorkspaceTab::Schedule);
+    QWidget* const currentWidget = pages->currentWidget();
+    QVERIFY(currentWidget);
+    const QString currentPageIdentifier = pages->currentPageIdentifier();
+    QVERIFY(!currentPageIdentifier.isEmpty());
+
+    Sidebar* const sidebar = window.findChild<Sidebar*>();
+    QVERIFY(sidebar);
+    const QStringList sidebarKeys = sidebar->selectedKeys();
+    QCOMPARE(sidebarKeys, QStringList{QStringLiteral("my_workspace")});
+
+    QAction* const printCurrentPageAction = window.actions().printCurrentPage;
+    QVERIFY(printCurrentPageAction);
+    QVERIFY(printCurrentPageAction->isEnabled());
+
+    bool dialogTimerRan = false;
+    bool schedulePrintDialogObserved = false;
+    bool printScheduleTitleMatched = false;
+    bool printActionSelected = false;
+    bool schedulePrintButtonFound = false;
+    bool dialogRejected = false;
+    QString dialogTimerError;
+    QTimer dialogInspectionTimer;
+    dialogInspectionTimer.setSingleShot(true);
+    QObject::connect(
+        &dialogInspectionTimer,
+        &QTimer::timeout,
+        &window,
+        [&]()
+        {
+            dialogTimerRan = true;
+            QWidget* const activeModal = QApplication::activeModalWidget();
+            auto* const dialog = qobject_cast<SchedulePrintDialog*>(activeModal);
+            if (!dialog)
+            {
+                dialogTimerError = QStringLiteral(
+                    "Print Current Page did not open SchedulePrintDialog."
+                    );
+                if (auto* unexpectedDialog = qobject_cast<QDialog*>(activeModal))
+                {
+                    unexpectedDialog->reject();
+                    dialogRejected =
+                        unexpectedDialog->result() == QDialog::Rejected;
+                }
+                return;
+            }
+
+            schedulePrintDialogObserved = true;
+            printScheduleTitleMatched =
+                dialog->windowTitle() == QStringLiteral("Print Schedule");
+            printActionSelected =
+                dialog->selectedAction() == SchedulePrintDialog::Action::Print;
+            QPushButton* const printButton = dialog->findChild<QPushButton*>(
+                QStringLiteral("schedulePrintButton")
+                );
+            schedulePrintButtonFound = printButton != nullptr;
+
+            QStringList failedPreconditions;
+            if (!printScheduleTitleMatched)
+            {
+                failedPreconditions << QStringLiteral("title is not Print Schedule");
+            }
+            if (!printActionSelected)
+            {
+                failedPreconditions << QStringLiteral("Print is not selected");
+            }
+            if (!schedulePrintButtonFound)
+            {
+                failedPreconditions << QStringLiteral("schedulePrintButton is missing");
+            }
+            if (!failedPreconditions.isEmpty())
+            {
+                dialogTimerError = failedPreconditions.join(QStringLiteral("; "));
+            }
+
+            dialog->reject();
+            dialogRejected = dialog->result() == QDialog::Rejected;
+        }
+        );
+    dialogInspectionTimer.start(0);
+
+    printCurrentPageAction->trigger();
+
+    QTRY_VERIFY_WITH_TIMEOUT(dialogTimerRan, 5000);
+    QVERIFY2(schedulePrintDialogObserved, qPrintable(dialogTimerError));
+    QVERIFY2(printScheduleTitleMatched, qPrintable(dialogTimerError));
+    QVERIFY2(printActionSelected, qPrintable(dialogTimerError));
+    QVERIFY2(schedulePrintButtonFound, qPrintable(dialogTimerError));
+    QVERIFY(dialogRejected);
+    QVERIFY(QApplication::activeModalWidget() == nullptr);
+
+    QVERIFY(fileDialogs.saveFileRequests.isEmpty());
+    QVERIFY(fileDialogs.openFileRequests.isEmpty());
+    QVERIFY(fileDialogs.openFilesRequests.isEmpty());
+    QVERIFY(fileDialogs.saveFileWithOptionsRequests.isEmpty());
+    QVERIFY(fileDialogs.directoryRequests.isEmpty());
+    QVERIFY(prompts.messages.isEmpty());
+    QVERIFY(prompts.asynchronousMessages.isEmpty());
+    QVERIFY(prompts.confirmations.isEmpty());
+    QVERIFY(prompts.unsavedChangesConfirmations.isEmpty());
+    QVERIFY(prompts.actionPrompts.isEmpty());
+
+    QVERIFY(services->hasOpenDatabase());
+    QCOMPARE(services->databaseSession(), activeSession);
+    QCOMPARE(services->currentDatabasePath(), sourcePath);
+    QVERIFY(pages->isCurrentPage(PageType::MyWorkspace));
+    QCOMPARE(pages->currentWidget(), currentWidget);
+    QCOMPARE(pages->currentPageIdentifier(), currentPageIdentifier);
+    QCOMPARE(workspace->currentTab(), WorkspaceTab::Schedule);
+    QCOMPARE(sidebar->selectedKeys(), sidebarKeys);
+    QVERIFY(printCurrentPageAction->isEnabled());
 }
 
 void MainWindowSaveAsExportParityTests::

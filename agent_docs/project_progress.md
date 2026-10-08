@@ -93,9 +93,12 @@ CTest passed 1/1 each; direct target QtTest passed 5/5 and the selected case
 passed 3/3. F428 canceled database profile Save As is committed as
 b82bddaa59c57d88f773370e94b3163df9055f33. Executor and independent exact
 CTest passed 1/1; direct target QtTest passed 6/6 and the selected case passed
-3/3. F429 Document Catalog viewer Save As is selected/current; its acceptance
-matrix is in the Phase 2 progress log. Batch 21 contains ten provisional
-candidates; see the progress log.
+3/3. F429 Document Catalog viewer Save As is committed as
+19f6024d113dda41e7e7a2b41acf27961160462b. F430 Schedule Print QAction is
+selected/current. Its acceptance matrix is recorded in the Phase 2 progress
+log. Executor and independent focused verification passed; F430 is accepted
+in this changeset and ready to commit. F431-F438 remain provisional; see the
+progress log.
 F385 is retired as a duplicate of F369.
 The seven user-reported MSVC build errors in
 the Teacher Profile Edit persistence target are fixed and independently
@@ -3112,6 +3115,14 @@ focused target built under VS 18 x64 Debug; executor and independent CTest runs
 passed 1/1. The executor build reported `LNK4075` (`/INCREMENTAL` ignored due
 to `/FORCE`); the independent build did not reproduce it. No full suite ran.
 F416 was accepted and committed in its slice. Work paused after F416 at
-user request, then resumed through F426. Batch 20 is active; F426 is
-committed as 249d57b11ce327923a6416d72e53e034b53cda3c and F427 is committed as bbdf10e85ba2c5a61066ed6fd32a7c8993c0f04e. F428 is committed as b82bddaa59c57d88f773370e94b3163df9055f33. F429 Document Catalog PDF viewer Save As is accepted and ready to commit; F430 Schedule Print QAction is next. Ten Batch 21 candidates are recorded in the progress log. Batch 21 began when F427 started; two independent reviews surfaced ten
-provisional candidates after F428. See the Phase 2 progress log; F429 is next.
+user request, then resumed through F429. Batch 20 completed with F428. F426 is
+committed as 249d57b11ce327923a6416d72e53e034b53cda3c; F427 as
+bbdf10e85ba2c5a61066ed6fd32a7c8993c0f04e; F428 as
+b82bddaa59c57d88f773370e94b3163df9055f33; and F429 as
+19f6024d113dda41e7e7a2b41acf27961160462b. Batch 21 is active with F430
+Schedule Print QAction selected/current. Its acceptance matrix is recorded in
+the Phase 2 progress log: trigger the real MainWindow action, inspect and
+cancel the Print-mode Schedule dialog before native printer UI, then verify
+workspace state remains stable. Executor and independent focused
+verification passed. F430 is accepted and ready to commit. F431-F438 remain
+provisional candidates in Batch 21; see the progress log.
