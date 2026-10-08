@@ -13205,3 +13205,76 @@ Winter. The transcript at
 `79850613b548e3a1314e117289bebacf8b39ec8e0305bb629b55ccddf4a312ae`.
 `git diff --check` passed. No full suite ran. F389 and F390 remain provisional
 and unselected. Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial.
+
+### Batch 14 bounded discovery complete / F389 selected - 2026-10-08
+
+F389, My Info route navigation gate parity, is selected/current in Batch 13.
+Its immediate pre-slice source is F388 commit `f877acac` (`Phase2 - Add class
+route availability parity (F388)`). Two bounded scans reviewed the remaining
+NavigationController route dispatch and existing controller tests. They found
+three candidates for the following batch, without establishing repository-wide
+discovery exhaustion:
+
+1. F391 - Teacher route closed-session leave-confirmation gate parity. Teacher
+   lookup failures are covered, but a closed database session with a dirty
+   current page is not.
+2. F392 - Campus Directory root/section navigation confirmation and destination
+   parity. Page behavior is covered, but route dispatch from a dirty page is
+   not.
+3. F393 - Document Catalog route confirmation and PDF Viewer navigation
+   parity. Catalog/resource ports and viewer lifecycle are covered, but the
+   NavigationController route is not.
+
+No other slices were found.
+
+F389 covers the reachable My Workspace dispatcher keys `my_workspace`,
+`my_info_information`, `my_info_schedule`, and `my_info_calendar`; the stale
+`my_info_class_information` branch is not dispatched by the current route
+switch and is excluded. The matrix crosses each route with open and closed
+database sessions:
+
+1. With the database closed and a dirty Teacher Info page, assert that the page
+   and unsaved state remain unchanged; My Workspace is not newly created or
+   made current during dispatch; and no prompt, leave confirmation, or Qt
+   warning is emitted.
+2. With the database open and the same dirty page, choose Discard. Assert one
+   unsaved-changes confirmation, My Workspace is current, and the exact tab is
+   Details, Schedule, or Calendar (the root route opens Schedule). Assert no
+   warning or unrelated prompt.
+
+Sidebar highlight is excluded. F389 implementation and verification status
+are recorded below. F390 remains provisional in Batch 13; F391-F393 are
+discovered but remain inactive until Batch 13 completes. Phase 2 remains In
+Progress/Open; Gates 1 and 2 remain Partial.
+
+### F389 accepted - 2026-10-08
+
+F389, My Info route navigation gate parity, is accepted on immediate pre-slice
+source commit `f877acac` (`Phase2 - Add class route availability parity
+(F388)`). It adds `tests/my_info_route_navigation_parity_tests.cpp` and its
+focused registration/resources in `cmake/tests/pages_and_output.cmake`; no
+production sources changed.
+
+The focused Windows x64 Debug build passed in the standard
+`build/windows-x64-debug` tree, and focused CTest passed 1/1. Independent direct
+QtTest runs exited 0 and each emitted eight JSONL rows. All four reachable My
+Workspace route keys (`my_workspace`, `my_info_information`,
+`my_info_schedule`, and `my_info_calendar`) were checked with open and closed
+database sessions. Closed rows preserved the dirty Teacher Info page and exact
+notes, emitted no prompt, leave confirmation, or route warning, and caused no
+page creation or activation; the initial My Workspace page already existed
+before dispatch. Open rows discarded after exactly one leave confirmation and
+selected the requested tab, with the root route selecting Schedule. The
+transcript at `build/windows-x64-debug/f389-my-info-route-navigation.jsonl`
+has SHA-256
+`4d725cd4826c2913dbe97d49b1d10a4173d09c5f9a488a7634119096fe7e8c7d`;
+the independent run's hash matches after normalizing Windows CRLF line endings.
+
+The executor build reported MSVC LNK4075 (`/INCREMENTAL` ignored due to
+`/FORCE`); the independent rebuild passed without warnings. No build errors
+were observed in this focused verification, and no full suite ran. At the
+user's request, the seven separately reported build errors must be fixed and
+committed before F390 starts; their current diagnostics are not available in
+the persisted logs or IDE surface. F390 remains provisional and unstarted;
+F391-F393 remain inactive until Batch 13 completes. Phase 2 remains In
+Progress/Open; Gates 1 and 2 remain Partial.

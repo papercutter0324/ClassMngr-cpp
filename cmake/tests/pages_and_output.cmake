@@ -303,6 +303,36 @@ qt_add_resources(
         resources/assets/icons/keyboard_light.svg
 )
 
+classmngr_add_qt_test(
+    NAME MyInfoRouteNavigationParity
+    SOURCES
+        tests/my_info_route_navigation_parity_tests.cpp
+    LIBRARIES
+        Qt6::Test
+        Qt6::Widgets
+    OFFSCREEN
+)
+
+qt_add_resources(
+    ClassMngrMyInfoRouteNavigationParityTests
+    my_info_route_navigation_parity_qml_resources
+    PREFIX "/qt/qml/ClassMngr/Calendar"
+    BASE "${PROJECT_SOURCE_DIR}/src/features/calendar/ui/qml"
+    FILES
+        "${PROJECT_SOURCE_DIR}/src/features/calendar/ui/qml/EventCalendar.qml"
+        "${PROJECT_SOURCE_DIR}/src/features/calendar/ui/qml/MonthGridDelegate.qml"
+)
+
+qt_add_resources(
+    ClassMngrMyInfoRouteNavigationParityTests
+    my_info_route_navigation_parity_keyboard_resources
+    PREFIX "/"
+    BASE "${PROJECT_SOURCE_DIR}/resources"
+    FILES
+        resources/assets/icons/keyboard_dark.svg
+        resources/assets/icons/keyboard_light.svg
+)
+
 qt_add_resources(
     ClassMngrNavigationRosterSessionParityTests
     navigation_roster_session_parity_keyboard_resources

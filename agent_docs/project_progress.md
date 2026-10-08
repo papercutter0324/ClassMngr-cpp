@@ -55,11 +55,13 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ### Current state - 2026-10-08
 
-Phase 2 remains In Progress/Open under deployment `phase2_resume_20260929`,
-paused after the user-requested F384 acceptance commit. F371 and F382-F384 are
-accepted; Batches 11 and 12 are complete and Batch 13 is active. F385 is retired
-as a duplicate of F369. F386-F390 remain provisional and unselected; no next
-slice has been started. Gates 1 and 2 remain Partial. The current slice and
+Phase 2 remains In Progress/Open under deployment
+`phase2_f387_resume_20261008`. F371, F382-F384, and F386-F389 are accepted;
+Batches 11 and 12 are complete and Batch 13 remains active with F390
+provisional. F385 is retired as a duplicate of F369. The user reported seven
+build errors to fix before F390; their current diagnostics are not present in
+persisted logs or available through the IDE surface. Gates 1 and 2 remain
+Partial. The current slice and
 detailed acceptance records are maintained in the [Phase 2 plan](../plans/qt-rewrite-heavy-route-plan/03-Phase-2-Domain-Model-and-Application-Contracts.md)
 and [Phase 2 progress log](../plans/qt-rewrite-heavy-route-plan/03-Phase-2-Progress-Log.md).
 ### Earlier Phase 2 detail - 2026-09-26
@@ -2855,7 +2857,7 @@ unsynced and unaudited in this checkout; local Batch 11 evidence still ends at
 F366. No remote commits or acceptance results are inferred.
 
 
-## Current Position — 2026-10-08 (F388 accepted)
+## Current Position — 2026-10-08 (F389 accepted)
 
 Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial. F386 is
 accepted at `b3f9105e7c9160b2d862683d324f9dfd3cffc91d`, and F387 Calendar
@@ -2865,4 +2867,13 @@ Its focused Windows x64 Debug CTest passed 1/1; six normalized observations
 verified all three routes with open and closed database sessions. The closed
 session rows preserved the dirty page and emitted no prompts; the open rows
 navigated after one discard confirmation, including Winter selection for
-student Evaluation. F389-F390 remain provisional and unselected.
+student Evaluation. F389 My Info route navigation gate parity is accepted on
+source `f877acac`; independent focused build and CTest passed, and the direct
+QtTest transcript contains all eight route/session rows. Closed rows preserve
+the dirty Teacher Info page with no prompt, warning, new page, or activation;
+open rows select the exact tab after one discard confirmation. Transcript
+SHA-256: `4d725cd4826c2913dbe97d49b1d10a4173d09c5f9a488a7634119096fe7e8c7d`.
+The user reported seven build errors to fix before F390, but the exact current
+diagnostics are not available in persisted logs or the IDE surface. F390
+remains provisional pending that fix. Bounded Batch 14 discovery found
+F391-F393, recorded in the Phase 2 progress log.

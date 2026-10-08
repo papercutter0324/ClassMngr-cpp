@@ -2250,3 +2250,30 @@ state without prompting; open-session routes navigate to the requested class
 section after one Discard confirmation. The evaluation route selects Winter.
 The focused Windows x64 Debug CTest passed 1/1, and direct QtTest emitted six
 canonical route/session observations. No production sources changed.
+
+
+## 2026-10-08 - F389 My Info route gate selected
+
+F389 covers the My Workspace root and its Information, Schedule, and Calendar
+route keys with open and closed database sessions. Closed-session dispatch must
+preserve the dirty current page without prompting; open-session dispatch must
+confirm once and select the requested tab. The second-last Batch 13 position
+also triggered bounded Batch 14 discovery: Teacher, Campus Directory, and
+Document Catalog route parity are the next candidates; the details are in the
+Phase 2 progress log.
+
+
+## 2026-10-08 - F389 My Info route gate accepted
+
+F389 is accepted on the F388 source pin. Independent focused Windows x64 Debug
+build and CTest passed, and direct QtTest verified all eight route/session
+rows. Closed-session dispatch preserves the dirty Teacher Info page without
+prompting, warning, page creation, or activation; open-session dispatch
+selects the requested My Workspace tab after one Discard confirmation. The
+canonical transcript SHA-256 is
+`4d725cd4826c2913dbe97d49b1d10a4173d09c5f9a488a7634119096fe7e8c7d`.
+
+The user reported seven build errors to fix before F390. Their current
+diagnostics are not available in persisted build logs or the IDE surface, so
+the next slice remains unstarted pending the diagnostic list and a separate
+fix commit. Batch 14 remains inactive until Batch 13 is complete.
