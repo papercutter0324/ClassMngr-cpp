@@ -366,6 +366,52 @@ bool scheduleModelContainsClassOnDay(
     return false;
 }
 
+bool scheduleModelContainsClassAndName(
+    const ScheduleViewModel& model,
+    const int classId,
+    const QString& className
+    )
+{
+    for (const ScheduleRowView& row : model.rows)
+    {
+        for (const ScheduleCellView& cell : row.cells)
+        {
+            for (const ScheduleEntry& entry : cell.entries)
+            {
+                if (entry.classId == classId
+                    && entry.className == className)
+                {
+                    return true;
+                }
+            }
+        }
+    }
+
+    return false;
+}
+
+bool scheduleModelContainsEntryName(
+    const ScheduleViewModel& model,
+    const QString& className
+    )
+{
+    for (const ScheduleRowView& row : model.rows)
+    {
+        for (const ScheduleCellView& cell : row.cells)
+        {
+            for (const ScheduleEntry& entry : cell.entries)
+            {
+                if (entry.className == className)
+                {
+                    return true;
+                }
+            }
+        }
+    }
+
+    return false;
+}
+
 bool seedClassWithSchedule(
     ApplicationServices& services,
     const QString& className,
@@ -607,6 +653,7 @@ private slots:
     void scheduleImportPersistsAndRefreshesTeacherSidebar();
     void classesDetailsSaveRefreshesClassActionsThroughMainWindow();
     void workspaceScheduleEditorSaveRefreshesClassActionsThroughMainWindow();
+    void testingClassRenameMarksAndRefreshesBothSchedulePages();
 
 private:
     QTemporaryDir m_settingsDirectory;
@@ -1641,6 +1688,211 @@ workspaceScheduleEditorSaveRefreshesClassActionsThroughMainWindow()
     QCOMPARE(workspace->currentTab(), WorkspaceTab::Schedule);
     QCOMPARE(workspace->schedulePage(), schedulePage);
     QCOMPARE(sidebar->selectedKeys(), workspaceSidebarKeys);
+    QVERIFY(services->hasOpenDatabase());
+    QCOMPARE(services->databaseSession(), activeSession);
+    QCOMPARE(services->currentDatabasePath(), activePath);
+    assertNoPromptRequests(fixture.prompts);
+}
+
+void MainWindowScheduleTestingClassesHandoffParityTests::
+testingClassRenameMarksAndRefreshesBothSchedulePages()
+{
+    MainWindowFixture fixture;
+    QString setupError;
+    QVERIFY2(fixture.initialize(&setupError), qPrintable(setupError));
+
+    MainWindow* const window = fixture.window.get();
+    ApplicationServices* const services = window->services();
+    PageManager* const pages = window->pageManager();
+    QVERIFY(services);
+    QVERIFY(pages);
+    auto* const activeSession = services->databaseSession();
+    QVERIFY(activeSession);
+    const QString activePath = services->currentDatabasePath();
+
+    const QString originalName =
+        QStringLiteral("F422 Original Testing Class");
+    const QString updatedName =
+        QStringLiteral("F422 Renamed Testing Class");
+    TestingClass testingClass;
+    testingClass.name = originalName;
+    testingClass.grade = QStringLiteral("M1");
+    testingClass.level = QStringLiteral("Major");
+    testingClass.room = QStringLiteral("F422 Room");
+
+    ScheduleService* const scheduleService = services->scheduleService();
+    QVERIFY(scheduleService);
+    const auto createdClass = scheduleService->createTestingClass(
+        testingClass,
+        QStringLiteral("Monday"),
+        QStringLiteral("16:00")
+        );
+    if (!createdClass)
+    {
+        QFAIL(qPrintable(createdClass.error()));
+    }
+    const int classId = createdClass.value();
+    QVERIFY(classId > 0);
+
+    const auto assignments = scheduleService->testingAssignments();
+    QVERIFY(assignments);
+    QVERIFY(std::any_of(
+        assignments->cbegin(),
+        assignments->cend(),
+        [classId](const TestingAssignment& assignment)
+        {
+            return assignment.classId == classId
+                && assignment.day == QStringLiteral("Monday");
+        }
+        ));
+
+    pages->showPage(PageType::Schedule);
+    QApplication::processEvents();
+    QVERIFY(pages->isCurrentPage(PageType::Schedule));
+    SchedulePage* const standaloneSchedule = pages->schedulePage();
+    QVERIFY(standaloneSchedule);
+    ScheduleWidget* const standaloneWidget =
+        standaloneSchedule->findChild<ScheduleWidget*>();
+    QVERIFY(standaloneWidget);
+    QVERIFY(showTestingMode(standaloneWidget));
+    QCOMPARE(
+        standaloneWidget->displayState().displayMode,
+        ScheduleDisplayMode::Testing
+        );
+    const ScheduleViewModel standaloneInitialModel =
+        standaloneWidget->scheduleModel();
+    QVERIFY(scheduleModelContainsClassOnDay(
+        standaloneInitialModel,
+        classId,
+        QStringLiteral("Monday")
+        ));
+    QVERIFY(scheduleModelContainsClassAndName(
+        standaloneInitialModel,
+        classId,
+        originalName
+        ));
+    QVERIFY(!standaloneSchedule->needsRefresh());
+
+    MyWorkspacePage* const workspace = pages->myWorkspacePage();
+    QVERIFY(workspace);
+    pages->showPage(PageType::MyWorkspace);
+    workspace->openTab(WorkspaceTab::Schedule);
+    QApplication::processEvents();
+    QVERIFY(pages->isCurrentPage(PageType::MyWorkspace));
+    QCOMPARE(workspace->currentTab(), WorkspaceTab::Schedule);
+    SchedulePage* const workspaceSchedule = workspace->schedulePage();
+    QVERIFY(workspaceSchedule);
+    QVERIFY(standaloneSchedule != workspaceSchedule);
+    ScheduleWidget* const workspaceWidget =
+        workspaceSchedule->findChild<ScheduleWidget*>();
+    QVERIFY(workspaceWidget);
+    QVERIFY(showTestingMode(workspaceWidget));
+    QCOMPARE(
+        workspaceWidget->displayState().displayMode,
+        ScheduleDisplayMode::Testing
+        );
+    const ScheduleViewModel workspaceInitialModel =
+        workspaceWidget->scheduleModel();
+    QVERIFY(scheduleModelContainsClassOnDay(
+        workspaceInitialModel,
+        classId,
+        QStringLiteral("Monday")
+        ));
+    QVERIFY(scheduleModelContainsClassAndName(
+        workspaceInitialModel,
+        classId,
+        originalName
+        ));
+    QVERIFY(!workspaceSchedule->needsRefresh());
+
+    QVERIFY(clickTestingClassesButton(workspaceWidget));
+    QVERIFY(pages->isCurrentPage(PageType::TestingClasses));
+    TestingClassesPage* const testingClasses =
+        pages->testingClassesPage();
+    QVERIFY(testingClasses);
+    testingClasses->setSaveMode(SaveMode::Manual);
+    QLineEdit* const nameEdit = testingClasses->findChild<QLineEdit*>(
+        QStringLiteral("testingClassNameEdit")
+        );
+    QPushButton* const saveButton = testingClasses->findChild<QPushButton*>(
+        QStringLiteral("testingClassesSaveButton")
+        );
+    QVERIFY(nameEdit);
+    QVERIFY(saveButton);
+    QCOMPARE(nameEdit->text(), originalName);
+
+    QSignalSpy testingDataChangedSpy(
+        testingClasses,
+        &TestingClassesPage::testingDataChanged
+        );
+    QVERIFY(testingDataChangedSpy.isValid());
+    nameEdit->setText(updatedName);
+    QVERIFY(testingClasses->hasUnsavedChanges());
+    saveButton->click();
+
+    QCOMPARE(testingDataChangedSpy.size(), 1);
+    QVERIFY(standaloneSchedule->needsRefresh());
+    QVERIFY(workspaceSchedule->needsRefresh());
+
+    const auto persistedClass = scheduleService->testingClass(classId);
+    QVERIFY(persistedClass);
+    QCOMPARE(persistedClass->name, updatedName);
+    QVERIFY(scheduleModelContainsClassAndName(
+        standaloneWidget->scheduleModel(),
+        classId,
+        originalName
+        ));
+    QVERIFY(scheduleModelContainsClassAndName(
+        workspaceWidget->scheduleModel(),
+        classId,
+        originalName
+        ));
+
+    pages->showPage(PageType::Schedule);
+    QApplication::processEvents();
+    QVERIFY(pages->isCurrentPage(PageType::Schedule));
+    QCOMPARE(pages->schedulePage(), standaloneSchedule);
+    QVERIFY(!standaloneSchedule->needsRefresh());
+    QCOMPARE(
+        standaloneWidget->displayState().displayMode,
+        ScheduleDisplayMode::Testing
+        );
+    const ScheduleViewModel standaloneUpdatedModel =
+        standaloneWidget->scheduleModel();
+    QVERIFY(scheduleModelContainsClassAndName(
+        standaloneUpdatedModel,
+        classId,
+        updatedName
+        ));
+    QVERIFY(!scheduleModelContainsEntryName(
+        standaloneUpdatedModel,
+        originalName
+        ));
+
+    pages->showPage(PageType::MyWorkspace);
+    workspace->openTab(WorkspaceTab::Schedule);
+    QApplication::processEvents();
+    QVERIFY(pages->isCurrentPage(PageType::MyWorkspace));
+    QCOMPARE(pages->myWorkspacePage(), workspace);
+    QCOMPARE(workspace->currentTab(), WorkspaceTab::Schedule);
+    QCOMPARE(workspace->schedulePage(), workspaceSchedule);
+    QVERIFY(!workspaceSchedule->needsRefresh());
+    QCOMPARE(
+        workspaceWidget->displayState().displayMode,
+        ScheduleDisplayMode::Testing
+        );
+    const ScheduleViewModel workspaceUpdatedModel =
+        workspaceWidget->scheduleModel();
+    QVERIFY(scheduleModelContainsClassAndName(
+        workspaceUpdatedModel,
+        classId,
+        updatedName
+        ));
+    QVERIFY(!scheduleModelContainsEntryName(
+        workspaceUpdatedModel,
+        originalName
+        ));
+
     QVERIFY(services->hasOpenDatabase());
     QCOMPARE(services->databaseSession(), activeSession);
     QCOMPARE(services->currentDatabasePath(), activePath);

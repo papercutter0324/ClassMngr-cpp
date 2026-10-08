@@ -140,7 +140,7 @@ synchronization is committed (`f4bc5282`). F416 Document Catalog rendered
   F419 MainWindow Print/Save Current Page As action capability and enabled
   state is committed as `e2ad222b`. F420 Class/Schedule save signal to Sidebar
   action-state refresh is committed as 4c10f0d1; F421 Useful Links URL handoff
-  is accepted and ready to commit. See the Phase 2 progress log for evidence.
+  is committed as 27c064e3. F422 Testing Classes edits refreshing both Schedule views are accepted in this changeset. See the Phase 2 progress log for evidence.
   Gates 1 and 2 remain Partial, with broader feature
   migration, parity, and 96-class Release memory evidence still open.
   See the

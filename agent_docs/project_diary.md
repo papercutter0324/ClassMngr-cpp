@@ -2789,3 +2789,12 @@ F420 is committed as 4c10f0d1. Its two MainWindow save paths independently passe
 ## 2026-10-09 - F421 Useful Links URL handoff accepted
 
 F421 covers all seven rendered HTTPS leaves through the MainWindow Sidebar and captures the real Qt openUrl handoff without launching a browser. It verifies exact destinations, no navigation, unchanged page, cleared selection, and current root/leaf keys. The initial runtime exposed an invalid setUrlHandler method signature and a CTest filter mismatch; both were corrected. Executor and independent CTest passed 1/1, and independent QtTest passed 4/4. Only Qt's system-font-directory notice remained; repository fonts loaded. No production change or full-suite run was needed. F421 is accepted and ready to commit.
+
+
+## 2026-10-09 - F421 committed / F422 selected-current
+
+F421 Useful Links URL handoff is committed as 27c064e3. The focused target and independent CTest passed 1/1; independent QtTest passed 4/4 for the seven real Sidebar URL handoffs. F422 is selected next: verify both standalone and workspace Schedule pages become stale after a Testing Classes save, then refresh through normal page activation. The test must avoid the Back route that independently marks one page stale.
+
+## 2026-10-09 - F422 Testing Classes schedule refresh accepted
+
+A real Testing Classes rename/save marks both distinct Schedule views stale, and normal page activation refreshes each Testing-mode model to the updated class name. The focused build, exact filtered CTest (1/1), and direct QtTest (10/10) passed independently. No production code changed. The fixture must use the slot's HH:mm storage format; diagnostics must not evaluate expected::error() on success.

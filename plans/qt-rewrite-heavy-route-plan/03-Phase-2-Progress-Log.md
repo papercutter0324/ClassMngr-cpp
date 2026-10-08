@@ -15236,3 +15236,61 @@ remained, and no full suite ran.
 
 F421 is accepted and ready to commit. Batch 20 candidates after F421 remain
 provisional until the next slice is selected.
+
+
+### F421 committed / F422 selected/current - 2026-10-09
+
+F421 Useful Links URL handoff is committed as 27c064e3 with its seven-link
+MainWindow integration and acceptance record. F422 Testing Classes edits
+refreshing both Schedule views is selected/current from Batch 20.
+
+### F422 provisional acceptance matrix - 2026-10-09
+
+1. Extend the existing MainWindow schedule/classes handoff target. Seed a
+   real testing class assigned to a schedule slot, instantiate both the
+   standalone Schedule and My Workspace Schedule pages, switch both to Testing
+   mode, and verify each initially renders the original testing class name and
+   has needsRefresh() false after activation.
+2. Edit the existing testing class name through the actual Testing Classes
+   editor and Save action. Verify the save persists and both distinct
+   SchedulePage instances have needsRefresh() true immediately after the real
+   testingDataChanged signal. This state assertion directly covers both
+   MainWindow connections.
+3. Navigate to standalone Schedule with PageManager::showPage, then to My
+   Workspace and open its Schedule tab. Do not use the Testing Classes Back
+   handler or call markStale/refresh directly. Verify each activation clears
+   its stale flag and each rendered Testing-mode model contains the new name
+   and no longer contains the old name.
+4. Preserve the open database session/path and assert no unexpected prompts.
+   Build ClassMngrMainWindowScheduleTestingClassesHandoffParityTests and run
+   the exact registered CTest filter
+   ^ClassMngrMainWindowScheduleTestingClassesHandoffParityTests$. No full suite.
+
+Evidence: TestingClassesPage emits testingDataChanged after successful save
+(src/features/classes/ui/testing_classes_page.cpp:462-479). MainWindow marks
+both the standalone and workspace Schedule pages stale from that signal
+(src/app/mainwindow.cpp:957-973). The standalone Schedule page is created
+lazily by PageManager (src/ui/shared/pages/pagemanager.cpp:127-131); the
+workspace owns a separate SchedulePage (src/features/my_info/ui/
+my_workspace_page.cpp:314-316; src/ui/shared/pages/pagemanager.cpp:755-759).
+BasePage::activate refreshes only stale pages and clears the flag
+(src/ui/shared/pages/basepage.cpp:419-438); PageManager::showPage and
+MyWorkspacePage::openTab activate their destination pages
+(src/ui/shared/pages/pagemanager.cpp:367-374;
+src/features/my_info/ui/my_workspace_page.cpp:35-49). SchedulePage::refresh
+reloads its widget (src/features/schedule/ui/schedule_page.cpp:25-32), whose
+testing assignment model carries class details into the rendered cells
+(src/features/schedule/ui/schedule_widget.cpp:1111-1135;
+src/features/schedule/ui/schedule_view_model.cpp:396;
+src/features/schedule/ui/schedule_cell_widget_factory.cpp:71). Existing
+MainWindow fixture and focused target:
+tests/mainwindow_schedule_testing_classes_handoff_parity_tests.cpp and
+cmake/tests/pages_and_output.cmake:861.
+
+### F422 implementation and independent verification accepted - 2026-10-09
+
+The MainWindow regression seeds an assigned testing class, opens both distinct SchedulePage instances in Testing mode, and confirms both initially show the original name with fresh state. It renames the class through the real Testing Classes editor and Save button. The real save signal marks both pages stale; PageManager::showPage and MyWorkspacePage::openTab then reactivate each page, preserving Testing mode, clearing its stale flag, and rendering the new name without the old one. The test also verifies the database session/path stay stable and no unexpected prompts occur. It does not emit testingDataChanged or call markStale/refresh directly. No production code changed.
+
+Executor and independent Tester builds passed without warnings. The exact registered-name filtered CTest passed 1/1 for both runs, and direct QtTest passed 10/10 (the new case passed 3/3). The multi-config CTest invocation requires -C Debug. The fixture was corrected to seed the slot time in HH:mm form; a temporary diagnostic was also corrected to access expected::error() only on failure. The ordinary launcher failed before process start, while the elevated retry completed successfully. Remaining runtime notices were the missing Qt system font directory (repository fonts loaded) and existing offscreen propagateSizeHints() notices in other cases; the F422 case emitted no warning. No full suite ran and no focused process remains.
+
+F422 is accepted and included with this slice record. Later Batch 20 candidates remain provisional.

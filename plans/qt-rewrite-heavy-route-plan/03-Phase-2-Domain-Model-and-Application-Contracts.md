@@ -65,7 +65,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
   resumed with F417 Staff Directory rendered leaf through MainWindow
   independently accepted and committed (`d04d9bb0`). F418 Schedule Import through MainWindow apply and Sidebar refresh is committed;
   F419 MainWindow output action state is committed. F420 Class/Schedule save signal refresh is committed as 4c10f0d1; F421 Useful
-  Links URL handoff is accepted and ready to commit. See the Phase 2 progress log for acceptance and test evidence.
+  Links URL handoff is committed as 27c064e3. F422 Testing Classes edits refreshing both Schedule views are accepted in this changeset. See the Phase 2 progress log for acceptance and test evidence.
   Gates 1 and 2
   remain Partial; see the progress log for slice evidence.
 
@@ -108,12 +108,13 @@ log](03-Phase-2-Progress-Log.md).
    action capability and enabled state.
 7. F420 - Committed (4c10f0d1): Class/Schedule save signal to Sidebar
    action-state refresh.
-8. F421 - Accepted, ready to commit: Useful Links URL handoff.
+8. F421 - Committed (27c064e3): Useful Links URL handoff.
+9. F422 - Accepted in this changeset: Testing Classes edits refreshing Schedule views.
 
 Batch 20 read-only reviews surfaced additional provisional candidates after F421; see the Phase 2 progress log.
 
 Batch 19 resumed after F416. F417 is committed as `d04d9bb0`, F418 as
-`ea755736`, F419 as `e2ad222b`, and F420 is committed as 4c10f0d1; F421 Useful Links URL handoff is accepted and ready to commit.
+`ea755736`, F419 as `e2ad222b`, and F420 is committed as 4c10f0d1, F421 as 27c064e3, and F422 Testing Classes edits refreshing Schedule views are accepted in this changeset.
 
 Batch 18 was discovered at F402 start from two independent bounded reviews and
 activated after F403 committed as `28e881cd`; it completed when F413 committed
