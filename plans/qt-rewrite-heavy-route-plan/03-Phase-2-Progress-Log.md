@@ -13982,3 +13982,27 @@ sessions.
 Batch 16 is complete. Batch 17 is active with F399 selected/current; F400-F403
 follow in discovered order. Phase 2 remains In Progress/Open; Gates 1 and 2
 remain Partial.
+
+### F399 accepted / ready to commit - 2026-10-08
+
+F399 is accepted with no production change.
+`ClassMngrMainWindowCloseFileParityTests` covers the real Close File QAction
+with a dirty My Workspace draft: Cancel preserves the workspace, page, Sidebar,
+and actions; Discard closes it, selects Campus Dashboard Information, hides
+database Sidebar sections, and disables DB-backed actions. Its substantive
+QtTest slot is
+`closeFileCancelPreservesDraftBeforeDiscardClosesWorkspace`.
+
+The standard `build/windows-x64-debug` Visual Studio tree is blocked before
+compilation in generated `ZERO_CHECK` by MSBuild FileTracker initialization.
+Investigation found the current-shell CommonApplicationData lookup broken
+(`ProgramData` unset; registry `%ProgramData%` expansion throws in .NET). No
+system, registry, or ACL changes were made. The
+`build/windows-x64-debug-ninja` fallback, configured with x64 MSVC and Qt 6.12,
+built the focused target; filtered CTest passed 1/1 (0.46 s). No warnings
+appeared in the final build. This remains a validation limitation: the standard tree did not reach
+source compilation.
+
+Batch 17 remains active. F399 is ready to commit; F400 is next queued after that
+commit and is not current. Phase 2 remains In Progress/Open; Gates 1 and 2
+remain Partial.

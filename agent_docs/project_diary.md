@@ -2427,3 +2427,15 @@ establish the initial active workspace
 through FileController/coordinator. Opening only through the legacy
 ApplicationServices facade leaves the controller’s separate WorkspaceState
 closed and does not exercise replacement.
+
+## 2026-10-08 - F399 Close File no-workspace parity accepted
+
+The production Close File QAction applies the current page's dirty decision
+before attempting workspace close. A real MainWindow test now covers Cancel
+preserving the dirty draft and active UI, then Discard closing through the
+workspace coordinator and showing Campus Dashboard Information. In an empty
+workspace, entity-dependent database actions may already be disabled; snapshot
+their initial state when checking Cancel, while requiring core file actions to
+start enabled and all database-backed actions to be disabled after close. The
+production route already met the contract, so this slice added test coverage
+only.
