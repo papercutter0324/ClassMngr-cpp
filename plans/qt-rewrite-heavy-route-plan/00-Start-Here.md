@@ -5,7 +5,7 @@
 - Overall status: In progress
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
-- Last updated: 2026-10-08
+- Last updated: 2026-10-09
 - Current milestone: Phase 2 remains in progress. F253 (Qt-free private-notes
   splitter), F254 (Qt-free roster-score assignment planning), F255 (single-
   report AI eligibility policy reuse), F256 (typed roster read cutover for
@@ -133,10 +133,10 @@ Initial Setup success navigation is committed (`5d8a941a`), completing Batch 18.
 F414 Teacher profile save preserving the selected duplicate Sidebar occurrence
 is committed (`6fb39b2b`). F415 Campus Dashboard page-tab-to-Sidebar
 synchronization is committed (`f4bc5282`). F416 Document Catalog rendered
-Sidebar leaf through MainWindow/viewer is accepted and committed in this
-changeset. Batch 19 remains active but is paused after F416; F417 is next and
-F417-F421 remain queued, not selected/current. This run stops after F416. See
-the Phase 2 progress log for acceptance and test evidence.
+  Sidebar leaf through MainWindow/viewer is committed as `a4082f80`. Batch 19
+  resumed with F417 Staff Directory rendered leaf through MainWindow
+  independently accepted and ready to commit; F418-F421 remain queued until
+  the F417 commit. See the Phase 2 progress log for evidence.
   Gates 1 and 2 remain Partial, with broader feature
   migration, parity, and 96-class Release memory evidence still open.
   See the

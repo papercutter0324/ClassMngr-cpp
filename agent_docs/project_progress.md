@@ -1,7 +1,7 @@
 # Project Progress
 
 Active deployment plan: Qt Rewrite Phase 2 — Domain Model and Application Contracts.
-Current deployment: `phase2_f387_resume_20261008`. Route: Heavy.
+Current deployment: `phase2_f417_resume_20261009`. Route: Heavy.
 Phase 1 hosted acceptance is closed on commit `0883009d`; the local branch adds
 continued Phase 2 domain and application-contract work on top of that verified
 baseline.
@@ -56,11 +56,13 @@ the staged-package report probe passed. Cross-platform CI and local
 ### Current state - 2026-10-09
 
 Phase 2 remains In Progress/Open under deployment
-`phase2_f387_resume_20261008`. Batches 11-18 are complete. Batch 19 is paused
-after F416 at the user's request: F414 and F415 are committed, and F416's
-Document Catalog MainWindow-to-viewer integration test is accepted and included
-in this slice commit. F417-F421 remain queued; no next slice was started. F385
-is retired as a duplicate of F369. The seven user-reported MSVC build errors in
+`phase2_f417_resume_20261009`. Batches 11-18 are complete. Batch 19 resumed
+after F416 at the user's request. F414 and F415 are committed, and F416's
+Document Catalog MainWindow-to-viewer integration test is accepted and
+committed. F417 Staff Directory rendered leaf through MainWindow is
+independently accepted and ready to commit; F418-F421 remain queued until that
+commit. F385 is retired as a duplicate of F369.
+The seven user-reported MSVC build errors in
 the Teacher Profile Edit persistence target are fixed and independently
 verified in both the named target and all-target build, committed as
 `0b128601`. Gates 1 and 2 remain Partial. The current slice and detailed

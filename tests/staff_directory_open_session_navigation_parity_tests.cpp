@@ -1,7 +1,10 @@
 #include "app/controllers/navigation_controller.h"
+#include "app/mainwindow.h"
 #include "app/services/feature_services.h"
 #include "core/application_services.h"
+#include "core/language_service.h"
 #include "core/resource_packs/resource_pack_manager.h"
+#include "core/settingsmanager.h"
 #include "data/database/database_session.h"
 #include "data/repositories/gs_team_repository.h"
 #include "data/repositories/native_english_teacher_repository.h"
@@ -18,6 +21,7 @@
 
 #include <QCoreApplication>
 #include <QComboBox>
+#include <QFileInfo>
 #include <QJsonArray>
 #include <QJsonObject>
 #include <QLineEdit>
@@ -32,6 +36,8 @@
 #include <QUuid>
 #include <QVector>
 #include <QtTest/QtTest>
+
+#include <utility>
 
 namespace
 {
@@ -486,12 +492,29 @@ class StaffDirectoryOpenSessionNavigationParityTests final : public QObject
     Q_OBJECT
 
 private slots:
+    void initTestCase();
     void cleanup();
     void nativeEnglishCancelPreservesDirtyTeacherInfo();
     void nativeEnglishDiscardLoadsDirectoryAndDropsTeacherEdit();
     void gsTeamCancelPreservesDirtyTeacherInfo();
     void gsTeamDiscardLoadsDirectoryAndDropsTeacherEdit();
+    void mainWindowRenderedLeavesNavigateWithinOpenSession();
+
+private:
+    QTemporaryDir m_settingsDirectory;
 };
+
+void StaffDirectoryOpenSessionNavigationParityTests::initTestCase()
+{
+    QVERIFY(m_settingsDirectory.isValid());
+    qputenv(
+        "CLASSMNGR_SETTINGS_ROOT",
+        m_settingsDirectory.path().toUtf8()
+        );
+    SettingsManager::instance().clear();
+    SettingsManager::instance().sync();
+    qRegisterMetaType<NavigationData>();
+}
 
 void StaffDirectoryOpenSessionNavigationParityTests::cleanup()
 {
@@ -531,6 +554,159 @@ gsTeamDiscardLoadsDirectoryAndDropsTeacherEdit()
     verifyOpenSessionRoute(
         QStringLiteral("gs_team"),
         UnsavedChangesChoice::Discard
+        );
+}
+
+void StaffDirectoryOpenSessionNavigationParityTests::
+mainWindowRenderedLeavesNavigateWithinOpenSession()
+{
+    QTemporaryDir workspaceRoot;
+    QVERIFY(workspaceRoot.isValid());
+
+    const QString workspacePath = QFileInfo(
+        databasePath(workspaceRoot)
+        ).absoluteFilePath();
+
+    ApplicationServices seedServices;
+    QVERIFY(seedServices.openDatabase(workspacePath));
+    QVERIFY(seedStaffDirectories(seedServices));
+    seedServices.closeDatabase();
+    QVERIFY(!seedServices.hasOpenDatabase());
+
+    LanguageService languageService;
+    QVERIFY(languageService.setLanguage(Language::English));
+
+    MainWindowStartupOptions startupOptions;
+    startupOptions.loadMostRecentDatabase = false;
+    startupOptions.initialDatabasePath = workspacePath;
+
+    MainWindow window(
+        [](const QString&) {},
+        false,
+        &languageService,
+        nullptr,
+        std::move(startupOptions)
+        );
+    window.show();
+    QCoreApplication::processEvents();
+    QVERIFY(window.isVisible());
+
+    ApplicationServices* const services = window.services();
+    QVERIFY(services);
+    QVERIFY(services->hasOpenDatabase());
+    QCOMPARE(services->currentDatabasePath(), workspacePath);
+    DatabaseSession* const activeSession = services->databaseSession();
+    QVERIFY(activeSession);
+
+    PageManager* const pages = window.pageManager();
+    QVERIFY(pages);
+
+    Sidebar* const sidebar = window.findChild<Sidebar*>();
+    QVERIFY(sidebar);
+    QTreeWidget* const tree = sidebar->findChild<QTreeWidget*>(
+        QStringLiteral("sidebarTree")
+        );
+    QVERIFY(tree);
+
+    QSignalSpy routeSpy(sidebar, &Sidebar::itemSelected);
+    QVERIFY(routeSpy.isValid());
+
+    const auto verifyRenderedRoute = [
+        &window,
+        services,
+        activeSession,
+        workspacePath,
+        pages,
+        sidebar,
+        tree,
+        &routeSpy
+        ](
+        const QString& routeKey,
+        const QString& leafLabel,
+        const PageType pageType,
+        const QString& tableObjectName,
+        const QString& alphaName,
+        const QString& zuluName
+        )
+    {
+        QTreeWidgetItem* const campusStaff = findSidebarNode(
+            *tree,
+            QStringLiteral("campus_staff")
+            );
+        QTreeWidgetItem* const leaf = findSidebarNode(*tree, routeKey);
+        QVERIFY(campusStaff);
+        QVERIFY(leaf);
+        campusStaff->setExpanded(true);
+        tree->scrollToItem(leaf);
+        QCoreApplication::processEvents();
+
+        const QRect leafRect = tree->visualItemRect(leaf);
+        QVERIFY(leafRect.isValid());
+        QVERIFY(!leafRect.isEmpty());
+        QTest::mouseClick(
+            tree->viewport(),
+            Qt::LeftButton,
+            Qt::NoModifier,
+            leafRect.center()
+            );
+        QCoreApplication::processEvents();
+
+        QCOMPARE(routeSpy.size(), 1);
+        const NavigationData emittedRoute =
+            qvariant_cast<NavigationData>(routeSpy.takeFirst().at(0));
+        const QStringList expectedPath{
+            QStringLiteral("Campus Staff"),
+            leafLabel
+        };
+        const QStringList expectedKeys{
+            QStringLiteral("campus_staff"),
+            routeKey
+        };
+        QCOMPARE(emittedRoute.type, NodeType::Page);
+        QCOMPARE(emittedRoute.path, expectedPath);
+        QCOMPARE(emittedRoute.keys, expectedKeys);
+        QCOMPARE(emittedRoute.routeKey, routeKey);
+        QVERIFY(routeSpy.isEmpty());
+        QCOMPARE(sidebar->selectedKeys(), expectedKeys);
+
+        QVERIFY(pages->isPageInstantiated(pageType));
+        QVERIFY(pages->isCurrentPage(pageType));
+        StaffDirectoryPage* const destination =
+            pageType == PageType::NativeEnglishTeachers
+            ? pages->nativeEnglishTeachersPage()
+            : pages->gsTeamPage();
+        QVERIFY(destination);
+        QTableWidget* const table = destination->findChild<QTableWidget*>(
+            tableObjectName
+            );
+        QVERIFY(table);
+        QCOMPARE(table->rowCount(), 2);
+        QVERIFY(table->item(0, 0));
+        QVERIFY(table->item(1, 0));
+        QCOMPARE(table->item(0, 0)->text(), alphaName);
+        QCOMPARE(table->item(1, 0)->text(), zuluName);
+
+        QVERIFY(services->hasOpenDatabase());
+        QCOMPARE(services->databaseSession(), activeSession);
+        QCOMPARE(services->currentDatabasePath(), workspacePath);
+        QVERIFY(window.isVisible());
+    };
+
+    verifyRenderedRoute(
+        QStringLiteral("native_english_teachers"),
+        QStringLiteral("Native English Teachers"),
+        PageType::NativeEnglishTeachers,
+        QStringLiteral("nativeEnglishTeachersTable"),
+        QStringLiteral("Alpha Native"),
+        QStringLiteral("Zulu Native")
+        );
+    verifyRenderedRoute(
+        QStringLiteral("gs_team"),
+        QStringLiteral("GS Team"),
+        PageType::GsTeam,
+        QStringLiteral("gsTeamTable"),
+        QStringLiteral("Alpha GS"),
+        QStringLiteral("Zulu GS")
         );
 }
 

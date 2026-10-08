@@ -14892,3 +14892,54 @@ independent Tester rebuilt the same target and its exact filtered CTest passed
 accepted and committed in this changeset. Batch 19 remains active but is paused
 after F416; F417 is next and F417-F421 remain queued, not selected/current.
 This run stops after F416.
+
+### F417 selected/current / provisional acceptance matrix - 2026-10-09
+
+1. Seed a temporary workspace with two Native English Teachers and two GS Team
+   members through `ApplicationServices`, close the seeding session, then start
+   MainWindow with that workspace as `initialDatabasePath`.
+2. QTest-click the actual rendered `native_english_teachers` and `gs_team`
+   leaves. Do not add a test-side signal connection or call
+   `NavigationController::handleNavigation` directly.
+3. For each click, verify one `Sidebar::itemSelected` payload with Page type,
+   label path [`Campus Staff`, leaf label], keys [`campus_staff`, routeKey], and
+   matching route key. Verify the selected Sidebar path, correct current
+   StaffDirectory page, and the two alphabetized seeded rows.
+4. Verify the same open database session and workspace path remain active after
+   both routes. Keep the existing four cancel/discard cases unchanged.
+
+Evidence: MainWindow connects the production Sidebar signal to
+`NavigationController::handleNavigation`
+(`src/app/mainwindow.cpp:784-789`). Staff Directory leaves are defined beneath
+`campus_staff` as `NodeType::Page`
+(`src/ui/shared/widgets/sidebar/sidebar_definitions.cpp:40-44`). The existing
+open-session parity test already asserts the leaf payload and sorted table
+contents, but manually invokes the navigation handler
+(`tests/staff_directory_open_session_navigation_parity_tests.cpp:357-417,
+457-479`). F417 is test-only unless the integration case demonstrates a
+production defect; the pre-existing four cancel/discard cases remain in place.
+
+### F417 implementation complete / independently verified / accepted - 2026-10-09
+
+The test-only integration case was added to
+`tests/staff_directory_open_session_navigation_parity_tests.cpp`; CMake now
+provides MainWindow's needed campus/document resources and translations for
+the target. It seeds and closes a temporary workspace before MainWindow opens
+it, then QTest-clicks both real Staff Directory leaves without a test-side
+connection or direct navigation-handler call. The assertions verify each
+actual route payload and selected path, correct current page and alphabetized
+rows, and the same open database session and workspace path. The four existing
+cancel/discard cases are unchanged. No production change or runtime defect was
+needed.
+
+Executor and independent Tester builds of
+`ClassMngrStaffDirectoryOpenSessionNavigationParityTests` succeeded in
+`build/windows-x64-debug` under VS 18 x64 Debug. Each exact filtered CTest
+passed 1/1; the target ran all five QtTest cases, including the new integration
+case and four existing cancel/discard cases. Both workers' first build attempt
+encountered MSBuild FileTracker access denied at `ZERO_CHECK`; the target build
+then succeeded with elevated access. The successful independent build/test had
+no warnings. Executor CMake regeneration noted optional `WrapVulkanHeaders`
+was missing and used Qt's bundled zlib fallback. `git diff --check` passed;
+no full suite was run. F417 is accepted and ready to commit; F418-F421 remain
+queued until the F417 commit.

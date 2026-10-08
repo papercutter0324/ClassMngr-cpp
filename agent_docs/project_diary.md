@@ -2695,3 +2695,16 @@ checks the viewer is not instantiated before the click, route and selected
 keys, resource reference/path, print/save capability, and absence of
 navigation-time modal dialogs or Qt warnings. Independent focused CTest passed
 1/1. Keep F417 queued: the user requested stopping after the F416 commit.
+
+## 2026-10-09 - F417 Staff Directory MainWindow integration accepted
+
+The user resumed Phase 2 after F416 and requested commit-per-slice continuation.
+F417 adds real MainWindow coverage for both rendered Staff Directory leaves
+through the production Sidebar-to-NavigationController connection. It verifies
+route payloads, selected keys, current pages, sorted rows, and unchanged
+workspace session/path; all four existing open-session cancel/discard cases
+remain intact. Executor and independent builds succeeded, and the exact
+filtered CTest passed 1/1 for each; no production change was needed. The
+acceptance matrix and details are in the Phase 2 progress log. The pre-existing
+modification to `latest_session_work.md` and untracked `%SystemDrive%/` entry
+remain preserved. F417 is accepted and ready to commit; F418 remains queued.

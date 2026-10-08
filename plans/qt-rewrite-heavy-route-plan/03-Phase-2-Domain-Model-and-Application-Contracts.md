@@ -37,7 +37,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Depends on: Phase 1
 - Blocks: Persistence, bootstrap, shared UI, and feature migration
 - Owner: Unassigned
-- Last updated: 2026-10-08
+- Last updated: 2026-10-09
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
 - Current note: F400 Open File action dirty-page gate and F401 Recent-workspace
@@ -61,10 +61,11 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
   with F414 Teacher profile save preserving the selected duplicate Sidebar
   occurrence committed (`6fb39b2b`); F415 Campus Dashboard page-tab-to-Sidebar
   synchronization is committed (`f4bc5282`). F416 Document Catalog rendered
-  Sidebar leaf through MainWindow/viewer is accepted and committed in this
-  changeset. Batch 19 remains active but is paused after F416; F417 is next and
-  F417-F421 remain queued, not selected/current. This run stops after F416. See
-  the Phase 2 progress log for acceptance and test evidence. Gates 1 and 2
+  Sidebar leaf through MainWindow/viewer is committed (`a4082f80`). Batch 19
+  resumed with F417 Staff Directory rendered leaf through MainWindow
+  independently accepted and ready to commit; F418-F421 remain queued until
+  the F417 commit. See the Phase 2 progress log for acceptance and test
+  evidence. Gates 1 and 2
   remain Partial; see the progress log for slice evidence.
 
 ### Slice discovery batches
@@ -98,7 +99,8 @@ log](03-Phase-2-Progress-Log.md).
    synchronization.
 3. F416 - Committed in this changeset: Document Catalog rendered Sidebar leaf
    through MainWindow and viewer.
-4. F417 - Queued: Staff Directory rendered leaf through MainWindow.
+4. F417 - Accepted, ready to commit: Staff Directory rendered leaf through
+   MainWindow.
 5. F418 - Queued: Schedule Import through MainWindow apply and Sidebar refresh.
 6. F419 - Queued: MainWindow Print/Save Current Page As action capability and
    enabled state.
@@ -107,8 +109,8 @@ log](03-Phase-2-Progress-Log.md).
 
 No other slices were found.
 
-Batch 19 remains active but is paused after F416. F417 is next and remains
-queued, not selected/current; this run stops after F416.
+Batch 19 resumed after F416. F417 is independently accepted and ready to
+commit; F418-F421 remain queued until its commit.
 
 Batch 18 was discovered at F402 start from two independent bounded reviews and
 activated after F403 committed as `28e881cd`; it completed when F413 committed
