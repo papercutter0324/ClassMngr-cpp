@@ -53,10 +53,11 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
   F407 Schedule↔Testing Classes handoff is committed (`f639fbd3`); F408 Dynamic
   Teacher Sidebar selection/state during retranslation is committed
   (`9f92b78d`). F409 My Workspace Sidebar root producer-to-handler integration
-  is committed (`ee319df2`). F410 Classes Sidebar root integration is
-  implemented, accepted, and ready to commit; F411-F413 remain queued in active
-  Batch 18. Begin Batch 19 discovery when F412 starts. Gates 1 and 2 remain
-  Partial; see the Phase 2 progress log for slice evidence.
+  is committed (`ee319df2`); F410 Classes Sidebar root integration is committed
+  (`14723973`). F411 Sub Prep Sidebar root integration is implemented,
+  accepted, and ready to commit; F412-F413 remain queued in active Batch 18.
+  Begin Batch 19 discovery when F412 starts. Gates 1 and 2 remain Partial; see
+  the Phase 2 progress log for slice evidence.
 
 ### Slice discovery batches
 
@@ -92,8 +93,8 @@ log](03-Phase-2-Progress-Log.md).
    during retranslation.
 6. F409 - Committed (`ee319df2`): My Workspace Sidebar root
    producer-to-handler integration.
-7. F410 - Accepted / ready to commit: Classes Sidebar root integration.
-8. F411 - Queued: Sub Prep Sidebar root integration.
+7. F410 - Committed (`14723973`): Classes Sidebar root integration.
+8. F411 - Accepted / ready to commit: Sub Prep Sidebar root integration.
 9. F412 - Queued: Campus Sidebar root plus section producer integration.
 10. F413 - Queued: Initial Setup success navigation from the empty-state button.
 

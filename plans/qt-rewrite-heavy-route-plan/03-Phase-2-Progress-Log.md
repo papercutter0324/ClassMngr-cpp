@@ -14562,6 +14562,56 @@ alive (`src/app/mainwindow.cpp:1378-1383`). After this fix,
 Debug and the registered `MainWindowClassesSidebarRootNavigation` CTest passed
 1/1 in 0.32 s with normal QtTest completion and no lingering process. No full
 suite was run. F410 closes the root integration coverage gap and fixes the
-teardown defect found by the test. It is accepted and ready to commit;
+teardown defect found by the test. It is accepted and committed as `14723973`;
 F411-F413 remain queued in active Batch 18. Begin Batch 19 discovery when F412
 starts.
+
+### F410 committed / F411 selected/current - 2026-10-08
+
+F410 is committed as `14723973`. Batch 18 remains active with F411
+selected/current and F412-F413 queued.
+
+### F411 selected/current / provisional acceptance matrix - 2026-10-08
+
+1. With the database open, QTest mouse-click the rendered top-level `sub_prep`
+   root. Passively assert exactly one actual `NavigationData` payload:
+   `NodeType::Page`, path [`rootItem->text(0)`], keys [`sub_prep`], routeKey
+   `sub_prep`, and natural `classId` -1. Read the displayed root label from the
+   tree item for a translation-neutral path assertion.
+2. Verify the real MainWindow handler makes `PageType::SubPrep` current,
+   reaches Important Information (`sub_prep_important`), selects the stable
+   Sidebar root key, and preserves the open database session and path. The
+   database must be open for the root to be exposed.
+
+Evidence: `sub_prep` is a top-level `NodeType::Page` item
+(`src/ui/shared/widgets/sidebar/sidebar_definitions.cpp:27-31`). A real click
+creates a payload from the displayed label and stable key, with routeKey equal
+to the last key, then emits `itemSelected`
+(`src/ui/shared/widgets/sidebar/sidebar_selection.cpp:185-196,229-255`).
+MainWindow connects the signal to `NavigationController::handleNavigation`
+(`src/app/mainwindow.cpp:784-789`); the route dispatches to `handleSubPrep`
+(`src/app/controllers/navigation_controller.cpp:365-369,488-534`). Existing
+Sidebar structure coverage verifies the static root
+(`tests/sidebar_structure_tests.cpp:468-533`), while
+`SubPrepRouteGateParityTests` constructs route data and invokes the controller
+directly (`tests/sub_prep_route_gate_parity_tests.cpp:131-148,334-343`). It
+already covers closed-session and dirty-page gates; F411 is limited to the real
+root click and successful open-session handler path. Child routes are out of
+scope. This is a coverage gap, not an observed runtime defect. This matrix was
+provisional at selection; see the completion entry below. F412-F413 remain
+queued; begin Batch 19 discovery when F412 starts.
+
+### F411 implementation complete / focused verification passed - 2026-10-08
+
+The MainWindow test clicks the rendered `sub_prep` root with QTest input and
+observes one real `NodeType::Page` payload with the displayed-label path, stable
+`sub_prep` key/route, and natural `classId == -1`. The actual handler reaches
+the current Sub Prep page at Important Information (`sub_prep_important`),
+selects the root, and preserves the open database session and path
+(`tests/mainwindow_subprep_sidebar_root_navigation_tests.cpp`).
+
+`ClassMngrMainWindowSubPrepSidebarRootNavigationTests` rebuilt under VS 18 x64
+Debug; the registered `MainWindowSubPrepSidebarRootNavigation` CTest passed
+1/1 in 0.41 s. The direct test executable exited 0 and no process remained. No
+runtime defect was found. F411 is accepted and ready to commit; F412-F413 remain
+queued in active Batch 18. Begin Batch 19 discovery when F412 starts.

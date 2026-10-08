@@ -2549,7 +2549,7 @@ downstream handoff. Focused target
 `ClassMngrMainWindowScheduleTestingClassesHandoffParityTests` built with
 Ninja/MSVC; CTest passed 1/1 (1.54 s) on 2026-10-08.
 
-## 2026-10-08 - F410 implementation complete / focused verification passed
+## 2026-10-08 - F410 committed / F411 discovery started
 
 F407 is committed as `f639fbd3`; F408 Dynamic Teacher Sidebar
 selection/state after retranslation is committed as `9f92b78d`; F409 My
@@ -2586,5 +2586,13 @@ kept non-owning service pointers but were destroyed after MainWindow's service
 member. `MainWindow::~MainWindow()` now deletes `m_pages` while
 `ApplicationServices` is alive, preserving normal page hide/teardown behavior.
 The focused target built under VS 18 x64 and independent CTest passed 1/1
-(0.32 s) after the fix. F411-F413 remain queued in Batch 18; discover Batch 19
-when F412 starts.
+(0.32 s) after the fix. F410 is committed as `14723973`.
+
+F411 Sub Prep Sidebar root integration is implemented and accepted. The new
+MainWindow test clicks the rendered root, verifies its actual `Page` payload,
+displayed label, stable `sub_prep` key/route and class ID -1, then checks the
+Sub Prep page at Important Information, root selection, and unchanged open
+database session/path. Existing route-gate tests retain closed-session and
+dirty-page coverage. The focused target rebuilt under VS 18 x64; independent
+CTest passed 1/1 (0.41 s), and the direct executable exited normally. F412-F413
+remain queued in Batch 18; discover Batch 19 when F412 starts.

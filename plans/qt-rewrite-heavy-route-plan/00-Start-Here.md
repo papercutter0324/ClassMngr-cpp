@@ -126,9 +126,10 @@ F405 MainWindow Save As and Export action integration is committed
 F407 Schedule↔Testing Classes handoff is committed (`f639fbd3`); F408 Dynamic
 Teacher Sidebar selection/state during retranslation is committed (`9f92b78d`).
 F409 My Workspace Sidebar root producer-to-handler integration is committed
-(`ee319df2`). F410 Classes Sidebar root integration is implemented, accepted,
-and ready to commit; F411-F413 remain queued in active Batch 18. Begin Batch 19
-discovery when F412 starts. See the Phase 2 progress log for focused evidence.
+(`ee319df2`); F410 Classes Sidebar root integration is committed (`14723973`).
+F411 Sub Prep Sidebar root integration is implemented, accepted, and ready to
+commit; F412-F413 remain queued in active Batch 18. Begin Batch 19 discovery
+when F412 starts. See the Phase 2 progress log for focused verification.
   Gates 1 and 2 remain Partial, with broader feature
   migration, parity, and 96-class Release memory evidence still open.
   See the

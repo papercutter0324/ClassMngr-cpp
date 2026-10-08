@@ -3000,5 +3000,12 @@ defect: QObject-owned pages retained non-owning service pointers but were
 destroyed after MainWindow's `ApplicationServices` member. The destructor now
 deletes `m_pages` while services remain alive. `ClassMngrMainWindowClassesSidebarRootNavigationTests`
 built under VS 18 x64; independent filtered CTest passed 1/1 (0.32 s) after the
-fix. F411-F413 remain queued in Batch 18; the next-batch discovery trigger is
-F412.
+fix. F410 is committed as `14723973`. F411 Sub Prep Sidebar root integration
+is implemented and accepted. The new MainWindow test clicks the rendered root,
+verifies the actual `Page` payload, displayed label, stable `sub_prep` key/route
+and class ID -1, then asserts the Sub Prep page at Important Information, root
+selection, and unchanged open database session/path. Closed-session and
+dirty-page cases remain covered by the route-gate test. The focused target
+rebuilt under VS 18 x64; independent CTest passed 1/1 (0.41 s), and the direct
+executable exited normally. F412-F413 remain queued in Batch 18; the next-batch
+discovery trigger is F412.
