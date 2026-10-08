@@ -2806,3 +2806,11 @@ F422 is committed as 08f44ac6. Its real Testing Classes save signal marked both 
 ## 2026-10-09 - F423 My Schedule mode handoff accepted
 
 The integration test changes My Workspace Schedule to Intensive through its real button and observes the already-loaded Classes page update before routing to Classes again. This catches the missing-connection case that a route reload could mask by reading the saved preference. Executor and independent focused CTest passed; direct target and selected-case QtTest passed. No production code changed.
+
+## 2026-10-09 - F423 committed / F424 selected
+
+F423 is committed as 34966439. The test proved My Workspace Schedule's Intensive action updated an already-loaded Classes page before route reload; this avoids a false pass from stored-preference initialization. F424 targets the Sidebar Add Class QAction's MainWindow/controller connection and resulting selected Details record, beyond the existing signal-only Sidebar test.
+
+## 2026-10-09 - F424 Add Class context-menu handoff accepted
+
+The test now follows the Sidebar tree context-menu connection into the MainWindow SidebarController and verifies the created class opens in Details. Offscreen QtTest did not produce a context-menu event from a right-button mouse click alone; sending QContextMenuEvent through the viewport exercised the production connection. The existing signal-only test remains useful but cannot prove the handler path. Independent focused checks passed; no production code changed.

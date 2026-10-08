@@ -15320,3 +15320,29 @@ The MainWindow handoff case seeds one regular-only Tuesday class and one intensi
 Executor build and independent Tester build passed without warnings. Executor exact filtered CTest passed 1/1 and direct focused-target QtTest passed 11/11. Independent exact filtered CTest passed 1/1; direct QtTest for workspaceScheduleDisplayModeUpdatesLoadedClassesPage passed 3/3 including setup and cleanup. The standard launcher failed before process start with helper_unknown_error: setup refresh had errors; elevated retries passed. Runtime notices were Qt's missing system font directory (repository fonts loaded) and existing offscreen propagateSizeHints() warnings in other cases. The new case emitted no warning. No full suite ran and no focused process remains.
 
 F423 is accepted and included with this slice record. Later Batch 20 candidates remain provisional.
+
+### F423 committed / F424 selected-current - 2026-10-09
+
+F423 My Schedule display-mode handoff to Classes is committed as 34966439672b3e42434901795f0ad07d268afe9d. Executor and independent exact CTest passed 1/1 each, executor direct target QtTest passed 11/11, and independent focused QtTest passed 3/3. The test observes the already-loaded Classes page update before navigation reload. No production code changed.
+
+### F424 provisional acceptance matrix - 2026-10-09
+
+Scope: verify the Sidebar Add Class context-menu action reaches the real MainWindow SidebarController handler and creates/selects a class.
+
+1. Extend tests/mainwindow_classes_sidebar_root_navigation_tests.cpp and its existing focused MainWindow target. Use its temporary-profile fixture with a real open database. Start on a clean page so confirmCurrentPageCanLeave permits the operation.
+2. Find the rendered Classes root in the Sidebar tree. Open its context menu through a real right-button click at the root item's visual center. Since the production menu uses QMenu::exec, use a bounded QTimer callback to inspect the active popup, verify it contains an enabled Add Class action, trigger that QAction, and close the menu. Do not invoke showContextMenu directly, emit addClassRequested, or call SidebarController::addClass.
+3. Verify the real action-to-controller path leaves the clean prior page, creates a persisted class, makes the Classes page current, and opens that class in Details. Assert a valid currentClassId, persisted class identity, currentSection == Details, and the selected Sidebar root key is classes. Verify the action is enabled because the database sections are visible.
+4. Preserve the database session/path and assert no unexpected prompts or modal warnings. Use class ID/record identity instead of the blank display name.
+5. Build MainWindowClassesSidebarRootNavigationTests, run exact registered CTest filter ^ClassMngrMainWindowClassesSidebarRootNavigationTests$, and run direct QtTest for the focused target. No full suite.
+
+Evidence: Sidebar::showContextMenu creates Add Class for the Classes root and enables it when database sections are visible (src/ui/shared/widgets/sidebar/sidebar_context_menu.cpp:12-22,86-89); the tree routes context-menu requests to that handler (sidebar.cpp:183-191). MainWindow creates/connects SidebarController (src/app/mainwindow.cpp:480-489), whose action connection routes addClassRequested to addClass (src/app/controllers/sidebar_controller.cpp:79-84). addClass checks the service and page-leave state, creates a blank-name class, opens it in Classes Details, shows the page, and selects the Classes root (src/app/controllers/sidebar_controller_classes.cpp:14-73). Existing SidebarStructureTests only checks the Sidebar signal (tests/sidebar_structure_tests.cpp:406-457). The integration target and exact registered test are ClassMngrMainWindowClassesSidebarRootNavigationTests (cmake/tests/pages_and_output.cmake:629-645); the existing MainWindow fixture and root-click sequence are in tests/mainwindow_classes_sidebar_root_navigation_tests.cpp:70-162.
+
+F424 is selected for implementation after this matrix is recorded. Later Batch 20 candidates remain provisional.
+
+### F424 implementation and independent verification accepted - 2026-10-09
+
+The MainWindow integration case opens a fresh database and triggers Add Class from the Classes-root context menu. A real right-click is followed by an explicit QContextMenuEvent sent to the tree viewport because offscreen QtTest does not synthesize that event from the mouse click. The production tree connection opens the real QMenu::exec; a timer verifies the enabled QAction and triggers it. The case does not call showContextMenu, emit addClassRequested, or call SidebarController. It verifies a persisted class ID, the current Classes Details page, selected classes root, unchanged database session/path, and no unexpected prompts or modal warnings. No production code changed.
+
+Executor and independent Tester focused builds passed without warnings. Executor exact registered-name CTest passed 1/1; isolated QtTest passed 3/3 and direct target QtTest passed 4/4. Independent exact registered-name CTest passed 1/1 and the focused new test passed 3/3 including init/cleanup. The independent Tester first used an unprefixed filter that matched no test, then reran the registered ClassMngrMainWindowClassesSidebarRootNavigationTests filter successfully. The ordinary launcher failed before process start; elevated retries passed. Runtime notices were Qt's missing system font directory (repository fonts loaded) and offscreen-plugin notices for unsupported raise()/keyboard grabbing. No focused process remains; no full suite ran.
+
+F424 is accepted and included with this slice record. Later Batch 20 candidates remain provisional.

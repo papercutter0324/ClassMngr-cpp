@@ -66,7 +66,8 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
   independently accepted and committed (`d04d9bb0`). F418 Schedule Import through MainWindow apply and Sidebar refresh is committed;
   F419 MainWindow output action state is committed. F420 Class/Schedule save signal refresh is committed as 4c10f0d1; F421 Useful
   Links URL handoff is committed as 27c064e3. F422 Testing Classes edits refreshing both Schedule views is committed as
-  08f44ac6. F423 My Schedule display-mode handoff to Classes is accepted in this changeset.
+  08f44ac6. F423 My Schedule display-mode handoff to Classes is committed as 34966439.
+  F424 Sidebar Add Class context-menu handler is accepted in this changeset.
   See the Phase 2 progress log for acceptance and test evidence.
   Gates 1 and 2
   remain Partial; see the progress log for slice evidence.
@@ -112,13 +113,14 @@ log](03-Phase-2-Progress-Log.md).
    action-state refresh.
 8. F421 - Committed (27c064e3): Useful Links URL handoff.
 9. F422 - Committed (08f44ac6): Testing Classes edits refreshing Schedule views.
-10. F423 - Accepted in this changeset: My Schedule display-mode handoff to Classes.
+10. F423 - Committed (34966439): My Schedule display-mode handoff to Classes.
+11. F424 - Accepted in this changeset: Sidebar Add Class context-menu handler.
 
 Batch 20 read-only reviews surfaced additional provisional candidates after F421; see the Phase 2 progress log.
 
 Batch 19 resumed after F416. F417 is committed as `d04d9bb0`, F418 as
 `ea755736`, F419 as `e2ad222b`, and F420 is committed as 4c10f0d1, F421 as 27c064e3, and F422 Testing Classes edits refreshing Schedule views is committed as 08f44ac6.
-F423 My Schedule display-mode handoff to Classes is accepted in this changeset.
+F423 My Schedule display-mode handoff to Classes is committed as 34966439.
 
 Batch 18 was discovered at F402 start from two independent bounded reviews and
 activated after F403 committed as `28e881cd`; it completed when F413 committed
