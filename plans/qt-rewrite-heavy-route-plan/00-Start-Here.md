@@ -123,10 +123,10 @@ committed (`28e881cd`), completing Batch 17. Batch 18 is active.
 F404 Save choice on Open/Close File actions is committed (`b445e102`).
 F405 MainWindow Save As and Export action integration is committed
 (`07dc5864`). F406 Manage Campuses QAction transition is committed (`28b27998`).
-F407 Schedule↔Testing Classes handoff is implementation complete, accepted,
-and ready to commit. F408 is queued after the F407 commit; F409-F413 follow
-in active Batch 18. See the Phase 2 progress log for focused verification
-of the rendered-table handoff.
+F407 Schedule↔Testing Classes handoff is committed (`f639fbd3`). F408 Dynamic
+Teacher Sidebar selection/state during retranslation is accepted and ready to
+commit; F409-F413 remain queued in active Batch 18. Begin Batch 19 discovery
+when F412 starts. See the Phase 2 progress log for focused evidence.
   Gates 1 and 2 remain Partial, with broader feature
   migration, parity, and 96-class Release memory evidence still open.
   See the

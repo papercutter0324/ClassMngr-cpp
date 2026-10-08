@@ -302,6 +302,57 @@ void Sidebar::selectByKeys(
 
     if (teacherId > 0 && normalizedKeys.contains(QStringLiteral("teacher")))
     {
+        QTreeWidgetItem* teacherParent =
+            m_nodes.value(normalizedKeys.first(), nullptr);
+
+        for (int index = 1;
+             teacherParent && index < normalizedKeys.size() - 1;
+             ++index)
+        {
+            teacherParent = childWithKey(
+                teacherParent,
+                normalizedKeys.at(index)
+                );
+        }
+
+        QTreeWidgetItem* teacherItem = nullptr;
+        if (teacherParent
+            && normalizedKeys.constLast() == QStringLiteral("teacher"))
+        {
+            for (int index = 0;
+                 index < teacherParent->childCount();
+                 ++index)
+            {
+                QTreeWidgetItem* const child = teacherParent->child(index);
+                if (child
+                    && child->data(0, Qt::UserRole + 4).toString()
+                        == normalizedKeys.constLast()
+                    && child->data(0, Qt::UserRole).toInt()
+                        == static_cast<int>(NodeType::Teacher)
+                    && child->data(0, Qt::UserRole + 3).toInt() == teacherId)
+                {
+                    teacherItem = child;
+                    break;
+                }
+            }
+        }
+
+        if (teacherItem)
+        {
+            for (QTreeWidgetItem* ancestor = teacherItem->parent();
+                 ancestor;
+                 ancestor = ancestor->parent())
+            {
+                ancestor->setExpanded(true);
+            }
+
+            m_tree->setCurrentItem(teacherItem);
+            m_tree->scrollToItem(teacherItem);
+            return;
+        }
+
+        // Dynamic teachers can appear under multiple Sidebar sections. Keep
+        // the established ID-based fallback when the saved occurrence vanished.
         selectTeacher(teacherId);
         return;
     }

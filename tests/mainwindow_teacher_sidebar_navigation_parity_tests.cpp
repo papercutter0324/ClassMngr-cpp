@@ -14,6 +14,7 @@
 #include "ui/shared/pages/pagemanager.h"
 #include "ui/shared/widgets/sidebar/sidebar.h"
 
+#include <QAction>
 #include <QApplication>
 #include <QComboBox>
 #include <QFileInfo>
@@ -320,6 +321,7 @@ class MainWindowTeacherSidebarNavigationParityTests final : public QObject
 private slots:
     void initTestCase();
     void refreshedTeacherLeavesDispatchCancelAndDiscard();
+    void languageSwitchPreservesDuplicateTeacherOccurrenceAndDraft();
 
 private:
     QTemporaryDir m_settingsDirectory;
@@ -595,6 +597,292 @@ refreshedTeacherLeavesDispatchCancelAndDiscard()
             teacherSnapshot(*persistedAfterDiscard),
             sourceProfileSnapshot
             );
+    }
+}
+
+void MainWindowTeacherSidebarNavigationParityTests::
+languageSwitchPreservesDuplicateTeacherOccurrenceAndDraft()
+{
+    QTemporaryDir workspaceRoot;
+    QVERIFY(workspaceRoot.isValid());
+
+    const QString workspacePath = QFileInfo(
+        workspaceRoot.filePath(QStringLiteral("teacher-sidebar-language.tps"))
+        ).absoluteFilePath();
+
+    ApplicationServices seedServices;
+    QVERIFY(seedServices.openDatabase(workspacePath));
+
+    Teacher assignedTeacher = teacherFixture(
+        QStringLiteral("박언어"),
+        QStringLiteral("Language Teacher"),
+        QStringLiteral("Language Display"),
+        QStringLiteral("Persisted language profile")
+        );
+    QVERIFY(persistTeacher(seedServices, assignedTeacher) > 0);
+    QVERIFY(assignTeacherToClass(seedServices, assignedTeacher.id));
+    seedServices.closeDatabase();
+
+    LanguageService languageService;
+    QVERIFY(languageService.setLanguage(Language::English));
+    QCOMPARE(languageService.loadedLocaleName(), QStringLiteral("en_US"));
+
+    MainWindowStartupOptions startupOptions;
+    startupOptions.loadMostRecentDatabase = false;
+    startupOptions.initialDatabasePath = workspacePath;
+
+    FakeUserPromptService prompts;
+    const UserPromptServiceScope promptScope(&prompts);
+
+    MainWindow window(
+        [](const QString&) {},
+        false,
+        &languageService,
+        nullptr,
+        std::move(startupOptions)
+        );
+    window.show();
+    QApplication::processEvents();
+    QVERIFY(window.isVisible());
+
+    ApplicationServices* const services = window.services();
+    QVERIFY(services);
+    QVERIFY(services->hasOpenDatabase());
+    QCOMPARE(services->currentDatabasePath(), workspacePath);
+    auto* const activeSession = services->databaseSession();
+    QVERIFY(activeSession);
+
+    PageManager* const pages = window.pageManager();
+    QVERIFY(pages);
+    pages->setSaveMode(SaveMode::Manual);
+
+    Sidebar* const sidebar = window.findChild<Sidebar*>();
+    QVERIFY(sidebar);
+    QTreeWidget* const tree = sidebar->findChild<QTreeWidget*>(
+        QStringLiteral("sidebarTree")
+        );
+    QVERIFY(tree);
+
+    const QStringList coTeacherKeys{
+        QStringLiteral("co_teachers"),
+        QStringLiteral("teacher")
+    };
+    const QStringList koreanTeacherKeys{
+        QStringLiteral("campus_staff"),
+        QStringLiteral("teachers_all_korean"),
+        QStringLiteral("teacher")
+    };
+    const std::array occurrencePaths{coTeacherKeys, koreanTeacherKeys};
+
+    QTreeWidgetItem* const coTeacherLeaf = findTeacherLeaf(
+        tree,
+        coTeacherKeys,
+        assignedTeacher.id
+        );
+    QTreeWidgetItem* const koreanTeacherLeaf = findTeacherLeaf(
+        tree,
+        koreanTeacherKeys,
+        assignedTeacher.id
+        );
+    QVERIFY(coTeacherLeaf);
+    QVERIFY(koreanTeacherLeaf);
+    QVERIFY(coTeacherLeaf != koreanTeacherLeaf);
+
+    QSignalSpy routeSpy(sidebar, &Sidebar::itemSelected);
+    QVERIFY(routeSpy.isValid());
+
+    TeacherInfoPage* teacherPage = nullptr;
+    QAction* const deleteTeacherAction = window.actions().deleteTeacher;
+    QVERIFY(deleteTeacherAction);
+
+    const auto languageStableTeacherFormSnapshot = [&]()
+        {
+            QJsonObject snapshot = teacherFormSnapshot(*teacherPage);
+            QJsonObject internetType = snapshot.value(
+                QStringLiteral("combo:internetTypeCombo")
+                ).toObject();
+            internetType.remove(QStringLiteral("text"));
+            snapshot.insert(
+                QStringLiteral("combo:internetTypeCombo"),
+                internetType
+                );
+            return snapshot;
+        };
+
+    const auto assertRestoredState =
+        [&](const QStringList& expectedKeys,
+            const QList<QStringList>& expectedExpandedPaths,
+            const QString& expectedLocale)
+        {
+            QCOMPARE(languageService.loadedLocaleName(), expectedLocale);
+            QTreeWidgetItem* const coTeachersGroup = findTopLevelItemByKey(
+                tree,
+                QStringLiteral("co_teachers")
+                );
+            QVERIFY(coTeachersGroup);
+            QCOMPARE(
+                coTeachersGroup->text(0),
+                expectedLocale == QStringLiteral("ko_KR")
+                    ? QStringLiteral("공동 교사")
+                    : QStringLiteral("Co-Teachers")
+                );
+            QCOMPARE(sidebar->selectedKeys(), expectedKeys);
+            QCOMPARE(sidebar->getSelectedTeacherId(), assignedTeacher.id);
+
+            QTreeWidgetItem* const restoredLeaf = findTeacherLeaf(
+                tree,
+                expectedKeys,
+                assignedTeacher.id
+                );
+            QVERIFY(restoredLeaf);
+            QCOMPARE(tree->currentItem(), restoredLeaf);
+            QCOMPARE(restoredLeaf->text(0), QStringLiteral("Language Display"));
+
+            const QList<QStringList> expandedPaths =
+                sidebar->expandedItemKeyPaths();
+            QCOMPARE(expandedPaths, expectedExpandedPaths);
+            for (qsizetype index = 1; index < expectedKeys.size(); ++index)
+            {
+                QVERIFY(expandedPaths.contains(expectedKeys.mid(0, index)));
+            }
+
+            QVERIFY(pages->isCurrentPage(PageType::TeacherInfo));
+            QVERIFY(teacherPage);
+            QCOMPARE(pages->teacherPage(), teacherPage);
+            QCOMPARE(teacherPage->teacher().id, assignedTeacher.id);
+            QComboBox* const internetTypeCombo =
+                teacherPage->findChild<QComboBox*>(
+                    QStringLiteral("internetTypeCombo")
+                    );
+            QVERIFY(internetTypeCombo);
+            QCOMPARE(internetTypeCombo->currentData().toString(),
+                     QStringLiteral("Both"));
+            QCOMPARE(
+                internetTypeCombo->currentText(),
+                expectedLocale == QStringLiteral("ko_KR")
+                    ? QStringLiteral("둘 다")
+                    : QStringLiteral("Both")
+                );
+            QCOMPARE(window.actions().deleteTeacher, deleteTeacherAction);
+            QVERIFY(deleteTeacherAction->isEnabled());
+            QVERIFY(routeSpy.isEmpty());
+
+            QVERIFY(services == window.services());
+            QVERIFY(services->hasOpenDatabase());
+            QVERIFY(services->databaseSession() == activeSession);
+            QCOMPARE(services->currentDatabasePath(), workspacePath);
+        };
+
+    for (const QStringList& occurrencePath : occurrencePaths)
+    {
+        QTreeWidgetItem* const occurrenceLeaf = findTeacherLeaf(
+            tree,
+            occurrencePath,
+            assignedTeacher.id
+            );
+        QVERIFY(occurrenceLeaf);
+        QVERIFY(clickTreeItem(tree, occurrenceLeaf));
+        QCOMPARE(routeSpy.size(), 1);
+
+        const NavigationData route =
+            qvariant_cast<NavigationData>(routeSpy.takeFirst().at(0));
+        QCOMPARE(route.type, NodeType::Teacher);
+        QCOMPARE(route.teacherId, assignedTeacher.id);
+        QCOMPARE(route.keys, occurrencePath);
+        QCOMPARE(route.routeKey, QStringLiteral("teacher"));
+        QCOMPARE(sidebar->selectedKeys(), occurrencePath);
+        QCOMPARE(sidebar->getSelectedTeacherId(), assignedTeacher.id);
+        QVERIFY(pages->isCurrentPage(PageType::TeacherInfo));
+        if (!teacherPage)
+        {
+            teacherPage = pages->teacherPage();
+        }
+        QVERIFY(teacherPage);
+        QCOMPARE(teacherPage->teacher().id, assignedTeacher.id);
+        QVERIFY(deleteTeacherAction->isEnabled());
+
+        const QList<QStringList> expandedPaths =
+            sidebar->expandedItemKeyPaths();
+        for (qsizetype index = 1; index < occurrencePath.size(); ++index)
+        {
+            QVERIFY(expandedPaths.contains(occurrencePath.mid(0, index)));
+        }
+
+        QJsonObject dirtyForm;
+        const int promptCountBeforeLanguageSwitch = static_cast<int>(
+            prompts.unsavedChangesConfirmations.size()
+            );
+        if (occurrencePath == koreanTeacherKeys)
+        {
+            QLineEdit* const teacherName = teacherPage->findChild<QLineEdit*>(
+                QStringLiteral("teacherEnEdit")
+                );
+            QTextEdit* const teacherNotes = teacherPage->findChild<QTextEdit*>(
+                QStringLiteral("teacherNotesEdit")
+                );
+            QVERIFY(teacherName);
+            QVERIFY(teacherNotes);
+            teacherName->setText(QStringLiteral("Unsaved translation draft"));
+            teacherNotes->setPlainText(
+                QStringLiteral("Survives Korean and English translation")
+                );
+            QVERIFY(teacherPage->hasUnsavedChanges());
+            dirtyForm = languageStableTeacherFormSnapshot();
+        }
+
+        QAction* const koreanAction = window.actions().languageState
+            ? window.actions().languageState->action(Language::Korean)
+            : nullptr;
+        QVERIFY(koreanAction);
+        koreanAction->trigger();
+        QApplication::processEvents();
+
+        assertRestoredState(
+            occurrencePath,
+            expandedPaths,
+            QStringLiteral("ko_KR")
+            );
+        QCOMPARE(languageService.currentLanguage(), Language::Korean);
+        if (occurrencePath == koreanTeacherKeys)
+        {
+            QCOMPARE(
+                prompts.unsavedChangesConfirmations.size(),
+                promptCountBeforeLanguageSwitch
+                );
+            QVERIFY(prompts.messages.isEmpty());
+            QVERIFY(prompts.asynchronousMessages.isEmpty());
+            QVERIFY(prompts.confirmations.isEmpty());
+            QVERIFY(prompts.actionPrompts.isEmpty());
+            QCOMPARE(languageStableTeacherFormSnapshot(), dirtyForm);
+            QVERIFY(teacherPage->hasUnsavedChanges());
+        }
+
+        QAction* const englishAction = window.actions().languageState
+            ? window.actions().languageState->action(Language::English)
+            : nullptr;
+        QVERIFY(englishAction);
+        englishAction->trigger();
+        QApplication::processEvents();
+
+        assertRestoredState(
+            occurrencePath,
+            expandedPaths,
+            QStringLiteral("en_US")
+            );
+        QCOMPARE(languageService.currentLanguage(), Language::English);
+        if (occurrencePath == koreanTeacherKeys)
+        {
+            QCOMPARE(
+                prompts.unsavedChangesConfirmations.size(),
+                promptCountBeforeLanguageSwitch
+                );
+            QVERIFY(prompts.messages.isEmpty());
+            QVERIFY(prompts.asynchronousMessages.isEmpty());
+            QVERIFY(prompts.confirmations.isEmpty());
+            QVERIFY(prompts.actionPrompts.isEmpty());
+            QCOMPARE(languageStableTeacherFormSnapshot(), dirtyForm);
+            QVERIFY(teacherPage->hasUnsavedChanges());
+        }
     }
 }
 

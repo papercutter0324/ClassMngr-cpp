@@ -2548,3 +2548,18 @@ viewport, covering the actual `QTableWidget` `cellClicked` connection and
 downstream handoff. Focused target
 `ClassMngrMainWindowScheduleTestingClassesHandoffParityTests` built with
 Ninja/MSVC; CTest passed 1/1 (1.54 s) on 2026-10-08.
+
+## 2026-10-08 - F408 implementation complete / focused verification passed
+
+F407 is committed as `f639fbd3`. F408 Dynamic Teacher Sidebar selection/state
+after retranslation is implemented and accepted. Sidebar restoration now uses
+the saved stable key path plus teacher ID to restore the exact duplicate
+occurrence, falling back to ID-based selection if that occurrence no longer
+exists. The focused MainWindow test switches English↔Korean from both
+Co-Teachers and Campus Staff → Korean Teachers and verifies the occurrence,
+selected ID, expansion, no route event, Teacher Info identity, dirty manual-save
+draft and no prompt, delete action, database session/path, and dynamic teacher
+display. It also verifies translated group and internet-type labels while
+keeping the combo’s stable data and user draft intact. The focused target built
+under VS 18 x64; filtered CTest passed 1/1 (1.21 s). F409-F413 remain queued in
+Batch 18; discover Batch 19 at F412.

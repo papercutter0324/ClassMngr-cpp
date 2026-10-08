@@ -2960,3 +2960,21 @@ F407 commit;
 F409-F413 follow.
 
 The user-modified latest_session_work.md remains untouched.
+
+F407 is committed as `f639fbd3`, with the MainWindow Schedule ↔ Testing Classes
+handoff and focused `ClassMngrMainWindowScheduleTestingClassesHandoffParityTests`
+coverage (Ninja/MSVC build, filtered CTest 1/1).
+
+F408 Dynamic Teacher Sidebar selection/state after retranslation is
+implemented and accepted. `Sidebar::selectByKeys()` now restores the exact
+duplicate teacher occurrence from the saved stable key path plus teacher ID,
+with the prior ID-based behavior as fallback when that occurrence is gone.
+The MainWindow integration test switches English↔Korean from both Co-Teachers
+and Campus Staff → Korean Teachers and verifies selection path/ID, expansion,
+no route event, Teacher Info page and identity, dirty manual-save draft without
+prompts, delete-action state, and active database session/path. Dynamic teacher
+display remains stable while group and internet-type labels translate; the
+localized combo assertion compares its stable data separately from its display
+text. `ClassMngrMainWindowTeacherSidebarNavigationParityTests` built under VS
+18 x64 and filtered CTest passed 1/1 (1.21 s). F409-F413 remain queued in
+Batch 18; the next-batch discovery trigger is F412.

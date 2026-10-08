@@ -14384,7 +14384,7 @@ is not accepted.
 
 ### F407 implementation complete / focused verification passed - 2026-10-08
 
-F407 is accepted and ready to commit. Real ScheduleWidget Testing Classes and
+F407 is accepted and committed. Real ScheduleWidget Testing Classes and
 Testing Classes back actions cover standalone Schedule and My Workspace →
 Schedule, returning to the correct source page/tab and preserving active
 session/path/Sidebar. The cell-dialog Manage Classes path forwards the empty
@@ -14392,9 +14392,65 @@ choice list’s natural non-positive ID plus a specific day/time; class creation
 persists the requested slot. Cancel preserves the dirty Testing Classes page,
 draft, and dirty state; Discard completes the source-dependent return.
 
-The cell-dialog route now uses `QTest::mouseClick` on the rendered table
-viewport, covering the actual `QTableWidget` `cellClicked` connection and
-downstream handoff. Focused target
+The cell-dialog route uses `QTest::mouseClick` on the rendered table viewport,
+covering the actual `QTableWidget` `cellClicked` connection and downstream
+handoff. Focused target
 `ClassMngrMainWindowScheduleTestingClassesHandoffParityTests` built with
-Ninja/MSVC; focused CTest passed 1/1 (1.54 s) on 2026-10-08. F408 is queued
-after the F407 commit; F409-F413 follow in active Batch 18.
+Ninja/MSVC; focused CTest passed 1/1 (1.54 s) on 2026-10-08.
+
+### F407 committed / F408 selected/current - 2026-10-08
+
+F407 is committed as `f639fbd3`. Batch 18 remains active with F408
+selected/current and F409-F413 queued.
+
+### F408 selected/current / provisional acceptance matrix - 2026-10-08
+
+1. Verify an assigned teacher appears under both Co-Teachers and Campus Staff →
+   Korean Teachers. After English↔Korean retranslation, the selected teacher ID
+   and exact stable key path remain on the same occurrence; Sidebar expansion
+   remains and no route event is emitted.
+2. Verify Teacher Info page and teacher identity plus a manual-save dirty draft
+   survive language switching without prompts. Preserve active database
+   session/path and teacher-related QAction state.
+3. Verify the language action retranslates the UI while dynamic teacher content
+   stays attached to its ID.
+
+Evidence: MainWindow snapshots selected keys/teacher ID/expanded paths and
+restores them after rebuilding (`src/app/mainwindow.cpp:546-620`). Refresh adds
+assigned teachers to Co-Teachers before the all-teachers group and duplicates
+them by ID (`src/app/controllers/sidebar_controller_refresh.cpp:36-67,140-204`).
+Each dynamic leaf uses the generic `teacher` key with its ID in role+3
+(`src/ui/shared/widgets/sidebar/sidebar_teachers.cpp:3-38`). The current
+`selectByKeys` teacher special case delegates to the first match
+(`src/ui/shared/widgets/sidebar/sidebar_tree.cpp:282-307`,
+`src/ui/shared/widgets/sidebar/sidebar_selection.cpp:3-23`), so same-occurrence
+restoration is the inferred gap. Existing document-catalog retranslation tests
+cover static path/expansion/page state only
+(`tests/mainwindow_document_catalog_retranslation_parity_tests.cpp:114-198,208-293`);
+teacher-sidebar navigation covers real duplicate leaves and dirty Cancel/
+Discard without a language switch
+(`tests/mainwindow_teacher_sidebar_navigation_parity_tests.cpp:424-463,492-598`).
+This matrix was provisional; see the F408 completion entry below.
+
+### F408 implementation complete / focused verification passed - 2026-10-08
+
+`Sidebar::selectByKeys` now restores the saved teacher key path and teacher ID
+to the same dynamic occurrence, falling back to ID-based selection if that
+occurrence no longer exists (`src/ui/shared/widgets/sidebar/sidebar_tree.cpp:282-358`).
+MainWindow integration coverage switches English↔Korean from both assigned-
+teacher occurrences and verifies the selected key path/ID, expanded paths,
+Teacher Info page and identity, no route event, active database session/path,
+delete action, dynamic teacher display, and translated group/static and
+internet-type labels. For the Korean Teachers occurrence, a manual-save dirty
+teacher draft survives both language switches without prompting. The combo
+assertion treats its localized display text as presentation while preserving
+and checking its stable `currentData()` value.
+Coverage is in
+`tests/mainwindow_teacher_sidebar_navigation_parity_tests.cpp:604-883`
+(`languageSwitchPreservesDuplicateTeacherOccurrenceAndDraft`, registered by
+`cmake/tests/pages_and_output.cmake:800-810`).
+
+Focused target `ClassMngrMainWindowTeacherSidebarNavigationParityTests` built
+under VS 18 x64; filtered CTest passed 1/1 in 1.21 s. F408 is accepted and ready
+to commit. F409-F413 remain queued in active Batch 18; begin Batch 19 discovery
+when F412 starts, the second-last slice in this batch.

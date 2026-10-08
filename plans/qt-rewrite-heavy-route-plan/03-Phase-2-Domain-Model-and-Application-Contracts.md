@@ -50,10 +50,11 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
   F405 MainWindow Save As and Export action integration is committed
   (`07dc5864`). F406 Manage Campuses QAction transition is committed
   (`28b27998`).
-  F407 Schedule↔Testing Classes handoff is implementation complete, accepted,
-  and ready to commit. F408 is queued after the F407 commit; F409-F413 follow
-  in active Batch 18. Gates 1 and 2 remain Partial; see the Phase 2 progress log
-  for focused verification of the rendered-table handoff.
+  F407 Schedule↔Testing Classes handoff is committed (`f639fbd3`). F408 Dynamic
+  Teacher Sidebar selection/state during retranslation is accepted and ready to
+  commit; F409-F413 remain queued in active Batch 18. Begin Batch 19 discovery
+  when F412 starts. Gates 1 and 2 remain Partial; see the Phase 2 progress log
+  for slice evidence.
 
 ### Slice discovery batches
 
@@ -84,9 +85,9 @@ log](03-Phase-2-Progress-Log.md).
 2. F405 - Committed (`07dc5864`): MainWindow Save As and Export action
    integration.
 3. F406 - Committed (`28b27998`): Manage Campuses QAction transition.
-4. F407 - Accepted / ready to commit: Schedule↔Testing Classes handoff.
-5. F408 - Queued after the F407 commit: Dynamic Teacher Sidebar
-   selection/state during retranslation.
+4. F407 - Committed (`f639fbd3`): Schedule↔Testing Classes handoff.
+5. F408 - Accepted / ready to commit: Dynamic Teacher Sidebar selection/state
+   during retranslation.
 6. F409 - Queued: My Workspace Sidebar root producer-to-handler integration.
 7. F410 - Queued: Classes Sidebar root integration.
 8. F411 - Queued: Sub Prep Sidebar root integration.
@@ -96,6 +97,7 @@ log](03-Phase-2-Progress-Log.md).
 Batch 18 was discovered at F402 start from two independent bounded reviews and
 activated after F403 committed as `28e881cd`. Its evidence and limits are in the
 Phase 2 progress log; discovery does not establish repository-wide exhaustion.
+Begin Batch 19 discovery when F412 starts, the second-last slice in Batch 18.
 
 ## Objective
 
