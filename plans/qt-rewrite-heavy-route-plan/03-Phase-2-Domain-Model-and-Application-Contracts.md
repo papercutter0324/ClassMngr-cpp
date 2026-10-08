@@ -43,11 +43,12 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Current note: F438, “Phase2 - Reject existing IDs in repeat-series creation
   (F438),” is committed as 0c2ceca6; Batch 21 is complete. F439 Delete Teacher
   QAction confirmation success is committed as a0c50d2d (branch ahead 24). Batch
-  22 is active with F440 Complete Export Classes JSON output accepted in this
-  changeset and ready to commit. F441 Import Classes QAction apply with a create-only
-  fixture is next after commit; F442-F446 remain provisional. F285 stays deferred;
-  same-path Open remains unselected pending a contract. See the progress log. Gates
-  1 and 2 remain Partial.
+  F440, “Phase2 - Cover Export Classes JSON output (F440),” is committed as
+  01d1559c (branch ahead 25). Batch 22 is active with F441 Import Classes QAction
+  apply with a create-only fixture accepted in this changeset and ready to commit.
+  F442 Import Teachers QAction apply is next after commit; F443-F446 remain provisional.
+  F285 stays deferred; same-path Open remains unselected pending a contract. See the
+  progress log. Gates 1 and 2 remain Partial.
 
 ### Slice discovery batches
 
@@ -74,16 +75,17 @@ log](03-Phase-2-Progress-Log.md).
 
 #### Active batch: Batch 22
 
-1. F440 - Accepted in this changeset, ready to commit: Complete Export Classes JSON
-   output. Keep F440 in Batch 22 until commit; F441 Import Classes QAction apply
-   with a create-only fixture is next after commit. F442-F446 remain provisional;
-   see the progress log for bounded discovery outlines.
+1. F441 - Accepted in this changeset, ready to commit: Import Classes QAction apply
+   with a create-only fixture. Keep F441 in Batch 22 until commit; F442 Import
+   Teachers QAction apply is next after commit. F443-F446 remain provisional; see
+   the progress log for their bounded discovery outlines.
 
 Batch 21 began with ten candidates after F428 and is complete; F429-F438 are
 committed. F438, “Phase2 - Reject existing IDs in repeat-series creation (F438),”
 is commit 0c2ceca6. F439, “Phase2 - Cover Delete Teacher QAction confirmation
-success (F439),” is commit a0c50d2d on Qt-Rewrite (branch ahead 24). Batch 22 is
-active with F440 selected/current and F441-F446 provisional. F285 remains deferred,
+success (F439),” is commit a0c50d2d. F440, “Phase2 - Cover Export Classes JSON
+output (F440),” is commit 01d1559c on Qt-Rewrite (branch ahead 25). Batch 22 is
+active with F441 selected/current and F442-F446 provisional. F285 remains deferred,
 and same-path Open remains unselected until its contract is defined. This bounded
 discovery does not establish repository-wide exhaustion.
 Batch 20 completed when F428 committed as b82bddaa. F429 committed as 19f6024d. Batch 21 was

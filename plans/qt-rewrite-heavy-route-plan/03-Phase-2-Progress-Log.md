@@ -16164,3 +16164,56 @@ changed; there were no production or CMake changes.
 F440 is accepted in this changeset and ready to commit. F441 Import Classes
 QAction apply with a create-only fixture is next after the F440 commit. Batch 22
 remains active; F442-F446 remain provisional.
+
+### F440 committed / F441 selected-current - 2026-10-09
+
+F440, “Phase2 - Cover Export Classes JSON output (F440),” is committed as
+01d1559caae48eddcda739f4ea6f30dba8667e24 on Qt-Rewrite (branch ahead 25). Its
+JSON output acceptance evidence and focused verification remain recorded above.
+Batch 22 remains active with F441 Import Classes QAction apply using a create-only
+fixture selected/current. Bounded read-only discovery is underway; no F441 matrix
+or implementation has started. F442-F446 remain provisional. F285 successful New
+Teacher remains deferred, and same-path Open remains unselected pending its
+contract.
+
+### F441 acceptance matrix recorded before implementation - 2026-10-09
+
+Extend tests/mainwindow_close_file_parity_tests.cpp in the existing
+ClassMngrMainWindowCloseFileParityTests target. Use an empty destination and one
+valid package class with no teachers and an empty teacher_ref. This is a create-only
+fixture, keeping F442 Import Teachers separate and avoiding replacement semantics.
+
+Exercise the actual Import Classes QAction through the file picker, ClassImportDialog,
+and apply. Script one ClassTransfer JSON openFile request. Select Create and
+verify it is selected, then use a timer with a five-second watchdog to click Import. Assert
+the dialog is accepted with no timeout or fallback. Verify one imported class and
+its expected info result, zero teachers, teacherId -1, and summary Created 1,
+replaced 0, skipped 0, with no warning.
+
+Assert handoff to PageType::Classes with the imported ID selected and
+ClassesSection::Details active, Sidebar selection classes, and session/path stable.
+F426 covered picker cancellation; the existing controller success fixture covers
+lower-level apply (tests/sidebar_class_transfer_apply_parity_tests.cpp:124-188,
+332-361). Build target ClassMngrMainWindowCloseFileParityTests and run exact CTest
+^ClassMngrMainWindowCloseFileParityTests$. F441 remains selected/current with this
+matrix recorded before implementation; implementation has not started.
+
+### F441 accepted in this changeset - 2026-10-09
+
+The actual Import Classes QAction used one ClassTransfer JSON picker request,
+then the real dialog selected and verified Create before apply. Against an empty
+destination, the valid one-class package with empty teacher_ref imported one class
+and produced the expected class-created info; no teacher was
+created, teacherId is -1, and the summary was Created 1, replaced 0, skipped 0.
+The app handed off to Classes with the imported ID selected, Details active, and
+Sidebar route classes. Session and path remained stable.
+
+Executor and independent Tester each passed the target build, exact CTest
+^ClassMngrMainWindowCloseFileParityTests$ (1/1), target QtTest (10/10), and
+selected case (3/3). There were no compiler warnings; Qt font/offscreen notices
+only. The full suite was not run. Only tests/mainwindow_close_file_parity_tests.cpp
+changed; there were no production or CMake changes.
+
+F441 is accepted in this changeset and ready to commit. F442 Import Teachers
+QAction apply is next after the F441 commit. Batch 22 remains active; F443-F446
+remain provisional.

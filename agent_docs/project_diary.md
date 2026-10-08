@@ -3046,3 +3046,18 @@ F440 will add a success case beside F432’s picker cancellation in mainwindow_c
 ## 2026-10-09 - F440 Export Classes JSON success accepted
 
 The F440 case exercised the real QAction, actual ClassExportDialog and JSON save path. It listed two classes, selected only the target, and verified the saved package metadata, UTC timestamp, target class information, linked teacher profile, and absence of the unselected class. The Export Classes information prompt reported count and output path without warnings. Database class names/count/rows/info, MyWorkspace and page identity, session/path remained unchanged. Executor and independent Tester passed target build, exact CTest 1/1, QtTest 9/9, and selected case 3/3. No compiler warnings; Qt font/offscreen notices only. No full suite or production/CMake change. F440 is accepted and ready to commit; F441 Import Classes apply follows.
+
+
+## 2026-10-09 - F440 committed; F441 selected
+
+F440 committed as 01d1559caae48eddcda739f4ea6f30dba8667e24 (Phase2 - Cover Export Classes JSON output (F440)); branch is ahead by 25. The exact six approved paths were committed; source changes were test-only and diff checks passed. latest_session_work.md and unrelated %SystemDrive%/ remain excluded. Batch 22 is active with F441 Import Classes QAction apply selected/current for bounded context discovery; F442-F446 remain provisional.
+
+
+## 2026-10-09 - F441 Import Classes success matrix
+
+F441 will exercise the real MainWindow Import Classes QAction through picker, review, and apply. Use an empty destination and one valid package class with no package teachers/empty teacher_ref; this keeps Import Teachers and replacement/update behavior out of scope. Script the JSON file picker and accept the real ClassImportDialog after confirming Create is selected, using timer automation plus a five-second watchdog. Assert one class with expected ClassInfo, no teachers and teacherId -1, no replacement/skip, an information summary for Created 1/replaced 0/skipped 0, and no warning. The Classes page should show the imported class selected in Details with the Classes sidebar route, while session/path remain stable. Target/CTest: ClassMngrMainWindowCloseFileParityTests. Matrix is recorded before implementation.
+
+
+## 2026-10-09 - F441 Import Classes MainWindow apply accepted
+
+The F441 test imported a valid one-class, no-teacher package through the actual QAction, JSON picker, review dialog, Create selection, and Apply button. The empty destination now contains one class with its complete expected ClassInfo and no teachers; the class remains unassigned. The exact completion summary is Created 1/replaced 0/skipped 0. The Classes page shows the imported ID in Details, sidebar route is classes, and session/path remain stable. Executor and independent Tester passed the focused target build, CTest 1/1, QtTest 10/10, and selected case 3/3. No compiler warnings; Qt font/offscreen notices only. No full suite or production/CMake change. F441 is accepted and ready to commit; F442 Import Teachers QAction apply follows.

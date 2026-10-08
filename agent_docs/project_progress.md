@@ -3235,3 +3235,18 @@ F440 adds a successful companion to F432 in MainWindowCloseFileParityTests. Reus
 ## 2026-10-09 - F440 Export Classes JSON success accepted
 
 The new MainWindow case uses the real Export Classes QAction and dialog observer, verifies both seeded classes are listed but only the target is selected, and writes through the scripted temporary JSON picker. Parsed output has format ClassMngr Classes, version 1, a valid UTC timestamp, exactly the selected class with its info, and a teacher_ref linked to the exported teacher; the unselected class is absent. The success information prompt has the expected count/path and no warning. Workspace page/session/path, class names/count/table rows, and full class-info snapshots are unchanged. Executor and independent Tester passed Ninja Debug target build, exact CTest 1/1, target QtTest 9/9, and selected case 3/3. No compiler warnings; Qt font/offscreen notices only. No full suite or production/CMake change. F440 is accepted and ready to commit. F441 Import Classes QAction apply is next after this commit; Batch 22 remains active.
+
+
+## 2026-10-09 - F440 committed; F441 selected
+
+F440 committed as 01d1559caae48eddcda739f4ea6f30dba8667e24 (Phase2 - Cover Export Classes JSON output (F440)); branch is ahead by 25. The six-path commit contains the test-only source change and accepted progress records; diff checks passed. latest_session_work.md and unrelated %SystemDrive%/ remain outside slice commits. Batch 22 remains active. F441 Import Classes QAction apply with a create-only fixture is selected/current and bounded read-only discovery is underway; F442-F446 remain provisional.
+
+
+## 2026-10-09 - F441 Import Classes create-only matrix recorded
+
+F441 adds successful apply coverage beside F426 in MainWindowCloseFileParityTests. Use an empty destination database and a valid one-class JSON package with no teachers and an empty teacher_ref; this avoids teacher import and replacement semantics. Trigger the actual MainWindow importClasses QAction, script one openFile selection for FileDialogPurpose::ClassTransfer/JSON, then automate the real ClassImportDialog with a timer and five-second modal watchdog. Assert the default Create class choice and Import button, dialog acceptance, and no timeout/fallback. Verify exactly one class is created with expected class-info values, zero teachers are imported and the class remains unassigned, with summary Created: 1, replaced: 0, skipped: 0 and no warning. Assert PageType::Classes shows the imported class selected in ClassesSection::Details, sidebar route classes, and database path/session stable. Target/CTest: ClassMngrMainWindowCloseFileParityTests. Matrix recorded before implementation; no implementation has started.
+
+
+## 2026-10-09 - F441 Import Classes QAction apply accepted
+
+The test drives the real Import Classes QAction, scripted ClassTransfer JSON picker, real ClassImportDialog, explicit Create choice, and Import apply from an empty destination using a one-class package with no teachers. It verifies one new class and full expected ClassInfo, zero teacher rows with teacherId -1, exact Created: 1/replaced: 0/skipped: 0 information summary, no other prompt, Classes page with imported ID/Details active, sidebar route classes, and stable session/path. Executor and independent Tester passed Ninja Debug target build, exact CTest 1/1, target QtTest 10/10, and selected case 3/3. No compiler warnings; Qt font/offscreen notices only. No full-suite run or production/CMake change. F441 is accepted and ready to commit. F442 Import Teachers QAction apply is next after this commit; Batch 22 remains active.

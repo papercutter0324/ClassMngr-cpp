@@ -8,6 +8,9 @@
 #include "data/repositories/teacher_repository.h"
 #include "features/campus/ui/campus_dashboard_page.h"
 #include "features/classes/ui/class_export_dialog.h"
+#include "features/classes/ui/class_import_dialog.h"
+#include "features/classes/ui/classes_page.h"
+#include "features/classes/services/class_transfer_json_codec.h"
 #include "features/my_info/ui/my_workspace_page.h"
 #include "features/my_info/ui/personal_details_page.h"
 #include "domain/models/class_info.h"
@@ -21,6 +24,7 @@
 #include <QAction>
 #include <QApplication>
 #include <QCheckBox>
+#include <QComboBox>
 #include <QDate>
 #include <QDateTime>
 #include <QDialog>
@@ -368,6 +372,7 @@ private slots:
     void closeFileSavePersistsDraftBeforeClosingWorkspace();
     void upcomingBirthdaysActionShowsEntriesFromAllStaffDirectories();
     void importClassesActionRequestsJsonAndCancellationIsSilent();
+    void importClassesActionReviewsAndAppliesJsonPackage();
     void exportClassesActionReachesJsonPickerAndCancellationIsSilent();
     void exportClassesActionWritesSelectedClassPackage();
     void newTeacherActionShowsRequiredNameWarningWithoutNavigation();
@@ -1047,6 +1052,399 @@ importClassesActionRequestsJsonAndCancellationIsSilent()
     QVERIFY(prompts.unsavedChangesConfirmations.isEmpty());
     QVERIFY(prompts.actionPrompts.isEmpty());
     QVERIFY(QApplication::activeModalWidget() == nullptr);
+}
+
+void MainWindowCloseFileParityTests::
+importClassesActionReviewsAndAppliesJsonPackage()
+{
+    QTemporaryDir workspaceRoot;
+    QVERIFY(workspaceRoot.isValid());
+
+    const QString workspacePath = QFileInfo(
+        workspaceRoot.filePath(QStringLiteral("import-classes-success.tps"))
+        ).absoluteFilePath();
+    const QString packagePath = workspaceRoot.filePath(
+        QStringLiteral("f441-import-package.json")
+        );
+
+    ClassTransferPackage package;
+    package.exportedAtUtc = QDateTime::fromString(
+        QStringLiteral("2026-10-09T10:20:30.000Z"),
+        Qt::ISODateWithMs
+        );
+    QVERIFY(package.exportedAtUtc.isValid());
+    QCOMPARE(package.exportedAtUtc.timeSpec(), Qt::UTC);
+
+    ClassTransferClass transferClass;
+    transferClass.key = QStringLiteral("f441-source-class");
+    transferClass.name = QStringLiteral("F441 Imported Class");
+    transferClass.teacherKey.clear();
+    transferClass.info.teacherId = -1;
+    transferClass.info.classGrade = QStringLiteral("E5");
+    transferClass.info.classLevel = QStringLiteral("Artemis");
+    transferClass.info.readingBook = QStringLiteral("Reading Explorer 2");
+    transferClass.info.essayBook = QStringLiteral("5A");
+    transferClass.info.classTimes = {
+        {
+            QStringLiteral("Wednesday"),
+            QStringLiteral("5:00 PM"),
+            QStringLiteral("5:50 PM")
+        }
+    };
+    transferClass.info.intensiveTimes = {
+        {
+            QStringLiteral("Saturday"),
+            QStringLiteral("10:00 AM"),
+            QStringLiteral("11:00 AM")
+        }
+    };
+    transferClass.info.notes = QStringLiteral("F441 imported class notes");
+    transferClass.info.timeFillerActivities =
+        QStringLiteral("F441 imported filler activity");
+    transferClass.roster.columns = Roster::BaseColumns;
+    for (qsizetype index = 0;
+         index < transferClass.roster.columns.size();
+         ++index)
+    {
+        transferClass.roster.columnWidths.append(180);
+    }
+    ClassTransferEvaluation evaluation;
+    evaluation.name = QStringLiteral("F441 Package Evaluation");
+    QStringList evaluationRow;
+    for (int column = 0; column < SpeakingEval::ColumnCount; ++column)
+    {
+        evaluationRow.append(QString());
+    }
+    evaluationRow[SpeakingEval::toInt(SpeakingEvalColumn::EnglishName)] =
+        QStringLiteral("F441 Package Student");
+    evaluationRow[SpeakingEval::toInt(SpeakingEvalColumn::KoreanName)] =
+        QStringLiteral("F441 패키지 학생");
+    evaluation.rows.append(evaluationRow);
+    transferClass.evaluations.append(evaluation);
+    package.classes.append(transferClass);
+
+    QVERIFY(ClassTransferJsonCodec::saveFile(
+        packagePath,
+        package
+        ).has_value());
+    const auto decodedPackage = ClassTransferJsonCodec::loadFile(packagePath);
+    QVERIFY(decodedPackage.has_value());
+    QCOMPARE(decodedPackage->classes.size(), 1);
+    QVERIFY(decodedPackage->teachers.isEmpty());
+    QCOMPARE(decodedPackage->classes.constFirst().teacherKey, QString());
+    QCOMPARE(decodedPackage->classes.constFirst().roster.columns,
+             transferClass.roster.columns);
+    QCOMPARE(decodedPackage->classes.constFirst().evaluations.size(), 1);
+    QCOMPARE(decodedPackage->classes.constFirst().evaluations.constFirst().rows.size(), 1);
+
+    ApplicationServices seedServices;
+    QVERIFY(seedServices.openDatabase(workspacePath));
+    seedServices.closeDatabase();
+
+    FakeUserPromptService prompts;
+    FakeFileDialogService fileDialogs;
+    fileDialogs.scriptedOpenFiles.enqueue(packagePath);
+    const UserPromptServiceScope promptScope(&prompts);
+    const FileDialogServiceScope fileDialogScope(&fileDialogs);
+
+    LanguageService languageService;
+    QVERIFY(languageService.setLanguage(Language::English));
+
+    MainWindowStartupOptions startupOptions;
+    startupOptions.loadMostRecentDatabase = false;
+    startupOptions.initialDatabasePath = workspacePath;
+
+    MainWindow window(
+        [](const QString&) {},
+        false,
+        &languageService,
+        nullptr,
+        std::move(startupOptions)
+        );
+    window.show();
+    QApplication::processEvents();
+
+    ApplicationServices* const services = window.services();
+    QVERIFY(services);
+    QVERIFY(services->hasOpenDatabase());
+    QCOMPARE(services->currentDatabasePath(), workspacePath);
+    DatabaseSession* const activeSession = services->databaseSession();
+    QVERIFY(activeSession);
+
+    ClassService* const classService = services->classService();
+    QVERIFY(classService);
+    const auto classesBefore = classService->classes();
+    QVERIFY(classesBefore);
+    QVERIFY(classesBefore->isEmpty());
+    TeacherService* const teacherService = services->teacherService();
+    QVERIFY(teacherService);
+    const auto teachersBefore = teacherService->teachers();
+    QVERIFY(teachersBefore);
+    QVERIFY(teachersBefore->isEmpty());
+
+    PageManager* const pages = window.pageManager();
+    QVERIFY(pages);
+    QVERIFY(pages->isCurrentPage(PageType::MyWorkspace));
+    QWidget* const workspaceWidget = pages->currentWidget();
+    QVERIFY(workspaceWidget);
+    const QString workspacePageIdentifier = pages->currentPageIdentifier();
+    QVERIFY(!workspacePageIdentifier.isEmpty());
+
+    Sidebar* const sidebar = window.findChild<Sidebar*>();
+    QVERIFY(sidebar);
+    QCOMPARE(
+        sidebar->selectedKeys(),
+        QStringList{QStringLiteral("my_workspace")}
+        );
+
+    QAction* const importClassesAction = window.actions().importClasses;
+    QVERIFY(importClassesAction);
+    QVERIFY(importClassesAction->isEnabled());
+
+    struct ImportDialogObservation final
+    {
+        bool dialogObserved = false;
+        bool objectNameMatched = false;
+        bool classChoiceFound = false;
+        bool createChoiceFound = false;
+        bool createChoiceSelected = false;
+        bool noTeacherChoices = false;
+        bool createPlanSelected = false;
+        bool importButtonFound = false;
+        bool importButtonEnabled = false;
+        bool importButtonClicked = false;
+        bool dialogAccepted = false;
+        bool timedOut = false;
+        bool fallbackRejectedModal = false;
+        QString failure;
+    } observation;
+
+    QTimer dialogPoll;
+    dialogPoll.setInterval(10);
+    QTimer modalWatchdog;
+    modalWatchdog.setSingleShot(true);
+
+    QObject::connect(
+        &dialogPoll,
+        &QTimer::timeout,
+        &window,
+        [&]
+        {
+            ClassImportDialog* dialog = qobject_cast<ClassImportDialog*>(
+                QApplication::activeModalWidget()
+                );
+            if (!dialog)
+            {
+                for (QWidget* widget : QApplication::topLevelWidgets())
+                {
+                    dialog = qobject_cast<ClassImportDialog*>(widget);
+                    if (dialog && dialog->isVisible())
+                    {
+                        break;
+                    }
+                    dialog = nullptr;
+                }
+            }
+            if (!dialog)
+            {
+                return;
+            }
+
+            observation.dialogObserved = true;
+            observation.objectNameMatched =
+                dialog->objectName() == QStringLiteral("classImportDialog")
+                && dialog->dialogKey() == QStringLiteral("classImport");
+
+            QComboBox* const classChoice = dialog->findChild<QComboBox*>(
+                QStringLiteral("classImportChoice_0")
+                );
+            observation.classChoiceFound = classChoice != nullptr;
+            if (classChoice)
+            {
+                const int createIndex = classChoice->findData(
+                    static_cast<int>(ClassImportAction::Create),
+                    Qt::UserRole
+                    );
+                observation.createChoiceFound = createIndex >= 0;
+                if (createIndex >= 0)
+                {
+                    classChoice->setCurrentIndex(createIndex);
+                    observation.createChoiceSelected =
+                        classChoice->currentData(Qt::UserRole).toInt()
+                        == static_cast<int>(ClassImportAction::Create);
+                }
+            }
+
+            observation.noTeacherChoices =
+                dialog->findChildren<QComboBox*>().size() == 1;
+            if (classChoice)
+            {
+                const ClassImportPlan plan = dialog->importPlan();
+                observation.createPlanSelected =
+                    plan.classes.size() == 1
+                    && plan.classes.constFirst().action
+                        == ClassImportAction::Create;
+            }
+
+            QPushButton* const importButton = dialog->findChild<QPushButton*>(
+                QStringLiteral("importClassesButton")
+                );
+            observation.importButtonFound = importButton != nullptr;
+            observation.importButtonEnabled =
+                importButton && importButton->isEnabled();
+
+            if (observation.objectNameMatched
+                && observation.classChoiceFound
+                && observation.createChoiceFound
+                && observation.createChoiceSelected
+                && observation.noTeacherChoices
+                && observation.createPlanSelected
+                && observation.importButtonEnabled)
+            {
+                QObject::connect(
+                    dialog,
+                    &QDialog::accepted,
+                    &window,
+                    [&observation]
+                    {
+                        observation.dialogAccepted = true;
+                    }
+                    );
+                observation.importButtonClicked = true;
+                dialogPoll.stop();
+                importButton->click();
+                return;
+            }
+
+            observation.failure = QStringLiteral(
+                "The class import review dialog did not expose the expected "
+                "Create choice and enabled Import button.");
+            dialogPoll.stop();
+            dialog->reject();
+        }
+        );
+    QObject::connect(
+        &modalWatchdog,
+        &QTimer::timeout,
+        &window,
+        [&]
+        {
+            observation.timedOut = true;
+            dialogPoll.stop();
+
+            QDialog* dialog = qobject_cast<QDialog*>(
+                QApplication::activeModalWidget()
+                );
+            if (!dialog)
+            {
+                for (QWidget* widget : QApplication::topLevelWidgets())
+                {
+                    auto* const candidate = qobject_cast<QDialog*>(widget);
+                    if (candidate && candidate->isModal() && candidate->isVisible())
+                    {
+                        dialog = candidate;
+                        break;
+                    }
+                }
+            }
+            if (dialog)
+            {
+                observation.fallbackRejectedModal = true;
+                dialog->reject();
+            }
+        }
+        );
+
+    dialogPoll.start();
+    modalWatchdog.start(5000);
+    importClassesAction->trigger();
+    dialogPoll.stop();
+    modalWatchdog.stop();
+
+    QVERIFY(observation.dialogObserved);
+    QVERIFY(observation.objectNameMatched);
+    QVERIFY(observation.classChoiceFound);
+    QVERIFY(observation.createChoiceFound);
+    QVERIFY(observation.createChoiceSelected);
+    QVERIFY(observation.noTeacherChoices);
+    QVERIFY(observation.createPlanSelected);
+    QVERIFY(observation.importButtonFound);
+    QVERIFY(observation.importButtonEnabled);
+    QVERIFY(observation.importButtonClicked);
+    QVERIFY(observation.dialogAccepted);
+    QVERIFY(!observation.timedOut);
+    QVERIFY(!observation.fallbackRejectedModal);
+    QVERIFY2(observation.failure.isEmpty(), qPrintable(observation.failure));
+
+    QVERIFY(fileDialogs.scriptedOpenFiles.isEmpty());
+    QCOMPARE(fileDialogs.openFileRequests.size(), 1);
+    QCOMPARE(fileDialogs.openFilesRequests.size(), 0);
+    QCOMPARE(fileDialogs.saveFileRequests.size(), 0);
+    QCOMPARE(fileDialogs.saveFileWithOptionsRequests.size(), 0);
+    QCOMPARE(fileDialogs.directoryRequests.size(), 0);
+    const OpenFileRequest openRequest = fileDialogs.openFileRequests.constFirst();
+    QCOMPARE(openRequest.parent, static_cast<QWidget*>(sidebar));
+    QCOMPARE(openRequest.title, QStringLiteral("Import Classes"));
+    QCOMPARE(openRequest.purpose, FileDialogPurpose::ClassTransfer);
+    QCOMPARE(
+        openRequest.initialDirectory,
+        QFileInfo(workspacePath).absolutePath()
+        );
+    QCOMPARE(
+        openRequest.nameFilters,
+        QStringList{QStringLiteral("JSON Files (*.json)")}
+        );
+
+    const auto classesAfter = classService->classes();
+    QVERIFY(classesAfter);
+    QCOMPARE(classesAfter->size(), 1);
+    const Classroom& importedClass = classesAfter->constFirst();
+    QVERIFY(importedClass.id > 0);
+    QCOMPARE(importedClass.name, transferClass.name);
+    QCOMPARE(classTableRowCount(activeSession), 1);
+
+    const auto teachersAfter = teacherService->teachers();
+    QVERIFY(teachersAfter);
+    QVERIFY(teachersAfter->isEmpty());
+    const auto importedInfo = classService->classInfo(importedClass.id);
+    QVERIFY(importedInfo);
+    QCOMPARE(importedInfo->teacherId, -1);
+    ClassInfo expectedImportedInfo = transferClass.info;
+    expectedImportedInfo.classId = importedClass.id;
+    QCOMPARE(
+        classInfoSnapshot(*importedInfo),
+        classInfoSnapshot(expectedImportedInfo)
+        );
+
+    QCOMPARE(prompts.messages.size(), 1);
+    const PromptRequest& information = prompts.messages.constFirst();
+    QCOMPARE(information.parent, static_cast<QWidget*>(sidebar));
+    QCOMPARE(information.title, QStringLiteral("Import Classes"));
+    QCOMPARE(information.severity, PromptSeverity::Information);
+    QCOMPARE(
+        information.message,
+        QStringLiteral("Import complete. Created: 1, replaced: 0, skipped: 0.")
+        );
+    QVERIFY(prompts.asynchronousMessages.isEmpty());
+    QVERIFY(prompts.confirmations.isEmpty());
+    QVERIFY(prompts.unsavedChangesConfirmations.isEmpty());
+    QVERIFY(prompts.actionPrompts.isEmpty());
+    QVERIFY(prompts.scriptedChoices.isEmpty());
+    QVERIFY(prompts.scriptedUnsavedChangesChoices.isEmpty());
+    QVERIFY(prompts.scriptedActionIds.isEmpty());
+    QVERIFY(QApplication::activeModalWidget() == nullptr);
+
+    QVERIFY(pages->isCurrentPage(PageType::Classes));
+    ClassesPage* const classesPage = pages->classesPage();
+    QVERIFY(classesPage);
+    QCOMPARE(classesPage->currentClassId(), importedClass.id);
+    QCOMPARE(classesPage->currentSection(), ClassesSection::Details);
+    QVERIFY(classesPage->isEditorInstantiated(ClassesSection::Details));
+    QCOMPARE(sidebar->selectedKeys(), QStringList{QStringLiteral("classes")});
+    QVERIFY(services->hasOpenDatabase());
+    QCOMPARE(services->databaseSession(), activeSession);
+    QVERIFY(activeSession->isOpen());
+    QCOMPARE(services->currentDatabasePath(), workspacePath);
 }
 
 void MainWindowCloseFileParityTests::
