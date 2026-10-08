@@ -2857,7 +2857,7 @@ unsynced and unaudited in this checkout; local Batch 11 evidence still ends at
 F366. No remote commits or acceptance results are inferred.
 
 
-## Current Position — 2026-10-08 (F392 selected)
+## Current Position — 2026-10-08 (F392 in progress)
 
 Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial. F386 is
 accepted at `b3f9105e7c9160b2d862683d324f9dfd3cffc91d`, and F387 Calendar
@@ -2884,8 +2884,12 @@ Teacher Info page, selected profile fields, exact unsaved notes, and dirty
 state, with no prompts or captured Qt warnings. The focused target build
 passed, focused CTest passed 1/1, independent direct invocation of the new
 QtTest case exited 0, and `git diff --check` passed; no full suite ran. Batch
-14 is active with F392 Campus Directory root/section navigation parity
-selected/current and F393 Document Catalog/PDF Viewer route parity
-provisional. Bounded Batch 15 discovery begins with F392, the second-last
-slice in Batch 14. The Phase 2 progress log holds acceptance and discovery
-evidence.
+14 is active with F393 Document Catalog/PDF Viewer route parity
+selected/current. F392 Campus Directory root/section navigation parity is
+accepted on pre-slice source `a7df1fc5`. Its ten-row test covers cancellation,
+all five child destinations, root defaulting to Information, and same-page
+section switching. The target build passed, focused CTest passed 1/1, and
+independent direct QtTest passed 12/12 including setup and cleanup. Batch 15
+was discovered at F392 with F394 Classes landing open-session confirmation
+parity and F395 Campus Dashboard typed save boundary; it activates after
+F393. The Phase 2 progress log records the bounded comparison and evidence.

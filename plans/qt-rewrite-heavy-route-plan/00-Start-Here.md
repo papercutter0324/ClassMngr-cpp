@@ -105,10 +105,12 @@
   the Teacher Profile Edit persistence target are fixed in commit `0b128601`;
   the target and standard all-target builds passed independently with zero
   errors. F391 Teacher route closed-session gate parity is accepted. Batch 14
-  is active with F392 Campus Directory root/section navigation parity
-  selected/current and F393 Document Catalog/PDF Viewer route parity
-  provisional. Batch 15 discovery begins with F392. See the Phase 2 progress
-  log for slice acceptance, build-error repair, and bounded discovery evidence.
+  F392 Campus Directory root/section navigation confirmation and destination
+  parity is accepted. Batch 14 is active with F393 Document Catalog/PDF Viewer
+  route parity selected/current. Batch 15 was discovered at F392 with F394
+  Classes landing confirmation parity and F395 Campus Dashboard typed save
+  boundary; it activates after F393. See the Phase 2 progress log for slice
+  acceptance, build-error repair, and bounded discovery evidence.
   Gates 1 and 2 remain Partial, with broader feature
   migration, parity, and 96-class Release memory evidence still open.
   See the

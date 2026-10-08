@@ -40,13 +40,13 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-08
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F391 Teacher route closed-session gate parity is accepted on
-  pre-slice source `fdc360c3`; its focused target build, CTest, direct QtTest
-  invocation, and diff check passed. Batch 14 is active with F392 Campus
-  Directory root/section navigation confirmation and destination parity
-  selected/current; F393 Document Catalog route confirmation and PDF Viewer
-  navigation parity remains provisional. Batch 15 discovery begins with F392,
-  the second-last slice in Batch 14. Gates 1 and 2 remain Partial.
+- Current note: F392 Campus Directory root/section navigation confirmation
+  and destination parity is accepted on pre-slice source `a7df1fc5`; its
+  focused target, CTest, and direct QtTest matrix passed. Batch 14 is active
+  with F393 Document Catalog route confirmation and PDF Viewer navigation
+  parity selected/current. Batch 15 was discovered at F392 with F394 Classes
+  landing open-session confirmation parity and F395 Campus Dashboard typed
+  save boundary; it activates after F393. Gates 1 and 2 remain Partial.
 
 ### Slice discovery batches
 
@@ -73,13 +73,13 @@ log](03-Phase-2-Progress-Log.md).
 
 #### Active batch: Batch 14
 
-1. F392 - Selected/current: Campus Directory root/section navigation confirmation and destination parity.
-2. F393 - Provisional, not selected: Document Catalog route confirmation and PDF Viewer navigation parity.
+1. F393 - Selected/current: Document Catalog route confirmation and PDF Viewer navigation parity.
 
 The two independent scans were bounded to remaining NavigationController route
 parity and existing controller tests; they do not establish repository-wide
 discovery exhaustion.
 No other slices were found.
+
 
 ## Objective
 

@@ -2319,3 +2319,28 @@ also passed. The case confirms the selected profile and exact dirty notes stay
 visible with no prompt or captured Qt warning. Batch 14 now has F392 Campus
 Directory route parity selected/current and F393 Document Catalog/PDF Viewer
 route parity provisional. Batch 15 bounded discovery starts with F392.
+
+
+## 2026-10-08 - F392 Campus Directory route parity selected
+
+F392 covers Campus Directory root and section navigation. Local source has no
+database-session availability gate: navigation from another page confirms
+before entering, each child route selects its matching section, and navigation
+within Campus Dashboard keeps the current page without a leave prompt. The
+acceptance matrix includes root and child cancellation, the five section
+destinations, and root/section actions while the dashboard is already dirty.
+Batch 15 discovery at this second-last Batch 14 slice found two distinct
+candidates: F394 Classes landing open-session confirmation parity and F395
+Campus Dashboard typed save boundary. Both activate after F393; the bounded
+discovery record is in the Phase 2 progress log.
+
+
+## 2026-10-08 - F392 Campus Directory route parity accepted
+
+The focused Campus route target and CTest passed, and independent direct
+QtTest verified all ten route rows. Root and child navigation from a dirty
+page follows the leave confirmation; the root selects Information, each of
+the five child routes selects its matching section, and root/child actions
+within Campus Dashboard do not prompt to leave. Batch 14 advances to F393
+Document Catalog/PDF Viewer route parity. Batch 15 candidates F394 and F395
+remain provisional until F393 completes.

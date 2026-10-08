@@ -13414,3 +13414,98 @@ selected/current; F393 Document Catalog route confirmation and PDF Viewer
 navigation parity remains provisional. F392 is the second-last slice in
 Batch 14, so bounded Batch 15 discovery begins as F392 work starts. Phase 2
 remains In Progress/Open; Gates 1 and 2 remain Partial.
+
+### F392 selected/current / acceptance matrix established - 2026-10-08
+
+F392, Campus Directory root/section navigation confirmation and destination
+parity, is selected/current after F391. The local `NavigationController`
+dispatches the Campus root and its five section routes to `handleCampus`; the
+handler has no database availability gate. A root route from another page
+confirms leaving and opens Information. A child route from another page
+confirms before opening the matching section. From Campus Dashboard, a child
+route switches sections without leave confirmation, while a root click keeps
+the current section and synchronizes the Sidebar. Existing page and Sidebar
+tests do not exercise these controller transitions.
+
+The focused matrix is:
+
+1. From a dirty non-Campus page, cancel both the root and a child-section
+   route. Assert the same page and dirty state remain, Campus Dashboard is not
+   instantiated, and exactly one leave confirmation is recorded for each
+   dispatch.
+2. From a dirty non-Campus page, discard the root route and each child route.
+   Assert Campus Dashboard becomes current, the root selects Information, and
+   each child selects its exact section: Information, Directions, Address,
+   Housing, or Maps. Assert matching Sidebar selection and exactly one leave
+   confirmation per dispatch.
+3. With Campus Dashboard already current and dirty, dispatch the root route
+   and a different child-section route. Assert the root preserves the current
+   section, the child selects its requested section, the dirty state remains,
+   and neither dispatch prompts to leave.
+
+Database open/closed cross-products are excluded because this handler does not
+gate on workspace session state. Sidebar group-collapse clicks that emit no
+navigation, invalid/synthetic section keys, and Campus data persistence are
+out of scope. Use the existing standard Windows x64 Debug build tree and a
+focused offscreen Qt controller test. Batch 15 candidates are recorded below;
+they activate after F392 and F393 complete in order. Phase 2 remains In
+Progress/Open; Gates 1 and 2 remain Partial.
+
+### Batch 15 discovered at F392 - 2026-10-08
+
+Because F392 is the second-last slice in Batch 14, bounded discovery for the
+next batch ran against the Phase 2 plan/work packages, legacy-application
+mapping, progress history, current route dispatch, and related source/tests.
+The independent audit compared candidate routes and application boundaries
+with already accepted slices, producer reachability, and the stated migration
+order. It identified two ordered candidates after F392 and F393:
+
+1. **F394 - Classes landing open-session confirmation parity.** The `classes`
+   route has a production Sidebar producer. Existing tests cover a closed-
+   session dirty-page return and an open-session clean landing, but not an
+   open-session route from a dirty current page that confirms before loading
+   and showing Classes.
+2. **F395 - Campus Dashboard typed save boundary.** Campus selected-campus
+   reads have typed boundaries, while the dirty save still calls
+   `CampusJsonRepository::saveCampus`. Scope the next slice to the write path,
+   preserving validation, manual/automatic save behavior, failure feedback,
+   and dirty-state retention.
+
+Other supplied findings were excluded as aliases/duplicates, route keys with
+no production Sidebar producer, behavior without an established contract, or
+work already covered by accepted slices. The scan was bounded to the
+above Phase 2 documents and corresponding current source/tests; it does not
+claim repository-wide discovery exhaustion.
+No other slices were found.
+
+### F392 accepted - 2026-10-08
+
+F392 is accepted on pre-slice commit `a7df1fc5` (`Phase2 - Add Teacher route
+closed-session gate parity (F391)`). It adds
+`tests/campus_route_navigation_parity_tests.cpp` and registers
+`ClassMngrCampusRouteNavigationParityTests`, its resource packs, and offscreen
+resources in `cmake/tests/pages_and_output.cmake`; no production files
+changed. Ten route rows cover root/child cancellation, root plus all five
+child destinations after Discard, and root/child navigation from a dirty
+Campus Dashboard. Assertions verify confirmation counts, exact sections and
+Sidebar selection, canceled or dirty state preservation, prompt absence on
+same-page section changes, and empty route-scoped warning capture.
+
+The incremental standard-tree build of
+`ClassMngrCampusRouteNavigationParityTests` passed. Focused CTest passed 1/1;
+independent direct invocation of `campusRouteLeaveGuardMatrix` exited 0 with
+12 passed and 0 failed including QtTest setup and cleanup. CMake diff hygiene
+passed; the new source had no trailing whitespace and a final newline. No
+full suite ran. CMake regeneration reported missing `WrapVulkanHeaders` and
+`Vulkan_INCLUDE_DIR`, but target generation/build and verification succeeded.
+The direct output showed no setup warning, and the scoped navigation warning
+capture remained empty.
+
+### Batch 14 advanced / F393 selected - 2026-10-08
+
+F392 completes the first position in Batch 14. F393 Document Catalog route
+confirmation and PDF Viewer navigation parity is selected/current. Batch 15
+was discovered while F392 started and remains provisional until F393 finishes;
+its two ordered candidates are F394 Classes landing open-session confirmation
+parity and F395 Campus Dashboard typed save boundary. Phase 2 remains In
+Progress/Open; Gates 1 and 2 remain Partial.
