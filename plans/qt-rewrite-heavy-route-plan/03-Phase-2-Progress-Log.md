@@ -16322,3 +16322,56 @@ F443 is accepted in this changeset and ready to commit. F444 successful Open Fil
 QAction replacement of an already-open profile is next after the F443 commit. Batch
 22 remains active; F445-F446 remain provisional. The F442 pause was observed and the
 user has resumed.
+
+### F443 committed - 2026-10-09
+
+F443 committed as 1c03b326567cf52d808bc4c54b7a5e77021bb7bf; branch is ahead
+by 28. Its acceptance evidence remains recorded above. Batch 22 is active with
+F444 successful Open File QAction replacement of an already-open profile next.
+F435 already covers successful opening from no database, so F444 may be redundant;
+same-path Open remains unselected until its contract is defined. F445-F446 remain
+provisional. F285 remains deferred.
+
+
+### F444 acceptance matrix recorded before implementation - 2026-10-09
+
+Two independent read-only reviews converged on a focused successful replacement case
+for tests/mainwindow_open_file_parity_tests.cpp, in target/CTest
+ClassMngrMainWindowOpenFileParityTests. Seed distinct valid profiles A and B with
+identifiable persisted data; start a clean MainWindow with A open on My Workspace Schedule.
+Trigger the actual Open File QAction and script the fake picker to select B. Assert exactly
+one OpenFileRequest with MainWindow parent, title Open Teacher Profile, TeacherProfile
+purpose, databaseDialogDirectory as initial directory, and filters ClassMngr Teacher
+Profile (*.tps) and Legacy Teacher Profile (*.db). After load, verify B path and B-specific
+persisted data are active, My Workspace Schedule and its Sidebar selection remain routed,
+and no warning or unsaved-changes prompt appeared. DatabaseSession is updated in place;
+do not assert pointer identity or inequality.
+
+This adds successful replacement of a distinct already-open profile, separate from
+F435 empty-state banner Open flow. Existing Open File Cancel and Save-then-picker-cancel
+cases stop at cancellation (tests/mainwindow_open_file_parity_tests.cpp:173-225,
+312-350). Same-path semantics, dirty replacement choices, and load-failure behavior are
+excluded. Source path: MainWindow request wiring at src/app/mainwindow.cpp:666-673,
+actual QAction connection at src/app/controllers/file_controller.cpp:153-158, and
+request/load flow at src/app/controllers/file_controller.cpp:557-580. At recording, F444 was selected/current and implementation had not started; its
+acceptance follows below.
+Focused verification: build target ClassMngrMainWindowOpenFileParityTests, run exact
+CTest ^ClassMngrMainWindowOpenFileParityTests$, then run the target QtTest and selected
+case; no full suite is specified for this focused slice.
+
+
+### F444 accepted in this changeset - 2026-10-09
+
+The accepted test covers the real Open File QAction and correctly configured Teacher
+Profile picker from clean profile A to distinct profile B, with Schedule verified as the
+starting page. The source review approved the final assertions and starting state. The
+focused target build passed without compiler warnings; the selected QtTest run passed all
+three functions (setup, test slot, cleanup), and exact CTest
+ClassMngrMainWindowOpenFileParityTests passed 1/1. Qt reported one missing font-directory
+runtime warning. No full suite was run.
+
+The independent Tester could not run or inspect the result because process creation
+failed with helper_unknown_error: setup refresh had errors; independent verification is
+therefore unavailable. F444 is accepted in this changeset and ready to commit. F445
+MainWindow Save QAction persistence is next after the F444 commit; F446 Save on window
+close remains provisional. Batch 22 remains active.

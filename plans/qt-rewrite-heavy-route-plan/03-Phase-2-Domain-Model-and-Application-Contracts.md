@@ -47,11 +47,14 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
   01d1559c (branch ahead 25). F441, Import Classes QAction apply success, is
   committed as 75a559ae (branch ahead 26). F442, Import Teachers QAction apply
   success, is committed as 8cde2826 (branch ahead 27). The requested pause after
-  the F442 commit was observed; the user has resumed. Batch 22 is active with F443
-  Delete Class QAction is accepted in this changeset and ready to commit. F444
-  successful Open File QAction replacement of an already-open profile is next
-  after commit; F445-F446 remain provisional. F285 stays deferred; same-path Open
-  remains unselected pending its contract. See the progress log. Gates 1 and 2 remain Partial.
+  the F442 commit was observed; the user has resumed. F443 is committed as
+  1c03b326 (branch ahead 28). Batch 22 remains active with F444 successful Open File
+  QAction replacement accepted in this changeset and ready to commit. F445 MainWindow
+  Save QAction persistence is next after the F444 commit; F446 Save on window close
+  remains provisional. F435 covers the no-database banner route; F444 covers replacing
+  a distinct open profile. Same-path Open, dirty replacement choices, and load-failure
+  behavior remain excluded. F285 stays deferred. See the
+  progress log. Gates 1 and 2 remain Partial.
 
 ### Slice discovery batches
 
@@ -78,9 +81,10 @@ log](03-Phase-2-Progress-Log.md).
 
 #### Active batch: Batch 22
 
-1. F443 - Accepted in this changeset, ready to commit: Delete Class QAction.
-   Keep F443 in Batch 22 until commit; F444 successful Open File QAction replacement
-   of an already-open profile is next after commit. F445-F446 remain provisional.
+1. F444 - Accepted in this changeset; ready to commit. F445 MainWindow Save
+   QAction persistence is next after the F444 commit; F446 Save on window close
+   remains provisional. F444 is separate from F435 no-database banner Open and excludes
+   same-path opening, dirty replacement choices, and load-failure behavior.
 
 Batch 21 began with ten candidates after F428 and is complete; F429-F438 are
 committed. F438, “Phase2 - Reject existing IDs in repeat-series creation (F438),”
@@ -89,12 +93,15 @@ success (F439),” is commit a0c50d2d. F440, “Phase2 - Cover Export Classes JS
 output (F440),” is commit 01d1559c. F441, “Phase2 - Cover Import Classes QAction
 apply success (F441),” is commit 75a559ae. F442, “Phase2 - Cover Import Teachers
 QAction apply success (F442),” is commit 8cde2826 on Qt-Rewrite (branch ahead
-27). The requested pause after F442 was observed and the user has resumed. Batch 22
-remains active through the F443 commit. F443 is accepted in this changeset and ready
-to commit; F444 successful Open File QAction replacement of an already-open profile
-is next after commit. F445-F446 remain provisional. F285 remains deferred, and
-same-path Open remains unselected until its contract is defined. This bounded
-discovery does not establish repository-wide exhaustion.
+27). The requested pause after F442 was observed and the user has resumed. F443 is
+committed as 1c03b326567cf52d808bc4c54b7a5e77021bb7bf on Qt-Rewrite (branch ahead
+28); its acceptance evidence remains recorded in the progress log. Batch 22 is
+active with F444 successful Open File QAction replacement accepted in this changeset
+and ready to commit. F445 MainWindow Save QAction persistence is next after the F444
+commit; F446 Save on window close remains provisional. F435 covers opening from the
+no-database banner. F444 covers replacing a distinct open profile and excludes same-path
+opening, dirty replacement choices, and load-failure behavior. F285 remains deferred. This bounded discovery does not establish
+repository-wide exhaustion.
 Batch 20 completed when F428 committed as b82bddaa. F429 committed as 19f6024d. Batch 21 was
 discovered while F427 was the second-last known Batch 20 candidate and is now active.
 Candidate evidence and limits are in the Phase 2 progress log; this bounded

@@ -3090,4 +3090,12 @@ F443 will add the missing real MainWindow QAction success route in mainwindow_sc
 
 ## 2026-10-09 - F443 Delete Class MainWindow success accepted
 
+F443 committed as `1c03b326567cf52d808bc4c54b7a5e77021bb7bf`; branch is ahead by 28.
+
 The real MainWindow Delete Class QAction and chooser deleted the target after the destructive prompt. Its class, info, and schedule rows were removed; the sibling's info stayed unchanged and it became active in Details. The Classes page/sidebar route and database session/path remained stable, with no warning or unsaved-change prompt. Executor and independent Tester passed target build, exact CTest 1/1, direct target QtTest 12 passes (10 cases plus setup/cleanup), and selected case 3/3. No compiler warnings; Qt font/offscreen notices only. No full suite or production/CMake change. F443 is accepted and ready to commit; F444 successful Open File QAction replacement follows.
+
+## 2026-10-09 - F444 Open File replacement acceptance review
+
+Two independent reviews confirmed F444 covers successful replacement of an already-open clean profile with a different profile, which is distinct from F435's empty-state banner handoff and the existing Open File cancellation tests. Acceptance is a real QAction and Teacher Profile picker transition from seeded profile A, initially on My Workspace Schedule, to distinct profile B, verifying the chooser request, target path and persisted data, My Workspace Schedule and Sidebar selection, and no warning or unsaved prompt. The existing `DatabaseSession` is reused in place, so pointer identity is not an assertion. Same-path opening, dirty replacement choices, and load failures stay out of scope. The focused class/target is `MainWindowOpenFileParityTests` / `ClassMngrMainWindowOpenFileParityTests`.
+
+F444 is accepted and ready to commit. The focused target build passed without compiler warnings; the selected QtTest slot passed 3/3 functions (setup, test, cleanup), and exact filtered CTest passed 1/1. The final source review approved the Schedule starting state and assertions. Independent Tester could not inspect or run commands because process creation failed with `helper_unknown_error: setup refresh had errors`. One missing Qt font-directory runtime warning; no full suite.

@@ -3279,4 +3279,16 @@ Add a MainWindow integration case to MainWindowScheduleTestingClassesHandoffPari
 
 ## 2026-10-09 - F443 Delete Class QAction success accepted
 
+F443 committed as `1c03b326567cf52d808bc4c54b7a5e77021bb7bf`; branch is ahead by 28.
+
 The new MainWindow test triggers the real deleteClass QAction, selects the target through the actual chooser, and accepts the destructive confirmation. It verifies target class/ClassInfo/schedule removal, sibling record/info unchanged and active in Classes Details, Classes sidebar route, stable page/session/path, and no warning or unsaved-change prompt. No teacher assignments or cross-page navigation are asserted. Executor and independent Tester passed the target build, exact CTest 1/1, direct target QtTest 12 passes (10 test cases plus setup/cleanup), and selected case 3/3. No compiler warnings; Qt font/offscreen notices only. No full-suite run or production/CMake change. F443 is accepted and ready to commit. F444 successful Open File QAction replacement is next after this commit; Batch 22 remains active.
+
+## 2026-10-09 - F444 Open File replacement acceptance review
+
+Two independent read-only reviews approve F444 for implementation. Existing coverage tests Open File Cancel and Save followed by picker cancellation while a profile is open; F435 tests the empty-state banner path. F444 covers the distinct successful replacement transition.
+
+Acceptance: Start with a clean open profile A on My Workspace Schedule, trigger the real Open File QAction, and choose a distinct seeded profile B through the Teacher Profile picker. Verify one correctly configured chooser request, profile B's path and persisted data active, My Workspace Schedule and its Sidebar selection, and no warning or unsaved-changes prompt. `DatabaseSession` is reused in place, so assert active path/data rather than pointer identity. Same-path open, dirty replacement choices, and load failures remain outside scope.
+
+Source map: `MainWindow::connectControllers()` -> `FileController::openFile()` -> `WorkspaceCoordinator::openWorkspace()` -> `MainWindow::applyDatabaseLoadedState()`. Focused test class/target: `MainWindowOpenFileParityTests` / `ClassMngrMainWindowOpenFileParityTests`. F444 is accepted and ready to commit.
+
+Verification: target build passed with no compiler warnings; the selected QtTest slot passed 3/3 functions (setup, test, cleanup); exact filtered CTest `ClassMngrMainWindowOpenFileParityTests` passed 1/1. The final source review approved the Schedule starting state and assertions. Independent Tester could not inspect or run commands because process creation failed with `helper_unknown_error: setup refresh had errors`. One missing Qt font-directory runtime warning; no full suite.
