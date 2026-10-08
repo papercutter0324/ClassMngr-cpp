@@ -2857,7 +2857,7 @@ unsynced and unaudited in this checkout; local Batch 11 evidence still ends at
 F366. No remote commits or acceptance results are inferred.
 
 
-## Current Position — 2026-10-08 (F391 selected)
+## Current Position — 2026-10-08 (F392 selected)
 
 Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial. F386 is
 accepted at `b3f9105e7c9160b2d862683d324f9dfd3cffc91d`, and F387 Calendar
@@ -2878,6 +2878,14 @@ persistence target are fixed in commit `0b128601`; the named target and
 standard all-target build passed independent build-only verification with zero
 errors. F390 Sub Prep route gate parity is accepted on that source; focused
 CTest passed 1/1 and direct QtTest verified four route/session rows. Batch 13
-is complete. Batch 14 is active with F391 Teacher route closed-session gate
-parity selected/current; F392-F393 remain provisional. The bounded discovery
-record is in the Phase 2 progress log.
+is complete. F391 Teacher route closed-session gate parity is accepted on
+pre-slice source `fdc360c3`. Its new closed-database case preserves the same
+Teacher Info page, selected profile fields, exact unsaved notes, and dirty
+state, with no prompts or captured Qt warnings. The focused target build
+passed, focused CTest passed 1/1, independent direct invocation of the new
+QtTest case exited 0, and `git diff --check` passed; no full suite ran. Batch
+14 is active with F392 Campus Directory root/section navigation parity
+selected/current and F393 Document Catalog/PDF Viewer route parity
+provisional. Bounded Batch 15 discovery begins with F392, the second-last
+slice in Batch 14. The Phase 2 progress log holds acceptance and discovery
+evidence.

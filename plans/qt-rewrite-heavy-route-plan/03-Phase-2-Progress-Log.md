@@ -13353,3 +13353,64 @@ F393 Document Catalog route confirmation and PDF Viewer navigation parity
 remain provisional and ordered after F391. The acceptance matrix will be
 established from bounded source and test discovery before implementation.
 Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial.
+
+### F391 selected/current / acceptance matrix established - 2026-10-08
+
+F391, Teacher route closed-session leave-confirmation gate parity, is
+selected/current in Batch 14. Its immediate pre-slice source is F390 commit
+`fdc360c3` (`Phase2 - Add Sub Prep route gate parity (F390)`). The current
+`NodeType::Teacher` handler reads the valid teacher profile before asking the
+PageManager to confirm leaving; a closed database makes the profile read fail
+and the handler returns without prompting. The route is shared by the
+Co-Teachers and Campus Staff Korean Teacher nodes. Native English and GS Team
+remain separate Staff Directory routes.
+
+Existing tests cover invalid/missing Teacher IDs, the open-session successful
+read/confirmation path, and a closed-session Classes route. They do not
+dispatch a valid Teacher route with the database closed and a dirty current
+page. The matrix adds this one missing row:
+
+1. Persist a valid target Teacher, load a different Teacher into a dirty
+   Teacher Info page, close the database, and dispatch `NodeType::Teacher` for
+   the target ID. Assert the same Teacher Info widget remains current, its
+   original teacher identity and exact unsaved notes are preserved, and it
+   remains dirty. Assert zero unsaved-change confirmations, other prompts,
+   service warnings, or Qt warnings. The Teacher Info page already exists in
+   this fixture, so page-creation absence is not asserted.
+
+The existing `successfulReadConfirmsBeforeLoadingAndShowingTeacher` case
+continues to cover open-session behavior; no duplicate open row is added.
+Missing/nonpositive IDs, missing-record behavior, teacher create/edit/import,
+Native English, GS Team, sidebar highlighting, and production behavior changes
+are excluded. Use a focused test and preserve the existing assertions. F391
+implementation is underway. F392-F393 remain provisional in Batch 14. The next
+Batch 15 discovery is due when work starts on F392, the second-last slice in
+Batch 14. Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial.
+
+### F391 accepted - 2026-10-08
+
+F391 is accepted on pre-slice commit `fdc360c3` (`Phase2 - Add Sub Prep route
+gate parity (F390)`). It adds
+`closedSessionValidTeacherIdReturnsBeforeLeaveConfirmation` to
+`tests/navigation_teacher_read_tests.cpp`; no production behavior or CMake
+registration changed. The case persists distinct selected and requested
+Teachers, loads the selected profile into Teacher Info, makes its notes dirty,
+closes the database, and dispatches the valid requested Teacher ID. It verifies
+the same page, selected identity and displayed fields, exact unsaved notes,
+and dirty state remain, with no prompt in any category and no captured Qt
+warning. Existing open-session coverage remains in
+`successfulReadConfirmsBeforeLoadingAndShowingTeacher`.
+
+The incremental build of `ClassMngrNavigationTeacherReadTests` passed in the
+standard `build/windows-x64-debug` tree. Focused CTest passed 1/1 with Debug
+configuration; independent direct invocation of the new QtTest case exited 0.
+`git diff --check` passed. No full suite ran.
+
+### Batch 14 advanced / F392 selected - 2026-10-08
+
+F391 completes the first position in Batch 14. F392 Campus Directory
+root/section navigation confirmation and destination parity is now
+selected/current; F393 Document Catalog route confirmation and PDF Viewer
+navigation parity remains provisional. F392 is the second-last slice in
+Batch 14, so bounded Batch 15 discovery begins as F392 work starts. Phase 2
+remains In Progress/Open; Gates 1 and 2 remain Partial.

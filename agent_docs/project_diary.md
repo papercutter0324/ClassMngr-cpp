@@ -2297,3 +2297,25 @@ confirmation. The canonical transcript SHA-256 is
 F390 completes Batch 13. Batch 14 is active with F391 Teacher route closed-
 session leave-confirmation gate parity selected/current; F392 Campus Directory
 and F393 Document Catalog/PDF Viewer route parity remain provisional.
+
+
+## 2026-10-08 - F391 Teacher route gate selected
+
+The current Teacher route reads the profile before asking the dirty current
+page to close. The missing parity case is a valid Teacher route with a closed
+database and unsaved Teacher Info; it should return before prompting and
+preserve the current profile and notes. Existing tests already cover the open
+route and invalid IDs. The two regular-Teacher sidebar origins share this
+controller branch; Staff Directory routes remain separate. F392 is Batch 14's
+second-last slice, so Batch 15 discovery must begin when F392 starts.
+
+
+## 2026-10-08 - F391 Teacher route gate accepted
+
+F391 adds the missing closed-session case for a valid Teacher route while a
+dirty Teacher Info page is current. The focused target build and CTest passed;
+independent direct invocation of the new QtTest case and `git diff --check`
+also passed. The case confirms the selected profile and exact dirty notes stay
+visible with no prompt or captured Qt warning. Batch 14 now has F392 Campus
+Directory route parity selected/current and F393 Document Catalog/PDF Viewer
+route parity provisional. Batch 15 bounded discovery starts with F392.

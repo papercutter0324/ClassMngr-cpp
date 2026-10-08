@@ -104,9 +104,11 @@
   gate parity are also accepted. The seven user-reported MSVC build errors in
   the Teacher Profile Edit persistence target are fixed in commit `0b128601`;
   the target and standard all-target builds passed independently with zero
-  errors. Batch 14 is active with F391 Teacher route closed-session gate parity
-  selected/current; F392-F393 remain provisional. See the Phase 2 progress log
-  for F390 acceptance, build-error repair, and bounded discovery evidence.
+  errors. F391 Teacher route closed-session gate parity is accepted. Batch 14
+  is active with F392 Campus Directory root/section navigation parity
+  selected/current and F393 Document Catalog/PDF Viewer route parity
+  provisional. Batch 15 discovery begins with F392. See the Phase 2 progress
+  log for slice acceptance, build-error repair, and bounded discovery evidence.
   Gates 1 and 2 remain Partial, with broader feature
   migration, parity, and 96-class Release memory evidence still open.
   See the

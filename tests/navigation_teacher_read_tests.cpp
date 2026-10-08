@@ -40,6 +40,7 @@
 #include <QFileInfo>
 #include <QLabel>
 #include <QLineEdit>
+#include <QMessageLogContext>
 #include <QPushButton>
 #include <QSqlError>
 #include <QSqlQuery>
@@ -50,6 +51,7 @@
 #include <QTreeWidget>
 #include <QTreeWidgetItem>
 #include <QUuid>
+#include <QVector>
 #include <QtTest/QtTest>
 
 #include <functional>
@@ -656,6 +658,43 @@ QString initialSetupTeacherChoicesReadDetails(ApplicationServices& services)
             );
 }
 
+QVector<QString>* capturedQtWarnings = nullptr;
+
+void captureQtWarning(
+    const QtMsgType type,
+    const QMessageLogContext&,
+    const QString& message
+    )
+{
+    if (capturedQtWarnings
+        && (type == QtWarningMsg || type == QtCriticalMsg))
+    {
+        capturedQtWarnings->append(message);
+    }
+}
+
+class ScopedQtWarningCapture final
+{
+public:
+    explicit ScopedQtWarningCapture(QVector<QString>& warnings)
+        : m_previous(qInstallMessageHandler(captureQtWarning))
+    {
+        capturedQtWarnings = &warnings;
+    }
+
+    ~ScopedQtWarningCapture()
+    {
+        qInstallMessageHandler(m_previous);
+        capturedQtWarnings = nullptr;
+    }
+
+    ScopedQtWarningCapture(const ScopedQtWarningCapture&) = delete;
+    ScopedQtWarningCapture& operator=(const ScopedQtWarningCapture&) = delete;
+
+private:
+    QtMessageHandler m_previous = nullptr;
+};
+
 }
 
 class NavigationTeacherReadTests final : public QObject
@@ -665,6 +704,7 @@ class NavigationTeacherReadTests final : public QObject
 private slots:
     void cleanup();
     void rawNonpositiveAndMissingIdsReturnBeforeLeaveConfirmation();
+    void closedSessionValidTeacherIdReturnsBeforeLeaveConfirmation();
     void successfulReadConfirmsBeforeLoadingAndShowingTeacher();
     void selectedTeacherDeleteConfirmsProfileDisplayNameAndCanBeCanceled();
     void selectedTeacherProfileReadFailureWarnsWithoutConfirmation();
@@ -830,6 +870,92 @@ successfulReadConfirmsBeforeLoadingAndShowingTeacher()
     QVERIFY(header);
     QVERIFY(header->title().contains(QStringLiteral("Target Display")));
     QVERIFY(!page->hasUnsavedChanges());
+}
+
+void NavigationTeacherReadTests::
+closedSessionValidTeacherIdReturnsBeforeLeaveConfirmation()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+
+    Teacher selected = teacherFixture(
+        QStringLiteral("Selected Teacher Korean"),
+        QStringLiteral("Selected Teacher English"),
+        QStringLiteral("Selected Display Name")
+        );
+    selected.roomNumber = QStringLiteral("Selected Room");
+    selected.phoneNumber = QStringLiteral("010-1111-1111");
+    selected.wifiName = QStringLiteral("Selected Wi-Fi");
+    Teacher target = teacherFixture(
+        QStringLiteral("Requested Teacher Korean"),
+        QStringLiteral("Requested Teacher English"),
+        QStringLiteral("Requested Display Name")
+        );
+    target.roomNumber = QStringLiteral("Requested Room");
+    target.phoneNumber = QStringLiteral("010-2222-2222");
+    target.wifiName = QStringLiteral("Requested Wi-Fi");
+    QVERIFY(persistTeacher(services, selected) > 0);
+    QVERIFY(persistTeacher(services, target) > 0);
+    QVERIFY(selected.id != target.id);
+
+    PageManager pages;
+    pages.initialize(&services, false);
+    pages.showPage(PageType::TeacherInfo);
+    TeacherInfoPage* const page = pages.teacherPage();
+    QVERIFY(page);
+    page->setSaveMode(SaveMode::Manual);
+    page->loadTeacher(selected);
+    QTextEdit* const notes = page->findChild<QTextEdit*>(
+        QStringLiteral("teacherNotesEdit")
+        );
+    QVERIFY(notes);
+    const QString exactUnsavedNotes = QStringLiteral(
+        "Exact unsaved notes that must remain visible"
+        );
+    notes->setPlainText(exactUnsavedNotes);
+    QVERIFY(page->hasUnsavedChanges());
+
+    ResourcePackManager resources(
+        directory.filePath(QStringLiteral("resources")),
+        directory.filePath(QStringLiteral("baseline"))
+        );
+    Sidebar sidebar;
+    NavigationController navigation(&services, &sidebar, &pages, resources);
+    FakeUserPromptService prompts;
+    DialogServices::setUserPromptServiceForTesting(&prompts);
+
+    QVector<QString> qtWarnings;
+    ScopedQtWarningCapture warningCapture(qtWarnings);
+    services.closeDatabase();
+    QVERIFY(!services.hasOpenDatabase());
+    QVERIFY(!services.teacherService()->isAvailable());
+
+    navigation.handleNavigation({
+        .type = NodeType::Teacher,
+        .teacherId = target.id
+    });
+    QApplication::processEvents();
+
+    QVERIFY(pages.isCurrentPage(PageType::TeacherInfo));
+    QCOMPARE(pages.currentWidget(), page);
+    QCOMPARE(page->teacher().id, selected.id);
+    QCOMPARE(page->teacher().teacherKr, selected.teacherKr);
+    QCOMPARE(page->teacher().teacherEn, selected.teacherEn);
+    QCOMPARE(page->teacher().preferredName, selected.preferredName);
+    QCOMPARE(page->teacher().roomNumber, selected.roomNumber);
+    QCOMPARE(page->teacher().phoneNumber, selected.phoneNumber);
+    QCOMPARE(page->teacher().wifiName, selected.wifiName);
+    QCOMPARE(notes->toPlainText(), exactUnsavedNotes);
+    QVERIFY(page->hasUnsavedChanges());
+
+    QVERIFY(prompts.messages.isEmpty());
+    QVERIFY(prompts.asynchronousMessages.isEmpty());
+    QVERIFY(prompts.confirmations.isEmpty());
+    QVERIFY(prompts.unsavedChangesConfirmations.isEmpty());
+    QVERIFY(prompts.actionPrompts.isEmpty());
+    QVERIFY(qtWarnings.isEmpty());
 }
 
 void NavigationTeacherReadTests::
