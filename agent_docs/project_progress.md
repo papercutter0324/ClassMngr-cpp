@@ -59,9 +59,14 @@ Phase 2 remains In Progress/Open under deployment
 `phase2_f417_resume_20261009`. Batches 11-18 are complete. Batch 19 resumed
 after F416 at the user's request. F414 and F415 are committed, and F416's
 Document Catalog MainWindow-to-viewer integration test is accepted and
-committed. F417 Staff Directory rendered leaf through MainWindow is
-independently accepted and ready to commit; F418-F421 remain queued until that
-commit. F385 is retired as a duplicate of F369.
+committed. F417 Staff Directory rendered leaf through MainWindow is committed
+as `d04d9bb0`; F418 Schedule Import through MainWindow apply and Sidebar
+refresh is accepted and ready to commit, with F419-F421 queued. Its focused
+Executor and independent CTest runs passed 1/1 each, and direct QtTest passed
+7/7 including init/cleanup. F418 verifies persisted teacher/class/time data,
+Sidebar refresh, visible Schedule refresh, expected prompts, and stable page,
+selection, session, and workspace path. No production change was needed. F385
+is retired as a duplicate of F369.
 The seven user-reported MSVC build errors in
 the Teacher Profile Edit persistence target are fixed and independently
 verified in both the named target and all-target build, committed as

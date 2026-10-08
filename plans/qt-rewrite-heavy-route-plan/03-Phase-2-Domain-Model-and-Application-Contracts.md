@@ -63,9 +63,10 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
   synchronization is committed (`f4bc5282`). F416 Document Catalog rendered
   Sidebar leaf through MainWindow/viewer is committed (`a4082f80`). Batch 19
   resumed with F417 Staff Directory rendered leaf through MainWindow
-  independently accepted and ready to commit; F418-F421 remain queued until
-  the F417 commit. See the Phase 2 progress log for acceptance and test
-  evidence. Gates 1 and 2
+  independently accepted and committed (`d04d9bb0`). F418 Schedule Import
+  through MainWindow apply and Sidebar refresh is selected/current; F419-F421
+  remain queued. See the Phase 2 progress log for acceptance and test evidence.
+  Gates 1 and 2
   remain Partial; see the progress log for slice evidence.
 
 ### Slice discovery batches
@@ -99,9 +100,10 @@ log](03-Phase-2-Progress-Log.md).
    synchronization.
 3. F416 - Committed in this changeset: Document Catalog rendered Sidebar leaf
    through MainWindow and viewer.
-4. F417 - Accepted, ready to commit: Staff Directory rendered leaf through
+4. F417 - Committed (`d04d9bb0`): Staff Directory rendered leaf through
    MainWindow.
-5. F418 - Queued: Schedule Import through MainWindow apply and Sidebar refresh.
+5. F418 - Accepted / ready to commit: Schedule Import through MainWindow apply
+   and Sidebar refresh.
 6. F419 - Queued: MainWindow Print/Save Current Page As action capability and
    enabled state.
 7. F420 - Queued: Class/Schedule save signal to Sidebar action-state refresh.
@@ -109,8 +111,8 @@ log](03-Phase-2-Progress-Log.md).
 
 No other slices were found.
 
-Batch 19 resumed after F416. F417 is independently accepted and ready to
-commit; F418-F421 remain queued until its commit.
+Batch 19 resumed after F416. F417 is committed as `d04d9bb0`; F418 is accepted
+and ready to commit; F419-F421 remain queued until the F418 commit.
 
 Batch 18 was discovered at F402 start from two independent bounded reviews and
 activated after F403 committed as `28e881cd`; it completed when F413 committed

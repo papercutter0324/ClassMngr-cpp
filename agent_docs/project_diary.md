@@ -2707,4 +2707,28 @@ remain intact. Executor and independent builds succeeded, and the exact
 filtered CTest passed 1/1 for each; no production change was needed. The
 acceptance matrix and details are in the Phase 2 progress log. The pre-existing
 modification to `latest_session_work.md` and untracked `%SystemDrive%/` entry
-remain preserved. F417 is accepted and ready to commit; F418 remains queued.
+remain preserved. F417 is accepted and committed as `d04d9bb0`.
+
+## 2026-10-09 - F417 committed / F418 selected-current
+
+F417's seven-file slice is committed as `d04d9bb0`. It adds real MainWindow
+coverage for both rendered Staff Directory leaves and retains all four
+open-session cancel/discard cases. Executor and independent focused CTest runs
+passed 1/1 each. F418 Schedule Import through MainWindow apply and Sidebar
+refresh is now selected/current; F419-F421 remain queued.
+
+## 2026-10-09 - F418 Schedule Import MainWindow integration accepted
+
+F418 extends the real MainWindow Schedule target to exercise the rendered
+Schedule Import action through the production dialogs, apply use case, stale
+Schedule-page refresh, and teacher Sidebar refresh. The test checks the
+persisted Korean teacher/class and Monday/Friday times, matching teacher ID in
+the Korean Teachers group, refreshed visible schedule, expected prompts, and
+unchanged active page, Sidebar selection, session, and workspace path. The
+executor and independent Tester builds succeeded after elevated retries for
+the known Visual Studio `ZERO_CHECK` FileTracker access error; both focused
+CTest runs passed 1/1, and the independent QtTest run passed 7/7 including
+init/cleanup. Qt emitted only missing-font-directory and offscreen
+`propagateSizeHints()` notices; the project fonts loaded and no test process
+remained. No production change was required, and no full suite ran. F418 is
+accepted and ready to commit; F419-F421 remain queued until its commit.

@@ -6,6 +6,8 @@
 #include "domain/models/testing_class.h"
 #include "features/classes/ui/testing_classes_page.h"
 #include "features/my_info/ui/my_workspace_page.h"
+#include "features/schedule/ui/schedule_import_dialog.h"
+#include "features/schedule/ui/schedule_import_review_dialog.h"
 #include "features/schedule/ui/schedule_cell_hit_test.h"
 #include "features/schedule/ui/schedule_page.h"
 #include "features/schedule/ui/schedule_widget.h"
@@ -17,17 +19,24 @@
 
 #include <QApplication>
 #include <QComboBox>
+#include <QDir>
 #include <QFileInfo>
+#include <QLabel>
 #include <QLineEdit>
+#include <QProgressBar>
 #include <QPushButton>
+#include <QRadioButton>
 #include <QSignalSpy>
 #include <QStringList>
 #include <QTableWidget>
 #include <QTemporaryDir>
 #include <QTimer>
+#include <QTreeWidget>
+#include <QTreeWidgetItem>
 #include <QVariant>
 #include <QtTest>
 
+#include <algorithm>
 #include <functional>
 #include <memory>
 #include <utility>
@@ -250,6 +259,109 @@ bool showTestingMode(ScheduleWidget* widget)
     return testingClassesButton && !testingClassesButton->isHidden();
 }
 
+QTreeWidgetItem* findChildItemByKey(
+    QTreeWidgetItem* parent,
+    const QString& key
+    )
+{
+    if (!parent)
+    {
+        return nullptr;
+    }
+
+    for (int index = 0; index < parent->childCount(); ++index)
+    {
+        QTreeWidgetItem* const child = parent->child(index);
+        if (child->data(0, Qt::UserRole + 4).toString() == key)
+        {
+            return child;
+        }
+    }
+
+    return nullptr;
+}
+
+QTreeWidgetItem* findItemByKeyPath(
+    QTreeWidget* tree,
+    const QStringList& keys
+    )
+{
+    if (!tree || keys.isEmpty())
+    {
+        return nullptr;
+    }
+
+    QTreeWidgetItem* item = nullptr;
+    for (int index = 0; index < tree->topLevelItemCount(); ++index)
+    {
+        QTreeWidgetItem* const candidate = tree->topLevelItem(index);
+        if (candidate->data(0, Qt::UserRole + 4).toString() == keys.first())
+        {
+            item = candidate;
+            break;
+        }
+    }
+
+    for (qsizetype index = 1; item && index < keys.size(); ++index)
+    {
+        item = findChildItemByKey(item, keys.at(index));
+    }
+
+    return item;
+}
+
+QTreeWidgetItem* findTeacherLeaf(
+    QTreeWidgetItem* group,
+    const int teacherId
+    )
+{
+    if (!group)
+    {
+        return nullptr;
+    }
+
+    for (int index = 0; index < group->childCount(); ++index)
+    {
+        QTreeWidgetItem* const child = group->child(index);
+        if (child->data(0, Qt::UserRole + 4).toString()
+                == QStringLiteral("teacher")
+            && child->data(0, Qt::UserRole + 3).toInt() == teacherId)
+        {
+            return child;
+        }
+    }
+
+    return nullptr;
+}
+
+bool scheduleModelContainsClassOnDay(
+    const ScheduleViewModel& model,
+    const int classId,
+    const QString& day
+    )
+{
+    for (const ScheduleRowView& row : model.rows)
+    {
+        for (const ScheduleCellView& cell : row.cells)
+        {
+            if (cell.day != day)
+            {
+                continue;
+            }
+
+            for (const ScheduleEntry& entry : cell.entries)
+            {
+                if (entry.classId == classId)
+                {
+                    return true;
+                }
+            }
+        }
+    }
+
+    return false;
+}
+
 bool clickTestingClassesButton(ScheduleWidget* widget)
 {
     if (!widget)
@@ -291,6 +403,7 @@ private slots:
     void workspaceScheduleTestingClassesButtonReturnsToWorkspaceSchedule();
     void dirtyTestingClassesReturnCancelThenDiscardUsesWorkspaceSource();
     void scheduleCellManageClassesPreservesRequestedSlotForNewClass();
+    void scheduleImportPersistsAndRefreshesTeacherSidebar();
 
 private:
     QTemporaryDir m_settingsDirectory;
@@ -671,6 +784,406 @@ scheduleCellManageClassesPreservesRequestedSlotForNewClass()
     QCOMPARE(services->databaseSession(), activeSession);
     QCOMPARE(services->currentDatabasePath(), activePath);
     assertNoPromptRequests(fixture.prompts);
+}
+
+void MainWindowScheduleTestingClassesHandoffParityTests::
+scheduleImportPersistsAndRefreshesTeacherSidebar()
+{
+    MainWindowFixture fixture;
+    QString setupError;
+    QVERIFY2(fixture.initialize(&setupError), qPrintable(setupError));
+
+    MainWindow* const window = fixture.window.get();
+    ApplicationServices* const services = window->services();
+    PageManager* const pages = window->pageManager();
+    QVERIFY(services);
+    QVERIFY(pages);
+    auto* const activeSession = services->databaseSession();
+    QVERIFY(activeSession);
+    const QString activePath = services->currentDatabasePath();
+
+    const auto profileStatus = services->settingsService()->save(
+        QStringLiteral("myInfo/name"),
+        QStringLiteral("Alice")
+        );
+    QVERIFY2(
+        profileStatus.has_value(),
+        qPrintable(
+            profileStatus.has_value() ? QString() : profileStatus.error()
+            )
+        );
+
+    Sidebar* const sidebar = window->findChild<Sidebar*>();
+    QVERIFY(sidebar);
+    QTreeWidget* const tree = sidebar->findChild<QTreeWidget*>(
+        QStringLiteral("sidebarTree")
+        );
+    QVERIFY(tree);
+    const QStringList sidebarKeysBefore = sidebar->selectedKeys();
+    const QStringList koreanTeacherGroupKeys{
+        QStringLiteral("campus_staff"),
+        QStringLiteral("teachers_all_korean")
+    };
+    QTreeWidgetItem* const koreanTeacherGroupBefore = findItemByKeyPath(
+        tree,
+        koreanTeacherGroupKeys
+        );
+    QVERIFY(koreanTeacherGroupBefore);
+
+    pages->showPage(PageType::Schedule);
+    QApplication::processEvents();
+    QVERIFY(pages->isCurrentPage(PageType::Schedule));
+    SchedulePage* const schedulePage = pages->schedulePage();
+    QVERIFY(schedulePage);
+    ScheduleWidget* const scheduleWidget =
+        schedulePage->findChild<ScheduleWidget*>();
+    QVERIFY(scheduleWidget);
+    QCOMPARE(scheduleWidget->runtimeMetrics().modelEntryCount, 0);
+
+    auto* const importButton = scheduleWidget->findChild<QPushButton*>(
+        QStringLiteral("scheduleImportButton")
+        );
+    QVERIFY(importButton);
+    QVERIFY(importButton->isEnabled());
+    QVERIFY(!importButton->isHidden());
+
+    const QString workbookPath = QDir(
+        QStringLiteral(CLASSMNGR_SOURCE_DIR)
+        ).filePath(
+            QStringLiteral("tests/fixtures/imports/schedule_review.xlsx")
+            );
+    QVERIFY2(
+        QFileInfo::exists(workbookPath),
+        qPrintable(QStringLiteral("Missing workbook: %1").arg(workbookPath))
+        );
+
+    QSignalSpy importRequested(
+        schedulePage,
+        &SchedulePage::scheduleImportRequested
+        );
+    QVERIFY(importRequested.isValid());
+
+    int stage = 0;
+    int attempts = 0;
+    bool flowCompleted = false;
+    QString flowFailure;
+    QTimer dialogScript;
+    dialogScript.setInterval(10);
+    QObject::connect(
+        &dialogScript,
+        &QTimer::timeout,
+        window,
+        [&]()
+        {
+            ++attempts;
+            ScheduleImportDialog* const dialog =
+                window->findChild<ScheduleImportDialog*>();
+            if (!dialog)
+            {
+                if (attempts > 2000)
+                {
+                    flowFailure = QStringLiteral(
+                        "MainWindow did not open ScheduleImportDialog."
+                        );
+                    dialogScript.stop();
+                }
+                return;
+            }
+
+            const auto fail = [&](const QString& reason)
+            {
+                flowFailure = reason;
+                dialogScript.stop();
+                dialog->reject();
+            };
+
+            auto* const next = dialog->findChild<QPushButton*>(
+                QStringLiteral("scheduleImportNextButton")
+                );
+            auto* const sheets = dialog->findChild<QComboBox*>(
+                QStringLiteral("scheduleImportSheetCombo")
+                );
+            auto* const users = dialog->findChild<QComboBox*>(
+                QStringLiteral("scheduleImportUserCombo")
+                );
+            auto* const progress = dialog->findChild<QProgressBar*>(
+                QStringLiteral("scheduleImportProgressBar")
+                );
+            if (!next || !sheets || !users || !progress)
+            {
+                fail(QStringLiteral(
+                    "ScheduleImportDialog is missing an expected control."
+                    ));
+                return;
+            }
+
+            if (stage == 0)
+            {
+                auto* const normal = dialog->findChild<QRadioButton*>(
+                    QStringLiteral("scheduleImportNormalRadio")
+                    );
+                if (!normal)
+                {
+                    fail(QStringLiteral(
+                        "ScheduleImportDialog is missing the Regular option."
+                        ));
+                    return;
+                }
+
+                dialog->setFilePath(workbookPath);
+                normal->setChecked(true);
+                next->click();
+                stage = 1;
+                return;
+            }
+
+            if (stage == 1)
+            {
+                if (!progress->isHidden())
+                {
+                    return;
+                }
+                if (sheets->count() == 0)
+                {
+                    auto* const sourceStatus = dialog->findChild<QLabel*>(
+                        QStringLiteral("scheduleImportSourceStatus")
+                        );
+                    fail(
+                        QStringLiteral("Workbook did not load: %1")
+                            .arg(sourceStatus
+                                ? sourceStatus->text()
+                                : QStringLiteral("no worksheet loaded"))
+                        );
+                    return;
+                }
+
+                const int currentSheet = sheets->findText(
+                    QStringLiteral("Current"),
+                    Qt::MatchExactly
+                    );
+                if (currentSheet < 0)
+                {
+                    fail(QStringLiteral(
+                        "The checked-in workbook has no Current sheet."
+                        ));
+                    return;
+                }
+                sheets->setCurrentIndex(currentSheet);
+
+                const int alice = users->findText(
+                    QStringLiteral("Alice"),
+                    Qt::MatchExactly
+                    );
+                if (alice < 0)
+                {
+                    fail(QStringLiteral(
+                        "The Current sheet has no Alice profile."
+                        ));
+                    return;
+                }
+                users->setCurrentIndex(alice);
+                if (!next->isEnabled())
+                {
+                    fail(QStringLiteral(
+                        "The Schedule Import review action is disabled."
+                        ));
+                    return;
+                }
+                next->click();
+                stage = 2;
+                return;
+            }
+
+            auto* const review =
+                dialog->findChild<ScheduleImportReviewDialog*>();
+            if (!review || !review->isVisible())
+            {
+                return;
+            }
+
+            for (int index = 0; index < 3; ++index)
+            {
+                auto* const teacherAction = review->findChild<QComboBox*>(
+                    QStringLiteral("scheduleImportTeacherAction_%1")
+                        .arg(index)
+                    );
+                auto* const classAction = review->findChild<QComboBox*>(
+                    QStringLiteral("scheduleImportClassAction_%1")
+                        .arg(index)
+                    );
+                if (!teacherAction || !classAction)
+                {
+                    fail(QStringLiteral(
+                        "The workbook review is missing an import resolution."
+                        ));
+                    return;
+                }
+
+                int createTeacher = -1;
+                for (int actionIndex = 0;
+                     actionIndex < teacherAction->count();
+                     ++actionIndex)
+                {
+                    if (teacherAction->itemData(actionIndex).toInt()
+                        == static_cast<int>(ScheduleImportTeacherAction::Create))
+                    {
+                        createTeacher = actionIndex;
+                        break;
+                    }
+                }
+                int createClass = -1;
+                for (int actionIndex = 0;
+                     actionIndex < classAction->count();
+                     ++actionIndex)
+                {
+                    if (classAction->itemData(actionIndex).toInt()
+                        == static_cast<int>(ScheduleImportClassAction::CreateNew))
+                    {
+                        createClass = actionIndex;
+                        break;
+                    }
+                }
+                if (createTeacher < 0 || createClass < 0)
+                {
+                    fail(QStringLiteral(
+                        "The workbook review cannot create the imported records."
+                        ));
+                    return;
+                }
+                teacherAction->setCurrentIndex(createTeacher);
+                classAction->setCurrentIndex(createClass);
+            }
+
+            auto* const apply = review->findChild<QPushButton*>(
+                QStringLiteral("scheduleImportAcceptButton")
+                );
+            if (!apply || !apply->isEnabled())
+            {
+                fail(QStringLiteral(
+                    "The workbook review cannot apply the import."
+                    ));
+                return;
+            }
+
+            fixture.prompts.scriptedChoices.enqueue(
+                PromptChoice::Accepted
+                );
+            apply->click();
+            flowCompleted = true;
+            dialogScript.stop();
+        }
+        );
+    dialogScript.start();
+    QTest::mouseClick(importButton, Qt::LeftButton);
+    dialogScript.stop();
+    if (flowFailure.isEmpty() && !flowCompleted)
+    {
+        flowFailure = QStringLiteral(
+            "The Schedule Import dialog script did not complete."
+            );
+    }
+
+    QCOMPARE(importRequested.size(), 1);
+    QVERIFY2(flowCompleted, qPrintable(flowFailure));
+    QVERIFY(pages->isCurrentPage(PageType::Schedule));
+    QCOMPARE(pages->schedulePage(), schedulePage);
+    QVERIFY(schedulePage->isVisible());
+    QCOMPARE(sidebar->selectedKeys(), sidebarKeysBefore);
+    QVERIFY(services->hasOpenDatabase());
+    QCOMPARE(services->databaseSession(), activeSession);
+    QCOMPARE(services->currentDatabasePath(), activePath);
+
+    QCOMPARE(fixture.prompts.confirmations.size(), 1);
+    QCOMPARE(
+        fixture.prompts.confirmations.constFirst().automationId,
+        QStringLiteral("schedule-import-confirmation")
+        );
+    QCOMPARE(fixture.prompts.messages.size(), 1);
+    QVERIFY(fixture.prompts.messages.constFirst().message.startsWith(
+        QStringLiteral("Schedule imported successfully.")
+        ));
+    QVERIFY(fixture.prompts.asynchronousMessages.isEmpty());
+    QVERIFY(fixture.prompts.unsavedChangesConfirmations.isEmpty());
+    QVERIFY(fixture.prompts.actionPrompts.isEmpty());
+
+    const QString expectedTeacherName = QString::fromUtf8(
+        "\xEB\xB0\x95\xEC\x84\xA0\xEC\x83\x9D"
+        );
+    const auto teachers = services->teacherService()->teachers();
+    QVERIFY(teachers);
+    int importedTeacherId = -1;
+    for (const Teacher& teacher : *teachers)
+    {
+        if (teacher.teacherKr == expectedTeacherName)
+        {
+            importedTeacherId = teacher.id;
+            QCOMPARE(teacher.roomNumber, QStringLiteral("415"));
+            break;
+        }
+    }
+    QVERIFY(importedTeacherId > 0);
+
+    const auto classInfos = services->classService()->scheduleClassInfos();
+    QVERIFY(classInfos);
+    const ClassInfo* importedClassInfo = nullptr;
+    for (const ClassInfo& info : *classInfos)
+    {
+        if (info.teacherId == importedTeacherId
+            && info.classGrade == QStringLiteral("M3")
+            && info.classLevel == QStringLiteral("Song's"))
+        {
+            importedClassInfo = &info;
+            break;
+        }
+    }
+    QVERIFY(importedClassInfo);
+    QVERIFY(importedClassInfo->classId > 0);
+    QCOMPARE(importedClassInfo->teacherKr, expectedTeacherName);
+    QCOMPARE(importedClassInfo->roomNumber, QStringLiteral("415"));
+    QCOMPARE(importedClassInfo->classTimes.size(), 2);
+    QVERIFY(std::any_of(
+        importedClassInfo->classTimes.cbegin(),
+        importedClassInfo->classTimes.cend(),
+        [](const ClassTime& time)
+        {
+            return time.day == QStringLiteral("Monday")
+                && time.startTime == QStringLiteral("4:00 PM")
+                && time.endTime == QStringLiteral("4:55 PM");
+        }
+        ));
+    QVERIFY(std::any_of(
+        importedClassInfo->classTimes.cbegin(),
+        importedClassInfo->classTimes.cend(),
+        [](const ClassTime& time)
+        {
+            return time.day == QStringLiteral("Friday")
+                && time.startTime == QStringLiteral("4:00 PM")
+                && time.endTime == QStringLiteral("4:55 PM");
+        }
+        ));
+
+    QTreeWidgetItem* const koreanTeacherGroup = findItemByKeyPath(
+        tree,
+        koreanTeacherGroupKeys
+        );
+    QVERIFY(koreanTeacherGroup);
+    QTreeWidgetItem* const importedTeacherLeaf = findTeacherLeaf(
+        koreanTeacherGroup,
+        importedTeacherId
+        );
+    QVERIFY(importedTeacherLeaf);
+
+    const ScheduleViewModel visibleModel = scheduleWidget->scheduleModel();
+    QVERIFY(scheduleModelContainsClassOnDay(
+        visibleModel,
+        importedClassInfo->classId,
+        QStringLiteral("Monday")
+        ));
+    QVERIFY(scheduleModelContainsClassOnDay(
+        visibleModel,
+        importedClassInfo->classId,
+        QStringLiteral("Friday")
+        ));
 }
 
 QTEST_MAIN(MainWindowScheduleTestingClassesHandoffParityTests)

@@ -14943,3 +14943,68 @@ no warnings. Executor CMake regeneration noted optional `WrapVulkanHeaders`
 was missing and used Qt's bundled zlib fallback. `git diff --check` passed;
 no full suite was run. F417 is accepted and ready to commit; F418-F421 remain
 queued until the F417 commit.
+
+### F417 committed / F418 selected/current - 2026-10-09
+
+F417 Staff Directory rendered leaf through MainWindow is committed as
+`d04d9bb0`. The commit contains the focused integration case, its resource and
+translation test-target dependencies, and the acceptance record. Batch 19
+continues with F418 Schedule Import through MainWindow apply and Sidebar refresh
+selected/current; F419-F421 remain queued.
+
+### F418 selected/current / provisional acceptance matrix - 2026-10-09
+
+1. Start a real MainWindow on a temporary open workspace with the active
+   profile set to Alice. Navigate to Schedule and QTest-click its actual
+   `scheduleImportButton`; do not invoke the MainWindow handler or connect a
+   test-side replacement signal.
+2. Drive the real Schedule Import dialog with the checked-in
+   `tests/fixtures/imports/schedule_review.xlsx` Current sheet and Alice
+   profile. Accept the real review/apply confirmation so the production
+   `ScheduleImportApplyUseCase` writes the imported schedule.
+3. Verify persisted import results through the workspace services, including
+   the imported Korean teacher's stable ID and expected schedule/class data.
+   Verify the production Sidebar refresh makes that same teacher available
+   under Korean Teachers with the matching ID, and the visible Schedule page
+   reflects the applied data.
+4. Verify the same MainWindow, open database session, workspace path, and
+   Schedule page remain active; no extra navigation or unexpected prompt is
+   produced. Preserve all existing Schedule Import dialog/widget coverage.
+
+Evidence: the production MainWindow connection constructs and runs the modal
+Schedule Import flow, then marks Schedule pages stale, refreshes the teacher
+Sidebar, and refreshes class actions (`src/app/mainwindow.cpp:834-872`). The
+existing widget test only checks the request signal
+(`tests/schedule_widget_tests.cpp:892-908`), while dialog tests exercise apply
+without MainWindow. The checked-in workbook's Current sheet has three teacher
+and class groups, with Alice as the profile user
+(`tests/schedule_import_tests.cpp:2322-2391`). `refreshTeacherSidebar()` clears
+and reloads teacher nodes from the workspace
+(`src/app/controllers/sidebar_controller_refresh.cpp:36-100`). F418 is
+test-only unless the MainWindow integration exposes a production defect.
+
+### F418 implementation complete / independently verified / accepted, ready to commit - 2026-10-09
+
+`tests/mainwindow_schedule_testing_classes_handoff_parity_tests.cpp` now
+QTest-clicks the real Schedule Import button in MainWindow and drives the
+checked-in workbook through the actual source and review dialogs and apply
+confirmation. It verifies the persisted Korean teacher and class, stable
+teacher ID, Monday and Friday meeting times, refreshed teacher leaf under
+Campus Staff → Korean Teachers, and refreshed Schedule model. The active
+Schedule page, Sidebar selection, open database session, and workspace path
+remain unchanged. The expected confirmation and success message are the only
+prompt interactions. No production change or defect was needed; all prior
+cases in the target remain intact.
+
+Executor and independent Tester rebuilt
+`ClassMngrMainWindowScheduleTestingClassesHandoffParityTests` in the standard
+`build/windows-x64-debug` folder under Windows x64 Debug, Qt 6.12.0, and MSVC
+2022. Both first build attempts hit Visual Studio `ZERO_CHECK` FileTracker
+`E_ACCESSDENIED`; elevated retries succeeded. Each exact filtered CTest passed
+1/1. Independent direct QtTest reported 7 passed, 0 failed, and 0 skipped,
+including the new import case. The executor reported no compiler warnings;
+runtime notices in the independent run were Qt's missing font-directory and
+offscreen `propagateSizeHints()` messages, while project font assets loaded.
+No test process remained. `git diff --check` passed with Git line-ending
+notices. No full suite was run. F418 is accepted and ready to commit; F419-F421
+remain queued until the F418 commit.

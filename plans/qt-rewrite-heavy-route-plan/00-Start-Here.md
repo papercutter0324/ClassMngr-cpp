@@ -135,8 +135,10 @@ is committed (`6fb39b2b`). F415 Campus Dashboard page-tab-to-Sidebar
 synchronization is committed (`f4bc5282`). F416 Document Catalog rendered
   Sidebar leaf through MainWindow/viewer is committed as `a4082f80`. Batch 19
   resumed with F417 Staff Directory rendered leaf through MainWindow
-  independently accepted and ready to commit; F418-F421 remain queued until
-  the F417 commit. See the Phase 2 progress log for evidence.
+  independently accepted and committed as `d04d9bb0`. F418 Schedule Import
+  through MainWindow apply and Sidebar refresh is accepted and ready to commit;
+  F419-F421 remain queued pending its commit. See the Phase 2 progress log for
+  evidence.
   Gates 1 and 2 remain Partial, with broader feature
   migration, parity, and 96-class Release memory evidence still open.
   See the
