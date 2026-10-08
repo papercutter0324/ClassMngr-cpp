@@ -2,6 +2,10 @@
 #include "core/application_services.h"
 #include "core/language_service.h"
 #include "core/settingsmanager.h"
+#include "fakes/fake_file_dialog_service.h"
+#include "fakes/fake_user_prompt_service.h"
+#include "ui/shared/dialogs/file_dialog_service.h"
+#include "ui/shared/dialogs/user_prompt_service.h"
 #include "ui/shared/pages/pagemanager.h"
 #include "ui/shared/widgets/sidebar/sidebar.h"
 #include "features/my_info/ui/my_workspace_page.h"
@@ -94,6 +98,34 @@ QAction* findRecentAction(
 
     return nullptr;
 }
+
+class UserPromptServiceScope final
+{
+public:
+    explicit UserPromptServiceScope(IUserPromptService* service)
+    {
+        DialogServices::setUserPromptServiceForTesting(service);
+    }
+
+    ~UserPromptServiceScope()
+    {
+        DialogServices::setUserPromptServiceForTesting(nullptr);
+    }
+};
+
+class FileDialogServiceScope final
+{
+public:
+    explicit FileDialogServiceScope(IFileDialogService* service)
+    {
+        DialogServices::setFileDialogServiceForTesting(service);
+    }
+
+    ~FileDialogServiceScope()
+    {
+        DialogServices::setFileDialogServiceForTesting(nullptr);
+    }
+};
 }
 
 class MainWindowRecentWorkspaceReopenParityTests final : public QObject
@@ -103,6 +135,8 @@ class MainWindowRecentWorkspaceReopenParityTests final : public QObject
 private slots:
     void initTestCase();
     void recentActionReturnsFromOtherPageToSameWorkspaceSchedule();
+    void recentActionSwitchesActiveWorkspaceAndUpdatesHistoryWithoutChooser();
+    void missingRecentActionPrunesAndPreservesActiveWorkspace();
 
 private:
     QTemporaryDir m_settingsDirectory;
@@ -264,6 +298,217 @@ recentActionReturnsFromOtherPageToSameWorkspaceSchedule()
     QVERIFY(window.actions().saveAsFile->isEnabled());
     QVERIFY(window.actions().exportAsFile->isEnabled());
     QVERIFY(window.actions().closeFile->isEnabled());
+}
+
+void MainWindowRecentWorkspaceReopenParityTests::
+recentActionSwitchesActiveWorkspaceAndUpdatesHistoryWithoutChooser()
+{
+    QTemporaryDir workspaceRoot;
+    QVERIFY(workspaceRoot.isValid());
+
+    const QString activePath = QFileInfo(
+        workspaceRoot.filePath(QStringLiteral("active-workspace.tps"))
+        ).absoluteFilePath();
+    const QString otherPath = QFileInfo(
+        workspaceRoot.filePath(QStringLiteral("other-workspace.tps"))
+        ).absoluteFilePath();
+
+    ApplicationServices seedServices;
+    QVERIFY(seedServices.openDatabase(activePath));
+    seedServices.closeDatabase();
+    QVERIFY(seedServices.openDatabase(otherPath));
+    seedServices.closeDatabase();
+
+    SettingsManager& settings = SettingsManager::instance();
+    settings.setRecentFiles({otherPath, activePath});
+    settings.setLastFile(activePath);
+    settings.sync();
+
+    LanguageService languageService;
+    QVERIFY(languageService.setLanguage(Language::English));
+
+    MainWindowStartupOptions startupOptions;
+    startupOptions.loadMostRecentDatabase = false;
+    startupOptions.initialDatabasePath = activePath;
+
+    FakeUserPromptService prompts;
+    FakeFileDialogService fileDialogs;
+    const UserPromptServiceScope promptScope(&prompts);
+    const FileDialogServiceScope fileDialogScope(&fileDialogs);
+
+    MainWindow window(
+        [](const QString&) {},
+        false,
+        &languageService,
+        nullptr,
+        std::move(startupOptions)
+        );
+    window.show();
+    QApplication::processEvents();
+
+    ApplicationServices* const services = window.services();
+    QVERIFY(services);
+    QVERIFY(services->hasOpenDatabase());
+    QCOMPARE(services->currentDatabasePath(), activePath);
+
+    PageManager* const pages = window.pageManager();
+    QVERIFY(pages);
+    QVERIFY(pages->isCurrentPage(PageType::MyWorkspace));
+    MyWorkspacePage* const activeWorkspace = pages->myWorkspacePage();
+    QVERIFY(activeWorkspace);
+    const QString activePageIdentifier = pages->currentPageIdentifier();
+    QVERIFY(!activePageIdentifier.isEmpty());
+
+    QMenu* const recentMenu = window.actions().recentFilesMenu;
+    QVERIFY(recentMenu);
+    QAction* const otherWorkspaceAction = findRecentAction(
+        recentMenu,
+        otherPath
+        );
+    QVERIFY(otherWorkspaceAction);
+
+    otherWorkspaceAction->trigger();
+    QApplication::processEvents();
+
+    QVERIFY(prompts.unsavedChangesConfirmations.isEmpty());
+    QVERIFY(fileDialogs.openFileRequests.isEmpty());
+    QVERIFY(fileDialogs.openFilesRequests.isEmpty());
+    QVERIFY(services->hasOpenDatabase());
+    QCOMPARE(services->currentDatabasePath(), otherPath);
+    QVERIFY(pages->isCurrentPage(PageType::MyWorkspace));
+    QCOMPARE(pages->myWorkspacePage(), activeWorkspace);
+    QCOMPARE(pages->currentPageIdentifier(), activePageIdentifier);
+    QCOMPARE(activeWorkspace->currentTab(), WorkspaceTab::Schedule);
+    QCOMPARE(
+        settings.getRecentFiles(),
+        (QStringList{otherPath, activePath})
+        );
+    QCOMPARE(settings.getLastFile(), otherPath);
+
+    Sidebar* const sidebar = window.findChild<Sidebar*>();
+    QVERIFY(sidebar);
+    QCOMPARE(
+        sidebar->selectedKeys(),
+        QStringList{QStringLiteral("my_workspace")}
+        );
+}
+
+void MainWindowRecentWorkspaceReopenParityTests::
+missingRecentActionPrunesAndPreservesActiveWorkspace()
+{
+    QTemporaryDir workspaceRoot;
+    QVERIFY(workspaceRoot.isValid());
+
+    const QString activePath = QFileInfo(
+        workspaceRoot.filePath(QStringLiteral("active-workspace.tps"))
+        ).absoluteFilePath();
+    const QString otherPath = QFileInfo(
+        workspaceRoot.filePath(QStringLiteral("other-workspace.tps"))
+        ).absoluteFilePath();
+    const QString missingPath = QFileInfo(
+        workspaceRoot.filePath(QStringLiteral("missing-workspace.tps"))
+        ).absoluteFilePath();
+    QVERIFY(!QFileInfo::exists(missingPath));
+
+    ApplicationServices seedServices;
+    QVERIFY(seedServices.openDatabase(activePath));
+    seedServices.closeDatabase();
+    QVERIFY(seedServices.openDatabase(otherPath));
+    seedServices.closeDatabase();
+
+    SettingsManager& settings = SettingsManager::instance();
+    settings.setRecentFiles({missingPath, activePath, otherPath});
+    settings.setLastFile(activePath);
+    settings.sync();
+
+    LanguageService languageService;
+    QVERIFY(languageService.setLanguage(Language::English));
+
+    MainWindowStartupOptions startupOptions;
+    startupOptions.loadMostRecentDatabase = false;
+    startupOptions.initialDatabasePath = activePath;
+
+    FakeUserPromptService prompts;
+    FakeFileDialogService fileDialogs;
+    const UserPromptServiceScope promptScope(&prompts);
+    const FileDialogServiceScope fileDialogScope(&fileDialogs);
+
+    MainWindow window(
+        [](const QString&) {},
+        false,
+        &languageService,
+        nullptr,
+        std::move(startupOptions)
+        );
+    window.show();
+    QApplication::processEvents();
+
+    ApplicationServices* const services = window.services();
+    QVERIFY(services);
+    QVERIFY(services->hasOpenDatabase());
+    QCOMPARE(services->currentDatabasePath(), activePath);
+    auto* const activeSession = services->databaseSession();
+    QVERIFY(activeSession);
+
+    PageManager* const pages = window.pageManager();
+    QVERIFY(pages);
+    QVERIFY(pages->isCurrentPage(PageType::MyWorkspace));
+    MyWorkspacePage* const activeWorkspace = pages->myWorkspacePage();
+    QVERIFY(activeWorkspace);
+    QVERIFY(!activeWorkspace->hasUnsavedChanges());
+    const QString activePageIdentifier = pages->currentPageIdentifier();
+    QVERIFY(!activePageIdentifier.isEmpty());
+    const WorkspaceTab activeTab = activeWorkspace->currentTab();
+
+    Sidebar* const sidebar = window.findChild<Sidebar*>();
+    QVERIFY(sidebar);
+    QCOMPARE(
+        sidebar->selectedKeys(),
+        QStringList{QStringLiteral("my_workspace")}
+        );
+
+    QMenu* const recentMenu = window.actions().recentFilesMenu;
+    QVERIFY(recentMenu);
+    QAction* const missingWorkspaceAction = findRecentAction(
+        recentMenu,
+        missingPath
+        );
+    QVERIFY(missingWorkspaceAction);
+    QVERIFY(findRecentAction(recentMenu, otherPath));
+
+    settings.setLastFile(missingPath);
+    settings.sync();
+    missingWorkspaceAction->trigger();
+
+    QCOMPARE(prompts.unsavedChangesConfirmations.size(), 0);
+    QCOMPARE(prompts.messages.size(), 1);
+    const PromptRequest& warning = prompts.messages.constFirst();
+    QCOMPARE(warning.title, QStringLiteral("Missing File"));
+    QVERIFY(warning.severity == PromptSeverity::Warning);
+    QCOMPARE(fileDialogs.openFileRequests.size(), 0);
+    QVERIFY(fileDialogs.openFilesRequests.isEmpty());
+
+    QVERIFY(services->hasOpenDatabase());
+    QVERIFY(services->databaseSession() == activeSession);
+    QCOMPARE(services->currentDatabasePath(), activePath);
+    QVERIFY(pages->isCurrentPage(PageType::MyWorkspace));
+    QCOMPARE(pages->myWorkspacePage(), activeWorkspace);
+    QCOMPARE(pages->currentPageIdentifier(), activePageIdentifier);
+    QCOMPARE(activeWorkspace->currentTab(), activeTab);
+    QVERIFY(!activeWorkspace->hasUnsavedChanges());
+    QCOMPARE(
+        sidebar->selectedKeys(),
+        QStringList{QStringLiteral("my_workspace")}
+        );
+
+    QVERIFY(settings.getLastFile().isEmpty());
+    const QStringList remainingRecentFiles = settings.getRecentFiles();
+    QVERIFY(!remainingRecentFiles.contains(missingPath));
+    QVERIFY(remainingRecentFiles.contains(activePath));
+    QVERIFY(remainingRecentFiles.contains(otherPath));
+    QVERIFY(!findRecentAction(recentMenu, missingPath));
+    QVERIFY(findRecentAction(recentMenu, activePath));
+    QVERIFY(findRecentAction(recentMenu, otherPath));
 }
 
 QTEST_MAIN(MainWindowRecentWorkspaceReopenParityTests)

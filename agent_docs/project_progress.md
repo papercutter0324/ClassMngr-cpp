@@ -2857,7 +2857,7 @@ unsynced and unaudited in this checkout; local Batch 11 evidence still ends at
 F366. No remote commits or acceptance results are inferred.
 
 
-## Current Position — 2026-10-08 (F400 accepted; F401 queued)
+## Current Position — 2026-10-08 (F401 accepted; F402 queued)
 
 Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial. F386-F393
 are accepted as recorded in the Phase 2 progress log. The seven Teacher Profile
@@ -2882,6 +2882,14 @@ The standard Visual Studio tree remains blocked before source compilation in
 ZERO_CHECK by the current shell's FileTracker CommonApplicationData path
 resolution; no system settings changed. No full suite ran.
 
-Batch 17 remains active; F401 is next queued after F400 commit, followed by
-F402-F403. The next batch discovery is due when F402 starts. The user-modified
+F401 Recent-workspace menu selection and missing-path pruning is accepted
+with no production changes. Two new MainWindow tests use the production Recent
+menu to open a different existing workspace without a chooser and to prune a
+missing path while verifying the warning, history/menu updates, and exact active
+session/page preservation. The focused Ninja/MSVC/Qt 6.12 target built and
+filtered CTest passed 1/1 (1.02 s); incremental build with no warnings. No full
+suite ran; the standard Visual Studio tree was not used for this slice.
+
+Batch 17 remains active; F402 is next queued after the F401 commit, followed
+by F403. Batch 18 discovery is due when F402 starts. The user-modified
 `latest_session_work.md` remains untouched.

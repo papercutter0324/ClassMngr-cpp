@@ -40,12 +40,11 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-08
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F400 Open File action dirty-page gate is accepted and ready
-  to commit; focused Ninja fallback CTest passed 1/1 (0.35 s). The standard
-  Visual Studio tree remains blocked before compilation by the current-shell
-  FileTracker/CommonApplicationData environment failure. F401 is next queued
-  after the F400 commit and is not current; F402 starts Batch 18 discovery.
-  Gates 1 and 2 remain Partial; see the Phase 2 progress log for evidence.
+- Current note: F400 Open File action dirty-page gate is accepted and
+  committed. F401 Recent-workspace menu selection and missing-path pruning is
+  accepted and ready to commit. F402 is queued after the F401 commit and F403
+  follows. Begin Batch 18 discovery when F402 starts. Gates 1 and 2 remain
+  Partial; see the Phase 2 progress log for acceptance evidence.
 
 ### Slice discovery batches
 
@@ -72,8 +71,8 @@ log](03-Phase-2-Progress-Log.md).
 
 #### Active batch: Batch 17
 
-1. F401 - Next queued after the F400 commit: Recent-workspace menu selection
-   and missing-path pruning.
+1. F401 - Accepted / ready to commit: Recent-workspace menu
+   selection and missing-path pruning.
 2. F402 - MainWindow application-exit confirmation.
 3. F403 - Dynamic Teacher Sidebar leaf navigation.
 

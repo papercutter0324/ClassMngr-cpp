@@ -2449,3 +2449,16 @@ cancelled, the current workspace remains open and the discarded draft stays
 discarded. The real MainWindow QAction test covers both decision boundaries with
 injected prompt and file-dialog services. This records current behavior and
 does not claim legacy parity for draft restoration after chooser cancellation.
+
+## 2026-10-08 - F401 Recent menu selection and missing-path pruning accepted
+
+F401 adds real MainWindow coverage for opening a different existing workspace
+from the Recent menu and for selecting a missing recent path. The successful
+selection activates the chosen workspace and moves it to the front of recent
+history without invoking the Open File chooser. A missing selection warns,
+prunes recent and matching last-file history, refreshes the menu, and preserves
+the active database session and page. FileController already implemented these
+behaviors, so the slice changes tests only. The missing-path case uses a clean
+page; this slice does not change the existing dirty-page prompt order. The
+focused Ninja fallback target built and CTest passed 1/1 (1.02 s); no full suite
+ran.

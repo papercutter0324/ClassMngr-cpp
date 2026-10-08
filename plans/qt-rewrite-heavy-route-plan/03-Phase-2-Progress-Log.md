@@ -14033,3 +14033,21 @@ Batch 17 remains active. F400 is accepted and ready to commit; F401 is next
 queued after that commit and is not current. F402 and F403 follow. Batch 18
 discovery is due when F402 starts. Phase 2 remains In Progress/Open; Gates 1
 and 2 remain Partial.
+
+### F401 accepted / ready to commit - 2026-10-08
+
+F401 is accepted with no production changes. Two new slots in the existing
+MainWindow Recent target cover selecting a different existing workspace through
+the real Recent QAction: the active path, UI, MRU order, and last-file update
+without a chooser or prompt. The second selects a missing Recent QAction and
+verifies the Missing File warning, history and matching last-file pruning,
+immediate removal of the stale action, and preservation of the exact active
+session, path, page, and tab.
+
+The focused Ninja fallback target built and filtered CTest passed 1/1 (1.02 s).
+This was an incremental build with no reconfigure or warnings. The standard
+Visual Studio tree was not used for this slice. No full suite ran.
+
+Batch 17 remains active. F401 is accepted and ready to commit; F402 is queued
+after the F401 commit, with F403 following. Batch 18 discovery is due when F402
+starts. Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial.
