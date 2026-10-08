@@ -314,6 +314,34 @@ QTreeWidgetItem* findItemByKeyPath(
     return item;
 }
 
+bool clickSidebarItem(
+    QTreeWidget* tree,
+    QTreeWidgetItem* item
+    )
+{
+    if (!tree || !item)
+    {
+        return false;
+    }
+
+    tree->scrollToItem(item);
+    QApplication::processEvents();
+    const QRect itemRect = tree->visualItemRect(item);
+    if (!itemRect.isValid() || itemRect.isEmpty())
+    {
+        return false;
+    }
+
+    QTest::mouseClick(
+        tree->viewport(),
+        Qt::LeftButton,
+        Qt::NoModifier,
+        itemRect.center()
+        );
+    QApplication::processEvents();
+    return true;
+}
+
 QTreeWidgetItem* findTeacherLeaf(
     QTreeWidgetItem* group,
     const int teacherId
@@ -654,6 +682,7 @@ private slots:
     void classesDetailsSaveRefreshesClassActionsThroughMainWindow();
     void workspaceScheduleEditorSaveRefreshesClassActionsThroughMainWindow();
     void testingClassRenameMarksAndRefreshesBothSchedulePages();
+    void workspaceScheduleDisplayModeUpdatesLoadedClassesPage();
 
 private:
     QTemporaryDir m_settingsDirectory;
@@ -1892,6 +1921,192 @@ testingClassRenameMarksAndRefreshesBothSchedulePages()
         workspaceUpdatedModel,
         originalName
         ));
+
+    QVERIFY(services->hasOpenDatabase());
+    QCOMPARE(services->databaseSession(), activeSession);
+    QCOMPARE(services->currentDatabasePath(), activePath);
+    assertNoPromptRequests(fixture.prompts);
+}
+
+void MainWindowScheduleTestingClassesHandoffParityTests::
+workspaceScheduleDisplayModeUpdatesLoadedClassesPage()
+{
+    MainWindowFixture fixture;
+    QString setupError;
+    QVERIFY2(fixture.initialize(&setupError), qPrintable(setupError));
+
+    MainWindow* const window = fixture.window.get();
+    ApplicationServices* const services = window->services();
+    PageManager* const pages = window->pageManager();
+    QVERIFY(services);
+    QVERIFY(pages);
+    auto* const activeSession = services->databaseSession();
+    QVERIFY(activeSession);
+    const QString activePath = services->currentDatabasePath();
+    ClassService* const classService = services->classService();
+    QVERIFY(classService);
+
+    int regularClassId = -1;
+    QString regularSeedError;
+    QVERIFY2(
+        seedClassWithSchedule(
+            *services,
+            QStringLiteral("F423 Regular Tuesday"),
+            &regularClassId,
+            &regularSeedError
+            ),
+        qPrintable(regularSeedError)
+        );
+
+    const auto regularInfoResult = classService->classInfo(regularClassId);
+    if (!regularInfoResult)
+    {
+        QFAIL(qPrintable(regularInfoResult.error()));
+    }
+    ClassInfo regularInfo = regularInfoResult.value();
+    regularInfo.classTimes = {
+        {
+            QStringLiteral("Tuesday"),
+            QStringLiteral("4:00 PM"),
+            QStringLiteral("4:55 PM")
+        }
+    };
+    regularInfo.intensiveTimes.clear();
+    const Status regularInfoSaved = classService->saveClassInfo(regularInfo);
+    if (!regularInfoSaved)
+    {
+        QFAIL(qPrintable(regularInfoSaved.error()));
+    }
+
+    const auto intensiveClassCreated = classService->create(
+        QStringLiteral("F423 Intensive Friday")
+        );
+    if (!intensiveClassCreated)
+    {
+        QFAIL(qPrintable(intensiveClassCreated.error()));
+    }
+    const int intensiveClassId = intensiveClassCreated.value();
+    QVERIFY(intensiveClassId > 0);
+
+    const auto intensiveInfoResult = classService->classInfo(intensiveClassId);
+    if (!intensiveInfoResult)
+    {
+        QFAIL(qPrintable(intensiveInfoResult.error()));
+    }
+    ClassInfo intensiveInfo = intensiveInfoResult.value();
+    intensiveInfo.teacherId = regularInfo.teacherId;
+    intensiveInfo.classGrade = QStringLiteral("E5");
+    intensiveInfo.classLevel = QStringLiteral("Artemis");
+    intensiveInfo.classTimes.clear();
+    intensiveInfo.intensiveTimes = {
+        {
+            QStringLiteral("Friday"),
+            QStringLiteral("4:00 PM"),
+            QStringLiteral("4:55 PM")
+        }
+    };
+    const Status intensiveInfoSaved =
+        classService->saveClassInfo(intensiveInfo);
+    if (!intensiveInfoSaved)
+    {
+        QFAIL(qPrintable(intensiveInfoSaved.error()));
+    }
+
+    MyWorkspacePage* const workspace = pages->myWorkspacePage();
+    QVERIFY(workspace);
+    workspace->openTab(WorkspaceTab::Schedule);
+    QApplication::processEvents();
+    QVERIFY(pages->isCurrentPage(PageType::MyWorkspace));
+    QCOMPARE(workspace->currentTab(), WorkspaceTab::Schedule);
+    SchedulePage* const mySchedulePage = workspace->schedulePage();
+    QVERIFY(mySchedulePage);
+    ScheduleWidget* const scheduleWidget =
+        mySchedulePage->findChild<ScheduleWidget*>();
+    QVERIFY(scheduleWidget);
+    QCOMPARE(
+        scheduleWidget->displayState().displayMode,
+        ScheduleDisplayMode::Regular
+        );
+    QPushButton* const regularModeButton =
+        scheduleWidget->findChild<QPushButton*>(
+            QStringLiteral("scheduleRegularModeButton")
+            );
+    QPushButton* const intensiveModeButton =
+        scheduleWidget->findChild<QPushButton*>(
+            QStringLiteral("scheduleIntensiveModeButton")
+            );
+    QVERIFY(regularModeButton);
+    QVERIFY(intensiveModeButton);
+    QVERIFY(regularModeButton->isChecked());
+
+    Sidebar* const sidebar = window->findChild<Sidebar*>();
+    QVERIFY(sidebar);
+    QTreeWidget* const sidebarTree = sidebar->findChild<QTreeWidget*>(
+        QStringLiteral("sidebarTree")
+        );
+    QVERIFY(sidebarTree);
+    QTreeWidgetItem* const classesItem = findItemByKeyPath(
+        sidebarTree,
+        QStringList{QStringLiteral("classes")}
+        );
+    QTreeWidgetItem* const workspaceItem = findItemByKeyPath(
+        sidebarTree,
+        QStringList{QStringLiteral("my_workspace")}
+        );
+    QVERIFY(classesItem);
+    QVERIFY(workspaceItem);
+
+    QVERIFY(clickSidebarItem(sidebarTree, classesItem));
+    QVERIFY(pages->isCurrentPage(PageType::Classes));
+    ClassesPage* const classesPage = pages->classesPage();
+    QVERIFY(classesPage);
+    QCOMPARE(classesPage->runtimeMetrics().visibleClassCount, 1);
+
+    QPushButton* tuesdayFilterButton = classesPage->findChild<QPushButton*>(
+        QStringLiteral("classesTuesdayFilterButton")
+        );
+    QVERIFY(tuesdayFilterButton);
+    QVERIFY(!tuesdayFilterButton->isChecked());
+    tuesdayFilterButton->click();
+    QApplication::processEvents();
+    QVERIFY(tuesdayFilterButton->isChecked());
+    QCOMPARE(classesPage->runtimeMetrics().visibleClassCount, 1);
+
+    QVERIFY(clickSidebarItem(sidebarTree, workspaceItem));
+    QVERIFY(pages->isCurrentPage(PageType::MyWorkspace));
+    QCOMPARE(pages->myWorkspacePage(), workspace);
+    QCOMPARE(workspace->currentTab(), WorkspaceTab::Schedule);
+    QVERIFY(scheduleWidget->isVisible());
+    QCOMPARE(
+        scheduleWidget->displayState().displayMode,
+        ScheduleDisplayMode::Regular
+        );
+
+    intensiveModeButton->click();
+    QApplication::processEvents();
+    QCOMPARE(
+        scheduleWidget->displayState().displayMode,
+        ScheduleDisplayMode::Intensive
+        );
+    QVERIFY(intensiveModeButton->isChecked());
+
+    QCOMPARE(pages->classesPage(), classesPage);
+    QCOMPARE(classesPage->runtimeMetrics().visibleClassCount, 0);
+    tuesdayFilterButton = classesPage->findChild<QPushButton*>(
+        QStringLiteral("classesTuesdayFilterButton")
+        );
+    QVERIFY(tuesdayFilterButton);
+    QVERIFY(tuesdayFilterButton->isChecked());
+
+    QVERIFY(clickSidebarItem(sidebarTree, classesItem));
+    QVERIFY(pages->isCurrentPage(PageType::Classes));
+    QCOMPARE(pages->classesPage(), classesPage);
+    QCOMPARE(classesPage->runtimeMetrics().visibleClassCount, 0);
+    tuesdayFilterButton = classesPage->findChild<QPushButton*>(
+        QStringLiteral("classesTuesdayFilterButton")
+        );
+    QVERIFY(tuesdayFilterButton);
+    QVERIFY(tuesdayFilterButton->isChecked());
 
     QVERIFY(services->hasOpenDatabase());
     QCOMPARE(services->databaseSession(), activeSession);

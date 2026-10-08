@@ -2798,3 +2798,11 @@ F421 Useful Links URL handoff is committed as 27c064e3. The focused target and i
 ## 2026-10-09 - F422 Testing Classes schedule refresh accepted
 
 A real Testing Classes rename/save marks both distinct Schedule views stale, and normal page activation refreshes each Testing-mode model to the updated class name. The focused build, exact filtered CTest (1/1), and direct QtTest (10/10) passed independently. No production code changed. The fixture must use the slot's HH:mm storage format; diagnostics must not evaluate expected::error() on success.
+
+## 2026-10-09 - F422 committed / F423 selected
+
+F422 is committed as 08f44ac6. Its real Testing Classes save signal marked both distinct Schedule views stale; normal activation refreshed each Testing-mode view to the renamed class. Independent focused CTest and direct QtTest passed. For F423, the test must observe the already-open Classes page change before clicking its Sidebar route again: that route reloads from the persisted mode and could mask a missing live MainWindow signal connection.
+
+## 2026-10-09 - F423 My Schedule mode handoff accepted
+
+The integration test changes My Workspace Schedule to Intensive through its real button and observes the already-loaded Classes page update before routing to Classes again. This catches the missing-connection case that a route reload could mask by reading the saved preference. Executor and independent focused CTest passed; direct target and selected-case QtTest passed. No production code changed.
