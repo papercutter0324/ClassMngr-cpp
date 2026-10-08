@@ -260,6 +260,7 @@ private slots:
     void reportsSaveServiceFailureStructurally();
     void createsDailyWeeklyMonthlySeriesWithTypedIdsAndParity();
     void reportsInvalidSeriesCreateRequestStructurally();
+    void rejectsExistingOccurrenceIdBeforePersistence();
     void reportsUnavailableSeriesCreateSessionStructurally();
     void reportsSeriesCreateBatchFailureWithoutPartialRows();
     void editsValidRepeatSeriesSuffixWithTypedParity();
@@ -1609,6 +1610,86 @@ reportsInvalidSeriesCreateRequestStructurally()
         port.createRepeatSeries(tooManyOccurrences),
         ErrorCode::InvalidInput
         );
+}
+
+void NextPlatformApplicationServicesCalendarEventPortTests::
+rejectsExistingOccurrenceIdBeforePersistence()
+{
+    ApplicationServices services;
+    QVERIFY(openDatabase(services, m_directory));
+    CalendarService* const calendarService = services.calendarService();
+    QVERIFY(calendarService);
+    DatabaseSession* const session = services.databaseSession();
+    QVERIFY(session);
+    CalendarEventRepository* const repository =
+        session->calendarEventRepository();
+    QVERIFY(repository);
+
+    CalendarEvent existingEvent = makeEvent(
+        QStringLiteral("Existing standalone event"),
+        QDate(2026, 12, 10),
+        QDate(2026, 12, 10)
+        );
+    existingEvent.eventType = QStringLiteral("Meeting");
+    existingEvent.timeStatus = QStringLiteral("Timed");
+    existingEvent.startTime = QTime(9, 0);
+    existingEvent.endTime = QTime(10, 0);
+    const auto seeded = calendarService->saveEvent(existingEvent);
+    QVERIFY(seeded);
+    const int existingEventId = seeded.value();
+    QVERIFY(existingEventId > 0);
+
+    const auto seededRow = repository->getCalendarEvent(existingEventId);
+    QVERIFY(seededRow);
+    const CalendarEvent original = *seededRow;
+
+    QSqlQuery countBefore(session->database());
+    QVERIFY(countBefore.exec(QStringLiteral(
+        "SELECT COUNT(*) FROM calendar_events"
+        )));
+    QVERIFY(countBefore.next());
+    const int originalRowCount = countBefore.value(0).toInt();
+    QCOMPARE(originalRowCount, 1);
+
+    CalendarEventSeriesCreateRequest request = seriesCreateRequest(
+        "series-with-existing-id",
+        {
+            {QDate(2026, 12, 15), QDate(2026, 12, 15)},
+            {QDate(2026, 12, 22), QDate(2026, 12, 22)}
+        },
+        QStringLiteral("Attempted series replacement"),
+        QStringLiteral("Workshop"),
+        QStringLiteral("Timed")
+        );
+    request.occurrences.at(1).id = calendarEventId(existingEventId);
+
+    verifyFailure(request.validate(), ErrorCode::InvalidInput);
+
+    ApplicationServicesCalendarEventSeriesCreatePort port(services);
+    verifyFailure(
+        port.createRepeatSeries(request),
+        ErrorCode::InvalidInput
+        );
+
+    QSqlQuery countAfter(session->database());
+    QVERIFY(countAfter.exec(QStringLiteral(
+        "SELECT COUNT(*) FROM calendar_events"
+        )));
+    QVERIFY(countAfter.next());
+    QCOMPARE(countAfter.value(0).toInt(), originalRowCount);
+
+    const auto remainingRow = repository->getCalendarEvent(existingEventId);
+    QVERIFY(remainingRow);
+    QCOMPARE(remainingRow->id, original.id);
+    QCOMPARE(remainingRow->title, original.title);
+    QCOMPARE(remainingRow->eventType, original.eventType);
+    QCOMPARE(remainingRow->timeStatus, original.timeStatus);
+    QCOMPARE(remainingRow->repeatSeriesId, original.repeatSeriesId);
+    QCOMPARE(remainingRow->allDay, original.allDay);
+    QCOMPARE(remainingRow->startDate, original.startDate);
+    QCOMPARE(remainingRow->startTime, original.startTime);
+    QCOMPARE(remainingRow->endDate, original.endDate);
+    QCOMPARE(remainingRow->endTime, original.endTime);
 }
 
 void NextPlatformApplicationServicesCalendarEventPortTests::

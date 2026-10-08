@@ -15925,57 +15925,55 @@ F438 remains provisional.
 ### Batch 22 bounded discovery record - 2026-10-09
 
 Two independent reviews and reconciliation surfaced eight provisional candidates
-after F436 while F437 is the second-last known Batch 21 candidate. Batch 21 stays
-active with F437 current and F438 provisional; Batch 22 is inactive. The test
-outlines below are candidate scopes, not acceptance matrices.
+after F436 while F437 was the second-last known Batch 21 candidate. F438 is now
+accepted and ready to commit. Batch 21 remains active until that commit; then it
+completes and Batch 22 activates. Until activation, the eight candidates below
+remain provisional. They are numbered F439-F446 in current priority order; these
+are bounded discovery outlines, not acceptance matrices.
 
-1. Complete Delete Teacher QAction confirmation. F434 tested Cancel only; reuse
-   `ClassMngrMainWindowTeacherSidebarNavigationParityTests`. Proposed scope:
-   drive the real QAction and chooser, accept the destructive confirmation, and
-   verify target removal from persistence/Sidebar while the survivor and
-   workspace/session remain. Evidence: F434's cancellation matrix and
+1. **F439 - Accept Delete Teacher confirmation through MainWindow.** F434 tested
+   Cancel only. Reuse `ClassMngrMainWindowTeacherSidebarNavigationParityTests`;
+   drive the real QAction and chooser, accept the destructive confirmation, then
+   verify target removal from persistence/Sidebar while survivor and workspace/
+   session remain. Evidence: F434 cancellation matrix and
    `tests/mainwindow_teacher_sidebar_navigation_parity_tests.cpp:344-394`.
-2. Complete Export Classes JSON output. F432 stopped at picker cancellation;
-   reuse `ClassMngrMainWindowCloseFileParityTests`. Proposed scope: trigger the
-   real QAction, select a seeded assigned class in `ClassExportDialog`, choose a
-   temporary JSON output path, and verify the emitted file contains the selected
-   class. Evidence: F432's matrix and
-   `src/app/controllers/sidebar_controller_transfer.cpp:47-79`.
-3. Apply Import Classes through the real QAction/dialog using a create-only
-   package. Reuse `ClassMngrMainWindowCloseFileParityTests`; assert the imported
-   class is persisted after the dialog applies. F426 covered picker cancellation;
+2. **F440 - Complete Export Classes JSON output.** F432 stopped at picker
+   cancellation. Reuse `ClassMngrMainWindowCloseFileParityTests`; trigger the
+   real QAction, select a seeded assigned class, save to a temporary JSON path,
+   and verify the emitted file contains the selected class. Evidence: F432 matrix
+   and `src/app/controllers/sidebar_controller_transfer.cpp:47-79`.
+3. **F441 - Apply Import Classes through the real QAction/dialog.** Use a
+   create-only package in `ClassMngrMainWindowCloseFileParityTests`; apply it
+   and verify the imported class persists. F426 covered picker cancellation;
    `tests/sidebar_class_transfer_apply_parity_tests.cpp:124-188,332-361` covers
    lower-level handler apply.
-4. Apply Import Teachers through the actual QAction and dialog. Reuse
-   `ClassMngrMainWindowManageCampusesParityTests`; Browse to a prepared import
-   file, apply it, and verify the new teacher is persisted. F431 stopped before
-   Browse/apply; `ClassMngrTeacherImportUiApplyParityTests` covers UI apply
-   without the MainWindow QAction.
-5. Cover Delete Class through its real QAction. The closest target is
-   `ClassMngrMainWindowScheduleTestingClassesHandoffParityTests`; drive a
-   seeded target/survivor case through confirmation and verify only the target
-   is removed from persistence and Sidebar. Existing coverage is direct-controller
-   behavior and action state.
-6. Consider successful Open File while a profile is already open. The candidate
-   target is `ClassMngrMainWindowOpenFileParityTests`; its existing QAction case
-   cancels the picker, while F435 covers successful open from the no-database
-   banner, making this general open-success candidate potentially redundant.
-   If retained, bound it to opening a distinct profile and verifying replacement
-   of the open session/path. Exclude same-path open until idempotence/replacement
+4. **F442 - Apply Import Teachers through the actual QAction and dialog.** Reuse
+   `ClassMngrMainWindowManageCampusesParityTests`; Browse to a prepared file,
+   apply it, and verify the teacher persists. F431 stopped before Browse/apply;
+   `ClassMngrTeacherImportUiApplyParityTests` covers UI apply without the
+   MainWindow QAction.
+5. **F443 - Cover Delete Class through its real QAction.** The closest target is
+   `ClassMngrMainWindowScheduleTestingClassesHandoffParityTests`; confirm deletion
+   of a seeded target and verify only it is removed from persistence and Sidebar.
+   Existing coverage is direct-controller behavior and action state.
+6. **F444 - Consider successful Open File while a profile is already open.**
+   Target `ClassMngrMainWindowOpenFileParityTests` currently cancels the picker;
+   F435 covers successful open from the no-database banner, so this candidate may
+   be redundant. If retained, use a distinct profile and verify session/path
+   replacement. Same-path Open remains unselected until idempotence/replacement
    semantics are defined.
-7. Cover persistence through the MainWindow Save QAction. Reuse
+7. **F445 - Cover persistence through the MainWindow Save QAction.** Reuse
    `ClassMngrMainWindowSaveAsExportParityTests`; change a persisted profile,
    trigger the actual Save QAction, reopen it, and verify the saved value.
-   Current direct FileController coverage does not trigger the MainWindow action.
-8. Cover Save as the close-window choice. Reuse
-   `ClassMngrMainWindowExitConfirmationParityTests`; make a profile dirty, close
-   the window, choose Save, and verify persisted state and normal close. Existing
-   exit cases cover Cancel and Discard.
+   Existing direct FileController coverage does not trigger the MainWindow action.
+8. **F446 - Cover Save as the close-window choice.** Reuse
+   `ClassMngrMainWindowExitConfirmationParityTests`; dirty a profile, close the
+   window, choose Save, and verify persistence and normal close. Existing exit
+   cases cover Cancel and Discard.
 
 F285 successful New Teacher remains explicitly deferred. Batch 22 has fewer than
 ten candidates; this bounded discovery does not establish repository-wide
-exhaustion. See the [Phase 2 plan](03-Phase-2-Domain-Model-and-Application-Contracts.md)
-for the active batch and the individual progress entries for evidence.
+exhaustion. See the individual progress entries for evidence.
 
 ### F437 accepted in this changeset - 2026-10-09
 
@@ -15994,3 +15992,67 @@ No production or CMake changes were made, and the full suite was not run.
 F437 is accepted in this changeset and ready to commit. F438 is next after
 commit; Batch 21 remains active until F438 commits. Batch 22 remains inactive
 with eight provisional candidates.
+
+### F437 committed / F438 selected-current - 2026-10-09
+
+F437, “Phase2 - Cover Report worker terminal event-post failure (F437),” is
+committed as `f355a1aa65d63bbf18ddeda3e8cfa7ff76c985d7` on Qt-Rewrite (branch
+ahead 22). Its final worker/queue result and focused verification remain recorded
+above. F438 Optional typed occurrence IDs during repeat-series creation is
+selected/current. Read-only context discovery is underway; expected persistence
+semantics are unresolved, and no F438 matrix or implementation has started.
+Batch 21 remains active through F438; Batch 22 remains inactive with eight
+provisional candidates until F438 commits.
+
+### F438 acceptance matrix recorded before implementation - 2026-10-09
+
+`CalendarEventSaveRequest.id` denotes update, while series-create generates new
+rows. Therefore `CalendarEventSeriesCreateRequest::validate()` must reject any
+occurrence with a present `CalendarEventId` as nonrecoverable
+`Domain::ErrorCode::InvalidInput` before persistence.
+
+1. Add a focused integration case to
+   `tests/next_platform_application_services_calendar_event_port_tests.cpp` in
+   the existing `ClassMngrNextPlatformApplicationServicesCalendarEventPortTests`
+   target. Seed an existing row, then put its valid typed ID on a later
+   occurrence in a multi-occurrence series-create request.
+2. Assert request/port validation rejects the request as nonrecoverable
+   `InvalidInput` before persistence. Verify the existing row's fields and
+   `repeat_series_id` are unchanged and the total row count is unchanged.
+3. Preserve the existing ID-less series creation and generated-ID behavior.
+   Creating a standalone event as the first occurrence is a separate operation
+   and requires a separate contract.
+4. Build target `ClassMngrNextPlatformApplicationServicesCalendarEventPortTests`
+   and run exact filtered CTest
+   `^ClassMngrNextPlatformApplicationServicesCalendarEventPortTests$`.
+
+Evidence: the normal repeat planner clears seed IDs; calendar import's create-only
+validation rejects present IDs; series creation embeds the update-capable save
+shape, and the current adapter would update a matching row
+(`src/next/platform/application_services_calendar_event_series_create_port.h:268,304`;
+`tests/next_platform_application_services_calendar_event_port_tests.cpp:1419`).
+
+F438 is selected/current with this matrix recorded before implementation;
+implementation is pending. Batch 21 remains active through F438; Batch 22 remains
+inactive with eight provisional candidates until F438 commits.
+
+### F438 accepted in this changeset - 2026-10-09
+
+`CalendarEventSeriesCreateRequest::validate()` now rejects every present
+occurrence ID as nonrecoverable `Domain::ErrorCode::InvalidInput` before
+persistence. The integration case seeds an existing row, puts its valid typed ID
+on a later occurrence in a two-occurrence request, and verifies request and port
+rejection, the full row snapshot and row count unchanged. Existing ID-less series
+creation and generated-ID behavior remain valid.
+
+The executor and independent Tester each passed the target build, exact CTest
+`^ClassMngrNextPlatformApplicationServicesCalendarEventPortTests$` (1/1), direct
+target QtTest (55/55), and selected case (3/3), in Ninja Debug with the VS x64
+environment initialized. Final builds had no warnings; the full suite was not run.
+Only the application header and test changed beyond documentation:
+`src/next/application/calendar_event_series_create_port.h` and
+`tests/next_platform_application_services_calendar_event_port_tests.cpp`.
+
+F438 is accepted in this changeset and ready to commit. After this commit, Batch 21
+completes and Batch 22 activates with F439-F446 in the priority order recorded
+above. Until then, Batch 22 remains inactive and all eight candidates are provisional.

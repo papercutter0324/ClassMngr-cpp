@@ -15,9 +15,11 @@ inline constexpr std::size_t
     kCalendarEventSeriesCreateMaxRepeatSeriesIdLength = 128;
 inline constexpr std::size_t kCalendarEventSeriesCreateMaxOccurrences = 366;
 
-// A bounded, adapter-neutral request for creating one repeat series. Each
-// occurrence reuses the typed single-event save shape; the series identifier
-// is supplied once and applied by the platform adapter to every occurrence.
+// A bounded, adapter-neutral request for creating one repeat series.
+// Occurrences reuse the typed single-event save shape, but their identifiers
+// must be absent because this operation creates each row. In the generic save
+// shape, a present identifier selects an update. The series identifier is
+// supplied once and applied by the platform adapter to every occurrence.
 struct CalendarEventSeriesCreateRequest final
 {
     std::string repeatSeriesId;
@@ -103,6 +105,13 @@ validateCalendarEventSeriesCreateRequest(
 
     for (const CalendarEventSaveRequest& occurrence : request.occurrences)
     {
+        if (occurrence.id.has_value())
+        {
+            return invalid(
+                "Calendar repeat-series creation cannot update event IDs."
+                );
+        }
+
         const Domain::Result<void> occurrenceValidation =
             occurrence.validate();
         if (!occurrenceValidation)

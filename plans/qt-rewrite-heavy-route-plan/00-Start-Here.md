@@ -157,12 +157,13 @@ synchronization is committed (`f4bc5282`). F416 Document Catalog rendered
   log for its acceptance evidence. F435 Empty-state Open/New Profile button handoff through Banner, PageManager, and
   MainWindow is committed as 99856511; see the progress log for acceptance evidence.
   F436 Invalid UTF-8 document resource references is committed as c19e247f; see the progress log for acceptance evidence.
-  F437 Report worker event-post failure with a zero-capacity queue is accepted
-  in this changeset and ready to commit; see the progress log. F438 is next after
-  F437 commits. Batch 21 remains active through F438; Batch 22 is inactive with
-  eight provisional candidates. This bounded discovery does not establish
-  repository-wide exhaustion. Gates 1 and 2 remain Partial, with broader feature
-  migration, parity, and 96-class Release memory evidence still open.
+  F437 Report worker event-post failure with a zero-capacity queue is
+  committed as f355a1aa; see the progress log for acceptance evidence.
+  F438 Optional typed occurrence IDs during repeat-series creation is accepted
+  in this changeset and ready to commit. Batch 21 remains active until F438
+  commits, then completes. Batch 22 stays inactive with eight provisional
+  candidates until that commit; see the progress log for F439-F446 discovery. Gates 1 and 2 remain Partial,
+  with broader feature migration, parity, and 96-class Release memory evidence still open.
   See the
   [Phase 2 progress log](03-Phase-2-Progress-Log.md) for current scope and
   acceptance evidence.

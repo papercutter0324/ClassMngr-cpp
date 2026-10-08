@@ -2985,7 +2985,7 @@ The port now rejects malformed UTF-8 before path conversion and resource-pack ac
 
 ## 2026-10-09 - F436 committed; F437 selected
 
-F436 committed as c19e247f8066b546bfb71e9177e2413123309112 (Phase2 - Reject invalid UTF-8 document references (F436)); branch is ahead by 21. F437 Report worker event-post failure with a zero-capacity queue is accepted and ready to commit. F438 is next after commit; Batch 22 is discovered but inactive until Batch 21 completes.
+F436 committed as c19e247f8066b546bfb71e9177e2413123309112 (Phase2 - Reject invalid UTF-8 document references (F436)); branch is ahead by 21. F437 Report worker event-post failure with a zero-capacity queue is accepted and ready to commit. F438 Optional typed occurrence IDs during repeat-series creation is selected/current, with read-only context discovery underway. Batch 21 remains active through F438; Batch 22 remains inactive.
 
 
 ## 2026-10-09 - F437 report worker event-post failure matrix
@@ -2995,9 +2995,24 @@ A zero-capacity ReportJobEventQueue rejects the worker terminal Failed event wit
 
 ## 2026-10-09 - Batch 22 discovery at F437
 
-Two independent bounded reviews surfaced eight provisional MainWindow/worker integration candidates after F436, with evidence and targets recorded in the Phase 2 progress log. Batch 21 remains active (F437 accepted, F438 next); Batch 22 activates after F438 commits. Same-path open remains unselected pending contract definition; successful New Teacher remains deferred under F285.
+Two independent bounded reviews surfaced eight provisional MainWindow/worker integration candidates after F436, with evidence and targets recorded in the Phase 2 progress log. Batch 21 remains active with F438 current; Batch 22 activates after F438 commits. Same-path open remains unselected pending contract definition; successful New Teacher remains deferred under F285.
 
 
 ## 2026-10-09 - F437 report worker terminal-post rejection accepted
 
-An immediate report failure with zero queue capacity rejects the terminal Failed event as Conflict. Worker lastResult retains the post error, the worker exits and joins, the queue is empty, pump consumes zero, and coordinator remains Running because no event was delivered. Executor and independent Tester passed the final Ninja build, exact CTest 1/1, target QtTest 12/12, and selected case 3/3. VS FileTracker blocked rebuilds in the other tree; final Ninja build had no warnings. No production/CMake change or full-suite run. F437 is accepted and ready to commit; branch is ahead by 21.
+An immediate report failure with zero queue capacity rejects the terminal Failed event as Conflict. Worker lastResult retains the post error, the worker exits and joins, the queue is empty, pump consumes zero, and coordinator remains Running because no event was delivered. Executor and independent Tester passed the final Ninja build, exact CTest 1/1, target QtTest 12/12, and selected case 3/3. VS FileTracker blocked rebuilds in the other tree; final Ninja build had no warnings. No production/CMake change or full-suite run. F437 is committed as f355a1aa65d63bbf18ddeda3e8cfa7ff76c985d7; branch is ahead by 22.
+
+
+## 2026-10-09 - F437 committed; F438 selected
+
+F437 committed as f355a1aa65d63bbf18ddeda3e8cfa7ff76c985d7 (Phase2 - Cover Report worker terminal event-post failure (F437)); branch is ahead by 22. F438 Optional typed occurrence IDs during repeat-series creation is current; create-only acceptance matrix is recorded and implementation is pending. Batch 22 is discovered with eight provisional candidates and remains inactive until F438 commits.
+
+
+## 2026-10-09 - F438 occurrence-ID matrix
+
+A present CalendarEventId means update in the generic save request; repeat-series creation is create-only. The normal planner clears seed IDs, and calendar import rejects supplied IDs. F438 will reject every present occurrence ID as nonrecoverable InvalidInput before persistence, protecting an existing row and preventing partial series inserts. An integration test will seed a row, submit its ID on a later series occurrence, and verify the request fails, stored row remains unchanged, and count is stable; ID-less series creation stays covered. Target/CTest: ClassMngrNextPlatformApplicationServicesCalendarEventPortTests. Matrix recorded before implementation. Batch 22 remains inactive until F438 commits.
+
+
+## 2026-10-09 - F438 repeat-series create-only IDs accepted
+
+Series creation now rejects every occurrence with a supplied CalendarEventId as nonrecoverable InvalidInput during request validation, before persistence. A focused integration regression seeds a standalone event and supplies its ID on the second occurrence; both request and adapter return the validation error, all stored row fields and repeatSeriesId are unchanged, and row count remains one. Existing ID-less generated series creation remains covered. Executor and independent Tester passed the Ninja Debug target build, exact CTest 1/1, target QtTest 55/55, and selected case 3/3, with no compiler warnings. No full suite ran. F438 is accepted and ready to commit; after that commit Batch 21 completes and Batch 22 starts at F439 Delete Teacher confirmation success.
