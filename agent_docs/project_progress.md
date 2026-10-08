@@ -101,7 +101,7 @@ MainWindow, including the page-leave gate, is selected/current. Its two-outcome
 acceptance matrix is recorded in the Phase 2 progress log before implementation.
 The Cancel case preserves the dirty draft and blocks the import dialog; Discard
 reaches the import dialog, which the test cancels before file selection or apply.
-Executor and independent focused verification passed: CTest 1/1, target QtTest 6/6, and each new case 3/3. F431 is accepted and ready to commit; F432-F438 remain provisional.
+Executor and independent focused verification passed: CTest 1/1, target QtTest 6/6, and each new case 3/3. F431 is committed as 2ac08388. F432 Export Classes QAction through its selection dialog and JSON picker is selected/current. The QAction-to-picker-cancellation case is accepted: Executor and independent CTest passed 1/1, direct target QtTest 7/7, and the selected case 3/3. F432 is accepted and ready to commit. F433-F438 remain provisional.
 F385 is retired as a duplicate of F369.
 The seven user-reported MSVC build errors in
 the Teacher Profile Edit persistence target are fixed and independently
@@ -3129,5 +3129,4 @@ cancel the Print-mode Schedule dialog before native printer UI, then verify
 workspace state remains stable. Executor and independent focused
 verification passed. F430 is committed as aa7fca37. F431 Import Teachers
 through MainWindow, including the page-leave gate, is selected/current. Its
-Cancel and Discard cases are accepted with focused verification. F431 is
-accepted in this changeset and ready to commit; F432-F438 remain provisional.
+Cancel and Discard cases are accepted with focused verification. F431 is committed as 2ac08388. F432 Export Classes QAction through its selection dialog and JSON picker is selected/current; the QAction-to-picker-cancellation case passed focused verification. F432 is accepted in this changeset and ready to commit; F433 New Teacher menu QAction is next after commit, with F434-F438 provisional.

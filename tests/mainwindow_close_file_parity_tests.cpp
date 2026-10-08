@@ -3,11 +3,14 @@
 #include "core/application_services.h"
 #include "core/language_service.h"
 #include "core/settingsmanager.h"
+#include "data/repositories/class_info_repository.h"
 #include "data/database/database_session.h"
 #include "data/repositories/teacher_repository.h"
 #include "features/campus/ui/campus_dashboard_page.h"
+#include "features/classes/ui/class_export_dialog.h"
 #include "features/my_info/ui/my_workspace_page.h"
 #include "features/my_info/ui/personal_details_page.h"
+#include "domain/models/class_info.h"
 #include "fakes/fake_file_dialog_service.h"
 #include "fakes/fake_user_prompt_service.h"
 #include "ui/shared/dialogs/file_dialog_service.h"
@@ -24,6 +27,10 @@
 #include <QHash>
 #include <QLabel>
 #include <QLineEdit>
+#include <QListWidget>
+#include <QListWidgetItem>
+#include <QPushButton>
+#include <QSqlQuery>
 #include <QTemporaryDir>
 #include <QTimer>
 #include <QTreeWidget>
@@ -139,6 +146,167 @@ public:
         DialogServices::setFileDialogServiceForTesting(nullptr);
     }
 };
+
+int persistTeacher(
+    ApplicationServices& services,
+    Teacher& teacher
+    )
+{
+    const auto saved = services.databaseSession()
+        ->teacherRepository()
+        ->createTeacher(teacher);
+    if (!saved)
+    {
+        return -1;
+    }
+
+    teacher.id = *saved;
+    return *saved;
+}
+
+int classTableRowCount(DatabaseSession* session)
+{
+    if (!session)
+    {
+        return -1;
+    }
+
+    QSqlQuery query(session->database());
+    if (!query.exec(QStringLiteral("SELECT COUNT(*) FROM classes"))
+        || !query.next())
+    {
+        return -1;
+    }
+    return query.value(0).toInt();
+}
+
+struct ClassExportDialogObservation final
+{
+    bool dialogObserved = false;
+    bool listFound = false;
+    bool seededClassFound = false;
+    bool seededClassChecked = false;
+    bool exportButtonFound = false;
+    bool exportButtonEnabled = false;
+    bool exportButtonClicked = false;
+    bool timedOut = false;
+    bool fallbackRejectedModal = false;
+    QList<int> selectedClassIds;
+};
+
+void triggerExportClassesWithDialogObserver(
+    QWidget* timerContext,
+    QAction* exportClassesAction,
+    const int seededClassId,
+    ClassExportDialogObservation& observation
+    )
+{
+    QTimer poll;
+    poll.setInterval(10);
+    QTimer timeout;
+    timeout.setSingleShot(true);
+
+    QObject::connect(&poll, &QTimer::timeout, timerContext, [&]
+    {
+        auto* dialog = qobject_cast<ClassExportDialog*>(
+            QApplication::activeModalWidget());
+        if (!dialog)
+        {
+            for (QWidget* widget : QApplication::topLevelWidgets())
+            {
+                dialog = qobject_cast<ClassExportDialog*>(widget);
+                if (dialog)
+                {
+                    break;
+                }
+            }
+        }
+        if (!dialog)
+        {
+            return;
+        }
+
+        observation.dialogObserved = true;
+        auto* const classList = dialog->findChild<QListWidget*>(
+            QStringLiteral("classExportList")
+            );
+        observation.listFound = classList != nullptr;
+
+        QListWidgetItem* seededItem = nullptr;
+        if (classList)
+        {
+            for (int index = 0; index < classList->count(); ++index)
+            {
+                QListWidgetItem* const item = classList->item(index);
+                if (item->data(Qt::UserRole).toInt() == seededClassId)
+                {
+                    seededItem = item;
+                    break;
+                }
+            }
+        }
+        observation.seededClassFound = seededItem != nullptr;
+        if (seededItem)
+        {
+            seededItem->setCheckState(Qt::Checked);
+            observation.seededClassChecked =
+                seededItem->checkState() == Qt::Checked;
+        }
+
+        observation.selectedClassIds = dialog->selectedClassIds();
+        auto* const exportButton = dialog->findChild<QPushButton*>(
+            QStringLiteral("exportClassesButton")
+            );
+        observation.exportButtonFound = exportButton != nullptr;
+        observation.exportButtonEnabled =
+            exportButton && exportButton->isEnabled();
+
+        if (observation.seededClassFound
+            && observation.seededClassChecked
+            && observation.exportButtonEnabled
+            && observation.selectedClassIds == QList<int>{seededClassId})
+        {
+            observation.exportButtonClicked = true;
+            poll.stop();
+            exportButton->click();
+            return;
+        }
+
+        poll.stop();
+        dialog->reject();
+    });
+    QObject::connect(&timeout, &QTimer::timeout, timerContext, [&]
+    {
+        observation.timedOut = true;
+        poll.stop();
+
+        QDialog* dialog = qobject_cast<QDialog*>(
+            QApplication::activeModalWidget());
+        if (!dialog)
+        {
+            for (QWidget* widget : QApplication::topLevelWidgets())
+            {
+                auto* candidate = qobject_cast<QDialog*>(widget);
+                if (candidate && candidate->isModal() && candidate->isVisible())
+                {
+                    dialog = candidate;
+                    break;
+                }
+            }
+        }
+        if (dialog)
+        {
+            observation.fallbackRejectedModal = true;
+            dialog->reject();
+        }
+    });
+
+    poll.start();
+    timeout.start(5000);
+    exportClassesAction->trigger();
+    poll.stop();
+    timeout.stop();
+}
 }
 
 class MainWindowCloseFileParityTests final : public QObject
@@ -151,6 +319,7 @@ private slots:
     void closeFileSavePersistsDraftBeforeClosingWorkspace();
     void upcomingBirthdaysActionShowsEntriesFromAllStaffDirectories();
     void importClassesActionRequestsJsonAndCancellationIsSilent();
+    void exportClassesActionReachesJsonPickerAndCancellationIsSilent();
 
 private:
     QTemporaryDir m_settingsDirectory;
@@ -826,6 +995,217 @@ importClassesActionRequestsJsonAndCancellationIsSilent()
     QVERIFY(prompts.confirmations.isEmpty());
     QVERIFY(prompts.unsavedChangesConfirmations.isEmpty());
     QVERIFY(prompts.actionPrompts.isEmpty());
+    QVERIFY(QApplication::activeModalWidget() == nullptr);
+}
+
+void MainWindowCloseFileParityTests::
+exportClassesActionReachesJsonPickerAndCancellationIsSilent()
+{
+    QTemporaryDir workspaceRoot;
+    QVERIFY(workspaceRoot.isValid());
+
+    const QString workspacePath = QFileInfo(
+        workspaceRoot.filePath(QStringLiteral("export-classes-cancel.tps"))
+        ).absoluteFilePath();
+
+    ApplicationServices seedServices;
+    QVERIFY(seedServices.openDatabase(workspacePath));
+
+    Teacher teacher;
+    teacher.teacherKr = QStringLiteral("김수출");
+    teacher.teacherEn = QStringLiteral("F432 Export Teacher");
+    teacher.preferredRomanization = QStringLiteral("Export Teacher Roman");
+    teacher.preferredName = QStringLiteral("Export Teacher");
+    teacher.roomNumber = QStringLiteral("Room 32");
+    teacher.birthday = QStringLiteral("07-19");
+    teacher.phoneNumber = QStringLiteral("010-4321-8765");
+    teacher.wifiName = QStringLiteral("Export Teacher Wi-Fi");
+    teacher.wifiPassword = QStringLiteral("Export Teacher Wi-Fi password");
+    teacher.internetType = QStringLiteral("Both");
+    teacher.zoomId = QStringLiteral("export.teacher.zoom");
+    teacher.zoomPassword = QStringLiteral("Export Teacher Zoom password");
+    teacher.projectionType = QStringLiteral("HDMI");
+    teacher.notes = QStringLiteral("F432 assigned export fixture");
+    const int teacherId = persistTeacher(seedServices, teacher);
+    QVERIFY(teacherId > 0);
+
+    const auto createdClass = seedServices.classService()->create(
+        QStringLiteral("F432 Export target class")
+        );
+    QVERIFY(createdClass);
+    const int seededClassId = *createdClass;
+
+    ClassInfo seededClassInfo;
+    seededClassInfo.classId = seededClassId;
+    seededClassInfo.teacherId = teacherId;
+    seededClassInfo.classGrade = QStringLiteral("E4");
+    seededClassInfo.classLevel = QStringLiteral("Lyra");
+    seededClassInfo.classTimes = {
+        {
+            QStringLiteral("Monday"),
+            QStringLiteral("4:00 PM"),
+            QStringLiteral("5:00 PM")
+        }
+    };
+    QVERIFY(seedServices.databaseSession()
+        ->classInfoRepository()->saveClassInfo(seededClassInfo));
+    seedServices.closeDatabase();
+
+    FakeUserPromptService prompts;
+    FakeFileDialogService fileDialogs;
+    fileDialogs.scriptedSaveFiles.enqueue(std::nullopt);
+    const UserPromptServiceScope promptScope(&prompts);
+    const FileDialogServiceScope fileDialogScope(&fileDialogs);
+
+    LanguageService languageService;
+    QVERIFY(languageService.setLanguage(Language::English));
+
+    MainWindowStartupOptions startupOptions;
+    startupOptions.loadMostRecentDatabase = false;
+    startupOptions.initialDatabasePath = workspacePath;
+
+    MainWindow window(
+        [](const QString&) {},
+        false,
+        &languageService,
+        nullptr,
+        std::move(startupOptions)
+        );
+    window.show();
+    QApplication::processEvents();
+
+    ApplicationServices* const services = window.services();
+    QVERIFY(services);
+    QVERIFY(services->hasOpenDatabase());
+    QCOMPARE(services->currentDatabasePath(), workspacePath);
+    DatabaseSession* const activeSession = services->databaseSession();
+    QVERIFY(activeSession);
+
+    ClassService* const classService = services->classService();
+    QVERIFY(classService);
+    const auto classesBefore = classService->classes();
+    QVERIFY(classesBefore);
+    QCOMPARE(classesBefore->size(), 1);
+    QCOMPARE(classesBefore->constFirst().id, seededClassId);
+    QCOMPARE(
+        classesBefore->constFirst().name,
+        QStringLiteral("F432 Export target class")
+        );
+    const auto classInfoBefore = classService->classInfo(seededClassId);
+    QVERIFY(classInfoBefore);
+    QCOMPARE(classInfoBefore->teacherId, teacherId);
+    const int classTableRowsBefore = classTableRowCount(activeSession);
+    QVERIFY(classTableRowsBefore > 0);
+
+    PageManager* const pages = window.pageManager();
+    QVERIFY(pages);
+    QVERIFY(pages->isCurrentPage(PageType::MyWorkspace));
+    QWidget* const currentWidget = pages->currentWidget();
+    QVERIFY(currentWidget);
+    const QString currentPageIdentifier = pages->currentPageIdentifier();
+    QVERIFY(!currentPageIdentifier.isEmpty());
+
+    Sidebar* const sidebar = window.findChild<Sidebar*>();
+    QVERIFY(sidebar);
+    const QStringList sidebarKeys = sidebar->selectedKeys();
+    QCOMPARE(sidebarKeys, QStringList{QStringLiteral("my_workspace")});
+
+    QAction* const exportClassesAction = window.actions().exportClasses;
+    QVERIFY(exportClassesAction);
+    QVERIFY(exportClassesAction->isEnabled());
+
+    ClassExportDialogObservation dialogObservation;
+    triggerExportClassesWithDialogObserver(
+        &window,
+        exportClassesAction,
+        seededClassId,
+        dialogObservation
+        );
+
+    QVERIFY(dialogObservation.dialogObserved);
+    QVERIFY(dialogObservation.listFound);
+    QVERIFY(dialogObservation.seededClassFound);
+    QVERIFY(dialogObservation.seededClassChecked);
+    QVERIFY(dialogObservation.exportButtonFound);
+    QVERIFY(dialogObservation.exportButtonEnabled);
+    QVERIFY(dialogObservation.exportButtonClicked);
+    QVERIFY(!dialogObservation.timedOut);
+    QVERIFY(!dialogObservation.fallbackRejectedModal);
+    QCOMPARE(
+        dialogObservation.selectedClassIds,
+        (QList<int>{seededClassId})
+        );
+
+    QCOMPARE(fileDialogs.scriptedSaveFiles.size(), 0);
+    QCOMPARE(fileDialogs.saveFileRequests.size(), 1);
+    QCOMPARE(fileDialogs.openFileRequests.size(), 0);
+    QCOMPARE(fileDialogs.openFilesRequests.size(), 0);
+    QCOMPARE(fileDialogs.saveFileWithOptionsRequests.size(), 0);
+    QCOMPARE(fileDialogs.directoryRequests.size(), 0);
+    const SaveFileRequest request = fileDialogs.saveFileRequests.constFirst();
+    QCOMPARE(request.parent, static_cast<QWidget*>(sidebar));
+    QCOMPARE(request.title, QStringLiteral("Export Classes"));
+    QVERIFY(request.purpose == FileDialogPurpose::ClassTransfer);
+    QCOMPARE(
+        request.initialDirectory,
+        QFileInfo(workspacePath).absolutePath()
+        );
+    QCOMPARE(request.suggestedFileName, QStringLiteral("Classes.json"));
+    QCOMPARE(
+        request.nameFilters,
+        QStringList{QStringLiteral("JSON Files (*.json)")}
+        );
+    QCOMPARE(request.defaultSuffix, QStringLiteral("json"));
+    QVERIFY(fileDialogs.scriptedOpenFiles.isEmpty());
+    QVERIFY(fileDialogs.scriptedOpenFileLists.isEmpty());
+    QVERIFY(fileDialogs.scriptedSaveFileSelections.isEmpty());
+    QVERIFY(fileDialogs.scriptedDirectories.isEmpty());
+
+    QVERIFY(pages->isCurrentPage(PageType::MyWorkspace));
+    QCOMPARE(pages->currentWidget(), currentWidget);
+    QCOMPARE(pages->currentPageIdentifier(), currentPageIdentifier);
+    QCOMPARE(sidebar->selectedKeys(), sidebarKeys);
+    QVERIFY(services->hasOpenDatabase());
+    QCOMPARE(services->databaseSession(), activeSession);
+    QCOMPARE(services->currentDatabasePath(), workspacePath);
+    QVERIFY(exportClassesAction->isEnabled());
+
+    const auto classesAfter = classService->classes();
+    QVERIFY(classesAfter);
+    QCOMPARE(classesAfter->size(), classesBefore->size());
+    QCOMPARE(classesAfter->constFirst().id, classesBefore->constFirst().id);
+    QCOMPARE(classesAfter->constFirst().name, classesBefore->constFirst().name);
+    const auto classInfoAfter = classService->classInfo(seededClassId);
+    QVERIFY(classInfoAfter);
+    QCOMPARE(classInfoAfter->teacherId, classInfoBefore->teacherId);
+    QCOMPARE(classInfoAfter->classGrade, classInfoBefore->classGrade);
+    QCOMPARE(classInfoAfter->classLevel, classInfoBefore->classLevel);
+    QCOMPARE(classInfoAfter->classTimes.size(), classInfoBefore->classTimes.size());
+    for (int index = 0; index < classInfoBefore->classTimes.size(); ++index)
+    {
+        QCOMPARE(
+            classInfoAfter->classTimes.at(index).day,
+            classInfoBefore->classTimes.at(index).day
+            );
+        QCOMPARE(
+            classInfoAfter->classTimes.at(index).startTime,
+            classInfoBefore->classTimes.at(index).startTime
+            );
+        QCOMPARE(
+            classInfoAfter->classTimes.at(index).endTime,
+            classInfoBefore->classTimes.at(index).endTime
+            );
+    }
+    QCOMPARE(classTableRowCount(activeSession), classTableRowsBefore);
+
+    QVERIFY(prompts.messages.isEmpty());
+    QVERIFY(prompts.asynchronousMessages.isEmpty());
+    QVERIFY(prompts.confirmations.isEmpty());
+    QVERIFY(prompts.unsavedChangesConfirmations.isEmpty());
+    QVERIFY(prompts.actionPrompts.isEmpty());
+    QVERIFY(prompts.scriptedChoices.isEmpty());
+    QVERIFY(prompts.scriptedUnsavedChangesChoices.isEmpty());
+    QVERIFY(prompts.scriptedActionIds.isEmpty());
     QVERIFY(QApplication::activeModalWidget() == nullptr);
 }
 

@@ -15580,3 +15580,64 @@ Executor and independent Tester each built the correct `MainWindowManageCampuses
 Successful Browse, parsing, import apply, and import are outside this scope; `ClassMngrTeacherImportUiApplyParityTests` covers import apply.
 
 F431 is accepted in this changeset and ready to commit. F432 Export Classes QAction through dialog and JSON picker is next after the F431 commit.
+
+### F431 committed / F432 selected-current - 2026-10-09
+
+F431, “Phase2 - Cover Import Teachers QAction page-leave gate (F431),” is committed as `2ac08388cf8b28258cefd03fa42de25f43c45891` on Qt-Rewrite (branch ahead 16). Its acceptance matrix, implementation evidence, and focused verification are recorded above. F432 Export Classes QAction through its selection dialog and JSON picker is selected/current. Read-only context discovery is underway; no F432 matrix or implementation has started.
+
+### F432 acceptance matrix recorded before implementation - 2026-10-09
+
+This matrix is recorded before implementation. It covers the real MainWindow Export Classes QAction through selection and silent JSON picker cancellation; no file output is claimed.
+
+1. Extend `tests/mainwindow_close_file_parity_tests.cpp`, reusing its existing
+   MainWindow/temp-profile fixture and `MainWindowCloseFileParityTests` target; do
+   not change CMake. Before MainWindow startup, seed a temporary database with a
+   persisted teacher assigned to a class,
+   following `tests/mainwindow_teacher_sidebar_navigation_parity_tests.cpp:62-109,344-384`.
+   The assignment is required because startup refresh enables Export Classes from
+   teacher assignments. Assert `window.actions().exportClasses` exists and is enabled.
+2. Trigger that QAction. In a bounded timer, inspect the real `ClassExportDialog`,
+   find `classExportList`, locate the seeded class by its row UserRole ID, check it,
+   verify the selected IDs and enabled real `exportClassesButton`, then click that
+   button. On timeout, a fallback must reject any active modal `QDialog`.
+3. Explicitly enqueue `std::nullopt` in
+   `FakeFileDialogService::scriptedSaveFiles`; `saveFile()` consumes it and cancels
+   at the JSON picker. Assert exactly
+   one `SaveFileRequest` with parent Sidebar, title `Export Classes`, purpose
+   `ClassTransfer`, database-directory initial path, suggested name `Classes.json`,
+   filter `JSON Files (*.json)`, and suffix `json`. Assert every other picker
+   request collection is empty.
+4. Assert no prompt, warning, or information message appeared. Verify the same
+   current page/widget/identifier, database session/path, and Sidebar state. Do not
+   claim that a JSON file was created or a physical export succeeded.
+5. Build `MainWindowCloseFileParityTests`, run exact CTest filter
+   `^ClassMngrMainWindowCloseFileParityTests$`, and run direct target QtTest plus
+   the selected new case. Do not run the full suite.
+
+Evidence: the action is created in `src/ui/shared/actions/action_registry.cpp:691`,
+   placed in the menu at `src/app/menu_builder.cpp:1311`, and connected in
+   `src/app/controllers/sidebar_controller.cpp:44`. `SidebarController::exportClasses`
+   applies the current-page gate, runs `ClassExportDialog`, then passes selected
+   IDs to `saveClassExport` (`src/app/controllers/sidebar_controller_transfer.cpp:47-79`).
+   The dialog list object name, UserRole IDs, and checkable items are at
+   `src/features/classes/ui/class_export_dialog.cpp:130-132,253-259`; selected IDs
+   are at `:289-304`. Picker request and cancellation are at
+   `sidebar_controller_transfer.cpp:79+`; explicit null selection is used in
+   `tests/mainwindow_save_as_export_parity_tests.cpp:202-205`. Target registration
+   is `cmake/tests/pages_and_output.cmake:765-772`.
+
+Limit: this closes the QAction → selection-dialog → picker gap and verifies silent
+picker cancellation. Serialization and query output remain covered by existing
+lower-level query/codec tests.
+
+This matrix was recorded before implementation; F432 acceptance evidence follows.
+
+### F432 implementation and independent verification accepted - 2026-10-09
+
+Only `tests/mainwindow_close_file_parity_tests.cpp` changed; no production or CMake files changed. The test drives the real enabled Export Classes QAction, selects the seeded class by UserRole ID in the real `ClassExportDialog`, clicks the real Export button, and explicitly cancels the JSON picker with scripted `std::nullopt`. It verifies the exact `ClassTransfer` save request metadata and unchanged class identity/name, assigned teacher, grade, level, full classTimes (size/day/startTime/endTime), class count and row count, current workspace/session/path/Sidebar, and empty other picker and prompt queues. No JSON was written and no successful export is claimed.
+
+Executor and independent Tester each built `MainWindowCloseFileParityTests`, passed exact Debug CTest `^ClassMngrMainWindowCloseFileParityTests$` 1/1, direct target QtTest 7/7, and the selected case 3/3. The first independent pass found the full `classTimes` comparison missing; the executor added size/day/startTime/endTime assertions, then the independent recheck passed. The Tester rebuilt the updated source; its object timestamp is later than the source. The executor first hit FileTracker access denial, then passed with `/p:TrackFileAccess=false`; the independent standard rebuild passed without retry. Qt reported the missing system font directory and offscreen `propagateSizeHints`; no C++ warnings occurred. No focused process remains and no full suite ran.
+
+This slice stops at picker cancellation; serialization and query output remain covered by the existing lower-level query/codec tests.
+
+F432 is accepted in this changeset and ready to commit. F433 New Teacher menu QAction is next after the F432 commit.

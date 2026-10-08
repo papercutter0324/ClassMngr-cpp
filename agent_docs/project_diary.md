@@ -2895,3 +2895,24 @@ The real MainWindow Import Teachers QAction is the target. Reuse the existing My
 
 
 The real MainWindow QAction now has Cancel and Discard gate coverage. Cancel preserved a dirty Details draft and blocked TeacherImportDialog. Discard restored the persisted name and reached the actual dialog, which was rejected before file selection or apply. Executor and independent Tester each passed focused CTest 1/1, target QtTest 6/6, and each new case 3/3. No production/CMake change or full-suite run. F431 is accepted and ready to commit; F432 is next after commit.
+
+
+
+## 2026-10-09 - F431 committed / F432 selected
+
+
+F431 is committed as 2ac08388cf8b28258cefd03fa42de25f43c45891 with the six approved slice paths. Executor and independent focused CTest passed 1/1; target QtTest passed 6/6; each new case passed 3/3. F432 Export Classes QAction through its selection dialog and JSON picker is selected next in Batch 21.
+
+
+
+## 2026-10-09 - F432 acceptance matrix recorded
+
+
+F432 covers the real Export Classes QAction through the class selection dialog and JSON save picker. Seed an assigned teacher/class before MainWindow startup to enable the QAction, select the seeded ID in the actual dialog, then explicitly cancel the fake JSON picker. This verifies request metadata and silent cancellation without duplicating lower-level export serialization coverage. Implementation has not started.
+
+
+
+## 2026-10-09 - F432 Export Classes QAction accepted
+
+
+The real MainWindow Export Classes QAction opened the class selection dialog, selected the seeded teacher-assigned class, and reached the fake JSON save picker. Explicit null cancellation preserved the class/table and workspace state without writing a JSON file. Independent review found classTimes missing from the first snapshot assertions; the executor added size/day/startTime/endTime comparisons and final independent verification passed. Executor and independent focused CTest passed 1/1, target QtTest 7/7, selected case 3/3. No production/CMake change or full-suite run. F432 is accepted; F433 is next after commit.
