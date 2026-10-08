@@ -54,12 +54,16 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
   4b34a3b8a15a062377a245607228097fb43ee46b (branch ahead 31). F447 is committed as
   d5b130bd0558146185ebf4cdeab885bde6956fec (branch ahead 32); Batch 23 is complete. F448,
   “Phase2 - Cover New File QAction open-profile success (F448),” is committed as
-  f825a388db1897bc42cacf43c488850fa48a9de8 (branch ahead 33); Batch 24 is complete. Batch 25
-  is active with F449, “Cover Exit QAction close-confirmation handoff,” accepted in this
-  changeset and ready to commit. Its QAction→MainWindow::close() coverage passed focused build,
-  selected slot, full target QtTest, and CTest; evidence and environment notices are in the
-  progress log. F448 acceptance remains recorded there, including its blocked reviewer command.
-  F435 covers
+  f825a388db1897bc42cacf43c488850fa48a9de8 (branch ahead 33); Batch 24 is complete. F449,
+  “Phase2 - Cover Exit QAction close-confirmation handoff (F449),” is committed as
+  4e42a5a9cbe5c261fb78b2e39a98f81c93ef0372 (branch ahead 34); Batch 25 is complete. Batch 26
+  is active with F450, “Cover Undo QAction focused-editor dispatch,” accepted in this changeset
+  and ready to commit. Target build passed; selected case and full target each passed 3. Filtered
+  CTest ClassMngrMainWindowEditActionParityTests passed 1/1, and diff check was clean. Initial Ninja
+  regeneration/MSVC setup trouble was resolved with VS 18 VsDevCmd; one Qt font warning appeared.
+  F449 acceptance and focused verification remain in the progress log, including the Tester rerun
+  and line-ending notices. F448 acceptance remains recorded there,
+  including its blocked reviewer command. F435 covers
   no-database New Profile creation and picker metadata; F444 covers Open File replacement.
   F285 stays deferred. See the
   progress log. Gates 1 and 2 remain Partial.
@@ -87,12 +91,14 @@ log](03-Phase-2-Progress-Log.md).
   failure warning/no-navigation behavior; revisit after that behavior is
   clarified.
 
-#### Active batch: Batch 25
+#### Active batch: Batch 26
 
-1. F449 - Accepted in this changeset, ready to commit: Cover Exit QAction close-confirmation
-   handoff. The real QAction is wired through MainWindow::close(); selected slot passed 3/0, full
-   target QtTest 5, and filtered CTest 1/1. Target: ClassMngrMainWindowExitConfirmationParityTests.
-   F446 Save choice, OS shutdown, and multi-window behavior remain excluded.
+1. F450 - Accepted in this changeset, ready to commit: Cover Undo QAction focused-editor
+   dispatch. Target build passed; selected case and full target each passed 3. Filtered CTest
+   ClassMngrMainWindowEditActionParityTests passed 1/1; diff check was clean. Target:
+   ClassMngrMainWindowEditActionParityTests. The initial Ninja regeneration/MSVC setup issue was
+   resolved with VS 18 VsDevCmd; one Qt font-directory warning appeared. Matrix details and
+   exclusions are in the progress log.
 
 Batch 21 began with ten candidates after F428 and is complete; F429-F438 are
 committed. F438, “Phase2 - Reject existing IDs in repeat-series creation (F438),”
@@ -110,12 +116,14 @@ and focused verification remain recorded in the progress log. F446 is committed 
 verification remain recorded in the progress log. Batch 22 is complete. F447 is committed as d5b130bd0558146185ebf4cdeab885bde6956fec on Qt-Rewrite (branch ahead 32); its acceptance and
 verification remain recorded in the progress log. Batch 23 is complete. F448 is committed as
 f825a388db1897bc42cacf43c488850fa48a9de8 on Qt-Rewrite (branch ahead 33); its acceptance and
-focused verification remain recorded in the progress log. Batch 24 is complete. Batch 25 is active
-with F449, “Cover Exit QAction close-confirmation handoff,” accepted in this changeset and ready
-to commit; the action is connected in src/app/mainwindow.cpp and drives closeEvent. Focused
-build, selected slot 3/0, full target QtTest 5, and filtered CTest 1/1 passed; details are in
-the progress log. Target: ClassMngrMainWindowExitConfirmationParityTests. F435 covers opening
-from the no-database banner.
+focused verification remain recorded in the progress log. F449 is committed as
+4e42a5a9cbe5c261fb78b2e39a98f81c93ef0372 on Qt-Rewrite (branch ahead 34); Batch 25 is complete.
+Batch 26 is active with F450, “Cover Undo QAction focused-editor dispatch,” accepted in this
+changeset and ready to commit. The target build passed; selected case and full target each passed 3,
+and filtered CTest ClassMngrMainWindowEditActionParityTests passed 1/1. Initial Ninja regeneration/MSVC
+setup trouble was resolved with VS 18 VsDevCmd; one Qt font warning appeared. Details are in the
+progress log.
+F435 covers opening from the no-database banner.
 F444 covers replacing a distinct open profile and excludes same-path opening,
 dirty replacement choices, and
 load-failure behavior. F285 remains deferred. This bounded discovery does not establish

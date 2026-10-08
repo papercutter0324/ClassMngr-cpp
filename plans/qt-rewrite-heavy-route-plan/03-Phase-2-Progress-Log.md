@@ -16625,3 +16625,34 @@ initialized MSVC environment with the existing Ninja build tree. The independent
 target, slot, and CTest successfully; it reported the known Qt font-directory warning and LF-to-CRLF
 notices without whitespace errors. F449 is accepted in this changeset and ready to commit. Batch 25
 remains active until commit.
+
+### F449 committed - 2026-10-09
+
+F449, “Phase2 - Cover Exit QAction close-confirmation handoff (F449),” was committed as
+4e42a5a9cbe5c261fb78b2e39a98f81c93ef0372 on Qt-Rewrite (branch ahead 34). Batch 25 is
+complete. Batch 26 is active with F450 bounded QAction discovery underway; no candidate has been
+selected yet. F449’s acceptance matrix and focused verification remain recorded above.
+
+### F450 acceptance matrix recorded before implementation - 2026-10-09
+
+Candidate: “Cover Undo QAction focused-editor dispatch (F450).” Two independent reviews found no
+direct MainWindow Edit QAction test; existing service/component undo-stack tests do not cover the
+MainWindow action/focus dispatch. The source path is ActionRegistry::undo → Edit menu → MainWindow
+EditController wiring → EditController::undo()/dispatch() → focused QLineEdit::undo().
+
+In tests/mainwindow_edit_action_parity_tests.cpp, seed a file-backed profile with a baseline
+personal name and start MainWindow on My Workspace Details. Focus the name editor and change it
+using key events (Ctrl+A and QTest key typing; do not setText for the draft). Assert the real
+window.actions().undo is enabled, trigger it, and verify the editor returns to the baseline.
+
+Test class: MainWindowEditActionParityTests; build target and CTest:
+ClassMngrMainWindowEditActionParityTests (registration: cmake/tests/pages_and_output.cmake).
+Exclude Redo, clipboard actions, read-only widgets, and other editors. This matrix was recorded before implementation.
+
+### F450 acceptance update - 2026-10-09
+
+The initial Ninja regeneration/MSVC setup issue was resolved with VS 18 VsDevCmd, and the target
+build passed. The selected case and full target QtTest each passed 3. Filtered CTest
+ClassMngrMainWindowEditActionParityTests passed 1/1; git diff --check was clean. One Qt font-directory warning
+appeared. F450 is accepted in this changeset and ready to commit; Batch 26 remains active until
+commit.

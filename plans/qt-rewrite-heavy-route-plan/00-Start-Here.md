@@ -173,14 +173,17 @@ synchronization is committed (`f4bc5282`). F416 Document Catalog rendered
   4b34a3b8a15a062377a245607228097fb43ee46b (branch ahead 31). F447 is committed as
   d5b130bd0558146185ebf4cdeab885bde6956fec (branch ahead 32); Batch 23 is complete. F448,
   “Phase2 - Cover New File QAction open-profile success (F448),” is committed as
-  f825a388db1897bc42cacf43c488850fa48a9de8 (branch ahead 33); Batch 24 is complete. Batch 25
-  is active with F449, “Cover Exit QAction close-confirmation handoff,” accepted in this changeset
-  and ready to commit. The QAction is connected through MainWindow::close(); target
-  ClassMngrMainWindowExitConfirmationParityTests passed target build, selected slot 3/0, full
-  target QtTest 5, and filtered CTest 1/1; diff check was clean. Independent Tester reran the
-  focused checks successfully. The MSBuild FileTracker error required the existing Ninja tree; Qt
-  font and line-ending notices were reported without whitespace errors. F448 acceptance remains in
-  the progress log, including the reviewer command limitation. F435
+  f825a388db1897bc42cacf43c488850fa48a9de8 (branch ahead 33); Batch 24 is complete. F449,
+  “Phase2 - Cover Exit QAction close-confirmation handoff (F449),” is committed as
+  4e42a5a9cbe5c261fb78b2e39a98f81c93ef0372 (branch ahead 34); Batch 25 is complete. Batch 26
+  is active with F450, “Cover Undo QAction focused-editor dispatch,” accepted in this changeset
+  and ready to commit. Target build passed; selected case and full target each passed 3. Filtered
+  CTest ClassMngrMainWindowEditActionParityTests passed 1/1, and diff check was clean. Initial Ninja
+  regeneration/MSVC setup trouble was resolved with VS 18 VsDevCmd; one Qt font-directory warning
+  appeared. F449’s acceptance and focused verification remain in the progress log. The independent
+  Tester reran target, selected slot, and CTest successfully; reported line-ending notices had no
+  whitespace errors.
+  F448 acceptance remains in the progress log, including the reviewer command limitation. F435
   covers no-database New Profile creation and picker metadata; F444 covers Open File replacement.
   F285 stays deferred. See the
   progress log. Gates 1 and 2 remain Partial,
