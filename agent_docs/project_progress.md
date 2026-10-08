@@ -84,10 +84,14 @@ handoff updated the loaded Classes page before navigation. F424 Sidebar Add Clas
 executor and independent CTest passed 1/1 each, executor target QtTest
 passed 4/4, and independent focused case passed 3/3. F425 Upcoming Birthdays QAction is committed as 37588279; executor and
 independent CTest passed 1/1 each, executor target QtTest passed 5/5, and
-independent selected-case QtTest passed 3/3. F426 Class Transfer import QAction passed executor and independent focused
-CTest 1/1 each, executor direct target QtTest 6/6, and independent focused
-case 3/3. It is accepted in this changeset; remaining Batch 20 candidates
-stay provisional. F385 is retired as a duplicate of F369.
+independent selected-case QtTest passed 3/3. F426 Class Transfer import QAction is committed as
+249d57b11ce327923a6416d72e53e034b53cda3c. Executor and independent
+focused CTest passed 1/1 each; executor target QtTest passed 6/6 and
+independent selected-case QtTest passed 3/3. F427 Schedule Save As/PDF output is implemented and independently accepted,
+ready to commit. Executor and independent focused CTest passed 1/1 each;
+direct target QtTest passed 5/5 and the selected case passed 3/3. Batch 21
+reviews surfaced ten provisional candidates after F428; F429 is next.
+F385 is retired as a duplicate of F369.
 The seven user-reported MSVC build errors in
 the Teacher Profile Edit persistence target are fixed and independently
 verified in both the named target and all-target build, committed as
@@ -3102,5 +3106,7 @@ navigation-time modal or Qt warning. No production change was needed. The
 focused target built under VS 18 x64 Debug; executor and independent CTest runs
 passed 1/1. The executor build reported `LNK4075` (`/INCREMENTAL` ignored due
 to `/FORCE`); the independent build did not reproduce it. No full suite ran.
-F416 is accepted and included in this slice commit. At the user's request, work
-stops after this commit; F417-F421 remain queued.
+F416 was accepted and committed in its slice. Work paused after F416 at
+user request, then resumed through F426. Batch 20 is active; F426 is
+committed as 249d57b11ce327923a6416d72e53e034b53cda3c and F427 is implemented and independently accepted, ready to commit; verification and Batch 21 discovery are in the Phase 2 progress log. Batch 21 began when F427 started; two independent reviews surfaced ten
+provisional candidates after F428. See the Phase 2 progress log; F429 is next.

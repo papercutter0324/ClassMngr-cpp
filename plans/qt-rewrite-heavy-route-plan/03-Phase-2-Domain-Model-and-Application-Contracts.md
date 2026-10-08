@@ -40,39 +40,11 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-09
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F400 Open File action dirty-page gate and F401 Recent-workspace
-  menu selection/missing-path pruning are accepted and committed
-  (F401: `2121ce59`).
-  F402 MainWindow application-exit confirmation is committed (`9cbe39c9`);
-  F403 Dynamic Teacher Sidebar leaf navigation is committed (`28e881cd`),
-  completing Batch 17. Batch 18 is active.
-  F404 Save choice on Open/Close File actions is committed (`b445e102`).
-  F405 MainWindow Save As and Export action integration is committed
-  (`07dc5864`). F406 Manage Campuses QAction transition is committed
-  (`28b27998`).
-  F407 Schedule↔Testing Classes handoff is committed (`f639fbd3`); F408 Dynamic
-  Teacher Sidebar selection/state during retranslation is committed
-  (`9f92b78d`). F409 My Workspace Sidebar root producer-to-handler integration
-  is committed (`ee319df2`); F410 Classes Sidebar root integration is committed
-  (`14723973`). F411 Sub Prep Sidebar root integration is committed
-  (`3e5dbea4`); F412 Campus Sidebar root/section producer integration is
-  committed (`76661791`). F413 Initial Setup success
-  navigation is committed (`5d8a941a`), completing Batch 18. Batch 19 is active
-  with F414 Teacher profile save preserving the selected duplicate Sidebar
-  occurrence committed (`6fb39b2b`); F415 Campus Dashboard page-tab-to-Sidebar
-  synchronization is committed (`f4bc5282`). F416 Document Catalog rendered
-  Sidebar leaf through MainWindow/viewer is committed (`a4082f80`). Batch 19
-  resumed with F417 Staff Directory rendered leaf through MainWindow
-  independently accepted and committed (`d04d9bb0`). F418 Schedule Import through MainWindow apply and Sidebar refresh is committed;
-  F419 MainWindow output action state is committed. F420 Class/Schedule save signal refresh is committed as 4c10f0d1; F421 Useful
-  Links URL handoff is committed as 27c064e3. F422 Testing Classes edits refreshing both Schedule views is committed as
-  08f44ac6. F423 My Schedule display-mode handoff to Classes is committed as 34966439.
-  F424 Sidebar Add Class context-menu handler is committed as 3342963b.
-  F425 Upcoming Birthdays QAction is committed as 37588279.
-  F426 Class Transfer import QAction is accepted in this changeset.
-  See the Phase 2 progress log for acceptance and test evidence.
-  Gates 1 and 2
-  remain Partial; see the progress log for slice evidence.
+- Current note: Batch 20 is active. F422-F426 are committed; F427
+  Schedule Save As/PDF output is implemented and independently accepted,
+  ready to commit. F428 canceled profile Save As is the last Batch 20 candidate.
+  Batch 21 review is complete with ten provisional candidates after F428; see
+  the progress log. F429 is next after F428. Gates 1 and 2 remain Partial.
 
 ### Slice discovery batches
 
@@ -97,34 +69,23 @@ log](03-Phase-2-Progress-Log.md).
   failure warning/no-navigation behavior; revisit after that behavior is
   clarified.
 
-#### Active batch: Batch 19
+#### Active batch: Batch 20
 
-1. F414 - Committed (`6fb39b2b`): Teacher profile save preserves the selected
-   duplicate Sidebar occurrence.
-2. F415 - Committed (`f4bc5282`): Campus Dashboard page-tab-to-Sidebar
-   synchronization.
-3. F416 - Committed in this changeset: Document Catalog rendered Sidebar leaf
-   through MainWindow and viewer.
-4. F417 - Committed (`d04d9bb0`): Staff Directory rendered leaf through
-   MainWindow.
-5. F418 - Committed (`ea755736`): Schedule Import through MainWindow apply and
-   Sidebar refresh.
-6. F419 - Committed (`e2ad222b`): MainWindow Print/Save Current Page As
-   action capability and enabled state.
-7. F420 - Committed (4c10f0d1): Class/Schedule save signal to Sidebar
-   action-state refresh.
-8. F421 - Committed (27c064e3): Useful Links URL handoff.
-9. F422 - Committed (08f44ac6): Testing Classes edits refreshing Schedule views.
-10. F423 - Committed (34966439): My Schedule display-mode handoff to Classes.
-11. F424 - Committed (3342963b): Sidebar Add Class context-menu handler.
-12. F425 - Committed (37588279): Upcoming Birthdays QAction.
-13. F426 - Accepted in this changeset: Class Transfer import QAction.
+1. F422 - Committed (08f44ac6): Testing Classes edits refreshing Schedule views.
+2. F423 - Committed (34966439): My Schedule display-mode handoff to Classes.
+3. F424 - Committed (3342963b): Sidebar Add Class context-menu handler.
+4. F425 - Committed (37588279): Upcoming Birthdays QAction.
+5. F426 - Committed (249d57b1): Class Transfer import QAction.
+6. F427 - Accepted in this changeset: Schedule Save As/PDF output through MainWindow.
+7. F428 - Provisional: canceled database profile Save As through MainWindow.
 
-Batch 20 read-only reviews surfaced additional provisional candidates after F421; see the Phase 2 progress log.
+Batch 20 read-only reviews have surfaced provisional candidates after F421; see the Phase 2 progress log.
+Batch 21 reviews surfaced ten provisional candidates after F428; F429 is next.
 
-Batch 19 resumed after F416. F417 is committed as `d04d9bb0`, F418 as
-`ea755736`, F419 as `e2ad222b`, and F420 is committed as 4c10f0d1, F421 as 27c064e3, and F422 Testing Classes edits refreshing Schedule views is committed as 08f44ac6.
-F423 My Schedule display-mode handoff to Classes is committed as 34966439.
+Batch 19 completed with F421. Batch 20 was activated from the bounded review
+after F421; F422-F426 are committed and F427 is accepted, ready to commit.
+Batch 21 discovery began with F427, the second-last known Batch 20 candidate,
+and is complete with ten provisional candidates after F428.
 
 Batch 18 was discovered at F402 start from two independent bounded reviews and
 activated after F403 committed as `28e881cd`; it completed when F413 committed

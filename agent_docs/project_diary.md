@@ -2830,3 +2830,15 @@ F425 is committed as 37588279. The ActionRegistry Upcoming Birthdays QAction dis
 ## 2026-10-09 - F426 Class Transfer import QAction accepted
 
 The real Import Classes QAction reaches the file-dialog boundary with the ClassTransfer purpose, active database directory, and JSON filter. A scripted cancellation leaves the workspace unchanged. Existing controller tests already cover successful apply, so this slice isolates the missing QAction-to-controller connection. Independent focused CTest and QtTest passed; no production code changed.
+
+## 2026-10-09 - F426 committed / F427 selected
+
+F426 Class Transfer import QAction is committed as 249d57b11ce327923a6416d72e53e034b53cda3c. Executor and independent exact CTest passed 1/1 each; executor target QtTest passed 6/6 and independent selected-case QtTest passed 3/3. The real action reached the scoped file-dialog boundary and cancellation preserved workspace state. F427 was the current Schedule page Save As/PDF action, distinct from the
+FileController profile Save As action that writes .tps files. Batch 21 reviews
+started with F427 and surfaced ten provisional candidates after F428; F429 is next.
+
+## 2026-10-09 - F427 Schedule Save As/PDF accepted
+
+The real MainWindow saveCurrentPageAs QAction opens SchedulePrintDialog and the test clicks its Save As button. The fake picker request and real PDF are verified, including QPdfDocument validity and stable page/session/path/prompt state. Executor and independent focused CTest both passed 1/1; direct QtTest passed 5/5 and the selected case passed 3/3. Independent CMake regeneration took 220.7 seconds, then the exact Debug CTest passed; no focused process remains. No production change or full-suite run was needed. F427 is accepted and ready to commit.
+
+Batch 21 was discovered while F427, the second-last known Batch 20 candidate, was current. Two bounded reviews surfaced ten provisional candidates after F428; F429 is recommended next once Batch 20 completes.
