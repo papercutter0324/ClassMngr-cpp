@@ -40,12 +40,12 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-08
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F399 Close File parity is verified and ready to commit; the
-  focused Ninja/MSVC/Qt 6.12 target build succeeded and filtered CTest passed
-  1/1 (0.46 s). The standard Visual Studio tree remains blocked before compile
-  in ZERO_CHECK by MSBuild FileTracker initialization. F400 is next queued in
-  Batch 17 after the F399 commit and is not current. Gates 1 and 2 remain
-  Partial; see the Phase 2 progress log for acceptance and discovery evidence.
+- Current note: F400 Open File action dirty-page gate is accepted and ready
+  to commit; focused Ninja fallback CTest passed 1/1 (0.35 s). The standard
+  Visual Studio tree remains blocked before compilation by the current-shell
+  FileTracker/CommonApplicationData environment failure. F401 is next queued
+  after the F400 commit and is not current; F402 starts Batch 18 discovery.
+  Gates 1 and 2 remain Partial; see the Phase 2 progress log for evidence.
 
 ### Slice discovery batches
 
@@ -72,10 +72,10 @@ log](03-Phase-2-Progress-Log.md).
 
 #### Active batch: Batch 17
 
-1. F400 - Next queued after the F399 commit: Open File action dirty-page gate.
-2. F401 - Recent-workspace menu selection and missing-path pruning.
-3. F402 - MainWindow application-exit confirmation.
-4. F403 - Dynamic Teacher Sidebar leaf navigation.
+1. F401 - Next queued after the F400 commit: Recent-workspace menu selection
+   and missing-path pruning.
+2. F402 - MainWindow application-exit confirmation.
+3. F403 - Dynamic Teacher Sidebar leaf navigation.
 
 Batch 17 was discovered at F397 start through independent route-producer and
 application-boundary reviews. It is bounded to the reviewed Phase 2 plan and

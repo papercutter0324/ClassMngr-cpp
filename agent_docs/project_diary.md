@@ -2439,3 +2439,13 @@ their initial state when checking Cancel, while requiring core file actions to
 start enabled and all database-backed actions to be disabled after close. The
 production route already met the contract, so this slice added test coverage
 only.
+
+## 2026-10-08 - F400 Open File dirty-page gate accepted
+
+The production Open File action asks the current page before opening the file
+chooser. Page Cancel returns before the chooser and preserves the dirty draft.
+Discard reloads the saved page data before the chooser; if the chooser is then
+cancelled, the current workspace remains open and the discarded draft stays
+discarded. The real MainWindow QAction test covers both decision boundaries with
+injected prompt and file-dialog services. This records current behavior and
+does not claim legacy parity for draft restoration after chooser cancellation.

@@ -2857,30 +2857,31 @@ unsynced and unaudited in this checkout; local Batch 11 evidence still ends at
 F366. No remote commits or acceptance results are inferred.
 
 
-## Current Position — 2026-10-08 (F399 accepted; F400 queued)
+## Current Position — 2026-10-08 (F400 accepted; F401 queued)
 
 Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial. F386-F393
 are accepted as recorded in the Phase 2 progress log. The seven Teacher Profile
 Edit MSVC diagnostics were fixed in commit `0b128601`; the named target and
 standard all-target build passed earlier, and the exact affected persistence
-target rebuilt successfully at current HEAD with no reported errors or
-LNK4006 warnings.
+target rebuilt successfully with no reported errors or LNK4006 warnings.
 
 F394 Classes landing open-session confirmation parity, F395 Campus Dashboard
 typed save boundary, F396 Staff Directory open-session dirty-exit parity, and
 F397 MainWindow Document Catalog retranslation are accepted. F398 same-path
-workspace-open parity is accepted; its focused build and CTest passed 3/3.
+workspace-open parity is accepted with focused CTest 3/3. F399 Close File
+no-workspace parity is accepted and committed as `f21db8c3`; its real-window
+test passed 1/1 in the focused Ninja/MSVC/Qt 6.12 fallback tree.
 
-F399 is accepted with no production changes. A real MainWindow test covers the
-Close File action with a dirty My Workspace draft: Cancel preserves the active
-workspace, page, Sidebar, and action state; Discard closes the workspace and
-selects Campus Dashboard Information with database-backed sections hidden and
-actions disabled. The focused Ninja/MSVC/Qt 6.12 target built and filtered
-CTest passed 1/1. The standard Visual Studio tree's earlier focused attempts
-remained blocked before source compilation in ZERO_CHECK by MSBuild FileTracker
-CommonApplicationData path resolution in the current shell; no system settings
-were changed. No full suite ran.
+F400 Open File dirty-page gate parity is accepted with no production changes.
+The real QAction test verifies page Cancel preserves the dirty draft and skips
+the chooser; Discard reaches the chooser, and chooser cancellation preserves
+the same session with the saved profile restored. The focused Ninja/MSVC/Qt
+6.12 target built and filtered CTest passed 1/1. Configure reported optional
+missing WrapVulkanHeaders and nonfatal object-path-length warnings; no LNK4006.
+The standard Visual Studio tree remains blocked before source compilation in
+ZERO_CHECK by the current shell's FileTracker CommonApplicationData path
+resolution; no system settings changed. No full suite ran.
 
-Batch 16 is complete. Batch 17 remains active; F400 is next queued after the
-F399 commit, followed by F401-F403. The next batch discovery is due when F402
-starts. The user-modified `latest_session_work.md` remains untouched.
+Batch 17 remains active; F401 is next queued after F400 commit, followed by
+F402-F403. The next batch discovery is due when F402 starts. The user-modified
+`latest_session_work.md` remains untouched.

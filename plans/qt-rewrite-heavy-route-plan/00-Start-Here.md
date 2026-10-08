@@ -115,9 +115,12 @@ Document Catalog retranslation integration are accepted with focused
 evidence. F398 FileController same-path workspace-open parity is accepted:
 the focused coordinator, FileController, and MainWindow targets built, CTest
 passed 3/3, and all three direct QtTest cases passed. Batch 16 is complete.
-Batch 17 is active with F399 Close File action and no-workspace UI transition
-selected/current; F400-F403 follow in order. See the Phase 2 progress log for
-acceptance and bounded discovery evidence.
+F399 Close File action parity is accepted and committed. Batch 17 is active
+with F400 Open File action dirty-page gate selected/current. F400 acceptance
+scope is Cancel preserving the workspace without opening the chooser, and
+Discard reaching the chooser while chooser cancellation retains the active
+session. F401-F403 follow in order; begin Batch 18 discovery when F402 starts.
+See the Phase 2 progress log for F399 acceptance and bounded discovery evidence.
   Gates 1 and 2 remain Partial, with broader feature
   migration, parity, and 96-class Release memory evidence still open.
   See the

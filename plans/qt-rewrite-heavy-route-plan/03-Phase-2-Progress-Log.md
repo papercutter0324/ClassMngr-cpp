@@ -14006,3 +14006,30 @@ source compilation.
 Batch 17 remains active. F399 is ready to commit; F400 is next queued after that
 commit and is not current. Phase 2 remains In Progress/Open; Gates 1 and 2
 remain Partial.
+
+### F400 accepted / ready to commit - 2026-10-08
+
+F400 is accepted with no production changes.
+`ClassMngrMainWindowOpenFileParityTests` covers the real Open File QAction
+with a dirty My Workspace Details draft. Its slot
+`openFileCancelPreservesDraftAndChooserCancelKeepsWorkspace()` verifies
+Page Cancel makes zero chooser requests and preserves the draft and session;
+Discard makes one Teacher Profile chooser request, and nullopt keeps the same
+session, restores the persisted profile, and leaves the page clean. Draft-discard
+behavior is not characterized as legacy parity.
+
+The focused target built in `build/windows-x64-debug-ninja` with x64 MSVC and
+Qt 6.12; filtered CTest passed 1/1 (0.35 s). Configure reported optional
+`WrapVulkanHeaders` missing and used Qt's bundled zlib. Three nonfatal
+object-file path-length warnings were 152, 159, and 153 characters, all below
+the 250-character limit. No LNK4006 warnings appeared. No full suite ran.
+
+The standard `build/windows-x64-debug` Visual Studio tree remains blocked
+before compilation by the current-shell MSBuild FileTracker/CommonApplicationData
+environment failure. No registry or system changes were made. This remains a
+validation limitation.
+
+Batch 17 remains active. F400 is accepted and ready to commit; F401 is next
+queued after that commit and is not current. F402 and F403 follow. Batch 18
+discovery is due when F402 starts. Phase 2 remains In Progress/Open; Gates 1
+and 2 remain Partial.
