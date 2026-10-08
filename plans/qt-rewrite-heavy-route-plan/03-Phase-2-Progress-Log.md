@@ -13272,18 +13272,84 @@ the independent run's hash matches after normalizing Windows CRLF line endings.
 
 The executor build reported MSVC LNK4075 (`/INCREMENTAL` ignored due to
 `/FORCE`); the independent rebuild passed without warnings. No build errors
-were observed in this focused verification, and no full suite ran. The user
-then supplied seven errors from
+were observed in this focused verification, and no full suite ran. F390 was
+selected after the separate build-error repair commit, recorded below.
+F391-F393 remain inactive until Batch 13 completes. Phase 2 remains In
+Progress/Open; Gates 1 and 2 remain Partial.
+
+### Teacher Profile Edit build errors fixed - 2026-10-08
+
+The user reported seven MSVC errors in
 `ClassMngrNextPlatformApplicationServicesTeacherProfileEditPersistencePortTests.vcxproj`.
-The fix removes the duplicate integer-backed `TeacherId`, uses the shared
+The repair removes a duplicate integer-backed `TeacherId`, uses the shared
 string-backed v2 ID, and validates/converts it at the UI and platform edges
 before calling the legacy integer repository. Two existing test sources were
-updated to the shared ID contract. The initial repair exposed six stale test
-compile errors; after those updates, both the named target and
-`cmake --build --preset windows-x64-debug --parallel 4` passed with zero build
-errors. An independent Tester repeated both builds successfully and captured
-zero error lines. `git diff --check` passed. No test binary or CTest was run;
-LNK4006 warnings are excluded per the user's instruction. The repair commit is
-pending. F390 remains provisional and unstarted until that commit; F391-F393
-remain inactive until Batch 13 completes. Phase 2 remains In Progress/Open;
-Gates 1 and 2 remain Partial.
+updated to the shared ID contract. The first repair exposed six stale test
+compile errors; after those updates, the named target and
+`cmake --build --preset windows-x64-debug --parallel 4` passed. Independent
+build-only verification repeated both commands with exit code 0 and zero build
+error lines. `git diff --check` passed. No test binary or CTest was run;
+LNK4006 warnings are excluded per the user's instruction. Commit
+`0b1286011783107047b70493b8a69fdaa5d9a792` records the fix. F390 began only
+after this commit.
+
+### F390 selected/current / acceptance matrix established - 2026-10-08
+
+F390, Sub Prep route gate parity, is selected/current in Batch 13. Its
+immediate pre-slice source is build-error repair commit `0b128601` (`Phase2 -
+Fix Teacher Profile Edit typed ID build errors`). The matrix crosses the two
+distinct supported controller destinations with open and closed database
+sessions: the current sidebar root route and the controller-supported Notes
+route.
+
+1. For each route with the database closed, dispatch from dirty Teacher Info
+   with exact unsaved notes. Assert the current page pointer, teacher, notes,
+   and dirty state remain unchanged; there is no prompt, leave confirmation,
+   or Qt warning; and Sub Prep is neither created nor current.
+2. For each route with the database open, choose Discard. Assert exactly one
+   leave confirmation, Sub Prep is current, and its exact section is selected:
+   `sub_prep_important` for the root route and `sub_prep_notes` for Notes. Assert
+   no warning or unrelated prompt.
+
+The root case uses the current sidebar-generated `Page` payload for
+`sub_prep`. The Notes case uses a synthetic `Page` payload with keys
+`sub_prep/sub_prep_notes`; the current sidebar has no Notes child, but the
+controller explicitly supports this destination. Comments maps to the same
+Notes section and is excluded as a duplicate destination. The controller's
+`Root`-type branch is excluded because the current sidebar defines Sub Prep as
+a `Page`. Sidebar highlight, cancel behavior, repeated navigation, and the
+broader Sub Prep use-case/output-memory contracts are out of scope. Use a
+focused offscreen Qt test with canonical per-case observations. F390
+acceptance and Batch 14 activation are recorded below.
+
+### F390 accepted - 2026-10-08
+
+F390 is accepted on pre-slice source commit `0b128601` (`Phase2 - Fix Teacher
+Profile Edit typed ID build errors`). It adds
+`tests/sub_prep_route_gate_parity_tests.cpp` and registers
+`ClassMngrSubPrepRouteGateParityTests` with its offscreen resources in
+`cmake/tests/pages_and_output.cmake`; no production files changed.
+
+The focused incremental build of `ClassMngrSubPrepRouteGateParityTests` passed
+in the standard `build/windows-x64-debug` tree, and focused CTest passed 1/1
+with `-C Debug`. Independent direct offscreen QtTest exited 0 and verified all
+four JSONL rows. Closed-session sidebar-root and synthetic-Notes rows preserved
+the same dirty Teacher Info page, identity, and exact notes, with no Sub Prep
+creation, prompt, leave confirmation, or Qt warning. Open-session rows each
+discarded after exactly one leave confirmation and selected
+`sub_prep_important` or `sub_prep_notes`; no unrelated prompt or warning was
+reported. The executor and independent tester produced byte-identical
+transcripts at
+`build/windows-x64-debug/f390_sub_prep_route_gate_parity.jsonl`, SHA-256
+`FF1CCDB4ED143C6B4955254A115EA7DF3AFD000878D5EE6CBAEF4F67F3689179`.
+`git diff --check` passed. No full suite ran.
+
+### Batch 14 activated / F391 selected - 2026-10-08
+
+F390 completes Batch 13. Batch 14 is now active with F391, Teacher route
+closed-session leave-confirmation gate parity, selected/current. F392 Campus
+Directory root/section navigation confirmation and destination parity and
+F393 Document Catalog route confirmation and PDF Viewer navigation parity
+remain provisional and ordered after F391. The acceptance matrix will be
+established from bounded source and test discovery before implementation.
+Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial.

@@ -95,18 +95,18 @@
   accepted in this checkout.
   Batch 6 is complete; Batch 7 (F337-F338), Batch 8 (F339-F344), Batch 9
   (F345-F353), and Batch 10 (F354-F361) are complete. Batch 11 (F362-F371)
-  and Batch 12 (F372-F381) are complete; Batch 13 (F382-F390) is active with
-  F382-F384 and F386-F389 accepted, including the independently verified F386
+  and Batch 12 (F372-F381) are complete; Batch 13 (F382-F390) is complete with
+  F382-F384 and F386-F390 accepted, including the independently verified F386
   Staff Directory closed-session navigation parity. F385 is retired as a
   duplicate of F369. F387 Calendar Preferences event-reset parity and F388
   Class Details/Notes/student Evaluation route availability parity are
-  accepted; F389 My Info route navigation gate parity is also accepted, and
-  F390 Sub Prep route gate parity remains provisional. The seven user-reported
-  MSVC build errors in the Teacher Profile Edit persistence target are fixed;
+  accepted; F389 My Info route navigation gate parity and F390 Sub Prep route
+  gate parity are also accepted. The seven user-reported MSVC build errors in
+  the Teacher Profile Edit persistence target are fixed in commit `0b128601`;
   the target and standard all-target builds passed independently with zero
-  errors, and the separate repair commit is pending before F390 begins. Batch
-  14 bounded discovery is recorded in the Phase 2 progress log. See that log
-  for F389 acceptance evidence and its F388 source pin.
+  errors. Batch 14 is active with F391 Teacher route closed-session gate parity
+  selected/current; F392-F393 remain provisional. See the Phase 2 progress log
+  for F390 acceptance, build-error repair, and bounded discovery evidence.
   Gates 1 and 2 remain Partial, with broader feature
   migration, parity, and 96-class Release memory evidence still open.
   See the

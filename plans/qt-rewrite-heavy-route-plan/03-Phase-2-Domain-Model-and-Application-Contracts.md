@@ -40,14 +40,12 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-08
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F389 My Info route navigation gate parity is accepted on
-  pre-slice source `f877acac`; its eight-case route/session matrix passed
-  independent focused verification. The seven user-reported MSVC build errors
-  in the Teacher Profile Edit persistence target are fixed and independently
-  verified by the target and standard all-target builds; the separate repair
-  commit is pending. F390 Sub Prep route gate parity remains provisional and
-  unstarted until that commit. Batch 14 bounded discovery is recorded in the
-  progress log and becomes active after Batch 13. Gates 1 and 2 remain Partial.
+- Current note: F390 Sub Prep route gate parity is accepted on pre-slice source
+  `0b128601`; its four-case route/session matrix passed independent focused
+  verification. Batch 13 is complete. Batch 14 is active with F391 Teacher
+  route closed-session gate parity selected/current; its candidate list and
+  bounded discovery are recorded in the progress log. Gates 1 and 2 remain
+  Partial.
 
 ### Slice discovery batches
 
@@ -72,12 +70,15 @@ log](03-Phase-2-Progress-Log.md).
   failure warning/no-navigation behavior; revisit after that behavior is
   clarified.
 
-#### Active batch: Batch 13
+#### Active batch: Batch 14
 
-1. F390 - Provisional, not selected: Sub Prep route gate parity.
+1. F391 - Selected/current: Teacher route closed-session leave-confirmation gate parity.
+2. F392 - Provisional, not selected: Campus Directory root/section navigation confirmation and destination parity.
+3. F393 - Provisional, not selected: Document Catalog route confirmation and PDF Viewer navigation parity.
 
-The two independent scans were bounded to Calendar and NavigationController
-parity review; they do not establish repository-wide discovery exhaustion.
+The two independent scans were bounded to remaining NavigationController route
+parity and existing controller tests; they do not establish repository-wide
+discovery exhaustion.
 No other slices were found.
 
 ## Objective

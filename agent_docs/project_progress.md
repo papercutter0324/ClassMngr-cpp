@@ -1,7 +1,7 @@
 # Project Progress
 
 Active deployment plan: Qt Rewrite Phase 2 — Domain Model and Application Contracts.
-Current deployment: phase2_resume_20260929 (paused after F384 acceptance commit). Route: Heavy.
+Current deployment: `phase2_f387_resume_20261008`. Route: Heavy.
 Phase 1 hosted acceptance is closed on commit `0883009d`; the local branch adds
 continued Phase 2 domain and application-contract work on top of that verified
 baseline.
@@ -56,13 +56,12 @@ the staged-package report probe passed. Cross-platform CI and local
 ### Current state - 2026-10-08
 
 Phase 2 remains In Progress/Open under deployment
-`phase2_f387_resume_20261008`. F371, F382-F384, and F386-F389 are accepted;
-Batches 11 and 12 are complete and Batch 13 remains active with F390
-provisional. F385 is retired as a duplicate of F369. The seven user-reported
-MSVC build errors in the Teacher Profile Edit persistence target are fixed and
-independently verified in both the named target and all-target build; the
-separate repair commit is pending before F390 begins. Gates 1 and 2 remain
-Partial. The current slice and
+`phase2_f387_resume_20261008`. F371, F382-F384, and F386-F390 are accepted;
+Batches 11-13 are complete and Batch 14 is active with F391 selected/current.
+F385 is retired as a duplicate of F369. The seven
+user-reported MSVC build errors in the Teacher Profile Edit persistence target
+are fixed and independently verified in both the named target and all-target
+build, committed as `0b128601`. Gates 1 and 2 remain Partial. The current slice and
 detailed acceptance records are maintained in the [Phase 2 plan](../plans/qt-rewrite-heavy-route-plan/03-Phase-2-Domain-Model-and-Application-Contracts.md)
 and [Phase 2 progress log](../plans/qt-rewrite-heavy-route-plan/03-Phase-2-Progress-Log.md).
 ### Earlier Phase 2 detail - 2026-09-26
@@ -2858,7 +2857,7 @@ unsynced and unaudited in this checkout; local Batch 11 evidence still ends at
 F366. No remote commits or acceptance results are inferred.
 
 
-## Current Position — 2026-10-08 (F389 accepted)
+## Current Position — 2026-10-08 (F391 selected)
 
 Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial. F386 is
 accepted at `b3f9105e7c9160b2d862683d324f9dfd3cffc91d`, and F387 Calendar
@@ -2875,7 +2874,10 @@ the dirty Teacher Info page with no prompt, warning, new page, or activation;
 open rows select the exact tab after one discard confirmation. Transcript
 SHA-256: `4d725cd4826c2913dbe97d49b1d10a4173d09c5f9a488a7634119096fe7e8c7d`.
 The seven user-supplied MSVC build errors in the Teacher Profile Edit
-persistence target are fixed. The named target and standard all-target build
-passed independently with zero errors; no tests ran. The separate repair
-commit is pending, and F390 remains provisional until it completes. Bounded
-Batch 14 discovery found F391-F393, recorded in the Phase 2 progress log.
+persistence target are fixed in commit `0b128601`; the named target and
+standard all-target build passed independent build-only verification with zero
+errors. F390 Sub Prep route gate parity is accepted on that source; focused
+CTest passed 1/1 and direct QtTest verified four route/session rows. Batch 13
+is complete. Batch 14 is active with F391 Teacher route closed-session gate
+parity selected/current; F392-F393 remain provisional. The bounded discovery
+record is in the Phase 2 progress log.

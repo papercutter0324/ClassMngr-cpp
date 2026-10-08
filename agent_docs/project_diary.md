@@ -2274,10 +2274,26 @@ canonical transcript SHA-256 is
 `4d725cd4826c2913dbe97d49b1d10a4173d09c5f9a488a7634119096fe7e8c7d`.
 
 The user supplied seven MSVC errors in the Teacher Profile Edit persistence
-target. The fix uses the shared string-backed `TeacherId` and keeps canonical
-positive integer conversion at the platform and UI boundaries. It updates two
-existing test sources after the first production repair exposed stale integer
-ID usage. The named target and standard all-target build passed independent
-build-only verification with zero errors; no test binaries or CTest ran. The
-repair commit is pending, and F390 remains unstarted until it is committed.
-Batch 14 remains inactive until Batch 13 is complete.
+target. Commit `0b128601` uses the shared string-backed `TeacherId` and keeps
+canonical positive integer conversion at the platform and UI boundaries. It
+updates two existing test sources after the first production repair exposed
+stale integer ID usage. The named target and standard all-target build passed
+independent build-only verification with zero errors; no test binaries or CTest
+ran. After the fix commit, F390 Sub Prep route gate parity became the current
+slice. Its matrix covers the sidebar root and supported Notes destination with
+open and closed sessions; Batch 14 remained inactive until Batch 13 completed.
+
+
+## 2026-10-08 - F390 Sub Prep route gate accepted
+
+F390 is accepted on the Teacher Profile Edit build-repair commit. The focused
+Sub Prep route test passed 1/1 CTest, and independent direct QtTest verified
+four route/session rows with byte-identical JSONL transcripts. Closed-session
+root and Notes routes preserve dirty Teacher Info without creating Sub Prep or
+prompting. Open routes select Important Information or Notes after one Discard
+confirmation. The canonical transcript SHA-256 is
+`FF1CCDB4ED143C6B4955254A115EA7DF3AFD000878D5EE6CBAEF4F67F3689179`.
+
+F390 completes Batch 13. Batch 14 is active with F391 Teacher route closed-
+session leave-confirmation gate parity selected/current; F392 Campus Directory
+and F393 Document Catalog/PDF Viewer route parity remain provisional.
