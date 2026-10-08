@@ -1,11 +1,13 @@
 #include "campus_dashboard_page.h"
 #include "ui/shared/dialogs/user_prompt_service.h"
 
+#include "features/campus/data/campus_json_repository.h"
 #include "ui/shared/widgets/text_fit_push_button.h"
 
 #include "campus_dashboard_page_detail.h"
 #include "features/campus/ui/campus_map_preview.h"
 #include "next/platform/calendar_page_campus_directory_query_adapter.h"
+#include "next/platform/campus_dashboard_campus_repository_adapter.h"
 #include "next/platform/settings_manager_last_selected_campus_port.h"
 #include "ui/shared/constants/gui_constants.h"
 #include "ui/shared/utils/widget_sizing.h"
@@ -25,6 +27,7 @@
 #include <QTimer>
 #include <QUrl>
 
+#include <string>
 #include <utility>
 
 namespace Detail = CampusDashboardPageDetail;
@@ -331,7 +334,10 @@ void CampusDashboardPage::handleNewCampus()
 
     if (m_dirty)
     {
-        saveCurrentCampus();
+        if (!saveCurrentCampus())
+        {
+            return;
+        }
     }
 
     CampusInfo campus;
@@ -518,12 +524,31 @@ bool CampusDashboardPage::saveCurrentCampus()
         return false;
     }
 
-    const Status saved =
-        m_repository.saveCampus(updated);
+    const auto snapshot =
+        ClassMngr::Next::Platform::CampusDashboardCampusRepositoryAdapter::
+            snapshotFromCampusInfo(updated);
+    if (!snapshot.has_value())
+    {
+        setStatus(tr("Campus data could not be prepared."));
+        return false;
+    }
+
+    if (!m_campusSavePort)
+    {
+        setStatus(tr("Campus data could not be saved."));
+        return false;
+    }
+
+    const ClassMngr::Next::Domain::Result<void> saved =
+        m_campusSavePort->saveCampus(snapshot.value());
 
     if (!saved)
     {
-        setStatus(saved.error());
+        const std::string& message = saved.error().message;
+        setStatus(QString::fromUtf8(
+            message.data(),
+            static_cast<qsizetype>(message.size())
+            ));
         return false;
     }
 

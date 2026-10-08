@@ -73,6 +73,37 @@ add_test(
     COMMAND ClassMngrNextApplicationCampusDashboardSelectedCampusReadQueryTests
 )
 
+# Keep the Campus Dashboard save-port value contract independent of Qt.
+add_executable(
+    ClassMngrNextApplicationCampusDashboardCampusSavePortTests
+    tests/next_application_campus_dashboard_campus_save_port_tests.cpp
+)
+target_compile_features(
+    ClassMngrNextApplicationCampusDashboardCampusSavePortTests
+    PRIVATE
+        cxx_std_23
+)
+set_target_properties(
+    ClassMngrNextApplicationCampusDashboardCampusSavePortTests
+    PROPERTIES
+        AUTOMOC OFF
+        AUTOUIC OFF
+        AUTORCC OFF
+)
+set_property(
+    TARGET ClassMngrNextApplicationCampusDashboardCampusSavePortTests
+    PROPERTY CLASSMNGR_STANDALONE_CPP_TEST TRUE
+)
+target_link_libraries(
+    ClassMngrNextApplicationCampusDashboardCampusSavePortTests
+    PRIVATE
+        ClassMngrNext::Application
+)
+add_test(
+    NAME ClassMngrNextApplicationCampusDashboardCampusSavePortTests
+    COMMAND ClassMngrNextApplicationCampusDashboardCampusSavePortTests
+)
+
 # Keep roster-print class-info ID and repository-result policy independent of Qt.
 add_executable(
     ClassMngrNextApplicationRosterPrintClassInfoReadQueryTests
@@ -2869,6 +2900,15 @@ classmngr_add_qt_test(
     NAME NextPlatformCampusDashboardSelectedCampusReadAdapter
     SOURCES
         tests/next_platform_campus_dashboard_selected_campus_read_adapter_tests.cpp
+    LIBRARIES
+        ClassMngrNext::Platform
+        Qt6::Test
+)
+
+classmngr_add_qt_test(
+    NAME NextPlatformCampusDashboardCampusRepositoryAdapter
+    SOURCES
+        tests/next_platform_campus_dashboard_campus_repository_adapter_tests.cpp
     LIBRARIES
         ClassMngrNext::Platform
         Qt6::Test

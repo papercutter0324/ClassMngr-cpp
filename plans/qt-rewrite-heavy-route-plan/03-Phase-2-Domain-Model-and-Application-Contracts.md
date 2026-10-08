@@ -40,11 +40,12 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-08
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F394 Classes landing open-session confirmation parity is
-  accepted. Batch 15 remains active with F394 accepted and F395 Campus
-  Dashboard typed save boundary selected/current. Batch 16 was discovered at
-  F394 start and activates after F395. See the Phase 2 progress log for
-  acceptance and discovery evidence. Gates 1 and 2 remain Partial.
+- Current note: F395 Campus Dashboard typed save boundary is accepted. Batch 15
+  is complete; Batch 16 is active with F396 Staff Directory open-session
+  dirty-exit parity selected/current, followed by F397 MainWindow Document
+  Catalog retranslation and F398 same-path workspace-open parity. See the
+  Phase 2 progress log for acceptance and discovery evidence. Gates 1 and 2
+  remain Partial.
 
 ### Slice discovery batches
 
@@ -69,15 +70,16 @@ log](03-Phase-2-Progress-Log.md).
   failure warning/no-navigation behavior; revisit after that behavior is
   clarified.
 
-#### Active batch: Batch 15
+#### Active batch: Batch 16
 
-1. F394 - Accepted: Classes landing open-session confirmation parity.
-2. F395 - Selected/current: Campus Dashboard typed save boundary.
+1. F396 - Selected/current: Staff Directory dirty-exit parity with an open session.
+2. F397 - Provisional: MainWindow Document Catalog retranslation integration.
+3. F398 - Provisional: FileController same-path workspace-open parity.
 
-Batch 15 was bounded to remaining application navigation transitions and
-selected-campus write boundaries, compared against current source, tests, and
-prior accepted slices; it does not establish repository-wide discovery
-exhaustion.
+Batch 16 was discovered at F394 start through independent route-producer and
+application-boundary reviews. It is bounded to the reviewed Phase 2 plan and
+migration map, progress history, and candidate source/tests; it does not
+establish repository-wide discovery exhaustion.
 No other slices were found.
 
 

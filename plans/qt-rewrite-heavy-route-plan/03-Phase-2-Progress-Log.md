@@ -13649,3 +13649,86 @@ directory and `:/assets/icons/keyboard_light.svg`; bundled fonts were found and
 loaded, and the warnings did not fail either case. No production files changed
 and no full suite ran. Batch 15 advances to F395 Campus Dashboard typed save
 boundary; Batch 16 remains queued until F395 completes.
+
+### F395 selected/current / acceptance matrix established - 2026-10-08
+
+F395 moves Campus Dashboard writes from the page-owned
+`CampusJsonRepository` call through a Qt-free Application save port and a
+Platform adapter. Rename the existing read projection to the neutral owning
+`CampusDashboardCampusSnapshot` value and use that value for both the existing
+selected-campus read and the new write contract so the same field set is not
+duplicated. Keep page-level field collection and normalization at the Qt feature
+boundary; a separate pass-through use case is not needed.
+
+The existing save path preserves validation/normalization, manual and automatic
+save timing, visible status, and dirty state on direct write failure. Review
+also found that changing campuses and creating a new campus continue after a
+failed save, risking loss of the dirty form. F395 includes stopping those two
+transitions on write failure, retaining the current campus selection and dirty
+form, and preserving the existing error feedback.
+
+The focused matrix is:
+
+1. Verify the Qt-free Application write request carries an owning
+   `CampusDashboardCampusSnapshot` with no Qt objects. The existing
+   selected-campus query and the writer use this shared value without changing
+   read semantics.
+2. Through the Platform adapter, save and reload a representative campus with
+   address, transit, map, and housing fields. Verify every independently
+   persisted field round-trips and retain the repository's existing `image_main`
+   rule: it follows the first map path when paths exist, and otherwise preserves
+   the standalone image value. Map repository failure to a Technical result
+   with the same user-visible message; do not change the codec schema.
+3. In admin/manual mode, verify edits remain unsaved until the Save Campus
+   action. A successful typed write persists the normalized form, updates the
+   selector/status, and clears dirty state. Retain the existing save-before-read
+   behavior when changing campuses.
+4. In automatic mode, retain the existing 800 ms debounce and verify one typed
+   write, persisted values, updated status/selector, and cleared dirty state.
+5. On manual and automatic write failure, verify error feedback and dirty-state
+   retention. On failure before a campus switch or New Campus operation, verify
+   the current selector/form remain active, the requested campus is not loaded,
+   and no new-campuses draft is created.
+
+Use the standard `build/windows-x64-debug` tree and focused Application,
+Platform-adapter, and Campus Dashboard page tests; do not run the full suite.
+Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial.
+
+### F395 accepted - 2026-10-08
+
+F395 is accepted on pre-slice commit `7c9dde8b` (F394). The existing
+selected-campus read projection is now the neutral Qt-free
+`CampusDashboardCampusSnapshot`, shared with the Application save port. A
+Platform adapter maps the typed value to `CampusInfo` and delegates persistence
+to `CampusJsonRepository`; the page injects this writer and no longer writes
+campus JSON directly. Page-level normalization and the 800 ms automatic-save
+debounce remain in the Qt feature. Failed writes retain the dirty form; failed
+save-before-switch and save-before-New-Campus paths stop before changing the
+current selection or draft. The new Application and Platform headers were
+registered with their existing source owners without dependency changes.
+
+The adapter round-trip preserves every independently persisted field and the
+existing codec rule that `image_main` follows the first map image when map paths
+exist, or preserves standalone `imageMain` when none exist. Repository errors
+map to a Technical result with their exact user-visible message.
+
+The incremental standard-tree build of
+`ClassMngrNextApplicationCampusDashboardCampusSavePortTests`,
+`ClassMngrNextPlatformCampusDashboardCampusRepositoryAdapterTests`, and
+`ClassMngrCampusDashboardPageTests` passed. Focused CTest for those three
+targets passed 3/3. Independent direct invocations passed for the Application
+contract; Platform round-trip, standalone-image, and error-mapping cases; all
+six added page cases; and the existing save-before-read regression. The page
+cases ran offscreen. `git diff --check` passed, and both added test sources have
+final newlines with no trailing whitespace. CMake printed nonblocking missing
+`WrapVulkanHeaders` notices and used its bundled-zlib fallback; the Qt tests
+reported no runtime warnings. The initial source-ownership validation failure
+was corrected before successful regeneration/build. No full suite ran.
+
+### Batch 15 completed / Batch 16 activated - 2026-10-08
+
+F395 completes Batch 15. Batch 16 is active with F396 Staff Directory
+open-session dirty-exit parity selected/current, F397 MainWindow Document
+Catalog retranslation integration provisional, and F398 FileController
+same-path workspace-open parity provisional. Batch 16 discovery was recorded
+when F394 began. Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial.

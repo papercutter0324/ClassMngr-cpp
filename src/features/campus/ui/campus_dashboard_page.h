@@ -4,12 +4,14 @@
 #include "core/result.h"
 #include "ui/shared/pages/basepage.h"
 #include "domain/models/campus_info.h"
-#include "features/campus/data/campus_json_repository.h"
+#include "next/application/campus_dashboard_campus_save_port.h"
 #include "next/application/campus_dashboard_selected_campus_read_port.h"
 
 #include <QList>
 #include <QPointer>
 #include <QString>
+
+#include <memory>
 
 class QComboBox;
 class QCheckBox;
@@ -33,6 +35,10 @@ struct CampusDashboardPageDependencies final
     // adapter is constructed from the same directory when this is null.
     const ClassMngr::Next::Application::CampusDashboardSelectedCampusReadPort*
         selectedCampusReadPort = nullptr;
+    // Optional, non-owning save dependency. Production builds an adapter from
+    // campusDirectory when this is null.
+    const ClassMngr::Next::Application::CampusDashboardCampusSavePort*
+        campusSavePort = nullptr;
 };
 
 class CampusDashboardPage : public BasePage
@@ -331,9 +337,13 @@ private:
     int m_currentCampusComboIndex = -1;
 
     QString m_campusDirectory;
-    CampusJsonRepository m_repository;
     const ClassMngr::Next::Application::CampusDashboardSelectedCampusReadPort*
         m_selectedCampusReadPort = nullptr;
+    std::unique_ptr<
+        ClassMngr::Next::Application::CampusDashboardCampusSavePort
+        > m_ownedCampusSavePort;
+    const ClassMngr::Next::Application::CampusDashboardCampusSavePort*
+        m_campusSavePort = nullptr;
     CampusInfo m_currentCampus;
 
     QTimer* m_saveTimer = nullptr;

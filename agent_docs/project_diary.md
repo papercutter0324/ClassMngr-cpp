@@ -35,6 +35,10 @@
   closed-session and clean-landing cases. Verify Cancel preserves the complete
   form and page state, and verify Discard against persisted data so UI reset is
   not mistaken for discarding the edit.
+- For a typed Campus Dashboard writer, reuse the owning Qt-free campus snapshot
+  across read and save contracts, preserve the repository codec's canonical
+  `image_main` rule, and stop selection/create transitions when a save fails so
+  dirty edits remain reachable.
 - Feature-scoped assets are produced as standalone RCC resource packs. Do not
   assume every asset belongs in the main executable bundle; follow
   cmake/resources.cmake when changing packaging.
