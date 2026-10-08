@@ -16,6 +16,8 @@
 
 #include <QAction>
 #include <QApplication>
+#include <QDialog>
+#include <QDialogButtonBox>
 #include <QComboBox>
 #include <QFileInfo>
 #include <QJsonObject>
@@ -24,6 +26,7 @@
 #include <QRect>
 #include <QSignalSpy>
 #include <QTemporaryDir>
+#include <QTimer>
 #include <QTextEdit>
 #include <QTreeWidget>
 #include <QTreeWidgetItem>
@@ -324,6 +327,7 @@ private slots:
     void manualTeacherSavePreservesSelectedDuplicateOccurrence();
     void refreshedTeacherLeavesDispatchCancelAndDiscard();
     void languageSwitchPreservesDuplicateTeacherOccurrenceAndDraft();
+    void deleteTeacherActionChooserCancelPreservesWorkspace();
 
 private:
     QTemporaryDir m_settingsDirectory;
@@ -1073,6 +1077,373 @@ languageSwitchPreservesDuplicateTeacherOccurrenceAndDraft()
             QVERIFY(teacherPage->hasUnsavedChanges());
         }
     }
+}
+
+void MainWindowTeacherSidebarNavigationParityTests::
+deleteTeacherActionChooserCancelPreservesWorkspace()
+{
+    QTemporaryDir workspaceRoot;
+    QVERIFY(workspaceRoot.isValid());
+
+    const QString workspacePath = QFileInfo(
+        workspaceRoot.filePath(
+            QStringLiteral("teacher-delete-action-cancel.tps")
+            )
+        ).absoluteFilePath();
+
+    ApplicationServices seedServices;
+    QVERIFY(seedServices.openDatabase(workspacePath));
+
+    Teacher targetTeacher = teacherFixture(
+        QStringLiteral("박삭제대상"),
+        QStringLiteral("F434 Target English"),
+        QStringLiteral("F434 Target Display"),
+        QStringLiteral("F434 target profile")
+        );
+    Teacher survivorTeacher = teacherFixture(
+        QStringLiteral("박삭제생존"),
+        QStringLiteral("F434 Survivor English"),
+        QStringLiteral("F434 Survivor Display"),
+        QStringLiteral("F434 survivor profile")
+        );
+    QVERIFY(persistTeacher(seedServices, targetTeacher) > 0);
+    QVERIFY(persistTeacher(seedServices, survivorTeacher) > 0);
+    const QJsonObject targetSnapshot = teacherSnapshot(targetTeacher);
+    const QJsonObject survivorSnapshot = teacherSnapshot(survivorTeacher);
+    seedServices.closeDatabase();
+
+    LanguageService languageService;
+    QVERIFY(languageService.setLanguage(Language::English));
+
+    MainWindowStartupOptions startupOptions;
+    startupOptions.loadMostRecentDatabase = false;
+    startupOptions.initialDatabasePath = workspacePath;
+
+    FakeUserPromptService prompts;
+    const UserPromptServiceScope promptScope(&prompts);
+
+    MainWindow window(
+        [](const QString&) {},
+        false,
+        &languageService,
+        nullptr,
+        std::move(startupOptions)
+        );
+    window.show();
+    QApplication::processEvents();
+    QVERIFY(window.isVisible());
+
+    ApplicationServices* const services = window.services();
+    QVERIFY(services);
+    QVERIFY(services->hasOpenDatabase());
+    QCOMPARE(services->currentDatabasePath(), workspacePath);
+    DatabaseSession* const activeSession = services->databaseSession();
+    QVERIFY(activeSession);
+
+    PageManager* const pages = window.pageManager();
+    QVERIFY(pages);
+    QVERIFY(pages->isCurrentPage(PageType::MyWorkspace));
+    QWidget* const centralWidget = window.centralWidget();
+    QWidget* const currentPageWidget = pages->currentWidget();
+    QVERIFY(centralWidget);
+    QVERIFY(currentPageWidget);
+    const QString pageIdentifier = pages->currentPageIdentifier();
+    const int instantiatedPageCount = pages->instantiatedPageCount();
+    const bool teacherInfoPageInstantiated =
+        pages->isPageInstantiated(PageType::TeacherInfo);
+
+    Sidebar* const sidebar = window.findChild<Sidebar*>();
+    QVERIFY(sidebar);
+    QTreeWidget* const tree = sidebar->findChild<QTreeWidget*>(
+        QStringLiteral("sidebarTree")
+        );
+    QVERIFY(tree);
+
+    const QStringList allTeacherKeys{
+        QStringLiteral("campus_staff"),
+        QStringLiteral("teachers_all_korean"),
+        QStringLiteral("teacher")
+    };
+    QTreeWidgetItem* const targetLeaf = findTeacherLeaf(
+        tree,
+        allTeacherKeys,
+        targetTeacher.id
+        );
+    QTreeWidgetItem* const survivorLeaf = findTeacherLeaf(
+        tree,
+        allTeacherKeys,
+        survivorTeacher.id
+        );
+    QVERIFY(targetLeaf);
+    QVERIFY(survivorLeaf);
+    QCOMPARE(targetLeaf->text(0), targetTeacher.preferredDisplayName());
+    QCOMPARE(survivorLeaf->text(0), survivorTeacher.preferredDisplayName());
+
+    QCOMPARE(sidebar->getSelectedTeacherId(), -1);
+    const QStringList selectedKeys = sidebar->selectedKeys();
+    QTreeWidgetItem* const currentSidebarItem = tree->currentItem();
+    const QString currentSidebarItemKey = currentSidebarItem
+        ? currentSidebarItem->data(0, Qt::UserRole + 4).toString()
+        : QString();
+    const int currentSidebarItemType = currentSidebarItem
+        ? currentSidebarItem->data(0, Qt::UserRole).toInt()
+        : -1;
+
+    QAction* const deleteTeacherAction = window.actions().deleteTeacher;
+    QVERIFY(deleteTeacherAction);
+    QVERIFY(deleteTeacherAction->isEnabled());
+
+    QSignalSpy routeSpy(sidebar, &Sidebar::itemSelected);
+    QVERIFY(routeSpy.isValid());
+
+    prompts.scriptedChoices.enqueue(PromptChoice::Rejected);
+    bool selectionDialogSeen = false;
+    bool selectionDialogAccepted = false;
+    int selectedChooserTeacherId = -1;
+    QString selectionDialogFailure;
+
+    QTimer::singleShot(
+        0,
+        &window,
+        [&]()
+        {
+            QDialog* dialog = qobject_cast<QDialog*>(
+                QApplication::activeModalWidget()
+                );
+            if (!dialog)
+            {
+                for (QWidget* widget : QApplication::topLevelWidgets())
+                {
+                    auto* const candidate = qobject_cast<QDialog*>(widget);
+                    if (candidate
+                        && candidate->objectName()
+                            == QStringLiteral("sidebarRecordSelectionDialog"))
+                    {
+                        dialog = candidate;
+                        break;
+                    }
+                }
+            }
+
+            if (!dialog)
+            {
+                selectionDialogFailure = QStringLiteral(
+                    "The teacher selection dialog did not open."
+                    );
+                return;
+            }
+
+            if (dialog->objectName()
+                != QStringLiteral("sidebarRecordSelectionDialog"))
+            {
+                selectionDialogFailure = QStringLiteral(
+                    "An unexpected modal dialog opened."
+                    );
+                dialog->reject();
+                return;
+            }
+
+            selectionDialogSeen = true;
+            auto* const combo = dialog->findChild<QComboBox*>(
+                QStringLiteral("sidebarRecordSelectionCombo")
+                );
+            auto* const buttons = dialog->findChild<QDialogButtonBox*>(
+                QStringLiteral("sidebarRecordSelectionButtonBox")
+                );
+            auto* const acceptButton = buttons
+                ? buttons->button(QDialogButtonBox::Ok)
+                : nullptr;
+
+            const auto rejectWithFailure =
+                [&](const QString& failure)
+                {
+                    selectionDialogFailure = failure;
+                    dialog->reject();
+                };
+
+            if (!combo || !acceptButton)
+            {
+                rejectWithFailure(QStringLiteral(
+                    "The teacher selection dialog controls were missing."
+                    ));
+                return;
+            }
+
+            const int targetIndex = combo->findData(targetTeacher.id);
+            if (targetIndex < 0)
+            {
+                rejectWithFailure(QStringLiteral(
+                    "The target teacher was missing from the selection dialog."
+                    ));
+                return;
+            }
+
+            combo->setCurrentIndex(targetIndex);
+            selectedChooserTeacherId = combo->currentData().toInt();
+            if (selectedChooserTeacherId != targetTeacher.id
+                || !acceptButton->isEnabled())
+            {
+                rejectWithFailure(QStringLiteral(
+                    "The target teacher could not be selected for deletion."
+                    ));
+                return;
+            }
+
+            QObject::connect(
+                dialog,
+                &QDialog::accepted,
+                &window,
+                [&selectionDialogAccepted]
+                {
+                    selectionDialogAccepted = true;
+                }
+                );
+            acceptButton->click();
+        }
+        );
+
+    QTimer::singleShot(
+        5000,
+        &window,
+        [&]()
+        {
+            if (selectionDialogAccepted)
+            {
+                return;
+            }
+
+            selectionDialogFailure = QStringLiteral(
+                "Timed out waiting for the teacher selection dialog to be accepted."
+                );
+
+            QDialog* dialog = qobject_cast<QDialog*>(
+                QApplication::activeModalWidget()
+                );
+            if (!dialog)
+            {
+                for (QWidget* widget : QApplication::topLevelWidgets())
+                {
+                    auto* const candidate = qobject_cast<QDialog*>(widget);
+                    if (candidate && candidate->isModal() && candidate->isVisible())
+                    {
+                        dialog = candidate;
+                        break;
+                    }
+                }
+            }
+
+            if (dialog)
+            {
+                dialog->reject();
+            }
+            else if (QWidget* const activeModalWidget =
+                         QApplication::activeModalWidget())
+            {
+                activeModalWidget->close();
+            }
+        }
+        );
+
+    deleteTeacherAction->trigger();
+    QApplication::processEvents();
+
+    QVERIFY2(
+        selectionDialogSeen,
+        qPrintable(selectionDialogFailure)
+        );
+    QVERIFY2(
+        selectionDialogAccepted,
+        qPrintable(selectionDialogFailure)
+        );
+    QCOMPARE(selectedChooserTeacherId, targetTeacher.id);
+    QVERIFY(selectionDialogFailure.isEmpty());
+
+    QCOMPARE(prompts.confirmations.size(), 1);
+    const PromptRequest& confirmation = prompts.confirmations.constFirst();
+    QCOMPARE(confirmation.parent, static_cast<QWidget*>(sidebar));
+    QCOMPARE(confirmation.title, QStringLiteral("Delete Teacher"));
+    QCOMPARE(
+        confirmation.message,
+        QStringLiteral("Delete '%1'?").arg(targetTeacher.preferredDisplayName())
+        );
+    QCOMPARE(confirmation.severity, PromptSeverity::Warning);
+    QCOMPARE(confirmation.acceptText, QStringLiteral("Delete"));
+    QCOMPARE(confirmation.rejectText, QStringLiteral("Cancel"));
+    QVERIFY(confirmation.destructive);
+    QVERIFY(prompts.scriptedChoices.isEmpty());
+    QVERIFY(prompts.messages.isEmpty());
+    QVERIFY(prompts.asynchronousMessages.isEmpty());
+    QVERIFY(prompts.unsavedChangesConfirmations.isEmpty());
+    QVERIFY(prompts.actionPrompts.isEmpty());
+
+    auto* const repository = activeSession->teacherRepository();
+    QVERIFY(repository);
+    const auto persistedTarget = repository->getTeacher(targetTeacher.id);
+    const auto persistedSurvivor = repository->getTeacher(survivorTeacher.id);
+    QVERIFY(persistedTarget.has_value());
+    QVERIFY(persistedSurvivor.has_value());
+    QCOMPARE(teacherSnapshot(*persistedTarget), targetSnapshot);
+    QCOMPARE(teacherSnapshot(*persistedSurvivor), survivorSnapshot);
+
+    QTreeWidgetItem* const retainedTargetLeaf = findTeacherLeaf(
+        tree,
+        allTeacherKeys,
+        targetTeacher.id
+        );
+    QTreeWidgetItem* const retainedSurvivorLeaf = findTeacherLeaf(
+        tree,
+        allTeacherKeys,
+        survivorTeacher.id
+        );
+    QVERIFY(retainedTargetLeaf);
+    QVERIFY(retainedSurvivorLeaf);
+    QCOMPARE(
+        retainedTargetLeaf->text(0),
+        targetTeacher.preferredDisplayName()
+        );
+    QCOMPARE(
+        retainedSurvivorLeaf->text(0),
+        survivorTeacher.preferredDisplayName()
+        );
+
+    QVERIFY(pages->isCurrentPage(PageType::MyWorkspace));
+    QCOMPARE(window.pageManager(), pages);
+    QCOMPARE(window.centralWidget(), centralWidget);
+    QCOMPARE(pages->currentWidget(), currentPageWidget);
+    QCOMPARE(pages->currentPageIdentifier(), pageIdentifier);
+    QCOMPARE(pages->instantiatedPageCount(), instantiatedPageCount);
+    QCOMPARE(
+        pages->isPageInstantiated(PageType::TeacherInfo),
+        teacherInfoPageInstantiated
+        );
+    QCOMPARE(window.findChild<Sidebar*>(), sidebar);
+    QCOMPARE(
+        sidebar->findChild<QTreeWidget*>(QStringLiteral("sidebarTree")),
+        tree
+        );
+    QCOMPARE(sidebar->selectedKeys(), selectedKeys);
+    QCOMPARE(sidebar->getSelectedTeacherId(), -1);
+    QCOMPARE(
+        tree->currentItem()
+            ? tree->currentItem()->data(0, Qt::UserRole + 4).toString()
+            : QString(),
+        currentSidebarItemKey
+        );
+    QCOMPARE(
+        tree->currentItem()
+            ? tree->currentItem()->data(0, Qt::UserRole).toInt()
+            : -1,
+        currentSidebarItemType
+        );
+    QVERIFY(routeSpy.isEmpty());
+    QCOMPARE(window.actions().deleteTeacher, deleteTeacherAction);
+    QVERIFY(deleteTeacherAction->isEnabled());
+
+    QCOMPARE(window.services(), services);
+    QVERIFY(services->hasOpenDatabase());
+    QCOMPARE(services->databaseSession(), activeSession);
+    QVERIFY(activeSession->isOpen());
+    QCOMPARE(services->currentDatabasePath(), workspacePath);
 }
 
 QTEST_MAIN(MainWindowTeacherSidebarNavigationParityTests)

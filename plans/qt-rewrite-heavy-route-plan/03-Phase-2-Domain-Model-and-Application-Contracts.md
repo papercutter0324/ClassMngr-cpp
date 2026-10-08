@@ -40,10 +40,11 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-09
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F422-F432 are committed; F432 is 4bfe3dc2. Batch 21 is active
-  with F433 New Teacher menu QAction accepted in this changeset and ready to commit.
-  F434 Delete Teacher QAction confirmation through MainWindow is next after commit;
-  F435-F438 remain provisional. See the progress log. Gates 1 and 2 remain Partial.
+- Current note: F422-F433 are committed; F433 is b60c8025. Batch 21 is active
+  with F434 Delete Teacher QAction confirmation through MainWindow accepted in this
+  changeset and ready to commit. F435 Empty-state Open/New Profile is next after
+  commit; F436-F438 remain provisional. See the progress log for F434 evidence.
+  Gates 1 and 2 remain Partial.
 
 ### Slice discovery batches
 
@@ -70,16 +71,15 @@ log](03-Phase-2-Progress-Log.md).
 
 #### Active batch: Batch 21
 
-1. F433 - Accepted in this changeset: New Teacher menu QAction.
-2. F434 - Provisional: Delete Teacher QAction confirmation through MainWindow.
-3. F435 - Provisional: Empty-state Open/New Profile button handoff.
-4. F436 - Provisional: Invalid UTF-8 document resource reference handling.
-5. F437 - Provisional: Report worker event-post failure.
-6. F438 - Provisional: Optional occurrence IDs in repeat-series creation.
+1. F434 - Accepted in this changeset: Delete Teacher QAction confirmation through MainWindow.
+2. F435 - Provisional: Empty-state Open/New Profile button handoff.
+3. F436 - Provisional: Invalid UTF-8 document resource reference handling.
+4. F437 - Provisional: Report worker event-post failure.
+5. F438 - Provisional: Optional occurrence IDs in repeat-series creation.
 
-Batch 21 began with ten candidates after F428. F429-F432 are committed; F433 is
-accepted in this changeset and ready to commit. F434 follows after that commit;
-F435-F438 remain provisional. See the Phase 2 progress log.
+Batch 21 began with ten candidates after F428. F429-F433 are committed; F434 is
+accepted in this changeset and ready to commit. F435 follows after that commit;
+F436-F438 remain provisional. See the Phase 2 progress log.
 
 Batch 20 completed when F428 committed as b82bddaa. F429 committed as 19f6024d. Batch 21 was
 discovered while F427 was the second-last known Batch 20 candidate and is now active.

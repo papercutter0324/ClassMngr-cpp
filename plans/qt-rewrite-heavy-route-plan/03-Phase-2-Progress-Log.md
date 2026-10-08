@@ -15695,3 +15695,61 @@ Only `tests/mainwindow_close_file_parity_tests.cpp` changed; no production or CM
 Executor and independent Tester each built `MainWindowCloseFileParityTests`, passed exact Debug CTest `^ClassMngrMainWindowCloseFileParityTests$` 1/1, direct target QtTest 8/8, and the selected case 3/3. The independent build object timestamp is later than the source. The executor first hit FileTracker access denied, then passed with `/p:TrackFileAccess=false`; the independent standard build passed without retry. Qt reported the missing system font directory (repository fonts loaded) and one offscreen `propagateSizeHints` notice in other dialog cases. No C++ warnings occurred; no focused process remains and no full suite ran.
 
 F433 is accepted in this changeset and ready to commit. F434 Delete Teacher QAction confirmation through MainWindow is next after the F433 commit. F285 remains deferred pending its blank-draft contract.
+
+### F433 committed / F434 selected-current - 2026-10-09
+
+F433, “Phase2 - Cover New Teacher QAction validation warning (F433),” is committed as `b60c8025c937d8080395479b86dc30b84c75f160` on Qt-Rewrite (branch ahead 18). Its characterization evidence and the explicit F285 deferral remain recorded above. F434 Delete Teacher QAction confirmation through MainWindow is selected/current. Read-only context discovery is underway; no F434 matrix or implementation has started.
+
+### F434 acceptance matrix recorded before implementation - 2026-10-09
+
+This cancellation-only MainWindow characterization starts from MyWorkspace with a target and survivor teacher seeded in the temporary database. It does not claim successful deletion.
+
+1. Extend `tests/mainwindow_teacher_sidebar_navigation_parity_tests.cpp` in its
+   existing `MainWindowTeacherSidebarNavigationParityTests` target. Reuse its
+   temporary-database/MainWindow setup and seed both target and survivor. Ensure
+   no teacher is selected; assert `window.actions().deleteTeacher` exists and is
+   enabled.
+2. Trigger the real `deleteTeacher` QAction. In a bounded `QTimer`, inspect the
+   actual `sidebarRecordSelectionDialog`, select the target by the combo item's
+   `userData`, and accept the chooser.
+3. Have `FakeUserPromptService` capture the destructive confirmation and return
+   Cancel. Assert title `Delete Teacher`, message `Delete '<target display name>'?`,
+   buttons `Delete` and `Cancel`, and the destructive flag. Assert no additional
+   prompt appeared.
+4. Verify target and survivor remain persisted and represented in the Sidebar;
+   `deleteTeacher` remains enabled; the page, central widget, Sidebar selection,
+   database session, and path are unchanged.
+5. Build `MainWindowTeacherSidebarNavigationParityTests`, run exact CTest filter
+   `^ClassMngrMainWindowTeacherSidebarNavigationParityTests$`, and run direct
+   target QtTest plus the selected new case. Do not run the full suite.
+
+Evidence: ActionRegistry creates `deleteTeacher` at
+`src/ui/shared/actions/action_registry.cpp:703-707`; the menu places it beside
+`newTeacher` at `src/app/menu_builder.cpp:1319-1321`, and SidebarController
+connects it at `src/app/controllers/sidebar_controller.cpp:58-63`. With no selected
+teacher, `deleteTeacher()` calls `promptForTeacherToDelete()`
+(`src/app/controllers/sidebar_controller_teachers.cpp:88-102`). That helper
+loads teacher choices and opens the Delete Teacher chooser
+(`src/app/controllers/sidebar_controller_prompts.cpp:274-352`). The actual dialog
+object name is `sidebarRecordSelectionDialog` (DialogShell appends `Dialog` to
+`sidebarRecordSelection` at `src/ui/shared/dialogs/dialog_shell.cpp:46-57`); its
+combo stores each record ID in item data at
+`src/ui/shared/dialogs/record_selection_dialog.cpp:27-33`. The destructive prompt
+uses title `Delete Teacher`, message `Delete '%1'?`, buttons `Delete`/`Cancel`,
+and destructive=true (`src/app/controllers/sidebar_controller_prompts.cpp:401-418`).
+The existing fixture and test helpers are in
+`tests/mainwindow_teacher_sidebar_navigation_parity_tests.cpp:62-109,344-394`;
+target registration is in `cmake/tests/pages_and_output.cmake:889-900`.
+
+Limit: this covers chooser-to-confirmation routing and Cancel only; it does not
+claim deletion. Existing direct-controller tests cover lower-level rejection and
+chooser behavior.
+
+### F434 implementation and independent verification accepted - 2026-10-09
+
+The real MainWindow `deleteTeacher` QAction and chooser led to the destructive confirmation, which the fake prompt service rejected with Cancel. Both persisted target and survivor teachers remain and are still represented in the Sidebar. MyWorkspace/page/central widget/Sidebar selection, action enabled state, database session/path, and no-extra-prompt state are unchanged. A five-second modal watchdog protects the chooser interaction. This is cancellation-only; no successful deletion is claimed.
+
+Executor and independent Tester each built `MainWindowTeacherSidebarNavigationParityTests`
+and passed exact CTest filter `^ClassMngrMainWindowTeacherSidebarNavigationParityTests$` 1/1, direct target QtTest 6/6, and selected case 3/3. No full suite ran. The executor used Ninja Debug after Visual Studio FileTracker access-denied errors; the independent Visual Studio target build passed without retry. No focused process remains.
+
+F434 is accepted in this changeset and ready to commit. F435 Empty-state Open/New Profile button handoff is next after the F434 commit.

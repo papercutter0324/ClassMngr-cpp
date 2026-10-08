@@ -2937,3 +2937,17 @@ The New Teacher menu QAction currently attempts a blank teacher create, receives
 
 
 The real New Teacher QAction currently attempts a blank create and captures the expected Add Teacher warning containing teacher.name.required, with no database row or navigation. This is characterization only; F285 remains deferred. Executor and independent CTest passed 1/1, target QtTest 8/8, selected case 3/3. No production/CMake change or full-suite run. F433 is accepted; F434 is next after commit.
+
+## 2026-10-09 - F433 committed; F434 selected
+
+F433 committed as b60c8025c937d8080395479b86dc30b84c75f160 (Phase2 - Cover New Teacher QAction validation warning (F433)); branch is ahead by 18. The commit contains the approved test plus five Phase 2 documentation paths. F434 Delete Teacher QAction confirmation through MainWindow is accepted and ready to commit; F435-F438 remain provisional. latest_session_work.md and unrelated %SystemDrive%/ remain outside slice commits.
+
+
+## 2026-10-09 - F434 selection and acceptance matrix
+
+Read-only discovery traced Delete Teacher QAction through SidebarController, the real RecordSelectionDialog, destructive confirmation, and repository deletion. F434 will automate the real chooser to select one seeded teacher and reject the fake destructive confirmation, then assert prompt details, retained teacher/survivor data, sidebar state, and stable MyWorkspace/session state. Target: ClassMngrMainWindowTeacherSidebarNavigationParityTests; exact CTest target matches. This covers the MainWindow action path; direct-controller tests already cover lower-level branches. Matrix is recorded before implementation.
+
+
+## 2026-10-09 - F434 Delete Teacher QAction cancellation accepted
+
+The real MainWindow action and chooser reached the destructive Delete Teacher confirmation; rejecting it preserved the target and survivor records, sidebar rows, MyWorkspace page/widget/selection, session, and path, with no extra prompt. The test includes a five-second modal watchdog and claims cancellation only. Executor and independent Tester passed focused target build, exact Debug CTest 1/1, direct target QtTest 6/6, and selected case 3/3. Executor used Ninja Debug after VS FileTracker errors; independent VS target build passed without retry. No production/CMake change or full-suite run. F434 is accepted and ready to commit; branch is ahead by 18.
