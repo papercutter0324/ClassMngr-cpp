@@ -15826,3 +15826,65 @@ The executor's Ninja Debug build had no warnings; the independent VS target
 build had no C++ warnings (Qt reported only a missing system font directory).
 F435 is accepted in this changeset and ready to commit. F436 Invalid UTF-8
 document resource references is next after commit; F437-F438 remain provisional.
+
+### F435 committed / F436 selected-current - 2026-10-09
+
+F435, “Phase2 - Cover Empty-state Open/New Profile button handoff (F435),” is
+committed as `998565115361bdd301f1d06ecc4beb2da7a519b9` on Qt-Rewrite (branch
+ahead 20). Its accepted two-case coverage and focused verification remain
+recorded above. F436 Invalid UTF-8 document resource references is selected/current.
+Read-only context discovery is underway; error classification is unresolved, and
+no F436 acceptance matrix or implementation has started. F437-F438 remain
+provisional.
+
+### F436 acceptance matrix recorded before implementation - 2026-10-09
+
+The approved contract treats raw invalid UTF-8 in a `DocumentContentReference` as
+malformed input: return `Domain::ErrorCode::InvalidInput` with
+`recoverable=false`. A valid reference to a missing resource remains `NotFound`.
+
+1. Add strict UTF-8 validation and decoding of `relativePath` in
+   `src/next/platform/document_content_resource_port.h` before resource-pack
+   acquisition. Apply it to primary resources and optional export resources.
+2. Extend `tests/next_platform_document_content_resource_port_tests.cpp` in the
+   existing `ClassMngrNextPlatformDocumentContentResourcePortTests` target.
+   Construct invalid byte sequences in raw `std::string` values, not through
+   `QString`, including invalid-continuation, truncated, and malformed forms.
+   For both primary and optional export references, assert `InvalidInput`,
+   `recoverable=false`, and that no resource pack was mounted.
+3. Preserve assertions for valid resolution, valid missing-resource `NotFound`,
+   NUL, scheme, and traversal behavior.
+4. Build target `ClassMngrNextPlatformDocumentContentResourcePortTests` and run
+   exact filtered CTest
+   `^ClassMngrNextPlatformDocumentContentResourcePortTests$`; keep verification
+   focused on this target.
+
+Evidence: the current port is `src/next/platform/document_content_resource_port.h:206`;
+malformed-reference coverage starts in
+`tests/next_platform_document_content_resource_port_tests.cpp:54`.
+
+F436 is selected/current with this matrix recorded before implementation;
+implementation is pending.
+
+### F436 accepted in this changeset - 2026-10-09
+
+Implementation changed `src/next/platform/document_content_resource_port.h` and
+`tests/next_platform_document_content_resource_port_tests.cpp`. A stateless
+`QStringDecoder` validates `relativePath` before conversion or normalization and
+before resource-pack acquisition for both primary and optional export resources;
+invalid UTF-8 returns `Domain::ErrorCode::InvalidInput` with
+`recoverable=false`.
+
+Tests cover six malformed raw UTF-8 primary inputs plus invalid export input and
+assert the error and that the pack remains unmounted. Valid Unicode references to
+missing resources still return `NotFound`; existing NUL, scheme, traversal, and
+successful-resolution coverage remains.
+
+The executor and independent Tester each passed the focused build, exact CTest
+`^ClassMngrNextPlatformDocumentContentResourcePortTests$` (1/1), direct target
+QtTest (9/9), and the selected case (3/3). The full suite was not run. Ninja
+Debug required initializing the VS x64 environment after an initial
+`missing-type_traits` failure; final builds passed without warnings.
+
+F436 is accepted in this changeset and ready to commit. F437 Report worker
+event-post failure is next after commit; F438 remains provisional.

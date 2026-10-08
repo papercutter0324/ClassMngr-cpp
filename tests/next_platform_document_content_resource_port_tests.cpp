@@ -44,6 +44,13 @@ DocumentContentReference reference(
     return DocumentContentReference(value);
 }
 
+DocumentContentReference reference(
+    std::string value
+    )
+{
+    return DocumentContentReference(std::move(value));
+}
+
 } // namespace
 
 class NextPlatformDocumentContentResourcePortTests final : public QObject
@@ -52,6 +59,7 @@ class NextPlatformDocumentContentResourcePortTests final : public QObject
 
 private slots:
     void rejectsMalformedAndTraversalReferencesWithoutMounting();
+    void rejectsInvalidUtf8ReferencesWithoutMounting();
     void resolvesPrimaryAndExportWithOneLease();
     void reportsMissingResourcesWithoutLeakingLease();
     void releaseUnmountsAfterResolvedValueIsDestroyed();
@@ -67,6 +75,10 @@ rejectsMalformedAndTraversalReferencesWithoutMounting()
     auto manager = makeManager(storage);
     DocumentContentResourcePort port(*manager);
 
+    std::string embeddedNulReference =
+        "resource://documents/Guides/file.pdf";
+    embeddedNulReference.push_back('\0');
+    embeddedNulReference.append("suffix");
     const std::vector<DocumentContentReference> invalidReferences{
         reference(""),
         reference("   "),
@@ -76,7 +88,8 @@ rejectsMalformedAndTraversalReferencesWithoutMounting()
         reference("resource://documents/../Guides/file.pdf"),
         reference("resource://documents/Guides/../../file.pdf"),
         reference("resource://documents/Guides\\..\\file.pdf"),
-        reference("resource://documents//Guides/file.pdf")
+        reference("resource://documents//Guides/file.pdf"),
+        reference(std::move(embeddedNulReference))
     };
 
     for (const DocumentContentReference& invalid : invalidReferences)
@@ -95,6 +108,49 @@ rejectsMalformedAndTraversalReferencesWithoutMounting()
         );
     QVERIFY(!invalidExport);
     QCOMPARE(invalidExport.error().code, ErrorCode::InvalidInput);
+    QVERIFY(!manager->isMounted(QStringLiteral("documents")));
+}
+
+void NextPlatformDocumentContentResourcePortTests::
+rejectsInvalidUtf8ReferencesWithoutMounting()
+{
+    QTemporaryDir storage;
+    QVERIFY(storage.isValid());
+    auto manager = makeManager(storage);
+    DocumentContentResourcePort port(*manager);
+
+    const std::vector<std::string> invalidUtf8{
+        std::string("\xC3\x28", 2), // Invalid continuation byte.
+        std::string("\xE2\x82", 2), // Truncated three-byte sequence.
+        std::string("\xC0\xAF", 2), // Overlong encoding.
+        std::string("\xED\xA0\x80", 3), // UTF-8 encoded surrogate.
+        std::string("\xF4\x90\x80\x80", 4), // Above U+10FFFF.
+        std::string("\x80", 1) // Standalone continuation byte.
+    };
+
+    for (const std::string& invalidBytes : invalidUtf8)
+    {
+        std::string referenceValue = "resource://documents/Guides/";
+        referenceValue.append(invalidBytes);
+
+        const auto result = port.resolve(reference(std::move(referenceValue)));
+        QVERIFY(!result);
+        QCOMPARE(result.error().code, ErrorCode::InvalidInput);
+        QVERIFY(!result.error().recoverable);
+        QVERIFY(!manager->isMounted(QStringLiteral("documents")));
+    }
+
+    std::string invalidExportValue = "resource://documents/Guides/";
+    invalidExportValue.append("\xE2\x82", 2);
+    const auto invalidExport = port.resolve(
+        reference("resource://documents/Guides/DYB Lesson Planning Guide.pdf"),
+        std::optional<DocumentContentReference>(
+            reference(std::move(invalidExportValue))
+            )
+        );
+    QVERIFY(!invalidExport);
+    QCOMPARE(invalidExport.error().code, ErrorCode::InvalidInput);
+    QVERIFY(!invalidExport.error().recoverable);
     QVERIFY(!manager->isMounted(QStringLiteral("documents")));
 }
 
@@ -139,6 +195,16 @@ reportsMissingResourcesWithoutLeakingLease()
         );
     QVERIFY(!missingPrimary);
     QCOMPARE(missingPrimary.error().code, ErrorCode::NotFound);
+    QVERIFY(!manager->isMounted(QStringLiteral("documents")));
+
+    const auto missingUnicode = port.resolve(
+        reference(
+            std::string("resource://documents/Guides/")
+                + "\xED\x95\x9C\xEA\xB8\x80.pdf"
+            )
+        );
+    QVERIFY(!missingUnicode);
+    QCOMPARE(missingUnicode.error().code, ErrorCode::NotFound);
     QVERIFY(!manager->isMounted(QStringLiteral("documents")));
 
     const auto missingExport = port.resolve(

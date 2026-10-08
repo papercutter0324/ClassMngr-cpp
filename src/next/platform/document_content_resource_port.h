@@ -7,6 +7,7 @@
 #include <QDir>
 #include <QFileInfo>
 #include <QString>
+#include <QStringConverter>
 
 #include <cctype>
 #include <optional>
@@ -203,10 +204,25 @@ private:
                 );
         }
 
-        const QString relativePath = QString::fromUtf8(
-            relativeValue.data(),
-            static_cast<qsizetype>(relativeValue.size())
+        QStringDecoder utf8Decoder(
+            QStringDecoder::Utf8,
+            QStringConverter::Flag::Stateless
             );
+        const QString relativePath = utf8Decoder(
+            QByteArrayView(
+                relativeValue.data(),
+                static_cast<qsizetype>(relativeValue.size())
+                )
+            );
+        if (utf8Decoder.hasError())
+        {
+            return Domain::Result<QString>::failure(
+                invalidReference(
+                    "Document content reference must contain valid UTF-8."
+                    )
+                );
+        }
+
         QString normalizedPath = relativePath;
         normalizedPath.replace(QLatin1Char('\\'), QLatin1Char('/'));
 

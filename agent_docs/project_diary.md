@@ -2965,4 +2965,19 @@ Explorer traced BasePage banner signals through PageManager to MainWindow QActio
 
 ## 2026-10-09 - F435 banner Open/New Profile accepted
 
-The actual empty-state Open and New Profile buttons traversed BasePage, PageManager, the matching MainWindow QAction, and the expected TeacherProfile file picker. Open consumed a seeded temp profile; New created/opened one at a fresh nonexistent temp path. Both reached MyWorkspace Schedule, selected the expected sidebar route, hid the banner, and avoided Initial Setup/prompt/opposite picker. F413 remains separate. Executor and independent Tester passed focused build, exact Debug CTest 1/1, full target QtTest 5/5, and each new case 3/3. No production/CMake change or full-suite run. F435 is accepted and ready to commit; branch is ahead by 19.
+The actual empty-state Open and New Profile buttons traversed BasePage, PageManager, the matching MainWindow QAction, and the expected TeacherProfile file picker. Open consumed a seeded temp profile; New created/opened one at a fresh nonexistent temp path. Both reached MyWorkspace Schedule, selected the expected sidebar route, hid the banner, and avoided Initial Setup/prompt/opposite picker. F413 remains separate. Executor and independent Tester passed focused build, exact Debug CTest 1/1, full target QtTest 5/5, and each new case 3/3. No production/CMake change or full-suite run. F435 is committed as 998565115361bdd301f1d06ecc4beb2da7a519b9; branch is ahead by 20.
+
+
+## 2026-10-09 - F435 committed; F436 selected
+
+F435 committed as 998565115361bdd301f1d06ecc4beb2da7a519b9 (Phase2 - Cover Empty-state Open/New Profile button handoff (F435)); branch is ahead by 20. F436 Invalid UTF-8 document resource references is accepted and ready to commit. F437 is next after commit; F438 remains provisional. latest_session_work.md and unrelated %SystemDrive%/ remain outside slice commits.
+
+
+## 2026-10-09 - F436 invalid UTF-8 matrix
+
+Explorer and independent contract review support treating invalid UTF-8 as malformed input: InvalidInput, nonrecoverable, while NotFound remains for valid missing resources. Strict validation belongs at the resource-port boundary before path conversion and lease acquisition, covering primary and optional export references. Tests will preserve raw malformed bytes and assert the pack stays unmounted. Exact target/CTest: ClassMngrNextPlatformDocumentContentResourcePortTests. Matrix was recorded before implementation.
+
+
+## 2026-10-09 - F436 invalid UTF-8 accepted
+
+The port now rejects malformed UTF-8 before path conversion and resource-pack acquisition as nonrecoverable InvalidInput for both primary and export references. The focused test covers invalid continuation, truncation, overlong, surrogate, out-of-range, and standalone continuation bytes, with valid missing-resource behavior still NotFound. Executor and independent Tester passed the Ninja target build, exact CTest 1/1, full target QtTest 9/9, and selected case 3/3. No full-suite run. F436 is accepted and ready to commit; branch is ahead by 20.
