@@ -16056,3 +16056,58 @@ Only the application header and test changed beyond documentation:
 F438 is accepted in this changeset and ready to commit. After this commit, Batch 21
 completes and Batch 22 activates with F439-F446 in the priority order recorded
 above. Until then, Batch 22 remains inactive and all eight candidates are provisional.
+
+### F438 committed / F439 selected-current - 2026-10-09
+
+F438, “Phase2 - Reject existing IDs in repeat-series creation (F438),” is
+committed as 0c2ceca6136a962f41130f52975bbab7315cd465 on Qt-Rewrite (branch
+ahead 23). The F438 acceptance evidence and focused verification remain above.
+Batch 21 is complete. Batch 22 is active with F439 Accept Delete Teacher
+confirmation success path selected/current; bounded read-only context discovery
+is underway, and no F439 acceptance matrix or implementation has started.
+F440-F446 remain provisional. F285 successful New Teacher remains deferred, and
+same-path Open remains unselected until its idempotence/replacement contract is
+defined. See the Batch 22 discovery record above.
+
+### F439 acceptance matrix recorded before implementation - 2026-10-09
+
+Extend tests/mainwindow_teacher_sidebar_navigation_parity_tests.cpp in the
+ClassMngrMainWindowTeacherSidebarNavigationParityTests target with the success
+counterpart to deleteTeacherActionChooserCancelPreservesWorkspace(), an F434 case
+around lines 1083-1447. Trigger the actual MainWindow deleteTeacher QAction while
+on MyWorkspace with no teacher selected and two unassigned teachers. A zero-delay
+QTimer selects the target in the real sidebarRecordSelectionDialog by combo
+userData and accepts it; retain the five-second modal watchdog. Script
+PromptChoice::Destructive in FakeUserPromptService.
+
+Assert exactly one expected Delete Teacher prompt was consumed and no warning or
+message appeared; the target is absent from the repository and Sidebar, the
+survivor is unchanged, and no teacher row is selected. MyWorkspace, current page,
+central widget, open session, and database path remain stable. Use unassigned
+teachers so the case avoids class-assignment cleanup; do not delete while a
+TeacherInfoPage is active.
+
+Build target ClassMngrMainWindowTeacherSidebarNavigationParityTests and run exact
+CTest ^ClassMngrMainWindowTeacherSidebarNavigationParityTests$. This covers the
+real MainWindow QAction and chooser success path; existing direct-controller tests
+already cover successful deletion. F439 remains selected/current with this matrix
+recorded before implementation; implementation has not started.
+
+### F439 accepted in this changeset - 2026-10-09
+
+The actual MainWindow deleteTeacher QAction and real chooser success path were
+verified. The confirmation was consumed with no warning. The deleted target is
+absent from the repository and Sidebar; the unassigned survivor's full snapshot
+and leaf are unchanged. MyWorkspace, page, widget, session, path, and the no-teacher
+selection state remain stable.
+
+Executor and independent Tester each passed the Ninja Debug target build, exact
+filtered CTest ^ClassMngrMainWindowTeacherSidebarNavigationParityTests$ (1/1),
+direct target QtTest (7/7), and selected case (3/3). There were no compiler
+warnings; Qt emitted offscreen/font notices only. The full suite was not run. Only
+tests/mainwindow_teacher_sidebar_navigation_parity_tests.cpp changed; there were
+no production or CMake changes.
+
+F439 is accepted in this changeset and ready to commit. F440 Complete Export
+Classes JSON output is next after the F439 commit. Batch 22 remains active;
+F441-F446 remain provisional.

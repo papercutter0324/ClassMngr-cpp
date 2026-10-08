@@ -40,11 +40,12 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-09
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F422-F437 are committed; F437 is f355a1aa. F438, Optional typed
-  occurrence IDs during repeat-series creation, is accepted in this changeset and
-  ready to commit. Batch 21 remains active until that commit, then completes.
-  Batch 22 remains inactive with eight provisional F439-F446 candidates until
-  then. See the progress log. Gates 1 and 2 remain Partial.
+- Current note: F438, “Phase2 - Reject existing IDs in repeat-series creation
+  (F438),” is committed as 0c2ceca6; Batch 21 is complete. Batch 22 is active
+  with F439 Accept Delete Teacher confirmation success path accepted in this
+  changeset and ready to commit. F440 Complete Export Classes JSON output is next
+  after the F439 commit; F441-F446 remain provisional. F285 stays deferred; same-path Open
+  remains unselected pending a contract. See the progress log. Gates 1 and 2 remain Partial.
 
 ### Slice discovery batches
 
@@ -69,16 +70,19 @@ log](03-Phase-2-Progress-Log.md).
   failure warning/no-navigation behavior; revisit after that behavior is
   clarified.
 
-#### Active batch: Batch 21
+#### Active batch: Batch 22
 
-1. F438 - Accepted in this changeset, ready to commit: Optional typed occurrence
-   IDs during repeat-series creation. F438 remains in the active batch until commit.
+1. F439 - Accepted in this changeset, ready to commit: Accept Delete Teacher
+   confirmation success path. Keep F439 in Batch 22 until commit; F440 Complete
+   Export Classes JSON output is next after commit. F441-F446 remain provisional.
+   See the progress log for bounded discovery outlines.
 
-Batch 21 began with ten candidates after F428. F429-F437 are committed; F438 is
-accepted in this changeset and ready to commit. Batch 21 remains active until the
-F438 commit, then completes. Batch 22 remains inactive until then, with eight
-provisional candidates F439-F446 in the priority order recorded in the progress
-log. This bounded discovery does not establish repository-wide exhaustion.
+Batch 21 began with ten candidates after F428 and is complete; F429-F438 are
+committed. F438, “Phase2 - Reject existing IDs in repeat-series creation (F438),”
+is commit 0c2ceca6 on Qt-Rewrite (branch ahead 23). Batch 22 is active with
+F439 selected/current and F440-F446 provisional. F285 remains deferred, and
+same-path Open remains unselected until its contract is defined. This bounded
+discovery does not establish repository-wide exhaustion.
 Batch 20 completed when F428 committed as b82bddaa. F429 committed as 19f6024d. Batch 21 was
 discovered while F427 was the second-last known Batch 20 candidate and is now active.
 Candidate evidence and limits are in the Phase 2 progress log; this bounded

@@ -3016,3 +3016,18 @@ A present CalendarEventId means update in the generic save request; repeat-serie
 ## 2026-10-09 - F438 repeat-series create-only IDs accepted
 
 Series creation now rejects every occurrence with a supplied CalendarEventId as nonrecoverable InvalidInput during request validation, before persistence. A focused integration regression seeds a standalone event and supplies its ID on the second occurrence; both request and adapter return the validation error, all stored row fields and repeatSeriesId are unchanged, and row count remains one. Existing ID-less generated series creation remains covered. Executor and independent Tester passed the Ninja Debug target build, exact CTest 1/1, target QtTest 55/55, and selected case 3/3, with no compiler warnings. No full suite ran. F438 is accepted and ready to commit; after that commit Batch 21 completes and Batch 22 starts at F439 Delete Teacher confirmation success.
+
+
+## 2026-10-09 - F438 committed; F439 selected
+
+F438 committed as 0c2ceca6136a962f41130f52975bbab7315cd465 (Phase2 - Reject existing IDs in repeat-series creation (F438)); branch is ahead by 23. The exact seven approved paths were committed after the progress-log header path was corrected; diff checks passed. latest_session_work.md and unrelated %SystemDrive%/ remain outside the commit. Batch 21 is complete. Batch 22 is active with F439 Accept Delete Teacher confirmation success selected/current; bounded context discovery is underway. The remaining six Batch 22 candidates are provisional.
+
+
+## 2026-10-09 - F439 MainWindow Delete Teacher success matrix
+
+F439 will add a focused MainWindow success case beside F434 in mainwindow_teacher_sidebar_navigation_parity_tests.cpp. It will begin on MyWorkspace with no teacher sidebar row selected, create two unassigned teachers, trigger the real Delete Teacher QAction, select the target in the actual chooser using the established QTimer + five-second watchdog, and script PromptChoice::Destructive. Acceptance checks the confirmation request is correct and consumed, no warning is shown, only the target teacher disappears from repository/sidebar, the survivor is unchanged, and MyWorkspace page/widget plus session/path stay active. It does not exercise teacher deletion while a TeacherInfo page is active or class-assignment cleanup. Target/CTest: ClassMngrMainWindowTeacherSidebarNavigationParityTests. Matrix is recorded before implementation; no implementation has started.
+
+
+## 2026-10-09 - F439 MainWindow Delete Teacher accepted
+
+The F439 success case reuses the real MainWindow QAction and chooser. The target teacher was deleted from the repository and sidebar after the destructive confirmation; the unassigned survivor snapshot and leaf remained unchanged. No teacher row was selected, and MyWorkspace, the page/widget, service, database session, and path remained stable. The prompt was consumed with no extra warning/message. Executor and independent Tester passed the Ninja Debug target build, exact CTest 1/1, full target QtTest 7/7, and selected case 3/3. No compiler warnings; Qt offscreen/font notices only. No full suite or production/CMake change. F439 is accepted and ready to commit; F440 Export Classes JSON completion follows after commit.
