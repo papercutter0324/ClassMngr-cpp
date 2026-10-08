@@ -50,9 +50,11 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
   the F442 commit was observed; the user has resumed. F443 is committed as
   1c03b326 (branch ahead 28). F444 is committed as
   8a21da618870ba4308415aaf5927fa1393af6e97 (branch ahead 29). F445 is committed as
-  d9180f1c465976dfdd707382a1e615108aed9387 (branch ahead 30). Batch 22 remains active with F446, “Cover Save as the close-window choice,”
-  accepted in this changeset and ready to commit. F435 covers the no-database banner route;
-  F444 covers replacing a distinct open profile. F285 stays deferred. See the
+  d9180f1c465976dfdd707382a1e615108aed9387 (branch ahead 30). F446 is committed as
+  4b34a3b8a15a062377a245607228097fb43ee46b (branch ahead 31); Batch 22 is complete and Batch 23 is active with F447,
+  “Cover MainWindow Classes menu New Class QAction creation and navigation,” is accepted in this changeset and ready to commit.
+  F435 covers the no-database banner route; F444 covers replacing a distinct open profile.
+  F285 stays deferred. See the
   progress log. Gates 1 and 2 remain Partial.
 
 ### Slice discovery batches
@@ -78,10 +80,10 @@ log](03-Phase-2-Progress-Log.md).
   failure warning/no-navigation behavior; revisit after that behavior is
   clarified.
 
-#### Active batch: Batch 22
+#### Active batch: Batch 23
 
-1. F446 - Accepted in this changeset; ready to commit. The target is
-   ClassMngrMainWindowExitConfirmationParityTests. F446 acceptance and verification are
+1. F447 - Accepted in this changeset; ready to commit. Target:
+   ClassMngrMainWindowClassesSidebarRootNavigationTests. Acceptance and verification are
    recorded in the progress log.
 
 Batch 21 began with ten candidates after F428 and is complete; F429-F438 are
@@ -96,9 +98,11 @@ committed as 1c03b326567cf52d808bc4c54b7a5e77021bb7bf on Qt-Rewrite (branch ahea
 28); its acceptance evidence remains recorded in the progress log. Batch 22 is
 F444 is committed as 8a21da618870ba4308415aaf5927fa1393af6e97 on Qt-Rewrite (branch ahead 29); its acceptance
 and focused verification remain recorded in the progress log. F445 is committed as d9180f1c465976dfdd707382a1e615108aed9387 on Qt-Rewrite (branch ahead 30); its acceptance
-and focused verification remain recorded in the progress log. Batch 22 remains active with F446, “Cover Save as the close-window choice,”
-accepted in this changeset and ready to commit. Target: ClassMngrMainWindowExitConfirmationParityTests;
-acceptance and verification remain recorded in the progress log. F435 covers opening from the no-database banner. F444 covers replacing a
+and focused verification remain recorded in the progress log. F446 is committed as 4b34a3b8a15a062377a245607228097fb43ee46b on Qt-Rewrite (branch ahead 31); acceptance and
+verification remain recorded in the progress log. Batch 22 is complete. Batch 23 is active
+with F447 accepted in this changeset and ready to commit. Its target and acceptance
+evidence are recorded in the progress log. F435 covers opening
+from the no-database banner. F444 covers replacing a
 distinct open profile and excludes same-path opening, dirty replacement choices, and
 load-failure behavior. F285 remains deferred. This bounded discovery does not establish
 repository-wide exhaustion.

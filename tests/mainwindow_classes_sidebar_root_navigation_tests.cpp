@@ -74,6 +74,7 @@ private slots:
     void initTestCase();
     void renderedClassesRootClickDispatchesToClassesPage();
     void classesRootContextMenuAddClassCreatesAndOpensClass();
+    void newClassActionCreatesAndOpensClass();
 
 private:
     QTemporaryDir m_settingsDirectory;
@@ -381,6 +382,103 @@ classesRootContextMenuAddClassCreatesAndOpensClass()
     QVERIFY(prompts.confirmations.isEmpty());
     QVERIFY(prompts.unsavedChangesConfirmations.isEmpty());
     QVERIFY(prompts.actionPrompts.isEmpty());
+}
+
+
+void MainWindowClassesSidebarRootNavigationTests::newClassActionCreatesAndOpensClass()
+{
+    FakeUserPromptService prompts;
+    UserPromptServiceScope promptScope(&prompts);
+
+    QTemporaryDir workspaceRoot;
+    QVERIFY(workspaceRoot.isValid());
+
+    const QString workspacePath = QFileInfo(
+        workspaceRoot.filePath(QStringLiteral("new-class-action.tps"))
+        ).absoluteFilePath();
+
+    ApplicationServices seedServices;
+    QVERIFY(seedServices.openDatabase(workspacePath));
+    seedServices.closeDatabase();
+
+    LanguageService languageService;
+    QVERIFY(languageService.setLanguage(Language::English));
+
+    MainWindowStartupOptions startupOptions;
+    startupOptions.loadMostRecentDatabase = false;
+    startupOptions.initialDatabasePath = workspacePath;
+
+    MainWindow window(
+        [](const QString&) {},
+        false,
+        &languageService,
+        nullptr,
+        std::move(startupOptions)
+        );
+    window.show();
+    QApplication::processEvents();
+
+    ApplicationServices* const services = window.services();
+    QVERIFY(services);
+    QVERIFY(services->hasOpenDatabase());
+    const QString activeDatabasePath = services->currentDatabasePath();
+    QCOMPARE(activeDatabasePath, workspacePath);
+    auto* const activeSession = services->databaseSession();
+    QVERIFY(activeSession);
+    ClassService* const classService = services->classService();
+    QVERIFY(classService);
+
+    const auto classesBefore = classService->classes();
+    QVERIFY(classesBefore);
+    const int classCountBefore = classesBefore->size();
+    QCOMPARE(classCountBefore, 0);
+
+    PageManager* const pages = window.pageManager();
+    QVERIFY(pages);
+    QVERIFY(pages->isCurrentPage(PageType::MyWorkspace));
+    MyWorkspacePage* const workspace = pages->myWorkspacePage();
+    QVERIFY(workspace);
+    QVERIFY(!workspace->hasUnsavedChanges());
+
+    QAction* const newClassAction = window.actions().newClass;
+    QVERIFY(newClassAction);
+    QVERIFY(newClassAction->isEnabled());
+    newClassAction->trigger();
+    QApplication::processEvents();
+
+    const auto classesAfter = classService->classes();
+    QVERIFY(classesAfter);
+    QCOMPARE(classesAfter->size(), classCountBefore + 1);
+
+    QVERIFY(pages->isCurrentPage(PageType::Classes));
+    ClassesPage* const classesPage = pages->classesPage();
+    QVERIFY(classesPage);
+    const int createdClassId = classesPage->currentClassId();
+    QVERIFY(createdClassId > 0);
+    QCOMPARE(classesPage->currentSection(), ClassesSection::Details);
+    QCOMPARE(classesAfter->constFirst().id, createdClassId);
+
+    const auto persistedClass = classService->classroom(createdClassId);
+    QVERIFY(persistedClass);
+    QCOMPARE(persistedClass->id, createdClassId);
+
+    Sidebar* const sidebar = window.findChild<Sidebar*>();
+    QVERIFY(sidebar);
+    QCOMPARE(
+        sidebar->selectedKeys(),
+        QStringList{QStringLiteral("classes")}
+        );
+
+    QVERIFY(services->hasOpenDatabase());
+    QCOMPARE(services->databaseSession(), activeSession);
+    QCOMPARE(services->currentDatabasePath(), activeDatabasePath);
+
+    QVERIFY(prompts.messages.isEmpty());
+    QVERIFY(prompts.asynchronousMessages.isEmpty());
+    QVERIFY(prompts.confirmations.isEmpty());
+    QVERIFY(prompts.unsavedChangesConfirmations.isEmpty());
+    QVERIFY(prompts.actionPrompts.isEmpty());
+    QVERIFY(!QApplication::activeModalWidget());
 }
 
 QTEST_MAIN(MainWindowClassesSidebarRootNavigationTests)

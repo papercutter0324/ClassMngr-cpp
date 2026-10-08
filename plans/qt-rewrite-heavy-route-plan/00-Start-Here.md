@@ -169,9 +169,11 @@ synchronization is committed (`f4bc5282`). F416 Document Catalog rendered
   the F442 commit was observed; the user has resumed. F443 is committed as
   1c03b326 (branch ahead 28). F444 is committed as
   8a21da618870ba4308415aaf5927fa1393af6e97 (branch ahead 29). F445 is committed as
-  d9180f1c465976dfdd707382a1e615108aed9387 (branch ahead 30). Batch 22 remains active with F446, “Cover Save as the close-window choice,”
-  accepted in this changeset and ready to commit. F435 covers the no-database banner route;
-  F444 covers replacing a distinct open profile. F285 stays deferred. See the
+  d9180f1c465976dfdd707382a1e615108aed9387 (branch ahead 30). F446 is committed as
+  4b34a3b8a15a062377a245607228097fb43ee46b (branch ahead 31); Batch 22 is complete and Batch 23 is active with F447,
+  “Cover MainWindow Classes menu New Class QAction creation and navigation,” is accepted in this changeset and ready to commit.
+  F435 covers the no-database banner route; F444 covers replacing a distinct open profile.
+  F285 stays deferred. See the
   progress log. Gates 1 and 2 remain Partial,
   with broader feature migration, parity, and 96-class Release memory evidence still open.
   See the

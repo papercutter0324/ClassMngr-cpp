@@ -16488,3 +16488,53 @@ quotes; the corrected direct exact filtered invocation passed 1/1.
 F446 is accepted in this changeset and ready to commit. The recorded matrix exclusions
 remain: File→Save QAction details, Save As, save failure, and unrelated fields. Batch 22
 remains active through the F446 commit.
+
+### F446 committed - 2026-10-09
+
+F446 committed as 4b34a3b8a15a062377a245607228097fb43ee46b; branch is ahead by 31. Its accepted matrix and
+verification remain recorded above. Batch 22 is complete. A read-only scan of the Phase 2 plan found no
+post-F446 candidate or F447 title/target currently recorded. This bounded candidate review
+does not establish repository-wide exhaustion; a later discovery pass may identify more work.
+
+### F447 acceptance matrix recorded before implementation - 2026-10-09
+
+Two independent local reviews agree on a MainWindow QAction/menu integration slice.
+Extend tests/mainwindow_classes_sidebar_root_navigation_tests.cpp in
+MainWindowClassesSidebarRootNavigationTests /
+ClassMngrMainWindowClassesSidebarRootNavigationTests. The existing
+classesRootContextMenuAddClassCreatesAndOpensClass() test covers the distinct Sidebar
+context-menu Add Class action, not window.actions().newClass.
+
+On a clean open file-backed profile with My Workspace current, assert the actual
+window.actions().newClass QAction exists and is enabled, then trigger it. Verify exactly
+one new class is persisted, selected, and open in Classes Details; Sidebar selects Classes;
+the database session and path remain stable; and no unexpected prompt or warning appears.
+
+The novelty is the real ActionRegistry::newClass -> Classes menu ->
+SidebarController::addClass route around existing addClass behavior. Source evidence:
+src/ui/shared/actions/action_registry.cpp:671-677;
+src/app/menu_builder.cpp:1299-1306; src/app/controllers/sidebar_controller.cpp:18-28;
+src/app/controllers/sidebar_controller_classes.cpp:14-73. Existing context-menu test is
+tests/mainwindow_classes_sidebar_root_navigation_tests.cpp:188-386; target registration is
+cmake/tests/pages_and_output.cmake:629-640,643-655. Focused verification: build target
+ClassMngrMainWindowClassesSidebarRootNavigationTests and run exact filtered CTest
+^ClassMngrMainWindowClassesSidebarRootNavigationTests$.
+
+Exclude context-menu behavior, create/read failures (F298 remains deferred), dirty-page
+confirmation, no-database behavior, and unrelated class fields. At matrix record, F447 was selected/current and implementation had not started;
+acceptance follows below.
+
+### F447 accepted in this changeset - 2026-10-09
+
+Only tests/mainwindow_classes_sidebar_root_navigation_tests.cpp changed; there were no
+production or CMake changes. The independent source review approved the real action wiring,
+exact one-class count and persisted ID matching the page, Classes Details selection, Sidebar
+route, stable session/path, and no-prompt assertions.
+
+The target build passed with no compiler warnings. The selected QtTest had 3 pass incidents
+(setup, slot, cleanup); the full target QtTest had 5 pass incidents (three slots, setup,
+cleanup). Exact CTest ClassMngrMainWindowClassesSidebarRootNavigationTests passed 1/1.
+Qt reported a font-directory warning and offscreen raise()/keyboard-grab notices. No full
+project suite was run.
+
+F447 is accepted in this changeset and ready to commit. Batch 23 remains active.

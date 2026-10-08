@@ -3309,6 +3309,8 @@ Verification: target build passed without compiler warnings; selected QtTest pas
 
 ## 2026-10-09 - F446 Close-confirmation Save acceptance review
 
+F446 committed as `4b34a3b8a15a062377a245607228097fb43ee46b`; branch is ahead by 31.
+
 Two independent reviews support F446. The local source map confirmed the existing exit test covers Cancel then Discard, while the supplied-source scope review identified Save-on-close as a distinct path from F445's File → Save QAction. The scope review could not access local files due process setup failure.
 
 Acceptance: In a file-backed profile, persist a known baseline personal name, use Manual Save, then edit it to a distinct draft name in My Details. Script the fake unsaved-changes prompt as Save and call `window.close()` through the real `closeEvent`. Verify the Save choice was issued, close was accepted and the window is hidden, with no second prompt. Reopen through fresh `ApplicationServices` and verify the exact draft name replaced the baseline. Manual mode prevents autosave races. Keep the existing Cancel/Discard case; exclude File → Save QAction behavior, Save As, save failure, and unrelated fields.
@@ -3316,3 +3318,13 @@ Acceptance: In a file-backed profile, persist a known baseline personal name, us
 Source map: `MainWindow::closeEvent()` -> `confirmCurrentPageCanLeave(true)` -> PageManager prompt -> current page `saveChanges()`; My Details saves through `saveMyInfoInternal()`. Focused class/target: `MainWindowExitConfirmationParityTests` / `ClassMngrMainWindowExitConfirmationParityTests`. F446 is accepted and ready to commit.
 
 Verification: target build passed without compiler warnings; selected QtTest passed 3 functions (setup, slot, cleanup); full target QtTest passed 4 functions (two slots, setup, cleanup); exact filtered CTest passed 1/1. Independent source review approved the baseline-to-draft flow, Save choice, normal close, and fresh-service persistence check. One Qt font-directory warning; no full suite or production/CMake changes. The first wrapped CTest regex invocation found no tests because cmd.exe retained the quotes; rerunning with the regex as one direct argument passed.
+
+## 2026-10-09 - F447 New Class QAction acceptance review
+
+Two independent local read-only reviews identified the top-level New Class QAction as an uncovered MainWindow route. The existing `classesRootContextMenuAddClassCreatesAndOpensClass()` case covers the separate Sidebar context-menu action, while the QAction and context menu share `SidebarController::addClass()`.
+
+Acceptance: From a clean open file-backed profile on My Workspace, assert `window.actions().newClass` exists and is enabled, then trigger the real ActionRegistry QAction. Verify one new persisted class is selected and opened on Classes Details, Classes is selected in the Sidebar, the current database session/path remain stable, and no unexpected prompt or warning occurs. This adds MainWindow action wiring coverage around existing creation behavior.
+
+Source map: `ActionRegistry::newClass` -> Classes menu -> `SidebarController::addClass()`; handler creates the class, opens Details, selects Classes. Focused class/target: `MainWindowClassesSidebarRootNavigationTests` / `ClassMngrMainWindowClassesSidebarRootNavigationTests`. Exclude Sidebar context-menu behavior, creation/read failures (deferred F298), dirty-page confirmation, no-database behavior, and unrelated class fields. F447 is accepted and ready to commit.
+
+Verification: target build passed without compiler warnings; selected QtTest passed 3 functions (setup, slot, cleanup); full target QtTest passed 5 functions (three slots, setup, cleanup); exact filtered CTest passed 1/1. Independent source review approved the action wiring, class-count/persisted-ID check, Details route, and Sidebar/session/path assertions. One missing Qt font-directory warning and offscreen `raise()`/keyboard-grab notices occurred; tests passed. No full project suite or production/CMake change.
