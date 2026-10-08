@@ -16272,3 +16272,53 @@ F442 is accepted in this changeset and ready to commit. The user requested a pau
 after this commit. F443 Delete Class QAction is next on resume; its discovery and
 implementation have not started. Batch 22 remains active through the F442 commit;
 F444-F446 remain provisional.
+
+### F442 committed / F443 selected-current - 2026-10-09
+
+F442, “Phase2 - Cover Import Teachers QAction apply success (F442),” is
+committed as 8cde28263d3c89cc5f3f610d031a1a536ad183d4 on Qt-Rewrite (branch
+ahead 27). Its teacher-import QAction apply evidence and focused verification
+remain recorded above. The requested pause after the F442 commit was observed;
+the user has resumed. Batch 22 is active with F443 Delete Class QAction
+selected/current. Bounded read-only discovery is underway; no F443 matrix or
+implementation has started. F444-F446 remain provisional. F285 successful New
+Teacher remains deferred, and same-path Open remains unselected pending its
+contract.
+
+### F443 acceptance matrix recorded before implementation - 2026-10-09
+
+Add a test to Qt test class MainWindowScheduleTestingClassesHandoffParityTests
+in CMake target ClassMngrMainWindowScheduleTestingClassesHandoffParityTests.
+Start from a clean PageType::Classes Details view with two unassigned classes: the
+target has a ClassInfo record and one schedule row; retain a sibling class.
+
+Trigger the actual deleteClass QAction. Automate the real sidebarRecordSelectionDialog
+chooser with a five-second watchdog to select the target, then accept the destructive
+Delete Class confirmation. Assert the target, ClassInfo, and schedule row are removed;
+the sibling info is unchanged and it becomes active in Details. The Classes Sidebar
+root, PageType, session, and path remain stable; no warning or unsaved-changes prompt
+appears. There is no teacher-assignment behavior in scope.
+
+Existing lower-level success/cancel tests cover controller semantics; this matrix
+adds the MainWindow QAction/chooser route. Build target
+ClassMngrMainWindowScheduleTestingClassesHandoffParityTests and run exact CTest
+^ClassMngrMainWindowScheduleTestingClassesHandoffParityTests$. F443 remains selected/current
+with this matrix recorded before implementation; implementation has not started.
+
+### F443 accepted in this changeset - 2026-10-09
+
+The actual deleteClass QAction drove the real chooser and destructive confirmation.
+The target class, class_info, and class_times were removed; the sibling's data stayed
+unchanged and it became active in Details. The Classes page, Sidebar root, session,
+and path remained stable. No warning or unsaved-changes prompt appeared.
+
+Executor and independent Tester each passed the exact target build, filtered CTest
+^ClassMngrMainWindowScheduleTestingClassesHandoffParityTests$ (1/1), direct target
+QtTest with 12 passes (10 test cases plus init/cleanup), and selected case (3/3).
+There were no compiler warnings; Qt font/offscreen notices only. The full suite was
+not run, and there were no production or CMake changes.
+
+F443 is accepted in this changeset and ready to commit. F444 successful Open File
+QAction replacement of an already-open profile is next after the F443 commit. Batch
+22 remains active; F445-F446 remain provisional. The F442 pause was observed and the
+user has resumed.

@@ -3076,3 +3076,18 @@ F442 will use the known checked-in sectioned_review.xlsx fixture and an empty de
 ## 2026-10-09 - F442 Import Teachers success accepted; pause after commit
 
 F442 drove the real Import Teachers QAction, Browse picker, asynchronous workbook validation, review choices, and apply path from a fresh database. The checked-in workbook with M1 candidate 0 / M2 None / H1 All created Hong and Park, Alex, and Taylor (2 Korean, 1 Native English, 1 GS), with zero updates/unchanged; the Korean sidebar refreshed and the exact category summary was shown. No warning or date-confirmation prompt appeared, and MyWorkspace/session/path remained stable. Executor and independent Tester passed target build, exact CTest 1/1, target QtTest 7/7, and selected case 3/3. No compiler warnings; Qt font/offscreen notices only. No full suite or production/CMake change. F442 is accepted and ready to commit. Per user request, pause after its commit; F443 Delete Class QAction is next on resume and has not started.
+
+
+## 2026-10-09 - F442 committed; user resumed at F443
+
+F442 committed as 8cde28263d3c89cc5f3f610d031a1a536ad183d4 (Phase2 - Cover Import Teachers QAction apply success (F442)); branch is ahead by 27. Only the six approved paths were committed; source change was test-only and diff checks passed. latest_session_work.md and unrelated %SystemDrive%/ remain excluded. After the user-requested pause, work resumed at F443 Delete Class QAction; bounded discovery is underway. Batch 22 remains active and F444-F446 provisional.
+
+
+## 2026-10-09 - F443 Delete Class MainWindow success matrix
+
+F443 will add the missing real MainWindow QAction success route in mainwindow_schedule_testing_classes_handoff_parity_tests.cpp. Start with two unassigned classes, target selected/open in a clean Classes Details page, and target ClassInfo plus a schedule row. Drive the real class chooser with a five-second watchdog and accept the Delete Class confirmation. Verify target/class-info/schedule removal, sibling data preservation and fallback to the sibling in Details, Classes sidebar route, stable session/path, and no warning or unsaved prompt. Keep teacher assignments out of scope. The lower-level controller suite already covers cancellation and success/fallback. Target/CTest: ClassMngrMainWindowScheduleTestingClassesHandoffParityTests. Matrix recorded before implementation.
+
+
+## 2026-10-09 - F443 Delete Class MainWindow success accepted
+
+The real MainWindow Delete Class QAction and chooser deleted the target after the destructive prompt. Its class, info, and schedule rows were removed; the sibling's info stayed unchanged and it became active in Details. The Classes page/sidebar route and database session/path remained stable, with no warning or unsaved-change prompt. Executor and independent Tester passed target build, exact CTest 1/1, direct target QtTest 12 passes (10 cases plus setup/cleanup), and selected case 3/3. No compiler warnings; Qt font/offscreen notices only. No full suite or production/CMake change. F443 is accepted and ready to commit; F444 successful Open File QAction replacement follows.

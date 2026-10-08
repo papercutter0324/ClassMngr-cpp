@@ -3,6 +3,7 @@
 #include "core/application_services.h"
 #include "core/language_service.h"
 #include "core/settingsmanager.h"
+#include "data/database/database_session.h"
 #include "domain/models/class_info.h"
 #include "domain/models/testing_class.h"
 #include "domain/models/teacher.h"
@@ -23,6 +24,8 @@
 
 #include <QApplication>
 #include <QComboBox>
+#include <QDialog>
+#include <QDialogButtonBox>
 #include <QDir>
 #include <QFileInfo>
 #include <QLabel>
@@ -30,6 +33,7 @@
 #include <QProgressBar>
 #include <QPushButton>
 #include <QRadioButton>
+#include <QSqlQuery>
 #include <QSignalSpy>
 #include <QStringList>
 #include <QTableWidget>
@@ -535,6 +539,144 @@ bool seedClassWithSchedule(
     return true;
 }
 
+bool seedUnassignedClassWithSchedule(
+    ApplicationServices& services,
+    const QString& className,
+    const QString& grade,
+    const QString& level,
+    const QString& day,
+    const QString& startTime,
+    const QString& endTime,
+    int* classId,
+    QString* error
+    )
+{
+    if (!classId)
+    {
+        if (error)
+        {
+            *error = QStringLiteral("Class ID output is required.");
+        }
+        return false;
+    }
+
+    const auto created = services.classService()->create(className);
+    if (!created || created.value() <= 0)
+    {
+        if (error)
+        {
+            *error = created
+                ? QStringLiteral("Could not create an F443 class ID.")
+                : QStringLiteral("Could not create the F443 class: %1")
+                    .arg(created.error());
+        }
+        return false;
+    }
+
+    const int createdClassId = created.value();
+    const auto loadedInfo = services.classService()->classInfo(createdClassId);
+    if (!loadedInfo)
+    {
+        if (error)
+        {
+            *error = QStringLiteral("Could not read the F443 class details: %1")
+                .arg(loadedInfo.error());
+        }
+        return false;
+    }
+
+    ClassInfo info = loadedInfo.value();
+    info.teacherId = -1;
+    info.classGrade = grade;
+    info.classLevel = level;
+    info.classTimes = {{day, startTime, endTime}};
+    info.notes = className + QStringLiteral(" F443 fixture notes.");
+    const Status saved = services.classService()->saveClassInfo(info);
+    if (!saved)
+    {
+        if (error)
+        {
+            *error = QStringLiteral("Could not save the F443 class details: %1")
+                .arg(saved.error());
+        }
+        return false;
+    }
+
+    *classId = createdClassId;
+    return true;
+}
+
+int classScopedRowCount(
+    const DatabaseSession& session,
+    const QString& tableName,
+    const int classId,
+    const QString& keyColumnName = QStringLiteral("class_id")
+    )
+{
+    QSqlQuery query(session.database());
+    if (!query.prepare(
+            QStringLiteral("SELECT COUNT(*) FROM %1 WHERE %2=?")
+                .arg(tableName, keyColumnName)
+            ))
+    {
+        return -1;
+    }
+    query.addBindValue(classId);
+    return query.exec() && query.next()
+        ? query.value(0).toInt()
+        : -1;
+}
+
+bool sameClassTimes(
+    const QList<ClassTime>& left,
+    const QList<ClassTime>& right
+    )
+{
+    if (left.size() != right.size())
+    {
+        return false;
+    }
+
+    for (qsizetype index = 0; index < left.size(); ++index)
+    {
+        const ClassTime& leftTime = left.at(index);
+        const ClassTime& rightTime = right.at(index);
+        if (leftTime.day != rightTime.day
+            || leftTime.startTime != rightTime.startTime
+            || leftTime.endTime != rightTime.endTime)
+        {
+            return false;
+        }
+    }
+    return true;
+}
+
+bool sameClassInfo(const ClassInfo& left, const ClassInfo& right)
+{
+    return left.classId == right.classId
+        && left.teacherId == right.teacherId
+        && left.teacherKr == right.teacherKr
+        && left.teacherEn == right.teacherEn
+        && left.teacherPreferredName == right.teacherPreferredName
+        && left.roomNumber == right.roomNumber
+        && left.wifiName == right.wifiName
+        && left.wifiPassword == right.wifiPassword
+        && left.internetType == right.internetType
+        && left.zoomId == right.zoomId
+        && left.zoomPassword == right.zoomPassword
+        && left.projectionType == right.projectionType
+        && left.classGrade == right.classGrade
+        && left.classLevel == right.classLevel
+        && left.readingBook == right.readingBook
+        && left.essayBook == right.essayBook
+        && left.classColor == right.classColor
+        && left.fontColor == right.fontColor
+        && sameClassTimes(left.classTimes, right.classTimes)
+        && sameClassTimes(left.intensiveTimes, right.intensiveTimes)
+        && left.notes == right.notes
+        && left.timeFillerActivities == right.timeFillerActivities;
+}
+
 using ScheduleEditorDialogScript =
     std::function<bool(ScheduleEditorDialog*)>;
 
@@ -680,6 +822,7 @@ private slots:
     void scheduleCellManageClassesPreservesRequestedSlotForNewClass();
     void scheduleImportPersistsAndRefreshesTeacherSidebar();
     void classesDetailsSaveRefreshesClassActionsThroughMainWindow();
+    void deleteClassActionSelectsTargetAndKeepsSiblingDetails();
     void workspaceScheduleEditorSaveRefreshesClassActionsThroughMainWindow();
     void testingClassRenameMarksAndRefreshesBothSchedulePages();
     void workspaceScheduleDisplayModeUpdatesLoadedClassesPage();
@@ -1577,6 +1720,409 @@ classesDetailsSaveRefreshesClassActionsThroughMainWindow()
     QCOMPARE(services->databaseSession(), activeSession);
     QCOMPARE(services->currentDatabasePath(), activePath);
     assertNoPromptRequests(fixture.prompts);
+}
+
+void MainWindowScheduleTestingClassesHandoffParityTests::
+deleteClassActionSelectsTargetAndKeepsSiblingDetails()
+{
+    MainWindowFixture fixture;
+    QString setupError;
+    QVERIFY2(fixture.initialize(&setupError), qPrintable(setupError));
+
+    MainWindow* const window = fixture.window.get();
+    ApplicationServices* const services = window->services();
+    PageManager* const pages = window->pageManager();
+    QVERIFY(services);
+    QVERIFY(pages);
+    DatabaseSession* const activeSession = services->databaseSession();
+    QVERIFY(activeSession);
+    const QString activePath = services->currentDatabasePath();
+
+    QAction* const deleteClassAction = window->actions().deleteClass;
+    QVERIFY(deleteClassAction);
+    QVERIFY(!deleteClassAction->isEnabled());
+
+    int targetClassId = -1;
+    int siblingClassId = -1;
+    QString seedError;
+    QVERIFY2(
+        seedUnassignedClassWithSchedule(
+            *services,
+            QStringLiteral("F443 Target"),
+            QStringLiteral("E5"),
+            QStringLiteral("Artemis"),
+            QStringLiteral("Monday"),
+            QStringLiteral("4:00 PM"),
+            QStringLiteral("4:55 PM"),
+            &targetClassId,
+            &seedError
+            ),
+        qPrintable(seedError)
+        );
+    QVERIFY2(
+        seedUnassignedClassWithSchedule(
+            *services,
+            QStringLiteral("F443 Sibling"),
+            QStringLiteral("E4"),
+            QStringLiteral("Theseus"),
+            QStringLiteral("Wednesday"),
+            QStringLiteral("5:00 PM"),
+            QStringLiteral("5:55 PM"),
+            &siblingClassId,
+            &seedError
+            ),
+        qPrintable(seedError)
+        );
+    QVERIFY(targetClassId > 0);
+    QVERIFY(siblingClassId > 0);
+    QVERIFY(targetClassId != siblingClassId);
+    QVERIFY(!deleteClassAction->isEnabled());
+
+    const auto originalTargetInfo =
+        services->classService()->classInfo(targetClassId);
+    const auto originalSiblingInfo =
+        services->classService()->classInfo(siblingClassId);
+    QVERIFY(originalTargetInfo);
+    QVERIFY(originalSiblingInfo);
+    QCOMPARE(originalTargetInfo->teacherId, -1);
+    QCOMPARE(originalSiblingInfo->teacherId, -1);
+    QCOMPARE(originalTargetInfo->classTimes.size(), 1);
+    QCOMPARE(originalSiblingInfo->classTimes.size(), 1);
+    QCOMPARE(
+        classScopedRowCount(*activeSession, QStringLiteral("class_info"), targetClassId),
+        1
+        );
+    QCOMPARE(
+        classScopedRowCount(*activeSession, QStringLiteral("class_times"), targetClassId),
+        1
+        );
+
+    pages->showPage(PageType::Classes);
+    QApplication::processEvents();
+    QVERIFY(pages->isCurrentPage(PageType::Classes));
+    ClassesPage* const classesPage = pages->classesPage();
+    QVERIFY(classesPage);
+    QVERIFY(classesPage->openClass(targetClassId, ClassesSection::Details));
+    QCOMPARE(classesPage->currentClassId(), targetClassId);
+    QCOMPARE(classesPage->currentSection(), ClassesSection::Details);
+    classesPage->setSaveMode(SaveMode::Manual);
+
+    QComboBox* const grade = classesPage->findChild<QComboBox*>(
+        QStringLiteral("classGradeCombo")
+        );
+    QComboBox* const level = classesPage->findChild<QComboBox*>(
+        QStringLiteral("classLevelCombo")
+        );
+    QComboBox* const readingBook = classesPage->findChild<QComboBox*>(
+        QStringLiteral("classReadingBookCombo")
+        );
+    QComboBox* const essayBook = classesPage->findChild<QComboBox*>(
+        QStringLiteral("classEssayBookCombo")
+        );
+    QPushButton* const saveButton = classesPage->findChild<QPushButton*>(
+        QStringLiteral("classInfoSaveButton")
+        );
+    QVERIFY(grade);
+    QVERIFY(level);
+    QVERIFY(readingBook);
+    QVERIFY(essayBook);
+    QVERIFY(saveButton);
+
+    QSignalSpy savedSpy(classesPage, &ClassesPage::classInfoSaved);
+    QVERIFY(savedSpy.isValid());
+    grade->setCurrentText(QStringLiteral("E4"));
+    level->setCurrentText(QStringLiteral("Theseus"));
+    readingBook->setCurrentText(QStringLiteral("Reading Explorer 1"));
+    essayBook->setCurrentText(QStringLiteral("4A"));
+    QVERIFY(classesPage->hasUnsavedChanges());
+    QVERIFY(!deleteClassAction->isEnabled());
+    saveButton->click();
+    QApplication::processEvents();
+    QCOMPARE(savedSpy.size(), 1);
+    QCOMPARE(savedSpy.constFirst().at(0).toInt(), targetClassId);
+    QVERIFY(deleteClassAction->isEnabled());
+    QVERIFY(!classesPage->hasUnsavedChanges());
+
+    const auto targetInfo = services->classService()->classInfo(targetClassId);
+    const auto siblingInfoBeforeDelete =
+        services->classService()->classInfo(siblingClassId);
+    QVERIFY(targetInfo);
+    QVERIFY(siblingInfoBeforeDelete);
+    QCOMPARE(targetInfo->teacherId, -1);
+    QCOMPARE(targetInfo->classGrade, QStringLiteral("E4"));
+    QCOMPARE(targetInfo->classLevel, QStringLiteral("Theseus"));
+    QCOMPARE(targetInfo->classTimes.size(), 1);
+    QCOMPARE(targetInfo->classTimes.constFirst().day, QStringLiteral("Monday"));
+    QCOMPARE(targetInfo->classTimes.constFirst().startTime, QStringLiteral("4:00 PM"));
+    QCOMPARE(targetInfo->classTimes.constFirst().endTime, QStringLiteral("4:55 PM"));
+    QVERIFY(sameClassInfo(*originalSiblingInfo, *siblingInfoBeforeDelete));
+    QCOMPARE(
+        classScopedRowCount(*activeSession, QStringLiteral("class_info"), siblingClassId),
+        1
+        );
+    QCOMPARE(
+        classScopedRowCount(*activeSession, QStringLiteral("class_times"), targetClassId),
+        1
+        );
+    QCOMPARE(
+        classScopedRowCount(*activeSession, QStringLiteral("class_times"), siblingClassId),
+        1
+        );
+
+    Sidebar* const sidebar = window->findChild<Sidebar*>();
+    QVERIFY(sidebar);
+    QCOMPARE(sidebar->getSelectedTeacherId(), -1);
+    QWidget* const classesWidget = pages->currentWidget();
+    QVERIFY(classesWidget);
+    const QString expectedTargetLabel =
+        QStringLiteral("E4 Theseus • No Teacher • Mon (4:00)");
+
+    fixture.prompts.scriptedChoices.enqueue(PromptChoice::Destructive);
+    bool chooserSeen = false;
+    bool chooserAccepted = false;
+    bool timedOut = false;
+    bool fallbackRejectedModal = false;
+    int selectedChooserClassId = -1;
+    QString selectedChooserLabel;
+    QString chooserFailure;
+
+    QTimer chooserPoll;
+    chooserPoll.setInterval(10);
+    QObject::connect(
+        &chooserPoll,
+        &QTimer::timeout,
+        window,
+        [&]
+        {
+            QDialog* dialog = qobject_cast<QDialog*>(
+                QApplication::activeModalWidget()
+                );
+            if (!dialog)
+            {
+                for (QWidget* widget : QApplication::topLevelWidgets())
+                {
+                    auto* const candidate = qobject_cast<QDialog*>(widget);
+                    if (candidate
+                        && candidate->objectName()
+                            == QStringLiteral("sidebarRecordSelectionDialog"))
+                    {
+                        dialog = candidate;
+                        break;
+                    }
+                }
+            }
+            if (!dialog)
+            {
+                return;
+            }
+            if (dialog->objectName()
+                != QStringLiteral("sidebarRecordSelectionDialog"))
+            {
+                chooserFailure = QStringLiteral(
+                    "An unexpected modal dialog opened before class selection."
+                    );
+                fallbackRejectedModal = true;
+                dialog->reject();
+                return;
+            }
+            if (chooserSeen)
+            {
+                return;
+            }
+
+            chooserSeen = true;
+            QComboBox* const combo = dialog->findChild<QComboBox*>(
+                QStringLiteral("sidebarRecordSelectionCombo")
+                );
+            QDialogButtonBox* const buttons =
+                dialog->findChild<QDialogButtonBox*>(
+                    QStringLiteral("sidebarRecordSelectionButtonBox")
+                    );
+            QPushButton* const acceptButton = buttons
+                ? buttons->button(QDialogButtonBox::Ok)
+                : nullptr;
+            if (!combo || !acceptButton)
+            {
+                chooserFailure = QStringLiteral(
+                    "The class selection dialog controls were missing."
+                    );
+                dialog->reject();
+                return;
+            }
+
+            const int targetIndex = combo->findData(targetClassId);
+            if (targetIndex < 0)
+            {
+                chooserFailure = QStringLiteral(
+                    "The target class was missing from the selection dialog."
+                    );
+                dialog->reject();
+                return;
+            }
+            combo->setCurrentIndex(targetIndex);
+            selectedChooserClassId = combo->currentData().toInt();
+            selectedChooserLabel = combo->currentText();
+            if (selectedChooserClassId != targetClassId
+                || selectedChooserLabel != expectedTargetLabel
+                || !acceptButton->isEnabled())
+            {
+                chooserFailure = QStringLiteral(
+                    "The target class could not be selected for deletion."
+                    );
+                dialog->reject();
+                return;
+            }
+
+            QObject::connect(
+                dialog,
+                &QDialog::accepted,
+                window,
+                [&chooserAccepted]
+                {
+                    chooserAccepted = true;
+                }
+                );
+            acceptButton->click();
+        }
+        );
+
+    QTimer chooserWatchdog;
+    chooserWatchdog.setSingleShot(true);
+    QObject::connect(
+        &chooserWatchdog,
+        &QTimer::timeout,
+        window,
+        [&]
+        {
+            if (chooserAccepted)
+            {
+                return;
+            }
+            timedOut = true;
+            chooserFailure = QStringLiteral(
+                "Timed out waiting for the class selection dialog."
+                );
+
+            QDialog* dialog = qobject_cast<QDialog*>(
+                QApplication::activeModalWidget()
+                );
+            if (!dialog)
+            {
+                for (QWidget* widget : QApplication::topLevelWidgets())
+                {
+                    auto* const candidate = qobject_cast<QDialog*>(widget);
+                    if (candidate && candidate->isModal() && candidate->isVisible())
+                    {
+                        dialog = candidate;
+                        break;
+                    }
+                }
+            }
+            if (dialog)
+            {
+                dialog->reject();
+            }
+            else if (QWidget* const activeModal =
+                         QApplication::activeModalWidget())
+            {
+                fallbackRejectedModal = true;
+                activeModal->close();
+            }
+        }
+        );
+
+    chooserPoll.start();
+    chooserWatchdog.start(5000);
+    deleteClassAction->trigger();
+    QApplication::processEvents();
+    chooserPoll.stop();
+    chooserWatchdog.stop();
+    if (!chooserSeen && chooserFailure.isEmpty())
+    {
+        chooserFailure = QStringLiteral(
+            "The class selection dialog did not open."
+            );
+    }
+
+    QVERIFY2(chooserSeen, qPrintable(chooserFailure));
+    QVERIFY2(chooserAccepted, qPrintable(chooserFailure));
+    QVERIFY2(!timedOut, qPrintable(chooserFailure));
+    QVERIFY2(!fallbackRejectedModal, qPrintable(chooserFailure));
+    QVERIFY2(chooserFailure.isEmpty(), qPrintable(chooserFailure));
+    QCOMPARE(selectedChooserClassId, targetClassId);
+    QCOMPARE(selectedChooserLabel, expectedTargetLabel);
+
+    QCOMPARE(fixture.prompts.confirmations.size(), 1);
+    const PromptRequest& confirmation = fixture.prompts.confirmations.constFirst();
+    QCOMPARE(confirmation.parent, static_cast<QWidget*>(sidebar));
+    QCOMPARE(confirmation.title, QStringLiteral("Delete Class"));
+    QCOMPARE(
+        confirmation.message,
+        QStringLiteral("Delete 'E4 Theseus • No Teacher • Mon (4:00)'?")
+        );
+    QVERIFY(confirmation.severity == PromptSeverity::Warning);
+    QCOMPARE(confirmation.acceptText, QStringLiteral("Delete"));
+    QCOMPARE(confirmation.rejectText, QStringLiteral("Cancel"));
+    QVERIFY(confirmation.destructive);
+    QVERIFY(fixture.prompts.messages.isEmpty());
+    QVERIFY(fixture.prompts.asynchronousMessages.isEmpty());
+    QVERIFY(fixture.prompts.unsavedChangesConfirmations.isEmpty());
+    QVERIFY(fixture.prompts.actionPrompts.isEmpty());
+    QVERIFY(fixture.prompts.scriptedChoices.isEmpty());
+
+    const auto remainingClasses = services->classService()->classes();
+    QVERIFY(remainingClasses);
+    QCOMPARE(remainingClasses->size(), 1);
+    QCOMPARE(remainingClasses->constFirst().id, siblingClassId);
+    QCOMPARE(
+        remainingClasses->constFirst().name,
+        QStringLiteral("F443 Sibling")
+        );
+    QCOMPARE(
+        classScopedRowCount(*activeSession, QStringLiteral("class_info"), targetClassId),
+        0
+        );
+    const auto siblingInfoAfterDelete =
+        services->classService()->classInfo(siblingClassId);
+    QVERIFY(siblingInfoAfterDelete);
+    QVERIFY(sameClassInfo(*originalSiblingInfo, *siblingInfoAfterDelete));
+    QCOMPARE(
+        classScopedRowCount(
+            *activeSession,
+            QStringLiteral("classes"),
+            targetClassId,
+            QStringLiteral("id")
+            ),
+        0
+        );
+    QCOMPARE(
+        classScopedRowCount(*activeSession, QStringLiteral("class_info"), targetClassId),
+        0
+        );
+    QCOMPARE(
+        classScopedRowCount(*activeSession, QStringLiteral("class_times"), targetClassId),
+        0
+        );
+    QCOMPARE(
+        classScopedRowCount(*activeSession, QStringLiteral("class_info"), siblingClassId),
+        1
+        );
+    QCOMPARE(
+        classScopedRowCount(*activeSession, QStringLiteral("class_times"), siblingClassId),
+        1
+        );
+
+    QVERIFY(pages->isCurrentPage(PageType::Classes));
+    QCOMPARE(pages->classesPage(), classesPage);
+    QCOMPARE(pages->currentWidget(), classesWidget);
+    QCOMPARE(classesPage->currentClassId(), siblingClassId);
+    QCOMPARE(classesPage->currentSection(), ClassesSection::Details);
+    QVERIFY(!classesPage->hasUnsavedChanges());
+    QCOMPARE(sidebar->selectedKeys(), QStringList{QStringLiteral("classes")});
+    QCOMPARE(sidebar->getSelectedTeacherId(), -1);
+    QVERIFY(services->hasOpenDatabase());
+    QCOMPARE(services->databaseSession(), activeSession);
+    QCOMPARE(services->currentDatabasePath(), activePath);
 }
 
 void MainWindowScheduleTestingClassesHandoffParityTests::

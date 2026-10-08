@@ -3265,3 +3265,18 @@ Add a successful Import Teachers case to MainWindowManageCampusesParityTests, co
 ## 2026-10-09 - F442 Import Teachers MainWindow apply accepted
 
 The new case browses the checked-in XLSX through the real MainWindow QAction and TeacherImportDialog. It waits for async validation, applies M1 candidate 0 / M2 None / H1 All from a clean workspace, and verifies 2 Korean records (Hong/Park), 1 Native English (Alex), and 1 GS Team member (Taylor), all created with no updates/unchanged. It checks category table counts, Korean sidebar IDs/labels, source date, exact success summary, no warning/date confirmation, and stable MyWorkspace/session/path. Executor and independent Tester passed Ninja Debug target build, exact CTest 1/1, target QtTest 7/7, and selected case 3/3. No compiler warnings; Qt font/offscreen notices only. No full-suite run or production/CMake change. F442 is accepted and ready to commit. The user asked to pause after this commit; F443 Delete Class QAction is next on resume, but no F443 discovery or implementation has started.
+
+
+## 2026-10-09 - F442 committed; resumed at F443
+
+F442 committed as 8cde28263d3c89cc5f3f610d031a1a536ad183d4 (Phase2 - Cover Import Teachers QAction apply success (F442)); branch is ahead by 27. The six-path commit contains the test-only source change and accepted records; diff checks passed. latest_session_work.md and unrelated %SystemDrive%/ remain outside commits. The user has resumed after the requested pause. Batch 22 remains active; F443 Delete Class QAction is selected/current and bounded read-only discovery is underway. F444-F446 remain provisional.
+
+
+## 2026-10-09 - F443 Delete Class MainWindow success matrix recorded
+
+Add a MainWindow integration case to MainWindowScheduleTestingClassesHandoffParityTests for the real deleteClass QAction. Preseed two unassigned classes before opening a clean Classes details page, with the target owning ClassInfo and one schedule row and the sibling retained as fallback. Trigger the QAction, use the real sidebarRecordSelectionDialog to choose the target via the combo/button with a five-second modal watchdog, and script PromptChoice::Destructive for the actual Delete Class confirmation. Assert the exact confirmation is consumed, no warning/unsaved prompt appears, target class and its ClassInfo/schedule rows are removed, sibling class/info remain unchanged, the Classes page remains current with sibling selected in Details, sidebar key is classes, and session/path stay active. No teacher assignment behavior is in scope. Direct-controller tests already cover success/fallback; F443 adds the QAction/chooser route. Target/CTest: ClassMngrMainWindowScheduleTestingClassesHandoffParityTests. Matrix recorded before implementation; no implementation has started.
+
+
+## 2026-10-09 - F443 Delete Class QAction success accepted
+
+The new MainWindow test triggers the real deleteClass QAction, selects the target through the actual chooser, and accepts the destructive confirmation. It verifies target class/ClassInfo/schedule removal, sibling record/info unchanged and active in Classes Details, Classes sidebar route, stable page/session/path, and no warning or unsaved-change prompt. No teacher assignments or cross-page navigation are asserted. Executor and independent Tester passed the target build, exact CTest 1/1, direct target QtTest 12 passes (10 test cases plus setup/cleanup), and selected case 3/3. No compiler warnings; Qt font/offscreen notices only. No full-suite run or production/CMake change. F443 is accepted and ready to commit. F444 successful Open File QAction replacement is next after this commit; Batch 22 remains active.
