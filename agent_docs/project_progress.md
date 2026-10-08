@@ -3220,3 +3220,18 @@ F439 adds the successful counterpart to F434 in ClassMngrMainWindowTeacherSideba
 ## 2026-10-09 - F439 Delete Teacher QAction success accepted
 
 The new MainWindow case uses the enabled deleteTeacher QAction, selects a target in the actual chooser, and accepts the destructive confirmation. It verifies the confirmation request was consumed with no extra warning/message, the target is absent from repository and sidebar, the unassigned survivor record/sidebar leaf remain unchanged, no teacher row is selected, and MyWorkspace/page/widget/service/session/path remain stable. Executor and independent Tester passed the Ninja Debug target build, exact CTest 1/1, direct target QtTest 7/7, and selected case 3/3. No compiler warnings; offscreen Qt/font notices only. No full-suite run or production/CMake change. F439 is accepted and ready to commit. F440 Complete Export Classes JSON output is next after this commit; Batch 22 remains active.
+
+
+## 2026-10-09 - F439 committed; F440 selected
+
+F439 committed as a0c50d2dd37de11a4bfa91cfea044822cba7269f (Phase2 - Cover Delete Teacher QAction confirmation success (F439)); branch is ahead by 24. The six-path commit contains the test-only source change and accepted progress records; diff checks passed. latest_session_work.md and unrelated %SystemDrive%/ remain outside slice commits. Batch 22 remains active. F440 Complete Export Classes JSON output is selected/current and bounded read-only discovery is underway; F441-F446 remain provisional.
+
+
+## 2026-10-09 - F440 Export Classes JSON success matrix recorded
+
+F440 adds a successful companion to F432 in MainWindowCloseFileParityTests. Reuse the real MainWindow exportClasses QAction and ClassExportDialog observer, whose 10 ms poll and five-second watchdog reject a stuck modal; assert dialog observed, selected IDs contain only the target, Export clicked, and neither timeout nor fallback rejection occurred. Seed one teacher and two classes, select only the target, and script a temporary .json save path. Assert the file exists and parses; root format is ClassMngr Classes, version is 1, exported_at_utc parses as UTC, and classes contains only the selected class with its class_grade/class_level and teacher_ref linked to the single exported teacher profile. Do not compare the variable timestamp or treat generated package keys as database IDs. Assert one successful Export Classes information prompt mentions count/path, no warning, and MyWorkspace/session/path and persisted class records remain unchanged. Existing codec tests own exhaustive payload schema coverage; F440 proves the QAction/dialog/output integration. Exact target/CTest: ClassMngrMainWindowCloseFileParityTests. Matrix recorded before implementation; no implementation has started.
+
+
+## 2026-10-09 - F440 Export Classes JSON success accepted
+
+The new MainWindow case uses the real Export Classes QAction and dialog observer, verifies both seeded classes are listed but only the target is selected, and writes through the scripted temporary JSON picker. Parsed output has format ClassMngr Classes, version 1, a valid UTC timestamp, exactly the selected class with its info, and a teacher_ref linked to the exported teacher; the unselected class is absent. The success information prompt has the expected count/path and no warning. Workspace page/session/path, class names/count/table rows, and full class-info snapshots are unchanged. Executor and independent Tester passed Ninja Debug target build, exact CTest 1/1, target QtTest 9/9, and selected case 3/3. No compiler warnings; Qt font/offscreen notices only. No full suite or production/CMake change. F440 is accepted and ready to commit. F441 Import Classes QAction apply is next after this commit; Batch 22 remains active.

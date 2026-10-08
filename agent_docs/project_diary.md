@@ -3031,3 +3031,18 @@ F439 will add a focused MainWindow success case beside F434 in mainwindow_teache
 ## 2026-10-09 - F439 MainWindow Delete Teacher accepted
 
 The F439 success case reuses the real MainWindow QAction and chooser. The target teacher was deleted from the repository and sidebar after the destructive confirmation; the unassigned survivor snapshot and leaf remained unchanged. No teacher row was selected, and MyWorkspace, the page/widget, service, database session, and path remained stable. The prompt was consumed with no extra warning/message. Executor and independent Tester passed the Ninja Debug target build, exact CTest 1/1, full target QtTest 7/7, and selected case 3/3. No compiler warnings; Qt offscreen/font notices only. No full suite or production/CMake change. F439 is accepted and ready to commit; F440 Export Classes JSON completion follows after commit.
+
+
+## 2026-10-09 - F439 committed; F440 selected
+
+F439 committed as a0c50d2dd37de11a4bfa91cfea044822cba7269f (Phase2 - Cover Delete Teacher QAction confirmation success (F439)); branch is ahead by 24. Only the test file and six approved documentation paths were committed; diff checks passed. latest_session_work.md and unrelated %SystemDrive%/ stay excluded. Batch 22 is active with F440 successful Export Classes JSON output selected/current for bounded discovery; F441-F446 remain provisional.
+
+
+## 2026-10-09 - F440 successful Export Classes JSON matrix
+
+F440 will add a success case beside F432’s picker cancellation in mainwindow_close_file_parity_tests.cpp. Trigger the real QAction and reuse the observer with its five-second modal watchdog; select exactly one of two seeded classes, then return a temporary .json path from FakeFileDialogService. Verify the saved JSON envelope (ClassMngr Classes, version 1, valid UTC export timestamp), one selected class with its class info and linked exported teacher, and absence of the unselected class. Assert the success information prompt carries count/path and no warning, while MyWorkspace, database session/path, and persisted classes stay unchanged. Avoid asserting a fixed timestamp or serializing DB IDs into generated keys; codec tests already cover full payload parity. Exact target/CTest: ClassMngrMainWindowCloseFileParityTests. Matrix recorded before implementation.
+
+
+## 2026-10-09 - F440 Export Classes JSON success accepted
+
+The F440 case exercised the real QAction, actual ClassExportDialog and JSON save path. It listed two classes, selected only the target, and verified the saved package metadata, UTC timestamp, target class information, linked teacher profile, and absence of the unselected class. The Export Classes information prompt reported count and output path without warnings. Database class names/count/rows/info, MyWorkspace and page identity, session/path remained unchanged. Executor and independent Tester passed target build, exact CTest 1/1, QtTest 9/9, and selected case 3/3. No compiler warnings; Qt font/offscreen notices only. No full suite or production/CMake change. F440 is accepted and ready to commit; F441 Import Classes apply follows.

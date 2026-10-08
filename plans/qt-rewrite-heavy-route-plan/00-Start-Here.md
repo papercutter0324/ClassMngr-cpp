@@ -160,11 +160,12 @@ synchronization is committed (`f4bc5282`). F416 Document Catalog rendered
   F437 Report worker event-post failure with a zero-capacity queue is
   committed as f355a1aa; see the progress log for acceptance evidence.
   F438, “Phase2 - Reject existing IDs in repeat-series creation (F438),” is
-  committed as 0c2ceca6; Batch 21 is complete. Batch 22 is active with F439
-  Accept Delete Teacher confirmation success path is accepted in this changeset
-  and ready to commit. F440 Complete Export Classes JSON output is next after the
-  F439 commit; F441-F446 remain provisional. F285 stays deferred; same-path Open
-  remains unselected pending a contract. See the progress log for details. Gates 1 and 2 remain Partial,
+  committed as 0c2ceca6; Batch 21 is complete. F439, Delete Teacher QAction
+  confirmation success, is committed as a0c50d2d (branch ahead 24). Batch 22 is
+  active with F440 Complete Export Classes JSON output accepted in this changeset
+  and ready to commit. F441 Import Classes QAction apply with a create-only fixture
+  is next after commit; F442-F446 remain provisional. F285 stays deferred; same-path
+  Open remains unselected pending a contract. See the progress log for details. Gates 1 and 2 remain Partial,
   with broader feature migration, parity, and 96-class Release memory evidence still open.
   See the
   [Phase 2 progress log](03-Phase-2-Progress-Log.md) for current scope and

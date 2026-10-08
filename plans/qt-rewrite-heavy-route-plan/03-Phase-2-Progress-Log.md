@@ -16111,3 +16111,56 @@ no production or CMake changes.
 F439 is accepted in this changeset and ready to commit. F440 Complete Export
 Classes JSON output is next after the F439 commit. Batch 22 remains active;
 F441-F446 remain provisional.
+
+### F439 committed / F440 selected-current - 2026-10-09
+
+F439, “Phase2 - Cover Delete Teacher QAction confirmation success (F439),” is
+committed as a0c50d2dd37de11a4bfa91cfea044822cba7269f on Qt-Rewrite (branch
+ahead 24). Its MainWindow QAction/chooser acceptance evidence and focused
+verification remain recorded above. Batch 22 remains active. F440 Complete
+Export Classes JSON output is selected/current; bounded read-only context
+discovery is underway, and no F440 acceptance matrix or implementation has
+started. F441-F446 remain provisional. F285 successful New Teacher remains
+deferred, and same-path Open remains unselected pending its contract.
+
+### F440 acceptance matrix recorded before implementation - 2026-10-09
+
+Extend tests/mainwindow_close_file_parity_tests.cpp with the success counterpart
+to F432 case exportClassesActionReachesJsonPickerAndCancellationIsSilent(), in
+the ClassMngrMainWindowCloseFileParityTests target. Cover the actual QAction to
+SidebarController::exportClasses to ClassExportDialog to saveClassExport path.
+
+Seed one teacher and two classes. Reuse the observer that polls every 10 ms with
+a five-second watchdog/fallback. Trigger the QAction, select only the target
+class, and script a temporary .json save path. Assert the observer selected
+exactly that class, clicked Export, and neither timed out nor used fallback.
+
+Parse the emitted JSON and assert format ClassMngr Classes, version 1, a valid
+UTC exported_at_utc, exactly the selected class with its class_grade and
+class_level, and a teacher_ref linked to the seeded teacher. Assert the
+unselected class is absent. Assert exactly one successful Export Classes info
+prompt mentions the exported count and path, no warning appeared, and MyWorkspace,
+session/path, and stored records remain unchanged. Avoid fixed timestamps and
+database IDs/generated keys; existing codec tests cover exhaustive payload
+validation.
+
+Build target ClassMngrMainWindowCloseFileParityTests and run exact CTest
+^ClassMngrMainWindowCloseFileParityTests$. F440 remains selected/current with this
+matrix recorded before implementation; implementation has not started.
+
+### F440 accepted in this changeset - 2026-10-09
+
+The real Export Classes QAction reached the dialog and produced JSON for only
+the selected class, with its teacher_ref linked to the seeded teacher; the
+unselected class was absent. The successful Export Classes info prompt reported
+count and path. Full class/teacher and workspace records remained unchanged.
+
+Executor and independent Tester each passed the Ninja Debug target build, exact
+CTest ^ClassMngrMainWindowCloseFileParityTests$ (1/1), target QtTest (9/9), and
+selected case (3/3). There were no compiler warnings; Qt font/offscreen notices
+only. The full suite was not run. Only tests/mainwindow_close_file_parity_tests.cpp
+changed; there were no production or CMake changes.
+
+F440 is accepted in this changeset and ready to commit. F441 Import Classes
+QAction apply with a create-only fixture is next after the F440 commit. Batch 22
+remains active; F442-F446 remain provisional.
