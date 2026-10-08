@@ -93,6 +93,8 @@ cmake --build --preset windows-x64-release
 cmake --build --preset windows-x64-release-install
 ```
 
+The Windows presets use the Visual Studio 2022 generator so CMake can apply the selected x64 or ARM64 target architecture. If an existing Windows build directory was configured with another generator, refresh its cache once before building, for example `cmake --fresh --preset windows-x64-release`.
+
 Release presets run `windeployqt` after building. The install preset copies the standalone app under `dist/ClassMngr-windows-x64`. Run and distribute the whole installed directory, keeping `ClassMngr.exe` together with the copied Qt DLLs, plugins, QML files, and license files.
 
 ClassMngr supports x64 and ARM64 Windows; it does not produce a Win32 build. Build an x64 installer with:

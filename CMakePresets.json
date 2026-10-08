@@ -52,6 +52,7 @@
       "name": "windows-msvc-base",
       "hidden": true,
       "inherits": "base",
+      "generator": "Visual Studio 18 2026",
       "condition": {
         "type": "equals",
         "lhs": "${hostSystemName}",
