@@ -37,7 +37,7 @@ class MainWindowEditActionParityTests final : public QObject
 
 private slots:
     void initTestCase();
-    void undoActionRestoresPersistedPersonalNameInFocusedLineEdit();
+    void undoAndRedoActionsRestoreAndReapplyPersonalNameInFocusedLineEdit();
 
 private:
     QTemporaryDir m_settingsDirectory;
@@ -56,7 +56,7 @@ void MainWindowEditActionParityTests::initTestCase()
 }
 
 void MainWindowEditActionParityTests::
-undoActionRestoresPersistedPersonalNameInFocusedLineEdit()
+undoAndRedoActionsRestoreAndReapplyPersonalNameInFocusedLineEdit()
 {
     QTemporaryDir workspaceRoot;
     QVERIFY(workspaceRoot.isValid());
@@ -134,6 +134,17 @@ undoActionRestoresPersistedPersonalNameInFocusedLineEdit()
     undoAction->trigger();
 
     QCOMPARE(nameEditor->text(), baselineName);
+    QVERIFY(nameEditor->hasFocus());
+    QCOMPARE(QApplication::focusWidget(), nameEditor);
+
+    QAction* const redoAction = window.actions().redo;
+    QVERIFY(redoAction);
+    QVERIFY(redoAction->isEnabled());
+    redoAction->trigger();
+
+    QCOMPARE(nameEditor->text(), draftName);
+    QVERIFY(nameEditor->hasFocus());
+    QCOMPARE(QApplication::focusWidget(), nameEditor);
 }
 
 QTEST_MAIN(MainWindowEditActionParityTests)

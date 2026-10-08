@@ -16656,3 +16656,36 @@ build passed. The selected case and full target QtTest each passed 3. Filtered C
 ClassMngrMainWindowEditActionParityTests passed 1/1; git diff --check was clean. One Qt font-directory warning
 appeared. F450 is accepted in this changeset and ready to commit; Batch 26 remains active until
 commit.
+
+### F450 committed - 2026-10-09
+
+F450, “Phase2 - Cover Undo QAction focused-editor dispatch (F450),” was committed as
+e39852c8a9cef33c80d684dd0e63e18d19a6acf7 on Qt-Rewrite (branch ahead 35). The commit includes
+exactly seven approved paths and its commit diff check was clean. Batch 26 is complete. Batch 27
+is active with F451 bounded QAction coverage discovery underway; no candidate has been selected yet.
+F450 acceptance and focused verification remain recorded above.
+
+### F451 acceptance matrix recorded before implementation - 2026-10-09
+
+Candidate: “Cover Redo QAction focused-editor dispatch (F451).” Two independent reviews found no direct MainWindow Redo QAction coverage; existing service and
+component undo-stack tests do not cover MainWindow action/focus dispatch. Extend the existing
+tests/mainwindow_edit_action_parity_tests.cpp target. Source path: ActionRegistry::redo → Edit menu
+→ MainWindow/EditController → focused QLineEdit::redo.
+
+With a file-backed baseline personal name on My Workspace Details, focus the name editor and enter
+a distinct draft using Ctrl+A and QTest key typing (do not setText for the draft). Trigger the real
+Undo QAction and verify the baseline; then trigger the real Redo QAction and verify the draft returns
+while focus remains in the editor.
+
+Test class: MainWindowEditActionParityTests; build target and CTest:
+ClassMngrMainWindowEditActionParityTests (registration: cmake/tests/pages_and_output.cmake). Exclude
+Cut/Copy/Paste, read-only and other editors, and update-controller behavior. This matrix was recorded before implementation.
+
+### F451 acceptance update - 2026-10-09
+
+The F450 test slot was extended/renamed; no CMake or production files changed. The selected slot
+undoAndRedoActionsRestoreAndReapplyPersonalNameInFocusedLineEdit and full target QtTest each
+passed 3 with 0 failures; verbose slot execution confirmed the case. CTest
+ClassMngrMainWindowEditActionParityTests passed 1/1. Ninja target build and diff check passed. A
+known Qt font warning appeared while bundled fonts loaded. F451 is accepted in this changeset and
+ready to commit; Batch 27 remains active until commit.

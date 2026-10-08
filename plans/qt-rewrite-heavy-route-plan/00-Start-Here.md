@@ -175,14 +175,18 @@ synchronization is committed (`f4bc5282`). F416 Document Catalog rendered
   “Phase2 - Cover New File QAction open-profile success (F448),” is committed as
   f825a388db1897bc42cacf43c488850fa48a9de8 (branch ahead 33); Batch 24 is complete. F449,
   “Phase2 - Cover Exit QAction close-confirmation handoff (F449),” is committed as
-  4e42a5a9cbe5c261fb78b2e39a98f81c93ef0372 (branch ahead 34); Batch 25 is complete. Batch 26
-  is active with F450, “Cover Undo QAction focused-editor dispatch,” accepted in this changeset
-  and ready to commit. Target build passed; selected case and full target each passed 3. Filtered
-  CTest ClassMngrMainWindowEditActionParityTests passed 1/1, and diff check was clean. Initial Ninja
-  regeneration/MSVC setup trouble was resolved with VS 18 VsDevCmd; one Qt font-directory warning
-  appeared. F449’s acceptance and focused verification remain in the progress log. The independent
-  Tester reran target, selected slot, and CTest successfully; reported line-ending notices had no
-  whitespace errors.
+  4e42a5a9cbe5c261fb78b2e39a98f81c93ef0372 (branch ahead 34); Batch 25 is complete. F450,
+  “Phase2 - Cover Undo QAction focused-editor dispatch (F450),” is committed as
+  e39852c8a9cef33c80d684dd0e63e18d19a6acf7 (branch ahead 35); Batch 26 is complete. Its commit
+  includes exactly seven approved paths and has a clean commit diff check. Batch 27 is active with
+  F451, “Cover Redo QAction focused-editor dispatch (F451),” accepted in this changeset and ready to
+  commit. Slot undoAndRedoActionsRestoreAndReapplyPersonalNameInFocusedLineEdit and full target
+  QtTest each passed 3 with 0 failures; CTest ClassMngrMainWindowEditActionParityTests passed
+  1/1. Ninja target build
+  and diff check passed. The F450 test slot was extended/renamed; no CMake or production changes. A
+  known Qt font warning appeared while bundled fonts loaded. Batch 27 remains active until commit. F450 acceptance remains in the
+  progress log. F449’s acceptance and focused verification remain there;
+  its independent Tester rerun and environment notices are preserved.
   F448 acceptance remains in the progress log, including the reviewer command limitation. F435
   covers no-database New Profile creation and picker metadata; F444 covers Open File replacement.
   F285 stays deferred. See the

@@ -56,14 +56,16 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
   “Phase2 - Cover New File QAction open-profile success (F448),” is committed as
   f825a388db1897bc42cacf43c488850fa48a9de8 (branch ahead 33); Batch 24 is complete. F449,
   “Phase2 - Cover Exit QAction close-confirmation handoff (F449),” is committed as
-  4e42a5a9cbe5c261fb78b2e39a98f81c93ef0372 (branch ahead 34); Batch 25 is complete. Batch 26
-  is active with F450, “Cover Undo QAction focused-editor dispatch,” accepted in this changeset
-  and ready to commit. Target build passed; selected case and full target each passed 3. Filtered
-  CTest ClassMngrMainWindowEditActionParityTests passed 1/1, and diff check was clean. Initial Ninja
-  regeneration/MSVC setup trouble was resolved with VS 18 VsDevCmd; one Qt font warning appeared.
-  F449 acceptance and focused verification remain in the progress log, including the Tester rerun
-  and line-ending notices. F448 acceptance remains recorded there,
-  including its blocked reviewer command. F435 covers
+  4e42a5a9cbe5c261fb78b2e39a98f81c93ef0372 (branch ahead 34); Batch 25 is complete. F450,
+  “Phase2 - Cover Undo QAction focused-editor dispatch (F450),” is committed as
+  e39852c8a9cef33c80d684dd0e63e18d19a6acf7 (branch ahead 35); Batch 26 is complete. Its commit
+  includes exactly seven approved paths and has a clean commit diff check. Batch 27 is active with
+  F451, “Cover Redo QAction focused-editor dispatch (F451),” accepted in this changeset and ready to
+  commit. Selected slot and full target each passed 3 with 0 failures; CTest
+  ClassMngrMainWindowEditActionParityTests passed 1/1. Ninja target build and diff check passed.
+  The F450 test slot was extended/renamed; no CMake or production changes. A known Qt font
+  warning appeared while bundled fonts loaded. Batch 27 remains active until commit. F449/F448
+  acceptance and verification remain in the progress log. F435 covers
   no-database New Profile creation and picker metadata; F444 covers Open File replacement.
   F285 stays deferred. See the
   progress log. Gates 1 and 2 remain Partial.
@@ -91,14 +93,13 @@ log](03-Phase-2-Progress-Log.md).
   failure warning/no-navigation behavior; revisit after that behavior is
   clarified.
 
-#### Active batch: Batch 26
+#### Active batch: Batch 27
 
-1. F450 - Accepted in this changeset, ready to commit: Cover Undo QAction focused-editor
-   dispatch. Target build passed; selected case and full target each passed 3. Filtered CTest
-   ClassMngrMainWindowEditActionParityTests passed 1/1; diff check was clean. Target:
-   ClassMngrMainWindowEditActionParityTests. The initial Ninja regeneration/MSVC setup issue was
-   resolved with VS 18 VsDevCmd; one Qt font-directory warning appeared. Matrix details and
-   exclusions are in the progress log.
+1. F451 - Accepted in this changeset, ready to commit: Cover Redo QAction focused-editor dispatch (F451).
+   dispatch. Slot undoAndRedoActionsRestoreAndReapplyPersonalNameInFocusedLineEdit and full target
+   each passed 3 with 0 failures; CTest ClassMngrMainWindowEditActionParityTests passed 1/1.
+   Target build and diff check passed. The F450 slot was extended/renamed; no CMake or production
+   changes. A known Qt font warning appeared while bundled fonts loaded. Batch 27 remains active.
 
 Batch 21 began with ten candidates after F428 and is complete; F429-F438 are
 committed. F438, “Phase2 - Reject existing IDs in repeat-series creation (F438),”
@@ -118,12 +119,13 @@ verification remain recorded in the progress log. Batch 23 is complete. F448 is 
 f825a388db1897bc42cacf43c488850fa48a9de8 on Qt-Rewrite (branch ahead 33); its acceptance and
 focused verification remain recorded in the progress log. F449 is committed as
 4e42a5a9cbe5c261fb78b2e39a98f81c93ef0372 on Qt-Rewrite (branch ahead 34); Batch 25 is complete.
-Batch 26 is active with F450, “Cover Undo QAction focused-editor dispatch,” accepted in this
-changeset and ready to commit. The target build passed; selected case and full target each passed 3,
-and filtered CTest ClassMngrMainWindowEditActionParityTests passed 1/1. Initial Ninja regeneration/MSVC
-setup trouble was resolved with VS 18 VsDevCmd; one Qt font warning appeared. Details are in the
-progress log.
-F435 covers opening from the no-database banner.
+F450 is committed as e39852c8a9cef33c80d684dd0e63e18d19a6acf7 on Qt-Rewrite (branch ahead 35);
+Batch 26 is complete. Its commit includes exactly seven approved paths and has a clean diff check.
+Batch 27 is active with F451, “Cover Redo QAction focused-editor dispatch (F451),” accepted in this
+changeset and ready to commit. The exact slot and full target each passed 3 with 0 failures; CTest
+ClassMngrMainWindowEditActionParityTests passed 1/1. Ninja target build and diff check passed.
+The F450 slot was extended/renamed; no CMake or production changes. The known font warning and
+bundled-font load are recorded in the progress log. F435 covers opening from the no-database banner.
 F444 covers replacing a distinct open profile and excludes same-path opening,
 dirty replacement choices, and
 load-failure behavior. F285 remains deferred. This bounded discovery does not establish

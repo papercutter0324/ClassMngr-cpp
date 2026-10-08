@@ -3380,3 +3380,21 @@ Source map: `ActionRegistry::undo` -> Edit menu -> `MainWindow::connectControlle
 The dedicated MainWindow test seeds a file-backed baseline personal name, opens My Workspace Details, focuses the name editor, enters a draft through Ctrl+A and QTest keyboard input, confirms the real Undo QAction is enabled, triggers it, and verifies the baseline value is restored. The test covers EditController focus dispatch to QLineEdit undo; no repository write is expected from this local editor operation. Independent source review approved the test and target registration.
 
 Verification: the Ninja target build passed (the independent rerun reported no work to do); the exact QtTest slot and full target each passed 3 incidents (setup, test, cleanup) with zero failures; filtered CTest passed 1/1 using the generated registration `ClassMngrMainWindowEditActionParityTests`; `git diff --check` is clean. Both direct test runs emitted the existing Qt missing-font-directory warning, and bundled Inter/Pretendard fonts loaded. Initial MSVC attempts needed CMake regeneration and `VsDevCmd` initialization; the final executor and independent runs passed with that environment. No full project suite or production-code changes. F450 is accepted; commit metadata and next-slice discovery follow.
+
+## 2026-10-09 - F450 committed; F451 discovery started
+
+F450 committed as `e39852c8a9cef33c80d684dd0e63e18d19a6acf7` (`Phase2 - Cover Undo QAction focused-editor dispatch (F450)`); the branch is ahead by 35. Exactly the seven approved files were committed and the commit diff check was clean. `agent_docs/latest_session_work.md` and `%SystemDrive%/` remain outside. Batch 26 is complete. Batch 27 is active; two independent read-only reviews are beginning bounded MainWindow QAction coverage discovery for F451. No candidate is selected yet.
+
+## 2026-10-09 - F451 Redo QAction focused-editor acceptance review
+
+Two independent reviews found no direct MainWindow Redo QAction coverage. Existing update-controller tests do not exercise Edit action focus dispatch, and the committed F450 test verifies only Undo. Redo is a bounded continuation of the same focused QLineEdit path in EditController.
+
+Acceptance: In the file-backed profile and My Workspace Details setup used by `MainWindowEditActionParityTests`, focus the personal-name editor, and create a distinct draft using keyboard input (`Ctrl+A` and QTest key typing). Trigger the real Undo QAction and verify the baseline value returns. Then verify the real Redo QAction is available, trigger it, and verify the draft value returns while the editor remains focused. Keep the operation local to the editor; do not call `setText` for the draft.
+
+Source map: `ActionRegistry::redo` -> Edit menu -> MainWindow/EditController wiring -> focus-based dispatch -> `QLineEdit::redo()`. Test class/target/CTest remain `MainWindowEditActionParityTests` / `ClassMngrMainWindowEditActionParityTests`, already registered in `cmake/tests/pages_and_output.cmake`; add the focused Redo behavior to `mainwindow_edit_action_parity_tests.cpp`. Exclude Cut/Copy/Paste, read-only widgets, other editor types, and update-controller behavior. Matrix recorded before implementation; Batch 27 is active.
+
+## 2026-10-09 - F451 Redo QAction success accepted
+
+The existing focused MainWindow edit-action case now covers the paired path: after keyboard-entering a distinct draft in the focused personal-name QLineEdit, it triggers the real Undo QAction and verifies the persisted baseline value returns, then triggers the real Redo QAction and verifies the draft returns while the editor retains focus. The test slot is `undoAndRedoActionsRestoreAndReapplyPersonalNameInFocusedLineEdit`; this extends the F450 focused-editor test without production or CMake changes.
+
+Verification: the Ninja target build passed; the exact slot passed 3 incidents (setup, test, cleanup) with zero failures, and verbose output confirmed the slot ran; full target QtTest passed 3 incidents; filtered CTest `ClassMngrMainWindowEditActionParityTests` passed 1/1; `git diff --check` is clean. The direct runs emitted Qt’s known missing-font-directory warning; bundled Inter and Pretendard fonts loaded. No full project suite. F451 is accepted; commit metadata and next-slice discovery follow.
