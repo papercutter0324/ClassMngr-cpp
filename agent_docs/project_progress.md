@@ -2927,7 +2927,17 @@ reopening the workspace. Both focused Ninja/MSVC/Qt 6.12 targets built under the
 VS 18 x64 developer environment, and the filtered CTest passed 2/2. No full
 suite ran.
 
-F405 MainWindow Save As and Export action integration is accepted and ready
-to commit. The target built under VS 18 x64 with Ninja/MSVC; CTest simple-name
-filter passed 1/1. Batch 18 remains active, with F406 queued after the F405
-commit. The user-modified latest_session_work.md remains untouched.
+F405 MainWindow Save As and Export action integration is committed as
+07dc5864. Its target built under VS 18 x64 with Ninja/MSVC; CTest simple-name
+filter passed 1/1. Batch 18 remains active with F406 Manage Campuses QAction
+transition selected/current; F407-F413 remain queued.
+
+F406 is accepted and ready to commit. Cancel preserves page/tab, dirty draft,
+Sidebar, session/path, and blocks the transition. Discard reaches Campus Dashboard
+Information with matching Sidebar selection, restores the persisted draft cleanly,
+and preserves session/path/actions. MainWindow now calls
+`CampusDashboardPage::showInformation()` after showing the reused Dashboard,
+closing the Sidebar/page mismatch. The focused `ClassMngrMainWindowManageCampusesParityTests`
+target built under VS 18 x64 with Ninja/MSVC; simple-name filtered CTest passed
+1/1 with both Cancel/Discard cases. F407 is queued after the F406 commit;
+F408-F413 follow. The user-modified latest_session_work.md remains untouched.

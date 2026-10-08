@@ -47,10 +47,12 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
   F403 Dynamic Teacher Sidebar leaf navigation is committed (`28e881cd`),
   completing Batch 17. Batch 18 is active.
   F404 Save choice on Open/Close File actions is committed (`b445e102`).
-  F405 MainWindow Save As and Export action integration is accepted and ready
-  to commit; F406 is queued after the F405 commit, with F407-F413 following in
-  active Batch 18. Gates 1 and 2 remain Partial; see the
-  Phase 2 progress log for acceptance evidence.
+  F405 MainWindow Save As and Export action integration is committed
+  (`07dc5864`). F406 Manage Campuses QAction transition is accepted and ready
+  to commit. F407 is queued after the F406 commit; F408-F413 follow in active
+  Batch 18.
+  Gates 1 and 2 remain Partial; see the Phase 2 progress log for F406 acceptance
+  evidence and F400-F405 evidence.
 
 ### Slice discovery batches
 
@@ -78,10 +80,10 @@ log](03-Phase-2-Progress-Log.md).
 #### Active batch: Batch 18
 
 1. F404 - Committed (`b445e102`): Save choice on Open/Close File actions.
-2. F405 - Accepted / ready to commit: MainWindow Save As and
-   Export action integration.
-3. F406 - Queued after the F405 commit: Manage Campuses QAction transition.
-4. F407 - Queued: Schedule↔Testing Classes handoff.
+2. F405 - Committed (`07dc5864`): MainWindow Save As and Export action
+   integration.
+3. F406 - Accepted / ready to commit: Manage Campuses QAction transition.
+4. F407 - Queued after the F406 commit: Schedule↔Testing Classes handoff.
 5. F408 - Queued: Dynamic Teacher Sidebar selection/state during retranslation.
 6. F409 - Queued: My Workspace Sidebar root producer-to-handler integration.
 7. F410 - Queued: Classes Sidebar root integration.

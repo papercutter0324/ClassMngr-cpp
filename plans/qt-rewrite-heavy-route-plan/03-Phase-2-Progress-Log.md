@@ -14309,3 +14309,43 @@ result is recorded yet.
 F405 is accepted and ready to commit. The target built under VS 18 x64 with
 Ninja/MSVC; CTest simple-name filter passed 1/1. Batch 18 remains active, with
 F406 queued after the F405 commit.
+
+### F405 committed / F406 selected/current - 2026-10-08
+
+F405 is committed as `07dc5864`. Batch 18 remains active with F406 selected/current
+and F407-F413 queued.
+
+### F406 selected/current / provisional acceptance matrix - 2026-10-08
+
+Use a real admin MainWindow and trigger the actual Manage Campuses QAction from
+dirty My Workspace Details.
+
+1. **Cancel.** Preserve the current page and tab, exact dirty draft, Sidebar,
+   session and path; stop the Campus Dashboard transition.
+2. **Discard.** Before the action, leave Campus Dashboard on a different section.
+   Discard must transition to Campus Dashboard Information with matching Sidebar
+   selection, reload the persisted draft cleanly, and preserve the open
+   session/path/actions.
+
+The different-section precondition exposes a source gap: MainWindow selects
+Sidebar key `campus_information` but does not reset an already-instantiated
+Campus Dashboard page section. `CampusDashboardPage::showInformation()` may be
+needed. Evidence: action path (`src/app/mainwindow.cpp:1079-1097`); leave gate
+(`src/ui/shared/pages/pagemanager.cpp:485-528`); page reuse behavior
+(`src/ui/shared/pages/pagemanager.cpp:328-378`); page API
+(`src/features/campus/ui/campus_dashboard_page.cpp:96-102`). F406 is selected/current;
+this matrix is provisional and no acceptance result is recorded.
+
+### F406 accepted / ready to commit - 2026-10-08
+
+F406 is accepted and ready to commit. The focused
+`ClassMngrMainWindowManageCampusesParityTests` target built under VS 18 x64 with
+Ninja/MSVC; simple-name filtered CTest passed 1/1, containing both Cancel and
+Discard cases. Cancel preserves the current page/tab, dirty draft, Sidebar,
+session/path, and stops the transition. Discard from Campus Dashboard on a
+different section reaches Campus Dashboard Information with matching Sidebar
+selection, reloads the persisted draft cleanly, and preserves the open
+session/path/actions. MainWindow now calls
+`CampusDashboardPage::showInformation()` after showing the reused Dashboard,
+closing the Sidebar/page mismatch. F407 is queued after the F406 commit;
+F408-F413 follow in active Batch 18.

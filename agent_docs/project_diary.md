@@ -2506,3 +2506,30 @@ No full suite ran. Batch 18 continues with F405 queued after the F404 commit.
 F405 is accepted and ready to commit. The target built under VS 18 x64 with
 Ninja/MSVC; CTest simple-name filter passed 1/1. Batch 18 remains active, with
 F406 queued after the F405 commit.
+
+## 2026-10-08 - F405 committed; F406 Manage Campuses transition selected
+
+F405 is committed as 07dc5864. Its target built under VS 18 x64 with
+Ninja/MSVC; CTest simple-name filter passed 1/1.
+
+F406 is selected/current in Batch 18. It covers Cancel and Discard from dirty My
+Workspace Details through the real Manage Campuses QAction in an admin MainWindow.
+Cancel preserves page/tab, draft, Sidebar, session/path and blocks the transition.
+Discard must reach Campus Dashboard Information with matching Sidebar selection,
+restore the persisted draft cleanly, and preserve session/path/actions. Set the
+Dashboard to a different section before Discard: the action changes Sidebar
+selection to `campus_information` but does not reset an existing page section;
+`CampusDashboardPage::showInformation()` may be needed. This matrix is provisional;
+F406 is not accepted. F407-F413 remain queued.
+
+## 2026-10-08 - F406 Manage Campuses QAction accepted
+
+F406 is accepted and ready to commit. With the real Manage Campuses QAction,
+Cancel preserves the dirty Details state and stops the transition; Discard from a
+different Dashboard section reaches Campus Dashboard Information, restores the
+persisted draft cleanly, and preserves the open session/path/actions. MainWindow
+now calls `CampusDashboardPage::showInformation()` after showing the reused
+Dashboard, fixing the Sidebar/page mismatch. The focused
+`ClassMngrMainWindowManageCampusesParityTests` target built under VS 18 x64 with
+Ninja/MSVC; simple-name filtered CTest passed 1/1 with both cases. F407 is queued
+after the F406 commit; F408-F413 follow.

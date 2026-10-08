@@ -1090,6 +1090,10 @@ void MainWindow::connectSignals()
                 }
 
                 m_pages->showPage(PageType::CampusDashboard);
+                if (auto* campus = m_pages->campusDashboard())
+                {
+                    campus->showInformation();
+                }
                 ui->sidebarWidget->selectCampusSection(
                     QStringLiteral("campus_information")
                     );
