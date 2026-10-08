@@ -59,9 +59,10 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
   committed (`76661791`). F413 Initial Setup success
   navigation is committed (`5d8a941a`), completing Batch 18. Batch 19 is active
   with F414 Teacher profile save preserving the selected duplicate Sidebar
-  occurrence accepted and ready to commit; F415-F421 are queued. See the Phase
-  2 progress log for acceptance evidence and bounded discovery details. Gates
-  1 and 2 remain Partial; see the progress log for slice evidence.
+  occurrence committed (`6fb39b2b`); F415 Campus Dashboard page-tab-to-Sidebar
+  synchronization selected/current and accepted, ready to commit; F416-F421
+  remain queued. See the Phase 2 progress log for acceptance evidence. Gates 1 and 2
+  remain Partial; see the progress log for slice evidence.
 
 ### Slice discovery batches
 
@@ -88,9 +89,10 @@ log](03-Phase-2-Progress-Log.md).
 
 #### Active batch: Batch 19
 
-1. F414 - Accepted / ready to commit: Teacher profile save preserves the
-   selected duplicate Sidebar occurrence.
-2. F415 - Queued: Campus Dashboard page-tab-to-Sidebar synchronization.
+1. F414 - Committed (`6fb39b2b`): Teacher profile save preserves the selected
+   duplicate Sidebar occurrence.
+2. F415 - Selected/current; accepted / ready to commit: Campus Dashboard
+   page-tab-to-Sidebar synchronization.
 3. F416 - Queued: Document Catalog rendered Sidebar leaf through MainWindow
    and viewer.
 4. F417 - Queued: Staff Directory rendered leaf through MainWindow.

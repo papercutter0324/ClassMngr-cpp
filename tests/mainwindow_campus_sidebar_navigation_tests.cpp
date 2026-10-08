@@ -10,6 +10,7 @@
 #include <QFileInfo>
 #include <QRect>
 #include <QSignalSpy>
+#include <QTabBar>
 #include <QTemporaryDir>
 #include <QTreeWidget>
 #include <QTreeWidgetItem>
@@ -253,6 +254,74 @@ renderedCampusRootAndSectionsDispatchToCampusDashboard()
         QCOMPARE(
             sidebar->selectedKeys(),
             (QStringList{QStringLiteral("campus_info"), currentSectionKey})
+            );
+        QVERIFY(services->hasOpenDatabase());
+        QCOMPARE(services->databaseSession(), activeSession);
+        QCOMPARE(services->currentDatabasePath(), workspacePath);
+    }
+
+    QTabBar* const tabBar = campusPage->findChild<QTabBar*>();
+    QVERIFY(tabBar);
+
+    QSignalSpy sectionSpy(
+        campusPage,
+        &CampusDashboardPage::sectionChanged
+        );
+    QVERIFY(sectionSpy.isValid());
+    routeSpy.clear();
+
+    struct CampusTab final
+    {
+        const char* tabText;
+        const char* sectionKey;
+    };
+
+    constexpr std::array tabs{
+        CampusTab{"Information", "campus_information"},
+        CampusTab{"Address", "campus_address"},
+        CampusTab{"Directions", "campus_directions"},
+        CampusTab{"Housing", "campus_housing"},
+        CampusTab{"Maps", "campus_map"}
+    };
+
+    for (const CampusTab& tab : tabs)
+    {
+        const QString tabText = QString::fromLatin1(tab.tabText);
+        const QString sectionKey = QString::fromLatin1(tab.sectionKey);
+        int tabIndex = -1;
+        for (int index = 0; index < tabBar->count(); ++index)
+        {
+            if (tabBar->tabText(index) == tabText)
+            {
+                tabIndex = index;
+                break;
+            }
+        }
+        QVERIFY2(tabIndex >= 0, qPrintable(tabText));
+
+        const QRect tabRect = tabBar->tabRect(tabIndex);
+        QVERIFY(!tabRect.isEmpty());
+        sectionSpy.clear();
+        QTest::mouseClick(
+            tabBar,
+            Qt::LeftButton,
+            Qt::NoModifier,
+            tabRect.center()
+            );
+        QApplication::processEvents();
+
+        QCOMPARE(sectionSpy.count(), 1);
+        QCOMPARE(
+            sectionSpy.at(0).at(0).toString(),
+            sectionKey
+            );
+        QCOMPARE(routeSpy.count(), 0);
+        QVERIFY(pages->isCurrentPage(PageType::CampusDashboard));
+        QCOMPARE(pages->currentWidget(), static_cast<QWidget*>(campusPage));
+        QCOMPARE(campusPage->currentSectionKey(), sectionKey);
+        QCOMPARE(
+            sidebar->selectedKeys(),
+            (QStringList{QStringLiteral("campus_info"), sectionKey})
             );
         QVERIFY(services->hasOpenDatabase());
         QCOMPARE(services->databaseSession(), activeSession);

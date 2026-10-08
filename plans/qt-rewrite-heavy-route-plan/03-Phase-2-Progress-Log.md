@@ -14814,3 +14814,51 @@ filtered CTest passed 1/1 in 1.52 s; the executor's direct QtTest run reported
 5 passed and 0 failed. No LNK4006 warnings were reported, and no full suite was
 run. F414 is accepted and ready to commit; Batch 19 remains active with F415
 queued and F416-F421 queued.
+
+### F414 committed / F415 selected/current - 2026-10-08
+
+F414 Teacher profile save preserving the selected duplicate Sidebar occurrence
+is committed as `6fb39b2b`. Batch 19 remains active with F415 selected/current
+and F416-F421 queued.
+
+### F415 selected/current / provisional acceptance matrix - 2026-10-08
+
+1. Extend `tests/mainwindow_campus_sidebar_navigation_tests.cpp` using its
+   existing real MainWindow/open-session fixture. Do not add a manual signal
+   connection. QTest-click the actual Campus Dashboard QTabBar through
+   Information (`campus_information`), Address (`campus_address`), Directions
+   (`campus_directions`), Housing (`campus_housing`), and Maps (`campus_map`).
+2. For each tab change, passively verify exactly one `sectionChanged` emission
+   with that key. Verify `CampusDashboardPage::currentSectionKey()` matches that
+   key, Sidebar keys are [`campus_info`, sectionKey], and there is no extra
+   Sidebar route event. The same `CampusDashboardPage` instance remains current
+   and the database session and workspace path remain unchanged.
+
+Evidence: the QTabBar current-change signal calls
+`emitCurrentSectionChanged()` (`src/features/campus/ui/campus_dashboard_page_ui.cpp:241-248`),
+which emits the page's current section key
+(`src/features/campus/ui/campus_dashboard_page.cpp:641-650`). MainWindow wires
+`sectionChanged` to Sidebar selection for both created and already-instantiated
+Campus Dashboard pages (`src/app/mainwindow.cpp:992-1006,1017-1043,1074-1077`).
+NavigationController has a separate `sectionChanged` connection that updates
+the Sidebar only while Campus Dashboard is current
+(`src/app/controllers/navigation_controller.cpp:108-137`). Existing campus
+route parity tests manually connect the signal to Sidebar and therefore do not
+cover the production MainWindow path
+(`tests/campus_route_navigation_parity_tests.cpp:175-184`).
+
+At selection, the issue was source-inferred; the completion entry below records
+that the regression did not require a production change.
+
+### F415 implementation complete / independently verified / accepted - 2026-10-08
+
+Actual Campus Dashboard QTabBar clicks through Information, Address, Directions,
+Housing, and Maps in MainWindow each produced one expected `sectionChanged`
+emission. For each tab, `CampusDashboardPage::currentSectionKey()` and the
+Sidebar key path matched; there was no extra route event, and the same current
+page instance, database session, and workspace path remained unchanged.
+
+The focused VS 18 x64 Debug target built successfully, and its exact filtered
+CTest passed 1/1 in 0.46 s independently. No LNK4006 warnings were reported and
+no production change was needed. F415 is accepted and ready to commit; Batch 19
+remains active with F415 selected/current and F416-F421 queued.

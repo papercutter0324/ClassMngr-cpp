@@ -2657,3 +2657,23 @@ prompt, and stable database session/path. The focused VS 18 x64 Debug target
 rebuilt; independent filtered CTest passed 1/1 (1.52 s), and direct QtTest
 passed 5/5. No LNK4006 warnings occurred. F414 is accepted and ready to commit;
 F415 remains queued until that commit.
+
+## 2026-10-08 - F414 committed / F415 selected-current
+
+F414 Teacher profile save preserving the selected duplicate Sidebar occurrence
+is committed as `6fb39b2b`. Its focused target rebuilt, the exact filtered
+CTest passed 1/1 (1.52 s), direct QtTest passed 5/5, and no LNK4006 warnings
+occurred. Batch 19 continues with F415 Campus Dashboard page-tab-to-Sidebar
+synchronization selected/current; source discovery and acceptance definition
+are underway. F416-F421 remain queued.
+
+## 2026-10-08 - F415 Campus Dashboard tab handoff accepted / ready to commit
+
+The existing MainWindow/open-session test now QTest-clicks the actual Campus
+Dashboard tabs for Information, Address, Directions, Housing, and Maps without
+adding a test-side connection. Each `sectionChanged` key matched the page and
+Sidebar selection; no extra route event fired, and the same page and database
+session/path remained active. The focused VS 18 x64 Debug target rebuilt;
+independent filtered CTest passed 1/1 (0.46 s). No LNK4006 warnings occurred.
+No production change was needed. F415 is accepted and ready to commit; F416
+remains queued until the commit.
