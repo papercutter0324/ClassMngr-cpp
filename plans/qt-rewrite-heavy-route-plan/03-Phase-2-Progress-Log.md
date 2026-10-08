@@ -16375,3 +16375,57 @@ failed with helper_unknown_error: setup refresh had errors; independent verifica
 therefore unavailable. F444 is accepted in this changeset and ready to commit. F445
 MainWindow Save QAction persistence is next after the F444 commit; F446 Save on window
 close remains provisional. Batch 22 remains active.
+
+### F444 committed - 2026-10-09
+
+F444 committed as 8a21da618870ba4308415aaf5927fa1393af6e97; branch is ahead by 29. Its acceptance matrix and
+focused verification remain recorded above, including the independent Tester process-creation
+limitation. Batch 22 remains active with F445 MainWindow Save QAction persistence next;
+F446 Save on window close remains provisional.
+
+### F445 acceptance matrix recorded before implementation - 2026-10-09
+
+An independent scope review of a default-branch snapshot supported this slice; local
+shell setup failed in that review. The local source map confirms the path and target. Extend
+tests/mainwindow_save_as_export_parity_tests.cpp in MainWindowSaveAsExportParityTests /
+ClassMngrMainWindowSaveAsExportParityTests. Existing coverage exercises Save As, Export,
+and print routes; service-level save exists, but no test drives MainWindow Save QAction
+persistence.
+
+Start with a clean file-backed profile open at a nonempty current path on My Workspace
+Schedule. Begin an explicit transaction on the active database connection. Since
+SettingsService::save() stalled before reaching Save, use QSqlQuery to prepare and execute
+a distinctive setting INSERT on that same active QSqlDatabase inside the transaction.
+Trigger the real Save QAction to commit it. Verify a fresh ApplicationServices instance
+reads the persisted value, and path, page, Schedule, and Sidebar remain stable with no Save
+As picker, warning, or unsaved-changes prompt.
+
+This success case excludes Save As, commit failure, and same-path behavior. Do not infer
+error-reporting behavior: the save path ignores the commit result. Source evidence:
+MainWindow creates FileController and connects actions at src/app/mainwindow.cpp:500-505;
+the Save QAction connection and nonempty-path route are at
+src/app/controllers/file_controller.cpp:160-165,661-678,917-954 (saveDatabase calls
+WorkspaceCoordinator). Existing tests are tests/mainwindow_save_as_export_parity_tests.cpp; target
+registration is cmake/tests/pages_and_output.cmake:847-855,924-934.
+
+At matrix record, F445 was selected/current and implementation had not started;
+acceptance follows below. F446 remains provisional.
+
+### F445 accepted in this changeset - 2026-10-09
+
+The implementation changes only tests/mainwindow_save_as_export_parity_tests.cpp; no
+production or CMake change was made. The fixture uses a prepared QSqlQuery INSERT on the
+active QSqlDatabase within the explicit transaction because SettingsService::save()
+stalled before reaching Save. The real Save QAction commits the transaction, and a fresh
+ApplicationServices instance reads the persisted value.
+
+Executor verification passed: the target build had no compiler warnings; the selected
+QtTest passed 3/3 functions; the full target QtTest passed 8/8 functions; exact filtered
+CTest ClassMngrMainWindowSaveAsExportParityTests passed 1/1. The independent source
+reviewer approved the assertions. Qt reported one missing font-directory runtime warning.
+No full suite was run.
+
+F445 is accepted in this changeset and ready to commit. The matrix exclusions remain:
+Save As, commit-failure behavior, same-path behavior, and error-reporting claims are out
+of scope because the save path ignores the commit result. F446 Save on window close
+remains provisional; Batch 22 remains active.

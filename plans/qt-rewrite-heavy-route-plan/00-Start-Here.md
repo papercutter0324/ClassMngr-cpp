@@ -167,12 +167,10 @@ synchronization is committed (`f4bc5282`). F416 Document Catalog rendered
   committed as 75a559ae (branch ahead 26). F442, Import Teachers QAction apply
   success, is committed as 8cde2826 (branch ahead 27). The requested pause after
   the F442 commit was observed; the user has resumed. F443 is committed as
-  1c03b326 (branch ahead 28). Batch 22 remains active with F444 successful Open File
-  QAction replacement accepted in this changeset and ready to commit. F445 MainWindow
-  Save QAction persistence is next after the F444 commit; F446 Save on window close
-  remains provisional. F435 covers the no-database banner route; F444 covers replacing
-  a distinct open profile. Same-path Open, dirty replacement choices, and load-failure
-  behavior remain excluded. F285 stays deferred. See the
+  1c03b326 (branch ahead 28). F444 is committed as
+  8a21da618870ba4308415aaf5927fa1393af6e97 (branch ahead 29). Batch 22 remains active with F445 MainWindow Save QAction persistence accepted in this
+  changeset and ready to commit. F446 Save on window close remains provisional. F435 covers the no-database banner route;
+  F444 covers replacing a distinct open profile. F285 stays deferred. See the
   progress log. Gates 1 and 2 remain Partial,
   with broader feature migration, parity, and 96-class Release memory evidence still open.
   See the

@@ -48,12 +48,10 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
   committed as 75a559ae (branch ahead 26). F442, Import Teachers QAction apply
   success, is committed as 8cde2826 (branch ahead 27). The requested pause after
   the F442 commit was observed; the user has resumed. F443 is committed as
-  1c03b326 (branch ahead 28). Batch 22 remains active with F444 successful Open File
-  QAction replacement accepted in this changeset and ready to commit. F445 MainWindow
-  Save QAction persistence is next after the F444 commit; F446 Save on window close
-  remains provisional. F435 covers the no-database banner route; F444 covers replacing
-  a distinct open profile. Same-path Open, dirty replacement choices, and load-failure
-  behavior remain excluded. F285 stays deferred. See the
+  1c03b326 (branch ahead 28). F444 is committed as
+  8a21da618870ba4308415aaf5927fa1393af6e97 (branch ahead 29). Batch 22 remains active with F445 MainWindow Save QAction persistence accepted in this
+  changeset and ready to commit. F446 Save on window close remains provisional. F435 covers the no-database banner route;
+  F444 covers replacing a distinct open profile. F285 stays deferred. See the
   progress log. Gates 1 and 2 remain Partial.
 
 ### Slice discovery batches
@@ -81,10 +79,8 @@ log](03-Phase-2-Progress-Log.md).
 
 #### Active batch: Batch 22
 
-1. F444 - Accepted in this changeset; ready to commit. F445 MainWindow Save
-   QAction persistence is next after the F444 commit; F446 Save on window close
-   remains provisional. F444 is separate from F435 no-database banner Open and excludes
-   same-path opening, dirty replacement choices, and load-failure behavior.
+1. F445 - Accepted in this changeset; ready to commit. F446 Save on window close
+   remains provisional.
 
 Batch 21 began with ten candidates after F428 and is complete; F429-F438 are
 committed. F438, “Phase2 - Reject existing IDs in repeat-series creation (F438),”
@@ -96,11 +92,11 @@ QAction apply success (F442),” is commit 8cde2826 on Qt-Rewrite (branch ahead
 27). The requested pause after F442 was observed and the user has resumed. F443 is
 committed as 1c03b326567cf52d808bc4c54b7a5e77021bb7bf on Qt-Rewrite (branch ahead
 28); its acceptance evidence remains recorded in the progress log. Batch 22 is
-active with F444 successful Open File QAction replacement accepted in this changeset
-and ready to commit. F445 MainWindow Save QAction persistence is next after the F444
-commit; F446 Save on window close remains provisional. F435 covers opening from the
-no-database banner. F444 covers replacing a distinct open profile and excludes same-path
-opening, dirty replacement choices, and load-failure behavior. F285 remains deferred. This bounded discovery does not establish
+F444 is committed as 8a21da618870ba4308415aaf5927fa1393af6e97 on Qt-Rewrite (branch ahead 29); its acceptance
+and focused verification remain recorded in the progress log. Batch 22 remains active with F445 MainWindow Save QAction persistence accepted in this
+changeset and ready to commit. F446 Save on window close remains provisional. F435 covers opening from the no-database banner. F444 covers replacing a
+distinct open profile and excludes same-path opening, dirty replacement choices, and
+load-failure behavior. F285 remains deferred. This bounded discovery does not establish
 repository-wide exhaustion.
 Batch 20 completed when F428 committed as b82bddaa. F429 committed as 19f6024d. Batch 21 was
 discovered while F427 was the second-last known Batch 20 candidate and is now active.

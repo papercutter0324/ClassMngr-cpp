@@ -3285,6 +3285,8 @@ The new MainWindow test triggers the real deleteClass QAction, selects the targe
 
 ## 2026-10-09 - F444 Open File replacement acceptance review
 
+F444 committed as `8a21da618870ba4308415aaf5927fa1393af6e97`; branch is ahead by 29.
+
 Two independent read-only reviews approve F444 for implementation. Existing coverage tests Open File Cancel and Save followed by picker cancellation while a profile is open; F435 tests the empty-state banner path. F444 covers the distinct successful replacement transition.
 
 Acceptance: Start with a clean open profile A on My Workspace Schedule, trigger the real Open File QAction, and choose a distinct seeded profile B through the Teacher Profile picker. Verify one correctly configured chooser request, profile B's path and persisted data active, My Workspace Schedule and its Sidebar selection, and no warning or unsaved-changes prompt. `DatabaseSession` is reused in place, so assert active path/data rather than pointer identity. Same-path open, dirty replacement choices, and load failures remain outside scope.
@@ -3292,3 +3294,13 @@ Acceptance: Start with a clean open profile A on My Workspace Schedule, trigger 
 Source map: `MainWindow::connectControllers()` -> `FileController::openFile()` -> `WorkspaceCoordinator::openWorkspace()` -> `MainWindow::applyDatabaseLoadedState()`. Focused test class/target: `MainWindowOpenFileParityTests` / `ClassMngrMainWindowOpenFileParityTests`. F444 is accepted and ready to commit.
 
 Verification: target build passed with no compiler warnings; the selected QtTest slot passed 3/3 functions (setup, test, cleanup); exact filtered CTest `ClassMngrMainWindowOpenFileParityTests` passed 1/1. The final source review approved the Schedule starting state and assertions. Independent Tester could not inspect or run commands because process creation failed with `helper_unknown_error: setup refresh had errors`. One missing Qt font-directory runtime warning; no full suite.
+
+## 2026-10-09 - F445 Save QAction persistence acceptance review
+
+Two independent read-only reviews support F445. The local source map found no MainWindow Save QAction persistence case in `MainWindowSaveAsExportParityTests`; a separate scope review found service-level persistence coverage only, which does not test the QAction integration. The scope review used a default-branch snapshot because local process setup failed, so local target details come from the source map.
+
+Acceptance: Start with a clean file-backed profile open on My Workspace Schedule and a nonempty current path. Begin an explicit transaction on the active DB connection, write a distinctive setting value, then trigger the real Save QAction. Verify the value persisted through a fresh connection/reopened profile, the path/page/sidebar stay stable, and no Save As picker, warning, or unsaved prompt appears. A transaction is required because an ordinary setting write auto-commits. Exclude Save As, commit-failure behavior, and claims about error reporting; the save path ignores the commit result.
+
+Source map: MainWindow Save QAction -> `FileController::saveFile()` -> `saveDatabase()` / workspace commit path. Focused class/target: `MainWindowSaveAsExportParityTests` / `ClassMngrMainWindowSaveAsExportParityTests`. F445 is accepted and ready to commit; F446 remains provisional.
+
+Verification: target build passed without compiler warnings; selected QtTest passed 3/3 functions, full target QtTest passed 8/8 functions, and exact filtered CTest `ClassMngrMainWindowSaveAsExportParityTests` passed 1/1. Independent source review approved the transaction, real QAction, fresh-connection readback, and UI-state assertions. `SettingsService::save()` stalled before the action, so the fixture stages the unique value with a prepared `QSqlQuery` on the same active connection inside the transaction; Save commits it and a fresh `ApplicationServices` reads it. One missing Qt font-directory runtime warning; no full suite or production/CMake changes.

@@ -1,7 +1,9 @@
 #include "app/mainwindow.h"
+#include "app/services/feature_services.h"
 #include "core/application_services.h"
 #include "core/language_service.h"
 #include "core/settingsmanager.h"
+#include "data/database/database_session.h"
 #include "features/my_info/ui/my_workspace_page.h"
 #include "features/schedule/ui/schedule_print_dialog.h"
 #include "fakes/fake_file_dialog_service.h"
@@ -15,6 +17,8 @@
 #include <QFileInfo>
 #include <QPdfDocument>
 #include <QPushButton>
+#include <QSqlError>
+#include <QSqlQuery>
 #include <QTemporaryDir>
 #include <QStringList>
 #include <QTimer>
@@ -67,6 +71,7 @@ private slots:
     void exportActionPreservesWorkspaceAndUpdatesExportDirectoryPreference();
     void printCurrentPageActionCancellationPreservesWorkspaceState();
     void saveCurrentPageAsActionWritesSchedulePdf();
+    void saveActionCommitsActiveDatabaseTransaction();
 
 private:
     QTemporaryDir m_settingsDirectory;
@@ -727,6 +732,130 @@ saveCurrentPageAsActionWritesSchedulePdf()
     QVERIFY(prompts.unsavedChangesConfirmations.isEmpty());
     QVERIFY(prompts.actionPrompts.isEmpty());
     QVERIFY(QApplication::activeModalWidget() == nullptr);
+}
+
+void MainWindowSaveAsExportParityTests::
+saveActionCommitsActiveDatabaseTransaction()
+{
+    QTemporaryDir workspaceRoot;
+    QVERIFY(workspaceRoot.isValid());
+
+    const QString sourcePath = QFileInfo(
+        workspaceRoot.filePath(QStringLiteral("save-commit-workspace.tps"))
+        ).absoluteFilePath();
+    QVERIFY(!sourcePath.isEmpty());
+
+    ApplicationServices seedServices;
+    QVERIFY(seedServices.openDatabase(sourcePath));
+    seedServices.closeDatabase();
+
+    FakeFileDialogService fileDialogs;
+    const FileDialogServiceScope fileDialogScope(&fileDialogs);
+    FakeUserPromptService prompts;
+    const UserPromptServiceScope promptScope(&prompts);
+
+    LanguageService languageService;
+    QVERIFY(languageService.setLanguage(Language::English));
+
+    MainWindowStartupOptions startupOptions;
+    startupOptions.loadMostRecentDatabase = false;
+    startupOptions.initialDatabasePath = sourcePath;
+
+    MainWindow window(
+        [](const QString&) {},
+        false,
+        &languageService,
+        nullptr,
+        std::move(startupOptions)
+        );
+    window.show();
+    QApplication::processEvents();
+
+    ApplicationServices* const services = window.services();
+    QVERIFY(services);
+    QVERIFY(services->hasOpenDatabase());
+    QCOMPARE(services->currentDatabasePath(), sourcePath);
+    QVERIFY(!services->currentDatabasePath().isEmpty());
+    DatabaseSession* const activeSession = services->databaseSession();
+    QVERIFY(activeSession);
+    QSqlDatabase activeDatabase = activeSession->database();
+    QVERIFY(activeDatabase.isValid());
+    QVERIFY(activeDatabase.isOpen());
+
+    PageManager* const pages = window.pageManager();
+    QVERIFY(pages);
+    QVERIFY(pages->isCurrentPage(PageType::MyWorkspace));
+    MyWorkspacePage* const workspace = pages->myWorkspacePage();
+    QVERIFY(workspace);
+    QCOMPARE(workspace->currentTab(), WorkspaceTab::Schedule);
+    QWidget* const currentWidget = pages->currentWidget();
+    QVERIFY(currentWidget);
+    const QString currentPageIdentifier = pages->currentPageIdentifier();
+    QVERIFY(!currentPageIdentifier.isEmpty());
+
+    Sidebar* const sidebar = window.findChild<Sidebar*>();
+    QVERIFY(sidebar);
+    const QStringList sidebarKeys{QStringLiteral("my_workspace")};
+    QCOMPARE(sidebar->selectedKeys(), sidebarKeys);
+
+    const QString settingKey = QStringLiteral("F445/save-action-commit");
+    const QString settingValue = QStringLiteral("committed by Save QAction");
+    SettingsService* const settingsService = services->settingsService();
+    QVERIFY(settingsService);
+    const Result<QVariant> settingBeforeTransaction =
+        settingsService->load(settingKey);
+    QVERIFY(settingBeforeTransaction);
+    QVERIFY(!settingBeforeTransaction->isValid());
+    QVERIFY(activeDatabase.transaction());
+    QSqlQuery pendingInsert(activeDatabase);
+    QVERIFY(pendingInsert.prepare(R"(
+        INSERT INTO app_settings (
+            key,
+            value
+        )
+        VALUES (?, ?)
+        ON CONFLICT(key)
+        DO UPDATE SET value=excluded.value
+    )"));
+    pendingInsert.addBindValue(settingKey);
+    pendingInsert.addBindValue(settingValue);
+    QVERIFY2(pendingInsert.exec(), qPrintable(pendingInsert.lastError().text()));
+
+    QAction* const saveAction = window.actions().saveFile;
+    QVERIFY(saveAction);
+    QVERIFY(saveAction->isEnabled());
+    saveAction->trigger();
+    QApplication::processEvents();
+
+    QVERIFY(services->hasOpenDatabase());
+    QCOMPARE(services->currentDatabasePath(), sourcePath);
+    QVERIFY(pages->isCurrentPage(PageType::MyWorkspace));
+    QCOMPARE(pages->currentWidget(), currentWidget);
+    QCOMPARE(pages->currentPageIdentifier(), currentPageIdentifier);
+    QCOMPARE(workspace->currentTab(), WorkspaceTab::Schedule);
+    QCOMPARE(sidebar->selectedKeys(), sidebarKeys);
+
+    QVERIFY(fileDialogs.openFileRequests.isEmpty());
+    QVERIFY(fileDialogs.openFilesRequests.isEmpty());
+    QVERIFY(fileDialogs.saveFileRequests.isEmpty());
+    QVERIFY(fileDialogs.saveFileWithOptionsRequests.isEmpty());
+    QVERIFY(fileDialogs.directoryRequests.isEmpty());
+    QVERIFY(prompts.messages.isEmpty());
+    QVERIFY(prompts.asynchronousMessages.isEmpty());
+    QVERIFY(prompts.confirmations.isEmpty());
+    QVERIFY(prompts.unsavedChangesConfirmations.isEmpty());
+    QVERIFY(prompts.actionPrompts.isEmpty());
+    QVERIFY(QApplication::activeModalWidget() == nullptr);
+
+    ApplicationServices verificationServices;
+    QVERIFY(verificationServices.openDatabase(sourcePath));
+    QCOMPARE(verificationServices.currentDatabasePath(), sourcePath);
+    const Result<QVariant> persistedSetting =
+        verificationServices.settingsService()->load(settingKey);
+    QVERIFY(persistedSetting);
+    QVERIFY(persistedSetting->isValid());
+    QCOMPARE(persistedSetting->toString(), settingValue);
+    verificationServices.closeDatabase();
 }
 
 QTEST_MAIN(MainWindowSaveAsExportParityTests)
