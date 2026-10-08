@@ -15888,3 +15888,109 @@ Debug required initializing the VS x64 environment after an initial
 
 F436 is accepted in this changeset and ready to commit. F437 Report worker
 event-post failure is next after commit; F438 remains provisional.
+
+### F436 committed / F437 selected-current - 2026-10-09
+
+F436, “Phase2 - Reject invalid UTF-8 document references (F436),” is committed
+as `c19e247f8066b546bfb71e9177e2413123309112` on Qt-Rewrite (branch ahead 21).
+Its implementation and acceptance evidence remain recorded above. F437 Report
+worker event-post failure with a zero-capacity queue is selected/current.
+Read-only context discovery and Batch 22 candidate discovery are underway;
+no F437 matrix or implementation has started. F438 remains provisional.
+
+### F437 acceptance matrix recorded before implementation - 2026-10-09
+
+Use `ReportJobCoordinator` with a capacity-zero `ReportJobEventQueue` and an
+immediate failing callback. The terminal `Failed` event must be the first and
+only attempted post, which returns `Conflict`.
+
+1. Extend `tests/next_platform_qt_job_worker_tests.cpp` in the existing
+   `ClassMngrNextPlatformQtJobWorkerTests` target. Assert the worker's
+   `lastResult` is the post `Conflict`, not the callback work error; the queue
+   is empty; the worker finishes within the existing timeout and joins; and
+   the coordinator remains `ReportJobPhase::Running` because no event reached
+   its pump.
+2. Preserve the analogous Import worker case and existing Report worker cases.
+3. Build target `ClassMngrNextPlatformQtJobWorkerTests` and run exact filtered
+   CTest `^ClassMngrNextPlatformQtJobWorkerTests$`. Keep verification focused
+   on this target.
+
+Evidence: the analogous worker-post behavior is covered in
+`tests/next_platform_qt_job_worker_tests.cpp:273`.
+
+F437 is selected/current with this matrix recorded before implementation;
+implementation is pending. Batch 22 candidate discovery remains underway;
+F438 remains provisional.
+
+### Batch 22 bounded discovery record - 2026-10-09
+
+Two independent reviews and reconciliation surfaced eight provisional candidates
+after F436 while F437 is the second-last known Batch 21 candidate. Batch 21 stays
+active with F437 current and F438 provisional; Batch 22 is inactive. The test
+outlines below are candidate scopes, not acceptance matrices.
+
+1. Complete Delete Teacher QAction confirmation. F434 tested Cancel only; reuse
+   `ClassMngrMainWindowTeacherSidebarNavigationParityTests`. Proposed scope:
+   drive the real QAction and chooser, accept the destructive confirmation, and
+   verify target removal from persistence/Sidebar while the survivor and
+   workspace/session remain. Evidence: F434's cancellation matrix and
+   `tests/mainwindow_teacher_sidebar_navigation_parity_tests.cpp:344-394`.
+2. Complete Export Classes JSON output. F432 stopped at picker cancellation;
+   reuse `ClassMngrMainWindowCloseFileParityTests`. Proposed scope: trigger the
+   real QAction, select a seeded assigned class in `ClassExportDialog`, choose a
+   temporary JSON output path, and verify the emitted file contains the selected
+   class. Evidence: F432's matrix and
+   `src/app/controllers/sidebar_controller_transfer.cpp:47-79`.
+3. Apply Import Classes through the real QAction/dialog using a create-only
+   package. Reuse `ClassMngrMainWindowCloseFileParityTests`; assert the imported
+   class is persisted after the dialog applies. F426 covered picker cancellation;
+   `tests/sidebar_class_transfer_apply_parity_tests.cpp:124-188,332-361` covers
+   lower-level handler apply.
+4. Apply Import Teachers through the actual QAction and dialog. Reuse
+   `ClassMngrMainWindowManageCampusesParityTests`; Browse to a prepared import
+   file, apply it, and verify the new teacher is persisted. F431 stopped before
+   Browse/apply; `ClassMngrTeacherImportUiApplyParityTests` covers UI apply
+   without the MainWindow QAction.
+5. Cover Delete Class through its real QAction. The closest target is
+   `ClassMngrMainWindowScheduleTestingClassesHandoffParityTests`; drive a
+   seeded target/survivor case through confirmation and verify only the target
+   is removed from persistence and Sidebar. Existing coverage is direct-controller
+   behavior and action state.
+6. Consider successful Open File while a profile is already open. The candidate
+   target is `ClassMngrMainWindowOpenFileParityTests`; its existing QAction case
+   cancels the picker, while F435 covers successful open from the no-database
+   banner, making this general open-success candidate potentially redundant.
+   If retained, bound it to opening a distinct profile and verifying replacement
+   of the open session/path. Exclude same-path open until idempotence/replacement
+   semantics are defined.
+7. Cover persistence through the MainWindow Save QAction. Reuse
+   `ClassMngrMainWindowSaveAsExportParityTests`; change a persisted profile,
+   trigger the actual Save QAction, reopen it, and verify the saved value.
+   Current direct FileController coverage does not trigger the MainWindow action.
+8. Cover Save as the close-window choice. Reuse
+   `ClassMngrMainWindowExitConfirmationParityTests`; make a profile dirty, close
+   the window, choose Save, and verify persisted state and normal close. Existing
+   exit cases cover Cancel and Discard.
+
+F285 successful New Teacher remains explicitly deferred. Batch 22 has fewer than
+ten candidates; this bounded discovery does not establish repository-wide
+exhaustion. See the [Phase 2 plan](03-Phase-2-Domain-Model-and-Application-Contracts.md)
+for the active batch and the individual progress entries for evidence.
+
+### F437 accepted in this changeset - 2026-10-09
+
+The immediate failing callback produces a terminal `Failed` event as the first
+and only post; the zero-capacity report queue rejects it with `Conflict`. The
+worker's `lastResult` preserves this post error over the callback work error. The
+queue remains empty, the pump consumes zero events, the worker exits and joins,
+and `ReportJobCoordinator` remains `ReportJobPhase::Running`.
+
+The executor and independent Tester verified the final source with the target
+build, exact CTest `^ClassMngrNextPlatformQtJobWorkerTests$` (1/1), target
+QtTest (12/12), and selected case (3/3), all in Ninja Debug. FileTracker errors
+in the old VS tree were a tooling issue; the final Ninja build had no warnings.
+No production or CMake changes were made, and the full suite was not run.
+
+F437 is accepted in this changeset and ready to commit. F438 is next after
+commit; Batch 21 remains active until F438 commits. Batch 22 remains inactive
+with eight provisional candidates.

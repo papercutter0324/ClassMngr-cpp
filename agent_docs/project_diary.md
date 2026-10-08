@@ -2980,4 +2980,24 @@ Explorer and independent contract review support treating invalid UTF-8 as malfo
 
 ## 2026-10-09 - F436 invalid UTF-8 accepted
 
-The port now rejects malformed UTF-8 before path conversion and resource-pack acquisition as nonrecoverable InvalidInput for both primary and export references. The focused test covers invalid continuation, truncation, overlong, surrogate, out-of-range, and standalone continuation bytes, with valid missing-resource behavior still NotFound. Executor and independent Tester passed the Ninja target build, exact CTest 1/1, full target QtTest 9/9, and selected case 3/3. No full-suite run. F436 is accepted and ready to commit; branch is ahead by 20.
+The port now rejects malformed UTF-8 before path conversion and resource-pack acquisition as nonrecoverable InvalidInput for both primary and export references. The focused test covers invalid continuation, truncation, overlong, surrogate, out-of-range, and standalone continuation bytes, with valid missing-resource behavior still NotFound. Executor and independent Tester passed the Ninja target build, exact CTest 1/1, full target QtTest 9/9, and selected case 3/3. No full-suite run. F436 is committed as c19e247f8066b546bfb71e9177e2413123309112; branch is ahead by 21.
+
+
+## 2026-10-09 - F436 committed; F437 selected
+
+F436 committed as c19e247f8066b546bfb71e9177e2413123309112 (Phase2 - Reject invalid UTF-8 document references (F436)); branch is ahead by 21. F437 Report worker event-post failure with a zero-capacity queue is accepted and ready to commit. F438 is next after commit; Batch 22 is discovered but inactive until Batch 21 completes.
+
+
+## 2026-10-09 - F437 report worker event-post failure matrix
+
+A zero-capacity ReportJobEventQueue rejects the worker terminal Failed event with Conflict. The bounded case uses an immediate failing callback, then checks lastResult preserves the post error, queue is empty, worker exits and joins, and coordinator remains Running without a pumped event. This follows the analogous Import worker case. Target/CTest: ClassMngrNextPlatformQtJobWorkerTests. Matrix was recorded before implementation; final implementation and independent verification passed. Batch 22 discovery is documented and inactive until Batch 21 completes.
+
+
+## 2026-10-09 - Batch 22 discovery at F437
+
+Two independent bounded reviews surfaced eight provisional MainWindow/worker integration candidates after F436, with evidence and targets recorded in the Phase 2 progress log. Batch 21 remains active (F437 accepted, F438 next); Batch 22 activates after F438 commits. Same-path open remains unselected pending contract definition; successful New Teacher remains deferred under F285.
+
+
+## 2026-10-09 - F437 report worker terminal-post rejection accepted
+
+An immediate report failure with zero queue capacity rejects the terminal Failed event as Conflict. Worker lastResult retains the post error, the worker exits and joins, the queue is empty, pump consumes zero, and coordinator remains Running because no event was delivered. Executor and independent Tester passed the final Ninja build, exact CTest 1/1, target QtTest 12/12, and selected case 3/3. VS FileTracker blocked rebuilds in the other tree; final Ninja build had no warnings. No production/CMake change or full-suite run. F437 is accepted and ready to commit; branch is ahead by 21.

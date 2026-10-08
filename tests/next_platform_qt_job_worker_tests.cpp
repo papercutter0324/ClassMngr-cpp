@@ -60,6 +60,7 @@ private slots:
     void importCancellationIsAcknowledgedAfterCooperativeWorkReturns();
     void taskFailureAndExceptionProduceFailedEvents();
     void zeroCapacityQueueMakesLastResultReportPostFailure();
+    void reportZeroCapacityQueueMakesLastResultReportPostFailure();
     void duplicateActiveStartIsRejectedAndFinishedWorkerCanRestart();
     void completedJobRemainsCompletedAfterLaterCancellationRequest();
     void destructorRequestsCancellationAndJoinsCooperativeWork();
@@ -295,6 +296,42 @@ void NextPlatformQtJobWorkerTests::
         );
     QCOMPARE(coordinator.pendingEventCount(), std::size_t{0});
     QCOMPARE(coordinator.snapshot().phase(), ImportJobPhase::Running);
+}
+
+void NextPlatformQtJobWorkerTests::
+    reportZeroCapacityQueueMakesLastResultReportPostFailure()
+{
+    const OperationError callbackError = taskError("Report callback failure.");
+    bool workExecuted = false;
+    QtReportJobWorker worker(
+        [&](const auto, const auto, auto&, const auto&)
+        {
+            workExecuted = true;
+            return Result<std::string>::failure(callbackError);
+        }
+        );
+    ReportJobCoordinator coordinator(worker, 0);
+
+    QVERIFY(coordinator.startJob(1));
+    QCOMPARE(coordinator.eventQueueCapacity(), std::size_t{0});
+    QTRY_VERIFY_WITH_TIMEOUT(!worker.isRunning(), kTimeoutMs);
+    worker.waitForFinished();
+
+    QVERIFY(workExecuted);
+    const auto result = worker.lastResult();
+    QVERIFY(result.has_value());
+    QVERIFY(!*result);
+    QCOMPARE(result->error().code, ErrorCode::Conflict);
+    QCOMPARE(
+        result->error().message,
+        std::string("Report job event queue capacity has been reached.")
+        );
+    QVERIFY(result->error() != callbackError);
+    QCOMPARE(coordinator.pendingEventCount(), std::size_t{0});
+    const auto pump = coordinator.pump();
+    QVERIFY(pump);
+    QCOMPARE(pump.value(), std::size_t{0});
+    QCOMPARE(coordinator.snapshot().phase(), ReportJobPhase::Running);
 }
 
 void NextPlatformQtJobWorkerTests::
