@@ -2857,7 +2857,7 @@ unsynced and unaudited in this checkout; local Batch 11 evidence still ends at
 F366. No remote commits or acceptance results are inferred.
 
 
-## Current Position — 2026-10-08 (F397 selected/current)
+## Current Position — 2026-10-08 (F398 selected/current)
 
 Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial. F386-F393 are
 accepted as recorded in the Phase 2 progress log. The seven Teacher Profile
@@ -2866,15 +2866,18 @@ standard all-target build passed earlier, and the exact affected persistence
 target rebuilt successfully at current HEAD with no reported errors or
 LNK4006 warnings.
 
-F394 Classes landing open-session confirmation parity and F395 Campus
-Dashboard typed save boundary are accepted. F396 Staff Directory open-session
-dirty-exit parity is accepted on pre-slice source 5c8c907c. Its four focused
-cases drive the production Sidebar leaves for Native English and GS Team
-through NavigationController, covering Cancel preservation and Discard
-navigation with the workspace open. The focused Windows x64 Debug target build
-passed, focused CTest passed 1/1, and all four direct offscreen QtTest cases
-passed; no full suite ran. Batch 16 is active with F397 MainWindow Document
-Catalog retranslation integration selected/current and F398 FileController
-same-path workspace-open parity provisional. Batch 17 discovery is due at F397
-start. The Phase 2 progress log records the acceptance matrices and bounded
-discovery evidence. The user-modified latest_session_work.md remains untouched.
+F394 Classes landing open-session confirmation parity, F395 Campus Dashboard
+typed save boundary, and F396 Staff Directory open-session dirty-exit parity
+are accepted. F397 MainWindow Document Catalog retranslation is accepted on
+pre-slice source 6ea8c90f. The shared Sidebar expansion API now captures and
+restores recursive stable key paths across localized rebuilds, including a
+descendant expanded beneath a collapsed ancestor. The real English/Korean
+language actions preserve catalog labels, current route/page, and expansion
+state without creating the PDF Viewer or requesting document content. The
+focused standard-tree Sidebar/MainWindow targets built successfully, focused
+CTest passed 2/2, and both direct offscreen QtTest cases passed; no full suite
+ran. Batch 16 is active with F398 FileController same-path workspace-open
+parity selected/current. Batch 17 candidates F399-F403 were discovered at
+F397 start and activate after F398. The Phase 2 progress log records the
+acceptance matrix, bounded discovery, and verification evidence. The user-
+modified latest_session_work.md remains untouched.

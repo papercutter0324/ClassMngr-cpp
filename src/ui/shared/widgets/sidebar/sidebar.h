@@ -68,10 +68,14 @@ public:
 
     [[nodiscard]] int defaultWidthForTopLevelLabels() const;
 
-    QStringList expandedRootKeys() const;
+    // Expanded item identity uses each item's full stable key path, including
+    // descendants whose parents are currently collapsed.
+    QList<QStringList> expandedItemKeyPaths() const;
 
-    void restoreExpandedRootKeys(
-        const QStringList& keys
+    // Restores all keyed items: paths in the snapshot are expanded and other
+    // current paths are collapsed. Unknown snapshot paths are ignored.
+    void restoreExpandedItemKeyPaths(
+        const QList<QStringList>& keyPaths
         );
 
     QStringList selectedKeys() const;

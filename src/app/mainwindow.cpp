@@ -555,10 +555,10 @@ void MainWindow::retranslateUi()
             ? ui->sidebarWidget->getSelectedTeacherId()
             : -1;
 
-    const QStringList expandedRootKeys =
+    const QList<QStringList> expandedItemKeyPaths =
         ui && ui->sidebarWidget
-            ? ui->sidebarWidget->expandedRootKeys()
-            : QStringList();
+            ? ui->sidebarWidget->expandedItemKeyPaths()
+            : QList<QStringList>();
 
     initializeWindow();
 
@@ -599,8 +599,8 @@ void MainWindow::retranslateUi()
 
     if (ui && ui->sidebarWidget)
     {
-        ui->sidebarWidget->restoreExpandedRootKeys(
-            expandedRootKeys
+        ui->sidebarWidget->restoreExpandedItemKeyPaths(
+            expandedItemKeyPaths
             );
 
         ui->sidebarWidget->setDatabaseSectionsVisible(

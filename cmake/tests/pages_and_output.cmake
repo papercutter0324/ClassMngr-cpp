@@ -512,6 +512,39 @@ classmngr_add_qt_test(
 )
 
 classmngr_add_qt_test(
+    NAME MainWindowDocumentCatalogRetranslationParity
+    SOURCES
+        tests/mainwindow_document_catalog_retranslation_parity_tests.cpp
+    LIBRARIES
+        Qt6::Test
+        Qt6::Widgets
+    DEPENDENCIES
+        ClassMngrcampusesResourcePack
+        ClassMngrdocumentsResourcePack
+    OFFSCREEN
+)
+
+qt_add_resources(
+    ClassMngrMainWindowDocumentCatalogRetranslationParityTests
+    mainwindow_document_catalog_retranslation_keyboard_resources
+    PREFIX "/"
+    BASE "${PROJECT_SOURCE_DIR}/resources"
+    FILES
+        resources/assets/icons/keyboard_dark.svg
+        resources/assets/icons/keyboard_light.svg
+)
+
+qt_add_translations(
+    TARGETS ClassMngrMainWindowDocumentCatalogRetranslationParityTests
+    TS_FILES
+        resources/assets/translations/ClassMngr_en_AU.ts
+        resources/assets/translations/ClassMngr_en_CA.ts
+        resources/assets/translations/ClassMngr_en_GB.ts
+        resources/assets/translations/ClassMngr_en_US.ts
+        resources/assets/translations/ClassMngr_ko_KR.ts
+)
+
+classmngr_add_qt_test(
     NAME StaffDirectoryNativeEnglishRead
     SOURCES
         tests/staff_directory_native_english_read_tests.cpp

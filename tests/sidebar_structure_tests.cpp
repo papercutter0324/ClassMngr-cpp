@@ -240,6 +240,102 @@ std::optional<DocumentCatalogProjection> projectionFromCatalog(
 
     return result.value();
 }
+
+std::optional<DocumentCatalogProjection> recursiveExpansionProjection(
+    const bool korean
+    )
+{
+    using ClassMngr::Next::Domain::DocumentFolderId;
+    using ClassMngr::Next::Domain::DocumentId;
+
+    const auto rootFolderId = DocumentFolderId::fromString(
+        "test_recursive_root"
+        );
+    const auto nestedFolderId = DocumentFolderId::fromString(
+        "test_recursive_nested"
+        );
+    const auto siblingFolderId = DocumentFolderId::fromString(
+        "test_recursive_sibling"
+        );
+    const auto nestedDocumentId = DocumentId::fromString(
+        "test_recursive_nested_document"
+        );
+    const auto siblingDocumentId = DocumentId::fromString(
+        "test_recursive_sibling_document"
+        );
+
+    if (!rootFolderId || !nestedFolderId || !siblingFolderId
+        || !nestedDocumentId || !siblingDocumentId)
+    {
+        return std::nullopt;
+    }
+
+    DocumentCatalogProjectionInput input;
+    input.folders = {
+        {
+            *rootFolderId,
+            "synthetic/root",
+            "document_test_root",
+            korean ? "깊은 폴더" : "Deep Folder",
+            0,
+            ""
+        },
+        {
+            *nestedFolderId,
+            "synthetic/root/nested",
+            "document_test_nested",
+            korean ? "중첩 폴더" : "Nested Folder",
+            0,
+            "synthetic/root"
+        },
+        {
+            *siblingFolderId,
+            "synthetic/root/sibling",
+            "document_test_sibling",
+            korean ? "접힌 형제 폴더" : "Collapsed Sibling",
+            1,
+            "synthetic/root"
+        }
+    };
+    input.documents = {
+        {
+            *nestedDocumentId,
+            *nestedFolderId,
+            "synthetic/nested.pdf",
+            "document_test_nested_leaf",
+            korean ? "중첩 문서" : "Nested Document",
+            0,
+            true,
+            false,
+            DocumentContentReference(
+                "resource://documents/synthetic/nested.pdf"
+                ),
+            std::nullopt
+        },
+        {
+            *siblingDocumentId,
+            *siblingFolderId,
+            "synthetic/sibling.pdf",
+            "document_test_sibling_leaf",
+            korean ? "형제 문서" : "Sibling Document",
+            0,
+            true,
+            false,
+            DocumentContentReference(
+                "resource://documents/synthetic/sibling.pdf"
+                ),
+            std::nullopt
+        }
+    };
+
+    const auto result = DocumentCatalogProjection::create(std::move(input));
+    if (!result)
+    {
+        return std::nullopt;
+    }
+
+    return result.value();
+}
 }
 
 class SidebarStructureTests : public QObject
@@ -252,6 +348,7 @@ private slots:
     void topLevelOrderAndSubPrepStructure();
     void defaultWidthAccommodatesLongestTopLevelLabel();
     void documentCatalogBuildsLocalizedTree();
+    void recursiveExpandedKeyPathsSurviveLocalizedCatalogRebuild();
 };
 
 void SidebarStructureTests::classesPageContainsNoIndividualEntries()
@@ -609,6 +706,116 @@ void SidebarStructureTests::documentCatalogBuildsLocalizedTree()
     QVERIFY(emptyTree);
     QCOMPARE(emptyTree->topLevelItemCount(), 7);
     QVERIFY(!topLevelWithKey(emptyTree, QStringLiteral("document")));
+}
+
+void SidebarStructureTests::recursiveExpandedKeyPathsSurviveLocalizedCatalogRebuild()
+{
+    // The shipped catalog has Documents -> folder children -> document leaves.
+    // This synthetic projection adds another folder level to verify that the
+    // shared key-path API preserves expanded descendants at arbitrary depth.
+    const auto englishProjection = recursiveExpansionProjection(false);
+    const auto koreanProjection = recursiveExpansionProjection(true);
+    QVERIFY(englishProjection.has_value());
+    QVERIFY(koreanProjection.has_value());
+
+    Sidebar sidebar;
+    sidebar.setDocumentCatalog(
+        *englishProjection,
+        QStringLiteral("en_US")
+        );
+    sidebar.rebuildTree();
+
+    auto* tree = sidebar.findChild<QTreeWidget*>(
+        QStringLiteral("sidebarTree")
+        );
+    QVERIFY(tree);
+
+    QTreeWidgetItem* documents =
+        topLevelWithKey(tree, QStringLiteral("document"));
+    QVERIFY(documents);
+    QTreeWidgetItem* rootFolder =
+        childWithKey(documents, QStringLiteral("document_test_root"));
+    QVERIFY(rootFolder);
+    QTreeWidgetItem* nestedFolder =
+        childWithKey(rootFolder, QStringLiteral("document_test_nested"));
+    QVERIFY(nestedFolder);
+    QTreeWidgetItem* collapsedSibling =
+        childWithKey(rootFolder, QStringLiteral("document_test_sibling"));
+    QVERIFY(collapsedSibling);
+    QCOMPARE(nestedFolder->child(0)->text(0), QStringLiteral("Nested Document"));
+
+    sidebar.selectCampusSection(QStringLiteral("campus_information"));
+    const QStringList selectedKeys = sidebar.selectedKeys();
+    QVERIFY(!selectedKeys.isEmpty());
+
+    documents->setExpanded(true);
+    rootFolder->setExpanded(true);
+    nestedFolder->setExpanded(true);
+    collapsedSibling->setExpanded(false);
+    rootFolder->setExpanded(false);
+
+    const QList<QStringList> expandedKeyPaths =
+        sidebar.expandedItemKeyPaths();
+    const QStringList documentsPath{QStringLiteral("document")};
+    const QStringList nestedPath{
+        QStringLiteral("document"),
+        QStringLiteral("document_test_root"),
+        QStringLiteral("document_test_nested")
+    };
+    const QStringList rootFolderPath{
+        QStringLiteral("document"),
+        QStringLiteral("document_test_root")
+    };
+    const QStringList siblingPath{
+        QStringLiteral("document"),
+        QStringLiteral("document_test_root"),
+        QStringLiteral("document_test_sibling")
+    };
+    QVERIFY(expandedKeyPaths.contains(documentsPath));
+    QVERIFY(expandedKeyPaths.contains(nestedPath));
+    QVERIFY(!expandedKeyPaths.contains(rootFolderPath));
+    QVERIFY(!expandedKeyPaths.contains(siblingPath));
+    QVERIFY(!rootFolder->isExpanded());
+    QVERIFY(nestedFolder->isExpanded());
+    QVERIFY(!collapsedSibling->isExpanded());
+
+    sidebar.setDocumentCatalog(
+        *koreanProjection,
+        QStringLiteral("ko_KR")
+        );
+    sidebar.rebuildTree();
+
+    documents = topLevelWithKey(tree, QStringLiteral("document"));
+    QVERIFY(documents);
+    rootFolder = childWithKey(
+        documents,
+        QStringLiteral("document_test_root")
+        );
+    QVERIFY(rootFolder);
+    nestedFolder = childWithKey(
+        rootFolder,
+        QStringLiteral("document_test_nested")
+        );
+    QVERIFY(nestedFolder);
+    collapsedSibling = childWithKey(
+        rootFolder,
+        QStringLiteral("document_test_sibling")
+        );
+    QVERIFY(collapsedSibling);
+    QCOMPARE(rootFolder->text(0), QStringLiteral("깊은 폴더"));
+    QCOMPARE(nestedFolder->text(0), QStringLiteral("중첩 폴더"));
+    QCOMPARE(nestedFolder->child(0)->text(0), QStringLiteral("중첩 문서"));
+
+    sidebar.restoreExpandedItemKeyPaths(expandedKeyPaths);
+    sidebar.selectByKeys(selectedKeys);
+    QCOMPARE(sidebar.expandedItemKeyPaths(), expandedKeyPaths);
+    QCOMPARE(sidebar.selectedKeys(), selectedKeys);
+
+    documents->setExpanded(true);
+    QVERIFY(documents->isExpanded());
+    QVERIFY(!rootFolder->isExpanded());
+    QVERIFY(nestedFolder->isExpanded());
+    QVERIFY(!collapsedSibling->isExpanded());
 }
 
 QTEST_MAIN(SidebarStructureTests)

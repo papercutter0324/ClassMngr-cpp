@@ -201,45 +201,75 @@ void Sidebar::setDocumentCatalog(
     buildTree();
 }
 
-QStringList Sidebar::expandedRootKeys() const
+QList<QStringList> Sidebar::expandedItemKeyPaths() const
 {
-    QStringList keys;
-
-    for (
-        auto it = m_nodes.cbegin();
-        it != m_nodes.cend();
-        ++it
-        )
+    QList<QStringList> keyPaths;
+    if (!m_tree)
     {
-        if (it.value() && it.value()->isExpanded())
-        {
-            keys.append(
-                it.key()
-                );
-        }
+        return keyPaths;
     }
 
-    return keys;
+    const auto appendExpandedPaths =
+        [this, &keyPaths](auto&& self, QTreeWidgetItem* item) -> void
+    {
+        if (!item)
+        {
+            return;
+        }
+
+        const QStringList itemKeyPath = getItemKeys(item);
+        if (item->isExpanded() && !itemKeyPath.isEmpty())
+        {
+            keyPaths.append(itemKeyPath);
+        }
+
+        for (int index = 0; index < item->childCount(); ++index)
+        {
+            self(self, item->child(index));
+        }
+    };
+
+    for (int index = 0; index < m_tree->topLevelItemCount(); ++index)
+    {
+        appendExpandedPaths(appendExpandedPaths, m_tree->topLevelItem(index));
+    }
+
+    return keyPaths;
 }
 
-void Sidebar::restoreExpandedRootKeys(
-    const QStringList& keys
+void Sidebar::restoreExpandedItemKeyPaths(
+    const QList<QStringList>& keyPaths
     )
 {
-    for (
-        auto it = m_nodes.cbegin();
-        it != m_nodes.cend();
-        ++it
-        )
+    if (!m_tree)
     {
-        if (it.value())
-        {
-            it.value()->setExpanded(
-                keys.contains(it.key())
-                );
-        }
+        return;
     }
 
+    const auto restoreExpansion =
+        [this, &keyPaths](auto&& self, QTreeWidgetItem* item) -> void
+    {
+        if (!item)
+        {
+            return;
+        }
+
+        const QStringList itemKeyPath = getItemKeys(item);
+        if (!itemKeyPath.isEmpty())
+        {
+            item->setExpanded(keyPaths.contains(itemKeyPath));
+        }
+
+        for (int index = 0; index < item->childCount(); ++index)
+        {
+            self(self, item->child(index));
+        }
+    };
+
+    for (int index = 0; index < m_tree->topLevelItemCount(); ++index)
+    {
+        restoreExpansion(restoreExpansion, m_tree->topLevelItem(index));
+    }
 }
 
 QStringList Sidebar::selectedKeys() const

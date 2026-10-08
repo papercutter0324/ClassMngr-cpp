@@ -2403,3 +2403,16 @@ persisting the edit. The focused build and CTest passed, as did all four direct
 QtTest cases. The production controller already met the behavior, so this
 slice required test and CMake registration changes only. The next selected
 slice is F397; Batch 17 discovery is due when it starts.
+
+
+## 2026-10-08 - F397 Document Catalog retranslation accepted
+
+F397 showed that MainWindow retranslated catalog labels but preserved only
+top-level Sidebar expansion. The shared Sidebar snapshot now captures full
+stable key paths recursively and restores all keyed open/closed states across
+the rebuild. Tests cover a synthetic deeper folder with an expanded descendant
+under a collapsed ancestor and a real MainWindow English/Korean action path
+using the shipped catalog. Selection/page state remained unchanged, and no PDF
+content was requested or loaded. Focused Sidebar and MainWindow CTests passed
+2/2; the two direct QtTest cases passed. Batch 16 advances to F398; Batch 17
+discovery is recorded and activates after F398.

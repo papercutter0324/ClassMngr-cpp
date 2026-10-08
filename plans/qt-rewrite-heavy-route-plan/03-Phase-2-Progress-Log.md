@@ -13786,3 +13786,113 @@ resources. CMake diff hygiene and new-source trailing-whitespace checks passed.
 No full suite ran. Batch 16 advances to F397 MainWindow Document Catalog
 retranslation integration; F398 same-path workspace-open parity remains
 provisional. Batch 17 discovery begins at F397 start.
+
+### Batch 17 discovered at F397 - 2026-10-08
+
+At F397 start, two independent read-only reviews compared the Phase 2 plan,
+progress history, legacy-to-v2 migration map, and concrete production paths
+with existing tests. The reviews agreed on the Close File lifecycle gap and
+identified these ordered candidates for after Batch 16:
+
+1. **F399 - Close File action and no-workspace UI transition.** Exercise the
+   production Close File action with an open workspace and dirty page. Cover
+   Cancel preservation and accepted close through the workspace coordinator,
+   including Campus Dashboard Information, database-backed Sidebar visibility,
+   and action state. Evidence: file_controller.cpp:740-751,1113;
+   mainwindow.cpp:1227-1264; file_controller_workspace_lifecycle_tests.cpp:223-262;
+   phase2-legacy-application-mapping.md:134-138. Both reviews identified this gap.
+2. **F400 - Open File action dirty-page gate.** Exercise the real menu action
+   with a dirty page and verify Cancel preserves the workspace without opening
+   the chooser; Discard reaches the chooser, whose cancellation retains the
+   session. Evidence: file_controller.cpp:140-185,216-222,557-580;
+   file_controller_workspace_lifecycle_tests.cpp:223-262,466-522.
+3. **F401 - Recent-workspace menu selection.** Select a different existing
+   workspace from the production Recent menu and verify coordinator open; also
+   cover removal of a missing recent path while preserving the active session.
+   This remains distinct from F398 same-path open. Evidence: file_controller.cpp:582,753,814;
+   file_controller_workspace_lifecycle_tests.cpp:466,625;
+   phase2-legacy-application-mapping.md:928.
+4. **F402 - MainWindow application-exit confirmation.** Cover a real window close
+   with dirty page and open session: Cancel keeps window, draft, and workspace;
+   accepted page decision permits close. Evidence: mainwindow.cpp:1211,1412; the
+   reviewed tests have no QCloseEvent/MainWindow close case.
+5. **F403 - Dynamic Teacher Sidebar leaf navigation.** Build teacher leaves via
+   the production refresh path, click a leaf, verify its emitted teacher ID,
+   then dispatch it and cover Cancel/Discard from dirty Teacher Info for
+   Co-Teachers and Korean Teachers. Evidence: sidebar_controller_refresh.cpp:178-204;
+   sidebar_teachers.cpp:3-36; sidebar_selection.cpp:229-255;
+   navigation_controller.cpp:146-195; navigation_teacher_read_tests.cpp:861-1016,1226-1396.
+
+The open-workspace replacement failure in Initial Setup remains excluded
+because the intended post-close preservation contract is unresolved. The
+discovery boundary was the Phase 2 plan/history/migration map and reviewed UI,
+MainWindow, FileController, navigation, and related test paths; it does not
+claim repository-wide exhaustion.
+No other slices were found.
+
+### F397 selected/current / acceptance matrix established - 2026-10-08
+
+F397 covers the real MainWindow language-change path that reprojects Document
+Catalog labels in the Sidebar. The current MainWindow snapshot preserves selected
+route keys and top-level expanded roots, but loses nested folder expansion when
+the catalog rebuild replaces tree items. Use stable Sidebar key paths rather than
+localized labels as expansion identity. Generalize the shared Sidebar expansion
+snapshot/restore API to walk all tree nodes so this fix preserves nested
+expansion in other Sidebar groups as well.
+
+The focused matrix is:
+
+1. At the Sidebar layer, expand the Documents root and multiple nested catalog
+   folders; capture expanded item key paths, rebuild with a different localized
+   projection, restore, and verify the same expanded paths plus collapsed states.
+   Verify selection key-path handling remains compatible. Use a small synthetic
+   metadata projection if needed to cover a deeper folder path: keep a descendant
+   expanded while its ancestor is collapsed, snapshot/rebuild/restore, re-open the
+   ancestor, and verify the descendant remains expanded while closed siblings stay
+   closed. The shipped-catalog MainWindow test uses its real folder depth.
+2. In a real MainWindow, keep a non-document route selected, expand the Documents
+   root and a nested folder, then trigger the actual English-to-Korean language
+   action. Assert localized folder and document labels change, the stable
+   selection path and visible page remain unchanged, all captured expanded
+   paths (including nested folders) are restored, and no route event is emitted.
+3. Switch back to English and repeat the state/label assertions to cover repeated
+   retranslation. Verify the PDF Viewer is not constructed and no document
+   content is requested; this slice changes startup metadata presentation only.
+
+Use the standard build/windows-x64-debug tree and focused Sidebar plus
+MainWindow integration targets. Do not run the full suite. Batch 17 was
+discovered at F397 start and remains provisional until Batch 16 completes.
+Phase 2 stays In Progress/Open; Gates 1 and 2 remain Partial.
+
+### F397 accepted - 2026-10-08
+
+F397 is accepted on pre-slice source 6ea8c90f (F396). The Sidebar now
+captures expanded items recursively as full stable key paths, including
+expanded descendants beneath collapsed ancestors, and restores open and closed
+states after a tree rebuild. The obsolete root-only expansion methods were
+removed after a repository call-site search. MainWindow retranslation uses the
+shared recursive API around Document Catalog reprojection, then restores its
+existing selected route and teacher state.
+
+SidebarStructureTests adds a synthetic deeper-folder contract case verifying
+a hidden expanded descendant survives a localized rebuild and collapsed
+siblings remain closed. The MainWindow integration test triggers the real
+Korean and English language actions against the shipped catalog; it verifies
+localized labels, Campus Directory selection and page preservation, root and
+folder-child expansion state, zero route events, no PDF Viewer construction,
+and no active documents resource lease. The test does not request PDF content.
+
+The standard build/windows-x64-debug tree was reconfigured with the registered
+Visual Studio 18 instance and the focused Sidebar and MainWindow targets built
+successfully. The non-elevated attempt stopped before compilation in ZERO_CHECK
+with a FileTracker access-denied error; the same focused build passed via the
+approved elevated route. Focused CTest passed 2/2 and both direct offscreen
+QtTest invocations exited 0. CMake reported unavailable optional
+WrapVulkanHeaders and used bundled zlib; MSBuild emitted LNK4075 because
+/INCREMENTAL was ignored due to /FORCE. No compile errors or LNK4006 warnings
+occurred, no Qt runtime warning text was captured, and no full suite ran.
+Test and CMake hygiene checks passed.
+
+Batch 16 advances to F398 FileController same-path workspace-open parity,
+selected/current. Batch 17 remains provisional with F399-F403 and activates
+after F398. Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial.

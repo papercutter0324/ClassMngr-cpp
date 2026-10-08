@@ -111,11 +111,11 @@
   target, CTest, and three direct QtTest cases passed. F394 Classes landing
   open-session confirmation parity and F395 Campus Dashboard typed save
   boundary are accepted with focused build and runtime evidence. Batches 14-15 are complete. F396 Staff Directory open-session dirty-exit parity
-  is accepted with focused build, CTest, and four direct QtTest cases. Batch 16
-  is active with F397 MainWindow Document Catalog retranslation integration
-  selected/current and F398 FileController same-path workspace-open parity
-  provisional. Batch 17 discovery is due when F397 starts. See the Phase 2
-  progress log for acceptance and bounded discovery evidence.
+  and F397 MainWindow Document Catalog retranslation integration are accepted
+  with focused evidence. Batch 16 is active with F398 FileController same-path
+  workspace-open parity selected/current. Batch 17 candidates F399-F403 were
+  discovered during F397 and activate after F398. See the Phase 2 progress log
+  for acceptance and bounded discovery evidence.
   Gates 1 and 2 remain Partial, with broader feature
   migration, parity, and 96-class Release memory evidence still open.
   See the
