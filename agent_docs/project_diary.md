@@ -2950,4 +2950,19 @@ Read-only discovery traced Delete Teacher QAction through SidebarController, the
 
 ## 2026-10-09 - F434 Delete Teacher QAction cancellation accepted
 
-The real MainWindow action and chooser reached the destructive Delete Teacher confirmation; rejecting it preserved the target and survivor records, sidebar rows, MyWorkspace page/widget/selection, session, and path, with no extra prompt. The test includes a five-second modal watchdog and claims cancellation only. Executor and independent Tester passed focused target build, exact Debug CTest 1/1, direct target QtTest 6/6, and selected case 3/3. Executor used Ninja Debug after VS FileTracker errors; independent VS target build passed without retry. No production/CMake change or full-suite run. F434 is accepted and ready to commit; branch is ahead by 18.
+The real MainWindow action and chooser reached the destructive Delete Teacher confirmation; rejecting it preserved the target and survivor records, sidebar rows, MyWorkspace page/widget/selection, session, and path, with no extra prompt. The test includes a five-second modal watchdog and claims cancellation only. Executor and independent Tester passed focused target build, exact Debug CTest 1/1, direct target QtTest 6/6, and selected case 3/3. Executor used Ninja Debug after VS FileTracker errors; independent VS target build passed without retry. No production/CMake change or full-suite run. F434 is committed as 3fb5241347d14c2d9dfa94b5a25a6742d6ba28df; branch is ahead by 19.
+
+
+## 2026-10-09 - F434 committed; F435 selected
+
+F434 committed as 3fb5241347d14c2d9dfa94b5a25a6742d6ba28df (Phase2 - Cover Delete Teacher QAction cancellation (F434)); branch is ahead by 19. F435 Empty-state Open/New Profile button handoff through Banner, PageManager, and MainWindow is accepted and ready to commit. F436 Invalid UTF-8 document resource references is next after commit; F437-F438 remain provisional. latest_session_work.md and unrelated %SystemDrive%/ remain outside slice commits.
+
+
+## 2026-10-09 - F435 Open/New Profile matrix
+
+Explorer traced BasePage banner signals through PageManager to MainWindow QAction triggers and FileController. F435 will add separate Open and New success cases to the existing empty-state target. Open loads a seeded temporary profile through the TeacherProfile open picker; New creates a profile at a unique nonexistent temporary path through the TeacherProfile save picker. Both verify signal/action/picker handoff and loaded MyWorkspace Schedule state; New stays separate from Initial Setup. Build target and exact CTest: ClassMngrMainWindowInitialSetupEmptyStateNavigationTests. Matrix was recorded before implementation.
+
+
+## 2026-10-09 - F435 banner Open/New Profile accepted
+
+The actual empty-state Open and New Profile buttons traversed BasePage, PageManager, the matching MainWindow QAction, and the expected TeacherProfile file picker. Open consumed a seeded temp profile; New created/opened one at a fresh nonexistent temp path. Both reached MyWorkspace Schedule, selected the expected sidebar route, hid the banner, and avoided Initial Setup/prompt/opposite picker. F413 remains separate. Executor and independent Tester passed focused build, exact Debug CTest 1/1, full target QtTest 5/5, and each new case 3/3. No production/CMake change or full-suite run. F435 is accepted and ready to commit; branch is ahead by 19.

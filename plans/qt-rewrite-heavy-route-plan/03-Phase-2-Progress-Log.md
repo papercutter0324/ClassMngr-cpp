@@ -15433,7 +15433,7 @@ F427 was the second-last known Batch 20 slice, so two independent bounded review
 4. F432 - Export Classes QAction through selection dialog and JSON picker. MainWindow checks action state but does not trigger it; dialog tests and controller handler cover downstream pieces (tests/mainwindow_close_file_parity_tests.cpp:242-260; src/app/controllers/sidebar_controller.cpp:44-49; src/app/controllers/sidebar_controller_transfer.cpp:47-77,79-107). Focused target: MainWindowCloseFileParityTests.
 5. F433 - New Teacher menu QAction. The action is connected to addTeacher; MainWindow tests check enablement but do not follow creation, selection, and Teacher Info routing (src/app/menu_builder.cpp:1313-1324; src/app/controllers/sidebar_controller.cpp:51-56; src/app/controllers/sidebar_controller_teachers.cpp:25-85; tests/mainwindow_close_file_parity_tests.cpp:242-260).
 6. F434 - Delete Teacher QAction confirmation through MainWindow. Existing delete parity invokes the controller directly; current MainWindow navigation checks only enabled state (tests/sidebar_teacher_delete_parity_tests.cpp:161-239; tests/mainwindow_teacher_sidebar_navigation_parity_tests.cpp:883-957; src/app/controllers/sidebar_controller.cpp:58-63).
-7. F435 - Empty-state Open/New Profile buttons through the banner-to-PageManager-to-MainWindow handoff. F413 covers Initial Setup, while Open File coverage starts from the File action (src/ui/shared/pages/basepage.cpp:280-290; src/ui/shared/pages/pagemanager.cpp:296-305; src/app/mainwindow.cpp:666-683). Focused target: MainWindowInitialSetupEmptyStateNavigationTests.
+7. F435 - Empty-state Open/New Profile buttons through the banner-to-PageManager-to-MainWindow handoff. F413 covers Initial Setup, while Open File coverage starts from the File action (src/ui/shared/pages/basepage.cpp:280-290; src/ui/shared/pages/pagemanager.cpp:296-305; src/app/mainwindow.cpp:666-683). Focused target: ClassMngrMainWindowInitialSetupEmptyStateNavigationTests.
 8. F436 - Invalid UTF-8 document resource references. Current malformed-reference tests cover blank, scheme, and traversal values but not invalid UTF-8; expected error classification needs definition (src/next/platform/document_content_resource_port.h:206; tests/next_platform_document_content_resource_port_tests.cpp:54). Focused target: ClassMngrNextPlatformDocumentContentResourcePortTests.
 9. F437 - Report worker event-post failure with a zero-capacity queue. The analogous import-worker case leaves its job running when final-event posting fails; report-worker behavior is not characterized (tests/next_platform_qt_job_worker_tests.cpp:273). Focused target: ClassMngrNextPlatformQtJobWorkerTests.
 10. F438 - Optional typed occurrence IDs during repeat-series creation. The adapter converts optional IDs, but the persistence request helper leaves them unset; expected semantics need confirmation (src/next/platform/application_services_calendar_event_series_create_port.h:268,304; tests/next_platform_application_services_calendar_event_port_tests.cpp:1419). Focused target: ClassMngrNextPlatformApplicationServicesCalendarEventPortTests.
@@ -15753,3 +15753,76 @@ Executor and independent Tester each built `MainWindowTeacherSidebarNavigationPa
 and passed exact CTest filter `^ClassMngrMainWindowTeacherSidebarNavigationParityTests$` 1/1, direct target QtTest 6/6, and selected case 3/3. No full suite ran. The executor used Ninja Debug after Visual Studio FileTracker access-denied errors; the independent Visual Studio target build passed without retry. No focused process remains.
 
 F434 is accepted in this changeset and ready to commit. F435 Empty-state Open/New Profile button handoff is next after the F434 commit.
+
+### F434 committed / F435 selected-current - 2026-10-09
+
+F434, “Phase2 - Cover Delete Teacher QAction cancellation (F434),” is committed as `3fb5241347d14c2d9dfa94b5a25a6742d6ba28df` on Qt-Rewrite (branch ahead 19). Its cancellation acceptance and focused verification remain recorded above. F435 Empty-state Open/New Profile button handoff through Banner, PageManager, and MainWindow is selected/current. Read-only context discovery is underway; no F435 matrix or implementation has started.
+
+### F435 acceptance matrix recorded before implementation - 2026-10-09
+
+This two-case matrix exercises the real Open Profile and New Profile buttons on
+the no-database CampusDashboard banner. New Profile is distinct from Initial
+Setup; F413 remains a separate slice.
+
+1. Extend `tests/mainwindow_initial_setup_empty_state_navigation_tests.cpp` in
+   the existing `ClassMngrMainWindowInitialSetupEmptyStateNavigationTests` target;
+   no CMake change. Start each case with no database and the banner visible.
+   In Open, seed a valid profile in temporary storage and script its path through
+   `FakeFileDialogService`.
+2. Click the actual banner Open Profile button. Assert the
+   `BasePage::openDatabaseRequested` and `PageManager::openDatabaseRequested`
+   signal path reaches the actual `openFile` QAction trigger. Verify the
+   TeacherProfile picker metadata: title Open Teacher Profile, the database
+   directory as initial path, and the ClassMngr Teacher Profile (`*.tps`) and
+   Legacy Teacher Profile (`*.db`) filters. Assert the profile opens at the
+   selected path with an active session, MyWorkspace Schedule, the corresponding
+   Sidebar selection, and the banner hidden.
+3. In New, select a unique nonexistent temporary `.tps` path and click the
+   actual banner New Profile button. Assert the `BasePage::newDatabaseRequested`
+   and `PageManager::newDatabaseRequested` signal path reaches the actual
+   `newFile` QAction trigger. Verify TeacherProfile save-picker metadata: title
+   New Teacher Profile, the database directory as initial path, the `.tps`
+   filter, and `tps` suffix. Assert the new file is created and opened at the
+   selected path with an active session, MyWorkspace Schedule, the corresponding
+   Sidebar selection, and the banner hidden.
+4. In both cases assert there is no Initial Setup request, unexpected prompt, or
+   opposite picker request.
+5. Build target `ClassMngrMainWindowInitialSetupEmptyStateNavigationTests` and
+   run exact filtered Debug CTest
+   `^ClassMngrMainWindowInitialSetupEmptyStateNavigationTests$`. Keep
+   verification focused on these cases; do not run the full suite.
+
+Evidence: BasePage wires the banner buttons to its open/new database signals
+(`src/ui/shared/pages/basepage.cpp:279-291`) and labels them Open Profile/New
+Profile (`:384-402`). PageManager forwards both signals
+(`src/ui/shared/pages/pagemanager.cpp:294-305`); MainWindow routes them to the
+actual openFile/newFile QActions (`src/app/mainwindow.cpp:666-683`). The open
+picker uses title Open Teacher Profile, TeacherProfile purpose, the database
+directory, and the two profile filters (`src/app/controllers/file_controller.cpp:557-572`);
+the new-profile save picker uses title New Teacher Profile, TeacherProfile
+purpose, the database directory, the `.tps` filter, and `tps` suffix
+(`:272-304`). F413's Initial Setup case is separate
+(`tests/mainwindow_initial_setup_empty_state_navigation_tests.cpp:82-227`);
+target registration is `cmake/tests/pages_and_output.cmake:697-705`.
+
+F435 is selected/current with this matrix recorded; implementation is pending.
+
+### F435 accepted in this changeset - 2026-10-09
+
+Only `tests/mainwindow_initial_setup_empty_state_navigation_tests.cpp` changed;
+there were no production or CMake edits. Separate real banner Open Profile and
+New Profile cases verified the BasePage → PageManager → corresponding MainWindow
+QAction handoff and TeacherProfile picker metadata. Open used a valid seeded
+temporary profile; New used a unique nonexistent temporary `.tps` path. Both
+verified the resulting open session/path, MyWorkspace Schedule and Sidebar
+selection, hidden banner, and no Initial Setup request, unexpected prompt, or
+opposite picker request. F413 Initial Setup remains separate.
+
+The executor and independent Tester each passed build target
+`ClassMngrMainWindowInitialSetupEmptyStateNavigationTests`, exact filtered Debug
+CTest `^ClassMngrMainWindowInitialSetupEmptyStateNavigationTests$` (1/1), direct
+target QtTest (5/5), and each new selected case (3/3). No full suite was run.
+The executor's Ninja Debug build had no warnings; the independent VS target
+build had no C++ warnings (Qt reported only a missing system font directory).
+F435 is accepted in this changeset and ready to commit. F436 Invalid UTF-8
+document resource references is next after commit; F437-F438 remain provisional.
