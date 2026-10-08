@@ -40,12 +40,12 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-08
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F397 MainWindow Document Catalog retranslation is accepted
-  on pre-slice source 6ea8c90f; focused Sidebar and MainWindow verification
-  passed 2/2. Batch 16 is active with F398 FileController same-path
-  workspace-open parity selected/current. Batch 17 candidates F399-F403 were
-  discovered at F397 start and activate after F398. See the Phase 2 progress
-  log for evidence. Gates 1 and 2 remain Partial.
+- Current note: F398 FileController same-path workspace-open parity is
+  accepted with focused coordinator, FileController, and MainWindow coverage;
+  the standard focused build succeeded and CTest passed 3/3. Batch 16 is
+  complete. Batch 17 is active with F399 Close File action and no-workspace UI
+  transition selected/current; F400-F403 follow. Gates 1 and 2 remain Partial;
+  see the Phase 2 progress log for acceptance and discovery evidence.
 
 ### Slice discovery batches
 
@@ -70,15 +70,19 @@ log](03-Phase-2-Progress-Log.md).
   failure warning/no-navigation behavior; revisit after that behavior is
   clarified.
 
-#### Active batch: Batch 16
+#### Active batch: Batch 17
 
-1. F398 - Selected/current: FileController same-path workspace-open parity.
-Batch 16 was discovered at F394 start through independent route-producer and
+1. F399 - Selected/current: Close File action and no-workspace UI transition.
+2. F400 - Open File action dirty-page gate.
+3. F401 - Recent-workspace menu selection and missing-path pruning.
+4. F402 - MainWindow application-exit confirmation.
+5. F403 - Dynamic Teacher Sidebar leaf navigation.
+
+Batch 17 was discovered at F397 start through independent route-producer and
 application-boundary reviews. It is bounded to the reviewed Phase 2 plan and
 migration map, progress history, and candidate source/tests; it does not
 establish repository-wide discovery exhaustion.
 No other slices were found.
-
 
 ## Objective
 

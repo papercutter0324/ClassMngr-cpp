@@ -13896,3 +13896,89 @@ Test and CMake hygiene checks passed.
 Batch 16 advances to F398 FileController same-path workspace-open parity,
 selected/current. Batch 17 remains provisional with F399-F403 and activates
 after F398. Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial.
+
+
+### F398 selected/current / acceptance matrix established - 2026-10-08
+
+F398 covers selecting the already-active normalized workspace path through the
+FileController recent-workspace route. The migration map records same-path
+replacement and a complete MainWindow snapshot as missing direct integration
+coverage. `FileController::loadDatabase` currently sends this path through
+the ordinary WorkspaceCoordinator open path. Preserve that successful-reopen
+contract rather than introducing an early no-op: the coordinator commits the
+returned session and clears selection; FileController records recent history
+and applies the loaded state; MainWindow refreshes database-backed UI and
+returns to My Workspace/Schedule. The current page is clean during this slice;
+open-file dirty-page gating remains outside F398.
+
+Acceptance matrix:
+
+1. At the application boundary, cover a clean same-location reopen through the
+   WorkspaceCoordinator. Assert the gateway open is invoked, the resulting
+   session remains valid at the same location, and SelectionState is cleared.
+   Retain existing dirty-replacement and gateway-failure guarantees; do not
+   weaken their assertions.
+2. Through the real FileController recent-workspace action, seed history with
+   a second existing workspace ahead of the active `.tps` path, then select the
+   active path from Recent. Verify it remains open at its normalized location,
+   moves to the front with one normalized history entry, becomes `lastFile`,
+   refreshes the recent menu, and leaves database-backed file actions enabled.
+3. In a real MainWindow integration test, move away from My Workspace before
+   selecting the active path from Recent. Verify the normal successful-open
+   loaded-state transition: database-backed actions remain enabled, the visible
+   page/tab and Sidebar selection return to My Workspace/Schedule, and the
+   active workspace path and recent history remain correct. Use the actual
+   recent menu action so FileController, coordinator, and MainWindow are all
+   exercised together.
+4. Use `build/windows-x64-debug`; build the focused coordinator,
+   FileController lifecycle, and MainWindow integration targets and run only
+   their focused CTests/direct QtTest cases. Do not run the full suite.
+
+Discovery and decision evidence: `phase2-legacy-application-mapping.md` lines
+134-138 identifies the coverage gap; `file_controller.cpp` lines 582-658,
+753-779, 781-812; `workspace_coordinator.h` lines 58-85;
+`mainwindow.cpp` lines 1266-1299; and existing lifecycle/coordinator tests.
+The same-path reload expectation is an inference from the committed ordinary
+successful-open contract and existing FileController behavior.
+
+### F398 accepted - 2026-10-08
+
+F398 is accepted on pre-slice source `adcba55d` (F397). The same normalized
+workspace location follows the ordinary successful-open transition. No
+production changes were needed; the slice adds coverage at the coordinator,
+FileController, and MainWindow boundaries.
+
+`NextApplicationWorkspaceCoordinatorTests` verifies that a clean reopen at the
+same location invokes the gateway, retains the matching workspace identity
+and location, leaves the session clean, and clears SelectionState.
+`FileControllerWorkspaceLifecycleTests` opens the initial workspace through
+FileController, then selects that active path from the Recent menu while it
+sits behind a second existing workspace; the test verifies the open remains
+active, the normalized path moves to the MRU front, `lastFile` and menu order
+update, database-backed actions stay enabled, and no prompt appears. The
+MainWindow integration test opens a workspace, navigates to Campus Information,
+then reselects the same path through Recent; it verifies the page and Sidebar
+return to My Workspace/Schedule without a route event, with the same normalized
+workspace active and database-backed actions enabled.
+
+The focused standard-tree build succeeded for
+`ClassMngrNextApplicationWorkspaceCoordinatorTests`,
+`ClassMngrFileControllerWorkspaceLifecycleTests`, and
+`ClassMngrMainWindowRecentWorkspaceReopenParityTests`. Focused CTest passed
+3/3. Direct cases `openSuccessReopensSameLocationAndClearsSelection`,
+`recentActionReopensActiveWorkspaceAndMovesItToMruFront`, and
+`recentActionReturnsFromOtherPageToSameWorkspaceSchedule` each exited 0. CMake
+reported unavailable optional `WrapVulkanHeaders`; configuration and build
+succeeded. No full suite ran, and no runtime warnings appeared in visible test
+output.
+
+The first FileController fixture opened through `ApplicationServices` before
+constructing FileController, leaving its new WorkspaceState closed; review
+caught this gap. The fixture now establishes the active session through
+`loadDatabaseOnStartup` before selecting that same path from Recent. The
+coordinator fixture uses the production same workspace identity for both
+sessions.
+
+Batch 16 is complete. Batch 17 is active with F399 selected/current; F400-F403
+follow in discovered order. Phase 2 remains In Progress/Open; Gates 1 and 2
+remain Partial.

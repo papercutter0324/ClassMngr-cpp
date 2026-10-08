@@ -2416,3 +2416,14 @@ using the shipped catalog. Selection/page state remained unchanged, and no PDF
 content was requested or loaded. Focused Sidebar and MainWindow CTests passed
 2/2; the two direct QtTest cases passed. Batch 16 advances to F398; Batch 17
 discovery is recorded and activates after F398.
+
+### F398 same-path workspace reopen - 2026-10-08
+
+Same-path selection preserves the ordinary successful-open transition: the
+coordinator invokes its gateway and clears selection, the FileController
+reorders recent history, and MainWindow returns to My Workspace/Schedule. This
+decision preserves the existing Phase 2 parity behavior. For regression tests,
+establish the initial active workspace
+through FileController/coordinator. Opening only through the legacy
+ApplicationServices facade leaves the controller’s separate WorkspaceState
+closed and does not exercise replacement.

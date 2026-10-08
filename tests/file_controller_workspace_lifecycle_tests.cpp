@@ -230,6 +230,7 @@ private slots:
     void normalCreateUsesUnicodeSessionLocationForCurrentFile();
     void normalOpenUsesUnicodeSessionLocationAndPreservesHistory();
     void recentFilesDeduplicateRawAndNormalizedPaths();
+    void recentActionReopensActiveWorkspaceAndMovesItToMruFront();
     void recentFilesKeepNewestFirstAndCapAtTen();
     void pruningRemovesMissingPathAndClearsLastFile();
     void clearRecentFilesClearsListAndLastFile();
@@ -554,6 +555,80 @@ recentFilesDeduplicateRawAndNormalizedPaths()
         (QStringList{normalizedPath, otherPath})
         );
     QCOMPARE(settings.getLastFile(), normalizedPath);
+}
+
+void FileControllerWorkspaceLifecycleTests::
+recentActionReopensActiveWorkspaceAndMovesItToMruFront()
+{
+    QTemporaryDir workspaceRoot;
+    QVERIFY(workspaceRoot.isValid());
+
+    const QString activePath = QFileInfo(
+        workspaceRoot.filePath(QStringLiteral("active-workspace.tps"))
+        ).absoluteFilePath();
+    const QString otherPath = QFileInfo(
+        workspaceRoot.filePath(QStringLiteral("other-workspace.tps"))
+        ).absoluteFilePath();
+
+    ApplicationServices seedServices;
+    QVERIFY(seedServices.openDatabase(otherPath));
+    seedServices.closeDatabase();
+    QVERIFY(seedServices.openDatabase(activePath));
+    seedServices.closeDatabase();
+
+    FakeUserPromptService prompts;
+    DialogServices::setUserPromptServiceForTesting(&prompts);
+
+    ApplicationServices services;
+    FileController controller(&services, nullptr);
+    controller.loadDatabaseOnStartup(activePath);
+    QVERIFY(services.hasOpenDatabase());
+    QCOMPARE(services.currentDatabasePath(), activePath);
+
+    SettingsManager& settings = SettingsManager::instance();
+    settings.setRecentFiles({otherPath, activePath});
+    settings.setLastFile(otherPath);
+
+    ActionRegistry actions;
+    QMenu recentFilesMenu;
+    actions.recentFilesMenu = &recentFilesMenu;
+    connectFileActions(controller, actions);
+    controller.populateRecentMenu();
+
+    QVERIFY(recentFilesMenu.actions().size() >= 2);
+    QCOMPARE(
+        recentFilesMenu.actions().at(0)->data().toString(),
+        otherPath
+        );
+    QCOMPARE(
+        recentFilesMenu.actions().at(1)->data().toString(),
+        activePath
+        );
+
+    QAction* const activeRecentAction = recentFilesMenu.actions().at(1);
+    QVERIFY(activeRecentAction);
+    activeRecentAction->trigger();
+
+    QVERIFY(services.hasOpenDatabase());
+    QCOMPARE(services.currentDatabasePath(), activePath);
+    QCOMPARE(
+        settings.getRecentFiles(),
+        (QStringList{activePath, otherPath})
+        );
+    QCOMPARE(settings.getLastFile(), activePath);
+    QVERIFY(recentFilesMenu.actions().size() >= 2);
+    QCOMPARE(
+        recentFilesMenu.actions().at(0)->data().toString(),
+        activePath
+        );
+    QCOMPARE(
+        recentFilesMenu.actions().at(1)->data().toString(),
+        otherPath
+        );
+    QVERIFY(actions.saveFile->isEnabled());
+    QVERIFY(actions.closeFile->isEnabled());
+    QVERIFY(prompts.unsavedChangesConfirmations.isEmpty());
+    QVERIFY(prompts.messages.isEmpty());
 }
 
 void FileControllerWorkspaceLifecycleTests::

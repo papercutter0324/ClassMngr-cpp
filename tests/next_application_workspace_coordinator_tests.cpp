@@ -138,6 +138,7 @@ class NextApplicationWorkspaceCoordinatorTests final : public QObject
 private slots:
     void createSuccessOpensWorkspaceAndClearsSelection();
     void openSuccessReplacesCleanWorkspaceAndClearsSelection();
+    void openSuccessReopensSameLocationAndClearsSelection();
     void dirtyCreateIsRejectedBeforeGatewayAndPreservesState();
     void dirtyOpenIsRejectedBeforeGatewayAndPreservesState();
     void gatewayCreateFailurePreservesStateAndSelection();
@@ -223,6 +224,49 @@ void NextApplicationWorkspaceCoordinatorTests::openSuccessReplacesCleanWorkspace
     QCOMPARE(gateway.openCalls, 1);
     QVERIFY(workspaceState.snapshot().session().has_value());
     QVERIFY(*workspaceState.snapshot().session() == replacement);
+    QCOMPARE(selectionState.snapshot().kind(), SelectionKind::None);
+}
+
+void NextApplicationWorkspaceCoordinatorTests::
+    openSuccessReopensSameLocationAndClearsSelection()
+{
+    FakeWorkspaceGateway gateway;
+    const WorkspaceLocation activeLocation(
+        "C:/workspaces/current.tps"
+        );
+    const WorkspaceSession current = testSession(
+        "workspace-current",
+        "C:/workspaces/current.tps"
+        );
+    const WorkspaceSession reopened = testSession(
+        "workspace-current",
+        "C:/workspaces/current.tps"
+        );
+    gateway.openResponse = Result<WorkspaceSession>::success(reopened);
+    const WorkspaceUseCase useCase(gateway);
+    WorkspaceState workspaceState;
+    QVERIFY(workspaceState.open(current));
+    SelectionState selectionState;
+    selectionState.setSelection(*ClassId::fromString("class-1"));
+    WorkspaceCoordinator coordinator(useCase, workspaceState, selectionState);
+
+    const auto result = coordinator.openWorkspace(
+        OpenWorkspaceRequest{activeLocation}
+        );
+
+    QVERIFY(result);
+    QVERIFY(result.value() == reopened);
+    QCOMPARE(gateway.openCalls, 1);
+    QVERIFY(gateway.lastOpenedLocation == activeLocation);
+    QVERIFY(workspaceState.snapshot().session().has_value());
+    QVERIFY(*workspaceState.snapshot().session() == reopened);
+    QVERIFY(
+        workspaceState.snapshot().session()->location() == activeLocation
+        );
+    QCOMPARE(
+        workspaceState.snapshot().unsavedState(),
+        WorkspaceUnsavedState::Clean
+        );
     QCOMPARE(selectionState.snapshot().kind(), SelectionKind::None);
 }
 
