@@ -3008,4 +3008,18 @@ selection, and unchanged open database session/path. Closed-session and
 dirty-page cases remain covered by the route-gate test. The focused target
 rebuilt under VS 18 x64; independent CTest passed 1/1 (0.41 s), and the direct
 executable exited normally. F412-F413 remain queued in Batch 18; the next-batch
-discovery trigger is F412.
+discovery trigger is F412. F411 is committed as `3e5dbea4`. F412 Campus Sidebar
+root plus section producer integration is selected/current. Batch 19 discovery
+is complete: eight provisional candidates were reconciled from two independent
+bounded reviews before F412 implementation. The only preserved unrelated
+worktree entries are the user-modified `latest_session_work.md` and untracked
+`%SystemDrive%/` artifact.
+
+F412 Campus Sidebar root and section producer-to-handler integration is
+implemented and independently accepted. Its real MainWindow test clicks the
+rendered root and all five sections, asserts each actual `NavigationData`
+payload, destination page/section and Sidebar path, and unchanged database
+session/path. The VS 18 x64 Debug target rebuilt; independent filtered CTest
+passed 1/1 (0.42 s), with no lingering process. No production change or runtime
+defect was needed. F412 is ready to commit; F413 Initial Setup success
+navigation remains queued in active Batch 18.

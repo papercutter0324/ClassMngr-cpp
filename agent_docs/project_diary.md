@@ -2596,3 +2596,25 @@ database session/path. Existing route-gate tests retain closed-session and
 dirty-page coverage. The focused target rebuilt under VS 18 x64; independent
 CTest passed 1/1 (0.41 s), and the direct executable exited normally. F412-F413
 remain queued in Batch 18; discover Batch 19 when F412 starts.
+
+## 2026-10-08 - F411 committed / F412 selected; Batch 19 discovery completed
+
+F411 Sub Prep Sidebar root integration is committed as `3e5dbea4`. Its focused
+VS 18 x64 Debug target rebuilt and independent CTest passed 1/1 (0.41 s); the
+direct executable exited normally. F412 Campus Sidebar root plus section
+producer integration is now selected/current. Batch 19 discovery began before
+F412 implementation, following the second-last-slice trigger in
+`00-Start-Here.md`. Two independent bounded reviews produced eight reconciled
+provisional candidates for after F413; they do not establish Phase 2 exhaustion.
+The user-modified `latest_session_work.md` and untracked `%SystemDrive%/`
+artifact remain untouched.
+
+## 2026-10-08 - F412 Campus Sidebar integration accepted / ready to commit
+
+F412 Campus Sidebar root and section producer-to-handler integration is
+implemented and independently accepted. The real MainWindow test QTest-clicks
+the rendered root and each of its five sections, verifies each emitted payload,
+current Campus Dashboard section, selected Sidebar path, and unchanged open
+session/path. The VS 18 x64 Debug target rebuilt; independent filtered CTest
+passed 1/1 (0.42 s), with no lingering process. No production change or runtime
+defect was needed. F413 Initial Setup success navigation remains queued.

@@ -14615,3 +14615,94 @@ Debug; the registered `MainWindowSubPrepSidebarRootNavigation` CTest passed
 1/1 in 0.41 s. The direct test executable exited 0 and no process remained. No
 runtime defect was found. F411 is accepted and ready to commit; F412-F413 remain
 queued in active Batch 18. Begin Batch 19 discovery when F412 starts.
+
+### F411 committed / F412 selected/current - 2026-10-08
+
+F411 Sub Prep Sidebar root integration is committed as `3e5dbea4`. Batch 18
+remains active with F412 selected/current and F413 queued.
+
+### F412 selected/current / provisional acceptance matrix - 2026-10-08
+
+1. With an open temporary workspace, QTest-click the rendered `campus_info`
+   root. Passively assert exactly one actual `NavigationData` payload:
+   `NodeType::Root`, path from the displayed root label, keys [`campus_info`],
+   routeKey `campus_info`, and natural `classId` -1. Verify the actual handler
+   reaches the Campus Dashboard Information section and selects the root path.
+2. QTest-click each rendered child: `campus_information`,
+   `campus_directions`, `campus_address`, `campus_housing`, and `campus_map`.
+   For each click, passively assert one actual `NodeType::Page` payload with
+   displayed-label path, keys [`campus_info`, childKey], routeKey childKey, and
+   natural `classId` -1. Verify the same CampusDashboardPage instance remains
+   current on that child's section and the matching Sidebar path is selected.
+3. Verify the open database session and workspace path remain unchanged across
+   the root and child clicks.
+
+Evidence: Campus Sidebar root/section nodes are declared in
+`src/ui/shared/widgets/sidebar/sidebar_definitions.cpp:127-135`; the real
+Sidebar selection producer builds and emits navigation payloads in
+`src/ui/shared/widgets/sidebar/sidebar_selection.cpp:120-255`; MainWindow wires
+the signal to the navigation handler in `src/app/mainwindow.cpp:784-789`.
+Existing `campus_route_navigation_parity_tests.cpp` synthesizes/manual-dispatches
+route events and covers dirty-page leave gating with an open workspace
+(`tests/campus_route_navigation_parity_tests.cpp:149-169,403,442-510`); it does
+not cover closed-session behavior. The matrix was provisional at slice
+selection; see the implementation and verification entry below.
+
+### Batch 19 discovered at F412 - 2026-10-08
+
+At the required second-last-slice trigger, a bounded source-and-test review
+compared production event paths with existing focused coverage. The ordered
+candidates below are provisional until Batch 18 completes. This discovery is
+bounded and does not establish repository-wide exhaustion.
+
+1. **F414 - Teacher profile save preserves the selected duplicate Sidebar
+   occurrence.** Evidence: MainWindow refresh flow
+   (`src/app/mainwindow.cpp:986-988`), teacher-sidebar rebuild
+   (`src/app/controllers/sidebar_controller_refresh.cpp:224-231`), and
+   key-path selection (`src/ui/shared/widgets/sidebar/sidebar_selection.cpp:3-23`).
+   The occurrence shift is source-inferred; no production MainWindow refresh
+   test covers it.
+2. **F415 - Campus Dashboard page-tab-to-Sidebar synchronization.** Evidence:
+   tab change producer (`src/features/campus/ui/campus_dashboard_page_ui.cpp:242-246`)
+   and MainWindow connection (`src/app/mainwindow.cpp:1000-1004`). Existing
+   campus route tests manually connect the path.
+3. **F416 - Document Catalog rendered Sidebar leaf through MainWindow and
+   viewer.** Evidence: `tests/document_catalog_navigation_parity_tests.cpp:167-253,414-430`
+   clicks leaves but then directly dispatches; the MainWindow signal connection
+   is at `src/app/mainwindow.cpp:784`.
+4. **F417 - Staff Directory rendered leaf through MainWindow.** Evidence:
+   `tests/staff_directory_open_session_navigation_parity_tests.cpp:379-416`
+   clicks leaves but manually dispatches; MainWindow's Sidebar signal
+   connection is at `src/app/mainwindow.cpp:784`.
+5. **F418 - Schedule Import through MainWindow apply and Sidebar refresh.**
+   Evidence: MainWindow flow (`src/app/mainwindow.cpp:834-872`), widget request
+   test (`tests/schedule_widget_tests.cpp:892-908`), and separate dialog
+   coverage.
+6. **F419 - MainWindow Print/Save Current Page As action capability and enabled
+   state.** Evidence: action setup/state (`src/app/mainwindow.cpp:627-650,1120-1140`);
+   existing tests cover PageManager only.
+7. **F420 - Class/Schedule save signal to Sidebar action-state refresh.**
+   Evidence: MainWindow connections (`src/app/mainwindow.cpp:799-829`), refresh
+   handler (`src/app/controllers/sidebar_controller_refresh.cpp:217-222`);
+   existing tests invoke the handler directly.
+8. **F421 - Useful Links URL handoff.** Evidence: node definitions
+   (`src/ui/shared/widgets/sidebar/sidebar_definitions.cpp:61-120`) and
+   selection handling (`src/ui/shared/widgets/sidebar/sidebar_selection.cpp:205-219`).
+   There is no interception test seam; this is lower priority.
+
+No other slices were found.
+
+### F412 implementation complete / independently verified / accepted - 2026-10-08
+
+`tests/mainwindow_campus_sidebar_navigation_tests.cpp` QTest-clicks the rendered
+`campus_info` root and all five child sections in a real MainWindow. It checks
+the exact actual payloads, same CampusDashboardPage/current section/Sidebar
+keys, and unchanged open `DatabaseSession` and workspace path after each click.
+No production changes or runtime defect were found.
+
+`ClassMngrMainWindowCampusSidebarNavigationTests` was independently rebuilt
+under VS 18 x64 Debug; its exact registered CTest passed 1/1 in 0.42 s, with no
+lingering process. No full suite was run. The existing campus route test uses
+synthetic/manual dispatch and covers dirty-page leave gating with an open
+workspace, not closed-session behavior. F412 is accepted and ready to commit;
+Batch 18 remains active with F413 queued.
