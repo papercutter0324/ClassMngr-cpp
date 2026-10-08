@@ -96,11 +96,12 @@
   Batch 6 is complete; Batch 7 (F337-F338), Batch 8 (F339-F344), Batch 9
   (F345-F353), and Batch 10 (F354-F361) are complete. Batch 11 (F362-F371)
   and Batch 12 (F372-F381) are complete; Batch 13 (F382-F390) is active with
-  F382-F384 and F386-F387 accepted, including the independently verified F386
+  F382-F384 and F386-F388 accepted, including the independently verified F386
   Staff Directory closed-session navigation parity. F385 is retired as a
-  duplicate of F369. F387 Calendar Preferences event-reset parity is accepted;
-  F388-F390 remain provisional/unselected. See the Phase 2 progress log for
-  F387 acceptance evidence and its F386 acceptance-commit pin.
+  duplicate of F369. F387 Calendar Preferences event-reset parity and F388
+  Class Details/Notes/student Evaluation route availability parity are
+  accepted; F389-F390 remain provisional/unselected. See the Phase 2 progress
+  log for F388 acceptance evidence and its F387 source pin.
   Gates 1 and 2 remain Partial, with broader feature
   migration, parity, and 96-class Release memory evidence still open.
   See the

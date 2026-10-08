@@ -13155,3 +13155,53 @@ runs produced byte-identical transcript JSON; SHA-256:
 
 F388-F390 remain provisional and unselected. Phase 2 remains In Progress/Open;
 Gates 1 and 2 remain Partial.
+
+### F388 selected/current / acceptance matrix established - 2026-10-08
+
+F388, Class Details/Notes/student Evaluation route availability parity, is
+selected/current in Batch 13. Its immediate pre-slice source is F387 commit
+`32455d85` (`Phase2 - Add Calendar Preferences event-reset parity (F387)`).
+The matrix crosses each of the three routes (`class_details`, `class_notes`,
+and `speaking_winter` under `student_evaluations`) with an available and an
+unavailable database session:
+
+1. With the database closed and a valid seeded class ID, dispatch each route
+   from a dirty Teacher Info page. Assert that the current page, teacher
+   identity, exact notes content, and dirty state remain unchanged; Classes is
+   not created or shown; and no prompt, leave confirmation, or Qt warning is
+   emitted.
+2. With the database open and the same valid route/class ID, dispatch each
+   route from a dirty Teacher Info page and choose Discard. Assert exactly one
+   unsaved-changes confirmation, the Classes page is current for the requested
+   class, and the requested section is Details, Notes, or Evaluations. For the
+   evaluation route, also assert the selected evaluation is Winter. Assert no
+   warning or unrelated prompt.
+
+The slice is navigation parity only: no sidebar-highlight assertion, invalid
+ID/key case, alternate evaluation name, or production behavior change is in
+scope. The evaluation case uses the existing templates resource pack. Use a
+focused offscreen Qt test with canonical per-case observations. F388
+implementation and verification have not started. Phase 2 remains In
+Progress/Open; Gates 1 and 2 remain Partial.
+
+### F388 accepted - 2026-10-08
+
+F388, Class Details/Notes/student Evaluation route availability parity, is
+accepted on pre-slice source `32455d85` (F387). It adds
+`tests/class_route_availability_parity_tests.cpp` and registers the focused
+`ClassMngrClassRouteAvailabilityParityTests` target, including keyboard test
+resources and the templates resource-pack dependency. No production sources
+changed.
+
+The incremental Windows x64 Debug build succeeded in
+`build/windows-x64-debug`; focused CTest passed 1/1. Direct QtTest emitted six
+normalized JSONL rows. All three closed-session rows preserved the dirty
+Teacher Info page with exact notes, created no Classes page, and recorded zero
+prompts, leave confirmations, and Qt warnings. The three open-session rows
+each recorded one leave confirmation and routed to the requested class and
+Details, Notes, or Evaluations section; the student Evaluation row selected
+Winter. The transcript at
+`build/windows-x64-debug/f388-class-route-availability.jsonl` has SHA-256
+`79850613b548e3a1314e117289bebacf8b39ec8e0305bb629b55ccddf4a312ae`.
+`git diff --check` passed. No full suite ran. F389 and F390 remain provisional
+and unselected. Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial.

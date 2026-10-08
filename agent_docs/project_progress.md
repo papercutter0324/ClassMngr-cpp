@@ -2855,10 +2855,14 @@ unsynced and unaudited in this checkout; local Batch 11 evidence still ends at
 F366. No remote commits or acceptance results are inferred.
 
 
-## Current Position — 2026-10-08 (F387 accepted)
+## Current Position — 2026-10-08 (F388 accepted)
 
 Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial. F386 is
 accepted at `b3f9105e7c9160b2d862683d324f9dfd3cffc91d`, and F387 Calendar
-Preferences event-reset parity is accepted with focused CTest 1/1 and
-byte-identical repeated transcripts. F388-F390 remain provisional and
-unselected.
+Preferences event-reset parity is accepted. F388 Class Details/Notes/student
+Evaluation route availability parity is accepted from source commit `32455d85`.
+Its focused Windows x64 Debug CTest passed 1/1; six normalized observations
+verified all three routes with open and closed database sessions. The closed
+session rows preserved the dirty page and emitted no prompts; the open rows
+navigated after one discard confirmation, including Winter selection for
+student Evaluation. F389-F390 remain provisional and unselected.

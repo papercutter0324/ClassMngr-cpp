@@ -2240,3 +2240,13 @@ When a workspace is closed, each Staff Directory route must be rejected before p
 ## 2026-10-08 - F387 Calendar Preferences event-reset parity
 
 F387 covers unavailable-session rejection, cancel behavior, failure after the destructive prompt, and successful reset with Calendar cache refresh. Its focused target passes on the pinned F386 production source with only the test source and CMake registration overlaid. Repeated canonical transcripts match; no production files changed.
+
+
+## 2026-10-08 - F388 class route availability parity
+
+F388 covers Class Details, Class Notes, and student Evaluation navigation with
+the database open and closed. Closed-session routes preserve dirty Teacher Info
+state without prompting; open-session routes navigate to the requested class
+section after one Discard confirmation. The evaluation route selects Winter.
+The focused Windows x64 Debug CTest passed 1/1, and direct QtTest emitted six
+canonical route/session observations. No production sources changed.

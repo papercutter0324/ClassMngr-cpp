@@ -40,11 +40,11 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-08
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: Batch 13 slices F382-F384 and F386-F387 are accepted; F385 is
-  retired as a duplicate of F369. F387 Calendar Preferences event-reset parity
-  is accepted on the F386 acceptance source. F388-F390 remain provisional and
-  unselected; select the next slice and record its matrix before
-  implementation. Gates 1 and 2 remain Partial.
+- Current note: Batch 13 slices F382-F384 and F386-F388 are accepted; F385 is
+  retired as a duplicate of F369. F389 My Info route navigation gate parity
+  and F390 Sub Prep route gate parity remain provisional/unselected; select the
+  next slice and record its matrix before implementation. Gates 1 and 2 remain
+  Partial.
 
 ### Slice discovery batches
 
@@ -71,10 +71,8 @@ log](03-Phase-2-Progress-Log.md).
 
 #### Active batch: Batch 13
 
-1. F388 - Provisional, not selected: Class Details/Notes/student-Evaluation
-   route availability matrix.
-2. F389 - Provisional, not selected: My Info route navigation gate parity.
-3. F390 - Provisional, not selected: Sub Prep route gate parity.
+1. F389 - Provisional, not selected: My Info route navigation gate parity.
+2. F390 - Provisional, not selected: Sub Prep route gate parity.
 
 The two independent scans were bounded to Calendar and NavigationController
 parity review; they do not establish repository-wide discovery exhaustion.
