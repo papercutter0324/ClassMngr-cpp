@@ -51,9 +51,15 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
   1c03b326 (branch ahead 28). F444 is committed as
   8a21da618870ba4308415aaf5927fa1393af6e97 (branch ahead 29). F445 is committed as
   d9180f1c465976dfdd707382a1e615108aed9387 (branch ahead 30). F446 is committed as
-  4b34a3b8a15a062377a245607228097fb43ee46b (branch ahead 31); Batch 22 is complete and Batch 23 is active with F447,
-  “Cover MainWindow Classes menu New Class QAction creation and navigation,” is accepted in this changeset and ready to commit.
-  F435 covers the no-database banner route; F444 covers replacing a distinct open profile.
+  4b34a3b8a15a062377a245607228097fb43ee46b (branch ahead 31). F447 is committed as
+  d5b130bd0558146185ebf4cdeab885bde6956fec (branch ahead 32); Batch 23 is complete and
+  Batch 24 is active with F448, “Cover New File QAction open-profile success,” selected/current.
+  The independent Tester found empty A made a file-existence check weak; the test change now
+  seeds and verifies A details. F448 is accepted in this changeset and ready to commit: the
+  selected slot passed 3 incidents/0 failures and filtered CTest passed 1/1. Independent source review
+  approved the strengthened assertions; its command run was blocked by helper_unknown_error:
+  setup refresh had errors. A Qt font-directory warning appeared. F435 covers no-database New
+  Profile creation and picker metadata; F444 covers Open File replacement.
   F285 stays deferred. See the
   progress log. Gates 1 and 2 remain Partial.
 
@@ -80,11 +86,11 @@ log](03-Phase-2-Progress-Log.md).
   failure warning/no-navigation behavior; revisit after that behavior is
   clarified.
 
-#### Active batch: Batch 23
+#### Active batch: Batch 24
 
-1. F447 - Accepted in this changeset; ready to commit. Target:
-   ClassMngrMainWindowClassesSidebarRootNavigationTests. Acceptance and verification are
-   recorded in the progress log.
+1. F448 - Accepted in this changeset, ready to commit: Cover New File QAction open-profile
+   success. The seeded-A details remain unchanged, B stays active/open, target build and selected
+   slot passed, and filtered CTest passed 1/1. Target: ClassMngrMainWindowCloseFileParityTests.
 
 Batch 21 began with ten candidates after F428 and is complete; F429-F438 are
 committed. F438, “Phase2 - Reject existing IDs in repeat-series creation (F438),”
@@ -99,11 +105,13 @@ committed as 1c03b326567cf52d808bc4c54b7a5e77021bb7bf on Qt-Rewrite (branch ahea
 F444 is committed as 8a21da618870ba4308415aaf5927fa1393af6e97 on Qt-Rewrite (branch ahead 29); its acceptance
 and focused verification remain recorded in the progress log. F445 is committed as d9180f1c465976dfdd707382a1e615108aed9387 on Qt-Rewrite (branch ahead 30); its acceptance
 and focused verification remain recorded in the progress log. F446 is committed as 4b34a3b8a15a062377a245607228097fb43ee46b on Qt-Rewrite (branch ahead 31); acceptance and
-verification remain recorded in the progress log. Batch 22 is complete. Batch 23 is active
-with F447 accepted in this changeset and ready to commit. Its target and acceptance
-evidence are recorded in the progress log. F435 covers opening
-from the no-database banner. F444 covers replacing a
-distinct open profile and excludes same-path opening, dirty replacement choices, and
+verification remain recorded in the progress log. Batch 22 is complete. F447 is committed as d5b130bd0558146185ebf4cdeab885bde6956fec on Qt-Rewrite (branch ahead 32); its acceptance and
+verification remain recorded in the progress log. Batch 23 is complete. Batch 24 is active
+with F448 accepted in this changeset and ready to commit; its matrix was recorded before
+implementation. The independent Tester found the empty-A check weak; the test change now verifies
+seeded A details remain. Focused verification passed; details are in the progress log. Target
+and limits are recorded below. F435 covers opening from the no-database banner. F444 covers
+replacing a distinct open profile and excludes same-path opening, dirty replacement choices, and
 load-failure behavior. F285 remains deferred. This bounded discovery does not establish
 repository-wide exhaustion.
 Batch 20 completed when F428 committed as b82bddaa. F429 committed as 19f6024d. Batch 21 was

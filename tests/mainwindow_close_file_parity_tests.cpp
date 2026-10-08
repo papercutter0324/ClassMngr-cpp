@@ -11,6 +11,7 @@
 #include "features/classes/ui/class_import_dialog.h"
 #include "features/classes/ui/classes_page.h"
 #include "features/classes/services/class_transfer_json_codec.h"
+#include "features/my_info/data/personal_details_repository.h"
 #include "features/my_info/ui/my_workspace_page.h"
 #include "features/my_info/ui/personal_details_page.h"
 #include "domain/models/class_info.h"
@@ -370,6 +371,7 @@ private slots:
     void initTestCase();
     void closeFileCancelPreservesDraftBeforeDiscardClosesWorkspace();
     void closeFileSavePersistsDraftBeforeClosingWorkspace();
+    void newFileActionReplacesOpenProfileWithCreatedProfile();
     void upcomingBirthdaysActionShowsEntriesFromAllStaffDirectories();
     void importClassesActionRequestsJsonAndCancellationIsSilent();
     void importClassesActionReviewsAndAppliesJsonPackage();
@@ -699,6 +701,140 @@ closeFileSavePersistsDraftBeforeClosingWorkspace()
         draft
         );
     reopenedServices.closeDatabase();
+}
+
+void MainWindowCloseFileParityTests::
+newFileActionReplacesOpenProfileWithCreatedProfile()
+{
+    QTemporaryDir workspaceRoot;
+    QVERIFY(workspaceRoot.isValid());
+
+    const QString originalProfilePath = QFileInfo(
+        workspaceRoot.filePath(QStringLiteral("original-profile.tps"))
+        ).absoluteFilePath();
+    const QString newProfilePath = QFileInfo(
+        workspaceRoot.filePath(QStringLiteral("new-profile.tps"))
+        ).absoluteFilePath();
+    QVERIFY(!QFileInfo::exists(newProfilePath));
+
+    ApplicationServices seedServices;
+    QVERIFY(seedServices.openDatabase(originalProfilePath));
+    PersonalDetails originalProfileDetails;
+    originalProfileDetails.name = QStringLiteral("F448 Original Profile");
+    originalProfileDetails.campus = QStringLiteral("F448 Original Campus");
+    QVERIFY(
+        PersonalDetailsRepository(seedServices.settingsService())
+            .save(originalProfileDetails)
+        );
+    seedServices.closeDatabase();
+    QVERIFY(QFileInfo::exists(originalProfilePath));
+
+    LanguageService languageService;
+    QVERIFY(languageService.setLanguage(Language::English));
+
+    MainWindowStartupOptions startupOptions;
+    startupOptions.loadMostRecentDatabase = false;
+    startupOptions.initialDatabasePath = originalProfilePath;
+
+    FakeUserPromptService prompts;
+    FakeFileDialogService fileDialogs;
+    fileDialogs.scriptedSaveFiles.enqueue(newProfilePath);
+    const UserPromptServiceScope promptScope(&prompts);
+    const FileDialogServiceScope fileDialogScope(&fileDialogs);
+
+    MainWindow window(
+        [](const QString&) {},
+        false,
+        &languageService,
+        nullptr,
+        std::move(startupOptions)
+        );
+    window.show();
+    QApplication::processEvents();
+
+    ApplicationServices* const services = window.services();
+    QVERIFY(services);
+    QVERIFY(services->hasOpenDatabase());
+    QCOMPARE(services->currentDatabasePath(), originalProfilePath);
+
+    PageManager* const pages = window.pageManager();
+    QVERIFY(pages);
+    QVERIFY(pages->isCurrentPage(PageType::MyWorkspace));
+    MyWorkspacePage* const workspacePage = pages->myWorkspacePage();
+    QVERIFY(workspacePage);
+    QCOMPARE(workspacePage->currentTab(), WorkspaceTab::Schedule);
+
+    Sidebar* const sidebar = window.findChild<Sidebar*>();
+    QVERIFY(sidebar);
+    QCOMPARE(
+        sidebar->selectedKeys(),
+        QStringList{QStringLiteral("my_workspace")}
+        );
+
+    QAction* const newFileAction = window.actions().newFile;
+    QVERIFY(newFileAction);
+    QVERIFY(newFileAction->isEnabled());
+    newFileAction->trigger();
+    QApplication::processEvents();
+
+    QCOMPARE(fileDialogs.saveFileRequests.size(), 1);
+    QCOMPARE(fileDialogs.saveFileWithOptionsRequests.size(), 0);
+    QCOMPARE(fileDialogs.openFileRequests.size(), 0);
+    QCOMPARE(fileDialogs.openFilesRequests.size(), 0);
+    QCOMPARE(fileDialogs.directoryRequests.size(), 0);
+    QVERIFY(fileDialogs.scriptedSaveFiles.isEmpty());
+    const SaveFileRequest& saveRequest =
+        fileDialogs.saveFileRequests.constFirst();
+    QCOMPARE(saveRequest.parent, static_cast<QWidget*>(&window));
+    QCOMPARE(saveRequest.title, QStringLiteral("New Teacher Profile"));
+    QVERIFY(saveRequest.purpose == FileDialogPurpose::TeacherProfile);
+    QCOMPARE(saveRequest.initialDirectory, workspaceRoot.path());
+    QCOMPARE(
+        saveRequest.nameFilters,
+        QStringList{QStringLiteral("ClassMngr Teacher Profile (*.tps)")}
+        );
+    QCOMPARE(saveRequest.defaultSuffix, QStringLiteral("tps"));
+
+    QVERIFY(QFileInfo::exists(originalProfilePath));
+    QVERIFY(QFileInfo::exists(newProfilePath));
+    QVERIFY(services->hasOpenDatabase());
+    QCOMPARE(services->currentDatabasePath(), newProfilePath);
+    DatabaseSession* const activeSession = services->databaseSession();
+    QVERIFY(activeSession);
+    QVERIFY(activeSession->isOpen());
+
+    QVERIFY(pages->isCurrentPage(PageType::MyWorkspace));
+    QCOMPARE(workspacePage->currentTab(), WorkspaceTab::Schedule);
+    QCOMPARE(
+        sidebar->selectedKeys(),
+        QStringList{QStringLiteral("my_workspace")}
+        );
+
+    ApplicationServices reopenedOriginalServices;
+    QVERIFY(reopenedOriginalServices.openDatabase(originalProfilePath));
+    const PersonalDetails reopenedOriginalDetails =
+        PersonalDetailsRepository(
+            reopenedOriginalServices.settingsService()
+            ).load();
+    QCOMPARE(reopenedOriginalDetails.name, originalProfileDetails.name);
+    QCOMPARE(reopenedOriginalDetails.campus, originalProfileDetails.campus);
+    reopenedOriginalServices.closeDatabase();
+
+    QVERIFY(services->hasOpenDatabase());
+    QCOMPARE(services->currentDatabasePath(), newProfilePath);
+    DatabaseSession* const stillActiveSession = services->databaseSession();
+    QVERIFY(stillActiveSession);
+    QVERIFY(stillActiveSession->isOpen());
+
+    QVERIFY(prompts.messages.isEmpty());
+    QVERIFY(prompts.asynchronousMessages.isEmpty());
+    QVERIFY(prompts.confirmations.isEmpty());
+    QVERIFY(prompts.unsavedChangesConfirmations.isEmpty());
+    QVERIFY(prompts.actionPrompts.isEmpty());
+    QVERIFY(prompts.scriptedChoices.isEmpty());
+    QVERIFY(prompts.scriptedUnsavedChangesChoices.isEmpty());
+    QVERIFY(prompts.scriptedActionIds.isEmpty());
+    QVERIFY(QApplication::activeModalWidget() == nullptr);
 }
 
 void MainWindowCloseFileParityTests::

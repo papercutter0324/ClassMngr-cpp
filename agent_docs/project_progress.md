@@ -3321,10 +3321,26 @@ Verification: target build passed without compiler warnings; selected QtTest pas
 
 ## 2026-10-09 - F447 New Class QAction acceptance review
 
+F447 committed as `d5b130bd0558146185ebf4cdeab885bde6956fec`; branch is ahead by 32.
+
 Two independent local read-only reviews identified the top-level New Class QAction as an uncovered MainWindow route. The existing `classesRootContextMenuAddClassCreatesAndOpensClass()` case covers the separate Sidebar context-menu action, while the QAction and context menu share `SidebarController::addClass()`.
 
 Acceptance: From a clean open file-backed profile on My Workspace, assert `window.actions().newClass` exists and is enabled, then trigger the real ActionRegistry QAction. Verify one new persisted class is selected and opened on Classes Details, Classes is selected in the Sidebar, the current database session/path remain stable, and no unexpected prompt or warning occurs. This adds MainWindow action wiring coverage around existing creation behavior.
 
-Source map: `ActionRegistry::newClass` -> Classes menu -> `SidebarController::addClass()`; handler creates the class, opens Details, selects Classes. Focused class/target: `MainWindowClassesSidebarRootNavigationTests` / `ClassMngrMainWindowClassesSidebarRootNavigationTests`. Exclude Sidebar context-menu behavior, creation/read failures (deferred F298), dirty-page confirmation, no-database behavior, and unrelated class fields. F447 is accepted and ready to commit.
+Source map: `ActionRegistry::newClass` -> Classes menu -> `SidebarController::addClass()`; handler creates the class, opens Details, selects Classes. Focused class/target: `MainWindowClassesSidebarRootNavigationTests` / `ClassMngrMainWindowClassesSidebarRootNavigationTests`. Exclude Sidebar context-menu behavior, creation/read failures (deferred F298), dirty-page confirmation, no-database behavior, and unrelated class fields. F447 is committed as `d5b130bd0558146185ebf4cdeab885bde6956fec`.
 
 Verification: target build passed without compiler warnings; selected QtTest passed 3 functions (setup, slot, cleanup); full target QtTest passed 5 functions (three slots, setup, cleanup); exact filtered CTest passed 1/1. Independent source review approved the action wiring, class-count/persisted-ID check, Details route, and Sidebar/session/path assertions. One missing Qt font-directory warning and offscreen `raise()`/keyboard-grab notices occurred; tests passed. No full project suite or production/CMake change.
+
+## 2026-10-09 - F448 New File QAction open-profile acceptance review
+
+Two independent local reviews confirmed a distinct active-profile transition gap. F435 covers New Profile from the no-database banner, and F444 covers Open File replacement; neither covers New File closing an active profile and creating a new one through the MainWindow QAction. Existing FileController lifecycle tests cover creation without an open profile, not this MainWindow handoff.
+
+Acceptance: Start with a clean file-backed profile A open on My Workspace Schedule, select a unique nonexistent `.tps` path B through the fake Save File picker, and trigger the real `window.actions().newFile`. Verify the picker is rooted at the active profile directory, B is created and active with an open database session, A remains on disk with its seeded name and campus unchanged, My Workspace Schedule and the `my_workspace` Sidebar selection are restored, and no prompt, warning, or modal remains. Do not compare session pointer identity.
+
+Source map: `ActionRegistry::newFile` -> `FileController::newFile()` -> `confirmUnsavedChanges()` -> Save File picker -> `closeActiveDatabase()` -> `WorkspaceCoordinator::createWorkspace()` -> `MainWindow::applyDatabaseLoadedState()`. Focused class/target: `MainWindowCloseFileParityTests` / `ClassMngrMainWindowCloseFileParityTests`. Exclude dirty-page choices, picker cancellation, existing-target overwrite, Initial Setup, creation failures, and F435/F444 behavior. Acceptance matrix recorded before implementation; Batch 24 is active.
+
+## 2026-10-09 - F448 New File QAction success accepted
+
+The new MainWindow case triggers the real New File QAction from a clean open profile A, creates profile B at the selected destination, and checks that B becomes active on My Workspace Schedule with the `my_workspace` Sidebar route. It verifies A remains on disk with its seeded name and campus unchanged through a fresh `ApplicationServices` readback, and that no prompt, warning, or modal appears. F435 no-database creation and F444 Open File replacement remain separate coverage.
+
+Verification: `ClassMngrMainWindowCloseFileParityTests` target build passed; the selected QtTest slot passed 3 incidents (setup, test, cleanup) with zero failures; filtered CTest passed 1/1; `git diff --check` is clean. Independent source review approved the strengthened persistence readback and active-session/UI checks, but its test commands could not launch due `helper_unknown_error: setup refresh had errors`. The executor ran the updated verification successfully. One existing Qt font-directory warning appeared. No full project suite or production/CMake change. F448 is accepted and ready to commit; Batch 24 remains active pending commit.

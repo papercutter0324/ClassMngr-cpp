@@ -170,9 +170,15 @@ synchronization is committed (`f4bc5282`). F416 Document Catalog rendered
   1c03b326 (branch ahead 28). F444 is committed as
   8a21da618870ba4308415aaf5927fa1393af6e97 (branch ahead 29). F445 is committed as
   d9180f1c465976dfdd707382a1e615108aed9387 (branch ahead 30). F446 is committed as
-  4b34a3b8a15a062377a245607228097fb43ee46b (branch ahead 31); Batch 22 is complete and Batch 23 is active with F447,
-  “Cover MainWindow Classes menu New Class QAction creation and navigation,” is accepted in this changeset and ready to commit.
-  F435 covers the no-database banner route; F444 covers replacing a distinct open profile.
+  4b34a3b8a15a062377a245607228097fb43ee46b (branch ahead 31). F447 is committed as
+  d5b130bd0558146185ebf4cdeab885bde6956fec (branch ahead 32); Batch 23 is complete and
+  Batch 24 is active with F448, “Cover New File QAction open-profile success,” selected/current.
+  The independent Tester found empty A made a file-existence check weak; the test change now
+  seeds and verifies A details. F448 is accepted in this changeset and ready to commit: target
+  build passed, the selected slot passed 3 incidents/0 failures, and filtered CTest passed 1/1. Independent
+  source review approved the persistence and active-B assertions, but its command run was blocked
+  by helper_unknown_error: setup refresh had errors. A Qt font-directory warning appeared. F435
+  covers no-database New Profile creation and picker metadata; F444 covers Open File replacement.
   F285 stays deferred. See the
   progress log. Gates 1 and 2 remain Partial,
   with broader feature migration, parity, and 96-class Release memory evidence still open.

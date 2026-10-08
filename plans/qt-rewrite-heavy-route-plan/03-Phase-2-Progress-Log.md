@@ -16538,3 +16538,47 @@ Qt reported a font-directory warning and offscreen raise()/keyboard-grab notices
 project suite was run.
 
 F447 is accepted in this changeset and ready to commit. Batch 23 remains active.
+
+### F447 committed - 2026-10-09
+
+F447 committed as d5b130bd0558146185ebf4cdeab885bde6956fec; branch is ahead by 32. Its acceptance and verification remain
+recorded above. Batch 23 is complete. A read-only scan found no post-F447 candidate, F448
+title, or target currently recorded in the Phase 2 plan. This bounded review does not
+establish repository-wide exhaustion; a later discovery pass may identify more work.
+
+### F448 acceptance matrix recorded before implementation - 2026-10-09
+
+Two independent local reviews found the active-profile New File success path untested.
+The independent Tester noted that an empty seeded profile A made a file-existence-only
+check weak; the fixture now seeds distinct persisted personal details in A and verifies
+they remain unchanged after creating B, while A path/file are retained. Extend
+tests/mainwindow_close_file_parity_tests.cpp in
+MainWindowCloseFileParityTests / ClassMngrMainWindowCloseFileParityTests. F435 covers
+no-database New Profile creation and picker metadata; F444 covers Open File replacement.
+
+Start with a clean file-backed profile A seeded with distinctive persisted personal
+details, open on My Workspace Schedule. Script the picker with a unique nonexistent .tps
+destination B, trigger the real window.actions().newFile, and verify B is created and active
+at path B, the active database session is open, My Workspace Schedule and its Sidebar
+selection are restored, and no prompt, warning, or modal appears. Verify A file/path remain
+intact and its seeded details are unchanged through a fresh ApplicationServices read.
+
+Source path: MainWindow connects PageManager newDatabaseRequested to the newFile QAction
+(src/app/mainwindow.cpp:676-684); FileController connects that QAction to newFile
+(src/app/controllers/file_controller.cpp:146-151) and creates the new profile through
+createNewDatabaseInteractive() (:272-305). Existing close-file target registration is
+cmake/tests/pages_and_output.cmake:765-777,779-790.
+
+Exclude dirty-page choices, picker cancellation, overwriting an existing target, Initial
+Setup, and creation/load failures. F448 remains selected/current; implementation is accepted in
+this changeset and ready to commit. Focused acceptance evidence follows.
+
+### F448 acceptance update - 2026-10-09
+
+Only tests/mainwindow_close_file_parity_tests.cpp changed; no production or CMake files changed. The
+build target ClassMngrMainWindowCloseFileParityTests passed. The selected slot passed 3 incidents
+with 0 failures; filtered CTest passed 1/1. git diff --check was clean. Independent
+source review approved the strengthened checks: seeded name/campus survive fresh-service readback,
+and B remains active/open. The reviewer’s command execution was blocked by
+helper_unknown_error: setup refresh had errors. The existing Qt font-directory warning appeared.
+F448 is accepted in this changeset and ready to commit; Batch 24 remains active until commit.
