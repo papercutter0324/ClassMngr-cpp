@@ -40,10 +40,11 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-09
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F422-F429 are committed; F429 is 19f6024d. Batch 21 is active
-  with F430 accepted in this changeset and ready to commit; F431 follows after
-  commit, with F432-F438 provisional. See the progress log for acceptance evidence.
-  Gates 1 and 2 remain Partial.
+- Current note: F422-F430 are committed; F430 is aa7fca37. Batch 21 is active
+  with F431 Import Teachers QAction, including the page-leave gate, accepted in this
+  changeset and ready to commit. F432 Export Classes QAction is next after commit;
+  F433-F438 remain provisional. See the progress log for F431 evidence. Gates 1 and 2
+  remain Partial.
 
 ### Slice discovery batches
 
@@ -70,19 +71,18 @@ log](03-Phase-2-Progress-Log.md).
 
 #### Active batch: Batch 21
 
-1. F430 - Accepted in this changeset: Schedule Print QAction cancellation through the actual Schedule print flow.
-2. F431 - Provisional: Import Teachers QAction through MainWindow.
-3. F432 - Provisional: Export Classes QAction through dialog and JSON picker.
-4. F433 - Provisional: New Teacher menu QAction.
-5. F434 - Provisional: Delete Teacher QAction confirmation through MainWindow.
-6. F435 - Provisional: Empty-state Open/New Profile button handoff.
-7. F436 - Provisional: Invalid UTF-8 document resource reference handling.
-8. F437 - Provisional: Report worker event-post failure.
-9. F438 - Provisional: Optional occurrence IDs in repeat-series creation.
+1. F431 - Accepted in this changeset: Import Teachers QAction through MainWindow, including the page-leave gate.
+2. F432 - Provisional: Export Classes QAction through dialog and JSON picker.
+3. F433 - Provisional: New Teacher menu QAction.
+4. F434 - Provisional: Delete Teacher QAction confirmation through MainWindow.
+5. F435 - Provisional: Empty-state Open/New Profile button handoff.
+6. F436 - Provisional: Invalid UTF-8 document resource reference handling.
+7. F437 - Provisional: Report worker event-post failure.
+8. F438 - Provisional: Optional occurrence IDs in repeat-series creation.
 
-Batch 21 began with ten candidates after F428. F429 is committed; F430 is accepted
-in this changeset and ready to commit. F431 follows after that commit; F432-F438
-remain provisional. See the Phase 2 progress log.
+Batch 21 began with ten candidates after F428. F429 and F430 are committed; F431
+is accepted in this changeset and ready to commit. F432 follows after that commit;
+F433-F438 remain provisional. See the Phase 2 progress log.
 
 Batch 20 completed when F428 committed as b82bddaa. F429 committed as 19f6024d. Batch 21 was
 discovered while F427 was the second-last known Batch 20 candidate and is now active.

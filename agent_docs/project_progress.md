@@ -94,11 +94,14 @@ passed 3/3. F428 canceled database profile Save As is committed as
 b82bddaa59c57d88f773370e94b3163df9055f33. Executor and independent exact
 CTest passed 1/1; direct target QtTest passed 6/6 and the selected case passed
 3/3. F429 Document Catalog viewer Save As is committed as
-19f6024d113dda41e7e7a2b41acf27961160462b. F430 Schedule Print QAction is
-selected/current. Its acceptance matrix is recorded in the Phase 2 progress
-log. Executor and independent focused verification passed; F430 is accepted
-in this changeset and ready to commit. F431-F438 remain provisional; see the
-progress log.
+19f6024d113dda41e7e7a2b41acf27961160462b. F430 Schedule Print QAction cancellation is committed as aa7fca37. Executor
+and independent focused CTest passed 1/1, direct target QtTest passed 7/7,
+and the selected case passed 3/3. F431 Import Teachers QAction through
+MainWindow, including the page-leave gate, is selected/current. Its two-outcome
+acceptance matrix is recorded in the Phase 2 progress log before implementation.
+The Cancel case preserves the dirty draft and blocks the import dialog; Discard
+reaches the import dialog, which the test cancels before file selection or apply.
+Executor and independent focused verification passed: CTest 1/1, target QtTest 6/6, and each new case 3/3. F431 is accepted and ready to commit; F432-F438 remain provisional.
 F385 is retired as a duplicate of F369.
 The seven user-reported MSVC build errors in
 the Teacher Profile Edit persistence target are fixed and independently
@@ -3124,5 +3127,7 @@ Schedule Print QAction selected/current. Its acceptance matrix is recorded in
 the Phase 2 progress log: trigger the real MainWindow action, inspect and
 cancel the Print-mode Schedule dialog before native printer UI, then verify
 workspace state remains stable. Executor and independent focused
-verification passed. F430 is accepted and ready to commit. F431-F438 remain
-provisional candidates in Batch 21; see the progress log.
+verification passed. F430 is committed as aa7fca37. F431 Import Teachers
+through MainWindow, including the page-leave gate, is selected/current. Its
+Cancel and Discard cases are accepted with focused verification. F431 is
+accepted in this changeset and ready to commit; F432-F438 remain provisional.

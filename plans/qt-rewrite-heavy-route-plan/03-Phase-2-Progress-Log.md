@@ -15514,3 +15514,69 @@ This matrix was recorded before implementation; acceptance evidence follows.
 Executor and independent Tester each built `MainWindowSaveAsExportParityTests`, passed the exact Debug CTest 1/1, direct target QtTest 7/7, and selected case 3/3 including init/cleanup. Tester rebuilt the changed source; its object timestamp is newer than the source. Executor’s first build hit ZERO_CHECK MSBuild FileTracker UnauthorizedAccess; retry with `/p:TrackFileAccess=false` passed. The independent standard build passed without retry. Qt reported the missing system font directory and unfinished/untranslated strings; repository fonts loaded, with no C++ compile warnings. No focused process remains and no full suite ran.
 
 F430 is accepted in this changeset and ready to commit. F431 Import Teachers QAction through MainWindow is next after the F430 commit.
+
+### F430 committed / F431 selected-current - 2026-10-09
+
+F430, “Phase2 - Cover Schedule Print QAction dialog cancellation (F430),” is committed as `aa7fca3761143a1ee0dce403995063799343b699` on Qt-Rewrite (branch ahead 15). The acceptance evidence and focused verification are recorded above. F431 Import Teachers QAction through MainWindow, including the page-leave gate, is selected/current. Read-only context discovery is underway; no F431 acceptance matrix or implementation has started.
+
+### F431 acceptance matrix recorded before implementation - 2026-10-09
+
+This matrix is recorded before implementation. It covers the real MainWindow
+Import Teachers QAction and the dirty-page gate through cancel, discard, and
+dialog cancel.
+
+1. Add cases to `tests/mainwindow_manage_campuses_parity_tests.cpp`, reusing its
+   real MainWindow, open temporary database, My Workspace Details fixture, and
+   existing `MainWindowManageCampusesParityTests` target. Do not change CMake.
+   Establish manual-save mode, persist a teacher name, then create a dirty draft.
+   Assert `window.actions().importTeachers` exists and is enabled. Capture the
+   database session/path, current page and widget, page identifier, tab, and
+   Sidebar keys.
+2. Cancel outcome: script `UnsavedChangesChoice::Cancel`, trigger the actual
+   Import Teachers QAction, and assert exactly one dirty-page prompt was
+   consumed. Assert no `TeacherImportDialog`, file-picker request, other prompt,
+   or import side effect occurred. Verify the dirty draft and all captured page,
+   session, path, tab, and Sidebar state remain unchanged.
+3. Discard outcome: start from the same saved-name/dirty-draft baseline, script
+   `UnsavedChangesChoice::Discard`, and trigger the actual QAction. Use a bounded
+   timer to observe and record the real `TeacherImportDialog`, then reject it
+   without Browse, file selection, or accept/apply. Add a bounded fallback that
+   rejects any active modal `QDialog` on timeout to prevent a hang. Verify the
+   dirty draft returns to the persisted name and is clean; the same page/widget/
+   identifier/tab, database session/path, and Sidebar keys remain; picker and
+   additional message/confirmation queues are empty; and no import was applied.
+4. Build `MainWindowManageCampusesParityTests`, run exact registered CTest filter
+   `^ClassMngrMainWindowManageCampusesParityTests$`, then run direct target QtTest
+   and each new selected case. Do not run the full suite.
+
+Evidence: the action is created in
+`src/ui/shared/actions/action_registry.cpp:715`, placed in the menu at
+`src/app/menu_builder.cpp:1324`, connected to MainWindow’s SidebarController in
+`src/app/mainwindow.cpp:480`, and connected to its handler in
+`src/app/controllers/sidebar_controller.cpp:72`.
+`SidebarController::importTeachers` checks `confirmCurrentPageCanLeave()` before
+constructing `TeacherImportDialog`
+(`src/app/controllers/sidebar_controller_teacher_import.cpp:18`); the dirty gate
+is in `src/ui/shared/pages/pagemanager.cpp:485`. The reusable manual-save
+Details/dirty-draft fixture is in
+`tests/mainwindow_manage_campuses_parity_tests.cpp:91+`. A timer dialog helper
+in `tests/teacher_import_ui_apply_parity_tests.cpp:41+` is separate from this
+MainWindow action coverage. Target registration is
+`cmake/tests/pages_and_output.cmake:875`.
+
+Limit: this covers the real MainWindow action and dirty-page gate through
+cancel/discard plus dialog cancel. It does not cover Browse, parsing, import
+apply, or successful import; `ClassMngrTeacherImportUiApplyParityTests` covers
+import apply.
+
+This matrix was recorded before implementation; F431 acceptance evidence follows.
+
+### F431 implementation and independent verification accepted - 2026-10-09
+
+Only `tests/mainwindow_manage_campuses_parity_tests.cpp` changed; no production or CMake files changed. The Cancel case consumed exactly one scripted Cancel and showed no `TeacherImportDialog`, picker, or extra prompt; the dirty draft, page/widget/tab/identifier, session/path, Sidebar, and table counts stayed stable. The Discard case consumed one scripted Discard, restored the persisted teacher name and clean state, then a shared 10 ms timer observed and rejected the real `TeacherImportDialog` before Browse or apply. It preserved page/widget/tab/identifier, session/path, Sidebar, and table counts, with no picker or extra messages/confirmations and no import applied. The timer used a five-second fallback to reject an active modal `QDialog`; no hang occurred.
+
+Executor and independent Tester each built the correct `MainWindowManageCampusesParityTests` target, passed exact Debug CTest `^ClassMngrMainWindowManageCampusesParityTests$` 1/1, direct target QtTest 6/6, and each new selected case 3/3 including setup/cleanup. The independent Tester rebuilt the changed source and its object timestamp is newer. The executor first tried an unavailable short-name target; the correct target then hit FileTracker access denied, and retry with `/p:TrackFileAccess=false` passed. The independent standard build passed without retry. There were no C++ warnings or product defects. Qt reported its missing system font directory (repository fonts loaded) and offscreen `propagateSizeHints`; the executor also saw bundled-font debug output. No focused process remains and no full suite ran.
+
+Successful Browse, parsing, import apply, and import are outside this scope; `ClassMngrTeacherImportUiApplyParityTests` covers import apply.
+
+F431 is accepted in this changeset and ready to commit. F432 Export Classes QAction through dialog and JSON picker is next after the F431 commit.

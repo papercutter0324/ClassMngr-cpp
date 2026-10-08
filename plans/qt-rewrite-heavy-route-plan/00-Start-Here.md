@@ -148,10 +148,12 @@ synchronization is committed (`f4bc5282`). F416 Document Catalog rendered
   F427 Schedule Save As/PDF output is committed as bbdf10e8.
   F428 canceled database profile Save As is committed as b82bddaa.
   F429 Document Catalog viewer Save As is committed as 19f6024d; see the Phase 2
-  progress log for acceptance evidence. F430 Schedule Print QAction is accepted in this
-  changeset and ready to commit; F431 follows after that commit, with F432-F438
-  remaining provisional. Gates 1 and 2 remain Partial, with broader feature
-  migration, parity, and 96-class Release memory evidence still open.
+  progress log for acceptance evidence. F430 Schedule Print QAction is committed as
+  aa7fca37. F431 Import Teachers QAction through MainWindow, including its page-leave
+  gate, is accepted in this changeset and ready to commit. F432 Export Classes
+  QAction through dialog and JSON picker is next after commit; F433-F438 remain
+  provisional. Gates 1 and 2 remain Partial, with broader feature migration, parity,
+  and 96-class Release memory evidence still open.
   See the
   [Phase 2 progress log](03-Phase-2-Progress-Log.md) for current scope and
   acceptance evidence.

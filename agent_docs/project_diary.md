@@ -2874,3 +2874,24 @@ F430 covers the real MainWindow Print QAction through the Schedule print-options
 ## 2026-10-09 - F430 Schedule Print QAction accepted
 
 The real MainWindow Print QAction entered the Schedule Print options dialog and the test rejected it before printer service/native printer UI. Executor and independent Tester each passed the focused CTest 1/1, direct target QtTest 7/7, and selected case 3/3. Workspace state, action state, and empty picker/prompt queues were verified; no production code or full-suite run. F430 is accepted and ready to commit. F431 is next after the commit.
+
+
+
+## 2026-10-09 - F430 committed / F431 selected
+
+
+F430 is committed as aa7fca3761143a1ee0dce403995063799343b699 with exactly the six approved slice paths. The branch is ahead 15. Executor and independent focused CTest passed 1/1; direct QtTest passed 7/7; the selected case passed 3/3. F431 Import Teachers QAction through MainWindow, including the page-leave gate, is selected from Batch 21.
+
+
+
+## 2026-10-09 - F431 acceptance matrix recorded
+
+
+The real MainWindow Import Teachers QAction is the target. Reuse the existing My Workspace Details dirty-draft fixture to cover both page-leave choices: Cancel preserves the unsaved draft and blocks TeacherImportDialog; Discard restores the saved draft and enters TeacherImportDialog, then the test rejects it before file selection or apply. The acceptance matrix is in the Phase 2 progress log. Implementation has not started.
+
+
+
+## 2026-10-09 - F431 Import Teachers QAction accepted
+
+
+The real MainWindow QAction now has Cancel and Discard gate coverage. Cancel preserved a dirty Details draft and blocked TeacherImportDialog. Discard restored the persisted name and reached the actual dialog, which was rejected before file selection or apply. Executor and independent Tester each passed focused CTest 1/1, target QtTest 6/6, and each new case 3/3. No production/CMake change or full-suite run. F431 is accepted and ready to commit; F432 is next after commit.
