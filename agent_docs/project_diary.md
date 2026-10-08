@@ -2344,3 +2344,23 @@ the five child routes selects its matching section, and root/child actions
 within Campus Dashboard do not prompt to leave. Batch 14 advances to F393
 Document Catalog/PDF Viewer route parity. Batch 15 candidates F394 and F395
 remain provisional until F393 completes.
+
+
+## 2026-10-08 - F393 Document Catalog route parity accepted
+
+F393 adds a controller-level test that clicks a real document leaf in the
+Sidebar, then checks cancellation, successful PDF loading, and missing-resource
+behavior from a dirty page. The controller resolves content before asking to
+leave, so a missing PDF does not discard the current edits; cancellation also
+releases the preflight resource lease. The focused target build and CTest passed,
+and direct QtTest invocation of all three cases passed. Controller warning
+capture was empty; the offscreen size-hints and font-directory setup warnings
+occurred before the capture scope. No full suite ran.
+
+
+## 2026-10-08 - F394 Classes landing route parity selected
+
+F393 completes Batch 14. Batch 15 is active with F394 Classes landing
+open-session confirmation parity selected/current and F395 Campus Dashboard
+typed save boundary provisional. F394 is the second-last slice in this batch,
+so Batch 16 discovery begins as F394 work starts.

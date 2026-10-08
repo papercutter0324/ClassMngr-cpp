@@ -396,6 +396,69 @@ qt_add_resources(
         resources/assets/icons/keyboard_light.svg
 )
 
+set(document_catalog_navigation_missing_pack_dir
+    "${CMAKE_CURRENT_BINARY_DIR}/document-catalog-navigation-missing-resource-pack"
+)
+file(MAKE_DIRECTORY "${document_catalog_navigation_missing_pack_dir}")
+set(document_catalog_navigation_missing_pack_qrc
+    "${CMAKE_CURRENT_BINARY_DIR}/document-catalog-navigation-missing-resource-pack.qrc"
+)
+file(TO_CMAKE_PATH
+    "${PROJECT_SOURCE_DIR}/resources/assets/documents/documents.json"
+    document_catalog_navigation_catalog_path
+)
+file(WRITE "${document_catalog_navigation_missing_pack_qrc}"
+    "<RCC version=\"1.0\">\n"
+    "  <qresource prefix=\"/resource-packs/documents\">\n"
+    "    <file alias=\"documents.json\">${document_catalog_navigation_catalog_path}</file>\n"
+    "  </qresource>\n"
+    "</RCC>\n"
+)
+qt_add_binary_resources(
+    ClassMngrDocumentCatalogNavigationMissingResourcePack
+    "${document_catalog_navigation_missing_pack_qrc}"
+    DESTINATION
+        "${document_catalog_navigation_missing_pack_dir}/documents.rcc"
+)
+
+classmngr_add_qt_test(
+    NAME DocumentCatalogNavigationParity
+    SOURCES
+        tests/document_catalog_navigation_parity_tests.cpp
+    LIBRARIES
+        Qt6::Test
+        Qt6::Widgets
+    DEPENDENCIES
+        ClassMngrdocumentsResourcePack
+        ClassMngrDocumentCatalogNavigationMissingResourcePack
+    OFFSCREEN
+)
+target_compile_definitions(ClassMngrDocumentCatalogNavigationParityTests
+    PRIVATE
+        CLASSMNGR_TEST_DOCUMENT_BASELINE_PACK_DIR="${CLASSMNGR_RESOURCE_PACK_OUTPUT_DIR}"
+        CLASSMNGR_TEST_DOCUMENT_MISSING_RESOURCE_PACK_DIR="${document_catalog_navigation_missing_pack_dir}"
+)
+
+qt_add_resources(
+    ClassMngrDocumentCatalogNavigationParityTests
+    document_catalog_navigation_parity_qml_resources
+    PREFIX "/qt/qml/ClassMngr/Calendar"
+    BASE "${PROJECT_SOURCE_DIR}/src/features/calendar/ui/qml"
+    FILES
+        "${PROJECT_SOURCE_DIR}/src/features/calendar/ui/qml/EventCalendar.qml"
+        "${PROJECT_SOURCE_DIR}/src/features/calendar/ui/qml/MonthGridDelegate.qml"
+)
+
+qt_add_resources(
+    ClassMngrDocumentCatalogNavigationParityTests
+    document_catalog_navigation_parity_keyboard_resources
+    PREFIX "/"
+    BASE "${PROJECT_SOURCE_DIR}/resources"
+    FILES
+        resources/assets/icons/keyboard_dark.svg
+        resources/assets/icons/keyboard_light.svg
+)
+
 classmngr_add_qt_test(
     NAME SidebarClassDeleteParity
     SOURCES

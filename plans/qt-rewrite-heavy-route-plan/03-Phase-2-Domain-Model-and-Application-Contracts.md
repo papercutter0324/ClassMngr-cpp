@@ -40,13 +40,12 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-08
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F392 Campus Directory root/section navigation confirmation
-  and destination parity is accepted on pre-slice source `a7df1fc5`; its
-  focused target, CTest, and direct QtTest matrix passed. Batch 14 is active
-  with F393 Document Catalog route confirmation and PDF Viewer navigation
-  parity selected/current. Batch 15 was discovered at F392 with F394 Classes
-  landing open-session confirmation parity and F395 Campus Dashboard typed
-  save boundary; it activates after F393. Gates 1 and 2 remain Partial.
+- Current note: F393 Document Catalog route confirmation and PDF Viewer
+  navigation parity is accepted on pre-slice source `41da57c5`; its focused
+  target, CTest, and three direct QtTest cases passed. Batch 15 is active with
+  F394 Classes landing open-session confirmation parity selected/current and
+  F395 Campus Dashboard typed save boundary provisional. Batch 16 discovery
+  begins as F394 starts. Gates 1 and 2 remain Partial.
 
 ### Slice discovery batches
 
@@ -71,13 +70,15 @@ log](03-Phase-2-Progress-Log.md).
   failure warning/no-navigation behavior; revisit after that behavior is
   clarified.
 
-#### Active batch: Batch 14
+#### Active batch: Batch 15
 
-1. F393 - Selected/current: Document Catalog route confirmation and PDF Viewer navigation parity.
+1. F394 - Selected/current: Classes landing open-session confirmation parity.
+2. F395 - Provisional: Campus Dashboard typed save boundary.
 
-The two independent scans were bounded to remaining NavigationController route
-parity and existing controller tests; they do not establish repository-wide
-discovery exhaustion.
+Batch 15 was bounded to remaining application navigation transitions and
+selected-campus write boundaries, compared against current source, tests, and
+prior accepted slices; it does not establish repository-wide discovery
+exhaustion.
 No other slices were found.
 
 

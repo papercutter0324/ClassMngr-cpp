@@ -13509,3 +13509,67 @@ was discovered while F392 started and remains provisional until F393 finishes;
 its two ordered candidates are F394 Classes landing open-session confirmation
 parity and F395 Campus Dashboard typed save boundary. Phase 2 remains In
 Progress/Open; Gates 1 and 2 remain Partial.
+
+### F393 selected/current / acceptance matrix established - 2026-10-08
+
+F393 covers the real Document Catalog leaf route through `NavigationController`
+into the PDF Viewer. The Sidebar represents folders as expandable roots and
+document entries as page leaves keyed by typed catalog IDs. Only document leaves
+emit a navigation event; root/folder expansion clicks are outside this slice.
+Existing catalog, resource-port, and PageManager tests cover their own layers,
+but no runtime test joins a document leaf, leave confirmation, resource
+resolution, and viewer navigation.
+
+The focused matrix is:
+
+1. From a dirty current page, cancel a valid document route. Assert the exact
+   source page and dirty state remain, the PDF Viewer is not created, one leave
+   confirmation is recorded, and any preflight resource lease is released.
+2. From the same dirty state, discard and open a bundled document. Assert the
+   PDF Viewer becomes current with the requested document loaded and its content
+   session reaches Ready; verify the route-selected file and print/export
+   capabilities, and confirm the source page has no remaining unsaved changes.
+3. From a dirty current page, dispatch a catalog entry whose resource cannot be
+   resolved. Resolve the resource before prompting to leave, so failure preserves
+   the exact dirty page without prompting or creating the PDF Viewer; assert no
+   resource-pack lease remains mounted.
+
+Database-session cross-products are excluded because the document catalog is
+owned independently of the workspace database and this handler has no session
+availability gate. Use the standard Windows x64 Debug tree and the focused
+offscreen controller test; do not run the full suite. Phase 2 remains In
+Progress/Open; Gates 1 and 2 remain Partial.
+
+### F393 accepted - 2026-10-08
+
+F393 is accepted on pre-slice commit `41da57c55488248a6ad36907a2b1889fb05c38e9`
+(`Phase2 - Add Campus Directory route confirmation parity (F392)`). It moves
+document-resource resolution before the leave confirmation so a missing PDF
+cannot discard the current page's dirty state. If the user cancels, the
+move-only preflight result releases its lease when the route returns. The new
+`tests/document_catalog_navigation_parity_tests.cpp` clicks a real localized
+Sidebar document leaf and verifies its emitted route payload before dispatching
+it through `NavigationController`. Its three cases cover cancellation with
+dirty-state preservation and lease release; Discard followed by loading the
+requested PDF to Ready with the selected path/reference and print/export
+capabilities; and missing-resource failure before prompting, preserving the
+dirty page without creating the viewer or retaining a mount. The target is
+registered in `cmake/tests/pages_and_output.cmake` with bundled and
+missing-resource document packs.
+
+The standard `build/windows-x64-debug` build of
+`ClassMngrDocumentCatalogNavigationParityTests` passed with no build errors or
+LNK4006 warnings. Focused CTest `DocumentCatalogNavigationParity` passed 1/1;
+independent direct invocation of all three QtTest cases exited 0. Controller
+warning capture was empty in each case. Qt emitted the existing offscreen
+`propagateSizeHints()` and missing-font setup warnings before the scoped route
+capture. `git diff --check` and the new source's whitespace/final-newline check
+passed. CMake regeneration noted unavailable `WrapVulkanHeaders` and
+`Vulkan_INCLUDE_DIR`; generation and target build succeeded. No full suite ran.
+
+### Batch 15 activated / F394 selected - 2026-10-08
+
+F393 completes Batch 14. Batch 15 is now active with F394 Classes landing
+open-session confirmation parity selected/current and F395 Campus Dashboard
+typed save boundary provisional. F394 is the second-last slice in this
+two-slice batch, so Batch 16 discovery begins as F394 work starts.

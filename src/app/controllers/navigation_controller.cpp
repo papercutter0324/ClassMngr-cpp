@@ -433,16 +433,19 @@ void NavigationController::handleDocument(
         return;
     }
 
-    if (!m_pages->confirmCurrentPageCanLeave())
-    {
-        return;
-    }
-
     auto resources = m_documentContentResourcePort.resolve(
         document.value().contentReference,
         document.value().exportReference
         );
     if (!resources)
+    {
+        return;
+    }
+
+    // Keep the preflight lease alive while the leave prompt is shown. If the
+    // user cancels, the result's move-only resource value releases its lease
+    // as this function returns, before any viewer is created.
+    if (!m_pages->confirmCurrentPageCanLeave())
     {
         return;
     }
