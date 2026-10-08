@@ -3023,3 +3023,19 @@ session/path. The VS 18 x64 Debug target rebuilt; independent filtered CTest
 passed 1/1 (0.42 s), with no lingering process. No production change or runtime
 defect was needed. F412 is ready to commit; F413 Initial Setup success
 navigation remains queued in active Batch 18.
+
+F412 is committed as `76661791`. F413 Initial Setup success navigation from
+the empty-state button is selected/current; acceptance discovery is underway.
+Batch 18 remains active, and the already completed Batch 19 discovery remains
+provisional until F413 completes.
+
+F413 Initial Setup success navigation from the empty-state button is
+implemented and independently accepted. The real MainWindow test QTest-clicks
+the visible no-database button from Campus Dashboard Information, verifies the
+BasePage/PageManager request signals and accepted InitialSetupWizard, then
+checks the created profile/session, My Workspace Schedule, `my_workspace`
+Sidebar selection, and hidden empty-state banner. The VS 18 x64 Debug target
+rebuilt; independent filtered CTest passed 1/1 (0.46 s), with no lingering
+process. No production change or runtime defect was needed. F413 is ready to
+commit; Batch 18 is complete after its commit and Batch 19 candidates are ready
+to activate.

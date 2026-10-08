@@ -14704,5 +14704,51 @@ No production changes or runtime defect were found.
 under VS 18 x64 Debug; its exact registered CTest passed 1/1 in 0.42 s, with no
 lingering process. No full suite was run. The existing campus route test uses
 synthetic/manual dispatch and covers dirty-page leave gating with an open
-workspace, not closed-session behavior. F412 is accepted and ready to commit;
-Batch 18 remains active with F413 queued.
+workspace, not closed-session behavior. F412 is accepted and committed as
+`76661791`. At that point, Batch 18 remained active with F413 selected/current.
+Batch 19 candidates remain provisional until Batch 18 completes.
+
+### F413 selected/current / provisional acceptance matrix - 2026-10-08
+
+1. Start MainWindow with no database and recent-file autoload disabled. Verify
+   the actual no-database state displays Campus Dashboard Information, then
+   locate and QTest-click its rendered `noDatabaseSetupButton`.
+2. Observe the real direct signal path from `BasePage` through `PageManager` to
+   MainWindow's `startInitialSetup` handler. Use the existing
+   `FakeFileDialogService` and `FakeUserPromptService`, plus a timer, to accept
+   the real `InitialSetupWizard`.
+3. Verify the MainWindow accepted-result handoff makes exactly one expected
+   save-file request, opens the new database session and path, selects
+   `PageType::MyWorkspace` with the Schedule tab, selects Sidebar keys
+   [`my_workspace`], and hides the no-database banner.
+
+This tests MainWindow's accepted-result handoff, not wizard validation, which
+is already covered separately. Do not assert that the no-database initial page
+is My Workspace: `MainWindow::applyNoDatabaseState()` switches it to Campus
+Dashboard Information (`src/app/mainwindow.cpp:1223-1266`). The setup action
+travels through a direct signal path, not `NavigationData`
+(`src/ui/shared/pages/basepage.cpp:144-154,272-276`,
+`src/ui/shared/pages/pagemanager.cpp:283-292`,
+`src/app/mainwindow.cpp:656-663,1149-1197`). Existing BasePage signal tests
+(`tests/basepage_tests.cpp:248-280`), FileController lifecycle tests
+(`tests/file_controller_workspace_lifecycle_tests.cpp:883-1007`), and Initial
+Setup wizard tests remain responsible for their lower-layer behavior; no
+MainWindow end-to-end integration existed at F413 selection.
+
+### F413 implementation complete / independently verified / accepted - 2026-10-08
+
+The real MainWindow integration starts without a database and with recent-file
+autoload disabled, verifies Campus Dashboard Information, and QTest-clicks the
+visible `noDatabaseSetupButton`. It observes the `BasePage` and `PageManager`
+signals, opens and programmatically accepts the real `InitialSetupWizard`, and
+verifies one fake chooser request for a fresh profile. The new database session
+and path are open, My Workspace is current on Schedule, Sidebar keys are
+[`my_workspace`], and the no-database banner is hidden. This exercises the
+MainWindow accepted-result branch through a direct signal handoff, not
+`NavigationData`; wizard validation and lifecycle remain covered separately.
+
+The focused target built successfully under VS 18 x64 Debug. Its exact
+registered CTest passed 1/1 in 0.46 s, and no process remained. No full suite
+was run. No production change or runtime defect was found. F413 is accepted and
+ready to commit; Batch 18 completes after its commit, and Batch 19 activates
+after Batch 18 completes.

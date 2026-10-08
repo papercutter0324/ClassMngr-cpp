@@ -2618,3 +2618,22 @@ current Campus Dashboard section, selected Sidebar path, and unchanged open
 session/path. The VS 18 x64 Debug target rebuilt; independent filtered CTest
 passed 1/1 (0.42 s), with no lingering process. No production change or runtime
 defect was needed. F413 Initial Setup success navigation remains queued.
+
+## 2026-10-08 - F412 committed / F413 selected-current
+
+F412 Campus Sidebar root and section integration is committed as `76661791`.
+It adds real MainWindow clicks for the Campus root and all five sections, with
+payload, page, selection, and session/path assertions; independent focused
+CTest passed 1/1 (0.42 s). F413 Initial Setup success navigation from the
+empty-state button is now selected/current. Its acceptance discovery is
+underway; Batch 19 remains provisional until the final Batch 18 slice completes.
+
+## 2026-10-08 - F413 Initial Setup handoff accepted / ready to commit
+
+F413 exercises the real empty-state setup button in MainWindow, the forwarded
+BasePage/PageManager signals, and the accepted InitialSetupWizard result. It
+verifies the new profile/session, My Workspace Schedule, `my_workspace`
+Sidebar selection, and hidden no-database banner. The VS 18 x64 Debug target
+rebuilt; independent filtered CTest passed 1/1 (0.46 s), with no lingering
+process. No production change or runtime defect was needed. Batch 19 remains
+provisional until F413 is committed and Batch 18 closes.

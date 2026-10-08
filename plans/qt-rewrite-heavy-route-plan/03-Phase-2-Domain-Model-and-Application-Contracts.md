@@ -56,11 +56,11 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
   is committed (`ee319df2`); F410 Classes Sidebar root integration is committed
   (`14723973`). F411 Sub Prep Sidebar root integration is committed
   (`3e5dbea4`). Batch 18 remains active with F412 Campus Sidebar root/section
-  producer integration accepted and ready to commit and F413 Initial Setup
-  success navigation queued. Batch 19 discovery completed at F412 and remains
-  provisional until Batch 18 completes; see the Phase 2 progress log for its
-  bounded candidate evidence. Gates 1 and 2 remain Partial; see the progress
-  log for slice evidence.
+  producer integration committed (`76661791`) and F413 Initial Setup success
+  navigation accepted and ready to commit. Batch 19 discovery completed at
+  F412 and remains provisional until Batch 18 completes; see the Phase 2
+  progress log for its bounded candidate evidence. Gates 1 and 2 remain
+  Partial; see the progress log for slice evidence.
 
 ### Slice discovery batches
 
@@ -98,9 +98,10 @@ log](03-Phase-2-Progress-Log.md).
    producer-to-handler integration.
 7. F410 - Committed (`14723973`): Classes Sidebar root integration.
 8. F411 - Committed (`3e5dbea4`): Sub Prep Sidebar root integration.
-9. F412 - Accepted / ready to commit: Campus Sidebar root plus section
-   producer integration.
-10. F413 - Queued: Initial Setup success navigation from the empty-state button.
+9. F412 - Committed (`76661791`): Campus Sidebar root plus section producer
+   integration.
+10. F413 - Accepted / ready to commit: Initial Setup success navigation from
+    the no-database empty-state button.
 
 Batch 18 was discovered at F402 start from two independent bounded reviews and
 activated after F403 committed as `28e881cd`. Its evidence and limits are in the

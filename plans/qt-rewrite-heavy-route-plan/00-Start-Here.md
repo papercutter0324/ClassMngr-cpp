@@ -127,11 +127,12 @@ F407 Schedule↔Testing Classes handoff is committed (`f639fbd3`); F408 Dynamic
 Teacher Sidebar selection/state during retranslation is committed (`9f92b78d`).
 F409 My Workspace Sidebar root producer-to-handler integration is committed
 (`ee319df2`); F410 Classes Sidebar root integration is committed (`14723973`).
-F411 Sub Prep Sidebar root integration is committed (`3e5dbea4`). Batch 18
-remains active with F412 Campus Sidebar root/section producer integration
-accepted and ready to commit and F413 Initial Setup success navigation queued.
-Batch 19 discovery completed at F412 and remains provisional until Batch 18
-completes; see the Phase 2 progress log for its bounded candidate evidence.
+F411 Sub Prep Sidebar root integration is committed (`3e5dbea4`); F412 Campus
+Sidebar root/section producer integration is committed (`76661791`). Batch 18
+remains active with F413 Initial Setup success navigation accepted and ready to
+commit. Batch 19 discovery completed at F412 and remains provisional until
+Batch 18 completes; see the Phase 2 progress log for its bounded candidate
+evidence.
   Gates 1 and 2 remain Partial, with broader feature
   migration, parity, and 96-class Release memory evidence still open.
   See the

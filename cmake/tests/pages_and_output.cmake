@@ -681,6 +681,40 @@ qt_add_translations(
 )
 
 classmngr_add_qt_test(
+    NAME MainWindowInitialSetupEmptyStateNavigation
+    SOURCES
+        tests/mainwindow_initial_setup_empty_state_navigation_tests.cpp
+    LIBRARIES
+        Qt6::Sql
+        Qt6::Test
+        Qt6::Widgets
+    DEPENDENCIES
+        ClassMngrcampusesResourcePack
+        ClassMngrdocumentsResourcePack
+    OFFSCREEN
+)
+
+qt_add_resources(
+    ClassMngrMainWindowInitialSetupEmptyStateNavigationTests
+    mainwindow_initial_setup_empty_state_keyboard_resources
+    PREFIX "/"
+    BASE "${PROJECT_SOURCE_DIR}/resources"
+    FILES
+        resources/assets/icons/keyboard_dark.svg
+        resources/assets/icons/keyboard_light.svg
+)
+
+qt_add_translations(
+    TARGETS ClassMngrMainWindowInitialSetupEmptyStateNavigationTests
+    TS_FILES
+        resources/assets/translations/ClassMngr_en_AU.ts
+        resources/assets/translations/ClassMngr_en_CA.ts
+        resources/assets/translations/ClassMngr_en_GB.ts
+        resources/assets/translations/ClassMngr_en_US.ts
+        resources/assets/translations/ClassMngr_ko_KR.ts
+)
+
+classmngr_add_qt_test(
     NAME MainWindowCampusSidebarNavigation
     SOURCES
         tests/mainwindow_campus_sidebar_navigation_tests.cpp
