@@ -453,6 +453,12 @@ The 96-class output route generated Sub Prep.pdf and Rosters - By Day.pdf (2 fil
 
 The selected lifecycle-sub-prep route still has a 280,035,328-byte maximum at the PDF reopened/rendered workflow checkpoint; 24 samples exceeded the 262,144,000-byte target. These selected routes are only 2 of 24 Windows Phase 0 routes, macOS universal remains absent, and generated output was not visually compared with a baseline. The 250 MiB, full-route, and visual-parity gates remain open.
 
-## F512 diagnostic focus - 2026-10-09
+## F512 diagnostic result - 2026-10-09
 
-Trace the lifecycle-sub-prep route's 280,035,328-byte peak at PDF reopen/render. Inspect route checkpoints and PDF/document/widget ownership through open, render, release, and subsequent navigation to distinguish live retained resources from process allocator retention. Record causal evidence before choosing a bounded implementation slice; keep the 250 MiB gate open until a validated packaged route meets it.
+The lifecycle route's 280,035,328-byte process peak was recorded while a PDF document was loaded and the PDF view was rendered. The document-release checkpoint returned the live-document count to zero and current working set fell from 278,790,144 to 270,606,336 bytes; the final 1-second sample was 270,618,624 bytes. The route had already exceeded 250 MiB before loading a document: the My Classes activation checkpoint was 263,041,024 bytes, with 2,808 widgets and 10 instantiated pages. At the following PDF catalog-ready checkpoint, before document load, working set was 265,170,944 bytes.
+
+The My Classes activation added 321 widgets and 3,629,056 working-set bytes in this lifecycle route. `PageManager` caches the page; `MyClassesPage` does not override `releaseFeatureResources()`, so its selected detail tree remains live while hidden. By contrast, after document close the private working set was only 860,160 bytes above its pre-load sample, but the route metrics cannot attribute the remaining total working set to the hidden page, mapped Qt PDF pages, or allocator retention. The output route's F511 five-second sample was 240,316,416 bytes; the lifecycle route remains over target.
+
+## F513 implementation focus - 2026-10-09
+
+Release the one populated My Classes detail tree when its page is deactivated, while retaining the lightweight tabs, summary records, tab order, and selected class ID. On activation, rematerialize details for the selected class from the retained summary data without another summary query. Verify both flat and grouped selection/re-entry behavior and rerun the packaged lifecycle-sub-prep route. Keep the 250 MiB gate open until the route passes.

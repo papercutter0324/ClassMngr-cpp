@@ -42,7 +42,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-09
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F511 now materializes one My Classes detail tree and its packaged output-route activation measured 234,868,736 working-set bytes, while the lifecycle route still peaks at 280,035,328 bytes; F512 is active in Batch 88 to trace that peak, and Gates 1 and 2 remain Partial.
+- Current note: F512 localized the 280,035,328-byte lifecycle maximum to the loaded PDF render interval and found My Classes retains its selected detail tree while hidden; page activation added 321 widgets overall, and F513 is active in Batch 89 to release and restore the tree while Gates 1 and 2 remain Partial.
 
 ### Slice discovery batches
 
@@ -67,9 +67,9 @@ Treat this plan as an operational summary, not a history:
   failure warning/no-navigation behavior; revisit after that behavior is
   clarified.
 
-#### Active batch: Batch 88
+#### Active batch: Batch 89
 
-- F512 - Diagnose the remaining lifecycle-sub-prep working-set peak at the PDF reopen/render checkpoint and identify whether live UI/document resources or allocator retention account for it before selecting a remedy.
+- F513 - Release the active My Classes detail tree when hidden and rematerialize the selected class on return while preserving tab order, selection, summary reads, and visible content.
 
 ## Objective
 
