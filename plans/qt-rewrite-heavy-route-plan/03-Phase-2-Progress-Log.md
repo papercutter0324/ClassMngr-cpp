@@ -17313,3 +17313,7 @@ passed. Independent CTest passed 1/1 and git diff HEAD --check passed. The indep
 a QtTest summary, so no independent count is claimed. Qt reported an optional missing fonts-directory warning while packaged
 Inter/Pretendard fonts loaded. No full suite was run. F470 is independently verified, accepted, and ready to commit; Batch 46
 remains active until commit. F471 discovery begins only after F470 commits.
+
+### F470 committed - 2026-10-09
+
+F470, “Phase2 - Cover Document Viewer Background White QAction parity (F470),” was committed as `738f40f18baeb468be77e402d6fc0ea69aef8deb` on `Qt-Rewrite`. Batch 46 is complete. F471 discovery is pending; no next candidate has been selected yet.

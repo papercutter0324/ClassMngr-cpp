@@ -40,96 +40,20 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-09
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F438, “Phase2 - Reject existing IDs in repeat-series creation
-  (F438),” is committed as 0c2ceca6; Batch 21 is complete. F439 Delete Teacher
-  QAction confirmation success is committed as a0c50d2d (branch ahead 24). Batch
-  F440, “Phase2 - Cover Export Classes JSON output (F440),” is committed as
-  01d1559c (branch ahead 25). F441, Import Classes QAction apply success, is
-  committed as 75a559ae (branch ahead 26). F442, Import Teachers QAction apply
-  success, is committed as 8cde2826 (branch ahead 27). The requested pause after
-  the F442 commit was observed; the user has resumed. F443 is committed as
-  1c03b326 (branch ahead 28). F444 is committed as
-  8a21da618870ba4308415aaf5927fa1393af6e97 (branch ahead 29). F445 is committed as
-  d9180f1c465976dfdd707382a1e615108aed9387 (branch ahead 30). F446 is committed as
-  4b34a3b8a15a062377a245607228097fb43ee46b (branch ahead 31). F447 is committed as
-  d5b130bd0558146185ebf4cdeab885bde6956fec (branch ahead 32); Batch 23 is complete. F448,
-  “Phase2 - Cover New File QAction open-profile success (F448),” is committed as
-  f825a388db1897bc42cacf43c488850fa48a9de8 (branch ahead 33); Batch 24 is complete. F449,
-  “Phase2 - Cover Exit QAction close-confirmation handoff (F449),” is committed as
-  4e42a5a9cbe5c261fb78b2e39a98f81c93ef0372 (branch ahead 34); Batch 25 is complete. F450,
-  “Phase2 - Cover Undo QAction focused-editor dispatch (F450),” is committed as
-  e39852c8a9cef33c80d684dd0e63e18d19a6acf7 (branch ahead 35); Batch 26 is complete. Its commit
-  includes exactly seven approved paths and has a clean commit diff check. Batch 27 is active with
-  F451, “Phase2 - Cover Redo QAction focused-editor dispatch (F451),” is committed as
-  3137d522796365e81d4c3f99e341aacaf83cc392 (branch ahead 36); Batch 27 is complete. Its commit
-  includes exactly six approved paths and has a clean commit diff check. Batch 28 is active with
-  F452, “Phase2 - Cover Paste QAction focused-editor dispatch (F452),” is committed as
-  249dd38b8b3ee2223292c99ec740f2470e20e5e9 (branch ahead 37); Batch 28 is complete. Its commit
-  includes exactly six approved paths and has a clean commit diff check. F453, “Phase2 - Cover Cut QAction focused-editor dispatch (F453),” is committed as
-  4e9b3d6d79aff3c43b943aec8e165a6ab16ca8a9 (branch ahead 38); Batch 29 is complete. Its commit
-  includes exactly six approved paths and has a clean commit diff check. F454, “Phase2 - Cover Copy QAction focused-editor dispatch (F454),” is committed as
-  dd73b6d9c536809f05d38487ecca4bc873b9ea86 (branch ahead 39); Batch 30 is complete. Its commit
-  includes exactly six approved paths and has a clean commit diff check. F455, “Phase2 - Cover About QAction modal handoff (F455),” is committed as
-  76c67663cda5604353b4ba25e54c97160f6daf90 (branch ahead 40); Batch 31 is complete. Its commit
-  includes exactly seven approved paths and has a clean commit diff check. F456, “Phase2 - Cover Check for Updates QAction manual handoff (F456),” is committed as
-  d90def93f7947d0f031dc6f37a8a4a491f4d3718 (branch ahead 41); Batch 32 is complete. The commit
-  contains exactly seven scoped paths and its cached diff check was clean. F457, “Phase2 - Cover Font Size QAction application handoff (F457),” is committed as
-  719efeacb6e5a8533f2dd45f6fb0fdfe152c0714 on Qt-Rewrite, 42 commits ahead of origin; Batch 33 is
-  complete. Its commit contains exactly seven scoped paths and the cached diff check was clean. Batch 34 is complete. F458, “Phase2 - Cover Theme QAction application handoff (F458),” is
-  committed as 2ec351a805af2064a865c34b76b46f60df80acdc on Qt-Rewrite, 43 commits ahead of origin.
-  F459 Document Viewer Background QAction parity is committed as cba31503f0bb5accf68de2032131db984403deff;
-  Batch 35 is complete. F460, “Phase2 - Cover Document Viewer Page Spacing QAction parity (F460),” is committed
-  as fba46915d76b05aab53de85760a3f857dc4ed2a2 on Qt-Rewrite, 45 commits ahead of origin; Batch 36 is complete.
-  Its commit contains exactly seven scoped paths. Post-commit status was clean except for excluded
-  latest_session_work.md and %SystemDrive%/. F461, “Phase2 - Cover Sidebar Overflow Tooltips QAction parity (F461),” was
-  committed as e590ea773d4b6b1d415d248c9c3f5068094d5d4c on Qt-Rewrite, 46 commits ahead of origin; Batch 37 is
-  complete. Its commit contains exactly seven scoped paths. Post-commit status was clean except for excluded pre-existing
-  latest_session_work.md and %SystemDrive%/. F462, “Phase2 - Cover Save Mode QAction application handoff (F462),” was committed
-  as ad0d4de70aa5d984dd50eb0da13c1e3506e2be70 on Qt-Rewrite, 47 commits ahead of origin; Batch 38 is complete.
-  Its commit contains exactly seven scoped paths. Post-commit status was clean except for excluded pre-existing
-  latest_session_work.md and %SystemDrive%/. F463, “Phase2 - Cover Automatic Update Preference QAction parity (F463),” was
-  committed as e0771d5a3b87f75f6385bff23dd869e24e237242 on Qt-Rewrite, 48 commits ahead of origin; Batch 39 is
-  complete. Its commit contains exactly seven scoped paths. Post-commit status was clean except for excluded pre-existing
-  latest_session_work.md and %SystemDrive%/. F464, “Phase2 - Cover AI Comment Voice QAction prompt handoff (F464),” was committed as
-  27d30bbd8452f0d350e968ef462af83ae340cdd3 on Qt-Rewrite, 49 commits ahead of origin; Batch 40 is complete.
-  Its commit contains exactly seven scoped paths. Post-commit status was clean except for excluded pre-existing
-  latest_session_work.md and %SystemDrive%/. F465, “Phase2 - Cover AI Comment Provider QAction dialog handoff (F465),” was committed as
-  599916bada7a2a59ae041dc80d59cba2187cf3be on Qt-Rewrite, 50 commits ahead of origin; Batch 41 is complete.
-  Its commit contains exactly seven scoped paths. Post-commit status was clean except for excluded pre-existing
-  latest_session_work.md and %SystemDrive%/. F466, “Phase2 - Cover Custom Website provider QAction modal handoff (F466),” was committed as
-  0abbaf9238a25407f3c8a6c88a07adb4e93aa238 on Qt-Rewrite, 51 commits ahead of origin; Batch 42 is complete.
-  Its commit contains exactly seven scoped paths and the cached diff check was clean. Post-commit status was clean except for
-  excluded pre-existing latest_session_work.md and %SystemDrive%/. F467, “Phase2 - Cover Sidebar Marquee QAction parity (F467),” was committed as
-  0384c3768c18009689f918f456ae932c0c1d5a89 on Qt-Rewrite, 52 commits ahead of origin; Batch 43 is complete.
-  Its commit contains exactly seven paths and the cached diff check was clean. Post-commit status was clean except for excluded pre-existing
-  agent_docs/latest_session_work.md and %SystemDrive%/. F469, “Phase2 - Cover Document Viewer Page Spacing None and Medium QAction parity (F469),” was committed as
-  4044c80a on Qt-Rewrite. The commit contains the six reviewed test and Phase 2 tracking paths. Batch 45 is complete.
-  Post-commit worktree entries are only excluded pre-existing agent_docs/latest_session_work.md and %SystemDrive%/. Batch 46
-  is active with F470 Document Viewer Background White QAction parity accepted and ready to commit. F470 verification is
-  recorded in the progress log; F471 discovery begins only after F470 commits.
-  F457 acceptance and verification remain in the progress log. F456
-  acceptance and focused verification remain in the progress log. F454
-  acceptance and focused verification remain in the progress log. F453
-  acceptance and focused verification remain in the progress log.
-  F452 acceptance remains in the progress log. F451 acceptance remains recorded there.
-  F451 acceptance remains in the progress log. F450 acceptance remains recorded there. F449/F448
-  acceptance and verification remain in the progress log. F435 covers
-  no-database New Profile creation and picker metadata; F444 covers Open File replacement.
-  F285 stays deferred. See the
-  progress log. Gates 1 and 2 remain Partial.
+- Current note: F470 (738f40f1) is committed, Batch 46 is complete, F471 discovery is pending, and Gates 1 and 2 remain Partial.
 
 ### Slice discovery batches
 
-Discover upcoming slices in ordered batches of up to ten (or all remaining
-slices if fewer than ten remain). Keep only the active batch below. Begin
-discovering and recording the next batch when starting work on the second-last
-slice in the current batch. If a discovery pass finds fewer than ten slices,
-add the exact standalone line `Batch 20 read-only reviews have surfaced provisional candidates after F421; see the Phase 2 progress log.` beneath that batch.
+Discover upcoming slices in ordered batches of up to ten (or all remaining when fewer than ten remain). Begin recording the next batch when work starts on the second-last candidate in the active batch.
 
-Keep the Status `Current note` limited to the latest information relevant to the
-current or next slice. Remove accepted slices from this plan; keep their
-implementation and acceptance evidence in the chronological [Phase 2 progress
-log](03-Phase-2-Progress-Log.md).
+Treat this plan as an operational summary, not a history:
+
+- Keep `Current note` to one sentence about the current or next slice and open gate state; update it in place.
+- Keep only the active batch and unresolved deferred candidates here. Limit each active candidate to its ID, title, and one-line next action.
+- Store discovery evidence, full acceptance criteria, verification results, commit details, completed-batch summaries, and prior-batch history only in the chronological [Phase 2 progress log](03-Phase-2-Progress-Log.md).
+- When a slice is accepted, record its evidence in the progress log and remove its candidate from this plan in the same edit. Replace the active batch in place; do not append snapshots or carry-forward history.
+- Record a discovery shortfall in the progress log only; do not add a historical marker to this plan.
+- Keep `Deferred candidates` limited to unresolved items; remove entries when resolved or superseded.
 
 #### Deferred candidates
 
@@ -140,100 +64,6 @@ log](03-Phase-2-Progress-Log.md).
   class only to reuse the ID returned by create(). Removing the read changes its
   failure warning/no-navigation behavior; revisit after that behavior is
   clarified.
-
-#### Active batch: Batch 46
-
-F470 Document Viewer Background White QAction parity is independently verified, accepted, and ready to commit. The
-registered blank-viewer test exercises White while retaining Black and Default; it verifies OptionState, exclusive
-Default/White/Black QAction checks, persisted value 1, viewer and viewport pdfViewerBackground properties white, QPalette::Dark white, and
-Default-restorer sync on assertion exits.
-
-The focused target built under VS18. Executor CTest passed 1/1, direct offscreen QtTest passed 3/0/0, and git diff --check
-passed. Independent CTest passed 1/1 and git diff HEAD --check passed. The independent direct invocation exited 0 without
-a QtTest summary, so no independent count is claimed. Qt reported an optional missing fonts-directory warning while
-packaged Inter/Pretendard fonts loaded. No full suite was run. Batch 46 remains active until F470 commits; F471 discovery
-begins only after that commit.
-
-Batch 21 began with ten candidates after F428 and is complete; F429-F438 are
-committed. F438, “Phase2 - Reject existing IDs in repeat-series creation (F438),”
-is commit 0c2ceca6. F439, “Phase2 - Cover Delete Teacher QAction confirmation
-success (F439),” is commit a0c50d2d. F440, “Phase2 - Cover Export Classes JSON
-output (F440),” is commit 01d1559c. F441, “Phase2 - Cover Import Classes QAction
-apply success (F441),” is commit 75a559ae. F442, “Phase2 - Cover Import Teachers
-QAction apply success (F442),” is commit 8cde2826 on Qt-Rewrite (branch ahead
-27). The requested pause after F442 was observed and the user has resumed. F443 is
-committed as 1c03b326567cf52d808bc4c54b7a5e77021bb7bf on Qt-Rewrite (branch ahead
-28); its acceptance evidence remains recorded in the progress log. Batch 22 is
-F444 is committed as 8a21da618870ba4308415aaf5927fa1393af6e97 on Qt-Rewrite (branch ahead 29); its acceptance
-and focused verification remain recorded in the progress log. F445 is committed as d9180f1c465976dfdd707382a1e615108aed9387 on Qt-Rewrite (branch ahead 30); its acceptance
-and focused verification remain recorded in the progress log. F446 is committed as 4b34a3b8a15a062377a245607228097fb43ee46b on Qt-Rewrite (branch ahead 31); acceptance and
-verification remain recorded in the progress log. Batch 22 is complete. F447 is committed as d5b130bd0558146185ebf4cdeab885bde6956fec on Qt-Rewrite (branch ahead 32); its acceptance and
-verification remain recorded in the progress log. Batch 23 is complete. F448 is committed as
-f825a388db1897bc42cacf43c488850fa48a9de8 on Qt-Rewrite (branch ahead 33); its acceptance and
-focused verification remain recorded in the progress log. F449 is committed as
-4e42a5a9cbe5c261fb78b2e39a98f81c93ef0372 on Qt-Rewrite (branch ahead 34); Batch 25 is complete.
-F450 is committed as e39852c8a9cef33c80d684dd0e63e18d19a6acf7 on Qt-Rewrite (branch ahead 35);
-Batch 26 is complete. Its commit includes exactly seven approved paths and has a clean diff check.
-F451 is committed as 3137d522796365e81d4c3f99e341aacaf83cc392 on Qt-Rewrite (branch ahead 36);
-Batch 27 is complete. Its commit includes exactly six approved paths and has a clean diff check.
-F452 is committed as 249dd38b8b3ee2223292c99ec740f2470e20e5e9 on Qt-Rewrite (branch ahead 37);
-Batch 28 is complete. Its commit includes exactly six approved paths and has a clean diff check.
-F453, “Phase2 - Cover Cut QAction focused-editor dispatch (F453),” is committed as
-4e9b3d6d79aff3c43b943aec8e165a6ab16ca8a9 on Qt-Rewrite (branch ahead 38); Batch 29 is complete.
-Its commit includes exactly six approved paths and has a clean diff check. F455, “Phase2 - Cover About QAction modal handoff (F455),” is committed as
-76c67663cda5604353b4ba25e54c97160f6daf90 on Qt-Rewrite (branch ahead 40); Batch 31 is complete.
-The commit includes exactly seven approved paths and has a clean diff check. F456, “Phase2 - Cover Check for Updates QAction manual handoff (F456),” is committed as
-d90def93f7947d0f031dc6f37a8a4a491f4d3718 on Qt-Rewrite (branch ahead 41); Batch 32 is complete.
-The commit contains exactly seven scoped paths and its cached diff check was clean. Batch 33 is complete. F457, “Phase2 - Cover Font Size QAction application handoff (F457),” is
-committed as 719efeacb6e5a8533f2dd45f6fb0fdfe152c0714 on Qt-Rewrite, 42 commits ahead of origin.
-Its commit contains exactly seven scoped paths and the cached diff check was clean. Batch 34 is complete. F458, “Phase2 - Cover Theme QAction application handoff (F458),” is
-committed as 2ec351a805af2064a865c34b76b46f60df80acdc on Qt-Rewrite, 43 commits ahead of origin.
-Its commit contains exactly seven scoped paths and the cached diff check was clean. F459 Document Viewer
-Background QAction parity is committed as cba31503f0bb5accf68de2032131db984403deff; Batch 35 is complete.
-F460, “Phase2 - Cover Document Viewer Page Spacing QAction parity (F460),” is committed as
-fba46915d76b05aab53de85760a3f857dc4ed2a2 on Qt-Rewrite, 45 commits ahead of origin; Batch 36 is complete.
-The commit contains exactly seven scoped paths. Post-commit status was clean except for excluded
-  latest_session_work.md and %SystemDrive%/. F461, “Phase2 - Cover Sidebar Overflow Tooltips QAction parity (F461),” was
-  committed as e590ea773d4b6b1d415d248c9c3f5068094d5d4c on Qt-Rewrite, 46 commits ahead of origin; Batch 37 is
-  complete. Its commit contains exactly seven scoped paths. Post-commit status was clean except for excluded pre-existing
-  latest_session_work.md and %SystemDrive%/. F462, “Phase2 - Cover Save Mode QAction application handoff (F462),” was committed
-  as ad0d4de70aa5d984dd50eb0da13c1e3506e2be70 on Qt-Rewrite, 47 commits ahead of origin; Batch 38 is complete.
-  Its commit contains exactly seven scoped paths. Post-commit status was clean except for excluded pre-existing
-  latest_session_work.md and %SystemDrive%/. F463, “Phase2 - Cover Automatic Update Preference QAction parity (F463),” was
-  committed as e0771d5a3b87f75f6385bff23dd869e24e237242 on Qt-Rewrite, 48 commits ahead of origin; Batch 39 is
-  complete. Its commit contains exactly seven scoped paths. Post-commit status was clean except for excluded pre-existing
-  latest_session_work.md and %SystemDrive%/. F464, “Phase2 - Cover AI Comment Voice QAction prompt handoff (F464),” was committed as
-  27d30bbd8452f0d350e968ef462af83ae340cdd3 on Qt-Rewrite, 49 commits ahead of origin; Batch 40 is complete.
-  Its commit contains exactly seven scoped paths. Post-commit status was clean except for excluded pre-existing
-  latest_session_work.md and %SystemDrive%/. F465, “Phase2 - Cover AI Comment Provider QAction dialog handoff (F465),” was committed as
-  599916bada7a2a59ae041dc80d59cba2187cf3be on Qt-Rewrite, 50 commits ahead of origin; Batch 41 is complete.
-  Its commit contains exactly seven scoped paths. Post-commit status was clean except for excluded pre-existing
-  latest_session_work.md and %SystemDrive%/. F466, “Phase2 - Cover Custom Website provider QAction modal handoff (F466),” was committed as
-  0abbaf9238a25407f3c8a6c88a07adb4e93aa238 on Qt-Rewrite, 51 commits ahead of origin; Batch 42 is complete.
-  Its commit contains exactly seven scoped paths and the cached diff check was clean. Post-commit status was clean except for
-  excluded pre-existing latest_session_work.md and %SystemDrive%/. F467, “Phase2 - Cover Sidebar Marquee QAction parity (F467),” was committed as
-  0384c3768c18009689f918f456ae932c0c1d5a89 on Qt-Rewrite, 52 commits ahead of origin; Batch 43 is complete.
-  Its commit contains exactly seven paths and the cached diff check was clean. Post-commit status was clean except for excluded pre-existing
-  agent_docs/latest_session_work.md and %SystemDrive%/. F469, “Phase2 - Cover Document Viewer Page Spacing None and Medium QAction parity (F469),” was committed as
-  4044c80a on Qt-Rewrite. The commit contains the six reviewed test and Phase 2 tracking paths. Batch 45 is complete.
-  Post-commit worktree entries are only excluded pre-existing agent_docs/latest_session_work.md and %SystemDrive%/. Batch 46
-  is active with F470 Document Viewer Background White QAction parity accepted and ready to commit. F470 verification is
-  recorded in the progress log; F471 discovery begins only after F470 commits.
-remain in the progress log. F456 acceptance remains recorded there; F455/F454/F453/F452/F451 evidence remains there.
-F435 covers opening from the no-database banner.
-F444 covers replacing a distinct open profile and excludes same-path opening,
-dirty replacement choices, and
-load-failure behavior. F285 remains deferred. This bounded discovery does not establish
-repository-wide exhaustion.
-Batch 20 completed when F428 committed as b82bddaa. F429 committed as 19f6024d. Batch 21 was
-discovered while F427 was the second-last known Batch 20 candidate and is now active.
-Candidate evidence and limits are in the Phase 2 progress log; this bounded
-discovery does not establish repository-wide exhaustion.
-
-Batch 18 was discovered at F402 start from two independent bounded reviews and
-activated after F403 committed as 28e881cd; it completed when F413 committed
-as 5d8a941a. Batch 19 was discovered at F412 and activated after Batch 18
-completed.
 
 ## Objective
 
