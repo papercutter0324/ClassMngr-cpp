@@ -42,7 +42,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-10
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F516 paired Windows x64 Release routes pass after updating the Classes rebuild expectation to 5; Batch 93 starts with F517 to add settled-5-second samples to both lifecycle routes while preserving current assertions; Gates 1 and 2 remain Partial and Phase 0, 250 MiB, and visual gates remain open.
+- Current note: F517's paired Windows x64 lifecycle routes now record one- and five-second settled samples, but both remain over 250 MiB; Batch 94 selects F518 to diagnose per-page and selected-editor widget counts while the Phase 0, memory, and visual gates remain open.
 
 ### Slice discovery batches
 
@@ -67,9 +67,9 @@ Treat this plan as an operational summary, not a history:
   failure warning/no-navigation behavior; revisit after that behavior is
   clarified.
 
-#### Active batch: Batch 93
+#### Active batch: Batch 94
 
-- F517 - Add settled-5-second memory samples to the packaged Classes and Sub Prep lifecycle routes; keep existing route assertions and compare both settle points with the 250 MiB target.
+- F518 - Record per-page and selected Classes editor widget counts in the lifecycle route; compare owner counts across leave/re-entry without attributing process bytes.
 
 ## Objective
 

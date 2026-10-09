@@ -3338,7 +3338,7 @@ void StartupPerformanceTests
             QStringLiteral("--startup-performance-scenario"),
             QStringLiteral("representative"),
             QStringLiteral("--startup-performance-settle-ms"),
-            QStringLiteral("1000"),
+            QStringLiteral("5000"),
             QStringLiteral("--startup-performance-output"),
             metricsPath,
             fixturePath
@@ -3787,7 +3787,7 @@ void StartupPerformanceTests::capturesLargeClassesBoundaryWhenConfigured()
             QStringLiteral("--startup-performance-scenario"),
             QStringLiteral("representative"),
             QStringLiteral("--startup-performance-settle-ms"),
-            QStringLiteral("1000"),
+            QStringLiteral("5000"),
             QStringLiteral("--startup-performance-output"),
             metricsPath,
             fixturePath
