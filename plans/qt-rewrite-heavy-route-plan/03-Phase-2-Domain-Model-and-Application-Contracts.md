@@ -40,7 +40,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-09
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: Batch 64 is active with F488 batch-dialog Include-checkbox reset independently verified, accepted, and ready to commit; Gates 1 and 2 remain Partial.
+- Current note: Batch 65 is active with F489 batch-dialog post-parse response-edit invalidation independently verified, accepted, and ready to commit; Gates 1 and 2 remain Partial.
 
 ### Slice discovery batches
 
@@ -65,10 +65,10 @@ Treat this plan as an operational summary, not a history:
   failure warning/no-navigation behavior; revisit after that behavior is
   clarified.
 
-#### Active batch: Batch 64
+#### Active batch: Batch 65
 
-- F488 — Batch-dialog Include-checkbox reset after generated content: independently verified, accepted, and ready to commit.
-- Constraints: add one test in speaking_eval_batch_report_service_tests.cpp with two eligible reports. Create a two-student prompt, parse valid response blocks to populate review state, then uncheck the second Include item. Assert prompt/response/parse summary/review rows clear; Copy, Copy/Open, Parse, and Apply disable while Create remains enabled. Recreate and verify only the remaining student ID. Source also clears selected IDs. No production/CMake/browser/network changes.
+- F489 — Batch-dialog post-parse response-edit invalidation: independently verified, accepted, and ready to commit.
+- Constraints: with one eligible report, create a prompt and parse a valid response into one Ready row with Apply enabled. Edit the response; assert prompt and edited response remain, review/summary clear, Apply disables, and Parse/Copy/CopyOpen stay enabled. Reparse and verify review reflects edited text. F488 separately covers Include-checkbox reset. No production/CMake/browser/network changes.
 
 ## Objective
 

@@ -17717,3 +17717,25 @@ The executor focused build succeeded; CTest passed 1/1, the direct slot passed 3
 The Tester confirmed two Ready review rows before unchecking, complete prompt/response/summary/review reset and expected button states, then regeneration with STUDENT_01 only. The executable lists the fresh slot.
 
 Focused CTest passed 1/1; the direct QT_QPA_PLATFORM=offscreen slot passed 3/3. Scoped diff check exited 0 with a line-ending notice. No full suite, browser, or network. F488 is independently verified, accepted, and ready to commit; Batch 64 remains active until commit.
+
+### F488 committed - 2026-10-09
+
+F488 committed as f4c10bfc with six scoped paths. Batch 64 is complete. Batch 65 candidate discovery is underway for F489; selection is pending.
+
+### F489 acceptance plan recorded before implementation - 2026-10-09
+
+For one eligible report, create the batch prompt and parse a valid response into one Ready review row with Apply enabled. Edit the response and assert the prompt and edited response remain while review/summary clear, Apply disables, and Parse, Copy, and Copy/Open remain enabled. Reparse and verify review reflects the edited text. F488 covers Include-checkbox reset as a separate case.
+
+No production/CMake/browser/network changes. F489 is selected/current; implementation and verification are pending. Batch 65 remains active.
+
+### F489 implementation update - 2026-10-09
+
+The response-edit case retains the generated prompt and edited response, clears review/summary, disables Apply while keeping Parse/Copy/CopyOpen enabled, then reparses to reflect the edit. F488 Include-checkbox reset remains separate.
+
+The executor focused Ninja build succeeded; CTest passed 1/1, the direct slot passed 3/0/0, and scoped diff check passed. A Qt font-directory warning occurred. Independent verification is pending; Batch 65 remains active.
+
+### F489 independent verification update - 2026-10-09
+
+The Tester confirmed the slot is listed and verified the response-edit invalidation clears review/summary while retaining prompt and edited response, then reparses to reflect the edit.
+
+Focused CTest passed 1/1; direct offscreen execution passed 3/3. Scoped diff check exited 0 with an LF-to-CRLF notice. No full suite, browser, or network. F489 is independently verified, accepted, and ready to commit; Batch 65 remains active until commit.
