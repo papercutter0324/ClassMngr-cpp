@@ -17253,3 +17253,34 @@ Executor focused target build passed, CTest passed 1/1, direct offscreen QtTest 
 clean. Independent Tester confirmed source/restorer/fixture order, CTest 1/1, direct QtTest 4/0/0, and clean diff. Qt
 reported a missing fonts-directory warning while packaged Inter/Pretendard loaded. No full suite was run. F468 is accepted
 and ready to commit; Batch 44 remains active until commit. F469 discovery has not started and begins only after F468 commits.
+### F468 committed - 2026-10-09
+
+F468, “Phase2 - Cover Document Catalog Language Preference QAction parity (F468),” was committed as
+219ca8fb64b50247c24a722f7a091d75a2a6d86e on Qt-Rewrite, 53 commits ahead of origin. The commit contains six scoped
+paths and the cached diff check was clean. Batch 44 is complete. Post-commit status contains only excluded pre-existing
+agent_docs/latest_session_work.md and %SystemDrive%/. Batch 45 is active with F469 selected; F468 acceptance and
+verification remain recorded above.
+
+### F469 acceptance plan recorded before implementation - 2026-10-09
+
+Extend the existing F460 MainWindow Document Viewer Page Spacing action test on its blank PDF viewer. Trigger the actual None and Medium actions;
+assert each QAction checked state, OptionState state, persisted preference, and QPdfView pageSpacing values of 0 and 16,
+while preserving existing Small/Large assertions. The scoped Small restorer must sync its reset on assertion exits.
+
+Use temporary settings and disable recent-database loading; no database or PDF load is needed. Existing F460 coverage
+provides the concrete, host-independent viewer behavior; this was selected over System Default language coverage. Reuse
+the existing target, with no production or CMake change. F469 is selected/current; implementation and verification have
+not started. Batch 45 remains active.
+### F469 acceptance update - 2026-10-09
+
+The existing F460 MainWindow Document Viewer Page Spacing test now triggers the actual None and Medium actions on its
+blank viewer. It verifies OptionState, exclusive QAction checks, persisted preference values 0/2, and QPdfView
+pageSpacing values of 0/16 px, while retaining Small/Large coverage. The scoped Small restorer syncs its reset on assertion
+exits. Temporary settings and disabled recent-database loading remain; no PDF or database is loaded. No production or
+CMake change.
+
+The focused target build passed; executor CTest passed 1/1 and direct offscreen QtTest passed 3/0/0. Independent CTest
+passed 1/1 and git diff --check passed. The independent direct invocation exited 0 without a QtTest summary, so no
+independent case count is claimed. Qt reported an optional missing fonts-directory warning while packaged Inter/Pretendard
+fonts loaded. No full suite was run. F469 is independently verified, accepted, and ready to commit; Batch 45 remains active
+until commit. F470 discovery begins only after F469 commits.

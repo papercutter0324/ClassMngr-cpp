@@ -25,18 +25,17 @@ public:
     ~DocumentPageSpacingRestorer()
     {
         auto* const state = m_window.actions().documentPageSpacingState;
-        if (!state)
+        if (state)
         {
-            return;
+            QAction* const smallAction = state->action(
+                ::DocumentPageSpacing::Small
+                );
+            if (smallAction && state->current() != ::DocumentPageSpacing::Small)
+            {
+                smallAction->trigger();
+            }
         }
-
-        QAction* const smallAction = state->action(
-            ::DocumentPageSpacing::Small
-            );
-        if (smallAction)
-        {
-            smallAction->trigger();
-        }
+        SettingsManager::instance().sync();
     }
 
     DocumentPageSpacingRestorer(
@@ -57,7 +56,7 @@ class MainWindowDocumentViewerPageSpacingActionParityTests final : public QObjec
 
 private slots:
     void initTestCase();
-    void largeAndSmallActionsUpdateViewerAndPersist();
+    void allSizesUpdateViewerAndPersist();
 
 private:
     QTemporaryDir m_settingsDirectory;
@@ -78,7 +77,7 @@ void MainWindowDocumentViewerPageSpacingActionParityTests::initTestCase()
 }
 
 void MainWindowDocumentViewerPageSpacingActionParityTests::
-largeAndSmallActionsUpdateViewerAndPersist()
+allSizesUpdateViewerAndPersist()
 {
     LanguageService languageService;
     QVERIFY(languageService.setLanguage(Language::English));
@@ -109,15 +108,25 @@ largeAndSmallActionsUpdateViewerAndPersist()
     QVERIFY(state);
     QCOMPARE(state->current(), ::DocumentPageSpacing::Small);
 
+    QAction* const noneAction = state->action(
+        ::DocumentPageSpacing::None
+        );
     QAction* const smallAction = state->action(
         ::DocumentPageSpacing::Small
+        );
+    QAction* const mediumAction = state->action(
+        ::DocumentPageSpacing::Medium
         );
     QAction* const largeAction = state->action(
         ::DocumentPageSpacing::Large
         );
+    QVERIFY(noneAction);
     QVERIFY(smallAction);
+    QVERIFY(mediumAction);
     QVERIFY(largeAction);
+    QVERIFY(!noneAction->isChecked());
     QVERIFY(smallAction->isChecked());
+    QVERIFY(!mediumAction->isChecked());
     QVERIFY(!largeAction->isChecked());
 
     const QString spacingKey = QString::fromUtf8(
@@ -128,17 +137,45 @@ largeAndSmallActionsUpdateViewerAndPersist()
     largeAction->trigger();
 
     QCOMPARE(state->current(), ::DocumentPageSpacing::Large);
-    QVERIFY(largeAction->isChecked());
+    QVERIFY(!noneAction->isChecked());
     QVERIFY(!smallAction->isChecked());
+    QVERIFY(!mediumAction->isChecked());
+    QVERIFY(largeAction->isChecked());
     SettingsManager::instance().sync();
     QCOMPARE(SettingsManager::instance().get(spacingKey).toInt(), 3);
     QCOMPARE(view->pageSpacing(), 32);
+
+    QVERIFY(noneAction->isEnabled());
+    noneAction->trigger();
+
+    QCOMPARE(state->current(), ::DocumentPageSpacing::None);
+    QVERIFY(noneAction->isChecked());
+    QVERIFY(!smallAction->isChecked());
+    QVERIFY(!mediumAction->isChecked());
+    QVERIFY(!largeAction->isChecked());
+    SettingsManager::instance().sync();
+    QCOMPARE(SettingsManager::instance().get(spacingKey).toInt(), 0);
+    QCOMPARE(view->pageSpacing(), 0);
+
+    QVERIFY(mediumAction->isEnabled());
+    mediumAction->trigger();
+
+    QCOMPARE(state->current(), ::DocumentPageSpacing::Medium);
+    QVERIFY(!noneAction->isChecked());
+    QVERIFY(!smallAction->isChecked());
+    QVERIFY(mediumAction->isChecked());
+    QVERIFY(!largeAction->isChecked());
+    SettingsManager::instance().sync();
+    QCOMPARE(SettingsManager::instance().get(spacingKey).toInt(), 2);
+    QCOMPARE(view->pageSpacing(), 16);
 
     QVERIFY(smallAction->isEnabled());
     smallAction->trigger();
 
     QCOMPARE(state->current(), ::DocumentPageSpacing::Small);
+    QVERIFY(!noneAction->isChecked());
     QVERIFY(smallAction->isChecked());
+    QVERIFY(!mediumAction->isChecked());
     QVERIFY(!largeAction->isChecked());
     SettingsManager::instance().sync();
     QCOMPARE(SettingsManager::instance().get(spacingKey).toInt(), 1);

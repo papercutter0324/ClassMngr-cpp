@@ -3423,3 +3423,17 @@ Independent plan and code scans agree on F468: the existing retranslation test d
 F468 extends the existing MainWindow document-catalog retranslation parity test. The actual Korean and English language QAction transitions now verify `languageState->current()`, selected/unselected actions, and the typed persisted language preference after syncing. The fixture starts from English under temporary settings and disables recent-database loading. A scoped guard restores English through the QAction only when needed and syncs before MainWindow destruction on assertion exits. No production or CMake change.
 
 Focused build passed; CTest passed 1/1; direct offscreen QtTest passed 4/0/0; `git diff --check` passed. Independent Tester confirmed the test scope, fixture/restorer order, and reran CTest 1/1 and direct QtTest 4/0/0. Qt warned about a missing configured font directory, while packaged Inter/Pretendard fonts loaded. No full suite. F468 is accepted and ready to commit; Batch 44 remains active pending commit.
+
+## 2026-10-09 - F468 committed; F469 Page Spacing variants selected
+
+F468 committed as `219ca8fb64b50247c24a722f7a091d75a2a6d86e` (`Phase2 - Cover Document Catalog Language Preference QAction parity (F468)`). Its commit contains six scoped paths and a clean cached diff check; `Qt-Rewrite` is 53 commits ahead of origin. Batch 44 is complete. The existing `agent_docs/latest_session_work.md` and `%SystemDrive%/` changes remain excluded.
+
+F469 extends the existing Document Viewer Page Spacing parity test. F460 covers Small/Large; the `DocumentPageSpacing` enum also includes None and Medium, with viewer mappings 0 px and 16 px. Drive those actual QActions and assert OptionState, checked actions, persisted setting, and `QPdfView::pageSpacing()` while retaining the existing assertions. Keep temporary settings, disable recent-database loading, and sync the Small-state restorer on assertion exits. The blank PDF viewer is constructed without loading a PDF. No production or CMake change. This deterministic viewer-state slice was selected over System Default language. Batch 45/F469 is selected; implementation and verification are pending.
+
+## 2026-10-09 - F469 implementation and focused verification
+
+Extended the existing page-spacing parity test to trigger None and Medium and assert the QAction group state, `OptionState`, persisted integer values, and viewer spacing (0 px and 16 px). Existing Small/Large checks remain. The scoped Small restorer triggers only when needed and syncs settings on normal and assertion-return exits. The test uses temporary settings, disables recent-database loading, and does not load a PDF. No production or CMake changes.
+
+Focused target build passed; focused CTest passed 1/1; direct offscreen QtTest passed 3/0/0. `git diff --check` passed. Qt warned that its optional configured fonts directory is missing; packaged Inter/Pretendard fonts loaded. An initial plain-shell build lacked MSVC headers; the focused build succeeded under the VS18 developer environment. Independent review is pending; F469 remains active in Batch 45.
+
+Independent review accepted F469: the Tester confirmed the test scope and restorer, reran focused CTest (1/1), and passed `git diff --check`. The independent direct offscreen invocation exited 0 without a QtTest summary, so it provides no count; the executor invocation reported 3/0/0. No full suite. F469 is independently verified and ready to commit; Batch 45 remains active pending commit.

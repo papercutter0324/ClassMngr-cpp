@@ -102,9 +102,11 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
   excluded pre-existing latest_session_work.md and %SystemDrive%/. F467, “Phase2 - Cover Sidebar Marquee QAction parity (F467),” was committed as
   0384c3768c18009689f918f456ae932c0c1d5a89 on Qt-Rewrite, 52 commits ahead of origin; Batch 43 is complete.
   Its commit contains exactly seven paths and the cached diff check was clean. Post-commit status was clean except for excluded pre-existing
-  agent_docs/latest_session_work.md and %SystemDrive%/. Batch 44 is active with F468 Document Catalog Language QAction parity
-  accepted in this changeset and ready to commit. F468 acceptance and focused verification are recorded in the progress log;
-  F469 discovery begins only after F468 commits. F467 acceptance and focused verification, and earlier acceptance evidence, remain there.
+  agent_docs/latest_session_work.md and %SystemDrive%/. F468, “Phase2 - Cover Document Catalog Language Preference QAction parity (F468),” was committed as
+  219ca8fb64b50247c24a722f7a091d75a2a6d86e on Qt-Rewrite, 53 commits ahead of origin; Batch 44 is complete. Its commit
+  contains six scoped paths and the cached diff check was clean. Batch 45 is active with F469 Document Viewer Page Spacing
+  None/Medium QAction parity accepted in this changeset and ready to commit. F469 acceptance and focused verification are
+  recorded in the progress log; F470 discovery begins only after F469 commits.
   F457 acceptance and verification remain in the progress log. F456
   acceptance and focused verification remain in the progress log. F454
   acceptance and focused verification remain in the progress log. F453
@@ -139,16 +141,17 @@ log](03-Phase-2-Progress-Log.md).
   failure warning/no-navigation behavior; revisit after that behavior is
   clarified.
 
-#### Active batch: Batch 44
+#### Active batch: Batch 45
 
-F468 Document Catalog Language QAction parity is accepted in this changeset and ready to commit. The existing document-
-catalog retranslation test now checks languageState->current(), English and Korean QAction checked states, and typed
-SettingsManagerLanguagePreferencesPort::read() after each real action trigger and SettingsManager sync.
+F469 Document Viewer Page Spacing None/Medium QAction parity is accepted in this changeset and ready to commit. The
+existing F460 MainWindow test now triggers the actual None and Medium actions on its blank PDF viewer, verifies OptionState,
+exclusive action checks, persisted values 0/2, and QPdfView pageSpacing values 0/16 px, while retaining Small/Large
+coverage. The scoped Small restorer syncs on assertion exits.
 
-It starts with QTemporaryDir English settings and recent-database loading disabled. A scope guard declared after
-MainWindow restores English through the action only if needed and syncs on early return. This is test-only; no production
-or CMake change. Focused verification is recorded in the progress log. Batch 44 remains active until commit; F469
-discovery begins only after F468 commits.
+Focused target build and CTest passed 1/1; executor direct QtTest passed 3/0/0. Independent CTest passed 1/1 and
+git diff --check passed. The independent direct invocation exited 0 without a QtTest summary, so no independent case
+count is claimed. Qt reported an optional missing fonts-directory warning; bundled Inter/Pretendard fonts loaded. No full
+suite was run. Batch 45 remains active until F469 commits; F470 discovery begins after that commit.
 
 Batch 21 began with ten candidates after F428 and is complete; F429-F438 are
 committed. F438, “Phase2 - Reject existing IDs in repeat-series creation (F438),”
@@ -210,9 +213,11 @@ The commit contains exactly seven scoped paths. Post-commit status was clean exc
   excluded pre-existing latest_session_work.md and %SystemDrive%/. F467, “Phase2 - Cover Sidebar Marquee QAction parity (F467),” was committed as
   0384c3768c18009689f918f456ae932c0c1d5a89 on Qt-Rewrite, 52 commits ahead of origin; Batch 43 is complete.
   Its commit contains exactly seven paths and the cached diff check was clean. Post-commit status was clean except for excluded pre-existing
-  agent_docs/latest_session_work.md and %SystemDrive%/. Batch 44 is active with F468 Document Catalog Language QAction parity
-  accepted in this changeset and ready to commit. F468 acceptance and focused verification are recorded in the progress log;
-  F469 discovery begins only after F468 commits. F467 acceptance and focused verification, and earlier acceptance evidence, remain there.
+  agent_docs/latest_session_work.md and %SystemDrive%/. F468, “Phase2 - Cover Document Catalog Language Preference QAction parity (F468),” was committed as
+  219ca8fb64b50247c24a722f7a091d75a2a6d86e on Qt-Rewrite, 53 commits ahead of origin; Batch 44 is complete. Its commit
+  contains six scoped paths and the cached diff check was clean. Batch 45 is active with F469 Document Viewer Page Spacing
+  None/Medium QAction parity accepted in this changeset and ready to commit. F469 acceptance and focused verification are
+  recorded in the progress log; F470 discovery begins only after F469 commits.
 remain in the progress log. F456 acceptance remains recorded there; F455/F454/F453/F452/F451 evidence remains there.
 F435 covers opening from the no-database banner.
 F444 covers replacing a distinct open profile and excludes same-path opening,
