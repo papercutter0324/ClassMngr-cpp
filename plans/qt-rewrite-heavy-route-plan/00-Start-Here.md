@@ -194,9 +194,12 @@ synchronization is committed (`f4bc5282`). F416 Document Catalog rendered
   d90def93f7947d0f031dc6f37a8a4a491f4d3718 (branch ahead 41); Batch 32 is complete. The commit
   contains exactly seven scoped paths and its cached diff check was clean. F457, “Phase2 - Cover Font Size QAction application handoff (F457),” is committed as
   719efeacb6e5a8533f2dd45f6fb0fdfe152c0714 on Qt-Rewrite, 42 commits ahead of origin; Batch 33 is
-  complete. Its commit contains exactly seven scoped paths and the cached diff check was clean. Batch
-  34 is active with F458 MainWindowThemeActionParity for the Dark QAction is accepted in this changeset and
-  ready to commit; acceptance and focused verification are recorded in the progress log. F457 acceptance and verification remain in the progress log. F456
+  complete. Its commit contains exactly seven scoped paths and the cached diff check was clean. Batch 34 is complete. F458, “Phase2 - Cover Theme QAction application handoff (F458),” is
+  committed as 2ec351a805af2064a865c34b76b46f60df80acdc on Qt-Rewrite, 43 commits ahead of origin.
+  Its commit contains exactly seven scoped paths and the cached diff check was clean. Batch 35 is active
+  with F459 Document Viewer Background QAction parity is accepted in this changeset and
+ready to commit. Acceptance and focused verification are recorded in the progress log. F458
+  acceptance and verification remain in the progress log. F457 acceptance and verification remain in the progress log. F456
   acceptance and verification remain in the progress log. F455
   acceptance and focused verification remain in the progress log. F454
   acceptance and focused verification remain in the progress log. F453

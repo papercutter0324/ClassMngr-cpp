@@ -16942,3 +16942,41 @@ setup/test/cleanup 3/0; independent CTest rerun passed 1/1. git diff --check and
 whitespace check were clean. Qt reported the missing bundled lib/fonts path while Inter/Pretendard
 loaded; CMake reported unrelated long object-path warnings during reconfigure. No full suite was run.
 F458 is accepted and ready to commit; Batch 34 remains active.
+
+### F458 committed - 2026-10-09
+
+F458, “Phase2 - Cover Theme QAction application handoff (F458),” was committed as
+2ec351a805af2064a865c34b76b46f60df80acdc on Qt-Rewrite, 43 commits ahead of origin. Its commit
+contains exactly seven scoped paths and the cached diff check was clean. Batch 34 is complete. Batch 35
+is active with F459 bounded QAction coverage discovery underway; no candidate has been selected yet.
+F458 acceptance and verification remain recorded above.
+
+### F459 acceptance plan recorded before implementation - 2026-10-09
+
+Select Document Viewer Background QAction parity: a dedicated offscreen
+MainWindowDocumentViewerBackgroundActionParity test. Background directly exposes the view property and
+palette with a blank viewer; Save Mode also has a coverage gap but affects autosave timing and page state.
+
+Use QTemporaryDir for CLASSMNGR_SETTINGS_ROOT and disable recent-database loading. Construct MainWindow,
+create a blank PDF viewer via pageManager()->ensurePdfViewerPage() without loading a document, find the
+QWidget child pdfViewerView, and verify initial Default. Trigger the actual Black QAction; assert enabled/
+checked, state Black, saved setting value 2, viewer and viewport pdfViewerBackground property black, and
+view QPalette::Dark color black. Trigger Default; assert state/checks, saved value 0, property default, and
+palette restored to QApplication::palette(view).
+
+Use scoped cleanup to trigger Default on QtTest early returns. No production changes, document load, database,
+network, or autosave timer. This plan is selected, not implemented or verified.
+
+### F459 acceptance update - 2026-10-09
+
+Added mainwindow_document_viewer_background_action_parity_tests.cpp and dedicated offscreen
+target/resources. With temporary settings and recent-database loading disabled, the test created a blank
+PDF viewer via ensurePdfViewerPage() without loading a document, then checked the actual Black and Default
+actions for enabled/checked state, saved values 2/0, view and viewport properties, and palette colors. A
+scoped guard triggers Default while MainWindow and the viewer are alive on early returns.
+
+VS18/Qt6.12/Ninja target build passed; focused CTest passed 1/1; independent direct QtTest setup/test/
+cleanup passed 3/0 and independent CTest rerun passed 1/1. git diff --check and source whitespace/conflict
+scan were clean. Qt reported the missing bundled lib/fonts path while Inter/Pretendard loaded; CMake
+reported unrelated long object paths during reconfigure. No full suite was run; no document loading, database,
+or network coverage is claimed. F459 is accepted and ready to commit; Batch 35 remains active.
