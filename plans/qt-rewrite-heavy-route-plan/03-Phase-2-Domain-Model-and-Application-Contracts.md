@@ -42,7 +42,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-10
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F521's source review keeps deferred schedule-row disposal because row counts settle at the next event-loop return and no byte benefit is measured; Batch 98 selects F522 to assess the retained Classes Details editor subtree after page leave while the Phase 0, memory, and visual gates remain open.
+- Current note: F522 found that the 577-widget Classes Details editor subtree remains cached through settled checkpoints while ordinary re-entry avoids data reads; Batch 99 selects F523 to evaluate snapshot-backed eviction of that clean editor tree while preserving dirty-state safety and the no-reread contract.
 
 ### Slice discovery batches
 
@@ -67,9 +67,9 @@ Treat this plan as an operational summary, not a history:
   failure warning/no-navigation behavior; revisit after that behavior is
   clarified.
 
-#### Active batch: Batch 98
+#### Active batch: Batch 99
 
-- F522 - Assess whether the retained Classes Details editor subtree after page leave is necessary for F515's re-entry contract; trace dirty-state and page-transition ordering before changing release policy.
+- F523 - Release the clean selected Class Details widget tree on page leave into a value-only snapshot and restore it on unchanged re-entry without data reads; retain dirty editors if a caller bypasses the leave guard and measure the paired Release route.
 
 ## Objective
 

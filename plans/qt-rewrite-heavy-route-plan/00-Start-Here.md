@@ -6,7 +6,7 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-10
-- Current milestone: Phase 2 remains in progress. F520 and F521 retain deferred cleanup for replaced grade-tab roots and schedule rows; both transient counts settle at normal event-loop return, with no feature-level byte savings established. F522 in Batch 98 will assess the selected Details editor subtree that remains after Classes page leave. Gates 1 and 2 remain Partial, with the full Phase 0 and visual gates open. See the Phase 2 progress log for evidence and acceptance scope.
+- Current milestone: Phase 2 remains in progress. F522 found that the selected Classes Details editor subtree remains cached at 577 descendants after page leave and through settled checkpoints. F523 in Batch 99 will release a clean editor tree into a value-only snapshot and restore it on unchanged re-entry without data reads, while protecting dirty state. Gates 1 and 2 remain Partial, with the full Phase 0 and visual gates open. See the Phase 2 progress log for evidence and acceptance scope.
 - Phase 1 is complete. Its 2026-09-19 closure update records passing hosted
   baseline jobs for Windows x64 and macOS universal, the Phase 1 Build Quality
   and Dialog policy workflows, and packaged Release workflows. Linux x64 and
