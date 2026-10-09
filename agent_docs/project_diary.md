@@ -3567,3 +3567,11 @@ Select F480 for Custom Website chooser cancellation rollback. The action handler
 F480 implementation covers Custom Website chooser cancellation without a URL write or provider change. Focused build/CTest and diff check passed; direct offscreen slot exited 0. Independent verification is pending.
 
 Independent review accepted F480. Focused Debug CTest passed 1/1; the direct cancellation slot exited 0 without a summary; diff check passed. The Tester confirmed provider/URL rollback and RAII cleanup. No full suite or external behavior.
+
+F480 committed as `869b7331` with exactly six scoped paths; Batch 56 is complete. Only the excluded pre-existing worktree entries remain. F481 discovery begins.
+
+F481 discovery selected the preview Copy/Open handoff after independent plan and code scans. The existing test suite can capture QDesktopServices HTTPS URLs. Acceptance uses one synthetic ChatGPT preview, verifies exact prompt clipboard and captured ChatGPT URL, and restores the provider and handler. No browser/network or production/CMake changes. Batch 57 active; implementation pending.
+
+Code review corrected the modal expectation: the ActionRole Copy/Open button leaves the preview open. F481 will assert it stays open after handoff, then explicitly dismiss it and verify closure. Clipboard and captured-URL assertions are unchanged.
+
+F481 implementation and independent review accepted. Focused Ninja build/CTest passed; direct slot passed, with independent exit 0; diff checks passed. The test captures the ChatGPT URL and clipboard prompt, preserves the ActionRole modal, and restores provider/URL handler state. No full suite or external browser/network behavior; ready to commit.

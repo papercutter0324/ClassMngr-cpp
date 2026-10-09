@@ -17545,3 +17545,23 @@ The cancel branch provides a bounded rollback case. No invalid-URL, browser/netw
 The new slot edits the Custom Website chooser input and rejects it. ChatGPT remains current/checked with its typed preference unchanged after sync, CustomWebsite is unchecked, and the original URL is unchanged. Review confirmed the RAII restorer.
 
 The executor focused Debug build passed. Independent focused Debug CTest passed 1/1; the direct offscreen slot exited 0 without a summary. Independent diff check passed with an LF-to-CRLF notice. No full suite, invalid URL, browser, or network. F480 is independently verified, accepted, and ready to commit; Batch 56 remains active until commit.
+
+### F480 committed - 2026-10-09
+
+F480 committed as 869b7331 with six scoped paths. Batch 56 is complete. Batch 57 candidate discovery is underway for F481; selection is pending.
+
+### F481 acceptance plan recorded before implementation - 2026-10-09
+
+Add one focused slot to tests/speaking_eval_batch_report_service_tests.cpp using its synthetic eligible-report fixture and temporary settings. Seed ChatGPT with a scoped provider restorer, open the prompt preview, capture the displayed anonymous prompt, then click the actual speakingEvalAiPromptPreviewCopyOpen button. Assert the preview modal remains open after the ActionRole handoff, then explicitly reject it and verify it closes. The clipboard exactly matches the preview prompt (STD_NAME present and real student names absent), and exactly one intercepted QDesktopServices HTTPS URL equals https://chatgpt.com/. Use scoped cleanup for the HTTPS handler and retain the F479 provider-label matrix.
+
+The plan scan found the preview Copy/Open path uncovered after F479; the code scan confirmed an existing test-suite URL interception pattern. No production/CMake/browser/network behavior or real browser launch. F481 is selected/current; implementation and verification are pending. Batch 57 remains active.
+
+### F481 acceptance correction - 2026-10-09
+
+Code review confirmed speakingEvalAiPromptPreviewCopyOpen uses QDialogButtonBox::ActionRole, which leaves the preview dialog open. The corrected expectation is to verify it remains open after the handoff, then explicitly reject it and assert closure. Clipboard and exactly-one intercepted https://chatgpt.com/ URL assertions are unchanged.
+
+### F481 acceptance update - 2026-10-09
+
+The focused slot uses scoped provider and HTTPS-handler cleanup. The ActionRole Copy/Open handoff leaves the preview open, then the test rejects it explicitly. Clipboard equality/anonymization and exactly one https://chatgpt.com/ interception are asserted. The prior Copy-only test remains unchanged.
+
+Executor Ninja build in the VS Developer environment passed; CTest passed 1/1, the direct slot passed 3/0/0, and diff check passed. Independent review accepted the result; independent CTest passed 1/1, the executable inventory contains the new slot, and direct offscreen execution exited 0 without output. Independent diff check passed with an LF-to-CRLF notice. No full suite, browser/network, production, or CMake scope. F481 is independently verified, accepted, and ready to commit; Batch 57 remains active until commit.
