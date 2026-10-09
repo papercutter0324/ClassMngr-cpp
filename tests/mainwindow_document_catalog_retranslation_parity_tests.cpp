@@ -2,6 +2,7 @@
 #include "core/application_services.h"
 #include "core/language_service.h"
 #include "core/resource_packs/resource_pack_manager.h"
+#include "core/settingsmanager.h"
 #include "fakes/fake_file_dialog_service.h"
 #include "fakes/fake_user_prompt_service.h"
 #include "next/application/document_content_session.h"
@@ -227,6 +228,35 @@ public:
         DialogServices::setUserPromptServiceForTesting(nullptr);
     }
 };
+
+class ScopedEnglishLanguageActionRestore final
+{
+public:
+    explicit ScopedEnglishLanguageActionRestore(QAction* englishAction)
+        : m_englishAction(englishAction)
+    {
+    }
+
+    ~ScopedEnglishLanguageActionRestore()
+    {
+        if (m_englishAction && !m_englishAction->isChecked())
+        {
+            m_englishAction->trigger();
+            QApplication::processEvents();
+        }
+        SettingsManager::instance().sync();
+    }
+
+    ScopedEnglishLanguageActionRestore(
+        const ScopedEnglishLanguageActionRestore&
+        ) = delete;
+    ScopedEnglishLanguageActionRestore& operator=(
+        const ScopedEnglishLanguageActionRestore&
+        ) = delete;
+
+private:
+    QAction* m_englishAction = nullptr;
+};
 }
 
 class MainWindowDocumentCatalogRetranslationParityTests final
@@ -298,6 +328,28 @@ void MainWindowDocumentCatalogRetranslationParityTests::
     QVERIFY(!actions.saveCurrentPageAs->isEnabled());
     QVERIFY(!actions.printExportMenu->isEnabled());
 
+    QVERIFY(actions.languageState);
+    QAction* const englishAction = actions.languageState->action(
+        Language::English
+        );
+    QAction* const koreanAction = actions.languageState->action(
+        Language::Korean
+        );
+    QVERIFY(englishAction);
+    QVERIFY(koreanAction);
+    const ScopedEnglishLanguageActionRestore restoreEnglishAction(
+        englishAction
+        );
+
+    QCOMPARE(actions.languageState->current(), Language::English);
+    QVERIFY(englishAction->isChecked());
+    QVERIFY(!koreanAction->isChecked());
+    QCOMPARE(
+        ClassMngr::Next::Platform::
+            SettingsManagerLanguagePreferencesPort().read(),
+        ClassMngr::Next::Application::LanguagePreference::English
+        );
+
     const QStringList selectedKeys = sidebar->selectedKeys();
     QCOMPARE(
         selectedKeys,
@@ -363,12 +415,18 @@ void MainWindowDocumentCatalogRetranslationParityTests::
             .isEmpty()
         );
 
-    QAction* const koreanAction = window.actions().languageState
-        ? window.actions().languageState->action(Language::Korean)
-        : nullptr;
-    QVERIFY(koreanAction);
     koreanAction->trigger();
     QApplication::processEvents();
+    SettingsManager::instance().sync();
+
+    QCOMPARE(actions.languageState->current(), Language::Korean);
+    QVERIFY(koreanAction->isChecked());
+    QVERIFY(!englishAction->isChecked());
+    QCOMPARE(
+        ClassMngr::Next::Platform::
+            SettingsManagerLanguagePreferencesPort().read(),
+        ClassMngr::Next::Application::LanguagePreference::Korean
+        );
 
     documents = topLevelWithKey(tree, QStringLiteral("document"));
     QVERIFY(documents);
@@ -406,12 +464,18 @@ void MainWindowDocumentCatalogRetranslationParityTests::
             .isEmpty()
         );
 
-    QAction* const englishAction = window.actions().languageState
-        ? window.actions().languageState->action(Language::English)
-        : nullptr;
-    QVERIFY(englishAction);
     englishAction->trigger();
     QApplication::processEvents();
+    SettingsManager::instance().sync();
+
+    QCOMPARE(actions.languageState->current(), Language::English);
+    QVERIFY(englishAction->isChecked());
+    QVERIFY(!koreanAction->isChecked());
+    QCOMPARE(
+        ClassMngr::Next::Platform::
+            SettingsManagerLanguagePreferencesPort().read(),
+        ClassMngr::Next::Application::LanguagePreference::English
+        );
 
     documents = topLevelWithKey(tree, QStringLiteral("document"));
     QVERIFY(documents);

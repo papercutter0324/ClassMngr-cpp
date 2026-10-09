@@ -3411,3 +3411,15 @@ Discovery left the portable Sidebar Marquee QAction as the remaining MainWindow 
 F467 adds a read-only delegate enabled-state query and extends the existing Sidebar Overflow parity test. It triggers the actual `animateSidebarText` QAction in both directions and checks action state, delegate state, and the persisted preference each time. The test starts with the setting disabled in its temporary settings root, disables recent-database loading, and restores the original action state with RAII before MainWindow destruction. The scope covers configuration handoff; it does not test hover, timer movement, or visible animation. No CMake change.
 
 The focused target build passed; focused CTest passed 1/1 and an independent CTest rerun passed 1/1. The direct executable exited 0 from the build directory with the offscreen environment, but emitted no QtTest summary, so no count is claimed. `git diff --check` passed and independent review accepted the source/test lifecycle. No full suite. F467 is accepted and ready to commit; Batch 43 remains active pending commit.
+
+## 2026-10-09 - F467 committed; F468 language preference selected
+
+F467 committed as `0384c3768c18009689f918f456ae932c0c1d5a89` (`Phase2 - Cover Sidebar Marquee QAction parity (F467)`). Its commit contains exactly seven scoped paths and a clean cached diff check; `Qt-Rewrite` is 52 commits ahead of origin. Batch 43 is complete. The pre-existing `agent_docs/latest_session_work.md` and `%SystemDrive%/` entries remain excluded.
+
+Independent plan and code scans agree on F468: the existing retranslation test drives real Korean and English language QActions and checks locale/UI changes, but does not read back the typed persisted preference or selected action. Extend those same transitions with preference, OptionState, and QAction assertions. A scoped restorer returns to the English baseline through the action and syncs while MainWindow remains alive. Temporary settings and disabled recent-database loading remain in place. No production or CMake change. Batch 44/F468 is selected; implementation and verification are pending.
+
+## 2026-10-09 - F468 Document Catalog Language QAction parity accepted
+
+F468 extends the existing MainWindow document-catalog retranslation parity test. The actual Korean and English language QAction transitions now verify `languageState->current()`, selected/unselected actions, and the typed persisted language preference after syncing. The fixture starts from English under temporary settings and disables recent-database loading. A scoped guard restores English through the QAction only when needed and syncs before MainWindow destruction on assertion exits. No production or CMake change.
+
+Focused build passed; CTest passed 1/1; direct offscreen QtTest passed 4/0/0; `git diff --check` passed. Independent Tester confirmed the test scope, fixture/restorer order, and reran CTest 1/1 and direct QtTest 4/0/0. Qt warned about a missing configured font directory, while packaged Inter/Pretendard fonts loaded. No full suite. F468 is accepted and ready to commit; Batch 44 remains active pending commit.

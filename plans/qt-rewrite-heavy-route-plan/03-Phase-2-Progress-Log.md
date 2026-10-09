@@ -17224,3 +17224,32 @@ Executor focused target build passed, focused CTest passed 1/1, and git diff --c
 review passed and focused CTest passed 1/1. Direct QtTest from the build directory exited 0 but emitted no summary, so no
 case count is recorded. No full suite was run; hover, timer, and rendered animation are outside scope. F467 is accepted
 and ready to commit; Batch 43 remains active until commit.
+### F467 committed - 2026-10-09
+
+F467, “Phase2 - Cover Sidebar Marquee QAction parity (F467),” was committed as
+0384c3768c18009689f918f456ae932c0c1d5a89 on Qt-Rewrite, 52 commits ahead of origin. The commit contains exactly
+seven paths and the cached diff check was clean. Post-commit status was clean except for excluded pre-existing
+agent_docs/latest_session_work.md and %SystemDrive%/. Batch 43 is complete. Batch 44 is active with F468 Document
+Catalog Language QAction parity selected; its acceptance plan is recorded before implementation. F467 acceptance and
+focused verification remain recorded above.
+
+### F468 acceptance plan recorded before implementation - 2026-10-09
+
+Extend mainwindow_document_catalog_retranslation_parity_tests.cpp, which already triggers actual Korean and English
+language actions and checks locale/retranslation. Assert languageState->current(), selected QAction state, and the typed
+SettingsManagerLanguagePreferencesPort::read() after both triggers.
+
+Use QTemporaryDir settings and disable recent-database loading. Scoped RAII restores the English baseline through the
+action and syncs while MainWindow remains alive, including assertion exits. Test-only, using the existing target; no
+production or CMake change. F468 is selected; implementation and verification have not started. Batch 44 remains active.
+### F468 acceptance update - 2026-10-09
+
+The existing document-catalog retranslation test now asserts languageState->current(), English/Korean QAction checked
+states, and typed SettingsManagerLanguagePreferencesPort::read() after each actual action trigger and SettingsManager sync.
+It starts with temporary English settings and recent-database loading disabled. The scope guard is declared after
+MainWindow; on early return it triggers English only if needed, then syncs. No production or CMake change.
+
+Executor focused target build passed, CTest passed 1/1, direct offscreen QtTest passed 4/0/0, and git diff --check was
+clean. Independent Tester confirmed source/restorer/fixture order, CTest 1/1, direct QtTest 4/0/0, and clean diff. Qt
+reported a missing fonts-directory warning while packaged Inter/Pretendard loaded. No full suite was run. F468 is accepted
+and ready to commit; Batch 44 remains active until commit. F469 discovery has not started and begins only after F468 commits.

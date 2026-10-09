@@ -99,10 +99,12 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
   latest_session_work.md and %SystemDrive%/. F466, “Phase2 - Cover Custom Website provider QAction modal handoff (F466),” was committed as
   0abbaf9238a25407f3c8a6c88a07adb4e93aa238 on Qt-Rewrite, 51 commits ahead of origin; Batch 42 is complete.
   Its commit contains exactly seven scoped paths and the cached diff check was clean. Post-commit status was clean except for
-  excluded pre-existing latest_session_work.md and %SystemDrive%/. Batch 43 is active with F467 Sidebar Marquee enabled-state
-  QAction parity accepted in this changeset and ready to commit. F467 acceptance and focused verification are recorded in the progress log;
-  the configured handoff scope excludes hover, timer behavior, and rendered animation. F466 acceptance/focused verification and F465,
-  F464, F463, and F462 acceptance remain recorded in the progress log.
+  excluded pre-existing latest_session_work.md and %SystemDrive%/. F467, “Phase2 - Cover Sidebar Marquee QAction parity (F467),” was committed as
+  0384c3768c18009689f918f456ae932c0c1d5a89 on Qt-Rewrite, 52 commits ahead of origin; Batch 43 is complete.
+  Its commit contains exactly seven paths and the cached diff check was clean. Post-commit status was clean except for excluded pre-existing
+  agent_docs/latest_session_work.md and %SystemDrive%/. Batch 44 is active with F468 Document Catalog Language QAction parity
+  accepted in this changeset and ready to commit. F468 acceptance and focused verification are recorded in the progress log;
+  F469 discovery begins only after F468 commits. F467 acceptance and focused verification, and earlier acceptance evidence, remain there.
   F457 acceptance and verification remain in the progress log. F456
   acceptance and focused verification remain in the progress log. F454
   acceptance and focused verification remain in the progress log. F453
@@ -137,15 +139,16 @@ log](03-Phase-2-Progress-Log.md).
   failure warning/no-navigation behavior; revisit after that behavior is
   clarified.
 
-#### Active batch: Batch 43
+#### Active batch: Batch 44
 
-F467 Sidebar Marquee configured enabled-state QAction parity is accepted in this changeset and ready to commit.
-SidebarMarqueeDelegate::marqueeEnabled() is a read-only query. The existing Sidebar Overflow action parity test drives
-the actual animateSidebarText QAction off→on→off and confirms QAction, delegate, and persisted preference at each state.
-QTemporaryDir isolates settings; recent-database loading is disabled. The RAII restorer is constructed after MainWindow.
+F468 Document Catalog Language QAction parity is accepted in this changeset and ready to commit. The existing document-
+catalog retranslation test now checks languageState->current(), English and Korean QAction checked states, and typed
+SettingsManagerLanguagePreferencesPort::read() after each real action trigger and SettingsManager sync.
 
-The test covers configured enabled-state handoff only; it does not cover hover, timer behavior, or rendered animation. No
-CMake change. Focused verification is recorded in the progress log. Batch 43 remains active until commit.
+It starts with QTemporaryDir English settings and recent-database loading disabled. A scope guard declared after
+MainWindow restores English through the action only if needed and syncs on early return. This is test-only; no production
+or CMake change. Focused verification is recorded in the progress log. Batch 44 remains active until commit; F469
+discovery begins only after F468 commits.
 
 Batch 21 began with ten candidates after F428 and is complete; F429-F438 are
 committed. F438, “Phase2 - Reject existing IDs in repeat-series creation (F438),”
@@ -204,10 +207,12 @@ The commit contains exactly seven scoped paths. Post-commit status was clean exc
   latest_session_work.md and %SystemDrive%/. F466, “Phase2 - Cover Custom Website provider QAction modal handoff (F466),” was committed as
   0abbaf9238a25407f3c8a6c88a07adb4e93aa238 on Qt-Rewrite, 51 commits ahead of origin; Batch 42 is complete.
   Its commit contains exactly seven scoped paths and the cached diff check was clean. Post-commit status was clean except for
-  excluded pre-existing latest_session_work.md and %SystemDrive%/. Batch 43 is active with F467 Sidebar Marquee enabled-state
-  QAction parity accepted in this changeset and ready to commit. F467 acceptance and focused verification are recorded in the progress log;
-  the configured handoff scope excludes hover, timer behavior, and rendered animation. F466 acceptance/focused verification and F465,
-  F464, F463, and F462 acceptance remain recorded in the progress log.
+  excluded pre-existing latest_session_work.md and %SystemDrive%/. F467, “Phase2 - Cover Sidebar Marquee QAction parity (F467),” was committed as
+  0384c3768c18009689f918f456ae932c0c1d5a89 on Qt-Rewrite, 52 commits ahead of origin; Batch 43 is complete.
+  Its commit contains exactly seven paths and the cached diff check was clean. Post-commit status was clean except for excluded pre-existing
+  agent_docs/latest_session_work.md and %SystemDrive%/. Batch 44 is active with F468 Document Catalog Language QAction parity
+  accepted in this changeset and ready to commit. F468 acceptance and focused verification are recorded in the progress log;
+  F469 discovery begins only after F468 commits. F467 acceptance and focused verification, and earlier acceptance evidence, remain there.
 remain in the progress log. F456 acceptance remains recorded there; F455/F454/F453/F452/F451 evidence remains there.
 F435 covers opening from the no-database banner.
 F444 covers replacing a distinct open profile and excludes same-path opening,
