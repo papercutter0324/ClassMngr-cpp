@@ -10,6 +10,7 @@
 #include <QApplication>
 #include <QDialog>
 #include <QInputDialog>
+#include <QMessageBox>
 #include <QPointer>
 #include <QPushButton>
 #include <QTemporaryDir>
@@ -98,6 +99,7 @@ private slots:
     void initTestCase();
     void customWebsiteActionCapturesAndPersistsEnteredUrl();
     void customWebsiteActionCancellationKeepsPreviousSettings();
+    void customWebsiteActionInvalidUrlKeepsPreviousSettingsAndReportsWarning();
 
 private:
     QTemporaryDir m_settingsDirectory;
@@ -375,6 +377,152 @@ customWebsiteActionCancellationKeepsPreviousSettings()
         providerPreferences.read(),
         PersistedProvider::ChatGPT
         );
+    QCOMPARE(customWebsitePort.read(), originalUrl);
+}
+
+void MainWindowCustomWebsiteAiCommentProviderActionParityTests::
+customWebsiteActionInvalidUrlKeepsPreviousSettingsAndReportsWarning()
+{
+    using PersistedProvider =
+        ClassMngr::Next::Application::AiCommentProvider;
+    using ClassMngr::Next::Platform::
+        SettingsManagerAiCommentCustomWebsitePort;
+    using ClassMngr::Next::Platform::
+        SettingsManagerAiCommentProviderPreferencesPort;
+
+    LanguageService languageService;
+    QVERIFY(languageService.setLanguage(Language::English));
+
+    const std::string originalUrl =
+        "https://original.example.test/";
+    const QString enteredUrl =
+        QStringLiteral("http://invalid.example.test/");
+    const SettingsManagerAiCommentProviderPreferencesPort providerPreferences;
+    const SettingsManagerAiCommentCustomWebsitePort customWebsitePort;
+    providerPreferences.write(PersistedProvider::ChatGPT);
+    customWebsitePort.write(originalUrl);
+    SettingsManager::instance().sync();
+
+    MainWindowStartupOptions startupOptions;
+    startupOptions.loadMostRecentDatabase = false;
+
+    MainWindow window(
+        [](const QString&) {},
+        false,
+        &languageService,
+        nullptr,
+        std::move(startupOptions)
+        );
+
+    CustomWebsiteSettingsRestorer settingsRestorer(
+        window,
+        ::AiCommentProvider::ChatGPT,
+        originalUrl
+        );
+    auto* const state = window.actions().aiCommentProviderState;
+    QVERIFY(state);
+
+    QAction* const chatGptAction =
+        state->action(::AiCommentProvider::ChatGPT);
+    QAction* const customWebsiteAction =
+        state->action(::AiCommentProvider::CustomWebsite);
+    QVERIFY(chatGptAction);
+    QVERIFY(customWebsiteAction);
+    QCOMPARE(state->current(), ::AiCommentProvider::ChatGPT);
+    QVERIFY(chatGptAction->isChecked());
+    QVERIFY(!customWebsiteAction->isChecked());
+    QCOMPARE(providerPreferences.read(), PersistedProvider::ChatGPT);
+    QCOMPARE(customWebsitePort.read(), originalUrl);
+
+    bool inputDialogObserved = false;
+    bool unexpectedInputModalObserved = false;
+    bool warningObserved = false;
+    bool unexpectedWarningModalObserved = false;
+    QString warningTitle;
+    QString warningText;
+    QPointer<QInputDialog> observedInputDialog;
+    QPointer<QMessageBox> observedWarning;
+
+    QTimer modalSafetyTimer(&window);
+    modalSafetyTimer.setSingleShot(true);
+    connect(
+        &modalSafetyTimer,
+        &QTimer::timeout,
+        &window,
+        []()
+        {
+            rejectUnexpectedModal();
+        }
+        );
+    modalSafetyTimer.start(2000);
+
+    QTimer::singleShot(
+        0,
+        &window,
+        [&]()
+        {
+            QWidget* const activeModal = QApplication::activeModalWidget();
+            auto* const inputDialog =
+                qobject_cast<QInputDialog*>(activeModal);
+            if (!inputDialog)
+            {
+                unexpectedInputModalObserved = activeModal != nullptr;
+                rejectUnexpectedModal();
+                return;
+            }
+
+            inputDialogObserved = true;
+            observedInputDialog = inputDialog;
+            inputDialog->setTextValue(enteredUrl);
+
+            QTimer::singleShot(
+                0,
+                &window,
+                [&]()
+                {
+                    QWidget* const warningModal =
+                        QApplication::activeModalWidget();
+                    auto* const warning =
+                        qobject_cast<QMessageBox*>(warningModal);
+                    if (!warning)
+                    {
+                        unexpectedWarningModalObserved =
+                            warningModal != nullptr;
+                        rejectUnexpectedModal();
+                        return;
+                    }
+
+                    warningObserved = true;
+                    observedWarning = warning;
+                    warningTitle = warning->windowTitle();
+                    warningText = warning->text();
+                    warning->accept();
+                }
+                );
+            inputDialog->accept();
+        }
+        );
+
+    customWebsiteAction->trigger();
+    modalSafetyTimer.stop();
+
+    QVERIFY(inputDialogObserved);
+    QVERIFY(!unexpectedInputModalObserved);
+    QVERIFY(observedInputDialog.isNull());
+    QVERIFY(warningObserved);
+    QVERIFY(!unexpectedWarningModalObserved);
+    QVERIFY(observedWarning.isNull());
+    QCOMPARE(warningTitle, QStringLiteral("Invalid AI Website"));
+    QCOMPARE(
+        warningText,
+        QStringLiteral("Enter a valid HTTPS website URL.")
+        );
+
+    QCOMPARE(state->current(), ::AiCommentProvider::ChatGPT);
+    QVERIFY(chatGptAction->isChecked());
+    QVERIFY(!customWebsiteAction->isChecked());
+    SettingsManager::instance().sync();
+    QCOMPARE(providerPreferences.read(), PersistedProvider::ChatGPT);
     QCOMPARE(customWebsitePort.read(), originalUrl);
 }
 

@@ -40,7 +40,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-09
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: Batch 61 is active with F485 Microsoft Copilot preview Copy/Open destination independently verified, accepted, and ready to commit; Gates 1 and 2 remain Partial.
+- Current note: Batch 62 is active with F486 invalid Custom Website URL rejection independently verified, accepted, and ready to commit; Gates 1 and 2 remain Partial.
 
 ### Slice discovery batches
 
@@ -65,10 +65,10 @@ Treat this plan as an operational summary, not a history:
   failure warning/no-navigation behavior; revisit after that behavior is
   clarified.
 
-#### Active batch: Batch 61
+#### Active batch: Batch 62
 
-- F485 — Microsoft Copilot preview Copy/Open destination: independently verified, accepted, and ready to commit.
-- Constraints: add one focused slot in speaking_eval_batch_report_service_tests.cpp using synthetic eligible report data and temporary settings. RAII-restore the previous provider; seed and sync MicrosoftCopilot. Reuse the scoped HTTPS handler, click the actual preview Copy/Open, and assert ActionRole leaves the preview open, clipboard exactly matches the anonymous prompt (STD_NAME present, real names absent), and exactly one intercepted URL is https://copilot.microsoft.com/. Explicitly reject and verify closure. Preserve F481-F484 coverage; no production/CMake/browser/network behavior.
+- F486 — Invalid Custom Website URL rejection: independently verified, accepted, and ready to commit.
+- Constraints: in tests/mainwindow_custom_website_ai_comment_provider_action_parity_tests.cpp, use temporary English settings and the existing RAII restorer. Start with ChatGPT and a saved valid HTTPS URL; accept an HTTP replacement through the real chooser. Assert the Invalid AI Website title and exact HTTPS warning, dismiss it, then verify ChatGPT remains selected/persisted and the saved URL is unchanged. No production/CMake/browser/network changes.
 
 ## Objective
 

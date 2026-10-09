@@ -17653,3 +17653,23 @@ The Ninja build succeeded in the VS Developer environment; CTest passed 1/1, the
 The Tester confirmed the provider restorer precedes the MicrosoftCopilot write, the scoped handler captures exactly one https://copilot.microsoft.com/ URL, and clipboard text equals the anonymous preview with STD_NAME and without Alice/김민지. The ActionRole preview stays open until explicit rejection; a cleanup timer handles unexpected modals. The executable lists the slot.
 
 Focused CTest passed 1/1 in 8.31 seconds; direct offscreen execution exited 0 and scoped diff check passed. No full suite, browser, or network. F485 is independently verified, accepted, and ready to commit; Batch 61 remains active until commit.
+
+### F485 committed - 2026-10-09
+
+F485 committed as f8453210 with six scoped paths. Batch 61 is complete. Batch 62 candidate discovery is underway for F486; selection is pending.
+
+### F486 acceptance plan recorded before implementation - 2026-10-09
+
+In tests/mainwindow_custom_website_ai_comment_provider_action_parity_tests.cpp, use temporary English settings and the existing RAII restorer. Start with ChatGPT and a saved valid HTTPS URL; accept an HTTP replacement via the real chooser. Assert the Invalid AI Website title and exact HTTPS warning, dismiss it, then verify ChatGPT remains selected and persisted and the saved URL is unchanged.
+
+Invalid-URL rejection was deferred in F466/F480/F482 and is now selected based on the source contract. The code scan also found batch-dialog Copy/Open as a future candidate. No production/CMake/browser/network changes. F486 is selected/current; implementation and verification are pending. Batch 62 remains active.
+
+### F486 implementation update - 2026-10-09
+
+The executor focused build succeeded; CTest passed 1/1 and the direct slot passed 3/0/0. Scoped diff check passed. Routine Qt font/offscreen warnings occurred. Independent verification is pending; no commit has been recorded. Batch 62 remains active.
+
+### F486 independent verification update - 2026-10-09
+
+The Tester confirmed the real chooser accepts http://invalid.example.test/, the Invalid AI Website warning title and exact text are observed and dismissed, ChatGPT remains current/checked/persisted, and the saved HTTPS URL is unchanged. RAII restoration ordering was reviewed.
+
+Focused CTest passed 1/1; the direct slot passed 3/3 including init/cleanup. The executable lists the slot. Scoped diff check exited 0 with only an LF-to-CRLF notice. No browser or network behavior. F486 is independently verified, accepted, and ready to commit; Batch 62 remains active until commit.
