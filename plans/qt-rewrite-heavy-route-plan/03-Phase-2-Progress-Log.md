@@ -17999,3 +17999,21 @@ Fix redaction ordering so longer overlapping names are handled before shorter na
 ### F503 independent verification update - 2026-10-09
 
 The Tester confirmed the overlapping-name tokens with no raw fragments and verified the existing distinct-name case. The focused Ninja target was up to date; CTest passed 1/1; the direct offscreen slot exited 0; the function list included the slot; scoped diff check exited 0. An LF-to-CRLF advisory was the only noted issue. No other production or CMake changes. F503 is independently verified, accepted, and ready to commit; Batch 79 remains active until commit.
+
+### F503 committed - 2026-10-09
+
+F503, “Phase2 - Fix overlapping classmate name redaction (F503),” committed as b07c09af with seven scoped paths, including the production source file. Batch 79 is complete. Batch 80 candidate discovery is underway for F504; selection is pending. Post-commit status contains only the excluded `latest_session_work.md` and `%SystemDrive%/`.
+
+### F504 acceptance plan recorded before implementation - 2026-10-09
+
+Add a SpeakingEvalPage Generate Comments action integration test with named students separated by an unnamed source-model row. Submit a valid response only for the later named student, apply it through the page action, and verify the comment lands on that student’s original row after the gap while adjacent rows remain unchanged. Verify one undo restores the pre-apply state.
+
+This covers the untested handoff of `sourceRow` through `SpeakingEvalPage::generateClassAiComments` to `SpeakingEvalTableView::applyChanges`. Existing dialog sourceRow and table undo tests are separate. F504 is selected/current in Batch 80; implementation and verification are pending.
+
+### F504 implementation update - 2026-10-09
+
+The new `generateCommentsAppliesToOriginalRowAndUndoesAsOneAction()` slot covers the page button → batch dialog → filtered ID → accepted source row → single undo path across an unnamed row. Initial timer-order and unscripted overwrite-modal attempts were corrected; the test uses a bounded safety close and `FakeUserPromptService`. `ClassMngrSpeakingEvalPageSaveTests` built via VsDevCmd; registered CTest passed 1/1; direct offscreen slot passed 3; `-functions` listed the slot; scoped diff check passed. Independent verification is pending; F504 remains selected/current in Batch 80.
+
+### F504 independent verification update - 2026-10-09
+
+The Tester’s read-only review confirmed Alice/unnamed/Carol mapping, Carol’s STUDENT_02 Ready response and explicit replacement, unchanged other rows, one-step undo restore, and the five-second safety modal close. The `ClassMngrSpeakingEvalPageSaveTests` build was up to date with source timestamp newer; registered CTest passed 1/1; direct offscreen execution exited 0 with no per-slot output; `-functions` listed the slot; scoped diff check passed with only an LF-to-CRLF advisory. F504 is independently verified, accepted, and ready to commit; Batch 80 remains active until commit.

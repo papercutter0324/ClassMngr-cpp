@@ -40,7 +40,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-09
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F503 is accepted and ready to commit in active Batch 79; Gates 1 and 2 remain Partial.
+- Current note: F504 is accepted and ready to commit in active Batch 80; Gates 1 and 2 remain Partial.
 
 ### Slice discovery batches
 
@@ -65,9 +65,9 @@ Treat this plan as an operational summary, not a history:
   failure warning/no-navigation behavior; revisit after that behavior is
   clarified.
 
-#### Active batch: Batch 79
+#### Active batch: Batch 80
 
-- F503 - Accepted and ready to commit: longest-first overlapping-name redaction fix and regression test.
+- F504 - Accepted and ready to commit: Generate Comments sourceRow handoff and single undo across an unnamed-row gap.
 
 ## Objective
 
