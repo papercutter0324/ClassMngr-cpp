@@ -17164,3 +17164,34 @@ VS18/Qt6.12/Ninja build passed; focused CTest passed 1/1. Independent direct QtT
 and independent CTest rerun passed 1/1. Optional Vulkan/long object-path and missing-font warnings were reported. No full
 suite was run. F465 is independently verified, accepted, and ready to commit; Batch 41 remains active until commit.
 F466 discovery has not started and begins only after F465 commits.
+### F465 committed - 2026-10-09
+
+F465, “Phase2 - Cover AI Comment Provider QAction dialog handoff (F465),” was committed as
+599916bada7a2a59ae041dc80d59cba2187cf3be on Qt-Rewrite, 50 commits ahead of origin. The commit contains exactly
+seven scoped paths. Post-commit status was clean except for excluded pre-existing latest_session_work.md and
+%SystemDrive%/. Batch 41 is complete. Batch 42 is active with F466 Custom Website provider QAction parity selected;
+its acceptance plan is recorded before implementation. F465 acceptance and focused verification remain recorded above.
+
+### F466 acceptance plan recorded before implementation - 2026-10-09
+
+Two independent reviews identified Sidebar Marquee and the macOS-only PowerPoint notice; the broader scan found an
+uncovered Custom Website provider modal path.
+
+Use a dedicated offscreen MainWindow test with temporary settings, English, and recent-database loading disabled. Trigger
+the actual Custom Website provider QAction and automate its parented QInputDialog with a valid test URL using a zero-delay
+timer. Assert the modal handoff, SettingsManagerAiCommentCustomWebsitePort::read(), and provider state become the URL/
+CustomWebsite. Restore the prior URL/provider without reopening the modal while MainWindow remains alive.
+
+No copy/open/browser/network behavior. Avoid invalid URL and Cancel paths.
+F466 is selected for implementation; implementation and verification have not started. Batch 42 remains active.
+### F466 acceptance update - 2026-10-09
+
+The actual Custom Website provider QAction opens the captured parented QInputDialog. A zero-delay timer enters
+https://example.test/ and accepts it; the test verifies the modal closes and provider/URL ports match. Unexpected
+modals are rejected and closed. RAII restores the original provider via OptionState::set and restores/syncs the URL while
+MainWindow remains alive. No Copy/Open, browser, or network behavior is exercised.
+
+VS18/Qt6.12/Ninja build passed; focused CTest passed 1/1. Independent direct QtTest setup/test/cleanup passed 3/0
+and independent CTest rerun passed 1/1. CMake used optional Vulkan/zlib fallback; Qt reported missing-font and offscreen
+warnings. No full suite was run. F466 is independently verified, accepted, and ready to commit; Batch 42 remains active
+until commit. F467 discovery has not started and begins only after F466 commits.

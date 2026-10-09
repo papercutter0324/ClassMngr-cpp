@@ -212,10 +212,12 @@ synchronization is committed (`f4bc5282`). F416 Document Catalog rendered
   latest_session_work.md and %SystemDrive%/. F464, “Phase2 - Cover AI Comment Voice QAction prompt handoff (F464),” was committed as
   27d30bbd8452f0d350e968ef462af83ae340cdd3 on Qt-Rewrite, 49 commits ahead of origin; Batch 40 is complete.
   Its commit contains exactly seven scoped paths. Post-commit status was clean except for excluded pre-existing
-  latest_session_work.md and %SystemDrive%/. Batch 41 is active with F465 AI Comment Provider QAction parity accepted
-  in this changeset and ready to commit. F465 acceptance and focused verification are recorded in the progress log;
-  F466 discovery begins only after F465 commits. F464 acceptance and focused verification, and F463/F462 evidence, remain
-  in the progress log.
+  latest_session_work.md and %SystemDrive%/. F465, “Phase2 - Cover AI Comment Provider QAction dialog handoff (F465),” was committed as
+  599916bada7a2a59ae041dc80d59cba2187cf3be on Qt-Rewrite, 50 commits ahead of origin; Batch 41 is complete.
+  Its commit contains exactly seven scoped paths. Post-commit status was clean except for excluded pre-existing
+  latest_session_work.md and %SystemDrive%/. Batch 42 is active with F466 Custom Website provider QAction parity
+  accepted in this changeset and ready to commit. F466 acceptance and focused verification are recorded in the progress log;
+  F467 discovery begins only after F466 commits. F465, F464, F463, and F462 acceptance and focused verification remain in the progress log.
   F457 acceptance and verification remain in the progress log. F456
   acceptance and focused verification remain in the progress log. F454
   acceptance and focused verification remain in the progress log. F453
