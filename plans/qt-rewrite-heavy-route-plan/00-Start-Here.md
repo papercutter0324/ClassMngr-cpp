@@ -196,10 +196,11 @@ synchronization is committed (`f4bc5282`). F416 Document Catalog rendered
   719efeacb6e5a8533f2dd45f6fb0fdfe152c0714 on Qt-Rewrite, 42 commits ahead of origin; Batch 33 is
   complete. Its commit contains exactly seven scoped paths and the cached diff check was clean. Batch 34 is complete. F458, “Phase2 - Cover Theme QAction application handoff (F458),” is
   committed as 2ec351a805af2064a865c34b76b46f60df80acdc on Qt-Rewrite, 43 commits ahead of origin.
-  Its commit contains exactly seven scoped paths and the cached diff check was clean. Batch 35 is active
-  with F459 Document Viewer Background QAction parity is accepted in this changeset and
-ready to commit. Acceptance and focused verification are recorded in the progress log. F458
-  acceptance and verification remain in the progress log. F457 acceptance and verification remain in the progress log. F456
+  F459 Document Viewer Background QAction parity is committed as cba31503f0bb5accf68de2032131db984403deff;
+  Batch 35 is complete. F460 PDF Document Viewer Page Spacing QAction parity is accepted in this changeset and
+  ready to commit; Batch 36 remains active until commit. F461 discovery begins after F460 commits. F460
+  acceptance and focused verification are recorded in the progress log. F459 acceptance and focused verification,
+  and F458 acceptance and verification, remain recorded there. F457 acceptance and verification remain in the progress log. F456
   acceptance and verification remain in the progress log. F455
   acceptance and focused verification remain in the progress log. F454
   acceptance and focused verification remain in the progress log. F453

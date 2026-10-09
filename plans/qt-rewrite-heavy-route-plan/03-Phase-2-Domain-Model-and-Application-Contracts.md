@@ -77,10 +77,11 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
   719efeacb6e5a8533f2dd45f6fb0fdfe152c0714 on Qt-Rewrite, 42 commits ahead of origin; Batch 33 is
   complete. Its commit contains exactly seven scoped paths and the cached diff check was clean. Batch 34 is complete. F458, “Phase2 - Cover Theme QAction application handoff (F458),” is
   committed as 2ec351a805af2064a865c34b76b46f60df80acdc on Qt-Rewrite, 43 commits ahead of origin.
-  Its commit contains exactly seven scoped paths and the cached diff check was clean. Batch 35 is active
-  with F459 Document Viewer Background QAction parity is accepted in this changeset and
-ready to commit. Acceptance and focused verification are recorded in the progress log. F458
-  acceptance and verification remain in the progress log. F457 acceptance and verification remain in the progress log. F456
+  F459 Document Viewer Background QAction parity is committed as cba31503f0bb5accf68de2032131db984403deff;
+  Batch 35 is complete. F460 PDF Document Viewer Page Spacing QAction parity is accepted in this changeset and
+  ready to commit; Batch 36 remains active until commit. F461 discovery begins after F460 commits. F460
+  acceptance and focused verification are recorded in the progress log. F459 acceptance and focused verification,
+  and F458 acceptance and verification, remain recorded there. F457 acceptance and verification remain in the progress log. F456
   acceptance and verification remain in the progress log. F455
   acceptance and focused verification remain in the progress log. F454
   acceptance and focused verification remain in the progress log. F453
@@ -115,10 +116,13 @@ log](03-Phase-2-Progress-Log.md).
   failure warning/no-navigation behavior; revisit after that behavior is
   clarified.
 
-#### Active batch: Batch 35
+#### Active batch: Batch 36
 
-F459 Document Viewer Background QAction parity is accepted in this changeset and
-ready to commit. Acceptance and focused verification are recorded in the progress log.
+F460 PDF Document Viewer Page Spacing QAction parity is accepted in this changeset and ready to commit. A dedicated
+MainWindowDocumentViewerPageSpacingActionParity target/test uses temporary settings and disables recent-database
+loading. On a blank viewer, actual Large then Small actions verify checked/state, persisted preferences, and public
+QPdfView pageSpacing values 32/8. RAII cleanup restores Small while MainWindow remains alive. Focused verification
+is recorded in the progress log; Batch 36 remains active until commit. F461 discovery starts after F460 commits.
 
 
 Batch 21 began with ten candidates after F428 and is complete; F429-F438 are
@@ -155,9 +159,11 @@ The commit contains exactly seven scoped paths and its cached diff check was cle
 committed as 719efeacb6e5a8533f2dd45f6fb0fdfe152c0714 on Qt-Rewrite, 42 commits ahead of origin.
 Its commit contains exactly seven scoped paths and the cached diff check was clean. Batch 34 is complete. F458, “Phase2 - Cover Theme QAction application handoff (F458),” is
 committed as 2ec351a805af2064a865c34b76b46f60df80acdc on Qt-Rewrite, 43 commits ahead of origin.
-Its commit contains exactly seven scoped paths and the cached diff check was clean. Batch 35 is active
-with F459 Document Viewer Background QAction parity is accepted in this changeset and
-ready to commit. Acceptance and focused verification are recorded in the progress log. F458
+Its commit contains exactly seven scoped paths and the cached diff check was clean. F459 Document Viewer
+Background QAction parity is committed as cba31503f0bb5accf68de2032131db984403deff; Batch 35 is complete.
+F460 PDF Document Viewer Page Spacing QAction parity is accepted in this changeset and ready to commit; Batch 36
+remains active until commit. F461 discovery begins after F460 commits. Acceptance and focused verification are in the progress log. F459 acceptance and focused verification
+remain recorded in the progress log. F458
 acceptance and verification remain recorded in the progress log.
 F456 acceptance remains recorded in the progress log; F455/F454/F453/F452/F451 evidence remains there.
 F435 covers opening from the no-database banner.

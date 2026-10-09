@@ -3307,3 +3307,19 @@ F458, `Phase2 - Cover Theme QAction application handoff (F458)`, committed as `2
 The next gap was the MainWindow Document Viewer Background option. Existing tests exercise preference persistence through `OptionState::set(...)` but do not trigger the MainWindow QAction. The new offscreen test creates a blank viewer via PageManager, triggers Black, and checks the actual action/state, persisted value, viewer/viewport properties, and palette color before restoring Default. This gives a direct presentation assertion without loading a PDF or creating a database. Save Mode remains uncovered but crosses into autosave state and timer behavior. No production changes.
 
 Verification passed with VS18/Qt6.12/Ninja: focused target build succeeded; focused CTest passed 1/1; independent direct QtTest and CTest reruns passed (3/0 incidents and 1/1 CTest); `git diff --check` and untracked-source whitespace/conflict checks are clean. CMake reported unrelated long object paths during reconfigure; Qt's missing bundled `lib/fonts` warning remained while packaged Inter/Pretendard loaded. No full suite. F459 is accepted and ready to commit; Batch 35 remains active until commit.
+
+## 2026-10-09 - F459 committed; F460 discovery complete
+
+F459 committed as `cba31503f0bb5accf68de2032131db984403deff` (`Phase2 - Cover Document Viewer Background QAction parity (F459)`); `Qt-Rewrite` is 44 commits ahead of origin. Exactly seven scoped paths were committed and the cached diff check was clean. Batch 35 is complete. Two independent read-only reviews identified Page Spacing QAction parity as the next bounded gap: existing coverage sets the option directly and does not trigger the MainWindow action. Batch 36 is active with F460 selected. The pre-existing changes to `agent_docs/latest_session_work.md` and `%SystemDrive%/` remain excluded.
+
+## 2026-10-09 - F460 Document Viewer Page Spacing QAction acceptance
+
+Acceptance: Add a dedicated offscreen MainWindow parity target that isolates settings, disables recent-database loading, and creates a blank viewer using `pageManager()->ensurePdfViewerPage()`. Trigger the actual Large then Small Page Spacing actions. Check that each is enabled and selected, that the option state and persisted preference match Large/Small, and that the public `QPdfView::pageSpacing()` accessor reports 32/8 pixels. Use RAII to restore Small while MainWindow remains alive even if a QtTest assertion returns early. No PDF load, database, network, autosave timer, production change, or user-file access.
+
+Source map: ActionRegistry Page Spacing options -> Documents menu -> MainWindow action connection -> PageManager -> `PdfViewerPage::setDocumentPageSpacing()` -> `QPdfView::setPageSpacing()`. The focused test will be registered in `cmake/tests/pages_and_output.cmake`. Batch 36/F460 is selected; implementation, independent verification, and commit are pending.
+
+## 2026-10-09 - F460 Document Viewer Page Spacing QAction accepted
+
+Implementation added a dedicated `MainWindowDocumentViewerPageSpacingActionParity` target and test. The test creates a blank PDF viewer, triggers Large then Small through the actual MainWindow actions, and checks action selection, option state, persisted values, and the public QPdfView spacing values (32 and 8 pixels). A scoped restorer changes the option back to Small while MainWindow and the viewer still exist, including QtTest early-return paths. Settings are temporary and recent-database loading is disabled; no PDF is opened and there is no database, network, or autosave activity. No production code changed.
+
+Verification passed: VS18/Qt6.12/Ninja target build; focused CTest 1/1; independent direct QtTest setup/test/cleanup 3 passed, 0 failed; independent CTest rerun 1/1. Qt logged the existing missing bundled `lib/fonts` path while packaged Inter/Pretendard loaded. No full suite. F460 is accepted and ready to commit; Batch 36 is active pending commit.

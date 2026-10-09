@@ -16980,3 +16980,27 @@ cleanup passed 3/0 and independent CTest rerun passed 1/1. git diff --check and 
 scan were clean. Qt reported the missing bundled lib/fonts path while Inter/Pretendard loaded; CMake
 reported unrelated long object paths during reconfigure. No full suite was run; no document loading, database,
 or network coverage is claimed. F459 is accepted and ready to commit; Batch 35 remains active.
+### F459 committed - 2026-10-09
+
+F459 Document Viewer Background QAction parity was committed as cba31503f0bb5accf68de2032131db984403deff.
+Batch 35 is complete. Batch 36 is active with F460 PDF Document Viewer Page Spacing QAction parity selected. F459
+acceptance and focused verification remain recorded above.
+
+### F460 acceptance plan recorded before implementation - 2026-10-09
+
+Use a dedicated MainWindow action-parity test with a blank PDF viewer. Isolate settings with a temporary
+CLASSMNGR_SETTINGS_ROOT and disable recent-database loading. Trigger the actual Large action, then the actual Small
+action; verify each action checked state, the corresponding state and persisted preference, and QPdfView
+pageSpacing values of 32 and 8. Scoped cleanup restores Small. This matrix is planned only; implementation and
+verification have not started. F461 discovery begins after F460 commits.
+### F460 acceptance update - 2026-10-09
+
+The dedicated MainWindowDocumentViewerPageSpacingActionParity target/test uses temporary settings and disables
+recent-database loading. On a blank PDF viewer, the test triggers the actual Large then Small actions and verifies
+action/check state, persisted preferences, and public QPdfView pageSpacing values 32/8. RAII cleanup restores Small
+while MainWindow remains alive.
+
+VS18/Qt6.12/Ninja target build passed; focused CTest passed 1/1. Independent direct QtTest setup/test/cleanup
+passed 3/0 and independent CTest rerun passed 1/1. Qt reported a missing lib/fonts path while packaged
+Inter/Pretendard fonts loaded. No full suite was run. F460 is accepted and ready to commit; Batch 36 remains active
+until commit, and F461 discovery begins after F460 commits.
