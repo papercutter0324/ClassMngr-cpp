@@ -42,7 +42,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-10
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F527 passed after target-specific fixture repairs, and F528 is next in Batch 102; Sub Prep memory acceptance remains open after F526 exceeded the strict 250 MiB working-set target, with full Phase 0 and visual gates also open.
+- Current note: F528 found material visual differences and F529 is next; Sub Prep memory, visual parity, and full Phase 0 gates remain open.
 
 ### Slice discovery batches
 
@@ -67,9 +67,13 @@ Treat this plan as an operational summary, not a history:
   failure warning/no-navigation behavior; revisit after that behavior is
   clarified.
 
-#### Active batch: Batch 102
+#### Active batch: Batch 103
 
-- F528 - Confirm Sub Prep capture provenance, then compare captures with approved visual references.
+- F529 - Diagnose whether the Sub Prep capture mismatches reflect capture divergence or a product regression.
+- F530 - Diagnose the F526 PDF-reopen working-set peak before proposing a remedy.
+- F531 - Record release-route source revision provenance in the run manifest.
+- F532 - Compare Sub Prep PDFs with approved references using a matched fixture and date.
+- F533 - Test Sub Prep output-dialog cancellation and verify cleanup.
 
 ## Objective
 

@@ -111,8 +111,12 @@ failure cleanup checks pass. Work Package F has moved the information-sheet
 and roster stages to separate bounded Application projections; the package
 service releases the information-sheet input before loading roster records,
 and the data repository applies row/cell caps before creating a dense roster
-projection. Packaged Release memory acceptance and the full UI visual-state
-gate remain open; the next slice runs the Release memory gate.
+projection. F526 completed the packaged Release `lifecycle-sub-prep` and
+`output-sub-prep` evidence routes. Memory acceptance remains open: lifecycle
+peak working set was 264,310,784 bytes, 2,166,784 above 262,144,000; settled
+lifecycle and all output-route working-set samples were below target. The next
+memory action is F530's diagnosis of the PDF-reopen peak; F529 visual mismatch
+work is tracked in the Phase 2 plan and log.
 
 This is an implementation slice, not a new rewrite phase. The existing
 large-workspace fixture remains a required stress input. A bounded fixture may
