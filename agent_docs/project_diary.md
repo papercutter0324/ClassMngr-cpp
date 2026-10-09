@@ -3591,3 +3591,11 @@ F483 discovery selected Gemini preview Copy/Open destination coverage. The plan 
 F483 Gemini preview handoff implementation and focused checks passed: build, CTest 1/1, direct slot 3/0/0, and diff check. Independent review is pending.
 
 Independent review accepted F483. CTest passed 1/1, direct slot exited 0, and diff check passed. The slot captures Gemini’s URL without external navigation, verifies the anonymous prompt, and preserves modal/provider cleanup. Ready to commit.
+
+F483 committed as `3589209f` with six scoped paths; Batch 59 is complete. Only the excluded pre-existing worktree entries remain. F484 discovery begins.
+
+F484 discovery selected Claude preview Copy/Open destination. Independent scans confirmed the destination is uncovered and production maps Claude to https://claude.ai/. Acceptance reuses the scoped handler/restorer and verifies anonymous clipboard and ActionRole modal behavior. No browser/network or production/CMake changes. Batch 60 active; implementation pending.
+
+F484 Claude preview handoff implementation and focused checks passed: build, CTest 1/1, direct slot 3/0/0, and diff check. Independent review is pending.
+
+Independent review accepted F484. CTest passed 1/1, direct slot exited 0, and diff check passed. The slot captures Claude’s URL without external navigation and verifies anonymous clipboard and modal cleanup. Ready to commit.

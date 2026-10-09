@@ -17609,3 +17609,25 @@ The Ninja build succeeded in the VS Developer environment; CTest passed 1/1, the
 The Tester confirmed the provider restorer precedes the Gemini preference write, exactly one https://gemini.google.com/app URL is captured, the clipboard contains the anonymous prompt, and ActionRole remains active until explicit rejection. Timeout cleanup is covered; F481/F482 remain unchanged.
 
 Focused CTest passed 1/1; direct offscreen execution exited 0; diff check passed with an LF-to-CRLF notice. The Ninja executable lists the new slot. No full suite, browser, or network. F483 is independently verified, accepted, and ready to commit; Batch 59 remains active until commit.
+
+### F483 committed - 2026-10-09
+
+F483 committed as 3589209f with six scoped paths. Batch 59 is complete. Batch 60 candidate discovery is underway for F484; selection is pending.
+
+### F484 acceptance plan recorded before implementation - 2026-10-09
+
+Add a Claude case in tests/speaking_eval_batch_report_service_tests.cpp using synthetic eligible report data and temporary settings. RAII-restore the previous provider, seed and sync Claude, then reuse the scoped HTTPS handler. Click the actual preview Copy/Open and assert ActionRole leaves the preview open, clipboard exactly matches the anonymous prompt (STD_NAME present and real student names absent), and exactly one intercepted URL equals https://claude.ai/. Explicitly reject and verify closure. Preserve F481-F483 tests.
+
+Both scans confirmed the Claude preview handoff is untested and verified the source URL mapping. No production/CMake/browser/network behavior. F484 is selected/current; implementation and verification are pending. Batch 60 remains active.
+
+### F484 implementation update - 2026-10-09
+
+One Claude Copy/Open slot uses scoped provider and HTTPS cleanup, verifies the exact anonymous clipboard and https://claude.ai/ capture, and checks ActionRole leaves the preview open before explicit close.
+
+The Ninja build succeeded in the VS Developer environment; CTest passed 1/1, the direct slot passed 3/0/0, and diff check passed. Qt font/offscreen warnings only. Independent verification is pending. No browser/network or production/CMake changes. Batch 60 remains active.
+
+### F484 independent verification update - 2026-10-09
+
+The Tester confirmed the provider restorer precedes the Claude write, exactly one https://claude.ai/ URL is captured, clipboard matches the anonymous prompt, and the ActionRole preview remains open until explicit rejection. Timeout cleanup is covered.
+
+Focused Ninja CTest passed 1/1 in 8.64s; direct offscreen execution exited 0 without output. Scoped diff check passed, and the executable lists the slot. No full suite, browser, or network. F484 is independently verified, accepted, and ready to commit; Batch 60 remains active until commit.
