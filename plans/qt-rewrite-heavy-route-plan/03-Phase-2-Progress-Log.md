@@ -16899,3 +16899,46 @@ git diff --check was clean. Warnings were the pre-existing long CMake object pat
 Vulkan-header warnings during reconfigure, plus Qt missing the bundled lib/fonts path while
 Inter/Pretendard loaded. No full project suite was run. F457 is accepted and ready to commit; Batch 33
 remains active.
+
+### F457 committed - 2026-10-09
+
+F457, “Phase2 - Cover Font Size QAction application handoff (F457),” was committed as
+719efeacb6e5a8533f2dd45f6fb0fdfe152c0714 on Qt-Rewrite, 42 commits ahead of origin. Its commit
+contains exactly seven scoped paths and the cached diff check was clean. Batch 33 is complete. Batch 34
+is active with F458 bounded QAction coverage discovery underway; no candidate has been selected yet.
+F457 acceptance and verification remain recorded above.
+
+### F458 acceptance plan recorded before implementation - 2026-10-09
+
+Current tests call OptionState::set and do not exercise Theme QAction wiring through MainWindow. Select
+a dedicated offscreen MainWindowThemeActionParity test for the actual Dark theme QAction. Save mode
+has broader autosave/timer effects.
+
+Use temporary CLASSMNGR_SETTINGS_ROOT; seed SettingsManagerThemePreferencesPort with Light; inject a
+Light ThemeService through MainWindowStartupOptions.startupThemeService; and disable recent-database
+loading. Trigger window.actions().themeState->action(Theme::Dark). Assert Dark selected/checked, Light
+unchecked, persisted Dark preference, ThemeService::currentTheme()==Dark, QApplication Window palette
+color #202326, and MainWindow theme property dark. Trigger Light and verify state, preference, service,
+palette, and property return to Light.
+
+Capture the original QApplication palette and style. Use scoped restoration while MainWindow and the
+injected service are still alive, including QtTest assertion-return paths. No production changes are
+planned. F458 is selected/current in Batch 34; this plan is not implemented or verified.
+
+### F458 acceptance update - 2026-10-09
+
+Added mainwindow_theme_action_parity_tests.cpp and dedicated offscreen target/resources. With
+temporary settings, seeded Light preference and injected Light ThemeService, and recent-database
+loading disabled, the actual Dark QAction asserted enabled and verified action/state, preference,
+service, application palette, and MainWindow theme property; switching back to Light verified the
+corresponding restoration assertions.
+
+The original QApplication palette/stylesheet snapshot was taken before applying Light. A scoped RAII
+guard restores app state while MainWindow and the injected ThemeService remain alive, including on
+QtTest assertion-return paths.
+
+Focused Ninja target build passed; exact CTest passed 1/1; the independent direct QtTest passed
+setup/test/cleanup 3/0; independent CTest rerun passed 1/1. git diff --check and untracked-source
+whitespace check were clean. Qt reported the missing bundled lib/fonts path while Inter/Pretendard
+loaded; CMake reported unrelated long object-path warnings during reconfigure. No full suite was run.
+F458 is accepted and ready to commit; Batch 34 remains active.

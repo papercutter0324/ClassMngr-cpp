@@ -3280,10 +3280,20 @@ Verification: the Ninja target build passed under Visual Studio 18 with Qt 6.12;
 
 ## 2026-10-09 - F456 committed; F457 discovery started
 
-F456 committed as `d90def93f7947d0f031dc6f37a8a4a491f4d3718` (`Phase2 - Cover Check for Updates QAction manual handoff (F456)`); the branch is ahead by 41. Exactly the seven approved paths were committed and the cached diff check was clean. `agent_docs/latest_session_work.md` and `%SystemDrive%/` remain outside. Batch 32 is complete. Batch 33 is active with F457 selected for implementation.
+F456 committed as `d90def93f7947d0f031dc6f37a8a4a491f4d3718` (`Phase2 - Cover Check for Updates QAction manual handoff (F456)`); the branch was ahead by 41. Exactly the seven approved paths were committed and the cached diff check was clean. `agent_docs/latest_session_work.md` and `%SystemDrive%/` remain outside. Batch 32 is complete. Batch 33 is active with F457 selected for implementation.
 
 ## 2026-10-09 - F457 Font Size QAction accepted
 
 The next bounded QAction gap was the MainWindow Font Size option. Existing tests cover persistence and visual effects by calling `OptionState::set(...)`, but do not trigger MainWindow's Font Size QAction. The new offscreen parity target isolates settings, uses an English/Normal baseline, disables recent-database loading, then triggers Large and checks state, saved preference, FontManager offset, and QApplication font size. An RAII guard restores the original app font and static offset after MainWindow destruction, including assertion-return paths. No production behavior changed.
 
-Verification passed with VS18/Qt6.12/Ninja: focused target build succeeded; focused CTest passed 1/1; direct QtTest and independent rerun passed setup/test/cleanup (3/0 each); independent focused CTest passed 1/1; `git diff --check` is clean. Reconfigure warnings noted pre-existing long object paths and missing optional Vulkan headers; Qt's bundled `lib/fonts` path warning remained while Inter/Pretendard loaded. No full suite was run. F457 is accepted and ready to commit; Batch 33 remains active until commit.
+Verification passed with VS18/Qt6.12/Ninja: focused target build succeeded; focused CTest passed 1/1; direct QtTest and independent rerun passed setup/test/cleanup (3/0 each); independent focused CTest passed 1/1; `git diff --check` is clean. Reconfigure warnings noted pre-existing long object paths and missing optional Vulkan headers; Qt's bundled `lib/fonts` path warning remained while Inter/Pretendard loaded. No full suite was run. F457 is accepted; commit transition follows.
+
+## 2026-10-09 - F457 committed; F458 discovery started
+
+F457, `Phase2 - Cover Font Size QAction application handoff (F457)`, committed as `719efeacb6e5a8533f2dd45f6fb0fdfe152c0714` on `Qt-Rewrite` (42 commits ahead of origin). Exactly seven scoped paths were committed and the cached diff check was clean. Batch 33 is complete; Batch 34 is active with F458 Theme QAction coverage selected for implementation. `agent_docs/latest_session_work.md` and `%SystemDrive%/` remain excluded user changes.
+
+## 2026-10-09 - F458 Theme QAction accepted
+
+Theme was the next uncovered MainWindow option QAction with a direct visible effect; existing tests used `themeState->set(...)` but did not exercise the QAction-to-ThemeController path. The new test isolates settings, injects a Light ThemeService, triggers Dark, and checks action/state/persistence plus service theme, application Window palette, and MainWindow theme property. It then triggers Light and verifies the restored state and presentation. A cleanup guard now captures the application palette/stylesheet before applying Light and restores them while MainWindow and its service remain alive, including assertion-return paths. Save mode remains an alternative with broader autosave/timer effects. No production changes.
+
+Verification passed with VS18/Qt6.12/Ninja: focused target build succeeded; focused CTest passed 1/1; independent direct QtTest and CTest reruns passed (3/0 incidents and 1/1 CTest); `git diff --check` and untracked-source whitespace checks are clean. CMake reported unrelated long object paths during reconfigure; Qt's missing bundled `lib/fonts` directory warning remained while packaged Inter/Pretendard loaded. No full suite. F458 is accepted and ready to commit; Batch 34 remains active until commit.
