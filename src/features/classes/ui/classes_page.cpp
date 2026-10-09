@@ -482,6 +482,11 @@ ClassesPageRuntimeMetrics ClassesPage::runtimeMetrics() const
     metrics.teacherQueryCount = m_teacherQueryCount;
     metrics.teacherResultRowCount = m_teacherResultRowCount;
     metrics.visibleSectionCount = m_visibleSectionCount;
+    if (const BasePage* editor = activeEditor())
+    {
+        metrics.selectedEditorDescendantWidgetCount =
+            static_cast<int>(editor->findChildren<QWidget*>().size());
+    }
     metrics.loadedEditorClassCount = m_loadedEditorClassIds.size();
     metrics.rebuildCount = m_rebuildCount;
     metrics.selectedClassId = m_currentClassId;

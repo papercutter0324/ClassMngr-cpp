@@ -16,6 +16,7 @@ struct StartupApplicationMetrics
     int widgetCount = 0;
     int instantiatedPageCount = 0;
     int registeredPageCount = 0;
+    QJsonObject instantiatedPageWidgetDescendantCounts;
     int subPrepClassInformationWidgetCount = 0;
     int subPrepClassInformationTextEditCount = 0;
     int subPrepClassInformationNavigationRowCount = 0;
@@ -51,6 +52,7 @@ struct StartupApplicationMetrics
     int classesTeacherResultRowCount = 0;
     int classesVisibleSectionCount = 0;
     int classesInstantiatedEditorCount = 0;
+    int classesSelectedEditorDescendantWidgetCount = 0;
     int classesLoadedEditorClassCount = 0;
     int classesRebuildCount = 0;
     int classesSelectedClassId = -1;

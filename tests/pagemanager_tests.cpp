@@ -1,4 +1,5 @@
 #include "core/application_services.h"
+#include "features/classes/ui/classes_page.h"
 #include "features/calendar/ui/calendar_page.h"
 #include "features/my_info/ui/my_workspace_page.h"
 #include "features/schedule/ui/schedule_widget.h"
@@ -14,6 +15,7 @@ class PageManagerTests : public QObject
 
 private slots:
     void heavyPagesAreDeferredAndReused();
+    void pageWidgetDescendantCountsAreOnDemandValues();
     void scheduleWidgetsAreCreatedOnlyForOpenedScheduleViews();
     void registeredPagesAreCreatedOnFirstUse();
     void preparingCalendarDoesNotActivateItsHiddenTab();
@@ -86,6 +88,148 @@ void PageManagerTests::heavyPagesAreDeferredAndReused()
 
     QCOMPARE(pages.pdfViewerPage(), firstViewer);
     QCOMPARE(pdfPageCreations, 1);
+}
+
+void PageManagerTests::pageWidgetDescendantCountsAreOnDemandValues()
+{
+    ApplicationServices services;
+    PageManager pages;
+    pages.initialize(&services, false);
+
+    const auto countForPage =
+        [](const QList<PageWidgetDescendantCount>& counts,
+           const QString& pageKey)
+        {
+            for (const PageWidgetDescendantCount& count : counts)
+            {
+                if (count.pageKey == pageKey)
+                {
+                    return count.descendantWidgetCount;
+                }
+            }
+            return -1;
+        };
+
+    const QString workspaceKey =
+        PageManager::pageTypeIdentifier(PageType::MyWorkspace);
+    const QString classesKey =
+        PageManager::pageTypeIdentifier(PageType::Classes);
+    const int registeredPageCount = pages.registeredPageCount();
+    const QList<PageType> allPageTypes{
+        PageType::MyWorkspace,
+        PageType::MyClasses,
+        PageType::Schedule,
+        PageType::Classes,
+        PageType::TestingClasses,
+        PageType::TeacherInfo,
+        PageType::NativeEnglishTeachers,
+        PageType::GsTeam,
+        PageType::CampusDashboard,
+        PageType::SubPrep,
+        PageType::PdfViewer
+    };
+    const auto pageKeysFor =
+        [](
+            const QList<PageWidgetDescendantCount>& counts
+            )
+        {
+            QList<QString> reportedKeys;
+            for (const PageWidgetDescendantCount& count : counts)
+            {
+                reportedKeys.append(count.pageKey);
+            }
+            return reportedKeys;
+        };
+    const auto instantiatedPageKeys =
+        [&pages, &allPageTypes]()
+        {
+            QList<QString> instantiatedKeys;
+            for (const PageType type : allPageTypes)
+            {
+                if (pages.isPageInstantiated(type))
+                {
+                    instantiatedKeys.append(
+                        PageManager::pageTypeIdentifier(type)
+                        );
+                }
+            }
+            return instantiatedKeys;
+        };
+
+    const QList<PageWidgetDescendantCount> initialCounts =
+        pages.instantiatedPageWidgetDescendantCounts();
+    QCOMPARE(pageKeysFor(initialCounts), instantiatedPageKeys());
+    QCOMPARE(initialCounts.size(), 1);
+    QCOMPARE(countForPage(initialCounts, classesKey), -1);
+    QCOMPARE(pages.instantiatedPageCount(), 1);
+    QVERIFY(pages.isCurrentPage(PageType::MyWorkspace));
+    QCOMPARE(
+        countForPage(initialCounts, workspaceKey),
+        pages.myWorkspacePage()->findChildren<QWidget*>().size()
+        );
+
+    auto* hiddenContainer = new QWidget(pages.myWorkspacePage());
+    new QWidget(hiddenContainer);
+    hiddenContainer->hide();
+    const QList<PageWidgetDescendantCount> withTemporaryWidget =
+        pages.instantiatedPageWidgetDescendantCounts();
+    QCOMPARE(pageKeysFor(withTemporaryWidget), instantiatedPageKeys());
+    const int temporaryWidgetCount =
+        countForPage(withTemporaryWidget, workspaceKey);
+    QCOMPARE(
+        temporaryWidgetCount,
+        countForPage(initialCounts, workspaceKey) + 2
+        );
+    delete hiddenContainer;
+
+    const QList<PageWidgetDescendantCount> afterSynchronousDelete =
+        pages.instantiatedPageWidgetDescendantCounts();
+    QCOMPARE(
+        countForPage(afterSynchronousDelete, workspaceKey),
+        countForPage(initialCounts, workspaceKey)
+        );
+    // A prior report remains an integer/key snapshot after the widget dies.
+    QCOMPARE(
+        countForPage(withTemporaryWidget, workspaceKey),
+        temporaryWidgetCount
+        );
+    QCOMPARE(pages.instantiatedPageCount(), 1);
+    QCOMPARE(pages.registeredPageCount(), registeredPageCount);
+    QVERIFY(pages.isCurrentPage(PageType::MyWorkspace));
+
+    pages.showPage(PageType::Classes);
+    BasePage* classesPage = pages.classesPage();
+    QVERIFY(classesPage);
+    const QList<PageWidgetDescendantCount> withClassesPage =
+        pages.instantiatedPageWidgetDescendantCounts();
+    QCOMPARE(pageKeysFor(withClassesPage), instantiatedPageKeys());
+    QCOMPARE(withClassesPage.size(), 2);
+    QCOMPARE(
+        countForPage(withClassesPage, classesKey),
+        classesPage->findChildren<QWidget*>().size()
+        );
+    QCOMPARE(pages.instantiatedPageCount(), 2);
+    QVERIFY(pages.isCurrentPage(PageType::Classes));
+
+    pages.showPage(PageType::MyWorkspace);
+    const QList<PageWidgetDescendantCount> afterLeave =
+        pages.instantiatedPageWidgetDescendantCounts();
+    QCOMPARE(pageKeysFor(afterLeave), instantiatedPageKeys());
+    QCOMPARE(afterLeave.size(), 2);
+    QCOMPARE(pages.instantiatedPageCount(), 2);
+    QVERIFY(pages.isCurrentPage(PageType::MyWorkspace));
+    QCOMPARE(
+        countForPage(afterLeave, classesKey),
+        classesPage->findChildren<QWidget*>().size()
+        );
+
+    pages.showPage(PageType::Classes);
+    QCOMPARE(pages.instantiatedPageCount(), 2);
+    QVERIFY(pages.isCurrentPage(PageType::Classes));
+    QCOMPARE(
+        countForPage(pages.instantiatedPageWidgetDescendantCounts(), classesKey),
+        classesPage->findChildren<QWidget*>().size()
+        );
 }
 
 void PageManagerTests::scheduleWidgetsAreCreatedOnlyForOpenedScheduleViews()

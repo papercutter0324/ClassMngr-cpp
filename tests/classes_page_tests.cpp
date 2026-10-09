@@ -877,12 +877,50 @@ void ClassesPageTests::navigationReleaseCachesSnapshotAndEditorsAcrossReentry()
     page.resize(1200, 800);
     page.show();
     QApplication::processEvents();
+    QCOMPARE(
+        page.runtimeMetrics().selectedEditorDescendantWidgetCount,
+        0
+        );
     QVERIFY(page.openClass(42, ClassesSection::Notes));
     QCOMPARE(page.currentClassId(), 42);
     QVERIFY(page.isEditorInstantiated(ClassesSection::Notes));
 
     auto* const notesPage = page.findChild<ClassNotesPage*>();
     QVERIFY(notesPage);
+    int notesDescendantWidgetCount =
+        notesPage->findChildren<QWidget*>().size();
+    QVERIFY(notesDescendantWidgetCount > 0);
+    QCOMPARE(
+        page.runtimeMetrics().selectedEditorDescendantWidgetCount,
+        notesDescendantWidgetCount
+        );
+    auto* const sectionTabsForMetrics =
+        page.findChild<NavigationTabWidget*>(
+            QStringLiteral("classesSectionTabs")
+            );
+    QVERIFY(sectionTabsForMetrics);
+    sectionTabsForMetrics->setCurrentIndex(0);
+    QCOMPARE(page.currentSection(), ClassesSection::Details);
+    auto* const detailsPageForMetrics =
+        page.findChild<ClassDetailsPage*>();
+    QVERIFY(detailsPageForMetrics);
+    const int detailsDescendantWidgetCount =
+        detailsPageForMetrics->findChildren<QWidget*>().size();
+    QVERIFY(detailsDescendantWidgetCount > 0);
+    QCOMPARE(
+        page.runtimeMetrics().selectedEditorDescendantWidgetCount,
+        detailsDescendantWidgetCount
+        );
+    sectionTabsForMetrics->setCurrentIndex(
+        sectionTabsForMetrics->count() - 1
+        );
+    QCOMPARE(page.currentSection(), ClassesSection::Notes);
+    notesDescendantWidgetCount =
+        notesPage->findChildren<QWidget*>().size();
+    QCOMPARE(
+        page.runtimeMetrics().selectedEditorDescendantWidgetCount,
+        notesDescendantWidgetCount
+        );
     const QList<QTextEdit*> noteEditors =
         notesPage->findChildren<QTextEdit*>();
     QCOMPARE(noteEditors.size(), 2);
@@ -908,6 +946,10 @@ void ClassesPageTests::navigationReleaseCachesSnapshotAndEditorsAcrossReentry()
     QVERIFY(oldSectionTabs);
     const ClassesPageRuntimeMetrics beforeLeave = page.runtimeMetrics();
     QVERIFY(beforeLeave.navigationWidgetCount > 0);
+    QCOMPARE(
+        beforeLeave.selectedEditorDescendantWidgetCount,
+        notesDescendantWidgetCount
+        );
 
     page.deactivate();
     page.hide();
@@ -916,6 +958,10 @@ void ClassesPageTests::navigationReleaseCachesSnapshotAndEditorsAcrossReentry()
     QVERIFY(oldSectionTabs.isNull());
     QVERIFY(page.findChildren<NavigationTabWidget*>().isEmpty());
     QCOMPARE(page.runtimeMetrics().navigationWidgetCount, 0);
+    QCOMPARE(
+        page.runtimeMetrics().selectedEditorDescendantWidgetCount,
+        notesDescendantWidgetCount
+        );
     QVERIFY(page.isEditorInstantiated(ClassesSection::Notes));
     QCOMPARE(page.findChild<ClassNotesPage*>(), notesPage);
     QCOMPARE(noteEditors.constFirst()->toPlainText(),
@@ -934,6 +980,10 @@ void ClassesPageTests::navigationReleaseCachesSnapshotAndEditorsAcrossReentry()
         );
     QVERIFY(page.findChildren<NavigationTabWidget*>().isEmpty());
     QCOMPARE(page.runtimeMetrics().navigationWidgetCount, 0);
+    QCOMPARE(
+        page.runtimeMetrics().selectedEditorDescendantWidgetCount,
+        notesDescendantWidgetCount
+        );
     QCOMPARE(page.findChild<ClassNotesPage*>(), notesPage);
 
     const ClassesPageRuntimeMetrics beforeReentry = page.runtimeMetrics();
@@ -954,6 +1004,10 @@ void ClassesPageTests::navigationReleaseCachesSnapshotAndEditorsAcrossReentry()
     QCOMPARE(afterReentry.classInfoQueryCount, beforeLeave.classInfoQueryCount);
     QCOMPARE(afterReentry.selectedClassId, 42);
     QVERIFY(afterReentry.navigationWidgetCount > 0);
+    QCOMPARE(
+        afterReentry.selectedEditorDescendantWidgetCount,
+        notesDescendantWidgetCount
+        );
     QCOMPARE(page.currentSection(), ClassesSection::Notes);
     QVERIFY(page.isEditorInstantiated(ClassesSection::Notes));
     QCOMPARE(page.findChild<ClassNotesPage*>(), notesPage);
@@ -984,6 +1038,7 @@ void ClassesPageTests::navigationReleaseCachesSnapshotAndEditorsAcrossReentry()
         );
     QVERIFY(tuesday);
     QVERIFY(tuesday->isChecked());
+
 }
 
 void ClassesPageTests::

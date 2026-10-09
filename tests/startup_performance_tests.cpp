@@ -3931,6 +3931,7 @@ void StartupPerformanceTests::capturesLargeClassesBoundaryWhenConfigured()
     bool workflowCompleted = false;
     bool lifecycleCompleted = false;
     QJsonArray lifecycleCheckpoints;
+    QJsonArray allCheckpoints;
     QFile metricsFile(metricsPath);
     if (metricsFile.open(QIODevice::ReadOnly | QIODevice::Text))
     {
@@ -3968,6 +3969,7 @@ void StartupPerformanceTests::capturesLargeClassesBoundaryWhenConfigured()
             for (const QJsonValue& value : checkpoints)
             {
                 const QJsonObject checkpoint = value.toObject();
+                allCheckpoints.append(checkpoint);
                 const QString checkpointName =
                     checkpoint.value(QStringLiteral("name")).toString();
                 if (checkpointName.startsWith(QStringLiteral("classes-")))
@@ -4152,6 +4154,274 @@ void StartupPerformanceTests::capturesLargeClassesBoundaryWhenConfigured()
         classesMetrics.value(QStringLiteral("classesSelectedClassId")).toInt(),
         1
         );
+
+    const QStringList ownerCountCheckpointNames{
+        QStringLiteral("classes-lifecycle-entry"),
+        QStringLiteral("classes-refresh-1-start"),
+        QStringLiteral("classes-refresh-1-complete"),
+        QStringLiteral("classes-left-1"),
+        QStringLiteral("classes-reentry-1"),
+        QStringLiteral("classes-refresh-2-start"),
+        QStringLiteral("classes-refresh-2-complete"),
+        QStringLiteral("classes-left-2"),
+        QStringLiteral("classes-reentry-2"),
+        QStringLiteral("classes-lifecycle-complete")
+    };
+    QHash<QString, QHash<QString, int>> ownerCountsByCheckpoint;
+    QHash<QString, int> selectedEditorDescendantCountsByCheckpoint;
+    const QString classesPageKey = QStringLiteral("classes");
+    QStringList expectedPageKeys;
+
+    for (const QString& checkpointName : ownerCountCheckpointNames)
+    {
+        QJsonObject checkpoint;
+        for (const QJsonValue& value : allCheckpoints)
+        {
+            const QJsonObject candidate = value.toObject();
+            if (
+                candidate.value(QStringLiteral("name")).toString()
+                == checkpointName
+                )
+            {
+                checkpoint = candidate;
+                break;
+            }
+        }
+        QVERIFY2(
+            !checkpoint.isEmpty(),
+            qPrintable(
+                QStringLiteral("Missing owner-count checkpoint '%1'.")
+                    .arg(checkpointName)
+                )
+            );
+
+        const QJsonObject metrics =
+            checkpoint.value(QStringLiteral("metrics")).toObject();
+        const QJsonObject pageCounts = metrics.value(
+            QStringLiteral("instantiatedPageWidgetDescendantCounts")
+            ).toObject();
+        const int instantiatedPageCount = metrics.value(
+            QStringLiteral("instantiatedPageCount")
+            ).toInt(-1);
+        QVERIFY(instantiatedPageCount > 0);
+        QCOMPARE(pageCounts.size(), instantiatedPageCount);
+        if (expectedPageKeys.isEmpty())
+        {
+            expectedPageKeys = pageCounts.keys();
+        }
+        else
+        {
+            QCOMPARE(pageCounts.keys(), expectedPageKeys);
+        }
+
+        QHash<QString, int> ownerCounts;
+        for (const QString& pageKey : pageCounts.keys())
+        {
+            const int descendantWidgetCount =
+                pageCounts.value(pageKey).toInt(-1);
+            QVERIFY(!pageKey.isEmpty());
+            QVERIFY(descendantWidgetCount >= 0);
+            QVERIFY(!ownerCounts.contains(pageKey));
+            ownerCounts.insert(pageKey, descendantWidgetCount);
+        }
+        QVERIFY(ownerCounts.contains(classesPageKey));
+
+        const int selectedEditorDescendantWidgetCount = metrics.value(
+            QStringLiteral("classesSelectedEditorDescendantWidgetCount")
+            ).toInt(-1);
+        QVERIFY(selectedEditorDescendantWidgetCount > 0);
+        selectedEditorDescendantCountsByCheckpoint.insert(
+            checkpointName,
+            selectedEditorDescendantWidgetCount
+            );
+        ownerCountsByCheckpoint.insert(checkpointName, ownerCounts);
+    }
+
+    const auto classesPageWidgetCountAt =
+        [&ownerCountsByCheckpoint, &classesPageKey](const QString& checkpointName)
+        {
+            return ownerCountsByCheckpoint.value(checkpointName)
+                .value(classesPageKey, -1);
+        };
+
+    const auto checkpointNamed =
+        [&allCheckpoints](
+            const QString& checkpointName,
+            const QString& detail
+            )
+        {
+            for (const QJsonValue& value : allCheckpoints)
+            {
+                const QJsonObject checkpoint = value.toObject();
+                if (
+                    checkpoint.value(QStringLiteral("name")).toString()
+                        == checkpointName
+                    && (
+                        detail.isEmpty()
+                        || checkpoint.value(QStringLiteral("detail"))
+                               .toString()
+                               == detail
+                        )
+                )
+                {
+                    return checkpoint;
+                }
+            }
+            return QJsonObject{};
+        };
+    const QJsonObject workflowCompleteCheckpoint = checkpointNamed(
+        QStringLiteral("workflow-complete"),
+        QString()
+        );
+    QVERIFY(!workflowCompleteCheckpoint.isEmpty());
+    const QJsonObject workflowCompleteMetrics =
+        workflowCompleteCheckpoint.value(QStringLiteral("metrics")).toObject();
+    const QJsonObject workflowCompletePageCounts = workflowCompleteMetrics
+        .value(QStringLiteral("instantiatedPageWidgetDescendantCounts"))
+        .toObject();
+    const int workflowCompleteInstantiatedPageCount =
+        workflowCompleteMetrics.value(QStringLiteral("instantiatedPageCount"))
+            .toInt(-1);
+    QVERIFY(workflowCompleteInstantiatedPageCount > 0);
+    QCOMPARE(
+        workflowCompletePageCounts.size(),
+        workflowCompleteInstantiatedPageCount
+        );
+    const QStringList workflowCompletePageKeys =
+        workflowCompletePageCounts.keys();
+    QVERIFY(workflowCompletePageKeys.contains(classesPageKey));
+    for (const QString& pageKey : workflowCompletePageKeys)
+    {
+        QVERIFY(!pageKey.isEmpty());
+        QVERIFY(workflowCompletePageCounts.value(pageKey).toInt(-1) >= 0);
+    }
+
+    for (const QString& checkpointName : {
+             QStringLiteral("settled-1s"),
+             QStringLiteral("settled-5s")
+         })
+    {
+        const QJsonObject checkpoint =
+            checkpointNamed(checkpointName, QString());
+        QVERIFY2(
+            !checkpoint.isEmpty(),
+            qPrintable(
+                QStringLiteral("Missing owner-count checkpoint '%1'.")
+                    .arg(checkpointName)
+                )
+            );
+        const QJsonObject metrics =
+            checkpoint.value(QStringLiteral("metrics")).toObject();
+        const QJsonObject pageCounts = metrics.value(
+            QStringLiteral("instantiatedPageWidgetDescendantCounts")
+            ).toObject();
+        QCOMPARE(pageCounts.keys(), workflowCompletePageKeys);
+        QCOMPARE(
+            pageCounts.size(),
+            metrics.value(QStringLiteral("instantiatedPageCount")).toInt(-1)
+            );
+        QVERIFY(pageCounts.contains(classesPageKey));
+        for (const QString& pageKey : pageCounts.keys())
+        {
+            QVERIFY(!pageKey.isEmpty());
+            QVERIFY(pageCounts.value(pageKey).toInt(-1) >= 0);
+        }
+    }
+
+    const QJsonObject startupCheckpoint =
+        checkpointNamed(QStringLiteral("startup-complete"), QString());
+    QVERIFY(!startupCheckpoint.isEmpty());
+    const QJsonObject startupPageCounts = startupCheckpoint
+        .value(QStringLiteral("metrics"))
+        .toObject()
+        .value(QStringLiteral("instantiatedPageWidgetDescendantCounts"))
+        .toObject();
+    QVERIFY(!startupPageCounts.contains(classesPageKey));
+    QCOMPARE(
+        startupPageCounts.size(),
+        startupCheckpoint.value(QStringLiteral("metrics"))
+            .toObject()
+            .value(QStringLiteral("instantiatedPageCount"))
+            .toInt(-1)
+        );
+
+    const QJsonObject firstClassesActivationCheckpoint = checkpointNamed(
+        QStringLiteral("workflow-page-ready"),
+        classesPageKey
+        );
+    QVERIFY(!firstClassesActivationCheckpoint.isEmpty());
+    const QJsonObject firstClassesActivationMetrics =
+        firstClassesActivationCheckpoint
+            .value(QStringLiteral("metrics"))
+            .toObject();
+    const QJsonObject firstClassesPageCounts = firstClassesActivationMetrics
+        .value(QStringLiteral("instantiatedPageWidgetDescendantCounts"))
+        .toObject();
+    QVERIFY(firstClassesPageCounts.contains(classesPageKey));
+    QCOMPARE(
+        firstClassesPageCounts.size(),
+        firstClassesActivationMetrics
+            .value(QStringLiteral("instantiatedPageCount"))
+            .toInt(-1)
+        );
+
+    const auto selectedEditorDescendantCountAt =
+        [&selectedEditorDescendantCountsByCheckpoint](
+            const QString& checkpointName
+            )
+        {
+            return selectedEditorDescendantCountsByCheckpoint.value(
+                checkpointName,
+                -1
+                );
+        };
+    QVERIFY(
+        classesPageWidgetCountAt(QStringLiteral("classes-lifecycle-entry"))
+        > 0
+        );
+
+    const int refresh1ClassesDescendantCount =
+        classesPageWidgetCountAt(QStringLiteral("classes-refresh-1-complete"));
+    const int leave1ClassesDescendantCount =
+        classesPageWidgetCountAt(QStringLiteral("classes-left-1"));
+    const int reentry1ClassesDescendantCount =
+        classesPageWidgetCountAt(QStringLiteral("classes-reentry-1"));
+    QVERIFY(refresh1ClassesDescendantCount > leave1ClassesDescendantCount);
+    QVERIFY(reentry1ClassesDescendantCount > leave1ClassesDescendantCount);
+    QCOMPARE(
+        selectedEditorDescendantCountAt(QStringLiteral("classes-left-1")),
+        selectedEditorDescendantCountAt(
+            QStringLiteral("classes-refresh-1-complete")
+            )
+        );
+    QCOMPARE(
+        selectedEditorDescendantCountAt(QStringLiteral("classes-reentry-1")),
+        selectedEditorDescendantCountAt(
+            QStringLiteral("classes-refresh-1-complete")
+            )
+        );
+
+    const int refresh2ClassesDescendantCount =
+        classesPageWidgetCountAt(QStringLiteral("classes-refresh-2-complete"));
+    const int leave2ClassesDescendantCount =
+        classesPageWidgetCountAt(QStringLiteral("classes-left-2"));
+    const int reentry2ClassesDescendantCount =
+        classesPageWidgetCountAt(QStringLiteral("classes-reentry-2"));
+    QVERIFY(refresh2ClassesDescendantCount > leave2ClassesDescendantCount);
+    QVERIFY(reentry2ClassesDescendantCount > leave2ClassesDescendantCount);
+    QCOMPARE(
+        selectedEditorDescendantCountAt(QStringLiteral("classes-left-2")),
+        selectedEditorDescendantCountAt(
+            QStringLiteral("classes-refresh-2-complete")
+            )
+        );
+    QCOMPARE(
+        selectedEditorDescendantCountAt(QStringLiteral("classes-reentry-2")),
+        selectedEditorDescendantCountAt(
+            QStringLiteral("classes-refresh-2-complete")
+            )
+        );
+
 }
 
 void StartupPerformanceTests::capturesLargeClassesVisualStatesWhenConfigured()

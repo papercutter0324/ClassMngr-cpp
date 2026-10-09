@@ -53,6 +53,7 @@ struct ClassesPageRuntimeMetrics
     int teacherResultRowCount = 0;
     int visibleSectionCount = 0;
     int instantiatedEditorCount = 0;
+    int selectedEditorDescendantWidgetCount = 0;
     int loadedEditorClassCount = 0;
     int rebuildCount = 0;
     int selectedClassId = -1;

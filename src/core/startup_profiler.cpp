@@ -56,6 +56,10 @@ QJsonObject applicationMetricsJson(const StartupApplicationMetrics& metrics)
         {QStringLiteral("instantiatedPageCount"), metrics.instantiatedPageCount},
         {QStringLiteral("registeredPageCount"), metrics.registeredPageCount},
         {
+            QStringLiteral("instantiatedPageWidgetDescendantCounts"),
+            metrics.instantiatedPageWidgetDescendantCounts
+        },
+        {
             QStringLiteral("subPrepClassInformationWidgetCount"),
             metrics.subPrepClassInformationWidgetCount
         },
@@ -194,6 +198,10 @@ QJsonObject applicationMetricsJson(const StartupApplicationMetrics& metrics)
         {
             QStringLiteral("classesInstantiatedEditorCount"),
             metrics.classesInstantiatedEditorCount
+        },
+        {
+            QStringLiteral("classesSelectedEditorDescendantWidgetCount"),
+            metrics.classesSelectedEditorDescendantWidgetCount
         },
         {
             QStringLiteral("classesLoadedEditorClassCount"),
@@ -3184,6 +3192,8 @@ StartupApplicationMetrics StartupProfiler::applicationMetrics() const
             m_applicationMetricsProvider();
         metrics.instantiatedPageCount = supplied.instantiatedPageCount;
         metrics.registeredPageCount = supplied.registeredPageCount;
+        metrics.instantiatedPageWidgetDescendantCounts =
+            supplied.instantiatedPageWidgetDescendantCounts;
         metrics.subPrepClassInformationWidgetCount =
             supplied.subPrepClassInformationWidgetCount;
         metrics.subPrepClassInformationTextEditCount =
@@ -3254,6 +3264,8 @@ StartupApplicationMetrics StartupProfiler::applicationMetrics() const
             supplied.classesVisibleSectionCount;
         metrics.classesInstantiatedEditorCount =
             supplied.classesInstantiatedEditorCount;
+        metrics.classesSelectedEditorDescendantWidgetCount =
+            supplied.classesSelectedEditorDescendantWidgetCount;
         metrics.classesLoadedEditorClassCount =
             supplied.classesLoadedEditorClassCount;
         metrics.classesRebuildCount =

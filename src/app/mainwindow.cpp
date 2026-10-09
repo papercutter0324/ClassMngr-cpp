@@ -33,6 +33,7 @@
 #include "ui/shared/dialogs/user_prompt_service.h"
 
 #include <QDialog>
+#include <QJsonObject>
 #include <QMenuBar>
 #include <QScreen>
 #include <utility>
@@ -297,6 +298,19 @@ void MainWindow::initializePages()
                     m_pages ? m_pages->instantiatedPageCount() : 0;
                 metrics.registeredPageCount =
                     m_pages ? m_pages->registeredPageCount() : 0;
+                if (m_pages)
+                {
+                    for (
+                        const PageWidgetDescendantCount& pageCount :
+                        m_pages->instantiatedPageWidgetDescendantCounts()
+                        )
+                    {
+                        metrics.instantiatedPageWidgetDescendantCounts.insert(
+                            pageCount.pageKey,
+                            pageCount.descendantWidgetCount
+                            );
+                    }
+                }
 
                 if (m_pages && m_pages->subPrepPage())
                 {
@@ -378,6 +392,8 @@ void MainWindow::initializePages()
                         classesMetrics.visibleSectionCount;
                     metrics.classesInstantiatedEditorCount =
                         classesMetrics.instantiatedEditorCount;
+                    metrics.classesSelectedEditorDescendantWidgetCount =
+                        classesMetrics.selectedEditorDescendantWidgetCount;
                     metrics.classesLoadedEditorClassCount =
                         classesMetrics.loadedEditorClassCount;
                     metrics.classesRebuildCount =

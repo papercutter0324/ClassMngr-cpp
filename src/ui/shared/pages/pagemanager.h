@@ -3,8 +3,10 @@
 
 #include "core/resource_packs/resource_pack_manager.h"
 
+#include <QList>
 #include <QMap>
 #include <QStackedWidget>
+#include <QString>
 
 #include <functional>
 
@@ -52,6 +54,12 @@ enum class PageType
     PdfViewer
 };
 
+struct PageWidgetDescendantCount
+{
+    QString pageKey;
+    int descendantWidgetCount = 0;
+};
+
 
 
 // =========================================================
@@ -97,6 +105,8 @@ public:
         PageType type
         ) const;
     [[nodiscard]] int instantiatedPageCount() const;
+    [[nodiscard]] QList<PageWidgetDescendantCount>
+        instantiatedPageWidgetDescendantCounts() const;
     [[nodiscard]] int registeredPageCount() const;
     [[nodiscard]] QString currentPageIdentifier() const;
     [[nodiscard]] bool isDatabaseOpen() const;

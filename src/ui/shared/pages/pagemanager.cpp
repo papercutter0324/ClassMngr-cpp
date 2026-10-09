@@ -477,6 +477,29 @@ int PageManager::instantiatedPageCount() const
     return m_pages.size();
 }
 
+QList<PageWidgetDescendantCount>
+PageManager::instantiatedPageWidgetDescendantCounts() const
+{
+    QList<PageWidgetDescendantCount> counts;
+    counts.reserve(m_pages.size());
+
+    for (auto iterator = m_pages.cbegin(); iterator != m_pages.cend(); ++iterator)
+    {
+        const BasePage* page = iterator.value();
+        const int descendantWidgetCount = page
+            ? static_cast<int>(page->findChildren<QWidget*>().size())
+            : 0;
+        counts.append(
+            {
+                pageTypeIdentifier(iterator.key()),
+                descendantWidgetCount
+            }
+            );
+    }
+
+    return counts;
+}
+
 int PageManager::registeredPageCount() const
 {
     return m_pageFactories.size();
