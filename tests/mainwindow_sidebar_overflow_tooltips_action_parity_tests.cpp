@@ -3,6 +3,7 @@
 #include "core/settingsmanager.h"
 #include "ui/shared/state/option_state_keys.h"
 #include "ui/shared/widgets/sidebar/sidebar.h"
+#include "ui/shared/widgets/sidebar/sidebar_marquee_delegate.h"
 
 #include <QAction>
 #include <QCoreApplication>
@@ -46,6 +47,35 @@ private:
 };
 }
 
+class SidebarMarqueeRestorer final
+{
+public:
+    explicit SidebarMarqueeRestorer(MainWindow& window)
+        : m_action(window.actions().animateSidebarText)
+        , m_originalEnabled(m_action && m_action->isChecked())
+    {
+    }
+
+    ~SidebarMarqueeRestorer()
+    {
+        if (m_action && m_action->isChecked() != m_originalEnabled)
+        {
+            m_action->trigger();
+        }
+
+        SettingsManager::instance().sync();
+    }
+
+    SidebarMarqueeRestorer(const SidebarMarqueeRestorer&) = delete;
+    SidebarMarqueeRestorer& operator=(
+        const SidebarMarqueeRestorer&
+        ) = delete;
+
+private:
+    QAction* const m_action = nullptr;
+    const bool m_originalEnabled = false;
+};
+
 class MainWindowSidebarOverflowTooltipsActionParityTests final
     : public QObject
 {
@@ -54,6 +84,7 @@ class MainWindowSidebarOverflowTooltipsActionParityTests final
 private slots:
     void initTestCase();
     void actionUpdatesOverflowTooltipAndPersistsPreference();
+    void actionUpdatesMarqueeDelegateAndPersistsPreference();
 
 private:
     QTemporaryDir m_settingsDirectory;
@@ -185,6 +216,78 @@ actionUpdatesOverflowTooltipAndPersistsPreference()
     QVERIFY(finalPreference.isValid());
     QVERIFY(!finalPreference.toBool());
     QVERIFY(teacherItem->toolTip(0).isEmpty());
+}
+
+void MainWindowSidebarOverflowTooltipsActionParityTests::
+actionUpdatesMarqueeDelegateAndPersistsPreference()
+{
+    const QString preferenceKey = QString::fromUtf8(
+        OptionKeys::SidebarMarqueeEnabled
+        );
+    SettingsManager::instance().set(preferenceKey, false);
+    SettingsManager::instance().sync();
+
+    const QVariant initialPreference = SettingsManager::instance().get(
+        preferenceKey
+        );
+    QVERIFY(initialPreference.isValid());
+    QVERIFY(!initialPreference.toBool());
+
+    LanguageService languageService;
+    QVERIFY(languageService.setLanguage(Language::English));
+
+    MainWindowStartupOptions startupOptions;
+    startupOptions.loadMostRecentDatabase = false;
+
+    MainWindow window(
+        [](const QString&) {},
+        false,
+        &languageService,
+        nullptr,
+        std::move(startupOptions)
+        );
+    SidebarMarqueeRestorer marqueeRestorer(window);
+
+    QAction* const marqueeAction = window.actions().animateSidebarText;
+    QVERIFY(marqueeAction);
+    QVERIFY(marqueeAction->isCheckable());
+    QVERIFY(!marqueeAction->isChecked());
+
+    auto* const sidebar = window.findChild<Sidebar*>(
+        QStringLiteral("sidebarWidget")
+        );
+    QVERIFY(sidebar);
+
+    QTreeWidget* const tree = sidebar->findChild<QTreeWidget*>(
+        QStringLiteral("sidebarTree")
+        );
+    QVERIFY(tree);
+
+    auto* const delegate = dynamic_cast<SidebarMarqueeDelegate*>(
+        tree->itemDelegate()
+        );
+    QVERIFY(delegate);
+    QVERIFY(!delegate->marqueeEnabled());
+
+    marqueeAction->trigger();
+    QVERIFY(marqueeAction->isChecked());
+    QVERIFY(delegate->marqueeEnabled());
+    SettingsManager::instance().sync();
+    const QVariant enabledPreference = SettingsManager::instance().get(
+        preferenceKey
+        );
+    QVERIFY(enabledPreference.isValid());
+    QVERIFY(enabledPreference.toBool());
+
+    marqueeAction->trigger();
+    QVERIFY(!marqueeAction->isChecked());
+    QVERIFY(!delegate->marqueeEnabled());
+    SettingsManager::instance().sync();
+    const QVariant disabledPreference = SettingsManager::instance().get(
+        preferenceKey
+        );
+    QVERIFY(disabledPreference.isValid());
+    QVERIFY(!disabledPreference.toBool());
 }
 
 QTEST_MAIN(MainWindowSidebarOverflowTooltipsActionParityTests)

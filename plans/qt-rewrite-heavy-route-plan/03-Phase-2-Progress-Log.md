@@ -17195,3 +17195,32 @@ VS18/Qt6.12/Ninja build passed; focused CTest passed 1/1. Independent direct QtT
 and independent CTest rerun passed 1/1. CMake used optional Vulkan/zlib fallback; Qt reported missing-font and offscreen
 warnings. No full suite was run. F466 is independently verified, accepted, and ready to commit; Batch 42 remains active
 until commit. F467 discovery has not started and begins only after F466 commits.
+### F466 committed - 2026-10-09
+
+F466, “Phase2 - Cover Custom Website provider QAction modal handoff (F466),” was committed as
+0abbaf9238a25407f3c8a6c88a07adb4e93aa238 on Qt-Rewrite, 51 commits ahead of origin. The commit contains exactly
+seven scoped paths and the cached diff check was clean. Post-commit status was clean except for excluded pre-existing
+latest_session_work.md and %SystemDrive%/. Batch 42 is complete. Batch 43 is active with F467 Sidebar Marquee
+enabled-state QAction parity selected; its acceptance plan is recorded before implementation. F466 acceptance and focused
+verification remain recorded above.
+
+### F467 acceptance plan recorded before implementation - 2026-10-09
+
+Add a const read-only enabled-state getter to SidebarMarqueeDelegate and extend the existing Sidebar Overflow action
+parity test. Drive the actual animateSidebarText QAction through both state transitions and assert state propagation to
+the delegate and persisted setting.
+
+Keep the matrix scoped to configured enabled-state handoff; hover, timer behavior, and rendered animation are excluded.
+No CMake change; use the existing target. F467 is selected for implementation; implementation and verification have not
+started. Batch 43 remains active.
+### F467 acceptance update - 2026-10-09
+
+The implementation adds the const read-only SidebarMarqueeDelegate::marqueeEnabled() query and extends the existing
+Sidebar Overflow action parity test. With QTemporaryDir settings and recent-database loading disabled, the actual
+animateSidebarText QAction is driven off→on→off; the test confirms QAction state, delegate state, and persisted preference
+at each transition. Its RAII restorer is constructed after MainWindow.
+
+Executor focused target build passed, focused CTest passed 1/1, and git diff --check passed. Independent Tester source
+review passed and focused CTest passed 1/1. Direct QtTest from the build directory exited 0 but emitted no summary, so no
+case count is recorded. No full suite was run; hover, timer, and rendered animation are outside scope. F467 is accepted
+and ready to commit; Batch 43 remains active until commit.

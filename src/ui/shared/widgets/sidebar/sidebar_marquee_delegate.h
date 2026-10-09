@@ -18,6 +18,8 @@ public:
         bool enabled
         );
 
+    [[nodiscard]] bool marqueeEnabled() const { return m_enabled; }
+
     void resetMarquee();
 
     int textWidth(
