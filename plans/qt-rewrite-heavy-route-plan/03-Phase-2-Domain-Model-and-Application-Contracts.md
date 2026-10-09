@@ -1,5 +1,7 @@
 # Phase 2 — Domain Model and Application Contracts
 
+> **Phase 2 priority:** Prioritize implementing the core code. Additional tests beyond those needed to verify implementation and satisfy existing phase gates can be created later if desired.
+
 Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, and phase sequence.
 
 ## Mandatory route for new and resumed work
