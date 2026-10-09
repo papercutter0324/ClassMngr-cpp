@@ -42,7 +42,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-09
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F513 focused Debug CTest passed 3/3; current-source Release evidence lacks My Classes metrics and its lifecycle 1-second working set is 270,848,000 bytes, so the 250 MiB gate remains open; F514 route work follows the F513 commit, with Gates 1 and 2 still Partial.
+- Current note: F513 is committed as 139fb17cef7e8c83e404049b968f4166c8d5f28f with focused Debug CTest 3/3; its Release evidence lacks My Classes metrics and the lifecycle 250 MiB gate remains open; F514's paired route-level diagnostic completed with no re-entry rebuild or class/info query; F515 is active in Batch 91 to release/rematerialize Classes navigation while preserving filters, selection, and cached editors, with Gates 1 and 2 Partial and Phase 0, memory, and visual gates open.
 
 ### Slice discovery batches
 
@@ -67,9 +67,9 @@ Treat this plan as an operational summary, not a history:
   failure warning/no-navigation behavior; revisit after that behavior is
   clarified.
 
-#### Active batch: Batch 90
+#### Active batch: Batch 91
 
-- F514 - Use the opt-in 96-class lifecycle route to diagnose cached Classes navigation/editor reuse or accumulation across two leave/re-entry cycles; record route-level memory only.
+- F515 - Release the hidden Classes navigation tree and rematerialize it from retained navigation summaries on re-entry, preserving selection/filters and keeping nested editors cached.
 
 ## Objective
 

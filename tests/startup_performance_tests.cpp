@@ -4103,10 +4103,11 @@ void StartupPerformanceTests::capturesLargeClassesBoundaryWhenConfigured()
             .toInt(),
         288
         );
+    // Query counters track executions; row counters track the batched snapshot results.
     QCOMPARE(
         classesMetrics.value(QStringLiteral("classesClassInfoQueryCount"))
             .toInt(),
-        288
+        3
         );
     QCOMPARE(
         classesMetrics.value(QStringLiteral("classesClassInfoResultRowCount"))
@@ -4120,7 +4121,7 @@ void StartupPerformanceTests::capturesLargeClassesBoundaryWhenConfigured()
         );
     QCOMPARE(
         classesMetrics.value(QStringLiteral("classesTeacherQueryCount")).toInt(),
-        288
+        0
         );
     QCOMPARE(
         classesMetrics.value(QStringLiteral("classesTeacherResultRowCount"))

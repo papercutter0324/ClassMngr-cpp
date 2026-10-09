@@ -3815,3 +3815,7 @@ F512 localized the lifecycle-route maximum to active PDF rendering but found the
 ## F513 verification lesson - 2026-10-09
 
 A successful packaged route run verifies only the exercised checkpoints and emitted metrics: lifecycle-sub-prep/output-sub-prep validation lacked My Classes metrics, so it does not establish F513's summary-read or hidden-tree behavior. Use focused My Classes re-entry tests for that contract and keep process-wide memory separate from feature attribution.
+
+## F514 metric semantics - 2026-10-09
+
+The Classes diagnostic separates batched query executions from returned rows: three class-info snapshot calls and zero separate teacher calls yielded 288 info and teacher rows. Keep both counts asserted instead of treating rows as requests. Process-wide working-set and widget totals do not identify memory ownership; use the explicit navigation descendant and editor counters for feature-specific object counts.
