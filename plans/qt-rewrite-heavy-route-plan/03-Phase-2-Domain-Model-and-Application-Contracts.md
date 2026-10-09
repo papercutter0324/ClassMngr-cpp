@@ -40,7 +40,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-09
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F507 is independently verified and accepted, ready to commit in active Batch 83; Gates 1 and 2 remain Partial.
+- Current note: F507 committed as a5ff8b1c; Batch 83 is complete. F508 is independently verified and accepted, ready to commit in active Batch 84; F509 is queued separately; Gates 1 and 2 remain Partial.
 
 ### Slice discovery batches
 
@@ -65,9 +65,10 @@ Treat this plan as an operational summary, not a history:
   failure warning/no-navigation behavior; revisit after that behavior is
   clarified.
 
-#### Active batch: Batch 83
+#### Active batch: Batch 84
 
-- F507 - Independently verified and ready to commit: regular-mode dialog forwards Tuesday/Thursday class order [100,43], includes both selected PDF markers, excludes Friday sentinel, and preserves F380 single-day coverage.
+- F508 - Independently verified and ready to commit: the real Generate dialog forwards persisted Intensive mode and Tuesday-only target scope, asserts the Friday-only sentinel is absent from request.selectedClassIds, and checks the deterministic source-failure warning before package generation. F380/F507 remain separate; F509 is the next queued memory gate.
+- F509 - Queued candidate: explicit Packaged Release 96-class Sub Prep memory gate. The Sub Prep plan records settled samples around 306 MiB against a 250 MiB target; keep this gate open and separate from F508.
 
 ## Objective
 

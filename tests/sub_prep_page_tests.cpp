@@ -183,6 +183,15 @@ public:
     {
         ++loadCount;
         lastRequest = request;
+        if (failAfterCapture)
+        {
+            return SubPrepPrintSourceReadResult::failure({
+                .code = Domain::ErrorCode::Technical,
+                .message = "F508 print-source failure",
+                .recoverable = true
+            });
+        }
+
         SubPrepPrintSourceInput selectedInput;
         std::vector<ClassMngr::Next::Domain::TeacherId>
             selectedTeacherIds;
@@ -226,6 +235,7 @@ public:
     SubPrepPrintSourceRequest lastRequest;
     SubPrepPrintSourceInput lastSelectedInput;
     SubPrepPrintSourceInput sourceInput;
+    bool failAfterCapture = false;
 };
 
 class SubPrepTestCalendarIntervalsReadPort final
@@ -358,6 +368,7 @@ private slots:
     void clearDatabaseStateStopsAutosaveAndRemovesLoadedContent();
     void pageGenerationUsesSelectedTypedPrintSourceAndWritesInformationPdf();
     void pageGenerationForwardsSelectedDaysAndClassesInDisplayOrder();
+    void pageGenerationForwardsIntensiveModeWithFilteredClasses();
 
 private:
     std::unique_ptr<QTemporaryDir> m_generationDatabaseDirectory;
@@ -3026,6 +3037,248 @@ pageGenerationForwardsSelectedDaysAndClassesInDisplayOrder()
     QVERIFY(!informationPdfText.contains(
         QStringLiteral("F507_FRIDAY_SENTINEL")
         ));
+}
+
+void SubPrepPageTests
+    ::pageGenerationForwardsIntensiveModeWithFilteredClasses()
+{
+    QTemporaryDir outputRoot;
+    QVERIFY(outputRoot.isValid());
+
+    ScheduleWidgetTestStubs::setExistingIntensiveHours(true);
+    m_generationDatabaseDirectory = std::make_unique<QTemporaryDir>();
+    QVERIFY(m_generationDatabaseDirectory->isValid());
+    QVERIFY(!QSqlDatabase::contains(QSqlDatabase::defaultConnection));
+    m_generationDatabase = QSqlDatabase::addDatabase(
+        QStringLiteral("QSQLITE")
+        );
+    m_generationDatabaseCreated = true;
+    const QString databasePath = m_generationDatabaseDirectory->filePath(
+        QStringLiteral("sub-prep-page-tests.tps")
+        );
+    m_generationDatabase.setDatabaseName(databasePath);
+    QVERIFY(m_generationDatabase.open());
+    QVERIFY(DatabaseSchemaManager::ensureSchema(m_generationDatabase));
+
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath));
+    SubPrepTestCalendarIntervalsReadPort calendarIntervalsReadPort;
+    SubPrepPageHarness harness(&services, calendarIntervalsReadPort);
+    harness.printSourceReadPort.failAfterCapture = true;
+    activatePage(harness.page);
+
+    auto* const scheduleWidget = harness.page.findChild<ScheduleWidget*>(
+        QStringLiteral("subPrepScheduleWidget")
+        );
+    QVERIFY(scheduleWidget);
+
+    constexpr int targetClassId = 4201;
+    constexpr int fridaySentinelClassId = 9901;
+    ScheduleViewModel generationSchedule;
+    generationSchedule.days = {
+        QStringLiteral("Monday"),
+        QStringLiteral("Tuesday"),
+        QStringLiteral("Wednesday"),
+        QStringLiteral("Thursday"),
+        QStringLiteral("Friday")
+    };
+    ScheduleRowView generationRow;
+    for (const QString& day : generationSchedule.days)
+    {
+        ScheduleCellView cell;
+        cell.day = day;
+        if (day == QStringLiteral("Tuesday"))
+        {
+            ScheduleEntry entry;
+            entry.classId = targetClassId;
+            cell.entries.append(entry);
+        }
+        else if (day == QStringLiteral("Friday"))
+        {
+            ScheduleEntry entry;
+            entry.classId = fridaySentinelClassId;
+            cell.entries.append(entry);
+        }
+        generationRow.cells.append(cell);
+    }
+    generationSchedule.rows.append(generationRow);
+    scheduleWidget->setPreviewModel(generationSchedule);
+    const QSet<int> expectedVisibleClassIds{
+        targetClassId,
+        fridaySentinelClassId
+    };
+    QCOMPARE(scheduleWidget->visibleClassIds(), expectedVisibleClassIds);
+
+    QVERIFY(QMetaObject::invokeMethod(
+        scheduleWidget,
+        "setDisplayMode",
+        Qt::DirectConnection,
+        Q_ARG(int, static_cast<int>(ScheduleDisplayMode::Intensive))
+        ));
+    QCOMPARE(
+        scheduleWidget->displayState().displayMode,
+        ScheduleDisplayMode::Intensive
+        );
+
+    bool dialogOpened = false;
+    bool dialogAccepted = false;
+    bool safetyCloseTriggered = false;
+    QString dialogAutomationError;
+    QTimer::singleShot(
+        0,
+        &harness.page,
+        [&]
+        {
+            auto* const dialog = qobject_cast<SubPrepPrintDialog*>(
+                QApplication::activeModalWidget()
+                );
+            if (!dialog)
+            {
+                dialogAutomationError = QStringLiteral(
+                    "Sub Prep print dialog did not open."
+                    );
+                return;
+            }
+            dialogOpened = true;
+
+            auto* const targetEdit = dialog->findChild<QLineEdit*>(
+                QStringLiteral("subPrepTargetFolderEdit")
+                );
+            auto* const nameEdit = dialog->findChild<QLineEdit*>(
+                QStringLiteral("subPrepUserNameEdit")
+                );
+            auto* const openFolderCheck = dialog->findChild<QCheckBox*>(
+                QStringLiteral("subPrepOpenFolderCheckBox")
+                );
+            auto* const acceptButton = dialog->findChild<QPushButton*>(
+                QStringLiteral("subPrepGenerateOkButton")
+                );
+            if (!targetEdit || !nameEdit || !openFolderCheck || !acceptButton)
+            {
+                dialogAutomationError = QStringLiteral(
+                    "Sub Prep print dialog controls are incomplete."
+                    );
+                dialog->reject();
+                return;
+            }
+
+            QCheckBox* tuesdayCheck = nullptr;
+            for (const QString& day : QStringList{
+                     QStringLiteral("Monday"),
+                     QStringLiteral("Tuesday"),
+                     QStringLiteral("Wednesday"),
+                     QStringLiteral("Thursday"),
+                     QStringLiteral("Friday")
+                 })
+            {
+                auto* const dayCheck = dialog->findChild<QCheckBox*>(
+                    QStringLiteral("subPrepPrint%1CheckBox").arg(day)
+                    );
+                if (!dayCheck)
+                {
+                    dialogAutomationError = QStringLiteral(
+                        "A weekday selection control is missing."
+                        );
+                    dialog->reject();
+                    return;
+                }
+                dayCheck->setChecked(false);
+                if (day == QStringLiteral("Tuesday"))
+                {
+                    tuesdayCheck = dayCheck;
+                }
+            }
+            if (!tuesdayCheck)
+            {
+                dialogAutomationError = QStringLiteral(
+                    "Tuesday selection control is missing."
+                    );
+                dialog->reject();
+                return;
+            }
+
+            tuesdayCheck->setChecked(true);
+            targetEdit->setText(outputRoot.path());
+            nameEdit->setText(QStringLiteral("F508"));
+            openFolderCheck->setChecked(false);
+            if (!acceptButton->isEnabled())
+            {
+                dialogAutomationError = QStringLiteral(
+                    "Sub Prep generation did not become enabled."
+                    );
+                dialog->reject();
+                return;
+            }
+            acceptButton->click();
+            dialogAccepted = dialog->result() == QDialog::Accepted;
+        }
+        );
+
+    QTimer safetyCloseTimer;
+    safetyCloseTimer.setSingleShot(true);
+    QObject::connect(&safetyCloseTimer, &QTimer::timeout, &harness.page, [&]
+    {
+        if (QWidget* const modal = QApplication::activeModalWidget())
+        {
+            safetyCloseTriggered = true;
+            if (dialogAutomationError.isEmpty())
+            {
+                dialogAutomationError = QStringLiteral(
+                    "Sub Prep print dialog automation timed out."
+                    );
+            }
+            modal->close();
+        }
+    });
+
+    FakeUserPromptService promptService;
+    DialogServices::setUserPromptServiceForTesting(&promptService);
+    safetyCloseTimer.start(5'000);
+    const bool generationInvoked = QMetaObject::invokeMethod(
+        &harness.page,
+        "generateSubPrep",
+        Qt::DirectConnection
+        );
+    safetyCloseTimer.stop();
+    DialogServices::setUserPromptServiceForTesting(nullptr);
+    QVERIFY(generationInvoked);
+
+    QVERIFY2(!safetyCloseTriggered, qPrintable(dialogAutomationError));
+    QVERIFY2(dialogOpened, qPrintable(dialogAutomationError));
+    QVERIFY2(dialogAccepted, qPrintable(dialogAutomationError));
+
+    QCOMPARE(harness.printSourceReadPort.loadCount, 1);
+    const SubPrepPrintSourceRequest& request =
+        harness.printSourceReadPort.lastRequest;
+    QCOMPARE(request.mode, ScheduleViewMode::Intensive);
+    QCOMPARE(request.selectedDays.size(), std::size_t(1));
+    QCOMPARE(
+        static_cast<int>(request.selectedDays.front()),
+        static_cast<int>(SubPrepWeekday::Tuesday)
+        );
+    QCOMPARE(request.selectedClassIds.size(), std::size_t(1));
+    QCOMPARE(
+        request.selectedClassIds.front().value(),
+        std::to_string(targetClassId)
+        );
+    QVERIFY(std::none_of(
+        request.selectedClassIds.cbegin(),
+        request.selectedClassIds.cend(),
+        [](const ClassMngr::Next::Domain::ClassId& classId)
+        {
+            return classId.value() == "9901";
+        }
+        ));
+
+    QCOMPARE(promptService.messages.size(), 1);
+    const PromptRequest& warning = promptService.messages.front();
+    QCOMPARE(warning.severity, PromptSeverity::Warning);
+    QCOMPARE(warning.title, QStringLiteral("Load Class Information"));
+    QCOMPARE(
+        warning.message,
+        QStringLiteral("Class information for Sub Prep could not be loaded.")
+        );
+    QCOMPARE(warning.details, QStringLiteral("F508 print-source failure"));
 }
 
 void SubPrepPageTests
