@@ -556,6 +556,7 @@ private slots:
     void aiBatchDialogCopyOpenCopiesPromptAndOpensGemini();
     void aiBatchDialogSelectionChangesClearGeneratedReviewState();
     void aiBatchDialogResponseEditsClearStaleReviewState();
+    void aiBatchDialogClearingResponseClearsStaleReviewState();
     void aiBatchDialogConfirmsAcceptedCommentOverwrites();
     void aiPromptButtonsRequireCompleteInput();
     void aiPromptPreviewCopiesAnAnonymousPrompt();
@@ -2669,6 +2670,115 @@ void SpeakingEvalBatchReportServiceTests::
     QVERIFY(review->item(0, 4)->text().contains(
         QStringLiteral("Alice presented clearly")
         ));
+    QVERIFY(!parseSummary->text().isEmpty());
+    QVERIFY(applyButton->isEnabled());
+}
+
+void SpeakingEvalBatchReportServiceTests::
+    aiBatchDialogClearingResponseClearsStaleReviewState()
+{
+    SpeakingEvalReportData alice;
+    alice.englishName = QStringLiteral("Alice");
+    alice.koreanName = QStringLiteral("김민지");
+    alice.grade = 5;
+    alice.notes =
+        QStringLiteral(
+            "[Did Well]\nClear pronunciation\n"
+            "[Needs Improvement]\nAdd supporting details"
+            );
+
+    SpeakingEvalAiBatchDialog dialog(
+        {
+            { QStringLiteral("Alice (김민지)"), alice, 0 }
+        }
+        );
+
+    auto* createPromptButton =
+        dialog.findChild<QPushButton*>(
+            QStringLiteral("speakingEvalAiBatchCreatePrompt")
+            );
+    auto* promptEdit =
+        dialog.findChild<QPlainTextEdit*>(
+            QStringLiteral("speakingEvalAiBatchPrompt")
+            );
+    auto* responseEdit =
+        dialog.findChild<QPlainTextEdit*>(
+            QStringLiteral("speakingEvalAiBatchResponse")
+            );
+    auto* copyPromptButton =
+        dialog.findChild<QPushButton*>(
+            QStringLiteral("speakingEvalAiBatchCopyPrompt")
+            );
+    auto* copyOpenButton =
+        dialog.findChild<QPushButton*>(
+            QStringLiteral("speakingEvalAiBatchCopyOpen")
+            );
+    auto* parseButton =
+        dialog.findChild<QPushButton*>(
+            QStringLiteral("speakingEvalAiBatchParse")
+            );
+    auto* parseSummary =
+        dialog.findChild<QLabel*>(
+            QStringLiteral("speakingEvalAiBatchParseSummary")
+            );
+    auto* review =
+        dialog.findChild<QTableWidget*>(
+            QStringLiteral("speakingEvalAiBatchReviewTable")
+            );
+    auto* applyButton =
+        dialog.findChild<QPushButton*>(
+            QStringLiteral("speakingEvalAiBatchApply")
+            );
+    QVERIFY(createPromptButton);
+    QVERIFY(promptEdit);
+    QVERIFY(responseEdit);
+    QVERIFY(copyPromptButton);
+    QVERIFY(copyOpenButton);
+    QVERIFY(parseButton);
+    QVERIFY(parseSummary);
+    QVERIFY(review);
+    QVERIFY(applyButton);
+
+    createPromptButton->click();
+    const QString generatedPrompt = promptEdit->toPlainText();
+    QVERIFY(!generatedPrompt.isEmpty());
+
+    const QString validResponse =
+        QStringLiteral(
+            "<<<STUDENT_01>>>\n"
+            "STD_NAME spoke clearly and used strong vocabulary. "
+            "Keep adding supporting details and practice difficult sounds. "
+            "Your eye contact and confident voice made the presentation "
+            "engaging.\n"
+            "<<<END_STUDENT_01>>>"
+            );
+    responseEdit->setPlainText(validResponse);
+    QVERIFY(parseButton->isEnabled());
+    parseButton->click();
+
+    QCOMPARE(review->rowCount(), 1);
+    QCOMPARE(review->item(0, 2)->text(), QStringLiteral("Ready"));
+    QVERIFY(!parseSummary->text().isEmpty());
+    QVERIFY(applyButton->isEnabled());
+
+    responseEdit->clear();
+
+    QVERIFY(responseEdit->toPlainText().isEmpty());
+    QCOMPARE(promptEdit->toPlainText(), generatedPrompt);
+    QCOMPARE(review->rowCount(), 0);
+    QVERIFY(parseSummary->text().isEmpty());
+    QVERIFY(!parseButton->isEnabled());
+    QVERIFY(!applyButton->isEnabled());
+    QVERIFY(copyPromptButton->isEnabled());
+    QVERIFY(copyOpenButton->isEnabled());
+
+    responseEdit->setPlainText(validResponse);
+    QCOMPARE(promptEdit->toPlainText(), generatedPrompt);
+    QVERIFY(parseButton->isEnabled());
+    parseButton->click();
+
+    QCOMPARE(review->rowCount(), 1);
+    QCOMPARE(review->item(0, 2)->text(), QStringLiteral("Ready"));
     QVERIFY(!parseSummary->text().isEmpty());
     QVERIFY(applyButton->isEnabled());
 }

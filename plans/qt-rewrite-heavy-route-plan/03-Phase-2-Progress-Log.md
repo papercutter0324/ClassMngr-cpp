@@ -17739,3 +17739,25 @@ The executor focused Ninja build succeeded; CTest passed 1/1, the direct slot pa
 The Tester confirmed the slot is listed and verified the response-edit invalidation clears review/summary while retaining prompt and edited response, then reparses to reflect the edit.
 
 Focused CTest passed 1/1; direct offscreen execution passed 3/3. Scoped diff check exited 0 with an LF-to-CRLF notice. No full suite, browser, or network. F489 is independently verified, accepted, and ready to commit; Batch 65 remains active until commit.
+
+### F489 committed - 2026-10-09
+
+F489 committed as db95dde0 with six scoped paths. Batch 65 is complete. Batch 66 candidate discovery is underway for F490; selection is pending.
+
+### F490 acceptance plan recorded before implementation - 2026-10-09
+
+In the batch report service test, use one eligible report: generate a prompt and parse a valid response into one Ready row, then clear the response. Verify review/summary clear, Parse/Apply disable, the prompt remains unchanged, and Copy/CopyOpen stay enabled. Restore a valid response and confirm parsing/review recover.
+
+This clears the response entirely, distinct from F489’s nonempty response edit. Dialog-level malformed-status mapping remains a later alternative. No production/CMake/browser/network changes. F490 is selected/current; implementation and verification are pending. Batch 66 remains active.
+
+### F490 implementation update - 2026-10-09
+
+The implemented case clears an already parsed response, verifies review/summary clear and Parse/Apply disable while the prompt remains unchanged and Copy/CopyOpen stay enabled, then restores a valid response and confirms parsing/review recover. The boundary remains response-emptying, separate from F489’s nonempty edit.
+
+The executor focused build and CTest passed; the direct offscreen slot passed 3/0/0 and diff check passed. Qt font and LF-to-CRLF notices occurred. Independent verification is pending. Batch 66 remains active.
+
+### F490 independent verification update - 2026-10-09
+
+The Tester confirmed the slot is listed and verified clearing a parsed response resets review/summary and disables Parse/Apply while preserving the prompt and Copy/CopyOpen, then restoring valid response text recovers parsing/review. The executable timestamp is fresh.
+
+Focused CTest passed 1/1 in 8.51 seconds; direct offscreen execution exited 0. Scoped diff check exited 0 with a line-ending advisory. No full suite, browser, or network. F490 is independently verified, accepted, and ready to commit; Batch 66 remains active until commit.
