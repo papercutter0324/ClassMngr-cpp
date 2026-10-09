@@ -137,6 +137,8 @@ public:
 
     void refreshNavigationPreferences();
 
+    void refreshClasses();
+
 
 
 signals:

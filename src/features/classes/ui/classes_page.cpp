@@ -247,12 +247,24 @@ bool ClassesPage::openClass(
             releaseEvaluationResources();
         }
         m_classes.clear();
+        m_navigationSnapshot.clear();
+        m_navigationSnapshotMatchesClasses = true;
         m_currentClassId = -1;
         m_currentSection = section;
-        rebuildClassTabs(-1);
+        m_selectedGrade.clear();
+        m_selectedClassIds.clear();
+        m_weekendClassesAvailable = false;
+        m_dayFilter.selectedDays.remove(QStringLiteral("Saturday"));
+        m_dayFilter.selectedDays.remove(QStringLiteral("Sunday"));
+        m_visibleClassCount = 0;
+        m_navigationGradeGroupCount = 0;
+        m_navigationClassTabCount = 0;
+        releaseClassNavigationWidgets();
+        releaseSectionNavigationWidgets();
         rebuildSectionTabs();
         setEditorAvailable(false);
         updateHeaderText();
+        markRefreshed();
         return false;
     }
 
@@ -294,6 +306,7 @@ bool ClassesPage::openClass(
         return false;
     }
 
+    markStale();
     ++m_classQueryCount;
     ClassMngr::Next::Platform::
         ApplicationServicesClassesListReadPort readPort(m_services);
@@ -308,6 +321,7 @@ bool ClassesPage::openClass(
             classesListErrorMessage(loadedClasses.error().message)
             );
         m_classes.clear();
+        m_navigationSnapshotMatchesClasses = false;
         m_currentClassId = -1;
         rebuildClassTabs(-1);
         rebuildSectionTabs();
@@ -318,6 +332,7 @@ bool ClassesPage::openClass(
     m_classes = classroomsFromListSnapshot(loadedClasses.value());
     m_sourceClassCount = m_classes.size();
     m_classResultRowCount += m_classes.size();
+    refreshNavigationSnapshot();
 
     int selectedClassId =
         classId > 0
@@ -352,7 +367,10 @@ bool ClassesPage::openClass(
         rebuildSectionTabs();
         setEditorAvailable(false);
         updateHeaderText();
-        markRefreshed();
+        if (m_navigationSnapshotMatchesClasses)
+        {
+            markRefreshed();
+        }
         return true;
     }
 
@@ -370,7 +388,10 @@ bool ClassesPage::openClass(
     restoreSelections();
     setEditorAvailable(true);
     updateHeaderText();
-    markRefreshed();
+    if (m_navigationSnapshotMatchesClasses)
+    {
+        markRefreshed();
+    }
     return true;
 }
 
@@ -669,13 +690,22 @@ void ClassesPage::clearDatabaseState()
 {
     releaseEvaluationResources();
     m_classes.clear();
+    m_navigationSnapshot.clear();
+    m_navigationSnapshotMatchesClasses = true;
     m_currentClassId = -1;
     m_currentSection = ClassesSection::Details;
     m_selectedGrade.clear();
     m_selectedClassIds.clear();
     m_loadedEditorClassIds.clear();
+    m_weekendClassesAvailable = false;
+    m_dayFilter.selectedDays.remove(QStringLiteral("Saturday"));
+    m_dayFilter.selectedDays.remove(QStringLiteral("Sunday"));
+    m_visibleClassCount = 0;
+    m_navigationGradeGroupCount = 0;
+    m_navigationClassTabCount = 0;
 
-    rebuildClassTabs(-1);
+    releaseClassNavigationWidgets();
+    releaseSectionNavigationWidgets();
     rebuildSectionTabs();
 
     if (m_detailsPage)
@@ -716,6 +746,7 @@ void ClassesPage::clearDatabaseState()
 
 void ClassesPage::retranslateUi()
 {
+    const bool navigationWasBuilt = m_classTabs != nullptr;
     m_titleLabel->setText(tr("Classes"));
     m_emptyLabel->setText(tr("No classes available"));
 
@@ -745,7 +776,10 @@ void ClassesPage::retranslateUi()
     }
 
     rebuildSectionTabs();
-    rebuildClassTabs(m_currentClassId);
+    if (navigationWasBuilt)
+    {
+        rebuildClassTabs(m_currentClassId);
+    }
     restoreSelections();
     updateHeaderText();
 }
@@ -755,6 +789,39 @@ Status ClassesPage::prepareForActivation()
     return m_currentSection == ClassesSection::Evaluations
         ? acquireEvaluationResources()
         : Status{};
+}
+
+void ClassesPage::activate()
+{
+    // openClass() marks the page fresh only after a complete summary read.
+    // Keep failures stale so a later activation can retry.
+    if (needsRefresh())
+    {
+        refresh();
+    }
+
+    if (!m_services || !m_services->hasOpenDatabase())
+    {
+        return;
+    }
+
+    if (!m_sectionTabs)
+    {
+        createSectionTabs();
+    }
+
+    if (!m_classTabs)
+    {
+        rebuildClassTabs(m_currentClassId);
+        restoreSelections();
+    }
+}
+
+void ClassesPage::deactivate()
+{
+    BasePage::deactivate();
+    releaseClassNavigationWidgets();
+    releaseSectionNavigationWidgets();
 }
 
 void ClassesPage::releaseFeatureResources()
@@ -875,25 +942,17 @@ void ClassesPage::buildUi()
         );
 
     m_navigationContainer = new QWidget(this);
-    auto* navigationLayout = new QVBoxLayout(m_navigationContainer);
-    navigationLayout->setContentsMargins(0, 0, 0, 0);
-    navigationLayout->setSpacing(NavigationPillStyle::RowSpacing);
+    m_navigationLayout = new QVBoxLayout(m_navigationContainer);
+    m_navigationLayout->setContentsMargins(0, 0, 0, 0);
+    m_navigationLayout->setSpacing(NavigationPillStyle::RowSpacing);
 
     m_classTabsContainer = new QWidget(m_navigationContainer);
     m_classTabsLayout = new QVBoxLayout(m_classTabsContainer);
     m_classTabsLayout->setContentsMargins(0, 0, 0, 0);
     m_classTabsLayout->setSpacing(0);
-    navigationLayout->addWidget(m_classTabsContainer);
-
-    m_sectionTabs =
-        new NavigationTabWidget(
-            NavigationTabKind::Section,
-            QStringLiteral("classesSectionTabBar"),
-            m_navigationContainer
-            );
-    m_sectionTabs->setObjectName("classesSectionTabs");
-    navigationLayout->addWidget(m_sectionTabs);
+    m_navigationLayout->addWidget(m_classTabsContainer);
     rebuildSectionTabs();
+    createSectionTabs();
     contentLayout()->addWidget(m_navigationContainer);
 
     m_emptyLabel = new QLabel(tr("No classes available"), this);
@@ -922,29 +981,6 @@ void ClassesPage::buildUi()
             {
                 m_onScreenKeyboard->showForFocusScope(this);
             }
-        }
-        );
-
-    connect(
-        m_sectionTabs,
-        &NavigationTabWidget::currentChanged,
-        this,
-        [this](int index)
-        {
-            if (
-                m_rebuildingTabs
-                || m_rebuildingSectionTabs
-                || m_restoringTabs
-                || index < 0
-                || index >= m_visibleSections.size()
-                )
-            {
-                return;
-            }
-
-            activateSection(
-                m_visibleSections.at(index)
-                );
         }
         );
 
@@ -985,32 +1021,8 @@ void ClassesPage::hideEvent(QHideEvent* event)
     }
 }
 
-void ClassesPage::rebuildClassTabs(
-    int selectedClassId
-    )
+bool ClassesPage::refreshNavigationSnapshot()
 {
-    if (!m_classTabsLayout)
-    {
-        return;
-    }
-
-    ++m_rebuildCount;
-    m_rebuildingTabs = true;
-    m_dayFilterButtons.clear();
-    m_dayFilterControls = nullptr;
-
-    while (QLayoutItem* item = m_classTabsLayout->takeAt(0))
-    {
-        if (QWidget* widget = item->widget())
-        {
-            widget->deleteLater();
-        }
-
-        delete item;
-    }
-
-    m_classTabs = nullptr;
-
     ClassMngr::Next::Application::ClassesNavigationSnapshotQuery query;
     QList<ClassTabNavigation::ClassEntry> entries;
     query.classes.reserve(static_cast<std::size_t>(m_classes.size()));
@@ -1052,68 +1064,123 @@ void ClassesPage::rebuildClassTabs(
                     query,
                     readPort
                     );
-        if (snapshot)
+        if (!snapshot
+            || snapshot.value().classes.size()
+                != static_cast<std::size_t>(entries.size()))
         {
-            m_classInfoResultRowCount +=
-                static_cast<int>(snapshot.value().classes.size());
-            for (std::size_t index = 0;
-                 index < snapshot.value().classes.size();
-                 ++index)
+            m_navigationSnapshotMatchesClasses = false;
+            return false;
+        }
+
+        m_classInfoResultRowCount +=
+            static_cast<int>(snapshot.value().classes.size());
+        for (std::size_t index = 0;
+             index < snapshot.value().classes.size();
+             ++index)
+        {
+            const auto& source = snapshot.value().classes[index];
+            ClassTabNavigation::ClassEntry& entry =
+                entries[static_cast<qsizetype>(index)];
+            entry.grade = QString::fromStdU16String(source.grade);
+            entry.level = QString::fromStdU16String(source.level);
+            entry.teacherEn = QString::fromStdU16String(
+                source.teacherEnglishName
+                );
+            entry.teacherKr = QString::fromStdU16String(
+                source.teacherKoreanName
+                );
+
+            const auto appendSchedule = [](
+                const auto& sourceRows,
+                QList<ClassTime>& targetRows
+                )
             {
-                const auto& source = snapshot.value().classes[index];
-                ClassTabNavigation::ClassEntry& entry =
-                    entries[static_cast<qsizetype>(index)];
-                entry.grade = QString::fromStdU16String(source.grade);
-                entry.level = QString::fromStdU16String(source.level);
-                entry.teacherEn = QString::fromStdU16String(
-                    source.teacherEnglishName
+                targetRows.reserve(
+                    static_cast<qsizetype>(sourceRows.size())
                     );
-                entry.teacherKr = QString::fromStdU16String(
-                    source.teacherKoreanName
-                    );
-
-                const auto appendSchedule = [](
-                    const auto& sourceRows,
-                    QList<ClassTime>& targetRows
-                    )
+                for (const auto& row : sourceRows)
                 {
-                    targetRows.reserve(
-                        static_cast<qsizetype>(sourceRows.size())
-                        );
-                    for (const auto& row : sourceRows)
-                    {
-                        targetRows.append({
-                            .day = QString::fromStdU16String(row.day),
-                            .startTime = QString::fromStdU16String(
-                                row.startTime
-                                ),
-                            .endTime = QString::fromStdU16String(row.endTime)
-                        });
-                    }
-                };
-                appendSchedule(source.regularSchedule, entry.regularTimes);
-                appendSchedule(source.intensiveSchedule, entry.intensiveTimes);
-
-                m_classInfoScheduleRowCount +=
-                    static_cast<int>(source.regularSchedule.size())
-                    + static_cast<int>(source.intensiveSchedule.size());
-                if (!source.teacherEnglishName.empty()
-                    || !source.teacherKoreanName.empty())
-                {
-                    ++m_teacherResultRowCount;
+                    targetRows.append({
+                        .day = QString::fromStdU16String(row.day),
+                        .startTime = QString::fromStdU16String(
+                            row.startTime
+                            ),
+                        .endTime = QString::fromStdU16String(row.endTime)
+                    });
                 }
+            };
+            appendSchedule(source.regularSchedule, entry.regularTimes);
+            appendSchedule(source.intensiveSchedule, entry.intensiveTimes);
+
+            m_classInfoScheduleRowCount +=
+                static_cast<int>(source.regularSchedule.size())
+                + static_cast<int>(source.intensiveSchedule.size());
+            if (!source.teacherEnglishName.empty()
+                || !source.teacherKoreanName.empty())
+            {
+                ++m_teacherResultRowCount;
             }
         }
     }
 
-    m_weekendClassesAvailable = hasWeekendClasses(entries);
+    m_navigationSnapshot = std::move(entries);
+    m_navigationSnapshotMatchesClasses = true;
+    return true;
+}
+
+void ClassesPage::rebuildClassTabs(
+    int selectedClassId
+    )
+{
+    if (!m_classTabsLayout)
+    {
+        return;
+    }
+
+    ++m_rebuildCount;
+    m_rebuildingTabs = true;
+    m_dayFilterButtons.clear();
+    m_dayFilterControls = nullptr;
+    while (QLayoutItem* item = m_classTabsLayout->takeAt(0))
+    {
+        if (QWidget* widget = item->widget())
+        {
+            widget->deleteLater();
+        }
+
+        delete item;
+    }
+    m_classTabs = nullptr;
+
+    QList<ClassTabNavigation::ClassEntry> fallbackEntries;
+    const QList<ClassTabNavigation::ClassEntry>* entries =
+        &m_navigationSnapshot;
+    if (!m_navigationSnapshotMatchesClasses)
+    {
+        fallbackEntries.reserve(m_classes.size());
+        for (const Classroom& classroom : std::as_const(m_classes))
+        {
+            if (classroom.id <= 0)
+            {
+                continue;
+            }
+
+            fallbackEntries.append({
+                .classId = classroom.id,
+                .classroomName = classroom.name
+            });
+        }
+        entries = &fallbackEntries;
+    }
+
+    m_weekendClassesAvailable = hasWeekendClasses(*entries);
     if (!m_weekendClassesAvailable)
     {
         m_dayFilter.selectedDays.remove(QStringLiteral("Saturday"));
         m_dayFilter.selectedDays.remove(QStringLiteral("Sunday"));
     }
 
-    if (entries.isEmpty())
+    if (entries->isEmpty())
     {
         m_selectedGrade.clear();
         m_selectedClassIds.clear();
@@ -1142,7 +1209,7 @@ void ClassesPage::rebuildClassTabs(
 
     const ClassTabNavigation::Model navigation =
         ClassTabNavigation::build(
-            entries,
+            *entries,
             ClassTabNavigation::GroupingPolicy::AlwaysGradeGrouped,
             m_dayFilter
             );
@@ -1297,13 +1364,100 @@ void ClassesPage::rebuildClassTabs(
     scheduleFirstRowLayout();
 }
 
-void ClassesPage::rebuildSectionTabs()
+void ClassesPage::releaseClassNavigationWidgets()
 {
-    if (!m_sectionTabs)
+    const bool wasRebuildingTabs = m_rebuildingTabs;
+    m_rebuildingTabs = true;
+
+    m_dayFilterButtons.clear();
+    m_dayFilterControls = nullptr;
+    QList<QWidget*> widgetsToDelete;
+    if (m_classTabsLayout)
+    {
+        while (QLayoutItem* item = m_classTabsLayout->takeAt(0))
+        {
+            if (QWidget* widget = item->widget())
+            {
+                widgetsToDelete.append(widget);
+            }
+            delete item;
+        }
+    }
+
+    if (m_classTabsContainer)
+    {
+        for (QObject* child : m_classTabsContainer->children())
+        {
+            if (auto* widget = qobject_cast<NavigationTabWidget*>(child))
+            {
+                if (!widgetsToDelete.contains(widget))
+                {
+                    widgetsToDelete.append(widget);
+                }
+            }
+        }
+    }
+    for (QWidget* widget : std::as_const(widgetsToDelete))
+    {
+        delete widget;
+    }
+
+    m_classTabs = nullptr;
+
+    m_rebuildingTabs = wasRebuildingTabs;
+}
+
+void ClassesPage::createSectionTabs()
+{
+    if (m_sectionTabs || !m_navigationLayout)
     {
         return;
     }
 
+    m_sectionTabs = new NavigationTabWidget(
+        NavigationTabKind::Section,
+        QStringLiteral("classesSectionTabBar"),
+        m_navigationContainer
+        );
+    m_sectionTabs->setObjectName("classesSectionTabs");
+    m_navigationLayout->addWidget(m_sectionTabs);
+    rebuildSectionTabWidgets();
+
+    connect(
+        m_sectionTabs,
+        &NavigationTabWidget::currentChanged,
+        this,
+        [this](int index)
+        {
+            if (m_rebuildingTabs
+                || m_rebuildingSectionTabs
+                || m_restoringTabs
+                || index < 0
+                || index >= m_visibleSections.size())
+            {
+                return;
+            }
+
+            activateSection(m_visibleSections.at(index));
+        }
+        );
+}
+
+void ClassesPage::releaseSectionNavigationWidgets()
+{
+    const bool wasRebuildingSectionTabs = m_rebuildingSectionTabs;
+    m_rebuildingSectionTabs = true;
+    if (m_sectionTabs)
+    {
+        m_navigationLayout->removeWidget(m_sectionTabs);
+        delete m_sectionTabs;
+        m_sectionTabs = nullptr;
+    }
+    m_rebuildingSectionTabs = wasRebuildingSectionTabs;
+}
+
+void ClassesPage::rebuildSectionTabs()
+{
     bool hideMiddleSchoolAnalyticsAndEvaluations = false;
     const Classroom classroom = classroomById(m_currentClassId);
     if (
@@ -1348,6 +1502,18 @@ void ClassesPage::rebuildSectionTabs()
     visibleSections.append(ClassesSection::CoTeacher);
     visibleSections.append(ClassesSection::Notes);
 
+    m_visibleSections = std::move(visibleSections);
+    m_visibleSectionCount = m_visibleSections.size();
+    rebuildSectionTabWidgets();
+}
+
+void ClassesPage::rebuildSectionTabWidgets()
+{
+    if (!m_sectionTabs)
+    {
+        return;
+    }
+
     m_rebuildingSectionTabs = true;
     while (m_sectionTabs->count() > 0)
     {
@@ -1356,8 +1522,6 @@ void ClassesPage::rebuildSectionTabs()
         delete page;
     }
 
-    m_visibleSections = visibleSections;
-    m_visibleSectionCount = m_visibleSections.size();
     for (const ClassesSection section : std::as_const(m_visibleSections))
     {
         m_sectionTabs->addTab(
@@ -2344,6 +2508,7 @@ void ClassesPage::handleClassInfoSaved(
 {
     if (m_services && m_services->hasOpenDatabase())
     {
+        markStale();
         ClassMngr::Next::Platform::
             ApplicationServicesClassesListReadPort readPort(m_services);
         const ClassMngr::Next::Application::ClassesListReadQuery query(
@@ -2361,10 +2526,15 @@ void ClassesPage::handleClassInfoSaved(
             return;
         }
         m_classes = classroomsFromListSnapshot(loadedClasses.value());
+        refreshNavigationSnapshot();
         rebuildClassTabs(classId);
         rebuildSectionTabs();
         restoreSelections();
         updateHeaderText();
+        if (m_navigationSnapshotMatchesClasses)
+        {
+            markRefreshed();
+        }
     }
 
     emit classInfoSaved(classId);

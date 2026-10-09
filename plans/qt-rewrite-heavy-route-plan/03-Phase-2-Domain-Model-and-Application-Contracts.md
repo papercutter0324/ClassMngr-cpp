@@ -39,10 +39,10 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Depends on: Phase 1
 - Blocks: Persistence, bootstrap, shared UI, and feature migration
 - Owner: Unassigned
-- Last updated: 2026-10-09
+- Last updated: 2026-10-10
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F513 is committed as 139fb17cef7e8c83e404049b968f4166c8d5f28f with focused Debug CTest 3/3; its Release evidence lacks My Classes metrics and the lifecycle 250 MiB gate remains open; F514's paired route-level diagnostic completed with no re-entry rebuild or class/info query; F515 is active in Batch 91 to release/rematerialize Classes navigation while preserving filters, selection, and cached editors, with Gates 1 and 2 Partial and Phase 0, memory, and visual gates open.
+- Current note: F515 is accepted in Batch 91; Batch 92 starts with F516, a paired packaged Release rerun of `lifecycle-classes` and `lifecycle-sub-prep` to measure navigation lifecycle and current process memory; Gates 1 and 2 remain Partial and the Phase 0, 250 MiB, and visual gates remain open.
 
 ### Slice discovery batches
 
@@ -67,9 +67,9 @@ Treat this plan as an operational summary, not a history:
   failure warning/no-navigation behavior; revisit after that behavior is
   clarified.
 
-#### Active batch: Batch 91
+#### Active batch: Batch 92
 
-- F515 - Release the hidden Classes navigation tree and rematerialize it from retained navigation summaries on re-entry, preserving selection/filters and keeping nested editors cached.
+- F516 - Rerun packaged Classes and Sub Prep lifecycle routes after F515; report navigation/query/rebuild behavior and process memory against the 250 MiB target.
 
 ## Objective
 

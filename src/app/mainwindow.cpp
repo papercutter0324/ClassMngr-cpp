@@ -844,6 +844,19 @@ void MainWindow::connectSignals()
 
             connect(
                 page,
+                &SchedulePage::classInfoSaved,
+                this,
+                [this](int)
+                {
+                    if (m_pages)
+                    {
+                        m_pages->refreshClasses();
+                    }
+                }
+                );
+
+            connect(
+                page,
                 &SchedulePage::scheduleImportRequested,
                 this,
                 [this, page]()
@@ -857,6 +870,8 @@ void MainWindow::connectSignals()
                     {
                         return;
                     }
+
+                    m_pages->refreshClasses();
 
                     if (auto* schedule = m_pages->schedulePage())
                     {
@@ -999,6 +1014,19 @@ void MainWindow::connectSignals()
                 &TeacherInfoPage::teacherSaved,
                 m_sidebarController.get(),
                 &SidebarController::handleTeacherSaved
+                );
+
+            connect(
+                page,
+                &TeacherInfoPage::teacherSaved,
+                this,
+                [this](int)
+                {
+                    if (m_pages)
+                    {
+                        m_pages->refreshClasses();
+                    }
+                }
                 );
         };
 

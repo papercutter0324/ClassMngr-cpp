@@ -659,6 +659,11 @@ void PageManager::refreshSchedulePreferences()
 
 void PageManager::refreshNavigationPreferences()
 {
+    refreshClasses();
+}
+
+void PageManager::refreshClasses()
+{
     if (m_classesPage)
     {
         m_classesPage->markStale();

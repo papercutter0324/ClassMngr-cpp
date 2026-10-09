@@ -3819,3 +3819,9 @@ A successful packaged route run verifies only the exercised checkpoints and emit
 ## F514 metric semantics - 2026-10-09
 
 The Classes diagnostic separates batched query executions from returned rows: three class-info snapshot calls and zero separate teacher calls yielded 288 info and teacher rows. Keep both counts asserted instead of treating rows as requests. Process-wide working-set and widget totals do not identify memory ownership; use the explicit navigation descendant and editor counters for feature-specific object counts.
+
+## F515 hidden Classes freshness boundary - 2026-10-10
+
+A cached navigation summary needs invalidation coverage at every successful writer that changes displayed values while the page is hidden. Classes handles local detail and co-teacher saves, but teacher profile saves, external SchedulePage saves, and schedule imports can change teacher labels or schedules without touching the hidden page. Keep invalidation separate from widget lifetime: release the navigation widgets on leave, retain value summaries and nested editor state, and mark the summary stale only after successful external writes.
+
+F515 also exposed a route-level cache bypass: NavigationController reloaded Classes before PageManager could reactivate a fresh cached page. Fresh root-sidebar return now skips that read, while stale and current-page routes retain their prior refresh behavior. When releasing UI widgets, retranslation must still recompute section values without rematerializing the widgets.

@@ -20,6 +20,7 @@
 #include "fakes/fake_user_prompt_service.h"
 #include "ui/shared/dialogs/user_prompt_service.h"
 #include "ui/shared/pages/pagemanager.h"
+#include "ui/shared/widgets/navigation_tab_widget.h"
 #include "ui/shared/widgets/sidebar/sidebar.h"
 
 #include <QApplication>
@@ -33,6 +34,7 @@
 #include <QProgressBar>
 #include <QPushButton>
 #include <QRadioButton>
+#include <QSqlError>
 #include <QSqlQuery>
 #include <QSignalSpy>
 #include <QStringList>
@@ -1246,11 +1248,21 @@ scheduleImportPersistsAndRefreshesTeacherSidebar()
         QStringLiteral("campus_staff"),
         QStringLiteral("teachers_all_korean")
     };
+    QTreeWidgetItem* const classesItem = findItemByKeyPath(
+        tree,
+        QStringList{QStringLiteral("classes")}
+        );
+    QVERIFY(classesItem);
     QTreeWidgetItem* const koreanTeacherGroupBefore = findItemByKeyPath(
         tree,
         koreanTeacherGroupKeys
         );
     QVERIFY(koreanTeacherGroupBefore);
+
+    pages->showPage(PageType::Classes);
+    ClassesPage* const classesPage = pages->classesPage();
+    QVERIFY(classesPage);
+    QCOMPARE(classesPage->runtimeMetrics().visibleClassCount, 0);
 
     pages->showPage(PageType::Schedule);
     QApplication::processEvents();
@@ -1284,6 +1296,37 @@ scheduleImportPersistsAndRefreshesTeacherSidebar()
         &SchedulePage::scheduleImportRequested
         );
     QVERIFY(importRequested.isValid());
+
+    bool cancellationDialogFound = false;
+    QTimer::singleShot(
+        0,
+        window,
+        [&]()
+        {
+            if (ScheduleImportDialog* const dialog =
+                    window->findChild<ScheduleImportDialog*>())
+            {
+                cancellationDialogFound = true;
+                dialog->reject();
+            }
+        }
+        );
+    QTest::mouseClick(importButton, Qt::LeftButton);
+    QVERIFY(cancellationDialogFound);
+    QCOMPARE(importRequested.size(), 1);
+    QVERIFY(!classesPage->needsRefresh());
+
+    const ClassesPageRuntimeMetrics classesBeforeImport =
+        classesPage->runtimeMetrics();
+    pages->showPage(PageType::Classes);
+    const ClassesPageRuntimeMetrics afterCanceledImport =
+        classesPage->runtimeMetrics();
+    QCOMPARE(afterCanceledImport.classQueryCount,
+        classesBeforeImport.classQueryCount);
+    QCOMPARE(afterCanceledImport.classInfoQueryCount,
+        classesBeforeImport.classInfoQueryCount);
+    QVERIFY(!classesPage->needsRefresh());
+    pages->showPage(PageType::Schedule);
 
     int stage = 0;
     int attempts = 0;
@@ -1505,7 +1548,7 @@ scheduleImportPersistsAndRefreshesTeacherSidebar()
             );
     }
 
-    QCOMPARE(importRequested.size(), 1);
+    QCOMPARE(importRequested.size(), 2);
     QVERIFY2(flowCompleted, qPrintable(flowFailure));
     QVERIFY(pages->isCurrentPage(PageType::Schedule));
     QCOMPARE(pages->schedulePage(), schedulePage);
@@ -1606,6 +1649,44 @@ scheduleImportPersistsAndRefreshesTeacherSidebar()
         importedClassInfo->classId,
         QStringLiteral("Friday")
         ));
+
+    QVERIFY(classesPage->needsRefresh());
+    const ClassesPageRuntimeMetrics classesAfterAcceptedImport =
+        classesPage->runtimeMetrics();
+    QCOMPARE(classesAfterAcceptedImport.classQueryCount,
+        classesBeforeImport.classQueryCount);
+    QCOMPARE(classesAfterAcceptedImport.classInfoQueryCount,
+        classesBeforeImport.classInfoQueryCount);
+
+    QVERIFY(clickSidebarItem(tree, classesItem));
+    QVERIFY(pages->isCurrentPage(PageType::Classes));
+
+    const ClassesPageRuntimeMetrics classesAfterReentry =
+        classesPage->runtimeMetrics();
+    QCOMPARE(classesAfterReentry.classQueryCount,
+        classesBeforeImport.classQueryCount + 1);
+    QCOMPARE(classesAfterReentry.classInfoQueryCount,
+        classesBeforeImport.classInfoQueryCount + 1);
+    QVERIFY(!classesPage->needsRefresh());
+    QVERIFY(classesAfterReentry.visibleClassCount >= 3);
+    bool importedClassIsMaterialized = false;
+    for (NavigationTabWidget* const tabs :
+         classesPage->findChildren<NavigationTabWidget*>(
+             QStringLiteral("classesLevelTabs")
+             ))
+    {
+        for (int index = 0; index < tabs->count(); ++index)
+        {
+            const QWidget* const tabPage = tabs->widget(index);
+            if (tabPage
+                && tabPage->property("class_id").toInt()
+                    == importedClassInfo->classId)
+            {
+                importedClassIsMaterialized = true;
+            }
+        }
+    }
+    QVERIFY(importedClassIsMaterialized);
 }
 
 void MainWindowScheduleTestingClassesHandoffParityTests::
@@ -2192,6 +2273,15 @@ workspaceScheduleEditorSaveRefreshesClassActionsThroughMainWindow()
         QStringLiteral("Monday")
         ));
 
+    pages->showPage(PageType::Classes);
+    ClassesPage* const classesPage = pages->classesPage();
+    QVERIFY(classesPage);
+    QCOMPARE(classesPage->currentClassId(), classId);
+    const ClassesPageRuntimeMetrics classesBeforeScheduleSave =
+        classesPage->runtimeMetrics();
+    pages->showPage(PageType::MyWorkspace);
+    QVERIFY(pages->isCurrentPage(PageType::MyWorkspace));
+
     QSignalSpy savedSpy(schedulePage, &SchedulePage::classInfoSaved);
     QVERIFY(savedSpy.isValid());
     QVERIFY(interactWithScheduleEntryCell(
@@ -2258,6 +2348,114 @@ workspaceScheduleEditorSaveRefreshesClassActionsThroughMainWindow()
         QStringLiteral("3:55 PM")
         );
 
+    QVERIFY(classesPage->needsRefresh());
+    QCOMPARE(
+        classesPage->runtimeMetrics().classQueryCount,
+        classesBeforeScheduleSave.classQueryCount
+        );
+    QCOMPARE(
+        classesPage->runtimeMetrics().classInfoQueryCount,
+        classesBeforeScheduleSave.classInfoQueryCount
+        );
+
+    pages->showPage(PageType::Classes);
+    const ClassesPageRuntimeMetrics classesAfterScheduleSave =
+        classesPage->runtimeMetrics();
+    QCOMPARE(
+        classesAfterScheduleSave.classQueryCount,
+        classesBeforeScheduleSave.classQueryCount + 1
+        );
+    QCOMPARE(
+        classesAfterScheduleSave.classInfoQueryCount,
+        classesBeforeScheduleSave.classInfoQueryCount + 1
+        );
+    QVERIFY(!classesPage->needsRefresh());
+    QCOMPARE(classesPage->currentClassId(), classId);
+
+    pages->showPage(PageType::MyWorkspace);
+    QVERIFY(pages->isCurrentPage(PageType::MyWorkspace));
+    QVERIFY(workspace->schedulePage());
+    scheduleWidget->refreshSchedule();
+
+    QSqlQuery failClassInfoUpdate(activeSession->database());
+    const QString createClassInfoFailureTrigger =
+        QStringLiteral(
+            "CREATE TRIGGER fail_f515_class_info_update "
+            "BEFORE UPDATE ON class_info WHEN OLD.class_id = %1 "
+            "BEGIN SELECT RAISE(ABORT, 'F515 test write failure'); END"
+            ).arg(classId);
+    QVERIFY2(
+        failClassInfoUpdate.exec(createClassInfoFailureTrigger),
+        qPrintable(failClassInfoUpdate.lastError().text())
+        );
+
+    QSignalSpy failedSaveSpy(schedulePage, &SchedulePage::classInfoSaved);
+    QVERIFY(failedSaveSpy.isValid());
+    bool failedSaveKeptEditorOpen = false;
+    QVERIFY(!interactWithScheduleEntryCell(
+        *scheduleWidget,
+        classId,
+        [&failedSaveKeptEditorOpen](ScheduleEditorDialog* dialog)
+        {
+            if (!dialog)
+            {
+                return false;
+            }
+
+            const QList<QComboBox*> combos =
+                dialog->findChildren<QComboBox*>();
+            QPushButton* saveButton = nullptr;
+            for (QPushButton* button : dialog->findChildren<QPushButton*>())
+            {
+                if (button->text() == QStringLiteral("Save"))
+                {
+                    saveButton = button;
+                    break;
+                }
+            }
+            if (combos.size() != 2 || !saveButton)
+            {
+                return false;
+            }
+
+            if (combos.at(0)->currentText() != QStringLiteral("E4")
+                || combos.at(1)->currentText() != QStringLiteral("Theseus"))
+            {
+                return false;
+            }
+
+            combos.at(0)->setCurrentText(QStringLiteral("E5"));
+            combos.at(1)->setCurrentText(QStringLiteral("Artemis"));
+            QTest::mouseClick(saveButton, Qt::LeftButton);
+            failedSaveKeptEditorOpen = dialog->isVisible();
+            return false;
+        }
+        ));
+    QVERIFY(failedSaveKeptEditorOpen);
+    QCOMPARE(failedSaveSpy.size(), 0);
+    QVERIFY(!classesPage->needsRefresh());
+
+    QSqlQuery dropClassInfoFailureTrigger(activeSession->database());
+    QVERIFY(dropClassInfoFailureTrigger.exec(
+        QStringLiteral("DROP TRIGGER fail_f515_class_info_update")
+        ));
+
+    const auto unchangedAfterFailedSave =
+        services->classService()->classInfo(classId);
+    QVERIFY(unchangedAfterFailedSave);
+    QCOMPARE(unchangedAfterFailedSave->classGrade, QStringLiteral("E4"));
+    QCOMPARE(unchangedAfterFailedSave->classLevel, QStringLiteral("Theseus"));
+
+    pages->showPage(PageType::Classes);
+    const ClassesPageRuntimeMetrics afterFailedSave =
+        classesPage->runtimeMetrics();
+    QCOMPARE(afterFailedSave.classQueryCount,
+        classesAfterScheduleSave.classQueryCount);
+    QCOMPARE(afterFailedSave.classInfoQueryCount,
+        classesAfterScheduleSave.classInfoQueryCount);
+    QVERIFY(!classesPage->needsRefresh());
+
+    pages->showPage(PageType::MyWorkspace);
     QVERIFY(pages->isCurrentPage(PageType::MyWorkspace));
     QCOMPARE(pages->myWorkspacePage(), workspace);
     QCOMPARE(workspace->currentTab(), WorkspaceTab::Schedule);
@@ -2266,7 +2464,7 @@ workspaceScheduleEditorSaveRefreshesClassActionsThroughMainWindow()
     QVERIFY(services->hasOpenDatabase());
     QCOMPARE(services->databaseSession(), activeSession);
     QCOMPARE(services->currentDatabasePath(), activePath);
-    assertNoPromptRequests(fixture.prompts);
+    QVERIFY(!fixture.prompts.messages.isEmpty());
 }
 
 void MainWindowScheduleTestingClassesHandoffParityTests::
@@ -2617,6 +2815,8 @@ workspaceScheduleDisplayModeUpdatesLoadedClassesPage()
     QApplication::processEvents();
     QVERIFY(tuesdayFilterButton->isChecked());
     QCOMPARE(classesPage->runtimeMetrics().visibleClassCount, 1);
+    const ClassesPageRuntimeMetrics classesBeforeLeave =
+        classesPage->runtimeMetrics();
 
     QVERIFY(clickSidebarItem(sidebarTree, workspaceItem));
     QVERIFY(pages->isCurrentPage(PageType::MyWorkspace));
@@ -2637,7 +2837,33 @@ workspaceScheduleDisplayModeUpdatesLoadedClassesPage()
     QVERIFY(intensiveModeButton->isChecked());
 
     QCOMPARE(pages->classesPage(), classesPage);
-    QCOMPARE(classesPage->runtimeMetrics().visibleClassCount, 0);
+    QVERIFY(!classesPage->needsRefresh());
+    QCOMPARE(classesPage->runtimeMetrics().navigationWidgetCount, 0);
+    QVERIFY(classesPage->findChildren<NavigationTabWidget*>().isEmpty());
+    QCOMPARE(
+        classesPage->runtimeMetrics().visibleClassCount,
+        classesBeforeLeave.visibleClassCount
+        );
+    QCOMPARE(
+        classesPage->runtimeMetrics().classQueryCount,
+        classesBeforeLeave.classQueryCount
+        );
+    QCOMPARE(
+        classesPage->runtimeMetrics().classInfoQueryCount,
+        classesBeforeLeave.classInfoQueryCount
+        );
+
+    QVERIFY(clickSidebarItem(sidebarTree, classesItem));
+    QVERIFY(pages->isCurrentPage(PageType::Classes));
+    QCOMPARE(pages->classesPage(), classesPage);
+    const ClassesPageRuntimeMetrics classesAfterReentry =
+        classesPage->runtimeMetrics();
+    QCOMPARE(classesAfterReentry.visibleClassCount, 0);
+    QCOMPARE(classesAfterReentry.classQueryCount,
+        classesBeforeLeave.classQueryCount);
+    QCOMPARE(classesAfterReentry.classInfoQueryCount,
+        classesBeforeLeave.classInfoQueryCount);
+    QVERIFY(classesAfterReentry.navigationWidgetCount > 0);
     tuesdayFilterButton = classesPage->findChild<QPushButton*>(
         QStringLiteral("classesTuesdayFilterButton")
         );
@@ -2645,14 +2871,12 @@ workspaceScheduleDisplayModeUpdatesLoadedClassesPage()
     QVERIFY(tuesdayFilterButton->isChecked());
 
     QVERIFY(clickSidebarItem(sidebarTree, classesItem));
-    QVERIFY(pages->isCurrentPage(PageType::Classes));
-    QCOMPARE(pages->classesPage(), classesPage);
-    QCOMPARE(classesPage->runtimeMetrics().visibleClassCount, 0);
-    tuesdayFilterButton = classesPage->findChild<QPushButton*>(
-        QStringLiteral("classesTuesdayFilterButton")
-        );
-    QVERIFY(tuesdayFilterButton);
-    QVERIFY(tuesdayFilterButton->isChecked());
+    const ClassesPageRuntimeMetrics afterExplicitClassesSelection =
+        classesPage->runtimeMetrics();
+    QCOMPARE(afterExplicitClassesSelection.classQueryCount,
+        classesAfterReentry.classQueryCount + 1);
+    QCOMPARE(afterExplicitClassesSelection.classInfoQueryCount,
+        classesAfterReentry.classInfoQueryCount + 1);
 
     QVERIFY(services->hasOpenDatabase());
     QCOMPARE(services->databaseSession(), activeSession);

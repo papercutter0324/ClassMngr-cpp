@@ -107,6 +107,8 @@ public:
     void refreshNavigationPreferences();
     void clearDatabaseState() override;
     [[nodiscard]] Status prepareForActivation() override;
+    void activate() override;
+    void deactivate() override;
     void releaseFeatureResources() override;
     void retranslateUi() override;
     [[nodiscard]] PageOutputCapabilities outputCapabilities() const override;
@@ -118,7 +120,12 @@ signals:
 
 private:
     void buildUi();
+    bool refreshNavigationSnapshot();
     void rebuildClassTabs(int selectedClassId);
+    void releaseClassNavigationWidgets();
+    void createSectionTabs();
+    void releaseSectionNavigationWidgets();
+    void rebuildSectionTabWidgets();
     void rebuildSectionTabs();
     void createDayFilterControls(NavigationTabWidget* gradeTabs);
     void updateFirstRowLayout();
@@ -176,6 +183,8 @@ protected:
 private:
     ApplicationServices* m_services = nullptr;
     QList<Classroom> m_classes;
+    QList<ClassTabNavigation::ClassEntry> m_navigationSnapshot;
+    bool m_navigationSnapshotMatchesClasses = true;
     int m_currentClassId = -1;
     ClassesSection m_currentSection = ClassesSection::Details;
     SaveMode m_saveMode = SaveMode::Automatic;
@@ -217,6 +226,7 @@ private:
     QPushButton* m_koreanKeyboardButton = nullptr;
     OnScreenKeyboard* m_onScreenKeyboard = nullptr;
     QWidget* m_navigationContainer = nullptr;
+    QVBoxLayout* m_navigationLayout = nullptr;
     QWidget* m_classTabsContainer = nullptr;
     QVBoxLayout* m_classTabsLayout = nullptr;
     QWidget* m_dayFilterControls = nullptr;

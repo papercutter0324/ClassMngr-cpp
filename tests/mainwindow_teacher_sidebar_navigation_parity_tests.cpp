@@ -8,6 +8,7 @@
 #include "data/repositories/teacher_repository.h"
 #include "domain/models/class_info.h"
 #include "domain/models/teacher.h"
+#include "features/classes/ui/classes_page.h"
 #include "features/teacher/ui/teacher_info_page.h"
 #include "fakes/fake_user_prompt_service.h"
 #include "ui/shared/dialogs/user_prompt_service.h"
@@ -25,6 +26,8 @@
 #include <QPushButton>
 #include <QRect>
 #include <QSignalSpy>
+#include <QSqlError>
+#include <QSqlQuery>
 #include <QTemporaryDir>
 #include <QTimer>
 #include <QTextEdit>
@@ -402,12 +405,26 @@ manualTeacherSavePreservesSelectedDuplicateOccurrence()
     QVERIFY(pages);
     pages->setSaveMode(SaveMode::Manual);
 
+    pages->showPage(PageType::Classes);
+    ClassesPage* const classesPage = pages->classesPage();
+    QVERIFY(classesPage);
+    const int assignedClassId = classesPage->currentClassId();
+    QVERIFY(assignedClassId > 0);
+    const ClassesPageRuntimeMetrics classesBeforeTeacherSave =
+        classesPage->runtimeMetrics();
+    pages->showPage(PageType::MyWorkspace);
+
     Sidebar* const sidebar = window.findChild<Sidebar*>();
     QVERIFY(sidebar);
     QTreeWidget* const tree = sidebar->findChild<QTreeWidget*>(
         QStringLiteral("sidebarTree")
         );
     QVERIFY(tree);
+    QTreeWidgetItem* const classesItem = findTopLevelItemByKey(
+        tree,
+        QStringLiteral("classes")
+        );
+    QVERIFY(classesItem);
 
     const QStringList coTeacherKeys{
         QStringLiteral("co_teachers"),
@@ -463,6 +480,10 @@ manualTeacherSavePreservesSelectedDuplicateOccurrence()
 
     const QString updatedDisplayName =
         QStringLiteral("Assigned Roman");
+    QLineEdit* const teacherEnglishName = teacherPage->findChild<QLineEdit*>(
+        QStringLiteral("teacherEnEdit")
+        );
+    QVERIFY(teacherEnglishName);
     QVERIFY(preferredName->findText(updatedDisplayName) >= 0);
     preferredName->setCurrentText(updatedDisplayName);
     QVERIFY(teacherPage->hasUnsavedChanges());
@@ -526,6 +547,71 @@ manualTeacherSavePreservesSelectedDuplicateOccurrence()
         QStringLiteral("Assigned Teacher")
         );
     QCOMPARE(persistedTeacher->preferredName, updatedDisplayName);
+
+    QVERIFY(classesPage->needsRefresh());
+    QCOMPARE(
+        classesPage->runtimeMetrics().classQueryCount,
+        classesBeforeTeacherSave.classQueryCount
+        );
+    QCOMPARE(
+        classesPage->runtimeMetrics().classInfoQueryCount,
+        classesBeforeTeacherSave.classInfoQueryCount
+        );
+
+    QVERIFY(clickTreeItem(tree, classesItem));
+    QVERIFY(pages->isCurrentPage(PageType::Classes));
+    const ClassesPageRuntimeMetrics classesAfterTeacherSave =
+        classesPage->runtimeMetrics();
+    QCOMPARE(
+        classesAfterTeacherSave.classQueryCount,
+        classesBeforeTeacherSave.classQueryCount + 1
+        );
+    QCOMPARE(
+        classesAfterTeacherSave.classInfoQueryCount,
+        classesBeforeTeacherSave.classInfoQueryCount + 1
+        );
+    QVERIFY(!classesPage->needsRefresh());
+    QCOMPARE(classesPage->currentClassId(), assignedClassId);
+
+    pages->showPage(PageType::TeacherInfo);
+    QCOMPARE(pages->teacherPage(), teacherPage);
+    QSqlQuery failTeacherUpdate(activeSession->database());
+    const QString createTeacherFailureTrigger =
+        QStringLiteral(
+            "CREATE TRIGGER fail_f515_teacher_update "
+            "BEFORE UPDATE ON teachers WHEN OLD.id = %1 "
+            "BEGIN SELECT RAISE(ABORT, 'F515 test write failure'); END"
+            ).arg(assignedTeacher.id);
+    QVERIFY2(
+        failTeacherUpdate.exec(createTeacherFailureTrigger),
+        qPrintable(failTeacherUpdate.lastError().text())
+        );
+
+    teacherEnglishName->setText(QStringLiteral("Failed Update"));
+    QVERIFY(teacherPage->hasUnsavedChanges());
+    QSignalSpy failedTeacherSaveSpy(
+        teacherPage,
+        &TeacherInfoPage::teacherSaved
+        );
+    QVERIFY(failedTeacherSaveSpy.isValid());
+    QTest::mouseClick(saveButton, Qt::LeftButton);
+    QApplication::processEvents();
+    QCOMPARE(failedTeacherSaveSpy.size(), 0);
+    QVERIFY(teacherPage->hasUnsavedChanges());
+
+    QSqlQuery dropTeacherFailureTrigger(activeSession->database());
+    QVERIFY(dropTeacherFailureTrigger.exec(
+        QStringLiteral("DROP TRIGGER fail_f515_teacher_update")
+        ));
+
+    pages->showPage(PageType::Classes);
+    const ClassesPageRuntimeMetrics afterFailedTeacherSave =
+        classesPage->runtimeMetrics();
+    QCOMPARE(afterFailedTeacherSave.classQueryCount,
+        classesAfterTeacherSave.classQueryCount);
+    QCOMPARE(afterFailedTeacherSave.classInfoQueryCount,
+        classesAfterTeacherSave.classInfoQueryCount);
+    QVERIFY(!classesPage->needsRefresh());
 
     QVERIFY(services == window.services());
     QVERIFY(services->hasOpenDatabase());

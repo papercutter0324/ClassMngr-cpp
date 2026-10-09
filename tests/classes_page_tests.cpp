@@ -2,13 +2,16 @@
 #include "app/services/feature_services.h"
 #include "data/data_service.h"
 #include "data/database/database_session.h"
+#include "data/repositories/class_info_repository.h"
 #include "data/repositories/speaking_eval_repository.h"
 #include "features/classes/ui/class_co_teacher_page.h"
 #include "features/classes/ui/class_details_page.h"
+#include "features/classes/ui/class_notes_page.h"
 #include "features/classes/ui/classes_page.h"
 #include "features/classes/ui/classes_page_subtitle_text.h"
 #include "features/roster/ui/roster_editor_widget.h"
 #include "features/speaking_eval/ui/speaking_eval_page.h"
+#include "fakes/fake_user_prompt_service.h"
 #include "domain/models/speaking_evaluation.h"
 #include "next/application/class_day_filter_reset_policy.h"
 #include "next/application/class_selection_reset_policy.h"
@@ -23,6 +26,7 @@
 #include "ui/shared/widgets/navigation_pill_style.h"
 #include "ui/shared/widgets/navigation_tab_widget.h"
 #include "ui/shared/widgets/on_screen_keyboard.h"
+#include "ui/shared/dialogs/user_prompt_service.h"
 
 #include <QtTest>
 
@@ -35,10 +39,12 @@
 #include <QLabel>
 #include <QLayout>
 #include <QPushButton>
+#include <QPointer>
 #include <QSqlError>
 #include <QSqlQuery>
 #include <QSet>
 #include <QTableView>
+#include <QTextEdit>
 #include <QTemporaryDir>
 #include <QUuid>
 
@@ -99,6 +105,23 @@ bool openDatabase(
 {
     return services.openDatabase(databasePath(directory)).has_value();
 }
+
+class UserPromptServiceScope final
+{
+public:
+    explicit UserPromptServiceScope(IUserPromptService& service)
+    {
+        DialogServices::setUserPromptServiceForTesting(&service);
+    }
+
+    ~UserPromptServiceScope()
+    {
+        DialogServices::setUserPromptServiceForTesting(nullptr);
+    }
+
+    UserPromptServiceScope(const UserPromptServiceScope&) = delete;
+    UserPromptServiceScope& operator=(const UserPromptServiceScope&) = delete;
+};
 
 QAbstractButton* dayFilterButton(
     ClassesPage* page,
@@ -321,6 +344,7 @@ private slots:
     void visibilityScopePortIsAppliedOnInitialLoadAndRefresh();
     void dayFiltersToggleIndependentlyAndRetainHiddenEditor();
     void dayFiltersResetOnPageLeaveAfterHideAndShow();
+    void navigationReleaseCachesSnapshotAndEditorsAcrossReentry();
     void classSelectionResetOnPageLeaveClearsOnlyClassStateAfterHideAndShow();
     void classSelectionResetOnApplicationCloseRetainsOnlyClassStateAfterHideAndShow();
     void explicitClassRequestRetainsExcludingFiltersAndAllSelection();
@@ -444,6 +468,8 @@ classInfoSaveEmitsWhenRefreshIsSkippedWithoutSession()
 
 void ClassesPageTests::classDetailsAndCoTeacherTabsSeparateTheirSectionCards()
 {
+    FakeUserPromptService prompts;
+    const UserPromptServiceScope promptScope(prompts);
     ApplicationServices services;
     ClassesPage page(&services);
 
@@ -494,6 +520,11 @@ void ClassesPageTests::classDetailsAndCoTeacherTabsSeparateTheirSectionCards()
     QVERIFY(!coTeacher->findChild<SectionCard*>(
         QStringLiteral("classTimesCard")
         ));
+    QCOMPARE(prompts.messages.size(), 1);
+    QCOMPARE(
+        prompts.messages.constFirst().title,
+        QStringLiteral("Load Co-Teacher")
+        );
 }
 
 void ClassesPageTests
@@ -771,10 +802,19 @@ void ClassesPageTests::dayFiltersToggleIndependentlyAndRetainHiddenEditor()
 
 void ClassesPageTests::dayFiltersResetOnPageLeaveAfterHideAndShow()
 {
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+
     ApplicationServices services;
+    QVERIFY(openDatabase(services, directory));
     ClassMngr::Next::Platform::
         ApplicationServicesClassDayFilterResetPolicyPort policyPort(services);
     policyPort.save(
+        ClassMngr::Next::Application::
+            ClassDayFilterResetPolicy::OnPageLeave
+        );
+    QCOMPARE(
+        policyPort.load(),
         ClassMngr::Next::Application::
             ClassDayFilterResetPolicy::OnPageLeave
         );
@@ -811,6 +851,139 @@ void ClassesPageTests::dayFiltersResetOnPageLeaveAfterHideAndShow()
     QVERIFY(tuesday);
     QVERIFY(!tuesday->isChecked());
     QCOMPARE(page.currentClassId(), 42);
+}
+
+void ClassesPageTests::navigationReleaseCachesSnapshotAndEditorsAcrossReentry()
+{
+    ApplicationServices services;
+    ClassMngr::Next::Platform::
+        ApplicationServicesClassSelectionResetPolicyPort selectionPolicy(
+            services
+            );
+    selectionPolicy.save(
+        ClassMngr::Next::Application::
+            ClassSelectionResetPolicy::OnApplicationClose
+        );
+    ClassMngr::Next::Platform::
+        ApplicationServicesClassDayFilterResetPolicyPort dayFilterPolicy(
+            services
+            );
+    dayFilterPolicy.save(
+        ClassMngr::Next::Application::
+            ClassDayFilterResetPolicy::OnApplicationClose
+        );
+
+    ClassesPage page(&services);
+    page.resize(1200, 800);
+    page.show();
+    QApplication::processEvents();
+    QVERIFY(page.openClass(42, ClassesSection::Notes));
+    QCOMPARE(page.currentClassId(), 42);
+    QVERIFY(page.isEditorInstantiated(ClassesSection::Notes));
+
+    auto* const notesPage = page.findChild<ClassNotesPage*>();
+    QVERIFY(notesPage);
+    const QList<QTextEdit*> noteEditors =
+        notesPage->findChildren<QTextEdit*>();
+    QCOMPARE(noteEditors.size(), 2);
+    noteEditors.constFirst()->setPlainText(
+        QStringLiteral("Unsaved F515 editor state")
+        );
+    QVERIFY(notesPage->hasUnsavedChanges());
+
+    auto* tuesday = dayFilterButton(
+        &page,
+        QStringLiteral("classesTuesdayFilterButton")
+        );
+    QVERIFY(tuesday);
+    tuesday->click();
+    QVERIFY(tuesday->isChecked());
+
+    QPointer<NavigationTabWidget> oldGradeTabs = gradeTabs(&page);
+    QPointer<NavigationTabWidget> oldSectionTabs =
+        page.findChild<NavigationTabWidget*>(
+            QStringLiteral("classesSectionTabs")
+            );
+    QVERIFY(oldGradeTabs);
+    QVERIFY(oldSectionTabs);
+    const ClassesPageRuntimeMetrics beforeLeave = page.runtimeMetrics();
+    QVERIFY(beforeLeave.navigationWidgetCount > 0);
+
+    page.deactivate();
+    page.hide();
+
+    QVERIFY(oldGradeTabs.isNull());
+    QVERIFY(oldSectionTabs.isNull());
+    QVERIFY(page.findChildren<NavigationTabWidget*>().isEmpty());
+    QCOMPARE(page.runtimeMetrics().navigationWidgetCount, 0);
+    QVERIFY(page.isEditorInstantiated(ClassesSection::Notes));
+    QCOMPARE(page.findChild<ClassNotesPage*>(), notesPage);
+    QCOMPARE(noteEditors.constFirst()->toPlainText(),
+        QStringLiteral("Unsaved F515 editor state"));
+    QCOMPARE(page.currentClassId(), 42);
+
+    ClassInfoRepository* const classInfoRepository =
+        services.databaseSession()->classInfoRepository();
+    QVERIFY(classInfoRepository);
+    const int selectedGradeReadsBeforeRetranslation =
+        classInfoRepository->selectedClassGradeReadMetrics().callCount;
+    page.retranslateUi();
+    QCOMPARE(
+        classInfoRepository->selectedClassGradeReadMetrics().callCount,
+        selectedGradeReadsBeforeRetranslation + 1
+        );
+    QVERIFY(page.findChildren<NavigationTabWidget*>().isEmpty());
+    QCOMPARE(page.runtimeMetrics().navigationWidgetCount, 0);
+    QCOMPARE(page.findChild<ClassNotesPage*>(), notesPage);
+
+    const ClassesPageRuntimeMetrics beforeReentry = page.runtimeMetrics();
+    const int selectedGradeReadsBeforeReentry =
+        classInfoRepository->selectedClassGradeReadMetrics().callCount;
+
+    page.show();
+    page.activate();
+
+    const ClassesPageRuntimeMetrics afterReentry = page.runtimeMetrics();
+    QCOMPARE(afterReentry.classQueryCount, beforeReentry.classQueryCount);
+    QCOMPARE(afterReentry.classInfoQueryCount, beforeReentry.classInfoQueryCount);
+    QCOMPARE(
+        classInfoRepository->selectedClassGradeReadMetrics().callCount,
+        selectedGradeReadsBeforeReentry
+        );
+    QCOMPARE(afterReentry.classQueryCount, beforeLeave.classQueryCount);
+    QCOMPARE(afterReentry.classInfoQueryCount, beforeLeave.classInfoQueryCount);
+    QCOMPARE(afterReentry.selectedClassId, 42);
+    QVERIFY(afterReentry.navigationWidgetCount > 0);
+    QCOMPARE(page.currentSection(), ClassesSection::Notes);
+    QVERIFY(page.isEditorInstantiated(ClassesSection::Notes));
+    QCOMPARE(page.findChild<ClassNotesPage*>(), notesPage);
+    QCOMPARE(noteEditors.constFirst()->toPlainText(),
+        QStringLiteral("Unsaved F515 editor state"));
+
+    auto* const sectionTabs = page.findChild<NavigationTabWidget*>(
+        QStringLiteral("classesSectionTabs")
+        );
+    QVERIFY(sectionTabs);
+    const QStringList expectedSections{
+        QStringLiteral("Details"),
+        QStringLiteral("Roster"),
+        QStringLiteral("Analytics"),
+        QStringLiteral("Evaluations"),
+        QStringLiteral("Co-Teacher"),
+        QStringLiteral("Notes")
+    };
+    QCOMPARE(sectionTabs->count(), expectedSections.size());
+    for (int index = 0; index < expectedSections.size(); ++index)
+    {
+        QCOMPARE(sectionTabs->tabText(index), expectedSections.at(index));
+    }
+
+    tuesday = dayFilterButton(
+        &page,
+        QStringLiteral("classesTuesdayFilterButton")
+        );
+    QVERIFY(tuesday);
+    QVERIFY(tuesday->isChecked());
 }
 
 void ClassesPageTests::

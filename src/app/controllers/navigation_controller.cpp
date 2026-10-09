@@ -342,9 +342,20 @@ void NavigationController::handleNavigation(
 
             auto* classes = m_pages->ensureClassesPage();
 
-            if (!classes || !classes->loadClasses())
+            if (!classes)
             {
                 return;
+            }
+
+            if (
+                alreadyShowingClasses
+                || classes->needsRefresh()
+                )
+            {
+                if (!classes->loadClasses())
+                {
+                    return;
+                }
             }
 
             m_pages->showPage(PageType::Classes);
