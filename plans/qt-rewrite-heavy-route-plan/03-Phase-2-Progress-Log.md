@@ -16799,3 +16799,41 @@ target passed 6/0; CTest ClassMngrMainWindowEditActionParityTests passed 1/1. Th
 rerun passed and the diff check was clean. A known font-directory warning appeared while bundled
 fonts loaded. No CMake or production changes. F454 is accepted in this changeset and ready to
 commit; Batch 30 remains active.
+
+### F454 committed - 2026-10-09
+
+F454, “Phase2 - Cover Copy QAction focused-editor dispatch (F454),” was committed as
+dd73b6d9c536809f05d38487ecca4bc873b9ea86 on Qt-Rewrite (branch ahead 39). The commit includes
+exactly six approved paths and its commit diff check was clean. Batch 30 is complete. Batch 31 is
+active with F455 bounded QAction coverage discovery underway; no candidate has been selected yet.
+F454 acceptance and focused verification remain recorded above.
+
+### F455 acceptance matrix recorded before implementation - 2026-10-09
+
+Select About QAction modal handoff. Add dedicated offscreen coverage in
+tests/mainwindow_about_action_parity_tests.cpp / MainWindowAboutActionParityTests, with CTest
+ClassMngrMainWindowAboutActionParityTests. Register it in cmake/tests/pages_and_output.cmake
+alongside neighboring MainWindow resources.
+
+Isolate CLASSMNGR_SETTINGS_ROOT in a temporary directory because DialogShell persists geometry.
+Construct and show MainWindow without an update controller. Confirm the real About QAction exists
+and is enabled, queue a zero-delay timer, and trigger the QAction. In the timer, capture the active
+modal and verify it is a visible modal AboutDialog parented to MainWindow; close it. Then verify
+MainWindow remains visible and no modal remains.
+
+Exclude license/link checks and update behavior. This matrix is recorded before implementation; F455
+is selected/current in Batch 31 and implementation is pending.
+
+### F455 acceptance update - 2026-10-09
+
+The slot aboutActionShowsModalAboutDialogAndReturnsToMainWindow() passed. It used temporary
+CLASSMNGR_SETTINGS_ROOT settings, triggered the actual enabled About QAction, and used a timer to
+capture and close the visible modal AboutDialog parented to MainWindow. The mismatch path safely
+closed an unexpected active modal before failing. MainWindow remained visible and no modal remained.
+
+Build target MainWindowAboutActionParityTests passed; the exact slot and full target passed 3/0. CTest
+ClassMngrMainWindowAboutActionParityTests passed 1/1. The build and diff check were clean; the
+independent rerun passed. The initial shell launch lacked Qt runtime settings; the direct VS18 / Qt
+6.12 / offscreen launch passed. Output noted missing Vulkan/object-path configuration and a missing
+Qt font directory; bundled fonts loaded. No production changes. F455 is accepted in this changeset
+and ready to commit; Batch 31 remains active.
