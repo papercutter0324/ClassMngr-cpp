@@ -42,7 +42,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-09
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F509 Windows x64 Release evidence capture is recorded; its 307,523,584-byte five-second settled working set remains above the 250 MiB target, and F510 is active in Batch 86 to investigate the measured Sub Prep-to-My Classes increase; Gates 1 and 2 remain Partial.
+- Current note: F509 is committed as 37621c16 and its 307,523,584-byte five-second settled working set remains above the 250 MiB target; F510 identified eager My Classes widget construction plus PageManager caching, and F511 is active in Batch 87 to bound that tree; Gates 1 and 2 remain Partial.
 
 ### Slice discovery batches
 
@@ -67,13 +67,9 @@ Treat this plan as an operational summary, not a history:
   failure warning/no-navigation behavior; revisit after that behavior is
   clarified.
 
-#### Completed batch: Batch 85
+#### Active batch: Batch 87
 
-- F509 - Evidence capture complete: the selected Windows x64 Release routes completed and validated, but this subset is 2/24 routes and does not close the full route gate. The output route generated and released two PDFs; its five-second settled working set was 307,523,584 bytes, above the 262,144,000-byte target. Output parity remains unverified; retain the memory gate as open.
-
-#### Active batch: Batch 86
-
-- F510 - Selected/current: investigate the measured 66,588,672-byte working-set increase and 4,244-widget increase from sub-prep-output-operation-released to the Sub Prep-to-My Classes workflow-page-left checkpoint. Trace My Classes construction, ownership, and release through PageManager and feature UI; establish the responsible subtree before selecting a fix. Keep the 250 MiB acceptance gate open.
+- F511 - Selected/current: replace eager per-class detail-widget construction with one active class detail tree while preserving all class/grade tabs, order, selection, and visible content; release the prior tree on selection changes and rerun the packaged Release output route. Keep the 250 MiB gate open until measured.
 
 ## Objective
 

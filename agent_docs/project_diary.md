@@ -3780,7 +3780,7 @@ F508 independently verified and accepted, ready to commit. The separate page-gen
 
 F508, “Phase2 - Cover Intensive Sub Prep page handoff (F508),” committed as 6d6f0186 with six scoped paths. Batch 84 is complete. The committed test uses the real Generate dialog and persisted Intensive preference, selects Tuesday for target class 4201, excludes Friday sentinel 9901 from request.selectedClassIds, and verifies the source-failure warning. Direct F508/F380 each passed 3/3; the registered target remains red at 18 passed/5 failed in the same untouched slots.
 
-F509 selected/current in Batch 85: validate the packaged Windows x64 Release lifecycle-sub-prep and output-sub-prep routes with the 96-class fixture. The run completed and its measured outcome is recorded below; the 250 MiB settled target and output-parity criteria remain open. Batch 85 evidence capture complete; F510 selected in Batch 86.
+F509 is committed as 37621c16. Batch 85 evidence capture is complete; the 250 MiB target and output parity remain open. F510 diagnostic tracing is complete and F511 is next for the large Sub Prep-to-My Classes widget increase.
 
 
 ### F509 packaged Release evidence capture - 2026-10-09
@@ -3796,3 +3796,14 @@ The output route validator passed its selected-route checks, but the final 250 M
 ### F510 selected for Batch 86 - 2026-10-09
 
 Investigate the measured working-set and widget-count increase as the packaged output route leaves Sub Prep for My Classes. Trace My Classes page construction, ownership, and release in the page manager and feature UI, and confirm which allocations explain the checkpoint delta before choosing a narrowly scoped remedy. Keep the 250 MiB gate open while cause and release behavior remain unproven.
+
+
+### F510 diagnostic result - 2026-10-09
+
+The output route takes the large measurement after My Classes activation: main.cpp calls showPage(), processes events, and then records workflow-page-left/ready. At output-operation release, the route had 2,168 Qt widgets, 9 instantiated pages, and a 233,619,456-byte working set. After entering My Classes, the page-left checkpoint had 6,412 widgets, 10 instantiated pages, and a 300,208,128-byte working set. This is a 4,244-widget and 66,588,672-byte increase.
+
+The source path explains the timing and widget count. MyClassesPage::refresh rebuilds the full class-information navigation. For every summary, both flat and grade-grouped paths call createClassPage while adding every class tab; the page builder creates a teacher profile card, class details, and read-only text editors. Thus the 96-class fixture constructs the detailed QWidget tree for every class when My Classes first activates, although only one class tab is selected.
+
+PageManager caches the page in its m_pages map and QStackedWidget. Leaving a page calls deactivate/releaseFeatureResources, but MyClassesPage does not override resource release or clear its generated tree on deactivation. The hidden page therefore retains its per-class widget tree during the later PDF workflow. Source evidence and the post-activation route sample strongly identify eager all-class construction plus page caching as the cause of the jump; the route does not partition the exact byte contribution per QObject, so the 66,588,672 bytes are not claimed as an isolated My Classes allocation measurement.
+
+F510 diagnostic slice complete. F511 is selected in Batch 87 to keep the existing navigation tabs and class summaries while materializing the detailed widget tree only for the selected class and releasing the prior detail tree on selection changes. Keep the packaged 250 MiB memory gate open until the Release route is rerun.

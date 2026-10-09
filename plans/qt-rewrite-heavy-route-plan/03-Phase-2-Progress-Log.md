@@ -18116,3 +18116,12 @@ Selected routes pass validation, but the 250 MiB target (262,144,000 bytes) is n
 ### F510 acceptance recorded - 2026-10-09
 
 Investigate the 66,588,672-byte working-set and 4,244-widget increase between output-operation release and leaving Sub Prep for My Classes. Inspect the page-manager navigation path and My Classes UI creation/ownership/disposal, identify the responsible widgets/resources by code and instrumentation, and determine whether the memory remains live or the process retains freed allocations before implementing. No production defect or fix is presumed from the checkpoint correlation alone. Keep the 250 MiB gate open. Batch 86 is active.
+
+
+### F510 diagnostic completed - 2026-10-09
+
+The F509 route checkpoint is emitted only after showPage returns and app.processEvents completes (main.cpp workflow). At Sub Prep output-operation release, metrics show widgetCount 2,168, instantiatedPageCount 9, and working set 233,619,456 bytes. After My Classes activation, the workflow-page-left checkpoint shows widgetCount 6,412, instantiatedPageCount 10, and working set 300,208,128 bytes: +4,244 widgets and +66,588,672 working-set bytes.
+
+MyClassesPage::refresh rebuilds class information. The builder loads class summaries and constructs the full navigation, then its flat and grade-grouped loops call createClassPage for every class tab. Each page contains teacher and class detail cards and multiple fields/editors. The 96-class fixture therefore eagerly creates 96 detailed page trees on initial My Classes activation. PageManager keeps created pages in m_pages and QStackedWidget; leaving deactivates the page but does not clear its generated content. The source path explains the timing and widget increase, but the route does not provide per-object byte attribution; do not represent the full measured byte delta as an isolated My Classes allocation.
+
+F510 diagnostic is complete. Batch 86 is complete. F511 is selected in Batch 87 to materialize only the selected class detail view, release the previous detailed tree when class or grade selection changes, and preserve every tab label/order, selected-class behavior, and displayed details. Verification will update existing My Classes parity coverage for lazy selection and rerun the packaged Release output-sub-prep route. Leave the memory and output-parity gates open until their evidence is accepted.

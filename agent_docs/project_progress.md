@@ -3959,7 +3959,7 @@ F508 independently verified and accepted, ready to commit. The separate page-gen
 
 F508, “Phase2 - Cover Intensive Sub Prep page handoff (F508),” committed as 6d6f0186 with six scoped paths. Batch 84 is complete. The committed test uses the real Generate dialog and persisted Intensive preference, selects Tuesday for target class 4201, excludes Friday sentinel 9901 from request.selectedClassIds, and verifies the source-failure warning. Direct F508/F380 each passed 3/3; the registered target remains red at 18 passed/5 failed in the same untouched slots.
 
-F509 selected/current in Batch 85: validate the packaged Windows x64 Release lifecycle-sub-prep and output-sub-prep routes with the 96-class fixture. The run completed and its measured outcome is recorded below; the 250 MiB settled target and output-parity criteria remain open. Batch 85 evidence capture complete; F510 selected in Batch 86.
+F509 is committed as 37621c16. Batch 85 evidence capture is complete; the 250 MiB target and output parity remain open. F510 diagnostic tracing is complete and F511 is next for the large Sub Prep-to-My Classes widget increase.
 
 
 ## F509 packaged Release evidence capture - 2026-10-09
@@ -3968,4 +3968,13 @@ Packaged Windows x64 Release configuration/build/install and the test harness bu
 
 The 96-class Sub Prep lifecycle completed two refresh/leave/re-entry cycles. At the Sub Prep lifecycle checkpoint: 226,119,680 working-set bytes and 215,777,280 private bytes. The output route generated 2 PDFs (17 pages, 139,650 combined bytes) and released the output operation/documents. At release: 233,619,456 working-set and 220,405,760 private bytes; peak working set 242,655,232 bytes. Leaving Sub Prep for My Classes raised working set to 300,208,128 bytes and widget count from 2,168 to 6,412. After two PDF loads/renders/releases, the output route settled at 307,519,488 bytes at 1s and 307,523,584 bytes at 5s; private usage was 324,579,328 bytes and peak working set 316,862,464 bytes. The final sample exceeds the 262,144,000-byte 250 MiB target. The route does not compare generated output visually against a reference, and Phase 0 full 24-route Windows/macOS coverage remains incomplete.
 
-Batch 85 evidence capture is complete, with memory acceptance still open. Batch 86 begins F510: identify page construction/ownership responsible for the transition increase before proposing remediation; verify the owner and release lifecycle with focused evidence.
+Batch 85 evidence capture is complete, with memory acceptance still open. F510 diagnosis is recorded below; Batch 86 is complete and F511 is selected in Batch 87.
+
+
+## F510 diagnostic result - 2026-10-09
+
+The F509 output route records widget/memory checkpoints after calling PageManager::showPage and processing events. At sub-prep-output-operation-released: widgetCount 2,168, instantiatedPageCount 9, working set 233,619,456 bytes. After My Classes activation: widgetCount 6,412, instantiatedPageCount 10, working set 300,208,128 bytes. Delta: 4,244 widgets and 66,588,672 working-set bytes.
+
+Code tracing confirms the construction path. MyClassesPage::refresh calls rebuildClassInformation. After loading class summaries and building navigation, both the flat-class and grade-group loops call createClassPage for every tab. Each page builds teacher and class detail cards plus multiple read-only fields/editors. The 96-class fixture therefore creates detail widgets for every class on first activation, even though only one class is selected. PageManager stores each created page in m_pages and the QStackedWidget; page leave deactivates it but does not remove the My Classes page or clear its generated tree. The route samples after showPage returns and app.processEvents, so the observed count includes this activation and construction.
+
+This is strong causal evidence for the measured widget growth and resident increase, while the route does not measure a per-object byte attribution. F510 diagnostic slice is complete. F511 is selected in Batch 87: retain all navigation labels/order and batched summary data, build detailed UI only for the active class, clear the previously active detail tree when selection changes, and confirm selection/content parity plus the packaged Release memory route. Keep the 250 MiB gate open until measured.

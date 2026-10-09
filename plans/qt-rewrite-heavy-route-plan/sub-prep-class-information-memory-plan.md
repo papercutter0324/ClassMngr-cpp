@@ -439,6 +439,10 @@ The output route generated 2 PDFs with 17 pages and 139,650 combined bytes, then
 
 The route output is generated and release flags are clear, but visual parity was not compared with a reference. The target remains open. Keep the external evidence files for later comparison.
 
-## F510 diagnostic focus - 2026-10-09
+## F510 diagnostic result - 2026-10-09
 
-Trace the packaged output route transition from the Sub Prep page to My Classes. The recorded checkpoint delta is 66,588,672 working-set bytes and 4,244 widgets. Inspect My Classes and PageManager construction/ownership/release, map the increase to actual child widgets/resources, and establish whether those objects remain live or the process retains freed allocations before choosing remediation. Do not infer causality from memory correlation alone; carry the 250 MiB gate forward as open.
+The output route measured 2,168 widgets/233,619,456 working-set bytes at output-operation release, then 6,412 widgets/300,208,128 working-set bytes after the workflow activated My Classes. The checkpoint was emitted after showPage and app.processEvents. MyClassesPage rebuilds all class detail tab pages eagerly, and PageManager retains created pages in its stacked page map when hidden. These code paths explain the transition increase; exact byte attribution by QObject was not collected. F510 diagnosis is complete.
+
+## F511 implementation focus - 2026-10-09
+
+Keep every My Classes grade/class tab and its label/order, but materialize detailed fields/cards only for the active class. Clear the previously active detail widget tree on class/grade changes; preserve selection, refresh, and teacher/class detail behavior. Update existing focused parity coverage only as needed, then rerun the packaged Release output-sub-prep route. The 250 MiB gate remains open until measured, and F509 did not establish output visual parity.
