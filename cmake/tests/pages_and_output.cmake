@@ -1619,6 +1619,7 @@ classmngr_add_qt_test(
 
 qt_add_executable(ClassMngrClassesPageTests
         tests/classes_page_tests.cpp
+        tests/classes_page_test_support.cpp
         src/core/utils/colorutils.cpp
         src/core/utils/sidebar_node_naming.cpp
         src/domain/models/classroom.cpp

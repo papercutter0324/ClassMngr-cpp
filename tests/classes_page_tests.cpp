@@ -74,6 +74,7 @@ void setClassesNavigationReadFailure(bool fails);
 extern int legacyClassListReadCount;
 extern int repositoryClassListReadCount;
 extern int legacyClassInfoReadCount;
+extern int selectedClassGradeReadCount;
 extern int selectedClassSubtitleReadCount;
 extern int selectedClassSubtitleTeacherReadCount;
 QString settingValue(const QString& key);
@@ -610,9 +611,15 @@ selectedClassGradeFailureFailsOpenWithoutDataServiceFallback()
     ClassesPage controlPage(&controlServices);
     const int readsBeforeControl =
         ScheduleWidgetTestStubs::legacyClassInfoReadCount;
+    const int selectedGradeReadsBeforeControl =
+        ScheduleWidgetTestStubs::selectedClassGradeReadCount;
     QVERIFY(controlPage.openClass(42, ClassesSection::Details));
     const int controlPageClassInfoReads =
         ScheduleWidgetTestStubs::legacyClassInfoReadCount - readsBeforeControl;
+    QCOMPARE(
+        ScheduleWidgetTestStubs::selectedClassGradeReadCount,
+        selectedGradeReadsBeforeControl + 1
+        );
 
     ApplicationServices services;
     ClassMngr::Next::Platform::
@@ -630,11 +637,17 @@ selectedClassGradeFailureFailsOpenWithoutDataServiceFallback()
     ScheduleWidgetTestStubs::setSelectedClassGradeReadFailure(true);
     const int readsBeforeFailure =
         ScheduleWidgetTestStubs::legacyClassInfoReadCount;
+    const int selectedGradeReadsBeforeFailure =
+        ScheduleWidgetTestStubs::selectedClassGradeReadCount;
     QVERIFY(page.openClass(42, ClassesSection::Details));
     const int failurePageClassInfoReads =
         ScheduleWidgetTestStubs::legacyClassInfoReadCount - readsBeforeFailure;
 
     QCOMPARE(failurePageClassInfoReads, controlPageClassInfoReads);
+    QCOMPARE(
+        ScheduleWidgetTestStubs::selectedClassGradeReadCount,
+        selectedGradeReadsBeforeFailure + 1
+        );
     QCOMPARE(sectionTabs->count(), 6);
     QCOMPARE(sectionTabs->tabText(2), QStringLiteral("Analytics"));
     QCOMPARE(sectionTabs->tabText(3), QStringLiteral("Evaluations"));
@@ -976,10 +989,10 @@ void ClassesPageTests::navigationReleaseCachesSnapshotAndEditorsAcrossReentry()
         services.databaseSession()->classInfoRepository();
     QVERIFY(classInfoRepository);
     const int selectedGradeReadsBeforeRetranslation =
-        classInfoRepository->selectedClassGradeReadMetrics().callCount;
+        ScheduleWidgetTestStubs::selectedClassGradeReadCount;
     page.retranslateUi();
     QCOMPARE(
-        classInfoRepository->selectedClassGradeReadMetrics().callCount,
+        ScheduleWidgetTestStubs::selectedClassGradeReadCount,
         selectedGradeReadsBeforeRetranslation + 1
         );
     QVERIFY(page.findChildren<NavigationTabWidget*>().isEmpty());
@@ -992,7 +1005,7 @@ void ClassesPageTests::navigationReleaseCachesSnapshotAndEditorsAcrossReentry()
 
     const ClassesPageRuntimeMetrics beforeReentry = page.runtimeMetrics();
     const int selectedGradeReadsBeforeReentry =
-        classInfoRepository->selectedClassGradeReadMetrics().callCount;
+        ScheduleWidgetTestStubs::selectedClassGradeReadCount;
 
     page.show();
     page.activate();
@@ -1001,7 +1014,7 @@ void ClassesPageTests::navigationReleaseCachesSnapshotAndEditorsAcrossReentry()
     QCOMPARE(afterReentry.classQueryCount, beforeReentry.classQueryCount);
     QCOMPARE(afterReentry.classInfoQueryCount, beforeReentry.classInfoQueryCount);
     QCOMPARE(
-        classInfoRepository->selectedClassGradeReadMetrics().callCount,
+        ScheduleWidgetTestStubs::selectedClassGradeReadCount,
         selectedGradeReadsBeforeReentry
         );
     QCOMPARE(afterReentry.classQueryCount, beforeLeave.classQueryCount);
@@ -1561,8 +1574,8 @@ selectedClassSubtitleUsesIndependentReadOutcomesAndRefreshes()
         );
 
     ScheduleWidgetTestStubs::setDatabaseSessionOpen(false);
-    QVERIFY(services.classService()->isAvailable());
-    QVERIFY(services.teacherService()->isAvailable());
+    QVERIFY(!services.classService()->isAvailable());
+    QVERIFY(!services.teacherService()->isAvailable());
     const int legacyReadsBeforeClosedSession =
         ScheduleWidgetTestStubs::legacyClassInfoReadCount;
     page.retranslateUi();
@@ -1677,8 +1690,8 @@ rosterEditorSubtitleKeepsNameFallbackWhenReadIsUnavailable()
     QCOMPARE(ScheduleWidgetTestStubs::selectedClassSubtitleReadCount, 0);
 
     ScheduleWidgetTestStubs::setDatabaseSessionOpen(false);
-    QVERIFY(services.classService()->isAvailable());
-    QVERIFY(services.teacherService()->isAvailable());
+    QVERIFY(!services.classService()->isAvailable());
+    QVERIFY(!services.teacherService()->isAvailable());
     const int legacyClassInfoReadsBefore =
         ScheduleWidgetTestStubs::legacyClassInfoReadCount;
 

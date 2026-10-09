@@ -98,6 +98,7 @@ bool scheduleClassInfoReadFailure = false;
 int legacyClassListReadCount = 0;
 int repositoryClassListReadCount = 0;
 int legacyClassInfoReadCount = 0;
+int selectedClassGradeReadCount = 0;
 int scheduleImportPreviewCallCount = 0;
 int scheduleImportApplyCallCount = 0;
 ScheduleImportPlan lastScheduleImportPlan;
@@ -205,6 +206,7 @@ void reset()
     legacyClassListReadCount = 0;
     repositoryClassListReadCount = 0;
     legacyClassInfoReadCount = 0;
+    selectedClassGradeReadCount = 0;
     scheduleImportPreviewCallCount = 0;
     scheduleImportApplyCallCount = 0;
     lastScheduleImportPlan = {};
@@ -438,6 +440,44 @@ QString settingValue(
     )
 {
     return settings.value(key).toString();
+}
+
+void saveSessionSetting(
+    const QString& key,
+    const QVariant& value
+    )
+{
+    settings.insert(key, value);
+}
+
+QVariant loadSessionSetting(const QString& key)
+{
+    return settings.value(key);
+}
+
+QString selectedClassGrade(const int classId)
+{
+    return classGrades.value(
+        classId,
+        classId == 43
+            ? QStringLiteral("E5")
+            : QStringLiteral("E4")
+        );
+}
+
+QString selectedClassLevel(const int classId)
+{
+    return classLevels.value(
+        classId,
+        classId == 43
+            ? QStringLiteral("Athena")
+            : QStringLiteral("Hercules")
+        );
+}
+
+bool selectedClassGradeReadWillFail()
+{
+    return selectedClassGradeReadFailure;
 }
 
 void setTestingBlock(
