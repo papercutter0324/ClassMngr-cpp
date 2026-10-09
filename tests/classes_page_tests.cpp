@@ -4,6 +4,7 @@
 #include "data/database/database_session.h"
 #include "data/repositories/class_info_repository.h"
 #include "data/repositories/speaking_eval_repository.h"
+#include "domain/models/class_info.h"
 #include "features/classes/ui/class_co_teacher_page.h"
 #include "features/classes/ui/class_details_page.h"
 #include "features/classes/ui/class_notes_page.h"
@@ -26,6 +27,7 @@
 #include "ui/shared/widgets/navigation_pill_style.h"
 #include "ui/shared/widgets/navigation_tab_widget.h"
 #include "ui/shared/widgets/on_screen_keyboard.h"
+#include "ui/shared/widgets/sections/class_schedule_section.h"
 #include "ui/shared/dialogs/user_prompt_service.h"
 
 #include <QtTest>
@@ -42,6 +44,7 @@
 #include <QPointer>
 #include <QSqlError>
 #include <QSqlQuery>
+#include <QSignalBlocker>
 #include <QSet>
 #include <QTableView>
 #include <QTextEdit>
@@ -345,6 +348,7 @@ private slots:
     void dayFiltersToggleIndependentlyAndRetainHiddenEditor();
     void dayFiltersResetOnPageLeaveAfterHideAndShow();
     void navigationReleaseCachesSnapshotAndEditorsAcrossReentry();
+    void diagnosticMetricsTrackDeferredScheduleRowsAndNavigationRoots();
     void classSelectionResetOnPageLeaveClearsOnlyClassStateAfterHideAndShow();
     void classSelectionResetOnApplicationCloseRetainsOnlyClassStateAfterHideAndShow();
     void explicitClassRequestRetainsExcludingFiltersAndAllSelection();
@@ -1039,6 +1043,153 @@ void ClassesPageTests::navigationReleaseCachesSnapshotAndEditorsAcrossReentry()
     QVERIFY(tuesday);
     QVERIFY(tuesday->isChecked());
 
+}
+
+void ClassesPageTests::
+diagnosticMetricsTrackDeferredScheduleRowsAndNavigationRoots()
+{
+    ApplicationServices services;
+    ClassesPage page(&services);
+    page.resize(1200, 800);
+    page.show();
+    QApplication::processEvents();
+
+    QVERIFY(page.openClass(42, ClassesSection::Details));
+    QCOMPARE(page.currentSection(), ClassesSection::Details);
+    ClassScheduleSection* const scheduleSection =
+        page.findChild<ClassScheduleSection*>();
+    QVERIFY(scheduleSection);
+
+    const QList<ClassTime> threeRegularRows{
+        ClassTime{},
+        ClassTime{},
+        ClassTime{}
+    };
+    const QList<ClassTime> oneRegularRow{ClassTime{}};
+    const QList<ClassTime> oneIntensiveRow{ClassTime{}};
+    {
+        const QSignalBlocker signalsBlocked(scheduleSection);
+        scheduleSection->loadSchedules(
+            threeRegularRows,
+            QList<ClassTime>{}
+            );
+    }
+
+    QTRY_COMPARE_WITH_TIMEOUT(
+        page.runtimeMetrics().liveScheduleRowWidgetCount,
+        3,
+        2000
+        );
+    const ClassesPageRuntimeMetrics beforeScheduleReplacement =
+        page.runtimeMetrics();
+    QVERIFY(beforeScheduleReplacement.scheduleSectionAvailable);
+    QCOMPARE(beforeScheduleReplacement.currentScheduleRowCount, 3);
+    QCOMPARE(beforeScheduleReplacement.liveScheduleRowWidgetCount, 3);
+
+    {
+        const QSignalBlocker signalsBlocked(scheduleSection);
+        scheduleSection->loadSchedules(
+            oneRegularRow,
+            oneIntensiveRow
+            );
+    }
+
+    const ClassesPageRuntimeMetrics pendingScheduleDeletion =
+        page.runtimeMetrics();
+    QVERIFY(pendingScheduleDeletion.scheduleSectionAvailable);
+    QCOMPARE(pendingScheduleDeletion.currentScheduleRowCount, 2);
+    QCOMPARE(pendingScheduleDeletion.liveScheduleRowWidgetCount, 5);
+    QCOMPARE(pendingScheduleDeletion.currentNavigationTabRootCount, 1);
+    QCOMPARE(pendingScheduleDeletion.liveNavigationTabRootCount, 1);
+    const ClassesPageRuntimeMetrics repeatedScheduleSample =
+        page.runtimeMetrics();
+    QCOMPARE(
+        repeatedScheduleSample.currentScheduleRowCount,
+        pendingScheduleDeletion.currentScheduleRowCount
+        );
+    QCOMPARE(
+        repeatedScheduleSample.liveScheduleRowWidgetCount,
+        pendingScheduleDeletion.liveScheduleRowWidgetCount
+        );
+    QCOMPARE(
+        repeatedScheduleSample.classQueryCount,
+        pendingScheduleDeletion.classQueryCount
+        );
+    QCOMPARE(
+        repeatedScheduleSample.classInfoQueryCount,
+        pendingScheduleDeletion.classInfoQueryCount
+        );
+    QCOMPARE(page.currentClassId(), 42);
+    QCOMPARE(page.currentSection(), ClassesSection::Details);
+
+    QTRY_COMPARE_WITH_TIMEOUT(
+        page.runtimeMetrics().liveScheduleRowWidgetCount,
+        2,
+        2000
+        );
+    const ClassesPageRuntimeMetrics afterScheduleEventLoopReturn =
+        page.runtimeMetrics();
+    QVERIFY(afterScheduleEventLoopReturn.scheduleSectionAvailable);
+    QCOMPARE(afterScheduleEventLoopReturn.currentScheduleRowCount, 2);
+    QCOMPARE(afterScheduleEventLoopReturn.liveScheduleRowWidgetCount, 2);
+
+    page.refresh();
+    {
+        const QSignalBlocker signalsBlocked(scheduleSection);
+        scheduleSection->loadSchedules(
+            oneRegularRow,
+            oneIntensiveRow
+            );
+    }
+    const ClassesPageRuntimeMetrics pendingTabRootDeletion =
+        page.runtimeMetrics();
+    QCOMPARE(pendingTabRootDeletion.currentNavigationTabRootCount, 1);
+    QVERIFY(pendingTabRootDeletion.liveNavigationTabRootCount > 1);
+    QVERIFY(pendingTabRootDeletion.scheduleSectionAvailable);
+    QCOMPARE(pendingTabRootDeletion.currentScheduleRowCount, 2);
+    QVERIFY(pendingTabRootDeletion.liveScheduleRowWidgetCount >= 2);
+
+    QTRY_COMPARE_WITH_TIMEOUT(
+        page.runtimeMetrics().liveNavigationTabRootCount,
+        1,
+        2000
+        );
+    const ClassesPageRuntimeMetrics afterTabEventLoopReturn =
+        page.runtimeMetrics();
+    QCOMPARE(afterTabEventLoopReturn.currentNavigationTabRootCount, 1);
+    QCOMPARE(afterTabEventLoopReturn.liveNavigationTabRootCount, 1);
+    QVERIFY(afterTabEventLoopReturn.scheduleSectionAvailable);
+    QCOMPARE(afterTabEventLoopReturn.currentScheduleRowCount, 2);
+    QCOMPARE(afterTabEventLoopReturn.liveScheduleRowWidgetCount, 2);
+
+    const ClassesPageRuntimeMetrics beforeLeave = page.runtimeMetrics();
+    page.deactivate();
+    page.hide();
+    const ClassesPageRuntimeMetrics afterLeave = page.runtimeMetrics();
+    QCOMPARE(afterLeave.currentNavigationTabRootCount, 0);
+    QCOMPARE(afterLeave.liveNavigationTabRootCount, 0);
+    QVERIFY(afterLeave.scheduleSectionAvailable);
+    QVERIFY(afterLeave.currentScheduleRowCount > 0);
+    QCOMPARE(
+        afterLeave.liveScheduleRowWidgetCount,
+        afterLeave.currentScheduleRowCount
+        );
+
+    page.show();
+    page.activate();
+    const ClassesPageRuntimeMetrics afterReentry = page.runtimeMetrics();
+    QCOMPARE(afterReentry.currentNavigationTabRootCount, 1);
+    QCOMPARE(afterReentry.liveNavigationTabRootCount, 1);
+    QVERIFY(afterReentry.scheduleSectionAvailable);
+    QVERIFY(afterReentry.currentScheduleRowCount > 0);
+    QCOMPARE(
+        afterReentry.liveScheduleRowWidgetCount,
+        afterReentry.currentScheduleRowCount
+        );
+    QCOMPARE(afterReentry.classQueryCount, beforeLeave.classQueryCount);
+    QCOMPARE(afterReentry.classInfoQueryCount, beforeLeave.classInfoQueryCount);
+    QCOMPARE(page.currentClassId(), 42);
+    QCOMPARE(page.currentSection(), ClassesSection::Details);
 }
 
 void ClassesPageTests::

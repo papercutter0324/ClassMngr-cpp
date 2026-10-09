@@ -374,6 +374,10 @@ void MainWindow::initializePages()
                         classesMetrics.navigationClassTabCount;
                     metrics.classesNavigationWidgetCount =
                         classesMetrics.navigationWidgetCount;
+                    metrics.classesCurrentNavigationTabRootCount =
+                        classesMetrics.currentNavigationTabRootCount;
+                    metrics.classesLiveNavigationTabRootCount =
+                        classesMetrics.liveNavigationTabRootCount;
                     metrics.classesClassQueryCount =
                         classesMetrics.classQueryCount;
                     metrics.classesClassResultRowCount =
@@ -394,6 +398,12 @@ void MainWindow::initializePages()
                         classesMetrics.instantiatedEditorCount;
                     metrics.classesSelectedEditorDescendantWidgetCount =
                         classesMetrics.selectedEditorDescendantWidgetCount;
+                    metrics.classesScheduleSectionAvailable =
+                        classesMetrics.scheduleSectionAvailable;
+                    metrics.classesCurrentScheduleRowCount =
+                        classesMetrics.currentScheduleRowCount;
+                    metrics.classesLiveScheduleRowWidgetCount =
+                        classesMetrics.liveScheduleRowWidgetCount;
                     metrics.classesLoadedEditorClassCount =
                         classesMetrics.loadedEditorClassCount;
                     metrics.classesRebuildCount =

@@ -43,6 +43,8 @@ struct StartupApplicationMetrics
     int classesNavigationGradeGroupCount = 0;
     int classesNavigationClassTabCount = 0;
     int classesNavigationWidgetCount = 0;
+    int classesCurrentNavigationTabRootCount = 0;
+    int classesLiveNavigationTabRootCount = 0;
     int classesClassQueryCount = 0;
     int classesClassResultRowCount = 0;
     int classesClassInfoQueryCount = 0;
@@ -53,6 +55,9 @@ struct StartupApplicationMetrics
     int classesVisibleSectionCount = 0;
     int classesInstantiatedEditorCount = 0;
     int classesSelectedEditorDescendantWidgetCount = 0;
+    bool classesScheduleSectionAvailable = false;
+    int classesCurrentScheduleRowCount = 0;
+    int classesLiveScheduleRowWidgetCount = 0;
     int classesLoadedEditorClassCount = 0;
     int classesRebuildCount = 0;
     int classesSelectedClassId = -1;

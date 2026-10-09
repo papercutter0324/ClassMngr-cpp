@@ -44,6 +44,8 @@ struct ClassesPageRuntimeMetrics
     int navigationGradeGroupCount = 0;
     int navigationClassTabCount = 0;
     int navigationWidgetCount = 0;
+    int currentNavigationTabRootCount = 0;
+    int liveNavigationTabRootCount = 0;
     int classQueryCount = 0;
     int classResultRowCount = 0;
     int classInfoQueryCount = 0;
@@ -54,6 +56,9 @@ struct ClassesPageRuntimeMetrics
     int visibleSectionCount = 0;
     int instantiatedEditorCount = 0;
     int selectedEditorDescendantWidgetCount = 0;
+    bool scheduleSectionAvailable = false;
+    int currentScheduleRowCount = 0;
+    int liveScheduleRowWidgetCount = 0;
     int loadedEditorClassCount = 0;
     int rebuildCount = 0;
     int selectedClassId = -1;

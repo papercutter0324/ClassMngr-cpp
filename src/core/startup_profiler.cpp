@@ -164,6 +164,14 @@ QJsonObject applicationMetricsJson(const StartupApplicationMetrics& metrics)
             metrics.classesNavigationWidgetCount
         },
         {
+            QStringLiteral("classesCurrentNavigationTabRootCount"),
+            metrics.classesCurrentNavigationTabRootCount
+        },
+        {
+            QStringLiteral("classesLiveNavigationTabRootCount"),
+            metrics.classesLiveNavigationTabRootCount
+        },
+        {
             QStringLiteral("classesClassQueryCount"),
             metrics.classesClassQueryCount
         },
@@ -202,6 +210,18 @@ QJsonObject applicationMetricsJson(const StartupApplicationMetrics& metrics)
         {
             QStringLiteral("classesSelectedEditorDescendantWidgetCount"),
             metrics.classesSelectedEditorDescendantWidgetCount
+        },
+        {
+            QStringLiteral("classesScheduleSectionAvailable"),
+            metrics.classesScheduleSectionAvailable
+        },
+        {
+            QStringLiteral("classesCurrentScheduleRowCount"),
+            metrics.classesCurrentScheduleRowCount
+        },
+        {
+            QStringLiteral("classesLiveScheduleRowWidgetCount"),
+            metrics.classesLiveScheduleRowWidgetCount
         },
         {
             QStringLiteral("classesLoadedEditorClassCount"),
@@ -3246,6 +3266,10 @@ StartupApplicationMetrics StartupProfiler::applicationMetrics() const
             supplied.classesNavigationClassTabCount;
         metrics.classesNavigationWidgetCount =
             supplied.classesNavigationWidgetCount;
+        metrics.classesCurrentNavigationTabRootCount =
+            supplied.classesCurrentNavigationTabRootCount;
+        metrics.classesLiveNavigationTabRootCount =
+            supplied.classesLiveNavigationTabRootCount;
         metrics.classesClassQueryCount =
             supplied.classesClassQueryCount;
         metrics.classesClassResultRowCount =
@@ -3266,6 +3290,12 @@ StartupApplicationMetrics StartupProfiler::applicationMetrics() const
             supplied.classesInstantiatedEditorCount;
         metrics.classesSelectedEditorDescendantWidgetCount =
             supplied.classesSelectedEditorDescendantWidgetCount;
+        metrics.classesScheduleSectionAvailable =
+            supplied.classesScheduleSectionAvailable;
+        metrics.classesCurrentScheduleRowCount =
+            supplied.classesCurrentScheduleRowCount;
+        metrics.classesLiveScheduleRowWidgetCount =
+            supplied.classesLiveScheduleRowWidgetCount;
         metrics.classesLoadedEditorClassCount =
             supplied.classesLoadedEditorClassCount;
         metrics.classesRebuildCount =

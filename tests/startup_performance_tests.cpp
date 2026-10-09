@@ -4169,6 +4169,7 @@ void StartupPerformanceTests::capturesLargeClassesBoundaryWhenConfigured()
     };
     QHash<QString, QHash<QString, int>> ownerCountsByCheckpoint;
     QHash<QString, int> selectedEditorDescendantCountsByCheckpoint;
+    QHash<QString, QJsonObject> classesOwnerMetricsByCheckpoint;
     const QString classesPageKey = QStringLiteral("classes");
     QStringList expectedPageKeys;
 
@@ -4234,6 +4235,7 @@ void StartupPerformanceTests::capturesLargeClassesBoundaryWhenConfigured()
             checkpointName,
             selectedEditorDescendantWidgetCount
             );
+        classesOwnerMetricsByCheckpoint.insert(checkpointName, metrics);
         ownerCountsByCheckpoint.insert(checkpointName, ownerCounts);
     }
 
@@ -4269,6 +4271,216 @@ void StartupPerformanceTests::capturesLargeClassesBoundaryWhenConfigured()
             }
             return QJsonObject{};
         };
+    const QJsonObject nextWorkflowPageStartCheckpoint = checkpointNamed(
+        QStringLiteral("workflow-page-start"),
+        QStringLiteral("testing-classes")
+        );
+    QVERIFY(!nextWorkflowPageStartCheckpoint.isEmpty());
+    const QJsonObject classesPageLeftCheckpoint = checkpointNamed(
+        QStringLiteral("workflow-page-left"),
+        classesPageKey
+        );
+    QVERIFY(!classesPageLeftCheckpoint.isEmpty());
+    classesOwnerMetricsByCheckpoint.insert(
+        QStringLiteral("next-workflow-page-start"),
+        nextWorkflowPageStartCheckpoint
+            .value(QStringLiteral("metrics"))
+            .toObject()
+        );
+    classesOwnerMetricsByCheckpoint.insert(
+        QStringLiteral("classes-page-left"),
+        classesPageLeftCheckpoint
+            .value(QStringLiteral("metrics"))
+            .toObject()
+        );
+
+    const auto checkpointIndexFor =
+        [&allCheckpoints](const QString& checkpointName, const QString& detail)
+            -> qsizetype
+        {
+            for (qsizetype index = 0; index < allCheckpoints.size(); ++index)
+            {
+                const QJsonObject checkpoint =
+                    allCheckpoints.at(index).toObject();
+                if (
+                    checkpoint.value(QStringLiteral("name")).toString()
+                        == checkpointName
+                    && checkpoint.value(QStringLiteral("detail")).toString()
+                           == detail
+                    )
+                {
+                    return index;
+                }
+            }
+            return -1;
+        };
+    const qsizetype classesLifecycleCompleteIndex = checkpointIndexFor(
+        QStringLiteral("classes-lifecycle-complete"),
+        QStringLiteral("passed=true; selectedClassId=1")
+        );
+    const qsizetype nextWorkflowPageStartIndex = checkpointIndexFor(
+        QStringLiteral("workflow-page-start"),
+        QStringLiteral("testing-classes")
+        );
+    const qsizetype classesPageLeftIndex = checkpointIndexFor(
+        QStringLiteral("workflow-page-left"),
+        classesPageKey
+        );
+    QVERIFY(classesLifecycleCompleteIndex >= 0);
+    QVERIFY(nextWorkflowPageStartIndex > classesLifecycleCompleteIndex);
+    QVERIFY(classesPageLeftIndex > nextWorkflowPageStartIndex);
+
+    const QStringList classesOwnerDiagnosticCheckpointNames{
+        QStringLiteral("classes-refresh-1-complete"),
+        QStringLiteral("classes-left-1"),
+        QStringLiteral("classes-reentry-1"),
+        QStringLiteral("classes-refresh-2-complete"),
+        QStringLiteral("classes-left-2"),
+        QStringLiteral("classes-reentry-2"),
+        QStringLiteral("classes-lifecycle-complete"),
+        QStringLiteral("next-workflow-page-start"),
+        QStringLiteral("classes-page-left")
+    };
+    for (const QString& checkpointName : classesOwnerDiagnosticCheckpointNames)
+    {
+        const QJsonObject metrics =
+            classesOwnerMetricsByCheckpoint.value(checkpointName);
+        QVERIFY2(
+            !metrics.isEmpty(),
+            qPrintable(
+                QStringLiteral("Missing Classes owner metrics at '%1'.")
+                    .arg(checkpointName)
+                )
+            );
+        QVERIFY(
+            metrics.value(QStringLiteral("classesScheduleSectionAvailable"))
+                .isBool()
+            );
+        QVERIFY(
+            metrics.value(QStringLiteral("classesScheduleSectionAvailable"))
+                .toBool()
+            );
+
+        const int currentScheduleRowCount = metrics.value(
+            QStringLiteral("classesCurrentScheduleRowCount")
+            ).toInt(-1);
+        const int liveScheduleRowWidgetCount = metrics.value(
+            QStringLiteral("classesLiveScheduleRowWidgetCount")
+            ).toInt(-1);
+        QVERIFY(currentScheduleRowCount >= 0);
+        QVERIFY(liveScheduleRowWidgetCount >= currentScheduleRowCount);
+
+        const int currentNavigationTabRootCount = metrics.value(
+            QStringLiteral("classesCurrentNavigationTabRootCount")
+            ).toInt(-1);
+        const int liveNavigationTabRootCount = metrics.value(
+            QStringLiteral("classesLiveNavigationTabRootCount")
+            ).toInt(-1);
+        QVERIFY(currentNavigationTabRootCount >= 0);
+        QVERIFY(currentNavigationTabRootCount <= 1);
+        QVERIFY(liveNavigationTabRootCount >= currentNavigationTabRootCount);
+    }
+
+    for (const QString& checkpointName : {
+             QStringLiteral("classes-left-1"),
+             QStringLiteral("classes-left-2"),
+             QStringLiteral("classes-page-left")
+         })
+    {
+        const QJsonObject metrics =
+            classesOwnerMetricsByCheckpoint.value(checkpointName);
+        QCOMPARE(
+            metrics.value(QStringLiteral("classesCurrentNavigationTabRootCount"))
+                .toInt(-1),
+            0
+            );
+        QCOMPARE(
+            metrics.value(QStringLiteral("classesLiveNavigationTabRootCount"))
+                .toInt(-1),
+            0
+            );
+    }
+
+    for (const QString& checkpointName : {
+             QStringLiteral("classes-reentry-1"),
+             QStringLiteral("classes-reentry-2"),
+             QStringLiteral("classes-lifecycle-complete"),
+             QStringLiteral("next-workflow-page-start")
+         })
+    {
+        const QJsonObject metrics =
+            classesOwnerMetricsByCheckpoint.value(checkpointName);
+        QCOMPARE(
+            metrics.value(QStringLiteral("classesCurrentNavigationTabRootCount"))
+                .toInt(-1),
+            1
+            );
+        QCOMPARE(
+            metrics.value(QStringLiteral("classesLiveNavigationTabRootCount"))
+                .toInt(-1),
+            1
+            );
+    }
+
+    for (const QString& checkpointName : {
+             QStringLiteral("classes-refresh-1-complete"),
+             QStringLiteral("classes-refresh-2-complete")
+         })
+    {
+        const QJsonObject metrics =
+            classesOwnerMetricsByCheckpoint.value(checkpointName);
+        QVERIFY(
+            metrics.value(QStringLiteral("classesLiveNavigationTabRootCount"))
+                .toInt(-1)
+            > metrics.value(
+                  QStringLiteral("classesCurrentNavigationTabRootCount")
+                  ).toInt(-1)
+            );
+    }
+
+    const QJsonObject lifecycleCompleteOwnerMetrics =
+        classesOwnerMetricsByCheckpoint.value(
+            QStringLiteral("classes-lifecycle-complete")
+            );
+    QVERIFY(
+        lifecycleCompleteOwnerMetrics
+            .value(QStringLiteral("classesLiveScheduleRowWidgetCount"))
+            .toInt(-1)
+        > lifecycleCompleteOwnerMetrics
+              .value(QStringLiteral("classesCurrentScheduleRowCount"))
+              .toInt(-1)
+        );
+    const QJsonObject nextWorkflowOwnerMetrics =
+        classesOwnerMetricsByCheckpoint.value(
+            QStringLiteral("next-workflow-page-start")
+            );
+    QCOMPARE(
+        nextWorkflowOwnerMetrics
+            .value(QStringLiteral("classesLiveScheduleRowWidgetCount"))
+            .toInt(-1),
+        nextWorkflowOwnerMetrics
+            .value(QStringLiteral("classesCurrentScheduleRowCount"))
+            .toInt(-1)
+        );
+    const QJsonObject classesPageLeftOwnerMetrics =
+        classesOwnerMetricsByCheckpoint.value(
+            QStringLiteral("classes-page-left")
+            );
+    QVERIFY(
+        classesPageLeftOwnerMetrics
+            .value(QStringLiteral("classesCurrentScheduleRowCount"))
+            .toInt(-1)
+        > 0
+        );
+    QCOMPARE(
+        classesPageLeftOwnerMetrics
+            .value(QStringLiteral("classesLiveScheduleRowWidgetCount"))
+            .toInt(-1),
+        classesPageLeftOwnerMetrics
+            .value(QStringLiteral("classesCurrentScheduleRowCount"))
+            .toInt(-1)
+        );
+
     const QJsonObject workflowCompleteCheckpoint = checkpointNamed(
         QStringLiteral("workflow-complete"),
         QString()

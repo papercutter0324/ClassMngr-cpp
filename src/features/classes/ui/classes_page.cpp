@@ -15,6 +15,8 @@
 #include "features/roster/ui/roster_editor_widget.h"
 #include "features/speaking_eval/ui/speaking_eval_page.h"
 #include "features/speaking_eval/ui/speaking_eval_report_assets_p.h"
+#include "ui/shared/widgets/sectioncards/class_time_row.h"
+#include "ui/shared/widgets/sections/class_schedule_section.h"
 #include "next/application/classes_list_read_query.h"
 #include "next/application/classes_navigation_snapshot.h"
 #include "next/application/selected_class_subtitle_read_query.h"
@@ -474,6 +476,16 @@ ClassesPageRuntimeMetrics ClassesPage::runtimeMetrics() const
     metrics.navigationWidgetCount = m_classTabs
         ? m_classTabs->findChildren<QWidget*>().size() + 1
         : 0;
+    // Count root grade-tab trees only; nested class tabs are not separate roots.
+    metrics.currentNavigationTabRootCount = m_classTabs ? 1 : 0;
+    metrics.liveNavigationTabRootCount = m_classTabsContainer
+        ? static_cast<int>(
+            m_classTabsContainer->findChildren<NavigationTabWidget*>(
+                QString(),
+                Qt::FindDirectChildrenOnly
+                ).size()
+            )
+        : 0;
     metrics.classQueryCount = m_classQueryCount;
     metrics.classResultRowCount = m_classResultRowCount;
     metrics.classInfoQueryCount = m_classInfoQueryCount;
@@ -486,6 +498,20 @@ ClassesPageRuntimeMetrics ClassesPage::runtimeMetrics() const
     {
         metrics.selectedEditorDescendantWidgetCount =
             static_cast<int>(editor->findChildren<QWidget*>().size());
+        if (
+            const ClassScheduleSection* scheduleSection =
+                editor->findChild<ClassScheduleSection*>()
+            )
+        {
+            metrics.scheduleSectionAvailable = true;
+            metrics.currentScheduleRowCount = static_cast<int>(
+                scheduleSection->regularRows().size()
+                + scheduleSection->intensiveRows().size()
+                );
+            metrics.liveScheduleRowWidgetCount = static_cast<int>(
+                scheduleSection->findChildren<ClassTimeRow*>().size()
+                );
+        }
     }
     metrics.loadedEditorClassCount = m_loadedEditorClassIds.size();
     metrics.rebuildCount = m_rebuildCount;
