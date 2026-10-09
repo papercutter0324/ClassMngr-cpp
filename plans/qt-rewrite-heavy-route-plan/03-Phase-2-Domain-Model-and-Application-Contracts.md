@@ -42,7 +42,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-10
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F525 passed same-turn clean Details restoration coverage; Batch 102 starts with paired Release verification of Sub Prep lifecycle/output memory routes, with the 250 MiB, full Phase 0, and visual gates still open.
+- Current note: F526 route evidence passed validation; Sub Prep memory acceptance remains open because the lifecycle peak exceeded the strict 250 MiB working-set target, and Batch 102 continues with F527 then F528 while full Phase 0 and visual gates remain open.
 
 ### Slice discovery batches
 
@@ -69,9 +69,8 @@ Treat this plan as an operational summary, not a history:
 
 #### Active batch: Batch 102
 
-- F526 - Verify paired 96-class Sub Prep lifecycle/output Release routes, generated output release, and process memory samples against 262,144,000 bytes.
-- F527 - Re-establish the ClassesPage full-target baseline after lifecycle changes; repair fixture/assertion issues if needed without weakening tests.
-- F528 - Confirm Sub Prep capture provenance, then compare existing UI captures with approved visual references.
+- F527 - Re-establish the ClassesPage full-target baseline; repair fixture/assertion gaps if needed without weakening assertions.
+- F528 - Confirm Sub Prep capture provenance, then compare captures with approved visual references.
 
 ## Objective
 
