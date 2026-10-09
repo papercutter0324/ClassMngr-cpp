@@ -42,7 +42,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-10
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F524 now verifies aggregate Sub Prep roster row, cell, and text limits at the Platform boundary; Batch 101 starts F525 to cover same-turn clean Details re-entry while deferred deletion is pending, with the 250 MiB, full Phase 0, and visual gates still open.
+- Current note: F525 passed same-turn clean Details restoration coverage; Batch 102 starts with paired Release verification of Sub Prep lifecycle/output memory routes, with the 250 MiB, full Phase 0, and visual gates still open.
 
 ### Slice discovery batches
 
@@ -67,9 +67,11 @@ Treat this plan as an operational summary, not a history:
   failure warning/no-navigation behavior; revisit after that behavior is
   clarified.
 
-#### Active batch: Batch 101
+#### Active batch: Batch 102
 
-- F525 - Verify clean Details snapshot restoration when Classes is reactivated before the released editor's deferred deletion runs; preserve the active editor, restored values, and no-reread contract.
+- F526 - Verify paired 96-class Sub Prep lifecycle/output Release routes, generated output release, and process memory samples against 262,144,000 bytes.
+- F527 - Re-establish the ClassesPage full-target baseline after lifecycle changes; repair fixture/assertion issues if needed without weakening tests.
+- F528 - Confirm Sub Prep capture provenance, then compare existing UI captures with approved visual references.
 
 ## Objective
 

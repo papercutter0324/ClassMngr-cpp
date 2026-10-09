@@ -19,10 +19,13 @@
 #include <QApplication>
 #include <QContextMenuEvent>
 #include <QComboBox>
+#include <QCoreApplication>
+#include <QEvent>
 #include <QFileInfo>
 #include <QMenu>
 #include <QPointer>
 #include <QScrollBar>
+#include <QStackedWidget>
 #include <QRect>
 #include <QSignalSpy>
 #include <QTemporaryDir>
@@ -83,6 +86,7 @@ private slots:
     void renderedClassesRootClickDispatchesToClassesPage();
     void detailsLeaveChoicesPreserveCancelSaveAndDiscardBehavior();
     void cleanDetailsLeaveRestoresSnapshotAndStaleDataReloads();
+    void sameTurnCleanReentryRestoresBeforeDeferredDelete();
     void classesRootContextMenuAddClassCreatesAndOpensClass();
     void newClassActionCreatesAndOpensClass();
 
@@ -610,6 +614,161 @@ cleanDetailsLeaveRestoresSnapshotAndStaleDataReloads()
     QApplication::processEvents();
     QCOMPARE(refreshedGrade->currentText(), dirtyGrade);
     classesPage->discardChanges();
+}
+
+void MainWindowClassesSidebarRootNavigationTests::
+sameTurnCleanReentryRestoresBeforeDeferredDelete()
+{
+    QTemporaryDir workspaceRoot;
+    QVERIFY(workspaceRoot.isValid());
+    const QString workspacePath = QFileInfo(
+        workspaceRoot.filePath(QStringLiteral("classes-fast-reentry.tps"))
+        ).absoluteFilePath();
+
+    ApplicationServices seedServices;
+    QVERIFY(seedServices.openDatabase(workspacePath));
+    const auto createdClass = seedServices.classService()->create(
+        QStringLiteral("Fast Reentry Class")
+        );
+    QVERIFY(createdClass);
+    const auto originalInfo = seedServices.classService()->classInfo(
+        *createdClass
+        );
+    QVERIFY(originalInfo);
+    ClassInfo seededInfo = *originalInfo;
+    seededInfo.classGrade = QStringLiteral("E4");
+    seededInfo.classLevel = QStringLiteral("Theseus");
+    seededInfo.classTimes = {
+        {QStringLiteral("Monday"), QStringLiteral("9:00 AM"),
+         QStringLiteral("9:55 AM")}
+    };
+    QVERIFY(seedServices.classService()->saveClassInfo(seededInfo));
+    seedServices.closeDatabase();
+
+    LanguageService languageService;
+    QVERIFY(languageService.setLanguage(Language::English));
+    MainWindowStartupOptions startupOptions;
+    startupOptions.loadMostRecentDatabase = false;
+    startupOptions.initialDatabasePath = workspacePath;
+    MainWindow window(
+        [](const QString&) {},
+        false,
+        &languageService,
+        nullptr,
+        std::move(startupOptions)
+        );
+    window.show();
+    QApplication::processEvents();
+
+    PageManager* const pages = window.pageManager();
+    ApplicationServices* const services = window.services();
+    QVERIFY(pages);
+    QVERIFY(services);
+    pages->showPage(PageType::Classes);
+    ClassesPage* const classesPage = pages->classesPage();
+    QVERIFY(classesPage);
+    QCOMPARE(classesPage->currentClassId(), *createdClass);
+    QCOMPARE(classesPage->currentSection(), ClassesSection::Details);
+
+    ClassInfoRepository* const repository =
+        services->databaseSession()->classInfoRepository();
+    QVERIFY(repository);
+    const ClassesPageRuntimeMetrics metricsBeforeLeave =
+        classesPage->runtimeMetrics();
+    const int detailReadsBeforeLeave =
+        repository->classDetailsPageReadMetrics().callCount;
+    QVERIFY(detailReadsBeforeLeave > 0);
+    QPointer<ClassDetailsPage> releasedDetails =
+        classesPage->findChild<ClassDetailsPage*>();
+    QVERIFY(releasedDetails);
+    auto* const originalGrade = releasedDetails->findChild<QComboBox*>(
+        QStringLiteral("classGradeCombo")
+        );
+    auto* const originalLevel = releasedDetails->findChild<QComboBox*>(
+        QStringLiteral("classLevelCombo")
+        );
+    QVERIFY(originalGrade);
+    QVERIFY(originalLevel);
+    QCOMPARE(originalGrade->currentText(), QStringLiteral("E4"));
+    QCOMPARE(originalLevel->currentText(), QStringLiteral("Theseus"));
+
+    pages->showPage(PageType::MyWorkspace);
+    QVERIFY(!releasedDetails.isNull());
+    QCOMPARE(classesPage->runtimeMetrics().instantiatedEditorCount, 0);
+    QCOMPARE(
+        classesPage->runtimeMetrics().selectedEditorDescendantWidgetCount,
+        0
+        );
+
+    pages->showPage(PageType::Classes);
+    QCOMPARE(classesPage->currentSection(), ClassesSection::Details);
+    QCOMPARE(
+        repository->classDetailsPageReadMetrics().callCount,
+        detailReadsBeforeLeave
+        );
+    QCOMPARE(classesPage->runtimeMetrics().instantiatedEditorCount, 1);
+    QCOMPARE(classesPage->runtimeMetrics().loadedEditorClassCount, 1);
+    QVERIFY(
+        classesPage->runtimeMetrics().selectedEditorDescendantWidgetCount > 0
+        );
+
+    const QList<ClassDetailsPage*> detailsPages =
+        classesPage->findChildren<ClassDetailsPage*>();
+    QCOMPARE(detailsPages.size(), 2);
+    ClassDetailsPage* restoredDetails = nullptr;
+    for (ClassDetailsPage* details : detailsPages)
+    {
+        if (details != releasedDetails.data())
+        {
+            restoredDetails = details;
+        }
+    }
+    QVERIFY(restoredDetails);
+    QStackedWidget* const editorStack =
+        classesPage->findChild<QStackedWidget*>();
+    QVERIFY(editorStack);
+    QCOMPARE(editorStack->currentWidget(), restoredDetails);
+    QVERIFY(restoredDetails->isVisible());
+    auto* const restoredGrade = restoredDetails->findChild<QComboBox*>(
+        QStringLiteral("classGradeCombo")
+        );
+    auto* const restoredLevel = restoredDetails->findChild<QComboBox*>(
+        QStringLiteral("classLevelCombo")
+        );
+    QVERIFY(restoredGrade);
+    QVERIFY(restoredLevel);
+    QCOMPARE(restoredGrade->currentText(), QStringLiteral("E4"));
+    QCOMPARE(restoredLevel->currentText(), QStringLiteral("Theseus"));
+
+    QCoreApplication::sendPostedEvents(
+        releasedDetails.data(),
+        QEvent::DeferredDelete
+        );
+    QVERIFY(releasedDetails.isNull());
+    QCOMPARE(
+        classesPage->findChildren<ClassDetailsPage*>().size(),
+        1
+        );
+    QCOMPARE(editorStack->currentWidget(), restoredDetails);
+    QCOMPARE(restoredGrade->currentText(), QStringLiteral("E4"));
+    QCOMPARE(restoredLevel->currentText(), QStringLiteral("Theseus"));
+    QCOMPARE(classesPage->runtimeMetrics().instantiatedEditorCount, 1);
+    QCOMPARE(classesPage->runtimeMetrics().loadedEditorClassCount, 1);
+    QVERIFY(
+        classesPage->runtimeMetrics().selectedEditorDescendantWidgetCount > 0
+        );
+    QCOMPARE(
+        repository->classDetailsPageReadMetrics().callCount,
+        detailReadsBeforeLeave
+        );
+    QCOMPARE(
+        classesPage->runtimeMetrics().classQueryCount,
+        metricsBeforeLeave.classQueryCount
+        );
+    QCOMPARE(
+        classesPage->runtimeMetrics().classInfoQueryCount,
+        metricsBeforeLeave.classInfoQueryCount
+        );
 }
 
 void MainWindowClassesSidebarRootNavigationTests::

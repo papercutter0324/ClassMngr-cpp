@@ -18397,3 +18397,16 @@ Windows x64 Debug built `ClassMngrNextPlatformApplicationServicesSubPrepRosterOu
 ### F525 selected for Batch 101 - 2026-10-10
 
 F523 uses `deleteLater()` to release a clean Details editor without deleting a QWidget while a navigation callback may still be on the stack. Verify the fast leave/re-enter path where Classes is reactivated before the deferred-delete event runs. Acceptance requires the new editor to become current with the value snapshot restored, no data reads on unchanged re-entry, no stale editor shown or retained after the delete event, and no change to dirty-editor retention.
+
+## F525 same-turn clean Details re-entry - 2026-10-10
+
+Added `sameTurnCleanReentryRestoresBeforeDeferredDelete()`: Classes is left and re-entered before the old Details editor's `DeferredDelete` event. The restored editor is visible and current with the E4/Theseus snapshot, and class, class-info, and Details read counts remain unchanged. Processing the old editor's delete event removes it and leaves only the restored editor current; existing dirty-editor policy coverage remains. Independent verification inspected the latest version and passed the owning `ClassMngrMainWindowClassesSidebarRootNavigationTests` CTest 1/1 in `build/windows-x64-debug-ninja`; target/source timestamps confirm the binary is current. This is a test-only slice, so no Release route was required. Memory, full Phase 0, and visual gates remain open. Source: `tests/mainwindow_classes_sidebar_root_navigation_tests.cpp:620`.
+
+### F526 selected for Batch 102 - 2026-10-10
+
+Verification-only: run a fresh Windows x64 Release package with paired 96-class `lifecycle-sub-prep` and `output-sub-prep` routes. Require app and harness exit 0, route-scoped validation, generated PDF/output release checks, and process peak plus settled 1s/5s working-set/private samples against 262,144,000 bytes. These are route-level process values, not widget byte attribution; keep the memory gate open if any required route exceeds the target. Sources: `tests/startup_performance_tests.cpp:8011, :8345`; latest F523 memory state; Sub Prep memory plan, around line 108.
+
+### Provisional follow-ons discovered with F525 - 2026-10-10
+
+- F527: Re-establish the ClassesPage full-target baseline after lifecycle changes; if failures persist, repair fixture or assertion issues without weakening tests. Source: this log's ClassesPage baseline near line 18196.
+- F528: Confirm provenance of existing Sub Prep UI captures, then compare them with approved visual references. Sources: `tests/startup_performance_tests.cpp:8574`; `sub-prep-class-information-memory-plan.md:207`; `11-Phase-10-Visual-Behavioral-and-Cross-Platform-Parity.md:97`.
