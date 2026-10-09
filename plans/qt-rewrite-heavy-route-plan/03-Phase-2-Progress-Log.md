@@ -17891,3 +17891,21 @@ The `aiBatchDialogAppliesValidCommentWhenOtherBlockIsMissing` slot generates the
 ### F497 independent verification update - 2026-10-09
 
 The Tester confirmed the assertions, focused build, registered CTest 1/1, direct offscreen slot, function listing, and diff check. An LF-to-CRLF advisory was the only noted issue. This is test-only, with no production, CMake, browser, or network changes. F497 is independently verified, accepted, and ready to commit; Batch 73 remains active until commit.
+
+### F497 committed - 2026-10-09
+
+F497, “Phase2 - Cover missing response block status (F497),” committed as f5f9b561 with six scoped paths. Batch 73 is complete. Batch 74 candidate discovery is underway for F498; selection is pending.
+
+### F498 acceptance plan recorded before implementation - 2026-10-09
+
+Add one dialog-level test in `tests/speaking_eval_batch_report_service_tests.cpp` with three reports: eligible students at indexes 0 and 2 and an ineligible report at index 1. Create the prompt and assert Student IDs 01 and 03 are present while ID 02 is absent. Parse valid blocks for IDs 01 and 03; verify both rows are Ready and checked, then apply and assert exactly two results map in order to the original sourceRows/comments for reports 1 and 3.
+
+The source derives IDs from original report indexes on both prompt and response paths. This tests identity stability across an omitted report under Phase 2 §§2.1 and 2.3. The Copy-only handoff remains separate. Test-only; no production, CMake, browser, or network changes. F498 is selected/current in Batch 74; implementation and verification are pending.
+
+### F498 implementation update - 2026-10-09
+
+The `aiBatchDialogKeepsOriginalIdsAcrossIneligibleReport` slot uses eligible Alice/index 0 and Carol/index 2 around a disabled grade-3 report/index 1. The prompt contains STUDENT_01 and STUDENT_03, not STUDENT_02, and has two records. Parsing yields two Ready, checked rows; Apply returns Alice at sourceRow 5, then Carol at sourceRow 14, with expected restored texts. Executor focused build and CTest passed; direct offscreen execution exited 0, the function was listed, and diff check passed.
+
+### F498 independent verification update - 2026-10-09
+
+The Tester confirmed these assertions, the focused build, registered CTest 1/1, direct offscreen execution, function listing, and diff check. An LF-to-CRLF advisory was the only noted issue. This is test-only, with no production, CMake, browser, or network changes. F498 is independently verified, accepted, and ready to commit; Batch 74 remains active until commit.

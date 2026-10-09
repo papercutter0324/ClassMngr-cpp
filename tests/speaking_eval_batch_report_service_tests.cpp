@@ -561,6 +561,7 @@ private slots:
     void aiBatchDialogClearingResponseClearsStaleReviewState();
     void aiBatchDialogParsesDuplicateMalformedAndUnknownBlocks();
     void aiBatchDialogAppliesValidCommentWhenOtherBlockIsMissing();
+    void aiBatchDialogKeepsOriginalIdsAcrossIneligibleReport();
     void aiBatchDialogConfirmsAcceptedCommentOverwrites();
     void aiBatchDialogCancelDiscardsReadyComment();
     void aiBatchDialogRepairsMalformedReviewComment();
@@ -3250,6 +3251,164 @@ void SpeakingEvalBatchReportServiceTests::
             "Keep adding supporting details and practice difficult sounds. "
             "Your eye contact and confident voice made the presentation "
             "engaging."
+            )
+        );
+}
+
+void SpeakingEvalBatchReportServiceTests::
+    aiBatchDialogKeepsOriginalIdsAcrossIneligibleReport()
+{
+    const auto makeReport = [](
+        const QString& name,
+        const int grade,
+        const int sourceRow
+        )
+    {
+        SpeakingEvalReportData report;
+        report.englishName = name;
+        report.grade = grade;
+        report.notes =
+            QStringLiteral(
+                "[Did Well]\nClear pronunciation\n"
+                "[Needs Improvement]\nAdd supporting details"
+                );
+        return SpeakingEvalBatchReportService::StudentReport{
+            name,
+            report,
+            sourceRow
+        };
+    };
+
+    SpeakingEvalAiBatchDialog dialog(
+        {
+            makeReport(QStringLiteral("Alice"), 4, 5),
+            makeReport(QStringLiteral("Middle"), 3, 8),
+            makeReport(QStringLiteral("Carol"), 6, 14)
+        }
+        );
+    auto* selection =
+        dialog.findChild<QTableWidget*>(
+            QStringLiteral("speakingEvalAiBatchSelectionTable")
+            );
+    auto* createPromptButton =
+        dialog.findChild<QPushButton*>(
+            QStringLiteral("speakingEvalAiBatchCreatePrompt")
+            );
+    auto* promptEdit =
+        dialog.findChild<QPlainTextEdit*>(
+            QStringLiteral("speakingEvalAiBatchPrompt")
+            );
+    auto* responseEdit =
+        dialog.findChild<QPlainTextEdit*>(
+            QStringLiteral("speakingEvalAiBatchResponse")
+            );
+    auto* parseButton =
+        dialog.findChild<QPushButton*>(
+            QStringLiteral("speakingEvalAiBatchParse")
+            );
+    auto* review =
+        dialog.findChild<QTableWidget*>(
+            QStringLiteral("speakingEvalAiBatchReviewTable")
+            );
+    auto* applyButton =
+        dialog.findChild<QPushButton*>(
+            QStringLiteral("speakingEvalAiBatchApply")
+            );
+    QVERIFY(selection);
+    QVERIFY(createPromptButton);
+    QVERIFY(promptEdit);
+    QVERIFY(responseEdit);
+    QVERIFY(parseButton);
+    QVERIFY(review);
+    QVERIFY(applyButton);
+
+    QCOMPARE(selection->rowCount(), 3);
+    QCOMPARE(selection->item(0, 0)->checkState(), Qt::Checked);
+    QVERIFY(!(selection->item(1, 0)->flags() & Qt::ItemIsEnabled));
+    QCOMPARE(selection->item(1, 0)->checkState(), Qt::Unchecked);
+    QCOMPARE(selection->item(2, 0)->checkState(), Qt::Checked);
+
+    createPromptButton->click();
+    const QString generatedPrompt = promptEdit->toPlainText();
+    QVERIFY(
+        generatedPrompt.contains(
+            QStringLiteral("Student ID: STUDENT_01")
+            )
+        );
+    QVERIFY(
+        generatedPrompt.contains(
+            QStringLiteral("Student ID: STUDENT_03")
+            )
+        );
+    QVERIFY(!generatedPrompt.contains(QStringLiteral("STUDENT_02")));
+    QCOMPARE(generatedPrompt.count(QStringLiteral("Student ID:")), 2);
+
+    const QString aliceResponse =
+        QStringLiteral(
+            "STD_NAME spoke clearly and used strong vocabulary. "
+            "Keep adding supporting details and practice difficult sounds. "
+            "Your eye contact and confident voice made the presentation "
+            "engaging."
+            );
+    const QString carolResponse =
+        QStringLiteral(
+            "STD_NAME shared thoughtful ideas and organized the presentation "
+            "well. Keep adding examples to support each point and practice "
+            "new vocabulary. Your clear voice helped the audience follow "
+            "your presentation."
+            );
+    const auto responseBlock = [](
+        const QString& studentId,
+        const QString& comment
+        )
+    {
+        return QStringLiteral(
+            "<<<%1>>>\n%2\n<<<END_%1>>>"
+            ).arg(studentId, comment);
+    };
+    responseEdit->setPlainText(
+        QStringList{
+            responseBlock(QStringLiteral("STUDENT_01"), aliceResponse),
+            responseBlock(QStringLiteral("STUDENT_03"), carolResponse)
+        }.join(QLatin1Char('\n'))
+        );
+    QVERIFY(parseButton->isEnabled());
+    parseButton->click();
+
+    QCOMPARE(review->rowCount(), 2);
+    QCOMPARE(review->item(0, 1)->text(), QStringLiteral("Alice"));
+    QCOMPARE(review->item(1, 1)->text(), QStringLiteral("Carol"));
+    QCOMPARE(review->item(0, 2)->text(), QStringLiteral("Ready"));
+    QCOMPARE(review->item(1, 2)->text(), QStringLiteral("Ready"));
+    QCOMPARE(review->item(0, 0)->checkState(), Qt::Checked);
+    QCOMPARE(review->item(1, 0)->checkState(), Qt::Checked);
+    QVERIFY(applyButton->isEnabled());
+
+    applyButton->click();
+
+    QCOMPARE(dialog.result(), static_cast<int>(QDialog::Accepted));
+    const auto acceptedComments = dialog.acceptedComments();
+    QCOMPARE(acceptedComments.size(), 2);
+    QCOMPARE(acceptedComments.at(0).sourceRow, 5);
+    QVERIFY(acceptedComments.at(0).oldComment.isEmpty());
+    QCOMPARE(
+        acceptedComments.at(0).newComment,
+        QStringLiteral(
+            "Alice spoke clearly and used strong vocabulary. "
+            "Keep adding supporting details and practice difficult sounds. "
+            "Your eye contact and confident voice made the presentation "
+            "engaging."
+            )
+        );
+    QCOMPARE(acceptedComments.at(1).sourceRow, 14);
+    QVERIFY(acceptedComments.at(1).oldComment.isEmpty());
+    QCOMPARE(
+        acceptedComments.at(1).newComment,
+        QStringLiteral(
+            "Carol shared thoughtful ideas and organized the presentation "
+            "well. Keep adding examples to support each point and practice "
+            "new vocabulary. Your clear voice helped the audience follow "
+            "your presentation."
             )
         );
 }

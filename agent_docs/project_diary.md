@@ -3691,3 +3691,9 @@ F496 committed as da5540bb with six scoped paths. The only post-commit worktree 
 F497 decision: fill the batch dialog's missing-response-block classification gap left by F491. Pairing one missing row with one valid row verifies failure isolation: the missing row stays unchecked and the valid response remains applicable.
 
 F497 covers failure isolation for a missing response block: the missing row remains unchecked, while a valid peer row is applied with the expected source row and restored comment. Independent focused verification passed.
+
+F497 committed as f5f9b561 with six scoped paths. The only post-commit worktree entries are the excluded latest_session_work.md change and %SystemDrive%/. Batch 73 is complete; Batch 74 F498 discovery begins with selection pending.
+
+F498 decision: verify AI batch IDs stay tied to original report positions when an ineligible report creates a gap. The prompt, response parser, and accepted-source mapping all use the same report index; selected IDs should remain 01 and 03 and apply to the correct two source rows.
+
+F498 verifies stable AI prompt IDs and accepted-comment mapping across an ineligible report gap: the selected reports retain IDs 01/03 and apply to source rows 5/14 in order. Independent focused verification passed.
