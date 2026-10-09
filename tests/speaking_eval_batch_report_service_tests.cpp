@@ -555,6 +555,7 @@ private slots:
     void aiBatchDialogAssessesCommentQualityAndPreservesStatuses();
     void aiBatchDialogSelectsEligibleStudentsAndReviewsValidComments();
     void aiBatchDialogRedactsUncheckedClassmateNames();
+    void aiBatchDialogRedactsOverlappingUncheckedClassmateName();
     void aiBatchDialogAppliesOnlyRecheckedReadyComment();
     void aiBatchDialogCopyOpenCopiesPromptAndOpensGemini();
     void aiBatchDialogCopyPromptCopiesWithoutOpeningUrl();
@@ -2539,6 +2540,99 @@ void SpeakingEvalBatchReportServiceTests::
     QVERIFY(!generatedPrompt.contains(QStringLiteral("Alice")));
     QVERIFY(!generatedPrompt.contains(QStringLiteral("김민지")));
     QVERIFY(!generatedPrompt.contains(QStringLiteral("Bob")));
+    QVERIFY(!generatedPrompt.contains(QStringLiteral("박서준")));
+}
+
+void SpeakingEvalBatchReportServiceTests::
+    aiBatchDialogRedactsOverlappingUncheckedClassmateName()
+{
+    SpeakingEvalReportData alice;
+    alice.englishName = QStringLiteral("Alice");
+    alice.koreanName = QStringLiteral("김민지");
+    alice.grade = 4;
+    alice.notes =
+        QStringLiteral(
+            "[Did Well]\n"
+            "Alice presented her idea clearly after Alice Jones "
+            "shared a useful example.\n"
+            "[Needs Improvement]\n"
+            "김민지 should ask 박서준 for more supporting details."
+            );
+
+    SpeakingEvalReportData classmate;
+    classmate.englishName = QStringLiteral("Alice Jones");
+    classmate.koreanName = QStringLiteral("박서준");
+    classmate.grade = 5;
+    classmate.notes =
+        QStringLiteral(
+            "[Did Well]\nOrganized the presentation clearly\n"
+            "[Needs Improvement]\nAdd more supporting details"
+            );
+
+    SpeakingEvalAiBatchDialog dialog(
+        {
+            {
+                QStringLiteral("Alice (김민지)"),
+                alice,
+                0
+            },
+            {
+                QStringLiteral("Alice Jones (박서준)"),
+                classmate,
+                1
+            }
+        }
+        );
+
+    auto* selection =
+        dialog.findChild<QTableWidget*>(
+            QStringLiteral("speakingEvalAiBatchSelectionTable")
+            );
+    auto* createPromptButton =
+        dialog.findChild<QPushButton*>(
+            QStringLiteral("speakingEvalAiBatchCreatePrompt")
+            );
+    auto* promptEdit =
+        dialog.findChild<QPlainTextEdit*>(
+            QStringLiteral("speakingEvalAiBatchPrompt")
+            );
+    QVERIFY(selection);
+    QVERIFY(createPromptButton);
+    QVERIFY(promptEdit);
+    QCOMPARE(selection->rowCount(), 2);
+    QCOMPARE(selection->item(0, 0)->checkState(), Qt::Checked);
+    selection->item(1, 0)->setCheckState(Qt::Unchecked);
+    QCOMPARE(selection->item(1, 0)->checkState(), Qt::Unchecked);
+
+    createPromptButton->click();
+
+    const QString generatedPrompt = promptEdit->toPlainText();
+    QVERIFY(
+        generatedPrompt.contains(
+            QStringLiteral("Student ID: STUDENT_01")
+            )
+        );
+    QCOMPARE(generatedPrompt.count(QStringLiteral("Student ID:")), 1);
+    QVERIFY(!generatedPrompt.contains(QStringLiteral("STUDENT_02")));
+    QVERIFY(
+        generatedPrompt.contains(
+            QStringLiteral(
+                "STD_NAME presented her idea clearly after CLASSMATE "
+                "shared a useful example."
+                )
+            )
+        );
+    QVERIFY(
+        generatedPrompt.contains(
+            QStringLiteral(
+                "STD_NAME should ask CLASSMATE for more supporting details."
+                )
+            )
+        );
+    QVERIFY(!generatedPrompt.contains(QStringLiteral("Alice")));
+    QVERIFY(!generatedPrompt.contains(QStringLiteral("Alice Jones")));
+    QVERIFY(!generatedPrompt.contains(QStringLiteral("Jones")));
+    QVERIFY(!generatedPrompt.contains(QStringLiteral("김민지")));
     QVERIFY(!generatedPrompt.contains(QStringLiteral("박서준")));
 }
 

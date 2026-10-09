@@ -17981,3 +17981,21 @@ The `aiBatchDialogDisablesPromptWhenNoReportsAreIncluded` slot verifies two elig
 ### F502 independent verification update - 2026-10-09
 
 The Tester confirmed two checked rows, zero selection disabling Create Prompt, a disabled click leaving the prompt empty, and rechecking one row enabling the action. The focused Ninja target was up to date; CTest passed 1/1; the direct offscreen slot exited 0; the function list included the slot; diff check exited 0. An LF-to-CRLF advisory was the only noted issue. No full suite, production, or CMake changes. F502 is independently verified, accepted, and ready to commit; Batch 78 remains active until commit.
+
+### F502 committed - 2026-10-09
+
+F502, “Phase2 - Cover empty batch prompt selection (F502),” committed as 4b95a041 with six scoped paths. Batch 78 is complete. Batch 79 candidate discovery is underway for F503; selection is pending. Post-commit status contains only the excluded `latest_session_work.md` and `%SystemDrive%/`.
+
+### F503 acceptance plan recorded before implementation - 2026-10-09
+
+Add a focused dialog test in `tests/speaking_eval_batch_report_service_tests.cpp` with selected Alice (`Alice`, `김민지`) and unchecked eligible classmate Alice Jones (`Alice Jones`, `박서준`). Alice’s notes include “Alice presented her idea clearly after Alice Jones shared a useful example.” Generate the prompt and assert only STUDENT_01 is included, the selected reference is `STD_NAME`, the full unchecked classmate reference is `CLASSMATE`, and raw “Alice,” “Alice Jones,” “Jones,” and “박서준” are absent.
+
+Fix redaction ordering so longer overlapping names are handled before shorter names while preserving own-name versus classmate tokens. F492 covered unchecked-name redaction for distinct names, but this overlap exposes the suffix. Defer selection reset because F488 covers its Include-checkbox path. Production source plus focused test only; no CMake, browser, or network changes. F503 is selected/current in Batch 79; implementation and verification are pending.
+
+### F503 implementation update - 2026-10-09
+
+`src/features/speaking_eval/services/speaking_eval_ai_prompt.cpp` now matches escaped name alternatives from the original observations longest-first. Own-name matches become `STD_NAME`, classmate matches become `CLASSMATE`, and emitted placeholders are not reprocessed. The `aiBatchDialogRedactsOverlappingUncheckedClassmateName` regression slot covers Alice/Alice Jones and English/Korean aliases; it failed at the expected-token assertion before the fix and passes after. Executor focused Ninja target, CTest 1/1, direct offscreen slot (3 passed), function listing, and scoped diff check passed. A nonfatal Qt font-directory warning and LF-to-CRLF advisory were noted. Production plus focused-test changes only; no CMake, browser, or network changes. Independent verification is pending; F503 remains selected/current in Batch 79.
+
+### F503 independent verification update - 2026-10-09
+
+The Tester confirmed the overlapping-name tokens with no raw fragments and verified the existing distinct-name case. The focused Ninja target was up to date; CTest passed 1/1; the direct offscreen slot exited 0; the function list included the slot; scoped diff check exited 0. An LF-to-CRLF advisory was the only noted issue. No other production or CMake changes. F503 is independently verified, accepted, and ready to commit; Batch 79 remains active until commit.

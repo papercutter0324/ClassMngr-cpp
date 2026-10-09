@@ -35,25 +35,18 @@ QString promptItems(
     const QStringList& otherNames = {}
     )
 {
-    for (
-        const QString& studentName :
-        {
-            englishName.trimmed(),
-            koreanName.trimmed()
-        }
-        )
+    const QString trimmedEnglishName = englishName.trimmed();
+    const QString trimmedKoreanName = koreanName.trimmed();
+    QStringList redactedNames{
+        trimmedEnglishName,
+        trimmedKoreanName
+    };
+    for (const QString& name : otherNames)
     {
-        if (!studentName.isEmpty())
-        {
-            observations.replace(
-                studentName,
-                QStringLiteral("STD_NAME"),
-                Qt::CaseInsensitive
-            );
-        }
+        redactedNames.append(name.trimmed());
     }
 
-    QStringList redactedNames = otherNames;
+    // Replace complete longer names before an overlapping shorter name.
     std::ranges::sort(
         redactedNames,
         [](const QString& left, const QString& right)
@@ -61,28 +54,51 @@ QString promptItems(
             return left.size() > right.size();
         }
         );
+    QStringList namePatterns;
     for (const QString& name : redactedNames)
     {
-        const QString trimmedName = name.trimmed();
-        if (
-            trimmedName.isEmpty()
-            || trimmedName.compare(
-                englishName.trimmed(),
-                Qt::CaseInsensitive
-                ) == 0
-            || trimmedName.compare(
-                koreanName.trimmed(),
-                Qt::CaseInsensitive
-                ) == 0
-            )
+        if (!name.isEmpty())
         {
-            continue;
+            namePatterns.append(QRegularExpression::escape(name));
         }
-        observations.replace(
-            trimmedName,
-            QStringLiteral("CLASSMATE"),
-            Qt::CaseInsensitive
+    }
+    if (!namePatterns.isEmpty())
+    {
+        const QRegularExpression names(
+            namePatterns.join(QLatin1Char('|')),
+            QRegularExpression::CaseInsensitiveOption
             );
+        auto matches = names.globalMatch(observations);
+        QString redactedObservations;
+        qsizetype previousEnd = 0;
+        while (matches.hasNext())
+        {
+            const QRegularExpressionMatch match = matches.next();
+            const QString name = match.captured();
+            const bool isStudentName =
+                name.compare(
+                    trimmedEnglishName,
+                    Qt::CaseInsensitive
+                    ) == 0
+                || name.compare(
+                    trimmedKoreanName,
+                    Qt::CaseInsensitive
+                    ) == 0;
+            redactedObservations.append(
+                observations.mid(
+                    previousEnd,
+                    match.capturedStart() - previousEnd
+                    )
+                );
+            redactedObservations.append(
+                isStudentName
+                    ? QStringLiteral("STD_NAME")
+                    : QStringLiteral("CLASSMATE")
+                );
+            previousEnd = match.capturedEnd();
+        }
+        redactedObservations.append(observations.mid(previousEnd));
+        observations = redactedObservations;
     }
 
     QStringList lines;
