@@ -17497,3 +17497,19 @@ Use temporary English settings, disable recent-database loading, and restore Cha
 The existing provider parity test retains Gemini, Claude, and Copilot coverage, then triggers the actual ChatGPT QAction and checks exclusive state and typed preference after sync. A fresh synthetic-report batch dialog shows the exact label “Copy Prompt and Open ChatGPT.”
 
 The executor focused target build passed. Independent CTest passed 1/1, and the direct offscreen invocation exited 0 without a summary. Independent git diff --check passed; focused artifacts postdate the source. No full suite, browser, or network behavior. F477 is independently verified, accepted, and ready to commit; Batch 53 remains active until commit. F478 discovery begins only after F477 commits.
+
+### F477 committed - 2026-10-09
+
+F477 committed as 9a4c9e85 with six scoped paths. Batch 53 is complete. Batch 54 is active with F478 single-student report-dialog provider label parity selected/current.
+
+### F478 acceptance plan recorded before implementation - 2026-10-09
+
+Extend the existing MainWindow provider parity test to check the main single-student report dialog label after ChatGPT, Gemini, Claude, and Microsoft Copilot actions. Extend the existing Custom Website action parity test to check the same dialog label after the real modal action. Use fresh synthetic reports and assert speakingEvalCopyOpenAiPromptButton identifies the selected provider. Preserve the existing batch-dialog label assertions.
+
+Use temporary English settings, disable recent-database loading, and retain existing provider restorers. Do not click open/preview controls or access browser/network. No production or CMake changes. Defer the preview popup modal path and contract-dependent F285/F298. F478 is selected/current; implementation and verification are pending. Batch 54 remains active.
+
+### F478 acceptance update - 2026-10-09
+
+The main single-student report dialog label is asserted after ChatGPT, Gemini, Claude, and Microsoft Copilot transitions and after the actual Custom Website modal action. Existing batch-dialog labels remain covered.
+
+Both focused builds passed; CTests passed 1/1 each and direct QtTests passed 3/0 each. Independent diff check passed and focused binaries postdate their sources. Qt font/offscreen warnings occurred. No full suite, browser, or network behavior. F478 is independently verified, accepted, and ready to commit; Batch 54 remains active until commit.

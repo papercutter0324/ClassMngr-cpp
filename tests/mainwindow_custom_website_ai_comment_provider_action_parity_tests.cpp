@@ -2,6 +2,7 @@
 #include "core/language_service.h"
 #include "core/settingsmanager.h"
 #include "features/speaking_eval/ui/speaking_eval_ai_batch_dialog.h"
+#include "features/speaking_eval/ui/speaking_eval_report_dialog.h"
 #include "next/platform/settings_manager_ai_comment_custom_website_port.h"
 #include "next/platform/settings_manager_ai_comment_provider_preferences_port.h"
 
@@ -228,6 +229,31 @@ customWebsiteActionCapturesAndPersistsEnteredUrl()
     SpeakingEvalReportData report;
     report.englishName = QStringLiteral("Synthetic Student");
     report.grade = 4;
+    const QList<SpeakingEvalBatchReportService::StudentReport>
+        singleStudentReports{
+            {
+                report.englishName,
+                report,
+                0
+            }
+        };
+
+    SpeakingEvalReportDialog reportDialog(
+        singleStudentReports,
+        0,
+        nullptr,
+        true
+        );
+    QPushButton* const reportCopyOpenButton =
+        reportDialog.findChild<QPushButton*>(
+            QStringLiteral("speakingEvalCopyOpenAiPromptButton")
+            );
+    QVERIFY(reportCopyOpenButton);
+    QVERIFY(
+        reportCopyOpenButton->text().contains(
+            QStringLiteral("Custom AI Website")
+            )
+        );
 
     SpeakingEvalAiBatchDialog dialog(
         {

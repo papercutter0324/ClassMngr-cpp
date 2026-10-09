@@ -3543,3 +3543,11 @@ Select F477 for the deferred ChatGPT batch-dialog label gap. Independent plan an
 F477 implementation completes the provider label matrix for ChatGPT through its QAction, saved preference, and fresh local batch dialog. The executor's focused build, CTest (1/1), and diff check passed; independent verification remains pending.
 
 Independent review accepted F477. CTest passed 1/1; the direct offscreen executable exited 0 without a summary; `git diff --check` passed. The Tester confirmed provider action/persistence, label, and cleanup. The focused artifacts postdate the source; no full suite.
+
+F477 committed as `9a4c9e85` with exactly six scoped paths; Batch 53 is complete. The only remaining worktree entries are the excluded pre-existing `agent_docs/latest_session_work.md` and `%SystemDrive%/`. F478 discovery begins after this commit.
+
+F478 follows the provider-label matrix into the separate single-student report dialog, whose main provider button had only a Gemini assertion. The plan scan found F285/F298 still contract-dependent; the code scan found a bounded local label consumer, so this testable gap was selected. Keep the modal preview popup for a later focused slice.
+
+F478 implementation covers the main single-student report dialog provider label across all five providers while preserving batch-dialog coverage. Both focused builds, CTests (2/2), direct QtTests (3/0 each), and diff check passed; independent review remains pending.
+
+Independent review accepted F478. Both focused CTests passed 2/2, direct QtTests passed 3/0 each, and diff check passed. The Tester confirmed persisted provider labels and cleanup for all five providers. Only optional Qt font/offscreen warnings and Git line-ending notices were reported; no full suite.

@@ -2,6 +2,7 @@
 #include "core/language_service.h"
 #include "core/settingsmanager.h"
 #include "features/speaking_eval/ui/speaking_eval_ai_batch_dialog.h"
+#include "features/speaking_eval/ui/speaking_eval_report_dialog.h"
 #include "next/platform/settings_manager_ai_comment_provider_preferences_port.h"
 
 #include <QAction>
@@ -159,6 +160,31 @@ providerActionsUpdateProviderAndBatchDialogLabel()
     SpeakingEvalReportData report;
     report.englishName = QStringLiteral("Synthetic Student");
     report.grade = 4;
+    const QList<SpeakingEvalBatchReportService::StudentReport>
+        singleStudentReports{
+            {
+                report.englishName,
+                report,
+                0
+            }
+        };
+
+    SpeakingEvalReportDialog geminiReportDialog(
+        singleStudentReports,
+        0,
+        nullptr,
+        true
+        );
+    QPushButton* const geminiReportCopyOpenButton =
+        geminiReportDialog.findChild<QPushButton*>(
+            QStringLiteral("speakingEvalCopyOpenAiPromptButton")
+            );
+    QVERIFY(geminiReportCopyOpenButton);
+    QVERIFY(
+        geminiReportCopyOpenButton->text().contains(
+            QStringLiteral("Gemini")
+            )
+        );
 
     SpeakingEvalAiBatchDialog dialog(
         {
@@ -190,6 +216,23 @@ providerActionsUpdateProviderAndBatchDialogLabel()
     SettingsManager::instance().sync();
     QCOMPARE(preferences.read(), PersistedProvider::Claude);
 
+    SpeakingEvalReportDialog claudeReportDialog(
+        singleStudentReports,
+        0,
+        nullptr,
+        true
+        );
+    QPushButton* const claudeReportCopyOpenButton =
+        claudeReportDialog.findChild<QPushButton*>(
+            QStringLiteral("speakingEvalCopyOpenAiPromptButton")
+            );
+    QVERIFY(claudeReportCopyOpenButton);
+    QVERIFY(
+        claudeReportCopyOpenButton->text().contains(
+            QStringLiteral("Claude")
+            )
+        );
+
     SpeakingEvalAiBatchDialog claudeDialog(
         {
             {
@@ -220,6 +263,23 @@ providerActionsUpdateProviderAndBatchDialogLabel()
     QVERIFY(!customWebsiteAction->isChecked());
     SettingsManager::instance().sync();
     QCOMPARE(preferences.read(), PersistedProvider::MicrosoftCopilot);
+
+    SpeakingEvalReportDialog microsoftCopilotReportDialog(
+        singleStudentReports,
+        0,
+        nullptr,
+        true
+        );
+    QPushButton* const microsoftCopilotReportCopyOpenButton =
+        microsoftCopilotReportDialog.findChild<QPushButton*>(
+            QStringLiteral("speakingEvalCopyOpenAiPromptButton")
+            );
+    QVERIFY(microsoftCopilotReportCopyOpenButton);
+    QVERIFY(
+        microsoftCopilotReportCopyOpenButton->text().contains(
+            QStringLiteral("Microsoft Copilot")
+            )
+        );
 
     SpeakingEvalAiBatchDialog microsoftCopilotDialog(
         {
@@ -253,6 +313,23 @@ providerActionsUpdateProviderAndBatchDialogLabel()
     QVERIFY(!customWebsiteAction->isChecked());
     SettingsManager::instance().sync();
     QCOMPARE(preferences.read(), PersistedProvider::ChatGPT);
+
+    SpeakingEvalReportDialog chatGptReportDialog(
+        singleStudentReports,
+        0,
+        nullptr,
+        true
+        );
+    QPushButton* const chatGptReportCopyOpenButton =
+        chatGptReportDialog.findChild<QPushButton*>(
+            QStringLiteral("speakingEvalCopyOpenAiPromptButton")
+            );
+    QVERIFY(chatGptReportCopyOpenButton);
+    QVERIFY(
+        chatGptReportCopyOpenButton->text().contains(
+            QStringLiteral("ChatGPT")
+            )
+        );
 
     SpeakingEvalAiBatchDialog chatGptDialog(
         {
