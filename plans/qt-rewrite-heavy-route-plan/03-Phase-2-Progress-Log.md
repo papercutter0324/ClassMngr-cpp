@@ -17481,3 +17481,19 @@ The executor VS18 focused target build passed and CTest passed 1/1. Independent 
 executable exited 0 without a summary. Executor and independent git diff --check passed. No full suite, browser, or network behavior. F476 is
 independently verified, accepted, and ready to commit; Batch 52 remains active until commit. F477 discovery begins only after
 F476 commits.
+
+### F476 committed - 2026-10-09
+
+F476 committed as 9e58daae with six scoped paths. Batch 52 is complete. Batch 53 is active with F477 ChatGPT provider QAction-to-batch-dialog label parity selected/current.
+
+### F477 acceptance plan recorded before implementation - 2026-10-09
+
+Extend the existing AI provider parity test, retaining the Gemini, Claude, and Copilot checks. After Copilot, trigger the actual ChatGPT QAction and assert current/exclusive action state plus the typed preference after SettingsManager sync. Construct a fresh synthetic-report batch dialog and assert speakingEvalAiBatchCopyOpen identifies ChatGPT; the expected English label is “Copy Prompt and Open ChatGPT.”
+
+Use temporary English settings, disable recent-database loading, and restore ChatGPT and sync on assertion exits. Do not click the dialog button or use a browser/network; no production or CMake changes. F477 is selected/current; implementation and verification are pending. Batch 53 remains active.
+
+### F477 acceptance update - 2026-10-09
+
+The existing provider parity test retains Gemini, Claude, and Copilot coverage, then triggers the actual ChatGPT QAction and checks exclusive state and typed preference after sync. A fresh synthetic-report batch dialog shows the exact label “Copy Prompt and Open ChatGPT.”
+
+The executor focused target build passed. Independent CTest passed 1/1, and the direct offscreen invocation exited 0 without a summary. Independent git diff --check passed; focused artifacts postdate the source. No full suite, browser, or network behavior. F477 is independently verified, accepted, and ready to commit; Batch 53 remains active until commit. F478 discovery begins only after F477 commits.

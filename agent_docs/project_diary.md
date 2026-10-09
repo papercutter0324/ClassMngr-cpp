@@ -3535,3 +3535,11 @@ Independent F476 reviews found both a missing ChatGPT consumer label and an unte
 F476 implementation now covers both voice choices through the real QAction, persisted preference, and local prompt consumer. The focused target build, CTest (1/1), and diff check passed; independent verification remains pending.
 
 Independent review accepted F476. Focused CTest passed 1/1, the direct offscreen executable exited 0 without a summary, and `git diff --check` passed. The Tester confirmed prompt behavior and cleanup. The executor's successful focused build is the build evidence; no full suite.
+
+F476 committed as `9e58daae` with exactly six scoped paths; Batch 52 is complete. The only remaining worktree entries are the excluded pre-existing `agent_docs/latest_session_work.md` and `%SystemDrive%/`. F477 discovery begins after this commit.
+
+Select F477 for the deferred ChatGPT batch-dialog label gap. Independent plan and code scans found the same missing consumer assertion; extend the existing registered provider parity test through the real ChatGPT QAction, persisted preference, and fresh local dialog label. The other provider labels remain covered.
+
+F477 implementation completes the provider label matrix for ChatGPT through its QAction, saved preference, and fresh local batch dialog. The executor's focused build, CTest (1/1), and diff check passed; independent verification remains pending.
+
+Independent review accepted F477. CTest passed 1/1; the direct offscreen executable exited 0 without a summary; `git diff --check` passed. The Tester confirmed provider action/persistence, label, and cleanup. The focused artifacts postdate the source; no full suite.

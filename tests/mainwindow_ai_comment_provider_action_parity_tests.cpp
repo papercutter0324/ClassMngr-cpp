@@ -241,6 +241,38 @@ providerActionsUpdateProviderAndBatchDialogLabel()
             QStringLiteral("Microsoft Copilot")
             )
         );
+
+    QVERIFY(chatGptAction->isEnabled());
+    chatGptAction->trigger();
+
+    QCOMPARE(state->current(), LegacyProvider::ChatGPT);
+    QVERIFY(chatGptAction->isChecked());
+    QVERIFY(!geminiAction->isChecked());
+    QVERIFY(!claudeAction->isChecked());
+    QVERIFY(!microsoftCopilotAction->isChecked());
+    QVERIFY(!customWebsiteAction->isChecked());
+    SettingsManager::instance().sync();
+    QCOMPARE(preferences.read(), PersistedProvider::ChatGPT);
+
+    SpeakingEvalAiBatchDialog chatGptDialog(
+        {
+            {
+                report.englishName,
+                report,
+                0
+            }
+        }
+        );
+
+    QPushButton* const chatGptCopyOpenButton =
+        chatGptDialog.findChild<QPushButton*>(
+            QStringLiteral("speakingEvalAiBatchCopyOpen")
+            );
+    QVERIFY(chatGptCopyOpenButton);
+    QCOMPARE(
+        chatGptCopyOpenButton->text(),
+        QStringLiteral("Copy Prompt and Open ChatGPT")
+        );
 }
 
 QTEST_MAIN(MainWindowAiCommentProviderActionParityTests)

@@ -40,7 +40,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-09
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: Batch 52 is active with F476 independently verified and ready to commit; F477 discovery begins after its commit, and Gates 1 and 2 remain Partial.
+- Current note: Batch 53 is active with F477 ChatGPT provider QAction-to-batch-dialog label parity independently verified, accepted, and ready to commit; Gates 1 and 2 remain Partial.
 
 ### Slice discovery batches
 
@@ -65,11 +65,10 @@ Treat this plan as an operational summary, not a history:
   failure warning/no-navigation behavior; revisit after that behavior is
   clarified.
 
-#### Active batch: Batch 52
+#### Active batch: Batch 53
 
-- F476 — Direct to Student voice action-to-prompt handoff: independently verified, accepted, and ready to commit.
-- Constraints: temporary English settings; recent-database loading disabled; restore original voice and sync on assertion exits; use the existing synthetic-report fixture; no database, user file, production/CMake, browser, or network behavior.
-- State: commit pending; focused verification and acceptance evidence are in the progress log.
+- F477 — ChatGPT provider QAction-to-batch-dialog label parity: independently verified, accepted, and ready to commit.
+- Constraints: retain Gemini/Claude/Copilot checks; after Copilot, trigger ChatGPT, assert current/exclusive state and typed preference after sync, then construct a fresh synthetic-report batch dialog and verify speakingEvalAiBatchCopyOpen identifies ChatGPT (expected English label: “Copy Prompt and Open ChatGPT”). Use temporary English settings, disable recent-database loading, and restore ChatGPT/sync on assertion exits; do not click the button or use a browser/network. No production or CMake changes.
 
 ## Objective
 
