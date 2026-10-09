@@ -561,6 +561,7 @@ private slots:
     void aiBatchDialogClearingResponseClearsStaleReviewState();
     void aiBatchDialogParsesDuplicateMalformedAndUnknownBlocks();
     void aiBatchDialogConfirmsAcceptedCommentOverwrites();
+    void aiBatchDialogCancelDiscardsReadyComment();
     void aiPromptButtonsRequireCompleteInput();
     void aiPromptPreviewCopiesAnAnonymousPrompt();
     void aiPromptPreviewCopyOpenLabelTracksSelectedProvider();
@@ -3241,6 +3242,83 @@ void SpeakingEvalBatchReportServiceTests::
             QStringLiteral("Alice")
             )
         );
+}
+
+void SpeakingEvalBatchReportServiceTests::
+    aiBatchDialogCancelDiscardsReadyComment()
+{
+    SpeakingEvalReportData report;
+    report.englishName = QStringLiteral("Alice");
+    report.grade = 5;
+    report.notes =
+        QStringLiteral(
+            "[Did Well]\nClear pronunciation\n"
+            "[Needs Improvement]\nAdd supporting details"
+            );
+
+    SpeakingEvalAiBatchDialog dialog(
+        { { QStringLiteral("Alice"), report, 7 } }
+        );
+    auto* selection = dialog.findChild<QTableWidget*>(
+        QStringLiteral("speakingEvalAiBatchSelectionTable")
+        );
+    auto* createPromptButton = dialog.findChild<QPushButton*>(
+        QStringLiteral("speakingEvalAiBatchCreatePrompt")
+        );
+    auto* responseEdit = dialog.findChild<QPlainTextEdit*>(
+        QStringLiteral("speakingEvalAiBatchResponse")
+        );
+    auto* parseButton = dialog.findChild<QPushButton*>(
+        QStringLiteral("speakingEvalAiBatchParse")
+        );
+    auto* review = dialog.findChild<QTableWidget*>(
+        QStringLiteral("speakingEvalAiBatchReviewTable")
+        );
+    auto* applyButton = dialog.findChild<QPushButton*>(
+        QStringLiteral("speakingEvalAiBatchApply")
+        );
+    auto* buttonBox = dialog.findChild<QDialogButtonBox*>(
+        QStringLiteral("speakingEvalAiBatchButtonBox")
+        );
+    QVERIFY(selection);
+    QVERIFY(createPromptButton);
+    QVERIFY(responseEdit);
+    QVERIFY(parseButton);
+    QVERIFY(review);
+    QVERIFY(applyButton);
+    QVERIFY(buttonBox);
+    auto* cancelButton =
+        buttonBox->button(QDialogButtonBox::Cancel);
+    QVERIFY(cancelButton);
+
+    dialog.show();
+    QApplication::processEvents();
+    QVERIFY(dialog.isVisible());
+    QCOMPARE(selection->item(0, 0)->checkState(), Qt::Checked);
+    createPromptButton->click();
+    responseEdit->setPlainText(
+        QStringLiteral(
+            "<<<STUDENT_01>>>\n"
+            "STD_NAME spoke clearly and used strong vocabulary. "
+            "Keep adding supporting details and practice difficult sounds. "
+            "Your eye contact and confident voice made the presentation "
+            "engaging.\n"
+            "<<<END_STUDENT_01>>>"
+            )
+        );
+    QVERIFY(parseButton->isEnabled());
+    parseButton->click();
+
+    QCOMPARE(review->rowCount(), 1);
+    QCOMPARE(review->item(0, 2)->text(), QStringLiteral("Ready"));
+    QCOMPARE(review->item(0, 0)->checkState(), Qt::Checked);
+    QVERIFY(applyButton->isEnabled());
+
+    cancelButton->click();
+
+    QCOMPARE(dialog.result(), static_cast<int>(QDialog::Rejected));
+    QVERIFY(dialog.acceptedComments().isEmpty());
+    QVERIFY(!dialog.isVisible());
 }
 
 void SpeakingEvalBatchReportServiceTests::

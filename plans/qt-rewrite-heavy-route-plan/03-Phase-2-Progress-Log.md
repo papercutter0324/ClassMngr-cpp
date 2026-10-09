@@ -17837,3 +17837,21 @@ The existing decline/retry path is already exercised; F494 adds the missing visi
 ### F494 independent verification update - 2026-10-09
 
 The Tester confirmed the assertions, focused build, registered CTest 1/1, direct offscreen exit 0, slot registration, and diff check. An LF-to-CRLF advisory was the only noted issue. This is test-only, with no production, CMake, browser, or network changes. F494 is independently verified, accepted, and ready to commit; Batch 70 remains active until commit.
+
+### F494 committed - 2026-10-09
+
+F494, “Phase2 - Cover overwrite decline state (F494),” committed as b89fe5d4 with six scoped paths. Batch 70 is complete. Batch 71 candidate discovery is underway for F495; selection is pending.
+
+### F495 acceptance plan recorded before implementation - 2026-10-09
+
+Add one dialog-level test to `tests/speaking_eval_batch_report_service_tests.cpp`: with one eligible report, generate the prompt and parse a valid response into a checked Ready row with Apply enabled; click Cancel and assert the dialog result is Rejected and `acceptedComments()` remains empty. No accepted result may escape cancellation.
+
+This covers the missing batch-dialog Cancel case with a Ready row, supporting Phase 2 §2.2 cancellation state and §2.5 cancellation behavior. The code scan found no existing batch-dialog Cancel test. Malformed-row manual repair remains a possible later candidate. Test-only; no production, CMake, browser, or network changes. F495 is selected/current in Batch 71; implementation and verification are pending.
+
+### F495 implementation update - 2026-10-09
+
+The `aiBatchDialogCancelDiscardsReadyComment` slot creates the prompt, parses one checked Ready comment, confirms Apply is enabled, and clicks the actual Cancel control. It asserts a Rejected result, empty `acceptedComments()`, and a hidden dialog. The executor’s focused build and CTest passed; direct offscreen execution exited 0, the slot was listed, and scoped diff check passed.
+
+### F495 independent verification update - 2026-10-09
+
+The Tester independently verified the assertions. Focused target build exited 0; registered CTest passed 1/1; direct offscreen execution exited 0; the slot was listed and diff check passed. An LF-to-CRLF advisory was the only noted issue. This is test-only, with no production, CMake, browser, or network changes. F495 is independently verified, accepted, and ready to commit; Batch 71 remains active until commit.

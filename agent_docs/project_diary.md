@@ -3673,3 +3673,9 @@ F493 committed as 57da53c7 with six scoped paths. The only post-commit worktree 
 F494 decision: make the overwrite-decline state observable in the existing batch-dialog test. The decline/retry behavior is already exercised, but without showing the dialog it does not prove that the UI stays open with its Ready review selection intact. Acceptance requires visible state after decline and the existing successful retry.
 
 F494 adds visible-state coverage for declining an AI-comment overwrite: the batch dialog remains open and keeps the Ready selected comment, while returning no accepted comments. Retrying with confirmation preserves the existing accepted-result test. Independent focused verification passed.
+
+F494 committed as b89fe5d4 with six scoped paths. The only post-commit worktree entries are the excluded latest_session_work.md change and %SystemDrive%/. Batch 70 is complete; Batch 71 F495 discovery begins with selection pending.
+
+F495 decision: test cancellation after a valid AI comment is staged as Ready and selected. This closes the Phase 2 cancellation-state requirement at the batch dialog boundary; a malformed-response correction case remains a candidate for a later slice.
+
+F495 verifies batch review cancellation after a Ready checked comment exists: Cancel rejects and closes the dialog without returning any accepted comments. Independent focused verification passed.
