@@ -40,7 +40,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-09
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: Batch 63 is active with F487 Gemini batch-dialog Copy/Open handoff independently verified, accepted, and ready to commit; Gates 1 and 2 remain Partial.
+- Current note: Batch 64 is active with F488 batch-dialog Include-checkbox reset independently verified, accepted, and ready to commit; Gates 1 and 2 remain Partial.
 
 ### Slice discovery batches
 
@@ -65,10 +65,10 @@ Treat this plan as an operational summary, not a history:
   failure warning/no-navigation behavior; revisit after that behavior is
   clarified.
 
-#### Active batch: Batch 63
+#### Active batch: Batch 64
 
-- F487 — Gemini batch-dialog Copy/Open handoff: independently verified, accepted, and ready to commit.
-- Constraints: add one slot in speaking_eval_batch_report_service_tests.cpp; capture and RAII-restore the prior provider before seeding/syncing Gemini. Use the synthetic eligible Alice/김민지 report, create the batch prompt, and click speakingEvalAiBatchCopyOpen. Assert clipboard equals the anonymous prompt (STD_NAME present, real names absent) and one scoped URL equals https://gemini.google.com/app. No production/CMake/browser/network changes.
+- F488 — Batch-dialog Include-checkbox reset after generated content: independently verified, accepted, and ready to commit.
+- Constraints: add one test in speaking_eval_batch_report_service_tests.cpp with two eligible reports. Create a two-student prompt, parse valid response blocks to populate review state, then uncheck the second Include item. Assert prompt/response/parse summary/review rows clear; Copy, Copy/Open, Parse, and Apply disable while Create remains enabled. Recreate and verify only the remaining student ID. Source also clears selected IDs. No production/CMake/browser/network changes.
 
 ## Objective
 

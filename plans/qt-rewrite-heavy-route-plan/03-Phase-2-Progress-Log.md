@@ -17695,3 +17695,25 @@ The executor focused build succeeded; CTest passed 1/1, the direct slot passed 3
 Independent review confirmed the provider restorer precedes the Gemini write, the clipboard exactly matches the anonymous prompt, and one https://gemini.google.com/app capture occurs. The executable lists the slot.
 
 Focused CTest passed 1/1, the direct native slot exited 0, and scoped diff check passed. The direct offscreen invocation and a simple control both timed out under that setup; the cause is unresolved. No full suite, browser, or network. F487 is independently verified, accepted, and ready to commit; Batch 63 remains active until commit.
+
+### F487 committed - 2026-10-09
+
+F487 committed as efa93a42 with six scoped paths. Batch 63 is complete. Batch 64 candidate discovery is underway for F488; selection is pending.
+
+### F488 acceptance plan recorded before implementation - 2026-10-09
+
+Add one test in speaking_eval_batch_report_service_tests.cpp with two eligible reports. Create a two-student prompt and parse valid response blocks to populate review state. Uncheck the second Include item; assert the prompt, response, parse summary, and review rows clear, and Copy/CopyOpen/Parse/Apply disable while Create remains enabled. Recreate the prompt and verify only the remaining student ID is selected. The source also clears selected IDs.
+
+Response-edit reset was considered as an alternative; select Include-checkbox reset because it tests invalidation after generated content and review state exist. No production/CMake/browser/network changes. F488 is selected/current; implementation and verification are pending. Batch 64 remains active.
+
+### F488 implementation update - 2026-10-09
+
+The test creates and parses a two-student batch prompt, then unchecks the second Include item. It verifies prompt/response/summary/review reset, Copy/CopyOpen/Parse/Apply disabled with Create still enabled, and a recreated prompt containing only the remaining student ID. Selection-change prompt reset remains a separate candidate.
+
+The executor focused build succeeded; CTest passed 1/1, the direct slot passed 3/0/0 in 19 ms, and scoped diff check passed. A Qt font-directory warning occurred. Independent verification is pending; Batch 64 remains active.
+
+### F488 independent verification update - 2026-10-09
+
+The Tester confirmed two Ready review rows before unchecking, complete prompt/response/summary/review reset and expected button states, then regeneration with STUDENT_01 only. The executable lists the fresh slot.
+
+Focused CTest passed 1/1; the direct QT_QPA_PLATFORM=offscreen slot passed 3/3. Scoped diff check exited 0 with a line-ending notice. No full suite, browser, or network. F488 is independently verified, accepted, and ready to commit; Batch 64 remains active until commit.
