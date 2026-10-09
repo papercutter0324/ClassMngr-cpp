@@ -26,6 +26,14 @@ public:
 
     ~ApplicationFontStateRestorer()
     {
+        using PersistedFontSize =
+            ClassMngr::Next::Application::FontSize;
+        ClassMngr::Next::Platform::
+            SettingsManagerFontSizePreferencesPort().write(
+                PersistedFontSize::Normal
+                );
+        SettingsManager::instance().sync();
+
         FontManager::applyFontSize(
             m_application,
             QStringLiteral("en_US"),
@@ -55,7 +63,7 @@ class MainWindowFontSizeActionParityTests final : public QObject
 
 private slots:
     void initTestCase();
-    void largeFontSizeActionUpdatesStateAndPersistsPreference();
+    void allFontSizeActionsUpdateStateAndPersistPreference();
 
 private:
     QTemporaryDir m_settingsDirectory;
@@ -73,7 +81,7 @@ void MainWindowFontSizeActionParityTests::initTestCase()
 }
 
 void MainWindowFontSizeActionParityTests::
-largeFontSizeActionUpdatesStateAndPersistsPreference()
+allFontSizeActionsUpdateStateAndPersistPreference()
 {
     ApplicationFontStateRestorer fontStateRestorer(*qApp);
 
@@ -107,20 +115,50 @@ largeFontSizeActionUpdatesStateAndPersistsPreference()
     QVERIFY(fontSizeState);
     QCOMPARE(fontSizeState->current(), ::FontSize::Normal);
 
-    QAction* const largeAction =
-        window.actions().fontSizeState->action(::FontSize::Large);
+    QAction* const smallAction =
+        window.actions().fontSizeState->action(::FontSize::Small);
     QAction* const normalAction =
         window.actions().fontSizeState->action(::FontSize::Normal);
-    QVERIFY(largeAction);
+    QAction* const largeAction =
+        window.actions().fontSizeState->action(::FontSize::Large);
+    QAction* const extraLargeAction =
+        window.actions().fontSizeState->action(::FontSize::ExtraLarge);
+    QVERIFY(smallAction);
     QVERIFY(normalAction);
+    QVERIFY(largeAction);
+    QVERIFY(extraLargeAction);
     QVERIFY(normalAction->isChecked());
+    QVERIFY(!smallAction->isChecked());
     QVERIFY(!largeAction->isChecked());
+    QVERIFY(!extraLargeAction->isChecked());
+
+    smallAction->trigger();
+
+    QCOMPARE(fontSizeState->current(), ::FontSize::Small);
+    QVERIFY(smallAction->isChecked());
+    QVERIFY(!normalAction->isChecked());
+    QVERIFY(!largeAction->isChecked());
+    QVERIFY(!extraLargeAction->isChecked());
+    SettingsManager::instance().sync();
+    QVERIFY(preferences.read() == PersistedFontSize::Small);
+    QCOMPARE(
+        FontManager::sizeOffset(),
+        fontSizeOffset(::FontSize::Small)
+        );
+    QCOMPARE(
+        QApplication::font().pointSize(),
+        FontManager::getPlatformFontSize()
+            + fontSizeOffset(::FontSize::Small)
+        );
 
     largeAction->trigger();
 
     QCOMPARE(fontSizeState->current(), ::FontSize::Large);
-    QVERIFY(largeAction->isChecked());
+    QVERIFY(!smallAction->isChecked());
     QVERIFY(!normalAction->isChecked());
+    QVERIFY(largeAction->isChecked());
+    QVERIFY(!extraLargeAction->isChecked());
+    SettingsManager::instance().sync();
     QVERIFY(preferences.read() == PersistedFontSize::Large);
     QCOMPARE(
         FontManager::sizeOffset(),
@@ -130,6 +168,44 @@ largeFontSizeActionUpdatesStateAndPersistsPreference()
         QApplication::font().pointSize(),
         FontManager::getPlatformFontSize()
             + fontSizeOffset(::FontSize::Large)
+        );
+
+    extraLargeAction->trigger();
+
+    QCOMPARE(fontSizeState->current(), ::FontSize::ExtraLarge);
+    QVERIFY(!smallAction->isChecked());
+    QVERIFY(!normalAction->isChecked());
+    QVERIFY(!largeAction->isChecked());
+    QVERIFY(extraLargeAction->isChecked());
+    SettingsManager::instance().sync();
+    QVERIFY(preferences.read() == PersistedFontSize::ExtraLarge);
+    QCOMPARE(
+        FontManager::sizeOffset(),
+        fontSizeOffset(::FontSize::ExtraLarge)
+        );
+    QCOMPARE(
+        QApplication::font().pointSize(),
+        FontManager::getPlatformFontSize()
+            + fontSizeOffset(::FontSize::ExtraLarge)
+        );
+
+    normalAction->trigger();
+
+    QCOMPARE(fontSizeState->current(), ::FontSize::Normal);
+    QVERIFY(!smallAction->isChecked());
+    QVERIFY(normalAction->isChecked());
+    QVERIFY(!largeAction->isChecked());
+    QVERIFY(!extraLargeAction->isChecked());
+    SettingsManager::instance().sync();
+    QVERIFY(preferences.read() == PersistedFontSize::Normal);
+    QCOMPARE(
+        FontManager::sizeOffset(),
+        fontSizeOffset(::FontSize::Normal)
+        );
+    QCOMPARE(
+        QApplication::font().pointSize(),
+        FontManager::getPlatformFontSize()
+            + fontSizeOffset(::FontSize::Normal)
         );
 }
 

@@ -3452,3 +3452,18 @@ Extended the registered Document Viewer Background parity test to cover the Whit
 The focused target built under VS18; focused CTest passed 1/1; direct offscreen QtTest passed 3/0/0; `git diff --check` passed. Qt reported a missing optional configured fonts directory while packaged Inter/Pretendard fonts loaded. Independent review is pending; Batch 46 remains active.
 
 Independent review accepted F470. The Tester confirmed the action, persistence, viewer-property, palette, and restorer assertions, and independently passed focused CTest 1/1 and `git diff HEAD --check`. Its direct offscreen invocation exited 0 without a summary, so no independent case count is claimed; the executor run reported 3/0/0. No full suite. F470 is independently verified and ready to commit; Batch 46 remains active pending commit.
+
+
+## 2026-10-09 - F470 committed; F471 Font Size matrix selected
+
+F470, `Phase2 - Cover Document Viewer Background White QAction parity (F470)`, committed as `738f40f1` on `Qt-Rewrite`. The commit contains the six scoped test and Phase 2 tracking paths. Batch 46 is complete; the only post-commit worktree entries are the excluded pre-existing `agent_docs/latest_session_work.md` and `%SystemDrive%/`.
+
+Two independent F471 scans selected the missing Font Size actions in the existing registered parity test. It currently starts at Normal and exercises Large only. Extend it to trigger Small, retain Large, trigger Extra Large, and return through the Normal action. At each transition assert `OptionState`, exclusive action checks, the typed persisted preference after sync, `FontManager::sizeOffset()`, and runtime-relative application point size (`FontManager::getPlatformFontSize() + offset`). Keep English and temporary settings, disable recent-database loading, and restore the original application font/offset plus the Normal preference on assertion exits. Use dynamic base-size assertions, not hard-coded visual sizes. No production or CMake change. F471 is selected; Batch 47 is active.
+
+## 2026-10-09 - F471 implementation and focused verification
+
+Extended the existing Font Size QAction parity test to cover Small, Large, Extra Large, and Normal. Each action transition checks OptionState, exclusive checks, typed persisted preference after sync, FontManager offset, and QApplication point size relative to the runtime platform base. The scoped restorer preserves the original application font and offset and syncs the Normal preference on normal or assertion-return exits.
+
+The focused target built under VS18 and CTest passed 1/1. Direct offscreen QtTest exited 0 without a summary, so no direct count is claimed. `git diff --check` passed. Independent review is pending; Batch 47 remains active.
+
+Independent review accepted F471. The Tester confirmed the four QAction transitions and cleanup, and independently passed focused CTest 1/1 and `git diff --check`. The direct offscreen invocation exited 0 without output, so no case count is claimed; the executor direct invocation also exited 0 without a summary. No full suite. F471 is independently verified and ready to commit; Batch 47 remains active pending commit.

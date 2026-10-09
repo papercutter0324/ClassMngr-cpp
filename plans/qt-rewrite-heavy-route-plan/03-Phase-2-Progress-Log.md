@@ -17316,4 +17316,28 @@ remains active until commit. F471 discovery begins only after F470 commits.
 
 ### F470 committed - 2026-10-09
 
-F470, “Phase2 - Cover Document Viewer Background White QAction parity (F470),” was committed as `738f40f18baeb468be77e402d6fc0ea69aef8deb` on `Qt-Rewrite`. Batch 46 is complete. F471 discovery is pending; no next candidate has been selected yet.
+F470, “Phase2 - Cover Document Viewer Background White QAction parity (F470),” was committed as `738f40f18baeb468be77e402d6fc0ea69aef8deb` on `Qt-Rewrite`. Batch 46 is complete. Batch 47 is active with F471 Font Size QAction parity selected; its acceptance plan is recorded before implementation.
+
+### F471 acceptance plan recorded before implementation - 2026-10-09
+
+Extend the existing Font Size QAction parity test, which starts at Normal and currently exercises Large. Trigger Small,
+retain the Large transition, trigger Extra Large, and return through the Normal action. At each transition assert OptionState,
+exclusive QAction checks, typed persisted preference after sync, FontManager::sizeOffset() values -2/2/4/0, and runtime-
+relative QApplication point size equal to getPlatformFontSize() plus the selected offset.
+
+Use temporary English settings and disable recent-database loading. Restore the original application font and FontManager
+offset, and restore the Normal preference on assertion exits. Use dynamic platform base-size checks; no production or CMake
+change. F471 is selected/current; implementation and verification are pending. Batch 47 remains active.
+
+### F471 acceptance update - 2026-10-09
+
+The existing Font Size QAction parity test now covers Small, Large, Extra Large, and Normal. Review confirmed all four
+transitions, OptionState, exclusive QAction checks, typed persisted preferences after sync, offsets -2/2/4/0, and runtime-
+relative QApplication point sizes. Temporary English settings and recent-database loading disabled are in place; the restorer
+returns the original application font/offset and Normal preference on assertion exits. Dynamic platform base-size checks are
+used; no production or CMake change.
+
+The focused target built under VS18. Executor CTest passed 1/1; its direct offscreen QtTest exited 0 without a summary, so
+no count is claimed. Independent CTest passed 1/1 and independent direct invocation exited 0 without output, also without a
+count. Independent git diff --check passed. No full suite was run. F471 is independently verified, accepted, and ready to commit;
+Batch 47 remains active until commit. F472 discovery begins only after F471 commits.

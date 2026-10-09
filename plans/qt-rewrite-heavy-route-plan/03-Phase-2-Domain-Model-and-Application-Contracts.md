@@ -40,7 +40,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-09
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F470 (738f40f1) is committed, Batch 46 is complete, F471 discovery is pending, and Gates 1 and 2 remain Partial.
+- Current note: Batch 47 is active with F471 accepted and ready to commit; F472 discovery begins after its commit, and Gates 1 and 2 remain Partial.
 
 ### Slice discovery batches
 
@@ -64,6 +64,12 @@ Treat this plan as an operational summary, not a history:
   class only to reuse the ID returned by create(). Removing the read changes its
   failure warning/no-navigation behavior; revisit after that behavior is
   clarified.
+
+#### Active batch: Batch 47
+
+- F471 — Font Size QAction parity: independently verified, accepted, and ready to commit.
+- Constraints: temporary English settings; recent-database loading disabled; restore application font/offset and Normal preference on assertion exits; use dynamic base-size checks; no production/CMake change.
+- State: commit pending; focused verification and acceptance evidence are in the progress log.
 
 ## Objective
 

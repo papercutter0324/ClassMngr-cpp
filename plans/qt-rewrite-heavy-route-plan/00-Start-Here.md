@@ -223,8 +223,8 @@ synchronization is committed (`f4bc5282`). F416 Document Catalog rendered
   Its commit contains exactly seven paths and the cached diff check was clean. Post-commit status was clean except for excluded pre-existing
   agent_docs/latest_session_work.md and %SystemDrive%/. F469, “Phase2 - Cover Document Viewer Page Spacing None and Medium QAction parity (F469),” committed as
   4044c80a on Qt-Rewrite. The commit contains the six reviewed test and Phase 2 tracking paths. Batch 45 is complete.
-  Post-commit worktree entries are only the excluded pre-existing agent_docs/latest_session_work.md and %SystemDrive%/. Batch 46 is active with F470 Document Viewer Background White QAction parity accepted and ready to commit. F470 verification
-  is recorded in the progress log; F471 discovery begins only after F470 commits.
+  Post-commit worktree entries are only the excluded pre-existing agent_docs/latest_session_work.md and %SystemDrive%/. F470, “Phase2 - Cover Document Viewer Background White QAction parity (F470),” committed as
+  738f40f18baeb468be77e402d6fc0ea69aef8deb on Qt-Rewrite; Batch 46 is complete. Batch 47 is active with F471 Font Size QAction parity accepted and ready to commit. Focused verification is recorded in the progress log; F472 discovery begins only after F471 commits.
   F457 acceptance and verification remain in the progress log. F456
   acceptance and focused verification remain in the progress log. F454
   acceptance and focused verification remain in the progress log. F453
