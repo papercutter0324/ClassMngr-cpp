@@ -18331,3 +18331,22 @@ Assess whether synchronously disposing replaced `ClassTimeRow` widgets in `Class
 ### F521 scope and acceptance - 2026-10-10
 
 This is a source-and-evidence review before any row-deletion-policy change. Trace every `loadSchedules()` caller and determine whether replacement can run inside an event or signal callback originating from a row being removed. Inspect row and section QObject ownership, retained pointers, signal connections, and queued callbacks; distinguish page-leave/editor-release behavior from schedule replacement. Compare F519's current/live row counts and event-loop cleanup with available process-level samples, without assigning bytes to row widgets. Acceptance requires a concrete safety/value recommendation grounded in those traces and measurements, with scope limits stated. No production change is in scope unless a safe boundary and measurable benefit are established; no test or memory-gate claim is required for this diagnostic slice.
+
+
+## F521 schedule-row disposal review - 2026-10-10
+
+Keep `deleteLater()` for row replacement. Current `ClassScheduleSection::loadSchedules()` callers are Class Details load/clear paths and the setup wizard's initial schedule-row creation. Class selection calls `loadClass()` after the active editor commit and page-level selection change; database clearing and discard/reload are also page-level operations. No current caller originates from a row's own signal. By contrast, a row Remove button emits `ClassTimeRow::removeRequested()` from its click handler, and `ClassScheduleSection::removeRow()` handles that path with `deleteLater()`. Keep that direct row-event path deferred.
+
+Rows are children of `ClassScheduleSection`; its regular/intensive lists are the row collections, and `loadSchedules()` removes rows from their grids, schedules deletion, clears the lists, then creates the replacement rows. The Details page's validation binder temporarily refers to row controls through `QPointer<QWidget>` bindings; clearing and repopulating the bindings immediately follows row loading, and binder cleanup checks for null widgets. Row changes mark the page dirty and schedule autosave through `AutosaveCoordinator`'s timer; the save callback updates Classes navigation but does not reload schedule rows. No row-specific timer or queued callback was found.
+
+F519 measured current/live rows at 8/24 after refresh 1 and 9/42 after refresh 2 and re-entry. At the natural event-loop-return checkpoint and page leave, rows were 9/9. This establishes a transient duplicate-row window, including up to 33 old row widgets, followed by cleanup. The paired process samples remain above the target after that cleanup, and no per-row byte or causal process-memory comparison exists. The current callers do not show a direct row-event hazard for `loadSchedules()`, but the section API does not encode an event-stack boundary for future callers, while the existing release/Remove paths already provide safe deferred behavior. No change is justified from the available evidence; this review makes no production change and claims no memory reduction. Page-leave editor retention, the memory gate, full Phase 0 coverage, and visual parity remain separate acceptance items.
+
+
+### F522 selected for Batch 98 - 2026-10-10
+
+Assess whether the retained selected Details editor subtree after Classes page leave is necessary for F515's unchanged-re-entry/no-data-reread contract; trace dirty-state and page-transition ordering before changing release policy.
+
+
+### F522 scope and acceptance - 2026-10-10
+
+This is a source-and-evidence review before any editor-release change. Trace PageManager's dirty-page decision and activation/deactivation ordering, ClassesPage's editor cache and loaded-class IDs, and the Details editor's retained schedule rows/validation state. Compare active, page-left, re-entry, and settled owner counts from F518/F519; separate retained editor state from deferred rows and navigation widgets. Determine whether a value-only snapshot or existing persisted class data could restore required state without violating dirty save/discard behavior or F515's no-reread re-entry contract. Keep memory conclusions process-level. Acceptance requires a concrete recommendation and the precise behavior that any later release change must preserve; no implementation is in scope unless a safe replacement contract and measurable benefit are established. No tests or memory-gate claim are required for this diagnostic slice.

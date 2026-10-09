@@ -42,7 +42,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-10
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F520's source review keeps deferred grade-tab-root disposal because rebuilds can run inside handlers from the old tree and the measured duplicate root clears at event-loop return; Batch 97 selects F521 to assess the same safety/value question for replaced schedule rows while the Phase 0, memory, and visual gates remain open.
+- Current note: F521's source review keeps deferred schedule-row disposal because row counts settle at the next event-loop return and no byte benefit is measured; Batch 98 selects F522 to assess the retained Classes Details editor subtree after page leave while the Phase 0, memory, and visual gates remain open.
 
 ### Slice discovery batches
 
@@ -67,9 +67,9 @@ Treat this plan as an operational summary, not a history:
   failure warning/no-navigation behavior; revisit after that behavior is
   clarified.
 
-#### Active batch: Batch 97
+#### Active batch: Batch 98
 
-- F521 - Assess whether synchronous disposal of replaced schedule rows is safe and worthwhile; trace row signal/callback lifetime before changing deletion policy.
+- F522 - Assess whether the retained Classes Details editor subtree after page leave is necessary for F515's re-entry contract; trace dirty-state and page-transition ordering before changing release policy.
 
 ## Objective
 

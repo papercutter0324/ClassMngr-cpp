@@ -6,7 +6,7 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-10
-- Current milestone: Phase 2 remains in progress. F520's source review keeps deferred grade-tab-root disposal because replacement can run inside old-tree event handlers and the measured duplicate clears at event-loop return. F521 in Batch 97 will assess the safety and value of synchronous cleanup for replaced schedule rows. Gates 1 and 2 remain Partial, with the full Phase 0 and visual gates open. See the Phase 2 progress log for evidence and acceptance scope.
+- Current milestone: Phase 2 remains in progress. F520 and F521 retain deferred cleanup for replaced grade-tab roots and schedule rows; both transient counts settle at normal event-loop return, with no feature-level byte savings established. F522 in Batch 98 will assess the selected Details editor subtree that remains after Classes page leave. Gates 1 and 2 remain Partial, with the full Phase 0 and visual gates open. See the Phase 2 progress log for evidence and acceptance scope.
 - Phase 1 is complete. Its 2026-09-19 closure update records passing hosted
   baseline jobs for Windows x64 and macOS universal, the Phase 1 Build Quality
   and Dialog policy workflows, and packaged Release workflows. Linux x64 and
