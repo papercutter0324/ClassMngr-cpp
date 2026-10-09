@@ -17631,3 +17631,25 @@ The Ninja build succeeded in the VS Developer environment; CTest passed 1/1, the
 The Tester confirmed the provider restorer precedes the Claude write, exactly one https://claude.ai/ URL is captured, clipboard matches the anonymous prompt, and the ActionRole preview remains open until explicit rejection. Timeout cleanup is covered.
 
 Focused Ninja CTest passed 1/1 in 8.64s; direct offscreen execution exited 0 without output. Scoped diff check passed, and the executable lists the slot. No full suite, browser, or network. F484 is independently verified, accepted, and ready to commit; Batch 60 remains active until commit.
+
+### F484 committed - 2026-10-09
+
+F484 committed as 4116c83f with six scoped paths. Batch 60 is complete. Batch 61 candidate discovery is underway for F485; selection is pending.
+
+### F485 acceptance plan recorded before implementation - 2026-10-09
+
+Add one focused slot in speaking_eval_batch_report_service_tests.cpp using synthetic eligible report data and temporary settings. RAII-restore the previous provider; seed and sync MicrosoftCopilot, then reuse the scoped HTTPS handler. Click the actual preview Copy/Open and assert ActionRole leaves the preview open, clipboard exactly matches the anonymous prompt (STD_NAME present and real student names absent), and exactly one intercepted URL equals https://copilot.microsoft.com/. Explicitly reject and verify closure. Preserve F481-F484 tests.
+
+Both scans confirmed the Copilot preview handoff is uncovered and verified its production URL mapping. No production/CMake/browser/network behavior. F485 is selected/current; implementation and verification are pending. Batch 61 remains active.
+
+### F485 implementation update - 2026-10-09
+
+One Copilot Copy/Open slot uses scoped provider and HTTPS cleanup, verifies the exact anonymous clipboard and https://copilot.microsoft.com/ capture, and checks ActionRole leaves the preview open before explicit close.
+
+The Ninja build succeeded in the VS Developer environment; CTest passed 1/1, the direct slot passed 3/0/0, and diff check passed. Qt font/offscreen warnings only. Independent verification is pending. No browser/network or production/CMake changes. Batch 61 remains active.
+
+### F485 independent verification update - 2026-10-09
+
+The Tester confirmed the provider restorer precedes the MicrosoftCopilot write, the scoped handler captures exactly one https://copilot.microsoft.com/ URL, and clipboard text equals the anonymous preview with STD_NAME and without Alice/김민지. The ActionRole preview stays open until explicit rejection; a cleanup timer handles unexpected modals. The executable lists the slot.
+
+Focused CTest passed 1/1 in 8.31 seconds; direct offscreen execution exited 0 and scoped diff check passed. No full suite, browser, or network. F485 is independently verified, accepted, and ready to commit; Batch 61 remains active until commit.

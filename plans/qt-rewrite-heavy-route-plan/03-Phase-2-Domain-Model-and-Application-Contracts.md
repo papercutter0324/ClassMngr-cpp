@@ -40,7 +40,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-09
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: Batch 60 is active with F484 Claude preview Copy/Open destination independently verified, accepted, and ready to commit; Gates 1 and 2 remain Partial.
+- Current note: Batch 61 is active with F485 Microsoft Copilot preview Copy/Open destination independently verified, accepted, and ready to commit; Gates 1 and 2 remain Partial.
 
 ### Slice discovery batches
 
@@ -65,10 +65,10 @@ Treat this plan as an operational summary, not a history:
   failure warning/no-navigation behavior; revisit after that behavior is
   clarified.
 
-#### Active batch: Batch 60
+#### Active batch: Batch 61
 
-- F484 — Claude preview Copy/Open destination: independently verified, accepted, and ready to commit.
-- Constraints: add one slot in tests/speaking_eval_batch_report_service_tests.cpp using synthetic eligible report data and temporary settings. RAII-restore the previous provider; seed and sync Claude. Reuse the scoped HTTPS handler, click the actual preview Copy/Open, and assert ActionRole leaves the preview open, clipboard exactly matches the anonymous prompt (STD_NAME present, real names absent), and exactly one intercepted URL is https://claude.ai/. Explicitly reject and verify closure. Preserve F481-F483 coverage; no production/CMake/browser/network behavior.
+- F485 — Microsoft Copilot preview Copy/Open destination: independently verified, accepted, and ready to commit.
+- Constraints: add one focused slot in speaking_eval_batch_report_service_tests.cpp using synthetic eligible report data and temporary settings. RAII-restore the previous provider; seed and sync MicrosoftCopilot. Reuse the scoped HTTPS handler, click the actual preview Copy/Open, and assert ActionRole leaves the preview open, clipboard exactly matches the anonymous prompt (STD_NAME present, real names absent), and exactly one intercepted URL is https://copilot.microsoft.com/. Explicitly reject and verify closure. Preserve F481-F484 coverage; no production/CMake/browser/network behavior.
 
 ## Objective
 

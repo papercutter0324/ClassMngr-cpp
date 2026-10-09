@@ -3599,3 +3599,10 @@ F484 discovery selected Claude preview Copy/Open destination. Independent scans 
 F484 Claude preview handoff implementation and focused checks passed: build, CTest 1/1, direct slot 3/0/0, and diff check. Independent review is pending.
 
 Independent review accepted F484. CTest passed 1/1, direct slot exited 0, and diff check passed. The slot captures Claude’s URL without external navigation and verifies anonymous clipboard and modal cleanup. Ready to commit.
+
+F484 committed as `4116c83f` with six scoped paths; Batch 60 is complete. Only the excluded pre-existing worktree entries remain. F485 discovery begins.
+
+F485 discovery selected Microsoft Copilot preview Copy/Open destination. Both scans confirmed this is the remaining uncovered provider; production maps it to https://copilot.microsoft.com/. Acceptance reuses the scoped handler and provider restorer and verifies the anonymous prompt and ActionRole lifecycle. No browser/network or production/CMake changes. Batch 61 active; implementation pending.
+
+F485 Copilot preview handoff implementation and focused checks passed: build, CTest 1/1, direct slot 3/0/0, and diff check. Independent review is pending.
+Independent review accepted F485. The tester confirmed provider restoration precedes the MicrosoftCopilot write, the scoped HTTPS handler captures exactly one https://copilot.microsoft.com/ URL, and the clipboard exactly matches the anonymous prompt with STD_NAME present and student names absent. The ActionRole preview remains active until explicit rejection; the timeout handles unexpected modals. The executable lists the slot, focused CTest passed 1/1 in 8.31 seconds, direct offscreen execution exited 0, and scoped diff check passed. No full suite, browser, or network. F485 is accepted and ready to commit; Batch 61 remains active.
