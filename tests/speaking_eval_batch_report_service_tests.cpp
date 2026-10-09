@@ -551,6 +551,7 @@ private slots:
     void aiBatchPromptAnonymizesUpToFullClass();
     void aiBatchResponseParserHandlesPartialAndMalformedBlocks();
     void aiBatchDialogDisplaysEligibilityReasonsAndCheckState();
+    void aiBatchDialogUsesKoreanNameWhenEnglishNameIsBlank();
     void aiBatchDialogAssessesCommentQualityAndPreservesStatuses();
     void aiBatchDialogSelectsEligibleStudentsAndReviewsValidComments();
     void aiBatchDialogRedactsUncheckedClassmateNames();
@@ -1992,6 +1993,109 @@ void SpeakingEvalBatchReportServiceTests::
 
     QVERIFY(selection->item(6, 0)->flags() & Qt::ItemIsEnabled);
     QCOMPARE(selection->item(6, 0)->checkState(), Qt::Unchecked);
+}
+
+void SpeakingEvalBatchReportServiceTests::
+    aiBatchDialogUsesKoreanNameWhenEnglishNameIsBlank()
+{
+    const QString koreanName = QStringLiteral("\uAE40\uBBFC\uC9C0");
+    SpeakingEvalReportData report;
+    report.englishName = QStringLiteral(" \t ");
+    report.koreanName = koreanName;
+    report.grade = 5;
+    report.notes =
+        QStringLiteral(
+            "[Did Well]\nClear pronunciation\n"
+            "[Needs Improvement]\nAdd supporting details"
+            );
+    const int sourceRow = 37;
+    SpeakingEvalAiBatchDialog dialog(
+        { { QStringLiteral("Korean only"), report, sourceRow } }
+        );
+
+    auto* selection =
+        dialog.findChild<QTableWidget*>(
+            QStringLiteral("speakingEvalAiBatchSelectionTable")
+            );
+    auto* createPromptButton =
+        dialog.findChild<QPushButton*>(
+            QStringLiteral("speakingEvalAiBatchCreatePrompt")
+            );
+    auto* promptEdit =
+        dialog.findChild<QPlainTextEdit*>(
+            QStringLiteral("speakingEvalAiBatchPrompt")
+            );
+    auto* responseEdit =
+        dialog.findChild<QPlainTextEdit*>(
+            QStringLiteral("speakingEvalAiBatchResponse")
+            );
+    auto* parseButton =
+        dialog.findChild<QPushButton*>(
+            QStringLiteral("speakingEvalAiBatchParse")
+            );
+    auto* review =
+        dialog.findChild<QTableWidget*>(
+            QStringLiteral("speakingEvalAiBatchReviewTable")
+            );
+    auto* applyButton =
+        dialog.findChild<QPushButton*>(
+            QStringLiteral("speakingEvalAiBatchApply")
+            );
+    QVERIFY(selection);
+    QVERIFY(createPromptButton);
+    QVERIFY(promptEdit);
+    QVERIFY(responseEdit);
+    QVERIFY(parseButton);
+    QVERIFY(review);
+    QVERIFY(applyButton);
+
+    QCOMPARE(selection->rowCount(), 1);
+    QCOMPARE(selection->item(0, 0)->checkState(), Qt::Checked);
+
+    createPromptButton->click();
+    const QString generatedPrompt = promptEdit->toPlainText();
+    QVERIFY(
+        generatedPrompt.contains(
+            QStringLiteral("Student ID: STUDENT_01")
+            )
+        );
+    QVERIFY(!generatedPrompt.contains(koreanName));
+
+    const QString responseComment =
+        QStringLiteral(
+            "STD_NAME spoke clearly and used strong vocabulary. "
+            "Keep adding supporting details and practice difficult sounds. "
+            "Your eye contact and confident voice made the presentation "
+            "engaging."
+            );
+    const QString expectedComment =
+        QStringLiteral(
+            "\uAE40\uBBFC\uC9C0 spoke clearly and used strong vocabulary. "
+            "Keep adding supporting details and practice difficult sounds. "
+            "Your eye contact and confident voice made the presentation "
+            "engaging."
+            );
+    responseEdit->setPlainText(
+        QStringLiteral(
+            "<<<STUDENT_01>>>\n%1\n<<<END_STUDENT_01>>>"
+            ).arg(responseComment)
+        );
+    QVERIFY(parseButton->isEnabled());
+    parseButton->click();
+
+    QCOMPARE(review->rowCount(), 1);
+    QCOMPARE(review->item(0, 0)->checkState(), Qt::Checked);
+    QCOMPARE(review->item(0, 2)->text(), QStringLiteral("Ready"));
+    QCOMPARE(review->item(0, 4)->text(), expectedComment);
+    QVERIFY(applyButton->isEnabled());
+
+    applyButton->click();
+    QCOMPARE(dialog.result(), static_cast<int>(QDialog::Accepted));
+    const auto acceptedComments = dialog.acceptedComments();
+    QCOMPARE(acceptedComments.size(), 1);
+    QCOMPARE(acceptedComments.first().sourceRow, sourceRow);
+    QVERIFY(acceptedComments.first().oldComment.isEmpty());
+    QCOMPARE(acceptedComments.first().newComment, expectedComment);
 }
 
 void SpeakingEvalBatchReportServiceTests::

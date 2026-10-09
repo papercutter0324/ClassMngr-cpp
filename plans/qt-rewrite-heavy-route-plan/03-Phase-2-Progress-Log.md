@@ -17927,3 +17927,21 @@ The `aiBatchDialogProjectsPreferredCommentLengthBoundary` slot verifies an edite
 ### F499 independent verification update - 2026-10-09
 
 The Tester independently verified the assertions, focused build, registered CTest 1/1, direct slot, function listing, and diff check. An LF-to-CRLF advisory was the only noted issue. This is test-only, with no production, CMake, browser, or network changes. F499 is independently verified, accepted, and ready to commit; Batch 75 remains active until commit.
+
+### F499 committed - 2026-10-09
+
+F499, “Phase2 - Cover preferred comment boundary (F499),” committed as b253db85 with six scoped paths. Batch 75 is complete. Batch 76 candidate discovery is underway for F500; selection is pending.
+
+### F500 acceptance plan recorded before implementation - 2026-10-09
+
+Add one dialog-level test in `tests/speaking_eval_batch_report_service_tests.cpp` with one otherwise eligible grade-5 report, whitespace-only `englishName`, `koreanName` `김민지`, complete Did Well/Needs Improvement notes, and a stable known sourceRow. Verify it is selected by default; prompt creation includes STUDENT_01 and excludes the raw Korean name. Parse a valid STUDENT_01 block containing `STD_NAME`; verify one checked Ready row with the Korean name substituted. Apply and assert exactly the substituted comment and original sourceRow are returned.
+
+Both discovery scans converged on this fallback gap: F499 deferred Korean-only prompt flow; F249 covers eligibility but not prompt/parse; F492 covers classmate redaction when both names exist. The existing flow selects trimmed Korean for placeholder substitution and supplies both names to prompt redaction. This covers fallback flow, not eligibility semantics. The Copy-only handoff remains separate. Test-only; no production, CMake, browser, or network changes. F500 is selected/current in Batch 76; implementation and verification are pending.
+
+### F500 implementation update - 2026-10-09
+
+The `aiBatchDialogUsesKoreanNameWhenEnglishNameIsBlank` slot verifies the default-selected Korean-only student produces an anonymous STUDENT_01 prompt without the raw Korean name. Parsing a `STD_NAME` block substitutes the Korean name, yields one checked Ready row, and Apply returns the exact comment/sourceRow 37. The focused Ninja target build via VsDevCmd, CTest 1/1, direct offscreen slot, function listing, and scoped diff check passed. A nonfatal Qt font-directory warning appeared. No production or CMake changes. Independent verification is pending; F500 remains selected/current in Batch 76.
+
+### F500 independent verification update - 2026-10-09
+
+The Tester confirmed Korean-only default selection, omission of the raw Korean name from the prompt, a Ready/checked review row with Korean-name substitution, and the exact accepted comment/sourceRow 37. The focused Ninja target build was up to date; registered CTest passed 1/1; the direct offscreen slot exited 0; the function-list check included the slot; diff check exited 0. An LF-to-CRLF advisory was the only noted issue. No full suite, production, or CMake changes. F500 is independently verified, accepted, and ready to commit; Batch 76 remains active until commit.
