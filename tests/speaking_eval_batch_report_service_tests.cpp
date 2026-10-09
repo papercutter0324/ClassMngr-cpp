@@ -553,6 +553,7 @@ private slots:
     void aiBatchDialogDisplaysEligibilityReasonsAndCheckState();
     void aiBatchDialogAssessesCommentQualityAndPreservesStatuses();
     void aiBatchDialogSelectsEligibleStudentsAndReviewsValidComments();
+    void aiBatchDialogRedactsUncheckedClassmateNames();
     void aiBatchDialogCopyOpenCopiesPromptAndOpensGemini();
     void aiBatchDialogSelectionChangesClearGeneratedReviewState();
     void aiBatchDialogResponseEditsClearStaleReviewState();
@@ -2338,6 +2339,95 @@ void SpeakingEvalBatchReportServiceTests::
                 ),
         QString()
         );
+}
+
+void SpeakingEvalBatchReportServiceTests::
+    aiBatchDialogRedactsUncheckedClassmateNames()
+{
+    SpeakingEvalReportData alice;
+    alice.englishName = QStringLiteral("Alice");
+    alice.koreanName = QStringLiteral("김민지");
+    alice.grade = 4;
+    alice.notes =
+        QStringLiteral(
+            "[Did Well]\n"
+            "Alice (김민지) explained her thinking clearly after "
+            "Bob (박서준) shared a useful example.\n"
+            "[Needs Improvement]\n"
+            "Alice should encourage Bob to add supporting details."
+            );
+
+    SpeakingEvalReportData bob;
+    bob.englishName = QStringLiteral("Bob");
+    bob.koreanName = QStringLiteral("박서준");
+    bob.grade = 5;
+    bob.notes =
+        QStringLiteral(
+            "[Did Well]\nOrganized the presentation clearly\n"
+            "[Needs Improvement]\nAdd more supporting details"
+            );
+
+    SpeakingEvalAiBatchDialog dialog(
+        {
+            {
+                QStringLiteral("Alice (김민지)"),
+                alice,
+                0
+            },
+            {
+                QStringLiteral("Bob (박서준)"),
+                bob,
+                1
+            }
+        }
+        );
+
+    auto* selection =
+        dialog.findChild<QTableWidget*>(
+            QStringLiteral("speakingEvalAiBatchSelectionTable")
+            );
+    auto* createPromptButton =
+        dialog.findChild<QPushButton*>(
+            QStringLiteral("speakingEvalAiBatchCreatePrompt")
+            );
+    auto* promptEdit =
+        dialog.findChild<QPlainTextEdit*>(
+            QStringLiteral("speakingEvalAiBatchPrompt")
+            );
+    QVERIFY(selection);
+    QVERIFY(createPromptButton);
+    QVERIFY(promptEdit);
+    QCOMPARE(selection->rowCount(), 2);
+    QVERIFY(selection->item(0, 0)->flags() & Qt::ItemIsEnabled);
+    QVERIFY(selection->item(1, 0)->flags() & Qt::ItemIsEnabled);
+    QCOMPARE(selection->item(0, 2)->text(), QStringLiteral("Ready"));
+    QCOMPARE(selection->item(1, 2)->text(), QStringLiteral("Ready"));
+    QCOMPARE(selection->item(0, 0)->checkState(), Qt::Checked);
+    selection->item(1, 0)->setCheckState(Qt::Unchecked);
+    QCOMPARE(selection->item(1, 0)->checkState(), Qt::Unchecked);
+
+    createPromptButton->click();
+
+    const QString generatedPrompt = promptEdit->toPlainText();
+    QVERIFY(
+        generatedPrompt.contains(
+            QStringLiteral("Student ID: STUDENT_01")
+            )
+        );
+    QCOMPARE(generatedPrompt.count(QStringLiteral("Student ID:")), 1);
+    QVERIFY(!generatedPrompt.contains(QStringLiteral("STUDENT_02")));
+    QVERIFY(
+        generatedPrompt.contains(
+            QStringLiteral(
+                "STD_NAME (STD_NAME) explained her thinking clearly after "
+                "CLASSMATE (CLASSMATE) shared a useful example."
+                )
+            )
+        );
+    QVERIFY(!generatedPrompt.contains(QStringLiteral("Alice")));
+    QVERIFY(!generatedPrompt.contains(QStringLiteral("김민지")));
+    QVERIFY(!generatedPrompt.contains(QStringLiteral("Bob")));
+    QVERIFY(!generatedPrompt.contains(QStringLiteral("박서준")));
 }
 
 void SpeakingEvalBatchReportServiceTests::

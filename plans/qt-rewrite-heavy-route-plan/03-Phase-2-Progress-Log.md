@@ -17783,3 +17783,21 @@ The focused Ninja build and CTest passed 1/1; the direct offscreen slot passed 3
 The Tester confirmed exact row statuses/checks: STUDENT_01 shows “Duplicate response blocks” and is unchecked, STUDENT_02 shows “Ready” and is checked, and STUDENT_03 shows “Malformed response block” and is unchecked. Apply is enabled for the valid row. The exact summary reports 1 of 3 parsed and STUDENT_99 ignored; the executable lists the slot.
 
 Focused CTest passed 1/1 in 8.53 seconds; direct offscreen execution exited 0 with no per-slot output; diff check exited 0. No full suite, browser, or network. F491 is independently verified, accepted, and ready to commit; Batch 67 remains active until commit.
+
+### F491 committed - 2026-10-09
+
+F491 committed as d6564476 with six scoped paths. Batch 67 is complete. Batch 68 candidate discovery is underway for F492; selection is pending.
+
+### F492 acceptance plan recorded before implementation - 2026-10-09
+
+For the Phase 2 Speaking Evaluation batch-report prompt flow, add one focused dialog-level test in `tests/speaking_eval_batch_report_service_tests.cpp` with two eligible reports: Alice selected and Bob unchecked. Put references to both students in Alice’s observations, create the prompt, and assert Alice’s selected ID is present while Bob’s unchecked ID is absent; `STD_NAME` and `CLASSMATE` substitutions appear; and neither report’s raw English or Korean names appear. This checks that prompt redaction receives names from all eligible reports, including an unchecked report, while preserving selected-student inclusion behavior.
+
+No production, CMake, browser, or network changes. F492 is selected/current in Batch 68; implementation and verification are pending.
+
+### F492 implementation update - 2026-10-09
+
+The new `aiBatchDialogRedactsUncheckedClassmateNames` slot in `tests/speaking_eval_batch_report_service_tests.cpp` selects Alice and leaves eligible Bob unchecked; Alice’s observations mention both. The prompt includes Alice’s ID, `STD_NAME`, and `CLASSMATE`, excludes Bob’s ID, and contains none of the four raw English/Korean names. This verifies all-report name redaction at the dialog handoff. The focused build and CTest passed 1/1; direct offscreen execution exited 0.
+
+### F492 independent verification update - 2026-10-09
+
+The independent Tester confirmed the focused target build, CTest 1/1, direct offscreen QtTest 3/0/0, slot registration, and diff check. A Qt font-directory warning was the only reported warning. This is test-only; no production, CMake, browser, or network changes. F492 is independently verified, accepted, and ready to commit; Batch 68 remains active until commit.

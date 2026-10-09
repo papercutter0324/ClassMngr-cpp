@@ -40,7 +40,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-09
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: Batch 67 is active with F491 dialog-level batch parser-status mapping independently verified, accepted, and ready to commit; Gates 1 and 2 remain Partial.
+- Current note: F492 is accepted and ready to commit in active Batch 68; Gates 1 and 2 remain Partial.
 
 ### Slice discovery batches
 
@@ -65,10 +65,9 @@ Treat this plan as an operational summary, not a history:
   failure warning/no-navigation behavior; revisit after that behavior is
   clarified.
 
-#### Active batch: Batch 67
+#### Active batch: Batch 68
 
-- F491 — Dialog-level batch parser-status mapping: independently verified, accepted, and ready to commit.
-- Constraints: add one slot with three eligible reports and parsed response blocks for duplicate STUDENT_01, valid STUDENT_02, truncated STUDENT_03, and unknown STUDENT_99. Assert “Duplicate response blocks,” “Ready,” and “Malformed response block” statuses, only the valid row checked for Apply, and the exact summary reporting 1 of 3 parsed plus STUDENT_99 ignored. No production/CMake/browser/network changes.
+- F492 - Accepted and ready to commit: dialog-level batch-prompt redaction coverage for unchecked report names.
 
 ## Objective
 
