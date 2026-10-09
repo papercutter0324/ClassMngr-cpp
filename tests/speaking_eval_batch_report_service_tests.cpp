@@ -559,6 +559,7 @@ private slots:
     void aiBatchDialogCopyOpenCopiesPromptAndOpensGemini();
     void aiBatchDialogCopyPromptCopiesWithoutOpeningUrl();
     void aiBatchDialogSelectionChangesClearGeneratedReviewState();
+    void aiBatchDialogDisablesPromptWhenNoReportsAreIncluded();
     void aiBatchDialogResponseEditsClearStaleReviewState();
     void aiBatchDialogClearingResponseClearsStaleReviewState();
     void aiBatchDialogParsesDuplicateMalformedAndUnknownBlocks();
@@ -2957,6 +2958,71 @@ void SpeakingEvalBatchReportServiceTests::
     QVERIFY(!regeneratedPrompt.contains(
         QStringLiteral("Student ID: STUDENT_02")
         ));
+}
+
+void SpeakingEvalBatchReportServiceTests::
+    aiBatchDialogDisablesPromptWhenNoReportsAreIncluded()
+{
+    const QString notes =
+        QStringLiteral(
+            "[Did Well]\nClear pronunciation\n"
+            "[Needs Improvement]\nAdd supporting details"
+            );
+    const auto makeReport = [&notes](
+        const QString& englishName,
+        const int grade,
+        const int sourceRow
+        )
+    {
+        SpeakingEvalReportData report;
+        report.englishName = englishName;
+        report.grade = grade;
+        report.notes = notes;
+        return SpeakingEvalBatchReportService::StudentReport{
+            englishName,
+            report,
+            sourceRow
+        };
+    };
+    SpeakingEvalAiBatchDialog dialog(
+        {
+            makeReport(QStringLiteral("Alice"), 4, 0),
+            makeReport(QStringLiteral("Bob"), 5, 1)
+        }
+        );
+
+    auto* selection =
+        dialog.findChild<QTableWidget*>(
+            QStringLiteral("speakingEvalAiBatchSelectionTable")
+            );
+    auto* createPromptButton =
+        dialog.findChild<QPushButton*>(
+            QStringLiteral("speakingEvalAiBatchCreatePrompt")
+            );
+    auto* promptEdit =
+        dialog.findChild<QPlainTextEdit*>(
+            QStringLiteral("speakingEvalAiBatchPrompt")
+            );
+    QVERIFY(selection);
+    QVERIFY(createPromptButton);
+    QVERIFY(promptEdit);
+    QCOMPARE(selection->rowCount(), 2);
+    QCOMPARE(selection->item(0, 0)->checkState(), Qt::Checked);
+    QCOMPARE(selection->item(1, 0)->checkState(), Qt::Checked);
+    QVERIFY(createPromptButton->isEnabled());
+
+    selection->item(0, 0)->setCheckState(Qt::Unchecked);
+    selection->item(1, 0)->setCheckState(Qt::Unchecked);
+    QCOMPARE(selection->item(0, 0)->checkState(), Qt::Unchecked);
+    QCOMPARE(selection->item(1, 0)->checkState(), Qt::Unchecked);
+    QVERIFY(!createPromptButton->isEnabled());
+
+    createPromptButton->click();
+    QVERIFY(promptEdit->toPlainText().isEmpty());
+
+    selection->item(0, 0)->setCheckState(Qt::Checked);
+    QCOMPARE(selection->item(0, 0)->checkState(), Qt::Checked);
+    QVERIFY(createPromptButton->isEnabled());
 }
 
 void SpeakingEvalBatchReportServiceTests::

@@ -17963,3 +17963,21 @@ The new `aiBatchDialogCopyPromptCopiesWithoutOpeningUrl` slot creates an anonymo
 ### F501 independent verification update - 2026-10-09
 
 The Tester confirmed prompt anonymity, exact Copy Prompt clipboard equality, and an empty HTTPS URL handler. The focused Ninja target was up to date; CTest passed 1/1; the direct offscreen slot exited 0; the function list included the slot; diff check exited 0. An LF-to-CRLF advisory was the only noted issue. No full suite or production/CMake change. F501 is independently verified, accepted, and ready to commit; Batch 77 remains active until commit.
+
+### F501 committed - 2026-10-09
+
+F501, “Phase2 - Cover batch Copy Prompt handoff (F501),” committed as 030ac493 with six scoped paths. Batch 77 is complete. Batch 78 candidate discovery is underway for F502; selection is pending. Post-commit status contains only the excluded `latest_session_work.md` and `%SystemDrive%/`.
+
+### F502 acceptance plan recorded before implementation - 2026-10-09
+
+Add one dialog-level test with two eligible reports initially checked. Uncheck both prompt-input Include cells; assert Create Prompt is disabled and clicking it leaves the prompt empty. Recheck one item and assert Create Prompt is enabled.
+
+F488’s selection-reset test leaves one report checked; F493 unchecks review-table rows, not the prompt-input selection table. `updateCreatePromptButton()` gates on at least one checked Include item. This zero-selection UI boundary supports Phase 2 §§2.3–2.4. Test-only; no production, CMake, browser, or network changes. F502 is selected/current in Batch 78; implementation and verification are pending.
+
+### F502 implementation update - 2026-10-09
+
+The `aiBatchDialogDisablesPromptWhenNoReportsAreIncluded` slot verifies two eligible reports, all Include items unchecked, disabled Create Prompt, and an empty prompt after click; rechecking one report enables Create Prompt. Executor focused build, CTest 1/1, direct offscreen slot, function listing, and scoped diff check passed. Test-only, with no production or CMake changes. Independent verification is pending; F502 remains selected/current in Batch 78.
+
+### F502 independent verification update - 2026-10-09
+
+The Tester confirmed two checked rows, zero selection disabling Create Prompt, a disabled click leaving the prompt empty, and rechecking one row enabling the action. The focused Ninja target was up to date; CTest passed 1/1; the direct offscreen slot exited 0; the function list included the slot; diff check exited 0. An LF-to-CRLF advisory was the only noted issue. No full suite, production, or CMake changes. F502 is independently verified, accepted, and ready to commit; Batch 78 remains active until commit.
