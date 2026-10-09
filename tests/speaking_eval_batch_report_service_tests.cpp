@@ -557,6 +557,7 @@ private slots:
     void aiBatchDialogSelectionChangesClearGeneratedReviewState();
     void aiBatchDialogResponseEditsClearStaleReviewState();
     void aiBatchDialogClearingResponseClearsStaleReviewState();
+    void aiBatchDialogParsesDuplicateMalformedAndUnknownBlocks();
     void aiBatchDialogConfirmsAcceptedCommentOverwrites();
     void aiPromptButtonsRequireCompleteInput();
     void aiPromptPreviewCopiesAnAnonymousPrompt();
@@ -2780,6 +2781,121 @@ void SpeakingEvalBatchReportServiceTests::
     QCOMPARE(review->rowCount(), 1);
     QCOMPARE(review->item(0, 2)->text(), QStringLiteral("Ready"));
     QVERIFY(!parseSummary->text().isEmpty());
+    QVERIFY(applyButton->isEnabled());
+}
+
+void SpeakingEvalBatchReportServiceTests::
+    aiBatchDialogParsesDuplicateMalformedAndUnknownBlocks()
+{
+    const auto makeReport = [](
+        const QString& name,
+        const int sourceRow
+        )
+    {
+        SpeakingEvalReportData report;
+        report.englishName = name;
+        report.grade = 5;
+        report.notes =
+            QStringLiteral(
+                "[Did Well]\nClear pronunciation\n"
+                "[Needs Improvement]\nAdd supporting details"
+                );
+        return SpeakingEvalBatchReportService::StudentReport{
+            name,
+            report,
+            sourceRow
+        };
+    };
+
+    SpeakingEvalAiBatchDialog dialog(
+        {
+            makeReport(QStringLiteral("Alice"), 0),
+            makeReport(QStringLiteral("Bob"), 1),
+            makeReport(QStringLiteral("Carol"), 2)
+        }
+        );
+
+    auto* createPromptButton =
+        dialog.findChild<QPushButton*>(
+            QStringLiteral("speakingEvalAiBatchCreatePrompt")
+            );
+    auto* responseEdit =
+        dialog.findChild<QPlainTextEdit*>(
+            QStringLiteral("speakingEvalAiBatchResponse")
+            );
+    auto* parseButton =
+        dialog.findChild<QPushButton*>(
+            QStringLiteral("speakingEvalAiBatchParse")
+            );
+    auto* parseSummary =
+        dialog.findChild<QLabel*>(
+            QStringLiteral("speakingEvalAiBatchParseSummary")
+            );
+    auto* review =
+        dialog.findChild<QTableWidget*>(
+            QStringLiteral("speakingEvalAiBatchReviewTable")
+            );
+    auto* applyButton =
+        dialog.findChild<QPushButton*>(
+            QStringLiteral("speakingEvalAiBatchApply")
+            );
+    QVERIFY(createPromptButton);
+    QVERIFY(responseEdit);
+    QVERIFY(parseButton);
+    QVERIFY(parseSummary);
+    QVERIFY(review);
+    QVERIFY(applyButton);
+
+    createPromptButton->click();
+    QVERIFY(!parseButton->isEnabled());
+
+    responseEdit->setPlainText(
+        QStringLiteral(
+            "<<<STUDENT_01>>>\n"
+            "First duplicate response.\n"
+            "<<<END_STUDENT_01>>>\n"
+            "<<<STUDENT_01>>>\n"
+            "Second duplicate response.\n"
+            "<<<END_STUDENT_01>>>\n"
+            "<<<STUDENT_02>>>\n"
+            "STD_NAME spoke clearly and used strong vocabulary. "
+            "Keep adding supporting details and practice difficult sounds. "
+            "Your eye contact and confident voice made the presentation "
+            "engaging.\n"
+            "<<<END_STUDENT_02>>>\n"
+            "<<<STUDENT_03>>>\n"
+            "This block is truncated.\n"
+            "<<<STUDENT_99>>>\n"
+            "Unknown student.\n"
+            "<<<END_STUDENT_99>>>"
+            )
+        );
+    QVERIFY(parseButton->isEnabled());
+    parseButton->click();
+
+    QCOMPARE(review->rowCount(), 3);
+    QCOMPARE(
+        review->item(0, 2)->text(),
+        QStringLiteral("Duplicate response blocks")
+        );
+    QCOMPARE(
+        review->item(1, 2)->text(),
+        QStringLiteral("Ready")
+        );
+    QCOMPARE(
+        review->item(2, 2)->text(),
+        QStringLiteral("Malformed response block")
+        );
+    QCOMPARE(review->item(0, 0)->checkState(), Qt::Unchecked);
+    QCOMPARE(review->item(1, 0)->checkState(), Qt::Checked);
+    QCOMPARE(review->item(2, 0)->checkState(), Qt::Unchecked);
+    QCOMPARE(
+        parseSummary->text(),
+        QStringLiteral(
+            "1 of 3 selected students were parsed. "
+            "Unknown IDs were ignored: STUDENT_99"
+            )
+        );
     QVERIFY(applyButton->isEnabled());
 }
 

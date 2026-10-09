@@ -17761,3 +17761,25 @@ The executor focused build and CTest passed; the direct offscreen slot passed 3/
 The Tester confirmed the slot is listed and verified clearing a parsed response resets review/summary and disables Parse/Apply while preserving the prompt and Copy/CopyOpen, then restoring valid response text recovers parsing/review. The executable timestamp is fresh.
 
 Focused CTest passed 1/1 in 8.51 seconds; direct offscreen execution exited 0. Scoped diff check exited 0 with a line-ending advisory. No full suite, browser, or network. F490 is independently verified, accepted, and ready to commit; Batch 66 remains active until commit.
+
+### F490 committed - 2026-10-09
+
+F490 committed as ac2b8042 with six scoped paths. Batch 66 is complete. Batch 67 candidate discovery is underway for F491; selection is pending.
+
+### F491 acceptance plan recorded before implementation - 2026-10-09
+
+Add one dialog-level slot with three eligible reports and response blocks for duplicate STUDENT_01, valid STUDENT_02, truncated STUDENT_03, and unknown STUDENT_99. Assert the rows display “Duplicate response blocks,” “Ready,” and “Malformed response block” respectively, only the valid row is checked for Apply, and the exact summary reports 1 of 3 parsed plus STUDENT_99 ignored.
+
+Parser unit classifications already exist; the dialog presentation mapping is uncovered. No production/CMake/browser/network changes. F491 is selected/current; implementation and verification are pending. Batch 67 remains active.
+
+### F491 implementation update - 2026-10-09
+
+The dialog maps duplicate STUDENT_01 to “Duplicate response blocks,” STUDENT_02 to “Ready,” and truncated STUDENT_03 to “Malformed response block.” Only STUDENT_02 is checked for Apply; the summary reports 1 of 3 parsed and STUDENT_99 ignored.
+
+The focused Ninja build and CTest passed 1/1; the direct offscreen slot passed 3/0/0 and scoped diff check passed. Font and LF-to-CRLF notices occurred. Independent verification is pending; Batch 67 remains active.
+
+### F491 independent verification update - 2026-10-09
+
+The Tester confirmed exact row statuses/checks: STUDENT_01 shows “Duplicate response blocks” and is unchecked, STUDENT_02 shows “Ready” and is checked, and STUDENT_03 shows “Malformed response block” and is unchecked. Apply is enabled for the valid row. The exact summary reports 1 of 3 parsed and STUDENT_99 ignored; the executable lists the slot.
+
+Focused CTest passed 1/1 in 8.53 seconds; direct offscreen execution exited 0 with no per-slot output; diff check exited 0. No full suite, browser, or network. F491 is independently verified, accepted, and ready to commit; Batch 67 remains active until commit.
