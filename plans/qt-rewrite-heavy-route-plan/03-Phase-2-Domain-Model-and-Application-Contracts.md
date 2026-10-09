@@ -40,7 +40,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-09
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F498 is accepted and ready to commit in active Batch 74; Gates 1 and 2 remain Partial.
+- Current note: F499 is accepted and ready to commit in active Batch 75; Gates 1 and 2 remain Partial.
 
 ### Slice discovery batches
 
@@ -65,9 +65,9 @@ Treat this plan as an operational summary, not a history:
   failure warning/no-navigation behavior; revisit after that behavior is
   clarified.
 
-#### Active batch: Batch 74
+#### Active batch: Batch 75
 
-- F498 - Accepted and ready to commit: preserve sparse student IDs across an ineligible report.
+- F499 - Accepted and ready to commit: 420/421-character review-row length boundary.
 
 ## Objective
 

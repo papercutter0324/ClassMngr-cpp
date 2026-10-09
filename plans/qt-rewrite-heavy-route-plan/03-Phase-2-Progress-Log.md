@@ -17909,3 +17909,21 @@ The `aiBatchDialogKeepsOriginalIdsAcrossIneligibleReport` slot uses eligible Ali
 ### F498 independent verification update - 2026-10-09
 
 The Tester confirmed these assertions, the focused build, registered CTest 1/1, direct offscreen execution, function listing, and diff check. An LF-to-CRLF advisory was the only noted issue. This is test-only, with no production, CMake, browser, or network changes. F498 is independently verified, accepted, and ready to commit; Batch 74 remains active until commit.
+
+### F498 committed - 2026-10-09
+
+F498, “Phase2 - Cover AI batch IDs across report gaps (F498),” committed as 76df67b6 with six scoped paths. Batch 74 is complete. Batch 75 candidate discovery is underway for F499; selection is pending.
+
+### F499 acceptance plan recorded before implementation - 2026-10-09
+
+Add one dialog-level test to `tests/speaking_eval_batch_report_service_tests.cpp` with one eligible report. Create the prompt and parse a valid placeholder-bearing response. Edit its review cell to exactly 420 characters (retaining the placeholder); assert count 420, status Ready, and checked. Edit to 421 characters; assert count 421, status “Ready — outside preferred length,” still checked with Apply enabled. Apply and assert the exact edited 421-character comment and sourceRow are accepted.
+
+F251 records a 420-character preferred maximum and 450-character hard maximum; application tests cover 420/421, but the dialog’s edit-driven status mapping is untested. This verifies UI quality/status projection, not the App policy. A Korean-only prompt fallback is a separate later candidate. Test-only; no production, CMake, browser, or network changes. F499 is selected/current in Batch 75; implementation and verification are pending.
+
+### F499 implementation update - 2026-10-09
+
+The `aiBatchDialogProjectsPreferredCommentLengthBoundary` slot verifies an edited 420-character row has count 420, Ready status, and checked state. At 421 characters it has count 421, status “Ready — outside preferred length,” remains checked, and Apply stays enabled. Apply accepts the exact 421-character text at sourceRow 23. Executor focused build and CTest passed; direct offscreen execution exited 0, the function was listed, and diff check passed.
+
+### F499 independent verification update - 2026-10-09
+
+The Tester independently verified the assertions, focused build, registered CTest 1/1, direct slot, function listing, and diff check. An LF-to-CRLF advisory was the only noted issue. This is test-only, with no production, CMake, browser, or network changes. F499 is independently verified, accepted, and ready to commit; Batch 75 remains active until commit.

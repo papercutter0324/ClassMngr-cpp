@@ -3697,3 +3697,9 @@ F497 committed as f5f9b561 with six scoped paths. The only post-commit worktree 
 F498 decision: verify AI batch IDs stay tied to original report positions when an ineligible report creates a gap. The prompt, response parser, and accepted-source mapping all use the same report index; selected IDs should remain 01 and 03 and apply to the correct two source rows.
 
 F498 verifies stable AI prompt IDs and accepted-comment mapping across an ineligible report gap: the selected reports retain IDs 01/03 and apply to source rows 5/14 in order. Independent focused verification passed.
+
+F498 committed as 76df67b6 with six scoped paths. The only post-commit worktree entries are the excluded latest_session_work.md change and %SystemDrive%/. Batch 74 is complete; Batch 75 F499 discovery begins with selection pending.
+
+F499 decision: test the live UI projection when an edited AI comment crosses the 420-character preferred maximum. It should gain an advisory at 421 yet remain valid/checked/applicable under the 450 hard maximum; this complements the app-less boundary test with the dialog's visible state.
+
+F499 verifies the dialog's preferred length advisory at the 420/421 boundary: 421 characters remain valid, selected, and applicable while showing the warning. Apply preserves the edited text. Independent focused verification passed.
