@@ -585,6 +585,7 @@ void MyClassesPage::rebuildClassInformation()
     ClassMngr::Next::Platform::
         ApplicationServicesClassesListReadPort readPort(m_services);
     const ClassMngr::Next::Application::ClassesListReadQuery query(readPort);
+    ++m_runtimeMetrics.classSummaryListQueryCount;
     const auto classes = query.execute();
     if (!classes)
     {
@@ -1244,6 +1245,12 @@ void MyClassesPage::rebuildClassInformation()
             }
             );
 
+        m_materializeSelectedDetails =
+            [tabs, updateSelectedFromTabs]()
+            {
+                updateSelectedFromTabs(tabs);
+            };
+
         int selectedIndex =
             tabIndexForClass(
                 tabs,
@@ -1416,6 +1423,21 @@ void MyClassesPage::rebuildClassInformation()
         }
     }
 
+    m_materializeSelectedDetails =
+        [gradeTabs, updateSelectedFromTabs]()
+        {
+            QWidget* const gradePage =
+                gradeTabs->currentWidget();
+            auto* const classTabs =
+                gradePage
+                    ? gradePage->findChild<NavigationTabWidget*>(
+                        QStringLiteral("myInfoClassTabs"),
+                        Qt::FindDirectChildrenOnly
+                        )
+                    : nullptr;
+            updateSelectedFromTabs(classTabs);
+        };
+
     m_classInformationTabs = gradeTabs;
     m_classInformationLayout->addWidget(
         gradeTabs
@@ -1423,8 +1445,22 @@ void MyClassesPage::rebuildClassInformation()
 }
 void MyClassesPage::clearClassInformation()
 {
+    m_materializeSelectedDetails = {};
     m_activeClassPage = nullptr;
     clearLayout(
         m_classInformationLayout
         );
+}
+
+void MyClassesPage::releaseFeatureResources()
+{
+    if (m_activeClassPage)
+    {
+        clearLayoutImmediately(
+            m_activeClassPage->layout()
+            );
+        m_activeClassPage = nullptr;
+    }
+
+    BasePage::releaseFeatureResources();
 }

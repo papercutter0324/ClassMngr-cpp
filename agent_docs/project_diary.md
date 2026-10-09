@@ -3811,3 +3811,7 @@ F510 diagnostic slice complete. F511 is selected in Batch 87 to keep the existin
 F511 retains every My Classes tab while materializing one selected class's detail tree and clearing it immediately on selection changes. The three focused Debug CTests passed. The validated packaged 96-class output route measured 2,471 widgets and 234,868,736 working-set bytes after My Classes activation, down from F509's 6,412 widgets and 300,208,128 bytes at that checkpoint. The lifecycle route still peaked at 280,035,328 bytes during PDF reopen/render; memory and visual parity remain open. F512 begins tracing that remaining lifecycle peak.
 
 F512 localized the lifecycle-route maximum to active PDF rendering but found the route already above 250 MiB at My Classes activation. That page activation added 321 widgets overall, and the cached page retained its selected detail tree after navigation; the PDF document was closed after rendering and the live-document metric returned to zero. F513 will release the hidden detail tree and restore it from cached summaries when My Classes returns; the memory gate remains open.
+
+## F513 verification lesson - 2026-10-09
+
+A successful packaged route run verifies only the exercised checkpoints and emitted metrics: lifecycle-sub-prep/output-sub-prep validation lacked My Classes metrics, so it does not establish F513's summary-read or hidden-tree behavior. Use focused My Classes re-entry tests for that contract and keep process-wide memory separate from feature attribution.

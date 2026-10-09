@@ -22,6 +22,16 @@ void MyClassesPage::refresh()
     refreshGeneratedContent();
 }
 
+void MyClassesPage::activate()
+{
+    BasePage::activate();
+
+    if (m_materializeSelectedDetails)
+    {
+        m_materializeSelectedDetails();
+    }
+}
+
 void MyClassesPage::clearDatabaseState()
 {
     clearClassInformation();
@@ -36,4 +46,9 @@ void MyClassesPage::retranslateUi()
         tr("Review teacher, class, and roster details.")
         );
     refreshGeneratedContent();
+}
+
+MyClassesPageRuntimeMetrics MyClassesPage::runtimeMetrics() const noexcept
+{
+    return m_runtimeMetrics;
 }

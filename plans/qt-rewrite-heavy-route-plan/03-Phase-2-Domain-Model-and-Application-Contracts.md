@@ -42,7 +42,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-09
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F512 localized the 280,035,328-byte lifecycle maximum to the loaded PDF render interval and found My Classes retains its selected detail tree while hidden; page activation added 321 widgets overall, and F513 is active in Batch 89 to release and restore the tree while Gates 1 and 2 remain Partial.
+- Current note: F513 focused Debug CTest passed 3/3; current-source Release evidence lacks My Classes metrics and its lifecycle 1-second working set is 270,848,000 bytes, so the 250 MiB gate remains open; F514 route work follows the F513 commit, with Gates 1 and 2 still Partial.
 
 ### Slice discovery batches
 
@@ -67,9 +67,9 @@ Treat this plan as an operational summary, not a history:
   failure warning/no-navigation behavior; revisit after that behavior is
   clarified.
 
-#### Active batch: Batch 89
+#### Active batch: Batch 90
 
-- F513 - Release the active My Classes detail tree when hidden and rematerialize the selected class on return while preserving tab order, selection, summary reads, and visible content.
+- F514 - Use the opt-in 96-class lifecycle route to diagnose cached Classes navigation/editor reuse or accumulation across two leave/re-entry cycles; record route-level memory only.
 
 ## Objective
 

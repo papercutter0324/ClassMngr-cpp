@@ -336,6 +336,7 @@ private slots:
     void failedTeacherProfileKeepsClassAndUsesSilentUnassignedFallback();
     void rosterCountUsesNonblankEnglishOrKoreanCells();
     void studentCountBatchRunsOnceAndKeepsClassOrder();
+    void flatPageReentryRestoresDetailsWithoutSummaryRead();
     void groupedGradeSelectionMaterializesOnlySelectedDetails();
     void rosterReadFailureKeepsClassAndShowsZeroStudentCount();
     void rosterWithoutNameColumnsShowsZeroStudentCount();
@@ -1473,6 +1474,123 @@ void MyClassesPageTests::studentCountBatchRunsOnceAndKeepsClassOrder()
     QCOMPARE(after.fallbackClassReadCount, before.fallbackClassReadCount);
 }
 
+void MyClassesPageTests::flatPageReentryRestoresDetailsWithoutSummaryRead()
+{
+    MyClassesPageFixture fixture;
+    QString error;
+    QVERIFY2(fixture.initialize(&error), qPrintable(error));
+
+    int firstClassId = 0;
+    int secondClassId = 0;
+    QVERIFY2(fixture.createClass(
+                 QStringLiteral("Flat first class"),
+                 QStringLiteral("E4"),
+                 QStringLiteral("Theseus"),
+                 &firstClassId,
+                 &error
+                 ), qPrintable(error));
+    QVERIFY2(fixture.createClass(
+                 QStringLiteral("Flat second class"),
+                 QStringLiteral("E5"),
+                 QStringLiteral("Artemis"),
+                 &secondClassId,
+                 &error
+                 ), qPrintable(error));
+    QVERIFY2(saveRoster(
+                 fixture,
+                 secondClassId,
+                 rosterWithNamedRows(),
+                 &error
+                 ), qPrintable(error));
+
+    DatabaseSession* const session = fixture.services.databaseSession();
+    QVERIFY(session);
+    ClassInfoRepository* const classInfoRepository =
+        session->classInfoRepository();
+    TeacherRepository* const teacherRepository =
+        session->teacherRepository();
+    RosterRepository* const rosterRepository =
+        session->rosterRepository();
+    QVERIFY(classInfoRepository);
+    QVERIFY(teacherRepository);
+    QVERIFY(rosterRepository);
+
+    MyClassesPage page(&fixture.services);
+    page.resize(900, 700);
+    page.refresh();
+    page.show();
+    QApplication::processEvents();
+
+    NavigationTabWidget* const tabs = classTabsFor(page);
+    QVERIFY(tabs);
+    QCOMPARE(tabs->count(), 2);
+    const int selectedIndex = tabIndexForClass(*tabs, secondClassId);
+    QVERIFY(selectedIndex >= 0);
+    tabs->setCurrentIndex(selectedIndex);
+
+    QWidget* const selectedPage = tabs->currentWidget();
+    QVERIFY(selectedPage);
+    QCOMPARE(selectedPage->property("class_id").toInt(), secondClassId);
+    QLabel* const selectedStudentCount = infoRowValueLabelFor(
+        *selectedPage,
+        QStringLiteral("# of Students")
+        );
+    QVERIFY(selectedStudentCount);
+    const QString selectedStudentCountBefore = selectedStudentCount->text();
+    QCOMPARE(selectedStudentCountBefore, QStringLiteral("4"));
+
+    const auto classInfoReadsBefore =
+        classInfoRepository->myClassesClassInformationBatchReadMetrics();
+    const auto teacherReadsBefore =
+        teacherRepository->myClassesTeacherProfileBatchReadMetrics();
+    const auto rosterReadsBefore =
+        rosterRepository->myClassesStudentCountBatchReadMetrics();
+    const MyClassesPageRuntimeMetrics pageMetricsBefore =
+        page.runtimeMetrics();
+    QCOMPARE(pageMetricsBefore.classSummaryListQueryCount, 1);
+
+    page.deactivate();
+    QCOMPARE(tabs->count(), 2);
+    QCOMPARE(tabs->currentIndex(), selectedIndex);
+    QCOMPARE(tabs->currentWidget(), selectedPage);
+    QCOMPARE(selectedPage->property("class_id").toInt(), secondClassId);
+    QVERIFY(selectedPage->findChildren<QWidget*>().isEmpty());
+    QVERIFY(!infoRowValueLabelFor(
+        *selectedPage,
+        QStringLiteral("# of Students")
+        ));
+
+    page.activate();
+    QCOMPARE(tabs->count(), 2);
+    QCOMPARE(tabs->currentIndex(), selectedIndex);
+    QCOMPARE(tabs->currentWidget(), selectedPage);
+    QCOMPARE(selectedPage->property("class_id").toInt(), secondClassId);
+    QLabel* const restoredStudentCount = infoRowValueLabelFor(
+        *selectedPage,
+        QStringLiteral("# of Students")
+        );
+    QVERIFY(restoredStudentCount);
+    QCOMPARE(restoredStudentCount->text(), selectedStudentCountBefore);
+    const int firstIndex = tabIndexForClass(*tabs, firstClassId);
+    QVERIFY(firstIndex >= 0);
+    QVERIFY(tabs->widget(firstIndex)->findChildren<QWidget*>().isEmpty());
+
+    const auto classInfoReadsAfter =
+        classInfoRepository->myClassesClassInformationBatchReadMetrics();
+    const auto teacherReadsAfter =
+        teacherRepository->myClassesTeacherProfileBatchReadMetrics();
+    const auto rosterReadsAfter =
+        rosterRepository->myClassesStudentCountBatchReadMetrics();
+    const MyClassesPageRuntimeMetrics pageMetricsAfter = page.runtimeMetrics();
+    QCOMPARE(
+        pageMetricsAfter.classSummaryListQueryCount,
+        pageMetricsBefore.classSummaryListQueryCount
+        );
+    QCOMPARE(classInfoReadsAfter.callCount, classInfoReadsBefore.callCount);
+    QCOMPARE(teacherReadsAfter.callCount, teacherReadsBefore.callCount);
+    QCOMPARE(rosterReadsAfter.callCount, rosterReadsBefore.callCount);
+}
+
 void MyClassesPageTests::groupedGradeSelectionMaterializesOnlySelectedDetails()
 {
     MyClassesPageFixture fixture;
@@ -1561,10 +1679,75 @@ void MyClassesPageTests::groupedGradeSelectionMaterializesOnlySelectedDetails()
     QWidget* const secondSecondGradeClassPage =
         secondGradeClassTabs->currentWidget();
     QVERIFY(secondSecondGradeClassPage);
-    QVERIFY(infoRowValueLabelFor(
+    const int secondSecondGradeClassId =
+        secondSecondGradeClassPage->property("class_id").toInt();
+    QLabel* const selectedStudentCount = infoRowValueLabelFor(
         *secondSecondGradeClassPage,
         QStringLiteral("# of Students")
-        ));
+        );
+    QVERIFY(selectedStudentCount);
+    const QString selectedStudentCountBefore = selectedStudentCount->text();
+    QCOMPARE(selectedStudentCountBefore, QStringLiteral("0"));
+
+    DatabaseSession* const session = fixture.services.databaseSession();
+    QVERIFY(session);
+    ClassInfoRepository* const classInfoRepository =
+        session->classInfoRepository();
+    TeacherRepository* const teacherRepository =
+        session->teacherRepository();
+    RosterRepository* const rosterRepository =
+        session->rosterRepository();
+    QVERIFY(classInfoRepository);
+    QVERIFY(teacherRepository);
+    QVERIFY(rosterRepository);
+    const auto classInfoReadsBefore =
+        classInfoRepository->myClassesClassInformationBatchReadMetrics();
+    const auto teacherReadsBefore =
+        teacherRepository->myClassesTeacherProfileBatchReadMetrics();
+    const auto rosterReadsBefore =
+        rosterRepository->myClassesStudentCountBatchReadMetrics();
+    const MyClassesPageRuntimeMetrics pageMetricsBefore =
+        page.runtimeMetrics();
+    QCOMPARE(pageMetricsBefore.classSummaryListQueryCount, 1);
+
+    page.deactivate();
+    QCOMPARE(gradeTabs->currentIndex(), 1);
+    QCOMPARE(secondGradeClassTabs->currentIndex(), 1);
+    QVERIFY(firstGradeClassPage->findChildren<QWidget*>().isEmpty());
+    QVERIFY(firstSecondGradeClassPage->findChildren<QWidget*>().isEmpty());
+    QVERIFY(secondSecondGradeClassPage->findChildren<QWidget*>().isEmpty());
+
+    page.activate();
+    QCOMPARE(gradeTabs->currentIndex(), 1);
+    QCOMPARE(secondGradeClassTabs->currentIndex(), 1);
+    QCOMPARE(secondGradeClassTabs->currentWidget(), secondSecondGradeClassPage);
+    QCOMPARE(
+        secondSecondGradeClassPage->property("class_id").toInt(),
+        secondSecondGradeClassId
+        );
+    QLabel* const restoredStudentCount = infoRowValueLabelFor(
+        *secondSecondGradeClassPage,
+        QStringLiteral("# of Students")
+        );
+    QVERIFY(restoredStudentCount);
+    QCOMPARE(restoredStudentCount->text(), selectedStudentCountBefore);
+    QVERIFY(firstGradeClassPage->findChildren<QWidget*>().isEmpty());
+    QVERIFY(firstSecondGradeClassPage->findChildren<QWidget*>().isEmpty());
+
+    const auto classInfoReadsAfter =
+        classInfoRepository->myClassesClassInformationBatchReadMetrics();
+    const auto teacherReadsAfter =
+        teacherRepository->myClassesTeacherProfileBatchReadMetrics();
+    const auto rosterReadsAfter =
+        rosterRepository->myClassesStudentCountBatchReadMetrics();
+    const MyClassesPageRuntimeMetrics pageMetricsAfter = page.runtimeMetrics();
+    QCOMPARE(
+        pageMetricsAfter.classSummaryListQueryCount,
+        pageMetricsBefore.classSummaryListQueryCount
+        );
+    QCOMPARE(classInfoReadsAfter.callCount, classInfoReadsBefore.callCount);
+    QCOMPARE(teacherReadsAfter.callCount, teacherReadsBefore.callCount);
+    QCOMPARE(rosterReadsAfter.callCount, rosterReadsBefore.callCount);
 
     gradeTabs->setCurrentIndex(0);
     QVERIFY(secondSecondGradeClassPage->findChildren<QWidget*>().isEmpty());

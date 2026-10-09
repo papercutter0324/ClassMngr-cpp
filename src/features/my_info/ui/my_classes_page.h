@@ -4,6 +4,8 @@
 
 #include <QPointer>
 
+#include <functional>
+
 class ApplicationServices;
 class QLabel;
 class QScrollArea;
@@ -11,6 +13,12 @@ class NavigationTabWidget;
 class QTextEdit;
 class QVBoxLayout;
 class QWidget;
+
+struct MyClassesPageRuntimeMetrics final
+{
+    // Counts summary-list reads for refresh and reentry diagnostics.
+    int classSummaryListQueryCount = 0;
+};
 
 class MyClassesPage : public BasePage
 {
@@ -23,8 +31,11 @@ public:
         );
 
     void refresh() override;
+    void activate() override;
+    void releaseFeatureResources() override;
     void clearDatabaseState() override;
     void retranslateUi() override;
+    [[nodiscard]] MyClassesPageRuntimeMetrics runtimeMetrics() const noexcept;
 
 private:
     void buildUi();
@@ -52,5 +63,7 @@ private:
     QVBoxLayout* m_classInformationLayout = nullptr;
     NavigationTabWidget* m_classInformationTabs = nullptr;
     QPointer<QWidget> m_activeClassPage;
+    std::function<void()> m_materializeSelectedDetails;
     int m_selectedClassId = -1;
+    MyClassesPageRuntimeMetrics m_runtimeMetrics;
 };
