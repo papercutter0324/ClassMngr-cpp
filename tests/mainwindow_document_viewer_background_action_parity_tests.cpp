@@ -28,18 +28,21 @@ public:
     ~DocumentViewerBackgroundRestorer()
     {
         auto* const state = m_window.actions().documentViewerBackgroundState;
-        if (!state)
+        if (state)
         {
-            return;
+            QAction* const defaultAction = state->action(
+                ::DocumentViewerBackground::Default
+                );
+            if (
+                defaultAction
+                && state->current() != ::DocumentViewerBackground::Default
+                )
+            {
+                defaultAction->trigger();
+            }
         }
 
-        QAction* const defaultAction = state->action(
-            ::DocumentViewerBackground::Default
-            );
-        if (defaultAction)
-        {
-            defaultAction->trigger();
-        }
+        SettingsManager::instance().sync();
     }
 
     DocumentViewerBackgroundRestorer(
@@ -60,7 +63,7 @@ class MainWindowDocumentViewerBackgroundActionParityTests final : public QObject
 
 private slots:
     void initTestCase();
-    void blackActionUpdatesViewerAndDefaultRestoresIt();
+    void whiteAndBlackActionsUpdateViewerAndDefaultRestoresIt();
 
 private:
     QTemporaryDir m_settingsDirectory;
@@ -81,7 +84,7 @@ void MainWindowDocumentViewerBackgroundActionParityTests::initTestCase()
 }
 
 void MainWindowDocumentViewerBackgroundActionParityTests::
-blackActionUpdatesViewerAndDefaultRestoresIt()
+whiteAndBlackActionsUpdateViewerAndDefaultRestoresIt()
 {
     LanguageService languageService;
     QVERIFY(languageService.setLanguage(Language::English));
@@ -120,16 +123,43 @@ blackActionUpdatesViewerAndDefaultRestoresIt()
     QAction* const defaultAction = state->action(
         ::DocumentViewerBackground::Default
         );
+    QAction* const whiteAction = state->action(
+        ::DocumentViewerBackground::White
+        );
     QAction* const blackAction = state->action(
         ::DocumentViewerBackground::Black
         );
     QVERIFY(defaultAction);
+    QVERIFY(whiteAction);
     QVERIFY(blackAction);
     QVERIFY(defaultAction->isChecked());
+    QVERIFY(!whiteAction->isChecked());
     QVERIFY(!blackAction->isChecked());
 
     const QString backgroundKey = QString::fromUtf8(
         OptionKeys::DocumentViewerBackground
+        );
+
+    QVERIFY(whiteAction->isEnabled());
+    whiteAction->trigger();
+
+    QCOMPARE(state->current(), ::DocumentViewerBackground::White);
+    QVERIFY(whiteAction->isChecked());
+    QVERIFY(!defaultAction->isChecked());
+    QVERIFY(!blackAction->isChecked());
+    SettingsManager::instance().sync();
+    QCOMPARE(SettingsManager::instance().get(backgroundKey).toInt(), 1);
+    QCOMPARE(
+        view->property("pdfViewerBackground").toString(),
+        QStringLiteral("white")
+        );
+    QCOMPARE(
+        viewport->property("pdfViewerBackground").toString(),
+        QStringLiteral("white")
+        );
+    QCOMPARE(
+        view->palette().color(QPalette::Dark),
+        QColor(Qt::white)
         );
 
     QVERIFY(blackAction->isEnabled());
@@ -138,6 +168,7 @@ blackActionUpdatesViewerAndDefaultRestoresIt()
     QCOMPARE(state->current(), ::DocumentViewerBackground::Black);
     QVERIFY(blackAction->isChecked());
     QVERIFY(!defaultAction->isChecked());
+    QVERIFY(!whiteAction->isChecked());
     SettingsManager::instance().sync();
     QCOMPARE(SettingsManager::instance().get(backgroundKey).toInt(), 2);
     QCOMPARE(
@@ -158,6 +189,7 @@ blackActionUpdatesViewerAndDefaultRestoresIt()
 
     QCOMPARE(state->current(), ::DocumentViewerBackground::Default);
     QVERIFY(defaultAction->isChecked());
+    QVERIFY(!whiteAction->isChecked());
     QVERIFY(!blackAction->isChecked());
     SettingsManager::instance().sync();
     QCOMPARE(SettingsManager::instance().get(backgroundKey).toInt(), 0);

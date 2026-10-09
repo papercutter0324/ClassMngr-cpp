@@ -3437,3 +3437,18 @@ Extended the existing page-spacing parity test to trigger None and Medium and as
 Focused target build passed; focused CTest passed 1/1; direct offscreen QtTest passed 3/0/0. `git diff --check` passed. Qt warned that its optional configured fonts directory is missing; packaged Inter/Pretendard fonts loaded. An initial plain-shell build lacked MSVC headers; the focused build succeeded under the VS18 developer environment. Independent review is pending; F469 remains active in Batch 45.
 
 Independent review accepted F469: the Tester confirmed the test scope and restorer, reran focused CTest (1/1), and passed `git diff --check`. The independent direct offscreen invocation exited 0 without a QtTest summary, so it provides no count; the executor invocation reported 3/0/0. No full suite. F469 is independently verified and ready to commit; Batch 45 remains active pending commit.
+
+
+## 2026-10-09 - F469 committed; F470 Background White selected
+
+F469, `Phase2 - Cover Document Viewer Page Spacing None and Medium QAction parity (F469)`, committed as `4044c80a` on `Qt-Rewrite`. The commit contains the six reviewed test and Phase 2 tracking paths. Batch 45 is complete. The only post-commit worktree entries are the excluded pre-existing `agent_docs/latest_session_work.md` and `%SystemDrive%/`.
+
+Two independent F470 scans selected the omitted White action in the registered Document Viewer Background parity test. Extend the blank-viewer test to trigger White and assert `OptionState`, exclusive Default/White/Black QAction checks, persisted value `1`, viewer/viewport properties `white`, and the viewer `QPalette::Dark` color. Retain Black and Default behavior and cleanup. Use temporary settings, disable recent-database loading, and sync the Default restorer on assertion exits; no PDF load, production change, or CMake change is needed. F470 is selected for implementation; Batch 46 is active.
+
+## 2026-10-09 - F470 implementation and focused verification
+
+Extended the registered Document Viewer Background parity test to cover the White QAction before the existing Black and Default transitions. It checks `OptionState`, exclusive Default/White/Black action state, persisted value 1, viewer and viewport `pdfViewerBackground` properties, and `QPalette::Dark == white`. Existing Black and Default assertions remain. The scoped Default restorer triggers only when needed and syncs on normal and assertion-return paths. No production or CMake change.
+
+The focused target built under VS18; focused CTest passed 1/1; direct offscreen QtTest passed 3/0/0; `git diff --check` passed. Qt reported a missing optional configured fonts directory while packaged Inter/Pretendard fonts loaded. Independent review is pending; Batch 46 remains active.
+
+Independent review accepted F470. The Tester confirmed the action, persistence, viewer-property, palette, and restorer assertions, and independently passed focused CTest 1/1 and `git diff HEAD --check`. Its direct offscreen invocation exited 0 without a summary, so no independent case count is claimed; the executor run reported 3/0/0. No full suite. F470 is independently verified and ready to commit; Batch 46 remains active pending commit.

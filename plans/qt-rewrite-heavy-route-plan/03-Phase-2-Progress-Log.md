@@ -17284,3 +17284,32 @@ passed 1/1 and git diff --check passed. The independent direct invocation exited
 independent case count is claimed. Qt reported an optional missing fonts-directory warning while packaged Inter/Pretendard
 fonts loaded. No full suite was run. F469 is independently verified, accepted, and ready to commit; Batch 45 remains active
 until commit. F470 discovery begins only after F469 commits.
+
+### F469 committed - 2026-10-09
+
+F469, “Phase2 - Cover Document Viewer Page Spacing None and Medium QAction parity (F469),” committed as 4044c80a on
+Qt-Rewrite. The commit contains the six reviewed test and Phase 2 tracking paths. Batch 45 is complete. Post-commit
+worktree entries are only the excluded pre-existing agent_docs/latest_session_work.md and %SystemDrive%/. Batch 46 is
+active with F470 selected; F469 acceptance and verification remain recorded above.
+
+### F470 acceptance plan recorded before implementation - 2026-10-09
+
+Extend the existing registered blank-viewer Document Viewer Background action test. Trigger the actual White action and
+assert OptionState, exclusive Default/White/Black QAction checks, persisted value 1, viewer and viewport
+pdfViewerBackground properties white, and QPalette::Dark equal to white. Retain the existing Black/Default coverage; the
+Default restorer must sync on assertion exits.
+
+Use temporary settings and disable recent-database loading. No PDF load, production change, or CMake change is needed.
+F470 is selected/current; implementation and verification are pending. Batch 46 remains active.
+
+### F470 acceptance update - 2026-10-09
+
+The registered blank-viewer Document Viewer Background test now exercises White while retaining Black and Default. Review
+confirmed the fixture and White/Black/Default transitions, persisted value 1, viewer/viewport pdfViewerBackground
+properties white, QPalette::Dark white, and Default-restorer sync.
+
+The focused target built under VS18. Executor CTest passed 1/1, direct offscreen QtTest passed 3/0/0, and git diff --check
+passed. Independent CTest passed 1/1 and git diff HEAD --check passed. The independent direct invocation exited 0 without
+a QtTest summary, so no independent count is claimed. Qt reported an optional missing fonts-directory warning while packaged
+Inter/Pretendard fonts loaded. No full suite was run. F470 is independently verified, accepted, and ready to commit; Batch 46
+remains active until commit. F471 discovery begins only after F470 commits.
