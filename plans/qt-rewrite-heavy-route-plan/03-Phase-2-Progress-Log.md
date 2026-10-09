@@ -17068,3 +17068,36 @@ Independent verification passed with VS18/Qt6.12: focused CTest 1/1 and direct Q
 existing missing lib/fonts path while bundled fonts loaded. No full suite was run. F462 is independently verified,
 accepted, and ready to commit; Batch 38 remains active until commit. F463 discovery has not started and begins only
 after F462 commits.
+### F462 committed - 2026-10-09
+
+F462, “Phase2 - Cover Save Mode QAction application handoff (F462),” was committed as
+ad0d4de70aa5d984dd50eb0da13c1e3506e2be70 on Qt-Rewrite, 47 commits ahead of origin. The commit contains exactly
+seven scoped paths. Post-commit status was clean except for excluded pre-existing latest_session_work.md and
+%SystemDrive%/. Batch 38 is complete. Batch 39 is active with F463 Automatic Update Preference QAction parity selected;
+its acceptance plan is recorded before implementation. F462 acceptance and focused verification remain recorded above.
+
+### F463 acceptance plan recorded before implementation - 2026-10-09
+
+Two independent reviews found Sidebar Marquee and Automatic Update Preference gaps. Select the preference action
+because SettingsManagerAutomaticUpdatePreferencesPort::read() provides a stable observable, and MainWindow can be
+tested without UpdateController, avoiding its temporary cleanup, network, and startup path. Sidebar Marquee has no
+public enable getter and depends on hover and a 30 ms timer.
+
+Use a dedicated offscreen MainWindow test with temporary settings, English, recent-database loading disabled, and no
+UpdateController. Trigger the actual automaticallyCheckForUpdates QAction off then on; assert the QAction checked
+state and SettingsManagerAutomaticUpdatePreferencesPort::read() after each change. RAII restores the original setting
+while MainWindow remains alive.
+
+No network, controller startup, database, or user file. F463 is selected for implementation; implementation and
+verification have not started. Batch 39 remains active.
+### F463 acceptance update - 2026-10-09
+
+The dedicated offscreen MainWindow test uses temporary settings, English, recent-database loading disabled, a target-local
+temporary environment, and a null UpdateController. It triggers the actual automaticallyCheckForUpdates QAction off then
+on and verifies the checked state and SettingsManagerAutomaticUpdatePreferencesPort::read() after each transition. RAII
+restores the original setting while MainWindow remains alive.
+
+VS18/Qt6.12/Ninja focused build passed; focused CTest passed 1/1. Independent direct QtTest setup/test/cleanup passed
+3/0 and independent CTest rerun passed 1/1. Qt reported the known missing lib/fonts path while bundled fonts loaded.
+No full suite was run. F463 is independently verified, accepted, and ready to commit; Batch 39 remains active until commit.
+F464 discovery has not started and begins only after F463 commits.

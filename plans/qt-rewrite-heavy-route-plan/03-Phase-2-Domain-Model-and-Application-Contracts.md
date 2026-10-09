@@ -84,10 +84,13 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
   latest_session_work.md and %SystemDrive%/. F461, “Phase2 - Cover Sidebar Overflow Tooltips QAction parity (F461),” was
   committed as e590ea773d4b6b1d415d248c9c3f5068094d5d4c on Qt-Rewrite, 46 commits ahead of origin; Batch 37 is
   complete. Its commit contains exactly seven scoped paths. Post-commit status was clean except for excluded pre-existing
-  latest_session_work.md and %SystemDrive%/. Batch 38 is active with F462 Save Mode QAction parity accepted in this
-  changeset and ready to commit. F462 acceptance and focused verification are recorded in the progress log; F463
-  discovery begins only after F462 commits. F461 acceptance and focused verification remain in the progress log;
-  remain in the progress log. F457 acceptance and verification remain in the progress log. F456
+  latest_session_work.md and %SystemDrive%/. F462, “Phase2 - Cover Save Mode QAction application handoff (F462),” was committed
+  as ad0d4de70aa5d984dd50eb0da13c1e3506e2be70 on Qt-Rewrite, 47 commits ahead of origin; Batch 38 is complete.
+  Its commit contains exactly seven scoped paths. Post-commit status was clean except for excluded pre-existing
+  latest_session_work.md and %SystemDrive%/. Batch 39 is active with F463 Automatic Update Preference QAction parity
+  accepted in this changeset and ready to commit. F463 acceptance and focused verification are recorded in the progress log;
+  F464 discovery begins only after F463 commits. F462 acceptance and focused verification remain in the progress log;
+  F457 acceptance and verification remain in the progress log. F456
   acceptance and focused verification remain in the progress log. F454
   acceptance and focused verification remain in the progress log. F453
   acceptance and focused verification remain in the progress log.
@@ -121,13 +124,14 @@ log](03-Phase-2-Progress-Log.md).
   failure warning/no-navigation behavior; revisit after that behavior is
   clarified.
 
-#### Active batch: Batch 38
+#### Active batch: Batch 39
 
-F462 Save Mode QAction parity is accepted in this changeset and ready to commit. The test creates an unactivated
-TestingClassesPage, finds its direct-child AutosaveCoordinator, and triggers actual Manual then Automatic actions.
-It checks action/option/persisted state, coordinator modes, clean page and coordinator after each action, and zero
-saveRequested signals. RAII restores Automatic while MainWindow remains alive. Batch 38 remains active until commit;
-F463 discovery begins only after F462 commits. Focused verification is recorded in the progress log.
+F463 Automatic Update Preference QAction parity is accepted in this changeset and ready to commit. The dedicated
+offscreen MainWindow test uses temporary settings, English, recent-database loading disabled, and no UpdateController.
+It triggers the actual automaticallyCheckForUpdates QAction off then on and confirms the checked state and preference
+port read after both transitions. RAII restores the original preference while MainWindow remains alive.
+Focused verification is recorded in the progress log. Batch 39 remains active until commit; F464 discovery begins only
+after F463 commits.
 
 Batch 21 began with ten candidates after F428 and is complete; F429-F438 are
 committed. F438, “Phase2 - Reject existing IDs in repeat-series creation (F438),”
@@ -171,9 +175,12 @@ The commit contains exactly seven scoped paths. Post-commit status was clean exc
   latest_session_work.md and %SystemDrive%/. F461, “Phase2 - Cover Sidebar Overflow Tooltips QAction parity (F461),” was
   committed as e590ea773d4b6b1d415d248c9c3f5068094d5d4c on Qt-Rewrite, 46 commits ahead of origin; Batch 37 is
   complete. Its commit contains exactly seven scoped paths. Post-commit status was clean except for excluded pre-existing
-  latest_session_work.md and %SystemDrive%/. Batch 38 is active with F462 Save Mode QAction parity accepted in this
-  changeset and ready to commit. F462 acceptance and focused verification are recorded in the progress log; F463
-  discovery begins only after F462 commits. F461 acceptance and focused verification remain in the progress log;
+  latest_session_work.md and %SystemDrive%/. F462, “Phase2 - Cover Save Mode QAction application handoff (F462),” was committed
+  as ad0d4de70aa5d984dd50eb0da13c1e3506e2be70 on Qt-Rewrite, 47 commits ahead of origin; Batch 38 is complete.
+  Its commit contains exactly seven scoped paths. Post-commit status was clean except for excluded pre-existing
+  latest_session_work.md and %SystemDrive%/. Batch 39 is active with F463 Automatic Update Preference QAction parity
+  accepted in this changeset and ready to commit. F463 acceptance and focused verification are recorded in the progress log;
+  F464 discovery begins only after F463 commits. F462 acceptance and focused verification remain in the progress log;
 remain in the progress log. F456 acceptance remains recorded there; F455/F454/F453/F452/F451 evidence remains there.
 F435 covers opening from the no-database banner.
 F444 covers replacing a distinct open profile and excludes same-path opening,
