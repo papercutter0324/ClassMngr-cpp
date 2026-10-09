@@ -40,7 +40,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-09
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F505 is independently verified and accepted, ready to commit in active Batch 81; Gates 1 and 2 remain Partial.
+- Current note: F506 is independently verified and accepted, ready to commit in active Batch 82; Gates 1 and 2 remain Partial.
 
 ### Slice discovery batches
 
@@ -65,9 +65,9 @@ Treat this plan as an operational summary, not a history:
   failure warning/no-navigation behavior; revisit after that behavior is
   clarified.
 
-#### Active batch: Batch 81
+#### Active batch: Batch 82
 
-- F505 - Independently verified and ready to commit: capture QDialog::finished(int), assert QDialog::Rejected after Cancel, and preserve page/model state.
+- F506 - Independently verified and ready to commit: retain F504’s Carol-only case separately; F506 applies Alice/Carol across the unnamed row gap and undoes both in one action.
 
 ## Objective
 

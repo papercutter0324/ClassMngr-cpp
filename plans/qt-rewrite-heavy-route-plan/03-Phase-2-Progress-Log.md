@@ -18043,3 +18043,25 @@ The test captures the dialog result through QDialog::finished(int) and asserts t
 ### F505 independent reverification - 2026-10-09
 
 The Tester confirmed that the QDialog::finished(int) capture records Cancel’s actual QDialog::Rejected result, alongside the state assertions and safety timer. The focused build was up to date with source newer; registered CTest passed 1/1; the direct offscreen F505 slot exited 0 with no per-slot output; the function listing contains F504 and F505; and the scoped diff check passed with an LF-to-CRLF advisory. F505 is independently verified, accepted, and ready to commit; Batch 81 remains active until commit.
+
+### F505 committed - 2026-10-09
+
+F505, “Phase2 - Cover page AI comment cancellation (F505),” committed as 735ebf64 with six scoped paths. Batch 81 is complete. Batch 82 candidate discovery is underway for F506; selection is pending. Post-commit entries are only the excluded agent_docs/latest_session_work.md and untracked %SystemDrive%/.
+
+### F506 acceptance plan recorded before implementation - 2026-10-09
+
+Retain F504’s committed Carol-only case, generateCommentsAppliesToOriginalRowAndUndoesAsOneAction(), as a separate named slot. Add a separate F506 page-action integration slot in tests/speaking_eval_page_save_tests.cpp with two named students on either side of an unnamed source-model row. Generate and accept comments for both named students, apply through the page action, then assert both original source rows changed while the unnamed row stayed unchanged. One undo must restore both prior comments. This makes the existing single-undo grouping explicit; it tests the page-action handoff and undo boundary without implying a defect.
+
+F504 covers one accepted comment and one undo. The page collects accepted results and calls applyChanges once (src/features/speaking_eval/ui/speaking_eval_page_actions.cpp:410-438); SpeakingEvalTableView groups the change list in one edit command (src/features/speaking_eval/ui/speaking_eval_table_view.cpp:24-84,170-207). Peer-name redaction was considered but deferred because current-student-only prompt behavior is the documented promise and a general peer policy needs clarification. Focused verification: build ClassMngrSpeakingEvalPageSaveTests, run its exact registered CTest entry and selected slot; no full suite. F506 is selected/current in Batch 82; implementation and verification are pending.
+
+### F506 implementation update - 2026-10-09
+
+The test extends/renames the F504 page-action case to generateCommentsAppliesMultipleStudentsAndUndoesAsOneAction(). It prepares checked Ready responses for Alice and Carol (STUDENT_01/02) around unnamed source row 1, applies comments to original rows 0 and 2 while row 1 remains unchanged, verifies one undo entry, then undoes once and confirms both previous comments return. The F505 explicit QDialog::Rejected cancellation case remains unchanged. Focused build passed; registered CTest passed 1/1; direct offscreen slot passed 3; -functions lists both page-action slots and the F505 cancellation slot; scoped diff check passed with an LF-to-CRLF advisory. Independent verification is pending; F506 remains current in Batch 82.
+
+### F506 coverage-preservation refinement - 2026-10-09
+
+Independent Tester rejected the first implementation because it replaced the committed F504 Carol-only single-comment scenario. The new two-student scenario itself passes, but the F504 coverage must remain in its own named slot, generateCommentsAppliesToOriginalRowAndUndoesAsOneAction(), while F506’s Alice/Carol multi-comment apply-and-one-undo case remains a separate slot, generateCommentsAppliesMultipleStudentsAndUndoesAsOneAction(). Focused retest is underway; F506 remains selected/current in Batch 82 and is not accepted.
+
+### F506 independent verification - 2026-10-09
+
+The Tester confirmed the F504 Carol-only body matches commit f3ced0e5 and the F505 cancellation body matches 735ebf64; both remain intact as separate slots. F506’s separate slot verifies two Ready/checked comments for Alice and Carol, source rows 0 and 2 updated, unnamed row 1 unchanged, one grouped edit command, and one undo restoring both prior comments. The focused build was up to date with source newer; registered CTest passed 1/1; direct F504 and F506 slots exited 0; -functions lists all three page-action slots; scoped diff check passed with an LF-to-CRLF advisory. F506 is independently verified, accepted, and ready to commit; Batch 82 remains active until commit.
