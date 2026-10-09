@@ -17455,3 +17455,29 @@ The executor VS18 build passed and CTest passed 1/1; its direct invocation exite
 passed 1/1 and independent git diff --check passed. The independent executable was newer than source; its direct invocation exited
 0 without a summary, so no count is claimed. No full suite or network behavior. F475 is independently verified, accepted, and
 ready to commit; Batch 51 remains active until commit. F476 discovery begins only after F475 commits.
+
+### F475 committed - 2026-10-09
+
+F475 committed as 643d9674 with six scoped paths. Batch 51 is complete. Batch 52 is active with F476 Direct to Student
+voice action-to-prompt handoff selected; its acceptance plan is recorded before implementation.
+
+### F476 acceptance plan recorded before implementation - 2026-10-09
+
+Extend the existing voice parity test, retaining Third Person prompt coverage and then triggering the actual DirectToStudent
+voice QAction. Assert OptionState, exclusive voice QAction state, and the typed preference after sync. Construct a fresh
+synthetic-report batch dialog and click only the local speakingEvalAiBatchCreatePrompt button. Assert the Direct instruction
+appears in the generated prompt and Third Person instructions are absent.
+
+Keep temporary settings, English, and recent-database loading disabled. Restore the original voice preference and sync on
+assertion exits. No production/CMake changes, browser, or network behavior. The alternative ChatGPT dialog-label gap is
+deferred. F476 is selected/current; implementation and verification are pending. Batch 52 remains active.
+
+### F476 acceptance update - 2026-10-09
+
+The test retains Third Person prompt coverage and adds the DirectToStudent QAction, exclusive state, and typed preference
+after sync. A fresh local synthetic-report prompt contains the Direct instruction and omits Third Person wording.
+
+The executor VS18 focused target build passed and CTest passed 1/1. Independent CTest passed 1/1; the direct offscreen
+executable exited 0 without a summary. Executor and independent git diff --check passed. No full suite, browser, or network behavior. F476 is
+independently verified, accepted, and ready to commit; Batch 52 remains active until commit. F477 discovery begins only after
+F476 commits.

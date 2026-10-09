@@ -189,6 +189,62 @@ thirdPersonActionControlsBatchPromptVoice()
                 )
             )
         );
+
+    QVERIFY(directAction->isEnabled());
+    directAction->trigger();
+
+    QCOMPARE(state->current(), ::AiCommentVoice::DirectToStudent);
+    QVERIFY(directAction->isChecked());
+    QVERIFY(!thirdPersonAction->isChecked());
+    SettingsManager::instance().sync();
+    QCOMPARE(
+        preferences.read(),
+        ClassMngr::Next::Application::AiCommentVoice::DirectToStudent
+        );
+
+    SpeakingEvalAiBatchDialog directDialog(
+        {
+            {
+                report.englishName,
+                report,
+                0
+            }
+        }
+        );
+
+    auto* const directCreatePromptButton = directDialog.findChild<QPushButton*>(
+        QStringLiteral("speakingEvalAiBatchCreatePrompt")
+        );
+    auto* const directPromptEdit = directDialog.findChild<QPlainTextEdit*>(
+        QStringLiteral("speakingEvalAiBatchPrompt")
+        );
+    QVERIFY(directCreatePromptButton);
+    QVERIFY(directPromptEdit);
+    QVERIFY(directCreatePromptButton->isEnabled());
+
+    directCreatePromptButton->click();
+
+    const QString directPrompt = directPromptEdit->toPlainText();
+    QVERIFY(!directPrompt.isEmpty());
+    QVERIFY(
+        directPrompt.contains(
+            QStringLiteral(
+                "Address the student directly as \"you\" and use STD_NAME naturally."
+                )
+            )
+        );
+    QVERIFY(
+        !directPrompt.contains(
+            QStringLiteral("Write for a parent or guardian")
+            )
+        );
+    QVERIFY(
+        !directPrompt.contains(
+            QStringLiteral(
+                "use they/their rather than guessing gender."
+                )
+            )
+        );
 }
 
 QTEST_MAIN(MainWindowAiCommentVoiceActionParityTests)

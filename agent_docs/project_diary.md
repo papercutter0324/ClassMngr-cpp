@@ -3527,3 +3527,11 @@ Extended the existing Custom Website modal/action parity test to construct a bat
 The VS18 focused target build passed and focused CTest passed 1/1. Direct offscreen QtTest exited 0 without a summary; no count is claimed. `git diff --check` passed. Git emitted its LF-to-CRLF normalization notice for the test file. Independent review is pending; Batch 51 remains active.
 
 Independent review accepted F475. The Tester confirmed the custom URL modal, persistence, batch dialog label, fixture, and restorer, and independently passed focused CTest 1/1 and `git diff --check`. Its direct invocation exited 0 without a summary, so no direct count is claimed; the existing executable was newer than source. No full suite or network behavior. F475 is independently verified and ready to commit; Batch 51 remains active pending commit.
+
+F475, `Phase2 - Cover Custom Website batch dialog label (F475)`, committed as `643d9674` on `Qt-Rewrite` with six scoped paths; Batch 51 is complete. The only remaining worktree entries are the excluded pre-existing `agent_docs/latest_session_work.md` and `%SystemDrive%/`.
+
+Independent F476 reviews found both a missing ChatGPT consumer label and an untested Direct to Student voice handoff. Choose the voice slice because it verifies a complete local transition from QAction through persisted preference into generated prompt text. Preserve the ChatGPT label gap for a later slice if still needed.
+
+F476 implementation now covers both voice choices through the real QAction, persisted preference, and local prompt consumer. The focused target build, CTest (1/1), and diff check passed; independent verification remains pending.
+
+Independent review accepted F476. Focused CTest passed 1/1, the direct offscreen executable exited 0 without a summary, and `git diff --check` passed. The Tester confirmed prompt behavior and cleanup. The executor's successful focused build is the build evidence; no full suite.

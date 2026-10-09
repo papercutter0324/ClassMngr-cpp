@@ -40,7 +40,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-09
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: Batch 51 is active with F475 independently verified and ready to commit; F476 discovery begins after its commit, and Gates 1 and 2 remain Partial.
+- Current note: Batch 52 is active with F476 independently verified and ready to commit; F477 discovery begins after its commit, and Gates 1 and 2 remain Partial.
 
 ### Slice discovery batches
 
@@ -65,10 +65,10 @@ Treat this plan as an operational summary, not a history:
   failure warning/no-navigation behavior; revisit after that behavior is
   clarified.
 
-#### Active batch: Batch 51
+#### Active batch: Batch 52
 
-- F475 — Custom Website consumer-label parity: independently verified, accepted, and ready to commit.
-- Constraints: temporary English settings; recent-database loading disabled; retain provider/URL persistence; restore ChatGPT/URL and sync; do not click dialog buttons or access browser/network; no production/CMake change.
+- F476 — Direct to Student voice action-to-prompt handoff: independently verified, accepted, and ready to commit.
+- Constraints: temporary English settings; recent-database loading disabled; restore original voice and sync on assertion exits; use the existing synthetic-report fixture; no database, user file, production/CMake, browser, or network behavior.
 - State: commit pending; focused verification and acceptance evidence are in the progress log.
 
 ## Objective
