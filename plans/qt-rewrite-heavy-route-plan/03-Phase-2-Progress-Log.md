@@ -17873,3 +17873,21 @@ The `aiBatchDialogRepairsMalformedReviewComment` slot verifies a parsed malforme
 ### F496 independent verification update - 2026-10-09
 
 The Tester independently passed the focused build, registered CTest 1/1, direct offscreen execution, function listing, and diff check. An LF-to-CRLF advisory was the only noted issue. This is test-only, with no production, CMake, browser, or network changes. F496 is independently verified, accepted, and ready to commit; Batch 72 remains active until commit.
+
+### F496 committed - 2026-10-09
+
+F496, “Phase2 - Cover malformed review recovery (F496),” committed as da5540bb with six scoped paths. Batch 72 is complete. Batch 73 candidate discovery is underway for F497; selection is pending.
+
+### F497 acceptance plan recorded before implementation - 2026-10-09
+
+Add one dialog-level test to `tests/speaking_eval_batch_report_service_tests.cpp` with two eligible reports. Create a prompt and parse a valid response block for only one student; assert the other row is “Missing response block” and unchecked, while the valid row is “Ready” and checked and Apply remains enabled. Apply and assert exactly the valid student’s sourceRow/comment is accepted.
+
+The code scan found `parseResponse` assigns the missing-block status while allowing valid rows to apply; F491 covered other initial status mappings. A valid-edit/apply alternative was considered, but the existing quality test already exercises editing a row and then applying. This test-only case supports Phase 2 §§2.2–2.4; no production, CMake, browser, or network changes. F497 is selected/current in Batch 73; implementation and verification are pending.
+
+### F497 implementation update - 2026-10-09
+
+The `aiBatchDialogAppliesValidCommentWhenOtherBlockIsMissing` slot generates the Alice/Bob prompt and parses only Bob’s response. Alice shows “Missing response block” and is unchecked; Bob shows “Ready” and is checked, with Apply enabled. Applying accepts exactly Bob’s restored comment at sourceRow 17. Executor build and CTest passed; direct offscreen execution exited 0, function listing and diff check passed.
+
+### F497 independent verification update - 2026-10-09
+
+The Tester confirmed the assertions, focused build, registered CTest 1/1, direct offscreen slot, function listing, and diff check. An LF-to-CRLF advisory was the only noted issue. This is test-only, with no production, CMake, browser, or network changes. F497 is independently verified, accepted, and ready to commit; Batch 73 remains active until commit.

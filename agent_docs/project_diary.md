@@ -3685,3 +3685,9 @@ F495 committed as eb003134 with six scoped paths. The only post-commit worktree 
 F496 decision: use the previously deferred malformed-row repair gap. A valid manual edit can recover a malformed parsed review row to a selectable state with the parser-origin advisory Ready — name placeholder was omitted, then be applied. This connects parser feedback, row validation, and accepted output in one bounded test. The 451-character edit boundary remains a separate later candidate.
 
 F496 verifies manual repair of a malformed batch review row. The edited comment becomes valid/selectable while retaining the parser-origin name-placeholder advisory, and Apply returns the exact text/source row. Independent focused verification passed; the slice required no production change.
+
+F496 committed as da5540bb with six scoped paths. The only post-commit worktree entries are the excluded latest_session_work.md change and %SystemDrive%/. Batch 72 is complete; Batch 73 F497 discovery begins with selection pending.
+
+F497 decision: fill the batch dialog's missing-response-block classification gap left by F491. Pairing one missing row with one valid row verifies failure isolation: the missing row stays unchecked and the valid response remains applicable.
+
+F497 covers failure isolation for a missing response block: the missing row remains unchecked, while a valid peer row is applied with the expected source row and restored comment. Independent focused verification passed.
