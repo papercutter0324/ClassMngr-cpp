@@ -17945,3 +17945,21 @@ The `aiBatchDialogUsesKoreanNameWhenEnglishNameIsBlank` slot verifies the defaul
 ### F500 independent verification update - 2026-10-09
 
 The Tester confirmed Korean-only default selection, omission of the raw Korean name from the prompt, a Ready/checked review row with Korean-name substitution, and the exact accepted comment/sourceRow 37. The focused Ninja target build was up to date; registered CTest passed 1/1; the direct offscreen slot exited 0; the function-list check included the slot; diff check exited 0. An LF-to-CRLF advisory was the only noted issue. No full suite, production, or CMake changes. F500 is independently verified, accepted, and ready to commit; Batch 76 remains active until commit.
+
+### F500 committed - 2026-10-09
+
+F500, “Phase2 - Cover Korean-only name fallback (F500),” committed as 0f54d965 with six scoped paths. Batch 76 is complete. Batch 77 candidate discovery is underway for F501; selection is pending. Post-commit status contains only the excluded `latest_session_work.md` and `%SystemDrive%/`.
+
+### F501 acceptance plan recorded before implementation - 2026-10-09
+
+Add one dialog-level test to `tests/speaking_eval_batch_report_service_tests.cpp` with one eligible bilingual report. Generate a nonempty anonymous prompt and assert `STD_NAME` is present while the raw English and Korean names are absent. Register the captured provider-URL handler, click the distinct Copy Prompt action, and assert the clipboard equals the exact generated prompt and the URL handler remains unused. This covers Copy Prompt only, not Copy Prompt and Open.
+
+This Copy Prompt-only gap was deferred in F487 and kept separate in F498/F500; both discovery scans selected it now. Test-only; no production, CMake, browser, or network changes. F501 is selected/current in Batch 77; implementation and verification are pending.
+
+### F501 implementation update - 2026-10-09
+
+The new `aiBatchDialogCopyPromptCopiesWithoutOpeningUrl` slot creates an anonymous batch prompt for one eligible bilingual student and clicks the Copy Prompt-only action. The clipboard equals the exact generated prompt, and the captured URL handler remains empty. Executor focused build, CTest 1/1, direct offscreen slot, function listing, and scoped diff check passed. This is test-only, with no production or CMake changes. Independent verification is pending; F501 remains selected/current in Batch 77.
+
+### F501 independent verification update - 2026-10-09
+
+The Tester confirmed prompt anonymity, exact Copy Prompt clipboard equality, and an empty HTTPS URL handler. The focused Ninja target was up to date; CTest passed 1/1; the direct offscreen slot exited 0; the function list included the slot; diff check exited 0. An LF-to-CRLF advisory was the only noted issue. No full suite or production/CMake change. F501 is independently verified, accepted, and ready to commit; Batch 77 remains active until commit.

@@ -557,6 +557,7 @@ private slots:
     void aiBatchDialogRedactsUncheckedClassmateNames();
     void aiBatchDialogAppliesOnlyRecheckedReadyComment();
     void aiBatchDialogCopyOpenCopiesPromptAndOpensGemini();
+    void aiBatchDialogCopyPromptCopiesWithoutOpeningUrl();
     void aiBatchDialogSelectionChangesClearGeneratedReviewState();
     void aiBatchDialogResponseEditsClearStaleReviewState();
     void aiBatchDialogClearingResponseClearsStaleReviewState();
@@ -2754,6 +2755,67 @@ void SpeakingEvalBatchReportServiceTests::
         capturedUrlHandler.urls.constFirst(),
         QUrl(QStringLiteral("https://gemini.google.com/app"))
         );
+}
+
+void SpeakingEvalBatchReportServiceTests::
+    aiBatchDialogCopyPromptCopiesWithoutOpeningUrl()
+{
+    SpeakingEvalPromptPreviewCapturedUrlHandler capturedUrlHandler;
+    SpeakingEvalPromptPreviewHttpsUrlHandlerRegistration urlHandlerRegistration(
+        &capturedUrlHandler
+        );
+
+    const QString englishName = QStringLiteral("Alice");
+    const QString koreanName = QStringLiteral("김민지");
+    SpeakingEvalReportData report;
+    report.englishName = englishName;
+    report.koreanName = koreanName;
+    report.grade = 5;
+    report.notes =
+        QStringLiteral(
+            "[Did Well]\nClear pronunciation\n"
+            "[Needs Improvement]\nAdd supporting details"
+            );
+    SpeakingEvalAiBatchDialog dialog(
+        {
+            {
+                QStringLiteral("Alice (김민지)"),
+                report,
+                9
+            }
+        }
+        );
+
+    auto* createPromptButton =
+        dialog.findChild<QPushButton*>(
+            QStringLiteral("speakingEvalAiBatchCreatePrompt")
+            );
+    auto* promptEdit =
+        dialog.findChild<QPlainTextEdit*>(
+            QStringLiteral("speakingEvalAiBatchPrompt")
+            );
+    auto* copyPromptButton =
+        dialog.findChild<QPushButton*>(
+            QStringLiteral("speakingEvalAiBatchCopyPrompt")
+            );
+    QVERIFY(createPromptButton);
+    QVERIFY(promptEdit);
+    QVERIFY(copyPromptButton);
+    QVERIFY(createPromptButton->isEnabled());
+
+    QApplication::clipboard()->clear();
+    createPromptButton->click();
+    const QString generatedPrompt = promptEdit->toPlainText();
+    QVERIFY(!generatedPrompt.isEmpty());
+    QVERIFY(copyPromptButton->isEnabled());
+    QVERIFY(generatedPrompt.contains(QStringLiteral("STD_NAME")));
+    QVERIFY(!generatedPrompt.contains(englishName));
+    QVERIFY(!generatedPrompt.contains(koreanName));
+
+    copyPromptButton->click();
+
+    QCOMPARE(QApplication::clipboard()->text(), generatedPrompt);
+    QVERIFY(capturedUrlHandler.urls.isEmpty());
 }
 
 void SpeakingEvalBatchReportServiceTests::
