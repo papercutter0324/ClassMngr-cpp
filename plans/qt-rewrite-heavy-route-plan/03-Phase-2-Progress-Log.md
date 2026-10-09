@@ -17399,3 +17399,32 @@ VS18 x64 focused build passed. Executor CTest passed 1/1; its direct offscreen Q
 count is claimed. Independent CTest passed 1/1; its direct offscreen invocation exited 0 without output, also with no count.
 Independent git diff --check passed. No full suite or network behavior. F473 is independently verified, accepted, and ready to
 commit; Batch 49 remains active until commit. F474 discovery begins only after F473 commits.
+
+### F473 committed - 2026-10-09
+
+F473 committed as 438f541a. Batch 49 is complete. Batch 50 is active with F474 Microsoft Copilot QAction parity selected;
+its acceptance plan is recorded before implementation.
+
+### F474 acceptance plan recorded before implementation - 2026-10-09
+
+Extend mainwindow_ai_comment_provider_action_parity_tests.cpp with the actual Copilot QAction after Claude. Assert
+OptionState and exclusive ChatGPT/Gemini/Claude/Copilot/CustomWebsite checks, the typed MicrosoftCopilot preference after
+sync, and a newly constructed batch-dialog label containing “Microsoft Copilot.” Retain Gemini and Claude assertions.
+
+The scan also found the ChatGPT dialog-label assertion absent, but the baseline and ChatGPT restorer are already covered;
+Copilot lacks selected-consumer coverage. Use temporary English settings and disable recent-database loading. Reuse the
+ChatGPT restorer and sync. Do not click dialog buttons or access a browser/network. System Default Language was set aside
+due to host-locale dependence, as recorded for F469. No production or CMake change. F474 is selected/current; implementation
+and verification are pending. Batch 50 remains active.
+
+### F474 acceptance update - 2026-10-09
+
+The existing MainWindow AI Comment Provider parity test now covers all five providers’ exclusive QAction checks and typed
+persistence, with Gemini, Claude, and Copilot labels checked in the batch dialog. Review confirmed the ChatGPT restorer and
+temporary English settings with recent-database loading disabled. No production or CMake change; no dialog button was clicked
+and no browser/network behavior was exercised.
+
+VS18 focused build passed. Executor CTest passed 1/1; its direct offscreen invocation exited 0 without output, so no count is
+claimed. Independent CTest passed 1/1; its direct offscreen invocation exited 0 without output, also with no count. Independent
+git diff --check passed. No full suite or network behavior. F474 is independently verified, accepted, and ready to commit;
+Batch 50 remains active until commit. F475 discovery begins only after F474 commits.

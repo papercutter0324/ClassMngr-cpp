@@ -3497,3 +3497,18 @@ Extended the existing Gemini provider QAction test with Claude. It checks actual
 The VS18 x64 focused build passed and focused CTest passed 1/1. Direct offscreen QtTest exited 0 without a summary; no direct count is claimed. `git diff --check` passed. Independent review is pending; Batch 49 remains active.
 
 Independent review accepted F473. The Tester confirmed Gemini/Claude action state, persistence, dialog labels, fixture, and restorer, and independently passed focused CTest 1/1 and `git diff --check`. The existing executable was newer than source; its direct offscreen run exited 0 without output, so no count is claimed. No full suite or network behavior. F473 is independently verified and ready to commit; Batch 49 remains active pending commit.
+
+
+## 2026-10-09 - F473 committed; F474 Microsoft Copilot selected
+
+F473, `Phase2 - Cover Claude AI Comment Provider QAction parity (F473)`, committed as `438f541a` on `Qt-Rewrite`. The commit contains the six reviewed test and Phase 2 tracking paths. Batch 49 is complete; the only post-commit worktree entries are the excluded pre-existing `agent_docs/latest_session_work.md` and `%SystemDrive%/`.
+
+Two independent F474 scans found provider action gaps: the code scan nominated Microsoft Copilot; the plan scan noted ChatGPT’s consumer label/transition is not asserted. Select Copilot because the existing provider test already verifies ChatGPT baseline/restoration and Gemini/Claude action handoffs, while Copilot has no actual selected-action or consumer-label coverage. Extend `mainwindow_ai_comment_provider_action_parity_tests.cpp` to trigger Copilot after Claude, assert state and exclusivity across ChatGPT/Gemini/Claude/Copilot/CustomWebsite, typed persisted MicrosoftCopilot preference after sync, and a new batch dialog label containing “Microsoft Copilot.” Retain Gemini and Claude checks. Use temporary settings, English, and disabled recent-database loading; do not click the open button or access browser/network. Reuse the ChatGPT restorer and sync. No production or CMake change. F474 is selected; Batch 50 is active.
+
+## 2026-10-09 - F474 implementation and focused verification
+
+Extended the existing provider action test with Microsoft Copilot after Gemini and Claude. It verifies action exclusivity across all five providers, persisted typed Copilot preference after sync, and the batch dialog’s “Microsoft Copilot” label. Gemini and Claude checks remain. The test uses temporary settings, English, and disabled recent database loading; it does not click the open button or access a browser/network. The existing guard restores ChatGPT and syncs. No production or CMake change.
+
+The VS18 focused build passed and focused CTest passed 1/1. Direct offscreen QtTest exited 0 without output, so no direct count is claimed. `git diff --check` passed. Independent review is pending; Batch 50 remains active.
+
+Independent review accepted F474. The Tester confirmed all provider transitions, exclusivity, typed persistence, Copilot label, and ChatGPT restoration, and independently passed focused CTest 1/1 and `git diff --check`. The direct offscreen invocation exited 0 without output; no direct count is claimed. No full suite or network behavior. F474 is independently verified and ready to commit; Batch 50 remains active pending commit.

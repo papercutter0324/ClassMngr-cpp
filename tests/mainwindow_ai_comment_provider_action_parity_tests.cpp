@@ -60,7 +60,7 @@ class MainWindowAiCommentProviderActionParityTests final : public QObject
 
 private slots:
     void initTestCase();
-    void geminiAndClaudeActionsUpdateProviderAndBatchDialogLabel();
+    void providerActionsUpdateProviderAndBatchDialogLabel();
 
 private:
     QTemporaryDir m_settingsDirectory;
@@ -81,7 +81,7 @@ void MainWindowAiCommentProviderActionParityTests::initTestCase()
 }
 
 void MainWindowAiCommentProviderActionParityTests::
-geminiAndClaudeActionsUpdateProviderAndBatchDialogLabel()
+providerActionsUpdateProviderAndBatchDialogLabel()
 {
     using LegacyProvider = ::AiCommentProvider;
     using PersistedProvider =
@@ -121,9 +121,15 @@ geminiAndClaudeActionsUpdateProviderAndBatchDialogLabel()
         state->action(LegacyProvider::Gemini);
     QAction* const claudeAction =
         state->action(LegacyProvider::Claude);
+    QAction* const microsoftCopilotAction =
+        state->action(LegacyProvider::MicrosoftCopilot);
+    QAction* const customWebsiteAction =
+        state->action(LegacyProvider::CustomWebsite);
     QVERIFY(chatGptAction);
     QVERIFY(geminiAction);
     QVERIFY(claudeAction);
+    QVERIFY(microsoftCopilotAction);
+    QVERIFY(customWebsiteAction);
     QCOMPARE(originalProvider, LegacyProvider::ChatGPT);
     QCOMPARE(state->current(), LegacyProvider::ChatGPT);
     QVERIFY(chatGptAction->isCheckable());
@@ -132,6 +138,10 @@ geminiAndClaudeActionsUpdateProviderAndBatchDialogLabel()
     QVERIFY(!geminiAction->isChecked());
     QVERIFY(claudeAction->isCheckable());
     QVERIFY(!claudeAction->isChecked());
+    QVERIFY(microsoftCopilotAction->isCheckable());
+    QVERIFY(!microsoftCopilotAction->isChecked());
+    QVERIFY(customWebsiteAction->isCheckable());
+    QVERIFY(!customWebsiteAction->isChecked());
     QCOMPARE(preferences.read(), PersistedProvider::ChatGPT);
 
     QVERIFY(geminiAction->isEnabled());
@@ -141,6 +151,8 @@ geminiAndClaudeActionsUpdateProviderAndBatchDialogLabel()
     QVERIFY(geminiAction->isChecked());
     QVERIFY(!chatGptAction->isChecked());
     QVERIFY(!claudeAction->isChecked());
+    QVERIFY(!microsoftCopilotAction->isChecked());
+    QVERIFY(!customWebsiteAction->isChecked());
     SettingsManager::instance().sync();
     QCOMPARE(preferences.read(), PersistedProvider::Gemini);
 
@@ -173,6 +185,8 @@ geminiAndClaudeActionsUpdateProviderAndBatchDialogLabel()
     QVERIFY(claudeAction->isChecked());
     QVERIFY(!chatGptAction->isChecked());
     QVERIFY(!geminiAction->isChecked());
+    QVERIFY(!microsoftCopilotAction->isChecked());
+    QVERIFY(!customWebsiteAction->isChecked());
     SettingsManager::instance().sync();
     QCOMPARE(preferences.read(), PersistedProvider::Claude);
 
@@ -193,6 +207,39 @@ geminiAndClaudeActionsUpdateProviderAndBatchDialogLabel()
     QVERIFY(claudeCopyOpenButton);
     QVERIFY(
         claudeCopyOpenButton->text().contains(QStringLiteral("Claude"))
+        );
+
+    QVERIFY(microsoftCopilotAction->isEnabled());
+    microsoftCopilotAction->trigger();
+
+    QCOMPARE(state->current(), LegacyProvider::MicrosoftCopilot);
+    QVERIFY(microsoftCopilotAction->isChecked());
+    QVERIFY(!chatGptAction->isChecked());
+    QVERIFY(!geminiAction->isChecked());
+    QVERIFY(!claudeAction->isChecked());
+    QVERIFY(!customWebsiteAction->isChecked());
+    SettingsManager::instance().sync();
+    QCOMPARE(preferences.read(), PersistedProvider::MicrosoftCopilot);
+
+    SpeakingEvalAiBatchDialog microsoftCopilotDialog(
+        {
+            {
+                report.englishName,
+                report,
+                0
+            }
+        }
+        );
+
+    QPushButton* const microsoftCopilotCopyOpenButton =
+        microsoftCopilotDialog.findChild<QPushButton*>(
+            QStringLiteral("speakingEvalAiBatchCopyOpen")
+            );
+    QVERIFY(microsoftCopilotCopyOpenButton);
+    QVERIFY(
+        microsoftCopilotCopyOpenButton->text().contains(
+            QStringLiteral("Microsoft Copilot")
+            )
         );
 }
 

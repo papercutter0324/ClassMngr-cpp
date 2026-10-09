@@ -40,7 +40,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-09
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: Batch 49 is active with F473 independently verified and ready to commit; F474 discovery begins after its commit, and Gates 1 and 2 remain Partial.
+- Current note: Batch 50 is active with F474 independently verified and ready to commit; F475 discovery begins after its commit, and Gates 1 and 2 remain Partial.
 
 ### Slice discovery batches
 
@@ -65,10 +65,10 @@ Treat this plan as an operational summary, not a history:
   failure warning/no-navigation behavior; revisit after that behavior is
   clarified.
 
-#### Active batch: Batch 49
+#### Active batch: Batch 50
 
-- F473 — Claude AI Provider QAction parity: independently verified, accepted, and ready to commit.
-- Constraints: temporary English settings; recent-database loading disabled; retain Gemini; do not click dialog buttons or access browser/network; reuse the ChatGPT restorer and sync; no production/CMake change.
+- F474 — Microsoft Copilot QAction parity: independently verified, accepted, and ready to commit.
+- Constraints: temporary English settings; recent-database loading disabled; retain Gemini/Claude; do not click dialog buttons or access browser/network; reuse the ChatGPT restorer and sync; no production/CMake change.
 - State: commit pending; focused verification and acceptance evidence are in the progress log.
 
 ## Objective
