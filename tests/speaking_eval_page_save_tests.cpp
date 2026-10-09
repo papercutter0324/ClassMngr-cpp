@@ -27,6 +27,7 @@
 #include <QApplication>
 #include <QComboBox>
 #include <QDialog>
+#include <QDialogButtonBox>
 #include <QDir>
 #include <QEvent>
 #include <QInputDialog>
@@ -342,6 +343,7 @@ private slots:
     void reportClassInfoProjectionKeepsClassFieldsWhenTeacherReadFails();
     void outputReportsUsesProjectedRegularSchedule();
     void generateCommentsAppliesToOriginalRowAndUndoesAsOneAction();
+    void cancelingGenerateCommentsLeavesPageStateUntouched();
 };
 
 void SpeakingEvalPageSaveTests::
@@ -2171,6 +2173,233 @@ generateCommentsAppliesToOriginalRowAndUndoesAsOneAction()
     QCOMPARE(afterUndo.at(1).at(commentsColumn), unnamedComment);
     QCOMPARE(afterUndo.at(2).at(commentsColumn), carolComment);
     QCOMPARE(undoStack->index(), 0);
+}
+
+void SpeakingEvalPageSaveTests::
+cancelingGenerateCommentsLeavesPageStateUntouched()
+{
+    SpeakingEvalPageFixture fixture;
+    QString error;
+    QVERIFY2(fixture.initialize(1, &error), qPrintable(error));
+    QVERIFY2(
+        saveSubtitleForReportTests(
+            fixture.services,
+            fixture.classIds.first(),
+            QStringLiteral("E5"),
+            QStringLiteral("Athena"),
+            QStringLiteral("English Teacher"),
+            QStringLiteral("\uAE40\uBBFC\uC9C0"),
+            &error
+            ),
+        qPrintable(error)
+        );
+
+    SpeakingEvalPage page(&fixture.services);
+    page.setDatabaseOpen(true);
+    page.setSaveMode(SaveMode::Manual);
+    page.loadEvaluation(
+        Classroom(fixture.classNames.first(), fixture.classIds.first()),
+        QStringLiteral("Winter")
+        );
+
+    auto* const model = page.findChild<SpeakingEvalModel*>();
+    auto* const undoStack = page.findChild<QUndoStack*>();
+    QVERIFY(model);
+    QVERIFY(undoStack);
+
+    const QString originalComment =
+        QStringLiteral("Alice's comment before opening the dialog.");
+    const QString notes = QStringLiteral(
+        "[Did Well]\nClear pronunciation\n"
+        "[Needs Improvement]\nAdd supporting details"
+        );
+    const int commentsColumn =
+        SpeakingEval::toInt(SpeakingEvalColumn::Comments);
+    const int notesColumn = SpeakingEval::toInt(SpeakingEvalColumn::Notes);
+    QVERIFY(setStudent(
+        model,
+        0,
+        QStringLiteral("Alice"),
+        QStringLiteral("\uAE40\uBBFC\uC9C0")
+        ));
+    QVERIFY(model->setData(model->index(0, commentsColumn), originalComment));
+    QVERIFY(model->setData(model->index(0, notesColumn), notes));
+
+    const SpeakingEvalRows rowsBeforeDialog = model->rows();
+    const bool dirtyBeforeDialog = page.hasUnsavedChanges();
+    QVERIFY(dirtyBeforeDialog);
+    QCOMPARE(undoStack->count(), 0);
+
+    QPushButton* generateCommentsButton = nullptr;
+    for (QPushButton* const button : page.findChildren<QPushButton*>())
+    {
+        if (button->text() == QStringLiteral("Generate Comments"))
+        {
+            generateCommentsButton = button;
+            break;
+        }
+    }
+    QVERIFY(generateCommentsButton);
+
+    bool dialogShown = false;
+    bool controlsFound = false;
+    bool reviewReady = false;
+    bool cancelClicked = false;
+    bool safetyCloseTriggered = false;
+    int dialogResult = -1;
+    QString generatedPrompt;
+    QString reviewComment;
+    const QString responseComment = QStringLiteral(
+        "STD_NAME spoke clearly and used strong vocabulary. "
+        "Keep adding supporting details and practice difficult sounds. "
+        "Your eye contact and confident voice made the presentation engaging."
+        );
+    QString expectedComment = responseComment;
+    expectedComment.replace(QStringLiteral("STD_NAME"), QStringLiteral("Alice"));
+
+    page.show();
+    QCoreApplication::processEvents();
+    QTimer dialogDriver;
+    dialogDriver.setInterval(10);
+    QObject::connect(&dialogDriver, &QTimer::timeout, &page, [&]
+    {
+        auto* const dialog = qobject_cast<SpeakingEvalAiBatchDialog*>(
+            QApplication::activeModalWidget()
+            );
+        if (!dialog)
+        {
+            return;
+        }
+        dialogDriver.stop();
+        dialogShown = true;
+
+        auto* const selection = dialog->findChild<QTableWidget*>(
+            QStringLiteral("speakingEvalAiBatchSelectionTable")
+            );
+        auto* const createPromptButton = dialog->findChild<QPushButton*>(
+            QStringLiteral("speakingEvalAiBatchCreatePrompt")
+            );
+        auto* const promptEdit = dialog->findChild<QPlainTextEdit*>(
+            QStringLiteral("speakingEvalAiBatchPrompt")
+            );
+        auto* const responseEdit = dialog->findChild<QPlainTextEdit*>(
+            QStringLiteral("speakingEvalAiBatchResponse")
+            );
+        auto* const parseButton = dialog->findChild<QPushButton*>(
+            QStringLiteral("speakingEvalAiBatchParse")
+            );
+        auto* const review = dialog->findChild<QTableWidget*>(
+            QStringLiteral("speakingEvalAiBatchReviewTable")
+            );
+        auto* const applyButton = dialog->findChild<QPushButton*>(
+            QStringLiteral("speakingEvalAiBatchApply")
+            );
+        auto* const buttonBox = dialog->findChild<QDialogButtonBox*>();
+        QPushButton* const cancelButton = buttonBox
+            ? buttonBox->button(QDialogButtonBox::Cancel)
+            : nullptr;
+
+        controlsFound = selection
+            && createPromptButton
+            && promptEdit
+            && responseEdit
+            && parseButton
+            && review
+            && applyButton
+            && cancelButton;
+        if (!controlsFound)
+        {
+            dialog->reject();
+            return;
+        }
+        if (
+            selection->rowCount() != 1
+            || selection->item(0, 0)->checkState() != Qt::Unchecked
+            || selection->item(0, 1)->text()
+                != QStringLiteral("Alice (\uAE40\uBBFC\uC9C0)")
+        )
+        {
+            dialog->reject();
+            return;
+        }
+
+        selection->item(0, 0)->setCheckState(Qt::Checked);
+        createPromptButton->click();
+        generatedPrompt = promptEdit->toPlainText();
+        if (
+            !generatedPrompt.contains(
+                QStringLiteral("Student ID: STUDENT_01")
+                )
+            || generatedPrompt.contains(QStringLiteral("STUDENT_02"))
+        )
+        {
+            dialog->reject();
+            return;
+        }
+
+        responseEdit->setPlainText(
+            QStringLiteral(
+                "<<<STUDENT_01>>>\n%1\n<<<END_STUDENT_01>>>"
+                ).arg(responseComment)
+            );
+        parseButton->click();
+        reviewReady = review->rowCount() == 1
+            && review->item(0, 1)->text()
+                == QStringLiteral("Alice (\uAE40\uBBFC\uC9C0)")
+            && review->item(0, 2)->text() == QStringLiteral("Ready")
+            && review->item(0, 0)->checkState() == Qt::Checked
+            && review->item(0, 4)->text() == expectedComment
+            && applyButton->isEnabled();
+        if (review->rowCount() == 1 && review->item(0, 4))
+        {
+            reviewComment = review->item(0, 4)->text();
+        }
+        if (!reviewReady)
+        {
+            dialog->reject();
+            return;
+        }
+
+        QObject::connect(
+            dialog,
+            &QDialog::finished,
+            &page,
+            [&dialogResult](const int result) { dialogResult = result; }
+            );
+        cancelButton->click();
+        cancelClicked = true;
+    });
+    QTimer safetyCloseTimer;
+    safetyCloseTimer.setSingleShot(true);
+    QObject::connect(&safetyCloseTimer, &QTimer::timeout, &page, [&]
+    {
+        if (QWidget* const modal = QApplication::activeModalWidget())
+        {
+            safetyCloseTriggered = true;
+            modal->close();
+        }
+    });
+    dialogDriver.start();
+    safetyCloseTimer.start(5000);
+
+    QTest::mouseClick(generateCommentsButton, Qt::LeftButton);
+
+    QVERIFY(dialogShown);
+    QVERIFY(controlsFound);
+    QVERIFY(reviewReady);
+    QVERIFY(cancelClicked);
+    QVERIFY(!safetyCloseTriggered);
+    QCOMPARE(dialogResult, static_cast<int>(QDialog::Rejected));
+    QVERIFY(generatedPrompt.contains(QStringLiteral("Student ID: STUDENT_01")));
+    QVERIFY(!generatedPrompt.contains(QStringLiteral("STUDENT_02")));
+    QCOMPARE(reviewComment, expectedComment);
+    QCOMPARE(model->rows(), rowsBeforeDialog);
+    QCOMPARE(
+        model->data(model->index(0, commentsColumn), Qt::EditRole).toString(),
+        originalComment
+        );
+    QCOMPARE(page.hasUnsavedChanges(), dirtyBeforeDialog);
+    QCOMPARE(undoStack->count(), 0);
 }
 
 QTEST_MAIN(SpeakingEvalPageSaveTests)

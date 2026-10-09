@@ -18017,3 +18017,29 @@ The new `generateCommentsAppliesToOriginalRowAndUndoesAsOneAction()` slot covers
 ### F504 independent verification update - 2026-10-09
 
 The Tester’s read-only review confirmed Alice/unnamed/Carol mapping, Carol’s STUDENT_02 Ready response and explicit replacement, unchanged other rows, one-step undo restore, and the five-second safety modal close. The `ClassMngrSpeakingEvalPageSaveTests` build was up to date with source timestamp newer; registered CTest passed 1/1; direct offscreen execution exited 0 with no per-slot output; `-functions` listed the slot; scoped diff check passed with only an LF-to-CRLF advisory. F504 is independently verified, accepted, and ready to commit; Batch 80 remains active until commit.
+
+### F504 committed - 2026-10-09
+
+F504, “Phase2 - Cover page AI comment sourceRow handoff (F504),” committed as f3ced0e5 with six scoped paths. Batch 80 is complete. Batch 81 candidate discovery is underway for F505; selection is pending. Post-commit status contains only the excluded `agent_docs/latest_session_work.md` and untracked `%SystemDrive%/`.
+
+### F505 acceptance plan recorded before implementation - 2026-10-09
+
+Add a page-level Generate Comments cancellation test with at least one eligible report that already has a comment. Open the batch dialog through the page action, create and parse a valid Ready replacement, then click Cancel. After clicking Cancel, assert the actual dialog result is `QDialog::Rejected`, the source comment/model is unchanged, no undo entry was added, and page dirty state is unchanged from before the dialog.
+
+F495’s dialog-only cancellation case (`tests/speaking_eval_batch_report_service_tests.cpp:3956-4030`) discards ready comments; F504 covers accepted page apply in `tests/speaking_eval_page_save_tests.cpp`. `SpeakingEvalPage::generateClassAiComments` returns when the dialog result is Rejected (`src/features/speaking_eval/ui/speaking_eval_page_actions.cpp:401-408`), but no page-level rejection case existed. This test-only slice closes that handoff gap. Focused verification: build `ClassMngrSpeakingEvalPageSaveTests`, run its exact registered CTest entry and selected slot; no full suite. F505 is selected/current in Batch 81; implementation and verification are pending.
+
+### F505 implementation update - 2026-10-09
+
+The `cancelingGenerateCommentsLeavesPageStateUntouched()` slot prepares a valid Ready replacement for a student with an existing comment, then cancels through the page flow. It verifies model rows/comment, page dirty state, and zero undo entries remain at baseline, with bounded safety close and visible control/state checks. The focused page-save target built; registered CTest passed 1/1; the direct offscreen slot passed 3; `-functions` listed both F504 and F505 slots; scoped diff check passed. Nonfatal offscreen font/icon/size-hint warnings and an LF-to-CRLF advisory were noted. Independent verification is pending; F505 remains selected/current in Batch 81.
+
+### F505 acceptance refinement - 2026-10-09
+
+Independent review found that unchanged model, dirty state, and undo assertions also pass when the dialog is Accepted with empty changes, so they do not prove the page rejection branch. The acceptance matrix now explicitly requires `QDialog::Rejected` after Cancel. Verification refinement and focused retest are underway; F505 remains current in Batch 81 and is not yet ready for acceptance.
+
+### F505 strengthened executor rerun - 2026-10-09
+
+The test captures the dialog result through QDialog::finished(int) and asserts that clicking Cancel yields QDialog::Rejected, alongside the unchanged model/comment, dirty-state, and zero-undo checks. The focused build passed; the registered CTest passed 1/1; the direct offscreen slot passed 3/0/0; -functions lists the slot; and the scoped diff check passed. Only existing nonfatal Qt font-directory and SVG warnings were reported. Independent verification is pending; Batch 81 remains active.
+
+### F505 independent reverification - 2026-10-09
+
+The Tester confirmed that the QDialog::finished(int) capture records Cancel’s actual QDialog::Rejected result, alongside the state assertions and safety timer. The focused build was up to date with source newer; registered CTest passed 1/1; the direct offscreen F505 slot exited 0 with no per-slot output; the function listing contains F504 and F505; and the scoped diff check passed with an LF-to-CRLF advisory. F505 is independently verified, accepted, and ready to commit; Batch 81 remains active until commit.

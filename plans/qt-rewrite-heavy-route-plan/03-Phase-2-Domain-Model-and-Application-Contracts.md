@@ -40,7 +40,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-09
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F504 is accepted and ready to commit in active Batch 80; Gates 1 and 2 remain Partial.
+- Current note: F505 is independently verified and accepted, ready to commit in active Batch 81; Gates 1 and 2 remain Partial.
 
 ### Slice discovery batches
 
@@ -65,9 +65,9 @@ Treat this plan as an operational summary, not a history:
   failure warning/no-navigation behavior; revisit after that behavior is
   clarified.
 
-#### Active batch: Batch 80
+#### Active batch: Batch 81
 
-- F504 - Accepted and ready to commit: Generate Comments sourceRow handoff and single undo across an unnamed-row gap.
+- F505 - Independently verified and ready to commit: capture QDialog::finished(int), assert QDialog::Rejected after Cancel, and preserve page/model state.
 
 ## Objective
 
