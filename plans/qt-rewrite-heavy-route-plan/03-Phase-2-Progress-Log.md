@@ -16860,3 +16860,42 @@ The target built with VS18/Qt6.12/Ninja. CTest passed 1/1; the direct full targe
 each passed 3/0; the independent CTest rerun passed 1/1. Known Qt font and offscreen warnings
 only. F456 is accepted in this changeset and ready to commit; Batch 32 remains active. F457 remains
 unselected.
+
+### F456 committed - 2026-10-09
+
+F456, “Phase2 - Cover Check for Updates QAction manual handoff (F456),” was committed as
+d90def93f7947d0f031dc6f37a8a4a491f4d3718 on Qt-Rewrite (branch ahead 41). Its commit contains
+exactly seven scoped paths and the cached diff check was clean. Batch 32 is complete. Batch 33 is
+active with F457 bounded QAction coverage discovery underway; no candidate has been selected yet.
+F456 acceptance and verification remain recorded above, including that no successful online check was
+exercised.
+
+### F457 acceptance plan recorded before implementation - 2026-10-09
+
+Existing visual and persistence tests use OptionState::set and do not cover MainWindow Font Size QAction
+wiring. Plan dedicated MainWindowFontSizeActionParity coverage for the actual Font Size Large QAction.
+
+Use a temporary CLASSMNGR_SETTINGS_ROOT, a deterministic Normal startup font baseline, and
+loadMostRecentDatabase=false. Trigger window.actions().fontSizeState->action(FontSize::Large). Assert
+the font-size state and checked action, persisted font-size preference,
+FontManager::sizeOffset()==fontSizeOffset(Large), and QApplication point size equal to platform size
+plus the Large offset. Restore the process-global font and FontManager offset even on assertion
+failure; keep user settings isolated.
+
+F457 is selected/current in Batch 33. This acceptance plan is recorded before implementation; the slice
+has not been implemented or verified.
+
+### F457 acceptance update - 2026-10-09
+
+Added tests/mainwindow_font_size_action_parity_tests.cpp with MainWindowFontSizeActionParity CTest
+registration. The actual Font Size Large QAction verified state/checks, persisted Large preference,
+FontManager offset, and QApplication point size. The fixture used QTemporaryDir settings, English/Normal
+baseline, and disabled recent-database loading. An RAII guard restores process font and FontManager
+offset after MainWindow destruction, including QtTest early returns.
+
+VS18/Qt6.12/Ninja focused target build passed; exact focused CTest passed 1/1; direct QtTest
+setup/test/cleanup passed 3/0. Independent CTest rerun passed 1/1 and direct QtTest 3/0.
+git diff --check was clean. Warnings were the pre-existing long CMake object path and optional
+Vulkan-header warnings during reconfigure, plus Qt missing the bundled lib/fonts path while
+Inter/Pretendard loaded. No full project suite was run. F457 is accepted and ready to commit; Batch 33
+remains active.

@@ -3484,3 +3484,13 @@ Cover the real enabled `window.actions().checkForUpdates` QAction and its handof
 Added `mainwindow_check_for_updates_action_parity_tests.cpp` and the dedicated `MainWindowCheckForUpdatesActionParity` CTest target, including keyboard resources/translations and the isolated temp environment. The actual QAction opened the manual update dialog; the test observed one configuration failure, verified the failure UI and retry action, and confirmed MainWindow remained visible. Because the service configuration has no API URL, the action makes no network request; startup cleanup resolves only inside the test-specific temp root. No production changes.
 
 Verification: the Ninja target build passed under Visual Studio 18 with Qt 6.12; focused CTest `ClassMngrMainWindowCheckForUpdatesActionParityTests` passed 1/1; direct full-target and selected-slot QtTest runs each passed 3/0; an independent tester reran CTest and confirmed temp isolation and action-path assertions. Qt emitted the existing missing-font-directory and offscreen size/raise warnings while bundled fonts loaded. No full project suite. F456 is accepted and ready to commit; Batch 32 remains active until commit.
+
+## 2026-10-09 - F456 committed; F457 discovery started
+
+F456 committed as `d90def93f7947d0f031dc6f37a8a4a491f4d3718` (`Phase2 - Cover Check for Updates QAction manual handoff (F456)`); the branch is ahead by 41. Exactly the seven approved paths were committed and the cached diff check was clean. `agent_docs/latest_session_work.md` and `%SystemDrive%/` remain outside. Batch 32 is complete. Batch 33 is active; F457 is accepted in this changeset and ready to commit.
+
+## 2026-10-09 - F457 Font Size QAction accepted
+
+Added `mainwindow_font_size_action_parity_tests.cpp` and the dedicated offscreen `MainWindowFontSizeActionParity` target. It isolates settings in QTemporaryDir, establishes an English/Normal baseline, disables recent-database loading, triggers the actual Large QAction, and verifies option/check state, persisted Large preference, FontManager offset, and QApplication point size. RAII restores the original process font and offset after MainWindow destruction, including assertion-failure exits. No production behavior changes.
+
+Verification: the VS18/Qt6.12/Ninja target build passed; focused CTest passed 1/1; direct QtTest and independent direct rerun each passed setup/test/cleanup (3 passed, 0 failed); independent CTest rerun passed 1/1; `git diff --check` is clean. CMake reported pre-existing long object-path and missing optional Vulkan-header warnings; Qt reported a missing bundled `lib/fonts` directory while Inter and Pretendard loaded. No full project suite. F457 is accepted and ready to commit; Batch 33 remains active until commit.
