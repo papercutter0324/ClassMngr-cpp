@@ -4861,7 +4861,7 @@ actions, and resolution in the models/page. Add app-less policy cases, model
 wrapper checks, and a focused Speaking Evaluation duplicate-resolution
 regression. Phase 2 remains In Progress/Open, with Gates 1 and 2 Partial.
 
-## Current continuation - 2026-10-07 (F382 accepted; stop point)
+## Earlier continuation - 2026-10-07 (F382 accepted; previous stop point)
 
 Phase 2 remains In Progress/Open under deployment `phase2_resume_20260929` on
 the Heavy route. The user requested stopping after F382 is committed; do not
@@ -4899,3 +4899,430 @@ F383-F386 remain provisional discovery candidates and are not selected. The
 [Phase 2 plan](../plans/qt-rewrite-heavy-route-plan/03-Phase-2-Domain-Model-and-Application-Contracts.md)
 and [progress log](../plans/qt-rewrite-heavy-route-plan/03-Phase-2-Progress-Log.md)
 contain the batch discovery and detailed preceding-slice evidence.
+
+
+## Pause checkpoint - 2026-10-08 (F386 accepted; F387 in progress)
+
+Deployment `phase2_resume_20261008_f386` is paused at the user's request. Resume from the uncommitted F387 work; do not treat it as accepted. F386 is committed at `b3f9105e7c9160b2d862683d324f9dfd3cffc91d` (`Phase2 - Add Staff Directory closed-session navigation parity (F386)`). The branch was `Qt-Rewrite`, ahead of origin by five commits after F386. The user asked for a commit after each accepted slice; F387 was not accepted or committed when paused.
+
+F386 adds `tests/staff_directory_closed_session_navigation_parity_tests.cpp` and its CMake registration. Both `native_english_teachers` and `gs_team` were dispatched with a closed session and dirty TeacherInfo notes. The test verified that no prompt or warning appeared, the dirty page and notes remained unchanged, and the destination was neither created nor shown. The focused CTest passed 1/1 on current source. The direct QtTest transcript also matched byte-for-byte against the immediate pre-slice source overlay at `90e18680ebd3496cc5991dbfb9e823404e1df44a`; SHA-256 `c99738b62b11916539fd74dd8b523bb053960ac94534e0fcfd11924249d8e349`. `git diff --check` passed. No full suite ran.
+
+F387 is selected for Calendar Preferences event-reset UI parity. Its baseline is F386 commit `b3f9105e7c9160b2d862683d324f9dfd3cffc91d`. At pause, only `cmake/tests/pages_and_output.cmake` and `tests/calendar_preferences_restore_defaults_tests.cpp` were modified; nothing was staged. No production sources changed. The test covers unavailable session, Cancel, apply-time failure, and successful deletion plus visible Calendar refresh. The focused target `ClassMngrCalendarPreferencesRestoreDefaultsTests` compiled and linked in the standard `build/windows-x64-debug` folder using MSVC x64 and Qt 6.12. Its runtime verification is incomplete: the direct-test stage log ends after `unavailable reopened`, the temporary CTest log contains only a start line, and the ordinary LastTest.log is still the F386 result. No F387 transcript, baseline comparison, independent verification, or acceptance exists. A read-only process snapshot found no active CTest/CMake/MSBuild/ClassMngr test process.
+
+Resume by diagnosing why the F387 direct test stops after the unavailable-session case, then complete all four cases and produce a stable transcript. Verify current source and a test-only/CMake overlay on the pinned F386 source, then request an independent Tester run. Only commit after the main accepts the completed verification. Keep Phase 2 Gates 1 and 2 Partial and the overall exit gate Open.
+
+
+## Resume checkpoint - 2026-10-09 (F416 committed; F417 selected)
+
+The user resumed Phase 2 after the F416 commit and requested continuing with a
+commit after each slice, then starting the next. Current deployment is
+`phase2_f417_resume_20261009` on the Heavy route. F416 is `a4082f80`; Batch 19
+is active with F417 selected/current and F418-F421 queued. Gates 1 and 2 remain
+Partial and the Phase 2 exit gate remains Open.
+
+F417 adds both rendered Staff Directory leaves through MainWindow's actual
+Sidebar-to-NavigationController connection. The existing four open-session
+cancel/discard cases remain intact. Executor and independent builds succeeded
+in the standard Windows x64 Debug folder; each exact filtered CTest passed 1/1.
+The two workers' first build attempts hit MSBuild FileTracker access denied at
+`ZERO_CHECK`; the target later built successfully with elevated access. No
+production change was needed, `git diff --check` passed, and no full suite ran.
+The F417 acceptance matrix and source evidence are in the Phase 2 progress log.
+F417 is committed as `d04d9bb0`. F418 Schedule Import through MainWindow apply
+and Sidebar refresh is selected/current; F419-F421 remain queued. Continue with
+the next acceptance matrix and implementation after F417's commit.
+Preserve the pre-existing modification and untracked `%SystemDrive%/` entry;
+neither is part of the slice.
+
+## Continuation checkpoint - 2026-10-09 (F418 committed; F419 selected)
+
+Phase 2 continues under deployment `phase2_f417_resume_20261009` on the Heavy
+route. F417 is committed as `d04d9bb0`, and F418 Schedule Import through
+MainWindow apply and Sidebar refresh is committed as `ea755736`. F418's
+Executor and independent focused CTest runs passed 1/1 each; direct QtTest
+passed 7/7 including init/cleanup. The test verifies the real Schedule Import
+button and dialogs, persisted teacher/class/time data, matching Sidebar entry,
+refreshed visible Schedule, and unchanged session/path. No production change
+was needed. The F418 acceptance evidence is in the Phase 2 progress log.
+
+F419 MainWindow Print/Save Current Page As action capability and enabled state
+is committed as `e2ad222b`. Its acceptance matrix and evidence are recorded in
+the Phase 2 progress log. F420 Class/Schedule save signal to Sidebar action-
+state refresh is selected/current; F421 remains queued. Gates 1 and 2 remain
+Partial and the Phase 2 exit gate remains Open.
+Preserve this modified session note and the untracked `%SystemDrive%/` entry;
+neither is part of the slice commit.
+
+## F420 transition note - 2026-10-09
+
+Batch 19 reaches F420, its second-to-last slice. Start Batch 20 discovery now,
+before F420 implementation, following the heavy-route plan. Keep this session
+note and `%SystemDrive%/` out of slice commits.
+
+
+## F420 acceptance setup - 2026-10-09
+
+F420 acceptance is recorded in the Phase 2 progress log before implementation.
+It covers actual Classes Details and workspace Schedule Editor saves, each
+proving initially disabled deleteClass/exportClasses actions become enabled
+through the production MainWindow signal connection. Tests must not invoke the
+controller handler, emit the signal, or substitute the standalone Schedule
+page. The existing MainWindow schedule/classes handoff target is the focused
+verification target; no full suite.
+
+Two independent Batch 20 reviews are reconciled in the Phase 2 log. F421
+Useful Links URL handoff remains queued. Provisional options after F421: F422
+Testing Classes to Schedule refresh, F423 My Schedule display-mode handoff,
+F424 Sidebar Add Class context-menu handler, F425 Upcoming Birthdays QAction,
+F426 Class Transfer import QAction, and later MainWindow Schedule Save As/PDF
+output and canceled database Save As behavior. No implementation has started
+on F420 yet. Preserve this modified session note and %SystemDrive%/ outside
+slice commits.
+
+
+F421 read-only context is complete. All seven Useful Links are HTTPS URL leaves
+handled in Sidebar directly by QDesktopServices::openUrl; they bypass
+itemSelected/NavigationController. Qt QDesktopServices::setUrlHandler for the
+https scheme can intercept the real call and unsetUrlHandler restores default
+handling. The global handler is single-owner and cannot expose a previously
+registered handler for restoration, so use scoped cleanup and ensure no
+conflicting test registration. No existing src/tests handler registration was
+found. A focused MainWindow case can click all seven rendered leaves and assert
+captured URLs, no navigation, unchanged page, cleared selected items, and
+current path keys. This is read-only prep only; define/record F421 acceptance
+after F420 commit.
+
+
+## F420 first independent run - fixture repair pending
+
+The F420 focused target built, but independent CTest failed both new cases
+before either save route. The shared teacher seed used the 24-character English
+name F420 Integration Teacher, while validation limits the field to 20 chars.
+The Tester confirmed both failures occur during setup; save paths and persistence
+assertions were therefore not exercised. Direct QtTest reported 7 passed, 2
+failed, 0 skipped; exact CTest selected 1 and failed. Qt font-directory and
+offscreen propagateSizeHints notices were observed; no process remained. The
+Executor is fixing the test fixture and preserving the underlying seed error;
+F420 remains unaccepted, with the same Tester to recheck after repair.
+
+
+## F420 accepted, ready to commit - 2026-10-09
+
+The test-only repair changed the fixture teacher to valid Fixture Teacher and
+retained the underlying seed error. The executor focused target build passed;
+filtered CTest passed 1/1 and direct QtTest passed 9/9. The independent Tester
+rebuilt and independently passed the same filtered CTest 1/1 and QtTest 9/9.
+Both the Classes Details and workspace Schedule Editor paths reached their real
+save and verified action-state transition, persistence, open-session continuity,
+and empty prompt queues. First-run failure was fixture validation only. No
+production code changed. Runtime had missing Qt system font-directory and
+offscreen propagateSizeHints notices; repository fonts loaded and no process
+remained. F420 is accepted. F421 Useful Links URL handoff is next after the
+F420 commit. Keep this session note and the unrelated untracked %SystemDrive%/
+entry out of slice commits.
+
+
+## F420 committed; F421 selected - 2026-10-09
+
+F420 is committed as 4c10f0d107c972ddd4e3a62869ca8d81088c6de4 with exactly the six approved slice paths. Pre/post diff-checks were clean; branch Qt-Rewrite is ahead 5. The pre-existing modified agent_docs/latest_session_work.md and unrelated untracked %SystemDrive%/ entry remain preserved and were excluded.
+
+F421 Useful Links URL handoff is selected/current. Read-only context found seven HTTPS leaves and a Qt-supported setUrlHandler hook that intercepts QDesktopServices::openUrl. Acceptance is recorded in the Phase 2 progress log: click each rendered leaf, capture exact destinations, verify no navigation/selection, keep the current page unchanged, and unset the global handler before destroying its receiver. Implementation has not started.
+
+
+## F421 accepted, ready to commit - 2026-10-09
+
+F421's real MainWindow click path now captures all seven Useful Links HTTPS destinations through a scoped QDesktopServices handler. After two test-only corrections (bare handler slot name; exact registered CTest name), the executor and independent Tester both built and passed the focused CTest 1/1. The independent direct QtTest passed 4/4. URL capture, no navigation, unchanged page/widget, cleared selection, and selectedKeys assertions passed; the handler was unset before destruction. Qt's missing system font-directory notice remained; repo fonts loaded and no process remained. F421 is accepted and ready to commit.
+
+F422 read-only context mapped Testing Classes edits marking both standalone and workspace Schedule pages stale, then normal activation refreshes each model. Avoid the Testing Classes Back path because it independently marks the selected Schedule page stale and could hide a missing save-signal connection. F422 is selected/current after F421's commit.
+
+
+## F421 committed; F422 selected - 2026-10-09
+
+F421 is committed as 27c064e3fd7de3b4cd8e65fd839917675b680e76 with exactly the six approved slice files. Pre/post diff-checks were clean; branch Qt-Rewrite is ahead 6. The modified session note and unrelated untracked %SystemDrive%/ entry remain preserved and uncommitted.
+
+F422 acceptance is in the Phase 2 progress log. It covers a real Testing Classes save marking both pre-instantiated SchedulePage views stale, then uses normal PageManager/workspace tab activation to confirm each Testing-mode model refreshes to the saved name. The Back handler is excluded because it independently marks a Schedule page stale. F422 implementation has not started.
+
+## F429 committed; F430 context discovery - 2026-10-09
+
+F429 is committed as 19f6024d113dda41e7e7a2b41acf27961160462b with exactly the six approved slice paths. Pre/post diff checks were clean; branch Qt-Rewrite is ahead 14. The modified session handoff and unrelated untracked %SystemDrive%/ remain excluded from slice commits.
+
+F430 Schedule Print QAction is the next Batch 21 candidate. Read-only context discovery is checking the real print dialog/service path and how to cover it without opening an uncontrolled native printer dialog. No F430 acceptance matrix or implementation has started.
+
+Batch 21 has ten provisional candidates after F428. F429 was the first and is committed; F430 is next. See the Phase 2 progress log for the bounded review and candidate evidence.
+
+
+
+
+## Resume checkpoint - F429 committed; F430 matrix recorded - 2026-10-09
+
+F429 is committed as 19f6024d113dda41e7e7a2b41acf27961160462b with exactly the six approved slice paths; branch Qt-Rewrite is ahead 14. Pre/post diff checks passed. Preserve this modified handoff and the unrelated untracked %SystemDrive%/ entry outside slice commits.
+
+F430 Schedule Print QAction is selected/current in active Batch 21. Its acceptance matrix was recorded before implementation in the Phase 2 progress log. Reuse the MainWindow Schedule fixture, trigger the real Print QAction, assert the Print-mode SchedulePrintDialog and schedulePrintButton, and reject before printer service/native UI. Verify stable page/widget/session/path/Sidebar, enabled action, and no file picker or prompt. Build MainWindowSaveAsExportParityTests, run the exact registered CTest, direct target QtTest, and selected case; no full suite. Implementation has not started.
+
+F429-F430 context discovery confirmed the MainWindow action connection, workspace Schedule forwarding, and that accepting the Schedule dialog continues into printer-dependent code. This slice establishes action-to-options-dialog entry/cancel only, not a successful print job. Batch 21 remains active with F431-F438 provisional; do not start Batch 22 until F437 becomes current as the second-last candidate.
+
+
+
+## F430 accepted; ready to commit - 2026-10-09
+
+F430 adds only printCurrentPageActionCancellationPreservesWorkspaceState() in tests/mainwindow_save_as_export_parity_tests.cpp. The real Print QAction opened the Print-mode SchedulePrintDialog; the timer found schedulePrintButton and rejected the dialog during its nested modal event loop before printer service/native UI. The test confirms the page/widget, open database session/path, Sidebar selection, enabled action, and fake picker/prompt queues remain unchanged.
+
+Executor and independent Tester each built MainWindowSaveAsExportParityTests; the exact Debug CTest passed 1/1, direct target QtTest passed 7/7, and the selected case passed 3/3 including setup/cleanup. The Tester rebuilt the edited source; its target object timestamp is newer. The Executor first hit ZERO_CHECK MSBuild FileTracker UnauthorizedAccess, then the target build passed with /p:TrackFileAccess=false. The independent standard build passed without that retry. Qt reported its system-font directory missing and then loaded repository fonts; the Executor saw translation notices about unfinished/untranslated strings and no C++ compiler warnings. No focused process remains; no full suite ran. No production code changed. This case does not claim a successful physical print job.
+
+F430 is accepted and ready to commit. F431 Import Teachers QAction through MainWindow is next after the F430 commit. Preserve this modified handoff and the unrelated untracked %SystemDrive%/ entry outside the slice commit.
+
+
+
+## F430 committed; F431 context discovery - 2026-10-09
+
+
+F430 is committed as aa7fca3761143a1ee0dce403995063799343b699 (Phase2 - Cover Schedule Print QAction dialog cancellation (F430)); branch Qt-Rewrite is ahead 15. The six-path commit passed exact pre/post status and diff checks. The modified session handoff and unrelated untracked %SystemDrive%/ remain excluded.
+
+
+F431 Import Teachers QAction through MainWindow, including the page-leave gate, is selected/current in Batch 21. Read-only context discovery is underway. No F431 acceptance matrix or implementation has started. After Explorer returns, record the matrix before implementation. F432-F438 remain provisional.
+
+
+
+## F431 matrix recorded - implementation not started - 2026-10-09
+
+
+F431 Import Teachers QAction through MainWindow, including the page-leave gate, is selected/current in active Batch 21. Its acceptance matrix is recorded in the Phase 2 progress log before implementation. Extend tests/mainwindow_manage_campuses_parity_tests.cpp in the existing MainWindowManageCampusesParityTests target; no CMake change.
+
+
+Cover two independent cases from a dirty My Workspace Details draft. Cancel must consume exactly one UnsavedChangesChoice::Cancel prompt, leave the dirty draft/page/session/path/Sidebar intact, and never open TeacherImportDialog or a picker. Discard must consume one Discard choice, reach the real TeacherImportDialog via the QAction, then reject with a bounded timer before Browse/file selection/apply; verify saved draft restored/clean and page/widget/tab/session/path/Sidebar stable. Assert no extra picker/prompt/import effects. Build the focused target, run exact CTest ClassMngrMainWindowManageCampusesParityTests, direct target QtTest and each new case; no full suite. The existing Teacher Import UI apply suite covers apply separately.
+
+
+Explorer evidence: ActionRegistry action at action_registry.cpp:715, menu at menu_builder.cpp:1324, MainWindow SidebarController connection at mainwindow.cpp:480, action handler connection at sidebar_controller.cpp:72; import handler calls page leave gate before dialog construction at sidebar_controller_teacher_import.cpp:18; gate at pagemanager.cpp:485. Existing fixture is tests/mainwindow_manage_campuses_parity_tests.cpp; standalone teacher import dialog timer helper is tests/teacher_import_ui_apply_parity_tests.cpp. F432-F438 remain provisional. Preserve this handoff and %SystemDrive%/ outside slice commits.
+
+
+
+## F431 accepted; ready to commit - 2026-10-09
+
+
+F431 adds two cases in tests/mainwindow_manage_campuses_parity_tests.cpp only. Both trigger the real MainWindow Import Teachers QAction from a dirty My Workspace Details draft. Cancel consumed one gate choice, preserved the draft and workspace state, and blocked the import dialog. Discard consumed one gate choice, restored the saved draft and clean state, then reached the real TeacherImportDialog, which the timer rejected before Browse or apply. Both cases verify session/path, page/widget/tab/identifier, Sidebar, teacher-table counts, and no picker or extra prompt.
+
+
+Executor and independent Tester each built MainWindowManageCampusesParityTests and passed exact Debug CTest 1/1, direct target QtTest 6/6, and each selected case 3/3 including setup/cleanup. Tester rebuilt the edited source and target object is newer. Executor first tried a short target name that did not exist; correct target build then hit FileTracker access denied; retry with /p:TrackFileAccess=false passed. Independent standard build passed without retry. The 10 ms poll rejected the dialog and a 5-second fallback can reject an active modal QDialog; no hang occurred. Qt reported missing system font directory (repo fonts loaded) and offscreen propagateSizeHints; no C++ warnings. No focused process remains; no full suite ran. Successful import/Browse/apply are outside this slice.
+
+
+F431 is accepted and ready to commit. F432 Export Classes QAction through dialog and JSON picker is next after the commit. Preserve this modified handoff and unrelated %SystemDrive%/ outside slice commits.
+
+
+
+## F431 committed; F432 context discovery - 2026-10-09
+
+
+F431 is committed as 2ac08388cf8b28258cefd03fa42de25f43c45891 (Phase2 - Cover Import Teachers QAction page-leave gate (F431)); branch Qt-Rewrite is ahead 16. The six-path commit passed pre/post status and diff checks. The modified session handoff and unrelated untracked %SystemDrive%/ remain excluded.
+
+
+F432 Export Classes QAction through its selection dialog and JSON picker is selected/current in Batch 21. Read-only context discovery is underway; no F432 acceptance matrix or implementation has started. F433-F438 remain provisional.
+
+
+
+## F432 matrix recorded - implementation not started - 2026-10-09
+
+
+F432 Export Classes QAction through the selection dialog and JSON picker is selected/current in active Batch 21. The acceptance matrix is in the Phase 2 progress log and was recorded before implementation. Extend tests/mainwindow_close_file_parity_tests.cpp in existing MainWindowCloseFileParityTests; no CMake change.
+
+
+Seed a teacher-assigned class before MainWindow startup; startup refresh uses assignment presence to enable export. Trigger the real Export Classes QAction, select the seeded class in ClassExportDialog using its UserRole ID and real export button, then consume an explicit std::nullopt from FakeFileDialogService at the JSON picker. Assert the ClassTransfer/JSON request metadata and unchanged page/widget/session/path/Sidebar, with no prompts or other picker requests. The timer fallback closes an active modal QDialog. No JSON file is produced or claimed; query and codec serialization are covered by existing lower-level tests. Build MainWindowCloseFileParityTests, run exact CTest ClassMngrMainWindowCloseFileParityTests, direct target QtTest and the selected case; no full suite. F433-F438 remain provisional.
+
+
+
+## F432 accepted; ready to commit - 2026-10-09
+
+
+F432 adds only exportClassesActionReachesJsonPickerAndCancellationIsSilent() in tests/mainwindow_close_file_parity_tests.cpp. The test seeds a teacher-assigned class before MainWindow startup, triggers the actual enabled QAction, selects the class in ClassExportDialog through its UserRole ID and Export button, then consumes explicit nullopt from the fake JSON picker. It verifies picker request metadata and unchanged class identity/name/assignment/grade/level/classTimes/count/row count, workspace page/session/path/Sidebar, and prompt queues. The picker is canceled; no JSON is written and no successful export is claimed.
+
+
+Executor and independent Tester final runs passed MainWindowCloseFileParityTests build, exact Debug CTest 1/1, direct target QtTest 7/7, and selected case 3/3 including setup/cleanup. The Tester rebuilt after the classTimes assertions were added; object is newer than source. Executor first tried an incorrect short target name, then hit FileTracker access denied on the correct target; retry with /p:TrackFileAccess=false passed. Independent standard target build passed without retry. Qt reported missing system fonts (repository fonts loaded) and offscreen propagateSizeHints; no C++ warnings. No focused process remains; no full suite ran. The first independent review identified the missing classTimes comparison; executor repaired it and final independent recheck passed. Existing query/codec tests cover serialization, outside this slice.
+
+
+F432 is accepted and ready to commit. F433 New Teacher menu QAction is next after the F432 commit. Preserve this modified handoff and unrelated %SystemDrive%/ outside slice commits.
+
+
+
+## F432 committed; F433 context discovery - 2026-10-09
+
+
+F432 is committed as 4bfe3dc27c1c3adbc2ca3824d290cffec7d805c0 (Phase2 - Cover Export Classes QAction JSON picker cancellation (F432)); branch Qt-Rewrite is ahead 17. The six-path commit passed exact pre/post status and diff checks. The modified session handoff and unrelated untracked %SystemDrive%/ remain excluded.
+
+
+F433 New Teacher menu QAction is selected/current in active Batch 21. Read-only context discovery is underway; no F433 acceptance matrix or implementation has started. F434-F438 remain provisional.
+
+
+
+## F433 characterization matrix recorded - implementation not started - 2026-10-09
+
+
+F433 New Teacher menu QAction is selected/current in active Batch 21. The Phase 2 progress log records the acceptance matrix before implementation. Extend tests/mainwindow_close_file_parity_tests.cpp in the existing MainWindowCloseFileParityTests target; no CMake change.
+
+
+Use a clean temporary empty database, assert the real enabled newTeacher QAction, and trigger it. FakeUserPromptService should capture one Add Teacher warning with the required-name validation detail (teacher.name.required). Verify no teacher row is created, no TeacherInfoPage/navigation occurs, and page/widget/identifier/Sidebar/session/path/action state remain stable; no unsaved prompt appears. This is a characterization of the current blank-create rejection, not successful teacher creation. F285 remains deferred until the blank-draft creation contract is clarified. Build MainWindowCloseFileParityTests, run exact CTest, direct target QtTest and selected case; no full suite. F434-F438 remain provisional.
+
+
+
+## F433 accepted; ready to commit - 2026-10-09
+
+
+F433 adds newTeacherActionShowsRequiredNameWarningWithoutNavigation() in tests/mainwindow_close_file_parity_tests.cpp only. It triggers the actual enabled QAction against an empty temporary profile and captures exactly one Add Teacher warning containing teacher.name.required. No teacher is inserted or TeacherInfoPage created/selected; current page/widget/identifier/Sidebar/session/path/action remain unchanged. This records current blank-create validation behavior and does not claim success or change the deferred F285 contract.
+
+
+Executor and independent Tester each built MainWindowCloseFileParityTests and passed exact Debug CTest 1/1, direct target QtTest 8/8, selected case 3/3 including setup/cleanup. The Tester rebuilt the source; target object is newer. Executor first hit FileTracker access denied; retry with /p:TrackFileAccess=false passed. Independent standard build passed without retry. Qt reported missing system fonts (repository fonts loaded) and an offscreen propagateSizeHints notice in other target dialog cases. No C++ warnings or focused processes remain; no full suite ran. No production/CMake changes.
+
+
+F433 is committed as b60c8025. F434 Delete Teacher QAction confirmation through MainWindow is current. Preserve this modified handoff and unrelated %SystemDrive%/ outside slice commits.
+
+## F433 committed; F434 context discovery - 2026-10-09
+
+F433 committed as b60c8025c937d8080395479b86dc30b84c75f160 (Phase2 - Cover New Teacher QAction validation warning (F433)); branch is ahead by 18. F434 Delete Teacher QAction confirmation through MainWindow is accepted and ready to commit. F435-F438 remain provisional. Preserve this modified handoff and unrelated %SystemDrive%/ outside slice commits.
+
+
+## F434 acceptance matrix recorded - 2026-10-09
+
+Explorer traced the real Delete Teacher QAction through teacher selection and confirmation. Matrix: on MyWorkspace with a target and survivor seeded, trigger the QAction, select the target in the real modal chooser via a bounded timer, then have FakeUserPromptService reject the destructive confirmation. Assert exact prompt metadata, unchanged persisted teachers/sidebar/action, stable workspace/page/widget/selection/session/path, and no extra prompt. Test file: tests/mainwindow_teacher_sidebar_navigation_parity_tests.cpp. Build target and CTest: ClassMngrMainWindowTeacherSidebarNavigationParityTests. This is cancellation-path characterization; no successful deletion claim. Existing direct-controller tests cover the lower-level branches. Matrix was recorded before implementation; implementation and focused independent verification are complete. F435-F438 remain provisional; latest_session_work.md and unrelated %SystemDrive%/ stay outside slice commits.
+
+
+## F434 accepted; ready to commit - 2026-10-09
+
+The real Delete Teacher QAction and chooser reached the destructive confirmation; cancel preserved the seeded target and survivor snapshots, sidebar entries, action state, MyWorkspace page/widget/selection, database session, and path, with no extra prompt. A five-second watchdog closes an active modal if selection automation fails. Executor and independent Tester each passed the focused build, exact Debug CTest 1/1, target QtTest 6/6, selected case 3/3. Executor used Ninja Debug after VS FileTracker errors; independent VS build passed without retry. No full suite ran; no production/CMake change. F434 is committed as 3fb5241347d14c2d9dfa94b5a25a6742d6ba28df; branch is ahead by 19. F435-F438 remain provisional. Keep this modified handoff and unrelated %SystemDrive%/ outside slice commits.
+
+
+## F434 committed; F435 context discovery - 2026-10-09
+
+F434 committed as 3fb5241347d14c2d9dfa94b5a25a6742d6ba28df (Phase2 - Cover Delete Teacher QAction cancellation (F434)); branch is ahead by 19. F435 Empty-state Open/New Profile button handoff through Banner, PageManager, and MainWindow is accepted and ready to commit. F436 Invalid UTF-8 document resource references is next; F437-F438 remain provisional. Keep latest_session_work.md and unrelated %SystemDrive%/ outside slice commits.
+
+
+## F435 acceptance matrix recorded - 2026-10-09
+
+Two cases in tests/mainwindow_initial_setup_empty_state_navigation_tests.cpp cover the actual no-database banner Open and New Profile buttons. Each spies on BasePage and PageManager requests, the corresponding MainWindow QAction, and file-picker metadata. Open loads a seeded temporary profile through the TeacherProfile open picker. New creates a profile at a unique nonexistent temporary path through the TeacherProfile save picker. Both verify opened session/path, MyWorkspace Schedule/sidebar state, and hidden banner; New must not launch Initial Setup. Build target and exact CTest: ClassMngrMainWindowInitialSetupEmptyStateNavigationTests. Matrix was recorded before implementation; F436-F438 remain provisional. Preserve latest_session_work.md and unrelated %SystemDrive%/ outside slice commits.
+
+
+## F435 accepted; ready to commit - 2026-10-09
+
+Separate real no-database banner Open/New Profile cases verify the BasePage → PageManager → MainWindow QAction handoff and matching TeacherProfile pickers. Open loads a seeded temporary profile; New creates a profile at a unique nonexistent temporary path. Both verify session/path, MyWorkspace Schedule/sidebar selection, hidden banner, and no Initial Setup request, prompt, or opposite picker. Executor and independent Tester passed the exact target build, filtered CTest 1/1, target QtTest 5/5, and each new case 3/3. No full suite or production/CMake change. F435 is committed as 998565115361bdd301f1d06ecc4beb2da7a519b9; branch is ahead by 20. Preserve this handoff and unrelated %SystemDrive%/ outside slice commits.
+
+
+## F435 committed; F436 context discovery - 2026-10-09
+
+F435 committed as 998565115361bdd301f1d06ecc4beb2da7a519b9 (Phase2 - Cover Empty-state Open/New Profile button handoff (F435)); branch is ahead by 20. F436 Invalid UTF-8 document resource references is accepted and ready to commit. F437 is next after commit; F438 remains provisional. Keep latest_session_work.md and unrelated %SystemDrive%/ outside slice commits.
+
+
+## F436 acceptance matrix recorded - 2026-10-09
+
+Invalid UTF-8 in raw document resource references will return InvalidInput with recoverable=false before path conversion and resource-pack acquisition, for primary and optional export references. Tests use raw std::string bytes for invalid continuation/truncated/malformed sequences, assert the pack remains unmounted, and preserve NotFound for valid missing resources plus existing NUL/scheme/traversal behavior. Build target and exact CTest: ClassMngrNextPlatformDocumentContentResourcePortTests. Matrix was recorded before implementation; implementation and independent verification are complete. F437 is next after commit; F438 remains provisional. Keep latest_session_work.md and unrelated %SystemDrive%/ outside slice commits.
+
+
+## F436 accepted; ready to commit - 2026-10-09
+
+The resource port uses stateless QStringDecoder to reject malformed raw UTF-8 as nonrecoverable InvalidInput before path normalization and resource-pack acquisition, for primary and export references. The test checks six malformed primary forms and one malformed export, keeps the pack unmounted at return, preserves NotFound for a valid missing path and existing scheme/NUL/traversal behavior, and retains valid resource resolution. Executor and independent Tester passed the focused target build, exact CTest 1/1, target QtTest 9/9, selected case 3/3. The Ninja Debug build ran under an initialized VS x64 environment; final runs reported no compiler warnings. No full suite ran. F436 is committed as c19e247f8066b546bfb71e9177e2413123309112; branch is ahead by 21. Preserve latest_session_work.md and unrelated %SystemDrive%/ outside slice commits.
+
+
+## F436 committed; F437 and Batch 22 discovery - 2026-10-09
+
+F436 committed as c19e247f8066b546bfb71e9177e2413123309112 (Phase2 - Reject invalid UTF-8 document references (F436)); branch is ahead by 21. F437 Report worker event-post failure with a zero-capacity queue is accepted and ready to commit. F438 Optional typed occurrence IDs during repeat-series creation is current; read-only context discovery is underway. Batch 21 remains active through F438; Batch 22 is discovered but inactive. Keep latest_session_work.md and unrelated %SystemDrive%/ outside slice commits.
+
+
+## F437 acceptance matrix recorded - 2026-10-09
+
+With a zero-capacity ReportJobEventQueue and an immediately failing work callback, the terminal Failed event post returns Conflict. Assert worker lastResult contains the post error rather than the work error, queue is empty, worker completes within timeout and joins, and coordinator remains Running because no event was pumped. Test file: tests/next_platform_qt_job_worker_tests.cpp. Build target and exact CTest: ClassMngrNextPlatformQtJobWorkerTests. F438 remains provisional; Batch 22 discovery is underway. Matrix was recorded before implementation; final implementation and independent verification passed. latest_session_work.md and unrelated %SystemDrive%/ stay outside slice commits.
+
+
+## Batch 22 discovery recorded - 2026-10-09
+
+Two independent reviews and reconciliation identified eight provisional candidates, recorded in the Phase 2 progress log. Batch 21 remains active with F438 current; Batch 22 is discovered but inactive until F438 commits. A general Open success candidate is redundant with F435; only replacement of an already-open profile is distinct. Same-path open semantics remain undefined; F285 remains deferred.
+
+
+## F437 accepted; ready to commit - 2026-10-09
+
+The zero-capacity Report worker case verifies a terminal Failed-event post returns Conflict and supersedes the callback error; worker completes/joins, queue is empty, pump consumes zero, and coordinator remains Running. Executor and independent Tester verified final source: Ninja target build passed, filtered CTest 1/1, target QtTest 12/12, selected case 3/3. The ordinary VS tree hit FileTracker errors; final Ninja build had no warnings. No production/CMake change or full-suite run. F437 is committed as f355a1aa65d63bbf18ddeda3e8cfa7ff76c985d7; branch is ahead by 22. F438 is next after commit. Batch 22 has eight provisional candidates, remains inactive until Batch 21 completes. Preserve latest_session_work.md and unrelated %SystemDrive%/ outside slice commits.
+
+
+## F437 committed; F438 context discovery - 2026-10-09
+
+F437 committed as f355a1aa65d63bbf18ddeda3e8cfa7ff76c985d7 (Phase2 - Cover Report worker terminal event-post failure (F437)); branch is ahead by 22. F438 Optional typed occurrence IDs during repeat-series creation is current; the create-only acceptance matrix is recorded and implementation is pending. Batch 21 remains active through F438; Batch 22 stays inactive. Keep latest_session_work.md and unrelated %SystemDrive%/ outside slice commits.
+
+
+## F438 acceptance matrix recorded - 2026-10-09
+
+Repeat-series creation is create-only; any present occurrence CalendarEventId is an update selector and must return nonrecoverable InvalidInput before persistence. This follows the existing planner clearing generated IDs and calendar import rejecting supplied IDs. Seed an existing row, submit its ID on one occurrence in a multi-occurrence create request, and assert failure with unchanged row fields/repeat_series_id and unchanged row count. Existing ID-less series creation remains valid. Test target/CTest: ClassMngrNextPlatformApplicationServicesCalendarEventPortTests. Matrix recorded before implementation; F437 is committed, Batch 21 remains active through F438, and Batch 22 is discovered but inactive. Keep latest_session_work.md and unrelated %SystemDrive%/ outside slice commits.
+
+
+## F438 accepted; ready to commit - 2026-10-09
+
+Repeat-series creation now rejects every present occurrence CalendarEventId as nonrecoverable InvalidInput during request validation, before persistence. The integration case seeds a standalone row, supplies its typed ID on the later occurrence, verifies request/adapter errors, compares the full stored row including repeatSeriesId, and confirms row count is unchanged. ID-less series creation remains covered. Executor and independent Tester passed target Ninja Debug build, exact CTest 1/1, direct target QtTest 55/55, and selected case 3/3; no compiler warnings. No full-suite run. After the F438 commit, Batch 21 completes and Batch 22 begins with F439 Accept Delete Teacher confirmation. Preserve latest_session_work.md and unrelated %SystemDrive%/ outside slice commits.
+
+
+## F438 committed; F439 context discovery - 2026-10-09
+
+F438 committed as 0c2ceca6136a962f41130f52975bbab7315cd465 (Phase2 - Reject existing IDs in repeat-series creation (F438)); branch is ahead by 23. Its seven-path scoped commit passed staged/worktree diff checks. Batch 21 is complete. Batch 22 is active; F439 Accept Delete Teacher confirmation success is selected/current and bounded read-only discovery is underway. F440-F446 remain provisional; same-path Open is held pending replacement/idempotence contract, and F285 successful New Teacher remains deferred. Preserve latest_session_work.md and unrelated %SystemDrive%/ outside slice commits.
+
+
+## F439 acceptance matrix recorded - 2026-10-09
+
+Add the Delete Teacher success path to ClassMngrMainWindowTeacherSidebarNavigationParityTests, reusing F434’s real MainWindow QAction and chooser fixture. Start on MyWorkspace with no teacher selected; use two unassigned records. Drive the actual chooser through its timer and five-second modal watchdog, then script PromptChoice::Destructive. Verify the expected single Delete Teacher confirmation was consumed without warning, the target row and sidebar item are gone, the survivor remains unchanged, and page/widget/session/path remain stable. No class-assignment cleanup or deletion from a selected TeacherInfo page. Direct-controller success coverage already exists, so this slice proves QAction+chooser integration. Exact target and CTest: ClassMngrMainWindowTeacherSidebarNavigationParityTests. Matrix recorded before implementation; implementation pending. F440-F446 remain provisional. Preserve this file and unrelated %SystemDrive%/ outside slice commits.
+
+
+## F439 accepted; ready to commit - 2026-10-09
+
+The successful MainWindow Delete Teacher case triggers the real QAction, selects the target in the actual chooser, and consumes the destructive confirmation. The target is absent from repository/sidebar; the unassigned survivor’s complete snapshot and sidebar leaf remain unchanged. No teacher row is selected; MyWorkspace, current page/widget, service, open database session, and path stay stable, with no extra warning/message prompt. Executor and independent Tester passed target Ninja Debug build, exact CTest 1/1, direct QtTest 7/7, and selected case 3/3. No compiler warnings; offscreen Qt/font notices only. No production/CMake change or full-suite run. F439 is accepted and ready to commit. F440 Complete Export Classes JSON output is next after commit; Batch 22 remains active. Preserve latest_session_work.md and unrelated %SystemDrive%/ outside slice commits.
+
+
+## F439 committed; F440 context discovery - 2026-10-09
+
+F439 committed as a0c50d2dd37de11a4bfa91cfea044822cba7269f (Phase2 - Cover Delete Teacher QAction confirmation success (F439)); branch is ahead by 24. The six-path scoped commit passed diff checks; only the test source changed beyond documentation. Batch 22 remains active. F440 Complete Export Classes JSON output is selected/current and bounded read-only discovery is underway. F441-F446 remain provisional. Preserve latest_session_work.md and unrelated %SystemDrive%/ outside slice commits.
+
+
+## F440 acceptance matrix recorded - 2026-10-09
+
+Add successful Export Classes JSON output coverage to MainWindowCloseFileParityTests, complementing F432 cancellation. Use the real QAction and ClassExportDialog observer with 10 ms polling/five-second watchdog; seed an assigned teacher plus target and unselected classes, select only the target, and script a temporary .json save path. Verify file creation and parsed envelope (format ClassMngr Classes, version 1, valid UTC exported_at_utc), exactly the selected class with class_grade/class_level and a teacher_ref linked to its exported profile, and no unselected class. Do not assert a fixed timestamp or confuse generated package keys with DB IDs. Expect one Export Classes info prompt mentioning count/path and no warning; page/session/path and persisted classes remain unchanged. Reuse assertions for observed dialog, exact selected ID, clicked Export, no timeout/fallback. Exact target/CTest: ClassMngrMainWindowCloseFileParityTests. Matrix recorded before implementation; implementation pending. Preserve latest_session_work.md and unrelated %SystemDrive%/ outside slice commits.
+
+
+## F440 accepted; ready to commit - 2026-10-09
+
+The real Export Classes QAction and dialog exported only the selected class from two listed classes to a temporary JSON file. The parsed package has format ClassMngr Classes, version 1, valid UTC exported_at_utc, target class info, a teacher_ref linked to its exported profile, and no unselected class. The successful info prompt reports count and path; no warning appeared. Stored class names/count/table rows/full info and MyWorkspace/page/session/path stayed unchanged. Executor and independent Tester passed Ninja Debug target build, exact CTest 1/1, direct QtTest 9/9, and selected case 3/3. No compiler warnings; Qt font/offscreen notices only. No production/CMake change or full-suite run. F440 is accepted and ready to commit. F441 Import Classes QAction apply with a create-only fixture is next after commit. Preserve latest_session_work.md and unrelated %SystemDrive%/ outside slice commits.
+
+
+## F440 committed; F441 context discovery - 2026-10-09
+
+F440 committed as 01d1559caae48eddcda739f4ea6f30dba8667e24 (Phase2 - Cover Export Classes JSON output (F440)); branch is ahead by 25. Its six-path scoped commit passed diff checks; only the test file changed beyond documentation. Batch 22 remains active. F441 Import Classes QAction apply with a create-only fixture is selected/current and bounded read-only discovery is underway. F442-F446 remain provisional. Preserve latest_session_work.md and unrelated %SystemDrive%/ outside slice commits.
+
+
+## F441 acceptance matrix recorded - 2026-10-09
+
+Add Import Classes success to MainWindowCloseFileParityTests. Use an empty destination database and valid JSON package with one unassigned class, no teachers, and empty teacher_ref. Trigger the real MainWindow QAction; script one ClassTransfer JSON openFile request; observe the real ClassImportDialog, verify Create choice, and click Import using a timer plus five-second watchdog. Assert dialog accepted without timeout/fallback, exactly one class with expected ClassInfo, no teacher rows and teacherId -1, summary Created: 1/replaced: 0/skipped: 0, and no warning. Verify the Classes page shows the imported class selected with Details active and sidebar route classes; session/path remain stable. Exact target/CTest: ClassMngrMainWindowCloseFileParityTests. Matrix recorded before implementation; implementation pending. F442-F446 remain provisional. Preserve latest_session_work.md and unrelated %SystemDrive%/ outside slice commits.
+
+
+## F441 accepted; ready to commit - 2026-10-09
+
+The real Import Classes QAction loaded and applied a valid one-class package with no teachers into an empty destination. The test exercised the JSON picker and ClassImportDialog, selected Create, and clicked Import with a bounded timer/watchdog. It verifies one class with the full expected ClassInfo, zero teachers and teacherId -1, exact Created: 1/replaced: 0/skipped: 0 summary, no other prompt, Classes page with imported class ID selected and Details active, sidebar route classes, and stable session/path. Executor and independent Tester passed target build, exact CTest 1/1, target QtTest 10/10, selected case 3/3. No compiler warnings; Qt font/offscreen notices only. No production/CMake change or full-suite run. F441 is accepted and ready to commit. F442 Import Teachers QAction apply follows after commit. Preserve latest_session_work.md and unrelated %SystemDrive%/ outside slice commits.
+
+
+## F441 committed; F442 context discovery - 2026-10-09
+
+F441 committed as 75a559ae7bad175cba106d0377bcf59c506cd247 (Phase2 - Cover Import Classes QAction apply success (F441)); branch is ahead by 26. Its six-path scoped commit passed diff checks; only the test source changed beyond documentation. Batch 22 remains active. F442 Import Teachers QAction apply is selected/current and bounded read-only discovery is underway. F443-F446 remain provisional. Preserve latest_session_work.md and unrelated %SystemDrive%/ outside slice commits.
+
+
+## F442 acceptance matrix recorded - 2026-10-09
+
+Add Import Teachers success through the real MainWindow QAction and TeacherImportDialog using an empty temporary database plus checked-in sectioned_review.xlsx. Browse through FakeFileDialogService and verify one ImportWorkbook openFile request with the Excel Workbooks (*.xlsx) filter. Wait for asynchronous Valid File with a bounded 15-second watchdog, set M1 candidate 0 / M2 None / H1 All, then click Import. Expected create-only result: 2 Korean (Hong/Park), 1 Native English (Alex), and 1 GS Team (Taylor), with zero updated/unchanged, exact successful category summary, no warning/confirmation, refreshed Korean sidebar, and stable workspace page/session/path. Fresh DB means no previous import-date branch. Exact target/CTest: ClassMngrMainWindowManageCampusesParityTests. Matrix recorded before implementation; F443-F446 remain provisional. Preserve latest_session_work.md and unrelated %SystemDrive%/ outside slice commits.
+
+
+## F442 accepted; commit then pause - 2026-10-09
+
+F442 uses the real Import Teachers QAction and Browse dialog with the checked-in sectioned_review.xlsx fixture and a fresh database. M1 candidate 0 / M2 None / H1 All created 2 Korean teachers (Hong/Park), 1 Native English (Alex), and 1 GS Team member (Taylor), with no updates/unchanged. The test verifies table counts, source date, refreshed Korean sidebar, exact success summary, no warning/date prompt, and stable MyWorkspace/session/path. Executor and independent Tester passed target build, exact CTest 1/1, target QtTest 7/7, and selected case 3/3. No compiler warnings; Qt font/offscreen notices only. No full suite or production/CMake change. F442 is accepted and ready to commit. After the commit, pause as requested. F443 Delete Class QAction is next on resume; no discovery or implementation has begun. Preserve this handoff and unrelated %SystemDrive%/ outside slice commits.
+
+
+## Resumed after F442 pause; F443 discovery - 2026-10-09
+
+F442 committed as 8cde28263d3c89cc5f3f610d031a1a536ad183d4 (Phase2 - Cover Import Teachers QAction apply success (F442)); branch is ahead by 27. The six-path scoped commit passed diff checks; only the test file changed beyond documentation. The user has resumed after the pause requested following F442. Batch 22 remains active. F443 Delete Class QAction is selected/current and bounded read-only discovery is underway; F444-F446 remain provisional. Preserve latest_session_work.md and unrelated %SystemDrive%/ outside slice commits.
+
+
+## F443 acceptance matrix recorded - 2026-10-09
+
+Add real MainWindow Delete Class QAction success coverage to MainWindowScheduleTestingClassesHandoffParityTests. Preseed two classes without teacher assignments; open the target in a clean Classes Details page and give it ClassInfo plus one schedule row. Use the actual sidebarRecordSelectionDialog to select the target and accept the real destructive confirmation; retain the five-second modal watchdog. Assert target/class-info/schedule removal, sibling record/info unchanged and selected in Details, PageType::Classes and sidebar key classes, stable session/path, and no warning/unsaved prompt. Direct-controller success/cancel tests already exist; no teacher or unrelated cascade behavior. Exact target/CTest: ClassMngrMainWindowScheduleTestingClassesHandoffParityTests. Matrix recorded before implementation; implementation pending. F444-F446 remain provisional. Preserve latest_session_work.md and unrelated %SystemDrive%/ outside slice commits.
+
+
+## F443 accepted; ready to commit - 2026-10-09
+
+The MainWindow Delete Class QAction selected and deleted the target through the real chooser and confirmation. Target class/ClassInfo/schedule rows are gone; sibling data is unchanged and the sibling is active in Classes Details. The Classes page/sidebar route and session/path remain stable; no warning or unsaved prompt appeared. Executor and independent Tester passed target build, exact CTest 1/1, target QtTest 12 passes (10 cases plus setup/cleanup), and selected case 3/3. No compiler warnings; Qt font/offscreen notices only. No full suite or production/CMake change. F443 is accepted and ready to commit. F444 successful Open File QAction replacement is next. Preserve latest_session_work.md and unrelated %SystemDrive%/ outside slice commits.
