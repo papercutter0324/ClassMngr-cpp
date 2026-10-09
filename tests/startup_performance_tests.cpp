@@ -4142,9 +4142,11 @@ void StartupPerformanceTests::capturesLargeClassesBoundaryWhenConfigured()
             .toInt(),
         1
         );
+    // One initial build, two explicit refreshes, and two re-entry
+    // rematerializations.
     QCOMPARE(
         classesMetrics.value(QStringLiteral("classesRebuildCount")).toInt(),
-        3
+        5
         );
     QCOMPARE(
         classesMetrics.value(QStringLiteral("classesSelectedClassId")).toInt(),

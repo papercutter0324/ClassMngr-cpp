@@ -6,7 +6,7 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-10
-- Current milestone: Phase 2 remains in progress. F515 is accepted: Classes releases hidden navigation widgets, retains its value snapshot and nested editors, rematerializes on fresh return without rereads, and invalidates after successful off-page teacher, schedule, and import writes. F516 in Batch 92 runs the paired packaged Release Classes/Sub Prep lifecycle routes to record navigation behavior and current memory evidence. Gates 1 and 2 remain Partial; Phase 0, the 250 MiB memory, and visual gates remain open. See the Phase 2 progress log for evidence and acceptance scope.
+- Current milestone: Phase 2 remains in progress. F515 is accepted, and F516 paired Windows x64 Release routes pass with Classes widgets released to zero and rematerialized without added data reads. One-second settled working sets remain over 250 MiB. F517 in Batch 93 adds five-second settled samples to both lifecycle routes; Gates 1 and 2 remain Partial, with the full Phase 0 and visual gates open. See the Phase 2 progress log for evidence and acceptance scope.
 - Phase 1 is complete. Its 2026-09-19 closure update records passing hosted
   baseline jobs for Windows x64 and macOS universal, the Phase 1 Build Quality
   and Dialog policy workflows, and packaged Release workflows. Linux x64 and
