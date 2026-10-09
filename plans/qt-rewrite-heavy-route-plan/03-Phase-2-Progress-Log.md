@@ -17101,3 +17101,35 @@ VS18/Qt6.12/Ninja focused build passed; focused CTest passed 1/1. Independent di
 3/0 and independent CTest rerun passed 1/1. Qt reported the known missing lib/fonts path while bundled fonts loaded.
 No full suite was run. F463 is independently verified, accepted, and ready to commit; Batch 39 remains active until commit.
 F464 discovery has not started and begins only after F463 commits.
+### F463 committed - 2026-10-09
+
+F463, “Phase2 - Cover Automatic Update Preference QAction parity (F463),” was committed as
+e0771d5a3b87f75f6385bff23dd869e24e237242 on Qt-Rewrite, 48 commits ahead of origin. The commit contains exactly
+seven scoped paths. Post-commit status was clean except for excluded pre-existing latest_session_work.md and
+%SystemDrive%/. Batch 39 is complete. Batch 40 is active with F464 AI Comment Voice QAction parity selected; its
+acceptance plan is recorded before implementation. F463 acceptance and focused verification remain recorded above.
+
+### F464 acceptance plan recorded before implementation - 2026-10-09
+
+Two independent reviews compared Sidebar Marquee and AI Comment Voice. Select AI Comment Voice because generated-prompt
+content is a stable observable and the case avoids marquee hover/timer rendering.
+
+Use a dedicated offscreen MainWindow test with temporary settings and recent-database loading disabled. Trigger the
+actual Third Person voice QAction; assert the selected state and SettingsManagerAiCommentVoicePreferencesPort::read().
+Construct SpeakingEvalAiBatchDialog with one synthetic eligible grade-4 report, click
+speakingEvalAiBatchCreatePrompt, then assert speakingEvalAiBatchPrompt includes parent/guardian and they/their wording.
+Do not copy or open the prompt. RAII restores the original voice preference while MainWindow remains alive.
+
+No database, network, timer, or user file. F464 is selected for implementation; implementation and verification have
+not started. Batch 40 remains active.
+### F464 acceptance update - 2026-10-09
+
+With temporary settings and recent-database loading disabled, the test triggers the actual Third Person voice QAction
+and verifies OptionState and SettingsManagerAiCommentVoicePreferencesPort state. It selects a synthetic eligible grade-4
+report, confirms it is enabled and Ready, and generates the prompt in memory. The prompt includes parent/guardian and
+they/their wording. It is not copied or opened. RAII restores and syncs the original voice while MainWindow is alive.
+
+VS18/Qt6.12/Ninja build passed; focused CTest passed 1/1. Independent direct QtTest setup/test/cleanup passed 3/0
+and independent CTest rerun passed 1/1. Optional Vulkan-header and missing-font warnings were reported. No full suite
+was run. F464 is independently verified, accepted, and ready to commit; Batch 40 remains active until commit.
+F465 discovery has not started and begins only after F464 commits.
