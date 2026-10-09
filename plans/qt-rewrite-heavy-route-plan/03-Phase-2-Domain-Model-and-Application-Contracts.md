@@ -65,9 +65,13 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
   includes exactly six approved paths and has a clean commit diff check. Batch 28 is active with
   F452, “Phase2 - Cover Paste QAction focused-editor dispatch (F452),” is committed as
   249dd38b8b3ee2223292c99ec740f2470e20e5e9 (branch ahead 37); Batch 28 is complete. Its commit
-  includes exactly six approved paths and has a clean commit diff check. Batch 29 is active with
-  F453, “Cover Cut QAction focused-editor dispatch (F453),” is accepted in this changeset and
-  ready to commit; its acceptance and focused verification are recorded in the progress log.
+  includes exactly six approved paths and has a clean commit diff check. F453, “Phase2 - Cover Cut QAction focused-editor dispatch (F453),” is committed as
+  4e9b3d6d79aff3c43b943aec8e165a6ab16ca8a9 (branch ahead 38); Batch 29 is complete. Its commit
+  includes exactly six approved paths and has a clean commit diff check. Batch 30 is active with
+  F454, “Cover Copy QAction focused-editor dispatch (F454),” is accepted in this changeset and
+  ready to commit; acceptance and focused verification are recorded in the
+  progress log. F453
+  acceptance and focused verification remain in the progress log.
   F452 acceptance remains in the progress log. F451 acceptance remains recorded there.
   F451 acceptance remains in the progress log. F450 acceptance remains recorded there. F449/F448
   acceptance and verification remain in the progress log. F435 covers
@@ -98,10 +102,11 @@ log](03-Phase-2-Progress-Log.md).
   failure warning/no-navigation behavior; revisit after that behavior is
   clarified.
 
-#### Active batch: Batch 29
+#### Active batch: Batch 30
 
-F453, “Cover Cut QAction focused-editor dispatch (F453),” is accepted in this changeset and
-ready to commit. Batch 29 remains active; acceptance and focused verification are in the progress log.
+F454, “Cover Copy QAction focused-editor dispatch (F454),” is accepted in this changeset and
+  ready to commit; acceptance and focused verification are recorded in the
+  progress log.
 
 
 Batch 21 began with ten candidates after F428 and is complete; F429-F438 are
@@ -128,9 +133,13 @@ F451 is committed as 3137d522796365e81d4c3f99e341aacaf83cc392 on Qt-Rewrite (bra
 Batch 27 is complete. Its commit includes exactly six approved paths and has a clean diff check.
 F452 is committed as 249dd38b8b3ee2223292c99ec740f2470e20e5e9 on Qt-Rewrite (branch ahead 37);
 Batch 28 is complete. Its commit includes exactly six approved paths and has a clean diff check.
-Batch 29 is active with F453, “Cover Cut QAction focused-editor dispatch (F453),”
-accepted in this changeset and ready to commit. Acceptance and focused verification remain in the
-progress log; F452/F451 evidence remains there.
+F453, “Phase2 - Cover Cut QAction focused-editor dispatch (F453),” is committed as
+4e9b3d6d79aff3c43b943aec8e165a6ab16ca8a9 on Qt-Rewrite (branch ahead 38); Batch 29 is complete.
+Its commit includes exactly six approved paths and has a clean diff check. Batch 30 is active with
+F454, “Cover Copy QAction focused-editor dispatch (F454),” is accepted in this changeset and
+  ready to commit; acceptance and focused verification are recorded in the
+  progress log. F453/F452/F451
+acceptance evidence remains in the progress log.
 F435 covers opening from the no-database banner.
 F444 covers replacing a distinct open profile and excludes same-path opening,
 dirty replacement choices, and

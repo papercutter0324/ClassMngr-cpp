@@ -16759,3 +16759,43 @@ ClassMngrMainWindowEditActionParityTests passed 1/1. Independent logs confirmed 
 The diff check was clean. Initial direct launch required the VS 18 / Qt 6.12 offscreen PATH; the
 known font-directory warning appeared while bundled fonts loaded. No CMake or production changes.
 F453 is accepted in this changeset and ready to commit; Batch 29 remains active.
+
+### F453 committed - 2026-10-09
+
+F453, “Phase2 - Cover Cut QAction focused-editor dispatch (F453),” was committed as
+4e9b3d6d79aff3c43b943aec8e165a6ab16ca8a9 on Qt-Rewrite (branch ahead 38). The commit includes
+exactly six approved paths and its commit diff check was clean. Batch 29 is complete. Batch 30 is
+active with F454 bounded QAction coverage discovery underway; no candidate has been selected yet.
+F453 acceptance and focused verification remain recorded above.
+
+### F454 acceptance matrix recorded before implementation - 2026-10-09
+
+Two independent reviews found no direct MainWindow Copy QAction test. Add one dedicated case to the
+existing tests/mainwindow_edit_action_parity_tests.cpp / MainWindowEditActionParityTests target;
+the registered build/CTest target is ClassMngrMainWindowEditActionParityTests.
+
+Reuse the file-backed personal-name editor setup and clipboard MIME restorer. Focus the QLineEdit,
+seed sentinel clipboard text, select all with Ctrl+A, and verify the baseline name is selected. Assert
+the actual Copy QAction is enabled, trigger it, and verify the clipboard equals the selected text while
+the editor text, focus, open workspace/path, and Details route remain unchanged, with no modal.
+Restore clipboard MIME data on every exit.
+
+Exclude empty selection, shortcut dispatch, other editors, production/CMake changes, and persistence
+assertions. This matrix is recorded before implementation; F454 is selected/current in Batch 30 and
+implementation is pending.
+
+### F454 acceptance update - 2026-10-09
+
+The case copyActionCopiesSelectedPersonalNameFromFocusedEditor() passed. The test selected the
+baseline personal name, asserted and triggered the enabled real Copy QAction, and verified the
+clipboard equals the selected text while editor contents, focus, open workspace/path, and Details
+route remained unchanged; no modal appeared.
+
+The clipboard MIME restorer explicitly compared the original and restored MIME format names and
+payload bytes. Its destructor fallback restored prior clipboard data on early exits.
+
+Build target MainWindowEditActionParityTests passed. The focused case passed QtTest 3/0; the full
+target passed 6/0; CTest ClassMngrMainWindowEditActionParityTests passed 1/1. The independent
+rerun passed and the diff check was clean. A known font-directory warning appeared while bundled
+fonts loaded. No CMake or production changes. F454 is accepted in this changeset and ready to
+commit; Batch 30 remains active.
