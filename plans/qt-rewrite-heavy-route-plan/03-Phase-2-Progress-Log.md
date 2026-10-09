@@ -16837,3 +16837,26 @@ independent rerun passed. The initial shell launch lacked Qt runtime settings; t
 6.12 / offscreen launch passed. Output noted missing Vulkan/object-path configuration and a missing
 Qt font directory; bundled fonts loaded. No production changes. F455 is accepted in this changeset
 and ready to commit; Batch 31 remains active.
+
+### F455 committed - 2026-10-09
+
+F455, “Phase2 - Cover About QAction modal handoff (F455),” was committed as
+76c67663cda5604353b4ba25e54c97160f6daf90 on Qt-Rewrite (branch ahead 40). The commit includes
+exactly seven approved paths and its commit diff check was clean. Batch 31 is complete. Batch 32 is
+active with F456 bounded QAction coverage discovery underway; no candidate has been selected yet.
+F455 acceptance and focused verification remain recorded above.
+
+### F456 acceptance update - 2026-10-09
+
+The Check for Updates QAction case used an empty UpdateConfiguration and triggered
+window.actions().checkForUpdates. It observed exactly one deterministic configuration failure and a
+visible manual UpdateDialog parented to MainWindow, showing the exact error with Try Again enabled.
+MainWindow remained visible. No network access occurred, so a successful online update check was not exercised.
+
+TMP, TEMP, and TMPDIR pointed to a private build-directory root; the test asserted QStandardPaths::TempLocation
+resolved there and created the root before QTemporaryDir. Settings used a separate QTemporaryDir.
+
+The target built with VS18/Qt6.12/Ninja. CTest passed 1/1; the direct full target and selected slot
+each passed 3/0; the independent CTest rerun passed 1/1. Known Qt font and offscreen warnings
+only. F456 is accepted in this changeset and ready to commit; Batch 32 remains active. F457 remains
+unselected.
