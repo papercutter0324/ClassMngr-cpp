@@ -1,6 +1,7 @@
 #include "app/mainwindow.h"
 #include "core/language_service.h"
 #include "core/settingsmanager.h"
+#include "features/speaking_eval/ui/speaking_eval_ai_batch_dialog.h"
 #include "next/platform/settings_manager_ai_comment_custom_website_port.h"
 #include "next/platform/settings_manager_ai_comment_provider_preferences_port.h"
 
@@ -9,6 +10,7 @@
 #include <QDialog>
 #include <QInputDialog>
 #include <QPointer>
+#include <QPushButton>
 #include <QTemporaryDir>
 #include <QTimer>
 #include <QtTest>
@@ -221,6 +223,30 @@ customWebsiteActionCapturesAndPersistsEnteredUrl()
             static_cast<qsizetype>(storedUrl.size())
             ),
         enteredUrl
+        );
+
+    SpeakingEvalReportData report;
+    report.englishName = QStringLiteral("Synthetic Student");
+    report.grade = 4;
+
+    SpeakingEvalAiBatchDialog dialog(
+        {
+            {
+                report.englishName,
+                report,
+                0
+            }
+        }
+        );
+
+    QPushButton* const copyOpenButton = dialog.findChild<QPushButton*>(
+        QStringLiteral("speakingEvalAiBatchCopyOpen")
+        );
+    QVERIFY(copyOpenButton);
+    QVERIFY(
+        copyOpenButton->text().contains(
+            QStringLiteral("Custom AI Website")
+            )
         );
 }
 

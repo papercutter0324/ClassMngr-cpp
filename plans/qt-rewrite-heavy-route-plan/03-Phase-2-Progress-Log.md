@@ -17428,3 +17428,30 @@ VS18 focused build passed. Executor CTest passed 1/1; its direct offscreen invoc
 claimed. Independent CTest passed 1/1; its direct offscreen invocation exited 0 without output, also with no count. Independent
 git diff --check passed. No full suite or network behavior. F474 is independently verified, accepted, and ready to commit;
 Batch 50 remains active until commit. F475 discovery begins only after F474 commits.
+
+### F474 committed - 2026-10-09
+
+F474 committed as f102e7ad. Batch 50 is complete. Batch 51 is active with F475 Custom Website consumer-label parity
+selected; its acceptance plan is recorded before implementation.
+
+### F475 acceptance plan recorded before implementation - 2026-10-09
+
+Extend the existing Custom Website provider modal/action test to construct a batch dialog with synthetic report data after
+saving the custom URL. Assert speakingEvalAiBatchCopyOpen contains “Custom AI Website,” while retaining provider and URL
+persistence assertions. Reuse the existing ChatGPT/URL restorer and sync.
+
+A scan also suggested ChatGPT’s baseline label, but that baseline/restorer is already covered. Select Custom Website because
+its distinctive modal URL handoff lacks a consumer-label assertion. Use temporary English settings and disable recent-database
+loading. Do not click dialog buttons or access a browser/network. No production or CMake change. F475 is selected/current;
+implementation and verification are pending. Batch 51 remains active.
+
+### F475 acceptance update - 2026-10-09
+
+Review confirmed the Custom Website modal URL/provider persistence, synthetic-report fixture, speakingEvalAiBatchCopyOpen label
+“Custom AI Website,” and ChatGPT/URL restorer. The test uses temporary English settings with recent-database loading
+disabled; no production or CMake change. No dialog button was clicked and no browser/network behavior was exercised.
+
+The executor VS18 build passed and CTest passed 1/1; its direct invocation exited 0 without a summary. Independent CTest
+passed 1/1 and independent git diff --check passed. The independent executable was newer than source; its direct invocation exited
+0 without a summary, so no count is claimed. No full suite or network behavior. F475 is independently verified, accepted, and
+ready to commit; Batch 51 remains active until commit. F476 discovery begins only after F475 commits.

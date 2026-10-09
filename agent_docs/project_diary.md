@@ -3512,3 +3512,18 @@ Extended the existing provider action test with Microsoft Copilot after Gemini a
 The VS18 focused build passed and focused CTest passed 1/1. Direct offscreen QtTest exited 0 without output, so no direct count is claimed. `git diff --check` passed. Independent review is pending; Batch 50 remains active.
 
 Independent review accepted F474. The Tester confirmed all provider transitions, exclusivity, typed persistence, Copilot label, and ChatGPT restoration, and independently passed focused CTest 1/1 and `git diff --check`. The direct offscreen invocation exited 0 without output; no direct count is claimed. No full suite or network behavior. F474 is independently verified and ready to commit; Batch 50 remains active pending commit.
+
+
+## 2026-10-09 - F474 committed; F475 Custom Website label selected
+
+F474, `Phase2 - Cover Microsoft Copilot AI Comment Provider QAction parity (F474)`, committed as `f102e7ad` on `Qt-Rewrite`. The commit contains the six reviewed test and Phase 2 tracking paths. Batch 50 is complete; the only post-commit worktree entries are the excluded pre-existing `agent_docs/latest_session_work.md` and `%SystemDrive%/`.
+
+Two independent F475 scans found missing batch-dialog label coverage: one nominated ChatGPT at the existing default baseline, and the other nominated Custom Website after its modal action flow. Select Custom Website because the existing isolated test verifies the unique URL-entry action, saved provider, and URL; asserting its local consumer label closes the end-to-end handoff without host or network dependence. Extend `mainwindow_custom_website_ai_comment_provider_action_parity_tests.cpp` to construct a batch dialog with synthetic report data after the action saves the custom URL, then assert `speakingEvalAiBatchCopyOpen` contains “Custom AI Website.” Retain provider/URL persistence assertions and the ChatGPT/URL restorer. Do not click the button or access a browser/network. Use temporary settings, English, and disabled recent-database loading; no production or CMake change. F475 is selected; Batch 51 is active.
+
+## 2026-10-09 - F475 implementation and focused verification
+
+Extended the existing Custom Website modal/action parity test to construct a batch dialog after saving the custom provider and URL, then assert its “Custom AI Website” button label. Existing preference/URL persistence and ChatGPT/URL restoration checks remain. The test does not click the button or access browser/network behavior. No production or CMake change.
+
+The VS18 focused target build passed and focused CTest passed 1/1. Direct offscreen QtTest exited 0 without a summary; no count is claimed. `git diff --check` passed. Git emitted its LF-to-CRLF normalization notice for the test file. Independent review is pending; Batch 51 remains active.
+
+Independent review accepted F475. The Tester confirmed the custom URL modal, persistence, batch dialog label, fixture, and restorer, and independently passed focused CTest 1/1 and `git diff --check`. Its direct invocation exited 0 without a summary, so no direct count is claimed; the existing executable was newer than source. No full suite or network behavior. F475 is independently verified and ready to commit; Batch 51 remains active pending commit.
