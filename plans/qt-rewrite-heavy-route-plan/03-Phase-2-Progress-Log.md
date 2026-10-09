@@ -17565,3 +17565,25 @@ Code review confirmed speakingEvalAiPromptPreviewCopyOpen uses QDialogButtonBox:
 The focused slot uses scoped provider and HTTPS-handler cleanup. The ActionRole Copy/Open handoff leaves the preview open, then the test rejects it explicitly. Clipboard equality/anonymization and exactly one https://chatgpt.com/ interception are asserted. The prior Copy-only test remains unchanged.
 
 Executor Ninja build in the VS Developer environment passed; CTest passed 1/1, the direct slot passed 3/0/0, and diff check passed. Independent review accepted the result; independent CTest passed 1/1, the executable inventory contains the new slot, and direct offscreen execution exited 0 without output. Independent diff check passed with an LF-to-CRLF notice. No full suite, browser/network, production, or CMake scope. F481 is independently verified, accepted, and ready to commit; Batch 57 remains active until commit.
+
+### F481 committed - 2026-10-09
+
+F481 committed as ae1da379 with six scoped paths. Batch 57 is complete. Batch 58 candidate discovery is underway for F482; selection is pending.
+
+### F482 acceptance plan recorded before implementation - 2026-10-09
+
+Add one slot in tests/speaking_eval_batch_report_service_tests.cpp using synthetic eligible report data and temporary settings. Save and sync a deterministic valid HTTPS Custom Website URL with path/query, then select and sync CustomWebsite. RAII-restore the prior provider and URL. Reuse the scoped HTTPS handler. Open preview, capture its prompt, and click actual Copy/Open. Assert the ActionRole leaves preview open, clipboard exactly matches the anonymous prompt (STD_NAME present, real student names absent), and exactly one intercepted QUrl equals the saved URL. Explicitly reject and verify the dialog closes.
+
+Plan and code scans converged; preferredAiCommentProviderUrl reads the saved URL and the helper returns valid HTTPS. No invalid-URL, production/CMake/browser/network behavior. F482 is selected/current; implementation and verification are pending. Batch 58 remains active.
+
+### F482 implementation update - 2026-10-09
+
+The test uses RAII restoration for the original provider and URL, a deterministic valid HTTPS URL with path/query, and the scoped interceptor. Copy/Open asserts the exact intercepted URL, anonymous clipboard contents, and ActionRole behavior: the preview remains open until explicit rejection.
+
+The focused Ninja build succeeded in the VS Developer environment; CTest passed 1/1, the direct slot passed 3/0/0, and diff check passed. Qt font/offscreen warnings only. Independent verification is pending. No invalid URL, browser/network, production, or CMake behavior. Batch 58 remains active.
+
+### F482 independent verification update - 2026-10-09
+
+The independent Tester confirmed provider/URL restorers precede mutations. The captured URL is exactly https://custom.example.test/f482/preview?source=phase2; clipboard matches the anonymous prompt. Copy/Open leaves the ActionRole preview open, then explicit rejection closes it; timeout cleanup is covered.
+
+Independent CTest passed 1/1; direct offscreen execution exited 0 without a summary; diff check passed. The Ninja executable contains the slot and is newer than the source/object. No full suite, browser, or network. F482 is independently verified, accepted, and ready to commit; Batch 58 remains active until commit.

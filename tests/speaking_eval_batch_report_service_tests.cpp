@@ -10,6 +10,7 @@
 #include "core/settingsmanager.h"
 #include "core/zip_archive_writer.h"
 #include "fakes/fake_user_prompt_service.h"
+#include "next/platform/settings_manager_ai_comment_custom_website_port.h"
 #include "next/platform/settings_manager_ai_comment_provider_preferences_port.h"
 #include "ui/shared/state/option_state_keys.h"
 #include "windows_output_reference_capture.h"
@@ -50,6 +51,7 @@
 #include <QUrl>
 
 #include <functional>
+#include <string>
 
 class SpeakingEvalPromptPreviewCapturedUrlHandler final : public QObject
 {
@@ -90,6 +92,36 @@ public:
     SpeakingEvalPromptPreviewHttpsUrlHandlerRegistration& operator=(
         const SpeakingEvalPromptPreviewHttpsUrlHandlerRegistration&
         ) = delete;
+};
+
+class SpeakingEvalCustomWebsiteUrlRestorer final
+{
+public:
+    explicit SpeakingEvalCustomWebsiteUrlRestorer(
+        const std::string& originalUrl
+        )
+        : m_originalUrl(originalUrl)
+    {
+    }
+
+    ~SpeakingEvalCustomWebsiteUrlRestorer()
+    {
+        ClassMngr::Next::Platform::
+            SettingsManagerAiCommentCustomWebsitePort().write(
+                m_originalUrl
+                );
+        SettingsManager::instance().sync();
+    }
+
+    SpeakingEvalCustomWebsiteUrlRestorer(
+        const SpeakingEvalCustomWebsiteUrlRestorer&
+        ) = delete;
+    SpeakingEvalCustomWebsiteUrlRestorer& operator=(
+        const SpeakingEvalCustomWebsiteUrlRestorer&
+        ) = delete;
+
+private:
+    std::string m_originalUrl;
 };
 
 namespace
@@ -526,6 +558,7 @@ private slots:
     void aiPromptPreviewCopiesAnAnonymousPrompt();
     void aiPromptPreviewCopyOpenLabelTracksSelectedProvider();
     void aiPromptPreviewCopyOpenCopiesPromptAndOpensProvider();
+    void aiPromptPreviewCopyOpenUsesCustomWebsiteUrl();
     void pastedAiCommentsReplaceStudentPlaceholder();
     void notesDialogShowsNotesBesideEachOtherAndCommentBelow();
     void notesDialogPreservesUntouchedValuesAndFocusesClickedSection();
@@ -2951,6 +2984,189 @@ void SpeakingEvalBatchReportServiceTests::
     QCOMPARE(
         capturedUrlHandler.urls.constFirst(),
         QUrl(QStringLiteral("https://chatgpt.com/"))
+        );
+}
+
+void SpeakingEvalBatchReportServiceTests::
+    aiPromptPreviewCopyOpenUsesCustomWebsiteUrl()
+{
+    using PersistedProvider =
+        ClassMngr::Next::Application::AiCommentProvider;
+    using ProviderPreferences =
+        ClassMngr::Next::Platform::
+            SettingsManagerAiCommentProviderPreferencesPort;
+    using CustomWebsitePreferences =
+        ClassMngr::Next::Platform::
+            SettingsManagerAiCommentCustomWebsitePort;
+
+    const ProviderPreferences providerPreferences;
+    const CustomWebsitePreferences customWebsitePreferences;
+    AiCommentProviderPreferenceRestorer restoreProvider(
+        providerPreferences.read()
+        );
+    const std::string originalCustomWebsiteUrl =
+        customWebsitePreferences.read();
+    SpeakingEvalCustomWebsiteUrlRestorer restoreCustomWebsiteUrl(
+        originalCustomWebsiteUrl
+        );
+
+    const QString customWebsiteUrl =
+        QStringLiteral(
+            "https://custom.example.test/f482/preview?source=phase2"
+            );
+    providerPreferences.write(PersistedProvider::CustomWebsite);
+    customWebsitePreferences.write(customWebsiteUrl.toStdString());
+    SettingsManager::instance().sync();
+
+    SpeakingEvalPromptPreviewCapturedUrlHandler capturedUrlHandler;
+    SpeakingEvalPromptPreviewHttpsUrlHandlerRegistration urlHandlerRegistration(
+        &capturedUrlHandler
+        );
+
+    SpeakingEvalReportData reportData;
+    reportData.englishName = QStringLiteral("Alice");
+    reportData.koreanName = QStringLiteral("김민지");
+    reportData.grade = 4;
+    reportData.notes =
+        QStringLiteral(
+            "[Did Well]\n• memorization\n"
+            "[Needs Improvement]\n• posture"
+            );
+    SpeakingEvalReportDialog dialog(
+        { { QStringLiteral("Alice (김민지)"), reportData } },
+        0,
+        nullptr,
+        true
+        );
+
+    auto* previewButton =
+        dialog.findChild<QPushButton*>(
+            QStringLiteral("speakingEvalPreviewAiPromptButton")
+            );
+    QVERIFY(previewButton);
+
+    QApplication::clipboard()->clear();
+    QPointer<QDialog> observedPreview;
+    QString displayedPrompt;
+    bool previewWasObserved = false;
+    bool copyOpenButtonWasFound = false;
+    bool previewRemainedActiveAfterCopyOpen = false;
+    bool previewClosedAfterExplicitReject = false;
+
+    QTimer modalSafetyTimer(&dialog);
+    modalSafetyTimer.setSingleShot(true);
+    connect(
+        &modalSafetyTimer,
+        &QTimer::timeout,
+        &dialog,
+        [&dialog]()
+        {
+            if (
+                auto* activeDialog =
+                    qobject_cast<QDialog*>(
+                        QApplication::activeModalWidget()
+                        )
+                )
+            {
+                activeDialog->reject();
+            }
+
+            if (
+                auto* preview =
+                    dialog.findChild<QDialog*>(
+                        QStringLiteral(
+                            "speakingEvalAiPromptPreviewDialog"
+                            )
+                        )
+                )
+            {
+                preview->reject();
+            }
+        }
+        );
+    modalSafetyTimer.start(2000);
+
+    QTimer::singleShot(
+        0,
+        &dialog,
+        [&]()
+        {
+            auto* preview =
+                qobject_cast<QDialog*>(
+                    QApplication::activeModalWidget()
+                    );
+            if (
+                !preview
+                || preview->objectName()
+                    != QStringLiteral(
+                        "speakingEvalAiPromptPreviewDialog"
+                        )
+                )
+            {
+                return;
+            }
+
+            previewWasObserved = true;
+            observedPreview = preview;
+            auto* promptEdit =
+                preview->findChild<QPlainTextEdit*>(
+                    QStringLiteral(
+                        "speakingEvalAiPromptPreviewText"
+                        )
+                    );
+            auto* copyOpenButton =
+                preview->findChild<QPushButton*>(
+                    QStringLiteral(
+                        "speakingEvalAiPromptPreviewCopyOpen"
+                        )
+                    );
+            if (!promptEdit || !copyOpenButton)
+            {
+                preview->reject();
+                return;
+            }
+
+            copyOpenButtonWasFound = true;
+            displayedPrompt = promptEdit->toPlainText();
+            QTest::mouseClick(
+                copyOpenButton,
+                Qt::LeftButton
+                );
+
+            previewRemainedActiveAfterCopyOpen =
+                observedPreview.data() == preview
+                && preview->isVisible()
+                && QApplication::activeModalWidget() == preview;
+            QVERIFY2(
+                previewRemainedActiveAfterCopyOpen,
+                "Copy/Open should leave the preview modal active."
+                );
+
+            preview->reject();
+            previewClosedAfterExplicitReject = !preview->isVisible();
+        }
+        );
+
+    QTest::mouseClick(
+        previewButton,
+        Qt::LeftButton
+        );
+    modalSafetyTimer.stop();
+
+    QVERIFY(previewWasObserved);
+    QVERIFY(copyOpenButtonWasFound);
+    QVERIFY(previewRemainedActiveAfterCopyOpen);
+    QVERIFY(previewClosedAfterExplicitReject);
+    QVERIFY(observedPreview.isNull());
+    QVERIFY(QApplication::activeModalWidget() == nullptr);
+    QCOMPARE(QApplication::clipboard()->text(), displayedPrompt);
+    QVERIFY(displayedPrompt.contains(QStringLiteral("STD_NAME")));
+    QVERIFY(!displayedPrompt.contains(QStringLiteral("Alice")));
+    QVERIFY(!displayedPrompt.contains(QStringLiteral("김민지")));
+    QCOMPARE(capturedUrlHandler.urls.size(), 1);
+    QCOMPARE(
+        capturedUrlHandler.urls.constFirst(),
+        QUrl(customWebsiteUrl)
         );
 }
 

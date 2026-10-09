@@ -40,7 +40,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-09
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: Batch 57 is active with F481 AI prompt preview Copy/Open handoff independently verified, accepted, and ready to commit; Gates 1 and 2 remain Partial.
+- Current note: Batch 58 is active with F482 Custom Website preview Copy/Open destination independently verified, accepted, and ready to commit; Gates 1 and 2 remain Partial.
 
 ### Slice discovery batches
 
@@ -65,10 +65,10 @@ Treat this plan as an operational summary, not a history:
   failure warning/no-navigation behavior; revisit after that behavior is
   clarified.
 
-#### Active batch: Batch 57
+#### Active batch: Batch 58
 
-- F481 — AI prompt preview Copy/Open handoff: independently verified, accepted, and ready to commit.
-- Constraints: add one focused slot to tests/speaking_eval_batch_report_service_tests.cpp using its synthetic eligible-report fixture and temporary settings. Seed ChatGPT with a scoped provider restorer, open the preview, capture its anonymous prompt, and click the actual speakingEvalAiPromptPreviewCopyOpen button. Assert the preview modal remains open after the ActionRole handoff; then explicitly reject it and verify it closes. Clipboard must exactly match the preview (STD_NAME present, real student names absent), and one intercepted QDesktopServices HTTPS URL must equal https://chatgpt.com/. Clean up the HTTPS handler with a scoped guard. Preserve F479 label coverage; no production/CMake/browser/network or real browser launch.
+- F482 — Custom Website preview Copy/Open destination handoff: independently verified, accepted, and ready to commit.
+- Constraints: add one slot in tests/speaking_eval_batch_report_service_tests.cpp using synthetic eligible report data and temporary settings. Save/sync a deterministic valid HTTPS Custom Website URL with path/query, select/sync CustomWebsite, and RAII-restore prior provider and URL. Reuse the scoped HTTPS handler. Open preview, capture prompt, click actual Copy/Open, assert ActionRole leaves preview open, clipboard exactly matches anonymous prompt (STD_NAME present, real names absent), and exactly one intercepted QUrl equals saved URL; explicitly reject and verify close. No invalid-URL, production/CMake/browser/network behavior.
 
 ## Objective
 

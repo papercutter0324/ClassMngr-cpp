@@ -3575,3 +3575,11 @@ F481 discovery selected the preview Copy/Open handoff after independent plan and
 Code review corrected the modal expectation: the ActionRole Copy/Open button leaves the preview open. F481 will assert it stays open after handoff, then explicitly dismiss it and verify closure. Clipboard and captured-URL assertions are unchanged.
 
 F481 implementation and independent review accepted. Focused Ninja build/CTest passed; direct slot passed, with independent exit 0; diff checks passed. The test captures the ChatGPT URL and clipboard prompt, preserves the ActionRole modal, and restores provider/URL handler state. No full suite or external browser/network behavior; ready to commit.
+
+F481 committed as `ae1da379` with exactly six scoped paths; Batch 57 is complete. Only the excluded pre-existing worktree entries remain. F482 discovery begins.
+
+F482 discovery selected Custom Website preview Copy/Open handoff after independent plan and code scans. The resolver reads and returns the saved valid HTTPS URL, and the existing URL handler captures it. Acceptance uses a deterministic path/query URL, exact anonymous clipboard prompt, scoped provider/URL restoration, and the existing ActionRole modal behavior. No browser/network, invalid-URL, or production/CMake changes. Batch 58 active; implementation pending.
+
+F482 implementation adds Custom Website Copy/Open destination coverage with scoped provider/URL restoration and intercepted HTTPS handoff. Focused build/CTest and direct slot passed; diff check passed. Independent review is pending.
+
+Independent review accepted F482. CTest passed 1/1, direct slot exited 0, and diff check passed. The scoped test captures the saved Custom Website URL without browser/network launch and restores provider and URL settings. Ready to commit.
