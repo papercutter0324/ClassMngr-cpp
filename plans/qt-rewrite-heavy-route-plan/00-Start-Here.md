@@ -181,13 +181,15 @@ synchronization is committed (`f4bc5282`). F416 Document Catalog rendered
   includes exactly seven approved paths and has a clean commit diff check. F451,
   “Phase2 - Cover Redo QAction focused-editor dispatch (F451),” is committed as
   3137d522796365e81d4c3f99e341aacaf83cc392 (branch ahead 36); Batch 27 is complete. Its commit
-  includes exactly six approved paths and has a clean commit diff check. Batch 28 is active with
-  F452 Paste QAction coverage is accepted in this changeset and ready to commit. Slot
-  pasteActionReplacesSelectedPersonalNameFromClipboard() passed 3/0; full target passed 4/0; CTest
-  ClassMngrMainWindowEditActionParityTests passed 1/1. Ninja build and diff check passed; independent
-  run log confirmed the selected slot. Clipboard MIME snapshot/restore uses RAII. Initial Qt PATH
-  setup was resolved; a known missing-font warning appeared while bundled fonts loaded. No CMake or
-  production changes. Batch 28 remains active until commit.
+  includes exactly six approved paths and has a clean commit diff check. F452,
+  “Phase2 - Cover Paste QAction focused-editor dispatch (F452),” is committed as
+  249dd38b8b3ee2223292c99ec740f2470e20e5e9 (branch ahead 37); Batch 28 is complete. Its commit
+  includes exactly six approved paths and has a clean commit diff check. Batch 29 is active with
+  F453, “Cover Cut QAction focused-editor dispatch (F453),” is accepted in this changeset and
+  ready to commit; its acceptance and focused verification are recorded in the progress log.
+  F452 acceptance remains in the progress log. F451 acceptance remains there. F450 acceptance
+  remains recorded there. F449’s acceptance and focused verification remain there; its independent
+  Tester rerun and environment notices are preserved.
   F451 acceptance remains in the progress log. F450 acceptance remains there. F449’s acceptance
   and focused verification remain there; its independent Tester rerun and environment notices are
   preserved.

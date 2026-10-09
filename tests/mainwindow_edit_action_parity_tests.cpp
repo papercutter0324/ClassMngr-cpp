@@ -79,6 +79,7 @@ private slots:
     void initTestCase();
     void undoAndRedoActionsRestoreAndReapplyPersonalNameInFocusedLineEdit();
     void pasteActionReplacesSelectedPersonalNameFromClipboard();
+    void cutActionCopiesSelectedPersonalNameFromFocusedEditor();
 
 private:
     QTemporaryDir m_settingsDirectory;
@@ -277,6 +278,104 @@ pasteActionReplacesSelectedPersonalNameFromClipboard()
     QCOMPARE(nameEditor->text(), clipboardText);
     QVERIFY(nameEditor->hasFocus());
     QCOMPARE(QApplication::focusWidget(), nameEditor);
+}
+
+void MainWindowEditActionParityTests::
+cutActionCopiesSelectedPersonalNameFromFocusedEditor()
+{
+    ClipboardMimeDataRestorer clipboardMimeDataRestorer;
+    QClipboard* const clipboard = QApplication::clipboard();
+    QVERIFY(clipboard);
+
+    const QString sentinelClipboardText =
+        QStringLiteral("F453 sentinel clipboard text");
+    clipboard->setText(sentinelClipboardText, QClipboard::Clipboard);
+    QCOMPARE(clipboard->text(QClipboard::Clipboard), sentinelClipboardText);
+
+    QTemporaryDir workspaceRoot;
+    QVERIFY(workspaceRoot.isValid());
+
+    const QString workspacePath = QFileInfo(
+        workspaceRoot.filePath(QStringLiteral("cut-workspace.tps"))
+        ).absoluteFilePath();
+    const QString baselineName =
+        QStringLiteral("F453 persisted personal name");
+
+    ApplicationServices seedServices;
+    QVERIFY(seedServices.openDatabase(workspacePath));
+    PersonalDetails baselineDetails;
+    baselineDetails.name = baselineName;
+    QVERIFY(
+        PersonalDetailsRepository(seedServices.settingsService())
+            .save(baselineDetails)
+        );
+    seedServices.closeDatabase();
+
+    LanguageService languageService;
+    QVERIFY(languageService.setLanguage(Language::English));
+
+    MainWindowStartupOptions startupOptions;
+    startupOptions.loadMostRecentDatabase = false;
+    startupOptions.initialDatabasePath = workspacePath;
+
+    MainWindow window(
+        [](const QString&) {},
+        false,
+        &languageService,
+        nullptr,
+        std::move(startupOptions)
+        );
+    window.show();
+    QApplication::processEvents();
+    QVERIFY(window.isVisible());
+    QVERIFY(QApplication::activeModalWidget() == nullptr);
+
+    ApplicationServices* const services = window.services();
+    QVERIFY(services);
+    QVERIFY(services->hasOpenDatabase());
+    QCOMPARE(services->currentDatabasePath(), workspacePath);
+
+    PageManager* const pages = window.pageManager();
+    QVERIFY(pages);
+    QVERIFY(pages->isCurrentPage(PageType::MyWorkspace));
+
+    MyWorkspacePage* const workspace = pages->myWorkspacePage();
+    QVERIFY(workspace);
+    workspace->openTab(WorkspaceTab::Details);
+    QApplication::processEvents();
+    QCOMPARE(workspace->currentTab(), WorkspaceTab::Details);
+    pages->setSaveMode(SaveMode::Manual);
+
+    PersonalDetailsPage* const details = workspace->personalDetailsPage();
+    QVERIFY(details);
+    QLineEdit* const nameEditor = personalNameEditor(details);
+    QVERIFY(nameEditor);
+    QCOMPARE(nameEditor->text(), baselineName);
+
+    nameEditor->setFocus(Qt::OtherFocusReason);
+    QApplication::processEvents();
+    QVERIFY(nameEditor->hasFocus());
+    QCOMPARE(QApplication::focusWidget(), nameEditor);
+
+    QTest::keyClick(nameEditor, Qt::Key_A, Qt::ControlModifier);
+    const QString selectedName = nameEditor->selectedText();
+    QCOMPARE(selectedName, baselineName);
+
+    QAction* const cutAction = window.actions().cut;
+    QVERIFY(cutAction);
+    QTRY_VERIFY(cutAction->isEnabled());
+    cutAction->trigger();
+
+    QVERIFY(nameEditor->text().isEmpty());
+    QCOMPARE(clipboard->text(QClipboard::Clipboard), selectedName);
+    QVERIFY(nameEditor->hasFocus());
+    QCOMPARE(QApplication::focusWidget(), nameEditor);
+    QVERIFY(window.isVisible());
+    QVERIFY(services->hasOpenDatabase());
+    QCOMPARE(services->currentDatabasePath(), workspacePath);
+    QVERIFY(pages->isCurrentPage(PageType::MyWorkspace));
+    QCOMPARE(workspace->currentTab(), WorkspaceTab::Details);
+    QVERIFY(QApplication::activeModalWidget() == nullptr);
 }
 
 QTEST_MAIN(MainWindowEditActionParityTests)

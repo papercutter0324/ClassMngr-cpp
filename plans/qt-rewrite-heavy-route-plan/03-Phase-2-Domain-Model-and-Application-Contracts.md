@@ -63,12 +63,12 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
   F451, “Phase2 - Cover Redo QAction focused-editor dispatch (F451),” is committed as
   3137d522796365e81d4c3f99e341aacaf83cc392 (branch ahead 36); Batch 27 is complete. Its commit
   includes exactly six approved paths and has a clean commit diff check. Batch 28 is active with
-  F452 Paste QAction coverage is accepted in this changeset and ready to commit. Slot
-  pasteActionReplacesSelectedPersonalNameFromClipboard() passed 3/0; full target passed 4/0; CTest
-  ClassMngrMainWindowEditActionParityTests passed 1/1. Ninja target build and diff check passed.
-  Independent run log confirmed the slot. RAII restores clipboard MIME data; initial Qt PATH setup
-  was resolved. A known missing-font warning appeared while bundled fonts loaded. No CMake or
-  production changes. Batch 28 remains active until commit.
+  F452, “Phase2 - Cover Paste QAction focused-editor dispatch (F452),” is committed as
+  249dd38b8b3ee2223292c99ec740f2470e20e5e9 (branch ahead 37); Batch 28 is complete. Its commit
+  includes exactly six approved paths and has a clean commit diff check. Batch 29 is active with
+  F453, “Cover Cut QAction focused-editor dispatch (F453),” is accepted in this changeset and
+  ready to commit; its acceptance and focused verification are recorded in the progress log.
+  F452 acceptance remains in the progress log. F451 acceptance remains recorded there.
   F451 acceptance remains in the progress log. F450 acceptance remains recorded there. F449/F448
   acceptance and verification remain in the progress log. F435 covers
   no-database New Profile creation and picker metadata; F444 covers Open File replacement.
@@ -98,13 +98,10 @@ log](03-Phase-2-Progress-Log.md).
   failure warning/no-navigation behavior; revisit after that behavior is
   clarified.
 
-#### Active batch: Batch 28
+#### Active batch: Batch 29
 
-1. F452 - Accepted in this changeset, ready to commit: Paste QAction focused-editor dispatch.
-   Slot pasteActionReplacesSelectedPersonalNameFromClipboard() passed 3/0; full target passed 4/0.
-   CTest ClassMngrMainWindowEditActionParityTests passed 1/1. Target build and diff check passed.
-   RAII restores clipboard MIME data. No CMake/production changes. Batch 28 remains active until
-   commit; the matrix and exclusions are recorded in the progress log.
+F453, “Cover Cut QAction focused-editor dispatch (F453),” is accepted in this changeset and
+ready to commit. Batch 29 remains active; acceptance and focused verification are in the progress log.
 
 
 Batch 21 began with ten candidates after F428 and is complete; F429-F438 are
@@ -129,11 +126,12 @@ F450 is committed as e39852c8a9cef33c80d684dd0e63e18d19a6acf7 on Qt-Rewrite (bra
 Batch 26 is complete. Its commit includes exactly seven approved paths and has a clean diff check.
 F451 is committed as 3137d522796365e81d4c3f99e341aacaf83cc392 on Qt-Rewrite (branch ahead 36);
 Batch 27 is complete. Its commit includes exactly six approved paths and has a clean diff check.
-Batch 28 is active with F452 Paste QAction coverage accepted in this changeset and ready to commit.
-Slot pasteActionReplacesSelectedPersonalNameFromClipboard() passed 3/0; full target passed 4/0;
-CTest ClassMngrMainWindowEditActionParityTests passed 1/1. Ninja build and diff check passed.
-RAII cleanup, Qt notices, and remaining details are in the progress log. F451 acceptance remains
-recorded there. F435 covers opening from the no-database banner.
+F452 is committed as 249dd38b8b3ee2223292c99ec740f2470e20e5e9 on Qt-Rewrite (branch ahead 37);
+Batch 28 is complete. Its commit includes exactly six approved paths and has a clean diff check.
+Batch 29 is active with F453, “Cover Cut QAction focused-editor dispatch (F453),”
+accepted in this changeset and ready to commit. Acceptance and focused verification remain in the
+progress log; F452/F451 evidence remains there.
+F435 covers opening from the no-database banner.
 F444 covers replacing a distinct open profile and excludes same-path opening,
 dirty replacement choices, and
 load-failure behavior. F285 remains deferred. This bounded discovery does not establish

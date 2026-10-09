@@ -16720,5 +16720,42 @@ git diff --check passed; the independent run log confirmed the selected slot. RA
 restores clipboard MIME format/payload during cleanup. Empty clipboard disabled the actual Paste
 QAction; non-empty text enabled it; Ctrl+A selection was replaced by paste while editor focus
 remained. Initial Qt PATH setup was resolved. A known missing-font warning appeared with bundled
-fonts loaded. No CMake or production changes. F452 is accepted in this changeset and ready to commit;
-Batch 28 remains active until commit.
+fonts loaded. No CMake or production changes. F452 was accepted in this changeset and ready to commit; Batch 28 remained active until its commit.
+
+### F452 committed - 2026-10-09
+
+F452, “Phase2 - Cover Paste QAction focused-editor dispatch (F452),” was committed as
+249dd38b8b3ee2223292c99ec740f2470e20e5e9 on Qt-Rewrite (branch ahead 37). The commit includes
+exactly six approved paths and its commit diff check was clean. Batch 28 is complete. Batch 29 is
+active with F453 bounded QAction coverage discovery underway; no candidate has been selected yet.
+F452 acceptance and focused verification remain recorded above.
+
+### F453 acceptance matrix recorded before implementation - 2026-10-09
+
+Two independent reviews found no direct MainWindow clipboard QAction test and recommended
+Cut. Add one dedicated case to the existing
+tests/mainwindow_edit_action_parity_tests.cpp / MainWindowEditActionParityTests target; the
+registered build/CTest target is ClassMngrMainWindowEditActionParityTests.
+
+Reuse the file-backed personal-name setup and clipboard MIME restorer. Focus the personal-name
+QLineEdit, seed sentinel clipboard text, select all with Ctrl+A, and verify the baseline is selected.
+Assert the actual Cut QAction is enabled, trigger it, then verify the editor is cleared, the clipboard
+contains the selected name, focus remains in the editor, and the workspace stays open without a
+prompt. Do not use setText for the edit.
+
+Exclude Copy, read-only gating, other editors, persistence assertions, and non-text clipboard formats.
+This matrix is recorded before implementation; F453 is selected/current in Batch 29 and
+implementation is pending.
+
+### F453 acceptance update - 2026-10-09
+
+The case cutActionCopiesSelectedPersonalNameFromFocusedEditor() passed. The clipboard MIME
+restorer preserved prior clipboard formats and payload. The sentinel clipboard text was replaced by
+the selected baseline name; the personal-name QLineEdit was empty after Cut. Focus, My Workspace
+Details, and the open workspace remained stable, with no modal. Manual Save kept the edit local.
+
+Ninja build target MainWindowEditActionParityTests passed. The focused case passed QtTest 3/0; the full target passed 5/0; CTest
+ClassMngrMainWindowEditActionParityTests passed 1/1. Independent logs confirmed the exact slot.
+The diff check was clean. Initial direct launch required the VS 18 / Qt 6.12 offscreen PATH; the
+known font-directory warning appeared while bundled fonts loaded. No CMake or production changes.
+F453 is accepted in this changeset and ready to commit; Batch 29 remains active.
