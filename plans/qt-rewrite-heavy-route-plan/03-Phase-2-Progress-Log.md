@@ -18065,3 +18065,17 @@ Independent Tester rejected the first implementation because it replaced the com
 ### F506 independent verification - 2026-10-09
 
 The Tester confirmed the F504 Carol-only body matches commit f3ced0e5 and the F505 cancellation body matches 735ebf64; both remain intact as separate slots. F506’s separate slot verifies two Ready/checked comments for Alice and Carol, source rows 0 and 2 updated, unnamed row 1 unchanged, one grouped edit command, and one undo restoring both prior comments. The focused build was up to date with source newer; registered CTest passed 1/1; direct F504 and F506 slots exited 0; -functions lists all three page-action slots; scoped diff check passed with an LF-to-CRLF advisory. F506 is independently verified, accepted, and ready to commit; Batch 82 remains active until commit.
+
+### F506 committed - 2026-10-09
+
+F506, “Phase2 - Cover multi-comment page apply undo (F506),” committed as e6891f3f with six scoped paths. Batch 82 is complete. Batch 83 candidate discovery is underway for F507; selection is pending. Post-commit worktree entries are only the excluded agent_docs/latest_session_work.md and untracked %SystemDrive%/.
+
+### F507 acceptance plan recorded before implementation - 2026-10-09
+
+Add a separate Sub Prep page integration test for selected-scope forwarding across multiple weekdays/classes, while retaining F380’s existing single-day coverage. Seed two classes meeting on distinct selected weekdays (for example Tuesday and Thursday) and a sentinel class meeting only Friday. Drive the real print dialog selecting Tuesday and Thursday; assert selectedDays and selectedClassIds in order, verify schedule mode is forwarded to the print-source read request, and inspect the generated information PDF to confirm the two selected classes appear and the Friday sentinel does not. This checks the selected-scope handoff and does not introduce a new union-algorithm rule.
+
+The Sub Prep plan identifies the page/print scope at lines 179 and 328; prior progress records relevant coverage at lines 3125, 3208, and 3306. The F380 page test around lines 2150-2392 covers one day/class and excludes a same-day unselected sentinel; app-level query coverage already spans two classes. This test-only slice asserts no existing defect. Focused verification: build ClassMngrSubPrepPageTests, run its exact registered CTest entry, direct offscreen selected slot, function-list check and scoped diff check; no full suite. F507 is selected/current in Batch 83; implementation and verification are pending.
+
+### F507 independent verification - 2026-10-09
+
+After the nonnumeric ordering refinement, schedule traversal is Tuesday class 100 then Thursday class 43; request/payload order [100,43] distinguishes traversal from numeric sorting. The real dialog uses regular mode, both selected classes appear in the PDF markers, and the Friday-only sentinel is excluded. The F380 test body is unchanged. Focused build passed; direct F380 and F507 slots each passed 3/3; -functions lists F507; scoped diff check passed. The full target run includes F507 passing, while registered target CTest remains red at 17 passed/5 failed in the same untouched grading, campus, Zoom, username-save, and database-state slots. F507 is independently accepted and ready to commit; Batch 83 remains active until commit.
