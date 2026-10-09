@@ -17529,3 +17529,19 @@ Use the existing temporary English settings and scoped RAII provider restorer on
 The test cycles through all five typed provider preferences, opens a fresh synthetic-data preview, checks speakingEvalAiPromptPreviewCopyOpen, and closes each popup without clicking Copy/Open. RAII restores and syncs the original provider.
 
 The executor focused build and CTest passed 1/1. Independent CTest passed 1/1; the direct offscreen slot passed 3/0/0 with its summary captured to a temporary report. Independent diff check passed, and the artifact is newer than source. Qt font/offscreen warnings occurred. No full suite, browser, or network. F479 is independently verified, accepted, and ready to commit; Batch 55 remains active until commit.
+
+### F479 committed - 2026-10-09
+
+F479 committed as 803ff239 with six scoped paths. Batch 55 is complete. Batch 56 is active with F480 Custom Website chooser cancellation rollback selected/current.
+
+### F480 acceptance plan recorded before implementation - 2026-10-09
+
+Start with ChatGPT and a known Custom Website URL in temporary English settings, with recent-database loading disabled. Trigger the actual Custom Website QAction; in a timer replace the input text and reject the dialog. Assert the modal was observed and closed, ChatGPT remains current and checked, CustomWebsite is unchecked, the typed preference after sync remains ChatGPT, and the saved URL is unchanged. Reuse the existing provider/URL RAII restorer on assertion exits.
+
+The cancel branch provides a bounded rollback case. No invalid-URL, browser/network, production, or CMake behavior; preview Copy/Open remains separate. F480 is selected/current; implementation and verification are pending. Batch 56 remains active.
+
+### F480 acceptance update - 2026-10-09
+
+The new slot edits the Custom Website chooser input and rejects it. ChatGPT remains current/checked with its typed preference unchanged after sync, CustomWebsite is unchecked, and the original URL is unchanged. Review confirmed the RAII restorer.
+
+The executor focused Debug build passed. Independent focused Debug CTest passed 1/1; the direct offscreen slot exited 0 without a summary. Independent diff check passed with an LF-to-CRLF notice. No full suite, invalid URL, browser, or network. F480 is independently verified, accepted, and ready to commit; Batch 56 remains active until commit.

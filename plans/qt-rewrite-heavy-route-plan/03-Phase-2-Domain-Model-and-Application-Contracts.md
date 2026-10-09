@@ -40,7 +40,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-09
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: Batch 55 is active with F479 AI Prompt Preview provider-label parity independently verified, accepted, and ready to commit; Gates 1 and 2 remain Partial.
+- Current note: Batch 56 is active with F480 Custom Website chooser cancellation rollback independently verified, accepted, and ready to commit; Gates 1 and 2 remain Partial.
 
 ### Slice discovery batches
 
@@ -65,10 +65,10 @@ Treat this plan as an operational summary, not a history:
   failure warning/no-navigation behavior; revisit after that behavior is
   clarified.
 
-#### Active batch: Batch 55
+#### Active batch: Batch 56
 
-- F479 — AI Prompt Preview provider-label parity: independently verified, accepted, and ready to commit.
-- Constraints: retain prompt, anonymization, and copy assertions; for ChatGPT, Gemini, Claude, Microsoft Copilot, and Custom AI Website, sync the typed provider preference and open the local preview from synthetic eligible report data. Verify speakingEvalAiPromptPreviewCopyOpen contains the selected provider, then close without clicking Copy/Open. Restore provider with scoped RAII on assertion exits. No production/CMake/browser/network. F285/F298 remain deferred due contract uncertainty.
+- F480 — Custom Website chooser cancellation rollback: independently verified, accepted, and ready to commit.
+- Constraints: start with ChatGPT and a known URL in temporary English settings; disable recent-database loading. Trigger the actual Custom Website QAction, replace the modal input text in a timer, then reject. Assert the modal was observed/closed, ChatGPT remains current and checked, CustomWebsite is unchecked, the typed preference after sync remains ChatGPT, and the URL is unchanged. Reuse the provider/URL RAII restorer. No invalid URL, browser/network, production, or CMake behavior; preview Copy/Open is a separate candidate.
 
 ## Objective
 

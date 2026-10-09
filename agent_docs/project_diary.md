@@ -3559,3 +3559,11 @@ F479 covers the preview popup's provider label using the existing safe modal har
 F479 implementation covers the preview popup label for all five providers. The executor's focused build, CTest, and diff check passed; direct offscreen invocation exited 0 without output. Independent review is pending.
 
 Independent review accepted F479. CTest passed 1/1; direct QtTest passed 3/0/0; diff check passed. The Tester reviewed the five-provider preview labels, modal closure, and RAII restoration. No full suite or browser/network behavior.
+
+F479 committed as `803ff239` with exactly six scoped paths; Batch 55 is complete. The only remaining worktree entries are the excluded pre-existing `agent_docs/latest_session_work.md` and `%SystemDrive%/`. F480 discovery begins after this commit.
+
+Select F480 for Custom Website chooser cancellation rollback. The action handler has an explicit cancel branch, and the existing test already contains a safe modal timer. Verify provider and URL remain unchanged after rejecting edited text; keep invalid URL and provider-open behavior in separate slices.
+
+F480 implementation covers Custom Website chooser cancellation without a URL write or provider change. Focused build/CTest and diff check passed; direct offscreen slot exited 0. Independent verification is pending.
+
+Independent review accepted F480. Focused Debug CTest passed 1/1; the direct cancellation slot exited 0 without a summary; diff check passed. The Tester confirmed provider/URL rollback and RAII cleanup. No full suite or external behavior.
