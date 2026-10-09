@@ -60,7 +60,7 @@ class MainWindowAiCommentProviderActionParityTests final : public QObject
 
 private slots:
     void initTestCase();
-    void geminiActionUpdatesProviderAndBatchDialogLabel();
+    void geminiAndClaudeActionsUpdateProviderAndBatchDialogLabel();
 
 private:
     QTemporaryDir m_settingsDirectory;
@@ -81,7 +81,7 @@ void MainWindowAiCommentProviderActionParityTests::initTestCase()
 }
 
 void MainWindowAiCommentProviderActionParityTests::
-geminiActionUpdatesProviderAndBatchDialogLabel()
+geminiAndClaudeActionsUpdateProviderAndBatchDialogLabel()
 {
     using LegacyProvider = ::AiCommentProvider;
     using PersistedProvider =
@@ -119,14 +119,19 @@ geminiActionUpdatesProviderAndBatchDialogLabel()
         state->action(LegacyProvider::ChatGPT);
     QAction* const geminiAction =
         state->action(LegacyProvider::Gemini);
+    QAction* const claudeAction =
+        state->action(LegacyProvider::Claude);
     QVERIFY(chatGptAction);
     QVERIFY(geminiAction);
+    QVERIFY(claudeAction);
     QCOMPARE(originalProvider, LegacyProvider::ChatGPT);
     QCOMPARE(state->current(), LegacyProvider::ChatGPT);
     QVERIFY(chatGptAction->isCheckable());
     QVERIFY(chatGptAction->isChecked());
     QVERIFY(geminiAction->isCheckable());
     QVERIFY(!geminiAction->isChecked());
+    QVERIFY(claudeAction->isCheckable());
+    QVERIFY(!claudeAction->isChecked());
     QCOMPARE(preferences.read(), PersistedProvider::ChatGPT);
 
     QVERIFY(geminiAction->isEnabled());
@@ -135,6 +140,7 @@ geminiActionUpdatesProviderAndBatchDialogLabel()
     QCOMPARE(state->current(), LegacyProvider::Gemini);
     QVERIFY(geminiAction->isChecked());
     QVERIFY(!chatGptAction->isChecked());
+    QVERIFY(!claudeAction->isChecked());
     SettingsManager::instance().sync();
     QCOMPARE(preferences.read(), PersistedProvider::Gemini);
 
@@ -158,6 +164,35 @@ geminiActionUpdatesProviderAndBatchDialogLabel()
     QVERIFY(copyOpenButton);
     QVERIFY(
         copyOpenButton->text().contains(QStringLiteral("Gemini"))
+        );
+
+    QVERIFY(claudeAction->isEnabled());
+    claudeAction->trigger();
+
+    QCOMPARE(state->current(), LegacyProvider::Claude);
+    QVERIFY(claudeAction->isChecked());
+    QVERIFY(!chatGptAction->isChecked());
+    QVERIFY(!geminiAction->isChecked());
+    SettingsManager::instance().sync();
+    QCOMPARE(preferences.read(), PersistedProvider::Claude);
+
+    SpeakingEvalAiBatchDialog claudeDialog(
+        {
+            {
+                report.englishName,
+                report,
+                0
+            }
+        }
+        );
+
+    QPushButton* const claudeCopyOpenButton =
+        claudeDialog.findChild<QPushButton*>(
+            QStringLiteral("speakingEvalAiBatchCopyOpen")
+            );
+    QVERIFY(claudeCopyOpenButton);
+    QVERIFY(
+        claudeCopyOpenButton->text().contains(QStringLiteral("Claude"))
         );
 }
 

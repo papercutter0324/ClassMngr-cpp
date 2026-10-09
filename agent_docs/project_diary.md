@@ -3482,3 +3482,18 @@ Extended the existing theme parity test with the System Default QAction while re
 The VS2026 x64 focused build passed; focused CTest passed 1/1; direct offscreen QtTest passed 3/0/0; `git diff --check` passed. Independent review is pending; Batch 48 remains active.
 
 Independent review accepted F472. The Tester confirmed all action transitions and the dynamic color-scheme expectation, and independently passed focused CTest 1/1, direct offscreen QtTest 3/0/0, and `git diff --check`. Qt warned about a missing optional configured fonts directory; packaged Inter/Pretendard fonts loaded. No full suite. F472 is independently verified and ready to commit; Batch 48 remains active pending commit.
+
+
+## 2026-10-09 - F472 committed; F473 Claude Provider selected
+
+F472, `Phase2 - Cover System Default Theme QAction parity (F472)`, committed as `88fd2088` on `Qt-Rewrite`. The commit contains the six reviewed test and Phase 2 tracking paths. Batch 48 is complete; the only post-commit worktree entries are the excluded pre-existing `agent_docs/latest_session_work.md` and `%SystemDrive%/`.
+
+Two independent F473 scans nominated System Default Language and Claude AI Provider. Select Claude in the existing MainWindow provider parity test: it already triggers Gemini and checks the local batch-dialog provider label, while Claude’s QAction, saved preference value, and consumer label have stable local behavior. System Default Language remains locale-dependent and was set aside during F469. Extend the test to trigger the actual Claude action after Gemini, assert provider state and exclusive ChatGPT/Gemini/Claude checks, typed persisted preference after sync, and a newly constructed batch dialog label identifying Claude. Retain Gemini checks. Keep temporary settings, English, and recent-database loading disabled; do not click the open button or access a browser/network. Reuse the existing restorer to return to ChatGPT and sync. No production or CMake change. F473 is selected; Batch 49 is active.
+
+## 2026-10-09 - F473 implementation and focused verification
+
+Extended the existing Gemini provider QAction test with Claude. It checks actual selected/exclusive actions, typed saved preference after sync, and the batch dialog’s “Copy Prompt and Open Claude” label while retaining Gemini coverage. The test uses temporary settings, English, and disabled recent database loading. It does not click the open button or access a browser/network. The existing restorer returns to ChatGPT and syncs. No production or CMake change.
+
+The VS18 x64 focused build passed and focused CTest passed 1/1. Direct offscreen QtTest exited 0 without a summary; no direct count is claimed. `git diff --check` passed. Independent review is pending; Batch 49 remains active.
+
+Independent review accepted F473. The Tester confirmed Gemini/Claude action state, persistence, dialog labels, fixture, and restorer, and independently passed focused CTest 1/1 and `git diff --check`. The existing executable was newer than source; its direct offscreen run exited 0 without output, so no count is claimed. No full suite or network behavior. F473 is independently verified and ready to commit; Batch 49 remains active pending commit.

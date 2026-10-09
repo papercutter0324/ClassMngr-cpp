@@ -17370,3 +17370,32 @@ The VS2026 x64 focused build passed. Executor CTest passed 1/1 and direct offscr
 passed 1/1, independent direct offscreen QtTest passed 3/0/0, and independent git diff --check passed. Qt reported a missing
 optional fonts-directory warning while packaged Inter/Pretendard fonts loaded. No full suite was run. F472 is independently
 verified, accepted, and ready to commit; Batch 48 remains active until commit. F473 discovery begins only after F472 commits.
+
+### F472 committed - 2026-10-09
+
+F472, “Phase2 - Cover System Default Theme QAction parity (F472),” committed as 88fd2088 on Qt-Rewrite. Batch 48 is
+complete. Batch 49 is active with F473 Claude AI Provider QAction parity selected; its acceptance plan is recorded before
+implementation.
+
+### F473 acceptance plan recorded before implementation - 2026-10-09
+
+Extend mainwindow_ai_comment_provider_action_parity_tests.cpp, which currently triggers Gemini and checks the local batch-
+dialog label, to trigger the actual Claude QAction as well. Assert OptionState, exclusive ChatGPT/Gemini/Claude actions, the
+typed saved preference after sync, and a newly constructed batch dialog label identifying Claude; retain Gemini coverage.
+
+Use temporary settings, English, and disabled recent-database loading. Reuse the ChatGPT restorer and sync. Do not click
+buttons or open a browser/access a network. System Default Language was considered but set aside due to host-locale
+dependence, as noted for F469. No production or CMake change. F473 is selected/current; implementation and verification are
+pending. Batch 49 remains active.
+
+### F473 acceptance update - 2026-10-09
+
+The existing MainWindow AI Comment Provider parity test now covers the actual Gemini and Claude QAction transitions. Review
+confirmed ChatGPT/Gemini/Claude state and exclusivity, typed preferences after sync, corresponding batch-dialog labels, the
+temporary English settings fixture with recent-database loading disabled, and ChatGPT restorer. No production or CMake change.
+No dialog button was clicked and no browser/network behavior was exercised.
+
+VS18 x64 focused build passed. Executor CTest passed 1/1; its direct offscreen QtTest exited 0 without a summary, so no
+count is claimed. Independent CTest passed 1/1; its direct offscreen invocation exited 0 without output, also with no count.
+Independent git diff --check passed. No full suite or network behavior. F473 is independently verified, accepted, and ready to
+commit; Batch 49 remains active until commit. F474 discovery begins only after F473 commits.
