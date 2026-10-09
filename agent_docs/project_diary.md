@@ -3583,3 +3583,11 @@ F482 discovery selected Custom Website preview Copy/Open handoff after independe
 F482 implementation adds Custom Website Copy/Open destination coverage with scoped provider/URL restoration and intercepted HTTPS handoff. Focused build/CTest and direct slot passed; diff check passed. Independent review is pending.
 
 Independent review accepted F482. CTest passed 1/1, direct slot exited 0, and diff check passed. The scoped test captures the saved Custom Website URL without browser/network launch and restores provider and URL settings. Ready to commit.
+
+F482 committed as `82733b05` with six scoped paths; Batch 58 is complete. Only the excluded pre-existing worktree entries remain. F483 discovery begins.
+
+F483 discovery selected Gemini preview Copy/Open destination coverage. The plan and code scans found it uncovered; production maps Gemini to https://gemini.google.com/app. Acceptance reuses the scoped HTTPS handler and ActionRole checks, restores provider state, and verifies clipboard anonymization. No browser/network or production/CMake changes. Batch 59 active; implementation pending.
+
+F483 Gemini preview handoff implementation and focused checks passed: build, CTest 1/1, direct slot 3/0/0, and diff check. Independent review is pending.
+
+Independent review accepted F483. CTest passed 1/1, direct slot exited 0, and diff check passed. The slot captures Gemini’s URL without external navigation, verifies the anonymous prompt, and preserves modal/provider cleanup. Ready to commit.

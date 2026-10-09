@@ -17587,3 +17587,25 @@ The focused Ninja build succeeded in the VS Developer environment; CTest passed 
 The independent Tester confirmed provider/URL restorers precede mutations. The captured URL is exactly https://custom.example.test/f482/preview?source=phase2; clipboard matches the anonymous prompt. Copy/Open leaves the ActionRole preview open, then explicit rejection closes it; timeout cleanup is covered.
 
 Independent CTest passed 1/1; direct offscreen execution exited 0 without a summary; diff check passed. The Ninja executable contains the slot and is newer than the source/object. No full suite, browser, or network. F482 is independently verified, accepted, and ready to commit; Batch 58 remains active until commit.
+
+### F482 committed - 2026-10-09
+
+F482 committed as 82733b05 with six scoped paths. Batch 58 is complete. Batch 59 candidate discovery is underway for F483; selection is pending.
+
+### F483 acceptance plan recorded before implementation - 2026-10-09
+
+Add one Gemini case in tests/speaking_eval_batch_report_service_tests.cpp using synthetic eligible report data and temporary settings. RAII-restore the previous provider, seed and sync Gemini, then reuse the scoped HTTPS handler. Click the actual preview Copy/Open and assert the ActionRole leaves the preview open, clipboard exactly matches the anonymous prompt (STD_NAME present and real student names absent), and exactly one intercepted URL equals https://gemini.google.com/app. Explicitly reject and verify closure. Preserve F481/F482 test coverage.
+
+Plan and code scans found Gemini uncovered and confirmed its production URL mapping. No production/CMake/browser/network behavior. F483 is selected/current; implementation and verification are pending. Batch 59 remains active.
+
+### F483 implementation update - 2026-10-09
+
+One Gemini Copy/Open slot uses scoped provider and HTTPS restorers, verifies the exact anonymous clipboard and https://gemini.google.com/app capture, and checks ActionRole leaves the preview open before explicit close.
+
+The Ninja build succeeded in the VS Developer environment; CTest passed 1/1, the direct slot passed 3/0/0, and diff check passed. Qt font/offscreen warnings only. Independent verification is pending. No browser/network or production/CMake changes. Batch 59 remains active.
+
+### F483 independent verification update - 2026-10-09
+
+The Tester confirmed the provider restorer precedes the Gemini preference write, exactly one https://gemini.google.com/app URL is captured, the clipboard contains the anonymous prompt, and ActionRole remains active until explicit rejection. Timeout cleanup is covered; F481/F482 remain unchanged.
+
+Focused CTest passed 1/1; direct offscreen execution exited 0; diff check passed with an LF-to-CRLF notice. The Ninja executable lists the new slot. No full suite, browser, or network. F483 is independently verified, accepted, and ready to commit; Batch 59 remains active until commit.
