@@ -6,7 +6,7 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-10
-- Current milestone: Phase 2 remains in progress. F519's paired Windows x64 Release routes validate deferred schedule-row and tab-root cleanup across the Classes event-loop boundary; both five-second working sets remain over 250 MiB. F520 in Batch 96 will assess whether synchronous replacement-root disposal is safe and worthwhile. Gates 1 and 2 remain Partial, with the full Phase 0 and visual gates open. See the Phase 2 progress log for evidence and acceptance scope.
+- Current milestone: Phase 2 remains in progress. F520's source review keeps deferred grade-tab-root disposal because replacement can run inside old-tree event handlers and the measured duplicate clears at event-loop return. F521 in Batch 97 will assess the safety and value of synchronous cleanup for replaced schedule rows. Gates 1 and 2 remain Partial, with the full Phase 0 and visual gates open. See the Phase 2 progress log for evidence and acceptance scope.
 - Phase 1 is complete. Its 2026-09-19 closure update records passing hosted
   baseline jobs for Windows x64 and macOS universal, the Phase 1 Build Quality
   and Dialog policy workflows, and packaged Release workflows. Linux x64 and

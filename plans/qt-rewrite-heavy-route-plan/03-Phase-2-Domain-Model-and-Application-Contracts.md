@@ -42,7 +42,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-10
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F519's paired Windows x64 Release routes validate deferred schedule-row and tab-root cleanup across the Classes event-loop boundary; both five-second working sets remain over 250 MiB, and Batch 96 selects F520 to assess the safety and value of synchronous replacement-root disposal while the Phase 0 and visual gates remain open.
+- Current note: F520's source review keeps deferred grade-tab-root disposal because rebuilds can run inside handlers from the old tree and the measured duplicate root clears at event-loop return; Batch 97 selects F521 to assess the same safety/value question for replaced schedule rows while the Phase 0, memory, and visual gates remain open.
 
 ### Slice discovery batches
 
@@ -67,9 +67,9 @@ Treat this plan as an operational summary, not a history:
   failure warning/no-navigation behavior; revisit after that behavior is
   clarified.
 
-#### Active batch: Batch 96
+#### Active batch: Batch 97
 
-- F520 - Assess whether synchronous disposal of the replaced grade-tab root is safe and worthwhile; trace signal/callback lifetime before changing deletion policy.
+- F521 - Assess whether synchronous disposal of replaced schedule rows is safe and worthwhile; trace row signal/callback lifetime before changing deletion policy.
 
 ## Objective
 

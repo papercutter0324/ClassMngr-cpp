@@ -18307,3 +18307,27 @@ The focused Ninja Debug build and focused Classes tests passed; the new deferred
 ### F520 selected for Batch 96 - 2026-10-10
 
 Assess whether synchronously disposing the replaced grade-tab root is safe and worthwhile given the measured transient duplicate root; trace signal/callback lifetime and ownership before changing the current deferred-deletion policy.
+
+
+### F520 scope and acceptance - 2026-10-10
+
+This is a source-and-evidence review before any deletion-policy change. Trace every `rebuildClassTabs()` caller and identify whether rebuild can run within an event or signal callback originating from the old navigation root. Inspect the old root's QObject ownership tree, page-held pointers, signal connections, and queued layout callbacks; distinguish synchronous page-leave disposal from replacement disposal. Compare the transient duplicate-root counts with normal event-loop cleanup and route-level memory samples, without assigning bytes to widgets. Acceptance requires a concrete safety/value recommendation grounded in those traces and measurements, with explicit scope limits. No production change is in scope unless the trace establishes a safe disposal boundary and the measurements justify it; no test or memory-gate claim is required for this diagnostic slice.
+
+
+## F520 grade-tab-root disposal review - 2026-10-10
+
+Keep `deleteLater()` in `ClassesPage::rebuildClassTabs()`. A day-filter button is parented under the grade-tab root, and its `toggled` handler calls `setDayFilterEnabled()`, which synchronously calls `rebuildClassTabs()`. Deleting the old root at that point would destroy the button while its input event and signal handling are active. A class-tab `currentChanged` callback also calls `activateClass()`; if committing the active editor emits `classInfoSaved`, its connected `handleClassInfoSaved()` path can rebuild tabs while the selection callback is still on the stack. Qt's QObject documentation warns that deleting an object while it is handling an event can cause a crash and recommends `deleteLater()` ([Qt 6.12 QObject destructor](https://doc.qt.io/qt-6.12/qobject.html#dtor.QObject)).
+
+The root owns its tab strip, stack, grade pages, nested class tabs, and day-filter controls. `rebuildClassTabs()` removes the old layout item, schedules the widget for deferred deletion, and clears the page's active root and day-filter pointers before constructing the replacement. Root signal connections are context-owned; the queued first-row layout callback is owned by `ClassesPage` and reads current members when it runs rather than capturing the old root. `releaseClassNavigationWidgets()` remains a separate synchronous owner boundary used on page deactivation and database clearing; no rebuild-time path needs to be routed through it.
+
+F519 measured one active / two live direct-child tab roots at refresh completion, then one / one after a normal event-loop return. At five seconds the Classes route still measured 267,591,680 bytes working set, 5,447,680 bytes above the 262,144,000-byte target, after the duplicate root had been collected. Route-level samples do not attribute bytes to the root or show that removing the short overlap would materially change peak or settled process memory. Therefore the existing deferred replacement policy is both safer for the current call graph and sufficient for the observed lifecycle; this review makes no production change and claims no memory reduction. Page-leave synchronous release, full Phase 0 coverage, the memory gate, and visual parity remain separate acceptance items.
+
+
+### F521 selected for Batch 97 - 2026-10-10
+
+Assess whether synchronously disposing replaced `ClassTimeRow` widgets in `ClassScheduleSection::loadSchedules()` is safe and worthwhile; trace row signal/callback lifetime and ownership before changing deletion policy.
+
+
+### F521 scope and acceptance - 2026-10-10
+
+This is a source-and-evidence review before any row-deletion-policy change. Trace every `loadSchedules()` caller and determine whether replacement can run inside an event or signal callback originating from a row being removed. Inspect row and section QObject ownership, retained pointers, signal connections, and queued callbacks; distinguish page-leave/editor-release behavior from schedule replacement. Compare F519's current/live row counts and event-loop cleanup with available process-level samples, without assigning bytes to row widgets. Acceptance requires a concrete safety/value recommendation grounded in those traces and measurements, with scope limits stated. No production change is in scope unless a safe boundary and measurable benefit are established; no test or memory-gate claim is required for this diagnostic slice.
