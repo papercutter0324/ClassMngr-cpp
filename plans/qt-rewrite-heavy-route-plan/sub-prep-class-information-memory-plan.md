@@ -115,7 +115,7 @@ projection. F526 completed the packaged Release `lifecycle-sub-prep` and
 `output-sub-prep` evidence routes. Memory acceptance remains open: lifecycle
 peak working set was 264,310,784 bytes, 2,166,784 above 262,144,000; settled
 lifecycle and all output-route working-set samples were below target. The next
-memory action is F530's diagnosis of the PDF-reopen peak; F529 visual mismatch
+memory action is F531's diagnosis of the PDF-reopen peak; F530 visual-parity
 work is tracked in the Phase 2 plan and log.
 
 This is an implementation slice, not a new rewrite phase. The existing
