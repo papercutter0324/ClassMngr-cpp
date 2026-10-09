@@ -209,9 +209,13 @@ synchronization is committed (`f4bc5282`). F416 Document Catalog rendered
   latest_session_work.md and %SystemDrive%/. F463, “Phase2 - Cover Automatic Update Preference QAction parity (F463),” was
   committed as e0771d5a3b87f75f6385bff23dd869e24e237242 on Qt-Rewrite, 48 commits ahead of origin; Batch 39 is
   complete. Its commit contains exactly seven scoped paths. Post-commit status was clean except for excluded pre-existing
-  latest_session_work.md and %SystemDrive%/. Batch 40 is active with F464 AI Comment Voice QAction parity accepted in this changeset and ready to commit.
-  F464 acceptance and focused verification are recorded in the progress log; F465 discovery begins only after F464 commits.
-  F463 acceptance and focused verification remain in the progress log; F462 acceptance and focused verification remain in the progress log.
+  latest_session_work.md and %SystemDrive%/. F464, “Phase2 - Cover AI Comment Voice QAction prompt handoff (F464),” was committed as
+  27d30bbd8452f0d350e968ef462af83ae340cdd3 on Qt-Rewrite, 49 commits ahead of origin; Batch 40 is complete.
+  Its commit contains exactly seven scoped paths. Post-commit status was clean except for excluded pre-existing
+  latest_session_work.md and %SystemDrive%/. Batch 41 is active with F465 AI Comment Provider QAction parity accepted
+  in this changeset and ready to commit. F465 acceptance and focused verification are recorded in the progress log;
+  F466 discovery begins only after F465 commits. F464 acceptance and focused verification, and F463/F462 evidence, remain
+  in the progress log.
   F457 acceptance and verification remain in the progress log. F456
   acceptance and focused verification remain in the progress log. F454
   acceptance and focused verification remain in the progress log. F453

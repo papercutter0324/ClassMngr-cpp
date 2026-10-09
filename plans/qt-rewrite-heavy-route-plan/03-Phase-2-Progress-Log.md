@@ -17133,3 +17133,34 @@ VS18/Qt6.12/Ninja build passed; focused CTest passed 1/1. Independent direct QtT
 and independent CTest rerun passed 1/1. Optional Vulkan-header and missing-font warnings were reported. No full suite
 was run. F464 is independently verified, accepted, and ready to commit; Batch 40 remains active until commit.
 F465 discovery has not started and begins only after F464 commits.
+### F464 committed - 2026-10-09
+
+F464, “Phase2 - Cover AI Comment Voice QAction prompt handoff (F464),” was committed as
+27d30bbd8452f0d350e968ef462af83ae340cdd3 on Qt-Rewrite, 49 commits ahead of origin. The commit contains exactly
+seven scoped paths. Post-commit status was clean except for excluded pre-existing latest_session_work.md and
+%SystemDrive%/. Batch 40 is complete. Batch 41 is active with F465 AI Comment Provider QAction parity selected; its
+acceptance plan is recorded before implementation. F464 acceptance and focused verification remain recorded above.
+
+### F465 acceptance plan recorded before implementation - 2026-10-09
+
+Two independent reviews favor a built-in AI provider action as a stable dialog-label observable. Sidebar Marquee is
+hover/timer sensitive; the PowerPoint notice is macOS-only.
+
+Use a dedicated offscreen MainWindow test with temporary settings, English, and recent-database loading disabled. Trigger
+the actual Gemini provider QAction and assert action/OptionState plus SettingsManagerAiCommentProviderPreferencesPort::read().
+Construct SpeakingEvalAiBatchDialog and assert the Copy Prompt and Open button labels each include Gemini. Do not click either
+button or invoke external behavior. RAII restores and syncs the original provider while MainWindow remains alive. Avoid
+the Custom Website input dialog.
+
+F465 is selected for implementation; it is not implemented or verified. Batch 41 remains active.
+### F465 acceptance update - 2026-10-09
+
+The offscreen test starts with isolated ChatGPT and temporary settings, English, and recent-database loading disabled.
+It triggers the actual Gemini provider QAction and synchronizes/checks SettingsManagerAiCommentProviderPreferencesPort::read()
+and OptionState. SpeakingEvalAiBatchDialog is then constructed, and both Copy Prompt and Open button labels are confirmed
+to include Gemini without clicking either button. RAII restores and syncs the original provider while MainWindow lives.
+
+VS18/Qt6.12/Ninja build passed; focused CTest passed 1/1. Independent direct QtTest setup/test/cleanup passed 3/0
+and independent CTest rerun passed 1/1. Optional Vulkan/long object-path and missing-font warnings were reported. No full
+suite was run. F465 is independently verified, accepted, and ready to commit; Batch 41 remains active until commit.
+F466 discovery has not started and begins only after F465 commits.

@@ -1007,6 +1007,20 @@ classmngr_add_qt_test(
     OFFSCREEN
 )
 
+classmngr_add_qt_test(
+    NAME MainWindowAiCommentProviderActionParity
+    SOURCES
+        tests/mainwindow_ai_comment_provider_action_parity_tests.cpp
+    LIBRARIES
+        Qt6::Sql
+        Qt6::Test
+        Qt6::Widgets
+    DEPENDENCIES
+        ClassMngrcampusesResourcePack
+        ClassMngrdocumentsResourcePack
+    OFFSCREEN
+)
+
 qt_add_resources(
     ClassMngrMainWindowDocumentViewerPageSpacingActionParityTests
     mainwindow_document_viewer_page_spacing_keyboard_resources
@@ -1059,6 +1073,26 @@ qt_add_resources(
 
 qt_add_translations(
     TARGETS ClassMngrMainWindowAiCommentVoiceActionParityTests
+    TS_FILES
+        resources/assets/translations/ClassMngr_en_AU.ts
+        resources/assets/translations/ClassMngr_en_CA.ts
+        resources/assets/translations/ClassMngr_en_GB.ts
+        resources/assets/translations/ClassMngr_en_US.ts
+        resources/assets/translations/ClassMngr_ko_KR.ts
+)
+
+qt_add_resources(
+    ClassMngrMainWindowAiCommentProviderActionParityTests
+    mainwindow_ai_comment_provider_action_keyboard_resources
+    PREFIX "/"
+    BASE "${PROJECT_SOURCE_DIR}/resources"
+    FILES
+        resources/assets/icons/keyboard_dark.svg
+        resources/assets/icons/keyboard_light.svg
+)
+
+qt_add_translations(
+    TARGETS ClassMngrMainWindowAiCommentProviderActionParityTests
     TS_FILES
         resources/assets/translations/ClassMngr_en_AU.ts
         resources/assets/translations/ClassMngr_en_CA.ts
