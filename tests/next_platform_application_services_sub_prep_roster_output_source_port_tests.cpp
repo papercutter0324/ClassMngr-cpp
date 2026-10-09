@@ -9,6 +9,7 @@
 
 #include <QByteArray>
 #include <QSqlDatabase>
+#include <QSqlError>
 #include <QSqlQuery>
 #include <QTemporaryDir>
 #include <QUuid>
@@ -195,6 +196,9 @@ private slots:
     void rejectsOutOfBoundRosterAndClassText();
     void rejectsScheduleMeetingOverflow();
     void rejectsAggregateMeetingOverflow();
+    void rejectsAggregateRosterRowOverflowAcrossClasses();
+    void rejectsAggregateRosterCellOverflowAcrossClasses();
+    void rejectsAggregateRosterTextOverflowBeforeReturningInput();
 
 private:
     QTemporaryDir m_directory;
@@ -1242,6 +1246,310 @@ rejectsAggregateMeetingOverflow()
         scheduleMetricsAfter.statementCount
             - scheduleMetricsBefore.statementCount,
         1
+        );
+}
+
+void NextPlatformApplicationServicesSubPrepRosterOutputSourcePortTests::
+rejectsAggregateRosterRowOverflowAcrossClasses()
+{
+    constexpr std::size_t classCount =
+        kSubPrepRosterOutputMaxTotalRows
+            / kSubPrepRosterOutputMaxRowsPerClass
+        + 1;
+    static_assert(classCount <= kSubPrepPrintSourceMaxClassIds);
+
+    ApplicationServices services;
+    QVERIFY(openDatabase(services, m_directory));
+    DatabaseSession* const session = services.databaseSession();
+    QVERIFY(session);
+
+    constexpr int firstClassId = 800'000;
+    std::vector<ClassId> selectedClassIds;
+    selectedClassIds.reserve(classCount);
+    QStringList classValues;
+    classValues.reserve(static_cast<qsizetype>(classCount));
+    QStringList classInfoValues;
+    classInfoValues.reserve(static_cast<qsizetype>(classCount));
+    QStringList scheduleValues;
+    scheduleValues.reserve(static_cast<qsizetype>(classCount));
+    QStringList rosterColumnValues;
+    rosterColumnValues.reserve(static_cast<qsizetype>(classCount * 3));
+    QStringList rosterDataValues;
+    rosterDataValues.reserve(static_cast<qsizetype>(classCount));
+
+    for (std::size_t index = 0; index < classCount; ++index)
+    {
+        const int id = firstClassId + static_cast<int>(index);
+        selectedClassIds.push_back(classId(id));
+        classValues.append(
+            QStringLiteral("(%1, 'aggregate-roster-%2')")
+                .arg(id)
+                .arg(static_cast<qulonglong>(index))
+            );
+        classInfoValues.append(QStringLiteral("(%1, NULL)").arg(id));
+        scheduleValues.append(
+            QStringLiteral(
+                "(%1, 'Monday', '9:00 AM', '10:00 AM')"
+                ).arg(id)
+            );
+        rosterColumnValues.append(
+            QStringLiteral("(%1, 'English', 0, 0)").arg(id)
+            );
+        rosterColumnValues.append(
+            QStringLiteral("(%1, 'Korean', 1, 0)").arg(id)
+            );
+        rosterColumnValues.append(
+            QStringLiteral("(%1, 'Notes', 2, 0)").arg(id)
+            );
+        rosterDataValues.append(
+            QStringLiteral("(%1, 4095, 0, 'last row')").arg(id)
+            );
+    }
+
+    QSqlDatabase database = session->database();
+    QVERIFY(database.transaction());
+    QVERIFY(executeSql(
+        services,
+        QStringLiteral("INSERT INTO classes (id, name) VALUES %1")
+            .arg(classValues.join(QStringLiteral(", ")))
+        ));
+    QVERIFY(executeSql(
+        services,
+        QStringLiteral(
+            "INSERT INTO class_info (class_id, teacher_id) VALUES %1"
+            ).arg(classInfoValues.join(QStringLiteral(", ")))
+        ));
+    QVERIFY(executeSql(
+        services,
+        QStringLiteral(
+            "INSERT INTO class_times (class_id, day, start_time, end_time) "
+            "VALUES %1"
+            ).arg(scheduleValues.join(QStringLiteral(", ")))
+        ));
+    QVERIFY(executeSql(
+        services,
+        QStringLiteral(
+            "INSERT INTO roster_columns (class_id, name, position, width) "
+            "VALUES %1"
+            ).arg(rosterColumnValues.join(QStringLiteral(", ")))
+        ));
+    QVERIFY(executeSql(
+        services,
+        QStringLiteral(
+            "INSERT INTO roster_data (class_id, row_index, col_index, value) "
+            "VALUES %1"
+            ).arg(rosterDataValues.join(QStringLiteral(", ")))
+        ));
+    QVERIFY(database.commit());
+
+    ApplicationServicesSubPrepRosterOutputSourcePort port(services);
+    const auto result = port.loadSource(requestFor(
+        selectedClassIds,
+        {SubPrepWeekday::Monday}
+        ));
+
+    QVERIFY(!result);
+    QCOMPARE(result.error().code, ErrorCode::Validation);
+    QVERIFY(
+        result.error().message.find("roster rows exceed the requested limit")
+        != std::string::npos
+        );
+}
+
+void NextPlatformApplicationServicesSubPrepRosterOutputSourcePortTests::
+rejectsAggregateRosterCellOverflowAcrossClasses()
+{
+    constexpr std::size_t classCount = 2;
+    constexpr std::size_t rowsPerClass =
+        kSubPrepRosterOutputMaxRowsPerClass;
+    constexpr std::size_t requestedColumnCount =
+        kSubPrepRosterOutputMaxRosterColumns;
+    static_assert(
+        classCount * rowsPerClass * requestedColumnCount
+        > kSubPrepRosterOutputMaxTotalCells
+        );
+
+    ApplicationServices services;
+    QVERIFY(openDatabase(services, m_directory));
+    DatabaseSession* const session = services.databaseSession();
+    QVERIFY(session);
+
+    constexpr int firstClassId = 900'000;
+    std::vector<ClassId> selectedClassIds;
+    selectedClassIds.reserve(classCount);
+    QStringList classValues;
+    QStringList classInfoValues;
+    QStringList scheduleValues;
+    QStringList rosterColumnValues;
+    QStringList rosterDataValues;
+    std::vector<std::string> selectedExtraColumns;
+    selectedExtraColumns.reserve(requestedColumnCount - 2);
+    for (std::size_t column = 0;
+         column < requestedColumnCount - 2;
+         ++column)
+    {
+        selectedExtraColumns.push_back(
+            "Extra " + std::to_string(column)
+            );
+    }
+
+    for (std::size_t index = 0; index < classCount; ++index)
+    {
+        const int id = firstClassId + static_cast<int>(index);
+        selectedClassIds.push_back(classId(id));
+        classValues.append(
+            QStringLiteral("(%1, 'aggregate-cell-%2')")
+                .arg(id)
+                .arg(static_cast<qulonglong>(index))
+            );
+        classInfoValues.append(QStringLiteral("(%1, NULL)").arg(id));
+        scheduleValues.append(
+            QStringLiteral(
+                "(%1, 'Monday', '9:00 AM', '10:00 AM')"
+                ).arg(id)
+            );
+        rosterColumnValues.append(
+            QStringLiteral("(%1, 'English', 0, 0)").arg(id)
+            );
+        rosterColumnValues.append(
+            QStringLiteral("(%1, 'Korean', 1, 0)").arg(id)
+            );
+        for (std::size_t column = 0;
+             column < selectedExtraColumns.size();
+             ++column)
+        {
+            rosterColumnValues.append(
+                QStringLiteral("(%1, 'Extra %2', %3, 0)")
+                    .arg(id)
+                    .arg(static_cast<qulonglong>(column))
+                    .arg(static_cast<qulonglong>(column + 2))
+                );
+        }
+        rosterDataValues.append(
+            QStringLiteral("(%1, 4095, 0, 'last row')").arg(id)
+            );
+    }
+
+    QSqlDatabase database = session->database();
+    QVERIFY(database.transaction());
+    QVERIFY(executeSql(
+        services,
+        QStringLiteral("INSERT INTO classes (id, name) VALUES %1")
+            .arg(classValues.join(QStringLiteral(", ")))
+        ));
+    QVERIFY(executeSql(
+        services,
+        QStringLiteral(
+            "INSERT INTO class_info (class_id, teacher_id) VALUES %1"
+            ).arg(classInfoValues.join(QStringLiteral(", ")))
+        ));
+    QVERIFY(executeSql(
+        services,
+        QStringLiteral(
+            "INSERT INTO class_times (class_id, day, start_time, end_time) "
+            "VALUES %1"
+            ).arg(scheduleValues.join(QStringLiteral(", ")))
+        ));
+    QVERIFY(executeSql(
+        services,
+        QStringLiteral(
+            "INSERT INTO roster_columns (class_id, name, position, width) "
+            "VALUES %1"
+            ).arg(rosterColumnValues.join(QStringLiteral(", ")))
+        ));
+    QVERIFY(executeSql(
+        services,
+        QStringLiteral(
+            "INSERT INTO roster_data (class_id, row_index, col_index, value) "
+            "VALUES %1"
+            ).arg(rosterDataValues.join(QStringLiteral(", ")))
+        ));
+    QVERIFY(database.commit());
+
+    SubPrepRosterOutputSourceRequest request{
+        .selectedClassIds = std::move(selectedClassIds),
+        .selectedDays = {SubPrepWeekday::Monday},
+        .mode = ScheduleViewMode::Regular,
+        .selectedExtraColumns = std::move(selectedExtraColumns)
+    };
+    ApplicationServicesSubPrepRosterOutputSourcePort port(services);
+    const auto result = port.loadSource(request);
+
+    QVERIFY(!result);
+    QCOMPARE(result.error().code, ErrorCode::Validation);
+    QVERIFY(
+        result.error().message.find("roster cells exceed the requested limit")
+        != std::string::npos
+        );
+}
+
+void NextPlatformApplicationServicesSubPrepRosterOutputSourcePortTests::
+rejectsAggregateRosterTextOverflowBeforeReturningInput()
+{
+    ApplicationServices services;
+    QVERIFY(openDatabase(services, m_directory));
+    const int classIdValue = createClass(
+        services,
+        QStringLiteral("Aggregate text overflow"),
+        -1,
+        QStringLiteral("E4"),
+        QStringLiteral("Hercules"),
+        QStringLiteral("Monday"),
+        QStringLiteral("9:00 AM"),
+        QStringLiteral("10:00 AM")
+        );
+    QVERIFY(classIdValue > 0);
+
+    QVERIFY(executeSql(
+        services,
+        QStringLiteral(
+            "INSERT INTO roster_columns (class_id, name, position, width) "
+            "VALUES (%1, 'English', 0, 0), (%1, 'Korean', 1, 0), "
+            "(%1, 'Notes', 2, 0)"
+            ).arg(classIdValue)
+        ));
+
+    DatabaseSession* const session = services.databaseSession();
+    QVERIFY(session);
+    QSqlQuery rosterData(session->database());
+    QVERIFY(rosterData.prepare(QStringLiteral(
+        "INSERT INTO roster_data (class_id, row_index, col_index, value) "
+        "VALUES (?, ?, 0, ?)"
+        )));
+    const QString maximumCell(QString::fromLatin1(
+        QByteArray(kSubPrepRosterOutputMaxCellBytes, 'x')
+        ));
+    constexpr int rowCount =
+        static_cast<int>(
+            kSubPrepRosterOutputMaxTotalTextBytes
+                / kSubPrepRosterOutputMaxCellBytes
+            + 1
+            );
+    QSqlDatabase database = session->database();
+    QVERIFY(database.transaction());
+    for (int row = 0; row < rowCount; ++row)
+    {
+        rosterData.bindValue(0, classIdValue);
+        rosterData.bindValue(1, row);
+        rosterData.bindValue(2, maximumCell);
+        QVERIFY2(
+            rosterData.exec(),
+            qPrintable(rosterData.lastError().text())
+            );
+    }
+    QVERIFY(database.commit());
+
+    ApplicationServicesSubPrepRosterOutputSourcePort port(services);
+    const auto result = port.loadSource(requestFor(
+        {classId(classIdValue)},
+        {SubPrepWeekday::Monday}
+        ));
+
+    QVERIFY(!result);
+    QCOMPARE(result.error().code, ErrorCode::Validation);
+    QVERIFY(
+        result.error().message.find("cell exceeds the text byte limit")
+        != std::string::npos
         );
 }
 

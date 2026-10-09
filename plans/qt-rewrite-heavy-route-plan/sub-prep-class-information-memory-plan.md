@@ -96,8 +96,11 @@ needed by the roster templates. Its app-less tests pass 1/1. The read adapter
 now has a bounded repository operation: it selects requested columns, checks
 row/cell limits before matrix allocation, streams SQL rows, and checks each
 cell's original byte size before conversion. Data lifecycle coverage passes
-1/1. The Platform adapter still must enforce aggregate budgets while building
-the Application input. See the [Phase 2 contract
+1/1. The Platform adapter passes its remaining aggregate row, cell, and
+text-byte budgets into that repository read and updates those totals while
+building the Application input. F524 adds repository-backed coverage that
+rejects cross-class row and cell overflow and aggregate text overflow before
+returning the Application projection. See the [Phase 2 contract
 update](03-Phase-2-Progress-Log.md#progress-update---2026-09-24-sub-prep-bounded-roster-repository-read).
 
 Output/package/PDF migration is wired through the operation-scoped roster

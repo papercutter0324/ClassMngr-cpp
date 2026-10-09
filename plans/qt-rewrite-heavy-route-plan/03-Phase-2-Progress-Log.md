@@ -18386,4 +18386,14 @@ At the Classes page-left checkpoint, total Classes descendants were 643 while th
 
 ### F524 selected for Batch 100 - 2026-10-10
 
-Close the Platform-boundary verification gap for Sub Prep roster output. The adapter already passes remaining aggregate row, cell, and text budgets into the bounded repository read; existing Platform tests cover per-class roster overflow and aggregate meeting overflow, while aggregate roster row/cell/text rejection is covered only at the Application-query layer. Add repository-backed Platform tests for the aggregate-budget handoff across selected classes, proving that oversized output fails before an over-limit Application projection is built.
+Close the Platform-boundary verification gap for Sub Prep roster output. The adapter already passes remaining aggregate row, cell, and text budgets into the bounded repository read; existing Platform tests cover per-class roster overflow and aggregate meeting overflow, while aggregate roster row/cell/text rejection is covered only at lower layers. Add repository-backed Platform tests proving that aggregate row/cell overflow across selected classes and aggregate text overflow across roster cells fail before an over-limit Application projection is returned.
+
+## F524 Sub Prep roster-output aggregate limits - 2026-10-10
+
+Added three repository-backed Platform regressions around the existing remaining-budget handoff. The row case gives 17 selected classes one sparse cell at row 4095: 16 classes consume the 65,536-row aggregate allowance, then the next class is rejected with a Validation error before any source value is returned. The cell case selects 128 columns across two classes; each class remains under its row cap, but the combined 1,048,576 projected cells exceed the aggregate limit and the second class is rejected before its dense matrix is allocated. The text case streams 2,049 maximum-sized roster cells and verifies the 32 MiB text budget rejects the read before a partial Application input is returned. Existing application-query tests continue covering aggregate row, cell, and text validation of constructed inputs.
+
+Windows x64 Debug built `ClassMngrNextPlatformApplicationServicesSubPrepRosterOutputSourcePortTests`; the complete QtTest target passed 18/18. No production code changed and no Release route was required for this test-only contract-coverage slice. `git diff --check` passed.
+
+### F525 selected for Batch 101 - 2026-10-10
+
+F523 uses `deleteLater()` to release a clean Details editor without deleting a QWidget while a navigation callback may still be on the stack. Verify the fast leave/re-enter path where Classes is reactivated before the deferred-delete event runs. Acceptance requires the new editor to become current with the value snapshot restored, no data reads on unchanged re-entry, no stale editor shown or retained after the delete event, and no change to dirty-editor retention.

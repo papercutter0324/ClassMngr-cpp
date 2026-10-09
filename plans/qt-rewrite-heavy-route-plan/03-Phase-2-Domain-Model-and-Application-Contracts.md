@@ -42,7 +42,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-10
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F523 now releases clean Classes Details widgets into an immutable value snapshot and lowers settled owner counts; Batch 100 selects F524 to verify aggregate roster-output limits at the Platform boundary while the 250 MiB, full Phase 0, and visual gates remain open.
+- Current note: F524 now verifies aggregate Sub Prep roster row, cell, and text limits at the Platform boundary; Batch 101 starts F525 to cover same-turn clean Details re-entry while deferred deletion is pending, with the 250 MiB, full Phase 0, and visual gates still open.
 
 ### Slice discovery batches
 
@@ -67,9 +67,9 @@ Treat this plan as an operational summary, not a history:
   failure warning/no-navigation behavior; revisit after that behavior is
   clarified.
 
-#### Active batch: Batch 100
+#### Active batch: Batch 101
 
-- F524 - Add repository-backed Platform adapter tests for aggregate roster-output row, cell, and text limits across selected classes before constructing the application projection.
+- F525 - Verify clean Details snapshot restoration when Classes is reactivated before the released editor's deferred deletion runs; preserve the active editor, restored values, and no-reread contract.
 
 ## Objective
 
