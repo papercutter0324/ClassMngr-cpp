@@ -18093,3 +18093,26 @@ The current page-generation tests F380/F507 assert Regular; query-level Intensiv
 ### F508 independent verification - 2026-10-09
 
 The test uses a temporary SQLite schema and a persisted Intensive preference so the real page refresh retains the mode. It drives the real Generate dialog, forwards Tuesday-only target scope with the Friday-only sentinel absent from request.selectedClassIds, and asserts the source-failure warning. Focused build passed; direct F508 and F380 slots each passed 3/3; -functions lists F380, F507, and F508; scoped diff check passed. The registered target CTest failed; direct full-target execution reported 18 passed/5 failed in the same untouched slots: grading settings, campus N/A, Zoom credentials, missing username save, and clearDatabaseState. F508 is independently accepted and ready to commit, but remains uncommitted in active Batch 84. F509 remains queued as the separate Packaged Release 96-class Sub Prep memory gate.
+
+### F508 committed - 2026-10-09
+
+F508 committed as 6d6f0186. Batch 84 is complete; Batch 85 is active with F509 selected for the Packaged Windows x64 Release lifecycle/output Sub Prep routes. F508’s registered target CTest failed; direct full-target execution reported 18 passed/5 failed in the same untouched grading, campus N/A, Zoom credentials, missing username-save, and clearDatabaseState slots. F508 itself and F380 each passed direct 3/3.
+
+### F509 acceptance plan recorded - 2026-10-09
+
+Validate both lifecycle-sub-prep and output-sub-prep in Packaged Windows x64 Release using the 96-class/8-slot fixture. Exercise entry, summary, detail, refresh, leave, and re-entry; verify actual package output. Keep the explicit memory gate open until Release measurements meet the documented 250 MiB settled target and repeated-cycle growth/parity criteria. Do not conflate route coverage with memory acceptance or claim these Release measurements have passed.
+
+
+### F509 evidence capture completed - 2026-10-09
+
+Fresh packaged Windows x64 Release evidence is retained at C:\Users\wfelt\AppData\Local\Temp\ClassMngr-F509-Evidence\subprep-20261009-01. Release configure/build/install and test-harness configure/build succeeded; both selected route processes and the evidence validator exited 0, with no selected-route validation failures. This run covers only lifecycle-sub-prep and output-sub-prep (2 of 24 Windows routes); macOS universal is absent and Phase 0 coverage remains incomplete.
+
+The 96-class lifecycle route completed two Sub Prep refresh/leave/re-entry cycles. Sub Prep lifecycle complete: 226,119,680-byte working set, 215,777,280-byte private usage, 348,200,960-byte route peak working set. Its later route settled at 338,866,176-byte working set after the My Classes/PDF workflow.
+
+The output route produced Sub Prep.pdf and Rosters - By Day.pdf (2 files, 17 pages, 139,650 combined bytes). The output-operation release checkpoint reports no retained documents or operation; working set/private usage were 233,619,456/220,405,760 bytes, with 242,655,232-byte peak working set. Leaving Sub Prep for My Classes then measured 300,208,128-byte working set and 6,412 widgets, from 233,619,456 bytes and 2,168 widgets at output release. Both PDF documents were released after opening/rendering. Settled-1s/5s working set was 307,519,488/307,523,584 bytes, private usage 324,579,328 bytes, and peak working set 316,862,464 bytes.
+
+Selected routes pass validation, but the 250 MiB target (262,144,000 bytes) is not met at the 5-second sample. Output parity against a baseline was not asserted, and the complete Windows/macOS Phase 0 route gate remains incomplete. Batch 85 is complete as an evidence-capture batch; do not mark the memory gate accepted.
+
+### F510 acceptance recorded - 2026-10-09
+
+Investigate the 66,588,672-byte working-set and 4,244-widget increase between output-operation release and leaving Sub Prep for My Classes. Inspect the page-manager navigation path and My Classes UI creation/ownership/disposal, identify the responsible widgets/resources by code and instrumentation, and determine whether the memory remains live or the process retains freed allocations before implementing. No production defect or fix is presumed from the checkpoint correlation alone. Keep the 250 MiB gate open. Batch 86 is active.

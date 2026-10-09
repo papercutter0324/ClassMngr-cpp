@@ -10,7 +10,7 @@
   packaged Release measurement harness
 - Blocks: Large-workspace Sub Prep acceptance and the Phase 9 memory gate
 - Owner: Unassigned
-- Last updated: 2026-09-25
+- Last updated: 2026-10-09
 
 ## Current Sub Prep contract boundary - 2026-09-24
 
@@ -427,3 +427,18 @@ This slice is accepted only when the owning data, application, UI, output, and
 lifecycle boundaries have moved together. A bounded fixture, a reduced class
 set, a hidden feature, or a Debug-only workaround is not an implementation of
 the memory fix.
+
+
+## F509 packaged Release measurement - 2026-10-09
+
+Evidence root: C:\Users\wfelt\AppData\Local\Temp\ClassMngr-F509-Evidence\subprep-20261009-01. Windows x64 Release configure/build/install, test-harness configure/build, both route processes, and selected-route validation completed successfully. This run covers two routes only; it is not the full 24-route Windows/macOS gate.
+
+The 96-class lifecycle route completed two Sub Prep refresh/leave/re-entry cycles. At sub-prep-lifecycle-complete, working set was 226,119,680 bytes and private usage 215,777,280 bytes; route peak working set was 348,200,960 bytes and final 1s working set after later My Classes/PDF navigation was 338,866,176 bytes.
+
+The output route generated 2 PDFs with 17 pages and 139,650 combined bytes, then recorded the output operation and documents released. At operation release, working set/private usage were 233,619,456/220,405,760 bytes and peak working set 242,655,232 bytes. The next checkpoint leaving Sub Prep for My Classes measured 300,208,128-byte working set and 6,412 widgets, versus 2,168 widgets at output release. After opening, rendering, and releasing both PDFs, settled working set was 307,519,488 bytes at 1s and 307,523,584 bytes at 5s; private usage 324,579,328 bytes; peak working set 316,862,464 bytes. The five-second sample is 45,379,584 bytes over the 262,144,000-byte 250 MiB target.
+
+The route output is generated and release flags are clear, but visual parity was not compared with a reference. The target remains open. Keep the external evidence files for later comparison.
+
+## F510 diagnostic focus - 2026-10-09
+
+Trace the packaged output route transition from the Sub Prep page to My Classes. The recorded checkpoint delta is 66,588,672 working-set bytes and 4,244 widgets. Inspect My Classes and PageManager construction/ownership/release, map the increase to actual child widgets/resources, and establish whether those objects remain live or the process retains freed allocations before choosing remediation. Do not infer causality from memory correlation alone; carry the 250 MiB gate forward as open.
