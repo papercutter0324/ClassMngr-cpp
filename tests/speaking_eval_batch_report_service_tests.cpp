@@ -553,6 +553,7 @@ private slots:
     void aiBatchDialogDisplaysEligibilityReasonsAndCheckState();
     void aiBatchDialogAssessesCommentQualityAndPreservesStatuses();
     void aiBatchDialogSelectsEligibleStudentsAndReviewsValidComments();
+    void aiBatchDialogCopyOpenCopiesPromptAndOpensGemini();
     void aiBatchDialogConfirmsAcceptedCommentOverwrites();
     void aiPromptButtonsRequireCompleteInput();
     void aiPromptPreviewCopiesAnAnonymousPrompt();
@@ -2332,6 +2333,82 @@ void SpeakingEvalBatchReportServiceTests::
                     )
                 ),
         QString()
+        );
+}
+
+void SpeakingEvalBatchReportServiceTests::
+    aiBatchDialogCopyOpenCopiesPromptAndOpensGemini()
+{
+    using PersistedProvider =
+        ClassMngr::Next::Application::AiCommentProvider;
+    using ProviderPreferences =
+        ClassMngr::Next::Platform::
+            SettingsManagerAiCommentProviderPreferencesPort;
+
+    const ProviderPreferences providerPreferences;
+    AiCommentProviderPreferenceRestorer restoreProvider(
+        providerPreferences.read()
+        );
+    providerPreferences.write(PersistedProvider::Gemini);
+    SettingsManager::instance().sync();
+
+    SpeakingEvalPromptPreviewCapturedUrlHandler capturedUrlHandler;
+    SpeakingEvalPromptPreviewHttpsUrlHandlerRegistration urlHandlerRegistration(
+        &capturedUrlHandler
+        );
+
+    SpeakingEvalReportData report;
+    report.englishName = QStringLiteral("Alice");
+    report.koreanName = QStringLiteral("김민지");
+    report.grade = 4;
+    report.notes =
+        QStringLiteral(
+            "[Did Well]\nClear pronunciation\n"
+            "[Needs Improvement]\nAdd supporting details"
+            );
+    SpeakingEvalAiBatchDialog dialog(
+        {
+            {
+                QStringLiteral("Alice (김민지)"),
+                report,
+                0
+            }
+        }
+        );
+
+    auto* createPromptButton =
+        dialog.findChild<QPushButton*>(
+            QStringLiteral("speakingEvalAiBatchCreatePrompt")
+            );
+    auto* promptEdit =
+        dialog.findChild<QPlainTextEdit*>(
+            QStringLiteral("speakingEvalAiBatchPrompt")
+            );
+    auto* copyOpenButton =
+        dialog.findChild<QPushButton*>(
+            QStringLiteral("speakingEvalAiBatchCopyOpen")
+            );
+    QVERIFY(createPromptButton);
+    QVERIFY(promptEdit);
+    QVERIFY(copyOpenButton);
+    QVERIFY(createPromptButton->isEnabled());
+
+    QApplication::clipboard()->clear();
+    createPromptButton->click();
+    const QString generatedPrompt = promptEdit->toPlainText();
+    QVERIFY(!generatedPrompt.isEmpty());
+    QVERIFY(copyOpenButton->isEnabled());
+    QVERIFY(generatedPrompt.contains(QStringLiteral("STD_NAME")));
+    QVERIFY(!generatedPrompt.contains(QStringLiteral("Alice")));
+    QVERIFY(!generatedPrompt.contains(QStringLiteral("김민지")));
+
+    copyOpenButton->click();
+
+    QCOMPARE(QApplication::clipboard()->text(), generatedPrompt);
+    QCOMPARE(capturedUrlHandler.urls.size(), 1);
+    QCOMPARE(
+        capturedUrlHandler.urls.constFirst(),
+        QUrl(QStringLiteral("https://gemini.google.com/app"))
         );
 }
 

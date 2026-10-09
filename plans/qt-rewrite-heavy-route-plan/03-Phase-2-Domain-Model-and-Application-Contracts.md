@@ -40,7 +40,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-09
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: Batch 62 is active with F486 invalid Custom Website URL rejection independently verified, accepted, and ready to commit; Gates 1 and 2 remain Partial.
+- Current note: Batch 63 is active with F487 Gemini batch-dialog Copy/Open handoff independently verified, accepted, and ready to commit; Gates 1 and 2 remain Partial.
 
 ### Slice discovery batches
 
@@ -65,10 +65,10 @@ Treat this plan as an operational summary, not a history:
   failure warning/no-navigation behavior; revisit after that behavior is
   clarified.
 
-#### Active batch: Batch 62
+#### Active batch: Batch 63
 
-- F486 — Invalid Custom Website URL rejection: independently verified, accepted, and ready to commit.
-- Constraints: in tests/mainwindow_custom_website_ai_comment_provider_action_parity_tests.cpp, use temporary English settings and the existing RAII restorer. Start with ChatGPT and a saved valid HTTPS URL; accept an HTTP replacement through the real chooser. Assert the Invalid AI Website title and exact HTTPS warning, dismiss it, then verify ChatGPT remains selected/persisted and the saved URL is unchanged. No production/CMake/browser/network changes.
+- F487 — Gemini batch-dialog Copy/Open handoff: independently verified, accepted, and ready to commit.
+- Constraints: add one slot in speaking_eval_batch_report_service_tests.cpp; capture and RAII-restore the prior provider before seeding/syncing Gemini. Use the synthetic eligible Alice/김민지 report, create the batch prompt, and click speakingEvalAiBatchCopyOpen. Assert clipboard equals the anonymous prompt (STD_NAME present, real names absent) and one scoped URL equals https://gemini.google.com/app. No production/CMake/browser/network changes.
 
 ## Objective
 

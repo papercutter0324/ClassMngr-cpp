@@ -17673,3 +17673,25 @@ The executor focused build succeeded; CTest passed 1/1 and the direct slot passe
 The Tester confirmed the real chooser accepts http://invalid.example.test/, the Invalid AI Website warning title and exact text are observed and dismissed, ChatGPT remains current/checked/persisted, and the saved HTTPS URL is unchanged. RAII restoration ordering was reviewed.
 
 Focused CTest passed 1/1; the direct slot passed 3/3 including init/cleanup. The executable lists the slot. Scoped diff check exited 0 with only an LF-to-CRLF notice. No browser or network behavior. F486 is independently verified, accepted, and ready to commit; Batch 62 remains active until commit.
+
+### F486 committed - 2026-10-09
+
+F486 committed as 964da4e3 with six scoped paths. Batch 62 is complete. Batch 63 candidate discovery is underway for F487; selection is pending.
+
+### F487 acceptance plan recorded before implementation - 2026-10-09
+
+Add one slot in speaking_eval_batch_report_service_tests.cpp. Capture and RAII-restore the prior provider before seeding and syncing Gemini. Use the synthetic eligible Alice/김민지 report, create the batch prompt, then click speakingEvalAiBatchCopyOpen. Assert clipboard exactly matches the anonymous prompt (STD_NAME present, real names absent) and one scoped URL equals https://gemini.google.com/app.
+
+The code scan also found selection-change prompt reset as an alternate candidate; select batch Copy/Open handoff for its concrete clipboard and URL effects. No production/CMake/browser/network changes. F487 is selected/current; implementation and verification are pending. Batch 63 remains active.
+
+### F487 implementation update - 2026-10-09
+
+The Gemini batch-dialog Copy/Open slot uses the synthetic eligible report and scoped provider/HTTPS cleanup. It checks the anonymous prompt clipboard and exactly one https://gemini.google.com/app launch, distinguishing this batch-dialog handoff from preview Copy/Open.
+
+The executor focused build succeeded; CTest passed 1/1, the direct slot passed 3/0/0, and scoped diff check passed. A Qt font-directory warning occurred. Independent verification is pending; Batch 63 remains active.
+
+### F487 independent verification update - 2026-10-09
+
+Independent review confirmed the provider restorer precedes the Gemini write, the clipboard exactly matches the anonymous prompt, and one https://gemini.google.com/app capture occurs. The executable lists the slot.
+
+Focused CTest passed 1/1, the direct native slot exited 0, and scoped diff check passed. The direct offscreen invocation and a simple control both timed out under that setup; the cause is unresolved. No full suite, browser, or network. F487 is independently verified, accepted, and ready to commit; Batch 63 remains active until commit.
