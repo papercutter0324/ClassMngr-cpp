@@ -40,7 +40,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-09
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: Batch 54 is active with F478 single-student report-dialog provider label parity independently verified, accepted, and ready to commit; Gates 1 and 2 remain Partial.
+- Current note: Batch 55 is active with F479 AI Prompt Preview provider-label parity independently verified, accepted, and ready to commit; Gates 1 and 2 remain Partial.
 
 ### Slice discovery batches
 
@@ -65,10 +65,10 @@ Treat this plan as an operational summary, not a history:
   failure warning/no-navigation behavior; revisit after that behavior is
   clarified.
 
-#### Active batch: Batch 54
+#### Active batch: Batch 55
 
-- F478 — Single-student report-dialog provider label parity: independently verified, accepted, and ready to commit.
-- Constraints: retain batch-dialog label coverage; assert the main report dialog label after ChatGPT, Gemini, Claude, and Microsoft Copilot actions, and after the real Custom Website modal action. Use fresh synthetic reports and verify speakingEvalCopyOpenAiPromptButton identifies the selected provider. Keep temporary English settings, recent-database loading disabled, and existing restorers. Do not click open/preview controls or use browser/network; no production or CMake changes. Defer the preview popup modal path and contract-dependent F285/F298.
+- F479 — AI Prompt Preview provider-label parity: independently verified, accepted, and ready to commit.
+- Constraints: retain prompt, anonymization, and copy assertions; for ChatGPT, Gemini, Claude, Microsoft Copilot, and Custom AI Website, sync the typed provider preference and open the local preview from synthetic eligible report data. Verify speakingEvalAiPromptPreviewCopyOpen contains the selected provider, then close without clicking Copy/Open. Restore provider with scoped RAII on assertion exits. No production/CMake/browser/network. F285/F298 remain deferred due contract uncertainty.
 
 ## Objective
 

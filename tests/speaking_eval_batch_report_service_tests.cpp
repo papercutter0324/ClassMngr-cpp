@@ -10,6 +10,7 @@
 #include "core/settingsmanager.h"
 #include "core/zip_archive_writer.h"
 #include "fakes/fake_user_prompt_service.h"
+#include "next/platform/settings_manager_ai_comment_provider_preferences_port.h"
 #include "ui/shared/state/option_state_keys.h"
 #include "windows_output_reference_capture.h"
 
@@ -412,6 +413,36 @@ bool createStaleWorkspaceFile(
         && staleFile.write("stale") == 5;
 }
 #endif
+
+class AiCommentProviderPreferenceRestorer final
+{
+public:
+    explicit AiCommentProviderPreferenceRestorer(
+        const ClassMngr::Next::Application::AiCommentProvider provider
+        )
+        : m_provider(provider)
+    {
+    }
+
+    ~AiCommentProviderPreferenceRestorer()
+    {
+        ClassMngr::Next::Platform::
+            SettingsManagerAiCommentProviderPreferencesPort().write(
+                m_provider
+                );
+        SettingsManager::instance().sync();
+    }
+
+    AiCommentProviderPreferenceRestorer(
+        const AiCommentProviderPreferenceRestorer&
+        ) = delete;
+    AiCommentProviderPreferenceRestorer& operator=(
+        const AiCommentProviderPreferenceRestorer&
+        ) = delete;
+
+private:
+    ClassMngr::Next::Application::AiCommentProvider m_provider;
+};
 }
 
 class SpeakingEvalBatchReportServiceTests : public QObject
@@ -448,6 +479,7 @@ private slots:
     void aiBatchDialogConfirmsAcceptedCommentOverwrites();
     void aiPromptButtonsRequireCompleteInput();
     void aiPromptPreviewCopiesAnAnonymousPrompt();
+    void aiPromptPreviewCopyOpenLabelTracksSelectedProvider();
     void pastedAiCommentsReplaceStudentPlaceholder();
     void notesDialogShowsNotesBesideEachOtherAndCommentBelow();
     void notesDialogPreservesUntouchedValuesAndFocusesClickedSection();
@@ -2561,6 +2593,151 @@ void SpeakingEvalBatchReportServiceTests::
     QVERIFY(copyButtonFound);
     QVERIFY(clipboardMatched);
     QVERIFY(promptWasAnonymous);
+}
+
+void SpeakingEvalBatchReportServiceTests::
+    aiPromptPreviewCopyOpenLabelTracksSelectedProvider()
+{
+    using PersistedProvider =
+        ClassMngr::Next::Application::AiCommentProvider;
+    using ProviderPreferences =
+        ClassMngr::Next::Platform::
+            SettingsManagerAiCommentProviderPreferencesPort;
+
+    struct ProviderCase
+    {
+        PersistedProvider provider;
+        QString expectedName;
+    };
+
+    const ProviderCase providerCases[] = {
+        { PersistedProvider::ChatGPT, QStringLiteral("ChatGPT") },
+        { PersistedProvider::Gemini, QStringLiteral("Gemini") },
+        { PersistedProvider::Claude, QStringLiteral("Claude") },
+        {
+            PersistedProvider::MicrosoftCopilot,
+            QStringLiteral("Microsoft Copilot")
+        },
+        {
+            PersistedProvider::CustomWebsite,
+            QStringLiteral("Custom AI Website")
+        }
+    };
+
+    const ProviderPreferences providerPreferences;
+    AiCommentProviderPreferenceRestorer restoreProvider(
+        providerPreferences.read()
+        );
+
+    SpeakingEvalReportData reportData;
+    reportData.englishName = QStringLiteral("Alice");
+    reportData.koreanName = QStringLiteral("김민지");
+    reportData.grade = 4;
+    reportData.notes =
+        QStringLiteral(
+            "[Did Well]\n• memorization\n"
+            "[Needs Improvement]\n• posture"
+            );
+
+    for (const ProviderCase& providerCase : providerCases)
+    {
+        providerPreferences.write(providerCase.provider);
+        SettingsManager::instance().sync();
+
+        SpeakingEvalReportDialog dialog(
+            { { QStringLiteral("Alice (김민지)"), reportData } },
+            0,
+            nullptr,
+            true
+            );
+        auto* previewButton =
+            dialog.findChild<QPushButton*>(
+                QStringLiteral("speakingEvalPreviewAiPromptButton")
+                );
+        QVERIFY(previewButton);
+
+        bool previewFound = false;
+        bool copyOpenButtonFound = false;
+        QString copyOpenLabel;
+
+        QTimer modalSafetyTimer(&dialog);
+        modalSafetyTimer.setSingleShot(true);
+        connect(
+            &modalSafetyTimer,
+            &QTimer::timeout,
+            &dialog,
+            [&dialog]()
+            {
+                if (
+                    auto* preview =
+                        dialog.findChild<QDialog*>(
+                            QStringLiteral(
+                                "speakingEvalAiPromptPreviewDialog"
+                                )
+                            )
+                    )
+                {
+                    preview->reject();
+                }
+            }
+            );
+        modalSafetyTimer.start(2000);
+
+        QTimer::singleShot(
+            0,
+            &dialog,
+            [&]()
+            {
+                auto* preview =
+                    qobject_cast<QDialog*>(
+                        QApplication::activeModalWidget()
+                        );
+                if (
+                    !preview
+                    || preview->objectName()
+                        != QStringLiteral(
+                            "speakingEvalAiPromptPreviewDialog"
+                            )
+                    )
+                {
+                    return;
+                }
+
+                previewFound = true;
+                auto* copyOpenButton =
+                    preview->findChild<QPushButton*>(
+                        QStringLiteral(
+                            "speakingEvalAiPromptPreviewCopyOpen"
+                            )
+                        );
+                if (copyOpenButton)
+                {
+                    copyOpenButtonFound = true;
+                    copyOpenLabel = copyOpenButton->text();
+                }
+                preview->reject();
+            }
+            );
+
+        QTest::mouseClick(
+            previewButton,
+            Qt::LeftButton
+            );
+        modalSafetyTimer.stop();
+
+        QVERIFY2(
+            previewFound,
+            qPrintable(
+                QStringLiteral("Preview modal did not open for %1")
+                    .arg(providerCase.expectedName)
+                )
+            );
+        QVERIFY(copyOpenButtonFound);
+        QVERIFY2(
+            copyOpenLabel.contains(providerCase.expectedName),
+            qPrintable(copyOpenLabel)
+            );
+    }
 }
 
 void SpeakingEvalBatchReportServiceTests::

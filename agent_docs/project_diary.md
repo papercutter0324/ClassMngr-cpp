@@ -3551,3 +3551,11 @@ F478 follows the provider-label matrix into the separate single-student report d
 F478 implementation covers the main single-student report dialog provider label across all five providers while preserving batch-dialog coverage. Both focused builds, CTests (2/2), direct QtTests (3/0 each), and diff check passed; independent review remains pending.
 
 Independent review accepted F478. Both focused CTests passed 2/2, direct QtTests passed 3/0 each, and diff check passed. The Tester confirmed persisted provider labels and cleanup for all five providers. Only optional Qt font/offscreen warnings and Git line-ending notices were reported; no full suite.
+
+F478 committed as `d5a0eef5` with exactly seven scoped paths; Batch 54 is complete. The only remaining worktree entries are the excluded pre-existing `agent_docs/latest_session_work.md` and `%SystemDrive%/`. F479 discovery begins after this commit.
+
+F479 covers the preview popup's provider label using the existing safe modal harness. The plan scan found only contract-dependent F285/F298; the code scan found a directly testable local consumer. Keep the preview test local: inspect the button, close the popup, and do not click it.
+
+F479 implementation covers the preview popup label for all five providers. The executor's focused build, CTest, and diff check passed; direct offscreen invocation exited 0 without output. Independent review is pending.
+
+Independent review accepted F479. CTest passed 1/1; direct QtTest passed 3/0/0; diff check passed. The Tester reviewed the five-provider preview labels, modal closure, and RAII restoration. No full suite or browser/network behavior.

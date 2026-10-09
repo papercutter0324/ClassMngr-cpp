@@ -17513,3 +17513,19 @@ Use temporary English settings, disable recent-database loading, and retain exis
 The main single-student report dialog label is asserted after ChatGPT, Gemini, Claude, and Microsoft Copilot transitions and after the actual Custom Website modal action. Existing batch-dialog labels remain covered.
 
 Both focused builds passed; CTests passed 1/1 each and direct QtTests passed 3/0 each. Independent diff check passed and focused binaries postdate their sources. Qt font/offscreen warnings occurred. No full suite, browser, or network behavior. F478 is independently verified, accepted, and ready to commit; Batch 54 remains active until commit.
+
+### F478 committed - 2026-10-09
+
+F478 committed as d5a0eef5 with seven scoped paths. Batch 54 is complete. Batch 55 is active with F479 AI Prompt Preview provider-label parity selected/current.
+
+### F479 acceptance plan recorded before implementation - 2026-10-09
+
+Extend the existing provider tests to cover the local single-student SpeakingEval prompt preview. For ChatGPT, Gemini, Claude, Microsoft Copilot, and Custom AI Website, sync the typed provider preference, open the preview using synthetic eligible report data, and assert speakingEvalAiPromptPreviewCopyOpen contains the selected provider. Retain batch-dialog label, prompt, anonymization, and copy assertions. Close the preview without clicking Copy/Open.
+
+Use the existing temporary English settings and scoped RAII provider restorer on assertion exits. No production/CMake/browser/network behavior. Defer F285/F298 while their contracts remain uncertain. F479 is selected/current; implementation and verification are pending. Batch 55 remains active.
+
+### F479 acceptance update - 2026-10-09
+
+The test cycles through all five typed provider preferences, opens a fresh synthetic-data preview, checks speakingEvalAiPromptPreviewCopyOpen, and closes each popup without clicking Copy/Open. RAII restores and syncs the original provider.
+
+The executor focused build and CTest passed 1/1. Independent CTest passed 1/1; the direct offscreen slot passed 3/0/0 with its summary captured to a temporary report. Independent diff check passed, and the artifact is newer than source. Qt font/offscreen warnings occurred. No full suite, browser, or network. F479 is independently verified, accepted, and ready to commit; Batch 55 remains active until commit.
