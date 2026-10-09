@@ -17036,3 +17036,35 @@ VS18/Qt6.12/Ninja target build passed; focused CTest passed 1/1. Independent dir
 3/0 and independent CTest rerun passed 1/1. Qt reported the existing missing lib/fonts path while packaged fonts
 loaded. No full suite was run. F461 is independently verified, accepted, and ready to commit; Batch 37 remains active
 until commit. F462 discovery has not started and begins only after F461 commits.
+### F461 committed - 2026-10-09
+
+F461, “Phase2 - Cover Sidebar Overflow Tooltips QAction parity (F461),” was committed as
+e590ea773d4b6b1d415d248c9c3f5068094d5d4c on Qt-Rewrite, 46 commits ahead of origin. The commit contains exactly
+seven scoped paths. Post-commit status was clean except for excluded pre-existing latest_session_work.md and
+%SystemDrive%/. Batch 37 is complete. Batch 38 is active with F462 Save Mode QAction parity selected; its acceptance
+plan is recorded before implementation. F461 acceptance and focused verification remain recorded above.
+
+### F462 acceptance plan recorded before implementation - 2026-10-09
+
+Two independent reviews found gaps in Save Mode and Sidebar Marquee QAction coverage. Select Save Mode:
+TestingClassesPage::ensurePage() can create a clean page without activation or database reads, and
+AutosaveCoordinator::saveMode() is observable. Sidebar Marquee depends on hover and a 30 ms timer.
+
+Use a dedicated offscreen MainWindow test with temporary settings and recent-database loading disabled. Ensure
+TestingClassesPage through PageManager without activating it, find its direct-child AutosaveCoordinator, then trigger
+the actual Manual and Automatic actions. Assert each action/state and persisted preference, coordinator mode, clean
+state, and that saveRequested remains zero. RAII cleanup restores Automatic while MainWindow is alive.
+
+No database, network, user file, dirty page, autosave side effect, or production change. F462 is selected for
+implementation; implementation and verification have not started. Batch 38 remains active.
+### F462 acceptance update - 2026-10-09
+
+The test creates an unactivated TestingClassesPage through PageManager, finds its direct-child AutosaveCoordinator,
+and triggers the actual Manual then Automatic actions. It checks each action/option/persisted preference, coordinator
+mode, clean page and coordinator after each action, and zero saveRequested signals. RAII restores Automatic while
+MainWindow remains alive.
+
+Independent verification passed with VS18/Qt6.12: focused CTest 1/1 and direct QtTest setup/test/cleanup 3/0. Qt reported the
+existing missing lib/fonts path while bundled fonts loaded. No full suite was run. F462 is independently verified,
+accepted, and ready to commit; Batch 38 remains active until commit. F463 discovery has not started and begins only
+after F462 commits.

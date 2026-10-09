@@ -81,9 +81,12 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
   Batch 35 is complete. F460, “Phase2 - Cover Document Viewer Page Spacing QAction parity (F460),” is committed
   as fba46915d76b05aab53de85760a3f857dc4ed2a2 on Qt-Rewrite, 45 commits ahead of origin; Batch 36 is complete.
   Its commit contains exactly seven scoped paths. Post-commit status was clean except for excluded
-  latest_session_work.md and %SystemDrive%/. Batch 37 is active with F461 Sidebar Overflow Tooltips QAction parity
-  accepted in this changeset and ready to commit. F461 acceptance and focused verification are recorded in the progress log;
-  F462 discovery begins only after F461 commits. F460 and F459 acceptance/focused verification and F458 acceptance/verification
+  latest_session_work.md and %SystemDrive%/. F461, “Phase2 - Cover Sidebar Overflow Tooltips QAction parity (F461),” was
+  committed as e590ea773d4b6b1d415d248c9c3f5068094d5d4c on Qt-Rewrite, 46 commits ahead of origin; Batch 37 is
+  complete. Its commit contains exactly seven scoped paths. Post-commit status was clean except for excluded pre-existing
+  latest_session_work.md and %SystemDrive%/. Batch 38 is active with F462 Save Mode QAction parity accepted in this
+  changeset and ready to commit. F462 acceptance and focused verification are recorded in the progress log; F463
+  discovery begins only after F462 commits. F461 acceptance and focused verification remain in the progress log;
   remain in the progress log. F457 acceptance and verification remain in the progress log. F456
   acceptance and focused verification remain in the progress log. F454
   acceptance and focused verification remain in the progress log. F453
@@ -118,14 +121,13 @@ log](03-Phase-2-Progress-Log.md).
   failure warning/no-navigation behavior; revisit after that behavior is
   clarified.
 
-#### Active batch: Batch 37
+#### Active batch: Batch 38
 
-F461 Sidebar Overflow Tooltips QAction parity is accepted in this changeset and ready to commit. The offscreen
-MainWindow test uses temporary settings and disables recent-database loading. It verifies the initially checked real
-action, then drives false→true→false and checks action/persisted state plus cleared/full-name/cleared tooltips. It
-constrains Sidebar/tree geometry and compares measured text width with available viewport width to establish overflow.
-Focused verification is recorded in the progress log. Batch 37 remains active until commit; F462 discovery begins only
-after F461 commits.
+F462 Save Mode QAction parity is accepted in this changeset and ready to commit. The test creates an unactivated
+TestingClassesPage, finds its direct-child AutosaveCoordinator, and triggers actual Manual then Automatic actions.
+It checks action/option/persisted state, coordinator modes, clean page and coordinator after each action, and zero
+saveRequested signals. RAII restores Automatic while MainWindow remains alive. Batch 38 remains active until commit;
+F463 discovery begins only after F462 commits. Focused verification is recorded in the progress log.
 
 Batch 21 began with ten candidates after F428 and is complete; F429-F438 are
 committed. F438, “Phase2 - Reject existing IDs in repeat-series creation (F438),”
@@ -166,9 +168,12 @@ Background QAction parity is committed as cba31503f0bb5accf68de2032131db984403de
 F460, “Phase2 - Cover Document Viewer Page Spacing QAction parity (F460),” is committed as
 fba46915d76b05aab53de85760a3f857dc4ed2a2 on Qt-Rewrite, 45 commits ahead of origin; Batch 36 is complete.
 The commit contains exactly seven scoped paths. Post-commit status was clean except for excluded
-latest_session_work.md and %SystemDrive%/. Batch 37 is active with F461 Sidebar Overflow Tooltips QAction parity
-accepted in this changeset and ready to commit. F461 acceptance and focused verification are recorded in the progress log;
-F462 discovery begins only after F461 commits. F460/F459 acceptance and focused verification and F458 acceptance/verification
+  latest_session_work.md and %SystemDrive%/. F461, “Phase2 - Cover Sidebar Overflow Tooltips QAction parity (F461),” was
+  committed as e590ea773d4b6b1d415d248c9c3f5068094d5d4c on Qt-Rewrite, 46 commits ahead of origin; Batch 37 is
+  complete. Its commit contains exactly seven scoped paths. Post-commit status was clean except for excluded pre-existing
+  latest_session_work.md and %SystemDrive%/. Batch 38 is active with F462 Save Mode QAction parity accepted in this
+  changeset and ready to commit. F462 acceptance and focused verification are recorded in the progress log; F463
+  discovery begins only after F462 commits. F461 acceptance and focused verification remain in the progress log;
 remain in the progress log. F456 acceptance remains recorded there; F455/F454/F453/F452/F451 evidence remains there.
 F435 covers opening from the no-database banner.
 F444 covers replacing a distinct open profile and excludes same-path opening,

@@ -200,9 +200,12 @@ synchronization is committed (`f4bc5282`). F416 Document Catalog rendered
   Batch 35 is complete. F460, “Phase2 - Cover Document Viewer Page Spacing QAction parity (F460),” is committed
   as fba46915d76b05aab53de85760a3f857dc4ed2a2 on Qt-Rewrite, 45 commits ahead of origin; Batch 36 is complete.
   Its commit contains exactly seven scoped paths. Post-commit status was clean except for excluded
-  latest_session_work.md and %SystemDrive%/. Batch 37 is active with F461 Sidebar Overflow Tooltips QAction parity
-  accepted in this changeset and ready to commit. F461 acceptance and focused verification are recorded in the progress log;
-  F462 discovery begins only after F461 commits. F460 and F459 acceptance/focused verification and F458 acceptance/verification
+  latest_session_work.md and %SystemDrive%/. F461, “Phase2 - Cover Sidebar Overflow Tooltips QAction parity (F461),” was
+  committed as e590ea773d4b6b1d415d248c9c3f5068094d5d4c on Qt-Rewrite, 46 commits ahead of origin; Batch 37 is
+  complete. Its commit contains exactly seven scoped paths. Post-commit status was clean except for excluded pre-existing
+  latest_session_work.md and %SystemDrive%/. Batch 38 is active with F462 Save Mode QAction parity accepted in this
+  changeset and ready to commit. F462 acceptance and focused verification are recorded in the progress log; F463
+  discovery begins only after F462 commits. F461 acceptance and focused verification remain in the progress log;
   remain in the progress log. F457 acceptance and verification remain in the progress log. F456
   acceptance and focused verification remain in the progress log. F454
   acceptance and focused verification remain in the progress log. F453

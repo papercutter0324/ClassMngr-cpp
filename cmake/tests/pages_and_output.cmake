@@ -919,6 +919,20 @@ classmngr_add_qt_test(
 )
 
 classmngr_add_qt_test(
+    NAME MainWindowSaveModeActionParity
+    SOURCES
+        tests/mainwindow_save_mode_action_parity_tests.cpp
+    LIBRARIES
+        Qt6::Sql
+        Qt6::Test
+        Qt6::Widgets
+    DEPENDENCIES
+        ClassMngrcampusesResourcePack
+        ClassMngrdocumentsResourcePack
+    OFFSCREEN
+)
+
+classmngr_add_qt_test(
     NAME MainWindowDocumentViewerBackgroundActionParity
     SOURCES
         tests/mainwindow_document_viewer_background_action_parity_tests.cpp
@@ -1189,6 +1203,26 @@ qt_add_resources(
 
 qt_add_translations(
     TARGETS ClassMngrMainWindowThemeActionParityTests
+    TS_FILES
+        resources/assets/translations/ClassMngr_en_AU.ts
+        resources/assets/translations/ClassMngr_en_CA.ts
+        resources/assets/translations/ClassMngr_en_GB.ts
+        resources/assets/translations/ClassMngr_en_US.ts
+        resources/assets/translations/ClassMngr_ko_KR.ts
+)
+
+qt_add_resources(
+    ClassMngrMainWindowSaveModeActionParityTests
+    mainwindow_save_mode_action_keyboard_resources
+    PREFIX "/"
+    BASE "${PROJECT_SOURCE_DIR}/resources"
+    FILES
+        resources/assets/icons/keyboard_dark.svg
+        resources/assets/icons/keyboard_light.svg
+)
+
+qt_add_translations(
+    TARGETS ClassMngrMainWindowSaveModeActionParityTests
     TS_FILES
         resources/assets/translations/ClassMngr_en_AU.ts
         resources/assets/translations/ClassMngr_en_CA.ts
