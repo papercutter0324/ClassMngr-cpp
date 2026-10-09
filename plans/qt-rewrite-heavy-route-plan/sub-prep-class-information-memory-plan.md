@@ -443,6 +443,16 @@ The route output is generated and release flags are clear, but visual parity was
 
 The output route measured 2,168 widgets/233,619,456 working-set bytes at output-operation release, then 6,412 widgets/300,208,128 working-set bytes after the workflow activated My Classes. The checkpoint was emitted after showPage and app.processEvents. MyClassesPage rebuilds all class detail tab pages eagerly, and PageManager retains created pages in its stacked page map when hidden. These code paths explain the transition increase; exact byte attribution by QObject was not collected. F510 diagnosis is complete.
 
-## F511 implementation focus - 2026-10-09
+## F511 implementation and Release result - 2026-10-09
 
-Keep every My Classes grade/class tab and its label/order, but materialize detailed fields/cards only for the active class. Clear the previously active detail widget tree on class/grade changes; preserve selection, refresh, and teacher/class detail behavior. Update existing focused parity coverage only as needed, then rerun the packaged Release output-sub-prep route. The 250 MiB gate remains open until measured, and F509 did not establish output visual parity.
+My Classes now keeps every grade/class tab and builds the detail fields/cards only for the active class. Class and grade selection changes synchronously clear the prior detail tree before populating the new selection. Existing summary and teacher-display parity checks now select the relevant tab before inspecting its details; the grouped-grade regression also checks that the old detail widgets are cleared on both grade and class changes.
+
+The Windows x64 Debug Ninja build and the three focused My Classes CTests passed. The alternate Visual Studio build tree stopped before compilation because MSBuild FileTracker returned E_ACCESSDENIED during ZERO_CHECK. The packaged Windows x64 Release application and startup harness were freshly built and installed. A first single-route validation attempt exposed a runner manifest-shape issue for one requested route; the successful validated rerun requested lifecycle-sub-prep and output-sub-prep together. Evidence is under the external F511 evidence root, with the package/build in `f511-20261009-02` and route validation in `f511-20261009-03`.
+
+The 96-class output route generated Sub Prep.pdf and Rosters - By Day.pdf (2 files, 17 pages, 139,650 combined bytes). At output-operation release it measured 2,168 widgets and 235,069,440 working-set bytes. After My Classes activation it measured 2,471 widgets and 234,868,736 working-set bytes, versus F509's 6,412 widgets and 300,208,128 bytes at the equivalent checkpoint: 3,941 fewer widgets and 65,339,392 fewer working-set bytes. The output route settled at 240,312,320/240,316,416 working-set bytes at 1s/5s, with 254,984,192 private bytes and a 249,737,216-byte peak working set.
+
+The selected lifecycle-sub-prep route still has a 280,035,328-byte maximum at the PDF reopened/rendered workflow checkpoint; 24 samples exceeded the 262,144,000-byte target. These selected routes are only 2 of 24 Windows Phase 0 routes, macOS universal remains absent, and generated output was not visually compared with a baseline. The 250 MiB, full-route, and visual-parity gates remain open.
+
+## F512 diagnostic focus - 2026-10-09
+
+Trace the lifecycle-sub-prep route's 280,035,328-byte peak at PDF reopen/render. Inspect route checkpoints and PDF/document/widget ownership through open, render, release, and subsequent navigation to distinguish live retained resources from process allocator retention. Record causal evidence before choosing a bounded implementation slice; keep the 250 MiB gate open until a validated packaged route meets it.

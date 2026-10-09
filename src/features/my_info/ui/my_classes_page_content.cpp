@@ -26,6 +26,7 @@
 #include <algorithm>
 #include <charconv>
 #include <cstddef>
+#include <memory>
 #include <optional>
 #include <string>
 #include <system_error>
@@ -402,11 +403,39 @@ void clearLayout(
         {
             clearLayout(childLayout);
             delete childLayout;
+            continue;
         }
 
         if (auto* widget = item->widget())
         {
             widget->deleteLater();
+        }
+
+        delete item;
+    }
+}
+
+void clearLayoutImmediately(
+    QLayout* layout
+    )
+{
+    if (!layout)
+    {
+        return;
+    }
+
+    while (QLayoutItem* item = layout->takeAt(0))
+    {
+        if (auto* childLayout = item->layout())
+        {
+            clearLayoutImmediately(childLayout);
+            delete childLayout;
+            continue;
+        }
+
+        if (auto* widget = item->widget())
+        {
+            delete widget;
         }
 
         delete item;
@@ -785,10 +814,13 @@ void MyClassesPage::rebuildClassInformation()
     const int previousClassId =
         m_selectedClassId;
 
+    const auto summaryData =
+        std::make_shared<QList<ClassSummary>>(std::move(summaries));
+
     auto findSummary =
-        [&summaries](int classId) -> const ClassSummary*
+        [summaryData](int classId) -> const ClassSummary*
         {
-            for (const ClassSummary& summary : summaries)
+            for (const ClassSummary& summary : *summaryData)
             {
                 if (summary.classroom.id == classId)
                 {
@@ -824,39 +856,14 @@ void MyClassesPage::rebuildClassInformation()
             return -1;
         };
 
-    auto updateSelectedFromTabs =
-        [this](NavigationTabWidget* tabs)
-        {
-            if (!tabs || tabs->currentIndex() < 0)
-            {
-                return;
-            }
-
-            QWidget* page =
-                tabs->currentWidget();
-
-            const int classId =
-                page
-                    ? page->property("class_id").toInt()
-                    : -1;
-
-            if (classId > 0)
-            {
-                m_selectedClassId = classId;
-            }
-        };
-
     auto createClassPage =
-        [this](const ClassSummary& summary, QWidget* parent)
+        [](int classId, QWidget* parent)
         {
-            const bool unassigned =
-                !summary.teacherProfileLoaded;
-
             auto* page =
                 new QWidget(parent);
             page->setProperty(
                 "class_id",
-                summary.classroom.id
+                classId
                 );
 
             auto* pageLayout =
@@ -871,6 +878,28 @@ void MyClassesPage::rebuildClassInformation()
                 UiConstants::ClassInfo::Page::ContentSpacing
                 );
             pageLayout->setAlignment(Qt::AlignTop);
+
+            return page;
+        };
+
+    auto populateClassPage =
+        [this](QWidget* page, const ClassSummary& summary)
+        {
+            if (!page)
+            {
+                return;
+            }
+
+            const bool unassigned =
+                !summary.teacherProfileLoaded;
+
+            auto* pageLayout =
+                qobject_cast<QVBoxLayout*>(page->layout());
+
+            if (!pageLayout)
+            {
+                return;
+            }
 
             auto* teacherHeading =
                 new QLabel(
@@ -1132,8 +1161,47 @@ void MyClassesPage::rebuildClassInformation()
             pageLayout->addWidget(
                 classCard
                 );
+        };
 
-            return page;
+    auto updateSelectedFromTabs =
+        [this, findSummary, populateClassPage](NavigationTabWidget* tabs)
+        {
+            if (!tabs || tabs->currentIndex() < 0)
+            {
+                return;
+            }
+
+            QWidget* page =
+                tabs->currentWidget();
+
+            const int classId =
+                page
+                    ? page->property("class_id").toInt()
+                    : -1;
+            const ClassSummary* summary =
+                classId > 0
+                    ? findSummary(classId)
+                    : nullptr;
+
+            if (!summary)
+            {
+                return;
+            }
+
+            if (m_activeClassPage != page)
+            {
+                if (m_activeClassPage)
+                {
+                    clearLayoutImmediately(
+                        m_activeClassPage->layout()
+                        );
+                }
+
+                m_activeClassPage = page;
+                populateClassPage(page, *summary);
+            }
+
+            m_selectedClassId = classId;
         };
 
     if (navigation.mode == ClassTabNavigation::Mode::Flat)
@@ -1159,7 +1227,7 @@ void MyClassesPage::rebuildClassInformation()
 
             tabs->addTab(
                 createClassPage(
-                    *summary,
+                    tab.classId,
                     tabs
                     ),
                 tab.label
@@ -1247,7 +1315,7 @@ void MyClassesPage::rebuildClassInformation()
 
             classTabs->addTab(
                 createClassPage(
-                    *summary,
+                    tab.classId,
                     classTabs
                     ),
                 tab.label
@@ -1355,6 +1423,7 @@ void MyClassesPage::rebuildClassInformation()
 }
 void MyClassesPage::clearClassInformation()
 {
+    m_activeClassPage = nullptr;
     clearLayout(
         m_classInformationLayout
         );

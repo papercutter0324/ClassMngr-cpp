@@ -336,6 +336,7 @@ private slots:
     void failedTeacherProfileKeepsClassAndUsesSilentUnassignedFallback();
     void rosterCountUsesNonblankEnglishOrKoreanCells();
     void studentCountBatchRunsOnceAndKeepsClassOrder();
+    void groupedGradeSelectionMaterializesOnlySelectedDetails();
     void rosterReadFailureKeepsClassAndShowsZeroStudentCount();
     void rosterWithoutNameColumnsShowsZeroStudentCount();
 };
@@ -471,6 +472,7 @@ assignedTeacherProfileProjectsAllConsumedUtf16Fields()
             + QStringLiteral(" #%1").arg(secondEnglishClassId)
         );
 
+    tabs->setCurrentIndex(englishTabIndex);
     QWidget* const englishClassPage = tabs->widget(englishTabIndex);
     QVERIFY(englishClassPage);
     const QString expectedEnglishHeading =
@@ -480,21 +482,6 @@ assignedTeacherProfileProjectsAllConsumedUtf16Fields()
         labelsWithText(*englishClassPage, expectedEnglishHeading).size(),
         1
         );
-    QCOMPARE(
-        labelsWithText(
-            *tabs->widget(koreanTabIndex),
-            koreanTeacher.preferredRomanization
-            ).size(),
-        1
-        );
-    QCOMPARE(
-        labelsWithText(
-            *tabs->widget(secondEnglishTabIndex),
-            expectedEnglishHeading
-            ).size(),
-        1
-        );
-
     for (const QString& expectedValue : {
              englishTeacher.internetType,
              englishTeacher.wifiName,
@@ -513,6 +500,24 @@ assignedTeacherProfileProjectsAllConsumedUtf16Fields()
         *englishClassPage, englishTeacher.notes);
     QCOMPARE(notes.size(), 1);
     QVERIFY(notes.constFirst()->isReadOnly());
+
+    tabs->setCurrentIndex(koreanTabIndex);
+    QCOMPARE(
+        labelsWithText(
+            *tabs->widget(koreanTabIndex),
+            koreanTeacher.preferredRomanization
+            ).size(),
+        1
+        );
+
+    tabs->setCurrentIndex(secondEnglishTabIndex);
+    QCOMPARE(
+        labelsWithText(
+            *tabs->widget(secondEnglishTabIndex),
+            expectedEnglishHeading
+            ).size(),
+        1
+        );
     const QList<QTextEdit*> repeatedTeacherNotes = textEditsWithContent(
         *tabs->widget(secondEnglishTabIndex),
         englishTeacher.notes
@@ -727,6 +732,7 @@ classInformationBatchFailureKeepsEachClassInListOrder()
     QCOMPARE(tabs->tabText(2),
              QStringLiteral("Gamma information default class ")
                  + QChar(0x2022) + QStringLiteral(" No time"));
+    tabs->setCurrentIndex(2);
     QCOMPARE(labelsWithText(*tabs->widget(2), QStringLiteral("Unassigned")).size(), 1);
 
     QSqlQuery dropClassInfo(
@@ -790,13 +796,11 @@ classInformationBatchFailureKeepsEachClassInListOrder()
     QCOMPARE(tabs->widget(0)->property("class_id").toInt(), alphaId);
     QCOMPARE(tabs->widget(1)->property("class_id").toInt(), betaId);
     QCOMPARE(tabs->widget(2)->property("class_id").toInt(), missingInfoId);
-    for (QWidget* const classPage : {
-             tabs->widget(0),
-             tabs->widget(1),
-             tabs->widget(2)
-         })
+    for (int index = 0; index < tabs->count(); ++index)
     {
+        QWidget* const classPage = tabs->widget(index);
         QVERIFY(classPage);
+        tabs->setCurrentIndex(index);
         QCOMPARE(labelsWithText(*classPage, QStringLiteral("Unassigned")).size(), 1);
         QLabel* const schedule = infoRowValueLabelFor(
             *classPage,
@@ -1442,6 +1446,7 @@ void MyClassesPageTests::studentCountBatchRunsOnceAndKeepsClassOrder()
     };
     for (int index = 0; index < 3; ++index)
     {
+        tabs->setCurrentIndex(index);
         QWidget* const classPage = tabs->widget(index);
         QVERIFY(classPage);
         QCOMPARE(classPage->property("class_id").toInt(), expectedClassIds[index]);
@@ -1451,6 +1456,13 @@ void MyClassesPageTests::studentCountBatchRunsOnceAndKeepsClassOrder()
             );
         QVERIFY(count);
         QCOMPARE(count->text(), expectedCounts[index]);
+        for (int otherIndex = 0; otherIndex < tabs->count(); ++otherIndex)
+        {
+            if (otherIndex != index)
+            {
+                QVERIFY(tabs->widget(otherIndex)->findChildren<QWidget*>().isEmpty());
+            }
+        }
     }
 
     const auto after = repository->myClassesStudentCountBatchReadMetrics();
@@ -1459,6 +1471,107 @@ void MyClassesPageTests::studentCountBatchRunsOnceAndKeepsClassOrder()
     QCOMPARE(after.columnStatementCount, before.columnStatementCount + 1);
     QCOMPARE(after.dataStatementCount, before.dataStatementCount + 1);
     QCOMPARE(after.fallbackClassReadCount, before.fallbackClassReadCount);
+}
+
+void MyClassesPageTests::groupedGradeSelectionMaterializesOnlySelectedDetails()
+{
+    MyClassesPageFixture fixture;
+    QString error;
+    QVERIFY2(fixture.initialize(&error), qPrintable(error));
+
+    for (int index = 0; index < 7; ++index)
+    {
+        const QString grade =
+            index < 4
+                ? QStringLiteral("E4")
+                : QStringLiteral("E5");
+        const QString level =
+            grade == QStringLiteral("E4")
+                ? index % 2 == 0
+                    ? QStringLiteral("Theseus")
+                    : QStringLiteral("Perseus")
+                : QStringLiteral("Artemis");
+        int classId = 0;
+        QVERIFY2(fixture.createClass(
+                     QStringLiteral("Grouped class %1").arg(index),
+                     grade,
+                     level,
+                     &classId,
+                     &error
+                     ), qPrintable(error));
+        QVERIFY(classId > 0);
+    }
+
+    MyClassesPage page(&fixture.services);
+    page.resize(900, 700);
+    page.refresh();
+    page.show();
+    QApplication::processEvents();
+
+    NavigationTabWidget* const gradeTabs =
+        page.findChild<NavigationTabWidget*>(
+            QStringLiteral("myInfoGradeTabs")
+            );
+    QVERIFY(gradeTabs);
+    QCOMPARE(gradeTabs->count(), 2);
+
+    const auto classTabsForGrade =
+        [gradeTabs](int gradeIndex)
+        {
+            QWidget* const gradePage =
+                gradeTabs->widget(gradeIndex);
+            return gradePage
+                ? gradePage->findChild<NavigationTabWidget*>(
+                    QStringLiteral("myInfoClassTabs"),
+                    Qt::FindDirectChildrenOnly
+                    )
+                : nullptr;
+        };
+
+    NavigationTabWidget* const firstGradeClassTabs =
+        classTabsForGrade(0);
+    NavigationTabWidget* const secondGradeClassTabs =
+        classTabsForGrade(1);
+    QVERIFY(firstGradeClassTabs);
+    QVERIFY(secondGradeClassTabs);
+    QCOMPARE(firstGradeClassTabs->count(), 4);
+    QCOMPARE(secondGradeClassTabs->count(), 3);
+
+    QWidget* const firstGradeClassPage =
+        firstGradeClassTabs->currentWidget();
+    QWidget* const firstSecondGradeClassPage =
+        secondGradeClassTabs->currentWidget();
+    QVERIFY(firstGradeClassPage);
+    QVERIFY(firstSecondGradeClassPage);
+    QVERIFY(infoRowValueLabelFor(
+        *firstGradeClassPage,
+        QStringLiteral("# of Students")
+        ));
+    QVERIFY(firstSecondGradeClassPage->findChildren<QWidget*>().isEmpty());
+
+    gradeTabs->setCurrentIndex(1);
+    QVERIFY(firstGradeClassPage->findChildren<QWidget*>().isEmpty());
+    QVERIFY(infoRowValueLabelFor(
+        *firstSecondGradeClassPage,
+        QStringLiteral("# of Students")
+        ));
+
+    secondGradeClassTabs->setCurrentIndex(1);
+    QVERIFY(firstSecondGradeClassPage->findChildren<QWidget*>().isEmpty());
+    QWidget* const secondSecondGradeClassPage =
+        secondGradeClassTabs->currentWidget();
+    QVERIFY(secondSecondGradeClassPage);
+    QVERIFY(infoRowValueLabelFor(
+        *secondSecondGradeClassPage,
+        QStringLiteral("# of Students")
+        ));
+
+    gradeTabs->setCurrentIndex(0);
+    QVERIFY(secondSecondGradeClassPage->findChildren<QWidget*>().isEmpty());
+    QVERIFY(infoRowValueLabelFor(
+        *firstGradeClassPage,
+        QStringLiteral("# of Students")
+        ));
 }
 
 void MyClassesPageTests::rosterWithoutNameColumnsShowsZeroStudentCount()

@@ -42,7 +42,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-09
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F509 is committed as 37621c16 and its 307,523,584-byte five-second settled working set remains above the 250 MiB target; F510 identified eager My Classes widget construction plus PageManager caching, and F511 is active in Batch 87 to bound that tree; Gates 1 and 2 remain Partial.
+- Current note: F511 now materializes one My Classes detail tree and its packaged output-route activation measured 234,868,736 working-set bytes, while the lifecycle route still peaks at 280,035,328 bytes; F512 is active in Batch 88 to trace that peak, and Gates 1 and 2 remain Partial.
 
 ### Slice discovery batches
 
@@ -67,9 +67,9 @@ Treat this plan as an operational summary, not a history:
   failure warning/no-navigation behavior; revisit after that behavior is
   clarified.
 
-#### Active batch: Batch 87
+#### Active batch: Batch 88
 
-- F511 - Selected/current: replace eager per-class detail-widget construction with one active class detail tree while preserving all class/grade tabs, order, selection, and visible content; release the prior tree on selection changes and rerun the packaged Release output route. Keep the 250 MiB gate open until measured.
+- F512 - Diagnose the remaining lifecycle-sub-prep working-set peak at the PDF reopen/render checkpoint and identify whether live UI/document resources or allocator retention account for it before selecting a remedy.
 
 ## Objective
 

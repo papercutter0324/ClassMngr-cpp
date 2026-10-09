@@ -284,11 +284,17 @@ QJsonArray summariesInTabOrder(
 {
     QJsonArray summaries;
     *complete = true;
+    const int selectedIndex = tabs.currentIndex();
     for (int index = 0; index < tabs.count(); ++index)
     {
+        tabs.setCurrentIndex(index);
         const VisibleSummary summary = summaryFor(tabs, index, classRoles);
         *complete = *complete && summary.complete;
         summaries.append(summary.toJson());
+    }
+    if (selectedIndex >= 0 && selectedIndex < tabs.count())
+    {
+        tabs.setCurrentIndex(selectedIndex);
     }
     return summaries;
 }

@@ -2,6 +2,8 @@
 
 #include "ui/shared/pages/basepage.h"
 
+#include <QPointer>
+
 class ApplicationServices;
 class QLabel;
 class QScrollArea;
@@ -49,5 +51,6 @@ private:
     QWidget* m_classInformationContent = nullptr;
     QVBoxLayout* m_classInformationLayout = nullptr;
     NavigationTabWidget* m_classInformationTabs = nullptr;
+    QPointer<QWidget> m_activeClassPage;
     int m_selectedClassId = -1;
 };

@@ -264,6 +264,7 @@ void MyClassesPageTeacherDisplayParityTests::sharedTeacherAndKoreanFallbackKeepP
     const QStringList roles{QStringLiteral("first"), QStringLiteral("korean"), QStringLiteral("shared")};
     for (int index = 0; index < tabs->count(); ++index)
     {
+        tabs->setCurrentIndex(index);
         const auto profile = profileFor(*tabs->widget(index));
         const Teacher& expected = index == 1 ? korean : english;
         QVERIFY(profile.complete);
@@ -332,12 +333,14 @@ void MyClassesPageTeacherDisplayParityTests::refreshedProfileKeepsSelectedClassA
     QVERIFY(updated.heading != initial.heading);
     const int siblingIndex = indexFor(*tabs, siblingId);
     QVERIFY(siblingIndex >= 0);
+    tabs->setCurrentIndex(siblingIndex);
     const auto sibling = profileFor(*tabs->widget(siblingIndex));
     QVERIFY(sibling.complete && sibling.readOnly);
     QCOMPARE(sibling.heading, siblingTeacher.teacherEn);
     QCOMPARE(sibling.fields, QStringList({siblingTeacher.internetType, siblingTeacher.wifiName,
         siblingTeacher.wifiPassword, siblingTeacher.projectionType, siblingTeacher.zoomId, siblingTeacher.zoomPassword}));
     QCOMPARE(sibling.notes, siblingTeacher.notes);
+    tabs->setCurrentIndex(targetIndex);
     const auto classes = fixture.services.classService()->classes();
     QVERIFY(classes);
     QCOMPARE(classes->size(), 2);
