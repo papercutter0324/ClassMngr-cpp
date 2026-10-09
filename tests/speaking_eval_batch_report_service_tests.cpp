@@ -562,6 +562,7 @@ private slots:
     void aiBatchDialogParsesDuplicateMalformedAndUnknownBlocks();
     void aiBatchDialogConfirmsAcceptedCommentOverwrites();
     void aiBatchDialogCancelDiscardsReadyComment();
+    void aiBatchDialogRepairsMalformedReviewComment();
     void aiPromptButtonsRequireCompleteInput();
     void aiPromptPreviewCopiesAnAnonymousPrompt();
     void aiPromptPreviewCopyOpenLabelTracksSelectedProvider();
@@ -3319,6 +3320,94 @@ void SpeakingEvalBatchReportServiceTests::
     QCOMPARE(dialog.result(), static_cast<int>(QDialog::Rejected));
     QVERIFY(dialog.acceptedComments().isEmpty());
     QVERIFY(!dialog.isVisible());
+}
+
+void SpeakingEvalBatchReportServiceTests::
+    aiBatchDialogRepairsMalformedReviewComment()
+{
+    SpeakingEvalReportData report;
+    report.englishName = QStringLiteral("Alice");
+    report.grade = 5;
+    report.notes =
+        QStringLiteral(
+            "[Did Well]\nClear pronunciation\n"
+            "[Needs Improvement]\nAdd supporting details"
+            );
+
+    SpeakingEvalAiBatchDialog dialog(
+        { { QStringLiteral("Alice"), report, 11 } }
+        );
+    auto* selection = dialog.findChild<QTableWidget*>(
+        QStringLiteral("speakingEvalAiBatchSelectionTable")
+        );
+    auto* createPromptButton = dialog.findChild<QPushButton*>(
+        QStringLiteral("speakingEvalAiBatchCreatePrompt")
+        );
+    auto* responseEdit = dialog.findChild<QPlainTextEdit*>(
+        QStringLiteral("speakingEvalAiBatchResponse")
+        );
+    auto* parseButton = dialog.findChild<QPushButton*>(
+        QStringLiteral("speakingEvalAiBatchParse")
+        );
+    auto* review = dialog.findChild<QTableWidget*>(
+        QStringLiteral("speakingEvalAiBatchReviewTable")
+        );
+    auto* applyButton = dialog.findChild<QPushButton*>(
+        QStringLiteral("speakingEvalAiBatchApply")
+        );
+    QVERIFY(selection);
+    QVERIFY(createPromptButton);
+    QVERIFY(responseEdit);
+    QVERIFY(parseButton);
+    QVERIFY(review);
+    QVERIFY(applyButton);
+
+    QCOMPARE(selection->item(0, 0)->checkState(), Qt::Checked);
+    createPromptButton->click();
+    responseEdit->setPlainText(
+        QStringLiteral(
+            "<<<STUDENT_01>>>\n"
+            "This response block was truncated before its closing marker."
+            )
+        );
+    QVERIFY(parseButton->isEnabled());
+    parseButton->click();
+
+    QCOMPARE(review->rowCount(), 1);
+    QCOMPARE(
+        review->item(0, 2)->text(),
+        QStringLiteral("Malformed response block")
+        );
+    QCOMPARE(review->item(0, 0)->checkState(), Qt::Unchecked);
+    QVERIFY(!applyButton->isEnabled());
+
+    const QString repairedComment =
+        QStringLiteral(
+            "The student spoke clearly and shared useful ideas during the "
+            "presentation. The speaker used a calm voice and made good eye "
+            "contact. The student can add more details to explain each point. "
+            "Clear pronunciation helped the audience understand."
+            );
+    QVERIFY(repairedComment.size() >= 100);
+    QVERIFY(repairedComment.size() <= 420);
+    QVERIFY(!repairedComment.contains(QStringLiteral("STD_NAME")));
+    review->item(0, 4)->setText(repairedComment);
+
+    QCOMPARE(
+        review->item(0, 2)->text(),
+        QStringLiteral("Ready \u2014 name placeholder was omitted")
+        );
+    QCOMPARE(review->item(0, 0)->checkState(), Qt::Checked);
+    QVERIFY(applyButton->isEnabled());
+
+    applyButton->click();
+
+    QCOMPARE(dialog.result(), static_cast<int>(QDialog::Accepted));
+    const auto acceptedComments = dialog.acceptedComments();
+    QCOMPARE(acceptedComments.size(), 1);
+    QCOMPARE(acceptedComments.first().sourceRow, 11);
+    QVERIFY(acceptedComments.first().oldComment.isEmpty());
+    QCOMPARE(acceptedComments.first().newComment, repairedComment);
 }
 
 void SpeakingEvalBatchReportServiceTests::

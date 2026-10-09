@@ -3679,3 +3679,9 @@ F494 committed as b89fe5d4 with six scoped paths. The only post-commit worktree 
 F495 decision: test cancellation after a valid AI comment is staged as Ready and selected. This closes the Phase 2 cancellation-state requirement at the batch dialog boundary; a malformed-response correction case remains a candidate for a later slice.
 
 F495 verifies batch review cancellation after a Ready checked comment exists: Cancel rejects and closes the dialog without returning any accepted comments. Independent focused verification passed.
+
+F495 committed as eb003134 with six scoped paths. The only post-commit worktree entries are the excluded latest_session_work.md change and %SystemDrive%/. Batch 71 is complete; Batch 72 F496 discovery begins with selection pending.
+
+F496 decision: use the previously deferred malformed-row repair gap. A valid manual edit can recover a malformed parsed review row to a selectable state with the parser-origin advisory Ready — name placeholder was omitted, then be applied. This connects parser feedback, row validation, and accepted output in one bounded test. The 451-character edit boundary remains a separate later candidate.
+
+F496 verifies manual repair of a malformed batch review row. The edited comment becomes valid/selectable while retaining the parser-origin name-placeholder advisory, and Apply returns the exact text/source row. Independent focused verification passed; the slice required no production change.

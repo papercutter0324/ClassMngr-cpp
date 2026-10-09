@@ -40,7 +40,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-09
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F495 is accepted and ready to commit in active Batch 71; Gates 1 and 2 remain Partial.
+- Current note: F496 is accepted and ready to commit in active Batch 72; Gates 1 and 2 remain Partial.
 
 ### Slice discovery batches
 
@@ -65,9 +65,9 @@ Treat this plan as an operational summary, not a history:
   failure warning/no-navigation behavior; revisit after that behavior is
   clarified.
 
-#### Active batch: Batch 71
+#### Active batch: Batch 72
 
-- F495 - Accepted and ready to commit: dialog cancellation discards a Ready AI comment.
+- F496 - Accepted and ready to commit: manual repair of a malformed AI comment review row.
 
 ## Objective
 

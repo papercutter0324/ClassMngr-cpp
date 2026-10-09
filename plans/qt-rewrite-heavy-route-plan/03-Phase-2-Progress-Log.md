@@ -17855,3 +17855,21 @@ The `aiBatchDialogCancelDiscardsReadyComment` slot creates the prompt, parses on
 ### F495 independent verification update - 2026-10-09
 
 The Tester independently verified the assertions. Focused target build exited 0; registered CTest passed 1/1; direct offscreen execution exited 0; the slot was listed and diff check passed. An LF-to-CRLF advisory was the only noted issue. This is test-only, with no production, CMake, browser, or network changes. F495 is independently verified, accepted, and ready to commit; Batch 71 remains active until commit.
+
+### F495 committed - 2026-10-09
+
+F495, “Phase2 - Cover batch review cancellation (F495),” committed as eb003134 with six scoped paths. Batch 71 is complete. Batch 72 candidate discovery is underway for F496; selection is pending.
+
+### F496 acceptance plan recorded before implementation - 2026-10-09
+
+Add one dialog-level test to `tests/speaking_eval_batch_report_service_tests.cpp` with one eligible report: generate the prompt, parse a recognized but malformed response block, and assert “Malformed response block,” unchecked state, and disabled Apply. Edit its review comment cell to a valid 100–420-character comment without `STD_NAME`; assert the row becomes “Ready — name placeholder was omitted” and checked, Apply enables, and applying accepts exactly that comment and sourceRow.
+
+The code scan found the editable malformed row can recover through `updateReviewRow()`, which retains parser-origin provenance and its name-placeholder advisory after edits. This tests validation behavior in Phase 2 §2.4, distinct from F489/F490 response-editor invalidation and F491’s initial status mapping; F495 recorded malformed-row repair as a later option. No production, CMake, browser, or network changes. F496 is selected/current in Batch 72; implementation and verification are pending.
+
+### F496 implementation update - 2026-10-09
+
+The `aiBatchDialogRepairsMalformedReviewComment` slot verifies a parsed malformed row is unchecked with Apply disabled. It edits the comment to valid 100–420-character text without `STD_NAME`; the row changes to exactly “Ready — name placeholder was omitted,” becomes checked, and enables Apply. Applying accepts exactly that text at sourceRow 11. The parser-origin advisory remains after the edit. Executor build and CTest passed; direct offscreen execution exited 0, the function was listed, and diff check passed.
+
+### F496 independent verification update - 2026-10-09
+
+The Tester independently passed the focused build, registered CTest 1/1, direct offscreen execution, function listing, and diff check. An LF-to-CRLF advisory was the only noted issue. This is test-only, with no production, CMake, browser, or network changes. F496 is independently verified, accepted, and ready to commit; Batch 72 remains active until commit.
