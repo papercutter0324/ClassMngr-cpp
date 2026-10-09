@@ -6,9 +6,11 @@
 #include "next/platform/settings_manager_theme_preferences_port.h"
 
 #include <QAction>
+#include <QActionGroup>
 #include <QApplication>
 #include <QColor>
 #include <QPalette>
+#include <QStyleHints>
 #include <QTemporaryDir>
 #include <QtTest>
 
@@ -47,6 +49,8 @@ public:
         {
             m_window.services()->themeService()->setTheme(Theme::Light);
         }
+
+        SettingsManager::instance().sync();
 
         m_application.setPalette(m_palette);
         m_application.setStyleSheet(m_stylesheet);
@@ -138,17 +142,45 @@ darkThemeActionAndLightRestorationUpdateApplicationState()
 
     QAction* const darkAction = themeState->action(Theme::Dark);
     QAction* const lightAction = themeState->action(Theme::Light);
+    QAction* const systemDefaultAction =
+        themeState->action(Theme::SystemDefault);
     QVERIFY(darkAction);
     QVERIFY(lightAction);
+    QVERIFY(systemDefaultAction);
     QVERIFY(darkAction->isEnabled());
+    QVERIFY(lightAction->isEnabled());
+    QVERIFY(systemDefaultAction->isEnabled());
+
+    QActionGroup* const themeActionGroup = darkAction->actionGroup();
+    QVERIFY(themeActionGroup);
+    QVERIFY(themeActionGroup->isExclusive());
+    QCOMPARE(lightAction->actionGroup(), themeActionGroup);
+    QCOMPARE(systemDefaultAction->actionGroup(), themeActionGroup);
+    QVERIFY(darkAction->isCheckable());
+    QVERIFY(lightAction->isCheckable());
+    QVERIFY(systemDefaultAction->isCheckable());
+
+    const Theme expectedSystemTheme =
+        qApp->styleHints()->colorScheme() == Qt::ColorScheme::Dark
+            ? Theme::Dark
+            : Theme::Light;
+    const QString expectedSystemThemeKey =
+        expectedSystemTheme == Theme::Dark
+            ? QStringLiteral("dark")
+            : QStringLiteral("light");
+
     QVERIFY(!darkAction->isChecked());
     QVERIFY(lightAction->isChecked());
+    QVERIFY(!systemDefaultAction->isChecked());
+    QCOMPARE(preferences.read(), PersistedTheme::Light);
 
     darkAction->trigger();
+    SettingsManager::instance().sync();
 
     QCOMPARE(themeState->current(), Theme::Dark);
     QVERIFY(darkAction->isChecked());
     QVERIFY(!lightAction->isChecked());
+    QVERIFY(!systemDefaultAction->isChecked());
     QCOMPARE(preferences.read(), PersistedTheme::Dark);
     QCOMPARE(themeService->currentTheme(), Theme::Dark);
     QCOMPARE(
@@ -157,11 +189,33 @@ darkThemeActionAndLightRestorationUpdateApplicationState()
         );
     QCOMPARE(window.property("theme").toString(), QStringLiteral("dark"));
 
+    systemDefaultAction->trigger();
+    SettingsManager::instance().sync();
+
+    QCOMPARE(themeState->current(), Theme::SystemDefault);
+    QVERIFY(!darkAction->isChecked());
+    QVERIFY(!lightAction->isChecked());
+    QVERIFY(systemDefaultAction->isChecked());
+    QCOMPARE(preferences.read(), PersistedTheme::SystemDefault);
+    QCOMPARE(themeService->currentTheme(), expectedSystemTheme);
+    QCOMPARE(
+        QApplication::palette().color(QPalette::Window),
+        expectedSystemTheme == Theme::Dark
+            ? QColor("#202326")
+            : QColor("#eff0f1")
+        );
+    QCOMPARE(
+        window.property("theme").toString(),
+        expectedSystemThemeKey
+        );
+
     lightAction->trigger();
+    SettingsManager::instance().sync();
 
     QCOMPARE(themeState->current(), Theme::Light);
-    QVERIFY(lightAction->isChecked());
     QVERIFY(!darkAction->isChecked());
+    QVERIFY(lightAction->isChecked());
+    QVERIFY(!systemDefaultAction->isChecked());
     QCOMPARE(preferences.read(), PersistedTheme::Light);
     QCOMPARE(themeService->currentTheme(), Theme::Light);
     QCOMPARE(

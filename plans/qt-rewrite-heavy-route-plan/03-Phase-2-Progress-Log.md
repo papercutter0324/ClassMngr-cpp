@@ -17341,3 +17341,32 @@ The focused target built under VS18. Executor CTest passed 1/1; its direct offsc
 no count is claimed. Independent CTest passed 1/1 and independent direct invocation exited 0 without output, also without a
 count. Independent git diff --check passed. No full suite was run. F471 is independently verified, accepted, and ready to commit;
 Batch 47 remains active until commit. F472 discovery begins only after F471 commits.
+
+### F471 committed - 2026-10-09
+
+F471, “Phase2 - Cover Small and Extra Large Font Size QAction parity (F471),” committed as 0d972b53 on Qt-Rewrite.
+Batch 47 is complete. Batch 48 is active with F472 System Default Theme QAction parity selected; its acceptance plan is
+recorded before implementation.
+
+### F472 acceptance plan recorded before implementation - 2026-10-09
+
+Extend the existing MainWindow Theme parity test with Light → Dark → System Default → Light transitions. Assert all three
+exclusive actions, OptionState, typed saved preference after sync, and resolved ThemeService::currentTheme() plus window theme property. Compute
+the expected scheme from QApplication::styleHints()->colorScheme(); Unknown resolves Light. Do not assume a host scheme.
+
+Restore Light while MainWindow remains alive and sync settings; retain existing palette/stylesheet cleanup. Use temporary
+settings and English, disable recent-database loading, and make no production or CMake change. F472 is selected/current;
+implementation and verification are pending. Batch 48 remains active.
+
+### F472 acceptance update - 2026-10-09
+
+The existing MainWindow Theme parity test now exercises Light → Dark → System Default → Light. Review confirmed all four
+transitions, the exclusive action group, OptionState, typed preferences after sync, and resolved ThemeService::currentTheme(),
+application palette, and window theme property. The expected Light/Dark scheme comes from QApplication::styleHints()->colorScheme();
+Unknown resolves Light. Light restoration syncs while MainWindow remains alive and retains palette/stylesheet cleanup.
+Temporary English settings and disabled recent-database loading remain; no production or CMake change.
+
+The VS2026 x64 focused build passed. Executor CTest passed 1/1 and direct offscreen QtTest passed 3/0/0. Independent CTest
+passed 1/1, independent direct offscreen QtTest passed 3/0/0, and independent git diff --check passed. Qt reported a missing
+optional fonts-directory warning while packaged Inter/Pretendard fonts loaded. No full suite was run. F472 is independently
+verified, accepted, and ready to commit; Batch 48 remains active until commit. F473 discovery begins only after F472 commits.

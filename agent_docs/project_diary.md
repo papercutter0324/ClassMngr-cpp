@@ -3467,3 +3467,18 @@ Extended the existing Font Size QAction parity test to cover Small, Large, Extra
 The focused target built under VS18 and CTest passed 1/1. Direct offscreen QtTest exited 0 without a summary, so no direct count is claimed. `git diff --check` passed. Independent review is pending; Batch 47 remains active.
 
 Independent review accepted F471. The Tester confirmed the four QAction transitions and cleanup, and independently passed focused CTest 1/1 and `git diff --check`. The direct offscreen invocation exited 0 without output, so no case count is claimed; the executor direct invocation also exited 0 without a summary. No full suite. F471 is independently verified and ready to commit; Batch 47 remains active pending commit.
+
+
+## 2026-10-09 - F471 committed; F472 System Default Theme selected
+
+F471, `Phase2 - Cover Small and Extra Large Font Size QAction parity (F471)`, committed as `0d972b53` on `Qt-Rewrite`. The commit contains the six reviewed test and Phase 2 tracking paths. Batch 47 is complete; the only post-commit worktree entries are the excluded pre-existing `agent_docs/latest_session_work.md` and `%SystemDrive%/`.
+
+Two independent F472 scans selected the omitted System Default Theme action in the existing MainWindow Theme parity test. Extend its Light → Dark → System Default → Light flow to assert the three exclusive actions, `OptionState`, typed persisted preference after sync, and the effective resolved theme from `ThemeService::currentTheme()` plus the window theme property. Compute the expected Light/Dark result from `QApplication::styleHints()->colorScheme()` (Unknown resolves Light); do not assume a host scheme. Restore Light while MainWindow remains alive and sync settings, retaining the existing palette/stylesheet cleanup. Keep temporary settings, English, and recent-database loading disabled; no production or CMake change. F472 is selected; Batch 48 is active.
+
+## 2026-10-09 - F472 implementation and focused verification
+
+Extended the existing theme parity test with the System Default QAction while retaining Dark and Light transitions. The test checks all three actions’ exclusive group, selected checks, OptionState, and typed persisted preference after sync. It computes the resolved theme from `QApplication::styleHints()->colorScheme()` (Unknown resolves to Light) and verifies ThemeService, application palette, and the window theme property. The scoped restorer returns to Light while MainWindow lives, syncs settings, and restores the original palette and stylesheet. No production or CMake change.
+
+The VS2026 x64 focused build passed; focused CTest passed 1/1; direct offscreen QtTest passed 3/0/0; `git diff --check` passed. Independent review is pending; Batch 48 remains active.
+
+Independent review accepted F472. The Tester confirmed all action transitions and the dynamic color-scheme expectation, and independently passed focused CTest 1/1, direct offscreen QtTest 3/0/0, and `git diff --check`. Qt warned about a missing optional configured fonts directory; packaged Inter/Pretendard fonts loaded. No full suite. F472 is independently verified and ready to commit; Batch 48 remains active pending commit.
