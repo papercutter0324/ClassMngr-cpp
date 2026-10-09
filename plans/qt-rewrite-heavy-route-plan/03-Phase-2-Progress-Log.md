@@ -17004,3 +17004,35 @@ VS18/Qt6.12/Ninja target build passed; focused CTest passed 1/1. Independent dir
 passed 3/0 and independent CTest rerun passed 1/1. Qt reported a missing lib/fonts path while packaged
 Inter/Pretendard fonts loaded. No full suite was run. F460 is accepted and ready to commit; Batch 36 remains active
 until commit, and F461 discovery begins after F460 commits.
+### F460 committed - 2026-10-09
+
+F460, “Phase2 - Cover Document Viewer Page Spacing QAction parity (F460),” was committed as
+fba46915d76b05aab53de85760a3f857dc4ed2a2 on Qt-Rewrite, 45 commits ahead of origin. The commit contains
+exactly seven scoped paths. Post-commit status was clean except for excluded latest_session_work.md and
+%SystemDrive%/. Batch 36 is complete. Batch 37 is active; F461 bounded QAction discovery has started and no
+candidate is selected yet. F460 acceptance and focused verification remain recorded above.
+### F461 acceptance plan recorded before implementation - 2026-10-09
+
+Select Sidebar Overflow Tooltips QAction parity. Preference persistence coverage exists, but no test exercises the
+MainWindow QAction. MainWindow connects showSidebarTooltips to Sidebar::setOverflowTooltipsEnabled; Sidebar assigns
+full-text tooltips only when text exceeds the viewport.
+
+Use a dedicated offscreen MainWindow target with temporary settings and recent-database loading disabled. Add a
+synthetic teacher with a very long name using Sidebar::addTeacherNode; constrain the sidebar/tree width, show and
+process events, and establish that the name overflows. Trigger the actual enabled showSidebarTooltips QAction
+through false→true→false; assert checked state, option, and persisted preference, plus the full-name tooltip when
+enabled and its removal when disabled. RAII cleanup leaves the option false while MainWindow is alive.
+
+No database, network, autosave timer, or production change. F461 is selected for implementation; it is not
+implemented or verified. Batch 37 remains active.
+### F461 acceptance update - 2026-10-09
+
+The dedicated offscreen MainWindow test uses temporary settings and disables recent-database loading. It confirms the
+real showSidebarTooltips action starts checked; after constraining Sidebar/tree geometry it compares measured text width
+with available viewport width to establish overflow. The test drives false→true→false, checks action and persisted state,
+and verifies tooltip clear/full-name/clear. Scoped settings and MainWindow state remain isolated.
+
+VS18/Qt6.12/Ninja target build passed; focused CTest passed 1/1. Independent direct QtTest setup/test/cleanup passed
+3/0 and independent CTest rerun passed 1/1. Qt reported the existing missing lib/fonts path while packaged fonts
+loaded. No full suite was run. F461 is independently verified, accepted, and ready to commit; Batch 37 remains active
+until commit. F462 discovery has not started and begins only after F461 commits.

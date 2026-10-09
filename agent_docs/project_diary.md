@@ -3323,3 +3323,19 @@ Source map: ActionRegistry Page Spacing options -> Documents menu -> MainWindow 
 Implementation added a dedicated `MainWindowDocumentViewerPageSpacingActionParity` target and test. The test creates a blank PDF viewer, triggers Large then Small through the actual MainWindow actions, and checks action selection, option state, persisted values, and the public QPdfView spacing values (32 and 8 pixels). A scoped restorer changes the option back to Small while MainWindow and the viewer still exist, including QtTest early-return paths. Settings are temporary and recent-database loading is disabled; no PDF is opened and there is no database, network, or autosave activity. No production code changed.
 
 Verification passed: VS18/Qt6.12/Ninja target build; focused CTest 1/1; independent direct QtTest setup/test/cleanup 3 passed, 0 failed; independent CTest rerun 1/1. Qt logged the existing missing bundled `lib/fonts` path while packaged Inter/Pretendard loaded. No full suite. F460 is accepted and ready to commit; Batch 36 is active pending commit.
+
+## 2026-10-09 - F460 committed; F461 discovery started
+
+F460 committed as `fba46915d76b05aab53de85760a3f857dc4ed2a2` (`Phase2 - Cover Document Viewer Page Spacing QAction parity (F460)`). The commit contains exactly seven scoped paths and its cached diff check was clean. `Qt-Rewrite` is 45 commits ahead of origin. Batch 36 is complete; Batch 37 is active with two independent read-only reviews beginning F461 coverage discovery. No candidate is selected yet. The pre-existing `agent_docs/latest_session_work.md` and `%SystemDrive%/` changes remain excluded.
+
+## 2026-10-09 - F461 Sidebar Overflow Tooltips QAction selected
+
+Two independent read-only reviews compared the remaining MainWindow action gaps. Select Sidebar Show Tooltips: its standalone test only covers option persistence, while the actual MainWindow connection updates tooltip text on overflowing tree items. The separate Save Mode path reaches autosave coordinators and has broader timer/state setup.
+
+Acceptance: In a dedicated offscreen MainWindow target, isolate settings, disable recent-database loading, add a synthetic teacher with a very long display name, narrow the Sidebar/tree, then show the window and process events. Trigger the actual `showSidebarTooltips` action false→true→false. Verify action/check and persisted preference state plus the overflow item tooltip (full name when enabled, empty when disabled). A scoped guard ends false while MainWindow remains alive. No DB, network, autosave timer, or production changes. Batch 37/F461 is selected; implementation and verification are pending.
+
+## 2026-10-09 - F461 Sidebar Overflow Tooltips QAction accepted
+
+Implementation adds a dedicated offscreen `MainWindowSidebarOverflowTooltipsActionParity` test. With temporary settings and recent-database loading disabled, it inserts a synthetic long-name teacher, constrains the Sidebar and tree, and confirms measured text exceeds available viewport width. The actual enabled/checkable `showSidebarTooltips` action is driven false→true→false; assertions cover action and persisted state and the item tooltip changing from empty to the full teacher name and back. An RAII restorer ends false while MainWindow remains alive even when a QtTest assertion exits early. No production code, database, network, or autosave activity.
+
+Verification passed: VS18/Qt6.12/Ninja target build; focused CTest 1/1; independent direct QtTest setup/test/cleanup 3 passed, 0 failed; independent CTest rerun 1/1. Qt logged the missing bundled `lib/fonts` path while packaged Inter/Pretendard loaded. No full suite. F461 is accepted and ready to commit; Batch 37 is active pending commit.
