@@ -40,7 +40,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-09
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F492 is accepted and ready to commit in active Batch 68; Gates 1 and 2 remain Partial.
+- Current note: F493 is accepted and ready to commit in active Batch 69; Gates 1 and 2 remain Partial.
 
 ### Slice discovery batches
 
@@ -65,9 +65,9 @@ Treat this plan as an operational summary, not a history:
   failure warning/no-navigation behavior; revisit after that behavior is
   clarified.
 
-#### Active batch: Batch 68
+#### Active batch: Batch 69
 
-- F492 - Accepted and ready to commit: dialog-level batch-prompt redaction coverage for unchecked report names.
+- F493 - Accepted and ready to commit: dialog-level review-row opt-out coverage for AI comment apply.
 
 ## Objective
 

@@ -17801,3 +17801,21 @@ The new `aiBatchDialogRedactsUncheckedClassmateNames` slot in `tests/speaking_ev
 ### F492 independent verification update - 2026-10-09
 
 The independent Tester confirmed the focused target build, CTest 1/1, direct offscreen QtTest 3/0/0, slot registration, and diff check. A Qt font-directory warning was the only reported warning. This is test-only; no production, CMake, browser, or network changes. F492 is independently verified, accepted, and ready to commit; Batch 68 remains active until commit.
+
+### F492 committed - 2026-10-09
+
+F492, “Phase2 - Cover unchecked classmate name redaction (F492),” committed as 31f84450 with six scoped paths. Batch 68 is complete. Batch 69 candidate discovery is underway for F493; selection is pending.
+
+### F493 acceptance plan recorded before implementation - 2026-10-09
+
+Add one dialog flow to `tests/speaking_eval_batch_report_service_tests.cpp` with two eligible reports. Generate the prompt, parse two valid comments, and verify both review rows are Ready and checked by default. Uncheck both and assert Apply is disabled while the rows remain Ready; recheck only one, click Apply, and verify the dialog is accepted with exactly that row’s expected sourceRow/comment while the other is excluded. Empty prior comments avoid overwrite confirmation.
+
+This UI-boundary case reinforces Phase 2 §2.3 evaluation editing and §2.4 behavior preservation; the historical F252 application-plan record already covers checked/valid filtering. Selection-change prompt reset was considered but deferred as ambiguous and potentially overlapping F488 Include reset. No production, CMake, browser, or network changes. F493 is selected/current; implementation and verification are pending in Batch 69.
+
+### F493 implementation update - 2026-10-09
+
+The `aiBatchDialogAppliesOnlyRecheckedReadyComment` slot verifies two checked Ready comments. Unchecking both keeps both rows Ready and disables Apply; rechecking only Bob applies exactly Bob’s comment at sourceRow 9, with the expected text and empty prior comment, while excluding Alice. The executor’s focused build and CTest passed; direct offscreen execution exited 0, the slot was listed, and the scoped diff check passed.
+
+### F493 independent verification update - 2026-10-09
+
+The Tester’s focused Ninja build found no work necessary; object and executable timestamps were fresh. Registered CTest passed 1/1; direct offscreen execution exited 0; the slot was listed; scoped diff check exited 0. An LF-to-CRLF advisory was the only noted issue. This is test-only, with no production, CMake, browser, or network changes. F493 is independently verified, accepted, and ready to commit; Batch 69 remains active until commit.

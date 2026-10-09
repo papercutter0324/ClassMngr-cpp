@@ -554,6 +554,7 @@ private slots:
     void aiBatchDialogAssessesCommentQualityAndPreservesStatuses();
     void aiBatchDialogSelectsEligibleStudentsAndReviewsValidComments();
     void aiBatchDialogRedactsUncheckedClassmateNames();
+    void aiBatchDialogAppliesOnlyRecheckedReadyComment();
     void aiBatchDialogCopyOpenCopiesPromptAndOpensGemini();
     void aiBatchDialogSelectionChangesClearGeneratedReviewState();
     void aiBatchDialogResponseEditsClearStaleReviewState();
@@ -2428,6 +2429,146 @@ void SpeakingEvalBatchReportServiceTests::
     QVERIFY(!generatedPrompt.contains(QStringLiteral("김민지")));
     QVERIFY(!generatedPrompt.contains(QStringLiteral("Bob")));
     QVERIFY(!generatedPrompt.contains(QStringLiteral("박서준")));
+}
+
+void SpeakingEvalBatchReportServiceTests::
+    aiBatchDialogAppliesOnlyRecheckedReadyComment()
+{
+    const auto makeReport = [](
+        const QString& name,
+        const int sourceRow
+        )
+    {
+        SpeakingEvalReportData report;
+        report.englishName = name;
+        report.grade = 5;
+        report.notes =
+            QStringLiteral(
+                "[Did Well]\nClear pronunciation\n"
+                "[Needs Improvement]\nAdd supporting details"
+                );
+        return SpeakingEvalBatchReportService::StudentReport{
+            name,
+            report,
+            sourceRow
+        };
+    };
+
+    SpeakingEvalAiBatchDialog dialog(
+        {
+            makeReport(QStringLiteral("Alice"), 4),
+            makeReport(QStringLiteral("Bob"), 9)
+        }
+        );
+
+    auto* selection =
+        dialog.findChild<QTableWidget*>(
+            QStringLiteral("speakingEvalAiBatchSelectionTable")
+            );
+    auto* createPromptButton =
+        dialog.findChild<QPushButton*>(
+            QStringLiteral("speakingEvalAiBatchCreatePrompt")
+            );
+    auto* promptEdit =
+        dialog.findChild<QPlainTextEdit*>(
+            QStringLiteral("speakingEvalAiBatchPrompt")
+            );
+    auto* responseEdit =
+        dialog.findChild<QPlainTextEdit*>(
+            QStringLiteral("speakingEvalAiBatchResponse")
+            );
+    auto* parseButton =
+        dialog.findChild<QPushButton*>(
+            QStringLiteral("speakingEvalAiBatchParse")
+            );
+    auto* review =
+        dialog.findChild<QTableWidget*>(
+            QStringLiteral("speakingEvalAiBatchReviewTable")
+            );
+    auto* applyButton =
+        dialog.findChild<QPushButton*>(
+            QStringLiteral("speakingEvalAiBatchApply")
+            );
+    QVERIFY(selection);
+    QVERIFY(createPromptButton);
+    QVERIFY(promptEdit);
+    QVERIFY(responseEdit);
+    QVERIFY(parseButton);
+    QVERIFY(review);
+    QVERIFY(applyButton);
+
+    QCOMPARE(selection->rowCount(), 2);
+    QCOMPARE(selection->item(0, 0)->checkState(), Qt::Checked);
+    QCOMPARE(selection->item(1, 0)->checkState(), Qt::Checked);
+    createPromptButton->click();
+    QVERIFY(
+        promptEdit->toPlainText().contains(
+            QStringLiteral("Student ID: STUDENT_01")
+            )
+        );
+    QVERIFY(
+        promptEdit->toPlainText().contains(
+            QStringLiteral("Student ID: STUDENT_02")
+            )
+        );
+
+    const QString bobResponse =
+        QStringLiteral(
+            "STD_NAME organized ideas clearly and spoke with a confident "
+            "voice. Keep adding examples to support each point and practice "
+            "new vocabulary. Your clear pronunciation helped the audience "
+            "understand the presentation."
+            );
+    responseEdit->setPlainText(
+        QStringLiteral(
+            "<<<STUDENT_01>>>\n"
+            "STD_NAME spoke clearly and used strong vocabulary. "
+            "Keep adding supporting details and practice difficult sounds. "
+            "Your eye contact and confident voice made the presentation "
+            "engaging.\n"
+            "<<<END_STUDENT_01>>>\n"
+            "<<<STUDENT_02>>>\n"
+            "%1\n"
+            "<<<END_STUDENT_02>>>"
+            ).arg(bobResponse)
+        );
+    QVERIFY(parseButton->isEnabled());
+    parseButton->click();
+
+    QCOMPARE(review->rowCount(), 2);
+    QCOMPARE(review->item(0, 2)->text(), QStringLiteral("Ready"));
+    QCOMPARE(review->item(1, 2)->text(), QStringLiteral("Ready"));
+    QCOMPARE(review->item(0, 0)->checkState(), Qt::Checked);
+    QCOMPARE(review->item(1, 0)->checkState(), Qt::Checked);
+    QVERIFY(applyButton->isEnabled());
+
+    review->item(0, 0)->setCheckState(Qt::Unchecked);
+    review->item(1, 0)->setCheckState(Qt::Unchecked);
+    QCOMPARE(review->item(0, 2)->text(), QStringLiteral("Ready"));
+    QCOMPARE(review->item(1, 2)->text(), QStringLiteral("Ready"));
+    QVERIFY(!applyButton->isEnabled());
+
+    review->item(1, 0)->setCheckState(Qt::Checked);
+    QCOMPARE(review->item(0, 0)->checkState(), Qt::Unchecked);
+    QCOMPARE(review->item(1, 0)->checkState(), Qt::Checked);
+    QVERIFY(applyButton->isEnabled());
+
+    applyButton->click();
+
+    QCOMPARE(dialog.result(), static_cast<int>(QDialog::Accepted));
+    const auto acceptedComments = dialog.acceptedComments();
+    QCOMPARE(acceptedComments.size(), 1);
+    QCOMPARE(acceptedComments.first().sourceRow, 9);
+    QVERIFY(acceptedComments.first().oldComment.isEmpty());
+    QCOMPARE(
+        acceptedComments.first().newComment,
+        QStringLiteral(
+            "Bob organized ideas clearly and spoke with a confident voice. "
+            "Keep adding examples to support each point and practice new "
+            "vocabulary. Your clear pronunciation helped the audience "
+            "understand the presentation."
+            )
+        );
 }
 
 void SpeakingEvalBatchReportServiceTests::

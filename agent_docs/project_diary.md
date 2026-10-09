@@ -3661,3 +3661,9 @@ F491 committed as d6564476 with six scoped paths; Batch 67 is complete. Only the
 F492 decision: selected the batch prompt redaction handoff for an unchecked classmate's English/Korean name. Code discovery showed this narrow dialog edge lacks direct coverage; the existing UI disclosure promises name removal, and existing mixed-row coverage already clicks Apply. Acceptance is recorded before implementation in the Phase 2 plan; no production change is expected unless the test exposes a defect.
 
 F492 adds regression coverage for the batch-dialog-to-prompt redaction handoff. An eligible but unchecked classmate's English and Korean names mentioned in selected feedback are converted to CLASSMATE; the selected student's names become STD_NAME. Executor and independent Tester verified the slice with focused build/CTest/offscreen checks; the font-directory warning is environmental. Ready to commit.
+
+F492 committed as 31f84450 with six scoped paths. The only post-commit worktree entries are the excluded latest_session_work.md change and %SystemDrive%/. Batch 68 is complete; Batch 69 F493 discovery begins with selection pending.
+
+F493 decision: test opting out of one otherwise valid AI comment in the batch review table. The plan scan's prompt-reset alternative lacks a precise trigger and may overlap F488's Include-checkbox invalidation; the code scan found a crisp gap in checked/valid filtering. F252 already records that filtering as application behavior.
+
+F493 verifies the review-table opt-out boundary: unchecking both valid comments disables Apply; rechecking one applies only that accepted comment. Independent focused verification passed; this remains a UI test with no production change.
