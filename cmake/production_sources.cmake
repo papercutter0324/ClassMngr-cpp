@@ -349,6 +349,7 @@ set(CLASSMNGR_FEATURES_SOURCES
     "src/features/classes/ui/class_co_teacher_page.h"
     "src/features/classes/ui/class_details_page.cpp"
     "src/features/classes/ui/class_details_page.h"
+    "src/features/classes/ui/class_details_page_restoration_state.h"
     "src/features/classes/ui/class_export_dialog.cpp"
     "src/features/classes/ui/class_export_dialog.h"
     "src/features/classes/ui/class_import_dialog.cpp"

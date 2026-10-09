@@ -35,7 +35,9 @@
 #include <QComboBox>
 #include <QLabel>
 #include <QPushButton>
+#include <QScrollBar>
 #include <QStringList>
+#include <QTimer>
 #include <QVBoxLayout>
 #include <QWidget>
 #include <QtAssert>
@@ -807,6 +809,7 @@ void ClassDetailsPage::loadClass(
     const Classroom& classroom
     )
 {
+    const int scrollPosition = m_pageBody->verticalScrollBar()->value();
     m_autosave->setLoading(true);
 
     refresh();
@@ -818,6 +821,57 @@ void ClassDetailsPage::loadClass(
         m_displayReadPort,
         classroom.id
         );
+    applyDisplaySnapshot(scrollPosition);
+
+    m_autosave->setLoading(false);
+
+    clearDirty();
+}
+
+std::optional<ClassDetailsPageRestorationState>
+ClassDetailsPage::restorationState() const
+{
+    if (
+        hasUnsavedChanges()
+        || m_classroom.id <= 0
+        || !m_displaySnapshot
+        || m_displaySnapshot->classId.value()
+               != std::to_string(m_classroom.id)
+        )
+    {
+        return std::nullopt;
+    }
+
+    return ClassDetailsPageRestorationState{
+        m_classroom,
+        *m_displaySnapshot,
+        m_pageBody->verticalScrollBar()->value()
+    };
+}
+
+void ClassDetailsPage::restoreFromState(
+    const ClassDetailsPageRestorationState& state
+    )
+{
+    if (
+        state.classroom().id <= 0
+        || state.displaySnapshot().classId.value()
+               != std::to_string(state.classroom().id)
+        )
+    {
+        return;
+    }
+
+    m_autosave->setLoading(true);
+    m_classroom = state.classroom();
+    m_displaySnapshot = state.displaySnapshot();
+    applyDisplaySnapshot(state.scrollPosition());
+    m_autosave->setLoading(false);
+    clearDirty();
+}
+
+void ClassDetailsPage::applyDisplaySnapshot(int scrollPosition)
+{
     const ClassMngr::Next::Application::ClassDetailsPageFields emptyFields;
     const auto& fields = m_displaySnapshot && m_displaySnapshot->classFields
         ? m_displaySnapshot->classFields.value()
@@ -847,10 +901,25 @@ void ClassDetailsPage::loadClass(
     m_validationBinder->clear();
 
     updateScrollContentMinimumWidth();
+    scheduleScrollRestore(scrollPosition);
+}
 
-    m_autosave->setLoading(false);
+void ClassDetailsPage::scheduleScrollRestore(int scrollPosition)
+{
+    const int classId = m_classroom.id;
+    QTimer::singleShot(
+        0,
+        this,
+        [this, scrollPosition, classId]()
+        {
+            if (!m_pageBody || m_classroom.id != classId)
+            {
+                return;
+            }
 
-    clearDirty();
+            m_pageBody->verticalScrollBar()->setValue(scrollPosition);
+        }
+        );
 }
 
 void ClassDetailsPage::clearDatabaseState()

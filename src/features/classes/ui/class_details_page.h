@@ -2,9 +2,8 @@
 
 #include "core/enums/schedule_type.h"
 #include "domain/models/class_info.h"
-#include "next/application/class_details_page_snapshot.h"
+#include "features/classes/ui/class_details_page_restoration_state.h"
 #include "ui/shared/pages/basepage.h"
-#include "domain/models/classroom.h"
 
 #include <QString>
 
@@ -54,6 +53,11 @@ public:
     void loadClass(
         const Classroom& classroom
         );
+    [[nodiscard]] std::optional<ClassDetailsPageRestorationState>
+        restorationState() const;
+    void restoreFromState(
+        const ClassDetailsPageRestorationState& state
+        );
 
     void clearDatabaseState() override;
     void refresh() override;
@@ -76,6 +80,8 @@ private:
         const ClassMngr::Next::Application::
             ClassDetailsPageReadSnapshot* snapshot
         );
+    void applyDisplaySnapshot(int scrollPosition);
+    void scheduleScrollRestore(int scrollPosition);
 
     void markDirty();
     void clearDirty();

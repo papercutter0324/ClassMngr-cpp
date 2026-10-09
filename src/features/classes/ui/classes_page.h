@@ -2,12 +2,15 @@
 
 #include "core/resource_packs/resource_pack_manager.h"
 #include "domain/models/classroom.h"
+#include "features/classes/ui/class_details_page_restoration_state.h"
 #include "features/classes/models/class_tab_navigation_model.h"
 #include "features/schedule/ui/schedule_view_model.h"
 #include "ui/shared/pages/basepage.h"
 
 #include <QHash>
 #include <QList>
+
+#include <optional>
 
 class ApplicationServices;
 class ClassCoTeacherPage;
@@ -111,6 +114,7 @@ public:
     void setSaveMode(SaveMode mode) override;
     void refresh() override;
     void refreshNavigationPreferences();
+    void markStale() override;
     void clearDatabaseState() override;
     [[nodiscard]] Status prepareForActivation() override;
     void activate() override;
@@ -247,4 +251,6 @@ private:
     ClassCoTeacherPage* m_coTeacherPage = nullptr;
     ClassNotesPage* m_notesPage = nullptr;
     ResourcePackLease m_evaluationResourceLease;
+    std::optional<ClassDetailsPageRestorationState>
+        m_detailsPageRestorationState;
 };

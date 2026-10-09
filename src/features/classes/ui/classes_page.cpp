@@ -40,6 +40,7 @@
 #include "ui/shared/dialogs/user_prompt_service.h"
 
 #include <charconv>
+#include <algorithm>
 #include <optional>
 #include <string>
 #include <system_error>
@@ -243,6 +244,7 @@ bool ClassesPage::openClass(
 
     if (!m_services || !m_services->hasOpenDatabase())
     {
+        m_detailsPageRestorationState.reset();
         if (m_currentSection == ClassesSection::Evaluations
             && section != ClassesSection::Evaluations)
         {
@@ -717,8 +719,15 @@ void ClassesPage::refreshNavigationPreferences()
         );
 }
 
+void ClassesPage::markStale()
+{
+    m_detailsPageRestorationState.reset();
+    BasePage::markStale();
+}
+
 void ClassesPage::clearDatabaseState()
 {
+    m_detailsPageRestorationState.reset();
     releaseEvaluationResources();
     m_classes.clear();
     m_navigationSnapshot.clear();
@@ -846,13 +855,60 @@ void ClassesPage::activate()
         rebuildClassTabs(m_currentClassId);
         restoreSelections();
     }
+
+    loadActiveEditor();
 }
 
 void ClassesPage::deactivate()
 {
+    bool detailsPageCanBeReleased = false;
+    if (m_currentSection == ClassesSection::Details && m_detailsPage)
+    {
+        const QList<BasePage*> editors{
+            m_detailsPage,
+            m_rosterEditor,
+            m_analyticsPage,
+            m_evaluationsPage,
+            m_coTeacherPage,
+            m_notesPage
+        };
+        const bool anyEditorDirty = std::any_of(
+            editors.cbegin(),
+            editors.cend(),
+            [](const BasePage* editor)
+            {
+                return editor && editor->hasUnsavedChanges();
+            }
+            );
+
+        if (anyEditorDirty)
+        {
+            m_detailsPageRestorationState.reset();
+        }
+        else if (needsRefresh())
+        {
+            m_detailsPageRestorationState.reset();
+            detailsPageCanBeReleased = true;
+        }
+        else if (const auto state = m_detailsPage->restorationState())
+        {
+            m_detailsPageRestorationState.emplace(*state);
+            detailsPageCanBeReleased = true;
+        }
+    }
+
     BasePage::deactivate();
     releaseClassNavigationWidgets();
     releaseSectionNavigationWidgets();
+
+    if (detailsPageCanBeReleased)
+    {
+        m_detailsPage->deleteLater();
+        m_detailsPage = nullptr;
+        m_loadedEditorClassIds.remove(
+            static_cast<int>(ClassesSection::Details)
+            );
+    }
 }
 
 void ClassesPage::releaseFeatureResources()
@@ -2142,7 +2198,22 @@ void ClassesPage::loadActiveEditor()
         switch (m_currentSection)
         {
         case ClassesSection::Details:
-            m_detailsPage->loadClass(classroom);
+            if (
+                m_detailsPageRestorationState
+                && m_detailsPageRestorationState->classroom().id
+                    == classroom.id
+                && !needsRefresh()
+                )
+            {
+                m_detailsPage->restoreFromState(
+                    *m_detailsPageRestorationState
+                    );
+            }
+            else
+            {
+                m_detailsPage->loadClass(classroom);
+            }
+            m_detailsPageRestorationState.reset();
             break;
 
         case ClassesSection::Roster:

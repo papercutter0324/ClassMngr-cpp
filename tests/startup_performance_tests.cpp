@@ -4230,7 +4230,17 @@ void StartupPerformanceTests::capturesLargeClassesBoundaryWhenConfigured()
         const int selectedEditorDescendantWidgetCount = metrics.value(
             QStringLiteral("classesSelectedEditorDescendantWidgetCount")
             ).toInt(-1);
-        QVERIFY(selectedEditorDescendantWidgetCount > 0);
+        const bool editorIsReleased =
+            checkpointName == QStringLiteral("classes-left-1")
+            || checkpointName == QStringLiteral("classes-left-2");
+        if (editorIsReleased)
+        {
+            QCOMPARE(selectedEditorDescendantWidgetCount, 0);
+        }
+        else
+        {
+            QVERIFY(selectedEditorDescendantWidgetCount > 0);
+        }
         selectedEditorDescendantCountsByCheckpoint.insert(
             checkpointName,
             selectedEditorDescendantWidgetCount
@@ -4356,9 +4366,14 @@ void StartupPerformanceTests::capturesLargeClassesBoundaryWhenConfigured()
             metrics.value(QStringLiteral("classesScheduleSectionAvailable"))
                 .isBool()
             );
-        QVERIFY(
+        const bool editorIsReleased =
+            checkpointName == QStringLiteral("classes-left-1")
+            || checkpointName == QStringLiteral("classes-left-2")
+            || checkpointName == QStringLiteral("classes-page-left");
+        QCOMPARE(
             metrics.value(QStringLiteral("classesScheduleSectionAvailable"))
-                .toBool()
+                .toBool(),
+            !editorIsReleased
             );
 
         const int currentScheduleRowCount = metrics.value(
@@ -4369,6 +4384,30 @@ void StartupPerformanceTests::capturesLargeClassesBoundaryWhenConfigured()
             ).toInt(-1);
         QVERIFY(currentScheduleRowCount >= 0);
         QVERIFY(liveScheduleRowWidgetCount >= currentScheduleRowCount);
+
+        if (editorIsReleased)
+        {
+            QCOMPARE(currentScheduleRowCount, 0);
+            QCOMPARE(liveScheduleRowWidgetCount, 0);
+            QCOMPARE(
+                metrics.value(
+                    QStringLiteral(
+                        "classesSelectedEditorDescendantWidgetCount"
+                        )
+                    ).toInt(-1),
+                0
+                );
+            QCOMPARE(
+                metrics.value(QStringLiteral("classesInstantiatedEditorCount"))
+                    .toInt(-1),
+                0
+                );
+            QCOMPARE(
+                metrics.value(QStringLiteral("classesLoadedEditorClassCount"))
+                    .toInt(-1),
+                0
+                );
+        }
 
         const int currentNavigationTabRootCount = metrics.value(
             QStringLiteral("classesCurrentNavigationTabRootCount")
@@ -4442,13 +4481,13 @@ void StartupPerformanceTests::capturesLargeClassesBoundaryWhenConfigured()
         classesOwnerMetricsByCheckpoint.value(
             QStringLiteral("classes-lifecycle-complete")
             );
-    QVERIFY(
+    QCOMPARE(
         lifecycleCompleteOwnerMetrics
             .value(QStringLiteral("classesLiveScheduleRowWidgetCount"))
+            .toInt(-1),
+        lifecycleCompleteOwnerMetrics
+            .value(QStringLiteral("classesCurrentScheduleRowCount"))
             .toInt(-1)
-        > lifecycleCompleteOwnerMetrics
-              .value(QStringLiteral("classesCurrentScheduleRowCount"))
-              .toInt(-1)
         );
     const QJsonObject nextWorkflowOwnerMetrics =
         classesOwnerMetricsByCheckpoint.value(
@@ -4466,19 +4505,11 @@ void StartupPerformanceTests::capturesLargeClassesBoundaryWhenConfigured()
         classesOwnerMetricsByCheckpoint.value(
             QStringLiteral("classes-page-left")
             );
-    QVERIFY(
-        classesPageLeftOwnerMetrics
-            .value(QStringLiteral("classesCurrentScheduleRowCount"))
-            .toInt(-1)
-        > 0
-        );
     QCOMPARE(
         classesPageLeftOwnerMetrics
             .value(QStringLiteral("classesLiveScheduleRowWidgetCount"))
             .toInt(-1),
-        classesPageLeftOwnerMetrics
-            .value(QStringLiteral("classesCurrentScheduleRowCount"))
-            .toInt(-1)
+        0
         );
 
     const QJsonObject workflowCompleteCheckpoint = checkpointNamed(
@@ -4587,6 +4618,13 @@ void StartupPerformanceTests::capturesLargeClassesBoundaryWhenConfigured()
                 -1
                 );
         };
+    const auto scheduleRowCountAt =
+        [&classesOwnerMetricsByCheckpoint](const QString& checkpointName)
+        {
+            return classesOwnerMetricsByCheckpoint.value(checkpointName)
+                .value(QStringLiteral("classesCurrentScheduleRowCount"))
+                .toInt(-1);
+        };
     QVERIFY(
         classesPageWidgetCountAt(QStringLiteral("classes-lifecycle-entry"))
         > 0
@@ -4602,15 +4640,11 @@ void StartupPerformanceTests::capturesLargeClassesBoundaryWhenConfigured()
     QVERIFY(reentry1ClassesDescendantCount > leave1ClassesDescendantCount);
     QCOMPARE(
         selectedEditorDescendantCountAt(QStringLiteral("classes-left-1")),
-        selectedEditorDescendantCountAt(
-            QStringLiteral("classes-refresh-1-complete")
-            )
+        0
         );
     QCOMPARE(
-        selectedEditorDescendantCountAt(QStringLiteral("classes-reentry-1")),
-        selectedEditorDescendantCountAt(
-            QStringLiteral("classes-refresh-1-complete")
-            )
+        scheduleRowCountAt(QStringLiteral("classes-reentry-1")),
+        scheduleRowCountAt(QStringLiteral("classes-refresh-1-complete"))
         );
 
     const int refresh2ClassesDescendantCount =
@@ -4623,15 +4657,26 @@ void StartupPerformanceTests::capturesLargeClassesBoundaryWhenConfigured()
     QVERIFY(reentry2ClassesDescendantCount > leave2ClassesDescendantCount);
     QCOMPARE(
         selectedEditorDescendantCountAt(QStringLiteral("classes-left-2")),
-        selectedEditorDescendantCountAt(
-            QStringLiteral("classes-refresh-2-complete")
-            )
+        0
         );
     QCOMPARE(
-        selectedEditorDescendantCountAt(QStringLiteral("classes-reentry-2")),
-        selectedEditorDescendantCountAt(
-            QStringLiteral("classes-refresh-2-complete")
-            )
+        scheduleRowCountAt(QStringLiteral("classes-reentry-2")),
+        scheduleRowCountAt(QStringLiteral("classes-refresh-2-complete"))
+        );
+
+    const QJsonObject nextWorkflowPageDescendants =
+        classesOwnerMetricsByCheckpoint
+            .value(QStringLiteral("next-workflow-page-start"))
+            .value(QStringLiteral("instantiatedPageWidgetDescendantCounts"))
+            .toObject();
+    const QJsonObject classesPageLeftDescendants =
+        classesOwnerMetricsByCheckpoint
+            .value(QStringLiteral("classes-page-left"))
+            .value(QStringLiteral("instantiatedPageWidgetDescendantCounts"))
+            .toObject();
+    QVERIFY(
+        nextWorkflowPageDescendants.value(classesPageKey).toInt(-1)
+        > classesPageLeftDescendants.value(classesPageKey).toInt(-1)
         );
 
 }

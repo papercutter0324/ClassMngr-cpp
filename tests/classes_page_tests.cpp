@@ -1168,12 +1168,12 @@ diagnosticMetricsTrackDeferredScheduleRowsAndNavigationRoots()
     const ClassesPageRuntimeMetrics afterLeave = page.runtimeMetrics();
     QCOMPARE(afterLeave.currentNavigationTabRootCount, 0);
     QCOMPARE(afterLeave.liveNavigationTabRootCount, 0);
-    QVERIFY(afterLeave.scheduleSectionAvailable);
-    QVERIFY(afterLeave.currentScheduleRowCount > 0);
-    QCOMPARE(
-        afterLeave.liveScheduleRowWidgetCount,
-        afterLeave.currentScheduleRowCount
-        );
+    QVERIFY(!afterLeave.scheduleSectionAvailable);
+    QCOMPARE(afterLeave.currentScheduleRowCount, 0);
+    QCOMPARE(afterLeave.liveScheduleRowWidgetCount, 0);
+    QCOMPARE(afterLeave.instantiatedEditorCount, 0);
+    QCOMPARE(afterLeave.loadedEditorClassCount, 0);
+    QCOMPARE(afterLeave.selectedEditorDescendantWidgetCount, 0);
 
     page.show();
     page.activate();
@@ -1181,11 +1181,13 @@ diagnosticMetricsTrackDeferredScheduleRowsAndNavigationRoots()
     QCOMPARE(afterReentry.currentNavigationTabRootCount, 1);
     QCOMPARE(afterReentry.liveNavigationTabRootCount, 1);
     QVERIFY(afterReentry.scheduleSectionAvailable);
-    QVERIFY(afterReentry.currentScheduleRowCount > 0);
+    QCOMPARE(afterReentry.currentScheduleRowCount, 0);
     QCOMPARE(
         afterReentry.liveScheduleRowWidgetCount,
-        afterReentry.currentScheduleRowCount
+        0
         );
+    QCOMPARE(afterReentry.instantiatedEditorCount, 1);
+    QCOMPARE(afterReentry.loadedEditorClassCount, 1);
     QCOMPARE(afterReentry.classQueryCount, beforeLeave.classQueryCount);
     QCOMPARE(afterReentry.classInfoQueryCount, beforeLeave.classInfoQueryCount);
     QCOMPARE(page.currentClassId(), 42);
