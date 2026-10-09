@@ -16687,5 +16687,38 @@ The F450 test slot was extended/renamed; no CMake or production files changed. T
 undoAndRedoActionsRestoreAndReapplyPersonalNameInFocusedLineEdit and full target QtTest each
 passed 3 with 0 failures; verbose slot execution confirmed the case. CTest
 ClassMngrMainWindowEditActionParityTests passed 1/1. Ninja target build and diff check passed. A
-known Qt font warning appeared while bundled fonts loaded. F451 is accepted in this changeset and
-ready to commit; Batch 27 remains active until commit.
+known Qt font warning appeared while bundled fonts loaded. F451 was accepted in this changeset and ready to commit; Batch 27 remained active until its commit.
+
+### F451 committed - 2026-10-09
+
+F451, “Phase2 - Cover Redo QAction focused-editor dispatch (F451),” was committed as
+3137d522796365e81d4c3f99e341aacaf83cc392 on Qt-Rewrite (branch ahead 36). The commit includes
+exactly six approved paths and its commit diff check was clean. Batch 27 is complete. Batch 28 is
+active with F452 bounded QAction coverage discovery underway; no candidate has been selected yet.
+F451 acceptance and focused verification remain recorded above.
+
+### F452 acceptance matrix recorded before implementation - 2026-10-09
+
+Two independent reviews found no direct MainWindow clipboard QAction tests. Select Paste for the
+clipboard-dependent enablement and focused-editor dispatch case; extend the existing
+tests/mainwindow_edit_action_parity_tests.cpp / MainWindowEditActionParityTests target.
+
+Snapshot prior clipboard MIME data and restore it during cleanup. Open a file-backed profile on My
+Workspace Details, focus the personal-name QLineEdit, clear the clipboard and assert the actual Paste
+QAction is disabled. Set non-empty clipboard text and wait until Paste is enabled; select editor text
+with Ctrl+A, trigger the QAction, then verify clipboard text replaces the value while editor focus
+remains.
+
+Build target and CTest: ClassMngrMainWindowEditActionParityTests. Exclude Cut/Copy, read-only
+gating, non-text clipboard formats, and other editors. This matrix was recorded before implementation.
+
+### F452 acceptance update - 2026-10-09
+
+Slot pasteActionReplacesSelectedPersonalNameFromClipboard() passed focused QtTest 3/0; the full
+target passed 4/0. CTest ClassMngrMainWindowEditActionParityTests passed 1/1. Ninja build and
+git diff --check passed; the independent run log confirmed the selected slot. RAII snapshots and
+restores clipboard MIME format/payload during cleanup. Empty clipboard disabled the actual Paste
+QAction; non-empty text enabled it; Ctrl+A selection was replaced by paste while editor focus
+remained. Initial Qt PATH setup was resolved. A known missing-font warning appeared with bundled
+fonts loaded. No CMake or production changes. F452 is accepted in this changeset and ready to commit;
+Batch 28 remains active until commit.

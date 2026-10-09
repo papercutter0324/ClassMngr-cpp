@@ -3398,3 +3398,21 @@ Source map: `ActionRegistry::redo` -> Edit menu -> MainWindow/EditController wir
 The existing focused MainWindow edit-action case now covers the paired path: after keyboard-entering a distinct draft in the focused personal-name QLineEdit, it triggers the real Undo QAction and verifies the persisted baseline value returns, then triggers the real Redo QAction and verifies the draft returns while the editor retains focus. The test slot is `undoAndRedoActionsRestoreAndReapplyPersonalNameInFocusedLineEdit`; this extends the F450 focused-editor test without production or CMake changes.
 
 Verification: the Ninja target build passed; the exact slot passed 3 incidents (setup, test, cleanup) with zero failures, and verbose output confirmed the slot ran; full target QtTest passed 3 incidents; filtered CTest `ClassMngrMainWindowEditActionParityTests` passed 1/1; `git diff --check` is clean. The direct runs emitted Qt’s known missing-font-directory warning; bundled Inter and Pretendard fonts loaded. No full project suite. F451 is accepted; commit metadata and next-slice discovery follow.
+
+## 2026-10-09 - F451 committed; F452 discovery started
+
+F451 committed as `3137d522796365e81d4c3f99e341aacaf83cc392` (`Phase2 - Cover Redo QAction focused-editor dispatch (F451)`); the branch is ahead by 36. Exactly the six approved files were committed and the commit diff check was clean. `agent_docs/latest_session_work.md` and `%SystemDrive%/` remain outside. Batch 27 is complete. Batch 28 is active; two independent read-only reviews are beginning bounded QAction coverage discovery for F452. No candidate is selected yet.
+
+## 2026-10-09 - F452 Paste QAction focused-editor acceptance review
+
+Two independent reviews found no direct MainWindow Cut/Copy/Paste QAction tests. Paste is selected for its distinct clipboard-dependent enablement path and dispatch to the focused editor.
+
+Acceptance: In `MainWindowEditActionParityTests`, snapshot the current clipboard MIME data and restore it during cleanup, including early assertion exits. Open the file-backed profile on My Workspace Details and focus the personal-name QLineEdit. Clear clipboard content and verify the real Paste QAction is disabled; then set non-empty text, wait for the QAction to enable, select the editor content using Ctrl+A, trigger the actual Paste QAction, and verify the editor contains the clipboard text and retains focus. Avoid `setText` for the edit operation.
+
+Source map: ActionRegistry::paste -> Edit menu -> MainWindow/EditController wiring -> clipboard-change/focus action-state refresh -> focused QLineEdit::paste(). Test class/target/CTest remain `MainWindowEditActionParityTests` / `ClassMngrMainWindowEditActionParityTests`, already registered in `cmake/tests/pages_and_output.cmake`; add coverage in `mainwindow_edit_action_parity_tests.cpp`. Exclude Cut/Copy, read-only gating, non-text clipboard formats, and other editor types. Matrix recorded before implementation; Batch 28 is active.
+
+## 2026-10-09 - F452 Paste QAction success accepted
+
+Added `pasteActionReplacesSelectedPersonalNameFromClipboard()` to the existing MainWindow edit-action target. The test snapshots clipboard MIME formats and payloads in an RAII restorer, opens a file-backed profile on My Workspace Details, focuses the personal-name QLineEdit, verifies Paste is disabled with empty clipboard content, sets clipboard text and waits for the action to enable, selects the existing name with Ctrl+A, triggers the actual Paste QAction, and verifies replacement text and retained focus. The clipboard is restored on normal and assertion-failure exits. No production or CMake changes.
+
+Verification: Ninja target build passed; the exact slot passed 3 incidents (setup, test, cleanup) with zero failures; full target QtTest passed 4 incidents; filtered CTest `ClassMngrMainWindowEditActionParityTests` passed 1/1; `git diff --check` is clean. Independent verification captured the selected-slot output in a temp log after initializing VS 18 and Qt 6.12 paths. Qt emitted the known missing-font-directory warning; bundled Inter and Pretendard fonts loaded. No full project suite. F452 is accepted; commit metadata and next-slice discovery follow.

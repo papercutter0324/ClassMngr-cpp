@@ -60,11 +60,16 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
   “Phase2 - Cover Undo QAction focused-editor dispatch (F450),” is committed as
   e39852c8a9cef33c80d684dd0e63e18d19a6acf7 (branch ahead 35); Batch 26 is complete. Its commit
   includes exactly seven approved paths and has a clean commit diff check. Batch 27 is active with
-  F451, “Cover Redo QAction focused-editor dispatch (F451),” accepted in this changeset and ready to
-  commit. Selected slot and full target each passed 3 with 0 failures; CTest
+  F451, “Phase2 - Cover Redo QAction focused-editor dispatch (F451),” is committed as
+  3137d522796365e81d4c3f99e341aacaf83cc392 (branch ahead 36); Batch 27 is complete. Its commit
+  includes exactly six approved paths and has a clean commit diff check. Batch 28 is active with
+  F452 Paste QAction coverage is accepted in this changeset and ready to commit. Slot
+  pasteActionReplacesSelectedPersonalNameFromClipboard() passed 3/0; full target passed 4/0; CTest
   ClassMngrMainWindowEditActionParityTests passed 1/1. Ninja target build and diff check passed.
-  The F450 test slot was extended/renamed; no CMake or production changes. A known Qt font
-  warning appeared while bundled fonts loaded. Batch 27 remains active until commit. F449/F448
+  Independent run log confirmed the slot. RAII restores clipboard MIME data; initial Qt PATH setup
+  was resolved. A known missing-font warning appeared while bundled fonts loaded. No CMake or
+  production changes. Batch 28 remains active until commit.
+  F451 acceptance remains in the progress log. F450 acceptance remains recorded there. F449/F448
   acceptance and verification remain in the progress log. F435 covers
   no-database New Profile creation and picker metadata; F444 covers Open File replacement.
   F285 stays deferred. See the
@@ -93,13 +98,14 @@ log](03-Phase-2-Progress-Log.md).
   failure warning/no-navigation behavior; revisit after that behavior is
   clarified.
 
-#### Active batch: Batch 27
+#### Active batch: Batch 28
 
-1. F451 - Accepted in this changeset, ready to commit: Cover Redo QAction focused-editor dispatch (F451).
-   dispatch. Slot undoAndRedoActionsRestoreAndReapplyPersonalNameInFocusedLineEdit and full target
-   each passed 3 with 0 failures; CTest ClassMngrMainWindowEditActionParityTests passed 1/1.
-   Target build and diff check passed. The F450 slot was extended/renamed; no CMake or production
-   changes. A known Qt font warning appeared while bundled fonts loaded. Batch 27 remains active.
+1. F452 - Accepted in this changeset, ready to commit: Paste QAction focused-editor dispatch.
+   Slot pasteActionReplacesSelectedPersonalNameFromClipboard() passed 3/0; full target passed 4/0.
+   CTest ClassMngrMainWindowEditActionParityTests passed 1/1. Target build and diff check passed.
+   RAII restores clipboard MIME data. No CMake/production changes. Batch 28 remains active until
+   commit; the matrix and exclusions are recorded in the progress log.
+
 
 Batch 21 began with ten candidates after F428 and is complete; F429-F438 are
 committed. F438, “Phase2 - Reject existing IDs in repeat-series creation (F438),”
@@ -121,11 +127,13 @@ focused verification remain recorded in the progress log. F449 is committed as
 4e42a5a9cbe5c261fb78b2e39a98f81c93ef0372 on Qt-Rewrite (branch ahead 34); Batch 25 is complete.
 F450 is committed as e39852c8a9cef33c80d684dd0e63e18d19a6acf7 on Qt-Rewrite (branch ahead 35);
 Batch 26 is complete. Its commit includes exactly seven approved paths and has a clean diff check.
-Batch 27 is active with F451, “Cover Redo QAction focused-editor dispatch (F451),” accepted in this
-changeset and ready to commit. The exact slot and full target each passed 3 with 0 failures; CTest
-ClassMngrMainWindowEditActionParityTests passed 1/1. Ninja target build and diff check passed.
-The F450 slot was extended/renamed; no CMake or production changes. The known font warning and
-bundled-font load are recorded in the progress log. F435 covers opening from the no-database banner.
+F451 is committed as 3137d522796365e81d4c3f99e341aacaf83cc392 on Qt-Rewrite (branch ahead 36);
+Batch 27 is complete. Its commit includes exactly six approved paths and has a clean diff check.
+Batch 28 is active with F452 Paste QAction coverage accepted in this changeset and ready to commit.
+Slot pasteActionReplacesSelectedPersonalNameFromClipboard() passed 3/0; full target passed 4/0;
+CTest ClassMngrMainWindowEditActionParityTests passed 1/1. Ninja build and diff check passed.
+RAII cleanup, Qt notices, and remaining details are in the progress log. F451 acceptance remains
+recorded there. F435 covers opening from the no-database banner.
 F444 covers replacing a distinct open profile and excludes same-path opening,
 dirty replacement choices, and
 load-failure behavior. F285 remains deferred. This bounded discovery does not establish

@@ -9,11 +9,15 @@
 
 #include <QAction>
 #include <QApplication>
+#include <QClipboard>
 #include <QFileInfo>
 #include <QLineEdit>
 #include <QList>
+#include <QMimeData>
 #include <QTemporaryDir>
 #include <QtTest>
+
+#include <memory>
 
 #include <utility>
 
@@ -29,6 +33,42 @@ QLineEdit* personalNameEditor(PersonalDetailsPage* page)
     const QList<QLineEdit*> editors = page->findChildren<QLineEdit*>();
     return editors.isEmpty() ? nullptr : editors.constFirst();
 }
+
+class ClipboardMimeDataRestorer final
+{
+public:
+    ClipboardMimeDataRestorer()
+        : m_mimeData(std::make_unique<QMimeData>())
+    {
+        const QMimeData* const originalMimeData =
+            QApplication::clipboard()->mimeData(QClipboard::Clipboard);
+        if (!originalMimeData)
+        {
+            return;
+        }
+
+        for (const QString& format : originalMimeData->formats())
+        {
+            m_mimeData->setData(format, originalMimeData->data(format));
+        }
+    }
+
+    ~ClipboardMimeDataRestorer()
+    {
+        QApplication::clipboard()->setMimeData(
+            m_mimeData.release(),
+            QClipboard::Clipboard
+            );
+    }
+
+    ClipboardMimeDataRestorer(const ClipboardMimeDataRestorer&) = delete;
+    ClipboardMimeDataRestorer& operator=(
+        const ClipboardMimeDataRestorer&
+        ) = delete;
+
+private:
+    std::unique_ptr<QMimeData> m_mimeData;
+};
 }
 
 class MainWindowEditActionParityTests final : public QObject
@@ -38,6 +78,7 @@ class MainWindowEditActionParityTests final : public QObject
 private slots:
     void initTestCase();
     void undoAndRedoActionsRestoreAndReapplyPersonalNameInFocusedLineEdit();
+    void pasteActionReplacesSelectedPersonalNameFromClipboard();
 
 private:
     QTemporaryDir m_settingsDirectory;
@@ -143,6 +184,97 @@ undoAndRedoActionsRestoreAndReapplyPersonalNameInFocusedLineEdit()
     redoAction->trigger();
 
     QCOMPARE(nameEditor->text(), draftName);
+    QVERIFY(nameEditor->hasFocus());
+    QCOMPARE(QApplication::focusWidget(), nameEditor);
+}
+
+void MainWindowEditActionParityTests::
+pasteActionReplacesSelectedPersonalNameFromClipboard()
+{
+    ClipboardMimeDataRestorer clipboardMimeDataRestorer;
+    QClipboard* const clipboard = QApplication::clipboard();
+    QVERIFY(clipboard);
+    clipboard->clear(QClipboard::Clipboard);
+
+    QTemporaryDir workspaceRoot;
+    QVERIFY(workspaceRoot.isValid());
+
+    const QString workspacePath = QFileInfo(
+        workspaceRoot.filePath(QStringLiteral("paste-workspace.tps"))
+        ).absoluteFilePath();
+    const QString baselineName =
+        QStringLiteral("F452 persisted personal name");
+
+    ApplicationServices seedServices;
+    QVERIFY(seedServices.openDatabase(workspacePath));
+    PersonalDetails baselineDetails;
+    baselineDetails.name = baselineName;
+    QVERIFY(
+        PersonalDetailsRepository(seedServices.settingsService())
+            .save(baselineDetails)
+        );
+    seedServices.closeDatabase();
+
+    LanguageService languageService;
+    QVERIFY(languageService.setLanguage(Language::English));
+
+    MainWindowStartupOptions startupOptions;
+    startupOptions.loadMostRecentDatabase = false;
+    startupOptions.initialDatabasePath = workspacePath;
+
+    MainWindow window(
+        [](const QString&) {},
+        false,
+        &languageService,
+        nullptr,
+        std::move(startupOptions)
+        );
+    window.show();
+    QApplication::processEvents();
+    QVERIFY(window.isVisible());
+
+    ApplicationServices* const services = window.services();
+    QVERIFY(services);
+    QVERIFY(services->hasOpenDatabase());
+    QCOMPARE(services->currentDatabasePath(), workspacePath);
+
+    PageManager* const pages = window.pageManager();
+    QVERIFY(pages);
+    QVERIFY(pages->isCurrentPage(PageType::MyWorkspace));
+
+    MyWorkspacePage* const workspace = pages->myWorkspacePage();
+    QVERIFY(workspace);
+    workspace->openTab(WorkspaceTab::Details);
+    QApplication::processEvents();
+    QCOMPARE(workspace->currentTab(), WorkspaceTab::Details);
+
+    PersonalDetailsPage* const details = workspace->personalDetailsPage();
+    QVERIFY(details);
+    QLineEdit* const nameEditor = personalNameEditor(details);
+    QVERIFY(nameEditor);
+    QCOMPARE(nameEditor->text(), baselineName);
+
+    nameEditor->setFocus(Qt::OtherFocusReason);
+    QApplication::processEvents();
+    QVERIFY(nameEditor->hasFocus());
+    QCOMPARE(QApplication::focusWidget(), nameEditor);
+
+    QAction* const pasteAction = window.actions().paste;
+    QVERIFY(pasteAction);
+    QVERIFY(clipboard->text(QClipboard::Clipboard).isEmpty());
+    QVERIFY(!pasteAction->isEnabled());
+
+    const QString clipboardText =
+        QStringLiteral("F452 pasted personal name");
+    QVERIFY(!clipboardText.isEmpty());
+    clipboard->setText(clipboardText, QClipboard::Clipboard);
+    QTRY_VERIFY(pasteAction->isEnabled());
+
+    QTest::keyClick(nameEditor, Qt::Key_A, Qt::ControlModifier);
+    QCOMPARE(nameEditor->selectedText(), baselineName);
+    pasteAction->trigger();
+
+    QCOMPARE(nameEditor->text(), clipboardText);
     QVERIFY(nameEditor->hasFocus());
     QCOMPARE(QApplication::focusWidget(), nameEditor);
 }

@@ -178,15 +178,19 @@ synchronization is committed (`f4bc5282`). F416 Document Catalog rendered
   4e42a5a9cbe5c261fb78b2e39a98f81c93ef0372 (branch ahead 34); Batch 25 is complete. F450,
   “Phase2 - Cover Undo QAction focused-editor dispatch (F450),” is committed as
   e39852c8a9cef33c80d684dd0e63e18d19a6acf7 (branch ahead 35); Batch 26 is complete. Its commit
-  includes exactly seven approved paths and has a clean commit diff check. Batch 27 is active with
-  F451, “Cover Redo QAction focused-editor dispatch (F451),” accepted in this changeset and ready to
-  commit. Slot undoAndRedoActionsRestoreAndReapplyPersonalNameInFocusedLineEdit and full target
-  QtTest each passed 3 with 0 failures; CTest ClassMngrMainWindowEditActionParityTests passed
-  1/1. Ninja target build
-  and diff check passed. The F450 test slot was extended/renamed; no CMake or production changes. A
-  known Qt font warning appeared while bundled fonts loaded. Batch 27 remains active until commit. F450 acceptance remains in the
-  progress log. F449’s acceptance and focused verification remain there;
-  its independent Tester rerun and environment notices are preserved.
+  includes exactly seven approved paths and has a clean commit diff check. F451,
+  “Phase2 - Cover Redo QAction focused-editor dispatch (F451),” is committed as
+  3137d522796365e81d4c3f99e341aacaf83cc392 (branch ahead 36); Batch 27 is complete. Its commit
+  includes exactly six approved paths and has a clean commit diff check. Batch 28 is active with
+  F452 Paste QAction coverage is accepted in this changeset and ready to commit. Slot
+  pasteActionReplacesSelectedPersonalNameFromClipboard() passed 3/0; full target passed 4/0; CTest
+  ClassMngrMainWindowEditActionParityTests passed 1/1. Ninja build and diff check passed; independent
+  run log confirmed the selected slot. Clipboard MIME snapshot/restore uses RAII. Initial Qt PATH
+  setup was resolved; a known missing-font warning appeared while bundled fonts loaded. No CMake or
+  production changes. Batch 28 remains active until commit.
+  F451 acceptance remains in the progress log. F450 acceptance remains there. F449’s acceptance
+  and focused verification remain there; its independent Tester rerun and environment notices are
+  preserved.
   F448 acceptance remains in the progress log, including the reviewer command limitation. F435
   covers no-database New Profile creation and picker metadata; F444 covers Open File replacement.
   F285 stays deferred. See the
