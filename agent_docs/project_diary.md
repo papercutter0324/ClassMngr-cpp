@@ -3667,3 +3667,9 @@ F492 committed as 31f84450 with six scoped paths. The only post-commit worktree 
 F493 decision: test opting out of one otherwise valid AI comment in the batch review table. The plan scan's prompt-reset alternative lacks a precise trigger and may overlap F488's Include-checkbox invalidation; the code scan found a crisp gap in checked/valid filtering. F252 already records that filtering as application behavior.
 
 F493 verifies the review-table opt-out boundary: unchecking both valid comments disables Apply; rechecking one applies only that accepted comment. Independent focused verification passed; this remains a UI test with no production change.
+
+F493 committed as 57da53c7 with six scoped paths. The only post-commit worktree entries are the excluded latest_session_work.md change and %SystemDrive%/. Batch 69 is complete; Batch 70 F494 discovery begins with selection pending.
+
+F494 decision: make the overwrite-decline state observable in the existing batch-dialog test. The decline/retry behavior is already exercised, but without showing the dialog it does not prove that the UI stays open with its Ready review selection intact. Acceptance requires visible state after decline and the existing successful retry.
+
+F494 adds visible-state coverage for declining an AI-comment overwrite: the batch dialog remains open and keeps the Ready selected comment, while returning no accepted comments. Retrying with confirmation preserves the existing accepted-result test. Independent focused verification passed.

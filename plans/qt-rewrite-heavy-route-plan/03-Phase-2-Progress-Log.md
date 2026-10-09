@@ -17819,3 +17819,21 @@ The `aiBatchDialogAppliesOnlyRecheckedReadyComment` slot verifies two checked Re
 ### F493 independent verification update - 2026-10-09
 
 The Tester’s focused Ninja build found no work necessary; object and executable timestamps were fresh. Registered CTest passed 1/1; direct offscreen execution exited 0; the slot was listed; scoped diff check exited 0. An LF-to-CRLF advisory was the only noted issue. This is test-only, with no production, CMake, browser, or network changes. F493 is independently verified, accepted, and ready to commit; Batch 69 remains active until commit.
+
+### F493 committed - 2026-10-09
+
+F493, “Phase2 - Cover batch comment opt-out (F493),” committed as 57da53c7 with six scoped paths. Batch 69 is complete. Batch 70 candidate discovery is underway for F494; selection is pending.
+
+### F494 acceptance plan recorded before implementation - 2026-10-09
+
+Extend `aiBatchDialogConfirmsAcceptedCommentOverwrites` in `tests/speaking_eval_batch_report_service_tests.cpp` to show the overwrite-confirmation dialog. On the first Apply, choose the non-destructive response and assert the dialog remains visible, the Ready review row, selection, and comment are unchanged, and `acceptedComments` is empty. Then queue the destructive confirmation, apply again, and assert the existing successful accepted result.
+
+The existing decline/retry path is already exercised; F494 adds the missing visible-open-state assertion only. This is a test-only user-visible decline-state check, supported by Phase 2 §§2.3–2.4 and the F252 overwrite-confirmation gate. No production, CMake, browser, or network changes. F494 is selected/current in Batch 70; implementation and verification are pending.
+
+### F494 implementation update - 2026-10-09
+
+`aiBatchDialogConfirmsAcceptedCommentOverwrites` now shows the overwrite dialog and explicitly declines on the first Apply. It verifies the dialog remains visible, the review row is Ready and checked, the comment is unchanged, and `acceptedComments` is empty. The destructive retry still succeeds with one sourceRow 7 result containing the original/generated comment. The executor’s focused build and CTest passed; direct offscreen execution exited 0, the slot was listed, and diff check passed.
+
+### F494 independent verification update - 2026-10-09
+
+The Tester confirmed the assertions, focused build, registered CTest 1/1, direct offscreen exit 0, slot registration, and diff check. An LF-to-CRLF advisory was the only noted issue. This is test-only, with no production, CMake, browser, or network changes. F494 is independently verified, accepted, and ready to commit; Batch 70 remains active until commit.

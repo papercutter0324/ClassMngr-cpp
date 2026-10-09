@@ -3171,6 +3171,10 @@ void SpeakingEvalBatchReportServiceTests::
     QVERIFY(review);
     QVERIFY(applyButton);
 
+    dialog.show();
+    QApplication::processEvents();
+    QVERIFY(dialog.isVisible());
+
     selection->item(0, 0)->setCheckState(Qt::Checked);
     createPromptButton->click();
     responseEdit->setPlainText(
@@ -3186,6 +3190,11 @@ void SpeakingEvalBatchReportServiceTests::
     QVERIFY(parseButton->isEnabled());
     parseButton->click();
     QCOMPARE(review->rowCount(), 1);
+    QCOMPARE(review->item(0, 2)->text(), QStringLiteral("Ready"));
+    QCOMPARE(review->item(0, 0)->checkState(), Qt::Checked);
+    const QString commentBeforeDecline =
+        review->item(0, 4)->text();
+    QVERIFY(!commentBeforeDecline.isEmpty());
     QVERIFY(applyButton->isEnabled());
 
     struct ResetPromptService final
@@ -3198,7 +3207,12 @@ void SpeakingEvalBatchReportServiceTests::
     FakeUserPromptService promptService;
     const ResetPromptService resetPromptService;
     DialogServices::setUserPromptServiceForTesting(&promptService);
+    promptService.scriptedChoices.enqueue(PromptChoice::Rejected);
     applyButton->click();
+    QVERIFY(dialog.isVisible());
+    QCOMPARE(review->item(0, 2)->text(), QStringLiteral("Ready"));
+    QCOMPARE(review->item(0, 0)->checkState(), Qt::Checked);
+    QCOMPARE(review->item(0, 4)->text(), commentBeforeDecline);
     const int rejectedResult = dialog.result();
     const auto commentsAfterReject = dialog.acceptedComments();
 
