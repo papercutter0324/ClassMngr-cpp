@@ -19895,7 +19895,35 @@ omission and field mapping. F579 remains deferred; this metric contract needs
 no symbol work. The 250 MiB lifecycle gate, F536 cause, F526 provenance,
 output parity, render/window acceptance, and global Phase 0 remain open.
 
-F596 implements this checkpoint projection and its owning-layer coverage.
+## F596 per-owner schedule checkpoint implementation - 2026-10-11
+
+`StartupApplicationMetrics` now carries an additive `scheduleWidgetMetrics`
+array. MainWindow records value snapshots for `standalone-schedule`,
+`workspace-schedule`, and `sub-prep-preview`; the profiler serializes all eight
+`ScheduleWidgetRuntimeMetrics` fields for each owner. Sub Prep exposes the
+embedded schedule's current metrics by value, so MainWindow does not depend on
+its child object name. Existing top-level `schedule*` fields still come from
+the standalone SchedulePage. Missing owner pages are omitted.
+
+The serialization test checks every field for two owners, stable keys,
+omission of the absent third owner, and compatibility of the standalone scalar.
+The Sub Prep page test compares all eight fields from the page value accessor
+with the child widget's `runtimeMetrics()`. The first Sub Prep test invocation
+exposed an invalid fixture that passed null services; the fixture now supplies
+`ApplicationServices`, and the independent recheck passed both selected
+QtTest cases with 3 passed and 0 failed each. An incremental build of
+`ClassMngr`, `ClassMngrStartupPerformanceTests`, and
+`ClassMngrSubPrepPageTests` succeeded in the existing
+`build/windows-x64-debug-ninja` tree. The standard
+`build/windows-x64-debug` MSBuild attempt stopped at `ZERO_CHECK` after
+FileTracker raised `UnauthorizedAccessException`; the existing Ninja tree was
+used for focused builds and runs. No full test suite or fresh Release route was
+run. F597 will capture the newly serialized owner values in the packaged
+Release lifecycle route and align them with the existing heap checkpoints.
+
+F579 remains deferred at the user's direction. The 250 MiB lifecycle gate,
+F536 cause, F526 provenance, output parity, render/window acceptance, and
+global Phase 0 remain open.
 
 ## F594 per-instance ScheduleWidget metric coverage - 2026-10-11
 

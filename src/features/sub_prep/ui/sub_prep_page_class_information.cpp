@@ -1183,6 +1183,14 @@ SubPrepPageRuntimeMetrics SubPrepPage::runtimeMetrics() const
     return metrics;
 }
 
+ScheduleWidgetRuntimeMetrics
+SubPrepPage::scheduleWidgetRuntimeMetrics() const
+{
+    return m_scheduleWidget
+        ? m_scheduleWidget->runtimeMetrics()
+        : ScheduleWidgetRuntimeMetrics{};
+}
+
 bool SubPrepPage::buildPrintClassInformation(
     const QList<int>& classIds,
     const QStringList& selectedDays,

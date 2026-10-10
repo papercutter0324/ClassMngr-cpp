@@ -348,6 +348,7 @@ private slots:
     void cleanupTestCase();
     void init();
     void cleanup();
+    void scheduleWidgetRuntimeMetricsAreAvailableAsPageValue();
     void sectionsAppearInRequestedOrderAndUseExpectedEditability();
     void headerKeyboardOpensUntargeted();
     void gradeAndLevelTabsSelectOneClassAndPreserveSelection();
@@ -437,6 +438,31 @@ void SubPrepPageTests::cleanup()
         m_generationDatabaseCreated = false;
     }
     m_generationDatabaseDirectory.reset();
+}
+
+void SubPrepPageTests::scheduleWidgetRuntimeMetricsAreAvailableAsPageValue()
+{
+    ApplicationServices services;
+    SubPrepPageHarness harness(&services);
+    ScheduleWidget* const scheduleWidget =
+        harness.page.findChild<ScheduleWidget*>(
+            QStringLiteral("subPrepScheduleWidget")
+            );
+    QVERIFY(scheduleWidget);
+
+    const ScheduleWidgetRuntimeMetrics expected =
+        scheduleWidget->runtimeMetrics();
+    const ScheduleWidgetRuntimeMetrics actual =
+        harness.page.scheduleWidgetRuntimeMetrics();
+
+    QCOMPARE(actual.modelRowCount, expected.modelRowCount);
+    QCOMPARE(actual.modelCellCount, expected.modelCellCount);
+    QCOMPARE(actual.modelEntryCount, expected.modelEntryCount);
+    QCOMPARE(actual.tableRowCount, expected.tableRowCount);
+    QCOMPARE(actual.tableColumnCount, expected.tableColumnCount);
+    QCOMPARE(actual.tableItemCount, expected.tableItemCount);
+    QCOMPARE(actual.tableCellWidgetCount, expected.tableCellWidgetCount);
+    QCOMPARE(actual.visibleClassCount, expected.visibleClassCount);
 }
 
 void SubPrepPageTests::headerKeyboardOpensUntargeted()

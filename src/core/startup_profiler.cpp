@@ -51,6 +51,31 @@ void appendProfilerWorkflowTrace(const QString& message)
 
 QJsonObject applicationMetricsJson(const StartupApplicationMetrics& metrics)
 {
+    QJsonArray scheduleWidgetMetrics;
+    for (const StartupScheduleWidgetMetrics& scheduleMetrics :
+         metrics.scheduleWidgetMetrics)
+    {
+        scheduleWidgetMetrics.append(
+            QJsonObject{
+                {QStringLiteral("ownerKey"), scheduleMetrics.ownerKey},
+                {QStringLiteral("modelRowCount"), scheduleMetrics.modelRowCount},
+                {QStringLiteral("modelCellCount"), scheduleMetrics.modelCellCount},
+                {QStringLiteral("modelEntryCount"), scheduleMetrics.modelEntryCount},
+                {QStringLiteral("tableRowCount"), scheduleMetrics.tableRowCount},
+                {QStringLiteral("tableColumnCount"), scheduleMetrics.tableColumnCount},
+                {QStringLiteral("tableItemCount"), scheduleMetrics.tableItemCount},
+                {
+                    QStringLiteral("tableCellWidgetCount"),
+                    scheduleMetrics.tableCellWidgetCount
+                },
+                {
+                    QStringLiteral("visibleClassCount"),
+                    scheduleMetrics.visibleClassCount
+                }
+            }
+            );
+    }
+
     return {
         {QStringLiteral("widgetCount"), metrics.widgetCount},
         {QStringLiteral("instantiatedPageCount"), metrics.instantiatedPageCount},
@@ -266,6 +291,10 @@ QJsonObject applicationMetricsJson(const StartupApplicationMetrics& metrics)
         {
             QStringLiteral("scheduleVisibleClassCount"),
             metrics.scheduleVisibleClassCount
+        },
+        {
+            QStringLiteral("scheduleWidgetMetrics"),
+            scheduleWidgetMetrics
         },
         {
             QStringLiteral("calendarCacheEventCount"),
@@ -3392,6 +3421,8 @@ StartupApplicationMetrics StartupProfiler::applicationMetrics() const
             supplied.scheduleTableCellWidgetCount;
         metrics.scheduleVisibleClassCount =
             supplied.scheduleVisibleClassCount;
+        metrics.scheduleWidgetMetrics =
+            supplied.scheduleWidgetMetrics;
         metrics.calendarCacheEventCount =
             supplied.calendarCacheEventCount;
         metrics.calendarCacheDateBucketCount =

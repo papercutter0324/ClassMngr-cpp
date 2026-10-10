@@ -23,6 +23,7 @@ class QTimer;
 class QVBoxLayout;
 class QWidget;
 class ScheduleWidget;
+struct ScheduleWidgetRuntimeMetrics;
 class SectionCard;
 class SubPrepClassInformationDataAccess;
 class SubPrepClassInformationListModel;
@@ -127,6 +128,8 @@ public:
     QString currentSectionName() const;
     QString currentSectionKey() const;
     [[nodiscard]] SubPrepPageRuntimeMetrics runtimeMetrics() const;
+    [[nodiscard]] ScheduleWidgetRuntimeMetrics
+        scheduleWidgetRuntimeMetrics() const;
 
     // Used by the opt-in heavy startup diagnostics to exercise a real class
     // selection without relying on native desktop automation.

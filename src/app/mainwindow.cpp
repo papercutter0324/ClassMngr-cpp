@@ -64,6 +64,24 @@ requestDocumentCatalogProjection(
 
     return std::move(result.value());
 }
+
+StartupScheduleWidgetMetrics startupScheduleWidgetMetrics(
+    const QString& ownerKey,
+    const ScheduleWidgetRuntimeMetrics& source
+    )
+{
+    StartupScheduleWidgetMetrics metrics;
+    metrics.ownerKey = ownerKey;
+    metrics.modelRowCount = source.modelRowCount;
+    metrics.modelCellCount = source.modelCellCount;
+    metrics.modelEntryCount = source.modelEntryCount;
+    metrics.tableRowCount = source.tableRowCount;
+    metrics.tableColumnCount = source.tableColumnCount;
+    metrics.tableItemCount = source.tableItemCount;
+    metrics.tableCellWidgetCount = source.tableCellWidgetCount;
+    metrics.visibleClassCount = source.visibleClassCount;
+    return metrics;
+}
 }
 
 // =========================================================
@@ -416,6 +434,12 @@ void MainWindow::initializePages()
                 {
                     const ScheduleWidgetRuntimeMetrics scheduleMetrics =
                         m_pages->schedulePage()->runtimeMetrics();
+                    metrics.scheduleWidgetMetrics.append(
+                        startupScheduleWidgetMetrics(
+                            QStringLiteral("standalone-schedule"),
+                            scheduleMetrics
+                            )
+                        );
                     metrics.scheduleModelRowCount =
                         scheduleMetrics.modelRowCount;
                     metrics.scheduleModelCellCount =
@@ -432,6 +456,27 @@ void MainWindow::initializePages()
                         scheduleMetrics.tableCellWidgetCount;
                     metrics.scheduleVisibleClassCount =
                         scheduleMetrics.visibleClassCount;
+                }
+
+                if (m_pages && m_pages->mySchedulePage())
+                {
+                    metrics.scheduleWidgetMetrics.append(
+                        startupScheduleWidgetMetrics(
+                            QStringLiteral("workspace-schedule"),
+                            m_pages->mySchedulePage()->runtimeMetrics()
+                            )
+                        );
+                }
+
+                if (m_pages && m_pages->subPrepPage())
+                {
+                    metrics.scheduleWidgetMetrics.append(
+                        startupScheduleWidgetMetrics(
+                            QStringLiteral("sub-prep-preview"),
+                            m_pages->subPrepPage()
+                                ->scheduleWidgetRuntimeMetrics()
+                            )
+                        );
                 }
 
                 if (m_pages && m_pages->calendarPage())

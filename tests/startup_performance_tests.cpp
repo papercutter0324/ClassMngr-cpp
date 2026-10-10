@@ -1648,6 +1648,7 @@ class StartupPerformanceTests : public QObject
     Q_OBJECT
 
 private slots:
+    void scheduleWidgetMetricsAreSerializedPerOwnerAndOmitMissingOwners();
     void checkpointsBracketOneApplicationMetricsTraversal();
     void representativeStartupFixtureIsCompleteAndDeterministic();
     void largeStartupFixtureIsCompleteAndDeterministic();
@@ -1676,6 +1677,116 @@ private slots:
     void capturesVisualLanguageAndThemeVariants();
     void capturesRepresentativeVisualVariants();
 };
+
+void StartupPerformanceTests
+    ::scheduleWidgetMetricsAreSerializedPerOwnerAndOmitMissingOwners()
+{
+    StartupProfiler profiler;
+    profiler.setApplicationMetricsProvider(
+        []()
+        {
+            StartupApplicationMetrics metrics;
+            metrics.scheduleTableCellWidgetCount = 49;
+
+            StartupScheduleWidgetMetrics standalone;
+            standalone.ownerKey = QStringLiteral("standalone-schedule");
+            standalone.modelRowCount = 8;
+            standalone.modelCellCount = 48;
+            standalone.modelEntryCount = 768;
+            standalone.tableRowCount = 9;
+            standalone.tableColumnCount = 6;
+            standalone.tableItemCount = 55;
+            standalone.tableCellWidgetCount = 49;
+            standalone.visibleClassCount = 96;
+            metrics.scheduleWidgetMetrics.append(standalone);
+
+            StartupScheduleWidgetMetrics workspace;
+            workspace.ownerKey = QStringLiteral("workspace-schedule");
+            workspace.modelRowCount = 3;
+            workspace.modelCellCount = 15;
+            workspace.modelEntryCount = 42;
+            workspace.tableRowCount = 4;
+            workspace.tableColumnCount = 5;
+            workspace.tableItemCount = 19;
+            workspace.tableCellWidgetCount = 17;
+            workspace.visibleClassCount = 12;
+            metrics.scheduleWidgetMetrics.append(workspace);
+            return metrics;
+        }
+        );
+
+    profiler.checkpoint(QStringLiteral("schedule-owner-snapshot"));
+
+    const QJsonObject checkpoint = profiler.reportJson()
+        .value(QStringLiteral("checkpoints"))
+        .toArray()
+        .first()
+        .toObject();
+    const QJsonObject metrics = checkpoint
+        .value(QStringLiteral("metrics"))
+        .toObject();
+    const QJsonArray scheduleWidgetMetrics = metrics
+        .value(QStringLiteral("scheduleWidgetMetrics"))
+        .toArray();
+    QCOMPARE(scheduleWidgetMetrics.size(), 2);
+    QVERIFY(std::none_of(
+        scheduleWidgetMetrics.cbegin(),
+        scheduleWidgetMetrics.cend(),
+        [](const QJsonValue& scheduleMetricsValue)
+        {
+            return scheduleMetricsValue.toObject()
+                .value(QStringLiteral("ownerKey"))
+                .toString() == QStringLiteral("sub-prep-preview");
+        }
+        ));
+    QCOMPARE(
+        metrics.value(QStringLiteral("scheduleTableCellWidgetCount")).toInt(),
+        49
+        );
+
+    const QJsonObject standalone = scheduleWidgetMetrics.at(0).toObject();
+    QCOMPARE(
+        standalone.value(QStringLiteral("ownerKey")).toString(),
+        QStringLiteral("standalone-schedule")
+        );
+    QCOMPARE(standalone.value(QStringLiteral("modelRowCount")).toInt(), 8);
+    QCOMPARE(standalone.value(QStringLiteral("modelCellCount")).toInt(), 48);
+    QCOMPARE(
+        standalone.value(QStringLiteral("modelEntryCount")).toInt(),
+        768
+        );
+    QCOMPARE(standalone.value(QStringLiteral("tableRowCount")).toInt(), 9);
+    QCOMPARE(standalone.value(QStringLiteral("tableColumnCount")).toInt(), 6);
+    QCOMPARE(standalone.value(QStringLiteral("tableItemCount")).toInt(), 55);
+    QCOMPARE(
+        standalone.value(QStringLiteral("tableCellWidgetCount")).toInt(),
+        49
+        );
+    QCOMPARE(
+        standalone.value(QStringLiteral("visibleClassCount")).toInt(),
+        96
+        );
+
+    const QJsonObject workspace = scheduleWidgetMetrics.at(1).toObject();
+    QCOMPARE(
+        workspace.value(QStringLiteral("ownerKey")).toString(),
+        QStringLiteral("workspace-schedule")
+        );
+    QCOMPARE(workspace.value(QStringLiteral("modelRowCount")).toInt(), 3);
+    QCOMPARE(workspace.value(QStringLiteral("modelCellCount")).toInt(), 15);
+    QCOMPARE(
+        workspace.value(QStringLiteral("modelEntryCount")).toInt(),
+        42
+        );
+    QCOMPARE(workspace.value(QStringLiteral("tableRowCount")).toInt(), 4);
+    QCOMPARE(workspace.value(QStringLiteral("tableColumnCount")).toInt(), 5);
+    QCOMPARE(workspace.value(QStringLiteral("tableItemCount")).toInt(), 19);
+    QCOMPARE(
+        workspace.value(QStringLiteral("tableCellWidgetCount")).toInt(),
+        17
+        );
+    QCOMPARE(workspace.value(QStringLiteral("visibleClassCount")).toInt(), 12);
+}
 
 void StartupPerformanceTests
     ::checkpointsBracketOneApplicationMetricsTraversal()

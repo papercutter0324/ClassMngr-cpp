@@ -11,6 +11,19 @@
 
 // Application-level metrics intentionally describe the shared startup
 // lifecycle, rather than any operating-system-specific implementation.
+struct StartupScheduleWidgetMetrics
+{
+    QString ownerKey;
+    int modelRowCount = 0;
+    int modelCellCount = 0;
+    int modelEntryCount = 0;
+    int tableRowCount = 0;
+    int tableColumnCount = 0;
+    int tableItemCount = 0;
+    int tableCellWidgetCount = 0;
+    int visibleClassCount = 0;
+};
+
 struct StartupApplicationMetrics
 {
     int widgetCount = 0;
@@ -69,6 +82,7 @@ struct StartupApplicationMetrics
     int scheduleTableItemCount = 0;
     int scheduleTableCellWidgetCount = 0;
     int scheduleVisibleClassCount = 0;
+    QList<StartupScheduleWidgetMetrics> scheduleWidgetMetrics;
     int scheduleImportWorkbookSheetCount = 0;
     int scheduleImportWorkbookUserCount = 0;
     int scheduleImportWorkbookClassCandidateCount = 0;
