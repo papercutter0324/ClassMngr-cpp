@@ -23,6 +23,7 @@ class QLabel;
 class QModelIndex;
 class QPushButton;
 class NavigationTabWidget;
+class NavigationTabStrip;
 class QVBoxLayout;
 class QUndoStack;
 class QWidget;
@@ -99,7 +100,7 @@ private:
         );
 
     void createDayFilterControls(
-        NavigationTabWidget* tabs
+        NavigationTabStrip* tabs
         );
 
     void setDayFilterEnabled(
@@ -134,8 +135,17 @@ private:
         int classId
         );
 
+    void syncClassTabStripToClass(
+        NavigationTabStrip* tabs,
+        int classId
+        );
+
     int currentClassIdFromTabs(
         NavigationTabWidget* tabs
+        ) const;
+
+    int currentClassIdFromTabs(
+        NavigationTabStrip* tabs
         ) const;
 
     QString currentEvaluationNameFromTabs() const;
@@ -232,6 +242,7 @@ private:
     QWidget* m_classTabsContainer = nullptr;
     QVBoxLayout* m_classTabsLayout = nullptr;
     NavigationTabWidget* m_classTabs = nullptr;
+    NavigationTabStrip* m_flatClassTabs = nullptr;
     NavigationTabWidget* m_evaluationTabs = nullptr;
 
     SpeakingEvalModel* m_model = nullptr;

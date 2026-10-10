@@ -20203,6 +20203,33 @@ under `dist/f604-current-source-windows-x64`,
 `build/f604-verification-20261011`, and
 `build/f604-checkpoint-dryrun-20261011`.
 
+## F609 bound Speaking Evaluation class-page construction - 2026-10-11
+
+Speaking Evaluation class navigation no longer creates one empty page widget
+per class. Flat and grouped paths use `NavigationTabStrip` buttons with the
+class ID attached, while grouped grade pages and the shared evaluation model,
+table, delegate, undo stack, and active-record flow remain in place.
+
+The page test compares fixtures with 8 and 96 classes split across the same
+two grade groups; their plain `QWidget` page-container counts are equal. It
+also confirms all 96 class IDs are represented by navigation buttons, that
+class selection survives a grade switch and Monday-filter rebuild, and that
+the selected `Summer` evaluation is retained. Existing page coverage checks
+class order, schedule and visibility filters, autosave, failed-switch restore,
+and save behavior; parity coverage verifies report edits map to the original
+student row. This is structural page-count evidence, not allocation or byte
+attribution, and the per-class navigation buttons remain required.
+
+The incremental standard Windows x64 Debug build passed for
+`ClassMngrSpeakingEvalPageSaveTests` and
+`ClassMngrSpeakingEvalPageSaveParityTests`. The focused CTest set passed 2/2;
+the grouped-navigation test also passed directly. Independent verification
+reran both page targets plus `ClassMngrClassTabNavigationModelTests` and
+passed 3/3, including the Saturday/Sunday weekend-filter model case. Weekend
+filter behavior has model-level evidence; the F609 page regression directly
+clicks Monday. `git diff --check` passed. Broad suites and heap/symbol work
+were not run. Logs are retained under `build/windows-x64-debug`.
+
 ## F608 replace Staff Directory cell items with row models - 2026-10-11
 
 Both Staff Directory `QTableWidget`s are now `QTableView`s backed by a

@@ -350,6 +350,7 @@ void SpeakingEvalPage::rebuildClassTabs(
     }
 
     m_classTabs = nullptr;
+    m_flatClassTabs = nullptr;
 
     ClassMngr::Next::Application::ClassesNavigationSnapshotQuery query;
     query.classes.reserve(
@@ -445,24 +446,12 @@ void SpeakingEvalPage::rebuildClassTabs(
             m_dayFilter
             );
 
-    const auto createTabPage =
-        [](QWidget* parent, int classId)
-        {
-            auto* page =
-                new QWidget(parent);
-            page->setProperty(
-                "class_id",
-                classId
-                );
-            return page;
-        };
-
     const auto connectClassTabs =
-        [this](NavigationTabWidget* tabs)
+        [this](NavigationTabStrip* tabs)
         {
             connect(
                 tabs,
-                &NavigationTabWidget::currentChanged,
+                &NavigationTabStrip::currentChanged,
                 this,
                 [this, tabs](int)
                 {
@@ -487,9 +476,8 @@ void SpeakingEvalPage::rebuildClassTabs(
     if (navigation.mode == ClassTabNavigation::Mode::Flat)
     {
         auto* tabs =
-            new NavigationTabWidget(
+            new NavigationTabStrip(
                 NavigationTabKind::Class,
-                QStringLiteral("speakingEvalClassTabBar"),
                 m_classTabsContainer
                 );
         tabs->setSizePolicy(
@@ -502,19 +490,16 @@ void SpeakingEvalPage::rebuildClassTabs(
         for (const ClassTabNavigation::ClassTab& tab
              : navigation.flatClasses)
         {
-            tabs->addTab(
-                createTabPage(
-                    tabs,
-                    tab.classId
-                    ),
-                tab.label
-                );
+            const int index = tabs->addTab(tab.label);
+            if (NavigationPillButton* button = tabs->tabButton(index))
+            {
+                button->setProperty("class_id", tab.classId);
+            }
         }
 
         connectClassTabs(tabs);
 
-        m_classTabs =
-            tabs;
+        m_flatClassTabs = tabs;
         m_classTabsLayout->addWidget(tabs);
     }
     else
@@ -530,7 +515,7 @@ void SpeakingEvalPage::rebuildClassTabs(
             QSizePolicy::Maximum
             );
         gradeTabs->setObjectName("speakingEvalGradeTabs");
-        createDayFilterControls(gradeTabs);
+        createDayFilterControls(gradeTabs->tabStrip());
 
         for (const ClassTabNavigation::GradeGroup& group
              : navigation.gradeGroups)
@@ -545,9 +530,8 @@ void SpeakingEvalPage::rebuildClassTabs(
             gradeLayout->setAlignment(Qt::AlignTop);
 
             auto* classTabs =
-                new NavigationTabWidget(
+                new NavigationTabStrip(
                     NavigationTabKind::Class,
-                    QStringLiteral("speakingEvalClassTabBar"),
                     gradePage
                     );
             classTabs->setSizePolicy(
@@ -559,13 +543,11 @@ void SpeakingEvalPage::rebuildClassTabs(
             for (const ClassTabNavigation::ClassTab& tab
                  : group.classes)
             {
-                classTabs->addTab(
-                    createTabPage(
-                        classTabs,
-                        tab.classId
-                        ),
-                    tab.label
-                    );
+                const int index = classTabs->addTab(tab.label);
+                if (NavigationPillButton* button = classTabs->tabButton(index))
+                {
+                    button->setProperty("class_id", tab.classId);
+                }
             }
 
             connectClassTabs(classTabs);
@@ -606,21 +588,27 @@ void SpeakingEvalPage::rebuildClassTabs(
     }
 
     m_classTabsContainer->setVisible(
-        !m_embedded && m_classTabs && !m_evaluationClasses.isEmpty()
+        !m_embedded
+        && (m_classTabs || m_flatClassTabs)
+        && !m_evaluationClasses.isEmpty()
         );
 
     syncEvaluationTabFont();
 
-    syncTabWidgetToClass(
-        m_classTabs,
-        selectedClassId
-        );
+    if (m_classTabs)
+    {
+        syncTabWidgetToClass(m_classTabs, selectedClassId);
+    }
+    else
+    {
+        syncClassTabStripToClass(m_flatClassTabs, selectedClassId);
+    }
 
     m_rebuildingClassTabs = false;
 }
 
 void SpeakingEvalPage::createDayFilterControls(
-    NavigationTabWidget* tabs
+    NavigationTabStrip* tabs
     )
 {
     if (!tabs)
@@ -740,7 +728,7 @@ void SpeakingEvalPage::setScheduleSource(
 
     m_dayFilter.scheduleSource = source;
 
-    if (m_classTabs && !m_rebuildingClassTabs)
+    if ((m_classTabs || m_flatClassTabs) && !m_rebuildingClassTabs)
     {
         rebuildClassTabs(m_classroom.id);
         restoreEvaluationTabSelection();
@@ -758,7 +746,7 @@ void SpeakingEvalPage::setVisibilityScope(
 
     m_dayFilter.visibilityScope = visibilityScope;
 
-    if (m_classTabs && !m_rebuildingClassTabs)
+    if ((m_classTabs || m_flatClassTabs) && !m_rebuildingClassTabs)
     {
         rebuildClassTabs(m_classroom.id);
         restoreEvaluationTabSelection();
@@ -769,13 +757,14 @@ void SpeakingEvalPage::setNavigationSelectionVisible(
     bool visible
     )
 {
-    if (!m_classTabs)
+    if (!m_classTabs && !m_flatClassTabs)
     {
         return;
     }
 
-    const QList<NavigationTabStrip*> tabBars =
-        m_classTabs->findChildren<NavigationTabStrip*>();
+    const QList<NavigationTabStrip*> tabBars = m_classTabsContainer
+        ? m_classTabsContainer->findChildren<NavigationTabStrip*>()
+        : QList<NavigationTabStrip*>();
 
     for (NavigationTabStrip* tabBar : tabBars)
     {
@@ -788,13 +777,22 @@ void SpeakingEvalPage::setNavigationSelectionVisible(
 
 void SpeakingEvalPage::syncEvaluationTabFont()
 {
-    if (!m_evaluationTabs || !m_classTabs || !m_classTabs->tabStrip())
+    if (!m_evaluationTabs)
     {
         return;
     }
 
-    const QFont evaluationTabFont =
-        m_classTabs->tabStrip()->font();
+    NavigationTabStrip* sourceTabs = m_flatClassTabs;
+    if (!sourceTabs && m_classTabs)
+    {
+        sourceTabs = m_classTabs->tabStrip();
+    }
+    if (!sourceTabs)
+    {
+        return;
+    }
+
+    const QFont evaluationTabFont = sourceTabs->font();
 
     m_evaluationTabs->setFont(
         evaluationTabFont
@@ -859,10 +857,14 @@ bool SpeakingEvalPage::activateEvaluation(
 void SpeakingEvalPage::restoreEvaluationTabSelection()
 {
     m_restoringClassTabs = true;
-    syncTabWidgetToClass(
-        m_classTabs,
-        m_classroom.id
-        );
+    if (m_classTabs)
+    {
+        syncTabWidgetToClass(m_classTabs, m_classroom.id);
+    }
+    else
+    {
+        syncClassTabStripToClass(m_flatClassTabs, m_classroom.id);
+    }
     m_restoringClassTabs = false;
 
     m_syncingEvaluationTabs = true;
@@ -906,20 +908,9 @@ void SpeakingEvalPage::syncTabWidgetToClass(
     {
         QWidget* page =
             tabs->widget(index);
-
-        if (
-            page
-            && page->property("class_id").toInt() == classId
-            )
-        {
-            setNavigationSelectionVisible(true);
-            tabs->setCurrentIndex(index);
-            return;
-        }
-
         auto* nestedTabs =
             page
-                ? page->findChild<NavigationTabWidget*>(
+                ? page->findChild<NavigationTabStrip*>(
                     QStringLiteral("speakingEvalClassTabs")
                     )
                 : nullptr;
@@ -931,18 +922,13 @@ void SpeakingEvalPage::syncTabWidgetToClass(
 
         for (int childIndex = 0; childIndex < nestedTabs->count(); ++childIndex)
         {
-            QWidget* childPage =
-                nestedTabs->widget(childIndex);
-
-            if (
-                childPage
-                && childPage->property("class_id").toInt() == classId
-            )
-        {
-            setNavigationSelectionVisible(true);
-            tabs->setCurrentIndex(index);
-            nestedTabs->setCurrentIndex(childIndex);
-            return;
+            NavigationPillButton* button = nestedTabs->tabButton(childIndex);
+            if (button && button->property("class_id").toInt() == classId)
+            {
+                setNavigationSelectionVisible(true);
+                tabs->setCurrentIndex(index);
+                nestedTabs->setCurrentIndex(childIndex);
+                return;
             }
         }
     }
@@ -960,7 +946,7 @@ void SpeakingEvalPage::syncTabWidgetToClass(
 
         auto* nestedTabs =
             tabs->currentWidget()
-                ? tabs->currentWidget()->findChild<NavigationTabWidget*>(
+                ? tabs->currentWidget()->findChild<NavigationTabStrip*>(
                     QStringLiteral("speakingEvalClassTabs")
                     )
                 : nullptr;
@@ -969,6 +955,40 @@ void SpeakingEvalPage::syncTabWidgetToClass(
         {
             nestedTabs->setCurrentIndex(0);
         }
+    }
+}
+
+void SpeakingEvalPage::syncClassTabStripToClass(
+    NavigationTabStrip* tabs,
+    int classId
+    )
+{
+    if (!tabs)
+    {
+        return;
+    }
+
+    for (int index = 0; index < tabs->count(); ++index)
+    {
+        NavigationPillButton* button = tabs->tabButton(index);
+        if (button && button->property("class_id").toInt() == classId)
+        {
+            setNavigationSelectionVisible(true);
+            tabs->setCurrentIndex(index);
+            return;
+        }
+    }
+
+    if (classId > 0)
+    {
+        setNavigationSelectionVisible(false);
+        return;
+    }
+
+    if (tabs->count() > 0)
+    {
+        setNavigationSelectionVisible(true);
+        tabs->setCurrentIndex(0);
     }
 }
 
@@ -989,34 +1009,27 @@ int SpeakingEvalPage::currentClassIdFromTabs(
     QWidget* page =
         tabs->currentWidget();
 
-    const int pageClassId =
-        page
-            ? page->property("class_id").toInt()
-            : -1;
-
-    if (pageClassId > 0)
-    {
-        return pageClassId;
-    }
-
     auto* nestedTabs =
         page
-            ? page->findChild<NavigationTabWidget*>(
+            ? page->findChild<NavigationTabStrip*>(
                 QStringLiteral("speakingEvalClassTabs")
                 )
             : nullptr;
 
-    if (!nestedTabs || nestedTabs->currentIndex() < 0)
+    return currentClassIdFromTabs(nestedTabs);
+}
+
+int SpeakingEvalPage::currentClassIdFromTabs(
+    NavigationTabStrip* tabs
+    ) const
+{
+    if (!tabs || tabs->currentIndex() < 0 || !tabs->selectionVisible())
     {
         return -1;
     }
 
-    QWidget* classPage =
-        nestedTabs->currentWidget();
-
-    return classPage
-        ? classPage->property("class_id").toInt()
-        : -1;
+    NavigationPillButton* button = tabs->tabButton(tabs->currentIndex());
+    return button ? button->property("class_id").toInt() : -1;
 }
 
 QString SpeakingEvalPage::currentEvaluationNameFromTabs() const

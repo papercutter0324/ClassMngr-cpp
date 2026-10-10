@@ -20,6 +20,7 @@
 #include "ui/shared/dialogs/user_prompt_service.h"
 #include "ui/shared/pages/autosave_coordinator.h"
 #include "ui/shared/pages/page_header.h"
+#include "ui/shared/widgets/navigation_pill_button.h"
 #include "ui/shared/widgets/navigation_tab_widget.h"
 #include "ui/shared/validation/form_validation_binder.h"
 
@@ -128,6 +129,41 @@ bool setStudent(
             korean,
             Qt::EditRole
             );
+}
+
+int classIdAtTab(const NavigationTabStrip& tabs, const int index)
+{
+    const NavigationPillButton* const button = tabs.tabButton(index);
+    return button ? button->property("class_id").toInt() : -1;
+}
+
+NavigationTabStrip* activeClassTabStrip(SpeakingEvalPage& page)
+{
+    if (auto* const gradeTabs = page.findChild<NavigationTabWidget*>(
+            QStringLiteral("speakingEvalGradeTabs")))
+    {
+        QWidget* const groupPage = gradeTabs->currentWidget();
+        return groupPage
+            ? groupPage->findChild<NavigationTabStrip*>(
+                QStringLiteral("speakingEvalClassTabs"))
+            : nullptr;
+    }
+
+    return page.findChild<NavigationTabStrip*>(
+        QStringLiteral("speakingEvalClassTabs"));
+}
+
+int plainWidgetContainerCount(const QWidget& root)
+{
+    int count = 0;
+    for (const QWidget* const widget : root.findChildren<QWidget*>())
+    {
+        if (widget->metaObject() == &QWidget::staticMetaObject)
+        {
+            ++count;
+        }
+    }
+    return count;
 }
 
 bool seedRosterWithoutValidation(
@@ -321,6 +357,7 @@ private slots:
     void manualValidationAndConfirmedSaveKeepTheirCurrentTiming();
     void failedClassAndEvaluationSwitchesRestoreTheCurrentSelection();
     void classTabsKeepOrderAndSelectedClass();
+    void groupedNavigationUsesBoundedPagesAndRestoresSelection();
     void headerSubtitlePreservesClassAndTeacherDisplayMetadata();
     void scheduleModesAndVisibilityScopeFilterNavigationTabs();
     void unavailableClassListClearsThePageWithoutWarning();
@@ -551,8 +588,8 @@ failedClassAndEvaluationSwitchesRestoreTheCurrentSelection()
     auto* evaluationTabs = page.findChild<NavigationTabWidget*>(
         QStringLiteral("speakingEvalEvaluationTabs")
         );
-    const QList<NavigationTabWidget*> classTabsList =
-        page.findChildren<NavigationTabWidget*>(
+    const QList<NavigationTabStrip*> classTabsList =
+        page.findChildren<NavigationTabStrip*>(
             QStringLiteral("speakingEvalClassTabs")
             );
     QVERIFY(model);
@@ -566,8 +603,7 @@ failedClassAndEvaluationSwitchesRestoreTheCurrentSelection()
     int secondClassIndex = -1;
     for (int index = 0; index < classTabs->count(); ++index)
     {
-        if (classTabs->widget(index)->property("class_id").toInt()
-            == fixture.classIds.last())
+        if (classIdAtTab(*classTabs, index) == fixture.classIds.last())
         {
             secondClassIndex = index;
             break;
@@ -600,7 +636,7 @@ failedClassAndEvaluationSwitchesRestoreTheCurrentSelection()
 
     classTabs->setCurrentIndex(secondClassIndex);
     QCOMPARE(
-        classTabs->currentWidget()->property("class_id").toInt(),
+        classIdAtTab(*classTabs, classTabs->currentIndex()),
         fixture.classIds.first()
         );
     QVERIFY(page.hasUnsavedChanges());
@@ -637,25 +673,25 @@ classTabsKeepOrderAndSelectedClass()
     SpeakingEvalPage page(&fixture.services);
     page.loadEvaluations();
 
-    auto* classTabs = page.findChild<NavigationTabWidget*>(
+    auto* classTabs = page.findChild<NavigationTabStrip*>(
         QStringLiteral("speakingEvalClassTabs")
         );
     QVERIFY(classTabs);
     QCOMPARE(classTabs->count(), 3);
     QCOMPARE(
-        classTabs->widget(0)->property("class_id").toInt(),
+        classIdAtTab(*classTabs, 0),
         fixture.classIds.at(1)
         );
     QCOMPARE(
-        classTabs->widget(1)->property("class_id").toInt(),
+        classIdAtTab(*classTabs, 1),
         fixture.classIds.at(2)
         );
     QCOMPARE(
-        classTabs->widget(2)->property("class_id").toInt(),
+        classIdAtTab(*classTabs, 2),
         fixture.classIds.at(0)
         );
     QCOMPARE(
-        classTabs->currentWidget()->property("class_id").toInt(),
+        classIdAtTab(*classTabs, classTabs->currentIndex()),
         fixture.classIds.at(1)
         );
 
@@ -664,14 +700,154 @@ classTabsKeepOrderAndSelectedClass()
         QStringLiteral("Summer")
         );
     QCoreApplication::sendPostedEvents(nullptr, QEvent::DeferredDelete);
-    classTabs = page.findChild<NavigationTabWidget*>(
+    classTabs = page.findChild<NavigationTabStrip*>(
         QStringLiteral("speakingEvalClassTabs")
         );
     QVERIFY(classTabs);
     QCOMPARE(
-        classTabs->currentWidget()->property("class_id").toInt(),
+        classIdAtTab(*classTabs, classTabs->currentIndex()),
         fixture.classIds.at(0)
         );
+}
+
+void SpeakingEvalPageSaveTests::
+groupedNavigationUsesBoundedPagesAndRestoresSelection()
+{
+    SpeakingEvalPageFixture smallFixture;
+    SpeakingEvalPageFixture largeFixture;
+    QString error;
+    QVERIFY2(smallFixture.initialize(8, &error), qPrintable(error));
+    QVERIFY2(largeFixture.initialize(96, &error), qPrintable(error));
+
+    const auto configureNavigationClasses =
+        [](SpeakingEvalPageFixture& fixture, QString* failure)
+        {
+            for (int index = 0; index < fixture.classIds.size(); ++index)
+            {
+                const auto loadedInfo = fixture.services.classService()
+                    ->classInfo(fixture.classIds.at(index));
+                if (!loadedInfo)
+                {
+                    *failure = loadedInfo.error();
+                    return false;
+                }
+
+                ClassInfo classInfo = *loadedInfo;
+                classInfo.classGrade = index < fixture.classIds.size() / 2
+                    ? QStringLiteral("E4")
+                    : QStringLiteral("M1");
+                classInfo.classTimes = {
+                    ClassTime{
+                        .day = index % 2 == 0
+                            ? QStringLiteral("Monday")
+                            : QStringLiteral("Tuesday"),
+                        .startTime = QStringLiteral("4:00 PM"),
+                        .endTime = QStringLiteral("4:50 PM")
+                    }
+                };
+                const Status saved = fixture.services.databaseSession()
+                    ->classInfoRepository()->saveClassInfo(classInfo);
+                if (!saved)
+                {
+                    *failure = saved.error();
+                    return false;
+                }
+            }
+
+            ClassMngr::Next::Platform::
+                ApplicationServicesClassVisibilityPreferencesPort(
+                    fixture.services
+                    )
+                    .save(
+                        ClassMngr::Next::Application::
+                            ClassVisibilityScope::ActiveSchedule
+                        );
+            return true;
+        };
+    QVERIFY2(
+        configureNavigationClasses(smallFixture, &error),
+        qPrintable(error));
+    QVERIFY2(
+        configureNavigationClasses(largeFixture, &error),
+        qPrintable(error));
+
+    const int selectedClassId = largeFixture.classIds.at(72);
+    SpeakingEvalPage smallPage(&smallFixture.services);
+    smallPage.loadEvaluations(
+        smallFixture.classIds.at(6),
+        QStringLiteral("Winter")
+        );
+    SpeakingEvalPage largePage(&largeFixture.services);
+    largePage.loadEvaluations(
+        selectedClassId,
+        QStringLiteral("Summer")
+        );
+    QCoreApplication::sendPostedEvents(nullptr, QEvent::DeferredDelete);
+
+    QCOMPARE(
+        plainWidgetContainerCount(smallPage),
+        plainWidgetContainerCount(largePage));
+
+    auto* gradeTabs = largePage.findChild<NavigationTabWidget*>(
+        QStringLiteral("speakingEvalGradeTabs")
+        );
+    QVERIFY(gradeTabs);
+    QCOMPARE(gradeTabs->count(), 2);
+    QCOMPARE(gradeTabs->tabText(0), QStringLiteral("E4"));
+    QCOMPARE(gradeTabs->tabText(1), QStringLiteral("M1"));
+    QCOMPARE(gradeTabs->currentIndex(), 1);
+
+    auto* classTabs = activeClassTabStrip(largePage);
+    QVERIFY(classTabs);
+    QCOMPARE(classTabs->count(), 48);
+    QCOMPARE(
+        classIdAtTab(*classTabs, classTabs->currentIndex()),
+        selectedClassId);
+    int classIdWidgets = 0;
+    for (const QWidget* const widget : largePage.findChildren<QWidget*>())
+    {
+        if (widget->property("class_id").isValid())
+        {
+            ++classIdWidgets;
+            QVERIFY(widget->inherits("NavigationPillButton"));
+        }
+    }
+    QCOMPARE(classIdWidgets, 96);
+
+    gradeTabs->setCurrentIndex(0);
+    QCOMPARE(gradeTabs->currentIndex(), 0);
+    gradeTabs->setCurrentIndex(1);
+    classTabs = activeClassTabStrip(largePage);
+    QVERIFY(classTabs);
+    QCOMPARE(
+        classIdAtTab(*classTabs, classTabs->currentIndex()),
+        selectedClassId);
+
+    auto* mondayFilter = largePage.findChild<QPushButton*>(
+        QStringLiteral("speakingEvalMondayFilterButton")
+        );
+    QVERIFY(mondayFilter);
+    mondayFilter->click();
+    QCoreApplication::sendPostedEvents(nullptr, QEvent::DeferredDelete);
+
+    gradeTabs = largePage.findChild<NavigationTabWidget*>(
+        QStringLiteral("speakingEvalGradeTabs")
+        );
+    QVERIFY(gradeTabs);
+    QCOMPARE(gradeTabs->currentIndex(), 1);
+    classTabs = activeClassTabStrip(largePage);
+    QVERIFY(classTabs);
+    QCOMPARE(classTabs->count(), 24);
+    QCOMPARE(
+        classIdAtTab(*classTabs, classTabs->currentIndex()),
+        selectedClassId);
+    auto* evaluationTabs = largePage.findChild<NavigationTabWidget*>(
+        QStringLiteral("speakingEvalEvaluationTabs")
+        );
+    QVERIFY(evaluationTabs);
+    QCOMPARE(
+        evaluationTabs->currentWidget()->property("evaluation_name").toString(),
+        QStringLiteral("Summer"));
 }
 
 void SpeakingEvalPageSaveTests::
@@ -828,9 +1004,7 @@ scheduleModesAndVisibilityScopeFilterNavigationTabs()
     const auto visibleClassIds = [&page]()
     {
         QCoreApplication::sendPostedEvents(nullptr, QEvent::DeferredDelete);
-        auto* classTabs = page.findChild<NavigationTabWidget*>(
-            QStringLiteral("speakingEvalClassTabs")
-            );
+        auto* classTabs = activeClassTabStrip(page);
         QList<int> classIds;
         if (!classTabs)
         {
@@ -840,9 +1014,7 @@ scheduleModesAndVisibilityScopeFilterNavigationTabs()
         classIds.reserve(classTabs->count());
         for (int index = 0; index < classTabs->count(); ++index)
         {
-            classIds.append(
-                classTabs->widget(index)->property("class_id").toInt()
-                );
+            classIds.append(classIdAtTab(*classTabs, index));
         }
         return classIds;
     };
@@ -859,12 +1031,10 @@ scheduleModesAndVisibilityScopeFilterNavigationTabs()
         fixture.classIds.at(2)
     };
     QCOMPARE(visibleClassIds(), intensiveClassIds);
-    auto* classTabs = page.findChild<NavigationTabWidget*>(
-        QStringLiteral("speakingEvalClassTabs")
-        );
+    auto* classTabs = activeClassTabStrip(page);
     QVERIFY(classTabs);
     QCOMPARE(
-        classTabs->currentWidget()->property("class_id").toInt(),
+        classIdAtTab(*classTabs, classTabs->currentIndex()),
         fixture.classIds.at(2)
         );
 
@@ -885,12 +1055,10 @@ scheduleModesAndVisibilityScopeFilterNavigationTabs()
         );
     page.refreshNavigationPreferences();
     QCOMPARE(visibleClassIds(), intensiveClassIds);
-    classTabs = page.findChild<NavigationTabWidget*>(
-        QStringLiteral("speakingEvalClassTabs")
-        );
+    classTabs = activeClassTabStrip(page);
     QVERIFY(classTabs);
     QCOMPARE(
-        classTabs->currentWidget()->property("class_id").toInt(),
+        classIdAtTab(*classTabs, classTabs->currentIndex()),
         fixture.classIds.at(2)
         );
 }
@@ -921,7 +1089,7 @@ unavailableClassListClearsThePageWithoutWarning()
         ));
     page.loadEvaluations();
 
-    auto* classTabs = page.findChild<NavigationTabWidget*>(
+    auto* classTabs = page.findChild<NavigationTabStrip*>(
         QStringLiteral("speakingEvalClassTabs")
         );
     auto* table = page.findChild<SpeakingEvalTableView*>();
@@ -936,7 +1104,7 @@ unavailableClassListClearsThePageWithoutWarning()
     fixture.services.closeDatabase();
     page.loadEvaluations();
     QCoreApplication::sendPostedEvents(nullptr, QEvent::DeferredDelete);
-    classTabs = page.findChild<NavigationTabWidget*>(
+    classTabs = page.findChild<NavigationTabStrip*>(
         QStringLiteral("speakingEvalClassTabs")
         );
 
@@ -1021,7 +1189,7 @@ failedNavigationReadKeepsNameOnlyTabs()
     SpeakingEvalPage page(&fixture.services);
     page.loadEvaluations();
 
-    auto* classTabs = page.findChild<NavigationTabWidget*>(
+    auto* classTabs = page.findChild<NavigationTabStrip*>(
         QStringLiteral("speakingEvalClassTabs")
         );
     QVERIFY(classTabs);
@@ -1032,14 +1200,14 @@ failedNavigationReadKeepsNameOnlyTabs()
     fixture.services.closeDatabase();
     page.setScheduleDisplayMode(ScheduleDisplayMode::Intensive);
     QCoreApplication::sendPostedEvents(nullptr, QEvent::DeferredDelete);
-    classTabs = page.findChild<NavigationTabWidget*>(
+    classTabs = page.findChild<NavigationTabStrip*>(
         QStringLiteral("speakingEvalClassTabs")
         );
 
     QVERIFY(classTabs);
     QCOMPARE(classTabs->count(), 1);
     QCOMPARE(
-        classTabs->widget(0)->property("class_id").toInt(),
+        classIdAtTab(*classTabs, 0),
         fixture.classIds.first()
         );
     QVERIFY(classTabs->tabText(0).contains(fixture.classNames.first()));
