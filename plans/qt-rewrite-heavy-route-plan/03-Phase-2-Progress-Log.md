@@ -19812,3 +19812,62 @@ module contribution is not a function-level owner or leak conclusion. The
 250 MiB lifecycle gate, F536 cause, F526 provenance, output parity,
 render/window acceptance, and global Phase 0 remain open (Windows 1/24,
 macOS 0/24).
+
+## F568 raw per-stack allocation and module-path comparison - 2026-10-11
+
+TraceProcessor allocation rows were grouped by `TraceUniqueStackId` at each
+checkpoint. For all 54,741 trace stack IDs, the raw instruction-pointer lists
+match xperf's `-stack` export exactly. The 106 loaded-image ranges recorded for
+PID 48900 map 2,139,305 of 2,139,341 frame slots across those unique stacks;
+36 frame slots fall outside the captured image ranges. The ETL remains
+unchanged.
+
+This pass resolves F565's 59,148 count difference. xperf's symbolized detail
+contains explicit stack-reference count-mismatch warnings without a StackID.
+The warning rows' observed-reference counts equal the per-checkpoint gap;
+adding them to xperf's processed references gives the full allocation-record
+count. For stack IDs present in both reports, every xperf per-stack byte total
+matches TraceProcessor. The warning-group byte sums also exactly match the
+TraceProcessor bytes on stack IDs absent from xperf's per-stack detail:
+
+| Checkpoint | Allocation records | xperf processed refs | Warning rows | Observed refs on warning rows | TraceProcessor IDs absent from xperf detail | Warning bytes / raw bytes on IDs absent from xperf detail |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| after-render | 247,896 | 224,639 | 721 | 23,257 | 721 | 5,593,525 / 5,593,525 bytes |
+| after-document-close | 236,535 | 214,086 | 704 | 22,449 | 704 | 5,546,972 / 5,546,972 bytes |
+| after-view-destroyed | 107,013 | 93,571 | 406 | 13,442 | 406 | 3,873,734 / 3,873,734 bytes |
+
+For each snapshot, the valid xperf stack-ID byte totals plus warning-group
+bytes equal the complete TraceProcessor allocation-size sum. This identifies
+the reported count mismatch as xperf's stack-reference processing warning
+coverage, not absent allocation records or missing ETW buffers. Warning rows
+do not include StackIDs, so F568 does not claim a one-to-one ID mapping for
+each warning row; the count and byte totals reconcile at each checkpoint.
+
+Loaded-image mapping shows how often PDF module frames occur in allocation
+stack paths. These figures include each allocation once for every module
+present anywhere in its stack, so module rows overlap and are not owned-byte
+totals:
+
+| Checkpoint | Module in stack path | Allocation records | Summed allocation sizes on those stacks | Stack IDs |
+| --- | --- | ---: | ---: | ---: |
+| after-render | `Qt6Pdf.dll` | 10,851 | 3,638,954 bytes | 535 |
+| after-render | `Qt6PdfWidgets.dll` | 5,995 | 327,500 bytes | 271 |
+| after-document-close | `Qt6Pdf.dll` | 297 | 102,568 bytes | 192 |
+| after-document-close | `Qt6PdfWidgets.dll` | 201 | 53,714 bytes | 192 |
+| after-view-destroyed | `Qt6Pdf.dll` | 266 | 98,916 bytes | 166 |
+| after-view-destroyed | `Qt6PdfWidgets.dll` | 12 | 1,072 bytes | 12 |
+
+The largest stack bucket, ID 1417, is 2 allocation records totaling
+25,165,824 bytes at each checkpoint; its image path includes ClassMngr,
+Qt6Gui, and Qt6Core. A repeated stack bucket is not proof that the same heap
+blocks survived between snapshots. Function names and source lines remain
+unavailable, and no allocator, module, cache, or leak owner is inferred.
+
+Ignored local artifacts under `build/f565-wpa-analysis` contain the raw
+per-stack CSV, loaded-image mapping summary, and xperf detail parse. F569
+starts by comparing allocation-address/heap/size/stack signatures across the
+three snapshots to see which large stack buckets have same-address records at
+later checkpoints. Treat address reuse as possible and keep allocation
+lifetime claims bounded by the snapshot evidence. The 250 MiB lifecycle gate,
+F536 cause, F526 provenance, output parity, render/window acceptance, and
+global Phase 0 remain open (Windows 1/24, macOS 0/24).

@@ -781,9 +781,17 @@ zero lost buffers and events. xperf module frequencies still cover processed
 stack references only. F567 verified every raw allocation record has a
 nonempty instruction-pointer list and both stack IDs. TraceProcessor's union
 of 54,741 trace stack IDs exactly matches xperf's complete ID set (0 through
-54,740), so missing links do not explain the processed-reference difference;
-the exact meaning of that xperf counter remains unknown. F568 starts
-per-stack allocation-count and size aggregation, followed by loaded-image
-module mapping. Keep function-level owner and leak claims open. The 250 MiB
-lifecycle gate, F536 cause, F526 provenance, output parity, render/window
-acceptance, and global Phase 0 remain open (Windows 1/24, macOS 0/24).
+54,740), so missing links do not explain the processed-reference difference.
+F568 found that xperf's explicit stack-reference count-mismatch warning rows
+account for the gap at every checkpoint: their observed references add to the
+processed references to match all allocation records, and their allocation
+bytes match the raw sizes on stack IDs omitted from xperf's detailed output.
+All shared per-stack byte totals match exactly. Mapping all raw stack IPs to
+the PID's loaded images shows `Qt6Pdf.dll` paths covering 3,638,954 bytes
+after render, 102,568 after document close, and 98,916 after view destruction;
+these overlapping stack-path totals do not identify allocation ownership.
+Function names/source lines are unavailable. F569 will compare same-address
+heap/size/stack signatures across checkpoints, with possible address reuse
+kept explicit. The 250 MiB lifecycle gate, F536 cause, F526 provenance, output
+parity, render/window acceptance, and global Phase 0 remain open (Windows
+1/24, macOS 0/24).
