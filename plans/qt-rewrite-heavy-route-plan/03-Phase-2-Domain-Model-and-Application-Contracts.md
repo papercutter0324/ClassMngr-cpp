@@ -42,7 +42,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-11
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F587 found the `QTextDocument` path group unchanged through document close and smaller at view destruction; F588 will clarify the schedule-cell removal counter while memory, output-parity, and full Phase 0 gates remain open.
+- Current note: F588 scoped zero removals to explicit renderer detach/deleteLater calls and the 49-cell value to the main SchedulePage table; F589 will inspect page-render observer callbacks while memory, output-parity, and full Phase 0 gates remain open.
 
 ### Slice discovery batches
 
@@ -69,9 +69,9 @@ Treat this plan as an operational summary, not a history:
 - F579 - Deferred at the user's direction: take a fresh matched-symbol heap
   capture; revisit after the user asks to resume symbol work.
 
-#### Active batch: Batch 104
+#### Active batch: Batch 105
 
-- F588 - Trace schedule-cell removal-counter semantics to bound what F585's zero removal count establishes.
+- F589 - Inspect page-render observer callbacks from the retained `without-grabs` route against the PDF heap capture checkpoints.
 
 ## Objective
 

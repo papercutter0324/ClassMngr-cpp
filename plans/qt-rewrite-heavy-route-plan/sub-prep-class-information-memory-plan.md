@@ -818,8 +818,8 @@ unverified without app symbols or resource-path data in the ETL. F577
 confirmed the current optimized Release build emits no app PDB. F578 built
 an optimized executable with an exactly matching app PDB; F579's fresh trace
 from that executable is deferred at the user's direction. F580 used the
-retained F564 route and ETL to correlate the schedule renderer's 49 live cell
-widgets and 147 cumulative creations with 30,349,468 bytes of all-checkpoint
+retained F564 route and ETL to correlate 147 cumulative renderer creations
+with 30,349,468 bytes of all-checkpoint
 allocation signatures on Qt stack paths through `setCellWidget`, including
 12,651,289 bytes that also pass through `QTextDocument`. This is a source- and
 route-correlated lead, not ownership or leak evidence. F581 compares these
@@ -828,7 +828,8 @@ path unchanged at 39,324,262 bytes through document close, then down to
 30,349,468 at view destruction, while its `QTextDocument` overlap fell from
 20,207,585 to 12,651,289 bytes. The `QFontEngine` path stayed near 118-120 MB
 across the snapshots. These stack groups overlap and do not identify object
-ownership; the route still reported 49 live schedule cell widgets. F582 found
+ownership; the main SchedulePage table reported 49 cell widgets while the
+route reported three live ScheduleWidget instances. F582 found
 245 `setCellWidget` stack IDs with no final allocation bucket, six more with
 smaller nonzero buckets, and 333 unchanged IDs; none increased. The final
 30,349,468 bytes exactly match this group's all-three same-address signatures.
@@ -842,13 +843,16 @@ not proof of uninterrupted lifetime or object ownership. F584 found all 48,176
 setCellWidget heap/address keys (39,324,262 bytes) unchanged in size and stack
 from after-render through after-document-close, with no missing, added, or
 changed-signature key. F585 found the same schedule metrics at all three
-nearest PDF heap checkpoints and all 13 `pdf-*` route checkpoints: 49 live
-schedule cell widgets, 147 created, zero removed or queued, and three full
-schedule renders. F586 confirmed the route used the `without-grabs` arm, with
+nearest PDF heap checkpoints and all 13 `pdf-*` route checkpoints: the main
+SchedulePage table had 49 cells and 768 model entries; profiler totals across
+all renderer calls were three full renders, 147 created, zero removed, and
+zero queued. F586 confirmed the route used the `without-grabs` arm, with
 zero forced grabs; `pdfRenderCount` is therefore zero by design and does not
 count natural page rendering. This counter alignment shows no measured
-schedule-cell change coincident with the heap-group decrease, without proving
-or disproving ownership. The checked qtpdf 6.12
+renderer-reported removal coincident with the heap-group decrease. The 49-cell
+count covers only the main SchedulePage table and cannot rule out changes or
+teardown in other tables; it does not prove or disprove allocation ownership.
+The checked qtpdf 6.12
 extension tree had no separate debug-symbol package for
 the installed QtPdf 6.140.0.0 modules, so function-level PDFium/QtPdf
 ownership remains open. The 250 MiB lifecycle gate, F536 cause, F526
@@ -864,3 +868,11 @@ another path, and the final group has one new 12-byte key. Within the
 12,651,289 bytes remain, while 26,121 keys / 7,556,296 bytes are absent.
 These checkpoint path signatures do not identify allocation owners or prove
 continuous lifetime.
+
+F588 traced the metric scope: the creation/removal/queued values accumulate
+across `ScheduleWidget::loadSchedule()` calls, while the 49-cell snapshot value
+comes from only the main SchedulePage table. Zero removals means no explicit
+renderer `removeCellWidget()` / `deleteLater()` call was counted; table or page
+destruction does not increment this metric. The route's three live
+ScheduleWidget instances do not have a combined current-cell count in these
+metrics, so the counter correlation does not rule out changes in other tables.

@@ -19872,6 +19872,44 @@ lifetime claims bounded by the snapshot evidence. The 250 MiB lifecycle gate,
 F536 cause, F526 provenance, output parity, render/window acceptance, and
 global Phase 0 remain open (Windows 1/24, macOS 0/24).
 
+## F588 schedule-cell removal-counter scope - 2026-10-11
+
+The `scheduleCellWidgetsRemoved` and `scheduleCellWidgetsQueuedForDeletion`
+metrics are cumulative results from `ScheduleWidget::loadSchedule()` calls
+that report to the active `StartupProfiler`. `ScheduleTableRenderer` increments
+them only when a full render's `clearCellWidgets()` detaches an existing table
+cell widget and calls `deleteLater()`, or when an incremental render replaces
+a changed cell that already has a widget. The queued count mirrors those
+renderer calls. The source has no renderer counter connected to `QObject`
+destruction or table/page teardown.
+
+The retained route has three full `schedule-render-end` events: two owned by
+`SchedulePage` and one by `SectionCard`, each creating 49 cell widgets. Four
+further incremental `SectionCard` render events create or remove none. All
+seven events report zero removed and zero queued for deletion. The cumulative
+creation/removal/queued counters are therefore across schedule render calls;
+`scheduleRenderCount` counts only the three full renders. By contrast,
+`scheduleTableCellWidgetCount` and `scheduleModelEntryCount` are copied from
+`m_pages->schedulePage()->runtimeMetrics()`, which counts one main
+`SchedulePage` table. Its value 49 is not a total over the three live
+`ScheduleWidget` instances in the route.
+
+F585's zero removal metric means that no renderer-reported detach/`deleteLater`
+occurred in these calls. Its 49-cell value applies to the main SchedulePage
+table only; it cannot establish that all schedule tables kept the same live
+cell-widget count or exclude teardown outside the renderer. This narrows the
+correlation without attributing the heap group to any widget. The audited
+sources are `src/features/schedule/ui/schedule_table_renderer.cpp`,
+`src/features/schedule/ui/schedule_widget.cpp`, `src/app/mainwindow.cpp`, and
+`src/core/startup_profiler.cpp`.
+
+Batch 104 is complete. Batch 105 begins with F589: inspect the retained
+`pageRenderObserver` callbacks from the `without-grabs` route against the PDF
+capture checkpoints. F579's matched-symbol capture remains deferred at the
+user's direction. The 250 MiB lifecycle gate, F536 cause, F526 provenance,
+output parity, render/window acceptance, and global Phase 0 remain open
+(Windows 1/24, macOS 0/24).
+
 ## F587 QTextDocument heap/address identity - 2026-10-11
 
 F587 joined the retained F569 allocation rows by `(HeapHandle,
@@ -19897,13 +19935,13 @@ address may be reused. The reproducer is
 `build/f587_qtextdocument_heap_identity.py` under ignored local build
 artifacts. No new symbols or capture were produced.
 
-F588 will trace schedule-cell removal-counter semantics. Batch 105 discovery
-starts with F589: F586's retained route has the PDF page-render observer
-enabled and records callbacks with forced grabs disabled; inspect those
-callbacks against the capture checkpoints. F579 remains deferred at the user's
-direction. The 250 MiB lifecycle gate, F536 cause, F526 provenance, output
-parity, render/window acceptance, and global Phase 0 remain open
-(Windows 1/24, macOS 0/24).
+F588's schedule-counter scope is recorded above. Batch 105 starts with F589:
+F586's retained route has the PDF page-render observer enabled and records
+callbacks with forced grabs disabled; inspect those callbacks against the
+capture checkpoints. F579 remains deferred at the user's direction. The
+250 MiB lifecycle gate, F536 cause, F526 provenance, output parity,
+render/window acceptance, and global Phase 0 remain open (Windows 1/24,
+macOS 0/24).
 
 ## F586 forced-grab mode for the retained heap route - 2026-10-11
 
@@ -19941,17 +19979,18 @@ after-render marker is 0.1795 seconds before route sequence 69 (`pdf-opened`);
 after-document-close is 0.0133 seconds before sequence 77
 (`pdf-released-after-reopen`); after-view-destroyed is 1.1875 seconds after
 sequence 84 (`settled-5s`). At each nearest sample the metrics are identical:
-`scheduleRenderCount=3`, 768 model entries, 49 live schedule cell widgets,
-147 created, zero removed, and zero queued for deletion. All 13 route
-checkpoints named `pdf-*` have that same schedule-counter tuple.
+`scheduleRenderCount=3`, main SchedulePage `scheduleModelEntryCount=768` and
+`scheduleTableCellWidgetCount=49`, plus cumulative renderer counters of 147
+created, zero removed, and zero queued for deletion. All 13 route checkpoints
+named `pdf-*` have that same metric tuple.
 
 `pdfRenderCount` is zero at all three nearest samples. F586 found the route
 explicitly used the `without-grabs` arm, so this counter reflects the skipped
-forced viewer grabs rather than all PDF rendering. No measured schedule-cell
-counter change coincides with the setCellWidget stack-group decrease, but
-these sampled counters and
-overlapping stack paths do not prove or disprove allocation ownership. The
-read-only reproducer is `build/f585_pdf_schedule_metric_alignment.py` under
+forced viewer grabs rather than all PDF rendering. F588 establishes that the
+zero removal count covers renderer-reported detaches, while 49 cells counts
+only the main SchedulePage table. These values do not cover every schedule
+table or identify allocation ownership. The read-only reproducer is
+`build/f585_pdf_schedule_metric_alignment.py` under
 ignored local build artifacts. F579's fresh matched-symbol capture remains
 deferred at the user's direction. The 250 MiB lifecycle gate, F536 cause,
 F526 provenance, output parity, render/window acceptance, and global Phase 0
@@ -19959,9 +19998,9 @@ remain open (Windows 1/24, macOS 0/24).
 
 Batch 103 is resolved: F533 recorded the reference-provenance gap, and F534
 completed the output-dialog cancellation/cleanup regression. Batch 104's
-F586 forced-grab audit is complete; F587 will compare QTextDocument
-heap/address identities, and F588 will bound the schedule-cell removal
-counter's meaning. F579 remains deferred at the user's direction.
+F586 forced-grab audit, F587 allocation-identity comparison, and F588 counter
+scope audit are complete. Batch 105 begins with F589's page-render observer
+review. F579 remains deferred at the user's direction.
 
 ## F584 setCellWidget render-to-close identity - 2026-10-11
 
@@ -20086,14 +20125,16 @@ uses the retained F564 ETL and its route artifacts; it performed no new WPR
 capture. The ETL was captured from packaged Release `ClassMngr.exe` with SHA-256
 `529731f3e2e0ccfe3fefdbfe5fa0371de625af8a843bd416ef77f875e98e2e45`.
 
-The retained 84-checkpoint Sub Prep route reports 2 schedule renders, 768
-schedule-model entries, 49 current table cell widgets, and 98 cell-widget
-creations at checkpoint 25. At checkpoint 46, it reports 3 renders and 147
-creations. Those values stay at 49 current widgets and 147 cumulative
-creations through the Sub Prep lifecycle and re-entry checkpoints 48-59; the
-renderer counters report zero cell widgets removed or queued for deletion.
-This records the route's widget activity; it is not a heap-object identity
-mapping.
+At checkpoint 25, the 84-checkpoint Sub Prep route reports two full schedule
+renders and 98 cumulative cell-widget creations. Its separate
+`scheduleModelEntryCount=768` and `scheduleTableCellWidgetCount=49` values come
+from the main SchedulePage table. At checkpoint 46 there are three full
+renders and 147 cumulative creations. The route events identify two full
+`SchedulePage` renders and one full `SectionCard` render, each creating 49;
+four later incremental `SectionCard` renders report zero creations and
+removals. The renderer removal/queued counters remain zero through lifecycle
+and re-entry checkpoints 48-59. These route counters do not map heap records
+to a specific table or object.
 
 Joining F575's QtBase-symbolized stack paths to F570's 106,326 all-checkpoint
 same-address signatures finds 339 stack IDs (16,714 allocation records) and
@@ -20124,9 +20165,11 @@ bytes after render and after document close, then 30,349,468 after view
 destruction; the overlapping `setCellWidget`/`QTextDocument` subset falls from
 20,207,585 to 12,651,289 bytes at that last transition. The QFontEngine path
 is comparatively stable at 119,744,894, 118,039,144, and 118,021,861 bytes.
-The Sub Prep route still reports 49 current schedule cell widgets through its
-later lifecycle checkpoints, so stack-path decreases do not map directly to
-widget counts or establish ownership. F582 ranks the changed and retained
+The main SchedulePage table metric remains at 49 cell widgets through the
+later checkpoints, while `liveScheduleWidgetCount` is 3. Those values do not
+give a combined current cell-widget total across all schedule tables, so the
+stack-path decreases do not map directly to every widget count or establish
+ownership. F582 ranks the changed and retained
 `setCellWidget` stack IDs. The 250 MiB lifecycle gate, F536 cause, F526
 provenance, output parity, render/window acceptance, and global Phase 0 remain
 open (Windows 1/24, macOS 0/24).
