@@ -19015,6 +19015,45 @@ independent audit SHA-256
 range/median CSV SHA-256
 `96130A96B1A8B8A61FB70E7C6751AD2FA87958D41B1154F84E1B4E6C71AEC918`. Exact
 commands, six sidecars, and traces are retained under the same root. F547's
-interpretation and decision about matched instrumentation of the complete
-F536 route are pending. Lifecycle memory acceptance, F526 provenance, output
-parity, and full Phase 0 remain open.
+interpretation and decision are recorded below. Lifecycle memory acceptance,
+F526 provenance, output parity, and full Phase 0 remain open.
+
+## F547 PageManager probe interpretation and route-gap decision - 2026-10-10
+
+F546 reopen-arm medians at first versus second Ready were 739,635,200 /
+739,676,160 bytes working set, 741,449,728 / 741,744,640 peak working set,
+681,984,000 / 682,147,840 private usage, and 637,337,600 / 637,358,080
+private working set. The median differences are +40,960 / +294,912 / +163,840 /
++20,480 bytes, respectively. They are small at these measured boundaries for
+the simple PageManager probe; the unmounted state after close weighs against
+an active documents-pack mapping then, but does not identify a prior lease
+owner or other retained state. This is moderate-to-high confidence only
+against a large incremental second-reopen rise in this probe, not a broad
+exclusion of causes.
+
+The standalone probe still does not reproduce F536's full route history:
+Workspace -> Schedule -> Classes -> Testing Classes -> Teacher Info -> staff
+directories -> Campus Dashboard -> Sub Prep -> My Classes -> PDF viewer ->
+Workspace. F536 used the 96-class Sub Prep fixture with repeated refresh,
+leave, and entry before the PDF phase. That phase included catalog grab,
+initial load/grab, close/closed grab, missing-document error/grab, release,
+then reopen/grab. PNG file writing was disabled, but all five
+`viewer.grab()` operations remained. F537's ordered trace places the full
+high-water around the loaded PDF/release interval; the first boundary sample
+at that value is `pdf-document-release-start`, while
+`pdf-reopened-grab-complete` still reports
+a lower peak. The exact high-water time between samples is unknown.
+
+The main selected F548 to add an opt-in A/B on the actual `lifecycle-sub-prep`
+route. Both arms will use the same Release binary/source, fixture, PDF/RCC,
+Qt/display, and full route order, with PNG file writing disabled. One arm keeps
+all five forced viewer grabs; the other skips only those grabs. Keep the
+previous route and PDF load/request/ready/failed-load/close/reopen sequence
+identical. Record the pre-PDF checkpoints and every load, grab boundary,
+release-start/completion, status/page/path, view/document identity, pack mount
+state, and all four process-memory metrics. F549 is the repeated evidence
+campaign: three fresh processes per arm after F548 is committed and verified.
+This matched diagnostic can test dependence on grabs in the full route, but
+even a difference would not identify the allocation owner. F536's cause remains
+unresolved. The 250 MiB lifecycle gate, F526 provenance, output parity, and
+full Phase 0 remain open.

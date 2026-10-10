@@ -609,9 +609,15 @@ memory trend or cause.
 F546 completed three fresh Release processes per arm (six total). All Ready
 states were 38 pages with the resource pack mounted; closes were Null/zero
 pages and unmounted, with stable page/view/document identity through reopen.
-The probe's working set was roughly 731–742 MB, far above F536's approximately
-264 MB full-route reading; this different process/route setup is not a
-historical or acceptance comparison. F547's interpretation and decision on
-matched instrumentation of the full F536 route are pending. Lifecycle memory
-acceptance, F526 provenance, output parity, and the full Phase 0 gate remain
+The second Ready medians were close to the first in this simple probe, but its
+roughly 731–742 MB working set is not comparable with F536's approximately
+264 MB full-route reading. F547 therefore selected a full-route diagnostic.
+F548 will compare the same `lifecycle-sub-prep` route with all five forced
+viewer grabs enabled versus skipping only those grabs; both arms disable PNG
+file writing and preserve fixture, PDF/RCC, Qt/display, and route order. Keep
+pre-PDF and PDF lifecycle checkpoints, identity/status/path, pack mount, and
+all four memory metrics. F549 is the three-fresh-process-per-arm evidence
+campaign after F548 is committed and verified. This tests grab dependence in
+route context, not allocation ownership. F536 cause remains unresolved. The
+250 MiB lifecycle gate, F526 provenance, output parity, and full Phase 0 remain
 open.
