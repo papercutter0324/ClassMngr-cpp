@@ -904,5 +904,15 @@ same address under another stack path. From document close to view destruction,
 all 266 final Qt6Pdf-path keys / 98,916 bytes match exactly and 31 source keys /
 3,652 bytes are absent from the full snapshot. Across the first and final
 checkpoints, 195 keys / 67,728 bytes match. These module-path signatures do
-not identify allocation owners or prove continuous lifetime. The next slice
-ranks stack-path decreases outside Qt6Pdf paths.
+not identify allocation owners or prove continuous lifetime. F592 then ranks
+the decreases outside Qt6Pdf and Qt6PdfWidgets paths.
+
+F592 excluded all stack paths containing `Qt6Pdf.dll` or
+`Qt6PdfWidgets.dll` and found a 31,722,073-byte decrease among the remaining
+stack-group totals from document close to view destruction. In that scope,
+171,568,588 bytes match by heap/address, size, and trace stack ID;
+129,441 source keys / 31,754,590 bytes are absent from the full later
+snapshot, while 18 changed-signature keys account for 4,313 source bytes.
+The largest complete-module-set declines include qoffscreen, Qt6Core, and
+Qt6Widgets paths, with and without Qt6Gui. These path signatures do not
+identify allocation ownership. F593 will audit route ScheduleWidget teardown.

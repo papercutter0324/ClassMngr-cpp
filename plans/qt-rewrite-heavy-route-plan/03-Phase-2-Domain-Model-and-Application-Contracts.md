@@ -42,7 +42,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-11
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F591 found only 3,652 bytes on Qt6Pdf paths absent between document-close and view-destroyed snapshots; F592 ranks other path-group decreases while memory, output-parity, and full Phase 0 gates remain open.
+- Current note: F592 found a 31.72 MB non-PDF stack-path decrease, mostly from addresses absent in the later snapshot; F593 audits ScheduleWidget teardown while memory, output-parity, and full Phase 0 gates remain open.
 
 ### Slice discovery batches
 
@@ -69,9 +69,9 @@ Treat this plan as an operational summary, not a history:
 - F579 - Deferred at the user's direction: take a fresh matched-symbol heap
   capture; revisit after the user asks to resume symbol work.
 
-#### Active batch: Batch 108
+#### Active batch: Batch 109
 
-- F592 - Rank non-QtPdf stack-path decreases from document close to view destruction while retaining overlap and identity limits.
+- F593 - Audit how the route's ScheduleWidget owners and child widgets are released at view teardown without new symbol work.
 
 ## Objective
 

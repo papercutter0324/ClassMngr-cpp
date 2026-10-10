@@ -19872,6 +19872,43 @@ lifetime claims bounded by the snapshot evidence. The 250 MiB lifecycle gate,
 F536 cause, F526 provenance, output parity, render/window acceptance, and
 global Phase 0 remain open (Windows 1/24, macOS 0/24).
 
+## F592 non-PDF stack-path decreases at view destruction - 2026-10-11
+
+F592 compared the retained after-document-close and after-view-destroyed heap
+snapshots by stack ID and `(HeapHandle, AllocationAddress, size,
+TraceUniqueStackId)` signature. It excluded every stack path containing either
+`Qt6Pdf.dll` or `Qt6PdfWidgets.dll`: 749 stack IDs were excluded and 53,805
+non-PDF-module stack IDs remained. Their overlapping stack-group totals fell
+from 203,327,491 bytes to 171,605,418 bytes, a net decrease of 31,722,073.
+
+Within this scope, 171,568,588 bytes keep the same heap/address, size, and
+stack ID. Of the source bytes not exact-retained, 31,754,590 bytes across
+129,441 keys are absent from the full later snapshot; 4,313 bytes across 18
+shared keys have a changed size or stack signature. The later non-exact total
+is 36,830 bytes: 5,110 bytes at reused addresses with a changed signature
+and 31,720 bytes at addresses absent from the earlier snapshot. These totals
+account for the net change but do not prove when a block was freed or who
+owned it.
+
+Grouping stack IDs by their complete loaded-module set partitions the path
+groups without assigning ownership. The largest decreases are 20,310,727
+bytes across 26,445 stack IDs whose paths include ClassMngr.exe, qoffscreen,
+Qt6Core, and Qt6Widgets (plus the common runtime modules), and 11,291,869
+bytes across 8,071 IDs with the same module set plus Qt6Gui. The largest
+individual drop is stack ID 24473 at 1,797,120 bytes; IDs 50614, 50608,
+24931, and 24925 each lose 971,520 bytes and have no matching final bucket.
+The top 20 shrinking stack IDs contribute 12,071,564 bytes of gross decrease.
+These loaded-module path groups can overlap by module and remain unsuitable
+for allocator or object-owner attribution. The reproducible analysis is
+`build/f592_stack_path_delta.py` over the ignored F568/F569/F575 exports; no
+new trace or symbol work was performed. F579 remains deferred. The 250 MiB
+lifecycle gate, F536 cause, F526 provenance, output parity, render/window
+acceptance, and global Phase 0 remain open (Windows 1/24, macOS 0/24).
+
+F593 audits how the route's ScheduleWidget owners and child widgets are
+released at view teardown, using source and retained route evidence without
+resuming symbol work.
+
 ## F591 Qt6Pdf heap/address identity comparison - 2026-10-11
 
 F591 grouped the three retained allocation snapshots by the existing
@@ -19898,10 +19935,6 @@ QtPdf symbols and a fresh matched-symbol capture remain deferred at the user's
 direction; the 250 MiB lifecycle gate, F536 cause, F526 provenance, output
 parity, render/window acceptance, and global Phase 0 remain open (Windows
 1/24, macOS 0/24).
-
-F592 ranks the retained stack-path byte decreases between document close and
-view destruction outside Qt6Pdf paths, keeping path overlap and address
-identity limits explicit.
 
 ## F590 callback memory and heap-snapshot comparison - 2026-10-11
 
