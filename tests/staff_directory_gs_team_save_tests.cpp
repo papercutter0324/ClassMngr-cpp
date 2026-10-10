@@ -3,14 +3,16 @@
 #include "data/repositories/gs_team_repository.h"
 #include "domain/models/gs_team_member.h"
 #include "features/teacher/ui/staff_directory_page.h"
+#include "staff_directory_test_utils.h"
 #include "fakes/fake_user_prompt_service.h"
 #include "ui/shared/dialogs/user_prompt_service.h"
 
 #include <QPushButton>
+#include <QItemSelectionModel>
 #include <QSignalSpy>
 #include <QSqlError>
 #include <QSqlQuery>
-#include <QTableWidget>
+#include <QTableView>
 #include <QTemporaryDir>
 #include <QUuid>
 #include <QtTest/QtTest>
@@ -78,12 +80,11 @@ QPushButton* buttonWithText(QWidget& page, const QString& text)
     return nullptr;
 }
 
-int rowForId(const QTableWidget& table, const int id)
+int rowForId(const QTableView& table, const int id)
 {
-    for (int row = 0; row < table.rowCount(); ++row)
+    for (int row = 0; row < table.model()->rowCount(); ++row)
     {
-        const auto* item = table.item(row, 0);
-        if (item && item->data(IdRole).toInt() == id)
+        if (staffDirectoryCellData(table, row, 0, IdRole).toInt() == id)
         {
             return row;
         }
@@ -138,14 +139,14 @@ QString expectedValidationWarning()
         "Each GS Team member needs a unique name or Korean name and a valid MM-dd birthday.");
 }
 
-void setEnglishName(QTableWidget& table, const int row, const QString& name)
+void setEnglishName(QTableView& table, const int row, const QString& name)
 {
-    table.item(row, 0)->setText(name);
+    setStaffDirectoryCellText(table, row, 0, name);
 }
 
-void setKoreanName(QTableWidget& table, const int row, const QString& name)
+void setKoreanName(QTableView& table, const int row, const QString& name)
 {
-    table.item(row, 1)->setText(name);
+    setStaffDirectoryCellText(table, row, 1, name);
 }
 
 }
@@ -164,6 +165,10 @@ private slots:
     void unavailableSessionIsSilentAndRetainsEditedRows();
     void repositoryFailureRetainsEditsAndDeletionThenCanBeRetried();
     void automaticRepositoryFailureIsQuietAndKeepsDirtyState();
+    void automaticSavePersistsEditAndEmitsSaved();
+    void deletesOnlySelectedPersistedRowsWithOneConfirmation();
+    void manualDiscardRestoresRowsAndClearsPendingDeletes();
+    void refreshWhileDirtyPreservesEditsAndPendingDeletes();
 };
 
 void StaffDirectoryGsTeamSaveTests::cleanup()
@@ -192,21 +197,21 @@ createsUpdatesDeletesAndReloadsFiveFieldsWithTypedIds()
     StaffDirectoryPage page(&services, StaffDirectoryKind::GsTeam);
     page.setSaveMode(SaveMode::Manual);
     QVERIFY(page.loadDirectory());
-    auto* table = page.findChild<QTableWidget*>(QStringLiteral("gsTeamTable"));
+    auto* table = page.findChild<QTableView*>(QStringLiteral("gsTeamTable"));
     QVERIFY(table);
-    QCOMPARE(table->columnCount(), 5);
-    QCOMPARE(table->rowCount(), 2);
+    QCOMPARE(table->model()->columnCount(), 5);
+    QCOMPARE(table->model()->rowCount(), 2);
 
     const int updateRow = rowForId(*table, original.id);
     const int deleteRow = rowForId(*table, removed.id);
     QVERIFY(updateRow >= 0);
     QVERIFY(deleteRow >= 0);
-    QCOMPARE(table->item(updateRow, 0)->data(IdRole).toInt(), original.id);
-    table->item(updateRow, 0)->setText(QStringLiteral("  Updated   Member  "));
-    table->item(updateRow, 1)->setText(QStringLiteral("  \uC218\uC815    \uB2F4\uB2F9  "));
-    table->item(updateRow, 2)->setText(QStringLiteral(" Team Leader "));
-    table->item(updateRow, 3)->setText(QStringLiteral("010-2222-3333"));
-    table->item(updateRow, 4)->setText(QStringLiteral("02-29"));
+    QCOMPARE(staffDirectoryCellData(*table, updateRow, 0, IdRole).toInt(), original.id);
+    setStaffDirectoryCellText(*table, updateRow, 0, QStringLiteral("  Updated   Member  "));
+    setStaffDirectoryCellText(*table, updateRow, 1, QStringLiteral("  \uC218\uC815    \uB2F4\uB2F9  "));
+    setStaffDirectoryCellText(*table, updateRow, 2, QStringLiteral(" Team Leader "));
+    setStaffDirectoryCellText(*table, updateRow, 3, QStringLiteral("010-2222-3333"));
+    setStaffDirectoryCellText(*table, updateRow, 4, QStringLiteral("02-29"));
 
     FakeUserPromptService prompts;
     prompts.scriptedChoices.enqueue(PromptChoice::Destructive);
@@ -215,25 +220,25 @@ createsUpdatesDeletesAndReloadsFiveFieldsWithTypedIds()
     QPushButton* deleteButton = buttonWithText(page, QStringLiteral("Delete"));
     QVERIFY(deleteButton);
     deleteButton->click();
-    QCOMPARE(table->rowCount(), 1);
+    QCOMPARE(table->model()->rowCount(), 1);
 
     QPushButton* addButton = buttonWithText(page, QStringLiteral("Add"));
     QVERIFY(addButton);
     addButton->click();
-    const int insertRow = table->rowCount() - 1;
-    table->item(insertRow, 0)->setText(QStringLiteral("New Member"));
-    table->item(insertRow, 1)->setText(QStringLiteral("\uC2E0\uADDC"));
-    table->item(insertRow, 2)->setText(QStringLiteral("M3"));
-    table->item(insertRow, 3)->setText(QStringLiteral("010-3333-4444"));
-    table->item(insertRow, 4)->setText(QString());
+    const int insertRow = table->model()->rowCount() - 1;
+    setStaffDirectoryCellText(*table, insertRow, 0, QStringLiteral("New Member"));
+    setStaffDirectoryCellText(*table, insertRow, 1, QStringLiteral("\uC2E0\uADDC"));
+    setStaffDirectoryCellText(*table, insertRow, 2, QStringLiteral("M3"));
+    setStaffDirectoryCellText(*table, insertRow, 3, QStringLiteral("010-3333-4444"));
+    setStaffDirectoryCellText(*table, insertRow, 4, QString());
 
     QSignalSpy saved(&page, &StaffDirectoryPage::directorySaved);
     QVERIFY(page.hasUnsavedChanges());
     QVERIFY(page.saveChanges());
     QCOMPARE(saved.count(), 1);
     QVERIFY(!page.hasUnsavedChanges());
-    QCOMPARE(table->columnCount(), 5);
-    QCOMPARE(table->rowCount(), 2);
+    QCOMPARE(table->model()->columnCount(), 5);
+    QCOMPARE(table->model()->rowCount(), 2);
 
     const auto persisted = services.databaseSession()
         ->gsTeamRepository()->getAll();
@@ -261,18 +266,18 @@ createsUpdatesDeletesAndReloadsFiveFieldsWithTypedIds()
     const int reloadedInsertRow = rowForId(*table, inserted.id);
     QVERIFY(reloadedUpdateRow >= 0);
     QVERIFY(reloadedInsertRow >= 0);
-    QCOMPARE(table->item(reloadedUpdateRow, 0)->text(),
+    QCOMPARE(staffDirectoryCellText(*table, reloadedUpdateRow, 0),
         QStringLiteral("Updated Member"));
-    QCOMPARE(table->item(reloadedUpdateRow, 1)->text(),
+    QCOMPARE(staffDirectoryCellText(*table, reloadedUpdateRow, 1),
         QStringLiteral("\uC218\uC815 \uB2F4\uB2F9"));
-    QCOMPARE(table->item(reloadedUpdateRow, 2)->text(),
+    QCOMPARE(staffDirectoryCellText(*table, reloadedUpdateRow, 2),
         QStringLiteral("Team Leader"));
-    QCOMPARE(table->item(reloadedUpdateRow, 3)->text(),
+    QCOMPARE(staffDirectoryCellText(*table, reloadedUpdateRow, 3),
         QStringLiteral("010-2222-3333"));
-    QCOMPARE(table->item(reloadedUpdateRow, 4)->text(),
+    QCOMPARE(staffDirectoryCellText(*table, reloadedUpdateRow, 4),
         QStringLiteral("02-29"));
-    QCOMPARE(table->item(reloadedInsertRow, 0)->data(IdRole).toInt(), inserted.id);
-    QCOMPARE(table->item(reloadedInsertRow, 1)->text(),
+    QCOMPARE(staffDirectoryCellData(*table, reloadedInsertRow, 0, IdRole).toInt(), inserted.id);
+    QCOMPARE(staffDirectoryCellText(*table, reloadedInsertRow, 1),
         QStringLiteral("\uC2E0\uADDC"));
     QVERIFY(page.saveChanges());
     QCOMPARE(saved.count(), 1);
@@ -290,7 +295,7 @@ requiresEitherNameAndRejectsDuplicateEnglishNamesWithoutWriting()
     StaffDirectoryPage page(&services, StaffDirectoryKind::GsTeam);
     page.setSaveMode(SaveMode::Manual);
     QVERIFY(page.loadDirectory());
-    auto* table = page.findChild<QTableWidget*>(QStringLiteral("gsTeamTable"));
+    auto* table = page.findChild<QTableView*>(QStringLiteral("gsTeamTable"));
     QVERIFY(table);
     const auto before = services.databaseSession()
         ->gsTeamRepository()->getAll();
@@ -299,8 +304,8 @@ requiresEitherNameAndRejectsDuplicateEnglishNamesWithoutWriting()
     FakeUserPromptService prompts;
     DialogServices::setUserPromptServiceForTesting(&prompts);
 
-    table->item(0, 0)->setText(QStringLiteral("   "));
-    table->item(0, 1)->setText(QStringLiteral("  \t "));
+    setStaffDirectoryCellText(*table, 0, 0, QStringLiteral("   "));
+    setStaffDirectoryCellText(*table, 0, 1, QStringLiteral("  \t "));
     QVERIFY(!page.saveChanges());
     QCOMPARE(prompts.messages.size(), 1);
     QCOMPARE(prompts.messages.first().message, expectedValidationWarning());
@@ -340,7 +345,7 @@ rejectsDuplicateKoreanNamesWithoutWriting()
     StaffDirectoryPage page(&services, StaffDirectoryKind::GsTeam);
     page.setSaveMode(SaveMode::Manual);
     QVERIFY(page.loadDirectory());
-    auto* table = page.findChild<QTableWidget*>(QStringLiteral("gsTeamTable"));
+    auto* table = page.findChild<QTableView*>(QStringLiteral("gsTeamTable"));
     QVERIFY(table);
     const auto before = services.databaseSession()
         ->gsTeamRepository()->getAll();
@@ -376,7 +381,7 @@ permitsMatchingKeysAcrossEnglishAndKoreanNamespaces()
     StaffDirectoryPage page(&services, StaffDirectoryKind::GsTeam);
     page.setSaveMode(SaveMode::Manual);
     QVERIFY(page.loadDirectory());
-    auto* table = page.findChild<QTableWidget*>(QStringLiteral("gsTeamTable"));
+    auto* table = page.findChild<QTableView*>(QStringLiteral("gsTeamTable"));
     QVERIFY(table);
     setEnglishName(*table, 0, QStringLiteral("shared"));
     setKoreanName(*table, 0, QStringLiteral("\uAC00"));
@@ -412,12 +417,12 @@ rejectsInvalidBirthdayAndPreservesDatabaseState()
     StaffDirectoryPage page(&services, StaffDirectoryKind::GsTeam);
     page.setSaveMode(SaveMode::Manual);
     QVERIFY(page.loadDirectory());
-    auto* table = page.findChild<QTableWidget*>(QStringLiteral("gsTeamTable"));
+    auto* table = page.findChild<QTableView*>(QStringLiteral("gsTeamTable"));
     QVERIFY(table);
     const auto before = services.databaseSession()
         ->gsTeamRepository()->getAll();
     QVERIFY(before);
-    table->item(0, 4)->setText(QStringLiteral("02-30"));
+    setStaffDirectoryCellText(*table, 0, 4, QStringLiteral("02-30"));
 
     QSignalSpy saved(&page, &StaffDirectoryPage::directorySaved);
     FakeUserPromptService prompts;
@@ -443,13 +448,13 @@ unavailableSessionIsSilentAndRetainsEditedRows()
 
     StaffDirectoryPage page(&services, StaffDirectoryKind::GsTeam);
     page.setSaveMode(SaveMode::Manual);
-    auto* table = page.findChild<QTableWidget*>(QStringLiteral("gsTeamTable"));
+    auto* table = page.findChild<QTableView*>(QStringLiteral("gsTeamTable"));
     QVERIFY(table);
     QPushButton* addButton = buttonWithText(page, QStringLiteral("Add"));
     QVERIFY(addButton);
     addButton->click();
-    table->item(0, 0)->setText(QStringLiteral("Valid Name"));
-    table->item(0, 1)->setText(QStringLiteral("\uAC00"));
+    setStaffDirectoryCellText(*table, 0, 0, QStringLiteral("Valid Name"));
+    setStaffDirectoryCellText(*table, 0, 1, QStringLiteral("\uAC00"));
 
     QSignalSpy saved(&page, &StaffDirectoryPage::directorySaved);
     FakeUserPromptService prompts;
@@ -457,8 +462,8 @@ unavailableSessionIsSilentAndRetainsEditedRows()
     QVERIFY(!page.saveChanges());
 
     QVERIFY(page.hasUnsavedChanges());
-    QCOMPARE(table->rowCount(), 1);
-    QCOMPARE(table->item(0, 0)->text(), QStringLiteral("Valid Name"));
+    QCOMPARE(table->model()->rowCount(), 1);
+    QCOMPARE(staffDirectoryCellText(*table, 0, 0), QStringLiteral("Valid Name"));
     QCOMPARE(saved.count(), 0);
     QCOMPARE(prompts.messages.size(), 0);
 }
@@ -482,13 +487,13 @@ repositoryFailureRetainsEditsAndDeletionThenCanBeRetried()
     StaffDirectoryPage page(&services, StaffDirectoryKind::GsTeam);
     page.setSaveMode(SaveMode::Manual);
     QVERIFY(page.loadDirectory());
-    auto* table = page.findChild<QTableWidget*>(QStringLiteral("gsTeamTable"));
+    auto* table = page.findChild<QTableView*>(QStringLiteral("gsTeamTable"));
     QVERIFY(table);
     const int updateRow = rowForId(*table, updateOriginal.id);
     const int deleteRow = rowForId(*table, deleteOriginal.id);
     QVERIFY(updateRow >= 0);
     QVERIFY(deleteRow >= 0);
-    table->item(updateRow, 0)->setText(QStringLiteral("Edited Locally"));
+    setStaffDirectoryCellText(*table, updateRow, 0, QStringLiteral("Edited Locally"));
 
     FakeUserPromptService prompts;
     prompts.scriptedChoices.enqueue(PromptChoice::Destructive);
@@ -497,7 +502,7 @@ repositoryFailureRetainsEditsAndDeletionThenCanBeRetried()
     QPushButton* deleteButton = buttonWithText(page, QStringLiteral("Delete"));
     QVERIFY(deleteButton);
     deleteButton->click();
-    QCOMPARE(table->rowCount(), 1);
+    QCOMPARE(table->model()->rowCount(), 1);
 
     QSqlQuery createTrigger(services.databaseSession()->database());
     QVERIFY2(createTrigger.exec(QStringLiteral(
@@ -508,8 +513,8 @@ repositoryFailureRetainsEditsAndDeletionThenCanBeRetried()
 
     QVERIFY(!page.saveChanges());
     QVERIFY(page.hasUnsavedChanges());
-    QCOMPARE(table->rowCount(), 1);
-    QCOMPARE(table->item(0, 0)->text(), QStringLiteral("Edited Locally"));
+    QCOMPARE(table->model()->rowCount(), 1);
+    QCOMPARE(staffDirectoryCellText(*table, 0, 0), QStringLiteral("Edited Locally"));
     QCOMPARE(saved.count(), 0);
     QCOMPARE(prompts.messages.size(), 1);
     QCOMPARE(prompts.messages.first().severity, PromptSeverity::Warning);
@@ -552,7 +557,7 @@ automaticRepositoryFailureIsQuietAndKeepsDirtyState()
 
     StaffDirectoryPage page(&services, StaffDirectoryKind::GsTeam);
     QVERIFY(page.loadDirectory());
-    auto* table = page.findChild<QTableWidget*>(QStringLiteral("gsTeamTable"));
+    auto* table = page.findChild<QTableView*>(QStringLiteral("gsTeamTable"));
     QVERIFY(table);
 
     QSqlQuery createTrigger(services.databaseSession()->database());
@@ -564,15 +569,287 @@ automaticRepositoryFailureIsQuietAndKeepsDirtyState()
     FakeUserPromptService prompts;
     DialogServices::setUserPromptServiceForTesting(&prompts);
     QSignalSpy saved(&page, &StaffDirectoryPage::directorySaved);
-    table->item(0, 0)->setText(QStringLiteral("Automatic Edit"));
+    setStaffDirectoryCellText(*table, 0, 0, QStringLiteral("Automatic Edit"));
     QVERIFY(page.hasUnsavedChanges());
 
     QTest::qWait(1000);
 
     QVERIFY(page.hasUnsavedChanges());
-    QCOMPARE(table->item(0, 0)->text(), QStringLiteral("Automatic Edit"));
+    QCOMPARE(staffDirectoryCellText(*table, 0, 0), QStringLiteral("Automatic Edit"));
     QCOMPARE(saved.count(), 0);
     QCOMPARE(prompts.messages.size(), 0);
+}
+
+void StaffDirectoryGsTeamSaveTests::
+automaticSavePersistsEditAndEmitsSaved()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+    QVERIFY(seedDirectory(services));
+    const auto before = services.databaseSession()
+        ->gsTeamRepository()->getAll();
+    QVERIFY(before);
+    const GsTeamMember original =
+        memberNamed(*before, QStringLiteral("Update Target"));
+    QVERIFY(original.id > 0);
+
+    StaffDirectoryPage page(&services, StaffDirectoryKind::GsTeam);
+    page.setSaveMode(SaveMode::Automatic);
+    QVERIFY(page.loadDirectory());
+    auto* table = page.findChild<QTableView*>(QStringLiteral("gsTeamTable"));
+    QVERIFY(table);
+    const int row = rowForId(*table, original.id);
+    QVERIFY(row >= 0);
+
+    QSignalSpy saved(&page, &StaffDirectoryPage::directorySaved);
+    FakeUserPromptService prompts;
+    DialogServices::setUserPromptServiceForTesting(&prompts);
+    QVERIFY(setStaffDirectoryCellText(
+        *table, row, 0, QStringLiteral("Automatic Rename")));
+    QVERIFY(setStaffDirectoryCellText(
+        *table, row, 3, QStringLiteral("010-7777-8888")));
+    QVERIFY(page.hasUnsavedChanges());
+
+    QTRY_COMPARE_WITH_TIMEOUT(saved.count(), 1, 3000);
+
+    QVERIFY(!page.hasUnsavedChanges());
+    QCOMPARE(prompts.messages.size(), 0);
+    const auto persisted = services.databaseSession()
+        ->gsTeamRepository()->getAll();
+    QVERIFY(persisted);
+    QCOMPARE(persisted->size(), before->size());
+    const GsTeamMember updated =
+        memberNamed(*persisted, QStringLiteral("Automatic Rename"));
+    QCOMPARE(updated.id, original.id);
+    QCOMPARE(updated.koreanName, original.koreanName);
+    QCOMPARE(updated.phoneNumber, QStringLiteral("010-7777-8888"));
+}
+
+void StaffDirectoryGsTeamSaveTests::
+deletesOnlySelectedPersistedRowsWithOneConfirmation()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+    QVERIFY(static_cast<bool>(services.databaseSession()
+        ->gsTeamRepository()->saveDirectory(
+            {
+                member(QStringLiteral("Delete One"), QStringLiteral("\uAC00"),
+                    QStringLiteral("M1"), QStringLiteral("010-5000-0001"),
+                    QStringLiteral("01-02")),
+                member(QStringLiteral("Keep Member"), QStringLiteral("\uB098"),
+                    QStringLiteral("M2"), QStringLiteral("010-5000-0002"),
+                    QStringLiteral("02-03")),
+                member(QStringLiteral("Delete Two"), QStringLiteral("\uB2E4"),
+                    QStringLiteral("M3"), QStringLiteral("010-5000-0003"),
+                    QStringLiteral("03-04"))
+            },
+            {}
+            )));
+    const auto original = services.databaseSession()
+        ->gsTeamRepository()->getAll();
+    QVERIFY(original);
+    const GsTeamMember keepMember =
+        memberNamed(*original, QStringLiteral("Keep Member"));
+    const GsTeamMember deleteOne =
+        memberNamed(*original, QStringLiteral("Delete One"));
+    const GsTeamMember deleteTwo =
+        memberNamed(*original, QStringLiteral("Delete Two"));
+
+    StaffDirectoryPage page(&services, StaffDirectoryKind::GsTeam);
+    page.setSaveMode(SaveMode::Manual);
+    QVERIFY(page.loadDirectory());
+    auto* table = page.findChild<QTableView*>(QStringLiteral("gsTeamTable"));
+    QVERIFY(table);
+    const int deleteOneRow = rowForId(*table, deleteOne.id);
+    const int deleteTwoRow = rowForId(*table, deleteTwo.id);
+    QVERIFY(deleteOneRow >= 0);
+    QVERIFY(deleteTwoRow >= 0);
+
+    QPushButton* addButton = buttonWithText(page, QStringLiteral("Add"));
+    QVERIFY(addButton);
+    addButton->click();
+    const int draftRow = table->model()->rowCount() - 1;
+    QCOMPARE(staffDirectoryCellData(*table, draftRow, 0, IdRole).toInt(), 0);
+    setStaffDirectoryCellText(
+        *table, draftRow, 0, QStringLiteral("Draft Member"));
+    setStaffDirectoryCellText(
+        *table, draftRow, 1, QStringLiteral("\uB77C"));
+    setStaffDirectoryCellText(*table, draftRow, 2, QStringLiteral("NET"));
+    setStaffDirectoryCellText(
+        *table, draftRow, 3, QStringLiteral("010-5000-0004"));
+
+    table->selectionModel()->clearSelection();
+    table->selectionModel()->select(
+        table->model()->index(deleteOneRow, 0),
+        QItemSelectionModel::Select | QItemSelectionModel::Rows);
+    table->selectionModel()->select(
+        table->model()->index(deleteTwoRow, 0),
+        QItemSelectionModel::Select | QItemSelectionModel::Rows);
+    QCOMPARE(table->selectionModel()->selectedRows().size(), 2);
+
+    FakeUserPromptService prompts;
+    prompts.scriptedChoices.enqueue(PromptChoice::Destructive);
+    DialogServices::setUserPromptServiceForTesting(&prompts);
+    QPushButton* deleteButton = buttonWithText(page, QStringLiteral("Delete"));
+    QVERIFY(deleteButton);
+    deleteButton->click();
+    QCOMPARE(prompts.confirmations.size(), 1);
+    QCOMPARE(table->model()->rowCount(), 2);
+    QVERIFY(page.hasUnsavedChanges());
+
+    QSignalSpy saved(&page, &StaffDirectoryPage::directorySaved);
+    QVERIFY(page.saveChanges());
+    QCOMPARE(saved.count(), 1);
+    QVERIFY(!page.hasUnsavedChanges());
+
+    const auto persisted = services.databaseSession()
+        ->gsTeamRepository()->getAll();
+    QVERIFY(persisted);
+    QCOMPARE(persisted->size(), 2);
+    QCOMPARE(memberNamed(*persisted, QStringLiteral("Keep Member")).id,
+        keepMember.id);
+    QVERIFY(memberNamed(*persisted, QStringLiteral("Delete One")).id <= 0);
+    QVERIFY(memberNamed(*persisted, QStringLiteral("Delete Two")).id <= 0);
+    QVERIFY(memberNamed(*persisted, QStringLiteral("Draft Member")).id > 0);
+    QCOMPARE(prompts.confirmations.size(), 1);
+}
+
+void StaffDirectoryGsTeamSaveTests::
+manualDiscardRestoresRowsAndClearsPendingDeletes()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+    QVERIFY(seedDirectory(services));
+    const auto original = services.databaseSession()
+        ->gsTeamRepository()->getAll();
+    QVERIFY(original);
+    const GsTeamMember updateTarget =
+        memberNamed(*original, QStringLiteral("Update Target"));
+    const GsTeamMember deleteTarget =
+        memberNamed(*original, QStringLiteral("Delete Target"));
+
+    StaffDirectoryPage page(&services, StaffDirectoryKind::GsTeam);
+    page.setSaveMode(SaveMode::Manual);
+    QVERIFY(page.loadDirectory());
+    auto* table = page.findChild<QTableView*>(QStringLiteral("gsTeamTable"));
+    QVERIFY(table);
+    setStaffDirectoryCellText(
+        *table,
+        rowForId(*table, updateTarget.id),
+        0,
+        QStringLiteral("Edited before discard"));
+
+    FakeUserPromptService prompts;
+    prompts.scriptedChoices.enqueue(PromptChoice::Destructive);
+    DialogServices::setUserPromptServiceForTesting(&prompts);
+    table->selectRow(rowForId(*table, deleteTarget.id));
+    QPushButton* deleteButton = buttonWithText(page, QStringLiteral("Delete"));
+    QVERIFY(deleteButton);
+    deleteButton->click();
+    QCOMPARE(prompts.confirmations.size(), 1);
+    QCOMPARE(table->model()->rowCount(), 1);
+
+    QPushButton* addButton = buttonWithText(page, QStringLiteral("Add"));
+    QVERIFY(addButton);
+    addButton->click();
+    const int draftRow = table->model()->rowCount() - 1;
+    setStaffDirectoryCellText(*table, draftRow, 0, QStringLiteral("Draft"));
+    setStaffDirectoryCellText(*table, draftRow, 1, QStringLiteral("\uB77C"));
+    QCOMPARE(staffDirectoryCellData(*table, draftRow, 0, IdRole).toInt(), 0);
+    QVERIFY(page.hasUnsavedChanges());
+
+    QSignalSpy saved(&page, &StaffDirectoryPage::directorySaved);
+    page.discardChanges();
+    QVERIFY(!page.hasUnsavedChanges());
+    QCOMPARE(table->model()->rowCount(), original->size());
+    QCOMPARE(rowForId(*table, updateTarget.id) >= 0, true);
+    QCOMPARE(rowForId(*table, deleteTarget.id) >= 0, true);
+    QCOMPARE(staffDirectoryCellText(
+        *table,
+        rowForId(*table, updateTarget.id),
+        0),
+        QStringLiteral("Update Target"));
+    QCOMPARE(saved.count(), 0);
+
+    const auto unchanged = services.databaseSession()
+        ->gsTeamRepository()->getAll();
+    QVERIFY(unchanged);
+    QVERIFY(sameMembers(*unchanged, *original));
+}
+
+void StaffDirectoryGsTeamSaveTests::
+refreshWhileDirtyPreservesEditsAndPendingDeletes()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+    QVERIFY(seedDirectory(services));
+    const auto original = services.databaseSession()
+        ->gsTeamRepository()->getAll();
+    QVERIFY(original);
+    const GsTeamMember updateTarget =
+        memberNamed(*original, QStringLiteral("Update Target"));
+    const GsTeamMember deleteTarget =
+        memberNamed(*original, QStringLiteral("Delete Target"));
+    QVERIFY(updateTarget.id > 0);
+    QVERIFY(deleteTarget.id > 0);
+
+    StaffDirectoryPage page(&services, StaffDirectoryKind::GsTeam);
+    page.setSaveMode(SaveMode::Manual);
+    QVERIFY(page.loadDirectory());
+    auto* table = page.findChild<QTableView*>(QStringLiteral("gsTeamTable"));
+    QVERIFY(table);
+    const int updateRow = rowForId(*table, updateTarget.id);
+    const int deleteRow = rowForId(*table, deleteTarget.id);
+    QVERIFY(updateRow >= 0);
+    QVERIFY(deleteRow >= 0);
+    QVERIFY(setStaffDirectoryCellText(
+        *table, updateRow, 0, QStringLiteral("Edited Before Refresh")));
+
+    FakeUserPromptService prompts;
+    prompts.scriptedChoices.enqueue(PromptChoice::Destructive);
+    DialogServices::setUserPromptServiceForTesting(&prompts);
+    table->selectRow(deleteRow);
+    QPushButton* deleteButton = buttonWithText(page, QStringLiteral("Delete"));
+    QVERIFY(deleteButton);
+    deleteButton->click();
+    QCOMPARE(prompts.confirmations.size(), 1);
+    QCOMPARE(table->model()->rowCount(), 1);
+    QVERIFY(page.hasUnsavedChanges());
+
+    page.refresh();
+
+    QVERIFY(page.hasUnsavedChanges());
+    QCOMPARE(table->model()->rowCount(), 1);
+    const int editedRow = rowForId(*table, updateTarget.id);
+    QVERIFY(editedRow >= 0);
+    QCOMPARE(rowForId(*table, deleteTarget.id), -1);
+    QCOMPARE(staffDirectoryCellText(*table, editedRow, 0),
+        QStringLiteral("Edited Before Refresh"));
+    const auto beforeSave = services.databaseSession()
+        ->gsTeamRepository()->getAll();
+    QVERIFY(beforeSave);
+    QVERIFY(sameMembers(*beforeSave, *original));
+
+    QSignalSpy saved(&page, &StaffDirectoryPage::directorySaved);
+    QVERIFY(page.saveChanges());
+    QCOMPARE(saved.count(), 1);
+    QVERIFY(!page.hasUnsavedChanges());
+    const auto persisted = services.databaseSession()
+        ->gsTeamRepository()->getAll();
+    QVERIFY(persisted);
+    QCOMPARE(persisted->size(), 1);
+    const GsTeamMember updated =
+        memberNamed(*persisted, QStringLiteral("Edited Before Refresh"));
+    QCOMPARE(updated.id, updateTarget.id);
+    QVERIFY(memberNamed(*persisted, QStringLiteral("Delete Target")).id <= 0);
 }
 
 QTEST_MAIN(StaffDirectoryGsTeamSaveTests)

@@ -5,14 +5,17 @@
 #include "data/repositories/native_english_teacher_repository.h"
 #include "domain/models/native_english_teacher.h"
 #include "features/teacher/ui/staff_directory_page.h"
+#include "staff_directory_test_utils.h"
 #include "fakes/fake_user_prompt_service.h"
 #include "ui/shared/dialogs/user_prompt_service.h"
 #include "ui/shared/pages/pagemanager.h"
 #include "ui/shared/widgets/sidebar/sidebar.h"
 
+#include <QApplication>
 #include <QSqlError>
 #include <QSqlQuery>
-#include <QTableWidget>
+#include <QComboBox>
+#include <QTableView>
 #include <QTemporaryDir>
 #include <QUuid>
 #include <QtTest/QtTest>
@@ -84,6 +87,7 @@ class StaffDirectoryNativeEnglishReadTests final : public QObject
 private slots:
     void cleanup();
     void nativePageMapsSixFieldsInRepositoryOrderWithTypedRowIds();
+    void nativePositionEditorKeepsRawKnownAndUnknownValues();
     void unavailableSessionClearsSilently();
     void repositoryFailureWarnsAndRetainsDirtyState();
     void routeConfirmsBeforeReadAndShowsOnlyAfterSuccessfulLoad();
@@ -110,27 +114,103 @@ nativePageMapsSixFieldsInRepositoryOrderWithTypedRowIds()
         &services,
         StaffDirectoryKind::NativeEnglishTeachers);
     QVERIFY(page.loadDirectory());
-    auto* table = page.findChild<QTableWidget*>(
+    auto* table = page.findChild<QTableView*>(
         QStringLiteral("nativeEnglishTeachersTable"));
     QVERIFY(table);
-    QCOMPARE(table->columnCount(), 6);
-    QCOMPARE(table->rowCount(), persisted->size());
+    QCOMPARE(table->model()->columnCount(), 6);
+    QCOMPARE(table->model()->rowCount(), persisted->size());
 
     for (int row = 0; row < persisted->size(); ++row)
     {
         const NativeEnglishTeacher& expected = persisted->at(row);
-        QCOMPARE(table->item(row, 0)->text(), expected.name);
-        QCOMPARE(table->item(row, 0)->data(NativeEnglishIdRole).toInt(),
+        QCOMPARE(staffDirectoryCellText(*table, row, 0), expected.name);
+        QCOMPARE(staffDirectoryCellData(*table, row, 0, NativeEnglishIdRole).toInt(),
             expected.id);
-        QCOMPARE(table->item(row, 1)->text(), expected.position);
-        QCOMPARE(table->item(row, 2)->text(), expected.phoneNumber);
-        QCOMPARE(table->item(row, 3)->text(), expected.email);
-        QCOMPARE(table->item(row, 4)->text(), expected.birthday);
-        QCOMPARE(table->item(row, 5)->text(), expected.nationality);
+        QCOMPARE(staffDirectoryCellText(*table, row, 1), expected.position);
+        QCOMPARE(staffDirectoryCellText(*table, row, 2), expected.phoneNumber);
+        QCOMPARE(staffDirectoryCellText(*table, row, 3), expected.email);
+        QCOMPARE(staffDirectoryCellText(*table, row, 4), expected.birthday);
+        QCOMPARE(staffDirectoryCellText(*table, row, 5), expected.nationality);
     }
-    QCOMPARE(table->item(0, 0)->text(), QStringLiteral("Coordinator"));
-    QCOMPARE(table->item(1, 0)->text(), QStringLiteral("Alpha"));
-    QCOMPARE(table->item(2, 0)->text(), QStringLiteral("Zulu"));
+    QCOMPARE(staffDirectoryCellText(*table, 0, 0), QStringLiteral("Coordinator"));
+    QCOMPARE(staffDirectoryCellText(*table, 1, 0), QStringLiteral("Alpha"));
+    QCOMPARE(staffDirectoryCellText(*table, 2, 0), QStringLiteral("Zulu"));
+    QVERIFY(!page.hasUnsavedChanges());
+}
+
+void StaffDirectoryNativeEnglishReadTests::
+nativePositionEditorKeepsRawKnownAndUnknownValues()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+    NativeEnglishTeacher coordinator = teacher(
+        QStringLiteral("Coordinator"),
+        QStringLiteral("Co-ordinator"),
+        QStringLiteral("0001"));
+    NativeEnglishTeacher unknown = teacher(
+        QStringLiteral("Unknown Position"),
+        QStringLiteral("Learning Support"),
+        QStringLiteral("0002"));
+    QVERIFY(static_cast<bool>(services.databaseSession()
+        ->nativeEnglishTeacherRepository()->saveDirectory(
+            {coordinator, unknown}, {})));
+
+    StaffDirectoryPage page(
+        &services,
+        StaffDirectoryKind::NativeEnglishTeachers);
+    page.setSaveMode(SaveMode::Manual);
+    QVERIFY(page.loadDirectory());
+    auto* table = page.findChild<QTableView*>(
+        QStringLiteral("nativeEnglishTeachersTable"));
+    QVERIFY(table);
+    page.resize(1000, 700);
+    page.show();
+    QApplication::processEvents();
+
+    const auto rowForName = [table](const QString& name) {
+        for (int row = 0; row < table->model()->rowCount(); ++row)
+        {
+            if (staffDirectoryCellText(*table, row, 0) == name)
+            {
+                return row;
+            }
+        }
+        return -1;
+    };
+
+    const int coordinatorRow = rowForName(QStringLiteral("Coordinator"));
+    QVERIFY(coordinatorRow >= 0);
+    QModelIndex positionIndex = table->model()->index(coordinatorRow, 1);
+    table->setCurrentIndex(positionIndex);
+    table->edit(positionIndex);
+    auto* position = table->findChild<QComboBox*>();
+    QTRY_VERIFY(position);
+    QCOMPARE(position->currentData().toString(), QStringLiteral("Co-ordinator"));
+    const int coordinatorOption = position->findData(
+        QStringLiteral("Co-ordinator"));
+    QVERIFY(coordinatorOption >= 0);
+    QCOMPARE(position->itemText(coordinatorOption), QStringLiteral("Coordinator"));
+    QTest::keyClick(position, Qt::Key_Escape);
+    QTRY_VERIFY(table->findChildren<QComboBox*>().isEmpty());
+    QCOMPARE(staffDirectoryCellText(*table, coordinatorRow, 1),
+        QStringLiteral("Co-ordinator"));
+    QVERIFY(!page.hasUnsavedChanges());
+
+    const int unknownRow = rowForName(QStringLiteral("Unknown Position"));
+    QVERIFY(unknownRow >= 0);
+    positionIndex = table->model()->index(unknownRow, 1);
+    table->setCurrentIndex(positionIndex);
+    table->edit(positionIndex);
+    position = table->findChild<QComboBox*>();
+    QTRY_VERIFY(position);
+    QCOMPARE(position->currentData().toString(), QStringLiteral("Learning Support"));
+    QVERIFY(position->findData(QStringLiteral("Learning Support")) >= 0);
+    QTest::keyClick(position, Qt::Key_Escape);
+    QTRY_VERIFY(table->findChildren<QComboBox*>().isEmpty());
+    QCOMPARE(staffDirectoryCellText(*table, unknownRow, 1),
+        QStringLiteral("Learning Support"));
     QVERIFY(!page.hasUnsavedChanges());
 }
 
@@ -140,18 +220,19 @@ void StaffDirectoryNativeEnglishReadTests::unavailableSessionClearsSilently()
         nullptr,
         StaffDirectoryKind::NativeEnglishTeachers);
     page.setSaveMode(SaveMode::Manual);
-    auto* table = page.findChild<QTableWidget*>(
+    auto* table = page.findChild<QTableView*>(
         QStringLiteral("nativeEnglishTeachersTable"));
     QVERIFY(table);
-    table->setRowCount(1);
-    table->setItem(0, 0, new QTableWidgetItem(QStringLiteral("Stale row")));
+    QVERIFY(table->model()->insertRows(0, 1));
+    QVERIFY(setStaffDirectoryCellText(
+        *table, 0, 0, QStringLiteral("Stale row")));
     QVERIFY(page.hasUnsavedChanges());
 
     FakeUserPromptService prompts;
     DialogServices::setUserPromptServiceForTesting(&prompts);
     QVERIFY(!page.loadDirectory());
 
-    QCOMPARE(table->rowCount(), 0);
+    QCOMPARE(table->model()->rowCount(), 0);
     QVERIFY(!page.hasUnsavedChanges());
     QCOMPARE(prompts.messages.size(), 0);
 }
@@ -170,10 +251,10 @@ repositoryFailureWarnsAndRetainsDirtyState()
         StaffDirectoryKind::NativeEnglishTeachers);
     page.setSaveMode(SaveMode::Manual);
     QVERIFY(page.loadDirectory());
-    auto* table = page.findChild<QTableWidget*>(
+    auto* table = page.findChild<QTableView*>(
         QStringLiteral("nativeEnglishTeachersTable"));
     QVERIFY(table);
-    table->item(0, 0)->setText(QStringLiteral("Edited locally"));
+    setStaffDirectoryCellText(*table, 0, 0, QStringLiteral("Edited locally"));
     QVERIFY(page.hasUnsavedChanges());
 
     QSqlQuery query(services.databaseSession()->database());
@@ -184,7 +265,7 @@ repositoryFailureWarnsAndRetainsDirtyState()
     DialogServices::setUserPromptServiceForTesting(&prompts);
     QVERIFY(!page.loadDirectory());
 
-    QCOMPARE(table->rowCount(), 0);
+    QCOMPARE(table->model()->rowCount(), 0);
     QVERIFY(page.hasUnsavedChanges());
     QCOMPARE(prompts.messages.size(), 1);
     QCOMPARE(prompts.messages.first().severity, PromptSeverity::Warning);
@@ -219,18 +300,18 @@ routeConfirmsBeforeReadAndShowsOnlyAfterSuccessfulLoad()
     auto* page = pages.nativeEnglishTeachersPage();
     QVERIFY(page);
     page->setSaveMode(SaveMode::Manual);
-    auto* table = page->findChild<QTableWidget*>(
+    auto* table = page->findChild<QTableView*>(
         QStringLiteral("nativeEnglishTeachersTable"));
     QVERIFY(table);
-    QCOMPARE(table->item(0, 0)->text(), QStringLiteral("Coordinator"));
+    QCOMPARE(staffDirectoryCellText(*table, 0, 0), QStringLiteral("Coordinator"));
 
-    table->item(0, 0)->setText(QStringLiteral("Local unsaved edit"));
+    setStaffDirectoryCellText(*table, 0, 0, QStringLiteral("Local unsaved edit"));
     QVERIFY(page->hasUnsavedChanges());
     QSqlQuery update(services.databaseSession()->database());
     update.prepare(QStringLiteral(
         "UPDATE native_english_teachers SET name=? WHERE id=?"));
     update.addBindValue(QStringLiteral("Changed in database"));
-    update.addBindValue(table->item(0, 0)->data(NativeEnglishIdRole));
+    update.addBindValue(staffDirectoryCellData(*table, 0, 0, NativeEnglishIdRole));
     QVERIFY2(update.exec(), qPrintable(update.lastError().text()));
 
     prompts.scriptedUnsavedChangesChoices.enqueue(
@@ -238,14 +319,14 @@ routeConfirmsBeforeReadAndShowsOnlyAfterSuccessfulLoad()
     navigation.handleNavigation(route);
     QCOMPARE(prompts.unsavedChangesConfirmations.size(), 1);
     QVERIFY(pages.isCurrentPage(PageType::NativeEnglishTeachers));
-    QCOMPARE(table->item(0, 0)->text(), QStringLiteral("Local unsaved edit"));
+    QCOMPARE(staffDirectoryCellText(*table, 0, 0), QStringLiteral("Local unsaved edit"));
     QVERIFY(page->hasUnsavedChanges());
 
     prompts.scriptedUnsavedChangesChoices.enqueue(
         UnsavedChangesChoice::Discard);
     navigation.handleNavigation(route);
     QVERIFY(pages.isCurrentPage(PageType::NativeEnglishTeachers));
-    QCOMPARE(table->item(0, 0)->text(), QStringLiteral("Changed in database"));
+    QCOMPARE(staffDirectoryCellText(*table, 0, 0), QStringLiteral("Changed in database"));
     QVERIFY(!page->hasUnsavedChanges());
 
     pages.showPage(PageType::TeacherInfo);

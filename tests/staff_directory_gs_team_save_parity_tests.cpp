@@ -3,12 +3,13 @@
 #include "data/repositories/gs_team_repository.h"
 #include "domain/models/gs_team_member.h"
 #include "features/teacher/ui/staff_directory_page.h"
+#include "staff_directory_test_utils.h"
 #include "fakes/fake_user_prompt_service.h"
 #include "ui/shared/dialogs/user_prompt_service.h"
 
 #include <QPushButton>
 #include <QSignalSpy>
-#include <QTableWidget>
+#include <QTableView>
 #include <QTemporaryDir>
 #include <QUuid>
 #include <QtTest/QtTest>
@@ -72,12 +73,11 @@ QPushButton* buttonWithText(QWidget& page, const QString& text)
     return nullptr;
 }
 
-int rowForName(const QTableWidget& table, const QString& name)
+int rowForName(const QTableView& table, const QString& name)
 {
-    for (int row = 0; row < table.rowCount(); ++row)
+    for (int row = 0; row < table.model()->rowCount(); ++row)
     {
-        const auto* item = table.item(row, 0);
-        if (item && item->text() == name)
+        if (staffDirectoryCellText(table, row, 0) == name)
         {
             return row;
         }
@@ -139,21 +139,21 @@ publicPageSaveMatchesPinnedBaselineBehavior()
     StaffDirectoryPage page(&services, StaffDirectoryKind::GsTeam);
     page.setSaveMode(SaveMode::Manual);
     QVERIFY(page.loadDirectory());
-    auto* table = page.findChild<QTableWidget*>(QStringLiteral("gsTeamTable"));
+    auto* table = page.findChild<QTableView*>(QStringLiteral("gsTeamTable"));
     QVERIFY(table);
-    QCOMPARE(table->columnCount(), 5);
+    QCOMPARE(table->model()->columnCount(), 5);
 
     QSignalSpy saved(&page, &StaffDirectoryPage::directorySaved);
     const int updateRow = rowForName(*table, QStringLiteral("Parity Update"));
     const int deleteRow = rowForName(*table, QStringLiteral("Parity Delete"));
     QVERIFY(updateRow >= 0);
     QVERIFY(deleteRow >= 0);
-    QCOMPARE(table->item(updateRow, 0)->data(IdRole).toInt(), updateOriginal.id);
-    table->item(updateRow, 0)->setText(QStringLiteral("  Renamed   Member  "));
-    table->item(updateRow, 1)->setText(QStringLiteral("\uC218\uC815 \uB2F4\uB2F9"));
-    table->item(updateRow, 2)->setText(QStringLiteral(" Team Leader "));
-    table->item(updateRow, 3)->setText(QStringLiteral("010-4444-5555"));
-    table->item(updateRow, 4)->setText(QStringLiteral("02-29"));
+    QCOMPARE(staffDirectoryCellData(*table, updateRow, 0, IdRole).toInt(), updateOriginal.id);
+    setStaffDirectoryCellText(*table, updateRow, 0, QStringLiteral("  Renamed   Member  "));
+    setStaffDirectoryCellText(*table, updateRow, 1, QStringLiteral("\uC218\uC815 \uB2F4\uB2F9"));
+    setStaffDirectoryCellText(*table, updateRow, 2, QStringLiteral(" Team Leader "));
+    setStaffDirectoryCellText(*table, updateRow, 3, QStringLiteral("010-4444-5555"));
+    setStaffDirectoryCellText(*table, updateRow, 4, QStringLiteral("02-29"));
 
     FakeUserPromptService prompts;
     prompts.scriptedChoices.enqueue(PromptChoice::Destructive);
@@ -166,12 +166,12 @@ publicPageSaveMatchesPinnedBaselineBehavior()
     QPushButton* addButton = buttonWithText(page, QStringLiteral("Add"));
     QVERIFY(addButton);
     addButton->click();
-    const int insertedRow = table->rowCount() - 1;
-    table->item(insertedRow, 0)->setText(QString());
-    table->item(insertedRow, 1)->setText(QStringLiteral("\uC2E0\uADDC \uAD6C\uC131\uC6D0"));
-    table->item(insertedRow, 2)->setText(QStringLiteral("M3"));
-    table->item(insertedRow, 3)->setText(QStringLiteral("010-5555-6666"));
-    table->item(insertedRow, 4)->setText(QStringLiteral(""));
+    const int insertedRow = table->model()->rowCount() - 1;
+    setStaffDirectoryCellText(*table, insertedRow, 0, QString());
+    setStaffDirectoryCellText(*table, insertedRow, 1, QStringLiteral("\uC2E0\uADDC \uAD6C\uC131\uC6D0"));
+    setStaffDirectoryCellText(*table, insertedRow, 2, QStringLiteral("M3"));
+    setStaffDirectoryCellText(*table, insertedRow, 3, QStringLiteral("010-5555-6666"));
+    setStaffDirectoryCellText(*table, insertedRow, 4, QStringLiteral(""));
 
     QVERIFY(page.hasUnsavedChanges());
     QVERIFY(page.saveChanges());

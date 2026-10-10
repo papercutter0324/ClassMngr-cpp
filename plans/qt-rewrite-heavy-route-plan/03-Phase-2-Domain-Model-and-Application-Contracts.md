@@ -42,7 +42,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-11
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F607 releases hidden Calendar rendering/cache resources and restores month, filters, and scope on return; F608 will replace Staff Directory per-cell items, while F598 still awaits an elevated WPR process, F579 symbol work remains deferred at the user's direction, and the memory/output-parity/Phase 0 gates remain open.
+- Current note: F608 replaces Staff Directory per-cell items with bounded row models and preserves edit/save behavior; F609 will bound Speaking Evaluation class-page construction, while F598 still awaits an elevated WPR process, F579 symbol work remains deferred at the user's direction, and the memory/output-parity/Phase 0 gates remain open.
 
 ### Slice discovery batches
 
@@ -74,7 +74,6 @@ Treat this plan as an operational summary, not a history:
 
 #### Active batch: Batch 116
 
-- F608 - Replace Staff Directory per-cell table items while preserving editing and save behavior.
 - F609 - Bound Speaking Evaluation class-page construction while preserving navigation and reports.
 - F610 - Bound Schedule Import review controls after establishing a reliable baseline.
 - F611 - Reduce overlapping Schedule workbook representations in coordination with F606.

@@ -12,6 +12,7 @@
 #include "domain/models/native_english_teacher.h"
 #include "domain/models/teacher.h"
 #include "features/teacher/ui/staff_directory_page.h"
+#include "staff_directory_test_utils.h"
 #include "features/teacher/ui/teacher_info_page.h"
 #include "fakes/fake_user_prompt_service.h"
 #include "ui/shared/dialogs/user_prompt_service.h"
@@ -28,7 +29,7 @@
 #include <QMessageLogContext>
 #include <QRect>
 #include <QSignalSpy>
-#include <QTableWidget>
+#include <QTableView>
 #include <QTemporaryDir>
 #include <QTextEdit>
 #include <QTreeWidget>
@@ -464,21 +465,21 @@ void verifyOpenSessionRoute(
         ? pages.nativeEnglishTeachersPage()
         : pages.gsTeamPage();
     QVERIFY(destination);
-    QTableWidget* const table = destination->findChild<QTableWidget*>(
+    QTableView* const table = destination->findChild<QTableView*>(
         isNativeEnglish
             ? QStringLiteral("nativeEnglishTeachersTable")
             : QStringLiteral("gsTeamTable")
         );
     QVERIFY(table);
-    QCOMPARE(table->rowCount(), 2);
+    QCOMPARE(table->model()->rowCount(), 2);
     QCOMPARE(
-        table->item(0, 0)->text(),
+        staffDirectoryCellText(*table, 0, 0),
         isNativeEnglish
             ? QStringLiteral("Alpha Native")
             : QStringLiteral("Alpha GS")
         );
     QCOMPARE(
-        table->item(1, 0)->text(),
+        staffDirectoryCellText(*table, 1, 0),
         isNativeEnglish
             ? QStringLiteral("Zulu Native")
             : QStringLiteral("Zulu GS")
@@ -676,15 +677,15 @@ mainWindowRenderedLeavesNavigateWithinOpenSession()
             ? pages->nativeEnglishTeachersPage()
             : pages->gsTeamPage();
         QVERIFY(destination);
-        QTableWidget* const table = destination->findChild<QTableWidget*>(
+        QTableView* const table = destination->findChild<QTableView*>(
             tableObjectName
             );
         QVERIFY(table);
-        QCOMPARE(table->rowCount(), 2);
-        QVERIFY(table->item(0, 0));
-        QVERIFY(table->item(1, 0));
-        QCOMPARE(table->item(0, 0)->text(), alphaName);
-        QCOMPARE(table->item(1, 0)->text(), zuluName);
+        QCOMPARE(table->model()->rowCount(), 2);
+        QVERIFY(staffDirectoryCell(*table, 0, 0).isValid());
+        QVERIFY(staffDirectoryCell(*table, 1, 0).isValid());
+        QCOMPARE(staffDirectoryCellText(*table, 0, 0), alphaName);
+        QCOMPARE(staffDirectoryCellText(*table, 1, 0), zuluName);
 
         QVERIFY(services->hasOpenDatabase());
         QCOMPARE(services->databaseSession(), activeSession);

@@ -7,6 +7,7 @@
 #include "data/repositories/native_english_teacher_repository.h"
 #include "domain/models/native_english_teacher.h"
 #include "features/teacher/ui/staff_directory_page.h"
+#include "staff_directory_test_utils.h"
 #include "fakes/fake_user_prompt_service.h"
 #include "ui/shared/dialogs/user_prompt_service.h"
 #include "ui/shared/pages/pagemanager.h"
@@ -14,7 +15,7 @@
 
 #include <QSqlError>
 #include <QSqlQuery>
-#include <QTableWidget>
+#include <QTableView>
 #include <QTemporaryDir>
 #include <QUuid>
 #include <QtTest/QtTest>
@@ -108,20 +109,20 @@ routeDisplaysRepositoryRowsAndStaysPutWhenLoadFails()
     QVERIFY(pages.isCurrentPage(PageType::NativeEnglishTeachers));
     StaffDirectoryPage* const page = pages.nativeEnglishTeachersPage();
     QVERIFY(page);
-    auto* table = page->findChild<QTableWidget*>(
+    auto* table = page->findChild<QTableView*>(
         QStringLiteral("nativeEnglishTeachersTable"));
     QVERIFY(table);
-    QCOMPARE(table->columnCount(), 6);
-    QCOMPARE(table->rowCount(), 2);
-    QCOMPARE(table->item(0, 0)->text(), QStringLiteral("Coordinator"));
-    QCOMPARE(table->item(0, 1)->text(), QStringLiteral("Co-ordinator"));
-    QCOMPARE(table->item(0, 2)->text(), QStringLiteral("010-3000-0001"));
-    QCOMPARE(table->item(0, 3)->text(),
+    QCOMPARE(table->model()->columnCount(), 6);
+    QCOMPARE(table->model()->rowCount(), 2);
+    QCOMPARE(staffDirectoryCellText(*table, 0, 0), QStringLiteral("Coordinator"));
+    QCOMPARE(staffDirectoryCellText(*table, 0, 1), QStringLiteral("Co-ordinator"));
+    QCOMPARE(staffDirectoryCellText(*table, 0, 2), QStringLiteral("010-3000-0001"));
+    QCOMPARE(staffDirectoryCellText(*table, 0, 3),
         QStringLiteral("coordinator@example.test"));
-    QCOMPARE(table->item(0, 4)->text(), QStringLiteral("01-02"));
-    QCOMPARE(table->item(0, 5)->text(), QStringLiteral("Korea"));
-    QVERIFY(table->item(0, 0)->data(NativeEnglishIdRole).toInt() > 0);
-    QCOMPARE(table->item(1, 0)->text(), QStringLiteral("Zulu"));
+    QCOMPARE(staffDirectoryCellText(*table, 0, 4), QStringLiteral("01-02"));
+    QCOMPARE(staffDirectoryCellText(*table, 0, 5), QStringLiteral("Korea"));
+    QVERIFY(staffDirectoryCellData(*table, 0, 0, NativeEnglishIdRole).toInt() > 0);
+    QCOMPARE(staffDirectoryCellText(*table, 1, 0), QStringLiteral("Zulu"));
 
     pages.showPage(PageType::TeacherInfo);
     QVERIFY(pages.isCurrentPage(PageType::TeacherInfo));

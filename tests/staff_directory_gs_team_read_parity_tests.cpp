@@ -5,6 +5,7 @@
 #include "data/database/database_session.h"
 #include "domain/models/gs_team_member.h"
 #include "features/teacher/ui/staff_directory_page.h"
+#include "staff_directory_test_utils.h"
 #include "fakes/fake_user_prompt_service.h"
 #include "ui/shared/dialogs/user_prompt_service.h"
 #include "ui/shared/pages/pagemanager.h"
@@ -12,7 +13,7 @@
 
 #include <QSqlError>
 #include <QSqlQuery>
-#include <QTableWidget>
+#include <QTableView>
 #include <QTemporaryDir>
 #include <QUuid>
 #include <QtTest/QtTest>
@@ -116,20 +117,20 @@ routeDisplaysCommonRowsAndKeepsPreviousPageOnReadFailure()
     QVERIFY(pages.isCurrentPage(PageType::GsTeam));
     StaffDirectoryPage* const page = pages.gsTeamPage();
     QVERIFY(page);
-    auto* table = page->findChild<QTableWidget*>(QStringLiteral("gsTeamTable"));
+    auto* table = page->findChild<QTableView*>(QStringLiteral("gsTeamTable"));
     QVERIFY(table);
-    QCOMPARE(table->columnCount(), 5);
-    QCOMPARE(table->rowCount(), 4);
-    QCOMPARE(table->item(0, 0)->text(), QStringLiteral("Alex"));
-    QCOMPARE(table->item(0, 1)->text(),
+    QCOMPARE(table->model()->columnCount(), 5);
+    QCOMPARE(table->model()->rowCount(), 4);
+    QCOMPARE(staffDirectoryCellText(*table, 0, 0), QStringLiteral("Alex"));
+    QCOMPARE(staffDirectoryCellText(*table, 0, 1),
         QStringLiteral("\uC54C\uB809\uC2A4"));
-    QCOMPARE(table->item(0, 2)->text(), QStringLiteral("Branch Manager"));
-    QCOMPARE(table->item(0, 3)->text(), QStringLiteral("010-4000-0001"));
-    QCOMPARE(table->item(0, 4)->text(), QStringLiteral("01-02"));
-    QVERIFY(table->item(0, 0)->data(IdRole).toInt() > 0);
-    QCOMPARE(table->item(1, 0)->text(), QStringLiteral("Alpha"));
-    QCOMPARE(table->item(2, 0)->text(), QStringLiteral("Beta"));
-    QCOMPARE(table->item(3, 0)->text(), QString());
+    QCOMPARE(staffDirectoryCellText(*table, 0, 2), QStringLiteral("Branch Manager"));
+    QCOMPARE(staffDirectoryCellText(*table, 0, 3), QStringLiteral("010-4000-0001"));
+    QCOMPARE(staffDirectoryCellText(*table, 0, 4), QStringLiteral("01-02"));
+    QVERIFY(staffDirectoryCellData(*table, 0, 0, IdRole).toInt() > 0);
+    QCOMPARE(staffDirectoryCellText(*table, 1, 0), QStringLiteral("Alpha"));
+    QCOMPARE(staffDirectoryCellText(*table, 2, 0), QStringLiteral("Beta"));
+    QCOMPARE(staffDirectoryCellText(*table, 3, 0), QString());
 
     pages.showPage(PageType::TeacherInfo);
     QVERIFY(pages.isCurrentPage(PageType::TeacherInfo));

@@ -16,6 +16,7 @@
 #include "ui/shared/widgets/text_fit_push_button.h"
 
 #include <QAbstractItemView>
+#include <QAbstractTableModel>
 #include <QDate>
 #include <QEvent>
 #include <QFont>
@@ -27,9 +28,11 @@
 #include <QPushButton>
 #include <QComboBox>
 #include <QCoreApplication>
+#include <QStringList>
 #include <QStyledItemDelegate>
-#include <QTableWidget>
+#include <QTableView>
 #include <QTimer>
+#include <QVector>
 #include <QVBoxLayout>
 
 #include <algorithm>
@@ -77,6 +80,191 @@ QString nativeTeacherPositionDisplayText(
 
     return position;
 }
+
+struct StaffDirectoryRow final
+{
+    int persistedId = -1;
+    QStringList values;
+};
+
+class StaffDirectoryTableModel final : public QAbstractTableModel
+{
+public:
+    explicit StaffDirectoryTableModel(
+        const int columnCount,
+        QObject* parent = nullptr
+        )
+        : QAbstractTableModel(parent)
+        , m_columnCount(columnCount)
+    {
+    }
+
+    int rowCount(const QModelIndex& parent = QModelIndex()) const override
+    {
+        return parent.isValid() ? 0 : static_cast<int>(m_rows.size());
+    }
+
+    int columnCount(const QModelIndex& parent = QModelIndex()) const override
+    {
+        return parent.isValid() ? 0 : m_columnCount;
+    }
+
+    QVariant data(const QModelIndex& index, const int role) const override
+    {
+        if (!index.isValid()
+            || index.row() < 0
+            || index.row() >= rowCount()
+            || index.column() < 0
+            || index.column() >= m_columnCount)
+        {
+            return {};
+        }
+
+        const StaffDirectoryRow& row = m_rows.at(
+            static_cast<std::size_t>(index.row()));
+        if (role == Qt::DisplayRole || role == Qt::EditRole)
+        {
+            return row.values.at(index.column());
+        }
+        if (role == Qt::TextAlignmentRole)
+        {
+            return static_cast<int>(Qt::AlignCenter);
+        }
+        if (role == IdRole && index.column() == 0 && row.persistedId > 0)
+        {
+            return row.persistedId;
+        }
+        return {};
+    }
+
+    QVariant headerData(
+        const int section,
+        const Qt::Orientation orientation,
+        const int role
+        ) const override
+    {
+        if (orientation == Qt::Horizontal
+            && role == Qt::DisplayRole
+            && section >= 0
+            && section < m_headers.size())
+        {
+            return m_headers.at(section);
+        }
+        return QAbstractTableModel::headerData(section, orientation, role);
+    }
+
+    Qt::ItemFlags flags(const QModelIndex& index) const override
+    {
+        if (!index.isValid())
+        {
+            return Qt::NoItemFlags;
+        }
+        return Qt::ItemIsEnabled | Qt::ItemIsSelectable | Qt::ItemIsEditable;
+    }
+
+    bool setData(
+        const QModelIndex& index,
+        const QVariant& value,
+        const int role
+        ) override
+    {
+        if (role != Qt::EditRole
+            || !index.isValid()
+            || index.row() < 0
+            || index.row() >= rowCount()
+            || index.column() < 0
+            || index.column() >= m_columnCount)
+        {
+            return false;
+        }
+
+        StaffDirectoryRow& row = m_rows[index.row()];
+        const QString text = value.toString();
+        if (row.values.at(index.column()) == text)
+        {
+            return true;
+        }
+
+        row.values[index.column()] = text;
+        emit dataChanged(index, index, {Qt::DisplayRole, Qt::EditRole});
+        return true;
+    }
+
+    bool insertRows(
+        const int row,
+        const int count,
+        const QModelIndex& parent = QModelIndex()
+        ) override
+    {
+        if (parent.isValid() || row < 0 || row > rowCount() || count <= 0)
+        {
+            return false;
+        }
+
+        beginInsertRows(QModelIndex(), row, row + count - 1);
+        for (int offset = 0; offset < count; ++offset)
+        {
+            StaffDirectoryRow newRow;
+            newRow.values.fill(QString(), m_columnCount);
+            m_rows.insert(
+                m_rows.begin() + static_cast<std::ptrdiff_t>(row + offset),
+                std::move(newRow));
+        }
+        endInsertRows();
+        return true;
+    }
+
+    bool removeRows(
+        const int row,
+        const int count,
+        const QModelIndex& parent = QModelIndex()
+        ) override
+    {
+        if (parent.isValid()
+            || row < 0
+            || count <= 0
+            || row + count > rowCount())
+        {
+            return false;
+        }
+
+        beginRemoveRows(QModelIndex(), row, row + count - 1);
+        m_rows.erase(
+            m_rows.begin() + static_cast<std::ptrdiff_t>(row),
+            m_rows.begin() + static_cast<std::ptrdiff_t>(row + count));
+        endRemoveRows();
+        return true;
+    }
+
+    void setRows(QVector<StaffDirectoryRow> rows)
+    {
+        beginResetModel();
+        m_rows = std::move(rows);
+        endResetModel();
+    }
+
+    void setHeaders(QStringList headers)
+    {
+        m_headers = std::move(headers);
+        if (!m_headers.isEmpty())
+        {
+            emit headerDataChanged(
+                Qt::Horizontal,
+                0,
+                static_cast<int>(m_headers.size()) - 1);
+        }
+    }
+
+    const StaffDirectoryRow& rowAt(const int row) const
+    {
+        return m_rows.at(static_cast<std::size_t>(row));
+    }
+
+private:
+    int m_columnCount = 0;
+    QVector<StaffDirectoryRow> m_rows;
+    QStringList m_headers;
+};
 
 class NativeTeacherPositionDelegate final : public QStyledItemDelegate
 {
@@ -167,21 +355,17 @@ public:
     }
 };
 
-QTableWidgetItem* textItem(const QString& text, int id = -1)
+QString cellText(const QAbstractItemModel* model, int row, int column)
 {
-    auto* item = new QTableWidgetItem(text);
-    item->setTextAlignment(Qt::AlignCenter);
-    if (id > 0)
+    if (!model
+        || row < 0
+        || row >= model->rowCount()
+        || column < 0
+        || column >= model->columnCount())
     {
-        item->setData(IdRole, id);
+        return {};
     }
-    return item;
-}
-
-QString cellText(const QTableWidget* table, int row, int column)
-{
-    const auto* item = table ? table->item(row, column) : nullptr;
-    return item ? item->text().trimmed() : QString();
+    return model->index(row, column).data(Qt::EditRole).toString().trimmed();
 }
 
 QString normalizedName(const QString& value)
@@ -261,14 +445,16 @@ void StaffDirectoryPage::buildUi()
     contentLayout()->addLayout(headerLayout);
     contentLayout()->addSpacing(UiConstants::Pages::HeaderContentSpacing);
 
-    m_table = new QTableWidget(this);
+    m_table = new QTableView(this);
     m_table->installEventFilter(this);
     m_table->setObjectName(
         m_kind == StaffDirectoryKind::NativeEnglishTeachers
             ? QStringLiteral("nativeEnglishTeachersTable")
             : QStringLiteral("gsTeamTable"));
-    m_table->setColumnCount(
-        m_kind == StaffDirectoryKind::NativeEnglishTeachers ? 6 : 5);
+    const bool native = m_kind == StaffDirectoryKind::NativeEnglishTeachers;
+    auto* model = new StaffDirectoryTableModel(native ? 6 : 5, this);
+    m_model = model;
+    m_table->setModel(model);
     m_table->setSelectionBehavior(QAbstractItemView::SelectRows);
     m_table->setSelectionMode(QAbstractItemView::ExtendedSelection);
     m_table->setEditTriggers(
@@ -309,10 +495,16 @@ void StaffDirectoryPage::buildUi()
     connect(m_deleteButton, &QPushButton::clicked, this, &StaffDirectoryPage::deleteSelectedRows);
     connect(m_discardButton, &QPushButton::clicked, this, &StaffDirectoryPage::discardChanges);
     connect(m_saveButton, &QPushButton::clicked, this, [this]() { saveDirectory(true); });
-    connect(m_table, &QTableWidget::cellChanged, this, [this](int, int) {
+    connect(model, &QAbstractItemModel::dataChanged, this, [this]() {
         markDirty();
     });
-    connect(m_table, &QTableWidget::itemSelectionChanged, this, &StaffDirectoryPage::updateActions);
+    connect(
+        m_table->selectionModel(),
+        &QItemSelectionModel::selectionChanged,
+        this,
+        [this](const QItemSelection&, const QItemSelection&) {
+            updateActions();
+        });
     connect(
         m_koreanKeyboardButton,
         &QPushButton::clicked,
@@ -332,10 +524,9 @@ void StaffDirectoryPage::buildUi()
 
 bool StaffDirectoryPage::loadDirectory()
 {
+    auto* model = static_cast<StaffDirectoryTableModel*>(m_model);
     m_loading = true;
-    m_table->setSortingEnabled(false);
-    m_table->clearContents();
-    m_table->setRowCount(0);
+    model->setRows({});
 
     if (m_kind == StaffDirectoryKind::NativeEnglishTeachers)
     {
@@ -370,25 +561,23 @@ bool StaffDirectoryPage::loadDirectory()
         }
 
         const auto& teachers = loadedTeachers.value();
-        const int rowCount = static_cast<int>(teachers.size());
-        m_table->setRowCount(rowCount);
-        for (int row = 0; row < rowCount; ++row)
+        QVector<StaffDirectoryRow> rows;
+        rows.reserve(static_cast<qsizetype>(teachers.size()));
+        for (const auto& teacher : teachers)
         {
-            const auto& teacher = teachers.at(static_cast<std::size_t>(row));
-            m_table->setItem(row, 0, textItem(
+            StaffDirectoryRow row;
+            row.persistedId = teacher.id.value();
+            row.values = {
                 QString::fromStdU16String(teacher.name),
-                teacher.id.value()));
-            m_table->setItem(row, 1, textItem(
-                QString::fromStdU16String(teacher.position)));
-            m_table->setItem(row, 2, textItem(
-                QString::fromStdU16String(teacher.phoneNumber)));
-            m_table->setItem(row, 3, textItem(
-                QString::fromStdU16String(teacher.email)));
-            m_table->setItem(row, 4, textItem(
-                QString::fromStdU16String(teacher.birthday)));
-            m_table->setItem(row, 5, textItem(
-                QString::fromStdU16String(teacher.nationality)));
+                QString::fromStdU16String(teacher.position),
+                QString::fromStdU16String(teacher.phoneNumber),
+                QString::fromStdU16String(teacher.email),
+                QString::fromStdU16String(teacher.birthday),
+                QString::fromStdU16String(teacher.nationality)
+            };
+            rows.push_back(std::move(row));
         }
+        model->setRows(std::move(rows));
     }
     else
     {
@@ -420,23 +609,22 @@ bool StaffDirectoryPage::loadDirectory()
         }
 
         const auto& members = loadedMembers.value();
-        const int rowCount = static_cast<int>(members.size());
-        m_table->setRowCount(rowCount);
-        for (int row = 0; row < rowCount; ++row)
+        QVector<StaffDirectoryRow> rows;
+        rows.reserve(static_cast<qsizetype>(members.size()));
+        for (const auto& member : members)
         {
-            const auto& member = members.at(static_cast<std::size_t>(row));
-            m_table->setItem(row, 0, textItem(
+            StaffDirectoryRow row;
+            row.persistedId = member.id.value();
+            row.values = {
                 QString::fromStdU16String(member.name),
-                member.id.value()));
-            m_table->setItem(row, 1, textItem(
-                QString::fromStdU16String(member.koreanName)));
-            m_table->setItem(row, 2, textItem(
-                QString::fromStdU16String(member.position)));
-            m_table->setItem(row, 3, textItem(
-                QString::fromStdU16String(member.phoneNumber)));
-            m_table->setItem(row, 4, textItem(
-                QString::fromStdU16String(member.birthday)));
+                QString::fromStdU16String(member.koreanName),
+                QString::fromStdU16String(member.position),
+                QString::fromStdU16String(member.phoneNumber),
+                QString::fromStdU16String(member.birthday)
+            };
+            rows.push_back(std::move(row));
         }
+        model->setRows(std::move(rows));
     }
 
     m_deletedGsTeamMemberIds.clear();
@@ -450,20 +638,18 @@ bool StaffDirectoryPage::loadDirectory()
 
 void StaffDirectoryPage::addRow()
 {
-    m_table->setSortingEnabled(false);
-    const int row = m_table->rowCount();
-    m_table->insertRow(row);
-    for (int column = 0; column < m_table->columnCount(); ++column)
-    {
-        m_table->setItem(row, column, textItem(QString()));
-    }
-    m_table->setCurrentCell(row, 0);
-    m_table->editItem(m_table->item(row, 0));
+    auto* model = static_cast<StaffDirectoryTableModel*>(m_model);
+    const int row = model->rowCount();
+    model->insertRows(row, 1);
+    const QModelIndex firstCell = model->index(row, 0);
+    m_table->setCurrentIndex(firstCell);
+    m_table->edit(firstCell);
     markDirty(false);
 }
 
 void StaffDirectoryPage::deleteSelectedRows()
 {
+    auto* model = static_cast<StaffDirectoryTableModel*>(m_model);
     const QModelIndexList selected = m_table->selectionModel()->selectedRows();
     if (selected.isEmpty())
     {
@@ -492,8 +678,7 @@ void StaffDirectoryPage::deleteSelectedRows()
     std::sort(rows.begin(), rows.end(), std::greater<int>());
     for (int row : rows)
     {
-        const auto* item = m_table->item(row, 0);
-        const int id = item ? item->data(IdRole).toInt() : -1;
+        const int id = model->rowAt(row).persistedId;
         if (id > 0)
         {
             if (m_kind == StaffDirectoryKind::NativeEnglishTeachers)
@@ -507,13 +692,14 @@ void StaffDirectoryPage::deleteSelectedRows()
                     ClassMngr::Next::Domain::GsTeamMemberId(id));
             }
         }
-        m_table->removeRow(row);
+        model->removeRows(row, 1);
     }
     markDirty();
 }
 
 bool StaffDirectoryPage::saveDirectory(bool showErrors)
 {
+    const auto* model = static_cast<const StaffDirectoryTableModel*>(m_model);
     if (m_kind == StaffDirectoryKind::NativeEnglishTeachers)
     {
         const ClassMngr::Next::Platform::
@@ -526,13 +712,12 @@ bool StaffDirectoryPage::saveDirectory(bool showErrors)
 
         ClassMngr::Next::Application::
             NativeEnglishTeacherDirectorySaveRequest request;
-        request.rows.reserve(static_cast<std::size_t>(m_table->rowCount()));
-        for (int row = 0; row < m_table->rowCount(); ++row)
+        request.rows.reserve(static_cast<std::size_t>(model->rowCount()));
+        for (int row = 0; row < model->rowCount(); ++row)
         {
-            const auto* nameItem = m_table->item(row, 0);
-            const int id = nameItem ? nameItem->data(IdRole).toInt() : -1;
-            const QString name = cellText(m_table, row, 0).simplified();
-            const QString birthday = cellText(m_table, row, 4);
+            const int id = model->rowAt(row).persistedId;
+            const QString name = cellText(model, row, 0).simplified();
+            const QString birthday = cellText(model, row, 4);
             const QString normalizedBirthday = birthday.trimmed();
             const bool birthdayIsBlank = normalizedBirthday.isEmpty();
             const bool birthdayIsValid = QDate::fromString(
@@ -547,11 +732,11 @@ bool StaffDirectoryPage::saveDirectory(bool showErrors)
                 teacher.id = ClassMngr::Next::Domain::NativeEnglishTeacherId(id);
             }
             teacher.name = name.toStdU16String();
-            teacher.position = cellText(m_table, row, 1).toStdU16String();
-            teacher.phoneNumber = cellText(m_table, row, 2).toStdU16String();
-            teacher.email = cellText(m_table, row, 3).toStdU16String();
+            teacher.position = cellText(model, row, 1).toStdU16String();
+            teacher.phoneNumber = cellText(model, row, 2).toStdU16String();
+            teacher.email = cellText(model, row, 3).toStdU16String();
             teacher.birthday = birthday.toStdU16String();
-            teacher.nationality = cellText(m_table, row, 5).toStdU16String();
+            teacher.nationality = cellText(model, row, 5).toStdU16String();
             teacher.normalizedNameKey =
                 normalizedName(name).toStdU16String();
             teacher.birthdayIsBlank = birthdayIsBlank;
@@ -623,14 +808,13 @@ bool StaffDirectoryPage::saveDirectory(bool showErrors)
     }
 
     ClassMngr::Next::Application::GsTeamDirectorySaveRequest request;
-    request.rows.reserve(static_cast<std::size_t>(m_table->rowCount()));
-    for (int row = 0; row < m_table->rowCount(); ++row)
+    request.rows.reserve(static_cast<std::size_t>(model->rowCount()));
+    for (int row = 0; row < model->rowCount(); ++row)
     {
-        const auto* nameItem = m_table->item(row, 0);
-        const int id = nameItem ? nameItem->data(IdRole).toInt() : -1;
-        const QString name = cellText(m_table, row, 0).simplified();
-        const QString koreanName = cellText(m_table, row, 1).simplified();
-        const QString birthday = cellText(m_table, row, 4);
+        const int id = model->rowAt(row).persistedId;
+        const QString name = cellText(model, row, 0).simplified();
+        const QString koreanName = cellText(model, row, 1).simplified();
+        const QString birthday = cellText(model, row, 4);
         const QString normalizedBirthday = birthday.trimmed();
         const bool birthdayIsBlank = normalizedBirthday.isEmpty();
         const bool birthdayIsValid = QDate::fromString(
@@ -645,8 +829,8 @@ bool StaffDirectoryPage::saveDirectory(bool showErrors)
         }
         member.name = name.toStdU16String();
         member.koreanName = koreanName.toStdU16String();
-        member.position = cellText(m_table, row, 2).toStdU16String();
-        member.phoneNumber = cellText(m_table, row, 3).toStdU16String();
+        member.position = cellText(model, row, 2).toStdU16String();
+        member.phoneNumber = cellText(model, row, 3).toStdU16String();
         member.birthday = birthday.toStdU16String();
         member.normalizedEnglishNameKey =
             normalizedName(name).toStdU16String();
@@ -775,8 +959,7 @@ void StaffDirectoryPage::refresh()
 void StaffDirectoryPage::clearDatabaseState()
 {
     m_loading = true;
-    m_table->clearContents();
-    m_table->setRowCount(0);
+    static_cast<StaffDirectoryTableModel*>(m_model)->setRows({});
     m_deletedGsTeamMemberIds.clear();
     m_deletedNativeEnglishTeacherIds.clear();
     m_dirty = false;
@@ -791,7 +974,7 @@ void StaffDirectoryPage::retranslateUi()
     m_subtitleLabel->setText(native
         ? tr("View and maintain all Native English Teacher contact information.")
         : tr("View and maintain all GS and CS team contact information."));
-    m_table->setHorizontalHeaderLabels(native
+    static_cast<StaffDirectoryTableModel*>(m_model)->setHeaders(native
         ? QStringList{tr("Name"), tr("Position"), tr("Phone Number"), tr("Email"), tr("Birthday"), tr("Nationality")}
         : QStringList{tr("Name"), tr("Korean Name"), tr("Position"), tr("Phone Number"), tr("Birthday")});
     m_addButton->setText(tr("Add"));
@@ -860,7 +1043,8 @@ void StaffDirectoryPage::updateTableMetrics()
 void StaffDirectoryPage::updateActions()
 {
     if (!m_table) return;
-    m_deleteButton->setEnabled(!m_table->selectionModel()->selectedRows().isEmpty());
+    m_deleteButton->setEnabled(
+        !m_table->selectionModel()->selectedRows().isEmpty());
     const bool manual = m_saveMode != SaveMode::Automatic;
     m_discardButton->setVisible(manual);
     m_discardButton->setEnabled(manual && m_dirty);

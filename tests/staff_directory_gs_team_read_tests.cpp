@@ -7,6 +7,7 @@
 #include "data/repositories/native_english_teacher_repository.h"
 #include "domain/models/gs_team_member.h"
 #include "features/teacher/ui/staff_directory_page.h"
+#include "staff_directory_test_utils.h"
 #include "fakes/fake_user_prompt_service.h"
 #include "ui/shared/dialogs/user_prompt_service.h"
 #include "ui/shared/pages/pagemanager.h"
@@ -15,7 +16,7 @@
 #include <QPushButton>
 #include <QSqlError>
 #include <QSqlQuery>
-#include <QTableWidget>
+#include <QTableView>
 #include <QTemporaryDir>
 #include <QUuid>
 #include <QtTest/QtTest>
@@ -184,27 +185,27 @@ pageMapsFiveFieldsInRepositoryOrderWithIntegerIds()
 
     StaffDirectoryPage page(&services, StaffDirectoryKind::GsTeam);
     QVERIFY(page.loadDirectory());
-    auto* table = page.findChild<QTableWidget*>(QStringLiteral("gsTeamTable"));
+    auto* table = page.findChild<QTableView*>(QStringLiteral("gsTeamTable"));
     QVERIFY(table);
-    QCOMPARE(table->columnCount(), 5);
-    QCOMPARE(table->rowCount(), persisted->size());
+    QCOMPARE(table->model()->columnCount(), 5);
+    QCOMPARE(table->model()->rowCount(), persisted->size());
 
     for (int row = 0; row < persisted->size(); ++row)
     {
         const GsTeamMember& expected = persisted->at(row);
-        QCOMPARE(table->item(row, 0)->text(), expected.name);
-        QCOMPARE(table->item(row, 0)->data(IdRole).toInt(), expected.id);
-        QCOMPARE(table->item(row, 1)->text(), expected.koreanName);
-        QCOMPARE(table->item(row, 2)->text(), expected.position);
-        QCOMPARE(table->item(row, 3)->text(), expected.phoneNumber);
-        QCOMPARE(table->item(row, 4)->text(), expected.birthday);
+        QCOMPARE(staffDirectoryCellText(*table, row, 0), expected.name);
+        QCOMPARE(staffDirectoryCellData(*table, row, 0, IdRole).toInt(), expected.id);
+        QCOMPARE(staffDirectoryCellText(*table, row, 1), expected.koreanName);
+        QCOMPARE(staffDirectoryCellText(*table, row, 2), expected.position);
+        QCOMPARE(staffDirectoryCellText(*table, row, 3), expected.phoneNumber);
+        QCOMPARE(staffDirectoryCellText(*table, row, 4), expected.birthday);
     }
-    QCOMPARE(table->item(0, 0)->text(), QStringLiteral("Alex"));
-    QCOMPARE(table->item(0, 1)->text(), QStringLiteral("\uC54C\uB809\uC2A4"));
-    QCOMPARE(table->item(1, 0)->text(), QStringLiteral("Alpha"));
-    QCOMPARE(table->item(2, 0)->text(), QStringLiteral("Beta"));
-    QCOMPARE(table->item(3, 0)->text(), QString());
-    QVERIFY(table->item(0, 0)->data(IdRole).toInt() > 0);
+    QCOMPARE(staffDirectoryCellText(*table, 0, 0), QStringLiteral("Alex"));
+    QCOMPARE(staffDirectoryCellText(*table, 0, 1), QStringLiteral("\uC54C\uB809\uC2A4"));
+    QCOMPARE(staffDirectoryCellText(*table, 1, 0), QStringLiteral("Alpha"));
+    QCOMPARE(staffDirectoryCellText(*table, 2, 0), QStringLiteral("Beta"));
+    QCOMPARE(staffDirectoryCellText(*table, 3, 0), QString());
+    QVERIFY(staffDirectoryCellData(*table, 0, 0, IdRole).toInt() > 0);
     QVERIFY(!page.hasUnsavedChanges());
 }
 
@@ -220,9 +221,9 @@ successfulReloadClearsDirtyAndPendingDeletedState()
     StaffDirectoryPage page(&services, StaffDirectoryKind::GsTeam);
     page.setSaveMode(SaveMode::Manual);
     QVERIFY(page.loadDirectory());
-    auto* table = page.findChild<QTableWidget*>(QStringLiteral("gsTeamTable"));
+    auto* table = page.findChild<QTableView*>(QStringLiteral("gsTeamTable"));
     QVERIFY(table);
-    QCOMPARE(table->rowCount(), 4);
+    QCOMPARE(table->model()->rowCount(), 4);
 
     FakeUserPromptService prompts;
     prompts.scriptedChoices.enqueue(PromptChoice::Destructive);
@@ -231,15 +232,15 @@ successfulReloadClearsDirtyAndPendingDeletedState()
     QPushButton* deleteButton = buttonWithText(page, QStringLiteral("Delete"));
     QVERIFY(deleteButton);
     deleteButton->click();
-    QCOMPARE(table->rowCount(), 3);
+    QCOMPARE(table->model()->rowCount(), 3);
     QVERIFY(page.hasUnsavedChanges());
 
     QVERIFY(page.loadDirectory());
-    QCOMPARE(table->rowCount(), 4);
+    QCOMPARE(table->model()->rowCount(), 4);
     QVERIFY(!page.hasUnsavedChanges());
 
     QSignalSpy saved(&page, &StaffDirectoryPage::directorySaved);
-    table->item(0, 0)->setText(QStringLiteral("Alex Updated"));
+    setStaffDirectoryCellText(*table, 0, 0, QStringLiteral("Alex Updated"));
     QVERIFY(page.hasUnsavedChanges());
     QVERIFY(page.saveChanges());
     QCOMPARE(saved.size(), 1);
@@ -256,17 +257,18 @@ void StaffDirectoryGsTeamReadTests::unavailableSessionClearsSilently()
     ApplicationServices services;
     StaffDirectoryPage page(&services, StaffDirectoryKind::GsTeam);
     page.setSaveMode(SaveMode::Manual);
-    auto* table = page.findChild<QTableWidget*>(QStringLiteral("gsTeamTable"));
+    auto* table = page.findChild<QTableView*>(QStringLiteral("gsTeamTable"));
     QVERIFY(table);
-    table->setRowCount(1);
-    table->setItem(0, 0, new QTableWidgetItem(QStringLiteral("Stale row")));
+    QVERIFY(table->model()->insertRows(0, 1));
+    QVERIFY(setStaffDirectoryCellText(
+        *table, 0, 0, QStringLiteral("Stale row")));
     QVERIFY(page.hasUnsavedChanges());
 
     FakeUserPromptService prompts;
     DialogServices::setUserPromptServiceForTesting(&prompts);
     QVERIFY(!page.loadDirectory());
 
-    QCOMPARE(table->rowCount(), 0);
+    QCOMPARE(table->model()->rowCount(), 0);
     QVERIFY(!page.hasUnsavedChanges());
     QCOMPARE(prompts.messages.size(), 0);
 }
@@ -282,9 +284,9 @@ void StaffDirectoryGsTeamReadTests::repositoryFailureWarnsAndRetainsDirtyState()
     StaffDirectoryPage page(&services, StaffDirectoryKind::GsTeam);
     page.setSaveMode(SaveMode::Manual);
     QVERIFY(page.loadDirectory());
-    auto* table = page.findChild<QTableWidget*>(QStringLiteral("gsTeamTable"));
+    auto* table = page.findChild<QTableView*>(QStringLiteral("gsTeamTable"));
     QVERIFY(table);
-    table->item(0, 0)->setText(QStringLiteral("Edited locally"));
+    setStaffDirectoryCellText(*table, 0, 0, QStringLiteral("Edited locally"));
     QVERIFY(page.hasUnsavedChanges());
 
     QSqlQuery query(services.databaseSession()->database());
@@ -295,7 +297,7 @@ void StaffDirectoryGsTeamReadTests::repositoryFailureWarnsAndRetainsDirtyState()
     DialogServices::setUserPromptServiceForTesting(&prompts);
     QVERIFY(!page.loadDirectory());
 
-    QCOMPARE(table->rowCount(), 0);
+    QCOMPARE(table->model()->rowCount(), 0);
     QVERIFY(page.hasUnsavedChanges());
     QCOMPARE(prompts.messages.size(), 1);
     QCOMPARE(prompts.messages.first().severity, PromptSeverity::Warning);
@@ -343,10 +345,10 @@ routeUsesPostConfirmationSessionAndDoesNotFallbackOrShow()
     QCOMPARE(prompts.messages.size(), 0);
     StaffDirectoryPage* gsTeamPage = pages.gsTeamPage();
     QVERIFY(gsTeamPage);
-    auto* table = gsTeamPage->findChild<QTableWidget*>(
+    auto* table = gsTeamPage->findChild<QTableView*>(
         QStringLiteral("gsTeamTable"));
     QVERIFY(table);
-    QCOMPARE(table->rowCount(), 0);
+    QCOMPARE(table->model()->rowCount(), 0);
     QVERIFY(!gsTeamPage->hasUnsavedChanges());
 }
 

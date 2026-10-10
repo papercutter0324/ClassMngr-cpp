@@ -20203,6 +20203,39 @@ under `dist/f604-current-source-windows-x64`,
 `build/f604-verification-20261011`, and
 `build/f604-checkpoint-dryrun-20261011`.
 
+## F608 replace Staff Directory cell items with row models - 2026-10-11
+
+Both Staff Directory `QTableWidget`s are now `QTableView`s backed by a
+`QAbstractTableModel`. Each row owns its persisted ID separately from the
+editable field values, so renaming cannot lose the update/delete key. The
+views preserve the Native English and GS Team columns, repository order,
+centered editable text, fixed headers, disabled sorting, and extended row
+selection. The Native Position delegate still translates display text and
+opens a raw-value combo only for the active cell, including unknown stored
+positions. Add, multi-row delete, validation, save retry, manual discard,
+automatic save, dirty refresh gating, and save notifications retain their
+contracts.
+
+The large-directory lifecycle harness now reads model data, reports actual
+`QTableWidgetItem` count as zero, and labels its UTF-8 text length as payload
+rather than memory attribution. Its configured 96-row boundary reported 96
+rows in both schemas, 6 Native and 5 GS columns, zero cell items, positive
+text payloads (7,314/4,940 bytes), and two refreshes per directory. This
+confirms the per-cell item elimination; it does not attribute bytes or claim a
+working-set reduction. The existing 96-row screenshots were compared with the
+reference without a visible layout difference.
+
+The incremental standard Windows x64 Debug build passed for the app, ten
+Staff Directory test targets, and the startup harness. The focused CTest set
+passed 10/10. The isolated
+`capturesLargeStaffDirectoryBoundaryWhenConfigured` test passed; the broader
+startup-performance suite was stopped after it entered a long-running app
+process and is not reported as passing. Independent verification reran the ten
+focused targets after the GS save test rebuild and also passed 10/10. Added
+direct GS Team tests cover successful Automatic save and refresh while edits
+and pending deletions are dirty; each passed. Whitespace checks passed.
+Artifacts are retained under `build/windows-x64-debug`.
+
 ## F607 release hidden Calendar resources on workspace leave - 2026-10-11
 
 `CalendarPage::releaseFeatureResources()` now removes its Calendar content

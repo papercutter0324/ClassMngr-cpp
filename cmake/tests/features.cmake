@@ -253,6 +253,7 @@ qt_add_executable(ClassMngrClassTransferTests
 
     qt_add_executable(ClassMngrStaffDirectoryPageTests
         tests/staff_directory_page_tests.cpp
+        tests/staff_directory_test_utils.h
         tests/staff_directory_page_test_stubs.cpp
         src/core/fontmanager.cpp
         src/ui/shared/input/hangul_composer.cpp

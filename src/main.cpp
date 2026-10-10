@@ -84,7 +84,9 @@
 #include <QTimer>
 #include <QElapsedTimer>
 #include <QTabWidget>
+#include <QAbstractItemModel>
 #include <QTableWidget>
+#include <QTableView>
 #include <QLineEdit>
 #include <QTextEdit>
 #include <QDebug>
@@ -9420,20 +9422,23 @@ void scheduleStartupPerformanceStaffDirectoryLifecycle(
             {
                 int rows = 0;
                 int columns = 0;
+                // Actual QTableWidgetItem count; QTableView contributes none.
                 int items = 0;
                 int pageWidgets = 0;
+                // UTF-8 text payload length, not resident-memory attribution.
                 qint64 textBytes = 0;
             };
             const auto snapshot =
-                [](QTableWidget* table) -> TableSnapshot
+                [](QTableView* table) -> TableSnapshot
                 {
                     TableSnapshot result;
-                    if (!table)
+                    if (!table || !table->model())
                     {
                         return result;
                     }
-                    result.rows = table->rowCount();
-                    result.columns = table->columnCount();
+                    const QAbstractItemModel* model = table->model();
+                    result.rows = model->rowCount();
+                    result.columns = model->columnCount();
                     result.pageWidgets =
                         table->parentWidget()
                             ? table->parentWidget()->findChildren<QWidget*>().size()
@@ -9443,11 +9448,10 @@ void scheduleStartupPerformanceStaffDirectoryLifecycle(
                     {
                         for (int column = 0; column < result.columns; ++column)
                         {
-                            if (QTableWidgetItem* item = table->item(row, column))
-                            {
-                                ++result.items;
-                                result.textBytes += item->text().toUtf8().size();
-                            }
+                            result.textBytes += model->data(
+                                model->index(row, column),
+                                Qt::DisplayRole
+                                ).toString().toUtf8().size();
                         }
                     }
                     return result;
@@ -9468,7 +9472,7 @@ void scheduleStartupPerformanceStaffDirectoryLifecycle(
                 return;
             }
 
-            QTableWidget* table = directory->findChild<QTableWidget*>();
+            QTableView* table = directory->findChild<QTableView*>();
             if (!table)
             {
                 fail(QStringLiteral("staff-directory-table-missing"));
@@ -9502,9 +9506,9 @@ void scheduleStartupPerformanceStaffDirectoryLifecycle(
             {
                 directory->refresh();
                 app.processEvents();
-                table = directory->findChild<QTableWidget*>();
+                table = directory->findChild<QTableView*>();
                 current = snapshot(table);
-                if (!table || current.rows <= 0 || current.items <= 0)
+                if (!table || current.rows <= 0 || current.textBytes <= 0)
                 {
                     fail(
                         QStringLiteral(
@@ -9540,9 +9544,9 @@ void scheduleStartupPerformanceStaffDirectoryLifecycle(
                 fail(QStringLiteral("staff-directory-reentry-failed"));
                 return;
             }
-            table = directory->findChild<QTableWidget*>();
+            table = directory->findChild<QTableView*>();
             current = snapshot(table);
-            if (!table || current.rows <= 0 || current.items <= 0)
+            if (!table || current.rows <= 0 || current.textBytes <= 0)
             {
                 fail(QStringLiteral("staff-directory-reentry-data-missing"));
                 return;

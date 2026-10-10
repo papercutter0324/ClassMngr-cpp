@@ -3,6 +3,7 @@
 #include "data/repositories/native_english_teacher_repository.h"
 #include "domain/models/native_english_teacher.h"
 #include "features/teacher/ui/staff_directory_page.h"
+#include "staff_directory_test_utils.h"
 #include "fakes/fake_user_prompt_service.h"
 #include "ui/shared/dialogs/user_prompt_service.h"
 
@@ -10,7 +11,7 @@
 #include <QSignalSpy>
 #include <QSqlError>
 #include <QSqlQuery>
-#include <QTableWidget>
+#include <QTableView>
 #include <QTemporaryDir>
 #include <QUuid>
 #include <QtTest/QtTest>
@@ -68,12 +69,12 @@ QPushButton* buttonWithText(QWidget& page, const QString& text)
     return nullptr;
 }
 
-int rowForId(const QTableWidget& table, const int id)
+int rowForId(const QTableView& table, const int id)
 {
-    for (int row = 0; row < table.rowCount(); ++row)
+    for (int row = 0; row < table.model()->rowCount(); ++row)
     {
-        const auto* item = table.item(row, 0);
-        if (item && item->data(NativeEnglishIdRole).toInt() == id)
+        if (staffDirectoryCellData(
+                table, row, 0, NativeEnglishIdRole).toInt() == id)
         {
             return row;
         }
@@ -158,6 +159,7 @@ private slots:
     void unavailableSessionIsSilentAndRetainsDirtyRows();
     void repositoryFailureWarnsAndRetainsDirtyRows();
     void automaticSaveKeepsRepositoryFailuresQuiet();
+    void automaticSavePersistsEditAndEmitsSaved();
 };
 
 void StaffDirectoryNativeEnglishSaveTests::cleanup()
@@ -191,7 +193,7 @@ publicPageSaveMatchesPinnedBaselineBehavior()
         StaffDirectoryKind::NativeEnglishTeachers);
     page.setSaveMode(SaveMode::Manual);
     QVERIFY(page.loadDirectory());
-    auto* table = page.findChild<QTableWidget*>(
+    auto* table = page.findChild<QTableView*>(
         QStringLiteral("nativeEnglishTeachersTable"));
     QVERIFY(table);
 
@@ -200,12 +202,12 @@ publicPageSaveMatchesPinnedBaselineBehavior()
     const int deleteRow = rowForId(*table, deleteOriginal.id);
     QVERIFY(updateRow >= 0);
     QVERIFY(deleteRow >= 0);
-    table->item(updateRow, 0)->setText(QStringLiteral("  Renamed   Teacher  "));
-    table->item(updateRow, 1)->setText(QStringLiteral(" Team Leader "));
-    table->item(updateRow, 2)->setText(QStringLiteral("010-2222-3333"));
-    table->item(updateRow, 3)->setText(QStringLiteral("renamed@example.test"));
-    table->item(updateRow, 4)->setText(QStringLiteral("02-29"));
-    table->item(updateRow, 5)->setText(QStringLiteral("Australia"));
+    setStaffDirectoryCellText(*table, updateRow, 0, QStringLiteral("  Renamed   Teacher  "));
+    setStaffDirectoryCellText(*table, updateRow, 1, QStringLiteral(" Team Leader "));
+    setStaffDirectoryCellText(*table, updateRow, 2, QStringLiteral("010-2222-3333"));
+    setStaffDirectoryCellText(*table, updateRow, 3, QStringLiteral("renamed@example.test"));
+    setStaffDirectoryCellText(*table, updateRow, 4, QStringLiteral("02-29"));
+    setStaffDirectoryCellText(*table, updateRow, 5, QStringLiteral("Australia"));
 
     FakeUserPromptService prompts;
     prompts.scriptedChoices.enqueue(PromptChoice::Destructive);
@@ -218,14 +220,14 @@ publicPageSaveMatchesPinnedBaselineBehavior()
     QPushButton* const addButton = buttonWithText(page, QStringLiteral("Add"));
     QVERIFY(addButton);
     addButton->click();
-    const int insertRow = table->rowCount() - 1;
-    table->item(insertRow, 0)->setText(QStringLiteral("New Teacher"));
-    table->item(insertRow, 1)->setText(QStringLiteral("NET"));
-    table->item(insertRow, 2)->setText(QStringLiteral("010-3333-4444"));
-    table->item(insertRow, 3)->setText(QStringLiteral("new@example.test"));
-    table->item(insertRow, 4)->setText(QString());
-    table->item(insertRow, 5)->setText(QStringLiteral("New Zealand"));
-    table->setCurrentCell(insertRow, 1);
+    const int insertRow = table->model()->rowCount() - 1;
+    setStaffDirectoryCellText(*table, insertRow, 0, QStringLiteral("New Teacher"));
+    setStaffDirectoryCellText(*table, insertRow, 1, QStringLiteral("NET"));
+    setStaffDirectoryCellText(*table, insertRow, 2, QStringLiteral("010-3333-4444"));
+    setStaffDirectoryCellText(*table, insertRow, 3, QStringLiteral("new@example.test"));
+    setStaffDirectoryCellText(*table, insertRow, 4, QString());
+    setStaffDirectoryCellText(*table, insertRow, 5, QStringLiteral("New Zealand"));
+    table->setCurrentIndex(table->model()->index(insertRow, 1));
 
     QVERIFY(page.hasUnsavedChanges());
     QVERIFY(page.saveChanges());
@@ -259,8 +261,8 @@ publicPageSaveMatchesPinnedBaselineBehavior()
 
     const int reloadedNewRow = rowForId(*table, inserted.id);
     QVERIFY(reloadedNewRow >= 0);
-    QCOMPARE(table->item(reloadedNewRow, 0)->text(), QStringLiteral("New Teacher"));
-    QCOMPARE(table->item(reloadedNewRow, 5)->text(), QStringLiteral("New Zealand"));
+    QCOMPARE(staffDirectoryCellText(*table, reloadedNewRow, 0), QStringLiteral("New Teacher"));
+    QCOMPARE(staffDirectoryCellText(*table, reloadedNewRow, 5), QStringLiteral("New Zealand"));
     QVERIFY(page.saveChanges());
     QCOMPARE(saved.count(), 1);
 }
@@ -279,7 +281,7 @@ duplicateUnicodeComparisonKeyPreventsWritesAndShowsCurrentWarning()
         StaffDirectoryKind::NativeEnglishTeachers);
     page.setSaveMode(SaveMode::Manual);
     QVERIFY(page.loadDirectory());
-    auto* table = page.findChild<QTableWidget*>(
+    auto* table = page.findChild<QTableView*>(
         QStringLiteral("nativeEnglishTeachersTable"));
     QVERIFY(table);
     const QString uppercaseKey =
@@ -287,8 +289,8 @@ duplicateUnicodeComparisonKeyPreventsWritesAndShowsCurrentWarning()
     const QString lowercaseKey =
         QStringLiteral("\u00E4").simplified().toCaseFolded();
     QCOMPARE(uppercaseKey, lowercaseKey);
-    table->item(0, 0)->setText(QStringLiteral("\u00C4"));
-    table->item(1, 0)->setText(QStringLiteral("\u00E4"));
+    setStaffDirectoryCellText(*table, 0, 0, QStringLiteral("\u00C4"));
+    setStaffDirectoryCellText(*table, 1, 0, QStringLiteral("\u00E4"));
 
     const auto before = services.databaseSession()
         ->nativeEnglishTeacherRepository()->getAll();
@@ -325,10 +327,10 @@ invalidBirthdayPreventsWritesAndShowsCurrentWarning()
         StaffDirectoryKind::NativeEnglishTeachers);
     page.setSaveMode(SaveMode::Manual);
     QVERIFY(page.loadDirectory());
-    auto* table = page.findChild<QTableWidget*>(
+    auto* table = page.findChild<QTableView*>(
         QStringLiteral("nativeEnglishTeachersTable"));
     QVERIFY(table);
-    table->item(0, 4)->setText(QStringLiteral("02-30"));
+    setStaffDirectoryCellText(*table, 0, 4, QStringLiteral("02-30"));
 
     const auto before = services.databaseSession()
         ->nativeEnglishTeacherRepository()->getAll();
@@ -361,13 +363,13 @@ unavailableSessionIsSilentAndRetainsDirtyRows()
         &services,
         StaffDirectoryKind::NativeEnglishTeachers);
     page.setSaveMode(SaveMode::Manual);
-    auto* table = page.findChild<QTableWidget*>(
+    auto* table = page.findChild<QTableView*>(
         QStringLiteral("nativeEnglishTeachersTable"));
     QVERIFY(table);
     QPushButton* const addButton = buttonWithText(page, QStringLiteral("Add"));
     QVERIFY(addButton);
     addButton->click();
-    table->item(0, 0)->setText(QString());
+    setStaffDirectoryCellText(*table, 0, 0, QString());
 
     QSignalSpy saved(&page, &StaffDirectoryPage::directorySaved);
     FakeUserPromptService prompts;
@@ -376,8 +378,8 @@ unavailableSessionIsSilentAndRetainsDirtyRows()
     QVERIFY(!page.saveChanges());
 
     QVERIFY(page.hasUnsavedChanges());
-    QCOMPARE(table->rowCount(), 1);
-    QCOMPARE(table->item(0, 0)->text(), QString());
+    QCOMPARE(table->model()->rowCount(), 1);
+    QCOMPARE(staffDirectoryCellText(*table, 0, 0), QString());
     QCOMPARE(saved.count(), 0);
     QCOMPARE(prompts.messages.size(), 0);
 }
@@ -396,10 +398,10 @@ repositoryFailureWarnsAndRetainsDirtyRows()
         StaffDirectoryKind::NativeEnglishTeachers);
     page.setSaveMode(SaveMode::Manual);
     QVERIFY(page.loadDirectory());
-    auto* table = page.findChild<QTableWidget*>(
+    auto* table = page.findChild<QTableView*>(
         QStringLiteral("nativeEnglishTeachersTable"));
     QVERIFY(table);
-    table->item(0, 0)->setText(QStringLiteral("Edited Locally"));
+    setStaffDirectoryCellText(*table, 0, 0, QStringLiteral("Edited Locally"));
     FakeUserPromptService prompts;
     prompts.scriptedChoices.enqueue(PromptChoice::Destructive);
     DialogServices::setUserPromptServiceForTesting(&prompts);
@@ -407,7 +409,7 @@ repositoryFailureWarnsAndRetainsDirtyRows()
     QPushButton* const deleteButton = buttonWithText(page, QStringLiteral("Delete"));
     QVERIFY(deleteButton);
     deleteButton->click();
-    QCOMPARE(table->rowCount(), 1);
+    QCOMPARE(table->model()->rowCount(), 1);
 
     QSqlQuery drop(services.databaseSession()->database());
     QVERIFY2(drop.exec(QStringLiteral("DROP TABLE native_english_teachers")),
@@ -417,8 +419,8 @@ repositoryFailureWarnsAndRetainsDirtyRows()
     QVERIFY(!page.saveChanges());
 
     QVERIFY(page.hasUnsavedChanges());
-    QCOMPARE(table->rowCount(), 1);
-    QCOMPARE(table->item(0, 0)->text(), QStringLiteral("Edited Locally"));
+    QCOMPARE(table->model()->rowCount(), 1);
+    QCOMPARE(staffDirectoryCellText(*table, 0, 0), QStringLiteral("Edited Locally"));
     QCOMPARE(saved.count(), 0);
     QCOMPARE(prompts.messages.size(), 1);
     QCOMPARE(prompts.messages.first().severity, PromptSeverity::Warning);
@@ -439,7 +441,7 @@ automaticSaveKeepsRepositoryFailuresQuiet()
         &services,
         StaffDirectoryKind::NativeEnglishTeachers);
     QVERIFY(page.loadDirectory());
-    auto* table = page.findChild<QTableWidget*>(
+    auto* table = page.findChild<QTableView*>(
         QStringLiteral("nativeEnglishTeachersTable"));
     QVERIFY(table);
 
@@ -450,15 +452,58 @@ automaticSaveKeepsRepositoryFailuresQuiet()
     FakeUserPromptService prompts;
     DialogServices::setUserPromptServiceForTesting(&prompts);
     QSignalSpy saved(&page, &StaffDirectoryPage::directorySaved);
-    table->item(0, 0)->setText(QStringLiteral("Automatic Edit"));
+    setStaffDirectoryCellText(*table, 0, 0, QStringLiteral("Automatic Edit"));
     QVERIFY(page.hasUnsavedChanges());
 
     QTest::qWait(1100);
 
     QVERIFY(page.hasUnsavedChanges());
-    QCOMPARE(table->item(0, 0)->text(), QStringLiteral("Automatic Edit"));
+    QCOMPARE(staffDirectoryCellText(*table, 0, 0), QStringLiteral("Automatic Edit"));
     QCOMPARE(saved.count(), 0);
     QCOMPARE(prompts.messages.size(), 0);
+}
+
+void StaffDirectoryNativeEnglishSaveTests::
+automaticSavePersistsEditAndEmitsSaved()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+    QVERIFY(seedTeachers(services));
+    const auto before = services.databaseSession()
+        ->nativeEnglishTeacherRepository()->getAll();
+    QVERIFY(before);
+    const NativeEnglishTeacher original =
+        teacherNamed(*before, QStringLiteral("Update Target"));
+
+    StaffDirectoryPage page(
+        &services,
+        StaffDirectoryKind::NativeEnglishTeachers);
+    QVERIFY(page.loadDirectory());
+    auto* table = page.findChild<QTableView*>(
+        QStringLiteral("nativeEnglishTeachersTable"));
+    QVERIFY(table);
+    const int row = rowForId(*table, original.id);
+    QVERIFY(row >= 0);
+
+    QSignalSpy saved(&page, &StaffDirectoryPage::directorySaved);
+    FakeUserPromptService prompts;
+    DialogServices::setUserPromptServiceForTesting(&prompts);
+    QVERIFY(setStaffDirectoryCellText(
+        *table, row, 0, QStringLiteral("Automatic Rename")));
+    QVERIFY(page.hasUnsavedChanges());
+
+    QTRY_COMPARE_WITH_TIMEOUT(saved.count(), 1, 3000);
+
+    QVERIFY(!page.hasUnsavedChanges());
+    QCOMPARE(prompts.messages.size(), 0);
+    const auto persisted = services.databaseSession()
+        ->nativeEnglishTeacherRepository()->getAll();
+    QVERIFY(persisted);
+    const NativeEnglishTeacher updated =
+        teacherNamed(*persisted, QStringLiteral("Automatic Rename"));
+    QCOMPARE(updated.id, original.id);
 }
 
 QTEST_MAIN(StaffDirectoryNativeEnglishSaveTests)

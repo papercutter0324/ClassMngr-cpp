@@ -9724,7 +9724,7 @@ void StartupPerformanceTests::capturesLargeStaffDirectoryBoundaryWhenConfigured(
     QCOMPARE(
         nativeMetrics.value(QStringLiteral("staffDirectoryNativeItemCount"))
             .toInt(),
-        LargeStaffDirectoryEntryCount * LargeStaffDirectoryNativeColumnCount
+        0
         );
     QVERIFY(
         nativeMetrics.value(QStringLiteral("staffDirectoryNativePageWidgetCount"))
@@ -9754,7 +9754,7 @@ void StartupPerformanceTests::capturesLargeStaffDirectoryBoundaryWhenConfigured(
     QCOMPARE(
         gsMetrics.value(QStringLiteral("staffDirectoryGsItemCount"))
             .toInt(),
-        LargeStaffDirectoryEntryCount * LargeStaffDirectoryGsColumnCount
+        0
         );
     QVERIFY(
         gsMetrics.value(QStringLiteral("staffDirectoryGsPageWidgetCount"))
@@ -9779,7 +9779,7 @@ void StartupPerformanceTests::capturesLargeStaffDirectoryBoundaryWhenConfigured(
     QCOMPARE(
         nativeRefreshMetrics.value(QStringLiteral("staffDirectoryNativeItemCount"))
             .toInt(),
-        LargeStaffDirectoryEntryCount * LargeStaffDirectoryNativeColumnCount
+        0
         );
     const QJsonObject nativeLeftMetrics =
         nativeLeft.value(QStringLiteral("metrics")).toObject();
@@ -9938,11 +9938,11 @@ void StartupPerformanceTests::capturesLargeStaffDirectoryBoundaryWhenConfigured(
         },
         {
             QStringLiteral("nativeCellItemCount"),
-            LargeStaffDirectoryEntryCount * LargeStaffDirectoryNativeColumnCount
+            0
         },
         {
             QStringLiteral("gsCellItemCount"),
-            LargeStaffDirectoryEntryCount * LargeStaffDirectoryGsColumnCount
+            0
         },
         {QStringLiteral("processFinished"), finished},
         {

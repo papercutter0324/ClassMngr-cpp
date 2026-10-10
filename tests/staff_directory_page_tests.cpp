@@ -1,4 +1,5 @@
 #include "features/teacher/ui/staff_directory_page.h"
+#include "staff_directory_test_utils.h"
 
 #include "core/fontmanager.h"
 #include "ui/shared/constants/gui_constants.h"
@@ -12,6 +13,7 @@
 #include <QComboBox>
 #include <QPushButton>
 #include <QTableWidget>
+#include <QTableView>
 #include <QtTest>
 
 namespace
@@ -39,34 +41,42 @@ private slots:
     void directoryHeadersUseSharedPageStyling();
     void directoryTablesProvideRoomForCellEditors();
     void directoryHeaderKeyboardOpensUntargeted();
+    void largeDirectoriesKeepRowsInTheModelWithoutCellWidgets();
 };
 
 void StaffDirectoryPageTests::nativeEnglishTeacherColumnsAndEditing()
 {
     StaffDirectoryPage page(nullptr, StaffDirectoryKind::NativeEnglishTeachers);
-    auto* table = page.findChild<QTableWidget*>(
+    auto* table = page.findChild<QTableView*>(
         QStringLiteral("nativeEnglishTeachersTable"));
     QVERIFY(table);
     QVERIFY(!table->isSortingEnabled());
+    QCOMPARE(table->selectionBehavior(), QAbstractItemView::SelectRows);
+    QCOMPARE(table->selectionMode(), QAbstractItemView::ExtendedSelection);
     QVERIFY(!table->horizontalHeader()->sectionsMovable());
     QVERIFY(!table->horizontalHeader()->sectionsClickable());
-    QCOMPARE(table->columnCount(), 6);
-    QCOMPARE(table->horizontalHeaderItem(0)->text(), QStringLiteral("Name"));
-    QCOMPARE(table->horizontalHeaderItem(1)->text(), QStringLiteral("Position"));
-    QCOMPARE(table->horizontalHeaderItem(2)->text(), QStringLiteral("Phone Number"));
-    QCOMPARE(table->horizontalHeaderItem(3)->text(), QStringLiteral("Email"));
-    QCOMPARE(table->horizontalHeaderItem(4)->text(), QStringLiteral("Birthday"));
-    QCOMPARE(table->horizontalHeaderItem(5)->text(), QStringLiteral("Nationality"));
+    QCOMPARE(
+        table->horizontalHeader()->sectionResizeMode(0),
+        QHeaderView::Stretch);
+    QCOMPARE(table->model()->columnCount(), 6);
+    QCOMPARE(table->model()->headerData(0, Qt::Horizontal).toString(), QStringLiteral("Name"));
+    QCOMPARE(table->model()->headerData(1, Qt::Horizontal).toString(), QStringLiteral("Position"));
+    QCOMPARE(table->model()->headerData(2, Qt::Horizontal).toString(), QStringLiteral("Phone Number"));
+    QCOMPARE(table->model()->headerData(3, Qt::Horizontal).toString(), QStringLiteral("Email"));
+    QCOMPARE(table->model()->headerData(4, Qt::Horizontal).toString(), QStringLiteral("Birthday"));
+    QCOMPARE(table->model()->headerData(5, Qt::Horizontal).toString(), QStringLiteral("Nationality"));
 
     QPushButton* add = buttonWithText(page, QStringLiteral("Add"));
     QVERIFY(add);
     add->click();
-    QCOMPARE(table->rowCount(), 1);
+    QCOMPARE(table->model()->rowCount(), 1);
     QVERIFY(page.hasUnsavedChanges());
-    QCOMPARE(table->item(0, 0)->textAlignment(), Qt::AlignCenter);
+    QCOMPARE(
+        staffDirectoryCellData(*table, 0, 0, Qt::TextAlignmentRole).toInt(),
+        Qt::AlignCenter);
 
-    table->setCurrentCell(0, 1);
-    table->editItem(table->item(0, 1));
+    table->setCurrentIndex(staffDirectoryCell(*table, 0, 1));
+    table->edit(staffDirectoryCell(*table, 0, 1));
     auto* position = table->findChild<QComboBox*>();
     QTRY_VERIFY(position);
     const QStringList expectedPositions{
@@ -86,7 +96,8 @@ void StaffDirectoryPageTests::nativeEnglishTeacherColumnsAndEditing()
     const int netPosition = position->findText(QStringLiteral("NET"));
     position->setCurrentIndex(netPosition);
     position->activated(netPosition);
-    QTRY_COMPARE(table->item(0, 1)->text(), QStringLiteral("NET"));
+    QTRY_COMPARE(staffDirectoryCellText(*table, 0, 1), QStringLiteral("NET"));
+    QTRY_VERIFY(table->findChildren<QComboBox*>().isEmpty());
 
     page.setSaveMode(SaveMode::Manual);
     QPushButton* save = buttonWithText(page, QStringLiteral("Save Changes *"));
@@ -101,17 +112,17 @@ void StaffDirectoryPageTests::nativeEnglishTeacherColumnsAndEditing()
 void StaffDirectoryPageTests::gsTeamColumns()
 {
     StaffDirectoryPage page(nullptr, StaffDirectoryKind::GsTeam);
-    auto* table = page.findChild<QTableWidget*>(QStringLiteral("gsTeamTable"));
+    auto* table = page.findChild<QTableView*>(QStringLiteral("gsTeamTable"));
     QVERIFY(table);
     QVERIFY(!table->isSortingEnabled());
     QVERIFY(!table->horizontalHeader()->sectionsMovable());
     QVERIFY(!table->horizontalHeader()->sectionsClickable());
-    QCOMPARE(table->columnCount(), 5);
-    QCOMPARE(table->horizontalHeaderItem(0)->text(), QStringLiteral("Name"));
-    QCOMPARE(table->horizontalHeaderItem(1)->text(), QStringLiteral("Korean Name"));
-    QCOMPARE(table->horizontalHeaderItem(2)->text(), QStringLiteral("Position"));
-    QCOMPARE(table->horizontalHeaderItem(3)->text(), QStringLiteral("Phone Number"));
-    QCOMPARE(table->horizontalHeaderItem(4)->text(), QStringLiteral("Birthday"));
+    QCOMPARE(table->model()->columnCount(), 5);
+    QCOMPARE(table->model()->headerData(0, Qt::Horizontal).toString(), QStringLiteral("Name"));
+    QCOMPARE(table->model()->headerData(1, Qt::Horizontal).toString(), QStringLiteral("Korean Name"));
+    QCOMPARE(table->model()->headerData(2, Qt::Horizontal).toString(), QStringLiteral("Position"));
+    QCOMPARE(table->model()->headerData(3, Qt::Horizontal).toString(), QStringLiteral("Phone Number"));
+    QCOMPARE(table->model()->headerData(4, Qt::Horizontal).toString(), QStringLiteral("Birthday"));
 }
 
 void StaffDirectoryPageTests::directoryHeadersUseSharedPageStyling()
@@ -139,7 +150,7 @@ void StaffDirectoryPageTests::directoryTablesProvideRoomForCellEditors()
              StaffDirectoryKind::GsTeam})
     {
         StaffDirectoryPage page(nullptr, kind);
-        auto* table = page.findChild<QTableWidget*>();
+        auto* table = page.findChild<QTableView*>();
         QVERIFY(table);
 
         QLineEdit editorProbe;
@@ -155,6 +166,8 @@ void StaffDirectoryPageTests::directoryTablesProvideRoomForCellEditors()
             QHeaderView::Fixed);
         QVERIFY(table->alternatingRowColors());
         QVERIFY(!table->wordWrap());
+        QCOMPARE(table->selectionBehavior(), QAbstractItemView::SelectRows);
+        QCOMPARE(table->selectionMode(), QAbstractItemView::ExtendedSelection);
 
         QFont enlargedFont = table->font();
         enlargedFont.setPointSize(enlargedFont.pointSize() + 4);
@@ -172,12 +185,61 @@ void StaffDirectoryPageTests::directoryTablesProvideRoomForCellEditors()
 
         auto* editor = table->findChild<QLineEdit*>();
         QTRY_VERIFY(editor);
+        QCOMPARE(table->findChildren<QLineEdit*>().size(), 1);
         QVERIFY2(
             editor->height() >= editor->sizeHint().height(),
             "The in-cell editor must fit inside the directory row without clipping.");
     }
 
     qApp->setStyleSheet(previousStyleSheet);
+}
+
+void StaffDirectoryPageTests::
+largeDirectoriesKeepRowsInTheModelWithoutCellWidgets()
+{
+    for (const auto kind : {
+             StaffDirectoryKind::NativeEnglishTeachers,
+             StaffDirectoryKind::GsTeam})
+    {
+        StaffDirectoryPage page(nullptr, kind);
+        page.setSaveMode(SaveMode::Manual);
+        auto* table = page.findChild<QTableView*>();
+        QVERIFY(table);
+        QVERIFY(page.findChildren<QTableWidget*>().isEmpty());
+
+        const int rows = 96;
+        const int columns = kind == StaffDirectoryKind::NativeEnglishTeachers
+            ? 6
+            : 5;
+        const qsizetype widgetCountBefore =
+            page.findChildren<QWidget*>().size();
+        QVERIFY(table->model()->insertRows(0, rows));
+        for (int row = 0; row < rows; ++row)
+        {
+            for (int column = 0; column < columns; ++column)
+            {
+                QVERIFY(setStaffDirectoryCellText(
+                    *table,
+                    row,
+                    column,
+                    QStringLiteral("Row %1, column %2")
+                        .arg(row)
+                        .arg(column)));
+            }
+        }
+
+        QCOMPARE(table->model()->rowCount(), rows);
+        QCOMPARE(table->model()->columnCount(), columns);
+        QCOMPARE(page.findChildren<QWidget*>().size(), widgetCountBefore);
+        for (int row = 0; row < rows; ++row)
+        {
+            for (int column = 0; column < columns; ++column)
+            {
+                QVERIFY(!table->indexWidget(
+                    table->model()->index(row, column)));
+            }
+        }
+    }
 }
 
 void StaffDirectoryPageTests::directoryHeaderKeyboardOpensUntargeted()

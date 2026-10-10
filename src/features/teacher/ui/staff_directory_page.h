@@ -7,9 +7,10 @@
 #include <QList>
 
 class ApplicationServices;
+class QAbstractItemModel;
 class QLabel;
 class QPushButton;
-class QTableWidget;
+class QTableView;
 class QTimer;
 class OnScreenKeyboard;
 
@@ -72,7 +73,8 @@ private:
     QLabel* m_subtitleLabel = nullptr;
     QPushButton* m_koreanKeyboardButton = nullptr;
     OnScreenKeyboard* m_onScreenKeyboard = nullptr;
-    QTableWidget* m_table = nullptr;
+    QTableView* m_table = nullptr;
+    QAbstractItemModel* m_model = nullptr;
     QPushButton* m_addButton = nullptr;
     QPushButton* m_deleteButton = nullptr;
     QPushButton* m_saveButton = nullptr;
