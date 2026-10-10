@@ -924,3 +924,11 @@ ScheduleWidget teardown at that marker as the explanation for the stack-path
 decrease, but does not attribute absent heap keys or establish per-table cell
 counts. F594 audits which per-instance runtime metrics the retained route
 captured.
+
+F594 found that `ScheduleWidget::runtimeMetrics()` already reports current
+table-widget counts per instance, while the MainWindow checkpoint provider
+copies that value only from the standalone `PageManager::schedulePage()`. The
+workspace SchedulePage is reachable through `mySchedulePage()`; Sub Prep's
+widget is private but named `subPrepScheduleWidget`. Route render events are
+cumulative deltas and do not substitute for those current per-owner samples.
+F595 specifies a narrow owner-labeled checkpoint shape for all three tables.

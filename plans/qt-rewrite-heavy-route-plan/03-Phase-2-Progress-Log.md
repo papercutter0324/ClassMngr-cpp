@@ -19872,6 +19872,32 @@ lifetime claims bounded by the snapshot evidence. The 250 MiB lifecycle gate,
 F536 cause, F526 provenance, output parity, render/window acceptance, and
 global Phase 0 remain open (Windows 1/24, macOS 0/24).
 
+## F594 per-instance ScheduleWidget metric coverage - 2026-10-11
+
+F594 traced the values captured at each retained route checkpoint. Every
+ScheduleWidget already exposes `runtimeMetrics()`, which counts that
+instance's model rows/cells/entries and current table rows, columns, items, and
+cell widgets; SchedulePage forwards the metrics of its child widget. The
+application metrics provider in `MainWindow` reads only
+`m_pages->schedulePage()->runtimeMetrics()` and copies those fields into the
+checkpoint record. That explains why the retained `49` cell-widget and `768`
+model-entry values describe only the standalone SchedulePage table.
+
+The other two instances are also queryable through existing owner paths:
+`PageManager::mySchedulePage()` returns the nested My Workspace SchedulePage,
+and `PageManager::subPrepPage()` returns the Sub Prep page. Sub Prep keeps its
+ScheduleWidget private, though the widget has the stable object name
+`subPrepScheduleWidget`. Existing `schedule-render-end` events record owner
+labels and cumulative create/remove deltas, not each table's current
+`runtimeMetrics()` snapshot. Thus the 147 creations and three live widgets
+cannot replace a per-owner current-count sample. This is an instrumentation
+coverage gap; no code, tests, trace, or symbol output changed.
+
+F595 specifies the smallest owner-labeled checkpoint metric surface needed to
+sample the three live schedule tables without expanding the heap-symbol work.
+The 250 MiB lifecycle gate, F536 cause, F526 provenance, output parity,
+render/window acceptance, and global Phase 0 remain open.
+
 ## F593 ScheduleWidget owners at PDF view destruction - 2026-10-11
 
 F593 checked what the retained `after-view-destroyed` marker destroys. The
@@ -19903,9 +19929,6 @@ audit used `src/main.cpp`, `src/ui/shared/pages/pdf_viewer_page.cpp`,
 `src/features/schedule/ui/schedule_widget.cpp`; no new trace or symbol work
 was performed. F579 remains deferred, and the memory, output-parity, render/
 window, and global Phase 0 gates remain open.
-
-F594 maps per-instance ScheduleWidget runtime metrics to the three retained
-owners and identifies which values the existing route actually captured.
 
 ## F592 non-PDF stack-path decreases at view destruction - 2026-10-11
 

@@ -42,7 +42,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-11
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F593 confirmed all three ScheduleWidgets remain alive at the PDF view-destroyed checkpoint, so whole schedule-tree teardown does not explain the 31.72 MB path decrease; F594 checks per-instance metric coverage while memory, output-parity, and full Phase 0 gates remain open.
+- Current note: F594 found that existing checkpoints sample current table counts only from the standalone SchedulePage; F595 specifies owner-labeled metrics for all three live tables while memory, output-parity, and full Phase 0 gates remain open.
 
 ### Slice discovery batches
 
@@ -69,9 +69,9 @@ Treat this plan as an operational summary, not a history:
 - F579 - Deferred at the user's direction: take a fresh matched-symbol heap
   capture; revisit after the user asks to resume symbol work.
 
-#### Active batch: Batch 110
+#### Active batch: Batch 111
 
-- F594 - Map per-instance ScheduleWidget runtime metrics to the three retained owners and identify which values the route captured.
+- F595 - Specify the smallest owner-labeled checkpoint metric surface needed to sample all three live schedule tables.
 
 ## Objective
 
