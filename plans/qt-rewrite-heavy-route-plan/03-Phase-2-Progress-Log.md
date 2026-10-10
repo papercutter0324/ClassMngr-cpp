@@ -18637,8 +18637,28 @@ private-working-set deltas from sequence 74 to 75 are 5,668,864 / 98,304 /
 This identifies the first captured report of the high-water value; it does
 not locate when the operating-system peak occurred between snapshots or
 attribute memory to a component. Aggregate `peakMemory` remains a separate
-per-field maximum, and PNG capture was disabled. If PNG-save impact needs to be
-measured, the next bounded step is a matched capture-enabled run against this
-F536 baseline; that experiment is independent of the observed peak and does
-not close the memory gate. F526 provenance, output parity, memory acceptance,
-and the full Phase 0 gate remain open.
+per-field maximum, and PNG capture was disabled. F538 added an opt-in capture
+for the two Sub Prep routes; F539 is the next bounded step, a matched
+capture-enabled run against this F536 baseline. That experiment is independent
+of the observed peak and does not close the memory gate. F526 provenance,
+output parity, memory acceptance, and the full Phase 0 gate remain open.
+
+## F538 opt-in Sub Prep PDF capture - 2026-10-10
+
+`scripts/phase0/run_phase0_evidence.ps1` now accepts `-EnablePdfCapture`.
+When selected, it sets `CLASSMNGR_STARTUP_PDF_CAPTURE_OUTPUT_DIR` to each
+`lifecycle-sub-prep` and `output-sub-prep` route's `<routeRoot>\pdf-captures`
+directory and records `options.enablePdfCapture` in the run manifest. Without
+the option, those routes receive no new override; `workflow-representative`
+retains its existing capture behavior.
+
+Plan-only invocations with and without the option each selected both target
+routes and exited 0, reporting no file or process changes. Their stdout does
+not expose the route environment mapping; that mapping is verified in the
+source diff. No capture-enabled route has run yet, so PNG-save samples and
+generated files remain unverified. F539 is the matched current-source Windows
+x64 Release run of both routes with `-EnablePdfCapture`, checking source
+snapshots, validation, PNG-save boundaries, memory, and route-root files. This
+comparison does not attribute the F536 peak to capture or close memory
+acceptance. F526 source provenance, output parity, and the full Phase 0 gate
+remain open.

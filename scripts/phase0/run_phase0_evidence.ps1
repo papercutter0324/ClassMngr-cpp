@@ -27,6 +27,11 @@ still run unless -SkipBuild is also supplied.
 .PARAMETER AllowExistingRoot
 Allows reusing only an existing empty run directory. Non-empty or retained
 evidence roots are never overwritten.
+
+.PARAMETER EnablePdfCapture
+Enables PDF image capture for the lifecycle-sub-prep and output-sub-prep routes.
+Captures are written beneath each route's pdf-captures evidence directory.
+The workflow-representative route continues to enable capture independently.
 #>
 [CmdletBinding()]
 param(
@@ -47,7 +52,8 @@ param(
     [switch]$SkipBuild,
     [switch]$SkipRun,
     [switch]$SkipValidation,
-    [switch]$AllowExistingRoot
+    [switch]$AllowExistingRoot,
+    [switch]$EnablePdfCapture
 )
 
 $ErrorActionPreference = "Stop"
@@ -999,6 +1005,7 @@ $RunManifest = [ordered]@{
         skipRun = [bool]$SkipRun
         skipValidation = [bool]$SkipValidation
         allowExistingRoot = [bool]$AllowExistingRoot
+        enablePdfCapture = [bool]$EnablePdfCapture
         parallel = $Parallel
             timeoutSeconds = $TimeoutSeconds
             routes = $Routes
@@ -1347,6 +1354,14 @@ try {
             default {
                 throw "No runner command mapping exists for route $routeId."
             }
+        }
+
+        if (
+            $EnablePdfCapture -and
+            $routeId -in @("lifecycle-sub-prep", "output-sub-prep")
+        ) {
+            $environmentOverrides["CLASSMNGR_STARTUP_PDF_CAPTURE_OUTPUT_DIR"] =
+                Join-Path $routeRoot "pdf-captures"
         }
 
         $routeParameters = @{
