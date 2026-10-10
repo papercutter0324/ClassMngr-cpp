@@ -809,8 +809,11 @@ archive checksum and exact PDB GUID/age matches for QtCore, QtGui, QtWidgets,
 and qoffscreen against the packaged Release images. F574 resolved QtBase
 function names in xperf, including a QFontDatabase/QIODevice allocation path
 for stack ID 1417, while ClassMngr and QtPdf frames remain raw addresses.
-F575 examines the largest persistent signatures with the new symbols. The
-checked qtpdf 6.12 extension tree had no separate debug-symbol package for
+F575 found that the nine largest persistent stack buckets total 142,606,336
+bytes and all trace into Qt font loading or application font registration;
+the ClassMngr caller and exact font inputs remain unresolved. F576 searches
+the app source and packaged assets for those inputs. The checked qtpdf 6.12
+extension tree had no separate debug-symbol package for
 the installed QtPdf 6.140.0.0 modules, so function-level PDFium/QtPdf
 ownership remains open. The 250 MiB lifecycle gate, F536 cause, F526
 provenance, output parity, render/window acceptance, and global Phase 0 remain

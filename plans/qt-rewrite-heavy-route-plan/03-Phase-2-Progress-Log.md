@@ -19872,6 +19872,41 @@ lifetime claims bounded by the snapshot evidence. The 250 MiB lifecycle gate,
 F536 cause, F526 provenance, output parity, render/window acceptance, and
 global Phase 0 remain open (Windows 1/24, macOS 0/24).
 
+## F575 top persistent allocation stack paths - 2026-10-11
+
+F570's all-three same-address signature export was sorted by final-snapshot
+bytes and joined with xperf's symbolized `-stack` listing. The full listing
+covers all 54,741 trace stack IDs, including the four top-20 IDs (11302,
+11318, 10563, and 11399) absent from xperf's `-data` detail. Those four
+resolve to QTextDocument layout and HarfBuzz text-shaping/buffer frames.
+
+The nine largest stack buckets total 142,606,336 bytes, or 83.19% of the
+171,415,335 bytes in all-three same-address signatures in the final snapshot:
+
+| Stack ID | Final signature bytes | Key symbolized path |
+| ---: | ---: | --- |
+| 1417 | 25,165,824 | `QFontDatabase::addApplicationFont` -> `QIODevice::readAll` -> `QByteArray` allocation |
+| 3969 | 16,777,216 | QLabel text painting -> font engine load -> `QFreetypeFace::getFace` -> `QIODevice::readAll` |
+| 6546 | 16,777,216 | QPushButton size hint -> font metrics -> font engine load -> `QIODevice::readAll` |
+| 7445 | 16,777,216 | QTableView geometry -> font metrics -> font engine load -> `QIODevice::readAll` |
+| 10858 | 16,777,216 | table text layout/painting -> font engine load -> `QIODevice::readAll` |
+| 11484 | 16,777,216 | table cell widget/label sizing -> font engine load -> `QIODevice::readAll` |
+| 31331 | 16,777,216 | label/layout sizing -> font engine load -> `QIODevice::readAll` |
+| 8862 | 8,388,608 | tree column sizing -> font engine load -> `QIODevice::readAll` |
+| 11338 | 8,388,608 | QTextDocument layout/shaping -> font engine load -> `QIODevice::readAll` |
+
+Eight of these nine stacks (117,440,512 bytes) pass through
+`QFontDatabasePrivate::load`, `QFreeTypeFontDatabase::fontEngine`,
+`QFontEngineFT::init`, and `QFreetypeFace::getFace`, followed by
+`QIODevice::readAll` and `QByteArray` growth. Stack 1417 enters through
+`QFontDatabase::addApplicationFont` and the same read/allocation tail. These
+are allocation call paths; the same-address signatures do not prove the
+identity or owner of the retained objects or identify which font data was
+read. `ClassMngr.exe` frames remain unresolved, so F576 searches the app source
+and packaged assets for font registration and large font inputs. The 250 MiB
+lifecycle gate, F536 cause, F526 provenance, output parity, render/window
+acceptance, and global Phase 0 remain open (Windows 1/24, macOS 0/24).
+
 ## F574 symbolized PDF heap snapshot report - 2026-10-11
 
 The same F564 ETL was re-read with xperf `-symbols verbose` and the F573
@@ -19902,9 +19937,10 @@ the three checkpoints. Its symbolized frames include
 `Qt6Core.dll QIODevice::readAll`, `QByteArray::resize`,
 `QByteArray::reallocData`, and `QArrayData::allocate1`; five intervening
 ClassMngr frames remain raw instruction pointers. This is a call-stack path,
-not proof of which object or subsystem owns the retained bytes. F575 examines
-the largest all-checkpoint same-address signatures and their newly resolved
-call paths. The 250 MiB lifecycle gate, F536 cause, F526 provenance, output
+not proof of which object or subsystem owns the retained bytes. F575 mapped
+the largest persistent signatures to font-engine and text-layout call paths;
+F576 searches for the application-controlled font caller and inputs. The
+250 MiB lifecycle gate, F536 cause, F526 provenance, output
 parity, render/window acceptance, and global Phase 0 remain open (Windows
 1/24, macOS 0/24).
 
