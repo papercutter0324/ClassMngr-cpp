@@ -19235,11 +19235,13 @@ five route manifests are `skip-build` / `external-unverified`; the campaign
 manifest binds all six to the same binary and harness paths and package
 hashes. This supports a matched route-level comparison, not six independent
 build-provenance claims. The package version audit found Qt6Core at 6.12.0,
-while packaged Qt6Pdf and Qt6PdfWidgets version resources report 6.14.0; both
-PDF DLL hashes match the files at the declared Qt 6.12.0 prefix. Manifests do
-not establish a Qt PDF source tag or revision. The exact matched package is
-accepted for this route comparison, without source-level Qt or allocation
-ownership claims.
+while packaged Qt6Pdf and Qt6PdfWidgets version resources report 6.140.0; both
+PDF DLL hashes match the files at the declared Qt 6.12.0 prefix. The F553
+campaign and run manifests alone do not identify the Qt PDF source revision;
+F554 later found it recorded in the package SPDX SBOM (details below). The
+package is accepted for this matched route comparison without claiming that
+the installed implementation is verified against that source revision or
+identifying an allocation owner.
 
 PIDs were normal-01 48348, suppressed-01 49368, normal-02 46892,
 suppressed-02 47200, normal-03 31360, and suppressed-03 55084. All six route
@@ -19284,9 +19286,44 @@ cohort/instrumentation difference to follow up, not a causal contradiction.
 The non-overlapping working-set, peak-working-set, and private-working-set
 ranges show a route-level association with viewport-update suppression; the
 private-usage ranges overlap. F553 does not identify a Qt allocation owner.
-F554 is selected to audit the actual Qt PDF component's source/build revision
-and `QPdfView` paint/render path, then decide whether finer memory
-instrumentation is justified. F536 cause, the 250 MiB lifecycle gate, F526
-provenance, output parity, and global Phase 0 remain open (Windows 1/24,
-macOS 0/24). Artifacts are under
+F554's provenance and render-path audit, followed by the F555 selection, are
+recorded below. F536 cause, the 250 MiB lifecycle gate, F526 provenance, output
+parity, and global Phase 0 remain open (Windows 1/24, macOS 0/24). Artifacts are under
 `%LOCALAPPDATA%\Temp\ClassMngr-F553-Viewport-20261010T110023Z-666d6363a5`.
+
+## F554 Qt PDF provenance and render-path audit - 2026-10-10
+
+The F553 package combines QtBase/Core 6.12.0 with separately versioned QtPdf
+and QtPdfWidgets 6.140.0 (DLL version resources 6.140.0.0). Their package DLL
+hashes match the declared `C:\Qt\6.12.0\msvc2022_64` prefix. The package SBOMs
+record QtBase revision `025bdad181de241e81bf853c8a2d7bf3d19261a9` in
+`sbom\qtbase-6.12.0.spdx` and qtpdf revision
+`d505fc23640d2bd6345e6483eb73daf4e19f5829` in
+`sbom\qtpdf-6.140.0.spdx`. This is package provenance, not reproducible-build
+proof. This corrects F553's earlier shorthand `6.14.0` to the component's
+exact `6.140.0` version.
+
+Qt's [release announcement](https://www.qt.io/blog/qt-webengine-will-release-separate)
+explains that Qt 6.12.0 has no same-numbered Qt PDF binaries and that Qt PDF
+6.140.0 is separately versioned and can use an older Qt baseline. The public
+[Qt PDF 6.140.0 QPdfPageRenderer documentation](https://doc.qt.io/qt-6/qpdfpagerenderer.html)
+exposes `pageRendered` and describes queued rendering followed by that signal,
+with work in the UI thread on the next event-loop invocation or a worker
+thread according to `RenderMode`.
+
+A review of the moving
+[qtwebengine/dev QPdfView source](https://code.qt.io/cgit/qt/qtwebengine.git/tree/src/pdfwidgets/qpdfview.cpp?h=dev)
+indicates that a view cache miss requests rendering and the worker's completed
+result is delivered back to the view/cache. The exact qtpdf SBOM revision's
+source was not fetched or independently audited, so this does not establish
+that the packaged implementation follows that path or reveal allocation
+ownership.
+
+F555 is selected for an additive, opt-in `QPdfPageRenderer::pageRendered`
+observer on the existing no-grab route with its inner-boundary samples. Record
+page metadata and named process-memory samples without retaining or copying
+images or changing render settings. Describe the callback as occurring after
+view handling only if the implementation verifies that ordering; otherwise
+report only callback timing. The implementation package will decide the exact
+API attachment. Keep the render/window and Phase 0 gates open, along with
+F536's cause, the 250 MiB lifecycle gate, F526 provenance, and output parity.

@@ -680,9 +680,23 @@ cohort/instrumentation difference requiring follow-up. The app-level render
 event counter was zero but does not observe QPdfView's internal paint-triggered
 raster work.
 
-F554 is selected to verify the packaged Qt PDF component's source/build
-revision and `QPdfView` paint/render path, then decide whether finer-grained
-memory instrumentation is warranted. Do not infer a Qt rendering or
-allocation cause from F553. F536 cause remains unresolved. The 250 MiB
-lifecycle gate, F526 provenance, output parity, and global Phase 0 remain open
-(Windows 1/24, macOS 0/24 routes).
+F554 recorded package provenance: QtBase/Core 6.12.0 and separately versioned
+QtPdf/QtPdfWidgets 6.140.0 (file resources 6.140.0.0). Package SBOM revisions
+are QtBase `025bdad181de241e81bf853c8a2d7bf3d19261a9` and qtpdf
+`d505fc23640d2bd6345e6483eb73daf4e19f5829`; DLL hashes match the declared
+Qt 6.12.0 prefix. This is provenance, not reproducible-build proof. Public
+Qt PDF docs describe `QPdfPageRenderer::pageRendered` and queued UI/worker
+rendering; moving `qtwebengine/dev` source review suggests QPdfView cache-miss
+requests and completion delivery, but the exact SBOM revision's source was not
+verified. F553 therefore remains route-level evidence without Qt allocation
+ownership claims. See the [Phase 2 progress log](03-Phase-2-Progress-Log.md)
+for the audit and official Qt links.
+
+F555 is selected for an additive opt-in `QPdfPageRenderer::pageRendered`
+observer tied to the existing no-grab route and inner-boundary samples. Record
+page metadata and named process-memory samples; do not retain/copy images or
+change render settings. Label callback timing as after view handling only if
+the implementation verifies that ordering; leave the exact API attachment to
+the implementation package. Keep render/window and Phase 0 gates open. F536
+cause, the 250 MiB lifecycle gate, F526 provenance, and output parity also
+remain open (Phase 0: Windows 1/24, macOS 0/24 routes).
