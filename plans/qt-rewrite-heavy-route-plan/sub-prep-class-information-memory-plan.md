@@ -814,8 +814,10 @@ bytes and all trace into Qt font loading or application font registration.
 F576 mapped the startup loader to embedded Inter (13,172,948 bytes) and
 Pretendard (6,739,336 bytes); Stack ID 1417's 16 MiB and 8 MiB allocations
 fit those resource sizes, though exact allocation-to-file identity remains
-unverified without app symbols or resource-path data in the ETL. F577 audits
-a matching Release symbol route for the app caller. The checked qtpdf 6.12
+unverified without app symbols or resource-path data in the ETL. F577
+confirmed the current optimized Release build emits no app PDB. F578 prepares
+a separate optimized symbols build to resolve the app caller. The checked
+qtpdf 6.12
 extension tree had no separate debug-symbol package for
 the installed QtPdf 6.140.0.0 modules, so function-level PDFium/QtPdf
 ownership remains open. The 250 MiB lifecycle gate, F536 cause, F526

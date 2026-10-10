@@ -19872,6 +19872,27 @@ lifetime claims bounded by the snapshot evidence. The 250 MiB lifecycle gate,
 F536 cause, F526 provenance, output parity, render/window acceptance, and
 global Phase 0 remain open (Windows 1/24, macOS 0/24).
 
+## F577 optimized Release app-symbol route audit - 2026-10-11
+
+The F564 packaged executable is byte-identical to
+`build/windows-x64-release-ninja/ClassMngr.exe` (29,355,008 bytes;
+SHA-256 `529731f3e2e0ccfe3fefdbfe5fa0371de625af8a843bd416ef77f875e98e2e45`).
+Its configured Release flags are `/O2 /Ob2 /DNDEBUG`. The generated compile
+command has neither `/Zi` nor `/Z7`, and the link command has no `/DEBUG`;
+the Release tree has no `ClassMngr.pdb`, even though Ninja records a generic
+`TARGET_PDB` output name. This explains why the existing F564 application
+frames cannot be resolved with the local Release artifacts.
+
+A separate optimized build can retain `/O2 /Ob2 /DNDEBUG` while adding
+`/Zi` and `/DEBUG:FULL` to emit a PDB tied to its own executable. That PDB
+cannot be paired with the old F564 ETL; any application-symbol investigation
+must capture a new trace from the matching executable. No source or build
+configuration in the existing tree was changed. F578 configures an isolated
+ignored Release-with-symbols build, verifies its PDB identity, and prepares a
+matched capture. The 250 MiB lifecycle gate, F536 cause, F526 provenance,
+output parity, render/window acceptance, and global Phase 0 remain open
+(Windows 1/24, macOS 0/24).
+
 ## F576 startup font registration and asset mapping - 2026-10-11
 
 The F564 packaged Release source loads global fonts during startup:
@@ -19905,9 +19926,9 @@ does not establish whether either feature path ran in F564. The startup Inter
 and Pretendard path is a strong candidate for stack 1417, while exact
 allocation-to-file identity and the other font-engine inputs remain
 unverified. Qt documents `QFontDatabase::addApplicationFont` as the API for
-adding an application font from a file ([Qt 6.12 QFontDatabase API](https://doc.qt.io/qt-6.12/qfontdatabase.html#addApplicationFont)). F577 audits
-whether the optimized Release build can provide matching `ClassMngr.exe`
-symbols to resolve the app caller. The 250 MiB lifecycle gate, F536 cause,
+adding an application font from a file ([Qt 6.12 QFontDatabase API](https://doc.qt.io/qt-6.12/qfontdatabase.html#addApplicationFont)). F577 confirmed the existing Release build
+omits compiler debug info and has no app PDB. F578 prepares a separate
+optimized symbols build. The 250 MiB lifecycle gate, F536 cause,
 F526 provenance, output
 parity, render/window acceptance, and global Phase 0 remain open (Windows
 1/24, macOS 0/24).
