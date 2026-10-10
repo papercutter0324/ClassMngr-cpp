@@ -42,7 +42,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-11
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F592 found a 31.72 MB non-PDF stack-path decrease, mostly from addresses absent in the later snapshot; F593 audits ScheduleWidget teardown while memory, output-parity, and full Phase 0 gates remain open.
+- Current note: F593 confirmed all three ScheduleWidgets remain alive at the PDF view-destroyed checkpoint, so whole schedule-tree teardown does not explain the 31.72 MB path decrease; F594 checks per-instance metric coverage while memory, output-parity, and full Phase 0 gates remain open.
 
 ### Slice discovery batches
 
@@ -69,9 +69,9 @@ Treat this plan as an operational summary, not a history:
 - F579 - Deferred at the user's direction: take a fresh matched-symbol heap
   capture; revisit after the user asks to resume symbol work.
 
-#### Active batch: Batch 109
+#### Active batch: Batch 110
 
-- F593 - Audit how the route's ScheduleWidget owners and child widgets are released at view teardown without new symbol work.
+- F594 - Map per-instance ScheduleWidget runtime metrics to the three retained owners and identify which values the route captured.
 
 ## Objective
 

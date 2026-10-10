@@ -915,4 +915,12 @@ stack-group totals from document close to view destruction. In that scope,
 snapshot, while 18 changed-signature keys account for 4,313 source bytes.
 The largest complete-module-set declines include qoffscreen, Qt6Core, and
 Qt6Widgets paths, with and without Qt6Gui. These path signatures do not
-identify allocation ownership. F593 will audit route ScheduleWidget teardown.
+identify allocation ownership. F593 established that `after-view-destroyed` is
+published inside `PdfViewerPage` destruction after its `QPdfView` is deleted
+but before the PDF document is closed. The three ScheduleWidget instances
+remain live at that checkpoint: two belong to SchedulePages and one is the
+read-only Sub Prep preview inside a SectionCard. This rules out whole-
+ScheduleWidget teardown at that marker as the explanation for the stack-path
+decrease, but does not attribute absent heap keys or establish per-table cell
+counts. F594 audits which per-instance runtime metrics the retained route
+captured.

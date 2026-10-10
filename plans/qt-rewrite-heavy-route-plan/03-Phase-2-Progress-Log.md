@@ -19872,6 +19872,41 @@ lifetime claims bounded by the snapshot evidence. The 250 MiB lifecycle gate,
 F536 cause, F526 provenance, output parity, render/window acceptance, and
 global Phase 0 remain open (Windows 1/24, macOS 0/24).
 
+## F593 ScheduleWidget owners at PDF view destruction - 2026-10-11
+
+F593 checked what the retained `after-view-destroyed` marker destroys. The
+F563 handshake publishes it from `PdfViewerPage::~PdfViewerPage()` after
+deleting its `QPdfView` and before closing or deleting the still-live
+`QPdfDocument`; the marker contract requires a null-status document, no live
+or attached view, and `viewDestroyed=true`. It is the PDF viewer teardown
+boundary, not destruction of the ScheduleWidgets.
+
+The three retained checkpoints report `liveScheduleWidgetCount=3`. Source
+construction matches F588's two `SchedulePage` render owners and one
+`SectionCard` owner: PageManager lazily creates a standalone SchedulePage;
+MyWorkspacePage creates a second SchedulePage as a tab; and SubPrepPage puts a
+read-only ScheduleWidget inside a SectionCard. Each ScheduleWidget parents its
+QTableWidget, while the renderer creates cell widgets and installs them in the
+table. PageManager retains instantiated pages in its page map and does not
+delete them on navigation. The profiler's live ScheduleWidget count remains
+three at the final heap checkpoint.
+
+This excludes whole-ScheduleWidget subtree destruction as the event aligned
+with the 31.72 MB non-PDF path decrease, but it does not identify which other
+objects or cell descendants account for those missing allocation keys. The
+main SchedulePage's 49-cell metric is still not a combined count across the
+three instances, and the path totals remain non-owner evidence. The source
+audit used `src/main.cpp`, `src/ui/shared/pages/pdf_viewer_page.cpp`,
+`src/ui/shared/pages/pagemanager.cpp`,
+`src/features/my_info/ui/my_workspace_page.cpp`,
+`src/features/sub_prep/ui/sub_prep_page_ui.cpp`, and
+`src/features/schedule/ui/schedule_widget.cpp`; no new trace or symbol work
+was performed. F579 remains deferred, and the memory, output-parity, render/
+window, and global Phase 0 gates remain open.
+
+F594 maps per-instance ScheduleWidget runtime metrics to the three retained
+owners and identifies which values the existing route actually captured.
+
 ## F592 non-PDF stack-path decreases at view destruction - 2026-10-11
 
 F592 compared the retained after-document-close and after-view-destroyed heap
