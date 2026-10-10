@@ -42,7 +42,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-11
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F599 found stable populated owner tuples across all 39 shared checkpoints; F600 will audit paired profiler samples, F598 awaits an elevated WPR token, F579 remains deferred, and the memory/output-parity/Phase 0 gates remain open.
+- Current note: F600 found no working-set threshold crossings in 84 paired samples; F601 will reconcile PDF viewer counters with view destruction, F598 awaits an elevated WPR token, F579 remains deferred, and the memory/output-parity/Phase 0 gates remain open.
 
 ### Slice discovery batches
 
@@ -72,11 +72,11 @@ Treat this plan as an operational summary, not a history:
   because the current execution identity is not an Administrator; resume when
   a Windows process with an elevated administrator token is available.
 
-#### Active batch: Batch 114
+#### Active batch: Batch 115
 
-- F600 - Audit paired pre/post-`applicationMetrics()` process samples and any change to the 250 MiB working-set classification.
+- F601 - Reconcile PDF-viewer structural counters with view destruction.
 
-No other slices were found.
+No other slices are currently active.
 
 ## Objective
 

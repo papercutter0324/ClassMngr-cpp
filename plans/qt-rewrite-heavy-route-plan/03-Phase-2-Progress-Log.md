@@ -20006,14 +20006,50 @@ The profile is a dry-run without ETL; these are reported current counts, not
 widget identity, heap-byte ownership, or memory-gate evidence. It is retained
 under `%LOCALAPPDATA%\Temp\ClassMngr-F563-Checkpoint-DryRun-20261010T191329Z-5988\lifecycle-sub-prep\large-sub-prep-workflow.json`.
 
-F600 is next in Batch114 and will audit paired pre/post-`applicationMetrics()`
-process samples. Its acceptance is to parse every available
-`memory`/`memoryAfterMetrics` pair in this profile; report pair counts and
-signed deltas for working set, private usage, private working set, peak working
-set, handles, and threads; and identify whether any pair changes the strict
-262,144,000-byte working-set classification. These sequential samples cannot
-attribute changes to metric traversal and do not supply ETL or close the
-memory gate.
+## F600 paired profiler memory-sample audit - 2026-10-11
+
+The retained F597 dry-run profile was analyzed without rerunning the route.
+Its SHA-256 is
+`02a7fc82c50e51da8d030bbe0d168081f5436431260956e4a063e4b0f5057d18`. All 84
+checkpoints have available pre- and post-`applicationMetrics()` Windows
+snapshots. Each requested field has 84 numeric pairs and zero missing or
+nonnumeric pairs. Deltas are post-snapshot minus pre-snapshot.
+
+| Field | Negative / zero / positive pairs | Minimum delta | Maximum delta |
+|---|---:|---:|---:|
+| `workingSetBytes` | 0 / 76 / 8 | 0 (seq 2) | +36,864 (seq 11) |
+| `privateUsageBytes` | 0 / 82 / 2 | 0 (seq 1) | +36,864 (seq 13) |
+| `privateWorkingSetBytes` | 0 / 80 / 4 | 0 (seq 1) | +32,768 (seq 13) |
+| `peakWorkingSetBytes` | 0 / 50 / 34 | 0 (seq 11) | +1,171,456 (seq 1) |
+| `handleCount` | 0 / 83 / 1 | 0 (seq 1) | +2 (seq 10) |
+| `threadCount` | 0 / 84 / 0 | 0 | 0 |
+
+Under the strict current-working-set rule `workingSetBytes < 262,144,000`,
+all 84 pre- and all 84 post-snapshots are below threshold; no pair changes
+classification. The maximum current working set is 262,119,424 bytes at seqs
+75 and 76, which is 24,576 bytes below the threshold. The separate peak
+working set high-water is 263,852,032 bytes and is not the current-working-set
+classification field.
+
+An independent Tester re-parsed the profile, confirmed its hash, all 84
+complete pairs and field deltas, the strict-threshold result, and the maximum
+values. The profiler captures the snapshots on either side of
+`applicationMetrics()`, but these sequential observations do not attribute a
+delta to that traversal. This profile is a dry-run without ETL; it does not
+establish heap ownership or close the memory gate. No route or WPR was run.
+
+F601 is now selected first in Batch115. Its read-only acceptance is to
+reconcile the PDF viewer's `widgetCount` and
+`instantiatedPageWidgetDescendantCounts` with lifecycle/document counters and
+the view-destruction marker across retained checkpoints, stating exactly what
+the structural counters show and where they change. This is counter
+interpretation only, not heap ownership. The remaining Batch115 candidates are
+F602 (allocation-size breakdown of the existing non-PDF teardown delta), F603
+(release hidden Workspace Schedule rendered resources after confirming its
+inactive-owner evidence), F604 (remove per-cell ScheduleWidget child widgets),
+and F605 (defer hidden Personal Details construction). F598 still needs an
+actually elevated WPR process; F579 symbol work remains deferred at the user's
+direction.
 
 Batch115 discovery started while F599 was the second-last candidate in
 Batch114. Two independent Explorer angles found five ordered candidates:
@@ -20045,10 +20081,6 @@ Batch114. Two independent Explorer angles found five ordered candidates:
    Schedule tab creates no Details page, navigation creates it once, and
    switching preserves its state. Entrypoints: `my_workspace_page.cpp`,
    `my_workspace_page_tests.cpp`, and NavigationController access.
-
-These are candidates for Batch115, not yet active. F598's matched WPR capture
-requires an actually elevated Windows process; F579 symbol work remains
-deferred at the user's direction.
 
 ## F594 per-instance ScheduleWidget metric coverage - 2026-10-11
 
