@@ -19319,11 +19319,98 @@ source was not fetched or independently audited, so this does not establish
 that the packaged implementation follows that path or reveal allocation
 ownership.
 
-F555 is selected for an additive, opt-in `QPdfPageRenderer::pageRendered`
-observer on the existing no-grab route with its inner-boundary samples. Record
-page metadata and named process-memory samples without retaining or copying
-images or changing render settings. Describe the callback as occurring after
-view handling only if the implementation verifies that ordering; otherwise
-report only callback timing. The implementation package will decide the exact
-API attachment. Keep the render/window and Phase 0 gates open, along with
-F536's cause, the 250 MiB lifecycle gate, F526 provenance, and output parity.
+## F555 page-render observer implementation and Debug verification - 2026-10-10
+
+Commit `07b6d12d5adc392e1079cb564c796b28d1828bae` adds the opt-in selector
+`CLASSMNGR_STARTUP_PDF_LIFECYCLE_PAGE_RENDER_OBSERVER=1`, gated by the no-grab
+arm and inner-boundary sampling. The independent current-Debug check used app
+SHA-256 `3019ACCCE89550F98B656AB8901A17043CB0D422029D19ECF18E68D4C9E4B20F`:
+the observer attached in 1/1 eligible run and recorded two callbacks; with the
+selector unset, the route omitted the observer field. Both runs retained 38
+outer and 62 inner samples with matching normalized route state. Invalid
+selector values and missing gates exited 2. Debug QtPdf/PdfWidgets 6.140.0.0
+DLLs had hashes different from the Release modules used below. The observer
+records page metadata and named process-memory samples without retaining or
+copying images or changing render settings.
+
+## F556 Release page-render observer campaign - 2026-10-10
+
+The six fresh Release route processes used the package built from F555 commit
+`07b6d12d5adc392e1079cb564c796b28d1828bae`; all five Release app
+configure/build/install and Debug harness configure/build steps exited 0. The
+Release app SHA-256 was
+`033e2147e229fbea12282b9dbf3d75e2114be3d2429ecb15423222ab0bd05895`, and the
+Debug harness SHA-256 was
+`45594ec0c8f1ce25c7c522e54a89561386f953db0d2f01bd3476afb4f6464b3d`. The
+Debug harness orchestrated separate Release app processes; process memory
+values below belong to the Release processes, with harness/app timing as a
+caveat. Artifacts are under
+`%LOCALAPPDATA%\Temp\ClassMngr-F556-PageRender-20261010-07b6d12d`.
+
+All six routes exited 0 and passed validation, with unique PIDs, 38 ordered
+outer and 62 ordered inner samples, matching normalized states and the same
+622,592-byte fixture (96 classes, 24 teachers, 7,200 cells; SHA-256
+`c213ce96d85d927a4e2a4196c68be490f4517076079c069b475ec0ada872ffbb`). No
+forced grabs or PNG output occurred. The observer attached and
+was available in all six runs; normal runs reported two callbacks each and
+suppressed runs zero. Normal callback metadata was page 0, request IDs 1 and
+2, image size 720 x 1040. Live Release modules matched F553:
+
+| Module | File version | SHA-256 |
+| --- | --- | --- |
+| Qt6Core | 6.12.0.0 | `39175459c4837c8cc0f709a637fb6eadb25d696785109c8393559ec876f02703` |
+| Qt6Pdf | 6.140.0.0 | `aa0e0c688d5991b0b075d241d39901b15a641d3b9c4e4b1f82f4b391b5ed6447` |
+| Qt6PdfWidgets | 6.140.0.0 | `382b6075006e9bd5bfc6571389f86c930dc93b2ccb6c53da1881141fff5288d3` |
+
+Route manifests mark the runs `skip-build` / `external-unverified`; the
+source-bound build manifest, common executable and harness paths/hashes, and
+live module audit tie the routes to the built package. This is campaign
+provenance, not a separate build claim in each route manifest.
+
+Independent audit calculated min / median / max across three per-process
+maxima in each arm. Fields are independent, not paired:
+
+| Arm | Working set | Peak working set | Private usage | Private working set |
+| --- | ---: | ---: | ---: | ---: |
+| Normal | 261,857,280 / 262,012,928 / 262,160,384 | 263,614,464 / 263,794,688 / 263,942,144 | 303,120,384 / 303,374,336 / 303,448,064 | 194,535,424 / 194,637,824 / 194,838,528 |
+| Suppressed | 258,326,528 / 258,416,640 / 258,748,416 | 259,534,848 / 259,620,864 / 259,956,736 | 302,915,584 / 302,981,120 / 303,222,784 | 191,270,912 / 191,356,928 / 191,696,896 |
+
+Median normal-minus-suppressed deltas (working set / peak working set /
+private usage / private working set) were +3,596,288 / +4,173,824 / +393,216 /
++3,280,896 bytes. Against 262,144,000 bytes (250 MiB), all three normal
+peak-working-set maxima exceeded the target and no suppressed maximum did;
+working-set maxima exceeded it in one normal run and none suppressed. The
+normal validator had a non-failing legacy warning for 65 samples at or above
+250 MiB; suppressed had none, and neither arm had samples above 512 MiB.
+
+Across six normal callbacks, measured memory min / median / max was:
+
+| Field | MiB |
+| --- | ---: |
+| Working set | 249.19140625 / 249.609375 / 250.015625 |
+| Peak working set | null / null / null |
+| Private usage | 264.3828125 / 264.826171875 / 265.23046875 |
+| Private working set | 185.04296875 / 185.43359375 / 185.8125 |
+
+In every normal run, the second callback's working set and private working
+set equaled that process's full-route maxima; callback private usage was about
+25.3 MB below its process maximum. No timestamp/cycle basis supports pairing a
+callback with the nearest inner boundary. Report callback timing only; do not
+describe it as after view handling without verified ordering.
+
+For three selected close cycles per run (n=9 per arm and operation),
+`qpdfdocument-close` median deltas matched F553: normal working set / private
+usage / private working set -6,901,760 / -7,143,424 / -6,909,952 bytes;
+suppressed -3,821,568 / -4,059,136 / -3,829,760. Descriptor lease-clear and
+final view/UI-reset medians were zero across all four fields; the largest
+normal UI-reset delta was +40,960 bytes. This indicates no new
+close/cache-residency issue, but assigns no allocation ownership. F556 adds
+route-level process and callback
+correlation, not causal attribution.
+
+F557 is selected for a bounded audit of qtpdf revision
+`d505fc23640d2bd6345e6483eb73daf4e19f5829`, focusing on QPdfView page-image
+cache/request/completion and memory release on document close. If the exact
+pinned source is unavailable, choose a dynamic cache-lifecycle probe. Keep
+F536 cause, the 250 MiB lifecycle gate, F526 provenance, output parity, and
+render/window and global Phase 0 gates open (Windows 1/24, macOS 0/24).

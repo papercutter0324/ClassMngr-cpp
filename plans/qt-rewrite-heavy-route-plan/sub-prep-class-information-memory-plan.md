@@ -692,11 +692,35 @@ verified. F553 therefore remains route-level evidence without Qt allocation
 ownership claims. See the [Phase 2 progress log](03-Phase-2-Progress-Log.md)
 for the audit and official Qt links.
 
-F555 is selected for an additive opt-in `QPdfPageRenderer::pageRendered`
-observer tied to the existing no-grab route and inner-boundary samples. Record
-page metadata and named process-memory samples; do not retain/copy images or
-change render settings. Label callback timing as after view handling only if
-the implementation verifies that ordering; leave the exact API attachment to
-the implementation package. Keep render/window and Phase 0 gates open. F536
-cause, the 250 MiB lifecycle gate, F526 provenance, and output parity also
-remain open (Phase 0: Windows 1/24, macOS 0/24 routes).
+F555 implemented the additive opt-in `QPdfPageRenderer::pageRendered`
+observer, gated by no-grabs plus inner-boundary sampling. Current-Debug
+verification at commit `07b6d12d` attached it in 1/1 eligible route and
+recorded two callbacks; the unset-selector route omitted the field. Both runs
+retained 38 outer / 62 inner samples with matching normalized state. Invalid
+selectors and missing gates exited 2. The observer records page metadata and
+named process-memory samples without retaining/copying images or changing
+render settings; Debug PDF DLL hashes differ from Release.
+
+F556 passed all six fresh Release routes with unique PIDs, 38 outer / 62 inner
+samples, matching fixture/state, no grabs or PNG output, and observer
+availability in every run. Normal routes had two page-0 callbacks (request IDs
+1 and 2, 720 x 1040); suppressed routes had none. A separate Debug harness
+orchestrated the Release app. Independent per-process peak medians showed
+normal-minus-suppressed deltas of +3,596,288 / +4,173,824 / +393,216 /
++3,280,896 bytes (working set / peak working set / private usage / private
+working set); all normal peak-working-set maxima exceeded 250 MiB, versus none
+suppressed. In every normal run, callback two's working set and private
+working set equaled that process's full-route maximum; callback private usage
+was about 25.3 MB below its process maximum. No timestamp/cycle basis supports
+pairing callback samples with inner boundaries. Close deltas matched F553;
+lease-clear and final view/UI-reset medians were zero. This is route-level
+process/callback evidence, not allocation ownership. Full results
+and raw artifacts are recorded in the [Phase 2 progress log](03-Phase-2-Progress-Log.md)
+under `%LOCALAPPDATA%\Temp\ClassMngr-F556-PageRender-20261010-07b6d12d`.
+
+F557 is selected to audit qtpdf revision
+`d505fc23640d2bd6345e6483eb73daf4e19f5829`, focusing on QPdfView's page-image
+cache, render request/completion, and memory release on document close. If the
+exact pinned source is unavailable, use a dynamic cache-lifecycle probe. Keep
+F536 cause, the 250 MiB lifecycle gate, F526 provenance, output parity,
+render/window acceptance, and global Phase 0 open (Windows 1/24, macOS 0/24).
