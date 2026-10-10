@@ -19872,6 +19872,33 @@ lifetime claims bounded by the snapshot evidence. The 250 MiB lifecycle gate,
 F536 cause, F526 provenance, output parity, render/window acceptance, and
 global Phase 0 remain open (Windows 1/24, macOS 0/24).
 
+## F586 forced-grab mode for the retained heap route - 2026-10-11
+
+The F564 `capture-summary.json` points to the retained F563 route artifacts;
+although the directory name includes `DryRun`, F564 records `dryRun=false` and
+successful WPR snapshots for the accepted capture. The route's
+`pdfLifecycleGrabComparison` reports `arm=without-grabs`, `enabled=true`, and
+`forcedGrabCount=0`; per-operation samples report
+`forcedGrabPerformed=false` and `grabSkipped=true`. The route still records
+two PDF documents loaded and two released.
+
+The F563 controller sets
+`CLASSMNGR_STARTUP_PDF_LIFECYCLE_GRAB_ARM=without-grabs` at
+`scripts/phase2/run_f563_checkpoint_dry_run.py:300`. In `src/main.cpp`, that
+comparison arm disables `forcedGrabEnabled` (3821-3824), and both calls to
+`StartupProfiler::recordPdfDocumentRendered` are guarded by that flag
+(4389-4396, 4778-4785). Thus `pdfRenderCount=0` is expected for this capture
+and records no forced viewer grabs; the metric does not count natural page
+rendering and does not imply that the PDF documents were not loaded. The
+harness checkpoint names remain labels, not a record of forced viewer grabs.
+No new capture or source change was made.
+
+F587 compares the `QTextDocument` heap/address identities across the three
+retained snapshots. F579's fresh matched-symbol capture remains deferred at
+the user's direction. The 250 MiB lifecycle gate, F536 cause, F526 provenance,
+output parity, render/window acceptance, and global Phase 0 remain open
+(Windows 1/24, macOS 0/24).
+
 ## F585 schedule-cell metrics at PDF heap checkpoints - 2026-10-11
 
 F585 aligned the three retained F564 heap-snapshot markers with the nearest
@@ -19885,11 +19912,11 @@ sequence 84 (`settled-5s`). At each nearest sample the metrics are identical:
 147 created, zero removed, and zero queued for deletion. All 13 route
 checkpoints named `pdf-*` have that same schedule-counter tuple.
 
-`pdfRenderCount` is zero at all three nearest samples. The route checkpoint
-names are harness labels; this value alone does not establish whether the
-viewer performed a forced grab. F586 checks the captured mode before
-interpreting that counter. No measured schedule-cell counter change coincides
-with the setCellWidget stack-group decrease, but these sampled counters and
+`pdfRenderCount` is zero at all three nearest samples. F586 found the route
+explicitly used the `without-grabs` arm, so this counter reflects the skipped
+forced viewer grabs rather than all PDF rendering. No measured schedule-cell
+counter change coincides with the setCellWidget stack-group decrease, but
+these sampled counters and
 overlapping stack paths do not prove or disprove allocation ownership. The
 read-only reproducer is `build/f585_pdf_schedule_metric_alignment.py` under
 ignored local build artifacts. F579's fresh matched-symbol capture remains
@@ -19898,8 +19925,8 @@ F526 provenance, output parity, render/window acceptance, and global Phase 0
 remain open (Windows 1/24, macOS 0/24).
 
 Batch 103 is resolved: F533 recorded the reference-provenance gap, and F534
-completed the output-dialog cancellation/cleanup regression. Batch 104 starts
-with F586's forced-grab mode audit; F587 will compare QTextDocument
+completed the output-dialog cancellation/cleanup regression. Batch 104's
+F586 forced-grab audit is complete; F587 will compare QTextDocument
 heap/address identities, and F588 will bound the schedule-cell removal
 counter's meaning. F579 remains deferred at the user's direction.
 
