@@ -551,7 +551,19 @@ trend warning, not a failure. F526 source provenance, output parity, memory
 acceptance, and the full Phase 0 gate remain open; 24 required routes and
 macOS remain pending.
 
-F537 will inspect the first lifecycle process sample at the observed peak,
-recording its same-sample memory fields and viewer state separately from
-nearby checkpoint pre/post metrics and aggregate maxima. Do not infer
-attribution to Qt/PDF components from association alone.
+F537's merged-order analysis found the first captured report of the full
+264,273,920-byte peak working set at checkpoint sequence 75 (`pdf-reopened`),
+before the first PDF boundary sample reporting that value. Its four
+same-sample memory fields were
+263,086,080 / 264,273,920 / 278,904,832 / 195,760,128 bytes; it has no viewer
+state. The adjacent checkpoint snapshots and later boundary sample are
+recorded in the [Phase 2 progress log](03-Phase-2-Progress-Log.md). This marks
+when the value was first captured, not when the OS high-water mark occurred
+between snapshots or its cause; aggregate maxima remain independent per-field
+values.
+
+F536 had PNG capture disabled. If PNG-save impact still needs measurement, run
+a matched capture-enabled route against the F536 baseline; this is a separate
+question and does not imply that PNG saving caused the observed peak. Memory
+acceptance, F526 provenance, output parity, and the full Phase 0 gate remain
+open.

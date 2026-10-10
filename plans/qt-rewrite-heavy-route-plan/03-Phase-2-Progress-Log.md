@@ -18602,9 +18602,43 @@ warning, not a failure. F536 does not close memory acceptance, F526 source
 provenance, output parity, or the overall Phase 0 gate: 24 required routes
 and macOS remain pending.
 
-F537 is a bounded analysis of the first lifecycle process sample at the
-observed peak, recording its same-sample fields and viewer state alongside
-nearby checkpoint pre/post metrics. Keep those paired readings distinct from
-the independent aggregate maxima; association alone does not attribute memory
-to Qt or PDF components. The memory, provenance, output-parity, and Phase 0
-gates remain open.
+## F537 ordered lifecycle sample analysis - 2026-10-10
+
+The F536 lifecycle profile is
+`C:\Users\wfelt\AppData\Local\Temp\ClassMngr-Phase2-F536-bde6e7da3b1e4f06b3198072b7069ddb\F536-current-source\memory\sub-prep\large-sub-prep-workflow.json`
+from source commit `2abd6887f5831313d30b37c3c9a370ea1f696e03`. Merging all 84
+checkpoint pre-snapshots, 84 post-metrics snapshots, and 24 process-boundary
+samples by `capturedAt` (192 records) shows that the earliest record reporting
+the full 264,273,920-byte peak working set is checkpoint sequence 75,
+`pdf-reopened`, `checkpoints[74].memory`, elapsed 12,792 ms, captured at
+`2026-10-10T13:45:08.675`. Its same-sample working set / peak working set /
+private usage / private working set were 263,086,080 / 264,273,920 /
+278,904,832 / 195,760,128 bytes. It has no viewer state; its checkpoint
+metrics report one live PDF document, two loaded, one released, and two PDF
+renders.
+
+The preceding checkpoint (sequence 74, `pdf-reopen-start`) has identical
+pre/post-metrics values of 257,417,216 / 264,175,616 / 305,786,880 /
+190,078,976 bytes, captured at `.238` and `.276`. The target checkpoint's
+pre/post-metrics values match its first sample at `.675` and `.713`; the
+following checkpoint (sequence 76, `pdf-reopened-rendered`) also has those
+same values at `.752` and `.789`. The previous boundary sample,
+`memorySamples[21]` (`pdf-reopened-grab-complete`, captured at `.637`), reports
+263,086,080 / 264,175,616 / 278,904,832 / 195,760,128 bytes and a loaded,
+38-page viewer with a valid rendered image and render/view sizes of 600 x 526.
+The first boundary
+sample at the full peak is later: `memorySamples[22]`,
+`pdf-document-release-start` at `.827`, with the viewer still loaded at 38
+pages. Within each of the three checkpoints, the absolute pre/post delta is
+zero for all four fields. The absolute working-set / peak / private-usage /
+private-working-set deltas from sequence 74 to 75 are 5,668,864 / 98,304 /
+26,882,048 / 5,681,152 bytes, then zero from sequence 75 to 76.
+
+This identifies the first captured report of the high-water value; it does
+not locate when the operating-system peak occurred between snapshots or
+attribute memory to a component. Aggregate `peakMemory` remains a separate
+per-field maximum, and PNG capture was disabled. If PNG-save impact needs to be
+measured, the next bounded step is a matched capture-enabled run against this
+F536 baseline; that experiment is independent of the observed peak and does
+not close the memory gate. F526 provenance, output parity, memory acceptance,
+and the full Phase 0 gate remain open.
