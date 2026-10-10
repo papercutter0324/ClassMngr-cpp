@@ -39,7 +39,11 @@ void MyWorkspacePage::openTab(WorkspaceTab tab)
         return;
     }
 
-    if (tab == WorkspaceTab::Calendar)
+    if (tab == WorkspaceTab::Details)
+    {
+        ensurePersonalDetailsInitialized();
+    }
+    else if (tab == WorkspaceTab::Calendar)
     {
         ensureCalendarInitialized();
     }
@@ -121,6 +125,7 @@ void MyWorkspacePage::discardChanges()
 
 void MyWorkspacePage::setSaveMode(SaveMode mode)
 {
+    m_saveMode = mode;
     if (m_personalDetailsPage)
     {
         m_personalDetailsPage->setSaveMode(mode);
@@ -304,9 +309,8 @@ void MyWorkspacePage::buildUi()
     m_tabs->setObjectName(QStringLiteral("myWorkspaceTabs"));
     m_tabs->setPageSpacing(UiConstants::Pages::Spacing);
 
-    m_personalDetailsPage = new PersonalDetailsPage(m_services, m_tabs);
-    m_personalDetailsPage->setPageHeaderVisible(false);
-    connectChildPageSignals(m_personalDetailsPage);
+    m_detailsPlaceholder = new QWidget(m_tabs);
+    m_detailsPlaceholder->setObjectName(QStringLiteral("workspaceDetailsPlaceholder"));
 
     m_schedulePage = new SchedulePage(m_services, m_tabs);
     m_schedulePage->setPageHeaderVisible(false);
@@ -314,7 +318,7 @@ void MyWorkspacePage::buildUi()
 
     m_calendarPlaceholder = createPlaceholder(m_tabs);
 
-    m_tabs->addTab(m_personalDetailsPage, tr("My Details"));
+    m_tabs->addTab(m_detailsPlaceholder, tr("My Details"));
     m_tabs->addTab(m_schedulePage, tr("My Schedule"));
     m_tabs->addTab(m_calendarPlaceholder, tr("Calendar"));
 
@@ -324,6 +328,10 @@ void MyWorkspacePage::buildUi()
         this,
         [this](int index)
         {
+            if (index == tabIndex(WorkspaceTab::Details))
+            {
+                ensurePersonalDetailsInitialized();
+            }
             if (
                 index == tabIndex(WorkspaceTab::Calendar)
                 && !m_calendarPage
@@ -341,6 +349,28 @@ void MyWorkspacePage::buildUi()
 
     workspaceLayout->addWidget(m_tabs, 1);
     contentLayout()->addWidget(content);
+}
+
+void MyWorkspacePage::ensurePersonalDetailsInitialized()
+{
+    if (m_personalDetailsPage || !m_tabs)
+    {
+        return;
+    }
+
+    m_personalDetailsPage = new PersonalDetailsPage(m_services, m_tabs);
+    m_personalDetailsPage->setPageHeaderVisible(false);
+    m_personalDetailsPage->setDatabaseOpen(isDatabaseOpen());
+    m_personalDetailsPage->setSaveMode(m_saveMode);
+    m_personalDetailsPage->markStale();
+    connectChildPageSignals(m_personalDetailsPage);
+    m_tabs->replaceTabPage(tabIndex(WorkspaceTab::Details), m_personalDetailsPage);
+
+    if (m_detailsPlaceholder)
+    {
+        m_detailsPlaceholder->deleteLater();
+        m_detailsPlaceholder = nullptr;
+    }
 }
 
 void MyWorkspacePage::ensureCalendarInitialized()

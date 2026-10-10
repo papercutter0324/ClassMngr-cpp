@@ -12,6 +12,7 @@
 #include "data/database/database_session.h"
 #include "features/my_info/data/signature_image_processor.h"
 #include "ui/shared/pages/pagemanager.h"
+#include "ui/shared/pages/autosave_coordinator.h"
 #include "ui/shared/widgets/navigation_tab_widget.h"
 
 #include <QApplication>
@@ -247,6 +248,9 @@ private slots:
     void createsNamedTabsWithScheduleSelectedByDefault();
     void opensTabsThroughNamedIdentifiers();
     void preservesChildPagesWhenSwitchingTabs();
+    void absentDetailsLifecycleDoesNotConstructPage();
+    void lazyDetailsLoadsSettingsAndRetainsManualDraft_data();
+    void lazyDetailsLoadsSettingsAndRetainsManualDraft();
     void releasesWorkspaceScheduleResourcesAndRestoresOnReentry();
     void defersCalendarConstructionWhileOtherTabsAreOpen();
     void initializesCalendarWithoutChangingTheActiveWorkspaceTab();
@@ -281,7 +285,8 @@ void MyWorkspacePageTests::createsNamedTabsWithScheduleSelectedByDefault()
     QCOMPARE(tabs->tabText(2), QStringLiteral("Calendar"));
     QCOMPARE(page.currentTab(), WorkspaceTab::Schedule);
     QCOMPARE(tabs->currentIndex(), 1);
-    QVERIFY(page.personalDetailsPage());
+    QVERIFY(!page.personalDetailsPage());
+    QVERIFY(page.findChildren<PersonalDetailsPage*>().isEmpty());
     QVERIFY(page.schedulePage());
 }
 
@@ -299,14 +304,116 @@ void MyWorkspacePageTests::opensTabsThroughNamedIdentifiers()
 void MyWorkspacePageTests::preservesChildPagesWhenSwitchingTabs()
 {
     MyWorkspacePage page(nullptr);
-    PersonalDetailsPage* const details = page.personalDetailsPage();
+    QVERIFY(!page.personalDetailsPage());
     SchedulePage* const schedule = page.schedulePage();
 
     page.openTab(WorkspaceTab::Details);
+    PersonalDetailsPage* const details = page.personalDetailsPage();
+    QVERIFY(details);
     page.openTab(WorkspaceTab::Schedule);
+    page.openTab(WorkspaceTab::Details);
 
     QCOMPARE(page.personalDetailsPage(), details);
     QCOMPARE(page.schedulePage(), schedule);
+}
+
+void MyWorkspacePageTests::absentDetailsLifecycleDoesNotConstructPage()
+{
+    MyWorkspacePage page(nullptr);
+    page.setSaveMode(SaveMode::Manual);
+    page.setDatabaseOpen(true);
+    page.markStale();
+    page.refresh();
+    page.retranslateUi();
+    QVERIFY(!page.hasUnsavedChanges());
+    QVERIFY(page.saveChanges());
+    page.saveData();
+    page.discardChanges();
+    page.clearDatabaseState();
+    page.setDatabaseOpen(false);
+    QVERIFY(!page.personalDetailsPage());
+    QVERIFY(page.findChildren<PersonalDetailsPage*>().isEmpty());
+    QCOMPARE(page.currentTab(), WorkspaceTab::Schedule);
+}
+
+void MyWorkspacePageTests::lazyDetailsLoadsSettingsAndRetainsManualDraft_data()
+{
+    QTest::addColumn<bool>("selectTabDirectly");
+    QTest::newRow("openTab") << false;
+    QTest::newRow("tabSelection") << true;
+}
+
+void MyWorkspacePageTests::lazyDetailsLoadsSettingsAndRetainsManualDraft()
+{
+    QFETCH(bool, selectTabDirectly);
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(openDatabase(services, directory));
+    const QString storedName = QStringLiteral("Stored before Details exists");
+    QVERIFY(services.dataService()->saveSetting(QString::fromUtf8(DisplayNameKey), storedName));
+
+    MyWorkspacePage page(&services);
+    page.setDatabaseOpen(true);
+    page.setSaveMode(SaveMode::Manual);
+    page.show();
+    QApplication::processEvents();
+    QVERIFY(!page.personalDetailsPage());
+    QVERIFY(page.findChildren<PersonalDetailsPage*>().isEmpty());
+    auto* tabs = page.findChild<NavigationTabWidget*>(QStringLiteral("myWorkspaceTabs"));
+    QVERIFY(tabs);
+    SchedulePage* const schedule = page.schedulePage();
+    QSignalSpy tabChanges(tabs, &NavigationTabWidget::currentChanged);
+    QVERIFY(tabChanges.isValid());
+    if (selectTabDirectly)
+        tabs->setCurrentIndex(0);
+    else
+        page.openTab(WorkspaceTab::Details);
+    PersonalDetailsPage* const details = page.personalDetailsPage();
+    QVERIFY(details);
+    QCOMPARE(tabChanges.size(), 1);
+    QCOMPARE(page.findChildren<PersonalDetailsPage*>().size(), 1);
+    QCOMPARE(tabs->widget(0), details);
+    QCOMPARE(tabs->widget(1), schedule);
+    QCOMPARE(tabs->count(), 3);
+    QCOMPARE(tabs->tabText(0), QStringLiteral("My Details"));
+    QCOMPARE(tabs->tabText(1), QStringLiteral("My Schedule"));
+    QCOMPARE(tabs->tabText(2), QStringLiteral("Calendar"));
+    QVERIFY(!details->needsRefresh());
+    QLineEdit* const name = personalNameEditor(page);
+    QVERIFY(name);
+    QVERIFY(name->isVisibleTo(details));
+    QCOMPARE(name->text(), storedName);
+    auto* autosave = details->findChild<AutosaveCoordinator*>();
+    QVERIFY(autosave);
+    QCOMPARE(autosave->saveMode(), SaveMode::Manual);
+    QSignalSpy saves(autosave, &AutosaveCoordinator::saveRequested);
+    QVERIFY(saves.isValid());
+    const QString draft = QStringLiteral("Unsaved Manual draft");
+    name->setText(draft);
+    QVERIFY(page.hasUnsavedChanges());
+    page.openTab(WorkspaceTab::Schedule);
+    QVERIFY(!page.calendarPage());
+    page.openTab(WorkspaceTab::Calendar);
+    QVERIFY(page.calendarPage());
+    page.markStale();
+    page.openTab(WorkspaceTab::Details);
+    QApplication::processEvents();
+    QCOMPARE(page.personalDetailsPage(), details);
+    QCOMPARE(page.findChildren<PersonalDetailsPage*>().size(), 1);
+    QCOMPARE(name->text(), draft);
+    QVERIFY(page.hasUnsavedChanges());
+    QCOMPARE(saves.size(), 0);
+    const auto stored = services.dataService()->loadSetting(QString::fromUtf8(DisplayNameKey));
+    QVERIFY(stored);
+    QCOMPARE(stored.value().toString(), storedName);
+    QCOMPARE(tabs->count(), 3);
+    QCOMPARE(tabs->widget(0), details);
+    QCOMPARE(tabs->widget(1), schedule);
+    QCOMPARE(tabs->widget(2), page.calendarPage());
+    QCOMPARE(tabs->tabText(0), QStringLiteral("My Details"));
+    QCOMPARE(tabs->tabText(1), QStringLiteral("My Schedule"));
+    QCOMPARE(tabs->tabText(2), QStringLiteral("Calendar"));
 }
 
 void MyWorkspacePageTests
@@ -1191,6 +1298,8 @@ unavailableSettingsLeavePersonalDetailsFieldsUnchangedOnLoad()
     QVERIFY(!services.settingsService()->isAvailable());
 
     MyWorkspacePage page(&services);
+    page.openTab(WorkspaceTab::Details);
+    QVERIFY(page.personalDetailsPage());
     auto* name = personalNameEditor(page);
     auto* campus = page.personalDetailsPage()->findChild<QComboBox*>();
     auto* login = personalZoomLoginEditor(page);

@@ -55,6 +55,7 @@ public:
 private:
     void buildUi();
     void ensureCalendarInitialized();
+    void ensurePersonalDetailsInitialized();
     void connectChildPageSignals(BasePage* page);
     void activateCurrentChildPage();
     void deactivateChildPage(BasePage* page);
@@ -68,6 +69,8 @@ private:
     PageHeader* m_pageHeader = nullptr;
     NavigationTabWidget* m_tabs = nullptr;
     PersonalDetailsPage* m_personalDetailsPage = nullptr;
+    QWidget* m_detailsPlaceholder = nullptr;
+    SaveMode m_saveMode = SaveMode::Automatic;
     SchedulePage* m_schedulePage = nullptr;
     CalendarPage* m_calendarPage = nullptr;
     QLabel* m_calendarPlaceholder = nullptr;

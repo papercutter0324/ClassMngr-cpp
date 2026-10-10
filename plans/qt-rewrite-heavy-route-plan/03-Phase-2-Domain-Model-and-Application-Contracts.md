@@ -42,7 +42,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-11
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F604 replaces persistent per-cell ScheduleWidget widgets with delegate rendering backed by a shared immutable view model; its 84-checkpoint dry run reports zero cell widgets for all three owners, and F605 will defer hidden Personal Details construction next. F598 still awaits an actually elevated WPR process, F579 symbol work remains deferred at the user's direction, and the memory/output-parity/Phase 0 gates remain open.
+- Current note: F605 now defers Personal Details construction until first selection while preserving page state, and F606 will remove the duplicate Calendar workbook cell vector; F598 still awaits an elevated WPR process, F579 symbol work remains deferred at the user's direction, and the memory/output-parity/Phase 0 gates remain open.
 
 ### Slice discovery batches
 
@@ -72,11 +72,15 @@ Treat this plan as an operational summary, not a history:
   because the current execution identity is not an Administrator; resume when
   a Windows process with an elevated administrator token is available.
 
-#### Active batch: Batch 115
+#### Active batch: Batch 116
 
-- F605 - Defer hidden Personal Details construction while preserving one-time creation and state on return.
-
-No other slices are currently active.
+- F606 - Remove the duplicate Calendar workbook cell vector and preserve first-sheet ordering.
+- F607 - Release hidden Calendar resources on workspace leave while preserving return state.
+- F608 - Replace Staff Directory per-cell table items while preserving editing and save behavior.
+- F609 - Bound Speaking Evaluation class-page construction while preserving navigation and reports.
+- F610 - Bound Schedule Import review controls after establishing a reliable baseline.
+- F611 - Reduce overlapping Schedule workbook representations in coordination with F606.
+- F612 - Measure Sub Prep roster-source-to-renderer overlap while preserving SQL-route parity.
 
 ## Objective
 

@@ -20203,6 +20203,33 @@ under `dist/f604-current-source-windows-x64`,
 `build/f604-verification-20261011`, and
 `build/f604-checkpoint-dryrun-20261011`.
 
+## F605 defer hidden Personal Details construction - 2026-10-11
+
+`MyWorkspacePage` now starts with a lightweight Details placeholder and creates
+`PersonalDetailsPage` synchronously the first time Details is selected through
+`openTab`, direct tab selection, or the actual `my_info_information` route. An
+index-preserving `NavigationTabWidget::replaceTabPage` seam keeps the tab order
+and selection stable. The new page receives the current database-open state
+and retained save mode, is marked stale before its first activation so stored
+settings load, and remains the same instance when navigating away and back.
+
+Focused acceptance covers startup absence, exactly-once creation through both
+selection paths, stored settings, Manual mode inherited before creation,
+unsaved draft and dirty-state retention across Schedule/Calendar switches,
+safe lifecycle calls before Details exists, and the sidebar information
+route. The standard Windows x64 Debug targets built successfully after the
+initial sandboxed MSBuild attempt stopped at FileTracker with `E_ACCESSDENIED`;
+the same target build succeeded with sandbox escalation. The complete
+`ClassMngrMyWorkspacePageTests` target passed 26/0 and
+`ClassMngrMyInfoRouteNavigationParityTests` passed 11/0. Independent CTest
+verification passed 2/2 using the resulting Debug executables; the tester's
+separate build attempt was blocked by FileTracker access denial, while its
+Ninja fallback lacked the MSVC standard header. Diff whitespace validation
+passed. One existing unavailable-settings test was updated to navigate to
+Details before accessing fields; its existing assertions were retained and the
+full Workspace target passed after the setup change. Offscreen font/size and
+Calendar QML-resource warnings remain visible.
+
 ## F603 hidden Workspace Schedule rendered-resource release - 2026-10-11
 
 F603 clears the generated schedule model and interaction cache, table items,

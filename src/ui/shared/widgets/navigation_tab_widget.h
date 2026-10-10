@@ -138,6 +138,8 @@ public:
         );
 
     int addTab(QWidget* page, const QString& text);
+    // Keeps tab labels/order and selection; caller owns disposal of the removed page.
+    QWidget* replaceTabPage(int index, QWidget* page);
     void removeTab(int index);
     void clear();
 

@@ -4,6 +4,10 @@
 #include "core/resource_packs/resource_pack_manager.h"
 #include "domain/models/teacher.h"
 #include "features/my_info/ui/my_workspace_page.h"
+#include "features/my_info/ui/personal_details_page.h"
+#include "data/data_service.h"
+#include "ui/shared/pages/autosave_coordinator.h"
+#include "ui/shared/widgets/navigation_tab_widget.h"
 #include "features/teacher/ui/teacher_info_page.h"
 #include "fakes/fake_user_prompt_service.h"
 #include "ui/shared/dialogs/user_prompt_service.h"
@@ -11,6 +15,7 @@
 #include "ui/shared/widgets/sidebar/sidebar.h"
 #include "ui/shared/widgets/sidebar/sidebar_types.h"
 
+#include <QLineEdit>
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QTemporaryDir>
@@ -289,6 +294,7 @@ class MyInfoRouteNavigationParityTests final : public QObject
 private slots:
     void routeAvailabilityMatrix_data();
     void routeAvailabilityMatrix();
+    void informationRouteCreatesDetailsOnceAndRetainsManualDraft();
 };
 
 void MyInfoRouteNavigationParityTests::routeAvailabilityMatrix_data()
@@ -439,6 +445,68 @@ void MyInfoRouteNavigationParityTests::routeAvailabilityMatrix()
     QCOMPARE(prompts.unsavedChangesConfirmations.size(), 1);
     QCOMPARE(teacherState->notes->toPlainText(), QString());
     QVERIFY(!teacherState->page->hasUnsavedChanges());
+}
+
+void MyInfoRouteNavigationParityTests::informationRouteCreatesDetailsOnceAndRetainsManualDraft()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+    const QString storedName = QStringLiteral("Route stored name");
+    QVERIFY(services.dataService()->saveSetting(QStringLiteral("myInfo/name"), storedName));
+    PageManager pages;
+    pages.initialize(&services, false);
+    pages.setDatabaseOpen(true);
+    pages.setSaveMode(SaveMode::Manual);
+    auto* workspace = pages.myWorkspacePage();
+    QVERIFY(workspace);
+    QCOMPARE(workspace->currentTab(), WorkspaceTab::Schedule);
+    QVERIFY(!workspace->personalDetailsPage());
+    QVERIFY(workspace->findChildren<PersonalDetailsPage*>().isEmpty());
+    Sidebar sidebar;
+    NavigationController navigation(&services, &sidebar, &pages, ResourcePackManager::instance());
+    FakeUserPromptService prompts;
+    ScopedPromptService promptOverride(prompts);
+    navigation.handleNavigation(myInfoRoute(QStringLiteral("my_info_information")));
+    auto* details = workspace->personalDetailsPage();
+    QVERIFY(details);
+    QCOMPARE(workspace->currentTab(), WorkspaceTab::Details);
+    QCOMPARE(pages.personalDetailsPage(), details);
+    QCOMPARE(workspace->findChildren<PersonalDetailsPage*>().size(), 1);
+    const auto editors = details->findChildren<QLineEdit*>();
+    QVERIFY(!editors.isEmpty());
+    auto* name = editors.constFirst();
+    QCOMPARE(name->text(), storedName);
+    QVERIFY(!details->needsRefresh());
+    auto* autosave = details->findChild<AutosaveCoordinator*>();
+    QVERIFY(autosave);
+    QCOMPARE(autosave->saveMode(), SaveMode::Manual);
+    const QString draft = QStringLiteral("Information route unsaved draft");
+    name->setText(draft);
+    QVERIFY(workspace->hasUnsavedChanges());
+    navigation.handleNavigation(myInfoRoute(QStringLiteral("my_info_schedule")));
+    QCOMPARE(workspace->currentTab(), WorkspaceTab::Schedule);
+    navigation.handleNavigation(myInfoRoute(QStringLiteral("my_info_information")));
+    QCOMPARE(workspace->personalDetailsPage(), details);
+    QCOMPARE(workspace->findChildren<PersonalDetailsPage*>().size(), 1);
+    QCOMPARE(name->text(), draft);
+    QVERIFY(workspace->hasUnsavedChanges());
+    const auto saved = services.dataService()->loadSetting(QStringLiteral("myInfo/name"));
+    QVERIFY(saved);
+    QCOMPARE(saved.value().toString(), storedName);
+    auto* tabs = workspace->findChild<NavigationTabWidget*>(QStringLiteral("myWorkspaceTabs"));
+    QVERIFY(tabs);
+    QCOMPARE(tabs->count(), 3);
+    QCOMPARE(tabs->tabText(0), QStringLiteral("My Details"));
+    QCOMPARE(tabs->tabText(1), QStringLiteral("My Schedule"));
+    QCOMPARE(tabs->tabText(2), QStringLiteral("Calendar"));
+    QVERIFY(!workspace->calendarPage());
+    QVERIFY(prompts.messages.isEmpty());
+    QVERIFY(prompts.asynchronousMessages.isEmpty());
+    QVERIFY(prompts.confirmations.isEmpty());
+    QVERIFY(prompts.unsavedChangesConfirmations.isEmpty());
+    QVERIFY(prompts.actionPrompts.isEmpty());
 }
 
 QTEST_MAIN(MyInfoRouteNavigationParityTests)

@@ -1072,6 +1072,22 @@ int NavigationTabWidget::addTab(
     return index;
 }
 
+QWidget* NavigationTabWidget::replaceTabPage(int index, QWidget* page)
+{
+    QWidget* previousPage = widget(index);
+    if (!page || !previousPage || page == previousPage || m_stack->indexOf(page) >= 0)
+    {
+        return nullptr;
+    }
+
+    const int selectedIndex = currentIndex();
+    const QSignalBlocker blocker(m_stack);
+    m_stack->removeWidget(previousPage);
+    m_stack->insertWidget(index, page);
+    m_stack->setCurrentIndex(selectedIndex);
+    return previousPage;
+}
+
 void NavigationTabWidget::removeTab(int index)
 {
     QWidget* page = widget(index);
