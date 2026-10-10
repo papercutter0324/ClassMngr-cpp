@@ -42,7 +42,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-11
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F603 releases generated resources for the hidden Workspace Schedule child and restores them on re-entry; focused lifecycle checks pass, while the broader ScheduleWidget target has 13 failures with baseline status unestablished. F604 will remove per-cell ScheduleWidget child widgets; F598 awaits an elevated WPR token, F579 remains deferred, and the memory/output-parity/Phase 0 gates remain open.
+- Current note: F603 releases generated resources for the hidden Workspace Schedule child and restores them on re-entry. The 13 failures in the full ScheduleWidget target reproduce at F602 baseline (28 passed / 13 failed); F603 adds a passing lifecycle case (29 / 13). F604 will remove per-cell ScheduleWidget child widgets; F598 awaits an elevated WPR token, F579 remains deferred, and the memory/output-parity/Phase 0 gates remain open.
 
 ### Slice discovery batches
 

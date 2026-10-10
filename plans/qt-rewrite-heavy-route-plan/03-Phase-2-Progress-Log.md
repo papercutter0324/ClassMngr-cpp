@@ -20107,8 +20107,11 @@ target (23/0), the F603 lifecycle slot (3/0), standalone retention (3/0), and
 the intensive and regular schedule interaction slots (3/0 each). The focused
 build succeeded. Thus the bounded F603 acceptance is met.
 
-The full `ClassMngrScheduleWidgetTests` target remains at 29 passed / 13
-failed. The failed slots are `persistsAndMirrorsEveryViewOption`,
+The full `ClassMngrScheduleWidgetTests` target at F603 is 29 passed / 13
+failed. A separate Debug/Ninja build at the exact F602 parent commit
+`1e0118f706087c8663816478120310489fdc8b42` reported 28 passed / the same 13
+failed slots, establishing that these failures predate F603. The failed slots
+are `persistsAndMirrorsEveryViewOption`,
 `printUsesSelectedTeacherNameLanguage`,
 `outputReadsDisplayNameAfterDialogAcceptanceWithoutTrimming`,
 `testingModeFiltersClassesAndDisplaysSavedBlock`,
@@ -20121,10 +20124,11 @@ failed. The failed slots are `persistsAndMirrorsEveryViewOption`,
 `unavailableSlotStateReadIsSilentAndRetainsOverrides`,
 `failedSlotStateReadWarnsAndRetainsOverrides`, and
 `readOnlyScheduleStillLoadsSlotStates`. They also failed when run
-individually and do not invoke the workspace release path. No baseline
-comparison was performed, so their origin is unresolved; do not describe them
-as pre-existing. They remain a separate verification issue and do not block
-the scoped F603 acceptance.
+individually and do not invoke the workspace release path. The baseline
+comparison used a detached clean checkout and separate build; all 13 names
+matched exactly. Their origin before F602 is not established. These are
+existing test failures at F602, not regressions introduced by F603, and do not
+block the scoped F603 acceptance.
 
 F604 is now active in Batch115. It will replace the 49-per-owner cell-widget
 rendering with model/delegate display and active interaction editors, preserve
