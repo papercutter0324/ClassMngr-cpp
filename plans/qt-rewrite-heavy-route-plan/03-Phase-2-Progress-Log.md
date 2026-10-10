@@ -19561,12 +19561,62 @@ and does not match Release. UMDH is not currently available locally and its
 [setup](https://learn.microsoft.com/en-us/windows-hardware/drivers/debugger/preparing-to-use-umdh)
 requires GFlags `+ust` on a future process.
 
-F562 is selected to design and preflight a bounded checkpoint mechanism for
-one WPR heap-snapshot run at render completion, after document close while the
-view remains, and after view teardown/event drain. Elevated access and a
-reversible process-specific IFEO setup remain prerequisites; neither is
-authorized or applied by this finding. Keep the probe opt-in, avoid forcing a
-render/close race, and preserve normal app behavior when unselected. Make no
-allocation-ownership claim before capture and analysis. The 250 MiB lifecycle
-gate, F536 cause, F526 provenance, output parity, render/window acceptance,
-and global Phase 0 remain open (Windows 1/24, macOS 0/24).
+## F562 checkpoint/WPR design preflight - 2026-10-10
+
+The representative PDF route attaches page/status observers before initial
+load, but callbacks only update in-memory state and do not gate route progress.
+Metrics JSON is written after the workflow; the incremental generic workflow
+trace omits PDF render, status, and close milestones. The route waits 150 ms,
+processes events, samples the viewer, records `pdf-opened`/`pdf-rendered`, then
+immediately calls `releaseDocument()`; its `pdf-rendered` marker is not a
+render-completion wait. The no-grab arm skips forced grabs. `releaseDocument()`
+closes `QPdfDocument` synchronously while its attached `QPdfView` remains;
+`PageManager` caches the page, and leaving the route does not destroy the view.
+The view is deleted by `PdfViewerPage` destruction at window/process teardown.
+StartupPerformanceTests and the Phase 0 runner read final metrics only after
+process exit, so neither can currently drive three deterministic external
+snapshots.
+
+F562 selects an additive, opt-in app/controller marker-and-ack handshake for
+F563. Its stable checkpoints are: (1) only after a confirmed
+`pageRendered` callback and queued view processing, scheduled on the GUI thread
+without blocking the renderer callback thread; (2) after `releaseDocument()`
+reports Null, with the view still attached and events drained; and (3) after
+explicit view destruction while the process remains alive. Each wait needs a
+bounded timeout and clear failure status. The controller keeps the app alive
+until each acknowledgement; WPR documentation does not require pausing the
+target but does not guarantee zero brief internal synchronization. Heap stack
+coverage begins when snapshot configuration is enabled.
+
+For a later authorized capture, Microsoft's [WPR command-line
+documentation](https://learn.microsoft.com/en-us/windows-hardware/test/wpt/wpr-command-line-options)
+and [heap snapshot guide](https://learn.microsoft.com/en-us/windows-hardware/test/wpt/record-heap-snapshot)
+document a one-ETL sequence: configure by image name, start the heapsnapshot
+recording, launch `ClassMngr.exe` only after configuration is enabled, snapshot
+the same PID at each acknowledged checkpoint, stop once, then disable
+configuration:
+
+```text
+wpr -snapshotconfig heap -name ClassMngr.exe enable
+wpr -start heapsnapshot -filemode
+launch ClassMngr.exe
+wpr -singlesnapshot heap <PID>   # repeat at each of the three checkpoints
+wpr -stop <etl-path>
+wpr -snapshotconfig heap -name ClassMngr.exe disable
+```
+
+Verify syntax against the installed WPR version before execution. Setup needs
+an elevated command prompt and process-specific IFEO configuration. F562
+performed no elevation, configuration, WPR command, or ETL collection; this
+design is not authorization. Without matching PDBs, WPA can show module and
+instruction-pointer frames but not internal Qt/PDFium function or source-line
+names.
+
+F563 is limited to implementing the opt-in handshake and a deterministic
+Debug dry-run with a fake acknowledgement controller. With the selector unset,
+the production route and report must remain unchanged. No WPR configuration,
+command, or ETL belongs in F563. Independent verification is required before
+commit; after F563 is committed, decide whether to request elevated setup for
+F564 collection. The 250 MiB lifecycle gate, F536 cause, F526 provenance,
+output parity, render/window acceptance, and global Phase 0 remain open
+(Windows 1/24, macOS 0/24).

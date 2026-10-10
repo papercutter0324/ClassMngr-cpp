@@ -748,12 +748,16 @@ names. Detailed executable paths/versions, artifact search limits, and
 official method references are in the [Phase 2 progress
 log](03-Phase-2-Progress-Log.md).
 
-F562 is selected to design and preflight a bounded checkpoint mechanism for
-one WPR heap-snapshot run at render completion, after document close while the
-view remains, and after view teardown/event drain. Elevated access and
-reversible process-specific IFEO setup are preconditions; this selection does
-not authorize or apply them. Keep the probe opt-in, do not force a render/close
-race, and preserve normal app behavior when unselected. Do not claim allocation
-ownership before capture and analysis. Keep the 250 MiB lifecycle gate, F536
+F562 completed the read-only checkpoint/WPR design preflight. F563 is selected
+for an opt-in app/controller handshake at confirmed render completion, after
+document close with the view attached, and after view destruction while the
+process remains alive, plus a deterministic Debug dry-run with fake
+acknowledgements. Require bounded waits and explicit failure status; with the
+selector unset, preserve the production route and report. F563 excludes WPR
+configuration and ETL collection. A later capture still requires a separate
+decision on elevated, process-specific IFEO setup; no setup or collection has
+been authorized or performed. See the [Phase 2 progress log](03-Phase-2-Progress-Log.md)
+for route synchronization findings, the documented one-ETL command sequence,
+symbol limits, and evidence boundary. Keep the 250 MiB lifecycle gate, F536
 cause, F526 provenance, output parity, render/window acceptance, and global
 Phase 0 open (Windows 1/24, macOS 0/24).
