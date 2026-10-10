@@ -598,15 +598,20 @@ roughly 264 MiB route reading; the different process/route setup makes them
 incomparable for acceptance or historical growth. The medians are descriptive,
 not causal, and establish no owner or fix. F544 found that F543's standalone
 load/close arms did not exercise leaving and reopening the cached production
-`PageManager` viewer. F545 is next: compare one production load/leave/close
-cycle with a leave/close/reopen/leave/close cycle, three fresh Release
-processes per arm, on the same binary, fixture, PDF/RCC, Qt, and display. Keep
-the visible MultiPage view but disable forced grabs and PNG writes; record
-document status/pages/readiness, view/document identity, and resource-pack
-mount state at every load/ready and close/reopen (mounted state indicates any
-lease, not owner/count); sample memory at first-ready, immediately after each
-close, +1s/+5s, second-ready, and final close. Wait for Ready after each load;
-confirm Null status/zero pages after close. Keep control duration matched and
-use normal teardown without `setDocument(nullptr)` or deleting the cached page.
-This narrows hypotheses only; no cause or fix is established. The 250 MiB
-lifecycle gate, F526 provenance, output parity, and full Phase 0 remain open.
+`PageManager` viewer. F545 implemented `page-manager-cycle` (one load/leave/
+close with matched duration) and `page-manager-reopen` (close/wait/reopen/
+close) using the cached production page and visible MultiPage view; forced grabs
+and PNG writes are disabled. The one-process-per-arm smoke verified
+Ready/38 -> Null/0 -> Ready/38 -> Null/0 in the reopen arm, with mounted-resource
+true at Ready and false after close. This confirms instrumentation, not a
+memory trend or cause.
+
+F546 is next: run three fresh Release processes per arm (six total) on the same
+committed binary/source, 96-class fixture, PDF/RCC hashes, Qt, and display.
+Record document status/pages/readiness, view/document identity, and mounted
+state at each transition; sample all four memory metrics at first-ready,
+immediately after close, +1s/+5s, second-ready, and final close. Match control
+duration, confirm Ready and Null/zero pages, and use normal teardown without
+`setDocument(nullptr)` or deleting the cached page. This comparison only
+narrows hypotheses; no cause or fix is established. The 250 MiB lifecycle
+gate, F526 provenance, output parity, and full Phase 0 remain open.

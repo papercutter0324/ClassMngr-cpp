@@ -1,5 +1,6 @@
 #include "app/mainwindow.h"
 #include "app/services/feature_services.h"
+#include "app/controllers/navigation_controller.h"
 #include "app/controllers/update_controller.h"
 #include "app/startup_database_path.h"
 #include "core/application_services.h"
@@ -41,6 +42,7 @@
 #include "features/teacher/ui/staff_directory_page.h"
 #include "ui/shared/pages/pdf_viewer_page.h"
 #include "ui/shared/pages/pagemanager.h"
+#include "ui/shared/widgets/sidebar/sidebar_types.h"
 #include "ui/shared/dialogs/user_prompt_service.h"
 #include "ui/shared/dialogs/file_dialog_service.h"
 #include "ui/shared/widgets/navigation_tab_widget.h"
@@ -172,6 +174,7 @@ constexpr auto StartupPdfLifetimeProbeExpectedDocumentsRccSha256 =
     "A3EB570294B55A616EA05797222FC1FEDD93620ABB25360B724ED6843BEE924F";
 constexpr auto StartupPdfLifetimeProbeResolvedPath =
     ":/resource-packs/documents/Guides/DYB Lesson Planning Guide.pdf";
+constexpr int StartupPdfLifetimePageManagerMatchedDurationMilliseconds = 10500;
 
 const QList<PageType>& startupWorkflowPageTypes()
 {
@@ -654,10 +657,20 @@ struct StartupPdfLifetimeProbeState
     bool pdfViewCreated = false;
     bool viewerVisible = false;
     bool forcedGrabInvoked = false;
+    bool pageManagerLifecycle = false;
+    QString pageIdentity;
+    QString viewIdentity;
+    QString documentIdentity;
+    QJsonArray pageManagerLifecycleEvents;
+    QString pageManagerLifecyclePhase;
+    int pageManagerCloseNumber = 0;
     QPointer<PdfViewerPage> viewer;
+    QPointer<QPdfDocument> pageManagerDocument;
+    QPointer<QPdfView> pageManagerView;
     std::unique_ptr<QPdfDocument> documentOnly;
     QElapsedTimer closeTimer;
     QElapsedTimer loadTimer;
+    QElapsedTimer lifecycleTimer;
     ResourcePackLease documentOnlyResourceLease;
 };
 
@@ -745,6 +758,14 @@ QJsonObject startupPdfLifetimeDisplay(const MainWindow& window)
     };
 }
 
+QString startupPdfLifetimeObjectIdentity(const QObject* object)
+{
+    return object
+        ? QStringLiteral("0x%1")
+              .arg(reinterpret_cast<quintptr>(object), 0, 16)
+        : QString();
+}
+
 bool writeStartupPdfLifetimeProbeTrace(
     const StartupPerformanceMode& mode,
     StartupPdfLifetimeProbeState& state,
@@ -768,12 +789,33 @@ bool writeStartupPdfLifetimeProbeTrace(
         }
     }
 
-    const QStringList requiredMeasurements{
+    QStringList requiredMeasurements{
         QStringLiteral("pdf-lifetime-loaded-ready"),
         QStringLiteral("pdf-lifetime-after-close"),
         QStringLiteral("pdf-lifetime-after-close-1s"),
         QStringLiteral("pdf-lifetime-after-close-5s")
     };
+    if (state.arm == QStringLiteral("page-manager-cycle"))
+    {
+        requiredMeasurements.append(
+            QStringLiteral("pdf-lifetime-cycle-end")
+            );
+    }
+    else if (state.arm == QStringLiteral("page-manager-reopen"))
+    {
+        requiredMeasurements.append(
+            QStringLiteral("pdf-lifetime-reopened-ready")
+            );
+        requiredMeasurements.append(
+            QStringLiteral("pdf-lifetime-after-reopen-close")
+            );
+        requiredMeasurements.append(
+            QStringLiteral("pdf-lifetime-after-reopen-close-1s")
+            );
+        requiredMeasurements.append(
+            QStringLiteral("pdf-lifetime-after-reopen-close-5s")
+            );
+    }
     bool requiredMeasurementsPresent = true;
     for (const QString& name : requiredMeasurements)
     {
@@ -842,6 +884,34 @@ bool writeStartupPdfLifetimeProbeTrace(
             }
         },
         {QStringLiteral("measurementLabels"), requiredMeasurementLabels},
+        {
+            QStringLiteral("pageManagerLifecycle"),
+            QJsonObject{
+                {QStringLiteral("enabled"), state.pageManagerLifecycle},
+                {
+                    QStringLiteral("navigationRoute"),
+                    state.pageManagerLifecycle
+                        ? QStringLiteral("NavigationController.handleNavigation")
+                        : QString()
+                },
+                {
+                    QStringLiteral("documentId"),
+                    state.pageManagerLifecycle
+                        ? QStringLiteral("document_guides_lesson_planning")
+                        : QString()
+                },
+                {
+                    QStringLiteral("matchedProcessAgeTargetMs"),
+                    state.pageManagerLifecycle
+                        ? StartupPdfLifetimePageManagerMatchedDurationMilliseconds
+                        : 0
+                },
+                {QStringLiteral("pageIdentity"), state.pageIdentity},
+                {QStringLiteral("viewIdentity"), state.viewIdentity},
+                {QStringLiteral("documentIdentity"), state.documentIdentity},
+                {QStringLiteral("events"), state.pageManagerLifecycleEvents}
+            }
+        },
         {QStringLiteral("memorySamples"), memorySamples},
         {QStringLiteral("status"), state.error.isEmpty() ? QStringLiteral("completed") : QStringLiteral("failed")},
         {QStringLiteral("error"), state.error}
@@ -866,6 +936,601 @@ bool writeStartupPdfLifetimeProbeTrace(
         return false;
     }
     return state.error.isEmpty() && requiredMeasurementsPresent;
+}
+
+void scheduleStartupPageManagerPdfLifetimeProbe(
+    QApplication& app,
+    MainWindow& window,
+    PageManager& pageManager,
+    StartupProfiler& profiler,
+    const StartupPerformanceMode& mode,
+    const std::shared_ptr<bool>& workflowSucceeded,
+    const std::shared_ptr<StartupPdfLifetimeProbeState>& state,
+    std::function<void(const QString&)> fail,
+    std::function<void()> completion
+    )
+{
+    auto* navigationController = window.findChild<NavigationController*>();
+    if (!navigationController)
+    {
+        fail(QStringLiteral("navigation-controller-unavailable"));
+        return;
+    }
+
+    if (pageManager.pdfViewerPage() || window.findChild<QPdfView*>())
+    {
+        fail(QStringLiteral("pdf-viewer-existed-before-page-manager-route"));
+        return;
+    }
+
+    state->pageManagerLifecycle = true;
+    state->lifecycleTimer.start();
+    state->pageManagerLifecyclePhase = QStringLiteral("wait-initial-ready");
+
+    const auto navigateToCatalogDocument = [navigationController]()
+    {
+        NavigationData data;
+        data.path = {
+            QStringLiteral("document"),
+            QStringLiteral("document_guides_lesson_planning")
+        };
+        data.keys = data.path;
+        data.routeKey = QStringLiteral("document_guides_lesson_planning");
+        data.type = NodeType::Page;
+        navigationController->handleNavigation(data);
+    };
+    const auto navigateToWorkspace = [navigationController]()
+    {
+        NavigationData data;
+        data.path = {QStringLiteral("my_workspace")};
+        data.keys = data.path;
+        data.routeKey = QStringLiteral("my_workspace");
+        data.type = NodeType::Page;
+        navigationController->handleNavigation(data);
+    };
+
+    PageManager* const pages = &pageManager;
+    QApplication* const application = &app;
+    StartupProfiler* const startupProfiler = &profiler;
+    MainWindow* const mainWindow = &window;
+    const StartupPerformanceMode* const performanceMode = &mode;
+    const auto run = std::make_shared<std::function<void()>>();
+
+    const auto failAndStop = [run, fail, application](const QString& detail)
+    {
+        QTimer::singleShot(
+            0,
+            application,
+            [run, fail, detail]()
+            {
+                if (*run)
+                {
+                    *run = {};
+                }
+                fail(detail);
+            }
+            );
+    };
+    const auto finish = [
+        run,
+        application,
+        performanceMode,
+        state,
+        mainWindow,
+        startupProfiler,
+        workflowSucceeded,
+        completion
+    ]()
+    {
+        QTimer::singleShot(
+            0,
+            application,
+            [
+                run,
+                performanceMode,
+                state,
+                mainWindow,
+                startupProfiler,
+                workflowSucceeded,
+                completion
+            ]()
+            {
+                if (*run)
+                {
+                    *run = {};
+                }
+                if (
+                    !writeStartupPdfLifetimeProbeTrace(
+                        *performanceMode,
+                        *state,
+                        *mainWindow,
+                        *startupProfiler
+                        )
+                    )
+                {
+                    *workflowSucceeded = false;
+                }
+                completion();
+            }
+            );
+    };
+
+    const auto viewerState = [state, pages]()
+    {
+        const QPdfDocument* document = state->pageManagerDocument;
+        const QPdfView* view = state->pageManagerView;
+        const bool viewVisible = view && view->isVisible();
+        return QJsonObject{
+            {QStringLiteral("documentCreated"), document != nullptr},
+            {
+                QStringLiteral("documentStatus"),
+                document
+                    ? startupPdfDocumentStatusName(document->status())
+                    : QStringLiteral("Unavailable")
+            },
+            {
+                QStringLiteral("pageCount"),
+                document ? document->pageCount() : -1
+            },
+            {QStringLiteral("pdfViewCreated"), view != nullptr},
+            {QStringLiteral("viewerVisible"), viewVisible},
+            {
+                QStringLiteral("pageMode"),
+                view && view->pageMode() == QPdfView::PageMode::MultiPage
+                    ? QStringLiteral("MultiPage")
+                    : QStringLiteral("Unknown")
+            },
+            {QStringLiteral("viewWidth"), view ? view->width() : 0},
+            {QStringLiteral("viewHeight"), view ? view->height() : 0},
+            {QStringLiteral("forcedGrabInvoked"), false},
+            {QStringLiteral("pngFileWritingEnabled"), false},
+            {QStringLiteral("currentPage"), pages->currentPageIdentifier()},
+            {
+                QStringLiteral("documentsPackMounted"),
+                ResourcePackManager::instance().isMounted(
+                    QStringLiteral("documents")
+                    )
+            },
+            {QStringLiteral("pageIdentity"), state->pageIdentity},
+            {QStringLiteral("viewIdentity"), state->viewIdentity},
+            {QStringLiteral("documentIdentity"), state->documentIdentity}
+        };
+    };
+    const auto sample = [viewerState, startupProfiler](
+        const QString& name,
+        const QString& eventName,
+        QJsonObject operation = {}
+        )
+    {
+        operation.insert(QStringLiteral("event"), eventName);
+        startupProfiler->sampleProcessMemory(
+            name,
+            viewerState(),
+            operation
+            );
+    };
+    const auto appendEvent = [
+        state,
+        viewerState
+    ](const QString& name, const QString& sampleName)
+    {
+        QJsonObject event = viewerState();
+        event.insert(QStringLiteral("name"), name);
+        event.insert(QStringLiteral("memorySampleName"), sampleName);
+        event.insert(
+            QStringLiteral("probeElapsedMs"),
+            static_cast<double>(state->lifecycleTimer.elapsed())
+            );
+        state->pageManagerLifecycleEvents.append(event);
+    };
+
+    *run = [
+        run,
+        application,
+        pages,
+        state,
+        navigateToCatalogDocument,
+        navigateToWorkspace,
+        viewerState,
+        sample,
+        appendEvent,
+        failAndStop,
+        finish
+    ]()
+    {
+        const QString phase = state->pageManagerLifecyclePhase;
+        if (
+            phase == QStringLiteral("wait-initial-ready")
+            || phase == QStringLiteral("wait-reopen-ready")
+            )
+        {
+            if (!state->viewer)
+            {
+                state->viewer = pages->pdfViewerPage();
+            }
+            state->pageManagerDocument = state->viewer
+                ? state->viewer->findChild<QPdfDocument*>()
+                : nullptr;
+            state->pageManagerView = state->viewer
+                ? state->viewer->findChild<QPdfView*>(
+                      QStringLiteral("pdfViewerView")
+                      )
+                : nullptr;
+            if (
+                !state->viewer
+                || !state->pageManagerDocument
+                || !state->pageManagerView
+                || !pages->isCurrentPage(PageType::PdfViewer)
+                )
+            {
+                failAndStop(
+                    QStringLiteral("page-manager-route-did-not-open-pdf-viewer")
+                    );
+                return;
+            }
+
+            if (
+                state->pageManagerDocument->status()
+                    == QPdfDocument::Status::Error
+                || state->loadTimer.elapsed() >= 30000
+                )
+            {
+                failAndStop(
+                    state->pageManagerDocument->status()
+                            == QPdfDocument::Status::Error
+                        ? QStringLiteral("page-manager-pdf-load-error")
+                        : QStringLiteral("page-manager-pdf-load-timeout")
+                    );
+                return;
+            }
+            if (
+                state->pageManagerDocument->status()
+                    != QPdfDocument::Status::Ready
+                )
+            {
+                QTimer::singleShot(
+                    50,
+                    application,
+                    [run]()
+                    {
+                        if (*run)
+                        {
+                            (*run)();
+                        }
+                    }
+                    );
+                return;
+            }
+            if (
+                state->pageManagerDocument->pageCount() != 38
+                || !state->pageManagerView->isVisible()
+                || state->pageManagerView->pageMode()
+                    != QPdfView::PageMode::MultiPage
+                || state->pageManagerView->width() <= 0
+                || state->pageManagerView->height() <= 0
+                || state->viewer->currentFilePath()
+                    != QString::fromUtf8(StartupPdfLifetimeProbeResolvedPath)
+            )
+            {
+                failAndStop(
+                    QStringLiteral("page-manager-pdf-ready-state-mismatch")
+                    );
+                return;
+            }
+
+            const bool reopening =
+                phase == QStringLiteral("wait-reopen-ready");
+            const QString pageIdentity = startupPdfLifetimeObjectIdentity(
+                state->viewer
+                );
+            const QString viewIdentity = startupPdfLifetimeObjectIdentity(
+                state->pageManagerView
+                );
+            const QString documentIdentity = startupPdfLifetimeObjectIdentity(
+                state->pageManagerDocument
+                );
+            if (reopening)
+            {
+                if (
+                    pageIdentity != state->pageIdentity
+                    || viewIdentity != state->viewIdentity
+                    || documentIdentity != state->documentIdentity
+                )
+                {
+                    failAndStop(
+                        QStringLiteral("page-manager-reopen-object-identity-changed")
+                        );
+                    return;
+                }
+            }
+            else
+            {
+                state->pageIdentity = pageIdentity;
+                state->viewIdentity = viewIdentity;
+                state->documentIdentity = documentIdentity;
+            }
+
+            state->pdfViewCreated = true;
+            state->viewerVisible = true;
+            state->pageMode = QStringLiteral("MultiPage");
+            state->viewWidth = state->pageManagerView->width();
+            state->viewHeight = state->pageManagerView->height();
+            state->pageCount = state->pageManagerDocument->pageCount();
+
+            const QString sampleName = reopening
+                ? QStringLiteral("pdf-lifetime-reopened-ready")
+                : QStringLiteral("pdf-lifetime-loaded-ready");
+            const QString eventName = reopening
+                ? QStringLiteral("reopened-load-ready")
+                : QStringLiteral("initial-load-ready");
+            QJsonObject operation{
+                {QStringLiteral("probeElapsedMs"), static_cast<double>(state->lifecycleTimer.elapsed())}
+            };
+            if (reopening)
+            {
+                operation.insert(
+                    QStringLiteral("firstCloseElapsedMs"),
+                    static_cast<double>(state->closeTimer.elapsed())
+                    );
+            }
+            sample(sampleName, eventName, operation);
+            appendEvent(eventName, sampleName);
+
+            if (
+                !ResourcePackManager::instance().isMounted(
+                    QStringLiteral("documents")
+                    )
+            )
+            {
+                failAndStop(
+                    QStringLiteral("documents-pack-not-mounted-at-load")
+                    );
+                return;
+            }
+
+            state->pageManagerCloseNumber = reopening ? 2 : 1;
+            state->pageManagerLifecyclePhase = QStringLiteral("close-page");
+            (*run)();
+            return;
+        }
+
+        if (phase == QStringLiteral("close-page"))
+        {
+            if (
+                !state->viewer
+                || !state->pageManagerDocument
+                || !state->pageManagerView
+                || !pages->isCurrentPage(PageType::PdfViewer)
+            )
+            {
+                failAndStop(
+                    QStringLiteral("page-manager-close-start-state-mismatch")
+                    );
+                return;
+            }
+
+            navigateToWorkspace();
+            application->processEvents();
+            state->closeTimer.start();
+            const QString sampleName = state->pageManagerCloseNumber == 1
+                ? QStringLiteral("pdf-lifetime-after-close")
+                : QStringLiteral("pdf-lifetime-after-reopen-close");
+            const QString eventName = state->pageManagerCloseNumber == 1
+                ? QStringLiteral("first-page-leave-close")
+                : QStringLiteral("second-page-leave-close");
+            sample(
+                sampleName,
+                eventName,
+                QJsonObject{{QStringLiteral("closeElapsedMs"), 0}}
+                );
+            appendEvent(eventName, sampleName);
+            if (
+                !pages->isCurrentPage(PageType::MyWorkspace)
+                || state->pageManagerDocument->status()
+                    != QPdfDocument::Status::Null
+                || state->pageManagerDocument->pageCount() != 0
+                || ResourcePackManager::instance().isMounted(
+                       QStringLiteral("documents")
+                   )
+            )
+            {
+                failAndStop(
+                    QStringLiteral("page-manager-leave-did-not-close-pdf-session")
+                    );
+                return;
+            }
+
+            state->pageManagerLifecyclePhase = QStringLiteral("close-plus-one");
+            QTimer::singleShot(
+                1000,
+                application,
+                [run]()
+                {
+                    if (*run)
+                    {
+                        (*run)();
+                    }
+                }
+                );
+            return;
+        }
+
+        if (
+            phase == QStringLiteral("close-plus-one")
+            || phase == QStringLiteral("close-plus-five")
+            )
+        {
+            const bool fiveSeconds =
+                phase == QStringLiteral("close-plus-five");
+            const qint64 closeElapsedMilliseconds = state->closeTimer.elapsed();
+            const QString sampleName = state->pageManagerCloseNumber == 1
+                ? (fiveSeconds
+                    ? QStringLiteral("pdf-lifetime-after-close-5s")
+                    : QStringLiteral("pdf-lifetime-after-close-1s"))
+                : (fiveSeconds
+                    ? QStringLiteral("pdf-lifetime-after-reopen-close-5s")
+                    : QStringLiteral("pdf-lifetime-after-reopen-close-1s"));
+            sample(
+                sampleName,
+                fiveSeconds
+                    ? QStringLiteral("close-plus-five-seconds")
+                    : QStringLiteral("close-plus-one-second"),
+                QJsonObject{
+                    {QStringLiteral("closeElapsedMs"), static_cast<double>(closeElapsedMilliseconds)}
+                }
+                );
+            if (
+                state->pageManagerDocument->status()
+                    != QPdfDocument::Status::Null
+                || state->pageManagerDocument->pageCount() != 0
+                || ResourcePackManager::instance().isMounted(
+                       QStringLiteral("documents")
+                   )
+            )
+            {
+                failAndStop(
+                    fiveSeconds
+                        ? QStringLiteral("page-manager-pdf-state-changed-after-close-five-seconds")
+                        : QStringLiteral("page-manager-pdf-state-changed-after-close-one-second")
+                    );
+                return;
+            }
+
+            if (!fiveSeconds)
+            {
+                state->pageManagerLifecyclePhase = QStringLiteral("close-plus-five");
+                const int delayUntilFiveSeconds = qMax(
+                    0,
+                    5000 - static_cast<int>(closeElapsedMilliseconds)
+                    );
+                QTimer::singleShot(
+                    delayUntilFiveSeconds,
+                    application,
+                    [run]()
+                    {
+                        if (*run)
+                        {
+                            (*run)();
+                        }
+                    }
+                    );
+                return;
+            }
+
+            if (
+                state->arm == QStringLiteral("page-manager-reopen")
+                && state->pageManagerCloseNumber == 1
+                )
+            {
+                navigateToCatalogDocument();
+                application->processEvents();
+                if (
+                    !pages->isCurrentPage(PageType::PdfViewer)
+                    || pages->pdfViewerPage() != state->viewer
+                )
+                {
+                    failAndStop(
+                        QStringLiteral("page-manager-reopen-did-not-reuse-cached-page")
+                        );
+                    return;
+                }
+                state->loadTimer.restart();
+                state->pageManagerLifecyclePhase = QStringLiteral("wait-reopen-ready");
+                QTimer::singleShot(
+                    50,
+                    application,
+                    [run]()
+                    {
+                        if (*run)
+                        {
+                            (*run)();
+                        }
+                    }
+                    );
+                return;
+            }
+
+            if (
+                state->arm == QStringLiteral("page-manager-cycle")
+                )
+            {
+                state->pageManagerLifecyclePhase = QStringLiteral("cycle-end");
+                const int delay = qMax(
+                    0,
+                    StartupPdfLifetimePageManagerMatchedDurationMilliseconds
+                        - static_cast<int>(state->lifecycleTimer.elapsed())
+                    );
+                QTimer::singleShot(
+                    delay,
+                    application,
+                    [run]()
+                    {
+                        if (*run)
+                        {
+                            (*run)();
+                        }
+                    }
+                    );
+                return;
+            }
+
+            finish();
+            return;
+        }
+
+        if (phase == QStringLiteral("cycle-end"))
+        {
+            const QString sampleName = QStringLiteral("pdf-lifetime-cycle-end");
+            sample(
+                sampleName,
+                QStringLiteral("matched-process-age-control-end"),
+                QJsonObject{
+                    {
+                        QStringLiteral("probeElapsedMs"),
+                        static_cast<double>(state->lifecycleTimer.elapsed())
+                    },
+                    {
+                        QStringLiteral("matchedProcessAgeTargetMs"),
+                        StartupPdfLifetimePageManagerMatchedDurationMilliseconds
+                    }
+                }
+                );
+            appendEvent(QStringLiteral("cycle-control-end"), sampleName);
+            finish();
+            return;
+        }
+
+        failAndStop(QStringLiteral("unknown-page-manager-lifecycle-phase"));
+    };
+
+    navigateToCatalogDocument();
+    application->processEvents();
+    state->viewer = pageManager.pdfViewerPage();
+    state->loadTimer.start();
+    if (
+        !state->viewer
+        || !pageManager.isCurrentPage(PageType::PdfViewer)
+        || state->viewer->currentFilePath()
+            != QString::fromUtf8(StartupPdfLifetimeProbeResolvedPath)
+    )
+    {
+        failAndStop(
+            QStringLiteral("production-document-navigation-did-not-open-guide")
+            );
+        return;
+    }
+    state->pdfPath = state->viewer->currentFilePath();
+    QTimer::singleShot(
+        50,
+        &app,
+        [run]()
+        {
+            if (*run)
+            {
+                (*run)();
+            }
+        }
+        );
 }
 
 void scheduleStartupPdfLifetimeProbe(
@@ -951,6 +1616,25 @@ void scheduleStartupPdfLifetimeProbe(
     if (!pageManager)
     {
         fail(QStringLiteral("page-manager-unavailable"));
+        return;
+    }
+
+    if (
+        state->arm == QStringLiteral("page-manager-cycle")
+        || state->arm == QStringLiteral("page-manager-reopen")
+        )
+    {
+        scheduleStartupPageManagerPdfLifetimeProbe(
+            app,
+            window,
+            *pageManager,
+            profiler,
+            mode,
+            workflowSucceeded,
+            state,
+            fail,
+            completion
+            );
         return;
     }
 
@@ -2729,7 +3413,7 @@ StartupPerformanceMode startupPerformanceMode(
             {
                 fail(
                     QStringLiteral(
-                        "Missing PDF lifetime probe arm; expected document-only, viewer-no-grab, or viewer-grab."
+                        "Missing PDF lifetime probe arm; expected document-only, viewer-no-grab, viewer-grab, page-manager-cycle, or page-manager-reopen."
                         )
                     );
             }
@@ -2741,11 +3425,13 @@ StartupPerformanceMode startupPerformanceMode(
                     mode.pdfLifetimeProbeArm != QStringLiteral("document-only")
                     && mode.pdfLifetimeProbeArm != QStringLiteral("viewer-no-grab")
                     && mode.pdfLifetimeProbeArm != QStringLiteral("viewer-grab")
+                    && mode.pdfLifetimeProbeArm != QStringLiteral("page-manager-cycle")
+                    && mode.pdfLifetimeProbeArm != QStringLiteral("page-manager-reopen")
                     )
                 {
                     fail(
                         QStringLiteral(
-                            "Invalid PDF lifetime probe arm '%1'; expected document-only, viewer-no-grab, or viewer-grab."
+                            "Invalid PDF lifetime probe arm '%1'; expected document-only, viewer-no-grab, viewer-grab, page-manager-cycle, or page-manager-reopen."
                             )
                             .arg(mode.pdfLifetimeProbeArm)
                         );

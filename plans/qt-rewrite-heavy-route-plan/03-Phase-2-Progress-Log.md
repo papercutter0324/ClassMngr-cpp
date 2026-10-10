@@ -18919,5 +18919,47 @@ confirm `Null` status and zero pages after close; keep the control alive for the
 same elapsed time as the reopen arm. Use normal window teardown; do not detach
 with `setDocument(nullptr)` or manually delete the cached page. These
 observations may narrow hypotheses but do not automatically attribute a
-repeated rise to a cause or fix. F545 is next. Lifecycle acceptance, F526
-provenance, output parity, and full Phase 0 remain open.
+repeated rise to a cause or fix. F545's harness implementation and one-process
+smoke are recorded below; F546's repeated campaign is next. Lifecycle
+acceptance, F526 provenance, output parity, and full Phase 0 remain open.
+
+## F545 production PageManager lifetime probe - 2026-10-10
+
+F545 adds two opt-in arms to `src/main.cpp` and the PDF lifetime probe runner:
+`page-manager-cycle` performs one catalog load/leave/close with matched process
+duration; `page-manager-reopen` closes, waits, reopens through the cached
+production `PageManager` page/view/document, and closes again. Both navigate
+through `NavigationController.handleNavigation`, keep the visible MultiPage
+view, and disable forced grabs and PNG writes. Existing three standalone arms
+remain the defaults; no product default changed. The runner validates exact
+arm-specific `measurementLabels` against ordered memory samples. The cycle arm
+has five labels (including cycle-end); reopen has eight (second ready/close
+and post-close +1s/+5s). Qt 6.12's `setDocument(nullptr)` is not used.
+
+Independent verification passed 17/17 Python runner tests, `py_compile`, an
+incremental Windows x64 Release build, invalid-arm validation (exit 2 with all
+five choices), and validation of all nine stored F543 traces. The paired
+one-process-per-arm Release smoke exited 0 with unique PIDs, empty stdout/stderr,
+no PNG output, available memory samples, and matching binary/source/fixture/
+PDF/RCC/Qt/display identities. Pre-commit revision was `7b7073bf`; the
+executable SHA-256 was
+`11D59B8EDC3690E646F66100DB3050AFFE24C5E42E889C230D8CF3E9FEC9359A`. The
+fixture, `documents.rcc`, and PDF hashes matched F543. Sidecars carry the F545
+tracked-source hashes.
+
+The traces report stable page/view/document identities through cached-page
+reuse. In the reopen arm the document transitions Ready/38 pages -> Null/0 ->
+Ready/38 -> Null/0; `documentsPackMounted` is true at Ready and false after
+close. Cycle and reopen durations were 14,359 ms and 14,356 ms; close +1s/+5s
+samples landed 1,053–1,057 ms and 5,058–5,068 ms after close. Both arms' memory
+samples were available. Evidence root:
+`%LOCALAPPDATA%\Temp\F545-metadata-recheck-33912cd3bee74dada0456b2d8462f1a3`;
+manifest SHA-256
+`3A61C9B9A091E1C00429C6594E882A8E43F11CBD7B0D0DDDBFFBBF572CFC46F6`.
+
+This is one process per arm and verifies the instrumented production
+navigation/lifecycle only; it establishes no repeated memory trend, cause, or
+fix. F546 is next: run three fresh Release processes per arm (six total) on
+the clean committed binary/source with the same fixture and asset identities.
+The 250 MiB lifecycle gate, F526 provenance, output parity, and full Phase 0
+remain open.
