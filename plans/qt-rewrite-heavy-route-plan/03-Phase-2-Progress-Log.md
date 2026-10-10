@@ -19872,6 +19872,37 @@ lifetime claims bounded by the snapshot evidence. The 250 MiB lifecycle gate,
 F536 cause, F526 provenance, output parity, render/window acceptance, and
 global Phase 0 remain open (Windows 1/24, macOS 0/24).
 
+## F582 setCellWidget stack-bucket deltas - 2026-10-11
+
+F582 ranked the 584 stack IDs whose F575 paths contain
+`QTableWidget::setCellWidget`, comparing F568's after-document-close and
+after-view-destroyed aggregates and checking final buckets against F570's
+all-three same-address signatures. The group falls from 39,324,262 bytes in
+snapshot 2 to 30,349,468 in snapshot 3, a net decrease of 8,974,794 bytes.
+There are 251 decreasing stack IDs, none increasing: 245 have no allocations
+in the final snapshot, six decrease but remain present, and 333 are unchanged.
+The final 16,714 records / 30,349,468 bytes exactly equal this group's
+all-three same-address signature totals. This equality does not prove object
+lifetime; an address may be reused.
+
+The ten largest decreases total 6,228,448 bytes. The four largest buckets
+each drop 971,520 bytes and show the same resolved Qt event/timer dispatch
+sequence, with unresolved `ClassMngr.exe` instruction addresses in the caller
+frames. The two largest final buckets remain 16,777,216 bytes on a path
+through `QFontMetrics::horizontalAdvance`/`QFontPrivate::engineForScript` and
+8,388,608 bytes through `QTextDocument::setHtml`. These are stack-path
+signatures, not proof that the named Qt object owns each allocation. F582's
+read-only ranking script is `build/f582_setcellwidget_stack_delta.py` under
+ignored local build artifacts.
+
+F583 checks whether snapshot-2 heap/address keys in the decreasing stack
+buckets occur in snapshot 3 with a changed size or stack signature. This can
+separate absent keys from keys still present under another signature, while
+retaining the address-reuse limitation. F579's matched-symbol capture remains
+deferred. The 250 MiB lifecycle gate, F536 cause, F526 provenance, output
+parity, render/window acceptance, and global Phase 0 remain open (Windows
+1/24, macOS 0/24).
+
 ## F581 checkpoint-by-checkpoint Qt stack groups - 2026-10-11
 
 F581 grouped F575's QtBase-symbolized stack paths against F568's raw
@@ -19901,13 +19932,15 @@ were released or prove that the schedule table owns the difference.
 The reproducible aggregation pass is `build/f581_checkpoint_stack_audit.py`;
 it reads the ignored F568 per-snapshot CSV and F575 symbol report.
 
-F582 ranks the stack IDs responsible for the `setCellWidget` group's
-after-document-close to after-view-destroyed decrease and the final retained
-bytes, using the per-stack snapshot aggregates and F575's Qt function names.
-It will keep overlapping stack-path and unresolved application-frame limits
-explicit. F579's matched-symbol capture remains deferred. The 250 MiB
-lifecycle gate, F536 cause, F526 provenance, output parity, render/window
-acceptance, and global Phase 0 remain open (Windows 1/24, macOS 0/24).
+F582 ranks the 584 `setCellWidget` stack IDs. Of these, 251 decrease by the
+last snapshot (245 with no final bucket and six with smaller nonzero buckets);
+none increases. The final 30,349,468 bytes exactly match the all-three
+same-address signature total. The largest remaining buckets are 16 MiB on a
+font-metrics path and 8 MiB on a rich-text path. F583 compares the decreasing
+snapshot-2 heap/address keys with snapshot 3 to see whether a key is absent or
+present with a changed signature. The 250 MiB lifecycle gate, F536 cause, F526
+provenance, output parity, render/window acceptance, and global Phase 0 remain
+open (Windows 1/24, macOS 0/24).
 
 ## F580 schedule-table rich-text allocation correlation - 2026-10-11
 

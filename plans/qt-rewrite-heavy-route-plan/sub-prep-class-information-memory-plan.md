@@ -828,8 +828,14 @@ path unchanged at 39,324,262 bytes through document close, then down to
 30,349,468 at view destruction, while its `QTextDocument` overlap fell from
 20,207,585 to 12,651,289 bytes. The `QFontEngine` path stayed near 118-120 MB
 across the snapshots. These stack groups overlap and do not identify object
-ownership; the route still reported 49 live schedule cell widgets. F582 ranks
-the stack IDs behind the change and retained bytes. The
+ownership; the route still reported 49 live schedule cell widgets. F582 found
+245 `setCellWidget` stack IDs with no final allocation bucket, six more with
+smaller nonzero buckets, and 333 unchanged IDs; none increased. The final
+30,349,468 bytes exactly match this group's all-three same-address signatures.
+Its largest final buckets are 16 MiB through font metrics and 8 MiB through
+rich-text layout, with `ClassMngr.exe` caller frames still unresolved. F583
+checks the heap/address keys for the decreasing stack buckets across the final
+two checkpoints. The
 checked qtpdf 6.12
 extension tree had no separate debug-symbol package for
 the installed QtPdf 6.140.0.0 modules, so function-level PDFium/QtPdf
