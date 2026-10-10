@@ -19736,10 +19736,43 @@ ignored. The ETL remains at
 The WPA Exporter could not provide a usable export in this restricted session,
 so F565 records the xperf CLI output rather than claiming a WPA GUI inspection.
 
-F566 is next: cross-check the 59,148-record discrepancy with an independent
-WPA/ETW trace-processing path before using these counts or module frequencies
-for quantitative attribution. Keep the retained ETL immutable and the
-allocation-owner conclusion open until the analyzer counts reconcile and
-matching Release symbols are available. The 250 MiB lifecycle gate, F536
-cause, F526 provenance, output parity, render/window acceptance, and global
-Phase 0 remain open (Windows 1/24, macOS 0/24).
+## F566 independent heap-allocation record cross-check - 2026-10-11
+
+The retained F564 ETL was also read with Microsoft's local TraceProcessor
+heap-snapshot API from the installed Windows Performance Toolkit. The raw
+`UseHeapSnapshotsFastUnsafe` path succeeded without symbol enrichment and
+returned three snapshots and their allocation records. A separate attempt to
+initialize the symbol-enriched heap table failed in the local
+`SymbolFlyweightDataSource` setup, so F566 makes no symbol-enriched claim. The
+ETL was not changed; its size and SHA-256 remain those recorded under F565.
+
+| Checkpoint | xperf header records | TraceProcessor records | Difference | Summed allocation sizes | xperf processed stack references |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| after-render | 247,896 | 247,896 | 0 | 208,775,254 bytes | 224,639 |
+| after-document-close | 236,535 | 236,535 | 0 | 203,479,577 bytes | 214,086 |
+| after-view-destroyed | 107,013 | 107,013 | 0 | 171,704,838 bytes | 93,571 |
+| **Total** | **591,444** | **591,444** | **0** | n/a | **532,296** |
+
+For each checkpoint, TraceProcessor's independently enumerated allocation
+record count exactly matches xperf's snapshot header count. The summed sizes
+are the recorded allocation sizes in that snapshot; they are not working-set,
+private-bytes, or OS-residency measurements. This establishes that the
+59,148 difference is between the complete allocation-record totals and
+xperf's processed stack-reference count, not 59,148 absent allocation records.
+The per-checkpoint differences are 23,257, 22,449, and 13,442 respectively.
+
+`xperf -tracestats` reports zero lost buffers and zero lost events for this
+trace window. Therefore the ETW loss counters do not explain the smaller
+processed stack-reference totals. F566 reconciles the allocation-record
+counts and validates the per-snapshot allocation-size sums with an independent
+reader. xperf module frequencies still describe only the processed stack
+references and must not be presented as full allocation-module frequencies.
+Neither parser result identifies a retained allocation's owner or establishes
+a leak. The ETL and local analysis reports remain ignored build artifacts.
+
+F567 begins by inspecting raw allocation-to-stack linkage and measuring stack
+attribution coverage per checkpoint, to determine what the smaller processed
+reference totals mean. Keep the ETL immutable and allocation-owner conclusions
+open; matching private Release symbols are still unavailable. The 250 MiB
+lifecycle gate, F536 cause, F526 provenance, output parity, render/window
+acceptance, and global Phase 0 remain open (Windows 1/24, macOS 0/24).

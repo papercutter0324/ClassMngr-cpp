@@ -769,10 +769,16 @@ F565 inspected the three instances with the installed Windows Performance
 Toolkit xperf heap-snapshot actions. Module names and raw instruction pointers
 are available, including `Qt6Pdf.dll` frames in processed stack data at all
 three checkpoints; no function names/source lines or allocation owner can be
-established without matching Release symbols. The detail report's declared
-591,444 allocations do not reconcile with its 532,296 processed stack
-references, so it is not used for full quantitative attribution. F566 will
-cross-check that discrepancy with an independent WPA/ETW trace-processing
-path before counts or module frequencies are interpreted. The 250 MiB
-lifecycle gate, F536 cause, F526 provenance, output parity, render/window
-acceptance, and global Phase 0 remain open (Windows 1/24, macOS 0/24).
+established without matching Release symbols. F566 independently enumerated
+the same ETL's allocation records with TraceProcessor's raw heap-snapshot API:
+all three per-checkpoint record counts exactly match xperf's header counts
+(247,896; 236,535; and 107,013). The 59,148 difference is between those
+complete record totals and xperf's processed stack-reference count, not absent
+allocation records. TraceProcessor's summed allocation sizes are 208,775,254,
+203,479,577, and 171,704,838 bytes respectively; these are heap snapshot
+allocation sizes, not process working set or OS residency. ETW statistics show
+zero lost buffers and events. xperf module frequencies still cover processed
+stack references only. F567 starts by inspecting raw allocation-to-stack
+linkage and measuring stack-attribution coverage. The 250 MiB lifecycle gate,
+F536 cause, F526 provenance, output parity, render/window acceptance, and
+global Phase 0 remain open (Windows 1/24, macOS 0/24).
