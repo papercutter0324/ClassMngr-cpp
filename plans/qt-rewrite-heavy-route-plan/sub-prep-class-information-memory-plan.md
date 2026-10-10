@@ -799,8 +799,11 @@ the 171,415,335 same-address-signature bytes in the final snapshot, only
 67,728 bytes are on paths containing `Qt6Pdf.dll` and 1,072 bytes on paths
 containing `Qt6PdfWidgets.dll`; module totals overlap and do not identify
 allocation ownership. The largest repeated stack bucket is 25,165,824 bytes
-on a path through ClassMngr, Qt6Gui, and Qt6Core. F571 checks matching local
-symbols for the large buckets; function-level ownership remains open. The
-250 MiB lifecycle gate, F536 cause, F526 provenance, output parity,
-render/window acceptance, and global Phase 0 remain open (Windows 1/24,
-macOS 0/24).
+on a path through ClassMngr, Qt6Gui, and Qt6Core. F571 found no matching
+Release PDB or map for ClassMngr.exe or the Qt modules in the package, build,
+or Qt MSVC prefixes; only Debug ClassMngr PDBs exist. xperf therefore resolves
+module/IP frames but not internal function names. F572 checks the official
+Qt symbol-package route for the exact module versions. Function-level
+ownership remains open. The 250 MiB lifecycle gate, F536 cause, F526
+provenance, output parity, render/window acceptance, and global Phase 0 remain
+open (Windows 1/24, macOS 0/24).

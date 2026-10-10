@@ -19872,6 +19872,29 @@ lifetime claims bounded by the snapshot evidence. The 250 MiB lifecycle gate,
 F536 cause, F526 provenance, output parity, render/window acceptance, and
 global Phase 0 remain open (Windows 1/24, macOS 0/24).
 
+## F571 Release-symbol availability audit - 2026-10-11
+
+The local search covered the F564 packaged Release directory, the
+`build/windows-x64-release-ninja` build, the F564 capture directory, and the
+Qt 6.12.0 MSVC 2022 x64 and ARM64 prefixes. None contains matching PDB or map
+files for `ClassMngr.exe`, `Qt6Core.dll`, `Qt6Gui.dll`, `Qt6Pdf.dll`, or
+`Qt6PdfWidgets.dll`. Two `ClassMngr.pdb` files exist under Debug build
+directories, but the F564 ETL was captured from the separately hashed
+packaged Release executable; the Debug PDBs are not matching symbols for it.
+
+The installed Qt package records QtBase/Core/Gui 6.12.0.0 and QtPdf/
+QtPdfWidgets 6.140.0.0. The xperf symbolized report therefore resolves the
+captured frames to loaded modules and raw IPs but not to internal function
+names or source lines. The symbol limit applies to the largest surviving
+ClassMngr/QtGui/QtCore stack paths as well as QtPdf. No PDB or map was added to
+the repository or build artifacts, and the ETL remains unchanged.
+
+F572 checks the official Qt Windows symbol-package route for these exact
+module versions and records whether usable matching symbols can be obtained
+or a reproducible instrumented build would be required. The 250 MiB lifecycle
+gate, F536 cause, F526 provenance, output parity, render/window acceptance,
+and global Phase 0 remain open (Windows 1/24, macOS 0/24).
+
 ## F570 all-checkpoint signature module-path summary - 2026-10-11
 
 F570 restricted the loaded-image mapping to the 106,326 heap/address/size/
