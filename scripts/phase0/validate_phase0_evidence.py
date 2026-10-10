@@ -934,6 +934,213 @@ def _checkpoint_names(
     return names, [str(value.get("name")) for value in normalized if isinstance(value.get("name"), str)], normalized
 
 
+def _validate_diagnostic_memory_record(
+    record: dict[str, Any],
+    label: str,
+    path: Path,
+    failures: list[dict[str, Any]],
+) -> None:
+    numeric_fields = (
+        "workingSetBytes",
+        "peakWorkingSetBytes",
+        "privateUsageBytes",
+        "privateWorkingSetBytes",
+        "privateDirtyBytes",
+        "pagefileUsageBytes",
+        "handleCount",
+        "threadCount",
+    )
+    available = record.get("available")
+    if not isinstance(available, bool):
+        _append_issue(
+            failures,
+            "invalid-memory-diagnostic",
+            f"{label} has no boolean available field.",
+            path,
+        )
+    platform = record.get("platform")
+    if not isinstance(platform, str) or (available is True and not platform):
+        _append_issue(
+            failures,
+            "invalid-memory-diagnostic",
+            f"{label} has an invalid platform field.",
+            path,
+        )
+    captured_at = record.get("capturedAt")
+    if not isinstance(captured_at, str) or (available is True and not captured_at):
+        _append_issue(
+            failures,
+            "invalid-memory-diagnostic",
+            f"{label} has no capture timestamp.",
+            path,
+        )
+    elif captured_at:
+        try:
+            datetime.fromisoformat(captured_at.replace("Z", "+00:00"))
+        except ValueError:
+            _append_issue(
+                failures,
+                "invalid-memory-diagnostic",
+                f"{label} has an invalid capture timestamp.",
+                path,
+            )
+    for field in numeric_fields:
+        value = record.get(field)
+        if not _is_number(value) or value < 0:
+            _append_issue(
+                failures,
+                "invalid-memory-diagnostic",
+                f"{label} has an invalid {field} field.",
+                path,
+            )
+    viewer_state = record.get("viewerState")
+    if viewer_state is not None:
+        if not isinstance(viewer_state, dict):
+            _append_issue(
+                failures,
+                "invalid-memory-diagnostic",
+                f"{label} viewerState must be an object.",
+                path,
+            )
+        else:
+            for field in ("loaded", "renderedImageValid"):
+                if field in viewer_state and not isinstance(viewer_state[field], bool):
+                    _append_issue(
+                        failures,
+                        "invalid-memory-diagnostic",
+                        f"{label} viewerState.{field} must be boolean.",
+                        path,
+                    )
+            for field in (
+                "pageCount",
+                "viewWidth",
+                "viewHeight",
+                "renderWidth",
+                "renderHeight",
+            ):
+                if field in viewer_state and (
+                    not _is_number(viewer_state[field]) or viewer_state[field] < 0
+                ):
+                    _append_issue(
+                        failures,
+                        "invalid-memory-diagnostic",
+                        f"{label} viewerState.{field} must be a non-negative number.",
+                        path,
+                    )
+    operation = record.get("operation")
+    if operation is not None and not isinstance(operation, dict):
+        _append_issue(
+            failures,
+            "invalid-memory-diagnostic",
+            f"{label} operation must be an object.",
+            path,
+        )
+
+
+def _validate_optional_memory_diagnostics(
+    report: dict[str, Any],
+    failures: list[dict[str, Any]],
+    path: Path,
+) -> list[tuple[str, dict[str, Any]]]:
+    records: list[tuple[str, dict[str, Any]]] = []
+    checkpoints = report.get("checkpoints")
+    if isinstance(checkpoints, list):
+        for index, checkpoint in enumerate(checkpoints):
+            if not isinstance(checkpoint, dict) or "memoryAfterMetrics" not in checkpoint:
+                continue
+            name = checkpoint.get("name")
+            label = f"checkpoint {name if isinstance(name, str) else index} memoryAfterMetrics"
+            memory = checkpoint.get("memoryAfterMetrics")
+            if not isinstance(memory, dict):
+                _append_issue(
+                    failures,
+                    "invalid-memory-diagnostic",
+                    f"{label} must be an object.",
+                    path,
+                )
+                continue
+            _validate_diagnostic_memory_record(memory, label, path, failures)
+            records.append((label, memory))
+
+    if "memorySamples" in report:
+        samples = report.get("memorySamples")
+        if not isinstance(samples, list):
+            _append_issue(
+                failures,
+                "invalid-memory-diagnostic",
+                "memorySamples must be an ordered array.",
+                path,
+            )
+        else:
+            previous_elapsed: float | None = None
+            for index, sample in enumerate(samples):
+                label = f"memorySamples[{index}]"
+                if not isinstance(sample, dict):
+                    _append_issue(
+                        failures,
+                        "invalid-memory-diagnostic",
+                        f"{label} must be an object.",
+                        path,
+                    )
+                    continue
+                name = sample.get("name")
+                if not isinstance(name, str) or not name:
+                    _append_issue(
+                        failures,
+                        "invalid-memory-diagnostic",
+                        f"{label} has no sample name.",
+                        path,
+                    )
+                elapsed = sample.get("elapsedMs")
+                if not _is_number(elapsed) or elapsed < 0:
+                    _append_issue(
+                        failures,
+                        "invalid-memory-diagnostic",
+                        f"{label} has an invalid elapsedMs field.",
+                        path,
+                    )
+                else:
+                    if previous_elapsed is not None and elapsed < previous_elapsed:
+                        _append_issue(
+                            failures,
+                            "invalid-memory-diagnostic",
+                            "memorySamples are not ordered by elapsedMs.",
+                            path,
+                        )
+                    previous_elapsed = float(elapsed)
+                _validate_diagnostic_memory_record(sample, label, path, failures)
+                records.append((name if isinstance(name, str) else label, sample))
+
+    peak = report.get("peakMemory")
+    if isinstance(peak, dict):
+        if "processMemorySampleCount" in peak and (
+            not _is_number(peak["processMemorySampleCount"])
+            or peak["processMemorySampleCount"] < 0
+        ):
+            _append_issue(
+                failures,
+                "invalid-memory-diagnostic",
+                "peakMemory.processMemorySampleCount must be a non-negative number.",
+                path,
+            )
+        if "aggregation" in peak:
+            aggregation = peak.get("aggregation")
+            if (
+                not isinstance(aggregation, dict)
+                or aggregation.get("method") != "maximum-per-field"
+                or aggregation.get("singlePairedSample") is not False
+                or not isinstance(aggregation.get("scope"), str)
+                or not aggregation.get("scope")
+            ):
+                _append_issue(
+                    failures,
+                    "invalid-memory-diagnostic",
+                    "peakMemory.aggregation does not describe per-field aggregate maxima.",
+                    path,
+                )
+    return records
+
+
 def _find_release_metrics(
     report: dict[str, Any],
     route_manifest: dict[str, Any] | None,
@@ -1483,6 +1690,11 @@ def _validate_route(
             if observed:
                 _append_issue(failures, "unexpected-success", f"Expected parser failure reached success checkpoints: {', '.join(observed)}.", report_path)
         _check_release_flags(spec, report, route_manifest, failures, lifecycle)
+        diagnostic_memory_records = _validate_optional_memory_diagnostics(
+            report,
+            failures,
+            report_path,
+        )
         for checkpoint in checkpoints:
             memory = checkpoint.get("memory")
             if isinstance(memory, dict):
@@ -1495,6 +1707,16 @@ def _validate_route(
                 }
                 if _is_number(sample["workingSetBytes"]) or _is_number(sample["peakWorkingSetBytes"]):
                     memory_samples.append(sample)
+        for label, memory in diagnostic_memory_records:
+            sample = {
+                "routeId": spec.route_id,
+                "checkpoint": label,
+                "workingSetBytes": memory.get("workingSetBytes"),
+                "peakWorkingSetBytes": memory.get("peakWorkingSetBytes"),
+                "privateUsageBytes": memory.get("privateUsageBytes"),
+            }
+            if _is_number(sample["workingSetBytes"]) or _is_number(sample["peakWorkingSetBytes"]):
+                memory_samples.append(sample)
         peak = report.get("peakMemory")
         if isinstance(peak, dict):
             memory_samples.append(
@@ -1843,6 +2065,11 @@ def validate_retained_evidence(evidence_root: Path) -> dict[str, Any]:
 
     for path, report in reports:
         names, _, checkpoints = _checkpoint_names(report, failures, path)
+        diagnostic_memory_records = _validate_optional_memory_diagnostics(
+            report,
+            failures,
+            path,
+        )
         events = report.get("events")
         if not isinstance(events, list):
             _append_issue(failures, "invalid-metrics", "Metrics report has no events array.", path)
@@ -1871,6 +2098,14 @@ def validate_retained_evidence(evidence_root: Path) -> dict[str, Any]:
                     "peakWorkingSetBytes": memory.get("peakWorkingSetBytes"),
                     "privateUsageBytes": memory.get("privateUsageBytes"),
                 })
+        for label, memory in diagnostic_memory_records:
+            memory_samples.append({
+                "routeId": str(path.parent.relative_to(root)),
+                "checkpoint": label,
+                "workingSetBytes": memory.get("workingSetBytes"),
+                "peakWorkingSetBytes": memory.get("peakWorkingSetBytes"),
+                "privateUsageBytes": memory.get("privateUsageBytes"),
+            })
         peak = report.get("peakMemory")
         if isinstance(peak, dict):
             memory_samples.append({
@@ -2762,6 +2997,98 @@ def run_self_test() -> int:
                 self.assertTrue(any(item["code"] == "missing-artifact" for item in summary["failures"]))
                 self.assertEqual(summary["memoryTrend"]["aboveLegacy250MiBCount"], 1)
                 self.assertFalse(summary["memoryTrend"]["isPhase0Failure"])
+
+        def test_optional_memory_diagnostics_validate_and_preserve_legacy_v2(self) -> None:
+            def memory_record(working_set: int, elapsed_ms: int | None = None) -> dict[str, Any]:
+                record: dict[str, Any] = {
+                    "available": True,
+                    "platform": "windows",
+                    "capturedAt": "2026-10-10T00:00:00.000+09:00",
+                    "workingSetBytes": working_set,
+                    "peakWorkingSetBytes": working_set + 100,
+                    "privateUsageBytes": working_set + 200,
+                    "privateWorkingSetBytes": working_set + 300,
+                    "privateDirtyBytes": working_set + 400,
+                    "pagefileUsageBytes": working_set + 500,
+                    "handleCount": 12,
+                    "threadCount": 8,
+                }
+                if elapsed_ms is not None:
+                    record["elapsedMs"] = elapsed_ms
+                return record
+
+            with tempfile.TemporaryDirectory(prefix="phase0-validator-memory-diagnostics-") as temporary:
+                root = Path(temporary)
+                _create_self_test_fixture(root)
+                metrics_path = root / "workflow/representative/startup-metrics.json"
+
+                legacy_summary = validate_evidence(root)
+                self.assertEqual(legacy_summary["status"], "pass", legacy_summary["failures"])
+                legacy_sample_count = legacy_summary["memoryTrend"]["sampleCount"]
+
+                report = json.loads(metrics_path.read_text(encoding="utf-8"))
+                report["checkpoints"][0]["memoryAfterMetrics"] = memory_record(1500)
+                first_pdf_sample = memory_record(2500, 10)
+                first_pdf_sample.update(
+                    {
+                        "name": "pdf-grab-start",
+                        "viewerState": {
+                            "loaded": True,
+                            "pageCount": 3,
+                            "viewWidth": 900,
+                            "viewHeight": 700,
+                        },
+                    }
+                )
+                second_pdf_sample = memory_record(2600, 20)
+                second_pdf_sample.update(
+                    {
+                        "name": "pdf-grab-complete",
+                        "viewerState": {
+                            "loaded": True,
+                            "pageCount": 3,
+                            "viewWidth": 900,
+                            "viewHeight": 700,
+                            "renderedImageValid": True,
+                            "renderWidth": 900,
+                            "renderHeight": 700,
+                        },
+                        "operation": {"captureEnabled": True},
+                    }
+                )
+                report["memorySamples"] = [first_pdf_sample, second_pdf_sample]
+                report["peakMemory"]["processMemorySampleCount"] = (
+                    2 * len(report["checkpoints"]) + 2
+                )
+                report["peakMemory"]["aggregation"] = {
+                    "method": "maximum-per-field",
+                    "scope": "checkpoint and PDF lifecycle samples",
+                    "singlePairedSample": False,
+                }
+                _write_json(metrics_path, report)
+
+                summary = validate_evidence(root)
+
+                self.assertEqual(summary["status"], "pass", summary["failures"])
+                self.assertEqual(
+                    summary["memoryTrend"]["sampleCount"],
+                    legacy_sample_count + 3,
+                )
+                self.assertEqual(
+                    summary["memoryTrend"]["maximumComparedWorkingSetBytes"],
+                    2700,
+                )
+
+                report["memorySamples"][1]["workingSetBytes"] = "invalid"
+                _write_json(metrics_path, report)
+                invalid_summary = validate_evidence(root)
+                self.assertEqual(invalid_summary["status"], "fail")
+                self.assertTrue(
+                    any(
+                        issue["code"] == "invalid-memory-diagnostic"
+                        for issue in invalid_summary["failures"]
+                    )
+                )
 
         def test_representative_visual_uses_nested_variant_paths(self) -> None:
             with tempfile.TemporaryDirectory(prefix="phase0-validator-") as temporary:

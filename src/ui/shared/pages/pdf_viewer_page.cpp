@@ -294,6 +294,11 @@ bool PdfViewerPage::hasLoadedDocument() const
         && m_document->pageCount() > 0;
 }
 
+int PdfViewerPage::documentPageCount() const
+{
+    return m_document ? m_document->pageCount() : 0;
+}
+
 ClassMngr::Next::Application::DocumentContentSnapshot
 PdfViewerPage::documentContentSnapshot() const
 {

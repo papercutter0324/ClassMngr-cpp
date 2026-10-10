@@ -18544,3 +18544,25 @@ document/page/view metrics before and after `applicationMetrics()`, and around
 PDF load, viewer-ready/grab, PNG save, and close/lease release. This does not
 claim memory acceptance. Output parity, F526 source provenance, the memory
 target, and full Phase 0 gates remain open.
+
+## F535 memory-attribution instrumentation - 2026-10-10
+
+Startup profile v2 now adds optional `memoryAfterMetrics` checkpoint samples;
+the existing `memory` field remains the process snapshot taken before the one
+`applicationMetrics()` traversal. Ordered PDF lifecycle process samples cover
+load request/return, viewer-ready, grab, enabled PNG save, and document/lease
+release. No additional metrics traversal is performed. `peakMemory` includes
+all samples as independent maximum-per-field values and explicitly does not
+represent one paired process sample. The evidence validator checks the optional
+diagnostics while continuing to accept historical v2 reports without them.
+
+The first Ninja build attempt lacked the MSVC environment and could not resolve
+`<limits>`; the build passed after initializing `vcvars64.bat`. Independent
+Windows x64 Debug Ninja verification passed. The focused
+`ClassMngrStartupPerformanceTests` CTest passed 1/1, including lifecycle
+ordering and release assertions; validator `--self-test` passed 20/20,
+including the legacy-v2 case; `git diff --check` passed. No Release route was
+run. F536 is next: after F535 is committed, run the current-source Windows x64
+Release `lifecycle-sub-prep,output-sub-prep` routes with source snapshots.
+Instrumentation does not close the 262,144,000-byte memory gate. PDF parity,
+F526 source provenance, and Phase 0 remain open.

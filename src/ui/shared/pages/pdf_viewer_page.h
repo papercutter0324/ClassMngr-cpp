@@ -52,6 +52,7 @@ public:
 
     [[nodiscard]] QString currentFilePath() const;
     [[nodiscard]] bool hasLoadedDocument() const;
+    [[nodiscard]] int documentPageCount() const;
     [[nodiscard]] ClassMngr::Next::Application::DocumentContentSnapshot
         documentContentSnapshot() const;
 

@@ -278,6 +278,16 @@ struct StartupCheckpoint
     qint64 elapsedMilliseconds = 0;
     ProcessMemorySnapshot memory;
     StartupApplicationMetrics metrics;
+    ProcessMemorySnapshot memoryAfterMetrics;
+};
+
+struct StartupProcessMemorySample
+{
+    QString name;
+    qint64 elapsedMilliseconds = 0;
+    ProcessMemorySnapshot memory;
+    QJsonObject viewerState;
+    QJsonObject operation;
 };
 
 struct StartupProfilingEvent
@@ -293,7 +303,9 @@ struct StartupProfilingEvent
 class StartupProfiler
 {
 public:
-    StartupProfiler();
+    explicit StartupProfiler(
+        ProcessMemorySnapshotProvider* memoryProvider = nullptr
+        );
     ~StartupProfiler();
 
     StartupProfiler(const StartupProfiler&) = delete;
@@ -311,6 +323,11 @@ public:
     void checkpoint(
         const QString& name,
         const QString& detail = QString()
+        );
+    void sampleProcessMemory(
+        const QString& name,
+        const QJsonObject& viewerState = {},
+        const QJsonObject& operation = {}
         );
 
     [[nodiscard]] const QList<StartupCheckpoint>& checkpoints() const;
@@ -578,6 +595,7 @@ private:
     std::function<StartupApplicationMetrics()> m_applicationMetricsProvider;
     QList<StartupCheckpoint> m_checkpoints;
     QList<StartupProfilingEvent> m_events;
+    QList<StartupProcessMemorySample> m_processMemorySamples;
     StartupApplicationMetrics m_scheduleMetrics;
     PlatformProcessMemorySnapshotProvider m_platformMemoryProvider;
     bool m_subPrepDiagnosticsActive = false;

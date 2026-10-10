@@ -1,6 +1,7 @@
 #include <QDir>
 #include <QDirIterator>
 #include <QCryptographicHash>
+#include <QDateTime>
 #include <QElapsedTimer>
 #include <QEventLoop>
 #include <QFile>
@@ -18,6 +19,7 @@
 #include <QSqlDatabase>
 #include <QSqlError>
 #include <QSqlQuery>
+#include <QStringList>
 #include <QSet>
 #include <QTemporaryDir>
 #include <QTcpServer>
@@ -35,6 +37,7 @@
 #include "domain/models/class_transfer.h"
 #include "domain/models/speaking_evaluation.h"
 #include "features/classes/services/class_transfer_json_codec.h"
+#include "core/startup_profiler.h"
 
 namespace
 {
@@ -1645,6 +1648,7 @@ class StartupPerformanceTests : public QObject
     Q_OBJECT
 
 private slots:
+    void checkpointsBracketOneApplicationMetricsTraversal();
     void representativeStartupFixtureIsCompleteAndDeterministic();
     void largeStartupFixtureIsCompleteAndDeterministic();
     void legacyStartupFixtureMigratesAndRemainsReadable();
@@ -1669,6 +1673,116 @@ private slots:
     void capturesVisualLanguageAndThemeVariants();
     void capturesRepresentativeVisualVariants();
 };
+
+void StartupPerformanceTests
+    ::checkpointsBracketOneApplicationMetricsTraversal()
+{
+    class SequencedMemoryProvider final : public ProcessMemorySnapshotProvider
+    {
+    public:
+        explicit SequencedMemoryProvider(QStringList& sequence)
+            : m_sequence(sequence)
+        {
+        }
+
+        ProcessMemorySnapshot snapshot() const override
+        {
+            const int sampleNumber = ++m_sampleCount;
+            m_sequence.append(
+                QStringLiteral("memory-%1").arg(sampleNumber)
+                );
+
+            ProcessMemorySnapshot memory;
+            memory.isAvailable = true;
+            memory.platform = QStringLiteral("test");
+            memory.capturedAt = QDateTime::currentDateTime();
+            memory.workingSetBytes = sampleNumber == 1 ? 10 : 20;
+            memory.peakWorkingSetBytes = sampleNumber == 1 ? 100 : 90;
+            memory.privateUsageBytes = sampleNumber == 1 ? 1000 : 900;
+            return memory;
+        }
+
+        int sampleCount() const
+        {
+            return m_sampleCount;
+        }
+
+    private:
+        QStringList& m_sequence;
+        mutable int m_sampleCount = 0;
+    };
+
+    QStringList sequence;
+    SequencedMemoryProvider memoryProvider(sequence);
+    StartupProfiler profiler(&memoryProvider);
+    int applicationMetricsTraversalCount = 0;
+    profiler.setApplicationMetricsProvider(
+        [&sequence, &applicationMetricsTraversalCount]()
+        {
+            sequence.append(QStringLiteral("application-metrics"));
+            ++applicationMetricsTraversalCount;
+            StartupApplicationMetrics metrics;
+            metrics.instantiatedPageCount = 5;
+            metrics.registeredPageCount = 7;
+            return metrics;
+        }
+        );
+
+    profiler.checkpoint(QStringLiteral("single-checkpoint"));
+
+    QCOMPARE(
+        sequence,
+        (QStringList{
+            QStringLiteral("memory-1"),
+            QStringLiteral("application-metrics"),
+            QStringLiteral("memory-2")
+        })
+        );
+    QCOMPARE(memoryProvider.sampleCount(), 2);
+    QCOMPARE(applicationMetricsTraversalCount, 1);
+    QCOMPARE(profiler.checkpoints().size(), 1);
+    QCOMPARE(profiler.checkpoints().first().memory.workingSetBytes, quint64(10));
+    QCOMPARE(
+        profiler.checkpoints().first().memoryAfterMetrics.workingSetBytes,
+        quint64(20)
+        );
+    QCOMPARE(
+        profiler.checkpoints().first().metrics.instantiatedPageCount,
+        5
+        );
+
+    const QJsonObject report = profiler.reportJson();
+    const QJsonObject checkpoint = report
+        .value(QStringLiteral("checkpoints"))
+        .toArray()
+        .first()
+        .toObject();
+    QCOMPARE(
+        checkpoint.value(QStringLiteral("memory")).toObject()
+            .value(QStringLiteral("workingSetBytes")).toDouble(),
+        10.0
+        );
+    QCOMPARE(
+        checkpoint.value(QStringLiteral("memoryAfterMetrics")).toObject()
+            .value(QStringLiteral("workingSetBytes")).toDouble(),
+        20.0
+        );
+    const QJsonObject peakMemory = report
+        .value(QStringLiteral("peakMemory"))
+        .toObject();
+    QCOMPARE(peakMemory.value(QStringLiteral("workingSetBytes")).toDouble(), 20.0);
+    QCOMPARE(
+        peakMemory.value(QStringLiteral("peakWorkingSetBytes")).toDouble(),
+        100.0
+        );
+    QCOMPARE(peakMemory.value(QStringLiteral("privateUsageBytes")).toDouble(), 1000.0);
+    QCOMPARE(
+        peakMemory.value(QStringLiteral("processMemorySampleCount")).toInt(),
+        2
+        );
+    QVERIFY(!peakMemory.value(QStringLiteral("aggregation")).toObject()
+                 .value(QStringLiteral("singlePairedSample")).toBool());
+}
 
 void StartupPerformanceTests
     ::representativeStartupFixtureIsCompleteAndDeterministic()
@@ -3008,6 +3122,236 @@ void StartupPerformanceTests::runsRepresentativeWorkspaceLifecycleWorkflow()
     }
     QVERIFY(!checkpointNames.contains(QStringLiteral("workflow-page-failed")));
     QVERIFY(!checkpointNames.contains(QStringLiteral("workflow-child-failed")));
+
+    const QJsonArray memorySamples =
+        report.value(QStringLiteral("memorySamples")).toArray();
+    QVERIFY(memorySamples.size() > 0);
+    QStringList sampleNames;
+    QStringList loadRequests;
+    QStringList loadReturns;
+    QStringList viewerReadyRequests;
+    QStringList pngCaptureFileNames;
+    QList<bool> documentReleaseStartLoadedStates;
+    QList<int> documentReleaseStartPageCounts;
+    int documentReleaseStarts = 0;
+    int documentReleaseCompletions = 0;
+    double maximumObservedWorkingSetBytes = 0.0;
+    for (int index = 0; index < memorySamples.size(); ++index)
+    {
+        const QJsonObject sample = memorySamples.at(index).toObject();
+        const QString name = sample.value(QStringLiteral("name")).toString();
+        QVERIFY(!name.isEmpty());
+        sampleNames.append(name);
+        QVERIFY(sample.value(QStringLiteral("available")).isBool());
+        QVERIFY(!sample.value(QStringLiteral("platform")).toString().isEmpty());
+        QVERIFY(!sample.value(QStringLiteral("capturedAt")).toString().isEmpty());
+        for (const QString& field : {
+                 QStringLiteral("workingSetBytes"),
+                 QStringLiteral("peakWorkingSetBytes"),
+                 QStringLiteral("privateUsageBytes"),
+                 QStringLiteral("privateWorkingSetBytes"),
+                 QStringLiteral("privateDirtyBytes"),
+                 QStringLiteral("pagefileUsageBytes"),
+                 QStringLiteral("handleCount"),
+                 QStringLiteral("threadCount")
+             })
+        {
+            QVERIFY2(
+                sample.value(field).isDouble(),
+                qPrintable(QStringLiteral("Missing process sample field: %1").arg(field))
+                );
+        }
+        QVERIFY(sample.value(QStringLiteral("elapsedMs")).toDouble(-1.0) >= 0.0);
+        maximumObservedWorkingSetBytes = qMax(
+            maximumObservedWorkingSetBytes,
+            sample.value(QStringLiteral("workingSetBytes")).toDouble()
+            );
+        const QJsonObject viewerState =
+            sample.value(QStringLiteral("viewerState")).toObject();
+        QVERIFY(viewerState.value(QStringLiteral("loaded")).isBool());
+        QVERIFY(viewerState.value(QStringLiteral("pageCount")).isDouble());
+        QVERIFY(viewerState.value(QStringLiteral("viewWidth")).isDouble());
+        QVERIFY(viewerState.value(QStringLiteral("viewHeight")).isDouble());
+
+        const QJsonObject operation =
+            sample.value(QStringLiteral("operation")).toObject();
+        if (name == QStringLiteral("pdf-load-request"))
+        {
+            loadRequests.append(operation.value(QStringLiteral("request")).toString());
+        }
+        else if (name == QStringLiteral("pdf-load-return"))
+        {
+            loadReturns.append(operation.value(QStringLiteral("request")).toString());
+            const QString request = operation.value(QStringLiteral("request")).toString();
+            const bool accepted = operation.value(QStringLiteral("accepted")).toBool();
+            if (!accepted)
+            {
+                QCOMPARE(request, QStringLiteral("missing-document"));
+                QVERIFY(!viewerState.value(QStringLiteral("loaded")).toBool());
+            }
+        }
+        else if (name == QStringLiteral("pdf-viewer-ready"))
+        {
+            viewerReadyRequests.append(operation.value(QStringLiteral("request")).toString());
+            QVERIFY(viewerState.value(QStringLiteral("loaded")).toBool());
+            QVERIFY(viewerState.value(QStringLiteral("pageCount")).toInt() > 0);
+        }
+        else if (name == QStringLiteral("pdf-png-save-start"))
+        {
+            QVERIFY(operation.value(QStringLiteral("pngCaptureEnabled")).toBool());
+            pngCaptureFileNames.append(operation.value(QStringLiteral("fileName")).toString());
+            QVERIFY(index + 1 < memorySamples.size());
+            QCOMPARE(
+                memorySamples.at(index + 1).toObject()
+                    .value(QStringLiteral("name")).toString(),
+                QStringLiteral("pdf-png-save-complete")
+                );
+        }
+        else if (name == QStringLiteral("pdf-png-save-complete"))
+        {
+            QVERIFY(operation.value(QStringLiteral("saved")).toBool());
+        }
+        else if (name == QStringLiteral("pdf-document-release-start"))
+        {
+            ++documentReleaseStarts;
+            documentReleaseStartLoadedStates.append(
+                viewerState.value(QStringLiteral("loaded")).toBool()
+                );
+            documentReleaseStartPageCounts.append(
+                viewerState.value(QStringLiteral("pageCount")).toInt()
+                );
+            QVERIFY(operation.value(QStringLiteral("includesDocumentClose")).toBool());
+            QVERIFY(operation.value(QStringLiteral("includesResourceLeaseRelease")).toBool());
+        }
+        else if (name == QStringLiteral("pdf-document-release-complete"))
+        {
+            ++documentReleaseCompletions;
+            QVERIFY(!viewerState.value(QStringLiteral("loaded")).toBool());
+            QCOMPARE(viewerState.value(QStringLiteral("pageCount")).toInt(), 0);
+        }
+        if (name.endsWith(QStringLiteral("-grab-complete")))
+        {
+            QVERIFY(viewerState.value(QStringLiteral("renderedImageValid")).toBool());
+            QVERIFY(viewerState.value(QStringLiteral("renderWidth")).toInt() > 0);
+            QVERIFY(viewerState.value(QStringLiteral("renderHeight")).toInt() > 0);
+        }
+        else if (name.endsWith(QStringLiteral("-grab-start")))
+        {
+            QVERIFY(index + 1 < memorySamples.size());
+            const QString expectedCompletion =
+                name.left(name.size() - QStringLiteral("-start").size())
+                + QStringLiteral("-complete");
+            QCOMPARE(
+                memorySamples.at(index + 1).toObject()
+                    .value(QStringLiteral("name")).toString(),
+                expectedCompletion
+                );
+        }
+    }
+
+    for (const QJsonValue& checkpointValue : report
+             .value(QStringLiteral("checkpoints"))
+             .toArray())
+    {
+        const QJsonObject checkpoint = checkpointValue.toObject();
+        for (const QString& memoryField : {
+                 QStringLiteral("memory"),
+                 QStringLiteral("memoryAfterMetrics")
+             })
+        {
+            maximumObservedWorkingSetBytes = qMax(
+                maximumObservedWorkingSetBytes,
+                checkpoint.value(memoryField).toObject()
+                    .value(QStringLiteral("workingSetBytes")).toDouble()
+                );
+        }
+    }
+    const QJsonObject aggregatePeakMemory =
+        report.value(QStringLiteral("peakMemory")).toObject();
+    QCOMPARE(
+        aggregatePeakMemory.value(QStringLiteral("workingSetBytes")).toDouble(),
+        maximumObservedWorkingSetBytes
+        );
+    QCOMPARE(
+        aggregatePeakMemory.value(QStringLiteral("processMemorySampleCount")).toInt(),
+        2 * report.value(QStringLiteral("checkpoints")).toArray().size()
+            + memorySamples.size()
+        );
+    QCOMPARE(
+        aggregatePeakMemory.value(QStringLiteral("aggregation")).toObject()
+            .value(QStringLiteral("method")).toString(),
+        QStringLiteral("maximum-per-field")
+        );
+    QVERIFY(!aggregatePeakMemory.value(QStringLiteral("aggregation")).toObject()
+                 .value(QStringLiteral("singlePairedSample")).toBool());
+
+    QCOMPARE(
+        loadRequests,
+        (QStringList{
+            QStringLiteral("initial"),
+            QStringLiteral("missing-document"),
+            QStringLiteral("reopen")
+        })
+        );
+    QCOMPARE(loadReturns, loadRequests);
+    QCOMPARE(
+        viewerReadyRequests,
+        (QStringList{QStringLiteral("initial"), QStringLiteral("reopen")})
+        );
+    QCOMPARE(
+        pngCaptureFileNames,
+        (QStringList{
+            QStringLiteral("pdf-catalog.png"),
+            QStringLiteral("pdf-opened.png"),
+            QStringLiteral("pdf-closed.png"),
+            QStringLiteral("pdf-error.png"),
+            QStringLiteral("pdf-reopened.png")
+        })
+        );
+    QCOMPARE(documentReleaseStarts, 3);
+    QCOMPARE(documentReleaseCompletions, 3);
+    QCOMPARE(
+        documentReleaseStartLoadedStates,
+        (QList<bool>{true, false, true})
+        );
+    QVERIFY(documentReleaseStartPageCounts.at(0) > 0);
+    QCOMPARE(documentReleaseStartPageCounts.at(1), 0);
+    QVERIFY(documentReleaseStartPageCounts.at(2) > 0);
+    int previousSampleIndex = -1;
+    for (const QString& requiredSample : {
+             QStringLiteral("pdf-catalog-grab-start"),
+             QStringLiteral("pdf-catalog-grab-complete"),
+             QStringLiteral("pdf-png-save-start"),
+             QStringLiteral("pdf-png-save-complete"),
+             QStringLiteral("pdf-load-request"),
+             QStringLiteral("pdf-load-return"),
+             QStringLiteral("pdf-viewer-ready"),
+             QStringLiteral("pdf-opened-grab-start"),
+             QStringLiteral("pdf-opened-grab-complete"),
+             QStringLiteral("pdf-png-save-start"),
+             QStringLiteral("pdf-png-save-complete"),
+             QStringLiteral("pdf-document-release-start"),
+             QStringLiteral("pdf-document-release-complete"),
+             QStringLiteral("pdf-load-request"),
+             QStringLiteral("pdf-load-return"),
+             QStringLiteral("pdf-viewer-ready"),
+             QStringLiteral("pdf-reopened-grab-start"),
+             QStringLiteral("pdf-reopened-grab-complete"),
+             QStringLiteral("pdf-png-save-start"),
+             QStringLiteral("pdf-png-save-complete"),
+             QStringLiteral("pdf-document-release-start"),
+             QStringLiteral("pdf-document-release-complete")
+         })
+    {
+        previousSampleIndex = sampleNames.indexOf(requiredSample, previousSampleIndex + 1);
+        QVERIFY2(
+            previousSampleIndex >= 0,
+            qPrintable(
+                QStringLiteral("Missing or out-of-order PDF memory sample: %1")
+                    .arg(requiredSample)
+                )
+            );
+    }
 
     const QJsonObject startupMetrics =
         checkpoints.value(QStringLiteral("startup-complete"))

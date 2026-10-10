@@ -509,6 +509,27 @@ The retained PDF references use a synthetic package-service fixture, date
 2026-10-05 through 2026-10-09, and By Day roster. These artifacts do not support
 a valid page comparison or PDF parity result. This is a missing matched
 baseline, not a parity failure. Output parity and semantic content review
-remain open. F534 is next for Sub Prep output-dialog cancellation and cleanup.
-The [Phase 2 progress log](03-Phase-2-Progress-Log.md) records exact artifact
-hashes, fixture provenance, and the unverified F526 source association.
+remain open. F534 completed Sub Prep output-dialog cancellation coverage; see
+the [Phase 2 progress log](03-Phase-2-Progress-Log.md) for its verification and
+the exact artifact hashes, fixture provenance, and unverified F526 source
+association.
+
+## F535 memory-attribution instrumentation - 2026-10-10
+
+Startup profile v2 adds optional post-`applicationMetrics()` process snapshots
+in `memoryAfterMetrics`; `memory` retains its pre-traversal meaning, and each
+checkpoint still performs exactly one `applicationMetrics()` traversal.
+Ordered process samples record PDF load request/return, viewer-ready, grab,
+enabled PNG save, and document/lease release boundaries. Peak diagnostics use
+independent maximum-per-field aggregation across samples, explicitly not a
+single paired sample. The validator checks these optional fields and accepts
+historical v2 reports without them.
+
+Independent Windows x64 Debug Ninja verification passed: the focused startup
+performance CTest passed 1/1 with lifecycle ordering/release assertions, the
+validator self-test passed 20/20 including legacy v2, and `git diff --check`
+passed. No Release route was run, and this diagnostic instrumentation does not
+establish memory acceptance. F536 next runs current-source Windows x64 Release
+`lifecycle-sub-prep,output-sub-prep` with source snapshots, after F535 is
+committed. The memory target, PDF parity, F526 source provenance, and Phase 0
+gates remain open. See the [Phase 2 progress log](03-Phase-2-Progress-Log.md).

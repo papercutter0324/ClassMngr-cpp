@@ -1036,47 +1036,55 @@ QJsonObject applicationMetricsJson(const StartupApplicationMetrics& metrics)
     };
 }
 
+void includeMemoryMaximums(
+    ProcessMemorySnapshot& peak,
+    const ProcessMemorySnapshot& memory
+    )
+{
+    peak.isAvailable = peak.isAvailable || memory.isAvailable;
+    if (peak.platform.isEmpty())
+    {
+        peak.platform = memory.platform;
+    }
+    peak.workingSetBytes = qMax(peak.workingSetBytes, memory.workingSetBytes);
+    peak.peakWorkingSetBytes = qMax(
+        peak.peakWorkingSetBytes,
+        memory.peakWorkingSetBytes
+        );
+    peak.privateUsageBytes = qMax(
+        peak.privateUsageBytes,
+        memory.privateUsageBytes
+        );
+    peak.privateWorkingSetBytes = qMax(
+        peak.privateWorkingSetBytes,
+        memory.privateWorkingSetBytes
+        );
+    peak.privateDirtyBytes = qMax(
+        peak.privateDirtyBytes,
+        memory.privateDirtyBytes
+        );
+    peak.pagefileUsageBytes = qMax(
+        peak.pagefileUsageBytes,
+        memory.pagefileUsageBytes
+        );
+    peak.handleCount = qMax(peak.handleCount, memory.handleCount);
+    peak.threadCount = qMax(peak.threadCount, memory.threadCount);
+}
+
 QJsonObject peakMemoryJson(
-    const QList<StartupCheckpoint>& checkpoints
+    const QList<StartupCheckpoint>& checkpoints,
+    const QList<StartupProcessMemorySample>& processMemorySamples
     )
 {
     ProcessMemorySnapshot peak;
-
     for (const StartupCheckpoint& checkpoint : checkpoints)
     {
-        const ProcessMemorySnapshot& memory = checkpoint.memory;
-
-        peak.isAvailable = peak.isAvailable || memory.isAvailable;
-        if (peak.platform.isEmpty())
-        {
-            peak.platform = memory.platform;
-        }
-        peak.workingSetBytes = qMax(
-            peak.workingSetBytes,
-            memory.workingSetBytes
-            );
-        peak.peakWorkingSetBytes = qMax(
-            peak.peakWorkingSetBytes,
-            memory.peakWorkingSetBytes
-            );
-        peak.privateUsageBytes = qMax(
-            peak.privateUsageBytes,
-            memory.privateUsageBytes
-            );
-        peak.privateWorkingSetBytes = qMax(
-            peak.privateWorkingSetBytes,
-            memory.privateWorkingSetBytes
-            );
-        peak.privateDirtyBytes = qMax(
-            peak.privateDirtyBytes,
-            memory.privateDirtyBytes
-            );
-        peak.pagefileUsageBytes = qMax(
-            peak.pagefileUsageBytes,
-            memory.pagefileUsageBytes
-            );
-        peak.handleCount = qMax(peak.handleCount, memory.handleCount);
-        peak.threadCount = qMax(peak.threadCount, memory.threadCount);
+        includeMemoryMaximums(peak, checkpoint.memory);
+        includeMemoryMaximums(peak, checkpoint.memoryAfterMetrics);
+    }
+    for (const StartupProcessMemorySample& sample : processMemorySamples)
+    {
+        includeMemoryMaximums(peak, sample.memory);
     }
 
     QJsonObject result = memoryJson(peak);
@@ -1084,13 +1092,28 @@ QJsonObject peakMemoryJson(
         QStringLiteral("checkpointSampleCount"),
         checkpoints.size()
         );
+    result.insert(
+        QStringLiteral("processMemorySampleCount"),
+        checkpoints.size() * 2 + processMemorySamples.size()
+        );
+    result.insert(
+        QStringLiteral("aggregation"),
+        QJsonObject{
+            {QStringLiteral("method"), QStringLiteral("maximum-per-field")},
+            {QStringLiteral("scope"), QStringLiteral("checkpoint and PDF lifecycle samples")},
+            {QStringLiteral("singlePairedSample"), false}
+        }
+        );
     return result;
 }
 }
 
-StartupProfiler::StartupProfiler()
-    : m_memoryProvider(&m_platformMemoryProvider)
+StartupProfiler::StartupProfiler(
+    ProcessMemorySnapshotProvider* memoryProvider
+    )
 {
+    m_memoryProvider =
+        memoryProvider ? memoryProvider : &m_platformMemoryProvider;
     m_timer.start();
 }
 
@@ -1138,15 +1161,41 @@ void StartupProfiler::checkpoint(
         m_memoryProvider
             ? m_memoryProvider->snapshot()
             : ProcessMemorySnapshot{};
+    const qint64 elapsedMilliseconds = m_timer.elapsed();
+    const StartupApplicationMetrics metrics = applicationMetrics();
+    const ProcessMemorySnapshot memoryAfterMetrics =
+        m_memoryProvider
+            ? m_memoryProvider->snapshot()
+            : ProcessMemorySnapshot{};
 
     m_checkpoints.append(
         {
             static_cast<int>(m_checkpoints.size()) + 1,
             name,
             detail,
-            m_timer.elapsed(),
+            elapsedMilliseconds,
             memory,
-            applicationMetrics()
+            metrics,
+            memoryAfterMetrics
+        }
+        );
+}
+
+void StartupProfiler::sampleProcessMemory(
+    const QString& name,
+    const QJsonObject& viewerState,
+    const QJsonObject& operation
+    )
+{
+    m_processMemorySamples.append(
+        {
+            name,
+            m_timer.elapsed(),
+            m_memoryProvider
+                ? m_memoryProvider->snapshot()
+                : ProcessMemorySnapshot{},
+            viewerState,
+            operation
         }
         );
 }
@@ -1173,9 +1222,30 @@ QJsonObject StartupProfiler::reportJson() const
                 {QStringLiteral("detail"), checkpoint.detail},
                 {QStringLiteral("elapsedMs"), static_cast<double>(checkpoint.elapsedMilliseconds)},
                 {QStringLiteral("memory"), memoryJson(checkpoint.memory)},
+                {QStringLiteral("memoryAfterMetrics"), memoryJson(checkpoint.memoryAfterMetrics)},
                 {QStringLiteral("metrics"), applicationMetricsJson(checkpoint.metrics)}
             }
             );
+    }
+
+    QJsonArray processMemorySamples;
+    for (const StartupProcessMemorySample& sample : m_processMemorySamples)
+    {
+        QJsonObject sampleJson = memoryJson(sample.memory);
+        sampleJson.insert(QStringLiteral("name"), sample.name);
+        sampleJson.insert(
+            QStringLiteral("elapsedMs"),
+            static_cast<double>(sample.elapsedMilliseconds)
+            );
+        if (!sample.viewerState.isEmpty())
+        {
+            sampleJson.insert(QStringLiteral("viewerState"), sample.viewerState);
+        }
+        if (!sample.operation.isEmpty())
+        {
+            sampleJson.insert(QStringLiteral("operation"), sample.operation);
+        }
+        processMemorySamples.append(sampleJson);
     }
 
     QJsonArray events;
@@ -1192,8 +1262,12 @@ QJsonObject StartupProfiler::reportJson() const
 
     return {
         {QStringLiteral("checkpoints"), checkpoints},
+        {QStringLiteral("memorySamples"), processMemorySamples},
         {QStringLiteral("events"), events},
-        {QStringLiteral("peakMemory"), peakMemoryJson(m_checkpoints)}
+        {
+            QStringLiteral("peakMemory"),
+            peakMemoryJson(m_checkpoints, m_processMemorySamples)
+        }
     };
 }
 
