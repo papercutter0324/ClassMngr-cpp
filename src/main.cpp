@@ -127,6 +127,59 @@ struct StartupPdfLifecycleInnerBoundaryTrace
     qint64 lastTimestampNanoseconds = -1;
 };
 
+struct StartupPdfLifecycleViewportDiagnosticTrace
+{
+    QPointer<QWidget> viewport;
+    QPointer<QObject> eventFilter;
+    quint64 paintEventCount = 0;
+    quint64 loadedDocumentPaintEventCount = 0;
+    bool updatesEnabledBeforeDiagnostic = false;
+    bool suppressionAppliedBeforeFirstPdfLoad = false;
+    bool updatesRestored = false;
+    bool updatesEnabledAtWorkflowExit = false;
+    bool finalCloseReached = false;
+    QString restorationPoint;
+};
+
+class StartupPdfLifecycleViewportPaintObserver final : public QObject
+{
+public:
+    StartupPdfLifecycleViewportPaintObserver(
+        PdfViewerPage& viewer,
+        const std::shared_ptr<StartupPdfLifecycleViewportDiagnosticTrace>& trace,
+        QObject* parent
+        )
+        : QObject(parent)
+        , m_viewer(&viewer)
+        , m_trace(trace)
+    {
+    }
+
+protected:
+    bool eventFilter(QObject* watched, QEvent* event) override
+    {
+        if (
+            watched == parent()
+            && event
+            && event->type() == QEvent::Paint
+            && m_trace
+            )
+        {
+            ++m_trace->paintEventCount;
+            if (m_viewer && m_viewer->hasLoadedDocument())
+            {
+                ++m_trace->loadedDocumentPaintEventCount;
+            }
+        }
+
+        return QObject::eventFilter(watched, event);
+    }
+
+private:
+    QPointer<PdfViewerPage> m_viewer;
+    std::shared_ptr<StartupPdfLifecycleViewportDiagnosticTrace> m_trace;
+};
+
 struct StartupPerformanceMode
 {
     bool enabled = false;
@@ -162,6 +215,10 @@ struct StartupPerformanceMode
     bool pdfLifecycleInnerBoundariesEnabled = false;
     std::shared_ptr<StartupPdfLifecycleInnerBoundaryTrace>
         pdfLifecycleInnerBoundaryTrace;
+    QString pdfLifecycleViewportUpdateMode;
+    QString pdfLifecycleViewportUpdateError;
+    std::shared_ptr<StartupPdfLifecycleViewportDiagnosticTrace>
+        pdfLifecycleViewportDiagnosticTrace;
     enum class Scenario
     {
         Minimal,
@@ -196,6 +253,8 @@ constexpr auto StartupPdfLifecycleGrabArmEnvironmentVariable =
     "CLASSMNGR_STARTUP_PDF_LIFECYCLE_GRAB_ARM";
 constexpr auto StartupPdfLifecycleInnerBoundariesEnvironmentVariable =
     "CLASSMNGR_STARTUP_PDF_LIFECYCLE_INNER_BOUNDARIES";
+constexpr auto StartupPdfLifecycleViewportUpdatesEnvironmentVariable =
+    "CLASSMNGR_STARTUP_PDF_LIFECYCLE_VIEWPORT_UPDATES";
 
 bool startupPdfLifecycleGrabComparisonSelected()
 {
@@ -2913,6 +2972,9 @@ void scheduleStartupPerformancePdfLifecycle(
     const QString& pdfLifecycleGrabArm,
     const std::shared_ptr<StartupPdfLifecycleInnerBoundaryTrace>&
         innerBoundaryTrace,
+    const QString& viewportUpdateMode,
+    const std::shared_ptr<StartupPdfLifecycleViewportDiagnosticTrace>&
+        viewportDiagnosticTrace,
     std::function<void()> completion
     )
 {
@@ -2929,6 +2991,45 @@ void scheduleStartupPerformancePdfLifecycle(
         std::make_shared<QString>(QStringLiteral("initial-load"));
     const auto innerBoundaryObserverInstalled =
         std::make_shared<bool>(false);
+    const auto finishViewportDiagnostic =
+        [viewportDiagnosticTrace](
+            const QString& restorationPoint,
+            bool finalCloseReached
+            )
+    {
+        if (!viewportDiagnosticTrace)
+        {
+            return;
+        }
+
+        viewportDiagnosticTrace->restorationPoint = restorationPoint;
+        viewportDiagnosticTrace->finalCloseReached = finalCloseReached;
+        QWidget* const viewport = viewportDiagnosticTrace->viewport.data();
+        if (
+            viewport
+            && viewportDiagnosticTrace
+                ->suppressionAppliedBeforeFirstPdfLoad
+            )
+        {
+            viewport->setUpdatesEnabled(
+                viewportDiagnosticTrace->updatesEnabledBeforeDiagnostic
+                );
+            viewportDiagnosticTrace->updatesRestored =
+                viewport->updatesEnabled()
+                == viewportDiagnosticTrace->updatesEnabledBeforeDiagnostic;
+        }
+        viewportDiagnosticTrace->updatesEnabledAtWorkflowExit =
+            viewport && viewport->updatesEnabled();
+
+        if (viewport && viewportDiagnosticTrace->eventFilter)
+        {
+            QObject* const eventFilter =
+                viewportDiagnosticTrace->eventFilter.data();
+            viewport->removeEventFilter(eventFilter);
+            delete eventFilter;
+            viewportDiagnosticTrace->eventFilter.clear();
+        }
+    };
     const auto runPhase =
         std::make_shared<std::function<void()>>();
 
@@ -2942,6 +3043,9 @@ void scheduleStartupPerformancePdfLifecycle(
             forcedGrabEnabled,
             comparisonArm,
             innerBoundaryTrace,
+            viewportUpdateMode,
+            viewportDiagnosticTrace,
+            finishViewportDiagnostic,
             innerBoundaryCycle,
             innerBoundaryObserverInstalled,
             pdfPath,
@@ -2958,10 +3062,15 @@ void scheduleStartupPerformancePdfLifecycle(
             [
                 &profiler,
                 workflowSucceeded,
+                finishViewportDiagnostic,
                 completion
             ](const QString& detail)
         {
             *workflowSucceeded = false;
+            finishViewportDiagnostic(
+                QStringLiteral("workflow-error"),
+                false
+                );
             profiler.checkpoint(
                 QStringLiteral("pdf-workflow-failed"),
                 detail
@@ -2994,6 +3103,42 @@ void scheduleStartupPerformancePdfLifecycle(
                 }
                 );
             *innerBoundaryObserverInstalled = true;
+        }
+
+        if (
+            viewportDiagnosticTrace
+            && viewportDiagnosticTrace->eventFilter.isNull()
+        )
+        {
+            QPdfView* const pdfView =
+                viewer->findChild<QPdfView*>(
+                    QStringLiteral("pdfViewerView")
+                    );
+            QWidget* const viewport = pdfView ? pdfView->viewport() : nullptr;
+            if (!viewport)
+            {
+                fail(QStringLiteral("pdf-viewer-viewport-unavailable"));
+                return;
+            }
+
+            viewportDiagnosticTrace->viewport = viewport;
+            viewportDiagnosticTrace->updatesEnabledBeforeDiagnostic =
+                viewport->updatesEnabled();
+            auto* const paintObserver =
+                new StartupPdfLifecycleViewportPaintObserver(
+                    *viewer,
+                    viewportDiagnosticTrace,
+                    viewport
+                    );
+            viewportDiagnosticTrace->eventFilter = paintObserver;
+            viewport->installEventFilter(paintObserver);
+
+            if (viewportUpdateMode == QStringLiteral("suppressed"))
+            {
+                viewport->setUpdatesEnabled(false);
+                viewportDiagnosticTrace
+                    ->suppressionAppliedBeforeFirstPdfLoad = true;
+            }
         }
 
         if (*phase == 0)
@@ -3715,6 +3860,11 @@ void scheduleStartupPerformancePdfLifecycle(
             return;
         }
 
+        finishViewportDiagnostic(
+            QStringLiteral("final-close"),
+            true
+            );
+
         profiler.checkpoint(
             QStringLiteral("pdf-released-after-reopen"),
             QString::fromUtf8(StartupPdfWorkflowRelativePath)
@@ -4278,6 +4428,55 @@ StartupPerformanceMode startupPerformanceMode(
         mode.pdfLifecycleInnerBoundaryTrace =
             std::make_shared<StartupPdfLifecycleInnerBoundaryTrace>();
         mode.pdfLifecycleInnerBoundaryTrace->timer.start();
+    }
+    mode.pdfLifecycleViewportUpdateMode =
+        qEnvironmentVariable(
+            StartupPdfLifecycleViewportUpdatesEnvironmentVariable
+            ).trimmed().toLower();
+    if (!mode.pdfLifecycleViewportUpdateMode.isEmpty())
+    {
+        if (
+            mode.pdfLifecycleViewportUpdateMode != QStringLiteral("normal")
+            && mode.pdfLifecycleViewportUpdateMode
+                != QStringLiteral("suppressed")
+            )
+        {
+            mode.pdfLifecycleViewportUpdateError =
+                QStringLiteral(
+                    "%1 must be either 'normal' or 'suppressed'."
+                    )
+                    .arg(QString::fromUtf8(
+                        StartupPdfLifecycleViewportUpdatesEnvironmentVariable
+                        ));
+        }
+        else if (
+            mode.pdfLifecycleGrabArm != QStringLiteral("without-grabs")
+            || !mode.pdfLifecycleInnerBoundariesEnabled
+            )
+        {
+            mode.pdfLifecycleViewportUpdateError =
+                QStringLiteral(
+                    "%1 requires %2=without-grabs and %3=1."
+                    )
+                    .arg(
+                        QString::fromUtf8(
+                            StartupPdfLifecycleViewportUpdatesEnvironmentVariable
+                            ),
+                        QString::fromUtf8(
+                            StartupPdfLifecycleGrabArmEnvironmentVariable
+                            ),
+                        QString::fromUtf8(
+                            StartupPdfLifecycleInnerBoundariesEnvironmentVariable
+                            )
+                        );
+        }
+        else
+        {
+            mode.pdfLifecycleViewportDiagnosticTrace =
+                std::make_shared<
+                    StartupPdfLifecycleViewportDiagnosticTrace
+                    >();
+        }
     }
     if (!mode.pdfLifecycleGrabArm.isEmpty())
     {
@@ -8134,6 +8333,9 @@ void scheduleStartupPerformanceWorkflow(
     const QString& pdfLifecycleGrabArm,
     const std::shared_ptr<StartupPdfLifecycleInnerBoundaryTrace>&
         pdfLifecycleInnerBoundaryTrace,
+    const QString& pdfLifecycleViewportUpdateMode,
+    const std::shared_ptr<StartupPdfLifecycleViewportDiagnosticTrace>&
+        pdfLifecycleViewportDiagnosticTrace,
     std::function<void()> completion
     )
 {
@@ -8163,6 +8365,8 @@ void scheduleStartupPerformanceWorkflow(
             subPrepVisualOutputDirectoryPath,
             pdfLifecycleGrabArm,
             pdfLifecycleInnerBoundaryTrace,
+            pdfLifecycleViewportUpdateMode,
+            pdfLifecycleViewportDiagnosticTrace,
             pageTypes,
             pageIndex,
             runNextPage,
@@ -8613,6 +8817,8 @@ void scheduleStartupPerformanceWorkflow(
                 workflowSucceeded,
                 pdfLifecycleGrabArm,
                 pdfLifecycleInnerBoundaryTrace,
+                pdfLifecycleViewportUpdateMode,
+                pdfLifecycleViewportDiagnosticTrace,
                 [
                     &app,
                     pageIndex,
@@ -8875,6 +9081,71 @@ bool writeStartupPerformanceMetrics(
                 comparison
                 );
         }
+
+        if (mode.pdfLifecycleViewportDiagnosticTrace)
+        {
+            const auto& trace =
+                mode.pdfLifecycleViewportDiagnosticTrace;
+            QJsonObject comparison = metrics
+                .value(QStringLiteral("pdfLifecycleGrabComparison"))
+                .toObject();
+            comparison.insert(
+                QStringLiteral("viewportUpdateDiagnostic"),
+                QJsonObject{
+                    {QStringLiteral("enabled"), true},
+                    {
+                        QStringLiteral("mode"),
+                        mode.pdfLifecycleViewportUpdateMode
+                    },
+                    {
+                        QStringLiteral("viewportPaintEventCount"),
+                        static_cast<double>(trace->paintEventCount)
+                    },
+                    {
+                        QStringLiteral(
+                            "loadedDocumentViewportPaintEventCount"
+                            ),
+                        static_cast<double>(
+                            trace->loadedDocumentPaintEventCount
+                            )
+                    },
+                    {
+                        QStringLiteral(
+                            "viewportUpdatesEnabledBeforeDiagnostic"
+                            ),
+                        trace->updatesEnabledBeforeDiagnostic
+                    },
+                    {
+                        QStringLiteral(
+                            "suppressionAppliedBeforeFirstPdfLoad"
+                            ),
+                        trace->suppressionAppliedBeforeFirstPdfLoad
+                    },
+                    {
+                        QStringLiteral("viewportUpdatesRestored"),
+                        trace->updatesRestored
+                    },
+                    {
+                        QStringLiteral(
+                            "viewportUpdatesEnabledAtDiagnosticExit"
+                            ),
+                        trace->updatesEnabledAtWorkflowExit
+                    },
+                    {
+                        QStringLiteral("finalCloseReached"),
+                        trace->finalCloseReached
+                    },
+                    {
+                        QStringLiteral("restorationPoint"),
+                        trace->restorationPoint
+                    }
+                }
+                );
+            metrics.insert(
+                QStringLiteral("pdfLifecycleGrabComparison"),
+                comparison
+                );
+        }
     }
 
     file.write(
@@ -8928,6 +9199,27 @@ int main(int argc, char *argv[])
         const QString message =
             QStringLiteral("Invalid PDF lifecycle grab comparison invocation: %1\n")
                 .arg(startupPerformance.pdfLifecycleGrabComparisonError);
+        qCritical().noquote() << message.trimmed();
+        const QByteArray encodedMessage = message.toLocal8Bit();
+        if (!encodedMessage.isEmpty())
+        {
+            std::fwrite(
+                encodedMessage.constData(),
+                1,
+                static_cast<size_t>(encodedMessage.size()),
+                stderr
+                );
+            std::fflush(stderr);
+        }
+        return 2;
+    }
+    if (!startupPerformance.pdfLifecycleViewportUpdateError.isEmpty())
+    {
+        const QString message =
+            QStringLiteral(
+                "Invalid PDF lifecycle viewport update diagnostic invocation: %1\n"
+                )
+                .arg(startupPerformance.pdfLifecycleViewportUpdateError);
         qCritical().noquote() << message.trimmed();
         const QByteArray encodedMessage = message.toLocal8Bit();
         if (!encodedMessage.isEmpty())
@@ -9489,6 +9781,8 @@ int main(int argc, char *argv[])
                 startupPerformance.visualCaptureOutputPath,
                 startupPerformance.pdfLifecycleGrabArm,
                 startupPerformance.pdfLifecycleInnerBoundaryTrace,
+                startupPerformance.pdfLifecycleViewportUpdateMode,
+                startupPerformance.pdfLifecycleViewportDiagnosticTrace,
                 scheduleResourceTraceCompletion
                 );
             return;

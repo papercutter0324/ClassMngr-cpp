@@ -1657,6 +1657,8 @@ private slots:
     void reportsStartupMetricsAndHonorsThresholds();
     void runsRepresentativeWorkspaceLifecycleWorkflow();
     void pdfLifecycleGrabArmRejectsInvalidConfiguration();
+    void pdfLifecycleViewportDiagnosticRejectsInvalidConfiguration();
+    void pdfLifecycleViewportPaintDiagnosticMatchesNormalAndSuppressedModes();
     void capturesLargeSubPrepBoundaryWhenConfigured();
     void capturesLargeClassesBoundaryWhenConfigured();
     void capturesLargeClassesVisualStatesWhenConfigured();
@@ -2951,6 +2953,9 @@ void StartupPerformanceTests::runsRepresentativeWorkspaceLifecycleWorkflow()
     QProcess process;
     QProcessEnvironment environment =
         QProcessEnvironment::systemEnvironment();
+    environment.remove(
+        QStringLiteral("CLASSMNGR_STARTUP_PDF_LIFECYCLE_VIEWPORT_UPDATES")
+        );
     environment.insert(
         QStringLiteral("CLASSMNGR_SETTINGS_ROOT"),
         directory.filePath(QStringLiteral("settings"))
@@ -3054,6 +3059,14 @@ void StartupPerformanceTests::runsRepresentativeWorkspaceLifecycleWorkflow()
             QVERIFY(!viewerState.contains(QStringLiteral("pdfViewWidth")));
         }
     }
+    const QJsonObject defaultPdfLifecycleComparison = report
+        .value(QStringLiteral("pdfLifecycleGrabComparison"))
+        .toObject();
+    QVERIFY(
+        !defaultPdfLifecycleComparison.contains(
+            QStringLiteral("viewportUpdateDiagnostic")
+            )
+        );
     const QJsonObject workflow =
         report.value(QStringLiteral("workflow")).toObject();
     QVERIFY(workflow.value(QStringLiteral("enabled")).toBool());
@@ -3695,6 +3708,431 @@ void StartupPerformanceTests::pdfLifecycleGrabArmRejectsInvalidConfiguration()
     QCOMPARE(process.exitStatus(), QProcess::NormalExit);
     QCOMPARE(process.exitCode(), 2);
     QVERIFY(!QFileInfo::exists(directory.filePath(QStringLiteral("wrong-route.json"))));
+}
+
+void StartupPerformanceTests
+    ::pdfLifecycleViewportDiagnosticRejectsInvalidConfiguration()
+{
+    const QString appPath =
+        qEnvironmentVariable("CLASSMNGR_TEST_APP_PATH").trimmed();
+    if (appPath.isEmpty() || !QFile::exists(appPath))
+    {
+        QSKIP("Set CLASSMNGR_TEST_APP_PATH to an existing ClassMngr executable.");
+    }
+
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    const QString fixturePath =
+        directory.filePath(QStringLiteral("viewport-validation.tps"));
+    QString fixtureError;
+    QVERIFY2(
+        createRepresentativeStartupFixture(fixturePath, &fixtureError),
+        qPrintable(fixtureError)
+        );
+
+    const auto verifyRejected =
+        [&appPath, &directory, &fixturePath](
+            const QString& name,
+            const QString& grabArm,
+            const QString& innerBoundaries,
+            const QString& viewportUpdates
+            )
+    {
+        QProcessEnvironment environment =
+            QProcessEnvironment::systemEnvironment();
+        if (grabArm.isEmpty())
+        {
+            environment.remove(
+                QStringLiteral("CLASSMNGR_STARTUP_PDF_LIFECYCLE_GRAB_ARM")
+                );
+        }
+        else
+        {
+            environment.insert(
+                QStringLiteral("CLASSMNGR_STARTUP_PDF_LIFECYCLE_GRAB_ARM"),
+                grabArm
+                );
+        }
+        if (innerBoundaries.isEmpty())
+        {
+            environment.remove(
+                QStringLiteral(
+                    "CLASSMNGR_STARTUP_PDF_LIFECYCLE_INNER_BOUNDARIES"
+                    )
+                );
+        }
+        else
+        {
+            environment.insert(
+                QStringLiteral(
+                    "CLASSMNGR_STARTUP_PDF_LIFECYCLE_INNER_BOUNDARIES"
+                    ),
+                innerBoundaries
+                );
+        }
+        environment.insert(
+            QStringLiteral(
+                "CLASSMNGR_STARTUP_PDF_LIFECYCLE_VIEWPORT_UPDATES"
+                ),
+            viewportUpdates
+            );
+        environment.insert(
+            QStringLiteral("QT_QPA_PLATFORM"),
+            QStringLiteral("offscreen")
+            );
+
+        const QString outputPath =
+            directory.filePath(name + QStringLiteral(".json"));
+        QProcess process;
+        process.setProcessEnvironment(environment);
+        process.start(
+            appPath,
+            {
+                QStringLiteral("--startup-performance-test"),
+                QStringLiteral("--startup-performance-workflow"),
+                QStringLiteral("--startup-performance-sub-prep-lifecycle"),
+                QStringLiteral("--startup-performance-scenario"),
+                QStringLiteral("representative"),
+                QStringLiteral("--startup-performance-settle-ms"),
+                QStringLiteral("1000"),
+                QStringLiteral("--startup-performance-output"),
+                outputPath,
+                fixturePath
+            }
+            );
+        QVERIFY2(
+            process.waitForStarted(StartupTimeoutMs),
+            qPrintable(process.errorString())
+            );
+        QVERIFY2(
+            process.waitForFinished(StartupTimeoutMs),
+            qPrintable(processOutput(process))
+            );
+        QCOMPARE(process.exitStatus(), QProcess::NormalExit);
+        QCOMPARE(process.exitCode(), 2);
+        QVERIFY(!QFileInfo::exists(outputPath));
+    };
+
+    verifyRejected(
+        QStringLiteral("unknown-mode"),
+        QStringLiteral("without-grabs"),
+        QStringLiteral("1"),
+        QStringLiteral("unknown")
+        );
+    verifyRejected(
+        QStringLiteral("missing-inner-boundaries"),
+        QStringLiteral("without-grabs"),
+        QString(),
+        QStringLiteral("normal")
+        );
+    verifyRejected(
+        QStringLiteral("with-grabs"),
+        QStringLiteral("with-grabs"),
+        QStringLiteral("1"),
+        QStringLiteral("suppressed")
+        );
+    verifyRejected(
+        QStringLiteral("missing-grab-arm"),
+        QString(),
+        QStringLiteral("1"),
+        QStringLiteral("normal")
+        );
+}
+
+void StartupPerformanceTests
+    ::pdfLifecycleViewportPaintDiagnosticMatchesNormalAndSuppressedModes()
+{
+    const QString appPath =
+        qEnvironmentVariable("CLASSMNGR_TEST_APP_PATH").trimmed();
+    if (appPath.isEmpty() || !QFile::exists(appPath))
+    {
+        QSKIP("Set CLASSMNGR_TEST_APP_PATH to an existing ClassMngr executable.");
+    }
+
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    const QString fixturePath =
+        directory.filePath(QStringLiteral("viewport-paint-diagnostic.tps"));
+    QString fixtureError;
+    QVERIFY2(
+        createLargeStartupFixture(fixturePath, &fixtureError),
+        qPrintable(fixtureError)
+        );
+
+    QStringList baselineMeasurementLabels;
+    QStringList baselineOuterSampleNames;
+    QStringList baselineInnerSampleOrder;
+    for (const QString& mode : {
+             QString(),
+             QStringLiteral("normal"),
+             QStringLiteral("suppressed")
+         })
+    {
+        const QString runName = mode.isEmpty()
+            ? QStringLiteral("selector-unset")
+            : mode;
+        const QString settingsRoot =
+            directory.filePath(QStringLiteral("settings-%1").arg(runName));
+        QVERIFY2(
+            writeRepresentativeStartupSettings(settingsRoot),
+            qPrintable(
+                QStringLiteral("Unable to write settings for %1.").arg(runName)
+                )
+            );
+
+        QProcessEnvironment environment =
+            QProcessEnvironment::systemEnvironment();
+        environment.insert(
+            QStringLiteral("CLASSMNGR_SETTINGS_ROOT"),
+            settingsRoot
+            );
+        environment.insert(
+            QStringLiteral("CLASSMNGR_STARTUP_PDF_LIFECYCLE_GRAB_ARM"),
+            QStringLiteral("without-grabs")
+            );
+        environment.insert(
+            QStringLiteral("CLASSMNGR_STARTUP_PDF_LIFECYCLE_INNER_BOUNDARIES"),
+            QStringLiteral("1")
+            );
+        environment.remove(
+            QStringLiteral("CLASSMNGR_STARTUP_PDF_CAPTURE_OUTPUT_DIR")
+            );
+        if (mode.isEmpty())
+        {
+            environment.remove(
+                QStringLiteral(
+                    "CLASSMNGR_STARTUP_PDF_LIFECYCLE_VIEWPORT_UPDATES"
+                    )
+                );
+        }
+        else
+        {
+            environment.insert(
+                QStringLiteral(
+                    "CLASSMNGR_STARTUP_PDF_LIFECYCLE_VIEWPORT_UPDATES"
+                    ),
+                mode
+                );
+        }
+        environment.insert(
+            QStringLiteral("QT_QPA_PLATFORM"),
+            QStringLiteral("offscreen")
+            );
+
+        const QString outputPath =
+            directory.filePath(runName + QStringLiteral(".json"));
+        QProcess process;
+        process.setProcessEnvironment(environment);
+        process.start(
+            appPath,
+            {
+                QStringLiteral("--startup-performance-test"),
+                QStringLiteral("--startup-performance-workflow"),
+                QStringLiteral("--startup-performance-sub-prep-lifecycle"),
+                QStringLiteral("--startup-performance-scenario"),
+                QStringLiteral("representative"),
+                QStringLiteral("--startup-performance-settle-ms"),
+                QStringLiteral("1000"),
+                QStringLiteral("--startup-performance-output"),
+                outputPath,
+                fixturePath
+            }
+            );
+        QVERIFY2(
+            process.waitForStarted(StartupTimeoutMs),
+            qPrintable(process.errorString())
+            );
+        QVERIFY2(
+            process.waitForFinished(StartupTimeoutMs),
+            qPrintable(
+                QStringLiteral("%1 workflow failed. %2")
+                    .arg(runName, processOutput(process))
+                )
+            );
+        QVERIFY2(
+            process.exitStatus() == QProcess::NormalExit
+                && process.exitCode() == 0,
+            qPrintable(
+                QStringLiteral(
+                    "%1 workflow exited status=%2 code=%3. %4"
+                    )
+                    .arg(
+                        runName,
+                        process.exitStatus() == QProcess::NormalExit
+                            ? QStringLiteral("normal")
+                            : QStringLiteral("crash"),
+                        QString::number(process.exitCode()),
+                        processOutput(process)
+                        )
+                )
+            );
+
+        QFile metricsFile(outputPath);
+        QVERIFY2(metricsFile.open(QIODevice::ReadOnly), qPrintable(metricsFile.errorString()));
+        QJsonParseError parseError;
+        const QJsonDocument reportDocument =
+            QJsonDocument::fromJson(metricsFile.readAll(), &parseError);
+        QVERIFY2(
+            parseError.error == QJsonParseError::NoError,
+            qPrintable(parseError.errorString())
+            );
+        QVERIFY(reportDocument.isObject());
+        const QJsonObject report = reportDocument.object();
+        const QJsonObject comparison = report
+            .value(QStringLiteral("pdfLifecycleGrabComparison"))
+            .toObject();
+        QVERIFY(comparison.value(QStringLiteral("enabled")).toBool());
+        QCOMPARE(
+            comparison.value(QStringLiteral("arm")).toString(),
+            QStringLiteral("without-grabs")
+            );
+        QCOMPARE(comparison.value(QStringLiteral("forcedGrabCount")).toInt(-1), 0);
+        QVERIFY(!comparison.value(QStringLiteral("pngFileWritingEnabled")).toBool(true));
+
+        QStringList measurementLabels;
+        QSet<QString> measurementLabelSet;
+        for (const QJsonValue& value : comparison
+                 .value(QStringLiteral("measurementLabels"))
+                 .toArray())
+        {
+            const QString label = value.toString();
+            measurementLabels.append(label);
+            measurementLabelSet.insert(label);
+        }
+        QCOMPARE(measurementLabels.size(), 38);
+
+        QStringList outerSampleNames;
+        for (const QJsonValue& value : report
+                 .value(QStringLiteral("memorySamples"))
+                 .toArray())
+        {
+            const QString name = value.toObject()
+                .value(QStringLiteral("name"))
+                .toString();
+            if (measurementLabelSet.contains(name))
+            {
+                outerSampleNames.append(name);
+            }
+        }
+        QCOMPARE(outerSampleNames, measurementLabels);
+
+        QStringList innerSampleOrder;
+        const QJsonArray innerSamples = comparison
+            .value(QStringLiteral("innerBoundarySamples"))
+            .toArray();
+        QCOMPARE(innerSamples.size(), 62);
+        for (const QJsonValue& value : innerSamples)
+        {
+            const QJsonObject sample = value.toObject();
+            innerSampleOrder.append(
+                sample.value(QStringLiteral("cycle")).toString()
+                    + QChar('|')
+                    + sample.value(QStringLiteral("operation")).toString()
+                    + QChar('|')
+                    + sample.value(QStringLiteral("phase")).toString()
+                );
+        }
+
+        if (mode.isEmpty())
+        {
+            QVERIFY(
+                !comparison.contains(
+                    QStringLiteral("viewportUpdateDiagnostic")
+                    )
+                );
+            baselineMeasurementLabels = measurementLabels;
+            baselineOuterSampleNames = outerSampleNames;
+            baselineInnerSampleOrder = innerSampleOrder;
+        }
+        else
+        {
+            QCOMPARE(measurementLabels, baselineMeasurementLabels);
+            QCOMPARE(outerSampleNames, baselineOuterSampleNames);
+            QCOMPARE(innerSampleOrder, baselineInnerSampleOrder);
+
+            const QJsonObject diagnostic = comparison
+                .value(QStringLiteral("viewportUpdateDiagnostic"))
+                .toObject();
+            QVERIFY(diagnostic.value(QStringLiteral("enabled")).toBool());
+            QCOMPARE(diagnostic.value(QStringLiteral("mode")).toString(), mode);
+            QVERIFY(
+                diagnostic.value(
+                    QStringLiteral(
+                        "viewportUpdatesEnabledBeforeDiagnostic"
+                        )
+                    ).toBool()
+                );
+            QCOMPARE(
+                diagnostic.value(
+                    QStringLiteral("suppressionAppliedBeforeFirstPdfLoad")
+                    ).toBool(),
+                mode == QStringLiteral("suppressed")
+                );
+            QCOMPARE(
+                diagnostic.value(
+                    QStringLiteral("viewportUpdatesRestored")
+                    ).toBool(),
+                mode == QStringLiteral("suppressed")
+                );
+            QVERIFY(
+                diagnostic.value(
+                    QStringLiteral(
+                        "viewportUpdatesEnabledAtDiagnosticExit"
+                        )
+                    ).toBool()
+                );
+            QVERIFY(diagnostic.value(QStringLiteral("finalCloseReached")).toBool());
+            QCOMPARE(
+                diagnostic.value(QStringLiteral("restorationPoint")).toString(),
+                QStringLiteral("final-close")
+                );
+
+            const double paintEventCount = diagnostic
+                .value(QStringLiteral("viewportPaintEventCount"))
+                .toDouble(-1.0);
+            const double loadedDocumentPaintEventCount = diagnostic
+                .value(
+                    QStringLiteral(
+                        "loadedDocumentViewportPaintEventCount"
+                        )
+                    )
+                .toDouble(-1.0);
+            QVERIFY(paintEventCount >= 0.0);
+            QVERIFY(loadedDocumentPaintEventCount >= 0.0);
+            QVERIFY(paintEventCount >= loadedDocumentPaintEventCount);
+            if (mode == QStringLiteral("normal"))
+            {
+                QVERIFY2(
+                    loadedDocumentPaintEventCount > 0.0,
+                    "Normal viewport updates produced no paint while a PDF was loaded."
+                    );
+            }
+            else
+            {
+                QCOMPARE(loadedDocumentPaintEventCount, 0.0);
+            }
+        }
+
+        int pdfRenderEvents = 0;
+        for (const QJsonValue& value : report
+                 .value(QStringLiteral("events"))
+                 .toArray())
+        {
+            if (
+                value.toObject().value(QStringLiteral("name")).toString()
+                    == QStringLiteral("pdf-document-rendered")
+                )
+            {
+                ++pdfRenderEvents;
+            }
+        }
+        QCOMPARE(pdfRenderEvents, 0);
+        QVERIFY(
+            !QFileInfo::exists(
+                directory.filePath(QStringLiteral("pdf-captures"))
+                )
+            );
+    }
 }
 
 void StartupPerformanceTests
