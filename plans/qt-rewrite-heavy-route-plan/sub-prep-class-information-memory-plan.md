@@ -575,8 +575,24 @@ raised peak working set; the lifecycle aggregate peak was already 2,129,920
 bytes over target in F536 and is 20,480 bytes higher in F539. The first F539
 sample at its full peak is `pdf-png-save-start`, after the grab and before file
 writing; this timing and the cross-run values do not prove capture-specific
-causality. The output route stayed below the working-set target. F541 is next:
-investigate the PDF reopen/render lifecycle and possible memory owners/caches,
-then propose an evidence-backed next experiment or optimization. No cause or
-fix is established. Memory acceptance, F526 provenance, output parity, and the
-full Phase 0 gate remain open.
+causality. The output route stayed below the working-set target. F541 found
+that page leave closes/releases the document/session/lease but retains the
+cached `PdfViewerPage`, `QPdfView`, and `QPdfDocument`; no app-owned page-image
+cache was found. F536 disabled PNG file writes but still called `viewer.grab()`,
+so it did not isolate rendering/grabbing. The reopened 38-page high-water is
+not attributed to Qt view state, load overlap, mapped resources, or heap.
+The source/resource audit identifies the PDF as catalog ID
+`document_guides_lesson_planning`, path
+`Guides/DYB Lesson Planning Guide.pdf`; F536 and F539 use identical PDF and
+`documents.rcc` hashes. Their profiles report the basename and page count but
+omit the ID, resolved path, and file hash.
+
+F542 is proposed as a same-binary three-arm fresh-process diagnostic: document
+only, visible MultiPage without forced grab, and visible MultiPage with the
+current grab path, all with PNG writing disabled. Use the same large fixture,
+PDF, Qt version, and resolution; preserve the identical `documents.rcc` and
+relative PDF path. Record resolved path and PDF SHA-256 in sidecar metadata
+outside the measured process. Sample ready, after close, 1s, and 5s across at
+least three processes per arm. Avoid `setDocument(nullptr)` on Qt 6.12. This
+proposal is not an approved implementation or fix. Memory acceptance, F526
+provenance, output parity, and the full Phase 0 gate remain open.

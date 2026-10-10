@@ -18639,11 +18639,10 @@ not locate when the operating-system peak occurred between snapshots or
 attribute memory to a component. Aggregate `peakMemory` remains a separate
 per-field maximum, and PNG capture was disabled. F538 added an opt-in capture
 for the two Sub Prep routes; F539's matched capture-enabled run and F540's
-sample-level comparison are recorded below. F541 is next: investigate the PDF
-reopen/render lifecycle and memory owners or caches behind the lifecycle
-working-set overage, then propose an evidence-backed experiment or optimization.
-This analysis has not identified a cause or fix. F526 provenance, output
-parity, memory acceptance, and the full Phase 0 gate remain open.
+sample-level comparison are recorded below. F541's source and evidence
+investigation follows; it did not identify a confirmed cause or production
+fix. F542 is the next proposed diagnostic. F526 provenance, output parity,
+memory acceptance, and the full Phase 0 gate remain open.
 
 ## F538 opt-in Sub Prep PDF capture - 2026-10-10
 
@@ -18746,9 +18745,64 @@ was 23,674,880 bytes below it. Private usage above the working-set target does
 not itself fail the resident-memory comparison. These cross-run values are
 descriptive, not causal, and the commits differ.
 
-F540 is analysis only and makes no memory fix. F541 is next: bounded
-investigation of the PDF reopen/render lifecycle and memory owners or caches
-behind the lifecycle working-set overage, followed by an evidence-backed
-experiment or optimization proposal. Do not claim a cause or implement a fix
-from this comparison alone. Lifecycle memory acceptance, F526 provenance,
-output parity, and the overall Phase 0 gate remain open.
+F540 is analysis only and makes no memory fix. F541's source map and diagnostic
+recommendation follow. Lifecycle memory acceptance, F526 provenance, output
+parity, and the overall Phase 0 gate remain open.
+
+## F541 PDF reopen/render lifecycle investigation - 2026-10-10
+
+Source review found that `PageManager` lazily creates and caches one
+`PdfViewerPage`; its child `QPdfDocument` and `QPdfView` are attached when the
+page is constructed, and the app uses `QPdfView::MultiPage`. On page leave,
+`releaseDocument()` closes the document, releases the content session and
+resource lease, and clears the descriptor/path, while retaining the cached
+page, view, and document objects. Reopen reuses those objects and `loadPdf()`
+closes/reloads the document. Errors mark the session failed; close occurs on
+leave or replacement. The live-document metric counts load/release events, not
+QObject destruction.
+
+No app-owned page-image or `QImage` cache was found; renderer state belongs to
+Qt. The source avoids `setDocument(nullptr)` because it crashes Qt 6.12's
+bookmark model. `ResourcePackManager` is static and unregisters the RCC mapping
+when its lease count reaches zero, but current evidence does not establish
+whether another lease remains. These facts describe ownership boundaries;
+they do not show which objects or allocations account for the measured bytes.
+
+F536 disabled PNG file saving but still called `viewer.grab()`, which
+materializes a `QPixmap` in the capture path. Thus file writes are not required
+for the observed peak, but F536 does not isolate PDF rendering or grabbing;
+the source evidence does not establish that the pixmap outlives that call.
+F536 and F539 first report their roughly 264.27/264.29 MB lifecycle high-water
+around the reopened 38-page viewer. Source/resource audit maps the exercised
+PDF to catalog ID `document_guides_lesson_planning` and relative path
+`Guides/DYB Lesson Planning Guide.pdf` (`resources/assets/documents/documents.json:70-85`,
+`src/main.cpp:157-158,1216-1247`). Initial and reopen loads use the same
+resolved path and `QPdfDocument` object (`src/main.cpp:1226-1230,1515-1548`,
+`pdf_viewer_page.cpp:163-215`). The F536 and F539 commits contain the same PDF
+Git blob `bca024a5c90e47d54e10c345069cbe125d5b7d55` and file SHA-256
+`295ACCAB548B41F0B4F56E6AB89958AD5C3347646904C155B16A56EBE926CAEC`; their
+`documents.rcc` SHA-256 is also identical
+(`A3EB570294B55A616EA05797222FC1FEDD93620ABB25360B724ED6843BEE924F`). The
+profiles themselves record two 38-page loads/releases by basename but omit
+catalog ID, resolved path, and PDF hash, so those identifiers come from the
+source/resource audit rather than the profiles. Neither source nor trace
+attributes bytes among Qt view/render state, mapped resources, or private
+heap. Ranked hypotheses are: (1) Qt view/render state surviving close and
+reuse; (2) close/unload overlapping the next load; (3) a remaining
+documents-pack lease, with weaker support. No cause is confirmed.
+
+F541 recommends F542 as a same-source, same-binary, fresh-process diagnostic,
+with PNG file writing disabled in every arm and the same 96-class fixture, PDF,
+Qt version, and resolution. Compare document-only load/close without a view;
+a visible MultiPage viewer with forced grab omitted; and the current visible
+MultiPage-plus-grab path. Sample after load/ready, after close, and at one and
+five seconds; run at least three fresh processes per arm because peak working
+set is a process-lifetime high-water. Viewer destroy/recreate is optional only
+if needed; do not detach with `setDocument(nullptr)` on the Qt 6.12 path.
+Preserve the identical `documents.rcc` and PDF relative path in every arm; write
+the resolved path and PDF SHA-256 into sidecar metadata outside the measured
+process. Interpret repeated patterns as discriminating evidence, not causal
+proof; if ownership remains ambiguous, consider Windows allocation tracing.
+F542 is a proposal only: no production diagnostic implementation or fix has
+been selected. Lifecycle memory acceptance, F526 provenance, output parity,
+and the overall Phase 0 gate remain open.
