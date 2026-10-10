@@ -19872,6 +19872,42 @@ lifetime claims bounded by the snapshot evidence. The 250 MiB lifecycle gate,
 F536 cause, F526 provenance, output parity, render/window acceptance, and
 global Phase 0 remain open (Windows 1/24, macOS 0/24).
 
+## F574 symbolized PDF heap snapshot report - 2026-10-11
+
+The same F564 ETL was re-read with xperf `-symbols verbose` and the F573
+verified PDBs in `_NT_SYMBOL_PATH`; `_NT_SYMCACHE_PATH` was directed to an
+ignored local build directory. A first invocation placed `-o` after `-a` and
+xperf rejected that option order. The corrected invocation,
+`xperf -i <etl> -o <output> -symbols verbose -a heapsnapshot -data`, exited
+successfully and wrote an ignored 240,889,904-byte detail report. The ETL
+SHA-256 remains
+`948a1d81adc2b855bc0a0422ed1e70cb26539b1945fc36f4630f3d32f7f985fd`.
+
+The instance allocation counts remain 247,896, 236,535, and 107,013. The
+same report warning remains: 591,444 total allocation records versus 532,296
+processed stack references. Symbol decoding adds function names to stack
+frames but does not change xperf's count reconciliation.
+
+In the processed detail output, 2,710,115 of 5,068,076 emitted stack-frame
+lines contain resolved function names in the four modules with verified PDBs:
+Qt6Core (1,217,888), Qt6Gui (138,255), Qt6Widgets (1,267,016), and qoffscreen
+(86,956). `ClassMngr.exe` remains raw IPs (1,058,050 stack-frame lines), as do
+Qt6Pdf (7,412) and Qt6PdfWidgets (717), for which no matching PDB was found.
+These are report occurrences across repeated stack references, not unique
+function sites or unique stacks.
+
+Stack ID 1417 remains two allocations totaling 25,165,824 bytes at each of
+the three checkpoints. Its symbolized frames include
+`Qt6Gui.dll QFontDatabase::addApplicationFont`,
+`Qt6Core.dll QIODevice::readAll`, `QByteArray::resize`,
+`QByteArray::reallocData`, and `QArrayData::allocate1`; five intervening
+ClassMngr frames remain raw instruction pointers. This is a call-stack path,
+not proof of which object or subsystem owns the retained bytes. F575 examines
+the largest all-checkpoint same-address signatures and their newly resolved
+call paths. The 250 MiB lifecycle gate, F536 cause, F526 provenance, output
+parity, render/window acceptance, and global Phase 0 remain open (Windows
+1/24, macOS 0/24).
+
 ## F573 QtBase Release PDB identity verification - 2026-10-11
 
 The official Qt 6.12.0 MSVC 2022 x64 QtBase debug-symbol archive was fetched
@@ -19894,9 +19930,8 @@ in the corresponding F564 packaged Release image under
 | `plugins/platforms/qoffscreen.dll` | `539c8544-cc46-4ebb-ba8f-54e2d4958d2d` / 1 | Same | Match |
 
 These exact identities establish that the QtBase PDBs can be used for those
-captured binaries. This slice does not show that xperf resolves useful
-function names; F574 reruns the heap report with the verified symbols and
-compares the resolved frames. The archive contains no `Qt6Pdf.pdb` or
+captured binaries. F574 confirmed that xperf resolves function names from
+them. The archive contains no `Qt6Pdf.pdb` or
 `Qt6PdfWidgets.pdb`, so those modules remain at module/IP attribution.
 
 ## F572 official Qt symbol-package route - 2026-10-11
@@ -19921,7 +19956,8 @@ References: [Qt 6.12.0 MSVC 2022 x64 debug-info package index](https://download.
 
 F573 verified the official archive checksum and exact CodeView GUID/age
 matches for QtCore, QtGui, QtWidgets, and qoffscreen against the packaged
-Release images. F574 checks actual xperf symbol resolution from these PDBs.
+Release images. F574 confirmed actual xperf function-name resolution from
+these PDBs.
 The 250 MiB lifecycle gate, F536 cause, F526 provenance, output parity,
 render/window acceptance, and global Phase 0 remain open (Windows 1/24,
 macOS 0/24).

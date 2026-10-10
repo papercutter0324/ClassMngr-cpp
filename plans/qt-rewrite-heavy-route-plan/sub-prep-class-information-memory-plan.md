@@ -806,9 +806,12 @@ module/IP frames but not internal function names. F572 found an optional Qt
 6.12.0 MSVC 2022 x64 QtBase debug-symbol archive with the same package build
 identifier recorded for the installed QtBase binaries. F573 verified the
 archive checksum and exact PDB GUID/age matches for QtCore, QtGui, QtWidgets,
-and qoffscreen against the packaged Release images. F574 checks which frames
-xperf resolves using these PDBs. The checked qtpdf 6.12 extension tree had no
-separate debug-symbol package for the installed QtPdf 6.140.0.0 modules, so
-function-level PDFium/QtPdf ownership remains open. The 250 MiB lifecycle
-gate, F536 cause, F526 provenance, output parity, render/window acceptance,
-and global Phase 0 remain open (Windows 1/24, macOS 0/24).
+and qoffscreen against the packaged Release images. F574 resolved QtBase
+function names in xperf, including a QFontDatabase/QIODevice allocation path
+for stack ID 1417, while ClassMngr and QtPdf frames remain raw addresses.
+F575 examines the largest persistent signatures with the new symbols. The
+checked qtpdf 6.12 extension tree had no separate debug-symbol package for
+the installed QtPdf 6.140.0.0 modules, so function-level PDFium/QtPdf
+ownership remains open. The 250 MiB lifecycle gate, F536 cause, F526
+provenance, output parity, render/window acceptance, and global Phase 0 remain
+open (Windows 1/24, macOS 0/24).
