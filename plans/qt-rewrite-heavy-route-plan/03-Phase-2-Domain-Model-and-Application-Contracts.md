@@ -42,7 +42,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-11
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F596 adds owner-labeled schedule metrics to each checkpoint; F597 will capture them in a fresh Release lifecycle route, while F579 remains deferred and the memory, output-parity, and full Phase 0 gates remain open.
+- Current note: F597's fresh Release dry-run verified all three owner records; F599 will trace them across all 84 checkpoints, F598's matched WPR capture awaits an elevated token, F579 remains deferred, and the memory/output-parity/Phase 0 gates remain open.
 
 ### Slice discovery batches
 
@@ -68,10 +68,16 @@ Treat this plan as an operational summary, not a history:
   clarified.
 - F579 - Deferred at the user's direction: take a fresh matched-symbol heap
   capture; revisit after the user asks to resume symbol work.
+- F598 - Fresh matched WPR heap capture for the F596 Release route is blocked
+  because the current execution identity is not an Administrator; resume when
+  a Windows process with an elevated administrator token is available.
 
-#### Active batch: Batch 113
+#### Active batch: Batch 114
 
-- F597 - Capture a fresh packaged Release PDF lifecycle route with owner-labeled schedule metrics aligned to the existing heap checkpoints.
+- F599 - Track each schedule owner's metric tuple across all 84 F597 lifecycle checkpoints, including first population and any changes.
+- F600 - Audit paired pre/post-`applicationMetrics()` process samples and any change to the 250 MiB working-set classification.
+
+No other slices were found.
 
 ## Objective
 

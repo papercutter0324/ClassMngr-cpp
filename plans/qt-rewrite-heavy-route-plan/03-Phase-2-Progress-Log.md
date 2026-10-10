@@ -19925,6 +19925,59 @@ F579 remains deferred at the user's direction. The 250 MiB lifecycle gate,
 F536 cause, F526 provenance, output parity, render/window acceptance, and
 global Phase 0 remain open.
 
+## F597 packaged Release schedule-owner dry-run - 2026-10-11
+
+A fresh Windows x64 Release package was built from F596 commit
+`37cc51bbafd3f68fe341775266caa78375c84086` and installed at
+`dist/f597-current-source-windows-x64`. The packaged executable SHA-256 is
+`7488a941d259909f8997e4d2057a76db6967a4ca3d9b541c091fe10af533dbb3`; the
+Debug route harness SHA-256 is
+`9b437d75b21c56b9373a9eacaf125577a90deec3e25e54a6f47cbd7d64fbb2ed`. The
+existing `build/windows-x64-release` standard tree was freshly configured
+with Ninja after the Visual Studio preset configure hit FileTracker's
+`UnauthorizedAccessException`; the Release app built and installed with
+MSVC 19.51, CMake 4.4.2, and Qt 6.12.0.
+
+Two attempts at a matched F564 WPR capture failed before launching the app:
+WPR returned `0x80070005`. The retry requested sandbox escalation, but the
+process identity remained `Felt-Desktop\CodexSandboxOffline` with
+`IsAdministrator=False`. Both failure summaries remain preserved under
+`build/f597-f596-heap-capture` and
+`build/f597-f596-heap-capture-elevated`; each confirmed WPR idle and heap
+snapshot configuration disabled after the attempt. No matched route profile
+or ETL was produced, so F598 is deferred until an actually elevated Windows
+process is available.
+
+F597 instead exercised the packaged Release lifecycle through F564's
+`--dry-run`: `status=passed`, `dryRun=true`, controller and app harness exit 0,
+three ordered marker/acknowledgement pairs with matching run ID, PID, order,
+name, and SHA-256, and 84 workflow checkpoints. The independently verified
+nearest profile checkpoints were sequence 69 `pdf-opened`, 77
+`pdf-released-after-reopen`, and 84 `settled-5s`. Comparing profile `elapsedMs`
+with each marker's monotonic timestamp yielded offsets of +243.532 ms,
++88.130 ms, and -488.994 ms respectively. The distinct wall-clock comparison
+(`memory.capturedAt` versus wrapper `recordedAtUtc`) yielded +182.481 ms,
++15.033 ms, and -539.951 ms; both pairs were reconciled and the checkpoint
+identities agree.
+
+At each of those three checkpoints, all owners
+(`standalone-schedule`, `workspace-schedule`, and `sub-prep-preview`) reported
+`(modelRowCount, modelCellCount, modelEntryCount, tableRowCount,
+tableColumnCount, tableItemCount, tableCellWidgetCount, visibleClassCount) =
+(7, 49, 768, 7, 8, 7, 49, 96)`. All eight standalone values match their legacy
+`schedule*` scalar fields. The wrapper invoked no WPR commands and produced no
+ETL, so the dry-run provides no matched heap correlation or byte-ownership
+evidence and does not close the memory gate. Capture summary SHA-256 is
+`a5bc10a265e40b2e9d92acf122edc147b90d6392e12a1f14d912e3f5fa82b68e`; workflow
+profile SHA-256 is
+`02a7fc82c50e51da8d030bbe0d168081f5436431260956e4a063e4b0f5057d18`. The
+summary and profile remain under `build/f597-f596-heap-capture-dryrun` and the
+corresponding F563 temporary route directory. No symbols were decoded.
+
+F599 will audit owner tuple presence and changes over all 84 checkpoints;
+F600 will analyze the paired profiler memory samples. F579 remains deferred at
+the user's direction.
+
 ## F594 per-instance ScheduleWidget metric coverage - 2026-10-11
 
 F594 traced the values captured at each retained route checkpoint. Every
