@@ -1494,11 +1494,6 @@ Workbook parseWorkbook(
         workbook.worksheets.append(worksheet);
     }
 
-    if (!workbook.worksheets.isEmpty())
-    {
-        workbook.cells = workbook.worksheets.first().cells;
-    }
-
     const bool allWorksheetsEmpty = std::all_of(
         workbook.worksheets.cbegin(), workbook.worksheets.cend(),
         [](const Worksheet& worksheet) { return worksheet.cells.isEmpty(); });

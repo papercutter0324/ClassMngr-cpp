@@ -20203,6 +20203,32 @@ under `dist/f604-current-source-windows-x64`,
 `build/f604-verification-20261011`, and
 `build/f604-checkpoint-dryrun-20261011`.
 
+## F606 remove duplicate Calendar workbook cells - 2026-10-11
+
+`CalendarImport::Workbook` now owns parsed cells only through its worksheet
+collection. The reader no longer copies the first worksheet into a second flat
+vector, and `AcademicCalendarEventParser` traverses the first worksheet
+directly with a missing-worksheet guard. The two obsolete flat-vector
+assignments in Teacher import test fixtures were removed; Teacher and Schedule
+production consumers already use worksheet cells.
+
+`ClassMngrCalendarImportTests` adds a compile-time assertion that the flat
+projection is absent, first-sheet-only parsing with calendar-order output,
+worksheet mutation coverage, empty/missing worksheet behavior, and malformed
+workbook handling. The incremental standard Windows x64 Debug build completed
+with sandbox escalation for MSBuild FileTracker access and built
+`ClassMngrCalendarImportTests`, `ClassMngrCalendarEventImportParityTests`, and
+`ClassMngrTeacherImportTests`. Runtime results were 18/0, 3/0, and 23/0 with
+one optional external-workbook sample skipped, respectively; diff whitespace
+validation passed.
+
+The independent Tester could not build afresh because of the same FileTracker
+access denial, but inspected the successful build and test logs. They record
+compilation of the changed reader, parser, and tests; all three executables
+were produced after the changed-source timestamps, and their later test logs
+show the passing totals above. The logs do not contain executable hashes.
+Artifacts remain in `build/f606-verification-20261011`.
+
 ## F605 defer hidden Personal Details construction - 2026-10-11
 
 `MyWorkspacePage` now starts with a lightweight Details placeholder and creates

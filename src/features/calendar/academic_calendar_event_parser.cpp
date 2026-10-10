@@ -110,7 +110,7 @@ int calendarYear(
         QStringLiteral("(20\\d{2})")
         );
 
-    for (const Cell& cell : workbook.cells)
+    for (const Cell& cell : workbook.worksheets.constFirst().cells)
     {
         const QRegularExpressionMatch match =
             yearPattern.match(cell.value);
@@ -171,7 +171,7 @@ QVector<MonthBlock> monthBlocks(
     const int year =
         calendarYear(workbook);
 
-    for (const Cell& cell : workbook.cells)
+    for (const Cell& cell : workbook.worksheets.constFirst().cells)
     {
         const int month =
             monthNumber(cell.value);
@@ -390,7 +390,7 @@ QHash<QString, QString> fillLegend(
 {
     QHash<QString, QString> legend;
 
-    for (const Cell& cell : workbook.cells)
+    for (const Cell& cell : workbook.worksheets.constFirst().cells)
     {
         if (cell.column != LegendColumn)
         {
@@ -419,7 +419,7 @@ QHash<QString, QString> fontLegend(
 {
     QHash<QString, QString> legend;
 
-    for (const Cell& cell : workbook.cells)
+    for (const Cell& cell : workbook.worksheets.constFirst().cells)
     {
         if (cell.column != LegendColumn)
         {
@@ -447,7 +447,7 @@ Style weekendLegendStyle(
     const Workbook& workbook
     )
 {
-    for (const Cell& cell : workbook.cells)
+    for (const Cell& cell : workbook.worksheets.constFirst().cells)
     {
         if (
             cell.column == LegendColumn
@@ -811,13 +811,18 @@ ParsedCalendarImport parseCalendarEventsFromWorkbook(
     )
 {
     ParsedCalendarImport result;
+    if (workbook.worksheets.isEmpty())
+    {
+        return result;
+    }
+
     const QStringList knownCampusCodes =
         normalizedCampusCodes(campusCodes);
     const QVector<MonthBlock> blocks =
         monthBlocks(workbook);
 
     QHash<int, Cell> cellsByPosition;
-    for (const Cell& cell : workbook.cells)
+    for (const Cell& cell : workbook.worksheets.constFirst().cells)
     {
         cellsByPosition.insert(
             cell.row * 100 + cell.column,

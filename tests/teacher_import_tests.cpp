@@ -282,7 +282,6 @@ CalendarImport::Workbook sectionedWorkbook()
         {61, 5, 0, QStringLiteral("06/10"), {}}
     };
     workbook.worksheets = {worksheet};
-    workbook.cells = worksheet.cells;
     return workbook;
 }
 
@@ -479,7 +478,6 @@ void TeacherImportTests::invalidVersionIsRecognizedButRejected()
 {
     CalendarImport::Workbook workbook = sectionedWorkbook();
     workbook.worksheets.first().cells[0].value = QStringLiteral("not-a-date");
-    workbook.cells = workbook.worksheets.first().cells;
     SectionedContactListTemplate importTemplate;
     QVERIFY(importTemplate.recognizes(workbook));
     const auto preview = importTemplate.parse(workbook);

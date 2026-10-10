@@ -42,7 +42,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-11
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F605 now defers Personal Details construction until first selection while preserving page state, and F606 will remove the duplicate Calendar workbook cell vector; F598 still awaits an elevated WPR process, F579 symbol work remains deferred at the user's direction, and the memory/output-parity/Phase 0 gates remain open.
+- Current note: F606 removes the duplicate Calendar workbook cell vector while preserving first-sheet import order, and F607 will release hidden Calendar resources on workspace leave; F598 still awaits an elevated WPR process, F579 symbol work remains deferred at the user's direction, and the memory/output-parity/Phase 0 gates remain open.
 
 ### Slice discovery batches
 
@@ -74,7 +74,6 @@ Treat this plan as an operational summary, not a history:
 
 #### Active batch: Batch 116
 
-- F606 - Remove the duplicate Calendar workbook cell vector and preserve first-sheet ordering.
 - F607 - Release hidden Calendar resources on workspace leave while preserving return state.
 - F608 - Replace Staff Directory per-cell table items while preserving editing and save behavior.
 - F609 - Bound Speaking Evaluation class-page construction while preserving navigation and reports.

@@ -56,9 +56,6 @@ struct Workbook
     QStringList sharedStrings;
     QVector<Style> styles;
     QVector<Worksheet> worksheets;
-
-    // Compatibility view used by the existing calendar parser.
-    QVector<Cell> cells;
 };
 
 QString normalizedColor(
