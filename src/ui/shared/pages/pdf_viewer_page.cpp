@@ -44,6 +44,11 @@ PdfViewerPage::~PdfViewerPage()
     m_view =
         nullptr;
 
+    if (m_startupLifecycleViewDestroyedObserver)
+    {
+        m_startupLifecycleViewDestroyedObserver(m_document);
+    }
+
     if (m_document)
     {
         if (m_pdfLoadRecorded)
@@ -319,6 +324,13 @@ void PdfViewerPage::setStartupLifecycleBoundaryObserver(
     )
 {
     m_startupLifecycleBoundaryObserver = std::move(observer);
+}
+
+void PdfViewerPage::setStartupLifecycleViewDestroyedObserver(
+    StartupLifecycleViewDestroyedObserver observer
+    )
+{
+    m_startupLifecycleViewDestroyedObserver = std::move(observer);
 }
 
 void PdfViewerPage::recordStartupLifecycleBoundary(

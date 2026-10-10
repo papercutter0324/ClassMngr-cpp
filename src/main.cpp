@@ -56,6 +56,7 @@
 #include <QCheckBox>
 #include <QComboBox>
 #include <QCoreApplication>
+#include <QCryptographicHash>
 #include <QDir>
 #include <QDirIterator>
 #include <QDialog>
@@ -90,6 +91,9 @@
 #include <QScreen>
 #include <QMutex>
 #include <QMutexLocker>
+#include <QSaveFile>
+#include <QThread>
+#include <QUuid>
 
 #include <functional>
 #include <algorithm>
@@ -127,6 +131,8 @@ QString startupPdfLifecycleObservedDocumentStatusName(
     QPdfDocument::Status status
     );
 
+class StartupPdfLifecycleCheckpointHandshake;
+
 struct StartupPdfLifecycleInnerBoundaryTrace
 {
     QElapsedTimer timer;
@@ -155,6 +161,7 @@ struct StartupPdfLifecyclePageRenderObserverTrace
     int discoveredRendererCount = 0;
     int attachedRendererCount = 0;
     int nextOrder = 1;
+    int readyPageRenderCallbackCount = 0;
     qint64 lastTimestampNanoseconds = -1;
     bool documentStatusConnectionAvailable = false;
     bool disconnected = false;
@@ -252,6 +259,10 @@ struct StartupPerformanceMode
     QString pdfLifecyclePageRenderObserverError;
     std::shared_ptr<StartupPdfLifecyclePageRenderObserverTrace>
         pdfLifecyclePageRenderObserverTrace;
+    bool pdfLifecycleCheckpointHandshakeEnabled = false;
+    QString pdfLifecycleCheckpointHandshakeError;
+    std::shared_ptr<StartupPdfLifecycleCheckpointHandshake>
+        pdfLifecycleCheckpointHandshake;
     QString pdfLifecycleViewportUpdateMode;
     QString pdfLifecycleViewportUpdateError;
     std::shared_ptr<StartupPdfLifecycleViewportDiagnosticTrace>
@@ -560,6 +571,11 @@ void attachStartupPdfLifecyclePageRenderObserver(
                         callbackStatusName != QStringLiteral("Unknown")
                             ? QJsonValue(callbackStatusName)
                             : QJsonValue(QJsonValue::Null);
+
+                    if (callbackStatusName == QStringLiteral("Ready"))
+                    {
+                        ++trace->readyPageRenderCallbackCount;
+                    }
 
                     trace->callbacks.append(
                         QJsonObject{
@@ -1187,6 +1203,389 @@ QString startupPdfLifecycleObservedDocumentStatusName(
     }
     return startupPdfDocumentStatusName(status);
 }
+
+constexpr auto StartupPdfLifecycleCheckpointHandshakeEnvironmentVariable =
+    "CLASSMNGR_STARTUP_PDF_LIFECYCLE_CHECKPOINT_HANDSHAKE";
+constexpr auto StartupPdfLifecycleCheckpointControlDirectoryEnvironmentVariable =
+    "CLASSMNGR_STARTUP_PDF_LIFECYCLE_CHECKPOINT_CONTROL_DIR";
+constexpr int StartupPdfLifecycleCheckpointAckTimeoutMilliseconds = 30000;
+
+class StartupPdfLifecycleCheckpointHandshake
+{
+public:
+    explicit StartupPdfLifecycleCheckpointHandshake(
+        const QString& controlDirectory
+        )
+        : m_controlDirectory(QDir(controlDirectory).absolutePath())
+        , m_runId(QUuid::createUuid().toString(QUuid::WithoutBraces))
+    {
+        m_timer.start();
+    }
+
+    [[nodiscard]] int nextCheckpointOrder() const
+    {
+        return m_nextCheckpointOrder;
+    }
+
+    [[nodiscard]] bool isComplete() const
+    {
+        return m_complete;
+    }
+
+    [[nodiscard]] bool hasFailed() const
+    {
+        return m_failed;
+    }
+
+    [[nodiscard]] QString lastError() const
+    {
+        return m_lastError;
+    }
+
+    bool publishAndWait(
+        const QString& checkpoint,
+        QPdfDocument* document,
+        QPdfView* view,
+        int readyPageRenderCallbackCount,
+        bool guiProcessingDrained,
+        bool viewDestroyed
+        )
+    {
+        if (m_failed || m_complete)
+        {
+            return false;
+        }
+
+        const QString expectedCheckpoint =
+            checkpointNameForOrder(m_nextCheckpointOrder);
+        if (checkpoint != expectedCheckpoint)
+        {
+            return fail(
+                checkpoint,
+                QStringLiteral(
+                    "Expected checkpoint %1 at order %2, received %3."
+                    )
+                    .arg(
+                        expectedCheckpoint,
+                        QString::number(m_nextCheckpointOrder),
+                        checkpoint
+                        )
+                );
+        }
+
+        const bool documentAlive = document != nullptr;
+        const bool viewAlive = view != nullptr;
+        const bool viewAttachedToDocument =
+            viewAlive
+            && documentAlive
+            && view->document() == document;
+        const QString documentStatus = documentAlive
+            ? startupPdfLifecycleObservedDocumentStatusName(
+                  document->status()
+                  )
+            : QStringLiteral("Unavailable");
+
+        if (
+            m_nextCheckpointOrder == 1
+            && (
+                !documentAlive
+                || !viewAlive
+                || !viewAttachedToDocument
+                || documentStatus != QStringLiteral("Ready")
+                || readyPageRenderCallbackCount < 1
+                || !guiProcessingDrained
+                || viewDestroyed
+                )
+        )
+        {
+            return fail(
+                checkpoint,
+                QStringLiteral(
+                    "after-render requires a Ready document, an attached live view, at least one Ready pageRendered callback, and a completed GUI event drain."
+                    )
+                );
+        }
+        if (
+            m_nextCheckpointOrder == 2
+            && (
+                !documentAlive
+                || !viewAlive
+                || !viewAttachedToDocument
+                || documentStatus != QStringLiteral("Null")
+                || !guiProcessingDrained
+                || viewDestroyed
+                )
+        )
+        {
+            return fail(
+                checkpoint,
+                QStringLiteral(
+                    "after-document-close requires a Null document, a live attached view, and a completed GUI event drain."
+                    )
+                );
+        }
+        if (
+            m_nextCheckpointOrder == 3
+            && (
+                !documentAlive
+                || viewAlive
+                || viewAttachedToDocument
+                || documentStatus != QStringLiteral("Null")
+                || !viewDestroyed
+                )
+        )
+        {
+            return fail(
+                checkpoint,
+                QStringLiteral(
+                    "after-view-destroyed requires the deleted view, a live document, and Null document status."
+                    )
+                );
+        }
+
+        const QJsonObject marker{
+            {QStringLiteral("schema"), QStringLiteral("classmngr-f563-checkpoint-v1")},
+            {QStringLiteral("runId"), m_runId},
+            {
+                QStringLiteral("processId"),
+                static_cast<double>(QCoreApplication::applicationPid())
+            },
+            {QStringLiteral("checkpoint"), checkpoint},
+            {QStringLiteral("checkpointOrder"), m_nextCheckpointOrder},
+            {
+                QStringLiteral("monotonicTimestampNanoseconds"),
+                static_cast<double>(m_timer.nsecsElapsed())
+            },
+            {QStringLiteral("documentStatus"), documentStatus},
+            {QStringLiteral("documentAlive"), documentAlive},
+            {QStringLiteral("viewAlive"), viewAlive},
+            {
+                QStringLiteral("viewAttachedToDocument"),
+                viewAttachedToDocument
+            },
+            {QStringLiteral("viewDestroyed"), viewDestroyed},
+            {
+                QStringLiteral("readyPageRenderCallbackCount"),
+                readyPageRenderCallbackCount
+            },
+            {QStringLiteral("guiProcessingDrained"), guiProcessingDrained}
+        };
+        const QByteArray markerBytes =
+            QJsonDocument(marker).toJson(QJsonDocument::Indented);
+        const QString markerPath = markerFilePath(m_nextCheckpointOrder, checkpoint);
+        if (!writeAtomic(markerPath, markerBytes))
+        {
+            return fail(
+                checkpoint,
+                QStringLiteral("Unable to atomically write ready marker %1.")
+                    .arg(markerPath)
+                );
+        }
+
+        if (!waitForMatchingAck(checkpoint, markerBytes))
+        {
+            return false;
+        }
+
+        ++m_nextCheckpointOrder;
+        m_complete = m_nextCheckpointOrder == 4;
+        return true;
+    }
+
+    void markIncomplete(const QString& detail)
+    {
+        if (m_complete || m_failed)
+        {
+            return;
+        }
+
+        fail(
+            checkpointNameForOrder(m_nextCheckpointOrder),
+            detail
+            );
+    }
+
+private:
+    static QString checkpointNameForOrder(int order)
+    {
+        switch (order)
+        {
+        case 1:
+            return QStringLiteral("after-render");
+        case 2:
+            return QStringLiteral("after-document-close");
+        case 3:
+            return QStringLiteral("after-view-destroyed");
+        default:
+            return QStringLiteral("complete");
+        }
+    }
+
+    QString markerFilePath(int order, const QString& checkpoint) const
+    {
+        return QDir(m_controlDirectory).filePath(
+            QStringLiteral("ready-%1-%2.json")
+                .arg(order, 2, 10, QLatin1Char('0'))
+                .arg(checkpoint)
+            );
+    }
+
+    QString ackFilePath(int order, const QString& checkpoint) const
+    {
+        return QDir(m_controlDirectory).filePath(
+            QStringLiteral("ack-%1-%2.json")
+                .arg(order, 2, 10, QLatin1Char('0'))
+                .arg(checkpoint)
+            );
+    }
+
+    static bool writeAtomic(const QString& path, const QByteArray& contents)
+    {
+        QSaveFile file(path);
+        if (!file.open(QIODevice::WriteOnly))
+        {
+            return false;
+        }
+        if (
+            file.write(contents) != contents.size()
+            || !file.flush()
+            || !file.commit()
+            )
+        {
+            file.cancelWriting();
+            return false;
+        }
+        return true;
+    }
+
+    bool waitForMatchingAck(
+        const QString& checkpoint,
+        const QByteArray& markerBytes
+        )
+    {
+        const int order = m_nextCheckpointOrder;
+        const QString ackPath = ackFilePath(order, checkpoint);
+        const QString markerHash = QString::fromLatin1(
+            QCryptographicHash::hash(markerBytes, QCryptographicHash::Sha256)
+                .toHex()
+            );
+        QElapsedTimer timeout;
+        timeout.start();
+
+        while (timeout.elapsed() < StartupPdfLifecycleCheckpointAckTimeoutMilliseconds)
+        {
+            const QString controllerErrorPath = QDir(m_controlDirectory).filePath(
+                QStringLiteral("controller-error.json")
+                );
+            QFile controllerErrorFile(controllerErrorPath);
+            if (controllerErrorFile.open(QIODevice::ReadOnly))
+            {
+                const QJsonDocument errorDocument = QJsonDocument::fromJson(
+                    controllerErrorFile.readAll()
+                    );
+                return fail(
+                    checkpoint,
+                    QStringLiteral("Controller reported an error: %1")
+                        .arg(
+                            errorDocument.object()
+                                .value(QStringLiteral("error"))
+                                .toString(QStringLiteral("unknown controller error"))
+                            )
+                    );
+            }
+
+            QFile ackFile(ackPath);
+            if (ackFile.open(QIODevice::ReadOnly))
+            {
+                QJsonParseError parseError;
+                const QJsonDocument ackDocument = QJsonDocument::fromJson(
+                    ackFile.readAll(),
+                    &parseError
+                    );
+                const QJsonObject ack = ackDocument.object();
+                if (
+                    parseError.error != QJsonParseError::NoError
+                    || !ackDocument.isObject()
+                    || ack.value(QStringLiteral("schema")).toString()
+                        != QStringLiteral("classmngr-f563-checkpoint-ack-v1")
+                    || ack.value(QStringLiteral("runId")).toString() != m_runId
+                    || ack.value(QStringLiteral("processId")).toDouble()
+                        != static_cast<double>(QCoreApplication::applicationPid())
+                    || ack.value(QStringLiteral("checkpoint")).toString()
+                        != checkpoint
+                    || ack.value(QStringLiteral("checkpointOrder")).toInt()
+                        != order
+                    || ack.value(QStringLiteral("markerSha256")).toString()
+                        != markerHash
+                    )
+                {
+                    return fail(
+                        checkpoint,
+                        QStringLiteral("Ack %1 does not match the ready marker.")
+                            .arg(ackPath)
+                        );
+                }
+                return true;
+            }
+
+            // The third checkpoint waits from PdfViewerPage destruction,
+            // after deleting m_view. Do not dispatch queued Qt events into a
+            // partially destructed page while an external ack is pending.
+            QThread::msleep(10);
+        }
+
+        return fail(
+            checkpoint,
+            QStringLiteral(
+                "Timed out after %1 ms waiting for matching ack %2."
+                )
+                .arg(
+                    QString::number(
+                        StartupPdfLifecycleCheckpointAckTimeoutMilliseconds
+                        ),
+                    ackPath
+                    )
+            );
+    }
+
+    bool fail(const QString& checkpoint, const QString& detail)
+    {
+        m_failed = true;
+        m_lastError = detail;
+        const QJsonObject failure{
+            {QStringLiteral("schema"), QStringLiteral("classmngr-f563-checkpoint-failure-v1")},
+            {QStringLiteral("runId"), m_runId},
+            {
+                QStringLiteral("processId"),
+                static_cast<double>(QCoreApplication::applicationPid())
+            },
+            {QStringLiteral("checkpoint"), checkpoint},
+            {QStringLiteral("checkpointOrder"), m_nextCheckpointOrder},
+            {
+                QStringLiteral("monotonicTimestampNanoseconds"),
+                static_cast<double>(m_timer.nsecsElapsed())
+            },
+            {QStringLiteral("error"), detail}
+        };
+        writeAtomic(
+            QDir(m_controlDirectory).filePath(QStringLiteral("failure.json")),
+            QJsonDocument(failure).toJson(QJsonDocument::Indented)
+            );
+        qCritical().noquote()
+            << QStringLiteral("PDF lifecycle checkpoint %1 failed: %2")
+                   .arg(checkpoint, detail);
+        return false;
+    }
+
+private:
+    QString m_controlDirectory;
+    QString m_runId;
+    QElapsedTimer m_timer;
+    int m_nextCheckpointOrder = 1;
+    bool m_complete = false;
+    bool m_failed = false;
+    QString m_lastError;
+};
 
 QString startupPdfViewModeName(const QPdfView* view)
 {
@@ -3411,6 +3810,8 @@ void scheduleStartupPerformancePdfLifecycle(
         innerBoundaryTrace,
     const std::shared_ptr<StartupPdfLifecyclePageRenderObserverTrace>&
         pageRenderObserverTrace,
+    const std::shared_ptr<StartupPdfLifecycleCheckpointHandshake>&
+        checkpointHandshake,
     const QString& viewportUpdateMode,
     const std::shared_ptr<StartupPdfLifecycleViewportDiagnosticTrace>&
         viewportDiagnosticTrace,
@@ -3432,6 +3833,10 @@ void scheduleStartupPerformancePdfLifecycle(
         std::make_shared<bool>(false);
     const auto pageRenderObserverAttempted =
         std::make_shared<bool>(false);
+    const auto renderCheckpointScheduled =
+        std::make_shared<bool>(false);
+    const auto renderCallbackWaitTimer =
+        std::make_shared<QElapsedTimer>();
     const auto finishViewportDiagnostic =
         [viewportDiagnosticTrace](
             const QString& restorationPoint,
@@ -3485,12 +3890,15 @@ void scheduleStartupPerformancePdfLifecycle(
             comparisonArm,
             innerBoundaryTrace,
             pageRenderObserverTrace,
+            checkpointHandshake,
             viewportUpdateMode,
             viewportDiagnosticTrace,
             finishViewportDiagnostic,
             innerBoundaryCycle,
             innerBoundaryObserverInstalled,
             pageRenderObserverAttempted,
+            renderCheckpointScheduled,
+            renderCallbackWaitTimer,
             pdfPath,
             phase,
             runPhase,
@@ -3506,11 +3914,21 @@ void scheduleStartupPerformancePdfLifecycle(
                 &profiler,
                 workflowSucceeded,
                 pageRenderObserverTrace,
+                checkpointHandshake,
+                viewer,
                 finishViewportDiagnostic,
                 completion
             ](const QString& detail)
         {
             *workflowSucceeded = false;
+            if (checkpointHandshake)
+            {
+                if (viewer)
+                {
+                    viewer->setStartupLifecycleViewDestroyedObserver({});
+                }
+                checkpointHandshake->markIncomplete(detail);
+            }
             disconnectStartupPdfLifecyclePageRenderObserver(
                 pageRenderObserverTrace,
                 QStringLiteral("workflow-error")
@@ -3542,6 +3960,23 @@ void scheduleStartupPerformancePdfLifecycle(
                 *viewer,
                 app,
                 pageRenderObserverTrace
+                );
+        }
+
+        if (checkpointHandshake && *phase == 0)
+        {
+            viewer->setStartupLifecycleViewDestroyedObserver(
+                [checkpointHandshake](QPdfDocument* document)
+                {
+                    checkpointHandshake->publishAndWait(
+                        QStringLiteral("after-view-destroyed"),
+                        document,
+                        nullptr,
+                        0,
+                        false,
+                        true
+                        );
+                }
                 );
         }
 
@@ -3792,6 +4227,111 @@ void scheduleStartupPerformancePdfLifecycle(
         if (*phase == 1)
         {
             app.processEvents();
+            if (
+                checkpointHandshake
+                && checkpointHandshake->nextCheckpointOrder() == 1
+                )
+            {
+                int readyPageRenderCallbackCount = 0;
+                if (pageRenderObserverTrace)
+                {
+                    QMutexLocker lock(&pageRenderObserverTrace->mutex);
+                    readyPageRenderCallbackCount =
+                        pageRenderObserverTrace
+                            ->readyPageRenderCallbackCount;
+                }
+
+                if (readyPageRenderCallbackCount < 1)
+                {
+                    if (!renderCallbackWaitTimer->isValid())
+                    {
+                        renderCallbackWaitTimer->start();
+                    }
+                    if (
+                        renderCallbackWaitTimer->elapsed()
+                        >= StartupPdfLifecycleCheckpointAckTimeoutMilliseconds
+                        )
+                    {
+                        fail(
+                            QStringLiteral(
+                                "No Ready pageRendered callback was observed before the checkpoint timeout."
+                                )
+                            );
+                        return;
+                    }
+
+                    QTimer::singleShot(
+                        20,
+                        &app,
+                        [runPhase]()
+                        {
+                            (*runPhase)();
+                        }
+                        );
+                    return;
+                }
+
+                if (!*renderCheckpointScheduled)
+                {
+                    *renderCheckpointScheduled = true;
+                    QTimer::singleShot(
+                        25,
+                        &app,
+                        [
+                            &app,
+                            viewer,
+                            pageRenderObserverTrace,
+                            checkpointHandshake,
+                            runPhase,
+                            fail
+                        ]()
+                        {
+                            app.processEvents();
+                            int readyCallbackCount = 0;
+                            if (pageRenderObserverTrace)
+                            {
+                                QMutexLocker lock(
+                                    &pageRenderObserverTrace->mutex
+                                    );
+                                readyCallbackCount =
+                                    pageRenderObserverTrace
+                                        ->readyPageRenderCallbackCount;
+                            }
+                            QPdfDocument* const document =
+                                viewer->findChild<QPdfDocument*>(
+                                    QString(),
+                                    Qt::FindChildrenRecursively
+                                    );
+                            QPdfView* const view = viewer->findChild<QPdfView*>(
+                                QStringLiteral("pdfViewerView")
+                                );
+                            if (
+                                !checkpointHandshake->publishAndWait(
+                                    QStringLiteral("after-render"),
+                                    document,
+                                    view,
+                                    readyCallbackCount,
+                                    true,
+                                    false
+                                    )
+                                )
+                            {
+                                fail(
+                                    QStringLiteral(
+                                        "after-render handshake failed: %1"
+                                        )
+                                        .arg(checkpointHandshake->lastError())
+                                    );
+                                return;
+                            }
+
+                            (*runPhase)();
+                        }
+                        );
+                    return;
+                }
+            }
+
             if (!viewer->hasLoadedDocument())
             {
                 fail(QStringLiteral("initial-open-not-ready"));
@@ -4319,6 +4859,37 @@ void scheduleStartupPerformancePdfLifecycle(
         {
             fail(QStringLiteral("reopen-release-incomplete"));
             return;
+        }
+
+        if (
+            checkpointHandshake
+            && checkpointHandshake->nextCheckpointOrder() == 2
+            )
+        {
+            QPdfDocument* const document = viewer->findChild<QPdfDocument*>(
+                QString(),
+                Qt::FindChildrenRecursively
+                );
+            QPdfView* const view = viewer->findChild<QPdfView*>(
+                QStringLiteral("pdfViewerView")
+                );
+            if (
+                !checkpointHandshake->publishAndWait(
+                    QStringLiteral("after-document-close"),
+                    document,
+                    view,
+                    0,
+                    true,
+                    false
+                    )
+                )
+            {
+                fail(
+                    QStringLiteral("after-document-close handshake failed: %1")
+                        .arg(checkpointHandshake->lastError())
+                    );
+                return;
+            }
         }
 
         finishViewportDiagnostic(
@@ -4942,6 +5513,169 @@ StartupPerformanceMode startupPerformanceMode(
                     std::make_shared<
                         StartupPdfLifecyclePageRenderObserverTrace
                         >();
+            }
+        }
+    }
+    const QString checkpointHandshakeSelector =
+        qEnvironmentVariable(
+            StartupPdfLifecycleCheckpointHandshakeEnvironmentVariable
+            ).trimmed();
+    if (!checkpointHandshakeSelector.isEmpty())
+    {
+        mode.enabled = true;
+        const auto setCheckpointHandshakeError =
+            [&mode](QString error)
+        {
+            if (mode.pdfLifecycleCheckpointHandshakeError.isEmpty())
+            {
+                mode.pdfLifecycleCheckpointHandshakeError = std::move(error);
+            }
+        };
+        if (checkpointHandshakeSelector != QStringLiteral("1"))
+        {
+            setCheckpointHandshakeError(
+                QStringLiteral(
+                    "%1 must be either unset or '1'."
+                    )
+                    .arg(QString::fromUtf8(
+                        StartupPdfLifecycleCheckpointHandshakeEnvironmentVariable
+                        ))
+                );
+        }
+
+        const QString controlDirectory =
+            qEnvironmentVariable(
+                StartupPdfLifecycleCheckpointControlDirectoryEnvironmentVariable
+                ).trimmed();
+        if (controlDirectory.isEmpty())
+        {
+            setCheckpointHandshakeError(
+                QStringLiteral(
+                    "%1 requires %2 to name an existing writable control directory."
+                    )
+                    .arg(
+                        QString::fromUtf8(
+                            StartupPdfLifecycleCheckpointHandshakeEnvironmentVariable
+                            ),
+                        QString::fromUtf8(
+                            StartupPdfLifecycleCheckpointControlDirectoryEnvironmentVariable
+                            )
+                        )
+                );
+        }
+        else
+        {
+            const QFileInfo controlDirectoryInfo(controlDirectory);
+            if (
+                !controlDirectoryInfo.exists()
+                || !controlDirectoryInfo.isDir()
+                || !controlDirectoryInfo.isWritable()
+                )
+            {
+                setCheckpointHandshakeError(
+                    QStringLiteral(
+                        "%1 must name an existing writable directory: %2."
+                        )
+                        .arg(
+                            QString::fromUtf8(
+                                StartupPdfLifecycleCheckpointControlDirectoryEnvironmentVariable
+                                ),
+                            controlDirectory
+                            )
+                    );
+            }
+            else
+            {
+                const QDir directory(controlDirectoryInfo.absoluteFilePath());
+                QStringList expectedProtocolFiles{
+                    QStringLiteral("failure.json"),
+                    QStringLiteral("controller-error.json")
+                };
+                for (int order = 1; order <= 3; ++order)
+                {
+                    const QString checkpoint = order == 1
+                        ? QStringLiteral("after-render")
+                        : order == 2
+                            ? QStringLiteral("after-document-close")
+                            : QStringLiteral("after-view-destroyed");
+                    expectedProtocolFiles.append(
+                        QStringLiteral("ready-%1-%2.json")
+                            .arg(order, 2, 10, QLatin1Char('0'))
+                            .arg(checkpoint)
+                        );
+                    expectedProtocolFiles.append(
+                        QStringLiteral("ack-%1-%2.json")
+                            .arg(order, 2, 10, QLatin1Char('0'))
+                            .arg(checkpoint)
+                        );
+                }
+                for (const QString& fileName : expectedProtocolFiles)
+                {
+                    if (QFileInfo::exists(directory.filePath(fileName)))
+                    {
+                        setCheckpointHandshakeError(
+                            QStringLiteral(
+                                "Handshake control directory contains stale protocol file %1. Use a fresh directory."
+                                )
+                                .arg(directory.filePath(fileName))
+                            );
+                        break;
+                    }
+                }
+            }
+        }
+
+        if (
+            checkpointHandshakeSelector == QStringLiteral("1")
+            && mode.pdfLifecycleCheckpointHandshakeError.isEmpty()
+        )
+        {
+            if (
+                !mode.pdfLifecyclePageRenderObserverEnabled
+                || mode.pdfLifecycleGrabArm != QStringLiteral("without-grabs")
+                || !mode.pdfLifecycleInnerBoundariesEnabled
+            )
+            {
+                setCheckpointHandshakeError(
+                    QStringLiteral(
+                        "%1 requires %2=1, %3=without-grabs, and %4=1."
+                        )
+                        .arg(
+                            QString::fromUtf8(
+                                StartupPdfLifecycleCheckpointHandshakeEnvironmentVariable
+                                ),
+                            QString::fromUtf8(
+                                StartupPdfLifecyclePageRenderObserverEnvironmentVariable
+                                ),
+                            QString::fromUtf8(
+                                StartupPdfLifecycleGrabArmEnvironmentVariable
+                                ),
+                            QString::fromUtf8(
+                                StartupPdfLifecycleInnerBoundariesEnvironmentVariable
+                                )
+                            )
+                    );
+            }
+            else if (!mode.workflowEnabled || !mode.subPrepLifecycleEnabled)
+            {
+                setCheckpointHandshakeError(
+                    QStringLiteral(
+                        "%1 requires --startup-performance-workflow and --startup-performance-sub-prep-lifecycle."
+                        )
+                        .arg(QString::fromUtf8(
+                            StartupPdfLifecycleCheckpointHandshakeEnvironmentVariable
+                            ))
+                    );
+            }
+            else
+            {
+                mode.pdfLifecycleCheckpointHandshakeEnabled = true;
+                mode.pdfLifecycleCheckpointHandshake =
+                    std::make_shared<
+                        StartupPdfLifecycleCheckpointHandshake
+                        >(
+                            QFileInfo(controlDirectory).absoluteFilePath()
+                            );
             }
         }
     }
@@ -8851,6 +9585,8 @@ void scheduleStartupPerformanceWorkflow(
         pdfLifecycleInnerBoundaryTrace,
     const std::shared_ptr<StartupPdfLifecyclePageRenderObserverTrace>&
         pdfLifecyclePageRenderObserverTrace,
+    const std::shared_ptr<StartupPdfLifecycleCheckpointHandshake>&
+        pdfLifecycleCheckpointHandshake,
     const QString& pdfLifecycleViewportUpdateMode,
     const std::shared_ptr<StartupPdfLifecycleViewportDiagnosticTrace>&
         pdfLifecycleViewportDiagnosticTrace,
@@ -8884,6 +9620,7 @@ void scheduleStartupPerformanceWorkflow(
             pdfLifecycleGrabArm,
             pdfLifecycleInnerBoundaryTrace,
             pdfLifecyclePageRenderObserverTrace,
+            pdfLifecycleCheckpointHandshake,
             pdfLifecycleViewportUpdateMode,
             pdfLifecycleViewportDiagnosticTrace,
             pageTypes,
@@ -9337,6 +10074,7 @@ void scheduleStartupPerformanceWorkflow(
                 pdfLifecycleGrabArm,
                 pdfLifecycleInnerBoundaryTrace,
                 pdfLifecyclePageRenderObserverTrace,
+                pdfLifecycleCheckpointHandshake,
                 pdfLifecycleViewportUpdateMode,
                 pdfLifecycleViewportDiagnosticTrace,
                 [
@@ -9988,6 +10726,29 @@ int main(int argc, char *argv[])
         }
         return 2;
     }
+    if (
+        !startupPerformance.pdfLifecycleCheckpointHandshakeError.isEmpty()
+        )
+    {
+        const QString message =
+            QStringLiteral(
+                "Invalid PDF lifecycle checkpoint handshake invocation: %1\n"
+                )
+                .arg(startupPerformance.pdfLifecycleCheckpointHandshakeError);
+        qCritical().noquote() << message.trimmed();
+        const QByteArray encodedMessage = message.toLocal8Bit();
+        if (!encodedMessage.isEmpty())
+        {
+            std::fwrite(
+                encodedMessage.constData(),
+                1,
+                static_cast<size_t>(encodedMessage.size()),
+                stderr
+                );
+            std::fflush(stderr);
+        }
+        return 2;
+    }
     if (startupPerformance.enabled)
     {
         StartupProfiler::activate(&startupProfiler);
@@ -10233,12 +10994,12 @@ int main(int argc, char *argv[])
     std::unique_ptr<UpdateService> updateService;
     std::unique_ptr<UpdateController> updateController;
 
-    MainWindow window(
+    auto windowOwner = std::make_unique<MainWindow>(
         updateProgress,
         isAdminMode(app.arguments()),
         &languageService,
         nullptr,
-        {
+        MainWindowStartupOptions{
             .loadMostRecentDatabase =
                 !startupPerformance.enabled
                 || startupPerformance.scenario
@@ -10258,6 +11019,7 @@ int main(int argc, char *argv[])
                 }
         }
         );
+    MainWindow& window = *windowOwner;
 
     updateProgress(
         QCoreApplication::translate(
@@ -10536,6 +11298,7 @@ int main(int argc, char *argv[])
                 startupPerformance.pdfLifecycleGrabArm,
                 startupPerformance.pdfLifecycleInnerBoundaryTrace,
                 startupPerformance.pdfLifecyclePageRenderObserverTrace,
+                startupPerformance.pdfLifecycleCheckpointHandshake,
                 startupPerformance.pdfLifecycleViewportUpdateMode,
                 startupPerformance.pdfLifecycleViewportDiagnosticTrace,
                 scheduleResourceTraceCompletion
@@ -10613,5 +11376,25 @@ int main(int argc, char *argv[])
     // Run App
     // =====================================================
 
-    return app.exec();
+    const int eventLoopExitCode = app.exec();
+    windowOwner.reset();
+    if (startupPerformance.pdfLifecycleCheckpointHandshake)
+    {
+        if (
+            !startupPerformance.pdfLifecycleCheckpointHandshake->isComplete()
+            && !startupPerformance.pdfLifecycleCheckpointHandshake->hasFailed()
+            )
+        {
+            startupPerformance.pdfLifecycleCheckpointHandshake->markIncomplete(
+                QStringLiteral(
+                    "The application window was destroyed before all three checkpoints completed."
+                    )
+                );
+        }
+        if (startupPerformance.pdfLifecycleCheckpointHandshake->hasFailed())
+        {
+            return 2;
+        }
+    }
+    return eventLoopExitCode;
 }

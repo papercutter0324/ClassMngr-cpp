@@ -36,6 +36,8 @@ class PdfViewerPage : public BasePage
 public:
     using StartupLifecycleBoundaryObserver =
         std::function<void(const QString&, const QString&)>;
+    using StartupLifecycleViewDestroyedObserver =
+        std::function<void(QPdfDocument*)>;
 
     explicit PdfViewerPage(
         QWidget* parent = nullptr
@@ -55,6 +57,9 @@ public:
     void releaseDocument();
     void setStartupLifecycleBoundaryObserver(
         StartupLifecycleBoundaryObserver observer
+        );
+    void setStartupLifecycleViewDestroyedObserver(
+        StartupLifecycleViewDestroyedObserver observer
         );
 
     [[nodiscard]] QString currentFilePath() const;
@@ -145,6 +150,8 @@ private:
     qreal m_currentZoom = 1.0;
     PdfViewerDocumentDescriptor m_documentDescriptor;
     StartupLifecycleBoundaryObserver m_startupLifecycleBoundaryObserver;
+    StartupLifecycleViewDestroyedObserver
+        m_startupLifecycleViewDestroyedObserver;
     ClassMngr::Next::Application::DocumentContentSession
         m_documentContentSession;
     std::optional<ClassMngr::Next::Application::DocumentContentSessionToken>
