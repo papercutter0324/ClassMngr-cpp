@@ -10,7 +10,7 @@
   packaged Release measurement harness
 - Blocks: Large-workspace Sub Prep acceptance and the Phase 9 memory gate
 - Owner: Unassigned
-- Last updated: 2026-10-09
+- Last updated: 2026-10-10
 
 ## Current Sub Prep contract boundary - 2026-09-24
 
@@ -114,9 +114,11 @@ and the data repository applies row/cell caps before creating a dense roster
 projection. F526 completed the packaged Release `lifecycle-sub-prep` and
 `output-sub-prep` evidence routes. Memory acceptance remains open: lifecycle
 peak working set was 264,310,784 bytes, 2,166,784 above 262,144,000; settled
-lifecycle and all output-route working-set samples were below target. The next
-memory action is F531's diagnosis of the PDF-reopen peak; F530 visual-parity
-work is tracked in the Phase 2 plan and log.
+lifecycle and all output-route working-set samples were below target. F530's
+selected Release run reported a 263,880,704-byte peak and legacy 250 MiB
+memory-trend warnings; selected-route evidence does not close memory acceptance
+or full Phase 0. F530 visual parity was accepted across 13 approved UI pairs.
+The next memory action is F531's diagnosis of the F526 PDF-reopen peak.
 
 This is an implementation slice, not a new rewrite phase. The existing
 large-workspace fixture remains a required stress input. A bounded fixture may

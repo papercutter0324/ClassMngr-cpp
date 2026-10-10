@@ -1,10 +1,7 @@
 #include "sub_prep_page_p.h"
 
 #include "features/sub_prep/ui/sub_prep_class_information_list_model.h"
-
-#include <QAbstractItemView>
-#include <QItemSelectionModel>
-#include <QListView>
+#include "ui/shared/widgets/navigation_pill_style.h"
 
 void SubPrepPage::buildUi()
 {
@@ -462,7 +459,7 @@ void SubPrepPage::buildUi()
         new QVBoxLayout(m_classInformationContent);
     m_classInformationLayout->setContentsMargins(0, 0, 0, 0);
     m_classInformationLayout->setSpacing(
-        UiConstants::ClassInfo::Page::ContentSpacing
+        NavigationPillStyle::RowSpacing
         );
     m_classInformationLayout->setAlignment(Qt::AlignTop);
 
@@ -478,38 +475,15 @@ void SubPrepPage::buildUi()
         m_classInformationGradeTabs
         );
 
-    m_classInformationListView =
-        new QListView(m_classInformationContent);
-    m_classInformationListView->setObjectName(
-        QStringLiteral("subPrepClassList")
-        );
-    m_classInformationListView->setSelectionMode(
-        QAbstractItemView::SingleSelection
-        );
-    m_classInformationListView->setSelectionBehavior(
-        QAbstractItemView::SelectRows
-        );
-    m_classInformationListView->setEditTriggers(
-        QAbstractItemView::NoEditTriggers
-        );
-    m_classInformationListView->setUniformItemSizes(true);
-    m_classInformationListView->setWordWrap(true);
-    m_classInformationListView->setVerticalScrollBarPolicy(
-        Qt::ScrollBarAsNeeded
-        );
-    m_classInformationListView->setHorizontalScrollBarPolicy(
-        Qt::ScrollBarAlwaysOff
-        );
-    m_classInformationListView->setMaximumHeight(200);
-    m_classInformationListView->setSizePolicy(
-        QSizePolicy::Expanding,
-        QSizePolicy::Preferred
-        );
     m_classInformationModel =
         new SubPrepClassInformationListModel(this);
-    m_classInformationListView->setModel(m_classInformationModel);
+    m_classInformationTabSelector =
+        new SubPrepClassInformationTabSelector(
+            m_classInformationContent
+            );
+    m_classInformationTabSelector->setModel(m_classInformationModel);
     m_classInformationLayout->addWidget(
-        m_classInformationListView
+        m_classInformationTabSelector
         );
 
     m_classInformationEmptyLabel =
@@ -693,10 +667,10 @@ void SubPrepPage::buildUi()
         &SubPrepPage::handleClassInformationGradeChanged
         );
     connect(
-        m_classInformationListView->selectionModel(),
-        &QItemSelectionModel::currentChanged,
+        m_classInformationTabSelector,
+        &SubPrepClassInformationTabSelector::currentChanged,
         this,
-        [this](const QModelIndex&, const QModelIndex&)
+        [this](int)
         {
             handleClassInformationSelectionChanged();
         }

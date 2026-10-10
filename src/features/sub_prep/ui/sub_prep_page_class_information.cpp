@@ -12,9 +12,8 @@
 #include "features/sub_prep/ui/sub_prep_print_source_mapper.h"
 #include "ui/shared/dialogs/user_prompt_service.h"
 
-#include <QItemSelectionModel>
-#include <QListView>
 #include <QSignalBlocker>
+#include <QPoint>
 #include <QTextEdit>
 
 #include <algorithm>
@@ -271,7 +270,8 @@ QString runtimeMetricsDetail(
         "teacherLookups=%8; rosterLookups=%9; "
         "queryCounts=classes:%10,classInfo:%11,teachers:%12,rosterCounts:%13; "
         "resultRows=classes:%14,classInfo:%15,classInfoSchedule:%16,teachers:%17,"
-        "rosterCounts:%18; returnedStudents=%19; rebuilds=%20; selectedClassId=%21"
+        "rosterCounts:%18; returnedStudents=%19; rebuilds=%20; selectedClassId=%21; "
+        "selectedRow=%22; selectorViewportY=%23; detailsCardViewportY=%24"
         )
         .arg(metrics.classInformationWidgetCount)
         .arg(metrics.classInformationTextEditCount)
@@ -293,7 +293,10 @@ QString runtimeMetricsDetail(
         .arg(metrics.classInformationRosterResultRowCount)
         .arg(metrics.classInformationRosterStudentResultCount)
         .arg(metrics.classInformationRebuildCount)
-        .arg(metrics.selectedClassId);
+        .arg(metrics.selectedClassId)
+        .arg(metrics.classInformationSelectedRow)
+        .arg(metrics.classInformationSelectorViewportY)
+        .arg(metrics.classInformationDetailsCardViewportY);
 }
 }
 
@@ -451,7 +454,7 @@ void SubPrepPage::rebuildClassInformation()
         || !m_scheduleWidget
         || !m_classInformationModel
         || !m_classInformationGradeTabs
-        || !m_classInformationListView
+        || !m_classInformationTabSelector
         )
     {
         clearClassInformation();
@@ -509,17 +512,18 @@ void SubPrepPage::rebuildClassInformation()
         std::move(summaryResult.value())
         );
 
-    m_classInformationGrades =
-        m_classInformationModel->grades();
+    const QStringList grades = m_classInformationModel->grades();
+    if (grades != m_classInformationGrades)
     {
         const QSignalBlocker gradeTabsBlocker(
             m_classInformationGradeTabs
             );
         m_classInformationGradeTabs->clear();
-        for (const QString& grade : m_classInformationGrades)
+        for (const QString& grade : grades)
         {
             m_classInformationGradeTabs->addTab(grade);
         }
+        m_classInformationGrades = grades;
     }
 
     const auto& summaries =
@@ -573,7 +577,7 @@ void SubPrepPage::rebuildClassInformation()
             m_classInformationModel->classIdAt(0);
     }
 
-    m_classInformationListView->selectionModel()->clear();
+    m_classInformationTabSelector->setCurrentRow(-1);
     if (selectedClassId.has_value())
     {
         const auto selectedSummary =
@@ -598,13 +602,7 @@ void SubPrepPage::rebuildClassInformation()
                 m_classInformationModel->rowForClassId(*selectedClassId);
             if (row >= 0)
             {
-                const QModelIndex index =
-                    m_classInformationModel->index(row, 0);
-                m_classInformationListView->selectionModel()->setCurrentIndex(
-                    index,
-                    QItemSelectionModel::ClearAndSelect
-                        | QItemSelectionModel::Rows
-                    );
+                m_classInformationTabSelector->setCurrentRow(row);
             }
         }
     }
@@ -635,7 +633,7 @@ void SubPrepPage::handleClassInformationGradeChanged(int index)
         m_updatingClassInformation
         || !m_classInformationGradeTabs
         || !m_classInformationModel
-        || !m_classInformationListView
+        || !m_classInformationTabSelector
         || index < 0
         || index >= m_classInformationGradeTabs->count()
         )
@@ -671,17 +669,11 @@ void SubPrepPage::handleClassInformationGradeChanged(int index)
         selectedRow = 0;
     }
 
-    m_classInformationListView->selectionModel()->clear();
+    m_classInformationTabSelector->setCurrentRow(-1);
     std::optional<Domain::ClassId> selectedClassId;
     if (selectedRow >= 0)
     {
-        const QModelIndex index =
-            m_classInformationModel->index(selectedRow, 0);
-        m_classInformationListView->selectionModel()->setCurrentIndex(
-            index,
-            QItemSelectionModel::ClearAndSelect
-                | QItemSelectionModel::Rows
-            );
+        m_classInformationTabSelector->setCurrentRow(selectedRow);
         selectedClassId =
             m_classInformationModel->classIdAt(selectedRow);
     }
@@ -705,19 +697,17 @@ void SubPrepPage::handleClassInformationSelectionChanged()
 {
     if (
         m_updatingClassInformation
-        || !m_classInformationListView
+        || !m_classInformationTabSelector
         || !m_classInformationModel
         )
     {
         return;
     }
 
-    const QModelIndex currentIndex =
-        m_classInformationListView->currentIndex();
     const auto classId =
-        currentIndex.isValid()
-        ? m_classInformationModel->classIdAt(currentIndex.row())
-        : std::nullopt;
+        m_classInformationModel->classIdAt(
+            m_classInformationTabSelector->currentRow()
+            );
     if (classId.has_value())
     {
         showSelectedClassInformation(*classId);
@@ -834,6 +824,18 @@ void SubPrepPage::renderSelectedClassInformation()
         return;
     }
 
+    const auto setInlineField = [](
+                                   QLabel* field,
+                                   const QString& label,
+                                   const QString& value
+                               )
+    {
+        field->setText(
+            QStringLiteral("%1: %2")
+                .arg(label, valueOrNa(value))
+            );
+    };
+
     const auto& selectedId =
         m_classInformationState->selectedClassId();
     if (!selectedId.has_value())
@@ -843,35 +845,31 @@ void SubPrepPage::renderSelectedClassInformation()
         m_classInformationDetailsCard->setProperty("teacherId", -1);
         m_classInformationDetails->setProperty("classId", -1);
         m_classInformationDetails->setProperty("teacherId", -1);
-        m_classInformationLevelValue->setText(
-            tr("Level: %1").arg(valueOrNa(QString()))
+        setInlineField(m_classInformationLevelValue, tr("Level"), {});
+        setInlineField(m_classInformationTimeValue, tr("Time"), {});
+        setInlineField(
+            m_classInformationStudentCountValue,
+            tr("# of Students"),
+            {}
             );
-        m_classInformationTimeValue->setText(
-            tr("Time: %1").arg(valueOrNa(QString()))
+        setInlineField(m_classInformationRoomValue, tr("Room"), {});
+        setInlineField(m_classInformationWifiNameValue, tr("WiFi Name"), {});
+        setInlineField(
+            m_classInformationWifiPasswordValue,
+            tr("WiFi Password"),
+            {}
             );
-        m_classInformationStudentCountValue->setText(
-            tr("# of Students: %1").arg(valueOrNa(QString()))
+        setInlineField(m_classInformationZoomIdValue, tr("Zoom ID"), {});
+        setInlineField(
+            m_classInformationZoomPasswordValue,
+            tr("Zoom Password"),
+            {}
             );
-        m_classInformationRoomValue->setText(
-            tr("Room: %1").arg(valueOrNa(QString()))
-            );
-        m_classInformationWifiNameValue->setText(
-            tr("WiFi Name: %1").arg(valueOrNa(QString()))
-            );
-        m_classInformationWifiPasswordValue->setText(
-            tr("WiFi Password: %1").arg(valueOrNa(QString()))
-            );
-        m_classInformationZoomIdValue->setText(
-            tr("Zoom ID: %1").arg(valueOrNa(QString()))
-            );
-        m_classInformationZoomPasswordValue->setText(
-            tr("Zoom Password: %1").arg(valueOrNa(QString()))
-            );
-        m_classInformationInternetValue->setText(
-            tr("Internet: %1").arg(valueOrNa(QString()))
-            );
-        m_classInformationProjectionValue->setText(
-            tr("Projection: %1").arg(valueOrNa(QString()))
+        setInlineField(m_classInformationInternetValue, tr("Internet"), {});
+        setInlineField(
+            m_classInformationProjectionValue,
+            tr("Projection"),
+            {}
             );
         m_classInformationClassNotes->setPlainText(valueOrNa(QString()));
         m_classInformationTeacherNotes->setPlainText(valueOrNa(QString()));
@@ -927,22 +925,20 @@ void SubPrepPage::renderSelectedClassInformation()
         "teacherId",
         teacherIdValue
         );
-    m_classInformationLevelValue->setText(
-        tr("Level: %1").arg(
-            valueOrNa(fromUtf8(summary.level))
-            )
+    setInlineField(
+        m_classInformationLevelValue,
+        tr("Level"),
+        fromUtf8(summary.level)
         );
-    m_classInformationTimeValue->setText(
-        tr("Time: %1").arg(
-            valueOrNa(fromUtf8(summary.meetingText))
-            )
+    setInlineField(
+        m_classInformationTimeValue,
+        tr("Time"),
+        fromUtf8(summary.meetingText)
         );
-    m_classInformationStudentCountValue->setText(
-        tr("# of Students: %1").arg(
-            QString::number(
-                static_cast<qulonglong>(summary.studentCount)
-                )
-            )
+    setInlineField(
+        m_classInformationStudentCountValue,
+        tr("# of Students"),
+        QString::number(static_cast<qulonglong>(summary.studentCount))
         );
 
     const QString room = details.has_value()
@@ -967,26 +963,24 @@ void SubPrepPage::renderSelectedClassInformation()
         ? fromUtf8(details->teacherFacilities.projectionType)
         : QString();
 
-    m_classInformationRoomValue->setText(
-        tr("Room: %1").arg(valueOrNa(room))
+    setInlineField(m_classInformationRoomValue, tr("Room"), room);
+    setInlineField(m_classInformationWifiNameValue, tr("WiFi Name"), wifiName);
+    setInlineField(
+        m_classInformationWifiPasswordValue,
+        tr("WiFi Password"),
+        wifiPassword
         );
-    m_classInformationWifiNameValue->setText(
-        tr("WiFi Name: %1").arg(valueOrNa(wifiName))
+    setInlineField(m_classInformationZoomIdValue, tr("Zoom ID"), zoomId);
+    setInlineField(
+        m_classInformationZoomPasswordValue,
+        tr("Zoom Password"),
+        zoomPassword
         );
-    m_classInformationWifiPasswordValue->setText(
-        tr("WiFi Password: %1").arg(valueOrNa(wifiPassword))
-        );
-    m_classInformationZoomIdValue->setText(
-        tr("Zoom ID: %1").arg(valueOrNa(zoomId))
-        );
-    m_classInformationZoomPasswordValue->setText(
-        tr("Zoom Password: %1").arg(valueOrNa(zoomPassword))
-        );
-    m_classInformationInternetValue->setText(
-        tr("Internet: %1").arg(valueOrNa(internet))
-        );
-    m_classInformationProjectionValue->setText(
-        tr("Projection: %1").arg(valueOrNa(projection))
+    setInlineField(m_classInformationInternetValue, tr("Internet"), internet);
+    setInlineField(
+        m_classInformationProjectionValue,
+        tr("Projection"),
+        projection
         );
 
     m_classInformationClassNotes->setPlainText(
@@ -1018,7 +1012,7 @@ void SubPrepPage::updateClassInformationEmptyState()
     if (
         !m_classInformationModel
         || !m_classInformationGradeTabs
-        || !m_classInformationListView
+        || !m_classInformationTabSelector
         || !m_classInformationEmptyLabel
         || !m_classInformationDetailsCard
         )
@@ -1033,7 +1027,7 @@ void SubPrepPage::updateClassInformationEmptyState()
         && m_classInformationState->selectedClassId().has_value();
 
     m_classInformationGradeTabs->setVisible(hasSummaries);
-    m_classInformationListView->setVisible(hasSummaries);
+    m_classInformationTabSelector->setVisible(hasSummaries);
     m_classInformationEmptyLabel->setVisible(!hasSummaries);
     m_classInformationDetailsCard->setVisible(
         hasSummaries && hasSelection
@@ -1051,7 +1045,7 @@ bool SubPrepPage::selectClassForStartupDiagnostics(int classId)
         classId <= 0
         || !m_classInformationModel
         || !m_classInformationGradeTabs
-        || !m_classInformationListView
+        || !m_classInformationTabSelector
         || !m_classInformationState
         )
     {
@@ -1101,13 +1095,7 @@ bool SubPrepPage::selectClassForStartupDiagnostics(int classId)
         return false;
     }
 
-    const QModelIndex index =
-        m_classInformationModel->index(row, 0);
-    m_classInformationListView->selectionModel()->setCurrentIndex(
-        index,
-        QItemSelectionModel::ClearAndSelect
-            | QItemSelectionModel::Rows
-        );
+    m_classInformationTabSelector->setCurrentRow(row);
     m_updatingClassInformation = false;
     showSelectedClassInformation(*typedClassId);
     return m_selectedClassId == classId;
@@ -1159,6 +1147,26 @@ SubPrepPageRuntimeMetrics SubPrepPage::runtimeMetrics() const
                   *m_classInformationState->selectedClassId()
                   )
             : -1;
+    metrics.classInformationSelectedRow = m_classInformationTabSelector
+        ? m_classInformationTabSelector->currentRow()
+        : -1;
+
+    if (m_scrollArea && m_classInformationTabSelector)
+    {
+        metrics.classInformationSelectorViewportY =
+            m_classInformationTabSelector->mapTo(
+                m_scrollArea->viewport(),
+                QPoint(0, 0)
+                ).y();
+    }
+    if (m_scrollArea && m_classInformationDetailsCard)
+    {
+        metrics.classInformationDetailsCardViewportY =
+            m_classInformationDetailsCard->mapTo(
+                m_scrollArea->viewport(),
+                QPoint(0, 0)
+                ).y();
+    }
 
     if (m_classInformationContent)
     {
@@ -1380,26 +1388,15 @@ void SubPrepPage::clearClassInformation()
             Application::ClassSummaryProjection{}
             );
     }
-    if (m_classInformationGradeTabs)
+    if (m_classInformationTabSelector)
     {
-        const QSignalBlocker gradeTabsBlocker(
-            m_classInformationGradeTabs
-            );
-        m_classInformationGradeTabs->clear();
-    }
-    if (
-        m_classInformationListView
-        && m_classInformationListView->selectionModel()
-        )
-    {
-        m_classInformationListView->selectionModel()->clear();
+        m_classInformationTabSelector->setCurrentRow(-1);
     }
     if (m_classInformationState)
     {
         *m_classInformationState =
             m_classInformationState->clear();
     }
-    m_classInformationGrades.clear();
     m_classInformationSourceClassCount = 0;
     m_classInformationVisibleClassCount = 0;
     m_classInformationGroupCount = 0;

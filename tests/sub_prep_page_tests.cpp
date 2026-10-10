@@ -30,7 +30,6 @@
 #include <QDir>
 #include <QFileInfo>
 #include <QGridLayout>
-#include <QListView>
 #include <QMetaObject>
 #include <QPdfDocument>
 #include <QPushButton>
@@ -649,12 +648,15 @@ void SubPrepPageTests
     QCOMPARE(gradeTabs->count(), 1);
     QCOMPARE(gradeTabs->tabText(0), QStringLiteral("E4"));
 
-    auto* classList =
-        page.findChild<QListView*>(QStringLiteral("subPrepClassList"));
-    QVERIFY(classList);
-    QCOMPARE(classList->model()->rowCount(), 1);
+    auto* classTabs = page.findChild<SubPrepClassInformationTabSelector*>(
+        QStringLiteral("subPrepClassTabStrip")
+        );
+    QVERIFY(classTabs);
+    QVERIFY(classTabs->model());
+    QCOMPARE(classTabs->model()->rowCount(), 1);
+    QVERIFY(classTabs->height() < 64);
     QVERIFY(
-        classList->model()->data(classList->model()->index(0, 0))
+        classTabs->model()->data(classTabs->model()->index(0, 0))
             .toString()
             .contains(QStringLiteral("Hercules"))
         );
@@ -768,6 +770,20 @@ void SubPrepPageTests
             );
     QVERIFY(gradeTabs);
     QCOMPARE(gradeTabs->count(), 2);
+    auto* detailsCard = page.findChild<SectionCard*>(
+        QStringLiteral("subPrepTeacherSectionCard")
+        );
+    auto* selectedDetails = page.findChild<QWidget*>(
+        QStringLiteral("subPrepClassDetails")
+        );
+    QVERIFY(detailsCard);
+    QVERIFY(selectedDetails);
+    QCOMPARE(
+        page.findChildren<SectionCard*>(
+            QStringLiteral("subPrepTeacherSectionCard")
+            ).size(),
+        1
+        );
 
     int secondGradeIndex = -1;
 
@@ -785,32 +801,45 @@ void SubPrepPageTests
     QCOMPARE(harness.detailsReadPort.loadCount, 2);
     QCOMPARE(harness.detailsReadPort.loadedClassIds.back(), std::string("43"));
 
-    auto* classList =
-        page.findChild<QListView*>(QStringLiteral("subPrepClassList"));
-    QVERIFY(classList);
-    QCOMPARE(classList->model()->rowCount(), 1);
+    auto* classTabs = page.findChild<SubPrepClassInformationTabSelector*>(
+        QStringLiteral("subPrepClassTabStrip")
+        );
+    QVERIFY(classTabs);
+    QVERIFY(classTabs->model());
+    QCOMPARE(classTabs->model()->rowCount(), 1);
     QCOMPARE(
-        classList->model()
-            ->data(classList->model()->index(0, 0),
+        classTabs->model()->classIdAt(classTabs->currentRow())->value(),
+        std::string("43")
+        );
+    QCOMPARE(
+        classTabs->model()
+            ->data(classTabs->model()->index(classTabs->currentRow(), 0),
                    SubPrepClassInformationListModel::ClassIdRole)
             .toString(),
         QStringLiteral("43")
         );
+    QCOMPARE(
+        classTabs->model()->classIdAt(classTabs->currentRow())->value(),
+        std::string("43")
+        );
     QVERIFY(
-        classList->model()->data(classList->model()->index(0, 0))
+        classTabs->model()->data(classTabs->model()->index(0, 0))
             .toString()
             .contains(QStringLiteral("Athena"))
         );
 
-    auto* selectedDetails =
-        page.findChild<QWidget*>(QStringLiteral("subPrepClassDetails"));
-    QVERIFY(selectedDetails);
     QCOMPARE(
         selectedDetails->property("classId").toInt(),
         43
         );
 
+    const int stableClassInformationWidgetCount =
+        page.runtimeMetrics().classInformationWidgetCount;
     page.refresh();
+    QCOMPARE(
+        page.runtimeMetrics().classInformationWidgetCount,
+        stableClassInformationWidgetCount
+        );
 
     gradeTabs =
         page.findChild<NavigationTabStrip*>(
@@ -818,14 +847,24 @@ void SubPrepPageTests
             );
     QVERIFY(gradeTabs);
     QCOMPARE(
-        classList->model()
-            ->data(classList->currentIndex(),
+        classTabs->model()
+            ->data(classTabs->model()->index(classTabs->currentRow(), 0),
                    SubPrepClassInformationListModel::ClassIdRole)
             .toString()
             .toInt(),
         43
         );
     QCOMPARE(harness.detailsReadPort.loadCount, 3);
+    QCOMPARE(
+        page.findChildren<SectionCard*>(
+            QStringLiteral("subPrepTeacherSectionCard")
+            ).size(),
+        1
+        );
+    QCOMPARE(
+        page.findChild<QWidget*>(QStringLiteral("subPrepClassDetails")),
+        selectedDetails
+        );
 
     ScheduleWidgetTestStubs::setIncludeAdditionalClass(false);
     page.refresh();
@@ -835,8 +874,8 @@ void SubPrepPageTests
         42
         );
     QCOMPARE(
-        classList->model()
-            ->data(classList->currentIndex(),
+        classTabs->model()
+            ->data(classTabs->model()->index(classTabs->currentRow(), 0),
                    SubPrepClassInformationListModel::ClassIdRole)
             .toString()
             .toInt(),
@@ -844,6 +883,12 @@ void SubPrepPageTests
         );
     QCOMPARE(harness.detailsReadPort.loadCount, 4);
     QCOMPARE(harness.detailsReadPort.loadedClassIds.back(), std::string("42"));
+    QCOMPARE(
+        page.findChild<SectionCard*>(
+            QStringLiteral("subPrepTeacherSectionCard")
+            ),
+        detailsCard
+        );
 }
 
 void SubPrepPageTests
@@ -886,6 +931,7 @@ void SubPrepPageTests
         page.runtimeMetrics().classInformationVisibleClassCount,
         1
         );
+    QCOMPARE(page.runtimeMetrics().selectedClassId, 42);
 }
 
 void SubPrepPageTests
@@ -896,30 +942,40 @@ void SubPrepPageTests
     SubPrepPage& page = harness.page;
     activatePage(page);
 
-    auto* classList =
-        page.findChild<QListView*>(QStringLiteral("subPrepClassList"));
+    auto* gradeTabs = page.findChild<NavigationTabStrip*>(
+        QStringLiteral("subPrepGradeTabBar")
+        );
+    auto* classTabs = page.findChild<SubPrepClassInformationTabSelector*>(
+        QStringLiteral("subPrepClassTabStrip")
+        );
     auto* detailsCard =
         page.findChild<SectionCard*>(QStringLiteral("subPrepTeacherSectionCard"));
     auto* details =
         page.findChild<QWidget*>(QStringLiteral("subPrepClassDetails"));
-    QVERIFY(classList);
+    QVERIFY(gradeTabs);
+    QVERIFY(classTabs);
+    QCOMPARE(gradeTabs->count(), 1);
     QVERIFY(detailsCard);
     QVERIFY(details);
-    QCOMPARE(classList->model()->rowCount(), 1);
+    QCOMPARE(classTabs->model()->rowCount(), 1);
     QCOMPARE(details->property("classId").toInt(), 42);
     QCOMPARE(harness.detailsReadPort.loadCount, 1);
 
     page.deactivate();
 
     QVERIFY(page.needsRefresh());
-    QCOMPARE(classList->model()->rowCount(), 0);
+    QVERIFY(gradeTabs->isHidden());
+    QCOMPARE(gradeTabs->count(), 1);
+    QCOMPARE(classTabs->model()->rowCount(), 0);
     QVERIFY(detailsCard->isHidden());
     QCOMPARE(details->property("classId").toInt(), -1);
     QCOMPARE(harness.detailsReadPort.loadCount, 1);
 
     page.activate();
 
-    QCOMPARE(classList->model()->rowCount(), 1);
+    QVERIFY(!gradeTabs->isHidden());
+    QCOMPARE(gradeTabs->count(), 1);
+    QCOMPARE(classTabs->model()->rowCount(), 1);
     QCOMPARE(details->property("classId").toInt(), 42);
     QCOMPARE(harness.detailsReadPort.loadCount, 2);
 }
@@ -1392,13 +1448,14 @@ void SubPrepPageTests
         page.findChild<ScheduleWidget*>(
             QStringLiteral("subPrepScheduleWidget")
             );
-    auto* classList =
-        page.findChild<QListView*>(QStringLiteral("subPrepClassList"));
+    auto* classTabs = page.findChild<SubPrepClassInformationTabSelector*>(
+        QStringLiteral("subPrepClassTabStrip")
+        );
 
     QVERIFY(materials);
     QVERIFY(zoomLogin);
     QVERIFY(schedule);
-    QVERIFY(classList);
+    QVERIFY(classTabs);
     QCOMPARE(
         materials->toPlainText(),
         QStringLiteral("Stored database A material")
@@ -1430,7 +1487,8 @@ void SubPrepPageTests
         );
     QVERIFY(classDetails);
     QCOMPARE(classDetails->property("classId").toInt(), -1);
-    QCOMPARE(classList->model()->rowCount(), 0);
+    QCOMPARE(classTabs->model()->rowCount(), 0);
+    QVERIFY(classTabs->isHidden());
 
     QTest::qWait(850);
     QCOMPARE(

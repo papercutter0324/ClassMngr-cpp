@@ -1,5 +1,6 @@
 #include <QDir>
 #include <QDirIterator>
+#include <QCryptographicHash>
 #include <QElapsedTimer>
 #include <QEventLoop>
 #include <QFile>
@@ -634,6 +635,19 @@ bool thresholdExceeded(
                 );
 
     return true;
+}
+
+QByteArray sha256File(const QString& path)
+{
+    QFile file(path);
+    if (!file.open(QIODevice::ReadOnly))
+    {
+        return {};
+    }
+    return QCryptographicHash::hash(
+        file.readAll(),
+        QCryptographicHash::Sha256
+        ).toHex();
 }
 
 ClassTransferPackage largeClassTransferPackage()
@@ -3675,6 +3689,45 @@ void StartupPerformanceTests
                     : QStringLiteral("workflow-incomplete")
         );
 
+    QList<int> populatedClassInformationWidgetCounts;
+    for (const QJsonValue& value : lifecycleCheckpoints)
+    {
+        const QJsonObject checkpoint = value.toObject();
+        const QJsonObject metrics =
+            checkpoint.value(QStringLiteral("metrics")).toObject();
+        if (
+            metrics.value(
+                    QStringLiteral("subPrepClassInformationVisibleClassCount")
+                    )
+                .toInt()
+            <= 0
+            )
+        {
+            continue;
+        }
+
+        const int widgetCount =
+            metrics.value(
+                    QStringLiteral("subPrepClassInformationWidgetCount")
+                    )
+                .toInt();
+        QVERIFY(widgetCount > 0);
+        QVERIFY(widgetCount < 64);
+        populatedClassInformationWidgetCounts.append(widgetCount);
+    }
+    QVERIFY(populatedClassInformationWidgetCounts.size() >= 3);
+    for (const int widgetCount : populatedClassInformationWidgetCounts)
+    {
+        QCOMPARE(
+            widgetCount,
+            populatedClassInformationWidgetCounts.first()
+            );
+    }
+    manifest.insert(
+        QStringLiteral("stablePopulatedClassInformationWidgetCount"),
+        populatedClassInformationWidgetCounts.first()
+        );
+
     QFile manifestFile(
         QDir(outputRoot).filePath(QStringLiteral("manifest.json"))
         );
@@ -4787,6 +4840,8 @@ void StartupPerformanceTests::capturesLargeClassesVisualStatesWhenConfigured()
         };
 
     QJsonArray variantManifest;
+    QVERIFY(!sha256File(appPath).isEmpty());
+    QVERIFY(!sha256File(fixturePath).isEmpty());
     for (const auto& variant : {
              std::pair<const char*, const char*> {"english", "light"},
              std::pair<const char*, const char*> {"english", "dark"},
@@ -4913,6 +4968,7 @@ void StartupPerformanceTests::capturesLargeClassesVisualStatesWhenConfigured()
                 )
             );
 
+        QJsonObject captureHashes;
         for (const QString& captureName : {
                  QStringLiteral("startup-complete.png"),
                  QStringLiteral("classes-entry.png"),
@@ -4933,6 +4989,12 @@ void StartupPerformanceTests::capturesLargeClassesVisualStatesWhenConfigured()
                     )
                 );
             QVERIFY(QFileInfo(capturePath).size() > 0);
+            const QByteArray captureHash = sha256File(capturePath);
+            QVERIFY(!captureHash.isEmpty());
+            captureHashes.insert(
+                captureName,
+                QString::fromLatin1(captureHash)
+                );
         }
 
         QFile metricsFile(metricsPath);
@@ -8821,6 +8883,7 @@ void StartupPerformanceTests::capturesLargeSubPrepVisualStatesWhenConfigured()
                 )
             );
 
+        QJsonObject captureHashes;
         for (const QString& captureName : {
                  QStringLiteral("startup-complete.png"),
                  QStringLiteral("sub-prep-editing-read-only.png"),
@@ -8841,6 +8904,12 @@ void StartupPerformanceTests::capturesLargeSubPrepVisualStatesWhenConfigured()
                     )
                 );
             QVERIFY(QFileInfo(capturePath).size() > 0);
+            const QByteArray captureHash = sha256File(capturePath);
+            QVERIFY(!captureHash.isEmpty());
+            captureHashes.insert(
+                captureName,
+                QString::fromLatin1(captureHash)
+                );
         }
 
         QFile metricsFile(metricsPath);
@@ -8948,16 +9017,16 @@ void StartupPerformanceTests::capturesLargeSubPrepVisualStatesWhenConfigured()
             selectedCheckpoint.value(QStringLiteral("metrics")).toObject();
         const QJsonObject changedMetrics =
             changedCheckpoint.value(QStringLiteral("metrics")).toObject();
-        QVERIFY(
+        QCOMPARE(
             selectedMetrics
                 .value(QStringLiteral("subPrepClassInformationVisibleClassCount"))
-                .toInt()
-                >= 90
+                .toInt(),
+            96
             );
-        QVERIFY(
+        QCOMPARE(
             selectedMetrics.value(QStringLiteral("subPrepSelectedClassId"))
-                .toInt()
-                > 0
+                .toInt(),
+            25
             );
         QVERIFY(
             selectedMetrics.value(QStringLiteral("subPrepClassInformationWidgetCount"))
@@ -8981,16 +9050,16 @@ void StartupPerformanceTests::capturesLargeSubPrepVisualStatesWhenConfigured()
                 .toInt(),
             2
             );
-        QVERIFY(
+        QCOMPARE(
             changedMetrics
                 .value(QStringLiteral("subPrepClassInformationVisibleClassCount"))
-                .toInt()
-                >= 90
+                .toInt(),
+            96
             );
-        QVERIFY(
+        QCOMPARE(
             changedMetrics.value(QStringLiteral("subPrepSelectedClassId"))
-                .toInt()
-                > 0
+                .toInt(),
+            1
             );
         QVERIFY(
             changedMetrics.value(QStringLiteral("subPrepSelectedClassId"))
@@ -9012,6 +9081,7 @@ void StartupPerformanceTests::capturesLargeSubPrepVisualStatesWhenConfigured()
                 {QStringLiteral("outputDirectory"), variantName},
                 {QStringLiteral("metricsPath"), variantName + QStringLiteral("/metrics.json")},
                 {QStringLiteral("tracePath"), variantName + QStringLiteral("/workflow-trace.txt")},
+                {QStringLiteral("captureSha256"), captureHashes},
                 {QStringLiteral("peakMemory"), report.value(QStringLiteral("peakMemory"))},
                 {QStringLiteral("finalNormalWorkingSetTargetPass"), withinFinalNormalWorkingSetTarget},
                 {QStringLiteral("transientDiagnosticCeilingPass"), withinTransientDiagnosticCeiling},
@@ -9121,6 +9191,8 @@ void StartupPerformanceTests::capturesLargeSubPrepVisualStatesWhenConfigured()
     QVERIFY(emptyImage.width() > 0);
     QVERIFY(emptyImage.height() > 0);
     QVERIFY(QFileInfo(emptyCapturePath).size() > 0);
+    const QByteArray emptyCaptureHash = sha256File(emptyCapturePath);
+    QVERIFY(!emptyCaptureHash.isEmpty());
 
     QFile emptyMetricsFile(emptyMetricsPath);
     QVERIFY2(
@@ -9233,13 +9305,16 @@ void StartupPerformanceTests::capturesLargeSubPrepVisualStatesWhenConfigured()
                 {QStringLiteral("outputDirectory"), QStringLiteral("empty")},
                 {QStringLiteral("metricsPath"), QStringLiteral("empty/metrics.json")},
                 {QStringLiteral("tracePath"), QStringLiteral("empty/workflow-trace.txt")},
+                {QStringLiteral("captureSha256"), QString::fromLatin1(emptyCaptureHash)},
                 {QStringLiteral("peakWorkingSetBytes"), static_cast<double>(emptyPeakWorkingSetBytes)},
                 {QStringLiteral("finalNormalWorkingSetTargetPass"), emptyWithinFinalNormalWorkingSetTarget},
                 {QStringLiteral("transientDiagnosticCeilingPass"), emptyWithinTransientDiagnosticCeiling}
             }
         },
         {QStringLiteral("fixturePath"), QStringLiteral("generated-large-sub-prep-visual.tps")},
-        {QStringLiteral("emptyFixturePath"), QStringLiteral("generated-large-sub-prep-empty.tps")}
+        {QStringLiteral("emptyFixturePath"), QStringLiteral("generated-large-sub-prep-empty.tps")},
+        {QStringLiteral("fixtureSha256"), QString::fromLatin1(sha256File(retainedFixturePath))},
+        {QStringLiteral("builtApplicationSha256"), QString::fromLatin1(sha256File(appPath))}
     };
     QFile manifestFile(
         QDir(outputRoot).filePath(QStringLiteral("manifest.json"))

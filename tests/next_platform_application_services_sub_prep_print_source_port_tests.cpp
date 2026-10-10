@@ -396,6 +396,16 @@ projectsVisibleScheduleSummariesAndAggregatesRosterCounts()
     QCOMPARE(result.value().classes()[1].order, std::int32_t(1));
     QCOMPARE(result.value().classes()[1].studentCount, std::size_t(2));
     QCOMPARE(result.value().classes()[1].meetingText, std::string("MonWed 9am"));
+    QCOMPARE(
+        result.value().classes()[1].navigationLabel,
+        utf8(QStringLiteral("Perseus • M/W 9:00; T 11:00"))
+        );
+    QCOMPARE(
+        result.value().classes()[1].navigationTeacherLabel,
+        std::string("English Name")
+        );
+    QCOMPARE(result.value().classes()[1].navigationFirstDayOrder, 0);
+    QCOMPARE(result.value().classes()[1].navigationFirstTimeOrder, 9 * 60);
     QCOMPARE(result.value().teacherIndex().summaries().size(), std::size_t(1));
     const auto teacherSummary = result.value().teacherIndex().find(
         teacherId(teacher)
@@ -539,6 +549,12 @@ selectsModeAndOmitsUnusableOrOutOfScopeClasses()
     QCOMPARE(result.value().classes.size(), std::size_t(1));
     QCOMPARE(result.value().classes.front().id, classId(usable));
     QCOMPARE(result.value().classes.front().meetingText, std::string("Wed 2pm"));
+    QCOMPARE(
+        result.value().classes.front().navigationLabel,
+        utf8(QStringLiteral("Theseus • Int W 2:00"))
+        );
+    QCOMPARE(result.value().classes.front().navigationFirstDayOrder, 2);
+    QCOMPARE(result.value().classes.front().navigationFirstTimeOrder, 14 * 60);
     QCOMPARE(result.value().teachers.size(), std::size_t(1));
 }
 

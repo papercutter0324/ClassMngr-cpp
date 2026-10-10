@@ -120,6 +120,7 @@ private slots:
     void outOfScopeRowsFailAllOrNothing();
     void selectedDetailsFailAllOrNothing();
     void malformedProjectionDataFailsAllOrNothing();
+    void boundedNavigationMetadataIsEnforced();
 };
 
 void ClassMngrNextApplicationSubPrepScheduleSummaryQueryTests::
@@ -396,6 +397,42 @@ malformedProjectionDataFailsAllOrNothing()
 
     verifyError(result, ErrorCode::InvalidInput);
     QCOMPARE(readPort.calls, 1);
+}
+
+void ClassMngrNextApplicationSubPrepScheduleSummaryQueryTests::
+boundedNavigationMetadataIsEnforced()
+{
+    FakeReadPort readPort;
+    const SubPrepScheduleSummaryQuery query(readPort);
+
+    auto oversizedLabel = validInput();
+    oversizedLabel.classes.front().navigationLabel.assign(
+        kClassSummaryMaxNavigationLabelLength + 1,
+        'N'
+        );
+    auto oversizedTeacherLabel = validInput();
+    oversizedTeacherLabel.classes.front().navigationTeacherLabel.assign(
+        kClassSummaryMaxNavigationTeacherLabelLength + 1,
+        'T'
+        );
+    auto invalidDayOrder = validInput();
+    invalidDayOrder.classes.front().navigationFirstDayOrder = 7;
+    auto invalidTimeOrder = validInput();
+    invalidTimeOrder.classes.front().navigationFirstTimeOrder = 24 * 60;
+
+    for (auto input : {
+             oversizedLabel,
+             oversizedTeacherLabel,
+             invalidDayOrder,
+             invalidTimeOrder
+         })
+    {
+        readPort.result = SubPrepScheduleSummaryReadResult::success(
+            std::move(input)
+            );
+        verifyError(query.execute(validRequest()), ErrorCode::InvalidInput);
+    }
+    QCOMPARE(readPort.calls, 4);
 }
 
 QTEST_APPLESS_MAIN(ClassMngrNextApplicationSubPrepScheduleSummaryQueryTests)

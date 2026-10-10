@@ -14,7 +14,6 @@
 class ApplicationServices;
 class QLabel;
 class QLineEdit;
-class QListView;
 class QPushButton;
 class QScrollArea;
 class NavigationTabStrip;
@@ -27,6 +26,7 @@ class ScheduleWidget;
 class SectionCard;
 class SubPrepClassInformationDataAccess;
 class SubPrepClassInformationListModel;
+class SubPrepClassInformationTabSelector;
 namespace ClassMngr::Next::Application
 {
 class SubPrepClassDetailsReadPort;
@@ -65,6 +65,9 @@ struct SubPrepPageRuntimeMetrics
     int classInformationRosterStudentResultCount = 0;
     int classInformationRebuildCount = 0;
     int selectedClassId = -1;
+    int classInformationSelectedRow = -1;
+    int classInformationSelectorViewportY = -1;
+    int classInformationDetailsCardViewportY = -1;
 };
 
 class SubPrepPage : public BasePage
@@ -255,7 +258,7 @@ private:
     QWidget* m_classInformationContent = nullptr;
     QVBoxLayout* m_classInformationLayout = nullptr;
     NavigationTabStrip* m_classInformationGradeTabs = nullptr;
-    QListView* m_classInformationListView = nullptr;
+    SubPrepClassInformationTabSelector* m_classInformationTabSelector = nullptr;
     SubPrepClassInformationListModel* m_classInformationModel = nullptr;
     QLabel* m_classInformationEmptyLabel = nullptr;
     SectionCard* m_classInformationDetailsCard = nullptr;

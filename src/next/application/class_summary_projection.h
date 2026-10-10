@@ -29,7 +29,11 @@ inline constexpr std::size_t kClassSummaryMaxGradeLength = 64;
 inline constexpr std::size_t kClassSummaryMaxLevelLength = 64;
 inline constexpr std::size_t kClassSummaryMaxDisplayLabelLength = 256;
 inline constexpr std::size_t kClassSummaryMaxMeetingTextLength = 256;
+inline constexpr std::size_t kClassSummaryMaxNavigationLabelLength = 512;
+inline constexpr std::size_t kClassSummaryMaxNavigationTeacherLabelLength =
+    kTeacherSummaryMaxDisplayNameLength;
 inline constexpr std::size_t kClassSummaryMaxStudentCount = 10'000;
+inline constexpr std::int32_t kClassSummaryUnknownNavigationOrder = 1'000;
 inline constexpr std::size_t kSelectedClassDetailsMaxClassNotesLength = 4'096;
 inline constexpr std::size_t
     kSelectedClassDetailsMaxTeacherDisplayNameLength = 256;
@@ -78,6 +82,15 @@ struct ClassSummary final
     std::string meetingText;
     std::size_t studentCount = 0;
     std::int32_t order = 0;
+    // Compact legacy class-tab presentation and ordering values. The platform
+    // adapter computes these from the raw preferred schedule before releasing
+    // repository records; consumers do not need to retain per-meeting rows.
+    std::string navigationLabel;
+    std::string navigationTeacherLabel;
+    std::int32_t navigationFirstDayOrder =
+        kClassSummaryUnknownNavigationOrder;
+    std::int32_t navigationFirstTimeOrder =
+        kClassSummaryUnknownNavigationOrder;
 
     [[nodiscard]] bool hasTeacher() const noexcept
     {
@@ -305,6 +318,41 @@ template <typename TypedId>
         return Domain::Result<void>::failure(
             invalidInput(
                 "Class grade, level, display label, and meeting text must be non-blank and bounded."
+                )
+            );
+    }
+
+    if (!isOptionalText(
+            classSummary.navigationLabel,
+            kClassSummaryMaxNavigationLabelLength
+            )
+        || !isOptionalText(
+            classSummary.navigationTeacherLabel,
+            kClassSummaryMaxNavigationTeacherLabelLength
+            ))
+    {
+        return Domain::Result<void>::failure(
+            invalidInput(
+                "Class navigation labels must be bounded."
+                )
+            );
+    }
+
+    const bool validNavigationDayOrder =
+        classSummary.navigationFirstDayOrder
+            == kClassSummaryUnknownNavigationOrder
+        || (classSummary.navigationFirstDayOrder >= 0
+            && classSummary.navigationFirstDayOrder <= 6);
+    const bool validNavigationTimeOrder =
+        classSummary.navigationFirstTimeOrder
+            == kClassSummaryUnknownNavigationOrder
+        || (classSummary.navigationFirstTimeOrder >= 0
+            && classSummary.navigationFirstTimeOrder < 24 * 60);
+    if (!validNavigationDayOrder || !validNavigationTimeOrder)
+    {
+        return Domain::Result<void>::failure(
+            invalidInput(
+                "Class navigation schedule order is invalid."
                 )
             );
     }

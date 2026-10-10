@@ -18453,3 +18453,17 @@ F529 is a diagnosis-only completion. The migration is intentional, but no source
 ### F530 selected for Batch 103 - 2026-10-10
 
 Restore the approved Sub Prep layout and default/list ordering within the bounded model-backed list/detail UI, retaining one reusable details panel and bounded widget counts. Validate behavior and recapture/compare all 13 UI pairs. Treat geometry and content differences as material, not rendering tolerance; keep approved references read-only. If implementation instead requires an intentional redesign, parity remains open pending explicit user approval.
+
+## F530 Sub Prep visual parity restoration - 2026-10-10
+
+F530 restored the approved Sub Prep layout and default/list ordering while retaining the model-backed summary and one reusable details card. The fresh Release candidate under `C:\Users\wfelt\AppData\Local\Temp\f53w-20261010-025447-e2517ba0\phase0-20261010T025447485Z` ran `visual-sub-prep` and `lifecycle-sub-prep`; both app and harness processes exited 0, and route-scoped validation passed 2 routes with 36/36 required files. This is selected-route evidence, not the full Windows/macOS Phase 0 exit.
+
+An independent audit covered 13 approved 800x600 reference pairs: five were exact; the other eight differed by 115 or 119 edge pixels (0.024–0.025%) only at rounded arrow-frame and detail-scrollbar edges. The recorded predecessor-clipped value is `1`; pill fills, labels, order, selection, text, layout, and themes match. The tester accepted these residuals as visual parity. Runtime checkpoints recorded 96 source/visible classes, initial ID25, changed ID1, 43 active class-information widgets, two text editors, and lifecycle widget counts from 39–43 without accumulation.
+
+Package and harness SHA-256 values are `9E6FCE47918DF9EBF68EA66D174218B3DA284B4A9DC6319608AE870FA5BA019E` and `FA59EC0968E50AD5CC7D9F616C7C6C1EEF4E5B46E50D75BDBAE4C56A0D4094A9`. `runner/manual-repair/source-build-manifest.json` ties HEAD `a6cc201dad42cb4d135f8a5db0217f2c225e189b` to all 12 changed source-input hashes and artifacts; run timestamps are consistent from `02:54:47Z` start to `02:59:02Z` validation. Compact pair, build, test, and capture evidence is retained under `runner/manual-repair/`.
+
+Changed selector/model/page checks passed. The full owning Debug CTest run was not green: 4/5 suite binaries passed. `ClassMngrSubPrepPageTests` logged 18 passed/5 failed; its five failures (`freshAndExistingGradingSettingsResolveWithoutDataLoss`, `emptyCampusDetailsDisplayNotAvailable`, `zoomUnavailableHidesStoredCredentials`, `printDialogRequiresAndSavesMissingUserName`, and `clearDatabaseStateStopsAutosaveAndRemovesLoadedContent`) have the same actual/expected values as the pre-change comparison log, which recorded 15 passed/6 failed. The prior print-source marker failure now passes. Neither log records an executable hash, so the comparison's binary provenance is unverified. The Release validator reported a 263,880,704-byte peak and legacy 250 MiB memory-trend warnings; these do not establish memory acceptance. Full Phase 0 and memory gates remain open.
+
+### F531 selected next for Batch 103 - 2026-10-10
+
+Diagnose the F526 PDF-reopen working-set peak with process-level attribution before proposing a remedy; preserve the 250 MiB memory gate and selected-route/full-Phase-0 limits.

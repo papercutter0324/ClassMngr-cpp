@@ -42,7 +42,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-10
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F529 traced the material Sub Prep mismatches to the intentional but undocumented F5666748 UI migration; F530 will restore approved layout and ordering while Sub Prep memory, visual parity, and full Phase 0 gates remain open.
+- Current note: F530 restored approved Sub Prep layout and ordering with accepted visual parity across 13 references; F531 will diagnose the PDF-reopen peak while memory and full Phase 0 gates remain open.
 
 ### Slice discovery batches
 
@@ -69,7 +69,6 @@ Treat this plan as an operational summary, not a history:
 
 #### Active batch: Batch 103
 
-- F530 - Restore approved Sub Prep visual layout and default/list ordering in the bounded model-backed view.
 - F531 - Diagnose the F526 PDF-reopen working-set peak before proposing a remedy.
 - F532 - Record release-route source revision provenance in the run manifest.
 - F533 - Compare Sub Prep PDFs with approved references using a matched fixture and date.

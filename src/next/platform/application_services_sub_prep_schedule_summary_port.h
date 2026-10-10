@@ -140,6 +140,15 @@ public:
                 }
                 legacyDays.append(*label);
             }
+            const QStringList allLegacyDays{
+                QStringLiteral("Monday"),
+                QStringLiteral("Tuesday"),
+                QStringLiteral("Wednesday"),
+                QStringLiteral("Thursday"),
+                QStringLiteral("Friday"),
+                QStringLiteral("Saturday"),
+                QStringLiteral("Sunday")
+            };
 
             if (legacyClassIds.isEmpty() || legacyDays.isEmpty())
             {
@@ -245,6 +254,104 @@ public:
                 }
             }
 
+            std::unordered_map<int, NavigationMetadata>
+                preferredNavigationByClassId;
+            const ::Result<QList<SubPrepClassSummaryRecord>> regularRecords =
+                repository->loadSubPrepClassSummaries(
+                    legacyClassIds,
+                    allLegacyDays,
+                    ScheduleType::Regular,
+                    static_cast<int>(
+                        Application::kSubPrepScheduleSummaryMaxMeetingsPerClass
+                        ),
+                    static_cast<int>(
+                        Application::kSubPrepScheduleSummaryMaxMeetings
+                        )
+                    );
+            if (regularRecords)
+            {
+                preferredNavigationByClassId.reserve(
+                    static_cast<std::size_t>(regularRecords->size())
+                    );
+                for (const SubPrepClassSummaryRecord& record
+                     : regularRecords.value())
+                {
+                    if (record.classId <= 0 || record.teacherId <= 0
+                        || !requestedLegacyIds.contains(record.classId)
+                        || !preferredNavigationByClassId.emplace(
+                               record.classId,
+                               navigationMetadataFor(
+                                   record,
+                                   Application::ScheduleViewMode::Regular
+                                   )
+                               ).second)
+                    {
+                        return failure(
+                            Domain::ErrorCode::Validation,
+                            "The Sub Prep preferred schedule read returned an invalid or duplicate class."
+                            );
+                    }
+                }
+            }
+
+            const bool needsIntensiveNavigation =
+                request.mode == Application::ScheduleViewMode::Intensive
+                && std::any_of(
+                    recordsByClassId.cbegin(),
+                    recordsByClassId.cend(),
+                    [&preferredNavigationByClassId](const auto& entry)
+                    {
+                        return !preferredNavigationByClassId.contains(
+                            entry.first
+                            );
+                    }
+                    );
+            if (needsIntensiveNavigation)
+            {
+                const ::Result<QList<SubPrepClassSummaryRecord>> intensiveRecords =
+                    repository->loadSubPrepClassSummaries(
+                        legacyClassIds,
+                        allLegacyDays,
+                        ScheduleType::Intensive,
+                        static_cast<int>(
+                            Application::kSubPrepScheduleSummaryMaxMeetingsPerClass
+                            ),
+                        static_cast<int>(
+                            Application::kSubPrepScheduleSummaryMaxMeetings
+                            )
+                        );
+                if (intensiveRecords)
+                {
+                    preferredNavigationByClassId.reserve(
+                        preferredNavigationByClassId.size()
+                        + static_cast<std::size_t>(intensiveRecords->size())
+                        );
+                    for (const SubPrepClassSummaryRecord& record
+                         : intensiveRecords.value())
+                    {
+                        if (record.classId <= 0 || record.teacherId <= 0
+                            || !requestedLegacyIds.contains(record.classId))
+                        {
+                            return failure(
+                                Domain::ErrorCode::Validation,
+                                "The Sub Prep intensive preferred schedule read returned an invalid class."
+                                );
+                        }
+
+                        // Regular schedules take precedence for legacy tab
+                        // labels. Intensive is only a fallback for classes
+                        // that have no regular schedule of their own.
+                        preferredNavigationByClassId.try_emplace(
+                            record.classId,
+                            navigationMetadataFor(
+                                record,
+                                Application::ScheduleViewMode::Intensive
+                                )
+                            );
+                    }
+                }
+            }
+
             Application::ClassSummaryProjectionInput input;
             input.classes.reserve(recordsByClassId.size());
             input.teachers.reserve(recordsByClassId.size());
@@ -266,6 +373,12 @@ public:
 
                 const SubPrepClassSummaryRecord& record =
                     *recordEntry->second;
+                const auto navigationEntry =
+                    preferredNavigationByClassId.find(legacyClassId);
+                const NavigationMetadata navigation =
+                    navigationEntry != preferredNavigationByClassId.end()
+                    ? navigationEntry->second
+                    : navigationMetadataFor(record, request.mode);
                 const Domain::ClassId& requestedClassId =
                     request.visibleClassIds[requestIndex];
                 const auto gradeText = requiredUtf8(
@@ -284,7 +397,16 @@ public:
                     formatMeetingTimes(record.meetings, legacyDays),
                     Application::kClassSummaryMaxMeetingTextLength
                     );
-                if (!gradeText || !levelText || !displayLabel || !meetingText)
+                const auto navigationLabel = requiredUtf8(
+                    navigation.label,
+                    Application::kClassSummaryMaxNavigationLabelLength
+                    );
+                const auto navigationTeacherLabel = optionalUtf8(
+                    navigationTeacherLabelFor(record),
+                    Application::kClassSummaryMaxNavigationTeacherLabelLength
+                    );
+                if (!gradeText || !levelText || !displayLabel || !meetingText
+                    || !navigationLabel || !navigationTeacherLabel)
                 {
                     return failure(
                         Domain::ErrorCode::Validation,
@@ -316,8 +438,10 @@ public:
                             "A Sub Prep teacher summary exceeds a bounded text limit."
                             );
                     }
-
-                    teacherIndexes.emplace(record.teacherId, input.teachers.size());
+                    teacherIndexes.emplace(
+                        record.teacherId,
+                        input.teachers.size()
+                        );
                     input.teachers.push_back({
                         .id = typedTeacherId,
                         .displayName = *displayName,
@@ -333,23 +457,19 @@ public:
                     .level = *levelText,
                     .displayLabel = *displayLabel,
                     .meetingText = *meetingText,
-                    .studentCount = static_cast<std::size_t>(
-                        record.studentCount
-                        ),
-                    .order = static_cast<std::int32_t>(requestIndex)
+                    .studentCount = static_cast<std::size_t>(record.studentCount),
+                    .order = static_cast<std::int32_t>(requestIndex),
+                    .navigationLabel = *navigationLabel,
+                    .navigationTeacherLabel = *navigationTeacherLabel,
+                    .navigationFirstDayOrder = navigation.firstDayOrder,
+                    .navigationFirstTimeOrder = navigation.firstTimeOrder
                 });
             }
 
             return Application::SubPrepScheduleSummaryReadResult::success(
                 std::move(input)
                 );
-        }
-        catch (const std::exception&)
-        {
-            return failure(
-                Domain::ErrorCode::Technical,
-                "Sub Prep schedule summaries could not be loaded."
-                );
+
         }
         catch (...)
         {
@@ -358,6 +478,30 @@ public:
                 "Sub Prep schedule summaries could not be loaded."
                 );
         }
+    }
+
+private:
+    struct NavigationMetadata final
+    {
+        QString label;
+        std::int32_t firstDayOrder =
+            Application::kClassSummaryUnknownNavigationOrder;
+        std::int32_t firstTimeOrder =
+            Application::kClassSummaryUnknownNavigationOrder;
+    };
+
+    [[nodiscard]] static NavigationMetadata navigationMetadataFor(
+        const SubPrepClassSummaryRecord& record,
+        const Application::ScheduleViewMode mode
+        )
+    {
+        const auto [firstDayOrder, firstTimeOrder] =
+            navigationScheduleOrder(record.meetings);
+        return {
+            .label = navigationLabelFor(record, mode),
+            .firstDayOrder = firstDayOrder,
+            .firstTimeOrder = firstTimeOrder
+        };
     }
 
 private:
@@ -482,6 +626,263 @@ private:
             ? QStringLiteral("hap")
             : QStringLiteral("h:mmap");
         return time.toString(format).toLower();
+    }
+
+    [[nodiscard]] static QString compactNavigationStartTime(
+        const QString& value
+        )
+    {
+        const QString trimmed = value.trimmed();
+        if (trimmed.isEmpty())
+        {
+            return {};
+        }
+
+        const QStringList formats{
+            QStringLiteral("h:mm AP"),
+            QStringLiteral("h:mmAP"),
+            QStringLiteral("hh:mm AP"),
+            QStringLiteral("hh:mmAP"),
+            QStringLiteral("H:mm"),
+            QStringLiteral("HH:mm"),
+            QStringLiteral("H:mm:ss"),
+            QStringLiteral("HH:mm:ss")
+        };
+        const bool usesMeridiem =
+            trimmed.contains(QStringLiteral("AM"), Qt::CaseInsensitive)
+            || trimmed.contains(QStringLiteral("PM"), Qt::CaseInsensitive);
+        for (const QString& format : formats)
+        {
+            const QTime time = QTime::fromString(trimmed, format);
+            if (!time.isValid())
+            {
+                continue;
+            }
+            if (!usesMeridiem)
+            {
+                return time.toString(QStringLiteral("H:mm"));
+            }
+
+            QString formatted = time.toString(QStringLiteral("h:mm AP"));
+            formatted.remove(QStringLiteral(" AM"));
+            formatted.remove(QStringLiteral(" PM"));
+            return formatted;
+        }
+
+        QString fallback = trimmed;
+        fallback.remove(QStringLiteral(" AM"), Qt::CaseInsensitive);
+        fallback.remove(QStringLiteral(" PM"), Qt::CaseInsensitive);
+        return fallback;
+    }
+
+    [[nodiscard]] static QString navigationDayCode(const QString& day)
+    {
+        if (day == QStringLiteral("Monday"))
+        {
+            return QStringLiteral("M");
+        }
+        if (day == QStringLiteral("Tuesday"))
+        {
+            return QStringLiteral("T");
+        }
+        if (day == QStringLiteral("Wednesday"))
+        {
+            return QStringLiteral("W");
+        }
+        if (day == QStringLiteral("Thursday"))
+        {
+            return QStringLiteral("Th");
+        }
+        if (day == QStringLiteral("Friday"))
+        {
+            return QStringLiteral("F");
+        }
+        if (day == QStringLiteral("Saturday"))
+        {
+            return QStringLiteral("Sat");
+        }
+        if (day == QStringLiteral("Sunday"))
+        {
+            return QStringLiteral("Sun");
+        }
+        return day.trimmed();
+    }
+
+    [[nodiscard]] static QString compressedNavigationDays(
+        QStringList days
+        )
+    {
+        days.removeDuplicates();
+        std::sort(
+            days.begin(),
+            days.end(),
+            [](const QString& left, const QString& right)
+            {
+                return weekdayOrder(left).value_or(1'000)
+                    < weekdayOrder(right).value_or(1'000);
+            }
+            );
+
+        QStringList codes;
+        codes.reserve(days.size());
+        for (const QString& day : days)
+        {
+            const QString code = navigationDayCode(day);
+            if (!code.isEmpty())
+            {
+                codes.append(code);
+            }
+        }
+        if (codes == QStringList{QStringLiteral("M"), QStringLiteral("W")})
+        {
+            return QStringLiteral("M/W");
+        }
+        if (codes == QStringList{QStringLiteral("M"), QStringLiteral("F")})
+        {
+            return QStringLiteral("M/F");
+        }
+        if (codes == QStringList{QStringLiteral("W"), QStringLiteral("F")})
+        {
+            return QStringLiteral("W/F");
+        }
+        if (codes == QStringList{
+                QStringLiteral("M"),
+                QStringLiteral("W"),
+                QStringLiteral("F")
+            })
+        {
+            return QStringLiteral("M/W/F");
+        }
+        if (codes == QStringList{
+                QStringLiteral("T"),
+                QStringLiteral("Th")
+            })
+        {
+            return QStringLiteral("T/Th");
+        }
+        return codes.join(QStringLiteral("/"));
+    }
+
+    [[nodiscard]] static QString navigationScheduleText(
+        const QList<SubPrepScheduleMeetingRecord>& meetings
+        )
+    {
+        struct TimeGroup final
+        {
+            QString startTime;
+            QStringList days;
+        };
+
+        QList<TimeGroup> groups;
+        for (const SubPrepScheduleMeetingRecord& meeting : meetings)
+        {
+            const QString startTime =
+                compactNavigationStartTime(meeting.startTime);
+            if (startTime.isEmpty())
+            {
+                continue;
+            }
+
+            auto group = std::find_if(
+                groups.begin(),
+                groups.end(),
+                [&startTime](const TimeGroup& candidate)
+                {
+                    return candidate.startTime == startTime;
+                }
+                );
+            if (group == groups.end())
+            {
+                groups.append({startTime, {meeting.day.trimmed()}});
+            }
+            else
+            {
+                group->days.append(meeting.day.trimmed());
+            }
+        }
+
+        QStringList labels;
+        labels.reserve(groups.size());
+        for (const TimeGroup& group : groups)
+        {
+            labels.append(QStringLiteral("%1 %2")
+                .arg(
+                    compressedNavigationDays(group.days),
+                    group.startTime
+                    ));
+        }
+        return labels.join(QStringLiteral("; "));
+    }
+
+    [[nodiscard]] static QString navigationLabelFor(
+        const SubPrepClassSummaryRecord& record,
+        const Application::ScheduleViewMode mode
+        )
+    {
+        const QString level = record.classLevel.trimmed();
+        const QString grade = record.classGrade.trimmed();
+        const QString name = !level.isEmpty()
+            ? level
+            : !grade.isEmpty()
+                ? grade
+                : classLabel(record.classGrade, record.classLevel);
+        const QString schedule = navigationScheduleText(record.meetings);
+        const QString preferredSchedule = schedule.isEmpty()
+            ? QObject::tr("No time")
+            : mode == Application::ScheduleViewMode::Intensive
+                ? QStringLiteral("%1 %2").arg(QObject::tr("Int"), schedule)
+                : schedule;
+        return QStringLiteral("%1 • %2").arg(name, preferredSchedule);
+    }
+
+    [[nodiscard]] static QString navigationTeacherLabelFor(
+        const SubPrepClassSummaryRecord& record
+        )
+    {
+        const QString english = record.teacherEn.trimmed();
+        return english.isEmpty() ? record.teacherKr.trimmed() : english;
+    }
+
+    [[nodiscard]] static std::pair<std::int32_t, std::int32_t>
+    navigationScheduleOrder(
+        const QList<SubPrepScheduleMeetingRecord>& meetings
+        )
+    {
+        int firstDayOrder = Application::kClassSummaryUnknownNavigationOrder;
+        for (const SubPrepScheduleMeetingRecord& meeting : meetings)
+        {
+            const int dayOrder = weekdayOrder(meeting.day).value_or(
+                Application::kClassSummaryUnknownNavigationOrder
+                );
+            firstDayOrder = std::min(firstDayOrder, dayOrder);
+        }
+
+        int firstTimeOrder = Application::kClassSummaryUnknownNavigationOrder;
+        if (firstDayOrder != Application::kClassSummaryUnknownNavigationOrder)
+        {
+            for (const SubPrepScheduleMeetingRecord& meeting : meetings)
+            {
+                if (weekdayOrder(meeting.day).value_or(
+                        Application::kClassSummaryUnknownNavigationOrder
+                        ) != firstDayOrder)
+                {
+                    continue;
+                }
+                const QTime time = parseTime(meeting.startTime);
+                if (time.isValid())
+                {
+                    firstTimeOrder = std::min(
+                        firstTimeOrder,
+                        (time.hour() * 60) + time.minute()
+                        );
+                }
+            }
+        }
+
+        return {
+            static_cast<std::int32_t>(firstDayOrder),
+            static_cast<std::int32_t>(firstTimeOrder)
+        };
     }
 
     [[nodiscard]] static QString dayAbbreviation(const QString& day)
