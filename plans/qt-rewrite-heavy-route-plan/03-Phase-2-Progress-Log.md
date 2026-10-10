@@ -19871,3 +19871,40 @@ later checkpoints. Treat address reuse as possible and keep allocation
 lifetime claims bounded by the snapshot evidence. The 250 MiB lifecycle gate,
 F536 cause, F526 provenance, output parity, render/window acceptance, and
 global Phase 0 remain open (Windows 1/24, macOS 0/24).
+
+## F569 same-address allocation signature comparison - 2026-10-11
+
+TraceProcessor's raw allocation rows were compared by the composite key
+`(HeapHandle, AllocationAddress)`. Each snapshot has a unique key for every
+allocation record (zero duplicate keys). A same-address signature additionally
+requires the allocation size and `TraceUniqueStackId` to match. These
+signatures are stronger evidence of continuity than stack-bucket totals, but
+they still cannot exclude an address being freed and reused between two
+snapshots.
+
+| Checkpoint pair | Shared heap/address keys | Same size and stack ID | Shared keys with changed signature | Matching-signature bytes in later snapshot |
+| --- | ---: | ---: | ---: | ---: |
+| after-render -> after-document-close | 236,138 | 235,938 | 200 | 203,219,028 bytes |
+| after-document-close -> after-view-destroyed | 106,904 | 106,886 | 18 | 171,668,008 bytes |
+| after-render -> after-view-destroyed | 106,554 | 106,326 | 228 | 171,415,335 bytes |
+
+Across all three checkpoints, 106,326 heap/address keys keep the same size and
+trace stack ID; those records total 171,415,335 bytes in the final snapshot.
+That is about 99.83% of the final snapshot's 171,704,838 allocation bytes.
+The five largest same-signature stack buckets are present at all checkpoints:
+ID 1417 has 2 records totaling 25,165,824 bytes, while IDs 3969, 6546, 7445,
+and 11484 each have one 16,777,216-byte record. Stack ID 1417's two records
+are same-address signatures across all three snapshots. These are
+allocation-address signatures, not proof of object lifetime or ownership.
+
+F569's compact C# pass read all 591,444 records and performed the joins in
+memory. The result had no duplicate heap/address keys. Local identity exports
+and the summary remain under the ignored `build/f565-wpa-analysis` directory;
+the ETL remains immutable.
+
+F570 starts by grouping the all-three same-address signatures by stack ID and
+loaded-image path. This will show which module paths account for the large
+signature carryover, while preserving the address-reuse and missing-symbol
+limits. The 250 MiB lifecycle gate, F536 cause, F526 provenance, output parity,
+render/window acceptance, and global Phase 0 remain open (Windows 1/24,
+macOS 0/24).

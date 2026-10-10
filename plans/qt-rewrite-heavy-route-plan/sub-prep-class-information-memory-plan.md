@@ -790,8 +790,11 @@ All shared per-stack byte totals match exactly. Mapping all raw stack IPs to
 the PID's loaded images shows `Qt6Pdf.dll` paths covering 3,638,954 bytes
 after render, 102,568 after document close, and 98,916 after view destruction;
 these overlapping stack-path totals do not identify allocation ownership.
-Function names/source lines are unavailable. F569 will compare same-address
-heap/size/stack signatures across checkpoints, with possible address reuse
-kept explicit. The 250 MiB lifecycle gate, F536 cause, F526 provenance, output
-parity, render/window acceptance, and global Phase 0 remain open (Windows
-1/24, macOS 0/24).
+Function names/source lines are unavailable. F569 found 106,326 heap/address
+keys with the same size and trace stack ID across all three snapshots; their
+final-snapshot size sum is 171,415,335 bytes (about 99.83% of the final
+allocation-size total). This is same-address signature evidence, not proof of
+object lifetime. F570 will group those signatures by stack ID and loaded-image
+path. The 250 MiB lifecycle gate, F536 cause, F526 provenance, output parity,
+render/window acceptance, and global Phase 0 remain open (Windows 1/24,
+macOS 0/24).
