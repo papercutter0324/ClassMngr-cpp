@@ -619,11 +619,14 @@ writing disabled in both.
 F549 completed three fresh Windows x64 Qt 6.12.0 Release processes per arm
 from F548 commit `56c4104a6f1a1e00a25a2a0225b104158a07da35`. All six
 route-scoped validations passed with 38 ordered samples, identical fixture
-hash, and no PNG files. Per-process maxima summarized by field and then by
-three-run median (MiB; working set / peak working set / private usage / private
-working set) were 250.984 / 252.125 / 291.625 / 186.762 with grabs and 249.523 /
-251.219 / 289.109 / 185.352 without, differences +1.461 / +0.906 / +2.516 /
-+1.410. Both peak-working-set medians exceed the 250 MiB comparison target.
+hash, and no PNG files. Correction to the earlier summary: it reported each
+arm's maximum `peakMemory` value per field, not the median. Correct three-run
+medians of the per-process per-field aggregates (working set / peak working
+set / private usage / private working set; MiB) are 250.773438 / 251.914063 /
+291.457031 / 186.496094 with grabs and 249.453125 / 251.152344 / 288.792969 /
+185.285156 without; differences +1.320313 / +0.761719 / +2.664063 / +1.210938.
+The fields are independent, not a paired sample. Both peak-working-set medians
+exceed the 250 MiB comparison target.
 PDF load-return medians were 247.320 / 247.320 / 262.703 / 183.387 versus
 245.898 / 245.898 / 261.383 / 182.012 MiB; Ready medians were 249.566 /
 251.035 / 264.719 / 185.379 versus 249.391 / 250.875 / 264.617 / 185.250.
@@ -633,9 +636,33 @@ present by load return. Since the no-grab arm also omits the two render events,
 this measures combined render/capture-path dependence, not isolated grab
 allocation. It identifies no owner or cause.
 
-F550 is selected for measurement-only samples in the no-grab full route around
-documents-pack acquisition, `QPdfDocument::load()`, Ready view setup, close,
-lease/descriptor clear, and view/UI reset. Retain F548's 38 ordered samples
-and four memory fields. This can locate the phase of the rise but cannot
-establish ownership within Qt. F536 cause remains unresolved. The 250 MiB
-lifecycle gate, F526 provenance, output parity, and full Phase 0 remain open.
+F551 implemented F550's measurement-only boundaries in three fresh no-grab
+Release runs. All route validations passed with F548's 38 outer and 62 ordered
+inner samples, four memory fields, no forced grabs or render events, and no
+PNG files. Median deltas (bytes; working set / peak working set / private
+usage / private working set) at initial lease acquisition were +12,288 / 0 /
++32,776,192 / 0; at initial Ready-handler view setup, +7,135,232 / +7,135,232 /
++4,009,984 / +3,780,608; and at initial close, -6,901,760 / 0 / -7,143,424 /
+-6,909,952. Reopen lease acquisition repeated the private-usage increase
+(+32,768,000); load through Ready setup then changed the fields by +3,960,832 /
+0 / -28,573,696 / +3,973,120. Lease clear unmounted the resource, but private
+usage stayed above pre-acquire. These locate changes at observed boundaries
+without assigning allocation ownership.
+
+F551 median per-process `peakMemory` aggregates were 261,734,400 / 263,516,160
+/ 303,083,520 / 194,383,872 bytes (249.609375 / 251.308594 / 289.042969 /
+185.378906 MiB). They exceed F549's no-grab medians by 163,840 / 163,840 /
+262,144 / 98,304 bytes; because source commit and cohort differ, this is not
+evidence of sampler overhead. All three peak-working-set aggregates exceed
+250 MiB; the median exceeds the target by 1,372,160 bytes (1.308594 MiB).
+
+F552 is selected as a matched normal-versus-suppressed viewport-update
+diagnostic on the same no-grab route. Count viewport paint events and keep the
+38 outer / 62 inner samples and four memory fields. Suppress
+`m_view->viewport()` updates from before the first PDF load through both
+load/close cycles in the treatment, then restore after final close. The Ready
+handler changes view/UI state without an explicit render or grab; exact Qt
+6.12 renderer/cache behavior is not independently verified, so do not
+attribute the measured rise to Qt rendering.
+F536 cause remains unresolved. The 250 MiB lifecycle gate, F526 provenance,
+output parity, and global Phase 0 remain open (Windows 1/24, macOS 0/24 routes).

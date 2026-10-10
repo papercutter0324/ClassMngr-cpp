@@ -19121,15 +19121,17 @@ Both arms still loaded and released two PDFs, so this comparison measures the
 combined render/capture-path dependence and does not isolate allocation from
 the explicit `viewer.grab()` calls.
 
-The following are per-field medians across three processes after taking each
-process's maxima; they are not a paired sample:
+Correction recorded with F551: the previous table reported the highest of the
+three per-process `peakMemory` aggregates for each field, not their median.
+This table now gives the true median of each field across the three process
+aggregates; the fields remain independently summarized and are not paired.
 
-| Metric (MiB) | With grabs | Without grabs | Difference |
+| Metric | With grabs (bytes / MiB) | Without grabs (bytes / MiB) | Difference (MiB) |
 | --- | ---: | ---: | ---: |
-| Working set | 250.984 | 249.523 | +1.461 |
-| Peak working set | 252.125 | 251.219 | +0.906 |
-| Private usage | 291.625 | 289.109 | +2.516 |
-| Private working set | 186.762 | 185.352 | +1.410 |
+| Working set | 262,955,008 / 250.773438 | 261,570,560 / 249.453125 | +1.320313 |
+| Peak working set | 264,151,040 / 251.914063 | 263,352,320 / 251.152344 | +0.761719 |
+| Private usage | 305,614,848 / 291.457031 | 302,821,376 / 288.792969 | +2.664063 |
+| Private working set | 195,555,328 / 186.496094 | 194,285,568 / 185.285156 | +1.210938 |
 
 Both peak-working-set medians exceed the 262,144,000-byte (250 MiB) comparison
 target, so memory acceptance remains open. PDF load-return medians in the same
@@ -19141,13 +19143,68 @@ This suggests only a small association with the combined rendering/capture
 path, while much of the measured rise is already present by load return; it
 does not identify F536's cause or a Qt allocation owner.
 
-F550 is selected for measurement-only boundary instrumentation in the no-grab
-full route: retain F548's 38 samples and four memory fields, and add ordered
-samples around documents-pack acquisition, `QPdfDocument::load()`, Ready view
-setup, document close, lease/descriptor clear, and view/UI reset. This can
-locate the phase of the rise but will not establish ownership within Qt. The
-global Phase 0 gate remains incomplete for outstanding platform and route
-coverage; F526 provenance, output parity, the 250 MiB gate, and F536's cause
-remain open. Raw artifacts are under
+F550 selected measurement-only boundary instrumentation in the no-grab full
+route; F551 implemented it. The global Phase 0 gate remains incomplete for
+outstanding platform and route coverage; F526 provenance, output parity, the
+250 MiB gate, and F536's cause remain open. Raw F549 artifacts are under
 `%LOCALAPPDATA%\Temp\ClassMngr-F549-20261010-56c4104a` (`f549-release-build`
 and route folders `f549-01` through `f549-06`).
+
+## F551 Release no-grab inner-boundary diagnostic - 2026-10-10
+
+F551 completed the selected F550 measurement-only extension from commit
+`e4023f34ab5ac45e595068830c997065e231cdad`. The successful build-only root,
+`%LOCALAPPDATA%\Temp\ClassMngr-F550-20261010-e4023f34\f551-release-build-vcvars`,
+reports Release configure/build/install and Debug harness configure/build all
+exited 0 without timeout; its route run was skipped by design. The three route
+runs reused that package with build skipped, so their sidecars are not
+independent per-route build provenance; the separate build manifest and
+matching executable/harness hashes corroborate it. Application SHA-256 is
+`94084F3F2256ACC6171B9F8116B9EEE5F4028E796A2B50889E73387386C4867A`, harness
+`1CE1BE8B6594DA1C326DE39B69DA1B4947CA3458683BFD4D6331960EBA20BD5C`, RCC
+`A3EB570294B55A616EA05797222FC1FEDD93620ABB25360B724ED6843BEE924F`, and PDF
+`295ACCAB548B41F0B4F56E6AB89958AD5C3347646904C155B16A56EBE926CAEC`.
+
+Three fresh Windows x64 Qt 6.12.0 offscreen runs (`inner-boundary-01..03`,
+PIDs 27100, 8516, 30232) all passed route validation and exited 0. Each kept
+F548's 38 outer samples and added the same 62 ordered inner-boundary samples
+with all four memory fields. All used the no-grab arm, reported zero forced
+grabs and PDF render events, and wrote no PNGs. The fixture was 622,592 bytes,
+with 96 classes, 24 teachers, 7,200 rows, and SHA-256
+`c213ce96d85d927a4e2a4196c68be490f4517076079c069b475ec0ada872ffbb`.
+
+Median paired boundary deltas across the three runs (bytes; working set / peak
+working set / private usage / private working set) were:
+
+| Boundary | Working set | Peak working set | Private usage | Private working set |
+| --- | ---: | ---: | ---: | ---: |
+| Initial lease acquisition, unmounted to mounted | +12,288 | 0 | +32,776,192 | 0 |
+| Initial Ready-handler view setup | +7,135,232 | +7,135,232 | +4,009,984 | +3,780,608 |
+| Initial `QPdfDocument::close()` | -6,901,760 | 0 | -7,143,424 | -6,909,952 |
+| Reopen lease acquisition | +12,288 | 0 | +32,768,000 | 0 |
+| Reopen load through Ready setup | +3,960,832 | 0 | -28,573,696 | +3,973,120 |
+
+The initial path-resolution pair changed only peak working set (+4,096 bytes).
+Lease clear unmounted the resource, while private usage remained above its
+pre-acquire value. These are measured boundary changes, not allocation-owner
+attributions. Across the three processes, median per-field `peakMemory`
+aggregates were 261,734,400 / 263,516,160 / 303,083,520 / 194,383,872 bytes
+(249.609375 / 251.308594 / 289.042969 / 185.378906 MiB). Compared with F549's
+no-grab medians, these are +163,840 / +163,840 / +262,144 / +98,304 bytes
+(+0.15625 / +0.15625 / +0.25 / +0.09375 MiB); different source/cohort means
+this is not evidence of sampler overhead. All three peak-working-set
+aggregates exceed 250 MiB; the median is 1,372,160 bytes (1.308594 MiB) above
+the target. Artifacts are under
+`%LOCALAPPDATA%\Temp\ClassMngr-F550-20261010-e4023f34` (the three `inner-boundary`
+routes and `f551-release-build-vcvars`).
+
+F552 is selected as a matched normal-versus-suppressed viewport-update
+diagnostic on the same no-grab route. Count viewport paint events, retain the
+38 outer and 62 inner samples, and suppress `m_view->viewport()` updates from
+before the first PDF load through both load/close cycles in the treatment,
+restoring updates after final close. The Ready handler changes view/UI state
+without an explicit render or grab; the exact Qt 6.12 renderer/cache behavior
+has not been independently verified, so do not attribute the observed rise to
+Qt rendering. F536 cause and the 250 MiB gate remain open; F526 provenance,
+output parity, and the global Phase 0 gate also remain open (Windows 1/24,
+macOS 0/24 routes).
