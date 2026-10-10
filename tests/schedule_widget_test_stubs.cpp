@@ -148,6 +148,7 @@ QList<Classroom> classList()
 
 void reset()
 {
+    FontManager::setSizeOffset(0);
     settings.clear();
     classGrades.clear();
     classLevels.clear();
@@ -1957,6 +1958,11 @@ Theme ThemeService::currentTheme() const
     return ScheduleWidgetTestStubs::configuredTheme;
 }
 
+namespace
+{
+int scheduleTestFontSizeOffset = 0;
+}
+
 QFont FontManager::getUiFont(
     int size,
     int weight,
@@ -1966,7 +1972,7 @@ QFont FontManager::getUiFont(
     QFont font;
     if (size > 0)
     {
-        font.setPointSize(size);
+        font.setPointSize(adjustedPointSize(size));
     }
     font.setWeight(static_cast<QFont::Weight>(weight));
     font.setItalic(italic);
@@ -1986,12 +1992,17 @@ int FontManager::adjustedPointSize(
     int baseSize
     )
 {
-    return baseSize;
+    return qMax(1, baseSize + scheduleTestFontSizeOffset);
+}
+
+void FontManager::setSizeOffset(int offset)
+{
+    scheduleTestFontSizeOffset = offset;
 }
 
 int FontManager::sizeOffset()
 {
-    return 0;
+    return scheduleTestFontSizeOffset;
 }
 
 void FontManager::setManagedRichText(

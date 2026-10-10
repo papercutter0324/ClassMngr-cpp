@@ -179,7 +179,7 @@ bool interactWithTestingAssignmentCell(
         return false;
     }
 
-    QWidget* const cell = table->cellWidget(row, column);
+    const ScheduleCellView* cell = &model.rows.at(row).cells.at(column - 1);
     if (
         ScheduleCellHitTest::hit(cell).command
         != ScheduleCellCommand::EditTestingAssignment
@@ -704,10 +704,7 @@ bool interactWithScheduleEntryCell(
              ++dayIndex)
         {
             const int column = static_cast<int>(dayIndex) + 1;
-            QWidget* const cell = table->cellWidget(
-                static_cast<int>(row),
-                column
-                );
+            const ScheduleCellView* cell = &model.rows.at(row).cells.at(dayIndex);
             const ScheduleCellHit hit = ScheduleCellHitTest::hit(cell);
             if (hit.command != ScheduleCellCommand::EditClass
                 || hit.classId != classId)
@@ -2615,11 +2612,17 @@ testingClassRenameMarksAndRefreshesBothSchedulePages()
         classId,
         originalName
         ));
-    QVERIFY(scheduleModelContainsClassAndName(
-        workspaceWidget->scheduleModel(),
-        classId,
-        originalName
-        ));
+    // F603 releases generated Workspace Schedule state when navigating away.
+    // The retained page must stay stale and rebuild the renamed value on return.
+    QVERIFY(workspaceWidget->scheduleModel().rows.isEmpty());
+    const auto inactiveWorkspace = workspaceWidget->runtimeMetrics();
+    QCOMPARE(inactiveWorkspace.modelRowCount, 0);
+    QCOMPARE(inactiveWorkspace.modelCellCount, 0);
+    QCOMPARE(inactiveWorkspace.modelEntryCount, 0);
+    QCOMPARE(inactiveWorkspace.tableRowCount, 0);
+    QCOMPARE(inactiveWorkspace.tableItemCount, 0);
+    QCOMPARE(inactiveWorkspace.tableCellWidgetCount, 0);
+    QCOMPARE(inactiveWorkspace.visibleClassCount, 0);
 
     pages->showPage(PageType::Schedule);
     QApplication::processEvents();

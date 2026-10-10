@@ -1,11 +1,13 @@
 #include "app/services/feature_services.h"
 #include "core/application_services.h"
 #include "core/theme_service.h"
+#include "core/fontmanager.h"
 #include "data/data_service.h"
 #include "fakes/fake_user_prompt_service.h"
 #include "features/schedule/ui/schedule_page.h"
 #include "features/schedule/ui/schedule_cell_hit_test.h"
 #include "features/schedule/ui/schedule_table_renderer.h"
+#include "features/schedule/ui/schedule_widget_delegates.h"
 #include "features/schedule/ui/schedule_widget.h"
 #include "features/schedule/services/schedule_output_controller.h"
 #include "features/schedule/ui/testing_assignment_dialog.h"
@@ -21,6 +23,7 @@
 
 #include <QtTest>
 
+#include <QAccessible>
 #include <QAbstractButton>
 #include <QAbstractItemDelegate>
 #include <QApplication>
@@ -55,7 +58,9 @@
 
 namespace ScheduleWidgetTestStubs
 {
+extern QHash<QString, QVariant> settings;
 extern int savedSlotStates;
+extern int savedTestingBlocks;
 extern int scheduleClassInfoReadCount;
 extern int slotStateReadCount;
 extern int testingAssignmentsReadCount;
@@ -110,6 +115,7 @@ QString settingValue(const QString& key);
 
 namespace
 {
+using namespace ScheduleWidgetDelegates;
 class ScopedQtWarningCapture final
 {
 public:
@@ -318,7 +324,7 @@ bool interactWithTestingAssignmentCell(
         return false;
     }
 
-    QWidget* const cell = table->cellWidget(row, column);
+    const ScheduleCellView* cell = &model.rows.at(row).cells.at(column - 1);
     if (
         ScheduleCellHitTest::hit(cell).command
         != ScheduleCellCommand::EditTestingAssignment
@@ -647,6 +653,9 @@ private slots:
     void schedulePageScrollsWithoutResizingSchedule();
     void standaloneSchedulePageDeactivationRetainsRenderedResources();
     void rendererSkipsUnchangedAndUpdatesOnlyChangedCells();
+    void delegatePreservesContentColorsMarkersAndGeometry();
+    void projectionHitTestingPreservesCommands();
+    void readOnlyViewportClicksHaveNoSideEffects();
 };
 
 void ScheduleWidgetTests::init()
@@ -707,15 +716,13 @@ void ScheduleWidgetTests
     QVERIFY(table);
 
     auto* scheduledClass =
-        qobject_cast<QLabel*>(
-            table->cellWidget(0, 2)
-            );
+        table->item(0, 2);
     QVERIFY(scheduledClass);
     QVERIFY2(
-        scheduledClass->text().contains(QStringLiteral("Susan")),
-        qPrintable(scheduledClass->text())
+        scheduledClass->data(HtmlRole).toString().contains(QStringLiteral("Susan")),
+        qPrintable(scheduledClass->data(HtmlRole).toString())
         );
-    QVERIFY(!scheduledClass->text().contains(QStringLiteral("김선생")));
+    QVERIFY(!scheduledClass->data(HtmlRole).toString().contains(QStringLiteral("김선생")));
 
     ScheduleWidget mirrored(
         &services,
@@ -1004,14 +1011,12 @@ void ScheduleWidgetTests
     QVERIFY(banner->text().contains(QStringLiteral("M2 and M3")));
 
     auto* monday =
-        qobject_cast<QLabel*>(
-            table->cellWidget(0, 1)
-            );
+        table->item(0, 1);
     QVERIFY(monday);
     QVERIFY(monday->text().contains(QStringLiteral("Oral Testing")));
     QVERIFY(monday->text().contains(QStringLiteral("Library")));
     QCOMPARE(
-        monday->property("slot_state").toString(),
+        widget.scheduleModel().rows.at(0).cells.at(0).slotState,
         scheduleTestingSlotState()
         );
 
@@ -1024,15 +1029,11 @@ void ScheduleWidgetTests
     QCOMPARE(widget.visibleClassIds(), QSet<int>{42});
     QVERIFY(banner->text().contains(QStringLiteral("M1, M2, and M3")));
     auto* wednesday =
-        qobject_cast<QLabel*>(
-            table->cellWidget(0, 3)
-            );
+        table->item(0, 3);
     QVERIFY(wednesday);
     QCOMPARE(wednesday->text(), QStringLiteral("Essay"));
     QVERIFY(
-        wednesday
-            ->property("testing_block_creation_enabled")
-            .toBool()
+        widget.scheduleModel().rows.at(0).cells.at(2).testingBlockCreationEnabled
         );
 }
 
@@ -1081,27 +1082,25 @@ void ScheduleWidgetTests
     QVERIFY(classesButton->isVisibleTo(&widget));
 
     auto* label =
-        qobject_cast<QLabel*>(
-            table->cellWidget(0, 1)
-            );
+        table->item(0, 1);
     QVERIFY(label);
-    QCOMPARE(label->property("class_id").toInt(), 100);
+    QCOMPARE(widget.scheduleModel().rows.at(0).cells.at(0).entries.first().classId, 100);
     QVERIFY(
-        label->property("testing_class_assignment").toBool()
+        widget.scheduleModel().rows.at(0).cells.at(0).testingClassAssignment
         );
     const QString accessible =
-        label->accessibleName();
+        label->data(Qt::AccessibleTextRole).toString();
     QVERIFY(accessible.contains(QStringLiteral("Writing Lab")));
     QVERIFY(accessible.contains(QStringLiteral("M2")));
     QVERIFY(accessible.contains(QStringLiteral("Mixed (High)")));
     QVERIFY(accessible.contains(QStringLiteral("Library")));
     QVERIFY(
-        !label->text().contains(
+        !label->data(HtmlRole).toString().contains(
             QStringLiteral("Writing Lab Library")
             )
         );
     QCOMPARE(
-        label->palette().color(QPalette::Highlight),
+        label->data(MarkerColorRole).value<QColor>(),
         QColor(QStringLiteral("#FFFFFF"))
         );
 }
@@ -2822,9 +2821,9 @@ void ScheduleWidgetTests::regularSlotToggleUsesSharedPersistenceHandler()
         QStringLiteral("scheduleTable")
         );
     QVERIFY(table);
-    QWidget* mondaySlot = table->cellWidget(0, 1);
-    QVERIFY(mondaySlot);
-    mondaySlot->setProperty("slot_toggling_enabled", true);
+    ScheduleViewModel model = widget.scheduleModel();
+    model.rows[0].cells[0].slotTogglingEnabled = true;
+    widget.setPreviewModel(model);
 
     const int buildCountBeforeClick =
         ScheduleWidgetTestStubs::scheduleClassInfoReadCount;
@@ -2857,7 +2856,7 @@ void ScheduleWidgetTests::regularSlotToggleUsesSharedPersistenceHandler()
         );
     QCOMPARE(
         ScheduleWidgetTestStubs::scheduleClassInfoReadCount,
-        buildCountBeforeClick + 1
+        buildCountBeforeClick
         );
 }
 
@@ -2958,7 +2957,7 @@ void ScheduleWidgetTests
     const ScheduleWidgetRuntimeMetrics before = page.runtimeMetrics();
     QVERIFY(before.modelRowCount > 0);
     QVERIFY(before.tableItemCount > 0);
-    QVERIFY(before.tableCellWidgetCount > 0);
+    QCOMPARE(before.tableCellWidgetCount, 0);
 
     page.deactivate();
 
@@ -2986,43 +2985,336 @@ void ScheduleWidgetTests
     ScheduleTableRenderer::initialize(&table);
 
     const ScheduleTableRenderOptions options{.cellParent = &table};
-    const ScheduleViewModel initial = rendererTestModel();
+    const auto initial = std::make_shared<const ScheduleViewModel>(rendererTestModel());
     const ScheduleTableRenderMetrics first =
         ScheduleTableRenderer::render(&table, initial, options);
     QVERIFY(first.fullRender);
 
     QTableWidgetItem* const timeItem = table.item(0, 0);
-    QWidget* const mondayWidget = table.cellWidget(0, 1);
-    QWidget* const tuesdayWidget = table.cellWidget(0, 2);
+    QTableWidgetItem* const monday = table.item(0, 1);
+    QTableWidgetItem* const tuesday = table.item(0, 2);
     QVERIFY(timeItem);
-    QVERIFY(mondayWidget);
-    QVERIFY(tuesdayWidget);
-
-    ScheduleViewModel changed =
-        rendererTestModel(scheduleLunchSlotState());
-    const ScheduleTableRenderMetrics partial =
-        ScheduleTableRenderer::render(&table, changed, options);
+    QVERIFY(monday);
+    QVERIFY(tuesday);
+    QCOMPARE(first.cellWidgetsCreated, 0);
+    QCOMPARE(first.cellsUpdated, 2);
+    QSignalSpy changes(table.model(), &QAbstractItemModel::dataChanged);
+    const auto changed = std::make_shared<const ScheduleViewModel>(rendererTestModel(scheduleLunchSlotState()));
+    const auto partial = ScheduleTableRenderer::render(&table, changed, options);
     QVERIFY(!partial.fullRender);
     QCOMPARE(partial.tableItemsCreated, 0);
-    QCOMPARE(partial.cellWidgetsCreated, 1);
-    QCOMPARE(partial.cellWidgetsRemoved, 1);
+    QCOMPARE(partial.cellWidgetsCreated, 0);
+    QCOMPARE(partial.cellWidgetsRemoved, 0);
+    QCOMPARE(partial.cellsUpdated, 1);
+    QVERIFY(!changes.isEmpty());
+    for (const auto& change : changes)
+        QCOMPARE(qvariant_cast<QModelIndex>(change.at(0)).column(), 1);
     QCOMPARE(table.item(0, 0), timeItem);
-    QCOMPARE(table.cellWidget(0, 2), tuesdayWidget);
-
-    QWidget* const updatedMondayWidget = table.cellWidget(0, 1);
-    QVERIFY(updatedMondayWidget);
-    QVERIFY(updatedMondayWidget != mondayWidget);
-
-    const ScheduleTableRenderMetrics unchanged =
-        ScheduleTableRenderer::render(&table, changed, options);
+    QCOMPARE(table.item(0, 1), monday);
+    QCOMPARE(table.item(0, 2), tuesday);
+    QCOMPARE(monday->text(), QStringLiteral("Lunch"));
+    changes.clear();
+    const auto unchanged = ScheduleTableRenderer::render(&table, changed, options);
     QVERIFY(!unchanged.fullRender);
     QCOMPARE(unchanged.tableItemsCreated, 0);
+    QCOMPARE(unchanged.cellsUpdated, 0);
     QCOMPARE(unchanged.cellWidgetsCreated, 0);
     QCOMPARE(unchanged.cellWidgetsRemoved, 0);
     QCOMPARE(unchanged.cellWidgetsQueuedForDeletion, 0);
+    QCOMPARE(changes.size(), 0);
     QCOMPARE(table.item(0, 0), timeItem);
-    QCOMPARE(table.cellWidget(0, 1), updatedMondayWidget);
-    QCOMPARE(table.cellWidget(0, 2), tuesdayWidget);
+    QCOMPARE(table.item(0, 1), monday);
+    QCOMPARE(table.item(0, 2), tuesday);
+    QVERIFY(!table.cellWidget(0, 1));
+    QVERIFY(!table.cellWidget(0, 2));
+}
+
+void ScheduleWidgetTests::delegatePreservesContentColorsMarkersAndGeometry()
+{
+    ScheduleViewModel model;
+    model.days = visibleScheduleDays(true);
+    ScheduleRowView row;
+    row.timeLabel = QStringLiteral("16:00");
+    row.timeRangeLabel = QStringLiteral("4:00 -\n4:55 PM");
+    for (const QString& day : model.days)
+        row.cells.append({.day = day, .timeLabel = row.timeLabel, .slotState = scheduleEmptySlotState()});
+    const ScheduleEntry entry{
+        .classId = 42, .teacherKr = QStringLiteral("Teacher KR"),
+        .teacherEn = QStringLiteral("Teacher EN"), .teacherPreferredName = QStringLiteral("Teacher Preferred"),
+        .roomNumber = QStringLiteral("414"), .classGrade = QStringLiteral("E4"),
+        .classLevel = QStringLiteral("Hercules"), .classColor = QStringLiteral("#123456"),
+        .fontColor = QStringLiteral("#FFFFFF")};
+    row.cells[0].entries = {entry};
+    row.cells[1].entries = {entry, entry};
+    row.cells[3].slotState = scheduleEssaySlotState();
+    row.cells[4].slotState = scheduleLunchSlotState();
+    row.cells[5].slotState = scheduleTestingSlotState();
+    row.cells[5].testingRoom = QStringLiteral("Library");
+    ScheduleEntry assigned = entry;
+    assigned.kind = ScheduleEntryKind::TestingClass;
+    assigned.className = QStringLiteral("Writing Lab");
+    row.cells[6].entries = {assigned};
+    model.rows = {row};
+    const auto projection = std::make_shared<const ScheduleViewModel>(model);
+    QTableWidget table;
+    ScheduleTableRenderer::initialize(&table);
+    for (ScheduleMode mode : {ScheduleMode::Interactive, ScheduleMode::ReadOnly})
+    {
+        ScheduleWidget widget(nullptr, nullptr, mode);
+        widget.setPreviewModel(model);
+        QCOMPARE(widget.runtimeMetrics().tableCellWidgetCount, 0);
+        widget.setCompactPreview(true);
+        widget.refreshSchedule();
+        widget.refreshSchedule();
+        QCOMPARE(widget.runtimeMetrics().tableCellWidgetCount, 0);
+        for (const char* buttonName : {"scheduleIntensiveModeButton", "scheduleTestingModeButton", "scheduleRegularModeButton"})
+        {
+            auto* button = widget.findChild<QPushButton*>(QString::fromLatin1(buttonName));
+            QVERIFY(button);
+            button->click();
+            QCOMPARE(widget.runtimeMetrics().tableCellWidgetCount, 0);
+        }
+    }
+    const int originalOffset = FontManager::sizeOffset();
+    struct RestoreFont { int offset; ~RestoreFont() { FontManager::setSizeOffset(offset); } } restore{originalOffset};
+    for (bool compact : {false, true})
+    for (bool dark : {false, true})
+    for (bool english : {false, true})
+    for (int offset : {0, 2})
+    {
+        FontManager::setSizeOffset(offset);
+        QPalette palette = table.palette();
+        palette.setColor(QPalette::Window, dark ? Qt::black : Qt::white);
+        table.setPalette(palette);
+        const auto metrics = ScheduleTableRenderer::render(&table, projection,
+            {.cellParent = &table, .compactPreview = compact, .showKoreanTeacherEnglishNames = english});
+        QCOMPARE(metrics.cellWidgetsCreated, 0);
+        QCOMPARE(table.columnCount(), 8);
+        QCOMPARE(table.item(0, 0)->text(), row.timeRangeLabel);
+        QCOMPARE(table.columnWidth(0), compact ? 84 : 90);
+        QCOMPARE(table.horizontalHeader()->height(), compact ? 36 : 42);
+        QCOMPARE(table.rowHeight(0), compact ? 83 : 98);
+        QCOMPARE(table.selectionMode(), QAbstractItemView::NoSelection);
+        QCOMPARE(table.editTriggers(), QAbstractItemView::NoEditTriggers);
+        for (int column = 1; column <= 7; ++column)
+        {
+            QVERIFY(!table.cellWidget(0, column));
+            const auto* item = table.item(0, column);
+            QVERIFY(item);
+            QImage image(240, 120, QImage::Format_ARGB32_Premultiplied);
+            const QColor sentinel("#010203");
+            image.fill(sentinel);
+            QPainter painter(&image);
+            QStyleOptionViewItem option;
+            option.rect = image.rect();
+            option.palette = table.palette();
+            const QModelIndex index = table.model()->index(0, column);
+            table.itemDelegateForIndex(index)->paint(&painter, option, index);
+            painter.end();
+            QColor expected = item->data(BackgroundRole).value<QColor>();
+            if (expected.alpha() == 0)
+                expected = sentinel;
+            QCOMPARE(image.pixelColor(10, 10), expected);
+            if (column == 3)
+            {
+                QCOMPARE(image.pixelColor(120, 60), sentinel);
+                QVERIFY(item->data(Qt::AccessibleTextRole).toString().isEmpty());
+            }
+            else
+            {
+                QVERIFY(!item->data(Qt::AccessibleTextRole).toString().isEmpty());
+                int textPixels = 0;
+                for (int y = 25; y < 95; ++y)
+                for (int x = 20; x < 220; ++x)
+                    if (image.pixelColor(x, y) != expected)
+                        ++textPixels;
+                QVERIFY2(textPixels > 20, qPrintable(QStringLiteral("No text painted in column %1").arg(column)));
+            }
+            if (column >= 6)
+                QCOMPARE(image.pixelColor(237, 2), item->data(MarkerColorRole).value<QColor>());
+        }
+        const QString classText = table.item(0, 1)->data(Qt::AccessibleTextRole).toString();
+        QVERIFY(classText.contains(english ? QStringLiteral("Teacher Preferred") : QStringLiteral("Teacher KR")));
+        QVERIFY(classText.contains(QStringLiteral("414")));
+        QVERIFY(classText.contains(QStringLiteral("E4 - Hercules")));
+        const QString multi = table.item(0, 2)->data(Qt::AccessibleTextRole).toString();
+        QCOMPARE(multi.count(QStringLiteral("Hercules")), 2);
+        QCOMPARE(table.item(0, 4)->text(), QStringLiteral("Essay"));
+        QCOMPARE(table.item(0, 5)->text(), QStringLiteral("Lunch"));
+        QVERIFY(table.item(0, 6)->text().contains(QStringLiteral("Rm: Library")));
+        QCOMPARE(table.item(0, 6)->data(Qt::AccessibleTextRole).toString(), QStringLiteral("Oral Testing, room Library"));
+        QVERIFY(table.item(0, 7)->data(Qt::AccessibleTextRole).toString().contains(QStringLiteral("Writing Lab")));
+        QCOMPARE(table.item(0, 6)->data(BackgroundRole).value<QColor>(), QColor(dark ? "#4B3D20" : "#FFF0B8"));
+    }
+    auto* accessible = QAccessible::queryAccessibleInterface(&table);
+    QVERIFY(accessible);
+    auto* accessibleTable = accessible->tableInterface();
+    QVERIFY(accessibleTable);
+    auto* testingAccessible = accessibleTable->cellAt(0, 6);
+    QVERIFY(testingAccessible);
+    QCOMPARE(testingAccessible->text(QAccessible::Name), QStringLiteral("Oral Testing, room Library"));
+    auto* assignedAccessible = accessibleTable->cellAt(0, 7);
+    QVERIFY(assignedAccessible);
+    QVERIFY(assignedAccessible->text(QAccessible::Name).contains(QStringLiteral("Writing Lab")));
+
+    // Global font/theme changes repaint existing items without source reads or item replacement.
+    const auto paintCell = [&table](int column)
+    {
+        QImage image(240, 120, QImage::Format_ARGB32_Premultiplied);
+        image.fill(QColor("#010203"));
+        QPainter painter(&image);
+        QStyleOptionViewItem option;
+        option.rect = image.rect();
+        option.palette = table.palette();
+        const auto index = table.model()->index(0, column);
+        table.itemDelegateForIndex(index)->paint(&painter, option, index);
+        painter.end();
+        return image;
+    };
+    auto* originalItem = table.item(0, 1);
+    const QImage beforeFontChange = paintCell(1);
+    FontManager::setSizeOffset(4);
+    QVERIFY(beforeFontChange != paintCell(1));
+    QCOMPARE(table.item(0, 1), originalItem);
+    QPalette light = table.palette();
+    light.setColor(QPalette::Window, Qt::white);
+    table.setPalette(light);
+    QCOMPARE(paintCell(6).pixelColor(10, 10), QColor("#FFF0B8"));
+    QCOMPARE(table.item(0, 6)->data(BackgroundRole).value<QColor>(), QColor("#4B3D20"));
+}
+
+void ScheduleWidgetTests::projectionHitTestingPreservesCommands()
+{
+    QCOMPARE(ScheduleCellHitTest::hit(nullptr).command, ScheduleCellCommand::None);
+    ScheduleCellView cell{.day = QStringLiteral("Monday"), .timeLabel = QStringLiteral("16:00"),
+        .defaultSlotState = scheduleEmptySlotState(), .slotState = scheduleEmptySlotState()};
+    QCOMPARE(ScheduleCellHitTest::hit(&cell).command, ScheduleCellCommand::None);
+    cell.slotTogglingEnabled = true;
+    auto hit = ScheduleCellHitTest::hit(&cell);
+    QCOMPARE(hit.command, ScheduleCellCommand::ToggleSlot);
+    QCOMPARE(hit.day, cell.day);
+    QCOMPARE(hit.timeLabel, cell.timeLabel);
+    QCOMPARE(hit.defaultState, cell.defaultSlotState);
+    QCOMPARE(hit.nextState, scheduleEssaySlotState());
+    cell.testingBlockCreationEnabled = true;
+    QCOMPARE(ScheduleCellHitTest::hit(&cell).command, ScheduleCellCommand::EditTestingAssignment);
+    cell.testingBlockCreationEnabled = false;
+    cell.slotState = scheduleTestingSlotState();
+    QCOMPARE(ScheduleCellHitTest::hit(&cell).command, ScheduleCellCommand::EditTestingAssignment);
+    cell.entries = {{.classId = 42}};
+    QCOMPARE(ScheduleCellHitTest::hit(&cell).command, ScheduleCellCommand::EditClass);
+    QCOMPARE(ScheduleCellHitTest::hit(&cell).classId, 42);
+    cell.entries[0].kind = ScheduleEntryKind::TestingClass;
+    QCOMPARE(ScheduleCellHitTest::hit(&cell).command, ScheduleCellCommand::EditTestingAssignment);
+    cell.entries.append({.classId = 99});
+    QCOMPARE(ScheduleCellHitTest::hit(&cell).command, ScheduleCellCommand::EditClass);
+    QCOMPARE(ScheduleCellHitTest::hit(&cell).classId, 42);
+    cell.entries[0].classId = -1;
+    QCOMPARE(ScheduleCellHitTest::hit(&cell).command, ScheduleCellCommand::None);
+}
+
+void ScheduleWidgetTests::readOnlyViewportClicksHaveNoSideEffects()
+{
+    ApplicationServices services;
+    saveSettingOrFail(services.dataService(), QStringLiteral("read_only_sentinel"), QStringLiteral("preserved"));
+    ScheduleWidget widget(&services, nullptr, ScheduleMode::ReadOnly);
+    ScheduleViewModel model;
+    model.days = {QStringLiteral("Monday"), QStringLiteral("Tuesday"), QStringLiteral("Wednesday")};
+    ScheduleRowView row;
+    row.timeLabel = QStringLiteral("16:00");
+    row.timeRangeLabel = QStringLiteral("4:00 -\n4:55 PM");
+    row.cells = {
+        {.day = model.days[0], .timeLabel = row.timeLabel,
+         .entries = {{.classId = 42, .teacherEn = QStringLiteral("Teacher"),
+                      .classGrade = QStringLiteral("E4"), .classLevel = QStringLiteral("Hercules")}}},
+        {.day = model.days[1], .timeLabel = row.timeLabel,
+         .defaultSlotState = scheduleEssaySlotState(), .slotState = scheduleEssaySlotState(),
+         .slotTogglingEnabled = true},
+        {.day = model.days[2], .timeLabel = row.timeLabel,
+         .defaultSlotState = scheduleEmptySlotState(), .slotState = scheduleTestingSlotState(),
+         .testingRoom = QStringLiteral("Library"), .testingBlockCreationEnabled = true}
+    };
+    model.rows = {row};
+    widget.setPreviewModel(model);
+    auto* table = widget.findChild<QTableWidget*>(QStringLiteral("scheduleTable"));
+    QVERIFY(table);
+    QCOMPARE(widget.runtimeMetrics().tableCellWidgetCount, 0);
+    QCOMPARE(ScheduleCellHitTest::hit(&row.cells[0]).command, ScheduleCellCommand::EditClass);
+    QCOMPARE(ScheduleCellHitTest::hit(&row.cells[1]).command, ScheduleCellCommand::ToggleSlot);
+    QCOMPARE(ScheduleCellHitTest::hit(&row.cells[2]).command, ScheduleCellCommand::EditTestingAssignment);
+
+    FakeUserPromptService prompts;
+    DialogServices::setUserPromptServiceForTesting(&prompts);
+    QSignalSpy clicked(table, &QTableWidget::cellClicked);
+    QSignalSpy classSaved(&widget, &ScheduleWidget::classInfoSaved);
+    QSignalSpy testingRequested(&widget, &ScheduleWidget::testingClassesRequested);
+    QSignalSpy importRequested(&widget, &ScheduleWidget::scheduleImportRequested);
+    QSignalSpy modeChanged(&widget, &ScheduleWidget::displayModeChanged);
+    QVERIFY(clicked.isValid());
+    QVERIFY(classSaved.isValid());
+    QVERIFY(testingRequested.isValid());
+    QVERIFY(importRequested.isValid());
+    QVERIFY(modeChanged.isValid());
+    const auto settingsBefore = ScheduleWidgetTestStubs::settings;
+    const int slotWrites = ScheduleWidgetTestStubs::savedSlotStates;
+    const int blockWrites = ScheduleWidgetTestStubs::savedTestingBlocks;
+    const int assignmentWrites = ScheduleWidgetTestStubs::testingAssignmentWriteCount;
+    const int sourceReads = ScheduleWidgetTestStubs::scheduleClassInfoReadCount;
+    const int slotReads = ScheduleWidgetTestStubs::slotStateReadCount;
+    const int assignmentReads = ScheduleWidgetTestStubs::testingAssignmentsReadCount;
+    const auto* projectionBefore = &widget.scheduleModel();
+    QSet<QDialog*> observedDialogs;
+    QTimer dismissUnexpectedDialogs;
+    connect(&dismissUnexpectedDialogs, &QTimer::timeout, &widget, [&]
+    {
+        for (QWidget* topLevel : QApplication::topLevelWidgets())
+        {
+            auto* dialog = qobject_cast<QDialog*>(topLevel);
+            if (dialog && dialog->isVisible())
+            {
+                observedDialogs.insert(dialog);
+                dialog->reject();
+            }
+        }
+    });
+    widget.resize(900, 240);
+    widget.show();
+    QApplication::processEvents();
+    dismissUnexpectedDialogs.start(0);
+    for (int column = 1; column <= 3; ++column)
+    {
+        const QModelIndex index = table->model()->index(0, column);
+        const QPoint point = table->visualRect(index).center();
+        QVERIFY(table->viewport()->rect().contains(point));
+        QCOMPARE(table->indexAt(point), index);
+        QTest::mouseClick(table->viewport(), Qt::LeftButton, Qt::NoModifier, point);
+        QApplication::processEvents();
+        QCOMPARE(clicked.size(), column);
+        QCOMPARE(clicked.last().at(0).toInt(), 0);
+        QCOMPARE(clicked.last().at(1).toInt(), column);
+    }
+    dismissUnexpectedDialogs.stop();
+    QVERIFY(observedDialogs.isEmpty());
+    QVERIFY(prompts.messages.isEmpty());
+    QVERIFY(prompts.asynchronousMessages.isEmpty());
+    QVERIFY(prompts.confirmations.isEmpty());
+    QVERIFY(prompts.unsavedChangesConfirmations.isEmpty());
+    QVERIFY(prompts.actionPrompts.isEmpty());
+    QCOMPARE(classSaved.size(), 0);
+    QCOMPARE(testingRequested.size(), 0);
+    QCOMPARE(importRequested.size(), 0);
+    QCOMPARE(modeChanged.size(), 0);
+    QCOMPARE(ScheduleWidgetTestStubs::savedSlotStates, slotWrites);
+    QCOMPARE(ScheduleWidgetTestStubs::savedTestingBlocks, blockWrites);
+    QCOMPARE(ScheduleWidgetTestStubs::testingAssignmentWriteCount, assignmentWrites);
+    QCOMPARE(ScheduleWidgetTestStubs::scheduleClassInfoReadCount, sourceReads);
+    QCOMPARE(ScheduleWidgetTestStubs::slotStateReadCount, slotReads);
+    QCOMPARE(ScheduleWidgetTestStubs::testingAssignmentsReadCount, assignmentReads);
+    QCOMPARE(ScheduleWidgetTestStubs::settings, settingsBefore);
+    QCOMPARE(&widget.scheduleModel(), projectionBefore);
+    QCOMPARE(widget.runtimeMetrics().tableCellWidgetCount, 0);
+    QVERIFY(table->selectedItems().isEmpty());
+    QCOMPARE(table->editTriggers(), QAbstractItemView::NoEditTriggers);
 }
 
 QTEST_MAIN(ScheduleWidgetTests)

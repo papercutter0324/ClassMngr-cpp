@@ -1,6 +1,5 @@
 #pragma once
 
-#include <QLabel>
 #include <QStyledItemDelegate>
 
 namespace ScheduleWidgetDelegates
@@ -20,12 +19,24 @@ public:
         ) const override;
 };
 
-class CornerMarkerLabel final : public QLabel
+enum DayCellRole
+{
+    HtmlRole = Qt::UserRole + 2,
+    BackgroundRole,
+    ForegroundRole,
+    BorderRole,
+    MarkerRole,
+    MarkerColorRole,
+    CompactRole,
+    HtmlFontOffsetRole,
+    TestingSlotRole
+};
+
+class DayCellDelegate final : public QStyledItemDelegate
 {
 public:
-    using QLabel::QLabel;
-
-protected:
-    void paintEvent(QPaintEvent* event) override;
+    using QStyledItemDelegate::QStyledItemDelegate;
+    void paint(QPainter* painter, const QStyleOptionViewItem& option,
+        const QModelIndex& index) const override;
 };
 }

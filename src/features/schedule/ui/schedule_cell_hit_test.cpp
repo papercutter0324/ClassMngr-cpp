@@ -2,31 +2,29 @@
 
 #include "features/schedule/ui/schedule_view_model.h"
 
-#include <QWidget>
-
-ScheduleCellHit ScheduleCellHitTest::hit(const QWidget* widget)
+ScheduleCellHit ScheduleCellHitTest::hit(const ScheduleCellView* cell)
 {
     ScheduleCellHit result;
-    if (!widget)
+    if (!cell)
     {
         return result;
     }
 
-    result.day = widget->property("day").toString();
-    result.timeLabel = widget->property("time_label").toString();
-    if (widget->property("is_slot_cell").toBool())
+    result.day = cell->day;
+    result.timeLabel = cell->timeLabel;
+    if (cell->entries.isEmpty())
     {
-        result.currentState = widget->property("slot_state").toString();
+        result.currentState = cell->slotState;
         result.defaultState =
-            widget->property("default_slot_state").toString();
+            cell->defaultSlotState;
         if (
             result.currentState == scheduleTestingSlotState()
-            || widget->property("testing_block_creation_enabled").toBool()
+            || cell->testingBlockCreationEnabled
             )
         {
             result.command = ScheduleCellCommand::EditTestingAssignment;
         }
-        else if (widget->property("slot_toggling_enabled").toBool())
+        else if (cell->slotTogglingEnabled)
         {
             result.command = ScheduleCellCommand::ToggleSlot;
             result.nextState = nextScheduleSlotState(result.currentState);
@@ -34,12 +32,12 @@ ScheduleCellHit ScheduleCellHitTest::hit(const QWidget* widget)
         return result;
     }
 
-    result.classId = widget->property("class_id").toInt();
+    result.classId = cell->entries.first().classId;
     if (result.classId <= 0)
     {
         return result;
     }
-    result.command = widget->property("testing_class_assignment").toBool()
+    result.command = (cell->entries.size() == 1 && cell->entries.first().kind == ScheduleEntryKind::TestingClass)
         ? ScheduleCellCommand::EditTestingAssignment
         : ScheduleCellCommand::EditClass;
     return result;

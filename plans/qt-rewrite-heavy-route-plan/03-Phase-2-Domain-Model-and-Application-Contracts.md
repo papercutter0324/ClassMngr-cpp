@@ -42,7 +42,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-11
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F603 releases generated resources for the hidden Workspace Schedule child and restores them on re-entry. The 13 failures in the full ScheduleWidget target reproduce at F602 baseline (28 passed / 13 failed); F603 adds a passing lifecycle case (29 / 13). F604 will remove per-cell ScheduleWidget child widgets; F598 awaits an elevated WPR token, F579 remains deferred, and the memory/output-parity/Phase 0 gates remain open.
+- Current note: F604 replaces persistent per-cell ScheduleWidget widgets with delegate rendering backed by a shared immutable view model; its 84-checkpoint dry run reports zero cell widgets for all three owners, and F605 will defer hidden Personal Details construction next. F598 still awaits an actually elevated WPR process, F579 symbol work remains deferred at the user's direction, and the memory/output-parity/Phase 0 gates remain open.
 
 ### Slice discovery batches
 
@@ -74,7 +74,7 @@ Treat this plan as an operational summary, not a history:
 
 #### Active batch: Batch 115
 
-- F604 - Remove per-cell ScheduleWidget child widgets while preserving displayed facts, visuals, and interactions.
+- F605 - Defer hidden Personal Details construction while preserving one-time creation and state on return.
 
 No other slices are currently active.
 

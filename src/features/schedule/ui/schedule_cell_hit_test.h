@@ -2,7 +2,7 @@
 
 #include <QString>
 
-class QWidget;
+struct ScheduleCellView;
 
 enum class ScheduleCellCommand
 {
@@ -26,5 +26,5 @@ struct ScheduleCellHit
 class ScheduleCellHitTest final
 {
 public:
-    [[nodiscard]] static ScheduleCellHit hit(const QWidget* widget);
+    [[nodiscard]] static ScheduleCellHit hit(const ScheduleCellView* cell);
 };

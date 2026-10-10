@@ -217,7 +217,7 @@ void ScheduleWidget::refreshSchedule()
 void ScheduleWidget::releaseGeneratedResources()
 {
     m_interactionState.clear();
-    m_scheduleModel = {};
+    m_scheduleModel = std::make_shared<const ScheduleViewModel>();
     m_previewModel = {};
     m_hasPreviewModel = false;
     ScheduleTableRenderer::clear(m_table);
@@ -234,7 +234,7 @@ void ScheduleWidget::clearDatabaseState()
         ScheduleDisplayMode::Regular;
     m_regularWeekdaySlotTogglingEnabled = false;
     m_interactionState.clear();
-    m_scheduleModel = {};
+    m_scheduleModel = std::make_shared<const ScheduleViewModel>();
 
     updateButtons();
 }
@@ -263,10 +263,10 @@ ScheduleDisplayState ScheduleWidget::displayState() const
 ScheduleWidgetRuntimeMetrics ScheduleWidget::runtimeMetrics() const
 {
     ScheduleWidgetRuntimeMetrics metrics;
-    metrics.modelRowCount = m_scheduleModel.rows.size();
+    metrics.modelRowCount = m_scheduleModel->rows.size();
     metrics.visibleClassCount = visibleClassIds().size();
 
-    for (const ScheduleRowView& row : m_scheduleModel.rows)
+    for (const ScheduleRowView& row : m_scheduleModel->rows)
     {
         metrics.modelCellCount += row.cells.size();
         for (const ScheduleCellView& cell : row.cells)
@@ -302,16 +302,16 @@ ScheduleWidgetRuntimeMetrics ScheduleWidget::runtimeMetrics() const
     return metrics;
 }
 
-ScheduleViewModel ScheduleWidget::scheduleModel() const
+const ScheduleViewModel& ScheduleWidget::scheduleModel() const
 {
-    return m_scheduleModel;
+    return *m_scheduleModel;
 }
 
 QSet<int> ScheduleWidget::visibleClassIds() const
 {
     QSet<int> classIds;
 
-    for (const ScheduleRowView& row : m_scheduleModel.rows)
+    for (const ScheduleRowView& row : m_scheduleModel->rows)
     {
         for (const ScheduleCellView& cell : row.cells)
         {
@@ -361,7 +361,7 @@ void ScheduleWidget::setPreviewModel(
     const ScheduleViewModel& model
     )
 {
-    m_previewModel = model;
+    m_previewModel = std::make_shared<const ScheduleViewModel>(model);
     m_hasPreviewModel = true;
     loadSchedule();
 }
@@ -435,13 +435,14 @@ void ScheduleWidget::onCellClicked(
         return;
     }
 
-    if (column == 0)
+    if (column <= 0 || row < 0 || row >= m_scheduleModel->rows.size()
+        || column > m_scheduleModel->rows.at(row).cells.size())
     {
         return;
     }
 
     const ScheduleCellHit hit =
-        ScheduleCellHitTest::hit(m_table->cellWidget(row, column));
+        ScheduleCellHitTest::hit(&m_scheduleModel->rows.at(row).cells.at(column - 1));
     if (hit.command == ScheduleCellCommand::None)
     {
         return;
@@ -901,7 +902,9 @@ void ScheduleWidget::loadSchedule()
         StartupProfiler::recordScheduleRenderStarted(profilingOwner);
     }
 
-    m_scheduleModel = buildScheduleModel();
+    m_scheduleModel = m_hasPreviewModel
+        ? m_previewModel
+        : std::make_shared<const ScheduleViewModel>(buildScheduleModel());
 
     const ScheduleTableRenderMetrics metrics =
         ScheduleTableRenderer::render(
@@ -1213,11 +1216,6 @@ ScheduleViewRequest ScheduleWidget::buildScheduleViewRequest() const
 
 ScheduleViewModel ScheduleWidget::buildScheduleModel()
 {
-    if (m_hasPreviewModel)
-    {
-        return m_previewModel;
-    }
-
     reloadSlotStates();
     reloadTestingBlocks();
 

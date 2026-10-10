@@ -8,6 +8,7 @@
 #include "features/schedule/ui/schedule_import_dialog.h"
 #include "features/schedule/ui/schedule_import_review_dialog.h"
 #include "features/schedule/ui/schedule_widget.h"
+#include "features/schedule/ui/schedule_widget_delegates.h"
 #include "features/schedule/services/schedule_import_plan_validator.h"
 #include "features/schedule/services/schedule_import_review_model.h"
 #include "features/schedule/import/schedule_workbook_parser.h"
@@ -1946,9 +1947,7 @@ void ScheduleImportDialogTests::regularPreviewShowsFullEssayGrid()
         for (int column = 1; column < table->columnCount(); ++column)
         {
             auto* cell =
-                qobject_cast<QLabel*>(
-                    table->cellWidget(row, column)
-                    );
+                table->item(row, column);
             QVERIFY(cell);
             if (row == 0 && column == 1)
             {
@@ -3419,28 +3418,24 @@ void ScheduleImportDialogTests
     QCOMPARE(table->rowHeight(0), 51);
 
     auto* scheduledClass =
-        qobject_cast<QLabel*>(
-            table->cellWidget(0, 6)
-            );
+        table->item(0, 6);
     QVERIFY(scheduledClass);
     QVERIFY(
-        scheduledClass->text().contains(
+        scheduledClass->data(ScheduleWidgetDelegates::HtmlRole).toString().contains(
             QStringLiteral("font-size:%1pt").arg(
                 FontManager::adjustedPointSize(11)
                 )
             )
         );
     QVERIFY(
-        scheduledClass->text().contains(
+        scheduledClass->data(ScheduleWidgetDelegates::HtmlRole).toString().contains(
             QStringLiteral("font-size:%1pt").arg(
                 FontManager::adjustedPointSize(10)
                 )
             )
         );
     QVERIFY(
-        scheduledClass->styleSheet().contains(
-            QStringLiteral("padding:2.4px 3px")
-            )
+        scheduledClass->data(ScheduleWidgetDelegates::CompactRole).toBool()
         );
 }
 

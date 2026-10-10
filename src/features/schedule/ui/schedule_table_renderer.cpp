@@ -1,6 +1,6 @@
 #include "schedule_table_renderer.h"
 
-#include "schedule_cell_widget_factory.h"
+#include "schedule_cell_presentation.h"
 #include "schedule_widget_delegates.h"
 #include "schedule_widget_geometry.h"
 
@@ -49,7 +49,9 @@ public:
     }
 
     bool hasRendered = false;
-    ScheduleViewModel model;
+    bool dark = false;
+    int fontSizeOffset = 0;
+    std::shared_ptr<const ScheduleViewModel> model;
     int maximumVisibleRows = 0;
     bool compactPreview = false;
     bool showKoreanTeacherEnglishNames = false;
@@ -230,8 +232,8 @@ bool canUpdateIncrementally(
         || state->compactPreview != options.compactPreview
         || state->showKoreanTeacherEnglishNames
             != options.showKoreanTeacherEnglishNames
-        || state->model.rows.size() != model.rows.size()
-        || state->model.rows.isEmpty() != model.rows.isEmpty()
+        || state->model->rows.size() != model.rows.size()
+        || state->model->rows.isEmpty() != model.rows.isEmpty()
         || table->columnCount() != model.days.size() + 1
         )
     {
@@ -250,7 +252,7 @@ bool canUpdateIncrementally(
     for (int index = 0; index < model.rows.size(); ++index)
     {
         if (
-            state->model.rows.at(index).cells.size()
+            state->model->rows.at(index).cells.size()
             != model.rows.at(index).cells.size()
             )
         {
@@ -367,6 +369,7 @@ void ScheduleTableRenderer::initialize(
     table->setSelectionMode(QAbstractItemView::NoSelection);
     table->setWordWrap(true);
     table->setAlternatingRowColors(false);
+    table->setItemDelegate(new ScheduleWidgetDelegates::DayCellDelegate(table));
     table->setItemDelegateForColumn(
         0,
         new TimeColumnDelegate(table)
@@ -419,21 +422,25 @@ void ScheduleTableRenderer::clear(
 
 ScheduleTableRenderMetrics ScheduleTableRenderer::render(
     QTableWidget* table,
-    const ScheduleViewModel& model,
+    std::shared_ptr<const ScheduleViewModel> projection,
     const ScheduleTableRenderOptions& options
     )
 {
-    if (!table)
+    if (!table || !projection)
     {
         return {};
     }
 
+    const ScheduleViewModel& model = *projection;
     ScheduleTableRenderState* state = renderState(table);
     const bool sameModel =
         state->hasRendered
-        && equivalent(state->model, model);
+        && equivalent(*state->model, model);
+    const bool dark = (options.cellParent ? options.cellParent->palette() : table->palette()).color(QPalette::Window).lightness() < 128;
     const bool sameCellAppearance =
         state->hasRendered
+        && state->dark == dark
+        && state->fontSizeOffset == FontManager::sizeOffset()
         && state->compactPreview == options.compactPreview
         && state->showKoreanTeacherEnglishNames
             == options.showKoreanTeacherEnglishNames;
@@ -446,12 +453,13 @@ ScheduleTableRenderMetrics ScheduleTableRenderer::render(
         }
 
         state->maximumVisibleRows = options.maximumVisibleRows;
+        state->model = std::move(projection);
         return {};
     }
 
     ScheduleTableRenderMetrics metrics;
     const bool incremental =
-        canUpdateIncrementally(
+        sameCellAppearance && canUpdateIncrementally(
             table,
             state,
             model,
@@ -474,7 +482,7 @@ ScheduleTableRenderMetrics ScheduleTableRenderer::render(
 
     if (incremental)
     {
-        if (state->model.days != model.days)
+        if (state->model->days != model.days)
         {
             configureColumns(
                 table,
@@ -506,10 +514,10 @@ ScheduleTableRenderMetrics ScheduleTableRenderer::render(
         table->setRowCount(model.rows.size());
     }
 
-    const ScheduleCellWidgetOptions cellWidgetOptions{
-        options.cellParent,
+    const ScheduleCellPresentationOptions presentationOptions{
         options.compactPreview,
-        options.showKoreanTeacherEnglishNames
+        options.showKoreanTeacherEnglishNames,
+        (options.cellParent ? options.cellParent->palette() : table->palette()).color(QPalette::Window).lightness() < 128
     };
 
     for (int rowIndex = 0; rowIndex < model.rows.size(); ++rowIndex)
@@ -541,7 +549,7 @@ ScheduleTableRenderMetrics ScheduleTableRenderer::render(
 
         const ScheduleRowView* previousRow =
             incremental
-                ? &state->model.rows.at(rowIndex)
+                ? &state->model->rows.at(rowIndex)
                 : nullptr;
 
         int maxEntryCount = 1;
@@ -565,25 +573,30 @@ ScheduleTableRenderMetrics ScheduleTableRenderer::render(
                     );
             if (cellChanged)
             {
-                QWidget* oldWidget =
-                    table->cellWidget(rowIndex, dayIndex + 1);
-                if (oldWidget)
+                using namespace ScheduleWidgetDelegates;
+                QTableWidgetItem* item = table->item(rowIndex, dayIndex + 1);
+                if (!item)
                 {
-                    table->removeCellWidget(rowIndex, dayIndex + 1);
-                    oldWidget->deleteLater();
-                    ++metrics.cellWidgetsRemoved;
-                    ++metrics.cellWidgetsQueuedForDeletion;
+                    item = new QTableWidgetItem;
+                    item->setFlags(Qt::ItemIsEnabled);
+                    table->setItem(rowIndex, dayIndex + 1, item);
+                    ++metrics.tableItemsCreated;
                 }
-
-                table->setCellWidget(
-                    rowIndex,
-                    dayIndex + 1,
-                    ScheduleCellWidgetFactory::create(
-                        cell,
-                        cellWidgetOptions
-                        )
-                    );
-                ++metrics.cellWidgetsCreated;
+                const auto presentation = ScheduleCellPresentation::fromCell(cell, presentationOptions);
+                item->setText(presentation.text);
+                item->setData(Qt::AccessibleTextRole, presentation.accessibleText);
+                item->setData(Qt::AccessibleDescriptionRole, presentation.accessibleText);
+                item->setData(HtmlRole, presentation.html);
+                item->setData(BackgroundRole, presentation.background);
+                item->setData(ForegroundRole, presentation.foreground);
+                item->setData(BorderRole, presentation.border);
+                item->setData(MarkerRole, presentation.marker);
+                item->setData(MarkerColorRole, presentation.markerColor);
+                item->setData(CompactRole, options.compactPreview);
+                item->setData(HtmlFontOffsetRole, FontManager::sizeOffset());
+                item->setData(TestingSlotRole, cell.entries.isEmpty() && cell.slotState == scheduleTestingSlotState());
+                item->setFont(presentation.font);
+                ++metrics.cellsUpdated;
             }
         }
 
@@ -619,7 +632,9 @@ ScheduleTableRenderMetrics ScheduleTableRenderer::render(
 
     updateTableHeight(table, options);
     state->hasRendered = true;
-    state->model = model;
+    state->dark = dark;
+    state->fontSizeOffset = FontManager::sizeOffset();
+    state->model = std::move(projection);
     state->maximumVisibleRows = options.maximumVisibleRows;
     state->compactPreview = options.compactPreview;
     state->showKoreanTeacherEnglishNames =

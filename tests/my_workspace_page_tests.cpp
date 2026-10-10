@@ -430,12 +430,12 @@ void MyWorkspacePageTests
     QVERIFY(populatedMetrics.modelEntryCount > 0);
     QVERIFY(populatedMetrics.tableRowCount > 0);
     QVERIFY(populatedMetrics.tableItemCount > 0);
-    QVERIFY(populatedMetrics.tableCellWidgetCount > 0);
+    QCOMPARE(populatedMetrics.tableCellWidgetCount, 0);
     QCOMPARE(populatedMetrics.visibleClassCount, 1);
     const int persistentColumnCount = table->columnCount();
     const QList<QPointer<QWidget>> renderedCellWidgets =
         workspaceScheduleCellWidgets(table);
-    QVERIFY(!renderedCellWidgets.isEmpty());
+    QVERIFY(renderedCellWidgets.isEmpty());
 
     const auto loadedPreferences = preferencesPort.load();
     QVERIFY(loadedPreferences.hasValue());
@@ -459,10 +459,7 @@ void MyWorkspacePageTests
     QCOMPARE(releasedMetrics.tableCellWidgetCount, 0);
     QCOMPARE(releasedMetrics.visibleClassCount, 0);
     QCOMPARE(table->columnCount(), persistentColumnCount);
-    for (const QPointer<QWidget>& widget : renderedCellWidgets)
-    {
-        QVERIFY(widget.isNull());
-    }
+    QVERIFY(workspaceScheduleCellWidgets(table).isEmpty());
     QCOMPARE(page.schedulePage(), schedulePage);
     QCOMPARE(&page, workspacePageIdentity);
     QCOMPARE(
@@ -519,7 +516,7 @@ void MyWorkspacePageTests
 
     const QList<QPointer<QWidget>> renderedCellWidgetsBeforeDeactivate =
         workspaceScheduleCellWidgets(table);
-    QVERIFY(!renderedCellWidgetsBeforeDeactivate.isEmpty());
+    QVERIFY(renderedCellWidgetsBeforeDeactivate.isEmpty());
     page.deactivate();
     processDeferredWidgetDeletes();
     const ScheduleWidgetRuntimeMetrics deactivatedMetrics =
@@ -532,11 +529,7 @@ void MyWorkspacePageTests
     QCOMPARE(deactivatedMetrics.tableCellWidgetCount, 0);
     QCOMPARE(deactivatedMetrics.visibleClassCount, 0);
     QCOMPARE(table->columnCount(), persistentColumnCount);
-    for (const QPointer<QWidget>& widget :
-         renderedCellWidgetsBeforeDeactivate)
-    {
-        QVERIFY(widget.isNull());
-    }
+    QVERIFY(workspaceScheduleCellWidgets(table).isEmpty());
     QCOMPARE(workspaceScheduleModeWriteCount(services), 0);
     page.activate();
     QApplication::processEvents();

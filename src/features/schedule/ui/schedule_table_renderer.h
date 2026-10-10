@@ -1,6 +1,7 @@
 #pragma once
 
 #include "features/schedule/ui/schedule_view_model.h"
+#include <memory>
 
 class QTableWidget;
 class QWidget;
@@ -17,6 +18,7 @@ struct ScheduleTableRenderMetrics
 {
     bool fullRender = false;
     int tableItemsCreated = 0;
+    int cellsUpdated = 0;
     int cellWidgetsCreated = 0;
     int cellWidgetsRemoved = 0;
     int cellWidgetsQueuedForDeletion = 0;
@@ -39,7 +41,7 @@ public:
 
     [[nodiscard]] static ScheduleTableRenderMetrics render(
         QTableWidget* table,
-        const ScheduleViewModel& model,
+        std::shared_ptr<const ScheduleViewModel> model,
         const ScheduleTableRenderOptions& options
         );
 };

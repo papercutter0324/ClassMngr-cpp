@@ -3,6 +3,7 @@
 #include "features/schedule/ui/schedule_view_model.h"
 #include "features/schedule/ui/schedule_interaction_state.h"
 
+#include <memory>
 #include <QSet>
 #include <QWidget>
 
@@ -59,7 +60,7 @@ public:
     void retranslateUi();
     [[nodiscard]] ScheduleDisplayState displayState() const;
     [[nodiscard]] ScheduleWidgetRuntimeMetrics runtimeMetrics() const;
-    [[nodiscard]] ScheduleViewModel scheduleModel() const;
+    [[nodiscard]] const ScheduleViewModel& scheduleModel() const;
     [[nodiscard]] QSet<int> visibleClassIds() const;
     void setMaximumVisibleRows(
         int maximumVisibleRows
@@ -127,8 +128,8 @@ private:
     bool m_regularWeekdaySlotTogglingEnabled = false;
 
     ScheduleInteractionState m_interactionState;
-    ScheduleViewModel m_scheduleModel;
-    ScheduleViewModel m_previewModel;
+    std::shared_ptr<const ScheduleViewModel> m_scheduleModel = std::make_shared<const ScheduleViewModel>();
+    std::shared_ptr<const ScheduleViewModel> m_previewModel;
     bool m_hasPreviewModel = false;
     int m_maximumVisibleRows = 0;
     bool m_compactPreview = false;

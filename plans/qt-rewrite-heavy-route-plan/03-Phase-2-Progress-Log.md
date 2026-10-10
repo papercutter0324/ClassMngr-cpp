@@ -20082,6 +20082,127 @@ Batch114. Two independent Explorer angles found five ordered candidates:
    switching preserves its state. Entrypoints: `my_workspace_page.cpp`,
    `my_workspace_page_tests.cpp`, and NavigationController access.
 
+## Batch116 discovery - 2026-10-11
+
+Batch116 discovery started while F604 was the second-last candidate in
+Batch115. Two independent Explorer passes reviewed the retained memory evidence
+and current source routes. They propose the following ordered candidates after
+F605:
+
+1. **F606 - Remove the duplicate Calendar workbook cell vector.**
+   `CalendarImport::Workbook` keeps both per-worksheet cells and a flat
+   compatibility vector; `parseWorkbook()` copies the first worksheet into
+   that second vector, which event parsing consumes. Remove the duplicate and
+   update its consumers while preserving first-sheet ordering and import
+   results. Sources: `calendar_workbook_reader.h`,
+   `calendar_workbook_reader.cpp`, `academic_calendar_event_parser.cpp`,
+   Calendar import tests, and memory plan D5. Risk: other consumers may depend
+   on first-sheet compatibility behavior.
+2. **F607 - Release hidden Calendar resources on workspace leave.** The
+   workspace creates Calendar lazily but retains its `CalendarPage`, event
+   cache, and QML widget after leaving the tab. Clear feature-owned render/cache
+   resources on deactivation and restore them on re-entry while preserving
+   month, filters, and selection. Sources: `my_workspace_page.cpp`,
+   `calendar_page.cpp`, `basepage.cpp`, and Calendar cache/page tests; memory
+   plan D5. Risk: async cache requests and QML teardown/recreation need
+   lifecycle coverage.
+3. **F608 - Replace Staff Directory per-cell table items.** Bound the
+   directory's cell-item construction while preserving native-English and
+   GS-team edits, selection, add/delete, autosave, and save/discard behavior.
+   Sources: `staff_directory_page.cpp`, `staff_directory_page.h`, Staff
+   Directory and read/save parity tests; memory plan D2. Risk: retain edit-role
+   behavior and identifier tracking.
+4. **F609 - Bound Speaking Evaluation class-page construction.** Replace the
+   per-class placeholder `QWidget` pages with bounded navigation over the
+   shared evaluation table while preserving class/grade order, filters,
+   selected evaluation, save behavior, and report selection. Sources:
+   `speaking_eval_page.cpp` and Speaking Evaluation save/parity tests; memory
+   plan D6. Risk: nested-tab synchronization and navigation autosave.
+5. **F610 - Bound Schedule Import review controls.** Avoid creating a full
+   teacher/class resolution control set for every preview entry while
+   preserving decisions, conflict handling, apply, and cancel. Sources:
+   `schedule_import_resolution_controls.cpp`,
+   `schedule_import_review_dialog.cpp`, and the large-workbook harness; memory
+   plan D4. Establish a reliable test baseline first because F604's
+   import-dialog suite still has preview stalls.
+6. **F611 - Reduce overlapping Schedule workbook parse representations.**
+   The dialog holds workbook bytes while parsing a Calendar workbook and then
+   constructing a separate Schedule workbook projection. Measure or stage
+   these representations so they do not coexist longer than needed, preserving
+   parse/review/apply/cancel results. Sources: `schedule_import_dialog.cpp`,
+   `schedule_workbook_parser.cpp`, and memory plan D4. Dependency: coordinate
+   with F606's shared Calendar workbook reader; risk is preserving malformed
+   input behavior.
+7. **F612 - Measure Sub Prep roster-source-to-renderer overlap.** The typed
+   roster source is converted into package/roster renderer values while both
+   representations are live. Add phase metrics before selecting a reduction,
+   preserving packaged SQL-route parity, ordering, and cancellation cleanup.
+   Sources: `sub_prep_package_service.cpp` and the Sub Prep class-information
+   memory plan. Risk: synthetic output references do not establish packaged
+   F526 parity.
+
+These are source-grounded candidates, not newly measured heap causes. The
+retained F597 profile is a dry run without ETL, and neither Explorer used WPR,
+symbols, or tests. F598 remains gated on an elevated WPR process; F579 remains
+deferred at the user's direction.
+
+## F604 ScheduleWidget delegate rendering - 2026-10-11
+
+F604 removes the persistent per-cell widget factory. `ScheduleWidget` and
+`ScheduleTableRenderer` share one immutable `ScheduleViewModel`, and a table
+delegate paints each cell from that projection. The `QTableWidget` shell and
+existing click-driven commands remain; model-backed hit testing preserves
+class assignment, slot toggles, and testing-slot actions without persistent
+cell widgets. The delegate preserves cell content, light/dark colors, corner
+markers, teacher-name preference, font changes, compact geometry, and
+accessibility. The read-only preview path accepts a projection directly and
+does not perform source or schedule reads.
+
+The independent Tester passed the focused delegate and preview-projection
+checks, the complete Workspace target (23/0), the F603 release/re-entry and
+standalone-retention checks, the full MainWindow schedule handoff target
+(12/0), and the editor save target (10/0). The full ScheduleWidget target is
+32 passed / 13 failed; its 13 failing names exactly match the F602 baseline
+list recorded under F603. A physical read-only test clicks populated class,
+toggle-slot, and testing-slot cells at their viewport positions, confirms the
+expected `cellClicked` events, and verifies no dialog, request, database read,
+write, settings change, or projection replacement (3/0).
+
+The MainWindow rename test now expects F603's intentional inactive Workspace
+cleanup and still checks the final renamed values and notification. A detached
+F603 build reproduced that same-named test failure before F604, where the old
+inactive model was expected to retain its original class name. F603's failed
+assertion differs from F604's new zero-row resource assertion; the detached
+comparison establishes the stale expectation, not the new metric assertion.
+
+The packaged Release executable hash is
+`7fc948688d63cb4fc2bbcb67c2b69e7852d878f41156ec6f92e3359b97b01f5e`. The
+fresh F563 checkpoint dry run has 84 checkpoints and 173 owner observations;
+every observation reports zero cell widgets, and each populated observation
+retains 7 rows, 49 cells, 768 entries, a 7-by-8 table, 56 table items, and 96
+visible classes. The profile-check SHA-256 is
+`45eed25bbc0231030764fec0b9ba891b0b503742719a5af00e95b904c6686012`; the
+capture-summary SHA-256 is
+`e2a6a7d402e40d8dbd22a89a8777a90f6b3b7e4d09c00bad68ba31b489df2c77`. This
+was a dry run: no WPR command or ETL was produced, so it does not close the
+heap-memory gate or establish byte ownership.
+
+Import-dialog integration remains bounded. F602 reproduces the two assertion
+failures `acceptedReviewCanTearDownSourceDialog` and
+`mismatchedProfileRequiresConfirmation`, as well as the
+`compactFlowAndReviewPresentation` timeout. The F602 preview-slot timeouts
+include `regularPreviewShowsFullEssayGrid` and
+`reviewPreviewUsesProjectedRowsInControlOrder`. Three additional isolated
+F604 preview-slot timeouts remain unclassified:
+`intensivePreviewKeepsProjectedPreservationOrder`,
+`reviewPreviewUsesSavedScheduleDisplaySettings`, and
+`intensivePreviewPreservesEssayAndLunchBlocks`. The direct ScheduleWidget
+preview-projection checks pass, but end-to-end rendering through those stalled
+dialog paths was not observed. The package and profile artifacts are retained
+under `dist/f604-current-source-windows-x64`,
+`build/f604-verification-20261011`, and
+`build/f604-checkpoint-dryrun-20261011`.
+
 ## F603 hidden Workspace Schedule rendered-resource release - 2026-10-11
 
 F603 clears the generated schedule model and interaction cache, table items,

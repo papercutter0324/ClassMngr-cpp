@@ -1768,8 +1768,8 @@ qt_add_executable(ClassMngrScheduleImportDialogTests
         src/features/schedule/ui/schedule_print_dialog.h
         src/features/schedule/ui/schedule_time_formatter.cpp
         src/features/schedule/ui/schedule_time_formatter.h
-        src/features/schedule/ui/schedule_cell_widget_factory.cpp
-        src/features/schedule/ui/schedule_cell_widget_factory.h
+        src/features/schedule/ui/schedule_cell_presentation.cpp
+        src/features/schedule/ui/schedule_cell_presentation.h
         src/features/schedule/ui/schedule_table_renderer.cpp
         src/features/schedule/ui/schedule_table_renderer.h
         src/features/schedule/ui/schedule_widget.cpp
@@ -1864,8 +1864,8 @@ qt_add_executable(ClassMngrSubPrepPageTests
         src/ui/shared/widgets/navigation_tab_widget.cpp
         src/ui/shared/widgets/navigation_tab_widget.h
         src/ui/shared/widgets/on_screen_keyboard.cpp
-        src/features/schedule/ui/schedule_cell_widget_factory.cpp
-        src/features/schedule/ui/schedule_cell_widget_factory.h
+        src/features/schedule/ui/schedule_cell_presentation.cpp
+        src/features/schedule/ui/schedule_cell_presentation.h
         src/features/schedule/ui/schedule_table_renderer.cpp
         src/features/schedule/ui/schedule_table_renderer.h
         src/features/schedule/ui/schedule_widget.cpp
