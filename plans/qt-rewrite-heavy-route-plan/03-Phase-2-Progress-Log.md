@@ -18959,7 +18959,62 @@ manifest SHA-256
 
 This is one process per arm and verifies the instrumented production
 navigation/lifecycle only; it establishes no repeated memory trend, cause, or
-fix. F546 is next: run three fresh Release processes per arm (six total) on
-the clean committed binary/source with the same fixture and asset identities.
-The 250 MiB lifecycle gate, F526 provenance, output parity, and full Phase 0
-remain open.
+fix. F546's six-process campaign is recorded below; F547's interpretation of
+the gap between this probe and the full Sub Prep route is pending. The 250 MiB
+lifecycle gate, F526 provenance, output parity, and full Phase 0 remain open.
+
+## F546 repeated PageManager lifecycle campaign - 2026-10-10
+
+A clean Windows x64 Release package was configured, built, and installed from
+commit `98a0d758d1c9ba5fbec26ef2b50265270197136c` (BuildInfo `98a0d758`) with
+Ninja, MSVC 19.51.36257, and Qt 6.12.0. The tracked tree was clean, source was
+unchanged, configure/build/install exited 0, and pre-existing unrelated
+untracked items were left untouched. Executable SHA-256 was
+`D9A6C486C3F1040C1085A8140CF68CBFC35FA460758AF83EA45725EE52079F34`; fixture,
+`documents.rcc`, and PDF hashes were
+`DADD8DCFB7ABBBB291E5975286413CF1C489C793C8E640D33C181112DF38835F`,
+`A3EB570294B55A616EA05797222FC1FEDD93620ABB25360B724ED6843BEE924F`, and
+`295ACCAB548B41F0B4F56E6AB89958AD5C3347646904C155B16A56EBE926CAEC`.
+
+Independent audit accepted all six fresh processes (three per arm), with
+unique PIDs, matching route labels/events, identity sidecars, controls,
+available four-field memory samples, Qt/display and BuildInfo; stdout/stderr
+were empty and no PNGs were written. Process-age pair differences were 31,
+62, and 123 ms (within the 1,500 ms control). All Ready states had 38 pages,
+visible MultiPage, and `documentsPackMounted=true`; closes were `Null`/0 and
+unmounted. Page/view/document identities remained stable through reopen. The
+cycle arm ran 10,498–10,505 ms. Close +1s/+5s samples landed at 1,037–1,038 /
+5,037–5,047 ms; first-close reopen samples at 1,039–1,052 / 5,046–5,055 ms;
+final-close samples at 1,038–1,062 / 5,037–5,054 ms.
+
+Across three processes per arm, each cell below is `min–max / median` in
+bytes; fields are summarized independently. Working set is the current sample.
+Peak working set is the process-lifetime high-water, not a paired value.
+
+| Arm / sample | Working set | Peak working set | Private usage | Private working set |
+| --- | ---: | ---: | ---: | ---: |
+| Cycle, first Ready | 739,696,640–739,799,040 / 739,782,656 | 741,515,264–741,605,376 / 741,580,800 | 682,074,112–682,229,760 / 682,201,088 | 637,399,040–637,480,960 / 637,431,808 |
+| Cycle, close through +5s | 731,160,576–731,267,072 / ~731,254,784 | same lifetime peak | 678,342,656–678,502,400 / 678,469,632 | 628,838,400–628,936,704 / 628,862,976 |
+| Reopen, first Ready | 739,565,568–739,749,888 / 739,635,200 | 741,376,000–741,572,608 / 741,449,728 | 681,955,328–682,180,608 / 681,984,000 | 637,259,776–637,448,192 / 637,337,600 |
+| Reopen, second Ready | 739,594,240–739,971,072 / 739,676,160 | 741,662,720–742,039,552 / 741,744,640 | 681,971,712–682,205,184 / 682,147,840 | 637,267,968–637,648,896 / 637,358,080 |
+| Reopen, final close through +5s | 731,058,176–731,410,432 / ~731,107,328 | same lifetime peak | 678,268,928–678,457,344 / 678,400,000 | 628,723,712–629,067,776 / 628,781,056 |
+
+The +1s/+5s working-set and private-usage medians remained close to immediate
+close. Resource unmount confirms no `documents` mapping remained after close;
+it does not identify the prior lease owner. The probe's working set is roughly
+731–742 MB, far above F536's approximately 264 MB full-route reading. This
+PageManager probe uses a different process/route setup and is not a comparable
+historical or acceptance result; no causal attribution or fix follows.
+
+Artifacts are under
+`%LOCALAPPDATA%\Temp\ClassMngr-F546-page-manager-reopen-3x`; manifest
+`results/probe-manifest.json` SHA-256
+`C9F0DBCF12FA1CAC83F05D0E880354A0E7D51A072EA196EAC462DAF4E5C1E41A`,
+independent audit SHA-256
+`E74381B5865307E1DEA8F12059D235281CA3EB07408E9C5D06BB06B9AD12F465`, and
+range/median CSV SHA-256
+`96130A96B1A8B8A61FB70E7C6751AD2FA87958D41B1154F84E1B4E6C71AEC918`. Exact
+commands, six sidecars, and traces are retained under the same root. F547's
+interpretation and decision about matched instrumentation of the complete
+F536 route are pending. Lifecycle memory acceptance, F526 provenance, output
+parity, and full Phase 0 remain open.

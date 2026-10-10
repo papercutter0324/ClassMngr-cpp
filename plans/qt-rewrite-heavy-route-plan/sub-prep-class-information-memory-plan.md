@@ -606,12 +606,12 @@ Ready/38 -> Null/0 -> Ready/38 -> Null/0 in the reopen arm, with mounted-resourc
 true at Ready and false after close. This confirms instrumentation, not a
 memory trend or cause.
 
-F546 is next: run three fresh Release processes per arm (six total) on the same
-committed binary/source, 96-class fixture, PDF/RCC hashes, Qt, and display.
-Record document status/pages/readiness, view/document identity, and mounted
-state at each transition; sample all four memory metrics at first-ready,
-immediately after close, +1s/+5s, second-ready, and final close. Match control
-duration, confirm Ready and Null/zero pages, and use normal teardown without
-`setDocument(nullptr)` or deleting the cached page. This comparison only
-narrows hypotheses; no cause or fix is established. The 250 MiB lifecycle
-gate, F526 provenance, output parity, and full Phase 0 remain open.
+F546 completed three fresh Release processes per arm (six total). All Ready
+states were 38 pages with the resource pack mounted; closes were Null/zero
+pages and unmounted, with stable page/view/document identity through reopen.
+The probe's working set was roughly 731–742 MB, far above F536's approximately
+264 MB full-route reading; this different process/route setup is not a
+historical or acceptance comparison. F547's interpretation and decision on
+matched instrumentation of the full F536 route are pending. Lifecycle memory
+acceptance, F526 provenance, output parity, and the full Phase 0 gate remain
+open.
