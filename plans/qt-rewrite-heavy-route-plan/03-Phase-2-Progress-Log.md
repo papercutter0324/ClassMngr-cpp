@@ -18480,4 +18480,41 @@ The Windows Release runner now records top-level source snapshots from `$Reposit
 
 Independent validation passed `python scripts/phase0/validate_phase0_evidence.py --self-test` (19 passed), and confirmed the historical no-source fixture still validates. The retained outside-repository-CWD `-SkipBuild -SkipRun` manifest at `C:\Users\wf\AppData\Local\Temp\f532-manifest-verifier-f92993f29b1242beb845105e176a156d\windows-skip-build-skip-run\run-manifest.json` recorded repository root `C:\Git\ClassMngr-cpp`, `buildMode=skip-build`, skipped run status, `artifactSource=external-unverified`, and `workingTreeChangedDuringRun=false`. Both snapshots recorded commit `336efb95f0178b1aeebf1664b7d3fd5e5804ff8d` and a dirty tree from F532 edits plus preserved unrelated untracked paths. Existing zero-byte executable placeholders were not launched. The validator exited 0 with no source identity errors. The separate Git-unavailable manifest under `C:\Users\wf\AppData\Local\Temp\f532-git-unavailable-c354ad4073d84d778ca0e0662acc8e1e\windows-git-unavailable` recorded unavailable status, null commit/status/clean fields, and a nonempty error; validation accepted it.
 
-This verifies manifest behavior only: no app/package build or route replay occurred. The full historical route directory cannot validate because route artifacts are absent. Changes are limited to `scripts/phase0/run_phase0_evidence.ps1` and `scripts/phase0/validate_phase0_evidence.py`; the current F532 changes are uncommitted. The unrelated `%SystemDrive%/` and `txt` workspace items were preserved. F533 PDF visual comparison is next; F534 output-dialog cancellation/cleanup follows. The 262,144,000-byte memory target and full Phase 0 gates remain open.
+This verifies manifest behavior only: no app/package build or route replay occurred. The full historical route directory cannot validate because route artifacts are absent. Changes are limited to `scripts/phase0/run_phase0_evidence.ps1` and `scripts/phase0/validate_phase0_evidence.py`; F532 was committed as `66cdee0658a44984bd11ae73b4b087d088ef1f33`. The unrelated `%SystemDrive%/` and `txt` workspace items were preserved. F533's PDF reference-provenance gap is recorded below; F534 output-dialog cancellation/cleanup is next. The 262,144,000-byte memory target and full Phase 0 gates remain open.
+
+## F533 Sub Prep PDF reference provenance - 2026-10-10
+
+F533 found no retained approved reference that matches the packaged F526 route, so it could
+not make a valid page-parity comparison. The approved references under
+`docs/qt-rewrite/visual-baseline/release/sub-prep-output/reference/` are described by the
+manifest as 96 classes / 24 teachers from the synthetic in-memory package-service fixture
+(`largePackageGeneratesOutputReferenceWhenConfigured`, `populateHeavyOutputData()`, and
+`heavyPackageRequest()`), selected date 2026-07-21, and Daily roster. They contain a 19-page
+`Sub Prep.pdf` (SHA-256
+`5162CE2996233709349B0B4EF3F68F5FB3190D8D718A62B94B08DC69E1F10465`) and a 16-page
+`Rosters - Daily.pdf` (SHA-256
+`8F18E89A0D199063C6B56ADA5B825E6588BDD6CEADBE4239A7A386894FC3CCAE`). The 2026-09-18
+umbrella visual-reference review says the references look correct, but leaves semantic
+generated-output content review open (`phase-0-baseline.md:957-961`); it is not per-PDF
+approval. Checked-in Sep 14-18 generated outputs are historical before-state evidence only.
+
+F526's bounded Release output is under
+`%LOCALAPPDATA%\Temp\ClassMngr-F526-Evidence\f526-paired-20261010-02`. It used the
+96-class SQL fixture (source SQL SHA-256
+`1B2F09BE03CCE809E239112B3F7B4F2AF405BAD83A420DB0C6FFE5EF0EB597E3`; generated database
+SHA-256 `4B190BAA546508EC076158ACF6F68C11A1FDFF6884C77F909068247887431667`), which
+matches the retained historical large-output-boundary `.tps`. It selected week
+2026-10-05 through 2026-10-09 and By Day roster. It generated 17 total pages:
+`Sub Prep.pdf`, 62,754 bytes, SHA-256
+`9F019847F87C32D572492B5CAC0AEE8BC1599862C204B49DB2CCCA55ABA1ED76`;
+`Rosters - By Day.pdf`, 76,896 bytes, SHA-256
+`6D9430DC001BECCEAE69F92A391C0F0BF5D39BE2E631F5555497426820DA1ABF`. Fixture, date, and
+roster-mode differences prevent a valid page comparison. This is a baseline gap, not a
+parity failure; F8's synthetic package-service test comparison does not establish parity
+for the F526 SQL route. F526's manifest does not bind artifacts to a source commit;
+operator-reported `53d7d64e` remains unverified, and F532 did not retroactively bind it.
+Output parity and semantic generated-output content review remain open.
+
+### F534 selected next - 2026-10-10
+
+Test Sub Prep page output-dialog cancellation and verify package/document cleanup. F533 did not change references or claim PDF parity.

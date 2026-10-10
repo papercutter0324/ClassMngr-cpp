@@ -104,15 +104,17 @@ returning the Application projection. See the [Phase 2 contract
 update](03-Phase-2-Progress-Log.md#progress-update---2026-09-24-sub-prep-bounded-roster-repository-read).
 
 Output/package/PDF migration is wired through the operation-scoped roster
-source. F8 compares the 96-class information-sheet and Daily roster PDFs with
-retained references across page count, dimensions, and extracted text, and
-compares all Windows 150-DPI renders exactly. Print cancellation and source
-failure cleanup checks pass. Work Package F has moved the information-sheet
-and roster stages to separate bounded Application projections; the package
-service releases the information-sheet input before loading roster records,
-and the data repository applies row/cell caps before creating a dense roster
-projection. F526 completed the packaged Release `lifecycle-sub-prep` and
-`output-sub-prep` evidence routes. Memory acceptance remains open: lifecycle
+source. F8 compares information-sheet and Daily roster PDFs against test
+references produced by the synthetic in-memory package-service fixture across
+page count, dimensions, extracted text, and exact Windows 150-DPI renders.
+This comparison does not establish parity for the packaged F526 SQL route.
+Existing cancellation and source-failure cleanup checks pass; the Sub Prep page
+output-dialog path is queued as F534. Work Package F has moved the
+information-sheet and roster stages to separate bounded Application
+projections; the package service releases the information-sheet input before
+loading roster records, and the data repository applies row/cell caps before
+creating a dense roster projection. F526 completed the packaged Release
+`lifecycle-sub-prep` and `output-sub-prep` evidence routes. Memory acceptance remains open: lifecycle
 peak working set was 264,310,784 bytes, 2,166,784 above 262,144,000; settled
 lifecycle and all output-route working-set samples were below target. F530's
 selected Release run reported a 263,880,704-byte peak and legacy 250 MiB
@@ -498,3 +500,14 @@ The older lifecycle route measured 2,789 widgets after leaving My Classes (F511 
 The Windows x64 Release package passed validation for `lifecycle-sub-prep` and `output-sub-prep`. Its evidence directory is under the current user's Local\Temp at `ClassMngr-F513-Release-Evidence\f513-release-20261009-02`; the account name was redacted in the handoff, so no absolute path is recorded. The package omits all My Classes runtime metric keys, including `classSummaryListQueryCount`, and therefore does not independently verify F513's My Classes behavior. The focused Windows x64 Debug CTest pass (3/3), recorded in the Phase 2 progress log, remains the direct verification.
 
 Lifecycle settled-1s working set was 270,848,000 bytes and peak working set was 280,162,304 bytes. Output settled-5s working set was 239,767,552 bytes and peak was 249,077,760 bytes. Only 2 of 24 Windows routes were validated; macOS and output visual parity remain open. The lifecycle settled sample is 8,704,000 bytes above the 262,144,000-byte target, so the 250 MiB gate remains open. Do not infer memory improvement from these route-specific results. F514's route-level diagnostic is recorded in the [Phase 2 progress log](03-Phase-2-Progress-Log.md). Sub Prep memory and visual gates remain open.
+
+## F533 output-reference gap - 2026-10-10
+
+The retained PDF references use a synthetic package-service fixture, date
+2026-07-21, and Daily roster, while F526 used the SQL fixture, week
+2026-10-05 through 2026-10-09, and By Day roster. These artifacts do not support
+a valid page comparison or PDF parity result. This is a missing matched
+baseline, not a parity failure. Output parity and semantic content review
+remain open. F534 is next for Sub Prep output-dialog cancellation and cleanup.
+The [Phase 2 progress log](03-Phase-2-Progress-Log.md) records exact artifact
+hashes, fixture provenance, and the unverified F526 source association.
