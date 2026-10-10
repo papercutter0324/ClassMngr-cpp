@@ -737,10 +737,23 @@ normal runs recorded two callbacks each, both while cached status was `Ready`,
 and suppressed runs recorded none. Callback ordering and process-memory
 summaries are in the [Phase 2 progress log](03-Phase-2-Progress-Log.md). The
 campaign is natural-route evidence only: it does not force an in-flight close
-race or identify allocation/cache ownership. F561 is selected to begin with a
-bounded local feasibility audit of Windows allocation-stack tracing at render
-completion, after document close while the view remains, and after view
-teardown. First check available tools and symbol coverage, then recommend a
-feasible method or report a blocker; no trace has been run. Keep the 250 MiB
-lifecycle gate, F536 cause, F526 provenance, output parity, render/window
-acceptance, and global Phase 0 open (Windows 1/24, macOS 0/24).
+race or identify allocation/cache ownership.
+
+F561 completed a read-only local feasibility audit: WPR/WPA heap tracing is
+available, but a later capture requires an elevated command prompt and
+process-specific heap-tracing/IFEO setup. No capture or system configuration
+change occurred. Without exact private Qt/PDFium PDBs, expect module and
+instruction-pointer attribution rather than internal symbol/source-line
+names. Detailed executable paths/versions, artifact search limits, and
+official method references are in the [Phase 2 progress
+log](03-Phase-2-Progress-Log.md).
+
+F562 is selected to design and preflight a bounded checkpoint mechanism for
+one WPR heap-snapshot run at render completion, after document close while the
+view remains, and after view teardown/event drain. Elevated access and
+reversible process-specific IFEO setup are preconditions; this selection does
+not authorize or apply them. Keep the probe opt-in, do not force a render/close
+race, and preserve normal app behavior when unselected. Do not claim allocation
+ownership before capture and analysis. Keep the 250 MiB lifecycle gate, F536
+cause, F526 provenance, output parity, render/window acceptance, and global
+Phase 0 open (Windows 1/24, macOS 0/24).

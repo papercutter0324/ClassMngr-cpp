@@ -19529,3 +19529,44 @@ and pass/fail results. These route-level observations establish neither
 allocation nor cache ownership. The 250 MiB lifecycle gate, F536 cause, F526
 provenance, output parity, render/window acceptance, and global Phase 0 remain
 open (Windows 1/24, macOS 0/24).
+
+## F561 Windows heap-trace feasibility audit - 2026-10-10
+
+The bounded local audit was read-only; no trace, elevation, or system
+configuration change was performed. `wpr.exe` is available at
+`C:\WINDOWS\system32\wpr.exe` version `10.0.26100.9444` and at the Windows
+Performance Toolkit path
+`C:\Program Files (x86)\Windows Kits\10\Windows Performance Toolkit\wpr.exe`
+version `10.0.26100.8249`. Toolkit `wpa.exe` at
+`C:\Program Files (x86)\Windows Kits\10\Windows Performance Toolkit\wpa.exe`
+is version `11.7.395.48728` (`11.7.395+be585f6f10`); `xperf.exe` at
+`C:\Program Files (x86)\Windows Kits\10\Windows Performance Toolkit\xperf.exe`
+is version `10.0.26100.8249`. GFlags and UMDH were not PATH-resolvable and
+were absent from the searched Windows Kits tree.
+
+WPR/WPA heap collection is locally supported. Microsoft's [heap-analysis
+recording](https://learn.microsoft.com/en-us/windows-hardware/test/wpt/recording-for-heap-analysis)
+and [on-demand heap snapshot](https://learn.microsoft.com/en-us/windows-hardware/test/wpt/record-heap-snapshot)
+guidance requires an elevated command prompt and process-specific heap
+tracing/IFEO setup. This is a precondition for a later run, not an applied
+configuration. The [WPA symbol guidance](https://learn.microsoft.com/en-us/windows-hardware/test/wpt/symbol-support)
+allows module and instruction-pointer frames without private symbols, but
+internal Qt/PDFium names and source lines require matching private PDBs.
+Symbol path/cache variables were unset and common caches absent. No Qt6Pdf or
+PDFium PDB, map, or source artifacts were found under the Qt prefix or F553,
+F556, and F559 packages. The F559 Release application
+(`2bb052c5bb220d369a38ea1b2bba1c762df6ae7eec34d012ab38816965c1f46f`) had no
+matching PDB/map; the ClassMngr PDB under its `_build\test` tree is from Debug
+and does not match Release. UMDH is not currently available locally and its
+[setup](https://learn.microsoft.com/en-us/windows-hardware/drivers/debugger/preparing-to-use-umdh)
+requires GFlags `+ust` on a future process.
+
+F562 is selected to design and preflight a bounded checkpoint mechanism for
+one WPR heap-snapshot run at render completion, after document close while the
+view remains, and after view teardown/event drain. Elevated access and a
+reversible process-specific IFEO setup remain prerequisites; neither is
+authorized or applied by this finding. Keep the probe opt-in, avoid forcing a
+render/close race, and preserve normal app behavior when unselected. Make no
+allocation-ownership claim before capture and analysis. The 250 MiB lifecycle
+gate, F536 cause, F526 provenance, output parity, render/window acceptance,
+and global Phase 0 remain open (Windows 1/24, macOS 0/24).
