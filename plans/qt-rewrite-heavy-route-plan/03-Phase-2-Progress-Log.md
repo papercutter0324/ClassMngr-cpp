@@ -18840,8 +18840,54 @@ Each trace contains exactly one ready, after-close, +1s, and +5s sample, with
 available memory and no PNG output. This verifies harness operation only; it
 does not establish a trend, memory reduction, or cause.
 
-F543 is next: run three fresh processes per arm (nine total) with the matched
-sidecar controls and compare repeated samples. F541's hypotheses remain
-unresolved; no production optimization or fix is selected. The 250 MiB
-lifecycle memory gate, F526 source provenance, output parity, and full Phase 0
-coverage remain open.
+F543's repeated-probe campaign is recorded below. F544's bounded interpretation
+and decision on whether a reopen-specific follow-up is warranted are pending.
+F541's hypotheses remain unresolved; no production optimization or fix is
+selected. The 250 MiB lifecycle memory gate, F526 source provenance, output
+parity, and full Phase 0 coverage remain open.
+
+## F543 repeated PDF lifetime probe - 2026-10-10
+
+The campaign used F542 source commit
+`1a01b2d6648d7f9b02b8a078e93aa9d88120bedd`, a clean tracked tree, and matching
+hashes for all eight runner source inputs. One clean Windows x64 Release
+package was built and installed with Ninja under Qt 6.12.0 / MSVC 19.51.36257.0;
+two Visual Studio generator compiler-ID attempts had stopped with MSBuild
+FileTracker `E_ACCESSDENIED`. Runner tests passed 8/8.
+
+Independent validation accepted all nine fresh processes (three per arm),
+with unique PIDs/run IDs, matching sidecar/trace identities and controls, no
+PNG files, and exactly one ordered available-memory sample at each checkpoint:
+ready, after-close (0 ms), +1s (1,037–1,060 ms), and +5s (5,037–5,067 ms). Arms
+were `document-only`, visible MultiPage `viewer-no-grab`, and visible
+MultiPage `viewer-grab`. All used Qt 6.12.0 and a 3072 x 1728 display at DPR
+1.25 / 96 logical DPI. The executable SHA-256 was
+`3E288406BE15C799368FC55AF7C367816F3F9F0936D80643032955C7E3506C6C`; fixture,
+`documents.rcc`, and PDF SHA-256 values matched F542:
+`DADD8DCFB7ABBBB291E5975286413CF1C489C793C8E640D33C181112DF38835F`,
+`A3EB570294B55A616EA05797222FC1FEDD93620ABB25360B724ED6843BEE924F`, and
+`295ACCAB548B41F0B4F56E6AB89958AD5C3347646904C155B16A56EBE926CAEC`.
+
+Independent medians across three processes per arm, in MiB (each field
+summarized independently):
+
+| Arm | Ready WS / private | Lifetime peak WS | After-close, +1s, +5s WS / private (each) |
+| --- | ---: | ---: | ---: |
+| document-only | 691.8 / 645.3 | 692.9 | 691.7 / 645.2 |
+| viewer-no-grab | 705.1 / 650.3 | 706.8 | 697.0 / 641.9 |
+| viewer-grab | 705.2 / 650.2 | 713.1 | 697.3 / 642.1 |
+
+Campaign root:
+`%LOCALAPPDATA%\Temp\ClassMngr-F543-PDF-Lifetime-651f998edfd249ee8fb0220576dda7cc\campaign`;
+manifest `probe-manifest.json` SHA-256
+`D4F3F7C8B0933CCABBEE535B0F89704B05DFBD7C9E5557B4413313A440880C70`. Per-run
+traces and sidecars remain there; command/build logs are in sibling `commands`.
+
+This isolated probe's working-set baseline spans roughly 692–713 MiB, far
+above the historical F536 Sub Prep-route value near 264 MiB. The process and
+route setups differ, so these values are not comparable for lifecycle
+acceptance or historical growth. Private usage is a separate metric from the
+resident working-set target. The arm summaries are descriptive, not causal;
+they identify neither an owner nor a fix. F544's interpretation and decision
+on a reopen-specific follow-up are pending. Lifecycle 250 MiB acceptance,
+F526 provenance, output parity, and the full Phase 0 gate remain open.

@@ -590,8 +590,12 @@ omit the ID, resolved path, and file hash.
 F542 implemented an opt-in harness for those three arms, with external sidecar
 identity for the executable, source inputs, fixture, `documents.rcc`, and PDF.
 The one-process-per-arm smoke passed with ready/after-close/+1s/+5s samples,
-available memory, and no PNG output. This verifies the harness, not a trend,
-memory reduction, or cause. F543 is next: repeat each arm in three fresh
-processes (nine total) and compare the samples. No production default or fix
-was selected. The 250 MiB lifecycle gate, F526 provenance, output parity, and
-full Phase 0 remain open.
+available memory, and no PNG output. F543 completed three fresh processes per
+arm with matching sidecar identities. Median lifetime peak working sets were
+692.9 MiB (document-only), 706.8 MiB (viewer without forced grab), and 713.1
+MiB (viewer with grab). This isolated probe's baseline is far above F536's
+roughly 264 MiB route reading; the different process/route setup makes them
+incomparable for acceptance or historical growth. The medians are descriptive,
+not causal, and establish no owner or fix. F544's bounded interpretation and
+decision about a reopen-specific follow-up are pending. The 250 MiB lifecycle
+gate, F526 provenance, output parity, and full Phase 0 remain open.
