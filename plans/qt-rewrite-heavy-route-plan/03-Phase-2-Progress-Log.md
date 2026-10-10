@@ -19872,6 +19872,43 @@ lifetime claims bounded by the snapshot evidence. The 250 MiB lifecycle gate,
 F536 cause, F526 provenance, output parity, render/window acceptance, and
 global Phase 0 remain open (Windows 1/24, macOS 0/24).
 
+## F581 checkpoint-by-checkpoint Qt stack groups - 2026-10-11
+
+F581 grouped F575's QtBase-symbolized stack paths against F568's raw
+per-snapshot allocation aggregates. The recomputed snapshot totals exactly
+match F566: 247,896 records / 208,775,254 bytes after render; 236,535 /
+203,479,577 after document close; and 107,013 / 171,704,838 after view
+destruction. Snapshot path groups overlap and are not exclusive ownership
+categories.
+
+| Stack path group | After render | After document close | After view destruction |
+| --- | ---: | ---: | ---: |
+| `QTableWidget::setCellWidget` | 48,176 records / 39,324,262 bytes | 48,176 / 39,324,262 | 16,714 / 30,349,468 |
+| `QTextDocument` | 43,479 / 20,837,137 | 43,479 / 20,837,137 | 14,954 / 12,751,821 |
+| both `setCellWidget` and `QTextDocument` | 40,173 / 20,207,585 | 40,173 / 20,207,585 | 14,052 / 12,651,289 |
+| `QTextDocumentLayout` | 39,869 / 18,942,496 | 39,869 / 18,942,496 | 13,741 / 12,169,868 |
+| `QFontEngine` | 4,536 / 119,744,894 | 3,567 / 118,039,144 | 3,436 / 118,021,861 |
+
+The `setCellWidget` path total is unchanged between the render and document-
+close snapshots, then falls by 8,974,794 bytes at the view-destroyed snapshot.
+Its overlap with `QTextDocument` falls by 7,556,296 bytes at that same
+transition. `QFontEngine` bytes fall by 1,705,750 after document close and a
+further 17,283 after view destruction. Meanwhile, the route counters retain 49
+current schedule cell widgets through the Sub Prep lifecycle/re-entry
+checkpoints. This narrows when broad Qt stack-path totals change, but the
+counters and instruction stacks do not identify which individual objects
+were released or prove that the schedule table owns the difference.
+The reproducible aggregation pass is `build/f581_checkpoint_stack_audit.py`;
+it reads the ignored F568 per-snapshot CSV and F575 symbol report.
+
+F582 ranks the stack IDs responsible for the `setCellWidget` group's
+after-document-close to after-view-destroyed decrease and the final retained
+bytes, using the per-stack snapshot aggregates and F575's Qt function names.
+It will keep overlapping stack-path and unresolved application-frame limits
+explicit. F579's matched-symbol capture remains deferred. The 250 MiB
+lifecycle gate, F536 cause, F526 provenance, output parity, render/window
+acceptance, and global Phase 0 remain open (Windows 1/24, macOS 0/24).
+
 ## F580 schedule-table rich-text allocation correlation - 2026-10-11
 
 F579's fresh matched-symbol capture is deferred at the user's direction. F580
@@ -19912,11 +19949,17 @@ increase or identify a leak. F580's audit script and inputs remain in ignored
 and the ETL remains unchanged under `build/f564-heap-snapshot-20261010T161139Z-21976`.
 
 F581 compares the `setCellWidget`, `QTextDocument`, and font-engine stack
-groups independently at each of the three retained snapshot indices. It will
-report checkpoint counts and allocation sizes without claiming object
-ownership or requiring the deferred `ClassMngr` symbols. The 250 MiB lifecycle
-gate, F536 cause, F526 provenance, output parity, render/window acceptance,
-and global Phase 0 remain open (Windows 1/24, macOS 0/24).
+groups at each retained snapshot. The `setCellWidget` path totals 39,324,262
+bytes after render and after document close, then 30,349,468 after view
+destruction; the overlapping `setCellWidget`/`QTextDocument` subset falls from
+20,207,585 to 12,651,289 bytes at that last transition. The QFontEngine path
+is comparatively stable at 119,744,894, 118,039,144, and 118,021,861 bytes.
+The Sub Prep route still reports 49 current schedule cell widgets through its
+later lifecycle checkpoints, so stack-path decreases do not map directly to
+widget counts or establish ownership. F582 ranks the changed and retained
+`setCellWidget` stack IDs. The 250 MiB lifecycle gate, F536 cause, F526
+provenance, output parity, render/window acceptance, and global Phase 0 remain
+open (Windows 1/24, macOS 0/24).
 
 ## F578 optimized Release build with app symbols - 2026-10-11
 

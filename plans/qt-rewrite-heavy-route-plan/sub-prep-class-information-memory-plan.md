@@ -823,7 +823,13 @@ widgets and 147 cumulative creations with 30,349,468 bytes of all-checkpoint
 allocation signatures on Qt stack paths through `setCellWidget`, including
 12,651,289 bytes that also pass through `QTextDocument`. This is a source- and
 route-correlated lead, not ownership or leak evidence. F581 compares these
-stack groups across all three snapshot indices. The
+stack groups across all three snapshot indices. F581 found the `setCellWidget`
+path unchanged at 39,324,262 bytes through document close, then down to
+30,349,468 at view destruction, while its `QTextDocument` overlap fell from
+20,207,585 to 12,651,289 bytes. The `QFontEngine` path stayed near 118-120 MB
+across the snapshots. These stack groups overlap and do not identify object
+ownership; the route still reported 49 live schedule cell widgets. F582 ranks
+the stack IDs behind the change and retained bytes. The
 checked qtpdf 6.12
 extension tree had no separate debug-symbol package for
 the installed QtPdf 6.140.0.0 modules, so function-level PDFium/QtPdf
