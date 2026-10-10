@@ -876,3 +876,11 @@ renderer `removeCellWidget()` / `deleteLater()` call was counted; table or page
 destruction does not increment this metric. The route's three live
 ScheduleWidget instances do not have a combined current-cell count in these
 metrics, so the counter correlation does not rule out changes in other tables.
+
+F589 confirmed two Ready `QPdfPageRenderer::pageRendered` callbacks in the
+retained `without-grabs` route, one for the initial load and one after reopen.
+The first precedes the accepted after-render checkpoint; the second precedes
+the final document release and after-document-close capture. Their synchronous
+process samples are not heap-allocation attribution. `pdfRenderCount=0` is
+expected because the route skipped forced viewer grabs. The observer recorded
+one page-renderer connection and no image copy or retention.

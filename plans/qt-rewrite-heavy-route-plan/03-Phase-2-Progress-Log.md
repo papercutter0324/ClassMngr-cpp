@@ -19872,6 +19872,38 @@ lifetime claims bounded by the snapshot evidence. The 250 MiB lifecycle gate,
 F536 cause, F526 provenance, output parity, render/window acceptance, and
 global Phase 0 remain open (Windows 1/24, macOS 0/24).
 
+## F589 page-render observer events in the without-grabs route - 2026-10-11
+
+The accepted F564 route has forced grabs disabled (`without-grabs`, count 0)
+and an available direct `QPdfPageRenderer::pageRendered` observer attached to
+one renderer. It recorded two Ready callbacks for page 0 at 720x1040: request
+1 at 1.2153444 seconds after observer attachment (event order 3), and request
+2 at 5.3663022 seconds (order 10). The status timeline places the first
+callback after the initial document reaches Ready, and the second after the
+reopen reaches Ready; the intervening attempt reports Error. Both callbacks
+take synchronous process-memory samples. Their working set / private usage /
+private working set values are 303,935,488 / 313,806,848 / 230,711,296 bytes
+and 304,164,864 / 313,966,592 / 230,862,848 bytes, respectively.
+
+The `after-render` handshake marker reports Ready and
+`readyPageRenderCallbackCount=1`, so the first callback precedes that accepted
+checkpoint. Callback 2 precedes the final document Unloading/Null transitions
+(orders 11-12); the retained after-document-close capture aligns to route
+sequence 77, `pdf-released-after-reopen`, after both callbacks. The
+after-view-destroyed marker follows later with the view destroyed. These are
+actual page-render callbacks despite `pdfRenderCount=0`, which counts the
+disabled forced viewer grabs; neither their process samples nor their event
+order assign any heap-snapshot allocation to the PDF renderer. The read-only
+reproducer is `build/f589_page_render_observer_alignment.py` under ignored
+local build artifacts. No new capture, symbols, or source changes were made.
+
+Batch 105 is complete. Batch 106 begins with F590: compare the synchronous
+page-render callback memory samples with nearby PDF load/release boundary
+samples and the retained heap snapshots. F579 remains deferred at the user's
+direction. The 250 MiB lifecycle gate, F536 cause, F526 provenance, output
+parity, render/window acceptance, and global Phase 0 remain open
+(Windows 1/24, macOS 0/24).
+
 ## F588 schedule-cell removal-counter scope - 2026-10-11
 
 The `scheduleCellWidgetsRemoved` and `scheduleCellWidgetsQueuedForDeletion`
