@@ -20082,6 +20082,57 @@ Batch114. Two independent Explorer angles found five ordered candidates:
    switching preserves its state. Entrypoints: `my_workspace_page.cpp`,
    `my_workspace_page_tests.cpp`, and NavigationController access.
 
+## F602 non-PDF teardown allocation-size breakdown - 2026-10-11
+
+F602 independently reconstructed F592's existing source-absent allocation
+set from the retained F568/F569 exports; no route, WPA/WPR, or symbol decoding
+was run. Snapshot index 2 maps to `after-document-close` (236,535 records,
+203,479,577 recorded bytes); index 3 maps to `after-view-destroyed` (107,013
+records, 171,704,838 recorded bytes). F592 keys records by
+`(heap_handle, allocation_address)`, requires uniqueness, selects snapshot-2
+keys absent from snapshot 3, and excludes source paths containing
+`Qt6Pdf.dll` or `Qt6PdfWidgets.dll`.
+
+Of the 129,631 source keys absent from snapshot 3 (31,807,256 bytes), the
+PDF-path filter excludes 190 keys / 52,666 bytes. The remaining set contains
+129,441 distinct keys and sums to 31,754,590 recorded allocation bytes, exactly
+matching F592. The CSV's `allocation_bytes` field comes from
+`Microsoft.Windows.EventTracing.DataSize`; it records allocation size in
+bytes, not working set, private usage, or residency. The complete disjoint
+size-band breakdown is:
+
+| Recorded allocation size | Keys | Summed bytes |
+|---|---:|---:|
+| 0–64 B | 75,847 | 2,763,158 |
+| 65–256 B | 31,066 | 4,048,040 |
+| 257–1,024 B | 20,392 | 10,250,880 |
+| 1,025–4,096 B | 346 | 706,464 |
+| 4,097–16,384 B | 1,748 | 12,567,776 |
+| 16,385–65,536 B | 41 | 1,327,632 |
+| 65,537 B and above | 1 | 90,640 |
+| **Total** | **129,441** | **31,754,590** |
+
+The set contains 198 distinct exact sizes, from 1 to 90,640 bytes. Largest
+exact-size contributions are 6,912 B × 1,583 = 10,941,696 B; 640 B × 6,274 =
+4,015,360 B; and 32,768 B × 40 = 1,310,720 B. All selected sizes are valid
+positive integers. An independent Tester recomputed snapshot membership, the
+PDF exclusion, every size band, and the exact-size contributions from the
+retained exports. Whether recorded sizes include allocator overhead or
+rounding is not established by these artifacts.
+
+This is a size distribution of source-snapshot keys absent from a later
+snapshot under F592's non-PDF filter. Snapshot membership does not establish
+when an allocation was freed or identify its owner.
+
+F603 is now active in Batch115. Its acceptance will determine whether leaving
+Workspace Schedule releases its rendered table resources and whether re-entry
+restores them while preserving schedule facts and preferences. The inactive
+owner remains populated in the F597 profile according to F599. F604 (remove
+per-cell ScheduleWidget child widgets) and F605 (defer hidden Personal Details
+construction) remain discovered candidates. F598 still awaits an actually
+elevated WPR process; F579 symbol work remains deferred at the user's
+direction.
+
 ## F601 PDF counters and view destruction - 2026-10-11
 
 F601 reconciled the F597 PDF structural counters, document lifecycle values,
