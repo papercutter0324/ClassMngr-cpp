@@ -19612,11 +19612,28 @@ design is not authorization. Without matching PDBs, WPA can show module and
 instruction-pointer frames but not internal Qt/PDFium function or source-line
 names.
 
-F563 is limited to implementing the opt-in handshake and a deterministic
-Debug dry-run with a fake acknowledgement controller. With the selector unset,
-the production route and report must remain unchanged. No WPR configuration,
-command, or ETL belongs in F563. Independent verification is required before
-commit; after F563 is committed, decide whether to request elevated setup for
-F564 collection. The 250 MiB lifecycle gate, F536 cause, F526 provenance,
-output parity, render/window acceptance, and global Phase 0 remain open
-(Windows 1/24, macOS 0/24).
+## F563 opt-in PDF heap-snapshot checkpoints committed - 2026-10-11
+
+F563 committed as `4c856b57` (`Add opt-in PDF heap snapshot checkpoints`). Its
+four-file slice adds an opt-in controller/app ready-and-ack JSON handshake at
+three ordered checkpoints: after confirmed render and drained view processing;
+after `releaseDocument()` reports Null while the same view remains attached
+and events are drained; and after view destruction while the application
+process remains alive. Ready and acknowledgement records bind run ID, PID,
+checkpoint order, timestamp, and marker SHA-256. Waits are bounded at 30
+seconds and report a clear failure marker.
+
+Independent Windows x64 Debug dry-run passed: all three ordered markers and
+acknowledgement hashes matched, the PID stayed constant, and the controller
+exited 0. Selector-unset and observer-only routes preserved counts and report
+shape with no F563 files or fields. Invalid gates and missing or nonexistent
+control directories exited 2. The `pageRendered` callback returns before the
+scheduled handshake; acknowledgement waits hold the app at each checkpoint,
+not inside the renderer callback. Timeout behavior was source-inspected, not
+runtime-forced.
+
+No WPR command, IFEO configuration, elevation, ETL, or system change occurred.
+F564 remains a separate decision to authorize elevated, process-specific
+WPR/IFEO setup and collection. The 250 MiB lifecycle gate, F536 cause, F526
+provenance, output parity, render/window acceptance, and global Phase 0 remain
+open (Windows 1/24, macOS 0/24).
