@@ -42,7 +42,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-11
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F597's fresh Release dry-run verified all three owner records; F599 will trace them across all 84 checkpoints, F598's matched WPR capture awaits an elevated token, F579 remains deferred, and the memory/output-parity/Phase 0 gates remain open.
+- Current note: F599 found stable populated owner tuples across all 39 shared checkpoints; F600 will audit paired profiler samples, F598 awaits an elevated WPR token, F579 remains deferred, and the memory/output-parity/Phase 0 gates remain open.
 
 ### Slice discovery batches
 
@@ -74,7 +74,6 @@ Treat this plan as an operational summary, not a history:
 
 #### Active batch: Batch 114
 
-- F599 - Track each schedule owner's metric tuple across all 84 F597 lifecycle checkpoints, including first population and any changes.
 - F600 - Audit paired pre/post-`applicationMetrics()` process samples and any change to the 250 MiB working-set classification.
 
 No other slices were found.

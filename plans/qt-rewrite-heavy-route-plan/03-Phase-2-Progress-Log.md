@@ -19974,9 +19974,81 @@ profile SHA-256 is
 summary and profile remain under `build/f597-f596-heap-capture-dryrun` and the
 corresponding F563 temporary route directory. No symbols were decoded.
 
-F599 will audit owner tuple presence and changes over all 84 checkpoints;
-F600 will analyze the paired profiler memory samples. F579 remains deferred at
-the user's direction.
+F579 remains deferred at the user's direction.
+
+## F599 schedule-owner timeline analysis - 2026-10-11
+
+The retained F597 workflow profile was parsed without rerunning the route.
+Its SHA-256 is
+`02a7fc82c50e51da8d030bbe0d168081f5436431260956e4a063e4b0f5057d18`; it has
+84 unique route checkpoints and 173 schedule-owner records. The only keys are
+the three expected owners, with no duplicate owner in a checkpoint, unknown
+or ownerless record, incomplete metric tuple, or presence gaps after first
+appearance.
+
+| Owner | Present checkpoints | Populated checkpoints | First presence / population | Metric tuple changes |
+|---|---:|---:|---|---|
+| `standalone-schedule` | 60 | 60 | 25 `workflow-page-left` / 25 | One tuple, unchanged through 84 |
+| `workspace-schedule` | 74 | 72 | 11 `page-manager-initialized` / 13 `database-opened` | Zero tuple at 11–12; changes at 13 to the populated tuple, unchanged through 84 |
+| `sub-prep-preview` | 39 | 39 | 46 `workflow-page-left` / 46 | One tuple, unchanged through 84 |
+
+Tuple order is `(modelRowCount, modelCellCount, modelEntryCount,
+tableRowCount, tableColumnCount, tableItemCount, tableCellWidgetCount,
+visibleClassCount)`. The populated tuple is `(7, 49, 768, 7, 8, 7, 49, 96)`;
+the workspace's first two present records are `(0, 0, 0, 0, 6, 0, 0, 0)`.
+All three owners overlap continuously at sequences 46–84 (39 checkpoints)
+with matching tuples. The selected PDF checkpoints 69 `pdf-opened`, 77
+`pdf-released-after-reopen`, and 84 `settled-5s` also match the F597 values.
+
+An independent Tester confirmed the file hash, owner-key uniqueness, all
+presence/population counts, tuple transitions, overlap, and PDF checkpoints.
+The profile is a dry-run without ETL; these are reported current counts, not
+widget identity, heap-byte ownership, or memory-gate evidence. It is retained
+under `%LOCALAPPDATA%\Temp\ClassMngr-F563-Checkpoint-DryRun-20261010T191329Z-5988\lifecycle-sub-prep\large-sub-prep-workflow.json`.
+
+F600 is next in Batch114 and will audit paired pre/post-`applicationMetrics()`
+process samples. Its acceptance is to parse every available
+`memory`/`memoryAfterMetrics` pair in this profile; report pair counts and
+signed deltas for working set, private usage, private working set, peak working
+set, handles, and threads; and identify whether any pair changes the strict
+262,144,000-byte working-set classification. These sequential samples cannot
+attribute changes to metric traversal and do not supply ETL or close the
+memory gate.
+
+Batch115 discovery started while F599 was the second-last candidate in
+Batch114. Two independent Explorer angles found five ordered candidates:
+
+1. **F601 - Reconcile PDF-viewer structural counters with view destruction.**
+   Compare `widgetCount` and `instantiatedPageWidgetDescendantCounts` for the
+   PDF viewer with the lifecycle/document counters and the view-destruction
+   marker. Entrypoints: the retained F597 profile; `pdf_viewer_page.cpp`,
+   `pagemanager.cpp`, `startup_profiler.cpp`, and `main.cpp`. This addresses
+   counter interpretation, not heap ownership.
+2. **F602 - Break down the existing non-PDF teardown delta by allocation
+   size.** Bin the 129,441 after-document-close keys absent after view
+   destruction by allocation size and reconcile to F592's 31,754,590 bytes.
+   Entrypoints: `build/f565-wpa-analysis/f569-allocation-identities.csv`,
+   `build/f592_stack_path_delta.py`, and the F568 exports. This cannot prove
+   allocation lifetime or owner.
+3. **F603 - Release hidden Workspace Schedule rendered resources on leave.**
+   First confirm in F599/F600 route evidence that the inactive owner remains
+   populated; then test leave/re-entry releasing/restoring its rendered
+   resources while preserving schedule facts and preferences. Entrypoints:
+   `my_workspace_page.cpp`, `basepage.cpp`, and the workspace page tests.
+4. **F604 - Remove per-cell ScheduleWidget child widgets.** Replace the
+   49-per-owner cell-widget rendering with model/delegate display and active
+   interaction editors; preserve displayed facts, visuals, and interactions,
+   and verify the packaged route reports zero per-cell child widgets.
+   Entrypoints: `schedule_widget.cpp`, `schedule_table_renderer.cpp`,
+   `schedule_widget_tests.cpp`, and memory-plan work package D4.
+5. **F605 - Defer hidden Personal Details construction.** Verify the initial
+   Schedule tab creates no Details page, navigation creates it once, and
+   switching preserves its state. Entrypoints: `my_workspace_page.cpp`,
+   `my_workspace_page_tests.cpp`, and NavigationController access.
+
+These are candidates for Batch115, not yet active. F598's matched WPR capture
+requires an actually elevated Windows process; F579 symbol work remains
+deferred at the user's direction.
 
 ## F594 per-instance ScheduleWidget metric coverage - 2026-10-11
 
