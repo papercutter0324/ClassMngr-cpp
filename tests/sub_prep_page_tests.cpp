@@ -32,6 +32,7 @@
 #include <QGridLayout>
 #include <QMetaObject>
 #include <QPdfDocument>
+#include <QPointer>
 #include <QPushButton>
 #include <QSignalBlocker>
 #include <QTextEdit>
@@ -362,6 +363,7 @@ private slots:
     void printDialogOnlyOffersVacationModeWithinFourWeeks();
     void printDialogCombinesVacationDatesAcrossHolidayBlocks();
     void printDialogCalendarReadUsesTwoYearWindowAndFallsBackOnFailure();
+    void generateSubPrepCancelButtonSkipsGenerationAndDestroysDialog();
     void packageFolderNamesCoverDateRangesAndUnsafeCharacters();
     void printDialogRequiresAndSavesMissingUserName();
     void clearDatabaseStateStopsAutosaveAndRemovesLoadedContent();
@@ -2147,6 +2149,124 @@ printDialogCalendarReadUsesTwoYearWindowAndFallsBackOnFailure()
     QCOMPARE(
         calendarIntervalsReadPort.lastRequest.endDate.value(),
         expectedEndDate.toString(Qt::ISODate).toStdString()
+        );
+}
+
+void SubPrepPageTests::
+generateSubPrepCancelButtonSkipsGenerationAndDestroysDialog()
+{
+    ApplicationServices services;
+    SubPrepTestCalendarIntervalsReadPort calendarIntervalsReadPort;
+    SubPrepPageHarness harness(&services, calendarIntervalsReadPort);
+    QTemporaryDir outputRoot;
+    QVERIFY(outputRoot.isValid());
+
+    bool dialogOpened = false;
+    bool cancelButtonClicked = false;
+    bool dialogRejected = false;
+    bool safetyCloseTriggered = false;
+    QString dialogAutomationError;
+    QPointer<SubPrepPrintDialog> dialogGuard;
+    QTimer::singleShot(
+        0,
+        &harness.page,
+        [&]
+        {
+            auto* const dialog = qobject_cast<SubPrepPrintDialog*>(
+                QApplication::activeModalWidget()
+                );
+            if (!dialog)
+            {
+                dialogAutomationError = QStringLiteral(
+                    "Sub Prep print dialog did not open."
+                    );
+                return;
+            }
+
+            dialogOpened = true;
+            dialogGuard = dialog;
+            auto* const targetEdit = dialog->findChild<QLineEdit*>(
+                QStringLiteral("subPrepTargetFolderEdit")
+                );
+            auto* const cancelButton = dialog->findChild<QPushButton*>(
+                QStringLiteral("subPrepPrintCancelButton")
+                );
+            if (!targetEdit || !cancelButton)
+            {
+                dialogAutomationError = QStringLiteral(
+                    "Sub Prep print dialog controls are incomplete."
+                    );
+                dialog->reject();
+                return;
+            }
+
+            targetEdit->setText(outputRoot.path());
+            QObject::connect(
+                cancelButton,
+                &QPushButton::clicked,
+                dialog,
+                [&cancelButtonClicked]
+                {
+                    cancelButtonClicked = true;
+                }
+                );
+            cancelButton->click();
+            dialogRejected = dialog->result() == QDialog::Rejected;
+        }
+        );
+
+    QTimer safetyCloseTimer;
+    safetyCloseTimer.setSingleShot(true);
+    QObject::connect(&safetyCloseTimer, &QTimer::timeout, &harness.page, [&]
+    {
+        if (QWidget* const modal = QApplication::activeModalWidget())
+        {
+            safetyCloseTriggered = true;
+            if (dialogAutomationError.isEmpty())
+            {
+                dialogAutomationError = QStringLiteral(
+                    "Sub Prep print dialog automation timed out."
+                    );
+            }
+            modal->close();
+        }
+    });
+
+    FakeUserPromptService promptService;
+    struct PromptServiceRestorer final
+    {
+        ~PromptServiceRestorer()
+        {
+            DialogServices::setUserPromptServiceForTesting(nullptr);
+        }
+    } restorePromptService;
+    DialogServices::setUserPromptServiceForTesting(&promptService);
+
+    safetyCloseTimer.start(5'000);
+    const bool generationInvoked = QMetaObject::invokeMethod(
+        &harness.page,
+        "generateSubPrep",
+        Qt::DirectConnection
+        );
+    safetyCloseTimer.stop();
+
+    QVERIFY(generationInvoked);
+    QVERIFY2(!safetyCloseTriggered, qPrintable(dialogAutomationError));
+    QVERIFY2(dialogOpened, qPrintable(dialogAutomationError));
+    QVERIFY2(cancelButtonClicked, qPrintable(dialogAutomationError));
+    QVERIFY2(dialogRejected, qPrintable(dialogAutomationError));
+    QVERIFY(dialogGuard.isNull());
+    QCOMPARE(harness.printSourceReadPort.loadCount, 0);
+    QVERIFY(promptService.messages.isEmpty());
+    QVERIFY(promptService.asynchronousMessages.isEmpty());
+    QCOMPARE(
+        QDir(outputRoot.path()).entryList(
+            QDir::AllEntries
+                | QDir::NoDotAndDotDot
+                | QDir::Hidden
+                | QDir::System
+            ).size(),
+        0
         );
 }
 

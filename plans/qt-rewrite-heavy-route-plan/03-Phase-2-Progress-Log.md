@@ -18515,6 +18515,32 @@ for the F526 SQL route. F526's manifest does not bind artifacts to a source comm
 operator-reported `53d7d64e` remains unverified, and F532 did not retroactively bind it.
 Output parity and semantic generated-output content review remain open.
 
-### F534 selected next - 2026-10-10
+## F534 Sub Prep output-dialog cancellation regression - 2026-10-10
 
-Test Sub Prep page output-dialog cancellation and verify package/document cleanup. F533 did not change references or claim PDF parity.
+Added `generateSubPrepCancelButtonSkipsGenerationAndDestroysDialog`, a
+page-level regression that clicks the actual cancel button and verifies a
+rejected result, dialog destruction, zero print-source reads, no synchronous or
+asynchronous prompts, and an empty temporary target directory. No production
+behavior changed; the source already returns when the dialog is not accepted.
+Package-service print-only cancellation cleanup remains separate and was not
+changed.
+
+The `ClassMngrSubPrepPageTests` target built in
+`build/windows-x64-debug-ninja`. The new cancellation test and the unchanged
+`printDialogCalendarReadUsesTwoYearWindowAndFallsBackOnFailure` test each
+passed their focused QtTest run (3 passed, 0 failed); both emitted the expected
+calendar-read-failed warning. The unfiltered binary exited 5 with 19 passed,
+5 failed, and 0 skipped. Its failures are the five known F530/pre-change
+baseline cases: `freshAndExistingGradingSettingsResolveWithoutDataLoss`,
+`emptyCampusDetailsDisplayNotAvailable`,
+`zoomUnavailableHidesStoredCredentials`,
+`printDialogRequiresAndSavesMissingUserName`, and
+`clearDatabaseStateStopsAutosaveAndRemovesLoadedContent`. No new suite failure
+was observed.
+
+F535 is next for memory-attribution instrumentation: capture same-checkpoint
+working set, process peak working set, private usage, private working set, and
+document/page/view metrics before and after `applicationMetrics()`, and around
+PDF load, viewer-ready/grab, PNG save, and close/lease release. This does not
+claim memory acceptance. Output parity, F526 source provenance, the memory
+target, and full Phase 0 gates remain open.

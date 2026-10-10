@@ -108,9 +108,10 @@ source. F8 compares information-sheet and Daily roster PDFs against test
 references produced by the synthetic in-memory package-service fixture across
 page count, dimensions, extracted text, and exact Windows 150-DPI renders.
 This comparison does not establish parity for the packaged F526 SQL route.
-Existing cancellation and source-failure cleanup checks pass; the Sub Prep page
-output-dialog path is queued as F534. Work Package F has moved the
-information-sheet and roster stages to separate bounded Application
+Package-service print-only cancellation cleanup remains covered by existing
+checks. F534 separately adds a page-level regression for cancellation from the
+Sub Prep output dialog; it changes no production behavior. Work Package F has
+moved the information-sheet and roster stages to separate bounded Application
 projections; the package service releases the information-sheet input before
 loading roster records, and the data repository applies row/cell caps before
 creating a dense roster projection. F526 completed the packaged Release
@@ -131,12 +132,12 @@ capture, metric traversal, or allocator retention. The document counter tracks
 load/release events, not Qt object destruction. F526's maximum private usage
 (303,312,896 bytes) was sampled at `pdf-reopen-start`, while private usage at
 the working-set peak was 278,966,272 bytes; these maxima are not a paired
-measurement. If more attribution is planned, the smallest next diagnostic is
-to record same-sample working set, process peak working set, private usage,
-private working set, and document/page/view metrics immediately before and
-after `applicationMetrics()` in each checkpoint and around PDF load,
-viewer-ready/grab, PNG save, and close/lease release. A paired run with startup PDF
-output disabled can separate PNG encoding from render/grab if needed. F526's
+measurement. F535 is selected for the smallest attribution diagnostic: record
+same-sample working set, process peak working set, private usage, private
+working set, and document/page/view metrics immediately before and after
+`applicationMetrics()` in each checkpoint and around PDF load,
+viewer-ready/grab, PNG save, and close/lease release. A paired run with startup PDF output
+disabled can separate PNG encoding from render/grab if needed. F526's
 run manifest omits its source revision; the operator-reported `53d7d64e` is
 unverified. Memory acceptance and full Phase 0 remain open.
 
