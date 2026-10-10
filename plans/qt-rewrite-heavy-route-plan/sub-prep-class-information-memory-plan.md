@@ -587,12 +587,11 @@ The source/resource audit identifies the PDF as catalog ID
 `documents.rcc` hashes. Their profiles report the basename and page count but
 omit the ID, resolved path, and file hash.
 
-F542 is proposed as a same-binary three-arm fresh-process diagnostic: document
-only, visible MultiPage without forced grab, and visible MultiPage with the
-current grab path, all with PNG writing disabled. Use the same large fixture,
-PDF, Qt version, and resolution; preserve the identical `documents.rcc` and
-relative PDF path. Record resolved path and PDF SHA-256 in sidecar metadata
-outside the measured process. Sample ready, after close, 1s, and 5s across at
-least three processes per arm. Avoid `setDocument(nullptr)` on Qt 6.12. This
-proposal is not an approved implementation or fix. Memory acceptance, F526
-provenance, output parity, and the full Phase 0 gate remain open.
+F542 implemented an opt-in harness for those three arms, with external sidecar
+identity for the executable, source inputs, fixture, `documents.rcc`, and PDF.
+The one-process-per-arm smoke passed with ready/after-close/+1s/+5s samples,
+available memory, and no PNG output. This verifies the harness, not a trend,
+memory reduction, or cause. F543 is next: repeat each arm in three fresh
+processes (nine total) and compare the samples. No production default or fix
+was selected. The 250 MiB lifecycle gate, F526 provenance, output parity, and
+full Phase 0 remain open.

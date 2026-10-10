@@ -68,6 +68,7 @@
 #include <QLabel>
 #include <QPixmap>
 #include <QPdfDocument>
+#include <QPdfView>
 #include <QPointer>
 #include <QPlainTextEdit>
 #include <QProgressBar>
@@ -82,9 +83,11 @@
 #include <QLineEdit>
 #include <QTextEdit>
 #include <QDebug>
+#include <QScreen>
 
 #include <functional>
 #include <algorithm>
+#include <cstdio>
 #include <memory>
 #include <optional>
 
@@ -133,6 +136,13 @@ struct StartupPerformanceMode
     bool subPrepOutputLifecycleEnabled = false;
     bool subPrepVisualStatesEnabled = false;
     bool resourceTraceEnabled = false;
+    bool pdfLifetimeProbeEnabled = false;
+    QString pdfLifetimeProbeArm;
+    QString pdfLifetimeProbeRunId;
+    QString pdfLifetimeProbeSidecarPath;
+    QString pdfLifetimeProbeOutputPath;
+    QJsonObject pdfLifetimeProbeIdentity;
+    QString pdfLifetimeProbeError;
     enum class Scenario
     {
         Minimal,
@@ -156,6 +166,12 @@ constexpr int StartupWorkflowStepDelayMilliseconds = 150;
 constexpr int StartupFiveMinuteIdleMilliseconds = 5 * 60 * 1000;
 constexpr auto StartupPdfWorkflowRelativePath =
     "Guides/DYB Lesson Planning Guide.pdf";
+constexpr auto StartupPdfLifetimeProbeExpectedPdfSha256 =
+    "295ACCAB548B41F0B4F56E6AB89958AD5C3347646904C155B16A56EBE926CAEC";
+constexpr auto StartupPdfLifetimeProbeExpectedDocumentsRccSha256 =
+    "A3EB570294B55A616EA05797222FC1FEDD93620ABB25360B724ED6843BEE924F";
+constexpr auto StartupPdfLifetimeProbeResolvedPath =
+    ":/resource-packs/documents/Guides/DYB Lesson Planning Guide.pdf";
 
 const QList<PageType>& startupWorkflowPageTypes()
 {
@@ -622,6 +638,735 @@ QPixmap grabStartupPdfViewer(
         &image
         );
     return image;
+}
+
+struct StartupPdfLifetimeProbeState
+{
+    QJsonObject identity;
+    QString arm;
+    QString runId;
+    QString pdfPath;
+    QString error;
+    QString pageMode;
+    int pageCount = 0;
+    int viewWidth = 0;
+    int viewHeight = 0;
+    bool pdfViewCreated = false;
+    bool viewerVisible = false;
+    bool forcedGrabInvoked = false;
+    QPointer<PdfViewerPage> viewer;
+    std::unique_ptr<QPdfDocument> documentOnly;
+    QElapsedTimer closeTimer;
+    QElapsedTimer loadTimer;
+    ResourcePackLease documentOnlyResourceLease;
+};
+
+QString startupProbeCanonicalFilePath(const QString& path)
+{
+    const QFileInfo info(path);
+    const QString canonical = info.canonicalFilePath();
+    return QDir::cleanPath(
+        canonical.isEmpty()
+            ? info.absoluteFilePath()
+            : canonical
+        );
+}
+
+bool startupProbePathsMatch(
+    const QString& left,
+    const QString& right
+    )
+{
+    const Qt::CaseSensitivity sensitivity =
+#if defined(Q_OS_WIN)
+        Qt::CaseInsensitive;
+#else
+        Qt::CaseSensitive;
+#endif
+    return QString::compare(
+               startupProbeCanonicalFilePath(left),
+               startupProbeCanonicalFilePath(right),
+               sensitivity
+               ) == 0;
+}
+
+QString startupPdfDocumentStatusName(QPdfDocument::Status status)
+{
+    switch (status)
+    {
+    case QPdfDocument::Status::Null:
+        return QStringLiteral("Null");
+    case QPdfDocument::Status::Loading:
+        return QStringLiteral("Loading");
+    case QPdfDocument::Status::Ready:
+        return QStringLiteral("Ready");
+    case QPdfDocument::Status::Error:
+        return QStringLiteral("Error");
+    }
+    return QStringLiteral("Unknown");
+}
+
+QJsonObject startupPdfLifetimeDisplay(const MainWindow& window)
+{
+    const QScreen* screen = window.screen();
+    if (!screen)
+    {
+        return {
+            {QStringLiteral("available"), false},
+            {QStringLiteral("windowVisible"), window.isVisible()}
+        };
+    }
+
+    const QRect geometry = screen->geometry();
+    const QRect availableGeometry = screen->availableGeometry();
+    return {
+        {QStringLiteral("available"), true},
+        {
+            QStringLiteral("geometry"),
+            QJsonObject{
+                {QStringLiteral("x"), geometry.x()},
+                {QStringLiteral("y"), geometry.y()},
+                {QStringLiteral("width"), geometry.width()},
+                {QStringLiteral("height"), geometry.height()}
+            }
+        },
+        {
+            QStringLiteral("availableGeometry"),
+            QJsonObject{
+                {QStringLiteral("x"), availableGeometry.x()},
+                {QStringLiteral("y"), availableGeometry.y()},
+                {QStringLiteral("width"), availableGeometry.width()},
+                {QStringLiteral("height"), availableGeometry.height()}
+            }
+        },
+        {QStringLiteral("devicePixelRatio"), screen->devicePixelRatio()},
+        {QStringLiteral("logicalDotsPerInch"), screen->logicalDotsPerInch()},
+        {QStringLiteral("windowVisible"), window.isVisible()}
+    };
+}
+
+bool writeStartupPdfLifetimeProbeTrace(
+    const StartupPerformanceMode& mode,
+    StartupPdfLifetimeProbeState& state,
+    const MainWindow& window,
+    const StartupProfiler& profiler
+    )
+{
+    const QJsonObject profilerReport = profiler.reportJson();
+    const QJsonArray allMemorySamples =
+        profilerReport.value(QStringLiteral("memorySamples")).toArray();
+    QJsonArray memorySamples;
+    for (const QJsonValue& value : allMemorySamples)
+    {
+        const QJsonObject sample = value.toObject();
+        if (
+            sample.value(QStringLiteral("name")).toString()
+                .startsWith(QStringLiteral("pdf-lifetime-"))
+            )
+        {
+            memorySamples.append(sample);
+        }
+    }
+
+    const QStringList requiredMeasurements{
+        QStringLiteral("pdf-lifetime-loaded-ready"),
+        QStringLiteral("pdf-lifetime-after-close"),
+        QStringLiteral("pdf-lifetime-after-close-1s"),
+        QStringLiteral("pdf-lifetime-after-close-5s")
+    };
+    bool requiredMeasurementsPresent = true;
+    for (const QString& name : requiredMeasurements)
+    {
+        int matchingCount = 0;
+        for (const QJsonValue& value : memorySamples)
+        {
+            if (value.toObject().value(QStringLiteral("name")).toString() == name)
+            {
+                ++matchingCount;
+            }
+        }
+        if (matchingCount != 1)
+        {
+            requiredMeasurementsPresent = false;
+            break;
+        }
+    }
+    if (!requiredMeasurementsPresent && state.error.isEmpty())
+    {
+        state.error = QStringLiteral("required-process-snapshot-missing-or-duplicated");
+    }
+
+    QJsonArray requiredMeasurementLabels;
+    for (const QString& name : requiredMeasurements)
+    {
+        requiredMeasurementLabels.append(name);
+    }
+
+    QJsonObject trace{
+        {QStringLiteral("schema"), QStringLiteral("classmngr-pdf-lifetime-probe-v1")},
+        {QStringLiteral("sessionId"), state.identity.value(QStringLiteral("sessionId"))},
+        {QStringLiteral("runId"), state.runId},
+        {QStringLiteral("arm"), state.arm},
+        {QStringLiteral("identity"), state.identity},
+        {
+            QStringLiteral("process"),
+            QJsonObject{
+                {QStringLiteral("processId"), static_cast<double>(QCoreApplication::applicationPid())},
+                {QStringLiteral("applicationPath"), QCoreApplication::applicationFilePath()},
+                {QStringLiteral("version"), QString::fromUtf8(BuildInfo::Version)},
+                {QStringLiteral("gitRevision"), QString::fromUtf8(BuildInfo::GitRevision)},
+                {QStringLiteral("buildTimestamp"), QString::fromUtf8(BuildInfo::BuildTimestamp)},
+                {QStringLiteral("qtVersion"), QString::fromLatin1(qVersion())}
+            }
+        },
+        {QStringLiteral("display"), startupPdfLifetimeDisplay(window)},
+        {
+            QStringLiteral("pdf"),
+            QJsonObject{
+                {QStringLiteral("resolvedPath"), state.pdfPath},
+                {QStringLiteral("relativePath"), QString::fromUtf8(StartupPdfWorkflowRelativePath)},
+                {QStringLiteral("pageCount"), state.pageCount}
+            }
+        },
+        {
+            QStringLiteral("controls"),
+            QJsonObject{
+                {QStringLiteral("documentCreated"), true},
+                {QStringLiteral("pdfViewCreated"), state.pdfViewCreated},
+                {QStringLiteral("viewerVisible"), state.viewerVisible},
+                {QStringLiteral("pageMode"), state.pageMode},
+                {QStringLiteral("viewWidth"), state.viewWidth},
+                {QStringLiteral("viewHeight"), state.viewHeight},
+                {QStringLiteral("forcedGrabInvoked"), state.forcedGrabInvoked},
+                {QStringLiteral("pngFileWritingEnabled"), false}
+            }
+        },
+        {QStringLiteral("measurementLabels"), requiredMeasurementLabels},
+        {QStringLiteral("memorySamples"), memorySamples},
+        {QStringLiteral("status"), state.error.isEmpty() ? QStringLiteral("completed") : QStringLiteral("failed")},
+        {QStringLiteral("error"), state.error}
+    };
+
+    QFile file(mode.pdfLifetimeProbeOutputPath);
+    if (!file.open(QIODevice::WriteOnly | QIODevice::Truncate | QIODevice::Text))
+    {
+        qWarning().noquote()
+            << QStringLiteral("Unable to write PDF lifetime probe trace %1: %2")
+                   .arg(mode.pdfLifetimeProbeOutputPath, file.errorString());
+        return false;
+    }
+    const QByteArray encoded = QJsonDocument(trace).toJson(QJsonDocument::Indented);
+    const bool written = file.write(encoded) == encoded.size();
+    file.close();
+    if (!written || file.error() != QFile::NoError)
+    {
+        qWarning().noquote()
+            << QStringLiteral("Unable to finish PDF lifetime probe trace %1: %2")
+                   .arg(mode.pdfLifetimeProbeOutputPath, file.errorString());
+        return false;
+    }
+    return state.error.isEmpty() && requiredMeasurementsPresent;
+}
+
+void scheduleStartupPdfLifetimeProbe(
+    QApplication& app,
+    MainWindow& window,
+    StartupProfiler& profiler,
+    const StartupPerformanceMode& mode,
+    const std::shared_ptr<bool>& workflowSucceeded,
+    std::function<void()> completion
+    )
+{
+    auto state = std::make_shared<StartupPdfLifetimeProbeState>();
+    state->identity = mode.pdfLifetimeProbeIdentity;
+    state->arm = mode.pdfLifetimeProbeArm;
+    state->runId = mode.pdfLifetimeProbeRunId;
+
+    const auto fail =
+        [
+            &profiler,
+            &mode,
+            &window,
+            workflowSucceeded,
+            state,
+            completion
+        ](const QString& detail)
+    {
+        state->error = detail;
+        *workflowSucceeded = false;
+        profiler.checkpoint(
+            QStringLiteral("pdf-lifetime-probe-failed"),
+            detail
+            );
+        (void) writeStartupPdfLifetimeProbeTrace(
+            mode,
+            *state,
+            window,
+            profiler
+            );
+        completion();
+    };
+
+    const QJsonObject applicationIdentity =
+        state->identity.value(QStringLiteral("application")).toObject();
+    const QJsonObject fixtureIdentity =
+        state->identity.value(QStringLiteral("fixture")).toObject();
+    const QJsonObject resourcePackIdentity =
+        state->identity.value(QStringLiteral("resourcePack")).toObject();
+    const QString fixturePath = startupDatabasePath(app.arguments()).trimmed();
+    const QString expectedResourcePackPath = QDir(
+        ResourcePackManager::instance().baselineDirectory()
+        ).filePath(QStringLiteral("documents.rcc"));
+
+    if (
+        !startupProbePathsMatch(
+            applicationIdentity.value(QStringLiteral("path")).toString(),
+            QCoreApplication::applicationFilePath()
+            )
+        || !startupProbePathsMatch(
+            fixtureIdentity.value(QStringLiteral("path")).toString(),
+            fixturePath
+            )
+        || !startupProbePathsMatch(
+            resourcePackIdentity.value(QStringLiteral("path")).toString(),
+            expectedResourcePackPath
+            )
+        || resourcePackIdentity.value(QStringLiteral("version")).toString()
+            != QStringLiteral("1.0.0")
+        || ResourcePackManager::instance()
+               .currentVersion(QStringLiteral("documents"))
+               .toString() != QStringLiteral("1.0.0")
+        || !window.isVisible()
+        )
+    {
+        fail(
+            QStringLiteral(
+                "PDF lifetime probe sidecar paths do not match this application, startup fixture, or packaged documents.rcc."
+                )
+            );
+        return;
+    }
+
+    PageManager* pageManager = window.pageManager();
+    if (!pageManager)
+    {
+        fail(QStringLiteral("page-manager-unavailable"));
+        return;
+    }
+
+    const bool documentOnly =
+        state->arm == QStringLiteral("document-only");
+    if (documentOnly)
+    {
+        if (
+            pageManager->pdfViewerPage()
+            || window.findChild<QPdfView*>()
+            )
+        {
+            fail(
+                QStringLiteral(
+                    "Document-only arm found a PDF viewer before creating its document."
+                    )
+                );
+            return;
+        }
+    }
+    else
+    {
+        pageManager->showPage(PageType::PdfViewer);
+        app.processEvents();
+        state->viewer = pageManager->pdfViewerPage();
+        if (
+            !state->viewer
+            || !pageManager->isCurrentPage(PageType::PdfViewer)
+            )
+        {
+            fail(QStringLiteral("pdf-viewer-page-unavailable"));
+            return;
+        }
+        state->pdfViewCreated = true;
+    }
+
+    auto lease = ResourcePaths::Documents::acquire();
+    if (!lease)
+    {
+        fail(
+            QStringLiteral("documents-pack-unavailable: %1")
+                .arg(lease.error())
+            );
+        return;
+    }
+
+    state->pdfPath = ResourcePaths::Documents::filePath(
+        *lease,
+        QString::fromUtf8(StartupPdfWorkflowRelativePath)
+        );
+    if (
+        state->pdfPath != QString::fromUtf8(StartupPdfLifetimeProbeResolvedPath)
+        || !QFile::exists(state->pdfPath)
+        )
+    {
+        fail(
+            QStringLiteral("resolved-pdf-path-mismatch: %1")
+                .arg(state->pdfPath)
+            );
+        return;
+    }
+
+    const QJsonObject pdfIdentity =
+        state->identity.value(QStringLiteral("pdf")).toObject();
+    if (
+        pdfIdentity.value(QStringLiteral("resolvedPath")).toString()
+            != state->pdfPath
+        || pdfIdentity.value(QStringLiteral("relativePath")).toString()
+            != QString::fromUtf8(StartupPdfWorkflowRelativePath)
+        )
+    {
+        fail(QStringLiteral("sidecar-resolved-pdf-path-mismatch"));
+        return;
+    }
+
+    QPdfDocument* document = nullptr;
+    if (documentOnly)
+    {
+        state->documentOnly = std::make_unique<QPdfDocument>();
+        document = state->documentOnly.get();
+        state->documentOnlyResourceLease = std::move(*lease);
+        if (state->documentOnly->load(state->pdfPath) != QPdfDocument::Error::None)
+        {
+            fail(QStringLiteral("document-only-load-request-rejected"));
+            return;
+        }
+    }
+    else
+    {
+        PdfViewerDocumentDescriptor descriptor;
+        descriptor.pdfFilePath = state->pdfPath;
+        descriptor.resourceLease = std::move(*lease);
+        if (!state->viewer->loadPdf(std::move(descriptor)))
+        {
+            fail(QStringLiteral("viewer-load-request-rejected"));
+            return;
+        }
+        document = state->viewer->findChild<QPdfDocument*>();
+    }
+
+    if (!document)
+    {
+        fail(QStringLiteral("pdf-document-unavailable"));
+        return;
+    }
+
+    const auto sampleLoadedReady =
+        [
+            &app,
+            &profiler,
+            &mode,
+            &window,
+            workflowSucceeded,
+            state,
+            completion,
+            fail,
+            documentOnly,
+            document
+        ]()
+    {
+        app.processEvents();
+        if (
+            document->status() != QPdfDocument::Status::Ready
+            || document->pageCount() != 38
+            )
+        {
+            fail(
+                QStringLiteral("pdf-not-ready-or-page-count-mismatch: status=%1; pages=%2")
+                    .arg(static_cast<int>(document->status()))
+                    .arg(document->pageCount())
+                );
+            return;
+        }
+
+        if (
+            documentOnly
+            && (
+                window.findChild<QPdfView*>()
+                || window.pageManager()->pdfViewerPage()
+                )
+            )
+        {
+            fail(
+                QStringLiteral(
+                    "Document-only arm created a PDF view while loading the document."
+                    )
+                );
+            return;
+        }
+
+        QPdfView* view = nullptr;
+        if (!documentOnly)
+        {
+            view = state->viewer->findChild<QPdfView*>(
+                QStringLiteral("pdfViewerView")
+                );
+            if (
+                !view
+                || !view->isVisible()
+                || view->pageMode() != QPdfView::PageMode::MultiPage
+                )
+            {
+                fail(
+                    QStringLiteral(
+                        "PDF viewer is not visible in MultiPage mode after load."
+                        )
+                    );
+                return;
+            }
+            state->viewerVisible = true;
+            state->pageMode = QStringLiteral("MultiPage");
+            state->viewWidth = view->width();
+            state->viewHeight = view->height();
+        }
+
+        state->pageCount = document->pageCount();
+        QJsonObject loadedState{
+            {QStringLiteral("documentCreated"), true},
+            {QStringLiteral("documentStatus"), QStringLiteral("Ready")},
+            {QStringLiteral("pageCount"), state->pageCount},
+            {QStringLiteral("pdfViewCreated"), state->pdfViewCreated},
+            {QStringLiteral("viewerVisible"), state->viewerVisible},
+            {QStringLiteral("pageMode"), state->pageMode},
+            {QStringLiteral("forcedGrabInvoked"), false},
+            {QStringLiteral("pngFileWritingEnabled"), false}
+        };
+        if (view)
+        {
+            loadedState.insert(
+                QStringLiteral("viewWidth"),
+                view->width()
+                );
+            loadedState.insert(
+                QStringLiteral("viewHeight"),
+                view->height()
+                );
+        }
+        profiler.sampleProcessMemory(
+            QStringLiteral("pdf-lifetime-loaded-ready"),
+            loadedState,
+            QJsonObject{
+                {QStringLiteral("documentOnly"), documentOnly},
+                {QStringLiteral("pdfRelativePath"), QString::fromUtf8(StartupPdfWorkflowRelativePath)}
+            }
+            );
+
+        if (state->arm == QStringLiteral("viewer-grab"))
+        {
+            {
+                const QPixmap renderedImage = grabStartupPdfViewer(
+                    *state->viewer,
+                    profiler,
+                    QStringLiteral("pdf-lifetime")
+                    );
+                if (renderedImage.isNull() || renderedImage.size().isEmpty())
+                {
+                    fail(QStringLiteral("forced-view-grab-returned-empty-image"));
+                    return;
+                }
+                state->forcedGrabInvoked = true;
+                profiler.checkpoint(
+                    QStringLiteral("pdf-lifetime-forced-grab-invoked"),
+                    QStringLiteral("viewer.grab(); pngFileWritingEnabled=false")
+                    );
+            }
+        }
+
+        if (documentOnly)
+        {
+            document->close();
+            state->documentOnlyResourceLease.reset();
+        }
+        else
+        {
+            state->viewer->releaseDocument();
+        }
+        app.processEvents();
+        state->closeTimer.start();
+
+        QJsonObject closedState{
+            {QStringLiteral("documentStatus"), startupPdfDocumentStatusName(document->status())},
+            {QStringLiteral("pageCount"), document->pageCount()},
+            {QStringLiteral("pdfViewCreated"), state->pdfViewCreated},
+            {QStringLiteral("viewerVisible"), state->viewerVisible},
+            {QStringLiteral("pageMode"), state->pageMode},
+            {QStringLiteral("forcedGrabInvoked"), state->forcedGrabInvoked},
+            {QStringLiteral("pngFileWritingEnabled"), false}
+        };
+        profiler.sampleProcessMemory(
+            QStringLiteral("pdf-lifetime-after-close"),
+            closedState,
+            QJsonObject{
+                {QStringLiteral("closeElapsedMs"), 0},
+                {QStringLiteral("resourceLeaseReleased"), true}
+            }
+            );
+
+        if (
+            document->status() != QPdfDocument::Status::Null
+            || document->pageCount() != 0
+            )
+        {
+            fail(
+                QStringLiteral("pdf-close-incomplete: status=%1; pages=%2")
+                    .arg(startupPdfDocumentStatusName(document->status()))
+                    .arg(document->pageCount())
+                );
+            return;
+        }
+
+        QTimer::singleShot(
+            1000,
+            &app,
+            [
+                &app,
+                &profiler,
+                &mode,
+                &window,
+                workflowSucceeded,
+                state,
+                document,
+                fail,
+                completion
+            ]()
+            {
+                app.processEvents();
+                const qint64 elapsedMilliseconds = state->closeTimer.elapsed();
+                profiler.sampleProcessMemory(
+                    QStringLiteral("pdf-lifetime-after-close-1s"),
+                    QJsonObject{
+                        {QStringLiteral("documentStatus"), startupPdfDocumentStatusName(document->status())},
+                        {QStringLiteral("pageCount"), document->pageCount()},
+                        {QStringLiteral("pdfViewCreated"), state->pdfViewCreated},
+                        {QStringLiteral("viewerVisible"), state->viewerVisible},
+                        {QStringLiteral("pageMode"), state->pageMode},
+                        {QStringLiteral("viewWidth"), state->viewWidth},
+                        {QStringLiteral("viewHeight"), state->viewHeight},
+                        {QStringLiteral("forcedGrabInvoked"), state->forcedGrabInvoked},
+                        {QStringLiteral("pngFileWritingEnabled"), false}
+                    },
+                    QJsonObject{
+                        {QStringLiteral("closeElapsedMs"), static_cast<double>(elapsedMilliseconds)}
+                    }
+                    );
+
+                if (document->status() != QPdfDocument::Status::Null)
+                {
+                    fail(
+                        QStringLiteral("pdf-reloaded-without-request-after-1s")
+                        );
+                    return;
+                }
+
+                const int delayUntilFiveSeconds = qMax(
+                    0,
+                    5000 - static_cast<int>(elapsedMilliseconds)
+                    );
+                QTimer::singleShot(
+                    delayUntilFiveSeconds,
+                    &app,
+                    [
+                        &app,
+                        &profiler,
+                        &mode,
+                        &window,
+                        state,
+                        document,
+                        fail,
+                        workflowSucceeded,
+                        completion
+                    ]()
+                    {
+                        app.processEvents();
+                        const qint64 finalElapsedMilliseconds =
+                            state->closeTimer.elapsed();
+                        profiler.sampleProcessMemory(
+                            QStringLiteral("pdf-lifetime-after-close-5s"),
+                            QJsonObject{
+                                {QStringLiteral("documentStatus"), startupPdfDocumentStatusName(document->status())},
+                                {QStringLiteral("pageCount"), document->pageCount()},
+                                {QStringLiteral("pdfViewCreated"), state->pdfViewCreated},
+                                {QStringLiteral("viewerVisible"), state->viewerVisible},
+                                {QStringLiteral("pageMode"), state->pageMode},
+                                {QStringLiteral("viewWidth"), state->viewWidth},
+                                {QStringLiteral("viewHeight"), state->viewHeight},
+                                {QStringLiteral("forcedGrabInvoked"), state->forcedGrabInvoked},
+                                {QStringLiteral("pngFileWritingEnabled"), false}
+                            },
+                            QJsonObject{
+                                {QStringLiteral("closeElapsedMs"), static_cast<double>(finalElapsedMilliseconds)}
+                            }
+                            );
+                        if (document->status() != QPdfDocument::Status::Null)
+                        {
+                            fail(
+                                QStringLiteral("pdf-reloaded-without-request-after-5s")
+                                );
+                            return;
+                        }
+                        if (
+                            !writeStartupPdfLifetimeProbeTrace(
+                                mode,
+                                *state,
+                                window,
+                                profiler
+                                )
+                            )
+                        {
+                            *workflowSucceeded = false;
+                        }
+                        completion();
+                    }
+                    );
+            }
+            );
+    };
+
+    auto* readinessTimer = new QTimer(&app);
+    readinessTimer->setInterval(50);
+    state->loadTimer.start();
+    QObject::connect(
+        readinessTimer,
+        &QTimer::timeout,
+        &app,
+        [
+            readinessTimer,
+            state,
+            document,
+            sampleLoadedReady,
+            fail
+        ]()
+        {
+            if (document->status() == QPdfDocument::Status::Ready)
+            {
+                readinessTimer->stop();
+                readinessTimer->deleteLater();
+                sampleLoadedReady();
+                return;
+            }
+            if (
+                document->status() == QPdfDocument::Status::Error
+                || state->loadTimer.elapsed() >= 30000
+                )
+            {
+                readinessTimer->stop();
+                readinessTimer->deleteLater();
+                const QString detail =
+                    document->status() == QPdfDocument::Status::Error
+                        ? QStringLiteral("pdf-load-error: status=%1")
+                              .arg(static_cast<int>(document->status()))
+                        : QStringLiteral("pdf-load-timeout");
+                fail(detail);
+            }
+        }
+        );
+    readinessTimer->start();
 }
 
 bool saveStartupPdfCapture(
@@ -1923,6 +2668,301 @@ StartupPerformanceMode startupPerformanceMode(
                 << QStringLiteral(
                     "Ignoring invalid --startup-performance-settle-ms value '%1'."
                     ).arg(args.at(settleIndex + 1));
+        }
+    }
+
+    const QString pdfLifetimeProbeOption =
+        QStringLiteral("--startup-performance-pdf-lifetime-probe");
+    if (args.contains(pdfLifetimeProbeOption))
+    {
+        mode.pdfLifetimeProbeEnabled = true;
+        mode.enabled = true;
+
+        const auto fail = [&mode](const QString& message)
+        {
+            if (mode.pdfLifetimeProbeError.isEmpty())
+            {
+                mode.pdfLifetimeProbeError = message;
+            }
+        };
+        const auto readRequiredValue =
+            [&args, &fail](const QString& option) -> QString
+        {
+            if (args.count(option) != 1)
+            {
+                fail(
+                    QStringLiteral("Expected exactly one %1 argument.")
+                        .arg(option)
+                    );
+                return {};
+            }
+
+            const int index = args.indexOf(option);
+            if (
+                index + 1 >= args.size()
+                || args.at(index + 1).startsWith(QLatin1Char('-'))
+                )
+            {
+                fail(
+                    QStringLiteral("Missing value for %1.").arg(option)
+                    );
+                return {};
+            }
+            return args.at(index + 1).trimmed();
+        };
+
+        if (args.count(pdfLifetimeProbeOption) != 1)
+        {
+            fail(
+                QStringLiteral(
+                    "Expected exactly one --startup-performance-pdf-lifetime-probe argument."
+                    )
+                );
+        }
+        else
+        {
+            const int probeIndex = args.indexOf(pdfLifetimeProbeOption);
+            if (
+                probeIndex + 1 >= args.size()
+                || args.at(probeIndex + 1).startsWith(QLatin1Char('-'))
+                )
+            {
+                fail(
+                    QStringLiteral(
+                        "Missing PDF lifetime probe arm; expected document-only, viewer-no-grab, or viewer-grab."
+                        )
+                    );
+            }
+            else
+            {
+                mode.pdfLifetimeProbeArm =
+                    args.at(probeIndex + 1).trimmed();
+                if (
+                    mode.pdfLifetimeProbeArm != QStringLiteral("document-only")
+                    && mode.pdfLifetimeProbeArm != QStringLiteral("viewer-no-grab")
+                    && mode.pdfLifetimeProbeArm != QStringLiteral("viewer-grab")
+                    )
+                {
+                    fail(
+                        QStringLiteral(
+                            "Invalid PDF lifetime probe arm '%1'; expected document-only, viewer-no-grab, or viewer-grab."
+                            )
+                            .arg(mode.pdfLifetimeProbeArm)
+                        );
+                }
+            }
+        }
+
+        mode.pdfLifetimeProbeRunId = readRequiredValue(
+            QStringLiteral("--startup-performance-pdf-lifetime-run-id")
+            );
+        mode.pdfLifetimeProbeSidecarPath = readRequiredValue(
+            QStringLiteral("--startup-performance-pdf-lifetime-sidecar")
+            );
+        mode.pdfLifetimeProbeOutputPath = readRequiredValue(
+            QStringLiteral("--startup-performance-pdf-lifetime-output")
+            );
+
+        if (
+            mode.pdfLifetimeProbeRunId.isEmpty()
+            || mode.pdfLifetimeProbeRunId.size() > 128
+            )
+        {
+            fail(QStringLiteral("The PDF lifetime probe run ID is invalid."));
+        }
+        if (
+            mode.pdfLifetimeProbeSidecarPath.isEmpty()
+            || mode.pdfLifetimeProbeOutputPath.isEmpty()
+            )
+        {
+            fail(
+                QStringLiteral(
+                    "The PDF lifetime probe requires sidecar and output paths."
+                    )
+                );
+        }
+
+        if (
+            mode.workflowEnabled
+            || mode.scheduleLifecycleEnabled
+            || mode.scheduleImportLifecycleEnabled
+            || mode.scheduleImportApplyLifecycleEnabled
+            || mode.calendarImportLifecycleEnabled
+            || mode.classesLifecycleEnabled
+            || mode.classTransferLifecycleEnabled
+            || mode.speakingEvaluationLifecycleEnabled
+            || mode.staffDirectoryLifecycleEnabled
+            || mode.subPrepLifecycleEnabled
+            || mode.subPrepOutputLifecycleEnabled
+            || mode.subPrepVisualStatesEnabled
+            || mode.resourceTraceEnabled
+            || mode.visualCaptureEnabled
+            )
+        {
+            fail(
+                QStringLiteral(
+                    "The PDF lifetime probe cannot be combined with another startup workflow or capture mode."
+                    )
+                );
+        }
+
+        if (
+            scenarioIndex >= 0
+            && (
+                scenarioIndex + 1 >= args.size()
+                || args.at(scenarioIndex + 1).trimmed()
+                    != QStringLiteral("representative")
+                )
+            )
+        {
+            fail(
+                QStringLiteral(
+                    "The PDF lifetime probe requires --startup-performance-scenario representative."
+                    )
+                );
+        }
+        mode.scenario = StartupPerformanceMode::Scenario::Representative;
+        mode.settleMilliseconds = 0;
+
+        const QString fixturePath = startupDatabasePath(args).trimmed();
+        if (fixturePath.isEmpty() || !QFileInfo::exists(fixturePath))
+        {
+            fail(
+                QStringLiteral(
+                    "The PDF lifetime probe requires an existing 96-class .tps fixture path."
+                    )
+                );
+        }
+
+        if (mode.pdfLifetimeProbeError.isEmpty())
+        {
+            QFile sidecarFile(mode.pdfLifetimeProbeSidecarPath);
+            if (!sidecarFile.open(QIODevice::ReadOnly))
+            {
+                fail(
+                    QStringLiteral("Unable to read PDF lifetime probe sidecar: %1")
+                        .arg(sidecarFile.errorString())
+                    );
+            }
+            else
+            {
+                QJsonParseError parseError;
+                const QJsonDocument sidecarDocument = QJsonDocument::fromJson(
+                    sidecarFile.readAll(),
+                    &parseError
+                    );
+                sidecarFile.close();
+                if (
+                    parseError.error != QJsonParseError::NoError
+                    || !sidecarDocument.isObject()
+                    )
+                {
+                    fail(
+                        QStringLiteral("Invalid PDF lifetime probe sidecar JSON: %1")
+                            .arg(parseError.errorString())
+                        );
+                }
+                else
+                {
+                    const QJsonObject identity = sidecarDocument.object();
+                    const QJsonObject pdf =
+                        identity.value(QStringLiteral("pdf")).toObject();
+                    const QJsonObject resourcePack =
+                        identity.value(QStringLiteral("resourcePack")).toObject();
+                    const QJsonObject fixture =
+                        identity.value(QStringLiteral("fixture")).toObject();
+                    const QJsonObject controls =
+                        identity.value(QStringLiteral("controls")).toObject();
+                    const QJsonObject application =
+                        identity.value(QStringLiteral("application")).toObject();
+                    const QJsonObject source =
+                        identity.value(QStringLiteral("source")).toObject();
+
+                    const auto canonicalPath = [](const QString& path)
+                    {
+                        const QFileInfo info(path);
+                        const QString canonical = info.canonicalFilePath();
+                        return QDir::cleanPath(
+                            canonical.isEmpty()
+                                ? info.absoluteFilePath()
+                                : canonical
+                            );
+                    };
+                    const auto pathsMatch =
+                        [&canonicalPath](const QString& left, const QString& right)
+                    {
+                        const Qt::CaseSensitivity sensitivity =
+#if defined(Q_OS_WIN)
+                            Qt::CaseInsensitive;
+#else
+                            Qt::CaseSensitive;
+#endif
+                        return QString::compare(
+                                   canonicalPath(left),
+                                   canonicalPath(right),
+                                   sensitivity
+                                   ) == 0;
+                    };
+
+                    if (
+                        identity.value(QStringLiteral("schema")).toString()
+                            != QStringLiteral("classmngr-pdf-lifetime-probe-identity-v1")
+                        || identity.value(QStringLiteral("runId")).toString()
+                            != mode.pdfLifetimeProbeRunId
+                        || identity.value(QStringLiteral("arm")).toString()
+                            != mode.pdfLifetimeProbeArm
+                        || identity.value(QStringLiteral("sessionId")).toString().trimmed().isEmpty()
+                        || identity.value(QStringLiteral("outputPath")).toString().trimmed().isEmpty()
+                        || !pathsMatch(
+                            identity.value(QStringLiteral("outputPath")).toString(),
+                            mode.pdfLifetimeProbeOutputPath
+                            )
+                        || pdf.value(QStringLiteral("catalogId")).toString()
+                            != QStringLiteral("document_guides_lesson_planning")
+                        || pdf.value(QStringLiteral("relativePath")).toString()
+                            != QString::fromUtf8(StartupPdfWorkflowRelativePath)
+                        || pdf.value(QStringLiteral("resolvedPath")).toString()
+                            != QString::fromUtf8(StartupPdfLifetimeProbeResolvedPath)
+                        || pdf.value(QStringLiteral("sha256")).toString().compare(
+                               QString::fromUtf8(StartupPdfLifetimeProbeExpectedPdfSha256),
+                               Qt::CaseInsensitive
+                               ) != 0
+                        || resourcePack.value(QStringLiteral("id")).toString()
+                            != QStringLiteral("documents")
+                        || resourcePack.value(QStringLiteral("version")).toString()
+                            != QStringLiteral("1.0.0")
+                        || resourcePack.value(QStringLiteral("sha256")).toString().compare(
+                               QString::fromUtf8(
+                                   StartupPdfLifetimeProbeExpectedDocumentsRccSha256
+                                   ),
+                               Qt::CaseInsensitive
+                               ) != 0
+                        || fixture.value(QStringLiteral("classCount")).toInt(-1) != 96
+                        || !pathsMatch(fixture.value(QStringLiteral("path")).toString(), fixturePath)
+                        || fixture.value(QStringLiteral("sha256")).toString().size() != 64
+                        || application.value(QStringLiteral("path")).toString().trimmed().isEmpty()
+                        || application.value(QStringLiteral("sha256")).toString().size() != 64
+                        || source.value(QStringLiteral("gitRevision")).toString()
+                            != QString::fromUtf8(BuildInfo::GitRevision)
+                        || controls.value(QStringLiteral("arm")).toString()
+                            != mode.pdfLifetimeProbeArm
+                        || controls.value(QStringLiteral("forcedGrab")).toBool()
+                            != (mode.pdfLifetimeProbeArm == QStringLiteral("viewer-grab"))
+                        || controls.value(QStringLiteral("pngFileWritingEnabled")).toBool(true)
+                        )
+                    {
+                        fail(
+                            QStringLiteral(
+                                "PDF lifetime probe sidecar identity does not match the selected run, fixture, PDF, resource pack, or source revision."
+                                )
+                            );
+                    }
+                    else
+                    {
+                        mode.pdfLifetimeProbeIdentity = identity;
+                    }
+                }
+            }
         }
     }
 
@@ -6398,6 +7438,25 @@ int main(int argc, char *argv[])
 
     const StartupPerformanceMode startupPerformance =
         startupPerformanceMode(launchArguments);
+    if (!startupPerformance.pdfLifetimeProbeError.isEmpty())
+    {
+        const QString message =
+            QStringLiteral("Invalid PDF lifetime probe invocation: %1\n")
+                .arg(startupPerformance.pdfLifetimeProbeError);
+        qCritical().noquote() << message.trimmed();
+        const QByteArray encodedMessage = message.toLocal8Bit();
+        if (!encodedMessage.isEmpty())
+        {
+            std::fwrite(
+                encodedMessage.constData(),
+                1,
+                static_cast<size_t>(encodedMessage.size()),
+                stderr
+                );
+            std::fflush(stderr);
+        }
+        return 2;
+    }
     if (startupPerformance.enabled)
     {
         StartupProfiler::activate(&startupProfiler);
@@ -6758,16 +7817,18 @@ int main(int argc, char *argv[])
             }
 
             const bool metricsWritten =
-                startupPerformance.visualCaptureEnabled
-                && startupPerformance.outputPath.trimmed().isEmpty()
-                ? true
-                : writeStartupPerformanceMetrics(
-                      startupPerformance.outputPath,
-                      startupProfiler,
-                      startupPerformance,
-                      progressUpdates,
-                      progress
-                      );
+                startupPerformance.pdfLifetimeProbeEnabled
+                || (
+                    startupPerformance.visualCaptureEnabled
+                    && startupPerformance.outputPath.trimmed().isEmpty()
+                    )
+                || writeStartupPerformanceMetrics(
+                       startupPerformance.outputPath,
+                       startupProfiler,
+                       startupPerformance,
+                       progressUpdates,
+                       progress
+                       );
             app.exit(
                 metricsWritten
                     && visualCaptureSucceeded
@@ -6908,6 +7969,19 @@ int main(int argc, char *argv[])
             }
             scheduleSettledCompletion();
         };
+
+        if (startupPerformance.pdfLifetimeProbeEnabled)
+        {
+            scheduleStartupPdfLifetimeProbe(
+                app,
+                window,
+                startupProfiler,
+                startupPerformance,
+                workflowSucceeded,
+                finishPerformanceRun
+                );
+            return;
+        }
 
         if (startupPerformance.workflowEnabled)
         {

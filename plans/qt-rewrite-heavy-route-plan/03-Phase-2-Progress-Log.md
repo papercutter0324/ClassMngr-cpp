@@ -18803,6 +18803,45 @@ Preserve the identical `documents.rcc` and PDF relative path in every arm; write
 the resolved path and PDF SHA-256 into sidecar metadata outside the measured
 process. Interpret repeated patterns as discriminating evidence, not causal
 proof; if ownership remains ambiguous, consider Windows allocation tracing.
-F542 is a proposal only: no production diagnostic implementation or fix has
+F542's diagnostic harness implementation and smoke result are recorded below;
+the smoke is not repeated-process or causal evidence. No production fix has
 been selected. Lifecycle memory acceptance, F526 provenance, output parity,
 and the overall Phase 0 gate remain open.
+
+## F542 opt-in PDF lifetime diagnostic harness - 2026-10-10
+
+F542 adds an opt-in diagnostic to `src/main.cpp` and a three-arm runner in
+`scripts/phase0/run_pdf_lifetime_probe.py`, with tests in
+`scripts/phase0/test_pdf_lifetime_probe_runner.py`. The arms are document-only,
+visible MultiPage without forced grab, and visible MultiPage with the existing
+grab path. PNG file writing is disabled in every arm; no production default
+changed, and the Qt 6.12 `setDocument(nullptr)` path is not used.
+
+The external sidecar records executable SHA-256, Git revision and tracked-tree
+state, hashes of relevant source inputs, the 96-class SQLite fixture path/hash,
+resolved `documents.rcc` path/hash, and catalog PDF path/hash. The three arms
+share these identities while using distinct process IDs and matching Qt and
+display settings. The pre-commit revision was `7885a33e`; tracked source
+changes are explicitly hashed in the sidecars. Executable SHA-256 is
+`2562FE1BCA9318D3F35210A3F700FA921D376D43A33E773AD9BFE247539F3985`, fixture
+SHA-256 `DADD8DCFB7ABBBB291E5975286413CF1C489C793C8E640D33C181112DF38835F`,
+`documents.rcc` SHA-256
+`A3EB570294B55A616EA05797222FC1FEDD93620ABB25360B724ED6843BEE924F`, and PDF
+SHA-256 `295ACCAB548B41F0B4F56E6AB89958AD5C3347646904C155B16A56EBE926CAEC`.
+
+Windows x64 Debug Ninja configure and `ClassMngr` plus
+`ClassMngrStartupPerformanceTests` builds succeeded. The startup performance
+CTest passed 1/1 before a final runner-only availability-field correction;
+final Python runner tests passed 8/8, `py_compile` passed, and invalid-arm
+handling exited 2 with the valid modes listed. The final one-process-per-arm
+smoke passed under
+`%LOCALAPPDATA%\Temp\F542-final-smoke-e80765589f3041ee805ebf132290c002`.
+Each trace contains exactly one ready, after-close, +1s, and +5s sample, with
+available memory and no PNG output. This verifies harness operation only; it
+does not establish a trend, memory reduction, or cause.
+
+F543 is next: run three fresh processes per arm (nine total) with the matched
+sidecar controls and compare repeated samples. F541's hypotheses remain
+unresolved; no production optimization or fix is selected. The 250 MiB
+lifecycle memory gate, F526 source provenance, output parity, and full Phase 0
+coverage remain open.
