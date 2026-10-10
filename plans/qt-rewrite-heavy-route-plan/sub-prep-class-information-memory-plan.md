@@ -596,6 +596,17 @@ arm with matching sidecar identities. Median lifetime peak working sets were
 MiB (viewer with grab). This isolated probe's baseline is far above F536's
 roughly 264 MiB route reading; the different process/route setup makes them
 incomparable for acceptance or historical growth. The medians are descriptive,
-not causal, and establish no owner or fix. F544's bounded interpretation and
-decision about a reopen-specific follow-up are pending. The 250 MiB lifecycle
-gate, F526 provenance, output parity, and full Phase 0 remain open.
+not causal, and establish no owner or fix. F544 found that F543's standalone
+load/close arms did not exercise leaving and reopening the cached production
+`PageManager` viewer. F545 is next: compare one production load/leave/close
+cycle with a leave/close/reopen/leave/close cycle, three fresh Release
+processes per arm, on the same binary, fixture, PDF/RCC, Qt, and display. Keep
+the visible MultiPage view but disable forced grabs and PNG writes; record
+document status/pages/readiness, view/document identity, and resource-pack
+mount state at every load/ready and close/reopen (mounted state indicates any
+lease, not owner/count); sample memory at first-ready, immediately after each
+close, +1s/+5s, second-ready, and final close. Wait for Ready after each load;
+confirm Null status/zero pages after close. Keep control duration matched and
+use normal teardown without `setDocument(nullptr)` or deleting the cached page.
+This narrows hypotheses only; no cause or fix is established. The 250 MiB
+lifecycle gate, F526 provenance, output parity, and full Phase 0 remain open.

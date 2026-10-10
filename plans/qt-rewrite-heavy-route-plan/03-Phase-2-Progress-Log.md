@@ -18840,8 +18840,8 @@ Each trace contains exactly one ready, after-close, +1s, and +5s sample, with
 available memory and no PNG output. This verifies harness operation only; it
 does not establish a trend, memory reduction, or cause.
 
-F543's repeated-probe campaign is recorded below. F544's bounded interpretation
-and decision on whether a reopen-specific follow-up is warranted are pending.
+F543's repeated-probe campaign is recorded below. F544's interpretation and
+the selected F545 production-lifecycle comparison are recorded after it.
 F541's hypotheses remain unresolved; no production optimization or fix is
 selected. The 250 MiB lifecycle memory gate, F526 source provenance, output
 parity, and full Phase 0 coverage remain open.
@@ -18888,6 +18888,36 @@ above the historical F536 Sub Prep-route value near 264 MiB. The process and
 route setups differ, so these values are not comparable for lifecycle
 acceptance or historical growth. Private usage is a separate metric from the
 resident working-set target. The arm summaries are descriptive, not causal;
-they identify neither an owner nor a fix. F544's interpretation and decision
-on a reopen-specific follow-up are pending. Lifecycle 250 MiB acceptance,
-F526 provenance, output parity, and the full Phase 0 gate remain open.
+they identify neither an owner nor a fix. F544's interpretation follows.
+Lifecycle 250 MiB acceptance, F526 provenance, output parity, and the full
+Phase 0 gate remain open.
+
+## F544 probe interpretation and follow-up decision - 2026-10-10
+
+Across F543's independent three-process medians, `viewer-no-grab` versus
+`document-only` was +13.3 MiB working set / +5.0 MiB private usage at ready,
+then +5.3 / -3.3 MiB after close. `viewer-grab` and `viewer-no-grab` had nearly
+equal ready and post-close working sets (+0.1 and +0.3 MiB); their lifetime
+peak working-set medians differed by 6.3 MiB. These are descriptive medians,
+not allocation attribution or causal proof. F543 performs one standalone load
+and close; it does not leave and reopen the cached production `PageManager`
+viewer (`src/main.cpp`; `pdf_viewer_page.cpp:163-215`). The F536 route's
+reopened-viewer high-water remains unresolved.
+
+The main selected F545 to compare the production lifecycle in two arms: one
+load/leave/close (control), and load/leave/close/reopen/leave/close (reopen),
+with three fresh Release processes per arm. Use the same Release binary/commit,
+96-class fixture, PDF and `documents.rcc` hashes, Qt/display, visible MultiPage
+view, and production `PageManager` navigation. Disable forced grabs and PNG
+writes. At each load/ready and close/reopen, record document status/page count,
+readiness, view and document identity, and
+`ResourcePackManager::isMounted("documents")` (mounted state indicates any
+lease, not its owner or count). Sample working set / peak working set / private
+usage / private working set at first-ready, immediately after each close,
++1s/+5s, second-ready, and final close. Wait for Ready after each load and
+confirm `Null` status and zero pages after close; keep the control alive for the
+same elapsed time as the reopen arm. Use normal window teardown; do not detach
+with `setDocument(nullptr)` or manually delete the cached page. These
+observations may narrow hypotheses but do not automatically attribute a
+repeated rise to a cause or fix. F545 is next. Lifecycle acceptance, F526
+provenance, output parity, and full Phase 0 remain open.
