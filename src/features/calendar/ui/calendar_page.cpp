@@ -97,8 +97,8 @@ void CalendarPage::buildUi()
         UiConstants::Pages::HeaderContentSpacing
         );
 
-    buildCalendarContent();
     m_scrollContentLayout->addStretch();
+    buildCalendarContent();
 
     m_scrollArea->setWidget(m_scrollContent);
     contentLayout()->addWidget(m_scrollArea);
@@ -108,6 +108,7 @@ void CalendarPage::refresh()
 {
     BasePage::refresh();
 
+    buildCalendarContent();
     updateCalendarCampusFilter();
 
     refreshCalendarData();
@@ -118,6 +119,34 @@ void CalendarPage::refresh()
     }
 
     refreshUpcomingEvents();
+}
+
+void CalendarPage::releaseFeatureResources()
+{
+    if (!m_calendarContent)
+    {
+        return;
+    }
+
+    m_upcomingEventsScope = currentUpcomingEventsScope();
+    QWidget* const content = m_calendarContent;
+    m_calendarContent = nullptr;
+    m_calendarView = nullptr;
+    m_upcomingEventsTabs = nullptr;
+    m_upcomingEventsHeading = nullptr;
+    m_upcomingEventLayouts.fill(nullptr);
+    m_eventTypeFilterButtons.clear();
+    // Destroy QML bindings before invalidation notifies the retained model.
+    delete content;
+
+    m_nextTenSearchEnd = {};
+    m_nextTenSearchComplete = false;
+    m_nextTenLookupPending = false;
+    m_loadedMonths.clear();
+    m_onDemandRetainedRanges.clear();
+    m_calendarCache->setRetainedRanges({});
+    m_calendarCache->invalidate();
+    markStale();
 }
 
 void CalendarPage::clearDatabaseState()
@@ -226,6 +255,9 @@ CalendarPageRuntimeMetrics CalendarPage::runtimeMetrics() const
         metrics.cacheLoading = m_calendarCache->isLoading();
     }
 
+    metrics.nextTenSearchEnd = m_nextTenSearchEnd;
+    metrics.nextTenSearchComplete = m_nextTenSearchComplete;
+    metrics.nextTenLookupPending = m_nextTenLookupPending;
     metrics.loadedMonthCount = m_loadedMonths.size();
     metrics.onDemandRetainedRangeCount = m_onDemandRetainedRanges.size();
     metrics.modelRevision = m_calendarModel

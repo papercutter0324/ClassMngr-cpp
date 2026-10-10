@@ -20203,6 +20203,38 @@ under `dist/f604-current-source-windows-x64`,
 `build/f604-verification-20261011`, and
 `build/f604-checkpoint-dryrun-20261011`.
 
+## F607 release hidden Calendar resources on workspace leave - 2026-10-11
+
+`CalendarPage::releaseFeatureResources()` now removes its Calendar content
+card on deactivation, releasing the QQuickWidget/QML tree and upcoming-event
+widgets. It clears the event cache/model rows, loaded-month and on-demand
+retention ranges, and next-ten search state, then marks the page stale. The
+page, cache/watcher, model, and academic-calendar provider remain alive. On
+re-entry the card is rebuilt once and restores the visible month, event-type
+filters, and selected upcoming-events scope before requesting fresh data.
+
+Both range and next-event-month request deduplication now ignores active work
+from an earlier cache generation. If an old uncancelable request is still
+running at re-entry, fresh work for the same key queues behind it; its stale
+result is rejected and the fresh result is applied when it runs. No blocking
+wait was added to the UI thread.
+
+The standard Windows x64 Debug target build completed successfully with
+approved MSBuild access. Focused results were 13/0 for
+`ClassMngrCalendarEventCacheTests`, 12/0 for
+`ClassMngrCalendarPageEventMutationParityTests`, 26/0 for
+`ClassMngrMyWorkspacePageTests`, and 4/0 for
+`ClassMngrCalendarPreferencesRestoreDefaultsTests` (55/0 combined, no skips).
+Coverage includes blocked-worker stale-result/reissue cases for both request
+kinds and three repeated QML release/re-entry cycles across all upcoming
+scopes, with resource counts, stable identities, restored state, and fresh
+rows checked. The independent Tester reran all four Debug executables after
+the changed-source timestamps and confirmed the passing totals; it did not
+repeat the build. Diff whitespace validation passed. The non-cancelable worker
+can delay the queued fresh request until it finishes. Offscreen font/size
+warnings remain visible; artifacts are under
+`build/f607-verification-20261011`.
+
 ## F606 remove duplicate Calendar workbook cells - 2026-10-11
 
 `CalendarImport::Workbook` now owns parsed cells only through its worksheet

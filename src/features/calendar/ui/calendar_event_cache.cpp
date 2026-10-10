@@ -395,6 +395,7 @@ void CalendarEventCache::requestNextEventMonth(
     {
         if (
             request.kind == RequestKind::NextEventMonth
+            && request.generation == m_generation
             && request.startDate == afterDate
             )
         {
@@ -405,6 +406,7 @@ void CalendarEventCache::requestNextEventMonth(
     if (
         m_activeRequest
         && m_activeRequest->kind == RequestKind::NextEventMonth
+        && m_activeRequest->generation == m_generation
         && m_activeRequest->startDate == afterDate
         )
     {
@@ -923,9 +925,10 @@ bool CalendarEventCache::hasPendingRange(
     ) const
 {
     const auto coversRange =
-        [startDate, endDate](const Request& request)
+        [this, startDate, endDate](const Request& request)
         {
             return request.kind == RequestKind::Range
+                && request.generation == m_generation
                 && request.startDate <= startDate
                 && request.endDate >= endDate;
         };

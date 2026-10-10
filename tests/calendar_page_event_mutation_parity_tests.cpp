@@ -5,6 +5,8 @@
 #include "features/calendar/ui/calendar_event_dialog.h"
 #include "features/calendar/ui/calendar_event_model.h"
 #include "features/calendar/ui/calendar_page.h"
+#include "features/calendar/ui/academic_calendar_provider.h"
+#include "features/my_info/ui/my_workspace_page.h"
 #include "next/platform/application_services_schedule_display_preferences_port.h"
 #include "ui/shared/widgets/navigation_tab_widget.h"
 #include <QFrame>
@@ -24,6 +26,7 @@
 #include <QLineEdit>
 #include <QQmlContext>
 #include <QPushButton>
+#include <QPointer>
 #include <QQuickItem>
 #include <QQuickWidget>
 #include <QRadioButton>
@@ -36,6 +39,7 @@
 #include <QUuid>
 #include <QtTest/QtTest>
 
+#include <algorithm>
 #include <functional>
 
 namespace
@@ -813,6 +817,8 @@ class CalendarPageEventMutationParityTests final : public QObject
     Q_OBJECT
 
 private slots:
+    void workspaceCalendarResourcesReleaseAndRestore_data();
+    void workspaceCalendarResourcesReleaseAndRestore();
     void ordinaryCreateEditAndDeleteUseCalendarPageSignals();
     void repeatSeriesSuffixEditUsesCalendarPageSignalAndRefreshesProjection();
     void monthGridCellsMatchCalendarEventModelDateProjection();
@@ -821,6 +827,144 @@ private slots:
     void nextTenUpcomingEventsUseStableVisibleOrderAndLimit();
     void completedEmptyUpcomingRangeShowsItsEmptyLabel();
 };
+
+void CalendarPageEventMutationParityTests::workspaceCalendarResourcesReleaseAndRestore_data()
+{
+    QTest::addColumn<int>("scope");
+    QTest::addColumn<bool>("leaveWorkspace");
+    QTest::newRow("current-month-tab-leave") << 0 << false;
+    QTest::newRow("next-30-workspace-leave") << 1 << true;
+    QTest::newRow("next-10-tab-leave") << 2 << false;
+}
+
+void CalendarPageEventMutationParityTests::workspaceCalendarResourcesReleaseAndRestore()
+{
+    QFETCH(int, scope);
+    QFETCH(bool, leaveWorkspace);
+    CalendarWorkspace workspace;
+    QString error;
+    QVERIFY2(initializeWorkspace(workspace, &error), qPrintable(error));
+    QVERIFY2(removePreservedFixtureEvent(workspace, &error), qPrintable(error));
+    const QDate today = QDate::currentDate();
+    const QDate visibleMonth = QDate(qMax(today.year(), 2026), today.month(), 1)
+        .addMonths(2);
+    const QDate eventDate = visibleMonth.addDays(9);
+    CalendarEvent event;
+    event.title = QStringLiteral("Retained Calendar event");
+    event.eventType = QStringLiteral("Holiday");
+    event.startDate = eventDate;
+    event.endDate = eventDate;
+    QVERIFY2(saveFixtureEvent(workspace, event, &error) > 0, qPrintable(error));
+
+    MyWorkspacePage workspacePage(&workspace.services);
+    workspacePage.setDatabaseOpen(true);
+    workspacePage.show();
+    workspacePage.openTab(WorkspaceTab::Calendar);
+    CalendarPage* const page = workspacePage.calendarPage();
+    QVERIFY(page);
+    CalendarEventCache* const cache = page->findChild<CalendarEventCache*>();
+    CalendarEventModel* const model = calendarModel(*page);
+    AcademicCalendarProvider* const provider = page->academicCalendarProvider();
+    QVERIFY(cache);
+    QVERIFY(model);
+    QVERIFY(provider);
+    auto* root = calendarRoot(*page);
+    QVERIFY(root);
+    QVERIFY(root->setProperty("shownDate", QDateTime(visibleMonth, QTime(0, 0))));
+    auto* tabs = upcomingTabs(*page);
+    QVERIFY(tabs);
+    tabs->setCurrentIndex(scope);
+    const auto buttons = page->findChildren<QPushButton*>();
+    auto filter = std::find_if(buttons.cbegin(), buttons.cend(), [](QPushButton* button) {
+        return button->property("eventType").toString() == QStringLiteral("Workshop");
+    });
+    QVERIFY(filter != buttons.cend());
+    (*filter)->setChecked(false);
+
+    for (int cycle = 0; cycle < 3; ++cycle)
+    {
+        QTRY_VERIFY_WITH_TIMEOUT(model->isMonthLoaded(visibleMonth.year(), visibleMonth.month()), 5000);
+        QTRY_VERIFY_WITH_TIMEOUT(!cache->isLoading(), 5000);
+        QCOMPARE(model->eventsForDate(eventDate.year(), eventDate.month(), eventDate.day()).size(), 1);
+        const auto populated = page->runtimeMetrics();
+        QVERIFY(populated.cacheEventCount > 0);
+        QVERIFY(populated.loadedMonthCount > 0);
+        QVERIFY(populated.cacheLoadedRangeCount > 0);
+        QVERIFY(populated.cacheRetainedRangeCount > 0);
+        QVERIFY(!page->findChildren<QWidget*>(QStringLiteral("upcomingCalendarEventRow")).isEmpty());
+        if (scope == static_cast<int>(UpcomingEventsScope::Next10Events))
+            QVERIFY(populated.nextTenSearchEnd.isValid());
+        QPointer<QQuickWidget> oldView = page->findChild<QQuickWidget*>();
+        QPointer<QQuickItem> oldRoot = calendarRoot(*page);
+        QVERIFY(oldView);
+        QVERIFY(oldRoot);
+
+        if (leaveWorkspace)
+            workspacePage.deactivate();
+        else
+            workspacePage.openTab(WorkspaceTab::Schedule);
+        QVERIFY(oldView.isNull());
+        QVERIFY(oldRoot.isNull());
+        QCOMPARE(workspacePage.calendarPage(), page);
+        QCOMPARE(page->findChild<CalendarEventCache*>(), cache);
+        QCOMPARE(page->findChild<CalendarEventModel*>(), model);
+        QCOMPARE(page->academicCalendarProvider(), provider);
+        QVERIFY(page->needsRefresh());
+        QVERIFY(page->findChildren<QQuickWidget*>().isEmpty());
+        QVERIFY(!upcomingTabs(*page));
+        QVERIFY(page->findChildren<QWidget*>(QStringLiteral("upcomingCalendarEventRow")).isEmpty());
+        const auto released = page->runtimeMetrics();
+        QCOMPARE(released.cacheEventCount, 0);
+        QCOMPARE(released.cacheDateBucketCount, 0);
+        QCOMPARE(released.cacheLoadedRangeCount, 0);
+        QCOMPARE(released.cacheRetainedRangeCount, 0);
+        QCOMPARE(released.loadedMonthCount, 0);
+        QCOMPARE(released.onDemandRetainedRangeCount, 0);
+        QCOMPARE(released.calendarViewObjectCount, 0);
+        QVERIFY(released.pageWidgetCount < populated.pageWidgetCount);
+        QVERIFY(!released.nextTenSearchEnd.isValid());
+        QVERIFY(!released.nextTenSearchComplete);
+        QVERIFY(!released.nextTenLookupPending);
+        QVERIFY(model->eventsForDate(eventDate.year(), eventDate.month(), eventDate.day()).isEmpty());
+        page->deactivate(); // Repeated release is safe and does not rebuild anything.
+        QTRY_VERIFY_WITH_TIMEOUT(!cache->isLoading(), 5000);
+        QCOMPARE(cache->eventCount(), 0);
+        QCOMPARE(cache->loadedRangeCount(), 0);
+
+        event.title = QStringLiteral("Fresh Calendar event %1").arg(cycle);
+        event.startDate = eventDate.addDays(1);
+        event.endDate = event.startDate;
+        QVERIFY2(saveFixtureEvent(workspace, event, &error) > 0, qPrintable(error));
+        if (leaveWorkspace)
+            workspacePage.activate();
+        else
+            workspacePage.openTab(WorkspaceTab::Calendar);
+        QCOMPARE(workspacePage.calendarPage(), page);
+        QCOMPARE(page->findChildren<QQuickWidget*>().size(), 1);
+        QCOMPARE(page->findChildren<CalendarEventCache*>().size(), 1);
+        QCOMPARE(page->findChildren<CalendarEventModel*>().size(), 1);
+        QCOMPARE(page->findChildren<AcademicCalendarProvider*>().size(), 1);
+        QCOMPARE(calendarModel(*page), model);
+        QCOMPARE(page->academicCalendarProvider(), provider);
+        root = calendarRoot(*page);
+        QVERIFY(root);
+        QCOMPARE(root->property("shownDate").toDateTime().date(), visibleMonth);
+        QCOMPARE(upcomingTabs(*page)->currentIndex(), scope);
+        int disabledFilters = 0;
+        for (auto* button : page->findChildren<QPushButton*>())
+        {
+            if (button->property("eventType").toString() == QStringLiteral("Workshop"))
+            {
+                QVERIFY(!button->isChecked());
+                ++disabledFilters;
+            }
+        }
+        QCOMPARE(disabledFilters, UpcomingEventsScopeCount);
+        QTRY_VERIFY_WITH_TIMEOUT(model->isMonthLoaded(visibleMonth.year(), visibleMonth.month()), 5000);
+        const QDate freshDate = eventDate.addDays(1);
+        QCOMPARE(model->eventsForDate(freshDate.year(), freshDate.month(), freshDate.day()).size(), cycle + 1);
+    }
+}
 
 void CalendarPageEventMutationParityTests::
 ordinaryCreateEditAndDeleteUseCalendarPageSignals()

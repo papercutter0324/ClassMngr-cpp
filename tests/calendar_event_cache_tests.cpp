@@ -6,6 +6,7 @@
 
 #include <QDateTime>
 #include <QSignalSpy>
+#include <QSemaphore>
 #include <QSqlDatabase>
 #include <QSqlQuery>
 #include <QSet>
@@ -13,6 +14,7 @@
 #include <QUuid>
 #include <QtTest>
 
+#include <atomic>
 #include <memory>
 #include <optional>
 #include <string>
@@ -179,14 +181,16 @@ struct InjectedQueryState final
         > lastNextEventRequest;
 };
 
-ClassMngr::Next::Application::CalendarEventProjection injectedProjection()
+ClassMngr::Next::Application::CalendarEventProjection injectedProjection(
+    const std::string& title = "Injected event"
+    )
 {
     ClassMngr::Next::Application::CalendarEventProjectionInput input;
     input.events.push_back({
         *ClassMngr::Next::Domain::CalendarEventId::fromString("42"),
         std::nullopt,
         std::nullopt,
-        "Injected event",
+        title,
         "2026-07-10",
         "2026-07-11",
         std::string("09:00"),
@@ -268,6 +272,75 @@ public:
 private:
     std::shared_ptr<InjectedQueryState> m_state;
 };
+
+struct BlockedQueryState final
+{
+    QSemaphore entered;
+    QSemaphore resume;
+    std::atomic<int> calls = 0;
+};
+
+class BlockedQueryPort final
+    : public ClassMngr::Next::Application::CalendarEventQueryPort
+{
+public:
+    explicit BlockedQueryPort(std::shared_ptr<BlockedQueryState> state)
+        : m_state(std::move(state))
+    {
+    }
+
+    ClassMngr::Next::Application::CalendarEventProjectionResult loadRange(
+        const ClassMngr::Next::Application::CalendarEventRangeRequest&
+        ) override
+    {
+        const int call = enter();
+        return ClassMngr::Next::Application::CalendarEventProjectionResult::success(
+            injectedProjection(call == 1 ? "Stale generation" : "Fresh generation"));
+    }
+
+    ClassMngr::Next::Application::CalendarEventDateResult findNextEventDate(
+        const ClassMngr::Next::Application::CalendarEventNextEventRequest&
+        ) override
+    {
+        const int call = enter();
+        return ClassMngr::Next::Application::CalendarEventDateResult::success(
+            ClassMngr::Next::Application::CalendarEventDate(
+                call == 1 ? "2026-07-10" : "2026-08-10"));
+    }
+
+private:
+    int enter()
+    {
+        const int call = ++m_state->calls;
+        m_state->entered.release();
+        m_state->resume.acquire();
+        return call;
+    }
+    std::shared_ptr<BlockedQueryState> m_state;
+};
+
+class BlockedQueryFactory final
+    : public ClassMngr::Next::Application::CalendarEventQueryPortFactory
+{
+public:
+    explicit BlockedQueryFactory(std::shared_ptr<BlockedQueryState> state)
+        : m_state(std::move(state))
+    {
+    }
+    std::unique_ptr<ClassMngr::Next::Application::CalendarEventQueryPort>
+    create() const override
+    {
+        return std::make_unique<BlockedQueryPort>(m_state);
+    }
+private:
+    std::shared_ptr<BlockedQueryState> m_state;
+};
+
+struct ResumeQueriesOnExit final
+{
+    std::shared_ptr<BlockedQueryState> state;
+    ~ResumeQueriesOnExit() { state->resume.release(8); }
+};
 }
 
 class CalendarEventCacheTests : public QObject
@@ -282,6 +355,8 @@ private slots:
     void typedRangeProjectionPreservesOrderingMetadataAndLegacyParity();
     void nextEventLookupUsesProjectionQueryAndDeduplicates();
     void invalidationDiscardsCompletedWorkerResult();
+    void invalidatedActiveRangeDoesNotSuppressSameRangeReissue();
+    void invalidatedActiveNextEventLookupDoesNotSuppressReissue();
     void multiDayEventsUseOneCanonicalRecordAndRangeDeduplicates();
     void retainedRangesEvictEventsAndRejectEvictedWorkerResults();
 };
@@ -1053,6 +1128,73 @@ void CalendarEventCacheTests::invalidationDiscardsCompletedWorkerResult()
         5000
         );
     QCOMPARE(cache.eventsForDate(QDate(2026, 7, 10)).size(), 1);
+}
+
+void CalendarEventCacheTests::invalidatedActiveRangeDoesNotSuppressSameRangeReissue()
+{
+    const auto state = std::make_shared<BlockedQueryState>();
+    CalendarEventCache cache(std::make_shared<BlockedQueryFactory>(state));
+    ResumeQueriesOnExit resumeOnExit{state};
+    CalendarEventModel model(&cache);
+    cache.setDatabasePath(QStringLiteral("blocked-calendar.db"));
+    const QDate start(2026, 7, 1);
+    const QDate end(2026, 7, 31);
+    cache.requestRange(start, end);
+    QVERIFY(state->entered.tryAcquire(1, 5000));
+    cache.requestRange(start, end); // Same-generation active duplicate.
+    cache.invalidate();
+    QSignalSpy changes(&cache, &CalendarEventCache::cacheChanged);
+    cache.requestRange(start, end);
+    cache.requestRange(start, end); // Same-generation queued duplicate.
+    QCOMPARE(state->calls.load(), 1);
+
+    state->resume.release();
+    QTRY_VERIFY_WITH_TIMEOUT(state->entered.available() == 1, 5000);
+    QVERIFY(state->entered.tryAcquire());
+    QCOMPARE(state->calls.load(), 2);
+    QCOMPARE(changes.size(), 0);
+    QCOMPARE(cache.eventCount(), 0);
+    QVERIFY(!cache.isRangeLoaded(start, end));
+    QVERIFY(model.eventsForDate(2026, 7, 10).isEmpty());
+    QVERIFY(cache.isLoading());
+
+    state->resume.release();
+    QTRY_VERIFY_WITH_TIMEOUT(!cache.isLoading(), 5000);
+    QVERIFY(cache.isRangeLoaded(start, end));
+    QCOMPARE(changes.size(), 1);
+    QCOMPARE(cache.eventsForDate(QDate(2026, 7, 10)).first().title,
+        QStringLiteral("Fresh generation"));
+    QCOMPARE(model.eventsForDate(2026, 7, 10).size(), 1);
+    QCOMPARE(state->calls.load(), 2);
+}
+
+void CalendarEventCacheTests::invalidatedActiveNextEventLookupDoesNotSuppressReissue()
+{
+    const auto state = std::make_shared<BlockedQueryState>();
+    CalendarEventCache cache(std::make_shared<BlockedQueryFactory>(state));
+    ResumeQueriesOnExit resumeOnExit{state};
+    cache.setDatabasePath(QStringLiteral("blocked-calendar.db"));
+    const QDate after(2026, 7, 1);
+    QSignalSpy found(&cache, &CalendarEventCache::nextEventMonthFound);
+    cache.requestNextEventMonth(after);
+    QVERIFY(state->entered.tryAcquire(1, 5000));
+    cache.requestNextEventMonth(after);
+    cache.invalidate();
+    cache.requestNextEventMonth(after);
+    cache.requestNextEventMonth(after);
+    QCOMPARE(state->calls.load(), 1);
+
+    state->resume.release();
+    QTRY_VERIFY_WITH_TIMEOUT(state->entered.available() == 1, 5000);
+    QVERIFY(state->entered.tryAcquire());
+    QCOMPARE(state->calls.load(), 2);
+    QCOMPARE(found.size(), 0); // Old generation cannot advance next-ten progress.
+    QVERIFY(cache.isLoading());
+    state->resume.release();
+    QTRY_VERIFY_WITH_TIMEOUT(!cache.isLoading(), 5000);
+    QCOMPARE(found.size(), 1);
+    QCOMPARE(found.first().first().toDate(), QDate(2026, 8, 10));
+    QCOMPARE(state->calls.load(), 2);
 }
 
 void CalendarEventCacheTests::multiDayEventsUseOneCanonicalRecordAndRangeDeduplicates()

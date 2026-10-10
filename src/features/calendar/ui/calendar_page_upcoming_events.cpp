@@ -315,10 +315,10 @@ void CalendarPage::buildUpcomingEventsPanel(
 
     for (const QString& eventType : calendarEventTypes())
     {
-        m_eventTypeFilterStates.insert(
-            eventType,
-            true
-            );
+        if (!m_eventTypeFilterStates.contains(eventType))
+        {
+            m_eventTypeFilterStates.insert(eventType, true);
+        }
     }
 
     m_upcomingEventsTabs =
@@ -357,12 +357,15 @@ void CalendarPage::buildUpcomingEventsPanel(
         tr("Next 10 Events")
         );
 
+    m_upcomingEventsTabs->setCurrentIndex(static_cast<int>(m_upcomingEventsScope));
+
     connect(
         m_upcomingEventsTabs,
         &NavigationTabWidget::currentChanged,
         this,
         [this](int index)
         {
+            m_upcomingEventsScope = static_cast<UpcomingEventsScope>(index);
             ensureUpcomingEventsForScope(
                 static_cast<UpcomingEventsScope>(index)
                 );
@@ -738,7 +741,7 @@ UpcomingEventsScope CalendarPage::currentUpcomingEventsScope() const
 {
     if (!m_upcomingEventsTabs)
     {
-        return UpcomingEventsScope::CurrentMonth;
+        return m_upcomingEventsScope;
     }
 
     switch (m_upcomingEventsTabs->currentIndex())

@@ -40,6 +40,9 @@ struct CalendarPageRuntimeMetrics
     int pageWidgetCount = 0;
     int calendarViewObjectCount = 0;
     bool cacheLoading = false;
+    QDate nextTenSearchEnd;
+    bool nextTenSearchComplete = false;
+    bool nextTenLookupPending = false;
 };
 
 enum class UpcomingEventsScope
@@ -71,6 +74,7 @@ public:
     void calendarPreferencesChanged(bool eventsChanged);
 
 protected:
+    void releaseFeatureResources() override;
     bool eventFilter(
         QObject* watched,
         QEvent* event
@@ -214,6 +218,7 @@ private:
     QWidget* m_scrollContent = nullptr;
     QVBoxLayout* m_scrollContentLayout = nullptr;
     QWidget* m_pageHeader = nullptr;
+    QWidget* m_calendarContent = nullptr;
     QLabel* m_titleLabel = nullptr;
     QLabel* m_subtitleLabel = nullptr;
     QLabel* m_upcomingEventsHeading = nullptr;
@@ -222,6 +227,7 @@ private:
     AcademicCalendarProvider* m_academicCalendarProvider = nullptr;
     QQuickWidget* m_calendarView = nullptr;
     NavigationTabWidget* m_upcomingEventsTabs = nullptr;
+    UpcomingEventsScope m_upcomingEventsScope = UpcomingEventsScope::CurrentMonth;
     std::array<QVBoxLayout*, UpcomingEventsScopeCount> m_upcomingEventLayouts{};
     QList<QPushButton*> m_eventTypeFilterButtons;
     QHash<QString, bool> m_eventTypeFilterStates;

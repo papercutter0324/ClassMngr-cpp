@@ -26,6 +26,7 @@
 #include "ui/shared/styles/roles.h"
 
 #include <QDate>
+#include <QDateTime>
 #include <QDialog>
 #include <QFontInfo>
 #include <QFrame>
@@ -230,8 +231,14 @@ void CalendarPage::handleCalendarDisplayedMonthChanged(
 }
 void CalendarPage::buildCalendarContent()
 {
+    if (m_calendarContent)
+    {
+        return;
+    }
+
     auto* card =
         new QFrame(m_scrollContent);
+    m_calendarContent = card;
     card->setProperty(
         "role",
         UiRoles::Card
@@ -253,64 +260,70 @@ void CalendarPage::buildCalendarContent()
         UiConstants::ClassInfo::SectionCard::Spacing
         );
 
-    m_calendarCache =
-        new CalendarEventCache(this);
-    connect(
-        m_calendarCache,
-        &CalendarEventCache::cacheChanged,
-        this,
-        [this]()
-        {
-            refreshUpcomingEvents();
-
-            if (currentUpcomingEventsScope()
-                == UpcomingEventsScope::Next10Events)
-            {
-                ensureNextTenEvents();
-            }
-        }
-        );
-    connect(
-        m_calendarCache,
-        &CalendarEventCache::loadingChanged,
-        this,
-        &CalendarPage::refreshUpcomingEvents
-        );
-    connect(
-        m_calendarCache,
-        &CalendarEventCache::nextEventMonthFound,
-        this,
-        &CalendarPage::handleNextEventMonthFound
-        );
-
-    m_calendarModel =
-        new CalendarEventModel(
+    if (!m_calendarCache)
+    {
+        m_calendarCache =
+            new CalendarEventCache(this);
+        connect(
             m_calendarCache,
+            &CalendarEventCache::cacheChanged,
+            this,
+            [this]()
+            {
+                refreshUpcomingEvents();
+
+                if (currentUpcomingEventsScope()
+                    == UpcomingEventsScope::Next10Events)
+                {
+                    ensureNextTenEvents();
+                }
+            }
+            );
+        connect(
+            m_calendarCache,
+            &CalendarEventCache::loadingChanged,
+            this,
+            &CalendarPage::refreshUpcomingEvents
+            );
+        connect(
+            m_calendarCache,
+            &CalendarEventCache::nextEventMonthFound,
+            this,
+            &CalendarPage::handleNextEventMonthFound
+            );
+
+        m_calendarModel =
+            new CalendarEventModel(
+                m_calendarCache,
+                this
+                );
+
+        auto schedulePreferences = std::make_unique<
+            ClassMngr::Next::Platform::
+                ApplicationServicesAcademicCalendarSchedulePreferencesPort
+            >(m_services);
+        auto firstDayOfWeekPreferences = std::make_unique<
+            ClassMngr::Next::Platform::
+                ApplicationServicesCalendarFirstDayOfWeekPreferencesPort
+            >(m_services);
+        m_academicCalendarProvider = new AcademicCalendarProvider(
+            std::move(schedulePreferences),
+            std::move(firstDayOfWeekPreferences),
             this
             );
 
-    auto schedulePreferences = std::make_unique<
-        ClassMngr::Next::Platform::
-            ApplicationServicesAcademicCalendarSchedulePreferencesPort
-        >(m_services);
-    auto firstDayOfWeekPreferences = std::make_unique<
-        ClassMngr::Next::Platform::
-            ApplicationServicesCalendarFirstDayOfWeekPreferencesPort
-        >(m_services);
-    m_academicCalendarProvider = new AcademicCalendarProvider(
-        std::move(schedulePreferences),
-        std::move(firstDayOfWeekPreferences),
-        this
-        );
+    }
 
     const QDate today =
         QDate::currentDate();
-    m_calendarVisibleMonth =
-        QDate(
+    if (!m_calendarVisibleMonth.isValid())
+    {
+        m_calendarVisibleMonth = QDate(
             qMax(today.year(), 2026),
             today.year() < 2026 ? 1 : today.month(),
             1
             );
+    }
 
     m_calendarView =
         new QQuickWidget(card);
@@ -335,6 +348,9 @@ void CalendarPage::buildCalendarContent()
             QStringLiteral("academicCalendarProvider"),
             m_academicCalendarProvider
             );
+    m_calendarView->setInitialProperties({
+        {QStringLiteral("shownDate"), QDateTime(m_calendarVisibleMonth, QTime(0, 0))}
+    });
     m_calendarView->setSource(
         QUrl(
             QStringLiteral(
@@ -379,8 +395,10 @@ void CalendarPage::buildCalendarContent()
 
     updateCalendarCampusFilter();
     refreshCalendarData();
+    ensureUpcomingEventsForScope(currentUpcomingEventsScope());
 
-    m_scrollContentLayout->addWidget(
+    m_scrollContentLayout->insertWidget(
+        m_scrollContentLayout->count() - 1,
         card
         );
 }
@@ -411,7 +429,7 @@ void CalendarPage::updateCalendarCampusFilter()
 
 void CalendarPage::refreshCalendarData()
 {
-    if (!m_calendarCache)
+    if (!m_calendarContent || !m_calendarCache)
     {
         return;
     }
@@ -454,7 +472,7 @@ void CalendarPage::ensureUpcomingEventsForScope(
     UpcomingEventsScope scope
     )
 {
-    if (!m_calendarCache || scope == UpcomingEventsScope::CurrentMonth)
+    if (!m_calendarContent || !m_calendarCache || scope == UpcomingEventsScope::CurrentMonth)
     {
         return;
     }
@@ -571,7 +589,8 @@ void CalendarPage::invalidateCalendarData()
 void CalendarPage::ensureNextTenEvents()
 {
     if (
-        !m_calendarCache
+        !m_calendarContent
+        || !m_calendarCache
         || !m_nextTenSearchEnd.isValid()
         || m_nextTenSearchComplete
         || m_nextTenLookupPending
@@ -623,6 +642,11 @@ void CalendarPage::handleNextEventMonthFound(
     const QDate& firstEventDate
     )
 {
+    if (!m_calendarContent)
+    {
+        return;
+    }
+
     m_nextTenLookupPending = false;
 
     if (!firstEventDate.isValid())
