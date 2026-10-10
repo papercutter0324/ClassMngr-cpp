@@ -763,7 +763,16 @@ matched. One ETL was saved and hashed, and WPR was stopped with the temporary
 image-name snapshot setting disabled and verified afterward. The trace and
 full summary are retained under the ignored local build directory; key capture
 facts are recorded in the [Phase 2 progress
-log](03-Phase-2-Progress-Log.md). F565 will inspect the trace in WPA within
-the installed symbol limits. The 250 MiB lifecycle gate, F536 cause, F526
-provenance, output parity, render/window acceptance, and global Phase 0 remain
-open (Windows 1/24, macOS 0/24).
+log](03-Phase-2-Progress-Log.md).
+
+F565 inspected the three instances with the installed Windows Performance
+Toolkit xperf heap-snapshot actions. Module names and raw instruction pointers
+are available, including `Qt6Pdf.dll` frames in processed stack data at all
+three checkpoints; no function names/source lines or allocation owner can be
+established without matching Release symbols. The detail report's declared
+591,444 allocations do not reconcile with its 532,296 processed stack
+references, so it is not used for full quantitative attribution. F566 will
+cross-check that discrepancy with an independent WPA/ETW trace-processing
+path before counts or module frequencies are interpreted. The 250 MiB
+lifecycle gate, F536 cause, F526 provenance, output parity, render/window
+acceptance, and global Phase 0 remain open (Windows 1/24, macOS 0/24).

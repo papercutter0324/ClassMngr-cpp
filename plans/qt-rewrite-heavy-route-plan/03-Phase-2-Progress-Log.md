@@ -19692,3 +19692,54 @@ the installed symbol limits. No allocation owner is inferred from the
 capture alone. The 250 MiB lifecycle gate, F536 cause, F526 provenance,
 output parity, render/window acceptance, and global Phase 0 remain open
 (Windows 1/24, macOS 0/24).
+
+## F565 packaged PDF heap snapshot inspection - 2026-10-11
+
+The retained F564 ETL was read with the installed Windows Performance Toolkit
+`xperf.exe` heap-snapshot actions. `-count` reports three instances;
+`-instance` binds them to PID 48900 with 64-bit pointers and preserves the
+ordered offsets that align with the F563 after-render, after-document-close,
+and after-view-destroyed acknowledgements. The trace was not changed. The
+installed `xperf.exe` version is `10.0.26100.8249`; the installed WPA GUI and
+Exporter are `11.7.395.48728`. This slice used the WPT command-line analysis,
+not a WPA GUI table export.
+
+| Checkpoint | xperf timestamp | Snapshot event data | Header allocation count | Stack references processed |
+| --- | ---: | ---: | ---: | ---: |
+| after-render | 24,554,947 | 12,778,544 bytes | 247,896 | 224,639 |
+| after-document-close | 29,223,554 | 12,546,604 bytes | 236,535 | 214,086 |
+| after-view-destroyed | 36,531,266 | 6,917,484 bytes | 107,013 | 93,571 |
+
+These are the values reported by the xperf instance and detail sections;
+`Snapshot event data` is trace payload size, not allocated heap bytes. The
+detail report explicitly warns that total allocation counts (591,444) do not
+match its processed stack-reference count (532,296), a difference of 59,148.
+Because the report does not reconcile those records, the header counts and
+per-module frequencies are not treated as a complete allocation comparison.
+
+With `-symbols`, xperf resolves captured addresses to loaded module names and
+raw instruction pointers, but it does not resolve function names or source
+lines. The processed stacks include frames in `ClassMngr.exe`, Qt Core/Gui/
+Widgets/QML/Quick modules, `Qt6Pdf.dll`, and `Qt6PdfWidgets.dll`; at least one
+processed `Qt6Pdf.dll` frame occurs in each checkpoint's stack data. This is
+stack-path evidence only and does not identify which module owns a retained
+allocation. The captured image list has no standalone `pdfium.dll`. There are
+no matching PDB or map files in the F564 Release build or package; the wider
+F561 audit likewise found no matching private QtPdf/PDFium symbols. No leak,
+cache-owner, or Qt/PDFium allocation-owner conclusion follows from this trace.
+
+The CLI reports are retained locally under `build/f565-wpa-analysis` and are
+ignored. The ETL remains at
+`build/f564-heap-snapshot-20261010T161139Z-21976/classmngr-pdf-heap-snapshots.etl`,
+87,031,808 bytes with SHA-256
+`948a1d81adc2b855bc0a0422ed1e70cb26539b1945fc36f4630f3d32f7f985fd`.
+The WPA Exporter could not provide a usable export in this restricted session,
+so F565 records the xperf CLI output rather than claiming a WPA GUI inspection.
+
+F566 is next: cross-check the 59,148-record discrepancy with an independent
+WPA/ETW trace-processing path before using these counts or module frequencies
+for quantitative attribution. Keep the retained ETL immutable and the
+allocation-owner conclusion open until the analyzer counts reconcile and
+matching Release symbols are available. The 250 MiB lifecycle gate, F536
+cause, F526 provenance, output parity, render/window acceptance, and global
+Phase 0 remain open (Windows 1/24, macOS 0/24).
