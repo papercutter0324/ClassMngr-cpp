@@ -841,8 +841,14 @@ snapshot, and no shared key changed size or stack. This is checkpoint presence,
 not proof of uninterrupted lifetime or object ownership. F584 found all 48,176
 setCellWidget heap/address keys (39,324,262 bytes) unchanged in size and stack
 from after-render through after-document-close, with no missing, added, or
-changed-signature key. F585 checks the route's schedule-cell counters at the
-PDF lifecycle checkpoints. The
+changed-signature key. F585 found the same schedule metrics at all three
+nearest PDF heap checkpoints and all 13 `pdf-*` route checkpoints: 49 live
+schedule cell widgets, 147 created, zero removed or queued, and three full
+schedule renders. The captured `pdfRenderCount` is zero, but the route labels
+alone do not establish whether a forced viewer grab ran; F586 checks that
+capture mode. This counter alignment shows no measured schedule-cell change
+coincident with the heap-group decrease, without proving or disproving
+ownership. The
 checked qtpdf 6.12
 extension tree had no separate debug-symbol package for
 the installed QtPdf 6.140.0.0 modules, so function-level PDFium/QtPdf

@@ -19872,6 +19872,37 @@ lifetime claims bounded by the snapshot evidence. The 250 MiB lifecycle gate,
 F536 cause, F526 provenance, output parity, render/window acceptance, and
 global Phase 0 remain open (Windows 1/24, macOS 0/24).
 
+## F585 schedule-cell metrics at PDF heap checkpoints - 2026-10-11
+
+F585 aligned the three retained F564 heap-snapshot markers with the nearest
+route memory sample, converting the marker's UTC timestamp to the route's
+Asia/Seoul local clock (the route timestamps do not carry a timezone). The
+after-render marker is 0.1795 seconds before route sequence 69 (`pdf-opened`);
+after-document-close is 0.0133 seconds before sequence 77
+(`pdf-released-after-reopen`); after-view-destroyed is 1.1875 seconds after
+sequence 84 (`settled-5s`). At each nearest sample the metrics are identical:
+`scheduleRenderCount=3`, 768 model entries, 49 live schedule cell widgets,
+147 created, zero removed, and zero queued for deletion. All 13 route
+checkpoints named `pdf-*` have that same schedule-counter tuple.
+
+`pdfRenderCount` is zero at all three nearest samples. The route checkpoint
+names are harness labels; this value alone does not establish whether the
+viewer performed a forced grab. F586 checks the captured mode before
+interpreting that counter. No measured schedule-cell counter change coincides
+with the setCellWidget stack-group decrease, but these sampled counters and
+overlapping stack paths do not prove or disprove allocation ownership. The
+read-only reproducer is `build/f585_pdf_schedule_metric_alignment.py` under
+ignored local build artifacts. F579's fresh matched-symbol capture remains
+deferred at the user's direction. The 250 MiB lifecycle gate, F536 cause,
+F526 provenance, output parity, render/window acceptance, and global Phase 0
+remain open (Windows 1/24, macOS 0/24).
+
+Batch 103 is resolved: F533 recorded the reference-provenance gap, and F534
+completed the output-dialog cancellation/cleanup regression. Batch 104 starts
+with F586's forced-grab mode audit; F587 will compare QTextDocument
+heap/address identities, and F588 will bound the schedule-cell removal
+counter's meaning. F579 remains deferred at the user's direction.
+
 ## F584 setCellWidget render-to-close identity - 2026-10-11
 
 F584 compared the setCellWidget group by `(HeapHandle, AllocationAddress)`
@@ -19887,14 +19918,6 @@ after render through document close, then 31,462 keys / 8,974,794 bytes are
 absent by the view-destroyed snapshot while the other 16,714 exact signatures
 remain. This bounds the observed checkpoint transition. It does not prove
 that a given Qt widget owned any record or establish uninterrupted lifetime.
-
-F585 checks the Sub Prep route's `scheduleCellWidgetsCreated`,
-`scheduleCellWidgetsRemoved`, and current cell-widget count at the captured
-PDF lifecycle checkpoints. It will test whether the later heap-key decrease
-coincides with a measured schedule-cell change, without making an ownership
-claim. F579's matched-symbol capture remains deferred. The 250 MiB lifecycle
-gate, F536 cause, F526 provenance, output parity, render/window acceptance,
-and global Phase 0 remain open (Windows 1/24, macOS 0/24).
 
 ## F583 setCellWidget heap/address carryover - 2026-10-11
 
@@ -19919,11 +19942,10 @@ reused between checkpoints. The reproducer is
 
 F584 compares the setCellWidget group by heap/address between after-render and
 after-document-close. All 48,176 records / 39,324,262 bytes match in size and
-stack ID, with no added, missing, or changed-signature keys. F585 checks
-whether the later key decrease coincides with any measured schedule-cell
-creation, removal, or live-count change in the route JSON. The 250 MiB
-lifecycle gate, F536 cause, F526 provenance, output parity, render/window
-acceptance, and global Phase 0 remain open (Windows 1/24, macOS 0/24).
+stack ID, with no added, missing, or changed-signature keys. F585's route
+counter alignment is recorded above. The 250 MiB lifecycle gate, F536 cause,
+F526 provenance, output parity, render/window acceptance, and global Phase 0
+remain open (Windows 1/24, macOS 0/24).
 
 ## F582 setCellWidget stack-bucket deltas - 2026-10-11
 

@@ -39,10 +39,10 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Depends on: Phase 1
 - Blocks: Persistence, bootstrap, shared UI, and feature migration
 - Owner: Unassigned
-- Last updated: 2026-10-10
+- Last updated: 2026-10-11
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F532 completed Windows route source-provenance capture and validation; F533 PDF visual comparison is next, followed by F534 cancellation/cleanup, while memory and full Phase 0 gates remain open.
+- Current note: F585 found no schedule-cell counter change at the retained PDF heap checkpoints; F586 will verify the forced-grab mode before interpreting `pdfRenderCount`, while memory, output-parity, and full Phase 0 gates remain open.
 
 ### Slice discovery batches
 
@@ -66,11 +66,14 @@ Treat this plan as an operational summary, not a history:
   class only to reuse the ID returned by create(). Removing the read changes its
   failure warning/no-navigation behavior; revisit after that behavior is
   clarified.
+- F579 - Deferred at the user's direction: take a fresh matched-symbol heap
+  capture; revisit after the user asks to resume symbol work.
 
-#### Active batch: Batch 103
+#### Active batch: Batch 104
 
-- F533 - Compare Sub Prep PDFs with approved references using a matched fixture and date.
-- F534 - Test Sub Prep output-dialog cancellation and verify cleanup.
+- F586 - Determine whether forced PDF viewer grabs ran in the retained F564 route before interpreting `pdfRenderCount`.
+- F587 - Compare `QTextDocument` heap/address identities across the retained lifecycle snapshots.
+- F588 - Trace schedule-cell removal-counter semantics to bound what F585's zero removal count establishes.
 
 ## Objective
 
