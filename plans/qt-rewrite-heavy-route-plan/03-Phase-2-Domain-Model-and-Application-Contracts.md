@@ -42,7 +42,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-11
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F602 reconciled the non-PDF source-absent allocation set to 129,441 keys / 31,754,590 recorded bytes across seven size bands; F603 will examine releasing hidden Workspace Schedule rendered resources while preserving facts and preferences, F598 awaits an elevated WPR token, F579 remains deferred, and the memory/output-parity/Phase 0 gates remain open.
+- Current note: F603 releases generated resources for the hidden Workspace Schedule child and restores them on re-entry; focused lifecycle checks pass, while the broader ScheduleWidget target has 13 failures with baseline status unestablished. F604 will remove per-cell ScheduleWidget child widgets; F598 awaits an elevated WPR token, F579 remains deferred, and the memory/output-parity/Phase 0 gates remain open.
 
 ### Slice discovery batches
 
@@ -74,7 +74,7 @@ Treat this plan as an operational summary, not a history:
 
 #### Active batch: Batch 115
 
-- F603 - Release hidden Workspace Schedule rendered resources on leave while preserving schedule facts and preferences.
+- F604 - Remove per-cell ScheduleWidget child widgets while preserving displayed facts, visuals, and interactions.
 
 No other slices are currently active.
 

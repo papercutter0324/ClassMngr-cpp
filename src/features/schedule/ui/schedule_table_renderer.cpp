@@ -397,6 +397,26 @@ void ScheduleTableRenderer::invalidate(
     state->hasRendered = false;
 }
 
+void ScheduleTableRenderer::clear(
+    QTableWidget* table
+    )
+{
+    if (!table)
+    {
+        return;
+    }
+
+    clearCellWidgets(table);
+    table->clearContents();
+    table->setRowCount(0);
+    table->setMinimumHeight(0);
+    table->setMaximumHeight(QWIDGETSIZE_MAX);
+
+    ScheduleTableRenderState* state = renderState(table);
+    state->hasRendered = false;
+    state->model = {};
+}
+
 ScheduleTableRenderMetrics ScheduleTableRenderer::render(
     QTableWidget* table,
     const ScheduleViewModel& model,

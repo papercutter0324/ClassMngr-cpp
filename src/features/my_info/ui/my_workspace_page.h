@@ -57,6 +57,7 @@ private:
     void ensureCalendarInitialized();
     void connectChildPageSignals(BasePage* page);
     void activateCurrentChildPage();
+    void deactivateChildPage(BasePage* page);
     [[nodiscard]] BasePage* currentChildPage() const;
     [[nodiscard]] static constexpr int tabIndex(WorkspaceTab tab)
     {

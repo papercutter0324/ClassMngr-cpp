@@ -214,6 +214,15 @@ void ScheduleWidget::refreshSchedule()
     loadSchedule();
 }
 
+void ScheduleWidget::releaseGeneratedResources()
+{
+    m_interactionState.clear();
+    m_scheduleModel = {};
+    m_previewModel = {};
+    m_hasPreviewModel = false;
+    ScheduleTableRenderer::clear(m_table);
+}
+
 void ScheduleWidget::clearDatabaseState()
 {
     m_use24h = false;

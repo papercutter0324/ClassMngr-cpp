@@ -42,6 +42,17 @@ void SchedulePage::refreshSchedulePreferences()
     }
 }
 
+void SchedulePage::releaseWorkspaceResources()
+{
+    if (!m_scheduleWidget)
+    {
+        return;
+    }
+
+    m_scheduleWidget->releaseGeneratedResources();
+    markStale();
+}
+
 void SchedulePage::clearDatabaseState()
 {
     if (m_scheduleWidget)

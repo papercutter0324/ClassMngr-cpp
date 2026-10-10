@@ -24,6 +24,7 @@ public:
 
     void refresh() override;
     void refreshSchedulePreferences();
+    void releaseWorkspaceResources();
     void clearDatabaseState() override;
     void retranslateUi() override;
     void setPageHeaderVisible(bool visible);

@@ -33,6 +33,10 @@ public:
         QTableWidget* table
         );
 
+    static void clear(
+        QTableWidget* table
+        );
+
     [[nodiscard]] static ScheduleTableRenderMetrics render(
         QTableWidget* table,
         const ScheduleViewModel& model,

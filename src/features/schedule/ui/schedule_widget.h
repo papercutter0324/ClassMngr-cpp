@@ -54,6 +54,7 @@ public:
     ~ScheduleWidget() override;
 
     void refreshSchedule();
+    void releaseGeneratedResources();
     void clearDatabaseState();
     void retranslateUi();
     [[nodiscard]] ScheduleDisplayState displayState() const;

@@ -645,6 +645,7 @@ private slots:
     void regularSlotToggleUsesSharedPersistenceHandler();
     void clearDatabaseStateRemovesLoadedDataAndSettings();
     void schedulePageScrollsWithoutResizingSchedule();
+    void standaloneSchedulePageDeactivationRetainsRenderedResources();
     void rendererSkipsUnchangedAndUpdatesOnlyChangedCells();
 };
 
@@ -2937,6 +2938,45 @@ void ScheduleWidgetTests
 
     QCOMPARE(schedule->height(), scheduleHeight);
     QVERIFY(scrollArea->verticalScrollBar()->maximum() > 0);
+}
+
+void ScheduleWidgetTests
+    ::standaloneSchedulePageDeactivationRetainsRenderedResources()
+{
+    ApplicationServices services;
+    SchedulePage page(&services);
+    page.refresh();
+
+    ScheduleWidget* const scheduleWidget =
+        page.findChild<ScheduleWidget*>();
+    QVERIFY(scheduleWidget);
+    QTableWidget* const table = scheduleWidget->findChild<QTableWidget*>(
+        QStringLiteral("scheduleTable")
+        );
+    QVERIFY(table);
+
+    const ScheduleWidgetRuntimeMetrics before = page.runtimeMetrics();
+    QVERIFY(before.modelRowCount > 0);
+    QVERIFY(before.tableItemCount > 0);
+    QVERIFY(before.tableCellWidgetCount > 0);
+
+    page.deactivate();
+
+    const ScheduleWidgetRuntimeMetrics after = page.runtimeMetrics();
+    QCOMPARE(after.modelRowCount, before.modelRowCount);
+    QCOMPARE(after.modelCellCount, before.modelCellCount);
+    QCOMPARE(after.modelEntryCount, before.modelEntryCount);
+    QCOMPARE(after.tableRowCount, before.tableRowCount);
+    QCOMPARE(after.tableItemCount, before.tableItemCount);
+    QCOMPARE(after.tableCellWidgetCount, before.tableCellWidgetCount);
+    QCOMPARE(after.visibleClassCount, before.visibleClassCount);
+    QCOMPARE(page.findChild<ScheduleWidget*>(), scheduleWidget);
+    QCOMPARE(
+        scheduleWidget->findChild<QTableWidget*>(
+            QStringLiteral("scheduleTable")
+            ),
+        table
+        );
 }
 
 void ScheduleWidgetTests

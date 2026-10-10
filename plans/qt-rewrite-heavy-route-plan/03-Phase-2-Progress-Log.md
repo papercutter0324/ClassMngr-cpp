@@ -20082,6 +20082,58 @@ Batch114. Two independent Explorer angles found five ordered candidates:
    switching preserves its state. Entrypoints: `my_workspace_page.cpp`,
    `my_workspace_page_tests.cpp`, and NavigationController access.
 
+## F603 hidden Workspace Schedule rendered-resource release - 2026-10-11
+
+F603 clears the generated schedule model and interaction cache, table items,
+cell widgets, and renderer's cached model when the Workspace Schedule child
+deactivates. It retains the Workspace page, SchedulePage, ScheduleWidget, table
+and columns, and their signal setup. The page is marked stale so its existing
+activation/refresh path rebuilds schedule values and reloads saved display
+preferences. The trigger is scoped to the Workspace Schedule owner; standalone
+SchedulePage deactivation retains its rendered state.
+
+The new lifecycle regression covers leaving by switching workspace tabs and
+by deactivating the outer workspace page. After deferred deletion, generated
+model rows/cells/entries, table rows/items/cell widgets, and visible-class
+counts are zero while columns and page/widget identities remain stable. It
+checks no settings writes during leave/re-entry, preserved stored schedule
+facts and preferences, restored metrics and display mode, and exactly one
+callback plus one settings update from a restored interaction. The update
+trigger counts same-value upserts too. A separate regression protects
+standalone SchedulePage retention.
+
+The independent Tester passed the complete `ClassMngrMyWorkspacePageTests`
+target (23/0), the F603 lifecycle slot (3/0), standalone retention (3/0), and
+the intensive and regular schedule interaction slots (3/0 each). The focused
+build succeeded. Thus the bounded F603 acceptance is met.
+
+The full `ClassMngrScheduleWidgetTests` target remains at 29 passed / 13
+failed. The failed slots are `persistsAndMirrorsEveryViewOption`,
+`printUsesSelectedTeacherNameLanguage`,
+`outputReadsDisplayNameAfterDialogAcceptanceWithoutTrimming`,
+`testingModeFiltersClassesAndDisplaysSavedBlock`,
+`readOnlyPresentationHidesControlsAndIgnoresClicks`,
+`sourceQueryBuildsRegularIntensiveAndTestingSchedules`,
+`failedTestingAssignmentReadWarnsAndRetainsAssignments`,
+`unavailableTestingAssignmentReadClearsAssignments`,
+`missingTestingClassWarnsAndSkipsOnlyThatAssignment`,
+`slotStateSuccessReplacesAndClearsOverrides`,
+`unavailableSlotStateReadIsSilentAndRetainsOverrides`,
+`failedSlotStateReadWarnsAndRetainsOverrides`, and
+`readOnlyScheduleStillLoadsSlotStates`. They also failed when run
+individually and do not invoke the workspace release path. No baseline
+comparison was performed, so their origin is unresolved; do not describe them
+as pre-existing. They remain a separate verification issue and do not block
+the scoped F603 acceptance.
+
+F604 is now active in Batch115. It will replace the 49-per-owner cell-widget
+rendering with model/delegate display and active interaction editors, preserve
+schedule facts, visuals, and interactions, and verify that the packaged route
+reports zero per-cell child widgets. F605 (defer hidden Personal Details
+construction) remains a discovered candidate. F598 still awaits an actually
+elevated WPR process; F579 symbol work remains deferred at the user's
+direction.
+
 ## F602 non-PDF teardown allocation-size breakdown - 2026-10-11
 
 F602 independently reconstructed F592's existing source-absent allocation

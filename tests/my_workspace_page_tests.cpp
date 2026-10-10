@@ -3,6 +3,10 @@
 #include "features/my_info/ui/personal_details_page.h"
 #include "features/calendar/ui/calendar_page.h"
 #include "features/schedule/ui/schedule_page.h"
+#include "features/schedule/ui/schedule_widget.h"
+#include "next/application/schedule_display_mode_preferences.h"
+#include "next/platform/application_services_schedule_display_mode_preferences_port.h"
+#include "next/platform/application_services_schedule_display_preferences_port.h"
 #include "core/application_services.h"
 #include "data/data_service.h"
 #include "data/database/database_session.h"
@@ -12,15 +16,19 @@
 
 #include <QApplication>
 #include <QBuffer>
+#include <QCoreApplication>
 #include <QCheckBox>
 #include <QImage>
 #include <QComboBox>
 #include <QLabel>
 #include <QLineEdit>
 #include <QPushButton>
+#include <QPointer>
 #include <QSignalBlocker>
 #include <QSqlQuery>
+#include <QEvent>
 #include <QTemporaryDir>
+#include <QTableWidget>
 #include <QUuid>
 #include <QtTest>
 
@@ -149,6 +157,86 @@ void refreshPersonalDetails(MyWorkspacePage& page)
     QApplication::processEvents();
 }
 
+QStringList workspaceScheduleFacts(ApplicationServices& services)
+{
+    DataService* const dataService = services.dataService();
+    if (!dataService || !dataService->databaseSession())
+    {
+        return {};
+    }
+
+    QSqlQuery query(dataService->databaseSession()->database());
+    if (!query.exec(QStringLiteral(R"(
+        SELECT 'intensive|' || day || '|' || start_time || '|' || end_time
+        FROM class_intensive_times
+        WHERE class_id = 6042
+        UNION ALL
+        SELECT 'regular|' || day || '|' || start_time || '|' || end_time
+        FROM class_times
+        WHERE class_id = 6042
+        ORDER BY 1
+    )")))
+    {
+        return {};
+    }
+
+    QStringList facts;
+    while (query.next())
+    {
+        facts.append(query.value(0).toString());
+    }
+    return facts;
+}
+
+int workspaceScheduleModeWriteCount(ApplicationServices& services)
+{
+    DataService* const dataService = services.dataService();
+    if (!dataService || !dataService->databaseSession())
+    {
+        return -1;
+    }
+
+    QSqlQuery query(dataService->databaseSession()->database());
+    if (!query.exec(QStringLiteral(
+            "SELECT count FROM workspace_schedule_mode_write_count"
+            ))
+        || !query.next())
+    {
+        return -1;
+    }
+
+    return query.value(0).toInt();
+}
+
+QList<QPointer<QWidget>> workspaceScheduleCellWidgets(
+    QTableWidget* table
+    )
+{
+    QList<QPointer<QWidget>> widgets;
+    if (!table)
+    {
+        return widgets;
+    }
+
+    for (int row = 0; row < table->rowCount(); ++row)
+    {
+        for (int column = 0; column < table->columnCount(); ++column)
+        {
+            if (QWidget* const widget = table->cellWidget(row, column))
+            {
+                widgets.append(widget);
+            }
+        }
+    }
+    return widgets;
+}
+
+void processDeferredWidgetDeletes()
+{
+    QCoreApplication::sendPostedEvents(nullptr, QEvent::DeferredDelete);
+    QApplication::processEvents();
+}
+
 } // namespace
 
 class MyWorkspacePageTests : public QObject
@@ -159,6 +247,7 @@ private slots:
     void createsNamedTabsWithScheduleSelectedByDefault();
     void opensTabsThroughNamedIdentifiers();
     void preservesChildPagesWhenSwitchingTabs();
+    void releasesWorkspaceScheduleResourcesAndRestoresOnReentry();
     void defersCalendarConstructionWhileOtherTabsAreOpen();
     void initializesCalendarWithoutChangingTheActiveWorkspaceTab();
     void isAvailableAsTheDefaultTopLevelPage();
@@ -218,6 +307,291 @@ void MyWorkspacePageTests::preservesChildPagesWhenSwitchingTabs()
 
     QCOMPARE(page.personalDetailsPage(), details);
     QCOMPARE(page.schedulePage(), schedule);
+}
+
+void MyWorkspacePageTests
+    ::releasesWorkspaceScheduleResourcesAndRestoresOnReentry()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+
+    ApplicationServices services;
+    QVERIFY(openDatabase(services, directory));
+    QVERIFY(executeSql(
+        services,
+        QStringLiteral(
+            "INSERT INTO classes (id, name) "
+            "VALUES (6042, 'Workspace Lifecycle E4')"
+            )
+        ));
+    QVERIFY(executeSql(
+        services,
+        QStringLiteral(R"(
+            INSERT INTO class_info (
+                class_id, teacher_id, class_grade, class_level,
+                class_color, font_color
+            ) VALUES (
+                6042, NULL, 'E4', 'Blue', '#DDEBFF', '#172B4D'
+            )
+        )")
+        ));
+    QVERIFY(executeSql(
+        services,
+        QStringLiteral(
+            "INSERT INTO class_times "
+            "(class_id, day, start_time, end_time) "
+            "VALUES (6042, 'Monday', '4:00 PM', '4:50 PM')"
+            )
+        ));
+    QVERIFY(executeSql(
+        services,
+        QStringLiteral(
+            "INSERT INTO class_intensive_times "
+            "(class_id, day, start_time, end_time) "
+            "VALUES (6042, 'Tuesday', '9:00 AM', '9:50 AM')"
+            )
+        ));
+
+    ClassMngr::Next::Platform::
+        ApplicationServicesScheduleDisplayPreferencesPort preferencesPort(
+            services
+            );
+    const ClassMngr::Next::Application::ScheduleDisplayPreferences
+        expectedPreferences{
+        .use24HourTime = true,
+        .showEnglishNames = true,
+        .showWeekends = true,
+        .showAllIntensiveHours = true,
+        .testingAffectsM1 = true
+    };
+    QVERIFY(preferencesPort.save(expectedPreferences).hasValue());
+
+    ClassMngr::Next::Platform::
+        ApplicationServicesScheduleDisplayModePreferencesPort modePort(
+            services
+            );
+    modePort.save(
+        ClassMngr::Next::Application::ScheduleDisplayMode::Intensive
+        );
+
+    const QStringList savedScheduleFacts =
+        workspaceScheduleFacts(services);
+    QCOMPARE(savedScheduleFacts.size(), 2);
+    QVERIFY(executeSql(
+        services,
+        QStringLiteral(
+            "CREATE TABLE workspace_schedule_mode_write_count "
+            "(count INTEGER NOT NULL)"
+            )
+        ));
+    QVERIFY(executeSql(
+        services,
+        QStringLiteral(
+            "INSERT INTO workspace_schedule_mode_write_count (count) "
+            "VALUES (0)"
+            )
+        ));
+    QVERIFY(executeSql(
+        services,
+        QStringLiteral(R"(
+            CREATE TRIGGER workspace_schedule_mode_write_count_trigger
+            AFTER UPDATE ON app_settings
+            WHEN OLD.key = 'schedule_display_mode'
+            BEGIN
+                UPDATE workspace_schedule_mode_write_count
+                SET count = count + 1;
+            END
+        )")
+        ));
+
+    MyWorkspacePage page(&services);
+    MyWorkspacePage* const workspacePageIdentity = &page;
+    page.setDatabaseOpen(true);
+    page.resize(1100, 800);
+    page.show();
+    page.activate();
+    QApplication::processEvents();
+    QCOMPARE(workspaceScheduleModeWriteCount(services), 0);
+
+    SchedulePage* const schedulePage = page.schedulePage();
+    QVERIFY(schedulePage);
+    ScheduleWidget* const scheduleWidget =
+        schedulePage->findChild<ScheduleWidget*>();
+    QVERIFY(scheduleWidget);
+    QTableWidget* const table = scheduleWidget->findChild<QTableWidget*>(
+        QStringLiteral("scheduleTable")
+        );
+    QVERIFY(table);
+
+    const ScheduleWidgetRuntimeMetrics populatedMetrics =
+        scheduleWidget->runtimeMetrics();
+    QVERIFY(populatedMetrics.modelRowCount > 0);
+    QVERIFY(populatedMetrics.modelCellCount > 0);
+    QVERIFY(populatedMetrics.modelEntryCount > 0);
+    QVERIFY(populatedMetrics.tableRowCount > 0);
+    QVERIFY(populatedMetrics.tableItemCount > 0);
+    QVERIFY(populatedMetrics.tableCellWidgetCount > 0);
+    QCOMPARE(populatedMetrics.visibleClassCount, 1);
+    const int persistentColumnCount = table->columnCount();
+    const QList<QPointer<QWidget>> renderedCellWidgets =
+        workspaceScheduleCellWidgets(table);
+    QVERIFY(!renderedCellWidgets.isEmpty());
+
+    const auto loadedPreferences = preferencesPort.load();
+    QVERIFY(loadedPreferences.hasValue());
+    QCOMPARE(loadedPreferences.value(), expectedPreferences);
+    QCOMPARE(
+        modePort.load(),
+        ClassMngr::Next::Application::ScheduleDisplayMode::Intensive
+        );
+    QCOMPARE(workspaceScheduleModeWriteCount(services), 0);
+
+    page.openTab(WorkspaceTab::Details);
+    processDeferredWidgetDeletes();
+
+    const ScheduleWidgetRuntimeMetrics releasedMetrics =
+        scheduleWidget->runtimeMetrics();
+    QCOMPARE(releasedMetrics.modelRowCount, 0);
+    QCOMPARE(releasedMetrics.modelCellCount, 0);
+    QCOMPARE(releasedMetrics.modelEntryCount, 0);
+    QCOMPARE(releasedMetrics.tableRowCount, 0);
+    QCOMPARE(releasedMetrics.tableItemCount, 0);
+    QCOMPARE(releasedMetrics.tableCellWidgetCount, 0);
+    QCOMPARE(releasedMetrics.visibleClassCount, 0);
+    QCOMPARE(table->columnCount(), persistentColumnCount);
+    for (const QPointer<QWidget>& widget : renderedCellWidgets)
+    {
+        QVERIFY(widget.isNull());
+    }
+    QCOMPARE(page.schedulePage(), schedulePage);
+    QCOMPARE(&page, workspacePageIdentity);
+    QCOMPARE(
+        schedulePage->findChild<ScheduleWidget*>(),
+        scheduleWidget
+        );
+    QCOMPARE(
+        scheduleWidget->findChild<QTableWidget*>(
+            QStringLiteral("scheduleTable")
+            ),
+        table
+        );
+    QCOMPARE(workspaceScheduleFacts(services), savedScheduleFacts);
+    QCOMPARE(workspaceScheduleModeWriteCount(services), 0);
+    const auto preferencesAfterLeave = preferencesPort.load();
+    QVERIFY(preferencesAfterLeave.hasValue());
+    QCOMPARE(preferencesAfterLeave.value(), expectedPreferences);
+    QCOMPARE(
+        modePort.load(),
+        ClassMngr::Next::Application::ScheduleDisplayMode::Intensive
+        );
+
+    page.openTab(WorkspaceTab::Schedule);
+    QApplication::processEvents();
+
+    const ScheduleWidgetRuntimeMetrics restoredMetrics =
+        scheduleWidget->runtimeMetrics();
+    QCOMPARE(restoredMetrics.modelRowCount, populatedMetrics.modelRowCount);
+    QCOMPARE(restoredMetrics.modelCellCount, populatedMetrics.modelCellCount);
+    QCOMPARE(restoredMetrics.modelEntryCount, populatedMetrics.modelEntryCount);
+    QCOMPARE(restoredMetrics.tableRowCount, populatedMetrics.tableRowCount);
+    QCOMPARE(restoredMetrics.tableItemCount, populatedMetrics.tableItemCount);
+    QCOMPARE(
+        restoredMetrics.tableCellWidgetCount,
+        populatedMetrics.tableCellWidgetCount
+        );
+    QCOMPARE(
+        restoredMetrics.visibleClassCount,
+        populatedMetrics.visibleClassCount
+        );
+    const ScheduleDisplayState restoredDisplayState =
+        scheduleWidget->displayState();
+    QVERIFY(restoredDisplayState.use24HourTime);
+    QVERIFY(restoredDisplayState.showKoreanTeacherEnglishNames);
+    QVERIFY(restoredDisplayState.showAllHours);
+    QVERIFY(restoredDisplayState.showWeekends);
+    QVERIFY(restoredDisplayState.testingAffectsM1);
+    QCOMPARE(
+        restoredDisplayState.displayMode,
+        ScheduleDisplayMode::Intensive
+        );
+    QCOMPARE(workspaceScheduleFacts(services), savedScheduleFacts);
+    QCOMPARE(workspaceScheduleModeWriteCount(services), 0);
+
+    const QList<QPointer<QWidget>> renderedCellWidgetsBeforeDeactivate =
+        workspaceScheduleCellWidgets(table);
+    QVERIFY(!renderedCellWidgetsBeforeDeactivate.isEmpty());
+    page.deactivate();
+    processDeferredWidgetDeletes();
+    const ScheduleWidgetRuntimeMetrics deactivatedMetrics =
+        scheduleWidget->runtimeMetrics();
+    QCOMPARE(deactivatedMetrics.modelRowCount, 0);
+    QCOMPARE(deactivatedMetrics.modelCellCount, 0);
+    QCOMPARE(deactivatedMetrics.modelEntryCount, 0);
+    QCOMPARE(deactivatedMetrics.tableRowCount, 0);
+    QCOMPARE(deactivatedMetrics.tableItemCount, 0);
+    QCOMPARE(deactivatedMetrics.tableCellWidgetCount, 0);
+    QCOMPARE(deactivatedMetrics.visibleClassCount, 0);
+    QCOMPARE(table->columnCount(), persistentColumnCount);
+    for (const QPointer<QWidget>& widget :
+         renderedCellWidgetsBeforeDeactivate)
+    {
+        QVERIFY(widget.isNull());
+    }
+    QCOMPARE(workspaceScheduleModeWriteCount(services), 0);
+    page.activate();
+    QApplication::processEvents();
+    QCOMPARE(&page, workspacePageIdentity);
+    QCOMPARE(page.schedulePage(), schedulePage);
+    QCOMPARE(
+        schedulePage->findChild<ScheduleWidget*>(),
+        scheduleWidget
+        );
+    QCOMPARE(
+        scheduleWidget->findChild<QTableWidget*>(
+            QStringLiteral("scheduleTable")
+            ),
+        table
+        );
+    QCOMPARE(
+        scheduleWidget->runtimeMetrics().modelRowCount,
+        populatedMetrics.modelRowCount
+        );
+    QCOMPARE(
+        scheduleWidget->runtimeMetrics().tableCellWidgetCount,
+        populatedMetrics.tableCellWidgetCount
+        );
+    QCOMPARE(workspaceScheduleFacts(services), savedScheduleFacts);
+    const auto preferencesAfterReentry = preferencesPort.load();
+    QVERIFY(preferencesAfterReentry.hasValue());
+    QCOMPARE(preferencesAfterReentry.value(), expectedPreferences);
+    QCOMPARE(
+        modePort.load(),
+        ClassMngr::Next::Application::ScheduleDisplayMode::Intensive
+        );
+    QCOMPARE(workspaceScheduleModeWriteCount(services), 0);
+
+    int displayModeCallbackCount = 0;
+    connect(
+        schedulePage,
+        &SchedulePage::displayModeChanged,
+        &page,
+        [&displayModeCallbackCount](ScheduleDisplayMode)
+        {
+            ++displayModeCallbackCount;
+        }
+        );
+    QPushButton* const regularModeButton =
+        scheduleWidget->findChild<QPushButton*>(
+            QStringLiteral("scheduleRegularModeButton")
+            );
+    QVERIFY(regularModeButton);
+    regularModeButton->click();
+    QCOMPARE(displayModeCallbackCount, 1);
+    QCOMPARE(
+        modePort.load(),
+        ClassMngr::Next::Application::ScheduleDisplayMode::Regular
+        );
+    QCOMPARE(workspaceScheduleModeWriteCount(services), 1);
 }
 
 void MyWorkspacePageTests::defersCalendarConstructionWhileOtherTabsAreOpen()

@@ -165,10 +165,7 @@ void MyWorkspacePage::activate()
 
 void MyWorkspacePage::deactivate()
 {
-    if (m_activeChildPage)
-    {
-        m_activeChildPage->deactivate();
-    }
+    deactivateChildPage(m_activeChildPage);
 
     BasePage::deactivate();
 }
@@ -393,10 +390,7 @@ void MyWorkspacePage::activateCurrentChildPage()
 
     if (page != m_activeChildPage)
     {
-        if (m_activeChildPage)
-        {
-            m_activeChildPage->deactivate();
-        }
+        deactivateChildPage(m_activeChildPage);
 
         m_activeChildPage = page;
     }
@@ -404,6 +398,20 @@ void MyWorkspacePage::activateCurrentChildPage()
     if (m_activeChildPage)
     {
         m_activeChildPage->activate();
+    }
+}
+
+void MyWorkspacePage::deactivateChildPage(BasePage* page)
+{
+    if (!page)
+    {
+        return;
+    }
+
+    page->deactivate();
+    if (page == m_schedulePage)
+    {
+        m_schedulePage->releaseWorkspaceResources();
     }
 }
 
