@@ -19872,6 +19872,41 @@ lifetime claims bounded by the snapshot evidence. The 250 MiB lifecycle gate,
 F536 cause, F526 provenance, output parity, render/window acceptance, and
 global Phase 0 remain open (Windows 1/24, macOS 0/24).
 
+## F570 all-checkpoint signature module-path summary - 2026-10-11
+
+F570 restricted the loaded-image mapping to the 106,326 heap/address/size/
+stack signatures that appear in all three snapshots. Those stack groups total
+171,415,335 bytes in the final snapshot, matching F569's cross-check. Module
+totals below count records whose stack path contains the module; a record can
+appear in several module rows, so these are overlapping path summaries, not
+exclusive byte ownership:
+
+| Module in stack path | Matching records | Summed sizes on those stacks | Stack IDs |
+| --- | ---: | ---: | ---: |
+| `ClassMngr.exe` | 74,538 | 168,108,533 bytes | 16,610 |
+| `Qt6Core.dll` | 85,850 | 163,928,086 bytes | 19,416 |
+| `Qt6Gui.dll` | 53,812 | 162,312,721 bytes | 8,357 |
+| `Qt6Widgets.dll` | 93,176 | 140,717,414 bytes | 20,247 |
+| `qoffscreen.dll` | 33,240 | 62,304,262 bytes | 7,443 |
+| `Qt6Pdf.dll` | 195 | 67,728 bytes | 113 |
+| `Qt6PdfWidgets.dll` | 12 | 1,072 bytes | 12 |
+
+The largest signature bucket remains stack ID 1417: 2 same-address records,
+25,165,824 bytes, in every checkpoint. Its path contains ClassMngr, Qt6Gui,
+and Qt6Core. The stack paths that include Qt6Pdf.dll account for only 67,728
+bytes within the all-three signature set, but this does not prove PDF module
+ownership: a captured frame marks a path, not the module that allocated or
+retains the block. The private function symbols needed to resolve the large
+application/Qt stacks remain unavailable.
+
+F570's module summary is retained in ignored local artifacts under
+`build/f565-wpa-analysis`; the capture ETL is unchanged. F571 checks local
+symbol availability for the large surviving stack buckets and records which
+frames can be resolved to functions. If no matching PDBs/maps exist, retain
+module/IP evidence and leave allocator ownership open. The 250 MiB lifecycle
+gate, F536 cause, F526 provenance, output parity, render/window acceptance,
+and global Phase 0 remain open (Windows 1/24, macOS 0/24).
+
 ## F569 same-address allocation signature comparison - 2026-10-11
 
 TraceProcessor's raw allocation rows were compared by the composite key

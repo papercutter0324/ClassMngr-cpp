@@ -794,7 +794,13 @@ Function names/source lines are unavailable. F569 found 106,326 heap/address
 keys with the same size and trace stack ID across all three snapshots; their
 final-snapshot size sum is 171,415,335 bytes (about 99.83% of the final
 allocation-size total). This is same-address signature evidence, not proof of
-object lifetime. F570 will group those signatures by stack ID and loaded-image
-path. The 250 MiB lifecycle gate, F536 cause, F526 provenance, output parity,
+object lifetime. F570 grouped those signatures by loaded-image stack path. Of
+the 171,415,335 same-address-signature bytes in the final snapshot, only
+67,728 bytes are on paths containing `Qt6Pdf.dll` and 1,072 bytes on paths
+containing `Qt6PdfWidgets.dll`; module totals overlap and do not identify
+allocation ownership. The largest repeated stack bucket is 25,165,824 bytes
+on a path through ClassMngr, Qt6Gui, and Qt6Core. F571 checks matching local
+symbols for the large buckets; function-level ownership remains open. The
+250 MiB lifecycle gate, F536 cause, F526 provenance, output parity,
 render/window acceptance, and global Phase 0 remain open (Windows 1/24,
 macOS 0/24).
