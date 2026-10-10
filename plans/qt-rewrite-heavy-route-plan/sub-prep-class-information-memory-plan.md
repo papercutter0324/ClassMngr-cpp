@@ -884,3 +884,15 @@ the final document release and after-document-close capture. Their synchronous
 process samples are not heap-allocation attribution. `pdfRenderCount=0` is
 expected because the route skipped forced viewer grabs. The observer recorded
 one page-renderer connection and no image copy or retention.
+
+F590 found the first callback's process sample within 94,208 working-set,
+65,536 private-usage, and 53,248 private-working-set bytes of the `pdf-opened`
+checkpoint; the second callback exactly matches `pdf-reopened`. At the
+after-document-close sample, these process fields are lower than the second
+callback by 6,914,048, 7,147,520, and 6,918,144 bytes, respectively. The ETL
+allocation total fell by 5,295,677 bytes across after-render to
+after-document-close, while setCellWidget and QTextDocument path groups were
+unchanged. At view destruction, total ETL allocation bytes fell another
+31,774,739 while the nearby process working set changed by only 8,192 bytes.
+The measurements have different scopes and do not establish heap ownership or
+cause.

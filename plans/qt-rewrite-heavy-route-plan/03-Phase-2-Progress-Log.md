@@ -19872,6 +19872,39 @@ lifetime claims bounded by the snapshot evidence. The 250 MiB lifecycle gate,
 F536 cause, F526 provenance, output parity, render/window acceptance, and
 global Phase 0 remain open (Windows 1/24, macOS 0/24).
 
+## F590 callback memory and heap-snapshot comparison - 2026-10-11
+
+F590 compared the F589 callback process samples with the nearest retained route
+checkpoints and F568's ETL allocation totals. The first callback is nearest to
+`pdf-opened` (sequence 69): callback versus route values differ by +94,208
+working-set, +65,536 private-usage, and +53,248 private-working-set bytes.
+The second callback exactly matches `pdf-reopened` (sequence 75) in all three
+fields. The after-document-close capture aligns to `pdf-released-after-reopen`
+(sequence 77), where the process values are 6,914,048 working-set,
+7,147,520 private-usage, and 6,918,144 private-working-set bytes below the
+second callback sample.
+
+Across the after-render to after-document-close ETL snapshots, all heap
+allocation sizes fall by 5,295,677 bytes, while the `setCellWidget`,
+`QTextDocument`, and their overlap stack groups are unchanged at 39,324,262,
+20,837,137, and 20,207,585 bytes. By the after-view-destroyed snapshot, total
+ETL allocation sizes fall another 31,774,739 bytes; the corresponding process
+sample near `settled-5s` is nearly unchanged in working set (+8,192 bytes),
+has 5,005,312 more private-usage bytes, and 49,152 fewer private-working-set
+bytes than sequence 77. The setCellWidget and QTextDocument groups then fall
+by 8,974,794 and 8,085,316 bytes. These route process metrics, ETL heap sizes,
+and overlapping stack-path groups measure different things and do not identify
+an allocation owner or cause. The reproducer is
+`build/f590_pdf_callback_memory_and_heap_comparison.py` under ignored local
+build artifacts. No new capture, symbols, or source changes were made.
+
+Batch 106 is complete. Batch 107 starts with F591: compare Qt6Pdf.dll
+heap/address identities across the first two snapshots to determine whether
+the module-path byte decrease reflects absent keys or changed stack paths.
+F579 remains deferred at the user's direction. The 250 MiB lifecycle gate,
+F536 cause, F526 provenance, output parity, render/window acceptance, and
+global Phase 0 remain open (Windows 1/24, macOS 0/24).
+
 ## F589 page-render observer events in the without-grabs route - 2026-10-11
 
 The accepted F564 route has forced grabs disabled (`without-grabs`, count 0)
