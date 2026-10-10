@@ -42,7 +42,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-10
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F530 restored approved Sub Prep layout and ordering with accepted visual parity across 13 references; F531 will diagnose the PDF-reopen peak while memory and full Phase 0 gates remain open.
+- Current note: F530 restored approved Sub Prep layout and ordering with accepted visual parity across 13 references; F531 associated a transient PDF-viewing/render working-set excursion without allocation attribution, and F532 will record packaged Release source revision while memory and full Phase 0 gates remain open.
 
 ### Slice discovery batches
 
@@ -69,8 +69,7 @@ Treat this plan as an operational summary, not a history:
 
 #### Active batch: Batch 103
 
-- F531 - Diagnose the F526 PDF-reopen working-set peak before proposing a remedy.
-- F532 - Record release-route source revision provenance in the run manifest.
+- F532 - Record packaged Release route source revision provenance in the run manifest.
 - F533 - Compare Sub Prep PDFs with approved references using a matched fixture and date.
 - F534 - Test Sub Prep output-dialog cancellation and verify cleanup.
 

@@ -18467,3 +18467,13 @@ Changed selector/model/page checks passed. The full owning Debug CTest run was n
 ### F531 selected next for Batch 103 - 2026-10-10
 
 Diagnose the F526 PDF-reopen working-set peak with process-level attribution before proposing a remedy; preserve the 250 MiB memory gate and selected-route/full-Phase-0 limits.
+
+## F531 F526 PDF working-set diagnosis - 2026-10-10
+
+F531 is diagnosis-only; it proposes no memory fix. F526's first PDF render already set a 264,245,248-byte process peak working set, 2,101,248 above the strict 262,144,000-byte target. The reopened render raised the prior process high-water by only 61,440 bytes, to 264,310,784 (2,166,784 above target). After close, `livePdfDocumentCount` returned to zero and working set settled at 254,902,272/254,910,464 bytes at 1s/5s; the two open/close cycles show no visible working-set accumulation. F530's selected routes show the same qualitative pattern, with 77,824 bytes added on reopen and a 263,880,704-byte peak. This associates the PDF viewing/render phase with a transient working-set excursion but does not attribute bytes to the document, page rasters, view cache, PNG capture, metric traversal, or allocator retention. The live-document counter records load/release events, not Qt object destruction.
+
+F526's maximum private usage (303,312,896 bytes) was sampled at `pdf-reopen-start`, while private usage at the working-set peak was 278,966,272 bytes; the maxima are not a same-sample comparison. Checkpoint process high-water and app metric maxima can also come from different samples. The F526 manifest does not record its source revision; the operator-reported `53d7d64e` is unverified. The smallest follow-up diagnostic, if more attribution is planned, is to record same-sample working set, process peak working set, private usage, private working set, and document/page/view metrics immediately before and after `applicationMetrics()` within a checkpoint and around PDF load, viewer-ready/grab, PNG save, and close/lease release. A paired run with startup PDF output disabled can isolate PNG encoding from render/grab if needed. Memory acceptance and full Windows/macOS Phase 0 remain open.
+
+### F532 selected next for Batch 103 - 2026-10-10
+
+Record the packaged Release route source revision in the run manifest, separate from visual-reference provenance. F533 PDF visual comparison and F534 output-dialog cancellation/cleanup remain queued afterward.
