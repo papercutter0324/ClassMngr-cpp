@@ -4155,11 +4155,42 @@ void StartupPerformanceTests
             selectedPdfGrabArm
             );
         const bool grabsEnabled = selectedPdfGrabArm == QStringLiteral("with-grabs");
+        const bool innerBoundariesExpected =
+            selectedPdfGrabArm == QStringLiteral("without-grabs")
+            && qEnvironmentVariable(
+                   "CLASSMNGR_STARTUP_PDF_LIFECYCLE_INNER_BOUNDARIES"
+                   ).trimmed() == QStringLiteral("1");
         QCOMPARE(
             comparison.value(QStringLiteral("forcedGrabCount")).toInt(-1),
             grabsEnabled ? 5 : 0
             );
         QVERIFY(!comparison.value(QStringLiteral("pngFileWritingEnabled")).toBool(true));
+        if (innerBoundariesExpected)
+        {
+            QVERIFY(
+                comparison.value(
+                    QStringLiteral("innerBoundariesEnabled")
+                    ).toBool()
+                );
+            QVERIFY(
+                !comparison.value(
+                    QStringLiteral("innerBoundaryClock")
+                    ).toString().isEmpty()
+                );
+        }
+        else
+        {
+            QVERIFY(
+                !comparison.contains(
+                    QStringLiteral("innerBoundariesEnabled")
+                    )
+                );
+            QVERIFY(
+                !comparison.contains(
+                    QStringLiteral("innerBoundarySamples")
+                    )
+                );
+        }
 
         const QStringList expectedPdfMeasurementLabels{
             QStringLiteral("pdf-lifecycle-pre-pdf"),
@@ -4607,9 +4638,373 @@ void StartupPerformanceTests
         QCOMPARE(observedPdfSamples, expectedPdfMeasurementLabels);
         QCOMPARE(forcedGrabPairCount, 5);
         QVERIFY(!QFileInfo::exists(QDir(outputRoot).filePath(QStringLiteral("pdf-captures"))));
+
+        if (innerBoundariesExpected)
+        {
+            const QJsonArray innerBoundarySamples = comparison
+                .value(QStringLiteral("innerBoundarySamples"))
+                .toArray();
+            QVERIFY(!innerBoundarySamples.isEmpty());
+            QCOMPARE(innerBoundarySamples.size(), 62);
+            QHash<QString, QStringList> boundaryPhases;
+            QStringList observedBoundarySequence;
+            double previousTimestampNanoseconds = -1.0;
+            double processId = 0.0;
+            QString pageIdentity;
+            QString viewIdentity;
+            QString documentIdentity;
+            for (int index = 0; index < innerBoundarySamples.size(); ++index)
+            {
+                const QJsonObject sample =
+                    innerBoundarySamples.at(index).toObject();
+                QCOMPARE(sample.value(QStringLiteral("order")).toInt(-1), index + 1);
+                const double timestampNanoseconds = sample
+                    .value(QStringLiteral("timestampNanoseconds"))
+                    .toDouble(-1.0);
+                QVERIFY(timestampNanoseconds > previousTimestampNanoseconds);
+                previousTimestampNanoseconds = timestampNanoseconds;
+                QVERIFY(sample.value(QStringLiteral("elapsedMs")).isDouble());
+
+                const QString cycle =
+                    sample.value(QStringLiteral("cycle")).toString();
+                const QString operation =
+                    sample.value(QStringLiteral("operation")).toString();
+                const QString phase =
+                    sample.value(QStringLiteral("phase")).toString();
+                QVERIFY(!cycle.isEmpty());
+                QVERIFY(!operation.isEmpty());
+                QVERIFY(phase == QStringLiteral("before")
+                        || phase == QStringLiteral("after"));
+                observedBoundarySequence.append(
+                    cycle + QChar('|') + operation + QChar('|') + phase
+                    );
+                const QString key = cycle + QChar('|') + operation;
+                boundaryPhases[key].append(phase);
+
+                for (const QString& memoryField : {
+                         QStringLiteral("workingSetBytes"),
+                         QStringLiteral("peakWorkingSetBytes"),
+                         QStringLiteral("privateUsageBytes"),
+                         QStringLiteral("privateWorkingSetBytes")
+                     })
+                {
+                    QVERIFY2(
+                        sample.value(memoryField).isDouble(),
+                        qPrintable(
+                            QStringLiteral(
+                                "Inner boundary %1 omitted %2."
+                                )
+                                .arg(operation, memoryField)
+                            )
+                        );
+                }
+
+                const QJsonObject viewerState = sample
+                    .value(QStringLiteral("viewerState"))
+                    .toObject();
+                const double sampleProcessId = viewerState
+                    .value(QStringLiteral("processId"))
+                    .toDouble();
+                QVERIFY(sampleProcessId > 0.0);
+                if (processId == 0.0)
+                {
+                    processId = sampleProcessId;
+                    pageIdentity = viewerState
+                        .value(QStringLiteral("pageIdentity"))
+                        .toString();
+                    viewIdentity = viewerState
+                        .value(QStringLiteral("viewIdentity"))
+                        .toString();
+                    documentIdentity = viewerState
+                        .value(QStringLiteral("documentIdentity"))
+                        .toString();
+                }
+                QCOMPARE(sampleProcessId, processId);
+                QCOMPARE(
+                    viewerState.value(QStringLiteral("routePage")).toString(),
+                    QStringLiteral("pdf-viewer")
+                    );
+                QCOMPARE(
+                    viewerState.value(QStringLiteral("pageIdentity")).toString(),
+                    pageIdentity
+                    );
+                QCOMPARE(
+                    viewerState.value(QStringLiteral("viewIdentity")).toString(),
+                    viewIdentity
+                    );
+                QCOMPARE(
+                    viewerState.value(QStringLiteral("documentIdentity")).toString(),
+                    documentIdentity
+                    );
+                QVERIFY(
+                    !viewerState.value(
+                        QStringLiteral("documentStatus")
+                        ).toString().isEmpty()
+                    );
+                QVERIFY(viewerState.value(QStringLiteral("pdfPath")).isString());
+                QVERIFY(viewerState.value(QStringLiteral("pageCount")).isDouble());
+                QVERIFY(viewerState.value(QStringLiteral("currentPage")).isDouble());
+                QVERIFY(viewerState.value(QStringLiteral("pageMode")).isString());
+                QVERIFY(viewerState.value(QStringLiteral("viewMode")).isString());
+                QVERIFY(viewerState.value(QStringLiteral("documentsPackMounted")).isBool());
+                QVERIFY(!viewerState.contains(QStringLiteral("renderedImageValid")));
+                QVERIFY(!viewerState.contains(QStringLiteral("renderWidth")));
+                QVERIFY(!viewerState.contains(QStringLiteral("renderHeight")));
+            }
+
+            QStringList expectedBoundarySequence;
+            const auto appendExpectedBoundary =
+                [&expectedBoundarySequence](
+                    const QString& cycle,
+                    const QString& operation,
+                    const QString& phase
+                    )
+            {
+                expectedBoundarySequence.append(
+                    cycle + QChar('|') + operation + QChar('|') + phase
+                    );
+            };
+            const auto appendExpectedPair =
+                [&appendExpectedBoundary](
+                    const QString& cycle,
+                    const QString& operation
+                    )
+            {
+                appendExpectedBoundary(
+                    cycle,
+                    operation,
+                    QStringLiteral("before")
+                    );
+                appendExpectedBoundary(
+                    cycle,
+                    operation,
+                    QStringLiteral("after")
+                    );
+            };
+            const auto appendExpectedReleaseBoundaries =
+                [&appendExpectedPair](const QString& cycle)
+            {
+                appendExpectedPair(
+                    cycle,
+                    QStringLiteral("qpdfdocument-close")
+                    );
+                appendExpectedPair(
+                    cycle,
+                    QStringLiteral("document-descriptor-lease-clear")
+                    );
+                appendExpectedPair(
+                    cycle,
+                    QStringLiteral("final-view-ui-reset")
+                    );
+            };
+
+            const QString initialLoadCycle = QStringLiteral("initial-load");
+            appendExpectedPair(
+                initialLoadCycle,
+                QStringLiteral("documents-pack-lease-acquisition")
+                );
+            appendExpectedPair(
+                initialLoadCycle,
+                QStringLiteral("documents-pack-path-resolution")
+                );
+            appendExpectedReleaseBoundaries(initialLoadCycle);
+            appendExpectedBoundary(
+                initialLoadCycle,
+                QStringLiteral("qpdfdocument-load"),
+                QStringLiteral("before")
+                );
+            appendExpectedPair(
+                initialLoadCycle,
+                QStringLiteral("ready-handler-view-setup")
+                );
+            appendExpectedBoundary(
+                initialLoadCycle,
+                QStringLiteral("qpdfdocument-load"),
+                QStringLiteral("after")
+                );
+            appendExpectedPair(
+                initialLoadCycle,
+                QStringLiteral("ready-handler-view-setup")
+                );
+
+            appendExpectedReleaseBoundaries(
+                QStringLiteral("initial-release")
+                );
+
+            const QString errorLoadCycle = QStringLiteral("error-load");
+            appendExpectedReleaseBoundaries(errorLoadCycle);
+            appendExpectedBoundary(
+                errorLoadCycle,
+                QStringLiteral("qpdfdocument-load"),
+                QStringLiteral("before")
+                );
+            appendExpectedBoundary(
+                errorLoadCycle,
+                QStringLiteral("qpdfdocument-load"),
+                QStringLiteral("after")
+                );
+            appendExpectedReleaseBoundaries(
+                QStringLiteral("error-release")
+                );
+
+            const QString reopenLoadCycle = QStringLiteral("reopen-load");
+            appendExpectedPair(
+                reopenLoadCycle,
+                QStringLiteral("documents-pack-lease-acquisition")
+                );
+            appendExpectedReleaseBoundaries(reopenLoadCycle);
+            appendExpectedBoundary(
+                reopenLoadCycle,
+                QStringLiteral("qpdfdocument-load"),
+                QStringLiteral("before")
+                );
+            appendExpectedPair(
+                reopenLoadCycle,
+                QStringLiteral("ready-handler-view-setup")
+                );
+            appendExpectedBoundary(
+                reopenLoadCycle,
+                QStringLiteral("qpdfdocument-load"),
+                QStringLiteral("after")
+                );
+            appendExpectedPair(
+                reopenLoadCycle,
+                QStringLiteral("ready-handler-view-setup")
+                );
+
+            appendExpectedReleaseBoundaries(
+                QStringLiteral("reopen-release")
+                );
+            appendExpectedReleaseBoundaries(
+                QStringLiteral("page-leave-after-reopen")
+                );
+            QCOMPARE(observedBoundarySequence, expectedBoundarySequence);
+
+            const auto verifyBoundaryPairs =
+                [&boundaryPhases](
+                    const QString& cycle,
+                    const QString& operation,
+                    int expectedPairs
+                    )
+            {
+                const QString key = cycle + QChar('|') + operation;
+                const QStringList phases = boundaryPhases.value(key);
+                QVERIFY2(
+                    !phases.isEmpty(),
+                    qPrintable(
+                        QStringLiteral(
+                            "Missing inner boundary %1 in cycle %2."
+                            )
+                            .arg(operation, cycle)
+                        )
+                    );
+                QCOMPARE(phases.size() % 2, 0);
+                if (expectedPairs >= 0)
+                {
+                    QCOMPARE(phases.size(), expectedPairs * 2);
+                }
+                else
+                {
+                    QVERIFY(phases.size() >= 2);
+                }
+                for (int index = 0; index < phases.size(); index += 2)
+                {
+                    QCOMPARE(phases.at(index), QStringLiteral("before"));
+                    QCOMPARE(phases.at(index + 1), QStringLiteral("after"));
+                }
+            };
+
+            for (const QString& cycle : {
+                     QStringLiteral("initial-load"),
+                     QStringLiteral("reopen-load")
+                 })
+            {
+                verifyBoundaryPairs(
+                    cycle,
+                    QStringLiteral("documents-pack-lease-acquisition"),
+                    1
+                    );
+            }
+            verifyBoundaryPairs(
+                QStringLiteral("initial-load"),
+                QStringLiteral("documents-pack-path-resolution"),
+                1
+                );
+            for (const QString& cycle : {
+                     QStringLiteral("initial-load"),
+                     QStringLiteral("error-load"),
+                     QStringLiteral("reopen-load")
+                 })
+            {
+                verifyBoundaryPairs(
+                    cycle,
+                    QStringLiteral("qpdfdocument-load"),
+                    1
+                    );
+            }
+            for (const QString& cycle : {
+                     QStringLiteral("initial-load"),
+                     QStringLiteral("reopen-load")
+                 })
+            {
+                verifyBoundaryPairs(
+                    cycle,
+                    QStringLiteral("ready-handler-view-setup"),
+                    -1
+                    );
+            }
+            const QStringList releaseCycles{
+                QStringLiteral("initial-load"),
+                QStringLiteral("initial-release"),
+                QStringLiteral("error-load"),
+                QStringLiteral("error-release"),
+                QStringLiteral("reopen-load"),
+                QStringLiteral("reopen-release"),
+                QStringLiteral("page-leave-after-reopen")
+            };
+            for (const QString& cycle : releaseCycles)
+            {
+                verifyBoundaryPairs(
+                    cycle,
+                    QStringLiteral("qpdfdocument-close"),
+                    1
+                    );
+                verifyBoundaryPairs(
+                    cycle,
+                    QStringLiteral("document-descriptor-lease-clear"),
+                    1
+                    );
+                verifyBoundaryPairs(
+                    cycle,
+                    QStringLiteral("final-view-ui-reset"),
+                    1
+                    );
+            }
+
+            int pdfRenderEvents = 0;
+            for (const QJsonValue& value : metricsReportForEvidence
+                     .value(QStringLiteral("events"))
+                     .toArray())
+            {
+                if (value.toObject().value(QStringLiteral("name")).toString()
+                    == QStringLiteral("pdf-document-rendered"))
+                {
+                    ++pdfRenderEvents;
+                }
+            }
+            QCOMPARE(pdfRenderEvents, 0);
+        }
         manifest.insert(
             QStringLiteral("pdfLifecycleGrabComparison"),
             comparison
+            );
+    }
+    else
+    {
+        QVERIFY(
+            !metricsReportForEvidence.contains(
+                QStringLiteral("pdfLifecycleGrabComparison")
+                )
             );
     }
 

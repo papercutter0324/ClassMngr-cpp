@@ -6,6 +6,7 @@
 
 #include <QString>
 
+#include <functional>
 #include <optional>
 
 class QLabel;
@@ -33,6 +34,9 @@ class PdfViewerPage : public BasePage
     Q_OBJECT
 
 public:
+    using StartupLifecycleBoundaryObserver =
+        std::function<void(const QString&, const QString&)>;
+
     explicit PdfViewerPage(
         QWidget* parent = nullptr
         );
@@ -49,6 +53,9 @@ public:
         PdfViewerDocumentDescriptor descriptor
         );
     void releaseDocument();
+    void setStartupLifecycleBoundaryObserver(
+        StartupLifecycleBoundaryObserver observer
+        );
 
     [[nodiscard]] QString currentFilePath() const;
     [[nodiscard]] bool hasLoadedDocument() const;
@@ -111,6 +118,10 @@ private:
         const QString& errorText
         );
     void releaseDocumentContentSession();
+    void recordStartupLifecycleBoundary(
+        const QString& operation,
+        const QString& phase
+        ) const;
 
 private:
     bool m_tearingDown = false;
@@ -133,6 +144,7 @@ private:
     QString m_currentFilePath;
     qreal m_currentZoom = 1.0;
     PdfViewerDocumentDescriptor m_documentDescriptor;
+    StartupLifecycleBoundaryObserver m_startupLifecycleBoundaryObserver;
     ClassMngr::Next::Application::DocumentContentSession
         m_documentContentSession;
     std::optional<ClassMngr::Next::Application::DocumentContentSessionToken>

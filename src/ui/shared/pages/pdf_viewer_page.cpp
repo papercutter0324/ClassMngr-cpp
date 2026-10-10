@@ -210,8 +210,16 @@ bool PdfViewerPage::loadPdf(
     m_documentDescriptor = std::move(descriptor);
     m_view->setDocument(m_document);
 
+    recordStartupLifecycleBoundary(
+        QStringLiteral("qpdfdocument-load"),
+        QStringLiteral("before")
+        );
     const QPdfDocument::Error error =
         m_document->load(filePath);
+    recordStartupLifecycleBoundary(
+        QStringLiteral("qpdfdocument-load"),
+        QStringLiteral("after")
+        );
 
     if (error != QPdfDocument::Error::None)
     {
@@ -256,7 +264,15 @@ void PdfViewerPage::releaseDocument()
     // and can dereference that model during the next event-loop turn. Closing
     // the document releases the loaded PDF pages while retaining the stable
     // view/document pairing needed for a later reopen.
+    recordStartupLifecycleBoundary(
+        QStringLiteral("qpdfdocument-close"),
+        QStringLiteral("before")
+        );
     m_document->close();
+    recordStartupLifecycleBoundary(
+        QStringLiteral("qpdfdocument-close"),
+        QStringLiteral("after")
+        );
     releaseDocumentContentSession();
 
     if (documentWasLoaded)
@@ -266,7 +282,20 @@ void PdfViewerPage::releaseDocument()
             );
     }
     m_currentFilePath.clear();
+    recordStartupLifecycleBoundary(
+        QStringLiteral("document-descriptor-lease-clear"),
+        QStringLiteral("before")
+        );
     m_documentDescriptor = {};
+    recordStartupLifecycleBoundary(
+        QStringLiteral("document-descriptor-lease-clear"),
+        QStringLiteral("after")
+        );
+
+    recordStartupLifecycleBoundary(
+        QStringLiteral("final-view-ui-reset"),
+        QStringLiteral("before")
+        );
     m_currentZoom = 1.0;
 
     if (m_view)
@@ -279,6 +308,28 @@ void PdfViewerPage::releaseDocument()
     updatePageDisplay();
     clearStatusMessage();
     updateDocumentActionButtons();
+    recordStartupLifecycleBoundary(
+        QStringLiteral("final-view-ui-reset"),
+        QStringLiteral("after")
+        );
+}
+
+void PdfViewerPage::setStartupLifecycleBoundaryObserver(
+    StartupLifecycleBoundaryObserver observer
+    )
+{
+    m_startupLifecycleBoundaryObserver = std::move(observer);
+}
+
+void PdfViewerPage::recordStartupLifecycleBoundary(
+    const QString& operation,
+    const QString& phase
+    ) const
+{
+    if (m_startupLifecycleBoundaryObserver)
+    {
+        m_startupLifecycleBoundaryObserver(operation, phase);
+    }
 }
 
 QString PdfViewerPage::currentFilePath() const

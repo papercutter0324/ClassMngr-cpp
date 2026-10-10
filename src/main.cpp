@@ -118,6 +118,15 @@ bool isAdminMode(const QStringList &args)
     return args.contains(AppSettings::AdminModeArgument);
 }
 
+struct StartupPdfLifecycleInnerBoundaryTrace
+{
+    QElapsedTimer timer;
+    PlatformProcessMemorySnapshotProvider memoryProvider;
+    QJsonArray samples;
+    int nextOrder = 1;
+    qint64 lastTimestampNanoseconds = -1;
+};
+
 struct StartupPerformanceMode
 {
     bool enabled = false;
@@ -150,6 +159,9 @@ struct StartupPerformanceMode
     QString pdfLifecycleGrabComparisonError;
     bool pdfLifecycleGrabComparisonEnabled = false;
     bool pdfLifecycleForcedGrabsEnabled = true;
+    bool pdfLifecycleInnerBoundariesEnabled = false;
+    std::shared_ptr<StartupPdfLifecycleInnerBoundaryTrace>
+        pdfLifecycleInnerBoundaryTrace;
     enum class Scenario
     {
         Minimal,
@@ -182,6 +194,8 @@ constexpr auto StartupPdfLifetimeProbeResolvedPath =
 constexpr int StartupPdfLifetimePageManagerMatchedDurationMilliseconds = 10500;
 constexpr auto StartupPdfLifecycleGrabArmEnvironmentVariable =
     "CLASSMNGR_STARTUP_PDF_LIFECYCLE_GRAB_ARM";
+constexpr auto StartupPdfLifecycleInnerBoundariesEnvironmentVariable =
+    "CLASSMNGR_STARTUP_PDF_LIFECYCLE_INNER_BOUNDARIES";
 
 bool startupPdfLifecycleGrabComparisonSelected()
 {
@@ -190,6 +204,14 @@ bool startupPdfLifecycleGrabComparisonSelected()
             StartupPdfLifecycleGrabArmEnvironmentVariable
             ).trimmed().isEmpty();
     return selected;
+}
+
+bool startupPdfLifecycleInnerBoundariesSelected(const QString& grabArm)
+{
+    return grabArm == QStringLiteral("without-grabs")
+        && qEnvironmentVariable(
+               StartupPdfLifecycleInnerBoundariesEnvironmentVariable
+               ).trimmed() == QStringLiteral("1");
 }
 
 const QStringList& startupPdfLifecycleMeasurementLabels()
@@ -911,6 +933,76 @@ void sampleStartupPdfLifecycleBoundary(
             {QStringLiteral("routeStatus"), routeStatus}
         }
         );
+}
+
+void sampleStartupPdfLifecycleInnerBoundary(
+    const PdfViewerPage& viewer,
+    const std::shared_ptr<StartupPdfLifecycleInnerBoundaryTrace>& trace,
+    const QString& cycle,
+    const QString& operation,
+    const QString& phase,
+    const QJsonObject& details = {}
+    )
+{
+    if (!trace)
+    {
+        return;
+    }
+
+    const ProcessMemorySnapshot memory =
+        trace->memoryProvider.snapshot();
+    qint64 timestampNanoseconds = trace->timer.nsecsElapsed();
+    if (timestampNanoseconds <= trace->lastTimestampNanoseconds)
+    {
+        timestampNanoseconds = trace->lastTimestampNanoseconds + 1;
+    }
+    trace->lastTimestampNanoseconds = timestampNanoseconds;
+
+    QJsonObject sample{
+        {QStringLiteral("order"), trace->nextOrder++},
+        {
+            QStringLiteral("timestampNanoseconds"),
+            static_cast<double>(timestampNanoseconds)
+        },
+        {
+            QStringLiteral("elapsedMs"),
+            static_cast<double>(timestampNanoseconds) / 1000000.0
+        },
+        {QStringLiteral("cycle"), cycle},
+        {QStringLiteral("operation"), operation},
+        {QStringLiteral("phase"), phase},
+        {QStringLiteral("available"), memory.isAvailable},
+        {QStringLiteral("platform"), memory.platform},
+        {
+            QStringLiteral("workingSetBytes"),
+            static_cast<double>(memory.workingSetBytes)
+        },
+        {
+            QStringLiteral("peakWorkingSetBytes"),
+            static_cast<double>(memory.peakWorkingSetBytes)
+        },
+        {
+            QStringLiteral("privateUsageBytes"),
+            static_cast<double>(memory.privateUsageBytes)
+        },
+        {
+            QStringLiteral("privateWorkingSetBytes"),
+            static_cast<double>(memory.privateWorkingSetBytes)
+        },
+        {
+            QStringLiteral("viewerState"),
+            startupPdfViewerState(
+                viewer,
+                startupPdfPageManager(viewer),
+                true
+                )
+        }
+    };
+    if (!details.isEmpty())
+    {
+        sample.insert(QStringLiteral("details"), details);
+    }
+    trace->samples.append(sample);
 }
 
 struct StartupPdfLifetimeProbeState
@@ -2819,6 +2911,8 @@ void scheduleStartupPerformancePdfLifecycle(
     StartupProfiler& profiler,
     const std::shared_ptr<bool>& workflowSucceeded,
     const QString& pdfLifecycleGrabArm,
+    const std::shared_ptr<StartupPdfLifecycleInnerBoundaryTrace>&
+        innerBoundaryTrace,
     std::function<void()> completion
     )
 {
@@ -2831,6 +2925,10 @@ void scheduleStartupPerformancePdfLifecycle(
         : QStringLiteral("default");
     const auto phase = std::make_shared<int>(0);
     const auto pdfPath = std::make_shared<QString>();
+    const auto innerBoundaryCycle =
+        std::make_shared<QString>(QStringLiteral("initial-load"));
+    const auto innerBoundaryObserverInstalled =
+        std::make_shared<bool>(false);
     const auto runPhase =
         std::make_shared<std::function<void()>>();
 
@@ -2843,6 +2941,9 @@ void scheduleStartupPerformancePdfLifecycle(
             comparisonMode,
             forcedGrabEnabled,
             comparisonArm,
+            innerBoundaryTrace,
+            innerBoundaryCycle,
+            innerBoundaryObserverInstalled,
             pdfPath,
             phase,
             runPhase,
@@ -2872,6 +2973,27 @@ void scheduleStartupPerformancePdfLifecycle(
         {
             fail(QStringLiteral("viewer-unavailable"));
             return;
+        }
+
+        if (innerBoundaryTrace && !*innerBoundaryObserverInstalled)
+        {
+            viewer->setStartupLifecycleBoundaryObserver(
+                [
+                    viewer,
+                    innerBoundaryTrace,
+                    innerBoundaryCycle
+                ](const QString& operation, const QString& boundaryPhase)
+                {
+                    sampleStartupPdfLifecycleInnerBoundary(
+                        *viewer,
+                        innerBoundaryTrace,
+                        *innerBoundaryCycle,
+                        operation,
+                        boundaryPhase
+                        );
+                }
+                );
+            *innerBoundaryObserverInstalled = true;
         }
 
         if (*phase == 0)
@@ -2924,7 +3046,31 @@ void scheduleStartupPerformancePdfLifecycle(
                 QString::fromUtf8(StartupPdfWorkflowRelativePath)
                 );
 
+            *innerBoundaryCycle = QStringLiteral("initial-load");
+            if (innerBoundaryTrace)
+            {
+                sampleStartupPdfLifecycleInnerBoundary(
+                    *viewer,
+                    innerBoundaryTrace,
+                    *innerBoundaryCycle,
+                    QStringLiteral("documents-pack-lease-acquisition"),
+                    QStringLiteral("before")
+                    );
+            }
             auto lease = ResourcePaths::Documents::acquire();
+            if (innerBoundaryTrace)
+            {
+                sampleStartupPdfLifecycleInnerBoundary(
+                    *viewer,
+                    innerBoundaryTrace,
+                    *innerBoundaryCycle,
+                    QStringLiteral("documents-pack-lease-acquisition"),
+                    QStringLiteral("after"),
+                    QJsonObject{
+                        {QStringLiteral("leaseAcquired"), lease.has_value()}
+                    }
+                    );
+            }
             if (!lease)
             {
                 fail(
@@ -2934,11 +3080,42 @@ void scheduleStartupPerformancePdfLifecycle(
                 return;
             }
 
+            if (innerBoundaryTrace)
+            {
+                sampleStartupPdfLifecycleInnerBoundary(
+                    *viewer,
+                    innerBoundaryTrace,
+                    *innerBoundaryCycle,
+                    QStringLiteral("documents-pack-path-resolution"),
+                    QStringLiteral("before"),
+                    QJsonObject{
+                        {
+                            QStringLiteral("relativePath"),
+                            QString::fromUtf8(
+                                StartupPdfWorkflowRelativePath
+                                )
+                        }
+                    }
+                    );
+            }
             *pdfPath =
                 ResourcePaths::Documents::filePath(
                     *lease,
                     QString::fromUtf8(StartupPdfWorkflowRelativePath)
                     );
+            if (innerBoundaryTrace)
+            {
+                sampleStartupPdfLifecycleInnerBoundary(
+                    *viewer,
+                    innerBoundaryTrace,
+                    *innerBoundaryCycle,
+                    QStringLiteral("documents-pack-path-resolution"),
+                    QStringLiteral("after"),
+                    QJsonObject{
+                        {QStringLiteral("resolvedPath"), *pdfPath}
+                    }
+                    );
+            }
             if (!QFile::exists(*pdfPath))
             {
                 fail(
@@ -3110,6 +3287,7 @@ void scheduleStartupPerformancePdfLifecycle(
                     {QStringLiteral("includesResourceLeaseRelease"), true}
                 }
                 );
+            *innerBoundaryCycle = QStringLiteral("initial-release");
             viewer->releaseDocument();
             sampleStartupPdfViewerMemory(
                 profiler,
@@ -3188,6 +3366,7 @@ void scheduleStartupPerformancePdfLifecycle(
                         "ClassMngr-phase0-missing-document-%1.pdf"
                         ).arg(QCoreApplication::applicationPid())
                     );
+            *innerBoundaryCycle = QStringLiteral("error-load");
             sampleStartupPdfLifecycleBoundary(
                 profiler,
                 *viewer,
@@ -3278,6 +3457,7 @@ void scheduleStartupPerformancePdfLifecycle(
                     {QStringLiteral("includesResourceLeaseRelease"), true}
                 }
                 );
+            *innerBoundaryCycle = QStringLiteral("error-release");
             viewer->releaseDocument();
             sampleStartupPdfViewerMemory(
                 profiler,
@@ -3301,7 +3481,31 @@ void scheduleStartupPerformancePdfLifecycle(
                 return;
             }
 
+            *innerBoundaryCycle = QStringLiteral("reopen-load");
+            if (innerBoundaryTrace)
+            {
+                sampleStartupPdfLifecycleInnerBoundary(
+                    *viewer,
+                    innerBoundaryTrace,
+                    *innerBoundaryCycle,
+                    QStringLiteral("documents-pack-lease-acquisition"),
+                    QStringLiteral("before")
+                    );
+            }
             auto lease = ResourcePaths::Documents::acquire();
+            if (innerBoundaryTrace)
+            {
+                sampleStartupPdfLifecycleInnerBoundary(
+                    *viewer,
+                    innerBoundaryTrace,
+                    *innerBoundaryCycle,
+                    QStringLiteral("documents-pack-lease-acquisition"),
+                    QStringLiteral("after"),
+                    QJsonObject{
+                        {QStringLiteral("leaseAcquired"), lease.has_value()}
+                    }
+                    );
+            }
             if (!lease)
             {
                 fail(
@@ -3472,6 +3676,7 @@ void scheduleStartupPerformancePdfLifecycle(
                     {QStringLiteral("includesResourceLeaseRelease"), true}
                 }
                 );
+            *innerBoundaryCycle = QStringLiteral("reopen-release");
             viewer->releaseDocument();
             sampleStartupPdfViewerMemory(
                 profiler,
@@ -3524,6 +3729,8 @@ void scheduleStartupPerformancePdfLifecycle(
                       .arg(forcedGrabEnabled ? 0 : 5)
                 : QStringLiteral("opened=2; rendered=2; released=2")
             );
+        *innerBoundaryCycle =
+            QStringLiteral("page-leave-after-reopen");
         completion();
     };
 
@@ -4062,6 +4269,16 @@ StartupPerformanceMode startupPerformanceMode(
         qEnvironmentVariable(
             StartupPdfLifecycleGrabArmEnvironmentVariable
             ).trimmed().toLower();
+    mode.pdfLifecycleInnerBoundariesEnabled =
+        startupPdfLifecycleInnerBoundariesSelected(
+            mode.pdfLifecycleGrabArm
+            );
+    if (mode.pdfLifecycleInnerBoundariesEnabled)
+    {
+        mode.pdfLifecycleInnerBoundaryTrace =
+            std::make_shared<StartupPdfLifecycleInnerBoundaryTrace>();
+        mode.pdfLifecycleInnerBoundaryTrace->timer.start();
+    }
     if (!mode.pdfLifecycleGrabArm.isEmpty())
     {
         mode.pdfLifecycleGrabComparisonEnabled = true;
@@ -7915,6 +8132,8 @@ void scheduleStartupPerformanceWorkflow(
     bool subPrepVisualStatesEnabled,
     const QString& subPrepVisualOutputDirectoryPath,
     const QString& pdfLifecycleGrabArm,
+    const std::shared_ptr<StartupPdfLifecycleInnerBoundaryTrace>&
+        pdfLifecycleInnerBoundaryTrace,
     std::function<void()> completion
     )
 {
@@ -7943,6 +8162,7 @@ void scheduleStartupPerformanceWorkflow(
             subPrepVisualStatesEnabled,
             subPrepVisualOutputDirectoryPath,
             pdfLifecycleGrabArm,
+            pdfLifecycleInnerBoundaryTrace,
             pageTypes,
             pageIndex,
             runNextPage,
@@ -8392,6 +8612,7 @@ void scheduleStartupPerformanceWorkflow(
                 profiler,
                 workflowSucceeded,
                 pdfLifecycleGrabArm,
+                pdfLifecycleInnerBoundaryTrace,
                 [
                     &app,
                     pageIndex,
@@ -8626,6 +8847,34 @@ bool writeStartupPerformanceMetrics(
                 {QStringLiteral("measurementLabels"), pdfLifecycleMeasurementLabels}
             }
             );
+
+        if (
+            mode.pdfLifecycleInnerBoundariesEnabled
+            && mode.pdfLifecycleInnerBoundaryTrace
+            )
+        {
+            QJsonObject comparison = metrics
+                .value(QStringLiteral("pdfLifecycleGrabComparison"))
+                .toObject();
+            comparison.insert(
+                QStringLiteral("innerBoundariesEnabled"),
+                true
+                );
+            comparison.insert(
+                QStringLiteral("innerBoundaryClock"),
+                QStringLiteral(
+                    "monotonic nanoseconds from opt-in trace start"
+                    )
+                );
+            comparison.insert(
+                QStringLiteral("innerBoundarySamples"),
+                mode.pdfLifecycleInnerBoundaryTrace->samples
+                );
+            metrics.insert(
+                QStringLiteral("pdfLifecycleGrabComparison"),
+                comparison
+                );
+        }
     }
 
     file.write(
@@ -9239,6 +9488,7 @@ int main(int argc, char *argv[])
                 startupPerformance.subPrepVisualStatesEnabled,
                 startupPerformance.visualCaptureOutputPath,
                 startupPerformance.pdfLifecycleGrabArm,
+                startupPerformance.pdfLifecycleInnerBoundaryTrace,
                 scheduleResourceTraceCompletion
                 );
             return;

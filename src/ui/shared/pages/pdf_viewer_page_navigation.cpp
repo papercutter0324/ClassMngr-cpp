@@ -75,6 +75,10 @@ void PdfViewerPage::handleDocumentStatusChanged()
             m_pdfLoadRecorded = true;
         }
 
+        recordStartupLifecycleBoundary(
+            QStringLiteral("ready-handler-view-setup"),
+            QStringLiteral("before")
+            );
         m_view->setPageMode(
             QPdfView::PageMode::MultiPage
             );
@@ -83,6 +87,10 @@ void PdfViewerPage::handleDocumentStatusChanged()
         resetZoom();
         updatePageDisplay();
         updateDocumentActionButtons();
+        recordStartupLifecycleBoundary(
+            QStringLiteral("ready-handler-view-setup"),
+            QStringLiteral("after")
+            );
         return;
     }
 
