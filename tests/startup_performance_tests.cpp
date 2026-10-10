@@ -1656,6 +1656,7 @@ private slots:
     void rejectsLockedLegacyWorkspaceDuringMigration();
     void reportsStartupMetricsAndHonorsThresholds();
     void runsRepresentativeWorkspaceLifecycleWorkflow();
+    void pdfLifecycleGrabArmRejectsInvalidConfiguration();
     void capturesLargeSubPrepBoundaryWhenConfigured();
     void capturesLargeClassesBoundaryWhenConfigured();
     void capturesLargeClassesVisualStatesWhenConfigured();
@@ -3026,6 +3027,33 @@ void StartupPerformanceTests::runsRepresentativeWorkspaceLifecycleWorkflow()
     QVERIFY(document.isObject());
 
     const QJsonObject report = document.object();
+    if (
+        qEnvironmentVariable(
+            "CLASSMNGR_STARTUP_PDF_LIFECYCLE_GRAB_ARM"
+            ).trimmed().isEmpty()
+        )
+    {
+        QVERIFY(!report.contains(QStringLiteral("pdfLifecycleGrabComparison")));
+        for (const QJsonValue& value : report
+                 .value(QStringLiteral("memorySamples"))
+                 .toArray())
+        {
+            const QJsonObject sample = value.toObject();
+            if (!sample.value(QStringLiteral("name")).toString()
+                     .endsWith(QStringLiteral("-grab-start"))
+                && !sample.value(QStringLiteral("name")).toString()
+                        .endsWith(QStringLiteral("-grab-complete")))
+            {
+                continue;
+            }
+            QVERIFY(!sample.contains(QStringLiteral("operation")));
+            const QJsonObject viewerState =
+                sample.value(QStringLiteral("viewerState")).toObject();
+            QVERIFY(!viewerState.contains(QStringLiteral("processId")));
+            QVERIFY(!viewerState.contains(QStringLiteral("documentIdentity")));
+            QVERIFY(!viewerState.contains(QStringLiteral("pdfViewWidth")));
+        }
+    }
     const QJsonObject workflow =
         report.value(QStringLiteral("workflow")).toObject();
     QVERIFY(workflow.value(QStringLiteral("enabled")).toBool());
@@ -3598,6 +3626,77 @@ void StartupPerformanceTests::runsRepresentativeWorkspaceLifecycleWorkflow()
     QVERIFY(settledElapsed > workflowElapsed);
 }
 
+void StartupPerformanceTests::pdfLifecycleGrabArmRejectsInvalidConfiguration()
+{
+    const QString appPath =
+        qEnvironmentVariable("CLASSMNGR_TEST_APP_PATH").trimmed();
+    if (appPath.isEmpty() || !QFile::exists(appPath))
+    {
+        QSKIP("Set CLASSMNGR_TEST_APP_PATH to an existing ClassMngr executable.");
+    }
+
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    const QString fixturePath =
+        directory.filePath(QStringLiteral("comparison-validation.tps"));
+    QString fixtureError;
+    QVERIFY2(
+        createRepresentativeStartupFixture(fixturePath, &fixtureError),
+        qPrintable(fixtureError)
+        );
+
+    QProcess process;
+    QProcessEnvironment environment =
+        QProcessEnvironment::systemEnvironment();
+    environment.insert(
+        QStringLiteral("CLASSMNGR_STARTUP_PDF_LIFECYCLE_GRAB_ARM"),
+        QStringLiteral("unknown-arm")
+        );
+    environment.insert(
+        QStringLiteral("QT_QPA_PLATFORM"),
+        QStringLiteral("offscreen")
+        );
+    process.setProcessEnvironment(environment);
+    process.start(
+        appPath,
+        {
+            QStringLiteral("--startup-performance-test"),
+            QStringLiteral("--startup-performance-workflow"),
+            QStringLiteral("--startup-performance-sub-prep-lifecycle"),
+            QStringLiteral("--startup-performance-scenario"),
+            QStringLiteral("representative"),
+            QStringLiteral("--startup-performance-output"),
+            directory.filePath(QStringLiteral("invalid-arm.json")),
+            fixturePath
+        }
+        );
+    QVERIFY2(process.waitForStarted(StartupTimeoutMs), qPrintable(process.errorString()));
+    QVERIFY2(process.waitForFinished(StartupTimeoutMs), qPrintable(processOutput(process)));
+    QCOMPARE(process.exitStatus(), QProcess::NormalExit);
+    QCOMPARE(process.exitCode(), 2);
+    QVERIFY(!QFileInfo::exists(directory.filePath(QStringLiteral("invalid-arm.json"))));
+
+    environment.insert(
+        QStringLiteral("CLASSMNGR_STARTUP_PDF_LIFECYCLE_GRAB_ARM"),
+        QStringLiteral("with-grabs")
+        );
+    process.setProcessEnvironment(environment);
+    process.start(
+        appPath,
+        {
+            QStringLiteral("--startup-performance-test"),
+            QStringLiteral("--startup-performance-output"),
+            directory.filePath(QStringLiteral("wrong-route.json")),
+            fixturePath
+        }
+        );
+    QVERIFY2(process.waitForStarted(StartupTimeoutMs), qPrintable(process.errorString()));
+    QVERIFY2(process.waitForFinished(StartupTimeoutMs), qPrintable(processOutput(process)));
+    QCOMPARE(process.exitStatus(), QProcess::NormalExit);
+    QCOMPARE(process.exitCode(), 2);
+    QVERIFY(!QFileInfo::exists(directory.filePath(QStringLiteral("wrong-route.json"))));
+}
+
 void StartupPerformanceTests
     ::capturesLargeSubPrepBoundaryWhenConfigured()
 {
@@ -3630,8 +3729,43 @@ void StartupPerformanceTests
     QTemporaryDir directory;
     QVERIFY(directory.isValid());
 
+    const QString outputRoot =
+        QFileInfo(configuredOutputRoot).absoluteFilePath();
+    QVERIFY2(
+        QDir().mkpath(outputRoot),
+        qPrintable(
+            QStringLiteral("Unable to create large Sub Prep reference root: %1")
+                .arg(outputRoot)
+            )
+        );
+
+    const QString configuredFixturePath =
+        qEnvironmentVariable(
+            "CLASSMNGR_LARGE_STARTUP_FIXTURE_OUTPUT_PATH"
+            ).trimmed();
     const QString fixturePath =
-        directory.filePath(QStringLiteral("large-sub-prep-workflow.tps"));
+        configuredFixturePath.isEmpty()
+            ? directory.filePath(QStringLiteral("large-sub-prep-workflow.tps"))
+            : QFileInfo(configuredFixturePath).absoluteFilePath();
+    if (!configuredFixturePath.isEmpty())
+    {
+        QVERIFY2(
+            QDir().mkpath(QFileInfo(fixturePath).absolutePath()),
+            qPrintable(
+                QStringLiteral("Could not create fixture output directory for %1")
+                    .arg(fixturePath)
+                )
+            );
+        const QString relativeFixturePath =
+            QDir(outputRoot).relativeFilePath(fixturePath);
+        QVERIFY2(
+            !QDir::isAbsolutePath(relativeFixturePath)
+                && relativeFixturePath != QStringLiteral("..")
+                && !relativeFixturePath.startsWith(QStringLiteral("../"))
+                && !relativeFixturePath.startsWith(QStringLiteral("..\\")),
+            "The retained large startup fixture must stay inside the route artifact directory."
+            );
+    }
     QString fixtureError;
     QVERIFY2(
         createLargeStartupFixture(fixturePath, &fixtureError),
@@ -3644,15 +3778,6 @@ void StartupPerformanceTests
         "Unable to write deterministic large-workspace settings."
         );
 
-    const QString outputRoot =
-        QFileInfo(configuredOutputRoot).absoluteFilePath();
-    QVERIFY2(
-        QDir().mkpath(outputRoot),
-        qPrintable(
-            QStringLiteral("Unable to create large Sub Prep reference root: %1")
-                .arg(outputRoot)
-            )
-        );
     const QString metricsPath =
         QDir(outputRoot).filePath(
             QStringLiteral("large-sub-prep-workflow.json")
@@ -3821,6 +3946,24 @@ void StartupPerformanceTests
     manifest.insert(QStringLiteral("teacherCount"), 24);
     manifest.insert(QStringLiteral("classCount"), 96);
     manifest.insert(QStringLiteral("rosterCellCount"), 7200);
+    if (!configuredFixturePath.isEmpty())
+    {
+        const QString relativeFixturePath =
+            QDir(outputRoot).relativeFilePath(fixturePath);
+        const QByteArray fixtureHash = sha256File(fixturePath);
+        QVERIFY2(
+            fixtureHash.size() == 64,
+            "The retained large Sub Prep fixture could not be hashed."
+            );
+        manifest.insert(
+            QStringLiteral("fixturePath"),
+            QDir::fromNativeSeparators(relativeFixturePath)
+            );
+        manifest.insert(
+            QStringLiteral("fixtureSha256"),
+            QString::fromLatin1(fixtureHash)
+            );
+    }
     manifest.insert(QStringLiteral("processFinished"), finished);
     manifest.insert(
         QStringLiteral("exitStatus"),
@@ -3881,6 +4024,7 @@ void StartupPerformanceTests
             }
             return 0;
         };
+    QJsonObject metricsReportForEvidence;
     QFile metricsFile(metricsPath);
     if (metricsFile.open(QIODevice::ReadOnly | QIODevice::Text))
     {
@@ -3890,7 +4034,8 @@ void StartupPerformanceTests
         if (parseError.error == QJsonParseError::NoError
             && metricsDocument.isObject())
         {
-            const QJsonObject metricsReport = metricsDocument.object();
+            metricsReportForEvidence = metricsDocument.object();
+            const QJsonObject metricsReport = metricsReportForEvidence;
             manifest.insert(
                 QStringLiteral("peakMemory"),
                 metricsReport.value(QStringLiteral("peakMemory"))
@@ -3990,6 +4135,490 @@ void StartupPerformanceTests
                 }
             }
         }
+    }
+
+    const QString selectedPdfGrabArm =
+        qEnvironmentVariable(
+            "CLASSMNGR_STARTUP_PDF_LIFECYCLE_GRAB_ARM"
+            ).trimmed().toLower();
+    if (!selectedPdfGrabArm.isEmpty())
+    {
+        const QJsonObject comparison = metricsReportForEvidence
+            .value(QStringLiteral("pdfLifecycleGrabComparison"))
+            .toObject();
+        QVERIFY2(
+            comparison.value(QStringLiteral("enabled")).toBool(),
+            "Selected PDF lifecycle arm did not produce its comparison controls."
+            );
+        QCOMPARE(
+            comparison.value(QStringLiteral("arm")).toString(),
+            selectedPdfGrabArm
+            );
+        const bool grabsEnabled = selectedPdfGrabArm == QStringLiteral("with-grabs");
+        QCOMPARE(
+            comparison.value(QStringLiteral("forcedGrabCount")).toInt(-1),
+            grabsEnabled ? 5 : 0
+            );
+        QVERIFY(!comparison.value(QStringLiteral("pngFileWritingEnabled")).toBool(true));
+
+        const QStringList expectedPdfMeasurementLabels{
+            QStringLiteral("pdf-lifecycle-pre-pdf"),
+            QStringLiteral("pdf-catalog-grab-start"),
+            QStringLiteral("pdf-catalog-grab-complete"),
+            QStringLiteral("pdf-lifecycle-initial-load-request"),
+            QStringLiteral("pdf-load-request"),
+            QStringLiteral("pdf-load-return"),
+            QStringLiteral("pdf-lifecycle-initial-load-ready"),
+            QStringLiteral("pdf-viewer-ready"),
+            QStringLiteral("pdf-opened-grab-start"),
+            QStringLiteral("pdf-opened-grab-complete"),
+            QStringLiteral("pdf-lifecycle-initial-close-before"),
+            QStringLiteral("pdf-document-release-start"),
+            QStringLiteral("pdf-document-release-complete"),
+            QStringLiteral("pdf-lifecycle-initial-close-after"),
+            QStringLiteral("pdf-closed-grab-start"),
+            QStringLiteral("pdf-closed-grab-complete"),
+            QStringLiteral("pdf-lifecycle-error-load-request"),
+            QStringLiteral("pdf-load-request"),
+            QStringLiteral("pdf-load-return"),
+            QStringLiteral("pdf-lifecycle-error-load-return"),
+            QStringLiteral("pdf-lifecycle-error-ready"),
+            QStringLiteral("pdf-error-grab-start"),
+            QStringLiteral("pdf-error-grab-complete"),
+            QStringLiteral("pdf-lifecycle-error-close-before"),
+            QStringLiteral("pdf-document-release-start"),
+            QStringLiteral("pdf-document-release-complete"),
+            QStringLiteral("pdf-lifecycle-error-close-after"),
+            QStringLiteral("pdf-lifecycle-reopen-load-request"),
+            QStringLiteral("pdf-load-request"),
+            QStringLiteral("pdf-load-return"),
+            QStringLiteral("pdf-lifecycle-reopen-ready"),
+            QStringLiteral("pdf-viewer-ready"),
+            QStringLiteral("pdf-reopened-grab-start"),
+            QStringLiteral("pdf-reopened-grab-complete"),
+            QStringLiteral("pdf-lifecycle-reopen-close-before"),
+            QStringLiteral("pdf-document-release-start"),
+            QStringLiteral("pdf-document-release-complete"),
+            QStringLiteral("pdf-lifecycle-reopen-close-after")
+        };
+        enum class ExpectedPdfPathState
+        {
+            Empty,
+            PackagedGuide,
+            MissingDocument
+        };
+        struct ExpectedPdfBoundaryState
+        {
+            QString sampleName;
+            QString documentStatus;
+            bool loaded;
+            int pageCount;
+            bool documentsPackMounted;
+            ExpectedPdfPathState pathState;
+        };
+        QList<ExpectedPdfBoundaryState> expectedPdfBoundaryStates;
+        const auto appendExpectedPdfStates =
+            [&expectedPdfBoundaryStates](
+                const QStringList& sampleNames,
+                const QString& documentStatus,
+                bool loaded,
+                int pageCount,
+                bool documentsPackMounted,
+                ExpectedPdfPathState pathState
+                )
+        {
+            for (const QString& sampleName : sampleNames)
+            {
+                expectedPdfBoundaryStates.append(
+                    {
+                        sampleName,
+                        documentStatus,
+                        loaded,
+                        pageCount,
+                        documentsPackMounted,
+                        pathState
+                    }
+                    );
+            }
+        };
+        appendExpectedPdfStates(
+            {
+                QStringLiteral("pdf-lifecycle-pre-pdf"),
+                QStringLiteral("pdf-catalog-grab-start"),
+                QStringLiteral("pdf-catalog-grab-complete")
+            },
+            QStringLiteral("Null"),
+            false,
+            0,
+            false,
+            ExpectedPdfPathState::Empty
+            );
+        appendExpectedPdfStates(
+            {
+                QStringLiteral("pdf-lifecycle-initial-load-request"),
+                QStringLiteral("pdf-load-request")
+            },
+            QStringLiteral("Null"),
+            false,
+            0,
+            true,
+            ExpectedPdfPathState::Empty
+            );
+        appendExpectedPdfStates(
+            {
+                QStringLiteral("pdf-load-return"),
+                QStringLiteral("pdf-lifecycle-initial-load-ready"),
+                QStringLiteral("pdf-viewer-ready"),
+                QStringLiteral("pdf-opened-grab-start"),
+                QStringLiteral("pdf-opened-grab-complete"),
+                QStringLiteral("pdf-lifecycle-initial-close-before"),
+                QStringLiteral("pdf-document-release-start")
+            },
+            QStringLiteral("Ready"),
+            true,
+            38,
+            true,
+            ExpectedPdfPathState::PackagedGuide
+            );
+        appendExpectedPdfStates(
+            {
+                QStringLiteral("pdf-document-release-complete"),
+                QStringLiteral("pdf-lifecycle-initial-close-after"),
+                QStringLiteral("pdf-closed-grab-start"),
+                QStringLiteral("pdf-closed-grab-complete"),
+                QStringLiteral("pdf-lifecycle-error-load-request"),
+                QStringLiteral("pdf-load-request")
+            },
+            QStringLiteral("Null"),
+            false,
+            0,
+            false,
+            ExpectedPdfPathState::Empty
+            );
+        appendExpectedPdfStates(
+            {
+                QStringLiteral("pdf-load-return"),
+                QStringLiteral("pdf-lifecycle-error-load-return"),
+                QStringLiteral("pdf-lifecycle-error-ready"),
+                QStringLiteral("pdf-error-grab-start"),
+                QStringLiteral("pdf-error-grab-complete"),
+                QStringLiteral("pdf-lifecycle-error-close-before"),
+                QStringLiteral("pdf-document-release-start")
+            },
+            QStringLiteral("Error"),
+            false,
+            0,
+            false,
+            ExpectedPdfPathState::MissingDocument
+            );
+        appendExpectedPdfStates(
+            {
+                QStringLiteral("pdf-document-release-complete"),
+                QStringLiteral("pdf-lifecycle-error-close-after")
+            },
+            QStringLiteral("Error"),
+            false,
+            0,
+            false,
+            ExpectedPdfPathState::Empty
+            );
+        appendExpectedPdfStates(
+            {
+                QStringLiteral("pdf-lifecycle-reopen-load-request"),
+                QStringLiteral("pdf-load-request")
+            },
+            QStringLiteral("Error"),
+            false,
+            0,
+            true,
+            ExpectedPdfPathState::Empty
+            );
+        appendExpectedPdfStates(
+            {
+                QStringLiteral("pdf-load-return"),
+                QStringLiteral("pdf-lifecycle-reopen-ready"),
+                QStringLiteral("pdf-viewer-ready"),
+                QStringLiteral("pdf-reopened-grab-start"),
+                QStringLiteral("pdf-reopened-grab-complete"),
+                QStringLiteral("pdf-lifecycle-reopen-close-before"),
+                QStringLiteral("pdf-document-release-start")
+            },
+            QStringLiteral("Ready"),
+            true,
+            38,
+            true,
+            ExpectedPdfPathState::PackagedGuide
+            );
+        appendExpectedPdfStates(
+            {
+                QStringLiteral("pdf-document-release-complete"),
+                QStringLiteral("pdf-lifecycle-reopen-close-after")
+            },
+            QStringLiteral("Null"),
+            false,
+            0,
+            false,
+            ExpectedPdfPathState::Empty
+            );
+        QCOMPARE(
+            expectedPdfBoundaryStates.size(),
+            expectedPdfMeasurementLabels.size()
+            );
+        QStringList stateContractLabels;
+        for (const ExpectedPdfBoundaryState& state : expectedPdfBoundaryStates)
+        {
+            stateContractLabels.append(state.sampleName);
+        }
+        QCOMPARE(stateContractLabels, expectedPdfMeasurementLabels);
+
+        QStringList declaredLabels;
+        for (const QJsonValue& value : comparison
+                 .value(QStringLiteral("measurementLabels"))
+                 .toArray())
+        {
+            declaredLabels.append(value.toString());
+        }
+        QCOMPARE(declaredLabels, expectedPdfMeasurementLabels);
+
+        QStringList observedPdfSamples;
+        const QJsonArray memorySamples = metricsReportForEvidence
+            .value(QStringLiteral("memorySamples"))
+            .toArray();
+        double observedProcessId = 0.0;
+        QString observedPageIdentity;
+        QString observedViewIdentity;
+        QString observedDocumentIdentity;
+        int observedPdfSampleIndex = 0;
+        int forcedGrabPairCount = 0;
+        for (int index = 0; index < memorySamples.size(); ++index)
+        {
+            const QJsonObject sample = memorySamples.at(index).toObject();
+            const QString sampleName = sample.value(QStringLiteral("name")).toString();
+            if (!sampleName.startsWith(QStringLiteral("pdf-")))
+            {
+                continue;
+            }
+            observedPdfSamples.append(sampleName);
+            QVERIFY(observedPdfSampleIndex < expectedPdfBoundaryStates.size());
+            const ExpectedPdfBoundaryState& expectedState =
+                expectedPdfBoundaryStates.at(observedPdfSampleIndex);
+            QCOMPARE(sampleName, expectedState.sampleName);
+            ++observedPdfSampleIndex;
+            for (const QString& memoryField : {
+                     QStringLiteral("workingSetBytes"),
+                     QStringLiteral("peakWorkingSetBytes"),
+                     QStringLiteral("privateUsageBytes"),
+                     QStringLiteral("privateWorkingSetBytes")
+                 })
+            {
+                QVERIFY2(
+                    sample.value(memoryField).isDouble(),
+                    qPrintable(
+                        QStringLiteral("PDF sample %1 omitted %2.")
+                            .arg(sampleName, memoryField)
+                        )
+                    );
+            }
+
+            const QJsonObject viewerState =
+                sample.value(QStringLiteral("viewerState")).toObject();
+            const double processId =
+                viewerState.value(QStringLiteral("processId")).toDouble();
+            QVERIFY(processId > 0.0);
+            if (observedProcessId == 0.0)
+            {
+                observedProcessId = processId;
+            }
+            QCOMPARE(processId, observedProcessId);
+            QCOMPARE(
+                viewerState.value(QStringLiteral("routePage")).toString(),
+                QStringLiteral("pdf-viewer")
+                );
+            const QString pageIdentity =
+                viewerState.value(QStringLiteral("pageIdentity")).toString();
+            const QString viewIdentity =
+                viewerState.value(QStringLiteral("viewIdentity")).toString();
+            const QString documentIdentity =
+                viewerState.value(QStringLiteral("documentIdentity")).toString();
+            QVERIFY(!pageIdentity.isEmpty());
+            QVERIFY(!viewIdentity.isEmpty());
+            QVERIFY(!documentIdentity.isEmpty());
+            if (observedPageIdentity.isEmpty())
+            {
+                observedPageIdentity = pageIdentity;
+                observedViewIdentity = viewIdentity;
+                observedDocumentIdentity = documentIdentity;
+            }
+            QCOMPARE(pageIdentity, observedPageIdentity);
+            QCOMPARE(viewIdentity, observedViewIdentity);
+            QCOMPARE(documentIdentity, observedDocumentIdentity);
+            QVERIFY(viewerState.value(QStringLiteral("pdfPath")).isString());
+            QCOMPARE(
+                viewerState.value(QStringLiteral("documentStatus")).toString(),
+                expectedState.documentStatus
+                );
+            QVERIFY(viewerState.value(QStringLiteral("loaded")).isBool());
+            QCOMPARE(
+                viewerState.value(QStringLiteral("loaded")).toBool(),
+                expectedState.loaded
+                );
+            QCOMPARE(
+                viewerState.value(QStringLiteral("pageCount")).toInt(-1),
+                expectedState.pageCount
+                );
+            QCOMPARE(
+                viewerState.value(QStringLiteral("currentPage")).toInt(-1),
+                0
+                );
+            QVERIFY(!viewerState.value(QStringLiteral("pageMode")).toString().isEmpty());
+            QVERIFY(!viewerState.value(QStringLiteral("viewMode")).toString().isEmpty());
+            QVERIFY(viewerState.value(QStringLiteral("viewWidth")).toInt(-1) >= 0);
+            QVERIFY(viewerState.value(QStringLiteral("viewHeight")).toInt(-1) >= 0);
+            QVERIFY(viewerState.value(QStringLiteral("pdfViewWidth")).toInt(-1) >= 0);
+            QVERIFY(viewerState.value(QStringLiteral("pdfViewHeight")).toInt(-1) >= 0);
+            QVERIFY(viewerState.value(QStringLiteral("documentsPackMounted")).isBool());
+            QCOMPARE(
+                viewerState.value(QStringLiteral("documentsPackMounted")).toBool(),
+                expectedState.documentsPackMounted
+                );
+
+            const QString pdfPath =
+                viewerState.value(QStringLiteral("pdfPath")).toString();
+            switch (expectedState.pathState)
+            {
+                case ExpectedPdfPathState::Empty:
+                    QVERIFY2(
+                        pdfPath.isEmpty(),
+                        qPrintable(
+                            QStringLiteral("Expected an empty PDF path at %1, got '%2'.")
+                                .arg(sampleName, pdfPath)
+                            )
+                        );
+                    break;
+                case ExpectedPdfPathState::PackagedGuide:
+                    QCOMPARE(
+                        pdfPath,
+                        QStringLiteral(
+                            ":/resource-packs/documents/Guides/DYB Lesson Planning Guide.pdf"
+                            )
+                        );
+                    break;
+                case ExpectedPdfPathState::MissingDocument:
+                {
+                    QVERIFY(!pdfPath.isEmpty());
+                    const QString expectedMissingDocumentName =
+                        QStringLiteral("ClassMngr-phase0-missing-document-%1.pdf")
+                            .arg(QString::number(static_cast<quint64>(processId)));
+                    QCOMPARE(
+                        QFileInfo(pdfPath).fileName(),
+                        expectedMissingDocumentName
+                        );
+                    QVERIFY2(
+                        !QFileInfo::exists(pdfPath),
+                        qPrintable(
+                            QStringLiteral("The expected missing PDF exists: %1")
+                                .arg(pdfPath)
+                            )
+                        );
+                    break;
+                }
+            }
+
+            const QJsonObject operation =
+                sample.value(QStringLiteral("operation")).toObject();
+            if (sampleName.startsWith(QStringLiteral("pdf-lifecycle-")))
+            {
+                QCOMPARE(operation.value(QStringLiteral("boundary")).toString(), sampleName);
+                QVERIFY(!operation.value(QStringLiteral("routeStatus")).toString().isEmpty());
+            }
+            if (sampleName.endsWith(QStringLiteral("-grab-start")))
+            {
+                ++forcedGrabPairCount;
+                QVERIFY(index + 1 < memorySamples.size());
+                const QJsonObject complete = memorySamples.at(index + 1).toObject();
+                QCOMPARE(
+                    complete.value(QStringLiteral("name")).toString(),
+                    sampleName.left(sampleName.size() - QStringLiteral("-start").size())
+                        + QStringLiteral("-complete")
+                    );
+                const QJsonObject startOperation =
+                    sample.value(QStringLiteral("operation")).toObject();
+                const QJsonObject completeOperation =
+                    complete.value(QStringLiteral("operation")).toObject();
+                for (const QJsonObject& grabOperation : {
+                         startOperation,
+                         completeOperation
+                     })
+                {
+                    QCOMPARE(
+                        grabOperation.value(QStringLiteral("forcedGrabArm")).toString(),
+                        selectedPdfGrabArm
+                        );
+                    QVERIFY(
+                        grabOperation.value(
+                            QStringLiteral("forcedGrabPerformed")
+                            ).isBool()
+                        );
+                    QCOMPARE(
+                        grabOperation.value(QStringLiteral("forcedGrabPerformed")).toBool(),
+                        grabsEnabled
+                        );
+                    QVERIFY(
+                        grabOperation.value(QStringLiteral("grabSkipped")).isBool()
+                        );
+                    QCOMPARE(
+                        grabOperation.value(QStringLiteral("grabSkipped")).toBool(),
+                        !grabsEnabled
+                        );
+                    QVERIFY(
+                        grabOperation.value(
+                            QStringLiteral("pngFileWritingEnabled")
+                            ).isBool()
+                        );
+                    QVERIFY(!grabOperation.value(QStringLiteral("pngFileWritingEnabled")).toBool(true));
+                }
+                const QJsonObject completeState =
+                    complete.value(QStringLiteral("viewerState")).toObject();
+                if (grabsEnabled)
+                {
+                    QVERIFY(
+                        completeState.value(
+                            QStringLiteral("renderedImageValid")
+                            ).isBool()
+                        );
+                    QVERIFY(
+                        completeState.value(
+                            QStringLiteral("renderedImageValid")
+                            ).toBool()
+                        );
+                }
+                else
+                {
+                    QVERIFY(
+                        !completeState.contains(
+                            QStringLiteral("renderedImageValid")
+                            )
+                        );
+                }
+            }
+            QVERIFY(!sampleName.startsWith(QStringLiteral("pdf-png-save-")));
+        }
+        QCOMPARE(observedPdfSampleIndex, expectedPdfBoundaryStates.size());
+        QCOMPARE(observedPdfSamples, expectedPdfMeasurementLabels);
+        QCOMPARE(forcedGrabPairCount, 5);
+        QVERIFY(!QFileInfo::exists(QDir(outputRoot).filePath(QStringLiteral("pdf-captures"))));
+        manifest.insert(
+            QStringLiteral("pdfLifecycleGrabComparison"),
+            comparison
+            );
+    }
+
+    if (!configuredFixturePath.isEmpty())
+    {
+        manifest.insert(
+            QStringLiteral("pdfLifecycleGrabArm"),
+            selectedPdfGrabArm
+            );
     }
 
     manifest.insert(

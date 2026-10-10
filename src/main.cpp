@@ -70,6 +70,7 @@
 #include <QLabel>
 #include <QPixmap>
 #include <QPdfDocument>
+#include <QPdfPageNavigator>
 #include <QPdfView>
 #include <QPointer>
 #include <QPlainTextEdit>
@@ -145,6 +146,10 @@ struct StartupPerformanceMode
     QString pdfLifetimeProbeOutputPath;
     QJsonObject pdfLifetimeProbeIdentity;
     QString pdfLifetimeProbeError;
+    QString pdfLifecycleGrabArm;
+    QString pdfLifecycleGrabComparisonError;
+    bool pdfLifecycleGrabComparisonEnabled = false;
+    bool pdfLifecycleForcedGrabsEnabled = true;
     enum class Scenario
     {
         Minimal,
@@ -175,6 +180,62 @@ constexpr auto StartupPdfLifetimeProbeExpectedDocumentsRccSha256 =
 constexpr auto StartupPdfLifetimeProbeResolvedPath =
     ":/resource-packs/documents/Guides/DYB Lesson Planning Guide.pdf";
 constexpr int StartupPdfLifetimePageManagerMatchedDurationMilliseconds = 10500;
+constexpr auto StartupPdfLifecycleGrabArmEnvironmentVariable =
+    "CLASSMNGR_STARTUP_PDF_LIFECYCLE_GRAB_ARM";
+
+bool startupPdfLifecycleGrabComparisonSelected()
+{
+    static const bool selected =
+        !qEnvironmentVariable(
+            StartupPdfLifecycleGrabArmEnvironmentVariable
+            ).trimmed().isEmpty();
+    return selected;
+}
+
+const QStringList& startupPdfLifecycleMeasurementLabels()
+{
+    static const QStringList labels{
+        QStringLiteral("pdf-lifecycle-pre-pdf"),
+        QStringLiteral("pdf-catalog-grab-start"),
+        QStringLiteral("pdf-catalog-grab-complete"),
+        QStringLiteral("pdf-lifecycle-initial-load-request"),
+        QStringLiteral("pdf-load-request"),
+        QStringLiteral("pdf-load-return"),
+        QStringLiteral("pdf-lifecycle-initial-load-ready"),
+        QStringLiteral("pdf-viewer-ready"),
+        QStringLiteral("pdf-opened-grab-start"),
+        QStringLiteral("pdf-opened-grab-complete"),
+        QStringLiteral("pdf-lifecycle-initial-close-before"),
+        QStringLiteral("pdf-document-release-start"),
+        QStringLiteral("pdf-document-release-complete"),
+        QStringLiteral("pdf-lifecycle-initial-close-after"),
+        QStringLiteral("pdf-closed-grab-start"),
+        QStringLiteral("pdf-closed-grab-complete"),
+        QStringLiteral("pdf-lifecycle-error-load-request"),
+        QStringLiteral("pdf-load-request"),
+        QStringLiteral("pdf-load-return"),
+        QStringLiteral("pdf-lifecycle-error-load-return"),
+        QStringLiteral("pdf-lifecycle-error-ready"),
+        QStringLiteral("pdf-error-grab-start"),
+        QStringLiteral("pdf-error-grab-complete"),
+        QStringLiteral("pdf-lifecycle-error-close-before"),
+        QStringLiteral("pdf-document-release-start"),
+        QStringLiteral("pdf-document-release-complete"),
+        QStringLiteral("pdf-lifecycle-error-close-after"),
+        QStringLiteral("pdf-lifecycle-reopen-load-request"),
+        QStringLiteral("pdf-load-request"),
+        QStringLiteral("pdf-load-return"),
+        QStringLiteral("pdf-lifecycle-reopen-ready"),
+        QStringLiteral("pdf-viewer-ready"),
+        QStringLiteral("pdf-reopened-grab-start"),
+        QStringLiteral("pdf-reopened-grab-complete"),
+        QStringLiteral("pdf-lifecycle-reopen-close-before"),
+        QStringLiteral("pdf-document-release-start"),
+        QStringLiteral("pdf-document-release-complete"),
+        QStringLiteral("pdf-lifecycle-reopen-close-after")
+    };
+    return labels;
+}
 
 const QList<PageType>& startupWorkflowPageTypes()
 {
@@ -593,14 +654,170 @@ bool writeStartupResourceTrace()
     return errors.isEmpty();
 }
 
-QJsonObject startupPdfViewerState(const PdfViewerPage& viewer)
+QString startupPdfDocumentStatusName(QPdfDocument::Status status)
 {
-    return {
+    switch (status)
+    {
+    case QPdfDocument::Status::Null:
+        return QStringLiteral("Null");
+    case QPdfDocument::Status::Loading:
+        return QStringLiteral("Loading");
+    case QPdfDocument::Status::Ready:
+        return QStringLiteral("Ready");
+    case QPdfDocument::Status::Error:
+        return QStringLiteral("Error");
+    }
+    return QStringLiteral("Unknown");
+}
+
+QString startupPdfViewModeName(const QPdfView* view)
+{
+    if (!view)
+    {
+        return QStringLiteral("unavailable");
+    }
+
+    switch (view->zoomMode())
+    {
+    case QPdfView::ZoomMode::Custom:
+        return QStringLiteral("Custom");
+    case QPdfView::ZoomMode::FitToWidth:
+        return QStringLiteral("FitToWidth");
+    case QPdfView::ZoomMode::FitInView:
+        return QStringLiteral("FitInView");
+    }
+    return QStringLiteral("Unknown");
+}
+
+QString startupPdfPageModeName(const QPdfView* view)
+{
+    if (!view)
+    {
+        return QStringLiteral("unavailable");
+    }
+
+    switch (view->pageMode())
+    {
+    case QPdfView::PageMode::SinglePage:
+        return QStringLiteral("SinglePage");
+    case QPdfView::PageMode::MultiPage:
+        return QStringLiteral("MultiPage");
+    }
+    return QStringLiteral("Unknown");
+}
+
+QString startupPdfObjectIdentity(const QObject* object)
+{
+    return object
+        ? QStringLiteral("0x%1")
+              .arg(reinterpret_cast<quintptr>(object), 0, 16)
+        : QString();
+}
+
+PageManager* startupPdfPageManager(const PdfViewerPage& viewer)
+{
+    QWidget* ancestor = viewer.parentWidget();
+    while (ancestor)
+    {
+        if (auto* pageManager = qobject_cast<PageManager*>(ancestor))
+        {
+            return pageManager;
+        }
+        ancestor = ancestor->parentWidget();
+    }
+    return nullptr;
+}
+
+QJsonObject startupPdfViewerState(
+    const PdfViewerPage& viewer,
+    const PageManager* pageManager,
+    bool includeLifecycleContext
+    )
+{
+    if (!includeLifecycleContext)
+    {
+        return {
+            {QStringLiteral("loaded"), viewer.hasLoadedDocument()},
+            {QStringLiteral("pageCount"), viewer.documentPageCount()},
+            {QStringLiteral("viewWidth"), viewer.width()},
+            {QStringLiteral("viewHeight"), viewer.height()}
+        };
+    }
+
+    const QPdfView* pdfView = viewer.findChild<QPdfView*>();
+    const QPdfDocument* document = pdfView ? pdfView->document() : nullptr;
+    const QPdfPageNavigator* pageNavigator =
+        pdfView ? pdfView->pageNavigator() : nullptr;
+    QJsonObject state{
         {QStringLiteral("loaded"), viewer.hasLoadedDocument()},
         {QStringLiteral("pageCount"), viewer.documentPageCount()},
         {QStringLiteral("viewWidth"), viewer.width()},
         {QStringLiteral("viewHeight"), viewer.height()}
     };
+    if (includeLifecycleContext)
+    {
+        state.insert(
+            QStringLiteral("pdfViewWidth"),
+            pdfView ? pdfView->width() : 0
+            );
+        state.insert(
+            QStringLiteral("pdfViewHeight"),
+            pdfView ? pdfView->height() : 0
+            );
+        state.insert(
+            QStringLiteral("processId"),
+            static_cast<double>(QCoreApplication::applicationPid())
+            );
+        state.insert(
+            QStringLiteral("routePage"),
+            pageManager ? pageManager->currentPageIdentifier() : QString()
+            );
+        state.insert(
+            QStringLiteral("pageIdentity"),
+            startupPdfObjectIdentity(&viewer)
+            );
+        state.insert(
+            QStringLiteral("viewIdentity"),
+            startupPdfObjectIdentity(pdfView)
+            );
+        state.insert(
+            QStringLiteral("documentIdentity"),
+            startupPdfObjectIdentity(document)
+            );
+        state.insert(
+            QStringLiteral("pdfPath"),
+            viewer.currentFilePath()
+            );
+        state.insert(
+            QStringLiteral("documentStatus"),
+            document
+                ? startupPdfDocumentStatusName(document->status())
+                : QStringLiteral("Unavailable")
+            );
+        state.insert(
+            QStringLiteral("pageMode"),
+            startupPdfPageModeName(pdfView)
+            );
+        state.insert(
+            QStringLiteral("viewMode"),
+            startupPdfViewModeName(pdfView)
+            );
+        state.insert(
+            QStringLiteral("zoomFactor"),
+            pdfView ? pdfView->zoomFactor() : 0.0
+            );
+        state.insert(
+            QStringLiteral("currentPage"),
+            pageNavigator ? pageNavigator->currentPage() : -1
+            );
+        state.insert(
+            QStringLiteral("documentsPackMounted"),
+            ResourcePackManager::instance().isMounted(
+                QStringLiteral("documents")
+                )
+            );
+    }
+    return state;
 }
 
 void sampleStartupPdfViewerMemory(
@@ -611,7 +828,13 @@ void sampleStartupPdfViewerMemory(
     const QPixmap* renderedImage = nullptr
     )
 {
-    QJsonObject viewerState = startupPdfViewerState(viewer);
+    const bool includeLifecycleContext =
+        startupPdfLifecycleGrabComparisonSelected();
+    QJsonObject viewerState = startupPdfViewerState(
+        viewer,
+        includeLifecycleContext ? startupPdfPageManager(viewer) : nullptr,
+        includeLifecycleContext
+        );
     if (renderedImage)
     {
         viewerState.insert(QStringLiteral("renderWidth"), renderedImage->width());
@@ -624,23 +847,70 @@ void sampleStartupPdfViewerMemory(
 QPixmap grabStartupPdfViewer(
     PdfViewerPage& viewer,
     StartupProfiler& profiler,
-    const QString& samplePrefix
+    const QString& samplePrefix,
+    bool forcedGrabEnabled = true,
+    std::optional<bool> pngFileWritingEnabled = std::nullopt,
+    const QString& comparisonArm = QStringLiteral("default")
     )
 {
+    QJsonObject grabOperation;
+    if (comparisonArm != QStringLiteral("default"))
+    {
+        const bool effectivePngFileWritingEnabled =
+            pngFileWritingEnabled.has_value()
+                ? *pngFileWritingEnabled
+                : !qEnvironmentVariable(
+                       "CLASSMNGR_STARTUP_PDF_CAPTURE_OUTPUT_DIR"
+                       ).trimmed().isEmpty();
+        grabOperation = {
+            {QStringLiteral("forcedGrabArm"), comparisonArm},
+            {QStringLiteral("forcedGrabPerformed"), forcedGrabEnabled},
+            {QStringLiteral("grabSkipped"), !forcedGrabEnabled},
+            {QStringLiteral("pngFileWritingEnabled"), effectivePngFileWritingEnabled}
+        };
+    }
     sampleStartupPdfViewerMemory(
         profiler,
         viewer,
-        samplePrefix + QStringLiteral("-grab-start")
+        samplePrefix + QStringLiteral("-grab-start"),
+        grabOperation
         );
-    const QPixmap image = viewer.grab();
+    QPixmap image;
+    if (forcedGrabEnabled)
+    {
+        image = viewer.grab();
+    }
     sampleStartupPdfViewerMemory(
         profiler,
         viewer,
         samplePrefix + QStringLiteral("-grab-complete"),
-        {},
-        &image
+        grabOperation,
+        forcedGrabEnabled ? &image : nullptr
         );
     return image;
+}
+
+void sampleStartupPdfLifecycleBoundary(
+    StartupProfiler& profiler,
+    const PdfViewerPage& viewer,
+    const QString& name,
+    const QString& routeStatus
+    )
+{
+    if (!startupPdfLifecycleGrabComparisonSelected())
+    {
+        return;
+    }
+
+    sampleStartupPdfViewerMemory(
+        profiler,
+        viewer,
+        name,
+        QJsonObject{
+            {QStringLiteral("boundary"), name},
+            {QStringLiteral("routeStatus"), routeStatus}
+        }
+        );
 }
 
 struct StartupPdfLifetimeProbeState
@@ -701,22 +971,6 @@ bool startupProbePathsMatch(
                startupProbeCanonicalFilePath(right),
                sensitivity
                ) == 0;
-}
-
-QString startupPdfDocumentStatusName(QPdfDocument::Status status)
-{
-    switch (status)
-    {
-    case QPdfDocument::Status::Null:
-        return QStringLiteral("Null");
-    case QPdfDocument::Status::Loading:
-        return QStringLiteral("Loading");
-    case QPdfDocument::Status::Ready:
-        return QStringLiteral("Ready");
-    case QPdfDocument::Status::Error:
-        return QStringLiteral("Error");
-    }
-    return QStringLiteral("Unknown");
 }
 
 QJsonObject startupPdfLifetimeDisplay(const MainWindow& window)
@@ -2057,9 +2311,15 @@ bool saveStartupPdfCapture(
     const QPixmap& image,
     const QString& fileName,
     StartupProfiler& profiler,
-    const PdfViewerPage& viewer
+    const PdfViewerPage& viewer,
+    bool pngFileWritingAllowed = true
     )
 {
+    if (!pngFileWritingAllowed)
+    {
+        return true;
+    }
+
     const QString outputDirectoryPath =
         qEnvironmentVariable("CLASSMNGR_STARTUP_PDF_CAPTURE_OUTPUT_DIR")
             .trimmed();
@@ -2558,9 +2818,17 @@ void scheduleStartupPerformancePdfLifecycle(
     MainWindow& window,
     StartupProfiler& profiler,
     const std::shared_ptr<bool>& workflowSucceeded,
+    const QString& pdfLifecycleGrabArm,
     std::function<void()> completion
     )
 {
+    const bool comparisonMode = !pdfLifecycleGrabArm.isEmpty();
+    const bool forcedGrabEnabled =
+        !comparisonMode
+        || pdfLifecycleGrabArm == QStringLiteral("with-grabs");
+    const QString comparisonArm = comparisonMode
+        ? pdfLifecycleGrabArm
+        : QStringLiteral("default");
     const auto phase = std::make_shared<int>(0);
     const auto pdfPath = std::make_shared<QString>();
     const auto runPhase =
@@ -2572,6 +2840,9 @@ void scheduleStartupPerformancePdfLifecycle(
             &window,
             &profiler,
             workflowSucceeded,
+            comparisonMode,
+            forcedGrabEnabled,
+            comparisonArm,
             pdfPath,
             phase,
             runPhase,
@@ -2615,17 +2886,28 @@ void scheduleStartupPerformancePdfLifecycle(
                 return;
             }
 
+            sampleStartupPdfLifecycleBoundary(
+                profiler,
+                *viewer,
+                QStringLiteral("pdf-lifecycle-pre-pdf"),
+                QStringLiteral("before-catalog-grab-and-document-acquire")
+                );
+
             const QPixmap catalogImage = grabStartupPdfViewer(
                 *viewer,
                 profiler,
-                QStringLiteral("pdf-catalog")
+                QStringLiteral("pdf-catalog"),
+                forcedGrabEnabled,
+                comparisonMode ? std::optional<bool>(false) : std::nullopt,
+                comparisonArm
                 );
             if (
                 !saveStartupPdfCapture(
                     catalogImage,
                     QStringLiteral("pdf-catalog.png"),
                     profiler,
-                    *viewer
+                    *viewer,
+                    !comparisonMode
                     )
                 )
             {
@@ -2679,6 +2961,12 @@ void scheduleStartupPerformancePdfLifecycle(
                 QStringLiteral("pdf-open-start"),
                 QString::fromUtf8(StartupPdfWorkflowRelativePath)
                 );
+            sampleStartupPdfLifecycleBoundary(
+                profiler,
+                *viewer,
+                QStringLiteral("pdf-lifecycle-initial-load-request"),
+                QStringLiteral("initial-load-request")
+                );
             sampleStartupPdfViewerMemory(
                 profiler,
                 *viewer,
@@ -2726,6 +3014,12 @@ void scheduleStartupPerformancePdfLifecycle(
                 fail(QStringLiteral("initial-open-not-ready"));
                 return;
             }
+            sampleStartupPdfLifecycleBoundary(
+                profiler,
+                *viewer,
+                QStringLiteral("pdf-lifecycle-initial-load-ready"),
+                QStringLiteral("initial-load-ready")
+                );
             sampleStartupPdfViewerMemory(
                 profiler,
                 *viewer,
@@ -2738,11 +3032,17 @@ void scheduleStartupPerformancePdfLifecycle(
             const QPixmap renderedImage = grabStartupPdfViewer(
                 *viewer,
                 profiler,
-                QStringLiteral("pdf-opened")
+                QStringLiteral("pdf-opened"),
+                forcedGrabEnabled,
+                comparisonMode ? std::optional<bool>(false) : std::nullopt,
+                comparisonArm
                 );
             if (
-                renderedImage.isNull()
-                || renderedImage.size().isEmpty()
+                forcedGrabEnabled
+                && (
+                    renderedImage.isNull()
+                    || renderedImage.size().isEmpty()
+                    )
                 )
             {
                 fail(QStringLiteral("initial-render-empty"));
@@ -2754,7 +3054,8 @@ void scheduleStartupPerformancePdfLifecycle(
                     renderedImage,
                     QStringLiteral("pdf-opened.png"),
                     profiler,
-                    *viewer
+                    *viewer,
+                    !comparisonMode
                     )
                 )
             {
@@ -2762,29 +3063,44 @@ void scheduleStartupPerformancePdfLifecycle(
                 return;
             }
 
-            StartupProfiler::recordPdfDocumentRendered(
-                *pdfPath,
-                renderedImage.width(),
-                renderedImage.height()
-                );
+            if (forcedGrabEnabled)
+            {
+                StartupProfiler::recordPdfDocumentRendered(
+                    *pdfPath,
+                    renderedImage.width(),
+                    renderedImage.height()
+                    );
+            }
+            const QString openedDetail = forcedGrabEnabled
+                ? QStringLiteral("%1; rendered=%2x%3")
+                      .arg(
+                          QString::fromUtf8(StartupPdfWorkflowRelativePath),
+                          QString::number(renderedImage.width()),
+                          QString::number(renderedImage.height())
+                          )
+                : QStringLiteral("%1; forcedGrabSkipped=true")
+                      .arg(QString::fromUtf8(StartupPdfWorkflowRelativePath));
             profiler.checkpoint(
                 QStringLiteral("pdf-opened"),
-                QStringLiteral("%1; rendered=%2x%3")
-                    .arg(
-                        QString::fromUtf8(StartupPdfWorkflowRelativePath),
-                        QString::number(renderedImage.width()),
-                        QString::number(renderedImage.height())
-                        )
+                openedDetail
                 );
             profiler.checkpoint(
                 QStringLiteral("pdf-rendered"),
-                QStringLiteral("%1x%2")
-                    .arg(
-                        renderedImage.width(),
-                        renderedImage.height()
-                        )
+                forcedGrabEnabled
+                    ? QStringLiteral("%1x%2")
+                          .arg(
+                              renderedImage.width(),
+                              renderedImage.height()
+                              )
+                    : QStringLiteral("forcedGrabSkipped=true")
                 );
 
+            sampleStartupPdfLifecycleBoundary(
+                profiler,
+                *viewer,
+                QStringLiteral("pdf-lifecycle-initial-close-before"),
+                QStringLiteral("initial-close-before")
+                );
             sampleStartupPdfViewerMemory(
                 profiler,
                 *viewer,
@@ -2803,6 +3119,12 @@ void scheduleStartupPerformancePdfLifecycle(
                     {QStringLiteral("includesDocumentClose"), true},
                     {QStringLiteral("includesResourceLeaseRelease"), true}
                 }
+                );
+            sampleStartupPdfLifecycleBoundary(
+                profiler,
+                *viewer,
+                QStringLiteral("pdf-lifecycle-initial-close-after"),
+                QStringLiteral("initial-close-after")
                 );
             *phase = 2;
             QTimer::singleShot(
@@ -2836,14 +3158,18 @@ void scheduleStartupPerformancePdfLifecycle(
             const QPixmap closedImage = grabStartupPdfViewer(
                 *viewer,
                 profiler,
-                QStringLiteral("pdf-closed")
+                QStringLiteral("pdf-closed"),
+                forcedGrabEnabled,
+                comparisonMode ? std::optional<bool>(false) : std::nullopt,
+                comparisonArm
                 );
             if (
                 !saveStartupPdfCapture(
                     closedImage,
                     QStringLiteral("pdf-closed.png"),
                     profiler,
-                    *viewer
+                    *viewer,
+                    !comparisonMode
                     )
                 )
             {
@@ -2862,6 +3188,12 @@ void scheduleStartupPerformancePdfLifecycle(
                         "ClassMngr-phase0-missing-document-%1.pdf"
                         ).arg(QCoreApplication::applicationPid())
                     );
+            sampleStartupPdfLifecycleBoundary(
+                profiler,
+                *viewer,
+                QStringLiteral("pdf-lifecycle-error-load-request"),
+                QStringLiteral("missing-document-load-request")
+                );
             sampleStartupPdfViewerMemory(
                 profiler,
                 *viewer,
@@ -2883,6 +3215,12 @@ void scheduleStartupPerformancePdfLifecycle(
                     {QStringLiteral("accepted"), invalidLoadAccepted}
                 }
                 );
+            sampleStartupPdfLifecycleBoundary(
+                profiler,
+                *viewer,
+                QStringLiteral("pdf-lifecycle-error-load-return"),
+                QStringLiteral("missing-document-load-return")
+                );
             if (invalidLoadAccepted)
             {
                 fail(QStringLiteral("invalid-document-open-accepted"));
@@ -2894,17 +3232,27 @@ void scheduleStartupPerformancePdfLifecycle(
                 fail(QStringLiteral("invalid-document-reported-ready"));
                 return;
             }
+            sampleStartupPdfLifecycleBoundary(
+                profiler,
+                *viewer,
+                QStringLiteral("pdf-lifecycle-error-ready"),
+                QStringLiteral("missing-document-error-ready")
+                );
             const QPixmap errorImage = grabStartupPdfViewer(
                 *viewer,
                 profiler,
-                QStringLiteral("pdf-error")
+                QStringLiteral("pdf-error"),
+                forcedGrabEnabled,
+                comparisonMode ? std::optional<bool>(false) : std::nullopt,
+                comparisonArm
                 );
             if (
                 !saveStartupPdfCapture(
                     errorImage,
                     QStringLiteral("pdf-error.png"),
                     profiler,
-                    *viewer
+                    *viewer,
+                    !comparisonMode
                     )
                 )
             {
@@ -2914,6 +3262,12 @@ void scheduleStartupPerformancePdfLifecycle(
             profiler.checkpoint(
                 QStringLiteral("pdf-error"),
                 QStringLiteral("loaded=false; activeDocumentCount=0")
+                );
+            sampleStartupPdfLifecycleBoundary(
+                profiler,
+                *viewer,
+                QStringLiteral("pdf-lifecycle-error-close-before"),
+                QStringLiteral("missing-document-close-before")
                 );
             sampleStartupPdfViewerMemory(
                 profiler,
@@ -2933,6 +3287,12 @@ void scheduleStartupPerformancePdfLifecycle(
                     {QStringLiteral("includesDocumentClose"), true},
                     {QStringLiteral("includesResourceLeaseRelease"), true}
                 }
+                );
+            sampleStartupPdfLifecycleBoundary(
+                profiler,
+                *viewer,
+                QStringLiteral("pdf-lifecycle-error-close-after"),
+                QStringLiteral("missing-document-close-after")
                 );
             app.processEvents();
             if (!viewer->currentFilePath().isEmpty())
@@ -2963,6 +3323,12 @@ void scheduleStartupPerformancePdfLifecycle(
             profiler.checkpoint(
                 QStringLiteral("pdf-reopen-start"),
                 QString::fromUtf8(StartupPdfWorkflowRelativePath)
+                );
+            sampleStartupPdfLifecycleBoundary(
+                profiler,
+                *viewer,
+                QStringLiteral("pdf-lifecycle-reopen-load-request"),
+                QStringLiteral("reopen-load-request")
                 );
             sampleStartupPdfViewerMemory(
                 profiler,
@@ -3010,6 +3376,12 @@ void scheduleStartupPerformancePdfLifecycle(
                 fail(QStringLiteral("reopen-not-ready"));
                 return;
             }
+            sampleStartupPdfLifecycleBoundary(
+                profiler,
+                *viewer,
+                QStringLiteral("pdf-lifecycle-reopen-ready"),
+                QStringLiteral("reopen-ready")
+                );
             sampleStartupPdfViewerMemory(
                 profiler,
                 *viewer,
@@ -3022,11 +3394,17 @@ void scheduleStartupPerformancePdfLifecycle(
             const QPixmap renderedImage = grabStartupPdfViewer(
                 *viewer,
                 profiler,
-                QStringLiteral("pdf-reopened")
+                QStringLiteral("pdf-reopened"),
+                forcedGrabEnabled,
+                comparisonMode ? std::optional<bool>(false) : std::nullopt,
+                comparisonArm
                 );
             if (
-                renderedImage.isNull()
-                || renderedImage.size().isEmpty()
+                forcedGrabEnabled
+                && (
+                    renderedImage.isNull()
+                    || renderedImage.size().isEmpty()
+                    )
                 )
             {
                 fail(QStringLiteral("reopen-render-empty"));
@@ -3038,7 +3416,8 @@ void scheduleStartupPerformancePdfLifecycle(
                     renderedImage,
                     QStringLiteral("pdf-reopened.png"),
                     profiler,
-                    *viewer
+                    *viewer,
+                    !comparisonMode
                     )
                 )
             {
@@ -3046,29 +3425,44 @@ void scheduleStartupPerformancePdfLifecycle(
                 return;
             }
 
-            StartupProfiler::recordPdfDocumentRendered(
-                *pdfPath,
-                renderedImage.width(),
-                renderedImage.height()
-                );
+            if (forcedGrabEnabled)
+            {
+                StartupProfiler::recordPdfDocumentRendered(
+                    *pdfPath,
+                    renderedImage.width(),
+                    renderedImage.height()
+                    );
+            }
+            const QString reopenedDetail = forcedGrabEnabled
+                ? QStringLiteral("%1; rendered=%2x%3")
+                      .arg(
+                          QString::fromUtf8(StartupPdfWorkflowRelativePath),
+                          QString::number(renderedImage.width()),
+                          QString::number(renderedImage.height())
+                          )
+                : QStringLiteral("%1; forcedGrabSkipped=true")
+                      .arg(QString::fromUtf8(StartupPdfWorkflowRelativePath));
             profiler.checkpoint(
                 QStringLiteral("pdf-reopened"),
-                QStringLiteral("%1; rendered=%2x%3")
-                    .arg(
-                        QString::fromUtf8(StartupPdfWorkflowRelativePath),
-                        QString::number(renderedImage.width()),
-                        QString::number(renderedImage.height())
-                        )
+                reopenedDetail
                 );
             profiler.checkpoint(
                 QStringLiteral("pdf-reopened-rendered"),
-                QStringLiteral("%1x%2")
-                    .arg(
-                        renderedImage.width(),
-                        renderedImage.height()
-                        )
+                forcedGrabEnabled
+                    ? QStringLiteral("%1x%2")
+                          .arg(
+                              renderedImage.width(),
+                              renderedImage.height()
+                              )
+                    : QStringLiteral("forcedGrabSkipped=true")
                 );
 
+            sampleStartupPdfLifecycleBoundary(
+                profiler,
+                *viewer,
+                QStringLiteral("pdf-lifecycle-reopen-close-before"),
+                QStringLiteral("reopen-close-before")
+                );
             sampleStartupPdfViewerMemory(
                 profiler,
                 *viewer,
@@ -3087,6 +3481,12 @@ void scheduleStartupPerformancePdfLifecycle(
                     {QStringLiteral("includesDocumentClose"), true},
                     {QStringLiteral("includesResourceLeaseRelease"), true}
                 }
+                );
+            sampleStartupPdfLifecycleBoundary(
+                profiler,
+                *viewer,
+                QStringLiteral("pdf-lifecycle-reopen-close-after"),
+                QStringLiteral("reopen-close-after")
                 );
             *phase = 4;
             QTimer::singleShot(
@@ -3116,7 +3516,13 @@ void scheduleStartupPerformancePdfLifecycle(
             );
         profiler.checkpoint(
             QStringLiteral("pdf-workflow-complete"),
-            QStringLiteral("opened=2; rendered=2; released=2")
+            comparisonMode
+                ? QStringLiteral(
+                      "opened=2; rendered=%1; forcedGrabSkipped=%2; released=2"
+                      )
+                      .arg(forcedGrabEnabled ? 2 : 0)
+                      .arg(forcedGrabEnabled ? 0 : 5)
+                : QStringLiteral("opened=2; rendered=2; released=2")
             );
         completion();
     };
@@ -3649,6 +4055,104 @@ StartupPerformanceMode startupPerformanceMode(
                     }
                 }
             }
+        }
+    }
+
+    mode.pdfLifecycleGrabArm =
+        qEnvironmentVariable(
+            StartupPdfLifecycleGrabArmEnvironmentVariable
+            ).trimmed().toLower();
+    if (!mode.pdfLifecycleGrabArm.isEmpty())
+    {
+        mode.pdfLifecycleGrabComparisonEnabled = true;
+        mode.enabled = true;
+        mode.pdfLifecycleForcedGrabsEnabled =
+            mode.pdfLifecycleGrabArm != QStringLiteral("without-grabs");
+
+        const auto fail = [&mode](const QString& message)
+        {
+            if (mode.pdfLifecycleGrabComparisonError.isEmpty())
+            {
+                mode.pdfLifecycleGrabComparisonError = message;
+            }
+        };
+
+        if (
+            mode.pdfLifecycleGrabArm != QStringLiteral("with-grabs")
+            && mode.pdfLifecycleGrabArm != QStringLiteral("without-grabs")
+            )
+        {
+            fail(
+                QStringLiteral(
+                    "%1 must be either 'with-grabs' or 'without-grabs'."
+                    )
+                    .arg(QString::fromUtf8(
+                        StartupPdfLifecycleGrabArmEnvironmentVariable
+                        ))
+                );
+        }
+        if (!mode.workflowEnabled || !mode.subPrepLifecycleEnabled)
+        {
+            fail(
+                QStringLiteral(
+                    "%1 requires --startup-performance-workflow and --startup-performance-sub-prep-lifecycle."
+                    )
+                    .arg(QString::fromUtf8(
+                        StartupPdfLifecycleGrabArmEnvironmentVariable
+                        ))
+                );
+        }
+        if (
+            mode.scheduleLifecycleEnabled
+            || mode.scheduleImportLifecycleEnabled
+            || mode.scheduleImportApplyLifecycleEnabled
+            || mode.calendarImportLifecycleEnabled
+            || mode.classesLifecycleEnabled
+            || mode.classTransferLifecycleEnabled
+            || mode.speakingEvaluationLifecycleEnabled
+            || mode.staffDirectoryLifecycleEnabled
+            || mode.subPrepOutputLifecycleEnabled
+            || mode.subPrepVisualStatesEnabled
+            || mode.resourceTraceEnabled
+            || mode.visualCaptureEnabled
+            || mode.pdfLifetimeProbeEnabled
+        )
+        {
+            fail(
+                QStringLiteral(
+                    "The PDF lifecycle grab comparison cannot be combined with another startup lifecycle, resource trace, visual capture, or PDF lifetime probe mode."
+                    )
+                );
+        }
+        if (
+            scenarioIndex < 0
+            || scenarioIndex + 1 >= args.size()
+            || args.at(scenarioIndex + 1).trimmed()
+                != QStringLiteral("representative")
+            )
+        {
+            fail(
+                QStringLiteral(
+                    "The PDF lifecycle grab comparison requires --startup-performance-scenario representative."
+                    )
+                );
+        }
+        if (mode.outputPath.trimmed().isEmpty())
+        {
+            fail(
+                QStringLiteral(
+                    "The PDF lifecycle grab comparison requires --startup-performance-output."
+                    )
+                );
+        }
+        const QString fixturePath = startupDatabasePath(args).trimmed();
+        if (fixturePath.isEmpty() || !QFileInfo::exists(fixturePath))
+        {
+            fail(
+                QStringLiteral(
+                    "The PDF lifecycle grab comparison requires an existing startup database fixture."
+                    )
+                );
         }
     }
 
@@ -7410,6 +7914,7 @@ void scheduleStartupPerformanceWorkflow(
     bool subPrepOutputLifecycleEnabled,
     bool subPrepVisualStatesEnabled,
     const QString& subPrepVisualOutputDirectoryPath,
+    const QString& pdfLifecycleGrabArm,
     std::function<void()> completion
     )
 {
@@ -7437,6 +7942,7 @@ void scheduleStartupPerformanceWorkflow(
             subPrepOutputLifecycleEnabled,
             subPrepVisualStatesEnabled,
             subPrepVisualOutputDirectoryPath,
+            pdfLifecycleGrabArm,
             pageTypes,
             pageIndex,
             runNextPage,
@@ -7885,6 +8391,7 @@ void scheduleStartupPerformanceWorkflow(
                 window,
                 profiler,
                 workflowSucceeded,
+                pdfLifecycleGrabArm,
                 [
                     &app,
                     pageIndex,
@@ -8099,6 +8606,28 @@ bool writeStartupPerformanceMetrics(
         }
         );
 
+    if (mode.pdfLifecycleGrabComparisonEnabled)
+    {
+        QJsonArray pdfLifecycleMeasurementLabels;
+        for (const QString& name : startupPdfLifecycleMeasurementLabels())
+        {
+            pdfLifecycleMeasurementLabels.append(name);
+        }
+        metrics.insert(
+            QStringLiteral("pdfLifecycleGrabComparison"),
+            QJsonObject{
+                {QStringLiteral("enabled"), true},
+                {QStringLiteral("arm"), mode.pdfLifecycleGrabArm},
+                {
+                    QStringLiteral("forcedGrabCount"),
+                    mode.pdfLifecycleForcedGrabsEnabled ? 5 : 0
+                },
+                {QStringLiteral("pngFileWritingEnabled"), false},
+                {QStringLiteral("measurementLabels"), pdfLifecycleMeasurementLabels}
+            }
+            );
+    }
+
     file.write(
         QJsonDocument(metrics).toJson(QJsonDocument::Indented)
         );
@@ -8124,11 +8653,32 @@ int main(int argc, char *argv[])
 
     const StartupPerformanceMode startupPerformance =
         startupPerformanceMode(launchArguments);
+    [[maybe_unused]] const bool pdfLifecycleGrabComparisonWasSelected =
+        startupPdfLifecycleGrabComparisonSelected();
     if (!startupPerformance.pdfLifetimeProbeError.isEmpty())
     {
         const QString message =
             QStringLiteral("Invalid PDF lifetime probe invocation: %1\n")
                 .arg(startupPerformance.pdfLifetimeProbeError);
+        qCritical().noquote() << message.trimmed();
+        const QByteArray encodedMessage = message.toLocal8Bit();
+        if (!encodedMessage.isEmpty())
+        {
+            std::fwrite(
+                encodedMessage.constData(),
+                1,
+                static_cast<size_t>(encodedMessage.size()),
+                stderr
+                );
+            std::fflush(stderr);
+        }
+        return 2;
+    }
+    if (!startupPerformance.pdfLifecycleGrabComparisonError.isEmpty())
+    {
+        const QString message =
+            QStringLiteral("Invalid PDF lifecycle grab comparison invocation: %1\n")
+                .arg(startupPerformance.pdfLifecycleGrabComparisonError);
         qCritical().noquote() << message.trimmed();
         const QByteArray encodedMessage = message.toLocal8Bit();
         if (!encodedMessage.isEmpty())
@@ -8688,6 +9238,7 @@ int main(int argc, char *argv[])
                 startupPerformance.subPrepOutputLifecycleEnabled,
                 startupPerformance.subPrepVisualStatesEnabled,
                 startupPerformance.visualCaptureOutputPath,
+                startupPerformance.pdfLifecycleGrabArm,
                 scheduleResourceTraceCompletion
                 );
             return;

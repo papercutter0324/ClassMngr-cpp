@@ -19057,3 +19057,41 @@ This matched diagnostic can test dependence on grabs in the full route, but
 even a difference would not identify the allocation owner. F536's cause remains
 unresolved. The 250 MiB lifecycle gate, F526 provenance, output parity, and
 full Phase 0 remain open.
+
+## F548 full-route grab A/B instrumentation - 2026-10-10
+
+F548 adds opt-in `CLASSMNGR_STARTUP_PDF_LIFECYCLE_GRAB_ARM=with-grabs` and
+`without-grabs` instrumentation on `lifecycle-sub-prep`. Both arms retain the
+same route and PDF lifecycle; the latter skips only the five forced viewer
+grabs. PNG writing stays disabled. The route records the same 38 ordered PDF
+lifecycle samples in each arm, including load/grab/release boundaries, four
+process-memory fields, PID, status/path/page, view and document identities,
+and pack mount state. The default report shape remains unchanged when the
+selector is unset.
+
+Debug/tooling verification passed: focused Debug CTest 1/1,
+`capturesLargeSubPrepBoundaryWhenConfigured` 3 passed / 0 failed in each arm,
+`test_phase0_windows_runner.py -v` 1/1, and an actual one-route runner
+invocation passed automatic validation with
+`requestedRoutes=["lifecycle-sub-prep"]`. Independent current-source route
+runs exited 0 in both arms under Qt 6.12.0 and offscreen display, with 38
+samples each, unique PIDs 51432 and 53412, and the same retained fixture SHA-256
+`c213ce96d85d927a4e2a4196c68be490f4517076079c069b475ec0ada872ffbb`. Both
+reported PNG writing false and produced no `pdf-captures` folder, including
+with the capture-output environment configured. Observed state moved
+Null -> Ready -> Null; the failed load reported Error with its PDF path, then
+Error with an empty path after close; reopen reached Ready and release returned
+to Null. Page, view, and document identities remained stable.
+
+The independent route artifacts are retained under
+`%TEMP%\f548-independent-verify-c84df47ba8f549cabd2af9bd58bf7f19`; final
+post-assertion arm runs are under `%TEMP%\f548-state-contract-with-grabs-1f922caa94764d5798d8d2e83e5a56d4`
+and `%TEMP%\f548-state-contract-without-grabs-863e514bb21f4ed1a1822c2cc47ff73d`.
+The one-route automatic-validation run is under
+`%TEMP%\f548-final-runner-180f5a51a7dd4431ad43b73c09ed29ea`.
+
+These are Debug/tooling and current-source route checks, not F549 Release
+memory evidence. They do not identify the F536 cause or establish the 250 MiB
+acceptance gate. Next, commit F548, build one Release package from that commit,
+then run three fresh processes per arm with PNG writing off, the same route,
+fixture, and Qt, and unique PIDs. Keep F536 cause and 250 MiB acceptance open.

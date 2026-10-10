@@ -858,7 +858,7 @@ $ExplicitTestBuildDirectory = -not [string]::IsNullOrWhiteSpace($TestBuildDirect
 $ExplicitInstallDirectory = -not [string]::IsNullOrWhiteSpace($InstallDirectory)
 $ExplicitApplicationPath = -not [string]::IsNullOrWhiteSpace($ApplicationPath)
 $ExplicitTestExecutable = -not [string]::IsNullOrWhiteSpace($TestExecutable)
-$RequestedRouteIds = Expand-RequestedRoutes -RequestedValues $Routes
+$RequestedRouteIds = @(Expand-RequestedRoutes -RequestedValues $Routes)
 $HostPlatform = Get-HostPlatformName
 $HostSupported = Test-IsWindowsX64
 $EffectivePlan = [bool]$Plan
@@ -987,7 +987,7 @@ $RunManifest = [ordered]@{
         acceptanceScope = "Windows x64 is runnable here; macOS universal remains supported and is not run by this Windows-hosted runner."
     }
     source = $SourceIdentity
-    requestedRoutes = $RequestedRouteIds
+    requestedRoutes = @($RequestedRouteIds)
     paths = [ordered]@{
         repositoryRoot = $RepositoryRoot
         applicationPath = $ApplicationPath
@@ -1012,7 +1012,9 @@ $RunManifest = [ordered]@{
     }
     requiredOptInEnvironmentVariables = @(
         "QT_QPA_PLATFORM", "CLASSMNGR_TEST_APP_PATH", "CLASSMNGR_SETTINGS_ROOT",
+        "CLASSMNGR_LARGE_STARTUP_FIXTURE_OUTPUT_PATH",
         "CLASSMNGR_STARTUP_WORKFLOW_TRACE_PATH", "CLASSMNGR_STARTUP_PDF_CAPTURE_OUTPUT_DIR",
+        "CLASSMNGR_STARTUP_PDF_LIFECYCLE_GRAB_ARM",
         "CLASSMNGR_VISUAL_BASELINE_OUTPUT_DIR", "CLASSMNGR_LARGE_CLASSES_VISUAL_REFERENCE_DIR",
         "CLASSMNGR_LARGE_SUB_PREP_VISUAL_REFERENCE_DIR", "CLASSMNGR_LARGE_PDF_VIEWER_VISUAL_REFERENCE_DIR",
         "CLASSMNGR_LARGE_SUB_PREP_BOUNDARY_REFERENCE_DIR", "CLASSMNGR_LARGE_CLASSES_BOUNDARY_REFERENCE_DIR",
@@ -1292,6 +1294,8 @@ try {
             }
             "lifecycle-sub-prep" {
                 $environmentOverrides["CLASSMNGR_LARGE_SUB_PREP_BOUNDARY_REFERENCE_DIR"] = $routeRoot
+                $environmentOverrides["CLASSMNGR_LARGE_STARTUP_FIXTURE_OUTPUT_PATH"] =
+                    Join-Path $routeRoot "large_startup.tps"
                 $arguments = @("capturesLargeSubPrepBoundaryWhenConfigured")
                 break
             }
