@@ -612,12 +612,30 @@ pages and unmounted, with stable page/view/document identity through reopen.
 The second Ready medians were close to the first in this simple probe, but its
 roughly 731–742 MB working set is not comparable with F536's approximately
 264 MB full-route reading. F547 therefore selected a full-route diagnostic.
-F548 will compare the same `lifecycle-sub-prep` route with all five forced
-viewer grabs enabled versus skipping only those grabs; both arms disable PNG
-file writing and preserve fixture, PDF/RCC, Qt/display, and route order. Keep
-pre-PDF and PDF lifecycle checkpoints, identity/status/path, pack mount, and
-all four memory metrics. F549 is the three-fresh-process-per-arm evidence
-campaign after F548 is committed and verified. This tests grab dependence in
-route context, not allocation ownership. F536 cause remains unresolved. The
-250 MiB lifecycle gate, F526 provenance, output parity, and full Phase 0 remain
-open.
+F548 added the opt-in 38-sample `lifecycle-sub-prep` A/B, retaining all five
+forced viewer grabs in one arm and skipping them in the other, with PNG file
+writing disabled in both.
+
+F549 completed three fresh Windows x64 Qt 6.12.0 Release processes per arm
+from F548 commit `56c4104a6f1a1e00a25a2a0225b104158a07da35`. All six
+route-scoped validations passed with 38 ordered samples, identical fixture
+hash, and no PNG files. Per-process maxima summarized by field and then by
+three-run median (MiB; working set / peak working set / private usage / private
+working set) were 250.984 / 252.125 / 291.625 / 186.762 with grabs and 249.523 /
+251.219 / 289.109 / 185.352 without, differences +1.461 / +0.906 / +2.516 /
++1.410. Both peak-working-set medians exceed the 250 MiB comparison target.
+PDF load-return medians were 247.320 / 247.320 / 262.703 / 183.387 versus
+245.898 / 245.898 / 261.383 / 182.012 MiB; Ready medians were 249.566 /
+251.035 / 264.719 / 185.379 versus 249.391 / 250.875 / 264.617 / 185.250.
+Pre-PDF medians matched within 0.063 MiB per field. The small A/B differences
+suggest a modest association with rendering/capture, while much of the rise is
+present by load return. Since the no-grab arm also omits the two render events,
+this measures combined render/capture-path dependence, not isolated grab
+allocation. It identifies no owner or cause.
+
+F550 is selected for measurement-only samples in the no-grab full route around
+documents-pack acquisition, `QPdfDocument::load()`, Ready view setup, close,
+lease/descriptor clear, and view/UI reset. Retain F548's 38 ordered samples
+and four memory fields. This can locate the phase of the rise but cannot
+establish ownership within Qt. F536 cause remains unresolved. The 250 MiB
+lifecycle gate, F526 provenance, output parity, and full Phase 0 remain open.

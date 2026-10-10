@@ -19095,3 +19095,59 @@ memory evidence. They do not identify the F536 cause or establish the 250 MiB
 acceptance gate. Next, commit F548, build one Release package from that commit,
 then run three fresh processes per arm with PNG writing off, the same route,
 fixture, and Qt, and unique PIDs. Keep F536 cause and 250 MiB acceptance open.
+
+## F549 packaged Release grab-dependence campaign - 2026-10-10
+
+The six-process Windows x64 Release campaign used F548 commit
+`56c4104a6f1a1e00a25a2a0225b104158a07da35`, Qt 6.12.0, and offscreen display.
+The separate build-only runner completed Release configure/build/install and
+harness configure/build without timeout or tracked worktree changes; inherited
+untracked Windows cache artifacts and `txt` remained untouched. All route files
+match the package hashes: executable
+`16df2046cfaecc6e7b5b4ed2f45079959938a7dd995c15fb8a12aa81d93f665e`, harness
+`78547800527fbc84024a9acc67c8db649cf58b4975b1a15faa7d19e30bc0e006`, RCC
+`a3eb570294b55a616ea05797222fc1fedd93620abb25360b724ed6843bee924f`, and PDF
+`295accab548b41f0b4f56e6ab89958ad5c3347646904c155b16a56ebe926caec`.
+
+Three fresh `with-grabs` processes (PIDs 12176, 45208, 27632) and three
+`without-grabs` processes (51192, 53736, 49796) completed
+`lifecycle-sub-prep` with exit code 0. All six route-scoped validation
+summaries passed; each had 38 strictly ordered PDF lifecycle samples, PNG file
+writing disabled and no PNG files, and fixture SHA-256
+`c213ce96d85d927a4e2a4196c68be490f4517076079c069b475ec0ada872ffbb`. Each
+with-grabs process executed five forced viewer grabs and two PDF render events;
+each without-grabs process skipped the five grabs and had no PDF render events.
+Both arms still loaded and released two PDFs, so this comparison measures the
+combined render/capture-path dependence and does not isolate allocation from
+the explicit `viewer.grab()` calls.
+
+The following are per-field medians across three processes after taking each
+process's maxima; they are not a paired sample:
+
+| Metric (MiB) | With grabs | Without grabs | Difference |
+| --- | ---: | ---: | ---: |
+| Working set | 250.984 | 249.523 | +1.461 |
+| Peak working set | 252.125 | 251.219 | +0.906 |
+| Private usage | 291.625 | 289.109 | +2.516 |
+| Private working set | 186.762 | 185.352 | +1.410 |
+
+Both peak-working-set medians exceed the 262,144,000-byte (250 MiB) comparison
+target, so memory acceptance remains open. PDF load-return medians in the same
+metric order were 247.320 / 247.320 / 262.703 / 183.387 MiB with grabs and
+245.898 / 245.898 / 261.383 / 182.012 MiB without; PDF-ready medians were
+249.566 / 251.035 / 264.719 / 185.379 MiB and 249.391 / 250.875 / 264.617 /
+185.250 MiB, respectively. Pre-PDF values matched within 0.063 MiB per field.
+This suggests only a small association with the combined rendering/capture
+path, while much of the measured rise is already present by load return; it
+does not identify F536's cause or a Qt allocation owner.
+
+F550 is selected for measurement-only boundary instrumentation in the no-grab
+full route: retain F548's 38 samples and four memory fields, and add ordered
+samples around documents-pack acquisition, `QPdfDocument::load()`, Ready view
+setup, document close, lease/descriptor clear, and view/UI reset. This can
+locate the phase of the rise but will not establish ownership within Qt. The
+global Phase 0 gate remains incomplete for outstanding platform and route
+coverage; F526 provenance, output parity, the 250 MiB gate, and F536's cause
+remain open. Raw artifacts are under
+`%LOCALAPPDATA%\Temp\ClassMngr-F549-20261010-56c4104a` (`f549-release-build`
+and route folders `f549-01` through `f549-06`).
