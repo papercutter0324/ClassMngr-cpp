@@ -19872,6 +19872,29 @@ lifetime claims bounded by the snapshot evidence. The 250 MiB lifecycle gate,
 F536 cause, F526 provenance, output parity, render/window acceptance, and
 global Phase 0 remain open (Windows 1/24, macOS 0/24).
 
+## F578 optimized Release build with app symbols - 2026-10-11
+
+The separate `build/f578-release-pdb-ninja` configuration preserved the
+Release optimization flags `/O2 /Ob2 /DNDEBUG` and added `/Zi` plus
+`/DEBUG:FULL`. The first configure attempt from bare PowerShell stopped
+because `cl.exe` was not in that shell's Visual Studio environment; invoking
+the installed VS Developer setup fixed the environment and configuration
+completed. Only the `ClassMngr.exe` target was built; tests were disabled and
+not run. The entire build and generated `ClassMngr.pdb` are ignored under
+`build/`.
+
+The resulting executable is 34,522,112 bytes (SHA-256
+`36879b8b01f6b333cfa3c528cc0379dda33c17db837cf39f0fb06adb0e9c2297`). Its
+148,566,016-byte PDB has SHA-256
+`259165925d4a6f9616e1b2d1887a7677fd4c694fad0ceb69f9aa0ad616425d10`.
+The executable's RSDS record and PDB info stream match exactly at GUID
+`07bfd20b-1dbf-432d-8f5a-154b50a649a2`, age 1. This PDB resolves only the
+new F578 executable, not the old F564 ETL. F579 prepares an isolated runtime
+copy of the packaged Qt files, replaces only the executable with this
+matched build, and captures a fresh heap trace. The 250 MiB lifecycle gate,
+F536 cause, F526 provenance, output parity, render/window acceptance, and
+global Phase 0 remain open (Windows 1/24, macOS 0/24).
+
 ## F577 optimized Release app-symbol route audit - 2026-10-11
 
 The F564 packaged executable is byte-identical to
@@ -19884,14 +19907,12 @@ the Release tree has no `ClassMngr.pdb`, even though Ninja records a generic
 frames cannot be resolved with the local Release artifacts.
 
 A separate optimized build can retain `/O2 /Ob2 /DNDEBUG` while adding
-`/Zi` and `/DEBUG:FULL` to emit a PDB tied to its own executable. That PDB
-cannot be paired with the old F564 ETL; any application-symbol investigation
-must capture a new trace from the matching executable. No source or build
-configuration in the existing tree was changed. F578 configures an isolated
-ignored Release-with-symbols build, verifies its PDB identity, and prepares a
-matched capture. The 250 MiB lifecycle gate, F536 cause, F526 provenance,
-output parity, render/window acceptance, and global Phase 0 remain open
-(Windows 1/24, macOS 0/24).
+`/Zi` and `/DEBUG:FULL` to emit a PDB tied to its own executable. F578
+produced and verified that matching PDB; a fresh trace is still required.
+No source or existing build configuration changed. F579 prepares a matched
+runtime copy and capture. The 250 MiB lifecycle gate, F536 cause, F526
+provenance, output parity, render/window acceptance, and global Phase 0 remain
+open (Windows 1/24, macOS 0/24).
 
 ## F576 startup font registration and asset mapping - 2026-10-11
 
@@ -19927,8 +19948,9 @@ and Pretendard path is a strong candidate for stack 1417, while exact
 allocation-to-file identity and the other font-engine inputs remain
 unverified. Qt documents `QFontDatabase::addApplicationFont` as the API for
 adding an application font from a file ([Qt 6.12 QFontDatabase API](https://doc.qt.io/qt-6.12/qfontdatabase.html#addApplicationFont)). F577 confirmed the existing Release build
-omits compiler debug info and has no app PDB. F578 prepares a separate
-optimized symbols build. The 250 MiB lifecycle gate, F536 cause,
+omits compiler debug info and has no app PDB. F578 built an optimized exe
+and PDB with matching CodeView identity. F579 captures the matched image.
+The 250 MiB lifecycle gate, F536 cause,
 F526 provenance, output
 parity, render/window acceptance, and global Phase 0 remain open (Windows
 1/24, macOS 0/24).
