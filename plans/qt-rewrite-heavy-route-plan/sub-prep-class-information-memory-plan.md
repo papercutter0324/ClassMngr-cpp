@@ -854,3 +854,13 @@ the installed QtPdf 6.140.0.0 modules, so function-level PDFium/QtPdf
 ownership remains open. The 250 MiB lifecycle gate, F536 cause, F526
 provenance, output parity, render/window acceptance, and global Phase 0 remain
 open (Windows 1/24, macOS 0/24).
+
+F587 found all 43,479 `QTextDocument` path heap/address records (20,837,137
+bytes) unchanged from after render through document close. At view destruction,
+14,953 exact signatures / 12,751,809 bytes remain; 28,525 source keys /
+8,084,816 bytes are absent from the snapshot, one 512-byte key remains under
+another path, and the final group has one new 12-byte key. Within the
+`setCellWidget` + `QTextDocument` overlap, 14,052 exact signatures /
+12,651,289 bytes remain, while 26,121 keys / 7,556,296 bytes are absent.
+These checkpoint path signatures do not identify allocation owners or prove
+continuous lifetime.

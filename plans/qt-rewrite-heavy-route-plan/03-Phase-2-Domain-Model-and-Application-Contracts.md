@@ -42,7 +42,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-11
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F586 confirmed the retained heap route used `without-grabs`, so `pdfRenderCount=0` does not indicate absent PDF loading; F587 will compare `QTextDocument` allocation identities while memory, output-parity, and full Phase 0 gates remain open.
+- Current note: F587 found the `QTextDocument` path group unchanged through document close and smaller at view destruction; F588 will clarify the schedule-cell removal counter while memory, output-parity, and full Phase 0 gates remain open.
 
 ### Slice discovery batches
 
@@ -71,7 +71,6 @@ Treat this plan as an operational summary, not a history:
 
 #### Active batch: Batch 104
 
-- F587 - Compare `QTextDocument` heap/address identities across the retained lifecycle snapshots.
 - F588 - Trace schedule-cell removal-counter semantics to bound what F585's zero removal count establishes.
 
 ## Objective

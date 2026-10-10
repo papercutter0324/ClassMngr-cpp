@@ -19872,6 +19872,39 @@ lifetime claims bounded by the snapshot evidence. The 250 MiB lifecycle gate,
 F536 cause, F526 provenance, output parity, render/window acceptance, and
 global Phase 0 remain open (Windows 1/24, macOS 0/24).
 
+## F587 QTextDocument heap/address identity - 2026-10-11
+
+F587 joined the retained F569 allocation rows by `(HeapHandle,
+AllocationAddress)` and selected records whose existing F575 QtBase-symbolized
+stack path contains `QTextDocument`. The grouped totals reproduce F581:
+43,479 records / 20,837,137 bytes after render and after document close, then
+14,954 / 12,751,821 after view destruction. The intersection with
+`QTableWidget::setCellWidget` is 40,173 / 20,207,585 at the first two
+checkpoints and 14,052 / 12,651,289 at the last.
+
+All 43,479 QTextDocument heap/address keys keep the same size and stack ID
+from after render through document close. From document close to view
+destruction, 14,953 keys / 12,751,809 bytes remain in the QTextDocument path
+with the exact same signature; 28,525 keys / 8,084,816 source bytes are absent
+from the final snapshot, and one 512-byte source key remains under a different
+stack path. The final QTextDocument group also contains one new 12-byte key.
+There are no shared keys with changed signatures within the group. For the
+setCellWidget + QTextDocument intersection, 14,052 keys / 12,651,289 bytes
+remain exactly, while 26,121 keys / 7,556,296 bytes are absent; none move to
+another path or enter the intersection. These are stack-path and checkpoint
+identity results, not object ownership or continuous-lifetime evidence; an
+address may be reused. The reproducer is
+`build/f587_qtextdocument_heap_identity.py` under ignored local build
+artifacts. No new symbols or capture were produced.
+
+F588 will trace schedule-cell removal-counter semantics. Batch 105 discovery
+starts with F589: F586's retained route has the PDF page-render observer
+enabled and records callbacks with forced grabs disabled; inspect those
+callbacks against the capture checkpoints. F579 remains deferred at the user's
+direction. The 250 MiB lifecycle gate, F536 cause, F526 provenance, output
+parity, render/window acceptance, and global Phase 0 remain open
+(Windows 1/24, macOS 0/24).
+
 ## F586 forced-grab mode for the retained heap route - 2026-10-11
 
 The F564 `capture-summary.json` points to the retained F563 route artifacts;
@@ -19893,11 +19926,11 @@ rendering and does not imply that the PDF documents were not loaded. The
 harness checkpoint names remain labels, not a record of forced viewer grabs.
 No new capture or source change was made.
 
-F587 compares the `QTextDocument` heap/address identities across the three
-retained snapshots. F579's fresh matched-symbol capture remains deferred at
-the user's direction. The 250 MiB lifecycle gate, F536 cause, F526 provenance,
-output parity, render/window acceptance, and global Phase 0 remain open
-(Windows 1/24, macOS 0/24).
+F587's `QTextDocument` heap/address identity comparison is recorded above.
+F579's fresh matched-symbol capture remains deferred at the user's direction.
+The 250 MiB lifecycle gate, F536 cause, F526 provenance, output parity,
+render/window acceptance, and global Phase 0 remain open (Windows 1/24,
+macOS 0/24).
 
 ## F585 schedule-cell metrics at PDF heap checkpoints - 2026-10-11
 
