@@ -802,8 +802,12 @@ allocation ownership. The largest repeated stack bucket is 25,165,824 bytes
 on a path through ClassMngr, Qt6Gui, and Qt6Core. F571 found no matching
 Release PDB or map for ClassMngr.exe or the Qt modules in the package, build,
 or Qt MSVC prefixes; only Debug ClassMngr PDBs exist. xperf therefore resolves
-module/IP frames but not internal function names. F572 checks the official
-Qt symbol-package route for the exact module versions. Function-level
-ownership remains open. The 250 MiB lifecycle gate, F536 cause, F526
-provenance, output parity, render/window acceptance, and global Phase 0 remain
-open (Windows 1/24, macOS 0/24).
+module/IP frames but not internal function names. F572 found an optional Qt
+6.12.0 MSVC 2022 x64 QtBase debug-symbol archive with the same package build
+identifier recorded for the installed QtBase binaries. Its PDB GUIDs still
+need verification against those DLLs. The checked qtpdf 6.12 extension tree
+had no separate debug-symbol package for the installed QtPdf 6.140.0.0
+modules. F573 verifies the QtBase archive checksum and PDB identities before
+symbol use; function-level PDFium/QtPdf ownership remains open. The 250 MiB
+lifecycle gate, F536 cause, F526 provenance, output parity, render/window
+acceptance, and global Phase 0 remain open (Windows 1/24, macOS 0/24).

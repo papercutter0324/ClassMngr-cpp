@@ -19872,6 +19872,31 @@ lifetime claims bounded by the snapshot evidence. The 250 MiB lifecycle gate,
 F536 cause, F526 provenance, output parity, render/window acceptance, and
 global Phase 0 remain open (Windows 1/24, macOS 0/24).
 
+## F572 official Qt symbol-package route - 2026-10-11
+
+The Qt 6.12.0 MSVC 2022 x64 repository exposes the optional
+`qt.qt6.6120.debug_info.win64_msvc2022_64` component. Its QtBase debug-symbol
+archive is approximately 168 MB and carries build identifier
+`202609280346`; the local installation log records the same QtBase build
+identifier for `C:\Qt\6.12.0\msvc2022_64`. This makes the archive a plausible
+symbol source for the captured QtCore, QtGui, and QtWidgets binaries, but the
+archive filename alone does not establish PDB identity. F573 will verify the
+archive checksum and compare each PDB's CodeView GUID/age with the local PE
+debug records before asking xperf to use any symbol.
+
+The installed `Qt6Pdf.dll` and `Qt6PdfWidgets.dll` are QtPdf 6.140.0.0
+extension binaries. The checked official qtpdf 6.12.0 MSVC 2022 x64 package
+tree exposed the extension package but no separate debug-symbol component;
+QtPdf function-level symbols therefore remain unlocated. No package was
+installed or copied into `C:\Qt`, and no Qt or ETL files changed.
+
+References: [Qt 6.12.0 MSVC 2022 x64 debug-info package index](https://download.qt.io/online/qtsdkrepository/windows_x86/desktop/qt6_6120/qt6_6120_msvc2022_64/qt.qt6.6120.debug_info.win64_msvc2022_64/), [QtPdf 6.12 extension repository](https://download.qt.io/online/qtsdkrepository/windows_x86/extensions/qtpdf/6120/), [Qt Online Installer component selection](https://doc.qt.io/qt-6/qt-online-installation.html), and [Qt Windows deployment PDB option](https://doc.qt.io/qt-6.12/windows-deployment.html).
+
+F573 starts by verifying the official QtBase symbol archive and matching its
+PDBs to the installed Release Qt binaries. The 250 MiB lifecycle gate, F536
+cause, F526 provenance, output parity, render/window acceptance, and global
+Phase 0 remain open (Windows 1/24, macOS 0/24).
+
 ## F571 Release-symbol availability audit - 2026-10-11
 
 The local search covered the F564 packaged Release directory, the
@@ -19889,11 +19914,14 @@ names or source lines. The symbol limit applies to the largest surviving
 ClassMngr/QtGui/QtCore stack paths as well as QtPdf. No PDB or map was added to
 the repository or build artifacts, and the ETL remains unchanged.
 
-F572 checks the official Qt Windows symbol-package route for these exact
-module versions and records whether usable matching symbols can be obtained
-or a reproducible instrumented build would be required. The 250 MiB lifecycle
-gate, F536 cause, F526 provenance, output parity, render/window acceptance,
-and global Phase 0 remain open (Windows 1/24, macOS 0/24).
+F572 found an official QtBase debug-symbol package for the installed Qt 6.12.0
+MSVC 2022 x64 build identifier. Matching PDB identity has not yet been
+verified. The qtpdf extension package listing had no separate symbol package
+for QtPdf 6.140.0.0. F573 verifies QtBase PDB GUIDs against the local Qt
+binaries before symbol use. Function-level PDFium/QtPdf ownership remains
+open. The 250 MiB lifecycle gate, F536 cause, F526 provenance, output parity,
+render/window acceptance, and global Phase 0 remain open (Windows 1/24,
+macOS 0/24).
 
 ## F570 all-checkpoint signature module-path summary - 2026-10-11
 
