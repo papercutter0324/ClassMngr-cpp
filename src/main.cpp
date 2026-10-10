@@ -70,6 +70,7 @@
 #include <QLabel>
 #include <QPixmap>
 #include <QPdfDocument>
+#include <QPdfPageRenderer>
 #include <QPdfPageNavigator>
 #include <QPdfView>
 #include <QPointer>
@@ -87,12 +88,15 @@
 #include <QTextEdit>
 #include <QDebug>
 #include <QScreen>
+#include <QMutex>
+#include <QMutexLocker>
 
 #include <functional>
 #include <algorithm>
 #include <cstdio>
 #include <memory>
 #include <optional>
+#include <vector>
 
 // Later: move MainWindow construction behind an ApplicationBootstrap class
 
@@ -125,6 +129,24 @@ struct StartupPdfLifecycleInnerBoundaryTrace
     QJsonArray samples;
     int nextOrder = 1;
     qint64 lastTimestampNanoseconds = -1;
+};
+
+struct StartupPdfLifecyclePageRenderObserverTrace
+{
+    QElapsedTimer timer;
+    PlatformProcessMemorySnapshotProvider memoryProvider;
+    QMutex mutex;
+    QJsonArray callbacks;
+    std::vector<QMetaObject::Connection> connections;
+    QMetaObject::Connection applicationQuitConnection;
+    QString status = QStringLiteral("not-attached");
+    QString unavailableReason;
+    QString cleanupReason;
+    int discoveredRendererCount = 0;
+    int attachedRendererCount = 0;
+    int nextOrder = 1;
+    qint64 lastTimestampNanoseconds = -1;
+    bool disconnected = false;
 };
 
 struct StartupPdfLifecycleViewportDiagnosticTrace
@@ -215,6 +237,10 @@ struct StartupPerformanceMode
     bool pdfLifecycleInnerBoundariesEnabled = false;
     std::shared_ptr<StartupPdfLifecycleInnerBoundaryTrace>
         pdfLifecycleInnerBoundaryTrace;
+    bool pdfLifecyclePageRenderObserverEnabled = false;
+    QString pdfLifecyclePageRenderObserverError;
+    std::shared_ptr<StartupPdfLifecyclePageRenderObserverTrace>
+        pdfLifecyclePageRenderObserverTrace;
     QString pdfLifecycleViewportUpdateMode;
     QString pdfLifecycleViewportUpdateError;
     std::shared_ptr<StartupPdfLifecycleViewportDiagnosticTrace>
@@ -255,6 +281,8 @@ constexpr auto StartupPdfLifecycleInnerBoundariesEnvironmentVariable =
     "CLASSMNGR_STARTUP_PDF_LIFECYCLE_INNER_BOUNDARIES";
 constexpr auto StartupPdfLifecycleViewportUpdatesEnvironmentVariable =
     "CLASSMNGR_STARTUP_PDF_LIFECYCLE_VIEWPORT_UPDATES";
+constexpr auto StartupPdfLifecyclePageRenderObserverEnvironmentVariable =
+    "CLASSMNGR_STARTUP_PDF_LIFECYCLE_PAGE_RENDER_OBSERVER";
 
 bool startupPdfLifecycleGrabComparisonSelected()
 {
@@ -271,6 +299,232 @@ bool startupPdfLifecycleInnerBoundariesSelected(const QString& grabArm)
         && qEnvironmentVariable(
                StartupPdfLifecycleInnerBoundariesEnvironmentVariable
                ).trimmed() == QStringLiteral("1");
+}
+
+void disconnectStartupPdfLifecyclePageRenderObserver(
+    const std::shared_ptr<StartupPdfLifecyclePageRenderObserverTrace>& trace,
+    const QString& reason
+    )
+{
+    if (!trace)
+    {
+        return;
+    }
+
+    for (const QMetaObject::Connection& connection : trace->connections)
+    {
+        QObject::disconnect(connection);
+    }
+    trace->connections.clear();
+    QObject::disconnect(trace->applicationQuitConnection);
+    trace->applicationQuitConnection = {};
+
+    QMutexLocker lock(&trace->mutex);
+    trace->disconnected = true;
+    trace->cleanupReason = reason;
+}
+
+void attachStartupPdfLifecyclePageRenderObserver(
+    PdfViewerPage& viewer,
+    QApplication& app,
+    const std::shared_ptr<StartupPdfLifecyclePageRenderObserverTrace>& trace
+    )
+{
+    if (!trace)
+    {
+        return;
+    }
+
+    trace->timer.start();
+    const QList<QPdfPageRenderer*> renderers =
+        viewer.findChildren<QPdfPageRenderer*>(
+            QString(),
+            Qt::FindChildrenRecursively
+            );
+    trace->discoveredRendererCount = renderers.size();
+
+    if (renderers.isEmpty())
+    {
+        trace->status = QStringLiteral("unavailable");
+        trace->unavailableReason =
+            QStringLiteral(
+                "No QPdfPageRenderer child was found below PdfViewerPage at route start."
+                );
+        trace->disconnected = true;
+        trace->cleanupReason = QStringLiteral("no-renderer-found");
+        return;
+    }
+
+    const QByteArray expectedSignalSignature =
+        QMetaObject::normalizedSignature(
+            "pageRendered(int,QSize,QImage,QPdfDocumentRenderOptions,quint64)"
+            );
+    int signalAvailableRendererCount = 0;
+    for (QPdfPageRenderer* const renderer : renderers)
+    {
+        if (
+            !renderer
+            || renderer->metaObject()->indexOfSignal(
+                   expectedSignalSignature.constData()
+                   ) < 0
+            )
+        {
+            continue;
+        }
+
+        ++signalAvailableRendererCount;
+        const QMetaObject::Connection connection = QObject::connect(
+            renderer,
+            &QPdfPageRenderer::pageRendered,
+            &app,
+            [trace](
+                int pageNumber,
+                QSize imageSize,
+                const QImage& image,
+                QPdfDocumentRenderOptions,
+                quint64 requestId
+                )
+            {
+                const ProcessMemorySnapshot memory =
+                    trace->memoryProvider.snapshot();
+                const QSize observedImageSize = image.size();
+
+                QMutexLocker lock(&trace->mutex);
+                if (trace->disconnected)
+                {
+                    return;
+                }
+                qint64 timestampNanoseconds =
+                    trace->timer.nsecsElapsed();
+                if (
+                    timestampNanoseconds
+                    <= trace->lastTimestampNanoseconds
+                    )
+                {
+                    timestampNanoseconds =
+                        trace->lastTimestampNanoseconds + 1;
+                }
+                trace->lastTimestampNanoseconds = timestampNanoseconds;
+
+                trace->callbacks.append(
+                    QJsonObject{
+                        {
+                            QStringLiteral("event"),
+                            QStringLiteral("pageRendered callback")
+                        },
+                        {QStringLiteral("order"), trace->nextOrder++},
+                        {
+                            QStringLiteral(
+                                "elapsedNanosecondsSinceAttachment"
+                                ),
+                            static_cast<double>(timestampNanoseconds)
+                        },
+                        {QStringLiteral("pageNumber"), pageNumber},
+                        {
+                            QStringLiteral("imageSize"),
+                            QJsonObject{
+                                {
+                                    QStringLiteral("width"),
+                                    observedImageSize.width()
+                                },
+                                {
+                                    QStringLiteral("height"),
+                                    observedImageSize.height()
+                                }
+                            }
+                        },
+                        {
+                            QStringLiteral("requestedImageSize"),
+                            QJsonObject{
+                                {
+                                    QStringLiteral("width"),
+                                    imageSize.width()
+                                },
+                                {
+                                    QStringLiteral("height"),
+                                    imageSize.height()
+                                }
+                            }
+                        },
+                        {
+                            QStringLiteral("requestId"),
+                            QString::number(requestId)
+                        },
+                        {
+                            QStringLiteral("memoryAvailable"),
+                            memory.isAvailable
+                        },
+                        {
+                            QStringLiteral("memoryPlatform"),
+                            memory.platform
+                        },
+                        {
+                            QStringLiteral("workingSetBytes"),
+                            static_cast<double>(memory.workingSetBytes)
+                        },
+                        {
+                            QStringLiteral("privateUsageBytes"),
+                            static_cast<double>(memory.privateUsageBytes)
+                        },
+                        {
+                            QStringLiteral("privateWorkingSetBytes"),
+                            static_cast<double>(
+                                memory.privateWorkingSetBytes
+                                )
+                        }
+                    }
+                    );
+            },
+            Qt::DirectConnection
+            );
+
+        if (connection)
+        {
+            trace->connections.push_back(connection);
+            ++trace->attachedRendererCount;
+        }
+    }
+
+    if (trace->attachedRendererCount == 0)
+    {
+        trace->status = QStringLiteral("unavailable");
+        trace->unavailableReason =
+            signalAvailableRendererCount == 0
+                ? QStringLiteral(
+                      "Discovered QPdfPageRenderer children do not expose the expected pageRendered signal."
+                      )
+                : QStringLiteral(
+                      "The pageRendered signal was found but no observer connection could be established."
+                      );
+        trace->disconnected = true;
+        trace->cleanupReason = QStringLiteral("observer-connection-unavailable");
+        return;
+    }
+
+    trace->status =
+        trace->attachedRendererCount == trace->discoveredRendererCount
+            ? QStringLiteral("attached")
+            : QStringLiteral("partially-attached");
+    if (trace->status == QStringLiteral("partially-attached"))
+    {
+        trace->unavailableReason =
+            QStringLiteral(
+                "At least one discovered QPdfPageRenderer child could not be observed."
+                );
+    }
+    trace->applicationQuitConnection = QObject::connect(
+        &app,
+        &QCoreApplication::aboutToQuit,
+        &app,
+        [trace]()
+        {
+            disconnectStartupPdfLifecyclePageRenderObserver(
+                trace,
+                QStringLiteral("application-about-to-quit")
+                );
+        },
+        Qt::DirectConnection
+        );
 }
 
 const QStringList& startupPdfLifecycleMeasurementLabels()
@@ -2972,6 +3226,8 @@ void scheduleStartupPerformancePdfLifecycle(
     const QString& pdfLifecycleGrabArm,
     const std::shared_ptr<StartupPdfLifecycleInnerBoundaryTrace>&
         innerBoundaryTrace,
+    const std::shared_ptr<StartupPdfLifecyclePageRenderObserverTrace>&
+        pageRenderObserverTrace,
     const QString& viewportUpdateMode,
     const std::shared_ptr<StartupPdfLifecycleViewportDiagnosticTrace>&
         viewportDiagnosticTrace,
@@ -2990,6 +3246,8 @@ void scheduleStartupPerformancePdfLifecycle(
     const auto innerBoundaryCycle =
         std::make_shared<QString>(QStringLiteral("initial-load"));
     const auto innerBoundaryObserverInstalled =
+        std::make_shared<bool>(false);
+    const auto pageRenderObserverAttempted =
         std::make_shared<bool>(false);
     const auto finishViewportDiagnostic =
         [viewportDiagnosticTrace](
@@ -3043,11 +3301,13 @@ void scheduleStartupPerformancePdfLifecycle(
             forcedGrabEnabled,
             comparisonArm,
             innerBoundaryTrace,
+            pageRenderObserverTrace,
             viewportUpdateMode,
             viewportDiagnosticTrace,
             finishViewportDiagnostic,
             innerBoundaryCycle,
             innerBoundaryObserverInstalled,
+            pageRenderObserverAttempted,
             pdfPath,
             phase,
             runPhase,
@@ -3062,11 +3322,16 @@ void scheduleStartupPerformancePdfLifecycle(
             [
                 &profiler,
                 workflowSucceeded,
+                pageRenderObserverTrace,
                 finishViewportDiagnostic,
                 completion
             ](const QString& detail)
         {
             *workflowSucceeded = false;
+            disconnectStartupPdfLifecyclePageRenderObserver(
+                pageRenderObserverTrace,
+                QStringLiteral("workflow-error")
+                );
             finishViewportDiagnostic(
                 QStringLiteral("workflow-error"),
                 false
@@ -3082,6 +3347,19 @@ void scheduleStartupPerformancePdfLifecycle(
         {
             fail(QStringLiteral("viewer-unavailable"));
             return;
+        }
+
+        if (
+            pageRenderObserverTrace
+            && !*pageRenderObserverAttempted
+            )
+        {
+            *pageRenderObserverAttempted = true;
+            attachStartupPdfLifecyclePageRenderObserver(
+                *viewer,
+                app,
+                pageRenderObserverTrace
+                );
         }
 
         if (innerBoundaryTrace && !*innerBoundaryObserverInstalled)
@@ -3864,6 +4142,10 @@ void scheduleStartupPerformancePdfLifecycle(
             QStringLiteral("final-close"),
             true
             );
+        disconnectStartupPdfLifecyclePageRenderObserver(
+            pageRenderObserverTrace,
+            QStringLiteral("final-close")
+            );
 
         profiler.checkpoint(
             QStringLiteral("pdf-released-after-reopen"),
@@ -4428,6 +4710,57 @@ StartupPerformanceMode startupPerformanceMode(
         mode.pdfLifecycleInnerBoundaryTrace =
             std::make_shared<StartupPdfLifecycleInnerBoundaryTrace>();
         mode.pdfLifecycleInnerBoundaryTrace->timer.start();
+    }
+    const QString pageRenderObserverSelector =
+        qEnvironmentVariable(
+            StartupPdfLifecyclePageRenderObserverEnvironmentVariable
+            ).trimmed().toLower();
+    if (!pageRenderObserverSelector.isEmpty())
+    {
+        mode.enabled = true;
+        if (pageRenderObserverSelector != QStringLiteral("1"))
+        {
+            mode.pdfLifecyclePageRenderObserverError =
+                QStringLiteral(
+                    "%1 must be either unset or '1'."
+                    )
+                    .arg(QString::fromUtf8(
+                        StartupPdfLifecyclePageRenderObserverEnvironmentVariable
+                        ));
+        }
+        else
+        {
+            mode.pdfLifecyclePageRenderObserverEnabled = true;
+            if (
+                mode.pdfLifecycleGrabArm
+                    != QStringLiteral("without-grabs")
+                || !mode.pdfLifecycleInnerBoundariesEnabled
+                )
+            {
+                mode.pdfLifecyclePageRenderObserverError =
+                    QStringLiteral(
+                        "%1 requires %2=without-grabs and %3=1."
+                        )
+                        .arg(
+                            QString::fromUtf8(
+                                StartupPdfLifecyclePageRenderObserverEnvironmentVariable
+                                ),
+                            QString::fromUtf8(
+                                StartupPdfLifecycleGrabArmEnvironmentVariable
+                                ),
+                            QString::fromUtf8(
+                                StartupPdfLifecycleInnerBoundariesEnvironmentVariable
+                                )
+                            );
+            }
+            else
+            {
+                mode.pdfLifecyclePageRenderObserverTrace =
+                    std::make_shared<
+                        StartupPdfLifecyclePageRenderObserverTrace
+                        >();
+            }
+        }
     }
     mode.pdfLifecycleViewportUpdateMode =
         qEnvironmentVariable(
@@ -8333,6 +8666,8 @@ void scheduleStartupPerformanceWorkflow(
     const QString& pdfLifecycleGrabArm,
     const std::shared_ptr<StartupPdfLifecycleInnerBoundaryTrace>&
         pdfLifecycleInnerBoundaryTrace,
+    const std::shared_ptr<StartupPdfLifecyclePageRenderObserverTrace>&
+        pdfLifecyclePageRenderObserverTrace,
     const QString& pdfLifecycleViewportUpdateMode,
     const std::shared_ptr<StartupPdfLifecycleViewportDiagnosticTrace>&
         pdfLifecycleViewportDiagnosticTrace,
@@ -8365,6 +8700,7 @@ void scheduleStartupPerformanceWorkflow(
             subPrepVisualOutputDirectoryPath,
             pdfLifecycleGrabArm,
             pdfLifecycleInnerBoundaryTrace,
+            pdfLifecyclePageRenderObserverTrace,
             pdfLifecycleViewportUpdateMode,
             pdfLifecycleViewportDiagnosticTrace,
             pageTypes,
@@ -8817,6 +9153,7 @@ void scheduleStartupPerformanceWorkflow(
                 workflowSucceeded,
                 pdfLifecycleGrabArm,
                 pdfLifecycleInnerBoundaryTrace,
+                pdfLifecyclePageRenderObserverTrace,
                 pdfLifecycleViewportUpdateMode,
                 pdfLifecycleViewportDiagnosticTrace,
                 [
@@ -9146,6 +9483,117 @@ bool writeStartupPerformanceMetrics(
                 comparison
                 );
         }
+
+        if (
+            mode.pdfLifecyclePageRenderObserverEnabled
+            && mode.pdfLifecyclePageRenderObserverTrace
+            )
+        {
+            const auto& trace =
+                mode.pdfLifecyclePageRenderObserverTrace;
+            QMutexLocker lock(&trace->mutex);
+            const bool observerAvailable =
+                trace->attachedRendererCount > 0;
+            const bool attachmentAttempted =
+                trace->status != QStringLiteral("not-attached");
+            const QString observerStatus =
+                attachmentAttempted
+                    ? trace->status
+                    : QStringLiteral("unavailable");
+            QJsonObject observer{
+                {QStringLiteral("enabled"), true},
+                {QStringLiteral("status"), observerStatus},
+                {QStringLiteral("available"), observerAvailable},
+                {
+                    QStringLiteral("discoveredRendererCount"),
+                    trace->discoveredRendererCount
+                },
+                {
+                    QStringLiteral("attachedRendererCount"),
+                    trace->attachedRendererCount
+                },
+                {
+                    QStringLiteral("observedCompletionCount"),
+                    observerAvailable
+                        ? QJsonValue(trace->callbacks.size())
+                        : QJsonValue(QJsonValue::Null)
+                },
+                {QStringLiteral("callbacks"), trace->callbacks},
+                {
+                    QStringLiteral("signal"),
+                    QStringLiteral("QPdfPageRenderer::pageRendered")
+                },
+                {
+                    QStringLiteral("eventName"),
+                    QStringLiteral("pageRendered callback")
+                },
+                {
+                    QStringLiteral("connectionType"),
+                    QStringLiteral("direct")
+                },
+                {
+                    QStringLiteral("timingBasis"),
+                    QStringLiteral(
+                        "monotonic elapsed nanoseconds since observer attachment"
+                        )
+                },
+                {
+                    QStringLiteral("memorySampleTiming"),
+                    QStringLiteral(
+                        "synchronous inside each pageRendered callback"
+                        )
+                },
+                {
+                    QStringLiteral("imageHandling"),
+                    QStringLiteral(
+                        "reads dimensions by const reference; image is not retained or copied by the observer"
+                        )
+                },
+                {
+                    QStringLiteral("requestIdEncoding"),
+                    QStringLiteral(
+                        "decimal string to preserve 64-bit precision"
+                        )
+                },
+                {QStringLiteral("disconnected"), trace->disconnected},
+                {QStringLiteral("cleanupReason"), trace->cleanupReason}
+            };
+            if (!trace->unavailableReason.isEmpty())
+            {
+                observer.insert(
+                    QStringLiteral("coverageNote"),
+                    trace->unavailableReason
+                    );
+            }
+            else if (!attachmentAttempted)
+            {
+                observer.insert(
+                    QStringLiteral("coverageNote"),
+                    QStringLiteral(
+                        "The PDF lifecycle route ended before renderer attachment was attempted."
+                        )
+                    );
+            }
+            if (!observerAvailable)
+            {
+                observer.insert(
+                    QStringLiteral("observedCompletionCountUnavailable"),
+                    true
+                    );
+            }
+
+            QJsonObject comparison = metrics
+                .value(QStringLiteral("pdfLifecycleGrabComparison"))
+                .toObject();
+            comparison.insert(
+                QStringLiteral("pageRenderObserver"),
+                observer
+                );
+            metrics.insert(
+                QStringLiteral("pdfLifecycleGrabComparison"),
+                comparison
+                );
+        }
     }
 
     file.write(
@@ -9220,6 +9668,29 @@ int main(int argc, char *argv[])
                 "Invalid PDF lifecycle viewport update diagnostic invocation: %1\n"
                 )
                 .arg(startupPerformance.pdfLifecycleViewportUpdateError);
+        qCritical().noquote() << message.trimmed();
+        const QByteArray encodedMessage = message.toLocal8Bit();
+        if (!encodedMessage.isEmpty())
+        {
+            std::fwrite(
+                encodedMessage.constData(),
+                1,
+                static_cast<size_t>(encodedMessage.size()),
+                stderr
+                );
+            std::fflush(stderr);
+        }
+        return 2;
+    }
+    if (
+        !startupPerformance.pdfLifecyclePageRenderObserverError.isEmpty()
+        )
+    {
+        const QString message =
+            QStringLiteral(
+                "Invalid PDF lifecycle page-render observer invocation: %1\n"
+                )
+                .arg(startupPerformance.pdfLifecyclePageRenderObserverError);
         qCritical().noquote() << message.trimmed();
         const QByteArray encodedMessage = message.toLocal8Bit();
         if (!encodedMessage.isEmpty())
@@ -9781,6 +10252,7 @@ int main(int argc, char *argv[])
                 startupPerformance.visualCaptureOutputPath,
                 startupPerformance.pdfLifecycleGrabArm,
                 startupPerformance.pdfLifecycleInnerBoundaryTrace,
+                startupPerformance.pdfLifecyclePageRenderObserverTrace,
                 startupPerformance.pdfLifecycleViewportUpdateMode,
                 startupPerformance.pdfLifecycleViewportDiagnosticTrace,
                 scheduleResourceTraceCompletion
