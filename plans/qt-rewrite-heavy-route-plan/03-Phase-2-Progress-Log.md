@@ -18638,12 +18638,12 @@ This identifies the first captured report of the high-water value; it does
 not locate when the operating-system peak occurred between snapshots or
 attribute memory to a component. Aggregate `peakMemory` remains a separate
 per-field maximum, and PNG capture was disabled. F538 added an opt-in capture
-for the two Sub Prep routes; F539's matched capture-enabled run is recorded
-below. F540 is the next bounded step: compare and interpret F539's
-capture-enabled boundaries against the F536 capture-disabled baseline. This
-comparison cannot establish capture-specific causality or close the memory
-gate. F526 provenance, output parity, memory acceptance, and the full Phase 0
-gate remain open.
+for the two Sub Prep routes; F539's matched capture-enabled run and F540's
+sample-level comparison are recorded below. F541 is next: investigate the PDF
+reopen/render lifecycle and memory owners or caches behind the lifecycle
+working-set overage, then propose an evidence-backed experiment or optimization.
+This analysis has not identified a cause or fix. F526 provenance, output
+parity, memory acceptance, and the full Phase 0 gate remain open.
 
 ## F538 opt-in Sub Prep PDF capture - 2026-10-10
 
@@ -18693,7 +18693,62 @@ checkpoints, lifecycle `pdf-reopened` working set/peak deltas were +40,960 /
 specific causality, even though the harness was matched and application source
 was unchanged. Memory acceptance remains open.
 
-F540 is next: compare and interpret the F539 capture-enabled boundary samples
-against F536's capture-disabled baseline, keeping per-sample differences and
-the causal limits explicit. F526 source provenance, output parity, memory
-acceptance, and the full Phase 0 gate remain open.
+F540's sample-level comparison and interpretation are recorded below. F526
+source provenance, output parity, memory acceptance, and the full Phase 0 gate
+remain open.
+
+## F540 capture-boundary comparison - 2026-10-10
+
+The independent audit compared F536 (source commit
+`2abd6887f5831313d30b37c3c9a370ea1f696e03`, capture disabled) with F539
+(`fd180d80f029af48dd18950cec2d41fbd7d75eb4`, capture enabled). Both routes use
+v2 profiles; lifecycle has 84 checkpoints and output has 88. F536 has 24
+PDF-boundary samples; F539 has 34, adding five PNG save pairs. All 24 shared
+PDF-boundary labels map in the same order, with no mismatch.
+
+Save-start to save-complete deltas (working set / peak working set / private
+usage / private working set, bytes) were:
+
+| Route | Save | Delta |
+| --- | --- | --- |
+| Lifecycle | catalog | +253,952 / 0 / +208,896 / +188,416 |
+| Lifecycle | opened | +249,856 / 0 / +208,896 / +249,856 |
+| Lifecycle | closed, error, reopened | 0 / 0 / 0 / 0 each |
+| Output | catalog | +258,048 / 0 / +208,896 / +237,568 |
+| Output | opened | +245,760 / 0 / +208,896 / +245,760 |
+| Output | closed, error, reopened | 0 / 0 / 0 / 0 each |
+
+None of the ten save pairs raised peak working set between start and complete.
+Against the preceding grab-complete sample, peak-working-set changes at the
+five save starts (catalog/opened/closed/error/reopened) were +1,167,360 /
++872,448 / 0 / 0 / +40,960 bytes for lifecycle, and 0 / +860,160 / 0 / 0 /
++28,672 for output. The start marker follows image grab and precedes file
+writing, so these changes span prior work and cannot be attributed to disk
+encoding.
+
+F536 first reported its lifecycle aggregate peak working set of 264,273,920
+bytes at checkpoint 75 (`pdf-reopened`, elapsed 12,792 ms), with capture
+disabled. F539's maximum of 264,294,400 bytes first appears at boundary sample
+30 (`pdf-png-save-start`, elapsed 12,288 ms), and remains flat through save
+complete at sample 31 and checkpoint 75 at 12,407 ms. Both observations are
+at the reopened 38-page viewer state. F536 was already 2,129,920 bytes above
+the 262,144,000-byte target; F539 is 2,150,400 bytes above, 20,480 bytes
+higher than F536. The save-completion deltas do not explain the principal
+overage, but exact causality remains unresolved.
+
+Output checkpoint 62 (`sub-prep-output-generated`) precedes the first PDF
+sample in both runs. F539 minus F536 pre-metrics deltas there were +1,327,104 /
++2,408,448 / +1,089,536 / +1,323,008 bytes; post-metrics deltas were
++1,323,008 / +2,408,448 / +1,085,440 / +1,318,912. Output aggregate maxima
+were 237,293,568 / 238,469,120 / 274,731,008 / 168,853,504 bytes. No output
+route working-set or peak-working-set sample exceeded the target; its peak
+was 23,674,880 bytes below it. Private usage above the working-set target does
+not itself fail the resident-memory comparison. These cross-run values are
+descriptive, not causal, and the commits differ.
+
+F540 is analysis only and makes no memory fix. F541 is next: bounded
+investigation of the PDF reopen/render lifecycle and memory owners or caches
+behind the lifecycle working-set overage, followed by an evidence-backed
+experiment or optimization proposal. Do not claim a cause or implement a fix
+from this comparison alone. Lifecycle memory acceptance, F526 provenance,
+output parity, and the overall Phase 0 gate remain open.

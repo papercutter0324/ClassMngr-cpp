@@ -569,8 +569,14 @@ with capture enabled, rebuilt the application and harness, passed validation
 2/2, and produced five 600 x 526 PNGs per route with all five save pairs
 complete. The lifecycle aggregate peak working set was 264,294,400 bytes
 (2,150,400 above the 262,144,000-byte target); output was 238,469,120 bytes.
-Compared with F536, these cross-run aggregates and representative checkpoint
-deltas are observations and do not prove capture-specific causality. F540 is
-the next planned sample-level comparison of F539 capture-enabled boundaries
-against F536's capture-disabled baseline. Memory acceptance, F526 provenance,
-output parity, and the full Phase 0 gate remain open.
+F540 compared all 24 shared PDF-boundary labels in order and analyzed the five
+additional PNG save pairs in F539. None of the ten save start-to-complete pairs
+raised peak working set; the lifecycle aggregate peak was already 2,129,920
+bytes over target in F536 and is 20,480 bytes higher in F539. The first F539
+sample at its full peak is `pdf-png-save-start`, after the grab and before file
+writing; this timing and the cross-run values do not prove capture-specific
+causality. The output route stayed below the working-set target. F541 is next:
+investigate the PDF reopen/render lifecycle and possible memory owners/caches,
+then propose an evidence-backed next experiment or optimization. No cause or
+fix is established. Memory acceptance, F526 provenance, output parity, and the
+full Phase 0 gate remain open.
