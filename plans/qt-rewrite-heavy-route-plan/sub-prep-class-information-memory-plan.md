@@ -528,8 +528,30 @@ historical v2 reports without them.
 Independent Windows x64 Debug Ninja verification passed: the focused startup
 performance CTest passed 1/1 with lifecycle ordering/release assertions, the
 validator self-test passed 20/20 including legacy v2, and `git diff --check`
-passed. No Release route was run, and this diagnostic instrumentation does not
-establish memory acceptance. F536 next runs current-source Windows x64 Release
-`lifecycle-sub-prep,output-sub-prep` with source snapshots, after F535 is
-committed. The memory target, PDF parity, F526 source provenance, and Phase 0
-gates remain open. See the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
+passed. No Release route was run for F535, and this diagnostic instrumentation
+does not establish memory acceptance. F536's current-source Windows x64
+Release results and independent audit are recorded below and in the
+[Phase 2 progress log](03-Phase-2-Progress-Log.md).
+
+## F536 current-source Release route - 2026-10-10
+
+The lifecycle and output routes both validated successfully from source commit
+`2abd6887f5831313d30b37c3c9a370ea1f696e03`; the full Release and harness
+builds ran, and source did not change during the run. Independent audit
+confirmed the recorded `peakMemory` values are independent per-field maxima
+across checkpoint pre/post and boundary samples, not a paired sample. PNG
+capture was disabled.
+
+Lifecycle maxima (bytes: working set / peak working set / private usage /
+private working set) were 263,086,080 / 264,273,920 / 305,786,880 /
+195,760,128. Output maxima were 237,154,304 / 238,329,856 / 274,616,320 /
+168,742,912. Lifecycle peak working set is 2,129,920 bytes above the
+262,144,000-byte target. The 53 samples at or above 250 MiB are a validator
+trend warning, not a failure. F526 source provenance, output parity, memory
+acceptance, and the full Phase 0 gate remain open; 24 required routes and
+macOS remain pending.
+
+F537 will inspect the first lifecycle process sample at the observed peak,
+recording its same-sample memory fields and viewer state separately from
+nearby checkpoint pre/post metrics and aggregate maxima. Do not infer
+attribution to Qt/PDF components from association alone.

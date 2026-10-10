@@ -18566,3 +18566,45 @@ run. F536 is next: after F535 is committed, run the current-source Windows x64
 Release `lifecycle-sub-prep,output-sub-prep` routes with source snapshots.
 Instrumentation does not close the 262,144,000-byte memory gate. PDF parity,
 F526 source provenance, and Phase 0 remain open.
+
+## F536 current-source Windows x64 Release evidence - 2026-10-10
+
+Evidence root:
+`C:\Users\wfelt\AppData\Local\Temp\ClassMngr-Phase2-F536-bde6e7da3b1e4f06b3198072b7069ddb\F536-current-source`.
+The run used the Visual Studio 18 x64 environment and source commit
+`2abd6887f5831313d30b37c3c9a370ea1f696e03`; the full Release configure/build,
+install, harness configure/build, both `lifecycle-sub-prep` and
+`output-sub-prep` routes, and validation completed with exit code 0. Build was
+not skipped, and source snapshots report `workingTreeChangedDuringRun=false`.
+The validator passed both of 2 requested routes. A separate preliminary
+configure attempt without the compiler environment failed and is preserved
+under the distinct evidence parent ending in
+`F536-629e0acbd8a34b949cd97ae896b65218`.
+
+Independent audit recomputed `peakMemory` from checkpoint pre/post and boundary
+samples; the per-field maxima matched and are not a paired sample. The
+lifecycle profile contains 84 checkpoints (84 pre- and 84 post-metrics
+samples) and 24 boundary samples (192 total). The output profile contains 88
+checkpoints (88 pre- and 88 post-metrics samples), plus 24 boundary samples
+(200 total).
+Lifecycle boundaries cover catalog grab, initial load/ready/grab/release,
+closed grab, missing-document load/error/grab/release, and
+reopen/ready/grab/release.
+PNG capture was disabled, so no PNG-save sample was recorded.
+
+In bytes (`working set / peak working set / private usage / private working
+set`), lifecycle maxima were 263,086,080 / 264,273,920 / 305,786,880 /
+195,760,128; output maxima were 237,154,304 / 238,329,856 / 274,616,320 /
+168,742,912. The lifecycle peak working set exceeds the 262,144,000-byte
+target by 2,129,920 bytes; the maximum current working set exceeds it by
+942,080 bytes. The validator's 53 samples at or above 250 MiB are a trend
+warning, not a failure. F536 does not close memory acceptance, F526 source
+provenance, output parity, or the overall Phase 0 gate: 24 required routes
+and macOS remain pending.
+
+F537 is a bounded analysis of the first lifecycle process sample at the
+observed peak, recording its same-sample fields and viewer state alongside
+nearby checkpoint pre/post metrics. Keep those paired readings distinct from
+the independent aggregate maxima; association alone does not attribute memory
+to Qt or PDF components. The memory, provenance, output-parity, and Phase 0
+gates remain open.
