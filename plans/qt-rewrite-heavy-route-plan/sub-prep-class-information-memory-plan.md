@@ -816,8 +816,14 @@ Pretendard (6,739,336 bytes); Stack ID 1417's 16 MiB and 8 MiB allocations
 fit those resource sizes, though exact allocation-to-file identity remains
 unverified without app symbols or resource-path data in the ETL. F577
 confirmed the current optimized Release build emits no app PDB. F578 built
-an optimized executable with an exactly matching app PDB; F579 captures a
-fresh trace from that executable so its ClassMngr frames can be resolved. The
+an optimized executable with an exactly matching app PDB; F579's fresh trace
+from that executable is deferred at the user's direction. F580 used the
+retained F564 route and ETL to correlate the schedule renderer's 49 live cell
+widgets and 147 cumulative creations with 30,349,468 bytes of all-checkpoint
+allocation signatures on Qt stack paths through `setCellWidget`, including
+12,651,289 bytes that also pass through `QTextDocument`. This is a source- and
+route-correlated lead, not ownership or leak evidence. F581 compares these
+stack groups across all three snapshot indices. The
 checked qtpdf 6.12
 extension tree had no separate debug-symbol package for
 the installed QtPdf 6.140.0.0 modules, so function-level PDFium/QtPdf

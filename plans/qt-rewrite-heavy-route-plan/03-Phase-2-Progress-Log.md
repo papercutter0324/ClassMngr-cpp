@@ -19872,6 +19872,52 @@ lifetime claims bounded by the snapshot evidence. The 250 MiB lifecycle gate,
 F536 cause, F526 provenance, output parity, render/window acceptance, and
 global Phase 0 remain open (Windows 1/24, macOS 0/24).
 
+## F580 schedule-table rich-text allocation correlation - 2026-10-11
+
+F579's fresh matched-symbol capture is deferred at the user's direction. F580
+uses the retained F564 ETL and its route artifacts; it performed no new WPR
+capture. The ETL was captured from packaged Release `ClassMngr.exe` with SHA-256
+`529731f3e2e0ccfe3fefdbfe5fa0371de625af8a843bd416ef77f875e98e2e45`.
+
+The retained 84-checkpoint Sub Prep route reports 2 schedule renders, 768
+schedule-model entries, 49 current table cell widgets, and 98 cell-widget
+creations at checkpoint 25. At checkpoint 46, it reports 3 renders and 147
+creations. Those values stay at 49 current widgets and 147 cumulative
+creations through the Sub Prep lifecycle and re-entry checkpoints 48-59; the
+renderer counters report zero cell widgets removed or queued for deletion.
+This records the route's widget activity; it is not a heap-object identity
+mapping.
+
+Joining F575's QtBase-symbolized stack paths to F570's 106,326 all-checkpoint
+same-address signatures finds 339 stack IDs (16,714 allocation records) and
+30,349,468 final-snapshot allocation bytes on paths through
+`QTableWidget::setCellWidget`/`QAbstractItemView::setIndexWidget`. Of these,
+163 stack IDs (14,052 records; 12,651,289 bytes) also pass through
+`QTextDocument`. One such bucket is 8,388,608 bytes on a path through
+`QLabel::sizeHint`, `QTextDocument::setHtml`, and rich-text layout. These are
+allocation sizes on stack paths, not exclusive Qt or application ownership.
+The all-checkpoint signature is not proof of object lifetime, and address
+reuse remains possible.
+
+The source contains one `QTableWidget::setCellWidget` call in
+`src/features/schedule/ui/schedule_table_renderer.cpp`; it creates the label
+through `ScheduleCellWidgetFactory`, whose rich-text setup calls
+`FontManager::setManagedRichText` in
+`src/features/schedule/ui/schedule_cell_widget_factory.cpp`. This source and
+route correlation makes schedule-cell rich text a candidate for a focused
+follow-up, but does not establish that these frames caused the process memory
+increase or identify a leak. F580's audit script and inputs remain in ignored
+`build/f565-wpa-analysis`; the route JSON remains under
+`%LOCALAPPDATA%\Temp\ClassMngr-F563-Checkpoint-DryRun-20261010T161139Z-21976`,
+and the ETL remains unchanged under `build/f564-heap-snapshot-20261010T161139Z-21976`.
+
+F581 compares the `setCellWidget`, `QTextDocument`, and font-engine stack
+groups independently at each of the three retained snapshot indices. It will
+report checkpoint counts and allocation sizes without claiming object
+ownership or requiring the deferred `ClassMngr` symbols. The 250 MiB lifecycle
+gate, F536 cause, F526 provenance, output parity, render/window acceptance,
+and global Phase 0 remain open (Windows 1/24, macOS 0/24).
+
 ## F578 optimized Release build with app symbols - 2026-10-11
 
 The separate `build/f578-release-pdb-ninja` configuration preserved the
