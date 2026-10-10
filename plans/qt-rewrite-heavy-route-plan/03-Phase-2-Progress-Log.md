@@ -19458,3 +19458,74 @@ precede close, report only the natural lifecycle observed; this does not test a
 forced in-flight close race. Keep F536 cause, the 250 MiB lifecycle gate, F526
 provenance, output parity, render/window and global Phase 0 gates open
 (Windows 1/24, macOS 0/24).
+
+## F559 Release status-timeline campaign - 2026-10-10
+
+F559 independently accepted the F558 runtime status timeline from source
+revision `bd8e85d7fe1edc32d21dcb722612c8aad415acbd`. The final campaign report
+and analysis are under
+`C:\Users\wfelt\AppData\Local\Temp\ClassMngr-F559-StatusTimeline-20261010T134826Z-0b19e7603a`
+(`campaign-report.md`; `campaign-analysis.json` SHA-256
+`1e60c4fa5458304c8fe6efb11c7a120d2b61d7ca6662e5d679980f3be3954afd`). The
+fresh Release app SHA-256 is
+`2bb052c5bb220d369a38ea1b2bba1c762df6ae7eec34d012ab38816965c1f46f`, the
+Debug harness is
+`250e69b6167ab49b0de66f4d2c30375f17085ea59ffa316c21949382ab42c8eb`, and the
+128-file package inventory is
+`0f5150c8b4612b1931e5412c3049219f8caa5947f439b3f5af9efb09d948b8ba`. The
+shared fixture is 622,592 bytes, SHA-256
+`c213ce96d85d927a4e2a4196c68be490f4517076079c069b475ec0ada872ffbb`.
+
+Six unique Release processes alternated three normal and three suppressed
+viewport-update runs. All six routes and validators passed, with 38 outer and
+62 inner samples per process and normalized state parity. Every run recorded
+the same ten status transitions:
+`Loading, Ready, Unloading, Null, Loading, Error, Loading, Ready, Unloading,
+Null`. Each normal run had two render callbacks, both with cached status
+`Ready`; suppressed runs had none. Every callback preceded the subsequent
+`Unloading`/`Null`. Callback-to-next-`Unloading` intervals were
+530,507,900–559,008,700 ns; callback-to-next-`Null` intervals were
+531,404,700–559,941,600 ns. The observer records `final-close` cleanup after
+these events but no final-close timestamp, so no final-close interval can be
+reported. This is the natural route and does not exercise a forced in-flight
+close race. All six runs had zero forced grabs, PNG capture disabled, and no
+PNG files.
+
+The exact loaded Qt DLL identities matched the F553/F556 package in all six
+processes:
+
+| Module | File version | SHA-256 |
+| --- | --- | --- |
+| Qt6Core | 6.12.0.0 | `39175459c4837c8cc0f709a637fb6eadb25d696785109c8393559ec876f02703` |
+| Qt6Pdf | 6.140.0.0 | `aa0e0c688d5991b0b075d241d39901b15a641d3b9c4e4b1f82f4b391b5ed6447` |
+| Qt6PdfWidgets | 6.140.0.0 | `382b6075006e9bd5bfc6571389f86c930dc93b2ccb6c53da1881141fff5288d3` |
+
+Independent audit recomputed min / median / max bytes across the three
+per-process maxima in each arm. Fields are independent, not paired:
+
+| Field | Normal min / median / max | Suppressed min / median / max |
+| --- | ---: | ---: |
+| `workingSetBytes` | 262,103,040 / 262,496,256 / 262,602,752 | 258,375,680 / 258,408,448 / 258,752,512 |
+| `peakWorkingSetBytes` | 263,876,608 / 264,273,920 / 264,372,224 | 259,592,192 / 259,624,960 / 259,969,024 |
+| `privateUsageBytes` | 303,439,872 / 303,468,544 / 303,566,848 | 302,944,256 / 303,050,752 / 303,288,320 |
+| `privateWorkingSetBytes` | 194,830,336 / 195,158,016 / 195,260,416 | 191,320,064 / 191,352,832 / 191,737,856 |
+
+Median normal-minus-suppressed deltas (same field order) were +4,087,808 /
++4,648,960 / +417,792 / +3,805,184 bytes; maximum-of-arm differences were
++3,850,240 / +4,403,200 / +278,528 / +3,522,560 bytes. In the
+validator-compatible series, each normal run had 65/207 samples at or above
+262,144,000 bytes and suppressed runs had 0/207; overall this was 195/1,242,
+with zero samples above 536,870,912 bytes. Per-process maxima at or above
+250 MiB occurred for working set in 2/3 normal and 0/3 suppressed, peak
+working set in 3/3 and 0/3, private usage in 3/3 in both arms, and private
+working set in 0/3 in both arms. The three `legacy-memory-trend` warnings are
+non-failing; all six validators passed, with zero failures, and campaign
+status is pass.
+
+Campaign metadata has two non-result caveats: the copied driver completion-
+echo label says F556 although the F559 artifacts identify F559, and
+`routeExecutionStatus` is null. The tester independently recomputed raw data
+and pass/fail results. These route-level observations establish neither
+allocation nor cache ownership. The 250 MiB lifecycle gate, F536 cause, F526
+provenance, output parity, render/window acceptance, and global Phase 0 remain
+open (Windows 1/24, macOS 0/24).

@@ -730,10 +730,17 @@ does not prove OS memory return or allocator ownership. F556 close/lease-clear/
 view-reset samples showed no new cache-residency issue. See the [Phase 2 log](03-Phase-2-Progress-Log.md)
 for hashes, boundaries, and primary source links.
 
-F558 is selected as an additive runtime timeline: use the observer's monotonic
-clock for document status changes and include current known status at each
-`pageRendered` callback. Keep view/render settings unchanged; do not force a
-race or behavior change. If callbacks precede close, this records only natural
-lifecycle ordering and does not test a forced in-flight close race. Keep F536
-cause, the 250 MiB lifecycle gate, F526 provenance, output parity,
-render/window acceptance, and global Phase 0 open (Windows 1/24, macOS 0/24).
+F558's additive runtime status timeline is complete and independently accepted
+through F559's six-process Release campaign. Three normal and three suppressed
+viewport-update runs passed route validation with matching normalized state;
+normal runs recorded two callbacks each, both while cached status was `Ready`,
+and suppressed runs recorded none. Callback ordering and process-memory
+summaries are in the [Phase 2 progress log](03-Phase-2-Progress-Log.md). The
+campaign is natural-route evidence only: it does not force an in-flight close
+race or identify allocation/cache ownership. F561 is selected to begin with a
+bounded local feasibility audit of Windows allocation-stack tracing at render
+completion, after document close while the view remains, and after view
+teardown. First check available tools and symbol coverage, then recommend a
+feasible method or report a blocker; no trace has been run. Keep the 250 MiB
+lifecycle gate, F536 cause, F526 provenance, output parity, render/window
+acceptance, and global Phase 0 open (Windows 1/24, macOS 0/24).
