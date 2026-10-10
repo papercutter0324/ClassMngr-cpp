@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import struct
 import sys
 import tempfile
@@ -625,6 +626,173 @@ def _append_issue(
     if path is not None:
         issue["path"] = str(path)
     issues.append(issue)
+
+
+def _validate_git_source_snapshot(
+    snapshot: Any,
+    failures: list[dict[str, Any]],
+    path: Path,
+    label: str,
+) -> bool:
+    if not isinstance(snapshot, dict):
+        _append_issue(failures, "invalid-source-identity", f"{label} must be an object.", path)
+        return False
+
+    status = snapshot.get("status")
+    commit = snapshot.get("commit")
+    porcelain = snapshot.get("statusPorcelain")
+    clean = snapshot.get("workingTreeClean")
+    if status == "unavailable":
+        if commit is not None or porcelain is not None or clean is not None:
+            _append_issue(
+                failures,
+                "invalid-source-identity",
+                f"{label} marked unavailable must not claim a commit or working-tree state.",
+                path,
+            )
+            return False
+        if not isinstance(snapshot.get("error"), str) or not snapshot["error"].strip():
+            _append_issue(
+                failures,
+                "invalid-source-identity",
+                f"{label} marked unavailable must record a non-empty error.",
+                path,
+            )
+            return False
+        return True
+
+    if status != "available":
+        _append_issue(
+            failures,
+            "invalid-source-identity",
+            f"{label}.status must be 'available' or 'unavailable'.",
+            path,
+        )
+        return False
+
+    if not isinstance(commit, str) or not re.fullmatch(r"(?:[0-9a-f]{40}|[0-9a-f]{64})", commit):
+        _append_issue(
+            failures,
+            "invalid-source-identity",
+            f"{label}.commit must be a full 40- or 64-character lowercase Git object ID.",
+            path,
+        )
+        return False
+    if not isinstance(porcelain, list) or not all(
+        isinstance(item, str) and re.fullmatch(r"[ MADRCU?!][ MADRCU?!] .+", item)
+        for item in porcelain
+    ):
+        _append_issue(
+            failures,
+            "invalid-source-identity",
+            f"{label}.statusPorcelain must be an array of Git porcelain status paths.",
+            path,
+        )
+        return False
+    if not isinstance(clean, bool) or clean != (len(porcelain) == 0):
+        _append_issue(
+            failures,
+            "invalid-source-identity",
+            f"{label}.workingTreeClean must be true exactly when statusPorcelain is empty.",
+            path,
+        )
+        return False
+    return True
+
+
+def _validate_windows_source_identity(
+    source: Any,
+    run_status: str,
+    failures: list[dict[str, Any]],
+    path: Path,
+) -> None:
+    if not isinstance(source, dict):
+        _append_issue(failures, "invalid-source-identity", "source must be an object.", path)
+        return
+
+    base_valid = _validate_git_source_snapshot(source, failures, path, "source")
+    build_mode = source.get("buildMode")
+    artifact_source = source.get("artifactSource")
+    expected_artifact_source = {
+        "built-from-repository": "repository-build",
+        "skip-build": "external-unverified",
+        "not-built": "not-built",
+    }
+    if (
+        not isinstance(build_mode, str)
+        or build_mode not in expected_artifact_source
+        or artifact_source != expected_artifact_source.get(build_mode)
+    ):
+        _append_issue(
+            failures,
+            "invalid-source-identity",
+            "source.buildMode and source.artifactSource must identify a repository build, skipped external artifacts, or a run with no build.",
+            path,
+        )
+
+    after_build = source.get("afterBuildSnapshot")
+    final_snapshot = source.get("finalSnapshot")
+    snapshots: list[dict[str, Any]] = [source] if base_valid else []
+    for key in ("afterBuildSnapshot", "finalSnapshot"):
+        value = source.get(key)
+        if value is None:
+            continue
+        if _validate_git_source_snapshot(value, failures, path, f"source.{key}"):
+            snapshots.append(value)
+
+    changed = source.get("workingTreeChangedDuringRun")
+    if changed is not None and not isinstance(changed, bool):
+        _append_issue(
+            failures,
+            "invalid-source-identity",
+            "source.workingTreeChangedDuringRun must be a boolean or null.",
+            path,
+        )
+        return
+    baseline_available = base_valid and source.get("status") == "available"
+    observed_change = False
+    if baseline_available:
+        for item in snapshots[1:]:
+            if item.get("status") == "available" and (
+                item.get("commit") != source.get("commit")
+                or item.get("statusPorcelain") != source.get("statusPorcelain")
+            ):
+                observed_change = True
+    build_snapshot_expected = build_mode == "built-from-repository"
+    all_expected_snapshots_available = (
+        baseline_available
+        and isinstance(final_snapshot, dict)
+        and final_snapshot.get("status") == "available"
+        and (
+            not build_snapshot_expected
+            or (isinstance(after_build, dict) and after_build.get("status") == "available")
+        )
+    )
+    expected_changed: bool | None = (
+        True if observed_change else False if all_expected_snapshots_available else None
+    )
+    if changed is not expected_changed:
+        _append_issue(
+            failures,
+            "invalid-source-identity",
+            "source.workingTreeChangedDuringRun must reflect source snapshot differences, or be null when comparison is incomplete.",
+            path,
+        )
+
+    if run_status in {"completed", "skipped"} and build_snapshot_expected and after_build is None:
+        _append_issue(
+            failures,
+            "invalid-source-identity",
+            "A completed repository build must record source.afterBuildSnapshot.",
+            path,
+        )
+    if run_status in {"completed", "skipped", "deferred"} and final_snapshot is None:
+        _append_issue(
+            failures,
+            "invalid-source-identity",
+            "A terminal Windows run must record source.finalSnapshot, including an unavailable status when Git failed.",
+            path,
+        )
 
 
 def _load_json(
@@ -1812,6 +1980,16 @@ def validate_evidence(
         top_status = str(run_manifest.get("status", "unknown"))
         if run_manifest.get("schema") != SCHEMA:
             _append_issue(failures, "invalid-run-manifest", f"Unexpected run manifest schema: {run_manifest.get('schema')!r}.", manifest_path)
+        if (
+            run_manifest.get("supportedPlatform") == SUPPORTED_PLATFORM
+            and "source" in run_manifest
+        ):
+            _validate_windows_source_identity(
+                run_manifest.get("source"),
+                top_status,
+                failures,
+                manifest_path,
+            )
         manifest_task_id = run_manifest.get("taskId")
         if manifest_task_id not in (TASK_ID, *LEGACY_TASK_IDS):
             _append_issue(
@@ -2259,6 +2437,8 @@ def run_self_test() -> int:
             with tempfile.TemporaryDirectory(prefix="phase0-validator-") as temporary:
                 root = Path(temporary)
                 _create_self_test_fixture(root)
+                legacy_manifest = json.loads((root / "run-manifest.json").read_text(encoding="utf-8"))
+                self.assertNotIn("source", legacy_manifest)
                 summary = validate_evidence(root)
                 self.assertEqual(summary["status"], "pass")
                 self.assertFalse(summary["failures"])
@@ -2267,6 +2447,121 @@ def run_self_test() -> int:
                 self.assertEqual(summary["platformEvidence"]["windows-x64"]["presentRouteIds"], ["workflow-representative"])
                 self.assertEqual(len(summary["platformEvidence"]["windows-x64"]["missingRouteIds"]), 23)
                 self.assertEqual(summary["platformEvidence"]["macos-universal"]["status"], "missing")
+
+        def test_windows_source_identity_accepts_clean_dirty_and_unavailable_snapshots(self) -> None:
+            clean_snapshot = {
+                "status": "available",
+                "commit": "a" * 40,
+                "statusPorcelain": [],
+                "workingTreeClean": True,
+            }
+            dirty_snapshot = {
+                "status": "available",
+                "commit": "b" * 40,
+                "statusPorcelain": ["?? untracked-fixture.txt"],
+                "workingTreeClean": False,
+            }
+            changed_snapshot = {
+                "status": "available",
+                "commit": "a" * 40,
+                "statusPorcelain": ["?? generated-after-build.txt"],
+                "workingTreeClean": False,
+            }
+            unavailable_snapshot = {
+                "status": "unavailable",
+                "commit": None,
+                "statusPorcelain": None,
+                "workingTreeClean": None,
+                "error": "git status failed in the self-test fixture",
+            }
+            cases = (
+                (
+                    "clean",
+                    {
+                        **clean_snapshot,
+                        "buildMode": "built-from-repository",
+                        "artifactSource": "repository-build",
+                        "afterBuildSnapshot": clean_snapshot,
+                        "finalSnapshot": clean_snapshot,
+                        "workingTreeChangedDuringRun": False,
+                    },
+                ),
+                (
+                    "dirty",
+                    {
+                        **dirty_snapshot,
+                        "buildMode": "built-from-repository",
+                        "artifactSource": "repository-build",
+                        "afterBuildSnapshot": dirty_snapshot,
+                        "finalSnapshot": dirty_snapshot,
+                        "workingTreeChangedDuringRun": False,
+                    },
+                ),
+                (
+                    "changed-during-run",
+                    {
+                        **clean_snapshot,
+                        "buildMode": "built-from-repository",
+                        "artifactSource": "repository-build",
+                        "afterBuildSnapshot": changed_snapshot,
+                        "finalSnapshot": changed_snapshot,
+                        "workingTreeChangedDuringRun": True,
+                    },
+                ),
+                (
+                    "unavailable",
+                    {
+                        **unavailable_snapshot,
+                        "buildMode": "skip-build",
+                        "artifactSource": "external-unverified",
+                        "afterBuildSnapshot": None,
+                        "finalSnapshot": unavailable_snapshot,
+                        "workingTreeChangedDuringRun": None,
+                    },
+                ),
+            )
+            for name, source in cases:
+                with self.subTest(source=name), tempfile.TemporaryDirectory(prefix="phase0-source-validator-") as temporary:
+                    root = Path(temporary)
+                    _create_self_test_fixture(root)
+                    manifest_path = root / "run-manifest.json"
+                    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+                    manifest["source"] = source
+                    _write_json(manifest_path, manifest)
+                    summary = validate_evidence(root)
+                    self.assertEqual(summary["status"], "pass", summary["failures"])
+                    self.assertNotIn(
+                        "invalid-source-identity",
+                        {item["code"] for item in summary["failures"]},
+                    )
+
+        def test_windows_source_identity_rejects_inconsistent_clean_state(self) -> None:
+            with tempfile.TemporaryDirectory(prefix="phase0-source-validator-invalid-") as temporary:
+                root = Path(temporary)
+                _create_self_test_fixture(root)
+                manifest_path = root / "run-manifest.json"
+                manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+                snapshot = {
+                    "status": "available",
+                    "commit": "c" * 40,
+                    "statusPorcelain": [" M tracked.txt"],
+                    "workingTreeClean": True,
+                }
+                manifest["source"] = {
+                    **snapshot,
+                    "buildMode": "skip-build",
+                    "artifactSource": "external-unverified",
+                    "afterBuildSnapshot": None,
+                    "finalSnapshot": snapshot,
+                    "workingTreeChangedDuringRun": None,
+                }
+                _write_json(manifest_path, manifest)
+                summary = validate_evidence(root)
+                self.assertEqual(summary["status"], "fail")
+                self.assertIn(
+                    "invalid-source-identity",
+                    {item["code"] for item in summary["failures"]},
+                )
 
         def test_windows_and_macos_subsets_do_not_complete_exit_gate(self) -> None:
             with tempfile.TemporaryDirectory(prefix="phase0-validator-") as temporary:

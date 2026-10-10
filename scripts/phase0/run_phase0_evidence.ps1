@@ -87,6 +87,155 @@ function Write-JsonFile {
     )
 }
 
+function Invoke-GitText {
+    param([string]$Arguments)
+    $startInfo = [System.Diagnostics.ProcessStartInfo]::new()
+    $startInfo.FileName = "git"
+    $startInfo.Arguments = $Arguments
+    $startInfo.WorkingDirectory = $RepositoryRoot
+    $startInfo.UseShellExecute = $false
+    $startInfo.CreateNoWindow = $true
+    $startInfo.RedirectStandardOutput = $true
+    $startInfo.RedirectStandardError = $true
+    $startInfo.StandardOutputEncoding = [System.Text.UTF8Encoding]::new($false)
+    $startInfo.StandardErrorEncoding = [System.Text.UTF8Encoding]::new($false)
+    $process = [System.Diagnostics.Process]::new()
+    $process.StartInfo = $startInfo
+    try {
+        if (-not $process.Start()) {
+            throw "Unable to start git $Arguments."
+        }
+        $stdoutTask = $process.StandardOutput.ReadToEndAsync()
+        $stderrTask = $process.StandardError.ReadToEndAsync()
+        $process.WaitForExit()
+        $stdout = $stdoutTask.GetAwaiter().GetResult()
+        $stderr = $stderrTask.GetAwaiter().GetResult()
+        if ($process.ExitCode -ne 0) {
+            $detail = $stderr.Trim()
+            if ([string]::IsNullOrWhiteSpace($detail)) { $detail = "no error text was returned" }
+            throw "git $Arguments failed with exit code $($process.ExitCode): $detail"
+        }
+        return $stdout
+    } finally {
+        $process.Dispose()
+    }
+}
+
+function Get-GitSnapshot {
+    try {
+        $commit = (Invoke-GitText -Arguments "rev-parse --verify HEAD").Trim()
+        if ($commit -notmatch '^(?:[0-9a-f]{40}|[0-9a-f]{64})$') {
+            throw "git rev-parse returned an invalid full commit object ID."
+        }
+        $statusOutput = Invoke-GitText -Arguments "status --porcelain=v1 --untracked-files=all"
+        $statusPorcelain = @(
+            $statusOutput -split "`n" |
+                ForEach-Object { $_.TrimEnd([char]13) } |
+                Where-Object { $_.Length -gt 0 }
+        )
+        foreach ($entry in $statusPorcelain) {
+            if ($entry -notmatch '^[ MADRCU?!][ MADRCU?!] .+') {
+                throw "git status returned an invalid porcelain status record."
+            }
+        }
+        return [ordered]@{
+            status = "available"
+            commit = $commit
+            statusPorcelain = $statusPorcelain
+            workingTreeClean = ($statusPorcelain.Count -eq 0)
+        }
+    } catch {
+        return [ordered]@{
+            status = "unavailable"
+            commit = $null
+            statusPorcelain = $null
+            workingTreeClean = $null
+            error = $_.Exception.Message
+        }
+    }
+}
+
+function New-SourceIdentity {
+    param([string]$BuildMode)
+    $snapshot = Get-GitSnapshot
+    $artifactSource = switch ($BuildMode) {
+        "built-from-repository" { "repository-build"; break }
+        "skip-build" { "external-unverified"; break }
+        default { "not-built" }
+    }
+    $source = [ordered]@{
+        status = $snapshot.status
+        commit = $snapshot.commit
+        statusPorcelain = $snapshot.statusPorcelain
+        workingTreeClean = $snapshot.workingTreeClean
+        error = if ($snapshot.status -eq "unavailable") { $snapshot.error } else { $null }
+        buildMode = $BuildMode
+        artifactSource = $artifactSource
+        afterBuildSnapshot = $null
+        finalSnapshot = $null
+        workingTreeChangedDuringRun = $null
+    }
+    return $source
+}
+
+function Complete-SourceIdentity {
+    param(
+        [System.Collections.IDictionary]$Manifest,
+        [System.Collections.Generic.List[object]]$Warnings,
+        [switch]$CaptureAfterBuild
+    )
+    $source = $Manifest.source
+    if ($CaptureAfterBuild -and $null -eq $source.afterBuildSnapshot) {
+        $source.afterBuildSnapshot = Get-GitSnapshot
+    }
+    $source.finalSnapshot = Get-GitSnapshot
+
+    $snapshots = @($source)
+    if ($null -ne $source.afterBuildSnapshot) { $snapshots += $source.afterBuildSnapshot }
+    if ($null -ne $source.finalSnapshot) { $snapshots += $source.finalSnapshot }
+    $observedChange = $false
+    if ($source.status -eq "available") {
+        foreach ($snapshot in $snapshots | Select-Object -Skip 1) {
+            if (
+                $snapshot.status -eq "available" -and
+                (
+                    $snapshot.commit -ne $source.commit -or
+                    (($snapshot.statusPorcelain -join "`0") -cne ($source.statusPorcelain -join "`0"))
+                )
+            ) {
+                $observedChange = $true
+                break
+            }
+        }
+    }
+    $expectedBuildSnapshot = $source.buildMode -eq "built-from-repository"
+    $buildSnapshotAvailable = $true
+    if ($expectedBuildSnapshot) {
+        $buildSnapshotAvailable = $false
+        if ($null -ne $source.afterBuildSnapshot) {
+            $buildSnapshotAvailable = $source.afterBuildSnapshot.status -eq "available"
+        }
+    }
+    $comparisonComplete = (
+        $source.status -eq "available" -and
+        $source.finalSnapshot.status -eq "available" -and
+        $buildSnapshotAvailable
+    )
+    if ($observedChange) {
+        $source.workingTreeChangedDuringRun = $true
+        if (-not ($Warnings | Where-Object { $_.code -eq "source-changed-during-run" })) {
+            $Warnings.Add([ordered]@{
+                code = "source-changed-during-run"
+                message = "The source checkout revision or porcelain status differed from its initial snapshot during the run."
+            })
+        }
+    } elseif ($comparisonComplete) {
+        $source.workingTreeChangedDuringRun = $false
+    } else {
+        $source.workingTreeChangedDuringRun = $null
+    }
+}
+
 function ConvertTo-CommandLineArgument {
     param([AllowEmptyString()][string]$Value)
     if ($Value.Length -gt 0 -and $Value -notmatch '[\s"]') {
@@ -791,7 +940,18 @@ $CommandRecords = New-Object System.Collections.Generic.List[object]
 $RouteRecords = New-Object System.Collections.Generic.List[object]
 $RunFailures = New-Object System.Collections.Generic.List[object]
 $RunWarnings = New-Object System.Collections.Generic.List[object]
+$BuildAttempted = $false
 $RunManifestPath = Join-Path $RunRoot "run-manifest.json"
+$SourceBuildMode = "built-from-repository"
+if ($SkipBuild) {
+    $SourceBuildMode = "skip-build"
+} elseif (-not $HostSupported) {
+    $SourceBuildMode = "not-built"
+}
+$SourceIdentity = $null
+if (-not $EffectivePlan) {
+    $SourceIdentity = New-SourceIdentity -BuildMode $SourceBuildMode
+}
 $RunManifest = [ordered]@{
     schema = $RunSchema
     taskId = $TaskId
@@ -820,6 +980,7 @@ $RunManifest = [ordered]@{
         supported = $HostSupported
         acceptanceScope = "Windows x64 is runnable here; macOS universal remains supported and is not run by this Windows-hosted runner."
     }
+    source = $SourceIdentity
     requestedRoutes = $RequestedRouteIds
     paths = [ordered]@{
         repositoryRoot = $RepositoryRoot
@@ -883,6 +1044,11 @@ try {
             message = "Host '$HostPlatform' is outside the packaged Windows x64 Phase 0 acceptance scope; requested routes were not executed."
             platforms = $DeferredPlatforms
         })
+        if (-not $SkipBuild) {
+            $RunManifest.source.buildMode = "not-built"
+            $RunManifest.source.artifactSource = "not-built"
+        }
+        Complete-SourceIdentity -Manifest $RunManifest -Warnings $RunWarnings
         $RunManifest.warnings = $RunWarnings
         if (-not $EffectivePlan) {
             Write-RunManifest -Path $RunManifestPath -Manifest $RunManifest
@@ -923,6 +1089,7 @@ try {
             Timeout = $TimeoutSeconds
             IsPlan = [bool]$EffectivePlan
         }
+        if (-not $EffectivePlan) { $BuildAttempted = $true }
         [void](Add-BuildCommandRecord @buildStep)
         $buildStep.Arguments = @("--build", $ReleaseBuildDirectory, "--config", "Release", "--parallel", "$Parallel")
         $buildStep.Label = "build-release"
@@ -964,6 +1131,9 @@ try {
             $RunManifest.paths.testExecutable = $TestExecutable
         }
     }
+    if ($BuildAttempted -and -not $EffectivePlan) {
+        $RunManifest.source.afterBuildSnapshot = Get-GitSnapshot
+    }
 
     if ($SkipRun -and -not $EffectivePlan) {
         foreach ($routeId in $RequestedRouteIds) {
@@ -986,6 +1156,7 @@ try {
             requestedRouteCount = $RequestedRouteIds.Count
             executedRouteIds = @()
         }
+        Complete-SourceIdentity -Manifest $RunManifest -Warnings $RunWarnings -CaptureAfterBuild:$BuildAttempted
         $RunWarnings.Add([ordered]@{
             code = "route-execution-skipped"
             message = "Requested evidence routes were not executed because -SkipRun was supplied. Build commands may still have run unless -SkipBuild was also supplied."
@@ -1208,6 +1379,7 @@ try {
         exit 0
     }
 
+    Complete-SourceIdentity -Manifest $RunManifest -Warnings $RunWarnings -CaptureAfterBuild:$BuildAttempted
     $RunManifest.status = "completed"
     $RunManifest.recordedAtUtc = [DateTime]::UtcNow.ToString("o")
     $RunManifest.routes = $RouteRecords
@@ -1310,6 +1482,14 @@ try {
     Write-Host "ERROR: $message" -ForegroundColor Red
     if (-not $EffectivePlan) {
         $RunFailures.Add([ordered]@{ code = "runner-error"; message = $message })
+        try {
+            Complete-SourceIdentity -Manifest $RunManifest -Warnings $RunWarnings -CaptureAfterBuild:$BuildAttempted
+        } catch {
+            $RunWarnings.Add([ordered]@{
+                code = "source-final-snapshot-unavailable"
+                message = "Unable to capture the final Git source snapshot: $($_.Exception.Message)"
+            })
+        }
         $RunManifest.status = "failed"
         $RunManifest.recordedAtUtc = [DateTime]::UtcNow.ToString("o")
         $RunManifest.commands = $CommandRecords
