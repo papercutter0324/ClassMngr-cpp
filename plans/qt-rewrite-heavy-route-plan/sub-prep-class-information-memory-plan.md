@@ -896,3 +896,13 @@ unchanged. At view destruction, total ETL allocation bytes fell another
 31,774,739 while the nearby process working set changed by only 8,192 bytes.
 The measurements have different scopes and do not establish heap ownership or
 cause.
+
+F591 found 226 Qt6Pdf-path heap/address keys / 71,380 bytes unchanged from
+after render to document close; 10,460 source keys / 3,540,140 bytes were
+absent from the full later snapshot, and 145 / 10,048 bytes remained at the
+same address under another stack path. From document close to view destruction,
+all 266 final Qt6Pdf-path keys / 98,916 bytes match exactly and 31 source keys /
+3,652 bytes are absent from the full snapshot. Across the first and final
+checkpoints, 195 keys / 67,728 bytes match. These module-path signatures do
+not identify allocation owners or prove continuous lifetime. The next slice
+ranks stack-path decreases outside Qt6Pdf paths.

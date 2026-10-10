@@ -42,7 +42,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-11
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F590 found process-memory decreases across PDF document release while setCellWidget and QTextDocument heap-path totals stayed constant; F591 will compare Qt6Pdf.dll heap/address identities while memory, output-parity, and full Phase 0 gates remain open.
+- Current note: F591 found only 3,652 bytes on Qt6Pdf paths absent between document-close and view-destroyed snapshots; F592 ranks other path-group decreases while memory, output-parity, and full Phase 0 gates remain open.
 
 ### Slice discovery batches
 
@@ -69,9 +69,9 @@ Treat this plan as an operational summary, not a history:
 - F579 - Deferred at the user's direction: take a fresh matched-symbol heap
   capture; revisit after the user asks to resume symbol work.
 
-#### Active batch: Batch 107
+#### Active batch: Batch 108
 
-- F591 - Compare Qt6Pdf.dll heap/address identities across the first two snapshots to distinguish absent keys from changed stack paths.
+- F592 - Rank non-QtPdf stack-path decreases from document close to view destruction while retaining overlap and identity limits.
 
 ## Objective
 

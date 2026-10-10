@@ -19872,6 +19872,37 @@ lifetime claims bounded by the snapshot evidence. The 250 MiB lifecycle gate,
 F536 cause, F526 provenance, output parity, render/window acceptance, and
 global Phase 0 remain open (Windows 1/24, macOS 0/24).
 
+## F591 Qt6Pdf heap/address identity comparison - 2026-10-11
+
+F591 grouped the three retained allocation snapshots by the existing
+Qt6Pdf.dll stack-path IDs and compared each `(HeapHandle, AllocationAddress)`
+key with its size and trace stack ID. The path group has 588 stack IDs and
+contains 10,851 records / 3,638,954 bytes after render, 297 / 102,568 bytes
+after document close, and 266 / 98,916 bytes after view destruction. These
+are overlapping stack-path totals, not QtPdf allocation ownership.
+
+From after render to document close, 226 Qt6Pdf-path keys / 71,380 later
+bytes retain the same size and stack ID. Twenty shared keys change signature;
+145 source keys / 10,048 bytes still exist at the same address under another
+path, and 10,460 / 3,540,140 bytes are absent from the full later snapshot.
+There are 51 later Qt6Pdf-path keys / 11,844 bytes: two existed under another
+path before, while 49 were absent from the earlier full snapshot.
+
+From document close to view destruction, all 266 later Qt6Pdf-path keys /
+98,916 bytes match exactly; 31 source keys / 3,652 bytes are absent from the
+full final snapshot, with no changed-path, changed-signature, or new Qt6Pdf
+keys. Across the first and final snapshots, 195 keys / 67,728 final bytes
+retain the same signature. These address signatures cannot prove uninterrupted
+lifetime, and raw module paths cannot prove allocator ownership. Function-level
+QtPdf symbols and a fresh matched-symbol capture remain deferred at the user's
+direction; the 250 MiB lifecycle gate, F536 cause, F526 provenance, output
+parity, render/window acceptance, and global Phase 0 remain open (Windows
+1/24, macOS 0/24).
+
+F592 ranks the retained stack-path byte decreases between document close and
+view destruction outside Qt6Pdf paths, keeping path overlap and address
+identity limits explicit.
+
 ## F590 callback memory and heap-snapshot comparison - 2026-10-11
 
 F590 compared the F589 callback process samples with the nearest retained route
