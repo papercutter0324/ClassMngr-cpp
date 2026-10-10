@@ -42,7 +42,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-11
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F594 found that existing checkpoints sample current table counts only from the standalone SchedulePage; F595 specifies owner-labeled metrics for all three live tables while memory, output-parity, and full Phase 0 gates remain open.
+- Current note: F595 defined additive owner-labeled checkpoint metrics for all three schedule tables while preserving the standalone SchedulePage fields; F596 implements and verifies the projection while memory, output-parity, and full Phase 0 gates remain open.
 
 ### Slice discovery batches
 
@@ -69,9 +69,9 @@ Treat this plan as an operational summary, not a history:
 - F579 - Deferred at the user's direction: take a fresh matched-symbol heap
   capture; revisit after the user asks to resume symbol work.
 
-#### Active batch: Batch 111
+#### Active batch: Batch 112
 
-- F595 - Specify the smallest owner-labeled checkpoint metric surface needed to sample all three live schedule tables.
+- F596 - Implement per-owner schedule checkpoint snapshots and serialization coverage.
 
 ## Objective
 

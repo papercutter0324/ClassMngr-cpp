@@ -19872,6 +19872,31 @@ lifetime claims bounded by the snapshot evidence. The 250 MiB lifecycle gate,
 F536 cause, F526 provenance, output parity, render/window acceptance, and
 global Phase 0 remain open (Windows 1/24, macOS 0/24).
 
+## F595 owner-labeled schedule checkpoint metric contract - 2026-10-11
+
+F595 defines an additive owner-labeled `scheduleWidgetMetrics` collection on
+each startup checkpoint. Each entry carries a stable owner key and the value
+fields already returned by `ScheduleWidgetRuntimeMetrics`: model row/cell/
+entry counts, visible-class count, table row/column/item counts, and current
+cell-widget count. The retained route uses `standalone-schedule`,
+`workspace-schedule`, and `sub-prep-preview`. A missing or not-yet-instantiated
+owner is omitted rather than represented by a synthetic zero record.
+
+The existing top-level `schedule*` fields keep their established
+`PageManager::schedulePage()` scope for compatibility; the new collection is
+the explicit per-owner view. It does not collapse three tables into one count,
+expose widget pointers, or use run-dependent class names as identifiers. The
+Sub Prep value should cross a value-returning page accessor rather than making
+MainWindow depend on the private child object name. Acceptance for F596 is
+that a retained-route checkpoint emits all three stable owner keys with the
+same per-instance values as `runtimeMetrics()`, while existing main-page
+fields retain their meaning. A serialization test should cover missing-owner
+omission and field mapping. F579 remains deferred; this metric contract needs
+no symbol work. The 250 MiB lifecycle gate, F536 cause, F526 provenance,
+output parity, render/window acceptance, and global Phase 0 remain open.
+
+F596 implements this checkpoint projection and its owning-layer coverage.
+
 ## F594 per-instance ScheduleWidget metric coverage - 2026-10-11
 
 F594 traced the values captured at each retained route checkpoint. Every
@@ -19892,11 +19917,6 @@ labels and cumulative create/remove deltas, not each table's current
 `runtimeMetrics()` snapshot. Thus the 147 creations and three live widgets
 cannot replace a per-owner current-count sample. This is an instrumentation
 coverage gap; no code, tests, trace, or symbol output changed.
-
-F595 specifies the smallest owner-labeled checkpoint metric surface needed to
-sample the three live schedule tables without expanding the heap-symbol work.
-The 250 MiB lifecycle gate, F536 cause, F526 provenance, output parity,
-render/window acceptance, and global Phase 0 remain open.
 
 ## F593 ScheduleWidget owners at PDF view destruction - 2026-10-11
 

@@ -932,3 +932,11 @@ workspace SchedulePage is reachable through `mySchedulePage()`; Sub Prep's
 widget is private but named `subPrepScheduleWidget`. Route render events are
 cumulative deltas and do not substitute for those current per-owner samples.
 F595 specifies a narrow owner-labeled checkpoint shape for all three tables.
+
+F595 defines additive per-owner checkpoint entries keyed as
+`standalone-schedule`, `workspace-schedule`, and `sub-prep-preview`, each with
+the existing `ScheduleWidgetRuntimeMetrics` value fields. Existing scalar
+`schedule*` checkpoint fields retain their standalone SchedulePage meaning;
+the new collection records current values separately and omits owners not yet
+instantiated. Sub Prep should provide a value snapshot rather than expose its
+private widget. F596 implements the shape and verifies serialization/mapping.
