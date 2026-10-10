@@ -19632,8 +19632,63 @@ scheduled handshake; acknowledgement waits hold the app at each checkpoint,
 not inside the renderer callback. Timeout behavior was source-inspected, not
 runtime-forced.
 
-No WPR command, IFEO configuration, elevation, ETL, or system change occurred.
-F564 remains a separate decision to authorize elevated, process-specific
-WPR/IFEO setup and collection. The 250 MiB lifecycle gate, F536 cause, F526
-provenance, output parity, render/window acceptance, and global Phase 0 remain
-open (Windows 1/24, macOS 0/24).
+No WPR command, IFEO configuration, elevation, ETL, or system change occurred
+in F563. F564 still required separate authorization at this checkpoint; the
+user authorized the elevated capture on 2026-10-11. Its result follows. The
+250 MiB lifecycle gate, F536 cause, F526 provenance, output parity,
+render/window acceptance, and global Phase 0 remain open (Windows 1/24, macOS
+0/24).
+
+## F564 packaged Release PDF heap snapshots - 2026-10-11
+
+The WPR capture controller is
+[run_f564_heap_snapshot_capture.py](../../scripts/phase2/run_f564_heap_snapshot_capture.py).
+It refuses an existing WPR recording or an already-enabled image-name
+snapshot setting, enables the setting only after confirming it was disabled,
+starts one file-mode heap recording, and takes each snapshot after validating
+its ready marker but before writing the acknowledgement. Cleanup stops any
+recording started by this run, disables the setting it attempted to enable,
+and queries the final state. Its dry-run route exercises the Release
+application handshake without invoking WPR.
+
+A fresh Windows x64 packaged Release build was installed at
+dist/f564-current-source-windows-x64; ClassMngr.exe SHA-256 is
+529731f3e2e0ccfe3fefdbfe5fa0371de625af8a843bd416ef77f875e98e2e45. The
+Debug controller is ClassMngrStartupPerformanceTests.exe SHA-256
+ba69bfc2d085ada1ab34056653241eecc294a4f1857155a6224c36acac3c870d. Python
+byte-compilation, git diff --check, and two Release-app handshake dry-runs
+passed. The last dry-run reached all three ordered checkpoints with one PID
+and made no WPR call.
+
+The accepted elevated run began with WPR idle and the ClassMngr.exe heap
+snapshot setting disabled. WPR 10.0.26100.9444 enabled the image-name setting,
+started one heapsnapshot file-mode recording, successfully issued three
+single-snapshot commands for PID 48900, stopped the ETL, and disabled the
+setting. An independent comparison matched each ready marker to its
+acknowledgement and snapshot record by run ID, PID, checkpoint order, and
+marker SHA-256. Snapshot command exit codes were 0/0/0. The controller exited
+0; post-run WPR status was idle and the snapshot setting was disabled.
+
+The retained ETL is
+build/f564-heap-snapshot-20261010T161139Z-21976/classmngr-pdf-heap-snapshots.etl,
+87,031,808 bytes, SHA-256
+948a1d81adc2b855bc0a0422ed1e70cb26539b1945fc36f4630f3d32f7f985fd. Its
+checkpoint order is after-render, after-document-close, and after-view-destroyed
+at 2026-10-10 16:12:04.391, 16:12:09.050, and 16:12:16.336 UTC respectively.
+The ETL, capture-summary JSON, and packaged build remain in ignored local
+build/output directories. The progress log records the accepted summary facts;
+the controller source is committed, not the binary trace or local artifacts.
+
+One non-elevated attempt was denied before launching the app. A separate
+elevated preflight started and stopped WPR but aborted before app launch when
+the installed WPR status text differed from the initial parser expectation.
+Both attempts ended with WPR idle and the snapshot setting disabled; the
+accepted run followed after the parser correction. The preflight ETL contains
+no ClassMngr snapshots and is not used for analysis.
+
+F565 is next: inspect the three accepted heap snapshots in WPA, record the
+available allocation-stack/module attribution, and keep conclusions within
+the installed symbol limits. No allocation owner is inferred from the
+capture alone. The 250 MiB lifecycle gate, F536 cause, F526 provenance,
+output parity, render/window acceptance, and global Phase 0 remain open
+(Windows 1/24, macOS 0/24).

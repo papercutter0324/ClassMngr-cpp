@@ -17,6 +17,7 @@ import subprocess
 import sys
 import tempfile
 import time
+from collections.abc import Callable
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -235,7 +236,10 @@ def terminate_process_tree(process: subprocess.Popen[bytes]) -> None:
         process.wait(timeout=10)
 
 
-def run_controller(args: argparse.Namespace) -> Path:
+def run_controller(
+    args: argparse.Namespace,
+    before_ack: Callable[[dict[str, Any], bytes], None] | None = None,
+) -> Path:
     repository_root = Path(__file__).resolve().parents[2]
     application = (
         args.application.resolve()
@@ -362,6 +366,8 @@ def run_controller(args: argparse.Namespace) -> Path:
                     )
                 expected_run_id = run_id
                 expected_process_id = process_id
+                if before_ack is not None:
+                    before_ack(marker, marker_bytes)
                 ack_path = write_ack(
                     control_directory,
                     marker_path,

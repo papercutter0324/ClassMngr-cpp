@@ -753,9 +753,17 @@ ready-and-ack handshake and a 30-second bounded wait. Independent Debug
 verification passed ordered markers, SHA-256-bound acknowledgements, same-PID
 continuity, unset-selector and observer-only parity, and invalid-gate and
 control-directory rejection. Timeout behavior was inspected but not
-runtime-forced. F563 performed no WPR/IFEO setup or collection. F564 remains a
-separate decision on authorizing elevated, process-specific setup and capture.
-See the [Phase 2 progress log](03-Phase-2-Progress-Log.md) for checkpoint
-details, verification boundaries, WPR procedure, and symbol limits. The 250
-MiB lifecycle gate, F536 cause, F526 provenance, output parity, render/window
-acceptance, and global Phase 0 remain open (Windows 1/24, macOS 0/24).
+runtime-forced. F563 performed no WPR/IFEO setup or collection.
+
+F564 was authorized on 2026-10-11 and captured three ordered heap snapshots
+from a current-source packaged Windows x64 Release application at the F563
+render, document-close, and view-destroyed checkpoints. All three WPR commands
+succeeded against PID 48900; marker, acknowledgement, and snapshot hashes
+matched. One ETL was saved and hashed, and WPR was stopped with the temporary
+image-name snapshot setting disabled and verified afterward. The trace and
+full summary are retained under the ignored local build directory; key capture
+facts are recorded in the [Phase 2 progress
+log](03-Phase-2-Progress-Log.md). F565 will inspect the trace in WPA within
+the installed symbol limits. The 250 MiB lifecycle gate, F536 cause, F526
+provenance, output parity, render/window acceptance, and global Phase 0 remain
+open (Windows 1/24, macOS 0/24).
