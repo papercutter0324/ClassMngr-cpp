@@ -656,13 +656,33 @@ F551 median per-process `peakMemory` aggregates were 261,734,400 / 263,516,160
 evidence of sampler overhead. All three peak-working-set aggregates exceed
 250 MiB; the median exceeds the target by 1,372,160 bytes (1.308594 MiB).
 
-F552 is selected as a matched normal-versus-suppressed viewport-update
-diagnostic on the same no-grab route. Count viewport paint events and keep the
-38 outer / 62 inner samples and four memory fields. Suppress
-`m_view->viewport()` updates from before the first PDF load through both
-load/close cycles in the treatment, then restore after final close. The Ready
-handler changes view/UI state without an explicit render or grab; exact Qt
-6.12 renderer/cache behavior is not independently verified, so do not
-attribute the measured rise to Qt rendering.
-F536 cause remains unresolved. The 250 MiB lifecycle gate, F526 provenance,
-output parity, and global Phase 0 remain open (Windows 1/24, macOS 0/24 routes).
+F552 implemented the matched normal-versus-suppressed viewport-update
+diagnostic from commit `47ce7271b17a07108159519ab0c4dc3718061302`. An
+independent Debug pass retained 38 outer / 62 ordered inner samples and four
+memory fields, counted four versus zero paints while a PDF was loaded, and
+confirmed updates were restored at exit. Error cleanup was inspected but not
+fault-injected.
+
+F553 completed six fresh matched Release route runs: all validations passed,
+with 38 outer and 62 inner samples, matching fixture and package hashes, no
+forced grabs or PNG output, and four loaded-document paints in normal versus
+zero under suppression. The independently corrected per-process peak medians
+show normal-minus-suppressed deltas of +3.473 / +4.012 / +0.297 / +3.176 MiB
+(working set / peak working set / private usage / private working set). Normal
+peak-working-set maxima exceed 250 MiB, while suppressed maxima are below;
+private-usage ranges overlap. This supports matched route-level association
+with viewport-update suppression, not Qt allocation ownership. The campaign
+analyzer omitted private working set and substituted its sample count; the
+corrected four-field audit is in the Phase 2 log. Ready-handler setup medians
+were zero for working set, private usage, and private working set in both
+F553 arms, unlike F551's observed working-set increase; treat this as a
+cohort/instrumentation difference requiring follow-up. The app-level render
+event counter was zero but does not observe QPdfView's internal paint-triggered
+raster work.
+
+F554 is selected to verify the packaged Qt PDF component's source/build
+revision and `QPdfView` paint/render path, then decide whether finer-grained
+memory instrumentation is warranted. Do not infer a Qt rendering or
+allocation cause from F553. F536 cause remains unresolved. The 250 MiB
+lifecycle gate, F526 provenance, output parity, and global Phase 0 remain open
+(Windows 1/24, macOS 0/24 routes).

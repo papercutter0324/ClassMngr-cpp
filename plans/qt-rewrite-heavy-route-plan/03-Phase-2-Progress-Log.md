@@ -19198,13 +19198,95 @@ the target. Artifacts are under
 `%LOCALAPPDATA%\Temp\ClassMngr-F550-20261010-e4023f34` (the three `inner-boundary`
 routes and `f551-release-build-vcvars`).
 
-F552 is selected as a matched normal-versus-suppressed viewport-update
-diagnostic on the same no-grab route. Count viewport paint events, retain the
-38 outer and 62 inner samples, and suppress `m_view->viewport()` updates from
-before the first PDF load through both load/close cycles in the treatment,
-restoring updates after final close. The Ready handler changes view/UI state
-without an explicit render or grab; the exact Qt 6.12 renderer/cache behavior
-has not been independently verified, so do not attribute the observed rise to
-Qt rendering. F536 cause and the 250 MiB gate remain open; F526 provenance,
+F552 has now implemented the matched normal-versus-suppressed
+`m_view->viewport()` update diagnostic. Its implementation and F553 results are
+recorded below. F536 cause and the 250 MiB gate remain open; F526 provenance,
 output parity, and the global Phase 0 gate also remain open (Windows 1/24,
 macOS 0/24 routes).
+
+## F552 viewport-update diagnostic implementation - 2026-10-10
+
+Commit `47ce7271b17a07108159519ab0c4dc3718061302` adds an opt-in diagnostic to
+the no-grab Sub Prep PDF route. The treatment suppresses viewport updates
+before the first PDF load through the final close, counts viewport paint
+events, then restores updates. An independent Debug pass retained 38 outer and
+62 ordered inner samples and four memory fields; normal versus suppressed
+recorded four versus zero paints while a PDF was loaded, and updates were
+enabled again at exit. Error cleanup was inspected but not fault-injected.
+
+## F553 matched Release viewport-update campaign - 2026-10-10
+
+The six alternating Windows x64 Release processes used source commit
+`47ce7271b17a07108159519ab0c4dc3718061302`, Qt 6.12.0 prefix, offscreen
+display, and the same route, fixture, binary, and harness. VS 2026 Build Tools
+18.10.1, MSVC 19.51.36257, and Windows SDK 10.0.28000.0 were used. Release
+application configure/build/install and harness configure/build all exited 0
+without timeout in 86.126 / 351.240 / 0.919 / 240.050 / 340.322 seconds.
+The application SHA-256 is
+`d701375646c15c4ad6a2e557a0e333ea88879e1142885f96ff24259cc8acd96d`, harness
+`917c987baa48ef8288d32a5a2ae794b3edb2566a10a1836f42598a3a7f7e395b`, RCC
+`a3eb570294b55a616ea05797222fc1fedd93620abb25360b724ed6843bee924f`, and PDF
+`295accab548b41f0b4f56e6ab89958ad5c3347646904c155b16a56ebe926caec`. The
+fixture was 622,592 bytes (96 classes, 24 teachers, 7,200 rows), SHA-256
+`c213ce96d85d927a4e2a4196c68be490f4517076079c069b475ec0ada872ffbb`.
+
+`run-normal-01` records a repository build from the required commit. The other
+five route manifests are `skip-build` / `external-unverified`; the campaign
+manifest binds all six to the same binary and harness paths and package
+hashes. This supports a matched route-level comparison, not six independent
+build-provenance claims. The package version audit found Qt6Core at 6.12.0,
+while packaged Qt6Pdf and Qt6PdfWidgets version resources report 6.14.0; both
+PDF DLL hashes match the files at the declared Qt 6.12.0 prefix. Manifests do
+not establish a Qt PDF source tag or revision. The exact matched package is
+accepted for this route comparison, without source-level Qt or allocation
+ownership claims.
+
+PIDs were normal-01 48348, suppressed-01 49368, normal-02 46892,
+suppressed-02 47200, normal-03 31360, and suppressed-03 55084. All six route
+processes exited 0 and passed automatic validation. Each retained 38 outer
+labels and 62 ordered inner samples with matching normalized route state:
+initial Ready, initial close Null, failed load and close Error, reopen Ready,
+and final close Null. Normal runs counted eight viewport paints, four while a
+PDF was loaded; suppressed runs counted zero total and loaded-document paints.
+Suppression began before the first load and was restored after final close;
+updates were enabled at exit in all runs. All had zero forced grabs, PNG
+writing disabled and no PNG files, and zero app-level `pdf-document-rendered`
+events. That app-level counter does not observe `QPdfView`'s internal
+paint-triggered raster work; zero events do not mean no rasterization.
+
+Independent audit recomputed per-process maxima from all 84 checkpoints'
+`memory` and `memoryAfterMetrics` snapshots plus the 38 outer samples (206
+records per process). The campaign analyzer's peak table omitted
+`privateWorkingSetBytes` and placed `processMemorySampleCount` in that field;
+the table below uses the corrected four fields. Each cell is min / median / max
+bytes across three per-process maxima; fields are independent, not paired.
+
+| Arm | Working set | Peak working set | Private usage | Private working set |
+| --- | ---: | ---: | ---: | ---: |
+| Normal | 261,758,976 / 261,959,680 / 262,230,016 | 263,532,544 / 263,720,960 / 264,007,680 | 303,108,096 / 303,390,720 / 303,468,544 | 194,514,944 / 194,662,400 / 194,990,080 |
+| Suppressed | 258,154,496 / 258,318,336 / 259,063,808 | 259,350,528 / 259,514,368 / 260,263,936 | 302,903,296 / 303,079,424 / 303,763,456 | 191,176,704 / 191,332,352 / 192,081,920 |
+
+All normal peak-working-set maxima exceed 262,144,000 bytes (250 MiB), at
+251.324-251.777 MiB; all suppressed maxima are below it, at 247.336-248.207
+MiB. Median normal-minus-suppressed deltas (working set / peak working set /
+private usage / private working set) are 3,641,344 / 4,206,592 / 311,296 /
+3,330,048 bytes (3.472656 / 4.011719 / 0.296875 / 3.175781 MiB). Private-usage
+ranges overlap and both medians remain near 289 MiB. The normal validator has
+a non-failing legacy warning for 65 samples at or above 250 MiB; suppressed
+has no warning. Initial close-pair medians were -6,901,760 / -7,143,424 /
+-6,909,952 bytes for normal working set / private usage / private working set,
+and -3,821,568 / -4,059,136 / -3,829,760 for suppressed.
+
+Ready-handler view-setup pair medians for working set, private usage, and
+private working set were zero in both F553 arms (12 pairs each), unlike
+F551's +7,135,232-byte working-set delta. This is an observed
+cohort/instrumentation difference to follow up, not a causal contradiction.
+The non-overlapping working-set, peak-working-set, and private-working-set
+ranges show a route-level association with viewport-update suppression; the
+private-usage ranges overlap. F553 does not identify a Qt allocation owner.
+F554 is selected to audit the actual Qt PDF component's source/build revision
+and `QPdfView` paint/render path, then decide whether finer memory
+instrumentation is justified. F536 cause, the 250 MiB lifecycle gate, F526
+provenance, output parity, and global Phase 0 remain open (Windows 1/24,
+macOS 0/24). Artifacts are under
+`%LOCALAPPDATA%\Temp\ClassMngr-F553-Viewport-20261010T110023Z-666d6363a5`.
