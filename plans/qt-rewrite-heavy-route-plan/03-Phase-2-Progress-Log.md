@@ -19872,6 +19872,35 @@ lifetime claims bounded by the snapshot evidence. The 250 MiB lifecycle gate,
 F536 cause, F526 provenance, output parity, render/window acceptance, and
 global Phase 0 remain open (Windows 1/24, macOS 0/24).
 
+## F583 setCellWidget heap/address carryover - 2026-10-11
+
+F583 joined F569's raw allocation identities by `(HeapHandle,
+AllocationAddress)` for the setCellWidget stack group from the after-document-
+close to after-view-destroyed pair. Of the 48,176 snapshot-2 records
+(39,324,262 bytes), 16,714 records (30,349,468 bytes) have the same heap,
+address, size, and trace stack ID in snapshot 3. The other 31,462 records
+(8,974,794 bytes) have no matching heap/address key in snapshot 3. No shared
+key in this group has a changed size or stack signature. All 16,714 records in
+the final setCellWidget group have a matching key in snapshot 2.
+
+Within the 251 stack IDs whose aggregate bytes decrease, 31,470 snapshot-2
+records total 8,976,434 bytes. Eight records totaling 1,640 bytes remain as
+exact signatures; the remaining 31,462 records / 8,974,794 bytes have no
+matching heap/address key in snapshot 3. This resolves the aggregate delta as
+absence of those keys at the last snapshot rather than reclassification to a
+different size or stack in that same heap/address slot. It does not establish
+when an allocation was released, object ownership, or whether an address was
+reused between checkpoints. The reproducer is
+`build/f583_heap_address_carryover.py` in ignored local build artifacts.
+
+F584 compares the same group by heap/address key between after-render and
+after-document-close. It will check whether the unchanged aggregate totals
+also reflect identical captured keys, without treating a snapshot match as
+proof of uninterrupted object lifetime. F579's matched-symbol capture remains
+deferred. The 250 MiB lifecycle gate, F536 cause, F526 provenance, output
+parity, render/window acceptance, and global Phase 0 remain open (Windows
+1/24, macOS 0/24).
+
 ## F582 setCellWidget stack-bucket deltas - 2026-10-11
 
 F582 ranked the 584 stack IDs whose F575 paths contain
@@ -19895,13 +19924,15 @@ signatures, not proof that the named Qt object owns each allocation. F582's
 read-only ranking script is `build/f582_setcellwidget_stack_delta.py` under
 ignored local build artifacts.
 
-F583 checks whether snapshot-2 heap/address keys in the decreasing stack
-buckets occur in snapshot 3 with a changed size or stack signature. This can
-separate absent keys from keys still present under another signature, while
-retaining the address-reuse limitation. F579's matched-symbol capture remains
-deferred. The 250 MiB lifecycle gate, F536 cause, F526 provenance, output
-parity, render/window acceptance, and global Phase 0 remain open (Windows
-1/24, macOS 0/24).
+F583 checks heap/address keys in the snapshot-2 `setCellWidget` group against
+snapshot 3. Of 48,176 records / 39,324,262 bytes, 16,714 / 30,349,468 match
+the same heap, address, size, and stack, while 31,462 / 8,974,794 have no key
+in the final snapshot; none remain at the same key with a changed signature.
+This describes checkpoint presence, not uninterrupted lifetime or ownership.
+F584 compares the same keys between after-render and after-document-close.
+The 250 MiB lifecycle gate, F536 cause, F526 provenance, output parity,
+render/window acceptance, and global Phase 0 remain open (Windows 1/24,
+macOS 0/24).
 
 ## F581 checkpoint-by-checkpoint Qt stack groups - 2026-10-11
 

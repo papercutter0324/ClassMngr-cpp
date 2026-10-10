@@ -834,8 +834,12 @@ smaller nonzero buckets, and 333 unchanged IDs; none increased. The final
 30,349,468 bytes exactly match this group's all-three same-address signatures.
 Its largest final buckets are 16 MiB through font metrics and 8 MiB through
 rich-text layout, with `ClassMngr.exe` caller frames still unresolved. F583
-checks the heap/address keys for the decreasing stack buckets across the final
-two checkpoints. The
+found 16,714 final setCellWidget records / 30,349,468 bytes with matching
+heap/address/size/stack keys from the previous snapshot; 31,462 records /
+8,974,794 bytes from that previous group have no matching key in the final
+snapshot, and no shared key changed size or stack. This is checkpoint presence,
+not proof of uninterrupted lifetime or object ownership. F584 compares the
+same group between after-render and after-document-close. The
 checked qtpdf 6.12
 extension tree had no separate debug-symbol package for
 the installed QtPdf 6.140.0.0 modules, so function-level PDFium/QtPdf
