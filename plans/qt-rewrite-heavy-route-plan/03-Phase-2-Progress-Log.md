@@ -19872,6 +19872,46 @@ lifetime claims bounded by the snapshot evidence. The 250 MiB lifecycle gate,
 F536 cause, F526 provenance, output parity, render/window acceptance, and
 global Phase 0 remain open (Windows 1/24, macOS 0/24).
 
+## F576 startup font registration and asset mapping - 2026-10-11
+
+The F564 packaged Release source loads global fonts during startup:
+`main.cpp` calls `FontManager::applyGlobalFont`, which reaches
+`FontManager::loadFonts` through `getUiFont` or `getKoreanFont`. The loader is
+guarded by `s_loaded` and registers exactly two resources with
+`QFontDatabase::addApplicationFont`: `:/assets/fonts/Inter.ttc` and
+`:/assets/fonts/PretendardVariable.ttf` (`src/core/fontmanager.cpp`,
+`src/core/resource_paths.h`, and `src/main.cpp`). CMake embeds both in the
+application's `BIG_RESOURCES` bundle (`cmake/resources.cmake`).
+
+| Global font resource | File size |
+| --- | ---: |
+| `Inter.ttc` | 13,172,948 bytes |
+| `PretendardVariable.ttf` | 6,739,336 bytes |
+| Combined | 19,912,284 bytes |
+
+Stack ID 1417 contains two allocation records sized 16,777,216 and 8,388,608
+bytes and resolves through `QFontDatabase::addApplicationFont` to
+`QIODevice::readAll` and `QByteArray` growth. The two sizes are consistent
+with buffers large enough for the two global font resources, but the ETL
+contains no resource path or app function name to bind either allocation to a
+specific file. Eight other top persistent stacks follow Qt's font-engine
+loading path through `QFreetypeFace::getFace` and `QIODevice::readAll`; their
+specific font files remain unknown.
+
+The four smaller decorative fonts total 1,185,948 bytes. They are separate
+feature-specific resources loaded by the typed-signature renderer or speaking
+evaluation report path, not by `FontManager::loadFonts`; this source audit
+does not establish whether either feature path ran in F564. The startup Inter
+and Pretendard path is a strong candidate for stack 1417, while exact
+allocation-to-file identity and the other font-engine inputs remain
+unverified. Qt documents `QFontDatabase::addApplicationFont` as the API for
+adding an application font from a file ([Qt 6.12 QFontDatabase API](https://doc.qt.io/qt-6.12/qfontdatabase.html#addApplicationFont)). F577 audits
+whether the optimized Release build can provide matching `ClassMngr.exe`
+symbols to resolve the app caller. The 250 MiB lifecycle gate, F536 cause,
+F526 provenance, output
+parity, render/window acceptance, and global Phase 0 remain open (Windows
+1/24, macOS 0/24).
+
 ## F575 top persistent allocation stack paths - 2026-10-11
 
 F570's all-three same-address signature export was sorted by final-snapshot
@@ -19902,10 +19942,11 @@ Eight of these nine stacks (117,440,512 bytes) pass through
 `QFontDatabase::addApplicationFont` and the same read/allocation tail. These
 are allocation call paths; the same-address signatures do not prove the
 identity or owner of the retained objects or identify which font data was
-read. `ClassMngr.exe` frames remain unresolved, so F576 searches the app source
-and packaged assets for font registration and large font inputs. The 250 MiB
-lifecycle gate, F536 cause, F526 provenance, output parity, render/window
-acceptance, and global Phase 0 remain open (Windows 1/24, macOS 0/24).
+read. `ClassMngr.exe` frames remain unresolved, so F576 mapped the startup
+font loader and resource sizes. F577 audits a matching Release symbol route
+for the app caller. The 250 MiB lifecycle gate, F536 cause, F526 provenance,
+output parity, render/window acceptance, and global Phase 0 remain open
+(Windows 1/24, macOS 0/24).
 
 ## F574 symbolized PDF heap snapshot report - 2026-10-11
 
@@ -19939,8 +19980,9 @@ the three checkpoints. Its symbolized frames include
 ClassMngr frames remain raw instruction pointers. This is a call-stack path,
 not proof of which object or subsystem owns the retained bytes. F575 mapped
 the largest persistent signatures to font-engine and text-layout call paths;
-F576 searches for the application-controlled font caller and inputs. The
-250 MiB lifecycle gate, F536 cause, F526 provenance, output
+F576 mapped the startup font loader and large embedded resources. F577 audits
+the application's Release symbol route. The 250 MiB lifecycle gate, F536
+cause, F526 provenance, output
 parity, render/window acceptance, and global Phase 0 remain open (Windows
 1/24, macOS 0/24).
 

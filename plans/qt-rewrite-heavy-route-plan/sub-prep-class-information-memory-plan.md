@@ -810,9 +810,12 @@ and qoffscreen against the packaged Release images. F574 resolved QtBase
 function names in xperf, including a QFontDatabase/QIODevice allocation path
 for stack ID 1417, while ClassMngr and QtPdf frames remain raw addresses.
 F575 found that the nine largest persistent stack buckets total 142,606,336
-bytes and all trace into Qt font loading or application font registration;
-the ClassMngr caller and exact font inputs remain unresolved. F576 searches
-the app source and packaged assets for those inputs. The checked qtpdf 6.12
+bytes and all trace into Qt font loading or application font registration.
+F576 mapped the startup loader to embedded Inter (13,172,948 bytes) and
+Pretendard (6,739,336 bytes); Stack ID 1417's 16 MiB and 8 MiB allocations
+fit those resource sizes, though exact allocation-to-file identity remains
+unverified without app symbols or resource-path data in the ETL. F577 audits
+a matching Release symbol route for the app caller. The checked qtpdf 6.12
 extension tree had no separate debug-symbol package for
 the installed QtPdf 6.140.0.0 modules, so function-level PDFium/QtPdf
 ownership remains open. The 250 MiB lifecycle gate, F536 cause, F526
