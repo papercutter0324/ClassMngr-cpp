@@ -122,6 +122,11 @@ bool isAdminMode(const QStringList &args)
     return args.contains(AppSettings::AdminModeArgument);
 }
 
+QString startupPdfDocumentStatusName(QPdfDocument::Status status);
+QString startupPdfLifecycleObservedDocumentStatusName(
+    QPdfDocument::Status status
+    );
+
 struct StartupPdfLifecycleInnerBoundaryTrace
 {
     QElapsedTimer timer;
@@ -137,15 +142,21 @@ struct StartupPdfLifecyclePageRenderObserverTrace
     PlatformProcessMemorySnapshotProvider memoryProvider;
     QMutex mutex;
     QJsonArray callbacks;
+    QJsonArray documentStatusTransitions;
     std::vector<QMetaObject::Connection> connections;
     QMetaObject::Connection applicationQuitConnection;
+    std::optional<QPdfDocument::Status> cachedDocumentStatus;
+    std::optional<QPdfDocument::Status> initialDocumentStatus;
     QString status = QStringLiteral("not-attached");
     QString unavailableReason;
+    QString documentStatusUnavailableReason;
+    QString unknownDocumentStatusReason;
     QString cleanupReason;
     int discoveredRendererCount = 0;
     int attachedRendererCount = 0;
     int nextOrder = 1;
     qint64 lastTimestampNanoseconds = -1;
+    bool documentStatusConnectionAvailable = false;
     bool disconnected = false;
 };
 
@@ -324,6 +335,144 @@ void disconnectStartupPdfLifecyclePageRenderObserver(
     trace->cleanupReason = reason;
 }
 
+qint64 startupPdfLifecycleObserverTimestampNanosecondsLocked(
+    const std::shared_ptr<StartupPdfLifecyclePageRenderObserverTrace>& trace
+    )
+{
+    qint64 timestampNanoseconds = trace->timer.nsecsElapsed();
+    if (timestampNanoseconds <= trace->lastTimestampNanoseconds)
+    {
+        timestampNanoseconds = trace->lastTimestampNanoseconds + 1;
+    }
+    trace->lastTimestampNanoseconds = timestampNanoseconds;
+    return timestampNanoseconds;
+}
+
+void attachStartupPdfLifecycleDocumentStatusObserver(
+    PdfViewerPage& viewer,
+    QApplication& app,
+    const std::shared_ptr<StartupPdfLifecyclePageRenderObserverTrace>& trace
+    )
+{
+    QPdfDocument* const document = viewer.findChild<QPdfDocument*>(
+        QString(),
+        Qt::FindChildrenRecursively
+        );
+    if (!document)
+    {
+        trace->documentStatusUnavailableReason =
+            QStringLiteral(
+                "No QPdfDocument child was found below PdfViewerPage at route start."
+                );
+        return;
+    }
+
+    const QByteArray expectedSignalSignature =
+        QMetaObject::normalizedSignature(
+            "statusChanged(QPdfDocument::Status)"
+            );
+    if (
+        document->metaObject()->indexOfSignal(
+            expectedSignalSignature.constData()
+            ) < 0
+        )
+    {
+        trace->documentStatusUnavailableReason =
+            QStringLiteral(
+                "The discovered QPdfDocument does not expose the expected statusChanged signal."
+                );
+        return;
+    }
+
+    QMutexLocker lock(&trace->mutex);
+    const QMetaObject::Connection connection = QObject::connect(
+        document,
+        &QPdfDocument::statusChanged,
+        &app,
+        [trace](QPdfDocument::Status status)
+        {
+            QMutexLocker callbackLock(&trace->mutex);
+            if (trace->disconnected)
+            {
+                return;
+            }
+
+            const QString statusName =
+                startupPdfLifecycleObservedDocumentStatusName(status);
+            const bool statusKnown =
+                statusName != QStringLiteral("Unknown");
+            const qint64 timestampNanoseconds =
+                startupPdfLifecycleObserverTimestampNanosecondsLocked(
+                    trace
+                    );
+            trace->documentStatusTransitions.append(
+                QJsonObject{
+                    {
+                        QStringLiteral("event"),
+                        QStringLiteral("document statusChanged transition")
+                    },
+                    {QStringLiteral("order"), trace->nextOrder++},
+                    {
+                        QStringLiteral(
+                            "elapsedNanosecondsSinceAttachment"
+                            ),
+                        static_cast<double>(timestampNanoseconds)
+                    },
+                    {
+                        QStringLiteral("documentStatus"),
+                        statusKnown
+                            ? QJsonValue(statusName)
+                            : QJsonValue(QJsonValue::Null)
+                    }
+                }
+                );
+
+            if (statusKnown)
+            {
+                trace->cachedDocumentStatus = status;
+            }
+            else
+            {
+                trace->cachedDocumentStatus.reset();
+                trace->unknownDocumentStatusReason =
+                    QStringLiteral(
+                        "QPdfDocument::statusChanged emitted a status value not recognized by this observer."
+                        );
+            }
+        },
+        Qt::DirectConnection
+        );
+
+    if (!connection)
+    {
+        trace->documentStatusUnavailableReason =
+            QStringLiteral(
+                "The statusChanged signal was found but no observer connection could be established."
+                );
+        return;
+    }
+
+    trace->connections.push_back(connection);
+    trace->documentStatusConnectionAvailable = true;
+    const QPdfDocument::Status initialStatus = document->status();
+    trace->initialDocumentStatus = initialStatus;
+    if (
+        startupPdfLifecycleObservedDocumentStatusName(initialStatus)
+        != QStringLiteral("Unknown")
+        )
+    {
+        trace->cachedDocumentStatus = initialStatus;
+    }
+    else
+    {
+        trace->cachedDocumentStatus.reset();
+        trace->unknownDocumentStatusReason =
+            QStringLiteral(
+                "QPdfDocument::status returned a status value not recognized by this observer."
+                );
+    }
+}
+
 void attachStartupPdfLifecyclePageRenderObserver(
     PdfViewerPage& viewer,
     QApplication& app,
@@ -336,6 +485,11 @@ void attachStartupPdfLifecyclePageRenderObserver(
     }
 
     trace->timer.start();
+    attachStartupPdfLifecycleDocumentStatusObserver(
+        viewer,
+        app,
+        trace
+        );
     const QList<QPdfPageRenderer*> renderers =
         viewer.findChildren<QPdfPageRenderer*>(
             QString(),
@@ -350,168 +504,186 @@ void attachStartupPdfLifecyclePageRenderObserver(
             QStringLiteral(
                 "No QPdfPageRenderer child was found below PdfViewerPage at route start."
                 );
-        trace->disconnected = true;
-        trace->cleanupReason = QStringLiteral("no-renderer-found");
-        return;
     }
-
-    const QByteArray expectedSignalSignature =
-        QMetaObject::normalizedSignature(
-            "pageRendered(int,QSize,QImage,QPdfDocumentRenderOptions,quint64)"
-            );
-    int signalAvailableRendererCount = 0;
-    for (QPdfPageRenderer* const renderer : renderers)
+    else
     {
-        if (
-            !renderer
-            || renderer->metaObject()->indexOfSignal(
-                   expectedSignalSignature.constData()
-                   ) < 0
-            )
+        const QByteArray expectedSignalSignature =
+            QMetaObject::normalizedSignature(
+                "pageRendered(int,QSize,QImage,QPdfDocumentRenderOptions,quint64)"
+                );
+        int signalAvailableRendererCount = 0;
+        for (QPdfPageRenderer* const renderer : renderers)
         {
-            continue;
-        }
-
-        ++signalAvailableRendererCount;
-        const QMetaObject::Connection connection = QObject::connect(
-            renderer,
-            &QPdfPageRenderer::pageRendered,
-            &app,
-            [trace](
-                int pageNumber,
-                QSize imageSize,
-                const QImage& image,
-                QPdfDocumentRenderOptions,
-                quint64 requestId
+            if (
+                !renderer
+                || renderer->metaObject()->indexOfSignal(
+                       expectedSignalSignature.constData()
+                       ) < 0
                 )
             {
-                const ProcessMemorySnapshot memory =
-                    trace->memoryProvider.snapshot();
-                const QSize observedImageSize = image.size();
+                continue;
+            }
 
-                QMutexLocker lock(&trace->mutex);
-                if (trace->disconnected)
-                {
-                    return;
-                }
-                qint64 timestampNanoseconds =
-                    trace->timer.nsecsElapsed();
-                if (
-                    timestampNanoseconds
-                    <= trace->lastTimestampNanoseconds
+            ++signalAvailableRendererCount;
+            const QMetaObject::Connection connection = QObject::connect(
+                renderer,
+                &QPdfPageRenderer::pageRendered,
+                &app,
+                [trace](
+                    int pageNumber,
+                    QSize imageSize,
+                    const QImage& image,
+                    QPdfDocumentRenderOptions,
+                    quint64 requestId
                     )
                 {
-                    timestampNanoseconds =
-                        trace->lastTimestampNanoseconds + 1;
-                }
-                trace->lastTimestampNanoseconds = timestampNanoseconds;
+                    const ProcessMemorySnapshot memory =
+                        trace->memoryProvider.snapshot();
+                    const QSize observedImageSize = image.size();
 
-                trace->callbacks.append(
-                    QJsonObject{
-                        {
-                            QStringLiteral("event"),
-                            QStringLiteral("pageRendered callback")
-                        },
-                        {QStringLiteral("order"), trace->nextOrder++},
-                        {
-                            QStringLiteral(
-                                "elapsedNanosecondsSinceAttachment"
-                                ),
-                            static_cast<double>(timestampNanoseconds)
-                        },
-                        {QStringLiteral("pageNumber"), pageNumber},
-                        {
-                            QStringLiteral("imageSize"),
-                            QJsonObject{
-                                {
-                                    QStringLiteral("width"),
-                                    observedImageSize.width()
-                                },
-                                {
-                                    QStringLiteral("height"),
-                                    observedImageSize.height()
-                                }
-                            }
-                        },
-                        {
-                            QStringLiteral("requestedImageSize"),
-                            QJsonObject{
-                                {
-                                    QStringLiteral("width"),
-                                    imageSize.width()
-                                },
-                                {
-                                    QStringLiteral("height"),
-                                    imageSize.height()
-                                }
-                            }
-                        },
-                        {
-                            QStringLiteral("requestId"),
-                            QString::number(requestId)
-                        },
-                        {
-                            QStringLiteral("memoryAvailable"),
-                            memory.isAvailable
-                        },
-                        {
-                            QStringLiteral("memoryPlatform"),
-                            memory.platform
-                        },
-                        {
-                            QStringLiteral("workingSetBytes"),
-                            static_cast<double>(memory.workingSetBytes)
-                        },
-                        {
-                            QStringLiteral("privateUsageBytes"),
-                            static_cast<double>(memory.privateUsageBytes)
-                        },
-                        {
-                            QStringLiteral("privateWorkingSetBytes"),
-                            static_cast<double>(
-                                memory.privateWorkingSetBytes
-                                )
-                        }
+                    QMutexLocker lock(&trace->mutex);
+                    if (trace->disconnected)
+                    {
+                        return;
                     }
-                    );
-            },
-            Qt::DirectConnection
-            );
+                    const qint64 timestampNanoseconds =
+                        startupPdfLifecycleObserverTimestampNanosecondsLocked(
+                            trace
+                            );
+                    const QString callbackStatusName =
+                        trace->cachedDocumentStatus.has_value()
+                            ? startupPdfLifecycleObservedDocumentStatusName(
+                                  *trace->cachedDocumentStatus
+                                  )
+                            : QStringLiteral("Unknown");
+                    const QJsonValue callbackStatus =
+                        callbackStatusName != QStringLiteral("Unknown")
+                            ? QJsonValue(callbackStatusName)
+                            : QJsonValue(QJsonValue::Null);
 
-        if (connection)
+                    trace->callbacks.append(
+                        QJsonObject{
+                            {
+                                QStringLiteral("event"),
+                                QStringLiteral("pageRendered callback")
+                            },
+                            {QStringLiteral("order"), trace->nextOrder++},
+                            {
+                                QStringLiteral(
+                                    "elapsedNanosecondsSinceAttachment"
+                                    ),
+                                static_cast<double>(timestampNanoseconds)
+                            },
+                            {QStringLiteral("pageNumber"), pageNumber},
+                            {
+                                QStringLiteral("documentStatusAtCallback"),
+                                callbackStatus
+                            },
+                            {
+                                QStringLiteral("imageSize"),
+                                QJsonObject{
+                                    {
+                                        QStringLiteral("width"),
+                                        observedImageSize.width()
+                                    },
+                                    {
+                                        QStringLiteral("height"),
+                                        observedImageSize.height()
+                                    }
+                                }
+                            },
+                            {
+                                QStringLiteral("requestedImageSize"),
+                                QJsonObject{
+                                    {
+                                        QStringLiteral("width"),
+                                        imageSize.width()
+                                    },
+                                    {
+                                        QStringLiteral("height"),
+                                        imageSize.height()
+                                    }
+                                }
+                            },
+                            {
+                                QStringLiteral("requestId"),
+                                QString::number(requestId)
+                            },
+                            {
+                                QStringLiteral("memoryAvailable"),
+                                memory.isAvailable
+                            },
+                            {
+                                QStringLiteral("memoryPlatform"),
+                                memory.platform
+                            },
+                            {
+                                QStringLiteral("workingSetBytes"),
+                                static_cast<double>(memory.workingSetBytes)
+                            },
+                            {
+                                QStringLiteral("privateUsageBytes"),
+                                static_cast<double>(memory.privateUsageBytes)
+                            },
+                            {
+                                QStringLiteral("privateWorkingSetBytes"),
+                                static_cast<double>(
+                                    memory.privateWorkingSetBytes
+                                    )
+                            }
+                        }
+                        );
+                },
+                Qt::DirectConnection
+                );
+
+            if (connection)
+            {
+                trace->connections.push_back(connection);
+                ++trace->attachedRendererCount;
+            }
+        }
+
+        if (trace->attachedRendererCount == 0)
         {
-            trace->connections.push_back(connection);
-            ++trace->attachedRendererCount;
+            trace->status = QStringLiteral("unavailable");
+            trace->unavailableReason =
+                signalAvailableRendererCount == 0
+                    ? QStringLiteral(
+                          "Discovered QPdfPageRenderer children do not expose the expected pageRendered signal."
+                          )
+                    : QStringLiteral(
+                          "The pageRendered signal was found but no observer connection could be established."
+                          );
+        }
+        else
+        {
+            trace->status =
+                trace->attachedRendererCount == trace->discoveredRendererCount
+                    ? QStringLiteral("attached")
+                    : QStringLiteral("partially-attached");
+            if (trace->status == QStringLiteral("partially-attached"))
+            {
+                trace->unavailableReason =
+                    QStringLiteral(
+                        "At least one discovered QPdfPageRenderer child could not be observed."
+                        );
+            }
         }
     }
 
-    if (trace->attachedRendererCount == 0)
+    const bool anyObserverAvailable =
+        trace->attachedRendererCount > 0
+        || trace->documentStatusConnectionAvailable;
+    if (!anyObserverAvailable)
     {
-        trace->status = QStringLiteral("unavailable");
-        trace->unavailableReason =
-            signalAvailableRendererCount == 0
-                ? QStringLiteral(
-                      "Discovered QPdfPageRenderer children do not expose the expected pageRendered signal."
-                      )
-                : QStringLiteral(
-                      "The pageRendered signal was found but no observer connection could be established."
-                      );
         trace->disconnected = true;
-        trace->cleanupReason = QStringLiteral("observer-connection-unavailable");
+        trace->cleanupReason = renderers.isEmpty()
+            ? QStringLiteral("no-renderer-found")
+            : QStringLiteral("observer-connection-unavailable");
         return;
     }
 
-    trace->status =
-        trace->attachedRendererCount == trace->discoveredRendererCount
-            ? QStringLiteral("attached")
-            : QStringLiteral("partially-attached");
-    if (trace->status == QStringLiteral("partially-attached"))
-    {
-        trace->unavailableReason =
-            QStringLiteral(
-                "At least one discovered QPdfPageRenderer child could not be observed."
-                );
-    }
     trace->applicationQuitConnection = QObject::connect(
         &app,
         &QCoreApplication::aboutToQuit,
@@ -1003,6 +1175,17 @@ QString startupPdfDocumentStatusName(QPdfDocument::Status status)
         return QStringLiteral("Error");
     }
     return QStringLiteral("Unknown");
+}
+
+QString startupPdfLifecycleObservedDocumentStatusName(
+    QPdfDocument::Status status
+    )
+{
+    if (status == QPdfDocument::Status::Unloading)
+    {
+        return QStringLiteral("Unloading");
+    }
+    return startupPdfDocumentStatusName(status);
 }
 
 QString startupPdfViewModeName(const QPdfView* view)
@@ -9558,6 +9741,106 @@ bool writeStartupPerformanceMetrics(
                 {QStringLiteral("disconnected"), trace->disconnected},
                 {QStringLiteral("cleanupReason"), trace->cleanupReason}
             };
+
+            bool initialDocumentStatusAvailable = false;
+            QJsonValue initialDocumentStatus(QJsonValue::Null);
+            if (trace->initialDocumentStatus.has_value())
+            {
+                const QString initialStatusName =
+                    startupPdfLifecycleObservedDocumentStatusName(
+                        *trace->initialDocumentStatus
+                        );
+                if (initialStatusName != QStringLiteral("Unknown"))
+                {
+                    initialDocumentStatusAvailable = true;
+                    initialDocumentStatus = initialStatusName;
+                }
+            }
+
+            QJsonObject documentStatusTimeline{
+                {
+                    QStringLiteral("connectionAvailable"),
+                    trace->documentStatusConnectionAvailable
+                },
+                {
+                    QStringLiteral("connectionStatus"),
+                    trace->documentStatusConnectionAvailable
+                        ? QStringLiteral("attached")
+                        : attachmentAttempted
+                            ? QStringLiteral("unavailable")
+                            : QStringLiteral("not-attempted")
+                },
+                {
+                    QStringLiteral("signal"),
+                    QStringLiteral("QPdfDocument::statusChanged")
+                },
+                {
+                    QStringLiteral("connectionType"),
+                    QStringLiteral("direct")
+                },
+                {
+                    QStringLiteral("timingBasis"),
+                    QStringLiteral(
+                        "monotonic elapsed nanoseconds since observer attachment"
+                        )
+                },
+                {
+                    QStringLiteral("orderScope"),
+                    QStringLiteral(
+                        "shared with pageRendered callback order"
+                        )
+                },
+                {
+                    QStringLiteral("initialStatusAvailable"),
+                    initialDocumentStatusAvailable
+                },
+                {
+                    QStringLiteral("initialStatus"),
+                    initialDocumentStatus
+                },
+                {
+                    QStringLiteral("transitionCount"),
+                    trace->documentStatusTransitions.size()
+                },
+                {
+                    QStringLiteral("transitions"),
+                    trace->documentStatusTransitions
+                }
+            };
+
+            QString documentStatusCoverageNote =
+                trace->unknownDocumentStatusReason;
+            if (!trace->documentStatusConnectionAvailable)
+            {
+                documentStatusCoverageNote =
+                    trace->documentStatusUnavailableReason;
+                if (
+                    documentStatusCoverageNote.isEmpty()
+                    && !attachmentAttempted
+                    )
+                {
+                    documentStatusCoverageNote =
+                        QStringLiteral(
+                            "The PDF lifecycle route ended before status observer attachment was attempted."
+                            );
+                }
+                documentStatusTimeline.insert(
+                    QStringLiteral("unavailableReason"),
+                    documentStatusCoverageNote
+                    );
+            }
+            if (!documentStatusCoverageNote.isEmpty())
+            {
+                documentStatusTimeline.insert(
+                    QStringLiteral("coverageNote"),
+                    documentStatusCoverageNote
+                    );
+            }
+            observer.insert(
+                QStringLiteral("documentStatusTimeline"),
+                documentStatusTimeline
+                );
+
             if (!trace->unavailableReason.isEmpty())
             {
                 observer.insert(
