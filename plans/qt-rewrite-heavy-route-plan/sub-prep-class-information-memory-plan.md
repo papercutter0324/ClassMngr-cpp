@@ -718,9 +718,22 @@ process/callback evidence, not allocation ownership. Full results
 and raw artifacts are recorded in the [Phase 2 progress log](03-Phase-2-Progress-Log.md)
 under `%LOCALAPPDATA%\Temp\ClassMngr-F556-PageRender-20261010-07b6d12d`.
 
-F557 is selected to audit qtpdf revision
-`d505fc23640d2bd6345e6483eb73daf4e19f5829`, focusing on QPdfView's page-image
-cache, render request/completion, and memory release on document close. If the
-exact pinned source is unavailable, use a dynamic cache-lifecycle probe. Keep
-F536 cause, the 250 MiB lifecycle gate, F526 provenance, output parity,
+F557 found no qtpdf source checkout/archive, QtPdf PDB, or link map in the
+F553/F556 roots or Qt prefix. The installed qtpdf SBOM records candidate
+revision `d505fc23640d2bd6345e6483eb73daf4e19f5829`, but that source could not
+be fetched or verified. The installed private header declares a QImage page
+cache and LRU; this is not runtime behavior evidence. Current moving `dev`
+source indicates cache-hit drawing, render requests on misses, cache insertion
+on completion, and document close through Unloading/Null. An in-flight render
+may complete after close, but F556 did not show this; clearing image references
+does not prove OS memory return or allocator ownership. F556 close/lease-clear/
+view-reset samples showed no new cache-residency issue. See the [Phase 2 log](03-Phase-2-Progress-Log.md)
+for hashes, boundaries, and primary source links.
+
+F558 is selected as an additive runtime timeline: use the observer's monotonic
+clock for document status changes and include current known status at each
+`pageRendered` callback. Keep view/render settings unchanged; do not force a
+race or behavior change. If callbacks precede close, this records only natural
+lifecycle ordering and does not test a forced in-flight close race. Keep F536
+cause, the 250 MiB lifecycle gate, F526 provenance, output parity,
 render/window acceptance, and global Phase 0 open (Windows 1/24, macOS 0/24).

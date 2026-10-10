@@ -19408,9 +19408,53 @@ close/cache-residency issue, but assigns no allocation ownership. F556 adds
 route-level process and callback
 correlation, not causal attribution.
 
-F557 is selected for a bounded audit of qtpdf revision
-`d505fc23640d2bd6345e6483eb73daf4e19f5829`, focusing on QPdfView page-image
-cache/request/completion and memory release on document close. If the exact
-pinned source is unavailable, choose a dynamic cache-lifecycle probe. Keep
-F536 cause, the 250 MiB lifecycle gate, F526 provenance, output parity, and
-render/window and global Phase 0 gates open (Windows 1/24, macOS 0/24).
+## F557 qtpdf cache and close-path audit - 2026-10-10
+
+The F553/F556 artifact roots and `C:\Qt\6.12.0\msvc2022_64` prefix contain
+no qtpdf source archive or checkout, QtPdf PDB, or link map; the prefix has no
+`src` directory. The only PDB/ILK artifacts found were for ClassMngr/tests.
+Installed SBOM `C:\Qt\6.12.0\msvc2022_64\sbom\qtpdf-6.140.0.spdx` has
+SHA-256 `6147c46969ecfff875667f5bad0f100f9cc2079e04005ca8ff5a2759ffb4080d`
+and line 25 records candidate qtpdf revision
+`d505fc23640d2bd6345e6483eb73daf4e19f5829`. The candidate source could not be
+fetched or independently verified; the SBOM records a source candidate, not
+proof that the installed binary was reproducibly built from it.
+
+The installed private header
+`C:\Qt\6.12.0\msvc2022_64\include\QtPdfWidgets\6.140.0\QtPdfWidgets\private\qpdfview_p.h`
+has SHA-256 `ef9740952e39ceed7d511bcb2dc1b3896a364098a8fd619381279abe80d01e19`.
+It declares a `QHash<int, QImage>` page cache, LRU, and cache invalidation,
+`pageRendered`, and document-status handling. This private declaration is an
+implementation detail, not evidence of runtime behavior.
+
+Review of the current, moving Qt `dev` sources indicates that `QPdfView`
+draws a cached page image or requests rendering on a cache miss; its
+`pageRendered` handler inserts into the LRU cache, and invalidation clears the
+cache. A document status change invalidates the cache. `QPdfDocument::close()`
+sets `Unloading`, clears the document, then sets `Null`; the multi-threaded
+renderer has queued requests and can have render work in flight. Sources:
+[QPdfView](https://github.com/qt/qtwebengine/blob/dev/src/pdfwidgets/qpdfview.cpp),
+[QPdfView private header](https://github.com/qt/qtwebengine/blob/dev/src/pdfwidgets/qpdfview_p.h),
+[QPdfPageRenderer](https://github.com/qt/qtwebengine/blob/dev/src/pdf/qpdfpagerenderer.cpp),
+[QPdfDocument](https://github.com/qt/qtwebengine/blob/dev/src/pdf/qpdfdocument.cpp).
+These are moving-branch references, not the candidate SBOM revision; exact
+source URLs at that revision could not be fetched. An in-flight render already
+past its Ready check could therefore complete after close/cache invalidation,
+but this is an inference, with no evidence it happened in F556. Cache clear
+releases `QImage` references; it does not prove memory returns to the OS or
+identify an allocator owner.
+
+F556's three-cycle close-boundary medians matched F553: normal working set /
+private usage / private working set -6,901,760 / -7,143,424 / -6,909,952 bytes;
+suppressed -3,821,568 / -4,059,136 / -3,829,760. Lease-clear and final view
+reset medians were zero. No new cache-residency issue was identified; these
+process-level samples do not establish allocation ownership.
+
+F558 is selected as an additive runtime lifecycle timeline: record document
+status changes using the observer's monotonic clock, and include current known
+`QPdfDocument` status at each `pageRendered` callback. Keep view/render
+settings unchanged and do not force a race or alter behavior. If callbacks all
+precede close, report only the natural lifecycle observed; this does not test a
+forced in-flight close race. Keep F536 cause, the 250 MiB lifecycle gate, F526
+provenance, output parity, render/window and global Phase 0 gates open
+(Windows 1/24, macOS 0/24).
