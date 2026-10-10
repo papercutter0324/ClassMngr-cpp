@@ -19776,3 +19776,39 @@ reference totals mean. Keep the ETL immutable and allocation-owner conclusions
 open; matching private Release symbols are still unavailable. The 250 MiB
 lifecycle gate, F536 cause, F526 provenance, output parity, render/window
 acceptance, and global Phase 0 remain open (Windows 1/24, macOS 0/24).
+
+## F567 raw allocation-to-stack linkage cross-check - 2026-10-11
+
+TraceProcessor's raw `HeapAllocationFlyweight` records expose both
+`TraceUniqueStackId` and `SnapshotUniqueStackId`, plus a list of stack
+instruction pointers. Every enumerated allocation record in all three
+snapshots has both IDs and a nonempty instruction-pointer list:
+
+| Checkpoint | Allocation records | Records with stack IDs and instruction pointers | Records without either | Unique trace stack IDs |
+| --- | ---: | ---: | ---: | ---: |
+| after-render | 247,896 | 247,896 | 0 | 54,084 |
+| after-document-close | 236,535 | 236,535 | 0 | 54,045 |
+| after-view-destroyed | 107,013 | 107,013 | 0 | 24,026 |
+
+The union of TraceProcessor `TraceUniqueStackId` values is exactly 54,741 IDs,
+numbered 0 through 54,740 with no gaps. The installed xperf `-stack` action
+also exports 54,741 stack IDs, and set comparison found no ID present on only
+one side. This confirms that every raw allocation's nonempty stack list is
+backed by the same complete stack-ID set xperf exports. Missing IDs and empty
+instruction-pointer lists therefore do not explain the 59,148 difference
+between allocation records and xperf's processed stack-reference count.
+
+F567 does not establish the exact definition of xperf's processed-reference
+counter; it remains 532,296 across the three snapshots. TraceProcessor's raw
+stack linkage is complete for the enumerated allocation records, but that fact
+does not make xperf's processed-reference count interchangeable with an
+allocation count. The ETL remains unchanged and local exports remain ignored.
+
+F568 starts a raw per-stack comparison: aggregate allocation-record counts
+and summed allocation sizes by TraceProcessor stack ID, then map the stacks'
+instruction pointers to loaded image ranges for module-level summaries.
+Report unresolved addresses and preserve the missing private-symbol limit;
+module contribution is not a function-level owner or leak conclusion. The
+250 MiB lifecycle gate, F536 cause, F526 provenance, output parity,
+render/window acceptance, and global Phase 0 remain open (Windows 1/24,
+macOS 0/24).

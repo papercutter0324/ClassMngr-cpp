@@ -778,7 +778,12 @@ allocation records. TraceProcessor's summed allocation sizes are 208,775,254,
 203,479,577, and 171,704,838 bytes respectively; these are heap snapshot
 allocation sizes, not process working set or OS residency. ETW statistics show
 zero lost buffers and events. xperf module frequencies still cover processed
-stack references only. F567 starts by inspecting raw allocation-to-stack
-linkage and measuring stack-attribution coverage. The 250 MiB lifecycle gate,
-F536 cause, F526 provenance, output parity, render/window acceptance, and
-global Phase 0 remain open (Windows 1/24, macOS 0/24).
+stack references only. F567 verified every raw allocation record has a
+nonempty instruction-pointer list and both stack IDs. TraceProcessor's union
+of 54,741 trace stack IDs exactly matches xperf's complete ID set (0 through
+54,740), so missing links do not explain the processed-reference difference;
+the exact meaning of that xperf counter remains unknown. F568 starts
+per-stack allocation-count and size aggregation, followed by loaded-image
+module mapping. Keep function-level owner and leak claims open. The 250 MiB
+lifecycle gate, F536 cause, F526 provenance, output parity, render/window
+acceptance, and global Phase 0 remain open (Windows 1/24, macOS 0/24).
