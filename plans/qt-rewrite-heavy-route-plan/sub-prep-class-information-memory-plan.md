@@ -564,11 +564,13 @@ values.
 
 F536 had PNG capture disabled. F538 added an opt-in to enable capture for the
 two Sub Prep routes while preserving their default and the existing
-`workflow-representative` behavior. F539 is the next planned matched current-
-source Windows x64 Release run with capture enabled; it will check PNG-save
-boundaries, source snapshots, validation, memory, and route-root files. The
-plan-only invocation verified route selection, while the environment mapping
-was verified in the source diff; the capture-enabled route has not run. This
-experiment does not imply that PNG saving caused the observed peak. Memory
-acceptance, F526 provenance, output parity, and the full Phase 0 gate remain
-open.
+`workflow-representative` behavior. F539 ran both Windows x64 Release routes
+with capture enabled, rebuilt the application and harness, passed validation
+2/2, and produced five 600 x 526 PNGs per route with all five save pairs
+complete. The lifecycle aggregate peak working set was 264,294,400 bytes
+(2,150,400 above the 262,144,000-byte target); output was 238,469,120 bytes.
+Compared with F536, these cross-run aggregates and representative checkpoint
+deltas are observations and do not prove capture-specific causality. F540 is
+the next planned sample-level comparison of F539 capture-enabled boundaries
+against F536's capture-disabled baseline. Memory acceptance, F526 provenance,
+output parity, and the full Phase 0 gate remain open.

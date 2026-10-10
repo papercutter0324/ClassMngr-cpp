@@ -18210,7 +18210,7 @@ The first current-source paired run completed Release package and Debug harness 
 
 ## F516 paired packaged route result - 2026-10-10
 
-The final current-source Windows x64 paired run used Qt 6.12.0, Ninja, and MSVC x64 14.51.36231. Fresh Release configure/build/install and Debug harness configure/build all exited 0. Evidence root: `C:\Users\wfelt\AppData\Local\Temp\ClassMngr-F516-Evidence\f516-paired-20261010-03`. Package `ClassMngr.exe` SHA-256: `1A713604E60C8E47F3BC6CA0DDE54451DE4A0465F6F526F96F4B24A89F78F65F`; harness `ClassMngrStartupPerformanceTests.exe` SHA-256: `E11937C6410CB3757D9D62806028A7CC3A698651245FF55E059B0075D33AA23B`. Both selected routes used `large_startup.sql` with 96 classes and emitted 83 checkpoints; both apps and harnesses exited 0 and route-scoped validation passed.
+The final current-source Windows x64 paired run used Qt 6.12.0, Ninja, and MSVC x64 14.51.36231. Fresh Release configure/build/install and Debug harness configure/build all exited 0. Evidence root: `C:\Users\wfelt\AppData\Local\Temp\ClassMngr-Phase2-F539-20261010-fd180d80\F539-capture-enabled`. Package `ClassMngr.exe` SHA-256: `1A713604E60C8E47F3BC6CA0DDE54451DE4A0465F6F526F96F4B24A89F78F65F`; harness `ClassMngrStartupPerformanceTests.exe` SHA-256: `E11937C6410CB3757D9D62806028A7CC3A698651245FF55E059B0075D33AA23B`. Both selected routes used `large_startup.sql` with 96 classes and emitted 83 checkpoints; both apps and harnesses exited 0 and route-scoped validation passed.
 
 `lifecycle-classes` measured 473 navigation widgets at entry, 0 on leave, and 473 after each re-entry. The instantiated/loaded editor count remained 1. Class and class-info queries were 1/1 at entry, 2/2 after the first explicit refresh, and 3/3 after the second; neither return added a query. Navigation rebuild count was 5 (initial load, two refreshes, two required widget rematerializations), teacher queries remained 0, and class/class-info result rows ended at 288 each. The harness metrics do not report a separate selected-grade query count.
 
@@ -18638,10 +18638,12 @@ This identifies the first captured report of the high-water value; it does
 not locate when the operating-system peak occurred between snapshots or
 attribute memory to a component. Aggregate `peakMemory` remains a separate
 per-field maximum, and PNG capture was disabled. F538 added an opt-in capture
-for the two Sub Prep routes; F539 is the next bounded step, a matched
-capture-enabled run against this F536 baseline. That experiment is independent
-of the observed peak and does not close the memory gate. F526 provenance,
-output parity, memory acceptance, and the full Phase 0 gate remain open.
+for the two Sub Prep routes; F539's matched capture-enabled run is recorded
+below. F540 is the next bounded step: compare and interpret F539's
+capture-enabled boundaries against the F536 capture-disabled baseline. This
+comparison cannot establish capture-specific causality or close the memory
+gate. F526 provenance, output parity, memory acceptance, and the full Phase 0
+gate remain open.
 
 ## F538 opt-in Sub Prep PDF capture - 2026-10-10
 
@@ -18654,11 +18656,44 @@ retains its existing capture behavior.
 
 Plan-only invocations with and without the option each selected both target
 routes and exited 0, reporting no file or process changes. Their stdout does
-not expose the route environment mapping; that mapping is verified in the
-source diff. No capture-enabled route has run yet, so PNG-save samples and
-generated files remain unverified. F539 is the matched current-source Windows
-x64 Release run of both routes with `-EnablePdfCapture`, checking source
-snapshots, validation, PNG-save boundaries, memory, and route-root files. This
-comparison does not attribute the F536 peak to capture or close memory
-acceptance. F526 source provenance, output parity, and the full Phase 0 gate
-remain open.
+not expose the route environment mapping; that mapping was verified in the
+source diff. F539's capture-enabled run is recorded below. It does not
+attribute the F536 peak to capture or close memory acceptance. F526 source
+provenance, output parity, and the full Phase 0 gate remain open.
+
+## F539 capture-enabled Windows x64 Release routes - 2026-10-10
+
+Evidence root:
+`C:\Users\wf\AppData\Local\Temp\ClassMngr-Phase2-F539-20261010-fd180d80\F539-capture-enabled`.
+The run used source commit `fd180d80f029af48dd18950cec2d41fbd7d75eb4`, with
+`enablePdfCapture=true`; Release and harness builds were not skipped. Pre-,
+post-, and final-source snapshots match, and `workingTreeChangedDuringRun=false`.
+Both routes and all eight commands exited 0 without timeout. The independent
+audit passed; the validator passed both requested routes with no failures and
+one informational legacy 250 MiB trend warning (61 samples). This remains 2
+of 24 Windows routes; macOS evidence is absent and full Phase 0 coverage is
+incomplete.
+
+Each route produced five PNGs (catalog, opened, closed, error, reopened).
+Each v2 profile has 34 PDF-boundary samples and five ordered save-start/save-
+complete pairs at zero-based indexes 2/3, 9/10, 15/16, 21/22, and 30/31. Every
+save completed with `saved=true` at 600 x 526. Independent audit recomputed
+`peakMemory` across checkpoint pre-metrics, post-metrics, and PDF-boundary
+samples; fields are maximum-per-field aggregates, not a paired sample.
+
+In bytes (working set / peak working set / private usage / private working
+set), F539 lifecycle maxima were 263,127,040 / 264,294,400 / 305,623,040 /
+195,735,552, respectively (+40,960 / +20,480 / -163,840 / -24,576 vs F536).
+Output maxima were 237,293,568 / 238,469,120 / 274,731,008 / 168,853,504
+(+139,264 / +139,264 / +114,688 / +110,592 vs F536). Lifecycle peak working
+set is 2,150,400 bytes above the 262,144,000-byte target. At the representative
+checkpoints, lifecycle `pdf-reopened` working set/peak deltas were +40,960 /
++20,480 bytes; output `sub-prep-output-generated` deltas were +1,327,104 /
++2,408,448 bytes. These are cross-run observations, not proof of capture-
+specific causality, even though the harness was matched and application source
+was unchanged. Memory acceptance remains open.
+
+F540 is next: compare and interpret the F539 capture-enabled boundary samples
+against F536's capture-disabled baseline, keeping per-sample differences and
+the causal limits explicit. F526 source provenance, output parity, memory
+acceptance, and the full Phase 0 gate remain open.
