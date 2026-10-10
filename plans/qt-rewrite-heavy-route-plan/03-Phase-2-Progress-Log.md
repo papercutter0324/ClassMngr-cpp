@@ -19872,6 +19872,30 @@ lifetime claims bounded by the snapshot evidence. The 250 MiB lifecycle gate,
 F536 cause, F526 provenance, output parity, render/window acceptance, and
 global Phase 0 remain open (Windows 1/24, macOS 0/24).
 
+## F584 setCellWidget render-to-close identity - 2026-10-11
+
+F584 compared the setCellWidget group by `(HeapHandle, AllocationAddress)`
+between the after-render and after-document-close snapshots. Both snapshots
+contain the same 48,176 records totaling 39,324,262 bytes. All 48,176 keys
+match exactly in size and trace stack ID; there are no missing, added, or
+changed-signature keys in this group across that pair. The reproducible pass
+is `build/f584_setcellwidget_first_pair.py` under ignored local build
+artifacts.
+
+Together with F583, the setCellWidget heap/address records are unchanged from
+after render through document close, then 31,462 keys / 8,974,794 bytes are
+absent by the view-destroyed snapshot while the other 16,714 exact signatures
+remain. This bounds the observed checkpoint transition. It does not prove
+that a given Qt widget owned any record or establish uninterrupted lifetime.
+
+F585 checks the Sub Prep route's `scheduleCellWidgetsCreated`,
+`scheduleCellWidgetsRemoved`, and current cell-widget count at the captured
+PDF lifecycle checkpoints. It will test whether the later heap-key decrease
+coincides with a measured schedule-cell change, without making an ownership
+claim. F579's matched-symbol capture remains deferred. The 250 MiB lifecycle
+gate, F536 cause, F526 provenance, output parity, render/window acceptance,
+and global Phase 0 remain open (Windows 1/24, macOS 0/24).
+
 ## F583 setCellWidget heap/address carryover - 2026-10-11
 
 F583 joined F569's raw allocation identities by `(HeapHandle,
@@ -19893,13 +19917,13 @@ when an allocation was released, object ownership, or whether an address was
 reused between checkpoints. The reproducer is
 `build/f583_heap_address_carryover.py` in ignored local build artifacts.
 
-F584 compares the same group by heap/address key between after-render and
-after-document-close. It will check whether the unchanged aggregate totals
-also reflect identical captured keys, without treating a snapshot match as
-proof of uninterrupted object lifetime. F579's matched-symbol capture remains
-deferred. The 250 MiB lifecycle gate, F536 cause, F526 provenance, output
-parity, render/window acceptance, and global Phase 0 remain open (Windows
-1/24, macOS 0/24).
+F584 compares the setCellWidget group by heap/address between after-render and
+after-document-close. All 48,176 records / 39,324,262 bytes match in size and
+stack ID, with no added, missing, or changed-signature keys. F585 checks
+whether the later key decrease coincides with any measured schedule-cell
+creation, removal, or live-count change in the route JSON. The 250 MiB
+lifecycle gate, F536 cause, F526 provenance, output parity, render/window
+acceptance, and global Phase 0 remain open (Windows 1/24, macOS 0/24).
 
 ## F582 setCellWidget stack-bucket deltas - 2026-10-11
 
