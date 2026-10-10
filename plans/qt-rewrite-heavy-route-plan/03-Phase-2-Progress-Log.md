@@ -19872,6 +19872,33 @@ lifetime claims bounded by the snapshot evidence. The 250 MiB lifecycle gate,
 F536 cause, F526 provenance, output parity, render/window acceptance, and
 global Phase 0 remain open (Windows 1/24, macOS 0/24).
 
+## F573 QtBase Release PDB identity verification - 2026-10-11
+
+The official Qt 6.12.0 MSVC 2022 x64 QtBase debug-symbol archive was fetched
+to the ignored `build/f565-wpa-analysis` directory. The 176,666,994-byte
+archive matched Qt's published SHA-1 `4daf7b99354ea53f2cb74d1fd59fdfa750bde1a8`;
+its local SHA-256 is
+`9ddc386401efef47b590a1e95ca281cd74390daebb2f800104e5b43b4a847256`.
+Only `Qt6Core.pdb`, `Qt6Gui.pdb`, `Qt6Widgets.pdb`, and `qoffscreen.pdb` were
+extracted. The ETL and installed Qt tree were not modified.
+
+Each extracted PDB's CodeView GUID and age were compared with the RSDS record
+in the corresponding F564 packaged Release image under
+`dist/f564-current-source-windows-x64`:
+
+| Module | PE CodeView GUID / age | PDB GUID / age | Result |
+| --- | --- | --- | --- |
+| `Qt6Core.dll` | `57cb85ac-6360-4f46-b2ad-0a5815c3565b` / 1 | Same | Match |
+| `Qt6Gui.dll` | `5630957c-212a-4ce1-bd47-629647e5c1a1` / 1 | Same | Match |
+| `Qt6Widgets.dll` | `7611761c-6d45-4bae-9354-3792862acced` / 1 | Same | Match |
+| `plugins/platforms/qoffscreen.dll` | `539c8544-cc46-4ebb-ba8f-54e2d4958d2d` / 1 | Same | Match |
+
+These exact identities establish that the QtBase PDBs can be used for those
+captured binaries. This slice does not show that xperf resolves useful
+function names; F574 reruns the heap report with the verified symbols and
+compares the resolved frames. The archive contains no `Qt6Pdf.pdb` or
+`Qt6PdfWidgets.pdb`, so those modules remain at module/IP attribution.
+
 ## F572 official Qt symbol-package route - 2026-10-11
 
 The Qt 6.12.0 MSVC 2022 x64 repository exposes the optional
@@ -19892,10 +19919,12 @@ installed or copied into `C:\Qt`, and no Qt or ETL files changed.
 
 References: [Qt 6.12.0 MSVC 2022 x64 debug-info package index](https://download.qt.io/online/qtsdkrepository/windows_x86/desktop/qt6_6120/qt6_6120_msvc2022_64/qt.qt6.6120.debug_info.win64_msvc2022_64/), [QtPdf 6.12 extension repository](https://download.qt.io/online/qtsdkrepository/windows_x86/extensions/qtpdf/6120/), [Qt Online Installer component selection](https://doc.qt.io/qt-6/qt-online-installation.html), and [Qt Windows deployment PDB option](https://doc.qt.io/qt-6.12/windows-deployment.html).
 
-F573 starts by verifying the official QtBase symbol archive and matching its
-PDBs to the installed Release Qt binaries. The 250 MiB lifecycle gate, F536
-cause, F526 provenance, output parity, render/window acceptance, and global
-Phase 0 remain open (Windows 1/24, macOS 0/24).
+F573 verified the official archive checksum and exact CodeView GUID/age
+matches for QtCore, QtGui, QtWidgets, and qoffscreen against the packaged
+Release images. F574 checks actual xperf symbol resolution from these PDBs.
+The 250 MiB lifecycle gate, F536 cause, F526 provenance, output parity,
+render/window acceptance, and global Phase 0 remain open (Windows 1/24,
+macOS 0/24).
 
 ## F571 Release-symbol availability audit - 2026-10-11
 
