@@ -42,7 +42,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-11
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F600 found no working-set threshold crossings in 84 paired samples; F601 will reconcile PDF viewer counters with view destruction, F598 awaits an elevated WPR token, F579 remains deferred, and the memory/output-parity/Phase 0 gates remain open.
+- Current note: F601 reconciled the view-destruction marker to its nearest profile sample, 488.994 ms earlier, without a structural sample at destruction; F602 will break down the existing non-PDF teardown allocation delta, F598 awaits an elevated WPR token, F579 remains deferred, and the memory/output-parity/Phase 0 gates remain open.
 
 ### Slice discovery batches
 
@@ -74,7 +74,7 @@ Treat this plan as an operational summary, not a history:
 
 #### Active batch: Batch 115
 
-- F601 - Reconcile PDF-viewer structural counters with view destruction.
+- F602 - Break down the existing non-PDF teardown delta by allocation size.
 
 No other slices are currently active.
 

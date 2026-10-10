@@ -20082,6 +20082,57 @@ Batch114. Two independent Explorer angles found five ordered candidates:
    switching preserves its state. Entrypoints: `my_workspace_page.cpp`,
    `my_workspace_page_tests.cpp`, and NavigationController access.
 
+## F601 PDF counters and view destruction - 2026-10-11
+
+F601 reconciled the F597 PDF structural counters, document lifecycle values,
+and view-destruction handshake without rerunning the route. The profile hash is
+`02a7fc82c50e51da8d030bbe0d168081f5436431260956e4a063e4b0f5057d18`. During
+the PDF route, sequences 64–84 report `widgetCount=1766`, 11 instantiated
+pages, and 25 `pdf-viewer` widget descendants. Document lifecycle values
+change independently: seq 69 `pdf-opened` is live/loaded/released `1/1/0`,
+seq 71 after release is `0/1/1`, seq 75 after reopen is `1/2/1`, and seq 77
+after final release is `0/2/2`; the latter remains through seq 84
+`settled-5s`.
+
+The matching F597 `after-view-destroyed` marker is order 3 for run
+`f3a76891-7cd2-41db-9290-cf3e6bd1d645`, process 45752. Its marker hash is
+`0d802efbfbaa2b711f47aa49abaf4a5f63d3290bd36f3ce71e360418e382520b`; its
+monotonic timestamp is 21,902.9943 ms. The payload reports
+`documentAlive=true`, `documentStatus=Null`, `viewAlive=false`,
+`viewDestroyed=true`, and `viewAttachedToDocument=false`. The closest profile
+sample is seq 84 at 21,414 ms, 488.9943 ms before the marker; it still reports
+1766 widgets, 11 instantiated pages, 25 PDF-viewer descendants, and lifecycle
+values `0/2/2`. The marker and acknowledgement are in the route's sibling
+`control` directory, while the structural samples are in
+`lifecycle-sub-prep/large-sub-prep-workflow.json`.
+
+Source inspection confirms global `widgetCount` uses
+`QApplication::allWidgets()` and per-page descendant counts use
+`findChildren<QWidget*>()`. PDF load/release counters are updated by lifecycle
+events; `releaseDocument()` closes the PDF while retaining the view/document
+pair. The page destructor deletes the view, invokes the marker observer with
+the still-live document, then closes and deletes the document. Therefore
+`livePdfDocumentCount=0` does not mean the document QObject was destroyed.
+The marker gives a time and pointer-state observation, but no structural
+counters. The nearest profile sample precedes it by about 489 ms, so the
+artifacts do not establish widget counts at the instant of view destruction
+or whether those counts changed at deletion. No heap-byte ownership follows
+from these counters.
+
+An independent Tester confirmed the profile hash and timeline, all three
+same-run marker/acknowledgement identities, and the nearest-sample offset.
+F601 is accepted as bounded counter interpretation; it does not provide ETL,
+heap ownership, or a memory-gate result.
+
+F602 is now active in Batch115. It will bin the existing 129,441 allocation
+keys present after document close and absent after view destruction by
+allocation size, reconciling the total to F592's 31,754,590 bytes. This
+breakdown cannot establish allocation lifetime or owner. F603–F605 remain
+discovered candidates: release hidden Workspace Schedule rendered resources;
+replace per-cell ScheduleWidget child widgets; and defer hidden Personal
+Details construction. F598 still awaits an actually elevated WPR process, and
+F579 symbol work remains deferred at the user's direction.
+
 ## F594 per-instance ScheduleWidget metric coverage - 2026-10-11
 
 F594 traced the values captured at each retained route checkpoint. Every
