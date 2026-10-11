@@ -22571,6 +22571,8 @@ was found in this pass. A lower-confidence concern about direct Class Details
 save routes was not selected because this discovery did not establish a broken
 field-validation behavior in those routes. No test-only slice was proposed.
 
+No other slices were found.
+
 <a id="f639"></a>
 ### F639 Validate Testing Class create required fields in Application - accepted
 
@@ -22596,15 +22598,49 @@ focused, not a full-suite run.
 **Decision: accept F639.**
 
 <a id="f640"></a>
-### F640 Validate Testing Class details-update required fields in Application - active
+### F640 Validate Testing Class details-update required fields in Application - accepted
 
-The update request validates class and teacher identifiers but omits the
-required name, grade, level, and room fields enforced by the repository. Add
-equivalent Application-boundary validation while preserving identifier
-precedence, repository field order and messages, and adapter persistence
-failures. Report missing required fields as recoverable `Validation`; keep
-malformed identifiers as `InvalidInput`. Use the existing
-`tests/next_application_testing_class_details_update_use_case_tests.cpp` only
-for assertions directly required by a production/core change. Tests may run for
-any changed code; update test files only in response to a corresponding
+`TestingClassDetailsUpdateRequest::validate()` now rejects empty or
+Qt-whitespace-only name, grade, level, and room before the port, using
+`trimQtWhitespace` only for checking. Class ID and teacher ID retain precedence
+over the required fields, and the required checks follow repository order.
+Required-field failures return the repository's matching message as
+recoverable `Validation`; malformed IDs remain `InvalidInput`, and actual
+adapter persistence failures remain `Technical`.
+
+The existing Application use-case test was updated directly in response to
+this production/core change; no test file was created. It covers required-field
+order, exact errors, no port calls, ID precedence including both IDs malformed,
+and untrimmed forwarding. Commit `8b56cd07` (`Phase2 - Validate Testing Class
+update required fields in Application (F640)`) was accepted. The Executor built
+the Application use-case and Platform update-port targets in
+`build/windows-x64-debug`; focused CTests passed 2/2. The independent Tester
+rebuilt both targets and independently passed 2/2; after the Tester identified
+the combined-invalid-ID precedence gap, the existing Application target was
+rebuilt and passed 1/1 by both the Executor and Tester. `git diff --check`
+passed. Initial MSBuild FileTracker attempts failed before compilation; the
+same targets succeeded with escalated build access. Verification was focused,
+not a full-suite run.
+
+**Decision: accept F640.**
+
+Batch 122 is complete. Batch 123 is now active, using the candidates and
+evidence recorded in [Batch 123 discovery](#batch-123-discovery---recorded-at-f639-start).
+
+<a id="f641"></a>
+### F641 Validate Testing Class create assignment keys in Application - active
+
+`TestingClassCreateRequest::validate()` currently checks that assignment
+weekday and start time are either both present or both absent, but accepts
+nonempty malformed keys. Those values reach the repository, which rejects
+them as validation failures that the Platform adapter classifies by matching
+the repository message. Reuse F638's Qt-free `ScheduleKeyRules` at the
+Application boundary while preserving its established syntax, Qt-compatible
+weekday comparison and whitespace behavior, pair/required-field precedence,
+and original request values passed to the port. Invalid keys should return the
+existing repository message as recoverable `Validation` and stop before the
+port; actual persistence failures remain `Technical`. Use the existing
+`tests/next_application_testing_class_create_use_case_tests.cpp` only for
+assertions directly required by a production/core change. Tests may run for any
+changed code; update test files only in response to a corresponding
 production/core change. Do not create a test-only slice or a new test file.
