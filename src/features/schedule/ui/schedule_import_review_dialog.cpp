@@ -17,7 +17,6 @@
 #include "domain/rules/schedule_import_rules.h"
 #include "features/schedule/ui/schedule_import_dialog_shared.h"
 #include "features/schedule/ui/schedule_import_review_presentation.h"
-#include "features/schedule/ui/schedule_import_resolution_view.h"
 #include "features/schedule/services/schedule_import_review_model.h"
 #include "features/schedule/services/schedule_import_plan_validator.h"
 #include "features/teacher/import/teacher_import_name_utils.h"
@@ -47,6 +46,7 @@
 #include <QPushButton>
 #include <QRadioButton>
 #include <QScrollArea>
+#include <QScrollBar>
 #include <QScreen>
 #include <QSet>
 #include <QSizePolicy>
@@ -69,7 +69,6 @@
 namespace
 {
 using namespace ScheduleImportReviewPresentation;
-using namespace ScheduleImportResolutionView;
 constexpr int ReviewDialogHeight = 820;
 constexpr int MaximumReviewDialogWidth = 1180;
 constexpr int MaximumPreviewVisibleRows = 6;
@@ -795,8 +794,6 @@ void ScheduleImportReviewDialog::buildUi()
     m_teacherContent->setObjectName(
         QStringLiteral("scheduleImportTeacherGroup")
         );
-    m_teacherLayout =
-        new QVBoxLayout(m_teacherContent);
     m_teacherScrollArea->setWidget(m_teacherContent);
     m_classScrollArea =
         new QScrollArea(m_resolutionTabs);
@@ -812,8 +809,6 @@ void ScheduleImportReviewDialog::buildUi()
     m_classContent->setObjectName(
         QStringLiteral("scheduleImportClassesGroup")
         );
-    m_classLayout =
-        new QVBoxLayout(m_classContent);
     m_classScrollArea->setWidget(m_classContent);
     m_resolutionTabs->addTab(
         m_classScrollArea,
@@ -824,6 +819,33 @@ void ScheduleImportReviewDialog::buildUi()
         tr("Korean Teachers")
         );
     m_resolutionTabs->setCurrentWidget(m_classScrollArea);
+    connect(
+        m_resolutionTabs,
+        &QTabWidget::currentChanged,
+        this,
+        [this](int)
+        {
+            rebuildRealizedControls();
+        }
+        );
+    connect(
+        m_teacherScrollArea->verticalScrollBar(),
+        &QScrollBar::valueChanged,
+        this,
+        [this](int)
+        {
+            rebuildRealizedControls();
+        }
+        );
+    connect(
+        m_classScrollArea->verticalScrollBar(),
+        &QScrollBar::valueChanged,
+        this,
+        [this](int)
+        {
+            rebuildRealizedControls();
+        }
+        );
 
     m_reviewSplitter->addWidget(m_previewPane);
     m_reviewSplitter->addWidget(m_resolutionTabs);
@@ -905,12 +927,12 @@ bool ScheduleImportReviewDialog::prepare()
         ApplicationServicesScheduleImportStateSnapshotPort snapshotPort(
             m_services
             );
-    const ImportState::ScheduleImportStateSnapshotOutcome snapshotOutcome =
+    ImportState::ScheduleImportStateSnapshotOutcome snapshotOutcome =
         ImportState::ScheduleImportStateSnapshotQueryHandler::execute(
             {},
             snapshotPort
             );
-    const auto* stateSnapshot =
+    auto* stateSnapshot =
         std::get_if<ImportState::ScheduleImportStateSnapshot>(
             &snapshotOutcome
             );
@@ -928,13 +950,14 @@ bool ScheduleImportReviewDialog::prepare()
             );
         return false;
     }
+    m_resolutionStateSnapshot = std::move(*stateSnapshot);
 
     const ImportMatching::ScheduleImportMatchingProjection matchingProjection =
         ImportMatching::projectScheduleImportMatching(
             scheduleImportMatchingInput(
                 m_request.user,
                 m_request.kind,
-                *stateSnapshot
+                m_resolutionStateSnapshot
                 )
             );
     m_preview = scheduleImportPreview(
@@ -958,7 +981,7 @@ bool ScheduleImportReviewDialog::prepare()
             m_previewWidget->displayState()
             )
         );
-    rebuildResolutionControls(*stateSnapshot);
+    rebuildResolutionControls(m_resolutionStateSnapshot);
     updateReviewState();
     int previewEntryCount = 0;
     for (const ScheduleImportClassCandidate& candidate : m_preview.user.classes)
@@ -970,10 +993,11 @@ bool ScheduleImportReviewDialog::prepare()
         m_preview.classes.size(),
         m_preview.user.diagnostics.size(),
         previewEntryCount,
-        m_teacherControls.size(),
-        m_classControls.size()
+        m_resolutionModel.teacherControls.size(),
+        m_resolutionModel.classControls.size()
         );
     m_prepared = true;
+    updateRealizedWindowMetrics();
     resizeForReviewStage();
     QTimer::singleShot(
         0,
@@ -987,11 +1011,25 @@ void ScheduleImportReviewDialog::rebuildResolutionControls(
     const ImportState::ScheduleImportStateSnapshot& stateSnapshot
     )
 {
-    clearLayout(m_teacherLayout);
-    clearLayout(m_classLayout);
-
-    m_teacherControls.clear();
-    m_classControls.clear();
+    ScheduleImportResolutionControls::clearRealizedControls(
+        &m_resolutionModel
+        );
+    m_resolutionModel = {};
+    m_resolutionStateSnapshot = stateSnapshot;
+    m_teacherContent->setMinimumHeight(
+        static_cast<int>(m_preview.teachers.size())
+            * ScheduleImportResolutionControls::TeacherRowExtent
+        );
+    m_classContent->setMinimumHeight(
+        static_cast<int>(m_preview.classes.size())
+            * ScheduleImportResolutionControls::ClassRowExtent
+        );
+    m_lastTeacherFirst = -1;
+    m_lastTeacherLast = -1;
+    m_lastClassFirst = -1;
+    m_lastClassLast = -1;
+    m_lastTeacherContentWidth = -1;
+    m_lastClassContentWidth = -1;
     m_warningLabel = nullptr;
     m_warningAcknowledgement = nullptr;
 
@@ -1069,27 +1107,127 @@ void ScheduleImportReviewDialog::rebuildResolutionControls(
     }
 
 
-    const Result<ScheduleImportResolutionControls::BuildResult> controls =
-        ScheduleImportResolutionControls::build(
-            {
-                this,
-                m_teacherContent,
-                m_classContent,
-                m_teacherLayout,
-                m_classLayout,
-                &stateSnapshot,
-                &m_preview,
-                m_request.kind,
-                [this]()
-                {
-                    updateReviewState();
-                },
-                [this](int candidateIndex)
-                {
-                    chooseClassColor(candidateIndex);
-                }
-            }
+    rebuildRealizedControls();
+}
+
+void ScheduleImportReviewDialog::rebuildRealizedControls()
+{
+    if (
+        !m_teacherScrollArea
+        || !m_classScrollArea
+        || !m_teacherContent
+        || !m_classContent
+        || !m_resolutionTabs
+        || m_preview.teachers.isEmpty() && m_preview.classes.isEmpty()
+        )
+    {
+        return;
+    }
+
+    ScheduleImportResolutionControls::captureRealizedDecisions(
+        &m_resolutionModel
+        );
+
+    constexpr int teacherRowExtent =
+        ScheduleImportResolutionControls::TeacherRowExtent;
+    constexpr int classRowExtent =
+        ScheduleImportResolutionControls::ClassRowExtent;
+    constexpr int overscanRows =
+        ScheduleImportResolutionControls::RealizedRowOverscan;
+    QSet<int> teacherRows;
+    QSet<int> classRows;
+    int teacherFirst = -1;
+    int teacherLast = -1;
+    int classFirst = -1;
+    int classLast = -1;
+    const bool showTeachers =
+        m_resolutionTabs->currentWidget() == m_teacherScrollArea;
+    const bool showClasses =
+        m_resolutionTabs->currentWidget() == m_classScrollArea;
+    if (showTeachers && !m_preview.teachers.isEmpty())
+    {
+        const int firstVisible =
+            m_teacherScrollArea->verticalScrollBar()->value()
+            / teacherRowExtent;
+        const int lastVisible =
+            (m_teacherScrollArea->verticalScrollBar()->value()
+                + m_teacherScrollArea->viewport()->height())
+            / teacherRowExtent;
+        teacherFirst = std::max(0, firstVisible - overscanRows);
+        teacherLast = std::min(
+            static_cast<int>(m_preview.teachers.size()) - 1,
+            lastVisible + overscanRows
             );
+        for (int row = teacherFirst; row <= teacherLast; ++row)
+        {
+            teacherRows.insert(row);
+        }
+    }
+    if (showClasses && !m_preview.classes.isEmpty())
+    {
+        const int firstVisible =
+            m_classScrollArea->verticalScrollBar()->value()
+            / classRowExtent;
+        const int lastVisible =
+            (m_classScrollArea->verticalScrollBar()->value()
+                + m_classScrollArea->viewport()->height())
+            / classRowExtent;
+        classFirst = std::max(0, firstVisible - overscanRows);
+        classLast = std::min(
+            static_cast<int>(m_preview.classes.size()) - 1,
+            lastVisible + overscanRows
+            );
+        for (int row = classFirst; row <= classLast; ++row)
+        {
+            classRows.insert(row);
+        }
+    }
+
+    const int teacherWidth = m_teacherScrollArea->viewport()->width();
+    const int classWidth = m_classScrollArea->viewport()->width();
+    if (
+        teacherFirst == m_lastTeacherFirst
+        && teacherLast == m_lastTeacherLast
+        && classFirst == m_lastClassFirst
+        && classLast == m_lastClassLast
+        && teacherWidth == m_lastTeacherContentWidth
+        && classWidth == m_lastClassContentWidth
+        )
+    {
+        return;
+    }
+
+    m_lastTeacherFirst = teacherFirst;
+    m_lastTeacherLast = teacherLast;
+    m_lastClassFirst = classFirst;
+    m_lastClassLast = classLast;
+    m_lastTeacherContentWidth = teacherWidth;
+    m_lastClassContentWidth = classWidth;
+
+    ScheduleImportResolutionControls::clearRealizedControls(
+        &m_resolutionModel
+        );
+    ScheduleImportResolutionControls::BuildRequest request;
+    request.context = this;
+    request.teacherContent = m_teacherContent;
+    request.classContent = m_classContent;
+    request.stateSnapshot = &m_resolutionStateSnapshot;
+    request.preview = &m_preview;
+    request.kind = m_request.kind;
+    request.stateChanged = [this]() { updateReviewState(); };
+    request.colorRequested = [this](int candidateIndex)
+    {
+        chooseClassColor(candidateIndex);
+    };
+    request.virtualized = true;
+    request.previousState = &m_resolutionModel;
+    request.realizedTeacherRows = teacherRows;
+    request.realizedClassRows = classRows;
+    request.teacherRowExtent = teacherRowExtent;
+    request.classRowExtent = classRowExtent;
+
+    const Result<ScheduleImportResolutionControls::BuildResult> controls =
+        ScheduleImportResolutionControls::build(request);
     if (!controls)
     {
         DialogServices::showWarning(
@@ -1100,15 +1238,30 @@ void ScheduleImportReviewDialog::rebuildResolutionControls(
             );
         return;
     }
-    m_teacherControls = controls->teacherControls;
-    m_classControls = controls->classControls;
+    m_resolutionModel = *controls;
+    updateRealizedWindowMetrics();
+    if (m_prepared)
+    {
+        updateReviewState();
+    }
+}
+
+void ScheduleImportReviewDialog::updateRealizedWindowMetrics()
+{
+    StartupProfiler::recordScheduleImportReviewRealization(
+        ScheduleImportResolutionControls::realizedTeacherCount(m_resolutionModel),
+        ScheduleImportResolutionControls::realizedClassCount(m_resolutionModel),
+        ScheduleImportResolutionControls::realizedClassTargetChoiceCount(
+            m_resolutionModel
+            )
+        );
 }
 
 void ScheduleImportReviewDialog::chooseClassColor(
     int candidateIndex
     )
 {
-    for (ClassControl& control : m_classControls)
+    for (ClassControl& control : m_resolutionModel.classControls)
     {
         if (control.candidateIndex != candidateIndex)
         {
@@ -1213,9 +1366,12 @@ void ScheduleImportReviewDialog::updateScheduleConflictWarning(
 
 void ScheduleImportReviewDialog::updateReviewState()
 {
+    ScheduleImportResolutionControls::captureRealizedDecisions(
+        &m_resolutionModel
+        );
     bool valid =
-        m_teacherControls.size() == m_preview.teachers.size()
-        && m_classControls.size() == m_preview.classes.size();
+        m_resolutionModel.teacherControls.size() == m_preview.teachers.size()
+        && m_resolutionModel.classControls.size() == m_preview.classes.size();
     QString message;
     const bool preservesAbsentIntensiveClasses =
         m_request.kind == ScheduleImportKind::Intensive
@@ -1225,18 +1381,14 @@ void ScheduleImportReviewDialog::updateReviewState()
     QHash<QString, int> teacherActions;
     QHash<QString, int> teacherTargets;
     QHash<QString, QString> teacherRooms;
-    for (const TeacherControl& control : m_teacherControls)
+    for (const TeacherControl& control : m_resolutionModel.teacherControls)
     {
-        const int action =
-            control.action->currentData(
-                ActionRole
-                ).toInt();
-        const QString room =
-            control.room->currentData().toString();
+        const int action = control.actionValue;
+        const QString room = control.selectedRoom;
         teacherActions.insert(control.teacherKey, action);
         teacherTargets.insert(
             control.teacherKey,
-            control.action->currentData(TargetRole).toInt()
+            control.targetTeacherId
             );
         teacherRooms.insert(control.teacherKey, room);
 
@@ -1330,44 +1482,31 @@ void ScheduleImportReviewDialog::updateReviewState()
     QHash<int, int> classTargets;
     QStringList scheduleConflicts;
 
-    for (const ClassControl& control : m_classControls)
+    ScheduleImportResolutionControls::forceSkippedTeachers(
+        &m_resolutionModel,
+        skippedTeachers
+        );
+    for (ClassControl& control : m_resolutionModel.classControls)
     {
-        if (skippedTeachers.contains(control.teacherKey))
-        {
-            const int skipIndex =
-                findActionIndex(
-                    control.action,
-                    static_cast<int>(
-                        ScheduleImportClassAction::Skip
-                        )
-                    );
-            if (skipIndex >= 0)
-            {
-                control.action->setCurrentIndex(skipIndex);
-            }
-        }
-
-        const int action =
-            control.action->currentData(
-                ActionRole
-                ).toInt();
-        const int target =
-            control.action->currentData(
-                TargetRole
-                ).toInt();
+        const int action = control.actionValue;
+        const int target = control.targetClassId;
         classActions.insert(control.candidateIndex, action);
         classTargets.insert(control.candidateIndex, target);
 
         if (action < 0)
         {
+            control.detailsText =
+                tr("Choose how this imported row should be reconciled.");
             if (control.details)
             {
-                control.details->setText(
-                    tr("Choose how this imported row should be reconciled.")
-                    );
+                control.details->setText(control.detailsText);
             }
             continue;
         }
+
+        const QPalette detailsPalette = control.details
+            ? control.details->palette()
+            : m_reviewPage->palette();
 
         if (
             action == static_cast<int>(
@@ -1375,29 +1514,16 @@ void ScheduleImportReviewDialog::updateReviewState()
                 )
             )
         {
-            if (control.details)
-            {
-                control.details->setText(
-                    classDifferences(
-                        m_preview.user.classes[
-                            control.candidateIndex
-                        ],
-                        classSnapshotForReview(target),
-                        teacherSnapshotForReview(
-                            classSnapshotForReview(target)
-                            ),
-                        target,
-                        m_request.kind,
-                        control.color,
-                        control.details->palette().color(
-                            QPalette::Link
-                            ),
-                        control.details->palette().color(
-                            QPalette::Text
-                            )
-                        )
-                    );
-            }
+            control.detailsText = classDifferences(
+                m_preview.user.classes[control.candidateIndex],
+                classSnapshotForReview(target),
+                teacherSnapshotForReview(classSnapshotForReview(target)),
+                target,
+                m_request.kind,
+                control.color,
+                detailsPalette.color(QPalette::Link),
+                detailsPalette.color(QPalette::Text)
+                );
         }
         else if (
             action == static_cast<int>(
@@ -1405,40 +1531,22 @@ void ScheduleImportReviewDialog::updateReviewState()
                 )
             )
         {
-            if (control.details)
-            {
-                control.details->setText(
-                    classDifferences(
-                        m_preview.user.classes[
-                            control.candidateIndex
-                        ],
-                        nullptr,
-                        nullptr,
-                        -1,
-                        m_request.kind,
-                        control.color,
-                        control.details->palette().color(
-                            QPalette::Link
-                            ),
-                        control.details->palette().color(
-                            QPalette::Text
-                            )
-                        )
-                    );
-            }
+            control.detailsText = classDifferences(
+                m_preview.user.classes[control.candidateIndex],
+                nullptr,
+                nullptr,
+                -1,
+                m_request.kind,
+                control.color,
+                detailsPalette.color(QPalette::Link),
+                detailsPalette.color(QPalette::Text)
+                );
         }
         else
         {
-            if (control.details)
-            {
-                control.details->setText(
-                    target > 0
-                        ? tr(
-                              "The imported row will be skipped and its selected existing class will keep its current schedule."
-                              )
-                        : tr("The imported row will be skipped.")
-                );
-            }
+            control.detailsText = target > 0
+                ? tr("The imported row will be skipped and its selected existing class will keep its current schedule.")
+                : tr("The imported row will be skipped.");
         }
 
         if (control.colorButton)
@@ -1472,40 +1580,36 @@ void ScheduleImportReviewDialog::updateReviewState()
                                 candidate.classLevel
                                 );
                 }
-                if (control.details)
-                {
-                    control.details->setText(
-                        control.details->text()
-                        + QStringLiteral(
+                control.detailsText +=
+                    QStringLiteral(
                             "<br><span style=\"color:#b91c1c\"><b>%1</b> %2</span>"
                             )
                             .arg(
                                 tr("Meeting pattern:").toHtmlEscaped(),
                                 candidate.meetingPatternError
                                     .toHtmlEscaped()
-                                )
                         );
-                }
             }
             if (
                 candidate.importedColors.size() > 1
-                && control.details
                 )
             {
-                control.details->setText(
-                    control.details->text()
-                    + QStringLiteral(
+                control.detailsText +=
+                    QStringLiteral(
                         "<br><span style=\"color:%1\">%2</span>"
                         )
                         .arg(
-                            control.details->palette()
-                                .color(QPalette::Link)
+                            detailsPalette.color(QPalette::Link)
                                 .name(QColor::HexRgb),
                             tr("The spreadsheet uses multiple colors for this class; confirm the selected color.")
                                 .toHtmlEscaped()
-                            )
-                    );
+                        );
             }
+        }
+
+        if (control.details)
+        {
+            control.details->setText(control.detailsText);
         }
 
         if (target > 0)
@@ -1549,15 +1653,14 @@ void ScheduleImportReviewDialog::updateReviewState()
         }
 
         stateRequest.teacherResolutions.reserve(
-            static_cast<std::size_t>(m_teacherControls.size())
+            static_cast<std::size_t>(m_resolutionModel.teacherControls.size())
             );
-        for (const TeacherControl& control : m_teacherControls)
+        for (const TeacherControl& control : m_resolutionModel.teacherControls)
         {
             const auto action = stateTeacherAction(
-                control.action->currentData(ActionRole).toInt()
+                control.actionValue
                 );
-            const int legacyTarget =
-                control.action->currentData(TargetRole).toInt();
+            const int legacyTarget = control.targetTeacherId;
             std::optional<ImportDomain::TeacherId> targetTeacherId;
             if (
                 action == ImportState::ScheduleImportStateTeacherAction::Reuse
@@ -1573,21 +1676,20 @@ void ScheduleImportReviewDialog::updateReviewState()
                     utf8String(control.teacherKey),
                     action,
                     std::move(targetTeacherId),
-                    !control.room->currentData().toString().trimmed().isEmpty()
+                    !control.selectedRoom.trimmed().isEmpty()
                 }
                 );
         }
 
         stateRequest.classResolutions.reserve(
-            static_cast<std::size_t>(m_classControls.size())
+            static_cast<std::size_t>(m_resolutionModel.classControls.size())
             );
-        for (const ClassControl& control : m_classControls)
+        for (const ClassControl& control : m_resolutionModel.classControls)
         {
             const auto action = stateClassAction(
-                control.action->currentData(ActionRole).toInt()
+                control.actionValue
                 );
-            const int legacyTarget =
-                control.action->currentData(TargetRole).toInt();
+            const int legacyTarget = control.targetClassId;
             std::optional<ImportDomain::ClassId> targetClassId;
             if (
                 action
@@ -1760,7 +1862,7 @@ void ScheduleImportReviewDialog::updateReviewState()
 
     if (stateSnapshotsAvailable)
     {
-        for (const ClassControl& control : m_classControls)
+        for (const ClassControl& control : m_resolutionModel.classControls)
         {
             const int action =
                 classActions.value(
@@ -2070,8 +2172,6 @@ void ScheduleImportReviewDialog::resizeForReviewStage()
         return;
     }
 
-    m_teacherLayout->activate();
-    m_classLayout->activate();
     if (m_reviewPage)
     {
         if (m_reviewPage->layout())
@@ -2137,6 +2237,7 @@ void ScheduleImportReviewDialog::resizeForReviewStage()
         {previewWidth, resolutionWidth}
         );
     updatePreviewVisibleRows();
+    rebuildRealizedControls();
 }
 
 void ScheduleImportReviewDialog::resizeEvent(
@@ -2155,6 +2256,7 @@ void ScheduleImportReviewDialog::resizeEvent(
         m_previewPane->layout()->activate();
     }
     updatePreviewVisibleRows();
+    rebuildRealizedControls();
 }
 
 void ScheduleImportReviewDialog::updatePreviewVisibleRows()
@@ -2337,55 +2439,13 @@ ScheduleImportReviewDialog::applyRequest() const
     context.diagnostics =
         m_preview.user.diagnostics;
 
-    QList<ScheduleImportTeacherResolution> teachers;
-    for (const TeacherControl& control : m_teacherControls)
-    {
-        ScheduleImportTeacherResolution resolution;
-        resolution.teacherKey =
-            control.teacherKey;
-        resolution.action =
-            static_cast<ScheduleImportTeacherAction>(
-                control.action->currentData(
-                    ActionRole
-                    ).toInt()
-                );
-        resolution.targetTeacherId =
-            control.action->currentData(
-                TargetRole
-                ).toInt();
-        resolution.selectedRoom =
-            control.room->currentData().toString();
-        teachers.append(resolution);
-    }
-
-    QList<ScheduleImportClassResolution> classes;
-    for (const ClassControl& control : m_classControls)
-    {
-        ScheduleImportClassResolution resolution;
-        resolution.candidateIndex =
-            control.candidateIndex;
-        resolution.action =
-            static_cast<ScheduleImportClassAction>(
-                control.action->currentData(
-                    ActionRole
-                    ).toInt()
-                );
-        resolution.targetClassId =
-            control.action->currentData(
-                TargetRole
-                ).toInt();
-        resolution.classColor =
-            control.color;
-        resolution.fontColor =
-            ColorUtils::getContrastingFontColor(
-                QColor(control.color)
-                );
-        classes.append(resolution);
-    }
-
     return ScheduleImportReviewModel::buildApplyRequest(
         context,
-        teachers,
-        classes
+        ScheduleImportResolutionControls::teacherResolutions(
+            m_resolutionModel
+            ),
+        ScheduleImportResolutionControls::classResolutions(
+            m_resolutionModel
+            )
         );
 }

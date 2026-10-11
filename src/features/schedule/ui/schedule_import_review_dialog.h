@@ -22,7 +22,6 @@ class QResizeEvent;
 class QScrollArea;
 class QSplitter;
 class QTabWidget;
-class QVBoxLayout;
 class ScheduleWidget;
 
 class ScheduleImportReviewDialog final : public DialogShell
@@ -49,6 +48,8 @@ private:
     void rebuildResolutionControls(
         const ClassMngr::Next::Application::ScheduleImportStateSnapshot& snapshot
         );
+    void rebuildRealizedControls();
+    void updateRealizedWindowMetrics();
     void chooseClassColor(int candidateIndex);
     void updateReviewState();
     void updateScheduleConflictWarning(
@@ -87,12 +88,17 @@ protected:
     QScrollArea* m_classScrollArea = nullptr;
     QWidget* m_teacherContent = nullptr;
     QWidget* m_classContent = nullptr;
-    QVBoxLayout* m_teacherLayout = nullptr;
-    QVBoxLayout* m_classLayout = nullptr;
     QLabel* m_reviewStatus = nullptr;
     QLabel* m_reviewSummary = nullptr;
-    QList<TeacherControl> m_teacherControls;
-    QList<ClassControl> m_classControls;
+    ScheduleImportResolutionControls::BuildResult m_resolutionModel;
+    ClassMngr::Next::Application::ScheduleImportStateSnapshot
+        m_resolutionStateSnapshot;
+    int m_lastTeacherFirst = -1;
+    int m_lastTeacherLast = -1;
+    int m_lastClassFirst = -1;
+    int m_lastClassLast = -1;
+    int m_lastTeacherContentWidth = -1;
+    int m_lastClassContentWidth = -1;
     QString m_activeScheduleConflictSignature;
     QString m_lastWarnedScheduleConflictSignature;
     QString m_pendingScheduleConflictSignature;

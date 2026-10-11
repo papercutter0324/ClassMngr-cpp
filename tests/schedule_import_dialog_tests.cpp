@@ -13,6 +13,8 @@
 #include "features/schedule/services/schedule_import_review_model.h"
 #include "features/schedule/import/schedule_workbook_parser.h"
 #include "features/teacher/import/teacher_import_name_utils.h"
+#include "next/application/schedule_import_apply_review_decisions.h"
+#include "next/application/schedule_import_review_readiness.h"
 #include "next/application/schedule_import_review_summary_projection.h"
 #include "next/application/schedule_import_schedules_cleared_projection.h"
 #include "next/platform/application_services_schedule_import_state_snapshot_port.h"
@@ -44,6 +46,7 @@
 #include <QRegularExpression>
 #include <QScrollArea>
 #include <QScrollBar>
+#include <QSet>
 #include <QSqlDatabase>
 #include <QSqlError>
 #include <QSqlQuery>
@@ -58,6 +61,7 @@
 #include <QtTest>
 
 #include <algorithm>
+#include <string>
 
 #include <zlib.h>
 
@@ -108,6 +112,7 @@ private slots:
     void reviewPreviewUsesProjectedRowsInControlOrder();
     void intensivePreviewKeepsProjectedPreservationOrder();
     void resolutionBuilderRetainsAdditionalEligibleTargets();
+    void resolutionBuilderBoundsRowsAndRestoresDecisions();
     void reviewPrepareSnapshotFailureDoesNotBuildControlsOrFallback();
     void reviewPrepareClosedSessionUsesSnapshotWarning();
     void reviewRefreshUsesFreshTypedStateSnapshot();
@@ -2606,6 +2611,315 @@ resolutionBuilderRetainsAdditionalEligibleTargets()
     QVERIFY(action->itemText(1).startsWith(
         QStringLiteral("Update existing:")
         ));
+}
+
+void ScheduleImportDialogTests::
+resolutionBuilderBoundsRowsAndRestoresDecisions()
+{
+    constexpr int CandidateCount = 96;
+    const auto teacherId7 = *ImportDomain::TeacherId::fromString("7");
+    const auto teacherId8 = *ImportDomain::TeacherId::fromString("8");
+
+    ImportState::ScheduleImportStateSnapshot snapshot;
+    snapshot.teachers = {
+        {teacherId7, u"\uAE40\uC120\uC0DD", u"413"},
+        {teacherId8, u"\uC774\uC120\uC0DD", u"415"}
+    };
+    for (int index = 0; index < CandidateCount; ++index)
+    {
+        const auto id = *ImportDomain::ClassId::fromString(
+            std::to_string(1001 + index)
+            );
+        snapshot.classes.push_back(
+            {
+                id,
+                teacherId7,
+                u"Hercules",
+                u"E4",
+                u"Hercules",
+                u"#FFFFFF",
+                {{u"Tuesday", u"4:00 PM", u"4:50 PM"}},
+                {},
+                u"413"
+            }
+            );
+    }
+
+    ScheduleImportPreview preview;
+    preview.kind = ScheduleImportKind::Normal;
+    preview.teachers = {
+        {
+            QStringLiteral("teacher-key"),
+            QStringLiteral("\uAE40\uC120\uC0DD"),
+            {QStringLiteral("414"), QStringLiteral("415")},
+            {7, 8},
+            1
+        }
+    };
+    preview.user.classes.reserve(CandidateCount);
+    preview.classes.reserve(CandidateCount);
+    for (int index = 0; index < CandidateCount; ++index)
+    {
+        ScheduleImportClassCandidate candidate;
+        candidate.teacherKey = QStringLiteral("teacher-key");
+        candidate.teacherKr = QStringLiteral("\uAE40\uC120\uC0DD");
+        candidate.classGrade = QStringLiteral("E4");
+        candidate.classLevel = QStringLiteral("Hercules");
+        candidate.times = {
+            {
+                QStringLiteral("Tuesday"),
+                QStringLiteral("4:00 PM"),
+                QStringLiteral("4:50 PM")
+            }
+        };
+        preview.user.classes.append(candidate);
+
+        ScheduleImportClassPreview row;
+        row.candidateIndex = index;
+        row.matchingClassIds = {1001 + index};
+        row.suggestedClassId = 1001 + index;
+        row.exactMatch = true;
+        row.matchConfidence = ScheduleImportClassMatchConfidence::Confident;
+        preview.classes.append(row);
+    }
+
+    QWidget root;
+    QWidget teacherContent(&root);
+    QWidget classContent(&root);
+    teacherContent.resize(400, 900);
+    classContent.resize(400, 32000);
+    ScheduleImportResolutionControls::BuildRequest request;
+    request.context = &root;
+    request.teacherContent = &teacherContent;
+    request.classContent = &classContent;
+    request.stateSnapshot = &snapshot;
+    request.preview = &preview;
+    request.kind = ScheduleImportKind::Normal;
+    request.virtualized = true;
+    request.realizedTeacherRows = {0};
+    constexpr int FixedViewportHeight = 600;
+    const int fixedViewportLastRow =
+        FixedViewportHeight / ScheduleImportResolutionControls::ClassRowExtent
+        + ScheduleImportResolutionControls::RealizedRowOverscan;
+    for (int row = 0; row <= fixedViewportLastRow; ++row)
+    {
+        request.realizedClassRows.insert(row);
+    }
+
+    auto smallSnapshot = snapshot;
+    smallSnapshot.classes.erase(
+        smallSnapshot.classes.begin() + 8,
+        smallSnapshot.classes.end()
+        );
+    auto smallPreview = preview;
+    smallPreview.classes = smallPreview.classes.mid(0, 8);
+    smallPreview.user.classes = smallPreview.user.classes.mid(0, 8);
+    QWidget smallRoot;
+    QWidget smallTeacherContent(&smallRoot);
+    QWidget smallClassContent(&smallRoot);
+    smallTeacherContent.resize(400, 900);
+    smallClassContent.resize(400, 3200);
+    auto smallRequest = request;
+    smallRequest.context = &smallRoot;
+    smallRequest.teacherContent = &smallTeacherContent;
+    smallRequest.classContent = &smallClassContent;
+    smallRequest.stateSnapshot = &smallSnapshot;
+    smallRequest.preview = &smallPreview;
+    auto smallBuild = ScheduleImportResolutionControls::build(smallRequest);
+    QVERIFY(smallBuild);
+    auto smallState = *smallBuild;
+    QCOMPARE(smallState.teacherControls.size(), 1);
+    QCOMPARE(smallState.classControls.size(), 8);
+    QCOMPARE(ScheduleImportResolutionControls::realizedClassCount(smallState), 4);
+    QCOMPARE(
+        ScheduleImportResolutionControls::realizedClassTargetChoiceCount(smallState),
+        4 * 8
+        );
+    ScheduleImportResolutionControls::clearRealizedControls(&smallState);
+
+    auto firstBuild = ScheduleImportResolutionControls::build(request);
+    QVERIFY(firstBuild);
+    auto state = *firstBuild;
+    QCOMPARE(state.teacherControls.size(), 1);
+    QCOMPARE(state.classControls.size(), CandidateCount);
+    QCOMPARE(ScheduleImportResolutionControls::realizedTeacherCount(state), 1);
+    QCOMPARE(ScheduleImportResolutionControls::realizedClassCount(state), 4);
+    QCOMPARE(
+        ScheduleImportResolutionControls::realizedClassTargetChoiceCount(state),
+        4 * CandidateCount
+        );
+    QCOMPARE(teacherContent.findChildren<QComboBox*>().size(), 2);
+    QCOMPARE(classContent.findChildren<QComboBox*>().size(), 4);
+    QCOMPARE(classContent.findChildren<QPushButton*>().size(), 4);
+    QVERIFY(
+        ScheduleImportResolutionControls::realizedClassTargetChoiceCount(state)
+        < CandidateCount * CandidateCount
+        );
+
+    auto& teacher = state.teacherControls[0];
+    QVERIFY(teacher.action);
+    QVERIFY(teacher.room);
+    int teacherReuseIndex = -1;
+    for (int index = 0; index < teacher.action->count(); ++index)
+    {
+        if (
+            teacher.action->itemData(index, Qt::UserRole).toInt()
+                == static_cast<int>(ScheduleImportTeacherAction::Reuse)
+            && teacher.action->itemData(index, Qt::UserRole + 1).toInt() == 8
+            )
+        {
+            teacherReuseIndex = index;
+        }
+    }
+    QVERIFY(teacherReuseIndex >= 0);
+    teacher.action->setCurrentIndex(teacherReuseIndex);
+    const int roomIndex = teacher.room->findData(QStringLiteral("415"));
+    QVERIFY(roomIndex >= 0);
+    teacher.room->setCurrentIndex(roomIndex);
+
+    auto& firstClass = state.classControls[0];
+    QVERIFY(firstClass.action);
+    int lastExistingTargetIndex = -1;
+    for (int index = 0; index < firstClass.action->count(); ++index)
+    {
+        if (
+            firstClass.action->itemData(index, Qt::UserRole).toInt()
+                == static_cast<int>(ScheduleImportClassAction::UpdateExisting)
+            && firstClass.action->itemData(index, Qt::UserRole + 1).toInt()
+                == 1096
+            )
+        {
+            lastExistingTargetIndex = index;
+        }
+    }
+    QVERIFY(lastExistingTargetIndex >= 0);
+    firstClass.action->setCurrentIndex(lastExistingTargetIndex);
+    firstClass.color = QStringLiteral("#123456");
+    ScheduleImportResolutionControls::updateClassColorButton(&firstClass);
+    ScheduleImportResolutionControls::captureRealizedDecisions(&state);
+    QCOMPARE(teacher.targetTeacherId, 8);
+    QCOMPARE(teacher.selectedRoom, QStringLiteral("415"));
+    QCOMPARE(firstClass.targetClassId, 1096);
+
+    ScheduleImportResolutionControls::clearRealizedControls(&state);
+    request.previousState = &state;
+    request.realizedTeacherRows.clear();
+    request.realizedClassRows.clear();
+    for (int row = 40; row < 44; ++row)
+    {
+        request.realizedClassRows.insert(row);
+    }
+    auto scrolledBuild = ScheduleImportResolutionControls::build(request);
+    QVERIFY(scrolledBuild);
+    state = *scrolledBuild;
+    QCOMPARE(state.classControls.size(), CandidateCount);
+    QCOMPARE(state.classControls[0].action, nullptr);
+    QCOMPARE(state.classControls[0].targetClassId, 1096);
+    QCOMPARE(state.classControls[0].color, QStringLiteral("#123456"));
+    QCOMPARE(state.teacherControls[0].action, nullptr);
+    QCOMPARE(teacherContent.findChildren<QComboBox*>().size(), 0);
+    QCOMPARE(classContent.findChildren<QComboBox*>().size(), 4);
+    QCOMPARE(state.teacherControls[0].targetTeacherId, 8);
+    QCOMPARE(state.teacherControls[0].selectedRoom, QStringLiteral("415"));
+
+    ScheduleImportResolutionControls::clearRealizedControls(&state);
+    request.previousState = &state;
+    request.realizedTeacherRows = {0};
+    request.realizedClassRows = {0};
+    auto returnedBuild = ScheduleImportResolutionControls::build(request);
+    QVERIFY(returnedBuild);
+    state = *returnedBuild;
+    QCOMPARE(state.classControls[0].action->currentData(Qt::UserRole + 1).toInt(), 1096);
+    QCOMPARE(state.classControls[0].color, QStringLiteral("#123456"));
+    QCOMPARE(state.classControls[0].action->count(), CandidateCount + 2);
+    QCOMPARE(state.teacherControls[0].action->currentData(Qt::UserRole).toInt(),
+        static_cast<int>(ScheduleImportTeacherAction::Reuse));
+    QCOMPARE(state.teacherControls[0].action->currentData(Qt::UserRole + 1).toInt(), 8);
+    QCOMPARE(state.teacherControls[0].room->currentData().toString(), QStringLiteral("415"));
+
+    const QList<ScheduleImportTeacherResolution> teacherResolutions =
+        ScheduleImportResolutionControls::teacherResolutions(state);
+    QCOMPARE(teacherResolutions.size(), 1);
+    QCOMPARE(teacherResolutions.first().teacherKey, QStringLiteral("teacher-key"));
+    QCOMPARE(teacherResolutions.first().targetTeacherId, 8);
+    QCOMPARE(teacherResolutions.first().selectedRoom, QStringLiteral("415"));
+    const QList<ScheduleImportClassResolution> classResolutions =
+        ScheduleImportResolutionControls::classResolutions(state);
+    QCOMPARE(classResolutions.size(), CandidateCount);
+    QCOMPARE(classResolutions.first().candidateIndex, 0);
+    QCOMPARE(classResolutions.first().targetClassId, 1096);
+    QCOMPARE(classResolutions.first().classColor, QStringLiteral("#123456"));
+    QCOMPARE(classResolutions.last().candidateIndex, CandidateCount - 1);
+    QCOMPARE(classResolutions.last().targetClassId, 1096);
+
+    ScheduleImportReviewContext context;
+    context.kind = ScheduleImportKind::Normal;
+    context.selectedUserName = QStringLiteral("Alice");
+    context.candidates = preview.user.classes;
+    const auto completeApplyRequest =
+        ScheduleImportReviewModel::buildApplyRequest(
+            context,
+            teacherResolutions,
+            classResolutions
+            );
+    QCOMPARE(completeApplyRequest.teachers.size(), std::size_t(1));
+    QCOMPARE(completeApplyRequest.classes.size(),
+        static_cast<std::size_t>(CandidateCount));
+    QCOMPARE(completeApplyRequest.classes.front().candidateIndex, 0);
+    QVERIFY(completeApplyRequest.classes.front().targetClassId.has_value());
+    QCOMPARE(completeApplyRequest.classes.front().targetClassId->value(),
+        std::string("1096"));
+    QCOMPARE(completeApplyRequest.classes.back().candidateIndex,
+        CandidateCount - 1);
+
+    auto uniqueValidationClasses = classResolutions;
+    uniqueValidationClasses.last().action = ScheduleImportClassAction::CreateNew;
+    uniqueValidationClasses.last().targetClassId = -1;
+    const auto uniqueApplyRequest =
+        ScheduleImportReviewModel::buildApplyRequest(
+            context,
+            teacherResolutions,
+            uniqueValidationClasses
+            );
+    const auto decisionRequest =
+        ClassMngr::Next::Application::
+            projectScheduleImportApplyReviewDecisions(uniqueApplyRequest);
+    const auto readiness =
+        ClassMngr::Next::Application::evaluateScheduleImportReviewReadiness(
+            decisionRequest,
+            std::nullopt
+            );
+    QVERIFY(readiness.decisions.accepted());
+    QCOMPARE(decisionRequest.classes.size(),
+        static_cast<std::size_t>(CandidateCount));
+
+    state.teacherControls[0].actionValue = static_cast<int>(
+        ScheduleImportTeacherAction::Skip
+        );
+    ScheduleImportResolutionControls::forceSkippedTeachers(
+        &state,
+        {QStringLiteral("teacher-key")}
+        );
+    for (int row = 0; row < CandidateCount; ++row)
+    {
+        QCOMPARE(
+            state.classControls[row].actionValue,
+            static_cast<int>(ScheduleImportClassAction::Skip)
+            );
+        QCOMPARE(state.classControls[row].targetClassId, 1001 + row);
+    }
+    state.teacherControls[0].actionValue = static_cast<int>(
+        ScheduleImportTeacherAction::Create
+        );
+    ScheduleImportResolutionControls::forceSkippedTeachers(
+        &state,
+        {}
+        );
+    QCOMPARE(
+        state.classControls.first().actionValue,
+        static_cast<int>(ScheduleImportClassAction::Skip)
+        );
+    ScheduleImportResolutionControls::clearRealizedControls(&state);
 }
 
 void ScheduleImportDialogTests::

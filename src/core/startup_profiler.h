@@ -92,6 +92,9 @@ struct StartupApplicationMetrics
     int scheduleImportPreviewDiagnosticCount = 0;
     int scheduleImportReviewTeacherControlCount = 0;
     int scheduleImportReviewClassControlCount = 0;
+    int scheduleImportReviewRealizedTeacherControlCount = 0;
+    int scheduleImportReviewRealizedClassControlCount = 0;
+    int scheduleImportReviewClassTargetChoiceItemCount = 0;
     int scheduleImportReviewPreviewEntryCount = 0;
     int scheduleImportExistingTeacherCount = 0;
     int scheduleImportExistingClassCount = 0;
@@ -403,6 +406,11 @@ public:
         int previewEntryCount,
         int teacherControlCount,
         int classControlCount
+        );
+    static void recordScheduleImportReviewRealization(
+        int realizedTeacherControlCount,
+        int realizedClassControlCount,
+        int classTargetChoiceItemCount
         );
     static void recordScheduleImportReviewReleased();
     static void recordScheduleImportCancelled();

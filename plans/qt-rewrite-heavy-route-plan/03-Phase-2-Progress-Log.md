@@ -20203,6 +20203,43 @@ under `dist/f604-current-source-windows-x64`,
 `build/f604-verification-20261011`, and
 `build/f604-checkpoint-dryrun-20261011`.
 
+## F610 bound Schedule Import review controls - 2026-10-11
+
+Schedule Import now keeps all teacher and class decisions in per-row state
+while realizing card controls only for the active review tab's viewport plus
+two overscan rows. The existing scrollable card workflow remains. Class IDs
+are indexed once by normalized grade and level, and target choices are
+materialized only for realized class rows. Validation and Apply request
+construction enumerate every logical row; teacher Skip still propagates to
+its classes, and target, room, and color choices survive off-screen
+re-realization.
+
+With the same 600-pixel viewport, the focused builder regression compares 8
+and 96 imported classes: each realizes four class cards, with 32 and 384
+eligible target choices respectively (four realized rows times the 8 or 96
+existing targets). The 96-row case scrolls away and back, verifies action,
+target, room, and color restoration, passes all 96 Apply records through
+readiness evaluation, and confirms teacher Skip propagation across off-screen
+rows.
+The separate additional-target regression verifies positive choice
+materialization. This demonstrates fixed realized controls and choice growth
+bounded by realized rows and the existing target catalog; it does not
+attribute bytes.
+
+The standard Windows x64 Debug build passed for `ClassMngr`,
+`ClassMngrScheduleImportDialogTests`, and
+`ClassMngrStartupPerformanceTests`. Three focused QtTest functions passed
+(5/0 including setup and cleanup). The isolated configured
+`capturesLargeScheduleImportBoundaryWhenConfigured` route passed (3/0); its
+fixture reported 20 logical class rows, four realized class controls, and
+zero choices because it had no eligible update targets. The initial pre-change
+target rebuild emitted duplicate-symbol `/FORCE` link warnings. Interactive
+ordering, skip, refresh, and apply checks timed out or failed in the pre-change
+baseline with `QSqlQuery: database not open`. Post-change ordering, refresh,
+and apply attempts remain inconclusive with the same database-open symptom;
+none are reported as passing. No broad suite or heap-byte attribution was
+run. Logs and boundary metrics are retained under `build/windows-x64-debug`.
+
 ## F609 bound Speaking Evaluation class-page construction - 2026-10-11
 
 Speaking Evaluation class navigation no longer creates one empty page widget

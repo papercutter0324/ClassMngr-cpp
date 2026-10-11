@@ -3,6 +3,7 @@
 #include "schedule_import_review_presentation.h"
 #include "schedule_import_resolution_view.h"
 
+#include "core/utils/colorutils.h"
 #include "domain/models/class_info.h"
 #include "domain/rules/schedule_import_rules.h"
 #include "ui/shared/constants/gui_constants.h"
@@ -18,6 +19,7 @@
 #include <QObject>
 #include <QPushButton>
 #include <QSet>
+#include <QSignalBlocker>
 #include <QSizePolicy>
 #include <QVBoxLayout>
 
@@ -97,6 +99,34 @@ QString translate(
         );
 }
 
+QString classIdentityKey(
+    const QString& grade,
+    const QString& level
+    )
+{
+    return grade.simplified().toCaseFolded()
+        + QLatin1Char('\x1f')
+        + level.simplified().toCaseFolded();
+}
+
+bool shouldRealizeTeacher(
+    const BuildRequest& request,
+    int row
+    )
+{
+    return !request.virtualized
+        || request.realizedTeacherRows.contains(row);
+}
+
+bool shouldRealizeClass(
+    const BuildRequest& request,
+    int row
+    )
+{
+    return !request.virtualized
+        || request.realizedClassRows.contains(row);
+}
+
 void connectStateChanged(
     QComboBox* combo,
     const BuildRequest& request
@@ -141,12 +171,13 @@ Result<BuildResult> build(
     const BuildRequest& request
     )
 {
-    BuildResult result;
+    BuildResult result = request.previousState
+        ? *request.previousState
+        : BuildResult{};
     if (
         !request.teacherContent
         || !request.classContent
-        || !request.teacherLayout
-        || !request.classLayout
+        || (!request.virtualized && (!request.teacherLayout || !request.classLayout))
         || !request.stateSnapshot
         || !request.preview
         )
@@ -185,6 +216,121 @@ Result<BuildResult> build(
     {
         return classesById.value(id, nullptr);
     };
+
+    const bool restorePrevious =
+        request.previousState
+        && result.teacherControls.size() == request.preview->teachers.size()
+        && result.classControls.size() == request.preview->classes.size();
+    if (!restorePrevious)
+    {
+        result = BuildResult{};
+        result.teacherControls.reserve(request.preview->teachers.size());
+        for (int row = 0; row < request.preview->teachers.size(); ++row)
+        {
+            const ScheduleImportTeacherPreview& preview =
+                request.preview->teachers[row];
+            TeacherControl control;
+            control.rowIndex = row;
+            control.teacherKey = preview.teacherKey;
+            control.selectedRoom = preview.importedRooms.size() == 1
+                ? preview.importedRooms.first()
+                : QString();
+
+            if (preview.matchingTeacherIds.isEmpty())
+            {
+                control.actionValue = static_cast<int>(
+                    ScheduleImportTeacherAction::Create
+                    );
+            }
+            else if (preview.matchingTeacherIds.size() == 1)
+            {
+                const int teacherId = preview.matchingTeacherIds.first();
+                const auto* existing = teacherSnapshot(teacherId);
+                const bool exactRoom = existing
+                    && preview.importedRooms.size() == 1
+                    && snapshotText(existing->roomNumber).trimmed()
+                        == preview.importedRooms.first().trimmed();
+                if (exactRoom)
+                {
+                    control.actionValue = static_cast<int>(
+                        ScheduleImportTeacherAction::Reuse
+                        );
+                    control.targetTeacherId = teacherId;
+                }
+            }
+            result.teacherControls.append(control);
+        }
+
+        QList<ScheduleImportClassPreview> orderedClasses =
+            request.preview->classes;
+        std::stable_sort(
+            orderedClasses.begin(),
+            orderedClasses.end(),
+            [&request](
+                const ScheduleImportClassPreview& left,
+                const ScheduleImportClassPreview& right
+                )
+            {
+                return importedClassLess(
+                    request.preview->user.classes[left.candidateIndex],
+                    request.preview->user.classes[right.candidateIndex]
+                    );
+            }
+            );
+        result.classControls.reserve(orderedClasses.size());
+        for (int row = 0; row < orderedClasses.size(); ++row)
+        {
+            const ScheduleImportClassPreview& preview = orderedClasses[row];
+            const ScheduleImportClassCandidate& candidate =
+                request.preview->user.classes[preview.candidateIndex];
+            ClassControl control;
+            control.rowIndex = row;
+            control.candidateIndex = preview.candidateIndex;
+            control.teacherKey = candidate.teacherKey;
+            control.color = candidate.importedColors.isEmpty()
+                ? QStringLiteral("#FFFFFF")
+                : candidate.importedColors.first().toUpper();
+            if (!QColor(control.color).isValid())
+            {
+                control.color = QStringLiteral("#FFFFFF");
+            }
+            control.skipTargetId = preview.suggestedClassId;
+            if (preview.suggestedClassId > 0)
+            {
+                control.actionValue = static_cast<int>(
+                    ScheduleImportClassAction::UpdateExisting
+                    );
+                control.targetClassId = preview.suggestedClassId;
+            }
+            else if (preview.matchingClassIds.isEmpty())
+            {
+                control.actionValue = static_cast<int>(
+                    ScheduleImportClassAction::CreateNew
+                    );
+            }
+            else if (preview.exactMatch)
+            {
+                control.actionValue = static_cast<int>(
+                    ScheduleImportClassAction::UpdateExisting
+                    );
+                control.targetClassId = preview.matchingClassIds.first();
+            }
+            result.classControls.append(control);
+        }
+    }
+
+    if (result.classIdsByIdentity.isEmpty())
+    {
+        for (const auto& classroom : request.stateSnapshot->classes)
+        {
+            result.classIdsByIdentity[
+                classIdentityKey(
+                    snapshotText(classroom.grade),
+                    snapshotText(classroom.level)
+                    )
+                ].append(snapshotLegacyId(classroom.id));
+        }
+    }
 
     // Validate all references before creating any controls. A malformed or
     // incomplete snapshot must not leave a partly populated review page.
@@ -234,14 +380,15 @@ Result<BuildResult> build(
         }
     }
 
-    for (int row = 0;
-         row < request.preview->teachers.size();
-         ++row)
+    for (int row = 0; row < result.teacherControls.size(); ++row)
     {
+        if (!shouldRealizeTeacher(request, row))
+        {
+            continue;
+        }
         const ScheduleImportTeacherPreview& preview =
             request.preview->teachers[row];
-        TeacherControl control;
-        control.teacherKey = preview.teacherKey;
+        TeacherControl control = result.teacherControls[row];
         control.action =
             new NoWheelComboBox(request.teacherContent);
         control.room =
@@ -266,6 +413,19 @@ Result<BuildResult> build(
         for (const QString& room : preview.importedRooms)
         {
             control.room->addItem(room, room);
+        }
+
+        if (control.selectedRoom.isEmpty())
+        {
+            control.room->setCurrentIndex(0);
+        }
+        else
+        {
+            const int roomIndex = control.room->findData(control.selectedRoom);
+            if (roomIndex >= 0)
+            {
+                control.room->setCurrentIndex(roomIndex);
+            }
         }
 
         if (preview.matchingTeacherIds.size() == 1)
@@ -409,12 +569,38 @@ Result<BuildResult> build(
             control.room,
             teacherCard
             );
+        const int actionIndex = findActionIndex(
+            control.action,
+            control.actionValue,
+            control.targetTeacherId
+            );
+        if (actionIndex >= 0)
+        {
+            control.action->setCurrentIndex(actionIndex);
+        }
+        else
+        {
+            control.actionValue = control.action->currentData(ActionRole).toInt();
+            control.targetTeacherId = control.action->currentData(TargetRole).toInt();
+        }
+        control.card = teacherCard;
         connectStateChanged(control.action, request);
         connectStateChanged(control.room, request);
-        request.teacherLayout->addWidget(teacherCard);
-        result.teacherControls.append(control);
+        if (request.teacherLayout)
+        {
+            request.teacherLayout->addWidget(teacherCard);
+        }
+        else if (teacherCard)
+        {
+            teacherCard->setGeometry(
+                8,
+                row * request.teacherRowExtent + 6,
+                std::max(0, request.teacherContent->width() - 16),
+                request.teacherRowExtent - 12
+                );
+        }
+        result.teacherControls[row] = control;
     }
-    request.teacherLayout->addStretch();
 
     QList<ScheduleImportClassPreview> orderedClasses =
         request.preview->classes;
@@ -433,27 +619,23 @@ Result<BuildResult> build(
         }
         );
 
-    for (const ScheduleImportClassPreview& preview :
-         orderedClasses)
+    for (int row = 0; row < orderedClasses.size(); ++row)
     {
+        if (!shouldRealizeClass(request, row))
+        {
+            continue;
+        }
+        const ScheduleImportClassPreview& preview = orderedClasses[row];
         const ScheduleImportClassCandidate& candidate =
             request.preview->user.classes[
                 preview.candidateIndex
                 ];
-        ClassControl control;
-        control.candidateIndex =
-            preview.candidateIndex;
-        control.teacherKey =
-            candidate.teacherKey;
+        ClassControl control = result.classControls[row];
         control.action =
             new NoWheelComboBox(request.classContent);
         configureCompactActionCombo(control.action);
         control.colorButton =
             new QPushButton(request.classContent);
-        control.color =
-            candidate.importedColors.isEmpty()
-                ? QStringLiteral("#FFFFFF")
-                : candidate.importedColors.first().toUpper();
         control.details =
             new QLabel(request.classContent);
         control.action->setObjectName(
@@ -508,14 +690,22 @@ Result<BuildResult> build(
                 );
             addedTargets.insert(classId);
         }
-        for (const auto& classroom : request.stateSnapshot->classes)
+        const QList<int> eligibleIdentityIds =
+            result.classIdsByIdentity.value(
+                classIdentityKey(candidate.classGrade, candidate.classLevel)
+                );
+        for (const int classId : eligibleIdentityIds)
         {
-            const int classId = snapshotLegacyId(classroom.id);
             if (addedTargets.contains(classId))
             {
                 continue;
             }
-            const ClassInfo info = classInfoForEligibility(classroom);
+            const auto* classroom = classSnapshot(classId);
+            if (!classroom)
+            {
+                continue;
+            }
+            const ClassInfo info = classInfoForEligibility(*classroom);
             if (
                 !scheduleImportClassOptionIsEligible(
                     candidate,
@@ -531,9 +721,9 @@ Result<BuildResult> build(
                 translate("Update existing: %1")
                     .arg(
                         classLabel(
-                            classroom,
+                            *classroom,
                             teacherSnapshot(snapshotLegacyId(
-                                classroom.teacherId
+                                classroom->teacherId
                                 )),
                             request.kind
                             )
@@ -560,28 +750,19 @@ Result<BuildResult> build(
             preview.suggestedClassId
             );
 
-        if (preview.suggestedClassId > 0)
+        const int selectedActionIndex = findActionIndex(
+            control.action,
+            control.actionValue,
+            control.targetClassId
+            );
+        if (selectedActionIndex >= 0)
         {
-            control.action->setCurrentIndex(
-                findActionIndex(
-                    control.action,
-                    static_cast<int>(
-                        ScheduleImportClassAction::UpdateExisting
-                        ),
-                    preview.suggestedClassId
-                    )
-                );
+            control.action->setCurrentIndex(selectedActionIndex);
         }
-        else if (preview.matchingClassIds.isEmpty())
+        else
         {
-            control.action->setCurrentIndex(
-                findActionIndex(
-                    control.action,
-                    static_cast<int>(
-                        ScheduleImportClassAction::CreateNew
-                        )
-                    )
-                );
+            control.actionValue = control.action->currentData(ActionRole).toInt();
+            control.targetClassId = control.action->currentData(TargetRole).toInt();
         }
 
         const QString importedMeetings =
@@ -682,10 +863,22 @@ Result<BuildResult> build(
             preview.candidateIndex,
             request
             );
-        request.classLayout->addWidget(classCard);
-        result.classControls.append(control);
+        control.card = classCard;
+        if (request.classLayout)
+        {
+            request.classLayout->addWidget(classCard);
+        }
+        else
+        {
+            classCard->setGeometry(
+                8,
+                row * request.classRowExtent + 6,
+                std::max(0, request.classContent->width() - 16),
+                request.classRowExtent - 12
+                );
+        }
+        result.classControls[row] = control;
     }
-    request.classLayout->addStretch();
 
     return result;
 }
@@ -733,5 +926,182 @@ void updateClassColorButton(
             )
             .arg(control->color)
         );
+}
+
+void captureRealizedDecisions(
+    BuildResult* state
+    )
+{
+    if (!state)
+    {
+        return;
+    }
+    for (TeacherControl& control : state->teacherControls)
+    {
+        if (control.action)
+        {
+            control.actionValue = control.action->currentData(ActionRole).toInt();
+            control.targetTeacherId = control.action->currentData(TargetRole).toInt();
+        }
+        if (control.room)
+        {
+            control.selectedRoom = control.room->currentData().toString();
+        }
+    }
+    for (ClassControl& control : state->classControls)
+    {
+        if (control.action)
+        {
+            control.actionValue = control.action->currentData(ActionRole).toInt();
+            control.targetClassId = control.action->currentData(TargetRole).toInt();
+        }
+    }
+}
+
+void clearRealizedControls(
+    BuildResult* state
+    )
+{
+    if (!state)
+    {
+        return;
+    }
+    captureRealizedDecisions(state);
+    for (TeacherControl& control : state->teacherControls)
+    {
+        if (control.card)
+        {
+            delete control.card;
+        }
+        control.card = nullptr;
+        control.action = nullptr;
+        control.room = nullptr;
+    }
+    for (ClassControl& control : state->classControls)
+    {
+        if (control.card)
+        {
+            delete control.card;
+        }
+        control.card = nullptr;
+        control.action = nullptr;
+        control.colorButton = nullptr;
+        control.details = nullptr;
+    }
+}
+
+void forceSkippedTeachers(
+    BuildResult* state,
+    const QSet<QString>& skippedTeacherKeys
+    )
+{
+    if (!state || skippedTeacherKeys.isEmpty())
+    {
+        return;
+    }
+    for (ClassControl& control : state->classControls)
+    {
+        if (!skippedTeacherKeys.contains(control.teacherKey))
+        {
+            continue;
+        }
+        control.actionValue = static_cast<int>(
+            ScheduleImportClassAction::Skip
+            );
+        control.targetClassId = control.skipTargetId;
+        if (control.action)
+        {
+            const QSignalBlocker blocker(control.action);
+            const int index = findActionIndex(
+                control.action,
+                control.actionValue,
+                control.targetClassId
+                );
+            if (index >= 0)
+            {
+                control.action->setCurrentIndex(index);
+            }
+        }
+    }
+}
+
+int realizedTeacherCount(const BuildResult& state)
+{
+    return static_cast<int>(std::count_if(
+        state.teacherControls.cbegin(),
+        state.teacherControls.cend(),
+        [](const TeacherControl& control) { return control.card != nullptr; }
+        ));
+}
+
+int realizedClassCount(const BuildResult& state)
+{
+    return static_cast<int>(std::count_if(
+        state.classControls.cbegin(),
+        state.classControls.cend(),
+        [](const ClassControl& control) { return control.card != nullptr; }
+        ));
+}
+
+int realizedClassTargetChoiceCount(const BuildResult& state)
+{
+    int count = 0;
+    for (const ClassControl& control : state.classControls)
+    {
+        if (!control.action)
+        {
+            continue;
+        }
+        for (int index = 0; index < control.action->count(); ++index)
+        {
+            if (control.action->itemData(index, ActionRole).toInt()
+                == static_cast<int>(ScheduleImportClassAction::UpdateExisting))
+            {
+                ++count;
+            }
+        }
+    }
+    return count;
+}
+
+QList<ScheduleImportTeacherResolution> teacherResolutions(
+    const BuildResult& state
+    )
+{
+    QList<ScheduleImportTeacherResolution> result;
+    result.reserve(state.teacherControls.size());
+    for (const TeacherControl& control : state.teacherControls)
+    {
+        result.append(
+            {
+                control.teacherKey,
+                static_cast<ScheduleImportTeacherAction>(control.actionValue),
+                control.targetTeacherId,
+                control.selectedRoom
+            }
+            );
+    }
+    return result;
+}
+
+QList<ScheduleImportClassResolution> classResolutions(
+    const BuildResult& state
+    )
+{
+    QList<ScheduleImportClassResolution> result;
+    result.reserve(state.classControls.size());
+    for (const ClassControl& control : state.classControls)
+    {
+        result.append(
+            {
+                control.candidateIndex,
+                static_cast<ScheduleImportClassAction>(control.actionValue),
+                control.targetClassId,
+                control.color,
+                ColorUtils::getContrastingFontColor(QColor(control.color))
+            }
+            );
+    }
+    return result;
 }
 }

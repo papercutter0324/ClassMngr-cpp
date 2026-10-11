@@ -42,7 +42,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-11
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F609 removes per-class Speaking Evaluation page containers with navigation and save/report checks passing; F610 will bound Schedule Import review controls, while F598 still awaits elevated WPR and F579 symbols remain deferred, with memory/output-parity/Phase 0 gates open.
+- Current note: F610 bounds Schedule Import review controls and preserves off-screen decisions; F611 will reduce overlapping Schedule workbook representations, while F598 still awaits elevated WPR and F579 symbols remain deferred, with memory/output-parity/Phase 0 gates open.
 
 ### Slice discovery batches
 
@@ -74,7 +74,6 @@ Treat this plan as an operational summary, not a history:
 
 #### Active batch: Batch 116
 
-- F610 - Bound Schedule Import review controls after establishing a reliable baseline.
 - F611 - Reduce overlapping Schedule workbook representations in coordination with F606.
 - F612 - Measure Sub Prep roster-source-to-renderer overlap while preserving SQL-route parity.
 

@@ -373,6 +373,18 @@ QJsonObject applicationMetricsJson(const StartupApplicationMetrics& metrics)
             metrics.scheduleImportReviewClassControlCount
         },
         {
+            QStringLiteral("scheduleImportReviewRealizedTeacherControlCount"),
+            metrics.scheduleImportReviewRealizedTeacherControlCount
+        },
+        {
+            QStringLiteral("scheduleImportReviewRealizedClassControlCount"),
+            metrics.scheduleImportReviewRealizedClassControlCount
+        },
+        {
+            QStringLiteral("scheduleImportReviewClassTargetChoiceItemCount"),
+            metrics.scheduleImportReviewClassTargetChoiceItemCount
+        },
+        {
             QStringLiteral("scheduleImportReviewPreviewEntryCount"),
             metrics.scheduleImportReviewPreviewEntryCount
         },
@@ -1678,6 +1690,9 @@ void StartupProfiler::recordScheduleImportStarted(
         metrics.scheduleImportPreviewDiagnosticCount = 0;
         metrics.scheduleImportReviewTeacherControlCount = 0;
         metrics.scheduleImportReviewClassControlCount = 0;
+        metrics.scheduleImportReviewRealizedTeacherControlCount = 0;
+        metrics.scheduleImportReviewRealizedClassControlCount = 0;
+        metrics.scheduleImportReviewClassTargetChoiceItemCount = 0;
         metrics.scheduleImportReviewPreviewEntryCount = 0;
         metrics.scheduleImportExistingTeacherCount = 0;
         metrics.scheduleImportExistingClassCount = 0;
@@ -1771,6 +1786,9 @@ void StartupProfiler::recordScheduleImportReviewPrepared(
             qMax(0, teacherControlCount);
         metrics.scheduleImportReviewClassControlCount =
             qMax(0, classControlCount);
+        metrics.scheduleImportReviewRealizedTeacherControlCount = 0;
+        metrics.scheduleImportReviewRealizedClassControlCount = 0;
+        metrics.scheduleImportReviewClassTargetChoiceItemCount = 0;
 
         const QString detail =
             QStringLiteral(
@@ -1793,6 +1811,39 @@ void StartupProfiler::recordScheduleImportReviewPrepared(
     }
 }
 
+void StartupProfiler::recordScheduleImportReviewRealization(
+    int realizedTeacherControlCount,
+    int realizedClassControlCount,
+    int classTargetChoiceItemCount
+    )
+{
+    if (StartupProfiler* profiler = activeProfiler())
+    {
+        StartupApplicationMetrics& metrics = profiler->m_scheduleMetrics;
+        metrics.scheduleImportReviewRealizedTeacherControlCount =
+            qMax(0, realizedTeacherControlCount);
+        metrics.scheduleImportReviewRealizedClassControlCount =
+            qMax(0, realizedClassControlCount);
+        metrics.scheduleImportReviewClassTargetChoiceItemCount =
+            qMax(0, classTargetChoiceItemCount);
+        const QString detail =
+            QStringLiteral(
+                "realizedTeacherControls=%1; realizedClassControls=%2; classTargetChoiceItems=%3"
+                )
+                .arg(metrics.scheduleImportReviewRealizedTeacherControlCount)
+                .arg(metrics.scheduleImportReviewRealizedClassControlCount)
+                .arg(metrics.scheduleImportReviewClassTargetChoiceItemCount);
+        profiler->recordEvent(
+            QStringLiteral("schedule-import-review-realization"),
+            detail
+            );
+        appendProfilerWorkflowTrace(
+            QStringLiteral("schedule-import-review-realization %1")
+                .arg(detail)
+            );
+    }
+}
+
 void StartupProfiler::recordScheduleImportReviewReleased()
 {
     if (StartupProfiler* profiler = activeProfiler())
@@ -1805,6 +1856,9 @@ void StartupProfiler::recordScheduleImportReviewReleased()
         metrics.scheduleImportPreviewDiagnosticCount = 0;
         metrics.scheduleImportReviewTeacherControlCount = 0;
         metrics.scheduleImportReviewClassControlCount = 0;
+        metrics.scheduleImportReviewRealizedTeacherControlCount = 0;
+        metrics.scheduleImportReviewRealizedClassControlCount = 0;
+        metrics.scheduleImportReviewClassTargetChoiceItemCount = 0;
         metrics.scheduleImportReviewPreviewEntryCount = 0;
         profiler->recordEvent(
             QStringLiteral("schedule-import-review-released")

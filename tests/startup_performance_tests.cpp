@@ -7973,16 +7973,42 @@ void StartupPerformanceTests::capturesLargeScheduleImportBoundaryWhenConfigured(
             QStringLiteral("scheduleImportPreviewClassCount")
             ).toInt() > 0
         );
-    QVERIFY(
+    QCOMPARE(
         reviewMetrics.value(
             QStringLiteral("scheduleImportReviewTeacherControlCount")
-            ).toInt() > 0
+            ).toInt(),
+        reviewMetrics.value(
+            QStringLiteral("scheduleImportPreviewTeacherCount")
+            ).toInt()
         );
-    QVERIFY(
+    QCOMPARE(
         reviewMetrics.value(
             QStringLiteral("scheduleImportReviewClassControlCount")
-            ).toInt() > 0
+            ).toInt(),
+        reviewMetrics.value(
+            QStringLiteral("scheduleImportPreviewClassCount")
+            ).toInt()
         );
+    const int realizedTeacherControls = reviewMetrics.value(
+        QStringLiteral("scheduleImportReviewRealizedTeacherControlCount")
+        ).toInt();
+    const int realizedClassControls = reviewMetrics.value(
+        QStringLiteral("scheduleImportReviewRealizedClassControlCount")
+        ).toInt();
+    const int classTargetChoiceItems = reviewMetrics.value(
+        QStringLiteral("scheduleImportReviewClassTargetChoiceItemCount")
+        ).toInt();
+    QVERIFY(
+        reviewMetrics.contains(
+            QStringLiteral("scheduleImportReviewClassTargetChoiceItemCount")
+            )
+        );
+    QVERIFY(realizedTeacherControls >= 0);
+    QVERIFY(realizedClassControls > 0);
+    QVERIFY(realizedTeacherControls + realizedClassControls <= 8);
+    // This fixture may have no eligible update targets, so zero realized
+    // choice items is valid; keep the upper bound on choices per live row.
+    QVERIFY(classTargetChoiceItems <= realizedClassControls * 96);
     QVERIFY(
         reviewMetrics.value(
             QStringLiteral("scheduleImportReviewRetained")
