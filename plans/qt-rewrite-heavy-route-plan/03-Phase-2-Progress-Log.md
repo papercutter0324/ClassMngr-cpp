@@ -23017,3 +23017,37 @@ not a full-suite run.
 
 The matrix is recorded before F648 implementation; Batch 127 remains active
 with F648. Begin the next bounded slice-discovery batch when F649 starts.
+
+### F648 Schedule Import decision-index validation - accepted - 2026-10-12
+
+Commit `3ec5fbdea2567f57e9e1e1b29d2855d596406d91` adds typed rejection for
+invalid `CreateNew` and `UpdateExisting` candidate indexes through both
+validation overloads. Valid indexes and `Skip` behavior remain preserved.
+Independent review confirmed the rejection behavior.
+
+The forced Debug target build succeeded in standard
+`build/windows-x64-debug` after FileTracker `E_ACCESSDENIED`. Focused CTest
+`ClassMngrNextApplicationScheduleImportStateValidationTests` passed 1/1, and
+`git diff --check` passed. One residual remains: `InvalidClassCandidateIndex`
+is not mapped in repository/review `stateValidationMessage` switches and
+falls back to generic text; the acceptance matrix did not require
+user-facing wording. Verification was focused, not a full-suite run.
+
+**Decision: accept F648.** Batch 127 remains active with F649 next.
+
+### F649 Calendar import validation acceptance matrix - recorded before implementation - 2026-10-12
+
+- Before calling `loadSignaturesInRange`, validate every accepted `CreateNew`
+  event's per-event fields and the import create-only/no-ID rule. Any invalid
+  accepted row must fail with zero signature-query and save calls.
+- Preserve `Skip`, empty-input, valid event ordering, duplicate filtering,
+  signature-query failure, and save-failure behavior.
+- Validate the final assembled `CalendarEventImportSaveRequest` after
+  duplicate filtering and before save. Preserve the existing 4096 maximum on
+  the filtered save batch, not on the full pre-query candidate set; for
+  example, 4097 duplicate candidates reducing to one remain within the limit.
+- Focused target/CTest: `ClassMngrNextApplicationCalendarEventImportUseCaseTests`.
+
+The matrix is recorded before F649 implementation; Batch 127 remains active
+with F649. Begin Batch 128 bounded candidate discovery when F649
+implementation starts.

@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-12
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F647 is accepted and F648 is active as the next Batch 127 candidate; F625/F626 and current-source macOS universal evidence (0/24) remain open.
+- Current note: F648 is accepted and F649 is active as the next Batch 127 candidate; F625/F626 and current-source macOS universal evidence (0/24) remain open.
 
 ### Slice discovery batches
 
@@ -96,7 +96,6 @@ Treat this plan as an operational summary, not a history:
 
 #### Active batch: Batch 127
 
-- F648 - Reject out-of-range Schedule Import decision indexes before projection.
 - F649 - Validate accepted Calendar import save requests before port calls.
 - F650 - Preflight roster row transfer snapshots before persistence.
 
