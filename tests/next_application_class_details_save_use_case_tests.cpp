@@ -151,7 +151,7 @@ void NextApplicationClassDetailsSaveUseCaseTests::
 invalidClassIdsDoNotReachPort()
 {
     RecordingSavePort port;
-    for (const std::string classId : {"0", "-2", "class-42"})
+    for (const std::string classId : {"0", "-2", "class-42", "2147483648"})
     {
         const auto result = Application::ClassDetailsSaveUseCase::execute(
             request(classId),
@@ -159,6 +159,9 @@ invalidClassIdsDoNotReachPort()
             );
         QVERIFY(!result);
         QCOMPARE(result.error().code, Domain::ErrorCode::InvalidInput);
+        QCOMPARE(result.error().message,
+            std::string("Class ID must be a positive integer."));
+        QVERIFY(result.error().recoverable);
     }
     QCOMPARE(port.callCount, 0);
     QVERIFY(!port.lastRequest.has_value());
@@ -168,14 +171,14 @@ void NextApplicationClassDetailsSaveUseCaseTests::
 validRequestPreservesTypedScheduleValues()
 {
     RecordingSavePort port;
-    const Application::ClassDetailsSaveRequest value = request("42");
+    const Application::ClassDetailsSaveRequest value = request("00042");
 
     const auto result =
         Application::ClassDetailsSaveUseCase::execute(value, port);
     QVERIFY(result);
     QCOMPARE(port.callCount, 1);
     QVERIFY(port.lastRequest.has_value());
-    QCOMPARE(port.lastRequest->classId.value(), std::string("42"));
+    QCOMPARE(port.lastRequest->classId.value(), std::string("00042"));
     QCOMPARE(port.lastRequest->classGrade, std::u16string(u"E4"));
     QCOMPARE(port.lastRequest->regularTimes, value.regularTimes);
     QCOMPARE(port.lastRequest->intensiveTimes, value.intensiveTimes);

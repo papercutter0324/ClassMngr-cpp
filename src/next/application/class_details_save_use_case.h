@@ -74,15 +74,15 @@ private:
             return false;
         }
 
-        for (const char character : value)
-        {
-            if (character < '0' || character > '9')
-            {
-                return false;
-            }
-        }
-
-        return value.find_first_not_of('0') != std::string::npos;
+        int parsed = 0;
+        const auto [end, error] = std::from_chars(
+            value.data(),
+            value.data() + value.size(),
+            parsed
+            );
+        return error == std::errc{}
+            && end == value.data() + value.size()
+            && parsed > 0;
     }
 
     [[nodiscard]] static bool isCanonicalPositiveInteger(
