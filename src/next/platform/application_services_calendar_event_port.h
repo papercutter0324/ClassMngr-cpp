@@ -124,11 +124,10 @@ public:
                     );
             }
 
-            const ::Result<CalendarEvent> loaded =
-                repository->getCalendarEvent(eventId);
-            if (!loaded)
+            const CalendarEventByIdLookupResult loaded =
+                repository->lookupCalendarEventById(eventId);
+            if (loaded.code != CalendarEventByIdLookupCode::Found)
             {
-                const QString repositoryError = loaded.error();
                 if (!session->isOpen())
                 {
                     return failureSummary(
@@ -137,10 +136,7 @@ public:
                         );
                 }
 
-                const QString normalizedError = repositoryError.toLower();
-                if (normalizedError.contains(QStringLiteral("no matching record"))
-                    || normalizedError.contains(QStringLiteral("not found"))
-                    || normalizedError.contains(QStringLiteral("does not exist")))
+                if (loaded.code == CalendarEventByIdLookupCode::Missing)
                 {
                     return failureSummary(
                         Domain::ErrorCode::NotFound,
@@ -148,7 +144,7 @@ public:
                         );
                 }
 
-                const QByteArray errorBytes = repositoryError.toUtf8();
+                const QByteArray errorBytes = loaded.diagnostic.toUtf8();
                 const std::string message = errorBytes.isEmpty()
                     ? "Calendar event could not be loaded."
                     : "Calendar event could not be loaded: "
@@ -159,7 +155,7 @@ public:
                     );
             }
 
-            if (loaded->id != eventId)
+            if (loaded.event.id != eventId)
             {
                 return failureSummary(
                     Domain::ErrorCode::InvalidInput,
@@ -167,7 +163,7 @@ public:
                     );
             }
 
-            return projectEvent(*loaded, 0);
+            return projectEvent(loaded.event, 0);
         }
         catch (const std::exception&)
         {

@@ -381,12 +381,29 @@ Result<CalendarEvent> CalendarEventRepository::getCalendarEvent(
     int eventId
     )
 {
+    const CalendarEventByIdLookupResult lookup =
+        lookupCalendarEventById(eventId);
+    if (lookup.code == CalendarEventByIdLookupCode::Found)
+    {
+        return lookup.event;
+    }
+
+    return std::unexpected(lookup.diagnostic);
+}
+
+CalendarEventByIdLookupResult
+CalendarEventRepository::lookupCalendarEventById(
+    int eventId
+    )
+{
     if (eventId <= 0)
     {
-        return std::unexpected(
-            QObject::tr("Loading calendar event failed: invalid event id %1.")
-                .arg(eventId)
-            );
+        return {
+            .code = CalendarEventByIdLookupCode::Failure,
+            .diagnostic = QObject::tr(
+                "Loading calendar event failed: invalid event id %1."
+                ).arg(eventId)
+        };
     }
 
     QSqlQuery query(m_database);
@@ -416,18 +433,39 @@ Result<CalendarEvent> CalendarEventRepository::getCalendarEvent(
         );
     if (!loaded)
     {
-        return std::unexpected(loaded.error().userMessage());
+        return {
+            .code = CalendarEventByIdLookupCode::Failure,
+            .diagnostic = loaded.error().userMessage()
+        };
     }
 
     if (!query.next())
     {
-        return std::unexpected(
-            QObject::tr("Loading calendar event failed: no matching record exists for event id %1.")
-                .arg(eventId)
-            );
+        if (query.lastError().isValid())
+        {
+            return {
+                .code = CalendarEventByIdLookupCode::Failure,
+                .diagnostic = SqlQueryUtils::errorFor(
+                    query,
+                    QObject::tr("Loading calendar event"),
+                    {},
+                    QObject::tr("calendar event id %1").arg(eventId)
+                    ).userMessage()
+            };
+        }
+
+        return {
+            .code = CalendarEventByIdLookupCode::Missing,
+            .diagnostic = QObject::tr(
+                "Loading calendar event failed: no matching record exists for event id %1."
+                ).arg(eventId)
+        };
     }
 
-    return eventFromQuery(query);
+    return {
+        .code = CalendarEventByIdLookupCode::Found,
+        .event = eventFromQuery(query)
+    };
 }
 
 Result<QList<CalendarEvent>> CalendarEventRepository::loadCalendarEventsForRepeatSeriesFromDate(

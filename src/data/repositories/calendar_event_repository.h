@@ -5,6 +5,21 @@
 
 #include <QList>
 #include <QSqlDatabase>
+#include <QString>
+
+enum class CalendarEventByIdLookupCode
+{
+    Found,
+    Missing,
+    Failure
+};
+
+struct CalendarEventByIdLookupResult final
+{
+    CalendarEventByIdLookupCode code = CalendarEventByIdLookupCode::Failure;
+    CalendarEvent event;
+    QString diagnostic;
+};
 
 class CalendarEventRepository
 {
@@ -38,6 +53,9 @@ public:
         );
 
     [[nodiscard]] Result<CalendarEvent> getCalendarEvent(
+        int eventId
+        );
+    [[nodiscard]] CalendarEventByIdLookupResult lookupCalendarEventById(
         int eventId
         );
 

@@ -677,6 +677,15 @@ projectsByIdAsOwnedTypedMetadata()
     const int eventId = query.lastInsertId().toInt();
     QVERIFY(eventId > 0);
 
+    CalendarEventRepository* const repository =
+        services.databaseSession()->calendarEventRepository();
+    QVERIFY(repository);
+    const CalendarEventByIdLookupResult lookup =
+        repository->lookupCalendarEventById(eventId);
+    QCOMPARE(lookup.code, CalendarEventByIdLookupCode::Found);
+    QCOMPARE(lookup.event.id, eventId);
+    QCOMPARE(lookup.event.title, QStringLiteral("Activation event"));
+
     ApplicationServicesCalendarEventPort port(services);
     const auto result = port.loadEventById(calendarEventId(eventId));
 
@@ -2788,9 +2797,27 @@ reportsUnavailableAndInvalidRangesStructurally()
         port.loadEventById(*CalendarEventId::fromString("not-a-number")),
         ErrorCode::InvalidInput
         );
-    verifyFailure(
-        port.projectionById(999999),
-        ErrorCode::NotFound
+    CalendarEventRepository* const repository =
+        services.databaseSession()->calendarEventRepository();
+    QVERIFY(repository);
+    const int missingId = 999999;
+    const CalendarEventByIdLookupResult missingLookup =
+        repository->lookupCalendarEventById(missingId);
+    QCOMPARE(missingLookup.code, CalendarEventByIdLookupCode::Missing);
+    const QString missingDiagnostic = QObject::tr(
+        "Loading calendar event failed: no matching record exists for event id %1."
+        ).arg(missingId);
+    QCOMPARE(missingLookup.diagnostic, missingDiagnostic);
+    const ::Result<CalendarEvent> legacyMissing =
+        repository->getCalendarEvent(missingId);
+    QVERIFY(!legacyMissing);
+    QCOMPARE(legacyMissing.error(), missingDiagnostic);
+
+    const auto missing = port.projectionById(missingId);
+    verifyFailure(missing, ErrorCode::NotFound);
+    QCOMPARE(
+        missing.error().message,
+        std::string("The calendar event was not found.")
         );
     verifyFailure(
         port.projection(QDate(), QDate(2026, 9, 21)),
@@ -2841,12 +2868,28 @@ reportsCalendarEventRepositoryReadFailuresStructurally()
         qPrintable(query.lastError().text())
         );
 
+    CalendarEventRepository* const repository =
+        services.databaseSession()->calendarEventRepository();
+    QVERIFY(repository);
+    const CalendarEventByIdLookupResult failedLookup =
+        repository->lookupCalendarEventById(eventId);
+    QCOMPARE(failedLookup.code, CalendarEventByIdLookupCode::Failure);
+    QVERIFY(!failedLookup.diagnostic.isEmpty());
+
     ApplicationServicesCalendarEventPort port(services);
     verifyFailure(
         port.projection(QDate(2026, 9, 20), QDate(2026, 9, 21)),
         ErrorCode::Technical
         );
-    verifyFailure(port.projectionById(eventId), ErrorCode::Technical);
+    const auto byIdFailure = port.projectionById(eventId);
+    verifyFailure(byIdFailure, ErrorCode::Technical);
+    const QByteArray repositoryErrorBytes = failedLookup.diagnostic.toUtf8();
+    QVERIFY(!repositoryErrorBytes.isEmpty());
+    QCOMPARE(
+        byIdFailure.error().message,
+        "Calendar event could not be loaded: "
+            + repositoryErrorBytes.toStdString()
+        );
     verifyFailure(
         port.loadEventById(calendarEventId(eventId)),
         ErrorCode::Technical
