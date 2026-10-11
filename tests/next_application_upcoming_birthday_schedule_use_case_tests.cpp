@@ -37,6 +37,7 @@ private slots:
     void mapsLeapDayToFebruaryTwentyEighthInNonLeapYear();
     void omitsInvalidBirthdaysAndBlankNames();
     void preservesNonAsciiUtf16DisplayName();
+    void capsRangesAtMaximumDate();
     void invalidReferenceDateReturnsEmptySchedule();
 };
 
@@ -140,6 +141,43 @@ preservesNonAsciiUtf16DisplayName()
         schedule.today.front().displayName,
         std::u16string(u"\uAE40\uBBFC\uC9C0")
         );
+}
+
+void NextApplicationUpcomingBirthdayScheduleUseCaseTests::
+capsRangesAtMaximumDate()
+{
+    const UpcomingBirthdaySchedule partialNextWeek =
+        UpcomingBirthdayScheduleUseCase::build(
+            {
+                birthday("12-20", u"Today"),
+                birthday("12-26", u"This week"),
+                birthday("12-31", u"Partial next week"),
+                birthday("01-01", u"Beyond maximum")
+            },
+            {9999, 12, 20}
+            );
+
+    QCOMPARE(partialNextWeek.today.size(), std::size_t{1});
+    QVERIFY((partialNextWeek.today.front().date == UpcomingBirthdayDate{9999, 12, 20}));
+    QCOMPARE(partialNextWeek.thisWeek.size(), std::size_t{1});
+    QVERIFY((partialNextWeek.thisWeek.front().date == UpcomingBirthdayDate{9999, 12, 26}));
+    QCOMPARE(partialNextWeek.nextWeek.size(), std::size_t{1});
+    QVERIFY((partialNextWeek.nextWeek.front().date == UpcomingBirthdayDate{9999, 12, 31}));
+
+    const UpcomingBirthdaySchedule partialCurrentWeek =
+        UpcomingBirthdayScheduleUseCase::build(
+            {
+                birthday("12-30", u"Today"),
+                birthday("12-31", u"Partial current week"),
+                birthday("01-01", u"Beyond maximum")
+            },
+            {9999, 12, 30}
+            );
+
+    QCOMPARE(partialCurrentWeek.today.size(), std::size_t{1});
+    QCOMPARE(partialCurrentWeek.thisWeek.size(), std::size_t{1});
+    QVERIFY((partialCurrentWeek.thisWeek.front().date == UpcomingBirthdayDate{9999, 12, 31}));
+    QVERIFY(partialCurrentWeek.nextWeek.empty());
 }
 
 void NextApplicationUpcomingBirthdayScheduleUseCaseTests::

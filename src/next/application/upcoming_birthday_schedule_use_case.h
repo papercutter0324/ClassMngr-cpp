@@ -80,15 +80,17 @@ public:
         }
 
         const int dayOfWeek = weekday{*reference}.iso_encoding();
-        const sys_days thisWeekEnd = *reference + days{7 - dayOfWeek};
-        const sys_days nextWeekEnd = thisWeekEnd + days{7};
         constexpr sys_days maximumDate = sys_days{
             year{9999} / month{12} / day{31}
         };
-        if (nextWeekEnd > maximumDate)
-        {
-            return schedule;
-        }
+        const sys_days thisWeekEnd = std::min(
+            *reference + days{7 - dayOfWeek},
+            maximumDate
+            );
+        const sys_days nextWeekEnd = std::min(
+            thisWeekEnd + days{7},
+            maximumDate
+            );
 
         for (const UpcomingBirthdayCandidate& candidate : candidates)
         {
