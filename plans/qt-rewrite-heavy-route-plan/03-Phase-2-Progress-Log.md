@@ -23216,5 +23216,46 @@ F653.
 - Focused registered CTests: `ClassMngrNextPlatformApplicationServicesGsTeamDirectorySavePortTests`
   and `ClassMngrStaffDirectoryGsTeamSaveTests`.
 
-F653 implementation is pending this matrix's documentation commit; Batch 129
-is active with F653.
+This matrix was recorded and committed before F653 implementation.
+
+### F653 GsTeam stale-update - accepted - 2026-10-12
+
+Commit `8071bad4218c211a2a362ff57e8e513aababe85b` adds
+`GsTeamDirectorySaveOutcome`. A zero-row UPDATE maps to recoverable Platform
+`NotFound`, and the transaction rolls back companion writes. UPDATE-trigger
+failure remains `Technical` with SQL detail; existing INSERT-trigger and CRUD
+behavior remain preserved. On the page, stale save returns false, leaves the
+edited row visible and dirty, and does not emit `directorySaved`.
+
+Executor and independent Tester forced Debug builds of both targets passed.
+The exact registered CTests
+`ClassMngrNextPlatformApplicationServicesGsTeamDirectorySavePortTests` and
+`ClassMngrStaffDirectoryGsTeamSaveTests` passed 2/2. `git diff --check` passed.
+Verification was focused, not a full-suite run.
+
+**Decision: accept F653.** Batch 129 remains active with F654.
+
+### Batch 130 UI discovery - in progress - 2026-10-12
+
+The UI discovery pass is underway; findings are pending.
+
+### F654 Native English directory stale-update acceptance matrix - recorded before implementation - 2026-10-12
+
+- In a repository-backed mixed requested-delete + insert + stale UPDATE,
+  return typed `NotFound` and roll back the companion writes; the externally
+  deleted Native English teacher remains absent.
+- A real `BEFORE UPDATE` abort remains `Technical` with its SQL diagnostic and
+  rolls back the transaction. Preserve existing INSERT-trigger rollback and
+  CRUD behavior.
+- In the Staff Directory route, manually edit a Native English teacher, delete
+  it externally, then save. Return false, retain the visible dirty draft, and
+  emit no `directorySaved` signal.
+- Preserve ordinary CRUD and saved-signal behavior.
+- Focused registered CTests:
+  `ClassMngrNextPlatformApplicationServicesNativeEnglishTeacherDirectorySavePortTests`
+  and `ClassMngrStaffDirectoryNativeEnglishSaveParityTests`.
+
+Repository/Platform discovery evidence is in `NativeEnglishTeacherRepository.cpp`
+around lines 126-200 and the Platform adapter around line 81; test registrations
+are in `next.cmake` around line 2710 and `pages_and_output.cmake` around line
+1475. F654 implementation is pending this matrix's documentation commit.
