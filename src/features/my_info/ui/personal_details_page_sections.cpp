@@ -991,34 +991,32 @@ void PersonalDetailsPage::loadStoredSettings()
     updateTypedSignatureFontOptions();
     updateSignaturePreview();
 }
-bool PersonalDetailsPage::saveMyInfoInternal()
+bool PersonalDetailsPage::saveMyInfoInternal(QString* errorMessage)
 {
-    if (
-        !ClassMngr::Next::Platform::
-            ApplicationServicesCurrentCampusPreferencesPort(
-                m_services
-                ).isAvailable()
-        )
-    {
-        return false;
-    }
-
     m_autosave->cancelPendingSave();
 
-    if (
-        !m_zoomNotAvailableCheck
-        || !m_zoomNotAvailableCheck->isChecked()
-        )
+    QString zoomLoginId = m_zoomLoginIdEdit->text();
+    QString zoomPassword = m_zoomPasswordEdit->text();
+    const bool zoomNotAvailable =
+        m_zoomNotAvailableCheck->isChecked();
+    if (!zoomNotAvailable)
     {
-        normalizeZoomFields();
+        if (zoomLoginId.trimmed().isEmpty())
+        {
+            zoomLoginId = NotAvailableText;
+        }
+        if (zoomPassword.trimmed().isEmpty())
+        {
+            zoomPassword = NotAvailableText;
+        }
     }
 
     PersonalDetails details;
     details.name = m_nameEdit->text();
     details.campus = m_campusCombo->currentText();
-    details.zoomLoginId = m_zoomLoginIdEdit->text();
-    details.zoomPassword = m_zoomPasswordEdit->text();
-    details.zoomNotAvailable = m_zoomNotAvailableCheck->isChecked();
+    details.zoomLoginId = zoomLoginId;
+    details.zoomPassword = zoomPassword;
+    details.zoomNotAvailable = zoomNotAvailable;
     details.signatureImage = m_signatureImageData;
     details.signatureMode = m_signatureMode;
     details.typedSignatureText = m_typedSignatureEdit->text();
@@ -1066,7 +1064,24 @@ bool PersonalDetailsPage::saveMyInfoInternal()
                 });
     if (!saved)
     {
+        if (errorMessage)
+        {
+            const auto& error = saved.error();
+            *errorMessage = QString::fromUtf8(
+                error.message.data(),
+                static_cast<qsizetype>(error.message.size())
+                );
+            if (errorMessage->isEmpty())
+            {
+                *errorMessage = tr("No additional error details are available.");
+            }
+        }
         return false;
+    }
+
+    if (!zoomNotAvailable)
+    {
+        normalizeZoomFields();
     }
 
     clearDirty();

@@ -1,6 +1,7 @@
 #include "app/services/feature_services.h"
 #include "features/my_info/ui/my_workspace_page.h"
 #include "features/my_info/ui/personal_details_page.h"
+#include "fakes/fake_user_prompt_service.h"
 #include "features/calendar/ui/calendar_page.h"
 #include "features/schedule/ui/schedule_page.h"
 #include "features/schedule/ui/schedule_widget.h"
@@ -60,6 +61,23 @@ QString databasePath(QTemporaryDir& directory)
             )
         );
 }
+
+class ScopedUserPromptService final
+{
+public:
+    explicit ScopedUserPromptService(IUserPromptService& service)
+    {
+        DialogServices::setUserPromptServiceForTesting(&service);
+    }
+
+    ~ScopedUserPromptService()
+    {
+        DialogServices::setUserPromptServiceForTesting(nullptr);
+    }
+
+    ScopedUserPromptService(const ScopedUserPromptService&) = delete;
+    ScopedUserPromptService& operator=(const ScopedUserPromptService&) = delete;
+};
 
 bool openDatabase(
     ApplicationServices& services,
@@ -1346,6 +1364,9 @@ unavailableSettingsLeavePersonalDetailsFieldsUnchangedOnLoad()
 void MyWorkspacePageTests::
 unavailablePersonalDetailsSaveDoesNotNormalizeOrClearDirtyValues()
 {
+    FakeUserPromptService prompts;
+    ScopedUserPromptService promptScope(prompts);
+
     ApplicationServices services;
     QVERIFY(services.settingsService());
     QVERIFY(!services.settingsService()->isAvailable());
@@ -1365,8 +1386,32 @@ unavailablePersonalDetailsSaveDoesNotNormalizeOrClearDirtyValues()
     unavailable->setChecked(false);
     QVERIFY(page.personalDetailsPage()->hasUnsavedChanges());
 
-    QVERIFY(!page.personalDetailsPage()->saveChanges());
+    QVERIFY(!page.saveChanges());
 
+    QCOMPARE(prompts.messages.size(), 1);
+    QCOMPARE(prompts.messages.constFirst().severity, PromptSeverity::Warning);
+    QCOMPARE(
+        prompts.messages.constFirst().details,
+        QStringLiteral("Personal details settings service is unavailable.")
+        );
+
+    QCOMPARE(login->text(), QStringLiteral("  "));
+    QCOMPARE(password->text(), QStringLiteral(" \t "));
+    QVERIFY(page.personalDetailsPage()->hasUnsavedChanges());
+
+    page.personalDetailsPage()->saveData();
+    auto* autosave = page.personalDetailsPage()
+        ->findChild<AutosaveCoordinator*>();
+    QVERIFY(autosave);
+    QSignalSpy autosaveRequests(
+        autosave,
+        &AutosaveCoordinator::saveRequested
+        );
+    QVERIFY(autosaveRequests.isValid());
+    autosave->requestSave(false);
+    QCOMPARE(autosaveRequests.size(), 1);
+    QCOMPARE(autosaveRequests.constFirst().at(0).toBool(), false);
+    QCOMPARE(prompts.messages.size(), 1);
     QCOMPARE(login->text(), QStringLiteral("  "));
     QCOMPARE(password->text(), QStringLiteral(" \t "));
     QVERIFY(page.personalDetailsPage()->hasUnsavedChanges());
@@ -1375,6 +1420,9 @@ unavailablePersonalDetailsSaveDoesNotNormalizeOrClearDirtyValues()
 void MyWorkspacePageTests::
 aggregateSaveFailureRollsBackAndPreservesUnrelatedSettings()
 {
+    FakeUserPromptService prompts;
+    ScopedUserPromptService promptScope(prompts);
+
     QTemporaryDir directory;
     QVERIFY(directory.isValid());
 
@@ -1456,11 +1504,53 @@ aggregateSaveFailureRollsBackAndPreservesUnrelatedSettings()
 
     MyWorkspacePage page(&services);
     refreshPersonalDetails(page);
+    page.setSaveMode(SaveMode::Manual);
     auto* name = personalNameEditor(page);
+    auto* login = personalZoomLoginEditor(page);
+    auto* password = personalZoomPasswordEditor(page);
+    auto* unavailable = personalZoomUnavailableCheck(page);
     QVERIFY(name);
+    QVERIFY(login);
+    QVERIFY(password);
+    QVERIFY(unavailable);
     name->setText(QStringLiteral("new name"));
+    login->clear();
+    password->setText(QStringLiteral(" \t "));
+    unavailable->setChecked(false);
 
-    QVERIFY(!page.personalDetailsPage()->saveChanges());
+    QVERIFY(page.personalDetailsPage()->hasUnsavedChanges());
+    QVERIFY(!page.saveChanges());
+
+    QCOMPARE(prompts.messages.size(), 1);
+    QCOMPARE(prompts.messages.constFirst().severity, PromptSeverity::Warning);
+    QVERIFY(prompts.messages.constFirst().details.contains(
+        QStringLiteral("forced personal details page save failure")
+        ));
+    QVERIFY(prompts.messages.constFirst().message.contains(
+        QStringLiteral("changes are still here")
+        ));
+    QCOMPARE(name->text(), QStringLiteral("new name"));
+    QCOMPARE(login->text(), QString());
+    QCOMPARE(password->text(), QStringLiteral(" \t "));
+    QVERIFY(!unavailable->isChecked());
+    QVERIFY(page.personalDetailsPage()->hasUnsavedChanges());
+
+    page.personalDetailsPage()->saveData();
+    auto* autosave = page.personalDetailsPage()
+        ->findChild<AutosaveCoordinator*>();
+    QVERIFY(autosave);
+    QSignalSpy autosaveRequests(
+        autosave,
+        &AutosaveCoordinator::saveRequested
+        );
+    QVERIFY(autosaveRequests.isValid());
+    autosave->requestSave(false);
+    QCOMPARE(autosaveRequests.size(), 1);
+    QCOMPARE(autosaveRequests.constFirst().at(0).toBool(), false);
+    QCOMPARE(prompts.messages.size(), 1);
+    QCOMPARE(login->text(), QString());
+    QCOMPARE(password->text(), QStringLiteral(" \t "));
+    QVERIFY(page.personalDetailsPage()->hasUnsavedChanges());
 
     QCOMPARE(
         services.dataService()
@@ -1515,6 +1605,49 @@ aggregateSaveFailureRollsBackAndPreservesUnrelatedSettings()
             ->loadSetting(QString::fromUtf8(TypedSignatureFontKey))
             ->toInt(),
         1
+        );
+    QCOMPARE(
+        services.dataService()
+            ->loadSetting(QString::fromUtf8(UnrelatedKey))
+            ->toString(),
+        QStringLiteral("preserved")
+        );
+
+    QVERIFY(executeSql(
+        services,
+        QStringLiteral("DROP TRIGGER fail_personal_details_page_save")
+        ));
+    QVERIFY(page.saveChanges());
+    QCOMPARE(prompts.messages.size(), 1);
+    QVERIFY(!page.personalDetailsPage()->hasUnsavedChanges());
+    QCOMPARE(name->text(), QStringLiteral("new name"));
+    QCOMPARE(login->text(), QStringLiteral("N/A"));
+    QCOMPARE(password->text(), QStringLiteral("N/A"));
+    QVERIFY(!unavailable->isChecked());
+
+    QCOMPARE(
+        services.dataService()
+            ->loadSetting(QString::fromUtf8(DisplayNameKey))
+            ->toString(),
+        QStringLiteral("new name")
+        );
+    QCOMPARE(
+        services.dataService()
+            ->loadSetting(QString::fromUtf8(ZoomLoginIdKey))
+            ->toString(),
+        QStringLiteral("N/A")
+        );
+    QCOMPARE(
+        services.dataService()
+            ->loadSetting(QString::fromUtf8(ZoomPasswordKey))
+            ->toString(),
+        QStringLiteral("N/A")
+        );
+    QCOMPARE(
+        services.dataService()
+            ->loadSetting(QString::fromUtf8(ZoomNotAvailableKey))
+            ->toBool(),
+        false
         );
     QCOMPARE(
         services.dataService()

@@ -17,6 +17,7 @@ class QEvent;
 class QLabel;
 class QLineEdit;
 class QPushButton;
+class QString;
 class QVBoxLayout;
 class QWidget;
 
@@ -60,7 +61,7 @@ private:
     void buildSignatureSection();
     void loadPageData();
     void loadStoredSettings();
-    bool saveMyInfoInternal();
+    bool saveMyInfoInternal(QString* errorMessage = nullptr);
     bool normalizeZoomFields();
     bool normalizeLineEdit(QLineEdit* edit, const QString& defaultText);
     void setZoomFieldsEnabled();

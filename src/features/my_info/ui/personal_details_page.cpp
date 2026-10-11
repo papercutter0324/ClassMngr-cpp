@@ -1,5 +1,6 @@
 #include "personal_details_page.h"
 
+#include "ui/shared/dialogs/user_prompt_service.h"
 #include "ui/shared/styles/roles.h"
 #include "ui/shared/pages/autosave_coordinator.h"
 #include "ui/shared/pages/page_header.h"
@@ -127,7 +128,20 @@ void PersonalDetailsPage::saveData()
 bool PersonalDetailsPage::saveChanges()
 {
     m_autosave->cancelPendingSave();
-    return saveMyInfoInternal();
+
+    QString errorMessage;
+    if (saveMyInfoInternal(&errorMessage))
+    {
+        return true;
+    }
+
+    DialogServices::showWarning(
+        this,
+        tr("My Details Could Not Be Saved"),
+        tr("Your personal details could not be saved. Your changes are still here."),
+        errorMessage
+        );
+    return false;
 }
 
 bool PersonalDetailsPage::hasUnsavedChanges() const
