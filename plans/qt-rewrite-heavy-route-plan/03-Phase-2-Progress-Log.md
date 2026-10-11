@@ -22789,3 +22789,72 @@ path do not change. Exact MainWindow target/CTest:
 Application and Platform test files may be added because they directly cover
 the new production contract. Matrix recorded before implementation; Batch 125
 remains active.
+
+### F644 Route Sidebar Add Class post-create read through Application - accepted - 2026-10-12
+
+The post-create lookup in `SidebarController::addClass()` now uses the typed
+`ClassByIdReadQuery` and active-session Platform adapter backed by
+`ClassRepository::getClassById()`. The existing create result, page-leave
+guard, Details navigation, and failed-read warning/diagnostic with no
+navigation remain in place. Commit
+`7a8c59fa49b64aa8e056893ef462e364f16c72e7` (`Phase2 - Route Sidebar Add
+Class read through Application (F644)`) contains the production route,
+contracts, adapters, ownership declarations, and focused tests. The Executor
+built `ClassMngr`,
+`ClassMngrNextApplicationClassByIdReadQueryTests`,
+`ClassMngrNextPlatformApplicationServicesClassByIdReadPortTests`, and
+`ClassMngrMainWindowClassesSidebarRootNavigationTests` in
+`build/windows-x64-debug-ninja`; focused CTest passed 3/3. The MainWindow case
+checks the `no matching record exists.` diagnostic and stable route/session
+state after a trigger removes the newly created row. `git diff --check`
+passed. Verification was focused, not a full-suite run.
+
+**Decision: accept F644.** Batch 125 is complete.
+
+### Batch 126 discovery - recorded at F644 acceptance
+
+The bounded Application/Platform/route review selected two reachable
+structured-error candidates:
+
+1. **F645 - Distinguish a missing class row from repository failure in the
+   typed class-by-ID read.** `ClassRepository::getClassById()` reports both a
+   missing row and an SQL failure through `Result<Classroom>`'s `QString`
+   error; the Platform adapter currently maps both to `Technical`. The live
+   Sidebar Add Class route and its trigger-based MainWindow test exercise the
+   missing-row path. An additive optional repository lookup can express
+   absence without parsing translated text, while the existing repository API
+   retains its diagnostic.
+2. **F646 - Distinguish a missing teacher profile from repository failure in
+   the typed profile read.** `TeacherRepository::getTeacher()` has the same
+   result ambiguity and the profile Platform adapter maps both outcomes to
+   `Technical`. Sidebar Delete Teacher performs this read before confirmation;
+   an existing route test covers the early warning path.
+
+The Add Teacher post-create read was excluded because blank-name validation
+stops the action before that branch. A Delete Class by-ID substitution was
+excluded because the current by-ID adapter would lose its specific missing-row
+warning detail unless this classification gap were solved first. The
+FileController compatibility fallback was not selected because its normal
+MainWindow trigger was not established. Batch 126 is active with F645 first.
+
+### F645 acceptance matrix recorded - 2026-10-12
+
+Add a repository-level class-by-ID lookup that represents a missing row
+separately from SQL/repository failure, and have the existing Platform
+`ApplicationServicesClassByIdReadPort` map absence to `Domain::ErrorCode::NotFound`
+while retaining the exact translated repository diagnostic in
+`OperationError.message`. Keep `ClassRepository::getClassById()` behavior and
+its missing-row diagnostic compatible for existing callers. Check
+`QSqlQuery::lastError()` after failed result navigation so a fetch error is not
+reported as absence, as required by the [Qt 6.12 QSqlQuery documentation](https://doc.qt.io/qt-6/qsqlquery.html#next).
+
+Extend the existing Platform adapter tests to assert successful mapping,
+missing-row `NotFound` with the preserved diagnostic, and an actual repository
+failure remaining `Technical`; retain closed/unavailable-session behavior.
+Cover the additive repository lookup and compatibility diagnostic within
+existing focused tests where coherent. Keep the F644 MainWindow warning and
+no-navigation behavior unchanged and run
+`ClassMngrMainWindowClassesSidebarRootNavigationTests` as route regression.
+Exact Platform target/CTest:
+`ClassMngrNextPlatformApplicationServicesClassByIdReadPortTests`. Matrix
+recorded before implementation; Batch 126 remains active with F645 first.
