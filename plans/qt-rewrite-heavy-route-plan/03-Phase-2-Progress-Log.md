@@ -21519,7 +21519,7 @@ comparison. F614 is deferred: F612 found a 22,662-byte UTF-8 source/package
 payload on this fixture and showed the typed source released before rendering,
 without owner-specific memory evidence that would justify a material
 ownership refactor. Revisit F614 only with a larger fixture or owner-specific
-memory evidence. F616 is next. F579 symbols remain deferred at the user's
+memory evidence. F615 is next. F579 symbols remain deferred at the user's
 direction; F598 still requires elevated WPR. The 250 MiB lifecycle gate,
 render/window acceptance, and global Phase 0 remain open (Windows 1/24,
 macOS 0/24).
@@ -21559,9 +21559,57 @@ passed. The earlier full-target attempt exposed stale assumptions about
 virtualized tabs and a null test-control dereference; tests now select and wait
 for the appropriate tab before accessing its controls.
 
-F615 is accepted. F616 is next: stage Calendar workbook-to-event projection
-while retaining first-sheet ordering, cancellation behavior, all-sheet
-validation, and malformed later-sheet failures. F579 symbols remain deferred
+F615 is accepted (commit `55f7b7cc`). F616 is next: stage Calendar
+workbook-to-event projection while retaining first-sheet ordering,
+cancellation behavior, all-sheet validation, and malformed later-sheet
+failures. F579 symbols remain deferred
 at the user's direction; F598 still needs elevated WPR. The 250 MiB lifecycle
 gate, render/window acceptance, and global Phase 0 remain open (Windows 1/24,
 macOS 0/24).
+
+## F616 Stage Calendar workbook-to-event projection - 2026-10-11
+
+`CalendarEventImportService` now visits worksheet data with
+`CalendarImport::forEachWorksheet` instead of retaining a full `Workbook`.
+It projects events from the first worksheet within that worksheet's callback,
+then continues parsing later worksheets so missing or unreadable later-sheet
+parts still fail the import. A later-sheet failure discards the local event
+projection and returns before signature lookup or persistence. The existing
+Workbook-based event-parser API remains as a wrapper over the worksheet parser.
+
+The event parser now receives worksheet metadata and the first worksheet
+directly. Its positional index stores callback-scoped `const Cell*` values,
+avoiding copies of every first-sheet Cell object while the source worksheet is
+alive. Missing positions keep their prior empty-cell behavior, and duplicate
+coordinates still use the last cell in worksheet order. New coverage checks
+duplicate-coordinate behavior, canceled-date suppression, malformed later
+worksheets after a valid first-sheet projection, all-empty worksheets, and
+streamed-versus-Workbook parser parity. The existing first-sheet ordering and
+golden import-parity checks remain in place.
+
+The StartupProfiler's `calendarImportWorkbookRetained` metric now reports false
+at the parsed checkpoint because no full Workbook remains retained; response
+byte, workbook count, cell, merge, shared-string, and style counters remain
+available. No byte or RSS savings were measured or claimed.
+
+Windows x64 Debug Ninja built `ClassMngrCalendarImportTests`,
+`ClassMngrCalendarEventImportParityTests`, and
+`ClassMngrStartupPerformanceTests` in the existing
+`build/windows-x64-debug-ninja` folder after the standard Visual Studio Debug
+build hit a `ZERO_CHECK` FileTracker `E_ACCESSDENIED`. The independent
+incremental build reported no work to do. Focused CTest passed 3/3 targets
+(0 failed, 0 CTest-skipped) in 169.88 seconds. The startup suite passed, but
+its configured `capturesLargeCalendarImportBoundaryWhenConfigured` slot took
+its expected `QSKIP` path because
+`CLASSMNGR_LARGE_CALENDAR_IMPORT_BOUNDARY_REFERENCE_DIR` was unset; that heavy
+boundary was not measured. The focused Calendar Import and import-parity tests
+passed. Build, CTest, and boundary-slot evidence is in
+`build/windows-x64-debug-ninja/f616-verifier-build.log`,
+`f616-verifier-ctest.log`, and `f616-boundary-skip.xml`. `git diff --check`
+passed. No full repository suite was run.
+
+F616 is accepted. F617 is next: reduce Class Transfer import ownership
+overlap while preserving resolution and apply behavior. F579 symbols remain
+deferred at the user's direction; F598 still needs elevated WPR. The 250 MiB
+lifecycle gate, render/window acceptance, and global Phase 0 remain open
+(Windows 1/24, macOS 0/24).

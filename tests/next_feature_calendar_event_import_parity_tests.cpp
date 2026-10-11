@@ -123,6 +123,42 @@ productionImportPathMatchesLegacyGoldenFixture()
         };
     QCOMPARE(actualParsedSignatures, expectedParsedSignatures);
 
+    CalendarImport::ParsedCalendarImport streamedParse;
+    bool firstWorksheet = true;
+    QString streamError;
+    QVERIFY2(
+        CalendarImport::forEachWorksheet(
+            workbookBytes,
+            [&streamedParse, &firstWorksheet](
+                const CalendarImport::WorkbookMetadata& metadata,
+                const CalendarImport::Worksheet& worksheet
+                )
+            {
+                if (firstWorksheet)
+                {
+                    streamedParse =
+                        CalendarImport::parseCalendarEventsFromWorksheet(
+                            metadata,
+                            worksheet
+                            );
+                    firstWorksheet = false;
+                }
+                return true;
+            },
+            &streamError
+            ),
+        qPrintable(streamError)
+        );
+    QCOMPARE(streamedParse.skippedCount, parsed.skippedCount);
+    QCOMPARE(streamedParse.events.size(), parsed.events.size());
+    for (qsizetype index = 0; index < parsed.events.size(); ++index)
+    {
+        QCOMPARE(
+            legacySignature(streamedParse.events.at(index)),
+            legacySignature(parsed.events.at(index))
+            );
+    }
+
     QTemporaryDir directory;
     QVERIFY(directory.isValid());
 

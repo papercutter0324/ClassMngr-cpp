@@ -2433,7 +2433,7 @@ void StartupProfiler::recordCalendarImportWorkbookParsed(
         StartupApplicationMetrics& metrics = profiler->m_scheduleMetrics;
         ++metrics.calendarImportWorkbooksParsed;
         metrics.calendarImportRawBytesRetained = false;
-        metrics.calendarImportWorkbookRetained = true;
+        metrics.calendarImportWorkbookRetained = false;
         metrics.calendarImportWorkbookSheetCount = qMax(0, sheetCount);
         metrics.calendarImportWorkbookCellCount = qMax(0, cellCount);
         metrics.calendarImportWorkbookMergedRangeCount = qMax(0, mergedRangeCount);
@@ -2442,7 +2442,7 @@ void StartupProfiler::recordCalendarImportWorkbookParsed(
 
         const QString detail =
             QStringLiteral(
-                "sheets=%1; cells=%2; mergedRanges=%3; sharedStrings=%4; styles=%5; rawBytesRetained=false; workbookRetained=true"
+                "sheets=%1; cells=%2; mergedRanges=%3; sharedStrings=%4; styles=%5; rawBytesRetained=false; workbookRetained=false"
                 )
                 .arg(metrics.calendarImportWorkbookSheetCount)
                 .arg(metrics.calendarImportWorkbookCellCount)

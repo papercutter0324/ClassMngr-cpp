@@ -12928,9 +12928,14 @@ void StartupPerformanceTests::capturesLargeCalendarImportBoundaryWhenConfigured(
             ).toBool()
         );
     QVERIFY(
-        parsedMetrics.value(
+        !parsedMetrics.value(
             QStringLiteral("calendarImportWorkbookRetained")
             ).toBool()
+        );
+    QVERIFY(
+        parsedCheckpoint.value(QStringLiteral("detail"))
+            .toString()
+            .contains(QStringLiteral("workbookRetained=false"))
         );
 
     const QJsonObject eventsMetrics =

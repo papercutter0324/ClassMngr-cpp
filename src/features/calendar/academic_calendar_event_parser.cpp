@@ -78,39 +78,40 @@ QString comparableFontColor(
 }
 
 QString cellText(
-    const QHash<int, Cell>& cellsByPosition,
+    const QHash<int, const Cell*>& cellsByPosition,
     int row,
     int column
     )
 {
-    return cellsByPosition
-        .value(row * 100 + column)
-        .value
-        .trimmed();
+    const Cell* cell =
+        cellsByPosition.value(row * 100 + column, nullptr);
+    return cell
+        ? cell->value.trimmed()
+        : QString{};
 }
 
 Style cellStyle(
-    const Workbook& workbook,
+    const WorkbookMetadata& metadata,
     const Cell& cell
     )
 {
-    if (cell.style < 0 || cell.style >= workbook.styles.size())
+    if (cell.style < 0 || cell.style >= metadata.styles.size())
     {
         return {};
     }
 
-    return workbook.styles[cell.style];
+    return metadata.styles[cell.style];
 }
 
 int calendarYear(
-    const Workbook& workbook
+    const Worksheet& worksheet
     )
 {
     static const QRegularExpression yearPattern(
         QStringLiteral("(20\\d{2})")
         );
 
-    for (const Cell& cell : workbook.worksheets.constFirst().cells)
+    for (const Cell& cell : worksheet.cells)
     {
         const QRegularExpressionMatch match =
             yearPattern.match(cell.value);
@@ -164,14 +165,14 @@ int monthNumber(
 }
 
 QVector<MonthBlock> monthBlocks(
-    const Workbook& workbook
+    const Worksheet& worksheet
     )
 {
     QVector<MonthBlock> blocks;
     const int year =
-        calendarYear(workbook);
+        calendarYear(worksheet);
 
-    for (const Cell& cell : workbook.worksheets.constFirst().cells)
+    for (const Cell& cell : worksheet.cells)
     {
         const int month =
             monthNumber(cell.value);
@@ -232,7 +233,7 @@ QDate gridDate(
 }
 
 bool hasDisplayedDayInRow(
-    const QHash<int, Cell>& cellsByPosition,
+    const QHash<int, const Cell*>& cellsByPosition,
     const MonthBlock& block,
     int row
     )
@@ -241,11 +242,16 @@ bool hasDisplayedDayInRow(
          column < block.column + CalendarGridColumns;
          ++column)
     {
+        const Cell* cell =
+            cellsByPosition.value(row * 100 + column, nullptr);
+        if (!cell)
+        {
+            continue;
+        }
+
         bool dayOk = false;
         const double displayedDay =
-            cellsByPosition
-                .value(row * 100 + column)
-                .value
+            cell->value
                 .toDouble(&dayOk);
 
         if (dayOk && displayedDay > 0)
@@ -258,24 +264,29 @@ bool hasDisplayedDayInRow(
 }
 
 bool cellDisplaysDay(
-    const QHash<int, Cell>& cellsByPosition,
+    const QHash<int, const Cell*>& cellsByPosition,
     int row,
     int column,
     int day
     )
 {
+    const Cell* cell =
+        cellsByPosition.value(row * 100 + column, nullptr);
+    if (!cell)
+    {
+        return false;
+    }
+
     bool dayOk = false;
     const int displayedDay =
-        cellsByPosition
-            .value(row * 100 + column)
-            .value
+        cell->value
             .toDouble(&dayOk);
 
     return dayOk && displayedDay == day;
 }
 
 int gridStartRow(
-    const QHash<int, Cell>& cellsByPosition,
+    const QHash<int, const Cell*>& cellsByPosition,
     const MonthBlock& block
     )
 {
@@ -385,12 +396,13 @@ QString eventTypeForLegend(
 }
 
 QHash<QString, QString> fillLegend(
-    const Workbook& workbook
+    const WorkbookMetadata& metadata,
+    const Worksheet& worksheet
     )
 {
     QHash<QString, QString> legend;
 
-    for (const Cell& cell : workbook.worksheets.constFirst().cells)
+    for (const Cell& cell : worksheet.cells)
     {
         if (cell.column != LegendColumn)
         {
@@ -398,7 +410,7 @@ QHash<QString, QString> fillLegend(
         }
 
         const Style style =
-            cellStyle(workbook, cell);
+            cellStyle(metadata, cell);
         if (!isMeaningfulFill(style.fillColor))
         {
             continue;
@@ -414,12 +426,13 @@ QHash<QString, QString> fillLegend(
 }
 
 QHash<QString, QString> fontLegend(
-    const Workbook& workbook
+    const WorkbookMetadata& metadata,
+    const Worksheet& worksheet
     )
 {
     QHash<QString, QString> legend;
 
-    for (const Cell& cell : workbook.worksheets.constFirst().cells)
+    for (const Cell& cell : worksheet.cells)
     {
         if (cell.column != LegendColumn)
         {
@@ -427,7 +440,7 @@ QHash<QString, QString> fontLegend(
         }
 
         const Style style =
-            cellStyle(workbook, cell);
+            cellStyle(metadata, cell);
 
         if (!isMeaningfulFontColor(style.fontColor))
         {
@@ -444,17 +457,18 @@ QHash<QString, QString> fontLegend(
 }
 
 Style weekendLegendStyle(
-    const Workbook& workbook
+    const WorkbookMetadata& metadata,
+    const Worksheet& worksheet
     )
 {
-    for (const Cell& cell : workbook.worksheets.constFirst().cells)
+    for (const Cell& cell : worksheet.cells)
     {
         if (
             cell.column == LegendColumn
             && isWeekendLegend(cell.value)
             )
         {
-            return cellStyle(workbook, cell);
+            return cellStyle(metadata, cell);
         }
     }
 
@@ -616,9 +630,8 @@ void addNoteEntries(
 }
 
 QHash<QDate, QStringList> noteTitlesByDate(
-    const Workbook& workbook,
     const QVector<MonthBlock>& blocks,
-    const QHash<int, Cell>& cellsByPosition,
+    const QHash<int, const Cell*>& cellsByPosition,
     QSet<QDate>* cancelledDates
     )
 {
@@ -805,45 +818,40 @@ CalendarEvent calendarEvent(
     return event;
 }
 
-ParsedCalendarImport parseCalendarEventsFromWorkbook(
-    const Workbook& workbook,
+ParsedCalendarImport parseCalendarEventsFromWorksheet(
+    const WorkbookMetadata& metadata,
+    const Worksheet& worksheet,
     const QStringList& campusCodes
     )
 {
     ParsedCalendarImport result;
-    if (workbook.worksheets.isEmpty())
-    {
-        return result;
-    }
-
     const QStringList knownCampusCodes =
         normalizedCampusCodes(campusCodes);
     const QVector<MonthBlock> blocks =
-        monthBlocks(workbook);
+        monthBlocks(worksheet);
 
-    QHash<int, Cell> cellsByPosition;
-    for (const Cell& cell : workbook.worksheets.constFirst().cells)
+    QHash<int, const Cell*> cellsByPosition;
+    for (const Cell& cell : worksheet.cells)
     {
         cellsByPosition.insert(
             cell.row * 100 + cell.column,
-            cell
+            &cell
             );
     }
 
     QSet<QDate> cancelledDates;
     const QHash<QDate, QStringList> titlesByDate =
         noteTitlesByDate(
-            workbook,
             blocks,
             cellsByPosition,
             &cancelledDates
             );
     const QHash<QString, QString> labelsByFill =
-        fillLegend(workbook);
+        fillLegend(metadata, worksheet);
     const QHash<QString, QString> labelsByFont =
-        fontLegend(workbook);
+        fontLegend(metadata, worksheet);
     const Style weekendStyle =
-        weekendLegendStyle(workbook);
+        weekendLegendStyle(metadata, worksheet);
     const QString weekendFill =
         normalizedColor(weekendStyle.fillColor);
     const QString weekendFont =
@@ -869,17 +877,20 @@ ParsedCalendarImport parseCalendarEventsFromWorkbook(
                  column < block.column + CalendarGridColumns;
                  ++column)
             {
-                const Cell cell =
-                    cellsByPosition.value(row * 100 + column);
+                const Cell* cell =
+                    cellsByPosition.value(
+                        row * 100 + column,
+                        nullptr
+                        );
 
-                if (cell.value.trimmed().isEmpty())
+                if (!cell || cell->value.trimmed().isEmpty())
                 {
                     continue;
                 }
 
                 bool dayOk = false;
                 const int displayedDay =
-                    cell.value.toDouble(&dayOk);
+                    cell->value.toDouble(&dayOk);
 
                 if (!dayOk || displayedDay <= 0)
                 {
@@ -904,7 +915,7 @@ ParsedCalendarImport parseCalendarEventsFromWorkbook(
                 }
 
                 const Style style =
-                    cellStyle(workbook, cell);
+                    cellStyle(metadata, *cell);
                 QStringList labels;
 
                 const QString fill =
@@ -971,7 +982,7 @@ ParsedCalendarImport parseCalendarEventsFromWorkbook(
                         const QString importTitle =
                             titleWithCampusCodes(
                                 title,
-                                cell.note,
+                                cell->note,
                                 knownCampusCodes
                                 );
                         const CalendarEvent event =
@@ -997,6 +1008,27 @@ ParsedCalendarImport parseCalendarEventsFromWorkbook(
     }
 
     return result;
+}
+
+ParsedCalendarImport parseCalendarEventsFromWorkbook(
+    const Workbook& workbook,
+    const QStringList& campusCodes
+    )
+{
+    if (workbook.worksheets.isEmpty())
+    {
+        return {};
+    }
+
+    const WorkbookMetadata metadata{
+        workbook.sharedStrings,
+        workbook.styles
+    };
+    return parseCalendarEventsFromWorksheet(
+        metadata,
+        workbook.worksheets.constFirst(),
+        campusCodes
+        );
 }
 
 }

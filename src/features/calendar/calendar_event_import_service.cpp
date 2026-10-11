@@ -224,47 +224,73 @@ void CalendarEventImportService::handleFinished(
         );
 
     QString errorMessage;
-    const CalendarImport::Workbook workbook =
-        CalendarImport::parseWorkbook(
+    CalendarImport::ParsedCalendarImport parsed;
+    int workbookCellCount = 0;
+    int workbookMergedRangeCount = 0;
+    int workbookSheetCount = 0;
+    int workbookSharedStringCount = 0;
+    int workbookStyleCount = 0;
+    bool firstWorksheet = true;
+    const bool workbookParsed =
+        CalendarImport::forEachWorksheet(
             workbookData,
+            [&parsed,
+             &workbookCellCount,
+             &workbookMergedRangeCount,
+             &workbookSheetCount,
+             &workbookSharedStringCount,
+             &workbookStyleCount,
+             &firstWorksheet](
+                const CalendarImport::WorkbookMetadata& metadata,
+                const CalendarImport::Worksheet& worksheet
+                )
+            {
+                ++workbookSheetCount;
+                workbookCellCount += worksheet.cells.size();
+                workbookMergedRangeCount += worksheet.mergedRanges.size();
+                if (firstWorksheet)
+                {
+                    workbookSharedStringCount =
+                        metadata.sharedStrings.size();
+                    workbookStyleCount = metadata.styles.size();
+                    const ClassMngr::Next::Platform::
+                        CalendarEventImportCampusCodeQueryAdapter
+                            campusCodeQueryAdapter;
+                    const ClassMngr::Next::Application::
+                        CalendarEventImportCampusCodeQueryPort&
+                            campusCodeQueryPort = campusCodeQueryAdapter;
+                    parsed =
+                        CalendarImport::parseCalendarEventsFromWorksheet(
+                            metadata,
+                            worksheet,
+                            calendarImportCampusCodes(campusCodeQueryPort)
+                            );
+                    firstWorksheet = false;
+                }
+                return true;
+            },
             &errorMessage
             );
 
-    if (!errorMessage.isEmpty())
+    workbookData.clear();
+    workbookData.squeeze();
+
+    if (!workbookParsed)
     {
+        parsed = {};
         StartupProfiler::recordCalendarImportFailed(errorMessage);
         emit importFailed(errorMessage);
         return;
     }
 
-    workbookData.clear();
-    workbookData.squeeze();
-
-    int workbookCellCount = 0;
-    int workbookMergedRangeCount = 0;
-    for (const CalendarImport::Worksheet& worksheet : workbook.worksheets)
-    {
-        workbookCellCount += worksheet.cells.size();
-        workbookMergedRangeCount += worksheet.mergedRanges.size();
-    }
     StartupProfiler::recordCalendarImportWorkbookParsed(
-        workbook.worksheets.size(),
+        workbookSheetCount,
         workbookCellCount,
         workbookMergedRangeCount,
-        workbook.sharedStrings.size(),
-        workbook.styles.size()
+        workbookSharedStringCount,
+        workbookStyleCount
         );
 
-    const ClassMngr::Next::Platform::
-        CalendarEventImportCampusCodeQueryAdapter campusCodeQueryAdapter;
-    const ClassMngr::Next::Application::
-        CalendarEventImportCampusCodeQueryPort& campusCodeQueryPort =
-            campusCodeQueryAdapter;
-    CalendarImport::ParsedCalendarImport parsed =
-        CalendarImport::parseCalendarEventsFromWorkbook(
-            workbook,
-            calendarImportCampusCodes(campusCodeQueryPort)
-            );
     StartupProfiler::recordCalendarImportEventsPrepared(
         parsed.events.size(),
         parsed.skippedCount

@@ -9,6 +9,8 @@
 namespace CalendarImport
 {
 struct Workbook;
+struct WorkbookMetadata;
+struct Worksheet;
 
 struct ParsedCalendarImport
 {
@@ -18,6 +20,12 @@ struct ParsedCalendarImport
 
 ParsedCalendarImport parseCalendarEventsFromWorkbook(
     const Workbook& workbook,
+    const QStringList& campusCodes = {}
+    );
+
+ParsedCalendarImport parseCalendarEventsFromWorksheet(
+    const WorkbookMetadata& metadata,
+    const Worksheet& worksheet,
     const QStringList& campusCodes = {}
     );
 

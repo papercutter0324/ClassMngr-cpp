@@ -5,7 +5,10 @@
 
 #include <QtTest>
 
+#include <zlib.h>
+
 #include <string>
+#include <utility>
 
 namespace
 {
@@ -30,6 +33,186 @@ CalendarImport::Workbook baseWorkbook()
 
     return workbook;
 }
+
+void appendLittleEndian(
+    QByteArray* data,
+    quint32 value,
+    int byteCount
+    )
+{
+    for (int byte = 0; byte < byteCount; ++byte)
+    {
+        data->append(
+            static_cast<char>((value >> (byte * 8)) & 0xff)
+            );
+    }
+}
+
+struct TestArchiveEntry
+{
+    QByteArray name;
+    QByteArray contents;
+    quint32 crc = 0;
+    quint32 localOffset = 0;
+};
+
+QByteArray storedZipArchive(
+    const QList<std::pair<QByteArray, QByteArray>>& files
+    )
+{
+    QByteArray archive;
+    QVector<TestArchiveEntry> entries;
+    entries.reserve(files.size());
+
+    for (const auto& [name, contents] : files)
+    {
+        TestArchiveEntry entry;
+        entry.name = name;
+        entry.contents = contents;
+        entry.crc = static_cast<quint32>(
+            crc32(
+                0L,
+                reinterpret_cast<const Bytef*>(contents.constData()),
+                static_cast<uInt>(contents.size())
+                )
+            );
+        entry.localOffset = static_cast<quint32>(archive.size());
+
+        appendLittleEndian(&archive, 0x04034b50, 4);
+        appendLittleEndian(&archive, 20, 2);
+        appendLittleEndian(&archive, 0, 2);
+        appendLittleEndian(&archive, 0, 2);
+        appendLittleEndian(&archive, 0, 2);
+        appendLittleEndian(&archive, 0, 2);
+        appendLittleEndian(&archive, entry.crc, 4);
+        appendLittleEndian(&archive, entry.contents.size(), 4);
+        appendLittleEndian(&archive, entry.contents.size(), 4);
+        appendLittleEndian(&archive, entry.name.size(), 2);
+        appendLittleEndian(&archive, 0, 2);
+        archive.append(entry.name);
+        archive.append(entry.contents);
+        entries.append(std::move(entry));
+    }
+
+    const quint32 centralDirectoryOffset =
+        static_cast<quint32>(archive.size());
+    for (const TestArchiveEntry& entry : entries)
+    {
+        appendLittleEndian(&archive, 0x02014b50, 4);
+        appendLittleEndian(&archive, 20, 2);
+        appendLittleEndian(&archive, 20, 2);
+        appendLittleEndian(&archive, 0, 2);
+        appendLittleEndian(&archive, 0, 2);
+        appendLittleEndian(&archive, 0, 2);
+        appendLittleEndian(&archive, 0, 2);
+        appendLittleEndian(&archive, entry.crc, 4);
+        appendLittleEndian(&archive, entry.contents.size(), 4);
+        appendLittleEndian(&archive, entry.contents.size(), 4);
+        appendLittleEndian(&archive, entry.name.size(), 2);
+        appendLittleEndian(&archive, 0, 2);
+        appendLittleEndian(&archive, 0, 2);
+        appendLittleEndian(&archive, 0, 2);
+        appendLittleEndian(&archive, 0, 2);
+        appendLittleEndian(&archive, 0, 4);
+        appendLittleEndian(&archive, entry.localOffset, 4);
+        archive.append(entry.name);
+    }
+
+    const quint32 centralDirectorySize =
+        static_cast<quint32>(archive.size()) - centralDirectoryOffset;
+    appendLittleEndian(&archive, 0x06054b50, 4);
+    appendLittleEndian(&archive, 0, 2);
+    appendLittleEndian(&archive, 0, 2);
+    appendLittleEndian(&archive, entries.size(), 2);
+    appendLittleEndian(&archive, entries.size(), 2);
+    appendLittleEndian(&archive, centralDirectorySize, 4);
+    appendLittleEndian(&archive, centralDirectoryOffset, 4);
+    appendLittleEndian(&archive, 0, 2);
+
+    return archive;
+}
+
+QByteArray calendarWorksheetXml(
+    bool populated
+    )
+{
+    if (!populated)
+    {
+        return QByteArrayLiteral(
+            "<worksheet><sheetData/></worksheet>"
+            );
+    }
+
+    return QByteArrayLiteral(
+        "<worksheet><sheetData>"
+        "<row r=\"1\"><c r=\"A1\" t=\"inlineStr\"><is><t>JULY</t></is></c>"
+        "<c r=\"B1\" t=\"inlineStr\"><is><t>2026</t></is></c></row>"
+        "<row r=\"4\"><c r=\"A4\" s=\"1\" t=\"inlineStr\"><is><t>6</t></is></c></row>"
+        "<row r=\"20\"><c r=\"Z20\" s=\"1\" t=\"inlineStr\"><is><t>New Semester</t></is></c></row>"
+        "</sheetData></worksheet>"
+        );
+}
+
+QByteArray calendarWorkbookArchive(
+    int worksheetCount,
+    bool populatedWorksheets,
+    bool omitLastWorksheet
+    )
+{
+    QByteArray workbookXml = QByteArrayLiteral("<workbook><sheets>");
+    QByteArray relationshipsXml = QByteArrayLiteral("<Relationships>");
+    QList<std::pair<QByteArray, QByteArray>> files;
+    for (int index = 0; index < worksheetCount; ++index)
+    {
+        const int sheetNumber = index + 1;
+        const QByteArray suffix = QByteArray::number(sheetNumber);
+        const QByteArray name =
+            index == 0 ? QByteArrayLiteral("First")
+                       : QByteArrayLiteral("Later");
+        workbookXml.append(
+            QByteArrayLiteral("<sheet name=\"") + name
+            + QByteArrayLiteral("\" id=\"rId") + suffix
+            + QByteArrayLiteral("\"/>")
+            );
+        relationshipsXml.append(
+            QByteArrayLiteral("<Relationship Id=\"rId") + suffix
+            + QByteArrayLiteral("\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet\" Target=\"worksheets/sheet")
+            + suffix + QByteArrayLiteral(".xml\"/>")
+            );
+        if (!(omitLastWorksheet && index == worksheetCount - 1))
+        {
+            files.append({
+                QByteArrayLiteral("xl/worksheets/sheet") + suffix
+                    + QByteArrayLiteral(".xml"),
+                calendarWorksheetXml(populatedWorksheets)
+            });
+        }
+    }
+    workbookXml.append(QByteArrayLiteral("</sheets></workbook>"));
+    relationshipsXml.append(QByteArrayLiteral("</Relationships>"));
+
+    files.prepend({
+        QByteArrayLiteral("xl/_rels/workbook.xml.rels"),
+        relationshipsXml
+    });
+    files.prepend({
+        QByteArrayLiteral("xl/workbook.xml"),
+        workbookXml
+    });
+    if (populatedWorksheets)
+    {
+        files.append({
+            QByteArrayLiteral("xl/styles.xml"),
+            QByteArrayLiteral(
+                "<styleSheet><fonts><font/></fonts><fills>"
+                "<fill><patternFill patternType=\"none\"/></fill>"
+                "<fill><patternFill patternType=\"solid\"><fgColor rgb=\"FFCCCCCC\"/></patternFill></fill>"
+                "</fills><cellXfs><xf/><xf fillId=\"1\" fontId=\"0\"/></cellXfs></styleSheet>"
+                )
+        });
+    }
+    return storedZipArchive(files);
+}
 }
 
 class CalendarImportTests : public QObject
@@ -39,8 +222,11 @@ class CalendarImportTests : public QObject
 private slots:
     void importsOnlyFirstWorksheetInCalendarOrder();
     void returnsNoEventsForMissingOrEmptyFirstWorksheet();
+    void lastCellAtDuplicateCoordinateWinsInProjection();
+    void cancelledCalendarDatesAreSuppressed();
     void readerRejectsUnreadableWorkbook_data();
     void readerRejectsUnreadableWorkbook();
+    void readerRejectsMalformedLaterWorksheetAndAllEmptyWorkbook();
     void ignoresWeekendLegendEntries();
     void importsNewSemesterLegendEntries();
     void importsWeekendFontColorOverrides();
@@ -107,6 +293,38 @@ void CalendarImportTests::returnsNoEventsForMissingOrEmptyFirstWorksheet()
     QCOMPARE(emptyFirst.skippedCount, 0);
 }
 
+void CalendarImportTests::lastCellAtDuplicateCoordinateWinsInProjection()
+{
+    CalendarImport::Workbook workbook = baseWorkbook();
+    auto& worksheet = workbook.worksheets.first();
+    worksheet.cells.append(
+        {20, 26, 1, QStringLiteral("New Semester"), QString()}
+        );
+    worksheet.cells.append({4, 2, 1, QStringLiteral("6"), QString()});
+    worksheet.cells.append({4, 2, 1, QStringLiteral("7"), QString()});
+
+    const auto parsed = CalendarImport::parseCalendarEventsFromWorkbook(workbook);
+
+    QCOMPARE(parsed.events.size(), 1);
+    QCOMPARE(parsed.events.first().startDate, QDate(2026, 7, 7));
+}
+
+void CalendarImportTests::cancelledCalendarDatesAreSuppressed()
+{
+    CalendarImport::Workbook workbook = baseWorkbook();
+    auto& worksheet = workbook.worksheets.first();
+    worksheet.cells.append(
+        {20, 26, 1, QStringLiteral("New Semester"), QString()}
+        );
+    worksheet.cells.append({4, 1, 1, QStringLiteral("6"), QString()});
+    worksheet.cells.append({9, 1, 0, QStringLiteral("6 - CANCELLED"), {}});
+
+    const auto parsed = CalendarImport::parseCalendarEventsFromWorkbook(workbook);
+
+    QVERIFY(parsed.events.isEmpty());
+    QCOMPARE(parsed.skippedCount, 0);
+}
+
 void CalendarImportTests::readerRejectsUnreadableWorkbook_data()
 {
     QTest::addColumn<QByteArray>("bytes");
@@ -125,6 +343,64 @@ void CalendarImportTests::readerRejectsUnreadableWorkbook()
     const auto parsed = CalendarImport::parseCalendarEventsFromWorkbook(workbook);
     QVERIFY(parsed.events.isEmpty());
     QCOMPARE(parsed.skippedCount, 0);
+}
+
+void CalendarImportTests::readerRejectsMalformedLaterWorksheetAndAllEmptyWorkbook()
+{
+    const QByteArray malformedLater =
+        calendarWorkbookArchive(2, true, true);
+    CalendarImport::ParsedCalendarImport projection;
+    int worksheetCallbacks = 0;
+    QString error;
+    const bool malformedSucceeded =
+        CalendarImport::forEachWorksheet(
+            malformedLater,
+            [&projection, &worksheetCallbacks](
+                const CalendarImport::WorkbookMetadata& metadata,
+                const CalendarImport::Worksheet& worksheet
+                )
+            {
+                ++worksheetCallbacks;
+                if (worksheetCallbacks == 1)
+                {
+                    projection =
+                        CalendarImport::parseCalendarEventsFromWorksheet(
+                            metadata,
+                            worksheet
+                            );
+                }
+                return true;
+            },
+            &error
+            );
+
+    QVERIFY(!malformedSucceeded);
+    QCOMPARE(worksheetCallbacks, 1);
+    QCOMPARE(projection.events.size(), 1);
+    QCOMPARE(error, QStringLiteral("The spreadsheet is missing worksheet Later."));
+
+    error.clear();
+    worksheetCallbacks = 0;
+    bool worksheetsAreEmpty = true;
+    const bool emptySucceeded =
+        CalendarImport::forEachWorksheet(
+            calendarWorkbookArchive(2, false, false),
+            [&worksheetCallbacks, &worksheetsAreEmpty](
+                const CalendarImport::WorkbookMetadata&,
+                const CalendarImport::Worksheet& worksheet
+                )
+            {
+                ++worksheetCallbacks;
+                worksheetsAreEmpty =
+                    worksheetsAreEmpty && worksheet.cells.isEmpty();
+                return true;
+            },
+            &error
+            );
+    QVERIFY(!emptySucceeded);
+    QCOMPARE(worksheetCallbacks, 2);
+    QVERIFY(worksheetsAreEmpty);
+    QCOMPARE(error, QStringLiteral("The downloaded spreadsheet could not be read."));
 }
 
 void CalendarImportTests::ignoresWeekendLegendEntries()
