@@ -3843,3 +3843,26 @@ Value-only page descendant counts and a selected-editor descendant count now app
 ## F519 deferred widget cleanup - 2026-10-10
 
 The packaged route confirmed the `deleteLater()` explanation for the Classes count changes. After refresh, 8 current schedule rows had 24 live row widgets; after the second refresh, 9 current rows had 42 live widgets. At the natural event-loop return, the count was 9/9. Tab roots were 1 active / 2 live after refresh, 1/1 after the event-loop return, 0/0 on synchronous leave, and 1/1 on re-entry. Focused tests reproduced the 3-old-to-2-current row window (2 current/5 live before event processing, then 2/2) and confirmed the retained Details rows. This establishes deferred cleanup timing and navigation ownership, but not process bytes per object. The five-second process working sets still exceed 250 MiB; F520 will assess whether synchronously disposing a replaced tab root is safe and useful.
+
+## F671 Custom Color Palette typed failure feedback - 2026-10-12
+
+F671 changed the palette preference write to a typed Technical result and
+propagated the diagnostic through all seven color chooser callers. The shared
+ColorUtils callback runs after the color dialog closes on both Accept and
+Cancel; a failed palette write does not discard an accepted feature color.
+The independent trigger-backed test verifies the original compact palette
+JSON and an unrelated setting remain unchanged. Both focused CTests passed
+2/2; no full suite ran. F671 is committed as
+d34ace9387199dc59c856d4edfff24da700c10a2.
+
+## F672 Theme preference transaction - selected - 2026-10-12
+
+Theme preferences remain the direct preference port with a void write
+contract. Its SettingsManager adapter currently calls QSettings::setValue
+and a void sync, while OptionState changes the checked action before its
+persistence callback and ThemeController applies the live theme afterward.
+F672 will add a checked SettingsManager theme-write path that discards a
+failed QSettings object, return a typed adapter result, and move persistence
+into the theme controller transaction. Failure acceptance requires the prior
+stored theme, live theme, preference snapshot, and checked action to remain
+consistent, one diagnostic warning, and a successful retry after recovery.

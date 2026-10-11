@@ -5346,3 +5346,18 @@ Add real MainWindow Delete Class QAction success coverage to MainWindowScheduleT
 ## F443 accepted; ready to commit - 2026-10-09
 
 The MainWindow Delete Class QAction selected and deleted the target through the real chooser and confirmation. Target class/ClassInfo/schedule rows are gone; sibling data is unchanged and the sibling is active in Classes Details. The Classes page/sidebar route and session/path remain stable; no warning or unsaved prompt appeared. Executor and independent Tester passed target build, exact CTest 1/1, target QtTest 12 passes (10 cases plus setup/cleanup), and selected case 3/3. No compiler warnings; Qt font/offscreen notices only. No full suite or production/CMake change. F443 is accepted and ready to commit. F444 successful Open File QAction replacement is next. Preserve latest_session_work.md and unrelated %SystemDrive%/ outside slice commits.
+
+## Resumed Phase 2 after F670; F671 accepted and F672 selected - 2026-10-12
+
+F671 Custom Color Palette typed persistence and caller feedback is committed
+as d34ace9387199dc59c856d4edfff24da700c10a2. The product and both focused
+test targets built, and the exact port and ColorUtils CTests passed 2/2. The
+trigger-backed failure test confirms both the prior compact palette JSON and
+an unrelated setting remain unchanged. No full suite ran. Batch 146 is
+complete.
+
+F672 Theme preference typed persistence and action rollback is selected in
+Batch 147. Its matrix is recorded in the Phase 2 progress log. The checked
+theme write must recover from a failed QSettings sync, preserve the previous
+committed theme, restore the previous checked action, and report one
+diagnostic warning before a successful retry. Implementation has not begun.

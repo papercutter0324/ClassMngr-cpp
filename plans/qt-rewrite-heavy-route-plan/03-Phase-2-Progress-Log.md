@@ -24300,3 +24300,72 @@ contract in this scan.
    `ClassMngr` target to compile all call sites. Add no CMake target.
 
 This matrix is recorded before implementation. Batch 146 is active with F671.
+
+### F671 Custom Color Palette save failure - accepted - 2026-10-12
+
+F671 is accepted at code commit
+`d34ace9387199dc59c856d4edfff24da700c10a2`. The product target and both
+focused test targets built in the Windows x64 Ninja tree. The exact CTests
+passed 2/2:
+`ClassMngrNextPlatformApplicationServicesCustomColorPalettePreferencesPortTests`
+and `ClassMngrColorUtilsCustomColorPaletteTests`. Direct QtTest passed 10/10
+for the port target and 7/7 for ColorUtils. The trigger-backed failure test
+confirms the prior compact palette JSON and unrelated setting remain intact.
+ColorUtils tests verify exactly one failure callback after either dialog
+outcome while preserving the accepted color and invalid-color cancel result.
+No full suite was run.
+
+**Decision: accept F671.** Batch 146 is complete; Batch 147 is active with
+F672. Continue the one-commit-per-slice sequence.
+
+### Batch 147 shortlist and selection - recorded before F672 implementation - 2026-10-12
+
+The Phase 2 scan found Theme preference as the remaining direct preference
+port with a `void write` contract
+(`src/next/application/theme_preferences_port.h`,
+`src/next/platform/settings_manager_theme_preferences_port.h`). Unlike the
+recent database-backed preference slices, its adapter calls
+`SettingsManager::set`, and the generic `set`/`sync` wrapper does not report
+`QSettings` failures. `OptionState::set` also updates the checked action before
+calling its persistence callback; the live theme controller runs after that
+callback, so merely changing the write return type would leave UI and live
+state inconsistent on failure.
+
+**F672 is selected:** add a checked, synchronized SettingsManager write path
+for theme preferences that returns the QSettings status and recreates the
+settings object after a failed sync to discard its cached candidate and
+latched error. Keep existing generic `set`/`sync` behavior unchanged. Make the
+Theme Preferences port write typed, and move theme persistence into the theme
+controller transaction: only apply the live theme and advance its preference
+snapshot after persistence succeeds. On failure, restore the previous checked
+action and show one `Unable to Save Preference` warning with the diagnostic.
+The next retry must succeed after the storage fault is removed. The failure
+must leave the stored value readable as the previous committed theme.
+
+### F672 Theme preference failure acceptance matrix - recorded before implementation - 2026-10-12
+
+1. Add an additive SettingsManager theme-write operation that calls
+   `setValue` and `sync`, checks `QSettings::status`, returns the status, and
+   replaces the failed QSettings object so a cached candidate or latched error
+   cannot poison reads or retries. Preserve the prior committed theme after a
+   failed write; a later write succeeds after the fault is removed. Existing
+   generic `set`, `sync`, reads, and stored integer mappings remain unchanged.
+2. Change `ThemePreferencesPort::write` and its SettingsManager adapter to
+   return `[[nodiscard]] Domain::Result<void>`. Return a diagnostic Technical
+   error for a storage failure and an InvalidInput result for an unsupported
+   theme value; preserve the canonical 0/1/2 mapping and read defaults.
+3. Make ThemeController own the persistence-before-apply path. A failed
+   preference write must leave the stored value, ThemeService, preference
+   snapshot, OptionState value, and checked QAction on the previous theme and
+   invoke one warning callback with the diagnostic. After fault removal, a
+   successful retry updates the stored setting, action, snapshot, and live
+   theme together. Preserve startup selection and successful theme action
+   parity.
+4. Cover QSettings failure and retry in
+   `ClassMngrNextPlatformSettingsManagerThemePreferencesPortTests`; cover
+   controller rollback, one diagnostic callback, and successful retry in
+   `ClassMngrStartupVisualSettingsTests`; retain real action parity in
+   `ClassMngrMainWindowThemeActionParityTests`. Build `ClassMngr` and these
+   existing targets and run exactly those three CTests. Add no CMake target.
+
+This matrix is recorded before implementation. Batch 147 is active with F672.
