@@ -42,7 +42,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-11
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F613 is establishing deterministic packaged SQL-route Sub Prep PDF parity; F579 remains deferred and F598 still awaits elevated WPR, with memory, render/window, and Phase 0 gates open.
+- Current note: F615 is stabilizing Schedule Import dialog integration coverage; F579 remains deferred and F598 awaits elevated WPR, while F526 provenance, the 250 MiB lifecycle, render/window, and Phase 0 gates remain open.
 
 ### Slice discovery batches
 
@@ -68,14 +68,16 @@ Treat this plan as an operational summary, not a history:
   clarified.
 - F579 - Deferred at the user's direction: take a fresh matched-symbol heap
   capture; revisit after the user asks to resume symbol work.
+- F614 - Deferred after F612: the measured source/package payload is 22,662
+  UTF-8 bytes and the typed source releases before rendering; current evidence
+  does not justify a material ownership refactor. Revisit with larger-fixture
+  or owner-specific memory evidence.
 - F598 - Fresh matched WPR heap capture for the F596 Release route is blocked
   because the current execution identity is not an Administrator; resume when
   a Windows process with an elevated administrator token is available.
 
 #### Active batch: Batch 117
 
-- F613 - Establish packaged Sub Prep SQL-route output parity with deterministic dates and page-level semantics.
-- F614 - Reduce Sub Prep source-to-renderer overlap if F612 shows a material opportunity.
 - F615 - Stabilize Schedule Import dialog integration coverage for ordering, refresh, apply, reject, and cancellation.
 - F616 - Stage Calendar workbook-to-event projection while preserving event order and cancellation behavior.
 - F617 - Reduce Class Transfer import ownership overlap while preserving resolution and apply behavior.

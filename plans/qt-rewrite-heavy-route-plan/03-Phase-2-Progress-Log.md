@@ -21429,6 +21429,9 @@ macOS 0/24).
 
 ## F612 measured Sub Prep roster-output stages - 2026-10-11
 
+Commit: `e2aef9d7c9cf753e6b8d1a853e3e2bded3bb29ea` (`Phase 2 - Measure
+Sub Prep roster-output stages (F612)`).
+
 F612 adds stage checkpoints and in-loop counters across the typed Sub Prep
 roster source, PackageClass mapping, renderer cell projection, and owner
 release boundaries. The counters are collected during existing projection
@@ -21464,3 +21467,57 @@ synthetic package-service PDFs and aggregate byte equality do not establish
 that parity. F579 symbols remain deferred at the user's direction, F598 still
 needs an elevated Administrator WPR process, and the 250 MiB lifecycle gate,
 output parity, render/window acceptance, and global Phase 0 remain open.
+
+## F613 packaged Sub Prep SQL-route semantic parity - 2026-10-11
+
+The fixed Windows x64 Release route ran the 96-class SQL fixture in By Day
+mode for Monday 2026-09-14 through Friday 2026-09-18, with Teacher 01 selected,
+folder creation enabled, and print/automatic-folder-open disabled. The fixture
+contains 30 weekday classes and 66 Saturday classes. The output contained all
+30 expected weekday student markers on their expected day/class/teacher pages
+and no Saturday student markers.
+
+The generated document order was `Sub Prep.pdf`, then `Rosters - By Day.pdf`.
+Both matched the checked-in historical packaged SQL-route references by page
+count, per-page dimensions, and normalized text with page boundaries
+preserved: 12 portrait pages at 595 x 842 points and 5 landscape pages at 842 x
+595 points. The two PDFs totaled 139,650 bytes. Their hashes differ from the
+historical files; PDF byte equality is explicitly not required. References
+were not changed.
+
+The Phase 0 route sidecar records fixture SQL SHA-256
+`1b2f09be03cce809e239112b3f7b4f2af405bad83a420db0c6ffe5ef0eb597e3`, generated
+database hashes `c036a9c86fc889d577bcf0374ef0e48b448f8b8dc03ba66eba6c3446830afb47`
+before launch and
+`4b190baa546508ec076158ac6f668c11a1fdff6884c77f909068247887431667` after the
+route, Release app SHA-256
+`c07753d912701c8c0c98cc700b33fa73fdd73e03fb9b9ec1909f0bdc372ef3ba`, and
+harness SHA-256
+`e9763190fced9691bb1afcf2425b5b0b4436bb394d70f00511f669a1a7823245`. The
+before/after source snapshot matched across 1,033 tracked source files with
+SHA-256 `3862e8d093c34b20a46c38c17b2d043b7b554cc87f3d02c30816f905aba6aacb`.
+An independent Release rerun confirmed the same source, app, harness, fixture,
+and reference files remained unchanged, and independently checked the
+sidecar's generated and reference PDF hashes.
+
+A separate real-SQL-source-port cancellation test reached the print stage
+with both PDFs present, returned `Canceled`, and confirmed both temporary PDFs
+and the staging directory were removed. Focused Debug CTest passed 1/1 for
+`ClassMngrSubPrepRosterOutputParityTests`; the test checks SQL-source print
+cancellation cleanup. The independent verification also rebuilt the focused
+Debug app, parity, and startup-performance targets, and the fixed-date
+packaged Release route exited successfully. The runner's earlier whole-worktree
+warning came from the main-owned progress-log edit during its run; the
+independent rerun confirmed stable before/after source identity. No broad suite
+or PDF-byte equality claim was made.
+
+F613 is accepted. F526's historical capture still lacks source identity, but
+the current Release route now has a deterministic, source-bound semantic
+comparison. F614 is deferred: F612 found a 22,662-byte UTF-8 source/package
+payload on this fixture and showed the typed source released before rendering,
+without owner-specific memory evidence that would justify a material
+ownership refactor. Revisit F614 only with a larger fixture or owner-specific
+memory evidence. F615 is next. F579 symbols remain deferred at the user's
+direction; F598 still requires elevated WPR. The 250 MiB lifecycle gate,
+render/window acceptance, and global Phase 0 remain open (Windows 1/24,
+macOS 0/24).

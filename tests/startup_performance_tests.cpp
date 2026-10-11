@@ -653,6 +653,263 @@ QByteArray sha256File(const QString& path)
         ).toHex();
 }
 
+struct SubPrepPdfPageSnapshot
+{
+    QSizeF pointSize;
+    QString normalizedText;
+};
+
+struct SubPrepPdfSnapshot
+{
+    QString path;
+    QString fileName;
+    QByteArray sha256;
+    qint64 bytes = 0;
+    QList<SubPrepPdfPageSnapshot> pages;
+};
+
+QString normalizedPdfText(QString text)
+{
+    return text.normalized(QString::NormalizationForm_KC).simplified();
+}
+
+bool readSubPrepPdfSnapshot(
+    const QString& pdfPath,
+    SubPrepPdfSnapshot* snapshot,
+    QString* errorMessage
+    )
+{
+    if (!snapshot)
+    {
+        if (errorMessage)
+        {
+            *errorMessage = QStringLiteral("PDF snapshot output is missing.");
+        }
+        return false;
+    }
+
+    QPdfDocument document;
+    if (document.load(pdfPath) != QPdfDocument::Error::None
+        || document.status() != QPdfDocument::Status::Ready
+        || document.pageCount() <= 0)
+    {
+        if (errorMessage)
+        {
+            *errorMessage =
+                QStringLiteral("Unable to load Sub Prep PDF: %1")
+                    .arg(pdfPath);
+        }
+        return false;
+    }
+
+    snapshot->path = pdfPath;
+    snapshot->fileName = QFileInfo(pdfPath).fileName();
+    snapshot->sha256 = sha256File(pdfPath);
+    snapshot->bytes = QFileInfo(pdfPath).size();
+    snapshot->pages.clear();
+    snapshot->pages.reserve(document.pageCount());
+    if (snapshot->sha256.size() != 64)
+    {
+        if (errorMessage)
+        {
+            *errorMessage =
+                QStringLiteral("Unable to hash Sub Prep PDF: %1")
+                    .arg(pdfPath);
+        }
+        return false;
+    }
+
+    for (int pageIndex = 0; pageIndex < document.pageCount(); ++pageIndex)
+    {
+        snapshot->pages.append({
+            document.pagePointSize(pageIndex),
+            normalizedPdfText(document.getAllText(pageIndex).text())
+        });
+    }
+
+    return true;
+}
+
+QJsonObject sourceTreeSnapshot(
+    const QString& sourceRoot,
+    const QString& applicationPath
+    )
+{
+    QStringList sourceFiles;
+    QDirIterator sourceIterator(
+        QDir(sourceRoot).filePath(QStringLiteral("src")),
+        QDir::Files,
+        QDirIterator::Subdirectories
+        );
+    while (sourceIterator.hasNext())
+    {
+        sourceFiles.append(sourceIterator.next());
+    }
+
+    for (const QString& relativePath : {
+             QStringLiteral("tests/startup_performance_tests.cpp"),
+             QStringLiteral("tests/fixtures/workspaces/large_startup.sql"),
+             QStringLiteral("scripts/phase0/run_phase0_evidence.ps1")
+         })
+    {
+        sourceFiles.append(QDir(sourceRoot).filePath(relativePath));
+    }
+    std::sort(sourceFiles.begin(), sourceFiles.end());
+
+    QCryptographicHash sourceHash(QCryptographicHash::Sha256);
+    int fileCount = 0;
+    for (const QString& path : std::as_const(sourceFiles))
+    {
+        const QByteArray fileHash = sha256File(path);
+        if (fileHash.size() != 64)
+        {
+            return {
+                {QStringLiteral("available"), false},
+                {QStringLiteral("error"), QStringLiteral("Unable to hash %1").arg(path)},
+                {QStringLiteral("fileCount"), fileCount}
+            };
+        }
+
+        const QString relativePath = QDir(sourceRoot).relativeFilePath(path);
+        sourceHash.addData(relativePath.toUtf8());
+        sourceHash.addData("\0", 1);
+        sourceHash.addData(fileHash);
+        sourceHash.addData("\n", 1);
+        ++fileCount;
+    }
+
+    const QByteArray applicationHash = sha256File(applicationPath);
+    const QString harnessPath = QCoreApplication::applicationFilePath();
+    const QByteArray harnessHash = sha256File(harnessPath);
+    return {
+        {QStringLiteral("available"),
+            sourceHash.result().size() == 32
+            && applicationHash.size() == 64
+            && harnessHash.size() == 64},
+        {QStringLiteral("sourceTreeSha256"),
+            QString::fromLatin1(sourceHash.result().toHex())},
+        {QStringLiteral("sourceFileCount"), fileCount},
+        {QStringLiteral("applicationPath"), applicationPath},
+        {QStringLiteral("applicationSha256"),
+            QString::fromLatin1(applicationHash)},
+        {QStringLiteral("harnessPath"), harnessPath},
+        {QStringLiteral("harnessSha256"),
+            QString::fromLatin1(harnessHash)}
+    };
+}
+
+bool inspectLargeSubPrepOutputFixture(
+    const QString& fixturePath,
+    QJsonObject* counts,
+    QString* errorMessage
+    )
+{
+    const QString connectionName =
+        QStringLiteral("startup-sub-prep-output-inspection-%1")
+            .arg(QUuid::createUuid().toString(QUuid::WithoutBraces));
+    bool success = false;
+    {
+        QSqlDatabase database = QSqlDatabase::addDatabase(
+            QStringLiteral("QSQLITE"),
+            connectionName
+            );
+        database.setDatabaseName(fixturePath);
+
+        if (!database.open())
+        {
+            if (errorMessage)
+            {
+                *errorMessage = database.lastError().text();
+            }
+        }
+        else
+        {
+            QSqlQuery query(database);
+            if (!query.exec(
+                    QStringLiteral(
+                        "SELECT day, COUNT(DISTINCT class_id) "
+                        "FROM class_times GROUP BY day ORDER BY day"
+                        )
+                    ))
+            {
+                if (errorMessage)
+                {
+                    *errorMessage = query.lastError().text();
+                }
+            }
+            else
+            {
+                QJsonObject dayCounts;
+                int classCount = 0;
+                int weekdayClassCount = 0;
+                int saturdayClassCount = 0;
+                while (query.next())
+                {
+                    const QString day = query.value(0).toString();
+                    const int count = query.value(1).toInt();
+                    dayCounts.insert(day, count);
+                    classCount += count;
+                    if (day == QStringLiteral("Saturday"))
+                    {
+                        saturdayClassCount += count;
+                    }
+                    else if (day != QStringLiteral("Sunday"))
+                    {
+                        weekdayClassCount += count;
+                    }
+                }
+
+                if (counts)
+                {
+                    *counts = {
+                        {QStringLiteral("classCount"), classCount},
+                        {QStringLiteral("weekdayClassCount"), weekdayClassCount},
+                        {QStringLiteral("saturdayClassCount"), saturdayClassCount},
+                        {QStringLiteral("dayCounts"), dayCounts}
+                    };
+                }
+                success = true;
+            }
+        }
+
+        database.close();
+        database = QSqlDatabase();
+    }
+
+    QSqlDatabase::removeDatabase(connectionName);
+    return success;
+}
+
+bool writeSubPrepParityManifest(
+    const QString& path,
+    const QJsonObject& manifest,
+    QString* errorMessage
+    )
+{
+    QFile file(path);
+    if (!file.open(QIODevice::WriteOnly | QIODevice::Text | QIODevice::Truncate))
+    {
+        if (errorMessage)
+        {
+            *errorMessage = file.errorString();
+        }
+        return false;
+    }
+
+    const QByteArray contents =
+        QJsonDocument(manifest).toJson(QJsonDocument::Indented);
+    if (file.write(contents) != contents.size() || !file.flush())
+    {
+        if (errorMessage)
+        {
+            *errorMessage = file.errorString();
+        }
+        return false;
+    }
+
+    return true;
+}
+
 ClassTransferPackage largeClassTransferPackage()
 {
     ClassTransferPackage package;
@@ -8814,6 +9071,7 @@ void StartupPerformanceTests::capturesLargeSpeakingEvaluationBoundaryWhenConfigu
              QStringLiteral("large-speaking-evaluation-workflow.json"),
              QStringLiteral("workflow-trace.txt"),
              QStringLiteral("manifest.json"),
+             QStringLiteral("sub-prep-output-parity.json"),
              QStringLiteral("process-stdout.txt"),
              QStringLiteral("process-stderr.txt"),
              QStringLiteral("speaking-evaluation-page.png"),
@@ -10040,6 +10298,21 @@ void StartupPerformanceTests::capturesLargeSubPrepOutputBoundaryWhenConfigured()
             )
         );
 
+    const QString configuredReferenceDate =
+        qEnvironmentVariable(
+            "CLASSMNGR_STARTUP_SUB_PREP_OUTPUT_REFERENCE_DATE"
+            ).trimmed();
+    const QDate referenceDate =
+        QDate::fromString(configuredReferenceDate, Qt::ISODate);
+    QCOMPARE(referenceDate, QDate(2026, 9, 14));
+
+    const QString sourceRoot = QStringLiteral(CLASSMNGR_SOURCE_DIR);
+    const QString sqlFixturePath = QDir(sourceRoot).filePath(
+        QStringLiteral("tests/fixtures/workspaces/large_startup.sql")
+        );
+    const QByteArray sqlFixtureSha256 = sha256File(sqlFixturePath);
+    QCOMPARE(sqlFixtureSha256.size(), 64);
+
     QTemporaryDir directory;
     QVERIFY(directory.isValid());
 
@@ -10054,12 +10327,59 @@ void StartupPerformanceTests::capturesLargeSubPrepOutputBoundaryWhenConfigured()
         prepareLargeSubPrepOutputFixture(fixturePath, &fixtureError),
         qPrintable(fixtureError)
         );
+    QJsonObject fixtureClassCounts;
+    QVERIFY2(
+        inspectLargeSubPrepOutputFixture(
+            fixturePath,
+            &fixtureClassCounts,
+            &fixtureError
+            ),
+        qPrintable(fixtureError)
+        );
+    QCOMPARE(
+        fixtureClassCounts.value(QStringLiteral("classCount")).toInt(),
+        96
+        );
+    QCOMPARE(
+        fixtureClassCounts.value(QStringLiteral("weekdayClassCount")).toInt(),
+        30
+        );
+    QCOMPARE(
+        fixtureClassCounts.value(QStringLiteral("saturdayClassCount")).toInt(),
+        66
+        );
+    const QJsonObject fixtureDayCounts =
+        fixtureClassCounts.value(QStringLiteral("dayCounts")).toObject();
+    for (const QString& weekday : {
+             QStringLiteral("Monday"),
+             QStringLiteral("Tuesday"),
+             QStringLiteral("Wednesday"),
+             QStringLiteral("Thursday"),
+             QStringLiteral("Friday")
+         })
+    {
+        QCOMPARE(fixtureDayCounts.value(weekday).toInt(), 6);
+    }
+    QCOMPARE(fixtureDayCounts.value(QStringLiteral("Saturday")).toInt(), 66);
+    QCOMPARE(fixtureDayCounts.value(QStringLiteral("Sunday")).toInt(), 0);
     QVERIFY2(
         writeRepresentativeStartupSettings(
             directory.filePath(QStringLiteral("settings"))
             ),
         "Unable to write deterministic large-workspace settings."
         );
+
+    const QJsonObject sourceIdentityBefore =
+        sourceTreeSnapshot(sourceRoot, appPath);
+    QVERIFY2(
+        sourceIdentityBefore.value(QStringLiteral("available")).toBool(),
+        qPrintable(
+            sourceIdentityBefore.value(QStringLiteral("error")).toString()
+        )
+        );
+    const QByteArray generatedDatabaseSha256BeforeLaunch =
+        sha256File(fixturePath);
+    QCOMPARE(generatedDatabaseSha256BeforeLaunch.size(), 64);
 
     const QString outputRoot =
         QFileInfo(configuredOutputRoot).absoluteFilePath();
@@ -10184,6 +10504,17 @@ void StartupPerformanceTests::capturesLargeSubPrepOutputBoundaryWhenConfigured()
     QVERIFY2(finished, qPrintable(processOutput(process)));
     QCOMPARE(process.exitStatus(), QProcess::NormalExit);
     QCOMPARE(process.exitCode(), 0);
+    const QJsonObject sourceIdentityAfter =
+        sourceTreeSnapshot(sourceRoot, appPath);
+    QVERIFY2(
+        sourceIdentityAfter.value(QStringLiteral("available")).toBool(),
+        qPrintable(
+            sourceIdentityAfter.value(QStringLiteral("error")).toString()
+        )
+        );
+    const QByteArray generatedDatabaseSha256AfterRun =
+        sha256File(fixturePath);
+    QCOMPARE(generatedDatabaseSha256AfterRun.size(), 64);
 
     QByteArray traceContents;
     QFile traceFile(tracePath);
@@ -10725,6 +11056,452 @@ void StartupPerformanceTests::capturesLargeSubPrepOutputBoundaryWhenConfigured()
         qPrintable(
             QStringLiteral("Unable to retain the generated fixture: %1")
                 .arg(retainedFixturePath)
+            )
+        );
+
+    const QString expectedFolderName =
+        QStringLiteral("Teacher 01 (14 - 18 Sep 2026)");
+    const QString packageDirectory =
+        QDir(targetRoot).filePath(expectedFolderName);
+    const QString historicalOutputDirectory = QDir(sourceRoot).filePath(
+        QStringLiteral(
+            "docs/qt-rewrite/visual-baseline/release/"
+            "large-sub-prep-output-boundary/output-target/"
+            "Teacher 01 (14 - 18 Sep 2026)"
+            )
+        );
+    const QStringList expectedDocumentOrder{
+        QStringLiteral("Sub Prep.pdf"),
+        QStringLiteral("Rosters - By Day.pdf")
+    };
+    QStringList expectedDirectoryPdfNames = expectedDocumentOrder;
+    std::sort(
+        expectedDirectoryPdfNames.begin(),
+        expectedDirectoryPdfNames.end()
+        );
+    const QStringList generatedDirectoryPdfNames =
+        QDir(packageDirectory).entryList(
+            {QStringLiteral("*.pdf")},
+            QDir::Files,
+            QDir::Name
+            );
+    const QStringList historicalDirectoryPdfNames =
+        QDir(historicalOutputDirectory).entryList(
+            {QStringLiteral("*.pdf")},
+            QDir::Files,
+            QDir::Name
+            );
+
+    bool semanticParity =
+        generatedDirectoryPdfNames == expectedDirectoryPdfNames
+        && historicalDirectoryPdfNames == expectedDirectoryPdfNames;
+    int generatedDocumentCount = 0;
+    int generatedPageCount = 0;
+    qint64 generatedPdfBytes = 0;
+    int historicalDocumentCount = 0;
+    int historicalPageCount = 0;
+    qint64 historicalPdfBytes = 0;
+    QJsonArray documentComparisons;
+    QHash<QString, SubPrepPdfSnapshot> generatedPdfSnapshots;
+    QHash<QString, SubPrepPdfSnapshot> historicalPdfSnapshots;
+    QStringList pdfSnapshotErrors;
+
+    for (const QString& documentName : expectedDocumentOrder)
+    {
+        const QString generatedPath =
+            QDir(packageDirectory).filePath(documentName);
+        const QString historicalPath =
+            QDir(historicalOutputDirectory).filePath(documentName);
+        SubPrepPdfSnapshot generatedSnapshot;
+        SubPrepPdfSnapshot historicalSnapshot;
+        QString snapshotError;
+        const bool generatedLoaded = readSubPrepPdfSnapshot(
+            generatedPath,
+            &generatedSnapshot,
+            &snapshotError
+            );
+        if (!generatedLoaded)
+        {
+            pdfSnapshotErrors.append(snapshotError);
+        }
+        snapshotError.clear();
+        const bool historicalLoaded = readSubPrepPdfSnapshot(
+            historicalPath,
+            &historicalSnapshot,
+            &snapshotError
+            );
+        if (!historicalLoaded)
+        {
+            pdfSnapshotErrors.append(snapshotError);
+        }
+
+        QJsonObject documentComparison{
+            {QStringLiteral("fileName"), documentName},
+            {QStringLiteral("generatedLoaded"), generatedLoaded},
+            {QStringLiteral("historicalLoaded"), historicalLoaded}
+        };
+        if (generatedLoaded)
+        {
+            ++generatedDocumentCount;
+            generatedPageCount += generatedSnapshot.pages.size();
+            generatedPdfBytes += generatedSnapshot.bytes;
+            generatedPdfSnapshots.insert(documentName, generatedSnapshot);
+            documentComparison.insert(
+                QStringLiteral("generatedBytes"),
+                generatedSnapshot.bytes
+                );
+            documentComparison.insert(
+                QStringLiteral("generatedSha256"),
+                QString::fromLatin1(generatedSnapshot.sha256)
+                );
+            documentComparison.insert(
+                QStringLiteral("generatedPageCount"),
+                generatedSnapshot.pages.size()
+                );
+        }
+        if (historicalLoaded)
+        {
+            ++historicalDocumentCount;
+            historicalPageCount += historicalSnapshot.pages.size();
+            historicalPdfBytes += historicalSnapshot.bytes;
+            historicalPdfSnapshots.insert(documentName, historicalSnapshot);
+            documentComparison.insert(
+                QStringLiteral("historicalBytes"),
+                historicalSnapshot.bytes
+                );
+            documentComparison.insert(
+                QStringLiteral("historicalSha256"),
+                QString::fromLatin1(historicalSnapshot.sha256)
+                );
+            documentComparison.insert(
+                QStringLiteral("historicalPageCount"),
+                historicalSnapshot.pages.size()
+                );
+        }
+
+        bool documentMatches = generatedLoaded && historicalLoaded;
+        QJsonArray pageComparisons;
+        if (generatedLoaded && historicalLoaded)
+        {
+            documentMatches = documentMatches
+                && generatedSnapshot.pages.size()
+                    == historicalSnapshot.pages.size();
+            const int pageLimit = std::min(
+                generatedSnapshot.pages.size(),
+                historicalSnapshot.pages.size()
+                );
+            for (int pageIndex = 0; pageIndex < pageLimit; ++pageIndex)
+            {
+                const SubPrepPdfPageSnapshot& generatedPage =
+                    generatedSnapshot.pages.at(pageIndex);
+                const SubPrepPdfPageSnapshot& historicalPage =
+                    historicalSnapshot.pages.at(pageIndex);
+                const bool dimensionsMatch =
+                    generatedPage.pointSize == historicalPage.pointSize;
+                const bool textMatches =
+                    generatedPage.normalizedText
+                    == historicalPage.normalizedText;
+                documentMatches = documentMatches
+                    && dimensionsMatch
+                    && textMatches;
+                pageComparisons.append(QJsonObject{
+                    {QStringLiteral("page"), pageIndex + 1},
+                    {
+                        QStringLiteral("generatedDimensionsPoints"),
+                        QJsonArray{
+                            generatedPage.pointSize.width(),
+                            generatedPage.pointSize.height()
+                        }
+                    },
+                    {
+                        QStringLiteral("historicalDimensionsPoints"),
+                        QJsonArray{
+                            historicalPage.pointSize.width(),
+                            historicalPage.pointSize.height()
+                        }
+                    },
+                    {QStringLiteral("dimensionsMatch"), dimensionsMatch},
+                    {QStringLiteral("generatedNormalizedText"),
+                        generatedPage.normalizedText},
+                    {QStringLiteral("historicalNormalizedText"),
+                        historicalPage.normalizedText},
+                    {QStringLiteral("normalizedTextMatches"), textMatches}
+                });
+            }
+        }
+        semanticParity = semanticParity && documentMatches;
+        documentComparison.insert(
+            QStringLiteral("semanticMatch"),
+            documentMatches
+            );
+        documentComparison.insert(
+            QStringLiteral("pages"),
+            pageComparisons
+            );
+        documentComparisons.append(documentComparison);
+    }
+
+    const SubPrepPdfSnapshot rosterPdf = generatedPdfSnapshots.value(
+        QStringLiteral("Rosters - By Day.pdf")
+        );
+    QJsonArray weekdayMarkerChecks;
+    bool allWeekdayMarkersMatch = rosterPdf.pages.size() > 0;
+    const QStringList weekdays{
+        QStringLiteral("Monday"),
+        QStringLiteral("Tuesday"),
+        QStringLiteral("Wednesday"),
+        QStringLiteral("Thursday"),
+        QStringLiteral("Friday")
+    };
+    for (int classId = 1; classId <= 30; ++classId)
+    {
+        const QString day = weekdays.at((classId - 1) % weekdays.size());
+        const int teacherId = ((classId - 1) % 24) + 1;
+        QString grade;
+        switch (classId % 4)
+        {
+        case 1:
+            grade = QStringLiteral("E4");
+            break;
+        case 2:
+            grade = QStringLiteral("E5");
+            break;
+        case 3:
+            grade = QStringLiteral("M1");
+            break;
+        default:
+            grade = QStringLiteral("M2");
+            break;
+        }
+        const QString classMarker = QStringLiteral("%1 Level %2")
+            .arg(grade)
+            .arg(1 + (classId % 8), 2, 10, QLatin1Char('0'));
+        const QString teacherMarker = QStringLiteral("Teacher %1")
+            .arg(teacherId, 2, 10, QLatin1Char('0'));
+        const QString studentMarker = QStringLiteral("Student %1")
+            .arg(classId, 3, 10, QLatin1Char('0'));
+        int markerPage = -1;
+        int markerPageCount = 0;
+        for (int pageIndex = 0; pageIndex < rosterPdf.pages.size(); ++pageIndex)
+        {
+            if (rosterPdf.pages.at(pageIndex).normalizedText.contains(studentMarker))
+            {
+                markerPage = pageIndex;
+                ++markerPageCount;
+            }
+        }
+        bool pageMarkersMatch = markerPageCount == 1;
+        if (pageMarkersMatch)
+        {
+            const QString& pageText =
+                rosterPdf.pages.at(markerPage).normalizedText;
+            pageMarkersMatch =
+                pageText.contains(day, Qt::CaseInsensitive)
+                && pageText.contains(classMarker)
+                && pageText.contains(teacherMarker);
+        }
+        allWeekdayMarkersMatch = allWeekdayMarkersMatch && pageMarkersMatch;
+        weekdayMarkerChecks.append(QJsonObject{
+            {QStringLiteral("classId"), classId},
+            {QStringLiteral("day"), day},
+            {QStringLiteral("classMarker"), classMarker},
+            {QStringLiteral("teacherMarker"), teacherMarker},
+            {QStringLiteral("studentMarker"), studentMarker},
+            {QStringLiteral("pageNumber"), markerPage + 1},
+            {QStringLiteral("markerPageCount"), markerPageCount},
+            {QStringLiteral("markersMatchOnPage"), pageMarkersMatch}
+        });
+    }
+
+    int saturdayMarkerCount = 0;
+    for (int classId = 31; classId <= 96; ++classId)
+    {
+        const QString studentMarker = QStringLiteral("Student %1")
+            .arg(classId, 3, 10, QLatin1Char('0'));
+        bool markerFound = false;
+        for (const SubPrepPdfSnapshot& snapshot : std::as_const(generatedPdfSnapshots))
+        {
+            for (const SubPrepPdfPageSnapshot& page : snapshot.pages)
+            {
+                markerFound = markerFound
+                    || page.normalizedText.contains(studentMarker);
+            }
+        }
+        if (markerFound)
+        {
+            ++saturdayMarkerCount;
+        }
+    }
+    const bool saturdayMarkersAbsent = saturdayMarkerCount == 0;
+
+    const QByteArray generatedDatabaseSha256AfterRunForManifest =
+        sha256File(fixturePath);
+    const QByteArray retainedDatabaseSha256 =
+        sha256File(retainedFixturePath);
+    const bool sourceIdentityMatches =
+        sourceIdentityBefore.value(QStringLiteral("sourceTreeSha256"))
+            == sourceIdentityAfter.value(QStringLiteral("sourceTreeSha256"))
+        && sourceIdentityBefore.value(QStringLiteral("applicationSha256"))
+            == sourceIdentityAfter.value(QStringLiteral("applicationSha256"))
+        && sourceIdentityBefore.value(QStringLiteral("harnessSha256"))
+            == sourceIdentityAfter.value(QStringLiteral("harnessSha256"));
+    const bool countsMatch =
+        fixtureClassCounts.value(QStringLiteral("weekdayClassCount")).toInt() == 30
+        && fixtureClassCounts.value(QStringLiteral("saturdayClassCount")).toInt() == 66;
+    const bool totalsMatch =
+        generatedDocumentCount == 2
+        && historicalDocumentCount == 2
+        && generatedPageCount == 17
+        && historicalPageCount == 17
+        && historicalPdfBytes == 139650;
+    semanticParity = semanticParity
+        && countsMatch
+        && totalsMatch
+        && allWeekdayMarkersMatch
+        && saturdayMarkersAbsent
+        && sourceIdentityMatches;
+
+    const QJsonObject parityManifest{
+        {QStringLiteral("schema"),
+            QStringLiteral("classmngr-sub-prep-output-route-parity-v1")},
+        {QStringLiteral("route"), QStringLiteral("output-sub-prep")},
+        {QStringLiteral("scenario"),
+            QStringLiteral("packaged-ui-sql-route-semantic-parity")},
+        {
+            QStringLiteral("selection"),
+            QJsonObject{
+                {QStringLiteral("referenceDate"),
+                    referenceDate.toString(Qt::ISODate)},
+                {QStringLiteral("weekStart"),
+                    referenceDate.toString(Qt::ISODate)},
+                {QStringLiteral("weekEnd"),
+                    referenceDate.addDays(4).toString(Qt::ISODate)},
+                {QStringLiteral("mode"), QStringLiteral("By Day")},
+                {QStringLiteral("selectedDays"),
+                    QJsonArray::fromStringList(weekdays)},
+                {QStringLiteral("createFolder"), true},
+                {QStringLiteral("printPaperCopies"), false},
+                {QStringLiteral("openFolderAfterGeneration"), false},
+                {QStringLiteral("teacherName"), QStringLiteral("Teacher 01")}
+            }
+        },
+        {
+            QStringLiteral("fixture"),
+            QJsonObject{
+                {QStringLiteral("sourcePath"),
+                    QStringLiteral("tests/fixtures/workspaces/large_startup.sql")},
+                {QStringLiteral("sourceSha256"),
+                    QString::fromLatin1(sqlFixtureSha256)},
+                {QStringLiteral("generatedDatabasePath"),
+                    QDir::fromNativeSeparators(
+                        QDir(outputRoot).relativeFilePath(retainedFixturePath)
+                        )},
+                {QStringLiteral("generatedDatabaseSha256BeforeLaunch"),
+                    QString::fromLatin1(generatedDatabaseSha256BeforeLaunch)},
+                {QStringLiteral("generatedDatabaseSha256AfterRun"),
+                    QString::fromLatin1(generatedDatabaseSha256AfterRunForManifest)},
+                {QStringLiteral("retainedDatabaseSha256"),
+                    QString::fromLatin1(retainedDatabaseSha256)},
+                {QStringLiteral("classCounts"), fixtureClassCounts}
+            }
+        },
+        {
+            QStringLiteral("sourceIdentity"),
+            QJsonObject{
+                {QStringLiteral("sourceBefore"), sourceIdentityBefore},
+                {QStringLiteral("sourceAfter"), sourceIdentityAfter},
+                {QStringLiteral("unchangedDuringRoute"),
+                    sourceIdentityMatches},
+                {QStringLiteral("phase0RunManifestRelativePath"),
+                    QStringLiteral("../../run-manifest.json")}
+            }
+        },
+        {
+            QStringLiteral("artifacts"),
+            QJsonObject{
+                {QStringLiteral("applicationPath"), appPath},
+                {QStringLiteral("applicationSha256"),
+                    sourceIdentityBefore.value(QStringLiteral("applicationSha256"))},
+                {QStringLiteral("harnessPath"),
+                    sourceIdentityBefore.value(QStringLiteral("harnessPath"))},
+                {QStringLiteral("harnessSha256"),
+                    sourceIdentityBefore.value(QStringLiteral("harnessSha256"))},
+                {QStringLiteral("outputDirectory"), expectedFolderName},
+                {QStringLiteral("generatedPdfFileNames"),
+                    QJsonArray::fromStringList(generatedDirectoryPdfNames)},
+                {QStringLiteral("packageDocumentOrder"),
+                    QJsonArray::fromStringList(expectedDocumentOrder)}
+            }
+        },
+        {
+            QStringLiteral("historicalReference"),
+            QJsonObject{
+                {QStringLiteral("path"),
+                    QStringLiteral(
+                        "docs/qt-rewrite/visual-baseline/release/"
+                        "large-sub-prep-output-boundary/output-target/"
+                        "Teacher 01 (14 - 18 Sep 2026)"
+                        )},
+                {QStringLiteral("sourceBound"), false},
+                {QStringLiteral("semanticOracleOnly"), true},
+                {QStringLiteral("pdfFileNames"),
+                    QJsonArray::fromStringList(historicalDirectoryPdfNames)},
+                {QStringLiteral("pdfCount"), historicalDocumentCount},
+                {QStringLiteral("pageCount"), historicalPageCount},
+                {QStringLiteral("pdfBytes"), historicalPdfBytes}
+            }
+        },
+        {
+            QStringLiteral("generatedOutput"),
+            QJsonObject{
+                {QStringLiteral("pdfCount"), generatedDocumentCount},
+                {QStringLiteral("pageCount"), generatedPageCount},
+                {QStringLiteral("pdfBytes"), generatedPdfBytes}
+            }
+        },
+        {
+            QStringLiteral("weekdayClassMarkers"),
+            QJsonObject{
+                {QStringLiteral("checkedCount"), weekdayMarkerChecks.size()},
+                {QStringLiteral("allMatchExpectedDayClassTeacherStudentOnOnePage"),
+                    allWeekdayMarkersMatch},
+                {QStringLiteral("classes"), weekdayMarkerChecks}
+            }
+        },
+        {
+            QStringLiteral("saturdayExclusion"),
+            QJsonObject{
+                {QStringLiteral("fixtureClassCount"), 66},
+                {QStringLiteral("generatedStudentMarkersFound"),
+                    saturdayMarkerCount},
+                {QStringLiteral("allMarkersAbsent"), saturdayMarkersAbsent}
+            }
+        },
+        {QStringLiteral("pdfByteEqualityRequired"), false},
+        {QStringLiteral("pdfPageComparisons"), documentComparisons},
+        {QStringLiteral("pdfSnapshotErrors"),
+            QJsonArray::fromStringList(pdfSnapshotErrors)},
+        {QStringLiteral("semanticParity"),
+            semanticParity ? QStringLiteral("match") : QStringLiteral("mismatch")}
+    };
+    const QString parityManifestPath = QDir(outputRoot).filePath(
+        QStringLiteral("sub-prep-output-parity.json")
+        );
+    QString parityManifestError;
+    QVERIFY2(
+        writeSubPrepParityManifest(
+            parityManifestPath,
+            parityManifest,
+            &parityManifestError
+            ),
+        qPrintable(parityManifestError)
+        );
+    QVERIFY2(
+        semanticParity,
+        qPrintable(
+            QStringLiteral(
+                "Packaged SQL-route PDF parity failed. Evidence: %1"
+                ).arg(parityManifestPath)
             )
         );
 

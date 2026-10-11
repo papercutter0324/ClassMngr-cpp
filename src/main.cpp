@@ -3674,7 +3674,7 @@ void scheduleStartupPerformanceSubPrepOutputLifecycle(
                     QStringLiteral("subPrepUserNameEdit")
                     ))
         {
-            nameEdit->setText(QStringLiteral("Phase 0 Heavy"));
+            nameEdit->setText(QStringLiteral("Teacher 01"));
         }
         if (QCheckBox* createFolderCheck =
                 dialog->findChild<QCheckBox*>(

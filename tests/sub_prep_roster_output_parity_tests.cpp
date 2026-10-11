@@ -4,6 +4,7 @@
 #include "domain/models/roster.h"
 #include "domain/models/teacher.h"
 #include "features/sub_prep/services/sub_prep_package_service.h"
+#include "ui/shared/printing/pdf_print_service.h"
 
 #if __has_include("next/platform/application_services_sub_prep_roster_output_source_port.h")
 #include "next/platform/application_services_sub_prep_roster_output_source_port.h"
@@ -120,6 +121,10 @@ SubPrepPackageService::Request requestFor(const QString& target, const QList<QDa
     return request;
 }
 
+QStringList g_printStageDocumentPaths;
+int g_printStageCallCount = 0;
+bool g_printStageDocumentsExist = false;
+
 SubPrepPackageService::Result generate(Fixture& fixture, SubPrepPackageService::Request request,
     const QList<int>& ids)
 {
@@ -203,6 +208,31 @@ void logTranscript(const QJsonObject& value)
 }
 }
 
+namespace PdfPrintService
+{
+Result printPdfDocument(const Request&)
+{
+    return {Status::Canceled, {}};
+}
+
+Result printPdfDocuments(const BatchRequest& request)
+{
+    g_printStageDocumentPaths = request.documentPaths;
+    ++g_printStageCallCount;
+    g_printStageDocumentsExist = !request.documentPaths.isEmpty()
+        && std::all_of(
+            request.documentPaths.cbegin(),
+            request.documentPaths.cend(),
+            [](const QString& path)
+            {
+                return QFileInfo(path).isFile()
+                    && QFileInfo(path).size() > 0;
+            }
+            );
+    return {Status::Canceled, {}};
+}
+}
+
 class SubPrepRosterOutputParityTests final : public QObject
 {
     Q_OBJECT
@@ -210,6 +240,7 @@ private slots:
     void byDayRegularFiltersAndOrdersThePacket();
     void dailyUsesIntensiveMeetings();
     void perClassProjectsOrderedCustomColumns();
+    void realSqlSourcePrintCancellationRemovesPrintOnlyStaging();
 };
 
 void SubPrepRosterOutputParityTests::byDayRegularFiltersAndOrdersThePacket()
@@ -350,6 +381,107 @@ void SubPrepRosterOutputParityTests::perClassProjectsOrderedCustomColumns()
         QVERIFY(!compact.contains(compactText(other)));
     }
     logTranscript(transcript(QStringLiteral("per-class-columns"), result));
+}
+
+void SubPrepRosterOutputParityTests::
+realSqlSourcePrintCancellationRemovesPrintOnlyStaging()
+{
+    Fixture fixture;
+    QVERIFY(fixture.open());
+    const int teacher = fixture.teacher(
+        QStringLiteral("SQL Teacher"),
+        QStringLiteral("503")
+        );
+    QVERIFY(teacher > 0);
+    const int classId = fixture.classroom(
+        QStringLiteral("SQL Cancellation"),
+        teacher,
+        QStringLiteral("E4"),
+        QStringLiteral("Theseus"),
+        {{
+            QStringLiteral("Monday"),
+            QStringLiteral("4:00 PM"),
+            QStringLiteral("4:50 PM")
+        }},
+        {},
+        QStringLiteral("SQL Student")
+        );
+    QVERIFY(classId > 0);
+
+    auto request = requestFor(
+        QString(),
+        {QDate(2026, 10, 5)},
+        RosterTemplatePrintService::TemplateId::ByDay
+        );
+    request.createFolder = false;
+    request.printPaperCopies = true;
+
+    g_printStageDocumentPaths.clear();
+    g_printStageCallCount = 0;
+    g_printStageDocumentsExist = false;
+    const SubPrepPackageService::Result result = generate(
+        fixture,
+        request,
+        {classId}
+        );
+
+    QCOMPARE(result.status, SubPrepPackageService::Status::Canceled);
+    QVERIFY(result.printCanceled);
+    QCOMPARE(g_printStageCallCount, 1);
+    QVERIFY(g_printStageDocumentsExist);
+    QCOMPARE(g_printStageDocumentPaths, result.documentPaths);
+    QVERIFY(!result.folderCreated);
+    QVERIFY(result.outputDirectory.isEmpty());
+    QCOMPARE(result.documentPaths.size(), 2);
+    QStringList documentNames;
+    for (const QString& documentPath : result.documentPaths)
+    {
+        documentNames.append(QFileInfo(documentPath).fileName());
+    }
+    QCOMPARE(
+        documentNames,
+        (QStringList{
+            QStringLiteral("Sub Prep.pdf"),
+            QStringLiteral("Rosters - By Day.pdf")
+        })
+        );
+
+    const QString stagingDirectory =
+        QFileInfo(result.documentPaths.first()).absolutePath();
+    for (const QString& documentPath : result.documentPaths)
+    {
+        QVERIFY2(
+            !QFileInfo::exists(documentPath),
+            qPrintable(
+                QStringLiteral("Canceled print left a PDF behind: %1")
+                    .arg(documentPath)
+                )
+            );
+    }
+    QVERIFY2(
+        !QFileInfo::exists(stagingDirectory),
+        qPrintable(
+            QStringLiteral("Canceled print left staging output behind: %1")
+                .arg(stagingDirectory)
+            )
+        );
+
+    qInfo().noquote()
+        << "F613_SQL_SOURCE_PRINT_CANCEL_CLEANUP"
+        << QJsonDocument(QJsonObject{
+               {QStringLiteral("scenario"),
+                   QStringLiteral("real-sql-source-port-print-cancellation-cleanup")},
+               {QStringLiteral("sourcePort"),
+                   QStringLiteral("ApplicationServicesSubPrepRosterOutputSourcePort")},
+               {QStringLiteral("printStageObserved"), g_printStageCallCount == 1},
+               {QStringLiteral("bothPdfsExistedWhenCanceled"),
+                   g_printStageDocumentsExist},
+               {QStringLiteral("status"), QStringLiteral("Canceled")},
+               {QStringLiteral("documentNames"),
+                   QJsonArray::fromStringList(documentNames)},
+               {QStringLiteral("temporaryPdfsRemain"), false},
+               {QStringLiteral("stagingDirectoryRemains"), false}
+           }).toJson(QJsonDocument::Compact);
 }
 
 QTEST_MAIN(SubPrepRosterOutputParityTests)

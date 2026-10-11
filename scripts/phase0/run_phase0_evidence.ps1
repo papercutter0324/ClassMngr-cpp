@@ -533,6 +533,7 @@ function Get-CleanChildEnvironment {
         "CLASSMNGR_LARGE_SPEAKING_EVALUATION_BOUNDARY_REFERENCE_DIR",
         "CLASSMNGR_LARGE_STAFF_DIRECTORY_BOUNDARY_REFERENCE_DIR",
         "CLASSMNGR_LARGE_SUB_PREP_OUTPUT_BOUNDARY_REFERENCE_DIR",
+        "CLASSMNGR_STARTUP_SUB_PREP_OUTPUT_REFERENCE_DATE",
         "CLASSMNGR_LARGE_SUB_PREP_VISUAL_REFERENCE_DIR",
         "CLASSMNGR_LARGE_PDF_VIEWER_VISUAL_REFERENCE_DIR",
         "CLASSMNGR_LARGE_RESOURCE_TRACE_REFERENCE_DIR"
@@ -1347,6 +1348,7 @@ try {
             }
             "output-sub-prep" {
                 $environmentOverrides["CLASSMNGR_LARGE_SUB_PREP_OUTPUT_BOUNDARY_REFERENCE_DIR"] = $routeRoot
+                $environmentOverrides["CLASSMNGR_STARTUP_SUB_PREP_OUTPUT_REFERENCE_DATE"] = "2026-09-14"
                 $arguments = @("capturesLargeSubPrepOutputBoundaryWhenConfigured")
                 break
             }

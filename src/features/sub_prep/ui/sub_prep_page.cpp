@@ -8,7 +8,46 @@
 #include <limits>
 #include <string>
 
+#include <QCoreApplication>
+#include <QDate>
 #include <QDebug>
+
+namespace
+{
+QDate subPrepReferenceDate()
+{
+    const QDate currentDate = QDate::currentDate();
+    if (!QCoreApplication::arguments().contains(
+            QStringLiteral(
+                "--startup-performance-sub-prep-output-lifecycle"
+                )
+            ))
+    {
+        return currentDate;
+    }
+
+    const QString configuredDate =
+        qEnvironmentVariable(
+            "CLASSMNGR_STARTUP_SUB_PREP_OUTPUT_REFERENCE_DATE"
+            ).trimmed();
+    if (configuredDate.isEmpty())
+    {
+        return currentDate;
+    }
+
+    const QDate referenceDate =
+        QDate::fromString(configuredDate, Qt::ISODate);
+    if (!referenceDate.isValid())
+    {
+        qWarning()
+            << "Ignoring an invalid startup Sub Prep reference date:"
+            << configuredDate;
+        return currentDate;
+    }
+
+    return referenceDate;
+}
+}
 
 void SubPrepPage::saveData()
 {
@@ -482,7 +521,7 @@ void SubPrepPage::generateSubPrep()
 
     refreshGeneratedContent();
 
-    const QDate currentDate = QDate::currentDate();
+    const QDate currentDate = subPrepReferenceDate();
     QList<CalendarEvent> calendarEvents;
     std::unique_ptr<
         ClassMngr::Next::Application::SubPrepCalendarEventIntervalsReadPort
