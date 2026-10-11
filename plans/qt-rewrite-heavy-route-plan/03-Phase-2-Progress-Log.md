@@ -22550,17 +22550,58 @@ Verification was focused, not a full-suite run.
 
 **Decision: accept F638.**
 
-<a id="f639"></a>
-### F639 Validate Testing Class create required fields in Application - active
+### Batch 123 discovery - recorded at F639 start
 
-The Application request validates teacher IDs and paired schedule fields but
-currently omits required class fields enforced by the repository; the adapter
-classifies selected repository messages by string matching. Validate those
-required fields at the Application boundary while preserving field semantics,
-validation order, messages/categories/recoverability, and adapter persistence
-failure behavior. Use the existing
-`tests/next_application_testing_class_create_use_case_tests.cpp` only for a
-focused assertion directly required by a production/core change. Tests may run
-for any changed code; create or update test files only in response to a
-corresponding production/core change. Do not create a test-only slice or a new
-test file.
+The parallel Application/Domain and Platform/route passes found one bounded
+production candidate for the next batch:
+
+1. **F641 - Validate Testing Class create assignment keys in Application.**
+   `TestingClassCreateRequest::validate()` checks that weekday and start time
+   are provided together but allows nonempty malformed values to reach the
+   adapter and repository. The repository rejects invalid keys as a
+   validation failure, and the adapter classifies that failure by matching its
+   message. Reuse the F638 Qt-free `ScheduleKeyRules` for Application-boundary
+   validation. Existing coverage is available in
+   `tests/next_application_testing_class_create_use_case_tests.cpp` and
+   `tests/next_platform_application_services_testing_class_create_port_tests.cpp`;
+   update a test file only in direct response to the production/core change.
+
+No other bounded platform or route-consumer candidate with comparable evidence
+was found in this pass. No test-only slice was proposed.
+
+<a id="f639"></a>
+### F639 Validate Testing Class create required fields in Application - accepted
+
+`TestingClassCreateRequest::validate()` now rejects empty or Qt-whitespace-only
+name, grade, level, and room before the port. It uses `trimQtWhitespace` only
+for checking, preserving the request text. Existing teacher-ID and paired-
+assignment validation retains precedence; required fields follow repository
+order and return the repository's matching message with `Validation` and
+`recoverable=true`.
+
+The existing Application use-case test was updated directly in response to
+this production/core change; no test file was created. It covers required-field
+order, exact result details, no port calls, existing-check precedence, and
+untrimmed forwarding. Commit `bd02e3fa` (`Phase2 - Validate Testing Class
+create required fields in Application (F639)`) was accepted. The Executor built
+the Application use-case target; the independent Tester built both the
+Application use-case and Platform create-port targets in
+`build/windows-x64-debug` and their focused CTests passed 2/2. Initial MSBuild
+FileTracker attempts failed before compilation; the same targets succeeded
+with escalated build access. `git diff --check` passed. Verification was
+focused, not a full-suite run.
+
+**Decision: accept F639.**
+
+<a id="f640"></a>
+### F640 Validate Testing Class details-update required fields in Application - active
+
+The update request validates class and teacher identifiers but omits the
+required name, grade, level, and room fields enforced by the repository. Add
+equivalent Application-boundary validation while preserving identifier
+precedence, field order, repository messages/categories, recoverability, and
+adapter failure behavior. Use the existing
+`tests/next_application_testing_class_details_update_use_case_tests.cpp` only
+for assertions directly required by a production/core change. Tests may run for
+any changed code; update test files only in response to a corresponding
+production/core change. Do not create a test-only slice or a new test file.
