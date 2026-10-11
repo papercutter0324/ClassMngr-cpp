@@ -53,6 +53,21 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
+### Current state - 2026-10-12 (F669)
+
+Phase 2 remains In Progress/Open under deployment
+`phase2_f417_resume_20261009`, Heavy route; Gates 1 and 2 remain Partial.
+Batches 141-144 are complete. F666 Class Day Filter Reset Policy is committed
+as `faa5c3a7`; F667 Class Selection Reset Policy as `528e031b`; F668 Calendar
+Event Type Color as `4678f3c5`; and F669 Schedule Display Preferences as
+`400decff`. Their focused CTests passed 3/3, 3/3, 2/2, and 2/2 respectively.
+F670 Sub Prep remembered-name save-failure feedback is selected in Batch 145;
+its preimplementation acceptance matrix is in the Phase 2 progress log.
+
+F669 restores the five Schedule Preferences controls and skips schedule
+refresh on a failed atomic write, with a warning and a successful retry path.
+Its independent focused CTests passed; no full-suite result is claimed.
+
 ### Current state - 2026-10-09
 
 Phase 2 remains In Progress/Open under deployment

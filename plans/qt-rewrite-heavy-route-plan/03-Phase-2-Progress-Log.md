@@ -24193,3 +24193,49 @@ Custom Color Palette remains a later candidate. No new CMake target is planned.
    and `ClassMngrScheduleTestingLayoutClearParityTests`; add no CMake target.
 
 This matrix is recorded before implementation. Batch 144 is active with F669.
+
+### F669 Schedule Display Preferences save failure - accepted - 2026-10-12
+
+F669 is accepted at code commit
+`400decffe4840bd337d5c9f8fe80d644b88aa743`. The independent focused CTests
+passed 2/2: `ClassMngrScheduleTestingLayoutClearParityTests` and
+`ClassMngrNextPlatformApplicationServicesScheduleDisplayPreferencesPortTests`.
+The UI regression verifies one diagnostic warning, rollback of all five
+controls and persisted values, no failure refresh, and successful retry.
+
+**Decision: accept F669.** Batch 144 is complete; Batch 145 is active with
+F670. Continue the one-commit-per-slice sequence.
+
+### Batch 145 shortlist and selection - recorded before F670 implementation - 2026-10-12
+
+Independent platform and UI scans found two candidates. Custom Color Palette
+has the remaining direct database-backed preference `void write` contract and
+a trigger-backed port test, but surfacing its failure through `ColorUtils`
+would change a shared chooser API and seven calls across five UI files. The UI
+scan found a narrower Sub Prep print-dialog path: it already receives a typed
+personal-display-name write result but only logs a failure and continues
+accepting the generation dialog (`src/features/sub_prep/ui/sub_prep_print_dialog.cpp:788-820`).
+The trigger-backed port test and existing first-time-name dialog test provide
+an end-to-end seam. Inference: after a failed write, a later dialog may ask
+for the name again.
+
+**F670 is selected:** surface this typed save failure in Sub Prep with one
+warning while preserving the existing generation flow. This favors the smaller
+end-to-end caller slice; Custom Color Palette remains a later contract and
+caller-propagation candidate. Relative user impact is not established.
+
+### F670 Sub Prep remembered-name save-failure acceptance matrix - recorded before implementation - 2026-10-12
+
+1. When first-time personal display-name persistence fails after folder
+   creation, show one `Unable to Save Preference` warning with the typed
+   diagnostic. Preserve the current flow by accepting generation after the
+   warning; do not claim the name was persisted.
+2. Keep the stored preference unchanged on trigger-backed failure. After the
+   failure is removed, the existing successful first-time-name path persists
+   the entered value and accepts generation.
+3. Preserve existing folder-creation, Replace, and Sub Prep page behavior.
+   Reuse exact CTests
+   `ClassMngrNextPlatformApplicationServicesPersonalDisplayNamePreferencesPortTests`
+   and `ClassMngrSubPrepPageTests`; add no CMake target.
+
+This matrix is recorded before implementation. Batch 145 is active with F670.

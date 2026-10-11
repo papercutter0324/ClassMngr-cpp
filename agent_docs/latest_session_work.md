@@ -2,12 +2,26 @@
 
 ## Current Deployment Handoff
 
-- Deployment: `phase2_resume_20260929`; Heavy route; paused following the
-  user-requested F384 acceptance commit.
-- Phase 2 remains In Progress/Open. F371 and F382-F384 are accepted; Batches 11
-  and 12 are complete and Batch 13 remains active. Gates 1 and 2 remain Partial.
-- F384 adds an offscreen Calendar Preferences Restore Term Defaults test and a
-  focused CMake target; no production files changed.
+- Deployment: `phase2_f417_resume_20261009`; Heavy route; resumed 2026-10-12.
+- Phase 2 remains In Progress/Open. Batches 141-144 are complete; Gates 1 and 2
+  remain Partial.
+- F669 Schedule Display Preferences failure feedback is committed as
+  `400decffe4840bd337d5c9f8fe80d644b88aa743`. The independent focused CTests
+  passed 2/2. The UI case verifies warning/diagnostic, five-control and stored
+  value rollback, no failure refresh, and successful retry.
+- F670 Sub Prep remembered-name save-failure feedback is selected/current.
+  Its preimplementation matrix is in the Phase 2 progress log. Preserve dialog
+  acceptance after warning, then verify the existing successful write path.
+- Stop point: F670 implementation has not started. After it is committed,
+  begin the next Phase 2 slice selection.
+
+## Historical handoff - phase2_resume_20260929 (F384)
+
+- This earlier handoff was paused following the user-requested F384 acceptance
+  commit. F371 and F382-F384 were accepted; Batches 11 and 12 were complete and
+  Batch 13 was active. Gates 1 and 2 remained Partial.
+- F384 added an offscreen Calendar Preferences Restore Term Defaults test and
+  a focused CMake target; no production files changed.
 - Independent current and exact
   `fe24d66bbc9045f71d8af7f43b092501e831a60f` baseline verification passed:
   configure/build succeeded, focused CTest 1/1 and direct QtTest 3/3 on each.
@@ -16,8 +30,7 @@
 - Restore stages the 2026 term defaults, enables linked schedules, and disables
   the linked Middle School fields; persisted schedules remain unchanged until
   a separate save. F387 event reset and Save behavior were excluded.
-- Stop point: the user requested a stop immediately after the F384 acceptance
-  commit. F386-F390 remain provisional and unselected; no next slice has started.
+- F386-F390 remained provisional and unselected at that stop point.
 ## Local macOS Phase 1 Validation — 2026-09-18
 
 - On macOS 27.0 arm64 with Qt 6.12.0, the Debug universal build passed for
