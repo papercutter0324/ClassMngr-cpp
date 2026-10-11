@@ -20146,6 +20146,7 @@ retained F597 profile is a dry run without ETL, and neither Explorer used WPR,
 symbols, or tests. F598 remains gated on an elevated WPR process; F579 remains
 deferred at the user's direction. No other slices were found.
 
+<a id="f604"></a>
 ## F604 ScheduleWidget delegate rendering - 2026-10-11
 
 F604 removes the persistent per-cell widget factory. `ScheduleWidget` and
@@ -20331,6 +20332,7 @@ was run, and no byte-savings claim is made. F579 remains deferred at the user's
 direction; F598 still awaits an elevated WPR process. The memory, output
 parity, and Phase 0 gates remain open.
 
+<a id="f609"></a>
 ## F609 bound Speaking Evaluation class-page construction - 2026-10-11
 
 Speaking Evaluation class navigation no longer creates one empty page widget
@@ -22127,8 +22129,114 @@ No production/core code changed, so no test file was edited or run. This
 follows the 2026-10-11 test policy recorded in [00-Start-Here.md](00-Start-Here.md)
 and the Phase 2 plan.
 
-### Next selected slice (F627)
+### Next selected slice (F628)
 
-Requalify the current-source Windows x64 Phase 0 route matrix after
-memory-changing work settles, with packaged provenance and parity. Keep the
-full Phase 0 gate open until its route matrix passes.
+Run a fresh current-source Windows x64 packaged Release `-Routes all` matrix
+in one evidence root/manifest after committing F627. The focused F627
+correction passed its three affected routes but does not complete Phase 0.
+Historical Phase 0 completion remains valid; post-F621 current-source Windows
+and macOS matrix requalification remains open (Windows was 1/24 before the
+failed 21/24 attempt; macOS 0/24). F629 is the macOS matrix when its packaged
+runner is available.
+
+<a id="f627"></a>
+### F627 Correct initial Windows route-matrix failures - accepted
+
+#### Attempt and diagnosis
+
+The initial Windows x64 packaged Release `-Routes all` attempt used source
+commit `f19477399deaaeed7c13d61dae4fab2e23e94a3b`, tree
+`3401c61b796377fa0d8e6f934d81fcead5663109`, and evidence root
+`C:\Users\wfelt\AppData\Local\Temp\f627-phase0-windows-20261011-20261011-082251-7e3dfad2\phase0-20261011T082326421Z`.
+It completed 21/24 routes; `lifecycle-schedule`,
+`lifecycle-schedule-import-apply`, and `lifecycle-speaking-evaluation`
+failed, and the validator exited 1. The independent Tester confirmed the
+artifacts, and source experts diagnosed:
+
+- **`lifecycle-schedule`:** F604 (`6b9ae1b1`) changed Schedule rendering to
+  56 model-backed table items and zero cell widgets. Stale startup route
+  assertions still expect 7 items and 49 widgets. See
+  [F604](#f604).
+- **`lifecycle-speaking-evaluation`:** F609 (`09589771`) changed class tabs
+  to `NavigationTabStrip`; the `main.cpp` telemetry collector still searches
+  for `NavigationTabWidget`. The current structure is four class strips and
+  96 logical class buttons. See
+  [F609](#f609).
+- **`lifecycle-schedule-import-apply`:** apply commits successfully, then
+  opens a blocking information `QMessageBox` named `classmngrUserPrompt`.
+  Route automation's timer handles only the confirmation ID, so the success
+  dialog remains open until the harness's 60-second timeout and the route
+  fails.
+
+F627's first focused `lifecycle-speaking-evaluation` run (#03) reported the
+four class strips and 96 logical buttons, but changing the collector type
+stopped counting the four existing `classEvaluationsEvaluationTabs`
+(`NavigationTabWidget`), causing Speaking Evaluation to fail. Preserve that
+existing count while reporting class strips/buttons; the source-bound #04
+rerun below preserves both counts and passes.
+
+The pre-attempt post-F621 Windows acceptance was 1/24; the failed attempt
+does not replace or invalidate the historically completed Phase 0 24/24
+matrix. Current-source macOS requalification remains 0/24.
+
+#### Correction scope and acceptance
+
+F627 is limited to correcting the route telemetry, modal automation, and
+stale assertions caused by F604/F609. Acceptance requires all of the
+following:
+
+1. Update production `src/main.cpp` telemetry to report the four Speaking
+   class `NavigationTabStrip` instances and 96 logical class buttons while
+   preserving the existing count of four `classEvaluationsEvaluationTabs`
+   (`NavigationTabWidget`).
+2. Update route automation to handle the expected import-success message
+   after commit and reach release/completion.
+3. Update only the existing `tests/startup_performance_tests.cpp` route
+   assertions directly in response to F604/F609 core behavior: Schedule
+   expects 56 items and zero cell widgets; Speaking Evaluation expects four
+   strips and 96 logical buttons. Create no new tests or test files, and
+   weaken no assertions. This follows the test policy in
+   [00-Start-Here.md](00-Start-Here.md).
+4. Run the focused `lifecycle-schedule`,
+   `lifecycle-schedule-import-apply`, and
+   `lifecycle-speaking-evaluation` routes; all three must pass.
+
+#### Source-bound focused run #04 and outcome
+
+Run #04 evidence is under
+`%LOCALAPPDATA%\Temp\ClassMngr-F627-Focused\f627-focused-20261011-04`.
+The run is bound to base source commit
+`f19477399deaaeed7c13d61dae4fab2e23e94a3b`; the application was built from
+the repository (`repository-build`). At verification, the stable dirty
+source snapshot contained only these modified tracked files: the three Phase
+2 documents, `src/main.cpp`, and `tests/startup_performance_tests.cpp`. The
+pre-existing untracked paths were `%SystemDrive%/`,
+`Windows Performance Analyzer/`, and `txt`.
+
+Independent verification passed the validator for all three routes with zero
+failures. `lifecycle-schedule` reported 56 items and zero cell widgets;
+`lifecycle-schedule-import-apply` committed and reached release/completion;
+`lifecycle-speaking-evaluation` reported four class strips, 96 logical class
+buttons, and four evaluation tabs. Only the existing
+`tests/startup_performance_tests.cpp` assertions were updated directly in
+response to F604/F609; no new test files were created and no assertions were
+weakened.
+
+**Decision: accept F627's focused correction.** This closes the three-route
+correction only; it does not complete the post-F621 Phase 0 matrix. F628 is
+the next Windows x64 one-root `-Routes all` matrix after F627 is committed;
+F629 remains the macOS matrix when a packaged runner is available.
+
+#### Follow-up matrix slices
+
+- **F628:** run a fresh packaged Release Windows x64 `-Routes all` matrix in
+  one evidence root/manifest after F627 is committed and independently
+  review the complete evidence. This is the post-F621 Windows requalification
+  acceptance unit.
+- **F629:** run the current-source macOS matrix when a packaged runner is
+  available.
+
+F626 remains an unresolved deferred candidate. Revisit it only when matched
+owner-specific packaged Release evidence establishes material bytes retained
+by a cached page after feature-resource release and a safe state/re-entry
+contract.

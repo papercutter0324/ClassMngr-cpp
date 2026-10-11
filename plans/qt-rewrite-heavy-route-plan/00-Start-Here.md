@@ -6,7 +6,7 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-11
-- Current milestone: Phase 2 remains in progress. F624 passed the recorded 96-class current-working-set budget but lifecycle acceptance remains partial; F625's My Workspace child-resource release change and F626's broad PageManager retention policy are deferred for lack of owner-specific material-retention evidence. F627 is the current slice: requalify the current-source Windows x64 Phase 0 route matrix after memory-changing work settles. F579 symbols remain deferred and F598 awaits elevated WPR; full Phase 0 remains open. See the Phase 2 progress log for evidence and acceptance scope.
+- Current milestone: Phase 2 remains in progress. F624 passed the recorded 96-class current-working-set budget but lifecycle acceptance remains partial; F625's My Workspace release change and F626's broad PageManager retention policy remain deferred pending owner-specific material-retention evidence. Historical Phase 0 completion (24/24) remains valid; post-F621 current-source requalification remains incomplete (Windows 1/24 before the failed 21/24 matrix; macOS 0/24). F627's source-bound focused correction passed all three affected routes but does not complete Phase 0; F628 is current for a fresh one-root Windows x64 `-Routes all` matrix after F627 is committed, followed by F629 macOS when a packaged runner is available. See [F627](03-Phase-2-Progress-Log.md#f627). F579 symbols remain deferred and F598 awaits elevated WPR.
 - Phase 1 is complete. Its 2026-09-19 closure update records passing hosted
   baseline jobs for Windows x64 and macOS universal, the Phase 1 Build Quality
   and Dialog policy workflows, and packaged Release workflows. Linux x64 and

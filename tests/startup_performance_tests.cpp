@@ -7726,12 +7726,12 @@ void StartupPerformanceTests::capturesLargeScheduleBoundaryWhenConfigured()
         );
     QCOMPARE(
         scheduleMetrics.value(QStringLiteral("scheduleTableItemCount")).toInt(),
-        7
+        56
         );
     QCOMPARE(
         scheduleMetrics.value(QStringLiteral("scheduleTableCellWidgetCount"))
             .toInt(),
-        49
+        0
         );
     QCOMPARE(
         scheduleMetrics.value(QStringLiteral("scheduleVisibleClassCount"))
@@ -9340,9 +9340,10 @@ void StartupPerformanceTests::capturesLargeSpeakingEvaluationBoundaryWhenConfigu
             .toInt(),
         LargeSpeakingEvaluationClassCount
         );
-    QVERIFY(
+    QCOMPARE(
         pageMetrics.value(QStringLiteral("speakingEvalClassTabWidgetCount"))
-            .toInt() > 0
+            .toInt(),
+        4
         );
     QCOMPARE(
         pageMetrics.value(QStringLiteral("speakingEvalClassTabCount"))

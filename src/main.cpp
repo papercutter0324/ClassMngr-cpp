@@ -93,6 +93,7 @@
 #include <QScreen>
 #include <QMutex>
 #include <QMutexLocker>
+#include <QMessageBox>
 #include <QSaveFile>
 #include <QThread>
 #include <QUuid>
@@ -6840,21 +6841,33 @@ void scheduleStartupPerformanceSpeakingEvaluationLifecycle(
             int classTabCount = 0;
             int evaluationTabCount = 0;
             for (
-                NavigationTabWidget* tabs :
-                evaluationPage->findChildren<NavigationTabWidget*>()
+                NavigationTabStrip* tabs :
+                evaluationPage->findChildren<NavigationTabStrip*>()
                 )
             {
                 if (!tabs)
                 {
                     continue;
                 }
-                if (tabs->objectName() == QStringLiteral("speakingEvalClassTabs"))
+                if (
+                    tabs->objectName()
+                        == QStringLiteral("speakingEvalClassTabs")
+                    && tabs->tabKind() == NavigationTabKind::Class
+                    )
                 {
                     ++classTabWidgetCount;
                     classTabCount += tabs->count();
                 }
-                else if (
-                    tabs->objectName()
+            }
+
+            for (
+                NavigationTabWidget* tabs :
+                evaluationPage->findChildren<NavigationTabWidget*>()
+                )
+            {
+                if (
+                    tabs
+                    && tabs->objectName()
                         == QStringLiteral("classEvaluationsEvaluationTabs")
                     )
                 {
@@ -8649,12 +8662,73 @@ void scheduleStartupPerformanceScheduleImportLifecycle(
                                 &app,
                                 []()
                                 {
-                                    DialogServices::promptTestDriver()
-                                        .clickDefault(
+                                    auto& promptDriver =
+                                        DialogServices::promptTestDriver();
+                                    promptDriver.clickDefault(
+                                        QStringLiteral(
+                                            "schedule-import-confirmation"
+                                            )
+                                        );
+
+                                    const auto successPrompt =
+                                        promptDriver.activePrompt(
                                             QStringLiteral(
-                                                "schedule-import-confirmation"
+                                                "classmngrUserPrompt"
                                                 )
                                             );
+                                    auto* activeMessageBox =
+                                        qobject_cast<QMessageBox*>(
+                                            QApplication::activeModalWidget()
+                                            );
+                                    const QString translatedSuccessMessage =
+                                        QCoreApplication::translate(
+                                            "ScheduleImportReviewDialog",
+                                            "Schedule imported successfully.\n"
+                                            "Korean teachers created: %1\n"
+                                            "Korean teacher rooms updated: %2\n"
+                                            "Classes created: %3\n"
+                                            "Classes updated: %4\n"
+                                            "Classes skipped: %5\n"
+                                            "Schedules cleared: %6\n"
+                                            "Ignored occupied cells: %7%8"
+                                            );
+                                    const QString successMessageFirstLine =
+                                        translatedSuccessMessage.section(
+                                            QChar('\n'),
+                                            0,
+                                            0
+                                            );
+                                    if (
+                                        successPrompt
+                                        && successPrompt->objectName
+                                            == QStringLiteral(
+                                                "classmngrUserPrompt"
+                                                )
+                                        && successPrompt->visible
+                                        && activeMessageBox
+                                        && activeMessageBox->objectName()
+                                            == QStringLiteral(
+                                                "classmngrUserPrompt"
+                                                )
+                                        && activeMessageBox->icon()
+                                            == QMessageBox::Information
+                                        && successPrompt->title
+                                            == QCoreApplication::translate(
+                                                "ScheduleImportReviewDialog",
+                                                "Import Schedule"
+                                                )
+                                        && successPrompt->text.startsWith(
+                                            successMessageFirstLine
+                                            + QChar('\n')
+                                            )
+                                        )
+                                    {
+                                        promptDriver.accept(
+                                            QStringLiteral(
+                                                "classmngrUserPrompt"
+                                                )
+                                            );
+                                    }
                                 }
                                 );
                             promptTimer->start();

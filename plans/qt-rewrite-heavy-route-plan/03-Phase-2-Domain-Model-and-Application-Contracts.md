@@ -52,7 +52,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-11
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F625's My Workspace release change and F626's broad PageManager retention policy are deferred pending owner-specific material-retention evidence; F627 is current to requalify the current-source Windows x64 Phase 0 route matrix after memory-changing work settles, while F579, F598, F526 provenance, the broader memory gate, render/window, and Phase 0 remain open.
+- Current note: F625 and F626 remain deferred pending owner-specific material-retention evidence; historical Phase 0 completion (24/24) remains valid, post-F621 requalification remains incomplete (Windows 1/24 before the failed 21/24 matrix, then F627's focused correction passed 3/3 affected routes; macOS 0/24), F628 is current for a fresh one-root Windows x64 `-Routes all` matrix after F627 is committed, and F629 is macOS when its packaged runner is available; F579, F598, F526 provenance, the broader memory gate, and render/window remain open.
 
 ### Slice discovery batches
 
@@ -96,8 +96,8 @@ Treat this plan as an operational summary, not a history:
 
 #### Active batch: Batch 118
 
-- F627 - Requalify the current-source Windows x64 Phase 0 route matrix after memory-changing work settles.
-- F628 - Requalify the current-source macOS universal route matrix when a packaged runner is available.
+- F628 - Run and independently review a fresh current-source packaged Release Windows x64 `-Routes all` matrix after F627 is committed, with all 24 routes in one evidence root/manifest.
+- F629 - Requalify the current-source macOS universal route matrix when a packaged runner is available.
 
 ## Objective
 
