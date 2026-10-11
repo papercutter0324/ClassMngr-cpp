@@ -23573,4 +23573,65 @@ immediately to the next slice.
   feasible; add no test target if those harnesses permit it. Keep the failed
   write atomicity assertion in the trigger-backed port test.
 
-This matrix is recorded before implementation. Batch 134 is active with F659.
+This matrix was recorded before implementation; Batch 134 then remained active with F659.
+
+### F659 Class Visibility preference save failure - accepted - 2026-10-12
+
+Commit `272036cf4b7a6dde29cc6a2d81da800c39c867d2` makes
+`ClassVisibilityPreferencesPort::save` return typed Technical diagnostics.
+A trigger-backed failure preserves the stored scope and unrelated settings.
+The Preferences radio flow shows one warning, restores the persisted scope,
+and does not refresh Classes; after recovery, reselecting saves once and
+refreshes once. Existing Classes and Speaking Evaluation visibility behavior
+remains covered.
+
+The focused Debug build passed. An independent run of the exact registered
+CTests `ClassMngrNextPlatformApplicationServicesClassVisibilityPreferencesPortTests`,
+`ClassMngrClassesPageTests`, `ClassMngrSpeakingEvalPageSaveTests`, and
+`ClassMngrMainWindowClassVisibilityPreferencesFailureTests` passed 4/4 with no
+CTest warnings. `git diff --check` passed. The executor reported non-blocking
+CMake object-path warnings for three unrelated targets and Qt font-directory/
+offscreen warnings in the manual UI log; the independent CTest run was clean.
+No full suite was run.
+
+**Decision: accept F659.** Batch 134 is complete; Batch 135 is active with
+F660. Continue the user's sequence of one commit per slice.
+
+### Batch 135 shortlist - recorded before F660 implementation - 2026-10-12
+
+- F660 is selected: a failed Calendar Next 10 `findNextEventDate` lookup can
+  leave upcoming-events search pending. `CalendarEventCache::load` records
+  lookup errors (`src/features/calendar/ui/calendar_event_cache.cpp:728,755`),
+  but `finishActiveRequest` handles errors only for Range and emits
+  `nextEventMonthFound` only on success (`:835,893`). The page sets
+  `m_nextTenLookupPending` before requesting and clears it only on success
+  (`src/features/calendar/ui/calendar_page_events.cpp:634-635,650`); loading
+  and recovery UI do not handle Next10 errors
+  (`src/features/calendar/ui/calendar_page_upcoming_events.cpp:567-727,846-878`).
+  The cache fake always succeeds for this lookup
+  (`tests/calendar_event_cache_tests.cpp:317`), and page tests cover success,
+  not failure/recovery (`tests/calendar_page_event_mutation_parity_tests.cpp:2023`).
+  F657 explicitly excluded this latch behavior at lines 23450-23451; F660 is a
+  separate follow-up completing that error scope.
+- A platform scan ranked middle-school analytics visibility failure as an
+  alternative. F660 was selected because its explicit pending latch can remain
+  stuck after an uncaught asynchronous error; this user-impact framing is an
+  inference. Calendar event-display and other preference-write failures remain
+  later candidates.
+
+### F660 Calendar Next 10 lookup failure acceptance matrix - recorded before implementation - 2026-10-12
+
+1. Retain a current-generation Next 10 date lookup failure as a cache
+   diagnostic; discard stale-generation failures, and clear the diagnostic on
+   invalidation, success, or retry.
+2. Exit the page's pending state on failure, show the diagnostic and Retry for
+   Next 10, and resubmit the failed date lookup when retried.
+3. After recovery, complete the lookup and month-range load, clear error/retry
+   UI, and render upcoming rows. A successful no-match completes and shows the
+   existing empty state.
+4. Preserve Current Month/Next 30 Days error handling, successful Next 10
+   ordering/cap behavior, and the target set. Extend existing
+   `ClassMngrCalendarEventCacheTests` and
+   `ClassMngrCalendarPageEventMutationParityTests`; add no test target.
+
+This matrix is recorded before implementation. Batch 135 is active with F660.
