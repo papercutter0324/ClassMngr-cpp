@@ -14,6 +14,20 @@ struct GsTeamBirthdayReadRecord final
     QString birthday;
 };
 
+enum class GsTeamDirectorySaveOutcomeCode
+{
+    Saved,
+    Missing,
+    Failure
+};
+
+struct GsTeamDirectorySaveOutcome final
+{
+    GsTeamDirectorySaveOutcomeCode code =
+        GsTeamDirectorySaveOutcomeCode::Failure;
+    QString diagnostic;
+};
+
 class GsTeamRepository
 {
 public:
@@ -24,6 +38,10 @@ public:
         loadBirthdayDirectoryReadRecords() const;
 
     [[nodiscard]] Status saveDirectory(
+        const QList<GsTeamMember>& members,
+        const QList<int>& deletedIds
+        );
+    [[nodiscard]] GsTeamDirectorySaveOutcome saveDirectoryWithOutcome(
         const QList<GsTeamMember>& members,
         const QList<int>& deletedIds
         );

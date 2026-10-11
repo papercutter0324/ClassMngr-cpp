@@ -74,10 +74,16 @@ public:
 
         try
         {
-            const Status saved = repository->saveDirectory(members, deletedIds);
-            if (!saved)
+            const GsTeamDirectorySaveOutcome saved =
+                repository->saveDirectoryWithOutcome(members, deletedIds);
+            if (saved.code == GsTeamDirectorySaveOutcomeCode::Missing)
             {
-                std::string message = utf8(saved.error());
+                return failure(
+                    Domain::ErrorCode::NotFound, utf8(saved.diagnostic), true);
+            }
+            if (saved.code != GsTeamDirectorySaveOutcomeCode::Saved)
+            {
+                std::string message = utf8(saved.diagnostic);
                 if (message.empty())
                 {
                     message = "The GS Team directory could not be saved.";

@@ -12,6 +12,7 @@
 #include <QtTest/QtTest>
 
 #include <optional>
+#include <string>
 
 using namespace ClassMngr::Next;
 
@@ -100,6 +101,8 @@ private slots:
     void mapsFiveFieldsTypedIdsAndDeletedIdsThroughTheActiveRepository();
     void reportsMissingAndClosedSessionsAsUnavailableWithoutLegacyFallback();
     void reportsRepositoryFailureAndTransactionRollsBackAllChanges();
+    void rollsBackCompanionWritesWhenUpdateFails_data();
+    void rollsBackCompanionWritesWhenUpdateFails();
 };
 
 void NextPlatformApplicationServicesGsTeamDirectorySavePortTests::
@@ -257,6 +260,7 @@ reportsRepositoryFailureAndTransactionRollsBackAllChanges()
     QVERIFY(!saved);
     QCOMPARE(saved.error().code, Domain::ErrorCode::Technical);
     QVERIFY(!saved.error().message.empty());
+    QVERIFY(saved.error().message.find("reject insert") != std::string::npos);
     QVERIFY(!saved.error().recoverable);
 
     const auto after = services.databaseSession()
@@ -270,6 +274,119 @@ reportsRepositoryFailureAndTransactionRollsBackAllChanges()
         QStringLiteral("\uC218\uC815 \uB300\uC0C1"));
     QCOMPARE(restoredDelete.name, QStringLiteral("Delete Target"));
     QVERIFY(findById(*after, deleteId).id > 0);
+}
+
+void NextPlatformApplicationServicesGsTeamDirectorySavePortTests::
+rollsBackCompanionWritesWhenUpdateFails_data()
+{
+    QTest::addColumn<bool>("staleUpdate");
+    QTest::newRow("externally-deleted-update-is-not-found") << true;
+    QTest::newRow("update-trigger-failure-is-technical") << false;
+}
+
+void NextPlatformApplicationServicesGsTeamDirectorySavePortTests::
+rollsBackCompanionWritesWhenUpdateFails()
+{
+    QFETCH(bool, staleUpdate);
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+    QVERIFY(seedDirectory(services));
+    GsTeamRepository* const repository =
+        services.databaseSession()->gsTeamRepository();
+    const auto original = repository->getAll();
+    QVERIFY(original);
+
+    int updateId = -1;
+    int deleteId = -1;
+    for (const GsTeamMember& value : *original)
+    {
+        if (value.name == QStringLiteral("Update Target"))
+        {
+            updateId = value.id;
+        }
+        else if (value.name == QStringLiteral("Delete Target"))
+        {
+            deleteId = value.id;
+        }
+    }
+    QVERIFY(updateId > 0);
+    QVERIFY(deleteId > 0);
+
+    QSqlQuery setup(services.databaseSession()->database());
+    if (staleUpdate)
+    {
+        setup.prepare(QStringLiteral("DELETE FROM gs_team WHERE id=?"));
+        setup.addBindValue(updateId);
+        QVERIFY2(setup.exec(), qPrintable(setup.lastError().text()));
+        QCOMPARE(setup.numRowsAffected(), 1);
+    }
+    else
+    {
+        QVERIFY2(setup.exec(QStringLiteral(
+            "CREATE TRIGGER reject_gs_team_update BEFORE UPDATE ON gs_team "
+            "BEGIN SELECT RAISE(ABORT, 'injected GS Team update failure'); END")),
+            qPrintable(setup.lastError().text()));
+    }
+
+    Application::GsTeamDirectorySaveRequest request;
+    // The insert and requested delete execute before the failing update.
+    request.rows = {
+        saveRow(QStringLiteral("Inserted"), QStringLiteral("\u65B0\u898F")),
+        saveRow(QStringLiteral("Updated"), QStringLiteral("\u66F4\u65B0"),
+            updateId)
+    };
+    request.deletedIds = {Domain::GsTeamMemberId(deleteId)};
+    Platform::ApplicationServicesGsTeamDirectorySavePort port(&services);
+    const Domain::Result<void> saved = port.saveGsTeamDirectory(request);
+    QVERIFY(!saved);
+    if (staleUpdate)
+    {
+        QCOMPARE(saved.error().code, Domain::ErrorCode::NotFound);
+        QVERIFY(saved.error().recoverable);
+        QCOMPARE(QString::fromStdString(saved.error().message), QStringLiteral(
+            "Saving GS Team member id %1 failed: no matching record exists."
+            ).arg(updateId));
+    }
+    else
+    {
+        QCOMPARE(saved.error().code, Domain::ErrorCode::Technical);
+        QVERIFY(!saved.error().recoverable);
+        QVERIFY(saved.error().message.find("injected GS Team update failure")
+            != std::string::npos);
+    }
+
+    const auto after = repository->getAll();
+    QVERIFY(after);
+    QCOMPARE(after->size(), staleUpdate ? 1 : 2);
+    const GsTeamMember restoredDelete = findById(*after, deleteId);
+    const GsTeamMember originalDelete = findById(*original, deleteId);
+    QCOMPARE(restoredDelete.id, deleteId);
+    QCOMPARE(restoredDelete.name, originalDelete.name);
+    QCOMPARE(restoredDelete.koreanName, originalDelete.koreanName);
+    QCOMPARE(restoredDelete.position, originalDelete.position);
+    QCOMPARE(restoredDelete.phoneNumber, originalDelete.phoneNumber);
+    QCOMPARE(restoredDelete.birthday, originalDelete.birthday);
+    if (staleUpdate)
+    {
+        QVERIFY(findById(*after, updateId).id <= 0);
+    }
+    else
+    {
+        const GsTeamMember restoredUpdate = findById(*after, updateId);
+        const GsTeamMember originalUpdate = findById(*original, updateId);
+        QCOMPARE(restoredUpdate.id, updateId);
+        QCOMPARE(restoredUpdate.name, originalUpdate.name);
+        QCOMPARE(restoredUpdate.koreanName, originalUpdate.koreanName);
+        QCOMPARE(restoredUpdate.position, originalUpdate.position);
+        QCOMPARE(restoredUpdate.phoneNumber, originalUpdate.phoneNumber);
+        QCOMPARE(restoredUpdate.birthday, originalUpdate.birthday);
+    }
+    for (const GsTeamMember& value : *after)
+    {
+        QVERIFY(value.name != QStringLiteral("Inserted"));
+    }
 }
 
 QTEST_MAIN(NextPlatformApplicationServicesGsTeamDirectorySavePortTests)

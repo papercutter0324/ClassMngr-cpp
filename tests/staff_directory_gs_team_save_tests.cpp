@@ -163,6 +163,7 @@ private slots:
     void permitsMatchingKeysAcrossEnglishAndKoreanNamespaces();
     void rejectsInvalidBirthdayAndPreservesDatabaseState();
     void unavailableSessionIsSilentAndRetainsEditedRows();
+    void deletedMemberSaveIsSilentAndRetainsEditedRows();
     void repositoryFailureRetainsEditsAndDeletionThenCanBeRetried();
     void automaticRepositoryFailureIsQuietAndKeepsDirtyState();
     void automaticSavePersistsEditAndEmitsSaved();
@@ -466,6 +467,61 @@ unavailableSessionIsSilentAndRetainsEditedRows()
     QCOMPARE(staffDirectoryCellText(*table, 0, 0), QStringLiteral("Valid Name"));
     QCOMPARE(saved.count(), 0);
     QCOMPARE(prompts.messages.size(), 0);
+}
+
+void StaffDirectoryGsTeamSaveTests::
+deletedMemberSaveIsSilentAndRetainsEditedRows()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+    QVERIFY(seedDirectory(services));
+    const auto original = services.databaseSession()
+        ->gsTeamRepository()->getAll();
+    QVERIFY(original);
+    const GsTeamMember updateTarget =
+        memberNamed(*original, QStringLiteral("Update Target"));
+    QVERIFY(updateTarget.id > 0);
+
+    StaffDirectoryPage page(&services, StaffDirectoryKind::GsTeam);
+    page.setSaveMode(SaveMode::Manual);
+    QVERIFY(page.loadDirectory());
+    auto* table = page.findChild<QTableView*>(QStringLiteral("gsTeamTable"));
+    QVERIFY(table);
+    const int updateRow = rowForId(*table, updateTarget.id);
+    QVERIFY(updateRow >= 0);
+    QVERIFY(setStaffDirectoryCellText(
+        *table, updateRow, 0, QStringLiteral("Edited Locally")));
+    QVERIFY(page.hasUnsavedChanges());
+
+    QSqlQuery externalDelete(services.databaseSession()->database());
+    externalDelete.prepare(QStringLiteral("DELETE FROM gs_team WHERE id=?"));
+    externalDelete.addBindValue(updateTarget.id);
+    QVERIFY2(externalDelete.exec(), qPrintable(externalDelete.lastError().text()));
+    QCOMPARE(externalDelete.numRowsAffected(), 1);
+    const auto beforeSave = services.databaseSession()
+        ->gsTeamRepository()->getAll();
+    QVERIFY(beforeSave);
+
+    QSignalSpy saved(&page, &StaffDirectoryPage::directorySaved);
+    FakeUserPromptService prompts;
+    DialogServices::setUserPromptServiceForTesting(&prompts);
+    QVERIFY(!page.saveChanges());
+
+    QVERIFY(page.hasUnsavedChanges());
+    QCOMPARE(table->model()->rowCount(), original->size());
+    const int editedRow = rowForId(*table, updateTarget.id);
+    QVERIFY(editedRow >= 0);
+    QCOMPARE(staffDirectoryCellText(*table, editedRow, 0),
+        QStringLiteral("Edited Locally"));
+    QCOMPARE(saved.count(), 0);
+    QCOMPARE(prompts.messages.size(), 0);
+    const auto afterSave = services.databaseSession()
+        ->gsTeamRepository()->getAll();
+    QVERIFY(afterSave);
+    QVERIFY(sameMembers(*afterSave, *beforeSave));
+    QVERIFY(memberNamed(*afterSave, QStringLiteral("Update Target")).id <= 0);
 }
 
 void StaffDirectoryGsTeamSaveTests::
