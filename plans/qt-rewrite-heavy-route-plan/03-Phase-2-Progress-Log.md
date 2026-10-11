@@ -22445,14 +22445,34 @@ production/core gap with an existing test source available for focused changes
 only if corresponding production/core code is changed.
 
 <a id="f635"></a>
-### F635 Classify roster-preparation errors as Validation - active
+### F635 Classify roster-preparation errors as Validation - accepted
 
 The roster preparation contract records user-supplied content issues, but
 `RosterSaveUseCase` currently reports them as `Technical`. F635 will classify
 those preparation failures as `Validation`, preserving the formatted message,
 `recoverable=false`, invalid-class-ID precedence, and no-port-call behavior.
-Update assertions only in the existing
+The production result category changed to `Validation`. Assertions were
+updated only in the existing
 `tests/next_application_roster_save_use_case_tests.cpp` and
 `tests/next_platform_application_services_roster_save_port_tests.cpp`, directly
-in response to the production/core result-code change; create no test file.
-Verify the affected existing application and platform tests.
+in response to that production/core change; no test file was created. The
+existing persistence-failure result remains `Technical`.
+
+Commit `9ca00249` (`Phase2 - Classify roster preparation failures as
+Validation (F635)`) was accepted. The independent Tester rebuilt the existing
+application and platform test targets in `build/windows-x64-debug` with
+`TrackFileAccess=false` and `ForceRebuild=true`, then ran their focused CTests:
+2/2 passed. `git diff --check` passed. Verification was focused, not a
+full-suite run.
+
+**Decision: accept F635.**
+
+<a id="f636"></a>
+### F636 Preserve Upcoming Birthday results at the year-9999 boundary - active
+
+The selected candidate targets a year-boundary result in the Upcoming
+Birthday use case and its existing use-case test. Confirm the exact overflow
+path, expected result ordering, and smallest production/core behavior change
+before implementation. Run tests for changed code as appropriate; modify the
+existing test file only if a production/core change requires updated coverage,
+and create no test file.
