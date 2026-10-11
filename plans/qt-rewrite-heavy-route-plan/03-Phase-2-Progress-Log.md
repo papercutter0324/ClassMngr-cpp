@@ -23295,7 +23295,11 @@ F655.
   blank grading. `saveData` and autosave remain quiet.
 - The stub's normal success behavior remains the default. After disabling the
   failure, a successful save persists the normalized bundle, clears dirty
-  state, and shows no error. PageManager stays on the page after a false result.
+  state, and shows no error. The page CTest asserts `saveChanges() == false`
+  and preserved dirty state directly; code review verifies the existing
+  `PageManager::confirmCurrentPageCanLeave` gate at
+  `src/ui/shared/pages/pagemanager.cpp:539` returns the save result plus dirty
+  check. No PageManager route integration test was added or run.
 - Separately, the Platform test uses a real `app_settings` trigger to assert a
   typed `Technical` error, atomic rollback, and an unchanged stored bundle; the
   page test does not use SQL.
@@ -23306,8 +23310,9 @@ F655.
   deterministic unavailable-service case.
 - Focused registered CTests: `ClassMngrSubPrepPageTests` (test 126) and
   `ClassMngrNextPlatformApplicationServicesSubPrepPreferencesPortTests`
-  (test 367). Add route and explicit-save assertions in the page target; the
-  Platform target retains the atomic rollback guarantee.
+  (test 367). Add page-level explicit-save/unavailable-service assertions;
+  retain the existing PageManager false-result gate. The Platform target
+  retains the atomic rollback guarantee.
 
 ### F655 page-test substrate refinement - recorded before remaining support/test implementation - 2026-10-12
 
