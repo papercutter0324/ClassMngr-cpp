@@ -3,6 +3,7 @@
 #include "data/repositories/class_repository.h"
 #include "data/repositories/schedule_import_repository.h"
 #include "domain/rules/schedule_import_rules.h"
+#include "features/calendar/calendar_workbook_reader.h"
 #include "features/schedule/import/schedule_workbook_parser.h"
 #include "next/application/schedule_import_apply_use_case.h"
 #include "next/domain/schedule_entry.h"
@@ -34,6 +35,10 @@ class ScheduleImportTests : public QObject
 
 private slots:
     void parsesUsersMergesAndDiagnostics();
+    void streamsWorksheetsInWorkbookOrder();
+    void readerPreservesMissingAndAllEmptyWorkbookErrors();
+    void readerStreamsSharedStringsAndRejectsNoWorksheets();
+    void scheduleParserProjectsCheckedInWorkbookSheets();
     void rejectsAmbiguousIntensiveTimesWithCellDiagnostic();
     void convertsIntensiveTimesAcrossNoon();
     void appliesIntensiveSlotStatesSnapshot();
@@ -786,6 +791,383 @@ void ScheduleImportTests::parsesUsersMergesAndDiagnostics()
             QStringLiteral(" Alice-Jones ")
             ),
         QStringLiteral("alicejones")
+        );
+}
+
+void ScheduleImportTests::streamsWorksheetsInWorkbookOrder()
+{
+    const QByteArray data = scheduleWorkbookData();
+    QString bufferedError;
+    const CalendarImport::Workbook buffered =
+        CalendarImport::parseWorkbook(data, &bufferedError);
+    QVERIFY2(
+        !buffered.worksheets.isEmpty(),
+        qPrintable(bufferedError)
+        );
+
+    QStringList streamedNames;
+    QList<bool> streamedVisibility;
+    QList<int> streamedCellCounts;
+    QList<int> streamedMergeCounts;
+    QList<int> streamedStyleCounts;
+    bool callbackInProgress = false;
+    bool callbacksOverlapped = false;
+    QString streamingError;
+    const bool streamed =
+        CalendarImport::forEachWorksheet(
+            data,
+            [&streamedNames,
+             &streamedVisibility,
+             &streamedCellCounts,
+             &streamedMergeCounts,
+             &streamedStyleCounts,
+             &callbackInProgress,
+             &callbacksOverlapped](
+                const CalendarImport::WorkbookMetadata& metadata,
+                const CalendarImport::Worksheet& worksheet
+                )
+            {
+                if (callbackInProgress)
+                {
+                    callbacksOverlapped = true;
+                }
+                callbackInProgress = true;
+                streamedNames.append(worksheet.name);
+                streamedVisibility.append(worksheet.visible);
+                streamedCellCounts.append(worksheet.cells.size());
+                streamedMergeCounts.append(worksheet.mergedRanges.size());
+                streamedStyleCounts.append(metadata.styles.size());
+                callbackInProgress = false;
+                return true;
+            },
+            &streamingError
+            );
+
+    QVERIFY2(streamed, qPrintable(streamingError));
+    QVERIFY(!callbacksOverlapped);
+    QCOMPARE(streamedNames.size(), buffered.worksheets.size());
+    QCOMPARE(
+        streamedNames,
+        (QStringList{QStringLiteral("Current"), QStringLiteral("Archive")})
+        );
+    for (int index = 0; index < buffered.worksheets.size(); ++index)
+    {
+        const CalendarImport::Worksheet& worksheet =
+            buffered.worksheets[index];
+        QCOMPARE(streamedNames[index], worksheet.name);
+        QCOMPARE(streamedVisibility[index], worksheet.visible);
+        QCOMPARE(streamedCellCounts[index], worksheet.cells.size());
+        QCOMPARE(streamedMergeCounts[index], worksheet.mergedRanges.size());
+        QCOMPARE(streamedStyleCounts[index], buffered.styles.size());
+    }
+
+    QString visitorError;
+    const bool visitorSucceeded =
+        CalendarImport::forEachWorksheet(
+            data,
+            [](
+                const CalendarImport::WorkbookMetadata&,
+                const CalendarImport::Worksheet&
+                )
+            {
+                return false;
+            },
+            &visitorError
+            );
+    QVERIFY(!visitorSucceeded);
+    QCOMPARE(
+        visitorError,
+        QStringLiteral("The downloaded spreadsheet could not be read.")
+        );
+}
+
+void ScheduleImportTests::readerPreservesMissingAndAllEmptyWorkbookErrors()
+{
+    const QByteArray missingSheetWorkbook = storedZip({
+        {
+            QByteArrayLiteral("xl/workbook.xml"),
+            QByteArrayLiteral(
+                R"(<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="Missing" sheetId="1" r:id="rId1"/></sheets></workbook>)"
+                )
+        },
+        {
+            QByteArrayLiteral("xl/_rels/workbook.xml.rels"),
+            QByteArrayLiteral(
+                R"(<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/missing.xml"/></Relationships>)"
+                )
+        }
+    });
+
+    QString missingParseError;
+    const CalendarImport::Workbook missingParseResult =
+        CalendarImport::parseWorkbook(
+            missingSheetWorkbook,
+            &missingParseError
+            );
+    QVERIFY(missingParseResult.worksheets.isEmpty());
+    QCOMPARE(
+        missingParseError,
+        QStringLiteral("The spreadsheet is missing worksheet Missing.")
+        );
+
+    int missingSheetCallbacks = 0;
+    QString missingStreamError;
+    const bool missingStreamSucceeded =
+        CalendarImport::forEachWorksheet(
+            missingSheetWorkbook,
+            [&missingSheetCallbacks](
+                const CalendarImport::WorkbookMetadata&,
+                const CalendarImport::Worksheet&
+                )
+            {
+                ++missingSheetCallbacks;
+                return true;
+            },
+            &missingStreamError
+            );
+    QVERIFY(!missingStreamSucceeded);
+    QCOMPARE(missingStreamError, missingParseError);
+    QCOMPARE(missingSheetCallbacks, 0);
+
+    const QByteArray emptyWorkbook = storedZip({
+        {
+            QByteArrayLiteral("xl/workbook.xml"),
+            QByteArrayLiteral(
+                R"(<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="Empty" sheetId="1" r:id="rId1"/></sheets></workbook>)"
+                )
+        },
+        {
+            QByteArrayLiteral("xl/_rels/workbook.xml.rels"),
+            QByteArrayLiteral(
+                R"(<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/empty.xml"/></Relationships>)"
+                )
+        },
+        {
+            QByteArrayLiteral("xl/worksheets/empty.xml"),
+            QByteArrayLiteral(
+                R"(<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetData/></worksheet>)"
+                )
+        }
+    });
+
+    QString emptyParseError;
+    const CalendarImport::Workbook emptyParseResult =
+        CalendarImport::parseWorkbook(
+            emptyWorkbook,
+            &emptyParseError
+            );
+    QVERIFY(emptyParseResult.worksheets.isEmpty());
+    QCOMPARE(
+        emptyParseError,
+        QStringLiteral("The downloaded spreadsheet could not be read.")
+        );
+
+    int emptySheetCallbacks = 0;
+    QString emptySheetName;
+    bool emptySheetHadNoCells = false;
+    QString emptyStreamError;
+    const bool emptyStreamSucceeded =
+        CalendarImport::forEachWorksheet(
+            emptyWorkbook,
+            [&emptySheetCallbacks,
+             &emptySheetName,
+             &emptySheetHadNoCells](
+                const CalendarImport::WorkbookMetadata&,
+                const CalendarImport::Worksheet& worksheet
+                )
+            {
+                ++emptySheetCallbacks;
+                emptySheetName = worksheet.name;
+                emptySheetHadNoCells = worksheet.cells.isEmpty();
+                return true;
+            },
+            &emptyStreamError
+            );
+    QVERIFY(!emptyStreamSucceeded);
+    QCOMPARE(emptyStreamError, emptyParseError);
+    QCOMPARE(emptySheetCallbacks, 1);
+    QCOMPARE(emptySheetName, QStringLiteral("Empty"));
+    QVERIFY(emptySheetHadNoCells);
+}
+
+void ScheduleImportTests::readerStreamsSharedStringsAndRejectsNoWorksheets()
+{
+    const QByteArray sharedStringWorkbook = storedZip({
+        {
+            QByteArrayLiteral("xl/workbook.xml"),
+            QByteArrayLiteral(
+                R"(<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="SharedString" sheetId="1" r:id="rId1"/></sheets></workbook>)"
+                )
+        },
+        {
+            QByteArrayLiteral("xl/_rels/workbook.xml.rels"),
+            QByteArrayLiteral(
+                R"(<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/shared-string.xml"/></Relationships>)"
+                )
+        },
+        {
+            QByteArrayLiteral("xl/sharedStrings.xml"),
+            QByteArrayLiteral(
+                R"(<sst xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><si><t>Shared string value</t></si></sst>)"
+                )
+        },
+        {
+            QByteArrayLiteral("xl/worksheets/shared-string.xml"),
+            QByteArrayLiteral(
+                R"(<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetData><row r="1"><c r="A1" t="s"><v>0</v></c></row></sheetData></worksheet>)"
+                )
+        }
+    });
+
+    const QStringList expectedStrings{
+        QStringLiteral("Shared string value")
+    };
+    QString parseError;
+    const CalendarImport::Workbook buffered =
+        CalendarImport::parseWorkbook(
+            sharedStringWorkbook,
+            &parseError
+            );
+    QVERIFY2(!buffered.worksheets.isEmpty(), qPrintable(parseError));
+    QCOMPARE(buffered.sharedStrings, expectedStrings);
+    QCOMPARE(buffered.worksheets.first().cells.size(), 1);
+    QCOMPARE(
+        buffered.worksheets.first().cells.first().value,
+        expectedStrings.first()
+        );
+
+    int callbacks = 0;
+    QStringList streamedStrings;
+    QString streamedCellValue;
+    QString streamingError;
+    const bool streamed =
+        CalendarImport::forEachWorksheet(
+            sharedStringWorkbook,
+            [&callbacks, &streamedStrings, &streamedCellValue](
+                const CalendarImport::WorkbookMetadata& metadata,
+                const CalendarImport::Worksheet& worksheet
+                )
+            {
+                ++callbacks;
+                streamedStrings = metadata.sharedStrings;
+                if (!worksheet.cells.isEmpty())
+                {
+                    streamedCellValue = worksheet.cells.first().value;
+                }
+                return true;
+            },
+            &streamingError
+            );
+    QVERIFY2(streamed, qPrintable(streamingError));
+    QCOMPARE(callbacks, 1);
+    QCOMPARE(streamedStrings, expectedStrings);
+    QCOMPARE(streamedCellValue, expectedStrings.first());
+
+    const QByteArray noWorksheetsWorkbook = storedZip({
+        {
+            QByteArrayLiteral("xl/workbook.xml"),
+            QByteArrayLiteral(
+                R"(<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets/></workbook>)"
+                )
+        },
+        {
+            QByteArrayLiteral("xl/_rels/workbook.xml.rels"),
+            QByteArrayLiteral(
+                R"(<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"/>)"
+                )
+        }
+    });
+
+    QString emptyParseError;
+    const CalendarImport::Workbook noWorksheets =
+        CalendarImport::parseWorkbook(
+            noWorksheetsWorkbook,
+            &emptyParseError
+            );
+    QVERIFY(noWorksheets.worksheets.isEmpty());
+    QCOMPARE(
+        emptyParseError,
+        QStringLiteral("The downloaded spreadsheet could not be read.")
+        );
+
+    int emptyCallbacks = 0;
+    QString emptyStreamError;
+    const bool emptyStreamSucceeded =
+        CalendarImport::forEachWorksheet(
+            noWorksheetsWorkbook,
+            [&emptyCallbacks](
+                const CalendarImport::WorkbookMetadata&,
+                const CalendarImport::Worksheet&
+                )
+            {
+                ++emptyCallbacks;
+                return true;
+            },
+            &emptyStreamError
+            );
+    QVERIFY(!emptyStreamSucceeded);
+    QCOMPARE(emptyStreamError, emptyParseError);
+    QCOMPARE(emptyCallbacks, 0);
+}
+
+void ScheduleImportTests::scheduleParserProjectsCheckedInWorkbookSheets()
+{
+    QFile file(
+        QStringLiteral(
+            CLASSMNGR_SOURCE_DIR
+            "/tests/fixtures/imports/schedule_review.xlsx"
+            )
+        );
+    QVERIFY2(
+        file.open(QIODevice::ReadOnly),
+        qPrintable(file.errorString())
+        );
+    const QByteArray data = file.readAll();
+
+    QString readerError;
+    const CalendarImport::Workbook calendarWorkbook =
+        CalendarImport::parseWorkbook(data, &readerError);
+    QVERIFY2(
+        !calendarWorkbook.worksheets.isEmpty(),
+        qPrintable(readerError)
+        );
+
+    const auto scheduleWorkbook = parseScheduleImportWorkbook(
+        data,
+        ScheduleImportKind::Normal
+        );
+    const QString scheduleError =
+        scheduleWorkbook.has_value() ? QString() : scheduleWorkbook.error();
+    QVERIFY2(scheduleWorkbook.has_value(), qPrintable(scheduleError));
+    QCOMPARE(
+        scheduleWorkbook->sheets.size(),
+        calendarWorkbook.worksheets.size()
+        );
+    QCOMPARE(scheduleWorkbook->sheets.size(), 2);
+    QCOMPARE(scheduleWorkbook->sheets[0].name, QStringLiteral("Current"));
+    QCOMPARE(scheduleWorkbook->sheets[1].name, QStringLiteral("Alternate"));
+
+    for (int index = 0; index < calendarWorkbook.worksheets.size(); ++index)
+    {
+        const CalendarImport::Worksheet& source =
+            calendarWorkbook.worksheets[index];
+        const ScheduleImportSheet& projected =
+            scheduleWorkbook->sheets[index];
+        QCOMPARE(projected.name, source.name);
+        QCOMPARE(projected.visible, source.visible);
+    }
+
+    QCOMPARE(scheduleWorkbook->sheets[0].users.size(), 1);
+    QCOMPARE(
+        scheduleWorkbook->sheets[0].users.first().name,
+        QStringLiteral("Alice")
+        );
+    QCOMPARE(
+        scheduleWorkbook->sheets[0].users.first().classes.size(),
+        3
+        );
+    QVERIFY(
+        scheduleWorkbook->sheets[0].users.first().diagnostics.isEmpty()
         );
 }
 

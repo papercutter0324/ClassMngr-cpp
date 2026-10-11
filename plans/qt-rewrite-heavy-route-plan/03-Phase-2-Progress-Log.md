@@ -20144,7 +20144,7 @@ F605:
 These are source-grounded candidates, not newly measured heap causes. The
 retained F597 profile is a dry run without ETL, and neither Explorer used WPR,
 symbols, or tests. F598 remains gated on an elevated WPR process; F579 remains
-deferred at the user's direction.
+deferred at the user's direction. No other slices were found.
 
 ## F604 ScheduleWidget delegate rendering - 2026-10-11
 
@@ -20239,6 +20239,94 @@ baseline with `QSqlQuery: database not open`. Post-change ordering, refresh,
 and apply attempts remain inconclusive with the same database-open symptom;
 none are reported as passing. No broad suite or heap-byte attribution was
 run. Logs and boundary metrics are retained under `build/windows-x64-debug`.
+
+## Batch117 discovery - 2026-10-11 (started with F611)
+
+Two independent read-only passes reviewed the upcoming Phase 2 work from
+complementary memory-hotspot and contract/parity angles. Their candidate order
+differed: the memory pass proposed another Schedule Import lifetime step,
+which F611's staged reader now addresses; the contract/parity pass put the
+unmatched packaged Sub Prep SQL output baseline and the stalled Schedule
+Import integration checks first. The selected order establishes output parity
+before changing Sub Prep data ownership, then uses F612's route measurements
+to decide whether overlap reduction is justified. These candidates are
+source-grounded follow-ups, not measured heap causes:
+
+1. **F613 - Establish packaged Sub Prep SQL-route output parity.** Bind the
+   current SQL-backed package/PDF output to a reviewed semantic baseline,
+   including ordering, filtering, and cancellation cleanup. Synthetic
+   in-memory references do not establish packaged F526 parity.
+2. **F614 - Reduce Sub Prep source-to-renderer overlap if F612 finds a
+   material opportunity.** Use F612's stage counters and lifecycle evidence
+   to target only necessary ownership changes, preserving the SQL route and
+   the F613 output baseline.
+3. **F615 - Stabilize Schedule Import dialog integration coverage.** Classify
+   the existing database-not-open failures and preview timeouts, then verify
+   ordering, refresh, apply, reject, and cancellation through reliable
+   end-to-end fixtures.
+4. **F616 - Stage Calendar workbook-to-event projection.** Release worksheet
+   cells and workbook metadata as soon as the event projection no longer
+   needs them, preserving worksheet ordering and malformed-input behavior.
+5. **F617 - Reduce Class Transfer import ownership overlap.** Preserve preview
+   decisions and apply behavior while avoiding redundant full package
+   representations where their physical overlap is established.
+6. **F618 - Reduce Class Transfer export serialization overlap.** Preserve
+   the package format and atomic-save/error behavior while measuring the JSON
+   object and serialized byte-buffer lifetime.
+7. **F619 - Bound Speaking Evaluation AI batch selection and review tables.**
+   Replace per-report table items with bounded model-backed state while
+   preserving selection, validation, review, and apply behavior.
+8. **F620 - Measure Sub Prep PDF render-stage overlap.** Trace operation data,
+   renderer inputs, layout cells, and output buffers on the large route before
+   selecting any chunked-rendering change.
+9. **F621 - Bound remaining PageManager-cached large resources.** Identify
+   heavyweight page owners after their feature-specific release hooks and
+   define bounded recreation while preserving dirty state and navigation.
+10. **F622 - Reconcile current-source packaged Release memory and parity
+    evidence.** Bind source revisions to artifacts and rerun the required
+    route matrix after the behavior-changing slices settle; this is a Phase 2
+    exit-evidence candidate, not a substitute for the large fixtures.
+
+F613 and F614 depend on the F612 route results and the unresolved Sub Prep
+output baseline. F615 follows the known F602/F610 dialog stalls. F579's
+matched-symbol capture remains deferred at the user's direction; F598 still
+requires an elevated Administrator process. F285 and F298 remain deferred
+pending their recorded contract decisions.
+
+## F611 staged Schedule Import workbook parsing - 2026-10-11
+
+`CalendarImport::forEachWorksheet` now visits worksheet projections in
+workbook order with shared metadata. Each decompressed worksheet XML buffer
+leaves scope before the visitor converts that sheet; its parsed cells are
+released when the callback returns. The existing materializing
+`CalendarImport::parseWorkbook` API collects from the same staged reader.
+Schedule Import now builds its `ScheduleImportWorkbook` directly from each
+visitor call instead of retaining a complete `CalendarImport::Workbook` while
+building the projection. The async worker result and finished-handler handoff
+move the Schedule projection; request-ID and timeout guards remain.
+
+Focused tests cover worksheet ordering/visibility, style and shared-string
+metadata, shared-string cell resolution, visitor failure, a missing worksheet
+part, a valid workbook with zero worksheet references, an all-empty workbook,
+and Schedule projection from the checked-in fixture. The missing-part case
+produces the same error from both reader APIs without invoking the visitor;
+the all-empty case invokes its one empty-sheet visitor before the workbook
+level rejection; the zero-sheet case rejects without a visitor.
+
+The standard Windows x64 Debug build passed for `ClassMngr`,
+`ClassMngrCalendarImportTests`, `ClassMngrScheduleImportTests`, and
+`ClassMngrScheduleImportDialogTests`. Focused Calendar and Schedule CTest
+passed 2/2. The independent Tester reran four direct Schedule parser/reader
+cases (6/0 including setup/cleanup) and the async failure and stale/closed-load
+cases (4/0 including setup/cleanup); regular merge/diagnostic and intensive
+conversion cases also passed. The full Schedule Import Dialog CTest target
+did not complete and was interrupted, so it is not reported as passing. A
+missing-font-directory warning did not fail the focused runs.
+
+`git diff --check` passed. No broad suite, WPR, symbols, or heap attribution
+was run, and no byte-savings claim is made. F579 remains deferred at the user's
+direction; F598 still awaits an elevated WPR process. The memory, output
+parity, and Phase 0 gates remain open.
 
 ## F609 bound Speaking Evaluation class-page construction - 2026-10-11
 

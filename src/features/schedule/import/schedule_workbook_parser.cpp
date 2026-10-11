@@ -1274,67 +1274,69 @@ Result<ScheduleImportWorkbook> parseScheduleImportWorkbook(
     )
 {
     QString errorMessage;
-    const CalendarImport::Workbook workbook =
-        CalendarImport::parseWorkbook(
+    ScheduleImportWorkbook result;
+    const bool readSucceeded =
+        CalendarImport::forEachWorksheet(
             data,
+            [&result, kind](
+                const CalendarImport::WorkbookMetadata& metadata,
+                const CalendarImport::Worksheet& worksheet
+                )
+            {
+                ScheduleImportSheet sheet;
+                sheet.name = worksheet.name;
+                sheet.visible = worksheet.visible;
+
+                QHash<qint64, const CalendarImport::Cell*> cells;
+                for (const CalendarImport::Cell& cell : worksheet.cells)
+                {
+                    cells.insert(
+                        positionKey(cell.row, cell.column),
+                        &cell
+                        );
+                }
+
+                for (const CalendarImport::Cell& cell : worksheet.cells)
+                {
+                    if (!validHeader(cell, cells))
+                    {
+                        continue;
+                    }
+
+                    ScheduleImportUserBlock block =
+                        parseBlock(
+                            worksheet,
+                            metadata.styles,
+                            cells,
+                            cell,
+                            kind
+                            );
+
+                    if (!block.classes.isEmpty())
+                    {
+                        sheet.users.append(block);
+                    }
+                    else if (!block.diagnostics.isEmpty())
+                    {
+                        sheet.diagnostics.append(
+                            block.diagnostics
+                            );
+                    }
+                }
+
+                result.sheets.append(std::move(sheet));
+                return true;
+            },
             &errorMessage
             );
 
-    if (workbook.worksheets.isEmpty())
+    if (!readSucceeded)
     {
         return std::unexpected(
             errorMessage.trimmed().isEmpty()
                 ? QObject::tr("The workbook could not be read.")
                 : errorMessage
             );
-    }
-
-    ScheduleImportWorkbook result;
-
-    for (const CalendarImport::Worksheet& worksheet : workbook.worksheets)
-    {
-        ScheduleImportSheet sheet;
-        sheet.name = worksheet.name;
-        sheet.visible = worksheet.visible;
-
-        QHash<qint64, const CalendarImport::Cell*> cells;
-        for (const CalendarImport::Cell& cell : worksheet.cells)
-        {
-            cells.insert(
-                positionKey(cell.row, cell.column),
-                &cell
-                );
-        }
-
-        for (const CalendarImport::Cell& cell : worksheet.cells)
-        {
-            if (!validHeader(cell, cells))
-            {
-                continue;
-            }
-
-            ScheduleImportUserBlock block =
-                parseBlock(
-                    worksheet,
-                    workbook.styles,
-                    cells,
-                    cell,
-                    kind
-                    );
-
-            if (!block.classes.isEmpty())
-            {
-                sheet.users.append(block);
-            }
-            else if (!block.diagnostics.isEmpty())
-            {
-                sheet.diagnostics.append(
-                    block.diagnostics
-                    );
-            }
-        }
-
-        result.sheets.append(sheet);
     }
 
     const bool hasVisibleSchedule =

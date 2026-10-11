@@ -480,8 +480,8 @@ bool ScheduleImportDialog::loadWorkbook()
         [this, watcher, timeout, requestId, filePath, kind]()
         {
             timeout->stop();
-            const ScheduleWorkbookLoadResult result =
-                watcher->result();
+            ScheduleWorkbookLoadResult result =
+                watcher->future().takeResult();
             watcher->deleteLater();
 
             if (requestId != m_loadRequestId)
@@ -509,7 +509,7 @@ bool ScheduleImportDialog::loadWorkbook()
             }
 
             applyLoadedWorkbook(
-                result.workbook,
+                std::move(result.workbook),
                 filePath,
                 kind
                 );
@@ -558,7 +558,7 @@ bool ScheduleImportDialog::loadWorkbook()
                     return result;
                 }
 
-                result.workbook = *parsed;
+                result.workbook = std::move(*parsed);
                 result.succeeded = true;
                 return result;
             }

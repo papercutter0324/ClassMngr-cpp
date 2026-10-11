@@ -5,6 +5,8 @@
 #include <QStringList>
 #include <QVector>
 
+#include <functional>
+
 namespace CalendarImport
 {
 struct Cell
@@ -58,12 +60,34 @@ struct Workbook
     QVector<Worksheet> worksheets;
 };
 
+struct WorkbookMetadata
+{
+    QStringList sharedStrings;
+    QVector<Style> styles;
+};
+
+using WorksheetConsumer = std::function<bool(
+    const WorkbookMetadata& metadata,
+    const Worksheet& worksheet
+    )>;
+
 QString normalizedColor(
     QString color
     );
 
 Workbook parseWorkbook(
     const QByteArray& data,
+    QString* errorMessage
+    );
+
+// Calls the consumer synchronously in workbook order. Metadata is valid for the
+// full call; the worksheet and its parsed cells are valid only during the
+// callback. The decompressed worksheet XML is released before the callback.
+// Returning false stops parsing and reports the generic unreadable-workbook
+// error through errorMessage.
+bool forEachWorksheet(
+    const QByteArray& data,
+    const WorksheetConsumer& consumer,
     QString* errorMessage
     );
 }

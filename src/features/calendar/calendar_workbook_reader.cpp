@@ -1381,8 +1381,9 @@ QHash<int, QString> workbookCellNotes(
 }
 }
 
-Workbook parseWorkbook(
+bool forEachWorksheet(
     const QByteArray& data,
+    const WorksheetConsumer& consumer,
     QString* errorMessage
     )
 {
@@ -1404,14 +1405,14 @@ Workbook parseWorkbook(
                     QStringLiteral("The downloaded spreadsheet is missing %1.")
                         .arg(file);
             }
-            return {};
+            return false;
         }
     }
 
-    Workbook workbook;
+    WorkbookMetadata metadata;
     if (entries.contains(QStringLiteral("xl/sharedStrings.xml")))
     {
-        workbook.sharedStrings =
+        metadata.sharedStrings =
             parseSharedStrings(
                 zipFileData(
                     data,
@@ -1441,7 +1442,7 @@ Workbook parseWorkbook(
                         )
                     );
         }
-        workbook.styles =
+        metadata.styles =
             parseStyles(
                 zipFileData(
                     data,
@@ -1450,9 +1451,9 @@ Workbook parseWorkbook(
                 themeColors
                 );
     }
-    if (workbook.styles.isEmpty())
+    if (metadata.styles.isEmpty())
     {
-        workbook.styles.append(Style{});
+        metadata.styles.append(Style{});
     }
     const QVector<WorksheetReference> worksheetReferences =
         parseWorksheetReferences(
@@ -1463,6 +1464,7 @@ Workbook parseWorkbook(
             zipFileData(data, entries.value(QStringLiteral("xl/_rels/workbook.xml.rels")))
             );
 
+    bool anyWorksheetHasCells = false;
     for (const WorksheetReference& reference : worksheetReferences)
     {
         const QString entryName =
@@ -1475,35 +1477,78 @@ Workbook parseWorkbook(
                     QStringLiteral("The spreadsheet is missing worksheet %1.")
                         .arg(reference.name);
             }
-            return {};
+            return false;
         }
-
-        const QByteArray worksheetData =
-            zipFileData(data, entries.value(entryName));
 
         Worksheet worksheet;
         worksheet.name = reference.name;
         worksheet.visible = reference.visible;
-        worksheet.cells = parseSheet(
-            worksheetData,
-            workbook.sharedStrings,
-            workbookCellNotes(data, entries, entryName)
-            );
-        worksheet.mergedRanges =
-            parseMergedRanges(worksheetData);
-        workbook.worksheets.append(worksheet);
+        {
+            const QByteArray worksheetData =
+                zipFileData(data, entries.value(entryName));
+            worksheet.cells = parseSheet(
+                worksheetData,
+                metadata.sharedStrings,
+                workbookCellNotes(data, entries, entryName)
+                );
+            worksheet.mergedRanges =
+                parseMergedRanges(worksheetData);
+        }
+        anyWorksheetHasCells =
+            anyWorksheetHasCells || !worksheet.cells.isEmpty();
+
+        if (consumer && !consumer(metadata, worksheet))
+        {
+            if (errorMessage)
+            {
+                *errorMessage =
+                    QStringLiteral("The downloaded spreadsheet could not be read.");
+            }
+            return false;
+        }
     }
 
-    const bool allWorksheetsEmpty = std::all_of(
-        workbook.worksheets.cbegin(), workbook.worksheets.cend(),
-        [](const Worksheet& worksheet) { return worksheet.cells.isEmpty(); });
-    if (workbook.worksheets.isEmpty() || allWorksheetsEmpty)
+    if (worksheetReferences.isEmpty() || !anyWorksheetHasCells)
     {
         if (errorMessage)
         {
             *errorMessage =
                 QStringLiteral("The downloaded spreadsheet could not be read.");
         }
+        return false;
+    }
+
+    return true;
+}
+
+Workbook parseWorkbook(
+    const QByteArray& data,
+    QString* errorMessage
+    )
+{
+    Workbook workbook;
+    bool haveMetadata = false;
+    const bool succeeded =
+        forEachWorksheet(
+            data,
+            [&workbook, &haveMetadata](
+                const WorkbookMetadata& metadata,
+                const Worksheet& worksheet
+                )
+            {
+                if (!haveMetadata)
+                {
+                    workbook.sharedStrings = metadata.sharedStrings;
+                    workbook.styles = metadata.styles;
+                    haveMetadata = true;
+                }
+                workbook.worksheets.append(worksheet);
+                return true;
+            },
+            errorMessage
+            );
+    if (!succeeded)
+    {
         return {};
     }
 
