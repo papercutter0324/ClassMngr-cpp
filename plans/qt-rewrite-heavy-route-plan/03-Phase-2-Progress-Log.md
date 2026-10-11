@@ -22984,3 +22984,36 @@ F647 first.
 
 The matrix is recorded before F647 implementation; Batch 127 is active with
 F647 first.
+
+### F647 Calendar event by-ID read - accepted - 2026-10-12
+
+Commit `92de3d540129f2539f5f05a44a2206d86f9f35ce` (`Phase2 - Distinguish
+Calendar event read failure from missing row (F647)`) adds typed Found,
+Missing, and Failure outcomes for the Calendar event by-ID lookup. The legacy
+`getCalendarEvent(int)` signature and diagnostic remain compatible; the
+Platform adapter maps typed Missing to `NotFound` and repository failure to
+`Technical`. Failed `query.next()` checks `lastError()`; the fetch-error branch
+was implemented but not directly induced.
+
+Executor and independent Tester forced Debug target builds in the standard
+`build/windows-x64-debug` folder. Focused Debug CTests
+`ClassMngrNextPlatformApplicationServicesCalendarEventPortTests` and
+`ClassMngrCalendarPageEventMutationParityTests` passed 2/2, and
+`git diff --check` passed. FileTracker `E_ACCESSDENIED` required
+`TrackFileAccess=false` with `ForceRebuild=true`. Verification was focused,
+not a full-suite run.
+
+**Decision: accept F647.** Batch 127 remains active with F648 next.
+
+### F648 Schedule Import decision-index acceptance matrix - recorded before implementation - 2026-10-12
+
+- Reject out-of-range `candidateIndex` values for `CreateNew` and
+  `UpdateExisting` decisions before Schedule Import state projection; invalid
+  indexes must not be silently skipped or omit overlap input.
+- Preserve projection behavior for valid decision indexes.
+- Extend the existing `NextApplicationScheduleImportStateValidation` target/
+  CTest to cover invalid indexes and valid projection. Keep production scope
+  limited to the corresponding validation contract.
+
+The matrix is recorded before F648 implementation; Batch 127 remains active
+with F648. Begin the next bounded slice-discovery batch when F649 starts.
