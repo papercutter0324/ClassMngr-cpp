@@ -1,8 +1,10 @@
 #include "sidebar_controller_p.h"
 
 #include "app/services/feature_services.h"
+#include "next/application/class_create_use_case.h"
 #include "next/application/class_delete_use_case.h"
 #include "next/application/classes_list_read_query.h"
+#include "next/platform/application_services_class_create_port.h"
 #include "next/platform/application_services_class_delete_port.h"
 #include "next/platform/application_services_classes_list_read_port.h"
 #include "ui/shared/dialogs/user_prompt_service.h"
@@ -26,18 +28,36 @@ void SidebarController::addClass()
         return;
     }
 
-    const Result<int> created = classes->create(QString());
+    ClassMngr::Next::Platform::ApplicationServicesClassCreatePort createPort(
+        m_services
+        );
+    const auto created =
+        ClassMngr::Next::Application::ClassCreateUseCase::execute(
+            {}, createPort
+            );
     if (!created)
     {
         DialogServices::showWarning(
             m_sidebar,
             tr("Add Class"),
             tr("The class could not be created."),
-            created.error()
+            QString::fromUtf8(created.error().message.c_str())
             );
         return;
     }
-    const int classId = *created;
+
+    bool classIdOk = false;
+    const int classId = QString::fromStdString(created.value().value())
+        .toInt(&classIdOk);
+    if (!classIdOk || classId <= 0)
+    {
+        DialogServices::showWarning(
+            m_sidebar,
+            tr("Add Class"),
+            tr("The class could not be created.")
+            );
+        return;
+    }
 
     const Result<Classroom> classroom =
         classes->classroom(
