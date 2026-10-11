@@ -18,11 +18,29 @@ struct TeacherCreateRequest final
 };
 
 using TeacherCreateResult = Domain::Result<Domain::TeacherId>;
+using TeacherCreateValidationResult =
+    Domain::Result<Domain::TeacherProfileFields>;
+
+// Validation and normalization are supplied by a platform policy that adapts
+// the existing domain validator. The application contract stays Qt-free.
+class TeacherCreateValidationPolicy
+{
+public:
+    virtual ~TeacherCreateValidationPolicy() = default;
+
+    [[nodiscard]] virtual TeacherCreateValidationResult validate(
+        const Domain::TeacherProfileFields& fields
+        ) const = 0;
+};
 
 class TeacherCreatePort
 {
 public:
     virtual ~TeacherCreatePort() = default;
+
+    // Keep availability errors ahead of field validation, matching the
+    // existing setup flow's database/repository error precedence.
+    [[nodiscard]] virtual Domain::Result<void> preflight() const = 0;
 
     [[nodiscard]] virtual TeacherCreateResult createTeacher(
         const TeacherCreateRequest& request

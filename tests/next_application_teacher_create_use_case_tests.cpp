@@ -4,6 +4,7 @@
 
 #include <optional>
 #include <string>
+#include <vector>
 
 using namespace ClassMngr::Next;
 
@@ -13,27 +14,71 @@ namespace
 class RecordingTeacherCreatePort final : public Application::TeacherCreatePort
 {
 public:
+    [[nodiscard]] Domain::Result<void> preflight() const override
+    {
+        ++preflightCallCount;
+        if (events)
+        {
+            events->push_back("preflight");
+        }
+        return preflightResult;
+    }
+
     [[nodiscard]] Application::TeacherCreateResult createTeacher(
         const Application::TeacherCreateRequest& request
         ) const override
     {
-        ++callCount;
+        ++createCallCount;
         lastRequest = request;
+        if (events)
+        {
+            events->push_back("create");
+        }
         return result;
     }
 
-    mutable int callCount = 0;
+    mutable int preflightCallCount = 0;
+    mutable int createCallCount = 0;
     mutable std::optional<Application::TeacherCreateRequest> lastRequest;
+    mutable std::vector<std::string>* events = nullptr;
+    Domain::Result<void> preflightResult = Domain::Result<void>::success();
     Application::TeacherCreateResult result =
         Application::TeacherCreateResult::success(
             *Domain::TeacherId::fromString("42")
             );
 };
 
+class RecordingTeacherCreateValidationPolicy final
+    : public Application::TeacherCreateValidationPolicy
+{
+public:
+    [[nodiscard]] Application::TeacherCreateValidationResult validate(
+        const Domain::TeacherProfileFields& fields
+        ) const override
+    {
+        ++callCount;
+        lastFields = fields;
+        if (events)
+        {
+            events->push_back("validate");
+        }
+        if (result)
+        {
+            return *result;
+        }
+        return Application::TeacherCreateValidationResult::success(fields);
+    }
+
+    mutable int callCount = 0;
+    mutable std::optional<Domain::TeacherProfileFields> lastFields;
+    mutable std::vector<std::string>* events = nullptr;
+    std::optional<Application::TeacherCreateValidationResult> result;
+};
+
 Application::TeacherCreateRequest sampleRequest()
 {
     Domain::TeacherProfileFields fields;
-    fields.teacherEn = u"Alex Smith";
+    fields.teacherEn = u"  Alex   Smith  ";
     fields.teacherKr = u"Alex";
     fields.preferredRomanization = u"Alex";
     fields.preferredName = u"Alex Smith";
@@ -57,42 +102,115 @@ class NextApplicationTeacherCreateUseCaseTests final : public QObject
     Q_OBJECT
 
 private slots:
-    void forwardsFieldsAndTypedId();
+    void validatesBeforePersistingNormalizedFields();
+    void validationFailureStopsBeforePersistence();
+    void preflightFailurePrecedesFieldValidation();
     void preservesPortFailure();
 };
 
-void NextApplicationTeacherCreateUseCaseTests::forwardsFieldsAndTypedId()
+void NextApplicationTeacherCreateUseCaseTests::
+validatesBeforePersistingNormalizedFields()
 {
     RecordingTeacherCreatePort port;
+    RecordingTeacherCreateValidationPolicy validation;
+    std::vector<std::string> events;
+    port.events = &events;
+    validation.events = &events;
+
+    Domain::TeacherProfileFields normalizedFields = sampleRequest().fields;
+    normalizedFields.teacherEn = u"Alex Smith";
+    validation.result = Application::TeacherCreateValidationResult::success(
+        normalizedFields);
     const auto request = sampleRequest();
 
-    const auto result =
-        Application::TeacherCreateUseCase::execute(request, port);
+    const auto result = Application::TeacherCreateUseCase::execute(
+        request, validation, port);
 
     QVERIFY(result);
     QCOMPARE(result.value().value(), std::string("42"));
-    QCOMPARE(port.callCount, 1);
+    QCOMPARE(port.preflightCallCount, 1);
+    QCOMPARE(validation.callCount, 1);
+    QCOMPARE(port.createCallCount, 1);
+    QVERIFY(validation.lastFields.has_value());
+    QCOMPARE(*validation.lastFields, request.fields);
     QVERIFY(port.lastRequest.has_value());
-    QCOMPARE(*port.lastRequest, request);
+    QCOMPARE(port.lastRequest->fields, normalizedFields);
+    QVERIFY(events == (std::vector<std::string>{
+        "preflight", "validate", "create"}));
+}
+
+void NextApplicationTeacherCreateUseCaseTests::
+validationFailureStopsBeforePersistence()
+{
+    RecordingTeacherCreatePort port;
+    RecordingTeacherCreateValidationPolicy validation;
+    validation.result = Application::TeacherCreateValidationResult::failure({
+        .code = Domain::ErrorCode::Validation,
+        .message = "Teacher validation failed: teacherEn: teacher.name.invalid",
+        .recoverable = true
+    });
+
+    const auto result = Application::TeacherCreateUseCase::execute(
+        sampleRequest(), validation, port);
+
+    QVERIFY(!result);
+    QCOMPARE(result.error().code, Domain::ErrorCode::Validation);
+    QCOMPARE(
+        result.error().message,
+        std::string("Teacher validation failed: teacherEn: teacher.name.invalid")
+        );
+    QVERIFY(result.error().recoverable);
+    QCOMPARE(port.preflightCallCount, 1);
+    QCOMPARE(validation.callCount, 1);
+    QCOMPARE(port.createCallCount, 0);
+}
+
+void NextApplicationTeacherCreateUseCaseTests::
+preflightFailurePrecedesFieldValidation()
+{
+    RecordingTeacherCreatePort port;
+    port.preflightResult = Domain::Result<void>::failure({
+        .code = Domain::ErrorCode::NotFound,
+        .message = "The active database session for teachers is unavailable.",
+        .recoverable = true
+    });
+    RecordingTeacherCreateValidationPolicy validation;
+
+    const auto result = Application::TeacherCreateUseCase::execute(
+        sampleRequest(), validation, port);
+
+    QVERIFY(!result);
+    QCOMPARE(result.error().code, Domain::ErrorCode::NotFound);
+    QCOMPARE(
+        result.error().message,
+        std::string("The active database session for teachers is unavailable.")
+        );
+    QVERIFY(result.error().recoverable);
+    QCOMPARE(port.preflightCallCount, 1);
+    QCOMPARE(validation.callCount, 0);
+    QCOMPARE(port.createCallCount, 0);
 }
 
 void NextApplicationTeacherCreateUseCaseTests::preservesPortFailure()
 {
     RecordingTeacherCreatePort port;
     port.result = Application::TeacherCreateResult::failure({
-        .code = Domain::ErrorCode::Validation,
-        .message = "teacher rejected",
-        .recoverable = true
+        .code = Domain::ErrorCode::Technical,
+        .message = "teacher persistence rejected",
+        .recoverable = false
     });
+    RecordingTeacherCreateValidationPolicy validation;
 
-    const auto result =
-        Application::TeacherCreateUseCase::execute(sampleRequest(), port);
+    const auto result = Application::TeacherCreateUseCase::execute(
+        sampleRequest(), validation, port);
 
     QVERIFY(!result);
-    QCOMPARE(result.error().code, Domain::ErrorCode::Validation);
-    QCOMPARE(result.error().message, std::string("teacher rejected"));
-    QVERIFY(result.error().recoverable);
-    QCOMPARE(port.callCount, 1);
+    QCOMPARE(result.error().code, Domain::ErrorCode::Technical);
+    QCOMPARE(result.error().message, std::string("teacher persistence rejected"));
+    QVERIFY(!result.error().recoverable);
+    QCOMPARE(port.preflightCallCount, 1);
+    QCOMPARE(validation.callCount, 1);
+    QCOMPARE(port.createCallCount, 1);
 }
 
 QTEST_APPLESS_MAIN(NextApplicationTeacherCreateUseCaseTests)

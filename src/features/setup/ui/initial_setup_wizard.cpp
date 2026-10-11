@@ -918,11 +918,14 @@ private:
         const ClassMngr::Next::Application::TeacherCreateRequest request{
             .fields = std::move(fields)
         };
+        ClassMngr::Next::Platform::TeacherValidatorTeacherCreateValidationPolicy
+            validationPolicy;
         ClassMngr::Next::Platform::ApplicationServicesTeacherCreatePort
             createPort(setup->services());
         const auto created =
             ClassMngr::Next::Application::TeacherCreateUseCase::execute(
                 request,
+                validationPolicy,
                 createPort
                 );
         if (!created)

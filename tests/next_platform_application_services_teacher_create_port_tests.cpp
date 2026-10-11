@@ -90,8 +90,9 @@ createsNormalizedTeacherAndMapsId()
     QVERIFY(services.openDatabase(databasePath(directory)));
 
     Platform::ApplicationServicesTeacherCreatePort port(services);
+    Platform::TeacherValidatorTeacherCreateValidationPolicy validation;
     const auto created = Application::TeacherCreateUseCase::execute(
-        validRequest(), port);
+        validRequest(), validation, port);
 
     if (!created)
     {
@@ -133,28 +134,38 @@ invalidTeacherIsRejectedBeforeInsert()
 
     Application::TeacherCreateRequest request;
     Platform::ApplicationServicesTeacherCreatePort port(services);
+    Platform::TeacherValidatorTeacherCreateValidationPolicy validation;
     const auto result =
-        Application::TeacherCreateUseCase::execute(request, port);
+        Application::TeacherCreateUseCase::execute(request, validation, port);
 
     QVERIFY(!result);
     QCOMPARE(result.error().code, Domain::ErrorCode::Validation);
-    QVERIFY(result.error().message.find("teacher.name.required")
-        != std::string::npos);
+    QCOMPARE(
+        result.error().message,
+        std::string("Teacher validation failed: teacherEn: teacher.name.required")
+        );
+    QVERIFY(result.error().recoverable);
     QCOMPARE(teacherCount(services), 0);
 }
 
 void NextPlatformApplicationServicesTeacherCreatePortTests::
 unavailableAndClosedSessionsReturnStructuredFailures()
 {
-    const auto request = validRequest();
+    const Application::TeacherCreateRequest invalidRequest;
+    Platform::TeacherValidatorTeacherCreateValidationPolicy validation;
     {
         Platform::ApplicationServicesTeacherCreatePort nullPort(
             static_cast<ApplicationServices*>(nullptr)
             );
         const auto result =
-            Application::TeacherCreateUseCase::execute(request, nullPort);
+            Application::TeacherCreateUseCase::execute(
+                invalidRequest, validation, nullPort);
         QVERIFY(!result);
         QCOMPARE(result.error().code, Domain::ErrorCode::NotFound);
+        QCOMPARE(
+            result.error().message,
+            std::string("The active database session for teachers is unavailable.")
+            );
     }
 
     QTemporaryDir directory;
@@ -163,14 +174,16 @@ unavailableAndClosedSessionsReturnStructuredFailures()
     const QString path = databasePath(directory);
     Platform::ApplicationServicesTeacherCreatePort port(services);
     const auto unopened =
-        Application::TeacherCreateUseCase::execute(request, port);
+        Application::TeacherCreateUseCase::execute(
+            invalidRequest, validation, port);
     QVERIFY(!unopened);
     QCOMPARE(unopened.error().code, Domain::ErrorCode::NotFound);
 
     QVERIFY(services.openDatabase(path));
     services.closeDatabase();
     const auto closed =
-        Application::TeacherCreateUseCase::execute(request, port);
+        Application::TeacherCreateUseCase::execute(
+            invalidRequest, validation, port);
     QVERIFY(!closed);
     QCOMPARE(closed.error().code, Domain::ErrorCode::NotFound);
 
@@ -197,8 +210,9 @@ repositoryFailureDoesNotCreateTeacher()
         ));
 
     Platform::ApplicationServicesTeacherCreatePort port(services);
+    Platform::TeacherValidatorTeacherCreateValidationPolicy validation;
     const auto result = Application::TeacherCreateUseCase::execute(
-        validRequest(), port);
+        validRequest(), validation, port);
 
     QVERIFY(!result);
     QCOMPARE(result.error().code, Domain::ErrorCode::Technical);
