@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-11
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F638 is active to validate schedule-testing assignment keys in Application before persistence using the existing use-case test ([F638](03-Phase-2-Progress-Log.md#f638)); F625/F626 remain deferred pending owner-specific retention evidence, and Phase 0 remains open for current-source macOS universal evidence (0/24).
+- Current note: F639 is active to validate Testing Class create required fields in Application using the existing use-case test ([F639](03-Phase-2-Progress-Log.md#f639)); F625/F626 remain deferred pending owner-specific retention evidence, and Phase 0 remains open for current-source macOS universal evidence (0/24).
 
 ### Slice discovery batches
 
@@ -100,7 +100,6 @@ Treat this plan as an operational summary, not a history:
 
 #### Active batch: Batch 122
 
-- F638 - Validate schedule-testing assignment keys before persistence, using the existing use-case test.
 - F639 - Validate Testing Class create required fields in Application, using the existing use-case test.
 - F640 - Validate Testing Class details-update required fields in Application, using the existing use-case test.
 

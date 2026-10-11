@@ -22518,7 +22518,7 @@ full-suite run.
 **Decision: accept F637.**
 
 <a id="f638"></a>
-### F638 Validate schedule-testing assignment keys before persistence - active
+### F638 Validate schedule-testing assignment keys before persistence - accepted
 
 The request currently rejects empty schedule keys while nonempty invalid
 weekday/time values reach repository validation and are reported as a
@@ -22529,13 +22529,38 @@ weekday names, case-insensitive after trimming, plus a zero-padded 24-hour
 accepted keys; Application validation must preserve the original request
 strings passed to the port.
 
-The request is Qt-free, but the current shared schedule parser depends on Qt,
-so it cannot be called from Application directly. Select a cohesive way to
-share the established syntax without drifting from repository behavior before
-implementing validation. Invalid nonempty keys should stop before the port and
-use the existing request-level invalid-input message/category behavior; actual
-repository failures remain technical. Focus any required test-file edit in
-`tests/next_application_schedule_testing_assignment_save_use_case_tests.cpp`
-only as a direct response to a production/core change, preferably extending
-the existing invalid-mutation case. Tests may be run for any changed code; no
-test-only slice or new test file is planned.
+F638 validates schedule-testing weekday/time keys before persistence through
+Qt-free shared schedule-key rules. The Qt `ScheduleValueParser` delegates to
+the shared rule, and Application supplies the existing Qt case-insensitive
+weekday comparison semantics. Trimming is used only for validation; original
+request strings remain unchanged for repository canonicalization. Invalid keys
+return the existing request-level message/category behavior and stop before
+the port; structural mutation/ID precedence and technical persistence failures
+remain unchanged.
+
+The existing Application use-case and Platform save-port test files were
+updated directly in response to the production/API change; no test file was
+created. Commit `ed0c859a` (`Phase2 - Validate schedule testing assignment keys
+in Application (F638)`) was accepted. The Executor and independent Tester built
+`ClassMngr`, both affected use-case targets, and `ClassMngrSharedPolicyTests` in
+`build/windows-x64-debug`; focused existing CTests passed 3/3, and
+`git diff --check` passed. The first MSBuild FileTracker attempts failed before
+compilation; the same targets succeeded with escalated build access.
+Verification was focused, not a full-suite run.
+
+**Decision: accept F638.**
+
+<a id="f639"></a>
+### F639 Validate Testing Class create required fields in Application - active
+
+The Application request validates teacher IDs and paired schedule fields but
+currently omits required class fields enforced by the repository; the adapter
+classifies selected repository messages by string matching. Validate those
+required fields at the Application boundary while preserving field semantics,
+validation order, messages/categories/recoverability, and adapter persistence
+failure behavior. Use the existing
+`tests/next_application_testing_class_create_use_case_tests.cpp` only for a
+focused assertion directly required by a production/core change. Tests may run
+for any changed code; create or update test files only in response to a
+corresponding production/core change. Do not create a test-only slice or a new
+test file.
