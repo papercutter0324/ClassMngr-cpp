@@ -53,20 +53,28 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current state - 2026-10-12 (F669)
+### Current state - 2026-10-12 (F670)
 
 Phase 2 remains In Progress/Open under deployment
 `phase2_f417_resume_20261009`, Heavy route; Gates 1 and 2 remain Partial.
-Batches 141-144 are complete. F666 Class Day Filter Reset Policy is committed
+Batches 141-145 are complete. F666 Class Day Filter Reset Policy is committed
 as `faa5c3a7`; F667 Class Selection Reset Policy as `528e031b`; F668 Calendar
-Event Type Color as `4678f3c5`; and F669 Schedule Display Preferences as
-`400decff`. Their focused CTests passed 3/3, 3/3, 2/2, and 2/2 respectively.
-F670 Sub Prep remembered-name save-failure feedback is selected in Batch 145;
-its preimplementation acceptance matrix is in the Phase 2 progress log.
+Event Type Color as `4678f3c5`; F669 Schedule Display Preferences as
+`400decff`; and F670 Sub Prep remembered-name save feedback as `8cc1a68f`.
+Their focused CTests passed 3/3, 3/3, 2/2, 2/2, and 2/2 respectively.
 
 F669 restores the five Schedule Preferences controls and skips schedule
-refresh on a failed atomic write, with a warning and a successful retry path.
-Its independent focused CTests passed; no full-suite result is claimed.
+refresh on a failed atomic write. F670 warns when the typed remembered-name
+write fails while preserving generation acceptance. Its UI case injects the
+typed failure through the settings-repository test stub; the port CTest
+separately verifies the SQLite-triggered write failure. No full-suite result
+is claimed for F669 or F670.
+
+F671 Custom Color Palette typed persistence and caller feedback is
+selected/current in Batch 146. Its preimplementation acceptance matrix is in
+the Phase 2 progress log. The port contract and shared color utility need a
+typed failure path, and all seven UI calls must report it while preserving a
+valid selected feature color.
 
 ### Current state - 2026-10-09
 

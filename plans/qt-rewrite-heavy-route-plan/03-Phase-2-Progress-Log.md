@@ -24239,3 +24239,64 @@ caller-propagation candidate. Relative user impact is not established.
    and `ClassMngrSubPrepPageTests`; add no CMake target.
 
 This matrix is recorded before implementation. Batch 145 is active with F670.
+
+### F670 Sub Prep remembered-name save failure - accepted - 2026-10-12
+
+F670 is accepted at code commit
+`8cc1a68fec154d8db858e08f81d5f7de784bd79f`. The focused CTests passed 2/2:
+`ClassMngrNextPlatformApplicationServicesPersonalDisplayNamePreferencesPortTests`
+and `ClassMngrSubPrepPageTests`. The UI case confirms one warning with the
+diagnostic, unchanged stored name, and generation acceptance after the
+existing-folder confirmation. The UI test target uses its settings-repository
+stub to produce the typed error; the port CTest separately covers the
+SQLite-triggered write failure. Direct QtTest passed 3/3; the full suite was
+not run.
+
+**Decision: accept F670 with that coverage limit.** Batch 145 is complete;
+Batch 146 is active with F671. Continue the one-commit-per-slice sequence.
+
+### Batch 146 shortlist and selection - recorded before F671 implementation - 2026-10-12
+
+F671 is selected: Custom Color Palette remains the direct database-backed
+preference port with a `void write` contract, while its adapter only logs a
+failed write (`src/next/application/custom_color_palette_preferences.h:49-56`,
+`src/next/platform/application_services_custom_color_palette_preferences_port.cpp:48-73`).
+The existing port CTest has a trigger-backed `custom_colors` failure case.
+The shared `ColorUtils::getColor` currently saves the palette after either
+dialog acceptance or cancellation and returns the selected feature color;
+seven calls across five UI files use it. Inference: a failed palette write
+currently loses reusable custom swatches without user feedback while the
+selected feature color may still be applied.
+
+To keep the shared color utility independent of `DialogServices`, F671 will
+make the Application write typed and have `ColorUtils::getColor` require a
+palette-save failure callback. Each caller will present one
+`Unable to Save Preference` warning with the diagnostic. The existing
+no-session and closed-session no-op behavior remains success, avoiding a new
+warning on chooser paths that have no active profile; repository and write
+failures become Technical results. Custom Color Palette is broader than the
+Sub Prep candidate but directly closes the remaining void persistence
+contract in this scan.
+
+### F671 Custom Color Palette failure acceptance matrix - recorded before implementation - 2026-10-12
+
+1. Change the palette Application `write` and adapter to return a typed,
+   nodiscard Technical result for missing repository and failed writes. A
+   trigger-backed `custom_colors` failure preserves the prior palette and
+   unrelated settings; successful writes preserve the canonical 16-color
+   palette and compact JSON encoding. Preserve current read/default behavior
+   and no/closed-session no-op success.
+2. Make `ColorUtils::saveCustomColors` return the typed write result and make
+   `ColorUtils::getColor` require a failure callback. On write failure, invoke
+   it once with the diagnostic after either Accept or Cancel; preserve the
+   selected feature color on Accept and invalid-color Cancel behavior.
+3. Update all seven production calls across five UI files to show one
+   `Unable to Save Preference` warning. A failed palette write must not
+   discard an otherwise valid selected feature color. Preserve the existing
+   behavior that saves edited dialog swatches on cancel.
+4. Reuse exact CTests
+   `ClassMngrNextPlatformApplicationServicesCustomColorPalettePreferencesPortTests`
+   and `ClassMngrColorUtilsCustomColorPaletteTests`; build the production
+   `ClassMngr` target to compile all call sites. Add no CMake target.
+
+This matrix is recorded before implementation. Batch 146 is active with F671.

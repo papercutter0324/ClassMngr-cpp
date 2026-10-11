@@ -31,6 +31,10 @@
 - ApplicationServices is the preferred application boundary. DataService
   remains as a compatibility facade while callers migrate; UI/controllers
   should not add direct repository usage.
+- The Sub Prep page test target uses settings-repository stubs for UI failure
+  feedback; the focused preference-port CTest owns SQLite-trigger write-error
+  coverage. Inject failures through the UI target's active stub/session rather
+  than a separate profile database handle.
 - Navigation parity needs a dirty-page case with an open workspace as well as
   closed-session and clean-landing cases. Verify Cancel preserves the complete
   form and page state, and verify Discard against persisted data so UI reset is

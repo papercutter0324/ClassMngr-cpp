@@ -9,10 +9,17 @@
   `400decffe4840bd337d5c9f8fe80d644b88aa743`. The independent focused CTests
   passed 2/2. The UI case verifies warning/diagnostic, five-control and stored
   value rollback, no failure refresh, and successful retry.
-- F670 Sub Prep remembered-name save-failure feedback is selected/current.
-  Its preimplementation matrix is in the Phase 2 progress log. Preserve dialog
-  acceptance after warning, then verify the existing successful write path.
-- Stop point: F670 implementation has not started. After it is committed,
+- F670 Sub Prep remembered-name save-failure feedback is committed as
+  `8cc1a68fec154d8db858e08f81d5f7de784bd79f`. The independent focused CTests
+  passed 2/2 and direct QtTest passed 3/3. Its UI test uses the target's
+  settings-repository stub for the typed failure; the port CTest covers the
+  SQLite-triggered failure.
+- F671 Custom Color Palette typed persistence and caller feedback is
+  selected/current. Its preimplementation matrix is in the Phase 2 progress
+  log. Preserve no/closed-session no-op behavior, report repository/write
+  errors through the shared chooser to all seven callers, and preserve valid
+  selection and cancel behavior.
+- Stop point: F671 implementation has not started. After it is committed,
   begin the next Phase 2 slice selection.
 
 ## Historical handoff - phase2_resume_20260929 (F384)
