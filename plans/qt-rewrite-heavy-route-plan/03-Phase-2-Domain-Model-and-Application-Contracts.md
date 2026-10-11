@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-11
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F636 is active to preserve Upcoming Birthday results at the year-9999 boundary through the existing use-case boundary ([F636](03-Phase-2-Progress-Log.md#f636)); F625/F626 remain deferred pending owner-specific retention evidence, and Phase 0 remains open for current-source macOS universal evidence (0/24).
+- Current note: F637 is active to classify speaking-evaluation content failures as `Validation` while keeping malformed-request failures as `InvalidInput` ([F637](03-Phase-2-Progress-Log.md#f637)); F625/F626 remain deferred pending owner-specific retention evidence, and Phase 0 remains open for current-source macOS universal evidence (0/24).
 
 ### Slice discovery batches
 
@@ -98,9 +98,12 @@ Treat this plan as an operational summary, not a history:
   because the current execution identity is not an Administrator; resume when
   a Windows process with an elevated administrator token is available.
 
-#### Active batch: Batch 121
+#### Active batch: Batch 122
 
-- F636 - Preserve Upcoming Birthday results at the year-9999 boundary, using the existing use-case test.
+- F637 - Classify speaking-evaluation content failures as `Validation`, preserving `InvalidInput` for malformed requests; use the existing use-case test.
+- F638 - Validate schedule-testing assignment keys before persistence, using the existing use-case test.
+- F639 - Validate Testing Class create required fields in Application, using the existing use-case test.
+- F640 - Validate Testing Class details-update required fields in Application, using the existing use-case test.
 
 ## Objective
 

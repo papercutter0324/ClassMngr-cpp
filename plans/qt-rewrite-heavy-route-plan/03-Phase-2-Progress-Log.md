@@ -22468,11 +22468,43 @@ full-suite run.
 **Decision: accept F635.**
 
 <a id="f636"></a>
-### F636 Preserve Upcoming Birthday results at the year-9999 boundary - active
+### F636 Preserve Upcoming Birthday results at the year-9999 boundary - accepted
 
-The selected candidate targets a year-boundary result in the Upcoming
-Birthday use case and its existing use-case test. Confirm the exact overflow
-path, expected result ordering, and smallest production/core behavior change
-before implementation. Run tests for changed code as appropriate; modify the
-existing test file only if a production/core change requires updated coverage,
-and create no test file.
+The use case previously returned an empty schedule whenever the computed end
+of next week exceeded `9999-12-31`; for reference dates beginning `9999-12-20`,
+this discarded otherwise valid birthdays through the supported maximum date.
+F636 caps current-week and next-week range ends at `9999-12-31`, preserving
+normal buckets and including the partial final week while omitting occurrences
+beyond the supported range. Invalid reference dates still produce an empty
+schedule.
+
+One focused regression was added to the existing
+`tests/next_application_upcoming_birthday_schedule_use_case_tests.cpp` in
+direct response to the production/core fix; no test file was created. It
+covers a birthday today, this-week and partial-next-week occurrences through
+December 31, an occurrence beyond the maximum, and a final current week that
+extends beyond December 31. Existing bucket, rollover, leap-day, invalid
+birthday/name, UTF-16 display-name, and invalid-reference assertions remain.
+
+Commit `b1d95756` (`Phase2 - Preserve birthday results at year 9999 boundary
+(F636)`) was accepted. The independent Tester rebuilt the existing use-case
+target in `build/windows-x64-debug` with `TrackFileAccess=false` and
+`ForceRebuild=true`; its focused CTest passed 1/1. `git diff --check` passed.
+Verification was focused, not a full-suite run.
+
+**Decision: accept F636.**
+
+Batch 121 is complete. Batch 122 is now active, using the candidates and
+evidence recorded in [Batch 122 discovery](#batch-122-discovery---recorded-at-f635-start).
+
+<a id="f637"></a>
+### F637 Classify speaking-evaluation content failures as Validation - active
+
+`SpeakingEvaluationSaveUseCase` currently reports semantic content-validation
+errors as `InvalidInput`. Classify those failures as `Validation` while
+preserving `InvalidInput` for malformed IDs, matrix shape, and cell
+coordinates. Keep the existing message, recoverability, and stop-before-port
+behavior. Use the existing
+`tests/next_application_speaking_evaluation_save_use_case_tests.cpp`; modify
+it only in response to the production/core result change, and create no test
+file.
