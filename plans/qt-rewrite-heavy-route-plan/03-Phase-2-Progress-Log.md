@@ -23816,3 +23816,86 @@ F663. Continue the user's one-commit-per-slice sequence.
    `ClassMngrMainWindowClassVisibilityPreferencesFailureTests`; add no target.
 
 This matrix is recorded before implementation. Batch 138 is active with F663.
+
+### F663 Middle-school Analytics/Evaluations preference save failure - accepted - 2026-10-12
+
+Commit `a39427b53103bd737c5f44164ed22ac351b7ac7a`
+(`Phase2 - Surface middle-school analytics preference save failures`) contains
+exactly six files: the typed preference contract, Platform adapter, menu
+handler, Platform port tests, MainWindow preference-failure tests, and
+ClassesPage success assertions. Preference writes now return a typed Technical
+diagnostic for missing session/repository and failed writes. A trigger-backed
+failure preserves the previous preference and an unrelated setting. The actual
+Preferences flow shows one diagnostic warning, restores the checkbox from the
+persisted value with signals blocked, and does not refresh/query Classes on
+failure. Removing the trigger and retrying persists the value and causes one
+Classes query/refresh. Existing M1-M3 visibility, grade fail-open, and section
+tests remain passing.
+
+Executor final Ninja Debug focused CTest and independent Tester exact rerun
+passed `ClassMngrNextPlatformApplicationServicesMiddleSchoolAnalyticsPreferencesPortTests`,
+`ClassMngrMainWindowClassVisibilityPreferencesFailureTests`, and
+`ClassMngrClassesPageTests` (3/3; final exit 0). ClassesPage built without
+C4834 warnings after existing save calls were asserted; `git diff --check`
+passed. No full suite ran. The multi-config `build/windows-x64-debug` tree
+lacked the UI executable, so final verification used the existing single-config
+Debug Ninja tree `build/windows-x64-debug-ninja` with current binary/source
+timestamps. The open-session/null-repository defensive branch is not directly
+tested because `DatabaseSession` is final and privately owns its repository;
+closed-session and trigger write failures are tested and source review confirms
+the defensive Technical path. The UI failure test observes no refresh through
+unchanged Classes query count and early return, but does not directly assert
+effective tab contents.
+
+**Decision: accept F663 with those limits.** Batch 138 is complete; Batch 139
+is active with F664. Continue the one-commit-per-slice sequence.
+
+### Batch 139 shortlist - recorded before F664 implementation - 2026-10-12
+
+- F664 is selected: the Evaluation Default Policy contract has a void save
+  (`src/next/application/evaluation_default_policy_preferences.h:20-24`),
+  the Platform adapter ignores `saveSetting` failure for key
+  `classes_navigation_evaluation_default_policy`
+  (`src/next/platform/application_services_evaluation_default_policy_port.h:75-91`),
+  and the Preferences radio handler saves without checking failure or restoring
+  controls (`src/app/menu_builder.cpp:755-781`). A trigger-backed port test
+  verifies silent failure preserves the old policy
+  (`tests/next_platform_application_services_evaluation_default_policy_port_tests.cpp:256-281`).
+  The policy feeds `EvaluationDefaultSelection::forClass`
+  (`src/features/classes/evaluation_default_selection_service.cpp:40-43`),
+  used by Class Analytics (`class_analytics_page.cpp:453`) and Speaking
+  Evaluation (`speaking_eval_page.cpp:187`). Inference: a failed save can leave
+  the selected radio inconsistent with the policy used for later defaults in
+  both consumers.
+- UI scan ranks F664 clearer than active-editor-hidden behavior, which remains
+  semantically ambiguous given `sectionSelectionSurvivesGradeTabRebuilds`
+  (`tests/classes_page_tests.cpp:659`). Platform scan ranks it broader than
+  Class Selection Reset and Class Day Filter Reset write failures; this
+  comparative impact is inference. Active-editor behavior is deferred outside
+  F664.
+
+### F664 Evaluation Default Policy save failure acceptance matrix - recorded before implementation - 2026-10-12
+
+1. Return a typed Technical diagnostic for trigger-backed failure and
+   unavailable session/repository; preserve the prior policy and unrelated
+   setting, exact key, default All, encodings `all` and
+   `current_or_previous_term`, legacy trim/case behavior, invalid/missing
+   fallback, and round-trip. The direct null-repository branch has no existing
+   test seam if that remains true.
+2. In the actual Preferences radio flow, show exactly one `Unable to Save
+   Preference` warning with diagnostic, restore both radio controls from the
+   persisted policy with signals blocked and no second write, and ensure the
+   failed write does not change the policy selection used by existing consumers
+   or cause a refresh.
+3. After trigger removal, retry persists the desired policy once and leaves
+   the radio pair consistent; preserve current success behavior (no added
+   Classes refresh).
+4. Preserve `EvaluationDefaultSelectionIntegration`, Platform policy tests,
+   `ClassMngrClassesPageTests` default/load behavior, and unrelated preference
+   flows; adapt direct callers for the typed result and add no target. Likely
+   focused targets are `ClassMngrNextPlatformApplicationServicesEvaluationDefaultPolicyPortTests`,
+   `ClassMngrMainWindowClassVisibilityPreferencesFailureTests`,
+   `EvaluationDefaultSelectionIntegration`, and `ClassMngrClassesPageTests` as
+   needed.
+
+This matrix is recorded before implementation. Batch 139 is active with F664.

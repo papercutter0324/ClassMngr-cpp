@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-12
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F662 is accepted at commit `2937fb4fb5cd9199af0b8d88a8e82d5c92716620`; F663 (middle-school Analytics/Evaluations preference save-failure feedback and persisted-checkbox consistency) is selected in Batch 138, while F625/F626 and current-source macOS universal evidence (0/24) remain open.
+- Current note: F663 is accepted at commit `a39427b53103bd737c5f44164ed22ac351b7ac7a`; F664 (Evaluation Default Policy save-failure feedback and radio restoration) is selected in Batch 139, while F625/F626 and current-source macOS universal evidence (0/24) remain open.
 
 ### Slice discovery batches
 
@@ -94,9 +94,9 @@ Treat this plan as an operational summary, not a history:
   because the current execution identity is not an Administrator; resume when
   a Windows process with an elevated administrator token is available.
 
-#### Active batch: Batch 138
+#### Active batch: Batch 139
 
-- F663 - Surface middle-school Analytics/Evaluations preference save failures and restore checkbox state from persisted values; implement the pre-recorded UI and persistence matrix.
+- F664 - Surface Evaluation Default Policy save failures and restore radio selection; implement the pre-recorded UI and persistence matrix.
 
 ## Objective
 
