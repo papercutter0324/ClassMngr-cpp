@@ -42,7 +42,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-11
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F618 is measuring Class Transfer export serialization overlap; F579 remains deferred and F598 awaits elevated WPR, while F526 provenance, the 250 MiB lifecycle, render/window, and Phase 0 gates remain open.
+- Current note: F619 is bounding Speaking Evaluation AI batch selection and review tables; F579 remains deferred and F598 awaits elevated WPR, while F526 provenance, the 250 MiB lifecycle, render/window, and Phase 0 gates remain open.
 
 ### Slice discovery batches
 
@@ -72,13 +72,16 @@ Treat this plan as an operational summary, not a history:
   UTF-8 bytes and the typed source releases before rendering; current evidence
   does not justify a material ownership refactor. Revisit with larger-fixture
   or owner-specific memory evidence.
+- F618 - Deferred after a read-only export trace: package, JSON tree, and
+  encoded buffer overlap, but no export-specific peak measurement establishes
+  a material cost. Revisit with a matched packaged Release export measurement
+  before changing serialization or QSaveFile behavior.
 - F598 - Fresh matched WPR heap capture for the F596 Release route is blocked
   because the current execution identity is not an Administrator; resume when
   a Windows process with an elevated administrator token is available.
 
 #### Active batch: Batch 117
 
-- F618 - Reduce Class Transfer export serialization overlap while preserving output semantics.
 - F619 - Bound Speaking Evaluation AI batch selection and review tables.
 - F620 - Measure Sub Prep PDF render-stage overlap before selecting a reduction.
 - F621 - Bound remaining large resources cached by PageManager.

@@ -21655,3 +21655,36 @@ serialization overlap while preserving package format and atomic-save/error
 behavior. F579 symbols remain deferred at the user's direction; F598 still
 needs elevated WPR. The 250 MiB lifecycle gate, render/window acceptance, and
 global Phase 0 remain open (Windows 1/24, macOS 0/24).
+
+## F618 Class Transfer export serialization overlap review - 2026-10-11
+
+The read-only trace found that the typed sidebar export obtains an owning
+`ClassTransferExportPackage`, then the codec builds one `QJsonObject` /
+`QJsonDocument` and one indented `QByteArray` while the package remains live.
+`QSaveFile` opens before serialization, writes the encoded array, cancels on a
+short write, and commits only after a full write. The document temporary ends
+before file write/commit. The source confirms representation overlap but does
+not identify its peak allocation or establish that it is material. No
+export-specific allocation or matched process-memory trace exists.
+
+Existing evidence is `ClassMngrClassTransferExportCodecParityTests` for typed
+versus legacy schema/order/payload parity, round-trip output, and an open-error
+case; `ClassMngrClassTransferTests` for package round-trip and repository
+ordering; `ClassMngrMainWindowCloseFileParityTests` for picker cancellation
+and successful file output; and the application query and Platform source
+tests for projection construction. There is no always-on short-write or commit
+failure test, destination-preservation assertion after failed replacement, or
+export-specific large-route measurement. The existing large Class Transfer
+startup boundary is environment-gated and exercises an import lifecycle, not
+an export memory reference.
+
+F618 is deferred: retain the current Qt JSON and `QSaveFile` path until a
+matched packaged Release export measurement shows that package/tree/buffer
+overlap is worth changing. If resumed, preserve package schema, selected and
+first-seen teacher order, sparse payloads, and atomic-save/error behavior;
+add destination-preservation coverage for any changed failure phase. No code
+was changed and no tests were run. F619 is next: bound Speaking Evaluation AI
+batch selection and review tables. F579 symbols remain deferred at the user's
+direction; F598 still needs elevated WPR. The 250 MiB lifecycle gate,
+render/window acceptance, and global Phase 0 remain open (Windows 1/24,
+macOS 0/24).
