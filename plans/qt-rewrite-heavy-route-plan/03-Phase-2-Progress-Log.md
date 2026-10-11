@@ -22695,7 +22695,7 @@ No other slices were found.
 
 Batch 124 is now active, with F642 first.
 
-### F642 Route Sidebar Add Class through the existing Application create contract - active
+### F642 Route Sidebar Add Class through the existing Application create contract - accepted
 
 Move `SidebarController::addClass()` from the direct `ClassService` create
 route to the existing `ClassCreateUseCase` and Platform create port. Preserve
@@ -22704,3 +22704,33 @@ subsequent class read, and existing Details navigation and selection. Run
 focused tests for changed production code as appropriate; update a test file
 only in direct response to a corresponding production/core change, and do not
 create a test-only slice or new test file.
+
+The sidebar now creates the blank class through `ClassCreateUseCase` and the
+Platform create port, then loads the created class through the existing read
+service and preserves Details navigation and selection. Commit
+`0d2415f23009bc82148279be29b929c978fa0b4a` (`Phase2 - Route Sidebar Add Class
+through Application (F642)`) contains the production change. The Executor
+built `ClassMngr` and `ClassMngrMainWindowClassesSidebarRootNavigationTests`
+in `build/windows-x64-debug-ninja`; focused CTest passed 1/1. The first build
+attempt lacked the MSVC developer environment and failed before compilation;
+the retry through Visual Studio 2026 Developer Command Prompt succeeded.
+`git diff --check` passed. Verification was focused, not a full-suite run.
+
+**Decision: accept F642.** Batch 124 remains active with F643 selected.
+
+### F643 acceptance matrix recorded - 2026-10-11
+
+Route Sidebar Add Teacher through the existing `TeacherCreateUseCase`,
+`TeacherValidatorTeacherCreateValidationPolicy`, and Platform create port.
+Add one case to
+`tests/mainwindow_teacher_sidebar_navigation_parity_tests.cpp`: open an empty
+temporary workspace, trigger the real MainWindow New Teacher action, and
+verify the required-name validation warning retains its title, generic message,
+and exact detail `Teacher validation failed: teacherEn: teacher.name.required`.
+Verify no teacher is written, no extra prompt appears,
+the current page/widget and sidebar selection stay unchanged, Teacher Info
+page instantiation does not change, and the database session/path remain
+stable. Keep the subsequent teacher read and Details navigation behavior on
+the existing service path. Exact target/CTest:
+`ClassMngrMainWindowTeacherSidebarNavigationParityTests`. Matrix recorded
+before implementation; implementation pending. Batch 124 remains active.
