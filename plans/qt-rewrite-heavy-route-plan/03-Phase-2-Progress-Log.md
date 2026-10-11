@@ -23325,5 +23325,34 @@ CMake variant. The real `app_settings` trigger remains isolated to
 `ClassMngrNextPlatformApplicationServicesSubPrepPreferencesPortTests`, which
 proves typed `Technical` failure and atomic rollback.
 
-F655 implementation is pending this matrix's documentation commit; Batch 130
-is active with F655.
+This matrix was recorded and committed before F655 implementation.
+
+### F655 Sub Prep explicit-save failure - accepted - 2026-10-12
+
+Commit `12dc5c519b3560a803b1246b321e3b82a30fbe3d` makes explicit
+`saveChanges()` surface one warning with the port error or fallback while
+keeping `saveData` and autosave quiet. Failed drafts, including blank grading,
+remain unchanged; blank grading is normalized only after a successful save.
+The page test uses opt-in failure in the in-memory stub, while the Platform
+test uses a real `app_settings` trigger for Technical failure and atomic
+rollback. The deterministic unavailable-service page path also returns a
+clear explicit-save fallback and preserves the draft.
+
+Executor and independent Tester forced Debug builds of
+`ClassMngrSubPrepPageTests` and
+`ClassMngrNextPlatformApplicationServicesSubPrepPreferencesPortTests`
+succeeded. The exact registered CTests passed 1/1 each, and
+`git diff --check` passed. PageManager integration was not tested; code review
+at `src/ui/shared/pages/pagemanager.cpp:539` verifies a false save result
+blocks page leave. Link emitted pre-existing `/FORCE:MULTIPLE` duplicate
+`ApplicationServices` symbol warnings; CMake explicitly enables override
+support, and the tests passed. Verification was focused, not a full-suite run.
+
+**Decision: accept F655.** Batch 130 is complete; Batch 131 discovery is
+underway.
+
+### Batch 131 discovery - underway at F655 acceptance - 2026-10-12
+
+- Class Notes stale-parent classification is a validated backup candidate,
+  but lower impact because the existing path warns and retains dirty draft.
+- Fresh discovery is underway. No F656 candidate has been selected yet.

@@ -6,7 +6,7 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-12
-- Current milestone: Phase 2 remains in progress: F654 was accepted at commit `f1ea1f51819448222a541dfdad5c7dfb74326fc8`, and F655 is active in Batch 130; F625/F626 remain deferred pending owner-specific retention evidence, the current-source Phase 0 gate remains open for macOS universal evidence (0/24) with F629 awaiting a suitable runner, and F579 symbols/F598 elevated WPR remain deferred. See the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
+- Current milestone: Phase 2 remains in progress: F655 was accepted at commit `12dc5c519b3560a803b1246b321e3b82a30fbe3d`; Batch 131 discovery is underway, with no F656 candidate active yet. F625/F626 remain deferred pending owner-specific retention evidence, the current-source Phase 0 gate remains open for macOS universal evidence (0/24) with F629 awaiting a suitable runner, and F579 symbols/F598 elevated WPR remain deferred. See the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 - Phase 1 is complete. Its 2026-09-19 closure update records passing hosted
   baseline jobs for Windows x64 and macOS universal, the Phase 1 Build Quality
   and Dialog policy workflows, and packaged Release workflows. Linux x64 and
