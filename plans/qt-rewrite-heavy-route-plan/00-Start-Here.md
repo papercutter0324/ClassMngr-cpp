@@ -5,8 +5,8 @@
 - Overall status: In progress
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
-- Last updated: 2026-10-10
-- Current milestone: Phase 2 remains in progress. F522 found that the selected Classes Details editor subtree remains cached at 577 descendants after page leave and through settled checkpoints. F523 in Batch 99 will release a clean editor tree into a value-only snapshot and restore it on unchanged re-entry without data reads, while protecting dirty state. Gates 1 and 2 remain Partial, with the full Phase 0 and visual gates open. See the Phase 2 progress log for evidence and acceptance scope.
+- Last updated: 2026-10-11
+- Current milestone: Phase 2 remains in progress. F622 accepted current-source packaged Sub Prep lifecycle, render, and output-parity evidence; F623 will interpret the repeated render-stage samples. F579 symbols remain deferred and F598 awaits elevated WPR; the full Phase 0 and 250 MiB lifecycle gates remain open. See the Phase 2 progress log for evidence and acceptance scope.
 - Phase 1 is complete. Its 2026-09-19 closure update records passing hosted
   baseline jobs for Windows x64 and macOS universal, the Phase 1 Build Quality
   and Dialog policy workflows, and packaged Release workflows. Linux x64 and
@@ -83,10 +83,13 @@ Statuses are intentionally conservative. A phase is not In progress until its wo
 
 ## Test scope
 
-- User direction (2026-10-11): do not add new test files. Rely on existing
-  suites by default; avoid test-only slices and redundant cases. When a
-  production change or named phase gate requires new regression coverage, add
-  only the smallest focused assertion to an existing test file.
+- User direction (2026-10-11): tests may be run for any changed code. Create or
+  update test files only in direct response to a change in production/core
+  code, and make the test cover that change. Prefer the smallest focused
+  assertion in an existing test file; create a separate test file only when a
+  new production/core contract cannot be covered coherently in an existing
+  file. Avoid tests for unchanged behavior, redundant cases, and test-only
+  slices.
 
 ## Cross-cutting memory remediation
 

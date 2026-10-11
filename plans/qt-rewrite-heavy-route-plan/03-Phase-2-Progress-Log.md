@@ -21777,11 +21777,13 @@ The packaged trace is process-level observation at named stages; it neither
 assigns bytes to individual renderer components nor demonstrates memory
 savings. No WPR, IFEO, or symbol work was performed.
 
-F620 is accepted (commit `31d3e227`). F621 is accepted; F622 is active to
-reconcile current-source packaged Release memory and parity evidence after
-behavior-changing slices settle. No new test files are to be added per the
-user's 2026-10-11 direction; use existing suites only when proportionate
-coverage is required. F579 symbols remain deferred; F598 still requires an
+F620 is accepted (commit `31d3e227`). F621 is accepted (commit `b5fdecd1`);
+F622 is accepted and F623 is next to interpret repeated render-stage samples.
+Per the user's 2026-10-11
+direction, tests may verify any changed code, but a test file may be created or
+updated only in direct response to modified production/core code and must
+cover that change; prefer focused coverage in an existing suite and avoid
+test-only slices. F579 symbols remain deferred; F598 still requires an
 elevated Administrator process. The 250 MiB lifecycle gate, render/window
 acceptance, and global Phase 0 remain open (Windows 1/24, macOS 0/24).
 
@@ -21807,7 +21809,9 @@ and table items after leave, restored model entries after return, and
 preservation of an unsaved Sub Prep form value and dirty state across that
 lifecycle. Verify only
 through the existing `pageDeactivationReleasesClassInformationForTheNextEntry`
-case in `tests/sub_prep_page_tests.cpp`; no new test file or test-only slice.
+case in `tests/sub_prep_page_tests.cpp`. Its assertions were updated in direct
+response to the F621 production lifecycle change; no new test file or
+test-only slice was added.
 
 ### Implementation and verification outcome
 
@@ -21852,4 +21856,74 @@ F621 and F622 results should determine whether they remain useful:
    packaged macOS runner is available; keep platform availability explicit.
 
 F623-F628 are provisional and may be reordered or dropped after F621/F622.
-The user's no-new-test-file policy applies to the follow-on batch as well.
+The user's test policy applies to the follow-on batch: test files may change
+only to verify modified production/core code, with focused coverage and no
+test-only slices.
+
+## F622 Current-source packaged Sub Prep memory and parity reconciliation - accepted
+
+### Scope and acceptance
+
+Produce current-source Windows x64 packaged Release evidence after F621 using
+the existing 96-class `large_startup.sql` fixture and `output-sub-prep`
+route. Run three fresh packaged route invocations from the same clean source
+commit and tree. The supported runner has no repeat option that preserves
+repository-build provenance, so each invocation builds and installs its own
+Release app and harness; record each app and harness identity rather than
+claiming the runs share binaries. The route includes two Sub Prep leave/re-entry
+cycles before output generation, covering F621's lifecycle behavior and the
+F620 render stages.
+
+Acceptance requires route-scoped validation for all three processes; source,
+application, harness, and fixture provenance bound to the artifacts; the
+`sub-prep-preview` schedule structure at its populated route baseline before
+leave, zero entries and table items at both leave checkpoints, and restoration
+to the same baseline on re-entry; ordered render-stage samples and one-/five-
+second settled process samples; two generated PDFs totaling 17 pages / 139,650 bytes;
+and the existing semantic parity result (dimensions and normalized text,
+weekday markers present, Saturday markers absent) with the output operation
+released. Compare the same named process-memory fields to F620's three runs.
+Treat all memory values as process-level observations: they do not assign
+bytes to the schedule widget or prove savings. This selected route does not
+close the 250 MiB lifecycle or full Phase 0 gates. F622 changes no
+production/core code, so it changes no test files or cases; it uses the
+existing packaged route and validator.
+
+### Execution and acceptance outcome
+
+Three fresh Windows x64 packaged Release `output-sub-prep` invocations passed
+their route and explicit validation commands with exit code 0. All used the
+same 96-class `large_startup.sql` fixture (30 weekday and 66 Saturday
+classes), recorded 15 ordered render stages, and captured one- and five-second
+settled process samples. For `sub-prep-preview`, each run began at 96 model
+entries / 42 model cells / 6 rows / 48 table items, reached zero entries and
+table items at both leave checkpoints, and restored its observed baseline at
+both re-entries. Each run produced two PDFs totaling 17 pages / 139,650 bytes.
+The semantic oracle matched dimensions and normalized text on all pages, all
+30 weekday markers were present, no Saturday markers appeared, and the output
+operation was released. App and harness hashes were distinct across all three
+independent builds; fixture hashes matched.
+
+The initial provenance review reported 1,033 modified files because the
+archive was checked through the parent checkout's shared Git index, and its
+raw `CMakeLists.txt` hash did not apply Git's path normalization. The source
+was reconciled without rerunning routes: all three manifests and all six
+Release/test `CMAKE_HOME_DIRECTORY` cache values bind to the common archive
+root. An independent path-aware comparison against F621 commit
+`b5fdecd17078a48848d141095d9e9e47d20eca42` / tree
+`224c3f1f6343229ce35178a43cafa053394c5f97` found 2,097 expected and present
+tracked files, zero missing or extra paths, and zero normalized content
+mismatches. The preliminary configure failure remains excluded from the three
+accepted runs. The source-verification record is
+`%LOCALAPPDATA%\Temp\f622-sub-prep-20261011-10ea979b61774376b939e04152db22bd\source-verification.json`;
+the route and comparison artifacts are in the same root.
+
+Across the F622 stage samples, the aggregate working-set observations were
+216,772,608–217,063,424 bytes; the corresponding F620 observations were
+217,309,184–218,505,216 bytes. These are process-wide samples. The comparison
+does not assign bytes to schedule or renderer components and does not prove
+memory savings. The independent artifact reviewer verified the route,
+fixture, lifecycle checkpoints, parity, and F620 field comparison, then
+independently reconciled exact source content and build-directory binding.
+The selected route does not close the 250 MiB lifecycle or full Phase 0 gate;
+Windows route coverage remains 1/24 and macOS remains 0/24.

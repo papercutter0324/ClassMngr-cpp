@@ -34,10 +34,13 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 
 ## Test scope
 
-- User direction (2026-10-11): do not add new test files. Rely on existing
-  suites by default; avoid test-only slices and redundant cases. When a
-  production change or named phase gate requires new regression coverage, add
-  only the smallest focused assertion to an existing test file.
+- User direction (2026-10-11): tests may be run for any changed code. Create or
+  update test files only in direct response to a change in production/core
+  code, and make the test cover that change. Prefer the smallest focused
+  assertion in an existing test file; create a separate test file only when a
+  new production/core contract cannot be covered coherently in an existing
+  file. Avoid tests for unchanged behavior, redundant cases, and test-only
+  slices.
 
 ## Status
 
@@ -49,7 +52,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-11
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F621 is accepted and F622 is active to reconcile current-source packaged Release memory and parity evidence after behavior-changing slices settle; F579 remains deferred and F598 awaits elevated WPR, while F526 provenance, the 250 MiB lifecycle, render/window, and Phase 0 gates remain open.
+- Current note: F622 is accepted and F623 will interpret repeated packaged render-stage samples; F579 remains deferred and F598 awaits elevated WPR, while F526 provenance, the 250 MiB lifecycle, render/window, and Phase 0 gates remain open.
 
 ### Slice discovery batches
 
@@ -87,9 +90,14 @@ Treat this plan as an operational summary, not a history:
   because the current execution identity is not an Administrator; resume when
   a Windows process with an elevated administrator token is available.
 
-#### Active batch: Batch 117
+#### Active batch: Batch 118
 
-- F622 - Reconcile current-source packaged Release memory and parity evidence after behavior-changing slices settle.
+- F623 - Interpret F620/F622 render-stage samples to identify repeatable peak or growth boundaries.
+- F624 - Reassess the 96-class lifecycle memory gate after F621/F622.
+- F625 - Release retained My Workspace child resources if route evidence justifies it.
+- F626 - Apply a bounded retention policy only to heavyweight PageManager owners F621 identifies as material.
+- F627 - Requalify the current-source Windows x64 Phase 0 route matrix after memory-changing work settles.
+- F628 - Requalify the current-source macOS universal route matrix when a packaged runner is available.
 
 ## Objective
 
