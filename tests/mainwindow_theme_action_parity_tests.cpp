@@ -106,7 +106,7 @@ darkThemeActionAndLightRestorationUpdateApplicationState()
     using PersistedTheme = ClassMngr::Next::Application::Theme;
     using ClassMngr::Next::Platform::SettingsManagerThemePreferencesPort;
     const SettingsManagerThemePreferencesPort preferences;
-    preferences.write(PersistedTheme::Light);
+    QVERIFY(preferences.write(PersistedTheme::Light));
     SettingsManager::instance().sync();
 
     auto startupThemeService = std::make_unique<ThemeService>();

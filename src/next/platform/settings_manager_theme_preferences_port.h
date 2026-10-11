@@ -6,6 +6,8 @@
 
 #include <QString>
 #include <QVariant>
+#include <string>
+#include <utility>
 
 namespace ClassMngr::Next::Platform
 {
@@ -16,7 +18,12 @@ class SettingsManagerThemePreferencesPort final
     : public Application::ThemePreferencesPort
 {
 public:
-    SettingsManagerThemePreferencesPort() = default;
+    explicit SettingsManagerThemePreferencesPort(
+        SettingsManager::ThemePreferenceSync synchronize = {}
+        )
+        : m_synchronize(std::move(synchronize))
+    {
+    }
 
     [[nodiscard]] Application::Theme read() const override
     {
@@ -44,7 +51,7 @@ public:
         }
     }
 
-    void write(
+    [[nodiscard]] Domain::Result<void> write(
         const Application::Theme theme
         ) const override
     {
@@ -64,16 +71,35 @@ public:
             break;
 
         default:
-            return;
+            return Domain::Result<void>::failure({
+                .code = Domain::ErrorCode::InvalidInput,
+                .message = "Theme must be Dark, Light, or SystemDefault.",
+                .recoverable = false
+            });
         }
 
-        SettingsManager::instance().set(
-            key(),
-            storedTheme
+        const auto status = SettingsManager::instance().writeThemePreference(
+            storedTheme,
+            m_synchronize
             );
+        if (status != QSettings::NoError)
+        {
+            const char* statusName = status == QSettings::AccessError
+                ? "AccessError (settings could not be written)"
+                : "FormatError (settings contain invalid data)";
+            return Domain::Result<void>::failure({
+                .code = Domain::ErrorCode::Technical,
+                .message = std::string("Unable to save theme preference: QSettings ")
+                    + statusName + ".",
+                .recoverable = true
+            });
+        }
+        return Domain::Result<void>::success();
     }
 
 private:
+    SettingsManager::ThemePreferenceSync m_synchronize;
+
     [[nodiscard]] static QString key()
     {
         return QString::fromUtf8(

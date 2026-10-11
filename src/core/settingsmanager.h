@@ -6,6 +6,7 @@
 #include <QByteArray>
 #include <memory>
 #include <optional>
+#include <functional>
 
 class SettingsManager
 {
@@ -53,6 +54,9 @@ public:
     {
         static constexpr auto THEME =
             "ui/theme";
+
+        static constexpr auto THEME_PREFERENCE =
+            "options/theme";
 
         static constexpr auto SAVE_MODE =
             "app/saveMode";
@@ -131,6 +135,15 @@ public:
 
     QString getTheme() const;
     void setTheme(const QString& theme);
+
+    // An empty callback uses QSettings::sync/status. Injection lets boundary
+    // tests force a write failure without relying on filesystem permissions.
+    using ThemePreferenceSync = std::function<QSettings::Status(QSettings&)>;
+
+    [[nodiscard]] QSettings::Status writeThemePreference(
+        int theme,
+        const ThemePreferenceSync& synchronize = {}
+        );
 
     // =====================================================
     // Save Mode

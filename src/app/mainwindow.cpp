@@ -597,7 +597,16 @@ void MainWindow::connectControllers()
     m_themeController =
         std::make_unique<ThemeController>(
             *m_services->themeService(),
-            this
+            this,
+            [this](const ClassMngr::Next::Domain::OperationError& error)
+            {
+                DialogServices::showWarning(
+                    this,
+                    tr("Unable to Save Preference"),
+                    tr("The theme preference could not be saved."),
+                    QString::fromStdString(error.message)
+                    );
+            }
             );
     m_themeController->connectActions(m_actions);
 

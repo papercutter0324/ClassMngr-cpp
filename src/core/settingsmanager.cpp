@@ -131,6 +131,45 @@ void SettingsManager::setTheme(
     set(Keys::THEME, theme);
 }
 
+QSettings::Status SettingsManager::writeThemePreference(
+    const int theme,
+    const ThemePreferenceSync& synchronize
+    )
+{
+    const bool hadPreviousTheme = m_settings->contains(Keys::THEME_PREFERENCE);
+    const QVariant previousTheme = m_settings->value(Keys::THEME_PREFERENCE);
+    m_settings->setValue(Keys::THEME_PREFERENCE, theme);
+    QSettings::Status status;
+    if (synchronize)
+    {
+        status = synchronize(*m_settings);
+    }
+    else
+    {
+        m_settings->sync();
+        status = m_settings->status();
+    }
+    if (status != QSettings::NoError)
+    {
+        // QSettings may retry synchronization during destruction or share its
+        // pending changes with another instance. Remove the attempted theme
+        // before replacing the failed instance.
+        if (hadPreviousTheme)
+        {
+            m_settings->setValue(Keys::THEME_PREFERENCE, previousTheme);
+        }
+        else
+        {
+            m_settings->remove(Keys::THEME_PREFERENCE);
+        }
+        // Destroy the failed instance before opening a fresh one, so neither
+        // its unsaved candidate nor its latched error survives the retry.
+        m_settings.reset();
+        m_settings = createSettings();
+    }
+    return status;
+}
+
 // =========================================================
 // Save Mode
 // =========================================================

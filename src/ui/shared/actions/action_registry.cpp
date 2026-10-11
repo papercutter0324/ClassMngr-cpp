@@ -805,34 +805,6 @@ void ActionRegistry::createOptionActions()
     themeState->addOption(Theme::Dark, darkThemeAction);
     themeState->addOption(Theme::Light, lightThemeAction);
 
-    themeState->onPersist = [](const ::Theme theme)
-    {
-        ClassMngr::Next::Application::Theme preference;
-        switch (theme)
-        {
-        case ::Theme::Dark:
-            preference =
-                ClassMngr::Next::Application::Theme::Dark;
-            break;
-
-        case ::Theme::Light:
-            preference =
-                ClassMngr::Next::Application::Theme::Light;
-            break;
-
-        case ::Theme::SystemDefault:
-            preference =
-                ClassMngr::Next::Application::Theme::SystemDefault;
-            break;
-
-        default:
-            return;
-        }
-
-        ClassMngr::Next::Platform::
-            SettingsManagerThemePreferencesPort().write(preference);
-    };
-
     const auto storedTheme =
         ClassMngr::Next::Platform::
             SettingsManagerThemePreferencesPort()

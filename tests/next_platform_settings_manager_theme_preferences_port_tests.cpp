@@ -32,6 +32,7 @@ private slots:
     void usesTheExactCanonicalKey();
     void mapsAllStoredThemeValues();
     void writesCanonicalThemeValues();
+    void themeSyncFailurePreservesPreviousValueAndAllowsRetry();
     void missingAndUnknownValuesDefaultToSystemDefault();
     void unavailableSettingsDefaultToSystemDefault();
 
@@ -116,19 +117,69 @@ writesCanonicalThemeValues()
 
     for (int storedValue = 0; storedValue < 3; ++storedValue)
     {
-        port.write(themes[storedValue]);
+        const auto result = port.write(themes[storedValue]);
+        QVERIFY(result);
         QCOMPARE(
             settings.get(themeKey()).toInt(),
             storedValue
             );
     }
 
-    settings.set(themeKey(), 17);
-    port.write(static_cast<Theme>(17));
+    const auto invalidResult = port.write(static_cast<Theme>(17));
+    QVERIFY(!invalidResult);
+    QCOMPARE(
+        invalidResult.error().code,
+        ClassMngr::Next::Domain::ErrorCode::InvalidInput
+        );
     QCOMPARE(
         settings.get(themeKey()).toInt(),
-        17
+        2
         );
+}
+
+void NextPlatformSettingsManagerThemePreferencesPortTests::
+themeSyncFailurePreservesPreviousValueAndAllowsRetry()
+{
+    const SettingsManagerThemePreferencesPort normalPort;
+    const auto seedResult = normalPort.write(Theme::Dark);
+    QVERIFY(seedResult);
+    QCOMPARE(normalPort.read(), Theme::Dark);
+
+    bool injectAccessError = true;
+    int synchronizationAttempts = 0;
+    const SettingsManagerThemePreferencesPort faultablePort(
+        [&injectAccessError, &synchronizationAttempts](QSettings& settings)
+        {
+            ++synchronizationAttempts;
+            if (injectAccessError)
+            {
+                return QSettings::AccessError;
+            }
+
+            settings.sync();
+            return settings.status();
+        }
+        );
+
+    const auto failedWrite = faultablePort.write(Theme::Light);
+    QVERIFY(!failedWrite);
+    QCOMPARE(
+        failedWrite.error().code,
+        ClassMngr::Next::Domain::ErrorCode::Technical
+        );
+    QVERIFY(failedWrite.error().recoverable);
+    QVERIFY(
+        failedWrite.error().message.find("AccessError")
+        != std::string::npos
+        );
+    QCOMPARE(synchronizationAttempts, 1);
+    QCOMPARE(faultablePort.read(), Theme::Dark);
+
+    injectAccessError = false;
+    const auto retryResult = faultablePort.write(Theme::Light);
+    QVERIFY(retryResult);
+    QCOMPARE(synchronizationAttempts, 2);
+    QCOMPARE(faultablePort.read(), Theme::Light);
 }
 
 void NextPlatformSettingsManagerThemePreferencesPortTests::
