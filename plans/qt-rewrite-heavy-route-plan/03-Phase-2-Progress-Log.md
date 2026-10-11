@@ -21778,8 +21778,8 @@ assigns bytes to individual renderer components nor demonstrates memory
 savings. No WPR, IFEO, or symbol work was performed.
 
 F620 is accepted (commit `31d3e227`). F621 is accepted (commit `b5fdecd1`);
-F622 is accepted and F623 is next to interpret repeated render-stage samples.
-Per the user's 2026-10-11
+F622 is accepted (commit `2ab606bd`). F623 is accepted (commit `cbe2ae80`);
+F624 passed the recorded current-working-set budget but left lifecycle acceptance partial; F625 is active to confirm whether My Workspace child-resource retention is material. Per the user's 2026-10-11
 direction, tests may verify any changed code, but a test file may be created or
 updated only in direct response to modified production/core code and must
 cover that change; prefer focused coverage in an existing suite and avoid
@@ -21993,3 +21993,96 @@ three independent repository builds. The matching qualitative pattern can
 be reported; numeric differences cannot be attributed to F621 or to renderer
 changes. The traces support no component-byte attribution or memory-savings
 claim, and F623 makes no production or test changes.
+
+## F624 Reassess the 96-class Sub Prep lifecycle memory gate - accepted
+
+### Scope and acceptance
+
+Compare the 96-class lifecycle acceptance in
+`sub-prep-class-information-memory-plan.md` with F621's verified release and
+re-entry behavior and F622's source-bound packaged Release route. Determine
+whether the existing evidence records each required route/checkpoint, parity
+result, and named working-set budget measurement. For every value used in the
+decision, identify its process field, run, route stage or settled checkpoint,
+and source/fixture provenance; compare it only with the plan's specified
+budget. Separate the selected Sub Prep route from startup and the full 24-route
+Phase 0 gate. Use the existing F622 artifacts if they cover the requirement;
+do not rerun a route solely to reproduce already-valid evidence. Accept only
+with an explicit gate decision and evidence-linked explanation of any
+remaining gap. This is a read-only reassessment with no production or test
+file changes, builds, tests, or route reruns in scope.
+
+### Reassessment and decision
+
+The Phase 9 primary metric is packaged Release `workingSetBytes` below
+262,144,000 bytes at startup-ready and normal navigation/idle. The three F622
+runs record `startup-complete` working sets of 124,432,384, 124,370,944, and
+124,465,152 bytes. Their route-wide maxima are:
+
+| Run | Maximum `workingSetBytes` and stage | Maximum `peakWorkingSetBytes` and stage | Settled `workingSetBytes` at 1s / 5s |
+|---|---|---|---|
+| 1 | 217,063,424 at `pdf-png-save-complete` | 218,259,456 at `pdf-document-release-start` | 208,908,288 / 208,912,384 |
+| 2 | 216,772,608 at `pdf-reopened-grab-complete` | 217,968,640 at `pdf-png-save-start` | 208,961,536 / 208,965,632 |
+| 3 | 217,010,176 at `pdf-png-save-complete` | 218,198,016 at `pdf-document-release-start` | 208,949,248 / 208,953,344 |
+
+Every recorded current working-set sample is below the 262,144,000-byte
+target; the route maxima are 45,080,576–45,371,392 bytes below it. The
+`peakWorkingSetBytes` high-water field is reported separately and is not
+treated as the primary working-set metric. The settled samples are one and
+five seconds after route completion, not Phase 9's five-minute idle check.
+
+The 94-checkpoint traces show the large-fixture route completing normally,
+with two refresh/leave/re-entry cycles, output generation and release, and
+settled samples. Semantic PDF parity passed for two PDFs / 17 pages / 139,650
+bytes, with matching dimensions and normalized text, 30 weekday markers, and
+no Saturday markers. The source-verification sidecar binds all runs to F621
+commit `b5fdecd17078a48848d141095d9e9e47d20eca42` and fixture SHA-256
+`1c5759f9df9f20849939aeb8a3f1932c95f256485cb5eb2bfd0f384a93dab8b4`.
+
+Repeated-cycle process deltas relative to each run's
+`sub-prep-lifecycle-entry`, in `(working set / private working set / commit)`
+bytes, were:
+
+| Run | Leave 1 → leave 2 → re-entry 2 |
+|---|---|
+| 1 | +311,296 / +307,200 / +221,184 → +462,848 / +458,752 / +364,544 → same as leave 2 |
+| 2 | +122,880 / +118,784 / +65,536 → +188,416 / +184,320 / +65,536 → +192,512 / +188,416 / +65,536 |
+| 3 | +147,456 / +143,360 / +65,536 → +192,512 / +188,416 / +65,536 → +270,336 / +266,240 / +196,608 |
+
+The two cycles show small increments, but each run ends above its lifecycle
+entry values and two cycles do not establish bounded growth over further
+repetitions. During output, `workingSetBytes`, `privateWorkingSetBytes`, and
+`commitBytes` also rise from operation start to the operation-released
+checkpoint in every run. The release flags are clear, yet settled-5s working
+set remains 13,230,080–13,611,008 bytes above operation-start working set.
+The route performs later PDF viewing and release, so this is not a matched
+post-export idle comparison and cannot localize the residual process memory.
+At the settled checkpoints two PDF documents are released and the live
+document count is zero. Widget counts remain 43 class-information widgets and
+two text editors while active, with zero visible classes on leave.
+
+**Decision: partially met.** The selected current-source large-fixture route
+passes the recorded current-working-set budget and parity checks. The
+96-class lifecycle memory gate remains open because return toward the
+pre-operation baseline is not demonstrated, repeated-cycle evidence covers
+only two cycles and ends above entry, five-minute idle is not sampled, and
+this evidence does not cover the bounded fixture's separate role. This
+feature-level result does not close the Phase 9 scenario set, startup gate, or
+the full Phase 0 route matrix (Windows 1/24; macOS 0/24). The independent
+reviewer's exact checkpoint comparison is Task F624-TEST-GATE; raw artifacts
+are under `%LOCALAPPDATA%\Temp\f622-sub-prep-20261011-10ea979b61774376b939e04152db22bd`.
+F624 changed no production or test files.
+
+## F625 Release retained My Workspace child resources if route evidence justifies it - active
+
+### Scope and acceptance
+
+Inspect existing source ownership and route evidence for generated My
+Workspace child resources retained after page leave. Decide whether observed
+retention is material enough to justify a bounded release change. If evidence
+supports a change, specify the leave/re-entry and unsaved-edit/navigation
+contract it must preserve before production work; update tests only in direct
+response to that core change and prefer the existing owning suite. If current
+evidence cannot establish material retention, record the gap and defer the
+change without creating a test-only slice. No release behavior or test file
+changes are in scope until the material-retention finding is established.

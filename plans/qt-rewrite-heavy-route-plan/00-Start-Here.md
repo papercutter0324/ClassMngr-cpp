@@ -6,7 +6,7 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-11
-- Current milestone: Phase 2 remains in progress. F623 found repeatable image-render peaks and release drops in current process-memory fields, with later settled samples not localizing the remaining process-level elevation; F624 will reassess the 96-class lifecycle gate. F579 symbols remain deferred and F598 awaits elevated WPR; full Phase 0 remains open. See the Phase 2 progress log for evidence and acceptance scope.
+- Current milestone: Phase 2 remains in progress. F624 passed the recorded 96-class current-working-set budget but left lifecycle acceptance partial because return-to-baseline, stronger repeated-cycle, and five-minute idle evidence remain open; F625 will check for material My Workspace child-resource retention before any release change. F579 symbols remain deferred and F598 awaits elevated WPR; full Phase 0 remains open. See the Phase 2 progress log for evidence and acceptance scope.
 - Phase 1 is complete. Its 2026-09-19 closure update records passing hosted
   baseline jobs for Windows x64 and macOS universal, the Phase 1 Build Quality
   and Dialog policy workflows, and packaged Release workflows. Linux x64 and
