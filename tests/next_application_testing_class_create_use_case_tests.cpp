@@ -74,6 +74,7 @@ class NextApplicationTestingClassCreateUseCaseTests final : public QObject
 private slots:
     void rejectsMalformedTeacherIdsBeforePort();
     void rejectsHalfPresentAssignmentBeforePort();
+    void rejectsMissingRequiredFieldsBeforePort();
     void forwardsAllFieldsAndOptionalAssignmentAndReturnsTypedId();
     void forwardsRequestWithoutOptionalTeacherOrAssignment();
     void preservesStructuredPortFailure();
@@ -87,6 +88,7 @@ rejectsMalformedTeacherIdsBeforePort()
     {
         auto invalidRequest = request();
         invalidRequest.teacherId = teacherId(value);
+        invalidRequest.name.clear();
 
         const auto result = Application::TestingClassCreateUseCase::execute(
             invalidRequest,
@@ -95,6 +97,12 @@ rejectsMalformedTeacherIdsBeforePort()
 
         QVERIFY(!result);
         QCOMPARE(result.error().code, Domain::ErrorCode::InvalidInput);
+        QCOMPARE(
+            result.error().message,
+            std::string(
+                "Testing class teacher ID must be a canonical positive integer."
+                )
+            );
         QVERIFY(result.error().recoverable);
     }
 
@@ -108,8 +116,10 @@ rejectsHalfPresentAssignmentBeforePort()
     RecordingTestingClassCreatePort port;
     auto dayOnly = request();
     dayOnly.assignmentStartTime.reset();
+    dayOnly.name.clear();
     auto timeOnly = request();
     timeOnly.assignmentDay.reset();
+    timeOnly.name.clear();
 
     for (const auto& invalidRequest : {dayOnly, timeOnly})
     {
@@ -120,6 +130,81 @@ rejectsHalfPresentAssignmentBeforePort()
 
         QVERIFY(!result);
         QCOMPARE(result.error().code, Domain::ErrorCode::InvalidInput);
+        QCOMPARE(
+            result.error().message,
+            std::string(
+                "Testing class assignment weekday and start time must be provided together."
+                )
+            );
+        QVERIFY(result.error().recoverable);
+    }
+
+    QCOMPARE(port.callCount, 0);
+    QVERIFY(!port.lastRequest.has_value());
+}
+
+void NextApplicationTestingClassCreateUseCaseTests::
+rejectsMissingRequiredFieldsBeforePort()
+{
+    struct RequiredFieldCase final
+    {
+        const char* message;
+        std::u16string Application::TestingClassCreateRequest::*member;
+    };
+
+    const RequiredFieldCase requiredFields[] = {
+        {
+            "Testing class name is required.",
+            &Application::TestingClassCreateRequest::name
+        },
+        {
+            "Testing class grade is required.",
+            &Application::TestingClassCreateRequest::grade
+        },
+        {
+            "Testing class level is required.",
+            &Application::TestingClassCreateRequest::level
+        },
+        {
+            "Testing class room is required.",
+            &Application::TestingClassCreateRequest::room
+        }
+    };
+
+    RecordingTestingClassCreatePort port;
+    auto orderedInvalidRequest = request();
+    orderedInvalidRequest.name.clear();
+    orderedInvalidRequest.grade.clear();
+    orderedInvalidRequest.level.clear();
+    orderedInvalidRequest.room.clear();
+
+    for (const auto& field : requiredFields)
+    {
+        const auto result = Application::TestingClassCreateUseCase::execute(
+            orderedInvalidRequest,
+            port
+            );
+
+        QVERIFY(!result);
+        QCOMPARE(result.error().code, Domain::ErrorCode::Validation);
+        QCOMPARE(result.error().message, std::string(field.message));
+        QVERIFY(result.error().recoverable);
+        orderedInvalidRequest.*(field.member) = u"present";
+    }
+
+    for (const auto& field : requiredFields)
+    {
+        auto whitespaceOnlyRequest = request();
+        whitespaceOnlyRequest.*(field.member) = u"\u3000";
+
+        const auto result = Application::TestingClassCreateUseCase::execute(
+            whitespaceOnlyRequest,
+            port
+            );
+
+        QVERIFY(!result);
+        QCOMPARE(result.error().code, Domain::ErrorCode::Validation);
+        QCOMPARE(result.error().message, std::string(field.message));
         QVERIFY(result.error().recoverable);
     }
 
@@ -131,7 +216,8 @@ void NextApplicationTestingClassCreateUseCaseTests::
 forwardsAllFieldsAndOptionalAssignmentAndReturnsTypedId()
 {
     RecordingTestingClassCreatePort port;
-    const auto expected = request();
+    auto expected = request();
+    expected.name = u" \tF146 Testing Lab\u3000";
 
     const auto result = Application::TestingClassCreateUseCase::execute(
         expected,
