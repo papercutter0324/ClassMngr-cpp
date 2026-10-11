@@ -4,6 +4,7 @@
 #include "data/database/database_session.h"
 #include "data/repositories/testing_class_repository.h"
 #include "next/application/testing_class_create.h"
+#include "next/platform/application_services_schedule_testing_assignment_save_port.h"
 
 #include <QByteArray>
 #include <QObject>
@@ -54,7 +55,10 @@ public:
         const Application::TestingClassCreateRequest& request
         ) const override
     {
-        const Domain::Result<void> validation = request.validate();
+        const Domain::Result<void> validation = request.validate(
+            ApplicationServicesScheduleTestingAssignmentSavePort::
+                qtCaseInsensitiveWeekdayEquals
+            );
         if (!validation)
         {
             return Application::TestingClassCreateResult::failure(

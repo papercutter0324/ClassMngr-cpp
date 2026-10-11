@@ -1,5 +1,6 @@
 #pragma once
 
+#include "domain/rules/schedule_key_rules.h"
 #include "next/application/qt_compatible_text.h"
 #include "next/domain/domain_types.h"
 #include "next/domain/operation_result.h"
@@ -26,7 +27,10 @@ struct TestingClassCreateRequest final
     std::optional<std::u16string> assignmentDay;
     std::optional<std::u16string> assignmentStartTime;
 
-    [[nodiscard]] Domain::Result<void> validate() const
+    template <typename WeekdayCaseInsensitiveEquals>
+    [[nodiscard]] Domain::Result<void> validate(
+        WeekdayCaseInsensitiveEquals&& weekdayCaseInsensitiveEquals
+        ) const
     {
         if (
             teacherId
@@ -63,6 +67,27 @@ struct TestingClassCreateRequest final
         if (trimQtWhitespace(room).empty())
         {
             return validationFailure("Testing class room is required.");
+        }
+
+        if (assignmentDay)
+        {
+            const std::u16string trimmedDay =
+                trimQtWhitespace(*assignmentDay);
+            const std::u16string trimmedStartTime =
+                trimQtWhitespace(*assignmentStartTime);
+            if (!trimmedDay.empty() || !trimmedStartTime.empty())
+            {
+                if (!ScheduleKeyRules::parseWeekday(
+                        trimmedDay,
+                        weekdayCaseInsensitiveEquals
+                        )
+                    || !ScheduleKeyRules::parseTime(trimmedStartTime))
+                {
+                    return validationFailure(
+                        "A testing assignment requires a valid weekday and start time."
+                        );
+                }
+            }
         }
 
         return Domain::Result<void>::success();

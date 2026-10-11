@@ -4,6 +4,7 @@
 
 #include <optional>
 #include <string>
+#include <string_view>
 
 using namespace ClassMngr::Next;
 
@@ -30,6 +31,17 @@ Domain::TeacherId teacherId(const std::string& value)
     return *parsed;
 }
 
+bool qtCaseInsensitiveWeekdayEquals(
+    const std::u16string_view left,
+    const std::u16string_view right
+    )
+{
+    return QString::fromStdU16String(std::u16string(left)).compare(
+               QString::fromStdU16String(std::u16string(right)),
+               Qt::CaseInsensitive
+               ) == 0;
+}
+
 Application::TestingClassCreateRequest request()
 {
     return {
@@ -44,6 +56,18 @@ Application::TestingClassCreateRequest request()
         .assignmentDay = std::u16string(u"monday"),
         .assignmentStartTime = std::u16string(u"16:00")
     };
+}
+
+Application::TestingClassCreateResult executeCreate(
+    const Application::TestingClassCreateRequest& request,
+    const Application::TestingClassCreatePort& port
+    )
+{
+    return Application::TestingClassCreateUseCase::execute(
+        request,
+        port,
+        qtCaseInsensitiveWeekdayEquals
+        );
 }
 
 class RecordingTestingClassCreatePort final
@@ -75,6 +99,7 @@ private slots:
     void rejectsMalformedTeacherIdsBeforePort();
     void rejectsHalfPresentAssignmentBeforePort();
     void rejectsMissingRequiredFieldsBeforePort();
+    void rejectsMalformedAssignmentKeysAfterRequiredFieldsBeforePort();
     void forwardsAllFieldsAndOptionalAssignmentAndReturnsTypedId();
     void forwardsRequestWithoutOptionalTeacherOrAssignment();
     void preservesStructuredPortFailure();
@@ -90,10 +115,7 @@ rejectsMalformedTeacherIdsBeforePort()
         invalidRequest.teacherId = teacherId(value);
         invalidRequest.name.clear();
 
-        const auto result = Application::TestingClassCreateUseCase::execute(
-            invalidRequest,
-            port
-            );
+        const auto result = executeCreate(invalidRequest, port);
 
         QVERIFY(!result);
         QCOMPARE(result.error().code, Domain::ErrorCode::InvalidInput);
@@ -123,10 +145,7 @@ rejectsHalfPresentAssignmentBeforePort()
 
     for (const auto& invalidRequest : {dayOnly, timeOnly})
     {
-        const auto result = Application::TestingClassCreateUseCase::execute(
-            invalidRequest,
-            port
-            );
+        const auto result = executeCreate(invalidRequest, port);
 
         QVERIFY(!result);
         QCOMPARE(result.error().code, Domain::ErrorCode::InvalidInput);
@@ -177,13 +196,12 @@ rejectsMissingRequiredFieldsBeforePort()
     orderedInvalidRequest.grade.clear();
     orderedInvalidRequest.level.clear();
     orderedInvalidRequest.room.clear();
+    orderedInvalidRequest.assignmentDay = u"Funday";
+    orderedInvalidRequest.assignmentStartTime = u"9:00";
 
     for (const auto& field : requiredFields)
     {
-        const auto result = Application::TestingClassCreateUseCase::execute(
-            orderedInvalidRequest,
-            port
-            );
+        const auto result = executeCreate(orderedInvalidRequest, port);
 
         QVERIFY(!result);
         QCOMPARE(result.error().code, Domain::ErrorCode::Validation);
@@ -197,14 +215,39 @@ rejectsMissingRequiredFieldsBeforePort()
         auto whitespaceOnlyRequest = request();
         whitespaceOnlyRequest.*(field.member) = u"\u3000";
 
-        const auto result = Application::TestingClassCreateUseCase::execute(
-            whitespaceOnlyRequest,
-            port
-            );
+        const auto result = executeCreate(whitespaceOnlyRequest, port);
 
         QVERIFY(!result);
         QCOMPARE(result.error().code, Domain::ErrorCode::Validation);
         QCOMPARE(result.error().message, std::string(field.message));
+        QVERIFY(result.error().recoverable);
+    }
+
+    QCOMPARE(port.callCount, 0);
+    QVERIFY(!port.lastRequest.has_value());
+}
+
+void NextApplicationTestingClassCreateUseCaseTests::
+rejectsMalformedAssignmentKeysAfterRequiredFieldsBeforePort()
+{
+    RecordingTestingClassCreatePort port;
+    auto invalidWeekday = request();
+    invalidWeekday.assignmentDay = u"Funday";
+    auto invalidTime = request();
+    invalidTime.assignmentStartTime = u"9:05";
+
+    for (const auto& invalidRequest : {invalidWeekday, invalidTime})
+    {
+        const auto result = executeCreate(invalidRequest, port);
+
+        QVERIFY(!result);
+        QCOMPARE(result.error().code, Domain::ErrorCode::Validation);
+        QCOMPARE(
+            result.error().message,
+            std::string(
+                "A testing assignment requires a valid weekday and start time."
+                )
+            );
         QVERIFY(result.error().recoverable);
     }
 
@@ -218,11 +261,10 @@ forwardsAllFieldsAndOptionalAssignmentAndReturnsTypedId()
     RecordingTestingClassCreatePort port;
     auto expected = request();
     expected.name = u" \tF146 Testing Lab\u3000";
+    expected.assignmentDay = u" \tTue\u017fday\u3000";
+    expected.assignmentStartTime = u" 16:00\t";
 
-    const auto result = Application::TestingClassCreateUseCase::execute(
-        expected,
-        port
-        );
+    const auto result = executeCreate(expected, port);
 
     QVERIFY(result);
     QCOMPARE(result.value(), classId("42"));
@@ -253,10 +295,7 @@ forwardsRequestWithoutOptionalTeacherOrAssignment()
     withoutOptionals.assignmentDay.reset();
     withoutOptionals.assignmentStartTime.reset();
 
-    const auto result = Application::TestingClassCreateUseCase::execute(
-        withoutOptionals,
-        port
-        );
+    const auto result = executeCreate(withoutOptionals, port);
 
     QVERIFY(result);
     QCOMPARE(result.value(), classId("42"));
@@ -265,6 +304,21 @@ forwardsRequestWithoutOptionalTeacherOrAssignment()
     QVERIFY(!port.lastRequest->teacherId.has_value());
     QVERIFY(!port.lastRequest->assignmentDay.has_value());
     QVERIFY(!port.lastRequest->assignmentStartTime.has_value());
+
+    auto emptyAssignment = request();
+    emptyAssignment.assignmentDay = u" \u3000 ";
+    emptyAssignment.assignmentStartTime = u"\t";
+    const auto emptyAssignmentResult = executeCreate(emptyAssignment, port);
+
+    QVERIFY(emptyAssignmentResult);
+    QCOMPARE(port.callCount, 2);
+    QVERIFY(port.lastRequest->assignmentDay.has_value());
+    QVERIFY(port.lastRequest->assignmentStartTime.has_value());
+    QCOMPARE(*port.lastRequest->assignmentDay, *emptyAssignment.assignmentDay);
+    QCOMPARE(
+        *port.lastRequest->assignmentStartTime,
+        *emptyAssignment.assignmentStartTime
+        );
 }
 
 void NextApplicationTestingClassCreateUseCaseTests::
@@ -277,10 +331,7 @@ preservesStructuredPortFailure()
         .recoverable = true
     });
 
-    const auto result = Application::TestingClassCreateUseCase::execute(
-        request(),
-        port
-        );
+    const auto result = executeCreate(request(), port);
 
     QVERIFY(!result);
     QCOMPARE(result.error().code, Domain::ErrorCode::Conflict);

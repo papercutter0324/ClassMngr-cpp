@@ -12,6 +12,7 @@
 #include "next/platform/application_services_testing_class_details_update_port.h"
 #include "next/application/testing_class_create_use_case.h"
 #include "next/platform/application_services_testing_class_create_port.h"
+#include "next/platform/application_services_schedule_testing_assignment_save_port.h"
 #include "next/application/testing_class_delete_use_case.h"
 #include "next/platform/application_services_testing_class_delete_port.h"
 #include "next/application/testing_teacher_choices_read_query.h"
@@ -344,7 +345,10 @@ bool TestingClassesPage::saveChanges()
         const auto created =
             ClassMngr::Next::Application::TestingClassCreateUseCase::execute(
                 request,
-                createPort
+                createPort,
+                ClassMngr::Next::Platform::
+                    ApplicationServicesScheduleTestingAssignmentSavePort::
+                        qtCaseInsensitiveWeekdayEquals
                 );
         if (!created)
         {
