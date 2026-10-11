@@ -10562,6 +10562,51 @@ void StartupPerformanceTests::capturesLargeSubPrepOutputBoundaryWhenConfigured()
             );
     }
 
+    const QStringList expectedRenderSamples{
+        QStringLiteral("sub-prep-information-sheet-entry"),
+        QStringLiteral("sub-prep-information-sheet-layout-complete"),
+        QStringLiteral("sub-prep-information-sheet-writer-completion"),
+        QStringLiteral("sub-prep-roster-pdf-render-entry"),
+        QStringLiteral("sub-prep-roster-pdf-writer-completion"),
+        QStringLiteral("sub-prep-generated-pdf-document-ready-1"),
+        QStringLiteral("sub-prep-generated-pdf-first-page-render-start-1"),
+        QStringLiteral("sub-prep-generated-pdf-image-live-before-png-save-1"),
+        QStringLiteral("sub-prep-generated-pdf-image-live-after-png-save-1"),
+        QStringLiteral("sub-prep-generated-pdf-image-released-1"),
+        QStringLiteral("sub-prep-generated-pdf-document-ready-2"),
+        QStringLiteral("sub-prep-generated-pdf-first-page-render-start-2"),
+        QStringLiteral("sub-prep-generated-pdf-image-live-before-png-save-2"),
+        QStringLiteral("sub-prep-generated-pdf-image-live-after-png-save-2"),
+        QStringLiteral("sub-prep-generated-pdf-image-released-2")
+    };
+    int nextTraceLine = 0;
+    for (const QString& sampleName : expectedRenderSamples)
+    {
+        bool foundInOrder = false;
+        for (; nextTraceLine < traceLines.size(); ++nextTraceLine)
+        {
+            if (
+                traceLines.at(nextTraceLine).startsWith(
+                    QStringLiteral("sub-prep-render-sample %1").arg(sampleName)
+                    )
+                )
+            {
+                foundInOrder = true;
+                ++nextTraceLine;
+                break;
+            }
+        }
+        QVERIFY2(
+            foundInOrder,
+            qPrintable(
+                QStringLiteral(
+                    "Missing or out-of-order Sub Prep render sample marker: %1"
+                    )
+                    .arg(sampleName)
+                )
+            );
+    }
+
     QFile metricsFile(metricsPath);
     QVERIFY2(
         metricsFile.open(QIODevice::ReadOnly | QIODevice::Text),
@@ -10576,6 +10621,163 @@ void StartupPerformanceTests::capturesLargeSubPrepOutputBoundaryWhenConfigured()
         );
     QVERIFY(metricsDocument.isObject());
     const QJsonObject report = metricsDocument.object();
+
+    const QJsonArray processMemorySamples =
+        report.value(QStringLiteral("memorySamples")).toArray();
+    QHash<QString, QJsonObject> renderSamples;
+    for (const QJsonValue& value : processMemorySamples)
+    {
+        const QJsonObject sample = value.toObject();
+        const QString name = sample.value(QStringLiteral("name")).toString();
+        if (!expectedRenderSamples.contains(name))
+        {
+            continue;
+        }
+        QVERIFY2(
+            sample.value(QStringLiteral("available")).toBool(),
+            qPrintable(QStringLiteral("Unavailable process sample: %1").arg(name))
+            );
+        QCOMPARE(
+            sample.value(QStringLiteral("measurementScope")).toString(),
+            QStringLiteral("process-wide")
+            );
+        QCOMPARE(
+            sample.value(QStringLiteral("platform")).toString(),
+            QStringLiteral("windows")
+            );
+        for (const QString& field : {
+                 QStringLiteral("workingSetBytes"),
+                 QStringLiteral("peakWorkingSetBytes"),
+                 QStringLiteral("privateUsageBytes"),
+                 QStringLiteral("privateWorkingSetBytes"),
+                 QStringLiteral("pagefileUsageBytes"),
+                 QStringLiteral("privateDirtyBytes"),
+                 QStringLiteral("commitBytes")
+             })
+        {
+            QVERIFY2(
+                sample.contains(field),
+                qPrintable(
+                    QStringLiteral("Missing same-sample memory field %1 in %2")
+                        .arg(field, name)
+                    )
+                );
+        }
+        QVERIFY(
+            sample.value(QStringLiteral("workingSetBytes")).toDouble() > 0.0
+            );
+        QVERIFY(
+            sample.value(QStringLiteral("privateUsageBytes")).toDouble() > 0.0
+            );
+        QVERIFY(
+            sample.value(QStringLiteral("privateWorkingSetBytes")).toDouble() > 0.0
+            );
+        QCOMPARE(
+            sample.value(QStringLiteral("commitBytes")).toDouble(),
+            sample.value(QStringLiteral("privateUsageBytes")).toDouble()
+            );
+        const QJsonObject operation =
+            sample.value(QStringLiteral("operation")).toObject();
+        QVERIFY(
+            !operation.value(QStringLiteral("operationId")).toString().isEmpty()
+            );
+        QVERIFY(!operation.contains(QStringLiteral("filePath")));
+        QVERIFY(!operation.contains(QStringLiteral("content")));
+        renderSamples.insert(name, sample);
+    }
+    for (const QString& sampleName : expectedRenderSamples)
+    {
+        QVERIFY2(
+            renderSamples.contains(sampleName),
+            qPrintable(
+                QStringLiteral("Missing process memory sample: %1")
+                    .arg(sampleName)
+                )
+            );
+    }
+    QCOMPARE(
+        renderSamples.value(QStringLiteral("sub-prep-information-sheet-entry"))
+            .value(QStringLiteral("operation"))
+            .toObject()
+            .value(QStringLiteral("operationId"))
+            .toString(),
+        QStringLiteral("information-sheet")
+        );
+    QVERIFY(
+        renderSamples.value(
+            QStringLiteral("sub-prep-information-sheet-layout-complete")
+            )
+            .value(QStringLiteral("operation"))
+            .toObject()
+            .value(QStringLiteral("pageCount"))
+            .toInt() > 0
+        );
+    QCOMPARE(
+        renderSamples.value(QStringLiteral("sub-prep-roster-pdf-render-entry"))
+            .value(QStringLiteral("operation"))
+            .toObject()
+            .value(QStringLiteral("operationId"))
+            .toString(),
+        QStringLiteral("roster-pdf-1")
+        );
+    const QJsonObject rosterCompletionOperation =
+        renderSamples.value(
+            QStringLiteral("sub-prep-roster-pdf-writer-completion")
+            )
+            .value(QStringLiteral("operation"))
+            .toObject();
+    QVERIFY(rosterCompletionOperation.value(QStringLiteral("sourceRowCount")).toInt() > 0);
+    QVERIFY(rosterCompletionOperation.value(QStringLiteral("sourceCellCount")).toInt() > 0);
+    QVERIFY(rosterCompletionOperation.value(QStringLiteral("projectedCellCount")).toInt() > 0);
+    QVERIFY(rosterCompletionOperation.value(QStringLiteral("pageCount")).toInt() > 0);
+    for (const int pdfIndex : {1, 2})
+    {
+        const QString suffix = QString::number(pdfIndex);
+        const QJsonObject readyOperation =
+            renderSamples.value(
+                QStringLiteral("sub-prep-generated-pdf-document-ready-%1")
+                    .arg(suffix)
+                )
+                .value(QStringLiteral("operation"))
+                .toObject();
+        const QJsonObject beforeSaveOperation =
+            renderSamples.value(
+                QStringLiteral(
+                    "sub-prep-generated-pdf-image-live-before-png-save-%1"
+                    ).arg(suffix)
+                )
+                .value(QStringLiteral("operation"))
+                .toObject();
+        const QJsonObject afterSaveOperation =
+            renderSamples.value(
+                QStringLiteral(
+                    "sub-prep-generated-pdf-image-live-after-png-save-%1"
+                    ).arg(suffix)
+                )
+                .value(QStringLiteral("operation"))
+                .toObject();
+        const QJsonObject releasedOperation =
+            renderSamples.value(
+                QStringLiteral("sub-prep-generated-pdf-image-released-%1")
+                    .arg(suffix)
+                )
+                .value(QStringLiteral("operation"))
+                .toObject();
+        QVERIFY(readyOperation.value(QStringLiteral("documentReady")).toBool());
+        QVERIFY(readyOperation.value(QStringLiteral("pageCount")).toInt() > 0);
+        QVERIFY(beforeSaveOperation.value(QStringLiteral("decodedImageBytes")).toDouble() > 0.0);
+        QVERIFY(afterSaveOperation.value(QStringLiteral("pngSaveSucceeded")).toBool());
+        QVERIFY(afterSaveOperation.value(QStringLiteral("pngBytes")).toDouble() > 0.0);
+        QVERIFY(releasedOperation.value(QStringLiteral("imageReleased")).toBool());
+        QCOMPARE(
+            beforeSaveOperation.value(QStringLiteral("operationId")).toString(),
+            QStringLiteral("generated-pdf-%1").arg(suffix)
+            );
+        QCOMPARE(
+            afterSaveOperation.value(QStringLiteral("decodedImageBytes")).toDouble(),
+            beforeSaveOperation.value(QStringLiteral("decodedImageBytes")).toDouble()
+            );
+    }
 
     QHash<QString, QJsonObject> checkpoints;
     for (const QJsonValue& value : report

@@ -3396,9 +3396,22 @@ StartupGeneratedPdfSummary inspectStartupGeneratedPdfs(
     }
 
     std::sort(summary.pdfPaths.begin(), summary.pdfPaths.end());
+    const bool profiling = StartupProfiler::isActive();
     for (int index = 0; index < summary.pdfPaths.size(); ++index)
     {
         const QString& pdfPath = summary.pdfPaths.at(index);
+        const int pdfIndex = index + 1;
+        QJsonObject pdfOperation;
+        if (profiling)
+        {
+            pdfOperation = {
+                {QStringLiteral("operationId"), QStringLiteral("generated-pdf-%1").arg(pdfIndex)},
+                {QStringLiteral("operationType"), QStringLiteral("sub-prep-generated-pdf-inspection")},
+                {QStringLiteral("pdfIndex"), pdfIndex},
+                {QStringLiteral("pdfCount"), summary.pdfPaths.size()},
+                {QStringLiteral("pdfBytes"), static_cast<double>(QFileInfo(pdfPath).size())}
+            };
+        }
         QPdfDocument document;
         const QPdfDocument::Error loadError = document.load(pdfPath);
         if (
@@ -3412,12 +3425,46 @@ StartupGeneratedPdfSummary inspectStartupGeneratedPdfs(
             return summary;
         }
 
+        if (profiling)
+        {
+            QJsonObject documentReadyOperation = pdfOperation;
+            documentReadyOperation.insert(
+                QStringLiteral("pageCount"),
+                document.pageCount()
+                );
+            documentReadyOperation.insert(
+                QStringLiteral("documentReady"),
+                document.status() == QPdfDocument::Status::Ready
+                );
+            StartupProfiler::recordSubPrepRenderSample(
+                QStringLiteral("sub-prep-generated-pdf-document-ready-%1")
+                    .arg(pdfIndex),
+                documentReadyOperation
+                );
+        }
+
         const QSizeF pagePoints = document.pagePointSize(0);
         const QSize renderSize(
             std::max(1, qRound(pagePoints.width() * 150.0 / 72.0)),
             std::max(1, qRound(pagePoints.height() * 150.0 / 72.0))
             );
-        const QImage firstPage = document.render(0, renderSize);
+        if (profiling)
+        {
+            QJsonObject renderStartOperation = pdfOperation;
+            renderStartOperation.insert(QStringLiteral("pageCount"), document.pageCount());
+            renderStartOperation.insert(QStringLiteral("pageIndex"), 0);
+            renderStartOperation.insert(QStringLiteral("renderWidthPixels"), renderSize.width());
+            renderStartOperation.insert(QStringLiteral("renderHeightPixels"), renderSize.height());
+            renderStartOperation.insert(QStringLiteral("pageWidthPoints"), pagePoints.width());
+            renderStartOperation.insert(QStringLiteral("pageHeightPoints"), pagePoints.height());
+            StartupProfiler::recordSubPrepRenderSample(
+                QStringLiteral("sub-prep-generated-pdf-first-page-render-start-%1")
+                    .arg(pdfIndex),
+                renderStartOperation
+                );
+        }
+
+        QImage firstPage = document.render(0, renderSize);
         if (firstPage.isNull())
         {
             summary.error =
@@ -3430,7 +3477,48 @@ StartupGeneratedPdfSummary inspectStartupGeneratedPdfs(
                 QStringLiteral("generated-output-%1-first-page.png")
                     .arg(index + 1)
                 );
-        if (!firstPage.save(capturePath, "PNG"))
+        const qint64 decodedImageBytes =
+            static_cast<qint64>(firstPage.sizeInBytes());
+        QJsonObject imageLiveOperation;
+        if (profiling)
+        {
+            imageLiveOperation = pdfOperation;
+            imageLiveOperation.insert(QStringLiteral("pageCount"), document.pageCount());
+            imageLiveOperation.insert(QStringLiteral("imageWidthPixels"), firstPage.width());
+            imageLiveOperation.insert(QStringLiteral("imageHeightPixels"), firstPage.height());
+            imageLiveOperation.insert(
+                QStringLiteral("decodedImageBytes"),
+                static_cast<double>(decodedImageBytes)
+                );
+            StartupProfiler::recordSubPrepRenderSample(
+                QStringLiteral("sub-prep-generated-pdf-image-live-before-png-save-%1")
+                    .arg(pdfIndex),
+                imageLiveOperation
+                );
+        }
+
+        const bool captureSaved = firstPage.save(capturePath, "PNG");
+        QJsonObject imageSavedOperation;
+        if (profiling)
+        {
+            imageSavedOperation = imageLiveOperation;
+            imageSavedOperation.insert(
+                QStringLiteral("pngSaveSucceeded"),
+                captureSaved
+                );
+            imageSavedOperation.insert(
+                QStringLiteral("pngBytes"),
+                captureSaved
+                    ? static_cast<double>(QFileInfo(capturePath).size())
+                    : 0.0
+                );
+            StartupProfiler::recordSubPrepRenderSample(
+                QStringLiteral("sub-prep-generated-pdf-image-live-after-png-save-%1")
+                    .arg(pdfIndex),
+                imageSavedOperation
+                );
+        }
+        if (!captureSaved)
         {
             summary.error =
                 QStringLiteral("generated-pdf-capture-failed: %1")
@@ -3440,8 +3528,22 @@ StartupGeneratedPdfSummary inspectStartupGeneratedPdfs(
 
         summary.pageCount += document.pageCount();
         summary.pdfBytes += QFileInfo(pdfPath).size();
-        summary.decodedFirstPageBytes +=
-            static_cast<qint64>(firstPage.sizeInBytes());
+        summary.decodedFirstPageBytes += decodedImageBytes;
+
+        if (profiling)
+        {
+            firstPage = QImage();
+            QJsonObject imageReleasedOperation = imageSavedOperation;
+            imageReleasedOperation.insert(
+                QStringLiteral("imageReleased"),
+                firstPage.isNull()
+                );
+            StartupProfiler::recordSubPrepRenderSample(
+                QStringLiteral("sub-prep-generated-pdf-image-released-%1")
+                    .arg(pdfIndex),
+                imageReleasedOperation
+                );
+        }
     }
 
     if (summary.pdfPaths.isEmpty())

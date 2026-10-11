@@ -21727,3 +21727,58 @@ on the large route before choosing a reduction. F579 symbols remain deferred
 at the user's direction; F598 still needs elevated WPR. The 250 MiB lifecycle
 gate, render/window acceptance, and global Phase 0 remain open (Windows 1/24,
 macOS 0/24).
+
+## F620 Sub Prep PDF render-stage process trace - 2026-10-11
+
+F620 adds opt-in process-memory samples and ordered workflow markers around
+information-sheet PDF layout and writing, roster PDF writing, and each
+generated PDF's first-page render, live decoded image, PNG save, and image
+release. Each marker takes one direct `ProcessMemorySnapshot`; it does not
+call `applicationMetrics()` at these micro-boundaries. The new marker metadata
+contains operation IDs, counts, dimensions, page state, and byte sizes, not
+file paths or document content. Windows samples include working set, private
+usage, private working set, commit, peak working set, and related process
+fields in the same record.
+
+The source-bound Windows x64 packaged Release `output-sub-prep` route used the
+96-class `large_startup.sql` fixture. It produced two PDFs / 17 pages / 139,650
+bytes (`Sub Prep.pdf`: 12 pages / 62,754 bytes; `Rosters - By Day.pdf`: 5
+pages / 76,896 bytes). All 12 Sub Prep pages and five roster pages matched the
+historical semantic oracle by dimensions and normalized text, with all 30
+weekday markers present and Saturday markers absent. Byte equality was not
+required; the historical oracle is not source-bound.
+
+Three fresh Release processes each recorded the 15 expected render markers
+and process samples in order; process measurements were available and sample
+fields were paired within each record. The independent artifact review
+confirmed route completion, fixture identity, app/harness hashes, marker
+ordering, and parity. The primary route is under
+`%LOCALAPPDATA%\Temp\f620-sub-prep-render-trace-20261011-r2`; repeat runs are
+under the corresponding `-run2` and `-run3` directories. The source tree
+(1,033 files) SHA-256 was
+`68f97cdbc0b4a102fc21df8495ae23b678fef168b5faef0947e782bed899c341`; the
+packaged Release app SHA-256 was
+`4ace8c52d538b86ba15d979a931e64641c5f6ee6bf65e6cf5a4f659782a3d633`; the
+startup harness SHA-256 was
+`63f3c764d6f5d5f79528decdd00fe61c4c4dabd24f8641cb734ae62b0071c230`; and
+the fixture SHA-256 was
+`1b2f09be03cce809e239112b3f7b4f2af405bad83a420db0c6ffe5ef0eb597e3`. The
+two repeats are executions of the same app and harness artifacts, not
+independent builds.
+
+The executor's focused Debug verification passed the existing PDF/package/
+roster CTest entries (4/4) and the existing StartupPerformance target. The
+independent reviewer performed source and artifact inspection only and did not
+build or run tests. `git diff --check` passed before this progress-log update.
+The packaged trace is process-level observation at named stages; it neither
+assigns bytes to individual renderer components nor demonstrates memory
+savings. No WPR, IFEO, or symbol work was performed.
+
+F620 is accepted (commit pending). F621 is active: identify remaining large
+resources retained by PageManager after their feature-specific release hooks,
+then define bounded recreation only where owner evidence supports it while
+preserving dirty state and navigation. No new test files are to be added per
+the user's 2026-10-11 direction; use existing suites only when proportionate
+coverage is required. F579 symbols remain deferred; F598 still requires an
+elevated Administrator process. The 250 MiB lifecycle gate, render/window
+acceptance, and global Phase 0 remain open (Windows 1/24, macOS 0/24).

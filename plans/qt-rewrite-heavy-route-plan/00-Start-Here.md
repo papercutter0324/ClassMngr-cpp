@@ -81,6 +81,13 @@ Statuses are intentionally conservative. A phase is not In progress until its wo
   tests ran. Describe focused results as focused; do not report them as a
   full-suite pass.
 
+## Test scope
+
+- User direction (2026-10-11): do not add new test files. Rely on existing
+  suites by default; avoid test-only slices and redundant cases. When a
+  production change or named phase gate requires new regression coverage, add
+  only the smallest focused assertion to an existing test file.
+
 ## Cross-cutting memory remediation
 
 The audit of large-data and widget-heavy paths is tracked in the

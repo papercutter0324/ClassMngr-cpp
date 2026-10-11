@@ -1,6 +1,7 @@
 #include "sub_prep_pdf_renderer.h"
 
 #include "core/fontmanager.h"
+#include "core/startup_profiler.h"
 #include "ui/shared/printing/pdf_print_service.h"
 
 #include <algorithm>
@@ -10,6 +11,7 @@
 #include <QAbstractTextDocumentLayout>
 #include <QColor>
 #include <QCoreApplication>
+#include <QFileInfo>
 #include <QMarginsF>
 #include <QObject>
 #include <QPageLayout>
@@ -1299,6 +1301,38 @@ Result renderPdf(
     const QString& documentPath
     )
 {
+    const bool profiling = StartupProfiler::isActive();
+    QJsonObject informationSheetOperation;
+    if (profiling)
+    {
+        int classCount = 0;
+        for (const SubPrepClassInformation::TeacherGroup& group :
+             documentModel.classInformation.get())
+        {
+            classCount += group.classes.size();
+        }
+        int scheduleCellCount = 0;
+        for (const ScheduleRowView& row : documentModel.schedule.rows)
+        {
+            scheduleCellCount += row.cells.size();
+        }
+        informationSheetOperation = {
+            {QStringLiteral("operationId"), QStringLiteral("information-sheet")},
+            {QStringLiteral("operationType"), QStringLiteral("sub-prep-information-sheet")},
+            {QStringLiteral("classCount"), classCount},
+            {
+                QStringLiteral("teacherGroupCount"),
+                documentModel.classInformation.get().size()
+            },
+            {QStringLiteral("scheduleRowCount"), documentModel.schedule.rows.size()},
+            {QStringLiteral("scheduleCellCount"), scheduleCellCount}
+        };
+        StartupProfiler::recordSubPrepRenderSample(
+            QStringLiteral("sub-prep-information-sheet-entry"),
+            informationSheetOperation
+            );
+    }
+
     if (documentPath.trimmed().isEmpty())
     {
         return failed(
@@ -1529,6 +1563,34 @@ Result renderPdf(
                 : 0
             );
 
+    if (profiling)
+    {
+        QJsonObject operation = informationSheetOperation;
+        operation.insert(QStringLiteral("pageCount"), pageCount);
+        operation.insert(
+            QStringLiteral("writerWidthPixels"),
+            writer.width()
+            );
+        operation.insert(
+            QStringLiteral("writerHeightPixels"),
+            writer.height()
+            );
+        operation.insert(
+            QStringLiteral("layoutWidth"),
+            body.width()
+            );
+        operation.insert(
+            QStringLiteral("layoutHeight"),
+            body.height()
+            );
+        operation.insert(QStringLiteral("documentWidth"), documentSize.width());
+        operation.insert(QStringLiteral("documentHeight"), documentSize.height());
+        StartupProfiler::recordSubPrepRenderSample(
+            QStringLiteral("sub-prep-information-sheet-layout-complete"),
+            operation
+            );
+    }
+
     for (int pageIndex = 0; pageIndex < pageCount; ++pageIndex)
     {
         const bool isFallbackSubNotesPage =
@@ -1626,6 +1688,28 @@ Result renderPdf(
     {
         return failed(
             QObject::tr("The sub prep print file could not be completed.")
+            );
+    }
+
+    if (profiling)
+    {
+        QJsonObject operation = informationSheetOperation;
+        operation.insert(QStringLiteral("pageCount"), pageCount);
+        operation.insert(
+            QStringLiteral("writerWidthPixels"),
+            writer.width()
+            );
+        operation.insert(
+            QStringLiteral("writerHeightPixels"),
+            writer.height()
+            );
+        operation.insert(
+            QStringLiteral("pdfBytes"),
+            static_cast<double>(QFileInfo(documentPath).size())
+            );
+        StartupProfiler::recordSubPrepRenderSample(
+            QStringLiteral("sub-prep-information-sheet-writer-completion"),
+            operation
             );
     }
 

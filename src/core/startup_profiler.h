@@ -628,6 +628,10 @@ public:
         int inputClassCount,
         int projectedCellCount
         );
+    static void recordSubPrepRenderSample(
+        const QString& name,
+        const QJsonObject& operation = {}
+        );
     static void recordSubPrepOutputRendererProjectionReleased();
     static void recordSubPrepOutputPackageClassesReleased();
     static void recordSubPrepOutputGenerated(

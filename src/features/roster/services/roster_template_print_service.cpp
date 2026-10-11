@@ -12,9 +12,11 @@
 #include "ui/shared/printing/pdf_print_service.h"
 
 #include <QColor>
+#include <QAtomicInteger>
 #include <QFontMetricsF>
 #include <QHash>
 #include <QImage>
+#include <QFileInfo>
 #include <QMarginsF>
 #include <QObject>
 #include <QPageLayout>
@@ -38,6 +40,12 @@ namespace RosterTemplatePrintService
 {
 namespace
 {
+
+QAtomicInteger<int>& rosterPdfRenderSequence()
+{
+    static QAtomicInteger<int> sequence{0};
+    return sequence;
+}
 
 class RendererProjectionReleaseGuard
 {
@@ -705,6 +713,42 @@ Result saveRostersPdf(
     QPageLayout::Orientation perClassExtraInfoOrientation
     )
 {
+    const bool profiling = StartupProfiler::isActive();
+    QJsonObject rosterOperation;
+    if (profiling)
+    {
+        int sourceRowCount = 0;
+        int sourceCellCount = 0;
+        int sourceColumnCount = 0;
+        for (const RosterClassData& rosterClass : classes)
+        {
+            sourceRowCount += rosterClass.roster.rows.size();
+            sourceColumnCount += rosterClass.roster.columns.size();
+            for (const QStringList& row : rosterClass.roster.rows)
+            {
+                sourceCellCount += row.size();
+            }
+        }
+        const int renderSequence =
+            rosterPdfRenderSequence().fetchAndAddRelaxed(1) + 1;
+        rosterOperation = {
+            {
+                QStringLiteral("operationId"),
+                QStringLiteral("roster-pdf-%1").arg(renderSequence)
+            },
+            {QStringLiteral("operationType"), QStringLiteral("sub-prep-roster-pdf")},
+            {QStringLiteral("templateId"), static_cast<int>(templateId)},
+            {QStringLiteral("classCount"), classes.size()},
+            {QStringLiteral("sourceRowCount"), sourceRowCount},
+            {QStringLiteral("sourceCellCount"), sourceCellCount},
+            {QStringLiteral("sourceColumnCount"), sourceColumnCount}
+        };
+        StartupProfiler::recordSubPrepRenderSample(
+            QStringLiteral("sub-prep-roster-pdf-render-entry"),
+            rosterOperation
+            );
+    }
+
     if (documentPath.trimmed().isEmpty())
     {
         return failed(
@@ -824,6 +868,33 @@ Result saveRostersPdf(
     {
         return failed(
             QObject::tr("The roster print file could not be completed.")
+            );
+    }
+
+    if (profiling)
+    {
+        QJsonObject operation = rosterOperation;
+        operation.insert(QStringLiteral("projectedCellCount"), values.size());
+        operation.insert(QStringLiteral("pageCount"), days.size());
+        operation.insert(
+            QStringLiteral("writerWidthPixels"),
+            writer.width()
+            );
+        operation.insert(
+            QStringLiteral("writerHeightPixels"),
+            writer.height()
+            );
+        operation.insert(
+            QStringLiteral("writerResolutionDpi"),
+            writer.resolution()
+            );
+        operation.insert(
+            QStringLiteral("pdfBytes"),
+            static_cast<double>(QFileInfo(documentPath).size())
+            );
+        StartupProfiler::recordSubPrepRenderSample(
+            QStringLiteral("sub-prep-roster-pdf-writer-completion"),
+            operation
             );
     }
 

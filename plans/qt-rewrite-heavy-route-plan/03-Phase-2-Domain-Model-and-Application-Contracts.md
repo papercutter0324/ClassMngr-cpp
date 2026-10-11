@@ -32,6 +32,13 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
   tests ran. Describe focused results as focused; do not report them as a
   full-suite pass.
 
+## Test scope
+
+- User direction (2026-10-11): do not add new test files. Rely on existing
+  suites by default; avoid test-only slices and redundant cases. When a
+  production change or named phase gate requires new regression coverage, add
+  only the smallest focused assertion to an existing test file.
+
 ## Status
 
 - Status: In progress
@@ -42,7 +49,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-11
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F620 is measuring Sub Prep PDF render-stage overlap before selecting a reduction; F579 remains deferred and F598 awaits elevated WPR, while F526 provenance, the 250 MiB lifecycle, render/window, and Phase 0 gates remain open.
+- Current note: F620's Sub Prep PDF render-stage process trace is complete; F621 is active to identify remaining large resources retained by PageManager after feature-specific release hooks. F579 remains deferred and F598 awaits elevated WPR, while F526 provenance, the 250 MiB lifecycle, render/window, and Phase 0 gates remain open.
 
 ### Slice discovery batches
 
@@ -82,8 +89,8 @@ Treat this plan as an operational summary, not a history:
 
 #### Active batch: Batch 117
 
-- F620 - Measure Sub Prep PDF render-stage overlap before selecting a reduction.
-- F621 - Bound remaining large resources cached by PageManager.
+- F620 - Complete: measure Sub Prep PDF render-stage overlap before selecting a reduction.
+- F621 - Active: bound remaining large resources cached by PageManager.
 - F622 - Reconcile current-source packaged Release memory and parity evidence after behavior-changing slices settle.
 
 ## Objective

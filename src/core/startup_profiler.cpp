@@ -16,7 +16,7 @@ StartupProfiler*& activeProfiler()
 
 QJsonObject memoryJson(const ProcessMemorySnapshot& memory)
 {
-    return {
+    QJsonObject result{
         {QStringLiteral("available"), memory.isAvailable},
         {QStringLiteral("measurementScope"), QStringLiteral("process-wide")},
         {QStringLiteral("platform"), memory.platform},
@@ -30,6 +30,15 @@ QJsonObject memoryJson(const ProcessMemorySnapshot& memory)
         {QStringLiteral("handleCount"), static_cast<int>(memory.handleCount)},
         {QStringLiteral("threadCount"), static_cast<int>(memory.threadCount)}
     };
+    if (memory.platform == QStringLiteral("windows"))
+    {
+        // PROCESS_MEMORY_COUNTERS_EX::PrivateUsage is the process commit charge.
+        result.insert(
+            QStringLiteral("commitBytes"),
+            static_cast<double>(memory.privateUsageBytes)
+            );
+    }
+    return result;
 }
 
 void appendProfilerWorkflowTrace(const QString& message)
@@ -1728,6 +1737,20 @@ void StartupProfiler::recordSubPrepOutputRendererProjected(
         profiler->checkpoint(
             QStringLiteral("sub-prep-output-renderer-projected"),
             detail
+            );
+    }
+}
+
+void StartupProfiler::recordSubPrepRenderSample(
+    const QString& name,
+    const QJsonObject& operation
+    )
+{
+    if (StartupProfiler* profiler = activeProfiler())
+    {
+        profiler->sampleProcessMemory(name, {}, operation);
+        appendProfilerWorkflowTrace(
+            QStringLiteral("sub-prep-render-sample %1").arg(name)
             );
     }
 }
