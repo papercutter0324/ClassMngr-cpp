@@ -23983,3 +23983,61 @@ is active with F665. Continue the one-commit-per-slice sequence.
    is adapted.
 
 This matrix is recorded before implementation. Batch 140 is active with F665.
+
+### F665 Schedule Display Mode save failure - accepted - 2026-10-12
+
+F665 is accepted at commit
+`1d7806ff81d501f4dc5fcba34f449ee7d369ce4f`. Focused targets built, and the
+exact focused CTests passed independently 3/3:
+`ClassMngrScheduleWidgetTests`,
+`ClassMngrMyWorkspacePageTests`, and
+`ClassMngrNextPlatformApplicationServicesScheduleDisplayModePreferencesPortTests`.
+`git diff --check` passed.
+
+Coverage includes successful canonical migration and legacy fallback, plus a
+migration write warning when the settings table is unavailable. There is no
+isolated trigger that rejects canonical materialization while the legacy value
+remains readable; that adapter branch was source-reviewed only.
+
+**Decision: accept F665 with that limit.** Batch 140 is complete; Batch 141 is
+active with F666. Continue the one-commit-per-slice sequence.
+
+### Batch 141 shortlist - recorded before F666 implementation - 2026-10-12
+
+- F666 is selected: Class Day Filter Reset Policy save-failure feedback and
+  restoration. The UI scan recommends it because an existing trigger-backed
+  port test, MainWindow warning/radio-restore harness, and ClassesPage
+  page-leave behavior tests provide a bounded interaction-level seam.
+- The platform scan ranks Calendar event-type color next as narrower
+  typed-result work, but its QColorDialog flow has no current UI test seam;
+  Class Selection follows as broader navigation policy, then Day Filter.
+  The main selects Day Filter over Calendar color because its existing
+  Preferences harness and ClassesPage behavior tests support stronger bounded
+  acceptance. Inference: retaining a day filter can make class rows appear
+  missing.
+
+### F666 Class Day Filter Reset Policy save-failure acceptance matrix - recorded before implementation - 2026-10-12
+
+1. Return a typed Technical diagnostic for trigger-backed write failure and
+   unavailable session/repository. Preserve the prior value and unrelated
+   settings; key `classes_navigation_day_filter_reset_policy`; default
+   `on_application_close`; and stored encodings `on_application_close` and
+   `on_page_leave`.
+2. In Preferences > Day Filters, a failed save shows one
+   `Unable to Save Preference` warning with the diagnostic and restores both
+   radios to the persisted value without another write.
+3. After removing the failure, retry persists the desired policy once.
+4. Preserve day-filter reset behavior and the unrelated Class Selection
+   policy; adapt direct save callers. Reuse existing targets only and add no
+   target. Focused build targets are
+   `ClassMngrNextPlatformApplicationServicesClassDayFilterResetPolicyPortTests`,
+   `ClassMngrMainWindowClassVisibilityPreferencesFailureTests`, and
+   `ClassMngrClassesPageTests`. Their registered CTest names are
+   `ClassMngrNextPlatformApplicationServicesClassDayFilterResetPolicyPortTests`,
+   `ClassMngrMainWindowClassVisibilityPreferencesFailureTests`, and
+   `ClassMngrClassesPageTests` (registrations in
+   `cmake/tests.cmake:101`,
+   `cmake/tests/next.cmake:3389`, and
+   `cmake/tests/pages_and_output.cmake:912,1748`).
+
+This matrix is recorded before implementation. Batch 141 is active with F666.

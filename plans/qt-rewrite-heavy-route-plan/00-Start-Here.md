@@ -6,7 +6,7 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-12
-- Current milestone: Phase 2 remains in progress: F664 was accepted at commit `18329f2b1095c5ca4b6dbc51918db34726f80bb9`; F665, Schedule Display Mode save-failure feedback and live-mode restoration, is selected in Batch 140. F625/F626 remain deferred pending owner-specific retention evidence, the current-source Phase 0 gate remains open for macOS universal evidence (0/24) with F629 awaiting a suitable runner, and F579 symbols/F598 elevated WPR remain deferred. See the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
+- Current milestone: Phase 2 remains in progress: F665 was accepted at commit `1d7806ff81d501f4dc5fcba34f449ee7d369ce4f`; F666, Class Day Filter Reset Policy save-failure feedback and restoration, is selected in Batch 141. F625/F626 remain deferred pending owner-specific retention evidence, the current-source Phase 0 gate remains open for macOS universal evidence (0/24) with F629 awaiting a suitable runner, and F579 symbols/F598 elevated WPR remain deferred. See the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 - Phase 1 is complete. Its 2026-09-19 closure update records passing hosted
   baseline jobs for Windows x64 and macOS universal, the Phase 1 Build Quality
   and Dialog policy workflows, and packaged Release workflows. Linux x64 and

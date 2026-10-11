@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-12
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F664 is accepted at commit `18329f2b1095c5ca4b6dbc51918db34726f80bb9`; F665 (Schedule Display Mode save-failure feedback and live-mode restoration) is selected in Batch 140, while F625/F626 and current-source macOS universal evidence (0/24) remain open.
+- Current note: F665 is accepted at commit `1d7806ff81d501f4dc5fcba34f449ee7d369ce4f`; F666 (Class Day Filter Reset Policy save-failure feedback and restoration) is selected in Batch 141, while F625/F626 and current-source macOS universal evidence (0/24) remain open.
 
 ### Slice discovery batches
 
@@ -94,9 +94,9 @@ Treat this plan as an operational summary, not a history:
   because the current execution identity is not an Administrator; resume when
   a Windows process with an elevated administrator token is available.
 
-#### Active batch: Batch 140
+#### Active batch: Batch 141
 
-- F665 - Report Schedule Display Mode save failures and restore the live mode; implement the pre-recorded UI and persistence matrix.
+- F666 - Report Class Day Filter Reset Policy save failures and restore radio selection; implement the pre-recorded UI and persistence matrix.
 
 ## Objective
 
