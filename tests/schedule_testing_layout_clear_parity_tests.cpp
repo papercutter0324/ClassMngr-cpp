@@ -30,6 +30,8 @@
 #include <QVariant>
 #include <QtTest/QtTest>
 
+#include <algorithm>
+#include <array>
 #include <memory>
 #include <utility>
 
@@ -699,6 +701,7 @@ private slots:
     void writeFailureWarnsAndPreservesRowsWithoutRefresh();
     void successClearsLayoutPreservesSavedDataAndRefreshesViews();
     void preferencesToggleTestingGradeVisibilityAndRefreshesSchedule();
+    void schedulePreferenceSaveFailureRestoresControlsAndCanRetry();
 };
 
 void ScheduleTestingLayoutClearParityTests::
@@ -976,6 +979,212 @@ preferencesToggleTestingGradeVisibilityAndRefreshesSchedule()
         "\"testing_affects_m1\":true,\"preference_persisted\":true,"
         "\"banner\":\"m1_m2_m3_hidden\"}}"
         ));
+}
+
+void ScheduleTestingLayoutClearParityTests::
+schedulePreferenceSaveFailureRestoresControlsAndCanRetry()
+{
+    LayoutClearFixture fixture(true);
+    QVERIFY(fixture.databaseFileReady);
+    QVERIFY(fixture.databaseReady);
+    QVERIFY(fixture.seedRegularTestingPreferenceClasses());
+
+    ClassMngr::Next::Platform::
+        ApplicationServicesScheduleDisplayPreferencesPort preferencesPort(
+            *fixture.window->services()
+            );
+    const ClassMngr::Next::Application::ScheduleDisplayPreferences initial{
+        .use24HourTime = true,
+        .showEnglishNames = true,
+        .showWeekends = false,
+        .showAllIntensiveHours = true,
+        .testingAffectsM1 = false
+    };
+    QVERIFY(preferencesPort.save(initial));
+    QVERIFY2(fixture.prepareScheduleViews(),
+             qPrintable(fixture.scheduleViewError));
+    QVERIFY(fixture.workspaceSchedule);
+
+    ScheduleWidget* const widget =
+        fixture.workspaceSchedule->findChild<ScheduleWidget*>();
+    QVERIFY(widget);
+    QVERIFY(!widget->displayState().testingAffectsM1);
+    const QSet<int> initiallyVisibleClasses = widget->visibleClassIds();
+    QVERIFY(initiallyVisibleClasses.contains(fixture.ids.regularM1Class));
+    const int readsBeforeFailure = fixture.scheduleReadCount();
+
+    bool foundDialog = false;
+    bool foundScheduleTab = false;
+    bool controlsInitiallyMatched = false;
+    bool failureControlsRestored = false;
+    bool failureDidNotRefresh = false;
+    bool failureKeptPreferences = false;
+    bool triggerDropped = false;
+    bool retryControlsStayedChanged = false;
+    bool retryPreferencesPersisted = false;
+    bool retryRefreshedSchedule = false;
+    int warningCountAfterFailure = -1;
+    QString warningTitle;
+    QString warningMessage;
+    const std::array<bool, 5> expectedControlStates{{
+        initial.showEnglishNames,
+        initial.use24HourTime,
+        initial.showWeekends,
+        initial.showAllIntensiveHours,
+        initial.testingAffectsM1
+    }};
+
+    QTimer::singleShot(0, fixture.window.get(), [&]()
+    {
+        auto* const dialog = qobject_cast<QDialog*>(
+            QApplication::activeModalWidget()
+            );
+        if (!dialog)
+        {
+            return;
+        }
+        foundDialog = true;
+
+        auto* const tabs = dialog->findChild<QTabWidget*>(
+            QStringLiteral("preferencesTabs")
+            );
+        auto* const scheduleTab = dialog->findChild<QWidget*>(
+            QStringLiteral("preferencesScheduleTab")
+            );
+        if (!tabs || !scheduleTab)
+        {
+            return;
+        }
+        tabs->setCurrentWidget(scheduleTab);
+        foundScheduleTab = true;
+
+        const std::array<QCheckBox*, 5> controls{{
+            dialog->findChild<QCheckBox*>(
+                QStringLiteral("preferencesScheduleShowEnglishNames")
+                ),
+            dialog->findChild<QCheckBox*>(
+                QStringLiteral("preferencesScheduleUse24HourTime")
+                ),
+            dialog->findChild<QCheckBox*>(
+                QStringLiteral("preferencesScheduleShowWeekends")
+                ),
+            dialog->findChild<QCheckBox*>(
+                QStringLiteral("preferencesScheduleShowAllIntensiveHours")
+                ),
+            dialog->findChild<QCheckBox*>(
+                QStringLiteral("preferencesScheduleTestingAffectsM1")
+                )
+        }};
+        if (std::any_of(
+                controls.cbegin(),
+                controls.cend(),
+                [](const QCheckBox* const control) { return !control; }
+                ))
+        {
+            return;
+        }
+        const auto controlsMatch = [&controls](
+            const std::array<bool, 5>& expected
+            )
+        {
+            for (std::size_t index = 0; index < controls.size(); ++index)
+            {
+                if (controls.at(index)->isChecked() != expected.at(index))
+                {
+                    return false;
+                }
+            }
+            return true;
+        };
+        controlsInitiallyMatched = controlsMatch(expectedControlStates);
+
+        QSqlDatabase database =
+            fixture.window->services()->databaseSession()->database();
+        const bool failureInjected = executeSql(
+            database,
+            QStringLiteral(R"(
+                CREATE TRIGGER fail_schedule_preferences
+                BEFORE INSERT ON app_settings
+                WHEN NEW.key = 'schedule_show_weekends'
+                BEGIN
+                    SELECT RAISE(ABORT, 'F669 injected schedule preference failure');
+                END
+            )")
+            );
+        if (!failureInjected)
+        {
+            return;
+        }
+
+        controls.at(4)->click();
+        warningCountAfterFailure = fixture.prompts.messages.size();
+        if (warningCountAfterFailure == 1)
+        {
+            const PromptRequest& warning =
+                fixture.prompts.messages.constFirst();
+            warningTitle = warning.title;
+            warningMessage = warning.message;
+        }
+        failureControlsRestored = controlsMatch(expectedControlStates);
+        const auto afterFailure = preferencesPort.load();
+        failureKeptPreferences = afterFailure && afterFailure.value() == initial;
+        failureDidNotRefresh =
+            fixture.scheduleReadCount() == readsBeforeFailure
+            && widget->displayState().testingAffectsM1 == initial.testingAffectsM1
+            && widget->visibleClassIds() == initiallyVisibleClasses;
+
+        triggerDropped = executeSql(
+            database,
+            QStringLiteral("DROP TRIGGER fail_schedule_preferences")
+            );
+        if (!triggerDropped)
+        {
+            return;
+        }
+
+        controls.at(4)->click();
+        QApplication::processEvents();
+        retryControlsStayedChanged = controls.at(4)->isChecked();
+        const ClassMngr::Next::Application::ScheduleDisplayPreferences expectedRetry{
+            .use24HourTime = initial.use24HourTime,
+            .showEnglishNames = initial.showEnglishNames,
+            .showWeekends = initial.showWeekends,
+            .showAllIntensiveHours = initial.showAllIntensiveHours,
+            .testingAffectsM1 = true
+        };
+        const auto afterRetry = preferencesPort.load();
+        retryPreferencesPersisted =
+            afterRetry && afterRetry.value() == expectedRetry;
+        retryRefreshedSchedule =
+            fixture.scheduleReadCount() > readsBeforeFailure
+            && widget->displayState().testingAffectsM1
+            && !widget->visibleClassIds().contains(fixture.ids.regularM1Class);
+        dialog->accept();
+    });
+
+    QAction* const action = fixture.window->findChild<QAction*>(
+        QStringLiteral("preferencesAction")
+        );
+    QVERIFY(action);
+    action->trigger();
+
+    QVERIFY(foundDialog);
+    QVERIFY(foundScheduleTab);
+    QVERIFY(controlsInitiallyMatched);
+    QCOMPARE(warningCountAfterFailure, 1);
+    QCOMPARE(warningTitle, QStringLiteral("Unable to Save Preference"));
+    QVERIFY(warningMessage.contains(
+        QStringLiteral("F669 injected schedule preference failure")
+        ));
+    QVERIFY(failureControlsRestored);
+    QVERIFY(failureKeptPreferences);
+    QVERIFY(failureDidNotRefresh);
+    QVERIFY(triggerDropped);
+    QVERIFY(retryControlsStayedChanged);
+    QVERIFY(retryPreferencesPersisted);
+    QVERIFY(retryRefreshedSchedule);
+    QCOMPARE(fixture.prompts.calls, QStringList{QStringLiteral("warning")});
+    QCOMPARE(fixture.prompts.messages.size(), 1);
 }
 
 QTEST_MAIN(ScheduleTestingLayoutClearParityTests)

@@ -24,7 +24,6 @@
 #include <QCheckBox>
 #include <QComboBox>
 #include <QDialogButtonBox>
-#include <QDebug>
 #include <QFrame>
 #include <QFormLayout>
 #include <QGroupBox>
@@ -377,9 +376,48 @@ void addSchedulePreferencesTab(
             });
             if (!saved)
             {
-                qWarning()
-                    << "Failed to save schedule display preferences:"
-                    << QString::fromStdString(saved.error().message);
+                DialogServices::showWarning(
+                    window,
+                    preferencesText("Unable to Save Preference"),
+                    QString::fromStdString(saved.error().message)
+                    );
+
+                const auto persisted = port.load();
+                if (persisted)
+                {
+                    const QSignalBlocker showEnglishNamesSignals(
+                        showEnglishNames
+                        );
+                    const QSignalBlocker use24HourTimeSignals(
+                        use24HourTime
+                        );
+                    const QSignalBlocker showWeekendsSignals(
+                        showWeekends
+                        );
+                    const QSignalBlocker showAllHoursSignals(
+                        showAllHours
+                        );
+                    const QSignalBlocker testingAffectsM1Signals(
+                        testingAffectsM1
+                        );
+                    showEnglishNames->setChecked(
+                        persisted.value().showEnglishNames
+                        );
+                    use24HourTime->setChecked(
+                        persisted.value().use24HourTime
+                        );
+                    showWeekends->setChecked(
+                        persisted.value().showWeekends
+                        );
+                    showAllHours->setChecked(
+                        persisted.value().showAllIntensiveHours
+                        );
+                    testingAffectsM1->setChecked(
+                        persisted.value().testingAffectsM1
+                        );
+                }
+
+                return;
             }
         }
         window->refreshSchedulePreferences();
