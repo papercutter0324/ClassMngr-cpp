@@ -1,5 +1,6 @@
 #pragma once
 
+#include "next/application/qt_compatible_text.h"
 #include "next/domain/domain_types.h"
 #include "next/domain/operation_result.h"
 
@@ -43,6 +44,26 @@ struct TestingClassDetailsUpdateRequest final
                 );
         }
 
+        if (trimQtWhitespace(name).empty())
+        {
+            return validationFailure("Testing class name is required.");
+        }
+
+        if (trimQtWhitespace(grade).empty())
+        {
+            return validationFailure("Testing class grade is required.");
+        }
+
+        if (trimQtWhitespace(level).empty())
+        {
+            return validationFailure("Testing class level is required.");
+        }
+
+        if (trimQtWhitespace(room).empty())
+        {
+            return validationFailure("Testing class room is required.");
+        }
+
         return Domain::Result<void>::success();
     }
 
@@ -74,6 +95,17 @@ private:
     {
         return Domain::Result<void>::failure({
             .code = Domain::ErrorCode::InvalidInput,
+            .message = std::move(message),
+            .recoverable = true
+        });
+    }
+
+    [[nodiscard]] static Domain::Result<void> validationFailure(
+        std::string message
+        )
+    {
+        return Domain::Result<void>::failure({
+            .code = Domain::ErrorCode::Validation,
             .message = std::move(message),
             .recoverable = true
         });

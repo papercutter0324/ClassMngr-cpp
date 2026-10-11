@@ -2,8 +2,10 @@
 
 #include <QtTest/QtTest>
 
+#include <array>
 #include <optional>
 #include <string>
+#include <string_view>
 
 using namespace ClassMngr::Next;
 
@@ -82,6 +84,7 @@ class NextApplicationTestingClassDetailsUpdateUseCaseTests final
 private slots:
     void rejectsMalformedClassIdsBeforePort();
     void rejectsMalformedTeacherIdsBeforePort();
+    void rejectsMissingRequiredFieldsInRepositoryOrderBeforePort();
     void forwardsEveryFieldAndPreservesSuccess();
     void forwardsAbsentTeacherId();
     void preservesStructuredPortFailure();
@@ -105,6 +108,18 @@ rejectsMalformedClassIdsBeforePort()
         QVERIFY(result.error().recoverable);
     }
 
+    const auto bothIdsMalformed =
+        Application::TestingClassDetailsUpdateUseCase::execute(
+            request("042", "017"),
+            port
+            );
+    QVERIFY(!bothIdsMalformed);
+    QCOMPARE(bothIdsMalformed.error().code, Domain::ErrorCode::InvalidInput);
+    QCOMPARE(
+        bothIdsMalformed.error().message,
+        "Testing class ID must be a canonical positive integer."
+        );
+    QVERIFY(bothIdsMalformed.error().recoverable);
     QCOMPARE(port.callCount, 0);
     QVERIFY(!port.lastRequest.has_value());
 }
@@ -132,10 +147,102 @@ rejectsMalformedTeacherIdsBeforePort()
 }
 
 void NextApplicationTestingClassDetailsUpdateUseCaseTests::
+rejectsMissingRequiredFieldsInRepositoryOrderBeforePort()
+{
+    using Request = Application::TestingClassDetailsUpdateRequest;
+    struct RequiredField final
+    {
+        std::u16string Request::*value;
+        const char* message;
+    };
+    constexpr std::array requiredFields{
+        RequiredField{
+            &Request::name,
+            "Testing class name is required."
+        },
+        RequiredField{
+            &Request::grade,
+            "Testing class grade is required."
+        },
+        RequiredField{
+            &Request::level,
+            "Testing class level is required."
+        },
+        RequiredField{
+            &Request::room,
+            "Testing class room is required."
+        }
+    };
+    constexpr std::u16string_view whitespace = u" \u3000";
+
+    const auto setRequiredFields = [&](Request& value, std::u16string text)
+    {
+        for (const RequiredField& field : requiredFields)
+        {
+            value.*(field.value) = text;
+        }
+    };
+
+    RecordingTestingClassDetailsUpdatePort port;
+    Request invalid = request();
+    setRequiredFields(invalid, std::u16string(whitespace));
+
+    for (const RequiredField& field : requiredFields)
+    {
+        const auto result =
+            Application::TestingClassDetailsUpdateUseCase::execute(
+                invalid,
+                port
+                );
+
+        QVERIFY(!result);
+        QCOMPARE(result.error().code, Domain::ErrorCode::Validation);
+        QCOMPARE(result.error().message, field.message);
+        QVERIFY(result.error().recoverable);
+        QCOMPARE(port.callCount, 0);
+
+        invalid.*(field.value) = u"Valid";
+    }
+
+    Request invalidClassId = request("042");
+    setRequiredFields(invalidClassId, std::u16string(whitespace));
+    const auto classIdResult =
+        Application::TestingClassDetailsUpdateUseCase::execute(
+            invalidClassId,
+            port
+            );
+    QVERIFY(!classIdResult);
+    QCOMPARE(classIdResult.error().code, Domain::ErrorCode::InvalidInput);
+    QCOMPARE(
+        classIdResult.error().message,
+        "Testing class ID must be a canonical positive integer."
+        );
+    QVERIFY(classIdResult.error().recoverable);
+
+    Request invalidTeacherId = request("42", "017");
+    setRequiredFields(invalidTeacherId, std::u16string(whitespace));
+    const auto teacherIdResult =
+        Application::TestingClassDetailsUpdateUseCase::execute(
+            invalidTeacherId,
+            port
+            );
+    QVERIFY(!teacherIdResult);
+    QCOMPARE(teacherIdResult.error().code, Domain::ErrorCode::InvalidInput);
+    QCOMPARE(
+        teacherIdResult.error().message,
+        "Testing class teacher ID must be a canonical positive integer."
+        );
+    QVERIFY(teacherIdResult.error().recoverable);
+    QCOMPARE(port.callCount, 0);
+    QVERIFY(!port.lastRequest.has_value());
+}
+
+void NextApplicationTestingClassDetailsUpdateUseCaseTests::
 forwardsEveryFieldAndPreservesSuccess()
 {
     RecordingTestingClassDetailsUpdatePort port;
-    const auto expected = request("42", "17");
+    auto expected = request("42", "17");
+    expected.name = u"  Testing Lab ì‹¤í—˜ \u3000";
 
     const auto result =
         Application::TestingClassDetailsUpdateUseCase::execute(
