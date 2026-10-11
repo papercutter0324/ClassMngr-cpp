@@ -41,6 +41,10 @@ namespace ScheduleWidgetTestStubs
 {
 QHash<QString, QVariant> settings;
 QString settingsSaveFailure;
+QString scheduleDisplayModeSaveFailure;
+int scheduleDisplayModeSaveAttemptCount = 0;
+int scheduleDisplayModeSuccessfulSaveCount = 0;
+bool settingsRepositoryAvailable = true;
 QHash<int, QString> classGrades;
 QHash<int, QString> classLevels;
 QHash<int, QString> classRooms;
@@ -152,6 +156,10 @@ void reset()
     FontManager::setSizeOffset(0);
     settings.clear();
     settingsSaveFailure.clear();
+    scheduleDisplayModeSaveFailure.clear();
+    scheduleDisplayModeSaveAttemptCount = 0;
+    scheduleDisplayModeSuccessfulSaveCount = 0;
+    settingsRepositoryAvailable = true;
     classGrades.clear();
     classLevels.clear();
     classRooms.clear();
@@ -232,6 +240,16 @@ void setDatabaseOpen(
 void setSettingsSaveFailure(const QString& error)
 {
     settingsSaveFailure = error;
+}
+
+void setScheduleDisplayModeSaveFailure(const QString& error)
+{
+    scheduleDisplayModeSaveFailure = error;
+}
+
+void setSettingsRepositoryAvailable(const bool available)
+{
+    settingsRepositoryAvailable = available;
 }
 
 void setDatabaseSessionOpen(
@@ -567,6 +585,11 @@ bool DatabaseSession::isOpen() const
 
 SettingsRepository* DatabaseSession::settingsRepository() const
 {
+    if (!ScheduleWidgetTestStubs::settingsRepositoryAvailable)
+    {
+        return nullptr;
+    }
+
     static QSqlDatabase database;
     static SettingsRepository repository(database);
     return &repository;
@@ -582,6 +605,18 @@ Status SettingsRepository::saveSetting(
     const QVariant& value
     )
 {
+    if (key == QStringLiteral("schedule_display_mode"))
+    {
+        ++ScheduleWidgetTestStubs::scheduleDisplayModeSaveAttemptCount;
+        if (!ScheduleWidgetTestStubs::scheduleDisplayModeSaveFailure.isEmpty())
+        {
+            return std::unexpected(
+                ScheduleWidgetTestStubs::scheduleDisplayModeSaveFailure
+                );
+        }
+        ++ScheduleWidgetTestStubs::scheduleDisplayModeSuccessfulSaveCount;
+    }
+
     ScheduleWidgetTestStubs::settings.insert(key, value);
     return {};
 }

@@ -9,6 +9,9 @@
 #include <QString>
 #include <QVariant>
 
+#include <string>
+#include <utility>
+
 namespace ClassMngr::Next::Platform
 {
 
@@ -65,32 +68,54 @@ public:
 
         if (!storedMode.isValid())
         {
-            saveStoredMode(*repository, mode);
+            const auto saved = saveStoredMode(*repository, mode);
+            if (!saved)
+            {
+                qWarning()
+                    << "Failed to save schedule display mode:"
+                    << QString::fromStdString(saved.error().message);
+            }
         }
 
         return mode;
     }
 
-    void save(
+    [[nodiscard]] Application::ScheduleDisplayModePreferencesSaveResult save(
         const Application::ScheduleDisplayMode mode
         ) const override
     {
         DatabaseSession* const session = m_services.databaseSession();
         if (!session || !session->isOpen())
         {
-            return;
+            return failure(
+                "Schedule display mode cannot be saved because no database session is open."
+                );
         }
 
         SettingsRepository* const repository = session->settingsRepository();
         if (!repository)
         {
-            return;
+            return failure(
+                "Schedule display mode cannot be saved because the settings repository is unavailable."
+                );
         }
 
-        saveStoredMode(*repository, mode);
+        return saveStoredMode(*repository, mode);
     }
 
 private:
+    [[nodiscard]] static Application::
+        ScheduleDisplayModePreferencesSaveResult failure(
+            std::string message
+            )
+    {
+        return Application::ScheduleDisplayModePreferencesSaveResult::failure({
+            .code = Domain::ErrorCode::Technical,
+            .message = std::move(message),
+            .recoverable = false
+        });
+    }
+
     [[nodiscard]] static QString canonicalKey()
     {
         return QStringLiteral("schedule_display_mode");
@@ -192,21 +217,28 @@ private:
         return value->isValid() ? *value : defaultValue;
     }
 
-    static void saveStoredMode(
+    [[nodiscard]] static Application::
+        ScheduleDisplayModePreferencesSaveResult saveStoredMode(
         SettingsRepository& repository,
         const Application::ScheduleDisplayMode mode
         )
     {
-        if (const Status saved = repository.saveSetting(
-                canonicalKey(),
-                storedModeValue(mode)
-                );
-            !saved)
+        const Status saved = repository.saveSetting(
+            canonicalKey(),
+            storedModeValue(mode)
+            );
+        if (!saved)
         {
-            qWarning()
-                << "Failed to save schedule display mode:"
-                << saved.error();
+            const QByteArray errorBytes = saved.error().toUtf8();
+            return failure(
+                errorBytes.isEmpty()
+                    ? "Schedule display mode could not be saved."
+                    : errorBytes.toStdString()
+                );
         }
+
+        return Application::
+            ScheduleDisplayModePreferencesSaveResult::success();
     }
 
     ApplicationServices& m_services;

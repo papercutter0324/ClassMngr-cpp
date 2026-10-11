@@ -1,5 +1,7 @@
 #pragma once
 
+#include "next/domain/operation_result.h"
+
 namespace ClassMngr::Next::Application
 {
 
@@ -12,6 +14,9 @@ enum class ScheduleDisplayMode
     Testing
 };
 
+using ScheduleDisplayModePreferencesSaveResult = Domain::Result<void>;
+using ScheduleDisplayModePreferencesSaveError = Domain::OperationError;
+
 class ScheduleDisplayModePreferencesPort
 {
 public:
@@ -19,7 +24,9 @@ public:
 
     [[nodiscard]] virtual ScheduleDisplayMode load() const = 0;
 
-    virtual void save(ScheduleDisplayMode mode) const = 0;
+    [[nodiscard]] virtual ScheduleDisplayModePreferencesSaveResult save(
+        ScheduleDisplayMode mode
+        ) const = 0;
 };
 
 } // namespace ClassMngr::Next::Application

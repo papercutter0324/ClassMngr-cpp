@@ -393,8 +393,6 @@ void ScheduleWidget::setDisplayMode(
         return;
     }
 
-    m_displayMode = mode;
-
     if (m_services)
     {
         ClassMngr::Next::Platform::
@@ -403,7 +401,7 @@ void ScheduleWidget::setDisplayMode(
                 );
         ClassMngr::Next::Application::ScheduleDisplayMode storedMode =
             ClassMngr::Next::Application::ScheduleDisplayMode::Regular;
-        switch (m_displayMode)
+        switch (mode)
         {
         case ::ScheduleDisplayMode::Intensive:
             storedMode =
@@ -417,9 +415,20 @@ void ScheduleWidget::setDisplayMode(
         default:
             break;
         }
-        port.save(storedMode);
+        const auto saved = port.save(storedMode);
+        if (!saved)
+        {
+            updateButtons();
+            DialogServices::showWarning(
+                this,
+                tr("Schedule Display Mode"),
+                QString::fromStdString(saved.error().message)
+                );
+            return;
+        }
     }
 
+    m_displayMode = mode;
     updateButtons();
     loadSchedule();
     emit displayModeChanged(m_displayMode);

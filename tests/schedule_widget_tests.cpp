@@ -15,6 +15,7 @@
 #include "data/repositories/testing_class_repository.h"
 #include "next/application/schedule_testing_class_choices_query.h"
 #include "next/application/schedule_testing_assignment_save.h"
+#include "next/platform/application_services_schedule_display_mode_preferences_port.h"
 #include "next/platform/application_services_schedule_testing_class_choices_read_port.h"
 #include "next/platform/application_services_schedule_display_preferences_port.h"
 #include "ui/shared/dialogs/user_prompt_service.h"
@@ -59,6 +60,8 @@
 namespace ScheduleWidgetTestStubs
 {
 extern QHash<QString, QVariant> settings;
+extern int scheduleDisplayModeSaveAttemptCount;
+extern int scheduleDisplayModeSuccessfulSaveCount;
 extern int savedSlotStates;
 extern int savedTestingBlocks;
 extern int scheduleClassInfoReadCount;
@@ -84,6 +87,8 @@ void reset();
 void setCurrentTheme(Theme theme);
 void setDatabaseOpen(bool open);
 void setDatabaseSessionOpen(bool open);
+void setScheduleDisplayModeSaveFailure(const QString& error);
+void setSettingsRepositoryAvailable(bool available);
 void setIntensiveSlotStates(QList<IntensiveSlotState> states);
 void setIntensiveSlotStateReadFailure(const QString& error);
 void setIntensiveSlotStateRepositoryAvailable(bool available);
@@ -614,6 +619,8 @@ private slots:
     void init();
     void cleanup();
     void persistsAndMirrorsEveryViewOption();
+    void unavailableDisplayModeRepositoryReturnsTechnicalFailure();
+    void failedDisplayModeSaveRestoresStateAndSuccessfulRetryPersistsOnce();
     void clearTestingLayoutUsesScheduleService();
     void printUsesSelectedTeacherNameLanguage();
     void printPropagatesCurrentTheme();
@@ -746,6 +753,175 @@ void ScheduleWidgetTests
     QCOMPARE(
         mirrored.visibleClassIds(),
         QSet<int>{42}
+        );
+}
+
+void ScheduleWidgetTests::
+unavailableDisplayModeRepositoryReturnsTechnicalFailure()
+{
+    ApplicationServices services;
+    ScheduleWidgetTestStubs::setSettingsRepositoryAvailable(false);
+    ClassMngr::Next::Platform::ApplicationServicesScheduleDisplayModePreferencesPort
+        port(services);
+
+    QTest::failOnWarning();
+    const auto saved = port.save(
+        ClassMngr::Next::Application::ScheduleDisplayMode::Testing
+        );
+    QVERIFY(!saved);
+    QCOMPARE(
+        saved.error().code,
+        ClassMngr::Next::Domain::ErrorCode::Technical
+        );
+    QVERIFY(!saved.error().recoverable);
+    QCOMPARE(
+        saved.error().message,
+        std::string(
+            "Schedule display mode cannot be saved because the settings repository is unavailable."
+            )
+        );
+}
+
+void ScheduleWidgetTests
+    ::failedDisplayModeSaveRestoresStateAndSuccessfulRetryPersistsOnce()
+{
+    ScheduleWidgetTestStubs::setExistingIntensiveHours(true);
+    ScheduleWidgetTestStubs::settings.insert(
+        QStringLiteral("schedule_display_mode"),
+        QStringLiteral("regular")
+        );
+    const QString unrelatedKey =
+        QStringLiteral("unrelated_schedule_test_preference");
+    ScheduleWidgetTestStubs::settings.insert(
+        unrelatedKey,
+        QStringLiteral("preserved")
+        );
+
+    ApplicationServices services;
+    ScheduleWidget widget(&services);
+    widget.refreshSchedule();
+    auto* const regular = widget.findChild<QPushButton*>(
+        QStringLiteral("scheduleRegularModeButton")
+        );
+    auto* const intensive = widget.findChild<QPushButton*>(
+        QStringLiteral("scheduleIntensiveModeButton")
+        );
+    auto* const testing = widget.findChild<QPushButton*>(
+        QStringLiteral("scheduleTestingModeButton")
+        );
+    QVERIFY(regular);
+    QVERIFY(intensive);
+    QVERIFY(testing);
+    QVERIFY(regular->isChecked());
+    QVERIFY(!intensive->isChecked());
+    QVERIFY(!testing->isChecked());
+
+    QSignalSpy modeChanged(&widget, &ScheduleWidget::displayModeChanged);
+    QVERIFY(modeChanged.isValid());
+    const ScheduleViewModel* const modelBeforeFailure =
+        &widget.scheduleModel();
+    QVERIFY(!widget.scheduleModel().rows.isEmpty());
+    QVERIFY(!widget.scheduleModel().rows.constFirst().cells.isEmpty());
+    const QString slotStateBeforeFailure =
+        widget.scheduleModel().rows.constFirst().cells.constFirst().defaultSlotState;
+    const int classInfoReadsBeforeFailure =
+        ScheduleWidgetTestStubs::scheduleClassInfoReadCount;
+
+    FakeUserPromptService prompts;
+    DialogServices::setUserPromptServiceForTesting(&prompts);
+    ScheduleWidgetTestStubs::setScheduleDisplayModeSaveFailure(
+        QStringLiteral("forced schedule display mode write failure")
+        );
+
+    intensive->click();
+
+    QCOMPARE(prompts.messages.size(), 1);
+    QCOMPARE(
+        prompts.messages.constFirst().title,
+        QStringLiteral("Schedule Display Mode")
+        );
+    QCOMPARE(
+        prompts.messages.constFirst().severity,
+        PromptSeverity::Warning
+        );
+    QCOMPARE(
+        prompts.messages.constFirst().message,
+        QStringLiteral("forced schedule display mode write failure")
+        );
+    QCOMPARE(modeChanged.size(), 0);
+    QCOMPARE(
+        ScheduleWidgetTestStubs::scheduleDisplayModeSaveAttemptCount,
+        1
+        );
+    QCOMPARE(
+        ScheduleWidgetTestStubs::scheduleDisplayModeSuccessfulSaveCount,
+        0
+        );
+    QCOMPARE(
+        ScheduleWidgetTestStubs::settingValue(
+            QStringLiteral("schedule_display_mode")
+            ),
+        QStringLiteral("regular")
+        );
+    QCOMPARE(
+        ScheduleWidgetTestStubs::settings.value(unrelatedKey).toString(),
+        QStringLiteral("preserved")
+        );
+    QCOMPARE(
+        widget.displayState().displayMode,
+        ScheduleDisplayMode::Regular
+        );
+    QCOMPARE(
+        widget.scheduleModel().rows.constFirst().cells.constFirst().defaultSlotState,
+        slotStateBeforeFailure
+        );
+    QVERIFY(regular->isChecked());
+    QVERIFY(!intensive->isChecked());
+    QVERIFY(!testing->isChecked());
+    QCOMPARE(&widget.scheduleModel(), modelBeforeFailure);
+    QCOMPARE(
+        ScheduleWidgetTestStubs::scheduleClassInfoReadCount,
+        classInfoReadsBeforeFailure
+        );
+
+    ScheduleWidgetTestStubs::setScheduleDisplayModeSaveFailure(QString());
+    intensive->click();
+
+    QCOMPARE(prompts.messages.size(), 1);
+    QCOMPARE(modeChanged.size(), 1);
+    QCOMPARE(
+        ScheduleWidgetTestStubs::scheduleDisplayModeSaveAttemptCount,
+        2
+        );
+    QCOMPARE(
+        ScheduleWidgetTestStubs::scheduleDisplayModeSuccessfulSaveCount,
+        1
+        );
+    QCOMPARE(
+        ScheduleWidgetTestStubs::settingValue(
+            QStringLiteral("schedule_display_mode")
+            ),
+        QStringLiteral("intensive")
+        );
+    QCOMPARE(
+        ScheduleWidgetTestStubs::settings.value(unrelatedKey).toString(),
+        QStringLiteral("preserved")
+        );
+    QCOMPARE(
+        widget.displayState().displayMode,
+        ScheduleDisplayMode::Intensive
+        );
+    QVERIFY(
+        widget.scheduleModel().rows.constFirst().cells.constFirst().defaultSlotState
+        != slotStateBeforeFailure
+        );
+    QVERIFY(!regular->isChecked());
+    QVERIFY(intensive->isChecked());
+    QVERIFY(!testing->isChecked());
+    QVERIFY(&widget.scheduleModel() != modelBeforeFailure);
+    QVERIFY(
+        ScheduleWidgetTestStubs::scheduleClassInfoReadCount
+        > classInfoReadsBeforeFailure
         );
 }
 

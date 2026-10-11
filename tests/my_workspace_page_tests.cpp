@@ -495,9 +495,10 @@ void MyWorkspacePageTests
         ApplicationServicesScheduleDisplayModePreferencesPort modePort(
             services
             );
-    modePort.save(
+    const auto initialModeSave = modePort.save(
         ClassMngr::Next::Application::ScheduleDisplayMode::Intensive
         );
+    QVERIFY(initialModeSave);
 
     const QStringList savedScheduleFacts =
         workspaceScheduleFacts(services);

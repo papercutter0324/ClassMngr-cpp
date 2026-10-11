@@ -13,6 +13,7 @@
 #include <QtTest/QtTest>
 
 #include <array>
+#include <string>
 #include <utility>
 
 using namespace ClassMngr::Next;
@@ -56,8 +57,9 @@ private slots:
     void invalidModernModeFallsBackWithoutOverwriting();
     void missingModeDefaultsAndMigratesRegular();
     void savesTypedModesAsCanonicalStrings();
-    void unavailableServicesDefaultAndIgnoreSaves();
-    void closedSessionDefaultsAndIgnoresSaves();
+    void unavailableServicesReturnTechnicalFailure();
+    void closedSessionReturnsTechnicalFailureAndPreservesSettings();
+    void failedSaveReturnsTechnicalDiagnosticAndPreservesSettings();
     void repositoryReadErrorsPreserveWarningsAndFallback();
 
 private:
@@ -225,7 +227,8 @@ void NextPlatformApplicationServicesScheduleDisplayModePreferencesPortTests
 
     for (const auto& [mode, expectedValue] : values)
     {
-        port.save(mode);
+        const auto saved = port.save(mode);
+        QVERIFY(saved);
         const auto canonical = repository->loadSetting(
             QString::fromUtf8(CanonicalKey)
             );
@@ -235,7 +238,7 @@ void NextPlatformApplicationServicesScheduleDisplayModePreferencesPortTests
 }
 
 void NextPlatformApplicationServicesScheduleDisplayModePreferencesPortTests
-    ::unavailableServicesDefaultAndIgnoreSaves()
+    ::unavailableServicesReturnTechnicalFailure()
 {
     ApplicationServices services;
     QVERIFY(services.dataService());
@@ -245,11 +248,15 @@ void NextPlatformApplicationServicesScheduleDisplayModePreferencesPortTests
     ApplicationServicesScheduleDisplayModePreferencesPort port(services);
 
     QCOMPARE(port.load(), ScheduleDisplayMode::Regular);
-    port.save(ScheduleDisplayMode::Intensive);
+    const auto saved = port.save(ScheduleDisplayMode::Intensive);
+    QVERIFY(!saved);
+    QCOMPARE(saved.error().code, Domain::ErrorCode::Technical);
+    QVERIFY(saved.error().message.find("no database session is open")
+        != std::string::npos);
 }
 
 void NextPlatformApplicationServicesScheduleDisplayModePreferencesPortTests
-    ::closedSessionDefaultsAndIgnoresSaves()
+    ::closedSessionReturnsTechnicalFailureAndPreservesSettings()
 {
     ApplicationServices services;
     const QString path = databasePath(m_directory);
@@ -274,7 +281,11 @@ void NextPlatformApplicationServicesScheduleDisplayModePreferencesPortTests
     QVERIFY(services.dataService());
     QVERIFY(!session->isOpen());
     QCOMPARE(port.load(), ScheduleDisplayMode::Regular);
-    port.save(ScheduleDisplayMode::Testing);
+    const auto saved = port.save(ScheduleDisplayMode::Testing);
+    QVERIFY(!saved);
+    QCOMPARE(saved.error().code, Domain::ErrorCode::Technical);
+    QVERIFY(saved.error().message.find("no database session is open")
+        != std::string::npos);
 
     QVERIFY(services.openDatabase(path));
     QVERIFY(session->isOpen());
@@ -291,6 +302,56 @@ void NextPlatformApplicationServicesScheduleDisplayModePreferencesPortTests
         );
     QVERIFY(legacy);
     QVERIFY(legacy->toBool());
+}
+
+void NextPlatformApplicationServicesScheduleDisplayModePreferencesPortTests
+    ::failedSaveReturnsTechnicalDiagnosticAndPreservesSettings()
+{
+    ApplicationServices services;
+    QVERIFY(openDatabase(services, m_directory));
+    DatabaseSession* const session = services.databaseSession();
+    QVERIFY(session);
+    SettingsRepository* const repository = session->settingsRepository();
+    QVERIFY(repository);
+
+    const QString unrelatedKey =
+        QStringLiteral("classes_navigation_unrelated_preference");
+    QVERIFY(repository->saveSetting(
+        QString::fromUtf8(CanonicalKey),
+        QStringLiteral("intensive")
+        ));
+    QVERIFY(repository->saveSetting(
+        unrelatedKey,
+        QStringLiteral("preserved")
+        ));
+    QSqlQuery query(session->database());
+    QVERIFY(query.exec(QStringLiteral(R"(
+        CREATE TRIGGER fail_schedule_display_mode_write
+        BEFORE INSERT ON app_settings
+        WHEN NEW.key = 'schedule_display_mode'
+        BEGIN
+            SELECT RAISE(ABORT, 'forced schedule display mode write failure');
+        END
+        )")));
+
+    ApplicationServicesScheduleDisplayModePreferencesPort port(services);
+    QTest::failOnWarning();
+    const auto saved = port.save(ScheduleDisplayMode::Regular);
+    QVERIFY(!saved);
+    QCOMPARE(saved.error().code, Domain::ErrorCode::Technical);
+    QVERIFY(!saved.error().recoverable);
+    QVERIFY(saved.error().message.find(
+        "forced schedule display mode write failure"
+        ) != std::string::npos);
+
+    const auto canonical = repository->loadSetting(
+        QString::fromUtf8(CanonicalKey)
+        );
+    QVERIFY(canonical);
+    QCOMPARE(canonical->toString(), QStringLiteral("intensive"));
+    const auto unrelated = repository->loadSetting(unrelatedKey);
+    QVERIFY(unrelated);
+    QCOMPARE(unrelated->toString(), QStringLiteral("preserved"));
 }
 
 void NextPlatformApplicationServicesScheduleDisplayModePreferencesPortTests
