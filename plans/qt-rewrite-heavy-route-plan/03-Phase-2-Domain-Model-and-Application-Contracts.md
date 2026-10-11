@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-11
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F634 is active to move Teacher Create validation into Application while preserving setup-wizard behavior and existing normalization/error behavior ([F634](03-Phase-2-Progress-Log.md#f634)); F625/F626 remain deferred pending owner-specific retention evidence, and Phase 0 remains open for current-source macOS universal evidence (0/24).
+- Current note: F635 is active to classify roster-preparation errors as `Validation` through the existing use-case boundary ([F635](03-Phase-2-Progress-Log.md#f635)); F625/F626 remain deferred pending owner-specific retention evidence, and Phase 0 remains open for current-source macOS universal evidence (0/24).
 
 ### Slice discovery batches
 
@@ -100,7 +100,6 @@ Treat this plan as an operational summary, not a history:
 
 #### Active batch: Batch 121
 
-- F634 - Move Teacher Create validation into Application, using the existing application test and preserving setup-wizard behavior and normalization/errors.
 - F635 - Classify roster-preparation errors as `Validation`, using the existing use-case test.
 - F636 - Preserve Upcoming Birthday results at the year-9999 boundary, using the existing use-case test.
 

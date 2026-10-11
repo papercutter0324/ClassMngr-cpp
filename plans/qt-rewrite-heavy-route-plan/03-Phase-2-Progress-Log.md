@@ -22377,14 +22377,82 @@ build/CTest passed, and independent CTest passed
 **Decision: accept F633.**
 
 <a id="f634"></a>
-### F634 Move Teacher Create validation into Application - active
+### F634 Move Teacher Create validation into Application - accepted
 
 The Explorer report found `TeacherCreateUseCase` is a pass-through, while the
 platform adapter normalizes and validates before repository creation. The
-active proposal is to move validation into Application while preserving
-setup-wizard behavior and existing normalization and error behavior; confirm
-the exact contract against the request, adapter, and existing application
-test at slice start. Tests may be run for any changed code; test files may be
-created or updated only to cover the corresponding production/core change.
-Use the existing application test for focused coverage, and leave final
-acceptance to the implementation and verification outcome.
+application use case now preflights availability, invokes a Qt-free validation
+policy backed by the existing `TeacherValidator`, and passes normalized fields
+to persistence. The preflight preserves unavailable database/repository error
+precedence; persistence rechecks availability before writing. The setup wizard
+passes the policy and retains its existing result-display and retry behavior.
+
+The existing application use-case and platform create-port tests were updated
+in direct response to this production/core contract change; no test file was
+created. Coverage includes preflight/validation/persistence order, stopping
+before persistence on either preflight or validation failure, normalized
+fields passed to persistence, exact required-name validation text and
+recoverability, unavailable-session precedence, and persistence failure.
+
+Commit `fdc0caf5` (`Phase2 - Move Teacher Create validation into Application
+(F634)`) was accepted. The independent Tester rebuilt `ClassMngr` and all
+three affected test targets in the standard `build/windows-x64-debug` folder
+with `TrackFileAccess=false` and `ForceRebuild=true`, then independently ran
+the existing use-case, platform-port, and setup-wizard parity CTests: 3/3
+passed. An initial build attempt failed in MSBuild FileTracker initialization
+before compilation; the successful standard-folder rebuild bypassed tracked
+minimal-rebuild calculation. `git diff --check` passed. Verification was
+focused and does not claim a full-suite pass.
+
+This follows the test policy: tests may run for any changed code; test files
+may be created or updated only in response to a corresponding production/core
+change. No test file was created.
+
+**Decision: accept F634.**
+
+### Batch 122 discovery - recorded at F635 start
+
+After F634 acceptance, discovery began when work started on the second-last
+remaining Batch 121 candidate, F635. It selected four bounded candidates for
+the next batch, ordered by scope and existing application-test coverage:
+
+1. **F637 - Classify speaking-evaluation content failures as `Validation`.**
+   `SpeakingEvaluationSaveUseCase` currently reports semantic content
+   validation errors as `InvalidInput`, while Phase 2 defines `Validation` as
+   a distinct result category. Preserve `InvalidInput` for malformed IDs,
+   matrix shape, and coordinates. Focus coverage in
+   `tests/next_application_speaking_evaluation_save_use_case_tests.cpp`.
+2. **F638 - Validate schedule-testing assignment keys before persistence.**
+   The application request rejects empty day/time fields but accepts
+   nonempty invalid keys that the repository later rejects as a technical
+   failure. Use
+   `tests/next_application_schedule_testing_assignment_save_use_case_tests.cpp`.
+3. **F639 - Validate Testing Class create required fields in Application.**
+   The application request checks teacher IDs and paired schedule fields but
+   omits class fields that the repository requires; the create adapter
+   classifies selected repository messages by string matching. Use
+   `tests/next_application_testing_class_create_use_case_tests.cpp`.
+4. **F640 - Validate Testing Class details-update required fields in
+   Application.** The update request checks identifiers but omits required
+   class fields that the repository enforces and the adapter reports as
+   technical failures. Use
+   `tests/next_application_testing_class_details_update_use_case_tests.cpp`.
+
+The co-teacher conflict candidate was not selected because conflict checks
+depend on persisted schedule state and need a separately scoped validation
+boundary. No test-only candidates were added; each selected item describes a
+production/core gap with an existing test source available for focused changes
+only if corresponding production/core code is changed.
+
+<a id="f635"></a>
+### F635 Classify roster-preparation errors as Validation - active
+
+The roster preparation contract records user-supplied content issues, but
+`RosterSaveUseCase` currently reports them as `Technical`. F635 will classify
+those preparation failures as `Validation`, preserving the formatted message,
+`recoverable=false`, invalid-class-ID precedence, and no-port-call behavior.
+Update assertions only in the existing
+`tests/next_application_roster_save_use_case_tests.cpp` and
+`tests/next_platform_application_services_roster_save_port_tests.cpp`, directly
+in response to the production/core result-code change; create no test file.
+Verify the affected existing application and platform tests.
