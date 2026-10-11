@@ -25,6 +25,7 @@
 #include <QUuid>
 #include <QtTest/QtTest>
 
+#include <tuple>
 #include <utility>
 
 namespace
@@ -331,11 +332,13 @@ private slots:
     void closedSessionRefreshIsQuietAndKeepsRenderedContent();
     void failedClassListReadClearsRenderedContentAndShowsWarning();
     void assignedTeacherProfileProjectsAllConsumedUtf16Fields();
+    void fullDetailsAreScopedToSelectedClassAndReloadedOnSwitchAndReentry();
     void classInformationFieldsAndTeacherAssociationUseTypedReads();
+    void selectedDetailFailureKeepsSummaryAndTeacherProfile();
     void classInformationBatchFailureKeepsEachClassInListOrder();
     void failedTeacherProfileKeepsClassAndUsesSilentUnassignedFallback();
     void rosterCountUsesNonblankEnglishOrKoreanCells();
-    void studentCountBatchRunsOnceAndKeepsClassOrder();
+    void studentCountReadsOnlySelectedClassAndKeepsCounts();
     void flatPageReentryRestoresDetailsWithoutSummaryRead();
     void groupedGradeSelectionMaterializesOnlySelectedDetails();
     void rosterReadFailureKeepsClassAndShowsZeroStudentCount();
@@ -437,7 +440,7 @@ assignedTeacherProfileProjectsAllConsumedUtf16Fields()
         teacherRepository->myClassesTeacherProfileBatchReadMetrics();
     QCOMPARE(afterProfiles.callCount, beforeProfiles.callCount + 1);
     QCOMPARE(afterProfiles.requestedTeacherCount,
-             beforeProfiles.requestedTeacherCount + 2);
+             beforeProfiles.requestedTeacherCount + 1);
     QCOMPARE(afterProfiles.statementCount, beforeProfiles.statementCount + 1);
 
     NavigationTabWidget* const tabs = classTabsFor(page);
@@ -525,6 +528,236 @@ assignedTeacherProfileProjectsAllConsumedUtf16Fields()
         );
     QCOMPARE(repeatedTeacherNotes.size(), 1);
     QVERIFY(repeatedTeacherNotes.constFirst()->isReadOnly());
+}
+
+void MyClassesPageTests::
+fullDetailsAreScopedToSelectedClassAndReloadedOnSwitchAndReentry()
+{
+    MyClassesPageFixture fixture;
+    QString error;
+    QVERIFY2(fixture.initialize(&error), qPrintable(error));
+
+    Teacher firstTeacher;
+    firstTeacher.teacherEn = QStringLiteral("First Detail Teacher");
+    firstTeacher.notes = QStringLiteral("First teacher full profile notes");
+    int firstTeacherId = 0;
+    QVERIFY2(fixture.createTeacher(firstTeacher, &firstTeacherId, &error),
+             qPrintable(error));
+
+    Teacher secondTeacher;
+    secondTeacher.teacherEn = QStringLiteral("Second Detail Teacher");
+    secondTeacher.notes = QStringLiteral("Second teacher full profile notes");
+    int secondTeacherId = 0;
+    QVERIFY2(fixture.createTeacher(secondTeacher, &secondTeacherId, &error),
+             qPrintable(error));
+
+    int firstClassId = 0;
+    int secondClassId = 0;
+    QVERIFY2(fixture.createClass(
+                 QStringLiteral("First detail class"),
+                 QStringLiteral("E4"),
+                 QStringLiteral("Theseus"),
+                 &firstClassId,
+                 &error
+                 ), qPrintable(error));
+    QVERIFY2(fixture.createClass(
+                 QStringLiteral("Second detail class"),
+                 QStringLiteral("E5"),
+                 QStringLiteral("Artemis"),
+                 &secondClassId,
+                 &error
+                 ), qPrintable(error));
+    QVERIFY2(fixture.assignTeacher(firstClassId, firstTeacherId, &error),
+             qPrintable(error));
+    QVERIFY2(fixture.assignTeacher(secondClassId, secondTeacherId, &error),
+             qPrintable(error));
+
+    for (const auto& [classId, note, filler] : {
+             std::tuple{
+                 firstClassId,
+                 QStringLiteral("First class full notes"),
+                 QStringLiteral("First class full time filler")
+             },
+             std::tuple{
+                 secondClassId,
+                 QStringLiteral("Second class full notes"),
+                 QStringLiteral("Second class full time filler")
+             }
+         })
+    {
+        auto loaded = fixture.services.classService()->classInfo(classId);
+        QVERIFY(loaded);
+        ClassInfo info = loaded.value();
+        info.notes = note;
+        info.timeFillerActivities = filler;
+        QVERIFY(fixture.services.databaseSession()->classInfoRepository()
+            ->saveClassInfo(info));
+    }
+
+    ClassInfoRepository* const classInfoRepository =
+        fixture.services.databaseSession()->classInfoRepository();
+    TeacherRepository* const teacherRepository =
+        fixture.services.databaseSession()->teacherRepository();
+    RosterRepository* const rosterRepository =
+        fixture.services.databaseSession()->rosterRepository();
+    QVERIFY(classInfoRepository);
+    QVERIFY(teacherRepository);
+    QVERIFY(rosterRepository);
+    const auto summaryReadsBefore =
+        classInfoRepository->myClassesClassSummaryBatchReadMetrics();
+    const auto detailReadsBefore =
+        classInfoRepository->myClassesClassInformationBatchReadMetrics();
+    const auto profileReadsBefore =
+        teacherRepository->myClassesTeacherProfileBatchReadMetrics();
+    const auto studentCountReadsBefore =
+        rosterRepository->myClassesStudentCountBatchReadMetrics();
+
+    MyClassesPage page(&fixture.services);
+    page.resize(900, 700);
+    page.refresh();
+    page.show();
+    QApplication::processEvents();
+
+    NavigationTabWidget* tabs = classTabsFor(page);
+    QVERIFY(tabs);
+    QCOMPARE(tabs->count(), 2);
+    const int firstIndex = tabIndexForClass(*tabs, firstClassId);
+    const int secondIndex = tabIndexForClass(*tabs, secondClassId);
+    QVERIFY(firstIndex >= 0);
+    QVERIFY(secondIndex >= 0);
+    QCOMPARE(tabs->currentIndex(), firstIndex);
+
+    const auto summaryReadsAfterInitialLoad =
+        classInfoRepository->myClassesClassSummaryBatchReadMetrics();
+    QCOMPARE(summaryReadsAfterInitialLoad.callCount,
+             summaryReadsBefore.callCount + 1);
+    QCOMPARE(summaryReadsAfterInitialLoad.requestedClassCount,
+             summaryReadsBefore.requestedClassCount + 2);
+    const auto detailReadsAfterInitialLoad =
+        classInfoRepository->myClassesClassInformationBatchReadMetrics();
+    QCOMPARE(detailReadsAfterInitialLoad.callCount,
+             detailReadsBefore.callCount + 1);
+    QCOMPARE(detailReadsAfterInitialLoad.requestedClassCount,
+             detailReadsBefore.requestedClassCount + 1);
+    const auto profileReadsAfterInitialLoad =
+        teacherRepository->myClassesTeacherProfileBatchReadMetrics();
+    QCOMPARE(profileReadsAfterInitialLoad.callCount,
+             profileReadsBefore.callCount + 1);
+    QCOMPARE(profileReadsAfterInitialLoad.requestedTeacherCount,
+             profileReadsBefore.requestedTeacherCount + 1);
+    const auto studentCountReadsAfterInitialLoad =
+        rosterRepository->myClassesStudentCountBatchReadMetrics();
+    QCOMPARE(studentCountReadsAfterInitialLoad.callCount,
+             studentCountReadsBefore.callCount + 1);
+    QCOMPARE(studentCountReadsAfterInitialLoad.requestedClassCount,
+             studentCountReadsBefore.requestedClassCount + 1);
+
+    QWidget* const firstPage = tabs->widget(firstIndex);
+    QWidget* const secondPage = tabs->widget(secondIndex);
+    QVERIFY(firstPage);
+    QVERIFY(secondPage);
+    QCOMPARE(textEditsWithContent(
+                 *firstPage,
+                 QStringLiteral("First class full notes")
+                 ).size(), 1);
+    QCOMPARE(textEditsWithContent(
+                 *firstPage,
+                 QStringLiteral("First class full time filler")
+                 ).size(), 1);
+    QCOMPARE(textEditsWithContent(
+                 *firstPage,
+                 QStringLiteral("First teacher full profile notes")
+                 ).size(), 1);
+    QVERIFY(secondPage->findChildren<QWidget*>().isEmpty());
+
+    tabs->setCurrentIndex(secondIndex);
+    QVERIFY(firstPage->findChildren<QWidget*>().isEmpty());
+    QCOMPARE(textEditsWithContent(
+                 *secondPage,
+                 QStringLiteral("Second class full notes")
+                 ).size(), 1);
+    QCOMPARE(textEditsWithContent(
+                 *secondPage,
+                 QStringLiteral("Second class full time filler")
+                 ).size(), 1);
+    QCOMPARE(textEditsWithContent(
+                 *secondPage,
+                 QStringLiteral("Second teacher full profile notes")
+                 ).size(), 1);
+    const auto detailReadsAfterSwitch =
+        classInfoRepository->myClassesClassInformationBatchReadMetrics();
+    QCOMPARE(detailReadsAfterSwitch.callCount,
+             detailReadsAfterInitialLoad.callCount + 1);
+    QCOMPARE(detailReadsAfterSwitch.requestedClassCount,
+             detailReadsAfterInitialLoad.requestedClassCount + 1);
+    const auto profileReadsAfterSwitch =
+        teacherRepository->myClassesTeacherProfileBatchReadMetrics();
+    QCOMPARE(profileReadsAfterSwitch.callCount,
+             profileReadsAfterInitialLoad.callCount + 1);
+    QCOMPARE(profileReadsAfterSwitch.requestedTeacherCount,
+             profileReadsAfterInitialLoad.requestedTeacherCount + 1);
+    const auto studentCountReadsAfterSwitch =
+        rosterRepository->myClassesStudentCountBatchReadMetrics();
+    QCOMPARE(studentCountReadsAfterSwitch.callCount,
+             studentCountReadsAfterInitialLoad.callCount + 1);
+    QCOMPARE(studentCountReadsAfterSwitch.requestedClassCount,
+             studentCountReadsAfterInitialLoad.requestedClassCount + 1);
+
+    tabs->setCurrentIndex(firstIndex);
+    QVERIFY(secondPage->findChildren<QWidget*>().isEmpty());
+    QCOMPARE(textEditsWithContent(
+                 *firstPage,
+                 QStringLiteral("First class full notes")
+                 ).size(), 1);
+    const auto detailReadsAfterReselection =
+        classInfoRepository->myClassesClassInformationBatchReadMetrics();
+    QCOMPARE(detailReadsAfterReselection.callCount,
+             detailReadsAfterSwitch.callCount + 1);
+    const auto profileReadsAfterReselection =
+        teacherRepository->myClassesTeacherProfileBatchReadMetrics();
+    QCOMPARE(profileReadsAfterReselection.callCount,
+             profileReadsAfterSwitch.callCount + 1);
+    const auto studentCountReadsAfterReselection =
+        rosterRepository->myClassesStudentCountBatchReadMetrics();
+    QCOMPARE(studentCountReadsAfterReselection.callCount,
+             studentCountReadsAfterSwitch.callCount + 1);
+
+    const MyClassesPageRuntimeMetrics pageMetricsBeforeRelease =
+        page.runtimeMetrics();
+    page.deactivate();
+    QVERIFY(firstPage->findChildren<QWidget*>().isEmpty());
+    page.activate();
+    QCOMPARE(tabs->currentIndex(), firstIndex);
+    QCOMPARE(textEditsWithContent(
+                 *firstPage,
+                 QStringLiteral("First class full notes")
+                 ).size(), 1);
+    const auto detailReadsAfterReentry =
+        classInfoRepository->myClassesClassInformationBatchReadMetrics();
+    QCOMPARE(detailReadsAfterReentry.callCount,
+             detailReadsAfterReselection.callCount + 1);
+    QCOMPARE(detailReadsAfterReentry.requestedClassCount,
+             detailReadsAfterReselection.requestedClassCount + 1);
+    const auto profileReadsAfterReentry =
+        teacherRepository->myClassesTeacherProfileBatchReadMetrics();
+    QCOMPARE(profileReadsAfterReentry.callCount,
+             profileReadsAfterReselection.callCount + 1);
+    QCOMPARE(profileReadsAfterReentry.requestedTeacherCount,
+             profileReadsAfterReselection.requestedTeacherCount + 1);
+    const auto studentCountReadsAfterReentry =
+        rosterRepository->myClassesStudentCountBatchReadMetrics();
+    QCOMPARE(studentCountReadsAfterReentry.callCount,
+             studentCountReadsAfterReselection.callCount + 1);
+    QCOMPARE(studentCountReadsAfterReentry.requestedClassCount,
+             studentCountReadsAfterReselection.requestedClassCount + 1);
+    QCOMPARE(
+        page.runtimeMetrics().classSummaryListQueryCount,
+        pageMetricsBeforeRelease.classSummaryListQueryCount
+        );
+    QCOMPARE(
+        classInfoRepository->myClassesClassSummaryBatchReadMetrics().callCount,
+        summaryReadsAfterInitialLoad.callCount
+        );
 }
 
 void MyClassesPageTests::
@@ -661,6 +894,141 @@ classInformationFieldsAndTeacherAssociationUseTypedReads()
 }
 
 void MyClassesPageTests::
+selectedDetailFailureKeepsSummaryAndTeacherProfile()
+{
+    MyClassesPageFixture fixture;
+    QString error;
+    QVERIFY2(fixture.initialize(&error), qPrintable(error));
+
+    Teacher teacher;
+    teacher.teacherEn = QStringLiteral("Summary Fallback Teacher");
+    teacher.roomNumber = QStringLiteral("Room 24");
+    teacher.notes = QStringLiteral("Teacher profile remains available");
+    int teacherId = 0;
+    QVERIFY2(fixture.createTeacher(teacher, &teacherId, &error),
+             qPrintable(error));
+
+    int classId = 0;
+    QVERIFY2(fixture.createClass(
+                 QStringLiteral("Summary Fallback class"),
+                 QStringLiteral("E4"),
+                 QStringLiteral("Theseus"),
+                 &classId,
+                 &error
+                 ), qPrintable(error));
+    QVERIFY2(fixture.assignTeacher(classId, teacherId, &error),
+             qPrintable(error));
+
+    auto loadedInfo = fixture.services.classService()->classInfo(classId);
+    QVERIFY(loadedInfo);
+    ClassInfo info = loadedInfo.value();
+    info.classTimes = {
+        {
+            .day = QStringLiteral("Tuesday"),
+            .startTime = QStringLiteral("11:05 am"),
+            .endTime = QStringLiteral("12:05 pm")
+        }
+    };
+    info.intensiveTimes = {
+        {
+            .day = QStringLiteral("Friday"),
+            .startTime = QStringLiteral("02:00 PM"),
+            .endTime = QStringLiteral("04:00 PM")
+        }
+    };
+    info.notes = QStringLiteral("Detail-only class notes");
+    info.timeFillerActivities = QStringLiteral("Detail-only filler");
+    QVERIFY(fixture.services.databaseSession()->classInfoRepository()
+        ->saveClassInfo(info));
+
+    QSqlQuery dropDetailColumn(
+        fixture.services.databaseSession()->database());
+    QVERIFY2(dropDetailColumn.exec(
+                 QStringLiteral("ALTER TABLE class_info DROP COLUMN notes")),
+             qPrintable(dropDetailColumn.lastError().text()));
+
+    ClassInfoRepository* const classInfoRepository = fixture.services
+        .databaseSession()->classInfoRepository();
+    QVERIFY(classInfoRepository);
+    const auto summaryReadsBefore =
+        classInfoRepository->myClassesClassSummaryBatchReadMetrics();
+    const auto detailReadsBefore =
+        classInfoRepository->myClassesClassInformationBatchReadMetrics();
+    TeacherRepository* const teacherRepository = fixture.services
+        .databaseSession()->teacherRepository();
+    QVERIFY(teacherRepository);
+    const auto profileReadsBefore =
+        teacherRepository->myClassesTeacherProfileBatchReadMetrics();
+
+    MyClassesPage page(&fixture.services);
+    page.resize(900, 700);
+    page.show();
+    page.refresh();
+    QApplication::processEvents();
+
+    NavigationTabWidget* const tabs = classTabsFor(page);
+    QVERIFY(tabs);
+    QCOMPARE(tabs->count(), 1);
+    QWidget* const classPage = tabs->widget(0);
+    QVERIFY(classPage);
+    QCOMPARE(classPage->property("class_id").toInt(), classId);
+    QCOMPARE(tabs->tabText(0),
+             QStringLiteral("E4 Theseus ") + QChar(0x2022)
+                 + QStringLiteral(" T 11:05"));
+    QCOMPARE(labelsWithText(
+                 *classPage,
+                 QStringLiteral("E4 - Theseus")
+                 ).size(), 1);
+    QCOMPARE(labelsWithText(
+                 *classPage,
+                 QStringLiteral("Summary Fallback Teacher - Room Room 24")
+                 ).size(), 1);
+    QCOMPARE(textEditsWithContent(
+                 *classPage,
+                 QStringLiteral("Teacher profile remains available")
+                 ).size(), 1);
+
+    QLabel* const regularSchedule = infoRowValueLabelFor(
+        *classPage,
+        QStringLiteral("Regular")
+        );
+    QVERIFY(regularSchedule);
+    QCOMPARE(regularSchedule->text(),
+             QStringLiteral("Tues 11:05 am-12:05 pm"));
+    QLabel* const intensiveSchedule = infoRowValueLabelFor(
+        *classPage,
+        QStringLiteral("Intensive")
+        );
+    QVERIFY(intensiveSchedule);
+    QCOMPARE(intensiveSchedule->text(),
+             QStringLiteral("Fri 02:00 PM-04:00 PM"));
+    QCOMPARE(textEditsWithContent(
+                 *classPage,
+                 QStringLiteral("Detail-only class notes")
+                 ).size(), 0);
+    QCOMPARE(textEditsWithContent(
+                 *classPage,
+                 QStringLiteral("Detail-only filler")
+                 ).size(), 0);
+
+    const auto summaryReadsAfter =
+        classInfoRepository->myClassesClassSummaryBatchReadMetrics();
+    QCOMPARE(summaryReadsAfter.callCount, summaryReadsBefore.callCount + 1);
+    QCOMPARE(summaryReadsAfter.requestedClassCount,
+             summaryReadsBefore.requestedClassCount + 1);
+    const auto detailReadsAfter =
+        classInfoRepository->myClassesClassInformationBatchReadMetrics();
+    QCOMPARE(detailReadsAfter.callCount, detailReadsBefore.callCount + 1);
+    QCOMPARE(detailReadsAfter.requestedClassCount,
+             detailReadsBefore.requestedClassCount + 1);
+    const auto profileReadsAfter =
+        teacherRepository->myClassesTeacherProfileBatchReadMetrics();
+    QCOMPARE(profileReadsAfter.callCount, profileReadsBefore.callCount + 1);
+    QCOMPARE(profileReadsAfter.requestedTeacherCount,
+             profileReadsBefore.requestedTeacherCount + 1);
+}
+
+void MyClassesPageTests::
 classInformationBatchFailureKeepsEachClassInListOrder()
 {
     MyClassesPageFixture fixture;
@@ -703,6 +1071,8 @@ classInformationBatchFailureKeepsEachClassInListOrder()
     ClassInfoRepository* const repository = fixture.services.databaseSession()
         ->classInfoRepository();
     QVERIFY(repository);
+    const MyClassesClassSummaryBatchReadMetrics summaryBefore =
+        repository->myClassesClassSummaryBatchReadMetrics();
     const MyClassesClassInformationBatchReadMetrics before =
         repository->myClassesClassInformationBatchReadMetrics();
 
@@ -715,7 +1085,7 @@ classInformationBatchFailureKeepsEachClassInListOrder()
     const MyClassesClassInformationBatchReadMetrics afterSuccess =
         repository->myClassesClassInformationBatchReadMetrics();
     QCOMPARE(afterSuccess.callCount, before.callCount + 1);
-    QCOMPARE(afterSuccess.requestedClassCount, before.requestedClassCount + 3);
+    QCOMPARE(afterSuccess.requestedClassCount, before.requestedClassCount + 1);
     QCOMPARE(afterSuccess.metadataStatementCount,
              before.metadataStatementCount + 1);
     QCOMPARE(afterSuccess.regularScheduleStatementCount,
@@ -724,6 +1094,17 @@ classInformationBatchFailureKeepsEachClassInListOrder()
              before.intensiveScheduleStatementCount + 1);
     QCOMPARE(afterSuccess.fallbackClassReadCount,
              before.fallbackClassReadCount);
+    const MyClassesClassSummaryBatchReadMetrics summaryAfterSuccess =
+        repository->myClassesClassSummaryBatchReadMetrics();
+    QCOMPARE(summaryAfterSuccess.callCount, summaryBefore.callCount + 1);
+    QCOMPARE(summaryAfterSuccess.requestedClassCount,
+             summaryBefore.requestedClassCount + 3);
+    QCOMPARE(summaryAfterSuccess.metadataStatementCount,
+             summaryBefore.metadataStatementCount + 1);
+    QCOMPARE(summaryAfterSuccess.scheduleStatementCount,
+             summaryBefore.scheduleStatementCount + 1);
+    QCOMPARE(summaryAfterSuccess.fallbackClassReadCount,
+             summaryBefore.fallbackClassReadCount);
     NavigationTabWidget* tabs = classTabsFor(page);
     QVERIFY(tabs);
     QCOMPARE(tabs->count(), 3);
@@ -735,6 +1116,11 @@ classInformationBatchFailureKeepsEachClassInListOrder()
                  + QChar(0x2022) + QStringLiteral(" No time"));
     tabs->setCurrentIndex(2);
     QCOMPARE(labelsWithText(*tabs->widget(2), QStringLiteral("Unassigned")).size(), 1);
+    const MyClassesClassInformationBatchReadMetrics afterSelection =
+        repository->myClassesClassInformationBatchReadMetrics();
+    QCOMPARE(afterSelection.callCount, afterSuccess.callCount + 1);
+    QCOMPARE(afterSelection.requestedClassCount,
+             afterSuccess.requestedClassCount + 1);
 
     QSqlQuery dropClassInfo(
         fixture.services.databaseSession()->database());
@@ -768,23 +1154,35 @@ classInformationBatchFailureKeepsEachClassInListOrder()
 
     const MyClassesClassInformationBatchReadMetrics afterFailure =
         repository->myClassesClassInformationBatchReadMetrics();
-    QCOMPARE(afterFailure.callCount, afterSuccess.callCount + 1);
+    QCOMPARE(afterFailure.callCount, afterSelection.callCount + 1);
     QCOMPARE(afterFailure.requestedClassCount,
-             afterSuccess.requestedClassCount + 3);
+             afterSelection.requestedClassCount + 1);
     QCOMPARE(afterFailure.metadataStatementCount,
-             afterSuccess.metadataStatementCount + 1);
+             afterSelection.metadataStatementCount + 1);
     QCOMPARE(afterFailure.regularScheduleStatementCount,
-             afterSuccess.regularScheduleStatementCount);
+             afterSelection.regularScheduleStatementCount);
     QCOMPARE(afterFailure.intensiveScheduleStatementCount,
-             afterSuccess.intensiveScheduleStatementCount);
+             afterSelection.intensiveScheduleStatementCount);
     QCOMPARE(afterFailure.fallbackClassReadCount,
-             afterSuccess.fallbackClassReadCount + 3);
+             afterSelection.fallbackClassReadCount + 1);
+    const MyClassesClassSummaryBatchReadMetrics summaryAfterFailure =
+        repository->myClassesClassSummaryBatchReadMetrics();
+    QCOMPARE(summaryAfterFailure.callCount,
+             summaryAfterSuccess.callCount + 1);
+    QCOMPARE(summaryAfterFailure.requestedClassCount,
+             summaryAfterSuccess.requestedClassCount + 3);
+    QCOMPARE(summaryAfterFailure.metadataStatementCount,
+             summaryAfterSuccess.metadataStatementCount + 1);
+    QCOMPARE(summaryAfterFailure.scheduleStatementCount,
+             summaryAfterSuccess.scheduleStatementCount);
+    QCOMPARE(summaryAfterFailure.fallbackClassReadCount,
+             summaryAfterSuccess.fallbackClassReadCount + 3);
     const auto afterInformationFailureCounts =
         rosterRepository->myClassesStudentCountBatchReadMetrics();
     QCOMPARE(afterInformationFailureCounts.callCount,
              beforeInformationFailureCounts.callCount + 1);
     QCOMPARE(afterInformationFailureCounts.requestedClassCount,
-             beforeInformationFailureCounts.requestedClassCount + 3);
+             beforeInformationFailureCounts.requestedClassCount + 1);
     QCOMPARE(afterInformationFailureCounts.columnStatementCount,
              beforeInformationFailureCounts.columnStatementCount + 1);
     QCOMPARE(afterInformationFailureCounts.dataStatementCount,
@@ -1352,7 +1750,7 @@ rosterReadFailureKeepsClassAndShowsZeroStudentCount()
              metricsBeforeFailure.fallbackClassReadCount + 1);
 }
 
-void MyClassesPageTests::studentCountBatchRunsOnceAndKeepsClassOrder()
+void MyClassesPageTests::studentCountReadsOnlySelectedClassAndKeepsCounts()
 {
     MyClassesPageFixture fixture;
     QString error;
@@ -1467,10 +1865,10 @@ void MyClassesPageTests::studentCountBatchRunsOnceAndKeepsClassOrder()
     }
 
     const auto after = repository->myClassesStudentCountBatchReadMetrics();
-    QCOMPARE(after.callCount, before.callCount + 1);
+    QCOMPARE(after.callCount, before.callCount + 3);
     QCOMPARE(after.requestedClassCount, before.requestedClassCount + 3);
-    QCOMPARE(after.columnStatementCount, before.columnStatementCount + 1);
-    QCOMPARE(after.dataStatementCount, before.dataStatementCount + 1);
+    QCOMPARE(after.columnStatementCount, before.columnStatementCount + 3);
+    QCOMPARE(after.dataStatementCount, before.dataStatementCount + 3);
     QCOMPARE(after.fallbackClassReadCount, before.fallbackClassReadCount);
 }
 
@@ -1586,9 +1984,13 @@ void MyClassesPageTests::flatPageReentryRestoresDetailsWithoutSummaryRead()
         pageMetricsAfter.classSummaryListQueryCount,
         pageMetricsBefore.classSummaryListQueryCount
         );
-    QCOMPARE(classInfoReadsAfter.callCount, classInfoReadsBefore.callCount);
+    QCOMPARE(classInfoReadsAfter.callCount, classInfoReadsBefore.callCount + 1);
+    QCOMPARE(classInfoReadsAfter.requestedClassCount,
+             classInfoReadsBefore.requestedClassCount + 1);
     QCOMPARE(teacherReadsAfter.callCount, teacherReadsBefore.callCount);
-    QCOMPARE(rosterReadsAfter.callCount, rosterReadsBefore.callCount);
+    QCOMPARE(rosterReadsAfter.callCount, rosterReadsBefore.callCount + 1);
+    QCOMPARE(rosterReadsAfter.requestedClassCount,
+             rosterReadsBefore.requestedClassCount + 1);
 }
 
 void MyClassesPageTests::groupedGradeSelectionMaterializesOnlySelectedDetails()
@@ -1745,9 +2147,13 @@ void MyClassesPageTests::groupedGradeSelectionMaterializesOnlySelectedDetails()
         pageMetricsAfter.classSummaryListQueryCount,
         pageMetricsBefore.classSummaryListQueryCount
         );
-    QCOMPARE(classInfoReadsAfter.callCount, classInfoReadsBefore.callCount);
+    QCOMPARE(classInfoReadsAfter.callCount, classInfoReadsBefore.callCount + 1);
+    QCOMPARE(classInfoReadsAfter.requestedClassCount,
+             classInfoReadsBefore.requestedClassCount + 1);
     QCOMPARE(teacherReadsAfter.callCount, teacherReadsBefore.callCount);
-    QCOMPARE(rosterReadsAfter.callCount, rosterReadsBefore.callCount);
+    QCOMPARE(rosterReadsAfter.callCount, rosterReadsBefore.callCount + 1);
+    QCOMPARE(rosterReadsAfter.requestedClassCount,
+             rosterReadsBefore.requestedClassCount + 1);
 
     gradeTabs->setCurrentIndex(0);
     QVERIFY(secondSecondGradeClassPage->findChildren<QWidget*>().isEmpty());

@@ -124,6 +124,22 @@ struct MyClassesClassInformationReadRecord final
     QString timeFillerActivities;
 };
 
+struct MyClassesClassSummaryReadRecord final
+{
+    int classId = -1;
+    int teacherId = -1;
+    QString classGrade;
+    QString classLevel;
+    QList<ClassTime> regularTimes;
+    QList<ClassTime> intensiveTimes;
+};
+
+struct MyClassesClassSummaryBatchReadEntry final
+{
+    int classId = -1;
+    Result<MyClassesClassSummaryReadRecord> summary;
+};
+
 struct MyClassesClassInformationBatchReadEntry final
 {
     int classId = -1;
@@ -269,6 +285,15 @@ struct MyClassesClassInformationBatchReadMetrics final
     int fallbackClassReadCount = 0;
 };
 
+struct MyClassesClassSummaryBatchReadMetrics final
+{
+    int callCount = 0;
+    int requestedClassCount = 0;
+    int metadataStatementCount = 0;
+    int scheduleStatementCount = 0;
+    int fallbackClassReadCount = 0;
+};
+
 class ClassInfoRepository
 {
 public:
@@ -314,6 +339,8 @@ public:
         loadClassSubtitleRecords(const QList<int>& classIds);
     [[nodiscard]] Result<std::vector<MyClassesClassInformationBatchReadEntry>>
         loadMyClassesClassInformationRecords(const QList<int>& classIds);
+    [[nodiscard]] Result<std::vector<MyClassesClassSummaryBatchReadEntry>>
+        loadMyClassesClassSummaryRecords(const QList<int>& classIds);
     [[nodiscard]] Result<RosterPrintClassInfoReadRecord>
         loadRosterPrintClassInfoRecord(int classId);
     [[nodiscard]] Result<QList<RosterPrintClassInfoReadRecord>>
@@ -347,6 +374,8 @@ public:
         classSubtitleBatchReadMetrics() const noexcept;
     [[nodiscard]] const MyClassesClassInformationBatchReadMetrics&
         myClassesClassInformationBatchReadMetrics() const noexcept;
+    [[nodiscard]] const MyClassesClassSummaryBatchReadMetrics&
+        myClassesClassSummaryBatchReadMetrics() const noexcept;
     [[nodiscard]] const SubPrepRosterOutputClassInfoBatchReadMetrics&
         subPrepRosterOutputClassInfoBatchReadMetrics() const noexcept;
     [[nodiscard]] const SubPrepRosterOutputScheduleBatchReadMetrics&
@@ -392,6 +421,8 @@ public:
         );
 
 private:
+    [[nodiscard]] Result<MyClassesClassSummaryReadRecord>
+        loadMyClassesClassSummaryRecord(int classId);
     [[nodiscard]] Result<MyClassesClassInformationReadRecord>
         loadMyClassesClassInformationRecord(int classId);
 
@@ -407,6 +438,8 @@ private:
     ClassSubtitleBatchReadMetrics m_classSubtitleBatchReadMetrics;
     MyClassesClassInformationBatchReadMetrics
         m_myClassesClassInformationBatchReadMetrics;
+    MyClassesClassSummaryBatchReadMetrics
+        m_myClassesClassSummaryBatchReadMetrics;
     SubPrepRosterOutputClassInfoBatchReadMetrics
         m_subPrepRosterOutputClassInfoBatchReadMetrics;
     SubPrepRosterOutputScheduleBatchReadMetrics

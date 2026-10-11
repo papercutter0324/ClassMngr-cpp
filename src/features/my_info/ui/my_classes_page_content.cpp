@@ -9,13 +9,17 @@
 #include "domain/models/teacher.h"
 #include "features/classes/models/class_tab_navigation_model.h"
 #include "next/application/classes_list_read_query.h"
+#include "next/application/my_classes_class_summary_batch_read_query.h"
 #include "next/application/my_classes_class_information_batch_read_query.h"
 #include "next/application/my_classes_student_count_batch_read_query.h"
 #include "next/application/my_classes_teacher_profile_batch_read_query.h"
+#include "next/application/teacher_display_name_batch_read_query.h"
 #include "next/platform/application_services_classes_list_read_port.h"
+#include "next/platform/application_services_my_classes_class_summary_batch_read_port.h"
 #include "next/platform/application_services_my_classes_class_information_batch_read_port.h"
 #include "next/platform/application_services_my_classes_student_count_batch_read_port.h"
 #include "next/platform/application_services_my_classes_teacher_profile_batch_read_port.h"
+#include "next/platform/application_services_teacher_display_name_batch_read_port.h"
 #include "ui/shared/constants/gui_constants.h"
 #include "ui/shared/styles/roles.h"
 #include "ui/shared/utils/widget_sizing.h"
@@ -97,12 +101,13 @@ QString classesListErrorMessage(const std::string& message)
 struct ClassSummary
 {
     Classroom classroom;
-    ClassInfo info;
+    QString classGrade;
+    QString classLevel;
+    QList<ClassTime> regularTimes;
+    QList<ClassTime> intensiveTimes;
     std::optional<ClassMngr::Next::Domain::TeacherId> teacherId;
-    Teacher teacher;
-    bool teacherProfileLoaded = false;
-    QString displayName;
-    int studentCount = 0;
+    QString teacherEn;
+    QString teacherKr;
 };
 
 ClassInfo classInfoFromMyClassesSnapshot(
@@ -137,6 +142,25 @@ ClassInfo classInfoFromMyClassesSnapshot(
     }
 
     return info;
+}
+
+QList<ClassTime> classTimesFromSnapshot(
+    const std::vector<
+        ClassMngr::Next::Application::MyClassesScheduleEntry
+        >& entries
+    )
+{
+    QList<ClassTime> times;
+    times.reserve(static_cast<qsizetype>(entries.size()));
+    for (const auto& entry : entries)
+    {
+        times.append({
+            .day = QString::fromStdU16String(entry.day),
+            .startTime = QString::fromStdU16String(entry.startTime),
+            .endTime = QString::fromStdU16String(entry.endTime)
+        });
+    }
+    return times;
 }
 
 Teacher teacherFromMyClassesProfile(
@@ -174,13 +198,12 @@ QString valueOrNa(
 }
 
 QString gradeLevelText(
-    const ClassInfo& info
+    const QString& gradeValue,
+    const QString& levelValue
     )
 {
-    const QString grade =
-        info.classGrade.trimmed();
-    const QString level =
-        info.classLevel.trimmed();
+    const QString grade = gradeValue.trimmed();
+    const QString level = levelValue.trimmed();
 
     if (!grade.isEmpty() && !level.isEmpty())
     {
@@ -203,11 +226,11 @@ QString gradeLevelText(
 
 QString classTitleText(
     const Classroom& classroom,
-    const ClassInfo& info
+    const QString& grade,
+    const QString& level
     )
 {
-    const QString gradeLevel =
-        gradeLevelText(info);
+    const QString gradeLevel = gradeLevelText(grade, level);
 
     if (gradeLevel != NotAvailableText)
     {
@@ -601,8 +624,8 @@ void MyClassesPage::rebuildClassInformation()
     const QList<Classroom> classrooms =
         classroomsFromListSnapshot(classes.value());
     summaries.reserve(classrooms.size());
-    std::vector<ClassMngr::Next::Domain::ClassId> classInformationIds;
-    classInformationIds.reserve(static_cast<std::size_t>(classrooms.size()));
+    std::vector<ClassMngr::Next::Domain::ClassId> classSummaryIds;
+    classSummaryIds.reserve(static_cast<std::size_t>(classrooms.size()));
     std::vector<std::size_t> summaryIndexes;
     summaryIndexes.reserve(static_cast<std::size_t>(classrooms.size()));
     for (const Classroom& classroom : classrooms)
@@ -615,7 +638,7 @@ void MyClassesPage::rebuildClassInformation()
                 );
         if (typedClassId)
         {
-            classInformationIds.push_back(*typedClassId);
+            classSummaryIds.push_back(*typedClassId);
             summaryIndexes.push_back(
                 static_cast<std::size_t>(summaries.size())
                 );
@@ -623,24 +646,24 @@ void MyClassesPage::rebuildClassInformation()
         summaries.append(std::move(summary));
     }
 
-    if (!classInformationIds.empty())
+    if (!classSummaryIds.empty())
     {
         ClassMngr::Next::Platform::
-            ApplicationServicesMyClassesClassInformationBatchReadPort
-                classInformationReadPort(m_services);
+            ApplicationServicesMyClassesClassSummaryBatchReadPort
+                classSummaryReadPort(m_services);
         const ClassMngr::Next::Application::
-            MyClassesClassInformationBatchReadQuery classInformationQuery(
-                classInformationReadPort
+            MyClassesClassSummaryBatchReadQuery classSummaryQuery(
+                classSummaryReadPort
                 );
-        const auto loadedClassInformation =
-            classInformationQuery.execute(classInformationIds);
-        if (loadedClassInformation)
+        const auto loadedClassSummaries =
+            classSummaryQuery.execute(classSummaryIds);
+        if (loadedClassSummaries)
         {
-            const auto& entries = loadedClassInformation.value();
+            const auto& entries = loadedClassSummaries.value();
             for (std::size_t index = 0; index < entries.size(); ++index)
             {
                 const auto& entry = entries[index];
-                if (!entry.information)
+                if (!entry.summary)
                 {
                     continue;
                 }
@@ -648,83 +671,65 @@ void MyClassesPage::rebuildClassInformation()
                 ClassSummary& summary = summaries[
                     static_cast<qsizetype>(summaryIndexes[index])
                     ];
-                const auto& fields = entry.information.value();
-                summary.info = classInfoFromMyClassesSnapshot(
-                    fields,
-                    summary.classroom.id
+                const auto& fields = entry.summary.value();
+                summary.classGrade = QString::fromStdU16String(
+                    fields.classGrade
+                    );
+                summary.classLevel = QString::fromStdU16String(
+                    fields.classLevel
+                    );
+                summary.regularTimes = classTimesFromSnapshot(
+                    fields.regularSchedule
+                    );
+                summary.intensiveTimes = classTimesFromSnapshot(
+                    fields.intensiveSchedule
                     );
                 summary.teacherId = fields.teacherId;
             }
         }
     }
 
-    if (!classInformationIds.empty())
-    {
-        ClassMngr::Next::Platform::
-            ApplicationServicesMyClassesStudentCountBatchReadPort
-                studentCountReadPort(m_services);
-        const ClassMngr::Next::Application::
-            MyClassesStudentCountBatchReadQuery studentCountQuery(
-                studentCountReadPort
-                );
-        const auto loadedStudentCounts =
-            studentCountQuery.execute(classInformationIds);
-        if (loadedStudentCounts)
-        {
-            const auto& entries = loadedStudentCounts.value();
-            for (std::size_t index = 0; index < entries.size(); ++index)
-            {
-                const auto& entry = entries[index];
-                if (!entry.studentCount)
-                {
-                    continue;
-                }
-
-                summaries[
-                    static_cast<qsizetype>(summaryIndexes[index])
-                    ].studentCount = entry.studentCount.value();
-            }
-        }
-    }
-
-    std::vector<ClassMngr::Next::Domain::TeacherId> teacherProfileIds;
-    std::unordered_set<std::string> seenTeacherProfileIds;
-    teacherProfileIds.reserve(static_cast<std::size_t>(summaries.size()));
-    seenTeacherProfileIds.reserve(static_cast<std::size_t>(summaries.size()));
+    std::vector<ClassMngr::Next::Domain::TeacherId> teacherDisplayNameIds;
+    std::unordered_set<std::string> seenTeacherDisplayNameIds;
+    teacherDisplayNameIds.reserve(static_cast<std::size_t>(summaries.size()));
+    seenTeacherDisplayNameIds.reserve(static_cast<std::size_t>(summaries.size()));
     for (const ClassSummary& summary : summaries)
     {
         if (summary.teacherId
-            && seenTeacherProfileIds.insert(
+            && seenTeacherDisplayNameIds.insert(
                 summary.teacherId->value()
                 ).second)
         {
-            teacherProfileIds.push_back(*summary.teacherId);
+            teacherDisplayNameIds.push_back(*summary.teacherId);
         }
     }
 
-    if (!teacherProfileIds.empty())
+    if (!teacherDisplayNameIds.empty())
     {
         ClassMngr::Next::Platform::
-            ApplicationServicesMyClassesTeacherProfileBatchReadPort
-                teacherProfileReadPort(m_services);
+            ApplicationServicesTeacherDisplayNameBatchReadPort
+                teacherDisplayNameReadPort(m_services);
         const ClassMngr::Next::Application::
-            MyClassesTeacherProfileBatchReadQuery teacherProfileQuery(
-                teacherProfileReadPort
+            TeacherDisplayNameBatchReadQuery teacherDisplayNameQuery(
+                teacherDisplayNameReadPort
                 );
-        const auto loadedProfiles = teacherProfileQuery.execute(
-            teacherProfileIds
+        const auto loadedDisplayNames = teacherDisplayNameQuery.execute(
+            teacherDisplayNameIds
             );
-        if (loadedProfiles)
+        if (loadedDisplayNames)
         {
-            std::unordered_map<std::string, std::size_t> profileIndexes;
-            profileIndexes.reserve(loadedProfiles.value().size());
-            for (std::size_t index = 0;
-                 index < loadedProfiles.value().size();
-                 ++index)
+            std::unordered_map<
+                std::string,
+                const ClassMngr::Next::Application::
+                    TeacherDisplayNameBatchReadSnapshot*
+                >
+                displayNameByTeacherId;
+            displayNameByTeacherId.reserve(loadedDisplayNames.value().size());
+            for (const auto& displayName : loadedDisplayNames.value())
             {
-                profileIndexes.emplace(
-                    loadedProfiles.value()[index].teacherId.value(),
-                    index
+                displayNameByTeacherId.emplace(
+                    displayName.teacherId.value(),
+                    &displayName
                     );
             }
 
@@ -735,35 +740,22 @@ void MyClassesPage::rebuildClassInformation()
                     continue;
                 }
 
-                const auto profileIndex = profileIndexes.find(
+                const auto displayName = displayNameByTeacherId.find(
                     summary.teacherId->value()
                     );
-                if (profileIndex == profileIndexes.end())
+                if (displayName == displayNameByTeacherId.end())
                 {
                     continue;
                 }
 
-                const auto& profile = loadedProfiles.value()[
-                    profileIndex->second
-                    ].profile;
-                if (profile)
-                {
-                    summary.teacher = teacherFromMyClassesProfile(
-                        profile.value()
-                        );
-                    summary.teacherProfileLoaded = true;
-                }
+                summary.teacherEn = QString::fromStdU16String(
+                    displayName->second->fields.teacherEn
+                    );
+                summary.teacherKr = QString::fromStdU16String(
+                    displayName->second->fields.teacherKr
+                    );
             }
         }
-    }
-
-    for (ClassSummary& summary : summaries)
-    {
-        summary.displayName =
-            classTitleText(
-                summary.classroom,
-                summary.info
-                );
     }
 
     if (summaries.isEmpty())
@@ -792,17 +784,17 @@ void MyClassesPage::rebuildClassInformation()
         entry.classroomName =
             summary.classroom.name;
         entry.grade =
-            summary.info.classGrade;
+            summary.classGrade;
         entry.level =
-            summary.info.classLevel;
+            summary.classLevel;
         entry.regularTimes =
-            summary.info.classTimes;
+            summary.regularTimes;
         entry.intensiveTimes =
-            summary.info.intensiveTimes;
+            summary.intensiveTimes;
         entry.teacherEn =
-            summary.teacher.teacherEn;
+            summary.teacherEn;
         entry.teacherKr =
-            summary.teacher.teacherKr;
+            summary.teacherKr;
 
         navigationEntries.append(entry);
     }
@@ -891,9 +883,6 @@ void MyClassesPage::rebuildClassInformation()
                 return;
             }
 
-            const bool unassigned =
-                !summary.teacherProfileLoaded;
-
             auto* pageLayout =
                 qobject_cast<QVBoxLayout*>(page->layout());
 
@@ -902,10 +891,97 @@ void MyClassesPage::rebuildClassInformation()
                 return;
             }
 
+            ClassInfo info;
+            info.classId = summary.classroom.id;
+            info.classGrade = summary.classGrade;
+            info.classLevel = summary.classLevel;
+            info.classTimes = summary.regularTimes;
+            info.intensiveTimes = summary.intensiveTimes;
+            std::optional<ClassMngr::Next::Domain::TeacherId>
+                selectedTeacherId = summary.teacherId;
+            const auto typedClassId =
+                ClassMngr::Next::Domain::ClassId::fromString(
+                    std::to_string(summary.classroom.id)
+                    );
+            int studentCount = 0;
+            if (typedClassId)
+            {
+                const std::vector<ClassMngr::Next::Domain::ClassId>
+                    selectedClassIds{*typedClassId};
+
+                ClassMngr::Next::Platform::
+                    ApplicationServicesMyClassesStudentCountBatchReadPort
+                        studentCountReadPort(m_services);
+                const ClassMngr::Next::Application::
+                    MyClassesStudentCountBatchReadQuery studentCountQuery(
+                        studentCountReadPort
+                        );
+                const auto loadedStudentCounts =
+                    studentCountQuery.execute(selectedClassIds);
+                if (loadedStudentCounts
+                    && loadedStudentCounts.value().size() == 1
+                    && loadedStudentCounts.value().front().studentCount)
+                {
+                    studentCount = loadedStudentCounts.value()
+                        .front().studentCount.value();
+                }
+
+                ClassMngr::Next::Platform::
+                    ApplicationServicesMyClassesClassInformationBatchReadPort
+                        classInformationReadPort(m_services);
+                const ClassMngr::Next::Application::
+                    MyClassesClassInformationBatchReadQuery classInformationQuery(
+                        classInformationReadPort
+                        );
+                const auto loadedClassInformation =
+                    classInformationQuery.execute(selectedClassIds);
+                if (loadedClassInformation
+                    && loadedClassInformation.value().size() == 1
+                    && loadedClassInformation.value().front().information)
+                {
+                    const auto& fields = loadedClassInformation.value()
+                        .front().information.value();
+                    info = classInfoFromMyClassesSnapshot(
+                        fields,
+                        summary.classroom.id
+                        );
+                    selectedTeacherId = fields.teacherId;
+                }
+            }
+
+            Teacher teacher;
+            bool teacherProfileLoaded = false;
+            if (selectedTeacherId)
+            {
+                const std::vector<ClassMngr::Next::Domain::TeacherId>
+                    selectedTeacherIds{*selectedTeacherId};
+                ClassMngr::Next::Platform::
+                    ApplicationServicesMyClassesTeacherProfileBatchReadPort
+                        teacherProfileReadPort(m_services);
+                const ClassMngr::Next::Application::
+                    MyClassesTeacherProfileBatchReadQuery teacherProfileQuery(
+                        teacherProfileReadPort
+                        );
+                const auto loadedProfiles = teacherProfileQuery.execute(
+                    selectedTeacherIds
+                    );
+                if (loadedProfiles
+                    && loadedProfiles.value().size() == 1
+                    && loadedProfiles.value().front().profile)
+                {
+                    teacher = teacherFromMyClassesProfile(
+                        loadedProfiles.value().front().profile.value()
+                        );
+                    teacherProfileLoaded = true;
+                }
+            }
+
+            const bool unassigned = !teacherProfileLoaded;
+
             auto* teacherHeading =
                 new QLabel(
                     teacherHeadingText(
-                        summary.teacher,
+                        teacher,
                         unassigned
                         ),
                     page
@@ -963,7 +1039,7 @@ void MyClassesPage::rebuildClassInformation()
                 1,
                 0,
                 tr("Internet Type"),
-                unassigned ? QString() : summary.teacher.internetType,
+                unassigned ? QString() : teacher.internetType,
                 teacherCard
                 );
             addHorizontalInfoField(
@@ -972,7 +1048,7 @@ void MyClassesPage::rebuildClassInformation()
                 1,
                 1,
                 tr("WiFi Name"),
-                unassigned ? QString() : summary.teacher.wifiName,
+                unassigned ? QString() : teacher.wifiName,
                 teacherCard
                 );
             addHorizontalInfoField(
@@ -981,7 +1057,7 @@ void MyClassesPage::rebuildClassInformation()
                 1,
                 2,
                 tr("WiFi Password"),
-                unassigned ? QString() : summary.teacher.wifiPassword,
+                unassigned ? QString() : teacher.wifiPassword,
                 teacherCard
                 );
             teacherGrid->addItem(
@@ -1002,7 +1078,7 @@ void MyClassesPage::rebuildClassInformation()
                 4,
                 0,
                 tr("Projection Type"),
-                unassigned ? QString() : summary.teacher.projectionType,
+                unassigned ? QString() : teacher.projectionType,
                 teacherCard
                 );
             addHorizontalInfoField(
@@ -1011,7 +1087,7 @@ void MyClassesPage::rebuildClassInformation()
                 4,
                 1,
                 tr("Zoom ID"),
-                unassigned ? QString() : summary.teacher.zoomId,
+                unassigned ? QString() : teacher.zoomId,
                 teacherCard
                 );
             addHorizontalInfoField(
@@ -1020,7 +1096,7 @@ void MyClassesPage::rebuildClassInformation()
                 4,
                 2,
                 tr("Zoom Password"),
-                unassigned ? QString() : summary.teacher.zoomPassword,
+                unassigned ? QString() : teacher.zoomPassword,
                 teacherCard
                 );
 
@@ -1042,7 +1118,7 @@ void MyClassesPage::rebuildClassInformation()
                     teacherCard
                     );
             teacherNotes->setPlainText(
-                unassigned ? QString() : summary.teacher.notes
+                unassigned ? QString() : teacher.notes
                 );
             teacherLayout->addWidget(
                 teacherNotes
@@ -1054,7 +1130,11 @@ void MyClassesPage::rebuildClassInformation()
 
             auto* classCard =
                 new SectionCard(
-                    summary.displayName,
+                    classTitleText(
+                        summary.classroom,
+                        info.classGrade,
+                        info.classLevel
+                        ),
                     page
                     );
 
@@ -1073,35 +1153,35 @@ void MyClassesPage::rebuildClassInformation()
                 classGrid,
                 row++,
                 tr("# of Students"),
-                QString::number(summary.studentCount),
+                QString::number(studentCount),
                 classCard
                 );
 
-            if (!summary.info.classTimes.isEmpty())
+            if (!info.classTimes.isEmpty())
             {
                 addInfoRow(
                     classGrid,
                     row++,
                     tr("Regular"),
-                    formatSchedule(summary.info.classTimes),
+                    formatSchedule(info.classTimes),
                     classCard
                     );
             }
 
-            if (!summary.info.intensiveTimes.isEmpty())
+            if (!info.intensiveTimes.isEmpty())
             {
                 addInfoRow(
                     classGrid,
                     row++,
                     tr("Intensive"),
-                    formatSchedule(summary.info.intensiveTimes),
+                    formatSchedule(info.intensiveTimes),
                     classCard
                     );
             }
 
             if (
-                summary.info.classTimes.isEmpty()
-                && summary.info.intensiveTimes.isEmpty()
+                info.classTimes.isEmpty()
+                && info.intensiveTimes.isEmpty()
                 )
             {
                 addInfoRow(
@@ -1131,7 +1211,7 @@ void MyClassesPage::rebuildClassInformation()
                     classCard
                     );
             classNotes->setPlainText(
-                summary.info.notes
+                info.notes
                 );
             classCard->contentLayout()->addWidget(
                 classNotes
@@ -1152,7 +1232,7 @@ void MyClassesPage::rebuildClassInformation()
                     );
             timeFillerActivities->setPlainText(
                 valueOrNa(
-                    summary.info.timeFillerActivities
+                    info.timeFillerActivities
                     )
                 );
             classCard->contentLayout()->addWidget(
