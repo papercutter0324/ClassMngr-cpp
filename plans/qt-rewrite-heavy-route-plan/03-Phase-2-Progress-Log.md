@@ -21781,13 +21781,17 @@ savings. No WPR, IFEO, or symbol work was performed.
 
 F620 is accepted (commit `31d3e227`). F621 is accepted (commit `b5fdecd1`);
 F622 is accepted (commit `2ab606bd`). F623 is accepted (commit `cbe2ae80`);
-F624 passed the recorded current-working-set budget but left lifecycle acceptance partial; F625 is active to confirm whether My Workspace child-resource retention is material. Per the user's 2026-10-11
-direction, tests may verify any changed code, but a test file may be created or
-updated only in direct response to modified production/core code and must
-cover that change; prefer focused coverage in an existing suite and avoid
-test-only slices. F579 symbols remain deferred; F598 still requires an
-elevated Administrator process. The 250 MiB lifecycle gate, render/window
-acceptance, and global Phase 0 remain open (Windows 1/24, macOS 0/24).
+F624 passed the recorded current-working-set budget but left lifecycle
+acceptance partial. F625 and F626 remain deferred pending owner-specific
+material-retention evidence; F627 is accepted; F628 passed current-source
+Windows requalification (24/24); and F629 is current for the macOS universal
+matrix when a packaged runner is available. Per the user's 2026-10-11
+direction, tests may be run for any changed code, but test files may be created
+or updated only to cover a corresponding change in production/core code;
+prefer focused coverage in an existing suite and avoid test-only slices.
+F579 symbols remain deferred; F598 still requires an elevated Administrator
+process. The 250 MiB lifecycle gate, render/window acceptance, and overall
+Phase 0 remain open (Windows 24/24, macOS 0/24).
 
 ## F621 Bound Sub Prep schedule preview retained by PageManager - accepted
 
@@ -22129,15 +22133,12 @@ No production/core code changed, so no test file was edited or run. This
 follows the 2026-10-11 test policy recorded in [00-Start-Here.md](00-Start-Here.md)
 and the Phase 2 plan.
 
-### Next selected slice (F628)
+### Next selected slice (F629)
 
-Run a fresh current-source Windows x64 packaged Release `-Routes all` matrix
-in one evidence root/manifest after committing F627. The focused F627
-correction passed its three affected routes but does not complete Phase 0.
-Historical Phase 0 completion remains valid; post-F621 current-source Windows
-and macOS matrix requalification remains open (Windows was 1/24 before the
-failed 21/24 attempt; macOS 0/24). F629 is the macOS matrix when its packaged
-runner is available.
+Run the current-source macOS universal Phase 0 matrix when a packaged runner
+is available. F628 passed all 24 Windows x64 routes in one evidence root;
+Phase 0's current-source exit gate remains incomplete solely pending this
+macOS evidence.
 
 <a id="f627"></a>
 ### F627 Correct initial Windows route-matrix failures - accepted
@@ -22223,20 +22224,42 @@ response to F604/F609; no new test files were created and no assertions were
 weakened.
 
 **Decision: accept F627's focused correction.** This closes the three-route
-correction only; it does not complete the post-F621 Phase 0 matrix. F628 is
-the next Windows x64 one-root `-Routes all` matrix after F627 is committed;
-F629 remains the macOS matrix when a packaged runner is available.
+correction only; it did not complete the post-F621 Phase 0 matrix. F628
+subsequently passed the Windows x64 one-root matrix, with evidence recorded
+below; F629 remains the macOS matrix when a packaged runner is available.
 
 #### Follow-up matrix slices
 
-- **F628:** run a fresh packaged Release Windows x64 `-Routes all` matrix in
-  one evidence root/manifest after F627 is committed and independently
-  review the complete evidence. This is the post-F621 Windows requalification
-  acceptance unit.
-- **F629:** run the current-source macOS matrix when a packaged runner is
-  available.
+- **F629:** run the current-source macOS universal matrix when a packaged
+  runner is available.
 
 F626 remains an unresolved deferred candidate. Revisit it only when matched
 owner-specific packaged Release evidence establishes material bytes retained
 by a cached page after feature-resource release and a safe state/re-entry
 contract.
+
+<a id="f628"></a>
+### F628 Current-source Windows x64 Phase 0 route-matrix requalification - accepted
+
+#### Source-bound evidence and result
+
+The packaged Release Windows x64 `-Routes all` run is recorded under
+`%LOCALAPPDATA%\Temp\ClassMngr-F628-Route-Evidence-20261011-01\windows-x64-all-routes`.
+Source and build commit: `62e549f324a72eee04ee108f85cbe556f5a940b7`;
+build provenance: `built-from-repository` / `repository-build`. The stable
+initial, after-build, final, and current source snapshots were identical, with
+zero tracked changes. All 24 canonical route IDs are present in this one
+evidence root. Every route, validator, and build command returned normally
+with exit code 0 and no timeout; the validator reports `pass=true`, 24 routes,
+zero failures, and complete Windows x64 coverage.
+
+`lifecycle-schedule`, `lifecycle-schedule-import-apply`, and
+`lifecycle-speaking-evaluation` pass with the F627 corrections. The route
+matrix also passed with a non-failing legacy 250 MiB trend warning; the
+temporary 512 MiB ceiling was not exceeded. F628 made no code, test, or
+test-file changes.
+
+**Decision: accept F628.** Post-F621 current-source Windows requalification
+is complete. Historical Phase 0 completion remains valid, and the current
+Phase 0 exit gate is incomplete solely pending macOS universal evidence
+(0/24). F629 is current for that matrix when its packaged runner is available.

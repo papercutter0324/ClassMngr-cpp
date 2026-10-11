@@ -1,6 +1,8 @@
 # Phase 2 — Domain Model and Application Contracts
 
-> **Phase 2 priority:** Prioritize implementing the core code. Additional tests beyond those needed to verify implementation and satisfy existing phase gates can be created later if desired.
+> **Phase 2 priority:** Prioritize implementing production/core code. Tests may be
+> run for any changed code. Create or update test files only to cover a
+> corresponding production/core change; do not add test-only slices.
 
 Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, and phase sequence.
 
@@ -35,12 +37,11 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 ## Test scope
 
 - User direction (2026-10-11): tests may be run for any changed code. Create or
-  update test files only in direct response to a change in production/core
-  code, and make the test cover that change. Prefer the smallest focused
-  assertion in an existing test file; create a separate test file only when a
-  new production/core contract cannot be covered coherently in an existing
-  file. Avoid tests for unchanged behavior, redundant cases, and test-only
-  slices.
+  update test files only to cover a corresponding change in production/core
+  code. Prefer the smallest focused assertion in an existing test file; create
+  a separate test file only when a new production/core contract cannot be
+  covered coherently in an existing file. Avoid tests for unchanged behavior,
+  redundant cases, and test-only slices.
 
 ## Status
 
@@ -52,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-11
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F625 and F626 remain deferred pending owner-specific material-retention evidence; historical Phase 0 completion (24/24) remains valid, post-F621 requalification remains incomplete (Windows 1/24 before the failed 21/24 matrix, then F627's focused correction passed 3/3 affected routes; macOS 0/24), F628 is current for a fresh one-root Windows x64 `-Routes all` matrix after F627 is committed, and F629 is macOS when its packaged runner is available; F579, F598, F526 provenance, the broader memory gate, and render/window remain open.
+- Current note: F625 and F626 remain deferred pending owner-specific material-retention evidence; historical Phase 0 completion (24/24) remains valid, F628 passed the post-F621 current-source Windows matrix 24/24, and the overall Phase 0 gate remains open only for current-source macOS universal evidence (0/24), making F629 current when its packaged runner is available; F579, F598, F526 provenance, the broader memory gate, and render/window remain open.
 
 ### Slice discovery batches
 
@@ -96,7 +97,6 @@ Treat this plan as an operational summary, not a history:
 
 #### Active batch: Batch 118
 
-- F628 - Run and independently review a fresh current-source packaged Release Windows x64 `-Routes all` matrix after F627 is committed, with all 24 routes in one evidence root/manifest.
 - F629 - Requalify the current-source macOS universal route matrix when a packaged runner is available.
 
 ## Objective

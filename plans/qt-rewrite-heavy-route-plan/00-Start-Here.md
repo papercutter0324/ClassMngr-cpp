@@ -6,7 +6,7 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-11
-- Current milestone: Phase 2 remains in progress. F624 passed the recorded 96-class current-working-set budget but lifecycle acceptance remains partial; F625's My Workspace release change and F626's broad PageManager retention policy remain deferred pending owner-specific material-retention evidence. Historical Phase 0 completion (24/24) remains valid; post-F621 current-source requalification remains incomplete (Windows 1/24 before the failed 21/24 matrix; macOS 0/24). F627's source-bound focused correction passed all three affected routes but does not complete Phase 0; F628 is current for a fresh one-root Windows x64 `-Routes all` matrix after F627 is committed, followed by F629 macOS when a packaged runner is available. See [F627](03-Phase-2-Progress-Log.md#f627). F579 symbols remain deferred and F598 awaits elevated WPR.
+- Current milestone: Phase 2 remains in progress. F624 passed the recorded 96-class current-working-set budget but lifecycle acceptance remains partial; F625's My Workspace release change and F626's broad PageManager retention policy remain deferred pending owner-specific material-retention evidence. Historical Phase 0 completion (24/24) remains valid; post-F621 Windows requalification passed F628 (24/24), while the overall Phase 0 gate remains open only for current-source macOS universal evidence (0/24). F627's focused correction passed its three affected routes; F629 is current for the macOS matrix when a packaged runner is available. See [F627](03-Phase-2-Progress-Log.md#f627) and [F628](03-Phase-2-Progress-Log.md#f628). F579 symbols remain deferred and F598 awaits elevated WPR.
 - Phase 1 is complete. Its 2026-09-19 closure update records passing hosted
   baseline jobs for Windows x64 and macOS universal, the Phase 1 Build Quality
   and Dialog policy workflows, and packaged Release workflows. Linux x64 and
@@ -84,12 +84,11 @@ Statuses are intentionally conservative. A phase is not In progress until its wo
 ## Test scope
 
 - User direction (2026-10-11): tests may be run for any changed code. Create or
-  update test files only in direct response to a change in production/core
-  code, and make the test cover that change. Prefer the smallest focused
-  assertion in an existing test file; create a separate test file only when a
-  new production/core contract cannot be covered coherently in an existing
-  file. Avoid tests for unchanged behavior, redundant cases, and test-only
-  slices.
+  update test files only to cover a corresponding change in production/core
+  code. Prefer the smallest focused assertion in an existing test file; create
+  a separate test file only when a new production/core contract cannot be
+  covered coherently in an existing file. Avoid tests for unchanged behavior,
+  redundant cases, and test-only slices.
 
 ## Cross-cutting memory remediation
 
