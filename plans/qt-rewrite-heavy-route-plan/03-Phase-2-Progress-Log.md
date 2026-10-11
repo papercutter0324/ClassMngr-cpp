@@ -23899,3 +23899,87 @@ is active with F664. Continue the one-commit-per-slice sequence.
    needed.
 
 This matrix is recorded before implementation. Batch 139 is active with F664.
+
+### F664 Evaluation Default Policy save failure - accepted - 2026-10-12
+
+Commit `18329f2b1095c5ca4b6dbc51918db34726f80bb9` (`Phase2 - Surface
+evaluation default policy save failures`) contains exactly seven files: the
+Application contract, Platform adapter, menu handler, policy-port tests,
+MainWindow Preferences failure tests, ClassesPage caller assertions, and
+evaluation-selection integration caller assertions.
+
+The port now returns typed Technical errors for closed/unavailable
+sessions/repositories and failed writes. A trigger-backed write failure
+preserves the prior policy and an unrelated setting. Preferences warns once
+with the diagnostic, restores both radios with signals blocked, and performs
+no second write or Classes refresh; retry persists once. Existing Analytics
+and Speaking Evaluation default selection remains correct. Success adds no
+Classes refresh.
+
+The focused targets built without compiler warnings. The final corrected
+combined independent CTest command passed 4/4:
+`ClassMngrNextPlatformApplicationServicesEvaluationDefaultPolicyPortTests`,
+`ClassMngrMainWindowClassVisibilityPreferencesFailureTests`,
+`ClassMngrClassesPageTests`, and
+`ClassMngrEvaluationDefaultSelectionIntegrationTests`. `git diff --check`
+passed; no full suite ran. The open-session/null-repository branch has no
+existing test seam and was source-reviewed only; closed-session and trigger
+write failures are covered.
+
+**Decision: accept F664 with those limits.** Batch 139 is complete; Batch 140
+is active with F665. Continue the one-commit-per-slice sequence.
+
+### Batch 140 shortlist - recorded before F665 implementation - 2026-10-12
+
+- F665 is selected: Schedule Display Mode save failure can leave the live
+  widget changed because the Application contract and adapter save methods are
+  void (`src/next/application/schedule_display_mode_preferences.h:15-22`,
+  `src/next/platform/application_services_schedule_display_mode_preferences_port.h:74-97,195-209`).
+  `ScheduleWidget::setDisplayMode` mutates the mode before saving, then updates
+  controls/view and emits `displayModeChanged`
+  (`src/features/schedule/ui/schedule_widget.cpp:376-425`); SchedulePage and
+  MainWindow propagate the signal, while Classes and Speaking Evaluation
+  separately load persisted mode (`schedule_page.cpp:237-239`,
+  `mainwindow.cpp:892`, `classes_page.cpp:278`, `speaking_eval_page.cpp:138`).
+  Inference: after a failed write, live mode and pages can follow the attempted
+  choice while later loads use the previous stored choice.
+- Schedule port tests cover canonical values and available/default behavior,
+  but no save-failure injection exists
+  (`tests/next_platform_application_services_schedule_display_mode_preferences_port_tests.cpp:199-220`,
+  target registration `cmake/tests/next.cmake:3369`). The ScheduleWidget test
+  repository stub always succeeds, so add a focused failure seam there
+  (`tests/schedule_widget_tests.cpp:672+`,
+  `tests/schedule_widget_test_stubs.cpp:562-580`). If save becomes nodiscard,
+  adapt MyWorkspacePage's direct caller/test
+  (`tests/my_workspace_page_tests.cpp:495`; target registration
+  `cmake/tests/pages_and_output.cmake:23`).
+- Reset-policy save failures and Calendar event-type color save feedback also
+  remain candidates. Relative user-impact ranking for F665 is inference from
+  cross-feature consumers and live event propagation. Active
+  Analytics/Evaluations editor-hidden behavior remains deferred because the
+  existing section-preservation test leaves intended behavior ambiguous.
+
+### F665 Schedule Display Mode save failure acceptance matrix - recorded before implementation - 2026-10-12
+
+1. Return a typed Technical diagnostic for trigger-backed write failure and
+   unavailable session/repository. Preserve the previous canonical value and
+   unrelated settings; canonical key `schedule_display_mode`; values
+   `regular`, `intensive`, and `testing`; default/fallback behavior; legacy
+   `schedule_show_intensive` fallback and canonical materialization; and
+   load-time migration/write-warning behavior.
+2. In the actual Schedule mode-button flow, a failed save shows one
+   user-visible warning with diagnostic, restores the previous persisted and
+   current mode and button state, emits no `displayModeChanged`, does not
+   publish the attempted mode to other pages, and does not mutate the schedule
+   view.
+3. After removing the failure, retry stores the desired mode once, updates the
+   widget, and emits one `displayModeChanged`; existing consumers continue to
+   work.
+4. Preserve all three mode renderings, schedule display preferences,
+   MyWorkspace load/activation behavior, and existing page consumers; adapt
+   direct save callers and add no test target. Likely focused targets are
+   `NextPlatformApplicationServicesScheduleDisplayModePreferencesPort`,
+   `ClassMngrScheduleWidgetTests`, and `MyWorkspacePage` if its direct caller
+   is adapted.
+
+This matrix is recorded before implementation. Batch 140 is active with F665.
