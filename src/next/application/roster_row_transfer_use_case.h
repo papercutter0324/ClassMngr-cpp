@@ -8,6 +8,7 @@
 
 #include <charconv>
 #include <functional>
+#include <string>
 #include <string_view>
 #include <variant>
 
@@ -80,12 +81,24 @@ public:
         if (const auto* error = std::get_if<RosterRowRemovalError>(&removed))
             return *error;
 
+        auto&& equals = caseInsensitiveEquals;
+        const RosterSaveCaseInsensitiveEquals validationEquals =
+            [&equals](const std::u16string_view left,
+                      const std::u16string_view right)
+            {
+                return std::invoke(equals, left, right);
+            };
+        const auto& source = std::get<RosterSnapshot>(removed);
+        const auto preparedSource = prepareRosterSaveText(
+            source, true, validationEquals);
+        if (preparedSource.hasErrors())
+            return validationError("Source");
+
         const auto loaded = RosterReadUseCase::execute(
             {.classId = request.targetClassId}, readPort);
         if (!loaded)
             return loaded.error();
 
-        auto&& equals = caseInsensitiveEquals;
         RosterSnapshot target = projectTargetRoster(
             decodedTargetSnapshot(loaded.value()), request.baseColumnNames, equals);
         auto prepared = prepareRosterRowTransfer(
@@ -99,6 +112,11 @@ public:
         auto& insertion = std::get<RosterRowTransferPreparation>(prepared);
         const std::size_t destinationRow = insertion.destinationRow;
         target.rows[destinationRow] = std::move(insertion.mappedRow);
+        const auto preparedTarget = prepareRosterSaveText(
+            target, true, validationEquals);
+        if (preparedTarget.hasErrors())
+            return validationError("Target");
+
         const auto saved = savePort.saveTransfer({
             .sourceClassId = request.sourceClassId,
             .targetClassId = request.targetClassId,
@@ -112,6 +130,16 @@ public:
     }
 
 private:
+    [[nodiscard]] static Domain::OperationError validationError(
+        const std::string_view rosterName)
+    {
+        return {
+            .code = Domain::ErrorCode::Validation,
+            .message = std::string(rosterName) + " roster failed validation before transfer.",
+            .recoverable = false
+        };
+    }
+
     [[nodiscard]] static RosterSnapshot decodedTargetSnapshot(RosterSnapshot snapshot)
     {
         // Preserve the former read-edge QString::fromStdU16String decoding.

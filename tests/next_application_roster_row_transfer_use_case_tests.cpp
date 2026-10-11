@@ -110,6 +110,21 @@ bool invalidSourcePreventsReadAndSave()
     return error && error->code == RosterRowRemovalErrorCode::RowHasNoData && ports.calls.empty();
 }
 
+bool invalidRemainingSourceRosterPreventsReadAndSave()
+{
+    auto req = request();
+    req.sourceRoster.rows[1][0].clear();
+    const auto sourceBefore = req.sourceRoster;
+    Ports ports;
+    const auto result = RosterRowTransferUseCase::execute(req, ports, ports, equals);
+    const auto* error = std::get_if<Domain::OperationError>(&result);
+    return error && error->code == Domain::ErrorCode::Validation
+        && !error->recoverable
+        && error->message.find("Source") != std::string::npos
+        && ports.calls.empty() && !ports.saved
+        && req.sourceRoster == sourceBefore;
+}
+
 bool invalidIdsPreventReadAndSave()
 {
     for (const auto& pair : std::vector<std::pair<std::string,std::string>>{
@@ -134,8 +149,10 @@ bool rejectsPreparationWithoutSave()
         RosterRowTransferPreparationRejection expected;
         if (scenario == 0)
         {
-            req.sourceRoster.columns = {u"Source only"};
-            req.sourceRoster.rows = {{u"Unmapped data"}};
+            req.sourceRoster.columns = base;
+            req.sourceRoster.columns.push_back(u"Source only");
+            req.sourceRoster.columnWidths = std::vector<int>(base.size() + 1, 0);
+            req.sourceRoster.rows = {{u"", u"", u"", u"", u"", u"", u"Unmapped data"}};
             expected = RosterRowTransferPreparationRejection::SourceRowHasNoData;
         }
         else if (scenario == 1)
@@ -156,6 +173,65 @@ bool rejectsPreparationWithoutSave()
             || ports.saved || req.sourceRoster != before || ports.target != targetBefore) return false;
     }
     return true;
+}
+
+bool invalidTargetSnapshotDoesNotReachSave()
+{
+    auto req = request();
+    const auto sourceBefore = req.sourceRoster;
+    Ports ports;
+    ports.target.columns = base;
+    ports.target.columns.push_back(std::u16string(65, u'X'));
+    const auto targetBefore = ports.target;
+
+    const auto result = RosterRowTransferUseCase::execute(req, ports, ports, equals);
+    const auto* error = std::get_if<Domain::OperationError>(&result);
+    return error && error->code == Domain::ErrorCode::Validation
+        && !error->recoverable
+        && error->message.find("Target") != std::string::npos
+        && ports.calls == std::vector<std::string>{"read"} && !ports.saved
+        && req.sourceRoster == sourceBefore && ports.target == targetBefore;
+}
+
+bool emptyTargetUsesCanonicalBaseAndRowZero()
+{
+    auto req = request();
+    const auto sourceBefore = req.sourceRoster;
+    Ports ports;
+    const auto result = RosterRowTransferUseCase::execute(req, ports, ports, equals);
+    const auto* ok = std::get_if<RosterRowTransferSuccess>(&result);
+    if (!ok || ok->destinationRow != 0 || !ports.saved
+        || ports.calls != std::vector<std::string>{"read", "save"})
+        return false;
+
+    const auto& target = ports.saved->targetRoster;
+    if (target.rows.size() != RosterModeledRowCount)
+        return false;
+    return target.columns == base
+        && target.columnWidths == std::vector<int>(base.size(), 0)
+        && target.rows[0] == std::vector<std::u16string>{
+            u"John", u"\uAE40\uBBFC\uC9C0", u"", u"", u"", u"Fall value"}
+        && target.rows[1] == std::vector<std::u16string>(base.size())
+        && target.rows.back() == std::vector<std::u16string>(base.size())
+        && req.sourceRoster == sourceBefore;
+}
+
+bool warningOnlySnapshotPreparationStillSaves()
+{
+    auto req = request();
+    req.sourceRoster.rows[0][1] = u"\uAE40";
+    Ports ports;
+    const auto result = RosterRowTransferUseCase::execute(req, ports, ports, equals);
+    const auto* ok = std::get_if<RosterRowTransferSuccess>(&result);
+    if (!ok || !ports.saved || ports.calls != std::vector<std::string>{"read", "save"})
+        return false;
+    if (ok->destinationRow >= ports.saved->targetRoster.rows.size()
+        || ports.saved->targetRoster.rows[ok->destinationRow][1] != u"\uAE40")
+        return false;
+
+    const auto prepared = prepareRosterSaveText(
+        ports.saved->targetRoster, true, RosterSaveCaseInsensitiveEquals{equals});
+    return !prepared.issues.empty() && !prepared.hasErrors();
 }
 
 bool legacyCollisionStillRejectsWithoutWriting()
@@ -194,7 +270,11 @@ int main()
     const std::pair<const char*, bool(*)()> cases[]{
         {"success projection and immutable inputs",successProjectsAndCompactsWithoutMutatingInputs},
         {"invalid and empty source",invalidSourcePreventsReadAndSave},
+        {"invalid remaining source roster",invalidRemainingSourceRosterPreventsReadAndSave},
         {"invalid IDs",invalidIdsPreventReadAndSave},
+        {"invalid target snapshot",invalidTargetSnapshotDoesNotReachSave},
+        {"empty target base columns and row zero",emptyTargetUsesCanonicalBaseAndRowZero},
+        {"warning-only roster preparation",warningOnlySnapshotPreparationStillSaves},
         {"ordered preparation rejections",rejectsPreparationWithoutSave},
         {"read and save failures",propagatesPortErrorsAndKeepsSnapshots},
         {"legacy name-pair collision",legacyCollisionStillRejectsWithoutWriting}};
