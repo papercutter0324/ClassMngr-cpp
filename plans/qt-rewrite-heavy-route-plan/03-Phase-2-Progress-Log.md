@@ -21757,7 +21757,10 @@ ordering, and parity. The primary route is under
 under the corresponding `-run2` and `-run3` directories. The source tree
 (1,033 files) SHA-256 was
 `68f97cdbc0b4a102fc21df8495ae23b678fef168b5faef0947e782bed899c341`; the
-packaged Release app SHA-256 was
+runner's Git commit field was the pre-F620 HEAD
+`4a9408067753699da90d1b751b30469f27bffbc7`, while this tree hash binds the
+F620 source changes used for the build and remained unchanged through each
+route. The packaged Release app SHA-256 was
 `4ace8c52d538b86ba15d979a931e64641c5f6ee6bf65e6cf5a4f659782a3d633`; the
 startup harness SHA-256 was
 `63f3c764d6f5d5f79528decdd00fe61c4c4dabd24f8641cb734ae62b0071c230`; and
@@ -21774,11 +21777,79 @@ The packaged trace is process-level observation at named stages; it neither
 assigns bytes to individual renderer components nor demonstrates memory
 savings. No WPR, IFEO, or symbol work was performed.
 
-F620 is accepted (commit pending). F621 is active: identify remaining large
-resources retained by PageManager after their feature-specific release hooks,
-then define bounded recreation only where owner evidence supports it while
-preserving dirty state and navigation. No new test files are to be added per
-the user's 2026-10-11 direction; use existing suites only when proportionate
+F620 is accepted (commit `31d3e227`). F621 is accepted; F622 is active to
+reconcile current-source packaged Release memory and parity evidence after
+behavior-changing slices settle. No new test files are to be added per the
+user's 2026-10-11 direction; use existing suites only when proportionate
 coverage is required. F579 symbols remain deferred; F598 still requires an
 elevated Administrator process. The 250 MiB lifecycle gate, render/window
 acceptance, and global Phase 0 remain open (Windows 1/24, macOS 0/24).
+
+## F621 Bound Sub Prep schedule preview retained by PageManager - accepted
+
+### Scope and acceptance
+
+PageManager keeps instantiated pages in its page map and stacked widget after
+navigation; leaving a page invokes its `deactivate()` hook. Sub Prep's existing
+`releaseFeatureResources()` clears class-information data and marks the page
+stale but leaves its read-only embedded `ScheduleWidget` projection populated.
+F599 observed the `sub-prep-preview` schedule owner populated through the PDF
+checkpoints, and F604's structural dry run recorded 768 model entries and zero
+cell widgets for each populated schedule owner. These are retained structural
+counts, not memory-byte attribution.
+
+The selected bounded change is to release Sub Prep's generated schedule model
+and rendered table through the existing `ScheduleWidget::releaseGeneratedResources()`
+hook on page deactivation, retaining the page and widget shell. The existing
+stale-page refresh path calls `refreshGeneratedContent()` and reconstructs the
+schedule on re-entry. Acceptance is limited to zero schedule model entries
+and table items after leave, restored model entries after return, and
+preservation of an unsaved Sub Prep form value and dirty state across that
+lifecycle. Verify only
+through the existing `pageDeactivationReleasesClassInformationForTheNextEntry`
+case in `tests/sub_prep_page_tests.cpp`; no new test file or test-only slice.
+
+### Implementation and verification outcome
+
+Sub Prep deactivation now calls the embedded schedule's existing generated-
+resource release hook before clearing class information and marking the page
+stale. The existing lifecycle case asserts that generated model entries and
+table items clear on leave and return to their prior counts on re-entry, while
+an unsaved note and dirty state survive. The executor's incremental Debug
+build of `ClassMngrSubPrepPageTests` in `build/windows-x64-debug-ninja`
+succeeded. Its initial test launch failed before entering QtTest because Qt
+could not initialize the platform plugin. The independent verifier reran only
+the named existing case with explicit offscreen plugin paths and a QtTest
+transcript under `%TEMP%`; the transcript records the named case, init, and
+cleanup passing (3 passed, 0 failed, 0 skipped, 111 ms). No other tests were
+run and no test file was added.
+
+### Batch 118 discovery - started with F621
+
+The read-only discovery produced these conditional, source-grounded follow-ons;
+F621 and F622 results should determine whether they remain useful:
+
+1. **F623 - Interpret F620 render-stage samples.** Compare the existing 15
+   same-sample process observations across three Release runs to locate any
+   repeatable peak or growth boundary before considering renderer changes.
+   Accept with stage-level comparisons and no component ownership or savings
+   claim. Source: this log's F620 evidence and retained route artifacts.
+2. **F624 - Reassess the 96-class lifecycle memory gate after F621/F622.** Use
+   current packaged source and the large fixture only if lifecycle acceptance
+   remains unresolved; require source-bound artifacts, parity, and the
+   recorded working-set budget. Source: `sub-prep-class-information-memory-plan.md`.
+3. **F625 - Release retained My Workspace child resources if route evidence
+   justifies it.** Confirm material retention first and preserve unsaved edits
+   and navigation state. Source: `my_workspace_page.cpp` and the shared memory
+   remediation plan.
+4. **F626 - Apply a bounded retention policy only to heavyweight PageManager
+   owners F621 identifies as material.** Require release/recreation to
+   preserve dirty state and navigation. Source: `pagemanager.cpp` and the
+   shared memory remediation plan.
+5. **F627 - Requalify the current-source Windows x64 Phase 0 route matrix**
+   after memory-changing work settles, with packaged provenance and parity.
+6. **F628 - Requalify the current-source macOS universal route matrix** when a
+   packaged macOS runner is available; keep platform availability explicit.
+
+F623-F628 are provisional and may be reordered or dropped after F621/F622.
+The user's no-new-test-file policy applies to the follow-on batch as well.

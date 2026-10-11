@@ -970,6 +970,23 @@ void SubPrepPageTests
     SubPrepPage& page = harness.page;
     activatePage(page);
 
+    auto* scheduleWidget = page.findChild<ScheduleWidget*>(
+        QStringLiteral("subPrepScheduleWidget")
+        );
+    auto* notes = page.findChild<QTextEdit*>(
+        QStringLiteral("subPrepNotesEdit")
+        );
+    QVERIFY(scheduleWidget);
+    QVERIFY(notes);
+    const auto scheduleMetricsBeforeLeave =
+        page.scheduleWidgetRuntimeMetrics();
+    QVERIFY(scheduleMetricsBeforeLeave.modelEntryCount > 0);
+    QVERIFY(scheduleMetricsBeforeLeave.tableItemCount > 0);
+
+    const QString unsavedNotes = QStringLiteral("Unsaved Sub Prep note");
+    notes->setPlainText(unsavedNotes);
+    QVERIFY(page.hasUnsavedChanges());
+
     auto* gradeTabs = page.findChild<NavigationTabStrip*>(
         QStringLiteral("subPrepGradeTabBar")
         );
@@ -998,14 +1015,30 @@ void SubPrepPageTests
     QVERIFY(detailsCard->isHidden());
     QCOMPARE(details->property("classId").toInt(), -1);
     QCOMPARE(harness.detailsReadPort.loadCount, 1);
+    QCOMPARE(page.scheduleWidgetRuntimeMetrics().modelEntryCount, 0);
+    QCOMPARE(page.scheduleWidgetRuntimeMetrics().tableItemCount, 0);
+    QCOMPARE(notes->toPlainText(), unsavedNotes);
+    QVERIFY(page.hasUnsavedChanges());
 
     page.activate();
 
+    const auto scheduleMetricsAfterReentry =
+        page.scheduleWidgetRuntimeMetrics();
+    QCOMPARE(
+        scheduleMetricsAfterReentry.modelEntryCount,
+        scheduleMetricsBeforeLeave.modelEntryCount
+        );
+    QCOMPARE(
+        scheduleMetricsAfterReentry.tableItemCount,
+        scheduleMetricsBeforeLeave.tableItemCount
+        );
     QVERIFY(!gradeTabs->isHidden());
     QCOMPARE(gradeTabs->count(), 1);
     QCOMPARE(classTabs->model()->rowCount(), 1);
     QCOMPARE(details->property("classId").toInt(), 42);
     QCOMPARE(harness.detailsReadPort.loadCount, 2);
+    QCOMPARE(notes->toPlainText(), unsavedNotes);
+    QVERIFY(page.hasUnsavedChanges());
 }
 
 void SubPrepPageTests

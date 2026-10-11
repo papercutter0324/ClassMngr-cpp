@@ -1436,6 +1436,11 @@ void SubPrepPage::clearClassInformation()
 
 void SubPrepPage::releaseFeatureResources()
 {
+    if (m_scheduleWidget)
+    {
+        m_scheduleWidget->releaseGeneratedResources();
+    }
+
     clearClassInformation();
     markStale();
     BasePage::releaseFeatureResources();
