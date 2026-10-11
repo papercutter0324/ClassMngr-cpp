@@ -227,6 +227,45 @@ int workspaceScheduleModeWriteCount(ApplicationServices& services)
     return query.value(0).toInt();
 }
 
+int campusCorrectionWriteAttempts(ApplicationServices& services)
+{
+    DataService* const dataService = services.dataService();
+    if (!dataService || !dataService->databaseSession())
+    {
+        return -1;
+    }
+
+    QSqlQuery query(dataService->databaseSession()->database());
+    if (
+        !query.exec(QStringLiteral(
+            "SELECT attempts FROM campus_correction_write_attempts"
+            ))
+        || !query.next()
+        )
+    {
+        return -1;
+    }
+
+    return query.value(0).toInt();
+}
+
+bool installFailingCampusCorrectionTrigger(ApplicationServices& services)
+{
+    return executeSql(
+        services,
+        QStringLiteral(R"(
+            CREATE TRIGGER fail_current_campus_correction
+            BEFORE INSERT ON app_settings
+            WHEN NEW.key = 'myInfo/campus'
+            BEGIN
+                UPDATE campus_correction_write_attempts
+                SET attempts = attempts + 1;
+                SELECT RAISE(FAIL, 'forced current campus correction failure');
+            END
+        )")
+        );
+}
+
 QList<QPointer<QWidget>> workspaceScheduleCellWidgets(
     QTableWidget* table
     )
@@ -277,6 +316,8 @@ private slots:
     void storedSignatureImageIsPreparedForPreview();
     void missingCorruptAndUnavailableSignatureImagesStayEmpty();
     void storedCampusPrefillsAndCorrectsThroughTypedPort();
+    void failedCampusCorrectionRetriesAndSuppressesRepeatedWarnings();
+    void failedMatchedCampusIdCorrectionWarnsAndRecovers();
     void storedDisplayNamePrefillsWithUtf8AndWhitespace();
     void missingAndUnavailableDisplayNamePrefillEmpty();
     void storedZoomCredentialsPrefillAndRespectUnavailableState();
@@ -888,6 +929,256 @@ void MyWorkspacePageTests::storedCampusPrefillsAndCorrectsThroughTypedPort()
         );
     QVERIFY(stored);
     QCOMPARE(stored->toString(), QStringLiteral("Jeongja"));
+}
+
+void MyWorkspacePageTests::
+failedCampusCorrectionRetriesAndSuppressesRepeatedWarnings()
+{
+    FakeUserPromptService prompts;
+    ScopedUserPromptService promptScope(prompts);
+
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+
+    ApplicationServices services;
+    QVERIFY(openDatabase(services, directory));
+    QVERIFY(services.dataService());
+    const QString unresolvedCampus = QStringLiteral("Closed Campus");
+    QVERIFY(services.dataService()->saveSetting(
+        QString::fromUtf8(CurrentCampusKey),
+        unresolvedCampus
+        ));
+    QVERIFY(executeSql(
+        services,
+        QStringLiteral(R"(
+            CREATE TABLE campus_correction_write_attempts (
+                attempts INTEGER NOT NULL
+            )
+        )")
+        ));
+    QVERIFY(executeSql(
+        services,
+        QStringLiteral(
+            "INSERT INTO campus_correction_write_attempts (attempts) "
+            "VALUES (0)"
+            )
+        ));
+    QVERIFY(installFailingCampusCorrectionTrigger(services));
+
+    MyWorkspacePage page(&services);
+    refreshPersonalDetails(page);
+
+    PersonalDetailsPage* const details = page.personalDetailsPage();
+    QVERIFY(details);
+    auto* const campus = details->findChild<QComboBox*>();
+    QVERIFY(campus);
+    QVERIFY(campus->count() > 0);
+    const QString fallbackCampus = campus->itemText(0);
+    QVERIFY(!fallbackCampus.isEmpty());
+    QCOMPARE(campus->currentIndex(), 0);
+    QCOMPARE(campus->currentText(), fallbackCampus);
+
+    const auto storedAfterFirstFailure =
+        services.dataService()->loadSetting(
+            QString::fromUtf8(CurrentCampusKey)
+            );
+    QVERIFY(storedAfterFirstFailure);
+    QCOMPARE(storedAfterFirstFailure->toString(), unresolvedCampus);
+    QCOMPARE(prompts.messages.size(), 1);
+    QCOMPARE(
+        prompts.messages.constFirst().severity,
+        PromptSeverity::Warning
+        );
+    QVERIFY(prompts.messages.constFirst().details.contains(
+        QStringLiteral("forced current campus correction failure")
+        ));
+
+    const int attemptsAfterInitialLoad =
+        campusCorrectionWriteAttempts(services);
+    QVERIFY(attemptsAfterInitialLoad >= 1);
+
+    details->refresh();
+    QCOMPARE(
+        campusCorrectionWriteAttempts(services),
+        attemptsAfterInitialLoad + 1
+        );
+    QCOMPARE(prompts.messages.size(), 1);
+    QCOMPARE(campus->currentText(), fallbackCampus);
+    const auto storedAfterRepeatedFailure =
+        services.dataService()->loadSetting(
+            QString::fromUtf8(CurrentCampusKey)
+            );
+    QVERIFY(storedAfterRepeatedFailure);
+    QCOMPARE(storedAfterRepeatedFailure->toString(), unresolvedCampus);
+
+    details->refresh();
+    QCOMPARE(
+        campusCorrectionWriteAttempts(services),
+        attemptsAfterInitialLoad + 2
+        );
+    QCOMPARE(prompts.messages.size(), 1);
+    QCOMPARE(campus->currentText(), fallbackCampus);
+    const auto storedAfterThirdFailure =
+        services.dataService()->loadSetting(
+            QString::fromUtf8(CurrentCampusKey)
+            );
+    QVERIFY(storedAfterThirdFailure);
+    QCOMPARE(storedAfterThirdFailure->toString(), unresolvedCampus);
+
+    page.clearDatabaseState();
+    details->refresh();
+    QCOMPARE(
+        campusCorrectionWriteAttempts(services),
+        attemptsAfterInitialLoad + 3
+        );
+    QCOMPARE(campus->currentText(), fallbackCampus);
+    QCOMPARE(prompts.messages.size(), 2);
+    QCOMPARE(
+        prompts.messages.constLast().severity,
+        PromptSeverity::Warning
+        );
+    QVERIFY(prompts.messages.constLast().details.contains(
+        QStringLiteral("forced current campus correction failure")
+        ));
+    const auto storedAfterStateClearFailure =
+        services.dataService()->loadSetting(
+            QString::fromUtf8(CurrentCampusKey)
+            );
+    QVERIFY(storedAfterStateClearFailure);
+    QCOMPARE(storedAfterStateClearFailure->toString(), unresolvedCampus);
+
+    QVERIFY(executeSql(
+        services,
+        QStringLiteral("DROP TRIGGER fail_current_campus_correction")
+        ));
+    details->refresh();
+
+    const auto storedAfterRecovery =
+        services.dataService()->loadSetting(
+            QString::fromUtf8(CurrentCampusKey)
+            );
+    QVERIFY(storedAfterRecovery);
+    QCOMPARE(storedAfterRecovery->toString(), fallbackCampus);
+    QCOMPARE(campus->currentText(), fallbackCampus);
+    QCOMPARE(
+        campus->currentData().toString(),
+        campus->itemData(0).toString()
+        );
+    QCOMPARE(prompts.messages.size(), 2);
+
+    QVERIFY(services.dataService()->saveSetting(
+        QString::fromUtf8(CurrentCampusKey),
+        unresolvedCampus
+        ));
+    QVERIFY(installFailingCampusCorrectionTrigger(services));
+    const int attemptsBeforeLaterFailure =
+        campusCorrectionWriteAttempts(services);
+    details->refresh();
+    QCOMPARE(
+        campusCorrectionWriteAttempts(services),
+        attemptsBeforeLaterFailure + 1
+        );
+    QCOMPARE(campus->currentText(), fallbackCampus);
+    QCOMPARE(prompts.messages.size(), 3);
+    QCOMPARE(
+        prompts.messages.constLast().severity,
+        PromptSeverity::Warning
+        );
+    QVERIFY(prompts.messages.constLast().details.contains(
+        QStringLiteral("forced current campus correction failure")
+        ));
+    const auto storedAfterLaterFailure =
+        services.dataService()->loadSetting(
+            QString::fromUtf8(CurrentCampusKey)
+            );
+    QVERIFY(storedAfterLaterFailure);
+    QCOMPARE(storedAfterLaterFailure->toString(), unresolvedCampus);
+}
+
+void MyWorkspacePageTests::failedMatchedCampusIdCorrectionWarnsAndRecovers()
+{
+    FakeUserPromptService prompts;
+    ScopedUserPromptService promptScope(prompts);
+
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+
+    ApplicationServices services;
+    QVERIFY(openDatabase(services, directory));
+    QVERIFY(services.dataService());
+    QVERIFY(services.dataService()->saveSetting(
+        QString::fromUtf8(CurrentCampusKey),
+        QStringLiteral("j")
+        ));
+    QVERIFY(executeSql(
+        services,
+        QStringLiteral(R"(
+            CREATE TABLE campus_correction_write_attempts (
+                attempts INTEGER NOT NULL
+            )
+        )")
+        ));
+    QVERIFY(executeSql(
+        services,
+        QStringLiteral(
+            "INSERT INTO campus_correction_write_attempts (attempts) "
+            "VALUES (0)"
+            )
+        ));
+    QVERIFY(installFailingCampusCorrectionTrigger(services));
+
+    MyWorkspacePage page(&services);
+    refreshPersonalDetails(page);
+
+    PersonalDetailsPage* const details = page.personalDetailsPage();
+    QVERIFY(details);
+    auto* const campus = details->findChild<QComboBox*>();
+    QVERIFY(campus);
+    QCOMPARE(campus->currentData().toString(), QStringLiteral("j"));
+    QCOMPARE(campus->currentText(), QStringLiteral("Jeongja"));
+    QCOMPARE(prompts.messages.size(), 1);
+    QCOMPARE(
+        prompts.messages.constFirst().severity,
+        PromptSeverity::Warning
+        );
+    QVERIFY(prompts.messages.constFirst().details.contains(
+        QStringLiteral("forced current campus correction failure")
+        ));
+    const auto storedAfterFailure = services.dataService()->loadSetting(
+        QString::fromUtf8(CurrentCampusKey)
+        );
+    QVERIFY(storedAfterFailure);
+    QCOMPARE(storedAfterFailure->toString(), QStringLiteral("j"));
+
+    const int attemptsAfterInitialLoad =
+        campusCorrectionWriteAttempts(services);
+    QVERIFY(attemptsAfterInitialLoad >= 1);
+    details->refresh();
+    QCOMPARE(
+        campusCorrectionWriteAttempts(services),
+        attemptsAfterInitialLoad + 1
+        );
+    QCOMPARE(prompts.messages.size(), 1);
+    QCOMPARE(campus->currentText(), QStringLiteral("Jeongja"));
+    const auto storedAfterRetry = services.dataService()->loadSetting(
+        QString::fromUtf8(CurrentCampusKey)
+        );
+    QVERIFY(storedAfterRetry);
+    QCOMPARE(storedAfterRetry->toString(), QStringLiteral("j"));
+
+    QVERIFY(executeSql(
+        services,
+        QStringLiteral("DROP TRIGGER fail_current_campus_correction")
+        ));
+    details->refresh();
+    const auto storedAfterRecovery = services.dataService()->loadSetting(
+        QString::fromUtf8(CurrentCampusKey)
+        );
+    QVERIFY(storedAfterRecovery);
+    QCOMPARE(storedAfterRecovery->toString(), QStringLiteral("Jeongja"));
+    QCOMPARE(campus->currentData().toString(), QStringLiteral("j"));
+    QCOMPARE(campus->currentText(), QStringLiteral("Jeongja"));
+    QCOMPARE(prompts.messages.size(), 1);
 }
 
 void MyWorkspacePageTests::storedDisplayNamePrefillsWithUtf8AndWhitespace()

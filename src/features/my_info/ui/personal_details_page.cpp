@@ -46,6 +46,9 @@ void PersonalDetailsPage::refresh()
 void PersonalDetailsPage::clearDatabaseState()
 {
     m_autosave->setLoading(true);
+    m_failedCampusCorrectionStoredValue.clear();
+    m_failedCampusCorrectionSelectedCampus.clear();
+    m_hasFailedCampusCorrection = false;
 
     if (m_nameEdit)
     {

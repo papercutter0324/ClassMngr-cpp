@@ -908,15 +908,67 @@ void PersonalDetailsPage::loadStoredSettings()
             ) != 0
         )
     {
-        [[maybe_unused]] const auto campusSaved =
+        const QString selectedCampus =
+            m_campusCombo->currentText();
+        const auto campusSaved =
             ClassMngr::Next::Platform::
                 ApplicationServicesCurrentCampusPreferencesPort(
                     m_services
                     ).write(
-                        m_campusCombo->currentText()
+                        selectedCampus
                             .toUtf8()
                             .toStdString()
                         );
+
+        if (campusSaved)
+        {
+            m_failedCampusCorrectionStoredValue.clear();
+            m_failedCampusCorrectionSelectedCampus.clear();
+            m_hasFailedCampusCorrection = false;
+        }
+        else
+        {
+            const bool sameFailedCorrection =
+                m_hasFailedCampusCorrection
+                && m_failedCampusCorrectionStoredValue == campus
+                && m_failedCampusCorrectionSelectedCampus == selectedCampus;
+
+            if (!sameFailedCorrection)
+            {
+                const auto& error = campusSaved.error();
+                QString diagnostic = QString::fromUtf8(
+                    error.message.data(),
+                    static_cast<qsizetype>(error.message.size())
+                    );
+                if (diagnostic.isEmpty())
+                {
+                    diagnostic =
+                        tr("No additional error details are available.");
+                }
+
+                DialogServices::showWarning(
+                    this,
+                    tr("Unable to Save Preference"),
+                    tr(
+                        "The campus preference could not be updated. The "
+                        "selected campus remains in place."
+                        ),
+                    diagnostic
+                    );
+            }
+
+            m_failedCampusCorrectionStoredValue = campus;
+            m_failedCampusCorrectionSelectedCampus = selectedCampus;
+            m_hasFailedCampusCorrection = true;
+        }
+    }
+    else
+    {
+        // A matching stored value ends any earlier correction failure
+        // episode.
+        m_failedCampusCorrectionStoredValue.clear();
+        m_failedCampusCorrectionSelectedCampus.clear();
+        m_hasFailedCampusCorrection = false;
     }
 
     ClassMngr::Next::Platform::

@@ -6,6 +6,7 @@
 
 #include <QByteArray>
 #include <QList>
+#include <QString>
 
 class ApplicationServices;
 class AutosaveCoordinator;
@@ -17,7 +18,6 @@ class QEvent;
 class QLabel;
 class QLineEdit;
 class QPushButton;
-class QString;
 class QVBoxLayout;
 class QWidget;
 
@@ -120,5 +120,8 @@ private:
     SignatureMode m_signatureMode = SignatureMode::Image;
     TypedSignatureFont m_typedSignatureFont =
         TypedSignatureFont::JustAnotherHand;
+    QString m_failedCampusCorrectionStoredValue;
+    QString m_failedCampusCorrectionSelectedCampus;
+    bool m_hasFailedCampusCorrection = false;
 
 };
