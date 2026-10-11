@@ -23071,6 +23071,22 @@ not a full-suite run.
 
 **Decision: accept F649.** Batch 127 remains active with F650.
 
+### Batch 128 bounded discovery - findings recorded at F649 start - 2026-10-12
+
+- Two independent Application/UI scans selected F651: distinguish a stale
+  Calendar event UPDATE after its row is deleted from a true SQL UPDATE
+  failure. The stale-row route is live and SQLite-testable, and is distinct
+  from F647's by-ID read classification and F645's class read.
+- The F648 invalid-index generic-message follow-up was low priority. A direct
+  projection candidate was low priority/unreachable in normal UI/repository
+  flow because validation precedes projection and the projector
+  bounds-checks.
+- `TestingBlockRepository::existingClassId` may treat a false first `next()`
+  as absence and bypass the replacement guard, a high-impact concern. QSQLITE
+  cannot naturally induce a first-fetch error after successful query
+  execution, no query seam exists, and a custom driver was too heavy; leave it
+  provisional and unselected.
+
 ### F650 Roster transfer snapshot validation acceptance matrix - recorded before implementation - 2026-10-12
 
 - In `RosterRowTransferUseCase`, after computing final source and target
@@ -23079,8 +23095,9 @@ not a full-suite run.
   `RosterSaveUseCase`. Reject `hasErrors`; warning-only preparation remains
   permitted.
 - A malformed remaining populated row in the final source snapshot returns
-  Validation with no read or save calls. A custom target header over 64
-  characters returns Validation after one target read and with no save call.
+  Validation with no target read or save calls. A custom target header over
+  64 characters returns Validation after one target read and with no save
+  call.
 - Preserve valid transfer behavior, including canonical base/row-0 semantics
   for an empty target, exact source-row removal, surrounding data, target
   mapping and order, compaction, row identity, padding, and width. Preserve
@@ -23091,16 +23108,37 @@ not a full-suite run.
   `successProjectsAndCompactsWithoutMutatingInputs` and adjacent
   rejection/failure cases.
 
-F650 implementation is pending this matrix's documentation commit.
-Batch 127 now contains only F650.
+Batch 127 contains F645-F650 and is complete.
 
-### Batch 128 bounded discovery - findings recorded at F649 start - 2026-10-12
+### F650 Roster transfer snapshot validation - accepted - 2026-10-12
 
-- The F648 invalid-index generic-message follow-up was low priority; its
-  acceptance matrix did not require user-facing wording. A direct-projection
-  candidate was unreachable in normal flow because the dialog validates first
-  and the projector already bounds-checks.
-- `TestingBlockRepository::existingClassId` may treat a false first `next()`
-  as absence and bypass the replacement guard. QSQLITE cannot naturally induce
-  a first-fetch error after successful query execution, and no driver/query
-  test seam exists; retain this as provisional and unselected.
+Commit `cf003d3e59742781092438bb6c4b54be577e5db0` validates both final
+transfer snapshots with roster save preparation. An invalid source prevents
+the target read and save; an invalid target prevents save after one read.
+Warning-only preparation passes. Empty-target base columns and row-0 behavior,
+existing transfer ordering and errors remain preserved.
+
+Independent forced Debug builds of
+`ClassMngrNextApplicationRosterRowTransferUseCaseTests` and `ClassMngr`
+succeeded in standard `build/windows-x64-debug`. The focused CTest passed 1/1,
+and `git diff --check` passed. Verification was focused, not a full-suite run.
+
+**Decision: accept F650.** Batch 127 is complete; Batch 128 is active with
+F651.
+
+### F651 Calendar event stale-update acceptance matrix - recorded before implementation - 2026-10-12
+
+- At the Repository/Platform boundary, distinguish an UPDATE whose Calendar
+  event row was deleted after page load from an actual SQL UPDATE failure.
+- Create an event, delete its row, then attempt update by ID. The missing row
+  must return typed `Domain::NotFound` while preserving the existing
+  repository “no matching record” diagnostic. Successful create and update
+  behavior remains unchanged.
+- Cause a real UPDATE failure with a `BEFORE UPDATE` abort trigger; it must
+  remain `Technical` with its SQL diagnostic. Preserve the existing
+  INSERT-trigger `Technical` case. If a typed repository result is additive,
+  retain the legacy repository signature and diagnostic behavior.
+- Focused target/CTest: existing
+  `ClassMngrNextPlatformApplicationServicesCalendarEventPortTests`.
+
+F651 implementation is pending this matrix's documentation commit.
