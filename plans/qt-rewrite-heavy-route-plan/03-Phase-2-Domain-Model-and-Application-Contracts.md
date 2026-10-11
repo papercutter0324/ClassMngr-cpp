@@ -52,7 +52,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-11
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F625 is accepted with the My Workspace release change deferred because available evidence does not establish material child retention; F626 is next in Batch 118, while F579, F598, F526 provenance, the broader memory gate, render/window, and Phase 0 remain open.
+- Current note: F625's My Workspace release change and F626's broad PageManager retention policy are deferred pending owner-specific material-retention evidence; F627 is current to requalify the current-source Windows x64 Phase 0 route matrix after memory-changing work settles, while F579, F598, F526 provenance, the broader memory gate, render/window, and Phase 0 remain open.
 
 ### Slice discovery batches
 
@@ -86,13 +86,16 @@ Treat this plan as an operational summary, not a history:
   encoded buffer overlap, but no export-specific peak measurement establishes
   a material cost. Revisit with a matched packaged Release export measurement
   before changing serialization or QSaveFile behavior.
+- F626 - Deferred with no implementation: current process-wide metrics and
+  structural counts do not identify material bytes retained by a cached page
+  after feature-resource release. Revisit only with matched owner-specific
+  packaged Release evidence and a safe state/re-entry contract.
 - F598 - Fresh matched WPR heap capture for the F596 Release route is blocked
   because the current execution identity is not an Administrator; resume when
   a Windows process with an elevated administrator token is available.
 
 #### Active batch: Batch 118
 
-- F626 - Apply a bounded retention policy only to heavyweight PageManager owners F621 identifies as material.
 - F627 - Requalify the current-source Windows x64 Phase 0 route matrix after memory-changing work settles.
 - F628 - Requalify the current-source macOS universal route matrix when a packaged runner is available.
 

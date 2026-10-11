@@ -22099,3 +22099,36 @@ run. This honors the 2026-10-11 user policy: tests may be run for changed
 code; test files may be created or updated only directly in response to
 modified production/core code and must cover the change; avoid test-only
 slices.
+
+## F626 Defer broad PageManager retention policy - no implementation
+
+### Findings and decision
+
+PageManager retains instantiated pages and descendants, while its diagnostics
+count pages/widgets rather than bytes. Existing process-wide metrics do not
+attribute residual bytes to a cached page, and structural counts alone do not
+establish material retention. F621's Sub Prep generated schedule projection
+already has a feature deactivation release hook; F622 confirms the packaged
+route clears and restores it on leave/re-entry. F625 records other generated
+feature-content release hooks, but no owner-specific materiality; top-level
+Schedule has no generic page release hook, with no owner-specific materiality
+measured. See [F621](#f621-bound-sub-prep-schedule-preview-retained-by-pagemanager---accepted),
+[F622](#f622-current-source-packaged-sub-prep-memory-and-parity-reconciliation---accepted),
+[F624](#f624-reassess-the-96-class-sub-prep-lifecycle-memory-gate---accepted),
+and [F625](#f625-assess-my-workspace-child-resource-retention---accepted-release-change-deferred).
+
+**Decision: defer F626 with no implementation.** Revisit only after matched
+owner-specific packaged Release evidence identifies material bytes retained
+by a cached page after feature resource release and establishes a safe
+state/re-entry contract. Current evidence is process-wide or structural and
+provides no owner attribution.
+
+No production/core code changed, so no test file was edited or run. This
+follows the 2026-10-11 test policy recorded in [00-Start-Here.md](00-Start-Here.md)
+and the Phase 2 plan.
+
+### Next selected slice (F627)
+
+Requalify the current-source Windows x64 Phase 0 route matrix after
+memory-changing work settles, with packaged provenance and parity. Keep the
+full Phase 0 gate open until its route matrix passes.
