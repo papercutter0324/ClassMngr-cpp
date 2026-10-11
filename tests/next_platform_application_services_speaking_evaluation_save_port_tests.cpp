@@ -241,7 +241,7 @@ validationRejectsInvalidRowsBeforePersistence()
         port
         );
     QVERIFY(!rejectedNew);
-    QCOMPARE(rejectedNew.error().code, Domain::ErrorCode::InvalidInput);
+    QCOMPARE(rejectedNew.error().code, Domain::ErrorCode::Validation);
     QVERIFY(rejectedNew.error().recoverable);
 
     const auto absentEvaluation = services.speakingEvaluationService()->evaluation(
@@ -272,7 +272,7 @@ validationRejectsInvalidRowsBeforePersistence()
         port
         );
     QVERIFY(!rejectedUpdate);
-    QCOMPARE(rejectedUpdate.error().code, Domain::ErrorCode::InvalidInput);
+    QCOMPARE(rejectedUpdate.error().code, Domain::ErrorCode::Validation);
     QVERIFY(rejectedUpdate.error().recoverable);
 
     const auto afterUpdate = services.speakingEvaluationService()->evaluation(
@@ -552,7 +552,7 @@ forwardsQuestionableKoreanNameDecision()
         port
         );
     QVERIFY(!saved);
-    QCOMPARE(saved.error().code, Domain::ErrorCode::InvalidInput);
+    QCOMPARE(saved.error().code, Domain::ErrorCode::Validation);
     QVERIFY(saved.error().recoverable);
 
     saveRequest.allowQuestionableKoreanNameLengths = true;

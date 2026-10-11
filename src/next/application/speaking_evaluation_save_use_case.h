@@ -60,17 +60,23 @@ public:
             validateAndNormalizeSpeakingEvaluation(request);
         if (validation.hasErrors())
         {
-            return failure("Speaking evaluation content is invalid.");
+            return failure(
+                "Speaking evaluation content is invalid.",
+                Domain::ErrorCode::Validation
+                );
         }
 
         return port.saveEvaluation(validation.normalizedRequest);
     }
 
 private:
-    [[nodiscard]] static Domain::Result<void> failure(std::string message)
+    [[nodiscard]] static Domain::Result<void> failure(
+        std::string message,
+        const Domain::ErrorCode code = Domain::ErrorCode::InvalidInput
+        )
     {
         return Domain::Result<void>::failure({
-            .code = Domain::ErrorCode::InvalidInput,
+            .code = code,
             .message = std::move(message),
             .recoverable = true
         });

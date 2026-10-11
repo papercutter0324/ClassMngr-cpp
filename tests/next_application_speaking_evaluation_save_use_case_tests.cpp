@@ -275,7 +275,11 @@ rejectsInvalidContentBeforeCallingPort()
         port
         );
     QVERIFY(!result);
-    QCOMPARE(result.error().code, Domain::ErrorCode::InvalidInput);
+    QCOMPARE(result.error().code, Domain::ErrorCode::Validation);
+    QCOMPARE(
+        result.error().message,
+        std::string("Speaking evaluation content is invalid.")
+        );
     QCOMPARE(port.callCount, 0);
     QVERIFY(!port.lastRequest.has_value());
 
