@@ -23351,8 +23351,50 @@ support, and the tests passed. Verification was focused, not a full-suite run.
 **Decision: accept F655.** Batch 130 is complete; Batch 131 discovery is
 underway.
 
-### Batch 131 discovery - underway at F655 acceptance - 2026-10-12
+### Batch 131 shortlist - recorded before F656 implementation - 2026-10-12
 
-- Class Notes stale-parent classification is a validated backup candidate,
-  but lower impact because the existing path warns and retains dirty draft.
-- Fresh discovery is underway. No F656 candidate has been selected yet.
+- F656 is selected: My Info explicit save silently hides structured
+  persistence errors. `PersonalDetailsPage::saveChanges` calls
+  `saveMyInfoInternal`; the helper returns false without feedback when the
+  current-campus service is unavailable and after typed Platform errors.
+  `normalizeZoomFields` currently mutates blank Zoom fields before writing;
+  `saveData` and autosave also drop failures. `MyWorkspacePage` forwards
+  `saveChanges`.
+- The UI scan ranked this first. Calendar-preference immediate write only
+  warns with `qWarning`; TestingClass deleted-class handling has a typed
+  mismatch but retains a visible warning and draft.
+- Platform scan alternatives include Schedule Testing Assignment stale
+  selected-class and other class-parent saves that map missing to Technical;
+  these retain visible failures and overlap stale-parent work.
+- Class Notes stale-parent classification is a lower-impact backup because
+  the page already warns and retains dirty draft.
+
+### F656 My Info explicit-save failure acceptance matrix - recorded before implementation - 2026-10-12
+
+- A failed explicit `MyWorkspacePage::saveChanges()` returns false, shows one
+  warning with the typed port diagnostic, and retains the full dirty draft.
+  The existing PageManager false-result gate is code-review evidence; no
+  separate route-test requirement.
+- Extend the existing trigger-backed
+  `aggregateSaveFailureRollsBackAndPreservesUnrelatedSettings` page test with
+  empty/whitespace Zoom login and password and availability unchecked. After
+  failure, every visible edited field remains exactly as drafted, and all
+  personal settings plus the unrelated key remain unchanged. This catches
+  `normalizeZoomFields()` mutating the draft before persistence; apply N/A
+  normalization to visible fields only after success while preserving the
+  normalized stored bundle.
+- `saveData` and autosave stay quiet under the same persistence failure and
+  retain the draft; use the existing AutosaveCoordinator or a deterministic
+  invocation aligned with current test patterns.
+- If the current-campus service is unavailable, explicit save shows a clear
+  fallback warning and retains dirty draft; background saves stay quiet.
+- Preserve successful save: persist settings with normalized Zoom defaults,
+  clear dirty state, and show no prompt. Preserve Platform typed `Technical`
+  failure and atomic rollback.
+- Focused registered CTests: `ClassMngrMyWorkspacePageTests` (test 52) and
+  `ClassMngrNextPlatformApplicationServicesPersonalDetailsSavePortTests`
+  (test 364). Extend the page target; retain the Platform target's trigger
+  rollback coverage.
+
+F656 implementation is pending this matrix's documentation commit; Batch 131
+is active with F656.
