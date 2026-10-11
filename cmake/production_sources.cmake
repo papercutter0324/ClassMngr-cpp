@@ -137,6 +137,7 @@ set(CLASSMNGR_DOMAIN_SOURCES
     "src/domain/models/testing_class.h"
     "src/domain/rules/schedule_import_rules.cpp"
     "src/domain/rules/schedule_import_rules.h"
+    "src/domain/rules/schedule_key_rules.h"
     "src/domain/rules/schedule_value_parser.cpp"
     "src/domain/rules/schedule_value_parser.h"
     "src/domain/validation/calendar_event_validator.cpp"

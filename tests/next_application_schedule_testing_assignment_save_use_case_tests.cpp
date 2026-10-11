@@ -3,6 +3,7 @@
 #include <QtTest/QtTest>
 
 #include <optional>
+#include <string_view>
 
 using namespace ClassMngr::Next;
 
@@ -43,6 +44,29 @@ Application::ScheduleTestingAssignmentSaveRequest validPlainRequest()
     };
 }
 
+bool qtCaseInsensitiveWeekdayEquals(
+    const std::u16string_view left,
+    const std::u16string_view right
+    )
+{
+    return QString::fromStdU16String(std::u16string(left)).compare(
+               QString::fromStdU16String(std::u16string(right)),
+               Qt::CaseInsensitive
+               ) == 0;
+}
+
+Application::ScheduleTestingAssignmentSaveResult executeSave(
+    const Application::ScheduleTestingAssignmentSaveRequest& request,
+    const Application::ScheduleTestingAssignmentSavePort& port
+    )
+{
+    return Application::ScheduleTestingAssignmentSaveUseCase::execute(
+        request,
+        port,
+        qtCaseInsensitiveWeekdayEquals
+        );
+}
+
 }
 
 class NextApplicationScheduleTestingAssignmentSaveUseCaseTests final
@@ -52,6 +76,7 @@ class NextApplicationScheduleTestingAssignmentSaveUseCaseTests final
 
 private slots:
     void forwardsExactValuesForEachMutation();
+    void acceptsQtCaseInsensitiveWeekdayEquivalents();
     void rejectsInvalidMutationFieldsWithoutCallingPort();
     void preservesStructuredPortFailure();
 };
@@ -67,7 +92,7 @@ forwardsExactValuesForEachMutation()
     request.room = u"  Room 4  ";
     request.replaceExisting = true;
 
-    auto result = Application::ScheduleTestingAssignmentSaveUseCase::execute(
+    auto result = executeSave(
         request,
         port
         );
@@ -88,7 +113,7 @@ forwardsExactValuesForEachMutation()
     request.startTime = u"10:00 ";
     request.room = u"unused remove room";
     request.replaceExisting = true;
-    result = Application::ScheduleTestingAssignmentSaveUseCase::execute(
+    result = executeSave(
         request,
         port
         );
@@ -110,7 +135,7 @@ forwardsExactValuesForEachMutation()
     request.room = u"unused class room";
     request.classId = Domain::ClassId::fromString("42");
     request.replaceExisting = true;
-    result = Application::ScheduleTestingAssignmentSaveUseCase::execute(
+    result = executeSave(
         request,
         port
         );
@@ -127,13 +152,42 @@ forwardsExactValuesForEachMutation()
 }
 
 void NextApplicationScheduleTestingAssignmentSaveUseCaseTests::
+acceptsQtCaseInsensitiveWeekdayEquivalents()
+{
+    RecordingScheduleTestingAssignmentSavePort port;
+    auto request = validPlainRequest();
+    request.day = u"Tue\u017fday";
+
+    const auto result = executeSave(request, port);
+
+    QVERIFY(result);
+    QCOMPARE(port.callCount, 1);
+    QVERIFY(port.lastRequest.has_value());
+    QCOMPARE(port.lastRequest->day, std::u16string(u"Tue\u017fday"));
+}
+
+void NextApplicationScheduleTestingAssignmentSaveUseCaseTests::
 rejectsInvalidMutationFieldsWithoutCallingPort()
 {
     RecordingScheduleTestingAssignmentSavePort port;
     auto request = validPlainRequest();
 
     request.day.clear();
-    auto result = Application::ScheduleTestingAssignmentSaveUseCase::execute(
+    auto result = executeSave(
+        request,
+        port
+        );
+    QVERIFY(!result);
+    QCOMPARE(result.error().code, Domain::ErrorCode::InvalidInput);
+    QCOMPARE(
+        result.error().message,
+        std::string("A testing block requires a valid weekday and start time.")
+        );
+    QVERIFY(result.error().recoverable);
+
+    request = validPlainRequest();
+    request.startTime.clear();
+    result = executeSave(
         request,
         port
         );
@@ -141,69 +195,109 @@ rejectsInvalidMutationFieldsWithoutCallingPort()
     QCOMPARE(result.error().code, Domain::ErrorCode::InvalidInput);
 
     request = validPlainRequest();
-    request.startTime.clear();
-    result = Application::ScheduleTestingAssignmentSaveUseCase::execute(
-        request,
-        port
+    request.day = u"Funday";
+    result = executeSave(request, port);
+    QVERIFY(!result);
+    QCOMPARE(result.error().code, Domain::ErrorCode::InvalidInput);
+    QCOMPARE(
+        result.error().message,
+        std::string("A testing block requires a valid weekday and start time.")
         );
+    QVERIFY(result.error().recoverable);
+
+    request = validPlainRequest();
+    request.startTime = u"9:05";
+    result = executeSave(request, port);
+    QVERIFY(!result);
+    QCOMPARE(result.error().code, Domain::ErrorCode::InvalidInput);
+    request.startTime = u"24:00";
+    result = executeSave(request, port);
     QVERIFY(!result);
     QCOMPARE(result.error().code, Domain::ErrorCode::InvalidInput);
 
     request = validPlainRequest();
     request.mutation =
         Application::ScheduleTestingAssignmentMutation::AssignTestingClass;
-    result = Application::ScheduleTestingAssignmentSaveUseCase::execute(
+    request.day = u"Funday";
+    result = executeSave(
         request,
         port
         );
     QVERIFY(!result);
     QCOMPARE(result.error().code, Domain::ErrorCode::InvalidInput);
+    QCOMPARE(
+        result.error().message,
+        std::string("A valid testing class is required.")
+        );
 
     request.classId = Domain::ClassId::fromString("not-an-integer");
-    result = Application::ScheduleTestingAssignmentSaveUseCase::execute(
+    result = executeSave(
         request,
         port
         );
     QVERIFY(!result);
     QCOMPARE(result.error().code, Domain::ErrorCode::InvalidInput);
+    QCOMPARE(
+        result.error().message,
+        std::string("A valid testing class is required.")
+        );
 
     request.classId = Domain::ClassId::fromString("0");
-    result = Application::ScheduleTestingAssignmentSaveUseCase::execute(
+    result = executeSave(
         request,
         port
         );
     QVERIFY(!result);
     QCOMPARE(result.error().code, Domain::ErrorCode::InvalidInput);
+    QCOMPARE(
+        result.error().message,
+        std::string("A valid testing class is required.")
+        );
 
     request = validPlainRequest();
     request.classId = Domain::ClassId::fromString("42");
-    result = Application::ScheduleTestingAssignmentSaveUseCase::execute(
+    request.day = u"Funday";
+    result = executeSave(
         request,
         port
         );
     QVERIFY(!result);
     QCOMPARE(result.error().code, Domain::ErrorCode::InvalidInput);
+    QCOMPARE(
+        result.error().message,
+        std::string("A class ID is only valid for a testing class assignment.")
+        );
 
     request = validPlainRequest();
     request.mutation =
         Application::ScheduleTestingAssignmentMutation::RemoveAssignment;
     request.classId = Domain::ClassId::fromString("42");
-    result = Application::ScheduleTestingAssignmentSaveUseCase::execute(
+    request.day = u"Funday";
+    result = executeSave(
         request,
         port
         );
     QVERIFY(!result);
     QCOMPARE(result.error().code, Domain::ErrorCode::InvalidInput);
+    QCOMPARE(
+        result.error().message,
+        std::string("A class ID is only valid for a testing class assignment.")
+        );
 
     request = validPlainRequest();
     request.mutation =
         static_cast<Application::ScheduleTestingAssignmentMutation>(99);
-    result = Application::ScheduleTestingAssignmentSaveUseCase::execute(
+    request.day = u"Funday";
+    result = executeSave(
         request,
         port
         );
     QVERIFY(!result);
     QCOMPARE(result.error().code, Domain::ErrorCode::InvalidInput);
+    QCOMPARE(
+        result.error().message,
+        std::string("Testing assignment action is invalid.")
+        );
 
     QCOMPARE(port.callCount, 0);
     QVERIFY(!port.lastRequest.has_value());
@@ -221,8 +315,7 @@ preservesStructuredPortFailure()
     port.result =
         Application::ScheduleTestingAssignmentSaveResult::failure(expected);
 
-    const auto result = Application::ScheduleTestingAssignmentSaveUseCase::
-        execute(validPlainRequest(), port);
+    const auto result = executeSave(validPlainRequest(), port);
 
     QVERIFY(!result);
     QCOMPARE(port.callCount, 1);

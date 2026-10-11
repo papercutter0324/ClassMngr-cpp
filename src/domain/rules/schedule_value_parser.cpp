@@ -1,56 +1,86 @@
 #include "schedule_value_parser.h"
 
-#include <array>
+#include "domain/rules/schedule_key_rules.h"
+
+#include <string>
+#include <string_view>
 
 namespace ScheduleValueParser
 {
 namespace
 {
-struct WeekdayEntry
+[[nodiscard]] bool qtCaseInsensitiveEquals(
+    const std::u16string_view left,
+    const std::u16string_view right
+    )
 {
-    Weekday value;
-    const char* name;
-};
+    return QString::fromStdU16String(std::u16string(left)).compare(
+               QString::fromStdU16String(std::u16string(right)),
+               Qt::CaseInsensitive
+               ) == 0;
+}
 
-constexpr std::array Weekdays{
-    WeekdayEntry{Weekday::Monday, "Monday"},
-    WeekdayEntry{Weekday::Tuesday, "Tuesday"},
-    WeekdayEntry{Weekday::Wednesday, "Wednesday"},
-    WeekdayEntry{Weekday::Thursday, "Thursday"},
-    WeekdayEntry{Weekday::Friday, "Friday"},
-    WeekdayEntry{Weekday::Saturday, "Saturday"},
-    WeekdayEntry{Weekday::Sunday, "Sunday"}
-};
+[[nodiscard]] Weekday toQtWeekday(const ScheduleKeyRules::Weekday weekday)
+{
+    switch (weekday)
+    {
+    case ScheduleKeyRules::Weekday::Monday:
+        return Weekday::Monday;
+    case ScheduleKeyRules::Weekday::Tuesday:
+        return Weekday::Tuesday;
+    case ScheduleKeyRules::Weekday::Wednesday:
+        return Weekday::Wednesday;
+    case ScheduleKeyRules::Weekday::Thursday:
+        return Weekday::Thursday;
+    case ScheduleKeyRules::Weekday::Friday:
+        return Weekday::Friday;
+    case ScheduleKeyRules::Weekday::Saturday:
+        return Weekday::Saturday;
+    case ScheduleKeyRules::Weekday::Sunday:
+        return Weekday::Sunday;
+    }
+
+    return Weekday::Monday;
+}
 }
 
 Result<CanonicalWeekday> parseWeekday(QStringView input)
 {
     const QString normalized = input.trimmed().toString();
-
-    for (const WeekdayEntry& weekday : Weekdays)
+    const std::u16string normalizedUtf16 = normalized.toStdU16String();
+    const auto parsed = ScheduleKeyRules::parseWeekday(
+        normalizedUtf16,
+        qtCaseInsensitiveEquals
+        );
+    if (!parsed)
     {
-        const QString canonical = QString::fromLatin1(weekday.name);
-        if (normalized.compare(canonical, Qt::CaseInsensitive) == 0)
-        {
-            return CanonicalWeekday{weekday.value, canonical};
-        }
+        return std::unexpected(QStringLiteral("Invalid weekday."));
     }
 
-    return std::unexpected(QStringLiteral("Invalid weekday."));
+    return CanonicalWeekday{
+        toQtWeekday(parsed->value),
+        QString::fromStdU16String(std::u16string(parsed->canonicalName))
+    };
 }
 
 Result<CanonicalTime> parseTime(QStringView input)
 {
     const QString normalized = input.trimmed().toString();
-    const QTime parsed = QTime::fromString(normalized, QStringLiteral("HH:mm"));
-
-    if (!parsed.isValid()
-        || parsed.toString(QStringLiteral("HH:mm")) != normalized)
+    const auto parsed = ScheduleKeyRules::parseTime(
+        normalized.toStdU16String()
+        );
+    if (!parsed)
     {
         return std::unexpected(QStringLiteral("Invalid time; expected HH:mm."));
     }
 
-    return CanonicalTime{parsed, normalized};
+    return CanonicalTime{
+        QTime(
+            static_cast<int>(parsed->hour),
+            static_cast<int>(parsed->minute)
+            ),
+        normalized
+    };
 }
 
 } // namespace ScheduleValueParser

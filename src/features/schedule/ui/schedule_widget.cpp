@@ -624,7 +624,13 @@ void ScheduleWidget::editTestingAssignment(
         ApplicationServicesScheduleTestingAssignmentSavePort port(m_services);
     const auto result =
         ClassMngr::Next::Application::
-            ScheduleTestingAssignmentSaveUseCase::execute(request, port);
+            ScheduleTestingAssignmentSaveUseCase::execute(
+                request,
+                port,
+                ClassMngr::Next::Platform::
+                    ApplicationServicesScheduleTestingAssignmentSavePort::
+                        qtCaseInsensitiveWeekdayEquals
+                );
 
     if (!result)
     {

@@ -1,5 +1,7 @@
 #pragma once
 
+#include "domain/rules/schedule_key_rules.h"
+#include "next/application/qt_compatible_text.h"
 #include "next/domain/domain_types.h"
 #include "next/domain/operation_result.h"
 
@@ -29,7 +31,10 @@ struct ScheduleTestingAssignmentSaveRequest final
     std::optional<Domain::ClassId> classId;
     bool replaceExisting = false;
 
-    [[nodiscard]] Domain::Result<void> validate() const
+    template <typename WeekdayCaseInsensitiveEquals>
+    [[nodiscard]] Domain::Result<void> validate(
+        WeekdayCaseInsensitiveEquals&& weekdayCaseInsensitiveEquals
+        ) const
     {
         if (day.empty() || startTime.empty())
         {
@@ -48,17 +53,38 @@ struct ScheduleTestingAssignmentSaveRequest final
                     "A class ID is only valid for a testing class assignment."
                     );
             }
-            return Domain::Result<void>::success();
+            break;
 
         case ScheduleTestingAssignmentMutation::AssignTestingClass:
             if (!classId || !isValidClassId(*classId))
             {
                 return invalidInput("A valid testing class is required.");
             }
-            return Domain::Result<void>::success();
+            break;
         }
 
-        return invalidInput("Testing assignment action is invalid.");
+        if (mutation != ScheduleTestingAssignmentMutation::RemoveAssignment
+            && mutation != ScheduleTestingAssignmentMutation::SavePlainTesting
+            && mutation
+                != ScheduleTestingAssignmentMutation::AssignTestingClass)
+        {
+            return invalidInput("Testing assignment action is invalid.");
+        }
+
+        const std::u16string trimmedDay = trimQtWhitespace(day);
+        const std::u16string trimmedStartTime = trimQtWhitespace(startTime);
+        if (!ScheduleKeyRules::parseWeekday(
+                trimmedDay,
+                weekdayCaseInsensitiveEquals
+                )
+            || !ScheduleKeyRules::parseTime(trimmedStartTime))
+        {
+            return invalidInput(
+                "A testing block requires a valid weekday and start time."
+                );
+        }
+
+        return Domain::Result<void>::success();
     }
 
 private:

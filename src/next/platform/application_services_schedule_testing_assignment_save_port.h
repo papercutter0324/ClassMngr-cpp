@@ -12,6 +12,7 @@
 #include <exception>
 #include <optional>
 #include <string>
+#include <string_view>
 #include <system_error>
 #include <utility>
 
@@ -22,6 +23,17 @@ class ApplicationServicesScheduleTestingAssignmentSavePort final
     : public Application::ScheduleTestingAssignmentSavePort
 {
 public:
+    [[nodiscard]] static bool qtCaseInsensitiveWeekdayEquals(
+        const std::u16string_view left,
+        const std::u16string_view right
+        )
+    {
+        return QString::fromStdU16String(std::u16string(left)).compare(
+                   QString::fromStdU16String(std::u16string(right)),
+                   Qt::CaseInsensitive
+                   ) == 0;
+    }
+
     explicit ApplicationServicesScheduleTestingAssignmentSavePort(
         ApplicationServices& services
         ) noexcept
@@ -54,7 +66,9 @@ public:
         const Application::ScheduleTestingAssignmentSaveRequest& request
         ) const override
     {
-        const Domain::Result<void> validation = request.validate();
+        const Domain::Result<void> validation = request.validate(
+            qtCaseInsensitiveWeekdayEquals
+            );
         if (!validation)
         {
             return Application::ScheduleTestingAssignmentSaveResult::failure(

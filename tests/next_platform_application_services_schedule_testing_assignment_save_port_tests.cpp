@@ -133,6 +133,19 @@ Application::ScheduleTestingAssignmentSaveRequest classRequest(
     };
 }
 
+Application::ScheduleTestingAssignmentSaveResult executeSave(
+    const Application::ScheduleTestingAssignmentSaveRequest& request,
+    const Application::ScheduleTestingAssignmentSavePort& port
+    )
+{
+    return Application::ScheduleTestingAssignmentSaveUseCase::execute(
+        request,
+        port,
+        Platform::ApplicationServicesScheduleTestingAssignmentSavePort::
+            qtCaseInsensitiveWeekdayEquals
+        );
+}
+
 QList<TestingAssignment> loadedAssignments(ApplicationServices& services)
 {
     return services.databaseSession()
@@ -174,11 +187,10 @@ savesPlainAssignmentAndRemovesOnlyItsKey()
         services
         );
 
-    const auto saved = Application::ScheduleTestingAssignmentSaveUseCase::
-        execute(
-            plainRequest(u"Thursday", u"13:05", u"  Library  "),
-            port
-            );
+    const auto saved = executeSave(
+        plainRequest(u"Thursday", u"13:05", u"  Library  "),
+        port
+        );
     QVERIFY(saved);
 
     QSqlQuery keyQuery(services.databaseSession()->database());
@@ -197,12 +209,14 @@ savesPlainAssignmentAndRemovesOnlyItsKey()
     QVERIFY(keyQuery.value(QStringLiteral("class_id")).isNull());
     QVERIFY(!keyQuery.next());
 
-    QVERIFY(Application::ScheduleTestingAssignmentSaveUseCase::execute(
+    QVERIFY(executeSave(
         plainRequest(u"Thursday", u"14:05", u"Room 2"),
         port
         ));
-    const auto removed = Application::ScheduleTestingAssignmentSaveUseCase::
-        execute(removeRequest(u"Thursday", u"13:05"), port);
+    const auto removed = executeSave(
+        removeRequest(u"Thursday", u"13:05"),
+        port
+        );
     QVERIFY(removed);
 
     const QList<TestingAssignment> assignments = loadedAssignments(services);
@@ -226,13 +240,13 @@ enforcesReplaceExistingForClassAndPlainTransitions()
     Platform::ApplicationServicesScheduleTestingAssignmentSavePort port(
         services
         );
-    auto result = Application::ScheduleTestingAssignmentSaveUseCase::execute(
+    auto result = executeSave(
         classRequest(u"Monday", u"09:00", classId),
         port
         );
     QVERIFY(result);
 
-    result = Application::ScheduleTestingAssignmentSaveUseCase::execute(
+    result = executeSave(
         plainRequest(u"Monday", u"09:00", u"Room 5"),
         port
         );
@@ -244,7 +258,7 @@ enforcesReplaceExistingForClassAndPlainTransitions()
     QCOMPARE(unchangedClassAssignment.size(), 1);
     QCOMPARE(unchangedClassAssignment.first().classId, classId);
 
-    result = Application::ScheduleTestingAssignmentSaveUseCase::execute(
+    result = executeSave(
         plainRequest(u"Monday", u"09:00", u"  Room 5  ", true),
         port
         );
@@ -257,7 +271,7 @@ enforcesReplaceExistingForClassAndPlainTransitions()
     QCOMPARE(assignments.first().classId, -1);
     QCOMPARE(assignments.first().kind, TestingAssignmentKind::PlainTesting);
 
-    result = Application::ScheduleTestingAssignmentSaveUseCase::execute(
+    result = executeSave(
         classRequest(u"Monday", u"09:00", classId),
         port
         );
@@ -268,7 +282,7 @@ enforcesReplaceExistingForClassAndPlainTransitions()
     QCOMPARE(assignments.first().classId, -1);
     QCOMPARE(assignments.first().room, QStringLiteral("Room 5"));
 
-    result = Application::ScheduleTestingAssignmentSaveUseCase::execute(
+    result = executeSave(
         classRequest(u"Monday", u"09:00", classId, true),
         port
         );
@@ -281,7 +295,7 @@ enforcesReplaceExistingForClassAndPlainTransitions()
     QCOMPARE(assignments.first().classId, classId);
     QCOMPARE(assignments.first().kind, TestingAssignmentKind::SpecialClass);
 
-    result = Application::ScheduleTestingAssignmentSaveUseCase::execute(
+    result = executeSave(
         classRequest(u"Tuesday", u"10:00", classId),
         port
         );
@@ -299,7 +313,7 @@ rejectsWritesWithoutAnOpenSessionWithoutFallback()
     Platform::ApplicationServicesScheduleTestingAssignmentSavePort nullPort(
         static_cast<ApplicationServices*>(nullptr)
         );
-    auto result = Application::ScheduleTestingAssignmentSaveUseCase::execute(
+    auto result = executeSave(
         plainRequest(u"Wednesday", u"11:00", u"Room 9"),
         nullPort
         );
@@ -313,13 +327,13 @@ rejectsWritesWithoutAnOpenSessionWithoutFallback()
     Platform::ApplicationServicesScheduleTestingAssignmentSavePort port(
         services
         );
-    QVERIFY(Application::ScheduleTestingAssignmentSaveUseCase::execute(
+    QVERIFY(executeSave(
         plainRequest(u"Wednesday", u"11:00", u"Room 9"),
         port
         ));
     services.closeDatabase();
 
-    result = Application::ScheduleTestingAssignmentSaveUseCase::execute(
+    result = executeSave(
         plainRequest(u"Wednesday", u"12:00", u"Room 8"),
         port
         );
@@ -348,11 +362,10 @@ forwardsRepositoryFailureAsStructuredError()
     Platform::ApplicationServicesScheduleTestingAssignmentSavePort port(
         services
         );
-    const auto result = Application::ScheduleTestingAssignmentSaveUseCase::
-        execute(
-            plainRequest(u"Friday", u"10:00", u"Room 7"),
-            port
-            );
+    const auto result = executeSave(
+        plainRequest(u"Friday", u"10:00", u"Room 7"),
+        port
+        );
 
     QVERIFY(!result);
     QCOMPARE(result.error().code, Domain::ErrorCode::Technical);
