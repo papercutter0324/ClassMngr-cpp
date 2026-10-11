@@ -11,6 +11,7 @@
 #include <QtTest/QtTest>
 
 #include <array>
+#include <string>
 
 using namespace ClassMngr::Next;
 using namespace ClassMngr::Next::Application;
@@ -79,7 +80,7 @@ private slots:
     void loadsCurrentOrPreviousTermValue();
     void savesBothValuesUsingTheExactLegacyKey();
     void closedSessionDefaultsAndIgnoresSaveWithoutChangingSettings();
-    void failedSaveIsSilentAndPreservesStoredValue();
+    void failedSaveReturnsTechnicalDiagnosticAndPreservesSettings();
     void repositoryReadFailureDefaultsAndRemainsSilent();
 
 private:
@@ -145,7 +146,13 @@ unavailableSettingsDefaultToAll()
     QVERIFY(!services.databaseSession()->settingsRepository());
 
     QCOMPARE(port.load(), EvaluationDefaultPolicy::All);
-    port.save(EvaluationDefaultPolicy::CurrentOrPreviousTerm);
+    const auto saved = port.save(
+        EvaluationDefaultPolicy::CurrentOrPreviousTerm
+        );
+    QVERIFY(!saved);
+    QCOMPARE(saved.error().code, Domain::ErrorCode::Technical);
+    QVERIFY(saved.error().message.find("no database session is open")
+        != std::string::npos);
     QCOMPARE(port.load(), EvaluationDefaultPolicy::All);
 }
 
@@ -185,7 +192,10 @@ savesBothValuesUsingTheExactLegacyKey()
         );
 
     ApplicationServicesEvaluationDefaultPolicyPort port(services);
-    port.save(EvaluationDefaultPolicy::CurrentOrPreviousTerm);
+    const auto currentOrPreviousTermSaved = port.save(
+        EvaluationDefaultPolicy::CurrentOrPreviousTerm
+        );
+    QVERIFY(currentOrPreviousTermSaved);
     auto stored = repository->loadSetting(policyKey());
     QVERIFY(stored);
     QCOMPARE(stored->toString(), QStringLiteral("current_or_previous_term"));
@@ -194,7 +204,8 @@ savesBothValuesUsingTheExactLegacyKey()
         EvaluationDefaultPolicy::CurrentOrPreviousTerm
         );
 
-    port.save(EvaluationDefaultPolicy::All);
+    const auto allSaved = port.save(EvaluationDefaultPolicy::All);
+    QVERIFY(allSaved);
     stored = repository->loadSetting(policyKey());
     QVERIFY(stored);
     QCOMPARE(stored->toString(), QStringLiteral("all"));
@@ -235,7 +246,12 @@ closedSessionDefaultsAndIgnoresSaveWithoutChangingSettings()
     QVERIFY(services.dataService());
     QVERIFY(!session->isOpen());
     QCOMPARE(port.load(), EvaluationDefaultPolicy::All);
-    port.save(EvaluationDefaultPolicy::All);
+    const auto closedSessionSave = port.save(EvaluationDefaultPolicy::All);
+    QVERIFY(!closedSessionSave);
+    QCOMPARE(closedSessionSave.error().code, Domain::ErrorCode::Technical);
+    QVERIFY(closedSessionSave.error().message.find(
+        "no database session is open"
+        ) != std::string::npos);
 
     QVERIFY(services.openDatabase(path));
     QVERIFY(session->isOpen());
@@ -253,7 +269,7 @@ closedSessionDefaultsAndIgnoresSaveWithoutChangingSettings()
 }
 
 void NextPlatformApplicationServicesEvaluationDefaultPolicyPortTests::
-failedSaveIsSilentAndPreservesStoredValue()
+failedSaveReturnsTechnicalDiagnosticAndPreservesSettings()
 {
     ApplicationServices services;
     QVERIFY(openDatabase(services, m_directory));
@@ -263,6 +279,9 @@ failedSaveIsSilentAndPreservesStoredValue()
         policyKey(),
         QStringLiteral("current_or_previous_term")
         ));
+    const QString unrelatedKey =
+        QStringLiteral("classes_navigation_unrelated_preference");
+    QVERIFY(repository->saveSetting(unrelatedKey, QStringLiteral("preserved")));
     QVERIFY(executeSql(
         services,
         QStringLiteral(R"(
@@ -277,7 +296,13 @@ failedSaveIsSilentAndPreservesStoredValue()
 
     ApplicationServicesEvaluationDefaultPolicyPort port(services);
     QTest::failOnWarning();
-    port.save(EvaluationDefaultPolicy::All);
+    const auto saved = port.save(EvaluationDefaultPolicy::All);
+    QVERIFY(!saved);
+    QCOMPARE(saved.error().code, Domain::ErrorCode::Technical);
+    QVERIFY(!saved.error().recoverable);
+    QVERIFY(saved.error().message.find(
+        "forced evaluation policy write failure"
+        ) != std::string::npos);
 
     const auto storedPolicy = repository->loadSetting(policyKey());
     QVERIFY(storedPolicy);
@@ -285,6 +310,9 @@ failedSaveIsSilentAndPreservesStoredValue()
         storedPolicy->toString(),
         QStringLiteral("current_or_previous_term")
         );
+    const auto unrelated = repository->loadSetting(unrelatedKey);
+    QVERIFY(unrelated);
+    QCOMPARE(unrelated->toString(), QStringLiteral("preserved"));
 }
 
 void NextPlatformApplicationServicesEvaluationDefaultPolicyPortTests::

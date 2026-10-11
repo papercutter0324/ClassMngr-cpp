@@ -1,5 +1,7 @@
 #pragma once
 
+#include "next/domain/operation_result.h"
+
 namespace ClassMngr::Next::Application
 {
 
@@ -12,6 +14,9 @@ enum class EvaluationDefaultPolicy
     CurrentOrPreviousTerm
 };
 
+using EvaluationDefaultPolicyPreferencesSaveResult = Domain::Result<void>;
+using EvaluationDefaultPolicyPreferencesSaveError = Domain::OperationError;
+
 class EvaluationDefaultPolicyPreferencesPort
 {
 public:
@@ -19,7 +24,7 @@ public:
 
     [[nodiscard]] virtual EvaluationDefaultPolicy load() const = 0;
 
-    virtual void save(
+    [[nodiscard]] virtual EvaluationDefaultPolicyPreferencesSaveResult save(
         EvaluationDefaultPolicy policy
         ) const = 0;
 };

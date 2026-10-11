@@ -105,7 +105,8 @@ void setSelectionPolicy(
 {
     ClassMngr::Next::Platform::
         ApplicationServicesEvaluationDefaultPolicyPort port(services);
-    port.save(policy);
+    const auto saved = port.save(policy);
+    QVERIFY(saved);
 }
 
 } // namespace

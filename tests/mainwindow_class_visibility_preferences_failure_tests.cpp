@@ -6,8 +6,10 @@
 #include "data/repositories/settings_repository.h"
 #include "features/classes/ui/classes_page.h"
 #include "next/application/class_visibility_preferences.h"
+#include "next/application/evaluation_default_policy_preferences.h"
 #include "next/application/middle_school_analytics_preferences.h"
 #include "next/platform/application_services_class_visibility_preferences_port.h"
+#include "next/platform/application_services_evaluation_default_policy_port.h"
 #include "next/platform/application_services_middle_school_analytics_preferences_port.h"
 #include "ui/shared/pages/pagemanager.h"
 
@@ -101,6 +103,25 @@ int middleSchoolAuditRowCount(DatabaseSession* session)
     return query.value(0).toInt();
 }
 
+int evaluationDefaultPolicyAuditRowCount(DatabaseSession* session)
+{
+    if (!session || !session->isOpen())
+    {
+        return -1;
+    }
+
+    QSqlQuery query(session->database());
+    if (!query.exec(QStringLiteral(
+            "SELECT COUNT(*) FROM f664_evaluation_default_policy_save_audit"
+            ))
+        || !query.next())
+    {
+        return -1;
+    }
+
+    return query.value(0).toInt();
+}
+
 } // namespace
 
 class MainWindowClassVisibilityPreferencesFailureTests final : public QObject
@@ -111,6 +132,7 @@ private slots:
     void initTestCase();
     void preferenceFailureRestoresSelectionAndSuccessfulRetryRefreshesOnce();
     void middleSchoolPreferenceFailureRestoresSelectionAndSuccessfulRetryRefreshesOnce();
+    void evaluationDefaultPolicyFailureRestoresSelectionAndSuccessfulRetryDoesNotRefresh();
 
 private:
     std::unique_ptr<QTemporaryDir> m_settingsDirectory;
@@ -691,6 +713,297 @@ middleSchoolPreferenceFailureRestoresSelectionAndSuccessfulRetryRefreshesOnce()
     QCOMPARE(auditsAfterFailure, 0);
     QCOMPARE(classQueriesAfterRetry, initialClassQueryCount + 1);
     QVERIFY(preferenceAfterRetry);
+    QCOMPARE(auditsAfterRetry, 1);
+}
+
+void MainWindowClassVisibilityPreferencesFailureTests::
+evaluationDefaultPolicyFailureRestoresSelectionAndSuccessfulRetryDoesNotRefresh()
+{
+    LanguageService languageService;
+    QVERIFY(languageService.setLanguage(Language::English));
+
+    MainWindowStartupOptions startupOptions;
+    startupOptions.loadMostRecentDatabase = false;
+
+    MainWindow window(
+        [](const QString&) {},
+        false,
+        &languageService,
+        nullptr,
+        std::move(startupOptions)
+        );
+
+    const QString databasePath = m_databaseDirectory->filePath(
+        QStringLiteral("evaluation-default-policy-preferences.tps")
+        );
+    const Status opened = window.services()->openDatabase(databasePath);
+    QVERIFY2(opened.has_value(), "Could not open the test database.");
+    window.applyDatabaseLoadedState();
+
+    ClassMngr::Next::Platform::
+        ApplicationServicesEvaluationDefaultPolicyPort preferences(
+            *window.services()
+            );
+    const auto initialSave = preferences.save(
+        ClassMngr::Next::Application::EvaluationDefaultPolicy::
+            CurrentOrPreviousTerm
+        );
+    QVERIFY(initialSave);
+
+    PageManager* const pages = window.pageManager();
+    QVERIFY(pages);
+    pages->showPage(PageType::Classes);
+    ClassesPage* const classesPage = pages->classesPage();
+    QVERIFY(classesPage);
+    const int initialClassQueryCount =
+        classesPage->runtimeMetrics().classQueryCount;
+    QVERIFY(initialClassQueryCount > 0);
+    QVERIFY(!classesPage->needsRefresh());
+
+    DatabaseSession* const session = window.services()->databaseSession();
+    QVERIFY(session);
+    QVERIFY(executeSql(
+        session,
+        QStringLiteral(R"(
+            CREATE TABLE f664_evaluation_default_policy_save_audit (
+                value TEXT NOT NULL
+            )
+            )")
+        ));
+    QVERIFY(executeSql(
+        session,
+        QStringLiteral(R"(
+            CREATE TRIGGER fail_evaluation_default_policy_preference_write
+            BEFORE INSERT ON app_settings
+            WHEN NEW.key = 'classes_navigation_evaluation_default_policy'
+            BEGIN
+                SELECT RAISE(ABORT, 'forced evaluation policy write failure');
+            END
+            )")
+        ));
+    QVERIFY(executeSql(
+        session,
+        QStringLiteral(R"(
+            CREATE TRIGGER audit_evaluation_default_policy_preference_update
+            AFTER UPDATE ON app_settings
+            WHEN NEW.key = 'classes_navigation_evaluation_default_policy'
+            BEGIN
+                INSERT INTO f664_evaluation_default_policy_save_audit(value)
+                VALUES (NEW.value);
+            END
+            )")
+        ));
+
+    QAction* const preferencesAction = window.findChild<QAction*>(
+        QStringLiteral("preferencesAction")
+        );
+    QVERIFY(preferencesAction);
+
+    bool preferencesDialogObserved = false;
+    bool failedSelectionRestored = false;
+    bool warningObserved = false;
+    int warningCount = 0;
+    QString warningTitle;
+    QString warningText;
+    QString scriptFailure;
+    int classQueriesAfterFailure = -1;
+    int classQueriesAfterRetry = -1;
+    QString policyAfterFailure;
+    QString policyAfterRetry;
+    int auditsAfterFailure = -1;
+    int auditsAfterRetry = -1;
+    bool retrySelectionConsistent = false;
+
+    QTimer::singleShot(
+        0,
+        &window,
+        [&]()
+        {
+            QDialog* const dialog = window.findChild<QDialog*>(
+                QStringLiteral("preferencesDialog")
+                );
+            const auto fail = [&](const QString& reason)
+            {
+                scriptFailure = reason;
+                if (dialog)
+                {
+                    dialog->reject();
+                }
+            };
+            if (!dialog)
+            {
+                fail(QStringLiteral("Preferences dialog was not opened."));
+                return;
+            }
+
+            auto* const tabs = dialog->findChild<QTabWidget*>(
+                QStringLiteral("preferencesTabs")
+                );
+            auto* const followTermSchedule = dialog->findChild<QRadioButton*>(
+                QStringLiteral(
+                    "preferencesNavigationEvaluationDefaultTermSchedule"
+                    )
+                );
+            auto* const defaultAnalyticsToAll = dialog->findChild<QRadioButton*>(
+                QStringLiteral("preferencesNavigationEvaluationDefaultAll")
+                );
+            QWidget* const navigationTab = dialog->findChild<QWidget*>(
+                QStringLiteral("preferencesNavigationTab")
+                );
+            if (!tabs || !followTermSchedule || !defaultAnalyticsToAll
+                || !navigationTab || tabs->indexOf(navigationTab) < 0)
+            {
+                fail(QStringLiteral(
+                    "Evaluation default policy controls were missing."
+                    ));
+                return;
+            }
+
+            preferencesDialogObserved = true;
+            tabs->setCurrentWidget(navigationTab);
+            if (!followTermSchedule->isChecked()
+                || defaultAnalyticsToAll->isChecked())
+            {
+                fail(QStringLiteral(
+                    "Initial evaluation default policy radios did not match storage."
+                    ));
+                return;
+            }
+
+            QTimer::singleShot(
+                0,
+                &window,
+                [&]()
+                {
+                    QWidget* const activeModal =
+                        QApplication::activeModalWidget();
+                    auto* const warning = qobject_cast<QMessageBox*>(
+                        activeModal
+                        );
+                    if (!warning)
+                    {
+                        if (activeModal)
+                        {
+                            activeModal->close();
+                        }
+                        scriptFailure = QStringLiteral(
+                            "Evaluation default policy failure did not surface a warning dialog."
+                            );
+                        return;
+                    }
+
+                    ++warningCount;
+                    warningObserved = true;
+                    warningTitle = warning->windowTitle();
+                    warningText = warning->text();
+                    warning->accept();
+                }
+                );
+
+            defaultAnalyticsToAll->click();
+            if (!scriptFailure.isEmpty())
+            {
+                dialog->reject();
+                return;
+            }
+
+            failedSelectionRestored =
+                followTermSchedule->isChecked()
+                && !defaultAnalyticsToAll->isChecked();
+            classQueriesAfterFailure =
+                classesPage->runtimeMetrics().classQueryCount;
+            const auto persistedAfterFailure =
+                session->settingsRepository()->loadSetting(
+                    QStringLiteral(
+                        "classes_navigation_evaluation_default_policy"
+                        )
+                    );
+            policyAfterFailure = persistedAfterFailure
+                && persistedAfterFailure->isValid()
+                ? persistedAfterFailure->toString()
+                : QString();
+            auditsAfterFailure =
+                evaluationDefaultPolicyAuditRowCount(session);
+            if (!warningObserved
+                || warningCount != 1
+                || warningTitle != QStringLiteral("Unable to Save Preference")
+                || !warningText.contains(QStringLiteral(
+                    "forced evaluation policy write failure"
+                    ))
+                || !failedSelectionRestored
+                || classQueriesAfterFailure != initialClassQueryCount
+                || policyAfterFailure != QStringLiteral("current_or_previous_term")
+                || auditsAfterFailure != 0)
+            {
+                fail(QStringLiteral(
+                    "Failed evaluation default policy write did not preserve persisted and displayed state."
+                    ));
+                return;
+            }
+
+            if (!executeSql(
+                    session,
+                    QStringLiteral(
+                        "DROP TRIGGER fail_evaluation_default_policy_preference_write"
+                        )
+                    ))
+            {
+                fail(QStringLiteral(
+                    "Could not remove the evaluation default policy failure trigger."
+                    ));
+                return;
+            }
+
+            defaultAnalyticsToAll->click();
+            retrySelectionConsistent =
+                !followTermSchedule->isChecked()
+                && defaultAnalyticsToAll->isChecked();
+            classQueriesAfterRetry =
+                classesPage->runtimeMetrics().classQueryCount;
+            const auto persistedAfterRetry =
+                session->settingsRepository()->loadSetting(
+                    QStringLiteral(
+                        "classes_navigation_evaluation_default_policy"
+                        )
+                    );
+            policyAfterRetry = persistedAfterRetry
+                && persistedAfterRetry->isValid()
+                ? persistedAfterRetry->toString()
+                : QString();
+            auditsAfterRetry =
+                evaluationDefaultPolicyAuditRowCount(session);
+            if (!retrySelectionConsistent
+                || classQueriesAfterRetry != initialClassQueryCount
+                || policyAfterRetry != QStringLiteral("all")
+                || auditsAfterRetry != 1)
+            {
+                fail(QStringLiteral(
+                    "Successful evaluation default policy retry did not persist exactly once without refreshing Classes."
+                    ));
+                return;
+            }
+
+            dialog->accept();
+        }
+        );
+
+    preferencesAction->trigger();
+
+    QVERIFY2(scriptFailure.isEmpty(), qPrintable(scriptFailure));
+    QVERIFY(preferencesDialogObserved);
+    QVERIFY(warningObserved);
+    QCOMPARE(warningCount, 1);
+    QCOMPARE(warningTitle, QStringLiteral("Unable to Save Preference"));
+    QVERIFY(warningText.contains(QStringLiteral(
+        "forced evaluation policy write failure"
+        )));
+    QVERIFY(failedSelectionRestored);
+    QCOMPARE(classQueriesAfterFailure, initialClassQueryCount);
+    QCOMPARE(policyAfterFailure, QStringLiteral("current_or_previous_term"));
+    QCOMPARE(auditsAfterFailure, 0);
+    QVERIFY(retrySelectionConsistent);
+    QCOMPARE(classQueriesAfterRetry, initialClassQueryCount);
+    QCOMPARE(policyAfterRetry, QStringLiteral("all"));
     QCOMPARE(auditsAfterRetry, 1);
 }
 

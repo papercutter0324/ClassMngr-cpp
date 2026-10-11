@@ -753,7 +753,7 @@ void addNavigationPreferencesTab(
         }
         );
     const auto saveEvaluationDefaultPolicy =
-        [services, followTermSchedule](bool checked)
+        [window, services, followTermSchedule, defaultAnalyticsToAll](bool checked)
         {
             if (!checked || !services)
             {
@@ -762,11 +762,36 @@ void addNavigationPreferencesTab(
 
             ClassMngr::Next::Platform::
                 ApplicationServicesEvaluationDefaultPolicyPort port(*services);
-            port.save(
+            const auto saved = port.save(
                 followTermSchedule->isChecked()
                     ? ClassMngr::Next::Application::EvaluationDefaultPolicy::CurrentOrPreviousTerm
                     : ClassMngr::Next::Application::EvaluationDefaultPolicy::All
                 );
+            if (!saved)
+            {
+                DialogServices::showWarning(
+                    window,
+                    preferencesText("Unable to Save Preference"),
+                    QString::fromStdString(saved.error().message)
+                    );
+
+                const auto persistedPolicy = port.load();
+                const QSignalBlocker followTermScheduleSignals(
+                    followTermSchedule
+                    );
+                const QSignalBlocker defaultAnalyticsToAllSignals(
+                    defaultAnalyticsToAll
+                    );
+                followTermSchedule->setChecked(
+                    persistedPolicy
+                        == ClassMngr::Next::Application::EvaluationDefaultPolicy::CurrentOrPreviousTerm
+                    );
+                defaultAnalyticsToAll->setChecked(
+                    persistedPolicy
+                        == ClassMngr::Next::Application::EvaluationDefaultPolicy::All
+                    );
+                return;
+            }
         };
     QObject::connect(
         followTermSchedule,

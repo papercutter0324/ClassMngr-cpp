@@ -693,9 +693,10 @@ void ClassesPageTests::evaluationDefaultPolicyDefaultsToAllAndPersists()
         ClassMngr::Next::Application::EvaluationDefaultPolicy::All
         );
 
-    port.save(
+    const auto saved = port.save(
         ClassMngr::Next::Application::EvaluationDefaultPolicy::CurrentOrPreviousTerm
         );
+    QVERIFY(saved);
     QCOMPARE(
         port.load(),
         ClassMngr::Next::Application::EvaluationDefaultPolicy::CurrentOrPreviousTerm
