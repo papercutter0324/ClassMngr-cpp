@@ -62,6 +62,11 @@ struct CalendarPreferenceState final
     std::string scheduleWriteFailure =
         "Academic calendar schedule test failure.";
     CalendarFirstDayOfWeek firstDayOfWeek = CalendarFirstDayOfWeek::Sunday;
+    int firstDayWriteCount = 0;
+    int firstDayWriteAttemptCount = 0;
+    bool failFirstDayWrites = false;
+    std::string firstDayWriteFailure =
+        "Academic calendar first-day test failure.";
 };
 
 class TestAcademicCalendarSchedulePreferencesPort final
@@ -123,9 +128,23 @@ public:
         return m_state->firstDayOfWeek;
     }
 
-    void save(const CalendarFirstDayOfWeek firstDayOfWeek) const override
+    [[nodiscard]] SaveResult save(
+        const CalendarFirstDayOfWeek firstDayOfWeek
+        ) const override
     {
+        ++m_state->firstDayWriteAttemptCount;
+        if (m_state->failFirstDayWrites)
+        {
+            return SaveResult::failure({
+                .code = ClassMngr::Next::Domain::ErrorCode::Technical,
+                .message = m_state->firstDayWriteFailure,
+                .recoverable = false
+            });
+        }
+
         m_state->firstDayOfWeek = firstDayOfWeek;
+        ++m_state->firstDayWriteCount;
+        return SaveResult::success();
     }
 
 private:
@@ -616,6 +635,7 @@ private slots:
     void restoreDefaultsStagesVisibleSchedulesWithoutPersistence();
     void failedScheduleSaveKeepsDraftAndRetrySucceeds();
     void failedEventDisplaySaveRestoresPersistedPairAndRetrySucceeds();
+    void failedFirstDaySaveRestoresPersistedValueAndRetrySucceeds();
     void resetEventsMatchesConfirmationDeleteFailureAndRefreshParity();
 };
 
@@ -1187,6 +1207,19 @@ failedEventDisplaySaveRestoresPersistedPairAndRetrySucceeds()
     QVERIFY(!persistedShow.value().toBool());
     QVERIFY(persistedHide.value().toBool());
 
+    startWeekOnMonday->setChecked(true);
+
+    QVERIFY(!startWeekOnMonday->isChecked());
+    QCOMPARE(preferenceState->firstDayOfWeek, CalendarFirstDayOfWeek::Sunday);
+    QCOMPARE(preferenceState->firstDayWriteAttemptCount, 0);
+    QCOMPARE(prompts.messages.size(), 2);
+    QCOMPARE(prompts.messages.constLast().severity, PromptSeverity::Warning);
+    QVERIFY(prompts.messages.constLast().details.contains(
+        QStringLiteral("forced calendar preference failure")
+        ));
+    QCOMPARE(preferencesChanged.count(), 0);
+    QCOMPARE(modelRefreshes.count(), 0);
+
     QVERIFY(executeCalendarPreferenceSql(
         services,
         QStringLiteral("DROP TRIGGER fail_calendar_event_display_preferences")
@@ -1195,7 +1228,7 @@ failedEventDisplaySaveRestoresPersistedPairAndRetrySucceeds()
 
     QVERIFY(showAllCampuses->isChecked());
     QVERIFY(hideStartOfTerm->isChecked());
-    QCOMPARE(prompts.messages.size(), 1);
+    QCOMPARE(prompts.messages.size(), 2);
     QCOMPARE(preferencesChanged.count(), 1);
     QCOMPARE(preferencesChanged.at(0).at(0).toBool(), false);
     QCOMPARE(modelRefreshes.count(), 1);
@@ -1217,6 +1250,151 @@ failedEventDisplaySaveRestoresPersistedPairAndRetrySucceeds()
     QCOMPARE(preferencesChanged.count(), 2);
     QCOMPARE(preferencesChanged.at(1).at(0).toBool(), false);
     QCOMPARE(modelRefreshes.count(), 1);
+}
+
+void CalendarPreferencesRestoreDefaultsTests::
+failedFirstDaySaveRestoresPersistedValueAndRetrySucceeds()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+
+    ApplicationServices services;
+    const QString databasePath = directory.filePath(
+        QStringLiteral("f662-calendar-first-day-preferences.tps")
+        );
+    QVERIFY(services.openDatabase(databasePath).has_value());
+    DatabaseSession* const session = services.databaseSession();
+    QVERIFY(session);
+    QVERIFY(session->isOpen());
+    SettingsRepository* const settings = session->settingsRepository();
+    QVERIFY(settings);
+
+    const QString firstDayKey =
+        QStringLiteral("calendar/firstDayOfWeek");
+    QVERIFY(settings->saveSetting(
+        firstDayKey,
+        static_cast<int>(CalendarFirstDayOfWeek::Sunday)
+        ));
+
+    CalendarPage calendarPage(&services);
+    AcademicCalendarProvider* const provider =
+        calendarPage.academicCalendarProvider();
+    QVERIFY(provider);
+    QCOMPARE(provider->firstDayOfWeek(), 0);
+    const int revisionBefore = provider->revision();
+    QSignalSpy firstDayChanged(
+        provider,
+        &AcademicCalendarProvider::firstDayOfWeekChanged
+        );
+    QVERIFY(firstDayChanged.isValid());
+    QSignalSpy providerRevisionChanged(
+        provider,
+        &AcademicCalendarProvider::revisionChanged
+        );
+    QVERIFY(providerRevisionChanged.isValid());
+
+    QQuickItem* const calendarRootItem = calendarRoot(calendarPage);
+    QVERIFY(calendarRootItem);
+    const QDate visibleMonth(
+        QDate::currentDate().year(),
+        QDate::currentDate().month(),
+        1
+        );
+    QVERIFY(calendarRootItem->setProperty(
+        "shownDate",
+        QDateTime(visibleMonth, QTime(0, 0))
+        ));
+    calendarPage.show();
+    calendarPage.activate();
+    CalendarEventModel* const model = calendarModel(calendarPage);
+    QVERIFY(model);
+    QTRY_VERIFY_WITH_TIMEOUT(
+        model->isMonthLoaded(visibleMonth.year(), visibleMonth.month()),
+        10000
+        );
+    QSignalSpy modelRefreshes(
+        model,
+        &CalendarEventModel::revisionChanged
+        );
+    QVERIFY(modelRefreshes.isValid());
+
+    CalendarPreferencesPanel panel(provider, &services);
+    auto* const startWeekOnMonday = panel.findChild<QCheckBox*>(
+        QStringLiteral("preferencesCalendarStartWeekOnMonday")
+        );
+    QVERIFY(startWeekOnMonday);
+    QVERIFY(!startWeekOnMonday->isChecked());
+    QSignalSpy preferencesChanged(
+        &panel,
+        &CalendarPreferencesPanel::calendarPreferencesChanged
+        );
+    QVERIFY(preferencesChanged.isValid());
+    QObject::connect(
+        &panel,
+        &CalendarPreferencesPanel::calendarPreferencesChanged,
+        &calendarPage,
+        &CalendarPage::calendarPreferencesChanged
+        );
+    RecordingCalendarPromptService prompts;
+    CalendarPromptServiceOverride promptOverride(&prompts);
+
+    QVERIFY(executeCalendarPreferenceSql(
+        services,
+        QStringLiteral(R"(
+            CREATE TRIGGER fail_calendar_first_day_preference
+            BEFORE INSERT ON app_settings
+            WHEN NEW.key = 'calendar/firstDayOfWeek'
+            BEGIN
+                SELECT RAISE(ABORT, 'forced calendar first-day failure');
+            END
+        )")
+        ));
+
+    startWeekOnMonday->setChecked(true);
+
+    QVERIFY(!startWeekOnMonday->isChecked());
+    QCOMPARE(provider->firstDayOfWeek(), 0);
+    QCOMPARE(provider->revision(), revisionBefore);
+    QCOMPARE(firstDayChanged.count(), 0);
+    QCOMPARE(providerRevisionChanged.count(), 0);
+    QCOMPARE(preferencesChanged.count(), 0);
+    QCOMPARE(modelRefreshes.count(), 0);
+    QCOMPARE(prompts.messages.size(), 1);
+    QCOMPARE(prompts.messages.constFirst().severity, PromptSeverity::Warning);
+    QCOMPARE(
+        prompts.messages.constFirst().title,
+        QStringLiteral("Calendar Preferences Not Saved")
+        );
+    QVERIFY(prompts.messages.constFirst().details.contains(
+        QStringLiteral("forced calendar first-day failure")
+        ));
+    const auto persistedFailure = settings->loadSetting(firstDayKey);
+    QVERIFY(persistedFailure);
+    QCOMPARE(
+        persistedFailure->toInt(),
+        static_cast<int>(CalendarFirstDayOfWeek::Sunday)
+        );
+
+    QVERIFY(executeCalendarPreferenceSql(
+        services,
+        QStringLiteral("DROP TRIGGER fail_calendar_first_day_preference")
+        ));
+    startWeekOnMonday->setChecked(true);
+
+    QVERIFY(startWeekOnMonday->isChecked());
+    QCOMPARE(provider->firstDayOfWeek(), 1);
+    QCOMPARE(provider->revision(), revisionBefore + 1);
+    QCOMPARE(firstDayChanged.count(), 1);
+    QCOMPARE(providerRevisionChanged.count(), 1);
+    QCOMPARE(preferencesChanged.count(), 1);
+    QCOMPARE(preferencesChanged.at(0).at(0).toBool(), false);
+    QCOMPARE(prompts.messages.size(), 1);
+    const auto persistedRetry = settings->loadSetting(firstDayKey);
+    QVERIFY(persistedRetry);
+    QCOMPARE(
+        persistedRetry->toInt(),
+        static_cast<int>(CalendarFirstDayOfWeek::Monday)
+        );
 }
 
 void CalendarPreferencesRestoreDefaultsTests::

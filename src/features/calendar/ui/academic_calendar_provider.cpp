@@ -212,25 +212,53 @@ AcademicCalendarProvider::saveYearSchedules(
         AcademicCalendarSchedulePreferencesSaveResult::success();
 }
 
-void AcademicCalendarProvider::setFirstDayOfWeek(int firstDayOfWeek)
+ClassMngr::Next::Application::
+    CalendarFirstDayOfWeekPreferencesPort::SaveResult
+AcademicCalendarProvider::setFirstDayOfWeek(int firstDayOfWeek)
 {
     const int normalized =
         firstDayOfWeek == 1 ? 1 : 0;
 
     if (m_firstDayOfWeek == normalized)
     {
-        return;
+        return ClassMngr::Next::Application::
+            CalendarFirstDayOfWeekPreferencesPort::SaveResult::success();
+    }
+
+    using FirstDayOfWeekPreferencesPort =
+        ClassMngr::Next::Application::
+            CalendarFirstDayOfWeekPreferencesPort;
+    if (!m_firstDayOfWeekPreferences)
+    {
+        return FirstDayOfWeekPreferencesPort::SaveResult::failure({
+            .code = ClassMngr::Next::Domain::ErrorCode::Technical,
+            .message =
+                "Calendar first-day preference persistence is unavailable.",
+            .recoverable = false
+        });
+    }
+
+    const auto saved = m_firstDayOfWeekPreferences->save(
+        static_cast<
+            ClassMngr::Next::Application::CalendarFirstDayOfWeek
+            >(normalized)
+        );
+    if (!saved)
+    {
+        return saved;
     }
 
     m_firstDayOfWeek = normalized;
-    persistFirstDayOfWeek();
     ++m_revision;
     emit firstDayOfWeekChanged();
     emit revisionChanged();
+    return FirstDayOfWeekPreferencesPort::SaveResult::success();
 }
 
 void AcademicCalendarProvider::reload()
 {
+    const QJsonObject scheduleBefore = m_schedule.toJson();
+    const int firstDayBefore = m_firstDayOfWeek;
     m_schedule.clear();
     loadOptions();
 
@@ -260,9 +288,19 @@ void AcademicCalendarProvider::reload()
         }
     }
 
-    ++m_revision;
-    emit firstDayOfWeekChanged();
-    emit revisionChanged();
+    const bool firstDayChanged =
+        m_firstDayOfWeek != firstDayBefore;
+    const bool scheduleChanged =
+        m_schedule.toJson() != scheduleBefore;
+    if (firstDayChanged)
+    {
+        emit firstDayOfWeekChanged();
+    }
+    if (firstDayChanged || scheduleChanged)
+    {
+        ++m_revision;
+        emit revisionChanged();
+    }
 }
 
 void AcademicCalendarProvider::loadOptions()
@@ -361,16 +399,4 @@ AcademicCalendarProvider::persist(
         QJsonDocument(schedule.toJson())
             .toJson(QJsonDocument::Compact);
     return m_schedulePreferences->write(json.toStdString());
-}
-
-void AcademicCalendarProvider::persistFirstDayOfWeek()
-{
-    using FirstDayOfWeek =
-        ClassMngr::Next::Application::CalendarFirstDayOfWeek;
-    if (m_firstDayOfWeekPreferences)
-    {
-        m_firstDayOfWeekPreferences->save(
-            static_cast<FirstDayOfWeek>(m_firstDayOfWeek)
-            );
-    }
 }

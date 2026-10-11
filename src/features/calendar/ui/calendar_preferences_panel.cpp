@@ -690,13 +690,6 @@ bool CalendarPreferencesPanel::saveOptions()
                     .hideStartOfTermEvents =
                         m_hideStartOfTermEventsCheck->isChecked()
                 });
-    if (m_provider && m_startWeekOnMondayCheck)
-    {
-        m_provider->setFirstDayOfWeek(
-            m_startWeekOnMondayCheck->isChecked() ? 1 : 0
-            );
-    }
-
     if (!saved)
     {
         const QString diagnostic = QString::fromStdString(
@@ -707,6 +700,12 @@ bool CalendarPreferencesPanel::saveOptions()
         const bool wasRefreshing = m_refreshing;
         m_refreshing = true;
         loadEventDisplayOptions();
+        if (m_provider && m_startWeekOnMondayCheck)
+        {
+            m_startWeekOnMondayCheck->setChecked(
+                m_provider->firstDayOfWeek() == 1
+                );
+        }
         m_refreshing = wasRefreshing;
 
         DialogServices::showWarning(
@@ -719,6 +718,40 @@ bool CalendarPreferencesPanel::saveOptions()
             diagnostic
             );
         return false;
+    }
+
+    if (m_provider && m_startWeekOnMondayCheck)
+    {
+        const auto firstDaySaved = m_provider->setFirstDayOfWeek(
+            m_startWeekOnMondayCheck->isChecked() ? 1 : 0
+            );
+        if (!firstDaySaved)
+        {
+            const QString diagnostic = QString::fromStdString(
+                firstDaySaved.error().message
+                );
+            qWarning()
+                << "Failed to save calendar first-day preference:"
+                << diagnostic;
+
+            const bool wasRefreshing = m_refreshing;
+            m_refreshing = true;
+            m_startWeekOnMondayCheck->setChecked(
+                m_provider->firstDayOfWeek() == 1
+                );
+            m_refreshing = wasRefreshing;
+
+            DialogServices::showWarning(
+                this,
+                tr("Calendar Preferences Not Saved"),
+                tr(
+                    "The first day of the week could not be saved. "
+                    "The previous setting has been restored."
+                    ),
+                diagnostic
+                );
+            return false;
+        }
     }
 
     return true;

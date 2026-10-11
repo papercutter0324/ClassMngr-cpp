@@ -27,6 +27,10 @@ struct AcademicCalendarPreferenceState final
     std::string scheduleWriteFailure =
         "Academic calendar schedule test failure.";
     int firstDayWriteCount = 0;
+    int firstDayWriteAttemptCount = 0;
+    bool failFirstDayWrites = false;
+    std::string firstDayWriteFailure =
+        "Academic calendar first-day test failure.";
 };
 
 class TestAcademicCalendarSchedulePreferencesPort final
@@ -84,10 +88,23 @@ public:
         return m_state->firstDayOfWeek;
     }
 
-    void save(const CalendarFirstDayOfWeek firstDayOfWeek) const override
+    [[nodiscard]] SaveResult save(
+        const CalendarFirstDayOfWeek firstDayOfWeek
+        ) const override
     {
+        ++m_state->firstDayWriteAttemptCount;
+        if (m_state->failFirstDayWrites)
+        {
+            return SaveResult::failure({
+                .code = Domain::ErrorCode::Technical,
+                .message = m_state->firstDayWriteFailure,
+                .recoverable = false
+            });
+        }
+
         m_state->firstDayOfWeek = firstDayOfWeek;
         ++m_state->firstDayWriteCount;
+        return SaveResult::success();
     }
 
 private:
@@ -118,6 +135,9 @@ private slots:
     void providerBuildsLocaleAlignedWeekRows();
     void providerOverridesFirstDayOfWeek();
     void providerReadsAndWritesInjectedPreferencePorts();
+    void providerReloadSignalsOnlyPersistedChanges();
+    void providerFirstDaySaveFailureDoesNotPublishAndRetrySucceeds();
+    void providerWithoutFirstDayPortDoesNotPublishChange();
     void providerSaveFailureDoesNotPublishScheduleOrRevision();
     void customizedYearShiftsRolloverButFutureUsesDefaults();
     void winterEditKeepsPreviousFallContinuous();
@@ -230,7 +250,7 @@ void AcademicCalendarTests::providerOverridesFirstDayOfWeek()
     QLocale::setDefault(QLocale(QStringLiteral("en_US")));
     const auto provider = makeProvider();
 
-    provider->setFirstDayOfWeek(0);
+    QVERIFY(provider->setFirstDayOfWeek(0));
     QCOMPARE(provider->firstDayOfWeek(), 0);
 
     const QVariantMap sundayRow =
@@ -243,7 +263,7 @@ void AcademicCalendarTests::providerOverridesFirstDayOfWeek()
             .toMap();
     QCOMPARE(sundayRow.value(QStringLiteral("elementaryWeek")).toInt(), 10);
 
-    provider->setFirstDayOfWeek(1);
+    QVERIFY(provider->setFirstDayOfWeek(1));
     QCOMPARE(provider->firstDayOfWeek(), 1);
 
     const QVariantMap mondayRow =
@@ -268,7 +288,7 @@ void AcademicCalendarTests::providerReadsAndWritesInjectedPreferencePorts()
         provider->schedule().yearSchedule(SchoolLevel::Middle, 2026);
     elementary.weeks[2] = 12;
     QVERIFY(provider->saveYearSchedules(2026, elementary, middle));
-    provider->setFirstDayOfWeek(1);
+    QVERIFY(provider->setFirstDayOfWeek(1));
 
     QCOMPARE(state->scheduleWriteCount, 1);
     QVERIFY(!state->scheduleJson.empty());
@@ -283,6 +303,145 @@ void AcademicCalendarTests::providerReadsAndWritesInjectedPreferencePorts()
         12
         );
     QCOMPARE(provider->firstDayOfWeek(), 1);
+}
+
+void AcademicCalendarTests::providerReloadSignalsOnlyPersistedChanges()
+{
+    auto state = std::make_shared<AcademicCalendarPreferenceState>();
+    auto provider = makeProvider(state);
+    const int revisionBefore = provider->revision();
+    QSignalSpy firstDayChanged(
+        provider.get(),
+        &AcademicCalendarProvider::firstDayOfWeekChanged
+        );
+    QVERIFY(firstDayChanged.isValid());
+    QSignalSpy revisionChanged(
+        provider.get(),
+        &AcademicCalendarProvider::revisionChanged
+        );
+    QVERIFY(revisionChanged.isValid());
+
+    provider->reload();
+
+    QCOMPARE(provider->revision(), revisionBefore);
+    QCOMPARE(firstDayChanged.count(), 0);
+    QCOMPARE(revisionChanged.count(), 0);
+
+    state->firstDayOfWeek = CalendarFirstDayOfWeek::Monday;
+    provider->reload();
+
+    QCOMPARE(provider->firstDayOfWeek(), 1);
+    QCOMPARE(provider->revision(), revisionBefore + 1);
+    QCOMPARE(firstDayChanged.count(), 1);
+    QCOMPARE(revisionChanged.count(), 1);
+
+    AcademicCalendarSchedule changedSchedule;
+    AcademicYearSchedule elementary =
+        changedSchedule.yearSchedule(SchoolLevel::Elementary, 2026);
+    AcademicYearSchedule middle =
+        changedSchedule.yearSchedule(SchoolLevel::Middle, 2026);
+    ++elementary.weeks[2];
+    changedSchedule.setYearSchedules(2026, elementary, middle);
+    state->scheduleJson = QJsonDocument(changedSchedule.toJson())
+        .toJson(QJsonDocument::Compact)
+        .toStdString();
+    provider->reload();
+
+    QCOMPARE(
+        provider->schedule()
+            .yearSchedule(SchoolLevel::Elementary, 2026)
+            .weeks[2],
+        elementary.weeks[2]
+        );
+    QCOMPARE(provider->revision(), revisionBefore + 2);
+    QCOMPARE(firstDayChanged.count(), 1);
+    QCOMPARE(revisionChanged.count(), 2);
+
+    provider->reload();
+
+    QCOMPARE(provider->revision(), revisionBefore + 2);
+    QCOMPARE(firstDayChanged.count(), 1);
+    QCOMPARE(revisionChanged.count(), 2);
+}
+
+void AcademicCalendarTests::
+providerFirstDaySaveFailureDoesNotPublishAndRetrySucceeds()
+{
+    auto state = std::make_shared<AcademicCalendarPreferenceState>();
+    auto provider = makeProvider(state);
+    const int revisionBefore = provider->revision();
+    QSignalSpy firstDayChanged(
+        provider.get(),
+        &AcademicCalendarProvider::firstDayOfWeekChanged
+        );
+    QVERIFY(firstDayChanged.isValid());
+    QSignalSpy revisionChanged(
+        provider.get(),
+        &AcademicCalendarProvider::revisionChanged
+        );
+    QVERIFY(revisionChanged.isValid());
+
+    state->failFirstDayWrites = true;
+    const auto failed = provider->setFirstDayOfWeek(1);
+
+    QVERIFY(!failed);
+    QCOMPARE(failed.error().code, Domain::ErrorCode::Technical);
+    QCOMPARE(
+        failed.error().message,
+        state->firstDayWriteFailure
+        );
+    QCOMPARE(state->firstDayWriteAttemptCount, 1);
+    QCOMPARE(state->firstDayWriteCount, 0);
+    QCOMPARE(state->firstDayOfWeek, CalendarFirstDayOfWeek::Sunday);
+    QCOMPARE(provider->firstDayOfWeek(), 0);
+    QCOMPARE(provider->revision(), revisionBefore);
+    QCOMPARE(firstDayChanged.count(), 0);
+    QCOMPARE(revisionChanged.count(), 0);
+
+    state->failFirstDayWrites = false;
+    const auto retried = provider->setFirstDayOfWeek(1);
+
+    QVERIFY(retried);
+    QCOMPARE(state->firstDayWriteAttemptCount, 2);
+    QCOMPARE(state->firstDayWriteCount, 1);
+    QCOMPARE(state->firstDayOfWeek, CalendarFirstDayOfWeek::Monday);
+    QCOMPARE(provider->firstDayOfWeek(), 1);
+    QCOMPARE(provider->revision(), revisionBefore + 1);
+    QCOMPARE(firstDayChanged.count(), 1);
+    QCOMPARE(revisionChanged.count(), 1);
+}
+
+void AcademicCalendarTests::
+providerWithoutFirstDayPortDoesNotPublishChange()
+{
+    auto state = std::make_shared<AcademicCalendarPreferenceState>();
+    AcademicCalendarProvider provider(
+        std::make_unique<TestAcademicCalendarSchedulePreferencesPort>(state),
+        std::unique_ptr<CalendarFirstDayOfWeekPreferencesPort>{}
+        );
+    const int revisionBefore = provider.revision();
+    QSignalSpy firstDayChanged(
+        &provider,
+        &AcademicCalendarProvider::firstDayOfWeekChanged
+        );
+    QVERIFY(firstDayChanged.isValid());
+    QSignalSpy revisionChanged(
+        &provider,
+        &AcademicCalendarProvider::revisionChanged
+        );
+    QVERIFY(revisionChanged.isValid());
+
+    const auto failed = provider.setFirstDayOfWeek(1);
+
+    QVERIFY(!failed);
+    QCOMPARE(failed.error().code, Domain::ErrorCode::Technical);
+    QVERIFY(QString::fromStdString(failed.error().message).contains(
+        QStringLiteral("persistence is unavailable")
+        ));
+    QCOMPARE(provider.firstDayOfWeek(), 0);
+    QCOMPARE(provider.revision(), revisionBefore);
+    QCOMPARE(firstDayChanged.count(), 0);
+    QCOMPARE(revisionChanged.count(), 0);
 }
 
 void AcademicCalendarTests::

@@ -50,7 +50,9 @@ public:
         const AcademicYearSchedule& elementary,
         const AcademicYearSchedule& middle
         );
-    void setFirstDayOfWeek(int firstDayOfWeek);
+    [[nodiscard]] ClassMngr::Next::Application::
+        CalendarFirstDayOfWeekPreferencesPort::SaveResult
+        setFirstDayOfWeek(int firstDayOfWeek);
     void reload();
 
 signals:
@@ -71,7 +73,6 @@ private:
         AcademicCalendarSchedulePreferencesSaveResult persist(
             const AcademicCalendarSchedule& schedule
             ) const;
-    void persistFirstDayOfWeek();
 
     std::unique_ptr<ClassMngr::Next::Application::
         AcademicCalendarSchedulePreferencesPort> m_schedulePreferences;

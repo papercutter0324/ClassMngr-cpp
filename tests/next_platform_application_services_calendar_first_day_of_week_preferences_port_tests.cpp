@@ -7,7 +7,6 @@
 
 #include <QSqlQuery>
 #include <QLocale>
-#include <QRegularExpression>
 #include <QTemporaryDir>
 #include <QUuid>
 #include <QtTest/QtTest>
@@ -93,8 +92,8 @@ private slots:
     void invalidSettingUsesLocaleFallback();
     void readErrorsUseLocaleFallback();
     void roundTripsAllDaysUsingExactKey();
-    void unavailableSettingsUseLocaleFallbackAndIgnoreSave();
-    void saveFailurePreservesStoredValueAndWarning();
+    void unavailableSettingsUseLocaleFallbackAndReportSaveFailure();
+    void saveFailurePreservesStoredValueAndReportsDiagnostic();
 
 private:
     QLocale m_originalLocale;
@@ -232,7 +231,7 @@ roundTripsAllDaysUsingExactKey()
         );
     for (const CalendarFirstDayOfWeek expected : values)
     {
-        port.save(expected);
+        QVERIFY(port.save(expected));
         QCOMPARE(port.load(), expected);
 
         const auto stored = repository->loadSetting(
@@ -250,7 +249,7 @@ roundTripsAllDaysUsingExactKey()
 }
 
 void NextPlatformApplicationServicesCalendarFirstDayOfWeekPreferencesPortTests::
-unavailableSettingsUseLocaleFallbackAndIgnoreSave()
+unavailableSettingsUseLocaleFallbackAndReportSaveFailure()
 {
     QLocale::setDefault(QLocale(QStringLiteral("en_GB")));
     ApplicationServices services;
@@ -261,14 +260,24 @@ unavailableSettingsUseLocaleFallbackAndIgnoreSave()
     ApplicationServicesCalendarFirstDayOfWeekPreferencesPort port(services);
 
     QCOMPARE(port.load(), CalendarFirstDayOfWeek::Monday);
-    port.save(CalendarFirstDayOfWeek::Sunday);
+    const auto unavailableSave = port.save(CalendarFirstDayOfWeek::Sunday);
+    QVERIFY(!unavailableSave);
+    QCOMPARE(unavailableSave.error().code, Domain::ErrorCode::Technical);
+    QVERIFY(QString::fromStdString(unavailableSave.error().message).contains(
+        QStringLiteral("database session")
+        ));
     QCOMPARE(port.load(), CalendarFirstDayOfWeek::Monday);
 
     ApplicationServicesCalendarFirstDayOfWeekPreferencesPort nullPort(
         static_cast<ApplicationServices*>(nullptr)
         );
     QCOMPARE(nullPort.load(), CalendarFirstDayOfWeek::Monday);
-    nullPort.save(CalendarFirstDayOfWeek::Sunday);
+    const auto nullSave = nullPort.save(CalendarFirstDayOfWeek::Sunday);
+    QVERIFY(!nullSave);
+    QCOMPARE(nullSave.error().code, Domain::ErrorCode::Technical);
+    QVERIFY(QString::fromStdString(nullSave.error().message).contains(
+        QStringLiteral("database session")
+        ));
     QCOMPARE(nullPort.load(), CalendarFirstDayOfWeek::Monday);
 
     ApplicationServices closedServices;
@@ -292,7 +301,12 @@ unavailableSettingsUseLocaleFallbackAndIgnoreSave()
     QVERIFY(closedServices.dataService());
     QVERIFY(!closedSession->isOpen());
     QCOMPARE(closedPort.load(), CalendarFirstDayOfWeek::Monday);
-    closedPort.save(CalendarFirstDayOfWeek::Monday);
+    const auto closedSave = closedPort.save(CalendarFirstDayOfWeek::Monday);
+    QVERIFY(!closedSave);
+    QCOMPARE(closedSave.error().code, Domain::ErrorCode::Technical);
+    QVERIFY(QString::fromStdString(closedSave.error().message).contains(
+        QStringLiteral("database session")
+        ));
 
     QVERIFY(closedServices.openDatabase(closedDatabasePath));
     QVERIFY(closedSession->isOpen());
@@ -310,7 +324,7 @@ unavailableSettingsUseLocaleFallbackAndIgnoreSave()
 }
 
 void NextPlatformApplicationServicesCalendarFirstDayOfWeekPreferencesPortTests::
-saveFailurePreservesStoredValueAndWarning()
+saveFailurePreservesStoredValueAndReportsDiagnostic()
 {
     ApplicationServices services;
     QVERIFY(openDatabase(services, m_directory));
@@ -322,7 +336,11 @@ saveFailurePreservesStoredValueAndWarning()
 
     QLocale::setDefault(QLocale(QStringLiteral("en_US")));
     ApplicationServicesCalendarFirstDayOfWeekPreferencesPort port(services);
-    port.save(CalendarFirstDayOfWeek::Sunday);
+    QVERIFY(port.save(CalendarFirstDayOfWeek::Sunday));
+    QVERIFY(session->settingsRepository()->saveSetting(
+        QStringLiteral("calendar/unrelatedPreference"),
+        QStringLiteral("preserved")
+        ));
     QVERIFY(executeSql(
         services,
         QStringLiteral(R"(
@@ -335,17 +353,19 @@ saveFailurePreservesStoredValueAndWarning()
         )")
         ));
 
-    QTest::ignoreMessage(
-        QtWarningMsg,
-        QRegularExpression(
-            QStringLiteral(
-                "Failed to save calendar first-day preference:.*"
-                )
-            )
-        );
-    port.save(CalendarFirstDayOfWeek::Monday);
+    const auto failed = port.save(CalendarFirstDayOfWeek::Monday);
 
+    QVERIFY(!failed);
+    QCOMPARE(failed.error().code, Domain::ErrorCode::Technical);
+    QVERIFY(QString::fromStdString(failed.error().message).contains(
+        QStringLiteral("forced calendar first-day failure")
+        ));
     QCOMPARE(port.load(), CalendarFirstDayOfWeek::Sunday);
+    const auto unrelated = session->settingsRepository()->loadSetting(
+        QStringLiteral("calendar/unrelatedPreference")
+        );
+    QVERIFY(unrelated);
+    QCOMPARE(unrelated->toString(), QStringLiteral("preserved"));
 }
 
 QTEST_MAIN(

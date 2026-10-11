@@ -5,10 +5,13 @@
 #include "data/repositories/settings_repository.h"
 #include "next/application/calendar_first_day_of_week_preferences.h"
 
-#include <QDebug>
+#include <QByteArray>
 #include <QLocale>
 #include <QString>
 #include <QVariant>
+
+#include <string>
+#include <utility>
 
 namespace ClassMngr::Next::Platform
 {
@@ -80,19 +83,24 @@ public:
         return static_cast<Application::CalendarFirstDayOfWeek>(storedDay);
     }
 
-    void save(
+    [[nodiscard]] Application::
+        CalendarFirstDayOfWeekPreferencesPort::SaveResult save(
         const Application::CalendarFirstDayOfWeek firstDayOfWeek
         ) const override
     {
         if (!m_session || !m_session->isOpen())
         {
-            return;
+            return failure(
+                "Calendar first-day preference cannot be saved because no database session is open."
+                );
         }
 
         SettingsRepository* const repository = m_session->settingsRepository();
         if (!repository)
         {
-            return;
+            return failure(
+                "Calendar first-day preference cannot be saved because the settings repository is unavailable."
+                );
         }
 
         if (const Status saved = repository->saveSetting(
@@ -100,13 +108,32 @@ public:
                 static_cast<int>(firstDayOfWeek)
                 ); !saved)
         {
-            qWarning()
-                << "Failed to save calendar first-day preference:"
-                << saved.error();
+            const QByteArray errorBytes = saved.error().toUtf8();
+            return failure(
+                errorBytes.isEmpty()
+                    ? "Calendar first-day preference could not be saved."
+                    : errorBytes.toStdString()
+                );
         }
+
+        return Application::
+            CalendarFirstDayOfWeekPreferencesPort::SaveResult::success();
     }
 
 private:
+    [[nodiscard]] static Application::
+        CalendarFirstDayOfWeekPreferencesPort::SaveResult failure(
+            std::string message
+            )
+    {
+        return Application::
+            CalendarFirstDayOfWeekPreferencesPort::SaveResult::failure({
+                .code = Domain::ErrorCode::Technical,
+                .message = std::move(message),
+                .recoverable = false
+            });
+    }
+
     [[nodiscard]] static QString key()
     {
         return QStringLiteral("calendar/firstDayOfWeek");

@@ -1,5 +1,7 @@
 #pragma once
 
+#include "next/domain/operation_result.h"
+
 namespace ClassMngr::Next::Application
 {
 
@@ -23,7 +25,11 @@ public:
 
     [[nodiscard]] virtual CalendarFirstDayOfWeek load() const = 0;
 
-    virtual void save(CalendarFirstDayOfWeek firstDayOfWeek) const = 0;
+    using SaveResult = Domain::Result<void>;
+
+    [[nodiscard]] virtual SaveResult save(
+        CalendarFirstDayOfWeek firstDayOfWeek
+        ) const = 0;
 };
 
 } // namespace ClassMngr::Next::Application
