@@ -7,6 +7,7 @@
 #include "features/speaking_eval/ui/speaking_eval_report_assets_p.h"
 #include "features/speaking_eval/ui/speaking_eval_report_dialog.h"
 #include "features/speaking_eval/ui/speaking_eval_table_view.h"
+#include "domain/models/speaking_evaluation.h"
 #include "core/settingsmanager.h"
 #include "core/zip_archive_writer.h"
 #include "fakes/fake_user_prompt_service.h"
@@ -554,6 +555,7 @@ private slots:
     void aiBatchDialogUsesKoreanNameWhenEnglishNameIsBlank();
     void aiBatchDialogAssessesCommentQualityAndPreservesStatuses();
     void aiBatchDialogSelectsEligibleStudentsAndReviewsValidComments();
+    void aiBatchDialogReviewsFullClassMaximumInOrder();
     void aiBatchDialogRedactsUncheckedClassmateNames();
     void aiBatchDialogRedactsOverlappingUncheckedClassmateName();
     void aiBatchDialogAppliesOnlyRecheckedReadyComment();
@@ -2452,6 +2454,188 @@ void SpeakingEvalBatchReportServiceTests::
                 ),
         QString()
         );
+}
+
+void SpeakingEvalBatchReportServiceTests::
+    aiBatchDialogReviewsFullClassMaximumInOrder()
+{
+    QCOMPARE(SpeakingEval::RowCount, 25);
+
+    const QString notes =
+        QStringLiteral(
+            "[Did Well]\nClear pronunciation\n"
+            "[Needs Improvement]\nAdd supporting details"
+            );
+    QList<SpeakingEvalBatchReportService::StudentReport> reports;
+    QList<QString> englishNames;
+    reports.reserve(SpeakingEval::RowCount);
+    englishNames.reserve(SpeakingEval::RowCount);
+    for (int row = 0; row < SpeakingEval::RowCount; ++row)
+    {
+        const QString number =
+            QStringLiteral("%1")
+                .arg(row + 1, 2, 10, QLatin1Char('0'));
+        const QString name =
+            QStringLiteral("English %1").arg(number);
+        SpeakingEvalReportData report;
+        report.englishName = name;
+        report.koreanName = QStringLiteral("Korean %1").arg(number);
+        report.grade = 5;
+        report.notes = notes;
+        reports.append({name, report, row});
+        englishNames.append(name);
+    }
+
+    SpeakingEvalAiBatchDialog dialog(reports);
+    auto* selection =
+        dialog.findChild<QTableWidget*>(
+            QStringLiteral("speakingEvalAiBatchSelectionTable")
+            );
+    auto* createPromptButton =
+        dialog.findChild<QPushButton*>(
+            QStringLiteral("speakingEvalAiBatchCreatePrompt")
+            );
+    auto* promptEdit =
+        dialog.findChild<QPlainTextEdit*>(
+            QStringLiteral("speakingEvalAiBatchPrompt")
+            );
+    auto* responseEdit =
+        dialog.findChild<QPlainTextEdit*>(
+            QStringLiteral("speakingEvalAiBatchResponse")
+            );
+    auto* parseButton =
+        dialog.findChild<QPushButton*>(
+            QStringLiteral("speakingEvalAiBatchParse")
+            );
+    auto* review =
+        dialog.findChild<QTableWidget*>(
+            QStringLiteral("speakingEvalAiBatchReviewTable")
+            );
+    auto* applyButton =
+        dialog.findChild<QPushButton*>(
+            QStringLiteral("speakingEvalAiBatchApply")
+            );
+
+    QVERIFY(selection);
+    QVERIFY(createPromptButton);
+    QVERIFY(promptEdit);
+    QVERIFY(responseEdit);
+    QVERIFY(parseButton);
+    QVERIFY(review);
+    QVERIFY(applyButton);
+    QCOMPARE(selection->rowCount(), SpeakingEval::RowCount);
+    QCOMPARE(selection->columnCount(), 3);
+    QCOMPARE(review->columnCount(), 5);
+
+    for (int row = 0; row < SpeakingEval::RowCount; ++row)
+    {
+        for (int column = 0; column < selection->columnCount(); ++column)
+        {
+            QVERIFY(selection->item(row, column));
+        }
+
+        const QString id =
+            QStringLiteral("STUDENT_%1")
+                .arg(row + 1, 2, 10, QLatin1Char('0'));
+        const QTableWidgetItem* includeItem = selection->item(row, 0);
+        QVERIFY(includeItem->flags() & Qt::ItemIsEnabled);
+        QVERIFY(includeItem->flags() & Qt::ItemIsUserCheckable);
+        QCOMPARE(includeItem->checkState(), Qt::Checked);
+        QCOMPARE(includeItem->data(Qt::UserRole).toInt(), row);
+        QCOMPARE(
+            includeItem->data(Qt::UserRole + 1).toString(),
+            id
+            );
+        QCOMPARE(selection->item(row, 1)->text(), englishNames.at(row));
+        QCOMPARE(selection->item(row, 2)->text(), QStringLiteral("Ready"));
+    }
+
+    createPromptButton->click();
+    const QString prompt = promptEdit->toPlainText();
+    QVERIFY(!prompt.isEmpty());
+    QCOMPARE(
+        prompt.count(
+            QRegularExpression(
+                QStringLiteral(R"(Student ID: STUDENT_[0-9]{2})")
+                )
+            ),
+        SpeakingEval::RowCount
+        );
+    int previousIdPosition = -1;
+    for (int row = 0; row < SpeakingEval::RowCount; ++row)
+    {
+        const QString id =
+            QStringLiteral("STUDENT_%1")
+                .arg(row + 1, 2, 10, QLatin1Char('0'));
+        const int idPosition =
+            prompt.indexOf(QStringLiteral("Student ID: %1").arg(id));
+        QVERIFY(idPosition > previousIdPosition);
+        QVERIFY(!prompt.contains(englishNames.at(row)));
+        previousIdPosition = idPosition;
+    }
+
+    QStringList responseBlocks;
+    QList<QString> expectedComments;
+    expectedComments.reserve(SpeakingEval::RowCount);
+    for (int row = 0; row < SpeakingEval::RowCount; ++row)
+    {
+        expectedComments.append(QString());
+    }
+    for (int row = SpeakingEval::RowCount - 1; row >= 0; --row)
+    {
+        const QString id =
+            QStringLiteral("STUDENT_%1")
+                .arg(row + 1, 2, 10, QLatin1Char('0'));
+        const QString detail =
+            QStringLiteral("milestone %1")
+                .arg(row + 1, 2, 10, QLatin1Char('0'));
+        const QString commentTail =
+            QStringLiteral(
+                " improved fluency and used a specific supporting detail %1. "
+                ).arg(detail)
+            + QString(105, QLatin1Char('a'));
+        const QString rawComment = QStringLiteral("STD_NAME") + commentTail;
+        expectedComments[row] = englishNames.at(row) + commentTail;
+        responseBlocks.append(
+            QStringLiteral("<<<%1>>>\n%2\n<<<END_%1>>>")
+                .arg(id, rawComment)
+            );
+    }
+    responseEdit->setPlainText(responseBlocks.join(QLatin1Char('\n')));
+    QVERIFY(parseButton->isEnabled());
+    parseButton->click();
+
+    QCOMPARE(review->rowCount(), SpeakingEval::RowCount);
+    for (int row = 0; row < SpeakingEval::RowCount; ++row)
+    {
+        for (int column = 0; column < review->columnCount(); ++column)
+        {
+            QVERIFY(review->item(row, column));
+        }
+
+        const QTableWidgetItem* applyItem = review->item(row, 0);
+        QCOMPARE(applyItem->data(Qt::UserRole).toInt(), row);
+        QCOMPARE(applyItem->checkState(), Qt::Checked);
+        QCOMPARE(review->item(row, 1)->text(), englishNames.at(row));
+        QCOMPARE(review->item(row, 2)->text(), QStringLiteral("Ready"));
+        QCOMPARE(
+            review->item(row, 3)->text(),
+            QString::number(expectedComments.at(row).size())
+            );
+        QCOMPARE(review->item(row, 4)->text(), expectedComments.at(row));
+    }
+    QVERIFY(applyButton->isEnabled());
+
+    applyButton->click();
+    QCOMPARE(dialog.result(), static_cast<int>(QDialog::Accepted));
+    const auto accepted = dialog.acceptedComments();
+    QCOMPARE(accepted.size(), SpeakingEval::RowCount);
+    for (int row = 0; row < SpeakingEval::RowCount; ++row)
+    {
+        QCOMPARE(accepted.at(row).sourceRow, row);
+        QCOMPARE(accepted.at(row).oldComment, QString());
+        QCOMPARE(accepted.at(row).newComment, expectedComments.at(row));
+    }
 }
 
 void SpeakingEvalBatchReportServiceTests::

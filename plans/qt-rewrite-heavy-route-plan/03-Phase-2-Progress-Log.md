@@ -21650,7 +21650,7 @@ savings were not measured. Successful build and CTest logs are
 `C:\Users\wfelt\AppData\Local\Temp\f617-class-transfer-build-ninja-devcmd.log`
 and `C:\Users\wfelt\AppData\Local\Temp\f617-class-transfer-ctest-ninja.log`.
 
-F617 is accepted. F618 is next: measure and reduce Class Transfer export
+F617 is accepted (commit `c911b06d`). F618 is next: measure and reduce Class Transfer export
 serialization overlap while preserving package format and atomic-save/error
 behavior. F579 symbols remain deferred at the user's direction; F598 still
 needs elevated WPR. The 250 MiB lifecycle gate, render/window acceptance, and
@@ -21678,7 +21678,7 @@ export-specific large-route measurement. The existing large Class Transfer
 startup boundary is environment-gated and exercises an import lifecycle, not
 an export memory reference.
 
-F618 is deferred: retain the current Qt JSON and `QSaveFile` path until a
+F618 is deferred (decision commit `78d98109`): retain the current Qt JSON and `QSaveFile` path until a
 matched packaged Release export measurement shows that package/tree/buffer
 overlap is worth changing. If resumed, preserve package schema, selected and
 first-seen teacher order, sparse payloads, and atomic-save/error behavior;
@@ -21687,4 +21687,43 @@ was changed and no tests were run. F619 is next: bound Speaking Evaluation AI
 batch selection and review tables. F579 symbols remain deferred at the user's
 direction; F598 still needs elevated WPR. The 250 MiB lifecycle gate,
 render/window acceptance, and global Phase 0 remain open (Windows 1/24,
+macOS 0/24).
+
+## F619 Bound Speaking Evaluation AI batch review at the supported class size - 2026-10-11
+
+The production page builds reports from one `SpeakingEvalModel`, whose fixed
+`SpeakingEval::RowCount` is 25. Rows without a display name are skipped, so
+the production review dialog receives at most 25 reports. At that maximum the
+selection table has 25 rows by 3 cells and the review table has up to 25 rows
+by 5 cells. The dialog constructor itself accepts arbitrary report lists, so
+the bound is established by the production page path rather than a dialog
+input cap.
+
+Added the always-on `aiBatchDialogReviewsFullClassMaximumInOrder` regression
+to `tests/speaking_eval_batch_report_service_tests.cpp`. It exercises all 25
+rows, selection defaults, prompt IDs, table cells, row/report mapping, status
+values, reverse-order response blocks, accepted comment order, and all 25
+source-row mappings. This verifies the supported table bound and behavior; it
+does not measure memory or claim a resource reduction.
+
+Independent focused Debug Ninja verification built and passed five CTest
+entries: `ClassMngrSpeakingEvalBatchReportServiceTests`,
+`ClassMngrSpeakingEvalPageSaveTests`,
+`ClassMngrNextApplicationSpeakingEvaluationAiBatchEligibilityTests`,
+`ClassMngrNextApplicationSpeakingEvaluationAiBatchCommentQualityTests`, and
+`ClassMngrNextApplicationSpeakingEvaluationAiBatchAcceptedCommentPlanTests`
+(5 passed, 0 failed, 0 CTest-level skips). Direct QtTest output for the batch
+suite was 60 passed/0 failed/5 skipped before the new test and 61 passed/0
+failed/5 skipped afterward; those five skips are PowerPoint integration tests
+gated by `CLASSMNGR_ENABLE_POWERPOINT_INTEGRATION_TESTS`. The page suite was
+31 passed/0 failed/0 skipped. The updated batch CTest rerun passed 1/1. The
+standard Visual Studio build hit FileTracker access denied; the existing Ninja
+folder built successfully when invoked from the VS developer environment.
+The 96-class StartupPerformance boundary remains environment-gated and was
+not run. `git diff --check` passed.
+
+F619 is accepted. F620 is next: measure the Sub Prep PDF render-stage overlap
+on the large route before choosing a reduction. F579 symbols remain deferred
+at the user's direction; F598 still needs elevated WPR. The 250 MiB lifecycle
+gate, render/window acceptance, and global Phase 0 remain open (Windows 1/24,
 macOS 0/24).
