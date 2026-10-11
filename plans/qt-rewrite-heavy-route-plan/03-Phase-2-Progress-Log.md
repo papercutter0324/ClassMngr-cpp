@@ -22936,3 +22936,51 @@ Route regression: `ClassMngrSidebarTeacherDeleteParityTests`. Sidebar
 warning and prevent confirmation/deletion. Preserve success, cancel, and
 delete-failure route behavior covered by the existing test. The matrix is
 recorded before F646 implementation; Batch 126 remains active with F646.
+
+### F646 Teacher profile read - accepted - 2026-10-12
+
+Commit `46ef2e6f` (`Phase2 - Distinguish missing Teacher profile from read
+failure (F646)`) adds `TeacherRepository::lookupTeacherById()` with distinct
+Found, Missing, and Failure outcomes. It checks `query.lastError()` after a
+false `query.next()`. Legacy `getTeacher(int)` delegates to the typed lookup
+and retains the exact missing diagnostic. The Platform adapter maps Missing
+to recoverable `NotFound` and SQL failure to non-recoverable `Technical`;
+success maps all profile fields, and no-session behavior is preserved.
+
+In standard `build/windows-x64-debug` Debug, `ClassMngr` and both focused test
+targets built with `TrackFileAccess=false` and `ForceRebuild=true` after the
+ordinary and TrackFileAccess-only builds failed with FileTracker
+`E_ACCESSDENIED`. The focused profile-read and Sidebar Teacher-delete CTests
+passed 2/2; the independent Tester repeated both successfully. Coverage checks
+all 14 fields, the exact missing diagnostic through the adapter and legacy
+method, SQL failure using a dropped table, and session states. The
+`query.next()` fetch-error branch is implemented but was not directly induced.
+The Tester could not rebuild because of FileTracker and ran
+`ClassMngrDataServiceLifecycleTests` only against a binary predating
+`teacher_repository.cpp`; that result is excluded from current-source evidence.
+`git diff --check` passed. Verification was focused, not a clean or full-suite
+pass.
+
+**Decision: accept F646.** Batch 126 is complete; Batch 127 is active with
+F647 first.
+
+### F647 Calendar event by-ID read acceptance matrix - recorded before implementation - 2026-10-12
+
+- Add a typed `CalendarEventRepository` by-ID lookup with Found, Missing, and
+  SQL/fetch Failure outcomes; preserve `getCalendarEvent(int)` and its exact
+  legacy diagnostic. Check `query.lastError()` after a false `query.next()` so
+  fetch failure maps to Technical, never absence.
+- Remove Platform message-substring classification. Map typed Missing to
+  `NotFound` while preserving the adapter's current missing-event message;
+  map Failure to `Technical` with repository detail. Preserve success mapping
+  and closed/unavailable-session behavior.
+- Extend the existing
+  `ClassMngrNextPlatformApplicationServicesCalendarEventPortTests` for success,
+  missing/diagnostic compatibility, and an actual repository SQL failure.
+  Keep the live CalendarPage event-activation route unchanged and run
+  `ClassMngrCalendarPageEventMutationParityTests`.
+- Add no test file unless the existing target cannot coherently cover this
+  production contract.
+
+The matrix is recorded before F647 implementation; Batch 127 is active with
+F647 first.

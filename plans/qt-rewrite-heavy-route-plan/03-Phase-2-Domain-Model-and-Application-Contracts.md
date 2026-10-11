@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-12
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F645 is accepted and F646 is active to distinguish a missing Teacher profile from repository failure while preserving legacy diagnostics; F625/F626 and current-source macOS universal evidence (0/24) remain open.
+- Current note: F646 is accepted and F647 is active as the first Batch 127 candidate; F625/F626 and current-source macOS universal evidence (0/24) remain open.
 
 ### Slice discovery batches
 
@@ -94,9 +94,12 @@ Treat this plan as an operational summary, not a history:
   because the current execution identity is not an Administrator; resume when
   a Windows process with an elevated administrator token is available.
 
-#### Active batch: Batch 126
+#### Active batch: Batch 127
 
-- F646 - Distinguish a missing Teacher profile from repository failure in the typed profile read.
+- F647 - Distinguish Calendar event fetch failure from a missing row in the typed by-ID read.
+- F648 - Reject out-of-range Schedule Import decision indexes before projection.
+- F649 - Validate accepted Calendar import save requests before port calls.
+- F650 - Preflight roster row transfer snapshots before persistence.
 
 ## Objective
 
