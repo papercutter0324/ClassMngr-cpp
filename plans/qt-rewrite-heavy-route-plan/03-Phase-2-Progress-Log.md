@@ -23456,3 +23456,57 @@ recorded below.
   assertions. Add no test target.
 
 This matrix is recorded before implementation. Batch 132 is active with F657.
+
+### F657 Calendar event range-query failure - accepted - 2026-10-12
+
+Commit `320ee456d6542211b90d70ecf791d454cc345ded`, following preimplementation
+matrix commit `940de103b11c0aebcfeada499f7fd0afb9c03188`, exposes current-
+generation exact-range query diagnostics in `CalendarEventCache`. Failures are
+pruned with retention, invalidation and retry clear them, and stale-generation
+failures do not leak into current state. Current Month and Next 30 Days show
+the diagnostic and Retry action; a table-rename failure followed by recovery
+and Retry renders the event. Successful empty results remain supported.
+Next 10 `findNextEventDate` remains explicitly out of scope.
+
+An independent forced Debug build of
+`ClassMngrCalendarEventCacheTests` and
+`ClassMngrCalendarPageEventMutationParityTests` passed with
+`/p:TrackFileAccess=false /p:ForceRebuild=true`. Exact registered CTests #23
+and #63 passed 2/2. `git diff --check` passed with only the LF-to-CRLF
+advisory; there were no linker warnings. No full suite was run. The three
+unrelated untracked root entries were preserved.
+
+**Decision: accept F657.** Batch 132 is complete; Batch 133 discovery is
+recorded below.
+
+### Batch 133 shortlist - recorded before F658 implementation - 2026-10-12
+
+- F658 is selected: custom academic calendar schedule saves currently have a
+  `void` port, and the ApplicationServices adapter logs and returns without
+  exposing persistence failure. The provider has already replaced its active
+  schedule and advanced revision before that failure; the preferences panel
+  then clears dirty state and emits its success signal. A failed save can
+  therefore lose the editable draft and leave UI state out of sync with stored
+  state.
+- This is prioritized over Calendar event-type color writes because losing a
+  custom schedule or showing it as saved when it was not persisted has greater
+  user impact; treating color as cosmetic is an impact inference.
+
+### F658 custom academic calendar schedule save acceptance matrix - recorded before implementation - 2026-10-12
+
+- Change `AcademicCalendarSchedulePreferencesPort::write` to return a typed
+  result. An unavailable service or failed persistence returns a `Technical`
+  diagnostic instead of logging and silently returning.
+- With a real persistence trigger forcing failure, the stored schedule payload
+  remains unchanged. The provider does not publish the proposed schedule,
+  advance its revision, or emit `revisionChanged` on failure.
+- The preferences panel shows one warning containing the persistence detail,
+  retains the editable draft and dirty state, and emits no success signal.
+  After removing the failure, retry persists the draft, clears dirty state,
+  and emits success once.
+- Preserve successful custom schedule persistence and recalculation behavior.
+- Use existing registered CTests `ClassMngrAcademicCalendarTests`,
+  `ClassMngrNextPlatformApplicationServicesAcademicCalendarSchedulePreferencesPortTests`,
+  and `ClassMngrCalendarPreferencesRestoreDefaultsTests`; add no test target.
+
+This matrix is recorded before implementation. Batch 133 is active with F658.
