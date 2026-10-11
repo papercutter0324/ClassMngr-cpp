@@ -22858,3 +22858,11 @@ no-navigation behavior unchanged and run
 Exact Platform target/CTest:
 `ClassMngrNextPlatformApplicationServicesClassByIdReadPortTests`. Matrix
 recorded before implementation; Batch 126 remains active with F645 first.
+
+### Batch 127 discovery - recorded at F645 start - 2026-10-12
+
+Because F645 is the second-last candidate in Batch 126, two independent
+read-only reviews began to prepare the following batch: one checks Application
+validation boundaries outside the recent Class/Teacher slices; the other
+checks Platform error mappings with live routes. Record ordered candidates and
+exclusions here before F646 begins.
