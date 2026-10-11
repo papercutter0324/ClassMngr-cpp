@@ -22298,22 +22298,57 @@ byte-savings measurement was made, so F630 makes no byte-savings claim.
 
 **Decision: accept F630.**
 
-### F631 Bound Class Details Save IDs to the platform integer range - active
+<a id="f631"></a>
+### F631 Bound Class Details Save IDs to the platform integer range - accepted
 
-The main agent selected F631 for the next production slice; a separate
-Explorer proposed a birthday-year edge, but F631 aligns directly with the
-application/platform port contract. In
-[`class_details_save_use_case.h`](../../src/next/application/class_details_save_use_case.h),
-`ClassDetailsSaveUseCase::execute` currently checks for positive digit
-strings without checking that the value fits in `int`; the platform port
-[`application_services_class_details_save_port.h`](../../src/next/platform/application_services_class_details_save_port.h)
-parses to `int` later and rejects overflow.
+F631 validates positive `int` representability in the application before the
+Class Details Save port, preserving leading-zero IDs and the existing
+`InvalidInput` fields. Commit `940298a0` (`Phase2 - Bound Class Details IDs to
+int range (F631)`) was independently reviewed. The existing
+`tests/next_application_class_details_save_use_case_tests.cpp` was updated
+because F631 changed production code; no test file was created. The
+implementer and independent Tester built and ran the existing target, and
+independent CTest passed `ClassMngrNextApplicationClassDetailsSaveUseCaseTests`
+1/1. `git diff --check` passed, and teacher-ID validation stayed unchanged.
 
-F631 will validate the positive `int` range in the application before calling
-the port, preserving leading-zero acceptance (`00042` parses as 42) and the
-existing `InvalidInput` error contract. Cover the boundary through the
-existing `invalidClassIdsDoNotReachPort()` case in
-[`next_application_class_details_save_use_case_tests.cpp`](../../tests/next_application_class_details_save_use_case_tests.cpp).
-Create or update that test only for the corresponding production change; add
-no test file or test-only slice. This follows the policy in
-[00-Start-Here.md](00-Start-Here.md).
+**Decision: accept F631.**
+
+### Batch 121 discovery - selected F632
+
+The bounded read-only discovery selected F632 first and found four additional
+well-defined candidates, in priority order:
+
+1. **F632 - Move staff-directory birthday validity into Application policies.**
+   Replace UI-supplied blank/valid flags with validation of the birthday text
+   in both policies; preserve blank dates, valid `02-29`, reject `02-30`, UI
+   messages, and raw save behavior.
+2. **F633 - Validate Class Notes Save positive-`int` IDs before the port.**
+   Cover the application boundary in the existing
+   `tests/next_application_class_notes_save_port_tests.cpp`.
+3. **F634 - Move Teacher Create validation into Application.** Cover it in the
+   existing application test.
+4. **F635 - Classify roster-preparation errors as `Validation`.** Cover it in
+   the existing use-case test.
+5. **F636 - Preserve Upcoming Birthday results at the year-9999 boundary.**
+   Cover it in the existing use-case test.
+
+No other slices were found. The reported Calendar Event ID mismatch was not
+selected because its intended contract is ambiguous.
+
+<a id="f632"></a>
+#### F632 selection and acceptance
+
+Phase 2 §2.4 assigns business-rule implementation to domain/application
+services and leaves the UI to display results and choose when to validate.
+`staff_directory_page.cpp` currently derives blank/valid birthday flags with
+`QDate`, while both application policies trust those flags despite receiving
+the birthday text; callers can therefore bypass the date rule. Existing
+coverage is in `tests/next_application_native_english_teacher_directory_save_tests.cpp`
+and `tests/next_application_gs_team_directory_save_tests.cpp`.
+
+F632 is the active next production slice. Move validity checks into both
+Application policies and derive them from request text. Preserve blank-date
+behavior, valid `02-29`, rejection of `02-30`, existing UI messages, and raw
+save behavior. Tests may be run for changed code; test files may be changed
+only to cover the corresponding production/core change, preferably with
+focused assertions in those existing files.

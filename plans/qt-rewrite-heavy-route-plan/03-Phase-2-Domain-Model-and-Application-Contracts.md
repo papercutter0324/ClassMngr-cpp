@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-11
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F625 and F626 remain deferred pending owner-specific material-retention evidence; historical Phase 0 completion (24/24) remains valid, F628 passed the post-F621 current-source Windows matrix 24/24, and the overall Phase 0 gate remains open only for current-source macOS universal evidence (0/24), with F629 deferred because this session has no suitable Apple Silicon runner, F630 accepted with three existing My Classes CTest targets passing and no byte-savings claim, and F631 active to enforce the positive `int` range before the Class Details Save platform port while preserving leading-zero acceptance and the `InvalidInput` contract; F579, F598, F526 provenance, the broader memory gate, and render/window remain open.
+- Current note: F632 is active to move staff-directory birthday validity into the Native English and GS Team Application policies while preserving blank-date behavior, leap day, UI messages, and raw saves; F625/F626 remain deferred pending owner-specific retention evidence, and Phase 0 remains open for current-source macOS universal evidence (0/24) while F629 awaits a suitable runner.
 
 ### Slice discovery batches
 
@@ -98,9 +98,13 @@ Treat this plan as an operational summary, not a history:
   because the current execution identity is not an Administrator; resume when
   a Windows process with an elevated administrator token is available.
 
-#### Active batch: Batch 120
+#### Active batch: Batch 121
 
-- F631 - Enforce the platform's representable positive `int` range in Class Details Save application validation, preserving leading-zero acceptance and `InvalidInput` behavior.
+- F632 - Move staff-directory birthday validity from UI-supplied booleans into the Native English and GS Team Application policies; preserve blank dates, leap day, UI messages, and raw saves.
+- F633 - Validate Class Notes Save positive-`int` IDs before the port, using the existing application test.
+- F634 - Move Teacher Create validation into Application, using the existing application test.
+- F635 - Classify roster-preparation errors as `Validation`, using the existing use-case test.
+- F636 - Preserve Upcoming Birthday results at the year-9999 boundary, using the existing use-case test.
 
 ## Objective
 
