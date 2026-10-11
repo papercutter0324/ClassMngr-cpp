@@ -25,6 +25,8 @@
 #include <QMenu>
 #include <QPointer>
 #include <QScrollBar>
+#include <QSqlError>
+#include <QSqlQuery>
 #include <QStackedWidget>
 #include <QRect>
 #include <QSignalSpy>
@@ -89,6 +91,7 @@ private slots:
     void sameTurnCleanReentryRestoresBeforeDeferredDelete();
     void classesRootContextMenuAddClassCreatesAndOpensClass();
     void newClassActionCreatesAndOpensClass();
+    void classReadFailurePreservesAddClassRoute();
 
 private:
     QTemporaryDir m_settingsDirectory;
@@ -1059,6 +1062,117 @@ void MainWindowClassesSidebarRootNavigationTests::newClassActionCreatesAndOpensC
     QCOMPARE(services->currentDatabasePath(), activeDatabasePath);
 
     QVERIFY(prompts.messages.isEmpty());
+    QVERIFY(prompts.asynchronousMessages.isEmpty());
+    QVERIFY(prompts.confirmations.isEmpty());
+    QVERIFY(prompts.unsavedChangesConfirmations.isEmpty());
+    QVERIFY(prompts.actionPrompts.isEmpty());
+    QVERIFY(!QApplication::activeModalWidget());
+}
+
+void MainWindowClassesSidebarRootNavigationTests::
+classReadFailurePreservesAddClassRoute()
+{
+    FakeUserPromptService prompts;
+    UserPromptServiceScope promptScope(&prompts);
+
+    QTemporaryDir workspaceRoot;
+    QVERIFY(workspaceRoot.isValid());
+
+    const QString workspacePath = QFileInfo(
+        workspaceRoot.filePath(QStringLiteral("new-class-read-failure.tps"))
+        ).absoluteFilePath();
+
+    ApplicationServices seedServices;
+    QVERIFY(seedServices.openDatabase(workspacePath));
+    seedServices.closeDatabase();
+
+    LanguageService languageService;
+    QVERIFY(languageService.setLanguage(Language::English));
+
+    MainWindowStartupOptions startupOptions;
+    startupOptions.loadMostRecentDatabase = false;
+    startupOptions.initialDatabasePath = workspacePath;
+
+    MainWindow window(
+        [](const QString&) {},
+        false,
+        &languageService,
+        nullptr,
+        std::move(startupOptions)
+        );
+    window.show();
+    QApplication::processEvents();
+    QVERIFY(window.isVisible());
+
+    ApplicationServices* const services = window.services();
+    QVERIFY(services);
+    QVERIFY(services->hasOpenDatabase());
+    QCOMPARE(services->currentDatabasePath(), workspacePath);
+    DatabaseSession* const activeSession = services->databaseSession();
+    QVERIFY(activeSession);
+
+    ClassService* const classService = services->classService();
+    QVERIFY(classService);
+    const auto classesBefore = classService->classes();
+    QVERIFY(classesBefore);
+    QCOMPARE(classesBefore->size(), 0);
+
+    QSqlQuery deleteInsertedClass(activeSession->database());
+    QVERIFY2(
+        deleteInsertedClass.exec(QStringLiteral(
+            "CREATE TRIGGER delete_created_class_after_insert "
+            "AFTER INSERT ON classes "
+            "BEGIN DELETE FROM classes WHERE id = NEW.id; END"
+            )),
+        qPrintable(deleteInsertedClass.lastError().text())
+        );
+
+    PageManager* const pages = window.pageManager();
+    QVERIFY(pages);
+    QVERIFY(pages->isCurrentPage(PageType::MyWorkspace));
+    QWidget* const currentPageWidget = pages->currentWidget();
+    QVERIFY(currentPageWidget);
+    const QString pageIdentifier = pages->currentPageIdentifier();
+    const int instantiatedPageCount = pages->instantiatedPageCount();
+    const bool classesPageInstantiated =
+        pages->isPageInstantiated(PageType::Classes);
+
+    Sidebar* const sidebar = window.findChild<Sidebar*>();
+    QVERIFY(sidebar);
+    const QStringList selectedKeys = sidebar->selectedKeys();
+
+    QAction* const newClassAction = window.actions().newClass;
+    QVERIFY(newClassAction);
+    QVERIFY(newClassAction->isEnabled());
+    newClassAction->trigger();
+    QApplication::processEvents();
+
+    QCOMPARE(prompts.messages.size(), 1);
+    const PromptRequest& warning = prompts.messages.constFirst();
+    QCOMPARE(warning.severity, PromptSeverity::Warning);
+    QCOMPARE(warning.title, QStringLiteral("Add Class"));
+    QCOMPARE(
+        warning.message,
+        QStringLiteral("The created class could not be loaded.")
+        );
+    QVERIFY(warning.details.contains(
+        QStringLiteral("no matching record exists.")
+        ));
+
+    const auto classesAfter = classService->classes();
+    QVERIFY(classesAfter);
+    QCOMPARE(classesAfter->size(), 0);
+    QCOMPARE(services->databaseSession(), activeSession);
+    QCOMPARE(services->currentDatabasePath(), workspacePath);
+    QVERIFY(pages->isCurrentPage(PageType::MyWorkspace));
+    QCOMPARE(pages->currentWidget(), currentPageWidget);
+    QCOMPARE(pages->currentPageIdentifier(), pageIdentifier);
+    QCOMPARE(pages->instantiatedPageCount(), instantiatedPageCount);
+    QCOMPARE(
+        pages->isPageInstantiated(PageType::Classes),
+        classesPageInstantiated
+        );
+    QCOMPARE(sidebar->selectedKeys(), selectedKeys);
     QVERIFY(prompts.asynchronousMessages.isEmpty());
     QVERIFY(prompts.confirmations.isEmpty());
     QVERIFY(prompts.unsavedChangesConfirmations.isEmpty());

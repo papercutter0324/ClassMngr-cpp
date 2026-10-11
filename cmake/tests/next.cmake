@@ -1230,12 +1230,31 @@ classmngr_add_qt_test(
 )
 
 classmngr_add_qt_test(
+    NAME NextApplicationClassByIdReadQuery
+    SOURCES
+        tests/next_application_class_by_id_read_query_tests.cpp
+    LIBRARIES
+        ClassMngrNext::Application
+        Qt6::Test
+)
+
+classmngr_add_qt_test(
     NAME NextApplicationClassesListReadQuery
     SOURCES
         tests/next_application_classes_list_read_query_tests.cpp
     LIBRARIES
         ClassMngrNext::Application
         Qt6::Test
+)
+
+classmngr_add_qt_test(
+    NAME NextPlatformApplicationServicesClassByIdReadPort
+    SOURCES
+        tests/next_platform_application_services_class_by_id_read_port_tests.cpp
+    LIBRARIES
+        ClassMngrNext::Platform
+        Qt6::Test
+    OFFSCREEN
 )
 
 classmngr_add_qt_test(

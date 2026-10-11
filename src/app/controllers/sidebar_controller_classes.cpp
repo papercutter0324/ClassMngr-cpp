@@ -1,9 +1,11 @@
 #include "sidebar_controller_p.h"
 
 #include "app/services/feature_services.h"
+#include "next/application/class_by_id_read_query.h"
 #include "next/application/class_create_use_case.h"
 #include "next/application/class_delete_use_case.h"
 #include "next/application/classes_list_read_query.h"
+#include "next/platform/application_services_class_by_id_read_port.h"
 #include "next/platform/application_services_class_create_port.h"
 #include "next/platform/application_services_class_delete_port.h"
 #include "next/platform/application_services_classes_list_read_port.h"
@@ -59,18 +61,22 @@ void SidebarController::addClass()
         return;
     }
 
-    const Result<Classroom> classroom =
-        classes->classroom(
-            classId
+    ClassMngr::Next::Platform::
+        ApplicationServicesClassByIdReadPort classReadPort(m_services);
+    const ClassMngr::Next::Application::ClassByIdReadQuery classReadQuery(
+        classReadPort
             );
-
-    if (!classroom)
+    const auto loadedClass = classReadQuery.execute(created.value());
+    if (!loadedClass)
     {
         DialogServices::showWarning(
             m_sidebar,
             tr("Add Class"),
             tr("The created class could not be loaded."),
-            classroom.error()
+            QString::fromUtf8(
+                loadedClass.error().message.data(),
+                static_cast<qsizetype>(loadedClass.error().message.size())
+                )
             );
         return;
     }
@@ -78,7 +84,7 @@ void SidebarController::addClass()
     if (auto* page = m_pages->ensureClassesPage())
     {
         page->openClass(
-            classroom->id,
+            classId,
             ClassesSection::Details
             );
     }
