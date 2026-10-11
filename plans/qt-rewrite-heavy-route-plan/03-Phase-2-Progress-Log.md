@@ -23288,14 +23288,17 @@ F655.
 
 ### F655 Sub Prep explicit-save failure acceptance matrix - recorded before implementation - 2026-10-12
 
-- With a real `app_settings` trigger failure, explicit `saveChanges` returns
-  false, surfaces the error message once, retains the unchanged visible draft
-  and dirty state, and leaves the stored bundle unchanged after the atomic
-  Platform failure. PageManager stays on the page because the result is false.
-- Autosave on the same trigger failure stays quiet, retains the draft and
-  dirty state, and has no side effects.
-- Preserve successful save: persist the bundle, clear dirty state, and show no
-  error. Preserve the existing preferences-port atomic rollback behavior.
+- In the page test, use an opt-in failure in the existing
+  `SettingsRepository::saveSettings` test stub. Return a distinctive error
+  before any values mutate. Explicit `saveChanges()` returns false, surfaces
+  the error once, and retains all visible draft and dirty state, including
+  blank grading. `saveData` and autosave remain quiet.
+- The stub's normal success behavior remains the default. After disabling the
+  failure, a successful save persists the normalized bundle, clears dirty
+  state, and shows no error. PageManager stays on the page after a false result.
+- Separately, the Platform test uses a real `app_settings` trigger to assert a
+  typed `Technical` error, atomic rollback, and an unchanged stored bundle; the
+  page test does not use SQL.
 - If the current-campus preferences service is unavailable, explicit
   `saveChanges()` must surface a clear fallback error and retain the dirty
   draft even though the path returns false before the typed port. Keep
@@ -23305,6 +23308,17 @@ F655.
   `ClassMngrNextPlatformApplicationServicesSubPrepPreferencesPortTests`
   (test 367). Add route and explicit-save assertions in the page target; the
   Platform target retains the atomic rollback guarantee.
+
+### F655 page-test substrate refinement - recorded before remaining support/test implementation - 2026-10-12
+
+`ClassMngrSubPrepPageTests` links `ClassMngrScheduleWidgetTestSupport`, whose
+`tests/schedule_widget_test_stubs.cpp` provides `SettingsRepository::saveSettings`
+as in-memory success. That repository path is used by the page test, so an
+SQLite trigger cannot reach the page layer. Keep failure injection opt-in in
+the existing stub; preserve its default success behavior and add no target or
+CMake variant. The real `app_settings` trigger remains isolated to
+`ClassMngrNextPlatformApplicationServicesSubPrepPreferencesPortTests`, which
+proves typed `Technical` failure and atomic rollback.
 
 F655 implementation is pending this matrix's documentation commit; Batch 130
 is active with F655.
