@@ -3855,14 +3855,22 @@ JSON and an unrelated setting remain unchanged. Both focused CTests passed
 2/2; no full suite ran. F671 is committed as
 d34ace9387199dc59c856d4edfff24da700c10a2.
 
-## F672 Theme preference transaction - selected - 2026-10-12
+## F672 Theme preference transaction - accepted - 2026-10-12
 
-Theme preferences remain the direct preference port with a void write
-contract. Its SettingsManager adapter currently calls QSettings::setValue
-and a void sync, while OptionState changes the checked action before its
-persistence callback and ThemeController applies the live theme afterward.
-F672 will add a checked SettingsManager theme-write path that discards a
-failed QSettings object, return a typed adapter result, and move persistence
-into the theme controller transaction. Failure acceptance requires the prior
-stored theme, live theme, preference snapshot, and checked action to remain
-consistent, one diagnostic warning, and a successful retry after recovery.
+F672 added a checked SettingsManager theme-write path that discards a failed
+QSettings object, made the preference port return a typed result, and moved
+persistence into the ThemeController transaction. The focused three CTests
+passed; failure coverage confirms the prior stored theme, live theme,
+preference snapshot, and checked action remain consistent, with one diagnostic
+callback and a successful retry. The MainWindow modal warning binding was
+source-reviewed but not rendered in a UI test. F672 is committed as
+`a6543994484b5b504383c95251a29997b71c3788`.
+
+## F673 current-campus correction feedback - selected - 2026-10-12
+
+PersonalDetailsPage retries a typed current-campus preference correction during
+stored-settings loads but currently discards the failure. Because those loads
+can recur on explicit refresh or stale-page activation, report the diagnostic
+once for the same unresolved stored-to-fallback correction; keep retrying and
+clear suppression after a successful correction or database-state reset. The
+displayed fallback and stored value must remain intact on failure.

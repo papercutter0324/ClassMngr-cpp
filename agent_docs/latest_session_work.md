@@ -5347,7 +5347,7 @@ Add real MainWindow Delete Class QAction success coverage to MainWindowScheduleT
 
 The MainWindow Delete Class QAction selected and deleted the target through the real chooser and confirmation. Target class/ClassInfo/schedule rows are gone; sibling data is unchanged and the sibling is active in Classes Details. The Classes page/sidebar route and session/path remain stable; no warning or unsaved prompt appeared. Executor and independent Tester passed target build, exact CTest 1/1, target QtTest 12 passes (10 cases plus setup/cleanup), and selected case 3/3. No compiler warnings; Qt font/offscreen notices only. No full suite or production/CMake change. F443 is accepted and ready to commit. F444 successful Open File QAction replacement is next. Preserve latest_session_work.md and unrelated %SystemDrive%/ outside slice commits.
 
-## Resumed Phase 2 after F670; F671 accepted and F672 selected - 2026-10-12
+## Resumed Phase 2 after F670; F672 accepted and F673 selected - 2026-10-12
 
 F671 Custom Color Palette typed persistence and caller feedback is committed
 as d34ace9387199dc59c856d4edfff24da700c10a2. The product and both focused
@@ -5356,8 +5356,23 @@ trigger-backed failure test confirms both the prior compact palette JSON and
 an unrelated setting remain unchanged. No full suite ran. Batch 146 is
 complete.
 
-F672 Theme preference typed persistence and action rollback is selected in
-Batch 147. Its matrix is recorded in the Phase 2 progress log. The checked
-theme write must recover from a failed QSettings sync, preserve the previous
-committed theme, restore the previous checked action, and report one
-diagnostic warning before a successful retry. Implementation has not begun.
+F672 Theme preference typed persistence and action rollback is committed as
+`a6543994484b5b504383c95251a29997b71c3788`. The product target and all three
+focused test targets built; the exact CTests
+`ClassMngrNextPlatformSettingsManagerThemePreferencesPortTests`,
+`ClassMngrStartupVisualSettingsTests`, and
+`ClassMngrMainWindowThemeActionParityTests` passed 3/3. Failure coverage
+verifies storage retry, action rollback, a single diagnostic callback, and
+unchanged live theme and preference snapshot before retry. MainWindow warning
+binding was reviewed in source; modal rendering was not tested. No full suite
+ran. Batch 147 is complete.
+
+F673 Personal Details current-campus correction feedback is selected/current
+in Batch 148. Discovery found that page loading retries a correction whenever
+the stored campus is absent or unmatched, and repeated warnings could recur
+on explicit refresh or stale-page activation. Acceptance records one warning
+per unresolved correction episode, continued retries with warning suppression,
+fallback display and unchanged stored value on failure, and suppression reset
+after success or database-state clear. The exact CTests and matrix are in the
+Phase 2 progress log. Implementation begins after the selection record is
+committed.

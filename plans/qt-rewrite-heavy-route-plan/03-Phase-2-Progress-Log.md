@@ -24368,4 +24368,56 @@ must leave the stored value readable as the previous committed theme.
    `ClassMngrMainWindowThemeActionParityTests`. Build `ClassMngr` and these
    existing targets and run exactly those three CTests. Add no CMake target.
 
-This matrix is recorded before implementation. Batch 147 is active with F672.
+This matrix was recorded before implementation. Batch 147 was active with F672.
+
+### F672 Theme preference transaction - accepted - 2026-10-12
+
+F672 is accepted at code commit
+`a6543994484b5b504383c95251a29997b71c3788`. The `ClassMngr` product target
+and the three selected test targets built in the Windows x64 Ninja tree. The
+exact CTests passed 3/3:
+`ClassMngrNextPlatformSettingsManagerThemePreferencesPortTests`,
+`ClassMngrStartupVisualSettingsTests`, and
+`ClassMngrMainWindowThemeActionParityTests`. The controller test confirms
+failure rollback, one diagnostic callback, unchanged theme/snapshot, and a
+successful retry; the port test confirms the previous stored theme survives
+the injected failure and a subsequent sync succeeds. The MainWindow warning
+binding was source-reviewed, but the modal warning rendering was not exercised.
+No full suite ran.
+
+**Decision: accept F672.** Batch 147 is complete; Batch 148 is active with
+F673. Continue the one-commit-per-slice sequence.
+
+### Batch 148 shortlist and selection - recorded before F673 implementation - 2026-10-12
+
+F673 is selected: `PersonalDetailsPage::loadStoredSettings()` selects the
+first available campus when the stored current-campus value is absent or does
+not match the current campus list, then attempts to persist that correction.
+The current-campus preference port already returns a typed result, but the
+caller discards it. The correction runs during page loads, which can recur on
+explicit refresh or stale-page activation. A modal warning on every failed
+load could therefore repeat while the storage fault remains.
+
+**F673 acceptance matrix:**
+
+1. Handle the typed correction result in the Personal Details page. On failure,
+   keep the valid fallback campus selected, preserve the previous stored
+   preference, and surface one `Unable to Save Preference` warning containing
+   the returned diagnostic.
+2. Keep retrying the same failed correction on later loads, but report only
+   once while the stored-value-to-fallback correction remains unresolved.
+   Treat a different correction as a new failure episode. Clear suppression
+   after a successful correction and when database state is cleared.
+3. Extend the existing campus correction page test with a trigger-backed write
+   failure and `FakeUserPromptService`: repeat the load, assert one warning and
+   the unchanged stored value with the fallback still displayed, remove the
+   fault, and verify a later retry persists the correction and clears
+   suppression. Verify that a later failure after recovery can report again.
+   The current-campus port's existing trigger-backed failure case continues to
+   cover typed Technical mapping.
+4. Build `ClassMngr` and the existing UI and port targets; run exactly
+   `ClassMngrMyWorkspacePageTests` and
+   `ClassMngrNextPlatformApplicationServicesCurrentCampusPreferencesPortTests`.
+   Add no CMake target.
+
+This matrix is recorded before implementation. Batch 148 is active with F673.

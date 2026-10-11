@@ -53,7 +53,7 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current state - 2026-10-12 (F672)
+### Current state - 2026-10-12 (F673)
 
 Phase 2 remains In Progress/Open under deployment
 `phase2_f417_resume_20261009`, Heavy route; Gates 1 and 2 remain Partial.
@@ -79,11 +79,22 @@ the exact stored palette JSON and an unrelated setting. The focused port and
 ColorUtils CTests passed 2/2 after the independent tester extended that
 assertion; the full suite was not run.
 
-F672 Theme preference typed persistence and action rollback is selected/current
-in Batch 147. Its preimplementation acceptance matrix is in the Phase 2
-progress log. The theme write must check QSettings sync status and discard a
-failed cached value; the controller must persist before applying the live
-theme and restore the checked action with one diagnostic warning on failure.
+F672 Theme preference typed persistence and action rollback is committed as
+`a6543994484b5b504383c95251a29997b71c3788`. The product target and three
+focused test targets built, and the exact theme port, startup visual settings,
+and MainWindow theme action parity CTests passed 3/3. The failure test confirms
+action rollback, one diagnostic callback, unchanged live theme and preference
+snapshot, followed by a successful retry. The MainWindow warning binding was
+source-reviewed; modal rendering itself was not exercised. No full suite ran.
+Batch 147 is complete.
+
+F673 Personal Details current-campus correction failure feedback is
+selected/current in Batch 148. Its acceptance matrix is recorded in the Phase
+2 progress log. A failed typed write must leave the fallback campus displayed
+and the stored preference unchanged, while reporting the diagnostic once per
+unresolved correction episode. Repeated loads retry the write without
+repeating the warning; a successful correction and database-state clear reset
+the warning suppression.
 
 ### Current state - 2026-10-09
 
