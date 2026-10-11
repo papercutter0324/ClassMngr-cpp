@@ -58,6 +58,7 @@ namespace ScheduleWidgetTestStubs
 void reset();
 void setDatabaseOpen(bool open);
 void setSettingsSaveFailure(const QString& error);
+void setSettingsRepositoryAvailable(bool available);
 void setIncludeAdditionalClass(bool include);
 void setExistingIntensiveHours(bool exists);
 }
@@ -369,6 +370,7 @@ private slots:
     void generateSubPrepCancelButtonSkipsGenerationAndDestroysDialog();
     void packageFolderNamesCoverDateRangesAndUnsafeCharacters();
     void printDialogRequiresAndSavesMissingUserName();
+    void printDialogAcceptsWhenRememberedNameSaveFails();
     void clearDatabaseStateStopsAutosaveAndRemovesLoadedContent();
     void pageGenerationUsesSelectedTypedPrintSourceAndWritesInformationPdf();
     void pageGenerationForwardsSelectedDaysAndClassesInDisplayOrder();
@@ -3896,6 +3898,115 @@ void SubPrepPageTests::printDialogRequiresAndSavesMissingUserName()
             ->toString(),
         QStringLiteral("Jamie")
         );
+}
+
+void SubPrepPageTests::printDialogAcceptsWhenRememberedNameSaveFails()
+{
+    FakeUserPromptService promptService;
+    struct PromptServiceRestorer final
+    {
+        ~PromptServiceRestorer()
+        {
+            DialogServices::setUserPromptServiceForTesting(nullptr);
+        }
+    } restorePromptService;
+    DialogServices::setUserPromptServiceForTesting(&promptService);
+
+    QTemporaryDir targetRoot;
+    ApplicationServices services;
+    QVERIFY(targetRoot.isValid());
+    QVERIFY(services.dataService());
+
+    const QString nameKey = QStringLiteral("myInfo/name");
+    const auto initialName = services.dataService()->loadSetting(nameKey);
+    QVERIFY(initialName);
+    QVERIFY(!initialName->isValid());
+
+    ScheduleViewModel schedule;
+    schedule.days = {QStringLiteral("Tuesday")};
+    ScheduleRowView row;
+    ScheduleCellView cell;
+    cell.day = QStringLiteral("Tuesday");
+    ScheduleEntry entry;
+    entry.classId = 42;
+    cell.entries.append(entry);
+    row.cells.append(cell);
+    schedule.rows.append(row);
+
+    CalendarEvent vacation;
+    vacation.eventType = QStringLiteral("Vacation");
+    vacation.startDate = QDate(2026, 7, 14);
+    vacation.endDate = QDate(2026, 7, 14);
+
+    SubPrepPrintDialog dialog(
+        &services,
+        schedule,
+        {vacation},
+        QDate(2026, 7, 13)
+        );
+    auto* nameEdit = dialog.findChild<QLineEdit*>(
+        QStringLiteral("subPrepUserNameEdit")
+        );
+    auto* targetEdit = dialog.findChild<QLineEdit*>(
+        QStringLiteral("subPrepTargetFolderEdit")
+        );
+    auto* okButton = dialog.findChild<QPushButton*>(
+        QStringLiteral("subPrepGenerateOkButton")
+        );
+    QVERIFY(nameEdit);
+    QVERIFY(targetEdit);
+    QVERIFY(okButton);
+    auto* createFolderCheck = dialog.findChild<QCheckBox*>(
+        QStringLiteral("subPrepCreateFolderCheckBox")
+        );
+    QVERIFY(createFolderCheck);
+    QVERIFY(createFolderCheck->isChecked());
+
+    const QString failureDiagnostic =
+        QStringLiteral("Personal display name could not be saved.");
+
+    const QString folderName = SubPrepPackageService::datedFolderName(
+        QStringLiteral("Jamie"),
+        {QDate(2026, 7, 14)}
+        );
+    const QString existingOutputDirectory =
+        QDir(targetRoot.path()).filePath(folderName);
+    QVERIFY(QDir().mkpath(existingOutputDirectory));
+
+    nameEdit->setText(QStringLiteral("Jamie"));
+    targetEdit->setText(targetRoot.path());
+    QVERIFY(okButton->isEnabled());
+
+    struct SettingsRepositoryAvailabilityRestorer final
+    {
+        ~SettingsRepositoryAvailabilityRestorer()
+        {
+            ScheduleWidgetTestStubs::setSettingsRepositoryAvailable(true);
+        }
+    } restoreSettingsRepositoryAvailability;
+    ScheduleWidgetTestStubs::setSettingsRepositoryAvailable(false);
+
+    promptService.scriptedChoices.enqueue(PromptChoice::Destructive);
+    okButton->click();
+
+    QCOMPARE(dialog.result(), static_cast<int>(QDialog::Accepted));
+    QVERIFY(dialog.replaceExisting());
+    QCOMPARE(promptService.confirmations.size(), 1);
+    QCOMPARE(
+        promptService.confirmations.front().title,
+        QStringLiteral("Replace Existing Sub Prep Folder")
+        );
+    QVERIFY(promptService.confirmations.front().destructive);
+
+    const auto savedName = services.dataService()->loadSetting(nameKey);
+    QVERIFY(savedName);
+    QVERIFY(!savedName->isValid());
+
+    QCOMPARE(promptService.messages.size(), 1);
+    const PromptRequest& warning = promptService.messages.front();
+    QCOMPARE(warning.severity, PromptSeverity::Warning);
+    QCOMPARE(warning.title, QStringLiteral("Unable to Save Preference"));
+    QVERIFY(warning.message.contains(failureDiagnostic));
 }
 
 QTEST_MAIN(SubPrepPageTests)

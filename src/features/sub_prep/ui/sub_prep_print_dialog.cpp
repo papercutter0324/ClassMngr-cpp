@@ -14,7 +14,6 @@
 #include <utility>
 
 #include <QCheckBox>
-#include <QDebug>
 #include <QDir>
 #include <QDialogButtonBox>
 #include <QFileInfo>
@@ -806,9 +805,11 @@ void SubPrepPrintDialog::acceptGeneration()
         {
             const QByteArray errorBytes =
                 QByteArray::fromStdString(saved.error().message);
-            qWarning()
-                << "Failed to save the Sub Prep user name:"
-                << QString::fromUtf8(errorBytes);
+            DialogServices::showWarning(
+                this,
+                tr("Unable to Save Preference"),
+                QString::fromUtf8(errorBytes)
+                );
         }
     }
 
