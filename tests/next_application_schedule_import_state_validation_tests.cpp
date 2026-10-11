@@ -156,6 +156,7 @@ private slots:
     void rejectsCreateNewClassWithTarget();
     void requiresUniqueExactSkipTarget();
     void rejectsSkippedClassWithMismatchedTeacherKey();
+    void rejectsOutOfRangeCandidateIndexesForCreateAndUpdate();
     void rejectsInvalidProjectedTimes();
     void rejectsOverlapsAndAllowsAdjacentTimes();
     void normalProjectionIncludesSkippedButDropsAbsentClasses();
@@ -430,6 +431,57 @@ rejectsSkippedClassWithMismatchedTeacherKey()
                 SkippedClassNotUniqueExactMatch
         }
         );
+}
+
+void NextApplicationScheduleImportStateValidationTests::
+rejectsOutOfRangeCandidateIndexesForCreateAndUpdate()
+{
+    ScheduleImportStateValidationRequest request;
+    request.existingClasses = {
+        {
+            classId(42),
+            teacherId(3),
+            "e5",
+            "zeus",
+            "E5 Zeus",
+            {},
+            {}
+        }
+    };
+
+    for (const auto action : {
+             ScheduleImportStateClassAction::CreateNew,
+             ScheduleImportStateClassAction::UpdateExisting
+         })
+    {
+        request.classResolutions = {
+            {
+                0,
+                action,
+                action == ScheduleImportStateClassAction::UpdateExisting
+                    ? std::optional<Domain::ClassId>{classId(42)}
+                    : std::nullopt
+            }
+        };
+
+        const auto error = validateScheduleImportState(request);
+        QVERIFY(error.has_value());
+        QCOMPARE(
+            error->code,
+            ScheduleImportStateValidationErrorCode::InvalidClassCandidateIndex
+            );
+
+        const auto suppliedProjectionError = validateScheduleImportState(
+            request,
+            std::vector<ScheduleImportStateProjectedSchedule>{}
+            );
+        QVERIFY(suppliedProjectionError.has_value());
+        QCOMPARE(
+            suppliedProjectionError->code,
+            ScheduleImportStateValidationErrorCode::
+                InvalidClassCandidateIndex
+            );
+    }
 }
 
 void NextApplicationScheduleImportStateValidationTests::
@@ -750,6 +802,7 @@ projectionUsesTypedReferencesAndPreservesMeetingOrder()
     QCOMPARE(projected[1].times.size(), std::size_t(2));
     QCOMPARE(projected[1].times[0].dayLabel, std::string("Tuesday"));
     QCOMPARE(projected[1].times[1].dayLabel, std::string("Thursday"));
+    QVERIFY(!validateScheduleImportState(request).has_value());
 
     request.candidates[1].times[0] =
         time(0, 16 * 60 + 30, 17 * 60 + 30);

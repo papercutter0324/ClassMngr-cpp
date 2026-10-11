@@ -19,7 +19,8 @@ enum class ScheduleImportStateValidationErrorCode
     CreateNewClassHasTarget,
     SkippedClassNotUniqueExactMatch,
     InvalidProjectedTime,
-    ProjectedScheduleOverlap
+    ProjectedScheduleOverlap,
+    InvalidClassCandidateIndex
 };
 
 struct ScheduleImportStateValidationError
@@ -31,6 +32,30 @@ struct ScheduleImportStateValidationError
     std::string startTime;
     std::string endTime;
 };
+
+namespace ScheduleImportStateValidationDetail
+{
+[[nodiscard]] inline std::optional<ScheduleImportStateValidationError>
+validateScheduleImportStateCandidateIndexes(
+    const ScheduleImportStateValidationRequest& request
+    )
+{
+    for (const auto& resolution : request.classResolutions)
+    {
+        if ((resolution.action == ScheduleImportStateClassAction::CreateNew
+             || resolution.action
+                 == ScheduleImportStateClassAction::UpdateExisting)
+            && resolution.candidateIndex >= request.candidates.size())
+        {
+            return ScheduleImportStateValidationError{
+                ScheduleImportStateValidationErrorCode::
+                    InvalidClassCandidateIndex
+            };
+        }
+    }
+    return std::nullopt;
+}
+} // namespace ScheduleImportStateValidationDetail
 
 [[nodiscard]] inline std::optional<ScheduleImportStateValidationError>
 validateScheduleImportState(
@@ -44,6 +69,13 @@ validateScheduleImportState(
             ScheduleImportStateValidationError{code}
             );
     };
+
+    if (const auto error =
+            ScheduleImportStateValidationDetail::
+                validateScheduleImportStateCandidateIndexes(request))
+    {
+        return error;
+    }
 
     const auto teacherForId = [&request](
                                    const std::optional<Domain::TeacherId>& id
@@ -210,6 +242,12 @@ validateScheduleImportState(
     const ScheduleImportStateValidationRequest& request
     )
 {
+    if (const auto error =
+            ScheduleImportStateValidationDetail::
+                validateScheduleImportStateCandidateIndexes(request))
+    {
+        return error;
+    }
     const auto projectedSchedules =
         projectScheduleImportStateSchedules(request);
     return validateScheduleImportState(request, projectedSchedules);
