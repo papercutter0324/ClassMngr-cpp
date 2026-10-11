@@ -61,13 +61,23 @@ public:
 
         try
         {
-            const Result<Teacher> loaded = repository->getTeacher(*legacyId);
-            if (!loaded)
+            const TeacherByIdLookupResult loaded =
+                repository->lookupTeacherById(*legacyId);
+            switch (loaded.code)
             {
+            case TeacherByIdLookupCode::Missing:
+                return Application::TeacherProfileReadResult::failure({
+                    .code = Domain::ErrorCode::NotFound,
+                    .message = utf8(loaded.diagnostic),
+                    .recoverable = true
+                });
+            case TeacherByIdLookupCode::Failure:
                 return Application::TeacherProfileReadResult::failure(
-                    repositoryError(loaded.error()));
+                    repositoryError(loaded.diagnostic));
+            case TeacherByIdLookupCode::Found:
+                break;
             }
-            if (loaded->id != *legacyId)
+            if (loaded.teacher.id != *legacyId)
             {
                 return Application::TeacherProfileReadResult::failure({
                     .code = Domain::ErrorCode::Validation,
@@ -78,7 +88,7 @@ public:
 
             return Application::TeacherProfileReadResult::success({
                 .teacherId = id,
-                .fields = profileFieldsFromTeacher(*loaded)
+                .fields = profileFieldsFromTeacher(loaded.teacher)
             });
         }
         catch (const std::exception&)

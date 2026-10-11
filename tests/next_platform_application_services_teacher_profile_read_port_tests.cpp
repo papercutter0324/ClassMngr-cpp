@@ -60,6 +60,12 @@ int createTeacher(ApplicationServices& services)
     return result.value_or(-1);
 }
 
+std::string utf8(const QString& value)
+{
+    const QByteArray bytes = value.toUtf8();
+    return {bytes.constData(), static_cast<std::size_t>(bytes.size())};
+}
+
 }
 
 class NextPlatformApplicationServicesTeacherProfileReadPortTests final
@@ -69,7 +75,7 @@ class NextPlatformApplicationServicesTeacherProfileReadPortTests final
 
 private slots:
     void readsCompleteTeacherProfileFromActiveSession();
-    void reportsUnavailableSessionAndRepositoryErrorsWithoutFallback();
+    void reportsUnavailableMissingAndRepositoryFailureWithoutFallback();
 };
 
 void NextPlatformApplicationServicesTeacherProfileReadPortTests::
@@ -109,7 +115,7 @@ readsCompleteTeacherProfileFromActiveSession()
 }
 
 void NextPlatformApplicationServicesTeacherProfileReadPortTests::
-reportsUnavailableSessionAndRepositoryErrorsWithoutFallback()
+reportsUnavailableMissingAndRepositoryFailureWithoutFallback()
 {
     ApplicationServices services;
     QVERIFY(services.dataService());
@@ -127,19 +133,40 @@ reportsUnavailableSessionAndRepositoryErrorsWithoutFallback()
     const int id = createTeacher(services);
     QVERIFY(id > 0);
 
-    const auto missing = port.readTeacherProfile(teacherId(id + 1000));
+    const int missingId = id + 1000;
+    TeacherRepository* const repository =
+        services.databaseSession()->teacherRepository();
+    const TeacherByIdLookupResult typedMissing =
+        repository->lookupTeacherById(missingId);
+    QCOMPARE(typedMissing.code, TeacherByIdLookupCode::Missing);
+    const QString expectedMissingDiagnostic = QObject::tr(
+        "Loading teacher failed for %1: no matching record exists."
+        ).arg(QObject::tr("teacher id %1").arg(missingId));
+    QCOMPARE(typedMissing.diagnostic, expectedMissingDiagnostic);
+
+    const Result<Teacher> legacyMissing = repository->getTeacher(missingId);
+    QVERIFY(!legacyMissing);
+    QCOMPARE(legacyMissing.error(), typedMissing.diagnostic);
+
+    const auto missing = port.readTeacherProfile(teacherId(missingId));
     QVERIFY(!missing);
-    QCOMPARE(missing.error().code, Domain::ErrorCode::Technical);
-    QVERIFY(!missing.error().message.empty());
-    QVERIFY(!missing.error().recoverable);
+    QCOMPARE(missing.error().code, Domain::ErrorCode::NotFound);
+    QCOMPARE(missing.error().message, utf8(typedMissing.diagnostic));
+    QVERIFY(missing.error().recoverable);
 
     QSqlQuery query(services.databaseSession()->database());
     QVERIFY2(query.exec(QStringLiteral("DROP TABLE teachers")),
         qPrintable(query.lastError().text()));
+    const TeacherByIdLookupResult typedFailure =
+        repository->lookupTeacherById(id);
+    QCOMPARE(typedFailure.code, TeacherByIdLookupCode::Failure);
+    QVERIFY(!typedFailure.diagnostic.isEmpty());
+
     const auto repositoryFailure = port.readTeacherProfile(teacherId(id));
     QVERIFY(!repositoryFailure);
     QCOMPARE(repositoryFailure.error().code, Domain::ErrorCode::Technical);
-    QVERIFY(!repositoryFailure.error().message.empty());
+    QCOMPARE(repositoryFailure.error().message, utf8(typedFailure.diagnostic));
+    QVERIFY(!repositoryFailure.error().recoverable);
 
     services.closeDatabase();
     unavailable = port.readTeacherProfile(teacherId(id));

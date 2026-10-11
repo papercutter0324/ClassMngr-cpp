@@ -270,12 +270,27 @@ Result<Teacher> TeacherRepository::getTeacher(
     int teacherId
     )
 {
+    const TeacherByIdLookupResult lookup = lookupTeacherById(teacherId);
+    if (lookup.code == TeacherByIdLookupCode::Found)
+    {
+        return lookup.teacher;
+    }
+
+    return std::unexpected(lookup.diagnostic);
+}
+
+TeacherByIdLookupResult TeacherRepository::lookupTeacherById(
+    int teacherId
+    )
+{
     if (teacherId <= 0)
     {
-        return std::unexpected(
-            QObject::tr("Loading teacher failed: invalid teacher id %1.")
-                .arg(teacherId)
-            );
+        return {
+            .code = TeacherByIdLookupCode::Failure,
+            .diagnostic = QObject::tr(
+                "Loading teacher failed: invalid teacher id %1."
+                ).arg(teacherId)
+        };
     }
 
     QSqlQuery query(m_database);
@@ -295,19 +310,39 @@ Result<Teacher> TeacherRepository::getTeacher(
         );
     if (!executed)
     {
-        return std::unexpected(executed.error().userMessage());
+        return {
+            .code = TeacherByIdLookupCode::Failure,
+            .diagnostic = executed.error().userMessage()
+        };
     }
 
     if (!query.next())
     {
-        return std::unexpected(
-            QObject::tr(
+        if (query.lastError().isValid())
+        {
+            return {
+                .code = TeacherByIdLookupCode::Failure,
+                .diagnostic = SqlQueryUtils::errorFor(
+                    query,
+                    QObject::tr("Loading teacher"),
+                    {},
+                    teacherIdentity(teacherId)
+                    ).userMessage()
+            };
+        }
+
+        return {
+            .code = TeacherByIdLookupCode::Missing,
+            .diagnostic = QObject::tr(
                 "Loading teacher failed for %1: no matching record exists."
                 ).arg(teacherIdentity(teacherId))
-            );
+        };
     }
 
-    return teacherFromQuery(query);
+    return {
+        .code = TeacherByIdLookupCode::Found,
+        .teacher = teacherFromQuery(query)
+    };
 }
 
 Result<TeacherDisplayNameReadRecord>

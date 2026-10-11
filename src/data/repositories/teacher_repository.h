@@ -148,6 +148,20 @@ struct MyClassesTeacherProfileBatchReadMetrics final
     int statementCount = 0;
 };
 
+enum class TeacherByIdLookupCode
+{
+    Found,
+    Missing,
+    Failure
+};
+
+struct TeacherByIdLookupResult final
+{
+    TeacherByIdLookupCode code = TeacherByIdLookupCode::Failure;
+    Teacher teacher;
+    QString diagnostic;
+};
+
 class TeacherRepository
 {
 public:
@@ -168,6 +182,9 @@ public:
         );
 
     [[nodiscard]] Result<Teacher> getTeacher(
+        int teacherId
+        );
+    [[nodiscard]] TeacherByIdLookupResult lookupTeacherById(
         int teacherId
         );
     [[nodiscard]] Result<TeacherDisplayNameReadRecord>
