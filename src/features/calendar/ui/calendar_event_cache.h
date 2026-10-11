@@ -90,6 +90,10 @@ public:
         const QDate& startDate,
         const QDate& endDate
         ) const;
+    [[nodiscard]] QString rangeError(
+        const QDate& startDate,
+        const QDate& endDate
+        ) const;
     bool isLoading() const;
     [[nodiscard]] int eventCount() const;
     [[nodiscard]] int dateBucketCount() const;
@@ -117,6 +121,12 @@ private:
         QDate endDate;
         quint64 generation = 0;
         Priority priority = Priority::Foreground;
+    };
+
+    struct RangeFailure
+    {
+        DateRange range;
+        QString error;
     };
 
     struct LoadResult
@@ -180,6 +190,7 @@ private:
     QHash<QDate, QList<int>> m_eventIdsByDate;
     quint64 m_dateIndexEntryCount = 0;
     QList<DateRange> m_loadedRanges;
+    QList<RangeFailure> m_rangeFailures;
     QList<DateRange> m_retainedRanges;
     bool m_retentionEnabled = false;
     QList<Request> m_pendingRequests;

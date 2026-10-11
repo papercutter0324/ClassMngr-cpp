@@ -525,6 +525,7 @@ void CalendarPage::refreshUpcomingEvents()
         std::vector<CalendarEventSummary>,
         UpcomingEventsScopeCount
         > filteredEventsByScope;
+    std::array<QString, UpcomingEventsScopeCount> rangeErrorsByScope;
     std::array<bool, UpcomingEventsScopeCount> loadingByScope{};
     const CalendarEventDisplayOptions options =
         calendarEventDisplayOptions();
@@ -555,6 +556,36 @@ void CalendarPage::refreshUpcomingEvents()
                 scope,
                 filteredEventsByScope[scopeIndex(scope)]
                 );
+
+        if (m_calendarCache)
+        {
+            const QDate today = QDate::currentDate();
+            QDate rangeStart;
+            QDate rangeEnd;
+            switch (scope)
+            {
+            case UpcomingEventsScope::CurrentMonth:
+                rangeStart = m_calendarVisibleMonth.isValid()
+                    ? m_calendarVisibleMonth
+                    : QDate(today.year(), today.month(), 1);
+                rangeEnd = rangeStart.addMonths(1).addDays(-1);
+                break;
+
+            case UpcomingEventsScope::Next30Days:
+                rangeStart = today;
+                rangeEnd = today.addDays(UpcomingEventsNext30Days);
+                break;
+
+            case UpcomingEventsScope::Next10Events:
+                break;
+            }
+
+            if (rangeStart.isValid() && rangeEnd.isValid())
+            {
+                rangeErrorsByScope[scopeIndex(scope)] =
+                    m_calendarCache->rangeError(rangeStart, rangeEnd);
+            }
+        }
     }
 
     int dateColumnWidth = UpcomingEventDateColumnMinimumWidth;
@@ -611,6 +642,7 @@ void CalendarPage::refreshUpcomingEvents()
             scope,
             filteredEventsByScope[scopeIndex(scope)],
             loadingByScope[scopeIndex(scope)],
+            rangeErrorsByScope[scopeIndex(scope)],
             options.use24HourTime,
             dateColumnWidth,
             timeColumnWidth,
@@ -622,6 +654,7 @@ void CalendarPage::renderUpcomingEvents(
     UpcomingEventsScope scope,
     const std::vector<CalendarEventSummary>& events,
     bool loading,
+    const QString& rangeError,
     bool use24HourTime,
     int dateColumnWidth,
     int timeColumnWidth,
@@ -646,8 +679,60 @@ void CalendarPage::renderUpcomingEvents(
         delete item;
     }
 
+    if (!rangeError.isEmpty())
+    {
+        auto* errorLabel = new QLabel(
+            tr("Unable to load upcoming events: %1").arg(rangeError),
+            layout->parentWidget()
+            );
+        errorLabel->setObjectName(
+            QStringLiteral("calendarUpcomingEventsError")
+            );
+        errorLabel->setWordWrap(true);
+        errorLabel->setTextInteractionFlags(Qt::TextSelectableByMouse);
+        errorLabel->setAlignment(Qt::AlignCenter);
+        layout->addWidget(errorLabel);
+
+        auto* retryButton = new QPushButton(
+            tr("Retry"),
+            layout->parentWidget()
+            );
+        retryButton->setObjectName(
+            QStringLiteral("calendarUpcomingEventsRetry")
+            );
+        retryButton->setCursor(Qt::PointingHandCursor);
+        connect(
+            retryButton,
+            &QPushButton::clicked,
+            this,
+            [this, scope]()
+            {
+                QTimer::singleShot(
+                    0,
+                    this,
+                    [this, scope]()
+                    {
+                        if (scope == UpcomingEventsScope::CurrentMonth)
+                        {
+                            refreshCalendarData();
+                            return;
+                        }
+
+                        ensureUpcomingEventsForScope(scope);
+                    }
+                    );
+            }
+            );
+        layout->addWidget(retryButton, 0, Qt::AlignHCenter);
+    }
+
     if (events.empty())
     {
+        if (!rangeError.isEmpty())
+        {
+            return;
+        }
+
         auto* empty =
             new QLabel(
                 loading

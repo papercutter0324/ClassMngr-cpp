@@ -325,6 +325,7 @@ void CalendarEventCache::invalidate()
     m_eventIdsByDate.clear();
     m_dateIndexEntryCount = 0;
     m_loadedRanges.clear();
+    m_rangeFailures.clear();
     m_pendingRequests.clear();
 
     emit cacheChanged();
@@ -365,6 +366,21 @@ void CalendarEventCache::requestRange(
         )
     {
         return;
+    }
+
+    const DateRange requestedRange{startDate, endDate};
+    const auto previousFailure = std::find_if(
+        m_rangeFailures.begin(),
+        m_rangeFailures.end(),
+        [&requestedRange](const RangeFailure& failure)
+        {
+            return failure.range == requestedRange;
+        }
+        );
+    if (previousFailure != m_rangeFailures.end())
+    {
+        m_rangeFailures.erase(previousFailure);
+        emit cacheChanged();
     }
 
     enqueue(
@@ -594,6 +610,34 @@ bool CalendarEventCache::isRangeLoaded(
     return false;
 }
 
+QString CalendarEventCache::rangeError(
+    const QDate& startDate,
+    const QDate& endDate
+    ) const
+{
+    if (
+        !startDate.isValid()
+        || !endDate.isValid()
+        || endDate < startDate
+        )
+    {
+        return {};
+    }
+
+    const DateRange requestedRange{startDate, endDate};
+    const auto failure = std::find_if(
+        m_rangeFailures.cbegin(),
+        m_rangeFailures.cend(),
+        [&requestedRange](const RangeFailure& candidate)
+        {
+            return candidate.range == requestedRange;
+        }
+        );
+    return failure == m_rangeFailures.cend()
+        ? QString()
+        : failure->error;
+}
+
 bool CalendarEventCache::isLoading() const
 {
     return m_activeRequest.has_value()
@@ -786,13 +830,39 @@ void CalendarEventCache::finishActiveRequest()
 
     m_activeRequest.reset();
 
-    const bool acceptedResult =
-        result.request.generation == m_generation
-        && result.error.isEmpty();
-
-    if (acceptedResult)
+    if (result.request.generation == m_generation)
     {
-        if (result.request.kind == RequestKind::Range)
+        if (!result.error.isEmpty())
+        {
+            if (result.request.kind == RequestKind::Range)
+            {
+                const DateRange failedRange{
+                    result.request.startDate,
+                    result.request.endDate
+                };
+                if (!retainedRangesWithin(failedRange).isEmpty())
+                {
+                    const auto previousFailure = std::find_if(
+                        m_rangeFailures.begin(),
+                        m_rangeFailures.end(),
+                        [&failedRange](const RangeFailure& failure)
+                        {
+                            return failure.range == failedRange;
+                        }
+                        );
+                    if (previousFailure == m_rangeFailures.end())
+                    {
+                        m_rangeFailures.append({failedRange, result.error});
+                    }
+                    else
+                    {
+                        previousFailure->error = result.error;
+                    }
+                    emit cacheChanged();
+                }
+            }
+        }
+        else if (result.request.kind == RequestKind::Range)
         {
             const QList<DateRange> loadedRanges =
                 retainedRangesWithin(
@@ -1005,6 +1075,18 @@ void CalendarEventCache::pruneToRetainedRanges()
     {
         return;
     }
+
+    m_rangeFailures.erase(
+        std::remove_if(
+            m_rangeFailures.begin(),
+            m_rangeFailures.end(),
+            [this](const RangeFailure& failure)
+            {
+                return retainedRangesWithin(failure.range).isEmpty();
+            }
+            ),
+        m_rangeFailures.end()
+        );
 
     QList<DateRange> retainedLoadedRanges;
     for (const DateRange& loadedRange : m_loadedRanges)

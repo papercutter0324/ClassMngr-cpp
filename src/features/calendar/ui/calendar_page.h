@@ -140,6 +140,7 @@ private:
             ClassMngr::Next::Application::CalendarEventSummary
             >& events,
         bool loading,
+        const QString& rangeError,
         bool use24HourTime,
         int dateColumnWidth,
         int timeColumnWidth,

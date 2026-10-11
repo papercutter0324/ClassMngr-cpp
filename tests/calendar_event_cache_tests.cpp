@@ -278,6 +278,9 @@ struct BlockedQueryState final
     QSemaphore entered;
     QSemaphore resume;
     std::atomic<int> calls = 0;
+    std::atomic_bool blockQueries = true;
+    std::atomic_bool failAllRanges = false;
+    std::atomic_bool failFirstRange = false;
 };
 
 class BlockedQueryPort final
@@ -294,6 +297,19 @@ public:
         ) override
     {
         const int call = enter();
+        if (
+            m_state->failAllRanges.load()
+            || (call == 1 && m_state->failFirstRange.load())
+            )
+        {
+            return ClassMngr::Next::Application::
+                CalendarEventProjectionResult::failure({
+                    .code = ClassMngr::Next::Domain::ErrorCode::Technical,
+                    .message = "injected calendar range failure",
+                    .recoverable = true
+                });
+        }
+
         return ClassMngr::Next::Application::CalendarEventProjectionResult::success(
             injectedProjection(call == 1 ? "Stale generation" : "Fresh generation"));
     }
@@ -312,8 +328,11 @@ private:
     int enter()
     {
         const int call = ++m_state->calls;
-        m_state->entered.release();
-        m_state->resume.acquire();
+        if (m_state->blockQueries.load())
+        {
+            m_state->entered.release();
+            m_state->resume.acquire();
+        }
         return call;
     }
     std::shared_ptr<BlockedQueryState> m_state;
@@ -354,6 +373,9 @@ private slots:
     void typedDateProjectionPreservesModelParityAndFiltering();
     void typedRangeProjectionPreservesOrderingMetadataAndLegacyParity();
     void nextEventLookupUsesProjectionQueryAndDeduplicates();
+    void rangeFailureExposesDiagnosticAndRetryClearsIt();
+    void rangeFailureDiagnosticFollowsRetainedRanges();
+    void staleGenerationRangeFailureDoesNotLeak();
     void invalidationDiscardsCompletedWorkerResult();
     void invalidatedActiveRangeDoesNotSuppressSameRangeReissue();
     void invalidatedActiveNextEventLookupDoesNotSuppressReissue();
@@ -1088,6 +1110,97 @@ void CalendarEventCacheTests::nextEventLookupUsesProjectionQueryAndDeduplicates(
     QTRY_COMPARE_WITH_TIMEOUT(foundSpy.count(), 2, 5000);
     QVERIFY(!foundSpy.at(1).at(0).toDate().isValid());
     QCOMPARE(connectionNameSet(), connectionsBeforeQuery);
+}
+
+void CalendarEventCacheTests::rangeFailureExposesDiagnosticAndRetryClearsIt()
+{
+    const auto state = std::make_shared<BlockedQueryState>();
+    state->blockQueries = false;
+    state->failAllRanges = true;
+    CalendarEventCache cache(std::make_shared<BlockedQueryFactory>(state));
+    cache.setDatabasePath(QStringLiteral("failed-calendar.db"));
+    const QDate start(2026, 7, 1);
+    const QDate end(2026, 7, 31);
+
+    cache.requestRange(start, end);
+    QTRY_VERIFY_WITH_TIMEOUT(!cache.isLoading(), 5000);
+    QVERIFY(!cache.isRangeLoaded(start, end));
+    QCOMPARE(cache.loadedRangeCount(), 0);
+    QCOMPARE(
+        cache.rangeError(start, end),
+        QStringLiteral("injected calendar range failure")
+        );
+    QCOMPARE(state->calls.load(), 1);
+
+    state->failAllRanges = false;
+    cache.requestRange(start, end);
+    QCOMPARE(cache.rangeError(start, end), QString());
+    QTRY_VERIFY_WITH_TIMEOUT(cache.isRangeLoaded(start, end), 5000);
+    QTRY_VERIFY_WITH_TIMEOUT(!cache.isLoading(), 5000);
+    QCOMPARE(cache.rangeError(start, end), QString());
+    QCOMPARE(cache.eventCount(), 1);
+    QCOMPARE(state->calls.load(), 2);
+}
+
+void CalendarEventCacheTests::rangeFailureDiagnosticFollowsRetainedRanges()
+{
+    const auto state = std::make_shared<BlockedQueryState>();
+    state->blockQueries = false;
+    state->failAllRanges = true;
+    CalendarEventCache cache(std::make_shared<BlockedQueryFactory>(state));
+    cache.setDatabasePath(QStringLiteral("retained-failure-calendar.db"));
+
+    const QDate start(2026, 7, 1);
+    const QDate end(2026, 7, 31);
+    cache.setRetainedRanges({{start, end}});
+    cache.requestRange(start, end);
+    QTRY_VERIFY_WITH_TIMEOUT(!cache.isLoading(), 5000);
+    QCOMPARE(
+        cache.rangeError(start, end),
+        QStringLiteral("injected calendar range failure")
+        );
+
+    cache.setRetainedRanges({{QDate(2026, 7, 10), QDate(2026, 7, 20)}});
+    QCOMPARE(
+        cache.rangeError(start, end),
+        QStringLiteral("injected calendar range failure")
+        );
+    QVERIFY(
+        cache.rangeError(QDate(2026, 7, 10), QDate(2026, 7, 20)).isEmpty()
+        );
+
+    cache.setRetainedRanges({{QDate(2026, 8, 1), QDate(2026, 8, 31)}});
+    QVERIFY(cache.rangeError(start, end).isEmpty());
+}
+
+void CalendarEventCacheTests::staleGenerationRangeFailureDoesNotLeak()
+{
+    const auto state = std::make_shared<BlockedQueryState>();
+    state->failFirstRange = true;
+    CalendarEventCache cache(std::make_shared<BlockedQueryFactory>(state));
+    ResumeQueriesOnExit resumeOnExit{state};
+    cache.setDatabasePath(QStringLiteral("stale-failure-calendar.db"));
+    const QDate start(2026, 7, 1);
+    const QDate end(2026, 7, 31);
+
+    cache.requestRange(start, end);
+    QVERIFY(state->entered.tryAcquire(1, 5000));
+    cache.invalidate();
+    cache.requestRange(start, end);
+
+    state->resume.release();
+    QTRY_VERIFY_WITH_TIMEOUT(state->entered.available() == 1, 5000);
+    QVERIFY(state->entered.tryAcquire());
+    QVERIFY(cache.rangeError(start, end).isEmpty());
+    QVERIFY(!cache.isRangeLoaded(start, end));
+    QVERIFY(cache.isLoading());
+
+    state->resume.release();
+    QTRY_VERIFY_WITH_TIMEOUT(cache.isRangeLoaded(start, end), 5000);
+    QTRY_VERIFY_WITH_TIMEOUT(!cache.isLoading(), 5000);
+    QVERIFY(cache.rangeError(start, end).isEmpty());
+    QCOMPARE(cache.eventsForDate(QDate(2026, 7, 10)).first().title,
+        QStringLiteral("Fresh generation"));
 }
 
 void CalendarEventCacheTests::invalidationDiscardsCompletedWorkerResult()
