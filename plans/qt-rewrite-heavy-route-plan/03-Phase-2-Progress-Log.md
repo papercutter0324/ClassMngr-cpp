@@ -24041,3 +24041,58 @@ active with F666. Continue the one-commit-per-slice sequence.
    `cmake/tests/pages_and_output.cmake:912,1748`).
 
 This matrix is recorded before implementation. Batch 141 is active with F666.
+
+### F666 Class Day Filter Reset Policy save failure - accepted - 2026-10-12
+
+F666 is accepted at code commit
+`faa5c3a7bbfaff14ce391dc7e0ad703c074cb194`; its selection documentation is
+commit `907f1f735ba85f37a8729b7f9c103d84ad6b4843`. The executor and
+independent tester passed the exact focused CTests 3/3:
+`ClassMngrMainWindowClassVisibilityPreferencesFailureTests`,
+`ClassMngrClassesPageTests`, and
+`ClassMngrNextPlatformApplicationServicesClassDayFilterResetPolicyPortTests`.
+`git diff --check` passed.
+
+Coverage limit: there is no open-session/null-repository test seam, so that
+adapter failure branch was source-reviewed. No-session and closed-session
+paths are tested.
+
+**Decision: accept F666 with that limit.** Batch 141 is complete; Batch 142 is
+active with F667. Continue the one-commit-per-slice sequence.
+
+### Batch 142 shortlist - recorded before F667 implementation - 2026-10-12
+
+- F667 is selected: the Class Selection Reset Policy application contract and
+  adapter have void save methods and discard repository write errors for
+  `classes_navigation_class_selection_reset_policy`
+  (`src/next/application/class_selection_reset_policy.h:22`,
+  `src/next/platform/application_services_class_selection_reset_policy_port.h:77-101`).
+  Preferences silently saves this policy (`src/app/menu_builder.cpp:657`);
+  ClassesPage loads it on hide and may clear the current class
+  (`src/features/classes/ui/classes_page.cpp:1084-1107,1800-1804`).
+- UI and platform scans independently recommend F667. The existing
+  trigger-backed port test, F666 MainWindow radio-failure harness pattern, and
+  ClassesPage selection-reset tests bound the interaction scope.
+- Calendar event-type color remains a narrower port candidate, but its static
+  QColorDialog has no UI failure seam. Any relative user-impact comparison is
+  inference.
+
+### F667 Class Selection Reset Policy save-failure acceptance matrix - recorded before implementation - 2026-10-12
+
+1. Return a typed, nonrecoverable Technical result for trigger-backed write
+   failure and unavailable session/repository. Preserve the prior value and
+   unrelated settings; key
+   `classes_navigation_class_selection_reset_policy`; default
+   `on_application_close`; and encodings `on_application_close` and
+   `on_page_leave`.
+2. In Preferences > Class Selection, a failed save shows one
+   `Unable to Save Preference` warning with the diagnostic and restores both
+   radios to the persisted value without a second write.
+3. After removing the failure, retry writes the desired policy once.
+4. Preserve the F666 Day Filters branch and existing page-leave behaviors;
+   adapt all direct save callers. Reuse these existing focused targets and
+   exact CTests: `ClassMngrNextPlatformApplicationServicesClassSelectionResetPolicyPortTests`,
+   `ClassMngrMainWindowClassVisibilityPreferencesFailureTests`, and
+   `ClassMngrClassesPageTests`. Add no target.
+
+This matrix is recorded before implementation. Batch 142 is active with F667.
