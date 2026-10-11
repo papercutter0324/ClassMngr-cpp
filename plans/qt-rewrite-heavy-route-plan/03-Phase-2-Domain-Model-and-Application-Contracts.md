@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-11
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F642 is active to route Sidebar Add Class through the existing Application create contract while preserving its create-and-open behavior; F625/F626 remain deferred pending owner-specific retention evidence, and Phase 0 remains open for current-source macOS universal evidence (0/24).
+- Current note: F644 is active to route Sidebar Add Class's post-create read through a typed Application contract while preserving its failure warning and no-navigation behavior; F625/F626 remain deferred pending owner-specific retention evidence, and Phase 0 remains open for current-source macOS universal evidence (0/24).
 
 ### Slice discovery batches
 
@@ -98,10 +98,9 @@ Treat this plan as an operational summary, not a history:
   because the current execution identity is not an Administrator; resume when
   a Windows process with an elevated administrator token is available.
 
-#### Active batch: Batch 124
+#### Active batch: Batch 125
 
-- F642 - Route Sidebar Add Class through the existing Application create contract while preserving its current behavior.
-- F643 - Route Sidebar Add Teacher through the existing Application create contract while preserving current blank-name validation behavior.
+- F644 - Route Sidebar Add Class's post-create read through a typed Application contract while preserving its failure behavior.
 
 ## Objective
 

@@ -22734,3 +22734,58 @@ stable. Keep the subsequent teacher read and Details navigation behavior on
 the existing service path. Exact target/CTest:
 `ClassMngrMainWindowTeacherSidebarNavigationParityTests`. Matrix recorded
 before implementation; implementation pending. Batch 124 remains active.
+
+### F643 Route Sidebar Add Teacher through the existing Application create contract - accepted
+
+The MainWindow New Teacher action now sends its blank request through
+`TeacherCreateUseCase`, the shared teacher validation policy, and the Platform
+create port. The existing required-name validation message is preserved and
+the request stops before persistence. Commit
+`5288cab3ba5a7396dede96f1807810d7a3ffa8d7` (`Phase2 - Route Sidebar Add
+Teacher through Application (F643)`) contains the controller change and one
+case in the existing MainWindow teacher parity test. The Executor built
+`ClassMngr` and `ClassMngrMainWindowTeacherSidebarNavigationParityTests` in
+`build/windows-x64-debug-ninja`; focused CTest passed 1/1. The case verifies
+the exact warning title/message/detail, zero teacher rows, and stable page,
+selection, session, and workspace path. `git diff --check` passed. Verification
+was focused, not a full-suite run.
+
+**Decision: accept F643.** Batch 124 is complete.
+
+### Batch 125 discovery - recorded at F643 acceptance
+
+A focused controller/Application/Platform scan found the next bounded
+candidate: F642's `SidebarController::addClass()` now receives a typed ID from
+the create use case but still rereads the row through
+`ClassService::classroom(id)` and uses only `classroom.id`. The existing
+`ClassRepository::getClassById()` read and `TeacherProfileReadQuery` pattern
+support a small typed by-ID class read contract that can preserve the current
+failed-read warning and no-navigation behavior without loading the full class
+list. F285 remains deferred because blank Teacher draft creation is still
+undefined. No other comparable single-route candidate was selected.
+
+Batch 125 is now active with F644 first.
+
+### F644 acceptance matrix recorded - 2026-10-11
+
+Add a Qt-free typed Application class-by-ID read snapshot/query/port and a
+Platform adapter backed by the active session's
+`ClassRepository::getClassById()`. Route the post-create read in
+`SidebarController::addClass()` through this query, retaining the create
+result ID, Details navigation, and the existing `Add Class` warning title,
+`The created class could not be loaded.` message, repository diagnostic, and
+no-navigation outcome if the row is missing or cannot be loaded. Keep the
+page-leave guard and current closed-session behavior.
+
+Cover typed request validation, source error propagation, and mismatched
+snapshot IDs in the Application contract tests; cover one-row loading, a
+missing row, closed/unavailable session, and typed mapping in the Platform
+adapter tests. Extend the existing
+`tests/mainwindow_classes_sidebar_root_navigation_tests.cpp` with a temporary
+database trigger that deletes the inserted class after create, then verify the
+warning appears and the current page/widget, sidebar selection, session, and
+path do not change. Exact MainWindow target/CTest:
+`ClassMngrMainWindowClassesSidebarRootNavigationTests`. The contract-specific
+Application and Platform test files may be added because they directly cover
+the new production contract. Matrix recorded before implementation; Batch 125
+remains active.
