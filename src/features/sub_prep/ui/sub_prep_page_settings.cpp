@@ -289,14 +289,23 @@ void SubPrepPage::updateReadOnlyFieldWidths()
     }
 }
 
-bool SubPrepPage::saveSubPrepInternal()
+bool SubPrepPage::saveSubPrepInternal(QString* errorMessage)
 {
+    if (errorMessage)
+    {
+        errorMessage->clear();
+    }
+
     ClassMngr::Next::Platform::
         ApplicationServicesCurrentCampusPreferencesPort
         currentCampusPreferencesPort(m_services);
 
     if (!currentCampusPreferencesPort.isAvailable())
     {
+        if (errorMessage)
+        {
+            *errorMessage = tr("Sub Prep settings service is unavailable.");
+        }
         return false;
     }
 
@@ -305,7 +314,8 @@ bool SubPrepPage::saveSubPrepInternal()
         m_autosaveTimer->stop();
     }
 
-    restoreGradingDefaultIfNeeded();
+    const QString gradingInstructions =
+        m_gradingInstructionsEdit->toPlainText();
 
     const auto toUtf8 = [](const QString& value)
     {
@@ -322,7 +332,9 @@ bool SubPrepPage::saveSubPrepInternal()
     const auto saved = subPrepPreferencesPort.save({
         .classMaterials = toUtf8(m_classMaterialsEdit->toPlainText()),
         .bookReportGrading = toUtf8(
-            m_gradingInstructionsEdit->toPlainText()
+            gradingInstructions.trimmed().isEmpty()
+                ? defaultGradingInstructions()
+                : gradingInstructions
             ),
         .bookReportSpecialInstructions = toUtf8(
             m_specialInstructionsEdit->toPlainText()
@@ -331,9 +343,18 @@ bool SubPrepPage::saveSubPrepInternal()
     });
     if (!saved)
     {
+        if (errorMessage)
+        {
+            const std::string& message = saved.error().message;
+            *errorMessage = QString::fromUtf8(
+                message.data(),
+                static_cast<qsizetype>(message.size())
+                );
+        }
         return false;
     }
 
+    restoreGradingDefaultIfNeeded();
     clearDirty();
     return true;
 }

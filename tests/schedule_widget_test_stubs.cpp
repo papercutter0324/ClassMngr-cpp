@@ -40,6 +40,7 @@
 namespace ScheduleWidgetTestStubs
 {
 QHash<QString, QVariant> settings;
+QString settingsSaveFailure;
 QHash<int, QString> classGrades;
 QHash<int, QString> classLevels;
 QHash<int, QString> classRooms;
@@ -150,6 +151,7 @@ void reset()
 {
     FontManager::setSizeOffset(0);
     settings.clear();
+    settingsSaveFailure.clear();
     classGrades.clear();
     classLevels.clear();
     classRooms.clear();
@@ -225,6 +227,11 @@ void setDatabaseOpen(
     )
 {
     databaseSessionOpen = open;
+}
+
+void setSettingsSaveFailure(const QString& error)
+{
+    settingsSaveFailure = error;
 }
 
 void setDatabaseSessionOpen(
@@ -581,6 +588,11 @@ Status SettingsRepository::saveSetting(
 
 Status SettingsRepository::saveSettings(const QVariantMap& values)
 {
+    if (!ScheduleWidgetTestStubs::settingsSaveFailure.isEmpty())
+    {
+        return std::unexpected(ScheduleWidgetTestStubs::settingsSaveFailure);
+    }
+
     for (auto setting = values.cbegin(); setting != values.cend(); ++setting)
     {
         ScheduleWidgetTestStubs::settings.insert(

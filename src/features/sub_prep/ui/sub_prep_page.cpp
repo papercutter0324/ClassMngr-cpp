@@ -61,7 +61,19 @@ bool SubPrepPage::saveChanges()
         m_autosaveTimer->stop();
     }
 
-    return saveSubPrepInternal();
+    QString errorMessage;
+    if (!saveSubPrepInternal(&errorMessage))
+    {
+        DialogServices::showWarning(
+            this,
+            tr("Save Sub Prep"),
+            tr("Sub Prep settings could not be saved."),
+            errorMessage
+            );
+        return false;
+    }
+
+    return true;
 }
 
 bool SubPrepPage::hasUnsavedChanges() const

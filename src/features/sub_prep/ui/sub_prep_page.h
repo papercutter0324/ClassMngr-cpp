@@ -163,7 +163,7 @@ private:
         );
     void updateReadOnlyFieldWidths();
 
-    bool saveSubPrepInternal();
+    bool saveSubPrepInternal(QString* errorMessage = nullptr);
 
     void refreshGeneratedContent();
     void rebuildClassInformation();

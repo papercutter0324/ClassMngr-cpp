@@ -57,6 +57,7 @@ namespace ScheduleWidgetTestStubs
 {
 void reset();
 void setDatabaseOpen(bool open);
+void setSettingsSaveFailure(const QString& error);
 void setIncludeAdditionalClass(bool include);
 void setExistingIntensiveHours(bool exists);
 }
@@ -360,6 +361,7 @@ private slots:
     void zoomUnavailableHidesStoredCredentials();
     void unavailablePreferenceLoadsPreservePageValues();
     void unavailablePreferenceSaveHasNoSideEffects();
+    void failedPreferenceSaveReportsOnlyExplicitFailureAndPreservesDraft();
     void printDialogSelectsNextVacationBlock();
     void printDialogOnlyOffersVacationModeWithinFourWeeks();
     void printDialogCombinesVacationDatesAcrossHolidayBlocks();
@@ -1387,6 +1389,16 @@ void SubPrepPageTests
 void SubPrepPageTests
     ::unavailablePreferenceSaveHasNoSideEffects()
 {
+    FakeUserPromptService promptService;
+    struct PromptServiceRestorer final
+    {
+        ~PromptServiceRestorer()
+        {
+            DialogServices::setUserPromptServiceForTesting(nullptr);
+        }
+    } restorePromptService;
+    DialogServices::setUserPromptServiceForTesting(&promptService);
+
     ApplicationServices services;
     saveSettingOrFail(
         services.dataService(),
@@ -1443,6 +1455,25 @@ void SubPrepPageTests
     QCOMPARE(materials->toPlainText(), QStringLiteral("Unsaved materials"));
     QVERIFY(grading->toPlainText().isEmpty());
 
+    QVERIFY(QMetaObject::invokeMethod(&page, "autosave", Qt::DirectConnection));
+    QVERIFY(promptService.messages.isEmpty());
+    QVERIFY(promptService.asynchronousMessages.isEmpty());
+    QVERIFY(page.hasUnsavedChanges());
+    QCOMPARE(materials->toPlainText(), QStringLiteral("Unsaved materials"));
+    QVERIFY(grading->toPlainText().isEmpty());
+
+    QVERIFY(!page.saveChanges());
+    QCOMPARE(promptService.messages.size(), 1);
+    QCOMPARE(promptService.messages.first().title, QStringLiteral("Save Sub Prep"));
+    QCOMPARE(
+        promptService.messages.first().details,
+        QStringLiteral("Sub Prep settings service is unavailable.")
+        );
+    QVERIFY(page.hasUnsavedChanges());
+    QVERIFY(!timers.first()->isActive());
+    QCOMPARE(materials->toPlainText(), QStringLiteral("Unsaved materials"));
+    QVERIFY(grading->toPlainText().isEmpty());
+
     ScheduleWidgetTestStubs::setDatabaseOpen(true);
     QCOMPARE(
         services.dataService()
@@ -1473,6 +1504,125 @@ void SubPrepPageTests
             .value()
             .toString(),
         QStringLiteral("Stored notes")
+        );
+}
+
+void SubPrepPageTests::
+failedPreferenceSaveReportsOnlyExplicitFailureAndPreservesDraft()
+{
+    FakeUserPromptService promptService;
+    struct PromptServiceRestorer final
+    {
+        ~PromptServiceRestorer()
+        {
+            DialogServices::setUserPromptServiceForTesting(nullptr);
+        }
+    } restorePromptService;
+    DialogServices::setUserPromptServiceForTesting(&promptService);
+
+    ApplicationServices services;
+    const QStringList keys{
+        QStringLiteral("subPrep/classMaterials"),
+        QStringLiteral("subPrep/bookReportGrading"),
+        QStringLiteral("subPrep/bookReportSpecialInstructions"),
+        QStringLiteral("subPrep/subComments")
+    };
+    const QStringList stored{
+        QStringLiteral("Stored materials"),
+        QStringLiteral("Stored grading"),
+        QStringLiteral("Stored special instructions"),
+        QStringLiteral("Stored notes")
+    };
+    for (qsizetype index = 0; index < keys.size(); ++index)
+    {
+        saveSettingOrFail(services.dataService(), keys[index], stored[index]);
+    }
+    saveSettingOrFail(
+        services.dataService(),
+        QStringLiteral("subPrep/unrelatedPreference"),
+        QStringLiteral("Keep unrelated setting")
+        );
+
+    SubPrepPageHarness harness(&services);
+    SubPrepPage& page = harness.page;
+    activatePage(page);
+    const QList<QTextEdit*> editors{
+        page.findChild<QTextEdit*>(QStringLiteral("subPrepClassMaterialsEdit")),
+        page.findChild<QTextEdit*>(QStringLiteral("subPrepGradingInstructionsEdit")),
+        page.findChild<QTextEdit*>(QStringLiteral("subPrepSpecialInstructionsEdit")),
+        page.findChild<QTextEdit*>(QStringLiteral("subPrepNotesEdit"))
+    };
+    const QStringList draft{
+        QStringLiteral("  Unsaved materials\nKeep spacing  "),
+        QString(),
+        QStringLiteral("  Unsaved special instructions  "),
+        QStringLiteral("Unsaved notes\nSecond line")
+    };
+    for (qsizetype index = 0; index < editors.size(); ++index)
+    {
+        QVERIFY(editors[index]);
+        QCOMPARE(editors[index]->toPlainText(), stored[index]);
+        editors[index]->setPlainText(draft[index]);
+    }
+    QVERIFY(page.hasUnsavedChanges());
+    const QString failure = QStringLiteral("F655 injected settings save failure");
+    ScheduleWidgetTestStubs::setSettingsSaveFailure(failure);
+
+    QVERIFY(!page.saveChanges());
+    QCOMPARE(promptService.messages.size(), 1);
+    QCOMPARE(promptService.messages.first().title, QStringLiteral("Save Sub Prep"));
+    QCOMPARE(
+        promptService.messages.first().message,
+        QStringLiteral("Sub Prep settings could not be saved.")
+        );
+    QCOMPARE(promptService.messages.first().details, failure);
+    QVERIFY(promptService.asynchronousMessages.isEmpty());
+    QVERIFY(page.hasUnsavedChanges());
+    for (qsizetype index = 0; index < editors.size(); ++index)
+    {
+        QCOMPARE(editors[index]->toPlainText(), draft[index]);
+        QCOMPARE(
+            services.dataService()->loadSetting(keys[index])->toString(),
+            stored[index]
+            );
+    }
+
+    promptService.messages.clear();
+    page.saveData();
+    QVERIFY(QMetaObject::invokeMethod(&page, "autosave", Qt::DirectConnection));
+    QVERIFY(promptService.messages.isEmpty());
+    QVERIFY(promptService.asynchronousMessages.isEmpty());
+    QVERIFY(page.hasUnsavedChanges());
+    for (qsizetype index = 0; index < editors.size(); ++index)
+    {
+        QCOMPARE(editors[index]->toPlainText(), draft[index]);
+        QCOMPARE(
+            services.dataService()->loadSetting(keys[index])->toString(),
+            stored[index]
+            );
+    }
+
+    ScheduleWidgetTestStubs::setSettingsSaveFailure(QString());
+    QVERIFY(page.saveChanges());
+    QVERIFY(!page.hasUnsavedChanges());
+    QVERIFY(promptService.messages.isEmpty());
+    QVERIFY(promptService.asynchronousMessages.isEmpty());
+    QVERIFY(editors[1]->toPlainText().startsWith(QStringLiteral("Scoring: 0 / 20 / 40")));
+    for (qsizetype index = 0; index < editors.size(); ++index)
+    {
+        if (index != 1)
+        {
+            QCOMPARE(editors[index]->toPlainText(), draft[index]);
+        }
+        QCOMPARE(
+            services.dataService()->loadSetting(keys[index])->toString(),
+            editors[index]->toPlainText()
+            );
+    }
+    QCOMPARE(
+        services.dataService()
+            ->loadSetting(QStringLiteral("subPrep/unrelatedPreference"))->toString(),
+        QStringLiteral("Keep unrelated setting")
         );
 }
 
