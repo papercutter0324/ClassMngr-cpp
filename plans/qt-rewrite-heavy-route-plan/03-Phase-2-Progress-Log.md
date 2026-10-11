@@ -23141,4 +23141,45 @@ F651.
 - Focused target/CTest: existing
   `ClassMngrNextPlatformApplicationServicesCalendarEventPortTests`.
 
-F651 implementation is pending this matrix's documentation commit.
+This matrix was recorded and committed before F651 implementation.
+
+### Batch 129 bounded discovery - started during F651 - 2026-10-12
+
+- UI and Application scans both found a stale GsTeam zero-row UPDATE that can
+  silently report success and emit the saved signal. Record GsTeam as the
+  leading provisional candidate for Batch 129; no implementation has begun.
+- A stale co-teacher ID is lower severity and adjacent to F646, so it is not
+  selected as the next candidate.
+
+### F651 Calendar event stale update - accepted - 2026-10-12
+
+Commit `4594e1fa015fbccf49b2ef1041f46da1ee3e677e` distinguishes a deleted
+Calendar event row from an UPDATE failure. The stale-row update returns typed
+`NotFound` with the exact legacy no-match detail; a `BEFORE UPDATE` abort
+remains `Technical` with its SQL detail. Successful create/update and the
+INSERT-trigger `Technical` case remain preserved.
+
+The forced Debug build succeeded, and independent focused CTest
+`ClassMngrNextPlatformApplicationServicesCalendarEventPortTests` passed 1/1.
+`git diff --check` passed. Verification was focused, not a full-suite run.
+
+**Decision: accept F651.** Batch 128 remains active with F652.
+
+### F652 Teacher profile stale-update acceptance matrix - recorded before implementation - 2026-10-12
+
+- A positive-ID Teacher UPDATE that affects zero rows because the Teacher was
+  deleted after load must return typed `NotFound`; it must not be reported as
+  a successful write or as a reload failure.
+- Preserve valid update/reload success. A genuine UPDATE-trigger failure
+  remains `Technical` with its diagnostic.
+- Use a repository-backed fixture: delete the Teacher, then update using the
+  old ID. Retain the existing UPDATE-trigger failure case.
+- Focused CTest: `ClassMngrNextPlatformApplicationServicesTeacherProfileEditPersistencePortTests`.
+- `TeacherProfileEditUseCase` already maps failed persistence updates to
+  `UpdateFailed` and returns before reload with `writeSucceeded` false. Its
+  `updateFailureDoesNotReload` app-only test covers a generic Technical
+  failure, not zero-row SQL. An optional typed-`NotFound` cause assertion may
+  be added if useful; the repo-backed Platform case is the essential regression.
+
+F652 implementation is pending this matrix's documentation commit; Batch 128
+remains active with F652.

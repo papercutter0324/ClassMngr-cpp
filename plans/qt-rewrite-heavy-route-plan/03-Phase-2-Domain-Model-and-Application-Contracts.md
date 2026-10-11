@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-12
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: Batch 127 is complete; F651 is active in Batch 128, with F625/F626 and current-source macOS universal evidence (0/24) still open.
+- Current note: F651 is accepted and F652 is active in Batch 128; F625/F626 and current-source macOS universal evidence (0/24) remain open.
 
 ### Slice discovery batches
 
@@ -96,7 +96,7 @@ Treat this plan as an operational summary, not a history:
 
 #### Active batch: Batch 128
 
-- F651 - Distinguish a deleted Calendar event row from an UPDATE failure.
+- F652 - Distinguish a deleted Teacher row from a profile UPDATE failure.
 
 ## Objective
 
