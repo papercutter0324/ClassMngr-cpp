@@ -60,6 +60,21 @@ readsClassIdAndNameFromActiveSession()
     const int id = createClass(services, QStringLiteral("Orion"));
     QVERIFY(id > 0);
 
+    ClassRepository* const repository =
+        services.databaseSession()->classRepository();
+    const auto lookup = repository->lookupClassById(id);
+    QCOMPARE(
+        lookup.code,
+        ClassRepository::ClassByIdLookupCode::Found
+        );
+    QCOMPARE(lookup.classroom.id, id);
+    QCOMPARE(lookup.classroom.name, QStringLiteral("Orion"));
+
+    const Result<Classroom> legacy = repository->getClassById(id);
+    QVERIFY(legacy);
+    QCOMPARE(legacy->id, id);
+    QCOMPARE(legacy->name, QStringLiteral("Orion"));
+
     Platform::ApplicationServicesClassByIdReadPort port(&services);
     const Application::ClassByIdReadQuery query(port);
     const auto result = query.execute(classId(id));
@@ -78,6 +93,10 @@ reportsMissingUnavailableAndRepositoryFailures()
     auto result = port.readClassById(classId(1));
     QVERIFY(!result);
     QCOMPARE(result.error().code, Domain::ErrorCode::NotFound);
+    QCOMPARE(
+        result.error().message,
+        std::string("The active database session for classes is unavailable.")
+        );
     QVERIFY(result.error().recoverable);
 
     const auto nonCanonical = Domain::ClassId::fromString("01");
@@ -92,16 +111,40 @@ reportsMissingUnavailableAndRepositoryFailures()
     const int id = createClass(services, QStringLiteral("Orion"));
     QVERIFY(id > 0);
 
-    const auto missing = port.readClassById(classId(id + 1000));
+    ClassRepository* const repository =
+        services.databaseSession()->classRepository();
+    const int missingId = id + 1000;
+    const QString missingDiagnostic = QObject::tr(
+        "Loading class failed for %1: no matching record exists."
+        ).arg(QObject::tr("class id %1").arg(missingId));
+    const auto missingLookup = repository->lookupClassById(missingId);
+    QCOMPARE(
+        missingLookup.code,
+        ClassRepository::ClassByIdLookupCode::Missing
+        );
+    QCOMPARE(missingLookup.diagnostic, missingDiagnostic);
+
+    const Result<Classroom> legacyMissing =
+        repository->getClassById(missingId);
+    QVERIFY(!legacyMissing);
+    QCOMPARE(legacyMissing.error(), missingDiagnostic);
+
+    const auto missing = port.readClassById(classId(missingId));
     QVERIFY(!missing);
-    QCOMPARE(missing.error().code, Domain::ErrorCode::Technical);
-    QVERIFY(missing.error().message.find("no matching record")
-        != std::string::npos);
-    QVERIFY(!missing.error().recoverable);
+    QCOMPARE(missing.error().code, Domain::ErrorCode::NotFound);
+    QCOMPARE(missing.error().message, missingDiagnostic.toStdString());
+    QVERIFY(missing.error().recoverable);
 
     QSqlQuery query(services.databaseSession()->database());
     QVERIFY2(query.exec(QStringLiteral("DROP TABLE classes")),
         qPrintable(query.lastError().text()));
+    const auto failedLookup = repository->lookupClassById(id);
+    QCOMPARE(
+        failedLookup.code,
+        ClassRepository::ClassByIdLookupCode::Failure
+        );
+    QVERIFY(!failedLookup.diagnostic.isEmpty());
+
     const auto repositoryFailure = port.readClassById(classId(id));
     QVERIFY(!repositoryFailure);
     QCOMPARE(repositoryFailure.error().code, Domain::ErrorCode::Technical);
@@ -111,6 +154,11 @@ reportsMissingUnavailableAndRepositoryFailures()
     result = port.readClassById(classId(id));
     QVERIFY(!result);
     QCOMPARE(result.error().code, Domain::ErrorCode::NotFound);
+    QCOMPARE(
+        result.error().message,
+        std::string("The active database session for classes is unavailable.")
+        );
+    QVERIFY(result.error().recoverable);
 }
 
 QTEST_MAIN(NextPlatformApplicationServicesClassByIdReadPortTests)

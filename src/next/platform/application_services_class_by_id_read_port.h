@@ -79,14 +79,24 @@ public:
 
         try
         {
-            const Result<Classroom> loaded =
-                repository->getClassById(*legacyClassId);
-            if (!loaded)
+            const ClassRepository::ClassByIdLookupResult loaded =
+                repository->lookupClassById(*legacyClassId);
+            switch (loaded.code)
             {
+            case ClassRepository::ClassByIdLookupCode::Missing:
+                return Application::ClassByIdReadResult::failure({
+                    .code = Domain::ErrorCode::NotFound,
+                    .message = toStdString(loaded.diagnostic),
+                    .recoverable = true
+                });
+            case ClassRepository::ClassByIdLookupCode::Failure:
                 return Application::ClassByIdReadResult::failure(
-                    repositoryError(loaded.error()));
+                    repositoryError(loaded.diagnostic));
+            case ClassRepository::ClassByIdLookupCode::Found:
+                break;
             }
-            if (loaded->id != *legacyClassId)
+
+            if (loaded.classroom.id != *legacyClassId)
             {
                 return Application::ClassByIdReadResult::failure({
                     .code = Domain::ErrorCode::Validation,
@@ -97,7 +107,7 @@ public:
 
             return Application::ClassByIdReadResult::success({
                 .classId = classId,
-                .className = loaded->name.toStdU16String()
+                .className = loaded.classroom.name.toStdU16String()
             });
         }
         catch (const std::exception&)

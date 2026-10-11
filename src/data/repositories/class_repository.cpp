@@ -122,13 +122,28 @@ Result<Classroom> ClassRepository::getClassById(
     int classId
     )
 {
+    const ClassByIdLookupResult lookup = lookupClassById(classId);
+    if (lookup.code == ClassByIdLookupCode::Found)
+    {
+        return lookup.classroom;
+    }
+
+    return std::unexpected(lookup.diagnostic);
+}
+
+ClassRepository::ClassByIdLookupResult ClassRepository::lookupClassById(
+    int classId
+    )
+{
     ++m_readMetrics.getClassByIdCallCount;
     if (classId <= 0)
     {
-        return std::unexpected(
-            QObject::tr("Loading class failed: invalid class id %1.")
-                .arg(classId)
-            );
+        return {
+            .code = ClassByIdLookupCode::Failure,
+            .diagnostic = QObject::tr(
+                "Loading class failed: invalid class id %1."
+                ).arg(classId)
+        };
     }
 
     QSqlQuery query(m_database);
@@ -148,16 +163,33 @@ Result<Classroom> ClassRepository::getClassById(
         );
     if (!executed)
     {
-        return std::unexpected(executed.error().userMessage());
+        return {
+            .code = ClassByIdLookupCode::Failure,
+            .diagnostic = executed.error().userMessage()
+        };
     }
 
     if (!query.next())
     {
-        return std::unexpected(
-            QObject::tr(
+        if (query.lastError().isValid())
+        {
+            return {
+                .code = ClassByIdLookupCode::Failure,
+                .diagnostic = SqlQueryUtils::errorFor(
+                    query,
+                    QObject::tr("Loading class"),
+                    {},
+                    classIdentity(classId)
+                    ).userMessage()
+            };
+        }
+
+        return {
+            .code = ClassByIdLookupCode::Missing,
+            .diagnostic = QObject::tr(
                 "Loading class failed for %1: no matching record exists."
                 ).arg(classIdentity(classId))
-            );
+        };
     }
 
     Classroom classroom;
@@ -167,7 +199,10 @@ Result<Classroom> ClassRepository::getClassById(
     classroom.name =
         query.value("name").toString();
 
-    return classroom;
+    return {
+        .code = ClassByIdLookupCode::Found,
+        .classroom = std::move(classroom)
+    };
 }
 
 Result<QList<Classroom>> ClassRepository::getClassesByIds(
