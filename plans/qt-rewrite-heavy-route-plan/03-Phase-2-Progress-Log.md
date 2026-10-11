@@ -24096,3 +24096,56 @@ active with F667. Continue the one-commit-per-slice sequence.
    `ClassMngrClassesPageTests`. Add no target.
 
 This matrix is recorded before implementation. Batch 142 is active with F667.
+
+### F667 Class Selection Reset Policy save failure - accepted - 2026-10-12
+
+F667 is accepted at code commit
+`528e031ba1f3a549c04c901cd8f39a8c610269b9`. The focused CTests passed 3/3:
+`ClassMngrMainWindowClassVisibilityPreferencesFailureTests`,
+`ClassMngrClassesPageTests`, and
+`ClassMngrNextPlatformApplicationServicesClassSelectionResetPolicyPortTests`.
+The open-session/null-repository adapter failure branch was source-reviewed
+only.
+
+**Decision: accept F667 with that limit.** Batch 142 is complete; Batch 143 is
+active with F668. Continue the one-commit-per-slice sequence.
+
+### Batch 143 shortlist - recorded before F668 implementation - 2026-10-12
+
+- F668 is selected: Calendar event-type color persistence is a focused
+  dynamic preference write. The Application contract and adapter currently
+  expose a void write, and the adapter only logs a failed repository write
+  (`src/next/application/calendar_event_type_color_preferences.h:14-23`,
+  `src/next/platform/application_services_calendar_event_type_color_preferences_port.h:79-106`).
+  The color-picker flow saves a valid choice, then syncs filter buttons and
+  event badges and refreshes upcoming events
+  (`src/features/calendar/ui/calendar_page_upcoming_events.cpp:1088-1117`).
+  The sync paths reread the persisted color through the preference port.
+  Inference: a failed write therefore silently restores the old color in the
+  filter buttons and event badges; the user-visible gap is missing save-failure
+  feedback.
+- The platform scan identifies a narrow typed-port change and an existing
+  trigger-backed persistence test. The UI scan found no color-picker failure
+  test seam: the flow uses a static `QColorDialog`. Reuse the existing Calendar
+  page event-mutation parity target for UI coverage; add no target. Relative
+  user-impact ranking remains inference.
+
+### F668 Calendar event-type color save failure acceptance matrix - recorded before implementation - 2026-10-12
+
+1. Make the Application write return a typed, nodiscard Technical failure for
+   trigger-backed writes and unavailable/closed session or repository.
+   Preserve the prior dynamic-key value and unrelated settings, normalized
+   event type, key prefix `calendar/eventTypeColor/`, hex-RGB value, and
+   existing read/default semantics.
+2. In the Calendar color-picker flow, a failed save shows one warning with
+   diagnostic and restores the persisted color across filter buttons and
+   event badges; do not apply the attempted color.
+3. After removing the trigger, retry persists the chosen color once and
+   updates the display.
+4. Preserve dialog cancel behavior and existing Calendar event mutations;
+   adapt all direct callers. Reuse existing targets only and add no CMake
+   target. Exact focused CTests are
+   `ClassMngrNextPlatformApplicationServicesCalendarEventTypeColorPreferencesPortTests`
+   and `ClassMngrCalendarPageEventMutationParityTests`.
+
+This matrix is recorded before implementation. Batch 143 is active with F668.
