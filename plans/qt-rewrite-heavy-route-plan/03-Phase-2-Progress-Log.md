@@ -22357,16 +22357,34 @@ Commit `d6d483b70a04005ddcf84e1f9ee7c30196d1b827` (`Phase2 - Validate staff dire
 **Decision: accept F632.**
 
 <a id="f633"></a>
-#### F633 selection
+### F633 Validate Class Notes ID before the port - accepted
 
-F633 is the active next production slice. The Explorer report found that
-`ClassNotesSaveRequest::validate()` checks text lengths only, while the
-platform adapter parses a positive `int`; the use case forwards invalid IDs
-to that adapter. Move positive-`int` validation into Application before the
-port and cover it in the existing
-`tests/next_application_class_notes_save_port_tests.cpp`, updated only in
-response to the production/core change. At slice start, inspect and preserve
-leading-zero compatibility if the existing contract confirms it. Tests may
-be run for any changed code; test files may be created or updated only to
-cover a corresponding production/core change. Prefer focused assertions in
-the existing test file.
+The Explorer report found that `ClassNotesSaveRequest::validate()` checked
+text lengths only, while the platform adapter parsed a positive `int`; the
+use case forwarded invalid IDs to that adapter. F633 now validates full
+positive-`int` representability in Application after the text-length check,
+rejects invalid IDs before the port, and preserves the platform's exact
+`InvalidInput` contract, leading-zero forwarding, and `INT_MAX` forwarding.
+
+Commit `fcbf424a` (`Phase2 - Validate Class Notes ID before port (F633)`) was
+accepted. The existing
+`tests/next_application_class_notes_save_port_tests.cpp` changed in response
+to this production/core behavior; no test file was created. Implementer
+build/CTest passed, and independent CTest passed
+`ClassMngrNextApplicationClassNotesSavePortTests` 1/1 after adding the exact
+`INT_MAX` assertion. `git diff --check` passed.
+
+**Decision: accept F633.**
+
+<a id="f634"></a>
+### F634 Move Teacher Create validation into Application - active
+
+The Explorer report found `TeacherCreateUseCase` is a pass-through, while the
+platform adapter normalizes and validates before repository creation. The
+active proposal is to move validation into Application while preserving
+setup-wizard behavior and existing normalization and error behavior; confirm
+the exact contract against the request, adapter, and existing application
+test at slice start. Tests may be run for any changed code; test files may be
+created or updated only to cover the corresponding production/core change.
+Use the existing application test for focused coverage, and leave final
+acceptance to the implementation and verification outcome.

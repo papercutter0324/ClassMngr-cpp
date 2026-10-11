@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-11
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F633 is active to validate positive `int` Class Notes IDs in Application before the port; confirm and preserve existing leading-zero behavior at slice start, while F625/F626 remain deferred pending owner-specific retention evidence and Phase 0 remains open for current-source macOS universal evidence (0/24).
+- Current note: F634 is active to move Teacher Create validation into Application while preserving setup-wizard behavior and existing normalization/error behavior ([F634](03-Phase-2-Progress-Log.md#f634)); F625/F626 remain deferred pending owner-specific retention evidence, and Phase 0 remains open for current-source macOS universal evidence (0/24).
 
 ### Slice discovery batches
 
@@ -100,8 +100,7 @@ Treat this plan as an operational summary, not a history:
 
 #### Active batch: Batch 121
 
-- F633 - Validate Class Notes Save positive-`int` IDs before the port in the existing application test; confirm and preserve leading-zero behavior at slice start.
-- F634 - Move Teacher Create validation into Application, using the existing application test.
+- F634 - Move Teacher Create validation into Application, using the existing application test and preserving setup-wizard behavior and normalization/errors.
 - F635 - Classify roster-preparation errors as `Validation`, using the existing use-case test.
 - F636 - Preserve Upcoming Birthday results at the year-9999 boundary, using the existing use-case test.
 
