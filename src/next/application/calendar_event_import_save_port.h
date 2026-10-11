@@ -43,6 +43,20 @@ namespace CalendarEventImportSaveRequestDetail
     });
 }
 
+[[nodiscard]] inline Domain::Result<void> validateEvent(
+    const CalendarEventSaveRequest& event
+    )
+{
+    if (event.id.has_value())
+    {
+        return invalid(
+            "Calendar imports may only create new events."
+            );
+    }
+
+    return event.validate();
+}
+
 } // namespace CalendarEventImportSaveRequestDetail
 
 [[nodiscard]] inline Domain::Result<void>
@@ -61,14 +75,8 @@ validateCalendarEventImportSaveRequest(
 
     for (const CalendarEventSaveRequest& event : request.events)
     {
-        if (event.id.has_value())
-        {
-            return invalid(
-                "Calendar imports may only create new events."
-                );
-        }
-
-        const Domain::Result<void> eventValidation = event.validate();
+        const Domain::Result<void> eventValidation =
+            validateEvent(event);
         if (!eventValidation)
         {
             return eventValidation;

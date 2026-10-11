@@ -74,6 +74,20 @@ public:
             });
         }
 
+        for (const CalendarEventImportCandidate& candidate : request.candidates)
+        {
+            const Domain::Result<void> validation =
+                CalendarEventImportSaveRequestDetail::validateEvent(
+                    candidate.saveRequest
+                    );
+            if (!validation)
+            {
+                return Domain::Result<CalendarEventImportUseCaseResult>::failure(
+                    validation.error()
+                    );
+            }
+        }
+
         const CalendarEventImportSignatureQueryResult existingSignatures =
             signatureQueryPort.loadSignaturesInRange(request.signatureRange);
         if (!existingSignatures)
@@ -109,6 +123,15 @@ public:
         {
             saveRequest.events.push_back(
                 request.candidates.at(candidateIndex).saveRequest
+                );
+        }
+
+        const Domain::Result<void> saveRequestValidation =
+            saveRequest.validate();
+        if (!saveRequestValidation)
+        {
+            return Domain::Result<CalendarEventImportUseCaseResult>::failure(
+                saveRequestValidation.error()
                 );
         }
 
