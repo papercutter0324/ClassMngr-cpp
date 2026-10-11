@@ -157,6 +157,7 @@ private slots:
     void duplicateUnicodeComparisonKeyPreventsWritesAndShowsCurrentWarning();
     void invalidBirthdayPreventsWritesAndShowsCurrentWarning();
     void unavailableSessionIsSilentAndRetainsDirtyRows();
+    void deletedTeacherSaveIsSilentAndRetainsEditedRows();
     void repositoryFailureWarnsAndRetainsDirtyRows();
     void automaticSaveKeepsRepositoryFailuresQuiet();
     void automaticSavePersistsEditAndEmitsSaved();
@@ -382,6 +383,64 @@ unavailableSessionIsSilentAndRetainsDirtyRows()
     QCOMPARE(staffDirectoryCellText(*table, 0, 0), QString());
     QCOMPARE(saved.count(), 0);
     QCOMPARE(prompts.messages.size(), 0);
+}
+
+void StaffDirectoryNativeEnglishSaveTests::
+deletedTeacherSaveIsSilentAndRetainsEditedRows()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+    QVERIFY(seedTeachers(services));
+    const auto original = services.databaseSession()
+        ->nativeEnglishTeacherRepository()->getAll();
+    QVERIFY(original);
+    const NativeEnglishTeacher updateTarget =
+        teacherNamed(*original, QStringLiteral("Update Target"));
+    QVERIFY(updateTarget.id > 0);
+
+    StaffDirectoryPage page(
+        &services, StaffDirectoryKind::NativeEnglishTeachers);
+    page.setSaveMode(SaveMode::Manual);
+    QVERIFY(page.loadDirectory());
+    auto* table = page.findChild<QTableView*>(
+        QStringLiteral("nativeEnglishTeachersTable"));
+    QVERIFY(table);
+    const int updateRow = rowForId(*table, updateTarget.id);
+    QVERIFY(updateRow >= 0);
+    QVERIFY(setStaffDirectoryCellText(
+        *table, updateRow, 0, QStringLiteral("Edited Locally")));
+    QVERIFY(page.hasUnsavedChanges());
+
+    QSqlQuery externalDelete(services.databaseSession()->database());
+    externalDelete.prepare(QStringLiteral(
+        "DELETE FROM native_english_teachers WHERE id=?"));
+    externalDelete.addBindValue(updateTarget.id);
+    QVERIFY2(externalDelete.exec(), qPrintable(externalDelete.lastError().text()));
+    QCOMPARE(externalDelete.numRowsAffected(), 1);
+    const auto beforeSave = services.databaseSession()
+        ->nativeEnglishTeacherRepository()->getAll();
+    QVERIFY(beforeSave);
+
+    QSignalSpy saved(&page, &StaffDirectoryPage::directorySaved);
+    FakeUserPromptService prompts;
+    DialogServices::setUserPromptServiceForTesting(&prompts);
+    QVERIFY(!page.saveChanges());
+
+    QVERIFY(page.hasUnsavedChanges());
+    QCOMPARE(table->model()->rowCount(), original->size());
+    const int editedRow = rowForId(*table, updateTarget.id);
+    QVERIFY(editedRow >= 0);
+    QCOMPARE(staffDirectoryCellText(*table, editedRow, 0),
+        QStringLiteral("Edited Locally"));
+    QCOMPARE(saved.count(), 0);
+    QCOMPARE(prompts.messages.size(), 0);
+    const auto afterSave = services.databaseSession()
+        ->nativeEnglishTeacherRepository()->getAll();
+    QVERIFY(afterSave);
+    QVERIFY(sameTeacherLists(*afterSave, *beforeSave));
+    QVERIFY(teacherNamed(*afterSave, QStringLiteral("Update Target")).id <= 0);
 }
 
 void StaffDirectoryNativeEnglishSaveTests::

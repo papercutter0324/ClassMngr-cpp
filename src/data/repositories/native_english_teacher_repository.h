@@ -13,6 +13,20 @@ struct NativeEnglishTeacherBirthdayReadRecord final
     QString birthday;
 };
 
+enum class NativeEnglishTeacherDirectorySaveOutcomeCode
+{
+    Saved,
+    Missing,
+    Failure
+};
+
+struct NativeEnglishTeacherDirectorySaveOutcome final
+{
+    NativeEnglishTeacherDirectorySaveOutcomeCode code =
+        NativeEnglishTeacherDirectorySaveOutcomeCode::Failure;
+    QString diagnostic;
+};
+
 class NativeEnglishTeacherRepository
 {
 public:
@@ -23,6 +37,10 @@ public:
         loadBirthdayDirectoryReadRecords() const;
 
     [[nodiscard]] Status saveDirectory(
+        const QList<NativeEnglishTeacher>& teachers,
+        const QList<int>& deletedIds
+        );
+    [[nodiscard]] NativeEnglishTeacherDirectorySaveOutcome saveDirectoryWithOutcome(
         const QList<NativeEnglishTeacher>& teachers,
         const QList<int>& deletedIds
         );

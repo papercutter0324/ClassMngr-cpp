@@ -78,10 +78,16 @@ public:
 
         try
         {
-            const Status saved = repository->saveDirectory(teachers, deletedIds);
-            if (!saved)
+            const NativeEnglishTeacherDirectorySaveOutcome saved =
+                repository->saveDirectoryWithOutcome(teachers, deletedIds);
+            if (saved.code == NativeEnglishTeacherDirectorySaveOutcomeCode::Missing)
             {
-                std::string message = utf8(saved.error());
+                return failure(
+                    Domain::ErrorCode::NotFound, utf8(saved.diagnostic), true);
+            }
+            if (saved.code != NativeEnglishTeacherDirectorySaveOutcomeCode::Saved)
+            {
+                std::string message = utf8(saved.diagnostic);
                 if (message.empty())
                 {
                     message =

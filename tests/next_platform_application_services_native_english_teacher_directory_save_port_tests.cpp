@@ -91,6 +91,8 @@ private slots:
     void mapsTypedRowsAndDeletesThroughTheActiveSessionRepository();
     void unavailableSessionDoesNotUseTheDataServiceFallback();
     void repositoryFailureRollsBackTheEntireSaveTransaction();
+    void rollsBackCompanionWritesWhenUpdateFails_data();
+    void rollsBackCompanionWritesWhenUpdateFails();
 };
 
 void NextPlatformApplicationServicesNativeEnglishTeacherDirectorySavePortTests::
@@ -266,6 +268,123 @@ repositoryFailureRollsBackTheEntireSaveTransaction()
     QVERIFY(originalUpdatePresent);
     QVERIFY(deletedRowRestored);
     QVERIFY(!failedInsertPresent);
+}
+
+void NextPlatformApplicationServicesNativeEnglishTeacherDirectorySavePortTests::
+rollsBackCompanionWritesWhenUpdateFails_data()
+{
+    QTest::addColumn<bool>("staleUpdate");
+    QTest::newRow("externally-deleted-update-is-not-found") << true;
+    QTest::newRow("update-trigger-failure-is-technical") << false;
+}
+
+void NextPlatformApplicationServicesNativeEnglishTeacherDirectorySavePortTests::
+rollsBackCompanionWritesWhenUpdateFails()
+{
+    QFETCH(bool, staleUpdate);
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+    QVERIFY(seedDirectory(services));
+    NativeEnglishTeacherRepository* const repository =
+        services.databaseSession()->nativeEnglishTeacherRepository();
+    const auto original = repository->getAll();
+    QVERIFY(original);
+    int updateId = -1;
+    int deleteId = -1;
+    for (const NativeEnglishTeacher& teacher : *original)
+    {
+        if (teacher.name == QStringLiteral("Update Target"))
+        {
+            updateId = teacher.id;
+        }
+        else if (teacher.name == QStringLiteral("Delete Target"))
+        {
+            deleteId = teacher.id;
+        }
+    }
+    QVERIFY(updateId > 0);
+    QVERIFY(deleteId > 0);
+
+    QSqlQuery setup(services.databaseSession()->database());
+    if (staleUpdate)
+    {
+        setup.prepare(QStringLiteral(
+            "DELETE FROM native_english_teachers WHERE id=?"));
+        setup.addBindValue(updateId);
+        QVERIFY2(setup.exec(), qPrintable(setup.lastError().text()));
+        QCOMPARE(setup.numRowsAffected(), 1);
+    }
+    else
+    {
+        QVERIFY2(setup.exec(QStringLiteral(
+            "CREATE TRIGGER reject_directory_update "
+            "BEFORE UPDATE ON native_english_teachers "
+            "BEGIN SELECT RAISE(ABORT, 'injected Native English update failure'); END")),
+            qPrintable(setup.lastError().text()));
+    }
+
+    Application::NativeEnglishTeacherDirectorySaveRequest request;
+    // Both companion writes execute before the stale or rejected update.
+    request.rows = {
+        saveRow(QStringLiteral("Inserted Companion")),
+        saveRow(QStringLiteral("Updated Target"), updateId)
+    };
+    request.deletedIds = {Domain::NativeEnglishTeacherId(deleteId)};
+    Platform::ApplicationServicesNativeEnglishTeacherDirectorySavePort port(
+        &services);
+    const auto result = port.saveNativeEnglishTeacherDirectory(request);
+    QVERIFY(!result);
+    if (staleUpdate)
+    {
+        QCOMPARE(result.error().code, Domain::ErrorCode::NotFound);
+        QVERIFY(result.error().recoverable);
+        QCOMPARE(QString::fromStdString(result.error().message), QStringLiteral(
+            "Saving Native English Teacher id %1 failed: no matching record exists."
+            ).arg(updateId));
+    }
+    else
+    {
+        QCOMPARE(result.error().code, Domain::ErrorCode::Technical);
+        QVERIFY(!result.error().recoverable);
+        QVERIFY(result.error().message.find("injected Native English update failure")
+            != std::string::npos);
+    }
+
+    const auto after = repository->getAll();
+    QVERIFY(after);
+    QCOMPARE(after->size(), staleUpdate ? 1 : 2);
+    for (const NativeEnglishTeacher& expected : *original)
+    {
+        if (staleUpdate && expected.id == updateId)
+        {
+            continue;
+        }
+        bool found = false;
+        for (const NativeEnglishTeacher& actual : *after)
+        {
+            if (actual.id == expected.id)
+            {
+                found = true;
+                QCOMPARE(actual.name, expected.name);
+                QCOMPARE(actual.position, expected.position);
+                QCOMPARE(actual.phoneNumber, expected.phoneNumber);
+                QCOMPARE(actual.email, expected.email);
+                QCOMPARE(actual.birthday, expected.birthday);
+                QCOMPARE(actual.nationality, expected.nationality);
+            }
+        }
+        QVERIFY(found);
+    }
+    for (const NativeEnglishTeacher& teacher : *after)
+    {
+        QVERIFY(teacher.name != QStringLiteral("Inserted Companion"));
+        if (staleUpdate)
+        {
+            QVERIFY(teacher.id != updateId);
+        }
+    }
 }
 
 QTEST_MAIN(
