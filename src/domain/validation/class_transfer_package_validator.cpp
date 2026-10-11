@@ -5,6 +5,8 @@
 
 #include <QStringList>
 
+#include <utility>
+
 namespace
 {
 void appendValidation(
@@ -43,15 +45,14 @@ QString validationMessage(const ValidationResult& validation)
 }
 
 Result<ClassTransferPackage> ClassTransferPackageValidator::normalizedAndValidated(
-    const ClassTransferPackage& package
+    ClassTransferPackage package
     )
 {
-    ClassTransferPackage normalizedPackage = package;
     ValidationResult validation;
 
-    for (int index = 0; index < normalizedPackage.teachers.size(); ++index)
+    for (int index = 0; index < package.teachers.size(); ++index)
     {
-        ClassTransferTeacher& teacher = normalizedPackage.teachers[index];
+        ClassTransferTeacher& teacher = package.teachers[index];
         teacher.teacher = TeacherValidator::normalized(teacher.teacher);
         appendValidation(
             validation,
@@ -60,9 +61,9 @@ Result<ClassTransferPackage> ClassTransferPackageValidator::normalizedAndValidat
             );
     }
 
-    for (int index = 0; index < normalizedPackage.classes.size(); ++index)
+    for (int index = 0; index < package.classes.size(); ++index)
     {
-        ClassTransferClass& transferredClass = normalizedPackage.classes[index];
+        ClassTransferClass& transferredClass = package.classes[index];
         transferredClass.info = ClassInfoValidator::normalized(
             transferredClass.info
             );
@@ -85,5 +86,5 @@ Result<ClassTransferPackage> ClassTransferPackageValidator::normalizedAndValidat
         return std::unexpected(validationMessage(validation));
     }
 
-    return normalizedPackage;
+    return std::move(package);
 }

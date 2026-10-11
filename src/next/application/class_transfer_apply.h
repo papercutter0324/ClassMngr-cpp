@@ -31,7 +31,7 @@ public:
     virtual ~ClassTransferApplyPort() = default;
 
     [[nodiscard]] virtual ClassTransferApplyResult apply(
-        const ClassTransferApplyCommand& command
+        ClassTransferApplyCommand command
         ) const = 0;
 };
 

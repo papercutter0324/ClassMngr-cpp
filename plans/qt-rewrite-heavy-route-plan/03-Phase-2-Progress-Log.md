@@ -21608,8 +21608,50 @@ passed. Build, CTest, and boundary-slot evidence is in
 `f616-verifier-ctest.log`, and `f616-boundary-skip.xml`. `git diff --check`
 passed. No full repository suite was run.
 
-F616 is accepted. F617 is next: reduce Class Transfer import ownership
+F616 is accepted (commit `c47133a3`). F617 is next: reduce Class Transfer import ownership
 overlap while preserving resolution and apply behavior. F579 symbols remain
 deferred at the user's direction; F598 still needs elevated WPR. The 250 MiB
 lifecycle gate, render/window acceptance, and global Phase 0 remain open
 (Windows 1/24, macOS 0/24).
+
+## F617 Reduce Class Transfer import ownership overlap - 2026-10-11
+
+The sidebar now ends the review-dialog scope before applying. On acceptance it
+moves the loaded package into `ClassTransferApplyCommand`, then moves the
+command through the application use case and Platform port. The port transfers
+the package into the by-value validator, which normalizes its owned value in
+place and preserves teacher/class array order. Cancellation still returns
+before apply. The legacy `ClassService::importClasses` lvalue path remains
+source-compatible and copies into the validator's owned parameter.
+
+Independent incremental Ninja verification in the existing
+`build/windows-x64-debug-ninja` folder built `ClassMngrClassTransferTests`,
+`ClassMngrClassImportTeacherChoiceParityTests`,
+`ClassMngrSidebarClassTransferApplyParityTests`,
+`ClassMngrNextApplicationClassTransferTests`,
+`ClassMngrNextApplicationClassTransferApplyUseCaseTests`, and
+`ClassMngrNextPlatformApplicationServicesClassTransferApplyPortTests`. The
+standard Visual Studio Debug build hit the known `ZERO_CHECK` FileTracker
+`UnauthorizedAccessException`; a first Ninja attempt lacked MSVC standard
+header paths, and retrying from the existing VS developer environment
+succeeded. Focused CTest passed these seven entries (0 failed, 0 skipped) in
+7.02 seconds: `ClassMngrClassTransferTests`,
+`ClassMngrClassImportTeacherChoiceRegressionTests`,
+`ClassMngrClassImportTeacherChoiceParityTests`,
+`ClassMngrSidebarClassTransferApplyParityTests`,
+`ClassMngrNextApplicationClassTransferTests`,
+`ClassMngrNextApplicationClassTransferApplyUseCaseTests`, and
+`ClassMngrNextPlatformApplicationServicesClassTransferApplyPortTests`.
+Coverage includes cancel/no-write behavior, order and resolution parity, stale
+or changed destinations, schedule conflicts, normalization, apply result
+forwarding, late-write rollback, and legacy lvalue validation. The executor's
+`git diff --check` passed. No full repository suite ran, and physical byte/RSS
+savings were not measured. Successful build and CTest logs are
+`C:\Users\wfelt\AppData\Local\Temp\f617-class-transfer-build-ninja-devcmd.log`
+and `C:\Users\wfelt\AppData\Local\Temp\f617-class-transfer-ctest-ninja.log`.
+
+F617 is accepted. F618 is next: measure and reduce Class Transfer export
+serialization overlap while preserving package format and atomic-save/error
+behavior. F579 symbols remain deferred at the user's direction; F598 still
+needs elevated WPR. The 250 MiB lifecycle gate, render/window acceptance, and
+global Phase 0 remain open (Windows 1/24, macOS 0/24).

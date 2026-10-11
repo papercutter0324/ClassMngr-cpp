@@ -42,7 +42,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-11
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F617 is reducing Class Transfer import ownership overlap; F579 remains deferred and F598 awaits elevated WPR, while F526 provenance, the 250 MiB lifecycle, render/window, and Phase 0 gates remain open.
+- Current note: F618 is measuring Class Transfer export serialization overlap; F579 remains deferred and F598 awaits elevated WPR, while F526 provenance, the 250 MiB lifecycle, render/window, and Phase 0 gates remain open.
 
 ### Slice discovery batches
 
@@ -78,7 +78,6 @@ Treat this plan as an operational summary, not a history:
 
 #### Active batch: Batch 117
 
-- F617 - Reduce Class Transfer import ownership overlap while preserving resolution and apply behavior.
 - F618 - Reduce Class Transfer export serialization overlap while preserving output semantics.
 - F619 - Bound Speaking Evaluation AI batch selection and review tables.
 - F620 - Measure Sub Prep PDF render-stage overlap before selecting a reduction.

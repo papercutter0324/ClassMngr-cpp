@@ -9,6 +9,6 @@ class ClassTransferPackageValidator final
 {
 public:
     [[nodiscard]] static Result<ClassTransferPackage> normalizedAndValidated(
-        const ClassTransferPackage& package
+        ClassTransferPackage package
         );
 };

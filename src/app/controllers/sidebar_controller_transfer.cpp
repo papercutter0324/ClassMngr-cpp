@@ -17,6 +17,8 @@ using namespace SidebarControllerPrivate;
 #include <QDir>
 #include <QFileInfo>
 
+#include <utility>
+
 namespace
 {
 const QString JsonSuffix = QStringLiteral(".json");
@@ -178,7 +180,7 @@ void SidebarController::importClasses()
         return;
     }
 
-    const auto package = ClassTransferJsonCodec::loadFile(*selection);
+    auto package = ClassTransferJsonCodec::loadFile(*selection);
 
     if (!package)
     {
@@ -196,29 +198,34 @@ void SidebarController::importClasses()
         return;
     }
 
-    ClassImportDialog dialog(
-        m_services,
-        *package,
-        *preview,
-        m_sidebar
-        );
-
-    if (dialog.exec() != QDialog::Accepted)
+    ClassMngr::Next::Application::ClassTransferApplyRequest choices;
     {
-        return;
+        ClassImportDialog dialog(
+            m_services,
+            *package,
+            *preview,
+            m_sidebar
+            );
+
+        if (dialog.exec() != QDialog::Accepted)
+        {
+            return;
+        }
+
+        choices = dialog.applyRequest();
     }
 
     const QStringList selectedKeys = m_sidebar->selectedKeys();
     ClassMngr::Next::Application::ClassTransferApplyCommand command{
-        .package = *package,
-        .choices = dialog.applyRequest()
+        .package = std::move(*package),
+        .choices = std::move(choices)
     };
     ClassMngr::Next::Platform::ApplicationServicesClassTransferApplyPort port(
         *m_services
         );
     const auto summary =
         ClassMngr::Next::Application::ClassTransferApplyUseCase::execute(
-            command,
+            std::move(command),
             port
             );
 

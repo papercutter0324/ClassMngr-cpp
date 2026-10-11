@@ -2,6 +2,8 @@
 
 #include <QtTest/QtTest>
 
+#include <utility>
+
 using namespace ClassMngr::Next;
 
 namespace
@@ -10,11 +12,11 @@ class RecordingPort final : public Application::ClassTransferApplyPort
 {
 public:
     [[nodiscard]] Application::ClassTransferApplyResult apply(
-        const Application::ClassTransferApplyCommand& command
+        Application::ClassTransferApplyCommand command
         ) const override
     {
         ++calls;
-        received = command;
+        received = std::move(command);
         return result;
     }
 
@@ -60,10 +62,10 @@ forwardsPackageChoicesAndSummary()
         .replacedClassIds = {*Domain::ClassId::fromString("22")},
         .skippedClassCount = 3
     });
-    const auto request = command();
+    auto request = command();
 
     const auto result = Application::ClassTransferApplyUseCase::execute(
-        request,
+        std::move(request),
         port
         );
 

@@ -35,7 +35,7 @@ public:
     }
 
     [[nodiscard]] Application::ClassTransferApplyResult apply(
-        const Application::ClassTransferApplyCommand& command
+        Application::ClassTransferApplyCommand command
         ) const override
     {
         try
@@ -63,7 +63,7 @@ public:
 
             const auto normalized =
                 ClassTransferPackageValidator::normalizedAndValidated(
-                    command.package
+                    std::move(command.package)
                     );
             if (!normalized)
             {

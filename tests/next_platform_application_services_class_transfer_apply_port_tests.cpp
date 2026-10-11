@@ -14,6 +14,7 @@
 #include <QtTest/QtTest>
 
 #include <string>
+#include <utility>
 
 using namespace ClassMngr::Next;
 
@@ -124,6 +125,7 @@ private slots:
     void rejectsStaleChoiceWithoutWrites();
     void rejectsOnceValidChoiceAfterDestinationChanges();
     void preflightsScheduleConflictBeforeWrites();
+    void normalizesOwnedPackageWithoutChangingArrayOrder();
     void createsWithNormalizedPayloadAndTypedSummary();
     void replacesClassAndTeacherThroughRepository();
     void lateWriteFailureRollsBackTransferRows();
@@ -290,6 +292,31 @@ createsWithNormalizedPayloadAndTypedSummary()
     QVERIFY2(createCommand().package.teachers.first().teacher.teacherEn
         != stored->teacherEn,
         "fixture should require normalization");
+}
+
+void NextPlatformApplicationServicesClassTransferApplyPortTests::
+normalizesOwnedPackageWithoutChangingArrayOrder()
+{
+    auto package = validPackage();
+    ClassTransferClass secondClass = package.classes.first();
+    secondClass.key = QStringLiteral("class-2");
+    secondClass.name = QStringLiteral("Second Imported Class");
+    package.classes.append(std::move(secondClass));
+
+    const auto result = ClassTransferPackageValidator::normalizedAndValidated(
+        std::move(package)
+        );
+
+    QVERIFY(result);
+    QCOMPARE(result->teachers.size(), 1);
+    QCOMPARE(result->teachers.first().key, QStringLiteral("teacher-1"));
+    QCOMPARE(result->teachers.first().teacher.teacherEn,
+        QStringLiteral("Alex Kim"));
+    QCOMPARE(result->classes.size(), 2);
+    QCOMPARE(result->classes.at(0).key, QStringLiteral("class-1"));
+    QCOMPARE(result->classes.at(1).key, QStringLiteral("class-2"));
+    QCOMPARE(result->classes.at(0).info.classId, 1);
+    QCOMPARE(result->classes.at(0).info.classGrade, QStringLiteral("E4"));
 }
 
 void NextPlatformApplicationServicesClassTransferApplyPortTests::
