@@ -1,5 +1,7 @@
 #pragma once
 
+#include "next/domain/operation_result.h"
+
 namespace ClassMngr::Next::Application
 {
 
@@ -11,6 +13,9 @@ enum class ClassVisibilityScope
     AllClasses
 };
 
+using ClassVisibilityPreferencesSaveResult = Domain::Result<void>;
+using ClassVisibilityPreferencesSaveError = Domain::OperationError;
+
 class ClassVisibilityPreferencesPort
 {
 public:
@@ -18,7 +23,9 @@ public:
 
     [[nodiscard]] virtual ClassVisibilityScope load() const = 0;
 
-    virtual void save(ClassVisibilityScope scope) const = 0;
+    [[nodiscard]] virtual ClassVisibilityPreferencesSaveResult save(
+        ClassVisibilityScope scope
+        ) const = 0;
 };
 
 } // namespace ClassMngr::Next::Application

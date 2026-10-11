@@ -714,24 +714,27 @@ void ClassesPageTests::visibilityScopePortIsAppliedOnInitialLoadAndRefresh()
         ApplicationServicesClassVisibilityPreferencesPort visibilityPolicy(
             services
             );
-    visibilityPolicy.save(
+    const auto activeScheduleSaved = visibilityPolicy.save(
         ClassMngr::Next::Application::ClassVisibilityScope::ActiveSchedule
         );
+    QVERIFY(activeScheduleSaved);
 
     ClassesPage page(&services);
     QVERIFY(page.openClass(42));
     page.setScheduleDisplayMode(ScheduleDisplayMode::Intensive);
     QCOMPARE(page.runtimeMetrics().visibleClassCount, 0);
 
-    visibilityPolicy.save(
+    const auto allClassesSaved = visibilityPolicy.save(
         ClassMngr::Next::Application::ClassVisibilityScope::AllClasses
         );
+    QVERIFY(allClassesSaved);
     page.refreshNavigationPreferences();
     QCOMPARE(page.runtimeMetrics().visibleClassCount, 2);
 
-    visibilityPolicy.save(
+    const auto activeScheduleSavedAgain = visibilityPolicy.save(
         ClassMngr::Next::Application::ClassVisibilityScope::ActiveSchedule
         );
+    QVERIFY(activeScheduleSavedAgain);
     page.refreshNavigationPreferences();
     QCOMPARE(page.runtimeMetrics().visibleClassCount, 0);
 }
@@ -1440,11 +1443,12 @@ void ClassesPageTests::classesNavigationReadFailureKeepsNamesAndBlankMetadata()
     ScheduleWidgetTestStubs::setClassesNavigationReadFailure(true);
 
     ApplicationServices services;
-    ClassMngr::Next::Platform::
+    const auto saved = ClassMngr::Next::Platform::
         ApplicationServicesClassVisibilityPreferencesPort(services)
             .save(
                 ClassMngr::Next::Application::ClassVisibilityScope::AllClasses
                 );
+    QVERIFY(saved);
 
     ClassesPage page(&services);
     QVERIFY(page.openClass(42));

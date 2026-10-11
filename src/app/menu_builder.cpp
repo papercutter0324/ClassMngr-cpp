@@ -34,6 +34,7 @@
 #include <QPushButton>
 #include <QRadioButton>
 #include <QScrollArea>
+#include <QSignalBlocker>
 #include <QTabWidget>
 #include <QVBoxLayout>
 
@@ -666,7 +667,7 @@ void addNavigationPreferencesTab(
         );
     layout->addWidget(navigationGroup);
 
-    const auto save = [window, allClasses](bool checked)
+    const auto save = [window, allClasses, activeSchedule](bool checked)
     {
         if (!checked)
         {
@@ -675,17 +676,41 @@ void addNavigationPreferencesTab(
 
         if (window && window->services())
         {
+            const auto selectedScope = allClasses->isChecked()
+                ? ClassMngr::Next::Application::ClassVisibilityScope::AllClasses
+                : ClassMngr::Next::Application::ClassVisibilityScope::ActiveSchedule;
             ClassMngr::Next::Platform::
                 ApplicationServicesClassVisibilityPreferencesPort port(
                     *window->services()
                     );
-            port.save(
-                allClasses->isChecked()
-                    ? ClassMngr::Next::Application::ClassVisibilityScope::AllClasses
-                    : ClassMngr::Next::Application::ClassVisibilityScope::ActiveSchedule
-                );
+            const auto saved = port.save(selectedScope);
+            if (!saved)
+            {
+                DialogServices::showWarning(
+                    window,
+                    preferencesText("Unable to Save Preference"),
+                    QString::fromStdString(saved.error().message)
+                    );
+
+                const auto persistedScope = port.load();
+                const QSignalBlocker allClassesSignals(allClasses);
+                const QSignalBlocker activeScheduleSignals(activeSchedule);
+                allClasses->setChecked(
+                    persistedScope
+                        == ClassMngr::Next::Application::ClassVisibilityScope::AllClasses
+                    );
+                activeSchedule->setChecked(
+                    persistedScope
+                        == ClassMngr::Next::Application::ClassVisibilityScope::ActiveSchedule
+                    );
+                return;
+            }
         }
-        window->refreshNavigationPreferences();
+
+        if (window)
+        {
+            window->refreshNavigationPreferences();
+        }
     };
     QObject::connect(allClasses, &QRadioButton::toggled, page, save);
     QObject::connect(activeSchedule, &QRadioButton::toggled, page, save);

@@ -666,9 +666,9 @@ classTabsKeepOrderAndSelectedClass()
             names.at(index)
             ));
     }
-    ClassMngr::Next::Platform::
+    QVERIFY(ClassMngr::Next::Platform::
         ApplicationServicesClassVisibilityPreferencesPort(fixture.services)
-            .save(ClassMngr::Next::Application::ClassVisibilityScope::AllClasses);
+            .save(ClassMngr::Next::Application::ClassVisibilityScope::AllClasses));
 
     SpeakingEvalPage page(&fixture.services);
     page.loadEvaluations();
@@ -754,7 +754,7 @@ groupedNavigationUsesBoundedPagesAndRestoresSelection()
                 }
             }
 
-            ClassMngr::Next::Platform::
+            const auto visibilitySaved = ClassMngr::Next::Platform::
                 ApplicationServicesClassVisibilityPreferencesPort(
                     fixture.services
                     )
@@ -762,6 +762,13 @@ groupedNavigationUsesBoundedPagesAndRestoresSelection()
                         ClassMngr::Next::Application::
                             ClassVisibilityScope::ActiveSchedule
                         );
+            if (!visibilitySaved)
+            {
+                *failure = QString::fromStdString(
+                    visibilitySaved.error().message
+                    );
+                return false;
+            }
             return true;
         };
     QVERIFY2(
@@ -991,9 +998,9 @@ scheduleModesAndVisibilityScopeFilterNavigationTabs()
         ApplicationServicesClassVisibilityPreferencesPort visibilityPreferences(
             fixture.services
             );
-    visibilityPreferences.save(
+    QVERIFY(visibilityPreferences.save(
         ClassMngr::Next::Application::ClassVisibilityScope::ActiveSchedule
-        );
+        ));
 
     SpeakingEvalPage page(&fixture.services);
     page.loadEvaluations(
@@ -1038,9 +1045,9 @@ scheduleModesAndVisibilityScopeFilterNavigationTabs()
         fixture.classIds.at(2)
         );
 
-    visibilityPreferences.save(
+    QVERIFY(visibilityPreferences.save(
         ClassMngr::Next::Application::ClassVisibilityScope::AllClasses
-        );
+        ));
     page.refreshNavigationPreferences();
     const QList<int> allClassIds{
         fixture.classIds.at(0),
@@ -1050,9 +1057,9 @@ scheduleModesAndVisibilityScopeFilterNavigationTabs()
     };
     QCOMPARE(visibleClassIds(), allClassIds);
 
-    visibilityPreferences.save(
+    QVERIFY(visibilityPreferences.save(
         ClassMngr::Next::Application::ClassVisibilityScope::ActiveSchedule
-        );
+        ));
     page.refreshNavigationPreferences();
     QCOMPARE(visibleClassIds(), intensiveClassIds);
     classTabs = activeClassTabStrip(page);
@@ -1074,9 +1081,9 @@ unavailableClassListClearsThePageWithoutWarning()
     ScopedPromptService promptScope(&prompts);
 
     SpeakingEvalPage page(&fixture.services);
-    ClassMngr::Next::Platform::
+    QVERIFY(ClassMngr::Next::Platform::
         ApplicationServicesClassVisibilityPreferencesPort(fixture.services)
-            .save(ClassMngr::Next::Application::ClassVisibilityScope::AllClasses);
+            .save(ClassMngr::Next::Application::ClassVisibilityScope::AllClasses));
     SpeakingEvalRows persistedRows = SpeakingEval::emptyRows();
     persistedRows[0][SpeakingEval::toInt(SpeakingEvalColumn::EnglishName)] =
         QStringLiteral("Persisted");
@@ -1182,9 +1189,9 @@ failedNavigationReadKeepsNameOnlyTabs()
     };
     QVERIFY(fixture.services.databaseSession()->classInfoRepository()
                 ->saveClassInfo(classInfo));
-    ClassMngr::Next::Platform::
+    QVERIFY(ClassMngr::Next::Platform::
         ApplicationServicesClassVisibilityPreferencesPort(fixture.services)
-            .save(ClassMngr::Next::Application::ClassVisibilityScope::AllClasses);
+            .save(ClassMngr::Next::Application::ClassVisibilityScope::AllClasses));
 
     SpeakingEvalPage page(&fixture.services);
     page.loadEvaluations();

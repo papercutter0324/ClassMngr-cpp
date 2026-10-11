@@ -8,6 +8,9 @@
 #include <QString>
 #include <QVariant>
 
+#include <string>
+#include <utility>
+
 namespace ClassMngr::Next::Platform
 {
 
@@ -73,25 +76,53 @@ public:
             : Application::ClassVisibilityScope::ActiveSchedule;
     }
 
-    void save(const Application::ClassVisibilityScope scope) const override
+    [[nodiscard]] Application::ClassVisibilityPreferencesSaveResult save(
+        const Application::ClassVisibilityScope scope
+        ) const override
     {
         if (!m_session || !m_session->isOpen())
         {
-            return;
+            return failure(
+                "Class visibility preference cannot be saved because no database session is open."
+                );
         }
 
         SettingsRepository* const repository = m_session->settingsRepository();
         if (!repository)
         {
-            return;
+            return failure(
+                "Class visibility preference cannot be saved because the settings repository is unavailable."
+                );
         }
 
-        static_cast<void>(
-            repository->saveSetting(key(), storedScopeValue(scope))
+        const Status saved = repository->saveSetting(
+            key(),
+            storedScopeValue(scope)
             );
+        if (!saved)
+        {
+            const QByteArray errorBytes = saved.error().toUtf8();
+            return failure(
+                errorBytes.isEmpty()
+                    ? "Class visibility preference could not be saved."
+                    : errorBytes.toStdString()
+                );
+        }
+
+        return Application::ClassVisibilityPreferencesSaveResult::success();
     }
 
 private:
+    [[nodiscard]] static Application::ClassVisibilityPreferencesSaveResult
+    failure(std::string message)
+    {
+        return Application::ClassVisibilityPreferencesSaveResult::failure({
+            .code = Domain::ErrorCode::Technical,
+            .message = std::move(message),
+            .recoverable = false
+        });
+    }
+
     [[nodiscard]] static QString key()
     {
         return QStringLiteral("classes_navigation_visibility_scope");
