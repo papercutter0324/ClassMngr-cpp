@@ -281,6 +281,7 @@ struct BlockedQueryState final
     std::atomic_bool blockQueries = true;
     std::atomic_bool failAllRanges = false;
     std::atomic_bool failFirstRange = false;
+    std::atomic_bool failFirstNextEvent = false;
 };
 
 class BlockedQueryPort final
@@ -319,6 +320,15 @@ public:
         ) override
     {
         const int call = enter();
+        if (call == 1 && m_state->failFirstNextEvent.load())
+        {
+            return ClassMngr::Next::Application::CalendarEventDateResult::failure({
+                .code = ClassMngr::Next::Domain::ErrorCode::Technical,
+                .message = "injected calendar next event failure",
+                .recoverable = true
+            });
+        }
+
         return ClassMngr::Next::Application::CalendarEventDateResult::success(
             ClassMngr::Next::Application::CalendarEventDate(
                 call == 1 ? "2026-07-10" : "2026-08-10"));
@@ -373,6 +383,8 @@ private slots:
     void typedDateProjectionPreservesModelParityAndFiltering();
     void typedRangeProjectionPreservesOrderingMetadataAndLegacyParity();
     void nextEventLookupUsesProjectionQueryAndDeduplicates();
+    void nextEventLookupFailureExposesDiagnosticAndRetryClearsIt();
+    void nextEventLookupFailureDiagnosticClearsOnInvalidation();
     void rangeFailureExposesDiagnosticAndRetryClearsIt();
     void rangeFailureDiagnosticFollowsRetainedRanges();
     void staleGenerationRangeFailureDoesNotLeak();
@@ -1112,6 +1124,56 @@ void CalendarEventCacheTests::nextEventLookupUsesProjectionQueryAndDeduplicates(
     QCOMPARE(connectionNameSet(), connectionsBeforeQuery);
 }
 
+void CalendarEventCacheTests::
+nextEventLookupFailureExposesDiagnosticAndRetryClearsIt()
+{
+    const auto state = std::make_shared<BlockedQueryState>();
+    state->blockQueries = false;
+    state->failFirstNextEvent = true;
+    CalendarEventCache cache(std::make_shared<BlockedQueryFactory>(state));
+    cache.setDatabasePath(QStringLiteral("failed-next-event-calendar.db"));
+    const QDate afterDate(2026, 7, 31);
+    QSignalSpy foundSpy(&cache, &CalendarEventCache::nextEventMonthFound);
+    QSignalSpy failedSpy(&cache, &CalendarEventCache::nextEventMonthFailed);
+
+    cache.requestNextEventMonth(afterDate);
+    QTRY_VERIFY_WITH_TIMEOUT(!cache.isLoading(), 5000);
+    QCOMPARE(
+        cache.nextEventError(afterDate),
+        QStringLiteral("injected calendar next event failure")
+        );
+    QCOMPARE(failedSpy.size(), 1);
+    QCOMPARE(failedSpy.first().first().toDate(), afterDate);
+    QCOMPARE(foundSpy.size(), 0);
+    QCOMPARE(state->calls.load(), 1);
+
+    cache.requestNextEventMonth(afterDate);
+    QVERIFY(cache.nextEventError(afterDate).isEmpty());
+    QTRY_VERIFY_WITH_TIMEOUT(!cache.isLoading(), 5000);
+    QCOMPARE(foundSpy.size(), 1);
+    QCOMPARE(foundSpy.first().first().toDate(), QDate(2026, 8, 10));
+    QVERIFY(cache.nextEventError(afterDate).isEmpty());
+    QCOMPARE(state->calls.load(), 2);
+}
+
+void CalendarEventCacheTests::
+nextEventLookupFailureDiagnosticClearsOnInvalidation()
+{
+    const auto state = std::make_shared<BlockedQueryState>();
+    state->blockQueries = false;
+    state->failFirstNextEvent = true;
+    CalendarEventCache cache(std::make_shared<BlockedQueryFactory>(state));
+    cache.setDatabasePath(QStringLiteral("invalidated-next-event-calendar.db"));
+    const QDate afterDate(2026, 7, 31);
+
+    cache.requestNextEventMonth(afterDate);
+    QTRY_VERIFY_WITH_TIMEOUT(!cache.isLoading(), 5000);
+    QVERIFY(!cache.nextEventError(afterDate).isEmpty());
+
+    cache.invalidate();
+    QVERIFY(cache.nextEventError(afterDate).isEmpty());
+}
+
 void CalendarEventCacheTests::rangeFailureExposesDiagnosticAndRetryClearsIt()
 {
     const auto state = std::make_shared<BlockedQueryState>();
@@ -1284,6 +1346,7 @@ void CalendarEventCacheTests::invalidatedActiveRangeDoesNotSuppressSameRangeReis
 void CalendarEventCacheTests::invalidatedActiveNextEventLookupDoesNotSuppressReissue()
 {
     const auto state = std::make_shared<BlockedQueryState>();
+    state->failFirstNextEvent = true;
     CalendarEventCache cache(std::make_shared<BlockedQueryFactory>(state));
     ResumeQueriesOnExit resumeOnExit{state};
     cache.setDatabasePath(QStringLiteral("blocked-calendar.db"));
@@ -1302,11 +1365,13 @@ void CalendarEventCacheTests::invalidatedActiveNextEventLookupDoesNotSuppressRei
     QVERIFY(state->entered.tryAcquire());
     QCOMPARE(state->calls.load(), 2);
     QCOMPARE(found.size(), 0); // Old generation cannot advance next-ten progress.
+    QVERIFY(cache.nextEventError(after).isEmpty());
     QVERIFY(cache.isLoading());
     state->resume.release();
     QTRY_VERIFY_WITH_TIMEOUT(!cache.isLoading(), 5000);
     QCOMPARE(found.size(), 1);
     QCOMPARE(found.first().first().toDate(), QDate(2026, 8, 10));
+    QVERIFY(cache.nextEventError(after).isEmpty());
     QCOMPARE(state->calls.load(), 2);
 }
 

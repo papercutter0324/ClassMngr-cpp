@@ -585,6 +585,16 @@ void CalendarPage::refreshUpcomingEvents()
                 rangeErrorsByScope[scopeIndex(scope)] =
                     m_calendarCache->rangeError(rangeStart, rangeEnd);
             }
+            else if (
+                scope == UpcomingEventsScope::Next10Events
+                && m_nextTenLookupAfterDate.isValid()
+                )
+            {
+                rangeErrorsByScope[scopeIndex(scope)] =
+                    m_calendarCache->nextEventError(
+                        m_nextTenLookupAfterDate
+                        );
+            }
         }
     }
 
@@ -715,6 +725,24 @@ void CalendarPage::renderUpcomingEvents(
                         if (scope == UpcomingEventsScope::CurrentMonth)
                         {
                             refreshCalendarData();
+                            return;
+                        }
+
+                        if (scope == UpcomingEventsScope::Next10Events)
+                        {
+                            if (
+                                !m_calendarCache
+                                || !m_nextTenLookupAfterDate.isValid()
+                                )
+                            {
+                                return;
+                            }
+
+                            m_nextTenLookupPending = true;
+                            m_calendarCache->requestNextEventMonth(
+                                m_nextTenLookupAfterDate,
+                                CalendarEventCache::Priority::Background
+                                );
                             return;
                         }
 
@@ -879,7 +907,10 @@ bool CalendarPage::upcomingEventsLoading(
     case UpcomingEventsScope::Next10Events:
         return !activeCalendarEventTypes().isEmpty()
             && events.size() < UpcomingEventsLimit
-            && !m_nextTenSearchComplete;
+            && !m_nextTenSearchComplete
+            && m_calendarCache->nextEventError(
+                m_nextTenLookupAfterDate
+                ).isEmpty();
     }
 
     return false;

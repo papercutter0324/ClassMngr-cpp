@@ -94,6 +94,9 @@ public:
         const QDate& startDate,
         const QDate& endDate
         ) const;
+    [[nodiscard]] QString nextEventError(
+        const QDate& afterDate
+        ) const;
     bool isLoading() const;
     [[nodiscard]] int eventCount() const;
     [[nodiscard]] int dateBucketCount() const;
@@ -105,6 +108,9 @@ signals:
     void loadingChanged();
     void nextEventMonthFound(
         const QDate& firstEventDate
+        );
+    void nextEventMonthFailed(
+        const QDate& afterDate
         );
 
 private:
@@ -126,6 +132,12 @@ private:
     struct RangeFailure
     {
         DateRange range;
+        QString error;
+    };
+
+    struct NextEventFailure
+    {
+        QDate afterDate;
         QString error;
     };
 
@@ -191,6 +203,7 @@ private:
     quint64 m_dateIndexEntryCount = 0;
     QList<DateRange> m_loadedRanges;
     QList<RangeFailure> m_rangeFailures;
+    std::optional<NextEventFailure> m_nextEventFailure;
     QList<DateRange> m_retainedRanges;
     bool m_retentionEnabled = false;
     QList<Request> m_pendingRequests;

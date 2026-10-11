@@ -326,6 +326,7 @@ void CalendarEventCache::invalidate()
     m_dateIndexEntryCount = 0;
     m_loadedRanges.clear();
     m_rangeFailures.clear();
+    m_nextEventFailure.reset();
     m_pendingRequests.clear();
 
     emit cacheChanged();
@@ -427,6 +428,12 @@ void CalendarEventCache::requestNextEventMonth(
         )
     {
         return;
+    }
+
+    if (m_nextEventFailure)
+    {
+        m_nextEventFailure.reset();
+        emit cacheChanged();
     }
 
     enqueue(
@@ -636,6 +643,22 @@ QString CalendarEventCache::rangeError(
     return failure == m_rangeFailures.cend()
         ? QString()
         : failure->error;
+}
+
+QString CalendarEventCache::nextEventError(
+    const QDate& afterDate
+    ) const
+{
+    if (
+        !afterDate.isValid()
+        || !m_nextEventFailure
+        || m_nextEventFailure->afterDate != afterDate
+        )
+    {
+        return {};
+    }
+
+    return m_nextEventFailure->error;
 }
 
 bool CalendarEventCache::isLoading() const
@@ -861,6 +884,15 @@ void CalendarEventCache::finishActiveRequest()
                     emit cacheChanged();
                 }
             }
+            else
+            {
+                m_nextEventFailure = {
+                    result.request.startDate,
+                    result.error
+                };
+                emit cacheChanged();
+                emit nextEventMonthFailed(result.request.startDate);
+            }
         }
         else if (result.request.kind == RequestKind::Range)
         {
@@ -890,6 +922,7 @@ void CalendarEventCache::finishActiveRequest()
         }
         else
         {
+            m_nextEventFailure.reset();
             emit nextEventMonthFound(result.nextEventDate);
         }
     }

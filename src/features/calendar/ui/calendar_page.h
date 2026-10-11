@@ -132,6 +132,9 @@ private:
     void handleNextEventMonthFound(
         const QDate& firstEventDate
         );
+    void handleNextEventMonthFailed(
+        const QDate& afterDate
+        );
     void refreshUpcomingEvents();
     void updateCalendarCampusFilter();
     void renderUpcomingEvents(
@@ -234,6 +237,7 @@ private:
     QHash<QString, bool> m_eventTypeFilterStates;
     QDate m_calendarVisibleMonth;
     QDate m_nextTenSearchEnd;
+    QDate m_nextTenLookupAfterDate;
     QSet<QDate> m_loadedMonths;
     QList<CalendarEventCache::DateRange> m_onDemandRetainedRanges;
     bool m_nextTenSearchComplete = false;

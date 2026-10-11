@@ -291,6 +291,12 @@ void CalendarPage::buildCalendarContent()
             this,
             &CalendarPage::handleNextEventMonthFound
             );
+        connect(
+            m_calendarCache,
+            &CalendarEventCache::nextEventMonthFailed,
+            this,
+            &CalendarPage::handleNextEventMonthFailed
+            );
 
         m_calendarModel =
             new CalendarEventModel(
@@ -578,6 +584,7 @@ void CalendarPage::invalidateCalendarData()
     }
 
     m_nextTenSearchEnd = {};
+    m_nextTenLookupAfterDate = {};
     m_nextTenSearchComplete = false;
     m_nextTenLookupPending = false;
     m_loadedMonths.clear();
@@ -631,9 +638,16 @@ void CalendarPage::ensureNextTenEvents()
         return;
     }
 
+    const QDate lookupAfterDate = m_nextTenSearchEnd.addDays(1);
+    if (!m_calendarCache->nextEventError(lookupAfterDate).isEmpty())
+    {
+        return;
+    }
+
+    m_nextTenLookupAfterDate = lookupAfterDate;
     m_nextTenLookupPending = true;
     m_calendarCache->requestNextEventMonth(
-        m_nextTenSearchEnd.addDays(1),
+        lookupAfterDate,
         CalendarEventCache::Priority::Background
         );
 }
@@ -648,6 +662,7 @@ void CalendarPage::handleNextEventMonthFound(
     }
 
     m_nextTenLookupPending = false;
+    m_nextTenLookupAfterDate = {};
 
     if (!firstEventDate.isValid())
     {
@@ -681,6 +696,22 @@ void CalendarPage::handleNextEventMonthFound(
         m_nextTenSearchEnd,
         CalendarEventCache::Priority::Background
         );
+}
+
+void CalendarPage::handleNextEventMonthFailed(
+    const QDate& afterDate
+    )
+{
+    if (
+        !m_calendarContent
+        || afterDate != m_nextTenLookupAfterDate
+        )
+    {
+        return;
+    }
+
+    m_nextTenLookupPending = false;
+    refreshUpcomingEvents();
 }
 void CalendarPage::syncCalendarFontSize()
 {

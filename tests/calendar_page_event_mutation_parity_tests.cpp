@@ -868,8 +868,10 @@ private slots:
     void currentMonthUpcomingRowsMatchVisibleCalendarRange();
     void next30DaysIncludesBoundariesAndFiltersEventTypes();
     void nextTenUpcomingEventsUseStableVisibleOrderAndLimit();
+    void completedEmptyNextTenSearchShowsItsEmptyLabel();
     void completedEmptyUpcomingRangeShowsItsEmptyLabel();
     void upcomingRangeFailuresOfferRetryAndRecover();
+    void nextTenLookupFailuresOfferRetryAndRecover();
 };
 
 void CalendarPageEventMutationParityTests::workspaceCalendarResourcesReleaseAndRestore_data()
@@ -2165,6 +2167,35 @@ completedEmptyUpcomingRangeShowsItsEmptyLabel()
 }
 
 void CalendarPageEventMutationParityTests::
+completedEmptyNextTenSearchShowsItsEmptyLabel()
+{
+    CalendarWorkspace workspace;
+    QString setupError;
+    QVERIFY2(
+        initializeWorkspace(workspace, &setupError),
+        qPrintable(setupError)
+        );
+    QVERIFY2(
+        removePreservedFixtureEvent(workspace, &setupError),
+        qPrintable(setupError)
+        );
+
+    CalendarPage page(&workspace.services);
+    NavigationTabWidget* const tabs = upcomingTabs(page);
+    QVERIFY(tabs);
+    tabs->setCurrentIndex(2);
+
+    QTRY_COMPARE_WITH_TIMEOUT(
+        visibleUpcomingEmptyLabel(tabs->currentWidget()),
+        QStringLiteral("No upcoming events."),
+        15000
+        );
+    QVERIFY(visibleUpcomingRows(tabs->currentWidget()).isEmpty());
+    QVERIFY(visibleUpcomingFailure(tabs->currentWidget()).isEmpty());
+    QVERIFY(!upcomingRetryButton(tabs->currentWidget()));
+}
+
+void CalendarPageEventMutationParityTests::
 upcomingRangeFailuresOfferRetryAndRecover()
 {
     CalendarWorkspace workspace;
@@ -2281,6 +2312,131 @@ upcomingRangeFailuresOfferRetryAndRecover()
             .contains(event.title)
         );
     QVERIFY(cache->rangeError(today, next30End).isEmpty());
+}
+
+void CalendarPageEventMutationParityTests::
+nextTenLookupFailuresOfferRetryAndRecover()
+{
+    CalendarWorkspace workspace;
+    QString setupError;
+    QVERIFY2(
+        initializeWorkspace(workspace, &setupError),
+        qPrintable(setupError)
+        );
+    QVERIFY2(
+        removePreservedFixtureEvent(workspace, &setupError),
+        qPrintable(setupError)
+        );
+
+    const QDate today = QDate::currentDate();
+    CalendarEvent event;
+    event.title = QStringLiteral("Retry recovered Next 10 event");
+    event.eventType = QStringLiteral("Holiday");
+    event.startDate = today.addMonths(1).addDays(2);
+    event.endDate = event.startDate;
+    event.startTime = QTime(9, 0);
+    event.endTime = QTime(10, 0);
+    QVERIFY2(
+        saveFixtureEvent(workspace, event, &setupError) > 0,
+        qPrintable(setupError)
+        );
+
+    CalendarPage page(&workspace.services);
+    CalendarEventCache* const cache =
+        page.findChild<CalendarEventCache*>();
+    NavigationTabWidget* const tabs = upcomingTabs(page);
+    QVERIFY(cache);
+    QVERIFY(tabs);
+
+    const QDate visibleMonth(
+        qMax(today.year(), 2026),
+        today.year() < 2026 ? 1 : today.month(),
+        1
+        );
+    const QDate visibleMonthEnd = visibleMonth.addMonths(1).addDays(-1);
+    QTRY_VERIFY_WITH_TIMEOUT(
+        cache->isRangeLoaded(visibleMonth, visibleMonthEnd),
+        15000
+        );
+    QTRY_VERIFY_WITH_TIMEOUT(!cache->isLoading(), 5000);
+
+    const QDate currentSearchEnd =
+        QDate(today.year(), today.month(), 1)
+            .addMonths(1)
+            .addDays(-1);
+    cache->setRetainedRanges({
+        {visibleMonth, visibleMonthEnd},
+        {today, currentSearchEnd}
+    });
+    cache->requestRange(today, currentSearchEnd);
+    QTRY_VERIFY_WITH_TIMEOUT(
+        cache->isRangeLoaded(today, currentSearchEnd),
+        15000
+        );
+    QTRY_VERIFY_WITH_TIMEOUT(!cache->isLoading(), 5000);
+
+    QVERIFY2(
+        executeWorkspaceSql(
+            workspace,
+            QStringLiteral(
+                "ALTER TABLE calendar_events "
+                "RENAME TO calendar_events_temporarily_unavailable"
+                ),
+            &setupError
+            ),
+        qPrintable(setupError)
+        );
+
+    tabs->setCurrentIndex(2);
+    const QDate failedLookupAfter = currentSearchEnd.addDays(1);
+    QTRY_VERIFY_WITH_TIMEOUT(
+        !cache->nextEventError(failedLookupAfter).isEmpty(),
+        15000
+        );
+    QTRY_VERIFY_WITH_TIMEOUT(!cache->isLoading(), 5000);
+
+    const QString nextTenDiagnostic =
+        cache->nextEventError(failedLookupAfter);
+    const QString nextTenFailure =
+        visibleUpcomingFailure(tabs->currentWidget());
+    QVERIFY(!nextTenDiagnostic.isEmpty());
+    QVERIFY(nextTenFailure.contains(nextTenDiagnostic));
+    QVERIFY(upcomingRetryButton(tabs->currentWidget()));
+    QVERIFY(visibleUpcomingRows(tabs->currentWidget()).isEmpty());
+    QVERIFY(visibleUpcomingEmptyLabel(tabs->currentWidget()).isEmpty());
+    QVERIFY(!nextTenFailure.contains(QStringLiteral("Loading events")));
+    QVERIFY(!nextTenFailure.contains(QStringLiteral("No upcoming events")));
+    QVERIFY(!page.runtimeMetrics().nextTenLookupPending);
+
+    QVERIFY2(
+        executeWorkspaceSql(
+            workspace,
+            QStringLiteral(
+                "ALTER TABLE calendar_events_temporarily_unavailable "
+                "RENAME TO calendar_events"
+                ),
+            &setupError
+            ),
+        qPrintable(setupError)
+        );
+
+    QPushButton* const retryButton =
+        upcomingRetryButton(tabs->currentWidget());
+    QVERIFY(retryButton);
+    retryButton->click();
+
+    QTRY_VERIFY_WITH_TIMEOUT(
+        cache->nextEventError(failedLookupAfter).isEmpty(),
+        15000
+        );
+    QTRY_VERIFY_WITH_TIMEOUT(
+        visibleUpcomingRows(tabs->currentWidget())
+            .join(QString())
+            .contains(event.title),
+        15000
+        );
+    QVERIFY(visibleUpcomingFailure(tabs->currentWidget()).isEmpty());
+    QVERIFY(!upcomingRetryButton(tabs->currentWidget()));
 }
 
 QTEST_MAIN(CalendarPageEventMutationParityTests)
