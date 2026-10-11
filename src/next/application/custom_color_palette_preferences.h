@@ -1,5 +1,7 @@
 #pragma once
 
+#include "next/domain/operation_result.h"
+
 #include <array>
 #include <cstddef>
 #include <string>
@@ -53,7 +55,9 @@ public:
 
     [[nodiscard]] virtual CustomColorPalette read() const = 0;
 
-    virtual void write(const CustomColorPalette& palette) const = 0;
+    [[nodiscard]] virtual Domain::Result<void> write(
+        const CustomColorPalette& palette
+        ) const = 0;
 };
 
 } // namespace ClassMngr::Next::Application

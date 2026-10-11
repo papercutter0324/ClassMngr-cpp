@@ -1,12 +1,16 @@
 #include "core/utils/colorutils.h"
 #include "next/application/custom_color_palette_preferences.h"
 
+#include <QApplication>
 #include <QColorDialog>
+#include <QPointer>
 #include <QString>
+#include <QTimer>
 #include <QtTest/QtTest>
 
 #include <array>
 #include <cstddef>
+#include <optional>
 #include <string>
 #include <utility>
 
@@ -15,6 +19,9 @@ namespace
 
 using ClassMngr::Next::Application::CustomColorPalette;
 using ClassMngr::Next::Application::CustomColorPalettePreferencesPort;
+using ClassMngr::Next::Domain::ErrorCode;
+using ClassMngr::Next::Domain::OperationError;
+using ClassMngr::Next::Domain::Result;
 
 constexpr std::array<const char*, CustomColorPalette::EntryCount> ColorHexes = {{
     "#102030",
@@ -51,9 +58,11 @@ class FakeCustomColorPalettePreferencesPort final
 public:
     explicit FakeCustomColorPalettePreferencesPort(
         CustomColorPalette palette =
-            ClassMngr::Next::Application::defaultCustomColorPalette()
+            ClassMngr::Next::Application::defaultCustomColorPalette(),
+        std::optional<OperationError> writeFailure = std::nullopt
         )
         : m_palette(std::move(palette))
+        , m_writeFailure(std::move(writeFailure))
     {
     }
 
@@ -63,10 +72,17 @@ public:
         return m_palette;
     }
 
-    void write(const CustomColorPalette& palette) const override
+    [[nodiscard]] Result<void> write(
+        const CustomColorPalette& palette
+        ) const override
     {
         ++m_writeCount;
         m_writtenPalette = palette;
+        if (m_writeFailure)
+        {
+            return Result<void>::failure(*m_writeFailure);
+        }
+        return Result<void>::success();
     }
 
     [[nodiscard]] int readCount() const noexcept
@@ -86,6 +102,7 @@ public:
 
 private:
     CustomColorPalette m_palette;
+    std::optional<OperationError> m_writeFailure;
     mutable int m_readCount = 0;
     mutable int m_writeCount = 0;
     mutable CustomColorPalette m_writtenPalette =
@@ -103,6 +120,9 @@ private slots:
     void cleanup();
     void loadCopiesEveryPaletteEntryToTheDialog();
     void saveWritesEveryDialogSlotAsOneCanonicalPalette();
+    void saveCustomColorsReturnsTypedFailure();
+    void getColorReportsFailureAfterAcceptedDialogCloses();
+    void getColorReportsFailureAfterCanceledDialogCloses();
 
 private:
     std::array<QColor, CustomColorPalette::EntryCount> m_originalColors;
@@ -161,8 +181,9 @@ saveWritesEveryDialogSlotAsOneCanonicalPalette()
     }
     FakeCustomColorPalettePreferencesPort port;
 
-    ColorUtils::saveCustomColors(port);
+    const auto saved = ColorUtils::saveCustomColors(port);
 
+    QVERIFY(saved);
     QCOMPARE(port.readCount(), 0);
     QCOMPARE(port.writeCount(), 1);
     for (std::size_t index = 0; index < expected.hexColors.size(); ++index)
@@ -173,6 +194,146 @@ saveWritesEveryDialogSlotAsOneCanonicalPalette()
             == color.name(QColor::HexRgb).toStdString()
             );
     }
+}
+
+void ColorUtilsCustomColorPaletteTests::
+saveCustomColorsReturnsTypedFailure()
+{
+    const OperationError failure{
+        .code = ErrorCode::Technical,
+        .message = "forced custom palette failure",
+        .recoverable = false
+    };
+    FakeCustomColorPalettePreferencesPort port(
+        ClassMngr::Next::Application::defaultCustomColorPalette(),
+        failure
+        );
+
+    const auto saved = ColorUtils::saveCustomColors(port);
+
+    QVERIFY(!saved);
+    QCOMPARE(saved.error(), failure);
+    QCOMPARE(port.writeCount(), 1);
+}
+
+void ColorUtilsCustomColorPaletteTests::
+getColorReportsFailureAfterAcceptedDialogCloses()
+{
+    const OperationError failure{
+        .code = ErrorCode::Technical,
+        .message = "forced custom palette failure",
+        .recoverable = false
+    };
+    FakeCustomColorPalettePreferencesPort port(
+        ClassMngr::Next::Application::defaultCustomColorPalette(),
+        failure
+        );
+    const QColor selectedColor(QStringLiteral("#345678"));
+    QPointer<QColorDialog> observedDialog;
+    bool dialogWasHandled = false;
+    int callbackCount = 0;
+    bool callbackRanAfterDialogClosed = false;
+    std::optional<OperationError> callbackError;
+
+    QTimer::singleShot(0, [&observedDialog, &dialogWasHandled, selectedColor]
+    {
+        auto* const dialog = qobject_cast<QColorDialog*>(
+            QApplication::activeModalWidget()
+            );
+        if (!dialog)
+        {
+            return;
+        }
+        observedDialog = dialog;
+        dialogWasHandled = true;
+        dialog->setCurrentColor(selectedColor);
+        dialog->accept();
+    });
+
+    const QColor result = ColorUtils::getColor(
+        QColor(QStringLiteral("#ffffff")),
+        nullptr,
+        QStringLiteral("Pick a color"),
+        port,
+        [&]
+        (
+            const OperationError& error
+            )
+        {
+            ++callbackCount;
+            callbackError = error;
+            callbackRanAfterDialogClosed =
+                observedDialog && !observedDialog->isVisible();
+        }
+        );
+
+    QVERIFY(dialogWasHandled);
+    QCOMPARE(result, selectedColor);
+    QCOMPARE(callbackCount, 1);
+    QVERIFY(callbackRanAfterDialogClosed);
+    QVERIFY(callbackError);
+    QCOMPARE(*callbackError, failure);
+    QCOMPARE(port.readCount(), 1);
+    QCOMPARE(port.writeCount(), 1);
+}
+
+void ColorUtilsCustomColorPaletteTests::
+getColorReportsFailureAfterCanceledDialogCloses()
+{
+    const OperationError failure{
+        .code = ErrorCode::Technical,
+        .message = "forced custom palette failure",
+        .recoverable = false
+    };
+    FakeCustomColorPalettePreferencesPort port(
+        ClassMngr::Next::Application::defaultCustomColorPalette(),
+        failure
+        );
+    bool dialogWasHandled = false;
+    QPointer<QColorDialog> observedDialog;
+    int callbackCount = 0;
+    bool callbackRanAfterDialogClosed = false;
+    std::optional<OperationError> callbackError;
+
+    QTimer::singleShot(0, [&observedDialog, &dialogWasHandled]
+    {
+        auto* const dialog = qobject_cast<QColorDialog*>(
+            QApplication::activeModalWidget()
+            );
+        if (!dialog)
+        {
+            return;
+        }
+        observedDialog = dialog;
+        dialogWasHandled = true;
+        dialog->reject();
+    });
+
+    const QColor result = ColorUtils::getColor(
+        QColor(QStringLiteral("#ffffff")),
+        nullptr,
+        QStringLiteral("Pick a color"),
+        port,
+        [&]
+        (
+            const OperationError& error
+            )
+        {
+            ++callbackCount;
+            callbackError = error;
+            callbackRanAfterDialogClosed =
+                observedDialog && !observedDialog->isVisible();
+        }
+        );
+
+    QVERIFY(dialogWasHandled);
+    QVERIFY(!result.isValid());
+    QCOMPARE(callbackCount, 1);
+    QVERIFY(callbackRanAfterDialogClosed);
+    QVERIFY(callbackError);
+    QCOMPARE(*callbackError, failure);
+    QCOMPARE(port.readCount(), 1);
+    QCOMPARE(port.writeCount(), 1);
 }
 
 QTEST_MAIN(ColorUtilsCustomColorPaletteTests)

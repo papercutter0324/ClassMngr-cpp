@@ -184,7 +184,10 @@ QColor ColorUtils::getColor(
     QWidget* parent,
     const QString& title,
     const ClassMngr::Next::Application::
-        CustomColorPalettePreferencesPort& palettePreferencesPort
+        CustomColorPalettePreferencesPort& palettePreferencesPort,
+    const std::function<void(
+        const ClassMngr::Next::Domain::OperationError&
+        )>& onPaletteSaveFailure
     )
 {
     loadCustomColors(palettePreferencesPort);
@@ -196,7 +199,12 @@ QColor ColorUtils::getColor(
     dialog.setCurrentColor(startingColor);
     dialog.setOption(QColorDialog::DontUseNativeDialog, true);
     const int result = dialog.exec();
-    saveCustomColors(palettePreferencesPort);
+    const ClassMngr::Next::Domain::Result<void> saved =
+        saveCustomColors(palettePreferencesPort);
+    if (!saved)
+    {
+        onPaletteSaveFailure(saved.error());
+    }
     return result == QDialog::Accepted ? dialog.selectedColor() : QColor{};
 }
 
@@ -214,10 +222,10 @@ void ColorUtils::loadCustomColors(
         );
 }
 
-void ColorUtils::saveCustomColors(
+ClassMngr::Next::Domain::Result<void> ColorUtils::saveCustomColors(
     const ClassMngr::Next::Application::
         CustomColorPalettePreferencesPort& palettePreferencesPort
     )
 {
-    palettePreferencesPort.write(paletteFromDialog());
+    return palettePreferencesPort.write(paletteFromDialog());
 }

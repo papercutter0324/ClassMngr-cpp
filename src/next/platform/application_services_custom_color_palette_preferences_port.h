@@ -58,7 +58,7 @@ public:
     [[nodiscard]] Application::CustomColorPalette read()
         const override;
 
-    void write(
+    [[nodiscard]] Domain::Result<void> write(
         const Application::CustomColorPalette& palette
         ) const override;
 

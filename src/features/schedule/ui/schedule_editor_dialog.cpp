@@ -101,7 +101,20 @@ void ScheduleEditorDialog::chooseClassColor()
             QColor(m_classColor),
             this,
             tr("Choose Class Color"),
-            palettePreferencesPort
+            palettePreferencesPort,
+            [this](
+                const ClassMngr::Next::Domain::OperationError& error
+                )
+            {
+                DialogServices::showWarning(
+                    this,
+                    tr("Unable to Save Preference"),
+                    QString::fromUtf8(
+                        error.message.data(),
+                        static_cast<qsizetype>(error.message.size())
+                        )
+                    );
+            }
             );
 
     if (!color.isValid())
@@ -123,7 +136,20 @@ void ScheduleEditorDialog::chooseFontColor()
             QColor(m_fontColor),
             this,
             tr("Choose Font Color"),
-            palettePreferencesPort
+            palettePreferencesPort,
+            [this](
+                const ClassMngr::Next::Domain::OperationError& error
+                )
+            {
+                DialogServices::showWarning(
+                    this,
+                    tr("Unable to Save Preference"),
+                    QString::fromUtf8(
+                        error.message.data(),
+                        static_cast<qsizetype>(error.message.size())
+                        )
+                    );
+            }
             );
 
     if (!color.isValid())

@@ -1048,7 +1048,21 @@ public:
                 QColor(m_color),
                 this,
                 tr("Choose Class Color"),
-                palettePreferencesPort);
+                palettePreferencesPort,
+                [this](
+                    const ClassMngr::Next::Domain::OperationError& error
+                    )
+                {
+                    DialogServices::showWarning(
+                        this,
+                        tr("Unable to Save Preference"),
+                        QString::fromUtf8(
+                            error.message.data(),
+                            static_cast<qsizetype>(error.message.size())
+                            )
+                        );
+                }
+                );
             if (!color.isValid())
             {
                 return;

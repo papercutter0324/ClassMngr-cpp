@@ -160,14 +160,14 @@ missingAndUnavailableReadDefaults()
         );
     QVERIFY(unavailablePort.read() == defaultCustomColorPalette());
 
-    unavailablePort.write(paletteWithTwoColors());
+    QVERIFY(unavailablePort.write(paletteWithTwoColors()));
     QVERIFY(unavailablePort.read() == defaultCustomColorPalette());
 
     ApplicationServicesCustomColorPalettePreferencesPort nullSettingsPort(
         static_cast<ApplicationServices*>(nullptr)
         );
     QVERIFY(nullSettingsPort.read() == defaultCustomColorPalette());
-    nullSettingsPort.write(paletteWithTwoColors());
+    QVERIFY(nullSettingsPort.write(paletteWithTwoColors()));
     QVERIFY(nullSettingsPort.read() == defaultCustomColorPalette());
 }
 
@@ -182,7 +182,7 @@ compactJsonRoundTripUsesExactKey()
 
     const CustomColorPalette expected = paletteWithTwoColors();
     ApplicationServicesCustomColorPalettePreferencesPort port(services);
-    port.write(expected);
+    QVERIFY(port.write(expected));
 
     const auto actual = port.read();
     const auto expectedRead = canonicalizedPalette(expected);
@@ -291,7 +291,14 @@ saveFailurePreservesStoredPaletteAndWarning()
 
     ApplicationServicesCustomColorPalettePreferencesPort port(services);
     const auto initial = paletteWithTwoColors();
-    port.write(initial);
+    QVERIFY(port.write(initial));
+    SettingsRepository* const repository = settingsRepository(services);
+    QVERIFY(repository);
+    const QString unrelatedValue = QStringLiteral("preserved");
+    QVERIFY(repository->saveSetting(
+        QString::fromUtf8(UnrelatedKey),
+        unrelatedValue
+        ));
     QVERIFY(
         executeSql(
             services,
@@ -312,11 +319,32 @@ saveFailurePreservesStoredPaletteAndWarning()
         );
     auto attempted = paletteWithTwoColors();
     attempted.hexColors[0] = "#fedcba";
-    port.write(attempted);
+    const auto saveResult = port.write(attempted);
+    QVERIFY(!saveResult);
+    QCOMPARE(
+        saveResult.error().code,
+        ClassMngr::Next::Domain::ErrorCode::Technical
+        );
+    QVERIFY(!saveResult.error().recoverable);
+    QVERIFY(
+        QString::fromStdString(saveResult.error().message).contains(
+            QStringLiteral("forced custom colors failure")
+            )
+        );
 
     const auto actual = port.read();
     const auto expectedRead = canonicalizedPalette(initial);
     QVERIFY(actual == expectedRead);
+    const auto stored = repository->loadSetting(
+        QString::fromUtf8(CustomColorsKey)
+        );
+    QVERIFY(stored);
+    QCOMPARE(stored->toString(), compactJson(initial));
+    const auto unrelated = repository->loadSetting(
+        QString::fromUtf8(UnrelatedKey)
+        );
+    QVERIFY(unrelated);
+    QCOMPARE(unrelated->toString(), unrelatedValue);
 }
 
 void NextPlatformApplicationServicesCustomColorPalettePreferencesPortTests::
@@ -333,7 +361,7 @@ preservesUnrelatedSettings()
         ));
 
     ApplicationServicesCustomColorPalettePreferencesPort port(services);
-    port.write(paletteWithTwoColors());
+    QVERIFY(port.write(paletteWithTwoColors()));
 
     const auto unrelated = repository->loadSetting(
         QString::fromUtf8(UnrelatedKey)
@@ -372,7 +400,7 @@ closedSessionDefaultsAndIgnoresWritesWithoutFallback()
     QVERIFY(port.read() == defaultCustomColorPalette());
     auto attempted = paletteWithTwoColors();
     attempted.hexColors[0] = "#fedcba";
-    port.write(attempted);
+    QVERIFY(port.write(attempted));
 
     QVERIFY(services.openDatabase(path));
     QVERIFY(session->isOpen());

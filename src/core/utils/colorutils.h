@@ -6,6 +6,7 @@
 
 #include "next/application/custom_color_palette_preferences.h"
 
+#include <functional>
 #include <optional>
 
 class QWidget;
@@ -50,7 +51,10 @@ public:
         QWidget* parent,
         const QString& title,
         const ClassMngr::Next::Application::
-            CustomColorPalettePreferencesPort& palettePreferencesPort
+            CustomColorPalettePreferencesPort& palettePreferencesPort,
+        const std::function<void(
+            const ClassMngr::Next::Domain::OperationError&
+            )>& onPaletteSaveFailure
         );
 
     // =====================================================
@@ -61,7 +65,8 @@ public:
         const ClassMngr::Next::Application::
             CustomColorPalettePreferencesPort& palettePreferencesPort
         );
-    static void saveCustomColors(
+    [[nodiscard]] static ClassMngr::Next::Domain::Result<void>
+    saveCustomColors(
         const ClassMngr::Next::Application::
             CustomColorPalettePreferencesPort& palettePreferencesPort
         );

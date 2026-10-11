@@ -1276,7 +1276,20 @@ void ScheduleImportReviewDialog::chooseClassColor(
                 QColor(control.color),
                 this,
                 tr("Select Imported Class Color"),
-                palettePreferencesPort
+                palettePreferencesPort,
+                [this](
+                    const ClassMngr::Next::Domain::OperationError& error
+                    )
+                {
+                    DialogServices::showWarning(
+                        this,
+                        tr("Unable to Save Preference"),
+                        QString::fromUtf8(
+                            error.message.data(),
+                            static_cast<qsizetype>(error.message.size())
+                            )
+                        );
+                }
                 );
         if (!selected.isValid())
         {
