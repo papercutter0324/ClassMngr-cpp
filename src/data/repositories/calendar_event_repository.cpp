@@ -538,6 +538,56 @@ Result<int> CalendarEventRepository::saveCalendarEvent(
     const CalendarEvent& event
     )
 {
+    const CalendarEventSaveOutcome saved =
+        saveCalendarEventOutcomeWithoutTransaction(event);
+    if (saved.code == CalendarEventSaveOutcomeCode::Saved)
+    {
+        return saved.eventId;
+    }
+
+    return std::unexpected(saved.diagnostic);
+}
+
+CalendarEventSaveOutcome CalendarEventRepository::saveCalendarEventWithOutcome(
+    const CalendarEvent& event
+    )
+{
+    DatabaseTransaction transaction(m_database);
+    if (!transaction.started())
+    {
+        return {
+            CalendarEventSaveOutcomeCode::Failure,
+            0,
+            QObject::tr("Starting calendar event save transaction failed: %1")
+                .arg(m_database.lastError().text())
+        };
+    }
+
+    const CalendarEventSaveOutcome saved =
+        saveCalendarEventOutcomeWithoutTransaction(event);
+    if (saved.code != CalendarEventSaveOutcomeCode::Saved)
+    {
+        return saved;
+    }
+
+    if (!transaction.commit())
+    {
+        return {
+            CalendarEventSaveOutcomeCode::Failure,
+            0,
+            QObject::tr("Committing calendar event saves failed: %1")
+                .arg(m_database.lastError().text())
+        };
+    }
+
+    return saved;
+}
+
+CalendarEventSaveOutcome
+CalendarEventRepository::saveCalendarEventOutcomeWithoutTransaction(
+    const CalendarEvent& event
+    )
+{
     QSqlQuery query(m_database);
     const QString eventType =
         normalizedCalendarEventType(
@@ -591,17 +641,27 @@ Result<int> CalendarEventRepository::saveCalendarEvent(
             );
         if (!executed)
         {
-            return std::unexpected(executed.error().userMessage());
+            return {
+                CalendarEventSaveOutcomeCode::Failure,
+                0,
+                executed.error().userMessage()
+            };
         }
         if (query.numRowsAffected() == 0)
         {
-            return std::unexpected(
+            return {
+                CalendarEventSaveOutcomeCode::Missing,
+                0,
                 QObject::tr("Updating %1 failed: no matching record exists.")
                     .arg(eventIdentity(event))
-                );
+            };
         }
 
-        return event.id;
+        return {
+            CalendarEventSaveOutcomeCode::Saved,
+            event.id,
+            {}
+        };
     }
 
     query.prepare(R"(
@@ -636,21 +696,31 @@ Result<int> CalendarEventRepository::saveCalendarEvent(
         );
     if (!executed)
     {
-        return std::unexpected(executed.error().userMessage());
+        return {
+            CalendarEventSaveOutcomeCode::Failure,
+            0,
+            executed.error().userMessage()
+        };
     }
 
     const int eventId = query.lastInsertId().toInt();
     if (eventId <= 0)
     {
-        return std::unexpected(
+        return {
+            CalendarEventSaveOutcomeCode::Failure,
+            0,
             QObject::tr(
                 "Creating %1 failed: the database did not return a valid "
                 "record id."
                 ).arg(eventIdentity(event))
-            );
+        };
     }
 
-    return eventId;
+    return {
+        CalendarEventSaveOutcomeCode::Saved,
+        eventId,
+        {}
+    };
 }
 
 Result<QList<int>> CalendarEventRepository::saveCalendarEvents(

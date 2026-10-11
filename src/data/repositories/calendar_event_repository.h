@@ -21,6 +21,20 @@ struct CalendarEventByIdLookupResult final
     QString diagnostic;
 };
 
+enum class CalendarEventSaveOutcomeCode
+{
+    Saved,
+    Missing,
+    Failure
+};
+
+struct CalendarEventSaveOutcome final
+{
+    CalendarEventSaveOutcomeCode code = CalendarEventSaveOutcomeCode::Failure;
+    int eventId = 0;
+    QString diagnostic;
+};
+
 class CalendarEventRepository
 {
 public:
@@ -67,6 +81,9 @@ public:
     [[nodiscard]] Result<int> saveCalendarEvent(
         const CalendarEvent& event
         );
+    [[nodiscard]] CalendarEventSaveOutcome saveCalendarEventWithOutcome(
+        const CalendarEvent& event
+        );
 
     [[nodiscard]] Result<QList<int>> saveCalendarEvents(
         const QList<CalendarEvent>& events
@@ -84,5 +101,10 @@ public:
     [[nodiscard]] Status deleteAllCalendarEvents();
 
 private:
+    [[nodiscard]] CalendarEventSaveOutcome
+    saveCalendarEventOutcomeWithoutTransaction(
+        const CalendarEvent& event
+        );
+
     QSqlDatabase& m_database;
 };

@@ -255,6 +255,8 @@ private slots:
     void reportsImportBatchFailureWithoutPartialRows();
     void reportsUnavailableImportSaveSessionStructurally();
     void createsAndUpdatesValidEventWithTypedIdMapping();
+    void reportsMissingCalendarEventUpdateStructurally();
+    void reportsCalendarEventUpdateSqlFailureStructurally();
     void reportsInvalidSaveRequestStructurally();
     void reportsUnavailableSaveSessionStructurally();
     void reportsSaveServiceFailureStructurally();
@@ -1282,6 +1284,106 @@ createsAndUpdatesValidEventWithTypedIdMapping()
             );
     QVERIFY(loadedRange);
     QCOMPARE(loadedRange->size(), 1);
+}
+
+void NextPlatformApplicationServicesCalendarEventPortTests::
+reportsMissingCalendarEventUpdateStructurally()
+{
+    ApplicationServices services;
+    QVERIFY(openDatabase(services, m_directory));
+    QVERIFY(services.dataService());
+    DatabaseSession* const session = services.databaseSession();
+    QVERIFY(session);
+    QVERIFY(session->isOpen());
+    CalendarEventRepository* const repository =
+        session->calendarEventRepository();
+    QVERIFY(repository);
+
+    const auto created = repository->saveCalendarEvent(
+        makeEvent(
+            QStringLiteral("Deleted before update"),
+            QDate(2026, 12, 10),
+            QDate(2026, 12, 10)
+            )
+        );
+    QVERIFY(created);
+    const int eventId = *created;
+    QVERIFY(eventId > 0);
+    QVERIFY(repository->deleteCalendarEvent(eventId));
+
+    CalendarEvent legacyUpdate = makeEvent(
+        QStringLiteral("Legacy missing update"),
+        QDate(2026, 12, 10),
+        QDate(2026, 12, 10)
+        );
+    legacyUpdate.id = eventId;
+    const auto legacySaved = repository->saveCalendarEvent(legacyUpdate);
+    QVERIFY(!legacySaved);
+    const QString expectedDiagnostic =
+        QStringLiteral(
+            "Updating calendar event id %1 failed: no matching record exists."
+            ).arg(eventId);
+    QCOMPARE(legacySaved.error(), expectedDiagnostic);
+
+    ApplicationServicesCalendarEventSavePort port(services);
+    CalendarEventSaveRequest updateRequest = validSaveRequest();
+    updateRequest.id = calendarEventId(eventId);
+    const auto updated = port.saveEvent(updateRequest);
+
+    verifyFailure(updated, ErrorCode::NotFound);
+    QCOMPARE(
+        updated.error().message,
+        expectedDiagnostic.toUtf8().toStdString()
+        );
+}
+
+void NextPlatformApplicationServicesCalendarEventPortTests::
+reportsCalendarEventUpdateSqlFailureStructurally()
+{
+    ApplicationServices services;
+    QVERIFY(openDatabase(services, m_directory));
+    QVERIFY(services.dataService());
+    DatabaseSession* const session = services.databaseSession();
+    QVERIFY(session);
+    QVERIFY(session->isOpen());
+    CalendarEventRepository* const repository =
+        session->calendarEventRepository();
+    QVERIFY(repository);
+
+    const auto created = repository->saveCalendarEvent(
+        makeEvent(
+            QStringLiteral("Update failure"),
+            QDate(2026, 12, 10),
+            QDate(2026, 12, 10)
+            )
+        );
+    QVERIFY(created);
+    const int eventId = *created;
+    QVERIFY(eventId > 0);
+
+    QSqlQuery query(session->database());
+    QVERIFY(query.exec(QStringLiteral(
+        "CREATE TRIGGER reject_calendar_update "
+        "BEFORE UPDATE ON calendar_events "
+        "BEGIN "
+        "SELECT RAISE(ABORT, 'injected calendar update failure'); "
+        "END"
+        )));
+
+    ApplicationServicesCalendarEventSavePort port(services);
+    CalendarEventSaveRequest updateRequest = validSaveRequest();
+    updateRequest.id = calendarEventId(eventId);
+    updateRequest.title = "Updated value";
+    const auto updated = port.saveEvent(updateRequest);
+
+    verifyFailure(updated, ErrorCode::Technical);
+    QVERIFY(
+        updated.error().message.find("injected calendar update failure")
+            != std::string::npos
+        );
+    const auto stillStored = repository->getCalendarEvent(eventId);
+    QVERIFY(stillStored);
+    QCOMPARE(stillStored->title, QStringLiteral("Update failure"));
 }
 
 void NextPlatformApplicationServicesCalendarEventPortTests::

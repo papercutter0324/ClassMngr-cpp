@@ -148,9 +148,9 @@ public:
                     );
             }
 
-            const ::Result<QList<int>> saved =
-                repository->saveCalendarEvents(normalizedEvents);
-            if (!saved)
+            const CalendarEventSaveOutcome saved =
+                repository->saveCalendarEventWithOutcome(normalized);
+            if (saved.code != CalendarEventSaveOutcomeCode::Saved)
             {
                 if (!session->isOpen())
                 {
@@ -160,16 +160,18 @@ public:
                         );
                 }
 
-                const QByteArray errorBytes = saved.error().toUtf8();
+                const QByteArray errorBytes = saved.diagnostic.toUtf8();
                 return failure(
-                    Domain::ErrorCode::Technical,
+                    saved.code == CalendarEventSaveOutcomeCode::Missing
+                        ? Domain::ErrorCode::NotFound
+                        : Domain::ErrorCode::Technical,
                     errorBytes.isEmpty()
                         ? "Calendar event could not be saved."
                         : errorBytes.toStdString()
                     );
             }
 
-            if (saved->size() != 1 || saved->front() <= 0)
+            if (saved.eventId <= 0)
             {
                 return failure(
                     Domain::ErrorCode::Technical,
@@ -179,7 +181,7 @@ public:
 
             return Application::CalendarEventSaveResult::success(
                 *Domain::CalendarEventId::fromString(
-                    std::to_string(saved->front())
+                    std::to_string(saved.eventId)
                     )
                 );
         }
