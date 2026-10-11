@@ -7,10 +7,12 @@
 #include "features/classes/ui/classes_page.h"
 #include "next/application/class_visibility_preferences.h"
 #include "next/application/class_day_filter_reset_policy.h"
+#include "next/application/class_selection_reset_policy.h"
 #include "next/application/evaluation_default_policy_preferences.h"
 #include "next/application/middle_school_analytics_preferences.h"
 #include "next/platform/application_services_class_visibility_preferences_port.h"
 #include "next/platform/application_services_class_day_filter_reset_policy_port.h"
+#include "next/platform/application_services_class_selection_reset_policy_port.h"
 #include "next/platform/application_services_evaluation_default_policy_port.h"
 #include "next/platform/application_services_middle_school_analytics_preferences_port.h"
 #include "ui/shared/pages/pagemanager.h"
@@ -143,6 +145,25 @@ int dayFilterResetPolicyAuditRowCount(DatabaseSession* session)
     return query.value(0).toInt();
 }
 
+int classSelectionResetPolicyAuditRowCount(DatabaseSession* session)
+{
+    if (!session || !session->isOpen())
+    {
+        return -1;
+    }
+
+    QSqlQuery query(session->database());
+    if (!query.exec(QStringLiteral(
+            "SELECT COUNT(*) FROM f667_class_selection_reset_policy_save_audit"
+            ))
+        || !query.next())
+    {
+        return -1;
+    }
+
+    return query.value(0).toInt();
+}
+
 } // namespace
 
 class MainWindowClassVisibilityPreferencesFailureTests final : public QObject
@@ -155,6 +176,7 @@ private slots:
     void middleSchoolPreferenceFailureRestoresSelectionAndSuccessfulRetryRefreshesOnce();
     void evaluationDefaultPolicyFailureRestoresSelectionAndSuccessfulRetryDoesNotRefresh();
     void dayFilterResetPolicyFailureRestoresSelectionAndRetryPersistsOnce();
+    void classSelectionResetPolicyFailureRestoresSelectionAndRetryPersistsOnce();
 
 private:
     std::unique_ptr<QTemporaryDir> m_settingsDirectory;
@@ -1338,6 +1360,324 @@ dayFilterResetPolicyFailureRestoresSelectionAndRetryPersistsOnce()
         )));
     QVERIFY(failedSelectionRestored);
     QVERIFY(classSelectionUntouched);
+    QCOMPARE(classQueriesAfterFailure, initialClassQueryCount);
+    QCOMPARE(policyAfterFailure, QStringLiteral("on_application_close"));
+    QCOMPARE(unrelatedAfterFailure, QStringLiteral("preserved"));
+    QCOMPARE(auditsAfterFailure, 0);
+    QCOMPARE(classQueriesAfterRetry, initialClassQueryCount);
+    QCOMPARE(policyAfterRetry, QStringLiteral("on_page_leave"));
+    QCOMPARE(auditsAfterRetry, 1);
+}
+
+void MainWindowClassVisibilityPreferencesFailureTests::
+classSelectionResetPolicyFailureRestoresSelectionAndRetryPersistsOnce()
+{
+    LanguageService languageService;
+    QVERIFY(languageService.setLanguage(Language::English));
+
+    MainWindowStartupOptions startupOptions;
+    startupOptions.loadMostRecentDatabase = false;
+
+    MainWindow window(
+        [](const QString&) {},
+        false,
+        &languageService,
+        nullptr,
+        std::move(startupOptions)
+        );
+
+    const QString databasePath = m_databaseDirectory->filePath(
+        QStringLiteral("class-selection-reset-policy-preferences.tps")
+        );
+    const Status opened = window.services()->openDatabase(databasePath);
+    QVERIFY2(opened.has_value(), "Could not open the test database.");
+    window.applyDatabaseLoadedState();
+
+    ClassMngr::Next::Platform::
+        ApplicationServicesClassSelectionResetPolicyPort policyPort(
+            *window.services()
+            );
+    const auto initialSave = policyPort.save(
+        ClassMngr::Next::Application::
+            ClassSelectionResetPolicy::OnApplicationClose
+        );
+    QVERIFY(initialSave);
+
+    DatabaseSession* const session = window.services()->databaseSession();
+    QVERIFY(session);
+    SettingsRepository* const repository = session->settingsRepository();
+    QVERIFY(repository);
+    const QString unrelatedKey =
+        QStringLiteral("classes_navigation_unrelated_preference");
+    QVERIFY(repository->saveSetting(
+        unrelatedKey,
+        QStringLiteral("preserved")
+        ));
+
+    PageManager* const pages = window.pageManager();
+    QVERIFY(pages);
+    pages->showPage(PageType::Classes);
+    ClassesPage* const classesPage = pages->classesPage();
+    QVERIFY(classesPage);
+    const int initialClassQueryCount =
+        classesPage->runtimeMetrics().classQueryCount;
+    QVERIFY(initialClassQueryCount > 0);
+
+    QVERIFY(executeSql(
+        session,
+        QStringLiteral(R"(
+            CREATE TABLE f667_class_selection_reset_policy_save_audit (
+                value TEXT NOT NULL
+            )
+            )")
+        ));
+    QVERIFY(executeSql(
+        session,
+        QStringLiteral(R"(
+            CREATE TRIGGER fail_class_selection_reset_policy_preference_write
+            BEFORE INSERT ON app_settings
+            WHEN NEW.key = 'classes_navigation_class_selection_reset_policy'
+                AND NEW.value = 'on_page_leave'
+            BEGIN
+                SELECT RAISE(ABORT, 'forced class-selection reset policy write failure');
+            END
+            )")
+        ));
+    QVERIFY(executeSql(
+        session,
+        QStringLiteral(R"(
+            CREATE TRIGGER audit_class_selection_reset_policy_preference_update
+            AFTER UPDATE ON app_settings
+            WHEN NEW.key = 'classes_navigation_class_selection_reset_policy'
+            BEGIN
+                INSERT INTO f667_class_selection_reset_policy_save_audit(value)
+                VALUES (NEW.value);
+            END
+            )")
+        ));
+
+    QAction* const preferencesAction = window.findChild<QAction*>(
+        QStringLiteral("preferencesAction")
+        );
+    QVERIFY(preferencesAction);
+
+    bool preferencesDialogObserved = false;
+    bool failedSelectionRestored = false;
+    bool dayFiltersUntouched = false;
+    bool warningObserved = false;
+    int warningCount = 0;
+    QString warningTitle;
+    QString warningText;
+    QString scriptFailure;
+    QString policyAfterFailure;
+    QString policyAfterRetry;
+    QString unrelatedAfterFailure;
+    int classQueriesAfterFailure = -1;
+    int classQueriesAfterRetry = -1;
+    int auditsAfterFailure = -1;
+    int auditsAfterRetry = -1;
+
+    QTimer::singleShot(
+        0,
+        &window,
+        [&]()
+        {
+            QDialog* const dialog = window.findChild<QDialog*>(
+                QStringLiteral("preferencesDialog")
+                );
+            const auto fail = [&](const QString& reason)
+            {
+                scriptFailure = reason;
+                if (dialog)
+                {
+                    dialog->reject();
+                }
+            };
+            if (!dialog)
+            {
+                fail(QStringLiteral("Preferences dialog was not opened."));
+                return;
+            }
+
+            auto* const tabs = dialog->findChild<QTabWidget*>(
+                QStringLiteral("preferencesTabs")
+                );
+            auto* const dayFilterOnClose = dialog->findChild<QRadioButton*>(
+                QStringLiteral("preferencesNavigationDayFiltersResetOnClose")
+                );
+            auto* const dayFilterOnLeave = dialog->findChild<QRadioButton*>(
+                QStringLiteral("preferencesNavigationDayFiltersResetOnLeave")
+                );
+            auto* const classSelectionOnClose =
+                dialog->findChild<QRadioButton*>(
+                    QStringLiteral(
+                        "preferencesNavigationClassSelectionResetOnClose"
+                        )
+                    );
+            auto* const classSelectionOnLeave =
+                dialog->findChild<QRadioButton*>(
+                    QStringLiteral(
+                        "preferencesNavigationClassSelectionResetOnLeave"
+                        )
+                    );
+            QWidget* const navigationTab = dialog->findChild<QWidget*>(
+                QStringLiteral("preferencesNavigationTab")
+                );
+            if (!tabs || !dayFilterOnClose || !dayFilterOnLeave
+                || !classSelectionOnClose || !classSelectionOnLeave
+                || !navigationTab || tabs->indexOf(navigationTab) < 0)
+            {
+                fail(QStringLiteral(
+                    "Class-selection reset policy controls were missing."
+                    ));
+                return;
+            }
+
+            preferencesDialogObserved = true;
+            tabs->setCurrentWidget(navigationTab);
+            if (!dayFilterOnClose->isChecked()
+                || dayFilterOnLeave->isChecked()
+                || !classSelectionOnClose->isChecked()
+                || classSelectionOnLeave->isChecked())
+            {
+                fail(QStringLiteral(
+                    "Initial reset policy radios did not match persisted defaults."
+                    ));
+                return;
+            }
+
+            QTimer::singleShot(
+                0,
+                &window,
+                [&]()
+                {
+                    QWidget* const activeModal =
+                        QApplication::activeModalWidget();
+                    auto* const warning = qobject_cast<QMessageBox*>(
+                        activeModal
+                        );
+                    if (!warning)
+                    {
+                        if (activeModal)
+                        {
+                            activeModal->close();
+                        }
+                        scriptFailure = QStringLiteral(
+                            "Class-selection policy failure did not surface a warning dialog."
+                            );
+                        return;
+                    }
+
+                    ++warningCount;
+                    warningObserved = true;
+                    warningTitle = warning->windowTitle();
+                    warningText = warning->text();
+                    warning->accept();
+                }
+                );
+
+            classSelectionOnLeave->click();
+            if (!scriptFailure.isEmpty())
+            {
+                dialog->reject();
+                return;
+            }
+
+            failedSelectionRestored =
+                classSelectionOnClose->isChecked()
+                && !classSelectionOnLeave->isChecked();
+            dayFiltersUntouched =
+                dayFilterOnClose->isChecked()
+                && !dayFilterOnLeave->isChecked();
+            classQueriesAfterFailure =
+                classesPage->runtimeMetrics().classQueryCount;
+            const auto persistedAfterFailure =
+                repository->loadSetting(QStringLiteral(
+                    "classes_navigation_class_selection_reset_policy"
+                    ));
+            policyAfterFailure = persistedAfterFailure
+                && persistedAfterFailure->isValid()
+                ? persistedAfterFailure->toString()
+                : QString();
+            const auto unrelated = repository->loadSetting(unrelatedKey);
+            unrelatedAfterFailure = unrelated && unrelated->isValid()
+                ? unrelated->toString()
+                : QString();
+            auditsAfterFailure = classSelectionResetPolicyAuditRowCount(session);
+            if (!warningObserved
+                || warningCount != 1
+                || warningTitle != QStringLiteral("Unable to Save Preference")
+                || !warningText.contains(QStringLiteral(
+                    "forced class-selection reset policy write failure"
+                    ))
+                || !failedSelectionRestored
+                || !dayFiltersUntouched
+                || classQueriesAfterFailure != initialClassQueryCount
+                || policyAfterFailure != QStringLiteral("on_application_close")
+                || unrelatedAfterFailure != QStringLiteral("preserved")
+                || auditsAfterFailure != 0)
+            {
+                fail(QStringLiteral(
+                    "Failed class-selection policy write did not restore and preserve state."
+                    ));
+                return;
+            }
+
+            if (!executeSql(
+                    session,
+                    QStringLiteral(
+                        "DROP TRIGGER fail_class_selection_reset_policy_preference_write"
+                        )
+                    ))
+            {
+                fail(QStringLiteral(
+                    "Could not remove the class-selection policy failure trigger."
+                    ));
+                return;
+            }
+
+            classSelectionOnLeave->click();
+            classQueriesAfterRetry =
+                classesPage->runtimeMetrics().classQueryCount;
+            const auto persistedAfterRetry =
+                repository->loadSetting(QStringLiteral(
+                    "classes_navigation_class_selection_reset_policy"
+                    ));
+            policyAfterRetry = persistedAfterRetry
+                && persistedAfterRetry->isValid()
+                ? persistedAfterRetry->toString()
+                : QString();
+            auditsAfterRetry = classSelectionResetPolicyAuditRowCount(session);
+            if (classSelectionOnClose->isChecked()
+                || !classSelectionOnLeave->isChecked()
+                || !dayFilterOnClose->isChecked()
+                || dayFilterOnLeave->isChecked()
+                || classQueriesAfterRetry != initialClassQueryCount
+                || policyAfterRetry != QStringLiteral("on_page_leave")
+                || auditsAfterRetry != 1)
+            {
+                fail(QStringLiteral(
+                    "Class-selection policy retry did not persist exactly once."
+                    ));
+                return;
+            }
+
+            dialog->accept();
+        }
+        );
+
+    preferencesAction->trigger();
+
+    QVERIFY2(scriptFailure.isEmpty(), qPrintable(scriptFailure));
+    QVERIFY(preferencesDialogObserved);
+    QVERIFY(warningObserved);
+    QCOMPARE(warningCount, 1);
+    QCOMPARE(warningTitle, QStringLiteral("Unable to Save Preference"));
+    QVERIFY(warningText.contains(QStringLiteral(
+        "forced class-selection reset policy write failure"
+        )));
+    QVERIFY(failedSelectionRestored);
+    QVERIFY(dayFiltersUntouched);
     QCOMPARE(classQueriesAfterFailure, initialClassQueryCount);
     QCOMPARE(policyAfterFailure, QStringLiteral("on_application_close"));
     QCOMPARE(unrelatedAfterFailure, QStringLiteral("preserved"));

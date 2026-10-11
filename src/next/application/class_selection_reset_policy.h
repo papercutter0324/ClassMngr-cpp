@@ -1,5 +1,7 @@
 #pragma once
 
+#include "next/domain/operation_result.h"
+
 namespace ClassMngr::Next::Application
 {
 
@@ -12,6 +14,9 @@ enum class ClassSelectionResetPolicy
     OnPageLeave
 };
 
+using ClassSelectionResetPolicySaveResult = Domain::Result<void>;
+using ClassSelectionResetPolicySaveError = Domain::OperationError;
+
 class ClassSelectionResetPolicyPort
 {
 public:
@@ -19,7 +24,7 @@ public:
 
     [[nodiscard]] virtual ClassSelectionResetPolicy load() const = 0;
 
-    virtual void save(
+    [[nodiscard]] virtual ClassSelectionResetPolicySaveResult save(
         ClassSelectionResetPolicy policy
         ) const = 0;
 };

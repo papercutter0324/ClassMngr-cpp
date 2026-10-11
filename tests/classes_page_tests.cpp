@@ -882,10 +882,11 @@ void ClassesPageTests::navigationReleaseCachesSnapshotAndEditorsAcrossReentry()
         ApplicationServicesClassSelectionResetPolicyPort selectionPolicy(
             services
             );
-    selectionPolicy.save(
+    const auto selectionPolicySaved = selectionPolicy.save(
         ClassMngr::Next::Application::
             ClassSelectionResetPolicy::OnApplicationClose
         );
+    QVERIFY(selectionPolicySaved);
     ClassMngr::Next::Platform::
         ApplicationServicesClassDayFilterResetPolicyPort dayFilterPolicy(
             services
@@ -1224,10 +1225,11 @@ classSelectionResetOnPageLeaveClearsOnlyClassStateAfterHideAndShow()
         ApplicationServicesClassSelectionResetPolicyPort classSelectionPolicy(
             services
             );
-    classSelectionPolicy.save(
+    const auto classSelectionPolicySaved = classSelectionPolicy.save(
         ClassMngr::Next::Application::
             ClassSelectionResetPolicy::OnPageLeave
         );
+    QVERIFY(classSelectionPolicySaved);
 
     ClassMngr::Next::Platform::
         ApplicationServicesClassDayFilterResetPolicyPort dayFilterPolicy(
@@ -1284,10 +1286,11 @@ classSelectionResetOnApplicationCloseRetainsOnlyClassStateAfterHideAndShow()
         ApplicationServicesClassSelectionResetPolicyPort classSelectionPolicy(
             services
             );
-    classSelectionPolicy.save(
+    const auto classSelectionPolicySaved = classSelectionPolicy.save(
         ClassMngr::Next::Application::
             ClassSelectionResetPolicy::OnApplicationClose
         );
+    QVERIFY(classSelectionPolicySaved);
 
     ClassMngr::Next::Platform::
         ApplicationServicesClassDayFilterResetPolicyPort dayFilterPolicy(

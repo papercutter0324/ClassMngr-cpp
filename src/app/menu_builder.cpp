@@ -662,13 +662,36 @@ void addNavigationPreferencesTab(
                             ApplicationServicesClassSelectionResetPolicyPort port(
                                 *window->services()
                                 );
-                        port.save(
+                        const auto saved = port.save(
                             onClose->isChecked()
                                 ? ClassMngr::Next::Application::
                                     ClassSelectionResetPolicy::OnApplicationClose
                                 : ClassMngr::Next::Application::
                                     ClassSelectionResetPolicy::OnPageLeave
                             );
+                        if (!saved)
+                        {
+                            DialogServices::showWarning(
+                                window,
+                                preferencesText("Unable to Save Preference"),
+                                QString::fromStdString(saved.error().message)
+                                );
+
+                            const auto persistedPolicy = port.load();
+                            const QSignalBlocker onCloseSignals(onClose);
+                            const QSignalBlocker onLeaveSignals(onLeave);
+                            onClose->setChecked(
+                                persistedPolicy
+                                    == ClassMngr::Next::Application::
+                                        ClassSelectionResetPolicy::OnApplicationClose
+                                );
+                            onLeave->setChecked(
+                                persistedPolicy
+                                    == ClassMngr::Next::Application::
+                                        ClassSelectionResetPolicy::OnPageLeave
+                                );
+                            return;
+                        }
                     }
                 }
             };

@@ -8,6 +8,9 @@
 #include <QString>
 #include <QVariant>
 
+#include <string>
+#include <utility>
+
 namespace ClassMngr::Next::Platform
 {
 
@@ -74,27 +77,53 @@ public:
             : Application::ClassSelectionResetPolicy::OnApplicationClose;
     }
 
-    void save(
+    [[nodiscard]] Application::ClassSelectionResetPolicySaveResult save(
         const Application::ClassSelectionResetPolicy policy
         ) const override
     {
         if (!m_session || !m_session->isOpen())
         {
-            return;
+            return failure(
+                "Class selection reset policy cannot be saved because no database session is open."
+                );
         }
 
         SettingsRepository* const repository = m_session->settingsRepository();
         if (!repository)
         {
-            return;
+            return failure(
+                "Class selection reset policy cannot be saved because the settings repository is unavailable."
+                );
         }
 
-        static_cast<void>(
-            repository->saveSetting(key(), storedPolicyValue(policy))
+        const Status saved = repository->saveSetting(
+            key(),
+            storedPolicyValue(policy)
             );
+        if (!saved)
+        {
+            const QByteArray errorBytes = saved.error().toUtf8();
+            return failure(
+                errorBytes.isEmpty()
+                    ? "Class selection reset policy could not be saved."
+                    : errorBytes.toStdString()
+                );
+        }
+
+        return Application::ClassSelectionResetPolicySaveResult::success();
     }
 
 private:
+    [[nodiscard]] static Application::ClassSelectionResetPolicySaveResult
+    failure(std::string message)
+    {
+        return Application::ClassSelectionResetPolicySaveResult::failure({
+            .code = Domain::ErrorCode::Technical,
+            .message = std::move(message),
+            .recoverable = false
+        });
+    }
+
     [[nodiscard]] static QString key()
     {
         return QStringLiteral(
