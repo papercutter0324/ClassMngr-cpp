@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-11
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F625 and F626 remain deferred pending owner-specific material-retention evidence; historical Phase 0 completion (24/24) remains valid, F628 passed the post-F621 current-source Windows matrix 24/24, and the overall Phase 0 gate remains open only for current-source macOS universal evidence (0/24), making F629 current when its packaged runner is available; F579, F598, F526 provenance, the broader memory gate, and render/window remain open.
+- Current note: F625 and F626 remain deferred pending owner-specific material-retention evidence; historical Phase 0 completion (24/24) remains valid, F628 passed the post-F621 current-source Windows matrix 24/24, and the overall Phase 0 gate remains open only for current-source macOS universal evidence (0/24), with F629 deferred because this session has no suitable Apple Silicon runner, F630 accepted with three existing My Classes CTest targets passing and no byte-savings claim, and F631 active to enforce the positive `int` range before the Class Details Save platform port while preserving leading-zero acceptance and the `InvalidInput` contract; F579, F598, F526 provenance, the broader memory gate, and render/window remain open.
 
 ### Slice discovery batches
 
@@ -91,13 +91,16 @@ Treat this plan as an operational summary, not a history:
   structural counts do not identify material bytes retained by a cached page
   after feature-resource release. Revisit only with matched owner-specific
   packaged Release evidence and a safe state/re-entry contract.
+- F629 - Deferred pending a suitable packaged macOS universal Phase 0 matrix
+  runner; none is exposed in this Windows x64 session. This does not establish
+  global runner unavailability; resume when a suitable runner is accessible.
 - F598 - Fresh matched WPR heap capture for the F596 Release route is blocked
   because the current execution identity is not an Administrator; resume when
   a Windows process with an elevated administrator token is available.
 
-#### Active batch: Batch 118
+#### Active batch: Batch 120
 
-- F629 - Requalify the current-source macOS universal route matrix when a packaged runner is available.
+- F631 - Enforce the platform's representable positive `int` range in Class Details Save application validation, preserving leading-zero acceptance and `InvalidInput` behavior.
 
 ## Objective
 

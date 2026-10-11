@@ -22262,4 +22262,58 @@ test-file changes.
 **Decision: accept F628.** Post-F621 current-source Windows requalification
 is complete. Historical Phase 0 completion remains valid, and the current
 Phase 0 exit gate is incomplete solely pending macOS universal evidence
-(0/24). F629 is current for that matrix when its packaged runner is available.
+(0/24). F629 remains deferred pending a suitable packaged macOS runner.
+
+### F629 macOS Phase 0 runner discovery - deferred
+
+No suitable local macOS runner was exposed in this session, which ran on a
+Windows x64 host. The repository's Phase 0 script requires Apple Silicon
+macOS, macOS Qt, and Xcode tools. The inspected hosted macOS workflows are
+Intel release/baseline lanes and do not run the 24-route matrix. This records
+a session-scoped limitation, not global runner unavailability; resume F629
+when a suitable packaged macOS runner is accessible. The Phase 0 exit gate
+remains open only for current-source macOS universal evidence.
+
+### F630 Scope My Classes detail reads to the selected class - accepted
+
+Two independent Explorer reviews recommended this production slice, and the
+main agent selected it. In
+[`my_classes_page_content.cpp`](../../src/features/my_info/ui/my_classes_page_content.cpp),
+the prior implementation eagerly batch-loaded class fields and teacher
+profiles into every `ClassSummary`, although full details were rendered only
+for the selected tab; full profile snapshots include credentials and notes.
+The implementation adds a lightweight class-summary read projection, then
+loads full class information, full teacher profile, and roster count for the
+selected class. Switching or re-entering clears and reloads selected detail;
+on selected-detail failure, summary grade, schedules, and teacher association
+remain available. This follows memory-plan D1's compact summaries and
+selected-detail direction.
+
+Commit `d329b74a` (`Phase2 - Scope My Classes details to selected class
+(F630)`) was independently reviewed. The Tester confirmed the failure-path
+repair and passing results for the three existing My Classes CTest targets.
+`tests/my_classes_page_tests.cpp` was updated in response to the production
+change; no test file was created and no existing assertion was weakened. No
+byte-savings measurement was made, so F630 makes no byte-savings claim.
+
+**Decision: accept F630.**
+
+### F631 Bound Class Details Save IDs to the platform integer range - active
+
+The main agent selected F631 for the next production slice; a separate
+Explorer proposed a birthday-year edge, but F631 aligns directly with the
+application/platform port contract. In
+[`class_details_save_use_case.h`](../../src/next/application/class_details_save_use_case.h),
+`ClassDetailsSaveUseCase::execute` currently checks for positive digit
+strings without checking that the value fits in `int`; the platform port
+[`application_services_class_details_save_port.h`](../../src/next/platform/application_services_class_details_save_port.h)
+parses to `int` later and rejects overflow.
+
+F631 will validate the positive `int` range in the application before calling
+the port, preserving leading-zero acceptance (`00042` parses as 42) and the
+existing `InvalidInput` error contract. Cover the boundary through the
+existing `invalidClassIdsDoNotReachPort()` case in
+[`next_application_class_details_save_use_case_tests.cpp`](../../tests/next_application_class_details_save_use_case_tests.cpp).
+Create or update that test only for the corresponding production change; add
+no test file or test-only slice. This follows the policy in
+[00-Start-Here.md](00-Start-Here.md).
