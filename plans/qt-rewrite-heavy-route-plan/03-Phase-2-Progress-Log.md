@@ -23051,3 +23051,56 @@ user-facing wording. Verification was focused, not a full-suite run.
 The matrix is recorded before F649 implementation; Batch 127 remains active
 with F649. Begin Batch 128 bounded candidate discovery when F649
 implementation starts.
+
+### F649 Calendar import validation - accepted - 2026-10-12
+
+Commit `e62d27a9ae37ee98a9efe8a16d4c0e2c0e5b496a` validates accepted Calendar
+import rows before signature lookup and validates the assembled save request
+after duplicate filtering. Invalid fields or an ID on a create-only row return
+`InvalidInput` before `loadSignaturesInRange`, with no signature-query or save
+port calls. A 4097-candidate duplicate input filtered to one row saves one and
+skips 4096; 4097 unique filtered events are rejected before save, preserving
+the 4096 limit on the filtered batch.
+
+The focused Debug target build succeeded in standard
+`build/windows-x64-debug`; independent CTest
+`ClassMngrNextApplicationCalendarEventImportUseCaseTests` passed 1/1, and
+`git diff --check` passed. FileTracker `E_ACCESSDENIED` required
+`TrackFileAccess=false` with `ForceRebuild=true`. Verification was focused,
+not a full-suite run.
+
+**Decision: accept F649.** Batch 127 remains active with F650.
+
+### F650 Roster transfer snapshot validation acceptance matrix - recorded before implementation - 2026-10-12
+
+- In `RosterRowTransferUseCase`, after computing final source and target
+  snapshots and before `saveTransfer`, run roster text/domain save
+  preparation (`prepareRosterSaveText`) on both snapshots, matching
+  `RosterSaveUseCase`. Reject `hasErrors`; warning-only preparation remains
+  permitted.
+- A malformed remaining populated row in the final source snapshot returns
+  Validation with no read or save calls. A custom target header over 64
+  characters returns Validation after one target read and with no save call.
+- Preserve valid transfer behavior, including canonical base/row-0 semantics
+  for an empty target, exact source-row removal, surrounding data, target
+  mapping and order, compaction, row identity, padding, and width. Preserve
+  existing rejection cases and target-read/Platform-port failure propagation.
+- Focused target/CTest: `ClassMngrNextApplicationRosterRowTransferUseCaseTests`.
+  Existing coverage is in
+  `tests/next_application_roster_row_transfer_use_case_tests.cpp`, including
+  `successProjectsAndCompactsWithoutMutatingInputs` and adjacent
+  rejection/failure cases.
+
+F650 implementation is pending this matrix's documentation commit.
+Batch 127 now contains only F650.
+
+### Batch 128 bounded discovery - findings recorded at F649 start - 2026-10-12
+
+- The F648 invalid-index generic-message follow-up was low priority; its
+  acceptance matrix did not require user-facing wording. A direct-projection
+  candidate was unreachable in normal flow because the dialog validates first
+  and the projector already bounds-checks.
+- `TestingBlockRepository::existingClassId` may treat a false first `next()`
+  as absence and bypass the replacement guard. QSQLITE cannot naturally induce
+  a first-fetch error after successful query execution, and no driver/query
+  test seam exists; retain this as provisional and unselected.
