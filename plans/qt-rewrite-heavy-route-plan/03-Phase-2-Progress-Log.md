@@ -22859,10 +22859,80 @@ Exact Platform target/CTest:
 `ClassMngrNextPlatformApplicationServicesClassByIdReadPortTests`. Matrix
 recorded before implementation; Batch 126 remains active with F645 first.
 
-### Batch 127 discovery - recorded at F645 start - 2026-10-12
+### F645 class-by-ID read - accepted - 2026-10-12
 
-Because F645 is the second-last candidate in Batch 126, two independent
-read-only reviews began to prepare the following batch: one checks Application
-validation boundaries outside the recent Class/Teacher slices; the other
-checks Platform error mappings with live routes. Record ordered candidates and
-exclusions here before F646 begins.
+Commit `ae9fa070f04e085a7dc1d43aef8206bdca6ac747` (`Phase2 - Distinguish
+missing Class row from read failure (F645)`) adds
+`ClassRepository::lookupClassById()` with distinct Found, Missing, and Failure
+outcomes. `ApplicationServicesClassByIdReadPort` maps Missing to recoverable
+`NotFound`; the legacy `getClassById()` signature and exact diagnostic remain
+compatible. Failed `query.next()` checks `query.lastError()` so fetch failures
+remain failures. A dropped-table SQL failure was tested; the fetch-error branch
+was implemented but not directly induced.
+
+The independent Tester passed these four focused CTests in
+`build/windows-x64-debug` (Windows x64 Debug):
+`ClassMngrDataServiceLifecycleTests`,
+`ClassMngrNextApplicationClassByIdReadQueryTests`,
+`ClassMngrNextPlatformApplicationServicesClassByIdReadPortTests`, and
+`ClassMngrMainWindowClassesSidebarRootNavigationTests`. Platform and legacy
+tests assert exact diagnostic compatibility; the MainWindow route test checks
+the preserved detail as a contained diagnostic. `git diff --check` passed.
+This was not a clean build: standard incremental MSBuild failed with
+FileTracker `E_ACCESSDENIED`; retrying with `TrackFileAccess=false` failed in
+CL; forced dependency rebuilds with `TrackFileAccess=false` and
+`ForceRebuild=true` succeeded. Verification was focused, not a full-suite pass.
+
+**Decision: accept F645.** Batch 126 remains active with F646.
+
+### Batch 127 discovery - completed at F645 acceptance - 2026-10-12
+
+Ordered candidates for the next batch:
+
+1. **F647 - Distinguish Calendar event fetch failure from a missing row.**
+   `CalendarEventRepository` treats any false `query.next()` as missing
+   without checking `lastError()`; the Calendar Platform adapter infers
+   `NotFound` from diagnostic text. The live route is CalendarPage event
+   activation. Existing focused CTest/target:
+   `ClassMngrNextPlatformApplicationServicesCalendarEventPortTests`; route
+   regression: `ClassMngrCalendarPageEventMutationParityTests`. Classify fetch
+   failure as Technical while preserving missing-row behavior.
+2. **F648 - Reject invalid Schedule Import decision indexes.**
+   `ScheduleImportStateValidation` silently continues for out-of-range
+   `candidateIndex` values on `CreateNew`/`UpdateExisting`, allowing the
+   projection to omit schedule-overlap input. Target/CTest:
+   `NextApplicationScheduleImportStateValidation`.
+3. **F649 - Validate accepted Calendar import saves before port calls.**
+   `CalendarEventImportUseCase` does not validate assembled accepted save
+   requests before signature query/save; reject invalid candidates before
+   either port call. Target/CTest:
+   `NextApplicationCalendarEventImportUseCase`.
+4. **F650 - Preflight roster row transfer snapshots in Application.**
+   `RosterRowTransferUseCase` sends final snapshots directly to persistence
+   without normal roster preflight; classify invalid snapshots before the
+   persistence port. Target/CTest:
+   `ClassMngrNextApplicationRosterRowTransferUseCaseTests`.
+
+The Campus dashboard malformed/unreadable-detail candidate was excluded as
+lower confidence: current tests codify malformed/unreadable input as absence,
+and the page handles absence and error identically. The Sub Prep selected-class
+read was excluded because it overlaps F645's class-absence distinction. No
+other viable candidates were found in this batch.
+
+### F646 acceptance matrix recorded before implementation - 2026-10-12
+
+- Existing Teacher: Success with all profile fields mapped.
+- Missing Teacher row: typed repository Missing maps to recoverable `NotFound`,
+  retaining the exact localized `getTeacher()` diagnostic; legacy
+  `getTeacher(int)` signature/result stays compatible.
+- SQL failure: non-recoverable Technical with the SQL diagnostic retained.
+- No active session: existing recoverable `NotFound`, with no repository
+  lookup.
+
+Focused Platform target/CTest:
+`ClassMngrNextPlatformApplicationServicesTeacherProfileReadPortTests`.
+Route regression: `ClassMngrSidebarTeacherDeleteParityTests`. Sidebar
+`deleteTeacher()` reads before confirmation; a missing row must retain its
+warning and prevent confirmation/deletion. Preserve success, cancel, and
+delete-failure route behavior covered by the existing test. The matrix is
+recorded before F646 implementation; Batch 126 remains active with F646.

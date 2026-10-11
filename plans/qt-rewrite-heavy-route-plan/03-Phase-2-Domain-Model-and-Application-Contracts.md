@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-12
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F645 is active to distinguish a missing Class row from repository failure at the typed class-by-ID read boundary while preserving the diagnostic and legacy API; F646 is queued for the equivalent Teacher profile distinction, and F625/F626 plus current-source macOS universal evidence (0/24) remain open.
+- Current note: F645 is accepted and F646 is active to distinguish a missing Teacher profile from repository failure while preserving legacy diagnostics; F625/F626 and current-source macOS universal evidence (0/24) remain open.
 
 ### Slice discovery batches
 
@@ -96,7 +96,6 @@ Treat this plan as an operational summary, not a history:
 
 #### Active batch: Batch 126
 
-- F645 - Distinguish a missing Class row from repository failure in the typed class-by-ID read.
 - F646 - Distinguish a missing Teacher profile from repository failure in the typed profile read.
 
 ## Objective

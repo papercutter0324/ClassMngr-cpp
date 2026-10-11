@@ -6,7 +6,7 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-12
-- Current milestone: Phase 2 remains in progress. F644 was accepted at commit `7a8c59fa49b64aa8e056893ef462e364f16c72e7`; F645 is active to distinguish a missing class row from repository failure at the typed class-by-ID read boundary while preserving legacy diagnostics, with F646 queued for the teacher-profile equivalent. F625/F626 remain deferred pending owner-specific retention evidence, and the current Phase 0 gate remains open for macOS universal evidence (0/24), with F629 awaiting a suitable runner. F579 symbols remain deferred and F598 awaits elevated WPR. See [F644](03-Phase-2-Progress-Log.md) and [F645](03-Phase-2-Progress-Log.md).
+- Current milestone: Phase 2 remains in progress: F645 was accepted at commit `ae9fa070f04e085a7dc1d43aef8206bdca6ac747`, and F646 is active for the equivalent Teacher-profile distinction; F625/F626 remain deferred pending owner-specific retention evidence, the current-source Phase 0 gate remains open for macOS universal evidence (0/24) with F629 awaiting a suitable runner, and F579 symbols/F598 elevated WPR remain deferred. See the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 - Phase 1 is complete. Its 2026-09-19 closure update records passing hosted
   baseline jobs for Windows x64 and macOS universal, the Phase 1 Build Quality
   and Dialog policy workflows, and packaged Release workflows. Linux x64 and
