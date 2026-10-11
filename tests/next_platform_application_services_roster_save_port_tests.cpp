@@ -207,7 +207,7 @@ forwardsQuestionableKoreanNameDecision()
     const auto rejected =
         Application::RosterSaveUseCase::execute(saveRequest, port, Platform::rosterSaveCaseInsensitiveEquals);
     QVERIFY(!rejected);
-    QCOMPARE(rejected.error().code, Domain::ErrorCode::Technical);
+    QCOMPARE(rejected.error().code, Domain::ErrorCode::Validation);
     QVERIFY(!rejected.error().message.empty());
 
     RosterRepository* const repository =
@@ -464,7 +464,7 @@ invalidRosterPrecedesUnavailableSessionAndWritesNothing()
     const auto rejected = Application::RosterSaveUseCase::execute(value, unavailable,
         Platform::rosterSaveCaseInsensitiveEquals);
     QVERIFY(!rejected);
-    QCOMPARE(rejected.error().code, Domain::ErrorCode::Technical);
+    QCOMPARE(rejected.error().code, Domain::ErrorCode::Validation);
     QVERIFY(rejected.error().message.starts_with("Roster validation failed: "));
     QTemporaryDir directory;
     ApplicationServices services;

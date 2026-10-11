@@ -151,7 +151,7 @@ void NextApplicationRosterSaveUseCaseTests::invalidRosterDoesNotReachPortAndIdTa
     value.roster.rows[0][0] = u"Alice2";
     const auto rejected = Application::RosterSaveUseCase::execute(value, port, equals);
     QVERIFY(!rejected);
-    QCOMPARE(rejected.error().code, Domain::ErrorCode::Technical);
+    QCOMPARE(rejected.error().code, Domain::ErrorCode::Validation);
     QVERIFY(!rejected.error().recoverable);
     QCOMPARE(rejected.error().message, std::string(
         "Roster validation failed: rows[0].Korean: roster.student_name.required; "

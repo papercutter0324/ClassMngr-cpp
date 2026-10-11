@@ -74,7 +74,7 @@ public:
         if (prepared.hasErrors())
         {
             return Domain::Result<void>::failure({
-                .code = Domain::ErrorCode::Technical,
+                .code = Domain::ErrorCode::Validation,
                 .message = validationError(prepared.issues),
                 .recoverable = false
             });
