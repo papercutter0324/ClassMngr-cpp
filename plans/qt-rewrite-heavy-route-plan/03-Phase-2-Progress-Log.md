@@ -23396,5 +23396,63 @@ underway.
   (test 364). Extend the page target; retain the Platform target's trigger
   rollback coverage.
 
-F656 implementation is pending this matrix's documentation commit; Batch 131
-is active with F656.
+This matrix was recorded and committed before F656 implementation.
+
+### F656 My Info explicit-save failure - accepted - 2026-10-12
+
+Commit `f2dbaa2618f3a8b864d133f478d0af952d4ea21a`, following pre-code matrix
+commit `86b3d027`, makes explicit My Info save failures visible while
+preserving the dirty draft. Failed saves retain blank and whitespace Zoom
+fields; normalization is applied only after a successful save. Background
+`saveData` and autosave remain quiet, and unavailable-service explicit saves
+show fallback feedback. The existing PageManager false-result gate was
+reviewed; no route integration test was added.
+
+The focused Debug build command exited 0:
+
+```text
+cmake --build build/windows-x64-debug --config Debug --target ClassMngrMyWorkspacePageTests ClassMngrNextPlatformApplicationServicesPersonalDetailsSavePortTests -- /p:TrackFileAccess=false /p:ForceRebuild=true
+```
+
+The exact registered CTests (#52 and #364) passed 2/2, and
+`git diff --check` passed. The build emitted no linker warnings. No full suite
+or PageManager route test was run. At F656 verification, the only untracked
+root entries were the three unrelated pre-existing entries.
+
+**Decision: accept F656.** Batch 131 is complete; Batch 132 discovery is
+recorded below.
+
+### Batch 132 shortlist - recorded before F657 implementation - 2026-10-12
+
+- F657 is selected: Calendar event range-query failures are recorded by
+  `CalendarEventCache::load`, but `finishActiveRequest` drops the error and
+  leaves the range unloaded. The page interprets that state as loading, so
+  Current Month and Next 30 Days can remain on “Loading events…” indefinitely.
+  The cache test already has an injectable query factory.
+- The Platform alternative is an ApplicationServices workspace save that
+  drops `commit()` failure. It is not selected: `commit()` returning false
+  without an active transaction is a compatibility hazard, and other call
+  sites ignore the result. Resolve that contract before revisiting it.
+- Lower alternatives were Calendar preference writes that only emit
+  `qWarning` and Class Notes stale-parent handling.
+
+### F657 Calendar event range-query failure acceptance matrix - recorded before implementation - 2026-10-12
+
+- A current-generation range-query failure is exposed by the cache with its
+  diagnostic, leaves the range unloaded, and clears in-flight/loading state.
+  A stale-generation failure must not leak into current state.
+- Calendar Upcoming for Current Month and Next 30 Days renders a clear failure
+  state with a discoverable Retry action, rather than “Loading events…” or
+  “No upcoming events.”
+- Retrying after failure can succeed, clears the failure state, and renders
+  successful rows. A successful empty result continues to show “No upcoming
+  events.”
+- Keep Next 10 `findNextEventDate` failure/latch behavior explicitly out of
+  F657.
+- Use existing registered CTests `ClassMngrCalendarEventCacheTests` and
+  `ClassMngrCalendarPageEventMutationParityTests`; inject cache-query failure
+  through the existing query port. Exercise page failure and retry through
+  real SQLite schema failure/recovery or an existing seam, with deterministic
+  assertions. Add no test target.
+
+This matrix is recorded before implementation. Batch 132 is active with F657.
