@@ -3,6 +3,7 @@
 #include "app/services/feature_services.h"
 #include "core/application_services.h"
 #include "core/fontmanager.h"
+#include "core/startup_profiler.h"
 #include "next/application/classes_list_read_query.h"
 #include "next/application/roster_print_class_info_read_query.h"
 #include "next/application/roster_read_query.h"
@@ -37,6 +38,26 @@ namespace RosterTemplatePrintService
 {
 namespace
 {
+
+class RendererProjectionReleaseGuard
+{
+public:
+    ~RendererProjectionReleaseGuard()
+    {
+        if (m_active)
+        {
+            StartupProfiler::recordSubPrepOutputRendererProjectionReleased();
+        }
+    }
+
+    void activate() noexcept
+    {
+        m_active = true;
+    }
+
+private:
+    bool m_active = false;
+};
 
 // Template-specific implementation is split into focused include fragments.
 // They share this translation unit so rendering helpers remain private.
@@ -692,6 +713,7 @@ Result saveRostersPdf(
     }
 
     QString errorMessage;
+    RendererProjectionReleaseGuard projectionReleaseGuard;
     const QList<RosterCellValue> values =
         buildTemplateCellValues(
             templateId,
@@ -705,6 +727,12 @@ Result saveRostersPdf(
     {
         return failed(errorMessage);
     }
+
+    StartupProfiler::recordSubPrepOutputRendererProjected(
+        classes.size(),
+        values.size()
+        );
+    projectionReleaseGuard.activate();
 
     const QStringList days =
         daysWithValues(

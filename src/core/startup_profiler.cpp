@@ -18,6 +18,7 @@ QJsonObject memoryJson(const ProcessMemorySnapshot& memory)
 {
     return {
         {QStringLiteral("available"), memory.isAvailable},
+        {QStringLiteral("measurementScope"), QStringLiteral("process-wide")},
         {QStringLiteral("platform"), memory.platform},
         {QStringLiteral("capturedAt"), memory.capturedAt.toString(Qt::ISODateWithMs)},
         {QStringLiteral("workingSetBytes"), static_cast<double>(memory.workingSetBytes)},
@@ -757,6 +758,38 @@ QJsonObject applicationMetricsJson(const StartupApplicationMetrics& metrics)
             metrics.subPrepOutputPageCount
         },
         {
+            QStringLiteral("subPrepRosterSourceClassCount"),
+            metrics.subPrepRosterSourceClassCount
+        },
+        {
+            QStringLiteral("subPrepRosterSourceRowCount"),
+            metrics.subPrepRosterSourceRowCount
+        },
+        {
+            QStringLiteral("subPrepRosterSourceCellCount"),
+            metrics.subPrepRosterSourceCellCount
+        },
+        {
+            QStringLiteral("subPrepPackageClassCount"),
+            metrics.subPrepPackageClassCount
+        },
+        {
+            QStringLiteral("subPrepPackageRosterRowCount"),
+            metrics.subPrepPackageRosterRowCount
+        },
+        {
+            QStringLiteral("subPrepPackageRosterCellCount"),
+            metrics.subPrepPackageRosterCellCount
+        },
+        {
+            QStringLiteral("subPrepRendererInputClassCount"),
+            metrics.subPrepRendererInputClassCount
+        },
+        {
+            QStringLiteral("subPrepRendererProjectedCellCount"),
+            metrics.subPrepRendererProjectedCellCount
+        },
+        {
             QStringLiteral("scheduleImportRawBytesRetained"),
             metrics.scheduleImportRawBytesRetained
         },
@@ -811,6 +844,18 @@ QJsonObject applicationMetricsJson(const StartupApplicationMetrics& metrics)
         {
             QStringLiteral("subPrepOutputDecodedFirstPageBytes"),
             static_cast<double>(metrics.subPrepOutputDecodedFirstPageBytes)
+        },
+        {
+            QStringLiteral("subPrepRosterSourceUtf8Bytes"),
+            static_cast<double>(metrics.subPrepRosterSourceUtf8Bytes)
+        },
+        {
+            QStringLiteral("subPrepPackageSourceUtf8Bytes"),
+            static_cast<double>(metrics.subPrepPackageSourceUtf8Bytes)
+        },
+        {
+            QStringLiteral("subPrepPackageDestinationQStringUnits"),
+            static_cast<double>(metrics.subPrepPackageDestinationQStringUnits)
         },
         {
             QStringLiteral("calendarImportRawBytesRetained"),
@@ -903,6 +948,18 @@ QJsonObject applicationMetricsJson(const StartupApplicationMetrics& metrics)
         {
             QStringLiteral("subPrepOutputOperationRetained"),
             metrics.subPrepOutputOperationRetained
+        },
+        {
+            QStringLiteral("subPrepOutputTypedSourceRetained"),
+            metrics.subPrepOutputTypedSourceRetained
+        },
+        {
+            QStringLiteral("subPrepOutputPackageClassesRetained"),
+            metrics.subPrepOutputPackageClassesRetained
+        },
+        {
+            QStringLiteral("subPrepOutputRendererProjectionRetained"),
+            metrics.subPrepOutputRendererProjectionRetained
         },
         {QStringLiteral("liveScheduleWidgetCount"), metrics.liveScheduleWidgetCount},
         {QStringLiteral("livePdfDocumentCount"), metrics.livePdfDocumentCount},
@@ -1492,6 +1549,267 @@ void StartupProfiler::recordSubPrepOutputOperationStarted(
     }
 }
 
+void StartupProfiler::recordSubPrepOutputSourceProjected(
+    const int classCount,
+    const int rowCount,
+    const int cellCount,
+    const qint64 utf8Bytes
+    )
+{
+    if (StartupProfiler* profiler = activeProfiler())
+    {
+        StartupApplicationMetrics& metrics = profiler->m_scheduleMetrics;
+        if (!metrics.subPrepOutputOperationRetained)
+        {
+            return;
+        }
+        metrics.subPrepRosterSourceClassCount = qMax(0, classCount);
+        metrics.subPrepRosterSourceRowCount = qMax(0, rowCount);
+        metrics.subPrepRosterSourceCellCount = qMax(0, cellCount);
+        metrics.subPrepRosterSourceUtf8Bytes = qMax<qint64>(0, utf8Bytes);
+        metrics.subPrepOutputTypedSourceRetained = true;
+        const QString detail =
+            QStringLiteral(
+                "sourceClasses=%1; sourceRows=%2; sourceCells=%3; "
+                "sourceUtf8Bytes=%4; typedSourceRetained=true"
+                )
+                .arg(metrics.subPrepRosterSourceClassCount)
+                .arg(metrics.subPrepRosterSourceRowCount)
+                .arg(metrics.subPrepRosterSourceCellCount)
+                .arg(metrics.subPrepRosterSourceUtf8Bytes);
+        profiler->recordEvent(
+            QStringLiteral("sub-prep-output-source-projected"),
+            detail
+            );
+        appendProfilerWorkflowTrace(
+            QStringLiteral("sub-prep-output-source-projected %1").arg(detail)
+            );
+        profiler->checkpoint(
+            QStringLiteral("sub-prep-output-source-projected"),
+            detail
+            );
+    }
+}
+
+void StartupProfiler::recordSubPrepOutputPackageMapped(
+    const int classCount,
+    const int rowCount,
+    const int cellCount,
+    const qint64 sourceUtf8Bytes,
+    const qint64 destinationQStringUnits
+    )
+{
+    if (StartupProfiler* profiler = activeProfiler())
+    {
+        StartupApplicationMetrics& metrics = profiler->m_scheduleMetrics;
+        if (!metrics.subPrepOutputOperationRetained)
+        {
+            return;
+        }
+        metrics.subPrepPackageClassCount = qMax(0, classCount);
+        metrics.subPrepPackageRosterRowCount = qMax(0, rowCount);
+        metrics.subPrepPackageRosterCellCount = qMax(0, cellCount);
+        metrics.subPrepPackageSourceUtf8Bytes =
+            qMax<qint64>(0, sourceUtf8Bytes);
+        metrics.subPrepPackageDestinationQStringUnits =
+            qMax<qint64>(0, destinationQStringUnits);
+        metrics.subPrepOutputTypedSourceRetained = true;
+        metrics.subPrepOutputPackageClassesRetained = classCount > 0;
+        const QString detail =
+            QStringLiteral(
+                "packageClasses=%1; packageRows=%2; packageCells=%3; "
+                "sourceUtf8Bytes=%4; destinationQStringUnits=%5; "
+                "typedSourceRetained=true; packageClassesRetained=%6"
+                )
+                .arg(metrics.subPrepPackageClassCount)
+                .arg(metrics.subPrepPackageRosterRowCount)
+                .arg(metrics.subPrepPackageRosterCellCount)
+                .arg(metrics.subPrepPackageSourceUtf8Bytes)
+                .arg(metrics.subPrepPackageDestinationQStringUnits)
+                .arg(
+                    metrics.subPrepOutputPackageClassesRetained
+                        ? QStringLiteral("true")
+                        : QStringLiteral("false")
+                    );
+        profiler->recordEvent(
+            QStringLiteral("sub-prep-output-package-mapped"),
+            detail
+            );
+        appendProfilerWorkflowTrace(
+            QStringLiteral("sub-prep-output-package-mapped %1").arg(detail)
+            );
+        profiler->checkpoint(
+            QStringLiteral("sub-prep-output-package-mapped"),
+            detail
+            );
+    }
+}
+
+void StartupProfiler::recordSubPrepOutputTypedSourceReleased()
+{
+    if (StartupProfiler* profiler = activeProfiler())
+    {
+        StartupApplicationMetrics& metrics = profiler->m_scheduleMetrics;
+        if (!metrics.subPrepOutputOperationRetained
+            || !metrics.subPrepOutputTypedSourceRetained)
+        {
+            return;
+        }
+        metrics.subPrepOutputTypedSourceRetained = false;
+        const QString detail =
+            QStringLiteral(
+                "typedSourceRetained=false; packageClassesRetained=%1"
+                )
+                .arg(
+                    metrics.subPrepOutputPackageClassesRetained
+                        ? QStringLiteral("true")
+                        : QStringLiteral("false")
+                    );
+        profiler->recordEvent(
+            QStringLiteral("sub-prep-output-source-released"),
+            detail
+            );
+        appendProfilerWorkflowTrace(
+            QStringLiteral("sub-prep-output-source-released %1").arg(detail)
+            );
+        profiler->checkpoint(
+            QStringLiteral("sub-prep-output-source-released"),
+            detail
+            );
+    }
+}
+
+void StartupProfiler::recordSubPrepOutputRendererProjected(
+    const int inputClassCount,
+    const int projectedCellCount
+    )
+{
+    if (StartupProfiler* profiler = activeProfiler())
+    {
+        StartupApplicationMetrics& metrics = profiler->m_scheduleMetrics;
+        if (!metrics.subPrepOutputOperationRetained)
+        {
+            return;
+        }
+        metrics.subPrepRendererInputClassCount = qMax(0, inputClassCount);
+        const int cellCount = qMax(0, projectedCellCount);
+        metrics.subPrepRendererProjectedCellCount += cellCount;
+        metrics.subPrepOutputRendererProjectionRetained = true;
+        const QString detail =
+            QStringLiteral(
+                "inputClasses=%1; packageRosterRows=%2; "
+                "packageRosterCells=%3; "
+                "projectedCells=%4; cumulativeProjectedCells=%5; "
+                "typedSourceRetained=%6; packageClassesRetained=%7; "
+                "rendererProjectionRetained=true"
+                )
+                .arg(metrics.subPrepRendererInputClassCount)
+                .arg(metrics.subPrepPackageRosterRowCount)
+                .arg(metrics.subPrepPackageRosterCellCount)
+                .arg(cellCount)
+                .arg(metrics.subPrepRendererProjectedCellCount)
+                .arg(
+                    metrics.subPrepOutputTypedSourceRetained
+                        ? QStringLiteral("true")
+                        : QStringLiteral("false")
+                    )
+                .arg(
+                    metrics.subPrepOutputPackageClassesRetained
+                        ? QStringLiteral("true")
+                        : QStringLiteral("false")
+                    );
+        profiler->recordEvent(
+            QStringLiteral("sub-prep-output-renderer-projected"),
+            detail
+            );
+        appendProfilerWorkflowTrace(
+            QStringLiteral("sub-prep-output-renderer-projected %1").arg(detail)
+            );
+        profiler->checkpoint(
+            QStringLiteral("sub-prep-output-renderer-projected"),
+            detail
+            );
+    }
+}
+
+void StartupProfiler::recordSubPrepOutputRendererProjectionReleased()
+{
+    if (StartupProfiler* profiler = activeProfiler())
+    {
+        StartupApplicationMetrics& metrics = profiler->m_scheduleMetrics;
+        if (!metrics.subPrepOutputOperationRetained
+            || !metrics.subPrepOutputRendererProjectionRetained)
+        {
+            return;
+        }
+        metrics.subPrepOutputRendererProjectionRetained = false;
+        const QString detail =
+            QStringLiteral(
+                "rendererProjectionRetained=false; "
+                "packageClassesRetained=%1"
+                )
+                .arg(
+                    metrics.subPrepOutputPackageClassesRetained
+                        ? QStringLiteral("true")
+                        : QStringLiteral("false")
+                    );
+        profiler->recordEvent(
+            QStringLiteral("sub-prep-output-renderer-projection-released"),
+            detail
+            );
+        appendProfilerWorkflowTrace(
+            QStringLiteral(
+                "sub-prep-output-renderer-projection-released %1"
+                ).arg(detail)
+            );
+        profiler->checkpoint(
+            QStringLiteral("sub-prep-output-renderer-projection-released"),
+            detail
+            );
+    }
+}
+
+void StartupProfiler::recordSubPrepOutputPackageClassesReleased()
+{
+    if (StartupProfiler* profiler = activeProfiler())
+    {
+        StartupApplicationMetrics& metrics = profiler->m_scheduleMetrics;
+        if (!metrics.subPrepOutputOperationRetained
+            || !metrics.subPrepOutputPackageClassesRetained)
+        {
+            return;
+        }
+        metrics.subPrepOutputPackageClassesRetained = false;
+        const QString detail =
+            QStringLiteral(
+                "packageClassesRetained=false; typedSourceRetained=%1; "
+                "rendererProjectionRetained=%2"
+                )
+                .arg(
+                    metrics.subPrepOutputTypedSourceRetained
+                        ? QStringLiteral("true")
+                        : QStringLiteral("false")
+                    )
+                .arg(
+                    metrics.subPrepOutputRendererProjectionRetained
+                        ? QStringLiteral("true")
+                        : QStringLiteral("false")
+                    );
+        profiler->recordEvent(
+            QStringLiteral("sub-prep-output-package-classes-released"),
+            detail
+            );
+        appendProfilerWorkflowTrace(
+            QStringLiteral("sub-prep-output-package-classes-released %1")
+                .arg(detail)
+            );
+        profiler->checkpoint(
+            QStringLiteral("sub-prep-output-package-classes-released"),
+            detail
+            );
+    }
+}
+
 void StartupProfiler::recordSubPrepOutputGenerated(
     int pdfCount,
     int pageCount,
@@ -1557,18 +1875,31 @@ void StartupProfiler::recordSubPrepOutputOperationReleased()
         ++profiler->m_scheduleMetrics.subPrepOutputOperationsReleased;
         profiler->m_scheduleMetrics.subPrepOutputOperationRetained = false;
         profiler->m_scheduleMetrics.subPrepOutputDocumentsRetained = false;
+        profiler->m_scheduleMetrics.subPrepOutputTypedSourceRetained = false;
+        profiler->m_scheduleMetrics.subPrepOutputPackageClassesRetained = false;
+        profiler->m_scheduleMetrics.subPrepOutputRendererProjectionRetained = false;
         profiler->recordEvent(
             QStringLiteral("sub-prep-output-operation-released"),
-            QStringLiteral("documentsRetained=false")
+            QStringLiteral(
+                "documentsRetained=false; typedSourceRetained=false; "
+                "packageClassesRetained=false; "
+                "rendererProjectionRetained=false; operationRetained=false"
+                )
             );
         appendProfilerWorkflowTrace(
             QStringLiteral(
-                "sub-prep-output-operation-released documentsRetained=false"
+                "sub-prep-output-operation-released documentsRetained=false; "
+                "typedSourceRetained=false; packageClassesRetained=false; "
+                "rendererProjectionRetained=false; operationRetained=false"
                 )
             );
         profiler->checkpoint(
             QStringLiteral("sub-prep-output-operation-released"),
-            QStringLiteral("documentsRetained=false")
+            QStringLiteral(
+                "documentsRetained=false; typedSourceRetained=false; "
+                "packageClassesRetained=false; "
+                "rendererProjectionRetained=false; operationRetained=false"
+                )
             );
     }
 }

@@ -20295,6 +20295,9 @@ pending their recorded contract decisions.
 
 ## F611 staged Schedule Import workbook parsing - 2026-10-11
 
+Commit: `9da40443ac0cf8dd0c7d26ad04f66243d6453958` (`Phase 2 - Stage
+Schedule Import workbook parsing (F611)`).
+
 `CalendarImport::forEachWorksheet` now visits worksheet projections in
 workbook order with shared metadata. Each decompressed worksheet XML buffer
 leaves scope before the visitor converts that sheet; its parsed cells are
@@ -21423,3 +21426,41 @@ signature carryover, while preserving the address-reuse and missing-symbol
 limits. The 250 MiB lifecycle gate, F536 cause, F526 provenance, output parity,
 render/window acceptance, and global Phase 0 remain open (Windows 1/24,
 macOS 0/24).
+
+## F612 measured Sub Prep roster-output stages - 2026-10-11
+
+F612 adds stage checkpoints and in-loop counters across the typed Sub Prep
+roster source, PackageClass mapping, renderer cell projection, and owner
+release boundaries. The counters are collected during existing projection
+loops; they add no payload copy or rescan. Process memory samples remain
+explicitly process-wide, with no component byte attribution.
+
+The configured SQL-backed `large_startup.sql` route contains 96 classes. Its
+selected weekday scope emits 30 scheduled classes and excludes the 66 Saturday
+classes. Source and package values reconciled at 30 classes, 750 rows, and
+1,500 cells; both UTF-8 totals were 22,662 bytes. The destination QString-unit
+count is reported separately and was also 22,662 for this ASCII fixture. The
+renderer received exactly 30 package classes and projected 1,680 cells.
+Lifecycle flags and checkpoints showed the source released before render,
+renderer projection released before PackageClasses, and all stage owners
+cleared by operation release.
+
+The Debug route generated 2 PDFs, 17 pages, and 139,650 bytes, matching the
+existing Release reference aggregate. Process peak working set was 319,725,568
+bytes in the independent rerun; it is a process-wide Debug sample, not
+component attribution. The initial independent verification built six
+affected targets, passed focused CTest 4/4, and passed the configured output
+boundary. A follow-up added the exact renderer-input/package-class equality
+assertion; an independent rebuild and rerun passed with 30 = 30. No packaged
+Release route, WPR/ETL capture, heap attribution, broad test suite, or byte
+savings claim was made. Logs and generated PDFs remain in local build/temp
+artifacts rather than checked-in references.
+
+F612 is accepted as a measurement slice with the current SQL route preserved.
+F614 remains conditional: use these counts and release boundaries to decide
+whether a bounded ownership reduction is material. F613 is next to establish a
+deterministic, page-by-page semantic baseline for the packaged SQL output;
+synthetic package-service PDFs and aggregate byte equality do not establish
+that parity. F579 symbols remain deferred at the user's direction, F598 still
+needs an elevated Administrator WPR process, and the 250 MiB lifecycle gate,
+output parity, render/window acceptance, and global Phase 0 remain open.

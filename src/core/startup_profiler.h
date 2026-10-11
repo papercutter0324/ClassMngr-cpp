@@ -197,6 +197,14 @@ struct StartupApplicationMetrics
     int staffDirectoryGsReentryCount = 0;
     int subPrepOutputPdfCount = 0;
     int subPrepOutputPageCount = 0;
+    int subPrepRosterSourceClassCount = 0;
+    int subPrepRosterSourceRowCount = 0;
+    int subPrepRosterSourceCellCount = 0;
+    int subPrepPackageClassCount = 0;
+    int subPrepPackageRosterRowCount = 0;
+    int subPrepPackageRosterCellCount = 0;
+    int subPrepRendererInputClassCount = 0;
+    int subPrepRendererProjectedCellCount = 0;
     qint64 scheduleImportRawWorkbookBytes = 0;
     qint64 calendarImportRawWorkbookBytes = 0;
     qint64 classTransferRawJsonBytes = 0;
@@ -209,6 +217,9 @@ struct StartupApplicationMetrics
     qint64 staffDirectoryGsTextBytes = 0;
     qint64 subPrepOutputPdfBytes = 0;
     qint64 subPrepOutputDecodedFirstPageBytes = 0;
+    qint64 subPrepRosterSourceUtf8Bytes = 0;
+    qint64 subPrepPackageSourceUtf8Bytes = 0;
+    qint64 subPrepPackageDestinationQStringUnits = 0;
     bool scheduleImportRawBytesRetained = false;
     bool scheduleImportWorkbookRetained = false;
     bool scheduleImportReviewRetained = false;
@@ -235,6 +246,9 @@ struct StartupApplicationMetrics
     bool staffDirectoryGsOperationRetained = false;
     bool subPrepOutputDocumentsRetained = false;
     bool subPrepOutputOperationRetained = false;
+    bool subPrepOutputTypedSourceRetained = false;
+    bool subPrepOutputPackageClassesRetained = false;
+    bool subPrepOutputRendererProjectionRetained = false;
     int liveScheduleWidgetCount = 0;
     int livePdfDocumentCount = 0;
     quint64 scheduleWidgetsCreated = 0;
@@ -596,6 +610,26 @@ public:
         );
     static void recordStaffDirectoryOperationReleased(bool nativeDirectory);
     static void recordSubPrepOutputOperationStarted(const QString& targetRoot);
+    static void recordSubPrepOutputSourceProjected(
+        int classCount,
+        int rowCount,
+        int cellCount,
+        qint64 utf8Bytes
+        );
+    static void recordSubPrepOutputPackageMapped(
+        int classCount,
+        int rowCount,
+        int cellCount,
+        qint64 sourceUtf8Bytes,
+        qint64 destinationQStringUnits
+        );
+    static void recordSubPrepOutputTypedSourceReleased();
+    static void recordSubPrepOutputRendererProjected(
+        int inputClassCount,
+        int projectedCellCount
+        );
+    static void recordSubPrepOutputRendererProjectionReleased();
+    static void recordSubPrepOutputPackageClassesReleased();
     static void recordSubPrepOutputGenerated(
         int pdfCount,
         int pageCount,

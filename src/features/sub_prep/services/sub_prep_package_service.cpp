@@ -1,5 +1,6 @@
 #include "features/sub_prep/services/sub_prep_package_service.h"
 
+#include "core/startup_profiler.h"
 #include "core/utils/sidebar_node_naming.h"
 #include "domain/models/class_info.h"
 #include "domain/models/teacher.h"
@@ -46,6 +47,52 @@ struct GeneratedPackage
     bool success = false;
     QString message;
     QStringList relativeDocumentPaths;
+};
+
+struct TextProjectionCounts
+{
+    qint64 sourceUtf8Bytes = 0;
+    qint64 destinationQStringUnits = 0;
+};
+
+class TypedSourceReleaseGuard
+{
+public:
+    ~TypedSourceReleaseGuard()
+    {
+        if (m_active)
+        {
+            StartupProfiler::recordSubPrepOutputTypedSourceReleased();
+        }
+    }
+
+    void activate() noexcept
+    {
+        m_active = true;
+    }
+
+private:
+    bool m_active = false;
+};
+
+class PackageClassesReleaseGuard
+{
+public:
+    ~PackageClassesReleaseGuard()
+    {
+        if (m_active)
+        {
+            StartupProfiler::recordSubPrepOutputPackageClassesReleased();
+        }
+    }
+
+    void activate() noexcept
+    {
+        m_active = true;
+    }
+
+private:
+    bool m_active = false;
 };
 
 Result failed(
@@ -151,7 +198,10 @@ std::optional<int> legacyId(
     return parsed;
 }
 
-std::optional<QString> decodedText(const std::string& value)
+std::optional<QString> decodedText(
+    const std::string& value,
+    TextProjectionCounts* counts = nullptr
+    )
 {
     const QByteArray bytes(
         value.data(),
@@ -161,6 +211,11 @@ std::optional<QString> decodedText(const std::string& value)
     if (decoded.toUtf8() != bytes)
     {
         return std::nullopt;
+    }
+    if (counts)
+    {
+        counts->sourceUtf8Bytes += static_cast<qint64>(value.size());
+        counts->destinationQStringUnits += decoded.size();
     }
     return decoded;
 }
@@ -236,6 +291,7 @@ QList<PackageClass> loadPackageClasses(
     ClassMngr::Next::Application::SubPrepRosterOutputSourceQuery query(
         *request.rosterOutputSourceReadPort
         );
+    TypedSourceReleaseGuard typedSourceReleaseGuard;
     const auto loadedSource = query.execute(sourceRequest);
     if (!loadedSource)
     {
@@ -251,18 +307,33 @@ QList<PackageClass> loadPackageClasses(
         }
         return result;
     }
+    typedSourceReleaseGuard.activate();
 
     const ClassMngr::Next::Application::SubPrepRosterOutputSource& source =
         loadedSource.value();
+    TextProjectionCounts textProjectionCounts;
+    TextProjectionCounts* const activeTextProjectionCounts =
+        StartupProfiler::isActive() ? &textProjectionCounts : nullptr;
+    const bool collectProjectionCounts =
+        activeTextProjectionCounts != nullptr;
+    const auto decodeSourceText = [activeTextProjectionCounts](
+        const std::string& value
+        )
+    {
+        return decodedText(value, activeTextProjectionCounts);
+    };
+    int mappedClassCount = 0;
+    int mappedRowCount = 0;
+    int mappedCellCount = 0;
     QHash<int, Teacher> teachersById;
     teachersById.reserve(static_cast<qsizetype>(source.teachers().size()));
     for (const auto& sourceTeacher : source.teachers())
     {
         const auto teacherId = legacyId(sourceTeacher.id.value());
-        const auto englishName = decodedText(sourceTeacher.englishName);
-        const auto koreanName = decodedText(sourceTeacher.koreanName);
-        const auto preferredName = decodedText(sourceTeacher.preferredName);
-        const auto preferredRomanization = decodedText(
+        const auto englishName = decodeSourceText(sourceTeacher.englishName);
+        const auto koreanName = decodeSourceText(sourceTeacher.koreanName);
+        const auto preferredName = decodeSourceText(sourceTeacher.preferredName);
+        const auto preferredRomanization = decodeSourceText(
             sourceTeacher.preferredRomanization
             );
         if (!teacherId || !englishName || !koreanName || !preferredName
@@ -294,20 +365,20 @@ QList<PackageClass> loadPackageClasses(
         }
 
         const auto classId = legacyId(sourceClass.id.value());
-        const auto classroomName = decodedText(sourceClass.classroomName);
-        const auto grade = decodedText(sourceClass.grade);
-        const auto level = decodedText(sourceClass.level);
-        const auto classTeacherEnglishName = decodedText(
+        const auto classroomName = decodeSourceText(sourceClass.classroomName);
+        const auto grade = decodeSourceText(sourceClass.grade);
+        const auto level = decodeSourceText(sourceClass.level);
+        const auto classTeacherEnglishName = decodeSourceText(
             sourceClass.classTeacherEnglishName
             );
-        const auto classTeacherKoreanName = decodedText(
+        const auto classTeacherKoreanName = decodeSourceText(
             sourceClass.classTeacherKoreanName
             );
-        const auto room = decodedText(sourceClass.room);
-        const auto wifiName = decodedText(sourceClass.wifiName);
-        const auto wifiPassword = decodedText(sourceClass.wifiPassword);
-        const auto zoomId = decodedText(sourceClass.zoomId);
-        const auto zoomPassword = decodedText(sourceClass.zoomPassword);
+        const auto room = decodeSourceText(sourceClass.room);
+        const auto wifiName = decodeSourceText(sourceClass.wifiName);
+        const auto wifiPassword = decodeSourceText(sourceClass.wifiPassword);
+        const auto zoomId = decodeSourceText(sourceClass.zoomId);
+        const auto zoomPassword = decodeSourceText(sourceClass.zoomPassword);
         if (!classId || !classroomName || !grade || !level
             || !classTeacherEnglishName || !classTeacherKoreanName || !room
             || !wifiName || !wifiPassword || !zoomId || !zoomPassword)
@@ -362,8 +433,8 @@ QList<PackageClass> loadPackageClasses(
         for (const auto& sourceMeeting : sourceClass.meetings)
         {
             const auto day = weekdayLabel(sourceMeeting.weekday);
-            const auto startTime = decodedText(sourceMeeting.startTime);
-            const auto endTime = decodedText(sourceMeeting.endTime);
+            const auto startTime = decodeSourceText(sourceMeeting.startTime);
+            const auto endTime = decodeSourceText(sourceMeeting.endTime);
             if (!day || !startTime || !endTime)
             {
                 if (errorMessage)
@@ -385,7 +456,7 @@ QList<PackageClass> loadPackageClasses(
         Roster& roster = packageClass.rosterData.roster;
         for (const std::string& sourceColumn : sourceClass.rosterColumns)
         {
-            const auto column = decodedText(sourceColumn);
+            const auto column = decodeSourceText(sourceColumn);
             if (!column)
             {
                 if (errorMessage)
@@ -409,7 +480,7 @@ QList<PackageClass> loadPackageClasses(
             row.reserve(static_cast<qsizetype>(sourceRow.size()));
             for (const std::string& sourceCell : sourceRow)
             {
-                const auto cell = decodedText(sourceCell);
+                const auto cell = decodeSourceText(sourceCell);
                 if (!cell)
                 {
                     if (errorMessage)
@@ -421,11 +492,23 @@ QList<PackageClass> loadPackageClasses(
                     return {};
                 }
                 row.append(*cell);
+                if (collectProjectionCounts)
+                {
+                    ++mappedCellCount;
+                }
             }
             roster.rows.append(std::move(row));
+            if (collectProjectionCounts)
+            {
+                ++mappedRowCount;
+            }
         }
 
         result.append(std::move(packageClass));
+        if (collectProjectionCounts)
+        {
+            ++mappedClassCount;
+        }
     }
 
     std::sort(
@@ -461,6 +544,17 @@ QList<PackageClass> loadPackageClasses(
     {
         *errorMessage =
             QObject::tr("No classes meet on the selected days.");
+    }
+
+    if (!result.isEmpty())
+    {
+        StartupProfiler::recordSubPrepOutputPackageMapped(
+            mappedClassCount,
+            mappedRowCount,
+            mappedCellCount,
+            textProjectionCounts.sourceUtf8Bytes,
+            textProjectionCounts.destinationQStringUnits
+            );
     }
 
     return result;
@@ -500,6 +594,7 @@ GeneratedPackage generateAt(
     request.subPrep = {};
 
     QString classError;
+    PackageClassesReleaseGuard packageClassesReleaseGuard;
     QList<PackageClass> classes =
         loadPackageClasses(request, &classError);
 
@@ -507,6 +602,7 @@ GeneratedPackage generateAt(
     {
         return {false, classError, {}};
     }
+    packageClassesReleaseGuard.activate();
 
     QStringList documents{subPrepRelative};
     QList<RosterTemplatePrintService::RosterClassData> rosterClasses;

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "core/application_services.h"
+#include "core/startup_profiler.h"
 #include "data/database/database_session.h"
 #include "data/repositories/class_info_repository.h"
 #include "data/repositories/class_repository.h"
@@ -797,6 +798,12 @@ public:
                 source.classes.push_back(std::move(classRecord));
             }
 
+            StartupProfiler::recordSubPrepOutputSourceProjected(
+                static_cast<int>(source.classes.size()),
+                static_cast<int>(totalRows),
+                static_cast<int>(totalCells),
+                static_cast<qint64>(totalTextBytes)
+                );
             return Application::SubPrepRosterOutputSourceReadResult::success(
                 std::move(source)
                 );

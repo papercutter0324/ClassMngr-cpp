@@ -42,7 +42,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-11
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F612 is measuring Sub Prep roster-source-to-renderer overlap while preserving the SQL route, while F598 still awaits elevated WPR and F579 symbols remain deferred, with memory/output-parity/Phase 0 gates open.
+- Current note: F613 is establishing deterministic packaged SQL-route Sub Prep PDF parity; F579 remains deferred and F598 still awaits elevated WPR, with memory, render/window, and Phase 0 gates open.
 
 ### Slice discovery batches
 
@@ -72,9 +72,18 @@ Treat this plan as an operational summary, not a history:
   because the current execution identity is not an Administrator; resume when
   a Windows process with an elevated administrator token is available.
 
-#### Active batch: Batch 116
+#### Active batch: Batch 117
 
-- F612 - Measure Sub Prep roster-source-to-renderer overlap while preserving SQL-route parity.
+- F613 - Establish packaged Sub Prep SQL-route output parity with deterministic dates and page-level semantics.
+- F614 - Reduce Sub Prep source-to-renderer overlap if F612 shows a material opportunity.
+- F615 - Stabilize Schedule Import dialog integration coverage for ordering, refresh, apply, reject, and cancellation.
+- F616 - Stage Calendar workbook-to-event projection while preserving event order and cancellation behavior.
+- F617 - Reduce Class Transfer import ownership overlap while preserving resolution and apply behavior.
+- F618 - Reduce Class Transfer export serialization overlap while preserving output semantics.
+- F619 - Bound Speaking Evaluation AI batch selection and review tables.
+- F620 - Measure Sub Prep PDF render-stage overlap before selecting a reduction.
+- F621 - Bound remaining large resources cached by PageManager.
+- F622 - Reconcile current-source packaged Release memory and parity evidence after behavior-changing slices settle.
 
 ## Objective
 

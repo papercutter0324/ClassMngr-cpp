@@ -10200,6 +10200,12 @@ void StartupPerformanceTests::capturesLargeSubPrepOutputBoundaryWhenConfigured()
              QStringLiteral("sub-prep-lifecycle-complete"),
              QStringLiteral("sub-prep-output-operation-start"),
              QStringLiteral("sub-prep-output-validation-error"),
+             QStringLiteral("sub-prep-output-source-projected"),
+             QStringLiteral("sub-prep-output-package-mapped"),
+             QStringLiteral("sub-prep-output-source-released"),
+             QStringLiteral("sub-prep-output-renderer-projected"),
+             QStringLiteral("sub-prep-output-renderer-projection-released"),
+             QStringLiteral("sub-prep-output-package-classes-released"),
              QStringLiteral("sub-prep-output-generated"),
              QStringLiteral("sub-prep-output-operation-released"),
              QStringLiteral("complete")
@@ -10254,6 +10260,12 @@ void StartupPerformanceTests::capturesLargeSubPrepOutputBoundaryWhenConfigured()
     for (const QString& checkpointName : {
              QStringLiteral("sub-prep-output-operation-start"),
              QStringLiteral("sub-prep-output-validation-error"),
+             QStringLiteral("sub-prep-output-source-projected"),
+             QStringLiteral("sub-prep-output-package-mapped"),
+             QStringLiteral("sub-prep-output-source-released"),
+             QStringLiteral("sub-prep-output-renderer-projected"),
+             QStringLiteral("sub-prep-output-renderer-projection-released"),
+             QStringLiteral("sub-prep-output-package-classes-released"),
              QStringLiteral("sub-prep-output-generated"),
              QStringLiteral("sub-prep-output-operation-released"),
              QStringLiteral("workflow-complete"),
@@ -10291,6 +10303,22 @@ void StartupPerformanceTests::capturesLargeSubPrepOutputBoundaryWhenConfigured()
         checkpoints.value(QStringLiteral("sub-prep-output-operation-released"))
             .value(QStringLiteral("metrics"))
             .toObject();
+    const QJsonObject sourceProjectedCheckpoint =
+        checkpoints.value(QStringLiteral("sub-prep-output-source-projected"));
+    const QJsonObject packageMappedCheckpoint =
+        checkpoints.value(QStringLiteral("sub-prep-output-package-mapped"));
+    const QJsonObject sourceReleasedCheckpoint =
+        checkpoints.value(QStringLiteral("sub-prep-output-source-released"));
+    const QJsonObject rendererProjectedCheckpoint =
+        checkpoints.value(QStringLiteral("sub-prep-output-renderer-projected"));
+    const QJsonObject rendererReleasedCheckpoint =
+        checkpoints.value(
+            QStringLiteral("sub-prep-output-renderer-projection-released")
+            );
+    const QJsonObject packageClassesReleasedCheckpoint =
+        checkpoints.value(
+            QStringLiteral("sub-prep-output-package-classes-released")
+            );
     const QJsonObject settledMetrics =
         checkpoints.value(QStringLiteral("settled-1s"))
             .value(QStringLiteral("metrics"))
@@ -10317,11 +10345,197 @@ void StartupPerformanceTests::capturesLargeSubPrepOutputBoundaryWhenConfigured()
         settledFiveSecondCheckpoint.value(QStringLiteral("elapsedMs"))
             .toDouble();
 
+    const auto checkpointSequence = [](const QJsonObject& checkpoint)
+    {
+        return checkpoint.value(QStringLiteral("sequence")).toInt();
+    };
+    QVERIFY(
+        checkpointSequence(sourceProjectedCheckpoint)
+            < checkpointSequence(packageMappedCheckpoint)
+        );
+    QVERIFY(
+        checkpointSequence(packageMappedCheckpoint)
+            < checkpointSequence(sourceReleasedCheckpoint)
+        );
+    QVERIFY(
+        checkpointSequence(sourceReleasedCheckpoint)
+            < checkpointSequence(rendererProjectedCheckpoint)
+        );
+    QVERIFY(
+        checkpointSequence(rendererProjectedCheckpoint)
+            < checkpointSequence(rendererReleasedCheckpoint)
+        );
+    QVERIFY(
+        checkpointSequence(rendererReleasedCheckpoint)
+            < checkpointSequence(packageClassesReleasedCheckpoint)
+        );
+    QVERIFY(
+        checkpointSequence(packageClassesReleasedCheckpoint)
+            < checkpointSequence(
+                checkpoints.value(QStringLiteral("sub-prep-output-generated"))
+                )
+        );
+    QVERIFY(
+        checkpointSequence(
+            checkpoints.value(QStringLiteral("sub-prep-output-generated"))
+            )
+            < checkpointSequence(
+                checkpoints.value(
+                    QStringLiteral("sub-prep-output-operation-released")
+                    )
+                )
+        );
+
+    const QJsonObject sourceProjectedMetrics =
+        sourceProjectedCheckpoint.value(QStringLiteral("metrics")).toObject();
+    const QJsonObject packageMappedMetrics =
+        packageMappedCheckpoint.value(QStringLiteral("metrics")).toObject();
+    const QJsonObject sourceReleasedMetrics =
+        sourceReleasedCheckpoint.value(QStringLiteral("metrics")).toObject();
+    const QJsonObject rendererProjectedMetrics =
+        rendererProjectedCheckpoint.value(QStringLiteral("metrics")).toObject();
+    const QJsonObject rendererReleasedMetrics =
+        rendererReleasedCheckpoint.value(QStringLiteral("metrics")).toObject();
+    const QJsonObject packageClassesReleasedMetrics =
+        packageClassesReleasedCheckpoint.value(QStringLiteral("metrics"))
+            .toObject();
+
+    QVERIFY(
+        sourceProjectedMetrics.value(QStringLiteral("subPrepRosterSourceClassCount"))
+            .toInt() > 0
+        );
+    QVERIFY(
+        sourceProjectedMetrics.value(QStringLiteral("subPrepRosterSourceRowCount"))
+            .toInt() > 0
+        );
+    QVERIFY(
+        sourceProjectedMetrics.value(QStringLiteral("subPrepRosterSourceCellCount"))
+            .toInt() > 0
+        );
+    QVERIFY(
+        sourceProjectedMetrics.value(QStringLiteral("subPrepRosterSourceUtf8Bytes"))
+            .toDouble() > 0.0
+        );
+    QCOMPARE(
+        packageMappedMetrics.value(QStringLiteral("subPrepPackageClassCount"))
+            .toInt(),
+        sourceProjectedMetrics.value(QStringLiteral("subPrepRosterSourceClassCount"))
+            .toInt()
+        );
+    QCOMPARE(
+        packageMappedMetrics.value(QStringLiteral("subPrepPackageRosterRowCount"))
+            .toInt(),
+        sourceProjectedMetrics.value(QStringLiteral("subPrepRosterSourceRowCount"))
+            .toInt()
+        );
+    QCOMPARE(
+        packageMappedMetrics.value(QStringLiteral("subPrepPackageRosterCellCount"))
+            .toInt(),
+        sourceProjectedMetrics.value(QStringLiteral("subPrepRosterSourceCellCount"))
+            .toInt()
+        );
+    QCOMPARE(
+        packageMappedMetrics.value(QStringLiteral("subPrepPackageSourceUtf8Bytes"))
+            .toDouble(),
+        sourceProjectedMetrics.value(QStringLiteral("subPrepRosterSourceUtf8Bytes"))
+            .toDouble()
+        );
+    QVERIFY(
+        packageMappedMetrics
+            .value(QStringLiteral("subPrepPackageDestinationQStringUnits"))
+            .toDouble() > 0.0
+        );
+    QVERIFY(
+        rendererProjectedMetrics
+            .value(QStringLiteral("subPrepRendererInputClassCount"))
+            .toInt() > 0
+        );
+    QCOMPARE(
+        rendererProjectedMetrics
+            .value(QStringLiteral("subPrepRendererInputClassCount"))
+            .toInt(),
+        packageMappedMetrics.value(QStringLiteral("subPrepPackageClassCount"))
+            .toInt()
+        );
+    QVERIFY(
+        rendererProjectedMetrics
+            .value(QStringLiteral("subPrepRendererProjectedCellCount"))
+            .toInt() > 0
+        );
+    QVERIFY(
+        sourceProjectedMetrics
+            .value(QStringLiteral("subPrepOutputTypedSourceRetained"))
+            .toBool()
+        );
+    QVERIFY(
+        packageMappedMetrics
+            .value(QStringLiteral("subPrepOutputTypedSourceRetained"))
+            .toBool()
+        );
+    QVERIFY(
+        packageMappedMetrics
+            .value(QStringLiteral("subPrepOutputPackageClassesRetained"))
+            .toBool()
+        );
+    QVERIFY(
+        !sourceReleasedMetrics
+            .value(QStringLiteral("subPrepOutputTypedSourceRetained"))
+            .toBool()
+        );
+    QVERIFY(
+        sourceReleasedMetrics
+            .value(QStringLiteral("subPrepOutputPackageClassesRetained"))
+            .toBool()
+        );
+    QVERIFY(
+        !rendererProjectedMetrics
+            .value(QStringLiteral("subPrepOutputTypedSourceRetained"))
+            .toBool()
+        );
+    QVERIFY(
+        rendererProjectedMetrics
+            .value(QStringLiteral("subPrepOutputPackageClassesRetained"))
+            .toBool()
+        );
+    QVERIFY(
+        rendererProjectedMetrics
+            .value(QStringLiteral("subPrepOutputRendererProjectionRetained"))
+            .toBool()
+        );
+    QVERIFY(
+        !rendererReleasedMetrics
+            .value(QStringLiteral("subPrepOutputRendererProjectionRetained"))
+            .toBool()
+        );
+    QVERIFY(
+        rendererReleasedMetrics
+            .value(QStringLiteral("subPrepOutputPackageClassesRetained"))
+            .toBool()
+        );
+    QVERIFY(
+        !packageClassesReleasedMetrics
+            .value(QStringLiteral("subPrepOutputPackageClassesRetained"))
+            .toBool()
+        );
+    QVERIFY(
+        !packageClassesReleasedMetrics
+            .value(QStringLiteral("subPrepOutputRendererProjectionRetained"))
+            .toBool()
+        );
+
     QVERIFY(
         settledMemory.value(QStringLiteral("available")).toBool()
         );
     QVERIFY(
         settledMemory.value(QStringLiteral("workingSetBytes")).toDouble() > 0.0
+        );
+    QCOMPARE(
+        checkpoints.value(QStringLiteral("sub-prep-output-operation-released"))
+            .value(QStringLiteral("memory"))
+            .toObject()
+            .value(QStringLiteral("measurementScope"))
+            .toString(),
+        QStringLiteral("process-wide")
         );
     QVERIFY(
         settledFiveSecondMemory.value(QStringLiteral("available")).toBool()
@@ -10392,6 +10606,21 @@ void StartupPerformanceTests::capturesLargeSubPrepOutputBoundaryWhenConfigured()
         );
     QVERIFY(
         !outputReleasedMetrics.value(QStringLiteral("subPrepOutputDocumentsRetained"))
+            .toBool()
+        );
+    QVERIFY(
+        !outputReleasedMetrics
+            .value(QStringLiteral("subPrepOutputTypedSourceRetained"))
+            .toBool()
+        );
+    QVERIFY(
+        !outputReleasedMetrics
+            .value(QStringLiteral("subPrepOutputPackageClassesRetained"))
+            .toBool()
+        );
+    QVERIFY(
+        !outputReleasedMetrics
+            .value(QStringLiteral("subPrepOutputRendererProjectionRetained"))
             .toBool()
         );
     QCOMPARE(
