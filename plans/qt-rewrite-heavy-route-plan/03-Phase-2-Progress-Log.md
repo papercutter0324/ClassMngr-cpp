@@ -24149,3 +24149,47 @@ active with F668. Continue the one-commit-per-slice sequence.
    and `ClassMngrCalendarPageEventMutationParityTests`.
 
 This matrix is recorded before implementation. Batch 143 is active with F668.
+
+### F668 Calendar event-type color save failure - accepted - 2026-10-12
+
+F668 is accepted at code commit
+`4678f3c54e63fedcf9528cfce2ee8ded8d298d02`. The focused CTests passed
+2/2: `ClassMngrCalendarPageEventMutationParityTests` and
+`ClassMngrNextPlatformApplicationServicesCalendarEventTypeColorPreferencesPortTests`.
+The open-session/null-repository adapter failure branch was source-reviewed
+only; absent and closed sessions were tested.
+
+**Decision: accept F668 with that limit.** Batch 143 is complete; Batch 144 is
+active with F669. Continue the one-commit-per-slice sequence.
+
+### Batch 144 shortlist and selection - recorded before F669 implementation - 2026-10-12
+
+Independent UI and platform scans surfaced two focused remaining preference
+gaps. F669 is selected: Preferences > Schedule has five checkboxes whose
+handler calls the already typed, atomic Schedule Display Preferences save,
+logs a failed result, and still refreshes the schedule without restoring the
+controls (`src/app/menu_builder.cpp:357-387`). Inference: after a rejected
+write, the open dialog can continue showing attempted values while schedule
+pages read the unchanged persisted values.
+
+The UI scan found an existing Preferences-dialog checkbox interaction seam in
+`ClassMngrScheduleTestingLayoutClearParityTests`; the platform CTest has an
+existing trigger-backed test proving rollback of all five fields. The other
+candidate is Custom Color Palette: it has a void write contract and a trigger
+test, but propagating failure from the shared color chooser involves the core
+utility and several callers. F669 is the smaller user-facing consistency fix;
+Custom Color Palette remains a later candidate. No new CMake target is planned.
+
+### F669 Schedule Display Preferences save-failure acceptance matrix - recorded before implementation - 2026-10-12
+
+1. On a typed save failure, show one `Unable to Save Preference` warning with
+   the diagnostic and restore all five controls from persisted values without
+   causing another save. Do not refresh schedule pages for the rejected write.
+2. After the failure is removed, retry persists the selected values and
+   refreshes the schedule using the committed preferences.
+3. Preserve atomic rollback, defaults, key encodings, and existing successful
+   checkbox behavior. Reuse the exact focused CTests
+   `ClassMngrNextPlatformApplicationServicesScheduleDisplayPreferencesPortTests`
+   and `ClassMngrScheduleTestingLayoutClearParityTests`; add no CMake target.
+
+This matrix is recorded before implementation. Batch 144 is active with F669.
