@@ -830,10 +830,11 @@ void ClassesPageTests::dayFiltersResetOnPageLeaveAfterHideAndShow()
     QVERIFY(openDatabase(services, directory));
     ClassMngr::Next::Platform::
         ApplicationServicesClassDayFilterResetPolicyPort policyPort(services);
-    policyPort.save(
+    const auto policySaved = policyPort.save(
         ClassMngr::Next::Application::
             ClassDayFilterResetPolicy::OnPageLeave
         );
+    QVERIFY(policySaved);
     QCOMPARE(
         policyPort.load(),
         ClassMngr::Next::Application::
@@ -889,10 +890,11 @@ void ClassesPageTests::navigationReleaseCachesSnapshotAndEditorsAcrossReentry()
         ApplicationServicesClassDayFilterResetPolicyPort dayFilterPolicy(
             services
             );
-    dayFilterPolicy.save(
+    const auto dayFilterPolicySaved = dayFilterPolicy.save(
         ClassMngr::Next::Application::
             ClassDayFilterResetPolicy::OnApplicationClose
         );
+    QVERIFY(dayFilterPolicySaved);
 
     ClassesPage page(&services);
     page.resize(1200, 800);
@@ -1231,10 +1233,11 @@ classSelectionResetOnPageLeaveClearsOnlyClassStateAfterHideAndShow()
         ApplicationServicesClassDayFilterResetPolicyPort dayFilterPolicy(
             services
             );
-    dayFilterPolicy.save(
+    const auto dayFilterPolicySaved = dayFilterPolicy.save(
         ClassMngr::Next::Application::
             ClassDayFilterResetPolicy::OnApplicationClose
         );
+    QVERIFY(dayFilterPolicySaved);
 
     ClassesPage page(&services);
     page.resize(1200, 800);
@@ -1290,10 +1293,11 @@ classSelectionResetOnApplicationCloseRetainsOnlyClassStateAfterHideAndShow()
         ApplicationServicesClassDayFilterResetPolicyPort dayFilterPolicy(
             services
             );
-    dayFilterPolicy.save(
+    const auto dayFilterPolicySaved = dayFilterPolicy.save(
         ClassMngr::Next::Application::
             ClassDayFilterResetPolicy::OnPageLeave
         );
+    QVERIFY(dayFilterPolicySaved);
 
     ClassesPage page(&services);
     page.resize(1200, 800);

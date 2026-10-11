@@ -8,6 +8,9 @@
 #include <QString>
 #include <QVariant>
 
+#include <string>
+#include <utility>
+
 namespace ClassMngr::Next::Platform
 {
 
@@ -74,27 +77,53 @@ public:
             : Application::ClassDayFilterResetPolicy::OnApplicationClose;
     }
 
-    void save(
+    [[nodiscard]] Application::ClassDayFilterResetPolicySaveResult save(
         const Application::ClassDayFilterResetPolicy policy
         ) const override
     {
         if (!m_session || !m_session->isOpen())
         {
-            return;
+            return failure(
+                "Class day-filter reset policy cannot be saved because no database session is open."
+                );
         }
 
         SettingsRepository* const repository = m_session->settingsRepository();
         if (!repository)
         {
-            return;
+            return failure(
+                "Class day-filter reset policy cannot be saved because the settings repository is unavailable."
+                );
         }
 
-        static_cast<void>(
-            repository->saveSetting(key(), storedPolicyValue(policy))
+        const Status saved = repository->saveSetting(
+            key(),
+            storedPolicyValue(policy)
             );
+        if (!saved)
+        {
+            const QByteArray errorBytes = saved.error().toUtf8();
+            return failure(
+                errorBytes.isEmpty()
+                    ? "Class day-filter reset policy could not be saved."
+                    : errorBytes.toStdString()
+                );
+        }
+
+        return Application::ClassDayFilterResetPolicySaveResult::success();
     }
 
 private:
+    [[nodiscard]] static Application::ClassDayFilterResetPolicySaveResult
+    failure(std::string message)
+    {
+        return Application::ClassDayFilterResetPolicySaveResult::failure({
+            .code = Domain::ErrorCode::Technical,
+            .message = std::move(message),
+            .recoverable = false
+        });
+    }
+
     [[nodiscard]] static QString key()
     {
         return QStringLiteral(

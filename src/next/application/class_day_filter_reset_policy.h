@@ -1,5 +1,7 @@
 #pragma once
 
+#include "next/domain/operation_result.h"
+
 namespace ClassMngr::Next::Application
 {
 
@@ -12,6 +14,9 @@ enum class ClassDayFilterResetPolicy
     OnPageLeave
 };
 
+using ClassDayFilterResetPolicySaveResult = Domain::Result<void>;
+using ClassDayFilterResetPolicySaveError = Domain::OperationError;
+
 class ClassDayFilterResetPolicyPort
 {
 public:
@@ -19,7 +24,7 @@ public:
 
     [[nodiscard]] virtual ClassDayFilterResetPolicy load() const = 0;
 
-    virtual void save(
+    [[nodiscard]] virtual ClassDayFilterResetPolicySaveResult save(
         ClassDayFilterResetPolicy policy
         ) const = 0;
 };

@@ -607,7 +607,7 @@ void addNavigationPreferencesTab(
                 );
             groupLayout->addWidget(onLeave);
 
-            const auto savePolicy = [window, onClose, dayFilters](bool checked)
+            const auto savePolicy = [window, onClose, onLeave, dayFilters](bool checked)
             {
                 if (!checked)
                 {
@@ -622,13 +622,36 @@ void addNavigationPreferencesTab(
                             ApplicationServicesClassDayFilterResetPolicyPort port(
                                 *window->services()
                                 );
-                        port.save(
+                        const auto saved = port.save(
                             onClose->isChecked()
                                 ? ClassMngr::Next::Application::
                                     ClassDayFilterResetPolicy::OnApplicationClose
                                 : ClassMngr::Next::Application::
                                     ClassDayFilterResetPolicy::OnPageLeave
                             );
+                        if (!saved)
+                        {
+                            DialogServices::showWarning(
+                                window,
+                                preferencesText("Unable to Save Preference"),
+                                QString::fromStdString(saved.error().message)
+                                );
+
+                            const auto persistedPolicy = port.load();
+                            const QSignalBlocker onCloseSignals(onClose);
+                            const QSignalBlocker onLeaveSignals(onLeave);
+                            onClose->setChecked(
+                                persistedPolicy
+                                    == ClassMngr::Next::Application::
+                                        ClassDayFilterResetPolicy::OnApplicationClose
+                                );
+                            onLeave->setChecked(
+                                persistedPolicy
+                                    == ClassMngr::Next::Application::
+                                        ClassDayFilterResetPolicy::OnPageLeave
+                                );
+                            return;
+                        }
                     }
                 }
                 else

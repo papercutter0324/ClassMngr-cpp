@@ -11,6 +11,7 @@
 #include <QtTest/QtTest>
 
 #include <array>
+#include <string>
 #include <type_traits>
 
 using namespace ClassMngr::Next;
@@ -87,11 +88,11 @@ private slots:
     void initTestCase();
     void missingSettingDefaultsToApplicationCloseAndPersists();
     void validUnsupportedValuesDefaultWithoutRewrite();
-    void unavailableSettingsDefaultToApplicationCloseAndIgnoreSave();
+    void unavailableSettingsReturnTechnicalFailure();
     void loadsPageLeaveValue();
     void roundTripsBothValuesUsingTheExactLegacyKey();
-    void closedSessionDefaultsAndIgnoresSaveWithoutChangingSettings();
-    void failedSaveIsSilentAndPreservesStoredValue();
+    void closedSessionReturnsTechnicalFailureAndPreservesSettings();
+    void failedSaveReturnsTechnicalDiagnosticAndPreservesSettings();
     void repositoryReadFailureDefaultsAndRemainsSilent();
 
 private:
@@ -154,7 +155,7 @@ validUnsupportedValuesDefaultWithoutRewrite()
 }
 
 void NextPlatformApplicationServicesClassDayFilterResetPolicyPortTests::
-unavailableSettingsDefaultToApplicationCloseAndIgnoreSave()
+unavailableSettingsReturnTechnicalFailure()
 {
     ApplicationServices services;
     ApplicationServicesClassDayFilterResetPolicyPort port(services);
@@ -166,7 +167,12 @@ unavailableSettingsDefaultToApplicationCloseAndIgnoreSave()
         port.load(),
         ClassDayFilterResetPolicy::OnApplicationClose
         );
-    port.save(ClassDayFilterResetPolicy::OnPageLeave);
+    const auto saved = port.save(ClassDayFilterResetPolicy::OnPageLeave);
+    QVERIFY(!saved);
+    QCOMPARE(saved.error().code, Domain::ErrorCode::Technical);
+    QVERIFY(!saved.error().recoverable);
+    QVERIFY(saved.error().message.find("no database session is open")
+        != std::string::npos);
     QCOMPARE(
         port.load(),
         ClassDayFilterResetPolicy::OnApplicationClose
@@ -211,7 +217,8 @@ roundTripsBothValuesUsingTheExactLegacyKey()
              ClassDayFilterResetPolicy::OnPageLeave
          })
     {
-        port.save(expected);
+        const auto saved = port.save(expected);
+        QVERIFY(saved);
         QCOMPARE(port.load(), expected);
 
         const auto stored = repository->loadSetting(policyKey());
@@ -232,7 +239,7 @@ roundTripsBothValuesUsingTheExactLegacyKey()
 }
 
 void NextPlatformApplicationServicesClassDayFilterResetPolicyPortTests::
-closedSessionDefaultsAndIgnoresSaveWithoutChangingSettings()
+closedSessionReturnsTechnicalFailureAndPreservesSettings()
 {
     ApplicationServices services;
     const QString path = databasePath(m_directory);
@@ -259,7 +266,14 @@ closedSessionDefaultsAndIgnoresSaveWithoutChangingSettings()
     QVERIFY(services.dataService());
     QVERIFY(!session->isOpen());
     QCOMPARE(port.load(), ClassDayFilterResetPolicy::OnApplicationClose);
-    port.save(ClassDayFilterResetPolicy::OnApplicationClose);
+    const auto saved = port.save(
+        ClassDayFilterResetPolicy::OnApplicationClose
+        );
+    QVERIFY(!saved);
+    QCOMPARE(saved.error().code, Domain::ErrorCode::Technical);
+    QVERIFY(!saved.error().recoverable);
+    QVERIFY(saved.error().message.find("no database session is open")
+        != std::string::npos);
 
     QVERIFY(services.openDatabase(path));
     QVERIFY(session->isOpen());
@@ -274,7 +288,7 @@ closedSessionDefaultsAndIgnoresSaveWithoutChangingSettings()
 }
 
 void NextPlatformApplicationServicesClassDayFilterResetPolicyPortTests::
-failedSaveIsSilentAndPreservesStoredValue()
+failedSaveReturnsTechnicalDiagnosticAndPreservesSettings()
 {
     ApplicationServices services;
     QVERIFY(openDatabase(services, m_directory));
@@ -283,6 +297,12 @@ failedSaveIsSilentAndPreservesStoredValue()
     QVERIFY(repository->saveSetting(
         policyKey(),
         QStringLiteral("on_page_leave")
+        ));
+    const QString unrelatedKey =
+        QStringLiteral("classes_navigation_unrelated_preference");
+    QVERIFY(repository->saveSetting(
+        unrelatedKey,
+        QStringLiteral("preserved")
         ));
     QVERIFY(executeSql(
         services,
@@ -298,11 +318,22 @@ failedSaveIsSilentAndPreservesStoredValue()
 
     ApplicationServicesClassDayFilterResetPolicyPort port(services);
     QTest::failOnWarning();
-    port.save(ClassDayFilterResetPolicy::OnApplicationClose);
+    const auto saved = port.save(
+        ClassDayFilterResetPolicy::OnApplicationClose
+        );
+    QVERIFY(!saved);
+    QCOMPARE(saved.error().code, Domain::ErrorCode::Technical);
+    QVERIFY(!saved.error().recoverable);
+    QVERIFY(saved.error().message.find(
+        "forced day-filter reset policy write failure"
+        ) != std::string::npos);
 
     const auto storedPolicy = repository->loadSetting(policyKey());
     QVERIFY(storedPolicy);
     QCOMPARE(storedPolicy->toString(), QStringLiteral("on_page_leave"));
+    const auto unrelated = repository->loadSetting(unrelatedKey);
+    QVERIFY(unrelated);
+    QCOMPARE(unrelated->toString(), QStringLiteral("preserved"));
 }
 
 void NextPlatformApplicationServicesClassDayFilterResetPolicyPortTests::
