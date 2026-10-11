@@ -23145,11 +23145,11 @@ This matrix was recorded and committed before F651 implementation.
 
 ### Batch 129 bounded discovery - started during F651 - 2026-10-12
 
-- UI and Application scans both found a stale GsTeam zero-row UPDATE that can
-  silently report success and emit the saved signal. Record GsTeam as the
-  leading provisional candidate for Batch 129; no implementation has begun.
-- A stale co-teacher ID is lower severity and adjacent to F646, so it is not
-  selected as the next candidate.
+- The detailed UI scan identified a stale GsTeam zero-row UPDATE that can
+  silently report success and emit the saved signal. It is the leading
+  provisional candidate for Batch 129; no implementation has begun.
+- The Application scan's alternate was a stale co-teacher ID, lower severity
+  and adjacent to F646, so it was not selected as the next candidate.
 
 ### F651 Calendar event stale update - accepted - 2026-10-12
 
@@ -23174,12 +23174,47 @@ The forced Debug build succeeded, and independent focused CTest
   remains `Technical` with its diagnostic.
 - Use a repository-backed fixture: delete the Teacher, then update using the
   old ID. Retain the existing UPDATE-trigger failure case.
-- Focused CTest: `ClassMngrNextPlatformApplicationServicesTeacherProfileEditPersistencePortTests`.
+- Focused CTest (registered full name):
+  `ClassMngrNextPlatformApplicationServicesTeacherProfileEditPersistencePortTests`.
 - `TeacherProfileEditUseCase` already maps failed persistence updates to
   `UpdateFailed` and returns before reload with `writeSucceeded` false. Its
   `updateFailureDoesNotReload` app-only test covers a generic Technical
   failure, not zero-row SQL. An optional typed-`NotFound` cause assertion may
   be added if useful; the repo-backed Platform case is the essential regression.
 
-F652 implementation is pending this matrix's documentation commit; Batch 128
-remains active with F652.
+This matrix was recorded and committed before F652 implementation.
+
+### F652 Teacher profile stale-update - accepted - 2026-10-12
+
+Commit `479c5c44485f7de9cc488540a1c84f712b7a2463` adds an additive
+`TeacherUpdateOutcome`. A zero-row UPDATE maps to recoverable Platform
+`NotFound` with the no-match diagnostic; an UPDATE-trigger failure remains
+`Technical` with SQL detail. Valid update and reload fields remain preserved.
+
+Executor and independent Tester forced Debug target builds passed. The exact
+registered CTest
+`ClassMngrNextPlatformApplicationServicesTeacherProfileEditPersistencePortTests`
+passed 1/1, and `git diff --check` passed. Initial short-name CTest filters
+matched zero tests and were corrected to the registered full name. No full
+suite was run.
+
+**Decision: accept F652.** Batch 128 is complete; Batch 129 is active with
+F653.
+
+### F653 GsTeam stale-update acceptance matrix - recorded before implementation - 2026-10-12
+
+- In the repository-backed save path, a mixed delete + insert + stale UPDATE
+  must return typed `NotFound` and roll back the companion delete and insert;
+  the externally deleted row remains absent.
+- A `BEFORE UPDATE` abort remains `Technical` with its SQL diagnostic and
+  rolls back the transaction. Preserve the existing INSERT-trigger failure
+  behavior.
+- In the live Staff Directory route, manually edit a row, externally delete
+  it, then save. The save returns false, the edited row remains visible and
+  dirty, and `directorySaved` is not emitted.
+- Preserve ordinary CRUD behavior and save-signal behavior.
+- Focused registered CTests: `ClassMngrNextPlatformApplicationServicesGsTeamDirectorySavePortTests`
+  and `ClassMngrStaffDirectoryGsTeamSaveTests`.
+
+F653 implementation is pending this matrix's documentation commit; Batch 129
+is active with F653.
