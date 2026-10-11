@@ -1,6 +1,7 @@
 #include "core/application_services.h"
 #include "data/database/database_session.h"
 #include "data/repositories/calendar_event_repository.h"
+#include "data/repositories/settings_repository.h"
 #include "domain/models/calendar_event.h"
 #include "features/calendar/ui/calendar_event_dialog.h"
 #include "features/calendar/ui/calendar_event_model.h"
@@ -24,6 +25,7 @@
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QLineEdit>
+#include <QMessageBox>
 #include <QQmlContext>
 #include <QPushButton>
 #include <QPointer>
@@ -803,6 +805,66 @@ bool executeWorkspaceSql(
     return false;
 }
 
+QPushButton* upcomingEventTypeButton(
+    CalendarPage& page,
+    const int eventId
+    )
+{
+    for (QFrame* const row : page.findChildren<QFrame*>())
+    {
+        if (row->objectName()
+                != QStringLiteral("upcomingCalendarEventRow")
+            || row->property("calendarEventId").toInt() != eventId)
+        {
+            continue;
+        }
+
+        const QList<QPushButton*> buttons = row->findChildren<QPushButton*>();
+        return buttons.isEmpty() ? nullptr : buttons.constFirst();
+    }
+
+    return nullptr;
+}
+
+QList<QPushButton*> eventTypeFilterButtons(
+    CalendarPage& page,
+    const QString& eventType
+    )
+{
+    QList<QPushButton*> matching;
+    for (QPushButton* const button : page.findChildren<QPushButton*>())
+    {
+        if (button->property("eventType").toString() == eventType)
+        {
+            matching.append(button);
+        }
+    }
+    return matching;
+}
+
+int calendarColorUpdateAuditCount(
+    CalendarWorkspace& workspace,
+    QString* error
+    )
+{
+    QSqlQuery query(
+        workspace.services.databaseSession()->database()
+        );
+    if (!query.exec(QStringLiteral(
+            "SELECT successful_updates "
+            "FROM calendar_event_type_color_write_audit"
+            ))
+        || !query.next())
+    {
+        if (error)
+        {
+            *error = query.lastError().text();
+        }
+        return -1;
+    }
+    return query.value(0).toInt();
+}
+
 bool enable24HourFixtureTime(
     CalendarWorkspace& workspace,
     QString* error
@@ -870,6 +932,7 @@ private slots:
     void nextTenUpcomingEventsUseStableVisibleOrderAndLimit();
     void completedEmptyNextTenSearchShowsItsEmptyLabel();
     void completedEmptyUpcomingRangeShowsItsEmptyLabel();
+    void eventTypeColorPickerFailureResyncsAndRetries();
     void upcomingRangeFailuresOfferRetryAndRecover();
     void nextTenLookupFailuresOfferRetryAndRecover();
 };
@@ -2193,6 +2256,283 @@ completedEmptyNextTenSearchShowsItsEmptyLabel()
     QVERIFY(visibleUpcomingRows(tabs->currentWidget()).isEmpty());
     QVERIFY(visibleUpcomingFailure(tabs->currentWidget()).isEmpty());
     QVERIFY(!upcomingRetryButton(tabs->currentWidget()));
+}
+
+void CalendarPageEventMutationParityTests::
+eventTypeColorPickerFailureResyncsAndRetries()
+{
+    CalendarWorkspace workspace;
+    QString setupError;
+    QVERIFY2(
+        initializeWorkspace(workspace, &setupError),
+        qPrintable(setupError)
+        );
+
+    DatabaseSession* const session =
+        workspace.services.databaseSession();
+    QVERIFY(session);
+    QVERIFY(session->isOpen());
+    SettingsRepository* const settings = session->settingsRepository();
+    QVERIFY(settings);
+
+    const QString eventType = QStringLiteral("Holiday");
+    const QString colorKey =
+        QStringLiteral("calendar/eventTypeColor/") + eventType;
+    const QString unrelatedKey =
+        QStringLiteral("calendar/unrelatedColorPreference");
+    const QColor originalColor(QStringLiteral("#1a2b3c"));
+    const QColor attemptedColor(QStringLiteral("#de4567"));
+    QVERIFY(originalColor.isValid());
+    QVERIFY(attemptedColor.isValid());
+    QVERIFY(settings->saveSetting(
+        colorKey,
+        originalColor.name(QColor::HexRgb)
+        ));
+    QVERIFY(settings->saveSetting(
+        unrelatedKey,
+        QStringLiteral("preserved")
+        ));
+
+    QString sqlError;
+    QVERIFY2(
+        executeWorkspaceSql(
+            workspace,
+            QStringLiteral(
+                "CREATE TABLE calendar_event_type_color_write_audit ("
+                "successful_updates INTEGER NOT NULL)"
+                ),
+            &sqlError
+            ),
+        qPrintable(sqlError)
+        );
+    QVERIFY2(
+        executeWorkspaceSql(
+            workspace,
+            QStringLiteral(
+                "INSERT INTO calendar_event_type_color_write_audit "
+                "(successful_updates) VALUES (0)"
+                ),
+            &sqlError
+            ),
+        qPrintable(sqlError)
+        );
+    QVERIFY2(
+        executeWorkspaceSql(
+            workspace,
+            QStringLiteral(R"(
+                CREATE TRIGGER audit_calendar_event_type_color_update
+                AFTER UPDATE ON app_settings
+                WHEN NEW.key = 'calendar/eventTypeColor/Holiday'
+                BEGIN
+                    UPDATE calendar_event_type_color_write_audit
+                    SET successful_updates = successful_updates + 1;
+                END
+            )"),
+            &sqlError
+            ),
+        qPrintable(sqlError)
+        );
+
+    const QDate eventDate = QDate::currentDate().addDays(2);
+    CalendarEvent event;
+    event.title = QStringLiteral("F668 Color Picker Failure Event");
+    event.eventType = eventType;
+    event.timeStatus = QStringLiteral("All Day");
+    event.startDate = eventDate;
+    event.endDate = eventDate;
+    const int eventId = saveFixtureEvent(workspace, event, &setupError);
+    QVERIFY2(eventId > 0, qPrintable(setupError));
+
+    QColor pickerResult;
+    QColor lastPickerInitialColor;
+    QString lastPickerTitle;
+    int pickerCallCount = 0;
+    CalendarPage directPage(
+        &workspace.services,
+        nullptr,
+        [&](const QColor& initialColor, const QString& title)
+        {
+            ++pickerCallCount;
+            lastPickerInitialColor = initialColor;
+            lastPickerTitle = title;
+            return pickerResult;
+        }
+        );
+    CalendarPage* const page = &directPage;
+    page->show();
+    page->refresh();
+    NavigationTabWidget* const tabs = upcomingTabs(*page);
+    QVERIFY(tabs);
+    tabs->setCurrentIndex(1);
+
+    QTRY_VERIFY_WITH_TIMEOUT(
+        upcomingEventTypeButton(*page, eventId),
+        5000
+        );
+    QQuickItem* const root = calendarRoot(*page);
+    QVERIFY(root);
+    const auto displayedColor = [root, eventType]
+    {
+        return root->property("eventTypeColors")
+            .toMap()
+            .value(eventType)
+            .toString();
+    };
+    const auto buttonStylesMatch = [page, eventType](const QColor& color)
+    {
+        const QList<QPushButton*> filters =
+            eventTypeFilterButtons(*page, eventType);
+        const QString expected = QStringLiteral("background-color: %1;")
+            .arg(color.name(QColor::HexRgb));
+        return filters.size() == 3
+            && std::all_of(
+                filters.cbegin(),
+                filters.cend(),
+                [&expected](QPushButton* button)
+                {
+                    return button->styleSheet().contains(expected);
+                }
+                );
+    };
+    const auto badgeStyleMatches =
+        [page, eventId](const QColor& color)
+    {
+        QPushButton* const badge =
+            upcomingEventTypeButton(*page, eventId);
+        return badge
+            && badge->styleSheet().contains(
+                QStringLiteral("background-color: %1;")
+                    .arg(color.name(QColor::HexRgb))
+                );
+    };
+
+    QTRY_COMPARE_WITH_TIMEOUT(
+        displayedColor(),
+        originalColor.name(QColor::HexRgb),
+        5000
+        );
+    QVERIFY(buttonStylesMatch(originalColor));
+    QVERIFY(badgeStyleMatches(originalColor));
+
+    pickerResult = QColor();
+    QPushButton* const cancelButton =
+        upcomingEventTypeButton(*page, eventId);
+    QVERIFY(cancelButton);
+    cancelButton->click();
+    QCOMPARE(pickerCallCount, 1);
+    QCOMPARE(lastPickerInitialColor, originalColor);
+    QCOMPARE(lastPickerTitle, QStringLiteral("Choose Holiday Color"));
+    QCOMPARE(calendarColorUpdateAuditCount(workspace, &sqlError), 0);
+    QVERIFY2(sqlError.isEmpty(), qPrintable(sqlError));
+    const auto afterCancel = settings->loadSetting(colorKey);
+    QVERIFY(afterCancel);
+    QCOMPARE(afterCancel->toString(), originalColor.name(QColor::HexRgb));
+
+    QVERIFY2(
+        executeWorkspaceSql(
+            workspace,
+            QStringLiteral(R"(
+                CREATE TRIGGER fail_calendar_event_type_color_save
+                BEFORE INSERT ON app_settings
+                WHEN NEW.key = 'calendar/eventTypeColor/Holiday'
+                BEGIN
+                    SELECT RAISE(ABORT, 'forced calendar event color failure');
+                END
+            )"),
+            &sqlError
+            ),
+        qPrintable(sqlError)
+        );
+
+    int warningCount = 0;
+    QString warningError;
+    QString warningTitle;
+    QString warningText;
+    bool warningIcon = false;
+    QTimer::singleShot(
+        0,
+        page,
+        [&]
+        {
+            auto* const warning = qobject_cast<QMessageBox*>(
+                QApplication::activeModalWidget()
+                );
+            if (!warning)
+            {
+                warningError = QStringLiteral(
+                    "Calendar color save failure did not show a warning dialog."
+                    );
+                if (QWidget* const modal = QApplication::activeModalWidget())
+                {
+                    modal->close();
+                }
+                return;
+            }
+
+            ++warningCount;
+            warningTitle = warning->windowTitle();
+            warningText = warning->text();
+            warningIcon = warning->icon() == QMessageBox::Warning;
+            warning->accept();
+        }
+        );
+    pickerResult = attemptedColor;
+    QPushButton* const failedButton =
+        upcomingEventTypeButton(*page, eventId);
+    QVERIFY(failedButton);
+    failedButton->click();
+    QCOMPARE(pickerCallCount, 2);
+    QVERIFY2(warningError.isEmpty(), qPrintable(warningError));
+    QCOMPARE(warningCount, 1);
+    QCOMPARE(
+        warningTitle,
+        QStringLiteral("Unable to Save Preference")
+        );
+    QVERIFY(warningIcon);
+    QVERIFY(warningText.contains(
+        QStringLiteral("forced calendar event color failure")
+        ));
+    QCOMPARE(lastPickerInitialColor, originalColor);
+    QCOMPARE(calendarColorUpdateAuditCount(workspace, &sqlError), 0);
+    QVERIFY2(sqlError.isEmpty(), qPrintable(sqlError));
+    const auto afterFailure = settings->loadSetting(colorKey);
+    QVERIFY(afterFailure);
+    QCOMPARE(afterFailure->toString(), originalColor.name(QColor::HexRgb));
+    const auto unrelatedAfterFailure = settings->loadSetting(unrelatedKey);
+    QVERIFY(unrelatedAfterFailure);
+    QCOMPARE(unrelatedAfterFailure->toString(), QStringLiteral("preserved"));
+    QCOMPARE(displayedColor(), originalColor.name(QColor::HexRgb));
+    QVERIFY(buttonStylesMatch(originalColor));
+    QVERIFY(badgeStyleMatches(originalColor));
+
+    QVERIFY2(
+        executeWorkspaceSql(
+            workspace,
+            QStringLiteral(
+                "DROP TRIGGER fail_calendar_event_type_color_save"
+                ),
+            &sqlError
+            ),
+        qPrintable(sqlError)
+        );
+
+    QPushButton* const retryButton =
+        upcomingEventTypeButton(*page, eventId);
+    QVERIFY(retryButton);
+    retryButton->click();
+    QCOMPARE(pickerCallCount, 3);
+    QCOMPARE(lastPickerInitialColor, originalColor);
+    QCOMPARE(calendarColorUpdateAuditCount(workspace, &sqlError), 1);
+    QVERIFY2(sqlError.isEmpty(), qPrintable(sqlError));
+    const auto afterRetry = settings->loadSetting(colorKey);
+    QVERIFY(afterRetry);
+    QCOMPARE(afterRetry->toString(), attemptedColor.name(QColor::HexRgb));
+    const auto unrelatedAfterRetry = settings->loadSetting(unrelatedKey);
+    QVERIFY(unrelatedAfterRetry);
+    QCOMPARE(unrelatedAfterRetry->toString(), QStringLiteral("preserved"));
+    QCOMPARE(displayedColor(), attemptedColor.name(QColor::HexRgb));
+    QVERIFY(buttonStylesMatch(attemptedColor));
+    QVERIFY(badgeStyleMatches(attemptedColor));
 }
 
 void CalendarPageEventMutationParityTests::

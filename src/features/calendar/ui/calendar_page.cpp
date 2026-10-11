@@ -8,6 +8,7 @@
 #include "ui/shared/widgets/navigation_tab_widget.h"
 
 #include <QFrame>
+#include <QColorDialog>
 #include <QLabel>
 #include <QQmlEngine>
 #include <QQuickWidget>
@@ -16,12 +17,23 @@
 #include <QTimer>
 #include <QVBoxLayout>
 
+#include <utility>
+
 CalendarPage::CalendarPage(
     ApplicationServices* services,
-    QWidget* parent
+    QWidget* parent,
+    EventTypeColorPicker eventTypeColorPicker
     )
     : BasePage(parent)
     , m_services(services)
+    , m_eventTypeColorPicker(
+          eventTypeColorPicker
+              ? std::move(eventTypeColorPicker)
+              : [this](const QColor& initial, const QString& title)
+                {
+                    return QColorDialog::getColor(initial, this, title);
+                }
+          )
 {
     setProperty("role", UiRoles::MyInfo);
     buildUi();

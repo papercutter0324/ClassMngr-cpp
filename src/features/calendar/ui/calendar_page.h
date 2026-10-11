@@ -5,6 +5,7 @@
 #include "ui/shared/pages/basepage.h"
 
 #include <array>
+#include <functional>
 
 #include <QColor>
 #include <QDate>
@@ -59,9 +60,13 @@ class CalendarPage : public BasePage
     Q_OBJECT
 
 public:
+    using EventTypeColorPicker =
+        std::function<QColor(const QColor&, const QString&)>;
+
     explicit CalendarPage(
         ApplicationServices* services,
-        QWidget* parent = nullptr
+        QWidget* parent = nullptr,
+        EventTypeColorPicker eventTypeColorPicker = {}
         );
 
     void refresh() override;
@@ -218,6 +223,7 @@ private:
 
 private:
     ApplicationServices* m_services = nullptr;
+    EventTypeColorPicker m_eventTypeColorPicker;
     QScrollArea* m_scrollArea = nullptr;
     QWidget* m_scrollContent = nullptr;
     QVBoxLayout* m_scrollContentLayout = nullptr;

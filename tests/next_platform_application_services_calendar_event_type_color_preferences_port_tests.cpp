@@ -6,7 +6,6 @@
 #include "next/platform/application_services_calendar_event_type_color_preferences_port.h"
 
 #include <QColor>
-#include <QRegularExpression>
 #include <QSqlQuery>
 #include <QTemporaryDir>
 #include <QUuid>
@@ -84,7 +83,7 @@ private slots:
     void readErrorsDefaultEmpty();
     void pointerAndNullServiceAccessPreserveFallbacks();
     void invalidStoredColorPassesThroughUnchanged();
-    void saveFailurePreservesWarningAndStoredColor();
+    void saveFailureReturnsTechnicalFailureAndPreservesStoredValues();
 
 private:
     QTemporaryDir m_directory;
@@ -113,7 +112,7 @@ exactDynamicKeysUseNormalizedEventTypes()
     QCOMPARE(normalizedType, QStringLiteral("Vacation"));
 
     ApplicationServicesCalendarEventTypeColorPreferencesPort port(services);
-    port.write(utf8(normalizedType), utf8(QStringLiteral("#123456")));
+    QVERIFY(port.write(utf8(normalizedType), utf8(QStringLiteral("#123456"))));
 
     QCOMPARE(port.read(utf8(normalizedType)), utf8(QStringLiteral("#123456")));
 
@@ -154,7 +153,7 @@ validHexRgbRoundTripsAndPreservesUnrelatedSettings()
         utf8(expectedColor.name(QColor::HexRgb));
 
     ApplicationServicesCalendarEventTypeColorPreferencesPort port(services);
-    port.write(utf8(QStringLiteral("Holiday")), expectedHex);
+    QVERIFY(port.write(utf8(QStringLiteral("Holiday")), expectedHex));
     QCOMPARE(port.read(utf8(QStringLiteral("Holiday"))), expectedHex);
 
     const auto stored = repository->loadSetting(
@@ -194,10 +193,17 @@ missingAndUnavailableReadEmptyAndIgnoreSave()
         unavailableServices
         );
     QVERIFY(unavailablePort.read(utf8(QStringLiteral("Other"))).empty());
-    unavailablePort.write(
+    const auto unavailableSave = unavailablePort.write(
         utf8(QStringLiteral("Other")),
         utf8(QStringLiteral("#ffffff"))
         );
+    QVERIFY(!unavailableSave);
+    QCOMPARE(
+        unavailableSave.error().code,
+        ClassMngr::Next::Domain::ErrorCode::Technical
+        );
+    QVERIFY(!unavailableSave.error().message.empty());
+    QVERIFY(!unavailableSave.error().recoverable);
     QVERIFY(unavailablePort.read(utf8(QStringLiteral("Other"))).empty());
 
     ApplicationServices closedServices;
@@ -222,10 +228,17 @@ missingAndUnavailableReadEmptyAndIgnoreSave()
     QVERIFY(closedServices.dataService());
     QVERIFY(!closedSession->isOpen());
     QVERIFY(closedPort.read(utf8(QStringLiteral("Vacation"))).empty());
-    closedPort.write(
+    const auto closedSave = closedPort.write(
         utf8(QStringLiteral("Vacation")),
         utf8(QStringLiteral("#abcdef"))
         );
+    QVERIFY(!closedSave);
+    QCOMPARE(
+        closedSave.error().code,
+        ClassMngr::Next::Domain::ErrorCode::Technical
+        );
+    QVERIFY(!closedSave.error().message.empty());
+    QVERIFY(!closedSave.error().recoverable);
     QVERIFY(closedPort.read(utf8(QStringLiteral("Vacation"))).empty());
 
     QVERIFY(closedServices.openDatabase(closedDatabasePath));
@@ -271,10 +284,10 @@ pointerAndNullServiceAccessPreserveFallbacks()
     ApplicationServicesCalendarEventTypeColorPreferencesPort port(
         availableServices
         );
-    port.write(
+    QVERIFY(port.write(
         utf8(QStringLiteral("Vacation")),
         utf8(QStringLiteral("#123456"))
-        );
+        ));
     QCOMPARE(
         port.read(utf8(QStringLiteral("Vacation"))),
         utf8(QStringLiteral("#123456"))
@@ -285,10 +298,17 @@ pointerAndNullServiceAccessPreserveFallbacks()
         noServices
     );
     QVERIFY(nullPort.read(utf8(QStringLiteral("Vacation"))).empty());
-    nullPort.write(
+    const auto nullSave = nullPort.write(
         utf8(QStringLiteral("Vacation")),
         utf8(QStringLiteral("#abcdef"))
         );
+    QVERIFY(!nullSave);
+    QCOMPARE(
+        nullSave.error().code,
+        ClassMngr::Next::Domain::ErrorCode::Technical
+        );
+    QVERIFY(!nullSave.error().message.empty());
+    QVERIFY(!nullSave.error().recoverable);
     QVERIFY(nullPort.read(utf8(QStringLiteral("Vacation"))).empty());
 }
 
@@ -320,7 +340,7 @@ invalidStoredColorPassesThroughUnchanged()
 }
 
 void NextPlatformApplicationServicesCalendarEventTypeColorPreferencesPortTests::
-saveFailurePreservesWarningAndStoredColor()
+saveFailureReturnsTechnicalFailureAndPreservesStoredValues()
 {
     ApplicationServices services;
     QVERIFY(openDatabase(services, m_directory));
@@ -328,10 +348,18 @@ saveFailurePreservesWarningAndStoredColor()
     DatabaseSession* const session = services.databaseSession();
     QVERIFY(session);
     QVERIFY(session->isOpen());
-    QVERIFY(session->settingsRepository());
+    SettingsRepository* const repository = session->settingsRepository();
+    QVERIFY(repository);
+    QVERIFY(repository->saveSetting(
+        QString::fromUtf8(UnrelatedKey),
+        QStringLiteral("preserved")
+        ));
 
     ApplicationServicesCalendarEventTypeColorPreferencesPort port(services);
-    port.write(utf8(QStringLiteral("Vacation")), utf8(QStringLiteral("#123456")));
+    QVERIFY(port.write(
+        utf8(QStringLiteral("Vacation")),
+        utf8(QStringLiteral("#123456"))
+        ));
     QVERIFY(executeSql(
         services,
         QStringLiteral(R"(
@@ -344,20 +372,29 @@ saveFailurePreservesWarningAndStoredColor()
         )")
         ));
 
-    QTest::ignoreMessage(
-        QtWarningMsg,
-        QRegularExpression(
-            QStringLiteral(
-                "Failed to save calendar event type color:.*"
-                )
-            )
+    const auto failed = port.write(
+        utf8(QStringLiteral("Vacation")),
+        utf8(QStringLiteral("#abcdef"))
         );
-    port.write(utf8(QStringLiteral("Vacation")), utf8(QStringLiteral("#abcdef")));
+    QVERIFY(!failed);
+    QCOMPARE(
+        failed.error().code,
+        ClassMngr::Next::Domain::ErrorCode::Technical
+        );
+    QVERIFY(!failed.error().recoverable);
+    QVERIFY(QString::fromStdString(failed.error().message).contains(
+        QStringLiteral("forced calendar event color failure")
+        ));
 
     QCOMPARE(
         port.read(utf8(QStringLiteral("Vacation"))),
         utf8(QStringLiteral("#123456"))
         );
+    const auto unrelated = repository->loadSetting(
+        QString::fromUtf8(UnrelatedKey)
+        );
+    QVERIFY(unrelated);
+    QCOMPARE(unrelated->toString(), QStringLiteral("preserved"));
 }
 
 QTEST_MAIN(

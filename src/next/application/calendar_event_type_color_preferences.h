@@ -1,5 +1,7 @@
 #pragma once
 
+#include "next/domain/operation_result.h"
+
 #include <string>
 
 namespace ClassMngr::Next::Application
@@ -11,13 +13,15 @@ namespace ClassMngr::Next::Application
 class CalendarEventTypeColorPreferencesPort
 {
 public:
+    using SaveResult = Domain::Result<void>;
+
     virtual ~CalendarEventTypeColorPreferencesPort() = default;
 
     [[nodiscard]] virtual std::string read(
         const std::string& normalizedEventType
         ) const = 0;
 
-    virtual void write(
+    [[nodiscard]] virtual SaveResult write(
         const std::string& normalizedEventType,
         const std::string& colorHexRgb
         ) const = 0;

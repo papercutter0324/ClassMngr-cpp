@@ -6,11 +6,11 @@
 #include "next/application/calendar_event_type_color_preferences.h"
 
 #include <QByteArray>
-#include <QDebug>
 #include <QString>
 
 #include <cstddef>
 #include <string>
+#include <utility>
 
 namespace ClassMngr::Next::Platform
 {
@@ -75,20 +75,25 @@ public:
             );
     }
 
-    void write(
+    [[nodiscard]] Application::
+        CalendarEventTypeColorPreferencesPort::SaveResult write(
         const std::string& normalizedEventType,
         const std::string& colorHexRgb
         ) const override
     {
         if (!m_session || !m_session->isOpen())
         {
-            return;
+            return failure(
+                "Calendar event type color could not be saved because the database session is unavailable."
+                );
         }
 
         SettingsRepository* const repository = m_session->settingsRepository();
         if (!repository)
         {
-            return;
+            return failure(
+                "Calendar event type color could not be saved because the settings repository is unavailable."
+                );
         }
 
         const QString storedColor = QString::fromUtf8(
@@ -100,13 +105,32 @@ public:
                 storedColor
                 ); !saved)
         {
-            qWarning()
-                << "Failed to save calendar event type color:"
-                << saved.error();
+            const QByteArray errorBytes = saved.error().toUtf8();
+            return failure(
+                errorBytes.isEmpty()
+                    ? "Calendar event type color could not be saved."
+                    : errorBytes.toStdString()
+                );
         }
+
+        return Application::
+            CalendarEventTypeColorPreferencesPort::SaveResult::success();
     }
 
 private:
+    [[nodiscard]] static Application::
+        CalendarEventTypeColorPreferencesPort::SaveResult failure(
+            std::string message
+            )
+    {
+        return Application::
+            CalendarEventTypeColorPreferencesPort::SaveResult::failure({
+                .code = Domain::ErrorCode::Technical,
+                .message = std::move(message),
+                .recoverable = false
+            });
+    }
+
     [[nodiscard]] static QString key(
         const std::string& normalizedEventType
         )

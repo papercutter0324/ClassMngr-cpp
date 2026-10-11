@@ -11,6 +11,7 @@
 #include "next/platform/application_services_current_campus_preferences_port.h"
 #include "next/platform/application_services_schedule_display_preferences_port.h"
 #include "next/platform/calendar_page_campus_directory_query_adapter.h"
+#include "ui/shared/dialogs/user_prompt_service.h"
 #include "ui/shared/widgets/marquee_label.h"
 #include "ui/shared/widgets/navigation_tab_widget.h"
 
@@ -18,7 +19,6 @@
 #include <optional>
 #include <string>
 
-#include <QColorDialog>
 #include <QEvent>
 #include <QFontMetrics>
 #include <QFrame>
@@ -1076,10 +1076,19 @@ void CalendarPage::saveCalendarEventTypeColor(
     ClassMngr::Next::Platform::
         ApplicationServicesCalendarEventTypeColorPreferencesPort
         colorPreferencesPort(m_services);
-    colorPreferencesPort.write(
+    const auto saved = colorPreferencesPort.write(
         normalizedCalendarEventType(eventType).toUtf8().toStdString(),
         color.name(QColor::HexRgb).toUtf8().toStdString()
         );
+    if (!saved)
+    {
+        DialogServices::showWarning(
+            this,
+            tr("Unable to Save Preference"),
+            tr("The calendar event type color could not be saved.\n%1")
+                .arg(QString::fromStdString(saved.error().message))
+            );
+    }
 }
 void CalendarPage::chooseCalendarEventTypeColor(
     const QString& eventType
@@ -1088,12 +1097,10 @@ void CalendarPage::chooseCalendarEventTypeColor(
     const QString normalized =
         normalizedCalendarEventType(eventType);
 
-    const QColor selected =
-        QColorDialog::getColor(
-            calendarEventTypeColor(normalized),
-            this,
-            tr("Choose %1 Color").arg(normalized)
-            );
+    const QColor selected = m_eventTypeColorPicker(
+        calendarEventTypeColor(normalized),
+        tr("Choose %1 Color").arg(normalized)
+        );
 
     if (!selected.isValid())
     {
