@@ -53,7 +53,7 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current state - 2026-10-12 (F673)
+### Current state - 2026-10-12 (F674)
 
 Phase 2 remains In Progress/Open under deployment
 `phase2_f417_resume_20261009`, Heavy route; Gates 1 and 2 remain Partial.
@@ -88,13 +88,20 @@ snapshot, followed by a successful retry. The MainWindow warning binding was
 source-reviewed; modal rendering itself was not exercised. No full suite ran.
 Batch 147 is complete.
 
-F673 Personal Details current-campus correction failure feedback is
-selected/current in Batch 148. Its acceptance matrix is recorded in the Phase
-2 progress log. A failed typed write must leave the fallback campus displayed
-and the stored preference unchanged, while reporting the diagnostic once per
-unresolved correction episode. Repeated loads retry the write without
-repeating the warning; a successful correction and database-state clear reset
-the warning suppression.
+F673 Personal Details current-campus correction failure feedback is committed
+as `d9e8398d375c1e4c07e41feb0b3b3d81fe767cf6`. `ClassMngr` and the page and
+port test targets built; the exact CTests passed 2/2. Coverage includes stale
+campus fallback and matched campus-ID normalization failures, stored-value
+preservation, one warning across repeated retries, suppression reset on
+database clear and successful correction, and a later new warning episode.
+No full suite ran. Batch 148 is complete.
+
+F674 Excel Import Timeout typed persistence and UI rollback is selected/current
+in Batch 149. Its acceptance matrix is recorded in the Phase 2 progress log.
+The preference combo must restore its prior selection and report a diagnostic
+if a checked QSettings write fails; subsequent import validation must keep
+using the prior stored timeout. A retry after storage recovers must update the
+combo and persisted value together.
 
 ### Current state - 2026-10-09
 

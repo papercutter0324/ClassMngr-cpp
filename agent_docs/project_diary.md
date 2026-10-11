@@ -3866,11 +3866,23 @@ callback and a successful retry. The MainWindow modal warning binding was
 source-reviewed but not rendered in a UI test. F672 is committed as
 `a6543994484b5b504383c95251a29997b71c3788`.
 
-## F673 current-campus correction feedback - selected - 2026-10-12
+## F673 current-campus correction feedback - accepted - 2026-10-12
 
-PersonalDetailsPage retries a typed current-campus preference correction during
-stored-settings loads but currently discards the failure. Because those loads
-can recur on explicit refresh or stale-page activation, report the diagnostic
-once for the same unresolved stored-to-fallback correction; keep retrying and
-clear suppression after a successful correction or database-state reset. The
-displayed fallback and stored value must remain intact on failure.
+PersonalDetailsPage now reports any failed typed current-campus correction,
+including a saved campus ID that resolves to a combo item but still needs its
+display name persisted. It keeps retrying, suppresses repeat warnings for the
+same unresolved stored-value-to-selection pair, and clears suppression after a
+successful correction or database-state reset. The focused page and port
+CTests passed 2/2, including fallback, ID normalization, repeat, reset, and
+recovery paths. F673 is committed as
+`d9e8398d375c1e4c07e41feb0b3b3d81fe767cf6`.
+
+## F674 Excel Import Timeout feedback - selected - 2026-10-12
+
+Unlike Upcoming Birthday Dismissal, whose saved date currently has no reader,
+the Excel Import Timeout is read later by workbook validation. A failed save
+can leave the preference combo showing a timeout that import will not use.
+F674 adds a checked typed write and restores the previous combo selection on
+failure, with one diagnostic warning and a successful retry path. Keep generic
+SettingsManager writes unchanged and use a test seam confined to the existing
+private PreferencesDialog boundary.

@@ -24421,3 +24421,71 @@ load could therefore repeat while the storage fault remains.
    Add no CMake target.
 
 This matrix is recorded before implementation. Batch 148 is active with F673.
+
+### F673 current-campus correction scope refinement and acceptance - 2026-10-12
+
+Source review found a second correction path beyond an unmatched stored campus:
+`findCampusIndex()` can match a saved campus ID through combo item data, after
+which the page still attempts to persist the selected display name. F673
+acceptance therefore covers every attempted correction write, not only
+fallback selection. Independent tests exercise both cases.
+
+F673 is accepted at code commit
+`d9e8398d375c1e4c07e41feb0b3b3d81fe767cf6`. The `ClassMngr` target and the
+page and port test targets built in the Windows x64 Ninja tree. The exact
+CTests passed 2/2:
+`ClassMngrMyWorkspacePageTests` and
+`ClassMngrNextPlatformApplicationServicesCurrentCampusPreferencesPortTests`.
+The UI cases verify stored-value preservation and displayed selection after a
+trigger-backed write failure, one diagnostic warning across repeated refreshes
+for the same correction pair, reset on `clearDatabaseState()`, successful
+retry, and a later warning after recovery. The existing adapter test continues
+to verify typed Technical mapping. No full suite ran.
+
+**Decision: accept F673.** Batch 148 is complete; Batch 149 is active with
+F674. Continue the one-commit-per-slice sequence.
+
+### Batch 149 shortlist and selection - recorded before F674 implementation - 2026-10-12
+
+The read-only scan compared Excel Import Timeout and Upcoming Birthday
+Dismissal. The timeout combo in the private PreferencesDialog writes
+immediately, and teacher workbook validation later reads that stored timeout.
+A failed write can leave the combo showing a value that validation will not
+use. Upcoming Birthday Dismissal's date key currently has no reader, so a
+failed dismissal write has no distinct user-visible effect in the existing
+flow.
+
+**F674 is selected:** add an opt-in checked SettingsManager write for the Excel
+Import Timeout preference that synchronizes and returns `QSettings::Status`,
+restoring the previous setting and replacing a failed QSettings object after
+error. Keep generic `set`/`sync` behavior unchanged. Change the adapter to
+return a typed result and let the private PreferencesDialog own UI feedback:
+on failure, restore the prior combo value without another write and show one
+`Unable to Save Preference` warning with the diagnostic. A successful retry
+updates the displayed and persisted timeout together. Keep any injected
+failure seam inside the existing menu/dialog boundary; do not expand the
+public MainWindow constructor.
+
+### F674 Excel Import Timeout failure acceptance matrix - recorded before implementation - 2026-10-12
+
+1. Add an additive checked write path for Excel Import Timeout that checks the
+   result of `QSettings::sync`, preserves the prior key value (including an
+   absent key) on failure, and permits a successful retry after recovery.
+   Preserve unrelated existing settings and leave generic SettingsManager
+   `set`/`sync` behavior and current timeout defaults/validation unchanged.
+2. Return `[[nodiscard]] Domain::Result<void>` from the Excel timeout
+   preferences port. Preserve valid timeout values and read behavior; map
+   invalid values to `InvalidInput` and storage errors to diagnostic
+   `Technical` results.
+3. On a failed combo selection write, preserve the stored and effective prior
+   timeout, restore the previous combo selection without recursively writing,
+   and show one `Unable to Save Preference` warning with the diagnostic. On a
+   successful retry, persist the selected timeout and keep the combo aligned.
+4. Add injected failure and retry coverage to
+   `ClassMngrNextPlatformSettingsManagerExcelImportTimeoutPortTests`. Extend
+   `ClassMngrMainWindowClassVisibilityPreferencesFailureTests` to exercise the
+   real Preferences QAction and timeout combo, including selection rollback,
+   one diagnostic warning, and successful retry. Build `ClassMngr` and both
+   existing targets; run exactly those two CTests. Add no CMake target.
+
+This matrix is recorded before implementation. Batch 149 is active with F674.

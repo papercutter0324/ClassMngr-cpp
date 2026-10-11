@@ -5347,7 +5347,7 @@ Add real MainWindow Delete Class QAction success coverage to MainWindowScheduleT
 
 The MainWindow Delete Class QAction selected and deleted the target through the real chooser and confirmation. Target class/ClassInfo/schedule rows are gone; sibling data is unchanged and the sibling is active in Classes Details. The Classes page/sidebar route and session/path remain stable; no warning or unsaved prompt appeared. Executor and independent Tester passed target build, exact CTest 1/1, target QtTest 12 passes (10 cases plus setup/cleanup), and selected case 3/3. No compiler warnings; Qt font/offscreen notices only. No full suite or production/CMake change. F443 is accepted and ready to commit. F444 successful Open File QAction replacement is next. Preserve latest_session_work.md and unrelated %SystemDrive%/ outside slice commits.
 
-## Resumed Phase 2 after F670; F672 accepted and F673 selected - 2026-10-12
+## Resumed Phase 2 after F670; F672-F673 accepted and F674 selected - 2026-10-12
 
 F671 Custom Color Palette typed persistence and caller feedback is committed
 as d34ace9387199dc59c856d4edfff24da700c10a2. The product and both focused
@@ -5367,12 +5367,21 @@ unchanged live theme and preference snapshot before retry. MainWindow warning
 binding was reviewed in source; modal rendering was not tested. No full suite
 ran. Batch 147 is complete.
 
-F673 Personal Details current-campus correction feedback is selected/current
-in Batch 148. Discovery found that page loading retries a correction whenever
-the stored campus is absent or unmatched, and repeated warnings could recur
-on explicit refresh or stale-page activation. Acceptance records one warning
-per unresolved correction episode, continued retries with warning suppression,
-fallback display and unchanged stored value on failure, and suppression reset
-after success or database-state clear. The exact CTests and matrix are in the
-Phase 2 progress log. Implementation begins after the selection record is
+F673 Personal Details current-campus correction feedback is committed as
+`d9e8398d375c1e4c07e41feb0b3b3d81fe767cf6`. `ClassMngr` and the page/port
+test targets built; the exact CTests
+`ClassMngrMyWorkspacePageTests` and
+`ClassMngrNextPlatformApplicationServicesCurrentCampusPreferencesPortTests`
+passed 2/2. Independent coverage verifies stale fallback and matched-ID
+normalization failures, one warning across repeated writes, stored and
+displayed state, suppression reset after database clear and successful retry,
+and a later warning after recovery. No full suite ran. Batch 148 is complete.
+
+F674 Excel Import Timeout typed persistence and UI rollback is selected/current
+in Batch 149. Discovery found that the private `PreferencesDialog` combo writes
+on selection, while teacher workbook validation later reads the port value; a
+failed write can leave the combo and effective timeout out of sync. The
+upcoming-birthday dismissal date has no current reader, so its failure has no
+separate demonstrated effect. F674's acceptance matrix and exact CTests are in
+the Phase 2 progress log. Implementation begins after the selection record is
 committed.
