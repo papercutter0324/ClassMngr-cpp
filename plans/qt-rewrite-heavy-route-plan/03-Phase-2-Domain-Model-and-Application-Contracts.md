@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-12
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F653 is accepted and F654 is active in Batch 129; F625/F626 and current-source macOS universal evidence (0/24) remain open.
+- Current note: F654 is accepted and F655 is active in Batch 130; F625/F626 and current-source macOS universal evidence (0/24) remain open.
 
 ### Slice discovery batches
 
@@ -94,9 +94,9 @@ Treat this plan as an operational summary, not a history:
   because the current execution identity is not an Administrator; resume when
   a Windows process with an elevated administrator token is available.
 
-#### Active batch: Batch 129
+#### Active batch: Batch 130
 
-- F654 - Reject stale Native English directory updates when the row was deleted.
+- F655 - Surface explicit Sub Prep save failures while keeping autosave quiet.
 
 ## Objective
 

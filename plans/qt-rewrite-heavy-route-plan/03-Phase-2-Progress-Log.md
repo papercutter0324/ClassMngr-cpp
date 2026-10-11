@@ -23235,10 +23235,6 @@ Verification was focused, not a full-suite run.
 
 **Decision: accept F653.** Batch 129 remains active with F654.
 
-### Batch 130 UI discovery - in progress - 2026-10-12
-
-The UI discovery pass is underway; findings are pending.
-
 ### F654 Native English directory stale-update acceptance matrix - recorded before implementation - 2026-10-12
 
 - In a repository-backed mixed requested-delete + insert + stale UPDATE,
@@ -23258,4 +23254,57 @@ The UI discovery pass is underway; findings are pending.
 Repository/Platform discovery evidence is in `NativeEnglishTeacherRepository.cpp`
 around lines 126-200 and the Platform adapter around line 81; test registrations
 are in `next.cmake` around line 2710 and `pages_and_output.cmake` around line
-1475. F654 implementation is pending this matrix's documentation commit.
+1475. This matrix was recorded and committed before F654 implementation.
+
+### F654 Native English directory stale-update - accepted - 2026-10-12
+
+Commit `f1ea1f51819448222a541dfdad5c7dfb74326fc8` adds a typed
+`Saved`/`Missing`/`Failure` result while preserving the legacy `Status` API.
+A zero-row Native English UPDATE maps to recoverable `NotFound` and rolls back
+the companion requested delete and insert. A genuine `BEFORE UPDATE` trigger
+failure remains `Technical` with SQL detail and rolls back; existing
+INSERT-trigger rollback and CRUD behavior remain. In the page route, manual
+stale save returns false, keeps the edited row visible and dirty, and emits no
+`directorySaved` or warning.
+
+Executor and independent Tester forced Debug builds of both targets succeeded
+with `/p:TrackFileAccess=false /p:ForceRebuild=true`. The exact registered
+CTests `ClassMngrNextPlatformApplicationServicesNativeEnglishTeacherDirectorySavePortTests`
+and `ClassMngrStaffDirectoryNativeEnglishSaveParityTests` passed 2/2.
+`git diff --check` passed. Verification was focused, not a full-suite run.
+
+**Decision: accept F654.** Batch 129 is complete; Batch 130 is active with
+F655.
+
+### Batch 130 shortlist - recorded at F654 acceptance - 2026-10-12
+
+- F655 is selected: explicit Sub Prep `saveChanges` can hide persistence
+  errors. `saveSubPrepInternal` returns false without surfacing a structured
+  save error; `saveChanges` and PageManager use false to keep the page, while
+  autosave stays quiet. The typed preferences port reports Technical errors;
+  there is no production caller of `saveData`.
+- Class Notes stale-parent classification is lower confidence. Schedule Slot
+  and Campus Dashboard candidates were rejected.
+
+### F655 Sub Prep explicit-save failure acceptance matrix - recorded before implementation - 2026-10-12
+
+- With a real `app_settings` trigger failure, explicit `saveChanges` returns
+  false, surfaces the error message once, retains the unchanged visible draft
+  and dirty state, and leaves the stored bundle unchanged after the atomic
+  Platform failure. PageManager stays on the page because the result is false.
+- Autosave on the same trigger failure stays quiet, retains the draft and
+  dirty state, and has no side effects.
+- Preserve successful save: persist the bundle, clear dirty state, and show no
+  error. Preserve the existing preferences-port atomic rollback behavior.
+- If the current-campus preferences service is unavailable, explicit
+  `saveChanges()` must surface a clear fallback error and retain the dirty
+  draft even though the path returns false before the typed port. Keep
+  `saveData` and autosave quiet. Add a page-test assertion using the existing
+  deterministic unavailable-service case.
+- Focused registered CTests: `ClassMngrSubPrepPageTests` (test 126) and
+  `ClassMngrNextPlatformApplicationServicesSubPrepPreferencesPortTests`
+  (test 367). Add route and explicit-save assertions in the page target; the
+  Platform target retains the atomic rollback guarantee.
+
+F655 implementation is pending this matrix's documentation commit; Batch 130
+is active with F655.
