@@ -23697,4 +23697,63 @@ F661. Continue the user's one-commit-per-slice sequence.
    `ClassMngrNextPlatformApplicationServicesCalendarEventDisplayPreferencesPortTests`
    and `ClassMngrCalendarPreferencesRestoreDefaultsTests`; add no target.
 
-This matrix is recorded before implementation. Batch 136 is active with F661.
+This matrix was recorded before implementation. Batch 136 was active with F661.
+
+### F661 Calendar event-display preference failure - accepted - 2026-10-12
+
+Commit `fb81e42f4a4129018d5c474352dfdd0d1b0cb6a6` makes the Preferences
+checkbox flow report a failed paired save with one user-visible warning, restores both
+event-display controls from persisted values, and suppresses the change signal.
+After recovery, retry saves the pair and emits one change signal. The existing
+Platform port retains typed diagnostics and atomic rollback.
+
+The executor reported a successful implementation build. The independent
+Tester ran the exact Debug CTest selection
+`ClassMngrCalendarPreferencesRestoreDefaultsTests` and
+`ClassMngrNextPlatformApplicationServicesCalendarEventDisplayPreferencesPortTests`,
+which passed 2/2; that run did not rebuild. No full suite ran.
+`git diff --check` passed.
+
+**Decision: accept F661.** Batch 136 is complete; Batch 137 is active with
+F662. Continue the user's one-commit-per-slice sequence.
+
+### Batch 137 shortlist - recorded before F662 implementation - 2026-10-12
+
+- F662 is selected: the Calendar first-day-of-week preference port's `save`
+  returns `void` and logs persistence failures, so callers cannot react to a
+  failed write (`src/next/platform/application_services_calendar_first_day_of_week_preferences_port.h`).
+  `AcademicCalendarProvider::setFirstDayOfWeek` updates its in-memory value,
+  persists, increments the revision, and emits `firstDayOfWeekChanged` and
+  `revisionChanged` (`src/features/calendar/ui/academic_calendar_provider.cpp`);
+  Calendar Preferences calls it from `saveOptions`
+  (`src/features/calendar/ui/calendar_preferences_panel.cpp`). The existing
+  trigger-backed Platform test verifies stored-value preservation and a
+  warning, but no panel failure-flow test exists. A failed write can leave the
+  live global Calendar setting out of sync with storage and notify observers;
+  this impact assessment is an inference.
+- Defer the middle-school Analytics/Evaluations visibility candidate, which
+  affects two tabs for M1-M3 only. The relative-impact comparison is an
+  inference.
+
+### F662 Calendar first-day preference failure acceptance matrix - recorded before implementation - 2026-10-12
+
+1. A trigger-backed failed save returns a typed Technical diagnostic and
+   preserves the stored first-day value and unrelated settings.
+2. In the actual Preferences checkbox flow, failure leaves the provider value
+   and revision unchanged and emits neither `firstDayOfWeekChanged` nor
+   `revisionChanged`; it restores the checkbox from the persisted day without
+   another write, shows exactly one warning with the diagnostic, and emits no
+   `calendarPreferencesChanged` signal.
+3. After removing the trigger, retry persists the chosen day, updates the
+   provider and control once, emits `AcademicCalendarProvider::firstDayOfWeekChanged`
+   and `revisionChanged`, and emits one panel
+   `calendarPreferencesChanged(false)`; assert one resulting Calendar refresh
+   if the harness observes it.
+4. Preserve the locale fallback/default and exact
+   `calendar/firstDayOfWeek` setting key,
+   event-display pair behavior, custom-schedule and reset flows. Extend
+   `ClassMngrNextPlatformApplicationServicesCalendarFirstDayOfWeekPreferencesPortTests`,
+   `ClassMngrAcademicCalendarTests` as needed, and
+   `ClassMngrCalendarPreferencesRestoreDefaultsTests`; add no test target.
+
+This matrix is recorded before implementation. Batch 137 is active with F662.
