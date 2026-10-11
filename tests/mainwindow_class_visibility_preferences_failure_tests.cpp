@@ -6,11 +6,14 @@
 #include "data/repositories/settings_repository.h"
 #include "features/classes/ui/classes_page.h"
 #include "next/application/class_visibility_preferences.h"
+#include "next/application/middle_school_analytics_preferences.h"
 #include "next/platform/application_services_class_visibility_preferences_port.h"
+#include "next/platform/application_services_middle_school_analytics_preferences_port.h"
 #include "ui/shared/pages/pagemanager.h"
 
 #include <QAction>
 #include <QApplication>
+#include <QCheckBox>
 #include <QDir>
 #include <QDialog>
 #include <QMessageBox>
@@ -79,6 +82,25 @@ int auditRowCount(DatabaseSession* session)
     return query.value(0).toInt();
 }
 
+int middleSchoolAuditRowCount(DatabaseSession* session)
+{
+    if (!session || !session->isOpen())
+    {
+        return -1;
+    }
+
+    QSqlQuery query(session->database());
+    if (!query.exec(QStringLiteral(
+            "SELECT COUNT(*) FROM f663_middle_school_preference_save_audit"
+            ))
+        || !query.next())
+    {
+        return -1;
+    }
+
+    return query.value(0).toInt();
+}
+
 } // namespace
 
 class MainWindowClassVisibilityPreferencesFailureTests final : public QObject
@@ -88,6 +110,7 @@ class MainWindowClassVisibilityPreferencesFailureTests final : public QObject
 private slots:
     void initTestCase();
     void preferenceFailureRestoresSelectionAndSuccessfulRetryRefreshesOnce();
+    void middleSchoolPreferenceFailureRestoresSelectionAndSuccessfulRetryRefreshesOnce();
 
 private:
     std::unique_ptr<QTemporaryDir> m_settingsDirectory;
@@ -395,6 +418,279 @@ preferenceFailureRestoresSelectionAndSuccessfulRetryRefreshesOnce()
     QCOMPARE(auditsAfterFailure, 0);
     QCOMPARE(classQueriesAfterRetry, initialClassQueryCount + 1);
     QCOMPARE(scopeAfterRetry, QStringLiteral("all_classes"));
+    QCOMPARE(auditsAfterRetry, 1);
+}
+
+void MainWindowClassVisibilityPreferencesFailureTests::
+middleSchoolPreferenceFailureRestoresSelectionAndSuccessfulRetryRefreshesOnce()
+{
+    LanguageService languageService;
+    QVERIFY(languageService.setLanguage(Language::English));
+
+    MainWindowStartupOptions startupOptions;
+    startupOptions.loadMostRecentDatabase = false;
+
+    MainWindow window(
+        [](const QString&) {},
+        false,
+        &languageService,
+        nullptr,
+        std::move(startupOptions)
+        );
+
+    const QString databasePath = m_databaseDirectory->filePath(
+        QStringLiteral("middle-school-analytics-preferences.tps")
+        );
+    const Status opened = window.services()->openDatabase(databasePath);
+    QVERIFY2(opened.has_value(), "Could not open the test database.");
+    window.applyDatabaseLoadedState();
+
+    ClassMngr::Next::Platform::
+        ApplicationServicesMiddleSchoolAnalyticsPreferencesPort preferences(
+            *window.services()
+            );
+    const auto initialSave = preferences.save(false);
+    QVERIFY(initialSave);
+
+    PageManager* const pages = window.pageManager();
+    QVERIFY(pages);
+    pages->showPage(PageType::Classes);
+    ClassesPage* const classesPage = pages->classesPage();
+    QVERIFY(classesPage);
+    const int initialClassQueryCount =
+        classesPage->runtimeMetrics().classQueryCount;
+    QVERIFY(initialClassQueryCount > 0);
+    QVERIFY(!classesPage->needsRefresh());
+
+    DatabaseSession* const session = window.services()->databaseSession();
+    QVERIFY(session);
+    QVERIFY(executeSql(
+        session,
+        QStringLiteral(R"(
+            CREATE TABLE f663_middle_school_preference_save_audit (
+                value TEXT NOT NULL
+            )
+            )")
+        ));
+    QVERIFY(executeSql(
+        session,
+        QStringLiteral(R"(
+            CREATE TRIGGER fail_middle_school_preference_write
+            BEFORE INSERT ON app_settings
+            WHEN NEW.key = 'classes_navigation_show_middle_school_analytics_and_evaluations'
+            BEGIN
+                SELECT RAISE(ABORT, 'forced middle-school preference write failure');
+            END
+            )")
+        ));
+    QVERIFY(executeSql(
+        session,
+        QStringLiteral(R"(
+            CREATE TRIGGER audit_middle_school_preference_update
+            AFTER UPDATE ON app_settings
+            WHEN NEW.key = 'classes_navigation_show_middle_school_analytics_and_evaluations'
+            BEGIN
+                INSERT INTO f663_middle_school_preference_save_audit(value)
+                VALUES (NEW.value);
+            END
+            )")
+        ));
+
+    QAction* const preferencesAction = window.findChild<QAction*>(
+        QStringLiteral("preferencesAction")
+        );
+    QVERIFY(preferencesAction);
+
+    bool preferencesDialogObserved = false;
+    bool failedSelectionRestored = false;
+    bool warningObserved = false;
+    int warningCount = 0;
+    QString warningTitle;
+    QString warningText;
+    QString scriptFailure;
+    int classQueriesAfterFailure = -1;
+    int classQueriesAfterRetry = -1;
+    bool preferenceAfterFailure = true;
+    bool preferenceAfterRetry = false;
+    int auditsAfterFailure = -1;
+    int auditsAfterRetry = -1;
+
+    QTimer::singleShot(
+        0,
+        &window,
+        [&]()
+        {
+            QDialog* const dialog = window.findChild<QDialog*>(
+                QStringLiteral("preferencesDialog")
+                );
+            const auto fail = [&](const QString& reason)
+            {
+                scriptFailure = reason;
+                if (dialog)
+                {
+                    dialog->reject();
+                }
+            };
+            if (!dialog)
+            {
+                fail(QStringLiteral("Preferences dialog was not opened."));
+                return;
+            }
+
+            auto* const tabs = dialog->findChild<QTabWidget*>(
+                QStringLiteral("preferencesTabs")
+                );
+            auto* const showAnalytics = dialog->findChild<QCheckBox*>(
+                QStringLiteral(
+                    "preferencesNavigationShowMiddleSchoolAnalyticsAndEvaluations"
+                    )
+                );
+            QWidget* const navigationTab = dialog->findChild<QWidget*>(
+                QStringLiteral("preferencesNavigationTab")
+                );
+            if (!tabs || !showAnalytics || !navigationTab
+                || tabs->indexOf(navigationTab) < 0)
+            {
+                fail(QStringLiteral(
+                    "Middle-school analytics preference controls were missing."
+                    ));
+                return;
+            }
+
+            preferencesDialogObserved = true;
+            tabs->setCurrentWidget(navigationTab);
+            if (showAnalytics->isChecked())
+            {
+                fail(QStringLiteral(
+                    "Initial middle-school preference did not match storage."
+                    ));
+                return;
+            }
+
+            QTimer::singleShot(
+                0,
+                &window,
+                [&]()
+                {
+                    QWidget* const activeModal =
+                        QApplication::activeModalWidget();
+                    auto* const warning = qobject_cast<QMessageBox*>(
+                        activeModal
+                        );
+                    if (!warning)
+                    {
+                        if (activeModal)
+                        {
+                            activeModal->close();
+                        }
+                        scriptFailure = QStringLiteral(
+                            "Preference write failure did not surface a warning dialog."
+                            );
+                        return;
+                    }
+
+                    ++warningCount;
+                    warningObserved = true;
+                    warningTitle = warning->windowTitle();
+                    warningText = warning->text();
+                    warning->accept();
+                }
+                );
+
+            showAnalytics->click();
+            if (!scriptFailure.isEmpty())
+            {
+                dialog->reject();
+                return;
+            }
+
+            failedSelectionRestored = !showAnalytics->isChecked();
+            classQueriesAfterFailure =
+                classesPage->runtimeMetrics().classQueryCount;
+            const auto persistedAfterFailure =
+                session->settingsRepository()->loadSetting(
+                    QStringLiteral(
+                        "classes_navigation_show_middle_school_analytics_and_evaluations"
+                        )
+                    );
+            preferenceAfterFailure = persistedAfterFailure
+                && persistedAfterFailure->isValid()
+                && persistedAfterFailure->toBool();
+            auditsAfterFailure = middleSchoolAuditRowCount(session);
+            if (!warningObserved
+                || warningCount != 1
+                || warningTitle != QStringLiteral("Unable to Save Preference")
+                || !warningText.contains(QStringLiteral(
+                    "forced middle-school preference write failure"
+                    ))
+                || !failedSelectionRestored
+                || classQueriesAfterFailure != initialClassQueryCount
+                || preferenceAfterFailure
+                || auditsAfterFailure != 0)
+            {
+                fail(QStringLiteral(
+                    "Failed middle-school preference write did not preserve persisted and displayed state."
+                    ));
+                return;
+            }
+
+            if (!executeSql(
+                    session,
+                    QStringLiteral(
+                        "DROP TRIGGER fail_middle_school_preference_write"
+                        )
+                    ))
+            {
+                fail(QStringLiteral(
+                    "Could not remove the middle-school preference failure trigger."
+                    ));
+                return;
+            }
+
+            showAnalytics->click();
+            classQueriesAfterRetry =
+                classesPage->runtimeMetrics().classQueryCount;
+            const auto persistedAfterRetry =
+                session->settingsRepository()->loadSetting(
+                    QStringLiteral(
+                        "classes_navigation_show_middle_school_analytics_and_evaluations"
+                        )
+                    );
+            preferenceAfterRetry = persistedAfterRetry
+                && persistedAfterRetry->isValid()
+                && persistedAfterRetry->toBool();
+            auditsAfterRetry = middleSchoolAuditRowCount(session);
+            if (!showAnalytics->isChecked()
+                || classQueriesAfterRetry != initialClassQueryCount + 1
+                || !preferenceAfterRetry
+                || auditsAfterRetry != 1)
+            {
+                fail(QStringLiteral(
+                    "Successful middle-school preference retry did not save and refresh exactly once."
+                    ));
+                return;
+            }
+
+            dialog->accept();
+        }
+        );
+
+    preferencesAction->trigger();
+
+    QVERIFY2(scriptFailure.isEmpty(), qPrintable(scriptFailure));
+    QVERIFY(preferencesDialogObserved);
+    QVERIFY(warningObserved);
+    QCOMPARE(warningCount, 1);
+    QCOMPARE(warningTitle, QStringLiteral("Unable to Save Preference"));
+    QVERIFY(warningText.contains(QStringLiteral(
+        "forced middle-school preference write failure"
+        )));
+    QVERIFY(failedSelectionRestored);
+    QCOMPARE(classQueriesAfterFailure, initialClassQueryCount);
+    QVERIFY(!preferenceAfterFailure);
+    QCOMPARE(auditsAfterFailure, 0);
+    QCOMPARE(classQueriesAfterRetry, initialClassQueryCount + 1);
+    QVERIFY(preferenceAfterRetry);
     QCOMPARE(auditsAfterRetry, 1);
 }
 

@@ -582,7 +582,7 @@ void ClassesPageTests
         ApplicationServicesMiddleSchoolAnalyticsPreferencesPort port(services);
     ScheduleWidgetTestStubs::setClassGrade(42, QStringLiteral("M3"));
     QVERIFY(page.openClass(42));
-    port.save(true);
+    QVERIFY(port.save(true));
     page.refreshNavigationPreferences();
 
     const QStringList enabledLabels{
@@ -607,7 +607,7 @@ selectedClassGradeFailureFailsOpenWithoutDataServiceFallback()
     ClassMngr::Next::Platform::
         ApplicationServicesMiddleSchoolAnalyticsPreferencesPort
             controlPreference(controlServices);
-    controlPreference.save(true);
+    QVERIFY(controlPreference.save(true));
     ClassesPage controlPage(&controlServices);
     const int readsBeforeControl =
         ScheduleWidgetTestStubs::legacyClassInfoReadCount;
@@ -626,7 +626,7 @@ selectedClassGradeFailureFailsOpenWithoutDataServiceFallback()
         ApplicationServicesMiddleSchoolAnalyticsPreferencesPort preference(
             services
             );
-    preference.save(false);
+    QVERIFY(preference.save(false));
     ClassesPage page(&services);
     auto* sectionTabs = page.findChild<NavigationTabWidget*>(
         QStringLiteral("classesSectionTabs")

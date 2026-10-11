@@ -55,8 +55,8 @@ private slots:
     void missingSettingDefaultsFalseAndPersists();
     void preservesLegacyQVariantCoercion();
     void readFailureDefaultsFalse();
-    void saveFailureIsSilentAndPreservesStoredValue();
-    void unavailableSettingsDefaultFalseAndIgnoreSave();
+    void saveFailureReturnsTechnicalDiagnosticAndPreservesStoredValue();
+    void unavailableSettingsDefaultFalseAndReturnsSaveFailure();
     void closedSessionDefaultsFalseAndDoesNotOverwritePersistedValue();
     void roundTripsBothValuesUsingTheExactLegacyKey();
 
@@ -143,7 +143,7 @@ readFailureDefaultsFalse()
 }
 
 void NextPlatformApplicationServicesMiddleSchoolAnalyticsPreferencesPortTests::
-saveFailureIsSilentAndPreservesStoredValue()
+saveFailureReturnsTechnicalDiagnosticAndPreservesStoredValue()
 {
     ApplicationServices services;
     QVERIFY(openDatabase(services, m_directory));
@@ -153,6 +153,13 @@ saveFailureIsSilentAndPreservesStoredValue()
     SettingsRepository* const repository = session->settingsRepository();
     QVERIFY(repository);
     QVERIFY(repository->saveSetting(preferenceKey(), true));
+    const QString unrelatedPreferenceKey = QStringLiteral(
+        "classes_navigation_unrelated_preference"
+        );
+    QVERIFY(repository->saveSetting(
+        unrelatedPreferenceKey,
+        QStringLiteral("preserve after failed write")
+        ));
 
     QSqlQuery query(session->database());
     const QString rejectPreferenceWrite = QStringLiteral(R"(
@@ -165,24 +172,29 @@ saveFailureIsSilentAndPreservesStoredValue()
     )").arg(preferenceKey());
     QVERIFY(query.exec(rejectPreferenceWrite));
 
-    const Status rejectedWrite = repository->saveSetting(
-        preferenceKey(),
-        false
-        );
-    QVERIFY(!rejectedWrite);
-
     ApplicationServicesMiddleSchoolAnalyticsPreferencesPort port(services);
-    QTest::failOnWarning();
-    port.save(false);
+    const auto rejectedSave = port.save(false);
+    QVERIFY(!rejectedSave);
+    QCOMPARE(rejectedSave.error().code, Domain::ErrorCode::Technical);
+    QVERIFY(QString::fromStdString(rejectedSave.error().message).contains(
+        QStringLiteral("forced preference save failure")
+        ));
     QVERIFY(session->isOpen());
 
     const auto persisted = repository->loadSetting(preferenceKey());
     QVERIFY(persisted);
     QCOMPARE(persisted->toBool(), true);
+
+    const auto unrelated = repository->loadSetting(unrelatedPreferenceKey);
+    QVERIFY(unrelated);
+    QCOMPARE(
+        unrelated->toString(),
+        QStringLiteral("preserve after failed write")
+        );
 }
 
 void NextPlatformApplicationServicesMiddleSchoolAnalyticsPreferencesPortTests::
-unavailableSettingsDefaultFalseAndIgnoreSave()
+unavailableSettingsDefaultFalseAndReturnsSaveFailure()
 {
     ApplicationServices services;
     QVERIFY(services.dataService());
@@ -193,7 +205,12 @@ unavailableSettingsDefaultFalseAndIgnoreSave()
     ApplicationServicesMiddleSchoolAnalyticsPreferencesPort port(services);
 
     QCOMPARE(port.load(), false);
-    port.save(true);
+    const auto saveFailure = port.save(true);
+    QVERIFY(!saveFailure);
+    QCOMPARE(saveFailure.error().code, Domain::ErrorCode::Technical);
+    QVERIFY(QString::fromStdString(saveFailure.error().message).contains(
+        QStringLiteral("no database session is open")
+        ));
     QCOMPARE(port.load(), false);
 }
 
@@ -216,7 +233,12 @@ closedSessionDefaultsFalseAndDoesNotOverwritePersistedValue()
     QVERIFY(services.dataService());
     QVERIFY(!session->isOpen());
     QCOMPARE(port.load(), false);
-    port.save(false);
+    const auto saveFailure = port.save(false);
+    QVERIFY(!saveFailure);
+    QCOMPARE(saveFailure.error().code, Domain::ErrorCode::Technical);
+    QVERIFY(QString::fromStdString(saveFailure.error().message).contains(
+        QStringLiteral("no database session is open")
+        ));
 
     QVERIFY(services.openDatabase(path));
     QVERIFY(session->isOpen());
@@ -248,7 +270,8 @@ roundTripsBothValuesUsingTheExactLegacyKey()
     ApplicationServicesMiddleSchoolAnalyticsPreferencesPort port(services);
     for (const bool expected : {true, false})
     {
-        port.save(expected);
+        const auto saved = port.save(expected);
+        QVERIFY(saved);
         QCOMPARE(port.load(), expected);
 
         const auto stored = repository->loadSetting(preferenceKey());

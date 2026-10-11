@@ -8,6 +8,9 @@
 #include <QString>
 #include <QVariant>
 
+#include <string>
+#include <utility>
+
 namespace ClassMngr::Next::Platform
 {
 
@@ -64,23 +67,50 @@ public:
         return storedValue->toBool();
     }
 
-    void save(const bool show) const override
+    [[nodiscard]] Application::MiddleSchoolAnalyticsPreferencesSaveResult save(
+        const bool show
+        ) const override
     {
         if (!m_session || !m_session->isOpen())
         {
-            return;
+            return failure(
+                "Middle-school analytics preference cannot be saved because no database session is open."
+                );
         }
 
         SettingsRepository* const repository = m_session->settingsRepository();
         if (!repository)
         {
-            return;
+            return failure(
+                "Middle-school analytics preference cannot be saved because the settings repository is unavailable."
+                );
         }
 
-        static_cast<void>(repository->saveSetting(key(), show));
+        const Status saved = repository->saveSetting(key(), show);
+        if (!saved)
+        {
+            const QByteArray errorBytes = saved.error().toUtf8();
+            return failure(
+                errorBytes.isEmpty()
+                    ? "Middle-school analytics preference could not be saved."
+                    : errorBytes.toStdString()
+                );
+        }
+
+        return Application::MiddleSchoolAnalyticsPreferencesSaveResult::success();
     }
 
 private:
+    [[nodiscard]] static Application::MiddleSchoolAnalyticsPreferencesSaveResult
+    failure(std::string message)
+    {
+        return Application::MiddleSchoolAnalyticsPreferencesSaveResult::failure({
+                .code = Domain::ErrorCode::Technical,
+                .message = std::move(message),
+                .recoverable = false
+            });
+    }
+
     [[nodiscard]] static QString key()
     {
         return QStringLiteral(

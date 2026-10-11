@@ -718,16 +718,38 @@ void addNavigationPreferencesTab(
         showMiddleSchoolAnalyticsAndEvaluations,
         &QCheckBox::toggled,
         page,
-        [window](bool show)
+        [window, showMiddleSchoolAnalyticsAndEvaluations](bool show)
         {
             if (window && window->services())
             {
                 ClassMngr::Next::Platform::
-                    ApplicationServicesMiddleSchoolAnalyticsPreferencesPort(
+                    ApplicationServicesMiddleSchoolAnalyticsPreferencesPort port(
                         *window->services()
-                        ).save(show);
+                        );
+                const auto saved = port.save(show);
+                if (!saved)
+                {
+                    DialogServices::showWarning(
+                        window,
+                        preferencesText("Unable to Save Preference"),
+                        QString::fromStdString(saved.error().message)
+                        );
+
+                    const bool persistedValue = port.load();
+                    const QSignalBlocker showAnalyticsSignals(
+                        showMiddleSchoolAnalyticsAndEvaluations
+                        );
+                    showMiddleSchoolAnalyticsAndEvaluations->setChecked(
+                        persistedValue
+                        );
+                    return;
+                }
             }
-            window->refreshNavigationPreferences();
+
+            if (window)
+            {
+                window->refreshNavigationPreferences();
+            }
         }
         );
     const auto saveEvaluationDefaultPolicy =
