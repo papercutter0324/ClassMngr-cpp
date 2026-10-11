@@ -22567,7 +22567,9 @@ production candidate for the next batch:
    update a test file only in direct response to the production/core change.
 
 No other bounded platform or route-consumer candidate with comparable evidence
-was found in this pass. No test-only slice was proposed.
+was found in this pass. A lower-confidence concern about direct Class Details
+save routes was not selected because this discovery did not establish a broken
+field-validation behavior in those routes. No test-only slice was proposed.
 
 <a id="f639"></a>
 ### F639 Validate Testing Class create required fields in Application - accepted
@@ -22599,8 +22601,9 @@ focused, not a full-suite run.
 The update request validates class and teacher identifiers but omits the
 required name, grade, level, and room fields enforced by the repository. Add
 equivalent Application-boundary validation while preserving identifier
-precedence, field order, repository messages/categories, recoverability, and
-adapter failure behavior. Use the existing
+precedence, repository field order and messages, and adapter persistence
+failures. Report missing required fields as recoverable `Validation`; keep
+malformed identifiers as `InvalidInput`. Use the existing
 `tests/next_application_testing_class_details_update_use_case_tests.cpp` only
 for assertions directly required by a production/core change. Tests may run for
 any changed code; update test files only in response to a corresponding
