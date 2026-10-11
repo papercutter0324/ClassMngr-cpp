@@ -327,6 +327,7 @@ class MainWindowTeacherSidebarNavigationParityTests final : public QObject
 
 private slots:
     void initTestCase();
+    void addTeacherActionPreservesRequiredNameValidationOutcome();
     void manualTeacherSavePreservesSelectedDuplicateOccurrence();
     void refreshedTeacherLeavesDispatchCancelAndDiscard();
     void languageSwitchPreservesDuplicateTeacherOccurrenceAndDraft();
@@ -347,6 +348,113 @@ void MainWindowTeacherSidebarNavigationParityTests::initTestCase()
     SettingsManager::instance().clear();
     SettingsManager::instance().sync();
     qRegisterMetaType<NavigationData>();
+}
+
+void MainWindowTeacherSidebarNavigationParityTests::
+addTeacherActionPreservesRequiredNameValidationOutcome()
+{
+    QTemporaryDir workspaceRoot;
+    QVERIFY(workspaceRoot.isValid());
+
+    const QString workspacePath = QFileInfo(
+        workspaceRoot.filePath(
+            QStringLiteral("teacher-add-validation.tps")
+            )
+        ).absoluteFilePath();
+
+    ApplicationServices seedServices;
+    QVERIFY(seedServices.openDatabase(workspacePath));
+    seedServices.closeDatabase();
+
+    LanguageService languageService;
+    QVERIFY(languageService.setLanguage(Language::English));
+
+    MainWindowStartupOptions startupOptions;
+    startupOptions.loadMostRecentDatabase = false;
+    startupOptions.initialDatabasePath = workspacePath;
+
+    FakeUserPromptService prompts;
+    const UserPromptServiceScope promptScope(&prompts);
+
+    MainWindow window(
+        [](const QString&) {},
+        false,
+        &languageService,
+        nullptr,
+        std::move(startupOptions)
+        );
+    window.show();
+    QApplication::processEvents();
+    QVERIFY(window.isVisible());
+
+    ApplicationServices* const services = window.services();
+    QVERIFY(services);
+    QVERIFY(services->hasOpenDatabase());
+    QCOMPARE(services->currentDatabasePath(), workspacePath);
+    DatabaseSession* const activeSession = services->databaseSession();
+    QVERIFY(activeSession);
+
+    TeacherRepository* const repository = activeSession->teacherRepository();
+    QVERIFY(repository);
+    const auto teachersBefore = repository->getAllTeachers();
+    QVERIFY(teachersBefore);
+    QCOMPARE(teachersBefore->size(), 0);
+
+    PageManager* const pages = window.pageManager();
+    QVERIFY(pages);
+    QVERIFY(pages->isCurrentPage(PageType::MyWorkspace));
+    QWidget* const currentPageWidget = pages->currentWidget();
+    QVERIFY(currentPageWidget);
+    const QString pageIdentifier = pages->currentPageIdentifier();
+    const int instantiatedPageCount = pages->instantiatedPageCount();
+    const bool teacherInfoPageInstantiated =
+        pages->isPageInstantiated(PageType::TeacherInfo);
+
+    Sidebar* const sidebar = window.findChild<Sidebar*>();
+    QVERIFY(sidebar);
+    const QStringList selectedKeys = sidebar->selectedKeys();
+    QCOMPARE(sidebar->getSelectedTeacherId(), -1);
+
+    QAction* const addTeacherAction = window.actions().newTeacher;
+    QVERIFY(addTeacherAction);
+    QVERIFY(addTeacherAction->isEnabled());
+    addTeacherAction->trigger();
+    QApplication::processEvents();
+
+    QCOMPARE(prompts.messages.size(), 1);
+    const PromptRequest& warning = prompts.messages.constFirst();
+    QCOMPARE(warning.severity, PromptSeverity::Warning);
+    QCOMPARE(warning.title, QStringLiteral("Add Teacher"));
+    QCOMPARE(
+        warning.message,
+        QStringLiteral("The teacher could not be created.")
+        );
+    QCOMPARE(
+        warning.details,
+        QStringLiteral(
+            "Teacher validation failed: teacherEn: teacher.name.required"
+            )
+        );
+    QVERIFY(prompts.asynchronousMessages.isEmpty());
+    QVERIFY(prompts.confirmations.isEmpty());
+    QVERIFY(prompts.actionPrompts.isEmpty());
+
+    const auto teachersAfter = repository->getAllTeachers();
+    QVERIFY(teachersAfter);
+    QCOMPARE(teachersAfter->size(), teachersBefore->size());
+    QCOMPARE(teachersAfter->size(), 0);
+    QCOMPARE(services->currentDatabasePath(), workspacePath);
+    QCOMPARE(services->databaseSession(), activeSession);
+    QVERIFY(pages->isCurrentPage(PageType::MyWorkspace));
+    QCOMPARE(pages->currentWidget(), currentPageWidget);
+    QCOMPARE(pages->currentPageIdentifier(), pageIdentifier);
+    QCOMPARE(pages->instantiatedPageCount(), instantiatedPageCount);
+    QCOMPARE(
+        pages->isPageInstantiated(PageType::TeacherInfo),
+        teacherInfoPageInstantiated
+        );
+    QCOMPARE(sidebar->selectedKeys(), selectedKeys);
+    QCOMPARE(sidebar->getSelectedTeacherId(), -1);
 }
 
 void MainWindowTeacherSidebarNavigationParityTests::

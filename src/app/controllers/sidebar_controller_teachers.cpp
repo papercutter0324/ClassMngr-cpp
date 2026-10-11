@@ -1,9 +1,11 @@
 #include "sidebar_controller_p.h"
 
 #include "app/services/feature_services.h"
+#include "next/application/teacher_create_use_case.h"
 #include "next/application/teacher_delete_use_case.h"
 #include "next/application/teacher_profile_read_query.h"
 #include "next/domain/domain_types.h"
+#include "next/platform/application_services_teacher_create_port.h"
 #include "next/platform/application_services_teacher_delete_port.h"
 #include "next/platform/application_services_teacher_profile_read_port.h"
 #include "ui/shared/dialogs/user_prompt_service.h"
@@ -32,20 +34,44 @@ void SidebarController::addTeacher()
         return;
     }
 
-    Teacher newTeacher;
-
-    const Result<int> created = teachers->create(newTeacher);
+    ClassMngr::Next::Application::TeacherCreateRequest request;
+    ClassMngr::Next::Platform::
+        TeacherValidatorTeacherCreateValidationPolicy validationPolicy;
+    ClassMngr::Next::Platform::ApplicationServicesTeacherCreatePort createPort(
+        m_services
+        );
+    const auto created =
+        ClassMngr::Next::Application::TeacherCreateUseCase::execute(
+            request,
+            validationPolicy,
+            createPort
+            );
     if (!created)
     {
         DialogServices::showWarning(
             m_sidebar,
             tr("Add Teacher"),
             tr("The teacher could not be created."),
-            created.error()
+            QString::fromUtf8(
+                created.error().message.data(),
+                static_cast<qsizetype>(created.error().message.size())
+                )
             );
         return;
     }
-    const int teacherId = *created;
+
+    bool teacherIdOk = false;
+    const int teacherId = QString::fromStdString(created.value().value())
+        .toInt(&teacherIdOk);
+    if (!teacherIdOk || teacherId <= 0)
+    {
+        DialogServices::showWarning(
+            m_sidebar,
+            tr("Add Teacher"),
+            tr("The teacher could not be created.")
+            );
+        return;
+    }
 
     refreshTeacherSidebar();
 
