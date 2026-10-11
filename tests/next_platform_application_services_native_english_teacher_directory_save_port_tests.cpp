@@ -67,8 +67,6 @@ Application::NativeEnglishTeacherDirectorySaveRow saveRow(
     row.birthday = QStringLiteral("02-29").toStdU16String();
     row.nationality = QStringLiteral("Australia").toStdU16String();
     row.normalizedNameKey = name.toCaseFolded().toStdU16String();
-    row.birthdayIsBlank = false;
-    row.birthdayIsValid = true;
     return row;
 }
 

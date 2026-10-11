@@ -1,7 +1,10 @@
 #include "next/application/native_english_teacher_directory_save_use_case.h"
 
+#include <QDate>
 #include <QtTest/QtTest>
 
+#include <array>
+#include <string_view>
 #include <utility>
 
 using namespace ClassMngr::Next;
@@ -11,15 +14,13 @@ namespace
 
 Application::NativeEnglishTeacherDirectorySaveRow row(
     std::u16string key,
-    const bool birthdayIsBlank = true,
-    const bool birthdayIsValid = false
+    std::u16string birthday = {}
     )
 {
     Application::NativeEnglishTeacherDirectorySaveRow value;
     value.name = key;
     value.normalizedNameKey = std::move(key);
-    value.birthdayIsBlank = birthdayIsBlank;
-    value.birthdayIsValid = birthdayIsValid;
+    value.birthday = std::move(birthday);
     return value;
 }
 
@@ -49,20 +50,21 @@ class NextApplicationNativeEnglishTeacherDirectorySaveTests final
     Q_OBJECT
 
 private slots:
-    void acceptsBlankAndQtValidatedBirthdayFacts();
+    void acceptsBlankAndLeapDayBirthdayText();
+    void preservesQtBirthdayParsingBehavior();
     void rejectsEmptyAndDuplicateComparisonKeys();
-    void rejectsInvalidNonblankBirthday();
+    void rejectsInvalidCalendarDay();
     void reportsTheFirstInvalidRow();
     void useCaseCallsThePortOnceForValidInputAndNeverForInvalidInput();
 };
 
 void NextApplicationNativeEnglishTeacherDirectorySaveTests::
-acceptsBlankAndQtValidatedBirthdayFacts()
+acceptsBlankAndLeapDayBirthdayText()
 {
     Application::NativeEnglishTeacherDirectorySaveRequest request;
     request.rows = {
-        row(u"coordinator", true, false),
-        row(u"leap-year-birthday", false, true)
+        row(u"coordinator", u" \t\u00a0"),
+        row(u"leap-year-birthday", u"02-29")
     };
 
     const auto validation =
@@ -72,6 +74,35 @@ acceptsBlankAndQtValidatedBirthdayFacts()
     QCOMPARE(
         validation.issue,
         Application::NativeEnglishTeacherDirectorySaveIssue::None);
+}
+
+void NextApplicationNativeEnglishTeacherDirectorySaveTests::
+preservesQtBirthdayParsingBehavior()
+{
+    const std::array<std::u16string_view, 11> birthdays{
+        u"01-01",
+        u"02-29",
+        u"02-30",
+        u"13-01",
+        u"2-9",
+        u"02-9",
+        u"2-09",
+        u" 02-29 \t",
+        u"\u00a002-29\u3000",
+        u"\u0660\u0662-\u0662\u0669",
+        u"02/29"
+    };
+
+    for (const std::u16string_view birthday : birthdays)
+    {
+        const QString trimmed =
+            QString::fromStdU16String(std::u16string(birthday)).trimmed();
+        const bool qtAccepts = QDate::fromString(
+            QStringLiteral("2000-%1").arg(trimmed),
+            QStringLiteral("yyyy-MM-dd")
+            ).isValid();
+        QCOMPARE(Application::isValidMonthDayBirthday(birthday), qtAccepts);
+    }
 }
 
 void NextApplicationNativeEnglishTeacherDirectorySaveTests::
@@ -97,12 +128,10 @@ rejectsEmptyAndDuplicateComparisonKeys()
 }
 
 void NextApplicationNativeEnglishTeacherDirectorySaveTests::
-rejectsInvalidNonblankBirthday()
+rejectsInvalidCalendarDay()
 {
     Application::NativeEnglishTeacherDirectorySaveRequest request;
-    auto invalid = row(u"teacher", false, false);
-    invalid.birthday = u"02-30";
-    request.rows = {invalid};
+    request.rows = {row(u"teacher", u"02-30")};
 
     const auto validation =
         Application::validateNativeEnglishTeacherDirectorySave(request);
@@ -118,9 +147,9 @@ reportsTheFirstInvalidRow()
 {
     Application::NativeEnglishTeacherDirectorySaveRequest request;
     request.rows = {
-        row(u"valid", true, false),
-        row(u"", false, false),
-        row(u"later-invalid-date", false, false)
+        row(u"valid"),
+        row(u"", u"02-30"),
+        row(u"later-invalid-date", u"02-30")
     };
 
     const auto validation =
@@ -150,13 +179,22 @@ useCaseCallsThePortOnceForValidInputAndNeverForInvalidInput()
     QVERIFY(port.received == valid);
 
     Application::NativeEnglishTeacherDirectorySaveRequest invalid;
-    invalid.rows = {row(u"", false, false)};
+    invalid.rows = {row(u"")};
     outcome = Application::NativeEnglishTeacherDirectorySaveUseCase::
         execute(invalid, port);
     QVERIFY(!outcome.saved);
     QCOMPARE(
         outcome.validation.issue,
         Application::NativeEnglishTeacherDirectorySaveIssue::EmptyName);
+    QCOMPARE(port.calls, 1);
+
+    invalid.rows = {row(u"teacher", u"02-30")};
+    outcome = Application::NativeEnglishTeacherDirectorySaveUseCase::
+        execute(invalid, port);
+    QVERIFY(!outcome.saved);
+    QCOMPARE(
+        outcome.validation.issue,
+        Application::NativeEnglishTeacherDirectorySaveIssue::InvalidBirthday);
     QCOMPARE(port.calls, 1);
 }
 

@@ -17,7 +17,6 @@
 
 #include <QAbstractItemView>
 #include <QAbstractTableModel>
-#include <QDate>
 #include <QEvent>
 #include <QFont>
 #include <QHeaderView>
@@ -718,12 +717,6 @@ bool StaffDirectoryPage::saveDirectory(bool showErrors)
             const int id = model->rowAt(row).persistedId;
             const QString name = cellText(model, row, 0).simplified();
             const QString birthday = cellText(model, row, 4);
-            const QString normalizedBirthday = birthday.trimmed();
-            const bool birthdayIsBlank = normalizedBirthday.isEmpty();
-            const bool birthdayIsValid = QDate::fromString(
-                QStringLiteral("2000-%1").arg(normalizedBirthday),
-                QStringLiteral("yyyy-MM-dd")
-                ).isValid();
 
             ClassMngr::Next::Application::NativeEnglishTeacherDirectorySaveRow
                 teacher;
@@ -739,8 +732,6 @@ bool StaffDirectoryPage::saveDirectory(bool showErrors)
             teacher.nationality = cellText(model, row, 5).toStdU16String();
             teacher.normalizedNameKey =
                 normalizedName(name).toStdU16String();
-            teacher.birthdayIsBlank = birthdayIsBlank;
-            teacher.birthdayIsValid = birthdayIsValid;
             request.rows.push_back(std::move(teacher));
         }
 
@@ -815,12 +806,6 @@ bool StaffDirectoryPage::saveDirectory(bool showErrors)
         const QString name = cellText(model, row, 0).simplified();
         const QString koreanName = cellText(model, row, 1).simplified();
         const QString birthday = cellText(model, row, 4);
-        const QString normalizedBirthday = birthday.trimmed();
-        const bool birthdayIsBlank = normalizedBirthday.isEmpty();
-        const bool birthdayIsValid = QDate::fromString(
-            QStringLiteral("2000-%1").arg(normalizedBirthday),
-            QStringLiteral("yyyy-MM-dd")
-            ).isValid();
 
         ClassMngr::Next::Application::GsTeamDirectorySaveRow member;
         if (id > 0)
@@ -836,8 +821,6 @@ bool StaffDirectoryPage::saveDirectory(bool showErrors)
             normalizedName(name).toStdU16String();
         member.normalizedKoreanNameKey =
             normalizedName(koreanName).toStdU16String();
-        member.birthdayIsBlank = birthdayIsBlank;
-        member.birthdayIsValid = birthdayIsValid;
         request.rows.push_back(std::move(member));
     }
 

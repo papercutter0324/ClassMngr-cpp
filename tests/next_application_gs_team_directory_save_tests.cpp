@@ -12,8 +12,7 @@ namespace
 Application::GsTeamDirectorySaveRow row(
     std::u16string englishKey,
     std::u16string koreanKey = {},
-    const bool birthdayIsBlank = true,
-    const bool birthdayIsValid = false
+    std::u16string birthday = {}
     )
 {
     Application::GsTeamDirectorySaveRow value;
@@ -21,8 +20,7 @@ Application::GsTeamDirectorySaveRow row(
     value.koreanName = koreanKey;
     value.normalizedEnglishNameKey = std::move(englishKey);
     value.normalizedKoreanNameKey = std::move(koreanKey);
-    value.birthdayIsBlank = birthdayIsBlank;
-    value.birthdayIsValid = birthdayIsValid;
+    value.birthday = std::move(birthday);
     return value;
 }
 
@@ -53,7 +51,8 @@ private slots:
     void requiresAtLeastOneNameAndEnforcesEnglishUniqueness();
     void enforcesKoreanUniquenessWithinItsOwnNamespace();
     void allowsMatchingKeysAcrossNameNamespaces();
-    void acceptsBlankOrQtValidatedBirthdayFacts();
+    void acceptsBlankAndLeapDayBirthdayText();
+    void rejectsInvalidCalendarDay();
     void reportsTheFirstInvalidRow();
     void callsThePortOnceForValidInputAndNeverForInvalidInput();
 };
@@ -115,25 +114,29 @@ allowsMatchingKeysAcrossNameNamespaces()
 }
 
 void NextApplicationGsTeamDirectorySaveTests::
-acceptsBlankOrQtValidatedBirthdayFacts()
+acceptsBlankAndLeapDayBirthdayText()
 {
     Application::GsTeamDirectorySaveRequest request;
     request.rows = {
-        row(u"blank birthday", u"", true, false),
-        row(u"leap day", u"", false, true)
+        row(u"blank birthday", u"", u"\u00a0 \t"),
+        row(u"leap day", u"", u"02-29")
     };
-    request.rows.back().birthday = u"02-29";
 
     auto validation = Application::validateGsTeamDirectorySave(request);
     QVERIFY(validation.isValid());
+}
 
-    request.rows.back().birthday = u"02-30";
-    request.rows.back().birthdayIsValid = false;
-    validation = Application::validateGsTeamDirectorySave(request);
+void NextApplicationGsTeamDirectorySaveTests::
+rejectsInvalidCalendarDay()
+{
+    Application::GsTeamDirectorySaveRequest request;
+    request.rows = {row(u"member", u"", u"02-30")};
+
+    const auto validation = Application::validateGsTeamDirectorySave(request);
     QCOMPARE(
         validation.issue,
         Application::GsTeamDirectorySaveIssue::InvalidBirthday);
-    QCOMPARE(validation.rowIndex, std::size_t(1));
+    QCOMPARE(validation.rowIndex, std::size_t(0));
 }
 
 void NextApplicationGsTeamDirectorySaveTests::reportsTheFirstInvalidRow()
@@ -142,7 +145,7 @@ void NextApplicationGsTeamDirectorySaveTests::reportsTheFirstInvalidRow()
     request.rows = {
         row(u"valid", u"\uAC00"),
         row(u"duplicate", u"\uB098"),
-        row(u"duplicate", u"\uB2E4", false, false),
+        row(u"duplicate", u"\uB2E4", u"02-30"),
         row(u"", u"")
     };
 
@@ -177,6 +180,14 @@ callsThePortOnceForValidInputAndNeverForInvalidInput()
     QCOMPARE(
         outcome.validation.issue,
         Application::GsTeamDirectorySaveIssue::MissingNames);
+    QCOMPARE(port.calls, 1);
+
+    invalid.rows = {row(u"Alex", u"\uC54C\uB809\uC2A4", u"02-30")};
+    outcome = Application::GsTeamDirectorySaveUseCase::execute(invalid, port);
+    QVERIFY(!outcome.saved);
+    QCOMPARE(
+        outcome.validation.issue,
+        Application::GsTeamDirectorySaveIssue::InvalidBirthday);
     QCOMPARE(port.calls, 1);
 }
 

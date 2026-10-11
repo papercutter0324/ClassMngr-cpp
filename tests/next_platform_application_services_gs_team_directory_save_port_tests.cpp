@@ -71,7 +71,6 @@ Application::GsTeamDirectorySaveRow saveRow(
     row.normalizedEnglishNameKey = name.simplified().toCaseFolded().toStdU16String();
     row.normalizedKoreanNameKey =
         koreanName.simplified().toCaseFolded().toStdU16String();
-    row.birthdayIsValid = true;
     return row;
 }
 

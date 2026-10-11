@@ -264,6 +264,7 @@ set(CLASSMNGR_NEXT_APPLICATION_SOURCES
     src/next/application/native_english_teacher_directory_save_policy.h
     src/next/application/native_english_teacher_directory_save_port.h
     src/next/application/native_english_teacher_directory_save_use_case.h
+    src/next/application/birthday_validation.h
     src/next/application/gs_team_directory_save.h
     src/next/application/gs_team_directory_save_policy.h
     src/next/application/gs_team_directory_save_port.h

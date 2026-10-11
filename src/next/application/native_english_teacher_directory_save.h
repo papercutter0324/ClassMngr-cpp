@@ -12,8 +12,8 @@
 namespace ClassMngr::Next::Application
 {
 
-// The feature edge supplies Qt-normalized comparison and birthday facts so
-// this request remains Qt-free while Application owns the validation rules.
+// The feature edge supplies a Qt-normalized comparison key. Application
+// validates birthday text directly while remaining independent of Qt.
 struct NativeEnglishTeacherDirectorySaveRow final
 {
     // A missing ID explicitly represents a row that must be inserted.
@@ -25,8 +25,6 @@ struct NativeEnglishTeacherDirectorySaveRow final
     std::u16string birthday;
     std::u16string nationality;
     std::u16string normalizedNameKey;
-    bool birthdayIsBlank = false;
-    bool birthdayIsValid = false;
 
     friend bool operator==(
         const NativeEnglishTeacherDirectorySaveRow&,

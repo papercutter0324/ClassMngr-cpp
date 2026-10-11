@@ -12,8 +12,8 @@
 namespace ClassMngr::Next::Application
 {
 
-// The UI supplies Qt-normalized name keys and birthday facts so the save
-// policy can stay independent of Qt while owning its business decisions.
+// The feature edge supplies Qt-normalized name keys. Application validates
+// birthday text directly while remaining independent of Qt.
 struct GsTeamDirectorySaveRow final
 {
     // A missing ID explicitly represents a row that must be inserted.
@@ -25,8 +25,6 @@ struct GsTeamDirectorySaveRow final
     std::u16string birthday;
     std::u16string normalizedEnglishNameKey;
     std::u16string normalizedKoreanNameKey;
-    bool birthdayIsBlank = false;
-    bool birthdayIsValid = false;
 
     friend bool operator==(
         const GsTeamDirectorySaveRow&,

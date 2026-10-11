@@ -1,5 +1,6 @@
 #pragma once
 
+#include "next/application/birthday_validation.h"
 #include "next/application/gs_team_directory_save.h"
 
 #include <unordered_set>
@@ -41,7 +42,8 @@ validateGsTeamDirectorySave(
                 .rowIndex = index
             };
         }
-        if (!row.birthdayIsBlank && !row.birthdayIsValid)
+        if (!isBirthdayTextBlank(row.birthday)
+            && !isValidMonthDayBirthday(row.birthday))
         {
             return {
                 .issue = GsTeamDirectorySaveIssue::InvalidBirthday,

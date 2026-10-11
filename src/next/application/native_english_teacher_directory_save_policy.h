@@ -1,5 +1,6 @@
 #pragma once
 
+#include "next/application/birthday_validation.h"
 #include "next/application/native_english_teacher_directory_save.h"
 
 #include <unordered_set>
@@ -30,7 +31,8 @@ validateNativeEnglishTeacherDirectorySave(
                 .rowIndex = index
             };
         }
-        if (!row.birthdayIsBlank && !row.birthdayIsValid)
+        if (!isBirthdayTextBlank(row.birthday)
+            && !isValidMonthDayBirthday(row.birthday))
         {
             return {
                 .issue = NativeEnglishTeacherDirectorySaveIssue::InvalidBirthday,
