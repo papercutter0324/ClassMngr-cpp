@@ -23757,3 +23757,62 @@ F662. Continue the user's one-commit-per-slice sequence.
    `ClassMngrCalendarPreferencesRestoreDefaultsTests`; add no test target.
 
 This matrix is recorded before implementation. Batch 137 is active with F662.
+
+### F662 Calendar first-day preference save failure - accepted - 2026-10-12
+
+Commit `2937fb4fb5cd9199af0b8d88a8e82d5c92716620`
+(`Phase2 - Preserve Calendar first-day preference on save failure`), following
+F661 acceptance commit `fb81e42f4a4129018d5c474352dfdd0d1b0cb6a6`, contains
+exactly eight implementation/test files and makes first-day save failures
+typed. Trigger-backed failure preserves the stored day and unrelated settings;
+the provider preserves its value, revision, and signals. Preferences restores
+the checkbox from the persisted day and shows one diagnostic warning. Retry
+persists and signals once. If the paired event-display save fails, the first-day
+checkbox is restored without a first-day save, panel signal, or model revision.
+
+The conditional exact Calendar-refresh count was not observable: model
+`revisionChanged` measures model changes, not refreshes, and a weekday change
+may leave event rows identical. One panel signal is verified; source review
+confirms visible `CalendarPage` connects it to a slot that calls `activate()`.
+Executor and independent Tester report the exact three focused Debug CTests
+passed 3/3 after the latest code. `git diff --check` passed; no full suite ran.
+
+**Decision: accept F662.** Batch 137 is complete; Batch 138 is active with
+F663. Continue the user's one-commit-per-slice sequence.
+
+### Batch 138 shortlist - recorded before F663 implementation - 2026-10-12
+
+- F663 is selected: middle-school Analytics/Evaluations preference writes
+  discard the repository result (`src/next/platform/application_services_middle_school_analytics_preferences_port.h:67,84`),
+  while the menu handler saves and refreshes without checking failure
+  (`src/app/menu_builder.cpp:717+`). Classes reload the persisted value
+  (`src/features/classes/ui/classes_page.cpp:700-720`) and apply M1-M3 hiding
+  (`:1546-1590`). A trigger-backed port test silently verifies the stored
+  value remains unchanged (`tests/next_platform_application_services_middle_school_analytics_preferences_port_tests.cpp:145+`).
+  Reuse the class-visibility Preferences failure harness
+  (`tests/mainwindow_class_visibility_preferences_failure_tests.cpp:132+`,
+  CMake target at `cmake/tests/pages_and_output.cmake:911`) and normal grade /
+  visibility coverage (`tests/classes_page_tests.cpp:535+`).
+- A successful toggle that hides Analytics/Evaluations while its editor stays
+  active was observed at `classes_page.cpp:1917-1934,1619-1622,2177-2244,2489-2499`;
+  defer it as a separate UI candidate, outside F663. Evaluation Default Policy
+  save failure is ranked below F663; that relative-impact ranking is an
+  inference.
+
+### F663 Middle-school Analytics/Evaluations preference save failure acceptance matrix - recorded before implementation - 2026-10-12
+
+1. The port returns a typed Technical diagnostic for trigger-backed write
+   failure and unavailable session/repository; preserve the stored value,
+   unrelated settings, key `classes_navigation_show_middle_school_analytics_and_evaluations`,
+   default, QVariant coercion, and round-trip behavior.
+2. In the actual Preferences checkbox flow, failure shows exactly one warning
+   with the diagnostic, restores the checkbox from persisted state without
+   another write, and does not refresh navigation/query Classes or change
+   effective tabs.
+3. After removing the trigger, retry persists and refreshes Classes once;
+   existing M1-M3 visibility behavior remains correct.
+4. Preserve grade classification/fail-open behavior, active-section behavior,
+   and other preference flows. Extend the existing Platform port tests and
+   `ClassMngrMainWindowClassVisibilityPreferencesFailureTests`; add no target.
+
+This matrix is recorded before implementation. Batch 138 is active with F663.
