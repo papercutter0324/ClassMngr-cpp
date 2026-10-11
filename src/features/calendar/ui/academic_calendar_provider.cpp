@@ -184,20 +184,32 @@ bool AcademicCalendarProvider::hasCustomYearAfter(int termYear) const
     return m_schedule.hasCustomYearAfter(termYear);
 }
 
-void AcademicCalendarProvider::saveYearSchedules(
+ClassMngr::Next::Application::
+    AcademicCalendarSchedulePreferencesSaveResult
+AcademicCalendarProvider::saveYearSchedules(
     int termYear,
     const AcademicYearSchedule& elementary,
     const AcademicYearSchedule& middle
     )
 {
-    m_schedule.setYearSchedules(
+    AcademicCalendarSchedule candidate = m_schedule;
+    candidate.setYearSchedules(
         termYear,
         elementary,
         middle
         );
-    persist();
+
+    auto saved = persist(candidate);
+    if (!saved)
+    {
+        return saved;
+    }
+
+    m_schedule = std::move(candidate);
     ++m_revision;
     emit revisionChanged();
+    return ClassMngr::Next::Application::
+        AcademicCalendarSchedulePreferencesSaveResult::success();
 }
 
 void AcademicCalendarProvider::setFirstDayOfWeek(int firstDayOfWeek)
@@ -328,17 +340,27 @@ QString AcademicCalendarProvider::tooltipText(
         .arg(start, end);
 }
 
-void AcademicCalendarProvider::persist()
+ClassMngr::Next::Application::
+    AcademicCalendarSchedulePreferencesSaveResult
+AcademicCalendarProvider::persist(
+    const AcademicCalendarSchedule& schedule
+    ) const
 {
     if (!m_schedulePreferences)
     {
-        return;
+        return ClassMngr::Next::Application::
+            AcademicCalendarSchedulePreferencesSaveResult::failure({
+                .code = ClassMngr::Next::Domain::ErrorCode::Technical,
+                .message =
+                    "Academic calendar schedule persistence is unavailable.",
+                .recoverable = false
+            });
     }
 
     const QByteArray json =
-        QJsonDocument(m_schedule.toJson())
+        QJsonDocument(schedule.toJson())
             .toJson(QJsonDocument::Compact);
-    m_schedulePreferences->write(json.toStdString());
+    return m_schedulePreferences->write(json.toStdString());
 }
 
 void AcademicCalendarProvider::persistFirstDayOfWeek()

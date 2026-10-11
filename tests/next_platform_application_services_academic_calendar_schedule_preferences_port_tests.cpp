@@ -4,7 +4,6 @@
 #include "data/repositories/settings_repository.h"
 #include "next/platform/application_services_academic_calendar_schedule_preferences_port.h"
 
-#include <QRegularExpression>
 #include <QSqlQuery>
 #include <QTemporaryDir>
 #include <QUuid>
@@ -14,6 +13,7 @@
 #include <string>
 
 using namespace ClassMngr::Next::Platform;
+using namespace ClassMngr::Next;
 
 namespace
 {
@@ -71,11 +71,11 @@ class NextPlatformApplicationServicesAcademicCalendarSchedulePreferencesPortTest
 
 private slots:
     void initTestCase();
-    void missingAndUnavailableReadEmptyAndIgnoreSave();
+    void missingAndUnavailableReadEmptyAndReportWriteFailure();
     void readErrorsReturnEmpty();
     void roundTripsThroughTheExactKey();
     void preservesStoredPayloadAndUnrelatedSettings();
-    void saveFailurePreservesWarningAndStoredPayload();
+    void saveFailureReturnsTechnicalErrorAndPreservesStoredPayload();
 
 private:
     QTemporaryDir m_directory;
@@ -88,7 +88,7 @@ initTestCase()
 }
 
 void NextPlatformApplicationServicesAcademicCalendarSchedulePreferencesPortTests::
-missingAndUnavailableReadEmptyAndIgnoreSave()
+missingAndUnavailableReadEmptyAndReportWriteFailure()
 {
     ApplicationServices services;
     QVERIFY(openDatabase(services, m_directory));
@@ -111,7 +111,10 @@ missingAndUnavailableReadEmptyAndIgnoreSave()
         unavailableServices
         );
     QVERIFY(unavailablePort.read().empty());
-    unavailablePort.write(R"({"version":1})");
+    const auto unavailableSave = unavailablePort.write(R"({"version":1})");
+    QVERIFY(!unavailableSave);
+    QCOMPARE(unavailableSave.error().code, Domain::ErrorCode::Technical);
+    QVERIFY(!unavailableSave.error().message.empty());
     QVERIFY(unavailablePort.read().empty());
 
     ApplicationServices closedServices;
@@ -139,7 +142,12 @@ missingAndUnavailableReadEmptyAndIgnoreSave()
     QVERIFY(closedServices.dataService());
     QVERIFY(!closedSession->isOpen());
     QVERIFY(closedPort.read().empty());
-    closedPort.write(R"({"version":1,"profiles":{"new":true}})");
+    const auto closedSave = closedPort.write(
+        R"({"version":1,"profiles":{"new":true}})"
+        );
+    QVERIFY(!closedSave);
+    QCOMPARE(closedSave.error().code, Domain::ErrorCode::Technical);
+    QVERIFY(!closedSave.error().message.empty());
     QVERIFY(closedPort.read().empty());
 
     QVERIFY(closedServices.openDatabase(closedDatabasePath));
@@ -157,7 +165,10 @@ missingAndUnavailableReadEmptyAndIgnoreSave()
         static_cast<ApplicationServices*>(nullptr)
         );
     QVERIFY(nullPort.read().empty());
-    nullPort.write(R"({"version":1})");
+    const auto nullSave = nullPort.write(R"({"version":1})");
+    QVERIFY(!nullSave);
+    QCOMPARE(nullSave.error().code, Domain::ErrorCode::Technical);
+    QVERIFY(!nullSave.error().message.empty());
     QVERIFY(nullPort.read().empty());
 }
 
@@ -195,7 +206,7 @@ roundTripsThroughTheExactKey()
     ApplicationServicesAcademicCalendarSchedulePreferencesPort port(
         servicesPointer
         );
-    port.write(expected);
+    QVERIFY(port.write(expected));
 
     QCOMPARE(port.read(), expected);
 
@@ -239,7 +250,7 @@ preservesStoredPayloadAndUnrelatedSettings()
 
     const std::string replacement =
         R"({"version":1,"profiles":{"replacement":true}})";
-    port.write(replacement);
+    QVERIFY(port.write(replacement));
     QCOMPARE(port.read(), replacement);
 
     const auto unrelated = repository->loadSetting(
@@ -250,7 +261,7 @@ preservesStoredPayloadAndUnrelatedSettings()
 }
 
 void NextPlatformApplicationServicesAcademicCalendarSchedulePreferencesPortTests::
-saveFailurePreservesWarningAndStoredPayload()
+saveFailureReturnsTechnicalErrorAndPreservesStoredPayload()
 {
     ApplicationServices services;
     QVERIFY(openDatabase(services, m_directory));
@@ -262,8 +273,14 @@ saveFailurePreservesWarningAndStoredPayload()
 
     const std::string initial = R"({"version":1,"profiles":{}})";
     const std::string replacement = R"({"version":1,"profiles":{"changed":true}})";
+    SettingsRepository* const repository = session->settingsRepository();
+    QVERIFY(repository);
     ApplicationServicesAcademicCalendarSchedulePreferencesPort port(services);
-    port.write(initial);
+    QVERIFY(port.write(initial));
+    QVERIFY(repository->saveSetting(
+        QString::fromUtf8(UnrelatedKey),
+        QStringLiteral("preserved")
+        ));
     QVERIFY(executeSql(
         services,
         QStringLiteral(R"(
@@ -276,17 +293,19 @@ saveFailurePreservesWarningAndStoredPayload()
         )")
         ));
 
-    QTest::ignoreMessage(
-        QtWarningMsg,
-        QRegularExpression(
-            QStringLiteral(
-                "Failed to save academic calendar schedule:.*"
-                )
-            )
-        );
-    port.write(replacement);
+    const auto failed = port.write(replacement);
+    QVERIFY(!failed);
+    QCOMPARE(failed.error().code, Domain::ErrorCode::Technical);
+    QVERIFY(QString::fromStdString(failed.error().message).contains(
+        QStringLiteral("forced academic calendar schedule failure")
+        ));
 
     QCOMPARE(port.read(), initial);
+    const auto unrelated = repository->loadSetting(
+        QString::fromUtf8(UnrelatedKey)
+        );
+    QVERIFY(unrelated);
+    QCOMPARE(unrelated->toString(), QStringLiteral("preserved"));
 }
 
 QTEST_MAIN(

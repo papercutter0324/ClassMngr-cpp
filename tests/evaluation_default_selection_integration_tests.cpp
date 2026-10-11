@@ -76,8 +76,8 @@ bool saveSchedule(ApplicationServices& services)
         ApplicationServicesAcademicCalendarSchedulePreferencesPort port(
             services
             );
-    port.write(serialized.toStdString());
-    return schedule.hasSavedSchedules();
+    const auto saved = port.write(serialized.toStdString());
+    return saved && schedule.hasSavedSchedules();
 }
 
 bool saveCurrentEvaluation(

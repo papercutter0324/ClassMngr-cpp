@@ -6,11 +6,12 @@
 #include "next/application/academic_calendar_schedule_preferences.h"
 
 #include <QByteArray>
-#include <QDebug>
 #include <QString>
+#include <QVariant>
 
 #include <cstddef>
 #include <string>
+#include <utility>
 
 namespace ClassMngr::Next::Platform
 {
@@ -76,17 +77,22 @@ public:
             );
     }
 
-    void write(const std::string& payload) const override
+    [[nodiscard]] Application::AcademicCalendarSchedulePreferencesSaveResult
+    write(const std::string& payload) const override
     {
         if (!m_session || !m_session->isOpen())
         {
-            return;
+            return failure(
+                "Academic calendar schedule persistence is unavailable."
+                );
         }
 
         SettingsRepository* const repository = m_session->settingsRepository();
         if (!repository)
         {
-            return;
+            return failure(
+                "Academic calendar schedule persistence is unavailable."
+                );
         }
 
         const QString storedPayload = QString::fromUtf8(
@@ -98,13 +104,32 @@ public:
                 storedPayload
                 ); !saved)
         {
-            qWarning()
-                << "Failed to save academic calendar schedule:"
-                << saved.error();
+            const QByteArray errorBytes = saved.error().toUtf8();
+            return failure(
+                errorBytes.isEmpty()
+                    ? "Academic calendar schedule could not be saved."
+                    : errorBytes.toStdString()
+                );
         }
+
+        return Application::
+            AcademicCalendarSchedulePreferencesSaveResult::success();
     }
 
 private:
+    [[nodiscard]] static Application::
+    AcademicCalendarSchedulePreferencesSaveResult failure(
+        std::string message
+        )
+    {
+        return Application::AcademicCalendarSchedulePreferencesSaveResult::
+            failure({
+                .code = Domain::ErrorCode::Technical,
+                .message = std::move(message),
+                .recoverable = false
+            });
+    }
+
     [[nodiscard]] static QString key()
     {
         return QStringLiteral("calendar/academicSchedule/v1");

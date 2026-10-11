@@ -137,11 +137,27 @@ void CalendarPreferencesPanel::saveTermSchedules()
         }
     }
 
-    m_provider->saveYearSchedules(
+    const auto saved = m_provider->saveYearSchedules(
         m_termYear,
         m_schedules[0],
         m_schedules[1]
         );
+    if (!saved)
+    {
+        const QString details = QString::fromStdString(
+            saved.error().message
+            );
+        DialogServices::showWarning(
+            this,
+            tr("Academic Schedule Not Saved"),
+            tr("The academic schedule could not be saved. Your edits are still available."),
+            details.isEmpty()
+                ? tr("Academic calendar schedule could not be saved.")
+                : details
+            );
+        return;
+    }
+
     m_dirty = false;
     emit calendarPreferencesChanged(false);
 }

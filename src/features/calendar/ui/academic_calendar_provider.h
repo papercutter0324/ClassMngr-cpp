@@ -44,7 +44,8 @@ public:
 
     [[nodiscard]] int termYearForDate(const QDate& date) const;
     [[nodiscard]] bool hasCustomYearAfter(int termYear) const;
-    void saveYearSchedules(
+    [[nodiscard]] ClassMngr::Next::Application::
+        AcademicCalendarSchedulePreferencesSaveResult saveYearSchedules(
         int termYear,
         const AcademicYearSchedule& elementary,
         const AcademicYearSchedule& middle
@@ -66,7 +67,10 @@ private:
         const AcademicTermPosition& position
         ) const;
     void loadOptions();
-    void persist();
+    [[nodiscard]] ClassMngr::Next::Application::
+        AcademicCalendarSchedulePreferencesSaveResult persist(
+            const AcademicCalendarSchedule& schedule
+            ) const;
     void persistFirstDayOfWeek();
 
     std::unique_ptr<ClassMngr::Next::Application::

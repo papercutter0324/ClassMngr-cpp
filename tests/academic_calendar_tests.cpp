@@ -12,6 +12,7 @@
 #include <utility>
 
 using namespace ClassMngr::Next::Application;
+using namespace ClassMngr::Next;
 
 namespace
 {
@@ -21,6 +22,10 @@ struct AcademicCalendarPreferenceState final
     std::string scheduleJson;
     CalendarFirstDayOfWeek firstDayOfWeek = CalendarFirstDayOfWeek::Sunday;
     int scheduleWriteCount = 0;
+    int scheduleWriteAttemptCount = 0;
+    bool failScheduleWrites = false;
+    std::string scheduleWriteFailure =
+        "Academic calendar schedule test failure.";
     int firstDayWriteCount = 0;
 };
 
@@ -40,10 +45,23 @@ public:
         return m_state->scheduleJson;
     }
 
-    void write(const std::string& payload) const override
+    [[nodiscard]] AcademicCalendarSchedulePreferencesSaveResult write(
+        const std::string& payload
+        ) const override
     {
+        ++m_state->scheduleWriteAttemptCount;
+        if (m_state->failScheduleWrites)
+        {
+            return AcademicCalendarSchedulePreferencesSaveResult::failure({
+                .code = Domain::ErrorCode::Technical,
+                .message = m_state->scheduleWriteFailure,
+                .recoverable = false
+            });
+        }
+
         m_state->scheduleJson = payload;
         ++m_state->scheduleWriteCount;
+        return AcademicCalendarSchedulePreferencesSaveResult::success();
     }
 
 private:
@@ -100,6 +118,7 @@ private slots:
     void providerBuildsLocaleAlignedWeekRows();
     void providerOverridesFirstDayOfWeek();
     void providerReadsAndWritesInjectedPreferencePorts();
+    void providerSaveFailureDoesNotPublishScheduleOrRevision();
     void customizedYearShiftsRolloverButFutureUsesDefaults();
     void winterEditKeepsPreviousFallContinuous();
     void replacingEarlierYearInvalidatesLaterCustomization();
@@ -248,7 +267,7 @@ void AcademicCalendarTests::providerReadsAndWritesInjectedPreferencePorts()
     AcademicYearSchedule middle =
         provider->schedule().yearSchedule(SchoolLevel::Middle, 2026);
     elementary.weeks[2] = 12;
-    provider->saveYearSchedules(2026, elementary, middle);
+    QVERIFY(provider->saveYearSchedules(2026, elementary, middle));
     provider->setFirstDayOfWeek(1);
 
     QCOMPARE(state->scheduleWriteCount, 1);
@@ -264,6 +283,68 @@ void AcademicCalendarTests::providerReadsAndWritesInjectedPreferencePorts()
         12
         );
     QCOMPARE(provider->firstDayOfWeek(), 1);
+}
+
+void AcademicCalendarTests::
+providerSaveFailureDoesNotPublishScheduleOrRevision()
+{
+    auto state = std::make_shared<AcademicCalendarPreferenceState>();
+    auto provider = makeProvider(state);
+    const AcademicCalendarSchedule scheduleBefore = provider->schedule();
+    const std::string payloadBefore = state->scheduleJson;
+    const int revisionBefore = provider->revision();
+    QSignalSpy revisionChanged(
+        provider.get(),
+        &AcademicCalendarProvider::revisionChanged
+        );
+    QVERIFY(revisionChanged.isValid());
+
+    AcademicYearSchedule proposedElementary =
+        scheduleBefore.yearSchedule(SchoolLevel::Elementary, 2026);
+    AcademicYearSchedule proposedMiddle =
+        scheduleBefore.yearSchedule(SchoolLevel::Middle, 2026);
+    ++proposedElementary.weeks[2];
+    QVERIFY(proposedElementary.isValid());
+
+    state->failScheduleWrites = true;
+    const auto failed = provider->saveYearSchedules(
+        2026,
+        proposedElementary,
+        proposedMiddle
+        );
+    QVERIFY(!failed);
+    QCOMPARE(
+        failed.error().code,
+        Domain::ErrorCode::Technical
+        );
+    QCOMPARE(
+        QString::fromStdString(failed.error().message),
+        QString::fromStdString(state->scheduleWriteFailure)
+        );
+    QCOMPARE(state->scheduleWriteAttemptCount, 1);
+    QCOMPARE(state->scheduleWriteCount, 0);
+    QCOMPARE(state->scheduleJson, payloadBefore);
+    QCOMPARE(provider->schedule().toJson(), scheduleBefore.toJson());
+    QCOMPARE(provider->revision(), revisionBefore);
+    QCOMPARE(revisionChanged.count(), 0);
+
+    state->failScheduleWrites = false;
+    const auto saved = provider->saveYearSchedules(
+        2026,
+        proposedElementary,
+        proposedMiddle
+        );
+    QVERIFY(saved);
+    QCOMPARE(state->scheduleWriteAttemptCount, 2);
+    QCOMPARE(state->scheduleWriteCount, 1);
+    QCOMPARE(
+        provider->schedule()
+            .yearSchedule(SchoolLevel::Elementary, 2026)
+            .weeks[2],
+        proposedElementary.weeks[2]
+        );
+    QCOMPARE(provider->revision(), revisionBefore + 1);
+    QCOMPARE(revisionChanged.count(), 1);
 }
 
 void AcademicCalendarTests::customizedYearShiftsRolloverButFutureUsesDefaults()
