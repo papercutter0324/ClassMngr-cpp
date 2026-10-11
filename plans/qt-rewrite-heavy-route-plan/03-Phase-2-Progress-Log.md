@@ -22498,13 +22498,44 @@ Batch 121 is complete. Batch 122 is now active, using the candidates and
 evidence recorded in [Batch 122 discovery](#batch-122-discovery---recorded-at-f635-start).
 
 <a id="f637"></a>
-### F637 Classify speaking-evaluation content failures as Validation - active
+### F637 Classify speaking-evaluation content failures as Validation - accepted
 
-`SpeakingEvaluationSaveUseCase` currently reports semantic content-validation
-errors as `InvalidInput`. Classify those failures as `Validation` while
-preserving `InvalidInput` for malformed IDs, matrix shape, and cell
-coordinates. Keep the existing message, recoverability, and stop-before-port
-behavior. Use the existing
-`tests/next_application_speaking_evaluation_save_use_case_tests.cpp`; modify
-it only in response to the production/core result change, and create no test
-file.
+`SpeakingEvaluationSaveUseCase` previously reported semantic content
+validation errors as `InvalidInput`. F637 classifies those failures as
+`Validation` while preserving `InvalidInput` for malformed IDs, matrix shape,
+and cell coordinates. The generic validation message, recoverability, issue
+details/order, and stop-before-port behavior remain unchanged.
+
+The existing application use-case and platform save-port tests were updated
+directly in response to this production/core result change; no test file was
+created. The use-case test now asserts the exact preserved message. Commit
+`53a81ebf` (`Phase2 - Classify speaking evaluation content failures (F637)`) was
+accepted. Independent focused CTests passed 2/2; after the Tester identified
+the missing message assertion, the existing use-case target rebuilt and its
+CTest passed 1/1. `git diff --check` passed. Verification was focused, not a
+full-suite run.
+
+**Decision: accept F637.**
+
+<a id="f638"></a>
+### F638 Validate schedule-testing assignment keys before persistence - active
+
+The request currently rejects empty schedule keys while nonempty invalid
+weekday/time values reach repository validation and are reported as a
+technical failure. The established syntax is one of the seven full English
+weekday names, case-insensitive after trimming, plus a zero-padded 24-hour
+`HH:mm` time from `00:00` to `23:59`, also after trimming. Abbreviations,
+`9:05`, and out-of-range times are rejected. The repository canonicalizes
+accepted keys; Application validation must preserve the original request
+strings passed to the port.
+
+The request is Qt-free, but the current shared schedule parser depends on Qt,
+so it cannot be called from Application directly. Select a cohesive way to
+share the established syntax without drifting from repository behavior before
+implementing validation. Invalid nonempty keys should stop before the port and
+use the existing request-level invalid-input message/category behavior; actual
+repository failures remain technical. Focus any required test-file edit in
+`tests/next_application_schedule_testing_assignment_save_use_case_tests.cpp`
+only as a direct response to a production/core change, preferably extending
+the existing invalid-mutation case. Tests may be run for any changed code; no
+test-only slice or new test file is planned.
