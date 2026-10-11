@@ -2,6 +2,7 @@
 
 #include <QtTest/QtTest>
 
+#include <limits>
 #include <optional>
 #include <string>
 #include <utility>
@@ -39,6 +40,8 @@ class NextApplicationClassNotesSavePortTests final : public QObject
 private slots:
     void acceptsExactlyTenThousandUtf16CodeUnits();
     void rejectsTextBeyondTenThousandUtf16CodeUnits();
+    void rejectsInvalidClassIdentifiersBeforeCallingPort();
+    void acceptsPositiveClassIdentifiersAndForwardsUnchanged();
     void preservesPortFailure();
 };
 
@@ -84,7 +87,7 @@ void NextApplicationClassNotesSavePortTests::
 rejectsTextBeyondTenThousandUtf16CodeUnits()
 {
     const Application::ClassNotesSaveRequest request{
-        .classId = *Domain::ClassId::fromString("42"),
+        .classId = *Domain::ClassId::fromString("0"),
         .notes = {},
         .timeFillerActivities = std::u16string(
             Application::kClassNotesSaveMaxTextCodeUnits + 1,
@@ -97,8 +100,80 @@ rejectsTextBeyondTenThousandUtf16CodeUnits()
         Application::ClassNotesSaveUseCase::execute(request, port);
     QVERIFY(!result);
     QCOMPARE(result.error().code, Domain::ErrorCode::Validation);
+    QCOMPARE(
+        result.error().message,
+        std::string("Class notes text exceeds the 10,000 UTF-16 code-unit limit.")
+        );
+    QVERIFY(!result.error().recoverable);
     QCOMPARE(port.callCount, 0);
     QVERIFY(!port.lastRequest.has_value());
+}
+
+void NextApplicationClassNotesSavePortTests::
+rejectsInvalidClassIdentifiersBeforeCallingPort()
+{
+    const std::string overflowingId =
+        std::to_string(std::numeric_limits<int>::max()) + "0";
+    const std::string invalidIds[] = {
+        "0",
+        "-1",
+        "not-an-integer",
+        overflowingId
+    };
+
+    for (const std::string& invalidId : invalidIds)
+    {
+        const Application::ClassNotesSaveRequest request{
+            .classId = *Domain::ClassId::fromString(invalidId),
+            .notes = u"Notes",
+            .timeFillerActivities = u"Activities"
+        };
+        RecordingSavePort port;
+
+        const Domain::Result<void> result =
+            Application::ClassNotesSaveUseCase::execute(request, port);
+        QVERIFY(!result);
+        QCOMPARE(result.error().code, Domain::ErrorCode::InvalidInput);
+        QCOMPARE(
+            result.error().message,
+            std::string("Class identifier must be a positive integer.")
+            );
+        QVERIFY(!result.error().recoverable);
+        QCOMPARE(port.callCount, 0);
+        QVERIFY(!port.lastRequest.has_value());
+    }
+}
+
+void NextApplicationClassNotesSavePortTests::
+acceptsPositiveClassIdentifiersAndForwardsUnchanged()
+{
+    const Application::ClassNotesSaveRequest request{
+        .classId = *Domain::ClassId::fromString("00042"),
+        .notes = u"Notes",
+        .timeFillerActivities = u"Activities"
+    };
+    RecordingSavePort port;
+
+    const Domain::Result<void> result =
+        Application::ClassNotesSaveUseCase::execute(request, port);
+    QVERIFY(result);
+    QCOMPARE(port.callCount, 1);
+    QVERIFY(port.lastRequest.has_value());
+    QCOMPARE(port.lastRequest->classId.value(), std::string("00042"));
+
+    const std::string maximumClassId =
+        std::to_string(std::numeric_limits<int>::max());
+    const Application::ClassNotesSaveRequest maximumRequest{
+        .classId = *Domain::ClassId::fromString(maximumClassId),
+        .notes = u"Notes",
+        .timeFillerActivities = u"Activities"
+    };
+    const Domain::Result<void> maximumResult =
+        Application::ClassNotesSaveUseCase::execute(maximumRequest, port);
+    QVERIFY(maximumResult);
+    QCOMPARE(port.callCount, 2);
+    QVERIFY(port.lastRequest.has_value());
+    QCOMPARE(port.lastRequest->classId.value(), maximumClassId);
 }
 
 void NextApplicationClassNotesSavePortTests::preservesPortFailure()
