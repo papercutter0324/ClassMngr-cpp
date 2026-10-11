@@ -16,6 +16,7 @@
 #include <QHash>
 #include <QHBoxLayout>
 #include <QLabel>
+#include <QLayout>
 #include <QObject>
 #include <QPushButton>
 #include <QSet>
@@ -25,6 +26,7 @@
 
 #include <algorithm>
 #include <charconv>
+#include <initializer_list>
 #include <string>
 #include <system_error>
 
@@ -164,6 +166,32 @@ void connectColorRequested(
             }
         }
         );
+}
+
+void finalizeVirtualizedCard(
+    QWidget* card,
+    std::initializer_list<QWidget*> realizedWidgets
+    )
+{
+    if (!card)
+    {
+        return;
+    }
+
+    card->show();
+    for (QWidget* widget : realizedWidgets)
+    {
+        if (widget)
+        {
+            widget->show();
+        }
+    }
+
+    if (QLayout* layout = card->layout())
+    {
+        layout->invalidate();
+        layout->activate();
+    }
 }
 }
 
@@ -598,6 +626,14 @@ Result<BuildResult> build(
                 std::max(0, request.teacherContent->width() - 16),
                 request.teacherRowExtent - 12
                 );
+            finalizeVirtualizedCard(
+                teacherCard,
+                {
+                    spreadsheetTeacher,
+                    control.action,
+                    control.room
+                }
+                );
         }
         result.teacherControls[row] = control;
     }
@@ -875,6 +911,17 @@ Result<BuildResult> build(
                 row * request.classRowExtent + 6,
                 std::max(0, request.classContent->width() - 16),
                 request.classRowExtent - 12
+                );
+            finalizeVirtualizedCard(
+                classCard,
+                {
+                    importedClassLabel,
+                    colorLabel,
+                    control.colorButton,
+                    matchStatus,
+                    control.action,
+                    control.details
+                }
                 );
         }
         result.classControls[row] = control;

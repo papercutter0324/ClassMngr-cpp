@@ -21511,13 +21511,57 @@ warning came from the main-owned progress-log edit during its run; the
 independent rerun confirmed stable before/after source identity. No broad suite
 or PDF-byte equality claim was made.
 
-F613 is accepted. F526's historical capture still lacks source identity, but
+F613 is accepted (commit
+`1fd764727d6ab091ca6b4d75cc4f2ca45d026541`). F526's historical capture still
+lacks source identity, but
 the current Release route now has a deterministic, source-bound semantic
 comparison. F614 is deferred: F612 found a 22,662-byte UTF-8 source/package
 payload on this fixture and showed the typed source released before rendering,
 without owner-specific memory evidence that would justify a material
 ownership refactor. Revisit F614 only with a larger fixture or owner-specific
-memory evidence. F615 is next. F579 symbols remain deferred at the user's
+memory evidence. F616 is next. F579 symbols remain deferred at the user's
 direction; F598 still requires elevated WPR. The 250 MiB lifecycle gate,
 render/window acceptance, and global Phase 0 remain open (Windows 1/24,
+macOS 0/24).
+
+## F615 Schedule Import dialog integration coverage - 2026-10-11
+
+F615 stabilizes Schedule Import source and review-stage UI tests for workbook
+readiness, review presentation, virtualized class and teacher controls,
+refresh, apply, reject, cancellation, and repository outcomes. Test support now
+provides deterministic settings and schedule-import snapshot reads, so review
+preparation does not fall through to unrelated closed static SQL handles.
+The load helper waits for hidden progress, valid sheet and user selections,
+the ready status, and an enabled Next button. Geometry and behavior checks wait
+for the relevant page and realized controls instead of relying on a single
+event-loop pump.
+
+The compact flow exposed a production visibility defect: virtualized teacher
+and class cards were constructed and positioned but remained hidden. The
+resolution-control builder now shows each realized card and its standard
+controls, then activates the card layout. The test checks shared right-edge
+alignment for the color label and button when the column can fit the button;
+under the deliberately narrowed splitter it checks containment and candidate
+non-overlap. The change preserves the fixed-width compact preview and does not
+alter non-virtualized review behavior.
+
+Windows x64 Debug Ninja built `ClassMngrScheduleImportDialogTests` in the
+existing `build/windows-x64-debug-ninja` folder; an independent incremental
+build then reported no work to do. The focused
+`compactFlowAndReviewPresentation` slot passed 3/3 QtTest cases, and the full
+`ClassMngrScheduleImportDialogTests` target passed 39/39 with no failures or
+skips. Both runs used `QT_QPA_PLATFORM=offscreen` with Qt 6.12.0; the full
+report is `build/windows-x64-debug-ninja/f615-rerun-full.txt`. The build folder
+uses Ninja because the standard Visual Studio Debug build hit MSBuild
+FileTracker access-denied errors; this verification is limited to the focused
+Schedule Import target, not the full repository suite. `git diff --check`
+passed. The earlier full-target attempt exposed stale assumptions about
+virtualized tabs and a null test-control dereference; tests now select and wait
+for the appropriate tab before accessing its controls.
+
+F615 is accepted. F616 is next: stage Calendar workbook-to-event projection
+while retaining first-sheet ordering, cancellation behavior, all-sheet
+validation, and malformed later-sheet failures. F579 symbols remain deferred
+at the user's direction; F598 still needs elevated WPR. The 250 MiB lifecycle
+gate, render/window acceptance, and global Phase 0 remain open (Windows 1/24,
 macOS 0/24).

@@ -558,6 +558,44 @@ bool DatabaseSession::isOpen() const
     return ScheduleWidgetTestStubs::databaseSessionOpen;
 }
 
+SettingsRepository* DatabaseSession::settingsRepository() const
+{
+    static QSqlDatabase database;
+    static SettingsRepository repository(database);
+    return &repository;
+}
+
+SettingsRepository::SettingsRepository(QSqlDatabase& database)
+    : m_database(database)
+{
+}
+
+Status SettingsRepository::saveSetting(
+    const QString& key,
+    const QVariant& value
+    )
+{
+    ScheduleWidgetTestStubs::settings.insert(key, value);
+    return {};
+}
+
+Status SettingsRepository::saveSettings(const QVariantMap& values)
+{
+    for (auto setting = values.cbegin(); setting != values.cend(); ++setting)
+    {
+        ScheduleWidgetTestStubs::settings.insert(
+            setting.key(),
+            setting.value()
+            );
+    }
+    return {};
+}
+
+Result<QVariant> SettingsRepository::loadSetting(const QString& key)
+{
+    return ScheduleWidgetTestStubs::settings.value(key);
+}
+
 IntensiveSlotStateRepository* DatabaseSession::
 intensiveSlotStateRepository() const
 {
@@ -784,6 +822,90 @@ ClassInfoRepository::ClassInfoRepository(QSqlDatabase& database)
 {
 }
 
+Result<QList<ScheduleImportStateSnapshotClassInfoReadRecord>>
+ClassInfoRepository::loadScheduleImportStateSnapshotClassInfos()
+{
+    ++m_scheduleImportStateSnapshotClassInfoReadMetrics.callCount;
+    ++m_scheduleImportStateSnapshotClassInfoReadMetrics.metadataStatementCount;
+    ++ScheduleWidgetTestStubs::scheduleClassInfoReadCount;
+    if (ScheduleWidgetTestStubs::scheduleClassInfoReadFailure)
+    {
+        return std::unexpected(
+            QStringLiteral("injected schedule read failure")
+            );
+    }
+
+    QList<ScheduleImportStateSnapshotClassInfoReadRecord> records;
+    const QList<Classroom> classrooms = ScheduleWidgetTestStubs::classList();
+    records.reserve(classrooms.size());
+    for (const Classroom& classroom : classrooms)
+    {
+        ScheduleImportStateSnapshotClassInfoReadRecord record;
+        record.classId = classroom.id;
+        record.teacherId = classroom.id == 43 ? 8 : 7;
+        record.classGrade = ScheduleWidgetTestStubs::classGrades.value(
+            classroom.id,
+            classroom.id == 43
+                ? QStringLiteral("E5")
+                : QStringLiteral("E4")
+            );
+        record.classLevel = ScheduleWidgetTestStubs::classLevels.value(
+            classroom.id,
+            classroom.id == 43
+                ? QStringLiteral("Athena")
+                : QStringLiteral("Hercules")
+            );
+        record.roomNumber = ScheduleWidgetTestStubs::classRooms.value(
+            classroom.id,
+            DataService().getTeacher(record.teacherId)
+                .value_or(Teacher{})
+                .roomNumber
+            );
+
+        ClassTime regular;
+        regular.day = classroom.id == 44
+            ? QStringLiteral("Monday")
+            : classroom.id == 43
+                ? QStringLiteral("Thursday")
+                : QStringLiteral("Tuesday");
+        regular.startTime = classroom.id == 44 || classroom.id == 43
+            ? QStringLiteral("5:00 PM")
+            : QStringLiteral("4:00 PM");
+        regular.endTime = classroom.id == 44 || classroom.id == 43
+            ? QStringLiteral("5:50 PM")
+            : QStringLiteral("4:50 PM");
+        if (
+            !ScheduleWidgetTestStubs::classesWithEmptyRegularHours.contains(
+                classroom.id
+                )
+            )
+        {
+            record.regularTimes.append(regular);
+        }
+
+        if (ScheduleWidgetTestStubs::existingIntensiveHours)
+        {
+            if (ScheduleWidgetTestStubs::distinctIntensiveDays)
+            {
+                regular.day = classroom.id == 43
+                    ? QStringLiteral("Monday")
+                    : QStringLiteral("Friday");
+            }
+            regular.startTime = QStringLiteral("9:00 AM");
+            regular.endTime = QStringLiteral("9:50 AM");
+            record.intensiveTimes.append(regular);
+        }
+
+        records.append(std::move(record));
+    }
+
+    ++m_scheduleImportStateSnapshotClassInfoReadMetrics
+          .regularScheduleStatementCount;
+    ++m_scheduleImportStateSnapshotClassInfoReadMetrics
+          .intensiveScheduleStatementCount;
+    return records;
+}
+
 Result<ClassInfo> ClassInfoRepository::loadClassInfo(const int classId)
 {
     if (ScheduleWidgetTestStubs::selectedClassGradeReadFailure)
@@ -923,6 +1045,31 @@ TeacherRepository::loadTeacherDisplayNameFields(const int teacherId)
         ? QStringLiteral("이 선생님")
         : QStringLiteral("김 선생님");
     return record;
+}
+
+Result<QList<ScheduleImportTeacherReadRecord>>
+TeacherRepository::loadScheduleImportTeacherRecords()
+{
+    ++m_scheduleImportTeacherReadMetrics.callCount;
+    ++m_scheduleImportTeacherReadMetrics.statementCount;
+
+    QList<ScheduleImportTeacherReadRecord> records;
+    const Result<QList<Teacher>> teachers = DataService().getAllTeachers();
+    if (!teachers)
+    {
+        return std::unexpected(teachers.error());
+    }
+
+    records.reserve(teachers->size());
+    for (const Teacher& teacher : *teachers)
+    {
+        records.append({
+            teacher.id,
+            teacher.teacherKr,
+            teacher.roomNumber
+        });
+    }
+    return records;
 }
 
 Result<QList<ClassNavigationReadRecord>>
