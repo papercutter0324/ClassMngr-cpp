@@ -22346,9 +22346,27 @@ the birthday text; callers can therefore bypass the date rule. Existing
 coverage is in `tests/next_application_native_english_teacher_directory_save_tests.cpp`
 and `tests/next_application_gs_team_directory_save_tests.cpp`.
 
-F632 is the active next production slice. Move validity checks into both
-Application policies and derive them from request text. Preserve blank-date
-behavior, valid `02-29`, rejection of `02-30`, existing UI messages, and raw
-save behavior. Tests may be run for changed code; test files may be changed
-only to cover the corresponding production/core change, preferably with
-focused assertions in those existing files.
+F632 moved birthday validity into both Qt-free Application policies and
+removed the two UI-derived flags from the request contracts. It accepts blank
+and whitespace-only dates and `02-29`, rejects `02-30`, and preserves existing
+UI messages and save behavior. The platform still receives the preexisting
+UI-trimmed value from `cellText().trimmed()`.
+
+Commit `d6d483b70a04005ddcf84e1f9ee7c30196d1b827` (`Phase2 - Validate staff directory birthdays in application (F632)`) was accepted. Four existing test files were updated because this production/core request contract changed; no test file was created. The implementer built all five affected targets and ran 5/5 CTests; the independent Tester independently passed all five existing CTest targets (focused 5/5) and checked `git diff --check`. The review also confirmed that the original UI already trimmed the cell value before building the request.
+
+**Decision: accept F632.**
+
+<a id="f633"></a>
+#### F633 selection
+
+F633 is the active next production slice. The Explorer report found that
+`ClassNotesSaveRequest::validate()` checks text lengths only, while the
+platform adapter parses a positive `int`; the use case forwards invalid IDs
+to that adapter. Move positive-`int` validation into Application before the
+port and cover it in the existing
+`tests/next_application_class_notes_save_port_tests.cpp`, updated only in
+response to the production/core change. At slice start, inspect and preserve
+leading-zero compatibility if the existing contract confirms it. Tests may
+be run for any changed code; test files may be created or updated only to
+cover a corresponding production/core change. Prefer focused assertions in
+the existing test file.
