@@ -22628,7 +22628,7 @@ Batch 122 is complete. Batch 123 is now active, using the candidates and
 evidence recorded in [Batch 123 discovery](#batch-123-discovery---recorded-at-f639-start).
 
 <a id="f641"></a>
-### F641 Validate Testing Class create assignment keys in Application - active
+### F641 Validate Testing Class create assignment keys in Application - accepted
 
 `TestingClassCreateRequest::validate()` currently checks that assignment
 weekday and start time are either both present or both absent, but accepts
@@ -22644,3 +22644,63 @@ port; actual persistence failures remain `Technical`. Use the existing
 assertions directly required by a production/core change. Tests may run for any
 changed code; update test files only in response to a corresponding
 production/core change. Do not create a test-only slice or a new test file.
+
+The existing Application use-case test was updated directly in response to
+this production/core change; no test file was created. Commit
+`3a48f4c0` (`Phase2 - Validate Testing Class create assignment keys in
+Application (F641)`) was accepted. The Executor and independent Tester built
+`ClassMngr`, `ClassMngrNextApplicationTestingClassCreateUseCaseTests`, and
+`ClassMngrNextPlatformApplicationServicesTestingClassCreatePortTests` in
+`build/windows-x64-debug`. The independent focused CTest run passed 2/2, and
+`git diff --check` passed. Initial MSBuild FileTracker attempts failed before
+compilation; the affected targets succeeded on retry with elevated build
+access. The Platform path retains its existing technical-failure mapping by
+inspection; no runtime assertion was added for that unchanged branch.
+Verification was focused, not a full-suite run.
+
+**Decision: accept F641.**
+
+Batch 123 is complete.
+
+### Batch 124 discovery - recorded at F641 acceptance
+
+Parallel Application/domain and Platform/route discovery identified two
+bounded production-route candidates:
+
+1. **F642 - Route Sidebar Add Class through the existing Application create
+   contract.** `SidebarController::addClass()` directly invokes
+   `ClassService::create(QString())` and reads the result with
+   `ClassService::classroom(id)` in
+   `src/app/controllers/sidebar_controller_classes.cpp`. The existing
+   `ClassCreateUseCase` and Platform create port already create a blank class
+   and return its typed identifier; the setup wizard uses this path. Preserve
+   the page-leave guard, blank draft creation, existing error behavior, and
+   details navigation. Existing route coverage is in
+   `tests/mainwindow_classes_sidebar_root_navigation_tests.cpp`.
+2. **F643 - Route Sidebar Add Teacher through the existing Application create
+   contract.** `SidebarController::addTeacher()` directly creates a blank
+   Teacher and calls `TeacherService::create` in
+   `src/app/controllers/sidebar_controller_teachers.cpp`; F634's create
+   contract is already used by the setup wizard. Preserve the current
+   required-name validation message and no-write outcome. Existing teacher
+   create coverage and the MainWindow parity test can exercise this route.
+
+The Application/domain pass also identified a Class Details read-ID
+validation mismatch: the Platform adapter expects canonical numeric IDs while
+the existing Application query test treats IDs as opaque. This was not
+selected pending a clear `ClassId` grammar decision. No other comparable
+route or adapter candidate was found; no test-only slice was proposed.
+
+No other slices were found.
+
+Batch 124 is now active, with F642 first.
+
+### F642 Route Sidebar Add Class through the existing Application create contract - active
+
+Move `SidebarController::addClass()` from the direct `ClassService` create
+route to the existing `ClassCreateUseCase` and Platform create port. Preserve
+the page-leave guard, blank class draft semantics, result/error handling,
+subsequent class read, and existing Details navigation and selection. Run
+focused tests for changed production code as appropriate; update a test file
+only in direct response to a corresponding production/core change, and do not
+create a test-only slice or new test file.
