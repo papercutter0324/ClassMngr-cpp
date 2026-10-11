@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-12
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F659 is accepted at commit `272036cf4b7a6dde29cc6a2d81da800c39c867d2`; F660 (Calendar Next 10 lookup failure recovery) is selected in Batch 135, while F625/F626 and current-source macOS universal evidence (0/24) remain open.
+- Current note: F660 is accepted at commit `7dd40ef02edbe2187a23a8807cf1b70b4d4b7dc8`; F661 (Calendar event-display preference failure feedback and persisted-checkbox consistency) is selected in Batch 136, while F625/F626 and current-source macOS universal evidence (0/24) remain open.
 
 ### Slice discovery batches
 
@@ -94,9 +94,9 @@ Treat this plan as an operational summary, not a history:
   because the current execution identity is not an Administrator; resume when
   a Windows process with an elevated administrator token is available.
 
-#### Active batch: Batch 135
+#### Active batch: Batch 136
 
-- F660 - Add recoverable failure handling for Calendar Next 10 `findNextEventDate`; implement the pre-recorded cache and page recovery matrix.
+- F661 - Surface Calendar event-display preference save failures and restore checkbox state from persisted values; implement the pre-recorded UI and persistence matrix.
 
 ## Objective
 

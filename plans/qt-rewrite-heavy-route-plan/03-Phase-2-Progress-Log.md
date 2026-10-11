@@ -23634,4 +23634,67 @@ F660. Continue the user's sequence of one commit per slice.
    `ClassMngrCalendarEventCacheTests` and
    `ClassMngrCalendarPageEventMutationParityTests`; add no test target.
 
-This matrix is recorded before implementation. Batch 135 is active with F660.
+This matrix was recorded before implementation. Batch 135 is active with F660.
+
+### F660 Calendar Next 10 lookup failure - accepted - 2026-10-12
+
+Commit `7dd40ef02edbe2187a23a8807cf1b70b4d4b7dc8` retains current-generation
+Next 10 date lookup diagnostics by lookup date, discards stale-generation
+errors, and clears diagnostics on invalidation, re-execution, or success. The
+Calendar page clears pending state on failure, displays the diagnostic and
+Retry, and retries the recorded date. Recovery and successful no-match paths
+work. Existing Current Month/Next 30 Days error UI and Next 10 ordering/cap
+remain intact.
+
+`cmake -S . -B build/windows-x64-debug` and the forced Debug build of
+`ClassMngrCalendarEventCacheTests` and
+`ClassMngrCalendarPageEventMutationParityTests` succeeded without
+compiler/linker diagnostics. The exact registered Debug CTests passed 2/2 in
+both executor and independent Tester runs; the Tester saw no CTest warnings.
+`git diff --check` passed. CMake reported missing `WrapVulkanHeaders` and used
+Qt's bundled-zlib fallback; this was non-blocking. No full suite ran.
+
+**Decision: accept F660.** Batch 135 is complete; Batch 136 is active with
+F661. Continue the user's one-commit-per-slice sequence.
+
+### Batch 136 shortlist - recorded before F661 implementation - 2026-10-12
+
+- F661 is selected: Calendar event-display preference persistence already
+  returns typed errors for paired-write failure at
+  `src/next/platform/application_services_calendar_event_display_preferences_port.h:81-123`,
+  and trigger-backed tests cover atomic rollback and unchanged unrelated
+  settings at
+  `tests/next_platform_application_services_calendar_event_display_preferences_port_tests.cpp:301-355`.
+  The panel checkbox handler calls `saveOptions()` and emits
+  `calendarPreferencesChanged(false)` regardless of failure
+  (`src/features/calendar/ui/calendar_preferences_panel.cpp:367-388`);
+  `saveOptions()` reduces save errors to `qWarning()` (`:674-694`). Calendar
+  then refreshes its campus filter and reactivates when visible
+  (`src/features/calendar/ui/calendar_page.cpp:274-288`) from persisted
+  values. A checkbox-versus-event-list mismatch is an impact inference.
+- The existing
+  `ClassMngrCalendarPreferencesRestoreDefaultsTests` harness and prompt-service
+  seam do not cover this save-failure flow. The UI scan's middle-school
+  Analytics/Evaluations visibility failure is deferred: Calendar event-display
+  options govern events shown across calendars, while the alternative affects
+  two tabs only for middle-school classes; this impact comparison is an
+  inference. Keep that visibility failure as a later candidate.
+
+### F661 Calendar event-display preference failure acceptance matrix - recorded before implementation - 2026-10-12
+
+1. Preserve the Platform port's typed Technical diagnostic and atomic failure
+   behavior: a trigger-backed paired write leaves the prior display-preference
+   pair and unrelated settings unchanged.
+2. Exercise the actual Calendar Preferences checkbox flow. A failed save shows
+   exactly one user-visible warning with the diagnostic, restores both
+   event-display checkboxes from the persisted pair without a second write,
+   and emits no `calendarPreferencesChanged` signal.
+3. After removing the failure, selecting the desired checkbox again atomically
+   persists the pair, leaves controls consistent, and emits one change signal
+   so Calendar refreshes once.
+4. Preserve successful event-display pair and first-day preference behavior,
+   setting keys, existing reset/schedule flows, and test target set. Extend
+   `ClassMngrNextPlatformApplicationServicesCalendarEventDisplayPreferencesPortTests`
+   and `ClassMngrCalendarPreferencesRestoreDefaultsTests`; add no target.
+
+This matrix is recorded before implementation. Batch 136 is active with F661.
