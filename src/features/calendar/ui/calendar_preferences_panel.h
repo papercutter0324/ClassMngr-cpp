@@ -52,7 +52,8 @@ private:
     QWidget* buildImportSection();
     void loadSchedules();
     void loadOptions();
-    void saveOptions();
+    void loadEventDisplayOptions();
+    [[nodiscard]] bool saveOptions();
     void refreshFields();
     void commitDate(int schoolIndex, int termIndex);
     void clearDate(int schoolIndex, int termIndex);

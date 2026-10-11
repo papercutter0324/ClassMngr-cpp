@@ -371,8 +371,10 @@ QWidget* CalendarPreferencesPanel::buildOptionsSection()
             return;
         }
 
-        saveOptions();
-        emit calendarPreferencesChanged(false);
+        if (saveOptions())
+        {
+            emit calendarPreferencesChanged(false);
+        }
     };
     connect(
         m_showAllCampusesCheck,
@@ -639,6 +641,18 @@ void CalendarPreferencesPanel::loadOptions()
 {
     m_refreshing = true;
 
+    loadEventDisplayOptions();
+
+    if (m_startWeekOnMondayCheck && m_provider)
+    {
+        m_startWeekOnMondayCheck->setChecked(m_provider->firstDayOfWeek() == 1);
+    }
+
+    m_refreshing = false;
+}
+
+void CalendarPreferencesPanel::loadEventDisplayOptions()
+{
     const auto displayPreferences =
         ClassMngr::Next::Platform::
             ApplicationServicesCalendarEventDisplayPreferencesPort(
@@ -654,11 +668,6 @@ void CalendarPreferencesPanel::loadOptions()
             );
     }
 
-    if (m_startWeekOnMondayCheck && m_provider)
-    {
-        m_startWeekOnMondayCheck->setChecked(m_provider->firstDayOfWeek() == 1);
-    }
-
     if (m_hideStartOfTermEventsCheck)
     {
         m_hideStartOfTermEventsCheck->setChecked(
@@ -667,11 +676,9 @@ void CalendarPreferencesPanel::loadOptions()
                 : false
             );
     }
-
-    m_refreshing = false;
 }
 
-void CalendarPreferencesPanel::saveOptions()
+bool CalendarPreferencesPanel::saveOptions()
 {
     const auto saved =
         ClassMngr::Next::Platform::
@@ -683,19 +690,38 @@ void CalendarPreferencesPanel::saveOptions()
                     .hideStartOfTermEvents =
                         m_hideStartOfTermEventsCheck->isChecked()
                 });
-    if (!saved)
-    {
-        qWarning()
-            << "Failed to save calendar preferences:"
-            << QString::fromStdString(saved.error().message);
-    }
-
     if (m_provider && m_startWeekOnMondayCheck)
     {
         m_provider->setFirstDayOfWeek(
             m_startWeekOnMondayCheck->isChecked() ? 1 : 0
             );
     }
+
+    if (!saved)
+    {
+        const QString diagnostic = QString::fromStdString(
+            saved.error().message
+            );
+        qWarning() << "Failed to save calendar preferences:" << diagnostic;
+
+        const bool wasRefreshing = m_refreshing;
+        m_refreshing = true;
+        loadEventDisplayOptions();
+        m_refreshing = wasRefreshing;
+
+        DialogServices::showWarning(
+            this,
+            tr("Calendar Preferences Not Saved"),
+            tr(
+                "The event-display options could not be saved. "
+                "The previous settings have been restored."
+                ),
+            diagnostic
+            );
+        return false;
+    }
+
+    return true;
 }
 
 void CalendarPreferencesPanel::refreshFields()

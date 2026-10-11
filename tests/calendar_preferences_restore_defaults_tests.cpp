@@ -1,6 +1,7 @@
 #include "core/application_services.h"
 #include "data/database/database_session.h"
 #include "data/repositories/calendar_event_repository.h"
+#include "data/repositories/settings_repository.h"
 #include "domain/models/calendar_event.h"
 #include "features/calendar/academic_calendar_schedule.h"
 #include "features/calendar/ui/calendar_event_model.h"
@@ -154,6 +155,21 @@ QWidget* widgetAt(
 
     QLayoutItem* const item = layout->itemAtPosition(row, column);
     return item ? item->widget() : nullptr;
+}
+
+bool executeCalendarPreferenceSql(
+    ApplicationServices& services,
+    const QString& statement
+    )
+{
+    DatabaseSession* const session = services.databaseSession();
+    if (!session || !session->isOpen())
+    {
+        return false;
+    }
+
+    QSqlQuery query(session->database());
+    return query.exec(statement);
 }
 
 QString utf8String(const std::string& value)
@@ -599,6 +615,7 @@ class CalendarPreferencesRestoreDefaultsTests final : public QObject
 private slots:
     void restoreDefaultsStagesVisibleSchedulesWithoutPersistence();
     void failedScheduleSaveKeepsDraftAndRetrySucceeds();
+    void failedEventDisplaySaveRestoresPersistedPairAndRetrySucceeds();
     void resetEventsMatchesConfirmationDeleteFailureAndRefreshParity();
 };
 
@@ -1047,6 +1064,159 @@ failedScheduleSaveKeepsDraftAndRetrySucceeds()
     QCOMPARE(elementarySummerWeeks->value(), proposedWeeks);
     QCOMPARE(provider->revision(), revisionBefore + 1);
     QCOMPARE(revisionChanged.count(), 1);
+}
+
+void CalendarPreferencesRestoreDefaultsTests::
+failedEventDisplaySaveRestoresPersistedPairAndRetrySucceeds()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+
+    ApplicationServices services;
+    const QString databasePath = directory.filePath(
+        QStringLiteral("f661-calendar-event-display-preferences.tps")
+        );
+    QVERIFY(services.openDatabase(databasePath).has_value());
+
+    DatabaseSession* const session = services.databaseSession();
+    QVERIFY(session);
+    QVERIFY(session->isOpen());
+    SettingsRepository* const settings = session->settingsRepository();
+    QVERIFY(settings);
+
+    const QString showAllCampusesKey =
+        QStringLiteral("calendar/showEventsAtAllCampuses");
+    const QString hideStartOfTermKey =
+        QStringLiteral("calendar/hideStartOfTermEvents");
+    QVERIFY(settings->saveSettings({
+        {showAllCampusesKey, false},
+        {hideStartOfTermKey, true}
+    }));
+
+    auto preferenceState = std::make_shared<CalendarPreferenceState>();
+    auto provider = makeProvider(preferenceState);
+    CalendarPreferencesPanel panel(provider.get(), &services);
+    auto* const showAllCampuses = panel.findChild<QCheckBox*>(
+        QStringLiteral("preferencesCalendarShowAllCampuses")
+        );
+    auto* const hideStartOfTerm = panel.findChild<QCheckBox*>(
+        QStringLiteral("preferencesCalendarHideStartOfTermEvents")
+        );
+    auto* const startWeekOnMonday = panel.findChild<QCheckBox*>(
+        QStringLiteral("preferencesCalendarStartWeekOnMonday")
+        );
+    QVERIFY(showAllCampuses);
+    QVERIFY(hideStartOfTerm);
+    QVERIFY(startWeekOnMonday);
+    QVERIFY(!showAllCampuses->isChecked());
+    QVERIFY(hideStartOfTerm->isChecked());
+    QVERIFY(!startWeekOnMonday->isChecked());
+
+    CalendarPage calendarPage(&services);
+    QQuickItem* const calendarRootItem = calendarRoot(calendarPage);
+    QVERIFY(calendarRootItem);
+    const QDate visibleMonth(
+        QDate::currentDate().year(),
+        QDate::currentDate().month(),
+        1
+        );
+    QVERIFY(calendarRootItem->setProperty(
+        "shownDate",
+        QDateTime(visibleMonth, QTime(0, 0))
+        ));
+    calendarPage.show();
+    calendarPage.activate();
+    CalendarEventModel* const model = calendarModel(calendarPage);
+    QVERIFY(model);
+    QTRY_VERIFY_WITH_TIMEOUT(
+        model->isMonthLoaded(visibleMonth.year(), visibleMonth.month()),
+        10000
+        );
+    QSignalSpy modelRefreshes(
+        model,
+        &CalendarEventModel::revisionChanged
+        );
+    QVERIFY(modelRefreshes.isValid());
+
+    QSignalSpy preferencesChanged(
+        &panel,
+        &CalendarPreferencesPanel::calendarPreferencesChanged
+        );
+    QVERIFY(preferencesChanged.isValid());
+    QObject::connect(
+        &panel,
+        &CalendarPreferencesPanel::calendarPreferencesChanged,
+        &calendarPage,
+        &CalendarPage::calendarPreferencesChanged
+        );
+    RecordingCalendarPromptService prompts;
+    CalendarPromptServiceOverride promptOverride(&prompts);
+
+    QVERIFY(executeCalendarPreferenceSql(
+        services,
+        QStringLiteral(R"(
+            CREATE TRIGGER fail_calendar_event_display_preferences
+            BEFORE INSERT ON app_settings
+            WHEN NEW.key = 'calendar/showEventsAtAllCampuses'
+            BEGIN
+                SELECT RAISE(ABORT, 'forced calendar preference failure');
+            END
+        )")
+        ));
+
+    showAllCampuses->setChecked(true);
+
+    QVERIFY(!showAllCampuses->isChecked());
+    QVERIFY(hideStartOfTerm->isChecked());
+    QCOMPARE(prompts.messages.size(), 1);
+    QCOMPARE(prompts.messages.constFirst().severity, PromptSeverity::Warning);
+    QCOMPARE(
+        prompts.messages.constFirst().title,
+        QStringLiteral("Calendar Preferences Not Saved")
+        );
+    QVERIFY(prompts.messages.constFirst().details.contains(
+        QStringLiteral("forced calendar preference failure")
+        ));
+    QCOMPARE(preferencesChanged.count(), 0);
+    QCOMPARE(modelRefreshes.count(), 0);
+
+    const auto persistedShow = settings->loadSetting(showAllCampusesKey);
+    const auto persistedHide = settings->loadSetting(hideStartOfTermKey);
+    QVERIFY(persistedShow);
+    QVERIFY(persistedHide);
+    QVERIFY(!persistedShow.value().toBool());
+    QVERIFY(persistedHide.value().toBool());
+
+    QVERIFY(executeCalendarPreferenceSql(
+        services,
+        QStringLiteral("DROP TRIGGER fail_calendar_event_display_preferences")
+        ));
+    showAllCampuses->setChecked(true);
+
+    QVERIFY(showAllCampuses->isChecked());
+    QVERIFY(hideStartOfTerm->isChecked());
+    QCOMPARE(prompts.messages.size(), 1);
+    QCOMPARE(preferencesChanged.count(), 1);
+    QCOMPARE(preferencesChanged.at(0).at(0).toBool(), false);
+    QCOMPARE(modelRefreshes.count(), 1);
+
+    const auto retriedShow = settings->loadSetting(showAllCampusesKey);
+    const auto retriedHide = settings->loadSetting(hideStartOfTermKey);
+    QVERIFY(retriedShow);
+    QVERIFY(retriedHide);
+    QVERIFY(retriedShow.value().toBool());
+    QVERIFY(retriedHide.value().toBool());
+
+    startWeekOnMonday->setChecked(true);
+    QCOMPARE(
+        preferenceState->firstDayOfWeek,
+        CalendarFirstDayOfWeek::Monday
+        );
+    QVERIFY(showAllCampuses->isChecked());
+    QVERIFY(hideStartOfTerm->isChecked());
+    QCOMPARE(preferencesChanged.count(), 2);
+    QCOMPARE(preferencesChanged.at(1).at(0).toBool(), false);
+    QCOMPARE(modelRefreshes.count(), 1);
 }
 
 void CalendarPreferencesRestoreDefaultsTests::
