@@ -21927,3 +21927,69 @@ fixture, lifecycle checkpoints, parity, and F620 field comparison, then
 independently reconciled exact source content and build-directory binding.
 The selected route does not close the 250 MiB lifecycle or full Phase 0 gate;
 Windows route coverage remains 1/24 and macOS remains 0/24.
+
+## F623 Interpret packaged Sub Prep render-stage samples - accepted
+
+### Scope and acceptance
+
+Analyze the 15 ordered render-stage observations (a subset of 49 process
+samples per run) and the one-/five-second settled process samples in the three
+F620 and three F622 `output-sub-prep` Release runs. First summarize each cohort separately by marker and named
+process field; preserve within-sample field pairing and do not synthesize a
+record from independent per-field maxima. Report whether a peak or sustained
+growth boundary repeats at the same marker or transition across all three
+runs in either cohort. A single-run spike or a boundary that appears in only
+one run is not repeatable evidence. Compare across cohorts qualitatively only
+where marker semantics align; keep numeric ranges separate because source,
+build, and fixture provenance differ. Include settled samples to distinguish
+a transient render peak from a process value that remains elevated after the
+route. Treat every observation as process-wide; do not assign bytes to a
+renderer or schedule owner, infer savings, or propose a production change
+without separate causal evidence. Acceptance requires an evidence-linked
+stage summary, explicit repeatability decision, and recorded comparison
+limits. This is a read-only analysis slice: no production or test files are
+to change, and no builds, tests, or route reruns are in scope.
+
+### Analysis and verification outcome
+
+All six traces contain the same 15 ordered render markers. Independent
+cohort analyses and an artifact review confirmed repeatable process-level
+changes in both cohorts. From information-sheet entry to layout-complete,
+current working set rose by 3,833,856–4,411,392 bytes in F620 and
+4,263,936–4,595,712 bytes in F622; private working set rose by
+3,379,200–3,956,736 and 3,809,280–4,141,056 bytes; and private
+usage/commit/pagefile rose by 3,698,688–4,333,568 and 4,149,248–4,386,816
+bytes. These fields remained above their entry values across the later 14
+render markers in each run. This statement applies to the 15 render markers,
+not every one of the 49 process samples: later non-render samples can fall
+below the entry value.
+
+In every run, the image-live-before/after-PNG-save intervals contain the
+current working-set and private-working-set peaks among the 15 render
+markers. At each image release, current working set and private working set
+fall by exactly 8,699,904 bytes. Private usage, commit, and pagefile usage
+fall by 8,720,384 bytes in each F620 run; in F622 they fall by 8,716,288
+bytes in runs 1 and 2 and 8,720,384 bytes in run 3. The high-water
+`peakWorkingSetBytes` does not fall at release; it stays level or rises, so
+it is not evidence of current-memory release. The repeatable paired delta
+supports a transient process-memory pattern around image rendering, without
+identifying the allocations' owner.
+
+The one- and five-second records follow `workflow-complete` at checkpoint
+sequence 92 and are recorded at sequences 93 and 94. They are later route
+observations, not samples attributable to one render marker. In F622, settled
+working set remains 6,979,584–7,831,552 bytes above the output-operation
+released checkpoint, and private usage/commit/pagefile remains
+34,357,248–35,876,864 bytes above it; the 1s-to-5s values are otherwise
+stable. These samples do not localize the source of the remaining process
+elevation.
+
+Keep the cohorts numerically separate. F620 used source commit
+`4a9408067753699da90d1b751b30469f27bffbc7`, a different source tree and
+fixture hash, and its repeat runs skipped builds and used externally
+unverified binaries. F622 used clean source commit
+`b5fdecd17078a48848d141095d9e9e47d20eca42`, a different fixture hash, and
+three independent repository builds. The matching qualitative pattern can
+be reported; numeric differences cannot be attributed to F621 or to renderer
+changes. The traces support no component-byte attribution or memory-savings
+claim, and F623 makes no production or test changes.

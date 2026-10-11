@@ -52,7 +52,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-11
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F622 is accepted and F623 will interpret repeated packaged render-stage samples; F579 remains deferred and F598 awaits elevated WPR, while F526 provenance, the 250 MiB lifecycle, render/window, and Phase 0 gates remain open.
+- Current note: F623 is accepted and F624 will reassess the 96-class lifecycle gate after F621/F622; F579 remains deferred and F598 awaits elevated WPR, while F526 provenance, the 250 MiB lifecycle, render/window, and Phase 0 gates remain open.
 
 ### Slice discovery batches
 
@@ -92,7 +92,6 @@ Treat this plan as an operational summary, not a history:
 
 #### Active batch: Batch 118
 
-- F623 - Interpret F620/F622 render-stage samples to identify repeatable peak or growth boundaries.
 - F624 - Reassess the 96-class lifecycle memory gate after F621/F622.
 - F625 - Release retained My Workspace child resources if route evidence justifies it.
 - F626 - Apply a bounded retention policy only to heavyweight PageManager owners F621 identifies as material.
