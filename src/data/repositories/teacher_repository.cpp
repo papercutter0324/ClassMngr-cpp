@@ -217,6 +217,19 @@ Status TeacherRepository::updateTeacher(
     const Teacher& teacher
     )
 {
+    const TeacherUpdateOutcome outcome = updateTeacherWithOutcome(teacher);
+    if (outcome.code != TeacherUpdateOutcomeCode::Updated)
+    {
+        return std::unexpected(outcome.diagnostic);
+    }
+
+    return {};
+}
+
+TeacherUpdateOutcome TeacherRepository::updateTeacherWithOutcome(
+    const Teacher& teacher
+    )
+{
     QSqlQuery query(m_database);
 
     query.prepare(R"(
@@ -257,13 +270,30 @@ Status TeacherRepository::updateTeacher(
     query.addBindValue(teacher.notes);
     query.addBindValue(teacher.id);
 
-    return statusFromExecution(
-        SqlQueryUtils::executePrepared(
-            query,
-            QObject::tr("Updating teacher"),
-            teacherIdentity(teacher.id)
-            )
+    const auto executed = SqlQueryUtils::executePrepared(
+        query,
+        QObject::tr("Updating teacher"),
+        teacherIdentity(teacher.id)
         );
+    if (!executed)
+    {
+        return {
+            .code = TeacherUpdateOutcomeCode::Failure,
+            .diagnostic = executed.error().userMessage()
+        };
+    }
+
+    if (query.numRowsAffected() == 0)
+    {
+        return {
+            .code = TeacherUpdateOutcomeCode::Missing,
+            .diagnostic = QObject::tr(
+                "Updating teacher failed for %1: no matching record exists."
+                ).arg(teacherIdentity(teacher.id))
+        };
+    }
+
+    return {.code = TeacherUpdateOutcomeCode::Updated};
 }
 
 Result<Teacher> TeacherRepository::getTeacher(

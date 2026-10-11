@@ -82,6 +82,7 @@ class NextPlatformApplicationServicesTeacherProfileEditPersistencePortTests fina
 
 private slots:
     void updatesAndReloadsEveryProfileFieldThroughActiveRepository();
+    void mapsDeletedTeacherUpdateToNotFound();
     void mapsUnavailableSessionAndRepositoryFailures();
 };
 
@@ -141,6 +142,35 @@ updatesAndReloadsEveryProfileFieldThroughActiveRepository()
         port.reload(expected.id);
     QVERIFY(reloaded);
     QVERIFY(reloaded.value() == expected);
+}
+
+void NextPlatformApplicationServicesTeacherProfileEditPersistencePortTests::
+mapsDeletedTeacherUpdateToNotFound()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+    const int teacherId = createTeacher(services);
+    QVERIFY(teacherId > 0);
+
+    TeacherRepository* const repository =
+        services.databaseSession()->teacherRepository();
+    QVERIFY(repository);
+    QVERIFY(repository->deleteTeacher(teacherId));
+
+    Platform::ApplicationServicesTeacherProfileEditPersistencePort port(
+        services);
+    const Domain::Result<void> updated = port.update(profile(teacherId));
+    QVERIFY(!updated);
+    QCOMPARE(updated.error().code, Domain::ErrorCode::NotFound);
+    QCOMPARE(fromUtf8(updated.error().message), QStringLiteral(
+        "Updating teacher failed for teacher id %1: no matching record exists."
+        ).arg(teacherId));
+    const TeacherByIdLookupResult stored =
+        repository->lookupTeacherById(teacherId);
+    QCOMPARE(stored.code, TeacherByIdLookupCode::Missing);
 }
 
 void NextPlatformApplicationServicesTeacherProfileEditPersistencePortTests::

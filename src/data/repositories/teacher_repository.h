@@ -162,6 +162,19 @@ struct TeacherByIdLookupResult final
     QString diagnostic;
 };
 
+enum class TeacherUpdateOutcomeCode
+{
+    Updated,
+    Missing,
+    Failure
+};
+
+struct TeacherUpdateOutcome final
+{
+    TeacherUpdateOutcomeCode code = TeacherUpdateOutcomeCode::Failure;
+    QString diagnostic;
+};
+
 class TeacherRepository
 {
 public:
@@ -178,6 +191,9 @@ public:
         );
 
     [[nodiscard]] Status updateTeacher(
+        const Teacher& teacher
+        );
+    [[nodiscard]] TeacherUpdateOutcome updateTeacherWithOutcome(
         const Teacher& teacher
         );
 

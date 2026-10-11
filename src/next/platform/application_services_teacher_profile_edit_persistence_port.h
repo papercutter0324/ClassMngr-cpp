@@ -68,12 +68,21 @@ public:
 
         try
         {
-            const Status result = repository->updateTeacher(
-                teacherFromProfile(profile, *legacyId));
-            if (!result)
+            const TeacherUpdateOutcome result =
+                repository->updateTeacherWithOutcome(
+                    teacherFromProfile(profile, *legacyId));
+            if (result.code == TeacherUpdateOutcomeCode::Missing)
+            {
+                return Domain::Result<void>::failure({
+                    .code = Domain::ErrorCode::NotFound,
+                    .message = utf8(result.diagnostic),
+                    .recoverable = true
+                });
+            }
+            if (result.code != TeacherUpdateOutcomeCode::Updated)
             {
                 return Domain::Result<void>::failure(
-                    technicalError(result.error(),
+                    technicalError(result.diagnostic,
                         QStringLiteral("Updating teacher failed.")));
             }
             return Domain::Result<void>::success();
