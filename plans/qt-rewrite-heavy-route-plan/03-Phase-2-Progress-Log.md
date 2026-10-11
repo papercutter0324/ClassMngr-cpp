@@ -22073,16 +22073,29 @@ reviewer's exact checkpoint comparison is Task F624-TEST-GATE; raw artifacts
 are under `%LOCALAPPDATA%\Temp\f622-sub-prep-20261011-10ea979b61774376b939e04152db22bd`.
 F624 changed no production or test files.
 
-## F625 Release retained My Workspace child resources if route evidence justifies it - active
+## F625 Assess My Workspace child-resource retention - accepted; release change deferred
 
-### Scope and acceptance
+### Findings and limits
 
-Inspect existing source ownership and route evidence for generated My
-Workspace child resources retained after page leave. Decide whether observed
-retention is material enough to justify a bounded release change. If evidence
-supports a change, specify the leave/re-entry and unsaved-edit/navigation
-contract it must preserve before production work; update tests only in direct
-response to that core change and prefer the existing owning suite. If current
-evidence cannot establish material retention, record the gap and defer the
-change without creating a test-only slice. No release behavior or test file
-changes are in scope until the material-retention finding is established.
+PageManager retains instantiated page and child identity and state after
+navigation. Source shows generated Schedule data and Calendar content are
+explicitly released; route counters show zero generated Schedule counts on
+leave and zero Calendar views/cache after release, with restoration on
+re-entry. This evidence does not establish material My Workspace child
+retention. No My Workspace child bytes were attributed, and no matched
+owner-specific measurement was available. F622 and F624 likewise treat the
+memory samples as process-level observations without component attribution
+([F622](#f622-current-source-packaged-sub-prep-memory-and-parity-reconciliation---accepted),
+[F624](#f624-reassess-the-96-class-sub-prep-lifecycle-memory-gate---accepted)).
+
+**Decision: accepted; defer a My Workspace child-resource release change
+because available evidence does not establish material retention.** Revisit
+only if owner-specific evidence establishes material retained resources.
+
+### Outcome
+
+No production/core code changed, so no test file was edited and no test was
+run. This honors the 2026-10-11 user policy: tests may be run for changed
+code; test files may be created or updated only directly in response to
+modified production/core code and must cover the change; avoid test-only
+slices.

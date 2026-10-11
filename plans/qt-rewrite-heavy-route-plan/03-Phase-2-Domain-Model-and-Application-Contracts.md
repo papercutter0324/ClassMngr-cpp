@@ -52,7 +52,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-11
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F624 passed the recorded 96-class current-working-set budget but left lifecycle acceptance partial because return-to-baseline, stronger repeated-cycle, and five-minute idle evidence remain open; F625 will check My Workspace child-resource retention before any release change, while F579, F598, F526 provenance, the broader memory gate, render/window, and Phase 0 remain open.
+- Current note: F625 is accepted with the My Workspace release change deferred because available evidence does not establish material child retention; F626 is next in Batch 118, while F579, F598, F526 provenance, the broader memory gate, render/window, and Phase 0 remain open.
 
 ### Slice discovery batches
 
@@ -92,7 +92,6 @@ Treat this plan as an operational summary, not a history:
 
 #### Active batch: Batch 118
 
-- F625 - Release retained My Workspace child resources if route evidence justifies it.
 - F626 - Apply a bounded retention policy only to heavyweight PageManager owners F621 identifies as material.
 - F627 - Requalify the current-source Windows x64 Phase 0 route matrix after memory-changing work settles.
 - F628 - Requalify the current-source macOS universal route matrix when a packaged runner is available.
