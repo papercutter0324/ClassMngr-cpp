@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-12
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F657 is accepted and F658 is active in Batch 133; F625/F626 and current-source macOS universal evidence (0/24) remain open.
+- Current note: F658 is accepted at commit `4e85ade541369c0bc1e5f54c04c5df0822c56d52`; F659 (Class Visibility preference save failure feedback and state consistency) is selected in Batch 134, while F625/F626 and current-source macOS universal evidence (0/24) remain open.
 
 ### Slice discovery batches
 
@@ -94,9 +94,9 @@ Treat this plan as an operational summary, not a history:
   because the current execution identity is not an Administrator; resume when
   a Windows process with an elevated administrator token is available.
 
-#### Active batch: Batch 133
+#### Active batch: Batch 134
 
-- F658 - Propagate custom academic calendar schedule persistence failures without publishing failed state.
+- F659 - Surface Class Visibility preference save failures and keep selection, persisted scope, and Classes refresh consistent.
 
 ## Objective
 

@@ -23509,4 +23509,68 @@ recorded below.
   `ClassMngrNextPlatformApplicationServicesAcademicCalendarSchedulePreferencesPortTests`,
   and `ClassMngrCalendarPreferencesRestoreDefaultsTests`; add no test target.
 
-This matrix is recorded before implementation. Batch 133 is active with F658.
+This matrix is recorded before implementation.
+
+### F658 custom academic calendar schedule save failure - accepted - 2026-10-12
+
+Commit `4e85ade541369c0bc1e5f54c04c5df0822c56d52` changes the schedule
+preference write port to return typed Technical failures. The provider persists
+the candidate before publishing it; on failure, the stored payload, active
+schedule, revision, and `revisionChanged` signal remain unchanged. The panel
+shows one diagnostic warning and retains the editable draft; retry after
+recovery persists the draft and emits success once.
+
+The forced Debug build of `ClassMngrAcademicCalendarTests`,
+`ClassMngrNextPlatformApplicationServicesAcademicCalendarSchedulePreferencesPortTests`,
+and `ClassMngrCalendarPreferencesRestoreDefaultsTests` succeeded. These exact
+registered CTests passed 3/3 in both the main run and the independent Tester
+run. `git diff --check` passed; no full suite was run. The Tester confirmed
+preserved draft value and successful retry, but the test does not observe a
+separately exposed dirty-state indicator; source returns before clearing
+`m_dirty` on failure.
+
+**Decision: accept F658.** Batch 133 is complete; Batch 134 is active with
+F659. Continue the user's sequence of one commit per slice, then proceed
+immediately to the next slice.
+
+### Batch 134 shortlist - recorded before F659 implementation - 2026-10-12
+
+- F659 is selected: `ApplicationServicesClassVisibilityPreferencesPort::save`
+  (the preference-port `save` implementation) discards the
+  `SettingsRepository::saveSetting()` result at
+  `src/next/platform/application_services_class_visibility_preferences_port.h:76`.
+  Preferences radio controls change selection before attempting the write and
+  refresh navigation after a successful selection transition
+  (`src/app/menu_builder.cpp:443,469,681,688`); the shared callback returns
+  immediately for the unchecked radio (`:668-690`). Classes reload the
+  persisted scope at `src/features/classes/ui/classes_page.cpp:700` and
+  `src/ui/shared/pages/pagemanager.cpp:683`. A trigger-backed port test proves
+  a failed write leaves the stored scope unchanged
+  (`tests/next_platform_application_services_class_visibility_preferences_port_tests.cpp:278,291,302`);
+  success coverage exists at `tests/classes_page_tests.cpp:710`, but no test
+  covers the Preferences radio flow. A selected-control/navigation mismatch
+  after a failed write is an impact inference, not directly tested behavior.
+- Calendar event-display preference persistence, which also discards a write
+  failure and only emits `qWarning`
+  (`src/next/platform/application_services_calendar_event_display_preferences_port.h:82`,
+  `src/features/calendar/ui/calendar_preferences_panel.cpp:674`), remains a
+  later candidate.
+
+### F659 Class Visibility preference save failure acceptance matrix - recorded before implementation - 2026-10-12
+
+- With a real persistence trigger, a failed Platform write returns a typed
+  Technical diagnostic and leaves the stored scope and unrelated settings
+  unchanged.
+- Exercise the actual Preferences radio flow: a failed write surfaces one
+  diagnostic, restores the radio selection to the persisted scope, and
+  suppresses the Classes refresh.
+- After removing the failure, select the desired radio again. This performs
+  one save, persists the scope, updates the selected control, and refreshes
+  Classes once.
+- Preserve successful All Classes and Active Schedule behavior, the setting
+  key, and existing Classes page behavior.
+- Add focused port and Preferences UI coverage in existing harnesses when
+  feasible; add no test target if those harnesses permit it. Keep the failed
+  write atomicity assertion in the trigger-backed port test.
+
+This matrix is recorded before implementation. Batch 134 is active with F659.
