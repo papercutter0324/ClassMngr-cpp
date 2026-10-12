@@ -135,7 +135,8 @@ rejectsInvalidOrDuplicateTeacherIds()
         {"01"},
         {"-1"},
         {"2147483648"},
-        {"17", "17"}
+        {"17x"},
+        {"01", "01"}
     };
 
     for (const auto& ids : invalidIdSets)
@@ -160,10 +161,38 @@ rejectsInvalidOrDuplicateTeacherIds()
         const auto result = query.execute();
 
         QVERIFY(!result);
+        QVERIFY(result.error().message ==
+            "Initial setup teacher choices contain an invalid teacher identifier.");
         QCOMPARE(result.error().code, Domain::ErrorCode::Validation);
         QVERIFY(!result.error().recoverable);
         QCOMPARE(port.callCount, 1);
     }
+
+    RecordingInitialSetupTeacherChoicesReadPort port;
+    InitialSetupTeacherChoicesSnapshot snapshot;
+    for (const std::string id : {"17", "17"})
+    {
+        snapshot.teachers.push_back({
+            .teacherId = teacherId(id),
+            .teacherKr = u"Teacher",
+            .teacherEn = u"Teacher",
+            .preferredRomanization = u"Teacher",
+            .preferredName = u"Teacher"
+        });
+    }
+    port.result = InitialSetupTeacherChoicesResult::success(
+        std::move(snapshot)
+        );
+    const InitialSetupTeacherChoicesReadQuery query(port);
+
+    const auto result = query.execute();
+
+    QVERIFY(!result);
+    QVERIFY(result.error().message ==
+        "Initial setup teacher choices contain a duplicate teacher identifier.");
+    QCOMPARE(result.error().code, Domain::ErrorCode::Validation);
+    QVERIFY(!result.error().recoverable);
+    QCOMPARE(port.callCount, 1);
 }
 
 QTEST_APPLESS_MAIN(NextApplicationInitialSetupTeacherChoicesReadQueryTests)
