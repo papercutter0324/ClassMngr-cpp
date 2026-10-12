@@ -27446,5 +27446,52 @@ case-insensitive semantics to preserve day-group matching.
    comparator can differ for exotic Unicode. Ordinary English weekday labels
    are the supported domain for this migration.
 
-This matrix is recorded before implementation. Batch 179 is active with F729;
+This matrix was recorded before implementation.
+
+### F729 Schedule Import weekday-group parser migration - accepted - 2026-10-12
+
+F729 is accepted at code/test commit
+`cce4f011244b8e7659cfe504182d5eebbb7760d8`. `scheduleImportDayGroup` now
+uses `ScheduleValueParser::parseWeekday` with its built-in trim and
+case-insensitive semantics, without canonical-text equality. It maps Monday,
+Wednesday, and Friday to group 1; Tuesday and Thursday to group 2; and
+preserves rejection of weekends, invalid/empty values, and mixed groups. The
+empty-existing-times eligibility fallback remains intact.
+
+`ClassMngr` and `ClassMngrScheduleImportTests` built successfully. The exact
+registered CTest `ClassMngrScheduleImportTests` passed 1/1. No full suite ran.
+
+**Decision: accept F729.** Batch 179 continues with F730; F707 and F709 remain
+deferred.
+
+### Batch 179 continuation - F730 selection and acceptance matrix - recorded before implementation - 2026-10-12
+
+Select `ClassesPage::hasWeekendClasses` in
+`src/features/classes/ui/classes_page.cpp`.
+
+**F730 is selected:** reuse the Domain weekday parser while preserving weekend
+detection across regular and intensive schedules.
+
+1. Migrate only `ClassesPage::hasWeekendClasses` to
+   `ScheduleValueParser::parseWeekday`. Return true only for parsed Saturday
+   or Sunday, preserving trim and case-insensitive matching across regular
+   and intensive schedule times. Return false for weekdays, malformed names,
+   and empty values.
+2. Add a deterministic schedule-day control to the existing
+   `tests/schedule_widget_test_stubs.cpp` and declaration/test coverage in
+   `tests/classes_page_tests.cpp`, using
+   `ClassesPageTests::dayFiltersToggleIndependentlyAndRetainHiddenEditor`.
+   Keep stub defaults unchanged. Assert visibility for padded/mixed-case
+   weekend values in regular and intensive sources, and hidden state for
+   weekday, unknown, and no-time cases.
+3. `ClassMngrClassesPageTests` already compiles the parser. Build `ClassMngr`
+   and that target; run only the exact registered CTest
+   `ClassMngrClassesPageTests`. Run no full suite.
+4. Historical verification: an older Phase 2 report recorded nine unrelated
+   full-target failures; the later F528 report passed this target 1/1 and
+   direct tests 40/40. Report any current failures separately. The comparator
+   difference for exotic Unicode is outside the supported ordinary English
+   weekday labels.
+
+This matrix is recorded before implementation. Batch 179 is active with F730;
 F707 and F709 remain deferred.

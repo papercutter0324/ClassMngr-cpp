@@ -53,12 +53,12 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current state - 2026-10-12 (F728 accepted; F729 selected)
+### Current state - 2026-10-12 (F729 accepted; F730 selected)
 
 Phase 2 remains In Progress/Open under deployment
 `phase2_f417_resume_20261009`, Heavy route; Gates 1 and 2 remain Partial.
 Batches 141-178 are complete with F707 and F709 deferred; Batch 179 is active
-with F729, the Schedule Import weekday-group parser migration.
+with F730, the Classes page weekend-detection parser migration.
 F689-F693 are complete;
 their acceptance details and commit hashes are recorded in the Phase 2
 progress log. F694 is committed as b1654499e391656b0e7abb5625a1e1af293bc5bb;
@@ -319,19 +319,30 @@ canonical, duplicate, and Saturday cases. `ClassMngr` and
 `ClassMngrScheduleImportTests` built; the exact registered CTest passed 1/1.
 No full suite ran.
 
-F729 selects `scheduleImportDayGroup` in
-`src/domain/rules/schedule_import_rules.cpp`. Reuse the shared parser's trim
-and case-insensitive weekday recognition without requiring canonical-text
-equality. Preserve Monday/Wednesday/Friday group 1 and Tuesday/Thursday group
-2; weekends, invalid/empty input, and mixed groups return 0. Keep equal
-nonzero-group compatibility and the separate eligibility fallback for empty
-existing times. Extend `filtersClassOptionsByGradeAndDayGroup()` with padded
-and mixed-case acceptance and invalid/mixed-group rejection while preserving
-existing cases. Build `ClassMngr` and `ClassMngrScheduleImportTests`; run only
-that exact CTest. No CMake change or full suite is planned. F707 remains
-deferred because its comparator chain has no observed app callsite; F709 is
-deferred because its public fixture does not readily supply malformed raw time
-text.
+F729 is accepted and committed as
+`cce4f011244b8e7659cfe504182d5eebbb7760d8`. Schedule Import day grouping now
+uses `ScheduleValueParser::parseWeekday` with the parser's built-in trim and
+case-insensitive matching, preserving M/W/F group 1 and T/Th group 2.
+Weekends, invalid or empty inputs, and mixed groups remain incompatible, and
+the empty-existing-times class-option fallback remains intact. The focused
+test covers padded/mixed-case compatible rows plus mixed-group, Saturday,
+Sunday, unknown, and empty-candidate rejection. `ClassMngr` and
+`ClassMngrScheduleImportTests` built; the exact CTest passed 1/1. No full
+suite ran.
+
+F730 selects `ClassesPage::hasWeekendClasses` in
+`src/features/classes/ui/classes_page.cpp`. Reuse
+`ScheduleValueParser::parseWeekday` and return true only for Saturday or
+Sunday, preserving trimmed case-insensitive recognition and checks across
+regular and intensive times. Add deterministic schedule-time control to the
+existing page test stubs and cover padded/mixed-case weekend rows in both
+sources, plus weekday, unknown, and no-time rows that keep the weekend filter
+hidden. Build `ClassMngr` and `ClassMngrClassesPageTests`; run only that exact
+CTest. No CMake change or full suite is planned. The target had unrelated
+historical failures in one earlier run and a later 1/1 CTest plus 40/40 direct
+pass; report any current failures separately. F707 remains deferred because
+its comparator chain has no observed app callsite; F709 is deferred because
+its public fixture does not readily supply malformed raw time text.
 The current-source Phase 0
 evidence remains Windows x64 2/24 and macOS universal 0/24; it is separate
 from the historical Phase 0 closure described above. F625 remains accepted

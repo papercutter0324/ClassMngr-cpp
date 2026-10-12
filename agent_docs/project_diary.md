@@ -4530,13 +4530,25 @@ canonical, duplicate, and Saturday cases. `ClassMngr` and
 `ClassMngrScheduleImportTests` built; the exact registered CTest passed 1/1.
 No full suite ran.
 
-F729 is selected to migrate `scheduleImportDayGroup` in
-`src/domain/rules/schedule_import_rules.cpp`. Reuse the shared parser's trim
-and case-insensitive weekday recognition without canonical-text equality;
-preserve Monday/Wednesday/Friday group 1, Tuesday/Thursday group 2, and zero
-for weekends, invalid/empty input, or mixed groups. Keep the equal-nonzero
-compatibility rule and empty-existing-times eligibility fallback. Extend
-`filtersClassOptionsByGradeAndDayGroup()` for padded/mixed-case acceptance and
-mixed/weekend/unknown/empty rejection. Build `ClassMngr` and
-`ClassMngrScheduleImportTests`; run only that exact CTest. No full suite is
-planned. Phase 2 remains In Progress with Gates 1 and 2 Partial.
+F729 is accepted and committed as
+`cce4f011244b8e7659cfe504182d5eebbb7760d8`. Schedule Import day grouping now
+uses `ScheduleValueParser::parseWeekday` with the parser's built-in trim and
+case-insensitive matching, preserving M/W/F group 1 and T/Th group 2.
+Weekends, invalid or empty inputs, and mixed groups remain incompatible, and
+the empty-existing-times class-option fallback remains intact. The focused
+test covers padded/mixed-case compatible rows plus mixed-group, Saturday,
+Sunday, unknown, and empty-candidate rejection. `ClassMngr` and
+`ClassMngrScheduleImportTests` built; the exact CTest passed 1/1. No full
+suite ran.
+
+F730 is selected to migrate `ClassesPage::hasWeekendClasses` in
+`src/features/classes/ui/classes_page.cpp`. Parse with the shared weekday
+parser and return true only for parsed Saturday/Sunday, preserving trimmed
+case-insensitive recognition across regular and intensive times. Add a
+deterministic schedule-time control to the existing page test stubs; verify
+padded/mixed-case weekend rows in both sources and hidden filter state for
+weekday, unknown, and no-time cases. Build `ClassMngr` and
+`ClassMngrClassesPageTests`; run only that exact CTest. An older target run
+had nine unrelated failures; a later F528 run passed CTest 1/1 and direct
+40/40, so report current failures separately. No full suite is planned. Phase
+2 remains In Progress with Gates 1 and 2 Partial.
