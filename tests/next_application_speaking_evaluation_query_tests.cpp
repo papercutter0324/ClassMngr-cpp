@@ -108,6 +108,11 @@ rejectsInvalidClassIdsWithoutCallingPort()
             );
         QVERIFY(!result);
         QCOMPARE(result.error().code, Domain::ErrorCode::InvalidInput);
+        QCOMPARE(
+            result.error().message,
+            std::string("Class ID must be a canonical positive integer.")
+            );
+        QVERIFY(result.error().recoverable);
     }
     QVERIFY(port.requests.empty());
 }
@@ -186,14 +191,21 @@ propagatesPortErrorAndRejectsMismatchedIdentity()
     QVERIFY(!result);
     QVERIFY(result.error() == portError);
 
-    port.result = SpeakingEvaluationReadResult::success({
+    RecordingSpeakingEvaluationReadPort mismatchedIdentityPort;
+    mismatchedIdentityPort.result = SpeakingEvaluationReadResult::success({
         .classId = classId("43"),
         .evaluationName = requested.evaluationName,
         .rows = {}
     });
-    result = SpeakingEvaluationQuery::execute(requested, port);
+    result = SpeakingEvaluationQuery::execute(requested, mismatchedIdentityPort);
     QVERIFY(!result);
     QCOMPARE(result.error().code, Domain::ErrorCode::Validation);
+    QCOMPARE(
+        result.error().message,
+        std::string("A speaking evaluation read returned a different query identity.")
+        );
+    QVERIFY(!result.error().recoverable);
+    QCOMPARE(mismatchedIdentityPort.requests.size(), std::size_t(1));
 }
 
 QTEST_APPLESS_MAIN(NextApplicationSpeakingEvaluationQueryTests)

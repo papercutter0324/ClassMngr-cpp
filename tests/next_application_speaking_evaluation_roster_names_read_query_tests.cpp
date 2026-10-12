@@ -81,6 +81,11 @@ invalidClassIdsDoNotReachPort()
                 );
         QVERIFY(!result);
         QCOMPARE(result.error().code, Domain::ErrorCode::InvalidInput);
+        QCOMPARE(
+            result.error().message,
+            std::string("Class ID must be a canonical positive integer.")
+            );
+        QVERIFY(!result.error().recoverable);
     }
 
     QCOMPARE(port.callCount, 0);
@@ -159,6 +164,11 @@ rejectsMismatchedReturnedClass()
 
     QVERIFY(!result);
     QCOMPARE(result.error().code, Domain::ErrorCode::Validation);
+    QCOMPARE(
+        result.error().message,
+        std::string("Roster names were returned for a different class.")
+        );
+    QVERIFY(!result.error().recoverable);
     QCOMPARE(port.callCount, 1);
 }
 

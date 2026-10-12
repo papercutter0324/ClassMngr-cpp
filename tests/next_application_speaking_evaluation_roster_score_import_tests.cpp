@@ -380,6 +380,29 @@ bool emptyBatchSkipsBatchAndSinglePorts()
 bool batchQueryValidatesRequestAndReturnedOrder()
 {
     FakeSpeakingEvaluationReadBatchPort batchPort;
+    SpeakingEvaluationReadBatchQuery invalidClassIdRequest = batchQuery({
+        u"Winter"
+    });
+    invalidClassIdRequest.classId = *Domain::ClassId::fromString("01");
+    const auto invalidClassId = SpeakingEvaluationReadBatchQueryHandler::execute(
+        invalidClassIdRequest,
+        batchPort
+        );
+    if (!expect(!invalidClassId,
+                "A noncanonical class ID must fail batch validation.")
+        || !expect(invalidClassId.error().code == Domain::ErrorCode::InvalidInput,
+                   "An invalid batch class ID must report InvalidInput.")
+        || !expect(invalidClassId.error().message
+                       == "Class ID must be a canonical positive integer.",
+                   "An invalid batch class ID must report the common message.")
+        || !expect(invalidClassId.error().recoverable,
+                   "An invalid batch class ID must be recoverable.")
+        || !expect(batchPort.requests.empty(),
+                   "An invalid class ID must not reach the batch adapter."))
+    {
+        return false;
+    }
+
     const auto invalidRequest = SpeakingEvaluationReadBatchQueryHandler::execute(
         batchQuery({u"Winter", {}}),
         batchPort

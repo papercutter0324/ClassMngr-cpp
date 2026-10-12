@@ -1,10 +1,9 @@
 #pragma once
 
+#include "next/application/positive_decimal_id_validation.h"
 #include "next/application/speaking_evaluation_query.h"
 
-#include <charconv>
 #include <string>
-#include <system_error>
 #include <utility>
 #include <vector>
 
@@ -52,7 +51,7 @@ public:
         const SpeakingEvaluationReadBatchQuery& query
         )
     {
-        if (!isCanonicalPositiveClassId(query.classId.value()))
+        if (!isCanonicalPositiveDecimalId(query.classId.value()))
         {
             return Domain::Result<void>::failure({
                 .code = Domain::ErrorCode::InvalidInput,
@@ -135,27 +134,6 @@ private:
             .message = std::move(message),
             .recoverable = code == Domain::ErrorCode::InvalidInput
         });
-    }
-
-    [[nodiscard]] static bool isCanonicalPositiveClassId(
-        const std::string& value
-        )
-    {
-        if (value.empty() || value.front() < '1' || value.front() > '9')
-        {
-            return false;
-        }
-
-        int parsed = 0;
-        const auto [end, error] = std::from_chars(
-            value.data(),
-            value.data() + value.size(),
-            parsed
-            );
-        return error == std::errc{}
-            && end == value.data() + value.size()
-            && parsed > 0
-            && std::to_string(parsed) == value;
     }
 };
 
