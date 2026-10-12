@@ -1,12 +1,8 @@
 #pragma once
 
+#include "next/application/positive_decimal_id_validation.h"
 #include "next/domain/domain_types.h"
 #include "next/domain/operation_result.h"
-
-#include <charconv>
-#include <string>
-#include <system_error>
-#include <utility>
 
 namespace ClassMngr::Next::Application
 {
@@ -17,22 +13,7 @@ struct ClassDeleteRequest final
 
     [[nodiscard]] Domain::Result<void> validate() const
     {
-        const std::string& value = classId.value();
-        if (value.empty() || value.front() < '1' || value.front() > '9')
-        {
-            return invalidInput();
-        }
-
-        int parsed = 0;
-        const auto [end, error] = std::from_chars(
-            value.data(),
-            value.data() + value.size(),
-            parsed
-            );
-        if (error != std::errc{}
-            || end != value.data() + value.size()
-            || parsed <= 0
-            || std::to_string(parsed) != value)
+        if (!isCanonicalPositiveDecimalId(classId.value()))
         {
             return invalidInput();
         }
