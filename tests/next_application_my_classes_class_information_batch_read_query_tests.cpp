@@ -139,7 +139,7 @@ rejectsInvalidAndDuplicateClassIdsBeforePortRead()
     FakeMyClassesClassInformationBatchReadPort port;
     const Application::MyClassesClassInformationBatchReadQuery query(port);
     const std::vector<std::string> invalidIds{
-        "0", "07", "-1", "+4", " 4", "4 ", "2147483648"
+        "0", "07", "-1", "+4", " 4", "4 ", "42x", "2147483648"
     };
 
     for (const std::string& value : invalidIds)
@@ -147,11 +147,24 @@ rejectsInvalidAndDuplicateClassIdsBeforePortRead()
         const auto result = query.execute({classId(value)});
         QVERIFY(!result);
         QCOMPARE(result.error().code, Domain::ErrorCode::InvalidInput);
+        QCOMPARE(
+            result.error().message,
+            std::string(
+                "My Classes class IDs must be canonical positive integers."
+                )
+            );
+        QVERIFY(!result.error().recoverable);
     }
+    QCOMPARE(port.callCount, 0);
 
     const auto duplicate = query.execute({classId("4"), classId("4")});
     QVERIFY(!duplicate);
     QCOMPARE(duplicate.error().code, Domain::ErrorCode::InvalidInput);
+    QCOMPARE(
+        duplicate.error().message,
+        std::string("My Classes class IDs must be unique.")
+        );
+    QVERIFY(!duplicate.error().recoverable);
     QCOMPARE(port.callCount, 0);
 }
 
@@ -183,18 +196,30 @@ rejectsEntryCountAndOrderMismatch()
 void NextApplicationMyClassesClassInformationBatchReadQueryTests::
 rejectsInvalidTeacherIdInSuccessfulEntry()
 {
-    FakeMyClassesClassInformationBatchReadPort port;
-    port.result = Application::MyClassesClassInformationBatchReadResult::success({
-        successfulEntry(classId("7"), {
-            .teacherId = teacherId("019")
-        })
-    });
+    const std::vector<std::string> invalidTeacherIds{"019", "19x"};
+    for (const std::string& value : invalidTeacherIds)
+    {
+        FakeMyClassesClassInformationBatchReadPort port;
+        port.result = Application::MyClassesClassInformationBatchReadResult::success({
+            successfulEntry(classId("7"), {
+                .teacherId = teacherId(value)
+            })
+        });
 
-    const Application::MyClassesClassInformationBatchReadQuery query(port);
-    const auto result = query.execute({classId("7")});
+        const Application::MyClassesClassInformationBatchReadQuery query(port);
+        const auto result = query.execute({classId("7")});
 
-    QVERIFY(!result);
-    QCOMPARE(result.error().code, Domain::ErrorCode::Validation);
+        QVERIFY(!result);
+        QCOMPARE(result.error().code, Domain::ErrorCode::Validation);
+        QCOMPARE(
+            result.error().message,
+            std::string(
+                "A My Classes class-information batch returned an invalid teacher identifier."
+                )
+            );
+        QVERIFY(!result.error().recoverable);
+        QCOMPARE(port.callCount, 1);
+    }
 }
 
 void NextApplicationMyClassesClassInformationBatchReadQueryTests::

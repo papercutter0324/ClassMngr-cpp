@@ -143,7 +143,7 @@ rejectsInvalidAndDuplicateTeacherIdsBeforePortRead()
     FakeMyClassesTeacherProfileBatchReadPort port;
     const Application::MyClassesTeacherProfileBatchReadQuery query(port);
     const std::vector<std::string> invalidIds{
-        "0", "07", "-1", "+4", " 4", "4 ", "2147483648"
+        "0", "07", "-1", "+4", " 4", "4 ", "42x", "2147483648"
     };
 
     for (const std::string& value : invalidIds)
@@ -151,11 +151,24 @@ rejectsInvalidAndDuplicateTeacherIdsBeforePortRead()
         const auto result = query.execute({teacherId(value)});
         QVERIFY(!result);
         QCOMPARE(result.error().code, Domain::ErrorCode::InvalidInput);
+        QCOMPARE(
+            result.error().message,
+            std::string(
+                "My Classes teacher IDs must be canonical positive integers."
+                )
+            );
+        QVERIFY(!result.error().recoverable);
     }
+    QCOMPARE(port.callCount, 0);
 
     const auto duplicate = query.execute({teacherId("4"), teacherId("4")});
     QVERIFY(!duplicate);
     QCOMPARE(duplicate.error().code, Domain::ErrorCode::InvalidInput);
+    QCOMPARE(
+        duplicate.error().message,
+        std::string("My Classes teacher IDs must be unique.")
+        );
+    QVERIFY(!duplicate.error().recoverable);
     QCOMPARE(port.callCount, 0);
 }
 

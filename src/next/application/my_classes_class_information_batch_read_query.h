@@ -1,10 +1,9 @@
 #pragma once
 
 #include "next/application/my_classes_class_information_batch_read_port.h"
+#include "next/application/positive_decimal_id_validation.h"
 
-#include <charconv>
 #include <string>
-#include <system_error>
 #include <unordered_set>
 #include <utility>
 #include <vector>
@@ -30,7 +29,7 @@ public:
         seenClassIds.reserve(classIds.size());
         for (const Domain::ClassId& classId : classIds)
         {
-            if (!isCanonicalPositiveInteger(classId.value()))
+            if (!isCanonicalPositiveDecimalId(classId.value()))
             {
                 return MyClassesClassInformationBatchReadResult::failure({
                     .code = Domain::ErrorCode::InvalidInput,
@@ -83,7 +82,7 @@ public:
 
             if (entry.information
                 && entry.information.value().teacherId
-                && !isCanonicalPositiveInteger(
+                && !isCanonicalPositiveDecimalId(
                     entry.information.value().teacherId->value()
                     ))
             {
@@ -99,27 +98,6 @@ public:
     }
 
 private:
-    [[nodiscard]] static bool isCanonicalPositiveInteger(
-        const std::string& value
-        )
-    {
-        if (value.empty() || value.front() < '1' || value.front() > '9')
-        {
-            return false;
-        }
-
-        int parsed = 0;
-        const auto [end, error] = std::from_chars(
-            value.data(),
-            value.data() + value.size(),
-            parsed
-            );
-        return error == std::errc{}
-            && end == value.data() + value.size()
-            && parsed > 0
-            && std::to_string(parsed) == value;
-    }
-
     [[nodiscard]] static MyClassesClassInformationBatchReadResult
     validationFailure(std::string message)
     {
