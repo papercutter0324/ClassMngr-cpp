@@ -211,6 +211,9 @@ rejectsInvalidIdsBeforePortCall()
         const auto result = ScheduleEditorClassInfoQuery::execute(id, port);
         QVERIFY(!result);
         QCOMPARE(result.error().code, Domain::ErrorCode::InvalidInput);
+        QVERIFY(result.error().message ==
+            "Selected class identifier must be a canonical positive integer.");
+        QVERIFY(result.error().recoverable);
     }
     QCOMPARE(port.callCount, 0);
     QVERIFY(!port.lastClassId.has_value());
@@ -229,6 +232,8 @@ rejectsReturnedIdMismatch()
 
     QVERIFY(!result);
     QCOMPARE(result.error().code, Domain::ErrorCode::Validation);
+    QVERIFY(result.error().message ==
+        "The schedule editor read returned a different class identifier.");
     QVERIFY(!result.error().recoverable);
     QCOMPARE(port.callCount, 1);
     QVERIFY(port.lastClassId.has_value());
