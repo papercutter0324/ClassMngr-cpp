@@ -54,6 +54,7 @@ private slots:
     void propagatesPortFailureExactly();
     void rejectsMismatchedClassIdentity();
     void rejectsNonCanonicalIdsBeforePortCall();
+    void acceptsMaximumClassIdAndPreservesMatchedIdentity();
 };
 
 void NextApplicationClassDetailsValidationContextQueryTests::
@@ -173,7 +174,9 @@ void NextApplicationClassDetailsValidationContextQueryTests::
 rejectsNonCanonicalIdsBeforePortCall()
 {
     RecordingPort port;
-    const std::vector<std::string> values{"0", "042", "42x", "-1"};
+    const std::vector<std::string> values{
+        "0", "042", "42x", "-1", "2147483648"
+    };
     for (const std::string& value : values)
     {
         const auto result = Application::ClassDetailsValidationContextQuery::execute(
@@ -182,8 +185,37 @@ rejectsNonCanonicalIdsBeforePortCall()
             );
         QVERIFY(!result);
         QCOMPARE(result.error().code, Domain::ErrorCode::InvalidInput);
+        QCOMPARE(
+            result.error().message,
+            std::string("Class ID must be a canonical positive integer.")
+            );
+        QVERIFY(result.error().recoverable);
+        QCOMPARE(port.callCount, 0);
     }
     QCOMPARE(port.callCount, 0);
+}
+
+void NextApplicationClassDetailsValidationContextQueryTests::
+acceptsMaximumClassIdAndPreservesMatchedIdentity()
+{
+    RecordingPort port;
+    port.result = Application::ClassDetailsValidationContextPortResult::success({
+        .matchedClassId = classId("2147483647"),
+        .teacherId = 7,
+        .notes = u"maximum id",
+        .timeFillerActivities = u"activities"
+    });
+
+    const auto result = Application::ClassDetailsValidationContextQuery::execute(
+        classId("2147483647"),
+        port
+        );
+
+    QVERIFY(result);
+    QCOMPARE(port.callCount, 1);
+    QVERIFY(port.requestedClassId.has_value());
+    QCOMPARE(port.requestedClassId->value(), std::string("2147483647"));
+    QCOMPARE(result.value().matchedClassId.value(), std::string("2147483647"));
 }
 
 QTEST_APPLESS_MAIN(NextApplicationClassDetailsValidationContextQueryTests)

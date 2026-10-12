@@ -1,5 +1,6 @@
 #pragma once
 
+#include "next/application/positive_decimal_id_validation.h"
 #include "next/domain/domain_types.h"
 #include "next/domain/operation_result.h"
 #include "next/domain/schedule_time.h"
@@ -59,7 +60,7 @@ public:
         const ClassDetailsScheduleConflictPort& port
         )
     {
-        if (!isCanonicalPositiveInteger(request.classId.value()))
+        if (!isCanonicalPositiveDecimalId(request.classId.value()))
         {
             return ClassDetailsScheduleConflictResult::failure({
                 .code = Domain::ErrorCode::InvalidInput,
@@ -69,27 +70,6 @@ public:
         }
 
         return port.classDetailsScheduleConflicts(request);
-    }
-
-private:
-    [[nodiscard]] static bool isCanonicalPositiveInteger(
-        const std::string& value
-        )
-    {
-        if (value.empty() || value.front() < '1' || value.front() > '9')
-        {
-            return false;
-        }
-
-        for (const char character : value)
-        {
-            if (character < '0' || character > '9')
-            {
-                return false;
-            }
-        }
-
-        return true;
     }
 };
 

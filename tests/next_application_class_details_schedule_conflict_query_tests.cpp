@@ -65,6 +65,7 @@ private slots:
     void forwardsEmptyCandidatesWithoutSkippingThePort();
     void propagatesPortFailureExactly();
     void rejectsNonCanonicalIdsBeforePortCall();
+    void acceptsMaximumClassIdAndPreservesRequest();
 };
 
 void NextApplicationClassDetailsScheduleConflictQueryTests::
@@ -191,7 +192,9 @@ void NextApplicationClassDetailsScheduleConflictQueryTests::
 rejectsNonCanonicalIdsBeforePortCall()
 {
     RecordingPort port;
-    const std::vector<std::string> values{"0", "042", "42x", "-1"};
+    const std::vector<std::string> values{
+        "0", "042", "42x", "-1", "2147483648"
+    };
 
     for (const std::string& value : values)
     {
@@ -205,9 +208,44 @@ rejectsNonCanonicalIdsBeforePortCall()
             );
         QVERIFY(!result);
         QCOMPARE(result.error().code, Domain::ErrorCode::InvalidInput);
+        QCOMPARE(
+            result.error().message,
+            std::string("Class ID must be a canonical positive integer.")
+            );
+        QVERIFY(result.error().recoverable);
+        QVERIFY(port.requests.empty());
     }
 
     QVERIFY(port.requests.empty());
+}
+
+void NextApplicationClassDetailsScheduleConflictQueryTests::
+acceptsMaximumClassIdAndPreservesRequest()
+{
+    RecordingPort port;
+    const ClassDetailsScheduleConflictRequest request{
+        .classId = classId("2147483647"),
+        .mode = ClassDetailsScheduleMode::Intensive,
+        .candidateTimes = {
+            time(2, 12 * 60, 12 * 60 + 55),
+            time(5, 15 * 60, 15 * 60 + 55)
+        }
+    };
+    port.result = ClassDetailsScheduleConflictResult::success({});
+
+    const auto result = ClassDetailsScheduleConflictQuery::execute(
+        request,
+        port
+        );
+
+    QVERIFY(result);
+    QCOMPARE(port.requests.size(), std::size_t(1));
+    QCOMPARE(
+        port.requests.front().classId.value(),
+        std::string("2147483647")
+        );
+    QCOMPARE(port.requests.front().mode, request.mode);
+    QVERIFY(port.requests.front().candidateTimes == request.candidateTimes);
 }
 
 QTEST_APPLESS_MAIN(NextApplicationClassDetailsScheduleConflictQueryTests)
