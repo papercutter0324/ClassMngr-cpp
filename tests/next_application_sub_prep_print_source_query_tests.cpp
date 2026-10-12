@@ -153,6 +153,8 @@ private slots:
     void requestAndResultsOwnTypedValues();
     void invalidRequestsAreRejectedBeforeRead();
     void invalidWeekdaysAreRejectedBeforeRead();
+    void selectedDayValidationPreservesCountAndErrorPrecedence();
+    void acceptsMaximumSelectedDayCount();
     void emptyClassesOrDaysReturnWithoutRead();
     void forwardsExactScopePreservesPortOrderAndTeacherReferences();
     void propagatesReadPortFailure();
@@ -360,6 +362,82 @@ invalidWeekdaysAreRejectedBeforeRead()
         QVERIFY(!result.error().recoverable);
         QCOMPARE(readPort.calls, 0);
     }
+}
+
+void ClassMngrNextApplicationSubPrepPrintSourceQueryTests::
+selectedDayValidationPreservesCountAndErrorPrecedence()
+{
+    const auto verifyInvalidDays = [](
+                                   const std::vector<SubPrepWeekday>& days,
+                                   const char* expectedMessage
+                                   )
+    {
+        FakeReadPort readPort;
+        auto request = validRequest();
+        request.selectedDays = days;
+
+        const SubPrepPrintSourceQuery query(readPort);
+        const auto result = query.execute(request);
+
+        verifyError(result, ErrorCode::InvalidInput);
+        QCOMPARE(result.error().message, std::string(expectedMessage));
+        QVERIFY(!result.error().recoverable);
+        QCOMPARE(readPort.calls, 0);
+    };
+
+    verifyInvalidDays(
+        {
+            static_cast<SubPrepWeekday>(8),
+            SubPrepWeekday::Monday,
+            SubPrepWeekday::Tuesday,
+            SubPrepWeekday::Wednesday,
+            SubPrepWeekday::Thursday,
+            SubPrepWeekday::Friday,
+            SubPrepWeekday::Saturday,
+            SubPrepWeekday::Sunday
+        },
+        "Selected Sub Prep days exceed the weekly limit."
+        );
+    verifyInvalidDays(
+        {
+            SubPrepWeekday::Monday,
+            static_cast<SubPrepWeekday>(8),
+            static_cast<SubPrepWeekday>(8)
+        },
+        "A selected Sub Prep weekday is invalid."
+        );
+    verifyInvalidDays(
+        {
+            SubPrepWeekday::Monday,
+            SubPrepWeekday::Tuesday,
+            SubPrepWeekday::Monday
+        },
+        "Selected Sub Prep weekdays must be unique."
+        );
+}
+
+void ClassMngrNextApplicationSubPrepPrintSourceQueryTests::
+acceptsMaximumSelectedDayCount()
+{
+    FakeReadPort readPort;
+    readPort.result = SubPrepPrintSourceReadResult::success(validInput());
+    auto request = validRequest();
+    request.selectedDays = {
+        SubPrepWeekday::Monday,
+        SubPrepWeekday::Tuesday,
+        SubPrepWeekday::Wednesday,
+        SubPrepWeekday::Thursday,
+        SubPrepWeekday::Friday,
+        SubPrepWeekday::Saturday,
+        SubPrepWeekday::Sunday
+    };
+
+    const SubPrepPrintSourceQuery query(readPort);
+    const auto result = query.execute(request);
+
+    QVERIFY(result);
+    QCOMPARE(readPort.calls, 1);
+    QVERIFY(readPort.lastRequest == request);
 }
 
 void ClassMngrNextApplicationSubPrepPrintSourceQueryTests::

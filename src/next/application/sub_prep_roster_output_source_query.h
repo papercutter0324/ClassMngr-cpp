@@ -2,6 +2,7 @@
 
 #include "next/application/schedule_view_projection.h"
 #include "next/application/sub_prep_print_source_query.h"
+#include "next/application/sub_prep_selected_days_validation.h"
 #include "next/application/sub_prep_source_validation.h"
 #include "next/application/sub_prep_weekday.h"
 #include "next/domain/domain_types.h"
@@ -237,28 +238,24 @@ template <typename TypedId>
         }
     }
 
-    if (request.selectedDays.size() > kSubPrepPrintSourceMaxSelectedDays)
+    switch (validateSubPrepSelectedDays(request.selectedDays))
     {
-        return Domain::Result<void>::failure(
-            invalidInput("Selected roster-output days exceed the weekly limit.")
-            );
-    }
-
-    std::set<SubPrepWeekday> selectedDays;
-    for (const auto day : request.selectedDays)
-    {
-        if (!isValidSubPrepWeekday(day))
-        {
+        case SubPrepSelectedDaysValidationStatus::Valid:
+            break;
+        case SubPrepSelectedDaysValidationStatus::ExceedsWeeklyLimit:
+            return Domain::Result<void>::failure(
+                invalidInput(
+                    "Selected roster-output days exceed the weekly limit."
+                    )
+                );
+        case SubPrepSelectedDaysValidationStatus::InvalidWeekday:
             return Domain::Result<void>::failure(
                 invalidInput("A selected roster-output weekday is invalid.")
                 );
-        }
-        if (!selectedDays.insert(day).second)
-        {
+        case SubPrepSelectedDaysValidationStatus::DuplicateWeekday:
             return Domain::Result<void>::failure(
                 invalidInput("Selected roster-output weekdays must be unique.")
                 );
-        }
     }
 
     if (!isValidScheduleViewMode(request.mode))

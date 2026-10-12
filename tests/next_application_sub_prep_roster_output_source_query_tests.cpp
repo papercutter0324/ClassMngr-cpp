@@ -154,6 +154,8 @@ private slots:
     void requestAndSourceOwnTypedBoundedValues();
     void invalidRequestsAreRejectedBeforeRead();
     void invalidWeekdaysAreRejectedBeforeRead();
+    void selectedDayValidationPreservesCountAndErrorPrecedence();
+    void acceptsMaximumSelectedDayCount();
     void acceptsMaximumIdentifierLength();
     void emptyScopeReturnsWithoutRead();
     void forwardsExactScopeAndPreservesSourceOrder();
@@ -288,6 +290,82 @@ invalidWeekdaysAreRejectedBeforeRead()
         QVERIFY(!result.error().recoverable);
         QCOMPARE(readPort.calls, 0);
     }
+}
+
+void ClassMngrNextApplicationSubPrepRosterOutputSourceQueryTests::
+selectedDayValidationPreservesCountAndErrorPrecedence()
+{
+    const auto verifyInvalidDays = [](
+                                   const std::vector<SubPrepWeekday>& days,
+                                   const char* expectedMessage
+                                   )
+    {
+        FakeReadPort readPort;
+        auto request = validRequest();
+        request.selectedDays = days;
+
+        SubPrepRosterOutputSourceQuery query(readPort);
+        const auto result = query.execute(request);
+
+        verifyError(result, ErrorCode::InvalidInput);
+        QCOMPARE(result.error().message, std::string(expectedMessage));
+        QVERIFY(!result.error().recoverable);
+        QCOMPARE(readPort.calls, 0);
+    };
+
+    verifyInvalidDays(
+        {
+            static_cast<SubPrepWeekday>(8),
+            SubPrepWeekday::Monday,
+            SubPrepWeekday::Tuesday,
+            SubPrepWeekday::Wednesday,
+            SubPrepWeekday::Thursday,
+            SubPrepWeekday::Friday,
+            SubPrepWeekday::Saturday,
+            SubPrepWeekday::Sunday
+        },
+        "Selected roster-output days exceed the weekly limit."
+        );
+    verifyInvalidDays(
+        {
+            SubPrepWeekday::Monday,
+            static_cast<SubPrepWeekday>(8),
+            static_cast<SubPrepWeekday>(8)
+        },
+        "A selected roster-output weekday is invalid."
+        );
+    verifyInvalidDays(
+        {
+            SubPrepWeekday::Monday,
+            SubPrepWeekday::Tuesday,
+            SubPrepWeekday::Monday
+        },
+        "Selected roster-output weekdays must be unique."
+        );
+}
+
+void ClassMngrNextApplicationSubPrepRosterOutputSourceQueryTests::
+acceptsMaximumSelectedDayCount()
+{
+    FakeReadPort readPort;
+    setInput(readPort, validInput());
+    auto request = validRequest();
+    request.selectedDays = {
+        SubPrepWeekday::Monday,
+        SubPrepWeekday::Tuesday,
+        SubPrepWeekday::Wednesday,
+        SubPrepWeekday::Thursday,
+        SubPrepWeekday::Friday,
+        SubPrepWeekday::Saturday,
+        SubPrepWeekday::Sunday
+    };
+
+    SubPrepRosterOutputSourceQuery query(readPort);
+    const auto result = query.execute(request);
+
+    QVERIFY(result);
+    QCOMPARE(readPort.calls, 1);
+    QVERIFY(readPort.lastRequest == request);
 }
 
 void ClassMngrNextApplicationSubPrepRosterOutputSourceQueryTests::

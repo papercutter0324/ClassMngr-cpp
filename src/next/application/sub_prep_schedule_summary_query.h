@@ -2,6 +2,7 @@
 
 #include "next/application/class_summary_projection.h"
 #include "next/application/schedule_view_projection.h"
+#include "next/application/sub_prep_selected_days_validation.h"
 #include "next/application/sub_prep_source_validation.h"
 #include "next/application/sub_prep_weekday.h"
 
@@ -228,29 +229,24 @@ private:
             }
         }
 
-        if (request.selectedDays.size() > 7)
+        switch (validateSubPrepSelectedDays(request.selectedDays))
         {
-            return Domain::Result<void>::failure(
-                invalidInput("Selected Sub Prep days exceed the weekly limit.")
-                );
-        }
-
-        std::set<SubPrepWeekday> selectedDays;
-        for (const auto day : request.selectedDays)
-        {
-            if (!isValidSubPrepWeekday(day))
-            {
+            case SubPrepSelectedDaysValidationStatus::Valid:
+                break;
+            case SubPrepSelectedDaysValidationStatus::ExceedsWeeklyLimit:
+                return Domain::Result<void>::failure(
+                    invalidInput(
+                        "Selected Sub Prep days exceed the weekly limit."
+                        )
+                    );
+            case SubPrepSelectedDaysValidationStatus::InvalidWeekday:
                 return Domain::Result<void>::failure(
                     invalidInput("A selected Sub Prep weekday is invalid.")
                     );
-            }
-
-            if (!selectedDays.insert(day).second)
-            {
+            case SubPrepSelectedDaysValidationStatus::DuplicateWeekday:
                 return Domain::Result<void>::failure(
                     invalidInput("Selected Sub Prep weekdays must be unique.")
                     );
-            }
         }
 
         if (!isValidScheduleViewMode(request.mode))
