@@ -53,12 +53,12 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current state - 2026-10-12 (F715 accepted; F716 selected)
+### Current state - 2026-10-12 (F716 accepted; F717 selected)
 
 Phase 2 remains In Progress/Open under deployment
 `phase2_f417_resume_20261009`, Heavy route; Gates 1 and 2 remain Partial.
 Batches 141-178 are complete with F707 and F709 deferred; Batch 179 is active
-with F716, the ClassTabNavigationModel weekday-order parser migration.
+with F717, the SubPrepClassInformation weekday-order parser migration.
 F689-F693 are complete;
 their acceptance details and commit hashes are recorded in the Phase 2
 progress log. F694 is committed as b1654499e391656b0e7abb5625a1e1af293bc5bb;
@@ -186,20 +186,30 @@ Application query returns only two valid conflicts in repository order. The
 first CTest attempt failed in fixture setup through the validating service;
 repository persistence fixed the fixture, and the final test passed. The
 Developer environment printed a `vswhere.exe` recognition warning. No full
-suite ran. F716 selects `dayOrder` in
-`class_tab_navigation_model.cpp`. Reuse `ScheduleValueParser::parseWeekday`
-but require its canonical text to equal the already-trimmed input, preserving
-the current case-sensitive behavior: padded canonical weekdays remain
-accepted, while lowercase and unknown spellings retain `UnknownOrder` (1000)
-and sort last. Add public
-`ClassTabNavigation::build` ordering cases for padded canonical and
-lowercase/unknown weekdays alongside the existing navigation-model tests.
-The target already directly compiles `schedule_value_parser.cpp`; no CMake
-change is needed. Build `ClassMngr` and
-`ClassMngrClassTabNavigationModelTests`, then run only the exact registered
-CTest of that name. F707 remains deferred because its comparator chain has
-no observed app callsite; F709 is deferred because its public fixture does
-not readily supply malformed raw time text.
+suite ran. F716 is committed as `6fb6120a`. It migrates
+`ClassTabNavigationModel::dayOrder` through `ScheduleValueParser::parseWeekday`
+while preserving case-sensitive matching after trim and the `UnknownOrder`
+(1000) last-place fallback. `ClassMngr` and
+`ClassMngrClassTabNavigationModelTests` built in the Windows x64 Debug Ninja
+tree under VS 2026 x64 Developer; the exact registered CTest passed 1/1
+(0.04 seconds). The public `ClassTabNavigation::build` cases verify padded
+canonical weekday order and that lowercase/unknown weekdays follow canonical
+days. The Developer environment printed a `vswhere.exe` recognition warning;
+no full suite ran. F717 selects `SubPrepClassInformation::dayOrder` in
+`src/features/sub_prep/ui/sub_prep_class_information_model.cpp`. Reuse
+`ScheduleValueParser::parseWeekday` and require canonical text to equal the
+trimmed input, retaining case-sensitive weekday ordering and the existing
+`std::numeric_limits<int>::max()` fallback. Preserve exact-spelling weekday
+abbreviations and trimmed fallback labels. Test via the public
+`formatMeetingTimes` seam, including padded and lowercase spellings in
+`visibleDays` because filtering compares raw values; verify padded Monday
+orders canonically but retains the `Monday` fallback label, while lowercase
+`monday` remains unknown and keeps its lowercase label. The target already
+directly compiles `schedule_value_parser.cpp`; no CMake change is needed.
+Build `ClassMngr` and `ClassMngrSubPrepClassInformationModelTests`, then run
+only the exact registered CTest of that name. F707 remains deferred because
+its comparator chain has no observed app callsite; F709 is deferred because
+its public fixture does not readily supply malformed raw time text.
 The current-source Phase 0
 evidence remains Windows x64 2/24 and macOS universal 0/24; it is separate
 from the historical Phase 0 closure described above. F625 remains accepted

@@ -26833,4 +26833,54 @@ existing trimmed, case-sensitive weekday ordering behavior.
    `ClassMngr` and that target; run only the exact registered CTest
    `ClassMngrClassTabNavigationModelTests`. Run no full suite.
 
-This matrix is recorded before implementation. Batch 179 is active with F716.
+This matrix was recorded before implementation.
+
+### F716 Class Tab Navigation weekday-order parser migration - accepted - 2026-10-12
+
+F716 is accepted at source/test commit `6fb6120a`. The change is limited to
+`src/features/classes/models/class_tab_navigation_model.cpp` and focused
+coverage in `tests/class_tab_navigation_model_tests.cpp`. `dayOrder` now uses
+`ScheduleValueParser::parseWeekday` and requires its canonical text to match
+the trimmed input. Padded canonical weekday names remain accepted; lowercase
+and unknown weekdays retain the existing `UnknownOrder` value (1000) and sort
+last.
+
+`ClassMngr` and `ClassMngrClassTabNavigationModelTests` built successfully in
+`build/windows-x64-debug-ninja` under VS 2026 x64 Developer. The exact
+registered CTest `ClassMngrClassTabNavigationModelTests` passed 1/1 in 0.04
+seconds, and `git diff --check` passed. Developer-environment initialization
+printed a `vswhere.exe` recognition warning. No full suite ran.
+
+**Decision: accept F716.** Batch 179 continues with F717; F707 and F709 remain
+deferred.
+
+### Batch 179 continuation - F717 selection and acceptance matrix - recorded before implementation - 2026-10-12
+
+Select `dayOrder` in
+`src/features/sub_prep/ui/sub_prep_class_information_model.cpp`. It affects
+meeting and class ordering. The existing logic trims and performs
+case-sensitive weekday matching, with `std::numeric_limits<int>::max()` as
+the fallback. `dayAbbreviation` also matches exact spelling, and the
+presentation formatter filters with exact `visibleDays.contains(source.day)`.
+
+**F717 is selected:** reuse the Domain weekday parser while preserving trimmed,
+case-sensitive ordering, labels, abbreviations, and visible-day filtering.
+
+1. Migrate only `dayOrder` to `ScheduleValueParser::parseWeekday`, requiring
+   `parsed->text == trimmed`. Preserve the current max-int fallback on parse
+   failure or canonical mismatch.
+2. Preserve exact-spelling `dayAbbreviation` behavior and trimmed fallback
+   labels. Keep exact visible-day filtering; tests must include the raw padded
+   and lowercase strings in `visibleDays` so both inputs reach the ordering
+   and label projections.
+3. Extend `formatsSharedAndDifferentMeetingTimes` or nearby public test cases
+   with padded canonical Monday and lowercase `monday` alongside canonical
+   days. Verify padded Monday sorts as Monday and keeps label `Monday`, while
+   lowercase `monday` remains unknown and keeps label `monday`. Avoid tie
+   assertions among unknown days.
+4. `ClassMngrSubPrepClassInformationModelTests` already compiles the parser, so
+   no CMake change is needed. Build `ClassMngr` and that target; run only the
+   exact registered CTest `ClassMngrSubPrepClassInformationModelTests`. Run no
+   full suite.
+
+This matrix is recorded before implementation. Batch 179 is active with F717.
