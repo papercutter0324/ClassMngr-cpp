@@ -3,6 +3,7 @@
 #include "data/database/database_transaction.h"
 #include "data/database/sql_query_utils.h"
 #include "domain/models/classroom.h"
+#include "domain/rules/schedule_value_parser.h"
 
 #include <QDebug>
 #include <QHash>
@@ -12,6 +13,7 @@
 #include <QSet>
 #include <QStringList>
 
+#include <array>
 #include <limits>
 
 namespace
@@ -90,19 +92,23 @@ int timeToMinutes(
         return -1;
     }
 
-    if (period == "AM")
+    const QString normalizedTime = QStringLiteral("%1:%2 %3")
+        .arg(hour)
+        .arg(minute, 2, 10, QLatin1Char('0'))
+        .arg(period);
+    constexpr std::array allowedFormats{
+        ScheduleValueParser::DisplayTimeFormat::HourMinuteAmPmSpaced
+    };
+    const auto parsed = ScheduleValueParser::parseDisplayTime(
+        normalizedTime,
+        allowedFormats
+        );
+    if (!parsed)
     {
-        if (hour == 12)
-        {
-            hour = 0;
-        }
-    }
-    else if (hour != 12)
-    {
-        hour += 12;
+        return -1;
     }
 
-    return hour * 60 + minute;
+    return parsed->hour() * 60 + parsed->minute();
 }
 
 bool toInterval(

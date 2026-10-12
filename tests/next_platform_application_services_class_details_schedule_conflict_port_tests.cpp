@@ -151,22 +151,49 @@ readsRegularAndIntensiveConflictsAndPreservesRepositoryOrder()
     QVERIFY(target > 0);
     QVERIFY(source > 0);
     QVERIFY(intensiveSource > 0);
-    QVERIFY(saveClassTimes(
-        services,
-        source,
-        {
-            legacyTime(
-                QStringLiteral("Monday"),
-                QStringLiteral("9:00 AM"),
-                QStringLiteral("9:55 AM")
-                ),
-            legacyTime(
-                QStringLiteral("Tuesday"),
-                QStringLiteral("10:00 AM"),
-                QStringLiteral("10:55 AM")
-                )
-        }
-        ));
+    DatabaseSession* const session = services.databaseSession();
+    QVERIFY(session && session->isOpen());
+    ClassInfoRepository* const repository = session->classInfoRepository();
+    QVERIFY(repository);
+
+    auto sourceInfo = services.classService()->classInfo(source);
+    QVERIFY(sourceInfo);
+    sourceInfo->classTimes = {
+        legacyTime(
+            QStringLiteral("Monday"),
+            QStringLiteral("9:0 AM"),
+            QStringLiteral("9:55 AM")
+            ),
+        legacyTime(
+            QStringLiteral("Tuesday"),
+            QStringLiteral("10:00   AM"),
+            QStringLiteral("10:55 AM")
+            ),
+        // This would overlap the Monday candidate if the malformed end
+        // time were accepted.
+        legacyTime(
+            QStringLiteral("Monday"),
+            QStringLiteral("9:05 AM"),
+            QStringLiteral("9:35 A M")
+            )
+    };
+    const auto savedSourceInfo = repository->saveClassInfo(*sourceInfo);
+    QVERIFY(savedSourceInfo);
+    const auto persistedSourceInfo = repository->loadClassInfo(source);
+    QVERIFY(persistedSourceInfo);
+    QCOMPARE(persistedSourceInfo->classTimes.size(), 3);
+    QCOMPARE(
+        persistedSourceInfo->classTimes.at(0).startTime,
+        QStringLiteral("9:0 AM")
+        );
+    QCOMPARE(
+        persistedSourceInfo->classTimes.at(1).startTime,
+        QStringLiteral("10:00   AM")
+        );
+    QCOMPARE(
+        persistedSourceInfo->classTimes.at(2).endTime,
+        QStringLiteral("9:35 A M")
+        );
     QVERIFY(saveClassTimes(
         services,
         intensiveSource,
@@ -179,11 +206,6 @@ readsRegularAndIntensiveConflictsAndPreservesRepositoryOrder()
                 )
         }
         ));
-
-    DatabaseSession* const session = services.databaseSession();
-    QVERIFY(session && session->isOpen());
-    ClassInfoRepository* const repository = session->classInfoRepository();
-    QVERIFY(repository);
 
     const std::vector<Domain::ScheduleTime> regularCandidates{
         domainTime(1, 10 * 60 + 15, 11 * 60),
