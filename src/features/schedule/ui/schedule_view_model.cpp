@@ -1,11 +1,10 @@
 #include "schedule_view_model.h"
 
+#include "domain/rules/schedule_value_parser.h"
 #include "features/schedule/ui/schedule_time_formatter.h"
 #include "next/domain/course.h"
 
 #include <algorithm>
-
-#include <QTime>
 
 namespace
 {
@@ -15,14 +14,12 @@ bool isRegularEarlyEmptySlot(
     const QString& timeLabel
     )
 {
-    const QTime time =
-        QTime::fromString(
-            timeLabel,
-            QStringLiteral("HH:mm")
-            );
+    const auto parsedTime =
+        ScheduleValueParser::parseTime(timeLabel);
 
-    return time.isValid()
-        && time.hour() <= RegularEarlyEmptyFinalHour;
+    return parsedTime
+        && parsedTime->text == timeLabel
+        && parsedTime->value.hour() <= RegularEarlyEmptyFinalHour;
 }
 
 bool rowHasVisibleContent(

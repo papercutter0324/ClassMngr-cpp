@@ -141,7 +141,31 @@ void SchedulePrintModelTests::slotDefaultsMatchRegularAndIntensiveModes()
     QCOMPARE(
         scheduleDefaultSlotState(
             QStringLiteral("Monday"),
+            QStringLiteral("15:55"),
+            false
+            ),
+        scheduleEmptySlotState()
+        );
+    QCOMPARE(
+        scheduleDefaultSlotState(
+            QStringLiteral("Monday"),
             QStringLiteral("16:00"),
+            false
+            ),
+        scheduleEssaySlotState()
+        );
+    QCOMPARE(
+        scheduleDefaultSlotState(
+            QStringLiteral("Monday"),
+            QStringLiteral("not-a-time"),
+            false
+            ),
+        scheduleEssaySlotState()
+        );
+    QCOMPARE(
+        scheduleDefaultSlotState(
+            QStringLiteral("Monday"),
+            QStringLiteral(" 15:00 "),
             false
             ),
         scheduleEssaySlotState()
