@@ -1,6 +1,7 @@
 #include "calendar_event_dialog.h"
 
 #include "core/fontmanager.h"
+#include "domain/rules/schedule_value_parser.h"
 #include "domain/validation/calendar_event_validator.h"
 #include "ui/shared/constants/gui_constants.h"
 #include "ui/shared/utils/widget_sizing.h"
@@ -27,6 +28,7 @@
 #include <QTimeEdit>
 #include <QVBoxLayout>
 
+#include <array>
 #include <string>
 #include <utility>
 
@@ -47,6 +49,26 @@ QString draftText(
         value.data(),
         static_cast<qsizetype>(value.size())
         );
+}
+
+QTime draftTime(
+    const std::string& value
+    )
+{
+    constexpr std::array timeFormats{
+        ScheduleValueParser::DisplayTimeFormat::PaddedHourMinute24Hour
+    };
+
+    const QString text = draftText(value);
+    if (text != text.trimmed())
+    {
+        return {};
+    }
+
+    const auto parsed =
+        ScheduleValueParser::parseDisplayTime(text, timeFormats);
+
+    return parsed ? *parsed : QTime{};
 }
 
 CalendarEvent legacyEventFromDraft(
@@ -83,17 +105,11 @@ CalendarEvent legacyEventFromDraft(
 
     if (draft.startTime)
     {
-        event.startTime = QTime::fromString(
-            draftText(*draft.startTime),
-            QStringLiteral("HH:mm")
-            );
+        event.startTime = draftTime(*draft.startTime);
     }
     if (draft.endTime)
     {
-        event.endTime = QTime::fromString(
-            draftText(*draft.endTime),
-            QStringLiteral("HH:mm")
-            );
+        event.endTime = draftTime(*draft.endTime);
     }
 
     return event;

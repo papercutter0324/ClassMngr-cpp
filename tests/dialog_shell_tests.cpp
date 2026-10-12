@@ -142,6 +142,7 @@ private slots:
     void persistsGeometryByStableDialogKey();
     void calendarEventDialogsExposeUntargetedKeyboard();
     void calendarEventDialogMapsTypedEditDraft();
+    void calendarEventDialogRejectsInvalidTypedDraftTimes();
     void calendarEventDialogAppliesTypedDefaults();
     void calendarEventDialogShowsInlineValidation();
 
@@ -471,6 +472,76 @@ void DialogShellTests::calendarEventDialogMapsTypedEditDraft()
     QCOMPARE(unconfirmedEndTime->time(), QTime(10, 0));
     QVERIFY(!unconfirmedStartTime->isEnabled());
     QVERIFY(!unconfirmedEndTime->isEnabled());
+}
+
+void DialogShellTests::calendarEventDialogRejectsInvalidTypedDraftTimes()
+{
+    const auto verifyTimes = [](
+        const CalendarEventEditDraft& draft,
+        const QTime& expectedStart,
+        const QTime& expectedEnd,
+        const std::string& expectedStartText,
+        const std::string& expectedEndText
+        )
+    {
+        CalendarEventDialog dialog(draft, true, true);
+        auto* startTime = dialog.findChild<QTimeEdit*>(
+            QStringLiteral("calendarEventStartTimeEdit")
+            );
+        auto* endTime = dialog.findChild<QTimeEdit*>(
+            QStringLiteral("calendarEventEndTimeEdit")
+            );
+        QVERIFY(startTime);
+        QVERIFY(endTime);
+        QCOMPARE(startTime->time(), expectedStart);
+        QCOMPARE(endTime->time(), expectedEnd);
+
+        const auto result = dialog.eventData();
+        QVERIFY(result.startTime.has_value());
+        QVERIFY(result.endTime.has_value());
+        QCOMPARE(result.startTime.value(), expectedStartText);
+        QCOMPARE(result.endTime.value(), expectedEndText);
+    };
+
+    CalendarEventEditDraft paddedStart = timedCalendarEventDraft();
+    paddedStart.startTime = " 09:15 ";
+    verifyTimes(
+        paddedStart,
+        QTime(9, 0),
+        QTime(10, 45),
+        "09:00",
+        "10:45"
+        );
+
+    CalendarEventEditDraft malformedStart = timedCalendarEventDraft();
+    malformedStart.startTime = "not-a-time";
+    verifyTimes(
+        malformedStart,
+        QTime(9, 0),
+        QTime(10, 45),
+        "09:00",
+        "10:45"
+        );
+
+    CalendarEventEditDraft paddedEnd = timedCalendarEventDraft();
+    paddedEnd.endTime = " 10:45 ";
+    verifyTimes(
+        paddedEnd,
+        QTime(9, 15),
+        QTime(10, 0),
+        "09:15",
+        "10:00"
+        );
+
+    CalendarEventEditDraft malformedEnd = timedCalendarEventDraft();
+    malformedEnd.endTime = "not-a-time";
+    verifyTimes(
+        malformedEnd,
+        QTime(9, 15),
+        QTime(10, 0),
+        "09:15",
+        "10:00"
+        );
 }
 
 void DialogShellTests::calendarEventDialogAppliesTypedDefaults()
