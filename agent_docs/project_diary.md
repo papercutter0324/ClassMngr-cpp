@@ -4259,14 +4259,22 @@ passed 1/1. Public wizard-flow cases reject padded end and malformed start
 values, retain the blank class after failure, and confirm no details or
 schedule writes. No full suite ran.
 
-F705 is selected in Batch 178 for `writeIntensiveSlotStates` in the Schedule
-Import repository. Migrate only the raw `HH:mm` time conversion to the
-explicit padded 24-hour Domain parser with a raw-whitespace guard. Preserve
-exact weekday and state validation, duplicate raw day/time detection, error
-message, original string persistence, and transaction rollback. The public
-`ScheduleImportRepository::apply` seam can verify canonical persistence and
-reject padded, AM/PM, seconds and malformed values while retaining the prior
-seeded slot rows. Characterize one-digit-hour input against the existing Qt
-`HH:mm` parser; add no hour-width restriction. The parser is already linked to
-`ClassMngrScheduleImportTests`; no CMake change is expected. The acceptance
-matrix is recorded before implementation in the Phase 2 progress log.
+F705 is accepted and committed as
+`102a47332711ca680f4968ba9b58979d8b0ad9cb`. `ClassMngr` and
+`ClassMngrScheduleImportTests` built in the Windows x64 Debug Ninja tree
+under the VS 2026 x64 Developer environment; exact CTest passed 1/1 after
+correcting a test-fixture encoding issue. Public apply tests cover canonical
+verbatim persistence, whitespace/AM-PM/seconds/malformed rejection with
+rollback, and existing Qt `HH:mm` behavior for a one-digit hour. No full
+suite ran.
+
+F706 is selected in Batch 178 for `eventFromQuery` in the Calendar Event
+repository. Migrate only the start/end time columns to the explicit
+`PaddedHourMinute24Hour` Domain format with a raw-whitespace guard. Preserve
+invalid-QTime fallback, date parsing, repeat-series trimming and all other
+field mappings. Use `getCalendarEvent` to verify canonical round-trip and
+padded/malformed stored values while checking other event fields remain
+intact. Its test target does not yet link the parser source, so add
+`schedule_value_parser.cpp` there if required. The focused target is
+`ClassMngrCalendarEventRepositoryTests`; the matrix is recorded before
+implementation in the Phase 2 progress log.

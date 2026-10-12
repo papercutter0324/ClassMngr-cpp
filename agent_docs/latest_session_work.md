@@ -4,8 +4,8 @@
 
 - Deployment: `phase2_f417_resume_20261009`; Heavy route; resumed 2026-10-12.
 - Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial. Batches
-  141-177 are complete; Batch 178 has F703 and F704 complete and is active
-  with F705.
+  141-177 are complete; Batch 178 has F703-F705 complete and is active with
+  F706.
   F625's assessment is
   accepted and F626 remains deferred.
 - F693 roster display-time grammar migration is accepted and committed as
@@ -86,17 +86,23 @@
   existing Windows x64 Debug Ninja tree under VS 2026 x64 Developer; the
   exact CTest passed 1/1. Padded end and malformed start cases verify a
   retained blank class with no details or schedule writes. No full suite ran.
-- F705 is selected for the intensive-slot parser in
-  `writeIntensiveSlotStates`. Use only the explicit padded `HH:mm` format and
-  a raw-whitespace guard; preserve verbatim database values, weekday/state/
-  duplicate-key checks, error behavior and transaction rollback. Public apply
-  tests should keep canonical `09:00` persistence and reject padded, AM/PM,
-  seconds and malformed input while preserving prior rows. Characterize a
-  one-digit-hour value against the existing Qt `HH:mm` parser; add no hour-
-  width restriction.
-  `ClassMngrScheduleImportTests` already links the Domain parser; build that
-  target with `ClassMngr` and run only its exact CTest. The pre-implementation
-  matrix is in the Phase 2 progress log.
+- F705 Schedule Import intensive-slot parsing is committed as
+  `102a47332711ca680f4968ba9b58979d8b0ad9cb`. `ClassMngr` and
+  `ClassMngrScheduleImportTests` built in the Windows x64 Debug Ninja tree
+  under VS 2026 x64 Developer; the exact CTest passed 1/1 after correcting a
+  test-fixture encoding issue. Tests preserve canonical `09:00`, reject
+  whitespace, AM/PM, seconds and malformed values with database rollback,
+  and match existing Qt `HH:mm` behavior for one-digit hours. No full suite
+  ran.
+- F706 is selected for the `eventFromQuery` mapper in
+  `calendar_event_repository.cpp`. Parse only `start_time` and `end_time`
+  with singleton `PaddedHourMinute24Hour` plus a raw-whitespace guard;
+  preserve invalid-QTime fallback and all other mappings. Cover canonical
+  round-trip and invalid/padded stored values with `getCalendarEvent`, keeping
+  other event fields intact. Add `schedule_value_parser.cpp` to
+  `ClassMngrCalendarEventRepositoryTests` if needed; build it with `ClassMngr`
+  and run only its exact CTest. The pre-implementation matrix is in the Phase
+  2 progress log.
 - Phase 0 evidence remains Windows x64 2/24 and macOS universal 0/24; these
   slices add no route evidence. Preserve the existing unrelated untracked
   %SystemDrive%/, Windows Performance Analyzer/, and txt paths.

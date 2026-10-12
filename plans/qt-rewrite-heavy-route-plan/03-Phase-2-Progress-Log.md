@@ -26373,3 +26373,56 @@ behavior.
    full suite.
 
 This matrix is recorded before implementation. Batch 178 is active with F705.
+
+### F705 Schedule Import intensive-slot time parser migration - accepted - 2026-10-12
+
+F705 is accepted at code/test commit
+`102a47332711ca680f4968ba9b58979d8b0ad9cb`. `ClassMngr` and
+`ClassMngrScheduleImportTests` built in the existing
+`build/windows-x64-debug-ninja` tree under the VS 2026 x64 Developer
+environment; the exact CTest passed 1/1. The first fixture attempt failed
+early because of source encoding; the fixture was corrected, then the final
+build and test passed. QTest reported unavailable `vswhere.exe`. No full suite
+ran.
+
+**Decision: accept F705.** Batch 178 continues with F706.
+
+### F706 Calendar Event repository query time parser migration selection and acceptance matrix - recorded before implementation - 2026-10-12
+
+F706 is selected from Batch 178's ordered shortlist: migrate the two time
+columns in `eventFromQuery` in
+`src/data/repositories/calendar_event_repository.cpp`. Preserve all other
+query-to-event mappings and the existing invalid-time fallback; this is a
+bounded parser reuse with no broad behavior change.
+
+1. Migrate only `start_time` and `end_time` parsing from raw
+   `QTime::fromString(..., "HH:mm")` to
+   `ScheduleValueParser::parseDisplayTime` with the singleton allowlist
+   `PaddedHourMinute24Hour`. Require the raw value to equal its trimmed value
+   before accepting a parse because the shared parser trims. Preserve exact
+   Qt `HH:mm` compatibility, including invalid values remaining invalid
+   `QTime`s without failing the row.
+2. Preserve ISO date parsing, `repeat_series_id` trimming, `all_day`,
+   `time_status`, and every other mapping. Do not change row failure behavior
+   or broaden accepted time formats.
+3. Focus `getCalendarEvent` coverage on canonical round-trip plus directly
+   stored padded and malformed time values. Each invalid corresponding time
+   must remain invalid while the other event fields remain intact.
+4. `ClassMngrCalendarEventRepositoryTests` compiles the repository source but
+   does not currently compile the parser source; add the parser `.cpp` to that
+   target if needed. Build `ClassMngr` and
+   `ClassMngrCalendarEventRepositoryTests`; run only that exact CTest. Run no
+   full suite.
+
+This matrix is recorded before implementation. Batch 178 is active with F706.
+
+### Batch 178 remaining shortlist after F705 acceptance
+
+1. **Selected: Calendar Event repository `eventFromQuery`** - migrate only
+   start/end time parsing, preserving query conversion behavior.
+2. Sidebar controller `timeOrder`.
+3. Calendar Event dialog legacy draft parser.
+4. Calendar Page canonical `projectionTime`.
+5. Schedule-print service time parser.
+6. Next Calendar Event application-port conversion family.
+7. Next Sub Prep schedule-summary parsing/formatting pair.
