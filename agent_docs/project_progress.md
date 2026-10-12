@@ -53,12 +53,12 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current state - 2026-10-12 (F726 accepted; F727 selected)
+### Current state - 2026-10-12 (F727 accepted; F728 selected)
 
 Phase 2 remains In Progress/Open under deployment
 `phase2_f417_resume_20261009`, Heavy route; Gates 1 and 2 remain Partial.
 Batches 141-178 are complete with F707 and F709 deferred; Batch 179 is active
-with F727, the Sub Prep page weekday-mapping migration.
+with F728, the Schedule Import meeting-weekday parser migration.
 F689-F693 are complete;
 their acceptance details and commit hashes are recorded in the Phase 2
 progress log. F694 is committed as b1654499e391656b0e7abb5625a1e1af293bc5bb;
@@ -300,19 +300,27 @@ noncanonical weekday rows from reaching this helper through the public port.
 `ClassMngr` and `ClassMngrNextPlatformApplicationServicesSubPrepPrintSourcePortTests`
 built; the exact CTest passed 1/1. No full suite ran.
 
-F727 selects `weekdayFor` in
-`src/features/sub_prep/ui/sub_prep_page_class_information.cpp`. Reuse
-`ScheduleValueParser::parseWeekday` only when the returned canonical text
-matches the raw input, and map to the corresponding `SubPrepWeekday` enum
-value. Preserve first-seen order and deduplication in schedule scope requests
-and the existing invalid print-selection message. Add a public page test with
-preview days `Monday`, `monday`, ` Monday `, `Tuesday`, and repeated `Monday`;
-assert the captured request contains only Monday and Tuesday, once each and
-in first-seen order. Build `ClassMngr` and `ClassMngrSubPrepPageTests`; run
-only that exact registered CTest. No CMake change is needed and no full suite
-will run. F707 remains deferred because its comparator chain has no observed
-app callsite; F709 is deferred because its public fixture does not readily
-supply malformed raw time text.
+F727 is accepted and committed as
+`85f5b5ce22c13b93c75a80766f18968d33687e4f`. Sub Prep page weekday mapping now
+uses `ScheduleValueParser::parseWeekday` with exact canonical-text matching
+and explicit mapping to `SubPrepWeekday`. The page test injects `monday`,
+` Monday `, `Tuesday`, `Monday`, `Tuesday` and confirms only Tuesday then
+Monday reach the summary request, preserving first-seen order and
+deduplication. `ClassMngr` and `ClassMngrSubPrepPageTests` built; the exact
+registered CTest passed 1/1. No full suite ran.
+
+F728 selects `scheduleImportWeekday` in
+`src/domain/rules/schedule_import_rules.cpp`. Reuse
+`ScheduleValueParser::parseWeekday` with exact canonical-text equality, map
+Monday through Friday only, and preserve rejection of Saturday, Sunday, and
+other invalid inputs plus the existing meeting-pattern error. Extend
+`validatesCourseMeetingPatterns()` with lowercase and padded weekday cases
+that assert the exact generic error while retaining canonical and Saturday
+coverage. Build `ClassMngr` and `ClassMngrScheduleImportTests`; run only that
+exact registered CTest. No CMake change or full suite is planned. F707 remains
+deferred because its comparator chain has no observed app callsite; F709 is
+deferred because its public fixture does not readily supply malformed raw time
+text.
 The current-source Phase 0
 evidence remains Windows x64 2/24 and macOS universal 0/24; it is separate
 from the historical Phase 0 closure described above. F625 remains accepted

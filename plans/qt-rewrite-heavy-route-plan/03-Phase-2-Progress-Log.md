@@ -27351,12 +27351,54 @@ exact case-sensitive input contract and mapping to the Application enum.
    first-seen order and deduplication, and preserve the print-selection error
    `A selected schedule weekday is invalid.`
 2. Add public page coverage in `tests/sub_prep_page_tests.cpp`. Inject preview
-   schedule days `Monday`, `monday`, ` Monday `, `Tuesday`, `Monday`; assert
-   the captured summary request contains Monday and Tuesday once each in
-   first-seen order.
+   schedule days `monday`, ` Monday `, `Tuesday`, `Monday`, `Tuesday`; assert
+   the captured summary request is `[Tuesday, Monday]`. The noncanonical rows
+   precede the first exact Monday so first-seen deduplication cannot hide
+   accidental acceptance. This sensitivity clarification is recorded before
+   the focused test is written or run.
 3. `ClassMngrSubPrepPageTests` already includes the parser and source, so no
    CMake wiring change is needed. Build `ClassMngr` and that target; run only
    the exact registered CTest `ClassMngrSubPrepPageTests`. Run no full suite.
 
-This matrix is recorded before implementation. Batch 179 is active with F727;
+The F727 selection and migration scope were recorded before implementation;
+the test-order sensitivity refinement above was recorded before the focused
+test was written or run.
+
+### F727 SubPrep page weekday mapping - accepted - 2026-10-12
+
+F727 is accepted at code/test commit
+`85f5b5ce22c13b93c75a80766f18968d33687e4f`. `weekdayFor` now uses
+`ScheduleValueParser::parseWeekday` with exact canonical-text equality and
+maps to the corresponding Application enum without casting the parser's
+zero-based value. The public page test confirms that preview days
+`monday`, ` Monday `, `Tuesday`, `Monday`, `Tuesday` produce the captured
+summary request `[Tuesday, Monday]` in first-seen order.
+
+The exact registered CTest `ClassMngrSubPrepPageTests` passed 1/1. No full
+suite ran.
+
+**Decision: accept F727.** Batch 179 continues with F728; F707 and F709 remain
+deferred.
+
+### Batch 179 continuation - F728 selection and acceptance matrix - recorded before implementation - 2026-10-12
+
+Select `scheduleImportWeekday` in
+`src/domain/rules/schedule_import_rules.cpp`.
+
+**F728 is selected:** reuse the Domain weekday parser while preserving the
+course-meeting weekday contract.
+
+1. Migrate only `scheduleImportWeekday` to
+   `ScheduleValueParser::parseWeekday` and require exact canonical text
+   equality. Map Monday through Friday; preserve rejection of Saturday,
+   Sunday, and invalid values, including the exact error
+   `Each imported class must have exactly one meeting per scheduled weekday.`
+2. Extend `validatesCourseMeetingPatterns()` with lowercase and padded
+   weekday rejection cases. Retain canonical weekday and Saturday rejection
+   coverage.
+3. No CMake wiring change is needed. Build `ClassMngr` and
+   `ClassMngrScheduleImportTests`; run only the exact registered CTest
+   `ClassMngrScheduleImportTests`. Run no full suite.
+
+This matrix is recorded before implementation. Batch 179 is active with F728;
 F707 and F709 remain deferred.

@@ -4511,11 +4511,21 @@ ordering after reverse insertion and confirms Monday navigation order/time
 0/555; malformed raw weekdays cannot reach this helper through the port's
 selected-day SQL filter. Its focused CTest passed 1/1. No full suite ran.
 
-F727 selects `weekdayFor` in the Sub Prep page. Reuse the shared weekday
-parser with exact canonical-text matching and preserve mapping to
-`SubPrepWeekday`, selected-day first-seen order/deduplication, and the
-existing invalid print-selection message. The public page test will inject
-canonical, lowercase, padded, and repeated schedule days, then inspect the
-captured summary request. Its focused page CTest will run after building
-`ClassMngr` and `ClassMngrSubPrepPageTests`. F707 and F709 remain deferred.
-Phase 2 remains In Progress with Gates 1 and 2 Partial.
+F727 is accepted and committed as
+`85f5b5ce22c13b93c75a80766f18968d33687e4f`. Sub Prep page weekday mapping now
+uses `ScheduleValueParser::parseWeekday` with exact canonical-text matching
+and explicit mapping to `SubPrepWeekday`. The page test injects `monday`,
+` Monday `, `Tuesday`, `Monday`, `Tuesday` and confirms only Tuesday then
+Monday reach the summary request, preserving first-seen order and
+deduplication. `ClassMngr` and `ClassMngrSubPrepPageTests` built; the exact
+registered CTest passed 1/1. No full suite ran.
+
+F728 is selected in `scheduleImportWeekday` in
+`src/domain/rules/schedule_import_rules.cpp`. Reuse the shared weekday parser
+with exact canonical-text equality, map Monday-Friday only, and preserve
+Saturday/Sunday/invalid rejection and the existing generic meeting-pattern
+error. Extend `validatesCourseMeetingPatterns()` with lowercase and padded
+weekday cases and assert the exact error, retaining canonical and Saturday
+coverage. Build `ClassMngr` and `ClassMngrScheduleImportTests`; run only that
+exact CTest. No full suite is planned. Phase 2 remains In Progress with Gates
+1 and 2 Partial.

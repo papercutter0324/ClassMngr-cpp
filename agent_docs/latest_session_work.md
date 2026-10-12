@@ -5,7 +5,7 @@
 - Deployment: `phase2_f417_resume_20261009`; Heavy route; resumed 2026-10-12.
 - Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial. Batches
   141-178 are complete with F707 and F709 deferred; Batch 179 is active with
-  F727.
+  F728.
   F625's assessment is
   accepted and F626 remains deferred.
 - F693 roster display-time grammar migration is accepted and committed as
@@ -194,12 +194,16 @@
   targets built and the exact policy CTest passed 1/1. F726 is accepted and
   committed as `feea6f5ebf1b917d55fc1b8b7b9edb65728dcaf8`; its focused port
   test confirms canonical Monday-through-Sunday summary/navigation order and
-  Monday navigation order/time after reverse insertion. F727 selects the
-  Sub Prep page `weekdayFor` helper; its preimplementation matrix is recorded
-  in the Phase 2 progress log. F707 and F709 remain deferred.
+  Monday navigation order/time after reverse insertion. F727 is accepted and
+  committed as `85f5b5ce22c13b93c75a80766f18968d33687e4f`; the page weekday
+  mapping uses the shared parser with exact canonical-text matching and
+  explicit `SubPrepWeekday` mapping. Its focused page CTest passed 1/1. F728
+  selects the Schedule Import meeting-weekday mapper, retaining exact
+  canonical matching and Monday-Friday policy; its acceptance matrix is in
+  the Phase 2 progress log. No full suite ran. F707 and F709 remain deferred.
 - Phase 0 evidence remains Windows x64 2/24 and macOS universal 0/24; these
   slices add no route evidence. Preserve the existing unrelated untracked
-  %SystemDrive%/, Windows Performance Analyzer/, and txt paths.
+  %SystemDrive%/, Windows Performance Analyzer/, stdout, and txt paths.
 - F671 Custom Color Palette typed persistence and caller feedback is committed
   as `d34ace9387199dc59c856d4edfff24da700c10a2`; its two focused CTests passed.
 - F672 Theme preference typed persistence/action rollback is committed as
