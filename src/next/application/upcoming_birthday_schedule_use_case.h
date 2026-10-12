@@ -9,6 +9,8 @@
 #include <utility>
 #include <vector>
 
+#include "qt_compatible_text.h"
+
 namespace ClassMngr::Next::Application
 {
 
@@ -228,22 +230,6 @@ private:
             || value == '\r' || value == '\f' || value == '\v';
     }
 
-    [[nodiscard]] static bool isUnicodeWhitespace(
-        const char16_t value
-        ) noexcept
-    {
-        return (value >= u'\t' && value <= u'\r')
-            || value == u' '
-            || value == u'\u00A0'
-            || value == u'\u1680'
-            || (value >= u'\u2000' && value <= u'\u200A')
-            || value == u'\u2028'
-            || value == u'\u2029'
-            || value == u'\u202F'
-            || value == u'\u205F'
-            || value == u'\u3000';
-    }
-
     [[nodiscard]] static bool isBlank(const std::u16string& value) noexcept
     {
         return std::all_of(
@@ -251,7 +237,7 @@ private:
             value.end(),
             [](const char16_t character)
             {
-                return isUnicodeWhitespace(character);
+                return isQtWhitespace(character);
             }
             );
     }

@@ -118,6 +118,7 @@ omitsInvalidBirthdaysAndBlankNames()
                 birthday("2-03", u"Non-padded month"),
                 birthday("08-18", u""),
                 birthday("08-18", u"\u00A0 \t"),
+                birthday("08-18", u"\u0085"),
                 birthday("08-18", u"Visible")
             },
             {2026, 8, 18}
