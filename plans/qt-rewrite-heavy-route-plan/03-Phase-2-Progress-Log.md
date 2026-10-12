@@ -26046,4 +26046,56 @@ preserving each consumer's existing invalid-event behavior.
 4. Build `ClassMngr` and `ClassMngrCalendarEventCacheTests`; run only the CTest
    `ClassMngrCalendarEventCacheTests`. Run no full suite.
 
-This matrix is recorded before implementation. Batch 174 is active with F699.
+This matrix was recorded before implementation.
+
+### F699 calendar projected-time parser migration - accepted - 2026-10-12
+
+F699 is accepted at code/test commit
+`958962356eb3fe8652fa43b32354a1d2c98dd7ec` (`Phase2 - Reuse Domain parser
+for calendar projections (F699)`). `ClassMngr` and
+`ClassMngrCalendarEventCacheTests` built successfully. The exact CTest
+`ClassMngrCalendarEventCacheTests` passed 1/1 with fresh objects and
+executable. No full suite ran.
+
+**Decision: accept F699.** Batch 174 is complete.
+
+### Batch 175 selection - recorded before F700 implementation - 2026-10-12
+
+Select both identical Schedule Import review minute parsers:
+`ScheduleImportReviewPresentation::timeMinutes` in
+`src/features/schedule/ui/schedule_import_review_presentation.cpp` and
+`stateTimeMinutes` in
+`src/features/schedule/ui/schedule_import_review_dialog.cpp`. Both trim, try
+the same four ordered formats, convert hour/minute to minutes, and return -1
+on failure; use an explicit allowlist rather than the default eight-format
+parser. Keep `compactTimeDisplay` and `reconciliationTimeDisplay` out of scope
+because they parse one raw untrimmed format and have distinct raw or
+HTML-escaped fallbacks.
+
+**F700 is selected:** migrate both minute parsers to the Domain parser with an
+explicit ordered four-format allowlist, preserving their trim, conversion, and
+failure behavior.
+
+### F700 Schedule Import review time parser migration acceptance matrix - recorded before implementation - 2026-10-12
+
+1. Replace `ScheduleImportReviewPresentation::timeMinutes` and
+   `stateTimeMinutes` with calls to `ScheduleValueParser::parseDisplayTime`
+   using an explicit ordered `DisplayTimeFormat` allowlist for `h:mm AP`,
+   `h:mmAP`, `H:mm`, and `HH:mm`. Preserve trimming, hour/minute conversion,
+   and -1 on failure; do not use the default eight-format API.
+2. Keep `compactTimeDisplay` and `reconciliationTimeDisplay` unchanged: each
+   parses one raw untrimmed format and has its own raw or HTML-escaped fallback.
+3. Extend `tests/schedule_import_dialog_tests.cpp` with direct public
+   `compactMeetingText` coverage for all four supported formats, trimmed input,
+   and malformed sort fallback. Extend the public ScheduleImportReviewDialog
+   path (`reviewWarnsForOverlappingProjectedTimes`/helper usage) to verify
+   malformed time becomes `InvalidProjectedTime` and disables Import, plus a
+   valid alternate format.
+4. Add `src/domain/rules/schedule_value_parser.cpp` to
+   `ClassMngrScheduleImportDialogTests` in
+   `cmake/tests/pages_and_output.cmake`; this target also compiles
+   `schedule_time_formatter.cpp` and needs the parser implementation after
+   F696. Build `ClassMngr` and `ClassMngrScheduleImportDialogTests`; run only
+   the CTest `ClassMngrScheduleImportDialogTests`. Run no full suite.
+
+This matrix is recorded before implementation. Batch 175 is active with F700.

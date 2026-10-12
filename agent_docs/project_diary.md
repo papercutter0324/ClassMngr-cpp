@@ -4174,13 +4174,19 @@ and executable. Coverage verifies 15:00/15:55 empty, 16:00 Essay, malformed
 and whitespace-padded Essay fallback, plus weekend/intensive behavior. No
 full suite ran.
 
-F699 is selected in Batch 174 to migrate the paired projected-time conversions
-in both `CalendarEventCache` and `CalendarEventModel`. Both consume the same
-application projection, but projection validation allows nonblank malformed
-time text; require parser success and exact canonical-text equality to retain
-raw-input rejection. Preserve the cache's drop and model's skip behavior for
-invalid timed events, plus all-day/unknown-time handling, dates, ordering, and
-metadata. Add model parity and malformed/padded injected-projection tests to
-the shared calendar cache target, add the parser source to that target, then
-build product/target and run only its exact CTest. The matrix is recorded in
-the Phase 2 progress log.
+F699 is committed as `958962356eb3fe8652fa43b32354a1d2c98dd7ec`. `ClassMngr`
+and `ClassMngrCalendarEventCacheTests` built in the Windows x64 Debug Ninja
+tree; the focused CTest passed 1/1 on final fixtures with fresh adapter
+objects and test executable. Coverage retains all five injected projection
+records while both legacy consumers expose only the canonical timed event,
+and directly asserts model start/end parity. No full suite ran.
+
+F700 is selected in Batch 175 to reuse the Domain display-time parser in the
+two matching Schedule Import review minute helpers. Use the explicit ordered
+four-format allowlist, retaining trim, minute-of-day conversion, and -1 for
+invalid input. Keep `compactTimeDisplay` and `reconciliationTimeDisplay`
+unchanged because they parse raw untrimmed strings and have different
+fallbacks. Extend presentation and review-dialog tests to cover supported
+formats, trimming, invalid time, and order; add parser source to the dialog
+test target because the formatter migration already depends on it. The exact
+build/CTest matrix is in the Phase 2 progress log.

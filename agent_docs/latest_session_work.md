@@ -4,7 +4,7 @@
 
 - Deployment: `phase2_f417_resume_20261009`; Heavy route; resumed 2026-10-12.
 - Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial. Batches
-  141-173 are complete; Batch 174 is active with F699. F625's assessment is
+  141-174 are complete; Batch 175 is active with F700. F625's assessment is
   accepted and F626 remains deferred.
 - F693 roster display-time grammar migration is accepted and committed as
   504316a9c24c076e9d6aa474a5b713e9abd52e66. The Windows x64 Debug Ninja build
@@ -45,17 +45,24 @@
   executable. Coverage verifies the inclusive 15:00 cutoff, 15:55 empty
   state, 16:00 Essay state, malformed/padded Essay fallback, and existing
   weekend/intensive behavior. No full suite ran.
-- F699 migrates the projected start/end time conversions in both
-  `CalendarEventCache` and `CalendarEventModel` through
-  `ScheduleValueParser::parseTime`. Require successful canonical text equal to
-  the original projection string, preserving raw rejection despite parser
-  trimming; retain each consumer's invalid-event behavior and date, ordering,
-  all-day, and unknown-time handling. Extend the shared
-  `ClassMngrCalendarEventCacheTests` for model parity and malformed/padded
-  injected projections, and add the parser source to its CMake source list.
-  Build `ClassMngr` and the target; run only CTest
-  `ClassMngrCalendarEventCacheTests`. The acceptance matrix is recorded before
-  implementation in the Phase 2 progress log.
+- F699 calendar projection parser reuse is accepted and committed as
+  `958962356eb3fe8652fa43b32354a1d2c98dd7ec`. `ClassMngr` and
+  `ClassMngrCalendarEventCacheTests` built in the Windows x64 Debug Ninja tree;
+  the exact CTest passed 1/1 on final fixtures. Tests cover successful model
+  start/end parity and malformed/padded start/end rejection in both cache and
+  model, with all five injected typed projection records retained. Adapter
+  objects and the test executable were fresh; no full suite ran.
+- F700 migrates both Schedule Import review minute parsers to
+  `ScheduleValueParser::parseDisplayTime` with the ordered four-format
+  allowlist (`h:mm AP`, `h:mmAP`, `H:mm`, `HH:mm`). Preserve trimming,
+  minute conversion, and `-1` fallback. Leave the two untrimmed display
+  helpers and their distinct raw/HTML-escaped fallbacks unchanged. Extend the
+  presentation and review-dialog test paths for supported variants, trimming,
+  and invalid input. Add the parser source to
+  `ClassMngrScheduleImportDialogTests`, which also needs it for the formatter
+  port. Build `ClassMngr` and that target; run only its exact CTest. The
+  acceptance matrix is recorded before implementation in the Phase 2 progress
+  log.
 - Phase 0 evidence remains Windows x64 2/24 and macOS universal 0/24; these
   slices add no route evidence. Preserve the existing unrelated untracked
   %SystemDrive%/, Windows Performance Analyzer/, and txt paths.
