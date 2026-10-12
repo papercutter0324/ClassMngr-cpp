@@ -2,7 +2,9 @@
 
 #include "data/database/database_transaction.h"
 #include "data/database/sql_query_utils.h"
+#include "domain/rules/schedule_value_parser.h"
 
+#include <array>
 #include <QDebug>
 #include <QObject>
 #include <QSqlError>
@@ -11,6 +13,23 @@
 
 namespace
 {
+QTime parseStoredDisplayTime(const QString& value)
+{
+    constexpr std::array timeFormats{
+        ScheduleValueParser::DisplayTimeFormat::PaddedHourMinute24Hour
+    };
+
+    if (value != value.trimmed())
+    {
+        return {};
+    }
+
+    const auto parsed =
+        ScheduleValueParser::parseDisplayTime(value, timeFormats);
+
+    return parsed ? *parsed : QTime{};
+}
+
 CalendarEvent eventFromQuery(
     const QSqlQuery& query
     )
@@ -39,9 +58,8 @@ CalendarEvent eventFromQuery(
             Qt::ISODate
             );
     event.startTime =
-        QTime::fromString(
-            query.value("start_time").toString(),
-            QStringLiteral("HH:mm")
+        parseStoredDisplayTime(
+            query.value("start_time").toString()
             );
     event.endDate =
         QDate::fromString(
@@ -49,9 +67,8 @@ CalendarEvent eventFromQuery(
             Qt::ISODate
             );
     event.endTime =
-        QTime::fromString(
-            query.value("end_time").toString(),
-            QStringLiteral("HH:mm")
+        parseStoredDisplayTime(
+            query.value("end_time").toString()
             );
 
     return event;

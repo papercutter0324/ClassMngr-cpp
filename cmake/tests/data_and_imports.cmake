@@ -185,6 +185,7 @@ qt_add_executable(ClassMngrTeacherInfoSectionTests
         src/data/database/database_transaction.cpp
         src/data/database/sql_query_utils.cpp
         src/data/repositories/calendar_event_repository.cpp
+        src/domain/rules/schedule_value_parser.cpp
     )
 
     target_compile_features(ClassMngrCalendarEventRepositoryTests

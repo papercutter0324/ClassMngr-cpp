@@ -152,6 +152,7 @@ private slots:
     void nextEventQueryFindsEarliestFutureStartDate();
     void schemaCreatesEndDateIndex();
     void savesAndLoadsRepeatSeriesId();
+    void storedTimesUseExactPadded24HourFormatAndPreserveEventRows();
     void repeatSeriesBatchCreationPersistsOrderedRowsAndPreservesUnrelatedEvent();
     void repeatSeriesQueryLoadsSelectedAndFollowingOnly();
     void repeatSeriesSuffixSelectionAndPersistedUpdatesPreserveEarlierAndUnrelatedRows();
@@ -590,6 +591,137 @@ void CalendarEventRepositoryTests::savesAndLoadsRepeatSeriesId()
             repository.getCalendarEvent(eventId)->repeatSeriesId,
             QString()
             );
+    }
+
+    QSqlDatabase::removeDatabase(connectionName);
+}
+
+void CalendarEventRepositoryTests::
+storedTimesUseExactPadded24HourFormatAndPreserveEventRows()
+{
+    const QString connectionName =
+        QStringLiteral("calendar_event_repository_stored_time_tests");
+
+    {
+        QSqlDatabase database = QSqlDatabase::addDatabase(
+            QStringLiteral("QSQLITE"),
+            connectionName
+            );
+        database.setDatabaseName(QStringLiteral(":memory:"));
+
+        QVERIFY(database.open());
+        createCalendarEventsTable(database);
+
+        const auto insertStoredEvent = [&database](
+            const QString& title,
+            const QString& startTime,
+            const QString& endTime
+            ) -> int
+        {
+            QSqlQuery query(database);
+            query.prepare(R"(
+                INSERT INTO calendar_events (
+                    title,
+                    event_type,
+                    time_status,
+                    repeat_series_id,
+                    all_day,
+                    start_date,
+                    start_time,
+                    end_date,
+                    end_time
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            )");
+            query.addBindValue(title);
+            query.addBindValue(QStringLiteral("Meeting"));
+            query.addBindValue(QStringLiteral("Timed"));
+            query.addBindValue(QStringLiteral("stored-time-series"));
+            query.addBindValue(0);
+            query.addBindValue(QStringLiteral("2026-11-03"));
+            query.addBindValue(startTime);
+            query.addBindValue(QStringLiteral("2026-11-04"));
+            query.addBindValue(endTime);
+            if (!query.exec())
+            {
+                return 0;
+            }
+            return query.lastInsertId().toInt();
+        };
+
+        const int canonicalId = insertStoredEvent(
+            QStringLiteral("Canonical stored times"),
+            QStringLiteral("09:07"),
+            QStringLiteral("17:42")
+            );
+        QVERIFY(canonicalId > 0);
+
+        const int paddedId = insertStoredEvent(
+            QStringLiteral("Padded stored start"),
+            QStringLiteral(" 09:07 "),
+            QStringLiteral("11:05")
+            );
+        QVERIFY(paddedId > 0);
+
+        const int malformedId = insertStoredEvent(
+            QStringLiteral("Malformed stored end"),
+            QStringLiteral("13:30"),
+            QStringLiteral("not-a-time")
+            );
+        QVERIFY(malformedId > 0);
+
+        const int singleDigitHourId = insertStoredEvent(
+            QStringLiteral("Legacy single-digit hour"),
+            QStringLiteral("9:00"),
+            QStringLiteral("10:30")
+            );
+        QVERIFY(singleDigitHourId > 0);
+
+        CalendarEventRepository repository(database);
+
+        const Result<CalendarEvent> canonical =
+            repository.getCalendarEvent(canonicalId);
+        QVERIFY(canonical);
+        QCOMPARE(canonical->id, canonicalId);
+        QCOMPARE(canonical->title, QStringLiteral("Canonical stored times"));
+        QCOMPARE(canonical->eventType, QStringLiteral("Meeting"));
+        QCOMPARE(canonical->repeatSeriesId,
+                 QStringLiteral("stored-time-series"));
+        QCOMPARE(canonical->startDate, QDate(2026, 11, 3));
+        QCOMPARE(canonical->startTime, QTime(9, 7));
+        QCOMPARE(canonical->endDate, QDate(2026, 11, 4));
+        QCOMPARE(canonical->endTime, QTime(17, 42));
+
+        const Result<CalendarEvent> padded =
+            repository.getCalendarEvent(paddedId);
+        QVERIFY(padded);
+        QCOMPARE(padded->id, paddedId);
+        QCOMPARE(padded->title, QStringLiteral("Padded stored start"));
+        QCOMPARE(padded->eventType, QStringLiteral("Meeting"));
+        QCOMPARE(padded->startDate, QDate(2026, 11, 3));
+        QVERIFY(!padded->startTime.isValid());
+        QCOMPARE(padded->endDate, QDate(2026, 11, 4));
+        QCOMPARE(padded->endTime, QTime(11, 5));
+
+        const Result<CalendarEvent> malformed =
+            repository.getCalendarEvent(malformedId);
+        QVERIFY(malformed);
+        QCOMPARE(malformed->id, malformedId);
+        QCOMPARE(malformed->title, QStringLiteral("Malformed stored end"));
+        QCOMPARE(malformed->eventType, QStringLiteral("Meeting"));
+        QCOMPARE(malformed->startDate, QDate(2026, 11, 3));
+        QCOMPARE(malformed->startTime, QTime(13, 30));
+        QCOMPARE(malformed->endDate, QDate(2026, 11, 4));
+        QVERIFY(!malformed->endTime.isValid());
+
+        const Result<CalendarEvent> singleDigitHour =
+            repository.getCalendarEvent(singleDigitHourId);
+        QVERIFY(singleDigitHour);
+        const QTime legacySingleDigitHour = QTime::fromString(
+            QStringLiteral("9:00"),
+            QStringLiteral("HH:mm")
+            );
+        QCOMPARE(singleDigitHour->startTime, legacySingleDigitHour);
+        QCOMPARE(singleDigitHour->endTime, QTime(10, 30));
     }
 
     QSqlDatabase::removeDatabase(connectionName);
