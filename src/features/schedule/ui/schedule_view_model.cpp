@@ -220,8 +220,11 @@ bool isScheduleWeekendDay(
     const QString& day
     )
 {
-    return day == QStringLiteral("Saturday")
-        || day == QStringLiteral("Sunday");
+    const auto parsed = ScheduleValueParser::parseWeekday(day);
+    return parsed
+        && parsed->text == day
+        && (parsed->value == ScheduleValueParser::Weekday::Saturday
+            || parsed->value == ScheduleValueParser::Weekday::Sunday);
 }
 
 QString scheduleDefaultSlotState(

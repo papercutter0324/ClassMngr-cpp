@@ -86,6 +86,8 @@ class SchedulePrintModelTests : public QObject
 private slots:
     void visibleDaysCanIncludeWeekends();
     void slotDefaultsMatchRegularAndIntensiveModes();
+    void weekendSlotRulesRequireCanonicalWeekdayLabels_data();
+    void weekendSlotRulesRequireCanonicalWeekdayLabels();
     void persistedOverridesRespectTogglingRules();
     void intensiveTrimmingRemovesOnlyOuterEmptyRows();
     void intensiveNoFilteringKeepsAllRows();
@@ -185,6 +187,49 @@ void SchedulePrintModelTests::slotDefaultsMatchRegularAndIntensiveModes()
             true
             ),
         scheduleEssaySlotState()
+        );
+}
+
+void SchedulePrintModelTests::
+weekendSlotRulesRequireCanonicalWeekdayLabels_data()
+{
+    QTest::addColumn<QString>("day");
+    QTest::addColumn<bool>("canonicalWeekend");
+
+    QTest::addRow("Monday") << QStringLiteral("Monday") << false;
+    QTest::addRow("Tuesday") << QStringLiteral("Tuesday") << false;
+    QTest::addRow("Wednesday") << QStringLiteral("Wednesday") << false;
+    QTest::addRow("Thursday") << QStringLiteral("Thursday") << false;
+    QTest::addRow("Friday") << QStringLiteral("Friday") << false;
+    QTest::addRow("Saturday") << QStringLiteral("Saturday") << true;
+    QTest::addRow("Sunday") << QStringLiteral("Sunday") << true;
+    QTest::addRow("padded Saturday")
+        << QStringLiteral(" Saturday ") << false;
+    QTest::addRow("padded Sunday")
+        << QStringLiteral(" Sunday ") << false;
+    QTest::addRow("lowercase Saturday")
+        << QStringLiteral("saturday") << false;
+    QTest::addRow("lowercase Sunday")
+        << QStringLiteral("sunday") << false;
+    QTest::addRow("unknown") << QStringLiteral("Funday") << false;
+    QTest::addRow("empty") << QString() << false;
+}
+
+void SchedulePrintModelTests::
+weekendSlotRulesRequireCanonicalWeekdayLabels()
+{
+    QFETCH(QString, day);
+    QFETCH(bool, canonicalWeekend);
+
+    QCOMPARE(
+        scheduleDefaultSlotState(day, QStringLiteral("16:00"), false),
+        canonicalWeekend
+            ? scheduleEmptySlotState()
+            : scheduleEssaySlotState()
+        );
+    QCOMPARE(
+        scheduleSlotTogglingEnabled(day, false, false),
+        canonicalWeekend
         );
 }
 
