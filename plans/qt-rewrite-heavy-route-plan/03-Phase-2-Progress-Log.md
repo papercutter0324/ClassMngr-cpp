@@ -29470,10 +29470,13 @@ Each exact CTest registered once and passed. The initial sandbox build hit
 FileTracker `E_ACCESSDENIED`; the same command succeeded outside the sandbox.
 Only the three named CTests ran; no full suite ran.
 
-### Batch 190 discovery and F769 selection - remaining candidates provisional - 2026-10-13
+### Batch 190 discovery and F770 selection - F771/F772 provisional - 2026-10-13
 
-Two independent read-only audits converged on the candidate set. F769 is
-selected first; IDs/order after it remain provisional:
+Two independent read-only audits converged on the candidate set. Original
+discovery order was Testing Class helper consolidation, Class/Teacher Delete
+helper consolidation, Class Analytics Dashboard ID guard, then Class Details
+range assessment. F769 was selected from the second candidate and accepted;
+F770 is selected next, while F771/F772 remain provisional.
 
 - **F769 - Class and Teacher Delete helper consolidation:**
   `src/next/application/class_delete.h` and `teacher_delete.h`; CTests
@@ -29484,7 +29487,7 @@ selected first; IDs/order after it remain provisional:
   `ClassMngrNextApplicationTestingClassCreateUseCaseTests`,
   `ClassMngrNextApplicationTestingClassDetailsUpdateUseCaseTests`, and
   `ClassMngrNextApplicationTestingClassDeleteUseCaseTests`.
-- **F771 - Class Analytics Dashboard ID guard:**
+- **F771 - Provisional Class Analytics Dashboard ID guard:**
   `class_analytics_dashboard_read_query.h` and
   `ClassMngrNextApplicationClassAnalyticsDashboardReadQueryTests`.
 - **F772 - Provisional Class Details range-contract assessment:**
@@ -29514,6 +29517,51 @@ full input consumption. Build `ClassMngr` and
 `ClassMngrNextApplicationClassDeleteUseCaseTests` plus
 `ClassMngrNextApplicationTeacherDeleteUseCaseTests`. Confirm one registration
 for each exact CTest name, then run only those two CTests with `-C Debug`.
-Run no full suite. This matrix is recorded before implementation; F769
-verification is pending. F707/F709 remain deferred, Phase 2 Gates 1/2 remain
+Run no full suite. This matrix was recorded before implementation. F707/F709
+remain deferred, Phase 2 Gates 1/2 remain Partial, and the formal exit gate
+remains Open.
+
+### F769 Class and Teacher Delete ID validation - accepted - 2026-10-13
+
+F769 is accepted at commit
+`78405abad6052396ad367aa3c0962bec8f4677da`. In the VS 18 x64 Debug tree,
+`ClassMngr` and the class-delete and teacher-delete targets built. Their exact
+CTest registrations were one each (#378/#379); both tests passed 2/2 after an
+identical build retry outside the sandbox from FileTracker `E_ACCESSDENIED`.
+No full suite ran.
+
+### F770 Testing Class helper consolidation - selected and acceptance matrix - 2026-10-13
+
+**F770 is selected:** consolidate private canonical-positive-int parsers in
+`src/next/application/testing_class_create.h`,
+`testing_class_details_update.h`, and `testing_class_delete.h` with
+`Application::isCanonicalPositiveDecimalId`. The helper is already listed in
+`cmake/next.cmake`; no inventory change is expected.
+
+Preserve each operation's contract and ID/field validation order. Invalid IDs
+remain recoverable `InvalidInput` failures before any port call. Create's
+teacher ID and Update's teacher ID use
+`Testing class teacher ID must be a canonical positive integer.` Update's
+class ID and Delete's class ID use
+`Testing class ID must be a canonical positive integer.` Preserve Update's
+class-first validation precedence, canonical-success forwarding, and
+structured port failures.
+
+Create already pins its exact teacher-ID message; Update pins its exact class
+and teacher messages and class-first precedence. Add trailing-text `17x` to
+Create teacher-ID, Update teacher-ID, and Delete class-ID invalid sets; keep
+Update's existing class-ID `42x` coverage. Pin Delete's exact message. Assert
+`InvalidInput`, recoverable=true, and zero port calls for the added cases.
+
+Build `ClassMngr` and
+`ClassMngrNextApplicationTestingClassCreateUseCaseTests`,
+`ClassMngrNextApplicationTestingClassDetailsUpdateUseCaseTests`, and
+`ClassMngrNextApplicationTestingClassDeleteUseCaseTests`, from
+`tests/next_application_testing_class_create_use_case_tests.cpp`,
+`tests/next_application_testing_class_details_update_use_case_tests.cpp`,
+and `tests/next_application_testing_class_delete_use_case_tests.cpp`,
+respectively. Confirm one registration for each exact CTest name, then run
+only those three CTests with `-C Debug`. Run no full suite. This matrix is
+recorded before implementation; F770 verification is pending. F771/F772
+remain provisional. F707/F709 remain deferred, Phase 2 Gates 1/2 remain
 Partial, and the formal exit gate remains Open.

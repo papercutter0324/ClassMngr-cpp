@@ -5037,3 +5037,20 @@ and a conditional Class Details range-policy assessment. Preserve the tested
 leading-zero forwarding behavior in `ClassDetailsSaveUseCase`. F707/F709
 remain deferred; Phase 2 Gates 1/2 remain Partial and the formal exit gate
 remains Open.
+
+## Phase 2 F769 acceptance and F770 selection — 2026-10-13
+
+F769 is accepted at `78405abad6052396ad367aa3c0962bec8f4677da`. The Class
+Delete and Teacher Delete focused CTests registered once (#378/#379) and
+passed 2/2 in the Visual Studio 18 x64 Debug tree after the same build
+succeeded outside the sandbox following FileTracker `E_ACCESSDENIED`. No full
+suite ran.
+
+F770 is selected for Testing Class create, details-update, and delete ID
+validation. Its matrix reuses the shared helper, preserves field-specific
+messages and class-before-teacher update validation, adds missing trailing-text
+cases, and pins delete's exact error. F771 Class Analytics Dashboard and F772
+the conditional Class Details range-policy decision remain provisional.
+Preserve the tested leading-zero forwarding behavior in
+`ClassDetailsSaveUseCase`. F707/F709 remain deferred; Phase 2 Gates 1/2 remain
+Partial and the formal exit gate remains Open.

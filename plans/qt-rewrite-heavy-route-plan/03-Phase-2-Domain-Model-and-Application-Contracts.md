@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-13
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F768 is accepted at `ff60cd80a935f00ec660efd0aa132c6d88a87778`, completing Batch 189; F769 is selected for Class/Teacher Delete ID validation consolidation, with F707/F709 deferred, Gates 1/2 Partial, and the formal exit gate Open.
+- Current note: F769 is accepted at `78405abad6052396ad367aa3c0962bec8f4677da`; F770 is selected for Testing Class helper consolidation, with F771/F772 provisional and F707/F709 deferred, Gates 1/2 Partial, and the formal exit gate Open.
 
 ### Slice discovery batches
 
@@ -102,8 +102,7 @@ Treat this plan as an operational summary, not a history:
 
 #### Active batch: Batch 190
 
-- F769 - Class and Teacher Delete ID validation consolidation - Reuse the shared canonical ID helper and preserve entity-specific errors.
-- F770 - Testing Class helper consolidation - Assess helper reuse across create, details-update, and delete.
+- F770 - Testing Class helper consolidation - Consolidate canonical ID parsers across create, details-update, and delete while preserving field validation order.
 - F771 - Class Analytics Dashboard ID guard - Assess canonical ID validation reuse in the dashboard query.
 - F772 - Class Details range-contract assessment - Decide whether shared `int`-range validation applies before implementation; keep provisional.
 

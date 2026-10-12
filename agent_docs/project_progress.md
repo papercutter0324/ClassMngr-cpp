@@ -4874,24 +4874,24 @@ No full suite. F707/F709 remain deferred. Phase 2 remains In Progress/Open
 with Gates 1 and 2 Partial; separate current-source Phase 0 evidence remains
 Windows x64 2/24 and macOS universal 0/24.
 
-## Phase 2 current position — 2026-10-13 (F768 accepted; F769 selected)
+## Phase 2 current position — 2026-10-13 (F769 accepted; F770 selected)
 
-F768 is accepted at
-`ff60cd80a935f00ec660efd0aa132c6d88a87778`, completing Batch 189. The
-single, batch, and roster-names Speaking Evaluation queries now share the
-canonical-ID helper while preserving their distinct invalid-input
-recoverability and query-specific read/identity/order contracts. In the
-existing Visual Studio 18 x64 Debug tree, `ClassMngr` and all three focused
-targets built; each exact CTest registered once and all three passed. The
-sandbox build hit FileTracker `E_ACCESSDENIED`; the same build succeeded
-outside the sandbox. No full suite ran.
+F769 is accepted at
+`78405abad6052396ad367aa3c0962bec8f4677da`. Class Delete and Teacher Delete
+now use the shared canonical-ID validator while preserving their separate
+messages and pre-port rejection. Tests cover trailing-text IDs with exact
+recoverable InvalidInput details and zero calls. In the existing Visual Studio
+18 x64 Debug tree, `ClassMngr` and both focused targets built; the exact CTests
+registered once (#378/#379) and passed 2/2. The sandbox build hit FileTracker
+`E_ACCESSDENIED`; the same build succeeded outside the sandbox. No full suite
+ran.
 
-F769 is selected in Batch 190 for Class and Teacher Delete ID validation.
-Reuse the shared helper while preserving each entity's exact error, recoverable
-InvalidInput, and zero-port boundary; add trailing-text cases for full input
-consumption. F770 Testing Class use-case consolidation, F771 Class Analytics
-Dashboard ID validation, and F772 the conditional Class Details range-policy
-assessment remain provisional. Preserve the tested leading-zero forwarding
-behavior in `ClassDetailsSaveUseCase`. F707/F709 remain deferred. Phase 2
-remains In Progress/Open with Gates 1 and 2 Partial; separate current-source
-Phase 0 evidence remains Windows x64 2/24 and macOS universal 0/24.
+F770 is selected in Batch 190 for Testing Class create, details-update, and
+delete ID validation. Reuse the shared helper while preserving field-specific
+messages and ID-validation order; add trailing-text cases where not already
+covered and pin exact delete errors. F771 Class Analytics Dashboard ID
+validation and F772 the conditional Class Details range-policy assessment
+remain provisional. Preserve the tested leading-zero forwarding behavior in
+`ClassDetailsSaveUseCase`. F707/F709 remain deferred. Phase 2 remains In
+Progress/Open with Gates 1 and 2 Partial; separate current-source Phase 0
+evidence remains Windows x64 2/24 and macOS universal 0/24.
