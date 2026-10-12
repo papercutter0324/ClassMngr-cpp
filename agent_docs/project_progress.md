@@ -4874,24 +4874,27 @@ No full suite. F707/F709 remain deferred. Phase 2 remains In Progress/Open
 with Gates 1 and 2 Partial; separate current-source Phase 0 evidence remains
 Windows x64 2/24 and macOS universal 0/24.
 
-## Phase 2 current position — 2026-10-13 (F770 accepted; F771 selected)
+## Phase 2 current position — 2026-10-13 (F771 accepted; F772 selected)
 
-F770 is accepted at
-`1971a3ff5a1609ee89185624c0340561907350cd`. Testing Class create,
-details-update, and delete now share canonical positive-decimal ID validation
-while preserving field-specific errors and validation order. The three exact
-CTest registrations (#375/#374/#377) passed 3/3 in the Visual Studio 18 x64
-Debug tree after the same build succeeded outside the sandbox following
-FileTracker `E_ACCESSDENIED`. No full suite ran.
+F771 is accepted at
+`b9a09f304de1d9479fd91e0007a7f7018d226500`. The Class Analytics Dashboard
+query now uses the shared canonical-positive-int validator, preserving its
+nonrecoverable error and pre-read rejection. Its exact CTest registered once
+(#156) and passed 1/1 after the bounded Visual Studio 18 x64 Debug build
+succeeded outside the sandbox following FileTracker `E_ACCESSDENIED`. No
+full suite ran. CTest inventory output also warned that an unrelated
+MainWindow visibility-preferences executable was missing.
 
-F771 is selected for the Class Analytics Dashboard ID guard. Reuse the shared
-validator; cover `0`, `007`, `-1`, `17x`, and `2147483648` with the exact
-nonrecoverable InvalidInput message and zero reads; preserve the valid
-`2147483647` boundary and assert unchanged forwarding to both ports. Keep
-roster-before-batch ordering, evaluation/YTD behavior, and read-failure
-behavior. The helper and focused test are already in CMake inventories; no
-inventory edit is expected. F772's Class Details range-policy decision
-remains provisional. Preserve the tested leading-zero forwarding behavior in
-`ClassDetailsSaveUseCase`. F707/F709 remain deferred. Phase 2 remains In
-Progress/Open with Gates 1 and 2 Partial; separate current-source Phase 0
-evidence remains Windows x64 2/24 and macOS universal 0/24.
+F772 is selected to align the Class Details validation-context and
+schedule-conflict query boundaries with their concrete `int` adapters. Reuse
+the shared helper so `2147483648` returns each query's existing recoverable
+InvalidInput error before a port call; preserve the valid `2147483647`
+forwarding case, existing invalid-ID behavior, identity checks, request
+ordering, and port-failure behavior. Build `ClassMngr`, both exact query test
+targets, and the existing Class Details save-use-case test target; confirm
+one exact CTest registration each and run only those three CTests with
+`-C Debug`. Preserve the tested `00042` forwarding in
+`ClassDetailsSaveUseCase`. The helper is already listed in CMake; no inventory
+edit is expected. F707/F709 remain deferred. Phase 2 remains In Progress/Open
+with Gates 1 and 2 Partial; separate current-source Phase 0 evidence remains
+Windows x64 2/24 and macOS universal 0/24.

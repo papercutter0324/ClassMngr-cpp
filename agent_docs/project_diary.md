@@ -5068,3 +5068,18 @@ IDs, covers the `INT_MAX` boundary, and checks that both ports receive the
 valid boundary ID unchanged. Keep existing read ordering, YTD selection, and
 failure behavior. F772 remains provisional; F707/F709 remain deferred, Gates
 1/2 Partial, and the formal exit gate Open.
+
+## Phase 2 F771 acceptance and F772 selection — 2026-10-13
+
+F771 is accepted at `b9a09f304de1d9479fd91e0007a7f7018d226500`. The dashboard
+query's focused CTest registered once (#156) and passed 1/1 after its bounded
+Visual Studio 18 x64 Debug build succeeded outside the sandbox following
+FileTracker `E_ACCESSDENIED`. No full suite ran.
+
+For F772, repository evidence showed that both Class Details application
+queries accepted arbitrary-length positive digit strings while their concrete
+platform adapters and repository APIs use `int`. The application boundary
+will use the shared int-range helper so overflow fails before a port call with
+the existing error metadata. Keep the independently tested `00042`
+forwarding contract in `ClassDetailsSaveUseCase` intact. F707/F709 remain
+deferred, Gates 1/2 Partial, and the formal exit gate Open.

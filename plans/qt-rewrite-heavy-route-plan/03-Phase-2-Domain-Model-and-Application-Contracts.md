@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-13
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F770 is accepted at `1971a3ff5a1609ee89185624c0340561907350cd`; F771 is selected for the Class Analytics Dashboard ID guard, with F772 provisional and F707/F709 deferred, Gates 1/2 Partial, and the formal exit gate Open.
+- Current note: F771 is accepted at `b9a09f304de1d9479fd91e0007a7f7018d226500`; F772 is selected to align Class Details application ID validation with int-backed adapters and repositories, with F707/F709 deferred, Gates 1/2 Partial, and the formal exit gate Open.
 
 ### Slice discovery batches
 
@@ -102,8 +102,7 @@ Treat this plan as an operational summary, not a history:
 
 #### Active batch: Batch 190
 
-- F771 - Class Analytics Dashboard ID guard - Reuse canonical ID validation and preserve read order and failure behavior.
-- F772 - Class Details range-contract assessment - Decide whether shared `int`-range validation applies before implementation; keep provisional.
+- F772 - Class Details ID-range alignment - Reject values outside the int-backed repository range at the application boundary; keep ClassDetailsSaveUseCase forwarding unchanged.
 
 ## Objective
 

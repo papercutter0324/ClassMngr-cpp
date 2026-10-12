@@ -80,11 +80,16 @@
   is accepted at `1971a3ff5a1609ee89185624c0340561907350cd`; its create,
   update, and delete CTests registered once (#375/#374/#377) and passed 3/3
   after the same build succeeded outside the sandbox following FileTracker
-  access denial. F771 is selected for Class Analytics Dashboard ID validation:
-  reject `0`, `007`, `-1`, `17x`, and `2147483648` with exact nonrecoverable
-  InvalidInput metadata and zero reads; verify `2147483647` succeeds and is
-  forwarded unchanged to both ports. F772's Class Details range-policy
-  assessment remains provisional. No full suite ran.
+  access denial. F771 is accepted at
+  `b9a09f304de1d9479fd91e0007a7f7018d226500`; its exact dashboard CTest
+  registered once (#156) and passed 1/1 after the bounded build succeeded
+  outside the sandbox following FileTracker access denial. F772 is selected
+  to align the Class Details validation-context and schedule-conflict query
+  guards with their concrete `int` adapters. Add `2147483648` rejection with
+  existing exact recoverable InvalidInput metadata and zero port calls; verify
+  `2147483647` forwards unchanged in both query tests. Build/run those two
+  query tests and the existing save-use-case regression for `00042`. No full
+  suite ran.
   F707 and F709 remain deferred.
   F709 remains deferred after confirming raw SQL
   values become invalid `QTime`s before the public page's projection-string

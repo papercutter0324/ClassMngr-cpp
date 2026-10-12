@@ -29470,14 +29470,14 @@ Each exact CTest registered once and passed. The initial sandbox build hit
 FileTracker `E_ACCESSDENIED`; the same command succeeded outside the sandbox.
 Only the three named CTests ran; no full suite ran.
 
-### Batch 190 discovery and F770 selection - F771/F772 provisional - 2026-10-13
+### Batch 190 discovery and F772 selection - 2026-10-13
 
 Two independent read-only audits converged on the candidate set. Original
 discovery order was Testing Class helper consolidation, Class/Teacher Delete
 helper consolidation, Class Analytics Dashboard ID guard, then Class Details
 range assessment. F769 was selected from the second candidate and accepted;
-F770 was selected from the first and accepted. F771 is selected next; F772
-remains provisional.
+F770 was selected from the first and accepted. F771 was selected and accepted;
+F772 is selected after the application/adapter range decision.
 
 - **F769 - Class and Teacher Delete helper consolidation:**
   `src/next/application/class_delete.h` and `teacher_delete.h`; CTests
@@ -29488,15 +29488,15 @@ remains provisional.
   `ClassMngrNextApplicationTestingClassCreateUseCaseTests`,
   `ClassMngrNextApplicationTestingClassDetailsUpdateUseCaseTests`, and
   `ClassMngrNextApplicationTestingClassDeleteUseCaseTests`.
-- **F771 - Provisional Class Analytics Dashboard ID guard:**
+- **F771 - Class Analytics Dashboard ID guard:**
   `class_analytics_dashboard_read_query.h` and
   `ClassMngrNextApplicationClassAnalyticsDashboardReadQueryTests`.
-- **F772 - Provisional Class Details range-contract assessment:**
-  validation-context and schedule-conflict queries accept arbitrary-length
-  digit IDs that may exceed the shared helper's `int` range. Decide range
-  semantics before implementation. Preserve the tested leading-zero
-  forwarding contract in `ClassDetailsSaveUseCase`; exclude it from a blanket
-  validator sweep.
+- **F772 - Class Details ID-range alignment:** validation-context and
+  schedule-conflict application queries accept canonical positive digit IDs
+  of arbitrary length, but their concrete adapters and repositories use
+  `int`. Align application validation with that range so overflow fails
+  before the port. Preserve the tested leading-zero forwarding contract in
+  `ClassDetailsSaveUseCase`; exclude it from a blanket validator sweep.
 
 ### F769 Class and Teacher Delete ID validation - selected and acceptance matrix - 2026-10-13
 
@@ -29563,9 +29563,9 @@ Build `ClassMngr` and
 and `tests/next_application_testing_class_delete_use_case_tests.cpp`,
 respectively. Confirm one registration for each exact CTest name, then run
 only those three CTests with `-C Debug`. Run no full suite. This matrix was
-recorded before implementation. F771 is selected and F772 remains provisional.
-F707/F709 remain deferred, Phase 2 Gates 1/2 remain Partial, and the formal
-exit gate remains Open.
+recorded before implementation, when F771 was selected next and F772 remained
+provisional. F707/F709 remain deferred, Phase 2 Gates 1/2 remain Partial, and
+the formal exit gate remains Open.
 
 ### F770 Testing Class helper consolidation - accepted - 2026-10-13
 
@@ -29595,6 +29595,50 @@ evaluation/YTD behavior, and failure without a partial dashboard.
 Build `ClassMngr` and
 `ClassMngrNextApplicationClassAnalyticsDashboardReadQueryTests`. Confirm that
 exact CTest name is registered once, then run only that CTest with `-C Debug`.
-Run no full suite. This matrix was recorded before implementation; F771
-verification is pending. F772 remains provisional. F707/F709 remain deferred,
+Run no full suite. This matrix was recorded before implementation. F707/F709
+remain deferred, Phase 2 Gates 1/2 remain Partial, and the formal exit gate
+remains Open.
+
+### F771 Class Analytics Dashboard ID guard - accepted - 2026-10-13
+
+F771 is accepted at commit
+`b9a09f304de1d9479fd91e0007a7f7018d226500`. The focused
+`ClassMngrNextApplicationClassAnalyticsDashboardReadQueryTests` registration
+was unique (#156) and passed 1/1 after the bounded VS 18 x64 Debug build
+succeeded outside the sandbox following FileTracker `E_ACCESSDENIED`. An
+unrelated missing-executable warning was reported for
+`ClassMngrMainWindowClassVisibilityPreferencesFailureTests`; the focused
+registration and run succeeded. No full suite ran.
+
+### F772 Class Details application ID-range alignment - selected and acceptance matrix - 2026-10-13
+
+**F772 is selected:** align the validation-context and schedule-conflict
+application queries with their `int`-based adapters and repository APIs by
+reusing `Application::isCanonicalPositiveDecimalId` in
+`src/next/application/class_details_validation_context_query.h` and
+`src/next/application/class_details_schedule_conflict_query.h`. The helper is
+already listed in `cmake/next.cmake`; no inventory change is expected. The
+queries currently accept canonical positive digit strings of arbitrary
+length, while adapters parse to `int` and reject overflow with the same
+InvalidInput message. This alignment makes `2147483648` fail before the port.
+
+Preserve both queries' read and identity contracts. ClassDetailsSaveUseCase
+is outside this migration; retain its tested forwarding of `00042` and do not
+apply a blanket validator sweep.
+
+Keep invalid IDs `0`, `042`, `42x`, and `-1`, and add `2147483648`. Each
+returns `InvalidInput` with `Class ID must be a canonical positive integer.`,
+recoverable=true, and zero port calls. Add valid `2147483647` cases and verify
+success with unchanged ID forwarding in each query fake. Preserve the
+validation-context one-call and matched-class-identity contract, plus
+schedule-conflict request, order, and failure behavior.
+
+Build `ClassMngr` and
+`ClassMngrNextApplicationClassDetailsValidationContextQueryTests`,
+`ClassMngrNextApplicationClassDetailsScheduleConflictQueryTests`, and
+`ClassMngrNextApplicationClassDetailsSaveUseCaseTests`. Confirm one
+registration for each exact CTest name, then run only those three CTests with
+`-C Debug`; run no full suite. Keep the existing `00042` save-use-case
+assertion as a regression check. This matrix is recorded before
+implementation; F772 verification is pending. F707/F709 remain deferred,
 Phase 2 Gates 1/2 remain Partial, and the formal exit gate remains Open.
