@@ -25595,4 +25595,65 @@ the port and report persistence failure after the dismissal dialog closes.
    and `ClassMngrNavigationTeacherReadTests`. Add no target and run no full
    suite.
 
-This matrix is recorded before implementation. Batch 165 is active with F690.
+This matrix was recorded before implementation.
+
+### F690 Upcoming Birthday Dismissal checked persistence - accepted - 2026-10-12
+
+F690 is accepted at code/test commit
+`38de195c37c26fc51e5ffd4ea2df4fbccd5e4a9e`. The Windows x64 Debug Ninja
+tree built `ClassMngr`,
+`ClassMngrNextPlatformSettingsManagerUpcomingBirthdayDismissalPortTests`, and
+`ClassMngrNavigationTeacherReadTests`. The exact CTests passed 2/2:
+`ClassMngrNextPlatformSettingsManagerUpcomingBirthdayDismissalPortTests` and
+`ClassMngrNavigationTeacherReadTests`. The standard Visual Studio generator
+stopped at `ZERO_CHECK` with FileTracker `E_ACCESSDENIED`. No full suite ran.
+
+**Decision: accept F690.** Batch 165 is complete.
+
+### Batch 166 shortlist and selection - recorded before F691 implementation - 2026-10-12
+
+Select Recent Workspace History checked persistence. It covers distinct
+settings functions in `core/settingsmanager.h` and
+`core/settingsmanager.cpp`, which F690 also touched, and has existing port and
+FileController lifecycle test targets. Keep this slice bounded to the Recent
+Workspace History keys and caller behavior.
+
+**F691 is selected:** add an opt-in checked paired write for `files/recent` and
+`files/last`, return typed results from `RecentWorkspaceHistoryPort::save` and
+`clear`, and preserve existing UTF-8 conversion, ordering, key behavior, and
+empty fallback semantics. Inject the port optionally into FileController so
+history persistence failures can be reported without undoing completed
+workspace operations.
+
+### F691 Recent Workspace History checked persistence acceptance matrix - recorded before implementation - 2026-10-12
+
+1. Add an opt-in checked paired write for `files/recent` and `files/last`.
+   Preserve each exact prior QVariant or key absence if sync fails, preserve
+   unrelated values including `files/lastDirectory`, leave generic writes
+   unchanged, and allow retry after QSettings recovery.
+2. Return `[[nodiscard]] Domain::Result<void>` from
+   `RecentWorkspaceHistoryPort::save` and `clear`. Map persistence failures to
+   recoverable `Technical` results while preserving UTF-8 conversion, history
+   ordering, key behavior, and empty fallback semantics.
+3. Add optional borrowed port injection to FileController without changing
+   existing constructor behavior. After a successful open, a failed history
+   save must leave the operation and result successful and show one warning.
+   A failed prune or clear must show a persistence warning and preserve the
+   prior history through rollback; the clear-menu path must repopulate the
+   unchanged entries.
+4. Extend
+   `NextPlatformSettingsManagerRecentWorkspaceHistoryPortTests` with injected
+   sync failure, exact rollback for typed and absent values of both keys,
+   unrelated-setting preservation, typed error, retry, and existing
+   conversion/clear coverage. Extend `FileControllerWorkspaceLifecycleTests`
+   with failed history save after successful open, asserting one warning and a
+   preserved workspace; failed clear with one warning and prior menu/history
+   retained; and prune failure warning.
+5. Build `ClassMngr`,
+   `ClassMngrNextPlatformSettingsManagerRecentWorkspaceHistoryPortTests`, and
+   `ClassMngrFileControllerWorkspaceLifecycleTests`; run exactly the CTests
+   `ClassMngrNextPlatformSettingsManagerRecentWorkspaceHistoryPortTests` and
+   `ClassMngrFileControllerWorkspaceLifecycleTests`. Add no target and run no
+   full suite.
+
+This matrix is recorded before implementation. Batch 166 is active with F691.
