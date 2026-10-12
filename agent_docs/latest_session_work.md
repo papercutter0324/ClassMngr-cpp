@@ -64,10 +64,14 @@
   `a96246480d4939c00873a98b11ffa1ae10763118`; its Schedule Builder source
   snapshot target built and the exact CTest registered once and passed 1/1 in
   Visual Studio 18 x64 Debug. The sandbox build hit FileTracker access denial
-  and succeeded outside the sandbox on retry. F767 is selected in Batch 189
-  for Schedule Import state snapshot validation. Batch190 discovery identified
-  four candidate groups for after F768; selection is pending. No full suite
-  ran.
+  and succeeded outside the sandbox on retry. F767 is accepted at
+  `bc174c48bbf7152100320384f0b45ecff701d0ba`; its Schedule Import state
+  snapshot target built and the exact CTest registered once and passed 1/1 in
+  Visual Studio 18 x64 Debug. The sandbox build hit FileTracker access denial
+  and succeeded outside the sandbox on retry. F768 is selected as the final
+  Batch 189 Speaking Evaluation query-family slice. Batch190 discovery
+  identified four candidate groups for after F768; selection is pending. No
+  full suite ran.
   F707 and F709 remain deferred.
   F709 remains deferred after confirming raw SQL
   values become invalid `QTime`s before the public page's projection-string

@@ -29400,9 +29400,64 @@ retaining existing success and error coverage.
 Build `ClassMngr` and
 `ClassMngrNextApplicationScheduleImportStateSnapshotTests`. Confirm one
 registration for the exact full-name CTest, then run only that CTest with
-`-C Debug`. Run no full suite. This matrix is recorded before implementation;
-F767 verification is pending. F707/F709 remain deferred, Phase 2 Gates 1/2
-remain Partial, and the formal exit gate remains Open.
+`-C Debug`. Run no full suite. This matrix was recorded before implementation.
+F707/F709 remain deferred, Phase 2 Gates 1/2 remain Partial, and the formal
+exit gate remains Open.
+
+### F767 Schedule Import state snapshot canonical ID validation - accepted - 2026-10-13
+
+F767 is accepted at commit
+`bc174c48bbf7152100320384f0b45ecff701d0ba`. In the existing Visual Studio 18
+x64 Debug tree, `ClassMngr` and
+`ClassMngrNextApplicationScheduleImportStateSnapshotTests` built. The exact
+CTest registered once and passed 1/1 after an identical build retry outside
+the sandbox from FileTracker `E_ACCESSDENIED`. No full suite ran.
+
+### F768 Speaking Evaluation read-query ID validation - selected and acceptance matrix - 2026-10-13
+
+**F768 is selected:** consolidate the duplicated canonical-positive-int
+parsing in `src/next/application/speaking_evaluation_query.h`,
+`speaking_evaluation_batch_read_query.h`, and
+`speaking_evaluation_roster_names_read_query.h` using
+`Application::isCanonicalPositiveDecimalId`. The helper and these headers are
+already in `cmake/next.cmake`; no inventory change is needed.
+
+Preserve each query's contract:
+
+- Single query: invalid ClassId returns recoverable `InvalidInput` with
+  `Class ID must be a canonical positive integer.` before any read. Preserve
+  empty-name validation and forward port errors unchanged. A returned class
+  or evaluation identity mismatch remains nonrecoverable `Validation` with
+  `A speaking evaluation read returned a different query identity.` after
+  one read. Preserve ordered rows.
+- Batch query: invalid ClassId returns recoverable `InvalidInput` with the
+  same exact message before any read. Preserve empty-name rejection and
+  successful empty-name-list behavior with no read, forward port errors
+  unchanged, and preserve returned count, positional identity/order, and
+  ordered results.
+- Roster names: invalid ClassId returns nonrecoverable `InvalidInput` with
+  the same exact message before any read. A returned class mismatch remains
+  nonrecoverable `Validation` with
+  `Roster names were returned for a different class.` after one read. Forward
+  port errors unchanged and preserve ordered pairs and column-presence flags.
+
+Strengthen the single-query invalid and mismatch assertions. In the existing
+score-import test asset, add a focused batch invalid-ClassId-before-port
+case. Strengthen roster-name invalid and mismatch assertions. Do not add
+unrelated evaluation-name policy or adapter behavior changes.
+
+Build `ClassMngr` and
+`ClassMngrNextApplicationSpeakingEvaluationQueryTests`,
+`ClassMngrNextApplicationSpeakingEvaluationRosterScoreImportTests`, and
+`ClassMngrNextApplicationSpeakingEvaluationRosterNamesReadQueryTests` from
+`tests/next_application_speaking_evaluation_query_tests.cpp`,
+`tests/next_application_speaking_evaluation_roster_score_import_tests.cpp`,
+and `tests/next_application_speaking_evaluation_roster_names_read_query_tests.cpp`,
+respectively. Confirm one registration for each exact CTest name, then run
+only those three exact CTests with `-C Debug`. Run no full suite. This matrix
+is recorded before implementation; F768 verification is pending. F707/F709
+remain deferred, Phase 2 Gates 1/2 remain Partial, and the formal exit gate
+remains Open.
 
 ### Batch 190 read-only discovery - for after F768; selection pending - 2026-10-13
 

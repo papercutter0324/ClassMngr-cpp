@@ -4874,25 +4874,26 @@ No full suite. F707/F709 remain deferred. Phase 2 remains In Progress/Open
 with Gates 1 and 2 Partial; separate current-source Phase 0 evidence remains
 Windows x64 2/24 and macOS universal 0/24.
 
-## Phase 2 current position — 2026-10-13 (F766 accepted; F767 selected)
+## Phase 2 current position — 2026-10-13 (F767 accepted; F768 selected)
 
-F766 is accepted at
-`a96246480d4939c00873a98b11ffa1ae10763118`. The Schedule Builder source
-snapshot handler now reuses the shared canonical-ID validator while retaining
-the port-first read and raw returned order and fields. Its focused test pins
-invalid and duplicate response messages, Validation/nonrecoverable results,
-one read per failure, and forwarded port errors. In the existing Visual Studio
-18 x64 Debug tree, `ClassMngr` and
-`ClassMngrNextApplicationScheduleBuilderSourceSnapshotTests` built; the exact
+F767 is accepted at
+`bc174c48bbf7152100320384f0b45ecff701d0ba`. The Schedule Import state
+snapshot handler now uses the shared canonical-ID validator. Tests cover
+invalid and duplicate teacher/class IDs and invalid assignments with exact
+failure kind, source, message, and one-read assertions. Existing `-1`
+acceptance, source order, complete snapshot preservation, and structured
+port-failure forwarding remain covered. In the existing Visual Studio 18 x64
+Debug tree, `ClassMngr` and
+`ClassMngrNextApplicationScheduleImportStateSnapshotTests` built; the exact
 CTest registered once and passed 1/1. The sandbox build hit FileTracker
 `E_ACCESSDENIED`; the same build succeeded outside the sandbox. No full suite
 ran.
 
-F767 is selected in Batch 189 for the Schedule Import state snapshot handler.
-Reuse the shared ID helper while preserving all existing snapshot and
-structured port-failure behavior; pin invalid/duplicate teacher and class IDs
-and invalid assignments with exact failure metadata and one read. Batch 190
-discovery identified four candidate groups for after F768; selection is
-pending. F707/F709 remain deferred. Phase 2 remains In Progress/Open with
-Gates 1 and 2 Partial; separate current-source Phase 0 evidence remains
-Windows x64 2/24 and macOS universal 0/24.
+F768 is selected as the final Batch 189 slice: consolidate the shared
+canonical-ID predicate across the single, batch, and roster-name Speaking
+Evaluation queries while preserving their distinct recoverability, no-read,
+identity/order, and output contracts. Batch 190 discovery identified four
+candidate groups for after F768; selection is pending. F707/F709 remain
+deferred. Phase 2 remains In Progress/Open with Gates 1 and 2 Partial;
+separate current-source Phase 0 evidence remains Windows x64 2/24 and macOS
+universal 0/24.

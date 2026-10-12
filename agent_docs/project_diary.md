@@ -5004,3 +5004,19 @@ Class Analytics Dashboard, and a conditional Class Details ID-range decision.
 Selection is pending. Preserve the tested leading-zero forwarding behavior in
 ClassDetailsSaveUseCase. F707/F709 remain deferred; Phase 2 Gates 1/2 remain
 Partial and the formal exit gate remains Open.
+
+## Phase 2 F767 acceptance and F768 selection — 2026-10-13
+
+F767 is accepted at `bc174c48bbf7152100320384f0b45ecff701d0ba`. The Schedule
+Import state snapshot handler now shares canonical-ID validation across
+teacher IDs, class IDs, and assignments without changing `-1`, port-failure,
+or source-order behavior. The focused CTest registered once and passed 1/1 in
+the Visual Studio 18 x64 Debug tree after the same build succeeded outside the
+sandbox following FileTracker `E_ACCESSDENIED`. No full suite ran.
+
+F768 is selected for the Speaking Evaluation single, batch, and roster-names
+read queries. Consolidate their duplicated ID parser while keeping the
+single/batch recoverable invalid-input behavior distinct from roster-names,
+and preserve each query's read boundaries and identity/order contracts.
+Batch190 selection remains pending for after F768. F707/F709 remain deferred;
+Phase 2 Gates 1/2 remain Partial and the formal exit gate remains Open.

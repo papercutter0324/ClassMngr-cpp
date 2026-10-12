@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-13
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F766 is accepted at `a96246480d4939c00873a98b11ffa1ae10763118`; F767 is selected for the Schedule Import state snapshot, with F707/F709 deferred, Gates 1/2 Partial, and the formal exit gate Open.
+- Current note: F767 is accepted at `bc174c48bbf7152100320384f0b45ecff701d0ba`; F768 is selected as the final Batch 189 Speaking Evaluation read-query slice, with F707/F709 deferred, Gates 1/2 Partial, and the formal exit gate Open.
 
 ### Slice discovery batches
 
@@ -102,8 +102,7 @@ Treat this plan as an operational summary, not a history:
 
 #### Active batch: Batch 189
 
-- F767 - Schedule Import state snapshot - Reuse the existing canonical ID helper and preserve returned-snapshot validation contracts.
-- F768 - Speaking Evaluation read-query family - Assess and implement the selected read-query slice.
+- F768 - Speaking Evaluation read-query family - Consolidate canonical ID parsing across three queries while preserving caller contracts.
 
 ## Objective
 
